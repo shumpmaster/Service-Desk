@@ -1,0 +1,349 @@
+# The Orchestrator's routing table (S-012, frozen). Changing it is a rule change the owner approves
+# (R3; Chief of Staff lane). The tests load this file itself (S-012 AC4).
+#
+# Routes are tried in order; the first match on stage, state, role, verdict and round wins.
+# "*" matches anything; a role starting with "!" matches any role but that one. `round` is the
+# item's round for its stage's kind: plan_round at stages 2, 3, 4, 8; build_round at 5, 6.
+# `condition` "frozen" / "not-frozen" tests the item's current spec's status line.
+# `then_stage` is the stage the item moves to; `resume` is set on a failure card ("this" = the
+# item's current stage and role). Every dispatch first passes the freeze pre-check (stages 4-6),
+# then the budget check (exempt: run-checks and critic-triage). See S-012 AC3.
+
+[limits]
+budget_per_stage = 12
+stall_grace_minutes = 15
+usage_limit_hours = 24
+
+[time_limits]   # minutes per role
+default = 30
+
+[[route]]
+id = "triage-return"
+stage = "*"
+state = "returned"
+role = "critic-triage"
+verdict = "*"
+round = "*"
+action = "card stop"
+
+[[route]]
+id = "third-fail"
+stage = "*"
+state = "returned"
+role = "!critic-triage"
+verdict = "FAIL"
+round = ">=3"
+action = "dispatch critic-triage"
+
+[[route]]
+id = "malformed-return"
+stage = "*"
+state = "returned"
+role = "*"
+verdict = "malformed"
+round = "*"
+action = "card failure"
+resume = "this"
+
+[[route]]
+id = "dor-pass"
+stage = 2
+state = "returned"
+role = "critic"
+verdict = "PASS"
+round = "*"
+action = "card dor"
+
+[[route]]
+id = "dor-fail"
+stage = 2
+state = "returned"
+role = "critic"
+verdict = "FAIL"
+round = "<3"
+action = "card dor-fail"
+
+[[route]]
+id = "research-to-source"
+stage = 2
+state = "returned"
+role = "researcher"
+verdict = "*"
+round = "*"
+action = "dispatch source-checker"
+
+[[route]]
+id = "source-pass"
+stage = 2
+state = "returned"
+role = "source-checker"
+verdict = "PASS"
+round = "*"
+action = "done"
+
+[[route]]
+id = "source-fail"
+stage = 2
+state = "returned"
+role = "source-checker"
+verdict = "FAIL"
+round = "<3"
+action = "dispatch researcher"
+
+[[route]]
+id = "define-to-plan-review"
+stage = 3
+state = "returned"
+role = "definer"
+verdict = "*"
+round = "*"
+action = "dispatch critic"
+
+[[route]]
+id = "plan-pass"
+stage = 3
+state = "returned"
+role = "critic"
+verdict = "PASS"
+round = "*"
+action = "card criteria"
+
+[[route]]
+id = "plan-fail"
+stage = 3
+state = "returned"
+role = "critic"
+verdict = "FAIL"
+round = "<3"
+action = "dispatch definer"
+
+[[route]]
+id = "freeze-frozen"
+stage = 3
+state = "returned"
+role = "definer-freeze"
+verdict = "*"
+round = "*"
+condition = "frozen"
+action = "dispatch check-author"
+then_stage = 4
+
+[[route]]
+id = "freeze-not-frozen"
+stage = 3
+state = "returned"
+role = "definer-freeze"
+verdict = "*"
+round = "*"
+condition = "not-frozen"
+action = "card failure"
+resume = "3/definer-freeze"
+
+[[route]]
+id = "checks-to-critic"
+stage = 4
+state = "returned"
+role = "check-author"
+verdict = "*"
+round = "*"
+action = "dispatch critic"
+
+[[route]]
+id = "checks-pass"
+stage = 4
+state = "returned"
+role = "critic"
+verdict = "PASS"
+round = "*"
+action = "dispatch builder"
+then_stage = 5
+
+[[route]]
+id = "checks-fail"
+stage = 4
+state = "returned"
+role = "critic"
+verdict = "FAIL"
+round = "<3"
+action = "dispatch check-author"
+
+[[route]]
+id = "build-to-checks"
+stage = 5
+state = "returned"
+role = "builder"
+verdict = "*"
+round = "*"
+action = "run-checks"
+
+[[route]]
+id = "checks-run-pass"
+stage = 5
+state = "returned"
+role = "checks"
+verdict = "PASS"
+round = "*"
+action = "dispatch reviewer"
+
+[[route]]
+id = "checks-run-fail"
+stage = 5
+state = "returned"
+role = "checks"
+verdict = "FAIL"
+round = "<3"
+action = "dispatch builder"
+
+[[route]]
+id = "review-pass"
+stage = 5
+state = "returned"
+role = "reviewer"
+verdict = "PASS"
+round = "*"
+action = "dispatch builder"
+then_stage = 6
+
+[[route]]
+id = "review-fail"
+stage = 5
+state = "returned"
+role = "reviewer"
+verdict = "FAIL"
+round = "<3"
+action = "dispatch builder"
+
+[[route]]
+id = "launch-to-review"
+stage = 6
+state = "returned"
+role = "builder"
+verdict = "*"
+round = "*"
+action = "dispatch reviewer"
+
+[[route]]
+id = "launch-pass"
+stage = 6
+state = "returned"
+role = "reviewer"
+verdict = "PASS"
+round = "*"
+action = "card launch"
+
+[[route]]
+id = "launch-fail"
+stage = 6
+state = "returned"
+role = "reviewer"
+verdict = "FAIL"
+round = "<3"
+action = "dispatch builder"
+
+[[route]]
+id = "evidence-return"
+stage = 8
+state = "returned"
+role = "critic"
+verdict = "*"
+round = "*"
+action = "card evidence"
+
+[[route]]
+id = "ready-checks"
+stage = "*"
+state = "ready"
+role = "checks"
+verdict = "*"
+round = "*"
+action = "run-checks"
+
+[[route]]
+id = "ready-dispatch"
+stage = "*"
+state = "ready"
+role = "*"
+verdict = "*"
+round = "*"
+action = "dispatch item-role"
+
+[[route]]
+id = "waiting"
+stage = "*"
+state = "dispatched"
+role = "*"
+verdict = "*"
+round = "*"
+action = "none"
+
+[[route]]
+id = "waiting-owner"
+stage = "*"
+state = "waiting-owner"
+role = "*"
+verdict = "*"
+round = "*"
+action = "none"
+
+[[route]]
+id = "finished"
+stage = "*"
+state = ["done", "closed"]
+role = "*"
+verdict = "*"
+round = "*"
+action = "none"
+
+[[route]]
+id = "no-route"
+stage = "*"
+state = "*"
+role = "*"
+verdict = "*"
+round = "*"
+action = "card failure"
+
+# Owner gates: who answers, and the valid words by item kind (S-012 AC5).
+# "closes" words and "launch approve" refuse a Proxy: line (D-066).
+
+[gates.dor]
+answered_by = "owner"
+project = ["build", "re-aim", "stop"]
+
+[gates.dor-fail]
+answered_by = "chief-of-staff or owner"
+project = ["resubmit", "stop"]
+owner_only = ["stop"]
+
+[gates.criteria]
+answered_by = "owner"
+project = ["approve", "revise", "stop"]
+
+[gates.launch]
+answered_by = "owner"
+project = ["approve", "revise", "stop"]
+
+[gates.evidence]
+answered_by = "owner"
+evidence = ["continue", "re-aim", "stop"]
+
+[gates.stop]
+answered_by = "owner"
+project_with_spec = ["re-specify", "criteria-wrong", "checks-wrong", "rebuild", "confirm", "re-scope", "drop"]
+project_in_shape = ["resubmit", "confirm", "drop"]
+research = ["re-specify", "confirm", "drop"]
+evidence = ["retry", "confirm", "drop"]
+stage_limits = { rebuild = 5, checks-wrong = 4 }
+strikes = { re-specify = true, criteria-wrong = false, checks-wrong = false }
+
+[gates.failure]
+answered_by = "owner"
+project_with_spec = ["retry", "re-specify", "rebuild", "drop"]
+project_in_shape = ["retry", "drop"]
+research = ["retry", "re-specify", "drop"]
+evidence = ["retry", "drop"]
+stage_limits = { rebuild = 5 }
+retry_needs_resume = true
+
+[proxy]
+refused = ["launch.approve", "dor.stop", "dor-fail.stop", "criteria.stop", "launch.stop", "evidence.re-aim", "evidence.stop", "stop.re-scope", "stop.drop", "failure.drop"]

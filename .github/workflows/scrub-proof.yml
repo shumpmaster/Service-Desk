@@ -1,0 +1,91 @@
+# The live proof (model S-015 AC12, D-074): started only by hand, before session_commands may be
+# "on", and again on any new pinned version or runner image (the re-proof rule, D-077, model S-016
+# AC2). Its first part (model S-016 AC3) holds no secret: it tests the check-run sandbox with the
+# production steps. Then it runs the production session_runner.py pack and run, twice (session
+# commands on, then off), through a wrapper that keeps the command line's raw stream, and ends with
+# PASS or FAIL per check only, then the runner's ImageOS and ImageVersion and the command line's
+# version, which a passing run's rule change records (docs/SETUP.md). It uploads nothing and commits
+# nothing. Every action is pinned by commit, its release tag in a comment (model S-016 AC8).
+name: scrub-proof
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "The model the proof's two sessions use"
+        required: true
+
+permissions: {}
+
+# A push delivered twice starts two runs for one commit; the later one replaces the earlier.
+concurrency:
+  group: scrub-proof-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  # Model S-016 AC5: the token mode, checked in a job that uses no Environment and holds no secret
+  # beyond whether a repository-level token is visible, so no mode is reached by omission.
+  guard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Check the token mode
+        env:
+          TOKEN_ENVIRONMENT: ${{ vars.TOKEN_ENVIRONMENT }}
+          REPOSITORY_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+        run: python3 governance/checks/orchestrator_git.py token-mode
+
+  proof:
+    needs: guard
+    # Environment mode: the token comes from the Environment (limited to the default branch, so the
+    # proof then runs only from it); repository mode: none.
+    environment: ${{ vars.TOKEN_ENVIRONMENT != 'repository' && vars.TOKEN_ENVIRONMENT || '' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Install bubblewrap and socat
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap socat
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Check the sandbox dependencies
+        run: python3 governance/checks/orchestrator_git.py sandbox-check
+      - name: Test the check-run sandbox (no secret)
+        run: python3 governance/checks/orchestrator_git.py proof-setup --sandbox-part --config governance --agents .claude/agents --tools governance/checks --work "$RUNNER_TEMP/proof-sandbox"
+      - name: Set up the proof
+        id: setup
+        env:
+          MODEL: ${{ inputs.model }}
+        run: python3 governance/checks/orchestrator_git.py proof-setup --config governance --agents .claude/agents --tools governance/checks --work "$RUNNER_TEMP/proof" --model "$MODEL" --github-output "$GITHUB_OUTPUT"
+      - name: Install the pinned command line
+        env:
+          VERSION: ${{ steps.setup.outputs.version }}
+        run: npm install -g "@anthropic-ai/claude-code@$VERSION"
+      - name: Run the commands-on session
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          HASH: ${{ steps.setup.outputs.on_hash }}
+        run: python3 governance/checks/session_runner.py run --pack "$RUNNER_TEMP/proof/on/pack" --control "$RUNNER_TEMP/proof/on/control.json" --hash "$HASH" --out "$RUNNER_TEMP/proof/on/out" --claude "$RUNNER_TEMP/proof/on/claude-wrapper"
+      - name: Run the commands-off session
+        if: always()
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          HASH: ${{ steps.setup.outputs.off_hash }}
+        run: python3 governance/checks/session_runner.py run --pack "$RUNNER_TEMP/proof/off/pack" --control "$RUNNER_TEMP/proof/off/control.json" --hash "$HASH" --out "$RUNNER_TEMP/proof/off/out" --claude "$RUNNER_TEMP/proof/off/claude-wrapper"
+      - name: Check (PASS or FAIL only)
+        if: always()
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: python3 governance/checks/orchestrator_git.py proof-check --work "$RUNNER_TEMP/proof" --sandbox "$RUNNER_TEMP/proof-sandbox" --summary "$GITHUB_STEP_SUMMARY"

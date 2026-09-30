@@ -1,0 +1,13 @@
+# Enforcement mode per check (spec S-003, OPERATING_MODEL §9). Changing this file is R3.
+# Every check is enforced unless it is listed here. A check set to "warn" still runs and
+# prints its findings as WARN lines, but doesn't fail CI. Each entry cites the ledger entry that
+# justifies it, e.g. while adopting the model in an existing project (tuning false alarms for a
+# couple of weeks before enforcing).
+#
+# List the check names with: governance/checks/check_all.sh --list-checks
+# Some gates can never be warned: parse errors, the surface map's structure, the append-only
+# ledger, the owner's required verdict, the risk-path configuration, and this file's own lint.
+# `check_all.sh --list-checks` marks them "(never warn-only)".
+#
+# [checks]
+# "governance_checks.scope" = { mode = "warn", ledger = "L-0002" }

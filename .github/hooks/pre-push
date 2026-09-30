@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# pre-push: run the governance checks before a push (model S-005 AC6). Opt-in.
+#
+# Off until the owner turns it on, once per clone, by copying it (model S-006 AC1):
+#   cp .github/hooks/pre-push .git/hooks/pre-push
+# git then runs that copy before every push, and no other file in .github/hooks/. A later
+# change to this tracked file doesn't run until it is copied again, so re-copy only after
+# reviewing the change (docs/research/003 in the model, P1 to P10).
+# `git push --no-verify` skips it, and CI still decides: this is a convenience, not a rule.
+#
+# For every ref being pushed (deletions are skipped), it checks out the pushed commit in a
+# temporary worktree and runs its check_all.sh against the remote's default branch:
+#   bash <worktree>/governance/checks/check_all.sh <worktree> <default branch commit>
+# (tools/check_all.sh in the operating-model repository), with GOV_BRANCH set to the branch
+# being pushed and GOV_DEFAULT_BRANCH to the default branch. Two refs at one commit are each
+# checked, with their own branch. check_all.sh gets no stdin. A failure blocks the push.
+#
+# The default branch is <remote>/HEAD's target (set by `git clone`, or by
+# `git remote set-head <remote> --auto`), then origin/HEAD's, then main. Without that branch
+# on the remote (a first push), the checks run without a base.
+#
+# git passes the remote's name and URL as arguments, and one line per ref on stdin:
+#   <local ref> <local sha> <remote ref> <remote sha>
+
+set -u
+
+REMOTE="${1:-origin}"
+ZERO_RE='^0+$'
+
+default_branch() {
+  local r target
+  for r in "$REMOTE" origin; do
+    if target="$(git symbolic-ref -q "refs/remotes/$r/HEAD" 2>/dev/null)"; then
+      echo "${target#refs/remotes/$r/}"
+      return
+    fi
+  done
+  echo main
+}
+
+DEFAULT="$(default_branch)"
+BASE=""
+for ref in "refs/remotes/$REMOTE/$DEFAULT" "refs/remotes/origin/$DEFAULT"; do
+  if BASE="$(git rev-parse -q --verify "$ref^{commit}" 2>/dev/null)"; then
+    break
+  fi
+  BASE=""
+done
+
+TMP="$(mktemp -d)"
+WORKTREES=()
+cleanup() {
+  local wt
+  for wt in "${WORKTREES[@]+"${WORKTREES[@]}"}"; do
+    git worktree remove --force "$wt" >/dev/null 2>&1
+  done
+  git worktree prune >/dev/null 2>&1
+  rm -rf "$TMP"
+}
+trap cleanup EXIT
+
+failed=0
+checked=" "
+n=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -n "${local_sha:-}" ] || continue
+  if [[ "$local_sha" =~ $ZERO_RE ]]; then
+    continue   # a deletion: nothing to check
+  fi
+  if ! sha="$(git rev-parse -q --verify "$local_sha^{commit}" 2>/dev/null)"; then
+    continue   # not a commit (e.g. a tag on a blob)
+  fi
+  branch=""
+  case "$remote_ref" in
+    refs/heads/*) branch="${remote_ref#refs/heads/}" ;;
+  esac
+  # The checks depend on the branch (GOV_BRANCH) as well as the commit: skip only a repeat of both.
+  case "$checked" in
+    *" $sha:$branch "*) continue ;;
+  esac
+  checked="$checked$sha:$branch "
+  n=$((n + 1))
+  wt="$TMP/wt$n"
+  if ! git worktree add --detach -q "$wt" "$sha" >/dev/null 2>&1; then
+    echo "pre-push: can't check out $sha to run the governance checks" >&2
+    failed=1
+    continue
+  fi
+  WORKTREES+=("$wt")
+  check_all=""
+  for rel in governance/checks/check_all.sh tools/check_all.sh; do
+    if [ -f "$wt/$rel" ]; then
+      check_all="$wt/$rel"
+      break
+    fi
+  done
+  if [ -z "$check_all" ]; then
+    echo "pre-push: $remote_ref: no governance/checks/check_all.sh in the pushed commit" >&2
+    failed=1
+    continue
+  fi
+  echo "pre-push: governance checks for $remote_ref (${sha:0:12}) against ${DEFAULT}${BASE:+ (${BASE:0:12})}" >&2
+  # Run outside git's hook environment, so the tools read the worktree's own repository, and
+  # with no stdin, which holds the remaining ref lines this loop still has to read.
+  if ! (
+    unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
+    cd "$wt" && GOV_BRANCH="$branch" GOV_DEFAULT_BRANCH="$DEFAULT" bash "$check_all" "$wt" $BASE
+  ) </dev/null >&2; then
+    echo "pre-push: governance checks failed for $remote_ref; fix them, or push with --no-verify (CI still decides)" >&2
+    failed=1
+  fi
+done
+
+exit "$failed"

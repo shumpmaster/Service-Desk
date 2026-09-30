@@ -37,3 +37,66 @@ stays living. The Critic checks Part 1 against the definition of ready.*
 The owner's purpose, preferences and trade-offs for this project, and what he would hate. Drafted by
 the Chief of Staff from conversations, portfolio defaults and past rulings; confirmed on the
 move-to-Build card.
+
+*Draft 1, 2026-09-30. Chief of Staff, from the owner's answers in the intent-capture conversation
+on that date, the Operations-Hub record (its MISSION.md, SCOPE.md and docs/research/001, the
+Pocket Universe design guide), and the model's L-0115 (D-081). Quotes are the owner's own words.
+The owner has not yet confirmed it; confirmation comes on the move-to-Build card.*
+
+### Purpose
+- "I envisioned the service desk to be more of real time interactive planning, scheduling and
+  interactive workbench."
+- Service Desk replaces Operations-Hub, which is a read-only page answering "does anything need
+  me?" and linking out to GitHub. The owner chose to **act from the desk**, not only look.
+- On launch it takes over the old page's Cloudflare Pages project and address. Until then the old
+  page stays live and untouched, and the desk publishes only to a preview (L-0115).
+
+### What the first usable version covers
+The owner picked all four:
+1. **The Universe screen:** one box per project, with state, headline, sprint and main-branch
+   health. This is the old hub's core and must not get worse.
+2. **Decision cards:** v3's seven-part cards and owner questions, readable in full on the desk.
+3. **Team and pipeline:** where each project sits in the v3 stages (Shape, Build, Run), who is
+   working, and what comes next.
+4. **Spend and time:** spend against each project's ceiling, and the cost to the owner's time.
+
+### Preferences and trade-offs
+- **Phone first.** Desktop is a bigger view of the same thing.
+- **How actions work: whichever route is easiest.** "In somewhat indifferent here, the process was
+  designed to run from a Claude code window. However if one method is easier than the other I want
+  turn it down." Reading: the owner has no preferred mechanism, and would take the easier route,
+  whether actions happen on the desk itself or hand off to a Claude Code session. *To confirm: the
+  wording "I want turn it down" is ambiguous.*
+- **Spend follows value.** "I'm open to most anything if the value can be justified." There is no
+  fixed ceiling yet. Every paid service carries its value case, and Part 1 §5 still needs a
+  number.
+- **Four weeks, with a faster route shown.** Launch by 2026-10-28 is acceptable, "but with a route
+  to timeline compression if we work it aggressively." The plan should show what could shorten it
+  and what that would cost.
+- **Acting means write access.** The old hub deferred write-back because the page would then hold
+  the owner's credentials, which makes it T2 and needs a security review (Operations-Hub
+  SCOPE.md). The owner accepted that trade by choosing to act from the desk.
+
+### What the owner would hate
+- **False alarms.** It flags things that don't need the owner, and trust erodes.
+- **Missed decisions.** Something waits on the owner while the desk says "quiet".
+- **Upkeep on the owner.** Time spent on tokens, configuration or adding repositories.
+
+### Carried forward, to reconfirm
+These come from the Pocket Universe design guide (Operations-Hub docs/research/001), not from this
+conversation:
+- Exceptions first, activity second. Quiet is the success state.
+- Only flag what needs a human. A gate catching a problem, or an agent retrying, is activity.
+- The desk is never a source of truth. Every action writes back to the repository under the owner's
+  identity.
+
+### Open tensions for Shape
+These are questions for Shape to answer with evidence, not rulings:
+1. **Workbench versus source of truth.** Planning and scheduling need state. Does it live in the
+   project and portfolio repositories (the model's rule: the repository is the memory), or does
+   the desk keep its own?
+2. **Real time versus a static page.** The old hub is a static page rebuilt hourly. A real-time,
+   interactive desk needs a live backend, which bears on spend, tier and the data boundaries.
+3. **How the desk relates to Claude Code sessions and to each project's Orchestrator.** Does it
+   start or steer sessions, or only record the owner's rulings for the Orchestrator to act on?
+4. **The spend ceiling and the tier** that Part 1 §5 must state.

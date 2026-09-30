@@ -27,3 +27,17 @@ licenses_next: Writing MISSION.md and SCOPE.md, then opening the first sprint.
 decided_by: owner
 proposed_by: orchestrator
 reversibility: reversible
+
+## L-0002 — The founding import is exempt from the range guard
+date: 2026-09-30
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The project was founded in one commit (c1c9a56) holding the whole v3 template, authored by the orchestrator, which touches every surface. Exempt it from the range guard?
+decision: Exempt c1c9a56491d34565b931a6a8f6f41fab2caa855e (governance/SURFACES.md exempt block). It is the generated template, unchanged apart from the owner line, the founding date and the README title; the owner approves by merging the founding pull request.
+holdouts: changed
+licenses_next: The owner's GitHub setup (docs/SETUP.md), then the intent capture in docs/PROJECT.md.
+decided_by: owner (merges the founding pull request)
+proposed_by: orchestrator
+reversibility: reversible

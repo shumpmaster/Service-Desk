@@ -103,4 +103,5 @@ Commits the range guard skips (`<full sha> <ledger id>`), e.g. a founding import
 agent identities existed. Each needs its own ledger entry; adding one is R3.
 
 ```exempt
+c1c9a56491d34565b931a6a8f6f41fab2caa855e L-0002
 ```

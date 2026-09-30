@@ -62,11 +62,13 @@ The owner picked all four:
 
 ### Preferences and trade-offs
 - **Phone first.** Desktop is a bigger view of the same thing.
-- **How actions work: whichever route is easiest.** "In somewhat indifferent here, the process was
-  designed to run from a Claude code window. However if one method is easier than the other I want
-  turn it down." Reading: the owner has no preferred mechanism, and would take the easier route,
-  whether actions happen on the desk itself or hand off to a Claude Code session. *To confirm: the
-  wording "I want turn it down" is ambiguous.*
+- **Open to the desk becoming the easier way to run projects.** The model was designed to run from
+  a Claude Code window. The owner clarified: "if a design can be reached that makes future projects
+  or builds easier to run via the service desk than the are in a Claude code session - I am open to
+  that. I just hadn't thought that far so I can't be definitive about what is possible yet." So
+  running work from the desk is welcome where it is genuinely easier than a Claude Code session,
+  but it is not yet a requirement. Shape should find out what is possible and show the owner, and
+  the owner decides then.
 - **Spend follows value.** "I'm open to most anything if the value can be justified." There is no
   fixed ceiling yet. Every paid service carries its value case, and Part 1 §5 still needs a
   number.
@@ -97,6 +99,8 @@ These are questions for Shape to answer with evidence, not rulings:
    the desk keep its own?
 2. **Real time versus a static page.** The old hub is a static page rebuilt hourly. A real-time,
    interactive desk needs a live backend, which bears on spend, tier and the data boundaries.
-3. **How the desk relates to Claude Code sessions and to each project's Orchestrator.** Does it
-   start or steer sessions, or only record the owner's rulings for the Orchestrator to act on?
+3. **Could the desk be an easier way to run projects than a Claude Code session?** What is
+   possible: starting or steering sessions, driving each project's Orchestrator, or only recording
+   the owner's rulings for the Orchestrator to act on? What would each cost in spend, tier and
+   upkeep? The owner is open to it but has not decided (see Preferences).
 4. **The spend ceiling and the tier** that Part 1 §5 must state.

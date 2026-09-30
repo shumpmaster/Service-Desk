@@ -1,0 +1,141 @@
+# The governance checks (v3, model S-013 AC6). The v2.5.1 workflow's push and pull-request triggers,
+# base and GOV_BRANCH handling, plus a workflow_dispatch taking `base`: the Orchestrator's commit job
+# starts one after each push it makes to the default branch (the workflow's own token starts no push
+# run), with the default branch's tip before that push as the base. A dispatch whose base is empty or
+# not a full commit id in this repository fails. This run never pushes, so it starts nothing. The
+# decide job of orchestrator.yml reads these runs: while the latest on the default tip is failed,
+# running or absent, the loop starts no session and merges nothing. Every action is pinned by commit.
+name: governance
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: "The commit to check from: the default branch's tip before the Orchestrator's push"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  governance:
+    runs-on: ubuntu-24.04
+    # model S-004: the record step's summaries, read by the owner-signal job.
+    outputs:
+      tests: ${{ steps.record.outputs.tests }}
+      steps: ${{ steps.record.outputs.steps }}
+      review: ${{ steps.record.outputs.review }}
+      questions: ${{ steps.record.outputs.questions }}
+    steps:
+      # fetch-depth: 0 fetches the full history and every branch as
+      # refs/remotes/origin/*, which the range walk and the builders check read.
+      # persist-credentials: false keeps the token off disk while the PR's code runs.
+      # The runner's own Python (3.12 on ubuntu-24.04) runs the checks (3.11+ is needed).
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # REPLACE THIS STEP with your project's real test command
+      # (the same single entry point AGENTS.md names for build, test and check).
+      - name: Tests
+        id: tests
+        if: ${{ !cancelled() }}
+        run: echo "Add your test command here"
+
+      - name: Governance checks
+        id: governance-checks
+        if: ${{ !cancelled() }}
+        env:
+          # model S-004: check_all writes steps.json and review.json here.
+          GOV_SUMMARY_DIR: ${{ runner.temp }}/gov-summary
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+          # model S-013 AC6: the Orchestrator's dispatch names its base.
+          DISPATCH_BASE: ${{ inputs.base }}
+          # The PR number (empty on push) selects reviews/<PR>/ for the verdict check.
+          PR: ${{ github.event.pull_request.number }}
+          # The branch the range walk applies the build/<id>/<task> rule to.
+          GOV_BRANCH: ${{ github.head_ref || github.ref_name }}
+          # The scope check also counts scope extensions made earlier on the branch,
+          # since its merge base with the default branch.
+          GOV_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "${EVENT_NAME:-}" = "workflow_dispatch" ]; then
+            # model S-013 AC6: the base is required, a full commit id, and in this repository.
+            if ! printf '%s' "${DISPATCH_BASE:-}" | grep -Eqx '[0-9a-f]{40}' || ! git cat-file -e "$DISPATCH_BASE^{commit}" 2>/dev/null; then
+              echo "::error::The dispatch input base must be a full commit id in this repository (model S-013 AC6)."
+              exit 1
+            fi
+            bash governance/checks/check_all.sh . "$DISPATCH_BASE"
+            exit $?
+          fi
+          BASE="${PR_BASE:-$PUSH_BEFORE}"
+          # On a pull_request, HEAD is GitHub's merge ref: when it has two parents,
+          # its first parent is the base it was merged onto (which may be newer than
+          # pull_request.base.sha).
+          if [ "${EVENT_NAME:-}" = "pull_request" ] && git rev-parse -q --verify "HEAD^2" >/dev/null 2>&1; then
+            BASE="$(git rev-parse "HEAD^1")"
+          fi
+          # Omit the base when it is empty or all zeros (a new branch or first push),
+          # or when the commit is not in this clone (e.g. after a force-push).
+          if [ -n "$BASE" ] && [ -n "${BASE//0/}" ] && ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "::notice::Base commit $BASE is not available (force-push?); running the checks without the append-only ledger comparison."
+            BASE=""
+          fi
+          # Without a base there is no range walk and no required-review check.
+          if [ -z "$BASE" ] || [ -z "${BASE//0/}" ]; then
+            bash governance/checks/check_all.sh .
+          elif [ -n "${PR:-}" ]; then
+            bash governance/checks/check_all.sh . "$BASE" "$PR"
+          else
+            bash governance/checks/check_all.sh . "$BASE"
+          fi
+
+      # model S-004: record the owner-signal inputs as job outputs. A separate step,
+      # so the Governance checks step's run body is unchanged.
+      - name: Record owner signal inputs
+        id: record
+        if: ${{ !cancelled() }}
+        env:
+          SUMMARY_DIR: ${{ runner.temp }}/gov-summary
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          TESTS_OUTCOME: ${{ steps.tests.outcome }}
+        run: |
+          mkdir -p "$SUMMARY_DIR"
+          python3 governance/checks/review_check.py questions --default-branch "$DEFAULT_BRANCH" \
+            --summary-json "$SUMMARY_DIR/questions.json" || true
+          python3 governance/checks/owner_signal.py record --dir "$SUMMARY_DIR" --test "tests=$TESTS_OUTCOME"
+
+  # model S-004 AC4: post owner-verdict and owner-questions as commit statuses. Runs the
+  # default branch's copy of the script with only contents: read and statuses: write.
+  owner-signal:
+    needs: governance
+    if: always()
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Post owner signal
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          TESTS: ${{ needs.governance.outputs.tests }}
+          STEPS: ${{ needs.governance.outputs.steps }}
+          REVIEW: ${{ needs.governance.outputs.review }}
+          QUESTIONS: ${{ needs.governance.outputs.questions }}
+        run: python3 governance/checks/owner_signal.py post

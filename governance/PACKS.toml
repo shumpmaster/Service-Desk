@@ -1,0 +1,74 @@
+# Context packs (S-010 AC5, D-006). One table per role: what a session of that role receives.
+# must_read: always in the pack. may_read: added when the task needs it. must_not_see: never in the
+# pack, whatever else matches. include_feedback (S-014 AC5): the records of earlier rounds a role
+# needs, added after must_not_see; `decisions/{item}/*.md` never includes `*-notes.md`.
+# Patterns are path globs; {spec}, {item}, {project} and {question} stand for the item being worked
+# on ({item} is the S-012 item id; a placeholder without a value matches nothing). "library/**" and "ideas/**", "queue/**", "rulings/**" live in the
+# portfolio repo (D-068); the Orchestrator (S-008) assembles packs across repos and CI checks each
+# session received only its pack.
+
+[roles.input-reader]
+must_read = ["research/{question}.md"]
+may_read = []
+# "The hoped-for answer (D-055)."
+must_not_see = ["docs/PROJECT.md", "queue/**", "rulings/**", "decisions/**", "research/*-memo.md"]
+
+[roles.researcher]
+# The question, the decision it serves, what each answer would change; plus library entries
+# sharing a topic with the question (S-010 AC6).
+must_read = ["research/{question}.md", "library/**"]
+may_read = ["intent/PORTFOLIO-INTENT.md"]
+# "The hoped-for answer, the Chief of Staff's recommendation, and Kenny's leanings" (D-055).
+must_not_see = ["docs/PROJECT.md", "queue/**", "rulings/**", "decisions/**", "ideas/**"]
+# Which sources did not say what was claimed; it holds no hoped-for answer (D-055).
+include_feedback = ["research/{item}-source-check.md"]
+
+[roles.definer]
+must_read = ["docs/PROJECT.md", "library/**"]
+may_read = ["specs/**", "library/patterns/**"]
+must_not_see = []
+include_feedback = ["reviews/{spec}/plan.md", "decisions/{item}/*.md"]
+
+[roles.critic]
+# "The finished document under review; for Triage, the failure and the traceability chain."
+must_read = ["specs/{spec}.md", "docs/PROJECT.md"]
+may_read = ["docs/playbooks/**", "library/**", "tests/acceptance/**", "checks/**"]  # the checks it reviews (S-016 AC6); holdouts are always excluded
+# "The writer's drafts and reasoning; the writer's own summary of its work."
+must_not_see = ["docs/reports/**", "docs/briefs/**"]
+
+[roles.check-author]
+must_read = ["specs/{spec}.md"]
+may_read = ["library/**", "docs/playbooks/**"]
+# "Any work product."
+must_not_see = ["src/**", "docs/handover/**", "docs/reports/**"]
+include_feedback = ["reviews/{spec}/_critic-checks.md"]
+
+[roles.reviewer]
+# "The work, the frozen spec, the locked checks."
+must_read = ["specs/{spec}.md", "tests/acceptance/**", "checks/**", "src/**", "tests/**", "docs/handover/**"]
+may_read = ["library/**", "docs/playbooks/**"]
+# "The builder's summary of its own work."
+must_not_see = ["docs/reports/**"]
+# The check log is data, not instructions (D-064); it is not the builder's summary of its work.
+include_feedback = ["reviews/{spec}/checks.txt"]
+
+[roles.source-checker]
+must_read = ["research/{question}-memo.md"]
+may_read = ["library/**", "docs/playbooks/**"]
+# The hoped-for answer stays out, as for the Researcher (D-055).
+must_not_see = ["docs/PROJECT.md", "queue/**", "rulings/**", "decisions/**"]
+
+[roles.builder]
+# "The frozen spec, join sheets, the project intent, the locked checks (D-054)."
+must_read = ["specs/{spec}.md", "docs/PROJECT.md", "tests/acceptance/**", "checks/**"]
+may_read = ["src/**", "tests/**", "docs/**", "library/**"]
+# "The hidden holdout checks" — the sets live outside the repo; their record is kept out too.
+must_not_see = ["governance/HOLDOUTS.md", "holdouts/**"]
+include_feedback = ["reviews/{spec}/reviewer.md", "reviews/{spec}/checks.txt", "decisions/{item}/*.md"]
+
+[roles.critic-triage]
+# Triage traces "the failure and the traceability chain" (role card), never the writers' own
+# summaries. Dispatch-log month files are copied whole, chosen by name (S-014 AC4).
+must_read = ["specs/{spec}.md", "reviews/{spec}/**", "reviews/{item}/**", "triage/{item}*.md", "status/{item}.toml", "dispatch-log/*.jsonl"]
+may_read = ["docs/playbooks/**", "library/**", "tests/acceptance/**", "checks/**"]  # S-016 AC6
+must_not_see = ["docs/reports/**", "docs/briefs/**"]

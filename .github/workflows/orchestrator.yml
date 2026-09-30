@@ -1,0 +1,454 @@
+# The Orchestrator loop (model S-015). Six jobs, each holding only what its step needs:
+#   decide -> prepare -> session -> collect -> record -> commit
+# Every step calls governance/checks/orchestrator_git.py or session_runner.py; this file holds wiring
+# only, in a plain subset (block style, no anchors, no multi-line flow values) that the tests read
+# line by line. Every action is pinned by commit, its release tag in a comment (model S-016 AC8; the
+# record is in docs/SETUP.md). Setup: docs/SETUP.md.
+name: orchestrator
+
+on:
+  # Any default-branch name (model S-016 AC7): no branch filter; the decide job refuses any other ref.
+  push:
+    paths:
+      - "decisions/**"
+      - "intake/**"
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      chain:
+        description: "How many runs in a row started this one (the loop sets it; leave 0)"
+        required: false
+        default: "0"
+
+permissions: {}
+
+# One run at a time per ref, so a run from another branch (refused at once by the decide job) never
+# replaces or cancels a pending default-branch run; schedule, push, manual start and self-dispatch all
+# run on the default ref. A waiting run is never cancelled (model S-015 AC10, model S-016 AC7).
+concurrency:
+  group: orchestrator-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # AC2: no secret, read-only; refuses any ref but the default branch. Model S-016 AC5: first it
+  # refuses a run whose token mode (the repository variable TOKEN_ENVIRONMENT) is unset, or, in
+  # environment mode, whose repository-level token is still visible here (a job that uses no
+  # Environment); its only secret reference is that boolean. Model S-013 AC6: it reads the governance
+  # runs on the default branch's tip (actions: read) and, unless the latest passed, holds: it applies
+  # the owner's decisions and raises cards, but dispatches nothing, and the commit job runs no gate.
+  decide:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      now: ${{ steps.decide.outputs.now }}
+      sha: ${{ steps.decide.outputs.sha }}
+      decided: ${{ steps.decide.outputs.decided }}
+      default_branch: ${{ steps.decide.outputs.default_branch }}
+      legs: ${{ steps.decide.outputs.legs }}
+      hold: ${{ steps.decide.outputs.hold }}
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check the token mode
+        env:
+          TOKEN_ENVIRONMENT: ${{ vars.TOKEN_ENVIRONMENT }}
+          REPOSITORY_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+        run: python3 governance/checks/orchestrator_git.py token-mode
+      - name: Read the governance runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 governance/checks/orchestrator_git.py ci-runs --out "$RUNNER_TEMP/ci/runs.json"
+      - name: Decide (model S-012 step)
+        id: decide
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: python3 governance/checks/orchestrator_git.py decide --ref "$GITHUB_REF" --event "$GITHUB_EVENT_NAME" --default-branch "$DEFAULT_BRANCH" --ci-runs "$RUNNER_TEMP/ci/runs.json" --out "$RUNNER_TEMP/decided" --github-output "$GITHUB_OUTPUT"
+      - name: Hand on the decision
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: decided
+          path: ${{ runner.temp }}/decided/decided.tar
+          if-no-files-found: error
+          retention-days: 1
+
+  # AC3: no secret, read-only. One leg per plan entry: every leg computes the same plan and hashes
+  # and hands on only its own entry's tars (GitHub cannot upload a varying number of artifacts
+  # from one job); every hash travels in the single `plan` output. Model S-016 AC1: each role's model
+  # is a repository variable (the same for every leg), passed to every `pack`.
+  prepare:
+    needs: decide
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        leg: ${{ fromJSON(needs.decide.outputs.legs) }}
+    outputs:
+      plan: ${{ steps.prepare.outputs.plan }}
+    steps:
+      - name: Check out the decided commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ needs.decide.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Receive the decision
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: decided
+          path: ${{ runner.temp }}/art/decided
+      - name: Build the source trees and packs
+        id: prepare
+        env:
+          DECIDED: ${{ needs.decide.outputs.decided }}
+          NOW: ${{ needs.decide.outputs.now }}
+          MODEL_DEFINER: ${{ vars.MODEL_DEFINER }}
+          MODEL_CHECK_AUTHOR: ${{ vars.MODEL_CHECK_AUTHOR }}
+          MODEL_BUILDER: ${{ vars.MODEL_BUILDER }}
+          MODEL_SOURCE_CHECKER: ${{ vars.MODEL_SOURCE_CHECKER }}
+          MODEL_REVIEWER: ${{ vars.MODEL_REVIEWER }}
+          MODEL_CRITIC: ${{ vars.MODEL_CRITIC }}
+          MODEL_RESEARCHER: ${{ vars.MODEL_RESEARCHER }}
+          MODEL_INPUT_READER: ${{ vars.MODEL_INPUT_READER }}
+        run: python3 governance/checks/orchestrator_git.py prepare --decided "$RUNNER_TEMP/art/decided/decided.tar" --decided-hash "$DECIDED" --now "$NOW" --out "$RUNNER_TEMP/prepared" --github-output "$GITHUB_OUTPUT"
+      - name: Hand on the pack
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: pack-${{ matrix.leg }}
+          path: ${{ runner.temp }}/prepared/pack-${{ matrix.leg }}/pack.tar
+          if-no-files-found: ignore
+          retention-days: 1
+      - name: Hand on the control file
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: control-${{ matrix.leg }}
+          path: ${{ runner.temp }}/prepared/control-${{ matrix.leg }}/control.json
+          if-no-files-found: ignore
+          retention-days: 1
+      - name: Hand on the check run's source tree
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tree-${{ matrix.leg }}
+          path: ${{ runner.temp }}/prepared/tree-${{ matrix.leg }}/tree.tar
+          if-no-files-found: ignore
+          retention-days: 1
+      - name: Hand on the builder's change set
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: changes-${{ matrix.leg }}
+          path: ${{ runner.temp }}/prepared/changes-${{ matrix.leg }}/changes.tar
+          if-no-files-found: ignore
+          retention-days: 1
+      - name: Hand on the runner
+        if: matrix.leg == 0
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: runner
+          path: ${{ runner.temp }}/prepared/runner/runner.tar
+          if-no-files-found: error
+          retention-days: 1
+
+  # AC4: no permissions, no checkout; only its pack, its control file and the runner. The OAuth
+  # token is on the run step only. Model S-016 AC5: in environment mode it reads the token from the
+  # Environment TOKEN_ENVIRONMENT names (limited to the default branch); `repository` uses none.
+  session:
+    needs: [prepare]
+    if: fromJSON(needs.prepare.outputs.plan).session_count > 0
+    environment: ${{ vars.TOKEN_ENVIRONMENT != 'repository' && vars.TOKEN_ENVIRONMENT || '' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions: {}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.prepare.outputs.plan).sessions }}
+    env:
+      N: ${{ matrix.n }}
+      RUNNER_HASH: ${{ fromJSON(needs.prepare.outputs.plan).hashes.runner }}
+      CONTROL_HASH: ${{ fromJSON(needs.prepare.outputs.plan).hashes[format('control-{0}', matrix.n)] }}
+      PACK_HASH: ${{ fromJSON(needs.prepare.outputs.plan).hashes[format('pack-{0}', matrix.n)] }}
+    steps:
+      - name: Receive the runner
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: runner
+          path: ${{ runner.temp }}/art/runner
+      - name: Receive the pack
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: pack-${{ matrix.n }}
+          path: ${{ runner.temp }}/art/pack
+      - name: Receive the control file
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: control-${{ matrix.n }}
+          path: ${{ runner.temp }}/art/control
+      - name: Check and unpack the runner
+        run: |
+          echo "$RUNNER_HASH  $RUNNER_TEMP/art/runner/runner.tar" | sha256sum --check --strict
+          mkdir -p "$RUNNER_TEMP/boot"
+          tar -xf "$RUNNER_TEMP/art/runner/runner.tar" -C "$RUNNER_TEMP/boot"
+          python3 "$RUNNER_TEMP/boot/orchestrator_git.py" untar --tar "$RUNNER_TEMP/art/runner/runner.tar" --hash "$RUNNER_HASH" --out "$RUNNER_TEMP/runner"
+      - name: Check and unpack the pack
+        run: python3 "$RUNNER_TEMP/runner/orchestrator_git.py" untar --tar "$RUNNER_TEMP/art/pack/pack.tar" --hash "$PACK_HASH" --out "$RUNNER_TEMP/work/pack" --limits "$RUNNER_TEMP/art/control/control.json" --limits-hash "$CONTROL_HASH"
+      - name: Read the pinned command line version
+        id: version
+        run: python3 "$RUNNER_TEMP/runner/orchestrator_git.py" cli-version --control "$RUNNER_TEMP/art/control/control.json" --hash "$CONTROL_HASH" --github-output "$GITHUB_OUTPUT"
+      - name: Install the pinned command line
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: npm install -g "@anthropic-ai/claude-code@$VERSION"
+      - name: Install bubblewrap and socat
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap socat
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Check the sandbox dependencies
+        run: python3 "$RUNNER_TEMP/runner/orchestrator_git.py" sandbox-check
+      - name: Run the session
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          python3 "$RUNNER_TEMP/runner/session_runner.py" run --pack "$RUNNER_TEMP/work/pack" --control "$RUNNER_TEMP/art/control/control.json" --hash "$CONTROL_HASH" --out "$RUNNER_TEMP/work/out"
+          python3 "$RUNNER_TEMP/runner/orchestrator_git.py" leak-check --control "$RUNNER_TEMP/art/control/control.json" --hash "$CONTROL_HASH" --out "$RUNNER_TEMP/work/out" --pack "$RUNNER_TEMP/work/pack"
+      - name: Hand on the outputs
+        run: python3 "$RUNNER_TEMP/runner/orchestrator_git.py" hand-on --control "$RUNNER_TEMP/art/control/control.json" --hash "$CONTROL_HASH" --n "$N" --out "$RUNNER_TEMP/work/out" --pack "$RUNNER_TEMP/work/pack" --dest "$RUNNER_TEMP/hand" --summary "$GITHUB_STEP_SUMMARY"
+      - name: Upload the outputs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: out-${{ matrix.n }}
+          path: ${{ runner.temp }}/hand/out-${{ matrix.n }}
+          if-no-files-found: ignore
+          retention-days: 1
+      - name: Upload the finished pack
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: done-${{ matrix.n }}
+          path: ${{ runner.temp }}/hand/done-${{ matrix.n }}
+          if-no-files-found: ignore
+          retention-days: 1
+
+  # AC5: no secret, no permissions, no checkout. Builder code runs here only, on the holdout-free
+  # tree, inside `checks --sandbox bwrap` (model S-016 AC3): deny by default, no network, the runner's
+  # files, tools and $HOME read-only to it.
+  collect:
+    needs: [prepare, session]
+    if: always() && !cancelled() && needs.prepare.result == 'success' && fromJSON(needs.prepare.outputs.plan).collect_count > 0
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions: {}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.prepare.outputs.plan).collect }}
+    env:
+      N: ${{ matrix.n }}
+      RUNNER_HASH: ${{ fromJSON(needs.prepare.outputs.plan).hashes.runner }}
+      CONTROL_HASH: ${{ fromJSON(needs.prepare.outputs.plan).hashes[format('control-{0}', matrix.n)] }}
+      TREE_HASH: ${{ fromJSON(needs.prepare.outputs.plan).hashes[format('tree-{0}', matrix.n)] }}
+      CHANGES_HASH: ${{ fromJSON(needs.prepare.outputs.plan).hashes[format('changes-{0}', matrix.n)] }}
+      BUILDER_HASH: ${{ fromJSON(needs.prepare.outputs.plan).entries[matrix.n].builder_control }}
+    steps:
+      - name: Receive the runner
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: runner
+          path: ${{ runner.temp }}/art/runner
+      - name: Receive the control file
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: control-${{ matrix.n }}
+          path: ${{ runner.temp }}/art/control
+      - name: Receive the finished pack
+        if: matrix.kind == 'collect'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: done-${{ matrix.n }}
+          path: ${{ runner.temp }}/art/done
+      - name: Receive the check run's source tree
+        if: matrix.kind == 'checks'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: tree-${{ matrix.n }}
+          path: ${{ runner.temp }}/art/tree
+      - name: Receive the builder's change set
+        if: matrix.kind == 'checks'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: changes-${{ matrix.n }}
+          path: ${{ runner.temp }}/art/changes
+      - name: Check and unpack the runner
+        run: |
+          echo "$RUNNER_HASH  $RUNNER_TEMP/art/runner/runner.tar" | sha256sum --check --strict
+          mkdir -p "$RUNNER_TEMP/boot"
+          tar -xf "$RUNNER_TEMP/art/runner/runner.tar" -C "$RUNNER_TEMP/boot"
+          python3 "$RUNNER_TEMP/boot/orchestrator_git.py" untar --tar "$RUNNER_TEMP/art/runner/runner.tar" --hash "$RUNNER_HASH" --out "$RUNNER_TEMP/runner"
+      - name: Install bubblewrap and socat
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap socat
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Check the sandbox dependencies
+        run: python3 "$RUNNER_TEMP/runner/orchestrator_git.py" sandbox-check
+      - name: Unpack the finished pack
+        if: matrix.kind == 'collect'
+        run: python3 "$RUNNER_TEMP/runner/orchestrator_git.py" untar --tar "$RUNNER_TEMP/art/done/done.tar" --hash-file "$RUNNER_TEMP/art/done/done.tar.sha256" --out "$RUNNER_TEMP/work/pack" --limits "$RUNNER_TEMP/art/control/control.json" --limits-hash "$CONTROL_HASH"
+      - name: Collect the change set
+        if: matrix.kind == 'collect'
+        run: python3 "$RUNNER_TEMP/runner/session_runner.py" collect --pack "$RUNNER_TEMP/work/pack" --control "$RUNNER_TEMP/art/control/control.json" --hash "$CONTROL_HASH" --out "$RUNNER_TEMP/work/collected"
+      - name: Unpack the source tree and the change set
+        if: matrix.kind == 'checks'
+        run: |
+          python3 "$RUNNER_TEMP/runner/orchestrator_git.py" untar --tar "$RUNNER_TEMP/art/tree/tree.tar" --hash "$TREE_HASH" --out "$RUNNER_TEMP/work/tree" --limits "$RUNNER_TEMP/art/control/control.json" --limits-hash "$CONTROL_HASH"
+          python3 "$RUNNER_TEMP/runner/orchestrator_git.py" untar --tar "$RUNNER_TEMP/art/changes/changes.tar" --hash "$CHANGES_HASH" --out "$RUNNER_TEMP/work/changes" --limits "$RUNNER_TEMP/art/control/control.json" --limits-hash "$CONTROL_HASH"
+      - name: Run the checks in the sandbox
+        if: matrix.kind == 'checks'
+        run: python3 "$RUNNER_TEMP/runner/session_runner.py" checks --sandbox bwrap --source "$RUNNER_TEMP/work/tree" --changes "$RUNNER_TEMP/work/changes" --control "$RUNNER_TEMP/art/control/control.json" --hash "$CONTROL_HASH" --builder-control "$RUNNER_TEMP/work/changes/builder-control.json" --builder-hash "$BUILDER_HASH" --work "$RUNNER_TEMP/work/check" --out "$RUNNER_TEMP/work/checked"
+      - name: Hand on the change set
+        if: matrix.kind == 'collect'
+        run: python3 "$RUNNER_TEMP/runner/orchestrator_git.py" tar --dir "$RUNNER_TEMP/work/collected" --out "$RUNNER_TEMP/hand/collected-$N/collected.tar" --summary "$GITHUB_STEP_SUMMARY"
+      - name: Hand on the check run
+        if: matrix.kind == 'checks'
+        run: python3 "$RUNNER_TEMP/runner/orchestrator_git.py" tar --dir "$RUNNER_TEMP/work/checked" --out "$RUNNER_TEMP/hand/checked-$N/checked.tar" --summary "$GITHUB_STEP_SUMMARY"
+      - name: Upload the change set
+        if: matrix.kind == 'collect'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: collected-${{ matrix.n }}
+          path: ${{ runner.temp }}/hand/collected-${{ matrix.n }}
+          if-no-files-found: error
+          retention-days: 1
+      - name: Upload the check run
+        if: matrix.kind == 'checks'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: checked-${{ matrix.n }}
+          path: ${{ runner.temp }}/hand/checked-${{ matrix.n }}
+          if-no-files-found: error
+          retention-days: 1
+
+  # AC6: no secret, no permissions, no checkout; every entry recorded into one bundle, a missing or
+  # mismatched artifact an error outcome for its entry only.
+  record:
+    needs: [decide, prepare, session, collect]
+    if: always() && !cancelled() && needs.prepare.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions: {}
+    outputs:
+      bundle: ${{ steps.record.outputs.bundle }}
+    env:
+      RUNNER_HASH: ${{ fromJSON(needs.prepare.outputs.plan).hashes.runner }}
+    steps:
+      - name: Receive the runner
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: runner
+          path: ${{ runner.temp }}/art/runner
+      - name: Receive the control files
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: control-*
+          path: ${{ runner.temp }}/art
+      - name: Receive the session outputs
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: out-*
+          path: ${{ runner.temp }}/art
+      - name: Receive the change sets
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: collected-*
+          path: ${{ runner.temp }}/art
+      - name: Receive the check runs
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: checked-*
+          path: ${{ runner.temp }}/art
+      - name: Receive the builders' change sets
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: changes-*
+          path: ${{ runner.temp }}/art
+      - name: Check and unpack the runner
+        run: |
+          echo "$RUNNER_HASH  $RUNNER_TEMP/art/runner/runner.tar" | sha256sum --check --strict
+          mkdir -p "$RUNNER_TEMP/boot"
+          tar -xf "$RUNNER_TEMP/art/runner/runner.tar" -C "$RUNNER_TEMP/boot"
+          python3 "$RUNNER_TEMP/boot/orchestrator_git.py" untar --tar "$RUNNER_TEMP/art/runner/runner.tar" --hash "$RUNNER_HASH" --out "$RUNNER_TEMP/runner"
+      - name: Record every entry
+        id: record
+        env:
+          PLAN: ${{ needs.prepare.outputs.plan }}
+        run: python3 "$RUNNER_TEMP/runner/orchestrator_git.py" record --plan-env PLAN --artifacts "$RUNNER_TEMP/art" --out "$RUNNER_TEMP/bundle" --github-output "$GITHUB_OUTPUT"
+      - name: Hand on the bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: bundle
+          path: ${{ runner.temp }}/bundle/bundle.tar
+          if-no-files-found: error
+          retention-days: 1
+
+  # AC6, AC7, AC10: the only job with credentials; no OAuth token. It re-validates everything,
+  # commits with git hooks off, runs the range guard and model S-009's checks, and pushes role
+  # branches, item branches, then the default branch. Model S-013: then the merge gate (AC5; not
+  # while the decide job holds), and after any push to the default branch a governance run based on
+  # the tip before its pushes (AC6).
+  commit:
+    needs: [decide, prepare, record]
+    if: always() && !cancelled() && needs.record.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ needs.decide.outputs.default_branch }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Receive the decision
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: decided
+          path: ${{ runner.temp }}/art/decided
+      - name: Receive the bundle
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: bundle
+          path: ${{ runner.temp }}/art/bundle
+      - name: Commit and push
+        id: commit
+        env:
+          PLAN: ${{ needs.prepare.outputs.plan }}
+          BUNDLE: ${{ needs.record.outputs.bundle }}
+          DECIDED: ${{ needs.decide.outputs.decided }}
+          NOW: ${{ needs.decide.outputs.now }}
+          DEFAULT_BRANCH: ${{ needs.decide.outputs.default_branch }}
+          CHAIN: ${{ inputs.chain }}
+          HOLD: ${{ needs.decide.outputs.hold }}
+        run: python3 governance/checks/orchestrator_git.py commit --bundle "$RUNNER_TEMP/art/bundle/bundle.tar" --bundle-hash "$BUNDLE" --decided "$RUNNER_TEMP/art/decided/decided.tar" --decided-hash "$DECIDED" --plan-env PLAN --now "$NOW" --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --chain "$CHAIN" --default-branch "$DEFAULT_BRANCH" --hold "$HOLD" --github-output "$GITHUB_OUTPUT"
+      - name: Start the governance run
+        if: ${{ !cancelled() && steps.commit.outputs.governance_base != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ needs.decide.outputs.default_branch }}
+          BASE: ${{ steps.commit.outputs.governance_base }}
+        run: python3 governance/checks/orchestrator_git.py dispatch-governance --workflow governance.yml --ref "$DEFAULT_BRANCH" --base "$BASE"
+      - name: Start the next run
+        if: steps.commit.outputs.dispatch == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ needs.decide.outputs.default_branch }}
+          NEXT_CHAIN: ${{ steps.commit.outputs.next_chain }}
+        run: python3 governance/checks/orchestrator_git.py dispatch --workflow orchestrator.yml --ref "$DEFAULT_BRANCH" --chain "$NEXT_CHAIN"

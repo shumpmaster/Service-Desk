@@ -1,0 +1,36 @@
+# Path → risk class and required reviews (OPERATING_MODEL §3). CODEOWNERS-protected at T2+.
+# A path takes the highest class any rule gives it; a change takes the highest class of its
+# paths. Agents never choose it. Read by governance/checks/review_check.py (Python 3.11+).
+
+unmatched = "R1"          # class for a path no rule matches
+
+[classes]
+R3 = [                    # irreversible or gate-bearing: owner approval (A4)
+  "AGENTS.md",
+  "governance/**",
+  ".claude/**",
+  ".github/**",
+  "tests/acceptance/**",
+  "**/migrations/**",
+  "infra/**",
+  "requirements*.txt",
+  "pyproject.toml",
+  "package.json",
+  "package-lock.json",
+]
+R2 = ["src/ui/**", "config/**"]            # user-facing behavior, config, compatible schema
+R1 = ["src/**", "tests/**"]                # ordinary source with tests
+R0 = ["docs/**", "digest/**", "specs/**", "experiments/**", "questions/**", "reviews/**", "triage/**",
+      "research/**", "library/**", "intake/**", "status/**", "dispatch-log/**", "queue/**", "decisions/**",
+      "README.md", "CLAUDE.md"]
+
+[reviews]                 # verdicts a change needs, by its class: reviews/<PR>/<reviewer-id>.md
+R0 = []
+R1 = ["reviewer"]
+R2 = ["reviewer"]         # + a cross-vendor reviewer if §11 experiment 1 shows it pays
+R3 = ["reviewer", "owner"]
+
+# Domains add to (never replace) the defaults. See governance/domains/security/.
+
+# Domain reviewers (e.g. a security reviewer for auth and payments paths) are added per project,
+# with their roster row, agent file and a [paths."<glob>"] table here (v3 template, S-010).

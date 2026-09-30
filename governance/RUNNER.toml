@@ -1,0 +1,52 @@
+# The session runner's settings (S-014 AC10a). Changing this file is a rule change the owner
+# approves (R3; Chief of Staff lane).
+
+version = "2.1.284"          # the pinned Claude Code command line
+
+# D-077, S-016 AC2: commands run only while the pinned version and the runner image match the
+# last passing proof. The image version is matched by its first six digits (its month, D-078).
+# Record a new passing proof run's values here by a rule change.
+proven_version = "2.1.284"
+proven_image_os = "ubuntu24"
+proven_image_version = "202609"
+# Each role's model is a repository variable, MODEL_<ROLE> (L-0097, S-016 AC1), never a file.
+max_turns = 50
+
+# D-074, D-077: sessions may run commands because the live proof passed (run 6, 2026-09-29,
+# docs/trials/scrub-proof-result.md in the operating-model repo): with the credential scrub,
+# bubblewrap and socat, a session's commands saw no trace of the token. Re-proof rule (D-077):
+# a new pinned version above, or a new runner image, needs a fresh passing proof run first, or
+# this goes back to "off". Proven with version 2.1.284 on ubuntu-24.04 (image 20260920).
+# Any value other than "on" counts as "off".
+session_commands = "on"
+command_tools = ["Bash", "BashOutput", "KillShell", "Monitor", "PowerShell", "Task", "Agent"]
+
+usage_limit_patterns = ["usage limit", "rate limit"]
+# pass_env is passed to every session while session_commands is "off"; while "on", only if
+# pass_env_cleared is true, which a passing live proof (S-015) must justify (S-014 AC6).
+pass_env = ["HTTPS_PROXY", "HTTP_PROXY", "NO_PROXY", "SSL_CERT_FILE", "NODE_EXTRA_CA_CERTS"]
+credential_files = [".npmrc", ".netrc", ".pypirc", ".env", ".env.*", "**/*.pem", "**/*.key"]
+pass_env_cleared = false
+
+# The exact built-in tools each role's session has (S-014 AC7). While session_commands is "on",
+# builder-class roles and the reviewer also get command_tools.
+[tools]
+definer = ["Read", "Grep", "Glob", "Edit", "Write"]
+definer-freeze = ["Read", "Grep", "Glob", "Edit", "Write"]
+check-author = ["Read", "Grep", "Glob", "Edit", "Write"]
+builder = ["Read", "Grep", "Glob", "Edit", "Write"]
+source-checker = ["Read", "Grep", "Glob", "Edit", "Write", "WebFetch", "WebSearch"]
+reviewer = ["Read", "Grep", "Glob"]
+critic = ["Read", "Grep", "Glob"]
+critic-triage = ["Read", "Grep", "Glob"]
+researcher = ["Read", "Grep", "Glob", "WebFetch", "WebSearch"]
+input-reader = ["Read", "Grep", "Glob", "WebFetch", "WebSearch"]
+
+[limits]
+file_bytes = 1048576
+change_set_bytes = 20971520
+change_set_files = 500
+path_part_bytes = 255
+path_bytes = 1024
+record_bytes = 1048576
+check_run_minutes = 20

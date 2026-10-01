@@ -35,3 +35,8 @@ What would change this: evidence that the session never read the environment (fo
 refused output showing the token came from somewhere else), which would make rotation less urgent.
 
 The model gap is logged as LL-013 in the operating-model repository's docs/LESSONS.md.
+
+## Update, 2026-10-01: the owner's answer on the token
+"I'm not rotating the token, I am comfortable with the risk level." Recommendation 1 is closed as
+accepted risk, recorded in docs/PROJECT.md Part 2 (Preferences and trade-offs). Recommendations 2 to 4
+stand.

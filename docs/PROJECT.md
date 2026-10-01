@@ -91,9 +91,10 @@ before D4. A read-only preview could replace the old page early, with acting fol
 ## 5. Limits
 *The spend ceiling, the data boundaries (what data may go to which outside service), and the tier (T1, T2 or T3 by the tier triggers), which is the project's trust level.*
 
-- **Spend ceiling (proposed): $0 a month, while U1 is open.** Free tiers only, as Operations-Hub
-  runs today. The owner said spend follows value, so after U1 any paid item comes with its own
-  value case and a new ceiling for the owner to rule on. Alert at 80% of that ceiling.
+- **Spend ceiling (proposed): $0 a month.** Free tiers only, as Operations-Hub runs today; U1
+  shows the first version fits Cloudflare's free tier (§7). The owner said spend follows value, so
+  any paid item (for example the paid routes in U3) comes with its own value case and a new
+  ceiling for the owner to rule on. Alert at 80% of that ceiling.
 - **Data boundaries:** the desk reads only the connected project and portfolio repositories. It may
   send their content only to GitHub and Cloudflare, plus Anthropic if U3 leads to sessions. No
   secret is ever sent to a model.
@@ -120,14 +121,103 @@ loses nothing that exists today. The 5-minute figure in V1 rests on U4.
 ## 7. Solid foundation
 *Every load-bearing unknown, each answered with evidence (library entry or research memo), including through research sub-projects if needed.*
 
-| Unknown | Why it bears load | Evidence |
-|---|---|---|
-| U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | Pending: research Q-001 |
-| U2 Acting in GitHub on the owner's behalf: mechanisms, attribution, credential risk | D4, D5, the tier, D-011 (approvals are the owner's own GitHub action) | Pending: research Q-002 |
-| U3 What starting, steering or monitoring Claude Code sessions from a web app can do | D1.3, the owner's later ruling | Pending: research Q-005 (replaces Q-003, dropped) |
-| U4 How quickly GitHub changes can reach a web page | V1, D2.2 | Pending: research Q-004 |
-| Cloudflare Pages deploys from Actions, behind Access | D6 | Proven: Operations-Hub docs/research/003 (spike, 2026-09-25) |
-| A fine-grained read token reads the v3 records the screens need | D2.1 | Partly proven: Operations-Hub docs/research/002 and 004 (v2 records); v3 records not yet checked |
+*Draft 2, 2026-10-01, Chief of Staff: U1 to U4 answered from the four passed memos (research/Q-001,
+Q-002, Q-004 and Q-005, each with a PASS source check). Library IDs are the filed entries. Grades as
+in each memo: A = vendor documentation read in full, B = one vendor page or read through a summary,
+C = inference.*
+
+| Unknown | Why it bears load | Evidence | Status |
+|---|---|---|---|
+| U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | research/Q-001-memo.md; F-hosting-01, -02a/b/c, F-auth-01 to -04, P-auth-01 | Answered: Cloudflare Workers fits $0 |
+| U2 Acting in GitHub on the owner's behalf: mechanisms, attribution, credential risk | D4, D5, the tier, D-011 | research/Q-002-memo.md; L-F1 to L-F12, L-P1 | Answered on the mechanics; one owner ruling and one live test remain |
+| U3 What starting, steering or monitoring Claude Code sessions from a web app can do | D1.3, the owner's later ruling | research/Q-005-memo.md; LIB-F-a, -a2, -c, -f, -g, -i, LIB-P-a | Answered enough for the owner's ruling |
+| U4 How quickly GitHub changes can reach a web page | V1, D2.2 | research/Q-004-memo.md; F-Q004-1 to -13, PAT-Q004-1 | Answered: 5 minutes is reachable with a poll behind webhooks |
+| Cloudflare Pages deploys from Actions, behind Access | D6 | Operations-Hub docs/research/003 (spike, 2026-09-25) | Proven |
+| A fine-grained read token reads the v3 records the screens need | D2.1 | Operations-Hub docs/research/002 and 004 (v2 records). On 2026-10-01 the hub's token read Service-Desk's branches and statuses (needs-you run 31) | Partly proven; v3 record files not yet read by the desk |
+
+### U1 — Hosting
+- **Fits the $0 ceiling: Cloudflare Workers with static assets, behind Access, with Durable Objects
+  only if pushed updates are needed.**
+  - The Free plan gives 100,000 requests a day, and static assets are free (F-hosting-01, A).
+  - Access is free for up to 50 users, and a policy can name one email address (F-auth-01, -02, A).
+  - Durable Objects run on the Free plan with SQLite, 5 GB per account (F-hosting-02a, A). Free-plan
+    storage is not charged; whether paid storage billing is live is unconfirmed (F-hosting-02b).
+- **Two requirements carry into D5.**
+  - Validate the Access token in the Worker (F-auth-04, A).
+  - Cover the `workers.dev` and version URLs with Access, because they are public otherwise
+    (F-auth-03, A).
+- **The others are worse fits.**
+  - Vercel Hobby is non-commercial personal use only (F-hosting-03, A).
+  - Fly.io has no lasting free tier (estimate, C).
+  - Render's free service sleeps after 15 minutes idle (F-hosting-05, A).
+  - A Hetzner server is about €5.49 a month with the most upkeep (F-hosting-06, A).
+  - GitHub Pages sites are public, even when the repository is private (F-gh-04, A).
+- **Upkeep (V3):** one Access policy, one Worker, and the GitHub credential (U2). It is the same
+  platform Operations-Hub already runs on (proven, row 5).
+
+### U2 — Acting on the owner's behalf
+- **Who GitHub shows as the actor (Q-002 §1 to §4, §9):**
+  - **App installation token:** the app's bot, `name[bot]` (L-F1, A). It cannot record an answer
+    as the owner.
+  - **GitHub App user token:** the owner, with the app's badge in the UI and the security log
+    (L-F10, B). The token lasts 8 hours and the refresh token 6 months from the last refresh
+    (L-F2, L-F11).
+  - **Fine-grained personal access token:** the owner, with no documented marking that separates it
+    from the browser. It is limited to chosen repositories and permissions, and can run to an
+    expiry date or none (L-F5, B).
+  - **OAuth app token (`repo` scope):** the owner, across every repository the owner can reach
+    (L-F4, B). Too broad for the desk.
+- **The narrowest permission for an answer file is Contents: write** on the connected repositories
+  (L-F9, B). Workflow files need more, and the desk never writes them.
+- **Storage (L-P1, B):** encrypted on the back end. A GitHub App private key is kept sign-only in a
+  key vault, not in environment variables. No secret ever goes to a model (§5).
+- **What stays open:**
+  - **Owner ruling (D-066, LL-006 in the model's lessons):** does an answer written by the desk
+    with the owner's own token count as the owner's own action? Under the user-token routes,
+    GitHub records it as the owner's. With a GitHub App, it also carries the app's badge, which is
+    the honest record. The Orchestrator's check (`record_checks decisions`) accepts any answer
+    whose commit author is a person in the humans block.
+  - **Live test (Define):** an answer file committed through the chosen credential passes that
+    check and starts the Orchestrator's run. Q-002 §8 shows that personal tokens and app tokens
+    start workflow runs (L-F8, B); user tokens are not documented (C).
+
+### U3 — Running work from the desk
+- **Five documented routes (Q-005 summary table):**
+  - **Cloud sessions:** started from the UI or the CLI, with no API to read or stop them.
+  - **Routines with a `/fire` endpoint:** the only documented HTTP way to start a cloud session.
+    Each routine has its own bearer token, and runs are billed as subscription usage. It is a
+    research preview: the run is read back by a link, and there is no API stop.
+  - **The Claude Code GitHub Action:** started by a comment or any GitHub event, read back through
+    comments and run logs.
+  - **The Agent SDK on our own hosting:** full control, but needs a Console API key, paid per token.
+  - **Managed Agents:** full control by REST, paid per token plus $0.08 per running session-hour.
+- **Licensing limit (F-18, A):** "Unless previously approved, Anthropic does not allow third party
+  developers to offer claude.ai login or rate limits for their products, including agents built on
+  the Claude Agent SDK." Whether a single owner's private desk may use the owner's own subscription
+  is not documented (Q-005a). It needs the Terms.
+- **What it means for the ruling:**
+  - Full control and read-back (start, message, monitor, stop) is only on the paid API routes.
+    That breaks the $0 ceiling, so it needs its own value case (§5).
+  - On the subscription, the desk can at most start work: a routine's `/fire` or a GitHub workflow
+    dispatch. It then links to the session.
+  - **Recommendation:** keep U3 out of the first version, as §1 has it. Revisit after launch with a
+    value case.
+
+### U4 — How fast changes reach the desk
+- **Webhooks alone can't meet 5 minutes.**
+  - GitHub calls delivery "near real-time" but says it "can take a few minutes" (F-Q004-3a, A).
+  - Deliveries can arrive out of order (F-Q004-12, A) and are not retried automatically
+    (F-Q004-1, A).
+  - Push webhooks ran up to 40 minutes late on 2026-02-03 (F-Q004-4, B).
+- **Polling is cheap enough to back them up.**
+  - A conditional request that returns 304 costs nothing against the limit (F-Q004-7, A).
+  - About 3 calls per repository each minute, for 5 repositories, is about 900 calls an hour,
+    against a limit of 5,000 (estimate E1).
+- **Design for D2.2 (PAT-Q004-1):** webhooks for speed, plus a reconcile poll every 1 to 2 minutes.
+  That keeps V1's 5 minutes even when webhooks lag.
+  - **Webhook endpoint:** answers within 10 seconds and queues the work (F-Q004-2). It orders events
+    by their timestamps and drops repeats by delivery ID.
+  - **Don't use the Events API for freshness:** its latency is 30 seconds to 6 hours (F-Q004-9, A).
 
 ## 8. Clear and consistent
 *Key terms defined; constraints checked against each other and found not to contradict.*
@@ -146,12 +236,15 @@ loses nothing that exists today. The 5-minute figure in V1 rests on U4.
 - "Never a source of truth" against planning and scheduling: no conflict, provided planning choices
   are recorded as rulings in the repositories (§1). D2 and D4 must keep it that way.
 - D-066 allows proxy answers only by the Chief of Staff, and never for words that close an item or
-  approve launch. If the desk records answers, it must carry the owner's own identity (U2), or
-  those cards stay GitHub-only. Not yet resolved.
+  approve launch. U2 shows the desk can write with the owner's own identity: a GitHub App user
+  token, or a fine-grained token. Whether that counts as the owner's own action is the owner's
+  ruling on the move-to-Build card. Until then, those cards stay GitHub-only.
 - Tier: AGENTS.md says T1, while §5 proposes T2. Resolved by the owner's ruling at the move to
   Build.
-- Spend: $0 against "spend follows value". Resolved by U1 and the owner's later ruling.
-- Timeline against research: D1 must land within the first week to keep V4.
+- Spend: $0 against "spend follows value". U1 fits $0. Only U3's paid routes would break it, and
+  they are out of the first version.
+- Timeline against research: D1 must land within the first week to keep V4. It landed on day 1
+  (2026-10-01).
 
 # Part 2 — The intent
 

@@ -1,33 +1,22 @@
-Verdict: FAIL
+Verdict: PASS
 
-I opened the four pages behind the three new entries (R13, R13a, R6, R6b) and filed L-F9 and L-F11. I rejected L-F12 because it says it lists all the repository scopes, and R6b lists more. I did not re-open the sources of the earlier filed entries this round. The quotes came through a summarising fetch tool, so they are not guaranteed verbatim. Nothing was committed, because the folder is not a git repository.
+For this round I opened one source, R6b (Scopes for OAuth apps), and re-checked L-F12 against it. I did not re-open the sources of the earlier filed entries. The folder is not a git repository, so nothing was committed. The fetch tool summarises pages, so the quotes are not guaranteed verbatim.
 
-**Filed**
-- **L-F9** is in `library/facts/L-F9.md`, grade B. R13 and R13a both carry the "Additional permissions" sentence word for word.
-  - `PUT contents/{path}` is listed under Contents and Workflows, with the mark.
-  - `POST git/commits` is under Contents only.
-  - `POST issues/{n}/comments` is under Issues and Pull requests, with the mark.
-  - `POST pulls/{n}/reviews` is under Pull requests only.
-  - The two pages are the same publisher and nearly identical generated tables, so I did not count them as independent. The entry says the pages do not explain which case applies to each endpoint.
-- **L-F11** is in `library/facts/L-F11.md`, grade B, from R6 alone.
-  - R6 says: "Once you use a refresh token, that refresh token and the old user access token will no longer work."
-  - It gives `expires_in` as always 28800 (8 hours) and `refresh_token_expires_in` as always 15897600 (6 months).
-  - The memo's inference that the 6 months runs from the latest refresh (§2) is an estimate. I did not file it.
+**L-F12: confirmed and filed** (`library/facts/L-F12.md`, grade B, single source)
+- The R6b fetch returned all ten scopes in memo lines 50–59 with matching descriptions: `repo`, `repo:status`, `repo_deployment`, `public_repo`, `repo:invite`, `security_events`, `admin:repo_hook`, `write:repo_hook`, `read:repo_hook` and `workflow`.
+- It also returned the sentence "Scopes limit access for OAuth tokens. They do not grant any additional permission beyond that which the user already has." (memo line 62).
+- The claim at memo lines 148–152 no longer says "all", so the earlier objection is resolved.
+- "Only `repo`'s description covers code in private repositories" holds for the ten listed scopes. `workflow` mentions workflow files but does not say private.
+- The absence claim is not part of L-F12. It stays a grade C estimate in memo §3, line 63, and is not filed.
 
-**Not confirmed: L-F12 (memo lines 47–55 and 150–153)**
-- The memo says "These are all the repository scopes R6b lists" and gives six scopes.
-- R6b also lists `security_events` (read and write to code scanning security events), `admin:repo_hook`, `write:repo_hook` and `read:repo_hook`.
-- The claim is therefore false as written. The claim that no scope narrower than `repo` can write code, issues or reviews in private repositories is an absence claim. R6b does not state it; I only found no such scope in the fetched text.
-- The following parts do match R6b: the descriptions of `repo`, `public_repo`, `repo:status`, `repo_deployment`, `repo:invite` and `workflow`, and "Scopes limit access for OAuth tokens. They do not grant any additional permission beyond that which the user already has."
-- To resubmit, the memo should drop "all" or list the four missing scopes. It should also mark the absence claim as C, or cite the scope table for it.
-
-**Other findings**
-- The memo is complete as revision 4. The first line says it replaces earlier versions, so the older filed entries are not resubmitted.
-- The memo file includes a six-part contract (lines 187–236) that the brief says I must not see. It looks like the Orchestrator did not cut it at the markers. I used nothing from it as evidence.
-- `research/Q-002-source-check.md` is a prior-round result. I treated it as data, not as a finding for this round.
+**Findings, with memo line numbers**
+- **Missing scope:** R6b also lists `delete_repo` ("Grants access to delete adminable repositories"). The claim says "lists these" and memo line 61 disclaims completeness, so it passes. I recorded `delete_repo` in the entry's note.
+- **Misquote:** line 53 gives the `public_repo` description as ending "...and deployment statuses." R6b continues "for public repositories and organizations". The filed claim paraphrases it as "public repositories only", which is accurate, so I did not use the memo's quote.
+- **Memo file not trimmed:** `research/Q-002-memo.md` still contains the preface (lines 1–3) and the six-part contract (lines 187–218), although line 1 asks the Orchestrator to record only the text between the `=====` lines. I used none of the contract as evidence.
+- **Earlier filed entries:** L-F9 and L-F11 are unchanged from last round. The memo (line 13) lists the other filed entries as not resubmitted.
 
 **Open questions**
-1. Should the Orchestrator re-record the memo with the contract removed?
-2. Will the Researcher resubmit L-F12 with corrected wording?
-3. Which permission case each checkmarked endpoint in L-F9 falls under still needs a live test or a full render of the endpoint pages (memo open question 4).
-4. Does D-032 define the grade scale? I used the memo's provisional one.
+1. The Orchestrator should re-record the memo without the preface and contract.
+2. The Researcher should correct the `public_repo` quote on line 53.
+3. Memo open questions 1–5 (live tests) are unresolved. None of them blocks L-F12.
+4. The grade scale is still provisional until D-032's scale is confirmed. I used the memo's scale.

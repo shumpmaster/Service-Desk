@@ -1,8 +1,13 @@
 {
   "anomalies": [],
   "decisions": {},
-  "log_head": "0000000000000000000000000000000000000000000000000000000000000000",
+  "log_head": "7f8a560073d1033f4d456aeca868c5f66bf9e378c1dc057d88e0a143cdb5e26d",
   "outcomes": {},
   "plan_hash": "364b37738032a28a72829f4d2192b70bd9353c9ee8dddfc5b70c2785f995d6ac",
-  "requests": []
+  "requests": [
+    "Q-001",
+    "Q-002",
+    "Q-003",
+    "Q-004"
+  ]
 }

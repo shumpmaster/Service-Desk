@@ -20,8 +20,9 @@ must_read = ["research/{question}.md", "library/**"]
 may_read = ["intent/PORTFOLIO-INTENT.md"]
 # "The hoped-for answer, the Chief of Staff's recommendation, and Kenny's leanings" (D-055).
 must_not_see = ["docs/PROJECT.md", "queue/**", "rulings/**", "decisions/**", "ideas/**"]
-# Which sources did not say what was claimed; it holds no hoped-for answer (D-055).
-include_feedback = ["research/{item}-source-check.md"]
+# Which sources did not say what was claimed; it holds no hoped-for answer (D-055). Its own previous
+# memo too, so a later round revises the memo instead of rewriting it blind (LL-015).
+include_feedback = ["research/{item}-source-check.md", "research/{item}-memo.md"]
 
 [roles.definer]
 must_read = ["docs/PROJECT.md", "library/**"]
@@ -53,10 +54,14 @@ must_not_see = ["docs/reports/**"]
 include_feedback = ["reviews/{spec}/checks.txt"]
 
 [roles.source-checker]
-must_read = ["research/{question}-memo.md"]
+# The memo, the question it answers (the same blind question the Researcher gets), and the
+# owner's source standard (a checking rule, not a hoped-for answer).
+must_read = ["research/{question}-memo.md", "research/{question}.md", "governance/standards/sources.md"]
 may_read = ["library/**", "docs/playbooks/**"]
 # The hoped-for answer stays out, as for the Researcher (D-055).
 must_not_see = ["docs/PROJECT.md", "queue/**", "rulings/**", "decisions/**"]
+# Its own previous report, so a later round checks what changed against what it found (LL-015).
+include_feedback = ["research/{item}-source-check.md"]
 
 [roles.builder]
 # "The frozen spec, join sheets, the project intent, the locked checks (D-054)."
@@ -69,6 +74,9 @@ include_feedback = ["reviews/{spec}/reviewer.md", "reviews/{spec}/checks.txt", "
 [roles.critic-triage]
 # Triage traces "the failure and the traceability chain" (role card), never the writers' own
 # summaries. Dispatch-log month files are copied whole, chosen by name (S-014 AC4).
-must_read = ["specs/{spec}.md", "reviews/{spec}/**", "reviews/{item}/**", "triage/{item}*.md", "status/{item}.toml", "dispatch-log/*.jsonl"]
+must_read = ["specs/{spec}.md", "reviews/{spec}/**", "reviews/{item}/**", "triage/{item}*.md", "status/{item}.toml", "dispatch-log/*.jsonl",
+             # A research item has no spec or reviews; its chain is the question and the source check, which
+             # quotes each failing claim. Not the memo: it carries the researcher's own summary of its work.
+             "intake/requests/{item}.toml", "research/{item}.md", "research/{item}-source-check.md"]
 may_read = ["docs/playbooks/**", "library/**", "tests/acceptance/**", "checks/**"]  # S-016 AC6
 must_not_see = ["docs/reports/**", "docs/briefs/**"]

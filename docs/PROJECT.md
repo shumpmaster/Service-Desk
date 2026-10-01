@@ -80,7 +80,7 @@ before D4. A read-only preview could replace the old page early, with acting fol
 
 | Deliverable | Owner |
 |---|---|
-| D1 | Researcher and Source checker, through research requests Q-001 to Q-004 filed by the Chief of Staff |
+| D1 | Researcher and Source checker, through research requests Q-001, Q-002, Q-004 and Q-005 (Q-003 dropped) filed by the Chief of Staff |
 | D2 to D5 | Builder, to specs by the Definer, checks by the Check author, review by the Reviewer |
 | D5.2 | Reviewer, with a security focus |
 | Rulings: move to Build, criteria, tier, spend ceiling, launch, anything on D1.3 | The owner (Kenny) |
@@ -124,7 +124,7 @@ loses nothing that exists today. The 5-minute figure in V1 rests on U4.
 |---|---|---|
 | U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | Pending: research Q-001 |
 | U2 Acting in GitHub on the owner's behalf: mechanisms, attribution, credential risk | D4, D5, the tier, D-011 (approvals are the owner's own GitHub action) | Pending: research Q-002 |
-| U3 What starting, steering or monitoring Claude Code sessions from a web app can do | D1.3, the owner's later ruling | Pending: research Q-003 |
+| U3 What starting, steering or monitoring Claude Code sessions from a web app can do | D1.3, the owner's later ruling | Pending: research Q-005 (replaces Q-003, dropped) |
 | U4 How quickly GitHub changes can reach a web page | V1, D2.2 | Pending: research Q-004 |
 | Cloudflare Pages deploys from Actions, behind Access | D6 | Proven: Operations-Hub docs/research/003 (spike, 2026-09-25) |
 | A fine-grained read token reads the v3 records the screens need | D2.1 | Partly proven: Operations-Hub docs/research/002 and 004 (v2 records); v3 records not yet checked |

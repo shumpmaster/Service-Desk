@@ -1,54 +1,36 @@
 Verdict: FAIL
 
-The memo as a whole fails because some claims don't match their sources. Five of the eight proposed library entries pass and are filed. Three are held.
+Four of the five revised claims (F-07, F-12, F-13, F-14) now hold against their pages. F-09 does not, because the memo's header claim contradicts its own cited source. I also filed one new library entry and held another.
 
-I opened every cited source except the full Remote Control page. Its fetch came back truncated, so I only saw the opening description. I did not read `.env*`, `.npmrc`, lockfiles or other credential files in the folder. I made no commits and wrote no tests; the only changes are the five new files under `library/`.
+I re-read the routines, github-actions, routines-fire and remote-control pages in full. I did not open the `.env*`, `.npmrc` or lockfiles. I made no commits.
 
-## Claims that don't match their source
-- **F-13 (research/Q-005-memo.md, §R2).**
-  - The memo says a routine can be "paused or deleted in the UI or with `/schedule` in the CLI".
-  - The routines page confirms pause and delete in the UI only. For the CLI it documents `/schedule list`, `update`, `run` and create, and says nothing about delete or pause. Not confirmed.
-- **F-14 (research/Q-005-memo.md, §R3).**
-  - The memo says "the triggering user needs write access".
-  - The github-actions page limits this to issue and PR events. Events with no user author, such as `schedule`, skip the check, and `allowed_non_write_users` is an exception. The claim is too broad.
-- **F-07 (research/Q-005-memo.md, §R1).**
-  - What Remote Control is, is confirmed from the page opening.
-  - "No third-party or API access is documented" is an absence claim I could not verify, because I didn't read the whole page.
-- **Memo §3.** It says it read `research/Q-005.md`, but only `research/Q-005-memo.md` exists in the folder. Minor.
+## Findings
+- **F-09: fail** (`research/Q-005-memo.md` line 13 and lines 133–141).
+  - Line 13 calls `anthropic-beta: experimental-cc-routine-2026-04-01` a "required header". The fire page lists only `Authorization` and `anthropic-version` as required. It adds that the endpoint "accepts requests with and without" the beta header.
+  - The routines page curl example does send it. The "two most recent previous header versions continue to work" quote is on the routines page and is correct.
+  - The memo should say the beta header is optional.
+- **F-12: confirmed** (memo lines 152–159). It matches the routines page "Usage and limits" table, including the "None of these hourly limits has overage" sentence, run-now's separate 100/hour account limit, and the metered-overage wording.
+- **F-13: confirmed** (memo lines 160–167).
+  - The routines page has the pause switch and Delete menu in the web UI.
+  - The CLI commands are `/schedule list`, `update` and `run`, plus GitHub trigger (v2.1.225) and run history (v2.1.227).
+  - The Owner toggle, the 72-hour GitHub skip and the archive/delete of run sessions all match.
+  - Pause and delete from the CLI are not documented, as the memo now says.
+- **F-14: confirmed** (memo lines 170–176). The "Who can trigger runs" section matches: the write-access check applies to issue and PR events, `schedule` skips it, and `allowed_non_write_users` is the exception. The bot check applies on every event, including scheduled runs.
+- **F-07: confirmed, and the open question can be narrowed** (memo lines 114–122). I read the full Remote Control page from the fetch's saved copy.
+  - Pro, Max, Team and Enterprise are covered. "API keys are not supported."
+  - Bedrock, Agent Platform, Foundry and a non-`api.anthropic.com` `ANTHROPIC_BASE_URL` are excluded.
+  - On Team and Enterprise, an Owner must turn it on, and `setup-token` tokens cannot establish sessions.
+  - I found no API or third-party access documented anywhere on that page.
+  - The memo grades the requirements B. They can be A now, so the F-07 absence claim (Q-005e) can be recorded as "not documented on the full page".
+- **Memo §1 line 18 is false.** It says `research/Q-005.md` exists. It is not in the folder, so the memo's claim to have re-read it cannot be checked.
 
-## Confirmed
-Quotes match the pages unless noted.
-- **F-01 to F-06, F-08 to F-12, F-15, F-16, F-18, F-19, F-21 to F-23, F-25, F-27.** Confirmed against code.claude.com and platform.claude.com. The F-22/F-23/F-27 pages are overview, sessions, session-operations, reference and pricing. F-23's "budget in US cents" is right: `amount` is cents written as a string.
-- **F-17.** Confirmed on docs.github.com.
-  - Workflow dispatch has a 25-input maximum and returns HTTP 200 with `workflow_run_id`, `run_url` and `html_url`.
-  - `/cancel` and `/force-cancel` exist.
-  - The logs link expires in 1 minute.
-  - Classic tokens need the `repo` scope.
-  - Fine-grained permission names are still not confirmed, as the memo says.
-- **F-20, F-24, F-26.** Confirmed. These were read through the fetch tool's extract rather than the full page. F-26's statement that "whether the token enters the sandbox is not stated" held up.
-- **Q-005b (no read API for cloud sessions).** The llms.txt index lists none. This is only an absence in the index, not proof that no such API exists.
-
-## Entries filed (`library/`)
-All were checked on 2026-10-01 and opened by source-checker.
-
-| Entry | File | Shelf life |
-|---|---|---|
-| LIB-F-a | `facts/LIB-F-a-routine-fire-endpoint.md` | 3 months |
-| LIB-F-c | `facts/LIB-F-c-cloud-session-billing-credential.md` | 6 months |
-| LIB-F-f | `facts/LIB-F-f-managed-agents-lifecycle-price.md` | 3 months |
-| LIB-F-g | `facts/LIB-F-g-sdk-cost-fields-are-estimates.md` | 12 months |
-| LIB-P-a | `patterns/LIB-P-a-credential-outside-agent-boundary.md` | 12 months |
-
-All five are grade A. Each rests on two or more separate Anthropic pages. LIB-F-g's TypeScript page was read through the fetch tool's extract, not the full text.
-
-## Entries held (verified but not filed)
-They rest on a single page.
-- **LIB-F-b (F-03, CLI follow-ups).** Only the claude-code-on-the-web page covers it.
-- **LIB-F-d (F-15/F-16, Action credentials and cost).** Only the github-actions page covers it. The authentication page only partly corroborates the credentials half.
-- **LIB-F-e (F-18, Agent SDK auth policy).** Only the agent-sdk/overview page has the "third party developers" sentence.
+## Library
+- **Filed:** `library/facts/LIB-F-a2-routine-fire-limits-and-beta-header.md`. It carries the limits table, the overage rules and the corrected header rule. It supersedes LIB-F-a on those points only, and I did not edit LIB-F-a. Grade A, checked 2026-10-01, shelf life 3 months. It rests on two Anthropic pages, labelled as the same publisher.
+- **Held:** LIB-F-h (F-13 + F-14). Each half rests on one page, which is the same bar that held LIB-F-b, -d and -e last round.
+- **Still held:** LIB-F-b, -d and -e, since no second page was found.
+- **LIB-F-a still says** "Limits, no overage… (both pages)" and omits the beta header. This is not wrong, but it is incomplete, so readers should use LIB-F-a2.
 
 ## Open questions
-- **Independence.** Every filed entry rests on Anthropic's own pages, and no third-party source exists for product behaviour. I counted separate pages as two sources and labelled each entry "same publisher". If you require non-Anthropic corroboration, all five entries and the held ones fail that bar. Please confirm which reading applies.
-- **Q-005a (use of the owner's subscription)** needs a reading of Anthropic's Commercial and Consumer Terms. I did not read them, and the memo's author didn't either. This stays with the owner.
-- **Held entries.** Is a second page or an Anthropic-published source available for the held entries? If so, I can file them.
-- **Memo fixes.** The researcher should correct F-13 and F-14 and finish reading the Remote Control page for F-07. Then I can recheck.
+- Does the owner accept two separate Anthropic pages as independent sources? That decides LIB-F-h and the other held entries. It is still unanswered.
+- Q-005a, whether the owner's subscription may be used, needs the Terms, which nobody has read.
+- The researcher should fix F-09 and the line-18 claim, then I can recheck.

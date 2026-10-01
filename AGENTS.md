@@ -82,6 +82,8 @@ Downgrades are disclosed. The model is recorded in ledger entries (proposed_by),
 ## 7. Continuity
 Write every entry for a stranger. Before going idle: commit, push, log every reading, and name
 the next step. Don't re-litigate a ruling you didn't witness — raise it with the owner.
+Anything off in the workflow: add a row to docs/LESSONS.md in shumpmaster/Personal-Org-Operating-Model
+(its L-0116), the one log for every project. This charter is still the v2.5 text; see LL-001 there.
 
 ## 8. Commands
 governance checks: governance/checks/check_all.sh . [BASE_REF [PR]]   (Python 3.11+)

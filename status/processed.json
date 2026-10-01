@@ -1,9 +1,10 @@
 {
   "anomalies": [],
   "decisions": {
+    "decisions/Q-002/stop-1.md": "90df7188c89e104dd4d0c466f4f17e6d524853d74e6f6afe8ba52acf440628ed",
     "decisions/Q-003/failure-1.md": "bebe8499e5846eb84318556d379de04e027432497d758a57136945f91702e0ac"
   },
-  "log_head": "f2b270ea08ba317edf874f09b9d3d09f5af074a4780e9142703c29723bd2e9ce",
+  "log_head": "e5341a87bb61224a326040e0dfc5ee92c1b00e9f80c1cb089811967c4948d173",
   "outcomes": {
     "Q-001:ready-dispatch:2026-10-01T01:46:42Z": "0cbe2d2e1836ef440b4cf2fb153877755a4394a44d14fb0e4f43e55ef36e1a0d",
     "Q-001:research-to-source:2026-10-01T02:17:21Z": "932501df81848923da074b0c2b2e6619436b7d0c8c48685deceb925aa48e3350",

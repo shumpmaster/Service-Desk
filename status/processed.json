@@ -3,7 +3,7 @@
   "decisions": {
     "decisions/Q-003/failure-1.md": "bebe8499e5846eb84318556d379de04e027432497d758a57136945f91702e0ac"
   },
-  "log_head": "2ee0635fcb7f0d5a7d08e34aa9133ac2db95ca54f3773c58092f227e8ae6b642",
+  "log_head": "daab72cfd9916c5bbb2ab7b26a22349a77848e6b895c453c5e7bab7bb2a3fdea",
   "outcomes": {
     "Q-001:ready-dispatch:2026-10-01T01:46:42Z": "0cbe2d2e1836ef440b4cf2fb153877755a4394a44d14fb0e4f43e55ef36e1a0d",
     "Q-001:research-to-source:2026-10-01T02:17:21Z": "932501df81848923da074b0c2b2e6619436b7d0c8c48685deceb925aa48e3350",
@@ -22,6 +22,7 @@
     "Q-001",
     "Q-002",
     "Q-003",
-    "Q-004"
+    "Q-004",
+    "Q-005"
   ]
 }

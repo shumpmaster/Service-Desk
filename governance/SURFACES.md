@@ -38,7 +38,6 @@ docs/**
 !docs/PROJECT.md
 !docs/handover/**
 digest/**
-questions/**
 reviews/**
 triage/**
 research/**
@@ -74,6 +73,7 @@ AGENTS.md
 docs/PROJECT.md
 intake/**
 decisions/**
+questions/**
 governance/**
 !governance/HOLDOUTS.md
 .github/**

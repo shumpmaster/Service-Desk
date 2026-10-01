@@ -1,36 +1,52 @@
 Verdict: FAIL
 
-Four of the five revised claims (F-07, F-12, F-13, F-14) now hold against their pages. F-09 does not, because the memo's header claim contradicts its own cited source. I also filed one new library entry and held another.
-
-I re-read the routines, github-actions, routines-fire and remote-control pages in full. I did not open the `.env*`, `.npmrc` or lockfiles. I made no commits.
+One claim cannot be checked: the memo's question text, cited to `research/Q-005.md`, which is not in my folder. Every cited documentation page I opened this round says what the memo claims.
 
 ## Findings
-- **F-09: fail** (`research/Q-005-memo.md` line 13 and lines 133–141).
-  - Line 13 calls `anthropic-beta: experimental-cc-routine-2026-04-01` a "required header". The fire page lists only `Authorization` and `anthropic-version` as required. It adds that the endpoint "accepts requests with and without" the beta header.
-  - The routines page curl example does send it. The "two most recent previous header versions continue to work" quote is on the routines page and is correct.
-  - The memo should say the beta header is optional.
-- **F-12: confirmed** (memo lines 152–159). It matches the routines page "Usage and limits" table, including the "None of these hourly limits has overage" sentence, run-now's separate 100/hour account limit, and the metered-overage wording.
-- **F-13: confirmed** (memo lines 160–167).
-  - The routines page has the pause switch and Delete menu in the web UI.
-  - The CLI commands are `/schedule list`, `update` and `run`, plus GitHub trigger (v2.1.225) and run history (v2.1.227).
-  - The Owner toggle, the 72-hour GitHub skip and the archive/delete of run sessions all match.
-  - Pause and delete from the CLI are not documented, as the memo now says.
-- **F-14: confirmed** (memo lines 170–176). The "Who can trigger runs" section matches: the write-access check applies to issue and PR events, `schedule` skips it, and `allowed_non_write_users` is the exception. The bot check applies on every event, including scheduled runs.
-- **F-07: confirmed, and the open question can be narrowed** (memo lines 114–122). I read the full Remote Control page from the fetch's saved copy.
-  - Pro, Max, Team and Enterprise are covered. "API keys are not supported."
-  - Bedrock, Agent Platform, Foundry and a non-`api.anthropic.com` `ANTHROPIC_BASE_URL` are excluded.
-  - On Team and Enterprise, an Owner must turn it on, and `setup-token` tokens cannot establish sessions.
-  - I found no API or third-party access documented anywhere on that page.
-  - The memo grades the requirements B. They can be A now, so the F-07 absence claim (Q-005e) can be recorded as "not documented on the full page".
-- **Memo §1 line 18 is false.** It says `research/Q-005.md` exists. It is not in the folder, so the memo's claim to have re-read it cannot be checked.
+
+- **F-09: confirmed** (memo lines 120–131).
+  - The fire page's Headers table marks only `Authorization` and `anthropic-version` as required, and `Content-Type` only "when body is present". `2023-06-01` is "the only accepted value".
+  - The fire page says the endpoint "accepts requests with and without" the `anthropic-beta` header.
+  - The routines page curl example still sends that header, and its warning says "the two most recent previous header versions continue to work".
+  - The 400, 429 (with `Retry-After`) and 503 rows, the 65,536-character `text` limit, the no-idempotency-key statement and the response fields all match.
+- **F-12: confirmed** (lines 142–149). The routines "Usage and limits" table matches, including "None of these hourly limits has overage". The fire page agrees on 30 per routine and 100 per account for API fires.
+- **F-13: confirmed** (lines 150–160). Pause/resume switch, Delete menu, `/schedule list`, `update` and `run`, v2.1.225 and v2.1.227, the 72-hour GitHub skip, and the Owner toggle all match. Pause and delete from the CLI are not documented.
+- **F-14: confirmed** (lines 163–169). The github-actions "Who can trigger runs" section matches, including the `schedule` exception and the bot check on every event.
+- **F-07: confirmed** (lines 101–109). I read the full Remote Control page from the saved copy: lines 24, 27–28, 364, 370, 397 and 437.
+  - Plans: Pro, Max, Team and Enterprise. "API keys are not supported." An Owner must turn it on for Team and Enterprise.
+  - Excluded: Bedrock, Agent Platform, Foundry, and a non-`api.anthropic.com` `ANTHROPIC_BASE_URL`.
+  - `setup-token` tokens cannot establish sessions.
+  - I found no API or third-party access on the page. I can raise F-07 to grade A and record Q-005e as "not documented on the full page". That is an absence claim, not a fact entry.
+- **F-01 to F-06, F-08, F-10, F-11, F-15, F-16: confirmed** against the claude-code-on-the-web, authentication, routines and github-actions pages. The quotes match, including "Cloud sessions always use your subscription credentials" and the `claude -p … --cloud` follow-up with `{ok, session_id, url}`.
+- **F-17: confirmed (B stands).** The GitHub pages give the endpoints, the 25-input limit, the response fields, cancel and force-cancel, and the 1-minute log link. They name only the `repo` scope for classic tokens. Fine-grained permission names are not on those pages, as the memo says.
+- **F-18 to F-21: confirmed.**
+  - The overview page has the third-party login sentence, the branding rule and the Commercial Terms.
+  - The hosting page has 1 GiB / 5 GiB / 1 CPU, no session timeout, "order of magnitude", about $0.05 per hour, and `settingSources` / `CLAUDE_CONFIG_DIR`.
+  - The cost-tracking page has the client-side-estimate warning.
+  - The TypeScript reference page documents `streamInput`, `interrupt`, `close`, `abortController`, `maxBudgetUsd` and `maxTurns`, so F-20 can be A.
+  - The secure-deployment page has the proxy pattern.
+- **F-22 to F-27: confirmed** against the Managed Agents overview, sessions, session-operations, events-and-streaming, reference, github and webhooks pages, plus the pricing page.
+  - Confirmed values: the beta header, the statuses, budget in US cents, the 300 and 1,200 per minute limits, `$0.08 per session-hour` while `running`, and the webhook rules (3 attempts, not a durable log, no ordering).
+  - The `authorization_token` is "not echoed", and the docs don't say whether it enters the sandbox.
+- **F-19 wording, minor.** The memo says "Keep GitHub tokens out of the agent environment". The hosting page says "keep tool credentials out of the agent environment". The GitHub token is an inference from that. Please reword it.
+- **E-01, E-02, O-01** are marked estimate or opinion and carry no source claim.
+
+## Cannot verify
+- `research/Q-005.md` is cited at memo line 49 and is still missing from my folder. The researcher says it exists in theirs. I cannot confirm the question text or its provenance, so under the brief's rule this is a FAIL. No documentation claim depends on it.
+- The memo's line 1 and §1 are process notes. Line 1 says the file could not be written to disk, so I read the memo as it exists in this folder.
 
 ## Library
-- **Filed:** `library/facts/LIB-F-a2-routine-fire-limits-and-beta-header.md`. It carries the limits table, the overage rules and the corrected header rule. It supersedes LIB-F-a on those points only, and I did not edit LIB-F-a. Grade A, checked 2026-10-01, shelf life 3 months. It rests on two Anthropic pages, labelled as the same publisher.
-- **Held:** LIB-F-h (F-13 + F-14). Each half rests on one page, which is the same bar that held LIB-F-b, -d and -e last round.
-- **Still held:** LIB-F-b, -d and -e, since no second page was found.
-- **LIB-F-a still says** "Limits, no overage… (both pages)" and omits the beta header. This is not wrong, but it is incomplete, so readers should use LIB-F-a2.
+- **Filed:** `library/facts/LIB-F-i-setup-token-cannot-start-remote-control.md`, grade A, checked 2026-10-01, shelf life 6 months.
+  - I narrowed it to the one point that has two separate Anthropic pages, authentication and remote-control: a `setup-token` credential cannot establish Remote Control sessions.
+  - The other Remote Control requirements rest on one page, so they are not filed.
+- **Already filed, not touched:** LIB-F-a, -a2, -c, -f, -g and LIB-P-a.
+- **Still held:** LIB-F-b, -d, -e and -h.
+  - Each rests on one page for its key point, and I found no second page.
+  - The pages I opened do not change that. LIB-F-d, for instance, is supported only in part by the authentication page.
+- **Not committed.** There is no git repository in this folder, so I made no commits.
 
 ## Open questions
-- Does the owner accept two separate Anthropic pages as independent sources? That decides LIB-F-h and the other held entries. It is still unanswered.
-- Q-005a, whether the owner's subscription may be used, needs the Terms, which nobody has read.
-- The researcher should fix F-09 and the line-18 claim, then I can recheck.
+- **Independence ruling:** do two separate Anthropic pages count as independent sources? This is still unanswered. It decides LIB-F-b, -d, -e and -h, and whether LIB-F-i can be widened.
+- **Q-005.md:** the Orchestrator needs to check the source-checker pack in `governance/PACKS.toml`, or the researcher should drop the citation. Then I can recheck.
+- **Q-005a:** whether the owner's subscription may be used still needs the Anthropic Terms, which nobody has read.
+- **Not opened:** the GitHub Actions billing pages, GitHub's fine-grained permission names, the Terms, and the claude.ai plan usage limits. The memo does not rely on them.

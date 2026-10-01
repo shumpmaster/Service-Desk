@@ -54,7 +54,9 @@ must_not_see = ["docs/reports/**"]
 include_feedback = ["reviews/{spec}/checks.txt"]
 
 [roles.source-checker]
-must_read = ["research/{question}-memo.md"]
+# The memo, the question it answers (the same blind question the Researcher gets), and the
+# owner's source standard (a checking rule, not a hoped-for answer).
+must_read = ["research/{question}-memo.md", "research/{question}.md", "governance/standards/sources.md"]
 may_read = ["library/**", "docs/playbooks/**"]
 # The hoped-for answer stays out, as for the Researcher (D-055).
 must_not_see = ["docs/PROJECT.md", "queue/**", "rulings/**", "decisions/**"]

@@ -1,33 +1,38 @@
 Verdict: FAIL
 
-I filed nothing. `library/` still holds only L-F1 and L-F2, and I didn't edit either. The memo is not a complete memo, and several claims rest on sources I can't identify or open.
+I filed 7 of the 8 proposed entries, two with changes, and rejected L-F9 because its own source contradicts it. I fetched all 21 cited pages today (R2–R20 including R6b, plus L-F1's source). The quotes came through a summarising fetch tool, so they are close to the page text but not guaranteed verbatim. Nothing was committed because the working folder is not a git repository.
 
-**Blocking problems**
-- **The memo is a correction, not the memo.** `research/Q-002-memo.md` lines 1–5 say the original memo is missing and this is "revision 2". The entries it proposes (F12/L-F7, F16/L-F4 and others) depend on text I don't have.
-- **F12/L-F7 can't be checked.** Lines 80–81 say the researcher can't see what F12 claims, so it stays unfiled.
-- **Many cited sources have no URL.** The memo cites S1–S3, S8, S9, S11, S13, S15 and others only by number. Only S14, S16 and S18–S24 can be matched to URLs, in lines 83–92 and the closing source list. I could not open S3, which is the first source for the "every account" part of L-F6, nor S8, S9, S11 or S13.
-- **Several claims are marked as unsupported by the researcher itself.** C1 (fine-grained tokens), C4 (user tokens), C5 (reviews) and C6 (`performed_via_github_app` in workflows) are marked C or "needs a live test" (lines 16–21, 61, 67–75). These can't be filed as facts.
-- **The researcher's reasoning is in the memo.** The brief says I must not see this. It is mixed into the file, so my read of it may be influenced.
+**Not confirmed: L-F9 (memo line 124)**
+- The R13 permissions table marks `PUT …/contents/{path}` and `POST …/issues/{n}/comments` as needing "additional permissions".
+- The entry names only Contents: write and Issues: write, so as written it is incomplete or wrong. The memo says as much in open question 5 (line 139).
+- It also rests on a single source. It is not filed.
 
-**Confirmed by opening the pages** (WebFetch passes text through a summarising model, so the quotes are reliable but not verbatim page text)
-- **Classic PAT removal, memo line 14:** the page "Managing your personal access tokens" says "GitHub automatically removes personal access tokens that haven't been used in a year." It appears under the heading "Personal access tokens (classic)".
-- **Fine-grained expiry, line 23:** `expires_in` accepts "Integer between 1 and 366, or `none`". This is on the same page.
-- **Repository limit, line 25:** "Each token can be further limited to only access specific repositories…" is on the same page.
-- **One-year revocation, line 15:** the page "Token expiration and revocation" says "GitHub will automatically revoke an OAuth token or personal access token when the token hasn't been used in one year." It sits under "Token expired due to lack of use" and doesn't say which kind of personal access token.
-- **Public push, line 26:** the same page says a token pushed to a public repository or gist is automatically revoked.
-- **Private key, lines 47–50:** the key-management page says "Private keys do not expire and instead need to be manually revoked." It also gives the 25-key limit, recommends a sign-only vault, and warns that an environment variable is risky. It quotes "persistent authentication as the GitHub App" in the environment-variable warning. The memo's phrasing, "an attacker gets…", is a slight stretch.
-- **OAuth apps, lines 31–41:** the "Differences between GitHub Apps and OAuth apps" page confirms three things.
-  - Authorizing an OAuth app grants "the user's accessible resources".
-  - "OAuth app tokens re long-lived by default" appears with the typo "re" in the fetched text.
-  - 8-hour expiring tokens are configurable.
-- **Bot naming, L-F1:** the same page says an installation token identifies the app as a bot account "such as @jenkins[bot]".
-- **Changelog, lines 37–40:** the 2026-08-14 changelog exists, mentions `offline_access`, and says short-lived tokens are "enabled by default for all new applications".
-- **Workflow triggering, line 58:** the "Triggering a workflow" page says events triggered by `GITHUB_TOKEN` don't create a new workflow run, with exceptions. It also contains the sentence about using an installation token or PAT instead.
+**Filed in `library/`**
+- **L-F3 (`facts/L-F3.md`):** only the first clause is filed, that issue comments carry `performed_via_github_app` (R17, grade B). The clause that the PR review schema lacks the field is an absence claim from a summarising fetch (R18: 13 properties, field not listed). I did not file it.
+- **L-F4 (`facts/L-F4.md`):** confirmed against R2, R6b, R7 and R8, grade B. R8 says short-lived tokens are "enabled by default for all new applications". The "no per-repository restriction documented" clause is an absence claim and is left out. Identity and reach rest on R2 alone.
+- **L-F5 (`facts/L-F5.md`):** confirmed, grade B. R10 confirms the single owner, repository limit, `expires_in` 1–366 or none, and the lifetime policy. R10 puts the one-year removal under "Personal access tokens (classic)". R9 says only "personal access token", so the last clause records a documentation gap.
+- **L-F6 (`facts/L-F6.md`):** filed at grade B, not A as the memo has it (line 119). "Every account that the app is installed on" appears only in R3. R4 states no expiry, manual revocation and sign-only, but says nothing on the "every account" wording. That part therefore has one source.
+- **L-F8 (`facts/L-F8.md`):** confirmed, grade B. R19 and R20 both state the `GITHUB_TOKEN` rule. R19 uses "opened, synchronize, or reopened" for pull requests. The installation-token and PAT part rests on R20, with R19 covering pull requests only.
+- **L-F10 (`facts/L-F10.md`):** confirmed, grade A. The badge and security-log detail rest on R5 alone. The memo lists no sources for L-F10 (lines 127–129), so I assigned them myself.
+- **L-P1 (`patterns/L-P1.md`):** confirmed, grade B. R3 gives server-side encrypted storage and a sign-only vault. R4 warns about environment variables.
 
-**Not opened:** the private-key "grants access to every account" claim (S3), S8, S9, S11, S13, S15, S19, S22, S23 and S24. I could not confirm them, and I did not look for them.
+**Memo statements that don't hold up (none of these is filed)**
+- Line 87 grades "A" for a token pushed to a public repository being revoked. Only R9 says this, so it is B.
+- Line 61 cites R11 for OAuth apps not being able to go below `repo`. R11 does not say that.
+- Line 82 says R19 covers installation tokens and PATs for pull requests only. That is correct.
+- R14 (line 65): the quote is cut short. The page continues "and no custom signature information, such as Commits API". The meaning is unchanged.
+
+**Other confirmed items**
+- R2, R3, R5, R6, R7 and R10 support §1–§4 and §10. R6 does not say "without use", but R7 does.
+- R12 and R16 are silent on PAT marking and on `performed_via_github_app`, as the memo says.
+- R15 and R16 quotes match.
+
+**Process note**
+- The memo's contract section (lines 169–205) contains the Researcher's reasoning. The brief says I must not see it. I used nothing from it as evidence.
+- The "Estimate" and "C" statements (§4, §6, §7, §8, §9 table) are not fact entries and are not filed.
 
 **Open questions**
-1. Can the Orchestrator supply the original memo, or at least the S1–S24 URL list? Then I can re-run the check.
-2. Which grade scale does D-032 use? The memo asks this too (line 123).
-3. Does GitHub revoke unused fine-grained tokens? No page I opened says so (memo OQ3).
-4. Should L-F5 be filed in a narrower form, covering only the confirmed parts? Those are classic PAT removal, the 1–366 days or none expiry, and the repository limit. I need the memo or a go-ahead before I do that.
+1. Does D-032 define the grade scale? The memo's scale is provisional. I used it, with A requiring two independent first-party pages.
+2. Should L-F9 be resubmitted after someone reads the full R13 "additional permissions" footnotes? Pull requests may need Pull requests: write for PR conversation comments.
+3. Do you want the C-grade absence claims (R18 field absent, no OAuth per-repository limit) filed as "documentation gaps" with a tighter wording? I held them back.
+4. The memo's open questions 1–4 (fine-grained inactivity removal, workflow payloads, user tokens starting runs, refresh extension) need live tests. I did not research them.

@@ -1,13 +1,12 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "research"
 stage = 2
-state = "dispatched"
+state = "done"
 role = "source-checker"
-last_verdict = "none"
+last_verdict = "PASS"
 plan_round = 2
 build_round = 0
 confirm_used = true
 attempts = 0
 sessions = 1
-dispatched_at = "2026-10-01T16:23:47Z"
 card = 1

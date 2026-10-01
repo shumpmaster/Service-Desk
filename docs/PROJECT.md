@@ -20,7 +20,8 @@ stays living. The Critic checks Part 1 against the definition of ready.*
 - **Team and pipeline:** for each project, its v3 stage, the item and role at work, and what comes
   next.
 - **Planning and scheduling:** the work ahead across projects, and the owner's choice of its order
-  and timing, recorded as rulings the Orchestrators act on.
+  and timing, recorded as rulings the Orchestrators act on. *In or out of the first version is the
+  owner's ruling (§7, O2).*
 - **Spend and time:** spend against each project's ceiling, and the time each project has asked of
   the owner.
 - **Launch:** taking over the Operations-Hub address (Cloudflare Pages project `needs-you`) and
@@ -121,34 +122,52 @@ loses nothing that exists today. The 5-minute figure in V1 rests on U4.
 ## 7. Solid foundation
 *Every load-bearing unknown, each answered with evidence (library entry or research memo), including through research sub-projects if needed.*
 
-*Draft 2, 2026-10-01, Chief of Staff: U1 to U4 answered from the four passed memos (research/Q-001,
-Q-002, Q-004 and Q-005, each with a PASS source check). Library IDs are the filed entries. Grades as
-in each memo: A = vendor documentation read in full, B = one vendor page or read through a summary,
-C = inference.*
+*Draft 3, 2026-10-01, Chief of Staff, after the Critic's definition-of-ready return
+: U1 to U4 rest on library entries. The Source checker files an entry only after opening its
+sources and confirming them; each entry's opened-by line names the check that filed it. The memos
+(Q-001, Q-002, Q-004, Q-005) are named for where the reasoning sits; nothing here rests on a memo
+alone, or on the dropped Q-003. Each grade is the one filed in the library: A = vendor documentation read in full, B = one vendor page
+or read through a summary, C = inference, E = our own estimate (shown with its arithmetic). Items
+still open are listed under "Open at this exit" below; none is hidden in a status column.*
 
 | Unknown | Why it bears load | Evidence | Status |
 |---|---|---|---|
-| U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | research/Q-001-memo.md; F-hosting-01, -02a/b/c, F-auth-01 to -04, P-auth-01 | Answered: Cloudflare Workers fits $0 |
-| U2 Acting in GitHub on the owner's behalf: mechanisms, attribution, credential risk | D4, D5, the tier, D-011 | research/Q-002-memo.md; L-F1 to L-F12, L-P1 | Answered on the mechanics; one owner ruling and one live test remain |
+| U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | research/Q-001-memo.md; F-hosting-01, -02a/b/c, -03 to -06, F-auth-01 to -04, F-gh-04, P-auth-01 | Answered: Cloudflare Workers fits $0; one per-invocation limit open (O3) |
+| U2 Acting in GitHub on the owner's behalf: mechanisms, attribution, credential risk | D4, D5, the tier, D-011 | research/Q-002-memo.md; L-F1 to L-F12, L-P1 | Answered on the mechanics; the route is the owner's ruling (O1) |
 | U3 What starting, steering or monitoring Claude Code sessions from a web app can do | D1.3, the owner's later ruling | research/Q-005-memo.md; LIB-F-a, -a2, -c, -f, -g, -i, LIB-P-a | Answered enough for the owner's ruling |
-| U4 How quickly GitHub changes can reach a web page | V1, D2.2 | research/Q-004-memo.md; F-Q004-1 to -13, PAT-Q004-1 | Answered: 5 minutes is reachable with a poll behind webhooks |
-| Cloudflare Pages deploys from Actions, behind Access | D6 | Operations-Hub docs/research/003 (spike, 2026-09-25) | Proven |
-| A fine-grained read token reads the v3 records the screens need | D2.1 | Operations-Hub docs/research/002 and 004 (v2 records). On 2026-10-01 the hub's token read Service-Desk's branches and statuses (needs-you run 31) | Partly proven; v3 record files not yet read by the desk |
+| U4 How quickly GitHub changes can reach a web page | V1, D2.2 | research/Q-004-memo.md; F-Q004-1 to -13, PAT-Q004-1 | Answered: 5 minutes is reachable with a page-driven poll; webhooks optional |
+| Cloudflare Pages deploys from Actions, behind Access | D6 | Operations-Hub's own deploy, live since 2026-09-25 (its docs/research/003); outside the library | Observed, not filed (C). Not load-bearing: U1's library entries carry the hosting and Access choice, and D6 can fall back to deploying the Worker by hand |
+| A fine-grained read token reads the v3 records the screens need | D2.1 | Operations-Hub docs/research/002 and 004 (v2 records), and on 2026-10-01 the hub reading Service-Desk; outside the library | Observed, not filed (C); reading the v3 files themselves is inferred (C). Not load-bearing for the design: if the token can't read them, the fix is one read permission the owner adds by hand. Parsing them is D2.1 build work |
 
 ### U1 — Hosting
 - **Fits the $0 ceiling: Cloudflare Workers with static assets, behind Access, with Durable Objects
   only if pushed updates are needed.**
   - The Free plan gives 100,000 requests a day, and static assets are free (F-hosting-01, A).
   - Access is free for up to 50 users, and a policy can name one email address (F-auth-01, -02, A).
-  - Durable Objects run on the Free plan with SQLite, 5 GB per account (F-hosting-02a, A). Free-plan
-    storage is not charged; whether paid storage billing is live is unconfirmed (F-hosting-02b).
+  - Durable Objects run on the Free plan with SQLite, 5 GB per account (F-hosting-02a, A). The
+    changelog says "Developers on the Workers Free plan will not be charged" for that storage
+    (F-hosting-02b, A); whether paid-plan billing is live doesn't affect a Free-plan desk.
+- **What the free plan limits, and how the design stays inside them.**
+  - **WebSockets aren't used.** The plan bills incoming WebSocket messages at 20 to 1 against the
+    100,000 daily requests (F-hosting-02c, A). The first version doesn't need them: the open page
+    polls over plain HTTP (U4), so that billing never arises.
+  - **The page drives the reconcile poll; no cron or alarm is needed.** While the desk is open, the
+    page asks the Worker every 1 to 2 minutes, and the Worker makes conditional requests to GitHub.
+    When the desk is closed, nothing needs showing, so nothing polls, and opening it reconciles at
+    once (design; see "show" in §8).
+  - **Requests:** one page polling every minute for 16 hours is 960 Worker requests a day, against
+    100,000 (F-hosting-01, A; E2: 60 × 16 = 960).
+  - **CPU:** 10 ms per invocation on the Free plan (F-hosting-01, A). Whether a reconcile across 5
+    repositories fits, whether time spent waiting on GitHub counts, and how many outbound requests
+    one invocation may make are not in the library. That's open item O3.
 - **Two requirements carry into D5.**
   - Validate the Access token in the Worker (F-auth-04, A).
   - Cover the `workers.dev` and version URLs with Access, because they are public otherwise
     (F-auth-03, A).
 - **The others are worse fits.**
   - Vercel Hobby is non-commercial personal use only (F-hosting-03, A).
-  - Fly.io has no lasting free tier (estimate, C).
+  - Fly.io offers only a trial of 2 hours of machine time or 7 days; no lasting free tier is
+    described (F-hosting-04a, A).
   - Render's free service sleeps after 15 minutes idle (F-hosting-05, A).
   - A Hetzner server is about €5.49 a month with the most upkeep (F-hosting-06, A).
   - GitHub Pages sites are public, even when the repository is private (F-gh-04, A).
@@ -160,8 +179,8 @@ C = inference.*
   - **App installation token:** the app's bot, `name[bot]` (L-F1, A). It cannot record an answer
     as the owner.
   - **GitHub App user token:** the owner, with the app's badge in the UI and the security log
-    (L-F10, B). The token lasts 8 hours and the refresh token 6 months from the last refresh
-    (L-F2, L-F11).
+    (L-F10, A; the library notes the badge and security-log detail rest on one page). The token
+    lasts 8 hours and the refresh token 6 months from the last refresh (L-F2, A; L-F11, B).
   - **Fine-grained personal access token:** the owner, with no documented marking that separates it
     from the browser. It is limited to chosen repositories and permissions, and can run to an
     expiry date or none (L-F5, B).
@@ -171,15 +190,15 @@ C = inference.*
   (L-F9, B). Workflow files need more, and the desk never writes them.
 - **Storage (L-P1, B):** encrypted on the back end. A GitHub App private key is kept sign-only in a
   key vault, not in environment variables. No secret ever goes to a model (§5).
-- **What stays open:**
-  - **Owner ruling (D-066, LL-006 in the model's lessons):** does an answer written by the desk
-    with the owner's own token count as the owner's own action? Under the user-token routes,
-    GitHub records it as the owner's. With a GitHub App, it also carries the app's badge, which is
-    the honest record. The Orchestrator's check (`record_checks decisions`) accepts any answer
-    whose commit author is a person in the humans block.
-  - **Live test (Define):** an answer file committed through the chosen credential passes that
-    check and starts the Orchestrator's run. Q-002 §8 shows that personal tokens and app tokens
-    start workflow runs (L-F8, B); user tokens are not documented (C).
+- **A route with no credential at all:** the desk links each card to GitHub's new-file page with the
+  answer already filled in, and the owner commits it on GitHub. The desk then needs only
+  a read token. This is a design option, not a researched fact; it relies on nothing new.
+- **Which route the desk uses is the owner's ruling (O1).** The user-token routes need two more
+  things the no-credential route does not:
+  - a D-066 ruling that an answer the desk writes with the owner's token counts as the owner's own
+    action;
+  - for a GitHub App user token only, a live test in Define that its commit starts the run.
+    Personal access tokens are documented to start runs (L-F8, B); user tokens are not (C).
 
 ### U3 — Running work from the desk
 - **Five documented routes (Q-005 summary table):**
@@ -213,11 +232,23 @@ C = inference.*
   - A conditional request that returns 304 costs nothing against the limit (F-Q004-7, A).
   - About 3 calls per repository each minute, for 5 repositories, is about 900 calls an hour,
     against a limit of 5,000 (estimate E1).
-- **Design for D2.2 (PAT-Q004-1):** webhooks for speed, plus a reconcile poll every 1 to 2 minutes.
-  That keeps V1's 5 minutes even when webhooks lag.
-  - **Webhook endpoint:** answers within 10 seconds and queues the work (F-Q004-2). It orders events
-    by their timestamps and drops repeats by delivery ID.
+- **Design for D2.2 (PAT-Q004-1):** a reconcile poll every 1 to 2 minutes while the desk is open,
+  driven by the page (U1). That alone meets V1's 5 minutes. Webhooks can be added later for speed;
+  the first version doesn't depend on them.
+  - **If webhooks are added:** the endpoint answers within 10 seconds and queues the work
+    (F-Q004-2). It orders events by their timestamps and drops repeats by delivery ID.
+  - **The rate limit above is GitHub's, not Cloudflare's.** Cloudflare's limits are under U1.
   - **Don't use the Events API for freshness:** its latency is 30 seconds to 6 hours (F-Q004-9, A).
+
+### Open at this exit
+The exit is proposed with these items open. Each has an owner and a place where it closes. The
+owner approves the move to Build knowing them, or rules them first.
+
+| ID | Open item | Bears on | Closes by |
+|---|---|---|---|
+| O1 | Which route the desk acts through: prefilled GitHub links (no credential), a GitHub App user token, or a fine-grained token. The token routes also need a D-066 ruling and, for the app route, a live test | D4, D5, the tier | Owner's ruling: questions/P-001-acting-route.md |
+| O2 | Whether planning and scheduling (D3.4, D4.2) are in the first version | §1, D3, D4, V4 | Owner's ruling: questions/P-001-planning-scope.md |
+| O3 | Whether one reconcile fits the Free plan's per-invocation limits (CPU time, outbound requests) | U1, $0 ceiling | Research Q-006, if the owner approves it; otherwise a Define measurement. If it doesn't fit: one invocation per repository, or the $5 Paid plan by the owner's ruling (F-hosting-01) |
 
 ## 8. Clear and consistent
 *Key terms defined; constraints checked against each other and found not to contradict.*
@@ -230,6 +261,8 @@ C = inference.*
   Orchestrator already reads (`decisions/`). It changes nothing else.
 - *Quiet:* nothing needs the owner. Shown plainly; it is the success state.
 - *Real time:* within V1's figure, 5 minutes, unless U4 changes it.
+- *Show:* on the screen while the owner has the desk open, or as soon as the owner opens it. V1
+  counts an item missed if it was waiting for more than 5 minutes and the open desk didn't show it.
 - *Connected project:* a repository on the desk's list, with a token that can read it.
 
 **Checks, and the tensions still open.**
@@ -238,7 +271,9 @@ C = inference.*
 - D-066 allows proxy answers only by the Chief of Staff, and never for words that close an item or
   approve launch. U2 shows the desk can write with the owner's own identity: a GitHub App user
   token, or a fine-grained token. Whether that counts as the owner's own action is the owner's
-  ruling on the move-to-Build card. Until then, those cards stay GitHub-only.
+  ruling (O1). The no-credential route avoids the question, because the owner commits each answer.
+- Scope against the owner's picks: §1 lists planning and scheduling, which Part 2's Purpose names,
+  but the owner's four first-version picks don't include it. The owner rules (O2).
 - Tier: AGENTS.md says T1, while §5 proposes T2. Resolved by the owner's ruling at the move to
   Build.
 - Spend: $0 against "spend follows value". U1 fits $0. Only U3's paid routes would break it, and

@@ -1,0 +1,10 @@
+# Ruling needed: how should the desk record your answers?
+
+WHY: The Critic's definition-of-ready check on Service Desk (P-001) found this still open (docs/PROJECT.md §7, O1). The route decides how much security work D5 needs, whether the project is T1 or T2, and whether the desk holds a credential that can write to your repositories. Until you rule, the brief can't pass that check without saying this is open.
+OPTIONS:
+  A. Prefilled GitHub links (no credential) — each card on the desk has an answer button that opens GitHub's new-file page with the answer already filled in; you tap Commit. It's how you've answered every card so far, so it's proven to start the Orchestrator. The desk holds no write credential, there's no D-066 question, and D5 shrinks. Cost: one extra tap, and the commit happens on a GitHub page rather than inside the desk.
+  B. GitHub App user token — the desk writes the answer itself. GitHub shows it as yours with the app's badge, which is an honest record (L-F10). This needs your D-066 ruling that this counts as your own action, and a live test in Define, because GitHub doesn't document that these commits start workflow runs. It makes the project T2 and needs a security review. The token lasts 8 hours and the refresh token 6 months.
+  C. Fine-grained personal access token — the desk writes the answer itself, recorded as you with no marking. Starting runs is documented (L-F8). It needs the same D-066 ruling and T2 review. A leaked token is indistinguishable from you.
+RECOMMENDATION: A for the first version. It closes the open item today, keeps the 2026-10-28 date safe, and holds no credential. B can follow after launch if the extra tap proves to matter. You did choose to act from the desk (Part 2), so this is a trade against that: the answer starts on the desk but lands through GitHub.
+RISK CLASS: R0   REVERSIBILITY: reversible (a route can be added after launch)   BLAST RADIUS: Service Desk's D4 and D5, its tier, and which credentials exist; no other project
+DEFAULT: A   TIMEOUT: 48

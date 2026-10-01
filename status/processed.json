@@ -1,9 +1,14 @@
 {
   "anomalies": [],
   "decisions": {},
-  "log_head": "22ad4ecaba2ea76b37172dffc117304960674a5776c502bd49ac677b54673c59",
-  "outcomes": {},
-  "plan_hash": "0817a3e017f211a6b2a293870756f6110ad9498fc18df714a70c09e9d1cfe52a",
+  "log_head": "0be28f0c40ed574790976eb069a3ed875873e0d5f23e336739e484ab46733805",
+  "outcomes": {
+    "Q-001:ready-dispatch:2026-10-01T01:46:42Z": "0cbe2d2e1836ef440b4cf2fb153877755a4394a44d14fb0e4f43e55ef36e1a0d",
+    "Q-002:ready-dispatch:2026-10-01T01:46:42Z": "feb57330b4f61d25619edf28ec469923cb9ff3bf0a423373f07146d40e3f237b",
+    "Q-003:ready-dispatch:2026-10-01T01:46:42Z": "f70ae403b0efca858d765e9ba01855ace33f43cfda9f2141a3a17457b0cde91d",
+    "Q-004:ready-dispatch:2026-10-01T01:46:42Z": "3f2d4b02c2929662ba8d26f24c92a60f2a69f663d198b37183b01f3703f4480c"
+  },
+  "plan_hash": "364b37738032a28a72829f4d2192b70bd9353c9ee8dddfc5b70c2785f995d6ac",
   "requests": [
     "Q-001",
     "Q-002",

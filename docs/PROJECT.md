@@ -20,8 +20,8 @@ stays living. The Critic checks Part 1 against the definition of ready.*
 - **Team and pipeline:** for each project, its v3 stage, the item and role at work, and what comes
   next.
 - **Planning and scheduling:** the work ahead across projects, and the owner's choice of its order
-  and timing, recorded as rulings the Orchestrators act on. *In or out of the first version is the
-  owner's ruling (§7, O2).*
+  and timing, recorded as rulings the Orchestrators act on. In the first version by the owner's
+  ruling of 2026-10-01 (decisions/questions/P-001-planning-scope.md).
 - **Spend and time:** spend against each project's ceiling, and the time each project has asked of
   the owner.
 - **Launch:** taking over the Operations-Hub address (Cloudflare Pages project `needs-you`) and
@@ -64,10 +64,12 @@ that only the owner passes.
   - D3.1 Universe. D3.2 Decision card and question view. D3.3 Team and pipeline.
   - D3.4 Work ahead and scheduling. D3.5 Spend and time.
 - **D4 Acting.** *Depends on D1.2 and D3.2.*
-  - D4.1 Answering a card or question, recorded as `decisions/<item>/<gate>-<card>.md`.
+  - D4.1 Answering a card or question, recorded as `decisions/<item>/<gate>-<card>.md`. The desk
+    opens GitHub's new-file page with the answer filled in, and the owner commits it (owner's
+    ruling A, decisions/questions/P-001-acting-route.md).
   - D4.2 Planning rulings (order and timing), recorded the same way.
 - **D5 Security and trust.** *Depends on D1.2. Gates D4's launch.*
-  - D5.1 Credential handling and the login. D5.2 The security review the tier requires.
+  - D5.1 The read token's handling and the login; the desk holds no write credential. D5.2 The security review the tier requires.
 - **D6 Launch and hand-over.** *Depends on D3, D4 and D5.*
   - D6.1 Preview, then the owner's launch approval.
   - D6.2 Address cut-over and archiving Operations-Hub.
@@ -99,10 +101,11 @@ before D4. A read-only preview could replace the old page early, with acting fol
 - **Data boundaries:** the desk reads only the connected project and portfolio repositories. It may
   send their content only to GitHub and Cloudflare, plus Anthropic if U3 leads to sessions. No
   secret is ever sent to a model.
-- **Tier (proposed): T2.** The desk will hold credentials that write to the owner's repositories.
-  Operations-Hub's own scope ruled that write-back makes the hub T2 and needs a security review.
-  v2.5.1's tier table doesn't name this trigger directly, so it is the owner's ruling. AGENTS.md
-  says T1 today; a ledger entry changes it.
+- **Tier (proposed): T1, as AGENTS.md says today.** T2 was proposed while the desk might hold a
+  credential that writes to the owner's repositories; Operations-Hub's scope ruled that write-back
+  makes a hub T2. Under the owner's ruling A on the acting route, the owner commits every answer on
+  GitHub and the desk holds only a read token, so that trigger is gone. The owner rules the tier
+  on the move-to-Build card. D5's login checks (U1) apply either way.
 
 ## 6. Value and stop rule
 *This project's own measure of value, the target and date, and what counts as a miss — including the cost to the owner's time. Write each value target on its own line starting with its ID, like `V1: <measure>, <target>, <date>`; spec criteria trace to these IDs.*
@@ -133,7 +136,7 @@ still open are listed under "Open at this exit" below; none is hidden in a statu
 | Unknown | Why it bears load | Evidence | Status |
 |---|---|---|---|
 | U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | research/Q-001-memo.md; F-hosting-01, -02a/b/c, -03 to -06, F-auth-01 to -04, F-gh-04, P-auth-01 | Answered: Cloudflare Workers fits $0; one per-invocation limit open (O3) |
-| U2 Acting in GitHub on the owner's behalf: mechanisms, attribution, credential risk | D4, D5, the tier, D-011 | research/Q-002-memo.md; L-F1 to L-F12, L-P1 | Answered on the mechanics; the route is the owner's ruling (O1) |
+| U2 Acting in GitHub on the owner's behalf: mechanisms, attribution, credential risk | D4, D5, the tier, D-011 | research/Q-002-memo.md; L-F1 to L-F12, L-P1 | Answered; the owner ruled route A, prefilled GitHub links (O1, closed) |
 | U3 What starting, steering or monitoring Claude Code sessions from a web app can do | D1.3, the owner's later ruling | research/Q-005-memo.md; LIB-F-a, -a2, -c, -f, -g, -i, LIB-P-a | Answered enough for the owner's ruling |
 | U4 How quickly GitHub changes can reach a web page | V1, D2.2 | research/Q-004-memo.md; F-Q004-1 to -13, PAT-Q004-1 | Answered: 5 minutes is reachable with a page-driven poll; webhooks optional |
 | Cloudflare Pages deploys from Actions, behind Access | D6 | Operations-Hub's own deploy, live since 2026-09-25 (its docs/research/003); outside the library | Observed, not filed (C). Not load-bearing: U1's library entries carry the hosting and Access choice, and D6 can fall back to deploying the Worker by hand |
@@ -193,8 +196,9 @@ still open are listed under "Open at this exit" below; none is hidden in a statu
 - **A route with no credential at all:** the desk links each card to GitHub's new-file page with the
   answer already filled in, and the owner commits it on GitHub. The desk then needs only
   a read token. This is a design option, not a researched fact; it relies on nothing new.
-- **Which route the desk uses is the owner's ruling (O1).** The user-token routes need two more
-  things the no-credential route does not:
+- **The owner ruled route A, the no-credential route, on 2026-10-01**
+  (decisions/questions/P-001-acting-route.md). The token routes stay possible after launch; each
+  would need two things first:
   - a D-066 ruling that an answer the desk writes with the owner's token counts as the owner's own
     action;
   - for a GitHub App user token only, a live test in Define that its commit starts the run.
@@ -241,14 +245,13 @@ still open are listed under "Open at this exit" below; none is hidden in a statu
   - **Don't use the Events API for freshness:** its latency is 30 seconds to 6 hours (F-Q004-9, A).
 
 ### Open at this exit
-The exit is proposed with these items open. Each has an owner and a place where it closes. The
-owner approves the move to Build knowing them, or rules them first.
+Each item has an owner and a place where it closes. O1 and O2 are closed by the owner's rulings.
 
 | ID | Open item | Bears on | Closes by |
 |---|---|---|---|
-| O1 | Which route the desk acts through: prefilled GitHub links (no credential), a GitHub App user token, or a fine-grained token. The token routes also need a D-066 ruling and, for the app route, a live test | D4, D5, the tier | Owner's ruling: questions/P-001-acting-route.md |
-| O2 | Whether planning and scheduling (D3.4, D4.2) are in the first version | §1, D3, D4, V4 | Owner's ruling: questions/P-001-planning-scope.md |
-| O3 | Whether one reconcile fits the Free plan's per-invocation limits (CPU time, outbound requests) | U1, $0 ceiling | Research Q-006, if the owner approves it; otherwise a Define measurement. If it doesn't fit: one invocation per repository, or the $5 Paid plan by the owner's ruling (F-hosting-01) |
+| O1 | Which route the desk acts through | D4, D5, the tier | **Closed:** route A, prefilled GitHub links (decisions/questions/P-001-acting-route.md) |
+| O2 | Whether planning and scheduling (D3.4, D4.2) are in the first version | §1, D3, D4, V4 | **Closed:** in (decisions/questions/P-001-planning-scope.md) |
+| O3 | Whether one reconcile fits the Free plan's per-invocation limits (CPU time, outbound requests) | U1, $0 ceiling | Research Q-006, approved by the owner on 2026-10-01 (intake/requests/Q-006.toml). If it doesn't fit: one invocation per repository, or the $5 Paid plan by the owner's ruling (F-hosting-01) |
 
 ## 8. Clear and consistent
 *Key terms defined; constraints checked against each other and found not to contradict.*
@@ -265,17 +268,18 @@ owner approves the move to Build knowing them, or rules them first.
   counts an item missed if it was waiting for more than 5 minutes and the open desk didn't show it.
 - *Connected project:* a repository on the desk's list, with a token that can read it.
 
-**Checks, and the tensions still open.**
+**Checks, and the tensions.**
 - "Never a source of truth" against planning and scheduling: no conflict, provided planning choices
   are recorded as rulings in the repositories (§1). D2 and D4 must keep it that way.
 - D-066 allows proxy answers only by the Chief of Staff, and never for words that close an item or
   approve launch. U2 shows the desk can write with the owner's own identity: a GitHub App user
-  token, or a fine-grained token. Whether that counts as the owner's own action is the owner's
-  ruling (O1). The no-credential route avoids the question, because the owner commits each answer.
-- Scope against the owner's picks: §1 lists planning and scheduling, which Part 2's Purpose names,
-  but the owner's four first-version picks don't include it. The owner rules (O2).
-- Tier: AGENTS.md says T1, while §5 proposes T2. Resolved by the owner's ruling at the move to
-  Build.
+  token, or a fine-grained token. Resolved: the owner ruled the no-credential route (O1), so the
+  owner commits each answer and no proxy question arises.
+- Scope against the owner's picks: resolved. The owner put planning and scheduling in the first
+  version (O2), so it is a fifth pick (Part 2).
+- Tier: AGENTS.md says T1, and §5 now proposes T1. The owner confirms at the move to Build.
+- Scope against the date: planning and scheduling add D3.4 and D4.2 before 2026-10-28. §3's route
+  to compression still applies: D3.1 and D3.2 can ship to the preview first.
 - Spend: $0 against "spend follows value". U1 fits $0. Only U3's paid routes would break it, and
   they are out of the first version.
 - Timeline against research: D1 must land within the first week to keep V4. It landed on day 1
@@ -302,13 +306,14 @@ The owner has not yet confirmed it; confirmation comes on the move-to-Build card
   page stays live and untouched, and the desk publishes only to a preview (L-0115).
 
 ### What the first usable version covers
-The owner picked all four:
+The owner picked all four, and on 2026-10-01 added a fifth (decisions/questions/P-001-planning-scope.md):
 1. **The Universe screen:** one box per project, with state, headline, sprint and main-branch
    health. This is the old hub's core and must not get worse.
 2. **Decision cards:** v3's seven-part cards and owner questions, readable in full on the desk.
 3. **Team and pipeline:** where each project sits in the v3 stages (Shape, Build, Run), who is
    working, and what comes next.
 4. **Spend and time:** spend against each project's ceiling, and the cost to the owner's time.
+5. **Planning and scheduling.** The owner, 2026-10-01: "No I want planning and scheduling in".
 
 ### Preferences and trade-offs
 - **Phone first.** Desktop is a bigger view of the same thing.
@@ -338,7 +343,9 @@ The owner picked all four:
   it. The owner, 2026-10-01: "I'm not rotating the token, I am comfortable with the risk level."
 - **Acting means write access.** The old hub deferred write-back because the page would then hold
   the owner's credentials, which makes it T2 and needs a security review (Operations-Hub
-  SCOPE.md). The owner accepted that trade by choosing to act from the desk.
+  SCOPE.md). The owner accepted that trade by choosing to act from the desk. Then, on 2026-10-01,
+  the owner chose the route that avoids it for the first version: the desk prepares each answer and
+  the owner commits it on GitHub, so the desk holds no write credential (ruling A).
 
 ### What the owner would hate
 - **False alarms.** It flags things that don't need the owner, and trust erodes.

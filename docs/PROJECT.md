@@ -123,10 +123,10 @@ loses nothing that exists today. The 5-minute figure in V1 rests on U4.
 *Every load-bearing unknown, each answered with evidence (library entry or research memo), including through research sub-projects if needed.*
 
 *Draft 3, 2026-10-01, Chief of Staff, after the Critic's definition-of-ready return
-(reviews/P-001/_critic-dor.md): U1 to U4 answered from the four passed memos (research/Q-001,
-Q-002, Q-004 and Q-005, each with a PASS source check in research/<id>-source-check.md). Q-003 was
-dropped by the owner (decisions/Q-003/failure-1.md). Library IDs are the filed entries, and each
-grade is the one filed in the library: A = vendor documentation read in full, B = one vendor page
+: U1 to U4 rest on library entries. The Source checker files an entry only after opening its
+sources and confirming them; each entry's opened-by line names the check that filed it. The memos
+(Q-001, Q-002, Q-004, Q-005) are named for where the reasoning sits; nothing here rests on a memo
+alone, or on the dropped Q-003. Each grade is the one filed in the library: A = vendor documentation read in full, B = one vendor page
 or read through a summary, C = inference, E = our own estimate (shown with its arithmetic). Items
 still open are listed under "Open at this exit" below; none is hidden in a status column.*
 
@@ -135,9 +135,9 @@ still open are listed under "Open at this exit" below; none is hidden in a statu
 | U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | research/Q-001-memo.md; F-hosting-01, -02a/b/c, -03 to -06, F-auth-01 to -04, F-gh-04, P-auth-01 | Answered: Cloudflare Workers fits $0; one per-invocation limit open (O3) |
 | U2 Acting in GitHub on the owner's behalf: mechanisms, attribution, credential risk | D4, D5, the tier, D-011 | research/Q-002-memo.md; L-F1 to L-F12, L-P1 | Answered on the mechanics; the route is the owner's ruling (O1) |
 | U3 What starting, steering or monitoring Claude Code sessions from a web app can do | D1.3, the owner's later ruling | research/Q-005-memo.md; LIB-F-a, -a2, -c, -f, -g, -i, LIB-P-a | Answered enough for the owner's ruling |
-| U4 How quickly GitHub changes can reach a web page | V1, D2.2 | research/Q-004-memo.md; F-Q004-1 to -13, PAT-Q004-1 | Answered: 5 minutes is reachable with a poll behind webhooks |
-| Cloudflare Pages deploys from Actions, behind Access | D6 | Operations-Hub docs/research/003 (spike, 2026-09-25) | Proven |
-| A fine-grained read token reads the v3 records the screens need | D2.1 | Operations-Hub docs/research/002 and 004 (v2 records). On 2026-10-01 the hub's token read Service-Desk's branches and statuses (needs-you run 31) | Access to the repository proven; reading the v3 files themselves is inferred (C). Not load-bearing for the design: if the token can't read them, the fix is one read permission the owner adds by hand. Parsing them is D2.1 build work |
+| U4 How quickly GitHub changes can reach a web page | V1, D2.2 | research/Q-004-memo.md; F-Q004-1 to -13, PAT-Q004-1 | Answered: 5 minutes is reachable with a page-driven poll; webhooks optional |
+| Cloudflare Pages deploys from Actions, behind Access | D6 | Operations-Hub's own deploy, live since 2026-09-25 (its docs/research/003); outside the library | Observed, not filed (C). Not load-bearing: U1's library entries carry the hosting and Access choice, and D6 can fall back to deploying the Worker by hand |
+| A fine-grained read token reads the v3 records the screens need | D2.1 | Operations-Hub docs/research/002 and 004 (v2 records), and on 2026-10-01 the hub reading Service-Desk; outside the library | Observed, not filed (C); reading the v3 files themselves is inferred (C). Not load-bearing for the design: if the token can't read them, the fix is one read permission the owner adds by hand. Parsing them is D2.1 build work |
 
 ### U1 — Hosting
 - **Fits the $0 ceiling: Cloudflare Workers with static assets, behind Access, with Durable Objects
@@ -190,16 +190,9 @@ still open are listed under "Open at this exit" below; none is hidden in a statu
   (L-F9, B). Workflow files need more, and the desk never writes them.
 - **Storage (L-P1, B):** encrypted on the back end. A GitHub App private key is kept sign-only in a
   key vault, not in environment variables. No secret ever goes to a model (§5).
-- **What the record checks accept:** `record_checks decisions` accepts an answer file whose
-  commit author is a person in the surface map's humans block, or the Chief of Staff with a
-  `Proxy:` line (governance/checks/record_checks.py:16 to 22). An installation token's bot is
-  neither, so that route can't record an answer.
 - **A route with no credential at all:** the desk links each card to GitHub's new-file page with the
-  answer already filled in, and the owner commits it. This is how every answer so far has been
-  recorded: decisions/Q-002/stop-1.md and decisions/Q-003/failure-1.md carry no `Proxy:` line, so
-  the record checks above passed them only because a person in the humans block committed them.
-  The Orchestrator's workflow starts on any push to `decisions/**`
-  (.github/workflows/orchestrator.yml, lines 11 to 14).
+  answer already filled in, and the owner commits it on GitHub. The desk then needs only
+  a read token. This is a design option, not a researched fact; it relies on nothing new.
 - **Which route the desk uses is the owner's ruling (O1).** The user-token routes need two more
   things the no-credential route does not:
   - a D-066 ruling that an answer the desk writes with the owner's token counts as the owner's own

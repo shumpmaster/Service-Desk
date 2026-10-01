@@ -80,7 +80,7 @@ before D4. A read-only preview could replace the old page early, with acting fol
 
 | Deliverable | Owner |
 |---|---|
-| D1 | Researcher and Source checker, through research requests Q-001 to Q-004 filed by the Chief of Staff |
+| D1 | Researcher and Source checker, through research requests Q-001, Q-002, Q-004 and Q-005 (Q-003 dropped) filed by the Chief of Staff |
 | D2 to D5 | Builder, to specs by the Definer, checks by the Check author, review by the Reviewer |
 | D5.2 | Reviewer, with a security focus |
 | Rulings: move to Build, criteria, tier, spend ceiling, launch, anything on D1.3 | The owner (Kenny) |
@@ -124,7 +124,7 @@ loses nothing that exists today. The 5-minute figure in V1 rests on U4.
 |---|---|---|
 | U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | Pending: research Q-001 |
 | U2 Acting in GitHub on the owner's behalf: mechanisms, attribution, credential risk | D4, D5, the tier, D-011 (approvals are the owner's own GitHub action) | Pending: research Q-002 |
-| U3 What starting, steering or monitoring Claude Code sessions from a web app can do | D1.3, the owner's later ruling | Pending: research Q-003 |
+| U3 What starting, steering or monitoring Claude Code sessions from a web app can do | D1.3, the owner's later ruling | Pending: research Q-005 (replaces Q-003, dropped) |
 | U4 How quickly GitHub changes can reach a web page | V1, D2.2 | Pending: research Q-004 |
 | Cloudflare Pages deploys from Actions, behind Access | D6 | Proven: Operations-Hub docs/research/003 (spike, 2026-09-25) |
 | A fine-grained read token reads the v3 records the screens need | D2.1 | Partly proven: Operations-Hub docs/research/002 and 004 (v2 records); v3 records not yet checked |
@@ -191,12 +191,23 @@ The owner picked all four:
   running work from the desk is welcome where it is genuinely easier than a Claude Code session,
   but it is not yet a requirement. Shape should find out what is possible and show the owner, and
   the owner decides then.
+- **Why running work from the desk could matter: requests get buried.** The owner, 2026-10-01:
+  "here we see a potential justification for executing the sessions within the webpage. Simply
+  because the Claude windows tend to expand as actions are completed, or with tests, or other
+  setup. The point being that requests get buried sometimes in a Claude code conversation." The
+  case in point: on the first day of Shape, decisions the owner needed to make (a security card,
+  a merge, a yes or no) sat inside long streams of progress messages. Whatever the desk becomes, a
+  request for the owner must stand apart from activity, and never depend on the owner scrolling a
+  conversation to find it.
 - **Spend follows value.** "I'm open to most anything if the value can be justified." There is no
   fixed ceiling yet. Every paid service carries its value case, and Part 1 §5 still needs a
   number.
 - **Four weeks, with a faster route shown.** Launch by 2026-10-28 is acceptable, "but with a route
   to timeline compression if we work it aggressively." The plan should show what could shorten it
   and what that would cost.
+- **Accepted risk: the session token.** Two Q-003 Researcher sessions read the session OAuth token
+  (Service-Desk queue/Q-003-failure-1.md; model LESSONS LL-013). The Chief of Staff advised rotating
+  it. The owner, 2026-10-01: "I'm not rotating the token, I am comfortable with the risk level."
 - **Acting means write access.** The old hub deferred write-back because the page would then hold
   the owner's credentials, which makes it T2 and needs a security review (Operations-Hub
   SCOPE.md). The owner accepted that trade by choosing to act from the desk.
@@ -224,5 +235,7 @@ These are questions for Shape to answer with evidence, not rulings:
 3. **Could the desk be an easier way to run projects than a Claude Code session?** What is
    possible: starting or steering sessions, driving each project's Orchestrator, or only recording
    the owner's rulings for the Orchestrator to act on? What would each cost in spend, tier and
-   upkeep? The owner is open to it but has not decided (see Preferences).
+   upkeep? The owner is open to it but has not decided (see Preferences). The owner's reason to
+   want it is that requests get buried in long Claude Code conversations, so the question includes
+   whether the desk can keep every request for the owner separate from the activity around it.
 4. **The spend ceiling and the tier** that Part 1 §5 must state.

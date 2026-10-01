@@ -3,36 +3,18 @@
     {
       "action": "dispatch",
       "gate": null,
-      "item": "Q-001",
-      "role": "researcher",
-      "route": "ready-dispatch",
-      "spec": null,
-      "stage": 2
-    },
-    {
-      "action": "dispatch",
-      "gate": null,
       "item": "Q-002",
-      "role": "researcher",
-      "route": "ready-dispatch",
+      "role": "critic-triage",
+      "route": "third-fail",
       "spec": null,
       "stage": 2
     },
     {
       "action": "dispatch",
       "gate": null,
-      "item": "Q-003",
-      "role": "researcher",
-      "route": "ready-dispatch",
-      "spec": null,
-      "stage": 2
-    },
-    {
-      "action": "dispatch",
-      "gate": null,
-      "item": "Q-004",
-      "role": "researcher",
-      "route": "ready-dispatch",
+      "item": "Q-005",
+      "role": "source-checker",
+      "route": "research-to-source",
       "spec": null,
       "stage": 2
     }

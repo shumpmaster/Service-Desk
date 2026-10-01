@@ -1,7 +1,7 @@
 {
   "anomalies": [],
   "decisions": {},
-  "log_head": "3e181b526fc6ff4754fd66b317d3a7a46569e2c02fcf3110f29f8bb2b917f511",
+  "log_head": "139d731c1d30e63bc5b337ea0e7fd8fb8715bcf727c4177a25b3495cec529c2e",
   "outcomes": {
     "Q-001:ready-dispatch:2026-10-01T01:46:42Z": "0cbe2d2e1836ef440b4cf2fb153877755a4394a44d14fb0e4f43e55ef36e1a0d",
     "Q-001:research-to-source:2026-10-01T02:17:21Z": "932501df81848923da074b0c2b2e6619436b7d0c8c48685deceb925aa48e3350",
@@ -12,7 +12,7 @@
     "Q-004:ready-dispatch:2026-10-01T01:46:42Z": "3f2d4b02c2929662ba8d26f24c92a60f2a69f663d198b37183b01f3703f4480c",
     "Q-004:research-to-source:2026-10-01T02:17:21Z": "16d33a446fdcf5228d9d7f1bf84d1c4126ec6c93a43f92ae5068a4ebcf01ab20"
   },
-  "plan_hash": "364b37738032a28a72829f4d2192b70bd9353c9ee8dddfc5b70c2785f995d6ac",
+  "plan_hash": "1fb1e6a55e2ddc4d77d8d322f10f4d68ba544d7114e1a2499f49d3fc7f3cf5ee",
   "requests": [
     "Q-001",
     "Q-002",

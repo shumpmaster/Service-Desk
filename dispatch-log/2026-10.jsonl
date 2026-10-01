@@ -2,3 +2,7 @@
 {"item":"Q-002","prev":"677bb47551235da99d433b9567c80ee869a69f1434faa815cc5b9ea38b590538","record":"intake/requests/Q-002.toml","result":"created","time":"2026-10-01T01:17:50Z","trigger":"request"}
 {"item":"Q-003","prev":"667c482326c4c3cba072a3ae7e27e18ccb0ac8c32679c8c3704ef4afacfd5175","record":"intake/requests/Q-003.toml","result":"created","time":"2026-10-01T01:17:50Z","trigger":"request"}
 {"item":"Q-004","prev":"5d544dc08a604a3182bf0a3cd548d1374f1e4ffb300952a6fc97ee9e3db99dee","record":"intake/requests/Q-004.toml","result":"created","time":"2026-10-01T01:17:50Z","trigger":"request"}
+{"action":"dispatch","gate":null,"item":"Q-001","prev":"7f8a560073d1033f4d456aeca868c5f66bf9e378c1dc057d88e0a143cdb5e26d","role":"researcher","route":"ready-dispatch","spec":null,"stage":2,"time":"2026-10-01T01:46:42Z","trigger":"step"}
+{"action":"dispatch","gate":null,"item":"Q-002","prev":"248b7041745b851f9302415708c490fe727f770944860d8d10aed404ced94efb","role":"researcher","route":"ready-dispatch","spec":null,"stage":2,"time":"2026-10-01T01:46:42Z","trigger":"step"}
+{"action":"dispatch","gate":null,"item":"Q-003","prev":"bb5b409efa84fe1a62e72817442265da9c7463659a03355848145c50454a416f","role":"researcher","route":"ready-dispatch","spec":null,"stage":2,"time":"2026-10-01T01:46:42Z","trigger":"step"}
+{"action":"dispatch","gate":null,"item":"Q-004","prev":"dc2e508b481fd0abbcaa586c0675d29cf0b9652ece59d1843319507b0f391568","role":"researcher","route":"ready-dispatch","spec":null,"stage":2,"time":"2026-10-01T01:46:42Z","trigger":"step"}

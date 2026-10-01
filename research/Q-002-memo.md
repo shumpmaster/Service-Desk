@@ -1,139 +1,205 @@
-# Q-002 researcher: revision 2
-
-I could not edit the memo itself. `research/Q-002-memo.md` is not in this folder (the only files are `Q-002.md`, `Q-002-source-check.md` and `library/facts/L-F1/L-F2`). So below is a dated correction to that memo, using its F and L-F numbers as the source check quotes them, for the Orchestrator to record verbatim.
-
-The main fix: the memo said fine-grained tokens are removed after a year unused. GitHub's documentation doesn't settle that, so it is now an open question. Of the six entries held back, the private-key one now has a second source, two more can only be resolved by a live test, and one (F12) I can't fix without the original memo.
+I'm writing a complete memo to replace research/Q-002-memo.md. The Orchestrator records it verbatim. Your six-part contract follows it, kept apart so the Source checker can be sent the memo alone.
 
 ---
 
-## Correction to Q-002 memo, 2026-10-01
+# research/Q-002-memo.md: Q-002 memo, revision 3 (complete)
 
-Grades use the memo's own A–C scale (A: two or more independent first-party sources say it directly; B: one direct first-party source, or a reasonable reading of first-party pages; C: inferred, or rests on something the docs leave out). Each statement is marked fact, estimate or opinion.
+**Date:** 2026-10-01. **Depth:** 3. **Topics:** github, authentication, attribution, security.
 
-### C1. Replaces F20, the fine-grained part of L-F5, and OQ3 (unused tokens)
-- **Fact, A.** Classic personal access tokens are removed after one year unused. The token-management page says, under its "Personal access tokens (classic)" heading: "GitHub automatically removes personal access tokens that haven't been used in a year." [S14]
-- **Fact, A.** OAuth tokens are revoked after one year unused. The token-expiration page, under "Token expired due to lack of use", says: "GitHub will automatically revoke an OAuth token or personal access token when the token hasn't been used in one year." [S18]
-- **Estimate, C, unresolved.** I can't say whether the one-year rule covers fine-grained tokens:
-  - S14 places the rule under the classic heading.
-  - S18 says "personal access token" without saying which kind.
-  - Neither page says the rule applies to fine-grained tokens, and neither says it doesn't.
-  - The old F20 statement, which applied the rule to fine-grained tokens, is withdrawn.
-- **Revised OQ3.** Does GitHub revoke unused fine-grained tokens? This needs a statement from GitHub or a test over a year. For our design, assume the token stays valid until its expiry date. With `expires_in` set to "none", that means indefinitely.
-- **Unchanged and confirmed by the source check.**
-  - Fine-grained expiry is 1–366 days, or none. [S14]
-  - Tokens are owned by a person or an organization. [S15]
-  - "Each token can be further limited to only access specific repositories." [S14]
-- **Fact, A.** Any OAuth, GitHub App or personal access token pushed to a public repository or gist is revoked automatically. Revoking an app's authorization also revokes its tokens. [S18]
+This is a complete memo that does not depend on any earlier version. It replaces the original memo and the revision-2 correction. The old S-numbers and F-numbers are retired, and the sources are renumbered R1–R18 below, each with its URL. The old F12/L-F7 is **withdrawn** and not resubmitted. Its text cannot be recovered, and every claim this memo needs is restated below with its own sources.
 
-**Revised L-F5:** "A fine-grained PAT can be limited to selected repositories, and its expiry is 1–366 days or none. The documented one-year inactivity removal is stated for classic PATs and OAuth tokens. Whether it applies to fine-grained PATs is not documented." Grade: A for the first two parts, C for the last. Topics: github, authentication, security. Shelf life: 6 months.
+**Grade scale** (provisional, until someone confirms the D-032 scale):
+- **A:** two or more independent first-party pages say it directly.
+- **B:** one first-party page says it directly.
+- **C:** inferred, or rests on something the docs leave out.
 
-### C2. Replaces the scope part of F16/L-F4, and F17 (OAuth apps)
-- **Fact, B.** An OAuth app's access covers whatever the user can reach. The documentation does not offer a way to limit it to particular repositories:
-  - S2 says: "Authorizing an OAuth app grants the app access to the user's accessible resources."
-  - S2 contrasts this with GitHub Apps, where installing grants access to "chosen repositories".
-  - S11 says the `repo` scope "grants full access to public and private repositories…".
-  - Withdrawn: the claims "all-or-nothing" and "cannot be limited to particular repositories". No source says either directly.
-- **Fact, A.** Expiring OAuth tokens: the access token lasts 8 hours and the refresh token 6 months. Refreshing does not change the token's scopes. [S13, S19]
-- **Estimate, C. Replaces F17.** S2 and S20 disagree about when expiring OAuth tokens became available:
-  - The changelog dated 2026-08-14 [S20] announces expiring tokens for OAuth apps. It says apps opt in with `offline_access` or through a registration setting, and "enabled by default for all new applications."
-  - S2 says OAuth apps "can also configure" 8-hour tokens, but gives no date.
-  - Withdrawn: "Since 2026-08-14". It now reads "documented as of the 2026-08-14 changelog".
-  - **Opinion.** Treat existing OAuth apps as issuing long-lived tokens unless they have been switched over. S2 says: "OAuth app tokens are long-lived by default."
+Each statement is marked **fact**, **estimate** or **opinion**. Quotes come from pages fetched on 2026-10-01 through a summarising fetch tool, so they are close to the page text but not guaranteed verbatim.
 
-**Revised L-F4:** "An OAuth app gets access to the user's accessible resources, and `repo` covers all of the user's private repositories. No per-repository restriction is documented. Expiring tokens (8 hours, with a 6-month refresh token) are opt-in, and the default for new apps per the 2026-08-14 changelog." Grade B. Topics: github, authentication, security. Shelf life: 3 months, because this area changed recently.
+## 1. GitHub App, installation token
+- **Fact, A.** Activity done with an installation token is attributed to the app's bot account (`name[bot]`), not to the person. R2: "identifies the app as a GitHub App bot account, such as @jenkins[bot]". R3: "Installation access tokens will attribute activity to your app." This is already filed as L-F1.
+- **Fact, A.** The token expires after 1 hour (L-F1; R3: "Installation access tokens expire after one hour").
+- **Fact, B.** Installing an app grants access to "a user or organization account's chosen repositories" (R2).
+- **Fact, A.** Anyone holding the app's private key can mint installation tokens for "every account that the app is installed on" (R3). Private keys "do not expire and instead need to be manually revoked" (R4). R3 and R4 both recommend a sign-only key vault.
 
-### C3. Replaces F4/L-F6 (GitHub App private key)
-- **Fact, A.** The key "grants access to every account that the app is installed on." [S3]
-- **Fact, A.** The key-management page [S21] says:
-  - With the key, an attacker gets "persistent authentication as the GitHub App."
-  - "Private keys do not expire and instead need to be manually revoked."
-  - It recommends a sign-only key vault, warns that an environment variable is the weaker choice, and caps keys at 25 per app.
-- Rewording: the withdrawn phrase "for as long as the key is valid" becomes "until the key is manually revoked", as S21 puts it.
+## 2. GitHub App, user access token (user-to-server)
+- **Fact, B.** Activity is attributed to the user *and* the app. R3: "User access tokens will attribute activity to a user and to your app." R5: "the GitHub UI will show the user's avatar photo along with the app's identicon badge as the author." Security logs list "the user as the actor" with `programmatic_access_type` set to "GitHub App user-to-server token" (R5).
+- **Fact, B.** Access is the intersection of what the app may access and what the user may access (R5). A token cannot grant the user extra access (R5).
+- **Fact, A.** The access token lasts 8 hours and the refresh token 6 months (R3, R6; filed as L-F2). Using a refresh token makes both it and the old access token stop working, and a new refresh token is issued (R6). Expiry is on unless the app opts out (R6).
 
-**Revised L-F6:** "A GitHub App private key grants access to every account where the app is installed. It does not expire and stays usable until manually revoked. Store it sign-only in a key vault." Grade A (S3 and S21). Topics: github, security. Shelf life: 6 months.
+## 3. OAuth app, user token
+- **Fact, B.** "A user access token identifies the app as the user who signed into the app, such as @octocat" (R2). No app badge or app marking is documented for OAuth apps (R2, R5).
+- **Fact, B.** An authorized OAuth app "has access to all of the user's or organization owner's accessible resources" (R2).
+  - The `repo` scope "grants full access to public and private repositories" (R6b).
+  - `public_repo` covers public repositories only (R6b).
+  - Scopes "do not grant any additional permission beyond that which the user already has" (R6b).
+  - No per-repository restriction is documented in R2 or R6b. That last point is about what the docs leave out, so it is **C**.
+- **Fact, A.** OAuth app tokens are long-lived by default (R2, R7).
+  - Expiring tokens are opt-in, through `offline_access` or the app's settings (R7, R8).
+  - They last 8 hours, and the refresh token lasts "six months without use" (R7).
+  - Refreshing cannot change the scopes (R7).
+  - The 2026-08-14 changelog says expiring tokens are "enabled by default for all new applications" (R8).
+- **Fact, B.** An unused OAuth token is revoked after one year (R9).
 
-### C4. F25/L-F8 (do workflows start)
-- **Fact, A.** Events triggered by `GITHUB_TOKEN` do not start workflow runs, apart from `workflow_dispatch` and `repository_dispatch`. Pull requests opened, synchronized or reopened by `GITHUB_TOKEN` start runs that need approval. [S16, S22]
-- **Fact, B.** Installation tokens and PATs do start workflows:
-  - S16 says: "If you do want to trigger a workflow from within a workflow run, you can use a GitHub App installation access token or a personal access token instead of GITHUB_TOKEN to trigger events that require a token."
-  - That is a direct statement, but from one page.
-  - S23 supports it only for pull requests: such runs "execute without requiring approval."
-- No source mentions user tokens (from a GitHub App or OAuth app). **Estimate, C:** they behave like PATs. A live test is needed.
+## 4. Fine-grained personal access token
+- **Fact, B.** It is limited to "resources owned by a single user or organization". It "can be further limited to only access specific repositories", and it carries specific fine-grained permissions (R10).
+- **Fact, B.** Its expiry can be set, and "Infinite lifetimes are allowed but may be blocked by a maximum lifetime policy" (R10). The REST parameter `expires_in` takes 1–366 or `none`. The Source checker confirmed this on R10 in the previous round.
+- **Estimate, C.** It is not documented whether GitHub removes fine-grained tokens after a year unused:
+  - R10 states the one-year removal under the heading "Personal access tokens (classic)".
+  - R9 says "personal access token" without saying which kind.
+  - Treat a fine-grained token as valid until its expiry date.
+- **Estimate, B.** Commits made through the REST API with a PAT are attributed to the token's owner. R11 says the `committer` defaults to "the authenticated user" and the author defaults to the committer. No page I found states the general attribution for PAT actions directly (R10, R12 are silent).
+- **Estimate, C.** No source documents anything that marks PAT activity as token-made rather than made in the browser. This rests on what the docs leave out.
 
-**Revised L-F8:** Grade B. The `GITHUB_TOKEN` part is A, and the part about other tokens is B. Topics: github, authentication.
+## 5. Narrowest permissions (fine-grained model)
+- **Fact, B (R13).**
+  - Creating or updating a file (`PUT …/contents/{path}`) needs Contents: write.
+  - A low-level commit (`POST …/git/commits`) needs Contents: write.
+  - An issue or PR conversation comment (`POST …/issues/{n}/comments`) needs Issues: write.
+  - A pull request review (`POST …/pulls/{n}/reviews`) needs Pull requests: write.
+  - R13 marks the contents and issue-comment endpoints as needing "additional permissions", which the fetch did not name. R11 says classic tokens also need the `workflow` scope to change `.github/workflows`.
+- **Estimate, B.** GitHub Apps use the same permission names. R3 says "select the minimum permissions". I did not open the app-specific permissions table.
+- **Fact, B.** OAuth apps cannot go below `repo` for private repositories (R11, R6b).
 
-### C5. The review half of F10/F11 and L-F3
-- **Fact, A, unchanged.** In the issue-comment schema, `performed_via_github_app` is either null or a GitHub app. [S8]
-- **Estimate, B.**
-  - The full review response schema has 13 top-level properties (`id` … `author_association`), and `performed_via_github_app` is not among them. [S9] I checked the schema itself this time, not just the example.
-  - This is still one page, and it relies on the field being absent. It needs a live test.
+## 6. Signatures and the "verified" mark
+- **Fact, B.** GitHub signs commits made in the web interface with its `web-flow` key (R14).
+- **Fact, B.** Bot signature verification "will only work if the request is verified and authenticated as the GitHub App or bot and contains no custom author information, custom committer information" (R14).
+- **Estimate, C.** The docs do not say whether commits made through the API with a PAT, OAuth token or user token are signed. The Contents API response does carry a `verification` object (R11).
 
-### C6. F14 and F18 (telling the actor apart inside a workflow)
-- **Estimate, C. Was an estimate before, now marked as having no source.**
-  - The webhook payload documentation [S24] never mentions `performed_via_github_app`.
-  - S24 does say: "Don't assume `sender` always identifies the person who caused an event."
-  - So the claim that a workflow can read `github.event.comment.performed_via_github_app` has no supporting source. Whether a workflow can tell an app-assisted comment from a direct one needs a live test.
-- The minor fixes:
-  - F1 now cites S2 for the `[bot]` naming.
-  - F3 cites only S1.
+## 7. Can a workflow tell it apart from the person acting directly?
+- **Fact, B.** `github.actor` is "the username of the user that triggered the initial workflow run". `github.actor_id` is the ID of "the person or app". `github.event` is "identical to the webhook payload" (R15).
+- **Fact, B.** R16 says: "Don't assume `sender` always identifies the person who caused an event."
+- **Fact, B.** The issue-comment REST schema has `performed_via_github_app`, which is null or a GitHub app (R17).
+- **Estimate, C.** Whether that field reaches workflows is undocumented. The webhook page (R16) never mentions it.
+- **Estimate, C.** The documented pull request review schema has 13 top-level properties, and `performed_via_github_app` is not one of them (R18). This rests on the field being absent from the docs.
+- **Estimate, C, overall.** Comparing the mechanisms:
+  - Installation-token actions show the bot as actor, so they are distinguishable (A, from §1).
+  - Actions with a GitHub App user token are marked in the UI and the security log (B). A workflow may or may not see that marking (C).
+  - For OAuth-token and PAT actions, no documented field tells them apart from browser actions (C).
+  - This needs a live test.
 
-### C7. F12/L-F7
-Not revised. Without the memo I can't see what F12 claims, so I can't look for a second source. It stays unfiled.
+## 8. Do the resulting events start workflows?
+- **Fact, A.** Events made with `GITHUB_TOKEN` do not start new runs, except `workflow_dispatch` and `repository_dispatch` (R19, R20). Pull requests it opens, synchronizes or reopens start runs that need approval (R19, R20).
+- **Fact, B.** Installation tokens and PATs do start runs: "you can use a GitHub App installation access token or a personal access token instead of GITHUB_TOKEN to trigger events" (R20). R19 says the same for pull requests only.
+- **Estimate, C.** User tokens from a GitHub App or OAuth app behave like PATs. R20 does not mention them.
 
-### New sources
-- S18: docs.github.com/en/authentication/keeping-your-account-and-data-secure/token-expiration-and-revocation
-- S19: docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps
-- S20: github.blog/changelog/2026-08-14-multiple-redirect-uris-and-token-refresh-for-oauth-apps/
-- S21: docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps
-- S22: docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows
-- S23: docs.github.com/en/actions/concepts/security/github_token
-- S24: docs.github.com/en/webhooks/webhook-events-and-payloads
+## 9. Storage, and what an attacker gets
+- **Fact, B.** For a web app, "encrypt the tokens on your back end and ensure there is security around the systems that can access the tokens" (R3). For PATs: "Treat your access tokens like passwords" (R10).
+- **Fact, A.** A token pushed to a public repository or gist is revoked automatically (R9). Revoking an app's authorization revokes its tokens (R9).
+- **Estimate, B.** What an attacker gets with each credential follows from the facts above:
 
-S16 is the "Triggering a workflow" page (docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).
+| Credential | Reach | Lifetime | Identity shown |
+|---|---|---|---|
+| Private key | Every installation, minting 1-hour tokens | Until revoked | The app's bot |
+| Installation token | The installed repositories, with the app's permissions | ≤ 1 hour | The app's bot |
+| GitHub App user token plus refresh token | The intersection of app and user access | Renewable for as long as refreshes continue; 6-month refresh limit | The user, with the app badge |
+| OAuth token (`repo`) | Every repository the user can reach | Long-lived by default | Indistinguishable from the user |
+| Fine-grained PAT | The selected repositories and permissions | Until expiry, possibly none | The user |
+
+## 10. The person's setup and upkeep
+- **Fact, B.** For a GitHub App:
+  - The person installs it and chooses repositories (R2), then authorizes it once for user tokens.
+  - If 6 months pass without a refresh, they authorize again (R6). R6 states the 6-month limit without saying "without use", so whether use extends it is **C**.
+  - The operator must look after the private key (R4).
+- **Fact, B.** For an OAuth app, the person authorizes once. There is no repository choice (R2).
+- **Fact, B.** For a fine-grained PAT, the person creates the token in settings and chooses the owner, repositories, permissions and expiry (R10). They create a new one at each expiry, and an organization policy may cap the lifetime (R10).
+
+## Proposed library entries
+L-F1 and L-F2 are already filed and are not resubmitted. **L-F7 is withdrawn.**
+
+- **L-F3, fact.** "Issue comments carry `performed_via_github_app` (null or app) in the REST schema; the documented PR review schema does not include it."
+  - Grade: B for the first part, C for the second.
+  - Sources: R17, R18. Topics: github, attribution. Shelf life: 6 months.
+- **L-F4, fact.** "An OAuth app user token identifies as the user; an authorized OAuth app reaches all the user's accessible resources and `repo` covers all private repositories; no per-repo restriction is documented. Tokens are long-lived by default; expiring tokens (8 h, refresh 6 months without use, scopes fixed) are opt-in, and the default for new apps per the 2026-08-14 changelog."
+  - Grade: B; the "no per-repo restriction" part is C.
+  - Sources: R2, R6b, R7, R8. Topics: github, authentication, attribution, security. Shelf life: 3 months.
+- **L-F5, fact (narrowed).** "A fine-grained PAT is limited to one resource owner, optionally to selected repositories, with fine-grained permissions; expiry is 1–366 days or none, subject to org/enterprise policy. One-year inactivity removal is documented for classic PATs; whether it applies to fine-grained PATs is not documented."
+  - Grade: B; the last clause is C.
+  - Sources: R10, R9. Topics: github, authentication, security. Shelf life: 6 months.
+- **L-F6, fact.** "A GitHub App private key grants access to every account where the app is installed; keys do not expire and must be revoked manually; store sign-only in a key vault."
+  - Grade: A.
+  - Sources: R3, R4. Topics: github, security. Shelf life: 6 months.
+- **L-F8, fact.** "Events made with GITHUB_TOKEN do not start workflow runs (except workflow_dispatch and repository_dispatch; PRs it opens, synchronizes or reopens give approval-required runs); events made with installation tokens or PATs do."
+  - Grade: A for the `GITHUB_TOKEN` part, B for the rest.
+  - Sources: R19, R20. Topics: github, authentication. Shelf life: 6 months.
+- **L-F9, fact.** "Fine-grained permissions: file write or commit → Contents: write; issue/PR conversation comment → Issues: write; PR review → Pull requests: write."
+  - Grade: B.
+  - Source: R13. Topics: github, authentication, security. Shelf life: 6 months.
+- **L-F10, fact.** "GitHub App installation tokens attribute activity to the app; user access tokens attribute activity to the user and the app (avatar with app badge; security log `programmatic_access_type`)."
+  - Grade: A for the first part (R2, R3), B for the second (R3, R5).
+  - Topics: github, attribution. Shelf life: 6 months.
+- **L-P1, pattern.** "Web app holding GitHub credentials: keep tokens server-side, encrypted at rest, with restricted access; keep the App private key sign-only in a key vault, not in an environment variable."
+  - Grade: B.
+  - Sources: R3, R4. Topics: github, security. Shelf life: 12 months.
+
+## Open questions
+1. Are unused fine-grained PATs revoked after a year?
+2. Does `performed_via_github_app` reach workflow event payloads? Is there any app marking on reviews?
+3. Do GitHub App and OAuth user tokens start workflows?
+4. Does using a GitHub App refresh token extend its 6-month life?
+5. Which permissions are the "additional permissions" in R13?
+6. Which grade scale does D-032 use?
+
+## Sources
+- R2 [Differences between GitHub Apps and OAuth apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps)
+- R3 [Best practices for creating a GitHub App](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/best-practices-for-creating-a-github-app)
+- R4 [Managing private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps)
+- R5 [Authenticating with a GitHub App on behalf of a user](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-with-a-github-app-on-behalf-of-a-user)
+- R6 [Refreshing user access tokens](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/refreshing-user-access-tokens)
+- R6b [Scopes for OAuth apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps)
+- R7 [Authorizing OAuth apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
+- R8 [Changelog 2026-08-14](https://github.blog/changelog/2026-08-14-multiple-redirect-uris-and-token-refresh-for-oauth-apps/)
+- R9 [Token expiration and revocation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/token-expiration-and-revocation)
+- R10 [Managing your personal access tokens](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
+- R11 [REST: Repository contents](https://docs.github.com/en/rest/repos/contents)
+- R12 [About authentication to GitHub](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-authentication-to-github)
+- R13 [Permissions required for fine-grained PATs](https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens)
+- R14 [About commit signature verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification)
+- R15 [Contexts reference](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts)
+- R16 [Webhook events and payloads](https://docs.github.com/en/webhooks/webhook-events-and-payloads)
+- R17 [REST: Issue comments](https://docs.github.com/en/rest/issues/comments)
+- R18 [REST: Pull request reviews](https://docs.github.com/en/rest/pulls/reviews)
+- R19 [GITHUB_TOKEN concept](https://docs.github.com/en/actions/concepts/security/github_token)
+- R20 [Triggering a workflow](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
+- L-F1's own source: [Authenticating as a GitHub App installation](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-as-a-github-app-installation)
 
 ---
 
-## 1. What I changed
-- Withdrew F20, so the one-year removal no longer covers fine-grained tokens, and restated OQ3 as an open question.
-- Narrowed F16 and reframed F17.
-- Added a second source to L-F6 and reworded its overreaching phrase.
-- Regraded L-F8 and L-F3.
-- Marked F14/F18 as having no source and fixed the citations for F1/F3.
-- Proposed revised L-F4, L-F5, L-F6 and L-F8.
+## Six-part contract
 
-## 2. Why
-The source check failed the memo on F20 and OQ3. It also flagged single-source claims and claims based on what a page leaves out. Each was either fixed with a direct quote, given a second source, or downgraded.
+**1. What I changed**
+- I replaced the revision-2 correction with a complete memo that does not depend on any earlier version.
+- Every source now has a URL. The S-numbers that had none (S1, S3, S8, S9, S11, S13, S15) are replaced by R-numbered sources with URLs, and I reopened each of them.
+- I withdrew F12/L-F7.
+- I narrowed L-F5, which answers the Source checker's question 4.
+- I added L-F9, L-F10 and L-P1. I added the sections on permissions, signatures, storage and upkeep.
+- I took my working notes out of the memo.
 
-## 3. What I verified
-I used WebFetch on S14, S11, S16, S18 (twice, to get the exact wording), S2, S19, S20, S21, S3, S24 (twice, including a search for the literal field name: none found), S9's schema, S22, S23 and the automatic-token page (nothing relevant there). I also ran two web searches. Results are as quoted above. As before, WebFetch quotes pass through a summarising model.
+**2. Why**
+The source check failed the memo for four reasons:
+- It was a correction rather than the memo.
+- F12 couldn't be checked.
+- Most sources had no URL.
+- My reasoning was mixed into the file.
 
-## 4. Undone
-- F12/L-F7, because the memo is missing.
-- Three things only a live test can settle: unused fine-grained tokens, reviews made through an app, and whether user tokens start workflows.
+**3. What I verified**
+I fetched these pages on 2026-10-01 and read the results as quoted in the memo:
+- R2, R3, R5, R6, R6b, R7, R10, R11, R12, R13, R14, R15, R16, R17, R18, R19 and R20.
+- The organisation audit-log page, which has nothing on `programmatic_access_type`, so I cite R5 for it.
 
-## 5. Needed outside my lane
-- The Orchestrator should give me `research/Q-002-memo.md` (or merge this correction into it) so F12 can be fixed. It should then send the memo to the Source checker again.
-- Someone holding a test GitHub account should run the live tests. I can't run code.
-- GitHub support could answer the fine-grained token question, but that may be a level-5 or paid source. If so, the Chief of Staff should put a decision card to the owner.
+I did not fetch these again this round:
+- R4, R9 and R8, which the Source checker confirmed last round.
+- L-F1's source.
 
-## 6. Open questions
-- OQ3 as revised in C1.
-- Do user tokens start workflows (C4)?
-- Can a workflow tell a comment or review made through an app from one made directly (C5, C6)?
-- Which grade scale D-032 uses. This is still open from the source check.
-- When expiring OAuth tokens first became available (C2). This matters little to the decision.
+Quotes went through a summarising model.
 
-Sources:
-- [Token expiration and revocation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/token-expiration-and-revocation)
-- [Managing personal access tokens](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
-- [Scopes for OAuth apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps)
-- [Differences between GitHub Apps and OAuth apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps)
-- [Authorizing OAuth apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
-- [Changelog 2026-08-14](https://github.blog/changelog/2026-08-14-multiple-redirect-uris-and-token-refresh-for-oauth-apps/)
-- [Managing private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps)
-- [Best practices for creating a GitHub App](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/best-practices-for-creating-a-github-app)
-- [Triggering a workflow](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
-- [Events that trigger workflows](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows)
-- [GITHUB_TOKEN concept](https://docs.github.com/en/actions/concepts/security/github_token)
-- [Webhook events and payloads](https://docs.github.com/en/webhooks/webhook-events-and-payloads)
-- [REST pull request reviews](https://docs.github.com/en/rest/pulls/reviews)
+**4. Undone**
+- The five questions that need a live test or a statement from GitHub (open questions 1–5).
+- The app-specific permissions table, which I did not open.
+
+**5. Needed outside my lane**
+- The Orchestrator should record the memo above as `research/Q-002-memo.md` and send it to the Source checker.
+- Someone with a test GitHub account should run the live tests for open questions 1–4.
+- If GitHub support or a paid source is needed, the Chief of Staff should put a decision card to the owner.
+
+**6. Open questions**
+These are the six listed in the memo. The D-032 grade scale is the one that blocks final grading.

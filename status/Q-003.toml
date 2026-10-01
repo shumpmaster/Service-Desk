@@ -1,14 +1,13 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "research"
 stage = 2
-state = "waiting-owner"
+state = "closed"
 role = "researcher"
 last_verdict = "none"
 plan_round = 0
 build_round = 0
 confirm_used = false
 attempts = 2
-sessions = 2
-gate = "failure"
+sessions = 0
 card = 1
-resume = "2/researcher"
+outcome = "drop"

@@ -3,7 +3,7 @@
   "decisions": {
     "decisions/Q-003/failure-1.md": "bebe8499e5846eb84318556d379de04e027432497d758a57136945f91702e0ac"
   },
-  "log_head": "57dd8922c60041faff3462d172410ccab4a68e6ecea24fc59be4c47e09816de0",
+  "log_head": "649a2932c0fd13a12d36d023cafff1bc8d8e68138c5d32aa64518c844786ec3b",
   "outcomes": {
     "Q-001:ready-dispatch:2026-10-01T01:46:42Z": "0cbe2d2e1836ef440b4cf2fb153877755a4394a44d14fb0e4f43e55ef36e1a0d",
     "Q-001:research-to-source:2026-10-01T02:17:21Z": "932501df81848923da074b0c2b2e6619436b7d0c8c48685deceb925aa48e3350",
@@ -25,7 +25,7 @@
     "Q-005:ready-dispatch:2026-10-01T10:45:54Z": "ff3a3a856f702b3aa238437eb2fefa6c5eb03b6869115e3f051b76dc0551bbdf",
     "Q-005:research-to-source:2026-10-01T11:28:52Z": "d954ab9d94e9f8573c423d749dfde9dcd313787b5fe087c2229d070dd8e5b2fe"
   },
-  "plan_hash": "364b37738032a28a72829f4d2192b70bd9353c9ee8dddfc5b70c2785f995d6ac",
+  "plan_hash": "d739923dda06f3de4b437e86ed4928e622e4aaef426db3246a5a9e86d34bd326",
   "requests": [
     "Q-001",
     "Q-002",

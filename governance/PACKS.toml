@@ -32,10 +32,17 @@ include_feedback = ["reviews/{spec}/plan.md", "decisions/{item}/*.md"]
 
 [roles.critic]
 # "The finished document under review; for Triage, the failure and the traceability chain."
-must_read = ["specs/{spec}.md", "docs/PROJECT.md"]
-may_read = ["docs/playbooks/**", "library/**", "tests/acceptance/**", "checks/**"]  # the checks it reviews (S-016 AC6); holdouts are always excluded
+must_read = ["specs/{spec}.md", "docs/PROJECT.md", "governance/standards/definition-of-ready.md"]
+# The definition-of-ready check verifies Part 1 §7's evidence: the research memos and their source
+# checks, the owner's recorded rulings (decisions/; the Chief of Staff's notes never enter a pack),
+# and the record checks the brief cites. A memo is evidence here, not the writer's summary: the
+# writer under check is the brief's author (P-001 dor-fail-1).
+may_read = ["docs/playbooks/**", "library/**", "tests/acceptance/**", "checks/**",  # the checks it reviews (S-016 AC6); holdouts are always excluded
+            "research/**", "decisions/**", "governance/checks/record_checks.py"]
 # "The writer's drafts and reasoning; the writer's own summary of its work."
 must_not_see = ["docs/reports/**", "docs/briefs/**"]
+# Its own earlier return, so a later round checks each finding instead of starting blind (LL-015).
+include_feedback = ["reviews/{item}/_critic-dor.md"]
 
 [roles.check-author]
 must_read = ["specs/{spec}.md"]

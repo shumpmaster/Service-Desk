@@ -1,126 +1,122 @@
-# Q-004 revision (round 2): the revised memo is below, after the six-part contract
+# Q-004 revision (round 3): six-part contract, then the full revised memo
 
-**Main result:** the four failed entries have been narrowed or re-sourced. Two still depend on a second check from the Source checker: the Mergify event types and an independent second latency source. The round-1 memo is not in this pack, so I rebuilt the memo from the question, the source-check report and today's fetches.
+**Main result:** the checker's three open items are now settled. The "a few minutes" quote is on GitHub's troubleshooting-webhooks page, and that page also says delivery order is **not** guaranteed. The W6 phrase does exist, on GitHub's status page, but it describes event processing for Actions runs, not deliveries to customer webhooks, so it no longer supports F-Q004-4. The webhook-events-and-payloads URL works when opened without the `/using-webhooks/` path segment. Mergify is still the only latency source.
 
 ## 1. What I changed
-- **F-Q004-8 (GraphQL limits):** re-fetched the page and re-proposed the entry with the page's own wording, including the per-user and Actions limits and the two-step cost method.
-- **F-Q004-4 (incidents):** dropped W5 (the June 11 incident). The 2026-02-03 incident (W4) is now re-proposed against GitHub's own incident thread. W6 is carried over as round 1 confirmed it.
-- **F-Q004-5 (Mergify):** downgraded to a single-vendor estimate (grade C). It is no longer offered as a fact the decision can rest on. I removed the event list I had added myself, changed "average" to the page's p50/p95, and added the caveat that slow external CI systems explain many late check-run arrivals.
-- **F-Q004-3 (delivery time):** split in two. The "can take a few minutes" quote stays as a fact. The "no delivery-time guarantee" part is now an opinion, limited to the pages I read.
-- **G2 (GraphQL ETags):** taken out of the facts. It is now an opinion with no grade, and nothing depends on it.
-- **PAT-Q004-1 (the pattern):** rebuilt so that it rests only on facts that were filed or are re-proposed.
-- **W12 (redelivery ID):** settled by quoting the page.
-- **W7:** now names its four pages.
+- **F-Q004-3a:** re-sourced to `docs.github.com/en/webhooks/testing-and-troubleshooting-webhooks/troubleshooting-webhooks` with the exact quote. W1 ("near real-time", already confirmed by the checker) is added to the same entry with its page named.
+- **W7:** was the opinion "no promised order found". It is now **fact F-Q004-12**: the troubleshooting page says "GitHub may deliver webhooks in a different order than the order in which the events took place." The "no promised delivery time" part stays an opinion.
+- **W6:** now has a URL, `githubstatus.com/incidents/y1t7p9fzrlj2`, but its scope is narrowed. The incident is titled "Incident with Actions", and the throttles restored "full webhook processing for Actions runs". It is proposed separately as **F-Q004-13**, scoped to Actions. It is no longer part of F-Q004-4, which stays as filed with W4 only.
+- **PAT-Q004-1:** rebuilt so that it no longer depends on F-5 (Mergify, not filed) or W6. It now rests on F-1, F-3a, F-4, F-6, F-7, F-9 and F-12, plus E1 (arithmetic). Mergify is mentioned only as an illustration.
+- **F-Q004-5 (Mergify):** still not proposed for filing. The checker confirmed the figures and the nine event types, but it is still one vendor.
+- **W14/F-Q004-10 URL:** I give the URL that works (the path segment above made the difference).
 
 ## 2. Why
 Each change answers one point in `research/Q-004-source-check.md`:
-- I can't prove a claim that something is absent, so those claims become opinions.
-- A single vendor doesn't meet the two-source rule.
-- Sources that couldn't be opened (x.com, the Magee blog) are removed.
+- open question 2 (W2 page);
+- open question 1 (W6 URL);
+- open question 3 (the 404);
+- the PAT failing because it rested on unfiled entries.
 
-## 3. What I verified (fetches made today, 2026-10-01)
-- **GraphQL limits page:** gives 5,000 points/h per user (10,000 on Enterprise Cloud), 5,000 per app installation scaling up to 12,500 (10,000 on Enterprise Cloud), and 1,000/h per repo for GITHUB_TOKEN in Actions (15,000 for enterprise). The cost method is: "Add up the number of requests needed to fulfill each unique connection… Divide the number by 100 and round the result to the nearest whole number". It also gives a minimum cost of 1, 2,000 points/min, 500,000 nodes, and `first`/`last` of 1–100. The page says nothing about conditional requests.
-- **Webhooks best-practices page:** "If you request a redelivery, the `X-GitHub-Delivery` header will be the same as in the original delivery." It gives no guidance on delivery order.
-- **Redelivering-webhooks page:** past 3 days only. Who may redeliver: repo admin, org owner, or app owner/manager.
-- **Incident thread 2026-02-03** (github.com/orgs/community/discussions/186279, posted by github-actions[bot]): "Webhook deliveries for push events were delayed by up to 40 minutes, with an average delay of 10 minutes", 14:00–17:40 UTC.
-- **June 11 incident (W5):** it is not in GitHub's June 2026 availability report. Vantaj gives "~160 min", which conflicts with the 98 minutes in the x.com snippet (19:28–21:06). I could not open x.com, so W5 is dropped.
-- **Mergify page:** p50 28.44 s and p95 37.15 s at 11 events/s. My fetch says it names "nine event types… pull requests, reviews, check-runs, workflows, status updates, and push events". **This conflicts with round 1, which found no event types named**, so it needs a second look. The figures measure time from GitHub's timestamp to Mergify receiving the event, so slowness on Mergify's own side counts in them. On 2026-04-27 it rose to about 40 min during a check-run incident.
-- **Second latency source:** none first-party found.
-  - devactivity.com cites "~5 s baseline, ~160 s peak" for a 2026-03-18 incident, but links no source. That incident is not in GitHub's March 2026 report. Not proposed.
-  - Community discussion #173189 reports one user's delays of up to 7.5 h after months with no pushes. Unanswered by GitHub staff, and it is a single user's report. Listed as a lead only.
-- **GraphQL ETag:** I found only third-party GitHub issues, no GitHub source.
-- **Files I did not open:** the `.env*` files, lockfiles and package manager config in this pack. They have nothing to do with the question.
+Narrowing W6 follows its source: the status page talks only about Actions-run processing, and I can't prove that customer deliveries were delayed.
+
+## 3. What I verified (web fetches, 2026-10-01; no shell)
+- **troubleshooting-webhooks:** "Webhook deliveries can take a few minutes to be delivered and to appear in the recent deliveries log." (section "Webhook deliveries are not immediate"). Also: "GitHub may deliver webhooks in a different order than the order in which the events took place… use the timestamps that are included in the delivery payload." (section "Webhooks deliveries are out of order").
+- **githubstatus.com/incidents/y1t7p9fzrlj2:** title "Incident with Actions", 2026-08-26. It contains "The queue of webhook events was fully burned down at 17:40 UTC." and "throttles were gradually raised between 15:54 and 17:22 to restore full webhook processing for Actions runs."
+  - I found the URL through surfingcomplexity.blog (2026-08-29), which links to it.
+  - The August 2026 availability report (github.blog) gives 15:11 UTC and 2 h 50 min, and says more than one in five Actions run starts failed or were badly delayed at the peak. It does not contain the phrase, which matches what the checker found.
+- **docs.github.com/en/webhooks/webhook-events-and-payloads:** the page loads. The push section says: "Events will not be created if more than 5000 branches are pushed at once. Events will not be created for tags when more than three tags are pushed at once." It gives a maximum of 2,048 commits and a 25 MB cap. Repo/org webhooks get only `created` and `completed` for check_run. This confirms the filed F-Q004-10 and F-Q004-11.
+  - The page doesn't say whether push commits list added, modified and removed files, so W17 stays a gap.
+- **Search for a second latency measurement** ("measured GitHub webhook delivery latency p50 p99"): it returned only Mergify and generic webhook articles. None found.
+- **Not opened:** the `.env*` files, lockfiles and package configs in this pack. They are not relevant.
 
 ## 4. What is undone
-- W6 and the round-1 W1/W8–W16/P1–P4/O1–O2 rows are carried over without being re-fetched. The checker already confirmed them, and the round-1 memo's URLs aren't in this pack.
-- There is still no independent second measurement of normal (non-incident) webhook latency.
+- There is no independent second source for normal webhook latency, so F-Q004-5 stays unfiled.
 - No SLA page has been checked.
+- W17 (whether push payloads list changed files) is unresolved. The fallback is the REST compare/commit endpoints, which I have not researched.
 
 ## 5. What is needed outside my lane
-- **Source checker:** check F-Q004-8, F-Q004-4 (W4 only, plus W6) and F-Q004-3a again. Re-open the Mergify page to settle the event-type conflict.
+- **Source checker:**
+  - check F-Q004-3a, F-Q004-12 and F-Q004-13 (the two URLs above);
+  - check PAT-Q004-1 against its new list of dependencies;
+  - update the source URL on F-Q004-10 and F-Q004-11 if the filed one is the 404 path.
 - **Orchestrator:** record this memo in `research/`.
-- **Chief of Staff:** if the owner needs a contractual figure, the next step is a question to GitHub Support / Enterprise sales or a review of the Enterprise Cloud SLA. That is a decision card for the owner.
+- **Chief of Staff:** a contractual delivery-time figure would need GitHub Support/Sales or the Enterprise Cloud SLA. That is a decision card for the owner.
 
 ## 6. Open questions
-1. Does the GitHub Online Services SLA (Enterprise Cloud) cover webhook delivery time? (Not researched.)
+1. Does the GitHub Enterprise Cloud SLA cover webhook delivery time?
 2. Has anyone published an independent measurement of normal webhook latency?
-3. Do webhooks really slow down on repos that have been idle for a long time (#173189)?
-4. Is `library/` the right place to file? This repeats the source checker's question.
+3. Did the 2026-08-26 incident also delay customer webhook deliveries? The status page doesn't say.
+4. Do push webhook commits include file lists? If not, a "files changed in folder X" check needs a REST compare call for every push.
+5. Do webhooks really slow down on repos idle for a long time (community #173189, a single user's report)?
 
 ---
 
-# Memo — Q-004 (revised 2026-10-01, round 2)
+# Memo — Q-004 (revised 2026-10-01, round 3)
 
-**Question:** how quickly and how reliably can changes in private GitHub repositories be detected? The answer feeds the freshness target and the design for detecting changes. Depth 3. Topics: github, webhooks, polling, latency.
+**Question:** how quickly and how reliably can changes in private GitHub repos be detected? The answer feeds the freshness target and the change-detection design. Depth 3. Topics: github, webhooks, polling, latency.
 
-**Grades:**
-- **A** — GitHub docs.
-- **B** — a GitHub first-party incident post (one event).
-- **C** — a single third party.
-
+**Grades:** A = GitHub docs; B = a GitHub first-party incident record (one event); C = a single third party.
 **Labels:** F = fact, E = estimate, O = opinion.
 
 ## Webhooks
 | # | Statement | Type | Grade | Source |
 |---|---|---|---|---|
-| W1 | Docs describe delivery as "near real-time" | F | A | webhooks docs (checked in round 1) |
-| W2 | Delivery "can take a few minutes" | F | A | webhooks docs (checked in round 1) |
-| W4 | 2026-02-03, 14:00–17:40 UTC: push webhooks delayed up to 40 min, 10 min on average | F | B | github.com/orgs/community/discussions/186279 |
-| W6 | 2026-08-26: "queue of webhook events was fully burned down at 17:40 UTC" | F | B | as checked in round 1 |
-| W3 | Normal latency at one vendor: p50 28 s, p95 37 s at 11 events/s. Measured from GitHub's timestamp to the vendor receiving it, so the vendor's own delays count. Slow external CI explained many late check-runs. During an incident (2026-04-27) check-run p95 reached about 40 min | E | C | mergify.com/blog/what-github-webhook-latency-actually-looks-like/ (event types disputed, re-check) |
-| W7 | Among the pages I read, I found no promised delivery time or delivery order. **The four pages:** best-practices-for-using-webhooks, handling-failed-webhook-deliveries, redelivering-webhooks, webhook-events-and-payloads | O | — | those four pages |
-| W8–W10 | No automatic redelivery. Manual or API redelivery for the past 3 days by an admin, org owner or app owner/manager. List-deliveries and redeliver endpoints exist | F | A | handling-failed…, redelivering-webhooks |
-| W11 | Answer 2XX within 10 s and queue the payload | F | A | best-practices |
-| W12 | "If you request a redelivery, the `X-GitHub-Delivery` header will be the same as in the original delivery." So a redelivery can be matched to the original. Record an ID only after the delivery has been processed successfully, so that a redelivery after a failure is not dropped | F (quote) + O (advice) | A | best-practices |
-| W14–W16 | 25 MB, 5,000 branches, 3 tags and 2,048 commits limits. check_run actions by hook type. No localhost; certificate failures | F | A | webhook-events-and-payloads, etc. |
-| W17 | The payload page does not say whether push commits list added, modified and removed files | gap | — | — |
+| W1 | Delivery is described as "near real-time" | F | A | docs.github.com about-webhooks (checker confirmed) |
+| W2 | "Webhook deliveries can take a few minutes to be delivered and to appear in the recent deliveries log." | F | A | docs.github.com/en/webhooks/testing-and-troubleshooting-webhooks/troubleshooting-webhooks |
+| W7a | "GitHub may deliver webhooks in a different order than the order in which the events took place"; use the payload timestamps instead | F | A | same troubleshooting page |
+| W7b | In the docs pages I read (troubleshooting, best-practices, handling-failed, redelivering, events-and-payloads, about), I found no promised delivery time | O | — | those pages |
+| W4 | 2026-02-03, 14:00–17:40 UTC: push webhook deliveries delayed up to 40 min, 10 min on average | F | B | github.com/orgs/community/discussions/186279 (filed as F-Q004-4) |
+| W6 | 2026-08-26 "Incident with Actions": "The queue of webhook events was fully burned down at 17:40 UTC"; throttles were raised 15:54–17:22 "to restore full webhook processing for Actions runs". The source shows an effect on Actions runs only, not on deliveries to customer endpoints | F | B | www.githubstatus.com/incidents/y1t7p9fzrlj2 |
+| W3 | One vendor's normal latency: p50 28.44 s, p95 37.15 s at 11 events/s. Measured from GitHub's timestamp to the vendor parsing the request, across nine event types. Slow external CI explains many late check-runs. Check-run p95 reached about 40 min on 2026-04-27 | E | C | mergify.com/blog/what-github-webhook-latency-actually-looks-like/ (single source, not load-bearing) |
+| W8–W10 | No automatic redelivery. Manual or API redelivery within 3 days by a repo admin, org owner or app owner/manager | F | A | handling-failed-webhook-deliveries; redelivering-webhooks (filed as F-Q004-1) |
+| W11 | Answer 2XX within 10 s; queue the work | F | A | best-practices-for-using-webhooks (filed as F-Q004-2) |
+| W12 | On a redelivery, `X-GitHub-Delivery` is the same as in the original. **Advice (O):** record the ID only after the delivery has been processed successfully | F + O | A | best-practices-for-using-webhooks |
+| W14–W16 | Push: no event if more than 5,000 branches or more than 3 tags are pushed at once; at most 2,048 commits; 25 MB cap. Repo/org hooks get only check_run created/completed | F | A | docs.github.com/en/webhooks/webhook-events-and-payloads (filed as F-Q004-10/11) |
+| W17 | The payload docs don't say whether push commits list changed files | gap | — | same page |
 
-**What must be hosted:** a public HTTPS endpoint (W16) that answers within 10 s (W11).
+**What must be hosted:** a public HTTPS endpoint that answers within 10 s and queues the work. It must put events back in order by payload timestamp (W7a) and remove duplicates by delivery ID (W12).
 
 ## Polling
 | # | Statement | Type | Grade | Source |
 |---|---|---|---|---|
-| P1 | REST limits as in F-Q004-6 | F | A | rate-limits-for-the-rest-api |
-| P2 | A 304 sent with an Authorization header doesn't count against the primary limit | F | A | best-practices-for-using-the-rest-api |
-| G1 | GraphQL limits as in F-Q004-8 below | F | A | rate-limits-and-query-limits-for-the-graphql-api |
-| G2 | GraphQL appears to have no ETag/304 mechanism. GitHub's GraphQL limits page doesn't mention one; only third-party issues say so | O | — | (no first-party source) |
-| E1 | **Budget for 5 repos at about 3 REST calls per repo per poll** (commits, pulls, check-runs): 900 requests/h at 1 min, 180/h at 5 min, 60/h at 15 min. All are well under 5,000/h, and 304s are free (P2). The detection delay is about the polling interval plus the call time | E | — | arithmetic on P1/P2 |
-| O1 | Events API: "not built to serve real-time use cases", latency 30 s to 6 h | F | A | rest/activity/events |
+| P1 | REST limits | F | A | rate-limits-for-the-rest-api (F-Q004-6) |
+| P2 | A 304 sent with Authorization doesn't count against the primary limit | F | A | best-practices-for-using-the-rest-api (F-Q004-7) |
+| G1 | GraphQL limits; the page doesn't mention conditional requests | F | A | rate-limits-and-query-limits-for-the-graphql-api (F-Q004-8) |
+| G2 | GraphQL appears to have no ETag/304; only third-party issues say so | O | — | no first-party source |
+| E1 | About 3 REST calls per repo per poll across 5 repos: 900/h at 1 min, 180/h at 5 min, 60/h at 15 min. All are well under 5,000/h, and 304s are free. Detection delay ≈ the polling interval plus the call time | E | — | arithmetic on P1/P2 |
+| O1 | Events API "not built to serve real-time use cases", latency 30 s–6 h | F | A | rest/activity/events (F-Q004-9) |
 
-**What must be hosted:** a scheduled worker. No public inbound endpoint is needed.
+**What must be hosted:** a scheduled worker; no inbound endpoint.
 
 **Leads, not proposed:**
-- W5 (June 11): only an x.com snippet, and the durations conflict.
+- W5 (June 11): only an x.com snippet, with conflicting durations.
 - devactivity "~5 s baseline": no source given.
-- Community #173189: one user's 7.5 h delay on an idle repo.
+- Community #173189: one user's 7.5 h delay.
 
 ## Proposed library entries
-- **F-Q004-3a** (fact, A, 12 mo, webhooks/latency): GitHub docs say webhook delivery "can take a few minutes".
-- **F-Q004-4** (fact, B, 12 mo, webhooks/latency): GitHub incident posts record webhook delays of up to 40 min (push, 2026-02-03, average 10 min) and a backlog drained by 17:40 UTC on 2026-08-26.
-- **F-Q004-5** (estimate, C, 6 mo, webhooks/latency): one vendor (Mergify) measured normal p50 28 s / p95 37 s, from GitHub's timestamp to its own receipt. Single source, not for load-bearing use.
-- **F-Q004-8** (fact, A, 6 mo, github/polling): GraphQL primary limits are:
-  - 5,000 pts/h per user (10,000 on Enterprise Cloud);
-  - 5,000 per app installation, scaling up to 12,500 (10,000 on Enterprise Cloud);
-  - 1,000/h per repo for GITHUB_TOKEN (15,000 for enterprise).
+- **F-Q004-3a** (fact, A, 12 mo; webhooks, latency): GitHub docs describe delivery as "near real-time" (about-webhooks) and say "Webhook deliveries can take a few minutes to be delivered and to appear in the recent deliveries log" (troubleshooting-webhooks).
+- **F-Q004-12** (fact, A, 12 mo; webhooks): "GitHub may deliver webhooks in a different order than the order in which the events took place"; GitHub advises using the payload timestamps (troubleshooting-webhooks).
+- **F-Q004-13** (fact, B, 12 mo; github, webhooks, latency): on 2026-08-26 ("Incident with Actions", from 15:11 UTC, 2 h 50 min), GitHub throttled event processing. "The queue of webhook events was fully burned down at 17:40 UTC", restoring "full webhook processing for Actions runs". Scope: Actions runs; the source doesn't say customer deliveries were affected (githubstatus.com/incidents/y1t7p9fzrlj2; times from the github.blog August 2026 availability report).
+- **F-Q004-5:** withdrawn as a library proposal. It stays in the memo only as estimate W3, grade C.
+- **PAT-Q004-1** (opinion, 6 mo; webhooks, polling):
+  - **Use webhooks for speed.** GitHub calls delivery near real-time but says it can take a few minutes (F-3a).
+  - **Back them with a REST conditional-request reconcile poll.** Reasons:
+    - failed deliveries aren't redelivered automatically (F-1);
+    - an incident has delayed push webhooks by up to 40 min (F-4);
+    - order isn't guaranteed (F-12);
+    - 304s are free (F-7) and the cost fits the limits at a 1–15 min interval (F-6, E1).
+  - **Don't use the Events API for freshness** (F-9).
+  - **Depends on:** F-1, F-3a, F-4, F-6, F-7, F-9 and F-12, plus E1.
 
-  Cost = the number of requests needed for each connection, assuming `first`/`last` at their maximum, ÷ 100, rounded; minimum 1. Secondary limit 2,000 pts/min; at most 500,000 nodes; `first`/`last` 1–100.
-- **PAT-Q004-1** (opinion, 6 mo, webhooks/polling):
-  - Use webhooks for speed: normally seconds to minutes (F-3a, F-5).
-  - Back them with a REST conditional-request reconcile poll, because:
-    - GitHub doesn't redeliver failed deliveries (F-1);
-    - incidents have delayed webhooks by tens of minutes (F-4);
-    - 304s are free (F-7) and the cost fits easily in the rate limits (F-6, E1).
-  - Don't use the Events API for freshness (F-9).
-  - Rests only on F-1, F-3a, F-4, F-5, F-6, F-7 and F-9.
-
-Sources:
-- https://docs.github.com/en/graphql/overview/rate-limits-and-query-limits-for-the-graphql-api
-- https://docs.github.com/en/webhooks/using-webhooks/best-practices-for-using-webhooks
-- https://docs.github.com/en/webhooks/testing-and-troubleshooting-webhooks/redelivering-webhooks
-- https://github.com/orgs/community/discussions/186279
-- https://mergify.com/blog/what-github-webhook-latency-actually-looks-like/
-- https://github.blog/news-insights/company-news/github-availability-report-june-2026/
-- https://github.blog/news-insights/company-news/github-availability-report-march-2026/
-- https://vantaj.co/blog/github-outages-2026-analysis/
-- https://devactivity.com/insights/github-webhook-incident-lessons-in-performance-engineering-software/
-- https://github.com/orgs/community/discussions/173189
+## Sources
+- [Troubleshooting webhooks – GitHub Docs](https://docs.github.com/en/webhooks/testing-and-troubleshooting-webhooks/troubleshooting-webhooks)
+- [Webhook events and payloads – GitHub Docs](https://docs.github.com/en/webhooks/webhook-events-and-payloads)
+- [GitHub Status – Incident with Actions, 2026-08-26](https://www.githubstatus.com/incidents/y1t7p9fzrlj2)
+- [GitHub availability report: August 2026](https://github.blog/news-insights/company-news/github-availability-report-august-2026/)
+- [Quick thoughts on GitHub Actions Aug 26 incident (surfingcomplexity.blog)](https://surfingcomplexity.blog/2026/08/29/quick-thoughts-on-github-actions-aug-26-incident/) (used only to find the status-page URL)
+- [Incident thread, discussion 186279](https://github.com/orgs/community/discussions/186279)
+- [Mergify – What GitHub webhook latency actually looks like](https://mergify.com/blog/what-github-webhook-latency-actually-looks-like/)
+- [GraphQL rate and query limits – GitHub Docs](https://docs.github.com/en/graphql/overview/rate-limits-and-query-limits-for-the-graphql-api)
+- [Best practices for using webhooks – GitHub Docs](https://docs.github.com/en/webhooks/using-webhooks/best-practices-for-using-webhooks)
+- [Redelivering webhooks – GitHub Docs](https://docs.github.com/en/webhooks/testing-and-troubleshooting-webhooks/redelivering-webhooks)
+- [Community discussion 173189](https://github.com/orgs/community/discussions/173189)

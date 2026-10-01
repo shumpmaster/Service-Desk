@@ -1,13 +1,3 @@
 {
-  "entries": [
-    {
-      "action": "dispatch",
-      "gate": null,
-      "item": "Q-002",
-      "role": "researcher",
-      "route": "source-fail",
-      "spec": null,
-      "stage": 2
-    }
-  ]
+  "entries": []
 }

@@ -72,6 +72,8 @@ include_feedback = ["reviews/{spec}/reviewer.md", "reviews/{spec}/checks.txt", "
 [roles.critic-triage]
 # Triage traces "the failure and the traceability chain" (role card), never the writers' own
 # summaries. Dispatch-log month files are copied whole, chosen by name (S-014 AC4).
-must_read = ["specs/{spec}.md", "reviews/{spec}/**", "reviews/{item}/**", "triage/{item}*.md", "status/{item}.toml", "dispatch-log/*.jsonl"]
+must_read = ["specs/{spec}.md", "reviews/{spec}/**", "reviews/{item}/**", "triage/{item}*.md", "status/{item}.toml", "dispatch-log/*.jsonl",
+             # A research item has no spec or reviews; its chain is the question, memo and source check.
+             "intake/requests/{item}.toml", "research/{item}.md", "research/{item}-memo.md", "research/{item}-source-check.md"]
 may_read = ["docs/playbooks/**", "library/**", "tests/acceptance/**", "checks/**"]  # S-016 AC6
 must_not_see = ["docs/reports/**", "docs/briefs/**"]

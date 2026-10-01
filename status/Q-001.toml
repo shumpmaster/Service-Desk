@@ -1,7 +1,7 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "research"
 stage = 2
-state = "dispatched"
+state = "returned"
 role = "researcher"
 last_verdict = "none"
 plan_round = 1
@@ -9,4 +9,3 @@ build_round = 0
 confirm_used = false
 attempts = 0
 sessions = 3
-dispatched_at = "2026-10-01T09:15:57Z"

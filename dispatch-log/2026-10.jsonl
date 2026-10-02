@@ -86,3 +86,4 @@
 {"item":"Q-006","prev":"3d0943b0ef17dd1f13952b7d185cb71e176e800d06996d2cdd502d01299f9887","record":"intake/requests/Q-006.toml","result":"created","time":"2026-10-02T00:01:50Z","trigger":"request"}
 {"action":"dispatch","gate":null,"item":"Q-006","prev":"63ab722b8ce7687a6e5cdbd01a68828c9c9847994f75a95a34674b25b3d9b55d","role":"researcher","route":"ready-dispatch","spec":null,"stage":2,"time":"2026-10-02T00:15:15Z","trigger":"step"}
 {"item":"Q-006","prev":"a5510cac25415d961a7c7071787cc0a8b0e5b8936f83f084ccd74bbc21629056","record":"research/Q-006-memo.md","result":"ok","role":"researcher","session":"Q-006:ready-dispatch:2026-10-02T00:15:15Z","time":"2026-10-02T00:18:53Z","trigger":"outcome","verdict":"none"}
+{"action":"dispatch","gate":null,"item":"Q-006","prev":"2c1e31bfeb533cbb06a9acda801984871131e7ac680439beb54f70465d6422f5","role":"source-checker","route":"research-to-source","spec":null,"stage":2,"time":"2026-10-02T00:28:43Z","trigger":"step"}

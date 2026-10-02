@@ -5,7 +5,7 @@
     "decisions/Q-003/failure-1.md": "bebe8499e5846eb84318556d379de04e027432497d758a57136945f91702e0ac",
     "decisions/Q-005/stop-1.md": "67df7933de4b7de9aa56e3dfa0a2248d7979ab4af04602067e896ebf628e5702"
   },
-  "log_head": "3d0943b0ef17dd1f13952b7d185cb71e176e800d06996d2cdd502d01299f9887",
+  "log_head": "63ab722b8ce7687a6e5cdbd01a68828c9c9847994f75a95a34674b25b3d9b55d",
   "outcomes": {
     "P-001:ready-dispatch:2026-10-01T17:18:13Z": "808eac09a78f8eac75c1722733250aa948f091e7c5d26fc25b0670395bb57252",
     "Q-001:ready-dispatch:2026-10-01T01:46:42Z": "0cbe2d2e1836ef440b4cf2fb153877755a4394a44d14fb0e4f43e55ef36e1a0d",
@@ -49,6 +49,7 @@
     "Q-002",
     "Q-003",
     "Q-004",
-    "Q-005"
+    "Q-005",
+    "Q-006"
   ]
 }

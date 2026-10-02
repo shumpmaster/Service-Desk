@@ -1,35 +1,38 @@
 Verdict: FAIL
 
-I'm giving you the result now. I fetched the raw Cloudflare pages as markdown with curl and compared them with the memo. Several memo claims are wrong or unsupported, and none of the proposed entries meets the sourcing rule. I filed nothing and changed nothing in library/.
-
-**Wrong or unsupported in the memo**
-
-- **Item 7 is wrong.** The memo says what happens to a 7th connection is "not documented". The raw Limits page says: "If a seventh connection is attempted while six are already waiting for headers, it is queued until one of the existing connections receives its response headers" (limits.md:216). It queues and does not fail. F-cf-workers-03 therefore can't be filed as drafted. Item 15's "waves" reasoning does hold.
-- **Item 2 is only half supported.** The Limits page confirms it (limits.md:67). The memo also says Pricing "says the same", and Pricing does not. I found no such sentence in pricing.md, and the Pricing summary said it doesn't address the point.
-- **Item 4 is partly unsupported.**
-  - The Limits page confirms Error 1102 with "Worker exceeded resource limits" (limits.md:80). I did not check the "built-in flexibility" sentence against the raw page.
-  - The Errors page only says 1102 means "Worker exceeded CPU time limit" (errors.md:26). I found no statement there that resource-limit breaches end the whole request with an error page. The closest text is errors.md:21, which is about errors that stop a Worker returning a response.
-- **Item 14 omits relevant text.** limits.md:74 follows the 2.2 ms average with: "Heavier workloads that handle authentication, server-side rendering, or parse large payloads typically use 10-20 ms." That bears directly on the 10 ms risk for a JWT-checking Worker, and it is stronger than the memo's "not documented". The P-cf-fanout-01 pattern needs revising to reflect it.
-- **Item 10 is only half confirmed.** Error 1027 and the 100,000/day limit are confirmed (limits.md:171, errors.md:32, pricing.md:33). The reset time was not confirmed on Pricing, and "Errors; Pricing" overstates it.
-
-**Confirmed against the raw pages**
-
-- Items 1 and 3: Free is 10 ms for HTTP and Cron. Paid Cron is 30 s under a 1-hour interval and 15 min at or above it (limits.md:72).
-- Item 3a: the conflict is real. Pricing says "Max of 15 minutes of CPU time per Cron Trigger or Queue Consumer invocation" with no interval condition (pricing.md:34).
-- Item 5: Free is 50 per invocation and 1,000 to internal services. Paid is 10,000, up to 10M. The redirect-chain sentence is present (limits.md:185-192). The 2026-02-11 changelog matches, but I checked that one through the summarizer only.
-- Item 8: HTTP wall time is unlimited, and Cron, Queue consumer and Durable Object alarm are 15 min each (limits.md:421-423). `waitUntil` extends execution by up to 30 s (limits.md:192).
-- Item 11: "Cloudflare does not bill for subrequests" is confirmed. I saw it through the summarizer only and did not grep it in the raw file.
-- Item 6: the Workflows-only scope holds. The Errors page has no "Too many subrequests" entry. The Workflows limits page was checked through the summarizer only.
-- Item 9: the Durable Objects limits page was checked through the summarizer only. It matches the memo.
+I fetched all six cited pages as raw `index.md` files and grepped them. I filed nothing and changed nothing in `library/`. Line numbers below refer to those fetched files.
 
 **Why nothing was filed**
-1. Every source is Cloudflare, so nothing independent confirms any of it. governance/standards/sources.md only lets two pages from the same publisher count as two sources for Anthropic product behaviour. It says cost and risk claims need an independent source, and a wider rule needs its own owner ruling. F-hosting-01 was filed as single-source, but that is not a ruling.
-2. F-cf-workers-03 contains a false statement (item 7).
-3. F-cf-workers-01 contains the unsupported parts of items 2 and 4.
+1. **No ruling on the sourcing question.** `governance/standards/sources.md` only counts two pages from the same publisher as two sources for Anthropic product behaviour. Cost and risk claims still need an independent source. Every entry here is Cloudflare-only. The memo asks for a ruling (part 5), but none is in the folder. F-hosting-01 being filed as single-source is not a ruling.
+2. **Item 9 is wrong.** The memo says the CPU limit for Durable Object alarms is "not documented".
+   - The DO limits page says: "the maximum CPU time per Durable Objects invocation (HTTP request, WebSocket message, or Alarm) is set to 30 seconds" by default (durable-objects limits:101).
+   - It also says DOs "have the same per invocation CPU limits… as any Workers do" (line 99).
+   - So alarms are documented at 30 s. What is still unclear is how that squares with the Free plan's 10 ms.
+   - The page doesn't mention Free plan CPU or a subrequest count for alarms, so those two parts are still "not documented".
+   - F-cf-do-01 and open question 2 need revising.
+
+**Confirmed against the raw pages**
+- **Item 1:** Free is 10 ms for HTTP and for Cron (limits:71-72).
+- **Item 2:** the network-wait sentence is on the Limits page (limits:67).
+- **Item 3:** Paid Cron CPU is 30 s under a 1-hour interval and 15 min at or above it (limits:72).
+- **Item 3a:** the conflict is real. Pricing says "Max of 15 minutes of CPU time per Cron Trigger or Queue Consumer invocation" with no interval condition (pricing:34).
+- **Item 4:**
+  - Error 1102 and `Worker exceeded resource limits` are at limits:80.
+  - The overage-flexibility wording is at limits:76.
+  - The Errors page 1102 row says "Worker exceeded CPU time limit" (errors:26).
+- **Item 5:**
+  - Free is 50 subrequests, with 1,000 to internal services. Paid is 10,000, up to 10M (limits:188-189).
+  - The redirect-chain sentence is at limits:191.
+  - The changelog says Free is "limited to 50 external subrequests and 1000 subrequests to Cloudflare services".
+- **Item 6:** "Error: Too many subrequests." appears only in the Workflows limits page (workflows:157). It is not in Errors or Limits.
+- **Item 7:** the seventh connection is queued (limits:216).
+- **Item 8:** HTTP wall time is unlimited, Cron, Queue and DO alarms are 15 min each, and `waitUntil` allows 30 s (limits:420-423).
+- **Item 10:** 100,000 requests a day, resetting at midnight UTC, Error 1027 (limits:171, errors:32).
+- **Item 11:** Pricing says "Cloudflare does not bill for subrequests you make from your Worker" (pricing:36). This is now confirmed in the raw file.
+- **Item 14:** the 2.2 ms average and the 10-20 ms sentence for authentication and payload-heavy work are at limits:74.
 
 **Open questions**
-- Will the owner rule that Cloudflare vendor docs, or two Cloudflare pages, count as sources for Cloudflare product behaviour? Without that ruling, the facts that do pass can only be filed single-source with the grade stated.
-- Should the Researcher revise items 2, 4, 7, 10, 14 and the pattern, then resubmit?
-- Items 1, 3, 5 and 8 pass on content and could be filed once the sourcing question is settled.
-- The Pricing-versus-Limits conflict on Paid Cron CPU stays open.
-- The Free-plan Durable Object alarm CPU limit and subrequest count stay "not documented".
+- Will the owner rule that Cloudflare's own documentation counts for Cloudflare product behaviour? Without that ruling, even the passing items (1, 2, 3, 5, 7, 8, 10, 11) can only be filed single-source with the grade stated. The cost items are also affected.
+- Should the Researcher fix item 9 and F-cf-do-01, then resubmit?
+- Which page is right for Paid Cron CPU: Pricing or Limits?
+- Item 15 is a derived estimate. It assumes a 7th connection waits only for headers, so it is not a documented figure.

@@ -12,5 +12,4 @@ source. This widens ruling A on Q-005 (Anthropic pages only) to every vendor.
 Ruled 2026-10-03. The card's 24-hour timeout had passed, but this is the owner's own answer, not
 the default.
 
-Not yet carried into practice: governance/standards/sources.md still states the Anthropic-only rule.
-Changing it is R3, in its own PR with review.
+Carried into practice by PR #18, which changes governance/standards/sources.md (R3, with review).

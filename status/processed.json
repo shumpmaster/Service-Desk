@@ -3,9 +3,10 @@
   "decisions": {
     "decisions/Q-002/stop-1.md": "90df7188c89e104dd4d0c466f4f17e6d524853d74e6f6afe8ba52acf440628ed",
     "decisions/Q-003/failure-1.md": "bebe8499e5846eb84318556d379de04e027432497d758a57136945f91702e0ac",
-    "decisions/Q-005/stop-1.md": "67df7933de4b7de9aa56e3dfa0a2248d7979ab4af04602067e896ebf628e5702"
+    "decisions/Q-005/stop-1.md": "67df7933de4b7de9aa56e3dfa0a2248d7979ab4af04602067e896ebf628e5702",
+    "decisions/Q-006/stop-1.md": "64f4ee97bf095bdf733b2b4f3c980c81d16d58f1c683debb641668ffdd4a1970"
   },
-  "log_head": "dfd37aaaba2b1a4dd3224639851b9304b27bc0bb097e4cc44675e3d27aaa4b04",
+  "log_head": "7dd3f737eb967a215993d9c2f75ff83fe43fcdde50052c86cf7dac3096234aa8",
   "outcomes": {
     "P-001:ready-dispatch:2026-10-01T17:18:13Z": "808eac09a78f8eac75c1722733250aa948f091e7c5d26fc25b0670395bb57252",
     "Q-001:ready-dispatch:2026-10-01T01:46:42Z": "0cbe2d2e1836ef440b4cf2fb153877755a4394a44d14fb0e4f43e55ef36e1a0d",

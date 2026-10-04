@@ -1,33 +1,39 @@
 Verdict: FAIL
 
-I opened the memo's main sources myself as raw `index.md` pages from developers.cloudflare.com. Line numbers below are from those copies. Some claims are still on one page, or on none, so the memo as a whole can't pass. I filed two new entries. Nothing was committed, because the folder isn't a git repository.
+The folder isn't a git repository, so nothing was committed. I opened the changelog, Limits and Metrics pages as raw `index.md` copies with curl. Line numbers below come from those copies. I did not re-open the other sources, which are the Workflows limits, Error 1102, Pricing and 2026-02-11 changelog pages. Earlier rounds covered them, and the memo's claims that rest on them are held out anyway.
 
-**Filed** (`library/`, checked 2026-10-04, shelf life 6 months)
-- **F-cf-workers-03** (grade A, same publisher):
-  - Connections (item 7): at most six connections wait for response headers at once. A connection stops counting once its headers arrive (Limits:205, :216; changelog 2026-04-09:21, :31). The older rule of six concurrent fetches is in the historical changelog at :449.
-  - Cron 15 min (item 8a): Limits:155, :421 and historical changelog:362.
-  - Queue consumer 15 min (item 8e): Limits:157, :422 and Queues limits:33, :85.
-  - Durable Object alarm 15 min (item 8e): Limits:156, :423. The Durable Objects limits page was filed earlier in F-cf-do-01.
-  - Paid HTTP has no duration limit (item 8b): Limits:159, :420 and Pricing:34, "No charge or limit for duration".
-  - `waitUntil` (item 8d): 30 s, shared across calls, unfinished tasks cancelled. Limits:159 and Context API:234.
-- **F-cf-workers-06** (grade B): the Paid Cron and Queue CPU conflict. It supersedes the conflict part of F-cf-workers-02, which I left unedited.
-  - Pricing:34 gives 15 min per Cron Trigger or Queue Consumer.
-  - Limits:72 gives 30 s under a 1-hour interval and 15 min at 1 hour or more.
-  - Queues limits:34 and :56 give "configurable to 5 minutes", default 30 s.
-  - None of the three pages says which is right. I did not file the memo's opinion that Pricing is the odd one out (item 3a-op, grade C).
+**Filed** (checked 2026-10-04, shelf life 6 months, opened by me)
+- **F-cf-workers-07 (item 7b, grade B):** a 7th connection queues until an earlier one receives its response headers.
+  - Limits:216 says it outright: "it is queued until one of the existing connections receives its response headers".
+  - The changelog sentence the memo asked me to find is at changelog 2026-04-09:29: "A 7th fetch starts as soon as any earlier connection receives its response headers". It is only the image caption under the heading at :27, not body text. That is why this is B, not A.
+  - Neither page says whether a queued connection can time out or fail, so I filed no claim that a 7th connection never fails.
+  - The old-rule caption at :25 and the "without queueing" sentence at :31 are as the earlier round described them.
+- **F-cf-workers-08 (item 4a, grade B):** occasional CPU overages are tolerated.
+  - Limits:76 says each isolate has "built-in flexibility" for a Worker that "infrequently runs over the configured limit".
+  - Metrics and analytics:58 contains the rollover sentence word for word. It describes a related mechanism, not the same claim, so the grade is B.
+- I did not edit F-cf-workers-03 or F-cf-workers-01. The new entries supersede only the "not filed" notes in them.
 
 **Not filed**
-- **Item 7b (a 7th connection queues rather than fails):** Limits:216 says it, but it is the only page. The 2026-04-09 changelog says only "without queueing, as long as no more than six are waiting" (:31). The only changelog line that says "queued" is the old-rule diagram caption at :25.
-  - This answers the memo's request to check the "without queueing" wording against the raw page. The sentence is there, but it doesn't confirm the queueing claim.
-- **Item 8c (Free HTTP has no duration limit):** only Limits:159 and :420 say so. Pricing:33 says "No charge for duration", which is about billing, not limits.
-- **Item 4 (consistent overages are terminated):** Limits:76 only.
-- **Item 6 (`Error: Too many subrequests`):** Workflows limits:154-157 only, and it covers Workflows, not plain Workers. The 2026-02-11 changelog (:21) gives no error text.
-- **Item 11 and P-cf-fanout-01:** cost claims with no independent source. This is the owner-ruling gap in `governance/standards/sources.md:8-10`.
-- **Items 13 and 14:** the 304 claim has no page behind it, and the CPU estimate has one page.
-- **Pages I did not re-open:** DO pricing, DO release notes, Cron Triggers and Errors. They support only claims that are already withheld, or that earlier rounds filed.
+- **Item 4b (consistent overages are terminated):** Limits:76 only.
+- **Item 4c (Exceeded Resources status):** Metrics:90 and :93 only. The memo doesn't propose filing it.
+- **Item 6 (error text for too many subrequests):** Workflows limits only, and it covers Workflows, not plain Workers.
+- **Item 8c (Free HTTP has no duration limit):** Limits:159 and :420 only. Pricing:33 is about billing.
+- **Item 11 and P-cf-fanout-01 (cost claims):** no independent source, as `governance/standards/sources.md:10` requires.
+- **Item 14 (the 10–20 ms CPU estimate):** one page. Limits:71 says "heavier workloads … typically use 10-20 ms" generally, not for this workload.
+- **Item 13:** it rests on F-cf-workers-02, which I re-checked. Limits:188 gives 50 subrequests on Free. Items 13 and 14 are estimates, not facts.
+- **"Can't be raised" in the memo's short answer:** nothing I opened says Free's 10 ms can't be raised.
+  - Limits:84 and :90 describe raising CPU only on Paid.
+  - Limits:37 describes a generic limit-increase form.
+  - I filed nothing on this.
+
+**Why FAIL:** the memo's short answer includes claims that can't be confirmed: the "can't be raised" claim, the item 14 estimate, and the held-out items 4b, 6, 8c and 11. By the rule that an unverifiable claim is a FAIL, the memo as a whole fails. The two proposed amendments themselves passed.
 
 **Open questions**
-- Which of Pricing, Limits and Queues limits is right for Paid Cron and Queue CPU?
-- What CPU limit applies to a Durable Object or alarm on Free? What is an alarm's subrequest count?
-- Should the owner allow a non-Cloudflare source, accept a single-source grade, or leave unfiled the two cost claims (item 11 and P-cf-fanout-01)?
+- Is Free's 10 ms CPU limit fixed, or can it be raised by request? No page says.
+- Which of Pricing, Limits and Queues limits is right for Paid Cron and Queue CPU (F-cf-workers-06)?
+- What CPU limit and subrequest count apply to a Durable Object alarm on Free?
 - What error does a plain Worker raise when it exceeds the subrequest limit?
+- Does a 304 reply count as a subrequest?
+- Can a queued 7th connection time out or fail?
+- Should the owner allow a non-Cloudflare source for the two cost claims, accept them as single-source, or leave them unfiled?
+- Should the O3 CPU cost be measured in a separate task?

@@ -97,6 +97,8 @@ that only the owner passes.
     the command line reports, with the session's outcome. Specified and built in the model's own
     repository, under its spec process, and carried to Service-Desk as a model upgrade.
   - D7.2 Service-Desk adopts that model version, so its sessions carry the records D2.1 reads.
+    A governance change in Service-Desk (R3): made in the Orchestrator's lane, reviewed, and
+    approved by the owner.
 
 **Route to compression (Part 2):** D3.1 and D3.2 need only D2, so they can ship to the preview
 before D4. A read-only preview could replace the old page early, with acting following it.
@@ -115,7 +117,8 @@ before D4. A read-only preview could replace the old page early, with acting fol
 | D6.2 address cut-over | The owner approves; Builder carries it out |
 | D6.3 operating notes | Builder, with the Chief of Staff |
 | Carrying out planning choices (D4.2) | Chief of Staff |
-| D7 usage recording | The model's tools builder, to a model spec by the Definer, reviewed by the model's Reviewer; the owner approves the model change |
+| Weekly value checks (V1 to V3, pre-launch time) | Chief of Staff |
+| D7 usage recording | The model's tools builder, to a model spec by the Definer, reviewed by the model's Reviewer; the owner approves the model change; D7.2 is the Service-Desk Orchestrator's lane, approved by the owner |
 | Outside parties | GitHub and Cloudflare as platforms; Anthropic if the desk starts sessions (U3) |
 
 ## 5. Limits
@@ -130,9 +133,9 @@ before D4. A read-only preview could replace the old page early, with acting fol
   record a monthly AI-spend ceiling and an 80% alert (docs/playbooks/software.md §10). The agents
   that build the desk run on the owner's existing Claude subscription, not a pay-per-use API key,
   so the proposal is a $0 ceiling on API spend: any API key use needs the owner's ruling first.
-  The subscription's own usage limits stand in for the 80% alert: a session that hits one ends as
-  "usage-limit" in the Orchestrator's records, and the desk shows it (D3.6). The owner confirms or
-  changes this on the move-to-Build card.
+  The playbook's 80% alert measures metered spend; with no metered spend it has nothing to
+  measure. Whether to watch the subscription's own usage limits, and how, is a departure from the
+  playbook that the owner rules on the move-to-Build card; D3.6 can show usage once D7 lands.
 - **Data boundaries:** the desk reads only the connected project and portfolio repositories. It may
   send their content only to GitHub and Cloudflare, plus Anthropic if U3 leads to sessions. No
   secret is ever sent to a model.
@@ -172,9 +175,13 @@ days and moves with it, and the stop rule below uses V4's date as set.
 launch read-only and add acting after) or stop. A V1 to V3 miss after launch goes to the stage-8
 evidence review, where the owner rules continue, re-aim or stop. V1 is measured without server storage:
 each card on the desk shows when the desk first saw it, kept in the owner's own browser storage, and
-the weekly check compares that with the card's commit time in the repository. Nothing new is stored
+the Chief of Staff's weekly check compares that with the card's commit time in the repository. Nothing new is stored
 on Cloudflare, so the $0 ceiling and the data boundaries are unchanged (design; the Definer fixes it
-in Define). Operations-Hub stays live until launch, so stopping
+in Define).
+V2 is measured the same way: the owner taps "didn't need me" on a flagged item, the desk keeps the
+mark in browser storage, and the weekly check counts them. V3 and the pre-launch time are the
+owner's own weekly estimate, which the Chief of Staff asks for and records each week in
+docs/LEDGER.md. The Chief of Staff owns all four weekly checks (§4). Operations-Hub stays live until launch, so stopping
 loses nothing that exists today. The 5-minute figure in V1 rests on U4.
 
 ## 7. Solid foundation
@@ -225,17 +232,22 @@ inference or an absence we found, and E our own estimate (shown with its arithme
   - **Outbound requests:** 50 per invocation on Free, each redirect hop counting
     (F-cf-workers-02, A). The design never relies on one invocation reading everything: the page
     asks the function once per repository, and each call reads at most a fixed batch (set in
-    Define, under 40). A steady poll is one conditional request per repository for its default
-    branch head; a 304 means nothing changed and costs nothing against GitHub's limit (F-Q004-7, A).
-    Only when the head moves does the function read the changed records. A cold load after the
+    Define, under 40). A steady poll makes three conditional requests per repository: the
+    default branch head, the open pull requests, and the check runs on that head. That is
+    PAT-Q004-1's "3 calls per repository" (U4), and it covers new pull requests and finished CI
+    runs, which don't move the head. A 304 costs nothing against GitHub's limit (F-Q004-7, A). Only
+    when one of the three changes does the function read the changed records. A cold load after the
     desk was closed reads every record kind in D2.1, so it takes several batched calls rather than
     one (design, E).
   - **Connections:** up to six may wait for response headers at once; a seventh waits until one
-    gets its headers (F-cf-workers-03, A; F-cf-workers-07, B). A batch runs in waves of six.
+    gets its headers (F-cf-workers-03, A, for the six; F-cf-workers-07, B, for the seventh
+    queuing). A batch runs in waves of six. The wall-time limit for an HTTP request on Free isn't
+    in the library (F-cf-workers-03 files only Paid's), so Define's O3 measurement times a
+    cold-load batch too.
   - **What stays open (O3):** whether the CPU spent parsing one batch fits 10 ms. Steady polls are
     mostly empty 304s, but a cold-load batch carries full bodies, so the figure is only known by
     measuring; Define measures both.
-  - **Requests:** 5 repositories polled every minute for 16 hours is 4,800 requests a day, plus
+  - **Requests:** 5 repositories, one function call each, polled every minute for 16 hours is 4,800 requests a day, plus
     cold-load batches, against 100,000 (F-cf-workers-05, A; E2: 5 × 60 × 16 = 4,800).
   - **The page drives the reconcile poll; no cron or alarm is needed.** While the desk is open, the
     page asks the function every 1 to 2 minutes, and the function makes conditional requests to
@@ -362,7 +374,7 @@ O3 and O6 are open into Define, which the owner confirms on the card, and O4 and
 | O1 | Which route the desk acts through | D4, D5, the tier | **Closed** by the owner's ruling: the prefilled-link route (rests on O4) |
 | O2 | Whether planning and scheduling (D3.4, D4.2) are in the first version | §1, D3, D4, V4 | **Closed** by the owner's ruling: in |
 | O3 | Whether the CPU one batched call spends parsing its responses fits the Free plan's 10 ms | U1, $0 ceiling | **Open into Define.** The definition of ready asks every load-bearing unknown to be answered and has no exception clause, so the move-to-Build card asks the owner to accept this one open explicitly. Research Q-006 settled the rest: network waits don't count as CPU, 50 outbound requests are allowed, and occasional overages are tolerated (F-cf-workers-01, -02, -08). Closes by measuring a steady poll and a cold-load batch on the Pages project in Define. If it doesn't fit: smaller batches on Free, or the $5 Paid plan, which needs a new ceiling from the owner (F-hosting-01) |
-| O4 | Whether GitHub's new-file page takes a prefilled file name and content from a link, and lets the owner commit from a phone | D4, the prefilled-link route | **Closed** by research Q-007 and the owner's own use (U2): the file name is documented, the content is not but works, and the owner has committed from the phone's browser and app. Fallback if GitHub changes it: show the answer to copy |
+| O4 | Whether GitHub's new-file page takes a prefilled file name and content from a link, and lets the owner commit from a phone | D4, the prefilled-link route | **Closed** by research Q-007 and the owner's own use (U2): a file-name parameter is described on one GitHub page (F-gh-05, B), the content parameter is undocumented but works, and the owner has committed from the phone's browser and app. Fallback if GitHub changes it: show the answer to copy |
 | O5 | How the desk takes over the `needs-you` Pages address | V4, D6.2, U1 | **Closed** by research Q-008: the desk is a Pages project with Functions, deployed into `needs-you` by `wrangler pages deploy` (U1) |
 | O6 | Which usage and context figures Claude Code's command line reports for a session run non-interactively (tokens by kind, turns, context-window use, duration) | D7, D3.6 | **Open into Define.** As for O3, the move-to-Build card asks the owner to accept it open explicitly. Research Q-009 is still running and nothing it found is on main yet. Closes in Define by running one session with `stream-json` output and recording the fields that appear. A figure that doesn't appear is shown as not available |
 

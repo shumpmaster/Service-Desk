@@ -30,6 +30,10 @@ returns. Not yet approved.*
 - **Time asked of the owner:** for each project, how long its waits have taken, from a card or
   question being raised to the owner's answer being committed, read from its records. Spend is out
   of the first version, because no project records its spend yet (owner's ruling of 2026-10-04).
+- **Agent usage and context:** for each project, each agent session's role, run time, result,
+  tokens used and how full its context window got, shown alongside the timelines. The Orchestrator
+  doesn't record tokens or context today, so this needs a change to the operating model, D7 (owner's
+  ruling of 2026-10-04: in the first version, even if launch moves).
 - **Launch:** taking over the Operations-Hub address (Cloudflare Pages project `needs-you`) and
   archiving the old repository (L-0115 in the model's ledger).
 
@@ -65,11 +69,12 @@ that only the owner passes.
   - D1.3 What running work from the desk could look like (U3). Informs a later ruling only.
 - **D2 Read model:** one reader of every connected repository's v3 records.
   - D2.1 Status, queue, decisions, dispatch log, sprints and CI state, per project, with the
-    times cards were raised and answered.
+    times cards were raised and answered, and each agent session's usage record (D7).
   - D2.2 Change detection fast enough for V1. *Depends on D1.1.*
 - **D3 Screens, phone first.** *Depends on D2.*
   - D3.1 Universe. D3.2 Decision card and question view. D3.3 Team and pipeline.
   - D3.4 Work ahead and scheduling. D3.5 Time asked of the owner.
+  - D3.6 Agent usage and context. *Depends on D7.*
 - **D4 Acting.** *Depends on D1.2, D3.2 and (for D4.2) D3.4.*
   - D4.1 Answering a card or question, recorded as `decisions/<item>/<gate>-<card>.md`. The desk
     opens GitHub's new-file page with the answer filled in, and the owner commits it (the
@@ -79,10 +84,15 @@ that only the owner passes.
 - **D5 Security and trust.** *Depends on D1.2. Gates D4's launch.*
   - D5.1 The read token's handling and the login; the desk holds no write credential. D5.2 A security review of the
     login and the read token's handling, by the Reviewer.
-- **D6 Launch and hand-over.** *Depends on D3, D4 and D5.*
+- **D6 Launch and hand-over.** *Depends on D3, D4, D5 and D7.*
   - D6.1 Preview, then the owner's launch approval.
   - D6.2 Address cut-over and archiving Operations-Hub.
   - D6.3 Operating notes for the run stage.
+- **D7 Usage recording (an operating-model change).** *Depends on research Q-009 (O6).*
+  - D7.1 The model's session runner records, for each agent session, the usage and context figures
+    the command line reports, with the session's outcome. Specified and built in the model's own
+    repository, under its spec process, and carried to Service-Desk as a model upgrade.
+  - D7.2 Service-Desk adopts that model version, so its sessions carry the records D2.1 reads.
 
 **Route to compression (Part 2):** D3.1 and D3.2 need only D2, so they can ship to the preview
 before D4. A read-only preview could replace the old page early, with acting following it.
@@ -92,7 +102,7 @@ before D4. A read-only preview could replace the old page early, with acting fol
 
 | Deliverable | Owner |
 |---|---|
-| D1 | Researcher and Source checker, through research requests Q-001, Q-002, Q-004, Q-005, Q-006, Q-007 and Q-008 (Q-003 dropped) filed by the Chief of Staff |
+| D1 | Researcher and Source checker, through research requests Q-001, Q-002, Q-004 to Q-009 (Q-003 dropped) filed by the Chief of Staff |
 | D2 to D5 | Builder, to specs by the Definer, checks by the Check author, review by the Reviewer |
 | D5.2 | Reviewer, with a security focus |
 | Rulings: move to Build, criteria, tier, spend ceiling, launch, anything on D1.3 | The owner (Kenny) |
@@ -101,6 +111,7 @@ before D4. A read-only preview could replace the old page early, with acting fol
 | D6.2 address cut-over | The owner approves; Builder carries it out |
 | D6.3 operating notes | Builder, with the Chief of Staff |
 | Carrying out planning choices (D4.2) | Chief of Staff |
+| D7 usage recording | The model's tools builder, to a model spec by the Definer, reviewed by the model's Reviewer; the owner approves the model change |
 | Outside parties | GitHub and Cloudflare as platforms; Anthropic if the desk starts sessions (U3) |
 
 ## 5. Limits
@@ -144,6 +155,9 @@ V2: False alarms: items the desk flagged that did not need the owner, at most 1 
 V3: Owner upkeep: the owner's time on the desk itself (tokens, settings, adding repositories), at most 30 minutes a week after launch, 2026-11-11
 V4: Replacement: the desk serves the Operations-Hub address and the old repository is archived, by 2026-10-28
 
+V4's date is proposed: the owner said on 2026-10-04 that it can move, and sets it on the
+move-to-Build card.
+
 **Miss and stop rule:** a miss is V4 not met by 2026-10-28, or the redesign taking more than about
 2 hours a week of the owner's time before launch. At a miss, the owner rules: re-aim (for example,
 launch read-only and add acting after) or stop. A V1 to V3 miss after launch goes to the stage-8
@@ -161,40 +175,58 @@ inference or an absence we found, and E our own estimate (shown with its arithme
 
 | Unknown | Why it bears load | Evidence | Status |
 |---|---|---|---|
-| U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | F-hosting-01, -02a/b/c, -03 to -06, F-auth-01 to -04, F-gh-04, P-auth-01 | Answered except O3 (per-invocation limits) and O5 (taking over the address) |
+| U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | F-hosting-01, -02a/b/c, -03 to -06, F-auth-01 to -04, F-gh-04, P-auth-01, F-cf-01 to -07, P-cf-01, F-cf-workers-01 to -03, -05 to -08 | Answered except O3 (CPU per reconcile, measured in Define) |
 | U2 Acting in GitHub on the owner's behalf: mechanisms, attribution, credential risk | D4, D5, the tier, D-011 | L-F1 to L-F6, L-F8 to L-F12, L-P1 | Answered; the prefilled-link route is the owner's ruling (O1); it rests on O4 |
 | U3 What starting, steering or monitoring Claude Code sessions from a web app can do | D1.3, the owner's later ruling | LIB-F-a to -i, LIB-P-a | Answered enough for the owner's ruling |
 | U4 How quickly GitHub changes can reach a web page | V1, D2.2 | F-Q004-1, -2, -3a, -4, -6 to -13, PAT-Q004-1 | Answered: 5 minutes is reachable with a page-driven poll; webhooks optional |
-| Cloudflare Pages deploys from Actions, behind Access | D6 | Operations-Hub's own deploy, live since 2026-09-25 (its docs/research/003); outside the library | Observed, not filed (C). Load-bearing for V4: whether the desk can take over the `needs-you` Pages address is open item O5, research Q-008 |
+| Deploying the desk into the `needs-you` Pages project, behind Access | D6, V4 | F-cf-02, -03, -04, -07, P-cf-01; Operations-Hub's workflow deploys `needs-you` with `wrangler pages deploy` (observed, C) | Answered (O5, closed) |
 | A fine-grained read token reads the v3 records the screens need | D2.1 | Operations-Hub docs/research/002 and 004 (v2 records), and on 2026-10-01 the hub reading Service-Desk; outside the library | Observed, not filed (C); reading the v3 files themselves is inferred (C). Not load-bearing for the design: if the token can't read them, the fix is one read permission the owner adds by hand. Parsing them is D2.1 build work |
 
 ### U1 — Hosting
-- **Fits the $0 ceiling: Cloudflare Workers with static assets, behind Access, with Durable Objects
-  only if pushed updates are needed.**
-  - The Free plan gives 100,000 requests a day, and static assets are free (F-hosting-01, A).
-  - Access is free for up to 50 users, and a policy can name one email address (F-auth-01, -02, A).
-  - Durable Objects run on the Free plan with SQLite, 5 GB per account (F-hosting-02a, A). The
-    changelog says "Developers on the Workers Free plan will not be charged" for that storage
-    (F-hosting-02b, A); whether paid-plan billing is live doesn't affect a Free-plan desk.
+- **The desk is a Cloudflare Pages project with Pages Functions, deployed into the existing
+  `needs-you` project, behind Access.**
+  - Pages Functions run on Cloudflare Workers, and their requests count against the Workers plan
+    quota (F-cf-06, A). That the runtime limits are identical to a Worker's is not documented
+    (F-cf-06); the Free-plan limits below are the Workers ones, and Define's measurement (O3) is
+    taken on the Pages project itself.
+  - The Free plan gives 100,000 requests a day, resetting at midnight UTC (F-cf-workers-05, A), and
+    static asset requests are free (F-hosting-01, A).
+  - Access is free for up to 50 users, and a policy can name specific email addresses (F-auth-01,
+    -02, A).
+- **Taking over the address (O5, closed by research Q-008).**
+  - A production deployment to a Pages project, by Git commit or `wrangler pages deploy`, changes
+    what `<project>.pages.dev` and its custom domains serve; rollback is instant (F-cf-02, A).
+  - A project can't switch deployment method (F-cf-03, B). Operations-Hub deploys `needs-you` with
+    `wrangler pages deploy`, a Direct Upload (observed in its workflow, C), so the desk deploys the
+    same way.
+  - The documented routes are to deploy into the same Pages project, or to host elsewhere and 301
+    the `pages.dev` address to a custom domain (P-cf-01, C; F-cf-07, A). The desk takes the first.
+    Whether a Worker can hold a `pages.dev` address is not documented, so a plain Worker is not used.
+  - Pages-only gaps that matter: no Cron Triggers, and Durable Objects only by workaround (F-cf-06).
+    The design needs neither (below).
 - **What the free plan limits, and how the design stays inside them.**
-  - **WebSockets aren't used.** Cloudflare bills incoming WebSocket messages at 20 to 1 as
-    requests (F-hosting-02c, A). The entry doesn't say whether that applies on the Free plan; we
-    infer it counts against the 100,000 daily requests (C). The first version doesn't need
-    WebSockets: the open page polls over plain HTTP (U4), so the question never arises.
+  - **CPU:** 10 ms per request on the Free plan, and time spent waiting on network requests doesn't
+    count (F-cf-workers-01, A). Occasional overages are tolerated (F-cf-workers-08, B).
+  - **Outbound requests:** 50 per invocation on Free, each redirect hop counting
+    (F-cf-workers-02, A). A reconcile makes about 15: 3 conditional requests for each of 5
+    repositories (PAT-Q004-1; E1).
+  - **Connections:** up to six may wait for response headers at once; a seventh waits until one
+    gets its headers (F-cf-workers-03, A; F-cf-workers-07, B). Fifteen requests run in waves.
+  - **What stays open (O3):** whether the CPU spent parsing 15 responses fits 10 ms. Most polls get
+    an empty 304 when nothing changed (F-Q004-7), but the figure is only known by measuring.
+  - **Requests:** one page polling every minute for 16 hours is 960 requests a day, against 100,000
+    (E2: 60 × 16 = 960).
   - **The page drives the reconcile poll; no cron or alarm is needed.** While the desk is open, the
-    page asks the Worker every 1 to 2 minutes, and the Worker makes conditional requests to GitHub.
-    When the desk is closed, nothing needs showing, so nothing polls, and opening it reconciles at
-    once (design; see "show" in §8).
-  - **Requests:** one page polling every minute for 16 hours is 960 Worker requests a day, against
-    100,000 (F-hosting-01, A; E2: 60 × 16 = 960).
-  - **CPU:** 10 ms per invocation on the Free plan (F-hosting-01, A). Whether a reconcile across 5
-    repositories fits, whether time spent waiting on GitHub counts, and how many outbound requests
-    one invocation may make are not in the library on main. That's open item O3, which the owner
-    accepted into Define (below).
+    page asks the function every 1 to 2 minutes, and the function makes conditional requests to
+    GitHub. When the desk is closed, nothing needs showing, so nothing polls, and opening it
+    reconciles at once (design; see "show" in §8).
+  - **WebSockets aren't used.** Cloudflare bills incoming WebSocket messages at 20 to 1 as requests
+    (F-hosting-02c, A); the desk polls over plain HTTP, so the question never arises.
 - **Two requirements carry into D5.**
-  - Validate the Access token in the Worker (F-auth-04, A).
-  - Cover the `workers.dev` and version URLs with Access, because they are public otherwise
-    (F-auth-03, A).
+  - Validate the Access token in the function (F-auth-04, A).
+  - Put an Access policy on every hostname. Pages' own "Enable access policy" covers previews only;
+    `*.pages.dev` needs the wildcard removed from the Access app, and each custom domain needs its
+    own policy (F-cf-04, A). Worker-level Access (F-cf-05, A) is not documented for Pages.
 - **The others are worse fits.**
   - Vercel Hobby is non-commercial personal use only (F-hosting-03, A).
   - Fly.io offers only a trial of 2 hours of machine time or 7 days; no lasting free tier is
@@ -205,8 +237,7 @@ inference or an absence we found, and E our own estimate (shown with its arithme
   - GitHub Pages sites are public, even when the repository is private, "if your plan or
     organization allows it" (F-gh-04, A). The entry doesn't cover private publishing on Enterprise
     plans.
-- **Upkeep (V3):** one Access policy, one Worker, and the read token (U2). Operations-Hub already
-  runs on Cloudflare (observed, row 5).
+- **Upkeep (V3):** the Access policies, one Pages project, and the read token (U2).
 
 ### U2 — Acting on the owner's behalf
 - **Who GitHub shows as the actor (Q-002 §1 to §4, §9):**
@@ -282,15 +313,16 @@ inference or an absence we found, and E our own estimate (shown with its arithme
 
 ### Open at this exit
 Each item has an owner and a place where it closes. O1 and O2 are closed by the owner's rulings,
-O3's acceptance is the owner's too, and O4 and O5 wait on research (see "Owner rulings" in §8).
+O3's acceptance is the owner's too, O5 is closed by research, and O4 and O6 wait on research (see "Owner rulings" in §8).
 
 | ID | Open item | Bears on | Closes by |
 |---|---|---|---|
 | O1 | Which route the desk acts through | D4, D5, the tier | **Closed** by the owner's ruling: the prefilled-link route (rests on O4) |
 | O2 | Whether planning and scheduling (D3.4, D4.2) are in the first version | §1, D3, D4, V4 | **Closed** by the owner's ruling: in |
-| O3 | Whether one reconcile fits the Free plan's per-invocation limits (CPU time, outbound requests) | U1, $0 ceiling | **Open into Define, as the owner accepted on 2026-10-04.** This is an exception to the definition of ready's item 7, put to the owner on the move-to-Build card. Closes by measuring one reconcile on a real Free-plan Worker in Define. If it doesn't fit: one invocation per repository, or the $5 Paid plan, which needs a new ceiling from the owner (F-hosting-01). Research Q-006 continues; if it passes, its library entries are added here |
+| O3 | Whether the CPU one reconcile spends parsing about 15 responses fits the Free plan's 10 ms | U1, $0 ceiling | **Open into Define, as the owner accepted on 2026-10-04.** This is an exception to the definition of ready's item 7, put to the owner on the move-to-Build card. Research Q-006 settled the rest: network waits don't count as CPU, 50 outbound requests are allowed, and overages are tolerated occasionally (F-cf-workers-01, -02, -08). Closes by measuring one reconcile on the Pages project in Define. If it doesn't fit: one invocation per repository, or the $5 Paid plan, which needs a new ceiling from the owner (F-hosting-01) |
 | O4 | Whether GitHub's new-file page takes a prefilled file name and content from a link, and lets the owner commit from a phone browser | D4, the prefilled-link route | Research Q-007. If it doesn't: the desk shows the answer to copy and links to the empty new-file page, or the owner rules on a token route |
-| O5 | Whether the desk, built on Workers, can serve the `needs-you` Pages address, or must be a Pages project with Functions | V4, D6.2, U1 | Research Q-008. Either answer keeps Cloudflare and Access; it decides how the desk is built and deployed |
+| O5 | How the desk takes over the `needs-you` Pages address | V4, D6.2, U1 | **Closed** by research Q-008: the desk is a Pages project with Functions, deployed into `needs-you` by `wrangler pages deploy` (U1) |
+| O6 | Which usage and context figures Claude Code's command line reports for a session run non-interactively (tokens by kind, turns, context-window use, duration) | D7, D3.6 | Research Q-009. Whatever it reports is what D7 records; a figure it doesn't report is shown as not available |
 
 ## 8. Clear and consistent
 *Key terms defined; constraints checked against each other and found not to contradict.*
@@ -316,6 +348,8 @@ Critic's pack does not include; the owner confirms all of them on the move-to-Bu
 - Spend is out of the first version; the desk shows the time asked of the owner (2026-10-04).
 - Planning choices are recorded and carried out by the Chief of Staff, not acted on automatically
   by the Orchestrators, in the first version (2026-10-04).
+- Agent usage and context are in the first version, with the model change they need (D7), even if
+  launch moves (2026-10-04).
 - Two pages of a vendor's own documentation count as two sources for how its own product behaves
   (2026-10-01 for Anthropic, widened to any vendor on 2026-10-03); cost, risk and quality claims
   still need an independent source. This one is also in governance/standards/sources.md.
@@ -330,13 +364,16 @@ Critic's pack does not include; the owner confirms all of them on the move-to-Bu
 - Scope against the owner's picks: resolved. The owner put planning and scheduling in the first
   version (O2), so it is a fifth pick (Part 2).
 - Tier: AGENTS.md says T1, and §5 now proposes T1. The owner confirms at the move to Build.
-- Scope against the date: planning and scheduling add D3.4 and D4.2 before 2026-10-28. §3's route
-  to compression still applies: D3.1 and D3.2 can ship to the preview first.
+- Scope against the date: planning and scheduling (D3.4, D4.2) and usage recording (D7, a model
+  change) put 2026-10-28 at risk. The owner accepted that the date can move (2026-10-04); V4's date
+  is set on the move-to-Build card. §3's route to compression still applies: D3.1 and D3.2 can ship
+  to the preview first.
 - Spend: $0 against "spend follows value". The first version fits $0 on Cloudflare's Free plan if
   O3's measurement holds; its fallbacks and U3's paid routes would need a new ceiling from the
   owner, and U3 is out of the first version.
 - Timeline against research: D1 must land within the first week to keep V4. Four of its questions
-  passed on day 1 (2026-10-01); O3 to O5 remain, with research Q-006 to Q-008 running.
+  passed on day 1 (2026-10-01); Q-006 and Q-008 passed on 2026-10-04 (O5 closed, O3 narrowed); O4 and O6 wait on Q-007
+  and Q-009.
 
 # Part 2 — The intent
 
@@ -368,6 +405,9 @@ The owner picked all four, and on 2026-10-01 added a fifth:
 4. **Spend and time:** spend against each project's ceiling, and the cost to the owner's time.
    On 2026-10-04 the owner deferred spend, because no project records it yet; time stays.
 5. **Planning and scheduling.** The owner, 2026-10-01: "No I want planning and scheduling in".
+6. **Agent usage and context.** The owner, 2026-10-04: "It's important for me to see timelines and
+   context windows to be able to drive things." Chosen over keeping the launch date: "The launch
+   date isn't set in stone."
 
 ### Preferences and trade-offs
 - **Phone first.** Desktop is a bigger view of the same thing.
@@ -389,7 +429,8 @@ The owner picked all four, and on 2026-10-01 added a fifth:
 - **Spend follows value.** "I'm open to most anything if the value can be justified." There is no
   fixed ceiling yet. Every paid service carries its value case, and Part 1 §5 still needs a
   number.
-- **Four weeks, with a faster route shown.** Launch by 2026-10-28 is acceptable, "but with a route
+- **Four weeks, with a faster route shown; the date can move.** On 2026-10-04 the owner said "The
+  launch date isn't set in stone" when choosing to include usage and context. Launch by 2026-10-28 is acceptable, "but with a route
   to timeline compression if we work it aggressively." The plan should show what could shorten it
   and what that would cost.
 - **Accepted risk: the session token.** Two Q-003 Researcher sessions read the session OAuth token

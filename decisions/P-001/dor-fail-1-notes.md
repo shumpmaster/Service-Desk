@@ -28,3 +28,14 @@ no-credential route is described as a design option. Planning-in-scope is your r
 If O1 to O3 are ruled before the resubmit, the next check sees a brief with nothing open but O3's
 measurement. If not, the brief says plainly that they're open, and the Critic's own open question
 1 asks whether that's acceptable. Ruling them first is the stronger submission.
+
+## Update, 2026-10-04: resubmitting with O3 accepted open
+
+O1 and O2 are closed by the owner's rulings (decisions/questions/P-001-acting-route.md and
+P-001-planning-scope.md). Q-006, the research for O3, has failed its source check four times. Its
+load-bearing facts were confirmed on Cloudflare's own pages, but the memo can't pass while it holds
+cost estimates with no independent source. So the Chief of Staff asked the owner whether O3 may stay
+open into Define, closed by a measurement there with the stated fallback. The owner replied,
+verbatim: "Yes". The brief now says so in §7, and this file answers the Critic's open question 1.
+The owner also said "You can be my proxy there" for this card, so decisions/P-001/dor-fail-1.md is
+the proxy's `resubmit`.

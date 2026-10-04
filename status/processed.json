@@ -10,7 +10,7 @@
     "decisions/Q-006/stop-1.md": "64f4ee97bf095bdf733b2b4f3c980c81d16d58f1c683debb641668ffdd4a1970",
     "decisions/Q-006/stop-2.md": "2f5cfb93b14e26305e44d0cad760a1a260f469f42c5e7bf0a4378747a974fd3e"
   },
-  "log_head": "64e81b53be554143257752f23acc38ca946cc8c01a5dc6baa03d7b914eb0ab22",
+  "log_head": "5281babc7408815c9896afc43fc18bd01bf1b2da95361d95fa7b44018b97381a",
   "outcomes": {
     "P-001:ready-dispatch:2026-10-01T17:18:13Z": "808eac09a78f8eac75c1722733250aa948f091e7c5d26fc25b0670395bb57252",
     "P-001:ready-dispatch:2026-10-04T01:21:06Z": "ed8e92ce80b4a14a64ae0399e6c71307637841f83a0662724ce39c88446d4da3",
@@ -78,6 +78,7 @@
     "Q-005",
     "Q-006",
     "Q-007",
-    "Q-008"
+    "Q-008",
+    "Q-009"
   ]
 }

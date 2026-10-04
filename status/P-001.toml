@@ -1,13 +1,13 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "project"
 stage = 2
-state = "dispatched"
+state = "waiting-owner"
 role = "critic"
-last_verdict = "none"
-plan_round = 1
+last_verdict = "FAIL"
+plan_round = 2
 build_round = 0
 confirm_used = false
 attempts = 0
 sessions = 1
-dispatched_at = "2026-10-04T01:21:06Z"
-card = 1
+gate = "dor-fail"
+card = 2

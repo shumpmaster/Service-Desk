@@ -1,44 +1,38 @@
-Verdict: FAIL
+Verdict: PASS
 
-The memo's claims on parameters, the 414 error, forks and pull requests, and GitHub Mobile mostly hold up. Two claims don't, so the memo as a whole fails. I filed F-gh-05, F-gh-06, F-gh-07 and F-gh-09 in `library/`. I did not file F-gh-08. I opened the pages through web fetch and curl on the raw `github/docs` markdown. Line numbers are in the raw markdown files.
+I re-opened the sources behind the revised claims (3.3–3.10) and filed four new entries. Sections 1, 2 and 4.2–4.6 passed last round, and the memo leaves them unchanged. I did not re-open those pages, but the entries filed then (F-gh-05, 06, 09) stand.
+
+I fetched the raw `github/docs` markdown with curl. For the two pages whose tables the raw file lacks, I read the rendered HTML table cells. Line numbers below are in the raw files.
 
 ## Confirmed and filed
 
-- **1.1 / F-gh-05:**
-  - The 2012 blog post, updated 2019-12-06, says "Typing `?filename=yournewfile.txt` … will pre-fill the filename field."
-  - 1.2 is also confirmed: the raw `creating-new-files.md` names no URL parameters, and its line "type the `/` directory separator" confirms 1.6.
-  - This is one page only, so it is not "confirmed" by the question's two-page bar. I filed it as grade B and labelled it single page.
-- **2.2 / F-gh-06:**
-  - The issue page (`creating-an-issue.md`, line 131) and the pull request page (`using-query-parameters-to-create-a-pull-request.md`, line 31) both say a URL over the server limit returns `414 URI Too Long`. Neither gives a number.
-  - Two pages from the same publisher, grade A.
-- **3.1 and 3.2 / F-gh-07:**
-  - `creating-new-files.md` and `editing-files.md` both say forking and a pull request apply without access.
-  - The shared reusable `choose_commit_branch` says to use a new branch if the current one is the default branch.
-  - The "Commit changes" or "Propose changes" button is in `propose_new_file` and `propose_file_change`.
-- **4.2 / F-gh-09:**
-  - `github-mobile.md` lines 100–104 confirm Universal Links are on by default on iOS.
-  - The memo left out that long-press then "Open" turns this off for later taps for the same GitHub instance, not just that one tap. I added that to the entry.
-- **4.5 and 4.6 / F-gh-09:**
-  - The 2023-03-07 blog post confirms editing, a new branch while committing, and "Propose changes". It does not cover creating files.
-  - Staff post #40852 (alcere, 2023-10-19) confirms the "Create file" option in the top-bar overflow menu. That is grade C.
+- **3.7 and 3.8, filed as F-gh-10 (new entry, grade A with "shared text" label).**
+  - The push-rulesets reusable ("may block creating a new file", fork network) is included in `creating-new-files.md` line 18 and `adding-a-file-to-a-repository.md` line 30. `editing-files.md` does not include it, as the memo says.
+  - The protected-branch reusable ("you can't edit or upload files in the protected branch") is included in `editing-files.md` line 24 and `adding-a-file-to-a-repository.md` line 28. `creating-new-files.md` does not include it.
+  - The reusable text matches the memo's quotes word for word.
+  - F-gh-10 supersedes points (3) and (4) of F-gh-07. I did not edit F-gh-07.
+- **3.3a, 3.3b, 3.4, 3.5a–c, filed as F-gh-08a (grade B).**
+  - `about-protected-branches.md`:
+    - Lines 37 and 156: the rules don't apply to admins by default.
+    - Line 68: with required reviews, collaborators can only push through an approved pull request.
+    - Line 166: with push restrictions on, only users, teams or apps given permission can push, and they still need a pull request when one is required.
+    - Line 170: admins are always able to push.
+  - Roles page, rendered table:
+    - "Push to (write)" is ticked for Write, Maintain and Admin.
+    - "Push to protected branches" is ticked for Maintain and Admin only, with the note "Doesn't apply to rulesets as these have a different bypass model."
+  - Personal-account page: I reached it by following a 301 redirect. "Collaborators … can pull (read) … and push (write)" is there. The "Merge a pull request on a protected branch, even if there are no approving reviews" row sits in the owner-access table, so "only the owner" holds.
+  - The entry says this is a default-role table, not a rule about who can push. This resolves the conflict that kept F-gh-08 out last round.
+- **3.6, filed as F-gh-08b (grade B).** `available-rules-for-rulesets.md` line 101 says the pull request "doesn't necessarily have to be approved, but it must be opened". Line 31 says "only users with bypass permissions can push".
 
-## Problems
+## Not filed
 
-1. **3.7 is graded too high.** The memo calls it A, but the push-rulesets text is in `creating-new-files.md` only. `editing-files.md` doesn't include it. That makes it single page, grade B. I filed it that way in F-gh-07.
-2. **3.8 is wrong.** The memo says no page covers protected branches and the web editor. `editing-files.md` includes a reusable tip, `protected-branches-block-web-edits-uploads`: "If a repository has any protected branches, you can't edit or upload files in the protected branch using GitHub." This is one page and covers edit and upload, not creating a new file. I added it to F-gh-07. It bears directly on the Service Desk decision.
-3. **F-gh-08 not filed.** It says "pushing to protected branches needs Maintain or Admin." The roles page does show Push to protected branches as Maintain and Admin only. But `about-protected-branches.md` line 170 says write-access actors can be given push access to a protected branch, and that admins can always push. The two pages conflict, so the claim as worded is not confirmed.
-   - On the same page, line 37 says the rules don't apply to admins by default, and that line is consistent with the memo.
-   - Items 3.3 to 3.6 were only partly checked. I did not open the personal-account permissions page (3.4), and I did not confirm the 3.6 pull-request-ruleset sentence beyond `available-rules-for-rulesets.md` line 101, which supports it.
-
-## Not checked
-
-- The 2012 blog post as a source for 3.1 (not needed, since two docs pages cover it).
-- `supported-browsers` (4.1).
-- Both non-GitHub issue-tracker links (1.3, 1.5, 2.3), which the memo didn't offer as facts.
-- Whether the "Create file" option appears on GitHub's mobile website. No checked page says either way.
+- 3.9, 3.10, 4.1, 4.3, 4.7 and 4.8 are "not documented", so there is nothing to file as a fact.
+- The F-gh-09 amendment for 4.8 would add only a "not documented" item, so I left F-gh-09 as it is.
 
 ## Open questions
 
-- Does the protected-branch tip on `editing-files` also apply to creating a new file? It says "edit or upload." That needs its own source or the owner's decision.
-- Should F-gh-08 be re-researched and split into a protected-branch claim and a ruleset claim, with the Maintain and Admin wording corrected?
-- The memo's 3.8 should be corrected before anyone relies on it.
+- **Grade A for shared reusable text.** The owner ruling in `governance/standards/sources.md` counts two different pages as two sources. F-gh-10's two pages carry one identical sentence each, so the wording is not independent. I filed it as A and labelled it. If the owner wants a stricter reading, it is B. F-gh-07 point (2) and 3.2 use the same pattern.
+- **Protected branches and new files.** Does the protected-branch block cover creating a new file? The tip says "edit or upload", and `creating-new-files.md` doesn't include it. This is the point the Service Desk decision turns on, and no page answers it.
+- **Admins.** Are admins exempt from the web-editor block? No page says.
+- **Memo "Verified" line 3.** The memo flags that some of its fetches went through a summarising model. I re-fetched 3.3–3.6 directly, so that concern is closed.
+- **Mobile website.** Does the mobile website offer "Create file"? Still not documented.

@@ -18,7 +18,9 @@ None. You hold no write tool (class `reviewer`). The Orchestrator records your v
 The finished document under review; for Triage, the failure and the traceability chain.
 
 ## May read
-The definition of ready, the playbooks, the library.
+The definition of ready, the playbooks, the library, and the owner's ruling records in `decisions/`
+(never the Chief of Staff's `-notes.md` files), so that a brief citing an owner's ruling can be checked
+(model L-0119).
 
 ## Must not see
 The writer's drafts and reasoning; the writer's own summary of its work.

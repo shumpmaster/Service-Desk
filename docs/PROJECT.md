@@ -10,7 +10,8 @@ stays living. The Critic checks Part 1 against the definition of ready.*
 ## 1. Scope
 *What is in, what is explicitly out, and where it must work (target devices or places).*
 
-*Draft 1, 2026-10-01, Chief of Staff, from Part 2. Not yet checked by the Critic or approved.*
+*Draft 3, 2026-10-04, Chief of Staff, from Part 2 and the owner's rulings; revised after two Critic
+returns. Not yet approved.*
 
 **In (the first version people use):**
 - **Universe screen:** one box per project with its state, headline, sprint and main-branch health,
@@ -21,10 +22,14 @@ stays living. The Critic checks Part 1 against the definition of ready.*
 - **Team and pipeline:** for each project, its v3 stage, the item and role at work, and what comes
   next.
 - **Planning and scheduling:** the work ahead across projects, and the owner's choice of its order
-  and timing, recorded as rulings the Orchestrators act on. In the first version by the owner's
-  ruling of 2026-10-01 (see "Owner rulings" in §8).
-- **Spend and time:** spend against each project's ceiling, and the time each project has asked of
-  the owner.
+  and timing. In the first version by the owner's ruling of 2026-10-01. The owner's choices are
+  recorded through the same prefilled-link route as card answers, and the Chief of Staff carries
+  them out by filing requests in that order and at those times. No Orchestrator acts on them
+  automatically in the first version (owner's ruling of 2026-10-04; automatic action is a later
+  model change). See "Owner rulings" in §8.
+- **Time asked of the owner:** for each project, how long its waits have taken, from a card or
+  question being raised to the owner's answer being committed, read from its records. Spend is out
+  of the first version, because no project records its spend yet (owner's ruling of 2026-10-04).
 - **Launch:** taking over the Operations-Hub address (Cloudflare Pages project `needs-you`) and
   archiving the old repository (L-0115 in the model's ledger).
 
@@ -59,16 +64,18 @@ that only the owner passes.
   - D1.2 Acting on the owner's behalf: mechanism and attribution (U2).
   - D1.3 What running work from the desk could look like (U3). Informs a later ruling only.
 - **D2 Read model:** one reader of every connected repository's v3 records.
-  - D2.1 Status, queue, decisions, dispatch log, sprints and CI state, per project.
+  - D2.1 Status, queue, decisions, dispatch log, sprints and CI state, per project, with the
+    times cards were raised and answered.
   - D2.2 Change detection fast enough for V1. *Depends on D1.1.*
 - **D3 Screens, phone first.** *Depends on D2.*
   - D3.1 Universe. D3.2 Decision card and question view. D3.3 Team and pipeline.
-  - D3.4 Work ahead and scheduling. D3.5 Spend and time.
-- **D4 Acting.** *Depends on D1.2 and D3.2.*
+  - D3.4 Work ahead and scheduling. D3.5 Time asked of the owner.
+- **D4 Acting.** *Depends on D1.2, D3.2 and (for D4.2) D3.4.*
   - D4.1 Answering a card or question, recorded as `decisions/<item>/<gate>-<card>.md`. The desk
-    opens GitHub's new-file page with the answer filled in, and the owner commits it (route A,
-    the owner's ruling; see "Owner rulings" in §8).
-  - D4.2 Planning rulings (order and timing), recorded the same way.
+    opens GitHub's new-file page with the answer filled in, and the owner commits it (the
+    prefilled-link route, the owner's ruling; see "Owner rulings" in §8). Depends on O4.
+  - D4.2 Planning choices (order and timing), recorded the same way; the record's path is set in
+    Define. The Chief of Staff carries them out.
 - **D5 Security and trust.** *Depends on D1.2. Gates D4's launch.*
   - D5.1 The read token's handling and the login; the desk holds no write credential. D5.2 A security review of the
     login and the read token's handling, by the Reviewer.
@@ -85,29 +92,47 @@ before D4. A read-only preview could replace the old page early, with acting fol
 
 | Deliverable | Owner |
 |---|---|
-| D1 | Researcher and Source checker, through research requests Q-001, Q-002, Q-004 and Q-005 (Q-003 dropped) filed by the Chief of Staff |
+| D1 | Researcher and Source checker, through research requests Q-001, Q-002, Q-004, Q-005, Q-006, Q-007 and Q-008 (Q-003 dropped) filed by the Chief of Staff |
 | D2 to D5 | Builder, to specs by the Definer, checks by the Check author, review by the Reviewer |
 | D5.2 | Reviewer, with a security focus |
 | Rulings: move to Build, criteria, tier, spend ceiling, launch, anything on D1.3 | The owner (Kenny) |
 | Cloudflare and GitHub settings, and any secret | The owner, by hand. No agent holds them |
+| D6.1 preview deploy | Builder; the owner approves launch |
 | D6.2 address cut-over | The owner approves; Builder carries it out |
+| D6.3 operating notes | Builder, with the Chief of Staff |
+| Carrying out planning choices (D4.2) | Chief of Staff |
 | Outside parties | GitHub and Cloudflare as platforms; Anthropic if the desk starts sessions (U3) |
 
 ## 5. Limits
 *The spend ceiling, the data boundaries (what data may go to which outside service), and the tier (T1, T2 or T3 by the tier triggers), which is the project's trust level.*
 
-- **Spend ceiling (proposed): $0 a month.** Free tiers only, as Operations-Hub runs today; U1
-  shows the first version fits Cloudflare's free tier (§7). The owner said spend follows value, so
-  any paid item (for example the paid routes in U3) comes with its own value case and a new
-  ceiling for the owner to rule on. Alert at 80% of that ceiling.
+- **Hosting spend ceiling (proposed): $0 a month.** Free tiers only, as Operations-Hub runs
+  today. U1 shows the first version fits Cloudflare's Free plan if O3's measurement holds (§7); if
+  it doesn't, the fallbacks are one invocation per repository on Free, or the $5 Paid plan, which
+  needs a new ceiling from the owner. The owner said spend follows value, so any paid item comes
+  with its own value case.
+- **AI spend (proposed, for the owner to set on the move-to-Build card):** the agents that build the
+  desk run through the owner's existing Claude Code setup. The playbook asks each project to record
+  a monthly AI-spend ceiling and an 80% alert (docs/playbooks/software.md §10); the owner sets those
+  numbers on the card.
 - **Data boundaries:** the desk reads only the connected project and portfolio repositories. It may
   send their content only to GitHub and Cloudflare, plus Anthropic if U3 leads to sessions. No
   secret is ever sent to a model.
-- **Tier (proposed): T1, as AGENTS.md says today.** T2 was proposed while the desk might hold a
-  credential that writes to the owner's repositories; Operations-Hub's scope ruled that write-back
-  makes a hub T2. Under the owner's ruling A on the acting route, the owner commits every answer on
-  GitHub and the desk holds only a read token, so that trigger is gone. The owner rules the tier
-  on the move-to-Build card. D5's login checks (U1) apply either way.
+- **Tier (proposed): T1, as AGENTS.md says today.** Against the T1 → T2 triggers
+  (docs/playbooks/software.md §3):
+  - *Any external user:* none; the Access policy names one email address, the owner's (F-auth-02
+    shows a policy can name specific addresses).
+  - *Deploys to a shared environment:* the desk deploys to the owner's own Cloudflare account, used
+    by the owner alone. We read "shared" as used by others, so this doesn't trigger; the owner
+    rules on that reading.
+  - *Anyone else's personal data:* none; the desk reads only the owner's repositories.
+  - *3+ concurrent agents:* Build is planned with at most two agents at once; the Definer holds it
+    to that in Define. More would trigger T2.
+  - *A second human committer:* none; the humans block names only the owner.
+  - *A release that hurt someone:* none.
+  Operations-Hub's scope also made write-back a T2 trigger. Under the prefilled-link route the
+  desk holds only a read token, so it doesn't apply. The owner rules the tier on the move-to-Build
+  card.
 
 ## 6. Value and stop rule
 *This project's own measure of value, the target and date, and what counts as a miss — including the cost to the owner's time. Write each value target on its own line starting with its ID, like `V1: <measure>, <target>, <date>`; spec criteria trace to these IDs.*
@@ -121,25 +146,26 @@ V4: Replacement: the desk serves the Operations-Hub address and the old reposito
 
 **Miss and stop rule:** a miss is V4 not met by 2026-10-28, or the redesign taking more than about
 2 hours a week of the owner's time before launch. At a miss, the owner rules: re-aim (for example,
-launch read-only and add acting after) or stop. Operations-Hub stays live until launch, so stopping
+launch read-only and add acting after) or stop. A V1 to V3 miss after launch goes to the stage-8
+evidence review, where the owner rules continue, re-aim or stop. V1 misses are found in Define's
+design by comparing each repository's card times with the desk's own log of what it showed. Operations-Hub stays live until launch, so stopping
 loses nothing that exists today. The 5-minute figure in V1 rests on U4.
 
 ## 7. Solid foundation
 *Every load-bearing unknown, each answered with evidence (library entry or research memo), including through research sub-projects if needed.*
 
 *Draft 4, 2026-10-04, Chief of Staff, after the Critic's second definition-of-ready return. U1 to
-U4 rest on library entries only; each entry's opened-by line names the source check that filed it.
-Each grade is the one filed in the library: A = vendor documentation read in full, B = one vendor
-page or read through a summary, C = our inference or an absence we found, E = our own estimate
-(shown with its arithmetic). Items still open are under "Open at this exit" below.*
+U4 rest on library entries only; each entry, or for the Q-004 entries the file header, names the
+source check that filed it. Each A or B grade is the one filed in that entry; C marks our own
+inference or an absence we found, and E our own estimate (shown with its arithmetic). Items still open are under "Open at this exit" below.*
 
 | Unknown | Why it bears load | Evidence | Status |
 |---|---|---|---|
-| U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | F-hosting-01, -02a/b/c, -03 to -06, F-auth-01 to -04, F-gh-04, P-auth-01 | Answered: Cloudflare Workers fits $0; one per-invocation limit open into Define (O3) |
-| U2 Acting in GitHub on the owner's behalf: mechanisms, attribution, credential risk | D4, D5, the tier, D-011 | L-F1 to L-F12, L-P1 | Answered; route A, prefilled GitHub links, is the owner's ruling (O1) |
+| U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | F-hosting-01, -02a/b/c, -03 to -06, F-auth-01 to -04, F-gh-04, P-auth-01 | Answered except O3 (per-invocation limits) and O5 (taking over the address) |
+| U2 Acting in GitHub on the owner's behalf: mechanisms, attribution, credential risk | D4, D5, the tier, D-011 | L-F1 to L-F6, L-F8 to L-F12, L-P1 | Answered; the prefilled-link route is the owner's ruling (O1); it rests on O4 |
 | U3 What starting, steering or monitoring Claude Code sessions from a web app can do | D1.3, the owner's later ruling | LIB-F-a to -i, LIB-P-a | Answered enough for the owner's ruling |
-| U4 How quickly GitHub changes can reach a web page | V1, D2.2 | F-Q004-1 to -13, PAT-Q004-1 | Answered: 5 minutes is reachable with a page-driven poll; webhooks optional |
-| Cloudflare Pages deploys from Actions, behind Access | D6 | Operations-Hub's own deploy, live since 2026-09-25 (its docs/research/003); outside the library | Observed, not filed (C). Not load-bearing: U1's library entries carry the hosting and Access choice, and D6 can fall back to deploying the Worker by hand |
+| U4 How quickly GitHub changes can reach a web page | V1, D2.2 | F-Q004-1, -2, -3a, -4, -6 to -13, PAT-Q004-1 | Answered: 5 minutes is reachable with a page-driven poll; webhooks optional |
+| Cloudflare Pages deploys from Actions, behind Access | D6 | Operations-Hub's own deploy, live since 2026-09-25 (its docs/research/003); outside the library | Observed, not filed (C). Load-bearing for V4: whether the desk can take over the `needs-you` Pages address is open item O5, research Q-008 |
 | A fine-grained read token reads the v3 records the screens need | D2.1 | Operations-Hub docs/research/002 and 004 (v2 records), and on 2026-10-01 the hub reading Service-Desk; outside the library | Observed, not filed (C); reading the v3 files themselves is inferred (C). Not load-bearing for the design: if the token can't read them, the fix is one read permission the owner adds by hand. Parsing them is D2.1 build work |
 
 ### U1 — Hosting
@@ -174,12 +200,13 @@ page or read through a summary, C = our inference or an absence we found, E = ou
   - Fly.io offers only a trial of 2 hours of machine time or 7 days; no lasting free tier is
     described (F-hosting-04a, A).
   - Render's free service sleeps after 15 minutes idle (F-hosting-05, A).
-  - A Hetzner server is about €5.49 a month with the most upkeep (F-hosting-06, A).
+  - A Hetzner server is about €5.49 a month (F-hosting-06, A); that it needs the most upkeep is our
+    judgement (C).
   - GitHub Pages sites are public, even when the repository is private, "if your plan or
     organization allows it" (F-gh-04, A). The entry doesn't cover private publishing on Enterprise
-    plans, which this owner doesn't have.
-- **Upkeep (V3):** one Access policy, one Worker, and the GitHub credential (U2). It is the same
-  platform Operations-Hub already runs on (proven, row 5).
+    plans.
+- **Upkeep (V3):** one Access policy, one Worker, and the read token (U2). Operations-Hub already
+  runs on Cloudflare (observed, row 5).
 
 ### U2 — Acting on the owner's behalf
 - **Who GitHub shows as the actor (Q-002 §1 to §4, §9):**
@@ -187,7 +214,7 @@ page or read through a summary, C = our inference or an absence we found, E = ou
     as the owner.
   - **GitHub App user token:** the owner, with the app's badge in the UI and the security log
     (L-F10, A; the library notes the badge and security-log detail rest on one page). The token
-    lasts 8 hours and the refresh token 6 months from the last refresh (L-F2, A; L-F11, B).
+    lasts 8 hours and the refresh token 6 months (L-F2, A).
   - **Fine-grained personal access token:** recorded as the owner. It is limited to chosen
     repositories and permissions, and can run to an expiry date or none (L-F5, B). We found no
     documented marking that separates its actions from the browser's; that is an absence, not a
@@ -196,14 +223,15 @@ page or read through a summary, C = our inference or an absence we found, E = ou
     (L-F4, B). Too broad for the desk.
 - **Writing an answer file through the API** is listed under Contents: write and Workflows: write,
   marked "additional permissions"; the tables don't say whether both are needed or either suffices
-  (L-F9, B). Under route A the desk makes no such call, so this only matters for the later token
+  (L-F9, B). Under the prefilled-link route the desk makes no such call, so this only matters for the later token
   routes.
 - **Storage (L-P1, B):** encrypted on the back end. A GitHub App private key is kept sign-only in a
   key vault, not in environment variables. No secret ever goes to a model (§5).
 - **A route with no credential at all:** the desk links each card to GitHub's new-file page with the
-  answer already filled in, and the owner commits it on GitHub. The desk then needs only
-  a read token. This is a design option, not a researched fact; it relies on nothing new.
-- **Route A, the no-credential route, is the owner's ruling of 2026-10-01** (see "Owner rulings"
+  answer already filled in, and the owner commits it on GitHub. The desk then needs only a read
+  token. It rests on GitHub's new-file page taking a prefilled file name and content from a link,
+  in the owner's phone browser. That is not yet in the library: open item O4, research Q-007.
+- **The prefilled-link route is the owner's ruling of 2026-10-01** (see "Owner rulings"
   in §8). The token routes stay possible after launch; each
   would need two things first:
   - a D-066 ruling that an answer the desk writes with the owner's token counts as the owner's own
@@ -254,13 +282,15 @@ page or read through a summary, C = our inference or an absence we found, E = ou
 
 ### Open at this exit
 Each item has an owner and a place where it closes. O1 and O2 are closed by the owner's rulings,
-and O3's acceptance is the owner's too (see "Owner rulings" in §8).
+O3's acceptance is the owner's too, and O4 and O5 wait on research (see "Owner rulings" in §8).
 
 | ID | Open item | Bears on | Closes by |
 |---|---|---|---|
-| O1 | Which route the desk acts through | D4, D5, the tier | **Closed** by the owner's ruling: route A, prefilled GitHub links |
+| O1 | Which route the desk acts through | D4, D5, the tier | **Closed** by the owner's ruling: the prefilled-link route (rests on O4) |
 | O2 | Whether planning and scheduling (D3.4, D4.2) are in the first version | §1, D3, D4, V4 | **Closed** by the owner's ruling: in |
-| O3 | Whether one reconcile fits the Free plan's per-invocation limits (CPU time, outbound requests) | U1, $0 ceiling | **Open into Define, as the owner accepted on 2026-10-04.** Closes by measuring one reconcile on a real Free-plan Worker in Define. If it doesn't fit: one invocation per repository, or the $5 Paid plan by the owner's ruling (F-hosting-01). Research Q-006 continues; if it passes, its library entries are added here |
+| O3 | Whether one reconcile fits the Free plan's per-invocation limits (CPU time, outbound requests) | U1, $0 ceiling | **Open into Define, as the owner accepted on 2026-10-04.** This is an exception to the definition of ready's item 7, put to the owner on the move-to-Build card. Closes by measuring one reconcile on a real Free-plan Worker in Define. If it doesn't fit: one invocation per repository, or the $5 Paid plan, which needs a new ceiling from the owner (F-hosting-01). Research Q-006 continues; if it passes, its library entries are added here |
+| O4 | Whether GitHub's new-file page takes a prefilled file name and content from a link, and lets the owner commit from a phone browser | D4, the prefilled-link route | Research Q-007. If it doesn't: the desk shows the answer to copy and links to the empty new-file page, or the owner rules on a token route |
+| O5 | Whether the desk, built on Workers, can serve the `needs-you` Pages address, or must be a Pages project with Functions | V4, D6.2, U1 | Research Q-008. Either answer keeps Cloudflare and Access; it decides how the desk is built and deployed |
 
 ## 8. Clear and consistent
 *Key terms defined; constraints checked against each other and found not to contradict.*
@@ -283,6 +313,9 @@ Critic's pack does not include; the owner confirms all of them on the move-to-Bu
 - Route A, prefilled GitHub links; the desk holds no write credential (2026-10-01; O1).
 - Planning and scheduling in the first version (2026-10-01; O2).
 - O3 stays open into Define, closed by a measurement there with the stated fallback (2026-10-04).
+- Spend is out of the first version; the desk shows the time asked of the owner (2026-10-04).
+- Planning choices are recorded and carried out by the Chief of Staff, not acted on automatically
+  by the Orchestrators, in the first version (2026-10-04).
 - Two pages of a vendor's own documentation count as two sources for how its own product behaves
   (2026-10-01 for Anthropic, widened to any vendor on 2026-10-03); cost, risk and quality claims
   still need an independent source. This one is also in governance/standards/sources.md.
@@ -299,10 +332,11 @@ Critic's pack does not include; the owner confirms all of them on the move-to-Bu
 - Tier: AGENTS.md says T1, and §5 now proposes T1. The owner confirms at the move to Build.
 - Scope against the date: planning and scheduling add D3.4 and D4.2 before 2026-10-28. §3's route
   to compression still applies: D3.1 and D3.2 can ship to the preview first.
-- Spend: $0 against "spend follows value". U1 fits $0. Only U3's paid routes would break it, and
-  they are out of the first version.
-- Timeline against research: D1 must land within the first week to keep V4. It landed on day 1
-  (2026-10-01).
+- Spend: $0 against "spend follows value". The first version fits $0 on Cloudflare's Free plan if
+  O3's measurement holds; its fallbacks and U3's paid routes would need a new ceiling from the
+  owner, and U3 is out of the first version.
+- Timeline against research: D1 must land within the first week to keep V4. Four of its questions
+  passed on day 1 (2026-10-01); O3 to O5 remain, with research Q-006 to Q-008 running.
 
 # Part 2 — The intent
 
@@ -332,6 +366,7 @@ The owner picked all four, and on 2026-10-01 added a fifth:
 3. **Team and pipeline:** where each project sits in the v3 stages (Shape, Build, Run), who is
    working, and what comes next.
 4. **Spend and time:** spend against each project's ceiling, and the cost to the owner's time.
+   On 2026-10-04 the owner deferred spend, because no project records it yet; time stays.
 5. **Planning and scheduling.** The owner, 2026-10-01: "No I want planning and scheduling in".
 
 ### Preferences and trade-offs
@@ -364,7 +399,7 @@ The owner picked all four, and on 2026-10-01 added a fifth:
   the owner's credentials, which makes it T2 and needs a security review (Operations-Hub
   SCOPE.md). The owner accepted that trade by choosing to act from the desk. Then, on 2026-10-01,
   the owner chose the route that avoids it for the first version: the desk prepares each answer and
-  the owner commits it on GitHub, so the desk holds no write credential (ruling A).
+  the owner commits it on GitHub, so the desk holds no write credential (the prefilled-link route).
 
 ### What the owner would hate
 - **False alarms.** It flags things that don't need the owner, and trust erodes.

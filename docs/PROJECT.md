@@ -135,7 +135,7 @@ still open are listed under "Open at this exit" below; none is hidden in a statu
 
 | Unknown | Why it bears load | Evidence | Status |
 |---|---|---|---|
-| U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | research/Q-001-memo.md; F-hosting-01, -02a/b/c, -03 to -06, F-auth-01 to -04, F-gh-04, P-auth-01 | Answered: Cloudflare Workers fits $0; one per-invocation limit open (O3) |
+| U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | research/Q-001-memo.md; F-hosting-01, -02a/b/c, -03 to -06, F-auth-01 to -04, F-gh-04, P-auth-01 | Answered: Cloudflare Workers fits $0; one per-invocation limit open into Define, accepted by the owner (O3) |
 | U2 Acting in GitHub on the owner's behalf: mechanisms, attribution, credential risk | D4, D5, the tier, D-011 | research/Q-002-memo.md; L-F1 to L-F12, L-P1 | Answered; the owner ruled route A, prefilled GitHub links (O1, closed) |
 | U3 What starting, steering or monitoring Claude Code sessions from a web app can do | D1.3, the owner's later ruling | research/Q-005-memo.md; LIB-F-a, -a2, -c, -f, -g, -i, LIB-P-a | Answered enough for the owner's ruling |
 | U4 How quickly GitHub changes can reach a web page | V1, D2.2 | research/Q-004-memo.md; F-Q004-1 to -13, PAT-Q004-1 | Answered: 5 minutes is reachable with a page-driven poll; webhooks optional |
@@ -162,7 +162,8 @@ still open are listed under "Open at this exit" below; none is hidden in a statu
     100,000 (F-hosting-01, A; E2: 60 × 16 = 960).
   - **CPU:** 10 ms per invocation on the Free plan (F-hosting-01, A). Whether a reconcile across 5
     repositories fits, whether time spent waiting on GitHub counts, and how many outbound requests
-    one invocation may make are not in the library. That's open item O3.
+    one invocation may make are not in the library on main. That's open item O3, which the owner
+    accepted into Define (below).
 - **Two requirements carry into D5.**
   - Validate the Access token in the Worker (F-auth-04, A).
   - Cover the `workers.dev` and version URLs with Access, because they are public otherwise
@@ -246,12 +247,14 @@ still open are listed under "Open at this exit" below; none is hidden in a statu
 
 ### Open at this exit
 Each item has an owner and a place where it closes. O1 and O2 are closed by the owner's rulings.
+O3 is open, and the owner accepted the exit with it open on 2026-10-04. Asked whether O3 may stay
+open into Define, closed by a measurement there with the fallback below, the owner replied: "Yes".
 
 | ID | Open item | Bears on | Closes by |
 |---|---|---|---|
 | O1 | Which route the desk acts through | D4, D5, the tier | **Closed:** route A, prefilled GitHub links (decisions/questions/P-001-acting-route.md) |
 | O2 | Whether planning and scheduling (D3.4, D4.2) are in the first version | §1, D3, D4, V4 | **Closed:** in (decisions/questions/P-001-planning-scope.md) |
-| O3 | Whether one reconcile fits the Free plan's per-invocation limits (CPU time, outbound requests) | U1, $0 ceiling | Research Q-006, approved by the owner on 2026-10-01 (intake/requests/Q-006.toml). If it doesn't fit: one invocation per repository, or the $5 Paid plan by the owner's ruling (F-hosting-01) |
+| O3 | Whether one reconcile fits the Free plan's per-invocation limits (CPU time, outbound requests) | U1, $0 ceiling | **Accepted open into Define by the owner, 2026-10-04.** Closes by measuring one reconcile on a real Free-plan Worker in Define. If it doesn't fit: one invocation per repository, or the $5 Paid plan by the owner's ruling (F-hosting-01). Research Q-006 continues; if it passes, its library entries are added here |
 
 ## 8. Clear and consistent
 *Key terms defined; constraints checked against each other and found not to contradict.*

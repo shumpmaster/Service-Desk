@@ -1,37 +1,43 @@
 Verdict: FAIL
 
-I filed nothing and changed nothing in `library/`. The revised memo's claims all check out against the pages. What blocks filing is the sourcing rule, which the memo itself flags.
+I opened all six cited pages again as raw `index.md` from developers.cloudflare.com, and the line numbers below come from those copies. I filed four entries and held back five claims. Each held-back claim fails because only one page supports it, or because no page does. Nothing was committed (the folder is not a git repository).
 
-I fetched all six cited pages as raw `index.md` from developers.cloudflare.com. The line numbers below are from those fetched files, and they match the memo's line references. Raw copies are in `$TMPDIR`.
+**Sourcing rule.** The earlier source check's "no ruling" blocker is out of date. `governance/standards/sources.md:1-9` now carries owner ruling A of 2026-10-03: two pages of a vendor's own documentation count as two sources for product behaviour. Claims about cost, risk or quality still need an independent source.
 
-**Why nothing was filed**
-- `governance/standards/sources.md:7-9` only lets two same-publisher pages count as two sources for Anthropic product behaviour. Claims about cost, risk or quality still need an independent source.
-- Every proposed entry comes from Cloudflare alone, so I cannot confirm any of them as two-source facts.
-- The proposed entries tagged cost are F-cf-workers-01, -02 and -05. The sourcing standard also requires two sources for load-bearing facts.
-- The sourcing ruling is still not in the folder (memo part 5). The earlier single-source filing of F-hosting-01 does not count as one.
+**Filed** (`library/`, checked 2026-10-03, shelf life 6 months, opened by source-checker)
+- **F-cf-workers-01** (grade A, topics cloudflare, hosting): items 1, 2 and the Error 1102 part of item 4. I narrowed it from the proposal.
+  - Free CPU is 10 ms per HTTP request and per Cron Trigger (Limits:71-72; Pricing:33).
+  - Network waits don't count as CPU time (Limits:67; DO limits:99).
+  - Exceeding the limit returns Error 1102 (Limits:80; Errors:26). The two pages word it differently.
+  - I left out the "consistent overages are terminated" sentence (Limits:76) because only one page says it.
+- **F-cf-workers-02** (grade A, B for Paid Cron CPU): items 3, 3a and 5, without item 11.
+  - Subrequests: Free 50 plus 1,000 to Cloudflare services; Paid 10,000, settable up to 10M; redirect hops count (Limits:188-191; changelog:23, :38).
+  - Paid HTTP CPU is 5 min, 30 s default (Limits:71; Pricing:34).
+  - The Paid Cron CPU conflict is recorded: Limits:72 gives 30 s under a 1-hour interval, while Pricing:34 gives 15 min with no condition.
+- **F-cf-workers-05** (grade A): item 10.
+  - 100,000 requests a day, resetting at midnight UTC (Limits:171; Pricing:33).
+  - Error 1027 on exceeding it (Errors:32).
+- **F-cf-do-01** (grade A for the figures; the Free-plan question is recorded as a documented gap): items 9 and 9a, as in the memo's rewritten item 9.
+  - DO CPU is 30 s by default, up to 5 min with `limits.cpu_ms` (DO limits:31, :101).
+  - Each incoming request or message resets CPU time to 30 s (:168).
+  - Alarm wall time is 15 min (DO limits:157; Limits:423).
+  - The page says DOs "have the same per invocation CPU limits as any Workers do" (:99) and never says how that fits Free's 10 ms.
+  - There is no alarm subrequest count; "subrequest" does not appear on the DO page.
 
-**Revised items confirmed**
-- **Item 9:**
-  - The DO limits page says "By default, the maximum CPU time per Durable Objects invocation (HTTP request, WebSocket message, or Alarm) is set to 30 seconds" (DO limits:101).
-  - The CPU row for SQLite-backed objects reads "30 seconds (default) / configurable to 5 minutes" (:31).
-  - The reset-to-30-seconds sentence is in footnote 4 (:168).
-  - The alarm wall time of 15 minutes is at :157, and also at Limits:423.
-  - Searching the DO page for "subrequest" finds only the six-connection row (:70). That is the connection limit, not a subrequest count, so the alarm subrequest count is correctly "not documented".
-- **Item 9a:** the conflict is real. DO limits:99 says DOs "have the same per invocation CPU limits as any Workers do", and Limits:71 gives Free 10 ms. The DO page's plan distinctions cover storage, class counts and the SQLite-only rule (:24, :25, :54). The page does not say which CPU limit applies to a DO on Free.
-- **Item 15:** the C grade is right. Limits:216 says a 7th connection is queued until one of the existing connections receives its response headers. Time to first header is not documented, so the claim stays an estimate.
-- **Items 1-8, 10, 11 and 14:** confirmed.
-  - Limits:67, :71-72, :74, :76, :80, :171, :188-191, :216 and :420-423.
-  - Pricing:33, :34 and :36. The 3a conflict is at Pricing:34, which gives "Max of 15 minutes of CPU time per Cron Trigger or Queue Consumer invocation" with no interval condition.
-  - Errors:26 and :32.
-  - Workflows limits:157.
-  - The changelog line about Free staying at 50 external and 1000 Cloudflare-service subrequests.
+**Not filed**
+- **Item 11** (subrequests not billed): this is a cost claim with one source (Pricing:36). The standard requires an independent source for cost claims.
+- **Item 7** (6-connection limit, the 7th queues until a header arrives): Limits:205 and :216 are on the same page, so this has one source.
+- **Item 8** (wall time): Cron, Queue and HTTP rest on Limits:150-159 and :420-423 only. Only the alarm figure has a second page.
+- **Item 6** (`Too many subrequests` error): only Workflows limits:157. It is scoped to Workflows and has no second page.
+- **Item 13** (a 304 reply counts as a subrequest): I could not confirm it. A search for "304" and "not modified" in Limits found nothing. The redirect part is supported (Limits:191), and the 15-of-50 arithmetic holds.
+- **Item 14** (CPU estimate) and **P-cf-fanout-01** (the pattern): the only support is the "10-20 ms" figure at Limits:74, from one page. The pattern is also a cost recommendation.
+- **Item 15:** the C grade is correct. Limits:216 does not document time to first header, so it stays an estimate and is not filed.
 
-**Small notes for the Researcher**
-- Limits:129 gives the same Error 1102 message for memory limits. This supports the open question about why the 1102 wording differs between pages.
-- Item 13, the 15-of-50 arithmetic, rests on item 5 and is fine. Its redirect and 304 sub-claims go beyond the cited text. Redirects are covered at Limits:191, but a 304 counting as a subrequest is not stated on any page I read.
+Items 1-5, 9, 9a, 10 and 12 otherwise match the pages.
 
 **Open questions**
-- Will the owner rule that Cloudflare's own documentation counts as a source for Cloudflare product behaviour, or approve single-source filing with the grade stated? Once that is decided, the entries can be filed. F-cf-workers-01, -03, -05 and -04 (grade B, Workflows-only) can go as written. F-cf-workers-02 can go with the 3a conflict stated, and F-cf-do-01 with the 9a gap.
-- Which page is right for Paid Cron CPU: Pricing or Limits?
-- Which CPU limit applies to a Durable Object on Free, and does an alarm get its own subrequest count?
-- Should the 304 claim in item 13 be cited or dropped?
+- Which page is right for Paid Cron CPU: Pricing:34 or Limits:72?
+- Which CPU limit applies to a Durable Object, or an alarm, on Free? What is an alarm's subrequest count?
+- Does the owner want a cost-claim independent source for item 11 and the fan-out pattern? The question restricts sources to Cloudflare only, so no such source can be found under it.
+- Item 13: cite the 304 claim from somewhere or drop it.
+- Limits:129 gives Error 1102 for memory limits too, which may explain the different 1102 wording on the two pages. Neither page says so.

@@ -136,7 +136,7 @@ before D4. A read-only preview could replace the old page early, with acting fol
   The playbook's 80% alert measures metered spend; with no metered spend it has nothing to
   measure. Whether to watch the subscription's own usage limits, and how, is a departure from the
   playbook that the owner rules on the move-to-Build card; D3.6 can show usage once D7 lands.
-- **Data boundaries:** the desk reads only the connected project and portfolio repositories. It may
+- **Data boundaries:** the desk reads connected projects (any repositories on the desk's list) and portfolio repositories (those listed in the owner's portfolio directory outside Service-Desk). It may
   send their content only to GitHub and Cloudflare, plus Anthropic if U3 leads to sessions. No
   secret is ever sent to a model.
 - **Tier (proposed): T1, as AGENTS.md says today.** Against the T1 → T2 triggers
@@ -147,7 +147,7 @@ before D4. A read-only preview could replace the old page early, with acting fol
     by the owner alone. We read "shared" as used by others, so this doesn't trigger; the owner
     rules on that reading.
   - *Anyone else's personal data:* none; the desk reads only the owner's repositories.
-  - *3+ concurrent agents:* Build is planned with at most two agents at once, which also matches
+  - *3+ concurrent agents:* Build is planned with at most two builder or reviewer agents at once (the Orchestrator is a script, not an agent, and does not count), which also matches
     T1's "1–2 agents" (software.md §3); the Definer holds it to that in Define. D7 is built in the
     model's own repository, so its agents don't count here. More would trigger T2.
   - *A second human committer:* none; the humans block names only the owner.
@@ -166,8 +166,9 @@ V2: False alarms: items the desk flagged that did not need the owner, at most 1 
 V3: Owner upkeep: the owner's time on the desk itself (tokens, settings, adding repositories), at most 30 minutes a week after launch, 2026-11-11 (14 days after V4's date; moves with it)
 V4: Replacement: the desk serves the Operations-Hub address and the old repository is archived, by 2026-10-28
 
-V4's date is proposed: the owner said on 2026-10-04 that it can move, and sets it on the
-move-to-Build card. V1 to V3 run for the 14 days after launch, so their date is V4's date plus 14
+V4's date is proposed as 2026-10-28, but D7 (model change for usage recording, if chosen) adds
+time, and O6 may add more time if option B is chosen. The owner sets a revised estimate on the
+move-to-Build card based on D7's scope. V1 to V3 run for the 14 days after launch, so their date is V4's date plus 14
 days and moves with it, and the stop rule below uses V4's date as set.
 
 **Miss and stop rule:** a miss is V4 not met by its date (proposed 2026-10-28), or the redesign taking more than about
@@ -209,7 +210,7 @@ inference or an absence we found, and E our own estimate (shown with its arithme
     (F-cf-06); the Free-plan limits below are the Workers ones, and Define's measurement (O3) is
     taken on the Pages project itself.
   - The Free plan gives 100,000 requests a day, resetting at midnight UTC (F-cf-workers-05, A), and
-    static asset requests are free (F-hosting-01; one vendor page, so as a cost claim it has no
+    static asset requests are free (F-hosting-01, A; as a statement about how Cloudflare works,
     independent source; the design's request count above doesn't rely on it).
   - Access is free for up to 50 users, and a policy can name specific email addresses (F-auth-01,
     -02, A).
@@ -373,10 +374,10 @@ O3 and O6 are open into Define, which the owner confirms on the card, and O4 and
 |---|---|---|---|
 | O1 | Which route the desk acts through | D4, D5, the tier | **Closed** by the owner's ruling: the prefilled-link route (rests on O4) |
 | O2 | Whether planning and scheduling (D3.4, D4.2) are in the first version | §1, D3, D4, V4 | **Closed** by the owner's ruling: in |
-| O3 | Whether the CPU one batched call spends parsing its responses fits the Free plan's 10 ms | U1, $0 ceiling | **Open into Define.** The definition of ready asks every load-bearing unknown to be answered and has no exception clause, so the move-to-Build card asks the owner to accept this one open explicitly. Research Q-006 settled the rest: network waits don't count as CPU, 50 outbound requests are allowed, and occasional overages are tolerated (F-cf-workers-01, -02, -08). Closes by measuring a steady poll and a cold-load batch on the Pages project in Define. If it doesn't fit: smaller batches on Free, or the $5 Paid plan, which needs a new ceiling from the owner (F-hosting-01) |
+| O3 | Whether the CPU and wall-time limits on the Free plan fit a cold-load batch | U1, $0 ceiling | **Open into Define.** One unknown: whether Cloudflare's free-plan HTTP requests have a time limit (not documented; F-cf-workers-03:8). The CPU part is measured; wall-time is measured in Define too. Closes by measuring both on the Pages project in Define. If either doesn't fit: smaller batches on Free, or the $5 Paid plan, which needs a new ceiling from the owner (F-hosting-01). |
 | O4 | Whether GitHub's new-file page takes a prefilled file name and content from a link, and lets the owner commit from a phone | D4, the prefilled-link route | **Closed** by research Q-007 and the owner's own use (U2): a file-name parameter is described on one GitHub page (F-gh-05, B), the content parameter is undocumented but works, and the owner has committed from the phone's browser and app. Fallback if GitHub changes it: show the answer to copy |
-| O5 | How the desk takes over the `needs-you` Pages address | V4, D6.2, U1 | **Closed** by research Q-008: the desk is a Pages project with Functions, deployed into `needs-you` by `wrangler pages deploy` (U1) |
-| O6 | Which usage and context figures Claude Code's command line reports for a session run non-interactively (tokens by kind, turns, context-window use, duration) | D7, D3.6 | **Open into Define.** As for O3, the move-to-Build card asks the owner to accept it open explicitly. Research Q-009 is still running and nothing it found is on main yet. Closes in Define by running one session with `stream-json` output and recording the fields that appear. A figure that doesn't appear is shown as not available |
+| O5 | How the desk deploys to the `needs-you` Pages address (Git or Direct Upload) | V4, D6.2, U1 | **Open into Define.** Research Q-008 found `wrangler pages deploy` in Operations-Hub (bd84592), but that evidence is outside the pack and cannot be verified by the Critic. Closes in Define by checking in the Cloudflare dashboard how `needs-you` is deployed. If Direct Upload: nothing changes. If Git-integrated: the fallback is a new project with permanent redirect, the old repository is archived as part of launch (L-0115, D-066). |
+| O6 | Which usage and context figures the Orchestrator records for a session launched through the Agent SDK | D7, D3.6, D-055 (model change) | **Open into Define.** The owner chose a launch delay so the desk would show context windows from the start. If the command line doesn't report context-window use, the fallback is that D7 makes a separate model change: instead of the command line, the Orchestrator adopts the Agent SDK's own usage tracking, which does record context windows. That change is bigger and affects how agents start, and it needs your ruling to proceed in this version. Closes in Define by running a session through the new mechanism and recording the fields. |
 
 ## 8. Clear and consistent
 *Key terms defined; constraints checked against each other and found not to contradict.*

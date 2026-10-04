@@ -175,40 +175,58 @@ inference or an absence we found, and E our own estimate (shown with its arithme
 
 | Unknown | Why it bears load | Evidence | Status |
 |---|---|---|---|
-| U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | F-hosting-01, -02a/b/c, -03 to -06, F-auth-01 to -04, F-gh-04, P-auth-01 | Answered except O3 (per-invocation limits) and O5 (taking over the address) |
+| U1 Hosting a live, interactive, single-user app: options, cost, upkeep | §5 spend, V3, D2 to D4 | F-hosting-01, -02a/b/c, -03 to -06, F-auth-01 to -04, F-gh-04, P-auth-01, F-cf-01 to -07, P-cf-01, F-cf-workers-01 to -03, -05 to -08 | Answered except O3 (CPU per reconcile, measured in Define) |
 | U2 Acting in GitHub on the owner's behalf: mechanisms, attribution, credential risk | D4, D5, the tier, D-011 | L-F1 to L-F6, L-F8 to L-F12, L-P1 | Answered; the prefilled-link route is the owner's ruling (O1); it rests on O4 |
 | U3 What starting, steering or monitoring Claude Code sessions from a web app can do | D1.3, the owner's later ruling | LIB-F-a to -i, LIB-P-a | Answered enough for the owner's ruling |
 | U4 How quickly GitHub changes can reach a web page | V1, D2.2 | F-Q004-1, -2, -3a, -4, -6 to -13, PAT-Q004-1 | Answered: 5 minutes is reachable with a page-driven poll; webhooks optional |
-| Cloudflare Pages deploys from Actions, behind Access | D6 | Operations-Hub's own deploy, live since 2026-09-25 (its docs/research/003); outside the library | Observed, not filed (C). Load-bearing for V4: whether the desk can take over the `needs-you` Pages address is open item O5, research Q-008 |
+| Deploying the desk into the `needs-you` Pages project, behind Access | D6, V4 | F-cf-02, -03, -04, -07, P-cf-01; Operations-Hub's workflow deploys `needs-you` with `wrangler pages deploy` (observed, C) | Answered (O5, closed) |
 | A fine-grained read token reads the v3 records the screens need | D2.1 | Operations-Hub docs/research/002 and 004 (v2 records), and on 2026-10-01 the hub reading Service-Desk; outside the library | Observed, not filed (C); reading the v3 files themselves is inferred (C). Not load-bearing for the design: if the token can't read them, the fix is one read permission the owner adds by hand. Parsing them is D2.1 build work |
 
 ### U1 — Hosting
-- **Fits the $0 ceiling: Cloudflare Workers with static assets, behind Access, with Durable Objects
-  only if pushed updates are needed.**
-  - The Free plan gives 100,000 requests a day, and static assets are free (F-hosting-01, A).
-  - Access is free for up to 50 users, and a policy can name one email address (F-auth-01, -02, A).
-  - Durable Objects run on the Free plan with SQLite, 5 GB per account (F-hosting-02a, A). The
-    changelog says "Developers on the Workers Free plan will not be charged" for that storage
-    (F-hosting-02b, A); whether paid-plan billing is live doesn't affect a Free-plan desk.
+- **The desk is a Cloudflare Pages project with Pages Functions, deployed into the existing
+  `needs-you` project, behind Access.**
+  - Pages Functions run on Cloudflare Workers, and their requests count against the Workers plan
+    quota (F-cf-06, A). That the runtime limits are identical to a Worker's is not documented
+    (F-cf-06); the Free-plan limits below are the Workers ones, and Define's measurement (O3) is
+    taken on the Pages project itself.
+  - The Free plan gives 100,000 requests a day, resetting at midnight UTC (F-cf-workers-05, A), and
+    static asset requests are free (F-hosting-01, A).
+  - Access is free for up to 50 users, and a policy can name specific email addresses (F-auth-01,
+    -02, A).
+- **Taking over the address (O5, closed by research Q-008).**
+  - A production deployment to a Pages project, by Git commit or `wrangler pages deploy`, changes
+    what `<project>.pages.dev` and its custom domains serve; rollback is instant (F-cf-02, A).
+  - A project can't switch deployment method (F-cf-03, B). Operations-Hub deploys `needs-you` with
+    `wrangler pages deploy`, a Direct Upload (observed in its workflow, C), so the desk deploys the
+    same way.
+  - The documented routes are to deploy into the same Pages project, or to host elsewhere and 301
+    the `pages.dev` address to a custom domain (P-cf-01, C; F-cf-07, A). The desk takes the first.
+    Whether a Worker can hold a `pages.dev` address is not documented, so a plain Worker is not used.
+  - Pages-only gaps that matter: no Cron Triggers, and Durable Objects only by workaround (F-cf-06).
+    The design needs neither (below).
 - **What the free plan limits, and how the design stays inside them.**
-  - **WebSockets aren't used.** Cloudflare bills incoming WebSocket messages at 20 to 1 as
-    requests (F-hosting-02c, A). The entry doesn't say whether that applies on the Free plan; we
-    infer it counts against the 100,000 daily requests (C). The first version doesn't need
-    WebSockets: the open page polls over plain HTTP (U4), so the question never arises.
+  - **CPU:** 10 ms per request on the Free plan, and time spent waiting on network requests doesn't
+    count (F-cf-workers-01, A). Occasional overages are tolerated (F-cf-workers-08, B).
+  - **Outbound requests:** 50 per invocation on Free, each redirect hop counting
+    (F-cf-workers-02, A). A reconcile makes about 15: 3 conditional requests for each of 5
+    repositories (PAT-Q004-1; E1).
+  - **Connections:** up to six may wait for response headers at once; a seventh waits until one
+    gets its headers (F-cf-workers-03, A; F-cf-workers-07, B). Fifteen requests run in waves.
+  - **What stays open (O3):** whether the CPU spent parsing 15 responses fits 10 ms. Most polls get
+    an empty 304 when nothing changed (F-Q004-7), but the figure is only known by measuring.
+  - **Requests:** one page polling every minute for 16 hours is 960 requests a day, against 100,000
+    (E2: 60 × 16 = 960).
   - **The page drives the reconcile poll; no cron or alarm is needed.** While the desk is open, the
-    page asks the Worker every 1 to 2 minutes, and the Worker makes conditional requests to GitHub.
-    When the desk is closed, nothing needs showing, so nothing polls, and opening it reconciles at
-    once (design; see "show" in §8).
-  - **Requests:** one page polling every minute for 16 hours is 960 Worker requests a day, against
-    100,000 (F-hosting-01, A; E2: 60 × 16 = 960).
-  - **CPU:** 10 ms per invocation on the Free plan (F-hosting-01, A). Whether a reconcile across 5
-    repositories fits, whether time spent waiting on GitHub counts, and how many outbound requests
-    one invocation may make are not in the library on main. That's open item O3, which the owner
-    accepted into Define (below).
+    page asks the function every 1 to 2 minutes, and the function makes conditional requests to
+    GitHub. When the desk is closed, nothing needs showing, so nothing polls, and opening it
+    reconciles at once (design; see "show" in §8).
+  - **WebSockets aren't used.** Cloudflare bills incoming WebSocket messages at 20 to 1 as requests
+    (F-hosting-02c, A); the desk polls over plain HTTP, so the question never arises.
 - **Two requirements carry into D5.**
-  - Validate the Access token in the Worker (F-auth-04, A).
-  - Cover the `workers.dev` and version URLs with Access, because they are public otherwise
-    (F-auth-03, A).
+  - Validate the Access token in the function (F-auth-04, A).
+  - Put an Access policy on every hostname. Pages' own "Enable access policy" covers previews only;
+    `*.pages.dev` needs the wildcard removed from the Access app, and each custom domain needs its
+    own policy (F-cf-04, A). Worker-level Access (F-cf-05, A) is not documented for Pages.
 - **The others are worse fits.**
   - Vercel Hobby is non-commercial personal use only (F-hosting-03, A).
   - Fly.io offers only a trial of 2 hours of machine time or 7 days; no lasting free tier is
@@ -219,8 +237,7 @@ inference or an absence we found, and E our own estimate (shown with its arithme
   - GitHub Pages sites are public, even when the repository is private, "if your plan or
     organization allows it" (F-gh-04, A). The entry doesn't cover private publishing on Enterprise
     plans.
-- **Upkeep (V3):** one Access policy, one Worker, and the read token (U2). Operations-Hub already
-  runs on Cloudflare (observed, row 5).
+- **Upkeep (V3):** the Access policies, one Pages project, and the read token (U2).
 
 ### U2 — Acting on the owner's behalf
 - **Who GitHub shows as the actor (Q-002 §1 to §4, §9):**
@@ -296,15 +313,15 @@ inference or an absence we found, and E our own estimate (shown with its arithme
 
 ### Open at this exit
 Each item has an owner and a place where it closes. O1 and O2 are closed by the owner's rulings,
-O3's acceptance is the owner's too, and O4 to O6 wait on research (see "Owner rulings" in §8).
+O3's acceptance is the owner's too, O5 is closed by research, and O4 and O6 wait on research (see "Owner rulings" in §8).
 
 | ID | Open item | Bears on | Closes by |
 |---|---|---|---|
 | O1 | Which route the desk acts through | D4, D5, the tier | **Closed** by the owner's ruling: the prefilled-link route (rests on O4) |
 | O2 | Whether planning and scheduling (D3.4, D4.2) are in the first version | §1, D3, D4, V4 | **Closed** by the owner's ruling: in |
-| O3 | Whether one reconcile fits the Free plan's per-invocation limits (CPU time, outbound requests) | U1, $0 ceiling | **Open into Define, as the owner accepted on 2026-10-04.** This is an exception to the definition of ready's item 7, put to the owner on the move-to-Build card. Closes by measuring one reconcile on a real Free-plan Worker in Define. If it doesn't fit: one invocation per repository, or the $5 Paid plan, which needs a new ceiling from the owner (F-hosting-01). Research Q-006 continues; if it passes, its library entries are added here |
+| O3 | Whether the CPU one reconcile spends parsing about 15 responses fits the Free plan's 10 ms | U1, $0 ceiling | **Open into Define, as the owner accepted on 2026-10-04.** This is an exception to the definition of ready's item 7, put to the owner on the move-to-Build card. Research Q-006 settled the rest: network waits don't count as CPU, 50 outbound requests are allowed, and overages are tolerated occasionally (F-cf-workers-01, -02, -08). Closes by measuring one reconcile on the Pages project in Define. If it doesn't fit: one invocation per repository, or the $5 Paid plan, which needs a new ceiling from the owner (F-hosting-01) |
 | O4 | Whether GitHub's new-file page takes a prefilled file name and content from a link, and lets the owner commit from a phone browser | D4, the prefilled-link route | Research Q-007. If it doesn't: the desk shows the answer to copy and links to the empty new-file page, or the owner rules on a token route |
-| O5 | Whether the desk, built on Workers, can serve the `needs-you` Pages address, or must be a Pages project with Functions | V4, D6.2, U1 | Research Q-008. Either answer keeps Cloudflare and Access; it decides how the desk is built and deployed |
+| O5 | How the desk takes over the `needs-you` Pages address | V4, D6.2, U1 | **Closed** by research Q-008: the desk is a Pages project with Functions, deployed into `needs-you` by `wrangler pages deploy` (U1) |
 | O6 | Which usage and context figures Claude Code's command line reports for a session run non-interactively (tokens by kind, turns, context-window use, duration) | D7, D3.6 | Research Q-009. Whatever it reports is what D7 records; a figure it doesn't report is shown as not available |
 
 ## 8. Clear and consistent
@@ -355,7 +372,8 @@ Critic's pack does not include; the owner confirms all of them on the move-to-Bu
   O3's measurement holds; its fallbacks and U3's paid routes would need a new ceiling from the
   owner, and U3 is out of the first version.
 - Timeline against research: D1 must land within the first week to keep V4. Four of its questions
-  passed on day 1 (2026-10-01); O3 to O6 remain, with research Q-006 to Q-009 running.
+  passed on day 1 (2026-10-01); Q-006 and Q-008 passed on 2026-10-04 (O5 closed, O3 narrowed); O4 and O6 wait on Q-007
+  and Q-009.
 
 # Part 2 — The intent
 

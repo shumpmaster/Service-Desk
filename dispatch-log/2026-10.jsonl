@@ -121,3 +121,6 @@
 {"error":"session Q-006:research-to-source:2026-10-04T01:28:40Z: the item is returned, not dispatched; ignored","item":"Q-006","prev":"d992e7d830a5f390a098c9966231e963da467464c6a98c2b746434b35bda4563","time":"2026-10-04T01:30:54Z","trigger":"anomaly"}
 {"item":"Q-007","prev":"0404ae93d73b1c8e3eb23e7bf4cac467a18fcb7afe8077cc80392eac7f79fb3f","record":"intake/requests/Q-007.toml","result":"created","time":"2026-10-04T02:56:54Z","trigger":"request"}
 {"item":"Q-008","prev":"0c6886dc68ebeaab8f6289ef363757948167a34c2e5b71e6e41265851d7799aa","record":"intake/requests/Q-008.toml","result":"created","time":"2026-10-04T02:56:54Z","trigger":"request"}
+{"action":"dispatch","gate":null,"item":"Q-006","prev":"26c0ec9d761e859fb12a5f7decc153819a5943d125ce2742732eaeccd2ad9e94","role":"researcher","route":"source-fail","spec":null,"stage":2,"time":"2026-10-04T04:23:15Z","trigger":"step"}
+{"action":"dispatch","gate":null,"item":"Q-007","prev":"697e41975be57da921aebd2e8011b53634725c1b06bda14680e869e22a4dc26d","role":"researcher","route":"ready-dispatch","spec":null,"stage":2,"time":"2026-10-04T04:23:15Z","trigger":"step"}
+{"action":"dispatch","gate":null,"item":"Q-008","prev":"0885ae4b89d23eaff79356023d75d83a1014e8d8de596d8b278f2d0bb56f3eeb","role":"researcher","route":"ready-dispatch","spec":null,"stage":2,"time":"2026-10-04T04:23:15Z","trigger":"step"}

@@ -34,7 +34,8 @@ include_feedback = ["reviews/{spec}/plan.md", "decisions/{item}/*.md"]
 # "The finished document under review; for Triage, the failure and the traceability chain."
 must_read = ["specs/{spec}.md", "docs/PROJECT.md"]
 may_read = ["docs/playbooks/**", "library/**", "tests/acceptance/**", "checks/**",  # the checks it reviews (S-016 AC6); holdouts are always excluded
-            "governance/standards/definition-of-ready.md"]  # the card's "The definition of ready" (D-052), as a file
+            "governance/standards/definition-of-ready.md",  # the card's "The definition of ready" (D-052), as a file
+            "decisions/**"]  # the owner's ruling records (model L-0119); the Chief of Staff's -notes.md never enter a pack
 # "The writer's drafts and reasoning; the writer's own summary of its work."
 must_not_see = ["docs/reports/**", "docs/briefs/**"]
 

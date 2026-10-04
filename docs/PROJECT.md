@@ -394,20 +394,23 @@ O3 and O6 are open into Define, which the owner confirms on the card, and O4 and
   counts an item missed if it was waiting for more than 5 minutes and the open desk didn't show it.
 - *Connected project:* a repository on the desk's list, with a token that can read it.
 
-**Owner rulings this brief relies on.** They live in the project's decision records, which the
-Critic's pack does not include; the owner confirms all of them on the move-to-Build card.
-- Route A, prefilled GitHub links; the desk holds no write credential (2026-10-01; O1).
-- Planning and scheduling in the first version (2026-10-01; O2).
-- O3 stays open into Define, closed by a measurement there with the stated fallback (2026-10-04).
-- Spend is out of the first version; the desk shows the time asked of the owner (2026-10-04).
-- Planning choices are recorded and carried out by the Chief of Staff, not acted on automatically
-  by the Orchestrators, in the first version (2026-10-04).
-- Agent usage and context are in the first version, with the model change they need (D7), even if
-  launch moves (2026-10-04).
-- O6 stays open into Define, closed by a one-session test there (2026-10-04).
+**Owner rulings this brief relies on.** Each is a ruling record in `decisions/`, holding the
+question as put and the owner's words; the owner confirms all of them on the move-to-Build card.
+- The prefilled-link route; the desk holds no write credential (2026-10-01; O1):
+  decisions/questions/P-001-acting-route.md.
+- Planning and scheduling in the first version (2026-10-01; O2):
+  decisions/questions/P-001-planning-scope.md.
+- Spend out of the first version, time shown instead; planning choices carried out by the Chief of
+  Staff, not automatically (2026-10-04): decisions/questions/P-001-spend-and-planning.md.
+- Agent usage and context in the first version, with D7, even if launch moves (2026-10-04):
+  decisions/questions/P-001-usage-and-context.md.
+- O3 accepted open into Define (2026-10-04): decisions/questions/P-001-o3-define.md.
+- The owner's own use of prefilled links from the phone, and O6 accepted open into Define
+  (2026-10-04): decisions/questions/P-001-o6-define.md.
 - Two pages of a vendor's own documentation count as two sources for how its own product behaves
-  (2026-10-01 for Anthropic, widened to any vendor on 2026-10-03); cost, risk and quality claims
-  still need an independent source. This one is also in governance/standards/sources.md.
+  (2026-10-01 for Anthropic, widened to any vendor on 2026-10-03):
+  decisions/questions/Q-005-sources.md, Q-006-vendor-sources.md, and
+  governance/standards/sources.md.
 
 **Checks, and the tensions.**
 - "Never a source of truth" against planning and scheduling: no conflict, provided planning choices

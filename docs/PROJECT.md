@@ -247,8 +247,8 @@ still open are listed under "Open at this exit" below; none is hidden in a statu
 
 ### Open at this exit
 Each item has an owner and a place where it closes. O1 and O2 are closed by the owner's rulings.
-O3 is open, and the owner accepted the exit with it open on 2026-10-04 (decisions/P-001/
-dor-fail-1-notes.md records the reply).
+O3 is open, and the owner accepted the exit with it open on 2026-10-04. Asked whether O3 may stay
+open into Define, closed by a measurement there with the fallback below, the owner replied: "Yes".
 
 | ID | Open item | Bears on | Closes by |
 |---|---|---|---|

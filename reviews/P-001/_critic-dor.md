@@ -1,41 +1,49 @@
 Verdict: FAIL
 
-I checked `docs/PROJECT.md` Part 1 against the library entries in this pack. The pack has no definition-of-ready file, so I used the eight section headings of Part 1 as the checklist. Every section has content, and the main U1 and U4 facts match the library. Four things stop a pass.
+The exit has real gaps. §8 contradicts the owner's ruling, one library claim is overstated, and several claims can't be verified from this pack. Part 1 has all eight definition-of-ready sections (`governance/standards/definition-of-ready.md:7-14`), and most §7 citations match the library.
 
-**Findings**
+**Findings that block**
 
-1. **The evidence is not in the pack.**
-   - §7 (lines 131–134, 124–126) rests on `research/Q-001-memo.md`, `Q-002`, `Q-004` and `Q-005`, and says each has a PASS source check.
-   - There is no `research/` folder in the pack, and no source-check records.
-   - I can't verify the "four passed memos" claim or the memos' own grades. Under the brief, an unverifiable claim is a FAIL.
-   - The library has only entries for these. Nothing shows the Q-003 drop (line 83) was a recorded decision.
+1. **§8 defines "Act" in a way that contradicts route A.**
+   - `docs/PROJECT.md:266-267` says "the desk writes the owner's answer into the project repository". Route A says the desk holds no write credential and the owner commits every answer (`docs/PROJECT.md:197-199`, `:104-108`, `:351`).
+   - §1 line 17 says cards are "answerable from the desk", and Part 2 line 363 says "Every action writes back".
+   - §8 claims no contradictions. It also uses the old definition to resolve the D-066 tension (`:277-280`). The term must say the desk prepares the answer and the owner commits it.
 
-2. **Two load-bearing unknowns are still open, yet §7 reads as "Solid foundation".**
-   - **U2 (lines 174–182):** the owner ruling under D-066 is open, and the live test of an answer commit starting the Orchestrator's run is deferred to Define.
-   - Whether the user-token route starts workflow runs is only inference (grade C). L-F8 (`library/facts/L-F8.md:4`) documents installation tokens and personal access tokens, not user tokens.
-   - **D2.1 read access (line 136):** "Partly proven; v3 record files not yet read by the desk."
-   - D4, D5 and V1 depend on both. Either close them, or state explicitly that the exit is accepted with these open, with the owner's ruling.
+2. **U2 overstates L-F9.**
+   - `docs/PROJECT.md:193` says "The narrowest permission for an answer file is Contents: write (L-F9, B)".
+   - `library/facts/L-F9.md:4,13` says create/update file contents is under Contents: write and Workflows: write, with the "additional permissions" mark. The tables don't say whether several permissions are required or any one suffices. Which case applies per endpoint is "unconfirmed".
+   - "Narrowest" is therefore not supported. It matters little for route A, but it is stated as evidence.
 
-3. **A grade in the text doesn't match the library.**
-   - Line 165 grades L-F10 as "B", but `library/facts/L-F10.md:5` says A. Its own note says the badge and security-log detail rest on one page, so the library grade looks too high rather than the text.
-   - Line 166 cites L-F2 and L-F11 without grades. L-F2 is A and L-F11 is B in the library.
-   - Line 125 says grades are "as in each memo", so a mismatch matters. Reconcile it.
+3. **Claims rest on files I can't open, so I can't verify them.**
+   - The pack has no `research/Q-00x-memo.md`, `decisions/questions/*.md` or `queue/` files. These are cited at `docs/PROJECT.md:24,138-141,200-201,255-257`.
+   - The O3 acceptance ("the owner replied: 'Yes'", `:250-251`) can't be checked against a decision record. It is also the only open load-bearing unknown. It sits under the $0 ceiling, and the definition of ready asks for every such unknown to be answered.
+   - Rows 4 and 5 of the §7 table (`:142-143`) are labelled "Observed, not filed (C)" and rest on Operations-Hub docs outside the pack. The text itself says they are not load-bearing.
 
-4. **U1 leaves out a cost and a feasibility risk for the $0 ceiling.**
-   - `library/F-hosting-02c.md:8` says WebSocket messages bill at 20:1 against the 100,000 requests a day on the Free plan. §7 omits this, although the live-update design depends on it.
-   - `library/F-hosting-01.md:8` says the free plan allows 10 ms of CPU per invocation.
-   - The 1–2 minute reconcile poll (lines 216, 213–215) needs something to run it. §7 doesn't say what (cron trigger, Durable Object alarm) or whether it fits the free plan.
-   - The 900 calls an hour is GitHub's rate limit, not Cloudflare's, so it doesn't answer this.
-   - Whether paid Durable Object storage billing is live is also "unconfirmed" (line 144, `F-hosting-02b`).
+**Smaller defects**
 
-**Minor points**
-- Line 151 says Fly.io has "no lasting free tier (estimate, C)". There is no library entry for it.
-- Line 178 says the Orchestrator's `record_checks decisions` accepts any answer whose commit author is a person in the humans block. This comes from the model's repo, which isn't in the pack, so I can't verify it.
-- §1 includes Planning and scheduling (D3.4, D4.2), but Part 2 line 269 says the owner picked four first-version items and lists neither. Part 2 does name planning in the Purpose (line 263), so this is a scope question, not an error.
+4. **U2 uses an absence claim as a fact.**
+   - `docs/PROJECT.md:189-190` says a fine-grained PAT has "no documented marking that separates it from the browser" and cites L-F5.
+   - L-F5 (`library/facts/L-F5.md:4`) contains no such statement. A comparable absence claim was explicitly not filed for L-F4 (`library/facts/L-F4.md:15`). Label it as an unfiled absence claim.
+
+5. **U3 cites a memo ID, not a library ID.**
+   - `docs/PROJECT.md:218` says "F-18, A". The library entry is LIB-F-e (`library/facts/LIB-F-e-agent-sdk-no-claudeai-login-for-third-parties.md:2,10`), and F-18 is only the memo's number.
+   - The U3 evidence row (`:140`) omits LIB-F-h, -d and -b, while the text makes claims about the GitHub Action and cloud sessions at `:210-216`. Those claims may be supported elsewhere in the library, but the row doesn't say so. I did not trace them.
+
+6. **GitHub Pages is stated without its qualifier.** `docs/PROJECT.md:177` says "public, even when the repository is private". F-gh-04 (`library/F-gh-04.md:8`) adds "if your plan or organization allows it", and it does not rule out private publishing on Enterprise plans. This doesn't change the choice, since Pages isn't used.
+
+7. **WebSocket billing is joined from two entries.** `docs/PROJECT.md:155-156` joins the 20:1 ratio (`library/F-hosting-02c.md:8`) to the Free plan's 100,000 daily requests. The entry doesn't say the ratio applies to the Free plan. The inference is plausible but should be marked as an inference.
+
+8. **D5.2 may not match the tier.** `docs/PROJECT.md:72` says "the security review the tier requires" while the proposed tier is T1 (`:104`). It is unclear whether T1 requires a review.
+
+**Checked and sound**
+- Cloudflare numbers: 100,000 requests a day and 10 ms CPU (F-hosting-01); Access at $0 for up to 50 users (F-auth-01); Durable Objects 5 GB on Free (F-hosting-02a).
+- The Free-plan DO billing quote (F-hosting-02b) and the Q-004 polling facts.
+- The arithmetic: 60 × 16 = 960 requests a day, and 3 calls × 5 repos × 60 = 900 calls an hour.
+- The §6 values are measurable, and their dates are consistent with the stop rule.
+- The O3 fallback is stated.
 
 **Open questions**
-- Is the exit meant to pass with U2's ruling and live test still open? If so, say so, so the owner can approve it knowingly.
-- Where is the definition of ready (D-052), so the next check can run against its actual items?
-- Can the four research memos and their source-check results be added to the pack?
-- Should planning and scheduling be in the first version, given the 2026-10-28 target and the owner's four picks?
-- Which component runs the reconcile poll, and does it fit the free plan?
+- Does §8's "Act" get rewritten to match route A? Fix this before the card goes to the owner.
+- Can the decision records and the memos be added to the pack so the O3 acceptance and the route A and planning rulings can be verified?
+- Does T1 require a security review (D5.2)? If not, drop the "the tier requires" wording.
+- Which entries support the GitHub Action claims in U3?

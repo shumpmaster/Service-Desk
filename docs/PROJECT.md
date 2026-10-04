@@ -78,7 +78,7 @@ that only the owner passes.
 - **D4 Acting.** *Depends on D1.2, D3.2 and (for D4.2) D3.4.*
   - D4.1 Answering a card or question, recorded as `decisions/<item>/<gate>-<card>.md`. The desk
     opens GitHub's new-file page with the answer filled in, and the owner commits it (the
-    prefilled-link route, the owner's ruling; see "Owner rulings" in §8). Depends on O4.
+    prefilled-link route, the owner's ruling; see "Owner rulings" in §8). Rests on O4 (closed).
   - D4.2 Planning choices (order and timing), recorded the same way; the record's path is set in
     Define. The Chief of Staff carries them out.
 - **D5 Security and trust.** *Depends on D1.2. Gates D4's launch.*
@@ -260,8 +260,20 @@ inference or an absence we found, and E our own estimate (shown with its arithme
   key vault, not in environment variables. No secret ever goes to a model (§5).
 - **A route with no credential at all:** the desk links each card to GitHub's new-file page with the
   answer already filled in, and the owner commits it on GitHub. The desk then needs only a read
-  token. It rests on GitHub's new-file page taking a prefilled file name and content from a link,
-  in the owner's phone browser. That is not yet in the library: open item O4, research Q-007.
+  token. What it rests on (O4, closed):
+  - A `?filename=` parameter prefills the file name (F-gh-05, B: one GitHub page). No parameter
+    for the content is documented (F-gh-05).
+  - The commit step offers the current branch or a new one; on the default branch GitHub advises a
+    new branch and a pull request (F-gh-07, A).
+  - Push rulesets may block creating a file, and a protected branch blocks web edits and uploads
+    (F-gh-10, A). So each connected repository must leave its default branch open to the owner's
+    web commits, as Service-Desk's is today, or the desk targets a new branch and a pull request.
+    Define checks this per repository.
+  - The owner's own use (C, observed): the owner has committed answer files from links that
+    prefilled both the name and the content, from the phone's browser and from the GitHub app
+    (the owner, 2026-10-04: "Yes phone, browser and app"). Because the content parameter is
+    undocumented, GitHub could change it; the fallback is the desk showing the answer to copy and
+    linking to the empty new-file page.
 - **The prefilled-link route is the owner's ruling of 2026-10-01** (see "Owner rulings"
   in §8). The token routes stay possible after launch; each
   would need two things first:
@@ -313,16 +325,16 @@ inference or an absence we found, and E our own estimate (shown with its arithme
 
 ### Open at this exit
 Each item has an owner and a place where it closes. O1 and O2 are closed by the owner's rulings,
-O3's acceptance is the owner's too, O5 is closed by research, and O4 and O6 wait on research (see "Owner rulings" in §8).
+O3's and O6's acceptance is the owner's too, and O4 and O5 are closed by research (see "Owner rulings" in §8).
 
 | ID | Open item | Bears on | Closes by |
 |---|---|---|---|
 | O1 | Which route the desk acts through | D4, D5, the tier | **Closed** by the owner's ruling: the prefilled-link route (rests on O4) |
 | O2 | Whether planning and scheduling (D3.4, D4.2) are in the first version | §1, D3, D4, V4 | **Closed** by the owner's ruling: in |
 | O3 | Whether the CPU one reconcile spends parsing about 15 responses fits the Free plan's 10 ms | U1, $0 ceiling | **Open into Define, as the owner accepted on 2026-10-04.** This is an exception to the definition of ready's item 7, put to the owner on the move-to-Build card. Research Q-006 settled the rest: network waits don't count as CPU, 50 outbound requests are allowed, and overages are tolerated occasionally (F-cf-workers-01, -02, -08). Closes by measuring one reconcile on the Pages project in Define. If it doesn't fit: one invocation per repository, or the $5 Paid plan, which needs a new ceiling from the owner (F-hosting-01) |
-| O4 | Whether GitHub's new-file page takes a prefilled file name and content from a link, and lets the owner commit from a phone browser | D4, the prefilled-link route | Research Q-007. If it doesn't: the desk shows the answer to copy and links to the empty new-file page, or the owner rules on a token route |
+| O4 | Whether GitHub's new-file page takes a prefilled file name and content from a link, and lets the owner commit from a phone | D4, the prefilled-link route | **Closed** by research Q-007 and the owner's own use (U2): the file name is documented, the content is not but works, and the owner has committed from the phone's browser and app. Fallback if GitHub changes it: show the answer to copy |
 | O5 | How the desk takes over the `needs-you` Pages address | V4, D6.2, U1 | **Closed** by research Q-008: the desk is a Pages project with Functions, deployed into `needs-you` by `wrangler pages deploy` (U1) |
-| O6 | Which usage and context figures Claude Code's command line reports for a session run non-interactively (tokens by kind, turns, context-window use, duration) | D7, D3.6 | Research Q-009. Whatever it reports is what D7 records; a figure it doesn't report is shown as not available |
+| O6 | Which usage and context figures Claude Code's command line reports for a session run non-interactively (tokens by kind, turns, context-window use, duration) | D7, D3.6 | **Open into Define, as the owner accepted on 2026-10-04.** Research Q-009 filed the output formats (`text`, `json`, `stream-json`; LIB-F-j) and, at Agent SDK level, the usage and context fields (LIB-F-k, LIB-F-n); which of them a `-p` run prints is not documented. Closes in Define by running one session with `stream-json` output and recording the fields that appear. A figure that doesn't appear is shown as not available |
 
 ## 8. Clear and consistent
 *Key terms defined; constraints checked against each other and found not to contradict.*
@@ -350,6 +362,7 @@ Critic's pack does not include; the owner confirms all of them on the move-to-Bu
   by the Orchestrators, in the first version (2026-10-04).
 - Agent usage and context are in the first version, with the model change they need (D7), even if
   launch moves (2026-10-04).
+- O6 stays open into Define, closed by a one-session test there (2026-10-04).
 - Two pages of a vendor's own documentation count as two sources for how its own product behaves
   (2026-10-01 for Anthropic, widened to any vendor on 2026-10-03); cost, risk and quality claims
   still need an independent source. This one is also in governance/standards/sources.md.
@@ -372,8 +385,8 @@ Critic's pack does not include; the owner confirms all of them on the move-to-Bu
   O3's measurement holds; its fallbacks and U3's paid routes would need a new ceiling from the
   owner, and U3 is out of the first version.
 - Timeline against research: D1 must land within the first week to keep V4. Four of its questions
-  passed on day 1 (2026-10-01); Q-006 and Q-008 passed on 2026-10-04 (O5 closed, O3 narrowed); O4 and O6 wait on Q-007
-  and Q-009.
+  passed on day 1 (2026-10-01); Q-006 and Q-008 passed on 2026-10-04 (O5 closed, O3 narrowed); Q-007 closed O4 on 2026-10-04, and O6
+  stays open into Define.
 
 # Part 2 — The intent
 

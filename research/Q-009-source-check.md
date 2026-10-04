@@ -1,52 +1,51 @@
 Verdict: FAIL
 
-The memo's central question is still unanswered from documentation. It asks which usage figures `claude -p` reports, and no CLI page lists the `-p` result fields beyond a few cost fields. The memo now says this itself, so its SDK-scoped facts hold. The CLI link stays an estimate, and an unverifiable claim is a FAIL. I opened the cited pages as full text and ran nothing. I did not open `.env` or any credential file.
+I opened the cited pages and both changelogs myself and ran nothing. I did not open `.env` or any other credential file. The memo's SDK-scoped facts hold and its CLI claims match the pages. The question's core is still not answered from documentation, though: no page says which usage figures `claude -p` reports beyond a few cost fields. An unverifiable claim is a FAIL, so the memo stays a FAIL. The Researcher's own notes at `research/Q-009-memo.md` lines 21 and 34 say the same.
 
-## Filed
-- **`library/facts/LIB-F-j-claude-p-output-formats.md`**, grade A, 3-month shelf life, formats only.
-  - `text` (the default), `json` and `stream-json` are on cli-reference (`--output-format` row) and headless ("Get structured output").
-  - Headless alone says json carries `total_cost_usd` and a per-model breakdown, and that the last stream-json line is a `result` message with cost. That part is single-page (B), and the entry says so.
-- **`library/facts/LIB-F-n-modelusage-contextwindow-sdk.md`**, grade A, 3-month shelf life, SDK scope only.
-  - `contextWindow` is in the Python reference (line 1677) and the TypeScript reference (`ModelUsage`, line 4850).
-  - `get_context_usage()` is in Python (line 470) and `getContextUsage()` in TypeScript (line 630).
-  - The memo graded these B because it could not read the TypeScript page. They are A at SDK scope.
-- **`LIB-F-k`**, filed in the earlier round, still holds. The raw changelog file (the full text, not a summary) confirms 0.3.223, line 424: "`usage` is main-loop-only and per-turn; `modelUsage` is cumulative". Cost-tracking and headless state the rest.
+## Confirmed against the pages
 
-## Memo claims confirmed
-- **Client-side estimates.** headless "Pipe data" paragraph; cost-tracking Warning block.
-- **1.1× multiplier.** cost-tracking Warning; changelog line 337.
-- **Resumed totals.** headless; cost-tracking "Accumulate costs"; changelog line 110 (0.3.277).
-- **Turn limit.** cli-reference `--max-turns`: "Exits with an error when the limit is reached".
-- **SIGTERM.** headless: exit code 143, "records no result for it".
-- **Background wait.** headless: 10-minute ceiling.
-- **`API_TIMEOUT_MS`.** errors.md line 429: default 600000.
-- **Result subtypes.** agent-loop lines 201 and 320–321; Python line 1642.
-- **Crash.** agent-loop line 329; cost-tracking "Recover totals".
-- **`terminal_reason` and API error.** Python lines 1650 and 1995.
-- **`thinkingTokens`.** Python line 1675; TypeScript line 4858; changelog line 246 (0.3.257).
-- **`--agent`.** cli-reference row; sub-agents line 851. Neither page says usage reporting differs.
-- **OpenTelemetry.** monitoring-usage lines 604–605 and 663.
-- **0.3.280 usage-limit event.** changelog line 91. It is single-page (B), as the memo says.
-- **Bonus.** `SDKResultMessage` in TypeScript has `duration_ms` and `num_turns` (lines 1522–1526). That makes `duration_ms` A at SDK scope, where the memo graded it B.
+- **Formats, two pages (A).** The cli-reference `--output-format` row lists `text`, `json` and `stream-json`. The headless page lists the same at lines 138–142, with `text` as the default.
+- **Cost fields in `json`, headless only (B).** Line 112 names `total_cost_usd` and a per-model cost breakdown. It also says "Both figures are client-side estimates". Line 150 says `--json-schema` adds usage and session ID, and line 185 describes the final stream-json `result` line as carrying "cost, and session metadata".
+- **Cost is an estimate, two pages (A).** headless line 112 and cost-tracking line 14. The 1.1× multiplier is at cost-tracking line 20.
+- **Usage scope, two pages.** cost-tracking line 94 says `usage` is "Excluded. Counts only the top-level agent loop". SDK changelog 0.3.223 (line 423) says `usage` is main-loop-only and per-turn, and `modelUsage` is cumulative. This supports `LIB-F-k`. The cost-tracking "per-turn" wording at line 64 is about turns in streaming input mode, as the memo says at S3.
+- **Turn limit (B).** cli-reference `--max-turns`: "Exits with an error when the limit is reached".
+- **SIGTERM (B).** headless line 85: exit code 143, "records no result for it".
+- **Background wait (B).** headless line 79: 10-minute idle ceiling, then it "drops its partial result".
+- **`API_TIMEOUT_MS` (B).** errors.md line 429: default 600000.
+- **Crash (A).** cost-tracking line 327: `error_during_execution`, with `usage`, `total_cost_usd` and `modelUsage` possibly zeroed.
+- **`contextWindow` (A, SDK scope).** Python line 1677 and TypeScript line 4850.
+- **`duration_ms` (A, SDK scope).** TypeScript line 1522 and the Python reference.
+- **`--agent` (A).** The cli-reference row reads "Specify an agent for the current session". Nothing there says usage reporting differs.
+- **Usage-limit event (B).** SDK changelog 0.3.280 (line 90): a usage-limit wait emits `rate_limit_event` (`rejected`, `resetsAt`).
 
-## Not filed
-- **LIB-F-j2 (SDK result is probably the `-p` result):** an inference (C), so it does not go in the library.
-- **LIB-F-l (how a run ends):** the memo's wording mixes A and B facts and several are single-page: API-error `success`, the budget-crossing `usage` gap and `budget_exhausted`. The A parts, subtypes and crash zeroing, are SDK-only. I held it for the Researcher to split by grade.
-- **LIB-F-m (per-step `output_tokens` placeholder):** cost-tracking only, so single-page.
-- **The `-p` result field list, the `-p` ending shape and `--agent` behaviour:** not documented. This is the cause of the FAIL.
+## Why it fails
 
-## Memo defects
-- Memo F10 says `duration_ms` has no second page. TypeScript line 1522 is one.
-- Memo F13 and F19 grade `contextWindow` and `get_context_usage()` as B. Both are on two pages.
-- Memo F12 and the short answer attribute the "per-turn" wording to changelog 0.3.223. That is right, but `usage` being per-turn has no second page.
-- The changelog extracts returned by the fetch tool omitted the 0.3.223, 0.3.277 and 0.3.280 lines the memo cites. The raw file has them. Memo "What I verified" overstates the extract route.
+- **`-p` field list not documented.** I searched the full Claude Code CHANGELOG (904 KB raw file, the check the memo handed to me at part 5). `num_turns` and `duration_api_ms` do not appear in it. `duration_ms` appears once, line 4931, and is about hook inputs, not `-p` results. headless and cli-reference give no such list either.
+- **Link from `-p` to SDK result fields is an estimate.** The memo calls it E1 (grade C) and rightly keeps it out of the library. That leaves turns, duration, token fields, context size and endings unconfirmed for `-p`.
+- **Question parts with no documentation.** How `-p` reports a usage limit or a whole-session timeout, and whether `--agent` changes anything.
+
+## Library entries
+
+- **Already filed, still correct.** `LIB-F-j` (formats; grade A for formats, B for fields), `LIB-F-n` (SDK `contextWindow` and `getContextUsage`, grade A) and `LIB-F-k` (usage scope and cost estimates, grade A). Each is in `library/facts/`. I changed nothing.
+- **Left out, so no new entries.**
+  - `LIB-F-l-A`: the entry is SDK-only, and it needs checking per source (the `error_max_*` subtypes, `terminal_reason` and changelog 0.3.204) before filing. I have not done that.
+  - `LIB-F-l-B`: it mixes B-only facts and is not ready.
+  - `LIB-F-m`: single page (cost-tracking), grade B.
+  - `LIB-F-j2`: withdrawn by the memo as an estimate.
+
+## Defects in the memo
+
+- **Memo line 1.** It is stray text before the heading ("I've finished the search…").
+- **Memo line 4 vs the check file.** The memo cites "`research/Q-009-source-check.md`" as a verdict-FAIL document. It also relies on that file's claim that the checker read the TypeScript `SDKResultMessage` and `ModelUsage` sections. I verified both myself (lines 1522 and 4850), so the grades stand.
+- **Part 4 of the contract.** It lists the full Claude Code CHANGELOG as unread. I have now read it, and it adds nothing on `-p` fields.
 
 ## Open questions
-- Does any Anthropic page list the `-p` JSON result fields (Q-009c)? Without one, E1 stays an estimate and the decision (what the Orchestrator can record per session) rests on inference.
+
+- Does any Anthropic page list the `-p` JSON result fields (Q-009c)? Without one the decision (what the Orchestrator can record per session) rests on inference.
 - What does `num_turns` count (Q-009a)?
-- Is `total_cost_usd` cumulative under `json` the same way as under `stream-json` (Q-009b)?
-- Does `-p` report anything on a usage limit or whole-session timeout? No page was found.
-- Do `--agent` sessions differ in their figures, or in `agent.name` in OpenTelemetry? Not documented.
-- Python `ResultMessage` fields I did not individually check: `origin`, `deferred_tool_use`.
+- Is `total_cost_usd` cumulative under `json` as it is under `stream-json` (Q-009b)?
+- How does `-p` report a usage-limit ending or a whole-session timeout?
+- Does `--agent` change any figure?
+- What do the Python `origin` and `deferred_tool_use` fields mean? I did not check them.
 
 Nothing was committed. The working directory is not a git repository.

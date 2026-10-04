@@ -1,5 +1,5 @@
 Ruling: yes, phone; yes
-Proxy: done at the owner's request. The owner replied in the session, verbatim: "Yes phone, browser and app. Yes"
+Proxy: done at the owner's request (the owner replied in the session, verbatim: "Yes phone, browser and app. Yes")
 
 Questions (asked in the session on 2026-10-04):
 1. Did you commit any of the prefilled-link files from your phone's browser? (yes, phone / no,

@@ -1,7 +1,7 @@
 # Definition of ready — leaving Shape (D-052)
 
 *Copied verbatim from the operating model (OPERATING_MODEL.md, "Definition of ready: leaving
-Shape", model commit d9f569f, with item 7 as amended by model ruling L-0119) so the Critic's definition-of-ready check has its checklist in its
+Shape", model commit 00d6360, which carries item 7 as amended by model ruling L-0119) so the Critic's definition-of-ready check has its checklist in its
 pack. The model's text governs; if they differ, this copy is a bug to fix.*
 
 One project document in two parts. *Part 1, the brief* (settled at approval): (1) scope — in, out,

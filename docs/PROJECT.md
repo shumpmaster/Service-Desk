@@ -108,7 +108,7 @@ before D4. A read-only preview could replace the old page early, with acting fol
 
 | Deliverable | Owner |
 |---|---|
-| D1 | Researcher and Source checker, through research requests Q-001, Q-002, Q-004 to Q-009 (Q-003 dropped) filed by the Chief of Staff |
+| D1 | Researcher and Source checker, through research requests Q-001, Q-002, Q-004 to Q-008 (Q-003 and Q-009 dropped) filed by the Chief of Staff |
 | D2 to D5 | Builder, to specs by the Definer, checks by the Check author, review by the Reviewer |
 | D5.2 | Reviewer, with a security focus |
 | Rulings: move to Build, criteria, tier, spend ceiling, launch, anything on D1.3 | The owner (Kenny) |
@@ -161,18 +161,17 @@ before D4. A read-only preview could replace the old page early, with acting fol
 
 *Proposed values; the owner sets them on the move-to-Build card.*
 
-V1: Missed decisions: items waiting on the owner in a connected project that the desk did not show within 5 minutes, 0 over the first 14 days after launch, 2026-11-11 (14 days after V4's date; moves with it)
-V2: False alarms: items the desk flagged that did not need the owner, at most 1 a week over the first 14 days after launch, 2026-11-11 (14 days after V4's date; moves with it)
-V3: Owner upkeep: the owner's time on the desk itself (tokens, settings, adding repositories), at most 30 minutes a week after launch, 2026-11-11 (14 days after V4's date; moves with it)
-V4: Replacement: the desk serves the Operations-Hub address and the old repository is archived, by 2026-10-28
+V1: Missed decisions: items waiting on the owner in a connected project that the desk did not show within 5 minutes, 0 over the first 14 days after launch, 2026-11-25 (14 days after V4's date; moves with it)
+V2: False alarms: items the desk flagged that did not need the owner, at most 1 a week over the first 14 days after launch, 2026-11-25 (14 days after V4's date; moves with it)
+V3: Owner upkeep: the owner's time on the desk itself (tokens, settings, adding repositories), at most 30 minutes a week after launch, 2026-11-25 (14 days after V4's date; moves with it)
+V4: Replacement: the desk serves the Operations-Hub address and the old repository is archived, by 2026-11-11
 
-V4's date is proposed as 2026-10-28, which D7 puts at risk. The Chief of Staff's estimate with D7
-is 2026-11-11 (E: about two weeks for a model change's spec, build, review and owner approval, then
-its adoption here; O6's Agent SDK fallback would add more). The owner sets the date on the
+V4's date is proposed as 2026-11-11, the Chief of Staff's estimate with D7 (E: about two weeks for a model change's spec, build, review and owner approval, then
+its adoption here). The owner sets the date on the
 move-to-Build card. V1 to V3 run for the 14 days after launch, so their date is V4's date plus 14
 days and moves with it, and the stop rule below uses V4's date as set.
 
-**Miss and stop rule:** a miss is V4 not met by its date (proposed 2026-10-28), or the redesign taking more than about
+**Miss and stop rule:** a miss is V4 not met by its date (proposed 2026-11-11), or the redesign taking more than about
 2 hours a week of the owner's time before launch. At a miss, the owner rules: re-aim (for example,
 launch read-only and add acting after) or stop. A V1 to V3 miss after launch goes to the stage-8
 evidence review, where the owner rules continue, re-aim or stop. How V1 and V2 are measured (design, C;
@@ -383,7 +382,7 @@ O3, O5 and O6 are open into Define under the definition of ready's accepted-open
 | O3 | Whether the CPU and wall-time limits on the Free plan fit a cold-load batch | U1, $0 ceiling | **Open into Define.** One unknown: whether Cloudflare's free-plan HTTP requests have a time limit (not documented; F-cf-workers-03:8). The CPU part is measured; wall-time is measured in Define too. Closes by measuring both on the Pages project in Define. If either doesn't fit: smaller batches on Free, or the $5 Paid plan, which needs a new ceiling from the owner (F-hosting-01). |
 | O4 | Whether GitHub's new-file page takes a prefilled file name and content from a link, and lets the owner commit from a phone | D4, the prefilled-link route | **Closed** by research Q-007 and the owner's own use (U2): a file-name parameter is described on one GitHub page (F-gh-05, B), the content parameter is undocumented but works, and the owner has committed from the phone's browser and app. Fallback if GitHub changes it: show the answer to copy |
 | O5 | How the desk deploys to the `needs-you` Pages address (Git or Direct Upload) | V4, D6.2, U1 | **Open into Define.** Research Q-008 found `wrangler pages deploy` in Operations-Hub (bd84592), but that evidence is outside the pack and cannot be verified by the Critic. Closes in Define by checking in the Cloudflare dashboard how `needs-you` is deployed. If Direct Upload: nothing changes. If Git-integrated: the fallback is a new project with permanent redirect, the old repository is archived as part of launch (L-0115, D-066). |
-| O6 | Which usage and context figures (tokens by kind, turns, context-window use, duration) a Claude Code session run by the Orchestrator reports | D7, D3.6 | **Open into Define.** Research Q-009 did not pass its source check and waits on the owner's stop card (queue/Q-009-stop-1.md), so nothing from it is relied on. Closes in Define by running one session with `stream-json` output and recording the fields that appear. Fallback, as the owner ruled (decisions/questions/P-001-dor-fixes-round3.md, option B): D7 runs sessions through the Agent SDK instead and records what it reports; whether that includes context-window use is not in the library (C), so if it doesn't, the owner rules again (show the other figures, or hold launch) |
+| O6 | Which usage and context figures (tokens by kind, turns, context-window use, duration) a Claude Code session run by the Orchestrator reports | D7, D3.6 | **Open into Define.** Research Q-009 was dropped by the owner (decisions/Q-009/stop-1.md), so nothing from it is relied on. Closes in Define by running one session with `stream-json` output and recording the fields that appear. Fallback, as the owner ruled (decisions/questions/P-001-o6-fallback.md, option A): the desk shows the figures that are reported and marks any other, such as context-window use, as not available. It costs nothing and keeps the $0 API-spend ceiling; getting a missing figure another way is a later change with its own ruling |
 
 ## 8. Clear and consistent
 *Key terms defined; constraints checked against each other and found not to contradict.*
@@ -412,9 +411,11 @@ question as put and the owner's words; the owner confirms all of them on the mov
 - Agent usage and context in the first version, with D7, even if launch moves (2026-10-04):
   decisions/questions/P-001-usage-and-context.md.
 - O3 accepted open into Define (2026-10-04): decisions/questions/P-001-o3-define.md; the Free-plan
-  wall-time limit added to it, O5 accepted open into Define, O6's fallback set to the Agent SDK
-  route, and research Q-009 confirmed (2026-10-04):
-  decisions/questions/P-001-dor-fixes-round3.md.
+  wall-time limit added to it, and O5 accepted open into Define (2026-10-04):
+  decisions/questions/P-001-dor-fixes-round3.md, questions 1 and 4.
+- O6's fallback: show the reported figures, others marked not available (2026-10-05):
+  decisions/questions/P-001-o6-fallback.md. Research Q-009 dropped (2026-10-05):
+  decisions/Q-009/stop-1.md.
 - The owner's own use of prefilled links from the phone, and O6 accepted open into Define
   (2026-10-04): decisions/questions/P-001-o6-define.md.
 - Two pages of a vendor's own documentation count as two sources for how its own product behaves
@@ -433,8 +434,8 @@ question as put and the owner's words; the owner confirms all of them on the mov
   version (O2), so it is a fifth pick (Part 2).
 - Tier: AGENTS.md says T1, and §5 now proposes T1. The owner confirms at the move to Build.
 - Scope against the date: planning and scheduling (D3.4, D4.2) and usage recording (D7, a model
-  change) put 2026-10-28 at risk. The owner accepted that the date can move (2026-10-04); V4's date
-  is set on the move-to-Build card. §3's route to compression still applies: D3.1 and D3.2 can ship
+  change) put the first target, 2026-10-28, out of reach. The owner accepted that the date can
+  move (2026-10-04), so V4 is proposed at 2026-11-11 and set on the move-to-Build card. §3's route to compression still applies: D3.1 and D3.2 can ship
   to the preview first.
 - Spend: $0 against "spend follows value". The first version fits $0 on Cloudflare's Free plan if
   O3's measurement holds; its fallbacks and U3's paid routes would need a new ceiling from the

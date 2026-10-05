@@ -1,49 +1,50 @@
+Status: I've read the whole pack and am now writing the verdict.
+
 Verdict: FAIL
 
-The exit has real gaps. §8 contradicts the owner's ruling, one library claim is overstated, and several claims can't be verified from this pack. Part 1 has all eight definition-of-ready sections (`governance/standards/definition-of-ready.md:7-14`), and most §7 citations match the library.
+**Findings**
 
-**Findings that block**
+1. **O6's fallback contradicts the $0 API-spend limit.**
+   - docs/PROJECT.md:386 says that if the `claude -p` route fails, D7 runs sessions through the Agent SDK.
+   - docs/PROJECT.md:130-137 sets a $0 ceiling on pay-per-use API spend and says any API key needs the owner's ruling first.
+   - library/facts/LIB-F-e (lines 17 and 24) says SDK products are directed to API-key authentication. It also says whether a private single-owner desk may use claude.ai login is not decided.
+   - So the fallback probably needs an API key. §8 "Checks, and the tensions" never reconciles this, which fails item 8 (no contradictory constraints).
+   - The owner's ruling (P-001-dor-fixes-round3.md, question 3) chose option B without the API-key cost being put on the card. As written, the ruling does not cover that cost.
 
-1. **§8 defines "Act" in a way that contradicts route A.**
-   - `docs/PROJECT.md:266-267` says "the desk writes the owner's answer into the project repository". Route A says the desk holds no write credential and the owner commits every answer (`docs/PROJECT.md:197-199`, `:104-108`, `:351`).
-   - §1 line 17 says cards are "answerable from the desk", and Part 2 line 363 says "Every action writes back".
-   - §8 claims no contradictions. It also uses the old definition to resolve the D-066 tension (`:277-280`). The term must say the desk prepares the answer and the owner commits it.
+2. **The owner's stop card on Q-009 says "drop", and the brief says "confirmed".**
+   - decisions/Q-009/stop-1.md:1 reads `Decision: drop`.
+   - docs/PROJECT.md:417 says research Q-009 was "confirmed" by the round-3 ruling.
+   - docs/PROJECT.md:386 says Q-009 "waits on the owner's stop card (queue/Q-009-stop-1.md)". That path is not in the pack, and the card in the pack is already answered.
+   - docs/PROJECT.md:111 still lists Q-009 as active D1 work.
+   - The brief's account of Q-009 conflicts with the records, which weakens item 7.
+   - I could not verify the round-3 "confirm Q-009" ruling against the stop card. The card was answered "drop", and it is unclear which one governs.
 
-2. **U2 overstates L-F9.**
-   - `docs/PROJECT.md:193` says "The narrowest permission for an answer file is Contents: write (L-F9, B)".
-   - `library/facts/L-F9.md:4,13` says create/update file contents is under Contents: write and Workflows: write, with the "additional permissions" mark. The tables don't say whether several permissions are required or any one suffices. Which case applies per endpoint is "unconfirmed".
-   - "Narrowest" is therefore not supported. It matters little for route A, but it is stated as evidence.
+3. **The "accepted open" rulings are thinly supported.**
+   - Every ruling relied on is a proxy. The round-3 ruling (P-001-dor-fixes-round3.md:1-2) maps the owner's words "Go with your recommendations please" onto "yes; yes; B; yes; yes".
+   - The recommendations are not in any record I can read, and the README (lines 11-14) says they stay in `-notes.md` files. I cannot verify that this mapping is the owner's own choice.
+   - Question 5 on that card bundles several changes into one "yes", including the launch-date estimate.
+   - The owner's words are in the ruling record itself, so this is weak rather than disqualifying. But the owner must confirm each of them on the move-to-Build card (docs/PROJECT.md:404-405).
 
-3. **Claims rest on files I can't open, so I can't verify them.**
-   - The pack has no `research/Q-00x-memo.md`, `decisions/questions/*.md` or `queue/` files. These are cited at `docs/PROJECT.md:24,138-141,200-201,255-257`.
-   - The O3 acceptance ("the owner replied: 'Yes'", `:250-251`) can't be checked against a decision record. It is also the only open load-bearing unknown. It sits under the $0 ceiling, and the definition of ready asks for every such unknown to be answered.
-   - Rows 4 and 5 of the §7 table (`:142-143`) are labelled "Observed, not filed (C)" and rest on Operations-Hub docs outside the pack. The text itself says they are not load-bearing.
+4. **O6's fallback may not deliver the load-bearing feature.**
+   - docs/PROJECT.md:386 admits the SDK may not report context-window use (C). The owner chose agent usage and context specifically (Part 2, item 6).
+   - The definition of ready needs "the fallback if it fails" to be a real fallback. Here the fallback is another unknown, ending in "the owner rules again".
 
-**Smaller defects**
+5. **A decision record holds commentary it should not hold.**
+   - decisions/P-001/dor-fail-2.md:4-6 says "The brief has been revised… All four governance checks have passed."
+   - decisions/README.md:10-14 says a ruling record holds only the ruling line, any proxy line, the question and the owner's words.
+   - The claim that the checks passed cannot be verified from the pack, and it should not appear in a record the Critic reads.
+   - decisions/P-001/dor-fail-1.md:2 is a proxy with "You can be my proxy there." It is a vague basis for a resubmit.
 
-4. **U2 uses an absence claim as a fact.**
-   - `docs/PROJECT.md:189-190` says a fine-grained PAT has "no documented marking that separates it from the browser" and cites L-F5.
-   - L-F5 (`library/facts/L-F5.md:4`) contains no such statement. A comparable absence claim was explicitly not filed for L-F4 (`library/facts/L-F4.md:15`). Label it as an unfiled absence claim.
+6. **V4's date is internally inconsistent.**
+   - V4 is set to 2026-10-28 (docs/PROJECT.md:167). The text at lines 169-172 says the realistic date with D7 is 2026-11-11, and V1 to V3 are keyed to V4.
+   - The brief therefore proposes values it says it expects to miss. This is flagged as "proposed", so it is minor.
 
-5. **U3 cites a memo ID, not a library ID.**
-   - `docs/PROJECT.md:218` says "F-18, A". The library entry is LIB-F-e (`library/facts/LIB-F-e-agent-sdk-no-claudeai-login-for-third-parties.md:2,10`), and F-18 is only the memo's number.
-   - The U3 evidence row (`:140`) omits LIB-F-h, -d and -b, while the text makes claims about the GitHub Action and cloud sessions at `:210-216`. Those claims may be supported elsewhere in the library, but the row doesn't say so. I did not trace them.
-
-6. **GitHub Pages is stated without its qualifier.** `docs/PROJECT.md:177` says "public, even when the repository is private". F-gh-04 (`library/F-gh-04.md:8`) adds "if your plan or organization allows it", and it does not rule out private publishing on Enterprise plans. This doesn't change the choice, since Pages isn't used.
-
-7. **WebSocket billing is joined from two entries.** `docs/PROJECT.md:155-156` joins the 20:1 ratio (`library/F-hosting-02c.md:8`) to the Free plan's 100,000 daily requests. The entry doesn't say the ratio applies to the Free plan. The inference is plausible but should be marked as an inference.
-
-8. **D5.2 may not match the tier.** `docs/PROJECT.md:72` says "the security review the tier requires" while the proposed tier is T1 (`:104`). It is unclear whether T1 requires a review.
-
-**Checked and sound**
-- Cloudflare numbers: 100,000 requests a day and 10 ms CPU (F-hosting-01); Access at $0 for up to 50 users (F-auth-01); Durable Objects 5 GB on Free (F-hosting-02a).
-- The Free-plan DO billing quote (F-hosting-02b) and the Q-004 polling facts.
-- The arithmetic: 60 × 16 = 960 requests a day, and 3 calls × 5 repos × 60 = 900 calls an hour.
-- The §6 values are measurable, and their dates are consistent with the stop rule.
-- The O3 fallback is stated.
+**Passes**
+- Prefilled-link route (O1, O4), planning in scope (O2), spend deferred, and usage and context in scope: each matches its ruling record (acting-route, planning-scope, spend-and-planning, usage-and-context).
+- O3 and O5 each name a closing test and a fallback. Both have owner rulings: o3-define.md and round3 question 4.
+- The tier analysis and the owner's list match.
 
 **Open questions**
-- Does §8's "Act" get rewritten to match route A? Fix this before the card goes to the owner.
-- Can the decision records and the memos be added to the pack so the O3 acceptance and the route A and planning rulings can be verified?
-- Does T1 require a security review (D5.2)? If not, drop the "the tier requires" wording.
-- Which entries support the GitHub Action claims in U3?
+- Does the owner accept that the Agent SDK fallback may need an API key, given the $0 API ceiling?
+- Is Q-009 dropped, or confirmed? Which record governs?
+- What were the "recommendations" the owner agreed to in round 3? They should be shown on the card, not kept in notes.

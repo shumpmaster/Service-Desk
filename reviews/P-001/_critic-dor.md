@@ -1,50 +1,34 @@
-Status: I've read the whole pack and am now writing the verdict.
+Verdict: PASS
 
-Verdict: FAIL
+I read `docs/PROJECT.md` (Part 1) against `governance/standards/definition-of-ready.md`, and traced each ruling and library entry it cites. The brief meets all eight items. It has four weak points that I list below, none of which fails the exit.
 
-**Findings**
+**Evidence by item**
+- **(1) Scope, (2) strategy, (3) plan.** The scope has in, out and where it works (§1, lines 10–53). The strategy chain is at §2 (55–64). The plan is two levels deep with dependencies (§3, 66–104).
+- **(4) Owners.** The §4 table (109–122) covers every deliverable, the owner's rulings, the by-hand settings and the outside parties.
+- **(5) Limits.** The $0 hosting ceiling, the $0 API spend, the data boundaries and a T1 tier are all stated, with the tier checked against each trigger (§5, 127–157).
+- **(6) Value and stop rule.** V1–V4 each have a measure, target and date. Pre-launch time is a stated miss, and V1/V2 have a measurement route (§6, 164–189).
+- **(7) Solid foundation.** The three items left open into Define each meet the L-0119 rule: a named test, a fallback, and a recorded owner ruling.
+  - **O3, CPU and wall-time.** Test and fallback are at line 382. The rulings are `decisions/questions/P-001-o3-define.md` and `P-001-o3-walltime.md`, each "Ruling: yes" with the owner's words.
+  - **O5, how `needs-you` deploys.** Test and fallback are at line 384. The ruling is `P-001-o5-define.md`.
+  - **O6, usage figures.** Test and fallback are at line 385. The rulings are `P-001-o6-define.md` and `P-001-o6-fallback.md` (option A). The fallback is $0, which fits the §5 ceiling.
+  - **Citations.** I spot-checked these library entries and each matches the brief's text:
+    - F-cf-workers-01: 10 ms CPU on Free.
+    - F-cf-workers-02: 50 outbound requests per invocation.
+    - F-cf-workers-03: six connections, and the Free wall-time limit not filed (line 8).
+    - F-cf-workers-05: 100,000 requests a day.
+    - F-cf-workers-08: occasional overages tolerated.
+    - F-hosting-01: the $5 Paid plan.
+    - F-Q004-1, -2, -4, -7, -9 and -12.
+  - **Arithmetic.** The shown arithmetic is correct: 5×60×16 = 4,800, and 3×5×60 = 900.
+  - **Unfiled facts.** The brief marks the facts that are not filed or are unverified as C (our own observation or inference) and does not rely on them for its design.
+- **(8) Clear and consistent.** Terms are defined (§8, 390–401). The tensions are checked (427–446), including the moved date, D-066 and the tier.
 
-1. **O6's fallback contradicts the $0 API-spend limit.**
-   - docs/PROJECT.md:386 says that if the `claude -p` route fails, D7 runs sessions through the Agent SDK.
-   - docs/PROJECT.md:130-137 sets a $0 ceiling on pay-per-use API spend and says any API key needs the owner's ruling first.
-   - library/facts/LIB-F-e (lines 17 and 24) says SDK products are directed to API-key authentication. It also says whether a private single-owner desk may use claude.ai login is not decided.
-   - So the fallback probably needs an API key. §8 "Checks, and the tensions" never reconciles this, which fails item 8 (no contradictory constraints).
-   - The owner's ruling (P-001-dor-fixes-round3.md, question 3) chose option B without the API-key cost being put on the card. As written, the ruling does not cover that cost.
-
-2. **The owner's stop card on Q-009 says "drop", and the brief says "confirmed".**
-   - decisions/Q-009/stop-1.md:1 reads `Decision: drop`.
-   - docs/PROJECT.md:417 says research Q-009 was "confirmed" by the round-3 ruling.
-   - docs/PROJECT.md:386 says Q-009 "waits on the owner's stop card (queue/Q-009-stop-1.md)". That path is not in the pack, and the card in the pack is already answered.
-   - docs/PROJECT.md:111 still lists Q-009 as active D1 work.
-   - The brief's account of Q-009 conflicts with the records, which weakens item 7.
-   - I could not verify the round-3 "confirm Q-009" ruling against the stop card. The card was answered "drop", and it is unclear which one governs.
-
-3. **The "accepted open" rulings are thinly supported.**
-   - Every ruling relied on is a proxy. The round-3 ruling (P-001-dor-fixes-round3.md:1-2) maps the owner's words "Go with your recommendations please" onto "yes; yes; B; yes; yes".
-   - The recommendations are not in any record I can read, and the README (lines 11-14) says they stay in `-notes.md` files. I cannot verify that this mapping is the owner's own choice.
-   - Question 5 on that card bundles several changes into one "yes", including the launch-date estimate.
-   - The owner's words are in the ruling record itself, so this is weak rather than disqualifying. But the owner must confirm each of them on the move-to-Build card (docs/PROJECT.md:404-405).
-
-4. **O6's fallback may not deliver the load-bearing feature.**
-   - docs/PROJECT.md:386 admits the SDK may not report context-window use (C). The owner chose agent usage and context specifically (Part 2, item 6).
-   - The definition of ready needs "the fallback if it fails" to be a real fallback. Here the fallback is another unknown, ending in "the owner rules again".
-
-5. **A decision record holds commentary it should not hold.**
-   - decisions/P-001/dor-fail-2.md:4-6 says "The brief has been revised… All four governance checks have passed."
-   - decisions/README.md:10-14 says a ruling record holds only the ruling line, any proxy line, the question and the owner's words.
-   - The claim that the checks passed cannot be verified from the pack, and it should not appear in a record the Critic reads.
-   - decisions/P-001/dor-fail-1.md:2 is a proxy with "You can be my proxy there." It is a vague basis for a resubmit.
-
-6. **V4's date is internally inconsistent.**
-   - V4 is set to 2026-10-28 (docs/PROJECT.md:167). The text at lines 169-172 says the realistic date with D7 is 2026-11-11, and V1 to V3 are keyed to V4.
-   - The brief therefore proposes values it says it expects to miss. This is flagged as "proposed", so it is minor.
-
-**Passes**
-- Prefilled-link route (O1, O4), planning in scope (O2), spend deferred, and usage and context in scope: each matches its ruling record (acting-route, planning-scope, spend-and-planning, usage-and-context).
-- O3 and O5 each name a closing test and a fallback. Both have owner rulings: o3-define.md and round3 question 4.
-- The tier analysis and the owner's list match.
+**Weak points (none blocks the exit)**
+1. **O5 fallback against V4.** The fallback is "a new project with permanent redirect" (`PROJECT.md:384`; `P-001-o5-define.md`). V4 says the desk "serves the Operations-Hub address" (line 167). A redirect from the old address is not the same as serving it. The old project's survival is also unclear, because the old repository is archived. The Definer should settle this. The owner may need to confirm that a redirect meets V4.
+2. **V4 date has no arithmetic.** The 2026-11-11 date is marked E, "about two weeks" for D7 (lines 169–171). §7's header says E figures are "shown with its arithmetic" (line 198). There is no arithmetic for the full date. The owner sets the date on the move-to-Build card, so this is not blocking.
+3. **Q-009 drop record is thin.** `decisions/Q-009/stop-1.md` holds only "Decision: drop", with no owner words or proxy line. The brief says the owner dropped it (lines 385, 418). The Orchestrator should confirm that is the owner's decision. Nothing in the design relies on Q-009.
+4. **Part 2 is stale in places.** The intent draft still talks of a 2026-10-28 launch and a spend line (lines 502–503, 476). Part 1 reconciles both. It is living and awaits owner confirmation.
 
 **Open questions**
-- Does the owner accept that the Agent SDK fallback may need an API key, given the $0 API ceiling?
-- Is Q-009 dropped, or confirmed? Which record governs?
-- What were the "recommendations" the owner agreed to in round 3? They should be shown on the card, not kept in notes.
+- Does the owner accept that a redirect satisfies V4? See weak point 1.
+- Is `needs-you` a Direct Upload project? That is O5's test in Define. I cannot verify it from this pack, and the brief says so itself (line 384).

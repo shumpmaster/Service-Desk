@@ -496,13 +496,13 @@ The owner picked all four, and on 2026-10-01 added a fifth:
   a merge, a yes or no) sat inside long streams of progress messages. Whatever the desk becomes, a
   request for the owner must stand apart from activity, and never depend on the owner scrolling a
   conversation to find it.
-- **Spend follows value.** "I'm open to most anything if the value can be justified." There is no
-  fixed ceiling yet. Every paid service carries its value case, and Part 1 §5 still needs a
-  number.
+- **Spend follows value.** "I'm open to most anything if the value can be justified." Every paid
+  service carries its value case. The owner set $0 for hosting and for pay-per-use AI on the
+  move-to-Build card (decisions/questions/P-001-move-to-build-values.md).
 - **Four weeks, with a faster route shown; the date can move.** On 2026-10-04 the owner said "The
-  launch date isn't set in stone" when choosing to include usage and context. Launch by 2026-10-28 is acceptable, "but with a route
-  to timeline compression if we work it aggressively." The plan should show what could shorten it
-  and what that would cost.
+  launch date isn't set in stone" when choosing to include usage and context. The first target was 2026-10-28, "but with a route
+  to timeline compression if we work it aggressively." The owner set 2026-11-11 on the
+  move-to-Build card; the plan should show what could shorten it and what that would cost.
 - **Accepted risk: the session token.** Two Q-003 Researcher sessions read the session OAuth token
   (Service-Desk queue/Q-003-failure-1.md; model LESSONS LL-013). The Chief of Staff advised rotating
   it. The owner, 2026-10-01: "I'm not rotating the token, I am comfortable with the risk level."

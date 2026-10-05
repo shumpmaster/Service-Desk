@@ -411,8 +411,9 @@ question as put and the owner's words; the owner confirms all of them on the mov
 - Agent usage and context in the first version, with D7, even if launch moves (2026-10-04):
   decisions/questions/P-001-usage-and-context.md.
 - O3 accepted open into Define (2026-10-04): decisions/questions/P-001-o3-define.md; the Free-plan
-  wall-time limit added to it, and O5 accepted open into Define (2026-10-04):
-  decisions/questions/P-001-dor-fixes-round3.md, questions 1 and 4.
+  wall-time limit added to it (2026-10-05): decisions/questions/P-001-o3-walltime.md.
+- O5 accepted open into Define, with the new-project-and-redirect fallback (2026-10-05):
+  decisions/questions/P-001-o5-define.md.
 - O6's fallback: show the reported figures, others marked not available (2026-10-05):
   decisions/questions/P-001-o6-fallback.md. Research Q-009 dropped (2026-10-05):
   decisions/Q-009/stop-1.md.

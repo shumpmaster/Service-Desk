@@ -92,7 +92,7 @@ that only the owner passes.
   - D6.1 Preview, then the owner's launch approval.
   - D6.2 Address cut-over and archiving Operations-Hub.
   - D6.3 Operating notes for the run stage.
-- **D7 Usage recording (an operating-model change).** *Depends on research Q-009 (O6).*
+- **D7 Usage recording (an operating-model change).** *Depends on O6.*
   - D7.1 The model's session runner records, for each agent session, the usage and context figures
     the command line reports, with the session's outcome. Specified and built in the model's own
     repository, under its spec process, and carried to Service-Desk as a model upgrade.
@@ -136,7 +136,7 @@ before D4. A read-only preview could replace the old page early, with acting fol
   The playbook's 80% alert measures metered spend; with no metered spend it has nothing to
   measure. Whether to watch the subscription's own usage limits, and how, is a departure from the
   playbook that the owner rules on the move-to-Build card; D3.6 can show usage once D7 lands.
-- **Data boundaries:** the desk reads connected projects (any repositories on the desk's list) and portfolio repositories (those listed in the owner's portfolio directory outside Service-Desk). It may
+- **Data boundaries:** the desk reads only its connected projects (§8). It may
   send their content only to GitHub and Cloudflare, plus Anthropic if U3 leads to sessions. No
   secret is ever sent to a model.
 - **Tier (proposed): T1, as AGENTS.md says today.** Against the T1 → T2 triggers
@@ -166,21 +166,25 @@ V2: False alarms: items the desk flagged that did not need the owner, at most 1 
 V3: Owner upkeep: the owner's time on the desk itself (tokens, settings, adding repositories), at most 30 minutes a week after launch, 2026-11-11 (14 days after V4's date; moves with it)
 V4: Replacement: the desk serves the Operations-Hub address and the old repository is archived, by 2026-10-28
 
-V4's date is proposed as 2026-10-28, but D7 (model change for usage recording, if chosen) adds
-time, and O6 may add more time if option B is chosen. The owner sets a revised estimate on the
-move-to-Build card based on D7's scope. V1 to V3 run for the 14 days after launch, so their date is V4's date plus 14
+V4's date is proposed as 2026-10-28, which D7 puts at risk. The Chief of Staff's estimate with D7
+is 2026-11-11 (E: about two weeks for a model change's spec, build, review and owner approval, then
+its adoption here; O6's Agent SDK fallback would add more). The owner sets the date on the
+move-to-Build card. V1 to V3 run for the 14 days after launch, so their date is V4's date plus 14
 days and moves with it, and the stop rule below uses V4's date as set.
 
 **Miss and stop rule:** a miss is V4 not met by its date (proposed 2026-10-28), or the redesign taking more than about
 2 hours a week of the owner's time before launch. At a miss, the owner rules: re-aim (for example,
 launch read-only and add acting after) or stop. A V1 to V3 miss after launch goes to the stage-8
-evidence review, where the owner rules continue, re-aim or stop. V1 is measured without server storage:
-each card on the desk shows when the desk first saw it, kept in the owner's own browser storage, and
-the Chief of Staff's weekly check compares that with the card's commit time in the repository. Nothing new is stored
-on Cloudflare, so the $0 ceiling and the data boundaries are unchanged (design; the Definer fixes it
-in Define).
-V2 is measured the same way: the owner taps "didn't need me" on a flagged item, the desk keeps the
-mark in browser storage, and the weekly check counts them. V3 and the pre-launch time are the
+evidence review, where the owner rules continue, re-aim or stop. How V1 and V2 are measured (design, C;
+the Definer fixes the details in Define): the desk notes, on the device in use, the times it was
+open and when it first showed each card, and the owner's "didn't need me" marks. Once a week it
+offers a prefilled link (the same route as answers, D4.1) that commits those figures to
+`docs/metrics/<week>.md` in Service-Desk, so the record is in the repository, not only on a device.
+The Chief of Staff's weekly check counts, for V1, cards whose commit fell in an open window and that
+were shown more than 5 minutes later, or not at all (a card committed while the desk was closed is
+not a miss, matching "Show" in §8); and for V2, the marked items. Nothing is stored on Cloudflare,
+so the $0 ceiling and the data boundaries are unchanged; the cost is one commit a week by the
+owner, inside V3's 30 minutes. V3 and the pre-launch time are the
 owner's own weekly estimate, which the Chief of Staff asks for and records each week in
 docs/LEDGER.md. The Chief of Staff owns all four weekly checks (§4). Operations-Hub stays live until launch, so stopping
 loses nothing that exists today. The 5-minute figure in V1 rests on U4.
@@ -189,9 +193,10 @@ loses nothing that exists today. The 5-minute figure in V1 rests on U4.
 *Every load-bearing unknown, each answered with evidence (library entry or research memo), including through research sub-projects if needed.*
 
 *Draft 4, 2026-10-04, Chief of Staff, after the Critic's second definition-of-ready return. U1 to
-U4 rest on library entries only; each entry, or for the Q-004 entries the file header, names the
+U4 rest on library entries, plus a few observations outside the library that are marked C and
+named where used (Operations-Hub's workflow, a Service-Desk commit, the owner's own use); each entry, or for the Q-004 entries the file header, names the
 source check that filed it. Each A or B grade is the one filed in that entry; C marks our own
-inference or an absence we found, and E our own estimate (shown with its arithmetic). Items still open are under "Open at this exit" below.*
+observation, inference or an absence we found, and E our own estimate (shown with its arithmetic). Items still open are under "Open at this exit" below.*
 
 | Unknown | Why it bears load | Evidence | Status |
 |---|---|---|---|
@@ -220,8 +225,9 @@ inference or an absence we found, and E our own estimate (shown with its arithme
   - A project can't switch deployment method (F-cf-03, B). Operations-Hub deploys `needs-you` with
     `wrangler pages deploy`, a Direct Upload (observed, C: Operations-Hub's
     `.github/workflows/needs-you-page.yml` at commit bd84592, line 110, runs `wrangler pages deploy
-    site --project-name needs-you`), so the desk deploys the same way. Build confirms it in the
-    Cloudflare dashboard before the first deploy.
+    site --project-name needs-you`), so the desk deploys the same way if O5 confirms it.
+  - Whether `needs-you` is in fact a Direct Upload project is O5 (§7, open into Define): the
+    workflow above is outside the library.
   - The documented routes are to deploy into the same Pages project, or to host elsewhere and 301
     the `pages.dev` address to a custom domain (P-cf-01, C; F-cf-07, A). The desk takes the first.
     Whether a Worker can hold a `pages.dev` address is not documented, so a plain Worker is not used.
@@ -368,7 +374,7 @@ inference or an absence we found, and E our own estimate (shown with its arithme
 
 ### Open at this exit
 Each item has an owner and a place where it closes. O1 and O2 are closed by the owner's rulings,
-O3 and O6 are open into Define, which the owner confirms on the card, and O4 and O5 are closed by research (see "Owner rulings" in §8).
+O3, O5 and O6 are open into Define under the definition of ready's accepted-open rule (each with a closing test, a fallback and the owner's recorded ruling), and O4 is closed (see "Owner rulings" in §8).
 
 | ID | Open item | Bears on | Closes by |
 |---|---|---|---|
@@ -377,7 +383,7 @@ O3 and O6 are open into Define, which the owner confirms on the card, and O4 and
 | O3 | Whether the CPU and wall-time limits on the Free plan fit a cold-load batch | U1, $0 ceiling | **Open into Define.** One unknown: whether Cloudflare's free-plan HTTP requests have a time limit (not documented; F-cf-workers-03:8). The CPU part is measured; wall-time is measured in Define too. Closes by measuring both on the Pages project in Define. If either doesn't fit: smaller batches on Free, or the $5 Paid plan, which needs a new ceiling from the owner (F-hosting-01). |
 | O4 | Whether GitHub's new-file page takes a prefilled file name and content from a link, and lets the owner commit from a phone | D4, the prefilled-link route | **Closed** by research Q-007 and the owner's own use (U2): a file-name parameter is described on one GitHub page (F-gh-05, B), the content parameter is undocumented but works, and the owner has committed from the phone's browser and app. Fallback if GitHub changes it: show the answer to copy |
 | O5 | How the desk deploys to the `needs-you` Pages address (Git or Direct Upload) | V4, D6.2, U1 | **Open into Define.** Research Q-008 found `wrangler pages deploy` in Operations-Hub (bd84592), but that evidence is outside the pack and cannot be verified by the Critic. Closes in Define by checking in the Cloudflare dashboard how `needs-you` is deployed. If Direct Upload: nothing changes. If Git-integrated: the fallback is a new project with permanent redirect, the old repository is archived as part of launch (L-0115, D-066). |
-| O6 | Which usage and context figures the Orchestrator records for a session launched through the Agent SDK | D7, D3.6, D-055 (model change) | **Open into Define.** The owner chose a launch delay so the desk would show context windows from the start. If the command line doesn't report context-window use, the fallback is that D7 makes a separate model change: instead of the command line, the Orchestrator adopts the Agent SDK's own usage tracking, which does record context windows. That change is bigger and affects how agents start, and it needs your ruling to proceed in this version. Closes in Define by running a session through the new mechanism and recording the fields. |
+| O6 | Which usage and context figures (tokens by kind, turns, context-window use, duration) a Claude Code session run by the Orchestrator reports | D7, D3.6 | **Open into Define.** Research Q-009 did not pass its source check and waits on the owner's stop card (queue/Q-009-stop-1.md), so nothing from it is relied on. Closes in Define by running one session with `stream-json` output and recording the fields that appear. Fallback, as the owner ruled (decisions/questions/P-001-dor-fixes-round3.md, option B): D7 runs sessions through the Agent SDK instead and records what it reports; whether that includes context-window use is not in the library (C), so if it doesn't, the owner rules again (show the other figures, or hold launch) |
 
 ## 8. Clear and consistent
 *Key terms defined; constraints checked against each other and found not to contradict.*
@@ -405,7 +411,10 @@ question as put and the owner's words; the owner confirms all of them on the mov
   Staff, not automatically (2026-10-04): decisions/questions/P-001-spend-and-planning.md.
 - Agent usage and context in the first version, with D7, even if launch moves (2026-10-04):
   decisions/questions/P-001-usage-and-context.md.
-- O3 accepted open into Define (2026-10-04): decisions/questions/P-001-o3-define.md.
+- O3 accepted open into Define (2026-10-04): decisions/questions/P-001-o3-define.md; the Free-plan
+  wall-time limit added to it, O5 accepted open into Define, O6's fallback set to the Agent SDK
+  route, and research Q-009 confirmed (2026-10-04):
+  decisions/questions/P-001-dor-fixes-round3.md.
 - The owner's own use of prefilled links from the phone, and O6 accepted open into Define
   (2026-10-04): decisions/questions/P-001-o6-define.md.
 - Two pages of a vendor's own documentation count as two sources for how its own product behaves
@@ -417,8 +426,8 @@ question as put and the owner's words; the owner confirms all of them on the mov
 - "Never a source of truth" against planning and scheduling: no conflict, provided planning choices
   are recorded as rulings in the repositories (§1). D2 and D4 must keep it that way.
 - D-066 allows proxy answers only by the Chief of Staff, and never for words that close an item or
-  approve launch. U2 shows the desk can write with the owner's own identity: a GitHub App user
-  token, or a fine-grained token. Resolved by the owner's ruling for the no-credential route (O1), so the
+  approve launch. U2 shows the desk could write as the owner with a GitHub App user
+  token (L-F10); for a fine-grained token, attribution isn't in the library (C). Resolved by the owner's ruling for the no-credential route (O1), so the
   owner commits each answer and no proxy question arises.
 - Scope against the owner's picks: resolved. The owner put planning and scheduling in the first
   version (O2), so it is a fifth pick (Part 2).

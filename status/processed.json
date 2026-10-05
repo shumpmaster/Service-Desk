@@ -4,13 +4,14 @@
   ],
   "decisions": {
     "decisions/P-001/dor-fail-1.md": "1be19472799765aa17c9dc850ba03428c01a8621fa95bcc66e66977375ffa9a3",
+    "decisions/P-001/dor-fail-2.md": "459cb27900d3ad8111511b242436770e2577d703b9478c2800dce51a9b890a6d",
     "decisions/Q-002/stop-1.md": "90df7188c89e104dd4d0c466f4f17e6d524853d74e6f6afe8ba52acf440628ed",
     "decisions/Q-003/failure-1.md": "bebe8499e5846eb84318556d379de04e027432497d758a57136945f91702e0ac",
     "decisions/Q-005/stop-1.md": "67df7933de4b7de9aa56e3dfa0a2248d7979ab4af04602067e896ebf628e5702",
     "decisions/Q-006/stop-1.md": "64f4ee97bf095bdf733b2b4f3c980c81d16d58f1c683debb641668ffdd4a1970",
     "decisions/Q-006/stop-2.md": "2f5cfb93b14e26305e44d0cad760a1a260f469f42c5e7bf0a4378747a974fd3e"
   },
-  "log_head": "92bbd5993ad98188ec094a8d7d514ee11b1c84875038e05592efd3d8c3f1baa9",
+  "log_head": "8964b56dd00cd44db0838e6e3fd03f84bc6a85098445c0852b4d270ab6957f2e",
   "outcomes": {
     "P-001:ready-dispatch:2026-10-01T17:18:13Z": "808eac09a78f8eac75c1722733250aa948f091e7c5d26fc25b0670395bb57252",
     "P-001:ready-dispatch:2026-10-04T01:21:06Z": "ed8e92ce80b4a14a64ae0399e6c71307637841f83a0662724ce39c88446d4da3",

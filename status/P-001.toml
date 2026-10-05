@@ -1,13 +1,13 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "project"
-stage = 2
-state = "waiting-owner"
-role = "critic"
-last_verdict = "PASS"
+stage = 3
+state = "ready"
+role = "definer"
+last_verdict = "none"
 plan_round = 0
 build_round = 0
 confirm_used = false
 attempts = 0
-sessions = 1
-gate = "dor"
+sessions = 0
 card = 4
+spec = "S-001"

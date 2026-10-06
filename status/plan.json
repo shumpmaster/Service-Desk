@@ -4,8 +4,8 @@
       "action": "dispatch",
       "gate": null,
       "item": "P-001",
-      "role": "critic",
-      "route": "define-to-plan-review",
+      "role": "definer",
+      "route": "plan-fail",
       "spec": "S-001",
       "stage": 3
     }

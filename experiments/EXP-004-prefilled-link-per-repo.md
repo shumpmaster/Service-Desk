@@ -2,11 +2,12 @@
 
 *Pre-registered before any run (D-047). Frozen once the line below is set.*
 
-spec: S-001 (J1, J3, J7, AC16–AC19)   milestone: M1, at its first preview deploy
+spec: S-001 (J1, J3, J7, AC16–AC19)   milestone: M1, on the preview after M1's merge
 runner:
 - **The owner,** on the phone (Q1 to Q3) and by looking at the deployed preview (Q4). About 15
   minutes, counted against the pre-launch 2 hours a week.
-- **The Builder** prepares the links, as data in the M1 pull request, and records the results. It
+- **The Builder** prepares the links, as data in `src/` merged with M1, and records the results in a
+  later pull request. It
   holds no token and makes no live call.
 - **The Chief of Staff** may cross-check Q1 with its own GitHub access.
 
@@ -35,7 +36,7 @@ For each connected repository (Service-Desk, Personal-Org-Operating-Model):
 
 ## Method
 - **Q2 and Q3, the owner, on the phone's browser.**
-  - The Builder supplies four links per repository in the M1 pull request's description. Each
+  - The deployed preview lists four links per repository, built by the Builder in M1. Each
     creates `docs/exp-004/link-test-<n>.md`, outside `decisions/`, so no Orchestrator takes it for
     an answer.
   - At commit, the owner chooses "Create a new branch" named `desk-link-test`, so nothing lands on

@@ -2,7 +2,7 @@
 
 *Pre-registered before any run (D-047). Frozen once the line below is set.*
 
-spec: S-001 (AC28)   open item: O5   milestone: M1, at its first preview deploy
+spec: S-001 (AC28)   open item: O5   milestone: M1, on the preview after M1's merge
 runner: the Chief of Staff, through the read-only `exp-002` job of `.github/workflows/desk-deploy.yml`
 (environment `preview`, whose secrets only the workflow holds). If the log can't settle it, the
 owner checks the dashboard (about 5 minutes, counted against the pre-launch 2 hours a week). The

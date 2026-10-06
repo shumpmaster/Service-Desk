@@ -2,12 +2,13 @@
 
 *Pre-registered before any run (D-047). Frozen once the line below is set.*
 
-spec: S-001 (J1, J6, J8, AC14, AC15)   open item: O3   milestone: M1, at its first preview deploy
+spec: S-001 (J1, J6, J8, AC14, AC15)   open item: O3   milestone: M1, on the preview after M1's merge
 runner: the owner, from a signed-in desktop browser, using the experiment panel the Builder builds
 into M1 (about 15 minutes of the owner's time, counted against the pre-launch 2 hours a week). The
 Builder holds no secret and can't reach the Access-protected preview.
-result: docs/handover/experiments/EXP-001-result.md, with the summary and the raw table. The
-Builder records it from what the owner commits or hands over.
+result: docs/handover/experiments/EXP-001-result.md on `main`, with the summary and the raw table.
+The owner commits it, or the Builder records it in a later pull request from what the owner or the
+Chief of Staff hands over (docs/handover/** is the Builder's surface).
 rulings: decisions/questions/P-001-o3-define.md, P-001-o3-walltime.md (fallback);
 decisions/questions/P-001-build-path.md question 0 (run during Build, not Define)
 
@@ -30,7 +31,7 @@ Why it bears load:
 
 ## Method
 - **Where:** the preview Pages project `service-desk-preview`, on the Workers Free plan, as
-  deployed by the Chief of Staff's desk-deploy workflow from the M1 pull request's branch. Not
+  deployed from `main` by the Chief of Staff's desk-deploy workflow after M1's merge. Not
   `needs-you`. The run happens behind its Access application.
 - **No test-only path (decided here).** Every call is the owner's own: the panel runs in the
   owner's signed-in browser, so each request carries a real `Cf-Access-Jwt-Assertion` with the
@@ -46,8 +47,8 @@ Why it bears load:
   3. Afterwards, open the Pages project's Functions metrics in Cloudflare's dashboard, and note any
      CPU-time percentiles shown for the run window. If none are shown, note "not available".
   4. Commit the panel's summary through the prefilled link it offers. The link goes to
-     `docs/handover/experiments/EXP-001-result.md` on the M1 branch; a human commit may touch any
-     path. Paste the raw table, which the panel offers through the copy fallback.
+     `docs/handover/experiments/EXP-001-result.md` on `main`; a human commit may touch any path.
+     Paste the raw table, which the panel offers through the copy fallback.
 - **H1, steady polls:** 300 poll calls, alternating between the two repositories, one every 10 s
   (about 50 minutes). Steady polls are mostly 304s, which cost nothing at GitHub
   (library/Q-004-facts.md:9, A).
@@ -99,7 +100,9 @@ about 75 minutes.
   - if Cloudflare shows CPU percentiles, the 99th is under 10 ms.
 - **If any set fails, the owner's fallback applies**
   (decisions/questions/P-001-o3-define.md, P-001-o3-walltime.md):
-  - Lower `BLOB_BATCH` to 12 and re-run the failing sets, then to 6.
+  - Lower `BLOB_BATCH` to 12 and re-run the failing sets, then to 6. Each size change is a
+    fix-forward pull request merged to `main`, and the preview redeploys from it. Each rerun costs
+    the owner about 10 minutes (E).
   - If H1 fails, the batch size can't help, so go straight to the next step.
   - If it still fails at 6, M1 is not accepted, and the owner rules on the $5 Paid
     plan, which needs a new ceiling, or on re-aiming.

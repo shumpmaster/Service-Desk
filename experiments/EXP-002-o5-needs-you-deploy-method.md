@@ -23,9 +23,11 @@ The Cloudflare Pages project `needs-you` is a Direct Upload project, not Git-int
 
 ## Method
 Read-only. Nothing on `needs-you` is changed or deployed, by L-0115.
-1. The Chief of Staff runs the `exp-002` job (`workflow_dispatch`). It runs the pinned
-   `npx --yes wrangler@<x.y.z> pages project list` and prints the output to the job log. The
-   Chief of Staff copies the `needs-you` row from the log.
+1. The Chief of Staff dispatches the `exp-002` job (`workflow_dispatch`), and the owner approves it
+   in the `preview` environment (about 1 minute). It runs the Chief of Staff's pinned wrangler
+   (`.github/deploy-tools/`, installed with `--ignore-scripts`) with `pages project list`, with the
+   token in that step's `env:` only, and prints the output to the job log. The Chief of Staff
+   copies the `needs-you` row from the log.
    - Wrangler's columns (project name, domains, Git provider, last modified) are as observed in its
      output, not a library fact (C).
 2. If the row doesn't settle the question, the owner opens Cloudflare dashboard → Workers & Pages →

@@ -1,60 +1,49 @@
-I've written a draft of spec S-001 and four experiment pre-registrations. It still has to go through the Critic's plan review, the freeze gate and your scenario card. Nothing is committed: this folder isn't a git repository, so I couldn't commit to `build/definer/P-001`.
+I've revised `specs/S-001.md` against all seven review findings, but the spec still can't freeze. Freezing needs four results from Define: EXP-001, EXP-002, EXP-004, and real samples of the status, sprint and dispatch-log files. None is in this pack. Nothing is committed: the folder isn't a git repository.
 
-## 1. What I changed
-- **`specs/S-001.md` (new, status draft).** It covers the first version: reading the repositories, the screens, answering by prefilled link, security, the V1/V2 measurement and launch.
-  - **19 success criteria**, each written as a scenario and traced to a value target (`[trace: V<n> → AC<m>]`).
-  - **8 join sheets** (J1–J8), one per connection between pieces, each with its exact form, awkward cases and a `join-test:` tag.
-  - **Areas the build may change**, the facts relied on with file:line evidence, risks, the stop rule and rollback, and four questions for you.
-  - **Details the brief left to Define, now fixed:**
-    - At most 30 GitHub requests per call.
-    - The page polls every 60 seconds while open.
-    - The desk only shows "Quiet" after every project has been read successfully in the last 3 minutes.
-    - Answer links fall back to a copy button above 6,000 characters.
-    - Planning choices are recorded at `docs/planning/<YYYY-MM-DD>T<HHMM>Z.md` in Service-Desk.
-    - Weekly measurement figures go to `docs/metrics/<YYYY>-W<ww>.md`.
-    - The list of connected repositories lives in `config/projects.json`, capped at 5.
-    - Build runs with at most two builder or reviewer agents at once (tier T1).
-- **Agent usage and context (D3.6) is split out** into a proposed follow-up spec, S-002. Its input format depends on D7.1 (the model change) and on O6, which don't exist yet. Launch (AC17) waits for both S-001 and S-002.
-- **Four pre-registrations in `experiments/`:**
-  - **EXP-001 (O3):** CPU and wall time on a separate preview Pages project, with pass/fail rules fixed in advance.
-  - **EXP-002 (O5):** you check in the Cloudflare dashboard whether `needs-you` is Direct Upload or Git-connected.
-  - **EXP-003 (O6):** which usage fields a `stream-json` session reports.
-  - **EXP-004:** for each repository, whether the default branch takes your web commits, whether the content prefill works, and how long a link can be.
+**1. What I changed**
+- **Finding 1 (O3 and O5 closed in Build):** I put the closing back in Define, as the owner ruled. A new "Before freeze" section sets out EXP-001, EXP-002 and EXP-004, each with its question, method, pass bar and fallback fixed before it runs. The spec stays `draft` until those results are written into it. "EXP-001 measures it before Build ends" in Risks now reads "in Define, before freeze". The brief's "Before Build ends" line is now a list of inputs from Define. The content parameter's name is now config (`contentParam` in J7), so EXP-004's result never changes spec text.
+- **Finding 2 (no format for status, sprint and dispatch log):** I added join sheet J9. The desk's side is fixed:
+  - the exact `pipeline` object J6 returns;
+  - "last recorded" defined as the commit time of the file it came from, so it doesn't depend on the file's format;
+  - the rules for `atWork` (item and role at work now) and `next`;
+  - the awkward cases.
 
-## 2. Why
-Your agent file sets the definer's duties at Define, and the project is approved for Build (`decisions/P-001/dor-4.md`: "Decision: build"). `failure-5.md` says only "retry" and gives no reason. The earlier round files (dor-fail-1/2, stop-3) were about the brief, not a spec. So there were no specific findings to answer. I wrote the spec so it can freeze without depending on anything that is still open.
+  The source side, meaning how each field is read from the real files, is marked "Incomplete: blocks freeze" until samples are quoted. J6 now names `pipeline`, `prs` and `unparsed` precisely. I renamed J6's top-level `status` to `state` so it doesn't clash with the status file.
+- **Finding 3 (no source for "agent retrying"):** AC4 and the term "Activity" now list only things J1, J2 or J9 actually read. An agent retrying is defined as a repeat dispatch-log entry for the same item and role. "Agent sessions" is gone; that belongs to S-002.
+- **Finding 4 (AC11 unclear):** AC11 is rewritten. The link is the same J3 link to the default branch. The desk shows a set message first, and it neither creates nor names a branch nor opens the pull request. The owner picks "new branch" in GitHub's commit dialog (F-gh-07 (2)) and opens and merges the pull request. The card stays flagged until the answer is on the default branch.
+- **Finding 5 ("owner-approved" claim):** The heading now says draft, not yet approved by the owner, with a note that no ruling approves the criteria yet.
+- **Finding 6 (AC19 arithmetic):** Four stated assumptions (A1 to A4) give 5,300 requests a day, under the 10,000 margin. The spec covers the case of two devices both open all day (about 10,600, over the margin but far under Free's 100,000), says how retries are counted, and adds a GitHub-side figure for cold loads.
+- **Finding 7 (minor points):**
+  - J1 now explains how the 30-request cap and the six-connection waves fit together.
+  - New reasons for a project that can't be read: the function sets `github`; the page sets `cloudflare` and `network`. `parse` is removed.
+  - AC7 names its judge: the Chief of Staff, with a stated test for "explained", and the owner's ruling settles any dispute.
+- **Open questions:** I added two. Question 5 asks whether the owner wants to re-rule O3 and O5 to close in Build. Question 6 asks where the real status, sprint and dispatch-log files are.
 
-## 3. What I verified
-- I read PROJECT.md Parts 1–2, all five feedback files, the spec template, and the library entries cited in the spec.
-- I cross-checked the card-to-answer naming rule against real files in this folder (`decisions/P-001/*`) and the `queue/Q-003-failure-1.md` example in PROJECT.md:507.
-- Search for `[trace: |join-test: ` in the spec: 27 matches (19 criteria plus 8 join sheets).
-- Search for `^- AC\d+ \[trace: V[1-4] → AC\d+`: 19 matches, so every criterion traces to V1–V4.
-- No tests were run; writing checks is outside my role.
+**2. Why**
+Each change answers the matching finding in `reviews/S-001/plan.md`. For finding 1 I kept to the owner's ruling rather than widening it, since only the owner can widen it. For finding 2 I wouldn't guess a file format, so I fixed the desk's side and made the gap block freeze.
 
-## 4. What is undone
-- Nothing is committed, and there is no `Agent-Session` trailer.
-- `experiments/_REGISTRATION.md` isn't in this folder, so the registrations use my own structure and may need reshaping to the real template.
-- Some inputs are inferred rather than quoted from the model's documents: the file paths for status, sprint and dispatch logs, where owner questions live, and the card naming rule. They are config entries, but should be confirmed.
-- The content-prefill parameter name `value` is an assumption until EXP-004 confirms it.
-- S-002 isn't written; it waits on D7.1's frozen format and EXP-003.
-- I didn't add join sheets for D7 because they belong to the model's own spec.
+**3. What I verified**
+- I opened the library entries the spec relies on and checked them against its claims:
+  - F-gh-05: only `filename` is documented.
+  - F-gh-07 (2): the commit dialog offers a new branch.
+  - F-gh-10, F-cf-workers-03, -05 and -07.
+  - Q-004-facts lines 8, 9 and 18.
+- A text search found no "Before Build" or "owner-approved" left. It also found 9 join-test markers (J1 to J9) and all 19 criteria still traced to a value target.
+- The arithmetic adds up: 4,800 + 200 + 300 = 5,300.
 
-## 5. What is needed outside my lane
-- **You, by hand:**
-  - Create the `service-desk-preview` Pages project with Access on it.
-  - Set the read token and the Access settings.
-  - Run EXP-002 (about 5 minutes) and EXP-004 (about 15 minutes).
-  - Archive Operations-Hub at launch.
-- **Chief of Staff:** file those cards, run or arrange EXP-003, and do the 7-day side-by-side comparison with the old page (AC7).
-- **Builder:** run EXP-001 on the preview.
-- **Check author:** write the J1–J8 join tests after freeze.
-- **Reviewer:** the D5.2 security review.
-- **Model's definer:** the D7.1 spec.
-- **Service-Desk Orchestrator:** D7.2.
+**4. What is undone**
+- J9's source side.
+- The results of EXP-001, EXP-002 and EXP-004.
+- Separate registration files: `experiments/_REGISTRATION.md` isn't in the pack, so the pre-registrations sit inside the spec instead.
+- No commit.
 
-## 6. Open questions
-1. Is Service-Desk `docs/planning/` the right home for planning choices? I kept them outside `decisions/` so the Orchestrator can't mistake one for a card answer.
-2. §6 has no value target for "projects wait less" or "less time per decision". Do you want a V5 before freeze? Until then, AC9–AC14 trace to V4.
-3. Is 7 clean days of comparison on the preview the right bar for "at least as correct as Operations-Hub"?
-4. Should launch wait for S-002 (usage and context)? I've assumed yes, following your 2026-10-04 ruling.
-5. For the Critic: are the cap of 30 requests, the 3-minute freshness window for "Quiet" and the 6,000-character cap acceptable? They are my own estimates, each with a measurement or fallback.
+**5. What is needed outside my lane**
+- **Owner:** run EXP-002 and EXP-004 (about 20 minutes once), answer open questions 1 to 6, and create the preview project.
+- **Someone allowed to deploy to the preview project:** run EXP-001.
+- **Chief of Staff or Orchestrator:** supply the sample files.
+- **Not checked:** the critic cited `decisions/questions/P-001-o3-define.md`, `-o3-walltime.md` and `-o5-define.md`, but they aren't in this pack. I relied on the critic's reading and on PROJECT.md §8.
+
+**6. Open questions**
+- Will the owner re-rule O3 and O5 to close in Build, or keep Define (open question 5)?
+- Where are the real status, sprint and dispatch-log files (open question 6)?
+- Is a separate experiment registration file required in addition to the "Before freeze" section?

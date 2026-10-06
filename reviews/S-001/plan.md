@@ -1,53 +1,35 @@
-Status: I've read the spec, the definition of ready and the owner's ruling records, and I've checked the spec's citations against them. Verdict follows.
-
 Verdict: FAIL
+
+I tried to refute the spec and found three defects in the text and one gap in what EXP-001 measures. The spec also says itself that it cannot be frozen yet. I checked the cited library facts for F-cf-workers-03, F-cf-workers-05 and Q-004-facts. I did not open every cited file.
 
 **Findings**
 
-1. **The O3 and O5 rulings are widened without the owner.**
-   - `specs/S-001.md:355` and `:308` close the unknowns "Before Build ends" (EXP-001, EXP-002, EXP-004).
-   - The owner's rulings accepted them open "into Define, closed by a measurement there": `decisions/questions/P-001-o3-define.md:5`, `P-001-o3-walltime.md:5` and `P-001-o5-define.md:5`.
-   - The definition of ready (`governance/standards/definition-of-ready.md:13-16`) allows an unknown to stay open only into Define, with the owner's ruling recorded.
-   - The spec moves the closing test into Build and offers no ruling for that. That is a gap in the foundation, not a detail.
-   - Freeze depends on an open unknown. `:179-180` says that if EXP-004 finds a different name, it replaces `value` "before freeze". The spec is still a draft with no EXP-004 result, so it can't freeze as written. Run EXP-004 first, or move the name into `config/projects.json` (J7).
+1. **AC19's two-device figure is wrong, and the spec's conclusion from it is false.** The text is at specs/S-001.md:352-354.
+   - The two-devices case is stated as "about 10,600". By the spec's own assumptions it is 2×4,800 + 200 + 300 = 10,300, or 10,100 if cold loads aren't doubled.
+   - It then says this "passes the 10,000 margin". Any of those figures is above 10,000, so it fails the margin the spec set itself.
+   - AC19 (line 146-150) and A1 count two devices twice. The spec's own margin is therefore not met by the case it says it handles.
+   - The "no Error 1027" conclusion still holds, because the Free limit is 100,000 (F-cf-workers-05:8, confirmed). The AC19 figures and the assumption text have to be corrected or the margin restated.
 
-2. **The status, sprint and dispatch-log formats have no join sheet, so AC4, AC6 and AC12 can't be tested.**
-   - J2 (`:153-155`) reads those files at paths set in config. The only format material is `"status": {...}, "sprint": {...}, "dispatch": {...}` in J6 (`:238`).
-   - AC12 (`:92-95`) needs "the latest dispatch with no recorded outcome", "v3 stage", "next in queue order" and "time last recorded". None of these is defined.
-   - The spec admits the paths are inferred (C) (`:303-305`).
-   - The check author can't write a join test (`:169`) against a format nobody has written down.
+2. **J4's "latest file by name is the current plan" breaks for the same-minute rule.** The text is at S-001.md:230-232.
+   - The second plan in a minute is named `…T0930Z-2.md`.
+   - Compared as plain strings, `-` (0x2D) sorts before `.` (0x2E), so `T0930Z-2.md` sorts before `T0930Z.md`.
+   - The first plan would therefore be read as the latest, which gives the wrong current plan in AC13. The naming or the ordering rule needs to change, for example a zero-padded suffix that sorts after, and be tested.
 
-3. **AC4 asks for activity with no data source.**
-   - AC4 (`:61-62`) requires "an agent retrying", "a new dispatch", and agent sessions as activity (`:36-37`).
-   - J1 reads only branch head, pull requests and check runs (`:140-142`).
-   - "Agent retrying" has no source in J1, J2 or J6. It is either unbuildable or left to the builder to invent.
+3. **J9 is incomplete and the spec says so (S-001.md:299).** Its source side has no path, sample or field rule for the status, sprint and dispatch-log files. AC6 (headline, sprint), AC12 and AC4's retry detection depend on those rules, so they can't be checked as written. The spec is honest about this, but it fails the definition of ready ("clear and consistent", governance/standards/definition-of-ready.md:17). It cannot be frozen until the samples are quoted.
 
-4. **AC11 is incoherent.**
-   - `:86-89` says the link "targets the new-file page so the owner commits to a new branch".
-   - J3's URL is already the new-file page (`:172`).
-   - The spec never says how the branch is chosen or named when the default branch is closed, or whether the pull request is opened by the owner or by the desk. The criterion can't be tested as written.
+4. **EXP-001 (S-001.md:407-416) leaves out the Access check.**
+   - J8 requires the function to verify the Access token's signature on every request (F-auth-04).
+   - The throwaway batch measures only the GitHub batch and does not include this step.
+   - The 10 ms CPU pass bar (F-cf-workers-01:8) could pass in the experiment and fail in production.
+   - A p95 from 20 samples is effectively the maximum, so the pass bar is weak as stated.
 
-5. **"Owner-approved" is claimed and not evidenced.**
-   - `:45` labels the acceptance criteria "owner-approved", yet `:3` says `status: draft`.
-   - No ruling in `decisions/` approves these 19 criteria. Open questions 1–4 (`:336-348`) are still unanswered, including AC7's bar and V5. Remove the claim or cite the approval.
-
-6. **The AC19 arithmetic is weaker than it looks.**
-   - `:270-272` assumes one device and 10 openings a day.
-   - Each cold load needs several batched calls per project (J1 `:147-149`).
-   - A second device (J5 allows one, `:225`) or a long open window with retries is not modelled. The margin (about 5,000 against 10,000) is probably fine. State the assumption as an assumption, and note that retries after a 429 or 403 also count as requests.
-
-7. **Minor consistency points.**
-   - J1 says "at most 30 per invocation" but "a seventh connection queues… runs in waves of six" (`:146-148`). The wall-time impact is unmeasured (`:278`).
-   - The J6 reason enum has no value for Cloudflare errors, although AC3 lists them. "github" appears to absorb them. Say so.
-   - AC7 resets on "one unexplained difference". It doesn't say who judges "unexplained". Name that judge.
-
-**Checked and sound**
-- The citations I opened support the claims: F-gh-06 on 414 (`library/F-gh-06.md:8`), F-gh-05 on `filename` only, and the answer-file `Decision:` first lines.
-- The rulings on spend, planning, usage (launch waits for S-002) and the acting route match `decisions/questions/*`.
-- The card and answer pairing examples hold up. `queue/P-001-dor-fail-2.md` maps to `decisions/P-001/dor-fail-2.md`, which exists in this pack.
+5. **A3 and A4 (S-001.md:348-351) don't match J1's cost model.**
+   - Lines 364-369 say a cold load needs 30 to 120 requests per project, which is 1 to 4 batches.
+   - The "3 more batched calls" on a changed head is unexplained.
+   - The effect on the total is small, but the assumptions should reconcile.
 
 **Open questions**
-- Will the owner re-rule that O3, O5 and O4 may close in Build rather than in Define?
-- Where is the real format of the dispatch log, sprint and status files? Without a sample file, J2 and J6 stay guesses.
-- What source does "agent retrying" read from? Either name one or drop it from AC4.
-- What is the intended mechanics of AC11? Is it a `new/<branch>` URL, and who creates the branch?
+- Is a queue card file kept after it is answered? AC14 needs a card's raised time and AC5 needs open versus answered. The only evidence is queue/Q-003-failure-1.md (PROJECT.md:507). If cards are deleted on answer, J2 shows them as "withdrawn" and AC14 loses the raised time.
+- Does a read that returns "unchanged" (J6) count as a successful read for the 3-minute "Quiet" rule in AC3? The spec doesn't say.
+- docs/PROJECT.md:206 says "O5, closed", while lines 228 and 415 say it is open into Define. The spec follows the open reading. The brief should be made consistent.
+- Owner questions 1 to 6 (S-001.md:463-482) are still unanswered. Question 6 is the same blocker as finding 3.

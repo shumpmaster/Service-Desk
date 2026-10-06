@@ -2,7 +2,7 @@
 
 *Pre-registered before any run (D-047). Frozen once the line below is set.*
 
-spec: S-001 (J10, AC21) and the model's D7.1 spec   open item: O6   milestone: M2, at its start
+spec: S-001 (J10, AC23) and the model's D7.1 spec   open item: O6   milestone: M2, at its start
 runner: the Chief of Staff, or the model's tools builder; it is outside the Definer's and the
 Builder's lanes   result: handed to the Builder, who records it at
 docs/handover/experiments/EXP-003-result.md (redacted output plus the field table)
@@ -19,7 +19,7 @@ When a Claude Code session runs the way the Orchestrator runs sessions, with
 It does not report context-window fill or window size directly. This is a guess, not evidence.
 
 Why it bears load:
-- D7.1 records these figures, and S-001's AC21 shows them.
+- D7.1 records these figures, and S-001's AC23 shows them.
 - Research Q-009 was dropped (decisions/Q-009/stop-1.md), so nothing about the fields is in the
   library.
 - The Agent SDK's cost fields are estimates (LIB-F-g, A). This experiment records field names and
@@ -48,7 +48,7 @@ Two sessions.
 ## Deciding threshold
 - **A figure found:** named, with its field path, in D7.1's record format and in S-001's J10 `usage`
   key.
-- **A figure not found:** shown as "not available" in AC21, per the owner's fallback
+- **A figure not found:** shown as "not available" in AC23, per the owner's fallback
   (decisions/questions/P-001-o6-fallback.md, option A). No paid route is used to get it.
 - **The two runs differ:** both are recorded, J10 reads the union, and a missing field is
   "not available".
@@ -56,4 +56,5 @@ Two sessions.
 ## Holdout use
 none
 
-frozen: the commit that adds this file on build/definer/S-001-rev, before any run
+frozen: the last commit that changes this file on build/definer/S-001-rev, before any run (revised
+after the Reviewer's round 1, with no run yet)

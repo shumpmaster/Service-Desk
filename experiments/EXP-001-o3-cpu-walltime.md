@@ -2,8 +2,12 @@
 
 *Pre-registered before any run (D-047). Frozen once the line below is set.*
 
-spec: S-001 (J1, J6, J8, AC13, AC14)   open item: O3   milestone: M1, at its first preview deploy
-runner: Builder   result: docs/handover/experiments/EXP-001-result.md (raw table plus summary)
+spec: S-001 (J1, J6, J8, AC14, AC15)   open item: O3   milestone: M1, at its first preview deploy
+runner: the owner, from a signed-in desktop browser, using the experiment panel the Builder builds
+into M1 (about 15 minutes of the owner's time, counted against the pre-launch 2 hours a week). The
+Builder holds no secret and can't reach the Access-protected preview.
+result: docs/handover/experiments/EXP-001-result.md, with the summary and the raw table. The
+Builder records it from what the owner commits or hands over.
 rulings: decisions/questions/P-001-o3-define.md, P-001-o3-walltime.md (fallback);
 decisions/questions/P-001-build-path.md question 0 (run during Build, not Define)
 
@@ -25,36 +29,48 @@ Why it bears load:
   (library/facts/F-cf-06.md:4). So the run must be on the Pages project itself.
 
 ## Method
-- **Where:** the preview Pages project `service-desk-preview`, behind its Access application, on the
-  Workers Free plan. Not `needs-you`. Every call carries a real `Cf-Access-Jwt-Assertion` and goes
-  through J8's full check.
-- **What runs:** the real M1 function (J1, J6, J8), not a spike. The calls are driven by a test
-  page on the preview, signed in as the owner, or by the Builder through Access with a service
-  token if the owner sets one up.
-- **H1, steady polls:** 300 poll calls, 150 per repository, at 60 s intervals per repository (about
-  2.5 hours).
-- **H2, cold loads:** 40 cold loads, 20 per repository, with the page cache cleared each time. Each
-  is one poll call with `head: null`, then every blob call the tree needs.
-  - Cold loads are full reads that count against GitHub's 5,000 an hour (library/Q-004-facts.md:8,
-    A), so at most 10 cold loads run in any hour. 10 × about 80 requests = 800.
+- **Where:** the preview Pages project `service-desk-preview`, on the Workers Free plan, as
+  deployed by the Chief of Staff's desk-deploy workflow from the M1 pull request's branch. Not
+  `needs-you`. The run happens behind its Access application.
+- **No test-only path (decided here).** Every call is the owner's own: the panel runs in the
+  owner's signed-in browser, so each request carries a real `Cf-Access-Jwt-Assertion` with the
+  owner's `email` and goes through J8's full check.
+  - An Access service token carries no `email`, so it could never pass J8.
+  - S-001 adds no exception to J8 for it.
+- **What runs:** the real M1 function (J1, J6, J8), not a spike. The page's experiment panel
+  (`?exp=001`, built by the Builder in M1, tested against a fake function) drives the calls.
+- **The owner's steps** (about 15 minutes in all):
+  1. Open `?exp=001` on the preview, on a desktop browser, and press Start.
+  2. Leave the tab in the foreground for the run, about 75 minutes. Browsers may slow background
+     tabs (C), so the panel stops and says so if the tab is hidden.
+  3. Afterwards, open the Pages project's Functions metrics in Cloudflare's dashboard, and note any
+     CPU-time percentiles shown for the run window. If none are shown, note "not available".
+  4. Commit the panel's summary through the prefilled link it offers. The link goes to
+     `docs/handover/experiments/EXP-001-result.md` on the M1 branch; a human commit may touch any
+     path. Paste the raw table, which the panel offers through the copy fallback.
+- **H1, steady polls:** 300 poll calls, alternating between the two repositories, one every 10 s
+  (about 50 minutes). Steady polls are mostly 304s, which cost nothing at GitHub
+  (library/Q-004-facts.md:9, A).
+- **H2, cold loads:** 20 cold loads, 10 per repository, with the page cache cleared each time,
+  interleaved with H1. Each is one poll call with `head: null`, then every blob call the tree needs.
+  20 × about 80 GitHub requests = 1,600 full reads in the hour, under 5,000
+  (library/Q-004-facts.md:8, A).
 - **H3, heaviest case:** 20 blob calls against Personal-Org-Operating-Model. Each holds the 25
   largest blobs in its tree: `docs/LEDGER.md` (128,438 bytes on 2026-10-06), then the largest
   `specs/*.md` and `docs/**` files.
-  - This is far more than the desk ever asks of that repository (J6 fetches about 6 blobs there).
+  - This is far more than the desk ever asks of that repository (J6 fetches about 5 blobs there).
     So it bounds the byte volume a call can carry, as records grow.
-- **Recorded per call:**
+- **Recorded per call** (by the panel):
   - which set it belongs to;
   - the HTTP status;
   - any Cloudflare error code (1102, 1027, other);
-  - wall time, measured by the page from send to last byte (`performance.now()`);
-  - J6's `cost.github` and `cost.bytes`;
-  - whether J8 fetched the keys in that call.
-- **Recorded per set:** the CPU-time percentiles that Cloudflare's dashboard shows for the Functions
-  over the run window, if it shows any. That Pages exposes them is not in the library; if it
-  doesn't, record "not available" with a screenshot.
+  - wall time, measured from send to last byte (`performance.now()`);
+  - J6's `cost.github` and `cost.bytes`.
+- **Recorded per set:** the dashboard's CPU percentiles, or "not available". That Pages exposes
+  them is not in the library (library/facts/F-cf-06.md:4 marks Workers Logs as Workers-only).
 - **Representativeness:** the result states the size of each repository at the run.
-  - Its repository size from `GET /repos/{o}/{r}` (`size`, in KB): on 2026-10-06, 1,963 for
-    Personal-Org-Operating-Model and 1,067 for Service-Desk.
+  - Its repository size: on 2026-10-06, 1,963 KB for Personal-Org-Operating-Model and 1,067 KB for
+    Service-Desk.
   - Its tracked-file count: 318 and 319.
   - The largest single blob returned.
 
@@ -67,8 +83,8 @@ Why it bears load:
 - **A3:** the number of blob calls one cold load needs, per repository.
 
 ## Sample
-300 steady polls, 40 cold loads (2 repositories × 20) and 20 heaviest-case calls, all on one day,
-spread over at least 4 hours.
+300 steady polls, 20 cold loads (2 repositories × 10) and 20 heaviest-case calls, in one run of
+about 75 minutes.
 
 ## Exclusions
 - **Calls that failed before reaching the function**, such as a network drop on the phone. They
@@ -85,10 +101,10 @@ spread over at least 4 hours.
   (decisions/questions/P-001-o3-define.md, P-001-o3-walltime.md):
   - Lower `BLOB_BATCH` to 12 and re-run the failing sets, then to 6.
   - If H1 fails, the batch size can't help, so go straight to the next step.
-  - If it still fails at 6, the Builder stops M1's acceptance, and the owner rules on the $5 Paid
+  - If it still fails at 6, M1 is not accepted, and the owner rules on the $5 Paid
     plan, which needs a new ceiling, or on re-aiming.
 - **A changed batch size or count:** if the batch size changes, or a cold load needs more than 3
-  blob calls (A3), S-001's AC13 arithmetic is redone with the measured figures in the result file.
+  blob calls (A3), S-001's AC14 arithmetic is redone with the measured figures in the result file.
   The Definer folds the result into S-001.
 - **Re-run trigger:** the Chief of Staff re-runs H3 when any single blob a call returns exceeds
   twice the largest blob H3 tested.
@@ -96,4 +112,5 @@ spread over at least 4 hours.
 ## Holdout use
 none
 
-frozen: the commit that adds this file on build/definer/S-001-rev, before any run
+frozen: the last commit that changes this file on build/definer/S-001-rev, before any run (revised
+after the Reviewer's round 1, with no run yet)

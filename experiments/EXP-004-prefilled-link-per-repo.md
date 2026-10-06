@@ -2,9 +2,15 @@
 
 *Pre-registered before any run (D-047). Frozen once the line below is set.*
 
-spec: S-001 (J1, J3, J7, AC15–AC17)   milestone: M1, at its first preview deploy
-runner: Builder (Q1 and Q4, and preparing the links), then the owner on the phone (Q2 and Q3,
-about 15 minutes)   result: docs/handover/experiments/EXP-004-result.md, with the values applied in
+spec: S-001 (J1, J3, J7, AC16–AC19)   milestone: M1, at its first preview deploy
+runner:
+- **The owner,** on the phone (Q1 to Q3) and by looking at the deployed preview (Q4). About 15
+  minutes, counted against the pre-launch 2 hours a week.
+- **The Builder** prepares the links, as data in the M1 pull request, and records the results. It
+  holds no token and makes no live call.
+- **The Chief of Staff** may cross-check Q1 with its own GitHub access.
+
+result: docs/handover/experiments/EXP-004-result.md, with the values applied in
 `src/config/projects.json`
 rulings: P-001-build-path.md question 0 (run during Build)
 
@@ -28,18 +34,10 @@ For each connected repository (Service-Desk, Personal-Org-Operating-Model):
   - That a fine-grained token offers a checks permission is not in the library (C).
 
 ## Method
-- **Q1, the Builder.** With the read token, the Builder runs
-  `GET /repos/{o}/{r}/rules/branches/main` and `GET /repos/{o}/{r}/branches/main` (`protected`),
-  for each repository. It records every rule that applies to `main`, and the `protected` value.
-  - Both endpoints and their read access are not in the library (C).
-  - If either refuses with the read token, the owner checks Settings → Branches and Settings →
-    Rules → Rulesets by hand.
-- **Q4, the Builder.** The Builder calls the check-runs endpoint with the read token, for each
-  repository, and records the status code.
 - **Q2 and Q3, the owner, on the phone's browser.**
-  - The Builder supplies four links per repository, on the preview's test panel or in the M1 pull
-    request. Each creates `docs/exp-004/link-test-<n>.md`, outside `decisions/`, so no Orchestrator
-    takes it for an answer.
+  - The Builder supplies four links per repository in the M1 pull request's description. Each
+    creates `docs/exp-004/link-test-<n>.md`, outside `decisions/`, so no Orchestrator takes it for
+    an answer.
   - At commit, the owner chooses "Create a new branch" named `desk-link-test`, so nothing lands on
     `main`.
   - The four links:
@@ -48,8 +46,18 @@ For each connected repository (Service-Desk, Personal-Org-Operating-Model):
     - (c) 6,000 characters;
     - (d) 8,000 characters.
   - For each link the owner records: whether the file name was filled; whether the content was
-    filled and byte-identical (the Builder compares it on the branch); and any error page.
+    filled (the Builder compares it byte for byte on the branch, which needs no token); and any
+    error page.
   - Then the owner deletes the branch.
+- **Q1, during the same test.** On link (a)'s commit dialog, the owner records whether "Commit
+  directly to the `main` branch" is offered or disabled. A disabled or missing option means a rule
+  blocks it (library/F-gh-10.md:9, A).
+  - The Chief of Staff may confirm with its own GitHub access:
+    `GET /repos/{o}/{r}/rules/branches/main`, and `protected` from `GET /repos/{o}/{r}/branches/main`
+    (C for both endpoints).
+- **Q4, on the deployed preview.** The owner opens the preview's Universe screen and records each
+  box's CI field. A result, such as `passing`, means the read token reads check runs. "Can't read
+  checks" means the call was refused (S-001 J1).
 - **If (a) doesn't prefill the content with `value`,** stop and record it. No other parameter name
   is guessed without a source.
 
@@ -58,7 +66,7 @@ Per repository:
 - Q1: open or blocked, with the rules found.
 - Q2: filled, not filled, or altered (with a diff).
 - Q3: the largest tested length that still prefilled.
-- Q4: the status code.
+- Q4: per repository, the CI field shown: a result, or "can't read checks".
 
 ## Sample
 Two repositories; four links each for Q2 and Q3; one read each for Q1 and Q4.
@@ -67,23 +75,24 @@ Two repositories; four links each for Q2 and Q3; one read each for Q1 and Q4.
 - **A link that fails because the phone lost its connection:** repeated once, not counted.
 
 ## Deciding threshold
-- **Q1:** open → `webCommitsToDefault: true`. Blocked → `false`, and AC17's new-branch message
+- **Q1:** open → `webCommitsToDefault: true`. Blocked → `false`, and AC18's new-branch message
   applies.
 - **Q2:**
   - Filled and byte-identical → `contentPrefill: true`, `contentParam: "value"`.
-  - Not filled, or altered → `contentPrefill: false`, and AC16's copy route applies.
+  - Not filled, or altered → `contentPrefill: false`, and AC17's copy route applies.
 - **Q3:**
   - (c) works → `linkCap: 6000`.
   - Only (b) works → `linkCap: 2000`.
   - Neither works → `contentPrefill: false`.
 - **Q4:**
-  - 200 → J1 reads check runs.
-  - 403 → CI shows "can't read checks" (J1), and the owner is asked whether to add the permission
+  - A result shown → J1 reads check runs.
+  - "Can't read checks" → CI shows "can't read checks" (J1), and the owner is asked whether to add the permission
     to the token.
-- **No spec change:** whatever the outcome, S-001's AC16, AC17 and J1 already cover it. Only
+- **No spec change:** whatever the outcome, S-001's AC17, AC18 and J1 already cover it. Only
   `src/config/projects.json` changes.
 
 ## Holdout use
 none
 
-frozen: the commit that adds this file on build/definer/S-001-rev, before any run
+frozen: the last commit that changes this file on build/definer/S-001-rev, before any run (revised
+after the Reviewer's round 1, with no run yet)

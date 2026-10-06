@@ -1,0 +1,45 @@
+# The desk's build and tests (spec S-001, Toolchain and deploy route, Workflow 1). Runs on every
+# pull request and on pushes to main that touch src/** or tests/**. It holds no secret, uses no
+# environment and uploads nothing, so a pull request's code never meets a credential here and
+# nothing is handed on to another workflow. The config check runs first: wrangler.toml keys,
+# and no lifecycle scripts or dependencies block in src/package.json. Before M1 (no src/) the
+# job passes with a note. Every action is pinned by commit.
+name: desk-build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "tests/**"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      # wrangler 4 needs Node 22 or later.
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22"
+
+      - name: Config check
+        run: python3 .github/scripts/desk_config_check.py src
+
+      - name: Build and test
+        run: |
+          if [ ! -f src/package.json ]; then
+            echo "::notice::No src/package.json yet; nothing to build or test."
+            exit 0
+          fi
+          npm --prefix src ci --ignore-scripts
+          npm --prefix src run build
+          npm --prefix src test

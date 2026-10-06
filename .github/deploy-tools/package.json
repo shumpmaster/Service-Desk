@@ -1,0 +1,8 @@
+{
+  "name": "desk-deploy-tools",
+  "private": true,
+  "description": "The deploy tool desk-deploy.yml installs, pinned with its lockfile (spec S-001, Toolchain and deploy route). Installed with npm ci --ignore-scripts; nothing under src/ is installed by a deploy.",
+  "devDependencies": {
+    "wrangler": "4.148.0"
+  }
+}

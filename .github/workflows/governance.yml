@@ -39,12 +39,23 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      # REPLACE THIS STEP with your project's real test command
-      # (the same single entry point AGENTS.md names for build, test and check).
+      # The desk's build and test commands (spec S-001, CS4; AGENTS.md §8). wrangler 4 needs
+      # Node 22 or later. Before M1 there is no src/, and the step passes with a note.
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22"
+
       - name: Tests
         id: tests
         if: ${{ !cancelled() }}
-        run: echo "Add your test command here"
+        run: |
+          if [ ! -f src/package.json ]; then
+            echo "::notice::No src/package.json yet; nothing to build or test."
+            exit 0
+          fi
+          npm --prefix src ci --ignore-scripts
+          npm --prefix src run build
+          npm --prefix src test
 
       - name: Governance checks
         id: governance-checks

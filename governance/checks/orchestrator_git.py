@@ -4,7 +4,7 @@
 Usage:
   orchestrator_git.py decide    --out DIR [--repo DIR] [--now RFC3339] [--ref REF --event NAME
                                 --default-branch NAME] [--ci-runs FILE] [--github-output FILE]
-  orchestrator_git.py ci-runs   --out FILE [--repo DIR] [--workflow NAME]
+  orchestrator_git.py ci-runs   --out FILE [--repo DIR] [--workflow NAME] [--wait-seconds N]
   orchestrator_git.py specs     --out DIR [--repo DIR] [--default-ref REF] [--remote NAME]
   orchestrator_git.py tree      --item ID [--role ROLE --ref REF] --overlay DIR --out DIR [--repo DIR]
                                 [--default-ref REF] [--remote NAME]
@@ -24,8 +24,10 @@ Usage:
   orchestrator_git.py commit    --bundle TAR --bundle-hash HEX --decided TAR --decided-hash HEX
                                 (--plan FILE | --plan-env NAME) --now RFC3339 --run-id ID --run-attempt N
                                 [--chain N] [--repo DIR] [--remote NAME] [--default-branch NAME]
-                                [--hold true|false] [--github-output FILE]
-  orchestrator_git.py dispatch  --workflow FILE --ref BRANCH --chain N
+                                [--hold true|false] [--ci-state WORD] [--held-work N] [--held N]
+                                [--github-output FILE]
+  orchestrator_git.py dispatch  --workflow FILE --ref BRANCH --chain N [--held N]
+  orchestrator_git.py alerts    --default-branch NAME [--repo DIR] [--remote NAME] [--workflow NAME]
   orchestrator_git.py dispatch-governance --ref BRANCH --base SHA [--workflow NAME]
   orchestrator_git.py proof-setup --config DIR --agents DIR --tools DIR --work DIR --model NAME
                                 [--github-output FILE]
@@ -48,9 +50,17 @@ calls one of these subcommands (or session_runner.py); the workflow holds wiring
               (`ci-runs`' file), unless the latest governance run on HEAD passed (failed, running,
               absent or unreadable), `step --hold` (AC6: decisions apply, nothing is dispatched) and
               the commit job runs no gate; a hold of over 60 minutes on one tip raises the card
-              queue/ci-hold-<tip>.md.
+              queue/ci-hold-<tip>.md. model S-017 AC2: also outputs ci (the CI state) and held_work (how
+              many dispatch entries `step` would have planned without --hold, from a second `step` on a
+              copy of the tree; 0 when it did not hold), and hands on exactly what it would without it.
   ci-runs     (model S-013 AC6) `gh api` for the governance workflow's runs on HEAD, into FILE;
-              never fails (an error is written as unreadable, so the decide job holds).
+              never fails (an error is written as unreadable, so the decide job holds). model S-017 AC1:
+              with --wait-seconds N, while the latest run on HEAD is not completed, or there is none, it
+              reads again every 30 seconds until a completed run is seen or N seconds have passed on a
+              monotonic clock (each read cut off at the smaller of 60 seconds and the time left); no run
+              on HEAD after 180 seconds stops it early; a failed read is retried on the same schedule.
+              It writes the last good answer read, or the error. With ORCH_SIMULATED_CLOCK=1 (the
+              tests' workflow simulator only) its sleep returns at once and its clock runs virtually.
   specs       (AC1) For every status file with a `spec`, that spec's file from its item branch
               (item/<item>), or from the default branch before the item branch exists.
   tree        (AC1) A folder with no .git: the default branch's tip, then --overlay (this run's
@@ -110,8 +120,9 @@ calls one of these subcommands (or session_runner.py); the workflow holds wiring
               Pushes role branches, then item branches, then the default branch; a rejected push is
               retried once (default branch: this run's commit rebased, or merged when a pushed item
               branch already holds it or a merge commit is among them, which is never rebased or
-              flattened; other branches: a --no-ff merge). Outputs dispatch and next_chain (the
-              self-dispatch gate). In model S-013: every session's control file is kept on the item
+              flattened; other branches: a --no-ff merge). Outputs dispatch, next_chain and next_held
+              (the self-dispatch gate; model S-017 AC2: also after a hold with --ci-state running or
+              absent and --held-work above 0, when --held is below 2, with held + 1). In model S-013: every session's control file is kept on the item
               branch and the outcome line holds `control` and `record_sha` (AC2); a Definer briefed to
               supersede a spec must change only its status word to `superseded`, else its record is
               refused, and the ledger entry (with the digest rebuilt) goes on the item branch (AC7);
@@ -126,7 +137,16 @@ calls one of these subcommands (or session_runner.py); the workflow holds wiring
               the tip or the default branch, bookkeeping aside, changes). Output governance_base: the
               default tip before the job's first push to it.
   dispatch-governance (model S-013 AC6) `gh workflow run governance.yml --ref BRANCH -f base=SHA`.
-  dispatch    (AC10) `gh workflow run FILE --ref BRANCH -f chain=N` (GH_TOKEN from the environment).
+  dispatch    (AC10) `gh workflow run FILE --ref BRANCH -f chain=N` (GH_TOKEN from the environment);
+              with --held N (model S-017 AC2), also `-f held=N`.
+  alerts      (model S-017 AC3) Fetches the default branch and reads its tip (the checkout stays): one
+              GitHub issue (label needs-you, first body line `<!-- needs-you:<card id> -->`, assigned to
+              OWNER_LOGIN when it is a login) per card that waits on the owner: a status file waiting on
+              a gate (`<item> <gate>-<card>`), the newest ci-hold card until a governance run on its
+              commit or a descendant passes (`ci-hold <sha12>`), a merge card until its tip is merged or
+              recorded (`<item> merge-<step> <tip12>`). Never reopens or duplicates an issue; closes
+              each open one whose card no longer waits, with a comment saying why. Issues are listed
+              through the REST list endpoint. Always exits 0: every failure is printed and skipped.
   proof-setup (AC12) A throwaway config (session_commands "on" and "off", pass_env = [], a fixed
               brief with fresh nonces that asks only for line counts, L-0101, and, model S-016 AC2, the
               proven values set to this runner's ImageOS and ImageVersion and the version it
@@ -195,7 +215,9 @@ import stat  # noqa: E402
 import subprocess  # noqa: E402
 import tarfile  # noqa: E402
 import tempfile  # noqa: E402
+import time  # noqa: E402
 import tomllib  # noqa: E402
+import urllib.parse  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -1182,12 +1204,17 @@ def ci_state(path, sha):
     gave (`ci-runs`): green (completed, success), failed (completed otherwise), running, absent, or
     unreadable (no file, not JSON, an error)."""
     data = sr.read_regular(path) if path else None
+    return runs_state(data, sha) or "unreadable"
+
+
+def runs_state(data, sha):
+    """ci_state's word for one answer's bytes, or None when it is not an answer (not JSON, no run list)."""
     try:
         obj = json.loads(data.decode("utf-8")) if data is not None else None
     except (UnicodeDecodeError, ValueError, RecursionError):
         obj = None
     if not isinstance(obj, dict) or not isinstance(obj.get("workflow_runs"), list):
-        return "unreadable"
+        return None
     mine = [r for r in obj["workflow_runs"] if isinstance(r, dict) and r.get("head_sha") == sha]
     if not mine:
         return "absent"
@@ -1245,29 +1272,111 @@ def launch_tips(repo, remote, head):
     return out
 
 
+# model S-017 AC1: the wait's clock, sleep and read. Module-level so unit tests replace them; with
+# ORCH_SIMULATED_CLOCK=1 (set by the tests' workflow simulator only, never by a workflow) the sleep returns at
+# once and adds the slept seconds to a virtual offset that the clock adds, so a deadline passes in virtual time.
+CI_WAIT_EVERY = 30
+CI_ABSENT_STOP = 180
+CI_READ_TIMEOUT = 60
+_VIRTUAL = [0.0]
+
+
+def _simulated():
+    return os.environ.get("ORCH_SIMULATED_CLOCK") == "1"
+
+
+def _clock():
+    return time.monotonic() + (_VIRTUAL[0] if _simulated() else 0.0)
+
+
+def _sleep(seconds):
+    if seconds <= 0:
+        return
+    if _simulated():
+        _VIRTUAL[0] += seconds
+    else:
+        time.sleep(seconds)
+
+
+def run_cut(argv, timeout, input=None):
+    """(exit code, stdout, stderr) of argv, killed with its whole process group at `timeout` seconds
+    (exit None then). Never raises for a command that cannot run (exit None)."""
+    try:
+        proc = subprocess.Popen(argv, stdin=subprocess.PIPE if input is not None else subprocess.DEVNULL,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
+    except OSError as exc:
+        return None, b"", str(exc).encode()
+    try:
+        out, err = proc.communicate(input=input, timeout=max(0.0, timeout))
+        return proc.returncode, out, err
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(proc.pid, 9)
+        except OSError:
+            proc.kill()
+        out, err = proc.communicate()
+        return None, out, err
+
+
+def _read_runs(argv, timeout):
+    """One `gh api` read: (exit code or None when cut off or not run, stdout)."""
+    code, out, _ = run_cut(argv, timeout)
+    return code, out
+
+
 def cmd_ci_runs(a):
     """model S-013 AC6, the decide job's read: the governance runs on the checkout's HEAD, through `gh api`
     (GH_TOKEN, `actions: read`), into --out. Never fails: anything but an answer is written as an error,
-    which the decide job reads as unreadable (it holds)."""
+    which the decide job reads as unreadable (it holds). model S-017 AC1: with --wait-seconds N, while the
+    latest run on HEAD is not completed, or there is none, it reads again every 30 seconds until a completed
+    run is seen or N seconds have passed (each read cut off at the smaller of 60 seconds and the time left);
+    when no run on HEAD has appeared after 180 seconds it stops early; a failed read is retried on the same
+    schedule. It writes the last good answer read, or the error when none was."""
     repo = os.path.abspath(a.repo)
     sha = rev(repo, "HEAD")
     name = os.environ.get("GITHUB_REPOSITORY", "")
+    if not DIGITS_RE.fullmatch(str(a.wait_seconds)):
+        raise g.UsageError("--wait-seconds must be a whole number")
+    wait = int(a.wait_seconds)
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     doc = None
     if sha and re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", name) and re.fullmatch(r"[A-Za-z0-9_.-]+\.ya?ml",
                                                                                         a.workflow):
-        try:
-            proc = subprocess.run(["gh", "api", "-H", "Accept: application/vnd.github+json",
-                                   "repos/%s/actions/workflows/%s/runs?head_sha=%s&per_page=100" % (name, a.workflow,
-                                                                                                    sha)],
-                                  stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  timeout=120)
-            if proc.returncode == 0:
-                doc = proc.stdout
-            else:
-                print("NOTE: gh api failed (exit %d); the decide job holds" % proc.returncode)
-        except (OSError, subprocess.SubprocessError) as exc:
-            print("NOTE: gh api could not run (%s); the decide job holds" % type(exc).__name__)
+        argv = ["gh", "api", "-H", "Accept: application/vnd.github+json",
+                "repos/%s/actions/workflows/%s/runs?head_sha=%s&per_page=100" % (name, a.workflow, sha)]
+        start = _clock()
+        deadline = start + wait
+        k, seen_run, state = 0, False, None
+        while True:
+            left = deadline - _clock()
+            if k > 0 and left <= 0:
+                break
+            code, out = _read_runs(argv, min(CI_READ_TIMEOUT, left) if wait > 0 else 120)
+            k += 1
+            got = runs_state(out, sha) if code == 0 else None
+            if code is None:
+                print("NOTE: gh api read %d did not finish in time or could not run" % k)
+            elif code != 0:
+                print("NOTE: gh api read %d failed (exit %d)" % (k, code))
+            elif got is None:
+                print("NOTE: gh api read %d gave no run list" % k)
+            if got is not None:
+                doc, state = out, got
+                seen_run = seen_run or got != "absent"
+                if got in ("green", "failed"):
+                    break
+            if wait <= 0:
+                break
+            nxt = start + CI_WAIT_EVERY * k
+            if doc is not None and not seen_run and nxt - start >= CI_ABSENT_STOP:
+                _sleep(min(nxt, deadline) - _clock())
+                print("NOTE: no governance run on %s after %d seconds; not waiting for it" % (sha[:12], CI_ABSENT_STOP))
+                break
+            _sleep(min(nxt, deadline) - _clock())
+        if doc is None:
+            print("NOTE: no good read of the governance runs; the decide job holds")
+        else:
+            print("NOTE: %d read(s); the latest governance run on %s is %s" % (k, sha[:12], state))
     else:
         print("NOTE: no commit, repository name or workflow to ask about; the decide job holds")
     write_file(a.out, doc if doc is not None else b'{"error": "unreadable"}\n')
@@ -1289,6 +1398,27 @@ def cmd_dispatch_governance(a):
         raise Refused("gh workflow run failed (exit %d)" % proc.returncode)
     print("OK: started %s on %s with base %s" % (a.workflow, a.ref, a.base))
     return 0
+
+
+def count_held_work(repo, dest, now, specs, tips):
+    """model S-017 AC2: how many dispatch entries `step` would plan without --hold, from a second `step` on a
+    copy of the working tree (no .git) at `dest`; the tree handed on is never touched. 0 when it cannot tell."""
+    try:
+        shutil.copytree(repo, dest, symlinks=True, ignore=lambda d, names: [".git"] if d == repo else [])
+        argv = ["step", "--root", dest, "--now", now, "--spec-dir", specs, "--outcomes",
+                os.path.join(dest, "status", "outcomes.jsonl"), "--item-tips", tips]
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            code = orch.main(argv)
+        if code != 0:
+            return 0
+        with open(os.path.join(dest, "status", "plan.json"), encoding="utf-8") as fh:
+            entries = json.load(fh).get("entries", [])
+        return len(entries) if isinstance(entries, list) else 0
+    except Exception as exc:  # noqa: BLE001 - the count never stops the decision
+        print("NOTE: the held work could not be counted (%s); counted as 0" % type(exc).__name__)
+        return 0
+    finally:
+        shutil.rmtree(dest, True)
 
 
 def cmd_decide(a):
@@ -1328,6 +1458,7 @@ def cmd_decide(a):
             json.dump(launch_tips(repo, a.remote, sha), fh)
         argv = ["step", "--root", repo, "--now", now, "--spec-dir", specs, "--outcomes", outcomes,
                 "--item-tips", tips]
+        held_work = 0
         if hold:
             argv.append("--hold")
             print("HOLD: the latest governance run on %s is %s; decisions apply, nothing is dispatched "
@@ -1335,6 +1466,8 @@ def cmd_decide(a):
             card = hold_card(repo, sha, state, now)
             if card and not os.path.lexists(os.path.join(repo, card[0])):
                 write_file(os.path.join(repo, *card[0].split("/")), card[1].encode("utf-8"))
+            held_work = count_held_work(repo, os.path.join(work, "unheld"), now, specs, tips)
+            print("NOTE: without the hold, step would have planned %d dispatch(es) (model S-017 AC2)" % held_work)
         code = orch.main(argv)
         if code != 0:
             raise g.UsageError("model S-012's step failed (exit %d)" % code)
@@ -1359,7 +1492,8 @@ def cmd_decide(a):
     legs = list(range(max(1, len(entries))))
     github_output(a.github_output, {"now": now, "sha": sha, "decided": h, "default_branch": default,
                                     "legs": compact(legs), "plan_count": len(entries),
-                                    "hold": "true" if hold else "false", "ci": state or "not read"})
+                                    "hold": "true" if hold else "false", "ci": state or "not read",
+                                    "held_work": held_work})
     print("OK: decided at %s: %d plan entr%s, %d file(s) handed on (sha256 %s)"
           % (now, len(entries), "y" if len(entries) == 1 else "ies", len(paths), h))
     return 0
@@ -2493,11 +2627,12 @@ class Committer(object):
             self.say("NOTE: CI is not green on the default tip (the decide job holds); the merge gate does not run")
         else:
             MergeGate(self, tip).run()
-        dispatch, nxt = dispatch_gate(lines, self.new_lines, self.a.chain)
+        dispatch, nxt, held = next_run(lines, self.new_lines, self.a.chain, getattr(self.a, "ci_state", None),
+                                       getattr(self.a, "held_work", None), getattr(self.a, "held", None))
         github_output(self.a.github_output, {"dispatch": "true" if dispatch else "false", "next_chain": nxt,
-                                             "pushed": compact(pushed)})
-        self.say("OK: %d outcome line(s) committed; self-dispatch: %s" % (len(lines), "yes, chain %d" % nxt
-                                                                        if dispatch else "no"))
+                                             "next_held": held, "pushed": compact(pushed)})
+        self.say("OK: %d outcome line(s) committed; self-dispatch: %s" % (
+            len(lines), ("yes, chain %d, held %d" % (nxt, held)) if dispatch else "no"))
         return 0, lines
 
 
@@ -2818,6 +2953,39 @@ def dispatch_gate(outcomes, new_lines, chain):
     return False, c
 
 
+MAX_HELD = 2
+
+
+def next_run(outcomes, new_lines, chain, ci=None, held_work=None, held=None):
+    """(dispatch, next chain, next held), model S-017 AC2: dispatch_gate's reasons (held 0), and also, with
+    held + 1, a run that held with CI `running` or `absent` while `step` would have dispatched work
+    (held_work above 0), when `held` (empty = 0, else one digit 0 to 2) is below 2. The chain cap and a
+    `usage-limit` outcome block both."""
+    dispatch, nxt = dispatch_gate(outcomes, new_lines, chain)
+    if dispatch:
+        return True, nxt, 0
+    text = "" if chain is None else str(chain).strip()
+    if text != "" and not DIGITS_RE.fullmatch(text):
+        return False, 0, 0
+    c = int(text) if text else 0
+    if c >= MAX_CHAIN:
+        return False, c, 0
+    if "usage-limit" in [o.get("result") for o in outcomes if isinstance(o, dict)]:
+        return False, c, 0
+    h_text = "" if held is None else str(held).strip()
+    if h_text == "":
+        h = 0
+    elif re.fullmatch(r"[0-2]", h_text):
+        h = int(h_text)
+    else:
+        return False, c, 0
+    w_text = "" if held_work is None else str(held_work).strip()
+    work = int(w_text) if DIGITS_RE.fullmatch(w_text) else 0
+    if ci in ("running", "absent") and work > 0 and h < MAX_HELD:
+        return True, c + 1, h + 1
+    return False, c, 0
+
+
 def cmd_commit(a):
     c = Committer(a)
     try:
@@ -2835,10 +3003,383 @@ def cmd_dispatch(a):
         raise g.UsageError("--ref %r is not a branch name" % (a.ref,))
     if not DIGITS_RE.fullmatch(str(a.chain)) or not 1 <= int(a.chain) <= MAX_CHAIN:
         raise g.UsageError("--chain must be 1 to %d" % MAX_CHAIN)
-    proc = subprocess.run(["gh", "workflow", "run", a.workflow, "--ref", a.ref, "-f", "chain=%d" % int(a.chain)])
+    argv = ["gh", "workflow", "run", a.workflow, "--ref", a.ref, "-f", "chain=%d" % int(a.chain)]
+    if a.held is not None:
+        if not re.fullmatch(r"[0-9]+", str(a.held)) or int(a.held) > MAX_HELD:
+            raise g.UsageError("--held must be 0 to %d" % MAX_HELD)
+        argv += ["-f", "held=%d" % int(a.held)]     # model S-017 AC2
+    proc = subprocess.run(argv)
     if proc.returncode != 0:
         raise Refused("gh workflow run failed (exit %d)" % proc.returncode)
-    print("OK: started %s on %s with chain %d" % (a.workflow, a.ref, int(a.chain)))
+    print("OK: started %s on %s with chain %d%s" % (a.workflow, a.ref, int(a.chain),
+                                                    "" if a.held is None else ", held %d" % int(a.held)))
+    return 0
+
+
+# --------------------------------------------------------------------------
+# model S-017 AC3: one GitHub issue, assigned to the owner, per card that waits on the owner
+
+
+ALERT_LABEL = "needs-you"
+ALERT_BODY_MAX = 4000
+ALERT_PAGES = 50
+LOGIN_RE = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}")
+MARKER_RE = re.compile(r"<!-- needs-you:([^\n]+?) -->")
+CARD_DECISION_RE = re.compile(r"([PQE]-[0-9]+) ([a-z][a-z-]*)-([0-9]+)")
+CARD_HOLD_RE = re.compile(r"ci-hold ([0-9a-f]{12})")
+CARD_MERGE_RE = re.compile(r"([PQE]-[0-9]+) merge-(conflict|by-hand) ([0-9a-f]{12})")
+CARD_TIP_RE = re.compile(r"^item: [PQE]-[0-9]+ +tip: ([0-9a-f]{40})\b", re.M)
+OPTION_RE = re.compile(r"^- `([a-z][a-z-]*)` ")
+WHY_ANSWERED = "No longer waiting: answered (%s)"
+WHY_GREEN = "No longer waiting: governance green"
+WHY_MERGED = "No longer waiting: merged"
+WHY_WITHDRAWN = "No longer waiting: card withdrawn"
+
+
+def card_sections(text, wanted):
+    """The card's `## ` sections whose heading matches one of `wanted` (regexes), in card order, as text."""
+    out, cur = [], None
+    for line in text.split("\n"):
+        if line.startswith("## "):
+            cur = [line] if any(re.fullmatch(w, line[3:].strip()) for w in wanted) else None
+            if cur is not None:
+                out.append(cur)
+            continue
+        if cur is not None:
+            cur.append(line)
+    return "\n\n".join("\n".join(sec).strip() for sec in out)
+
+
+def card_words(text):
+    return [m.group(1) for m in (OPTION_RE.match(l) for l in card_sections(text, [r"4\..*"]).split("\n")) if m]
+
+
+class Alerts(object):
+    """model S-017 AC3: reads the default branch's tip as this run pushed it (fetched; the checkout stays at
+    the base), opens one issue per waiting card that has none and closes each open one whose card no longer
+    waits. Every failure is printed and skipped."""
+
+    def __init__(self, a):
+        self.a = a
+        self.repo = os.path.abspath(a.repo)
+        self.remote = a.remote
+        self.name = os.environ.get("GITHUB_REPOSITORY", "")
+        self.server = os.environ.get("GITHUB_SERVER_URL", "") or "https://github.com"
+        self.login = os.environ.get("OWNER_LOGIN", "").strip()
+        self.label_ready = False
+
+    # -- GitHub
+    def api(self, path, method="GET", payload=None):
+        """(ok, parsed answer or error text) of one `gh api` call (GH_TOKEN from the environment)."""
+        argv = ["gh", "api", "-X", method, "-H", "Accept: application/vnd.github+json", path]
+        data = None
+        if payload is not None:
+            argv += ["--input", "-"]
+            data = json.dumps(payload).encode("utf-8")
+        code, out, err = run_cut(argv, CI_READ_TIMEOUT, input=data)
+        if code != 0:
+            text = (err or out or b"").decode("utf-8", "replace").strip().replace("\n", " | ")[:300]
+            return False, "gh api %s %s: exit %s %s" % (method, path.split("?")[0], code, text)
+        try:
+            return True, json.loads(out.decode("utf-8")) if out.strip() else None
+        except (UnicodeDecodeError, ValueError):
+            return False, "gh api %s %s: not JSON" % (method, path.split("?")[0])
+
+    def issues(self):
+        """{card id: [issue]} of every issue (open or closed) labelled needs-you whose first body line is a
+        marker; None when the list cannot be read whole (then nothing is opened or closed)."""
+        found = []
+        for page in range(1, ALERT_PAGES + 1):
+            ok, res = self.api("repos/%s/issues?labels=%s&state=all&per_page=100&page=%d"
+                               % (self.name, ALERT_LABEL, page))
+            if not ok or not isinstance(res, list):
+                print("NOTE: alerts: the issues cannot be listed (%s); nothing is opened or closed"
+                      % (res if not ok else "not a list"))
+                return None
+            found += [i for i in res if isinstance(i, dict)]
+            if len(res) < 100:
+                break
+        out = {}
+        for issue in found:
+            if "pull_request" in issue or not isinstance(issue.get("number"), int):
+                continue
+            first = (issue.get("body") or "").split("\n", 1)[0].strip()
+            m = MARKER_RE.fullmatch(first)
+            if m:
+                out.setdefault(m.group(1), []).append(issue)
+        return out
+
+    def governance_runs(self):
+        """The governance workflow's runs on the default branch (the same endpoint as `ci-runs`), or None."""
+        ok, res = self.api("repos/%s/actions/workflows/%s/runs?branch=%s&per_page=100"
+                           % (self.name, self.a.workflow, urllib.parse.quote(self.default, safe="")))
+        if not ok or not isinstance(res, dict) or not isinstance(res.get("workflow_runs"), list):
+            print("NOTE: alerts: the governance runs cannot be read (%s); the hold card is left as it is"
+                  % (res if not ok else "no run list"))
+            return None
+        return [r for r in res["workflow_runs"] if isinstance(r, dict)]
+
+    def ensure_label(self):
+        if self.label_ready:
+            return
+        ok, _ = self.api("repos/%s/labels/%s" % (self.name, ALERT_LABEL))
+        if not ok:
+            ok, res = self.api("repos/%s/labels" % self.name, "POST",
+                               {"name": ALERT_LABEL, "color": "d93f0b",
+                                "description": "A card waits on the owner (the Orchestrator's alerts)"})
+            if not ok:
+                print("NOTE: alerts: the label %s cannot be created: %s" % (ALERT_LABEL, res))
+        self.label_ready = True
+
+    # -- the default branch's tip
+    def read_tip(self):
+        default = self.a.default_branch or os.environ.get("DEFAULT_BRANCH", "")
+        if not re.fullmatch(r"[A-Za-z0-9._/-]+", default or "") or default.startswith(("-", "/")) or ".." in default:
+            raise Refused("the default branch %r is not a branch name" % (default,))
+        self.default = default
+        run_git(self.repo, ["fetch", "-q", "--no-tags", self.remote,
+                            "+refs/heads/%s:refs/remotes/%s/%s" % (default, self.remote, default)])
+        self.tip = rev(self.repo, "refs/remotes/%s/%s" % (self.remote, default))
+        if not self.tip:
+            raise Refused("no tip of %s after the fetch" % default)
+        self.tree = ls_tree(self.repo, self.tip)
+
+    def text(self, rel):
+        e = self.tree.get(rel)
+        if not e or not regular(e[0]):
+            return None
+        return cat_blobs(self.repo, [e[2]])[e[2]].decode("utf-8", "replace")
+
+    def statuses(self):
+        out = {}
+        for rel in self.tree:
+            m = re.fullmatch(r"status/([PQE]-[0-9]+)\.toml", rel)
+            if not m:
+                continue
+            try:
+                st = tomllib.loads(self.text(rel) or "")
+            except tomllib.TOMLDecodeError:
+                continue
+            out[m.group(1)] = st
+        return out
+
+    def merged(self, item, tip):
+        """Whether the item tip is an ancestor of the default tip or recorded in status/merges.jsonl."""
+        if is_ancestor(self.repo, tip, self.tip):
+            return True
+        for line in read_jsonl((self.text(MERGES) or "").encode("utf-8")):
+            if line.get("item") == item and line.get("item_tip") == tip:
+                return True
+        return False
+
+    def green_since(self, commit):
+        """A governance run on the default branch, on `commit` or a descendant of it, concluded success."""
+        for r in self.runs or []:
+            head = r.get("head_sha")
+            if (r.get("status") == "completed" and r.get("conclusion") == "success" and isinstance(head, str)
+                    and re.fullmatch(r"[0-9a-f]{40}", head) and is_ancestor(self.repo, commit, head)):
+                return True
+        return False
+
+    def hold_cards(self):
+        """[(commit time, rel, commit)] of every ci-hold card, newest first (by the commit that added it)."""
+        out = []
+        for rel in self.tree:
+            if re.fullmatch(r"queue/ci-hold-[0-9a-f]{12}\.md", rel):
+                line = gitout(self.repo, ["log", "-1", "--diff-filter=A", "--format=%ct %H", self.tip, "--",
+                                          rel]).decode().split()
+                if len(line) == 2:
+                    out.append((int(line[0]), rel, line[1]))
+        return sorted(out, reverse=True)
+
+    def waiting(self):
+        """{card id: card} of every card that waits on the owner at the tip."""
+        self.st = self.statuses()
+        cards = {}
+        for item, st in sorted(self.st.items()):
+            gate, n = st.get("gate"), st.get("card")
+            if st.get("state") != "waiting-owner" or not isinstance(gate, str) or not isinstance(n, int) \
+                    or not re.fullmatch(r"[a-z][a-z-]*", gate):
+                continue
+            rel = "queue/%s-%s-%d.md" % (item, gate, n)
+            text = self.text(rel)
+            if text is None:
+                continue
+            cards["%s %s-%d" % (item, gate, n)] = {"kind": "decision", "rel": rel, "text": text, "gate": gate,
+                                                   "answer": "decisions/%s/%s-%d.md" % (item, gate, n)}
+        self.holds = self.hold_cards()
+        if self.holds and self.runs is not None:
+            _, rel, commit = self.holds[0]
+            if not self.green_since(commit):
+                cards["ci-hold %s" % rel[len("queue/ci-hold-"):-3]] = {"kind": "ci-hold", "rel": rel,
+                                                                       "text": self.text(rel) or ""}
+        for rel in sorted(self.tree):
+            m = re.fullmatch(r"queue/([PQE]-[0-9]+)-merge-(conflict|by-hand)\.md", rel)
+            if not m:
+                continue
+            text = self.text(rel) or ""
+            t = CARD_TIP_RE.search(text)
+            if not t or self.st.get(m.group(1), {}).get("state") == "closed" or self.merged(m.group(1), t.group(1)):
+                continue
+            cards["%s merge-%s %s" % (m.group(1), m.group(2), t.group(1)[:12])] = {"kind": "merge", "rel": rel,
+                                                                                    "text": text}
+        return cards
+
+    def why_not(self, cid):
+        """Why the card `cid` no longer waits (the closing comment), or None to leave its issue alone."""
+        m = CARD_MERGE_RE.fullmatch(cid)
+        if m:
+            item, tip12 = m.group(1), m.group(3)
+            tip = rev(self.repo, tip12) if re.fullmatch(r"[0-9a-f]{12}", tip12) else None
+            if tip and tip.startswith(tip12) and self.merged(item, tip):
+                return WHY_MERGED
+            for line in read_jsonl((self.text(MERGES) or "").encode("utf-8")):
+                if line.get("item") == item and str(line.get("item_tip") or "").startswith(tip12):
+                    return WHY_MERGED
+            return WHY_WITHDRAWN
+        m = CARD_HOLD_RE.fullmatch(cid)
+        if m:
+            if self.runs is None:
+                return None
+            rel = "queue/ci-hold-%s.md" % m.group(1)
+            mine = [h for h in self.holds if h[1] == rel]
+            if mine and self.green_since(mine[0][2]):
+                return WHY_GREEN
+            if mine:
+                return WHY_WITHDRAWN + "\n\nA newer hold card, %s, replaces it." % self.holds[0][1]
+            return WHY_WITHDRAWN
+        m = CARD_DECISION_RE.fullmatch(cid)
+        if m:
+            item, gate, n = m.group(1), m.group(2), int(m.group(3))
+            st = self.st.get(item, {})
+            if self.text("queue/%s-%s-%d.md" % (item, gate, n)) is not None and \
+                    self.text("decisions/%s/%s-%d.md" % (item, gate, n)) is not None and st.get("state"):
+                return WHY_ANSWERED % re.sub(r"[^a-z-]", "", str(st["state"]))[:32]
+            return WHY_WITHDRAWN
+        return None
+
+    # -- issue text
+    def link(self, kind, rel, query=None):
+        base = "%s/%s/%s/%s" % (self.server.rstrip("/"), self.name, kind, urllib.parse.quote(self.default, safe="/"))
+        if rel:
+            base += "/" + urllib.parse.quote(rel, safe="/")
+        return base + ("?" + urllib.parse.urlencode(query, quote_via=urllib.parse.quote) if query else "")
+
+    def who(self, card):
+        if card["kind"] != "decision":
+            return "Who acts: the owner. The loop reads no answer from this card."
+        try:
+            routing = tomllib.loads(self.text(orch.ROUTING_REL) or "")
+        except tomllib.TOMLDecodeError:
+            routing = {}
+        gate = ((routing.get("gates") or {}).get(card["gate"]) or {})
+        who = gate.get("answered_by") if isinstance(gate, dict) else None
+        who = re.sub(r"[^a-z -]", "", who) if isinstance(who, str) and who.strip() else "owner"
+        return "Who may answer: %s (governance/ROUTING.toml `answered_by`)." % who.replace("-", " ")
+
+    def body(self, cid, card, note=None):
+        head = ["<!-- needs-you:%s -->" % cid, "**%s** waits on you. %s" % (cid, self.who(card))]
+        if note:
+            head.append("")
+            head.append(note)
+        if card["kind"] == "decision":
+            quoted = card_sections(card["text"], [r"1\..*", r"4\..*"])
+        else:
+            quoted = card_sections(card["text"], [r"(1\. )?The decision", r"([0-9]\. )?What to do"])
+        foot = ["", "Card: [%s](%s)" % (card["rel"], self.link("blob", card["rel"]))]
+        if card["kind"] == "decision":
+            answer = card["answer"]
+            if self.text(answer) is not None:
+                foot.append("An answer file already exists at `%s` and was not accepted: [edit it](%s)."
+                            % (answer, self.link("edit", answer)))
+            else:
+                foot.append("Answer (each link opens a new file `%s` holding `Decision: <word>`; commit it to "
+                            "the default branch):" % answer)
+                for w in card_words(card["text"]):
+                    foot.append("- [`%s`](%s)" % (w, self.link("new", None, {"filename": answer,
+                                                                              "value": "Decision: %s\n" % w})))
+        head_t, foot_t = "\n".join(head) + "\n\n", "\n".join(foot) + "\n"
+        quoted = "\n".join("> " + l if l else ">" for l in quoted.split("\n")) if quoted else ""
+        room = ALERT_BODY_MAX - len(head_t) - len(foot_t)
+        cut = "\n> (cut; the full card is linked below)"
+        if len(quoted) > room:
+            quoted = quoted[:max(0, room - len(cut))] + cut if room > len(cut) else ""
+        return (head_t + quoted + "\n" + foot_t)[:ALERT_BODY_MAX]
+
+    # -- actions
+    def open(self, cid, card):
+        self.ensure_label()
+        good = bool(LOGIN_RE.fullmatch(self.login))
+        note = None if good else ("Not assigned: the repository variable OWNER_LOGIN is unset or not a GitHub login "
+                                  "(docs/SETUP.md).")
+        payload = {"title": "Needs you: %s" % cid, "body": self.body(cid, card, note), "labels": [ALERT_LABEL]}
+        if good:
+            payload["assignees"] = [self.login]
+        ok, res = self.api("repos/%s/issues" % self.name, "POST", payload)
+        if not ok and good:
+            print("NOTE: alerts: the issue for %s was not created assigned (%s); creating it unassigned" % (cid, res))
+            payload = {"title": payload["title"], "labels": [ALERT_LABEL],
+                       "body": self.body(cid, card, "Not assigned: GitHub refused the assignee `%s` (docs/SETUP.md)."
+                                         % self.login)}
+            ok, res = self.api("repos/%s/issues" % self.name, "POST", payload)
+        if ok:
+            print("OK: alerts: opened an issue for %s" % cid)
+        else:
+            print("NOTE: alerts: no issue for %s: %s" % (cid, res))
+
+    def close(self, issue, cid, why):
+        n = issue["number"]
+        ok, res = self.api("repos/%s/issues/%d/comments" % (self.name, n), "POST", {"body": why})
+        if not ok:
+            print("NOTE: alerts: no comment on issue %d (%s): %s" % (n, cid, res))
+        ok, res = self.api("repos/%s/issues/%d" % (self.name, n), "PATCH", {"state": "closed",
+                                                                            "state_reason": "completed"})
+        if ok:
+            print("OK: alerts: closed issue %d (%s): %s" % (n, cid, why.split("\n")[0]))
+        else:
+            print("NOTE: alerts: issue %d (%s) not closed: %s" % (n, cid, res))
+
+    def run(self):
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", self.name):
+            raise Refused("GITHUB_REPOSITORY %r is not owner/name" % (self.name,))
+        if not re.fullmatch(r"https://[A-Za-z0-9.-]+(:[0-9]+)?", self.server):
+            self.server = "https://github.com"
+        if not re.fullmatch(r"[A-Za-z0-9._-]+\.ya?ml", self.a.workflow or ""):
+            raise Refused("--workflow %r is not a workflow file name" % (self.a.workflow,))
+        self.read_tip()
+        self.runs = self.governance_runs()
+        cards = self.waiting()
+        issues = self.issues()
+        if issues is None:
+            return
+        for cid, card in sorted(cards.items()):
+            if cid in issues:
+                continue                     # one issue per card, open or closed: never reopened or duplicated
+            try:
+                self.open(cid, card)
+            except Exception as exc:  # noqa: BLE001 - every failure is printed and skipped
+                print("NOTE: alerts: %s: %s: %s" % (cid, type(exc).__name__, exc))
+        for cid, found in sorted(issues.items()):
+            if cid in cards:
+                continue
+            for issue in found:
+                if issue.get("state") != "open":
+                    continue
+                try:
+                    why = self.why_not(cid)
+                    if why:
+                        self.close(issue, cid, why)
+                except Exception as exc:  # noqa: BLE001
+                    print("NOTE: alerts: issue %s: %s: %s" % (issue.get("number"), type(exc).__name__, exc))
+        print("OK: alerts: %d card(s) wait on the owner at %s" % (len(cards), self.tip[:12]))
+
+
+def cmd_alerts(a):
+    """model S-017 AC3, in the commit job after both start steps; always exits 0."""
+    try:
+        Alerts(a).run()
+    except Exception as exc:  # noqa: BLE001 - an alert never stops the job
+        print("NOTE: alerts: skipped: %s: %s" % (type(exc).__name__, exc))
     return 0
 
 
@@ -3798,7 +4339,7 @@ def build_parser():
     repo = {"repo": ".", "remote": "origin", "default_ref": "HEAD"}
     add("decide", "--out", repo=".", remote="origin", now=None, ref=None, event=None, default_branch=None,
         github_output=None, ci_runs=None)
-    add("ci-runs", "--out", repo=".", workflow="governance.yml")
+    add("ci-runs", "--out", repo=".", workflow="governance.yml", wait_seconds="0")
     add("dispatch-governance", "--ref", "--base", workflow="governance.yml")
     add("specs", "--out", **repo)
     add("tree", "--item", "--overlay", "--out", role=None, ref=None, **repo)
@@ -3813,8 +4354,9 @@ def build_parser():
     add("record", "--artifacts", "--out", plan=None, plan_env=None, github_output=None)
     add("commit", "--bundle", "--bundle-hash", "--decided", "--decided-hash", "--now", "--run-id", "--run-attempt",
         plan=None, plan_env=None, chain="0", repo=".", remote="origin", default_branch=None, github_output=None,
-        hold="false")
-    add("dispatch", "--workflow", "--ref", "--chain")
+        hold="false", ci_state=None, held_work="0", held=None)
+    add("dispatch", "--workflow", "--ref", "--chain", held=None)
+    add("alerts", default_branch=None, repo=".", remote="origin", workflow="governance.yml")
     s = add("proof-setup", "--config", "--agents", "--tools", "--work", model=None, github_output=None)
     s.add_argument("--sandbox-part", action="store_true")
     add("proof-check", "--work", summary=None, sandbox=None)
@@ -3828,7 +4370,7 @@ COMMANDS = {"decide": cmd_decide, "specs": cmd_specs, "tree": cmd_tree, "changes
             "cli-version": cmd_cli_version, "leak-check": cmd_leak_check, "hand-on": cmd_hand_on,
             "record": cmd_record, "commit": cmd_commit, "dispatch": cmd_dispatch, "proof-setup": cmd_proof_setup,
             "proof-check": cmd_proof_check, "sandbox-check": cmd_sandbox_check, "token-mode": cmd_token_mode,
-            "ci-runs": cmd_ci_runs, "dispatch-governance": cmd_dispatch_governance}
+            "ci-runs": cmd_ci_runs, "dispatch-governance": cmd_dispatch_governance, "alerts": cmd_alerts}
 
 
 def main(argv=None):

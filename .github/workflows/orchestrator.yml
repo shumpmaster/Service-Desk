@@ -7,7 +7,7 @@
 name: orchestrator
 
 on:
-  # Any default-branch name (model S-016 AC7): no branch filter; the decide job refuses any other ref.
+  # Any default-branch name (model S-016 AC7): no branch filter; a run on any other ref is skipped (S-018 AC1).
   push:
     paths:
       - "decisions/**"
@@ -20,12 +20,17 @@ on:
         description: "How many runs in a row started this one (the loop sets it; leave 0)"
         required: false
         default: "0"
+      held:
+        description: "How many self-dispatches after a hold, in a row, led to this run (the loop sets it; leave 0)"
+        required: false
+        default: "0"
 
 permissions: {}
 
-# One run at a time per ref, so a run from another branch (refused at once by the decide job) never
-# replaces or cancels a pending default-branch run; schedule, push, manual start and self-dispatch all
-# run on the default ref. A waiting run is never cancelled (model S-015 AC10, model S-016 AC7).
+# One run at a time per ref, so a run from another branch (skipped before the decide job starts, model
+# S-018 AC1) never replaces or cancels a pending default-branch run; schedule, push, manual start and
+# self-dispatch all run on the default ref. A waiting run is never cancelled (model S-015 AC10, model
+# S-016 AC7).
 concurrency:
   group: orchestrator-${{ github.ref }}
   cancel-in-progress: false
@@ -37,7 +42,13 @@ jobs:
   # Environment); its only secret reference is that boolean. Model S-013 AC6: it reads the governance
   # runs on the default branch's tip (actions: read) and, unless the latest passed, holds: it applies
   # the owner's decisions and raises cards, but dispatches nothing, and the commit job runs no gate.
+  # Model S-017 AC1: the read first waits, up to 240 seconds, for the tip's governance run to finish; AC2:
+  # it reports the CI state and how many dispatches a hold kept back (held_work).
+  # Model S-018 AC1: it runs only on a schedule (GitHub runs one only on the default branch) or on the
+  # default branch, so a run on any other ref ends with every job skipped, not failed; the refusal
+  # inside stays as the second guard.
   decide:
+    if: github.event_name == 'schedule' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -50,6 +61,8 @@ jobs:
       default_branch: ${{ steps.decide.outputs.default_branch }}
       legs: ${{ steps.decide.outputs.legs }}
       hold: ${{ steps.decide.outputs.hold }}
+      ci: ${{ steps.decide.outputs.ci }}
+      held_work: ${{ steps.decide.outputs.held_work }}
     steps:
       - name: Check out the default branch
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -64,7 +77,7 @@ jobs:
       - name: Read the governance runs
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 governance/checks/orchestrator_git.py ci-runs --out "$RUNNER_TEMP/ci/runs.json"
+        run: python3 governance/checks/orchestrator_git.py ci-runs --out "$RUNNER_TEMP/ci/runs.json" --wait-seconds 240
       - name: Decide (model S-012 step)
         id: decide
         env:
@@ -401,7 +414,8 @@ jobs:
   # commits with git hooks off, runs the range guard and model S-009's checks, and pushes role
   # branches, item branches, then the default branch. Model S-013: then the merge gate (AC5; not
   # while the decide job holds), and after any push to the default branch a governance run based on
-  # the tip before its pushes (AC6).
+  # the tip before its pushes (AC6). Model S-017: the next run also after a hold that kept work back (AC2,
+  # at most two in a row), and last, on every run, one issue per card that waits on the owner (AC3).
   commit:
     needs: [decide, prepare, record]
     if: always() && !cancelled() && needs.record.result == 'success'
@@ -410,6 +424,7 @@ jobs:
     permissions:
       contents: write
       actions: write
+      issues: write
     steps:
       - name: Check out the default branch
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -437,7 +452,10 @@ jobs:
           DEFAULT_BRANCH: ${{ needs.decide.outputs.default_branch }}
           CHAIN: ${{ inputs.chain }}
           HOLD: ${{ needs.decide.outputs.hold }}
-        run: python3 governance/checks/orchestrator_git.py commit --bundle "$RUNNER_TEMP/art/bundle/bundle.tar" --bundle-hash "$BUNDLE" --decided "$RUNNER_TEMP/art/decided/decided.tar" --decided-hash "$DECIDED" --plan-env PLAN --now "$NOW" --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --chain "$CHAIN" --default-branch "$DEFAULT_BRANCH" --hold "$HOLD" --github-output "$GITHUB_OUTPUT"
+          CI_STATE: ${{ needs.decide.outputs.ci }}
+          HELD_WORK: ${{ needs.decide.outputs.held_work }}
+          HELD: ${{ inputs.held }}
+        run: python3 governance/checks/orchestrator_git.py commit --bundle "$RUNNER_TEMP/art/bundle/bundle.tar" --bundle-hash "$BUNDLE" --decided "$RUNNER_TEMP/art/decided/decided.tar" --decided-hash "$DECIDED" --plan-env PLAN --now "$NOW" --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --chain "$CHAIN" --default-branch "$DEFAULT_BRANCH" --hold "$HOLD" --ci-state "$CI_STATE" --held-work "$HELD_WORK" --held "$HELD" --github-output "$GITHUB_OUTPUT"
       - name: Start the governance run
         if: ${{ !cancelled() && steps.commit.outputs.governance_base != '' }}
         env:
@@ -451,4 +469,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DEFAULT_BRANCH: ${{ needs.decide.outputs.default_branch }}
           NEXT_CHAIN: ${{ steps.commit.outputs.next_chain }}
-        run: python3 governance/checks/orchestrator_git.py dispatch --workflow orchestrator.yml --ref "$DEFAULT_BRANCH" --chain "$NEXT_CHAIN"
+          NEXT_HELD: ${{ steps.commit.outputs.next_held }}
+        run: python3 governance/checks/orchestrator_git.py dispatch --workflow orchestrator.yml --ref "$DEFAULT_BRANCH" --chain "$NEXT_CHAIN" --held "$NEXT_HELD"
+      - name: Alert the owner
+        if: ${{ !cancelled() && steps.commit.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER_LOGIN: ${{ vars.OWNER_LOGIN }}
+          DEFAULT_BRANCH: ${{ needs.decide.outputs.default_branch }}
+        run: python3 governance/checks/orchestrator_git.py alerts --default-branch "$DEFAULT_BRANCH"

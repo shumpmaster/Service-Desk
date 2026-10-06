@@ -1,49 +1,48 @@
-I've revised `specs/S-001.md` against all seven review findings, but the spec still can't freeze. Freezing needs four results from Define: EXP-001, EXP-002, EXP-004, and real samples of the status, sprint and dispatch-log files. None is in this pack. Nothing is committed: the folder isn't a git repository.
+I've revised `specs/S-001.md` to answer the plan review. Four of the five findings are fixed. The fifth (J9, the status, sprint and dispatch-log files) still blocks freeze because the real sample files aren't in my folder, so the spec stays `draft`. Nothing was committed: this folder isn't a git repository, so there's no `build/definer/P-001` branch to commit to.
 
-**1. What I changed**
-- **Finding 1 (O3 and O5 closed in Build):** I put the closing back in Define, as the owner ruled. A new "Before freeze" section sets out EXP-001, EXP-002 and EXP-004, each with its question, method, pass bar and fallback fixed before it runs. The spec stays `draft` until those results are written into it. "EXP-001 measures it before Build ends" in Risks now reads "in Define, before freeze". The brief's "Before Build ends" line is now a list of inputs from Define. The content parameter's name is now config (`contentParam` in J7), so EXP-004's result never changes spec text.
-- **Finding 2 (no format for status, sprint and dispatch log):** I added join sheet J9. The desk's side is fixed:
-  - the exact `pipeline` object J6 returns;
-  - "last recorded" defined as the commit time of the file it came from, so it doesn't depend on the file's format;
-  - the rules for `atWork` (item and role at work now) and `next`;
-  - the awkward cases.
+## 1. What I changed
+- **AC19 arithmetic (finding 1):**
+  - The wrong sentence is gone. If two devices each stay open all 16 hours, the total is 10,100 requests (10,600 if openings and changes are counted per device). That **fails** the spec's own 10,000 margin. It is still nowhere near Free's 100,000, which is only reached after about 331 window-hours in a day.
+  - AC19 now says plainly that a day with more than 16 window-hours across all devices is outside the scenario. Two devices open together for 8 hours already make the 16.
+  - If the Chief of Staff's check during AC7 finds that assumption broken, it goes to the owner, who decides.
+- **Plan file naming (J4, AC13; finding 2):**
+  - Plan files are now named `docs/planning/<YYYY-MM-DD>T<HHMM>Z-<nn>.md`. The `<nn>` suffix is always there and always two digits (01 to 99).
+  - There is an explicit ordering rule: the current plan is the file whose name sorts last in plain ASCII order. Files that don't match the pattern are shown as "can't parse".
+  - Added two awkward cases: two links drafted with the same name, and the minute boundary. The join test now covers both.
+  - To show the current plan, the desk has to read the list of plan files. J2 now reads that list for Service-Desk, and the function's response (J6) gained a `plans` field.
+- **EXP-001 (finding 4):**
+  - The test function now runs behind Access with a real login token, and checks it fully the way production will, before the GitHub batch.
+  - It runs 100 calls of each kind instead of 20. Full reads are capped at 40 per hour so they stay inside GitHub's 5,000-an-hour limit.
+  - Stricter pass bar: no call at or over 10 ms CPU, 95th percentile under 8 ms, and at most 4 cold-load batches per project.
+  - The fallback now says the request arithmetic is redone if the batch size or batch count changes.
+  - J8 now counts the login-key fetch against the outbound request limit, and its CPU against each call's CPU.
+- **A3 and A4 (finding 5):** A3 now derives "4 batches" from the 30 to 120 requests a cold load needs. A4 explains the "3 more": a changed head re-reads at most a cold load's 4 batches, and the first of those is the poll already counted. The GitHub fact notes that these re-reads use ETags, so only files that actually changed count against GitHub's limit.
+- **Review's open questions:**
+  - A new term, "Read successfully", says an "unchanged" answer counts as a successful read. AC3 points to it.
+  - Cards and answers now work whether or not a card file is kept once answered. An answer file means its card is answered. The raised time comes from the oldest commit that touched the card path. Answered cards are also found from their answer files, and `decisions/questions/` is skipped. This is owner question 7.
+  - "Before freeze" notes that the project document contradicts itself on O5, and that the spec follows the "open into Define" reading.
 
-  The source side, meaning how each field is read from the real files, is marked "Incomplete: blocks freeze" until samples are quoted. J6 now names `pipeline`, `prs` and `unparsed` precisely. I renamed J6's top-level `status` to `state` so it doesn't clash with the status file.
-- **Finding 3 (no source for "agent retrying"):** AC4 and the term "Activity" now list only things J1, J2 or J9 actually read. An agent retrying is defined as a repeat dispatch-log entry for the same item and role. "Agent sessions" is gone; that belongs to S-002.
-- **Finding 4 (AC11 unclear):** AC11 is rewritten. The link is the same J3 link to the default branch. The desk shows a set message first, and it neither creates nor names a branch nor opens the pull request. The owner picks "new branch" in GitHub's commit dialog (F-gh-07 (2)) and opens and merges the pull request. The card stays flagged until the answer is on the default branch.
-- **Finding 5 ("owner-approved" claim):** The heading now says draft, not yet approved by the owner, with a note that no ruling approves the criteria yet.
-- **Finding 6 (AC19 arithmetic):** Four stated assumptions (A1 to A4) give 5,300 requests a day, under the 10,000 margin. The spec covers the case of two devices both open all day (about 10,600, over the margin but far under Free's 100,000), says how retries are counted, and adds a GitHub-side figure for cold loads.
-- **Finding 7 (minor points):**
-  - J1 now explains how the 30-request cap and the six-connection waves fit together.
-  - New reasons for a project that can't be read: the function sets `github`; the page sets `cloudflare` and `network`. `parse` is removed.
-  - AC7 names its judge: the Chief of Staff, with a stated test for "explained", and the owner's ruling settles any dispute.
-- **Open questions:** I added two. Question 5 asks whether the owner wants to re-rule O3 and O5 to close in Build. Question 6 asks where the real status, sprint and dispatch-log files are.
+## 2. Why
+These are the plan review's five findings and open questions. The earlier rounds' decisions (resubmit, retry, then build) ask for this revision to go back to the Critic.
 
-**2. Why**
-Each change answers the matching finding in `reviews/S-001/plan.md`. For finding 1 I kept to the owner's ruling rather than widening it, since only the owner can widen it. For finding 2 I wouldn't guess a file format, so I fixed the desk's side and made the gap block freeze.
+## 3. What I verified
+- **Plan ordering:** sorting the names in plain ASCII order put `T0930Z.md` after `T0930Z-2.md`, which confirms the defect. The new names come out `T0930Z-01` < `T0930Z-02` < `T0931Z-01`.
+- **Arithmetic:** 4,800 + 200 + 300 = 5,300; with two devices, 10,100 (or 10,600 counting per device); 99,500 / 300 ≈ 331.
+- **Card names:** splitting `Q-003-failure-1` and `P-001-dor-fail-2` gives the item, gate and number J2 expects.
+- **Leftovers:** no old `T<HHMM>Z.md` or `-2` names remain, and "10,600" survives only in the corrected worked case.
 
-**3. What I verified**
-- I opened the library entries the spec relies on and checked them against its claims:
-  - F-gh-05: only `filename` is documented.
-  - F-gh-07 (2): the commit dialog offers a new branch.
-  - F-gh-10, F-cf-workers-03, -05 and -07.
-  - Q-004-facts lines 8, 9 and 18.
-- A text search found no "Before Build" or "owner-approved" left. It also found 9 join-test markers (J1 to J9) and all 19 criteria still traced to a value target.
-- The arithmetic adds up: 4,800 + 200 + 300 = 5,300.
+## 4. What is undone
+- **J9's source side** still blocks freeze; it needs the real files (finding 3 and owner question 6).
+- **The measurements** EXP-001, EXP-002 and EXP-004 haven't run, and their results aren't in the spec.
+- **No separate registration file:** `experiments/_REGISTRATION.md` isn't in my folder, so the pre-registrations stay inside the spec.
 
-**4. What is undone**
-- J9's source side.
-- The results of EXP-001, EXP-002 and EXP-004.
-- Separate registration files: `experiments/_REGISTRATION.md` isn't in the pack, so the pre-registrations sit inside the spec instead.
-- No commit.
+## 5. What is needed outside my lane
+- The owner or Chief of Staff: one real status, sprint and dispatch-log file from each launch repository, with their paths.
+- Whoever owns the project document: correct `docs/PROJECT.md:206` ("O5, closed").
+- The owner and an agent allowed to deploy to the preview project: run the three experiments.
+- The Critic: review this revision.
 
-**5. What is needed outside my lane**
-- **Owner:** run EXP-002 and EXP-004 (about 20 minutes once), answer open questions 1 to 6, and create the preview project.
-- **Someone allowed to deploy to the preview project:** run EXP-001.
-- **Chief of Staff or Orchestrator:** supply the sample files.
-- **Not checked:** the critic cited `decisions/questions/P-001-o3-define.md`, `-o3-walltime.md` and `-o5-define.md`, but they aren't in this pack. I relied on the critic's reading and on PROJECT.md §8.
-
-**6. Open questions**
-- Will the owner re-rule O3 and O5 to close in Build, or keep Define (open question 5)?
-- Where are the real status, sprint and dispatch-log files (open question 6)?
-- Is a separate experiment registration file required in addition to the "Before freeze" section?
+## 6. Open questions
+- Owner questions 1 to 6 are still unanswered.
+- Question 7 is new: is a card file kept after it is answered? It doesn't block freeze.
+- The new 8 ms bar in EXP-001 is my own margin. The Critic or owner may want a different one.

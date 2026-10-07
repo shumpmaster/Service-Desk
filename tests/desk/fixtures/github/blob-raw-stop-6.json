@@ -1,0 +1,11 @@
+{
+ "note": "GET /repos/shumpmaster/Service-Desk/git/blobs/bfd279292f7d662c3bd32a2faa1ba2b5b1826790 with Accept: application/vnd.github.raw+json (queue/P-001-stop-6.md), recorded 2026-10-07",
+ "status": 200,
+ "headers": {
+  "content-type": "text/plain; charset=utf-8",
+  "etag": "\"542621995781f0039b9e4cb1b72ff7f57e2aa06d26d365392b27e8ddbb72bff7\"",
+  "x-ratelimit-remaining": "14985",
+  "x-ratelimit-reset": "1791407815"
+ },
+ "body": "# Decision card \u2014 P-001 stop-6\n\nitem: P-001   kind: project   gate: stop   card: 6   route: triage-return\nanswer: write `decisions/P-001/stop-6.md`, first line `Decision: <word>` (one of the words below).\n\n## 1. The decision\nThe work reached the stop rule. What happens next?\n\n## 2. Why it's yours\nRoute `triage-return` of governance/ROUTING.toml (model S-012) sends this card to the owner. Triage traced the failure chain to its root cause; its recorded return is linked below.\n\n## 3. Background\n- stage 3, role critic-triage, last verdict none\n- plan round 3, build round 0, confirm used: no\n- sessions this stage: 6 of 12\n- spec: S-001\n\n## 4. Options\n- `re-specify` \u2014 a new spec superseding the current one, back to the Definer (stage 3), who also marks the old spec superseded, with a ledger entry from the Orchestrator (model S-013 AC7), rounds reset; a strike (research: back to the Researcher, rounds reset).\n- `criteria-wrong` \u2014 a new spec superseding the current one, back to the Definer (stage 3), who also marks the old spec superseded, with a ledger entry from the Orchestrator; rounds reset; not a strike.\n- `confirm` \u2014 one focused check by the stage's checker, round set to 2 (offered once).\n- `re-scope` \u2014 closed (re-scope). A `Proxy:` line is refused on this word.\n- `drop` \u2014 closed (drop). A `Proxy:` line is refused on this word.\n\n## 5. Recommendation\nThe Chief of Staff's part: `decisions/P-001/stop-6-notes.md`.\n\n## 6. If you don't decide\nNothing moves: the item waits on this card. Waiting never counts as stalled and never uses the budget (model S-012 AC6).\n\n## 7. Who has checked it\n- the recorded return: `triage/P-001.md`\n- the status file: `status/P-001.toml`\n- the spec: S-001\n"
+}

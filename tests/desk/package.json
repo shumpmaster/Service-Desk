@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "description": "The desk's tests (spec S-001). `npm --prefix src test` runs `node --test ../tests/desk/`; Node treats that directory argument as a module, so it loads this folder's main, index.js, which imports every *.test.mjs here.",
+  "type": "module",
+  "main": "index.js"
+}

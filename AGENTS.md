@@ -86,4 +86,4 @@ the next step. Don't re-litigate a ruling you didn't witness — raise it with t
 ## 8. Commands
 governance checks: governance/checks/check_all.sh . [BASE_REF [PR]]   (Python 3.11+)
 regenerate digest:  python3 governance/checks/digest.py build
-build: <cmd>   test: <cmd>   acceptance: <cmd>   lint: <cmd>
+build: npm --prefix src ci && npm --prefix src run build   test: npm --prefix src test   acceptance: <cmd>   lint: <cmd>

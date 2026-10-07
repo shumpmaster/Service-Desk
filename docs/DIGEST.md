@@ -1,13 +1,19 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-09-30: 2 active rulings and 0 kills, from 2 ledger entries.
+As of 2026-10-07: 4 active rulings and 0 kills, from 4 ledger entries.
 
 ## Active rulings
+
+### P-001 (specs/S-001.md)
+| ID | Decision | Since | Expires |
+| --- | --- | --- | --- |
+| L-0003 | Yes, for S-001 only, until P-001 launches (S-001 AC28) or is stopped. The owner's ruling is decisions/questions/P-001-build-path.md, question 0. The Builder builds S-001 from the … | 2026-10-07 | never |
 
 ### project
 | ID | Decision | Since | Expires |
 | --- | --- | --- | --- |
 | L-0001 | Adopt the AI Build Operating Model at the version in governance/OPERATING_MODEL_VERSION, at tier T1. AGENTS.md is the charter. | 2026-09-30 | never |
 | L-0002 | Exempt c1c9a56491d34565b931a6a8f6f41fab2caa855e (governance/SURFACES.md exempt block). It is the generated template, unchanged apart from the owner line, the founding date and the README title; the owner … | 2026-09-30 | never |
+| L-0004 | Make Service-Desk public. The owner changed the visibility on 2026-10-07, after a scan of all 406 commits on all 57 branches. gitleaks 8.30.1 found no … | 2026-10-07 | never |
 
 ## Kills
 None.

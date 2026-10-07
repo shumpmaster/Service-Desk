@@ -12,6 +12,7 @@ import { whenText, hhmm, dateTimeText } from './lib/timefmt.js';
 import { defaultLabel } from './lib/records.js';
 import { blobLink, exp004Links, cappedNewFileLink } from './lib/links.js';
 import { createRun, summarize, resultMarkdown, rawTable } from './lib/exp001.js';
+import { routeParts, guardRender, boot } from './lib/page.js';
 
 const TZ = CONFIG.ownerTimeZone;
 const view = document.getElementById('view');
@@ -45,10 +46,6 @@ const params = new URLSearchParams(location.search);
 
 // ---------------------------------------------------------------------------
 // The desk
-
-function routeParts() {
-  return location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent).filter((s) => s !== '');
-}
 
 function projectByName(name) {
   return CONFIG.projects.find((p) => p.name === name) || null;
@@ -210,16 +207,23 @@ function renderQuestion(desk, name, qname) {
 function startDesk() {
   const store = createStore();
   const desk = createDesk({
-    config: CONFIG, call: (path, body) => callFunction(path, body), clock, store, isVisible, onChange: render,
+    config: CONFIG, call: (path, body) => callFunction(path, body), clock, store, isVisible, onChange: () => render(),
   });
-  function render() {
+  // A throw while drawing shows an error state, never a frozen "Quiet" (review N4).
+  const render = guardRender(draw, (state) => {
+    stateEl.textContent = state.text;
+    stateEl.className = state.className;
+    document.title = `Service Desk — ${state.text}`;
+    view.replaceChildren(h('section', {}, h('p', { class: 'flag' }, state.text), h('p', {}, h('a', { href: '#/' }, 'All projects'))));
+  });
+  function draw() {
     const bx = boxes(desk);
     const s = screenState(bx, desk.signedOut);
     stateEl.textContent = s.text;
     stateEl.className = s.quiet ? 'quiet' : desk.signedOut ? 'signed-out' : bx.some((b) => b.flaggedCount) ? 'flagged'
       : bx.some((b) => b.read.read === 'cant-read') ? 'cant-read' : '';
     document.title = s.quiet ? 'Service Desk — quiet' : `Service Desk — ${s.text}`;
-    const [r0, name, kind, ...rest] = routeParts();
+    const [r0, name, kind, ...rest] = routeParts(location.hash); // malformed → Universe (review N6)
     const y = window.scrollY;
     let node;
     if (r0 === 'p' && kind === 'card') node = renderCard(desk, name, rest.join('/'));
@@ -233,8 +237,7 @@ function startDesk() {
   window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
   document.addEventListener('visibilitychange', () => desk.visibilityChanged());
   setInterval(() => { if (isVisible()) render(); }, 15_000);
-  render();
-  desk.start();
+  boot(render, desk); // desk.start() runs even if the first render throws (review N6)
 }
 
 // ---------------------------------------------------------------------------

@@ -22,7 +22,18 @@ export const REASON_WORDS = {
   cloudflare: 'Cloudflare or desk-function error',
   network: "network error: the desk's function could not be reached",
   stale: 'no successful read for 3 minutes',
+  page: "the desk page hit an error reading this project's records",
 };
+
+/** An error's message, safely: the error itself may be any value, even one that can't be printed. */
+export function errorText(err) {
+  try {
+    if (err && typeof err.message === 'string' && err.message) return err.message.slice(0, 200);
+  } catch {
+    // fall through
+  }
+  return 'unknown error';
+}
 
 /** Split needed reads into blob calls within the budget (a blob counts 1, a history path 2). */
 export function batches(blobs, history, budget = BLOB_BATCH) {
@@ -225,21 +236,28 @@ export function createDesk(opts) {
     st.polls++;
     const etags = {};
     for (const [u, tag] of Object.entries(st.etags)) etags[u] = tag;
-    const res = await call('/api/poll', { project: st.project.name, head: st.head, etags: st.head ? etags : {} });
+    let res = null;
     let outcome;
-    if (!res.ok) {
-      outcome = res;
-    } else if (res.json.state === 'cant-read') {
-      outcome = { ok: false, reason: res.json.reason || 'github', retryAfter: res.json.retryAfter, words: res.json.words };
-    } else {
-      outcome = applyPoll(st, res.json);
-      if (st.tree) {
-        const blobs = await blobPhase(st);
-        if (outcome.ok || !blobs.ok) outcome = blobs.ok ? outcome : blobs;
+    try {
+      res = await call('/api/poll', { project: st.project.name, head: st.head, etags: st.head ? etags : {} });
+      if (!res.ok) {
+        outcome = res;
+      } else if (res.json.state === 'cant-read') {
+        outcome = { ok: false, reason: res.json.reason || 'github', retryAfter: res.json.retryAfter, words: res.json.words };
+      } else {
+        outcome = applyPoll(st, res.json);
+        if (st.tree) {
+          const blobs = await blobPhase(st);
+          if (outcome.ok || !blobs.ok) outcome = blobs.ok ? outcome : blobs;
+        }
       }
+    } catch (err) {
+      // Record content the page's parsers didn't anticipate must not end this project's polling:
+      // the project can't be read this cycle, and the next poll is still scheduled.
+      outcome = { ok: false, reason: 'page', words: `${REASON_WORDS.page} (${errorText(err)})` };
     }
     // A 403 from the function means the Access session is gone; any project's says so.
-    st.signedOut = res.reason === 'signed-out';
+    st.signedOut = Boolean(res && res.reason === 'signed-out');
     desk.signedOut = [...states.values()].some((x) => x.signedOut);
     if (outcome.ok) {
       st.lastSuccessAt = clock.now();
@@ -252,8 +270,15 @@ export function createDesk(opts) {
       fail(st, outcome.reason, words);
     }
     st.pending = false;
-    onChange();
-    schedule(st);
+    // A throw while the page renders (or builds the model it renders) must never stop polling
+    // (review N4): the next poll is scheduled whatever onChange does.
+    try {
+      onChange();
+    } catch {
+      // The page shows its own error state (page.js); here the only job is to keep polling.
+    } finally {
+      schedule(st);
+    }
   }
 
   function schedule(st) {
@@ -289,7 +314,11 @@ export function createDesk(opts) {
         st.timer = null;
       }
     }
-    onChange();
+    try {
+      onChange();
+    } catch {
+      // As in cycle: a failed render never changes what is polled.
+    }
   };
   desk.model = (name) => {
     const st = states.get(name);
@@ -303,30 +332,59 @@ export function createDesk(opts) {
   return desk;
 }
 
+export const CALL_TIMEOUT_MS = 30_000;
+const TIMED_OUT = Symbol('timed out');
+
 /**
  * The page's call to the desk function (J6). Classifies what came back:
  * 403 → signed-out (the Access JWT is invalid); 5xx or a non-JSON answer → cloudflare (with the
- * Cloudflare error code when the page shows one); a failed fetch → network.
+ * Cloudflare error code when the page shows one); a failed fetch → network. A call that hasn't
+ * answered in full within `timeoutMs` (30 s) is aborted and counts as network too (review N5), so
+ * a hung request can never hold a project's cycle open.
  */
-export async function callFunction(path, body, fetchImpl = fetch) {
-  let res;
+export async function callFunction(path, body, fetchImpl = fetch, { timeoutMs = CALL_TIMEOUT_MS } = {}) {
+  const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+  let timer = null;
+  const timeout = new Promise((resolve) => {
+    timer = setTimeout(() => {
+      if (ctl) ctl.abort();
+      resolve(TIMED_OUT);
+    }, timeoutMs);
+  });
+  const timedOut = (status) => ({ ok: false, status, reason: 'network',
+    words: `${REASON_WORDS.network} (no answer within ${Math.round(timeoutMs / 1000)} s)` });
   try {
-    res = await fetchImpl(path, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-      credentials: 'same-origin', redirect: 'manual', cache: 'no-store',
-    });
-  } catch {
-    return { ok: false, status: 0, reason: 'network' };
+    return await classify();
+  } finally {
+    clearTimeout(timer);
   }
-  if (res.type === 'opaqueredirect' || res.status === 403 || (res.status >= 300 && res.status < 400)) {
-    return { ok: false, status: res.status, reason: 'signed-out' };
+
+  async function classify() {
+    let res;
+    try {
+      res = await Promise.race([fetchImpl(path, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+        credentials: 'same-origin', redirect: 'manual', cache: 'no-store', signal: ctl ? ctl.signal : undefined,
+      }), timeout]);
+    } catch {
+      return ctl && ctl.signal.aborted ? timedOut(0) : { ok: false, status: 0, reason: 'network' };
+    }
+    if (res === TIMED_OUT) return timedOut(0);
+    if (res.type === 'opaqueredirect' || res.status === 403 || (res.status >= 300 && res.status < 400)) {
+      return { ok: false, status: res.status, reason: 'signed-out' };
+    }
+    let text = '';
+    try {
+      text = await Promise.race([res.text(), timeout]);
+    } catch {
+      return ctl && ctl.signal.aborted ? timedOut(res.status) : { ok: false, status: res.status, reason: 'network' };
+    }
+    if (text === TIMED_OUT) return timedOut(res.status);
+    return finish(res, text);
   }
-  let text = '';
-  try {
-    text = await res.text();
-  } catch {
-    return { ok: false, status: res.status, reason: 'network' };
-  }
+}
+
+function finish(res, text) {
   const code = /error(?: code)?:?\s*(1[0-9]{3})\b/i.exec(text);
   if (!res.ok) {
     return { ok: false, status: res.status, reason: 'cloudflare', cfError: code ? Number(code[1]) : null,

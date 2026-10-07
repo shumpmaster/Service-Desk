@@ -1,0 +1,20 @@
+kind = "research"
+question = """
+From published design guidance only: what makes a phone-first status dashboard, used by one person to oversee several automated projects, easy to read at a glance and quick to act on?
+
+Cover:
+- showing each item's stage or progress, such as a stage track, a stepper or a progress bar, and when each form reads best on a phone;
+- showing status with colour without relying on colour alone (colour-blind readers, bright sunlight, dark mode), with contrast minimums;
+- how much belongs on one phone screen, and how to order and group items so the most urgent comes first;
+- making a "needs you" signal hard to miss without becoming noise, including badges, counts and alert fatigue;
+- showing a timeline of recent and upcoming events on a narrow screen;
+- showing quantities such as usage against a limit or how full a context window is, using gauges, bars or numbers, and when each misleads;
+- touch-target sizes and one-handed use;
+- showing "no news", stale data and errors honestly, so that "quiet" can be trusted.
+
+Use only public sources read through web search and web fetch: platform guidelines (Apple Human Interface Guidelines, Material Design), accessibility standards (WCAG 2.2 and its understanding documents), and published usability research (e.g. Nielsen Norman Group, Baymard, academic HCI papers). Do not inspect this session's own environment, configuration, files outside the brief, or any credential. Where the guidance does not say, write "not documented" rather than guessing. Report a fact as confirmed only where two independent sources state it; list facts from one source only, or from none, separately as "single source" or "not documented". Make no recommendation of a specific product or library.
+
+The decision it serves: the Service Desk's design milestone (between S-001's M2 and M3), where the owner chooses a visual design through mockups and a sandbox view (decisions/questions/P-001-design-step.md).
+
+Depth: 3, a graded memo. Topics: design, dashboards, accessibility, mobile.
+"""

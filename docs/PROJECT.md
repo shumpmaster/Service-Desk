@@ -15,7 +15,9 @@ returns. Not yet approved.*
 
 **In (the first version people use):**
 - **Universe screen:** one box per project with its state, headline, sprint and main-branch health,
-  worst first. At least as correct as the Operations-Hub page it replaces.
+  worst first. Its correctness is judged by S-001's own criteria (AC1 to AC7), not by comparison
+  with the Operations-Hub page: the owner ruled out a side-by-side period because that page is no
+  longer in use (decisions/questions/P-001-build-path.md, answer 4).
 - **Decision cards and owner questions:** each readable in full, with its options, and answerable
   from the desk: the desk prepares the answer and the owner commits it on GitHub, so it lands in
   the project repository as the owner's own record (§8 "act").
@@ -165,6 +167,7 @@ V1: Missed decisions: items waiting on the owner in a connected project that the
 V2: False alarms: items the desk flagged that did not need the owner, at most 1 a week over the first 14 days after launch, 2026-11-25 (14 days after V4's date; moves with it)
 V3: Owner upkeep: the owner's time on the desk itself (tokens, settings, adding repositories), at most 30 minutes a week after launch, 2026-11-25 (14 days after V4's date; moves with it)
 V4: Replacement: the desk serves the Operations-Hub address and the old repository is archived, by 2026-11-11
+V5: Owner response time: the median time from a card appearing in a connected project to its answer being committed, counting only 07:00 to 22:00 Monday to Friday (America/Chicago), with a card still open at the window's end counted at its wait so far, tracked and shown on the desk, under 4 hours, over the first 14 days after launch, 2026-11-25 (14 days after V4's date; moves with it)
 
 V4's date is proposed as 2026-11-11, the Chief of Staff's estimate with D7 (E: about two weeks for a model change's spec, build, review and owner approval, then
 its adoption here). The owner sets the date on the

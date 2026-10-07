@@ -1,7 +1,7 @@
 // Cloudflare Access check for the desk function (spec S-001, J8; AC13).
 // Every request must carry a `Cf-Access-Jwt-Assertion` that is signed by one of the team's
 // public keys (RS256), unexpired, for one of the audience tags in ACCESS_AUD, and for the
-// owner's email. There is no other path: no test-only exception, no service tokens.
+// owner's email, issued by the team (`iss` is https://<ACCESS_TEAM_DOMAIN>). There is no other path: no test-only exception, no service tokens.
 //
 // Settings (Pages environment variables, set by the owner): OWNER_EMAIL, ACCESS_TEAM_DOMAIN (a
 // bare host such as team.cloudflareaccess.com) and ACCESS_AUD (one or more tags, comma-separated).
@@ -84,6 +84,8 @@ export async function checkAccess(request, env, { fetch: fetchImpl = fetch, now 
   if (typeof payload.nbf === 'number' && payload.nbf > nowSec + 60) return fail('not yet valid');
   const aud = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
   if (!aud.some((a) => typeof a === 'string' && settings.auds.includes(a))) return fail('wrong audience');
+  // The issuer is the team itself (review N9): a token another Access team signed never passes.
+  if (payload.iss !== `https://${settings.team}`) return fail('wrong issuer');
   if (typeof payload.email !== 'string' || payload.email.trim().toLowerCase() !== settings.email) {
     return fail('wrong email');
   }

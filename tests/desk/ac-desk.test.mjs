@@ -92,11 +92,12 @@ test('AC2: an open non-draft PR into the default branch is flagged with its titl
   s.desk.start();
   await s.clock.runUntil(START + 1000);
   s.sd.pulls.push(pr(40, 'Desk M1', { login: 'shumpmaster' }), pr(41, 'Draft work', { draft: true }),
-    pr(42, 'Into a branch', { base: 'build/x' }), pr(43, 'Item merge', { head: 'item/P-002' }), pr(44, 'Someone else', { login: 'other' }));
+    pr(42, 'Into a branch', { base: 'build/x' }), pr(43, 'Item merge', { head: 'item/P-002' }), pr(44, 'Someone else', { login: 'other' }),
+    pr(45, 'Fork named like an item', { head: 'item/x', headRepo: 'outsider/Service-Desk', login: 'outsider' }));
   await s.clock.runUntil(START + POLL_MS + 1000);
   const m = s.desk.model('Service-Desk');
   const flagged = m.flagged.filter((f) => f.kind === 'pr');
-  assert.deepEqual(flagged.map((f) => f.title), ['PR #40: Desk M1', 'PR #44: Someone else']);
+  assert.deepEqual(flagged.map((f) => f.title), ['PR #40: Desk M1', 'PR #44: Someone else', 'PR #45: Fork named like an item']);
   assert.equal(flagged[0].link, 'https://github.com/shumpmaster/Service-Desk/pull/40');
   assert.match(flagged[0].words, /^yours/);
   assert.match(flagged[1].words, /^opened by other/);
@@ -104,6 +105,7 @@ test('AC2: an open non-draft PR into the default branch is flagged with its titl
   // Merged, closed or turned back into a draft: no longer flagged at the next poll.
   s.sd.pulls.splice(0, 1);
   s.sd.pulls.find((p) => p.number === 44).draft = true;
+  s.sd.pulls.splice(s.sd.pulls.findIndex((p) => p.number === 45), 1);
   await s.clock.runUntil(s.clock.now() + POLL_MS + 1000);
   assert.equal(s.desk.model('Service-Desk').flagged.length, 0);
   // A draft marked ready is flagged again.

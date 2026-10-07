@@ -55,6 +55,40 @@ test('AC13/J8: no JWT, expired, wrong audience, wrong signature, another email o
   }
 });
 
+test('J8 (review N1): a token not valid until two minutes from now (nbf = now + 120) → 403, no GitHub call; nbf within the 60 s skew passes', async () => {
+  _resetKeyCache();
+  const nowSec = Math.floor(NOW / 1000);
+  const body = { project: 'Service-Desk', head: null, etags: {} };
+  const f = fakeFetch(steadyRoutes());
+  const res = await call('poll', request('/api/poll', { jwt: await signJwt(key, goodClaims({ nbf: nowSec + 120 })), body }), f);
+  assert.equal(res.status, 403);
+  assert.equal(f.calls.length, 0, 'refused on the claims, before any key fetch or GitHub call');
+  const g = fakeFetch(steadyRoutes());
+  const ok = await call('poll', request('/api/poll', { jwt: await signJwt(key, goodClaims({ nbf: nowSec + 30 })), body }), g);
+  assert.equal(ok.status, 200);
+});
+
+test('J8 (review N9): iss must equal https:// + ACCESS_TEAM_DOMAIN; another team, http, a missing iss → 403', async () => {
+  _resetKeyCache();
+  const body = { project: 'Service-Desk', head: null, etags: {} };
+  const bad = {
+    'another team': 'https://other.cloudflareaccess.com',
+    'http scheme': 'http://team.cloudflareaccess.com',
+    'trailing slash': 'https://team.cloudflareaccess.com/',
+    'bare host': 'team.cloudflareaccess.com',
+    missing: undefined,
+  };
+  for (const [name, iss] of Object.entries(bad)) {
+    const f = fakeFetch(steadyRoutes());
+    const res = await call('poll', request('/api/poll', { jwt: await signJwt(key, goodClaims({ iss })), body }), f);
+    assert.equal(res.status, 403, name);
+    assert.equal(githubCalls(f).length, 0, `${name}: no GitHub call`);
+  }
+  const f = fakeFetch(steadyRoutes());
+  const ok = await call('poll', request('/api/poll', { jwt: await signJwt(key, goodClaims({ iss: 'https://team.cloudflareaccess.com' })), body }), f);
+  assert.equal(ok.status, 200);
+});
+
 test('AC13/J8: any method other than POST is refused too, and without a JWT it is 403 first', async () => {
   _resetKeyCache();
   const jwt = await signJwt(key, goodClaims());

@@ -1,0 +1,11 @@
+{ "ownerLogin": "shumpmaster",
+  "ownerTimeZone": "America/Chicago",
+  "v5Clock": { "days": ["Mon", "Tue", "Wed", "Thu", "Fri"], "from": "07:00", "to": "22:00" },
+  "linkCap": 6000,
+  "projects": [
+    { "name": "Service-Desk", "repo": "shumpmaster/Service-Desk", "defaultBranch": "main",
+      "model": "v3", "planning": true,
+      "webCommitsToDefault": true, "contentPrefill": true, "contentParam": "value" },
+    { "name": "Personal-Org-Operating-Model", "repo": "shumpmaster/Personal-Org-Operating-Model",
+      "defaultBranch": "main", "model": "v2.5", "planning": false,
+      "webCommitsToDefault": true, "contentPrefill": true, "contentParam": "value" } ] }

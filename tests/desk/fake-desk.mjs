@@ -22,9 +22,11 @@ export function repo(files = {}, pulls = [], runs = []) {
   return r;
 }
 
-export function pr(number, title, { draft = false, base = 'main', head = `feature-${number}`, login = 'shumpmaster' } = {}) {
+export function pr(number, title, { draft = false, base = 'main', head = `feature-${number}`, login = 'shumpmaster',
+  headRepo = 'shumpmaster/Service-Desk' } = {}) {
   return { number, title, html_url: `https://github.com/shumpmaster/Service-Desk/pull/${number}`, draft,
-    base: { ref: base }, head: { ref: head }, user: { login }, created_at: '2026-10-06T12:00:00Z', state: 'open' };
+    base: { ref: base }, head: { ref: head, repo: headRepo == null ? null : { full_name: headRepo } }, user: { login },
+    created_at: '2026-10-06T12:00:00Z', state: 'open' };
 }
 
 /**
@@ -77,5 +79,10 @@ export function fakeServer(repos, config, clock) {
   }
   return { call, calls };
 }
+
+// The PR #40 review's example (N4): a dispatch-log line whose `item` is an object with
+// non-callable toString and valueOf. It parses as JSON and matches the dispatch shape; turning it
+// into words throws while the model is built.
+export const BAD_LOG_LINE = '{"action":"dispatch","time":"2026-10-06T18:30:00Z","item":{"toString":1,"valueOf":1},"role":"builder","stage":5}';
 
 export { pageUrl };

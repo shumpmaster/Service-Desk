@@ -39,6 +39,20 @@ test('AC11/AC12: record text is data, never markup — it is escaped, and only h
   assert.equal(escapeHtml(`"'&<>`), '&quot;&#39;&amp;&lt;&gt;');
 });
 
+test('AC11/AC12 (review N2): a markdown link to a non-http(s) scheme parses as a link and still produces no anchor or href', () => {
+  // These have no parenthesis inside the target, so the link pattern matches them and the href
+  // filter is what decides.
+  for (const target of ['javascript:void0', 'JavaScript:void0', 'data:text/html,x', 'vbscript:x', '//evil.example/x', 'mailto:a@b.c']) {
+    const html = renderMarkdown(`see [x](${target}) here`);
+    assert.ok(!/<a\b/i.test(html), `${target}: ${html}`);
+    assert.ok(!/href/i.test(html), `${target}: ${html}`);
+    // The link was parsed (text then target in brackets), not left as raw markdown.
+    assert.ok(!html.includes('[x]('), `${target} parsed as a link: ${html}`);
+  }
+  // Control: the same form with https does become an anchor.
+  assert.match(renderMarkdown('[x](https://github.com/a)'), /<a href="https:\/\/github\.com\/a"/);
+});
+
 test('AC11/AC12: the page wraps long words and preformatted text, so nothing needs sideways scrolling at 360 px', () => {
   const css = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
   assert.match(css, /overflow-wrap:\s*anywhere/);

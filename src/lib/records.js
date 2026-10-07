@@ -460,6 +460,9 @@ export function parsePulls(pages) {
         draft: p.draft === true,
         base: p.base && p.base.ref,
         head: p.head && p.head.ref,
+        // The head's repository (null for a fork that was deleted). It comes in the same list
+        // response J1 already reads, so it costs no request.
+        headRepo: (p.head && p.head.repo && typeof p.head.repo.full_name === 'string') ? p.head.repo.full_name : null,
         login: p.user && p.user.login,
         createdAt: p.created_at,
       });
@@ -468,15 +471,20 @@ export function parsePulls(pages) {
   return { pulls, notes };
 }
 
+export const ITEM_BRANCH_RE = /^item\/[A-Za-z0-9._-]+$/;
+
 /**
  * Whether a PR needs the owner (Terms, AC2): open (the list holds only open PRs), not a draft,
- * based on the default branch, and not an `item/` branch in a v3 project.
+ * based on the default branch, and not an Orchestrator item branch in a v3 project. An item
+ * branch is `item/<id>` (one segment of letters, digits, `.`, `_`, `-`) whose head repository is
+ * the project's own: a fork's PR from a branch of that name is flagged like any other (review N7).
  * Returns { flagged: boolean, why: string }.
  */
 export function classifyPull(pr, project) {
   if (pr.draft) return { flagged: false, why: 'draft' };
   if (pr.base !== project.defaultBranch) return { flagged: false, why: `into ${pr.base}` };
-  if (project.model === 'v3' && typeof pr.head === 'string' && pr.head.startsWith('item/')) {
+  if (project.model === 'v3' && typeof pr.head === 'string' && ITEM_BRANCH_RE.test(pr.head)
+    && typeof pr.headRepo === 'string' && pr.headRepo.toLowerCase() === String(project.repo).toLowerCase()) {
     return { flagged: false, why: 'item branch (the Orchestrator merges it)' };
   }
   return { flagged: true, why: 'waiting on your review or merge' };

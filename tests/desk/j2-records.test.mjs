@@ -236,4 +236,33 @@ test('J2 pull requests: the fields the desk reads, from the recorded PR pages', 
     assert.ok(p.createdAt);
   }
   assert.equal(classifyPull(pulls[0], SD).flagged, true);
+  assert.equal(pulls[0].headRepo, 'shumpmaster/Service-Desk', 'the head repository comes from the same list response');
+});
+
+test('J2/AC2 pull requests (review N7): only item/<id> from the project\'s own repository is exempt; a fork\'s item/x is flagged', () => {
+  const raw = (head, repo, extra = {}) => ({ number: 7, title: 't', html_url: 'https://github.com/shumpmaster/Service-Desk/pull/7', draft: false,
+    base: { ref: 'main' }, head: { ref: head, repo: repo === undefined ? undefined : repo }, user: { login: 'x' }, created_at: '2026-10-06T12:00:00Z', ...extra });
+  const one = (head, repo) => parsePulls([JSON.stringify([raw(head, repo)])]).pulls[0];
+  // Same repository, a well-formed item branch: activity (the Orchestrator merges it).
+  assert.equal(classifyPull(one('item/P-002', { full_name: 'shumpmaster/Service-Desk' }), SD).flagged, false);
+  assert.equal(classifyPull(one('item/S-1.2_a', { full_name: 'ShumpMaster/service-desk' }), SD).flagged, false, 'GitHub names compare without case');
+  // A fork's PR from item/x, or a PR whose head repository is unknown: flagged.
+  const flagged = [
+    ['item/x', { full_name: 'outsider/Service-Desk' }],
+    ['item/P-002', null],
+    ['item/P-002', undefined],
+    // Not the item/<id> form, even from the same repository.
+    ['item/', { full_name: 'shumpmaster/Service-Desk' }],
+    ['item/a/b', { full_name: 'shumpmaster/Service-Desk' }],
+    ['item/P 2', { full_name: 'shumpmaster/Service-Desk' }],
+    ['items/P-002', { full_name: 'shumpmaster/Service-Desk' }],
+    ['xitem/P-002', { full_name: 'shumpmaster/Service-Desk' }],
+  ];
+  for (const [head, repo] of flagged) {
+    const c = classifyPull(one(head, repo), SD);
+    assert.equal(c.flagged, true, `${head} from ${JSON.stringify(repo)}`);
+  }
+  // v2.5 projects have no item branches: flagged even from the same repository.
+  const poomPr = parsePulls([JSON.stringify([raw('item/P-002', { full_name: POOM.repo })])]).pulls[0];
+  assert.equal(classifyPull(poomPr, POOM).flagged, true);
 });

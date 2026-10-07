@@ -82,18 +82,19 @@ function makeGetter(token, fetchImpl, counter) {
 }
 
 class Failure extends Error {
-  constructor(reason, retryAfter = null, words = null) {
+  constructor(reason, retryAfter = null, words = null, status = null) {
     super(reason);
     this.reason = reason;
     this.retryAfter = retryAfter;
     this.words = words;
+    this.status = status; // GitHub's HTTP status, when GitHub answered
   }
 }
 
 function failFrom(res, nowMs) {
   if (res == null) return new Failure('github');
   const f = failureOf(res, nowMs);
-  return new Failure(f.reason, f.retryAfter);
+  return new Failure(f.reason, f.retryAfter, null, res.status);
 }
 
 /**
@@ -202,8 +203,11 @@ export async function pollProject(req, deps) {
     try {
       cl = await readList(get, u.checks(headSha), etagsIn, nowMs);
     } catch (f) {
-      if (f instanceof Failure && f.reason === 'token') {
-        cl = null; // 403 on check-runs only: CI can't be read; the project stays readable.
+      // J1: a 403 (without rate-limit headers) on check-runs only means the token lacks a checks
+      // permission: CI can't be read, and the project stays readable. A 401 is the token itself
+      // failing, as on every other request: the project can't be read, reason token.
+      if (f instanceof Failure && f.reason === 'token' && f.status === 403) {
+        cl = null;
       } else throw f;
     }
     if (cl) {

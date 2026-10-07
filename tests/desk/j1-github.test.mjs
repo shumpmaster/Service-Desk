@@ -140,6 +140,22 @@ test('J1 poll: a 403 on check runs only leaves the project readable, CI "can\'t 
   assert.equal(r.tree, tree.body);
 });
 
+test('J1 poll (review N8): a 401 on check runs is the token failing — cant-read, reason token — not "can\'t read checks"', async () => {
+  const routes = fullRoutes();
+  routes.unshift((url) => (url === U.checks(HEAD) ? { status: 401, body: '{"message":"Bad credentials"}' } : undefined));
+  const f = fakeFetch(routes);
+  const r = await pollProject({ project: SD, head: null, etags: {} }, deps(f));
+  assert.equal(r.state, 'cant-read');
+  assert.equal(r.reason, 'token');
+  assert.ok(!f.calls.some((c) => c.url === U.tree(TREE)), 'nothing more is read after the token fails');
+  // A rate-limited 403 on check runs is still a rate limit, not "can't read checks".
+  const g = fakeFetch([(url) => (url === U.checks(HEAD) ? { status: 403, headers: { 'X-RateLimit-Remaining': '0', 'Retry-After': '30' }, body: '{}' } : undefined), ...fullRoutes()]);
+  const rl = await pollProject({ project: SD, head: null, etags: {} }, deps(g));
+  assert.equal(rl.state, 'cant-read');
+  assert.equal(rl.reason, 'rate-limit');
+  assert.equal(rl.retryAfter, 30);
+});
+
 test('J1 blob call: raw media type, the JSON form decoded from base64, and both give the same text', async () => {
   const raw = recorded('blob-raw-stop-6');
   const json = recorded('blob-json-stop-6');

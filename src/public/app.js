@@ -10,9 +10,9 @@ import { createStore } from './lib/store.js';
 import { safeBox, orderBoxes, boxStateText, screenState } from './lib/universe.js';
 import { renderMarkdown } from './lib/markdown.js';
 import { whenText, hhmm, dateTimeText, durationText, hoursMinutes } from './lib/timefmt.js';
-import { defaultLabel } from './lib/records.js';
+import { defaultLabel, parseCardPath } from './lib/records.js';
 import { blobLink, exp004Links, cappedNewFileLink, answerPlan } from './lib/links.js';
-import { usageView, v5Line } from './lib/asked.js';
+import { usageView, v5Footer, notReadText, contextText } from './lib/asked.js';
 import { createRun, summarize, resultMarkdown, rawTable } from './lib/exp001.js';
 import { routeParts, guardRender, boot, SIGNED_OUT_STATE } from './lib/page.js';
 import { errorText } from './lib/scheduler.js';
@@ -234,27 +234,64 @@ function planNodes(plan) {
 }
 
 /** The answer box. choices: [{ value, text, recommended }]. */
+const draftKey = (projectName, target) => `${projectName}:${target.kind}:${target.answerPath || target.name}`;
+
 function answerBox(project, target, choices) {
-  const key = `${project.name}:${target.kind}:${target.answerPath || target.name}`;
+  const key = draftKey(project.name, target);
   const draft = drafts.get(key) || { choice: null, note: '' };
   drafts.set(key, draft);
   const result = h('div', { class: 'answer-result' });
-  const update = () => result.replaceChildren(...planNodes(answerPlan(project, CONFIG.linkCap, target, draft.choice, draft.note)));
-  update();
+  // The listeners go through the draft, so a note box kept across redraws (N5) updates the latest
+  // result area with the latest target (an answer that arrived meanwhile included).
+  draft.target = target;
+  draft.update = () => result.replaceChildren(...planNodes(answerPlan(project, CONFIG.linkCap, draft.target, draft.choice, draft.note)));
+  draft.update();
   const first = answerPlan(project, CONFIG.linkCap, target, null, '');
   if (first.offer === 'none') return h('div', { class: 'answer' }, h('h3', {}, 'Answer'), result);
   const radios = choices.map((c) => {
     const input = h('input', { type: 'radio', name: `choice-${key}`, value: c.value });
     if (draft.choice === c.value) input.checked = true;
-    input.addEventListener('change', () => { draft.choice = c.value; update(); });
+    input.addEventListener('change', () => { draft.choice = c.value; draft.update(); });
     return h('label', { class: 'choice' }, input, ' ', h('code', {}, c.value), c.text ? ` ${c.text}` : '',
       c.recommended ? h('span', { class: 'tag' }, 'recommended') : null);
   });
-  const note = h('textarea', { 'data-keep': '1', rows: '3', placeholder: 'Optional note' });
+  const note = h('textarea', { 'data-keep': key, rows: '3', placeholder: 'Optional note' });
   note.value = draft.note;
-  note.addEventListener('input', () => { draft.note = note.value; update(); });
+  note.addEventListener('input', () => { draft.note = note.value; draft.update(); });
   return h('div', { class: 'answer' }, h('h3', {}, 'Answer'), h('div', { class: 'choices' }, radios),
     h('label', {}, 'Note (optional)', note), result);
+}
+
+/**
+ * N5: while the owner types a note, the view isn't rebuilt (the note keeps its text and caret),
+ * but the answer box still follows the records: its target is rebuilt from the current model, so
+ * a link becomes "already answered: <verdict>" as soon as the answer is on main.
+ */
+function refreshAnswer(desk, name, kind, rest) {
+  const project = projectByName(name);
+  if (!project || (kind !== 'card' && kind !== 'q')) return;
+  const m = desk.model(name);
+  let target;
+  if (kind === 'card') {
+    const path = rest.join('/');
+    const card = parseCardPath(path);
+    if (!card) return;
+    const f = m.flagged.find((x) => x.kind === 'card' && x.card.path === path);
+    const done = m.answeredCards && m.answeredCards[path];
+    target = { kind: 'card', answerPath: card.answerPath, item: card.item,
+      options: f && f.card.parsed ? f.card.parsed.options.map((o) => o.word) : [], answered: f ? null : (done || { verdict: null }) };
+  } else {
+    const qname = rest.join('/');
+    const f = m.flagged.find((x) => x.kind === 'question' && x.question.name === qname);
+    const done = m.rulings && m.rulings[qname];
+    target = { kind: 'question', name: qname, options: f && f.question.parsed ? f.question.parsed.options.map((o) => o.letter) : [],
+      answered: f ? null : (done ? { verdict: done.ruling } : { verdict: null }) };
+  }
+  const d = drafts.get(draftKey(project.name, target));
+  if (d && d.update) {
+    d.target = target;
+    d.update();
+  }
 }
 
 const backTo = (name) => h('p', {}, h('a', { href: href(name) }, `← ${name}`));
@@ -381,9 +418,10 @@ function askedRow(r) {
   else if (r.state === 'recording') answered = 'recording…';
   else if (r.state === 'withdrawn') answered = 'withdrawn';
   else answered = 'open';
-  const wait = r.state === 'open' ? `${waitText(r.waitMs)} so far` : waitText(r.waitMs);
+  let wait = r.state === 'open' ? `${waitText(r.waitMs)} so far` : waitText(r.waitMs);
+  if (r.raisedLoading) wait = 'loading…'; // N6: its history read hasn't returned yet
   return h('li', {}, h('strong', {}, r.label),
-    h('div', { class: 'muted' }, `raised ${r.raisedAt != null ? when(r.raisedAt) : 'not recorded'} · answered ${answered} · wait ${wait}`
+    h('div', { class: 'muted' }, `raised ${r.raisedAt != null ? when(r.raisedAt) : r.raisedLoading ? 'loading…' : 'not recorded'} · answered ${answered} · wait ${wait}`
       + (r.state === 'answered' ? ` · ${proxyText(r.proxy)}` : '')
       + (r.word ? ` · ${r.word}` : '') + (r.ruling ? ` · Ruling: ${r.ruling}` : '')));
 }
@@ -391,18 +429,34 @@ function askedRow(r) {
 function renderAsked(desk, name) {
   return guardedView(desk, name, (box) => {
     const t = box.model.timeAsked;
+    // B1: until the project is read (its log months included) nothing is counted as none.
+    const ready = box.read.read === 'ok' && t.ready;
+    const unread = notReadText([name]);
     const out = [backTo(name), h('h2', {}, `Time asked of you — ${name}`)];
     if (t.cards) {
-      out.push(h('p', { class: 'state' }, t.summary.count
-        ? `Last 14 days: ${t.summary.count} card${t.summary.count === 1 ? '' : 's'}, median wait ${durationText(t.summary.medianMs)} (open cards with their wait so far)`
-        : 'Last 14 days: no cards'));
-      out.push(h('h3', {}, 'Cards, last 30 days'),
-        t.cards.length ? h('ul', { class: 'plain' }, t.cards.map(askedRow)) : h('p', { class: 'muted' }, 'No cards raised in the last 30 days.'));
+      let summary;
+      if (!ready) summary = `Last 14 days: ${unread}`;
+      else if (t.summary.count) summary = `Last 14 days: ${t.summary.count} card${t.summary.count === 1 ? '' : 's'}, median wait ${durationText(t.summary.medianMs)} (open cards with their wait so far)`;
+      else summary = 'Last 14 days: no cards';
+      out.push(h('p', { class: 'state' }, summary));
+      let list;
+      if (!ready) list = h('p', { class: 'muted' }, `Cards: ${unread}.`);
+      else if (t.cards.length) list = h('ul', { class: 'plain' }, t.cards.map(askedRow));
+      else list = h('p', { class: 'muted' }, 'No cards raised in the last 30 days.');
+      out.push(h('h3', {}, 'Cards, last 30 days'), list);
     } else {
       out.push(h('p', {}, t.cardsText));
     }
-    out.push(h('h3', {}, 'Owner questions, last 30 days'),
-      t.questions.length ? h('ul', { class: 'plain' }, t.questions.map(askedRow)) : h('p', { class: 'muted' }, 'No owner questions in the last 30 days.'));
+    let qlist;
+    if (!ready) qlist = [h('p', { class: 'muted' }, `Owner questions: ${unread}.`)];
+    else {
+      qlist = [t.questions.length ? h('ul', { class: 'plain' }, t.questions.map(askedRow))
+        : h('p', { class: 'muted' }, t.questionsPending ? 'None listed yet.' : 'No owner questions in the last 30 days.')];
+      if (t.questionsPending) {
+        qlist.push(h('p', { class: 'muted' }, `Loading: ${t.questionsPending} answered question${t.questionsPending === 1 ? '' : 's'} not checked yet.`));
+      }
+    }
+    out.push(h('h3', {}, 'Owner questions, last 30 days'), ...qlist);
     if (t.answeredText) out.push(h('p', { class: 'muted' }, t.answeredText));
     return h('section', {}, out);
   });
@@ -416,11 +470,10 @@ const num = (v) => (typeof v === 'number' ? v.toLocaleString('en-US') : v);
 function usageNode(s) {
   const u = usageView(s);
   if (!u.recorded) return h('div', { class: 'muted' }, 'Usage: not recorded');
-  const pct = typeof u.context_peak_percent === 'number' ? `${u.context_peak_percent}%` : u.context_peak_percent;
   return h('div', { class: 'muted' },
     `Tokens: input ${num(u.input_tokens)}, output ${num(u.output_tokens)}, cache read ${num(u.cache_read_tokens)}, cache write ${num(u.cache_write_tokens)} · turns ${num(u.turns)}`,
     h('br'),
-    `Context peak: ${num(u.context_peak_tokens)} tokens, ${pct} of a ${num(u.context_window_tokens)}-token window (derived from per-turn usage)`);
+    contextText(u));
 }
 
 function sessionNode(s) {
@@ -494,9 +547,16 @@ function startDesk() {
     stateEl.className = s.quiet ? 'quiet' : desk.signedOut ? 'signed-out' : bx.some((b) => b.flaggedCount) ? 'flagged'
       : bx.some((b) => b.read.read === 'cant-read' || b.drawError) ? 'cant-read' : '';
     document.title = s.quiet ? 'Service Desk — quiet' : `Service Desk — ${s.text}`;
-    // A note being typed is never redrawn under the owner (AC16, AC19).
+    // A note being typed is never redrawn under the owner (AC16, AC19); its answer box still
+    // follows the records (N5).
     const active = document.activeElement;
-    if (!(active && active.dataset && active.dataset.keep && view.contains && view.contains(active))) {
+    if (active && active.dataset && active.dataset.keep && view.contains && view.contains(active)) {
+      try {
+        refreshAnswer(desk, name, kind, rest);
+      } catch {
+        // the box keeps what it showed; the next render tries again
+      }
+    } else {
       view.replaceChildren(node);
       window.scrollTo(0, y);
     }
@@ -506,8 +566,11 @@ function startDesk() {
   function footer(bx) {
     let line;
     try {
-      const waits = bx.filter((b) => b.model && b.model.model === 'v3').flatMap((b) => b.model.v5Waits || []);
-      line = v5Line(waits, hoursMinutes);
+      // B1: until every v3 project has been read, the line says which ones it waits for.
+      line = v5Footer(CONFIG.projects.map((p) => {
+        const b = bx.find((x) => x.name === p.name);
+        return { name: p.name, v3: p.model === 'v3', readOk: Boolean(b && b.read && b.read.read === 'ok'), model: b ? b.model : null };
+      }), hoursMinutes);
     } catch (err) {
       line = `Median answer time: can't show it (${errorText(err)})`;
     }

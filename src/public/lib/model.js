@@ -144,7 +144,8 @@ function mergeCardState(card, rec, records, merges, compare) {
  * it fetches"). `records` maps path → parsed record and ctx.history path → { oldest, newest }, for
  * the passes that depend on what was read first. ctx.head is the default-branch head the page last
  * read; ctx.compare maps an item tip → 'merged' (final) or its answer at that head.
- * Returns { blobs: [{ path, sha, kind }], history: [path], compare: [{ base, head }] }.
+ * Returns { blobs: [{ path, sha, kind }], history: [path], compare: [{ base, head }], optional:
+ * { blobs, history } } — the optional reads (AC20's rulings) don't count towards "read successfully".
  */
 export function neededReads(project, tree, records, now, ctx = {}) {
   const history = ctx.history || new Map();
@@ -152,11 +153,14 @@ export function neededReads(project, tree, records, now, ctx = {}) {
   const want = [];
   const hist = [];
   const compare = [];
-  const add = (path) => {
+  const optBlobs = [];
+  const optHist = [];
+  const addTo = (list, path) => {
     const e = tree.get(path);
     const kind = recordKind(path, project.model);
-    if (e && kind && !want.some((w) => w.path === path)) want.push({ path, sha: e.sha, kind });
+    if (e && kind && !list.some((w) => w.path === path)) list.push({ path, sha: e.sha, kind });
   };
+  const add = (path) => addTo(want, path);
   if (project.model === 'v3') {
     for (const path of tree.keys()) if (STATUS_RE.test(path)) add(path);
     add(ROUTING_PATH);
@@ -203,20 +207,23 @@ export function neededReads(project, tree, records, now, ctx = {}) {
     }
 
     // Rulings (AC20): each ruling's answered time; for those inside the 30 days, its question's
-    // raised time; for those whose question has a history, the ruling's `Ruling:` line.
+    // raised time; for those whose question has a history, the ruling's `Ruling:` line. These feed
+    // only the "Time asked" view, never a flag, so they are optional reads (review N1): a project
+    // is read without them, and the scheduler fetches them in what budget a cycle has left, so
+    // rulings piling up never hold a read back or make it fail. Each is read once per device.
     for (const path of tree.keys()) {
       const name = questionAnswerName(path);
       if (!name) continue;
       const h = history.get(path);
       if (!h) {
-        hist.push(path);
+        optHist.push(path);
         continue;
       }
       if (!h.oldest || now - Date.parse(h.oldest) > TIME_ASKED_DAYS * DAY_MS) continue;
       const qpath = `questions/${name}.md`;
       const qh = history.get(qpath);
-      if (!qh) hist.push(qpath);
-      else if (qh.oldest) add(path);
+      if (!qh) optHist.push(qpath);
+      else if (qh.oldest) addTo(optBlobs, path);
     }
   } else {
     add(LEDGER_PATH);
@@ -226,7 +233,7 @@ export function neededReads(project, tree, records, now, ctx = {}) {
     add(q.path);
     if (!hist.includes(q.path)) hist.push(q.path);
   }
-  return { blobs: want, history: hist, compare };
+  return { blobs: want, history: hist, compare, optional: { blobs: optBlobs, history: optHist.filter((p) => !hist.includes(p)) } };
 }
 
 function blobUrl(project, path) {
@@ -314,12 +321,18 @@ export function buildModel(input) {
   // --- Dispatch log (J9)
   const entries = [];
   let logFound = 0;
+  // B1: the log months on main have all been read. Until then the cards' times are unknown, and
+  // AC20's and AC21's figures say so instead of counting nothing.
+  let logLoaded = input.tree != null;
   for (const m of logMonths(now)) {
     const path = `dispatch-log/${m}.jsonl`;
     const rec = records.get(path);
     if (!tree.has(path)) continue;
     logFound++;
-    if (!rec) continue;
+    if (!rec) {
+      logLoaded = false;
+      continue;
+    }
     entries.push(...rec.entries);
     notes.push(...rec.notes);
   }
@@ -520,8 +533,9 @@ export function buildModel(input) {
   // --- Time asked (AC20), V5 (AC21), agents and usage (AC22, AC23)
   const nowMs = now.getTime();
   const askedCards = cardRows(entries, tree, nowMs);
+  const qr = questionRows('v3', tree, records, history, nowMs);
   const timeAsked = { cards: askedCards, cardsText: null, summary: cardSummary(askedCards, nowMs),
-    questions: questionRows('v3', tree, records, history, nowMs), answeredText: null };
+    questions: qr.rows, questionsPending: qr.pending, answeredText: null, ready: logLoaded };
   const outcomesRec = records.get(OUTCOMES_PATH);
   if (outcomesRec) notes.push(...outcomesRec.notes);
   else if (!tree.has(OUTCOMES_PATH)) notes.push(`${OUTCOMES_PATH}: not found`);
@@ -531,7 +545,7 @@ export function buildModel(input) {
   return {
     name: project.name, model: project.model, repo: project.repo, defaultBranch: project.defaultBranch,
     flagged, activity, notes, ci, headline, items, openItems, questions, pulls, otherPulls,
-    sprint: null, answeredCards, rulings, timeAsked, v5Waits: v5Waits(askedCards, nowMs, config),
+    sprint: null, answeredCards, rulings, timeAsked, logLoaded, v5Waits: v5Waits(askedCards, nowMs, config),
     sessions, timelines: timelines(sessions, askedCards, nowMs),
   };
 }
@@ -565,7 +579,8 @@ function finishV25({ project, records, tree, flagged, activity, notes, ci, quest
     flagged, activity, notes, ci, headline, items: null, openItems: null, questions, pulls, otherPulls,
     sprint, itemsText: V25_NOT_RECORDED, runningText: V25_NOT_RECORDED,
     answeredCards: {}, rulings: {}, v5Waits: [], sessions: null, timelines: [],
-    timeAsked: { cards: null, cardsText: V25_NO_CARDS, summary: null,
-      questions: questionRows('v2.5', tree, records, history, now.getTime()), answeredText: V25_ANSWERED },
+    logLoaded: true,
+    timeAsked: { cards: null, cardsText: V25_NO_CARDS, summary: null, ready: true,
+      questions: questionRows('v2.5', tree, records, history, now.getTime()).rows, questionsPending: 0, answeredText: V25_ANSWERED },
   };
 }

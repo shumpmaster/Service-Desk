@@ -276,22 +276,53 @@ async function blobText(res) {
 }
 
 /**
- * A compare answer, cut down to what the page reads (review N1 on the M2 amendment): GitHub's body
- * carries `files` with their patch text and a `commits` list, which can run to hundreds of KB.
- * Only the counts and `status` (ahead, identical, behind or diverged) are kept, so cost.bytes
- * stays small. A body that isn't a JSON object is passed on as null (a failed read).
+ * A compare answer, cut down to what the page reads (reviews N1 and N4 on the amendment): GitHub's
+ * body carries `files` with their patch text and a `commits` list, which can run to megabytes. The
+ * top-level `status`, `ahead_by`, `behind_by` and `total_commits` come before `commits` and
+ * `files`, so only the head of the text is scanned (at most COMPARE_SCAN_CHARS characters, cut at
+ * the top-level `"commits":`); the body is never parsed whole. The answer is
+ * `{"status", "ahead_by", "behind_by", "total_commits"}` as JSON, or null when no status is found
+ * there (a failed read: the merge card stays flagged).
  */
+export const COMPARE_SCAN_CHARS = 65536;
+const COMPARE_STATUS_RE = /"status"\s*:\s*"(ahead|behind|identical|diverged)"/;
+const COMPARE_COUNTS = ['ahead_by', 'behind_by', 'total_commits'];
+
 export function compareBody(text) {
-  let v;
-  try {
-    v = JSON.parse(text);
-  } catch {
-    return null;
+  let head = String(text == null ? '' : text).slice(0, COMPARE_SCAN_CHARS);
+  const cut = head.indexOf('"commits"');
+  if (cut >= 0) head = head.slice(0, cut);
+  const st = COMPARE_STATUS_RE.exec(head);
+  if (!st) return null;
+  const keep = { status: st[1] };
+  for (const k of COMPARE_COUNTS) {
+    const m = new RegExp(`"${k}"\\s*:\\s*([0-9]+)`).exec(head);
+    if (m) keep[k] = Number(m[1]);
   }
-  if (!v || typeof v !== 'object' || typeof v.status !== 'string') return null;
-  const keep = { status: v.status };
-  for (const k of ['ahead_by', 'behind_by', 'total_commits']) if (Number.isInteger(v[k])) keep[k] = v[k];
   return JSON.stringify(keep);
+}
+
+/** Read only as much of a compare response as compareBody needs, then stop the download. */
+async function compareFromResponse(res) {
+  if (!res.body || typeof res.body.getReader !== 'function') return compareBody(await res.text());
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let text = '';
+  try {
+    while (text.length < COMPARE_SCAN_CHARS) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      text += dec.decode(value, { stream: true });
+      if (text.includes('"commits"')) break;
+    }
+  } finally {
+    try {
+      await reader.cancel();
+    } catch {
+      // already closed
+    }
+  }
+  return compareBody(text);
 }
 
 async function pool(tasks, limit) {
@@ -366,7 +397,7 @@ export async function readBlobs(req, deps) {
         if (f.reason === 'rate-limit' || (f.reason === 'token' && f.status === 401)) fail(f);
         return;
       }
-      out.compare[key] = compareBody(await res.text());
+      out.compare[key] = await compareFromResponse(res);
     });
   }
   await pool(tasks, MAX_PARALLEL);

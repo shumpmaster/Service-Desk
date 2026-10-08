@@ -12,6 +12,10 @@ export class FakeNode {
     this.text = null;
     for (const c of cs) this.children.push(typeof c === 'string' ? new FakeText(c) : c);
   }
+  contains(n) {
+    if (n === this) return true;
+    return this.children.some((c) => c instanceof FakeNode && c.contains(n));
+  }
   replaceChildren(...cs) {
     this.children = [];
     this.append(...cs);
@@ -66,13 +70,15 @@ export async function loadApp({ hash = '', repos, breakView = false, now: start 
   const fetchCalls = [];
   const set = (k, v) => Object.defineProperty(globalThis, k, { value: v, configurable: true, writable: true });
   set('Node', FakeNode);
-  set('document', {
+  const doc = {
+    activeElement: null,
     title: '', visibilityState: 'visible',
     createElement: (t) => new FakeElement(t),
     createTextNode: (t) => new FakeText(t),
     getElementById: (id) => els[id] || null,
     addEventListener: (type, fn) => { (docListeners[type] ||= []).push(fn); },
-  });
+  };
+  set('document', doc);
   set('window', { scrollY: 0, scrollTo() {}, addEventListener() {} });
   set('location', { hash, search: '' });
   set('setTimeout', (fn, ms) => { const id = ++seq; timers.set(id, { at: now + Math.max(0, ms || 0), fn, id }); return id; });
@@ -87,7 +93,7 @@ export async function loadApp({ hash = '', repos, breakView = false, now: start 
   Date.now = () => now;
   const flush = async () => { for (let i = 0; i < 8; i++) await new Promise((r) => setImmediate(r)); };
   const app = {
-    els, timers, fetchCalls, flush,
+    els, timers, fetchCalls, flush, doc,
     state: () => els['screen-state'],
     async advance(ms) {
       const until = now + ms;

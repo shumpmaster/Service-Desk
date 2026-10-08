@@ -12,6 +12,15 @@ import { hhmm } from './timefmt.js';
  */
 export function readState(st, desk, now) {
   if (st.failure) return { read: 'cant-read', since: st.failure.since, reason: st.failure.reason, words: st.failure.words };
+  if (st.checking) {
+    // Reads still arriving over several cycles (review N1): "Checking…", until 3 minutes pass
+    // without a completed read.
+    const last = st.lastSuccessAt != null && st.lastSuccessAt >= desk.openedAt ? st.lastSuccessAt : desk.openedAt;
+    if (now - Math.max(last, desk.visibleSince) > STALE_MS) {
+      return { read: 'cant-read', since: last, reason: 'stale', words: REASON_WORDS.stale };
+    }
+    return { read: 'checking', since: null, reason: null, words: null };
+  }
   const fresh = st.lastSuccessAt != null && st.lastSuccessAt >= desk.openedAt && now - st.lastSuccessAt <= STALE_MS;
   if (fresh) return { read: 'ok', since: st.lastSuccessAt, reason: null, words: null };
   const base = st.lastSuccessAt != null && st.lastSuccessAt >= desk.openedAt ? st.lastSuccessAt : desk.openedAt;

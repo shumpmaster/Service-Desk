@@ -55,10 +55,14 @@ export function cardRows(entries, tree, nowMs, days = ASKED_DAYS) {
 /**
  * The owner questions raised in the window (J2): open ones in the tree, and (v3) answered ones from
  * their rulings. Raised is the question path's oldest commit; answered the ruling's. A ruling whose
- * question has no history was asked in a session and isn't listed.
+ * question has no history was asked in a session and isn't listed. Returns { rows, pending }:
+ * `pending` counts the rulings whose history reads haven't returned yet, so the view can say the
+ * list isn't complete; an open question whose history hasn't returned is listed with
+ * `raisedLoading` (shown "loading…", never "not recorded").
  */
 export function questionRows(model, tree, records, history, nowMs, days = ASKED_DAYS) {
   const rows = [];
+  let pending = 0;
   const inWindow = (t) => t == null || (nowMs - t <= days * DAY && t <= nowMs);
   const oldest = (p) => {
     const h = history.get(p);
@@ -74,24 +78,38 @@ export function questionRows(model, tree, records, history, nowMs, days = ASKED_
     const raisedAt = raised == null ? null : raised;
     if (!inWindow(raisedAt)) continue;
     listed.add(name);
-    rows.push({ kind: 'question', label: name, path, raisedAt, answeredAt: null, state: 'open',
-      waitMs: raisedAt == null ? null : Math.max(0, nowMs - raisedAt), proxy: null, ruling: null });
+    rows.push({ kind: 'question', label: name, path, raisedAt, raisedLoading: raised === undefined, answeredAt: null,
+      state: 'open', waitMs: raisedAt == null ? null : Math.max(0, nowMs - raisedAt), proxy: null, ruling: null });
   }
   if (model === 'v3') {
     for (const path of tree.keys()) {
       const name = questionAnswerName(path);
       if (!name || listed.has(name)) continue;
       const answered = oldest(path);
+      if (answered === undefined) {
+        pending++;
+        continue;
+      }
+      if (answered == null || nowMs - answered > days * DAY) continue; // answered before the window
       const raised = oldest(`questions/${name}.md`);
-      if (answered == null || raised == null) continue; // not read yet, or asked in a session
-      if (!inWindow(raised)) continue;
+      if (raised === undefined) {
+        pending++;
+        continue;
+      }
+      if (raised == null || !inWindow(raised)) continue; // asked in a session, or raised before the window
       const rec = records.get(path);
       rows.push({ kind: 'question', label: name, path: `questions/${name}.md`, rulingPath: path, raisedAt: raised,
-        answeredAt: answered, state: 'answered', waitMs: Math.max(0, answered - raised),
+        raisedLoading: false, answeredAt: answered, state: 'answered', waitMs: Math.max(0, answered - raised),
         proxy: rec ? rec.proxy : null, ruling: rec ? rec.ruling : null });
     }
   }
-  return rows.sort((a, b) => (b.raisedAt ?? Infinity) - (a.raisedAt ?? Infinity));
+  rows.sort((a, b) => (b.raisedAt ?? Infinity) - (a.raisedAt ?? Infinity));
+  return { rows, pending };
+}
+
+/** The words for a figure that can't be shown yet (B1): never a zero or "none". */
+export function notReadText(names) {
+  return `not available until ${names.join(', ')} ${names.length === 1 ? 'has' : 'have'} been read`;
 }
 
 /** AC20's summary: count and median wait over the cards raised in the last 14 days, open ones
@@ -115,7 +133,22 @@ export function v5Waits(rows, nowMs, config, days = SUMMARY_DAYS) {
   return out;
 }
 
-/** AC21's footer line from every v3 project's counted waits. */
+const V5_HEAD = 'Median answer time, weekday cards, last 14 days: ';
+
+/**
+ * AC21's footer over every v3 project (B1). entries: [{ name, v3, readOk, model }], where readOk
+ * says the project's latest read succeeded and model is null when its box couldn't be built.
+ * Until every v3 project has been read, with its log months loaded, the line says which ones it
+ * waits for, instead of a median over what it happens to hold.
+ */
+export function v5Footer(entries, fmt) {
+  const v3 = entries.filter((e) => e.v3);
+  const waiting = v3.filter((e) => !e.readOk || !e.model || !e.model.logLoaded).map((e) => e.name);
+  if (waiting.length) return `${V5_HEAD}${notReadText(waiting)}`;
+  return v5Line(v3.flatMap((e) => e.model.v5Waits || []), fmt);
+}
+
+/** AC21's footer line from every v3 project's counted waits (all of them read). */
 export function v5Line(waits, fmt) {
   if (!waits.length) return 'Median answer time, weekday cards, last 14 days: no weekday cards in the last 14 days';
   return `Median answer time, weekday cards, last 14 days: ${fmt(median(waits))} (goal under 4h; ${waits.length} card${waits.length === 1 ? '' : 's'})`;
@@ -200,4 +233,21 @@ export function usageView(row) {
   out.context_peak_percent = Number.isInteger(peak) && Number.isInteger(win) && win > 0
     ? Math.round((peak / win) * 1000) / 10 : NOT_AVAILABLE;
   return out;
+}
+
+const fmtNum = (v) => (typeof v === 'number' ? v.toLocaleString('en-US') : v);
+
+/**
+ * AC23's context line (review N2): the peak as tokens and as a percentage of the window when both
+ * are figures; "(derived from per-turn usage)" goes only with a real peak figure. A missing peak
+ * or window shows its words, never garbled numbers.
+ */
+export function contextText(u) {
+  const peak = u.context_peak_tokens;
+  const win = u.context_window_tokens;
+  if (typeof peak !== 'number') {
+    return `Context peak: ${peak}${typeof win === 'number' ? `; window ${fmtNum(win)} tokens` : ''}`;
+  }
+  if (typeof win !== 'number') return `Context peak: ${fmtNum(peak)} tokens (derived from per-turn usage); window: ${win}`;
+  return `Context peak: ${fmtNum(peak)} tokens, ${u.context_peak_percent}% of a ${fmtNum(win)}-token window (derived from per-turn usage)`;
 }

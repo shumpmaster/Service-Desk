@@ -95,3 +95,16 @@ licenses_next: Merging PR #54 then PR #52 (the desk reads the frozen usage form)
 decided_by: owner (merges this pull request; items 1 to 3 proposed by the Orchestrator under the owner's standing "Go with reccomendations", 2026-10-08)
 proposed_by: orchestrator
 reversibility: reversible
+
+## L-0007 — Scrub proof deferred; it must pass before P-001 closes
+date: 2026-10-08
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: After adopting model S-021 (PR #56), the scrub proof was run by hand twice (runs 37843142513 and 37843333910, model sonnet, runner image 20261004). Every token check passed, the commands-on session passed every check (it read parent-pid.txt and its Read of the recorded parent's environ was blocked), but the commands-off session made no tool calls in either run, so its two Read checks had nothing to judge. A full pass needs a further model change. Fix it now, or defer?
+decision: Deferred. RUNNER.toml stays as it is: session_commands "on", proven_image_version 202609, so on today's 202610 image pipeline builder sessions run with commands forced off (S-016 AC2). Nothing current is blocked: the desk (P-001) is built outside the pipeline, and the pipeline's open items are research, which uses no commands. Condition (the owner's): the proof must pass, and RUNNER.toml record the proven image, before P-001 is closed out (M3's close), and before the operating model is run on a new project.
+licenses_next: The design milestone and M3 proceed; a model change making the commands-off session's Reads reliable, then a passing proof run here, before P-001's close-out.
+decided_by: owner ("deferring them means we can get the service desk stood up. But we would need to ensure it's added before the project is closed out and I want to operate my operating model on new projects.", 2026-10-08)
+proposed_by: orchestrator
+reversibility: reversible

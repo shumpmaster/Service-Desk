@@ -89,6 +89,24 @@ test('J8 (review N9): iss must equal https:// + ACCESS_TEAM_DOMAIN; another team
   assert.equal(ok.status, 200);
 });
 
+test('AC33/J8: ACCESS_TEAM_DOMAIN with capitals and a trailing space is trimmed and lowercased; another team is still refused', async () => {
+  // ac-test: S-001/AC33
+  _resetKeyCache();
+  const env = { ...ENV, ACCESS_TEAM_DOMAIN: ' Team.CloudflareAccess.COM ' };
+  assert.equal(accessSettings(env).team, 'team.cloudflareaccess.com');
+  const body = { project: 'Service-Desk', head: null, etags: {} };
+  const f = fakeFetch(steadyRoutes());
+  const ok = await handle({ request: request('/api/poll', { jwt: await signJwt(key, goodClaims()), body }), env }, 'poll', { fetch: f, now: () => NOW });
+  assert.equal(ok.status, 200, 'the owner\'s valid session is accepted');
+  assert.ok(f.calls.some((c) => c.url === 'https://team.cloudflareaccess.com/cdn-cgi/access/certs'), 'keys from the lowercased team');
+  for (const iss of ['https://other.cloudflareaccess.com', 'https://Team.CloudflareAccess.COM ']) {
+    const g = fakeFetch(steadyRoutes());
+    const no = await handle({ request: request('/api/poll', { jwt: await signJwt(key, goodClaims({ iss })), body }), env }, 'poll', { fetch: g, now: () => NOW });
+    assert.equal(no.status, 403, iss);
+    assert.equal(githubCalls(g).length, 0);
+  }
+});
+
 test('AC13/J8: any method other than POST is refused too, and without a JWT it is 403 first', async () => {
   _resetKeyCache();
   const jwt = await signJwt(key, goodClaims());

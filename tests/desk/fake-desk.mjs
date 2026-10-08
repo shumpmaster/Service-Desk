@@ -101,8 +101,13 @@ export function fakeServer(repos, config, clock) {
 }
 
 // The PR #40 review's example (N4): a dispatch-log line whose `item` is an object with
-// non-callable toString and valueOf. It parses as JSON and matches the dispatch shape; turning it
-// into words throws while the model is built.
+// non-callable toString and valueOf. From M2 the page type-checks log lines (AC31), so this line is
+// named in notes and skipped; it no longer throws.
 export const BAD_LOG_LINE = '{"action":"dispatch","time":"2026-10-06T18:30:00Z","item":{"toString":1,"valueOf":1},"role":"builder","stage":5}';
 
 export { pageUrl };
+
+// A record that still throws while a project's model is built (AC30's drawing case): a pull
+// request whose title is an object with non-callable toString and valueOf. It parses as JSON;
+// turning it into the flagged PR's title throws.
+export const BAD_PR = { ...pr(66, 'x'), title: { toString: 1, valueOf: 1 } };

@@ -242,25 +242,58 @@ export function stageName(n) {
   return STAGE_NAMES[n] ? `${n} ${STAGE_NAMES[n]}` : `stage ${n}`;
 }
 
+// J9's field types (AC31): a value of the wrong type is named in notes (file, line, field) and
+// skipped, so the field shows "not recorded", never a wrong value or zero. Unknown keys are ignored.
+const ISO_UTC_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$/;
+export const STATUS_TYPES = {
+  stage: 'integer', card: 'integer', plan_round: 'integer', build_round: 'integer', attempts: 'integer',
+  sessions: 'integer', confirm_used: 'boolean', kind: 'string', role: 'string', last_verdict: 'string',
+  gate: 'string', spec: 'string', outcome: 'string', dispatched_at: 'time', state: 'state',
+};
+
+/** Whether `v` has J9's type `type` (null allowed only where `nullable`). */
+export function hasType(v, type, nullable = false) {
+  if (v === null) return nullable;
+  switch (type) {
+    case 'integer': return Number.isInteger(v);
+    case 'boolean': return typeof v === 'boolean';
+    case 'string': return typeof v === 'string';
+    case 'time': return typeof v === 'string' && ISO_UTC_RE.test(v) && !Number.isNaN(Date.parse(v));
+    case 'state': return typeof v === 'string' && STATES.includes(v);
+    default: return true;
+  }
+}
+
+const TYPE_WORDS = { integer: 'an integer', boolean: 'true or false', string: 'a string', time: 'an ISO UTC time',
+  state: `one of ${STATES.join(', ')}` };
+
 /** Parse a status file: `key = <JSON value>` lines. Returns { fields, notes, ok }. */
-export function parseStatus(text) {
+export function parseStatus(text, path = 'status file') {
   const fields = {};
   const notes = [];
   lines(text).forEach((l, i) => {
     if (l.trim() === '' || l.startsWith('#')) return;
     const m = /^([a-z_]+) = (.+)$/.exec(l);
     if (!m) {
-      notes.push(`line ${i + 1} skipped: ${l.slice(0, 80)}`);
+      notes.push(`${path} line ${i + 1} skipped: ${l.slice(0, 80)}`);
       return;
     }
+    let v;
     try {
-      fields[m[1]] = JSON.parse(m[2]);
+      v = JSON.parse(m[2]);
     } catch {
-      notes.push(`line ${i + 1} skipped (value is not JSON): ${l.slice(0, 80)}`);
+      notes.push(`${path} line ${i + 1} skipped (value is not JSON): ${l.slice(0, 80)}`);
+      return;
     }
+    const type = STATUS_TYPES[m[1]];
+    if (type && !hasType(v, type)) {
+      notes.push(`${path} line ${i + 1} field ${m[1]}: expected ${TYPE_WORDS[type]}; skipped`);
+      return;
+    }
+    fields[m[1]] = v;
   });
   const ok = typeof fields.state === 'string' && STATES.includes(fields.state);
-  if (!ok) notes.push('no valid state');
+  if (!ok) notes.push(`${path}: no valid state`);
   return { fields, notes, ok };
 }
 
@@ -316,10 +349,45 @@ export function entryShape(e) {
   if (e.action === 'dispatch') return 'dispatch';
   if (e.action === 'card') return 'card';
   if (e.action === 'done') return 'done';
-  if (e.trigger === 'outcome' && typeof e.session === 'string') return 'outcome';
+  if (e.trigger === 'outcome') return 'outcome';
   if (e.trigger === 'decision') return 'decision';
   if (e.trigger === 'anomaly' && e.error != null) return 'anomaly';
   return null;
+}
+
+// J9's key types for dispatch-log and outcomes.jsonl lines (AC31). Strings may be null where the
+// samples show null; `time` never is.
+export const LOG_TYPES = {
+  item: 'string', role: 'string', route: 'string', time: 'string', session: 'string', result: 'string',
+  verdict: 'string', record: 'string', gate: 'string', word: 'string', error: 'string', stage: 'integer',
+  card: 'integer', proxy: 'boolean', strike: 'boolean',
+};
+// The keys each shape needs: a wrong-typed one skips the whole line.
+const NEEDED = {
+  request: ['item', 'time'], dispatch: ['item', 'role', 'route', 'time'], outcome: ['session', 'time'],
+  card: ['item', 'gate', 'card', 'time'], decision: ['record', 'time'], done: ['item', 'time'], anomaly: ['time'],
+};
+
+/**
+ * Check one log line's keys against LOG_TYPES. A wrong-typed key the shape needs (or `time`, which
+ * may never be null) skips the line: returns { skip: note }. Any other wrong-typed key is dropped and
+ * named: returns { entry, notes }.
+ */
+export function typeCheckEntry(e, shape, where) {
+  const notes = [];
+  const entry = { ...e };
+  for (const [k, type] of Object.entries(LOG_TYPES)) {
+    if (!(k in entry)) continue;
+    const nullable = k !== 'time';
+    if (hasType(entry[k], type, nullable) && !(entry[k] === null && (NEEDED[shape] || []).includes(k))) continue;
+    if ((NEEDED[shape] || []).includes(k)) return { skip: `${where} field ${k}: expected ${TYPE_WORDS[type]}; line skipped` };
+    notes.push(`${where} field ${k}: expected ${TYPE_WORDS[type]}; field skipped`);
+    delete entry[k];
+  }
+  for (const k of NEEDED[shape] || []) {
+    if (!(k in entry)) return { skip: `${where} has no ${k}; line skipped` };
+  }
+  return { entry, notes };
 }
 
 /** Parse a dispatch-log month. Returns { entries: [{...e, shape, line}], notes }. */
@@ -336,11 +404,17 @@ export function parseLog(text, label = 'dispatch log') {
       return;
     }
     const shape = entryShape(e);
-    if (!shape || typeof e.time !== 'string') {
+    if (!shape) {
       notes.push(`${label} line ${i + 1} matches no known shape; skipped`);
       return;
     }
-    entries.push({ ...e, shape, line: i + 1, label });
+    const checked = typeCheckEntry(e, shape, `${label} line ${i + 1}`);
+    if (checked.skip) {
+      notes.push(checked.skip);
+      return;
+    }
+    notes.push(...checked.notes);
+    entries.push({ ...checked.entry, shape, line: i + 1, label });
   });
   return { entries, notes };
 }

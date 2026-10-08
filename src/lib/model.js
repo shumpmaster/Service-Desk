@@ -43,7 +43,7 @@ export function recordKind(path, model) {
 /** Parse a blob's text as its kind. The result is what the page caches by blob sha. */
 export function parseRecord(kind, text, path) {
   switch (kind) {
-    case 'status': return parseStatus(text);
+    case 'status': return parseStatus(text, path);
     case 'routing': return parseRouting(text);
     case 'log': {
       const { entries, notes } = parseLog(text, path);
@@ -104,7 +104,7 @@ export function neededReads(project, tree, records, now) {
     }
     for (const path of tree.keys()) {
       const st = STATUS_RE.exec(path) && records.get(path);
-      if (!st || !st.ok || st.fields.state !== 'waiting-owner') continue;
+      if (!st || !st.ok || st.fields.state !== 'waiting-owner' || st.fields.gate == null || st.fields.card == null) continue;
       const ans = `decisions/${STATUS_RE.exec(path)[1]}/${st.fields.gate}-${st.fields.card}.md`;
       if (tree.has(ans) && !logged.has(ans)) add(ans);
     }
@@ -246,6 +246,7 @@ export function buildModel(input) {
       continue;
     }
     statusByItem.set(id, rec);
+    notes.push(...rec.notes); // AC31: skipped lines and fields are named in the project's notes
     if (!rec.ok) {
       item.unreadable = true;
       item.notes = rec.notes;
@@ -269,7 +270,18 @@ export function buildModel(input) {
       }
       notes.push(...lim.notes.map((n) => `${id}: ${n}`));
     }
-    if (f.state === 'waiting-owner') {
+    if (f.state === 'waiting-owner' && (f.gate == null || f.card == null)) {
+      // AC31: the gate or card was skipped (or missing), so the card can't be named. A skipped
+      // field never un-flags anything: the item's open card files are flagged through J2 below;
+      // with none, the safety net flags the status itself.
+      item.waiting = { gate: f.gate ?? NOT_RECORDED, card: f.card ?? NOT_RECORDED, path: null, link: null, answered: false };
+      const anyOpen = openCards(tree).some((c) => c.item === id);
+      if (!anyOpen) {
+        flagged.push({ kind: 'status-card', key: `status:${id}`, link: item.link, raisedAt: null,
+          title: `${id}: waiting on you: card ${f.gate ?? NOT_RECORDED}-${f.card ?? NOT_RECORDED} (card file not found)`,
+          words: 'from its status file' });
+      }
+    } else if (f.state === 'waiting-owner') {
       const cardPath = `queue/${id}-${f.gate}-${f.card}.md`;
       const answerPath = `decisions/${id}/${f.gate}-${f.card}.md`;
       item.waiting = { gate: f.gate ?? NOT_RECORDED, card: f.card ?? NOT_RECORDED, path: cardPath,

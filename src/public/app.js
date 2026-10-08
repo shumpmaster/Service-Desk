@@ -6,13 +6,14 @@
 import CONFIG from './lib/config.js';
 import { createDesk, callFunction } from './lib/scheduler.js';
 import { createStore } from './lib/store.js';
-import { makeBox, orderBoxes, boxStateText, screenState } from './lib/universe.js';
+import { safeBox, orderBoxes, boxStateText, screenState } from './lib/universe.js';
 import { renderMarkdown } from './lib/markdown.js';
 import { whenText, hhmm, dateTimeText } from './lib/timefmt.js';
 import { defaultLabel } from './lib/records.js';
 import { blobLink, exp004Links, cappedNewFileLink } from './lib/links.js';
 import { createRun, summarize, resultMarkdown, rawTable } from './lib/exp001.js';
-import { routeParts, guardRender, boot } from './lib/page.js';
+import { routeParts, guardRender, boot, SIGNED_OUT_STATE } from './lib/page.js';
+import { errorText } from './lib/scheduler.js';
 
 const TZ = CONFIG.ownerTimeZone;
 const view = document.getElementById('view');
@@ -52,36 +53,52 @@ function projectByName(name) {
 }
 
 function ciNode(ci) {
-  return h('span', { class: `ci-${ci}` }, ci);
+  return h('span', { class: /^[a-z-]+$/.test(String(ci)) ? `ci-${ci}` : 'ci-other' }, ci);
 }
 
+// AC30: each project's box is built on its own; one that throws says "Can't show this project".
 function boxes(desk) {
   const now = Date.now();
-  return CONFIG.projects.map((p) => makeBox(desk.model(p.name), desk.states.get(p.name), desk, now));
+  return CONFIG.projects.map((p) => safeBox(p.name, () => desk.model(p.name), desk.states.get(p.name), desk, now));
 }
 
-function renderUniverse(desk) {
-  const list = orderBoxes(boxes(desk));
+function cantShowBox(b, err) {
+  const words = b.drawError || `Can't show this project: ${errorText(err)}`;
+  return h('a', { class: 'box cant-read', href: `#/p/${encodeURIComponent(b.name)}` },
+    h('h2', {}, b.name), h('p', { class: 'state' }, words));
+}
+
+function renderUniverse(desk, list = orderBoxes(boxes(desk))) {
   return h('section', {},
     list.map((b) => {
-      const m = b.model;
-      const cls = b.flaggedCount ? 'box flagged' : b.read.read === 'cant-read' ? 'box cant-read' : 'box';
-      let work;
-      if (m.model === 'v2.5') {
-        work = h('p', {}, 'Sprint: ', m.sprint.title || m.sprint.note);
-      } else if (!m.openItems || m.openItems.length === 0) {
-        work = h('p', { class: 'muted' }, 'No open items');
-      } else {
-        work = h('ul', { class: 'plain' }, m.openItems.map((i) => h('li', {}, `${i.id} — ${i.loading ? 'loading…' : i.unreadable ? "can't read status" : `${i.stage}, ${i.state}`}`)));
+      if (b.drawError) return cantShowBox(b);
+      try {
+        return universeBox(b);
+      } catch (err) {
+        b.drawError = `Can't show this project: ${errorText(err)}`;
+        return cantShowBox(b);
       }
-      return h('a', { class: cls, href: `#/p/${encodeURIComponent(b.name)}` },
-        h('h2', {}, b.name),
-        h('p', { class: 'state' }, boxStateText(b, TZ)),
-        b.flaggedCount ? h('ul', { class: 'plain flagged-list' }, m.flagged.map((f) => h('li', { class: 'flag' }, '● ', f.title))) : null,
-        h('p', {}, m.headline.text),
-        work,
-        h('p', { class: 'muted' }, 'CI on ', m.defaultBranch, ': ', ciNode(m.ci)));
     }));
+}
+
+function universeBox(b) {
+  const m = b.model;
+  const cls = b.flaggedCount ? 'box flagged' : b.read.read === 'cant-read' ? 'box cant-read' : 'box';
+  let work;
+  if (m.model === 'v2.5') {
+    work = h('p', {}, 'Sprint: ', m.sprint.title || m.sprint.note);
+  } else if (!m.openItems || m.openItems.length === 0) {
+    work = h('p', { class: 'muted' }, 'No open items');
+  } else {
+    work = h('ul', { class: 'plain' }, m.openItems.map((i) => h('li', {}, `${i.id} — ${i.loading ? 'loading…' : i.unreadable ? "can't read status" : `${i.stage}, ${i.state}`}`)));
+  }
+  return h('a', { class: cls, href: `#/p/${encodeURIComponent(b.name)}` },
+    h('h2', {}, b.name),
+    h('p', { class: 'state' }, boxStateText(b, TZ)),
+    b.flaggedCount ? h('ul', { class: 'plain flagged-list' }, m.flagged.map((f) => h('li', { class: 'flag' }, '● ', f.title))) : null,
+    h('p', {}, m.headline.text),
+    work,
+    h('p', { class: 'muted' }, 'CI on ', m.defaultBranch, ': ', ciNode(m.ci)));
 }
 
 function flaggedList(m, name) {
@@ -139,8 +156,18 @@ function pipeline(m, name) {
 function renderProject(desk, name) {
   const project = projectByName(name);
   if (!project) return h('p', {}, 'No such project. ', h('a', { href: '#/' }, 'Back'));
-  const m = desk.model(name);
-  const box = makeBox(m, desk.states.get(name), desk, Date.now());
+  const box = safeBox(name, () => desk.model(name), desk.states.get(name), desk, Date.now());
+  try {
+    if (box.drawError) throw new Error(box.drawError.replace(/^Can't show this project: /, ''));
+    return projectView(box, name);
+  } catch (err) {
+    return h('section', {}, h('p', {}, h('a', { href: '#/' }, '← All projects')), h('h2', {}, name),
+      h('p', { class: 'flag' }, box.drawError || `Can't show this project: ${errorText(err)}`));
+  }
+}
+
+function projectView(box, name) {
+  const m = box.model;
   return h('section', {},
     h('p', {}, h('a', { href: '#/' }, '← All projects')),
     h('h2', {}, name),
@@ -209,30 +236,40 @@ function startDesk() {
   const desk = createDesk({
     config: CONFIG, call: (path, body) => callFunction(path, body), clock, store, isVisible, onChange: () => render(),
   });
-  // A throw while drawing shows an error state, never a frozen "Quiet" (review N4).
-  const render = guardRender(draw, (state) => {
+  const setState = (state) => {
     stateEl.textContent = state.text;
     stateEl.className = state.className;
     document.title = `Service Desk — ${state.text}`;
+  };
+  // A throw while drawing shows an error state, never a frozen "Quiet" (review N4), and never in
+  // place of "Signed out" (AC32).
+  const render = guardRender(draw, (state) => {
+    setState(state);
     view.replaceChildren(h('section', {}, h('p', { class: 'flag' }, state.text), h('p', {}, h('a', { href: '#/' }, 'All projects'))));
-  });
+  }, () => desk.signedOut);
   function draw() {
+    // AC32: the signed-out line is set first, before any box is built.
+    if (desk.signedOut) setState(SIGNED_OUT_STATE);
     const bx = boxes(desk);
-    const s = screenState(bx, desk.signedOut);
-    stateEl.textContent = s.text;
-    stateEl.className = s.quiet ? 'quiet' : desk.signedOut ? 'signed-out' : bx.some((b) => b.flaggedCount) ? 'flagged'
-      : bx.some((b) => b.read.read === 'cant-read') ? 'cant-read' : '';
-    document.title = s.quiet ? 'Service Desk — quiet' : `Service Desk — ${s.text}`;
     const [r0, name, kind, ...rest] = routeParts(location.hash); // malformed → Universe (review N6)
     const y = window.scrollY;
     let node;
     if (r0 === 'p' && kind === 'card') node = renderCard(desk, name, rest.join('/'));
     else if (r0 === 'p' && kind === 'q') node = renderQuestion(desk, name, rest.join('/'));
     else if (r0 === 'p' && name) node = renderProject(desk, name);
-    else node = renderUniverse(desk);
+    else node = renderUniverse(desk, orderBoxes(bx)); // marks a box that failed to draw (AC30)
+    // The state line counts every box, those that couldn't be shown included (AC30).
+    const s = screenState(bx, desk.signedOut);
+    stateEl.textContent = s.text;
+    stateEl.className = s.quiet ? 'quiet' : desk.signedOut ? 'signed-out' : bx.some((b) => b.flaggedCount) ? 'flagged'
+      : bx.some((b) => b.read.read === 'cant-read' || b.drawError) ? 'cant-read' : '';
+    document.title = s.quiet ? 'Service Desk — quiet' : `Service Desk — ${s.text}`;
     view.replaceChildren(node);
     window.scrollTo(0, y);
-    document.getElementById('foot').textContent = `Read-only: the desk links to GitHub; answering from the desk comes later. ${store.usable ? '' : 'Cache not kept on this device. '}Updated ${hhmm(new Date(), TZ)}.`;
+    footer(bx);
+  }
+  function footer(bx) {
+    document.getElementById('foot').textContent = `${store.usable ? '' : 'Cache not kept on this device. '}Updated ${hhmm(new Date(), TZ)}.`;
   }
   window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
   document.addEventListener('visibilitychange', () => desk.visibilityChanged());

@@ -6,18 +6,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDesk, POLL_MS, callFunction, CALL_TIMEOUT_MS, errorText } from '../../src/lib/scheduler.js';
 import { createStore } from '../../src/lib/store.js';
-import { makeBox, boxStateText, screenState, readState } from '../../src/lib/universe.js';
+import { makeBox, safeBox, boxStateText, screenState, readState } from '../../src/lib/universe.js';
 import { routeParts, guardRender, renderErrorState, boot } from '../../src/lib/page.js';
 import { fakeClock, fixture, CONFIG } from './helpers.mjs';
-import { repo, fakeServer, BAD_LOG_LINE } from './fake-desk.mjs';
+import { repo, fakeServer, BAD_PR } from './fake-desk.mjs';
 
 const START = Date.parse('2026-10-06T19:00:00Z');
 const MIN = 60_000;
 const sd = (p) => fixture(`service-desk/${p}`);
 
 
-function repos({ badLog = false } = {}) {
-  const log = fixture('service-desk/dispatch-log/2026-10.jsonl') + (badLog ? `${BAD_LOG_LINE}\n` : '');
+function repos({ badRecord = false } = {}) {
+  const log = fixture('service-desk/dispatch-log/2026-10.jsonl');
   return {
     'Service-Desk': repo({
       'queue/README.md': sd('queue/README.md'),
@@ -25,7 +25,7 @@ function repos({ badLog = false } = {}) {
       'status/P-001.toml': fixture('service-desk/status/P-001@7da0fd7.toml'),
       'dispatch-log/2026-10.jsonl': log,
       'questions/_TEMPLATE.md': sd('questions/_TEMPLATE.md'),
-    }, [], [{ name: 'governance', status: 'completed', conclusion: 'success' }]),
+    }, badRecord ? [BAD_PR] : [], [{ name: 'governance', status: 'completed', conclusion: 'success' }]),
     'Personal-Org-Operating-Model': repo({
       'docs/LEDGER.md': fixture('poom/docs/LEDGER.md'),
       'docs/sprints/m1.4-v3-build.md': fixture('poom/docs/sprints/m1.4-v3-build.md'),
@@ -33,9 +33,9 @@ function repos({ badLog = false } = {}) {
   };
 }
 
-function setup({ badLog = false, call: wrap, onChange } = {}) {
+function setup({ badRecord = false, call: wrap, onChange } = {}) {
   const clock = fakeClock(START);
-  const r = repos({ badLog });
+  const r = repos({ badRecord });
   const server = fakeServer(r, CONFIG, clock);
   const call = wrap ? wrap(server.call) : server.call;
   const ref = {};
@@ -95,16 +95,16 @@ test('AC4 (review N3): a success from before this opening does not count — rea
 // ---------------------------------------------------------------------------
 // N4: a throw while rendering or building the model never stops polling.
 
-test('AC5 (review N4): the dispatch-log example makes building the model throw; polling goes on and the screen is never a frozen Quiet', async () => {
+test('AC5 (review N4) + AC30: a record that makes building the model throw; polling goes on and the screen is never a frozen Quiet', async () => {
   const shown = [];
   let renders = 0;
-  // onChange does what the page's render does: build every box, and the screen state.
+  // onChange does what the page's render does: build every box (each on its own), and the screen state.
   const s = setup({
-    badLog: true,
+    badRecord: true,
     onChange: (desk) => {
       renders++;
       const render = guardRender(() => {
-        const bx = CONFIG.projects.map((p) => makeBox(desk.model(p.name), desk.states.get(p.name), desk, START));
+        const bx = CONFIG.projects.map((p) => safeBox(p.name, () => desk.model(p.name), desk.states.get(p.name), desk, START));
         shown.push(screenState(bx, desk.signedOut).text);
       }, (state) => shown.push(state.text));
       render();
@@ -116,7 +116,7 @@ test('AC5 (review N4): the dispatch-log example makes building the model throw; 
   assert.ok(renders >= 2);
   assert.ok(shown.length >= 2);
   assert.ok(!shown.includes('Quiet'), shown.join(' | '));
-  assert.ok(shown.some((t) => t.startsWith("Can't show the desk: ")), shown.join(' | '));
+  assert.ok(shown.some((t) => t.includes("can't show 1 project")), shown.join(' | '));
   await s.clock.runUntil(START + 3 * POLL_MS + 1000);
   assert.equal(s.polls('Service-Desk'), 4, 'polled every 60 s');
   assert.equal(s.polls('Personal-Org-Operating-Model'), 4);

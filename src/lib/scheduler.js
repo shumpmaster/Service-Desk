@@ -136,9 +136,13 @@ export function createDesk(opts) {
     return { shas, history, byPath };
   }
 
+  // AC34: a run of failures keeps the time of its first ("since": the project hasn't been read
+  // since then), and its reason and words follow the latest failure, so a page error that changes
+  // shows the new error (review N5 on PR #41). A success ends the run.
   function fail(st, reason, words) {
     const now = clock.now();
-    if (!st.failure || st.failure.reason !== reason) st.failure = { reason, words: words || REASON_WORDS[reason] || reason, since: now };
+    const text = words || REASON_WORDS[reason] || reason;
+    st.failure = { reason, words: text, since: st.failure ? st.failure.since : now };
   }
 
   function applyPoll(st, r) {

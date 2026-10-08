@@ -1,0 +1,25 @@
+kind = "research"
+question = """
+From published design guidance only: how should a phone-first status dashboard, used by one person to oversee several automated software projects, be designed so a few-second glance tells the owner where to drill in, with dashboard-level detail one step down rather than on the first screen?
+
+Cover only what the Service Desk's design lab needs first:
+- progressive disclosure for glanceable overviews: what belongs on the first screen of a phone dashboard, what one tap down, how many levels work, and how a summary signals that detail is worth opening;
+- showing values that are unknown, stale or estimated (in numbers, gauges and summary lines) so they are never read as real or as zero, and making stale data visibly degrade;
+- change on a screen that updates itself every minute: highlighting what is new since the last visit, avoiding layout shift and mis-taps;
+- a short standards lookup: colour not used alone, contrast minimums for text and graphics, touch-target minimums, reduced motion.
+
+Use only public sources read through web search and web fetch: platform guidelines (Apple Human Interface Guidelines, Material Design), accessibility standards (WCAG 2.2 and its understanding documents), and published usability research (e.g. Nielsen Norman Group, Baymard). Prefer HTML pages; academic papers only where their text can be read as HTML. Do not inspect this session's own environment, configuration, files outside the brief, or any credential.
+
+How sources are graded (as in Q-012):
+- A platform's own guideline (Apple, Google) or a W3C standard is authoritative for what it prescribes. Report it as "guideline (single authoritative source)", quoted, with its page. A second page from the same publisher adds nothing and is not needed.
+- A design principle is "corroborated" when two sources with different authors state it. A restatement that cites or derives from another listed source is labelled "derivative of <source>" and does not count as a second source.
+- A finding stated by one source only is kept, labelled "single source", never dropped and never called confirmed.
+- Where guidelines disagree (e.g. different minimum touch-target sizes), report each with its source, without choosing.
+- Every claim must be supported by the exact page cited; quote the sentence. Where the guidance does not say, write "not documented". Make no recommendation of a specific product or library.
+
+Sources the tools cannot open (new; Q-012 stopped on this, triage/Q-012.md on item/Q-012): a source whose text the session's tools cannot read (a PDF that does not extract, a page that renders only in a browser) makes no finding. The memo lists it in a final section "Not opened", with its address and what it was expected to say, and no row rests on it. The source check checks only the rows the memo makes, and treats the "Not opened" list as outside the check. A row that rests on a page the checker cannot re-open is moved to "Not opened", not failed.
+
+The decision it serves: the Service Desk's design milestone (between S-001's M2 and M3), where the owner chooses a visual design through mockups and a sandbox view (decisions/questions/P-001-design-step.md; the owner's answers in P-001-design-discovery.md). It replaces Q-012, which the owner chose to narrow and re-run after its stop card (2026-10-08). The topics left out here (stage-of-work displays, "where it's heading" lines, item kinds, the activity view, long timelines) may be asked later as their own questions.
+
+Depth: 2, a graded memo. Topics: design, dashboards, accessibility, mobile.
+"""

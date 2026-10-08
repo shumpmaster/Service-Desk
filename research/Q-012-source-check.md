@@ -1,33 +1,30 @@
 Verdict: FAIL
 
-I filed 6 of the 7 proposed entries and kept one out. The verdict is FAIL because the brief says an unverifiable claim is a FAIL. Several memo statements could not be confirmed (listed below). I did not check every statement in the memo. I opened the sources behind the 7 proposed entries, plus a few other cited pages. Nothing was committed, because this folder has no git repository.
+The memo is a graded memo, not a discovery map. I re-opened the sources behind the disputed claims and the amended entries. I filed entry f. Several claims are still unverified, and the brief treats an unverifiable claim as a FAIL. Nothing was committed because the folder is not a git repository.
+
+**Confirmed this round (live fetches on 2026-10-08)**
+- **Sherwin:** the page says "the user will become frustrated and the benefits of showing progress will be negated" (memo line 54). The 10-seconds sentence also matches. The earlier checker had not confirmed the "negated" clause.
+- **Laubheimer:** the "secondary grouping cue", "Shape or clear visual grouping" and "different colors … particular order" quotes all appear (memo lines 26 and 78). The dashboards definition also matches.
+- **Apple Progress indicators (JSON endpoint):** the Determinate and Indeterminate quotes, the 90 percent in five seconds sentence and the stationary indicator sentence all match (memo lines 51–53).
+- **Apple Accessibility (JSON endpoint):** the table gives 44×44 pt default and 28×28 pt minimum, with 12 pt and 24 pt padding (memo line 151). The plain HTML page returned no body, so the 28 pt versus 44 pt conflict is still open.
+- **Nielsen, progressive disclosure:** "Initially, show users only a few…" and "Label the button or link…" match (memo lines 28 and 31).
+- **Budiu, information scent:** the definition and the abandonment quote match. The page's only trust claim is the clickbait one, as the memo's correction says (memo line 32).
+- **Survey, arXiv 2410.03712v1:** the full sentences are "…higher perceived confidence and data quality" and "…reduce the perception of quality in data and can bias interpretation". The "default value" sentence matches (memo lines 126–127). The joining words the memo said were unseen are now seen.
 
 **Filed**
+- `library/facts/LIB-F-q12-f-missing-data.md`, grade C, derivative via one survey. It is stated as the survey's report only, with the originals unread.
+- The earlier six entries (a, b, c, d, e, g) and pattern P-q12-a are untouched. Entry e's file says the "negated" clause was left out, but that clause is now confirmed. A filed entry cannot be edited, so a superseding entry is needed if you want it recorded.
 
-Each filed file records the checked-on date, shelf life, grade, topics and who opened the sources. A line in each says what was left out.
-
-| Entry | Verdict | Evidence |
-|---|---|---|
-| a, WCAG target size | Confirmed | Both W3C pages gave the 24×24 px AA rule with five exceptions, and the 44×44 px AAA rule. |
-| b, platform target sizes | Confirmed with a caution | Apple's JSON endpoint gave 44 pt default and 28 pt minimum. One fetch of the Apple HTML page said "minimum 44", so the 28 pt figure should be re-read in a browser. Android gave 48dp, and Google gave 8dp spacing. I dropped the memo's "Material" label because no Material page was read. |
-| c, contrast and colour | Confirmed | 1.4.3, 1.4.11 and 1.4.1 all matched, including the 18 pt and 14 pt bold thresholds. |
-| d, auto-update control | Confirmed | 2.2.2 says there is no five-second exception for auto-updating content. G76 is sufficient for 2.2.4 and 3.2.5. |
-| e, progress honesty | Confirmed, grade B | The Apple quotes (determinate, 90 percent in five seconds, stationary indicator) and the Sherwin hang quote matched. |
-| g, categorical hue | Confirmed, grade B | The ColorBrewer sentence matched. Laubheimer's "people do not perceive different colors as being in a particular order" matched. |
-| Pattern P-q12-a, glance then one step | Filed as grade C | The Nielsen, Apple Disclosure controls, Apple Widgets and Budiu definition quotes matched. Both Apple pages were read through the HIG JSON endpoint. |
-
-**Not filed**
-- **Entry f (missing data):** The Alsufyani survey and the Colorado page attribute the findings to Song & Szafir and Eaton et al. The quote was truncated, so "…and data quality, while those that break the visual continuity…" was never seen. The original papers were not read, so the claim is derivative and only partly confirmed. The "default value" quote is confirmed only as a quote inside the survey.
-
-**Memo statements not confirmed**
-- **Laubheimer:** the memo's "helpful as a secondary grouping cue, rather than as the main way of showing groups" did not appear. The page returned a different sentence.
-- **Sherwin:** the "benefits of showing progress will be negated" clause was not returned.
-- **Apple Progress indicators:** the "Indeterminate" quotes were not returned.
-- **Nielsen:** the "beyond 2 disclosure levels" sentence was only paraphrased by the fetch tool.
-- **Budiu 2020:** only the information scent definition was confirmed. The claim that misleading labels erode trust was not.
-- **Not opened:** 1.2, 1.10, 1.11, 2.5, 3.2, 3.3, 5.4 to 5.7, 7.1 to 7.2, 8.4, 8.6 to 8.7 and the other W3C pages (2.3.3, 4.1.3, 3.2.5) were not opened. They are neither confirmed nor filed.
+**Not confirmed, so left out**
+- **Nielsen, "beyond 2 disclosure levels" (memo line 30):** the fetch returned only a paraphrase this round. The memo itself marks it as an excerpt.
+- **Memo 7.1, Brehmer's timeline scales:** unverified and not proposed. The PDFs could not be read.
+- **Song & Szafir original:** unread. The Colorado page confirms only the scope of the study, not the findings.
+- **Few's book definition, and the Material 3 pages:** unread.
+- **Statements I did not re-open:**
+  - Sections 1.2, 1.9–1.11, 2.5, 3.x, 5.2–5.8 and 8.4–8.7 were not re-opened; they rest on the Researcher's own re-reads.
+  - These are not filed, and they are not independently confirmed.
 
 **Open questions**
-- Can anyone render the Material 3 pages, the Few PDFs, the Brehmer PDF and the full Song & Szafir paper? None of those could be opened here.
-- Should the memo's 2.2 and 2.4 count as corroborating each other? Apple's quote is about uneven pace and Sherwin's is about stalling at the end. I graded entry e as B on that basis.
-- A second fetch of the Apple accessibility HTML page is needed to settle the 28 pt versus 44 pt minimum.
+- Is entry e still grade B? Memo 2.4 is now a single source. Apple's point is uneven pace and Sherwin's is stalling at the end.
+- Someone needs to render the Apple Accessibility HTML page in a browser to settle the 28 pt minimum. Until then, entry b's caution stands.
+- The PDFs (Brehmer, Fouché et al., Song & Szafir) need a renderer before 7.1 and the original f findings can be verified.

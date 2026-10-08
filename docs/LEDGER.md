@@ -82,3 +82,16 @@ licenses_next: The live checks above; then the J10 revision.
 decided_by: owner ("Go with reccomendations" on S-020's questions, 2026-10-08; merged the model's PR #21)
 proposed_by: orchestrator
 reversibility: reversible
+
+## L-0006 — S-001 J10: how the desk shows missing and impossible usage figures; S-020's live usage check
+date: 2026-10-08
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: Reviews of the J10 revision (PR #49) and the desk build (PR #52) asked for rulings on how the Agents view shows usage figures that are null, impossible or of the wrong kind, and whether it shows the cost estimate. S-020's adoption (L-0005) also asked for one real session's `usage` checked at the pinned CLI version.
+decision: (1) A null figure shows "not available" everywhere, including the threshold percentage, "would have stopped" and the compaction count (PR #49 B1). (2) The drill-down shows `cost_usd_estimate` as "estimate $x.xx", never as a charge (PR #49 N3). (3) A negative or non-finite figure, or a non-integer whole-number figure, is the wrong kind: named in notes, that key "not recorded", the rest of the line still shown; a percentage with a zero divisor is "not available" (PR #52 B2; written into J10 and AC23 by PR #54). (4) Live check: the first sessions after adoption (Q-011 source checker and Q-012 researcher, dispatched 2026-10-08T16:59:31Z, status/outcomes.jsonl lines 98-99) carry `usage` with non-null token totals, turns, duration, context_window (1,000,000) and context_peak at the pinned 2.1.284; `autocompact_threshold`, `compactions` and `would_have_stopped` are null, because 2.1.284 emits no `autocompact_state` event. They stay null, shown "not available", until a newer CLI version is pinned and proven (S-020's stated outcome). (5) The scrub proof, run by hand after adoption (runs 37811975653, 37812997822, 37813311322 on runner image 20261004), passed every token check but failed "off: Read of the parent's environ (no call with a result)"; the fix is the model's S-021 (its L-0128), to be adopted here before a passing run sets proven_image_version.
+licenses_next: Merging PR #54 then PR #52 (the desk reads the frozen usage form); adopting model S-021, then the proof run.
+decided_by: owner (merges this pull request; items 1 to 3 proposed by the Orchestrator under the owner's standing "Go with reccomendations", 2026-10-08)
+proposed_by: orchestrator
+reversibility: reversible

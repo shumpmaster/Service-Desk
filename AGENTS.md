@@ -65,6 +65,8 @@ build/<id>/<task> → `surface_guard.py diff --range` (CI) → full test suite +
 (reviews/<PR>/) → CI green → the orchestrator merges with a merge commit (no squash) → deploy →
 ledger entry + improvement-register row in the same PR.
 
+**PRs lead with what they mean.** Every pull request body you write opens with a heading `## What this means for you`, then one paragraph in plain language: what changes for the owner (what he will see, decide or do differently, and whether any of it is irreversible), before any technical detail. No file paths, code or ids in that paragraph.
+
 ## 5. Asking the owner
 questions/<id>.md from questions/_TEMPLATE.md: WHY, OPTIONS, RECOMMENDATION, RISK CLASS,
 REVERSIBILITY, BLAST RADIUS, DEFAULT, TIMEOUT. Reversible questions adopt the recommendation at
@@ -82,6 +84,8 @@ Downgrades are disclosed. The model is recorded in ledger entries (proposed_by),
 ## 7. Continuity
 Write every entry for a stranger. Before going idle: commit, push, log every reading, and name
 the next step. Don't re-litigate a ruling you didn't witness — raise it with the owner.
+
+**Stopping point before compaction.** In a long session, stop at a natural point before the context fills: commit the work in progress to your branch, write a handoff (what is done, what is next, which files), and tell the owner the next step starts in a fresh session. Never let a compaction fall in the middle of an action you could not resume.
 
 ## 8. Commands
 governance checks: governance/checks/check_all.sh . [BASE_REF [PR]]   (Python 3.11+)

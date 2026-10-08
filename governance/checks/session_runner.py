@@ -50,7 +50,8 @@ command line; `checks` runs git only to give the cleaned tree a fresh one-commit
            supersede line, {superseded} filled with that spec's id, and the control file names it
            as `supersede` (model S-013 AC7).
   run      Starts `claude -p <brief> --agent ... --model ... --max-turns ... --tools ...
-           --allowedTools ... [--disallowedTools <command tools>]` in the pack, with only
+           --allowedTools ... [--disallowedTools <command tools>] --output-format stream-json --verbose`
+           in the pack, with only
            CLAUDE_CODE_OAUTH_TOKEN, PATH, fresh HOME and TMPDIR beside the pack (<pack>.home,
            <pack>.tmp), LANG, RUNNER.toml's pass_env names (while session_commands is "on",
            only if pass_env_cleared is true) and, while "on", CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1. Kills the process group at the role's
@@ -59,7 +60,17 @@ command line; `checks` runs git only to give the cleaned tree a fresh one-commit
            runs as "off" would, stderr.txt starts with a fixed line and result.json says
            "commands": "off-unproven". Writes answer.md, stderr.txt (each capped, with a marker when cut; the
            token, if echoed, is removed) and result.json (ok, error, timeout, usage-limit) in
-           --out, outside the pack.
+           --out, outside the pack. model S-020 AC1, AC2: standard output is read line by line as it
+           arrives and never kept; each line (a longer one than 8 MiB, or one that cannot be folded,
+           is skipped and counted as stream_lines_skipped) is folded into a bounded state, and the answer is the last `result`
+           event's text, redacted after decoding, then capped. A session that ran gets result.json's
+           `usage`: the result event's token totals, num_turns, duration_ms and total_cost_usd (as
+           cost_usd_estimate, the tool's own estimate, not a bill), the main model's contextWindow,
+           autocompact_state's threshold, the largest context of any top-level assistant message
+           (context_peak, named in `derived`), compact_boundary events (compactions, null without an
+           autocompact_state event) and would_have_stopped: context_peak at or over the stop line,
+           floor(0.9 x threshold) (0.9 is the constant STOP_FRACTION, not a setting). A figure that is
+           absent or out of shape is null, never 0. The runner never stops a session for its context.
   collect  For a builder-class role: the files added, changed or deleted in the pack against
            the control file's manifest, kept only when safe and inside the role's lane (AC8),
            as --out/changes.json, --out/files/... and --out/discarded.txt (path: reason).
@@ -81,7 +92,9 @@ command line; `checks` runs git only to give the cleaned tree a fresh one-commit
   record   Writes the answer (or the check log followed by the discard list) byte for byte
            to its record under --dest, built from the control file's validated ids, and
            appends one line {item, session, role, record, result, verdict} to --outcomes,
-           which model S-012's `step --outcomes` reads (AC10).
+           which model S-012's `step --outcomes` reads (AC10). A session's result.json `usage` is
+           copied into the line unchanged when it has exactly model S-020 AC2's shape; otherwise the
+           key is left out and a NOTE says why.
 
 Exit 0 = done, 1 = refused (a control file that does not match its hash, a tampered pack,
 an unknown role — report it as result `error`), 2 = usage or configuration error.
@@ -97,6 +110,7 @@ if sys.version_info < (3, 11):
 import argparse  # noqa: E402
 import hashlib  # noqa: E402
 import json  # noqa: E402
+import math  # noqa: E402
 import os  # noqa: E402
 import re  # noqa: E402
 import shutil  # noqa: E402
@@ -167,6 +181,23 @@ SANDBOXES = ("bwrap",)
 SANDBOX_MISSING = "bwrap was not found; the checks did not run"
 SANDBOX_NOT_STARTED = "sandbox did not start"
 SANDBOX_PREFLIGHT_SECONDS = 60
+
+# model S-020 AC1, AC2: the session speaks stream-json; `run` folds the stream, as it arrives, into the
+# answer and a bounded set of usage figures, and never keeps the stream itself.
+STREAM_FLAGS = ("--output-format", "stream-json", "--verbose")
+STREAM_LINE_LIMIT = 8 * 1024 * 1024        # a longer line is skipped (counted as stream_lines_skipped)
+USAGE_INT_KEYS = ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens",
+                  "num_turns", "duration_ms", "context_window", "autocompact_threshold", "context_peak",
+                  "compactions")
+USAGE_KEYS = USAGE_INT_KEYS + ("derived", "would_have_stopped", "cost_usd_estimate")
+USAGE_DERIVED = ["context_peak"]
+FIGURE_MAX = 10 ** 12
+COST_MAX = 10 ** 6
+# The stop line, as a fraction of the auto-compact threshold: 0.9 (model S-020 AC2). A constant, not a
+# setting; the later spec that turns the stop on makes it one.
+STOP_FRACTION = (9, 10)
+CONTEXT_KEYS = ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
+MODEL_USAGE_KEYS = ("inputTokens", "cacheReadInputTokens", "cacheCreationInputTokens")
 
 
 class Refused(Exception):
@@ -806,6 +837,195 @@ class _Reader(threading.Thread):
                 self.buf += b[:room]
 
 
+def figure(v):
+    """A whole number from 0 to 10^12, else None (a float, a boolean, a string, a negative number)."""
+    return v if type(v) is int and 0 <= v <= FIGURE_MAX else None
+
+
+def cost_figure(v):
+    """A finite number from 0 to 10^6, else None (model S-020 AC2: the one non-integer figure). An int is
+    compared as an int, never converted to a float, so a huge one cannot raise."""
+    if type(v) is int:
+        return v if 0 <= v <= COST_MAX else None
+    if type(v) is not float or not math.isfinite(v) or not 0 <= v <= COST_MAX:
+        return None
+    return v
+
+
+class StreamFold(object):
+    """The bounded state `run` keeps of a stream-json output (model S-020 AC1): the first
+    autocompact_state event's threshold and effective window, system/init's model, the largest context
+    of any top-level assistant line (a message's lines share its id, so the largest over the lines is
+    the largest over the messages), the count of compact_boundary events, and the last result event's
+    figures and text. Nothing else of the stream is kept: tool results hold untrusted text."""
+
+    def __init__(self):
+        self.threshold = self.effective_window = None
+        self.autocompact_seen = False
+        self.init_model = None
+        self.peak = None
+        self.compactions = 0
+        self.result = None          # the last result event, reduced to what is kept
+        self.skipped = 0
+
+    def line(self, raw):
+        """Fold one line. Never raises: a line that cannot be folded is counted as skipped, so the reader
+        keeps draining the pipe and the rest of the stream still counts."""
+        try:
+            self._line(raw)
+        except Exception:                   # noqa: BLE001 - a hostile line must never stop the reader
+            self.skipped += 1
+
+    def _line(self, raw):
+        try:
+            ev = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, ValueError, RecursionError):
+            return
+        if not isinstance(ev, dict):
+            return
+        kind, sub = ev.get("type"), ev.get("subtype")
+        if kind == "autocompact_state" or (kind == "system" and sub == "autocompact_state"):
+            if not self.autocompact_seen:
+                self.autocompact_seen = True
+                value = ev.get("value")
+                if isinstance(value, dict):
+                    self.threshold = figure(value.get("threshold"))
+                    self.effective_window = figure(value.get("effective_window"))
+        elif kind == "system" and sub == "init":
+            if self.init_model is None and isinstance(ev.get("model"), str):
+                self.init_model = ev["model"]
+        elif kind == "system" and sub == "compact_boundary":
+            self.compactions += 1
+        elif kind == "assistant":
+            if ev.get("parent_tool_use_id") is not None:
+                return                          # a sub-agent's message, never the session's context
+            msg = ev.get("message")
+            usage = msg.get("usage") if isinstance(msg, dict) else None
+            if not isinstance(usage, dict):
+                return
+            parts = [usage.get(k, 0) for k in CONTEXT_KEYS]
+            if "input_tokens" not in usage or any(figure(x) is None for x in parts):
+                return
+            ctx = sum(parts)                    # bounded by usage(): a peak above 10^12 is null there
+            if self.peak is None or ctx > self.peak:
+                self.peak = ctx
+        elif kind == "result":
+            usage = ev.get("usage") if isinstance(ev.get("usage"), dict) else {}
+            models = {}
+            mu = ev.get("modelUsage")
+            if isinstance(mu, dict):
+                for name, m in mu.items():
+                    if isinstance(m, dict):
+                        size = sum(figure(m.get(k)) or 0 for k in MODEL_USAGE_KEYS)
+                        models[name] = (figure(m.get("contextWindow")), size)
+            text = ev.get("result")
+            self.result = {"text": text if isinstance(text, str) else "",
+                           "is_error": ev.get("is_error") is True,
+                           "totals": {k: figure(usage.get(k)) for k in ("input_tokens", "output_tokens",
+                                                                       "cache_read_input_tokens",
+                                                                       "cache_creation_input_tokens")},
+                           "num_turns": figure(ev.get("num_turns")), "duration_ms": figure(ev.get("duration_ms")),
+                           "models": models, "cost": cost_figure(ev.get("total_cost_usd"))}
+
+    def answer_text(self):
+        return self.result["text"] if self.result else ""
+
+    def usage(self):
+        """The `usage` figures (model S-020 AC2); a figure not seen, or not a whole number, is null."""
+        r = self.result or {}
+        totals = r.get("totals") or {}
+        window = None
+        models = r.get("models") or {}
+        if models:
+            if self.init_model in models:
+                main_model = self.init_model
+            else:
+                main_model = max(sorted(models), key=lambda k: models[k][1])
+            window = models[main_model][0]
+        u = {k: totals.get(k) for k in ("input_tokens", "output_tokens", "cache_read_input_tokens",
+                                        "cache_creation_input_tokens")}
+        peak = figure(self.peak)                # only the peak becomes null when out of range
+        u.update(num_turns=r.get("num_turns"), duration_ms=r.get("duration_ms"), context_window=window,
+                 autocompact_threshold=self.threshold, context_peak=peak, derived=list(USAGE_DERIVED))
+        if peak is None or self.threshold is None:
+            u["would_have_stopped"] = None
+        else:
+            u["would_have_stopped"] = peak >= self.threshold * STOP_FRACTION[0] // STOP_FRACTION[1]
+        u["compactions"] = self.compactions if self.autocompact_seen else None
+        u["cost_usd_estimate"] = r.get("cost")
+        return {k: u[k] for k in USAGE_KEYS}
+
+
+def usage_problem(u):
+    """Why `u` is not a `usage` value of exactly model S-020 AC2's shape, or None when it is. Never raises:
+    an unexpected failure is itself a reason."""
+    try:
+        return _usage_problem(u)
+    except Exception as exc:               # noqa: BLE001 - a bad figure must never crash record or commit
+        return "unreadable (%s)" % type(exc).__name__
+
+
+def _usage_problem(u):
+    if not isinstance(u, dict):
+        return "not an object"
+    extra, missing = sorted(set(u) - set(USAGE_KEYS)), sorted(set(USAGE_KEYS) - set(u))
+    if extra:
+        return "unknown key %s" % extra[0]
+    if missing:
+        return "missing key %s" % missing[0]
+    for k in USAGE_INT_KEYS:
+        if u[k] is not None and figure(u[k]) is None:
+            return "%s is not a whole number from 0 to 10^12 or null" % k
+    if u["derived"] != USAGE_DERIVED or not isinstance(u["derived"], list):
+        return 'derived is not ["context_peak"]'
+    if u["would_have_stopped"] is not None and type(u["would_have_stopped"]) is not bool:
+        return "would_have_stopped is not true, false or null"
+    if u["cost_usd_estimate"] is not None and cost_figure(u["cost_usd_estimate"]) is None:
+        return "cost_usd_estimate is not a finite number from 0 to 10^6 or null"
+    return None
+
+
+class _LineReader(threading.Thread):
+    """Reads a stream line by line as it arrives and hands each line (at most STREAM_LINE_LIMIT bytes)
+    to `fold`; a longer line is skipped whole and counted. Holds at most one line in memory."""
+
+    def __init__(self, stream, fold):
+        threading.Thread.__init__(self, daemon=True)
+        self.stream, self.fold = stream, fold
+        self.total = 0
+
+    def run(self):
+        buf, skipping = bytearray(), False
+        while True:
+            try:
+                b = self.stream.read1(65536)
+            except (OSError, ValueError):
+                break
+            if not b:
+                break
+            self.total += len(b)
+            start = 0
+            while start < len(b):
+                nl = b.find(b"\n", start)
+                end = len(b) if nl < 0 else nl
+                if not skipping:
+                    buf += b[start:end]
+                    if len(buf) > STREAM_LINE_LIMIT:
+                        buf, skipping = bytearray(), True
+                if nl < 0:
+                    break
+                if skipping:
+                    self.fold.skipped += 1
+                else:
+                    self.fold.line(bytes(buf))
+                buf, skipping = bytearray(), False
+                start = nl + 1
+        if skipping:
+            self.fold.skipped += 1
+        elif buf:
+            self.fold.line(bytes(buf))
+
+
 def _killpg(proc):
     try:
         os.killpg(proc.pid, signal.SIGKILL)
@@ -813,13 +1033,14 @@ def _killpg(proc):
         pass
 
 
-def run_program(argv, cwd, env, seconds, keep, merge_stderr=False):
+def run_program(argv, cwd, env, seconds, keep, merge_stderr=False, fold=None):
     """Run argv in its own process group; kill the whole group at the limit. Returns
-    (exit code or None, timed out, (stdout bytes, total), (stderr bytes, total))."""
+    (exit code or None, timed out, (stdout bytes, total), (stderr bytes, total)). With `fold` (a
+    StreamFold), standard output is folded line by line into it instead of kept (stdout bytes empty)."""
     proc = subprocess.Popen(argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT if merge_stderr else subprocess.PIPE,
                             start_new_session=True)
-    readers = [_Reader(proc.stdout, keep)]
+    readers = [_LineReader(proc.stdout, fold) if fold is not None else _Reader(proc.stdout, keep)]
     if not merge_stderr:
         readers.append(_Reader(proc.stderr, keep))
     for r in readers:
@@ -838,7 +1059,7 @@ def run_program(argv, cwd, env, seconds, keep, merge_stderr=False):
     deadline = time.monotonic() + KILL_GRACE_SECONDS
     for r in readers:
         r.join(max(0.0, deadline - time.monotonic()))
-    out = (bytes(readers[0].buf), readers[0].total)
+    out = (bytes(readers[0].buf) if fold is None else b"", readers[0].total)
     err = (bytes(readers[1].buf), readers[1].total) if not merge_stderr else (b"", 0)
     return rc, timed_out, out, err
 
@@ -905,12 +1126,14 @@ def commands_off(ctl):
 
 
 def session_argv(claude, ctl):
+    """The pinned command line's arguments; the last three ask for stream-json output (model S-020 AC1;
+    `--verbose` is required with -p, EXP-003)."""
     tools = ",".join(ctl["tools"])
     argv = [claude, "-p", ctl["brief"], "--agent", ctl["agent"], "--model", ctl["model"],
             "--max-turns", str(ctl["max_turns"]), "--tools", tools, "--allowedTools", tools]
     if ctl["session_commands"] != "on":
         argv += ["--disallowedTools", ",".join(ctl["command_tools"])]
-    return argv
+    return argv + list(STREAM_FLAGS)
 
 
 def _redact(data, token):
@@ -939,10 +1162,13 @@ def cmd_run(a):
         ctl = commands_off(ctl)
     env = session_env(ctl, home, tmp)
     lim = ctl["limits"]
-    token = os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", "").encode("utf-8")
+    token_text = os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", "")
+    token = token_text.encode("utf-8")
     keep = lim["record_bytes"] + len(token)
     result = {"control": a.hash, "session": ctl["session"]}
-    answer, errout = (b"", 0), (b"", 0)
+    errout = (b"", 0)
+    fold = StreamFold()
+    ran = False
     try:
         vrc, _, vout, _ = run_program([a.claude, "--version"], a.pack, env, 60, 4096)
         version_ok = vrc == 0 and ctl["cli_version"] in vout[0].decode("utf-8", "replace").split()
@@ -953,22 +1179,37 @@ def cmd_run(a):
                       reason="the command line is not version %s" % ctl["cli_version"])
         errout = (vout[0][:4096], len(vout[0][:4096]))
     else:
-        rc, timed_out, answer, errout = run_program(session_argv(a.claude, ctl), a.pack, env,
-                                                    lim["session_minutes"] * 60, keep)
+        rc, timed_out, _, errout = run_program(session_argv(a.claude, ctl), a.pack, env,
+                                               lim["session_minutes"] * 60, keep, fold=fold)
+        ran = True
         err_text = errout[0].decode("utf-8", "replace").casefold()
+        last = fold.result
+        result_text = last["text"].casefold() if last else ""
+        patterns = [p.casefold() for p in ctl["usage_limit_patterns"]]
         if timed_out:
             res = "timeout"
+        elif last and last["is_error"] and any(p in result_text for p in patterns):
+            res = "usage-limit"                   # model S-020 AC1: the result event says so
         elif rc == 0:
             res = "ok"
-        elif any(p.casefold() in err_text for p in ctl["usage_limit_patterns"]):
+        elif any(p in err_text for p in patterns):
             res = "usage-limit"
         else:
             res = "error"
         result.update(result=res, exit=rc, timed_out=timed_out)
-    ans, ans_cut = cap(_redact(answer[0], token), answer[1], lim["record_bytes"])
+    # model S-020 AC1: the answer is the last result event's text, redacted after decoding (so a token the
+    # stream wrote with JSON escapes is removed too), then capped.
+    text = fold.answer_text()
+    answer_bytes = len(text.encode("utf-8", "replace"))
+    if token_text:
+        text = text.replace(token_text, "[token removed]")
+    ans, ans_cut = cap(text.encode("utf-8", "replace"), answer_bytes, lim["record_bytes"])
     lead = (UNPROVEN_LINE + "\n").encode("ascii") if unproven else b""
     err, err_cut = cap(lead + _redact(errout[0], token), len(lead) + errout[1], lim["record_bytes"])
-    result.update(answer_bytes=answer[1], answer_cut=ans_cut, stderr_bytes=errout[1], stderr_cut=err_cut)
+    result.update(answer_bytes=answer_bytes, answer_cut=ans_cut, stderr_bytes=errout[1], stderr_cut=err_cut,
+                  stream_lines_skipped=fold.skipped)
+    if ran:
+        result["usage"] = fold.usage()
     if unproven:
         result["commands"] = "off-unproven"
     write_bytes(os.path.join(out, "answer.md"), ans)
@@ -1531,8 +1772,17 @@ def cmd_record(a):
             if role in CHECKERS:
                 verdict = review_check.parse_verdict(answer.decode("utf-8", "replace")) or "malformed"
     e = ctl["entry"]
-    line = json.dumps({"item": e["item"], "session": ctl["session"], "role": role, "record": record,
-                       "result": result, "verdict": verdict}, ensure_ascii=False)
+    obj = {"item": e["item"], "session": ctl["session"], "role": role, "record": record, "result": result,
+           "verdict": verdict}
+    if role != "checks" and "usage" in res:
+        # model S-020 AC2: copied unchanged when it has exactly the shape; otherwise left out (a bad figure
+        # never costs a session its outcome).
+        why = usage_problem(res["usage"])
+        if why is None:
+            obj["usage"] = res["usage"]
+        else:
+            print("NOTE: usage dropped (%s)" % why)
+    line = json.dumps(obj, ensure_ascii=False, allow_nan=False)
     with open(a.outcomes, "a", encoding="utf-8", newline="\n") as fh:
         fh.write(line + "\n")
     print("OK: %s %s -> %s (%s, %s)" % (role, ctl["session"], record or "no record", result, verdict))

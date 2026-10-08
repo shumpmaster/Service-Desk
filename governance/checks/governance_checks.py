@@ -8,6 +8,7 @@ Usage:
   governance_checks.py builders  [--root DIR] [--base REF]
   governance_checks.py scope     --base REF [--root DIR] [--files-from FILE] [--default-branch NAME]
   governance_checks.py all       [--root DIR] [--base REF]
+  governance_checks.py pr-body   --event FILE
 
 `all` runs sprints, questions, reviewers and builders, and also scope when
 --base is given.
@@ -32,10 +33,18 @@ In a v3 project (governance/v3.toml exists, model S-009 AC2) sprints are retired
 questions, reviewers and builders only. v3_checks.py scope takes scope from the
 spec instead.
 
+`pr-body` (model S-020 AC7) reads a GitHub event payload (the pr-body workflow passes
+$GITHUB_EVENT_PATH). Not a pull-request event: it passes with a NOTE. Otherwise the body's first
+non-blank line, after any leading HTML comment, must be a heading `What this means for you` (any
+level, an optional colon, case ignored), and the lead paragraph after it (up to the first blank line
+or the next heading) must have 15 to 150 words, no backtick and no fenced code. A null body fails;
+an unreadable payload exits 2. It checks the form, not the plainness, and is not part of `all`.
+
 Exit 0 = pass, 1 = rule violated, 2 = usage or parse error.
 """
 
 import argparse
+import json
 import os
 import re
 import sys
@@ -393,6 +402,76 @@ def check_builders(root, base=None):
     return v, notes
 
 
+# model S-020 AC7: a pull request's body opens with what it means for the owner.
+PR_LEAD_RE = re.compile(r"^#{1,6}\s*What this means for you\s*:?\s*$", re.IGNORECASE)
+PR_HEADING_RE = re.compile(r"^\s{0,3}#{1,6}(\s|$)")
+PR_FENCE_RE = re.compile(r"^\s{0,3}(```|~~~)")
+PR_LEAD_WORDS = (15, 150)
+
+
+def check_pr_body(payload):
+    """(problems, notes) for a GitHub event payload (model S-020 AC7). Blank lines straight after the
+    heading are skipped; the lead paragraph is then read up to the first blank line or the next
+    heading, whichever comes first."""
+    if not isinstance(payload, dict):
+        raise g.UsageError("the event payload is not a JSON object")
+    pr = payload.get("pull_request")
+    if not isinstance(pr, dict):
+        return [], ["NOTE: not a pull-request event; the PR-body check does not apply"]
+    body = pr.get("body")
+    if body is None:
+        return ["the pull request has no body; it must open with a '## What this means for you' heading "
+                "and a plain paragraph"], []
+    if not isinstance(body, str):
+        return ["the pull request's body is not text"], []
+    text = body.replace("\r\n", "\n").replace("\r", "\n").lstrip()
+    while text.startswith("<!--"):
+        end = text.find("-->")
+        if end < 0:
+            return ["the body's leading HTML comment is never closed"], []
+        text = text[end + 3:].lstrip()
+    lines = text.split("\n")
+    if not lines or not PR_LEAD_RE.match(lines[0].strip()):
+        first = lines[0].strip() if lines else ""
+        return ["the body's first line is %r, not a '## What this means for you' heading" % first[:80]], []
+    i = 1
+    while i < len(lines) and not lines[i].strip():
+        i += 1
+    lead = []
+    while i < len(lines) and lines[i].strip() and not PR_HEADING_RE.match(lines[i]):
+        lead.append(lines[i])
+        i += 1
+    problems = []
+    words = len(" ".join(lead).split())
+    if not PR_LEAD_WORDS[0] <= words <= PR_LEAD_WORDS[1]:
+        problems.append("the 'What this means for you' paragraph has %d words; it needs %d to %d"
+                        % (words, PR_LEAD_WORDS[0], PR_LEAD_WORDS[1]))
+    if any(PR_FENCE_RE.match(l) for l in lead):
+        problems.append("the 'What this means for you' paragraph holds fenced code")
+    elif any("`" in l for l in lead):
+        problems.append("the 'What this means for you' paragraph holds a backtick (code belongs after it)")
+    return problems, []
+
+
+def run_pr_body(event):
+    try:
+        with open(event, "rb") as fh:
+            payload = json.loads(fh.read().decode("utf-8"))
+        problems, notes = check_pr_body(payload)
+    except (OSError, UnicodeDecodeError, ValueError, g.UsageError) as exc:
+        print("ERROR: pr-body: cannot read the event payload %s: %s" % (event, exc), file=sys.stderr)
+        return 2
+    for n in notes:
+        print(n)
+    if problems:
+        for p in problems:
+            print("FAIL: pr-body: %s" % p)
+        print("PR-body check FAILED (model S-020 AC7).")
+        return 1
+    print("OK: pr-body check passed")
+    return 0
+
+
 # Not run in a v3 project (model S-009 AC2).
 V3_RETIRED = ("sprints", "scope")
 
@@ -414,6 +493,8 @@ def main(argv=None):
             p.add_argument("--base", required=True)
             p.add_argument("--files-from")
             p.add_argument("--default-branch")
+    p = sub.add_parser("pr-body", allow_abbrev=False)
+    p.add_argument("--event", required=True)
     try:
         args = parser.parse_args(argv)
     except SystemExit as exc:
@@ -421,6 +502,8 @@ def main(argv=None):
     if not args.cmd:
         parser.print_usage(sys.stderr)
         return 2
+    if args.cmd == "pr-body":
+        return run_pr_body(args.event)
     # `all` gains scope only when a base is given.
     selected = [c for c in CHECKS if args.cmd == c[0] or (args.cmd == "all" and (c[0] != "scope" or args.base))]
     violations, notes, errors = [], [], []

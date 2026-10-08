@@ -1,38 +1,48 @@
 Verdict: FAIL
 
-I opened the sources for the revised rows and filed six entries that passed. The memo as a whole still can't pass. Some claims are on one page only, and I couldn't open the older rows at all. I made no commits because there is no git repository here.
+The nine proposed entries passed and I filed them, but the memo still has claims I could not confirm. I made no commits, because the folder is not a git repository. The sources were opened as raw pages, not through a summarising fetch. I fetched raw text for the RFCs, the Apple `.md` page, the web.dev, MDN and Chrome pages, Cloudflare `index.md` and the GitHub article bodies.
 
-**Filed** (all under `library/facts/`, dated 2026-10-08)
-- **F-webpush-01b** passes (Home Screen web apps on iOS 16.4+). I read three pages:
-  - The Apple doc says "Add web push to Home Screen web apps in iOS 16.4 or later".
-  - The WebKit post says "adding support for Web Push to Home Screen web apps".
-  - MDN's PushManager.json says "Notifications are supported in web apps saved to the home screen."
-  - It is a new entry, because I may not edit F-webpush-01.
-- **F-webpush-04** passes (Safari revokes permission for invisible pushes).
-  - Apple says "Safari revokes the push notification permission for your site".
-  - WebKit "Meet Web Push" says "Violations of the `userVisibleOnly` promise will result in a push subscription being revoked."
-  - The WebKit post is about macOS Safari 16, so for iOS specifically only the Apple page supports it. I noted that in the entry.
-- **F-cf-cron-01** passes (Pages has no Cron Triggers). The migration matrix shows Pages ❌ for Cron Triggers. The Builder Day post of 2024-09-26 says "not yet supported in Pages, including … Cron Triggers". The post is two years old, so this may have changed.
-- **F-cf-pages-svc-01** passes (a Pages Function can call a Worker through a service binding). The bindings page says "Service bindings enable you to call a Worker from within your Pages Function." The matrix shows Service bindings ✅ for both Workers and Pages.
-- **F-cf-kv-01** passes in part. It covers 100,000 reads a day, 1,000 writes a day, 1 GB, 1 write per second to the same key, and the 60-second visibility delay.
-  - Each figure appears on two Cloudflare pages: limits, pricing, write-key-value-pairs and how-KV-works.
-  - **Ruling you asked for:** `governance/standards/sources.md` lets two pages from the same vendor count as two sources for limits and behaviour. Only cost, risk and quality claims need an independent source. These are quotas, not prices, so they qualify. I filed no dollar-cost claim.
-  - The 3-month shelf life is my choice.
-- **F-gh-12b** passes (schedule delay and dropped jobs, plus the 60-day disable in public repositories). The events page and the troubleshoot-workflows page both give the delay and the dropped jobs. The events page and the disable-and-enable page both give the 60-day rule.
-
-**Not filed**
-- **Topic replaces a waiting message (F-webpush-02 amendment):** RFC 8030 §5.4 says "A push message with a topic replaces any outstanding push message with an identical topic." Apple says only "coalesce", so I count that as one page. The 32-character limit is already in F-webpush-02.
-- **KV Free deletes and lists (1,000 each a day):** only the pricing page shows these. The limits-page fetch didn't itemise them.
-- **W1a, that Safari tabs cannot use Web Push:** no primary page says it. The memo grades it C.
-- **W3, the manifest `display` requirement:** the WebKit post is the only source.
-- **P2 (per-app notification settings, Focus):** not proposed for filing. The WebKit post confirms it; the Apple badging point is thinner.
+**Filed in `library/` (all dated 2026-10-08)**
+- **`facts/F-webpush-02b.md`** (a Topic replaces a pending push):
+  - RFC 8030 §5.4 reads "A push message with a topic replaces any outstanding push message with an identical topic" (rfc8030.txt, line 748).
+  - web.dev says Topics "replace a pending messages". Apple says "coalesce" (apple.md, line 66).
+- **`facts/F-webpush-05.md`** (4096-byte payload limit, grade A):
+  - RFC 8030 (line 1115), RFC 8291 (line 365), web.dev and Apple's "4 KB" error (apple.md, line 105) all confirm the limit.
+  - Only RFC 8291 says `aes128gcm` and single-record encryption (lines 352 and 374), so that part is stated as single-source.
+  - I did not file the memo's "about 3,993 octets" figure.
+- **`facts/F-webpush-06.md`** (response codes):
+  - I corrected the memo's shorthand "404 or 410 = expired". Apple's 404 means an invalid `:path` (apple.md, line 84). Apple's 410 means the token expired (line 86).
+  - RFC 8030 §7.3 says expired subscriptions get a 404. web.dev says 404 means expired and 410 means gone.
+  - The entry states each code per publisher.
+- **`facts/F-webpush-07.md`** (service worker, push while the page is closed, HTTPS):
+  - Confirmed by MDN Push API, Apple (apple.md, line 28), web.dev overview and MDN `register()`.
+  - Apple does not state the HTTPS rule.
+- **`patterns/P-notify-permission-01.md`** (ask for permission inside a user action):
+  - I graded it B, not the memo's A. web.dev and developer.chrome.com are both Google, and the advice is a quality claim that needs an independent source.
+  - MDN independently confirms only the denied/default behaviour.
+- **`facts/F-cf-kv-01b.md`** (KV Free: 1,000 deletes and 1,000 lists a day, reset at 00:00 UTC): confirmed on the KV pricing page (lines 23–24) and the Workers pricing page. Same-publisher pages count under `governance/standards/sources.md`.
+- **`facts/F-cf-do-free-01.md`** (Workers Free allows only SQLite-backed Durable Objects): the 100,000 requests a day, 13,000 GB-s a day and 5 GB are on both Cloudflare pages. The 5 million rows read and 100,000 rows written a day are on the DO pricing page only (line 88–89), so I labelled them single-source.
+- **`facts/F-cf-access-svc-01.md`** (service-token headers and the "Service Auth" action): confirmed on the service-tokens page (lines 145 and 159–161) and the CORS page (lines 139 and 197–198).
+- **`facts/F-gh-13.md`** (`repository_dispatch` and the 10-property limit on `client_payload`): both GitHub pages confirm it. I filed it with no size figure, because the events page says 65,535 characters and the REST page says "less than 64KB". That answers the memo's open request.
 
 **Why FAIL**
-- The memo says it replaces only the revised rows. The earlier version of `research/Q-011-memo.md` was overwritten, so I can't open the unchanged rows. These are W4, W6, W7, W11, W13, W16, S4, S5, X1–X7, P1, P3–P5, T6 and G2–G7.
-- W1a, W3, the Topic replacement and the KV deletes/lists remain on one page or none.
+- **T10, token scope:** the memo says a classic PAT needs `repo` scope, from the REST page. That sentence on the page belongs to the create-repository endpoint, not the dispatch endpoint. I dropped the claim from `F-gh-13`.
+- **T6, Cron Triggers "counted as requests":** the Workers pricing page has no such sentence.
+- **G2, team mentions excluded from push (GitHub blog):** confirmed on the blog page.
+- **Rows I did not open:** I did not open W12 (MDN BCD), X5, X7, T2, T7's date, T9's time-zone text or the Chromium blog. None is proposed for filing, but they remain unchecked.
+- **Rows I confirmed:**
+  - Cron: UTC, up to 15 minutes to propagate, 5 triggers on Free.
+  - Access: the AJAX sentence and the `X-Requested-With` header, plus the session range of 15 minutes to one month with a 24-hour default.
+  - Secrets: `wrangler secret put` deploys immediately.
+  - Web Crypto: the primitives listed.
+  - Workflows cron: confirmed.
+  - WebKit: the manifest `display` wording, per-app Notifications Settings, Focus, and no Developer Program needed.
+  - web.dev FAQ: the ten-day heuristic and "unreliable".
+  - GitHub: the mobile push types, Working Hours and the delay note; the 5-minute and 60-day schedule rules; the `assigned` activity type.
+  - Billing: free for public repositories.
+  - DO billing: SQLite storage billing starting no earlier than 7 January 2026.
 
 **Open questions**
-- Does any primary Apple or WebKit page say iOS Safari tabs cannot subscribe to push (Q-d)?
-- Has Cloudflare added Cron Triggers to Pages since September 2024 (Q-e)?
-- The memo's `.env*` / `.npmrc` flag: this pack has no such files, so I couldn't check it. The Orchestrator should confirm how the pack was built.
-- T3 and T6 are not covered here: the memo doesn't state them, and I haven't opened them.
+- Should the Researcher correct T10 and T6, or drop them?
+- Q-d (a primary page saying iOS Safari tabs cannot subscribe to push) and Q-e (Cron Triggers on Pages after September 2024) remain open.
+- Do the Free-plan Durable Object storage limits still hold after SQLite storage billing began? I set a 3-month shelf life on `F-cf-do-free-01` for this reason.

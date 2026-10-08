@@ -231,3 +231,31 @@ test('Page AC22/AC23: the Agents view lists sessions with run time, result, verd
     Date.now = realNow;
   }
 });
+
+test('Page AC20: "Time asked of you" for a v3 and a v2.5 project', async () => {
+  const repos = {
+    'Service-Desk': repo({ 'dispatch-log/2026-10.jsonl': fixture('service-desk/dispatch-log/2026-10.jsonl'),
+      'queue/P-001-stop-6.md': fixture('service-desk/queue/P-001-stop-6.md'), 'decisions/P-001/stop-6.md': 'Decision: re-scope\n' }, [], []),
+    'Personal-Org-Operating-Model': repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md'),
+      'questions/Q-030-x.md': fixture('service-desk/questions/Q-005-sources.md') }, [], []),
+  };
+  let app = await loadApp({ hash: '#/p/Service-Desk/asked', repos, now: Date.parse('2026-10-07T12:00:00Z') });
+  try {
+    await app.advance(1000);
+    const text = app.els.view.textContent;
+    assert.match(text, /Last 14 days: \d+ cards?, median wait /);
+    assert.match(text, /P-001 stop-6raised Oct 6 13:51 · answered Oct 6 16:31 · wait 2 h 39 min · not a proxy · re-scope/);
+  } finally {
+    app.restore();
+  }
+  app = await loadApp({ hash: '#/p/Personal-Org-Operating-Model/asked', repos, now: Date.parse('2026-10-07T12:00:00Z') });
+  try {
+    await app.advance(1000);
+    const text = app.els.view.textContent;
+    assert.match(text, /no cards in operating model v2\.5\.1/);
+    assert.match(text, /Q-030-x/);
+    assert.match(text, /answered questions: not recorded \(operating model v2\.5\.1 records rulings in the ledger\)/);
+  } finally {
+    app.restore();
+  }
+});

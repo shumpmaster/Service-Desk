@@ -2,12 +2,12 @@
 kind = "research"
 stage = 2
 state = "dispatched"
-role = "source-checker"
+role = "researcher"
 last_verdict = "none"
-plan_round = 0
+plan_round = 1
 build_round = 0
 confirm_used = false
 attempts = 0
-sessions = 2
-dispatched_at = "2026-10-08T14:11:23Z"
+sessions = 3
+dispatched_at = "2026-10-08T14:15:12Z"
 card = 1

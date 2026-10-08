@@ -1,43 +1,31 @@
 Verdict: FAIL
 
-I filed three of the four proposed entries. The pattern entry LIB-P-q010-b is not filed, and memo row 4.1 is not confirmed. I checked every claim by reading the pages myself. The Apple pages only rendered through their `tutorials/data` JSON endpoints.
+The pattern entry LIB-P-q010-b is not filed. The quotes check out, but the two-independent-sources rule isn't met. I filed nothing this round. The three entries filed earlier (b1, b2, e) are unchanged.
 
-**Filed (in `library/facts/`)**
-- **`LIB-F-q010-b1-touch-targets-ios-android.md`** (memo rows 9·iOS and 9·Android; lines 15 and 17):
-  - Apple's accessibility table gives a 44×44 pt default for iOS and iPadOS.
-  - Apple's Buttons page says "at least 44x44 pt".
-  - Android's developer guide says "at least 48dp×48dp. Larger is even better."
-  - Google's Accessibility Help page says 48×48 dp, 8 dp spacing and about 9 mm.
-  - Each platform's figure rests on two pages from one publisher.
-  - I left out the iOS 28 pt minimum, because it comes from one page and the Buttons page contradicts it.
-  - I also left out the 8 dp spacing, which appears on the Google help page only.
-- **`LIB-F-q010-b2-reduce-motion.md`** (row 5.4; line 13):
-  - The Reduce Motion claim has two independent sources. The W3C Understanding page for 2.3.3 describes the prefers-reduced-motion technique for disabling non-essential animation. Apple's accessibility page says to replace transitions in the x-, y- and z-axes with fades.
-  - I did not re-confirm the AAA level this round. I read it in an earlier round.
-  - The "replace with dissolve, highlight fade or colour shift" part comes from Apple alone (the accessibility page and the App Store Connect criteria). I quoted the App Store Connect page for it.
-- **`LIB-F-q010-e-widget-deep-link.md`** (memo section B; line 34):
-  - The HIG widgets page says "don't make people navigate to the relevant area in the app".
-  - The WidgetKit linking page says "open the app at a scene that matches the content of the widget".
-  - The memo's wording says "glance surface". I narrowed the entry to widgets and Live Activities, because the sources say nothing about web dashboards.
+**What I confirmed by opening the pages myself**
+- **Row 4.1a, Mackinlay 1986** (Xerox PARC archive HTML, `memo` line 14):
+  - Expressiveness means a sentence "encodes all the facts in the set and" "encodes only the facts in the set".
+  - The bar chart of the nominal Nation relation "expresses the fact that the countries are ordered, which is not correct".
+  - Both match the memo. My reader tool returned the page as a paraphrase with partial quotes, so it matched the wording but wasn't a clean verbatim read.
+- **BCB5200** (`memo` line 24): "The visual encoding should express all of, and only, the information in the dataset attributes." It also says "Unordered data should not be shown in a way that perceptually implies ordering."
+- **CUNY L5** (`memo` line 24): "Visual encoding should express all of, and only, the information in the dataset attributes."
+- **Retraction of the old row 4.1** (`memo` line 13): this is correct. It matches my earlier failed check in `research/Q-010-source-check.md`, lines 26–29.
 
-**Not filed or not confirmed**
-- **`LIB-P-q010-b`** (memo lines 38–41):
-  - The two course pages (CUNY L5 and BCB5200) are both restatements of Munzner. The original is unread, so they are not independent of each other.
-  - Their channel lists don't agree. My CUNY read found no "identity" or "magnitude" headings and no "spatial region". A first read of the same page listed spatial region as a magnitude channel. BCB5200 lists spatial position as an identity channel.
-  - The page-reader tool gave inconsistent summaries of the CUNY page, so I couldn't confirm which is right.
-  - Both pages do state the expressiveness quote "all of, and only, the information in the dataset attributes" and that unordered data should not suggest an order.
-- **Row 4.1** (line 12) is not confirmed. The memo says both pages confirm "spatial region is identity; only position on a scale is magnitude". My reads contradict that.
-- **Row 1.1** (line 11) is confirmed.
-  - NN/g says "single-page view that imparts at-a-glance information".
-  - Few says "consolidated and arranged on a single screen so the information can be monitored at a glance".
-  - Both quotes match the memo.
-  - "Single screen" rests on Few alone, as the memo says.
-  - I filed no entry for this row.
-- **Rows 7.2, 7.3, 8.1a and the iOS spacing row** have one source each. I didn't file them and didn't re-open them.
-- **Brehmer 2019, Gschwandtner 2016, GOV.UK, web.dev CLS, Boukhelifa and Song & Szafir** remain unchecked. I did not open them this round, and `LIB-F-q010-d` stays withdrawn.
+**Why the pattern isn't filed**
+- **Not independent** (`memo` lines 14 and 25):
+  - BCB5200 and CUNY L5 both restate Munzner.
+  - Munzner builds on Mackinlay, as the memo says.
+  - I treated derivative restatements as not independent in the earlier round (`research/Q-010-source-check.md`, line 43).
+  - That leaves one real source, Mackinlay. The Munzner restatements add nothing independent.
+  - No owner ruling says otherwise. `governance/standards/sources.md` lines 8–10 only lets two pages from the same vendor count as two sources, and only for a vendor's own product behaviour.
+- **Grade B isn't supported:** the memo grades 4.1a as B on two named authors. That counts Munzner as a second author, so the grade needs the same ruling.
+- **Row 4.1b** (channel lists, `memo` line 15) has a single source: restatement pages, with the primary unread. It stays out of the library, as the memo says.
+- **Row 4.1c** (`memo` line 16) is not used, and I did not check it.
+- **iOS note** (`memo` line 17): I did not re-open it. Filed entry b1 stands.
 
 **Open questions**
-- **Q-010-e (owner ruling needed):** the source standard covers "how a vendor's own product behaves". It is unclear whether Apple and Google design recommendations, such as touch-target sizes, count as behaviour. I filed b1, b2 and e on the narrow reading, with the claims worded as "Apple/Android guidance" and labelled "same publisher". If the owner rules otherwise, they should be withdrawn.
-- **Q-010-c:** is the 28 pt iOS minimum real? Apple's accessibility table says 28 pt, and the Buttons page says 44 pt. It stays unresolved.
-- **P-b needs a primary or a PDF-capable read** of Munzner, *Visualization Analysis & Design*, ch. 5, to settle the channel lists.
-- **Q-010-d:** I have no ruling on whether a paper plus a derivative that restates it counts as two sources. I treated derivative restatements as not independent.
+- **Q-010-d (owner ruling needed):** does Munzner restating Mackinlay count as an independent second source? If the owner says yes, LIB-P-q010-b could be filed at grade B, with its note on the channel lists kept.
+- **Possible one-source filing:** if the owner would accept a single primary source for a design principle, the entry could be filed at a lower grade, labelled single source. I need a ruling before doing that.
+- **Q-010-f:** do agreeing restatements count when the primary is unread? I assumed no, and that holds for 4.1b.
+- **Q-010-c:** which iOS figure applies, the 28 pt minimum or 44 pt? Still unresolved.
+- **Q-010-e:** whether Apple and Google design guidance counts as "product behaviour" under the source standard is still unruled. Entries b1, b2 and e rest on the narrow reading.

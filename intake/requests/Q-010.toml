@@ -1,20 +1,21 @@
 kind = "research"
 question = """
-From published design guidance only: what makes a phone-first status dashboard, used by one person to oversee several automated projects, easy to read at a glance and quick to act on?
+From published design guidance only: how should a phone-first status dashboard, used by one person to oversee several automated software projects, be designed so a few-second glance tells the owner where to drill in, with dashboard-level detail one step down rather than on the first screen?
 
 Cover:
-- showing each item's stage or progress, such as a stage track, a stepper or a progress bar, and when each form reads best on a phone;
-- showing status with colour without relying on colour alone (colour-blind readers, bright sunlight, dark mode), with contrast minimums;
-- how much belongs on one phone screen, and how to order and group items so the most urgent comes first;
-- making a "needs you" signal hard to miss without becoming noise, including badges, counts and alert fatigue;
-- showing a timeline of recent and upcoming events on a narrow screen;
-- showing quantities such as usage against a limit or how full a context window is, using gauges, bars or numbers, and when each misleads;
-- touch-target sizes and one-handed use;
-- showing "no news", stale data and errors honestly, so that "quiet" can be trusted.
+- progressive disclosure for glanceable overviews: what belongs on the first screen of a phone dashboard, what one tap down, and how a summary signals that detail is worth opening;
+- showing the stage of work that can loop back, stall or wait, per item and per project, without implying a percentage complete or steady progress;
+- a one-line "where it's heading" summary per project (the current phase, the upcoming work, what it unlocks) built from records without overclaiming;
+- telling different kinds of item apart without ranking their urgency (e.g. irreversible or self-defaulting decisions versus routine merges);
+- change on a screen that updates itself every minute: reordering, highlighting what is new since the last visit, avoiding layout shift and mis-taps;
+- an activity view of who is working on what, why, and what changed;
+- timelines on a 360 px screen holding events of very different lengths (minutes to days), past events beside planned ones with no fixed time;
+- showing values that are unknown, stale or estimated (in gauges, numbers and summary lines) so they are never read as real or as zero, and making stale data visibly degrade;
+- a short standards lookup only: colour not used alone, contrast minimums for text and graphics, touch-target minimums, reduced motion.
 
-Use only public sources read through web search and web fetch: platform guidelines (Apple Human Interface Guidelines, Material Design), accessibility standards (WCAG 2.2 and its understanding documents), and published usability research (e.g. Nielsen Norman Group, Baymard, academic HCI papers). Do not inspect this session's own environment, configuration, files outside the brief, or any credential. Where the guidance does not say, write "not documented" rather than guessing. Report a fact as confirmed only where two independent sources state it; list facts from one source only, or from none, separately as "single source" or "not documented". Make no recommendation of a specific product or library.
+Use only public sources read through web search and web fetch: platform guidelines (Apple Human Interface Guidelines, Material Design), accessibility standards (WCAG 2.2 and its understanding documents), published usability research (e.g. Nielsen Norman Group, Baymard, academic HCI papers) and information-design and data-visualisation literature. Do not inspect this session's own environment, configuration, files outside the brief, or any credential. Where the guidance does not say, write "not documented" rather than guessing. Report a fact as confirmed only where two independent sources state it; list facts from one source only, or from none, separately as "single source" or "not documented". Make no recommendation of a specific product or library.
 
-The decision it serves: the Service Desk's design milestone (between S-001's M2 and M3), where the owner chooses a visual design through mockups and a sandbox view (decisions/questions/P-001-design-step.md).
+The decision it serves: the Service Desk's design milestone (between S-001's M2 and M3), where the owner chooses a visual design through mockups and a sandbox view (decisions/questions/P-001-design-step.md; the owner's answers in P-001-design-discovery.md).
 
-Depth: 3, a graded memo. Topics: design, dashboards, accessibility, mobile.
+Depth: 3, a graded memo. Topics: design, dashboards, information-design, accessibility, mobile.
 """

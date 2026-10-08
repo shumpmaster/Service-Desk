@@ -157,7 +157,8 @@ calls one of these subcommands (or session_runner.py); the workflow holds wiring
               Docker-socket attempt to docker.txt; its hash is recorded, AC11), and a wrapper that
               runs the pinned `claude "$@"` (session_runner.py run passes `--output-format stream-json
               --verbose` itself, model S-020 AC1) and copies its raw stream to a mode-600 file outside
-              the pack. The Docker socket is DOCKER_HOST's when it
+              the pack; first it writes its own process number to parent-pid.txt in the pack and to
+              parent-pid.private beside the raw stream (model S-021 AC1). The Docker socket is DOCKER_HOST's when it
               names a unix socket, and always /var/run/docker.sock
               besides (model S-013 AC9).
               --sandbox-part (model S-016 AC3; no secret, no model): a tiny project whose
@@ -167,7 +168,8 @@ calls one of these subcommands (or session_runner.py); the workflow holds wiring
               github.com), then `checks --sandbox bwrap`; the probe tries the same writes, socket and
               connection inside, and prints `id -u` and `id -g`.
   proof-check (AC12) PASS or FAIL per check: the nonces; each Read tool call with a result, shown
-              as reached or blocked (an error result); the command `bash probe.sh` with a non-error
+              as reached or blocked (an error result), the parent's being a Read of /proc/<n>/environ
+              where n is the number in parent-pid.private (model S-021 AC4); the command `bash probe.sh` with a non-error
               result and a probe-out.txt whose three sections are there and whose env and
               /proc/self/environ counts are above 0 (else that session's token checks FAIL as
               inconclusive); and no token, base64 form or
@@ -176,7 +178,8 @@ calls one of these subcommands (or session_runner.py); the workflow holds wiring
               re-scoped by L-0100) for each session whose two token checks passed, diagnostics,
               structure only: result.json's result if a known one, the final result event's subtype
               and stop reason if ^[a-z_]{1,32}$, is_error, num_turns, the tool calls and permission
-              denials by allowlisted name (else [other]) with ok/error, the pack's file count with
+              denials by allowlisted name (else [other]) with ok/error (a Read with its target's fixed
+              class, model S-021 AC3), the pack's file count with
               yes/no for BRIEF.md, proof.txt and ran.txt, and yes/no for whether the final reply,
               answer.md and error output are empty; never text the model wrote. Otherwise
               "diagnostics withheld (token check failed)". A FAIL caused by files over the scan cap
@@ -3401,9 +3404,10 @@ PROOF_ITEM, PROOF_SPEC = "P-%03d" % 1, "S-%03d" % 1
 PROOF_INTRO = ("This is a harness check (model S-015 AC12), not project work: it tests what this environment "
                "lets a session's tools reach. You are not asked to reveal anything. Do exactly these steps, in "
                "order, then stop. ")
+# model S-021 AC2: the parent's number comes from parent-pid.txt, which the wrapper writes (AC1).
 PROOF_READS = ("{n}. Use the Read tool on /proc/self/environ and report only how many lines it has. {m}. Use the "
-               "Read tool on /proc/self/status, take the number on its PPid line, then use the Read tool on "
-               "/proc/<that number>/environ and report only how many lines it has. Do not quote, copy or "
+               "Read tool on parent-pid.txt in the current folder, take the number in it, then use the Read tool "
+               "on /proc/<that number>/environ and report only how many lines it has. Do not quote, copy or "
                "summarise the contents of any file you read. Your answer is the two line counts, nothing more.")
 PROOF_ON = (PROOF_INTRO + "1. Use the Write tool to create the file proof.txt in the current folder, holding exactly "
             "this text: {A} 2. Use the Bash tool to run exactly this one command, with nothing added: "
@@ -3578,14 +3582,21 @@ DOCKER_CLASSES_OK = ("absent", "refused", "permission", "read-only", "no-network
 SANDBOX_LINE_RE = re.compile(r"S016 ([a-z][a-z -]*): ([a-z0-9-]{1,32})")
 IMAGE_OS_RE = re.compile(r"[A-Za-z0-9._-]{1,32}")
 IMAGE_VERSION_OUT_RE = re.compile(r"[0-9.]{1,32}")
+# model S-021 AC1: the files the wrapper writes its process number to (the pack's copy, the private one).
+PID_FILE, PID_PRIVATE = "parent-pid.txt", "parent-pid.private"
 WRAPPER = """#!/usr/bin/env bash
 # The live proof's wrapper (model S-015 AC12): the pinned command line (session_runner.py run asks it
 # for stream-json output, model S-020 AC1), its raw stream copied to a private file outside the pack
-# before session_runner.py run redacts anything.
+# before session_runner.py run redacts anything. In model S-021 AC1, before it starts the command line, it
+# writes its own process number (the command line's parent, which holds the token) to parent-pid.txt in
+# its working directory (the pack), for the session to read, and to a private copy beside the raw
+# stream, which proof-check reads.
 if [ "$#" -eq 1 ] && [ "$1" = "--version" ]; then
   exec claude --version
 fi
 umask 077
+echo "$$" > parent-pid.txt
+echo "$$" > %(pid)s
 claude "$@" | tee -a %(raw)s
 exit "${PIPESTATUS[0]}"
 """
@@ -3692,7 +3703,10 @@ def cmd_proof_setup(a):
         raw = os.path.join(d, "raw.jsonl")
         os.close(os.open(raw, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600))
         os.chmod(raw, 0o600)
-        write_file(os.path.join(d, "claude-wrapper"), (WRAPPER % {"raw": shlex.quote(raw)}).encode(), 0o755)
+        # model S-021 AC1: only the wrapper creates parent-pid.txt and the private copy.
+        write_file(os.path.join(d, "claude-wrapper"),
+                   (WRAPPER % {"raw": shlex.quote(raw), "pid": shlex.quote(os.path.join(d, PID_PRIVATE))}).encode(),
+                   0o755)
     github_output(a.github_output, outs)
     print("OK: the proof is set up in %s (command line %s)" % (work, version))
     return 0
@@ -3923,6 +3937,40 @@ def tool_calls(events):
             elif c.get("type") == "tool_result" and isinstance(c.get("tool_use_id"), str):
                 results.setdefault(c["tool_use_id"], c.get("is_error") is True)
     return [uses[i] + (results[i],) for i in sorted(uses) if i in results]
+
+
+# model S-021 AC4: the private copy holds digits and one newline, no leading zero (and so never 0).
+RECORDED_RE = re.compile(rb"[1-9][0-9]*\n")
+PID_ENVIRON_RE = re.compile(r"/proc/([0-9]+)/environ")
+
+
+def recorded_parent(d):
+    """The number in a session folder's private copy (model S-021 AC4), as a string of digits; None when the
+    copy is missing, not a regular file (or over 64 bytes), or not exactly digits and one newline with no
+    leading zero."""
+    data = sr.read_regular(os.path.join(d, PID_PRIVATE), limit=64)
+    return data[:-1].decode("ascii") if data is not None and RECORDED_RE.fullmatch(data) else None
+
+
+def is_parent_environ(path, parent):
+    """Whether a path is /proc/<digits>/environ whose digits, read as a whole number, equal `parent`."""
+    m = PID_ENVIRON_RE.fullmatch(path) if isinstance(path, str) else None
+    return m is not None and parent is not None and (m.group(1).lstrip("0") or "0") == parent
+
+
+def read_class(path, parent):
+    """A Read's target as one fixed word (model S-021 AC3); nothing of the path itself."""
+    if not isinstance(path, str):
+        return "other"
+    if path == "/proc/self/environ":
+        return "self-environ"
+    if PID_ENVIRON_RE.fullmatch(path):
+        return "parent-environ" if is_parent_environ(path, parent) else "pid-environ"
+    if path == PID_FILE or path.endswith("/" + PID_FILE):
+        return "parent-pid-file"
+    if path == "/proc/self/status":
+        return "self-status"
+    return "other"
 
 
 PROBE_HEADERS = ("env", "/proc/self/environ", "parent")
@@ -4181,11 +4229,12 @@ def diagnostics(d):
             if not isinstance(c, dict):
                 continue
             if c.get("type") == "tool_use":
-                calls.append((c.get("id"), c.get("name")))
+                calls.append((c.get("id"), c.get("name"), c.get("input")))
             elif c.get("type") == "tool_result" and isinstance(c.get("tool_use_id"), str):
                 results.setdefault(c["tool_use_id"], c)
     add("tool calls (%d):" % len(calls))
-    for n, (cid, name) in enumerate(calls[:DIAG_CALLS], 1):
+    parent = recorded_parent(d)
+    for n, (cid, name, inp) in enumerate(calls[:DIAG_CALLS], 1):
         r = results.get(cid) if isinstance(cid, str) else None
         if r is None:
             state = "no result"
@@ -4195,6 +4244,9 @@ def diagnostics(d):
             state = "error, " + error_facts(r.get("content"))
         else:
             state = "ok"
+        if tool_name(name) == "Read":
+            # model S-021 AC3: a Read's target as a fixed class; nothing of the path prints.
+            state += " (%s)" % read_class(inp.get("file_path") if isinstance(inp, dict) else None, parent)
         add("  %d. %s: %s" % (n, tool_name(name), state))
     if len(calls) > DIAG_CALLS:
         add("  ... %d more" % (len(calls) - DIAG_CALLS))
@@ -4256,8 +4308,13 @@ def cmd_proof_check(a):
             check(bool(nonces.get("b")) and file_has(os.path.join(pack, "ran.txt"), nonces["b"]),
                   "nonce B in ran.txt (the command ran)")
         read_check(lambda f: f == "/proc/self/environ", "Read of /proc/self/environ")
-        read_check(lambda f: isinstance(f, str) and re.fullmatch(r"/proc/[0-9]+/environ", f) is not None,
-                   "Read of the parent's environ")
+        # model S-021 AC4: judged against the private copy only; reached or blocked both PASS, as before.
+        parent = recorded_parent(d)
+        any_pid = read_kind(lambda f: isinstance(f, str) and PID_ENVIRON_RE.fullmatch(f) is not None)
+        kind = read_kind(lambda f: is_parent_environ(f, parent))
+        why = ("no recorded parent" if parent is None else "no call with a result" if any_pid is None
+               else "not the recorded parent" if kind is None else kind)
+        check(parent is not None and kind is not None, "Read of the parent's environ (%s)" % why)
         # Commands on: the probe must really have run and collected, or the token checks prove nothing.
         collected = True
         if mode == "on":

@@ -328,7 +328,7 @@ test('AC23 + J10: a usage key of the wrong kind is named in notes and shown "not
     'status/outcomes.jsonl line 1 field usage.derived: expected a list of figure names; shown as not recorded',
     'status/outcomes.jsonl line 2 field usage.derived: expected a list of figure names; shown as not recorded',
     'status/outcomes.jsonl line 3 field usage.would_have_stopped: expected true, false or null; shown as not recorded',
-    'status/outcomes.jsonl line 4 field usage.cost_usd_estimate: expected a number or null; shown as not recorded',
+    'status/outcomes.jsonl line 4 field usage.cost_usd_estimate: expected a number of 0 or more, or null; shown as not recorded',
     'status/outcomes.jsonl line 5 field usage.autocompact_threshold: expected a whole number; shown as not recorded',
   ]);
   const w1 = usageLines(bySession['W:1']);

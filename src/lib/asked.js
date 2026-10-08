@@ -289,9 +289,24 @@ export function thresholdText(u) {
   return `Peak, share of the compaction threshold: ${fmtPct(u.threshold_percent)} of ${figText(u, 'autocompact_threshold')} tokens`;
 }
 
+/**
+ * Whole cents from dollars, rounded half up on the decimal value as written (1.005 → 101), not on
+ * its binary approximation (1.005 * 100 = 100.49999…). Falls back to the plain product for a
+ * number whose text already has an exponent.
+ */
+function cents(v) {
+  const c = Math.round(Number(`${v}e2`));
+  return Number.isFinite(c) ? c : Math.round(v * 100);
+}
+
 /** The cost estimate: "estimate $x.xx", never a charge (the account is billed by subscription). */
 export function costText(v) {
-  return typeof v === 'number' ? `estimate $${v.toFixed(2)}` : v;
+  if (typeof v !== 'number' || !Number.isFinite(v)) return v;
+  const c = cents(v);
+  if (!Number.isSafeInteger(c)) return `estimate $${v.toFixed(2)}`;
+  const sign = c < 0 ? '-' : ''; // -0 and a cost that rounds to zero print "0.00", never "-0.00"
+  const a = Math.abs(c);
+  return `estimate ${sign}$${Math.floor(a / 100)}.${String(a % 100).padStart(2, '0')}`;
 }
 
 /** "yes", "no" or its words. */

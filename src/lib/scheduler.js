@@ -10,7 +10,11 @@ export const POLL_MS = 60_000;
 export const STALE_MS = 180_000;
 export const BLOB_BATCH = 25;
 const MAX_BLOB_CALLS_PER_CYCLE = 6;
-const BLOB_CACHE_KEY = 'desk-blobs-v1';
+// The blob cache holds parsed records, so its key names the parse's shape: bump it whenever a
+// parser's output changes (v2: model S-020's frozen `usage` form, J10), and list the old keys here
+// so their entries are dropped, not left to fill storage.
+export const BLOB_CACHE_KEY = 'desk-blobs-v2';
+export const OLD_BLOB_CACHE_KEYS = ['desk-blobs-v1'];
 const HISTORY_CACHE_KEY = 'desk-history-v1';
 const COMPARE_CACHE_KEY = 'desk-compare-v1';
 
@@ -83,6 +87,7 @@ export function createDesk(opts) {
   const onChange = opts.onChange || (() => {});
   const isVisible = opts.isVisible || (() => true);
   const states = new Map(config.projects.map((p) => [p.name, newProjectState(p)]));
+  if (store && store.remove) for (const k of OLD_BLOB_CACHE_KEYS) store.remove(k);
   const blobCache = new Map(Object.entries((store && store.getJSON(BLOB_CACHE_KEY, {})) || {}));
   const historyCache = new Map(Object.entries((store && store.getJSON(HISTORY_CACHE_KEY, {})) || {}));
   // AC47: compare answers. `<project>:<tip>` → 'merged' is final (the tip is an ancestor of the

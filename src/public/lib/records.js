@@ -577,12 +577,14 @@ function usageValue(k, x) {
   if (x === undefined || x === null) return NOT_AVAILABLE;
   if (k === 'derived') return Array.isArray(x) && x.every((n) => typeof n === 'string') ? [...x] : null;
   if (k === 'would_have_stopped') return typeof x === 'boolean' ? x : null;
-  if (k === 'cost_usd_estimate') return typeof x === 'number' && Number.isFinite(x) ? x : null;
-  return Number.isInteger(x) ? x : null;
+  if (k === 'cost_usd_estimate') return typeof x === 'number' && Number.isFinite(x) && x >= 0 ? x : null;
+  return Number.isInteger(x) && x >= 0 ? x : null;
 }
 
+// A negative figure or cost is the wrong kind too (the Orchestrator's ruling on PR #52's review):
+// no count, time or cost can be below zero, so "whole number" here means 0, 1, 2, …
 const USAGE_KIND = { derived: 'a list of figure names', would_have_stopped: 'true, false or null',
-  cost_usd_estimate: 'a number or null' };
+  cost_usd_estimate: 'a number of 0 or more, or null' };
 
 /**
  * Parse status/outcomes.jsonl: one line per session. Returns { bySession: { session → { item,

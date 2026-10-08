@@ -4,7 +4,7 @@
 // scheduled poll; a rate-limited project isn't polled again before its retryAfter.
 
 import { neededReads, parseRecord, recordKind, buildModel } from './model.js';
-import { parseTree, parseHistory, parseCardPath } from './records.js';
+import { parseTree, parseHistory, parseCardPath, compareStatus } from './records.js';
 
 export const POLL_MS = 60_000;
 export const STALE_MS = 180_000;
@@ -12,6 +12,7 @@ export const BLOB_BATCH = 25;
 const MAX_BLOB_CALLS_PER_CYCLE = 6;
 const BLOB_CACHE_KEY = 'desk-blobs-v1';
 const HISTORY_CACHE_KEY = 'desk-history-v1';
+const COMPARE_CACHE_KEY = 'desk-compare-v1';
 
 export const REASON_WORDS = {
   token: 'the read token was rejected or has expired',
@@ -35,14 +36,20 @@ export function errorText(err) {
   return 'unknown error';
 }
 
-/** Split needed reads into blob calls within the budget (a blob counts 1, a history path 2). */
-export function batches(blobs, history, budget = BLOB_BATCH) {
+/** Split needed reads into blob calls within the budget (a blob counts 1, a history path 2, a
+ * compare 1). */
+export function batches(blobs, history, budget = BLOB_BATCH, compare = []) {
   const out = [];
-  let cur = { blobs: [], history: [], cost: 0 };
+  let cur = { blobs: [], history: [], compare: [], cost: 0 };
   const push = () => {
-    if (cur.cost) out.push({ blobs: cur.blobs, history: cur.history });
-    cur = { blobs: [], history: [], cost: 0 };
+    if (cur.cost) out.push({ blobs: cur.blobs, history: cur.history, compare: cur.compare });
+    cur = { blobs: [], history: [], compare: [], cost: 0 };
   };
+  for (const c of compare) {
+    if (cur.cost + 1 > budget) push();
+    cur.compare.push(c);
+    cur.cost += 1;
+  }
   for (const path of history) {
     if (cur.cost + 2 > budget) push();
     cur.history.push(path);
@@ -78,6 +85,10 @@ export function createDesk(opts) {
   const states = new Map(config.projects.map((p) => [p.name, newProjectState(p)]));
   const blobCache = new Map(Object.entries((store && store.getJSON(BLOB_CACHE_KEY, {})) || {}));
   const historyCache = new Map(Object.entries((store && store.getJSON(HISTORY_CACHE_KEY, {})) || {}));
+  // AC47: compare answers. `<project>:<tip>` → 'merged' is final (the tip is an ancestor of the
+  // head, and stays one); `<project>:<tip>@<head>` → the answer at that head ('behind', 'diverged'
+  // or 'failed'), asked again only when the head changes.
+  const compareCache = new Map(Object.entries((store && store.getJSON(COMPARE_CACHE_KEY, {})) || {}));
   const desk = {
     openedAt: clock.now(), visibleSince: clock.now(), signedOut: false, running: false, states,
   };
@@ -98,6 +109,13 @@ export function createDesk(opts) {
     for (const [k, v] of blobCache) if (live.has(k)) keep[k] = v;
     store.setJSON(BLOB_CACHE_KEY, keep);
     store.setJSON(HISTORY_CACHE_KEY, Object.fromEntries(historyCache));
+    const heads = new Set([...states.values()].map((x) => `${x.project.name}:${x.head}`));
+    const compares = {};
+    for (const [k, v] of compareCache) {
+      const at = k.indexOf('@');
+      if (at < 0 || heads.has(`${k.slice(0, k.indexOf(':'))}:${k.slice(at + 1)}`)) compares[k] = v;
+    }
+    store.setJSON(COMPARE_CACHE_KEY, compares);
   }
 
   function recordsFor(st) {
@@ -121,10 +139,24 @@ export function createDesk(opts) {
     return out;
   }
 
+  /** The compare answers for this project at its current head: tip → 'merged' | answer. */
+  function compareFor(st) {
+    const out = new Map();
+    const prefix = `${st.project.name}:`;
+    for (const [k, v] of compareCache) {
+      if (!k.startsWith(prefix)) continue;
+      const rest = k.slice(prefix.length);
+      const at = rest.indexOf('@');
+      if (at < 0) out.set(rest, v);
+      else if (rest.slice(at + 1) === st.head && !out.has(rest.slice(0, at))) out.set(rest.slice(0, at), v);
+    }
+    return out;
+  }
+
   function missing(st) {
     const now = new Date(clock.now());
     const records = recordsFor(st);
-    const need = neededReads(st.project, st.tree, records, now);
+    const need = neededReads(st.project, st.tree, records, now, { history: historyFor(st), head: st.head, compare: compareFor(st) });
     const shas = [];
     const byPath = new Map();
     for (const b of need.blobs) {
@@ -133,7 +165,7 @@ export function createDesk(opts) {
       byPath.set(b.path, b);
     }
     const history = need.history.filter((p) => !historyCache.has(`${st.project.name}:${p}`));
-    return { shas, history, byPath };
+    return { shas, history, byPath, compare: need.compare };
   }
 
   // AC34: a run of failures keeps the time of its first ("since": the project hasn't been read
@@ -208,10 +240,12 @@ export function createDesk(opts) {
   async function blobPhase(st) {
     for (let calls = 0; calls < MAX_BLOB_CALLS_PER_CYCLE; calls++) {
       const need = missing(st);
-      if (!need.shas.length && !need.history.length) return { ok: true };
-      const [batch] = batches(need.shas, need.history);
+      if (!need.shas.length && !need.history.length && !need.compare.length) return { ok: true };
+      const [batch] = batches(need.shas, need.history, BLOB_BATCH, need.compare);
       st.blobCalls++;
-      const res = await call('/api/blobs', { project: st.project.name, blobs: batch.blobs, history: batch.history });
+      const body = { project: st.project.name, blobs: batch.blobs, history: batch.history };
+      if (batch.compare.length) body.compare = batch.compare;
+      const res = await call('/api/blobs', body);
       if (!res.ok) return res;
       const r = res.json;
       for (const [sha, text] of Object.entries(r.blobs || {})) {
@@ -228,11 +262,18 @@ export function createDesk(opts) {
             oldest: h.oldest ? h.oldest.toISOString() : null, newest: h.newest ? h.newest.toISOString() : null });
         }
       }
+      for (const c of batch.compare) {
+        const key = `${c.base}...${c.head}`;
+        if (!r.compare || !(key in r.compare)) continue; // not answered (the call stopped): ask again
+        const status = compareStatus(r.compare[key]);
+        if (status === 'ahead' || status === 'identical') compareCache.set(`${st.project.name}:${c.base}`, 'merged');
+        else compareCache.set(`${st.project.name}:${c.base}@${c.head}`, status || 'failed');
+      }
       persist();
       if (r.state !== 'ok') return { ok: false, reason: r.reason || 'github', retryAfter: r.retryAfter };
     }
     const need = missing(st);
-    return need.shas.length || need.history.length ? { ok: false, reason: 'github' } : { ok: true };
+    return need.shas.length || need.history.length || need.compare.length ? { ok: false, reason: 'github' } : { ok: true };
   }
 
   async function cycle(st) {
@@ -331,7 +372,7 @@ export function createDesk(opts) {
     return buildModel({
       project: st.project, config, tree: st.tree, records: recordsFor(st), history: historyFor(st),
       pullPages: st.pullRaws || [], checkPages: st.checksRead ? st.checkRaws : null, checksState: st.checksState,
-      now: new Date(clock.now()), withdrawn: st.withdrawn,
+      now: new Date(clock.now()), withdrawn: st.withdrawn, compare: compareFor(st),
     });
   };
   desk.cacheSize = () => blobCache.size;

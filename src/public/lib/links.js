@@ -1,6 +1,6 @@
-// GitHub links the page builds (spec S-001, J3's URL form; EXP-004's test links).
-// M1 answers nothing from the desk: it links to records on GitHub, and offers the two
-// experiments' links. J3's answer links are M2's.
+// GitHub links the page builds (spec S-001, J3's URL form; EXP-004's test links), and from M2 the
+// answer the desk offers for a flagged card or owner question (AC16–AC19). The desk writes nothing
+// to GitHub: it opens GitHub's new-file page, prefilled, and the owner commits there.
 
 function encSegments(s) {
   return String(s).split('/').map(encodeURIComponent).join('/');
@@ -65,4 +65,65 @@ export function exp004Links(project) {
     const url = newFileUrl({ ...project, contentPrefill: true, contentParam: 'value' }, path, content);
     return { n, label: labels[n - 1], path, url, length: url.length, content };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Answering from the desk (M2: AC16–AC19, J3; AC46 and AC47 offer no answer)
+
+/** The owner's note, tidied: line endings normalised, trailing blank space dropped; '' for none. */
+export function tidyNote(note) {
+  return String(note == null ? '' : note).replace(/\r\n?/g, '\n').replace(/\s+$/, '');
+}
+
+/** J3's card content: `Decision: <option>` and, with a note, a blank line and the note. */
+export function cardAnswerContent(option, note) {
+  const n = tidyNote(note);
+  return `Decision: ${option}\n${n ? `\n${n}\n` : ''}`;
+}
+
+/** J3's question content: `Ruling: <letter>`, a blank line, `Question: questions/<name>.md`, then any note. */
+export function questionAnswerContent(letter, name, note) {
+  const n = tidyNote(note);
+  return `Ruling: ${letter}\n\nQuestion: questions/${name}.md\n${n ? `\n${n}\n` : ''}`;
+}
+
+/** AC19's v2.5 text: `Ruling: <letter>` and the note, to copy to the session. */
+export function v25RulingText(letter, note) {
+  const n = tidyNote(note);
+  return `Ruling: ${letter}\n${n ? `\n${n}\n` : ''}`;
+}
+
+export const HOLD_NO_ANSWER = 'No answer needed: fix or re-run the governance run; this clears once it passes.';
+export const mergeNoAnswer = (item) => `No answer needed: merge item/${item} by hand, or change the item and let the merge gate try again.`;
+export const V25_RULING_NOTE = 'this repository records rulings in its ledger; give this to your session';
+export const webCommitsWarning = (branch, what) => `This repository doesn't take commits to ${branch} from the web. On GitHub, `
+  + `choose 'Create a new branch' and then open the pull request GitHub offers; the ${what} stays flagged until that pull request is merged.`;
+export const COPY_WORDS = 'The answer is too long to prefill, or this repository doesn\'t take prefilled content: copy it, then paste it into the page GitHub opens.';
+
+/**
+ * What the desk offers for a flagged item.
+ * target: { kind: 'card' | 'question' | 'hold' | 'merge', answerPath, name, item, options: [word|letter],
+ *   answered: null | { verdict } }.
+ * Returns one of:
+ *   { offer: 'none', words }                         — already answered, or a hold or merge card;
+ *   { offer: 'choose' }                              — no option picked yet;
+ *   { offer: 'copy', copy, words }                   — v2.5 question (AC19): no link at all;
+ *   { offer: 'link', url, copy: null|text, words, warning: null|text, path, content }.
+ */
+export function answerPlan(project, linkCap, target, choice, note) {
+  if (target.kind === 'hold') return { offer: 'none', words: HOLD_NO_ANSWER };
+  if (target.kind === 'merge') return { offer: 'none', words: mergeNoAnswer(target.item) };
+  if (target.answered) return { offer: 'none', words: `already answered: ${target.answered.verdict || 'not recorded'}` };
+  if (!choice || !(target.options || []).includes(choice)) return { offer: 'choose' };
+  if (target.kind === 'question' && project.model !== 'v3') {
+    return { offer: 'copy', copy: v25RulingText(choice, note), words: V25_RULING_NOTE };
+  }
+  const path = target.kind === 'card' ? target.answerPath : `decisions/questions/${target.name}.md`;
+  const content = target.kind === 'card' ? cardAnswerContent(choice, note) : questionAnswerContent(choice, target.name, note);
+  const link = cappedNewFileLink(project, path, content, linkCap);
+  return {
+    offer: 'link', url: link.url, copy: link.copy, path, content,
+    words: link.copy ? COPY_WORDS : null,
+    warning: project.webCommitsToDefault === false ? webCommitsWarning(project.defaultBranch, target.kind === 'card' ? 'card' : 'question') : null,
+  };
 }

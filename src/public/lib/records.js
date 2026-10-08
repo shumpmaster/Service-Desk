@@ -14,6 +14,11 @@ export const LOG_RE = /^dispatch-log\/([0-9]{4}-[0-9]{2})\.jsonl$/;
 export const ROUTING_PATH = 'governance/ROUTING.toml';
 export const LEDGER_PATH = 'docs/LEDGER.md';
 export const SPRINT_RE = /^docs\/sprints\/([^/]+\.md)$/;
+// From M2: the Orchestrator's hold cards (AC46) and merge cards (AC47), and the merge gate's record.
+export const HOLD_RE = /^queue\/ci-hold-([0-9a-f]{12})\.md$/;
+export const MERGE_CARD_RE = /^queue\/([A-Z]+-[0-9]+)-merge-(conflict|by-hand)\.md$/;
+export const MERGES_PATH = 'status/merges.jsonl';
+export const OUTCOMES_PATH = 'status/outcomes.jsonl';
 const SPRINT_SKIP = new Set(['PROGRESS.md', 'SPRINT_PLAN.md']);
 
 /** A card path's parts, or null. `queue/P-001-dor-fail-2.md` → P-001, dor-fail, 2. */
@@ -52,14 +57,23 @@ export function isSprintPath(path) {
   return Boolean(m) && !SPRINT_SKIP.has(m[1]);
 }
 
+/** A merge card path's parts (AC47), or null: `queue/P-001-merge-by-hand.md` → P-001, by-hand. */
+export function parseMergeCardPath(path) {
+  const m = MERGE_CARD_RE.exec(path);
+  return m ? { path, item: m[1], step: m[2] } : null;
+}
+
 /**
- * Classify a path under queue/ (J2). Returns
- * { kind: 'card', card } | { kind: 'readme' } | { kind: 'merge-note' } | { kind: 'unparsed' } | null.
+ * Classify a path under queue/ (J2). Returns { kind: 'card', card } | { kind: 'hold' } |
+ * { kind: 'merge-card', merge } | { kind: 'readme' } | { kind: 'merge-note' } | { kind: 'unparsed' } | null.
  */
 export function classifyQueuePath(path) {
   if (!path.startsWith('queue/')) return null;
   if (path === 'queue/README.md') return { kind: 'readme' };
   if (path.startsWith('queue/merge/')) return { kind: 'merge-note' };
+  if (HOLD_RE.test(path)) return { kind: 'hold' };
+  const merge = parseMergeCardPath(path);
+  if (merge) return { kind: 'merge-card', merge };
   const card = parseCardPath(path);
   if (card) return { kind: 'card', card };
   return { kind: 'unparsed' };
@@ -112,6 +126,85 @@ export function parseCard(text) {
   if (!answerPath) notes.push('no answer path on the "answer:" line');
   const head = /^# (.+)$/.exec(all[0] || '');
   return { heading: head ? head[1] : null, title, options, answerPath, notes };
+}
+
+/** The text of a `## <heading>` section (J2), trimmed, or null when the section is missing. */
+export function sectionText(text, heading) {
+  const sec = sectionLines(lines(text), heading);
+  return sec ? sec.join('\n').trim() : null;
+}
+
+/**
+ * A hold card's text (AC46; `hold_card`, governance/checks/orchestrator_git.py:1233–1245):
+ * { title, tip, state, heldFor, whatToDo, notes }. A line that doesn't match is named in notes;
+ * the card is still flagged while open.
+ */
+export function parseHoldCard(text) {
+  const all = lines(text);
+  const notes = [];
+  const head = /^# (.+)$/.exec(all[0] || '');
+  if (!head) notes.push('line 1 is not a "# " title');
+  const m = /^tip: ([0-9a-f]{40}) +state: (\S+) +held for: ([0-9]+) minutes$/.exec(all[2] || '');
+  if (!m) notes.push('line 3 is not "tip: <sha>   state: <state>   held for: <n> minutes"');
+  const whatToDo = sectionText(text, '## 2. What to do');
+  if (whatToDo == null) notes.push('no "## 2. What to do" section');
+  return { title: head ? head[1].trim() : null, tip: m ? m[1] : null, state: m ? m[2] : null,
+    heldFor: m ? Number(m[3]) : null, whatToDo, notes };
+}
+
+// The Orchestrator's own pattern for a merge card's tip (orchestrator_git.py:3031, CARD_TIP_RE).
+export const MERGE_TIP_RE = /^item: [PQE]-[0-9]+ +tip: ([0-9a-f]{40})\b/m;
+
+/**
+ * A merge card's text (AC47; `MergeGate.fail`, orchestrator_git.py:2887–2910):
+ * { title, tip, decision, why, whatToDo, notes }. A card whose tip can't be read is named in notes
+ * and still flagged.
+ */
+export function parseMergeCard(text) {
+  const all = lines(text);
+  const notes = [];
+  const head = /^# (.+)$/.exec(all[0] || '');
+  const t = MERGE_TIP_RE.exec(lines(text).join('\n'));
+  if (!t) notes.push('no "item: <item>   tip: <40-hex sha>" line; its tip is unknown');
+  const out = { title: head ? head[1].trim() : null, tip: t ? t[1] : null, notes };
+  for (const [k, h] of [['decision', '## The decision'], ['why', '## Why'], ['whatToDo', '## What to do']]) {
+    out[k] = sectionText(text, h);
+    if (out[k] == null) notes.push(`no "${h}" section`);
+  }
+  return out;
+}
+
+/** status/merges.jsonl (the merge gate's own merges): [{ item, tip }] and notes. */
+export function parseMerges(text) {
+  const merges = [];
+  const notes = [];
+  lines(text).forEach((l, i) => {
+    if (l.trim() === '') return;
+    let v;
+    try {
+      v = JSON.parse(l);
+    } catch {
+      notes.push(`${MERGES_PATH} line ${i + 1} is not JSON; skipped`);
+      return;
+    }
+    if (!v || typeof v.item !== 'string' || typeof v.item_tip !== 'string') {
+      notes.push(`${MERGES_PATH} line ${i + 1} has no item and item_tip strings; skipped`);
+      return;
+    }
+    merges.push({ item: v.item, tip: v.item_tip });
+  });
+  return { merges, notes };
+}
+
+/** A compare answer's status (J1: ahead, identical, behind or diverged), or null. */
+export function compareStatus(raw) {
+  if (typeof raw !== 'string') return null;
+  try {
+    const v = JSON.parse(raw);
+    return v && typeof v.status === 'string' ? v.status : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Line 1 of an answer file: the text after `Decision: `, or null. */
@@ -465,6 +558,72 @@ export function markRetries(entries) {
     }
   }
   return entries;
+}
+
+// ---------------------------------------------------------------------------
+// Session usage (J10, AC23): status/outcomes.jsonl
+
+// J10's proposed `usage` form (to D7.1). EXP-003 found each figure in the session runner's
+// stream-json output; the record names below are J10's, not the tool's (see the EXP-003 result).
+export const USAGE_KEYS = ['input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'turns',
+  'context_peak_tokens', 'context_window_tokens'];
+export const NOT_AVAILABLE = 'not available';
+
+/**
+ * Parse status/outcomes.jsonl: one line per session. Returns { bySession: { session → { item,
+ * role, result, verdict, usage } }, notes } (a plain object, so the page can keep it in storage). `usage` is null for a line without one ("not
+ * recorded"); otherwise each J10 key maps to an integer, NOT_AVAILABLE (null, or not reported), or
+ * 'not recorded' (a value of the wrong type, named in notes). A line whose `session` isn't a
+ * string is named and skipped (AC31).
+ */
+export function parseOutcomes(text) {
+  const bySession = {};
+  const notes = [];
+  lines(text).forEach((l, i) => {
+    if (l.trim() === '') return;
+    const where = `${OUTCOMES_PATH} line ${i + 1}`;
+    let v;
+    try {
+      v = JSON.parse(l);
+    } catch {
+      notes.push(`${where} is not JSON; skipped`);
+      return;
+    }
+    if (!v || typeof v !== 'object' || Array.isArray(v)) {
+      notes.push(`${where} is not an object; skipped`);
+      return;
+    }
+    if (typeof v.session !== 'string' || v.session === '__proto__') {
+      notes.push(`${where} field session: expected a string; line skipped`);
+      return;
+    }
+    const row = { session: v.session };
+    for (const k of ['item', 'role', 'result', 'verdict', 'record']) {
+      if (v[k] == null) continue;
+      if (typeof v[k] === 'string') row[k] = v[k];
+      else notes.push(`${where} field ${k}: expected a string; field skipped`);
+    }
+    let usage = null;
+    if ('usage' in v && v.usage !== null) {
+      if (typeof v.usage !== 'object' || Array.isArray(v.usage)) {
+        notes.push(`${where} field usage: expected an object; shown as not recorded`);
+      } else {
+        usage = {};
+        for (const k of USAGE_KEYS) {
+          const x = v.usage[k];
+          if (x === undefined || x === null) usage[k] = NOT_AVAILABLE;
+          else if (Number.isInteger(x) && x >= 0) usage[k] = x;
+          else {
+            usage[k] = 'not recorded';
+            notes.push(`${where} field usage.${k}: expected a whole number; shown as not recorded`);
+          }
+        }
+      }
+    }
+    row.usage = usage;
+    bySession[v.session] = row;
+  });
+  return { bySession, notes };
 }
 
 // ---------------------------------------------------------------------------

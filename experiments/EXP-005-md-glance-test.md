@@ -24,16 +24,16 @@ After looking at the desk's first screen for 5 seconds, the owner can say correc
 - **G2:** which project he would open first, and what kind of thing waits there (a card, a
   question that never defaults or defaults on a timeout, or a pull request; S-001 Terms, "Decision
   kind");
-- **G3:** whether any project can't be read, or is stale, or the desk is still checking.
+- **G3:** whether any project can't be read or is stale.
 
 ## Method
 1. The owner opens the preview on the phone, signed in, and waits until the state line no longer
    says "Checking…". He keeps the screen covered or turned away until the Chief of Staff says go.
-2. He looks at the first screen for 5 seconds, without scrolling or tapping, then turns the phone
-   face down.
+2. He looks at the first screen for 5 seconds, without scrolling or tapping. At the end of the
+   5 seconds he takes a screenshot (the phone's buttons, no tap on the page), then turns the phone
+   face down. That screenshot, taken at the end of the glance, is the truth the answers are scored
+   against.
 3. He answers G1, G2 and G3 aloud or in writing to the Chief of Staff, from memory.
-4. He then takes a screenshot of the same screen, unchanged. The screenshot is the truth the
-   answers are scored against.
 5. **Five glances**, on at least three different days, at whatever the projects hold then. If
    no glance in the first four had a flagged item, or none had a can't-read or stale project, the
    fifth glance is taken when one exists; if none occurs before MD would otherwise be accepted,
@@ -47,7 +47,8 @@ For each glance:
 - G2: correct if the kind named matches what is flagged in the project he names. Which project he
   chooses is his choice and isn't scored.
 - G3: correct if he names exactly the projects shown as can't-read or stale, or says "none" when
-  there are none, or "still checking" when the state line said so.
+  there are none. ("Checking…" can't occur: step 1 waits until it has gone, and a glance where it
+  returns is excluded below.)
 - Time from the 5-second glance to the answer, as a note only.
 
 ## Sample
@@ -56,8 +57,10 @@ design (S-001 Known limits).
 
 ## Exclusions
 - A glance where the screen changed in the 5 seconds (a poll landed and redrew a box) is scored
-  but noted; if it changed what G1 to G3 should be, it is excluded and taken again.
-- A glance where the state line still said "Checking…" at go is excluded and taken again.
+  against the end-of-glance screenshot but noted; if it changed what G1 to G3 should be, it is
+  excluded and taken again.
+- A glance where the state line said "Checking…" at any point in the 5 seconds is excluded and
+  taken again.
 - A glance interrupted by the Access sign-in page is excluded and taken again, and noted
   (discovery map A6).
 
@@ -67,6 +70,9 @@ design (S-001 Known limits).
 - **Fail:** any other result. The failing question goes back to the design lab, the merged design
   is fixed forward through the normal route, and the test is taken again: five new glances, the
   same threshold.
+- **At most two such loops.** If the second retest also fails, no further loop starts on its own:
+  the owner rules (accept MD as it stands, run one more loop, or go back to another candidate), and
+  the Chief of Staff records the ruling in `decisions/questions/`.
 
 ## Holdout use
 none

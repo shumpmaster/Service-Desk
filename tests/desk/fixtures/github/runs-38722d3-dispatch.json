@@ -1,0 +1,11 @@
+{
+ "note": "GET /repos/shumpmaster/Service-Desk/actions/runs?head_sha=38722d3cc8885bb71ffa29fa0d70390afc758223&event=workflow_dispatch&exclude_pull_requests=true&per_page=100 (J1 request 3b), recorded 2026-10-08",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json; charset=utf-8",
+  "etag": "W/\"58fa4ab4f2e1bf49c19876c822e167756070992b1b620ec9dfc25d049b906838\"",
+  "x-ratelimit-remaining": "14970",
+  "x-ratelimit-reset": "1791464732"
+ },
+ "body": "{\"total_count\":0,\"workflow_runs\":[]}"
+}

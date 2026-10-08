@@ -3,18 +3,9 @@
     {
       "action": "dispatch",
       "gate": null,
-      "item": "Q-010",
-      "role": "researcher",
-      "route": "ready-dispatch",
-      "spec": null,
-      "stage": 2
-    },
-    {
-      "action": "dispatch",
-      "gate": null,
-      "item": "Q-011",
-      "role": "researcher",
-      "route": "ready-dispatch",
+      "item": "Q-012",
+      "role": "source-checker",
+      "route": "research-to-source",
       "spec": null,
       "stage": 2
     }

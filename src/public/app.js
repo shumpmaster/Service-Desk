@@ -1,18 +1,21 @@
-// The desk page (spec S-001, M1: AC1–AC12; the EXP-001 panel and EXP-004 links).
-// Renders the read model with DOM text nodes; record text goes through the escaping markdown
-// renderer only. Routes: #/ (Universe), #/p/<project>, #/p/<project>/card/<path>,
-// #/p/<project>/q/<name>; ?exp=001 and ?exp=004 are the experiment panels.
+// The desk page (spec S-001, M1: AC1–AC12; M2: AC16–AC23, AC29–AC34, AC46, AC47; the EXP-001
+// panel and EXP-004 links). Renders the read model with DOM text nodes; record text goes through
+// the escaping markdown renderer only. Routes: #/ (Universe), #/p/<project>, and under it
+// card/<path>, q/<name>, hold/<path>, merge/<path>, asked and agents; ?exp=001 and ?exp=004 are
+// the experiment panels.
 
 import CONFIG from './lib/config.js';
 import { createDesk, callFunction } from './lib/scheduler.js';
 import { createStore } from './lib/store.js';
-import { makeBox, orderBoxes, boxStateText, screenState } from './lib/universe.js';
+import { safeBox, orderBoxes, boxStateText, screenState } from './lib/universe.js';
 import { renderMarkdown } from './lib/markdown.js';
-import { whenText, hhmm, dateTimeText } from './lib/timefmt.js';
-import { defaultLabel } from './lib/records.js';
-import { blobLink, exp004Links, cappedNewFileLink } from './lib/links.js';
+import { whenText, hhmm, dateTimeText, durationText, hoursMinutes } from './lib/timefmt.js';
+import { defaultLabel, parseCardPath } from './lib/records.js';
+import { blobLink, exp004Links, cappedNewFileLink, answerPlan } from './lib/links.js';
+import { usageView, v5Footer, notReadText, contextText } from './lib/asked.js';
 import { createRun, summarize, resultMarkdown, rawTable } from './lib/exp001.js';
-import { routeParts, guardRender, boot } from './lib/page.js';
+import { routeParts, guardRender, boot, SIGNED_OUT_STATE } from './lib/page.js';
+import { errorText } from './lib/scheduler.js';
 
 const TZ = CONFIG.ownerTimeZone;
 const view = document.getElementById('view');
@@ -52,44 +55,64 @@ function projectByName(name) {
 }
 
 function ciNode(ci) {
-  return h('span', { class: `ci-${ci}` }, ci);
+  return h('span', { class: /^[a-z-]+$/.test(String(ci)) ? `ci-${ci}` : 'ci-other' }, ci);
 }
 
+// AC30: each project's box is built on its own; one that throws says "Can't show this project".
 function boxes(desk) {
   const now = Date.now();
-  return CONFIG.projects.map((p) => makeBox(desk.model(p.name), desk.states.get(p.name), desk, now));
+  return CONFIG.projects.map((p) => safeBox(p.name, () => desk.model(p.name), desk.states.get(p.name), desk, now));
 }
 
-function renderUniverse(desk) {
-  const list = orderBoxes(boxes(desk));
+function cantShowBox(b, err) {
+  const words = b.drawError || `Can't show this project: ${errorText(err)}`;
+  return h('a', { class: 'box cant-read', href: `#/p/${encodeURIComponent(b.name)}` },
+    h('h2', {}, b.name), h('p', { class: 'state' }, words));
+}
+
+function renderUniverse(desk, list = orderBoxes(boxes(desk))) {
   return h('section', {},
     list.map((b) => {
-      const m = b.model;
-      const cls = b.flaggedCount ? 'box flagged' : b.read.read === 'cant-read' ? 'box cant-read' : 'box';
-      let work;
-      if (m.model === 'v2.5') {
-        work = h('p', {}, 'Sprint: ', m.sprint.title || m.sprint.note);
-      } else if (!m.openItems || m.openItems.length === 0) {
-        work = h('p', { class: 'muted' }, 'No open items');
-      } else {
-        work = h('ul', { class: 'plain' }, m.openItems.map((i) => h('li', {}, `${i.id} — ${i.loading ? 'loading…' : i.unreadable ? "can't read status" : `${i.stage}, ${i.state}`}`)));
+      if (b.drawError) return cantShowBox(b);
+      try {
+        return universeBox(b);
+      } catch (err) {
+        b.drawError = `Can't show this project: ${errorText(err)}`;
+        return cantShowBox(b);
       }
-      return h('a', { class: cls, href: `#/p/${encodeURIComponent(b.name)}` },
-        h('h2', {}, b.name),
-        h('p', { class: 'state' }, boxStateText(b, TZ)),
-        b.flaggedCount ? h('ul', { class: 'plain flagged-list' }, m.flagged.map((f) => h('li', { class: 'flag' }, '● ', f.title))) : null,
-        h('p', {}, m.headline.text),
-        work,
-        h('p', { class: 'muted' }, 'CI on ', m.defaultBranch, ': ', ciNode(m.ci)));
     }));
 }
+
+function universeBox(b) {
+  const m = b.model;
+  const cls = b.flaggedCount ? 'box flagged' : b.read.read === 'cant-read' ? 'box cant-read' : 'box';
+  let work;
+  if (m.model === 'v2.5') {
+    work = h('p', {}, 'Sprint: ', m.sprint.title || m.sprint.note);
+  } else if (!m.openItems || m.openItems.length === 0) {
+    work = h('p', { class: 'muted' }, 'No open items');
+  } else {
+    work = h('ul', { class: 'plain' }, m.openItems.map((i) => h('li', {}, `${i.id} — ${i.loading ? 'loading…' : i.unreadable ? "can't read status" : `${i.stage}, ${i.state}`}`)));
+  }
+  return h('a', { class: cls, href: `#/p/${encodeURIComponent(b.name)}` },
+    h('h2', {}, b.name),
+    h('p', { class: 'state' }, boxStateText(b, TZ)),
+    b.flaggedCount ? h('ul', { class: 'plain flagged-list' }, m.flagged.map((f) => h('li', { class: 'flag' }, '● ', f.title))) : null,
+    h('p', {}, m.headline.text),
+    work,
+    h('p', { class: 'muted' }, 'CI on ', m.defaultBranch, ': ', ciNode(m.ci)));
+}
+
+const href = (name, ...parts) => `#/p/${[name, ...parts].map(encodeURIComponent).join('/')}`;
 
 function flaggedList(m, name) {
   if (!m.flagged.length) return h('p', { class: 'muted' }, 'Nothing waiting on you here.');
   return h('ul', { class: 'plain flagged-list' }, m.flagged.map((f) => {
     let target;
-    if (f.kind === 'card') target = h('a', { class: 'item', href: `#/p/${encodeURIComponent(name)}/card/${encodeURIComponent(f.card.path)}` }, f.title);
-    else if (f.kind === 'question') target = h('a', { class: 'item', href: `#/p/${encodeURIComponent(name)}/q/${encodeURIComponent(f.question.name)}` }, f.title);
+    if (f.kind === 'card') target = h('a', { class: 'item', href: href(name, 'card', f.card.path) }, f.title);
+    else if (f.kind === 'question') target = h('a', { class: 'item', href: href(name, 'q', f.question.name) }, f.title);
+    else if (f.kind === 'hold') target = h('a', { class: 'item', href: href(name, 'hold', f.hold.path) }, f.title);
+    else if (f.kind === 'merge') target = h('a', { class: 'item', href: href(name, 'merge', f.merge.path) }, f.title);
     else target = ext(f.link, f.title);
     return h('li', {}, h('span', { class: 'flag' }, '● '), target, h('div', { class: 'muted' }, f.words,
       f.card && f.card.cantParse ? ` · can't parse: ${f.card.cantParse}` : ''));
@@ -123,9 +146,11 @@ function pipeline(m, name) {
       }
       if (i.waiting) {
         const label = `Waiting on you: card ${i.waiting.gate}-${i.waiting.card}`;
-        rows.push(h('div', { class: i.waiting.answered ? '' : 'flag' }, i.waiting.answered
-          ? `${label} — answered${i.waiting.verdict ? `: ${i.waiting.verdict}` : ''}${i.waiting.recording ? ' (recording…)' : ''}`
-          : h('a', { href: `#/p/${encodeURIComponent(name)}/card/${encodeURIComponent(i.waiting.path)}` }, label)));
+        let what;
+        if (i.waiting.answered) what = `${label} — answered${i.waiting.verdict ? `: ${i.waiting.verdict}` : ''}${i.waiting.recording ? ' (recording…)' : ''}`;
+        else if (i.waiting.path) what = h('a', { href: href(name, 'card', i.waiting.path) }, label);
+        else what = label;
+        rows.push(h('div', { class: i.waiting.answered ? '' : 'flag' }, what));
       }
       if (i.next) rows.push(h('div', {}, i.next));
       rows.push(h('div', { class: 'muted' }, `as of ${i.asOf ? when(i.asOf) : 'not recorded'}`));
@@ -136,16 +161,33 @@ function pipeline(m, name) {
   ];
 }
 
-function renderProject(desk, name) {
+// Each project-level view is built inside the project's own guard (AC30).
+function guardedView(desk, name, build) {
   const project = projectByName(name);
   if (!project) return h('p', {}, 'No such project. ', h('a', { href: '#/' }, 'Back'));
-  const m = desk.model(name);
-  const box = makeBox(m, desk.states.get(name), desk, Date.now());
+  const box = safeBox(name, () => desk.model(name), desk.states.get(name), desk, Date.now());
+  try {
+    if (box.drawError) throw new Error(box.drawError.replace(/^Can't show this project: /, ''));
+    return build(box, project);
+  } catch (err) {
+    return h('section', {}, h('p', {}, h('a', { href: '#/' }, '← All projects')), h('h2', {}, name),
+      h('p', { class: 'flag' }, box.drawError || `Can't show this project: ${errorText(err)}`));
+  }
+}
+
+function renderProject(desk, name) {
+  return guardedView(desk, name, (box) => projectView(box, name));
+}
+
+function projectView(box, name) {
+  const m = box.model;
   return h('section', {},
     h('p', {}, h('a', { href: '#/' }, '← All projects')),
     h('h2', {}, name),
     h('p', { class: 'state' }, boxStateText(box, TZ)),
     h('p', { class: 'muted' }, 'CI on ', m.defaultBranch, ': ', ciNode(m.ci)),
+    h('p', { class: 'nav' }, h('a', { href: href(name, 'asked') }, 'Time asked of you'),
+      m.model === 'v3' ? [' · ', h('a', { href: href(name, 'agents') }, 'Agents')] : null),
     h('h3', {}, 'Waiting on you'),
     flaggedList(m, name),
     pipeline(m, name),
@@ -156,52 +198,316 @@ function renderProject(desk, name) {
       h('ul', {}, m.notes.map((n) => h('li', { class: 'note' }, n)))) : null);
 }
 
-function renderCard(desk, name, path) {
+// ---------------------------------------------------------------------------
+// Answering (AC16–AC19): the owner picks an option and may type a note; the desk builds J3's link.
+// Drafts survive the page's re-renders, and a note being typed is never redrawn under the owner.
+
+const drafts = new Map();
+
+function copyButton(text) {
+  const btn = h('button', { type: 'button' }, 'Copy');
+  btn.addEventListener('click', () => {
+    const done = () => { btn.textContent = 'Copied'; };
+    try {
+      navigator.clipboard.writeText(text).then(done, () => { btn.textContent = 'Copy failed: select the text above'; });
+    } catch {
+      btn.textContent = 'Copy failed: select the text above';
+    }
+  });
+  return btn;
+}
+
+function planNodes(plan) {
+  if (plan.offer === 'none') return [h('p', { class: 'answered' }, plan.words)];
+  if (plan.offer === 'choose') return [h('p', { class: 'muted' }, 'Pick an option to get the answer.')];
+  if (plan.offer === 'copy') {
+    return [h('p', {}, plan.words), h('pre', { class: 'copy' }, plan.copy), copyButton(plan.copy)];
+  }
+  const out = [];
+  if (plan.warning) out.push(h('p', { class: 'warn' }, plan.warning));
+  if (plan.copy) out.push(h('p', {}, plan.words), h('pre', { class: 'copy' }, plan.copy), copyButton(plan.copy));
+  else out.push(h('details', {}, h('summary', {}, 'What will be committed'), h('pre', { class: 'copy' }, plan.content)));
+  out.push(h('p', {}, h('a', { class: 'go', href: plan.url, rel: 'noopener noreferrer', target: '_blank' },
+    `Open GitHub to commit ${plan.path}`)));
+  out.push(h('p', { class: 'muted' }, 'The desk writes nothing to GitHub: you commit the answer on the page that opens.'));
+  return out;
+}
+
+/** The answer box. choices: [{ value, text, recommended }]. */
+const draftKey = (projectName, target) => `${projectName}:${target.kind}:${target.answerPath || target.name}`;
+
+function answerBox(project, target, choices) {
+  const key = draftKey(project.name, target);
+  const draft = drafts.get(key) || { choice: null, note: '' };
+  drafts.set(key, draft);
+  const result = h('div', { class: 'answer-result' });
+  // The listeners go through the draft, so a note box kept across redraws (N5) updates the latest
+  // result area with the latest target (an answer that arrived meanwhile included).
+  draft.target = target;
+  draft.update = () => result.replaceChildren(...planNodes(answerPlan(project, CONFIG.linkCap, draft.target, draft.choice, draft.note)));
+  draft.update();
+  const first = answerPlan(project, CONFIG.linkCap, target, null, '');
+  if (first.offer === 'none') return h('div', { class: 'answer' }, h('h3', {}, 'Answer'), result);
+  const radios = choices.map((c) => {
+    const input = h('input', { type: 'radio', name: `choice-${key}`, value: c.value });
+    if (draft.choice === c.value) input.checked = true;
+    input.addEventListener('change', () => { draft.choice = c.value; draft.update(); });
+    return h('label', { class: 'choice' }, input, ' ', h('code', {}, c.value), c.text ? ` ${c.text}` : '',
+      c.recommended ? h('span', { class: 'tag' }, 'recommended') : null);
+  });
+  const note = h('textarea', { 'data-keep': key, rows: '3', placeholder: 'Optional note' });
+  note.value = draft.note;
+  note.addEventListener('input', () => { draft.note = note.value; draft.update(); });
+  return h('div', { class: 'answer' }, h('h3', {}, 'Answer'), h('div', { class: 'choices' }, radios),
+    h('label', {}, 'Note (optional)', note), result);
+}
+
+/**
+ * N5: while the owner types a note, the view isn't rebuilt (the note keeps its text and caret),
+ * but the answer box still follows the records: its target is rebuilt from the current model, so
+ * a link becomes "already answered: <verdict>" as soon as the answer is on main.
+ */
+function refreshAnswer(desk, name, kind, rest) {
   const project = projectByName(name);
-  const m = project && desk.model(name);
-  const f = m && m.flagged.find((x) => x.kind === 'card' && x.card.path === path);
-  const back = h('p', {}, h('a', { href: `#/p/${encodeURIComponent(name)}` }, `← ${name}`));
-  if (!f) return h('section', {}, back, h('p', {}, `${path} is not waiting on you (answered, withdrawn, or not read yet).`));
-  const c = f.card;
-  const parsed = c.parsed;
-  return h('section', {}, back,
-    h('h2', {}, f.title),
-    h('p', { class: 'muted' }, `Raised ${c.raisedAt ? when(c.raisedAt) : 'not recorded'}`),
-    c.cantParse ? h('p', { class: 'flag' }, `Can't parse: ${c.cantParse}. It stays flagged until answered.`) : null,
-    h('p', {}, 'Answer path: ', h('code', {}, parsed && parsed.answerPath ? parsed.answerPath : c.answerPath)),
-    parsed && parsed.options.length ? [h('h3', {}, 'Options'),
-      h('ul', { class: 'options' }, parsed.options.map((o) => h('li', {}, h('code', {}, o.word))))] : null,
-    h('p', {}, ext(blobLink(project, c.path), 'Open the card on GitHub'),
-      ' (answering from the desk comes in M2)'),
-    parsed ? h('article', { class: 'record', html: renderMarkdown(parsed.text) }) : h('p', {}, 'Loading the card…'));
+  if (!project || (kind !== 'card' && kind !== 'q')) return;
+  const m = desk.model(name);
+  let target;
+  if (kind === 'card') {
+    const path = rest.join('/');
+    const card = parseCardPath(path);
+    if (!card) return;
+    const f = m.flagged.find((x) => x.kind === 'card' && x.card.path === path);
+    const done = m.answeredCards && m.answeredCards[path];
+    target = { kind: 'card', answerPath: card.answerPath, item: card.item,
+      options: f && f.card.parsed ? f.card.parsed.options.map((o) => o.word) : [], answered: f ? null : (done || { verdict: null }) };
+  } else {
+    const qname = rest.join('/');
+    const f = m.flagged.find((x) => x.kind === 'question' && x.question.name === qname);
+    const done = m.rulings && m.rulings[qname];
+    target = { kind: 'question', name: qname, options: f && f.question.parsed ? f.question.parsed.options.map((o) => o.letter) : [],
+      answered: f ? null : (done ? { verdict: done.ruling } : { verdict: null }) };
+  }
+  const d = drafts.get(draftKey(project.name, target));
+  if (d && d.update) {
+    d.target = target;
+    d.update();
+  }
+}
+
+const backTo = (name) => h('p', {}, h('a', { href: href(name) }, `← ${name}`));
+
+function renderCard(desk, name, path) {
+  return guardedView(desk, name, (box, project) => {
+    const m = box.model;
+    const f = m.flagged.find((x) => x.kind === 'card' && x.card.path === path);
+    if (!f) {
+      const done = m.answeredCards && m.answeredCards[path];
+      if (done) {
+        // AC16: the answer file already exists — no link.
+        return h('section', {}, backTo(name), h('h2', {}, path),
+          h('p', { class: 'answered' }, `already answered: ${done.verdict || 'not recorded'}`));
+      }
+      return h('section', {}, backTo(name), h('p', {}, `${path} is not waiting on you (answered, withdrawn, or not read yet).`));
+    }
+    const c = f.card;
+    const parsed = c.parsed;
+    const target = { kind: 'card', answerPath: c.answerPath, item: c.item, options: parsed ? parsed.options.map((o) => o.word) : [], answered: null };
+    return h('section', {}, backTo(name),
+      h('h2', {}, f.title),
+      h('p', { class: 'muted' }, `Raised ${c.raisedAt ? when(c.raisedAt) : 'not recorded'}`),
+      c.cantParse ? h('p', { class: 'flag' }, `Can't parse: ${c.cantParse}. It stays flagged until answered.`) : null,
+      h('p', {}, 'Answer path: ', h('code', {}, parsed && parsed.answerPath ? parsed.answerPath : c.answerPath)),
+      parsed && parsed.options.length
+        ? answerBox(project, target, parsed.options.map((o) => ({ value: o.word, text: o.text.replace(/^`[^`]+`\s*/, '') })))
+        : h('p', { class: 'muted' }, parsed ? 'The card lists no options the desk can read; answer it on GitHub.' : 'Loading the card…'),
+      h('p', {}, ext(blobLink(project, c.path), 'Open the card on GitHub')),
+      parsed ? h('article', { class: 'record', html: renderMarkdown(parsed.text) }) : null);
+  });
 }
 
 function renderQuestion(desk, name, qname) {
-  const project = projectByName(name);
-  const m = project && desk.model(name);
-  const f = m && m.flagged.find((x) => x.kind === 'question' && x.question.name === qname);
-  const back = h('p', {}, h('a', { href: `#/p/${encodeURIComponent(name)}` }, `← ${name}`));
-  if (!f) return h('section', {}, back, h('p', {}, `questions/${qname}.md is not waiting on you (answered, deleted, or not read yet).`));
-  const q = f.question;
-  const p = q.parsed;
-  const given = (v) => (v == null || v === '' ? 'not given' : v);
-  if (!p) return h('section', {}, back, h('h2', {}, f.title), h('p', {}, 'Loading the question…'));
-  return h('section', {}, back,
-    h('h2', {}, p.title),
-    h('p', { class: 'muted' }, `Raised ${q.raisedAt ? when(q.raisedAt) : 'not recorded'}`),
-    h('dl', { class: 'fields' },
-      h('dt', {}, 'WHY'), h('dd', {}, given(p.why)),
-      h('dt', {}, 'OPTIONS'), h('dd', {}, p.options.length
-        ? h('ul', { class: 'options' }, p.options.map((o) => h('li', { class: o.letter === p.recommendationLetter ? 'recommended' : '' },
-          `${o.letter}. ${o.text}`, o.letter === p.recommendationLetter ? h('span', { class: 'tag' }, 'recommended') : null)))
-        : 'not given'),
-      h('dt', {}, 'RECOMMENDATION'), h('dd', {}, given(p.recommendation)),
-      h('dt', {}, 'RISK CLASS'), h('dd', {}, given(p.riskClass)),
-      h('dt', {}, 'REVERSIBILITY'), h('dd', {}, given(p.reversibility)),
-      h('dt', {}, 'BLAST RADIUS'), h('dd', {}, given(p.blastRadius)),
-      h('dt', {}, 'DEFAULT'), h('dd', {}, defaultLabel(p, q.raisedAt, (d) => dateTimeText(d, TZ)))),
-    h('p', {}, ext(blobLink(project, q.path), 'Open the question on GitHub')),
-    h('h3', {}, 'Full text'), h('article', { class: 'record', html: renderMarkdown(p.text) }));
+  return guardedView(desk, name, (box, project) => {
+    const m = box.model;
+    const f = m.flagged.find((x) => x.kind === 'question' && x.question.name === qname);
+    if (!f) {
+      const done = m.rulings && m.rulings[qname];
+      if (done) {
+        return h('section', {}, backTo(name), h('h2', {}, `questions/${qname}.md`),
+          h('p', { class: 'answered' }, `already answered: ${done.ruling || 'not recorded'}`));
+      }
+      return h('section', {}, backTo(name), h('p', {}, `questions/${qname}.md is not waiting on you (answered, deleted, or not read yet).`));
+    }
+    const q = f.question;
+    const p = q.parsed;
+    const given = (v) => (v == null || v === '' ? 'not given' : v);
+    if (!p) return h('section', {}, backTo(name), h('h2', {}, f.title), h('p', {}, 'Loading the question…'));
+    const target = { kind: 'question', name: qname, options: p.options.map((o) => o.letter), answered: null };
+    return h('section', {}, backTo(name),
+      h('h2', {}, p.title),
+      h('p', { class: 'muted' }, `Raised ${q.raisedAt ? when(q.raisedAt) : 'not recorded'}`),
+      h('dl', { class: 'fields' },
+        h('dt', {}, 'WHY'), h('dd', {}, given(p.why)),
+        h('dt', {}, 'OPTIONS'), h('dd', {}, p.options.length
+          ? h('ul', { class: 'options' }, p.options.map((o) => h('li', { class: o.letter === p.recommendationLetter ? 'recommended' : '' },
+            `${o.letter}. ${o.text}`, o.letter === p.recommendationLetter ? h('span', { class: 'tag' }, 'recommended') : null)))
+          : 'not given'),
+        h('dt', {}, 'RECOMMENDATION'), h('dd', {}, given(p.recommendation)),
+        h('dt', {}, 'RISK CLASS'), h('dd', {}, given(p.riskClass)),
+        h('dt', {}, 'REVERSIBILITY'), h('dd', {}, given(p.reversibility)),
+        h('dt', {}, 'BLAST RADIUS'), h('dd', {}, given(p.blastRadius)),
+        h('dt', {}, 'DEFAULT'), h('dd', {}, defaultLabel(p, q.raisedAt, (d) => dateTimeText(d, TZ)))),
+      p.options.length
+        ? answerBox(project, target, p.options.map((o) => ({ value: o.letter, text: o.text, recommended: o.letter === p.recommendationLetter })))
+        : null,
+      h('p', {}, ext(blobLink(project, q.path), 'Open the question on GitHub')),
+      h('h3', {}, 'Full text'), h('article', { class: 'record', html: renderMarkdown(p.text) }));
+  });
+}
+
+// AC46: a hold card — what it says, and no answer link.
+function renderHold(desk, name, path) {
+  return guardedView(desk, name, (box, project) => {
+    const f = box.model.flagged.find((x) => x.kind === 'hold' && x.hold.path === path);
+    if (!f) return h('section', {}, backTo(name), h('p', {}, `${path} is not waiting on you (cleared, replaced, or not read yet).`));
+    const p = f.hold.parsed;
+    const nr = (v) => (v == null ? 'not recorded' : v);
+    return h('section', {}, backTo(name),
+      h('h2', {}, f.title),
+      h('p', {}, "the default branch's governance run is not green"),
+      h('dl', { class: 'fields' },
+        h('dt', {}, 'tip'), h('dd', {}, h('code', {}, nr(p && p.tip))),
+        h('dt', {}, 'state'), h('dd', {}, nr(p && p.state)),
+        h('dt', {}, 'held for'), h('dd', {}, p && p.heldFor != null ? `${p.heldFor} minutes` : 'not recorded')),
+      h('p', { class: 'answered' }, answerPlan(project, CONFIG.linkCap, { kind: 'hold' }).words),
+      h('h3', {}, 'What to do'),
+      p && p.whatToDo != null ? h('article', { class: 'record', html: renderMarkdown(p.whatToDo) }) : h('p', {}, p ? 'not given' : 'Loading the card…'),
+      h('p', {}, ext(f.hold.actionsLink, 'Open governance runs in the Actions tab'), ' · ', ext(f.hold.link, 'the card on GitHub')));
+  });
+}
+
+// AC47: a merge card — the item, the step, its tip and sections, and no answer link.
+function renderMerge(desk, name, path) {
+  return guardedView(desk, name, (box, project) => {
+    const f = box.model.flagged.find((x) => x.kind === 'merge' && x.merge.path === path);
+    if (!f) return h('section', {}, backTo(name), h('p', {}, `${path} is not waiting on you (merged, closed, or not read yet).`));
+    const mc = f.merge;
+    const p = mc.parsed;
+    const sec = (title, text) => [h('h3', {}, title),
+      text != null ? h('article', { class: 'record', html: renderMarkdown(text) }) : h('p', {}, p ? 'not given' : 'Loading the card…')];
+    return h('section', {}, backTo(name),
+      h('h2', {}, f.title),
+      h('dl', { class: 'fields' },
+        h('dt', {}, 'item'), h('dd', {}, mc.item),
+        h('dt', {}, 'step'), h('dd', {}, mc.stepWords),
+        h('dt', {}, 'item tip'), h('dd', {}, h('code', {}, p && p.tip ? p.tip : 'not recorded'))),
+      h('p', { class: 'answered' }, answerPlan(project, CONFIG.linkCap, { kind: 'merge', item: mc.item }).words),
+      sec('The decision', p && p.decision), sec('Why', p && p.why), sec('What to do', p && p.whatToDo),
+      h('p', {}, ext(mc.branchLink, `Open item/${mc.item} on GitHub`), ' · ', ext(mc.link, 'the card on GitHub')));
+  });
+}
+
+// ---------------------------------------------------------------------------
+// AC20: Time asked of you
+
+const waitText = (ms) => (ms == null ? 'not recorded' : durationText(ms));
+const proxyText = (p) => (p === true ? 'proxy' : p === false ? 'not a proxy' : 'proxy not recorded');
+
+function askedRow(r) {
+  let answered;
+  if (r.state === 'answered') answered = when(r.answeredAt);
+  else if (r.state === 'recording') answered = 'recording…';
+  else if (r.state === 'withdrawn') answered = 'withdrawn';
+  else answered = 'open';
+  let wait = r.state === 'open' ? `${waitText(r.waitMs)} so far` : waitText(r.waitMs);
+  if (r.raisedLoading) wait = 'loading…'; // N6: its history read hasn't returned yet
+  return h('li', {}, h('strong', {}, r.label),
+    h('div', { class: 'muted' }, `raised ${r.raisedAt != null ? when(r.raisedAt) : r.raisedLoading ? 'loading…' : 'not recorded'} · answered ${answered} · wait ${wait}`
+      + (r.state === 'answered' ? ` · ${proxyText(r.proxy)}` : '')
+      + (r.word ? ` · ${r.word}` : '') + (r.ruling ? ` · Ruling: ${r.ruling}` : '')));
+}
+
+function renderAsked(desk, name) {
+  return guardedView(desk, name, (box) => {
+    const t = box.model.timeAsked;
+    // B1: until the project is read (its log months included) nothing is counted as none.
+    const ready = box.read.read === 'ok' && t.ready;
+    const unread = notReadText([name]);
+    const out = [backTo(name), h('h2', {}, `Time asked of you — ${name}`)];
+    if (t.cards) {
+      let summary;
+      if (!ready) summary = `Last 14 days: ${unread}`;
+      else if (t.summary.count) summary = `Last 14 days: ${t.summary.count} card${t.summary.count === 1 ? '' : 's'}, median wait ${durationText(t.summary.medianMs)} (open cards with their wait so far)`;
+      else summary = 'Last 14 days: no cards';
+      out.push(h('p', { class: 'state' }, summary));
+      let list;
+      if (!ready) list = h('p', { class: 'muted' }, `Cards: ${unread}.`);
+      else if (t.cards.length) list = h('ul', { class: 'plain' }, t.cards.map(askedRow));
+      else list = h('p', { class: 'muted' }, 'No cards raised in the last 30 days.');
+      out.push(h('h3', {}, 'Cards, last 30 days'), list);
+    } else {
+      out.push(h('p', {}, t.cardsText));
+    }
+    let qlist;
+    if (!ready) qlist = [h('p', { class: 'muted' }, `Owner questions: ${unread}.`)];
+    else {
+      qlist = [t.questions.length ? h('ul', { class: 'plain' }, t.questions.map(askedRow))
+        : h('p', { class: 'muted' }, t.questionsPending ? 'None listed yet.' : 'No owner questions in the last 30 days.')];
+      if (t.questionsPending) {
+        qlist.push(h('p', { class: 'muted' }, `Loading: ${t.questionsPending} answered question${t.questionsPending === 1 ? '' : 's'} not checked yet.`));
+      }
+    }
+    out.push(h('h3', {}, 'Owner questions, last 30 days'), ...qlist);
+    if (t.answeredText) out.push(h('p', { class: 'muted' }, t.answeredText));
+    return h('section', {}, out);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// AC22 and AC23: Agents
+
+const num = (v) => (typeof v === 'number' ? v.toLocaleString('en-US') : v);
+
+function usageNode(s) {
+  const u = usageView(s);
+  if (!u.recorded) return h('div', { class: 'muted' }, 'Usage: not recorded');
+  return h('div', { class: 'muted' },
+    `Tokens: input ${num(u.input_tokens)}, output ${num(u.output_tokens)}, cache read ${num(u.cache_read_tokens)}, cache write ${num(u.cache_write_tokens)} · turns ${num(u.turns)}`,
+    h('br'),
+    contextText(u));
+}
+
+function sessionNode(s) {
+  const end = s.running ? `running, ${durationText(s.runMs)} so far` : s.noOutcome ? 'no outcome recorded' : `${when(s.end)}, ran ${durationText(s.runMs)}`;
+  const result = s.result ? ` · ${s.result}${s.verdict && s.verdict !== 'none' ? `, verdict ${s.verdict}` : ''}` : '';
+  return h('li', {}, h('strong', {}, `${s.item} ${s.role}`), s.retry ? h('span', { class: 'tag' }, 'retry') : null,
+    h('div', { class: 'muted' }, `started ${when(s.start)} · ended ${end}${result}`), usageNode(s));
+}
+
+function timelineNode(tl) {
+  const span = Math.max(1, tl.to - tl.from);
+  return h('li', {}, h('strong', {}, tl.item),
+    h('ol', { class: 'timeline' }, tl.events.map((e) => {
+      const bar = h('span', { class: `bar ${e.kind}${e.open ? ' open' : ''}` });
+      if (bar.style) {
+        bar.style.marginLeft = `${(((e.start - tl.from) / span) * 100).toFixed(1)}%`;
+        bar.style.width = `${Math.max(1, ((((e.end ?? e.start) - e.start) / span) * 100)).toFixed(1)}%`;
+      }
+      const label = e.kind === 'card' ? `${e.label}: waiting on you` : `${e.label} session`;
+      const until = e.end == null ? 'no end recorded' : e.open ? 'now' : when(e.end);
+      return h('li', {}, h('div', { class: 'track' }, bar), h('div', { class: 'muted' }, `${label}, ${when(e.start)} to ${until}`));
+    })));
+}
+
+function renderAgents(desk, name) {
+  return guardedView(desk, name, (box) => {
+    const m = box.model;
+    if (!m.sessions) return h('section', {}, backTo(name), h('h2', {}, `Agents — ${name}`), h('p', {}, m.runningText));
+    return h('section', {}, backTo(name), h('h2', {}, `Agents — ${name}`),
+      h('h3', {}, 'Sessions, last 14 days'),
+      m.sessions.length ? h('ul', { class: 'plain' }, m.sessions.map(sessionNode)) : h('p', { class: 'muted' }, 'No sessions in the last 14 days.'),
+      h('h3', {}, 'Timeline by item'),
+      m.timelines.length ? h('ul', { class: 'plain' }, m.timelines.map(timelineNode)) : h('p', { class: 'muted' }, 'Nothing to show.'));
+  });
 }
 
 function startDesk() {
@@ -209,30 +515,66 @@ function startDesk() {
   const desk = createDesk({
     config: CONFIG, call: (path, body) => callFunction(path, body), clock, store, isVisible, onChange: () => render(),
   });
-  // A throw while drawing shows an error state, never a frozen "Quiet" (review N4).
-  const render = guardRender(draw, (state) => {
+  const setState = (state) => {
     stateEl.textContent = state.text;
     stateEl.className = state.className;
     document.title = `Service Desk — ${state.text}`;
+  };
+  // A throw while drawing shows an error state, never a frozen "Quiet" (review N4), and never in
+  // place of "Signed out" (AC32).
+  const render = guardRender(draw, (state) => {
+    setState(state);
     view.replaceChildren(h('section', {}, h('p', { class: 'flag' }, state.text), h('p', {}, h('a', { href: '#/' }, 'All projects'))));
-  });
+  }, () => desk.signedOut);
   function draw() {
+    // AC32: the signed-out line is set first, before any box is built.
+    if (desk.signedOut) setState(SIGNED_OUT_STATE);
     const bx = boxes(desk);
-    const s = screenState(bx, desk.signedOut);
-    stateEl.textContent = s.text;
-    stateEl.className = s.quiet ? 'quiet' : desk.signedOut ? 'signed-out' : bx.some((b) => b.flaggedCount) ? 'flagged'
-      : bx.some((b) => b.read.read === 'cant-read') ? 'cant-read' : '';
-    document.title = s.quiet ? 'Service Desk — quiet' : `Service Desk — ${s.text}`;
     const [r0, name, kind, ...rest] = routeParts(location.hash); // malformed → Universe (review N6)
     const y = window.scrollY;
     let node;
     if (r0 === 'p' && kind === 'card') node = renderCard(desk, name, rest.join('/'));
     else if (r0 === 'p' && kind === 'q') node = renderQuestion(desk, name, rest.join('/'));
+    else if (r0 === 'p' && kind === 'hold') node = renderHold(desk, name, rest.join('/'));
+    else if (r0 === 'p' && kind === 'merge') node = renderMerge(desk, name, rest.join('/'));
+    else if (r0 === 'p' && kind === 'asked') node = renderAsked(desk, name);
+    else if (r0 === 'p' && kind === 'agents') node = renderAgents(desk, name);
     else if (r0 === 'p' && name) node = renderProject(desk, name);
-    else node = renderUniverse(desk);
-    view.replaceChildren(node);
-    window.scrollTo(0, y);
-    document.getElementById('foot').textContent = `Read-only: the desk links to GitHub; answering from the desk comes later. ${store.usable ? '' : 'Cache not kept on this device. '}Updated ${hhmm(new Date(), TZ)}.`;
+    else node = renderUniverse(desk, orderBoxes(bx)); // marks a box that failed to draw (AC30)
+    // The state line counts every box, those that couldn't be shown included (AC30).
+    const s = screenState(bx, desk.signedOut);
+    stateEl.textContent = s.text;
+    stateEl.className = s.quiet ? 'quiet' : desk.signedOut ? 'signed-out' : bx.some((b) => b.flaggedCount) ? 'flagged'
+      : bx.some((b) => b.read.read === 'cant-read' || b.drawError) ? 'cant-read' : '';
+    document.title = s.quiet ? 'Service Desk — quiet' : `Service Desk — ${s.text}`;
+    // A note being typed is never redrawn under the owner (AC16, AC19); its answer box still
+    // follows the records (N5).
+    const active = document.activeElement;
+    if (active && active.dataset && active.dataset.keep && view.contains && view.contains(active)) {
+      try {
+        refreshAnswer(desk, name, kind, rest);
+      } catch {
+        // the box keeps what it showed; the next render tries again
+      }
+    } else {
+      view.replaceChildren(node);
+      window.scrollTo(0, y);
+    }
+    footer(bx);
+  }
+  // AC21: V5 against its goal, over every v3 project whose box could be built.
+  function footer(bx) {
+    let line;
+    try {
+      // B1: until every v3 project has been read, the line says which ones it waits for.
+      line = v5Footer(CONFIG.projects.map((p) => {
+        const b = bx.find((x) => x.name === p.name);
+        return { name: p.name, v3: p.model === 'v3', readOk: Boolean(b && b.read && b.read.read === 'ok'), model: b ? b.model : null };
+      }), hoursMinutes);
+    } catch (err) {
+      line = `Median answer time: can't show it (${errorText(err)})`;
+    }
+    document.getElementById('foot').textContent = `${line}. ${store.usable ? '' : 'Cache not kept on this device. '}Updated ${hhmm(new Date(), TZ)}.`;
   }
   window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
   document.addEventListener('visibilitychange', () => desk.visibilityChanged());

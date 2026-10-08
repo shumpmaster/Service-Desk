@@ -69,3 +69,16 @@ options_considered: Stay private and deploy without approval, checked after the 
 decided_by: owner
 proposed_by: orchestrator
 reversibility: reversible (the visibility can be set back to private; what was public meanwhile may have been copied)
+
+## L-0005 — Model S-020 adopted: sessions record usage, PRs lead with what they mean, a discovery form for the Researcher
+date: 2026-10-08
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The model's S-020 (frozen under the model's L-0125, built and merged as the model's PR #21) is approved by the owner. Adopt it here as its "Adoption by Service-Desk" section says?
+decision: Adopted. governance/checks/session_runner.py, orchestrator_git.py and governance_checks.py are copied from the model at its PR #21 merge (each was identical to the model's 677fe5a copy before). Also copied: .github/workflows/pr-body.yml (a non-blocking red check on PR bodies); the Researcher's PACKS.toml line and research/_DISCOVERY.md; the Researcher's and Source checker's discovery-map duties; and AGENTS.md's two rules (PRs lead with "What this means for you"; a stopping point before compaction). Sessions now run with stream-json and their outcome lines carry `usage`. Nothing stops a session for its context; `would_have_stopped` only records it (the owner's ruling). Still to do: S-001's J10 revision and the desk's reading of the new names (a Definer and Builder change); one real session's `usage` checked at the pinned CLI version; the scrub proof run once by hand, since its wrapper changed (model S-015 AC12).
+licenses_next: The live checks above; then the J10 revision.
+decided_by: owner ("Go with reccomendations" on S-020's questions, 2026-10-08; merged the model's PR #21)
+proposed_by: orchestrator
+reversibility: reversible

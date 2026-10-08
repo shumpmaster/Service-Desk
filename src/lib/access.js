@@ -31,7 +31,9 @@ function b64urlJson(s) {
 /** The settings, or null when any is missing or malformed (then every request is refused). */
 export function accessSettings(env) {
   const email = typeof env.OWNER_EMAIL === 'string' ? env.OWNER_EMAIL.trim().toLowerCase() : '';
-  const team = typeof env.ACCESS_TEAM_DOMAIN === 'string' ? env.ACCESS_TEAM_DOMAIN.trim() : '';
+  // AC33: the team domain is trimmed and lowercased before it is used, so a value typed with
+  // capitals or surrounding spaces still matches the issuer Access writes (review N3 on PR #41).
+  const team = typeof env.ACCESS_TEAM_DOMAIN === 'string' ? env.ACCESS_TEAM_DOMAIN.trim().toLowerCase() : '';
   const auds = typeof env.ACCESS_AUD === 'string'
     ? env.ACCESS_AUD.split(',').map((a) => a.trim()).filter(Boolean) : [];
   if (!email || !auds.length || !/^[A-Za-z0-9.-]+$/.test(team)) return null;

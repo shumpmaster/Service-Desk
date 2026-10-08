@@ -138,7 +138,7 @@ test('AC5: each cause shows "Can\'t read since HH:MM" with the reason in words, 
     [{ kind: 'cloudflare' }, 'Error 1102'],
     [{ kind: 'network' }, "network error: the desk's function could not be reached"],
     [{ state: 'cant-read', reason: 'config' }, 'the configured default branch was not found'],
-    [{ state: 'partial' }, 'more open PRs, check runs or tree entries than one read can page through'],
+    [{ state: 'partial' }, 'more open PRs, workflow runs or tree entries than one read can page through'],
   ];
   for (const [fail, words] of causes) {
     const s = setup();

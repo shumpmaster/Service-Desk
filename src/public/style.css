@@ -45,3 +45,19 @@ td, th { border: 1px solid var(--line); padding: 3px 5px; text-align: left; }
 textarea { width: 100%; min-height: 8em; font: 0.85rem monospace; }
 dl.fields dt { font-weight: 600; margin-top: 8px; }
 dl.fields dd { margin: 0; }
+.nav a { font-weight: 600; }
+.warn { color: var(--warn); background: var(--warn-bg); border: 1px solid var(--warn); border-radius: 8px; padding: 8px; }
+.answered { font-weight: 600; }
+.answer { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin: 12px 0; }
+.answer h3 { margin-top: 0; }
+.choices { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+label.choice { display: block; padding: 6px 0; }
+.answer textarea { display: block; width: 100%; min-height: 4em; font: inherit; margin-top: 4px; }
+pre.copy { white-space: pre-wrap; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+a.go { display: inline-block; font-weight: 600; padding: 8px 0; }
+ol.timeline { list-style: none; padding: 0; margin: 6px 0; }
+ol.timeline > li { margin: 6px 0; }
+.track { position: relative; height: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
+.bar { display: block; height: 100%; min-width: 3px; background: var(--link); }
+.bar.card { background: var(--flag); }
+.bar.open { opacity: 0.6; }

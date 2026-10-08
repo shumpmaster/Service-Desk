@@ -4,8 +4,8 @@
       "action": "dispatch",
       "gate": null,
       "item": "Q-012",
-      "role": "researcher",
-      "route": "source-fail",
+      "role": "source-checker",
+      "route": "research-to-source",
       "spec": null,
       "stage": 2
     }

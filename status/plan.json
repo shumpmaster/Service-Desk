@@ -4,8 +4,8 @@
       "action": "dispatch",
       "gate": null,
       "item": "Q-011",
-      "role": "source-checker",
-      "route": "research-to-source",
+      "role": "researcher",
+      "route": "source-fail",
       "spec": null,
       "stage": 2
     },
@@ -13,8 +13,8 @@
       "action": "dispatch",
       "gate": null,
       "item": "Q-012",
-      "role": "researcher",
-      "route": "ready-dispatch",
+      "role": "source-checker",
+      "route": "research-to-source",
       "spec": null,
       "stage": 2
     }

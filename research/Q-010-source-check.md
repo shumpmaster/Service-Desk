@@ -1,36 +1,43 @@
 Verdict: FAIL
 
-Three of the seven proposed entries passed and are filed. Four are not filed. Each of those has a claim that rests on one source, or on a source I could not read, and an unverifiable claim is a FAIL.
+I filed three of the four proposed entries. The pattern entry LIB-P-q010-b is not filed, and memo row 4.1 is not confirmed. I checked every claim by reading the pages myself. The Apple pages only rendered through their `tutorials/data` JSON endpoints.
 
-**Confirmed and filed (all in `library/`)**
+**Filed (in `library/facts/`)**
+- **`LIB-F-q010-b1-touch-targets-ios-android.md`** (memo rows 9·iOS and 9·Android; lines 15 and 17):
+  - Apple's accessibility table gives a 44×44 pt default for iOS and iPadOS.
+  - Apple's Buttons page says "at least 44x44 pt".
+  - Android's developer guide says "at least 48dp×48dp. Larger is even better."
+  - Google's Accessibility Help page says 48×48 dp, 8 dp spacing and about 9 mm.
+  - Each platform's figure rests on two pages from one publisher.
+  - I left out the iOS 28 pt minimum, because it comes from one page and the Buttons page contradicts it.
+  - I also left out the 8 dp spacing, which appears on the Google help page only.
+- **`LIB-F-q010-b2-reduce-motion.md`** (row 5.4; line 13):
+  - The Reduce Motion claim has two independent sources. The W3C Understanding page for 2.3.3 describes the prefers-reduced-motion technique for disabling non-essential animation. Apple's accessibility page says to replace transitions in the x-, y- and z-axes with fades.
+  - I did not re-confirm the AAA level this round. I read it in an earlier round.
+  - The "replace with dissolve, highlight fade or colour shift" part comes from Apple alone (the accessibility page and the App Store Connect criteria). I quoted the App Store Connect page for it.
+- **`LIB-F-q010-e-widget-deep-link.md`** (memo section B; line 34):
+  - The HIG widgets page says "don't make people navigate to the relevant area in the app".
+  - The WidgetKit linking page says "open the app at a scene that matches the content of the widget".
+  - The memo's wording says "glance surface". I narrowed the entry to widgets and Live Activities, because the sources say nothing about web dashboards.
 
-- **`facts/LIB-F-q010-a-wcag22-mobile-dashboard-criteria.md`:** I opened the WCAG 2.2 text and the Understanding page for each criterion. Each one matches the memo (`research/Q-010-memo.md` lines 60, 64, 102–105):
-  - 2.5.8 is 24×24 CSS px with five exceptions.
-  - 2.5.5 is AAA at 44×44.
-  - 1.4.3 is 4.5:1, and 3:1 for large text (18pt, or 14pt bold).
-  - 1.4.11 is AA at 3:1, and 2.999:1 fails.
-  - 1.4.1 is Level A.
-  - 4.1.3 is AA.
-  - 2.2.2 is Level A with no five-second exception for auto-updating content.
-  - Both sources are from W3C, so I labelled them "same publisher". This is a standard, not a vendor-behaviour claim.
-- **`facts/LIB-F-q010-c-determinate-vs-indeterminate-progress.md`:** Apple's progress-indicators page and Material m1 both support it. I read the Apple page through its JSON endpoint. I narrowed the entry to the determinate/indeterminate rule. The "stationary indicator reads as stalled" claim comes from Apple only, so I left it out.
-- **`patterns/LIB-P-q010-a-glance-screen-linked-entry-points.md`:** NN/g's cards page and Apple's widgets page both support "linked entry points to their own detail". NN/g's dashboards page supports the at-a-glance framing.
-  - I narrowed the entry and dropped the two-disclosure-level limit and the "label sets expectations" rule. Both come from the one NN/g progressive-disclosure page.
-  - The memo quotes NN/g's dashboards page as "single-screen" (line 18), but what I read said "single-page view". The entry says "single-page".
-
-**Not filed**
-
-- **`LIB-F-q010-b`:** each part of it has only one source.
-  - The iOS 28 pt minimum comes from one Apple page. A plain fetch of that page gave a summary saying 44 pt is the minimum. The Apple JSON endpoint gave the table with a 44 pt default and 28 pt minimum, but nothing second confirms it.
-  - Android 48 dp comes from one Google page. The Material page was never read.
-  - Reduce Motion comes from Apple only. I did not open WCAG 2.3.3.
-  - The "shapes or icons" part is supported by Apple and WCAG 1.4.1, but it doesn't make up for the rest.
-- **`LIB-F-q010-d`:** the Brehmer 2019 and Gschwandtner 2016 findings are each seen on one page only. The Microsoft page confirms linear was faster than radial, with similar accuracy and 87 participants. The TU Wien page confirms ambiguation and error bars. Neither has a second source.
-- **`LIB-F-q010-e`:** it rests on the Apple widgets page alone. Every quote matches, but one page is one source.
-- **`LIB-P-q010-b`:** both PDFs (Munzner's slides and the UW slides) came back as unreadable binary. I could not confirm the expressiveness principle, so the entry stays out.
+**Not filed or not confirmed**
+- **`LIB-P-q010-b`** (memo lines 38–41):
+  - The two course pages (CUNY L5 and BCB5200) are both restatements of Munzner. The original is unread, so they are not independent of each other.
+  - Their channel lists don't agree. My CUNY read found no "identity" or "magnitude" headings and no "spatial region". A first read of the same page listed spatial region as a magnitude channel. BCB5200 lists spatial position as an identity channel.
+  - The page-reader tool gave inconsistent summaries of the CUNY page, so I couldn't confirm which is right.
+  - Both pages do state the expressiveness quote "all of, and only, the information in the dataset attributes" and that unordered data should not suggest an order.
+- **Row 4.1** (line 12) is not confirmed. The memo says both pages confirm "spatial region is identity; only position on a scale is magnitude". My reads contradict that.
+- **Row 1.1** (line 11) is confirmed.
+  - NN/g says "single-page view that imparts at-a-glance information".
+  - Few says "consolidated and arranged on a single screen so the information can be monitored at a glance".
+  - Both quotes match the memo.
+  - "Single screen" rests on Few alone, as the memo says.
+  - I filed no entry for this row.
+- **Rows 7.2, 7.3, 8.1a and the iOS spacing row** have one source each. I didn't file them and didn't re-open them.
+- **Brehmer 2019, Gschwandtner 2016, GOV.UK, web.dev CLS, Boukhelifa and Song & Szafir** remain unchecked. I did not open them this round, and `LIB-F-q010-d` stays withdrawn.
 
 **Open questions**
-
-- Other claims in the memo that are not in the proposed entries were not opened. These include the GOV.UK pages, the web.dev CLS page, the Boukhelifa and Song & Szafir studies, and Few's article. They remain unchecked and are not filed.
-- The memo marks 1.1 as confirmed on Few's wording, which it says it saw only through citing pages (grade C). That does not count as a second source.
-- The 28 pt versus 44 pt question (Q-010-c) stays open until a second Apple page or a PDF-capable read confirms the 28 pt minimum.
+- **Q-010-e (owner ruling needed):** the source standard covers "how a vendor's own product behaves". It is unclear whether Apple and Google design recommendations, such as touch-target sizes, count as behaviour. I filed b1, b2 and e on the narrow reading, with the claims worded as "Apple/Android guidance" and labelled "same publisher". If the owner rules otherwise, they should be withdrawn.
+- **Q-010-c:** is the 28 pt iOS minimum real? Apple's accessibility table says 28 pt, and the Buttons page says 44 pt. It stays unresolved.
+- **P-b needs a primary or a PDF-capable read** of Munzner, *Visualization Analysis & Design*, ch. 5, to settle the channel lists.
+- **Q-010-d:** I have no ruling on whether a paper plus a derivative that restates it counts as two sources. I treated derivative restatements as not independent.

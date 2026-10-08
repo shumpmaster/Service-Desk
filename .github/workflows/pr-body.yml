@@ -1,0 +1,25 @@
+# model S-020 AC7: every pull request body opens with "What this means for you" and a plain paragraph.
+# A red check, not a merge gate: the owner merges PRs himself. The checker script comes from the PR's
+# base commit; the body is read only from the event payload file, never through an expression, so a
+# hostile body cannot inject a command. GitHub takes this workflow file itself from the PR's merge
+# ref, so a PR can edit it; the owner sees that edit in the diff.
+name: pr-body
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-body:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+
+      - name: PR body leads with what it means
+        run: python3 governance/checks/governance_checks.py pr-body --event "$GITHUB_EVENT_PATH"

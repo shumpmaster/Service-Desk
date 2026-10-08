@@ -10,6 +10,8 @@ description: Source checker (Verifier). Opens every cited source, confirms it sa
 ## Duties
 Open every source a memo cites and confirm it says what is claimed (D-032, D-037). Two independent sources for load-bearing facts. File the entries that pass in the portfolio library, in the fact and pattern forms, with checked-on date, shelf life, grade, topics and who opened each source (D-064).
 
+A memo whose header line says 'This is a map of questions, not graded fact.' is a discovery map. For a map, open the source of every item marked known, and check that the shortlists are within eight and five. File no library entries from a map.
+
 ## Write lane
 <!-- surface:begin -->
 Writes:

@@ -8,7 +8,7 @@
 // join-test: S-001/J1 join-test: S-001/J2 join-test: S-001/J6 join-test: S-001/J10
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createDesk } from '../../src/lib/scheduler.js';
+import { createDesk, BLOB_CACHE_KEY, OLD_BLOB_CACHE_KEYS } from '../../src/lib/scheduler.js';
 import { createStore } from '../../src/lib/store.js';
 import { makeBox } from '../../src/lib/universe.js';
 import { buildModel, parseRecord } from '../../src/lib/model.js';
@@ -17,12 +17,13 @@ import { handle } from '../../src/lib/api.js';
 import { _resetKeyCache } from '../../src/lib/access.js';
 import {
   cardRows, cardSummary, questionRows, v5Footer, v5Waits, contextText, notReadText, ASKED_DAYS, SUMMARY_DAYS,
+  usageLines, usageView, costText,
 } from '../../src/lib/asked.js';
 import { hoursMinutes, median } from '../../src/lib/timefmt.js';
-import { NOT_AVAILABLE } from '../../src/lib/records.js';
+import { NOT_AVAILABLE, NOT_RECORDED, parseOutcomes } from '../../src/lib/records.js';
 import PUBLIC_CONFIG from '../../src/public/lib/config.js';
 import { fixture, recorded, CONFIG, SD, ENV, NOW, makeKey, signJwt, goodClaims, certsRoute, request, fakeFetch, fakeClock } from './helpers.mjs';
-import { repo, fakeServer } from './fake-desk.mjs';
+import { repo, fakeServer, gitSha } from './fake-desk.mjs';
 import { loadApp, find } from './page-harness.mjs';
 
 const DAY = 86400e3;
@@ -161,15 +162,19 @@ test('N1: needed reads past the cycle\'s cap are "Checking…", then read on the
 // N2
 
 test('N2 (AC23): the context line with a figure missing says "not available", and "derived" only goes with a real peak', () => {
-  const full = { context_peak_tokens: 36494, context_window_tokens: 1000000, context_peak_percent: 3.6 };
+  const D = ['context_peak'];
+  const full = { context_peak: 36494, context_window: 1000000, context_peak_percent: 3.6, derived: D };
   assert.equal(contextText(full), 'Context peak: 36,494 tokens, 3.6% of a 1,000,000-token window (derived from per-turn usage)');
-  assert.equal(contextText({ context_peak_tokens: NOT_AVAILABLE, context_window_tokens: NOT_AVAILABLE, context_peak_percent: NOT_AVAILABLE }),
+  assert.equal(contextText({ context_peak: NOT_AVAILABLE, context_window: NOT_AVAILABLE, context_peak_percent: NOT_AVAILABLE, derived: D }),
     'Context peak: not available');
-  assert.equal(contextText({ context_peak_tokens: NOT_AVAILABLE, context_window_tokens: 1000000, context_peak_percent: NOT_AVAILABLE }),
+  assert.equal(contextText({ context_peak: NOT_AVAILABLE, context_window: 1000000, context_peak_percent: NOT_AVAILABLE, derived: D }),
     'Context peak: not available; window 1,000,000 tokens');
-  assert.equal(contextText({ context_peak_tokens: 500, context_window_tokens: NOT_AVAILABLE, context_peak_percent: NOT_AVAILABLE }),
+  assert.equal(contextText({ context_peak: 500, context_window: NOT_AVAILABLE, context_peak_percent: NOT_AVAILABLE, derived: D }),
     'Context peak: 500 tokens (derived from per-turn usage); window: not available');
-  assert.equal(contextText({ context_peak_tokens: 'not recorded', context_window_tokens: 10, context_peak_percent: NOT_AVAILABLE }),
+  // From S-020's frozen form: the label goes only with a figure `derived` names (J10).
+  assert.equal(contextText({ ...full, derived: [] }), 'Context peak: 36,494 tokens, 3.6% of a 1,000,000-token window');
+  assert.equal(contextText({ ...full, derived: NOT_RECORDED }), 'Context peak: 36,494 tokens, 3.6% of a 1,000,000-token window');
+  assert.equal(contextText({ context_peak: 'not recorded', context_window: 10, context_peak_percent: NOT_AVAILABLE, derived: D }),
     'Context peak: not recorded; window 10 tokens');
 });
 
@@ -351,4 +356,101 @@ test('N6 (AC20): a question whose history read hasn\'t returned is "loading", no
   assert.equal(by['Q-041-y'].raisedAt, null);
   assert.equal(by['Q-042-z'].raisedLoading, false, 'a path with no history is "not recorded"');
   assert.equal(pending, 1);
+});
+
+// ---------------------------------------------------------------------------
+// PR #52's review (S-001 J10, AC23): B1, the Orchestrator's ruling on impossible figures, N3, N4
+
+test('B1 (J10): a parse cached under the old blob-cache key is never used; the old key is dropped from storage', async () => {
+  const OUT = 'status/outcomes.jsonl';
+  const text = fixture('service-desk/status/outcomes-usage-frozen.jsonl');
+  const files = { 'dispatch-log/2026-10.jsonl': fixture('service-desk/dispatch-log/2026-10.jsonl'), [OUT]: text };
+  const SESSION = 'P-001:define-to-plan-review:2026-10-06T16:40:19Z';
+  // main's parse of this blob, in the old shape (J10's proposed key names), as a browser holds it.
+  const oldParse = { bySession: { [SESSION]: { session: SESSION, item: 'P-001', role: 'critic', result: 'ok', verdict: 'FAIL',
+    usage: { input_tokens: 10, output_tokens: 707, cache_read_tokens: 168160, cache_write_tokens: 11120, turns: 7,
+      context_peak_tokens: 36494, context_window_tokens: 1000000 } } }, notes: [] };
+  assert.notEqual(BLOB_CACHE_KEY, 'desk-blobs-v1');
+  assert.ok(OLD_BLOB_CACHE_KEYS.includes('desk-blobs-v1'));
+  const backing = new Map([['desk-blobs-v1', JSON.stringify({ [`outcomes:${gitSha(text)}`]: oldParse })]]);
+  const storage = { getItem: (k) => (backing.has(k) ? backing.get(k) : null), setItem: (k, v) => backing.set(k, v),
+    removeItem: (k) => backing.delete(k) };
+  const at = Date.parse('2026-10-07T12:00:00Z');
+  const clock = fakeClock(at);
+  const server = fakeServer({ 'Service-Desk': repo(files, [], []), 'Personal-Org-Operating-Model': poomRepo() }, CONFIG, clock);
+  const desk = createDesk({ config: CONFIG, call: server.call, clock, store: createStore(storage), isVisible: () => true });
+  assert.equal(backing.has('desk-blobs-v1'), false, 'the old key is dropped, not left to fill storage');
+  desk.start();
+  await clock.runUntil(at + 1000);
+  desk.stop();
+  const s = desk.model('Service-Desk').sessions.find((r) => r.session === SESSION);
+  assert.equal(s.usage.cache_read_input_tokens, 168160, 'the blob was read and parsed afresh, not taken from the old cache');
+  assert.equal(usageLines(s)[0], 'Tokens: input 10, output 707, cache read 168,160, cache write 11,120 · turns 7');
+  assert.ok(JSON.parse(backing.get(BLOB_CACHE_KEY))[`outcomes:${gitSha(text)}`], 'the new parse is cached under the new key');
+  assert.equal(backing.has('desk-blobs-v1'), false);
+});
+
+test('Ruling (J10): a negative figure or cost is the wrong kind — named, "not recorded" for that key only', () => {
+  const { bySession, notes } = parseOutcomes(JSON.stringify({ session: 'N:1', usage: {
+    input_tokens: -1, num_turns: 3, duration_ms: -5, compactions: -2, cost_usd_estimate: -0.01, context_peak: 10, context_window: 100 } }));
+  assert.deepEqual(notes, [
+    'status/outcomes.jsonl line 1 field usage.input_tokens: expected a whole number; shown as not recorded',
+    'status/outcomes.jsonl line 1 field usage.duration_ms: expected a whole number; shown as not recorded',
+    'status/outcomes.jsonl line 1 field usage.compactions: expected a whole number; shown as not recorded',
+    'status/outcomes.jsonl line 1 field usage.cost_usd_estimate: expected a number of 0 or more, or null; shown as not recorded',
+  ]);
+  const u = usageView(bySession['N:1']);
+  assert.equal(u.input_tokens, NOT_RECORDED);
+  assert.equal(u.duration_ms, NOT_RECORDED);
+  assert.equal(u.compactions, NOT_RECORDED);
+  assert.equal(u.cost_usd_estimate, NOT_RECORDED);
+  assert.equal(u.num_turns, 3, 'the rest of the line still shows');
+  assert.equal(u.context_peak_percent, 10);
+  const l = usageLines(bySession['N:1']);
+  assert.ok(l.includes('Run time (agent tool): not recorded'));
+  assert.ok(l.includes('Cost: not recorded'));
+  // A negative peak: no percentages.
+  const neg = usageView(parseOutcomes(JSON.stringify({ session: 'N:2', usage: { context_peak: -10, context_window: 100,
+    autocompact_threshold: 80 } })).bySession['N:2']);
+  assert.equal(neg.context_peak_percent, NOT_AVAILABLE);
+  assert.equal(neg.threshold_percent, NOT_AVAILABLE);
+});
+
+test('Ruling + N4 (J10): a zero window or threshold leaves its percentage "not available", never "Infinity%"; the figure still shows', () => {
+  const { bySession, notes } = parseOutcomes(JSON.stringify({ session: 'Z:1', usage: {
+    context_peak: 500, context_window: 0, autocompact_threshold: 0, derived: ['context_peak'] } }));
+  assert.deepEqual(notes, []);
+  const u = usageView(bySession['Z:1']);
+  assert.equal(u.context_window, 0);
+  assert.equal(u.autocompact_threshold, 0);
+  assert.equal(u.context_peak_percent, NOT_AVAILABLE);
+  assert.equal(u.threshold_percent, NOT_AVAILABLE);
+  const l = usageLines(bySession['Z:1']);
+  assert.ok(l.every((x) => !/Infinity|NaN/.test(x)), l.join(' | '));
+  assert.equal(l[3], 'Peak, share of the compaction threshold: not available');
+  // A zero peak over a real window is a real 0.0%.
+  assert.equal(usageView({ usage: { context_peak: 0, context_window: 100 } }).context_peak_percent, 0);
+});
+
+test('N4 (J10): a cost too large for a number (1e400 parses as Infinity) is the wrong kind, not "Infinity"', () => {
+  const { bySession, notes } = parseOutcomes('{"session": "I:1", "usage": {"cost_usd_estimate": 1e400, "num_turns": 1e400}}');
+  assert.deepEqual(notes, [
+    'status/outcomes.jsonl line 1 field usage.num_turns: expected a whole number; shown as not recorded',
+    'status/outcomes.jsonl line 1 field usage.cost_usd_estimate: expected a number of 0 or more, or null; shown as not recorded',
+  ]);
+  const l = usageLines(bySession['I:1']);
+  assert.ok(l.includes('Cost: not recorded'));
+  assert.ok(l.every((x) => !/Infinity/.test(x)));
+});
+
+test('N3 (AC23): the cost is rounded to cents on its decimal value, and never prints "-0.00"', () => {
+  assert.equal(costText(1.005), 'estimate $1.01', '1.005 * 100 is 100.4999… in binary; the cents are 101');
+  assert.equal(costText(2.675), 'estimate $2.68');
+  assert.equal(costText(0.0854731), 'estimate $0.09');
+  assert.equal(costText(0.1560012), 'estimate $0.16');
+  assert.equal(costText(0.004), 'estimate $0.00');
+  assert.equal(costText(1234.5), 'estimate $1234.50');
+  assert.equal(costText(1e-7), 'estimate $0.00');
+  for (const v of [-0, -0.001, -0.004]) assert.equal(costText(v), 'estimate $0.00', `${Object.is(v, -0) ? '-0' : v}`);
+  assert.equal(costText(NOT_AVAILABLE), NOT_AVAILABLE);
 });

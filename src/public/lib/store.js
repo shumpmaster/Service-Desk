@@ -28,6 +28,15 @@ export function createStore(backing) {
       }
       return memory.has(key) ? memory.get(key) : fallback;
     },
+    remove(key) {
+      memory.delete(key);
+      if (!usable) return;
+      try {
+        storage.removeItem(key);
+      } catch {
+        // a failed removal costs only the space; the key is no longer read
+      }
+    },
     setJSON(key, value) {
       memory.set(key, value);
       if (!usable) return false;

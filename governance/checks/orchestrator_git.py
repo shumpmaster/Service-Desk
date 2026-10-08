@@ -123,7 +123,8 @@ calls one of these subcommands (or session_runner.py); the workflow holds wiring
               flattened; other branches: a --no-ff merge). Outputs dispatch, next_chain and next_held
               (the self-dispatch gate; model S-017 AC2: also after a hold with --ci-state running or
               absent and --held-work above 0, when --held is below 2, with held + 1). In model S-013: every session's control file is kept on the item
-              branch and the outcome line holds `control` and `record_sha` (AC2); a Definer briefed to
+              branch and the outcome line holds `control` and `record_sha` (AC2), and, for a session that
+              ran, may hold `usage` in exactly model S-020 AC2's shape; a Definer briefed to
               supersede a spec must change only its status word to `superseded`, else its record is
               refused, and the ledger entry (with the digest rebuilt) goes on the item branch (AC7);
               launch cards are stamped with the pushed item tip and every R3 path before the default
@@ -154,8 +155,9 @@ calls one of these subcommands (or session_runner.py); the workflow holds wiring
               probe.sh added to the commands-on pack and its manifest (it writes nonce B to ran.txt,
               env and both environ files to probe-out.txt, and, model S-016 AC3, the class of a
               Docker-socket attempt to docker.txt; its hash is recorded, AC11), and a wrapper that
-              runs the pinned `claude "$@" --output-format stream-json --verbose` and copies its raw
-              stream to a mode-600 file outside the pack. The Docker socket is DOCKER_HOST's when it
+              runs the pinned `claude "$@"` (session_runner.py run passes `--output-format stream-json
+              --verbose` itself, model S-020 AC1) and copies its raw stream to a mode-600 file outside
+              the pack. The Docker socket is DOCKER_HOST's when it
               names a unix socket, and always /var/run/docker.sock
               besides (model S-013 AC9).
               --sandbox-part (model S-016 AC3; no secret, no model): a tiny project whose
@@ -2176,8 +2178,13 @@ class Committer(object):
             raise Refused("the bundle holds %d outcome lines for its session" % len(lines))
         line = lines[0]
         keys = {"item", "session", "role", "record", "result", "verdict", "control", "record_sha"}
-        if set(line) != keys or line["item"] != e["item"] or line["role"] != ctl["role"]:
+        # model S-020 AC2: `usage` is the one optional key, and only in exactly its shape.
+        if set(line) - {"usage"} != keys or line["item"] != e["item"] or line["role"] != ctl["role"]:
             raise Refused("its outcome line is not the session's")
+        if "usage" in line:
+            why = sr.usage_problem(line["usage"])
+            if why is not None:
+                raise Refused("its outcome line's usage is malformed (%s)" % why)
         if line["control"] != h:
             raise Refused("its outcome line names another control file")
         if line["result"] not in orch.RESULTS or line["verdict"] not in orch.VERDICTS:
@@ -3572,13 +3579,14 @@ SANDBOX_LINE_RE = re.compile(r"S016 ([a-z][a-z -]*): ([a-z0-9-]{1,32})")
 IMAGE_OS_RE = re.compile(r"[A-Za-z0-9._-]{1,32}")
 IMAGE_VERSION_OUT_RE = re.compile(r"[0-9.]{1,32}")
 WRAPPER = """#!/usr/bin/env bash
-# The live proof's wrapper (model S-015 AC12): the pinned command line with a stream-json output, its
-# raw stream copied to a private file outside the pack before session_runner.py run redacts anything.
+# The live proof's wrapper (model S-015 AC12): the pinned command line (session_runner.py run asks it
+# for stream-json output, model S-020 AC1), its raw stream copied to a private file outside the pack
+# before session_runner.py run redacts anything.
 if [ "$#" -eq 1 ] && [ "$1" = "--version" ]; then
   exec claude --version
 fi
 umask 077
-claude "$@" --output-format stream-json --verbose | tee -a %(raw)s
+claude "$@" | tee -a %(raw)s
 exit "${PIPESTATUS[0]}"
 """
 

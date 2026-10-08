@@ -4,8 +4,8 @@
       "action": "dispatch",
       "gate": null,
       "item": "Q-010",
-      "role": "source-checker",
-      "route": "research-to-source",
+      "role": "critic-triage",
+      "route": "third-fail",
       "spec": null,
       "stage": 2
     },
@@ -13,8 +13,8 @@
       "action": "dispatch",
       "gate": null,
       "item": "Q-011",
-      "role": "source-checker",
-      "route": "research-to-source",
+      "role": "critic-triage",
+      "route": "third-fail",
       "spec": null,
       "stage": 2
     }

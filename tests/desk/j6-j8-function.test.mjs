@@ -24,7 +24,7 @@ function steadyRoutes() {
     certsRoute([key]),
     (url) => (url === U.branch ? branch : undefined),
     (url) => (url.startsWith(U.pulls) ? { status: 200, body: '[]' } : undefined),
-    (url) => (url.includes('/check-runs') ? { status: 200, body: '{"total_count":0,"check_runs":[]}' } : undefined),
+    (url) => (url.includes('/actions/runs?') ? { status: 200, body: '{"total_count":0,"workflow_runs":[]}' } : undefined),
     (url) => (url.includes('/git/trees/') ? { status: 200, body: '{"tree":[],"truncated":false}' } : undefined),
   ];
 }
@@ -125,7 +125,7 @@ test('AC13/J6: a POST without Content-Type application/json → 415; a foreign O
   const json = await ok.json();
   assert.equal(json.state, 'ok');
   assert.equal(json.project, 'Service-Desk');
-  assert.ok(json.cost.github >= 3 && json.cost.github <= 8);
+  assert.ok(json.cost.github >= 4 && json.cost.github <= 11);
   assert.ok(json.cost.bytes > 0);
 });
 
@@ -181,7 +181,19 @@ test('J6: refusals (400): unknown project, bad sha, bad history path, budget ove
     ['blobs', { project: 'Service-Desk', blobs: Array.from({ length: 22 }, (_, i) => i.toString(16).padStart(40, 'b')), history: ['questions/a.md', 'questions/b.md'] }],
     ['poll', { project: 'Nope', head: null }],
     ['poll', { project: 'Service-Desk', head: 'xyz' }],
-    ['poll', { project: 'Service-Desk', head: null, etags: Object.fromEntries(Array.from({ length: 8 }, (_, i) => [`u${i}`, 'e'])) }],
+    ['poll', { project: 'Service-Desk', head: null, etags: Object.fromEntries(Array.from({ length: 11 }, (_, i) => [`u${i}`, 'e'])) }],
+    ['poll', { project: 'Service-Desk', head: null, etags: { u: 'e'.repeat(3100) } }],
+    // From M2 (AC46, AC47): history paths for hold cards only; compare pairs of 40 lowercase hex.
+    ['blobs', { project: 'Service-Desk', blobs: [], history: ['queue/ci-hold-ABCDEF123456.md'] }],
+    ['blobs', { project: 'Service-Desk', blobs: [], history: ['queue/ci-hold-abc.md'] }],
+    ['blobs', { project: 'Service-Desk', blobs: [], history: ['queue/P-001-merge-conflict.md'] }],
+    ['blobs', { project: 'Service-Desk', blobs: [], history: [], compare: [{ base: sha, head: 'B'.repeat(40) }] }],
+    ['blobs', { project: 'Service-Desk', blobs: [], history: [], compare: [{ base: 'main', head: sha }] }],
+    ['blobs', { project: 'Service-Desk', blobs: [], history: [], compare: [{ base: sha }] }],
+    ['blobs', { project: 'Service-Desk', blobs: [], history: [], compare: [`${sha}...${sha}`] }],
+    ['blobs', { project: 'Service-Desk', blobs: [], history: [], compare: { base: sha, head: sha } }],
+    ['blobs', { project: 'Service-Desk', blobs: Array.from({ length: 24 }, (_, i) => i.toString(16).padStart(40, 'b')), history: [],
+      compare: [{ base: sha, head: 'c'.repeat(40) }, { base: 'd'.repeat(40), head: 'c'.repeat(40) }] }],
   ];
   for (const [kind, body] of bad) {
     const f = fakeFetch(steadyRoutes());
@@ -208,6 +220,46 @@ test('J6: a blob call within the budget (1 per blob, 2 per history path) returns
   assert.equal(json.blobs[shas[0]], `blob ${shas[0]}`);
   assert.deepEqual(json.history['questions/a.md'], ['[]']);
   assert.equal(json.cost.github, 23);
+});
+
+test('J6 (M2): hold-card history paths are accepted; each compare counts 1; the answer is keyed base...head, cut to its status (N1)', async () => {
+  _resetKeyCache();
+  const jwt = await signJwt(key, goodClaims());
+  const ahead = recorded('compare-ahead');
+  const diverged = recorded('compare-diverged');
+  const tipA = 'a'.repeat(40);
+  const tipB = 'b'.repeat(40);
+  const tipC = 'e'.repeat(40);
+  const head = 'c'.repeat(40);
+  const f = fakeFetch([certsRoute([key]),
+    (url) => (url === U.compare(tipA, head) ? ahead : undefined),
+    (url) => (url === U.compare(tipB, head) ? diverged : undefined),
+    (url) => (url === U.compare(tipC, head) ? { status: 404, body: '{"message":"Not Found"}' } : undefined),
+    (url) => (url.includes('/commits?path=') ? { status: 200, body: '[]' } : undefined),
+    (url) => (url.includes('/git/blobs/') ? { status: 200, headers: { 'Content-Type': 'text/plain' }, body: 'x' } : undefined)]);
+  const shas = Array.from({ length: 20 }, (_, i) => i.toString(16).padStart(40, 'f'));
+  const res = await call('blobs', request('/api/blobs', { jwt, body: { project: 'Service-Desk', blobs: shas,
+    history: ['queue/ci-hold-0123456789ab.md'], compare: [{ base: tipA, head }, { base: tipB, head }, { base: tipC, head }] } }), f);
+  assert.equal(res.status, 200, 'budget 20 + 2 + 3 = 25');
+  assert.equal(U.compare(tipA, head), `https://api.github.com/repos/shumpmaster/Service-Desk/compare/${tipA}...${head}?per_page=1`);
+  const json = await res.json();
+  assert.equal(json.state, 'ok', 'a failed compare is a null answer, not a failed call');
+  assert.deepEqual(json.history['queue/ci-hold-0123456789ab.md'], ['[]']);
+  assert.equal(JSON.parse(json.compare[`${tipA}...${head}`]).status, 'ahead');
+  assert.equal(JSON.parse(json.compare[`${tipB}...${head}`]).status, 'diverged');
+  assert.equal(json.compare[`${tipC}...${head}`], null);
+  // N1: the files with their patches (and the commit list) are not passed on.
+  const kept = json.compare[`${tipB}...${head}`];
+  assert.equal(kept.includes('"files"'), false);
+  assert.equal(kept.includes('"commits"'), false);
+  assert.ok(kept.length < 200, `${kept.length} bytes`);
+  assert.ok(diverged.body.length > 20000, 'the recorded answer itself is large');
+  assert.ok(json.cost.bytes < 3000, `cost.bytes ${json.cost.bytes}`);
+  // A rate-limited compare stops the call, as any read does.
+  const g = fakeFetch([certsRoute([key]), (url) => (url.includes('/compare/') ? { status: 429, headers: { 'Retry-After': '30' }, body: '{}' } : undefined)]);
+  const rl = await (await call('blobs', request('/api/blobs', { jwt, body: { project: 'Service-Desk', compare: [{ base: tipA, head }] } }), g)).json();
+  assert.equal(rl.state, 'cant-read');
+  assert.equal(rl.reason, 'rate-limit');
 });
 
 test('J6: the Pages Functions route to the handler (file-based routing: functions/api/poll.js and blobs.js)', async () => {

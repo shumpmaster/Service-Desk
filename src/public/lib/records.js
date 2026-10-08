@@ -1,4 +1,4 @@
-// Record parsers for the desk page (spec S-001, J1's CI rule, J2 and J9).
+// Record parsers for the desk page (spec S-001, J1's CI rule, J2, J9 and J10).
 // Pure functions over text: no network, no DOM. Shared by the page (as a copy under
 // public/lib/, kept identical by the build) and the tests.
 
@@ -491,12 +491,12 @@ export function classifyPull(pr, project) {
 }
 
 // ---------------------------------------------------------------------------
-// CI (J1's reduction rule)
+// CI (J1's reduction rule, from workflow runs: AC29)
 
 const FAILING = new Set(['failure', 'timed_out', 'action_required', 'startup_failure']);
 const NOT_FAILING = new Set(['success', 'neutral', 'skipped', 'cancelled', 'stale']);
 
-/** Reduce check runs to failing | running | passing | none. */
+/** Reduce runs ({ status, conclusion }) to failing | running | passing | none (J1). */
 export function reduceChecks(runs) {
   if (runs.some((r) => r.status === 'completed' && FAILING.has(r.conclusion))) return 'failing';
   if (runs.some((r) => r.status !== 'completed')) return 'running';
@@ -506,20 +506,91 @@ export function reduceChecks(runs) {
   return 'none';
 }
 
-/** Parse raw check-run pages into runs: [{ name, status, conclusion }]. */
-export function parseCheckRuns(pages) {
+/** The workflows whose runs are activity, never CI (J1): deploys wait for approval; the
+ * Orchestrator's own runs are cancelled and skipped by design. Paths a project lacks never match. */
+export const DEPLOY_WORKFLOW = '.github/workflows/desk-deploy.yml';
+export const ORCHESTRATOR_WORKFLOW = '.github/workflows/orchestrator.yml';
+export const GOVERNANCE_WORKFLOW = '.github/workflows/governance.yml';
+export const ACTIVITY_WORKFLOWS = [DEPLOY_WORKFLOW, ORCHESTRATOR_WORKFLOW];
+
+/**
+ * Parse raw workflow-run pages (J1's 3a and 3b, in J6's `checks`) into runs:
+ * [{ path, name, event, status, conclusion, runNumber, headSha, url }]. A page that isn't a run
+ * list, and a run without a `path` or a whole-number `run_number`, are named in notes and skipped.
+ */
+export function parseWorkflowRuns(pages) {
   const runs = [];
   const notes = [];
   (pages || []).forEach((raw, i) => {
     if (raw == null) return;
+    let v;
     try {
-      const v = JSON.parse(raw);
-      for (const r of v.check_runs || []) runs.push({ name: r.name, status: r.status, conclusion: r.conclusion });
+      v = JSON.parse(raw);
     } catch {
-      notes.push(`check-run page ${i + 1} is not JSON`);
+      notes.push(`workflow-run page ${i + 1} is not JSON`);
+      return;
+    }
+    if (!v || !Array.isArray(v.workflow_runs)) {
+      notes.push(`workflow-run page ${i + 1} has no workflow_runs list`);
+      return;
+    }
+    for (const r of v.workflow_runs) {
+      if (!r || typeof r.path !== 'string' || !Number.isInteger(r.run_number)) {
+        notes.push(`workflow-run page ${i + 1}: a run without a path or run_number; skipped`);
+        continue;
+      }
+      runs.push({ path: r.path.replace(/@.*$/, ''), name: typeof r.name === 'string' ? r.name : r.path,
+        event: r.event, status: r.status, conclusion: r.conclusion, runNumber: r.run_number,
+        headSha: typeof r.head_sha === 'string' ? r.head_sha : null, url: typeof r.html_url === 'string' ? r.html_url : null });
     }
   });
   return { runs, notes };
+}
+
+/** Latest run per workflow (J1): grouped by `path`, the greatest `run_number` in each. */
+export function latestPerWorkflow(runs) {
+  const by = new Map();
+  for (const r of runs) {
+    const cur = by.get(r.path);
+    if (!cur || r.runNumber > cur.runNumber) by.set(r.path, r);
+  }
+  return by;
+}
+
+/** A run's words: its conclusion when completed, else its status. */
+function runWord(r) {
+  return r.status === 'completed' ? (r.conclusion || 'no conclusion') : (r.status || 'status not recorded');
+}
+
+/** The words for desk-deploy's latest run (J1): "deploy <short sha>: <what happened>". */
+export function deployWords(r) {
+  const sha = r.headSha ? r.headSha.slice(0, 7) : 'sha not recorded';
+  let what;
+  if (r.status === 'waiting') what = 'waiting for approval';
+  else if (r.status !== 'completed') what = r.status || 'status not recorded';
+  else if (r.conclusion === 'success') what = 'deployed';
+  // A run whose deploy the owner rejected and one whose job failed both conclude `failure` as far
+  // as the run list shows (C: J1 says the first rejected deploy shows how GitHub concludes it).
+  else if (r.conclusion === 'failure') what = 'failed or rejected';
+  else what = r.conclusion || 'no conclusion';
+  return `deploy ${sha}: ${what}`;
+}
+
+/**
+ * J1's CI result for a head from its workflow runs (3a and 3b together): the latest run per
+ * workflow; desk-deploy and the Orchestrator are activity; the rest reduce to failing | running |
+ * passing | none. Returns { ci, activity: [text], governance: run|null, latest: Map }.
+ */
+export function reduceWorkflowRuns(runs) {
+  const latest = latestPerWorkflow(runs);
+  const activity = [];
+  const counted = [];
+  for (const [path, r] of latest) {
+    if (path === DEPLOY_WORKFLOW) activity.push({ text: deployWords(r), url: r.url });
+    else if (path === ORCHESTRATOR_WORKFLOW) activity.push({ text: `Orchestrator run: ${runWord(r)}`, url: r.url });
+    else counted.push(r);
+  }
+  return { ci: reduceChecks(counted), activity, governance: latest.get(GOVERNANCE_WORKFLOW) || null, latest };
 }
 
 // ---------------------------------------------------------------------------

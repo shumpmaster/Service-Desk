@@ -18,7 +18,7 @@ export const REASON_WORDS = {
   'rate-limit': "GitHub's rate limit",
   github: 'GitHub error, or the network between Cloudflare and GitHub',
   config: 'the configured default branch was not found',
-  'too-many': 'more open PRs, check runs or tree entries than one read can page through',
+  'too-many': 'more open PRs, workflow runs or tree entries than one read can page through',
   cloudflare: 'Cloudflare or desk-function error',
   network: "network error: the desk's function could not be reached",
   stale: 'no successful read for 3 minutes',
@@ -154,13 +154,15 @@ export function createDesk(opts) {
         }
         if (!page) return out.push(undefined);
         out.push(page.raw);
-        if (i === (urls.length - 1) && i === 2 && page.next) more = true;
+        // A list's third page that names a next page: more than one read can page through (J1).
+        // `checks` holds two lists (3a then 3b), so the page number is read from each URL.
+        if (/[?&]page=3$/.test(url) && page.next) more = true;
       });
       return { raws: out, more };
     };
     const pl = takeList(r.pulls || [], r.pullUrls || [], r.pullNext || []);
     const cl = takeList(r.checks || [], r.checkUrls || [], r.checkNext || []);
-    // Keep only the pages this poll used, and their ETags (J6: at most 7 entries).
+    // Keep only the pages this poll used, and their ETags (J6: at most 10 entries).
     const used = new Set([...(r.pullUrls || []), ...(r.checkUrls || [])]);
     for (const url of [...st.pages.keys()]) if (!used.has(url)) st.pages.delete(url);
     const branchUrl = Object.keys(r.etags || {}).find((u) => !used.has(u));

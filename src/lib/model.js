@@ -1,17 +1,18 @@
 // The read model of one connected project (spec S-001, Terms, J2, J6, J9; AC1–AC3, AC6–AC12).
-// Pure: given the tree, the parsed records, the PR and check-run pages and the clock, it says
+// Pure: given the tree, the parsed records, the PR and workflow-run pages and the clock, it says
 // what is flagged, what is activity, and what each view shows. No network, no DOM.
 
 import {
   parseCardPath, parseAnswerPath, questionName, questionAnswerName, classifyQueuePath,
   STATUS_RE, LOG_RE, ROUTING_PATH, LEDGER_PATH, isSprintPath,
   parseCard, parseAnswer, parseQuestion, parseStatus, parseRouting, parseLog, parseSprint,
-  parseLedger, parsePulls, classifyPull, parseCheckRuns, reduceChecks, entryWords, markRetries,
+  parseLedger, parsePulls, classifyPull, parseWorkflowRuns, reduceWorkflowRuns, entryWords, markRetries,
   stageName, timeLimitMinutes,
 } from './records.js';
 import { whenText, durationText } from './timefmt.js';
 
 export const NOT_RECORDED = 'not recorded';
+export const CI_CANT_READ = "can't read CI (the read token needs Actions: read)";
 export const V25_NOT_RECORDED = "not recorded in this repository's records (operating model v2.5.1)";
 
 /** The two dispatch-log months J2 reads: the current one and the one before, in UTC. */
@@ -158,14 +159,20 @@ export function buildModel(input) {
     }
   }
 
-  // --- CI (J1)
+  // --- CI (J1, AC29): the workflow runs of the default-branch head
   let ci;
-  if (input.checksState === 'cant-read') ci = "can't read checks";
+  let governance = null; // the latest governance run on the head, or null (unknown or none)
+  let ciKnown = false;
+  if (input.checksState === 'cant-read') ci = CI_CANT_READ;
   else if (input.checkPages == null) ci = 'not read yet';
   else {
-    const { runs, notes: ciNotes } = parseCheckRuns(input.checkPages);
+    const { runs, notes: ciNotes } = parseWorkflowRuns(input.checkPages);
     notes.push(...ciNotes);
-    ci = reduceChecks(runs);
+    const red = reduceWorkflowRuns(runs);
+    ci = red.ci;
+    governance = red.governance;
+    ciKnown = true;
+    for (const a of red.activity) activity.push({ kind: 'run', text: a.text, link: a.url || undefined });
   }
   if (ci === 'failing') activity.push({ kind: 'ci', text: `CI failing on ${project.defaultBranch}'s head` });
 

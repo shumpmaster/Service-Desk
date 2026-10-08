@@ -1,13 +1,19 @@
 // The desk function's GitHub reader (spec S-001, J1). It makes conditional REST reads with the
 // read token and hands the raw bodies back; the only body it parses is the branch's (and a
-// blob's JSON form, when GitHub ignores the raw media type). It never retries.
+// blob's JSON form, when GitHub ignores the raw media type, and a compare answer, which it cuts
+// down to its status before returning it). It never retries.
 
 export const API = 'https://api.github.com';
 export const BLOB_BATCH = 25; // EXP-001 may lower it to 12, then 6.
 export const MAX_PAGES = 3;
 export const MAX_PARALLEL = 6;
+// One check for every sha the desk takes from the page: blob shas, the poll's head and compare's
+// base and head alike (review N4 on the M2 amendment): 40 lowercase hex digits.
 export const SHA_RE = /^[0-9a-f]{40}$/;
-export const HISTORY_PATH_RE = /^(decisions\/)?questions\/[^/]+\.md$/;
+// J6: owner questions and their rulings (J2), and from M2 the Orchestrator's hold cards (AC46).
+export const HISTORY_PATH_RE = /^((decisions\/)?questions\/[^/]+\.md|queue\/ci-hold-[0-9a-f]{12}\.md)$/;
+// J1 3a and 3b: the workflow-run lists read for the head (AC29), push runs then dispatch runs.
+export const RUN_EVENTS = ['push', 'workflow_dispatch'];
 
 const JSON_ACCEPT = 'application/vnd.github+json';
 const RAW_ACCEPT = 'application/vnd.github.raw+json';
@@ -22,9 +28,10 @@ export function urlsFor(project) {
   return {
     branch: `${base}/branches/${encPath(project.defaultBranch)}`,
     pulls: `${base}/pulls?state=open&per_page=100`,
-    checks: (sha) => `${base}/commits/${sha}/check-runs?per_page=100`,
+    runs: (sha, event) => `${base}/actions/runs?head_sha=${sha}&event=${event}&exclude_pull_requests=true&per_page=100`,
     tree: (sha) => `${base}/git/trees/${sha}?recursive=1`,
     blob: (sha) => `${base}/git/blobs/${sha}`,
+    compare: (b, h) => `${base}/compare/${b}...${h}?per_page=1`,
     history: (path) => `${base}/commits?path=${encodeURIComponent(path)}&sha=${encodeURIComponent(project.defaultBranch)}&per_page=100`,
   };
 }
@@ -198,26 +205,33 @@ export async function pollProject(req, deps) {
     out.pullUrls = pl.urls;
     out.pullNext = pl.next;
 
-    // 3. Check runs on the head.
-    let cl;
-    try {
-      cl = await readList(get, u.checks(headSha), etagsIn, nowMs);
-    } catch (f) {
-      // J1: a 403 (without rate-limit headers) on check-runs only means the token lacks a checks
-      // permission: CI can't be read, and the project stays readable. A 401 is the token itself
-      // failing, as on every other request: the project can't be read, reason token.
-      if (f instanceof Failure && f.reason === 'token' && f.status === 403) {
-        cl = null;
-      } else throw f;
+    // 3. Workflow runs on the head (AC29): 3a push runs, then 3b workflow_dispatch runs. Their
+    // pages go back in `checks`, 3a's first, each named by its URL.
+    const lists = [];
+    for (const event of RUN_EVENTS) {
+      let cl;
+      try {
+        cl = await readList(get, u.runs(headSha, event), etagsIn, nowMs);
+      } catch (f) {
+        // J1: a 403 (without rate-limit headers) on workflow runs only means the token lacks
+        // Actions: read: CI can't be read, and the project stays readable. A 401 is the token
+        // itself failing, as on every other request: the project can't be read, reason token.
+        if (f instanceof Failure && f.reason === 'token' && f.status === 403) {
+          lists.length = 0;
+          out.checksState = 'cant-read';
+          break;
+        }
+        throw f;
+      }
+      lists.push(cl);
     }
-    if (cl) {
+    for (const cl of lists) {
       Object.assign(out.etags, cl.etags);
-      out.checks = cl.pages;
-      out.checkUrls = cl.urls;
-      out.checkNext = cl.next;
-    } else {
-      out.checksState = 'cant-read';
+      out.checks.push(...cl.pages);
+      out.checkUrls.push(...cl.urls);
+      out.checkNext.push(...cl.next);
     }
+    const cl = lists.length ? { tooMany: lists.some((x) => x.tooMany), all304: lists.every((x) => x.all304) } : null;
 
     // 4. The tree, only when the head moved (or the page sent none).
     if (!branch304 && headSha !== req.head) {
@@ -261,6 +275,25 @@ async function blobText(res) {
   return text;
 }
 
+/**
+ * A compare answer, cut down to what the page reads (review N1 on the M2 amendment): GitHub's body
+ * carries `files` with their patch text and a `commits` list, which can run to hundreds of KB.
+ * Only the counts and `status` (ahead, identical, behind or diverged) are kept, so cost.bytes
+ * stays small. A body that isn't a JSON object is passed on as null (a failed read).
+ */
+export function compareBody(text) {
+  let v;
+  try {
+    v = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (!v || typeof v !== 'object' || typeof v.status !== 'string') return null;
+  const keep = { status: v.status };
+  for (const k of ['ahead_by', 'behind_by', 'total_commits']) if (Number.isInteger(v[k])) keep[k] = v[k];
+  return JSON.stringify(keep);
+}
+
 async function pool(tasks, limit) {
   let i = 0;
   const workers = Array.from({ length: Math.min(limit, tasks.length) }, async () => {
@@ -273,7 +306,8 @@ async function pool(tasks, limit) {
 }
 
 /**
- * The blob call (J1, J6). req: { project, blobs: [sha], history: [path] } (already validated).
+ * The blob call (J1, J6). req: { project, blobs: [sha], history: [path], compare: [{ base, head }] }
+ * (already validated).
  * At most six requests wait at once. A failure stops new requests; nothing is retried.
  */
 export async function readBlobs(req, deps) {
@@ -284,7 +318,7 @@ export async function readBlobs(req, deps) {
   const u = urlsFor(project);
   const out = {
     project: project.name, readAt: new Date(nowMs).toISOString(), state: 'ok', reason: null,
-    retryAfter: null, blobs: {}, history: {},
+    retryAfter: null, blobs: {}, history: {}, compare: {},
   };
   let failure = null;
   const fail = (f) => {
@@ -317,6 +351,22 @@ export async function readBlobs(req, deps) {
       } else {
         out.history[path] = [first];
       }
+    });
+  }
+  for (const { base, head } of req.compare || []) {
+    const key = `${base}...${head}`;
+    out.compare[key] = null;
+    tasks.push(async () => {
+      if (failure) return;
+      const res = await get(u.compare(base, head));
+      if (!res || !res.ok) {
+        // J6: a failed compare is a null answer and the merge card stays flagged. Only a rate limit
+        // or the token failing stops the call, as for every other read.
+        const f = failFrom(res, nowMs);
+        if (f.reason === 'rate-limit' || (f.reason === 'token' && f.status === 401)) fail(f);
+        return;
+      }
+      out.compare[key] = compareBody(await res.text());
     });
   }
   await pool(tasks, MAX_PARALLEL);

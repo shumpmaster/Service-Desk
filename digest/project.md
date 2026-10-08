@@ -8,6 +8,7 @@
 | L-0004 | Make Service-Desk public. The owner changed the visibility on 2026-10-07, after a scan of all 406 commits on all 57 branches. gitleaks 8.30.1 found no … | 2026-10-07 | never |
 | L-0005 | Adopted. governance/checks/session_runner.py, orchestrator_git.py and governance_checks.py are copied from the model at its PR #21 merge (each was identical to the model's 677fe5a copy before). Also … | 2026-10-08 | never |
 | L-0006 | (1) A null figure shows "not available" everywhere, including the threshold percentage, "would have stopped" and the compaction count (PR #49 B1). (2) The drill-down … | 2026-10-08 | never |
+| L-0007 | Deferred. RUNNER.toml stays as it is: session_commands "on", proven_image_version 202609, so on today's 202610 image pipeline builder sessions run with commands forced off (S-016 AC2). … | 2026-10-08 | never |
 
 ## Kills
 None.

@@ -3,7 +3,7 @@
 *Pre-registered before any run (D-047). Frozen once the line below is set.*
 
 spec: S-001 (AC35, AC38, AC41, AC44)   milestone: MD, on the preview once the chosen design is the
-desk's default view (AC44 step 3)
+desk's default view (AC44 step 4); it is AC44 step 5
 runner:
 - **The owner,** on the phone, on the preview (about 15 minutes in all, counted against the
   pre-launch 2 hours a week).
@@ -34,7 +34,7 @@ After looking at the desk's first screen for 5 seconds, the owner can say correc
    face down. That screenshot, taken at the end of the glance, is the truth the answers are scored
    against.
 3. He answers G1, G2 and G3 aloud or in writing to the Chief of Staff, from memory.
-5. **Five glances**, on at least three different days, at whatever the projects hold then. If
+4. **Five glances**, on at least three different days, at whatever the projects hold then. If
    no glance in the first four had a flagged item, or none had a can't-read or stale project, the
    fifth glance is taken when one exists; if none occurs before MD would otherwise be accepted,
    that is noted and G3's can't-read case is unscored.
@@ -66,7 +66,7 @@ design (S-001 Known limits).
 
 ## Deciding threshold
 - **Pass:** G1 correct in all five glances, G3 correct in all five, and G2 correct in at least
-  four. Then AC44 step 4 is met.
+  four. Then AC44 step 5 is met.
 - **Fail:** any other result. The failing question goes back to the design lab, the merged design
   is fixed forward through the normal route, and the test is taken again: five new glances, the
   same threshold.

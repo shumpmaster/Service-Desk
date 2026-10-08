@@ -7,8 +7,10 @@ import { checkAccess } from './access.js';
 import { pollProject, readBlobs, BLOB_BATCH, SHA_RE, HISTORY_PATH_RE } from './github.js';
 import CONFIG from './config.js';
 
-const MAX_ETAGS = 7;
-const MAX_ETAG_BYTES = 2048;
+// J6: the branch, up to 3 PR pages and up to 3 pages for each of J1's 3a and 3b: at most 10
+// entries, under 3 KB.
+export const MAX_ETAGS = 10;
+export const MAX_ETAG_BYTES = 3072;
 const MAX_BODY_BYTES = 16384;
 
 function reply(status, body) {
@@ -49,12 +51,17 @@ function validateBlobs(body, config) {
   if (!project) return { error: 'unknown project' };
   const blobs = body.blobs == null ? [] : body.blobs;
   const history = body.history == null ? [] : body.history;
-  if (!Array.isArray(blobs) || !Array.isArray(history)) return { error: 'bad lists' };
+  const compare = body.compare == null ? [] : body.compare;
+  if (!Array.isArray(blobs) || !Array.isArray(history) || !Array.isArray(compare)) return { error: 'bad lists' };
   if (blobs.some((s) => typeof s !== 'string' || !SHA_RE.test(s))) return { error: 'bad sha' };
   if (history.some((p) => typeof p !== 'string' || !HISTORY_PATH_RE.test(p))) return { error: 'bad history path' };
-  const budget = new Set(blobs).size + 2 * new Set(history).size;
+  // AC47: compare's base and head go through the same 40-lowercase-hex check as blob shas (N4).
+  if (compare.some((c) => !c || typeof c !== 'object' || Array.isArray(c) || typeof c.base !== 'string'
+    || typeof c.head !== 'string' || !SHA_RE.test(c.base) || !SHA_RE.test(c.head))) return { error: 'bad compare' };
+  const pairs = [...new Map(compare.map((c) => [`${c.base}...${c.head}`, { base: c.base, head: c.head }])).values()];
+  const budget = new Set(blobs).size + 2 * new Set(history).size + pairs.length;
   if (budget > BLOB_BATCH) return { error: `budget ${budget} is over ${BLOB_BATCH}` };
-  return { req: { project, blobs: [...new Set(blobs)], history: [...new Set(history)] } };
+  return { req: { project, blobs: [...new Set(blobs)], history: [...new Set(history)], compare: pairs } };
 }
 
 /**

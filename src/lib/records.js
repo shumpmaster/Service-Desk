@@ -1,4 +1,4 @@
-// Record parsers for the desk page (spec S-001, J1's CI rule, J2 and J9).
+// Record parsers for the desk page (spec S-001, J1's CI rule, J2, J9 and J10).
 // Pure functions over text: no network, no DOM. Shared by the page (as a copy under
 // public/lib/, kept identical by the build) and the tests.
 
@@ -14,6 +14,11 @@ export const LOG_RE = /^dispatch-log\/([0-9]{4}-[0-9]{2})\.jsonl$/;
 export const ROUTING_PATH = 'governance/ROUTING.toml';
 export const LEDGER_PATH = 'docs/LEDGER.md';
 export const SPRINT_RE = /^docs\/sprints\/([^/]+\.md)$/;
+// From M2: the Orchestrator's hold cards (AC46) and merge cards (AC47), and the merge gate's record.
+export const HOLD_RE = /^queue\/ci-hold-([0-9a-f]{12})\.md$/;
+export const MERGE_CARD_RE = /^queue\/([A-Z]+-[0-9]+)-merge-(conflict|by-hand)\.md$/;
+export const MERGES_PATH = 'status/merges.jsonl';
+export const OUTCOMES_PATH = 'status/outcomes.jsonl';
 const SPRINT_SKIP = new Set(['PROGRESS.md', 'SPRINT_PLAN.md']);
 
 /** A card path's parts, or null. `queue/P-001-dor-fail-2.md` → P-001, dor-fail, 2. */
@@ -52,14 +57,23 @@ export function isSprintPath(path) {
   return Boolean(m) && !SPRINT_SKIP.has(m[1]);
 }
 
+/** A merge card path's parts (AC47), or null: `queue/P-001-merge-by-hand.md` → P-001, by-hand. */
+export function parseMergeCardPath(path) {
+  const m = MERGE_CARD_RE.exec(path);
+  return m ? { path, item: m[1], step: m[2] } : null;
+}
+
 /**
- * Classify a path under queue/ (J2). Returns
- * { kind: 'card', card } | { kind: 'readme' } | { kind: 'merge-note' } | { kind: 'unparsed' } | null.
+ * Classify a path under queue/ (J2). Returns { kind: 'card', card } | { kind: 'hold' } |
+ * { kind: 'merge-card', merge } | { kind: 'readme' } | { kind: 'merge-note' } | { kind: 'unparsed' } | null.
  */
 export function classifyQueuePath(path) {
   if (!path.startsWith('queue/')) return null;
   if (path === 'queue/README.md') return { kind: 'readme' };
   if (path.startsWith('queue/merge/')) return { kind: 'merge-note' };
+  if (HOLD_RE.test(path)) return { kind: 'hold' };
+  const merge = parseMergeCardPath(path);
+  if (merge) return { kind: 'merge-card', merge };
   const card = parseCardPath(path);
   if (card) return { kind: 'card', card };
   return { kind: 'unparsed' };
@@ -112,6 +126,85 @@ export function parseCard(text) {
   if (!answerPath) notes.push('no answer path on the "answer:" line');
   const head = /^# (.+)$/.exec(all[0] || '');
   return { heading: head ? head[1] : null, title, options, answerPath, notes };
+}
+
+/** The text of a `## <heading>` section (J2), trimmed, or null when the section is missing. */
+export function sectionText(text, heading) {
+  const sec = sectionLines(lines(text), heading);
+  return sec ? sec.join('\n').trim() : null;
+}
+
+/**
+ * A hold card's text (AC46; `hold_card`, governance/checks/orchestrator_git.py:1233–1245):
+ * { title, tip, state, heldFor, whatToDo, notes }. A line that doesn't match is named in notes;
+ * the card is still flagged while open.
+ */
+export function parseHoldCard(text) {
+  const all = lines(text);
+  const notes = [];
+  const head = /^# (.+)$/.exec(all[0] || '');
+  if (!head) notes.push('line 1 is not a "# " title');
+  const m = /^tip: ([0-9a-f]{40}) +state: (\S+) +held for: ([0-9]+) minutes$/.exec(all[2] || '');
+  if (!m) notes.push('line 3 is not "tip: <sha>   state: <state>   held for: <n> minutes"');
+  const whatToDo = sectionText(text, '## 2. What to do');
+  if (whatToDo == null) notes.push('no "## 2. What to do" section');
+  return { title: head ? head[1].trim() : null, tip: m ? m[1] : null, state: m ? m[2] : null,
+    heldFor: m ? Number(m[3]) : null, whatToDo, notes };
+}
+
+// The Orchestrator's own pattern for a merge card's tip (orchestrator_git.py:3031, CARD_TIP_RE).
+export const MERGE_TIP_RE = /^item: [PQE]-[0-9]+ +tip: ([0-9a-f]{40})\b/m;
+
+/**
+ * A merge card's text (AC47; `MergeGate.fail`, orchestrator_git.py:2887–2910):
+ * { title, tip, decision, why, whatToDo, notes }. A card whose tip can't be read is named in notes
+ * and still flagged.
+ */
+export function parseMergeCard(text) {
+  const all = lines(text);
+  const notes = [];
+  const head = /^# (.+)$/.exec(all[0] || '');
+  const t = MERGE_TIP_RE.exec(lines(text).join('\n'));
+  if (!t) notes.push('no "item: <item>   tip: <40-hex sha>" line; its tip is unknown');
+  const out = { title: head ? head[1].trim() : null, tip: t ? t[1] : null, notes };
+  for (const [k, h] of [['decision', '## The decision'], ['why', '## Why'], ['whatToDo', '## What to do']]) {
+    out[k] = sectionText(text, h);
+    if (out[k] == null) notes.push(`no "${h}" section`);
+  }
+  return out;
+}
+
+/** status/merges.jsonl (the merge gate's own merges): [{ item, tip }] and notes. */
+export function parseMerges(text) {
+  const merges = [];
+  const notes = [];
+  lines(text).forEach((l, i) => {
+    if (l.trim() === '') return;
+    let v;
+    try {
+      v = JSON.parse(l);
+    } catch {
+      notes.push(`${MERGES_PATH} line ${i + 1} is not JSON; skipped`);
+      return;
+    }
+    if (!v || typeof v.item !== 'string' || typeof v.item_tip !== 'string') {
+      notes.push(`${MERGES_PATH} line ${i + 1} has no item and item_tip strings; skipped`);
+      return;
+    }
+    merges.push({ item: v.item, tip: v.item_tip });
+  });
+  return { merges, notes };
+}
+
+/** A compare answer's status (J1: ahead, identical, behind or diverged), or null. */
+export function compareStatus(raw) {
+  if (typeof raw !== 'string') return null;
+  try {
+    const v = JSON.parse(raw);
+    return v && typeof v.status === 'string' ? v.status : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Line 1 of an answer file: the text after `Decision: `, or null. */
@@ -242,25 +335,58 @@ export function stageName(n) {
   return STAGE_NAMES[n] ? `${n} ${STAGE_NAMES[n]}` : `stage ${n}`;
 }
 
+// J9's field types (AC31): a value of the wrong type is named in notes (file, line, field) and
+// skipped, so the field shows "not recorded", never a wrong value or zero. Unknown keys are ignored.
+const ISO_UTC_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$/;
+export const STATUS_TYPES = {
+  stage: 'integer', card: 'integer', plan_round: 'integer', build_round: 'integer', attempts: 'integer',
+  sessions: 'integer', confirm_used: 'boolean', kind: 'string', role: 'string', last_verdict: 'string',
+  gate: 'string', spec: 'string', outcome: 'string', dispatched_at: 'time', state: 'state',
+};
+
+/** Whether `v` has J9's type `type` (null allowed only where `nullable`). */
+export function hasType(v, type, nullable = false) {
+  if (v === null) return nullable;
+  switch (type) {
+    case 'integer': return Number.isInteger(v);
+    case 'boolean': return typeof v === 'boolean';
+    case 'string': return typeof v === 'string';
+    case 'time': return typeof v === 'string' && ISO_UTC_RE.test(v) && !Number.isNaN(Date.parse(v));
+    case 'state': return typeof v === 'string' && STATES.includes(v);
+    default: return true;
+  }
+}
+
+const TYPE_WORDS = { integer: 'an integer', boolean: 'true or false', string: 'a string', time: 'an ISO UTC time',
+  state: `one of ${STATES.join(', ')}` };
+
 /** Parse a status file: `key = <JSON value>` lines. Returns { fields, notes, ok }. */
-export function parseStatus(text) {
+export function parseStatus(text, path = 'status file') {
   const fields = {};
   const notes = [];
   lines(text).forEach((l, i) => {
     if (l.trim() === '' || l.startsWith('#')) return;
     const m = /^([a-z_]+) = (.+)$/.exec(l);
     if (!m) {
-      notes.push(`line ${i + 1} skipped: ${l.slice(0, 80)}`);
+      notes.push(`${path} line ${i + 1} skipped: ${l.slice(0, 80)}`);
       return;
     }
+    let v;
     try {
-      fields[m[1]] = JSON.parse(m[2]);
+      v = JSON.parse(m[2]);
     } catch {
-      notes.push(`line ${i + 1} skipped (value is not JSON): ${l.slice(0, 80)}`);
+      notes.push(`${path} line ${i + 1} skipped (value is not JSON): ${l.slice(0, 80)}`);
+      return;
     }
+    const type = STATUS_TYPES[m[1]];
+    if (type && !hasType(v, type)) {
+      notes.push(`${path} line ${i + 1} field ${m[1]}: expected ${TYPE_WORDS[type]}; skipped`);
+      return;
+    }
+    fields[m[1]] = v;
   });
   const ok = typeof fields.state === 'string' && STATES.includes(fields.state);
-  if (!ok) notes.push('no valid state');
+  if (!ok) notes.push(`${path}: no valid state`);
   return { fields, notes, ok };
 }
 
@@ -316,10 +442,45 @@ export function entryShape(e) {
   if (e.action === 'dispatch') return 'dispatch';
   if (e.action === 'card') return 'card';
   if (e.action === 'done') return 'done';
-  if (e.trigger === 'outcome' && typeof e.session === 'string') return 'outcome';
+  if (e.trigger === 'outcome') return 'outcome';
   if (e.trigger === 'decision') return 'decision';
   if (e.trigger === 'anomaly' && e.error != null) return 'anomaly';
   return null;
+}
+
+// J9's key types for dispatch-log and outcomes.jsonl lines (AC31). Strings may be null where the
+// samples show null; `time` never is.
+export const LOG_TYPES = {
+  item: 'string', role: 'string', route: 'string', time: 'string', session: 'string', result: 'string',
+  verdict: 'string', record: 'string', gate: 'string', word: 'string', error: 'string', stage: 'integer',
+  card: 'integer', proxy: 'boolean', strike: 'boolean',
+};
+// The keys each shape needs: a wrong-typed one skips the whole line.
+const NEEDED = {
+  request: ['item', 'time'], dispatch: ['item', 'role', 'route', 'time'], outcome: ['session', 'time'],
+  card: ['item', 'gate', 'card', 'time'], decision: ['record', 'time'], done: ['item', 'time'], anomaly: ['time'],
+};
+
+/**
+ * Check one log line's keys against LOG_TYPES. A wrong-typed key the shape needs (or `time`, which
+ * may never be null) skips the line: returns { skip: note }. Any other wrong-typed key is dropped and
+ * named: returns { entry, notes }.
+ */
+export function typeCheckEntry(e, shape, where) {
+  const notes = [];
+  const entry = { ...e };
+  for (const [k, type] of Object.entries(LOG_TYPES)) {
+    if (!(k in entry)) continue;
+    const nullable = k !== 'time';
+    if (hasType(entry[k], type, nullable) && !(entry[k] === null && (NEEDED[shape] || []).includes(k))) continue;
+    if ((NEEDED[shape] || []).includes(k)) return { skip: `${where} field ${k}: expected ${TYPE_WORDS[type]}; line skipped` };
+    notes.push(`${where} field ${k}: expected ${TYPE_WORDS[type]}; field skipped`);
+    delete entry[k];
+  }
+  for (const k of NEEDED[shape] || []) {
+    if (!(k in entry)) return { skip: `${where} has no ${k}; line skipped` };
+  }
+  return { entry, notes };
 }
 
 /** Parse a dispatch-log month. Returns { entries: [{...e, shape, line}], notes }. */
@@ -336,11 +497,17 @@ export function parseLog(text, label = 'dispatch log') {
       return;
     }
     const shape = entryShape(e);
-    if (!shape || typeof e.time !== 'string') {
+    if (!shape) {
       notes.push(`${label} line ${i + 1} matches no known shape; skipped`);
       return;
     }
-    entries.push({ ...e, shape, line: i + 1, label });
+    const checked = typeCheckEntry(e, shape, `${label} line ${i + 1}`);
+    if (checked.skip) {
+      notes.push(checked.skip);
+      return;
+    }
+    notes.push(...checked.notes);
+    entries.push({ ...checked.entry, shape, line: i + 1, label });
   });
   return { entries, notes };
 }
@@ -391,6 +558,72 @@ export function markRetries(entries) {
     }
   }
   return entries;
+}
+
+// ---------------------------------------------------------------------------
+// Session usage (J10, AC23): status/outcomes.jsonl
+
+// J10's proposed `usage` form (to D7.1). EXP-003 found each figure in the session runner's
+// stream-json output; the record names below are J10's, not the tool's (see the EXP-003 result).
+export const USAGE_KEYS = ['input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'turns',
+  'context_peak_tokens', 'context_window_tokens'];
+export const NOT_AVAILABLE = 'not available';
+
+/**
+ * Parse status/outcomes.jsonl: one line per session. Returns { bySession: { session → { item,
+ * role, result, verdict, usage } }, notes } (a plain object, so the page can keep it in storage). `usage` is null for a line without one ("not
+ * recorded"); otherwise each J10 key maps to an integer, NOT_AVAILABLE (null, or not reported), or
+ * 'not recorded' (a value of the wrong type, named in notes). A line whose `session` isn't a
+ * string is named and skipped (AC31).
+ */
+export function parseOutcomes(text) {
+  const bySession = {};
+  const notes = [];
+  lines(text).forEach((l, i) => {
+    if (l.trim() === '') return;
+    const where = `${OUTCOMES_PATH} line ${i + 1}`;
+    let v;
+    try {
+      v = JSON.parse(l);
+    } catch {
+      notes.push(`${where} is not JSON; skipped`);
+      return;
+    }
+    if (!v || typeof v !== 'object' || Array.isArray(v)) {
+      notes.push(`${where} is not an object; skipped`);
+      return;
+    }
+    if (typeof v.session !== 'string' || v.session === '__proto__') {
+      notes.push(`${where} field session: expected a string; line skipped`);
+      return;
+    }
+    const row = { session: v.session };
+    for (const k of ['item', 'role', 'result', 'verdict', 'record']) {
+      if (v[k] == null) continue;
+      if (typeof v[k] === 'string') row[k] = v[k];
+      else notes.push(`${where} field ${k}: expected a string; field skipped`);
+    }
+    let usage = null;
+    if ('usage' in v && v.usage !== null) {
+      if (typeof v.usage !== 'object' || Array.isArray(v.usage)) {
+        notes.push(`${where} field usage: expected an object; shown as not recorded`);
+      } else {
+        usage = {};
+        for (const k of USAGE_KEYS) {
+          const x = v.usage[k];
+          if (x === undefined || x === null) usage[k] = NOT_AVAILABLE;
+          else if (Number.isInteger(x) && x >= 0) usage[k] = x;
+          else {
+            usage[k] = 'not recorded';
+            notes.push(`${where} field usage.${k}: expected a whole number; shown as not recorded`);
+          }
+        }
+      }
+    }
+    row.usage = usage;
+    bySession[v.session] = row;
+  });
+  return { bySession, notes };
 }
 
 // ---------------------------------------------------------------------------
@@ -491,12 +724,12 @@ export function classifyPull(pr, project) {
 }
 
 // ---------------------------------------------------------------------------
-// CI (J1's reduction rule)
+// CI (J1's reduction rule, from workflow runs: AC29)
 
 const FAILING = new Set(['failure', 'timed_out', 'action_required', 'startup_failure']);
 const NOT_FAILING = new Set(['success', 'neutral', 'skipped', 'cancelled', 'stale']);
 
-/** Reduce check runs to failing | running | passing | none. */
+/** Reduce runs ({ status, conclusion }) to failing | running | passing | none (J1). */
 export function reduceChecks(runs) {
   if (runs.some((r) => r.status === 'completed' && FAILING.has(r.conclusion))) return 'failing';
   if (runs.some((r) => r.status !== 'completed')) return 'running';
@@ -506,20 +739,91 @@ export function reduceChecks(runs) {
   return 'none';
 }
 
-/** Parse raw check-run pages into runs: [{ name, status, conclusion }]. */
-export function parseCheckRuns(pages) {
+/** The workflows whose runs are activity, never CI (J1): deploys wait for approval; the
+ * Orchestrator's own runs are cancelled and skipped by design. Paths a project lacks never match. */
+export const DEPLOY_WORKFLOW = '.github/workflows/desk-deploy.yml';
+export const ORCHESTRATOR_WORKFLOW = '.github/workflows/orchestrator.yml';
+export const GOVERNANCE_WORKFLOW = '.github/workflows/governance.yml';
+export const ACTIVITY_WORKFLOWS = [DEPLOY_WORKFLOW, ORCHESTRATOR_WORKFLOW];
+
+/**
+ * Parse raw workflow-run pages (J1's 3a and 3b, in J6's `checks`) into runs:
+ * [{ path, name, event, status, conclusion, runNumber, headSha, url }]. A page that isn't a run
+ * list, and a run without a `path` or a whole-number `run_number`, are named in notes and skipped.
+ */
+export function parseWorkflowRuns(pages) {
   const runs = [];
   const notes = [];
   (pages || []).forEach((raw, i) => {
     if (raw == null) return;
+    let v;
     try {
-      const v = JSON.parse(raw);
-      for (const r of v.check_runs || []) runs.push({ name: r.name, status: r.status, conclusion: r.conclusion });
+      v = JSON.parse(raw);
     } catch {
-      notes.push(`check-run page ${i + 1} is not JSON`);
+      notes.push(`workflow-run page ${i + 1} is not JSON`);
+      return;
+    }
+    if (!v || !Array.isArray(v.workflow_runs)) {
+      notes.push(`workflow-run page ${i + 1} has no workflow_runs list`);
+      return;
+    }
+    for (const r of v.workflow_runs) {
+      if (!r || typeof r.path !== 'string' || !Number.isInteger(r.run_number)) {
+        notes.push(`workflow-run page ${i + 1}: a run without a path or run_number; skipped`);
+        continue;
+      }
+      runs.push({ path: r.path.replace(/@.*$/, ''), name: typeof r.name === 'string' ? r.name : r.path,
+        event: r.event, status: r.status, conclusion: r.conclusion, runNumber: r.run_number,
+        headSha: typeof r.head_sha === 'string' ? r.head_sha : null, url: typeof r.html_url === 'string' ? r.html_url : null });
     }
   });
   return { runs, notes };
+}
+
+/** Latest run per workflow (J1): grouped by `path`, the greatest `run_number` in each. */
+export function latestPerWorkflow(runs) {
+  const by = new Map();
+  for (const r of runs) {
+    const cur = by.get(r.path);
+    if (!cur || r.runNumber > cur.runNumber) by.set(r.path, r);
+  }
+  return by;
+}
+
+/** A run's words: its conclusion when completed, else its status. */
+function runWord(r) {
+  return r.status === 'completed' ? (r.conclusion || 'no conclusion') : (r.status || 'status not recorded');
+}
+
+/** The words for desk-deploy's latest run (J1): "deploy <short sha>: <what happened>". */
+export function deployWords(r) {
+  const sha = r.headSha ? r.headSha.slice(0, 7) : 'sha not recorded';
+  let what;
+  if (r.status === 'waiting') what = 'waiting for approval';
+  else if (r.status !== 'completed') what = r.status || 'status not recorded';
+  else if (r.conclusion === 'success') what = 'deployed';
+  // A run whose deploy the owner rejected and one whose job failed both conclude `failure` as far
+  // as the run list shows (C: J1 says the first rejected deploy shows how GitHub concludes it).
+  else if (r.conclusion === 'failure') what = 'failed or rejected';
+  else what = r.conclusion || 'no conclusion';
+  return `deploy ${sha}: ${what}`;
+}
+
+/**
+ * J1's CI result for a head from its workflow runs (3a and 3b together): the latest run per
+ * workflow; desk-deploy and the Orchestrator are activity; the rest reduce to failing | running |
+ * passing | none. Returns { ci, activity: [text], governance: run|null, latest: Map }.
+ */
+export function reduceWorkflowRuns(runs) {
+  const latest = latestPerWorkflow(runs);
+  const activity = [];
+  const counted = [];
+  for (const [path, r] of latest) {
+    if (path === DEPLOY_WORKFLOW) activity.push({ text: deployWords(r), url: r.url });
+    else if (path === ORCHESTRATOR_WORKFLOW) activity.push({ text: `Orchestrator run: ${runWord(r)}`, url: r.url });
+    else counted.push(r);
+  }
+  return { ci: reduceChecks(counted), activity, governance: latest.get(GOVERNANCE_WORKFLOW) || null, latest };
 }
 
 // ---------------------------------------------------------------------------

@@ -19,6 +19,9 @@ export function routeParts(hash) {
   }
 }
 
+/** AC32: the state line while signed out. It is set before and apart from the boxes. */
+export const SIGNED_OUT_STATE = { text: 'Signed out — reload to sign in', quiet: false, className: 'signed-out' };
+
 /** The screen's state while a render has failed: never quiet. */
 export function renderErrorState(err) {
   return {
@@ -30,15 +33,22 @@ export function renderErrorState(err) {
 
 /**
  * Wrap the page's render: when `draw` throws, `showError(state, err)` is called with
- * renderErrorState's state. Never throws itself. Returns the wrapped function.
+ * renderErrorState's state, or with the signed-out state when `isSignedOut()` says so (AC32: a
+ * render error never replaces "Signed out"). Never throws itself. Returns the wrapped function.
  */
-export function guardRender(draw, showError) {
+export function guardRender(draw, showError, isSignedOut = () => false) {
   return function render() {
     try {
       draw();
     } catch (err) {
       try {
-        showError(renderErrorState(err), err);
+        let out = false;
+        try {
+          out = Boolean(isSignedOut());
+        } catch {
+          out = false;
+        }
+        showError(out ? SIGNED_OUT_STATE : renderErrorState(err), err);
       } catch {
         // Nothing more the page can do; polling goes on regardless.
       }

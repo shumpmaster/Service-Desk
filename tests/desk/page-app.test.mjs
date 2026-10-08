@@ -5,134 +5,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fixture, CONFIG } from './helpers.mjs';
-import { repo, fakeServer, BAD_LOG_LINE } from './fake-desk.mjs';
+import { repo, BAD_PR } from './fake-desk.mjs';
+import { loadApp } from './page-harness.mjs';
 
-class FakeNode {
-  constructor() {
-    this.children = [];
-    this.text = null;
-  }
-  append(...cs) {
-    this.text = null;
-    for (const c of cs) this.children.push(typeof c === 'string' ? new FakeText(c) : c);
-  }
-  replaceChildren(...cs) {
-    this.children = [];
-    this.append(...cs);
-  }
-  get textContent() {
-    return this.text != null ? this.text : this.children.map((c) => c.textContent).join('');
-  }
-  set textContent(v) {
-    this.children = [];
-    this.text = String(v);
-  }
-}
-class FakeText extends FakeNode {
-  constructor(t) {
-    super();
-    this.text = t;
-  }
-}
-class FakeElement extends FakeNode {
-  constructor(tag) {
-    super();
-    this.tag = tag;
-    this.attrs = {};
-    this.className = '';
-    this.innerHTML = '';
-    this.listeners = {};
-  }
-  setAttribute(k, v) {
-    this.attrs[k] = String(v);
-  }
-  addEventListener(type, fn) {
-    (this.listeners[type] ||= []).push(fn);
-  }
-}
-
-/**
- * Load app.js once under fake globals. opts: { hash, repos, breakView }. Returns handles to drive
- * it: the screen-state and view elements, the timers, the calls made, and `advance(ms)`.
- */
-let loads = 0;
-async function loadApp({ hash = '', repos, breakView = false }) {
-  const names = ['document', 'window', 'location', 'Node', 'setTimeout', 'clearTimeout', 'setInterval', 'fetch'];
-  const saved = Object.fromEntries(names.map((k) => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
-  let now = Date.now();
-  const realNow = Date.now;
-  const els = { view: new FakeElement('main'), 'screen-state': new FakeElement('p'), foot: new FakeElement('footer') };
-  if (breakView) els.view.replaceChildren = () => { throw new Error('view is broken'); };
-  const docListeners = {};
-  const timers = new Map();
-  let seq = 0;
-  const server = fakeServer(repos, CONFIG, { now: () => now });
-  const fetchCalls = [];
-  const set = (k, v) => Object.defineProperty(globalThis, k, { value: v, configurable: true, writable: true });
-  set('Node', FakeNode);
-  set('document', {
-    title: '', visibilityState: 'visible',
-    createElement: (t) => new FakeElement(t),
-    createTextNode: (t) => new FakeText(t),
-    getElementById: (id) => els[id] || null,
-    addEventListener: (type, fn) => { (docListeners[type] ||= []).push(fn); },
-  });
-  set('window', { scrollY: 0, scrollTo() {}, addEventListener() {} });
-  set('location', { hash, search: '' });
-  set('setTimeout', (fn, ms) => { const id = ++seq; timers.set(id, { at: now + Math.max(0, ms || 0), fn, id }); return id; });
-  set('clearTimeout', (id) => { timers.delete(id); });
-  set('setInterval', () => 0);
-  set('fetch', async (path, init) => {
-    fetchCalls.push({ path, at: now });
-    const r = await server.call(path, JSON.parse(init.body));
-    if (!r.ok) return { status: r.status || 500, ok: false, type: 'basic', text: async () => 'error' };
-    return { status: 200, ok: true, type: 'basic', text: async () => JSON.stringify(r.json) };
-  });
-  Date.now = () => now;
-  const flush = async () => { for (let i = 0; i < 8; i++) await new Promise((r) => setImmediate(r)); };
-  const app = {
-    els, timers, fetchCalls, flush,
-    state: () => els['screen-state'],
-    async advance(ms) {
-      const until = now + ms;
-      for (;;) {
-        let next = null;
-        for (const t of timers.values()) if (t.at <= until && (!next || t.at < next.at || (t.at === next.at && t.id < next.id))) next = t;
-        if (!next) break;
-        timers.delete(next.id);
-        now = next.at;
-        next.fn();
-        await flush();
-      }
-      now = until;
-      await flush();
-    },
-    restore() {
-      Date.now = realNow;
-      for (const k of names) {
-        if (saved[k]) Object.defineProperty(globalThis, k, saved[k]);
-        else delete globalThis[k];
-      }
-    },
-  };
-  try {
-    await import(`../../src/public/app.js?load=${++loads}`);
-  } catch (e) {
-    app.restore();
-    throw e;
-  }
-  return app;
-}
-
-function cleanRepos({ badLog = false } = {}) {
+function cleanRepos({ badRecord = false } = {}) {
   const sd = (p) => fixture(`service-desk/${p}`);
   return {
     'Service-Desk': repo({
       'queue/README.md': sd('queue/README.md'),
       'governance/ROUTING.toml': sd('governance/ROUTING.toml'),
       'status/P-001.toml': fixture('service-desk/status/P-001@7da0fd7.toml'),
-      'dispatch-log/2026-10.jsonl': fixture('service-desk/dispatch-log/2026-10.jsonl') + (badLog ? `${BAD_LOG_LINE}\n` : ''),
-    }, [], [{ name: 'governance', status: 'completed', conclusion: 'success' }]),
+      'dispatch-log/2026-10.jsonl': fixture('service-desk/dispatch-log/2026-10.jsonl'),
+    }, badRecord ? [BAD_PR] : [], [{ name: 'governance', status: 'completed', conclusion: 'success' }]),
     'Personal-Org-Operating-Model': repo({
       'docs/LEDGER.md': fixture('poom/docs/LEDGER.md'),
       'docs/sprints/m1.4-v3-build.md': fixture('poom/docs/sprints/m1.4-v3-build.md'),
@@ -159,19 +43,23 @@ test('Page (review N6): opened at #/p/%E0, the desk shows the Universe, starts p
   }
 });
 
-test('Page (review N4): the dispatch-log example makes render throw; the screen shows an error state, never "Quiet", and polling goes on', async () => {
-  const app = await loadApp({ repos: cleanRepos({ badLog: true }) });
+test('Page (review N4) + AC30: a record makes one project\'s box throw; that box says so, the other is drawn, never "Quiet", polling goes on', async () => {
+  // ac-test: S-001/AC30
+  const app = await loadApp({ repos: cleanRepos({ badRecord: true }) });
   try {
     await app.advance(1000);
     const s = app.state();
-    assert.match(s.textContent, /^Can't show the desk: /);
+    assert.equal(s.textContent, "Not quiet: can't show 1 project");
     assert.equal(s.className, 'cant-read');
-    assert.notEqual(s.textContent, 'Quiet');
-    assert.match(app.els.view.textContent, /Can't show the desk/);
+    const view = app.els.view.textContent;
+    assert.match(view, /Service-Desk\s*Can't show this project: /);
+    assert.ok(view.includes('Personal-Org-Operating-Model'), 'the other box is drawn');
+    assert.ok(view.includes('quiet'), 'and says quiet');
+    assert.match(app.els.foot.textContent, /Updated /, 'the footer is drawn');
     const first = polls(app);
     await app.advance(2 * 60_000);
     assert.equal(polls(app), first + 2 * CONFIG.projects.length, 'polled every 60 s after the throw');
-    assert.match(app.state().textContent, /^Can't show the desk: /);
+    assert.notEqual(app.state().textContent, 'Quiet');
   } finally {
     app.restore();
   }
@@ -185,6 +73,27 @@ test('Page (review N6): when even the first render\'s error state can\'t be draw
     await app.advance(1000);
     assert.equal(polls(app), CONFIG.projects.length);
     assert.notEqual(app.state().textContent, 'Quiet');
+  } finally {
+    app.restore();
+  }
+});
+
+test('Page AC32: signed out while a box throws, and then while the whole view throws — the line still says "Signed out"', async () => {
+  // ac-test: S-001/AC32
+  const repos = cleanRepos({ badRecord: true });
+  const app = await loadApp({ repos });
+  try {
+    await app.advance(1000);
+    assert.match(app.els.view.textContent, /Can't show this project/);
+    // The Access session goes: every call now answers 403.
+    for (const r of Object.values(repos)) r.fail = { kind: 'signed-out' };
+    await app.advance(60_000);
+    assert.equal(app.state().textContent, 'Signed out — reload to sign in');
+    assert.equal(app.state().className, 'signed-out');
+    // Now drawing the view throws too: the render-error message never replaces the line.
+    app.els.view.replaceChildren = () => { throw new Error('view is broken'); };
+    await app.advance(60_000);
+    assert.equal(app.state().textContent, 'Signed out — reload to sign in');
   } finally {
     app.restore();
   }

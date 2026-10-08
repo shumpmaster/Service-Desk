@@ -7,9 +7,23 @@
   - `dispatch-log/2026-10.jsonl` at e2ab9c5 (its 192 lines on 2026-10-06);
   - `status/P-001@<commit>.toml` at d4d0110 (dispatched), def1e83 (waiting-owner), b787280 (ready)
     and 7da0fd7 (closed).
+- `service-desk/status/outcomes.jsonl`: the real file at dd71b14 (no `usage` key yet, J10).
+  `service-desk/status/outcomes-usage-proposed.jsonl` is NOT a real record: it is the outcomes line
+  of J10's sample session (P-001's critic, 2026-10-06T16:40:19Z) with a `usage` key added in J10's
+  proposed form, whose figures are EXP-003 run 2's (docs/handover/experiments/EXP-003-result.md).
 - `github/`: real GitHub REST responses for Service-Desk (a public repository), recorded on
   2026-10-07 without the desk's token: status 200, the headers the function reads, and the body
-  exactly as GitHub sent it. Each file's `note` names the request.
+  exactly as GitHub sent it. Each file's `note` names the request. From M2 (recorded 2026-10-08
+  with `gh api`):
+  - `runs-<sha>-push.json` and `runs-<sha>-dispatch.json`: J1's workflow-run lists 3a and 3b for
+    the heads J1 quotes (e2ab9c5, 38722d3, bbd7abc), and 3a for 98cfcb4, whose Orchestrator run
+    failed;
+  - `compare-<status>.json`: `compare/{base}...{head}?per_page=1` answers with each status
+    (`ahead`, `identical`, `behind`, `diverged`), bodies as GitHub sent them, `files` included.
+- `orchestrator-m2/`: no hold or merge card is on main yet, so these are written with the exact
+  format strings of `hold_card` (governance/checks/orchestrator_git.py:1233–1245) and
+  `MergeGate.fail` (:2887–2910), and a `status/merges.jsonl` line in the form of :2873. The shas,
+  items and reasons in them are made up for the tests.
 - `poom/`: Personal-Org-Operating-Model is private, so its files are NOT copied here. These
   fixtures hold only the lines S-001 J9 quotes from it at 677fe5a (the open sprint's title and
   status line, the last ledger entry's heading, `date:` and `licenses_next:` lines), in the files'

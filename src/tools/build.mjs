@@ -20,7 +20,7 @@ const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const WRITE = process.argv.includes('--write');
 
 // The modules the page loads; each is copied to public/lib/ unchanged.
-export const PAGE_LIB = ['config.js', 'exp001.js', 'links.js', 'markdown.js', 'model.js', 'page.js', 'records.js',
+export const PAGE_LIB = ['asked.js', 'config.js', 'exp001.js', 'links.js', 'markdown.js', 'model.js', 'page.js', 'records.js',
   'scheduler.js', 'store.js', 'timefmt.js', 'universe.js'];
 const DEPENDENCY_BLOCKS = ['dependencies', 'optionalDependencies', 'peerDependencies', 'bundleDependencies',
   'bundledDependencies'];

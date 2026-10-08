@@ -196,14 +196,15 @@ test('J2: dispatch-log decision entries give answered times, words and proxy, an
   assert.equal(entries[1].proxy, false);
 });
 
-test('J2 + J6: which blobs a v3 project needs — status, ROUTING, two log months, open cards and open questions (with history)', () => {
+test('J2 + J6: which blobs a v3 project needs — status, ROUTING, two log months, outcomes (M2), open cards and open questions (with history)', () => {
   const tree = sdTree(['status/P-001.toml', 'status/README.md', 'status/outcomes.jsonl', 'governance/ROUTING.toml',
     'dispatch-log/2026-09.jsonl', 'dispatch-log/2026-10.jsonl', 'dispatch-log/2026-08.jsonl', 'queue/P-001-stop-6.md',
     'queue/Q-003-failure-1.md', 'decisions/Q-003/failure-1.md', 'questions/_TEMPLATE.md', 'questions/Q-005-sources.md', 'docs/LEDGER.md']);
   const need = neededReads(SD, tree, new Map(), new Date('2026-10-06T19:00:00Z'));
   assert.deepEqual(need.blobs.map((b) => b.path).sort(), ['dispatch-log/2026-09.jsonl', 'dispatch-log/2026-10.jsonl',
-    'governance/ROUTING.toml', 'questions/Q-005-sources.md', 'queue/P-001-stop-6.md', 'status/P-001.toml']);
+    'governance/ROUTING.toml', 'questions/Q-005-sources.md', 'queue/P-001-stop-6.md', 'status/P-001.toml', 'status/outcomes.jsonl']);
   assert.deepEqual(need.history, ['questions/Q-005-sources.md']);
+  assert.deepEqual(need.compare, []);
   // Across a year boundary the months are December and January.
   const jan = neededReads(SD, sdTree(['dispatch-log/2025-12.jsonl', 'dispatch-log/2026-01.jsonl']), new Map(), new Date('2026-01-03T00:00:00Z'));
   assert.deepEqual(jan.blobs.map((b) => b.path), ['dispatch-log/2025-12.jsonl', 'dispatch-log/2026-01.jsonl']);

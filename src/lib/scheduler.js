@@ -4,7 +4,7 @@
 // scheduled poll; a rate-limited project isn't polled again before its retryAfter.
 
 import { neededReads, parseRecord, recordKind, buildModel } from './model.js';
-import { parseTree, parseHistory, parseCardPath } from './records.js';
+import { parseTree, parseHistory, parseCardPath, compareStatus } from './records.js';
 
 export const POLL_MS = 60_000;
 export const STALE_MS = 180_000;
@@ -12,13 +12,14 @@ export const BLOB_BATCH = 25;
 const MAX_BLOB_CALLS_PER_CYCLE = 6;
 const BLOB_CACHE_KEY = 'desk-blobs-v1';
 const HISTORY_CACHE_KEY = 'desk-history-v1';
+const COMPARE_CACHE_KEY = 'desk-compare-v1';
 
 export const REASON_WORDS = {
   token: 'the read token was rejected or has expired',
   'rate-limit': "GitHub's rate limit",
   github: 'GitHub error, or the network between Cloudflare and GitHub',
   config: 'the configured default branch was not found',
-  'too-many': 'more open PRs, check runs or tree entries than one read can page through',
+  'too-many': 'more open PRs, workflow runs or tree entries than one read can page through',
   cloudflare: 'Cloudflare or desk-function error',
   network: "network error: the desk's function could not be reached",
   stale: 'no successful read for 3 minutes',
@@ -35,14 +36,20 @@ export function errorText(err) {
   return 'unknown error';
 }
 
-/** Split needed reads into blob calls within the budget (a blob counts 1, a history path 2). */
-export function batches(blobs, history, budget = BLOB_BATCH) {
+/** Split needed reads into blob calls within the budget (a blob counts 1, a history path 2, a
+ * compare 1). */
+export function batches(blobs, history, budget = BLOB_BATCH, compare = []) {
   const out = [];
-  let cur = { blobs: [], history: [], cost: 0 };
+  let cur = { blobs: [], history: [], compare: [], cost: 0 };
   const push = () => {
-    if (cur.cost) out.push({ blobs: cur.blobs, history: cur.history });
-    cur = { blobs: [], history: [], cost: 0 };
+    if (cur.cost) out.push({ blobs: cur.blobs, history: cur.history, compare: cur.compare });
+    cur = { blobs: [], history: [], compare: [], cost: 0 };
   };
+  for (const c of compare) {
+    if (cur.cost + 1 > budget) push();
+    cur.compare.push(c);
+    cur.cost += 1;
+  }
   for (const path of history) {
     if (cur.cost + 2 > budget) push();
     cur.history.push(path);
@@ -78,6 +85,10 @@ export function createDesk(opts) {
   const states = new Map(config.projects.map((p) => [p.name, newProjectState(p)]));
   const blobCache = new Map(Object.entries((store && store.getJSON(BLOB_CACHE_KEY, {})) || {}));
   const historyCache = new Map(Object.entries((store && store.getJSON(HISTORY_CACHE_KEY, {})) || {}));
+  // AC47: compare answers. `<project>:<tip>` → 'merged' is final (the tip is an ancestor of the
+  // head, and stays one); `<project>:<tip>@<head>` → the answer at that head ('behind', 'diverged'
+  // or 'failed'), asked again only when the head changes.
+  const compareCache = new Map(Object.entries((store && store.getJSON(COMPARE_CACHE_KEY, {})) || {}));
   const desk = {
     openedAt: clock.now(), visibleSince: clock.now(), signedOut: false, running: false, states,
   };
@@ -98,6 +109,13 @@ export function createDesk(opts) {
     for (const [k, v] of blobCache) if (live.has(k)) keep[k] = v;
     store.setJSON(BLOB_CACHE_KEY, keep);
     store.setJSON(HISTORY_CACHE_KEY, Object.fromEntries(historyCache));
+    const heads = new Set([...states.values()].map((x) => `${x.project.name}:${x.head}`));
+    const compares = {};
+    for (const [k, v] of compareCache) {
+      const at = k.indexOf('@');
+      if (at < 0 || heads.has(`${k.slice(0, k.indexOf(':'))}:${k.slice(at + 1)}`)) compares[k] = v;
+    }
+    store.setJSON(COMPARE_CACHE_KEY, compares);
   }
 
   function recordsFor(st) {
@@ -121,24 +139,47 @@ export function createDesk(opts) {
     return out;
   }
 
+  /** The compare answers for this project at its current head: tip → 'merged' | answer. */
+  function compareFor(st) {
+    const out = new Map();
+    const prefix = `${st.project.name}:`;
+    for (const [k, v] of compareCache) {
+      if (!k.startsWith(prefix)) continue;
+      const rest = k.slice(prefix.length);
+      const at = rest.indexOf('@');
+      if (at < 0) out.set(rest, v);
+      else if (rest.slice(at + 1) === st.head && !out.has(rest.slice(0, at))) out.set(rest.slice(0, at), v);
+    }
+    return out;
+  }
+
   function missing(st) {
     const now = new Date(clock.now());
     const records = recordsFor(st);
-    const need = neededReads(st.project, st.tree, records, now);
-    const shas = [];
+    const need = neededReads(st.project, st.tree, records, now, { history: historyFor(st), head: st.head, compare: compareFor(st) });
     const byPath = new Map();
-    for (const b of need.blobs) {
-      if (blobCache.has(cacheKey(b.kind, b.sha))) continue;
-      if (!shas.includes(b.sha)) shas.push(b.sha);
-      byPath.set(b.path, b);
-    }
-    const history = need.history.filter((p) => !historyCache.has(`${st.project.name}:${p}`));
-    return { shas, history, byPath };
+    const shasOf = (list) => {
+      const out = [];
+      for (const b of list) {
+        if (blobCache.has(cacheKey(b.kind, b.sha))) continue;
+        if (!out.includes(b.sha)) out.push(b.sha);
+        byPath.set(b.path, b);
+      }
+      return out;
+    };
+    const unread = (paths) => paths.filter((p) => !historyCache.has(`${st.project.name}:${p}`));
+    const shas = shasOf(need.blobs);
+    const optional = { shas: shasOf(need.optional.blobs).filter((x) => !shas.includes(x)), history: unread(need.optional.history) };
+    return { shas, history: unread(need.history), byPath, compare: need.compare, optional };
   }
 
+  // AC34: a run of failures keeps the time of its first ("since": the project hasn't been read
+  // since then), and its reason and words follow the latest failure, so a page error that changes
+  // shows the new error (review N5 on PR #41). A success ends the run.
   function fail(st, reason, words) {
     const now = clock.now();
-    if (!st.failure || st.failure.reason !== reason) st.failure = { reason, words: words || REASON_WORDS[reason] || reason, since: now };
+    const text = words || REASON_WORDS[reason] || reason;
+    st.failure = { reason, words: text, since: st.failure ? st.failure.since : now };
   }
 
   function applyPoll(st, r) {
@@ -154,13 +195,15 @@ export function createDesk(opts) {
         }
         if (!page) return out.push(undefined);
         out.push(page.raw);
-        if (i === (urls.length - 1) && i === 2 && page.next) more = true;
+        // A list's third page that names a next page: more than one read can page through (J1).
+        // `checks` holds two lists (3a then 3b), so the page number is read from each URL.
+        if (/[?&]page=3$/.test(url) && page.next) more = true;
       });
       return { raws: out, more };
     };
     const pl = takeList(r.pulls || [], r.pullUrls || [], r.pullNext || []);
     const cl = takeList(r.checks || [], r.checkUrls || [], r.checkNext || []);
-    // Keep only the pages this poll used, and their ETags (J6: at most 7 entries).
+    // Keep only the pages this poll used, and their ETags (J6: at most 10 entries).
     const used = new Set([...(r.pullUrls || []), ...(r.checkUrls || [])]);
     for (const url of [...st.pages.keys()]) if (!used.has(url)) st.pages.delete(url);
     const branchUrl = Object.keys(r.etags || {}).find((u) => !used.has(u));
@@ -199,34 +242,80 @@ export function createDesk(opts) {
     return { ok: true };
   }
 
-  async function blobPhase(st) {
-    for (let calls = 0; calls < MAX_BLOB_CALLS_PER_CYCLE; calls++) {
-      const need = missing(st);
-      if (!need.shas.length && !need.history.length) return { ok: true };
-      const [batch] = batches(need.shas, need.history);
-      st.blobCalls++;
-      const res = await call('/api/blobs', { project: st.project.name, blobs: batch.blobs, history: batch.history });
-      if (!res.ok) return res;
-      const r = res.json;
-      for (const [sha, text] of Object.entries(r.blobs || {})) {
-        if (text == null) continue;
-        for (const b of need.byPath.values()) {
-          if (b.sha === sha) blobCache.set(cacheKey(b.kind, sha), parseRecord(b.kind, text, b.path));
+  /** One blob call for these reads; returns { res, progress } (progress: anything asked arrived). */
+  async function blobCall(st, need, batch) {
+    st.blobCalls++;
+    const body = { project: st.project.name, blobs: batch.blobs, history: batch.history };
+    if (batch.compare.length) body.compare = batch.compare;
+    const res = await call('/api/blobs', body);
+    if (!res.ok) return { res, progress: false };
+    const r = res.json;
+    let progress = false;
+    for (const [sha, text] of Object.entries(r.blobs || {})) {
+      if (text == null) continue;
+      for (const b of need.byPath.values()) {
+        if (b.sha === sha) {
+          blobCache.set(cacheKey(b.kind, sha), parseRecord(b.kind, text, b.path));
+          progress = true;
         }
       }
-      for (const [path, pages] of Object.entries(r.history || {})) {
-        if (!pages) continue;
-        const h = parseHistory(pages);
-        if (h.ok) {
-          historyCache.set(`${st.project.name}:${path}`, {
-            oldest: h.oldest ? h.oldest.toISOString() : null, newest: h.newest ? h.newest.toISOString() : null });
-        }
-      }
-      persist();
-      if (r.state !== 'ok') return { ok: false, reason: r.reason || 'github', retryAfter: r.retryAfter };
     }
-    const need = missing(st);
-    return need.shas.length || need.history.length ? { ok: false, reason: 'github' } : { ok: true };
+    for (const [path, pages] of Object.entries(r.history || {})) {
+      if (!pages) continue;
+      const h = parseHistory(pages);
+      if (h.ok) {
+        historyCache.set(`${st.project.name}:${path}`, {
+          oldest: h.oldest ? h.oldest.toISOString() : null, newest: h.newest ? h.newest.toISOString() : null });
+        progress = true;
+      }
+    }
+    for (const c of batch.compare) {
+      const key = `${c.base}...${c.head}`;
+      if (!r.compare || !(key in r.compare)) continue; // not answered (the call stopped): ask again
+      const status = compareStatus(r.compare[key]);
+      if (status === 'ahead' || status === 'identical') compareCache.set(`${st.project.name}:${c.base}`, 'merged');
+      else compareCache.set(`${st.project.name}:${c.base}@${c.head}`, status || 'failed');
+      progress = true;
+    }
+    persist();
+    return { res, progress };
+  }
+
+  /**
+   * The blob calls a cycle makes, at most MAX_BLOB_CALLS_PER_CYCLE. The needed reads come first;
+   * once they are all in, the optional ones (AC20's rulings) use what is left of the cap.
+   * - A call that fails, or brings back nothing it asked for, is a failure (reason as the call says,
+   *   else `github`).
+   * - Reaching the cap while still making progress is not a failure (review N1): the project is
+   *   "Checking…" ({ ok: false, pending: true }) and the next cycle carries on.
+   */
+  async function blobPhase(st) {
+    let calls = 0;
+    for (; calls < MAX_BLOB_CALLS_PER_CYCLE; calls++) {
+      const need = missing(st);
+      if (!need.shas.length && !need.history.length && !need.compare.length) break;
+      const [batch] = batches(need.shas, need.history, BLOB_BATCH, need.compare);
+      const { res, progress } = await blobCall(st, need, batch);
+      if (!res.ok) return res;
+      if (res.json.state !== 'ok') return { ok: false, reason: res.json.reason || 'github', retryAfter: res.json.retryAfter };
+      if (!progress) return { ok: false, reason: 'github' };
+    }
+    const left = missing(st);
+    if (left.shas.length || left.history.length || left.compare.length) return { ok: false, pending: true };
+    for (; calls < MAX_BLOB_CALLS_PER_CYCLE; calls++) {
+      const need = missing(st);
+      if (!need.optional.shas.length && !need.optional.history.length) break;
+      const [batch] = batches(need.optional.shas, need.optional.history, BLOB_BATCH);
+      const { res, progress } = await blobCall(st, need, batch);
+      // An optional read that fails is tried again on a later cycle; it never fails the project,
+      // except a rate limit, which every read must respect.
+      if (!res.ok || res.json.state !== 'ok') {
+        if (res.ok && res.json.reason === 'rate-limit') return { ok: false, reason: 'rate-limit', retryAfter: res.json.retryAfter };
+        break;
+      }
+      if (!progress) break;
+    }
+    return { ok: true };
   }
 
   async function cycle(st) {
@@ -248,7 +337,8 @@ export function createDesk(opts) {
         outcome = applyPoll(st, res.json);
         if (st.tree) {
           const blobs = await blobPhase(st);
-          if (outcome.ok || !blobs.ok) outcome = blobs.ok ? outcome : blobs;
+          // A blob failure outranks the poll's own outcome; "still checking" only replaces a success.
+          if (!blobs.ok && (outcome.ok || !blobs.pending)) outcome = blobs;
         }
       }
     } catch (err) {
@@ -262,7 +352,14 @@ export function createDesk(opts) {
     if (outcome.ok) {
       st.lastSuccessAt = clock.now();
       st.failure = null;
+      st.checking = false;
+    } else if (outcome.pending) {
+      // Review N1: the cycle's call budget ran out while reads were still arriving. Not a failure:
+      // the project is "Checking…" until a cycle completes (readState).
+      st.checking = true;
+      st.failure = null;
     } else {
+      st.checking = false;
       if (outcome.reason === 'rate-limit' && outcome.retryAfter) st.retryUntil = clock.now() + outcome.retryAfter * 1000;
       let words = outcome.words || REASON_WORDS[outcome.reason];
       if (outcome.reason === 'rate-limit') words = `${REASON_WORDS['rate-limit']}; next read after ${new Date(st.retryUntil).toISOString().slice(11, 16)} UTC`;
@@ -325,7 +422,7 @@ export function createDesk(opts) {
     return buildModel({
       project: st.project, config, tree: st.tree, records: recordsFor(st), history: historyFor(st),
       pullPages: st.pullRaws || [], checkPages: st.checksRead ? st.checkRaws : null, checksState: st.checksState,
-      now: new Date(clock.now()), withdrawn: st.withdrawn,
+      now: new Date(clock.now()), withdrawn: st.withdrawn, compare: compareFor(st),
     });
   };
   desk.cacheSize = () => blobCache.size;

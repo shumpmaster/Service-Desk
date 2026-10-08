@@ -1,31 +1,21 @@
-Verdict: FAIL
+Verdict: PASS
 
-I filed nothing new this round. Every page below went through a summarising fetch, not a raw read.
+I re-opened only the four rows changed in revision 6: T2, T10, X5 and X7. All were read through summarising fetches, not byte-exact. I did not re-open the "unchanged" rows. They stay as passed in earlier rounds, because the feedback file records no failures on them.
 
-**Confirmed (opened this round)**
-- **X5:** The Cloudflare Access CORS page says the error occurs "regardless of whether you have logged in to the domain". It lists the three fixes: bypass OPTIONS, have Cloudflare answer the preflight, and use a Worker. It also gives the `credentials: 'same-origin'` and `"use-credentials"` advice. The fetch paraphrased most of the passage, so the memo's long "browser never includes cookies… by design" quote is only paraphrase-level (research/Q-011-memo.md:95). I accept the substance as grade B.
-- **X7, correction accepted:**
-  - The `notificationclick` page has the definition sentence and no Chrome-for-Android text.
-  - The `openWindow` page has the return-value sentence, the Chrome-for-Android sentence and the `InvalidAccessError` text.
-  - The `InvalidAccessError` text on the page reads "none of the windows in the app's origin have transient activation". That is slightly different from the memo's "at least one window… must have" (memo line 97).
-  - Grade B per page is right.
-- **T2:** The Pages changelog mentions no cron.
-
-**Why FAIL**
-- **T2 count (memo line 73):**
-  - The memo says "seven" entries, including "one more in that range".
-  - My fetch of the changelog listed six: 11 Aug 2026, 23 Jan 2026, 30 May 2025, two on 22 Mar 2025, and 17 Mar 2025.
-  - The "seventh" entry is unnamed and I could not find it.
-  - The previous check's "seven" was also a list of six, so the count was never confirmed.
-  - The absence claim (no cron entry) holds. The number does not, so the memo states a count I can't confirm.
-- **T10 (memo line 81):**
-  - The summarising fetch again puts "OAuth app tokens and personal access tokens (classic) need the repo scope to use this endpoint" inside the "Create a repository dispatch event" section. The next heading is "Parameters".
-  - An earlier round's raw read assigned that sentence to the create-repository endpoint. The two readings conflict, and a summary can't settle it.
-  - `library/facts/F-gh-13.md:15` correctly stays without the scope claim.
-- **T10b:** I did not re-open the fine-grained PAT permissions page this round. It is a single page, so it is not filed.
-- **P3 and W2:** unchanged. P3 is B and the Chromium post is bot-blocked. W2 is C and has no primary source.
+**Findings**
+- **T2 passes** (research/Q-011-memo.md:80). The Pages changelog lists six entries, with the same dates and titles the memo names. The fetch first printed "5" and then corrected itself to 6 while listing six numbered items. None mentions cron or scheduled runs. The "seventh entry" is rightly withdrawn.
+- **T10 passes** (memo:88). The memo now claims only the endpoint, `event_type` (100 characters or fewer), `client_payload` (at most 10 top-level properties, under 64 KB) and the 204 response.
+  - It no longer claims a token scope. This round's fetch put the "repo scope" sentence in the dispatch section, but earlier rounds conflicted on that, so dropping the claim is correct.
+  - `library/facts/F-gh-13.md:4` is consistent with this: it makes no scope claim.
+- **X5 passes** (memo:102). Both quoted sentences came back verbatim from the Cloudflare Access CORS `index.md`. The three fixes match. I did not verify the `credentials: 'same-origin'` and `"use-credentials"` advice this round. The memo marks that part as substance only, which is fair.
+- **X7 passes** (memo:104). The `openWindow` page returned both transient-activation sentences verbatim: "At least one window in the app's origin must have transient activation" (Security requirements) and "none of the windows … have transient activation" (Exceptions). The return-value sentence and the Chrome for Android sentence also match.
+- **Library:** the memo proposes no new entries (memo:132), so I filed none. F-gh-13 is unchanged, and I edited nothing.
 
 **Open questions**
-- The Researcher must either name the seventh Pages changelog entry or correct the count to six.
-- T10 needs a raw read of the heading order, or the scope claim should be dropped.
-- Q-d, Q-e, Q-h, Q-i, Q-j and Q-k remain not documented.
+- **Payload size conflict:** T10 states "under 64 KB" from the REST page alone. F-gh-13:4 records that the events page says 65,535 characters and the figures conflict. The row is graded B, so it is not wrong. The Researcher should not treat 64 KB as settled.
+- **Still unconfirmed, as the memo says:**
+  - The T10 token scope (Q-k) needs a raw read.
+  - T10b was not re-opened.
+  - P3 lacks the Chromium post.
+  - W2 has no primary source.
+  - Q-d, Q-e, Q-f, Q-g, Q-h, Q-i and Q-j remain not documented.

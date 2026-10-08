@@ -12,7 +12,7 @@ import { renderMarkdown } from './lib/markdown.js';
 import { whenText, hhmm, dateTimeText, durationText, hoursMinutes } from './lib/timefmt.js';
 import { defaultLabel, parseCardPath } from './lib/records.js';
 import { blobLink, exp004Links, cappedNewFileLink, answerPlan } from './lib/links.js';
-import { usageView, v5Footer, notReadText, contextText } from './lib/asked.js';
+import { usageLines, v5Footer, notReadText } from './lib/asked.js';
 import { createRun, summarize, resultMarkdown, rawTable } from './lib/exp001.js';
 import { routeParts, guardRender, boot, SIGNED_OUT_STATE } from './lib/page.js';
 import { errorText } from './lib/scheduler.js';
@@ -465,22 +465,19 @@ function renderAsked(desk, name) {
 // ---------------------------------------------------------------------------
 // AC22 and AC23: Agents
 
-const num = (v) => (typeof v === 'number' ? v.toLocaleString('en-US') : v);
-
+// AC23: the usage figures sit behind the session's drill-down (tap the session), not on its row,
+// so the list and the timeline stay readable on the phone.
 function usageNode(s) {
-  const u = usageView(s);
-  if (!u.recorded) return h('div', { class: 'muted' }, 'Usage: not recorded');
-  return h('div', { class: 'muted' },
-    `Tokens: input ${num(u.input_tokens)}, output ${num(u.output_tokens)}, cache read ${num(u.cache_read_tokens)}, cache write ${num(u.cache_write_tokens)} · turns ${num(u.turns)}`,
-    h('br'),
-    contextText(u));
+  return h('ul', { class: 'plain usage' }, usageLines(s).map((l) => h('li', { class: 'muted' }, l)));
 }
 
 function sessionNode(s) {
   const end = s.running ? `running, ${durationText(s.runMs)} so far` : s.noOutcome ? 'no outcome recorded' : `${when(s.end)}, ran ${durationText(s.runMs)}`;
   const result = s.result ? ` · ${s.result}${s.verdict && s.verdict !== 'none' ? `, verdict ${s.verdict}` : ''}` : '';
-  return h('li', {}, h('strong', {}, `${s.item} ${s.role}`), s.retry ? h('span', { class: 'tag' }, 'retry') : null,
-    h('div', { class: 'muted' }, `started ${when(s.start)} · ended ${end}${result}`), usageNode(s));
+  return h('li', {}, h('details', {},
+    h('summary', {}, h('strong', {}, `${s.item} ${s.role}`), s.retry ? h('span', { class: 'tag' }, 'retry') : null,
+      h('div', { class: 'muted' }, `started ${when(s.start)} · ended ${end}${result}`)),
+    usageNode(s)));
 }
 
 function timelineNode(tl) {

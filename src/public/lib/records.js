@@ -563,18 +563,34 @@ export function markRetries(entries) {
 // ---------------------------------------------------------------------------
 // Session usage (J10, AC23): status/outcomes.jsonl
 
-// J10's proposed `usage` form (to D7.1). EXP-003 found each figure in the session runner's
-// stream-json output; the record names below are J10's, not the tool's (see the EXP-003 result).
-export const USAGE_KEYS = ['input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'turns',
-  'context_peak_tokens', 'context_window_tokens'];
+// The `usage` form frozen by model S-020 (AC2), as J10 quotes it. USAGE_KEYS are the whole-number
+// figures; the three others have their own kinds (J10): `derived` a list of figure names,
+// `would_have_stopped` true/false/null, `cost_usd_estimate` a number or null.
+export const USAGE_KEYS = ['input_tokens', 'output_tokens', 'cache_read_input_tokens', 'cache_creation_input_tokens',
+  'num_turns', 'duration_ms', 'context_window', 'autocompact_threshold', 'context_peak', 'compactions'];
+export const USAGE_OTHER_KEYS = ['derived', 'would_have_stopped', 'cost_usd_estimate'];
 export const NOT_AVAILABLE = 'not available';
+export const NOT_RECORDED = 'not recorded';
+
+/** One `usage` key's value for display: the value, NOT_AVAILABLE (null or absent), or null for the wrong kind. */
+function usageValue(k, x) {
+  if (x === undefined || x === null) return NOT_AVAILABLE;
+  if (k === 'derived') return Array.isArray(x) && x.every((n) => typeof n === 'string') ? [...x] : null;
+  if (k === 'would_have_stopped') return typeof x === 'boolean' ? x : null;
+  if (k === 'cost_usd_estimate') return typeof x === 'number' && Number.isFinite(x) ? x : null;
+  return Number.isInteger(x) ? x : null;
+}
+
+const USAGE_KIND = { derived: 'a list of figure names', would_have_stopped: 'true, false or null',
+  cost_usd_estimate: 'a number or null' };
 
 /**
  * Parse status/outcomes.jsonl: one line per session. Returns { bySession: { session → { item,
- * role, result, verdict, usage } }, notes } (a plain object, so the page can keep it in storage). `usage` is null for a line without one ("not
- * recorded"); otherwise each J10 key maps to an integer, NOT_AVAILABLE (null, or not reported), or
- * 'not recorded' (a value of the wrong type, named in notes). A line whose `session` isn't a
- * string is named and skipped (AC31).
+ * role, result, verdict, usage } }, notes } (a plain object, so the page can keep it in storage).
+ * `usage` is null for a line without one ("not recorded"); otherwise each J10 key maps to its
+ * value, NOT_AVAILABLE (null, or not reported), or NOT_RECORDED (a value of the wrong kind, named
+ * in notes; only that key, the rest of the line's figures still show). A line whose `session`
+ * isn't a string is named and skipped (AC31).
  */
 export function parseOutcomes(text) {
   const bySession = {};
@@ -609,13 +625,12 @@ export function parseOutcomes(text) {
         notes.push(`${where} field usage: expected an object; shown as not recorded`);
       } else {
         usage = {};
-        for (const k of USAGE_KEYS) {
-          const x = v.usage[k];
-          if (x === undefined || x === null) usage[k] = NOT_AVAILABLE;
-          else if (Number.isInteger(x) && x >= 0) usage[k] = x;
+        for (const k of [...USAGE_KEYS, ...USAGE_OTHER_KEYS]) {
+          const x = usageValue(k, v.usage[k]);
+          if (x !== null) usage[k] = x;
           else {
-            usage[k] = 'not recorded';
-            notes.push(`${where} field usage.${k}: expected a whole number; shown as not recorded`);
+            usage[k] = NOT_RECORDED;
+            notes.push(`${where} field usage.${k}: expected ${USAGE_KIND[k] || 'a whole number'}; shown as not recorded`);
           }
         }
       }

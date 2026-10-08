@@ -2,14 +2,15 @@
 // context figures (AC23), from the dispatch log, history reads and status/outcomes.jsonl.
 // ac-test: S-001/AC20 ac-test: S-001/AC21 ac-test: S-001/AC22 ac-test: S-001/AC23
 // join-test: S-001/J10 — the sample dispatch/outcome pair J10 quotes (from the real
-// dispatch-log/2026-10.jsonl), the real status/outcomes.jsonl at dd71b14 (no usage yet), and one
-// fixture line in J10's proposed `usage` form (figures from EXP-003's run 2).
+// dispatch-log/2026-10.jsonl), the real status/outcomes.jsonl at dd71b14 (no usage yet), and J10's
+// three outcomes.jsonl lines with their exact expected drill-downs (sample line 1 without usage; the
+// fixture line in model S-020's frozen form; the real Q-011 line with three nulls).
 // join-test: S-001/J2 — raised and answered times, waits, proxy, and V5's counted time.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildModel, parseRecord } from '../../src/lib/model.js';
-import { parseOutcomes, markRetries, NOT_AVAILABLE } from '../../src/lib/records.js';
-import { cardRows, cardSummary, v5Waits, v5Line, sessionRows, timelines, usageView, V25_NO_CARDS, V25_ANSWERED } from '../../src/lib/asked.js';
+import { parseOutcomes, markRetries, NOT_AVAILABLE, NOT_RECORDED, USAGE_KEYS, USAGE_OTHER_KEYS } from '../../src/lib/records.js';
+import { cardRows, cardSummary, v5Waits, v5Line, sessionRows, timelines, usageView, usageLines, V25_NO_CARDS, V25_ANSWERED } from '../../src/lib/asked.js';
 import { countedMs, hoursMinutes, median } from '../../src/lib/timefmt.js';
 import { fixture, CONFIG, SD, POOM } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
@@ -170,14 +171,16 @@ test('AC22: a running session shows its elapsed time; a dispatch with no outcome
   assert.equal(tl.events[1].end, now, 'a running session runs to now');
 });
 
-test('AC23 + J10: usage in the proposed form shows tokens by kind, turns, and the peak as tokens and a percentage', () => {
-  const { bySession, notes } = parseOutcomes(fixture('service-desk/status/outcomes-usage-proposed.jsonl'));
+test('AC23 + J10: usage in the frozen form shows tokens by kind, turns, and the peak as tokens and percentages', () => {
+  const { bySession, notes } = parseOutcomes(fixture('service-desk/status/outcomes-usage-frozen.jsonl'));
   assert.deepEqual(notes, []);
   const rows = sessionRows(realLog().entries, bySession, new Map(), Date.parse('2026-10-07T12:00:00Z'));
   const s = rows.find((r) => r.session === 'P-001:define-to-plan-review:2026-10-06T16:40:19Z');
   const u = usageView(s);
-  assert.deepEqual(u, { recorded: true, input_tokens: 10, output_tokens: 707, cache_read_tokens: 168160, cache_write_tokens: 11120,
-    turns: 7, context_peak_tokens: 36494, context_window_tokens: 1000000, context_peak_percent: 3.6 });
+  assert.deepEqual(u, { recorded: true, input_tokens: 10, output_tokens: 707, cache_read_input_tokens: 168160,
+    cache_creation_input_tokens: 11120, num_turns: 7, duration_ms: 18392, context_window: 1000000,
+    autocompact_threshold: 784000, context_peak: 36494, compactions: 0, derived: ['context_peak'],
+    would_have_stopped: false, cost_usd_estimate: 0.0854731, context_peak_percent: 3.6, threshold_percent: 4.7 });
   // A session in the log with no outcomes.jsonl line: timeline only, usage "not recorded".
   const other = rows.find((r) => r.session !== s.session);
   assert.deepEqual(usageView(other), { recorded: false, words: 'not recorded' });
@@ -189,18 +192,18 @@ test('AC23 + J10: the real outcomes.jsonl (no usage yet) shows "not recorded"; n
   assert.ok(Object.keys(real.bySession).length >= 70);
   assert.ok(Object.values(real.bySession).every((r) => r.usage === null), 'none carry usage yet: "not recorded"');
   const odd = parseOutcomes([
-    line({ session: 'S:1', usage: { input_tokens: 5, output_tokens: null, cache_read_tokens: 1.5, turns: 2, context_peak_tokens: 100 } }),
+    line({ session: 'S:1', usage: { input_tokens: 5, output_tokens: null, cache_read_input_tokens: 1.5, num_turns: 2, context_peak: 100 } }),
     line({ session: 42, usage: {} }),
     line({ session: 'S:3', usage: 'lots' }),
   ].join('\n'));
   const u = usageView({ usage: odd.bySession['S:1'].usage });
   assert.equal(u.input_tokens, 5);
   assert.equal(u.output_tokens, NOT_AVAILABLE, 'null: not available');
-  assert.equal(u.cache_write_tokens, NOT_AVAILABLE, 'a figure the record lacks: not available');
-  assert.equal(u.cache_read_tokens, 'not recorded');
-  assert.equal(u.context_window_tokens, NOT_AVAILABLE);
+  assert.equal(u.cache_creation_input_tokens, NOT_AVAILABLE, 'a figure the record lacks: not available');
+  assert.equal(u.cache_read_input_tokens, 'not recorded');
+  assert.equal(u.context_window, NOT_AVAILABLE);
   assert.equal(u.context_peak_percent, NOT_AVAILABLE, 'the percentage only when both are present');
-  assert.ok(odd.notes.some((n) => n === 'status/outcomes.jsonl line 1 field usage.cache_read_tokens: expected a whole number; shown as not recorded'));
+  assert.ok(odd.notes.some((n) => n === 'status/outcomes.jsonl line 1 field usage.cache_read_input_tokens: expected a whole number; shown as not recorded'));
   assert.ok(odd.notes.some((n) => n === 'status/outcomes.jsonl line 2 field session: expected a string; line skipped'), 'AC31\'s example');
   assert.equal(odd.bySession['S:3'].usage, null);
   assert.ok(odd.notes.some((n) => n.startsWith('status/outcomes.jsonl line 3 field usage')));
@@ -210,7 +213,7 @@ test('Page AC22/AC23: the Agents view lists sessions with run time, result, verd
   const repos = {
     'Service-Desk': repo({
       'dispatch-log/2026-10.jsonl': fixture('service-desk/dispatch-log/2026-10.jsonl'),
-      'status/outcomes.jsonl': fixture('service-desk/status/outcomes-usage-proposed.jsonl'),
+      'status/outcomes.jsonl': fixture('service-desk/status/outcomes-usage-frozen.jsonl'),
     }, [], []),
     'Personal-Org-Operating-Model': repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md') }, [], []),
   };
@@ -226,6 +229,160 @@ test('Page AC22/AC23: the Agents view lists sessions with run time, result, verd
     assert.match(text, /Context peak: 36,494 tokens, 3.6% of a 1,000,000-token window/);
     assert.match(text, /Usage: not recorded/);
     assert.match(text, /Timeline by item/);
+  } finally {
+    app.restore();
+    Date.now = realNow;
+  }
+});
+
+// ---------------------------------------------------------------------------
+// join-test: S-001/J10 — J10's three outcomes.jsonl lines (tests/desk/fixtures/service-desk/status/
+// outcomes-j10.jsonl), each with the exact drill-down J10 states for it.
+
+const J10_LINES = () => parseOutcomes(fixture('service-desk/status/outcomes-j10.jsonl'));
+
+test('J10 join test, line 1: sample line 1 (real, no usage) — every usage figure "not recorded"', () => {
+  const { bySession, notes } = J10_LINES();
+  assert.deepEqual(notes, []);
+  const row = bySession['Q-001:ready-dispatch:2026-10-01T01:46:42Z'];
+  assert.equal(row.usage, null);
+  assert.deepEqual(usageView(row), { recorded: false, words: 'not recorded' });
+  assert.deepEqual(usageLines(row), ['Usage: not recorded']);
+});
+
+test('J10 join test, line 2: the fixture line in the frozen form — every figure, the derived label, both percentages, "estimate $0.09"', () => {
+  const row = J10_LINES().bySession['P-001:define-to-plan-review:2026-10-09T09:00:00Z'];
+  const u = usageView(row);
+  // input 10, output 707, cache read 168,160, cache write 11,120; 7 turns; run time 18 s; peak
+  // 36,494 tokens, derived from per-turn usage, 3.6 % of the window, 4.7 % of the compaction
+  // threshold; would have stopped: no; 0 compactions; estimate $0.09.
+  assert.equal(u.context_peak_percent, 3.6);
+  assert.equal(u.threshold_percent, 4.7);
+  assert.deepEqual(usageLines(row), [
+    'Tokens: input 10, output 707, cache read 168,160, cache write 11,120 · turns 7',
+    'Run time (agent tool): 18 s',
+    'Context peak: 36,494 tokens, 3.6% of a 1,000,000-token window (derived from per-turn usage)',
+    'Peak, share of the compaction threshold: 4.7% of 784,000 tokens',
+    'Would have stopped: no',
+    'Compactions: 0',
+    'Cost: estimate $0.09',
+  ]);
+});
+
+test('J10 join test, line 3: the real Q-011 line with three nulls — threshold %, would have stopped and compactions "not available"', () => {
+  const row = J10_LINES().bySession['Q-011:research-to-source:2026-10-08T16:59:31Z'];
+  const u = usageView(row);
+  assert.equal(u.autocompact_threshold, NOT_AVAILABLE);
+  assert.equal(u.would_have_stopped, NOT_AVAILABLE);
+  assert.equal(u.compactions, NOT_AVAILABLE);
+  // input 8, output 2,418, cache read 29,181, cache write 20,367; 11 turns; run time 41 s; peak
+  // 20,369 tokens, derived from per-turn usage, 2.0 % of the window; % of the compaction threshold
+  // "not available"; would have stopped "not available"; compactions "not available"; estimate $0.16.
+  assert.deepEqual(usageLines(row), [
+    'Tokens: input 8, output 2,418, cache read 29,181, cache write 20,367 · turns 11',
+    'Run time (agent tool): 41 s',
+    'Context peak: 20,369 tokens, 2.0% of a 1,000,000-token window (derived from per-turn usage)',
+    'Peak, share of the compaction threshold: not available',
+    'Would have stopped: not available',
+    'Compactions: not available',
+    'Cost: estimate $0.16',
+  ]);
+});
+
+test('AC23 + J10: the frozen form\'s keys, and the three keys that are not whole numbers', () => {
+  assert.deepEqual(USAGE_KEYS, ['input_tokens', 'output_tokens', 'cache_read_input_tokens', 'cache_creation_input_tokens',
+    'num_turns', 'duration_ms', 'context_window', 'autocompact_threshold', 'context_peak', 'compactions']);
+  assert.deepEqual(USAGE_OTHER_KEYS, ['derived', 'would_have_stopped', 'cost_usd_estimate']);
+  // would have stopped: yes; a cost is never a charge; a figure `derived` names carries the label.
+  const yes = usageLines({ usage: { ...J10_LINES().bySession['P-001:define-to-plan-review:2026-10-09T09:00:00Z'].usage,
+    would_have_stopped: true, derived: ['context_peak', 'num_turns'] } });
+  assert.ok(yes.includes('Would have stopped: yes'));
+  assert.match(yes[0], / · turns 7 \(derived from per-turn usage\)$/);
+  assert.ok(yes.every((l) => !/charge|charged|billed/i.test(l)));
+  // No label when `derived` doesn't name the peak.
+  const plain = usageLines({ usage: { ...J10_LINES().bySession['P-001:define-to-plan-review:2026-10-09T09:00:00Z'].usage, derived: [] } });
+  assert.ok(plain.every((l) => !l.includes('derived from per-turn usage')));
+  // A percentage needs both its figures: no window or no peak, no percentages.
+  const noWin = usageView({ usage: { context_peak: 5, context_window: NOT_AVAILABLE, autocompact_threshold: 100 } });
+  assert.equal(noWin.context_peak_percent, NOT_AVAILABLE);
+  assert.equal(noWin.threshold_percent, 5);
+  const noPeak = usageView({ usage: { context_peak: NOT_AVAILABLE, context_window: 100, autocompact_threshold: 100 } });
+  assert.equal(noPeak.context_peak_percent, NOT_AVAILABLE);
+  assert.equal(noPeak.threshold_percent, NOT_AVAILABLE);
+  // Run time to the nearest second.
+  assert.deepEqual([18392, 40999, 499, 125400, 3603000].map((ms) => usageLines({ usage: { duration_ms: ms } })[1]),
+    ['Run time (agent tool): 18 s', 'Run time (agent tool): 41 s', 'Run time (agent tool): 0 s',
+      'Run time (agent tool): 2 min 5 s', 'Run time (agent tool): 1 h 0 min 3 s']);
+  assert.equal(usageLines({ usage: { cost_usd_estimate: NOT_AVAILABLE } })[6], 'Cost: not available');
+});
+
+test('AC23 + J10: a usage key of the wrong kind is named in notes and shown "not recorded"; only that key, the rest still show', () => {
+  const { bySession, notes } = parseOutcomes([
+    line({ session: 'W:1', usage: { input_tokens: 3, derived: 'context_peak', context_peak: 50, context_window: 100 } }),
+    line({ session: 'W:2', usage: { input_tokens: 3, derived: ['context_peak', 7] } }),
+    line({ session: 'W:3', usage: { would_have_stopped: 'no', compactions: 0 } }),
+    line({ session: 'W:4', usage: { cost_usd_estimate: '0.08', num_turns: 2 } }),
+    line({ session: 'W:5', usage: { autocompact_threshold: 784000.5, context_peak: 10, cost_usd_estimate: 1 } }),
+  ].join('\n'));
+  assert.deepEqual(notes, [
+    'status/outcomes.jsonl line 1 field usage.derived: expected a list of figure names; shown as not recorded',
+    'status/outcomes.jsonl line 2 field usage.derived: expected a list of figure names; shown as not recorded',
+    'status/outcomes.jsonl line 3 field usage.would_have_stopped: expected true, false or null; shown as not recorded',
+    'status/outcomes.jsonl line 4 field usage.cost_usd_estimate: expected a number or null; shown as not recorded',
+    'status/outcomes.jsonl line 5 field usage.autocompact_threshold: expected a whole number; shown as not recorded',
+  ]);
+  const w1 = usageLines(bySession['W:1']);
+  assert.match(w1[0], /^Tokens: input 3, /);
+  assert.equal(w1[2], 'Context peak: 50 tokens, 50.0% of a 100-token window', 'no derived list, no label');
+  assert.equal(w1[w1.length - 1], 'Which figures are derived: not recorded');
+  assert.equal(bySession['W:2'].usage.derived, NOT_RECORDED);
+  const w3 = usageLines(bySession['W:3']);
+  assert.ok(w3.includes('Would have stopped: not recorded'));
+  assert.ok(w3.includes('Compactions: 0'));
+  const w4 = usageLines(bySession['W:4']);
+  assert.ok(w4.includes('Cost: not recorded'));
+  assert.match(w4[0], / · turns 2$/);
+  const w5 = usageView(bySession['W:5']);
+  assert.equal(w5.autocompact_threshold, NOT_RECORDED);
+  assert.equal(w5.threshold_percent, NOT_AVAILABLE, 'a percentage needs both its figures');
+  assert.equal(usageLines(bySession['W:5'])[6], 'Cost: estimate $1.00');
+});
+
+/** Every element under `node` (the fake DOM's tree). */
+function allElements(node, out = []) {
+  for (const c of node.children || []) {
+    if (c.tag) out.push(c);
+    allElements(c, out);
+  }
+  return out;
+}
+
+test('Page AC23: the figures sit behind each session\'s drill-down, not on its timeline row', async () => {
+  const repos = {
+    'Service-Desk': repo({
+      'dispatch-log/2026-10.jsonl': fixture('service-desk/dispatch-log/2026-10.jsonl'),
+      'status/outcomes.jsonl': fixture('service-desk/status/outcomes-usage-frozen.jsonl'),
+    }, [], []),
+    'Personal-Org-Operating-Model': repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md') }, [], []),
+  };
+  const realNow = Date.now;
+  const app = await loadApp({ hash: '#/p/Service-Desk/agents', repos, now: Date.parse('2026-10-07T12:00:00Z') });
+  try {
+    await app.advance(1000);
+    const els = allElements(app.els.view);
+    const details = els.filter((e) => e.tag === 'details');
+    const critic = details.find((d) => d.children[0].tag === 'summary' && d.children[0].textContent.includes('P-001 critic')
+      && d.textContent.includes('Tokens:'));
+    assert.ok(critic, 'the session is a drill-down whose summary is the session row');
+    const summary = critic.children[0].textContent;
+    assert.match(summary, /ok, verdict FAIL/);
+    assert.ok(!/Tokens|Context peak|estimate \$/.test(summary), 'figures are not on the session row itself');
+    const body = critic.children.slice(1).map((c) => c.textContent).join('\n');
+    for (const l of ['Run time (agent tool): 18 s', 'Peak, share of the compaction threshold: 4.7% of 784,000 tokens',
+      'Would have stopped: no', 'Compactions: 0', 'Cost: estimate $0.09']) assert.ok(body.includes(l), l);
+    const timeline = els.filter((e) => e.tag === 'ol' && e.className === 'timeline').map((e) => e.textContent).join('\n');
+    assert.ok(timeline.length > 0);
+    assert.ok(!/Tokens|Context peak|estimate \$|not recorded|not available/.test(timeline), 'no figures on the timeline rows');
   } finally {
     app.restore();
     Date.now = realNow;

@@ -1,7 +1,7 @@
 // Time asked of the owner (AC20, V5 for AC21) and the Agents view (AC22, AC23) — spec S-001, J2,
 // J10. Pure: from a v3 project's dispatch log, tree, records and history reads, and the clock.
 
-import { parseCardPath, questionName, questionAnswerName, USAGE_KEYS, NOT_AVAILABLE } from './records.js';
+import { parseCardPath, questionName, questionAnswerName, USAGE_KEYS, USAGE_OTHER_KEYS, NOT_AVAILABLE, NOT_RECORDED } from './records.js';
 import { countedMs, median } from './timefmt.js';
 
 export const ASKED_DAYS = 30;
@@ -218,36 +218,101 @@ export function timelines(sessions, cards, nowMs) {
   return out.sort((a, b) => b.to - a.to);
 }
 
+/** A percentage to one decimal of `part` over `whole`, only when both are figures (AC23's rule). */
+function percent(part, whole) {
+  return Number.isInteger(part) && Number.isInteger(whole) && whole > 0
+    ? Math.round((part / whole) * 1000) / 10 : NOT_AVAILABLE;
+}
+
 /**
- * AC23's figures for one session: each J10 figure as a number, 'not available' or 'not recorded';
- * the peak's percentage of the window only when both are numbers.
+ * AC23's figures for one session, in model S-020's form (J10): each figure as its value,
+ * 'not available' (null or unreported) or 'not recorded' (a value of the wrong kind); the peak as a
+ * percentage of the window and of the compaction threshold, each only when both its figures are
+ * present. A session without a `usage` key: { recorded: false, words: 'not recorded' }.
  */
 export function usageView(row) {
-  if (!row.usage) return { recorded: false, words: 'not recorded' };
+  if (!row.usage) return { recorded: false, words: NOT_RECORDED };
   const u = row.usage;
-  const fig = (k) => (k in u ? u[k] : NOT_AVAILABLE);
+  const fig = (k) => (Object.prototype.hasOwnProperty.call(u, k) ? u[k] : NOT_AVAILABLE);
   const out = { recorded: true };
-  for (const k of USAGE_KEYS) out[k] = fig(k);
-  const peak = out.context_peak_tokens;
-  const win = out.context_window_tokens;
-  out.context_peak_percent = Number.isInteger(peak) && Number.isInteger(win) && win > 0
-    ? Math.round((peak / win) * 1000) / 10 : NOT_AVAILABLE;
+  for (const k of [...USAGE_KEYS, ...USAGE_OTHER_KEYS]) out[k] = fig(k);
+  out.context_peak_percent = percent(out.context_peak, out.context_window);
+  out.threshold_percent = percent(out.context_peak, out.autocompact_threshold);
   return out;
 }
 
 const fmtNum = (v) => (typeof v === 'number' ? v.toLocaleString('en-US') : v);
+const fmtPct = (v) => (typeof v === 'number' ? `${v.toFixed(1)}%` : v);
+export const DERIVED_LABEL = 'derived from per-turn usage';
+
+/** True when J10's `derived` names the figure `k` (and `derived` is a list). */
+const isDerived = (u, k) => Array.isArray(u.derived) && u.derived.includes(k);
+
+/** A whole-number figure for display, with " (derived from per-turn usage)" when `derived` names it. */
+function figText(u, k) {
+  const v = u[k];
+  return typeof v === 'number' && isDerived(u, k) ? `${fmtNum(v)} (${DERIVED_LABEL})` : fmtNum(v);
+}
+
+/** A run time in ms, to the nearest second: "18 s", "2 min 5 s", "1 h 0 min 3 s". */
+export function runTimeText(ms) {
+  if (typeof ms !== 'number') return ms;
+  if (!Number.isFinite(ms) || ms < 0) return NOT_AVAILABLE;
+  const s = Math.round(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h} h ${m} min ${sec} s`;
+  if (m > 0) return `${m} min ${sec} s`;
+  return `${sec} s`;
+}
 
 /**
  * AC23's context line (review N2): the peak as tokens and as a percentage of the window when both
- * are figures; "(derived from per-turn usage)" goes only with a real peak figure. A missing peak
- * or window shows its words, never garbled numbers.
+ * are figures; "(derived from per-turn usage)" goes only with a real peak figure that J10's
+ * `derived` names. A missing peak or window shows its words, never garbled numbers.
  */
 export function contextText(u) {
-  const peak = u.context_peak_tokens;
-  const win = u.context_window_tokens;
+  const peak = u.context_peak;
+  const win = u.context_window;
+  const tag = isDerived(u, 'context_peak') ? ` (${DERIVED_LABEL})` : '';
   if (typeof peak !== 'number') {
     return `Context peak: ${peak}${typeof win === 'number' ? `; window ${fmtNum(win)} tokens` : ''}`;
   }
-  if (typeof win !== 'number') return `Context peak: ${fmtNum(peak)} tokens (derived from per-turn usage); window: ${win}`;
-  return `Context peak: ${fmtNum(peak)} tokens, ${u.context_peak_percent}% of a ${fmtNum(win)}-token window (derived from per-turn usage)`;
+  if (typeof win !== 'number') return `Context peak: ${fmtNum(peak)} tokens${tag}; window: ${win}`;
+  return `Context peak: ${fmtNum(peak)} tokens, ${fmtPct(u.context_peak_percent)} of a ${fmtNum(win)}-token window${tag}`;
+}
+
+/** The peak as a percentage of the compaction threshold (owner's answer 5), or its words. */
+export function thresholdText(u) {
+  if (typeof u.threshold_percent !== 'number') return `Peak, share of the compaction threshold: ${NOT_AVAILABLE}`;
+  return `Peak, share of the compaction threshold: ${fmtPct(u.threshold_percent)} of ${figText(u, 'autocompact_threshold')} tokens`;
+}
+
+/** The cost estimate: "estimate $x.xx", never a charge (the account is billed by subscription). */
+export function costText(v) {
+  return typeof v === 'number' ? `estimate $${v.toFixed(2)}` : v;
+}
+
+/** "yes", "no" or its words. */
+const yesNo = (v) => (v === true ? 'yes' : v === false ? 'no' : v);
+
+/**
+ * AC23's drill-down for one session: the lines shown behind the session's tap, never on its
+ * timeline row. A session without `usage` gives one line, "Usage: not recorded".
+ */
+export function usageLines(row) {
+  const u = usageView(row);
+  if (!u.recorded) return [`Usage: ${u.words}`];
+  const out = [
+    `Tokens: input ${figText(u, 'input_tokens')}, output ${figText(u, 'output_tokens')}, cache read ${figText(u, 'cache_read_input_tokens')}, cache write ${figText(u, 'cache_creation_input_tokens')} · turns ${figText(u, 'num_turns')}`,
+    `Run time (agent tool): ${runTimeText(u.duration_ms)}${typeof u.duration_ms === 'number' && isDerived(u, 'duration_ms') ? ` (${DERIVED_LABEL})` : ''}`,
+    contextText(u),
+    thresholdText(u),
+    `Would have stopped: ${yesNo(u.would_have_stopped)}`,
+    `Compactions: ${figText(u, 'compactions')}`,
+    `Cost: ${costText(u.cost_usd_estimate)}`,
+  ];
+  if (u.derived === NOT_RECORDED) out.push(`Which figures are derived: ${NOT_RECORDED}`);
+  return out;
 }

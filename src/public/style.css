@@ -30,6 +30,10 @@ header#top { position: sticky; top: 0; background: var(--bg); padding: 10px 0 6p
 ul.plain { list-style: none; padding: 0; margin: 6px 0; }
 ul.plain > li { padding: 6px 0; border-top: 1px solid var(--line); }
 ul.plain > li:first-child { border-top: 0; }
+/* AC23: a session's usage figures, behind its drill-down; they wrap on a phone. */
+ul.plain.usage { margin: 4px 0 0 12px; }
+ul.plain.usage > li { padding: 2px 0; border-top: 0; overflow-wrap: anywhere; }
+summary { cursor: pointer; }
 .flagged-list > li a.item { font-weight: 600; }
 .ci-failing { color: var(--flag); font-weight: 600; }
 .ci-passing { color: var(--ok); }

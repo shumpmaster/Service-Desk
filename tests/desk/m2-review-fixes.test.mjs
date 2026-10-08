@@ -19,7 +19,7 @@ import {
   cardRows, cardSummary, questionRows, v5Footer, v5Waits, contextText, notReadText, ASKED_DAYS, SUMMARY_DAYS,
 } from '../../src/lib/asked.js';
 import { hoursMinutes, median } from '../../src/lib/timefmt.js';
-import { NOT_AVAILABLE } from '../../src/lib/records.js';
+import { NOT_AVAILABLE, NOT_RECORDED } from '../../src/lib/records.js';
 import PUBLIC_CONFIG from '../../src/public/lib/config.js';
 import { fixture, recorded, CONFIG, SD, ENV, NOW, makeKey, signJwt, goodClaims, certsRoute, request, fakeFetch, fakeClock } from './helpers.mjs';
 import { repo, fakeServer } from './fake-desk.mjs';
@@ -161,15 +161,19 @@ test('N1: needed reads past the cycle\'s cap are "Checking…", then read on the
 // N2
 
 test('N2 (AC23): the context line with a figure missing says "not available", and "derived" only goes with a real peak', () => {
-  const full = { context_peak_tokens: 36494, context_window_tokens: 1000000, context_peak_percent: 3.6 };
+  const D = ['context_peak'];
+  const full = { context_peak: 36494, context_window: 1000000, context_peak_percent: 3.6, derived: D };
   assert.equal(contextText(full), 'Context peak: 36,494 tokens, 3.6% of a 1,000,000-token window (derived from per-turn usage)');
-  assert.equal(contextText({ context_peak_tokens: NOT_AVAILABLE, context_window_tokens: NOT_AVAILABLE, context_peak_percent: NOT_AVAILABLE }),
+  assert.equal(contextText({ context_peak: NOT_AVAILABLE, context_window: NOT_AVAILABLE, context_peak_percent: NOT_AVAILABLE, derived: D }),
     'Context peak: not available');
-  assert.equal(contextText({ context_peak_tokens: NOT_AVAILABLE, context_window_tokens: 1000000, context_peak_percent: NOT_AVAILABLE }),
+  assert.equal(contextText({ context_peak: NOT_AVAILABLE, context_window: 1000000, context_peak_percent: NOT_AVAILABLE, derived: D }),
     'Context peak: not available; window 1,000,000 tokens');
-  assert.equal(contextText({ context_peak_tokens: 500, context_window_tokens: NOT_AVAILABLE, context_peak_percent: NOT_AVAILABLE }),
+  assert.equal(contextText({ context_peak: 500, context_window: NOT_AVAILABLE, context_peak_percent: NOT_AVAILABLE, derived: D }),
     'Context peak: 500 tokens (derived from per-turn usage); window: not available');
-  assert.equal(contextText({ context_peak_tokens: 'not recorded', context_window_tokens: 10, context_peak_percent: NOT_AVAILABLE }),
+  // From S-020's frozen form: the label goes only with a figure `derived` names (J10).
+  assert.equal(contextText({ ...full, derived: [] }), 'Context peak: 36,494 tokens, 3.6% of a 1,000,000-token window');
+  assert.equal(contextText({ ...full, derived: NOT_RECORDED }), 'Context peak: 36,494 tokens, 3.6% of a 1,000,000-token window');
+  assert.equal(contextText({ context_peak: 'not recorded', context_window: 10, context_peak_percent: NOT_AVAILABLE, derived: D }),
     'Context peak: not recorded; window 10 tokens');
 });
 

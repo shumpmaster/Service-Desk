@@ -8,9 +8,15 @@
   - `status/P-001@<commit>.toml` at d4d0110 (dispatched), def1e83 (waiting-owner), b787280 (ready)
     and 7da0fd7 (closed).
 - `service-desk/status/outcomes.jsonl`: the real file at dd71b14 (no `usage` key yet, J10).
-  `service-desk/status/outcomes-usage-proposed.jsonl` is NOT a real record: it is the outcomes line
-  of J10's sample session (P-001's critic, 2026-10-06T16:40:19Z) with a `usage` key added in J10's
-  proposed form, whose figures are EXP-003 run 2's (docs/handover/experiments/EXP-003-result.md).
+  `service-desk/status/outcomes-usage-frozen.jsonl` is NOT a real record: it is the outcomes line
+  of J10's sample session (P-001's critic, 2026-10-06T16:40:19Z) with a `usage` key added in the
+  form model S-020 froze (J10), whose figures are EXP-003 run 2's
+  (docs/handover/experiments/EXP-003-result.md), the same as J10's fixture line.
+- `service-desk/status/outcomes-j10.jsonl`: J10's three join-test lines, in the order J10 lists
+  them: sample line 1 (the real file's first line, no `usage`); J10's fixture line in the frozen
+  form, copied from the spec (NOT a real record: `control` and `record_sha` are `<fixture>`); and
+  the real line of session `Q-011:research-to-source:2026-10-08T16:59:31Z`, copied unchanged from
+  origin/main's `status/outcomes.jsonl` at 8e69f54 (line 98).
 - `github/`: real GitHub REST responses for Service-Desk (a public repository), recorded on
   2026-10-07 without the desk's token: status 200, the headers the function reads, and the body
   exactly as GitHub sent it. Each file's `note` names the request. From M2 (recorded 2026-10-08

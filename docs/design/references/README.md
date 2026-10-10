@@ -89,6 +89,12 @@ Source: forevercomponents.com, a "Branch timeline" component (a git-style graph 
 - Agent page: "Is there a way to have every recorded responsibility in both the grouped section 2 and the branches show a popup plain English summary when tapped?"
 - Then, shown a template summary and a written one side by side: "Let's do the plain English version". This means each recorded event gets a short written summary that tells the story: what was found, why it mattered, what happened next, and whether the owner might act. The summary is written from the record when the event is recorded, and the record's own quote stays underneath as evidence.
 
+## Direction without an image: the gate document (10 Oct 2026, verbatim)
+
+- On phase moves: "I want a phase gate review established. I know this will be some additional operating design changes"
+- "the anchor in my mind is that I'm envisioning a neat and organized 1 pager at every gate that compiles all phase related information together for me to rule on in totality"
+- On the first mock-up: "Hmm thes one pagers read very much like a linear technical bullet. In my world the stage gate is the document associated with a formal review designed to "sell the vision, the plan and the risk" of the project moving forward. It's the stage in which the kill or proceed decision is made. The output you gave reads to me as a log of things that have been done."
+
 ## How to work from this
 
 Build one full screen at a time, in the order above, each matched to its reference. Fit each

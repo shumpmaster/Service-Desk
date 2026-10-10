@@ -1,0 +1,327 @@
+<meta charset="utf-8">
+<title>Screen 4: Timeline</title>
+<style>
+/* Layout: one full Timeline screen modelled on the owner's Structured reference: a big header with a strip of six phases where Structured has its week, a white sheet holding one consecutive line of work with round icon pills, titles and check circles, notes in the gaps, and a floating tab bar with a coral +. */
+:root {
+  --page: #eef0f3; --bg: #f5f5f7; --sheet: #ffffff; --ink: #1d1d1f; --muted: #8e8e93; --line: #e5e5ea;
+  --coral: #f08a7e; --coral-ink: #d9503f; --coral-soft: #fde8e5; --you: #f08a7e;
+  --agent: #6aa7f8; --agent-soft: #e6f0fe; --pass: #34c27a; --pass-soft: #e1f6ea; --fail: #e5484d; --fail-soft: #fde7e8;
+  --pr: #b08cf5; --pr-soft: #f0e9fe; --wait: #f2b84b; --wait-soft: #fdf3dd; --done-ring: #34c27a; --focus: #2f6fe0; --scrim: rgb(15 18 22 / .42);
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --round: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0b0c0e; --bg: #111214; --sheet: #1b1c1f; --ink: #f2f2f4; --muted: #9a9aa0; --line: #2c2d31; --coral: #ff9a8d; --coral-ink: #ff8a7a; --coral-soft: #3b201c;
+  --agent: #7fb2ff; --agent-soft: #182538; --pass: #4fd18b; --pass-soft: #12301f; --fail: #ff7b7f; --fail-soft: #3a1617; --pr: #c4a6ff; --pr-soft: #271d3a; --wait: #f5c86a; --wait-soft: #33290f; --done-ring: #4fd18b; --focus: #7fb2ff; --scrim: rgb(0 0 0 / .6); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --page: #0b0c0e; --bg: #111214; --sheet: #1b1c1f; --ink: #f2f2f4; --muted: #9a9aa0; --line: #2c2d31; --coral: #ff9a8d; --coral-ink: #ff8a7a; --coral-soft: #3b201c;
+  --agent: #7fb2ff; --agent-soft: #182538; --pass: #4fd18b; --pass-soft: #12301f; --fail: #ff7b7f; --fail-soft: #3a1617; --pr: #c4a6ff; --pr-soft: #271d3a; --wait: #f5c86a; --wait-soft: #33290f; --done-ring: #4fd18b; --focus: #7fb2ff; --scrim: rgb(0 0 0 / .6); color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--page); color: var(--ink); font: 15px/1.45 var(--sans); padding-inline: 16px; padding-block: 20px 40px; margin: 0 }
+.wrap { max-width: 780px; margin: 0 auto; display: grid; gap: 16px }
+h1 { font-size: 1.4rem; margin: 0 } .lede { color: var(--muted); margin: 4px 0 0; max-width: 64ch }
+button { font: inherit; color: inherit } button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px }
+.stage { display: flex; justify-content: center }
+.phone { position: relative; width: 100%; max-width: 390px; height: 840px; background: var(--bg); border-radius: 36px; overflow: hidden; box-shadow: 0 14px 40px rgb(0 0 0 / .16); border: 1px solid var(--line); display: grid; grid-template-rows: auto 1fr }
+
+/* header: Structured's big date and week strip, as the phase and the six phases */
+.head { padding: 18px 18px 10px }
+.proj { font-size: .78rem; color: var(--muted); font-weight: 600 }
+.big { font: 800 2.1rem/1.1 var(--sans); letter-spacing: -.02em; margin: 4px 0 12px; display: flex; gap: 8px; align-items: baseline }
+.big span { color: var(--coral); font-weight: 800 } .big small { color: var(--coral); font-size: 1.4rem }
+.strip { display: grid; grid-template-columns: repeat(6, 1fr); text-align: center; gap: 2px }
+.ph { border: 0; background: none; display: grid; justify-items: center; gap: 4px; padding: 2px 0; cursor: pointer; min-height: 70px }
+.ph .nm { font-size: .74rem; color: var(--muted) }
+.ph .n { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font: 700 1.02rem var(--round) }
+.ph[aria-pressed="true"] .n { background: var(--coral); color: #fff }
+.ph .dots { display: flex; gap: 2px; height: 10px } .ph .dots i { width: 9px; height: 9px; border-radius: 50% }
+.dots .d { background: var(--pass) } .dots .w { background: var(--coral) } .dots .o { border: 1.5px solid var(--muted) }
+
+/* the white sheet */
+.sheet { background: var(--sheet); border-radius: 30px 30px 0 0; position: relative; overflow: hidden; display: grid; grid-template-rows: auto auto 1fr; box-shadow: 0 -2px 12px rgb(0 0 0 / .04) }
+.grab { width: 44px; height: 5px; border-radius: 3px; background: var(--line); justify-self: center; margin: 8px 0 2px }
+.tl { overflow-y: auto; padding: 8px 0 130px }
+.row { display: grid; grid-template-columns: 14px 56px 1fr 44px; align-items: center; position: relative; min-height: 64px; width: 100%; border: 0; background: none; text-align: left; cursor: pointer; padding: 6px 12px 6px 0 }
+.row .when { font-size: .72rem; color: var(--muted); text-align: right; padding-right: 8px; font-variant-numeric: tabular-nums; line-height: 1.2 }
+.row .pill { justify-self: center; width: 48px; height: 48px; border-radius: 24px; display: grid; place-items: center; position: relative; z-index: 1 }
+.row .pill svg { width: 24px; height: 24px }
+.row.cap .pill { height: 84px }
+.row .tx { padding-left: 10px; min-width: 0 } .row .tx small { display: block; color: var(--muted); font-size: .76rem; margin-bottom: 1px }
+.row .tx b { display: block; font-size: 1rem; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere }
+.row.ms .tx b { font-size: 1.15rem } .row.ms .tx small { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: .68rem }
+.row .ck { justify-self: center; width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid var(--line); display: grid; place-items: center }
+.row .ck svg { width: 16px; height: 16px; color: #fff }
+.row.st-done .ck { border-color: var(--done-ring); background: var(--done-ring) }
+.row.st-fail .ck { border-color: var(--fail); background: var(--fail) }
+.row.st-you .ck { border-color: var(--coral); box-shadow: 0 0 0 4px var(--coral-soft) }
+.row.st-now .ck { border-color: var(--agent); border-style: dashed }
+.row.st-next .tx b { color: var(--muted); font-weight: 600 }
+/* the dashed line, coloured by milestone */
+.row::before { content: ""; position: absolute; left: 42px; top: 0; bottom: 0; border-left: 3px dashed var(--lc, var(--line)); transform: translateX(-1.5px) }
+.row.first::before { top: 50% } .row.last::before { bottom: 50% }
+.k-you .pill { background: var(--coral); color: #fff } .k-agent .pill { background: var(--agent-soft); color: var(--agent) } .k-pass .pill { background: var(--pass-soft); color: var(--pass) }
+.k-fail .pill { background: var(--fail-soft); color: var(--fail) } .k-pr .pill { background: var(--pr-soft); color: var(--pr) } .k-ms .pill { background: var(--lc); color: var(--ds-surf) }
+.k-next .pill { background: var(--bg); color: var(--muted) } .k-gate .pill { background: var(--wait-soft); color: var(--wait) }
+.note { display: grid; grid-template-columns: 14px 56px 1fr; align-items: center; min-height: 40px; position: relative; font-size: .86rem; color: var(--muted) }
+.note::before { content: ""; position: absolute; left: 42px; top: 0; bottom: 0; border-left: 3px dashed var(--lc, var(--line)); transform: translateX(-1.5px) }
+.note span { grid-column: 3; padding-left: 10px; display: flex; gap: 6px; align-items: center } .note svg { width: 16px; height: 16px; flex: none }
+.note.iter span { color: var(--coral-ink); font-weight: 700 } .note.stall span { color: var(--wait); font-weight: 650 }
+.note.day span { color: var(--ink); font-weight: 800; font-size: .8rem; letter-spacing: .04em }
+@media (prefers-reduced-motion: no-preference) { .row.just .ck { animation: pop .6s cubic-bezier(.2, 1.6, .4, 1) } @keyframes pop { from { transform: scale(.3) } } .row.just { animation: glow 2.4s ease-out } @keyframes glow { 0%, 30% { background: var(--pass-soft) } } }
+.empty { padding: 30px 24px; text-align: center; color: var(--muted) }
+
+/* tab bar and coral +, after Structured */
+.tabbar { position: absolute; left: 12px; right: 92px; bottom: 18px; background: color-mix(in srgb, var(--sheet) 94%, transparent); border-radius: 30px; box-shadow: 0 6px 24px rgb(0 0 0 / .12); display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px; z-index: 3; border: 1px solid var(--line) }
+.tab { border: 0; background: none; display: grid; justify-items: center; gap: 1px; font-size: .7rem; color: var(--ink); cursor: pointer; min-height: 50px; font-weight: 600 }
+.tab svg { width: 24px; height: 24px } .tab[aria-current="page"] { color: var(--coral) }
+.fab { position: absolute; right: 16px; bottom: 18px; width: 64px; height: 64px; border-radius: 50%; border: 0; background: var(--coral); color: #fff; font-size: 2rem; box-shadow: 0 8px 20px rgb(240 138 126 / .45); cursor: pointer; z-index: 3 }
+
+.scrim { position: absolute; inset: 0; background: var(--scrim); display: grid; align-items: end; z-index: 5 }
+.bs { background: var(--bg); border-radius: 28px 28px 0 0; padding: 10px 18px 24px; display: grid; gap: 10px; max-height: 88%; overflow: auto }
+.bs .g { width: 40px; height: 5px; border-radius: 3px; background: var(--line); justify-self: center }
+.bs h3 { margin: 0; font-size: 1.12rem } .bs p { margin: 0 } .bs .sub { color: var(--muted); font-size: .84rem }
+.plain { font-size: .95rem; line-height: 1.5 }
+.src { font: .7rem ui-monospace, Menlo, monospace; color: var(--muted); overflow-wrap: anywhere }
+.go { border: 0; border-radius: 18px; min-height: 52px; font-weight: 800; background: var(--ink); color: var(--bg); cursor: pointer }
+.go.coral { background: var(--coral); color: #fff } .go.ghost { background: var(--sheet); color: var(--ink) }
+.toast { position: absolute; left: 14px; right: 14px; bottom: 100px; background: var(--sheet); border-radius: 18px; padding: 12px 14px; box-shadow: 0 10px 28px rgb(0 0 0 / .2); z-index: 6; font-size: .9rem; display: flex; gap: 10px; justify-content: space-between; align-items: center }
+.toast button { border: 0; background: var(--bg); border-radius: 999px; min-height: 36px; padding: 0 12px; cursor: pointer; font-weight: 700 }
+.notes { background: var(--sheet); border-radius: 20px; padding: 16px 18px; display: grid; gap: 10px; border: 1px solid var(--line) }
+.notes h2 { margin: 0; font-size: 1rem } .notes ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 5px } .notes p { margin: 0 }
+
+/* denser, more technical pass */
+.head { padding: 12px 14px 6px } .big { font-size: 1.5rem; margin: 2px 0 8px } .big small { font-size: 1rem }
+.ph { min-height: 54px; gap: 2px } .ph .n { width: 28px; height: 28px; font-size: .82rem } .ph .nm { font-size: .64rem; font-family: ui-monospace, Menlo, monospace; text-transform: uppercase; letter-spacing: .04em }
+.ph .dots i { width: 6px; height: 6px }
+.row { grid-template-columns: 40px 34px 1fr 28px !important; min-height: 42px; padding: 3px 10px 3px 0 }
+.row .when { font: 600 .62rem/1.2 ui-monospace, "SF Mono", Menlo, monospace; color: var(--muted); padding-right: 6px }
+.row .pill { width: 28px; height: 28px; border-radius: 14px } .row .pill svg { width: 15px; height: 15px }
+.row.cap .pill { height: 44px }
+.row .tx { padding-left: 8px } .row .tx b { font-size: .84rem; font-weight: 650; line-height: 1.25 } .row .tx small { font-size: .68rem; margin-bottom: 0 }
+.row.ms .tx b { font-size: .92rem } .row.ms .tx small { font-size: .6rem }
+.row .ck { width: 18px; height: 18px; border-width: 2px } .row .ck svg { width: 10px; height: 10px }
+.row.st-you .ck { box-shadow: 0 0 0 3px var(--coral-soft) }
+.row::before, .note::before { left: 57px !important; border-left-width: 2px !important }
+.note { grid-template-columns: 40px 34px 1fr !important; min-height: 24px; font-size: .72rem }
+.note span { padding-left: 8px } .note svg { width: 12px; height: 12px }
+.note.day span { font: 700 .66rem ui-monospace, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+.id { font: 700 .62rem ui-monospace, "SF Mono", Menlo, monospace; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-right: 4px }
+.tl { padding-bottom: 110px }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 2px 14px 6px; font: 600 .6rem ui-monospace, Menlo, monospace; color: var(--muted); text-transform: uppercase; letter-spacing: .05em }
+.legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: -1px }
+.tabbar { padding: 4px } .tab { min-height: 42px; font-size: .64rem } .tab svg { width: 20px; height: 20px } .fab { width: 54px; height: 54px; font-size: 1.7rem }
+
+:root { --page: #eef0f3; --bg: #eef0f3; --sheet: #ffffff; --ink: #16191d; --muted: #6b7280; --line: #e5e7eb; --coral: #e8553e; --coral-ink: #e8553e; --coral-soft: #fdece8; --you: #e8553e; --agent: #2f6fe0; --agent-soft: #e6eefc; --pass: #15803d; --pass-soft: #e3f4e8; --fail: #c0262d; --fail-soft: #fde7e7; --pr: #7c4dcc; --pr-soft: #efe8fb; --wait: #a16207; --wait-soft: #fbf1d9; --done-ring: #15803d; --focus: #2f6fe0; --scrim: rgb(15 18 22 / .42); --ds-page: #eef0f3; --ds-surf: #ffffff; --ds-surf2: #f5f6f8; --ds-ink: #16191d; --ds-muted: #6b7280; --ds-line: #e5e7eb; --ds-you: #e8553e; --ds-yous: #fdece8; --ds-agent: #2f6fe0; --ds-agents: #e6eefc; --ds-pass: #15803d; --ds-passs: #e3f4e8; --ds-fail: #c0262d; --ds-fails: #fde7e7; --ds-merge: #7c4dcc; --ds-merges: #efe8fb; --ds-block: #a16207; --ds-blocks: #fbf1d9; --ds-gold: #a87a1e; --ds-idle: #c3c8cf; --ds-focus: #2f6fe0; --ds-shadow: 0 1px 2px rgb(0 0 0 / .05), 0 6px 16px rgb(0 0 0 / .05); --ds-scrim: rgb(15 18 22 / .42) }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #0b0c0e; --bg: #0b0c0e; --sheet: #1a1c20; --ink: #eef0f3; --muted: #9aa1ab; --line: #2a2e35; --coral: #ff7a63; --coral-ink: #ff7a63; --coral-soft: #3a1d18; --you: #ff7a63; --agent: #7aa7ff; --agent-soft: #17233a; --pass: #4ade80; --pass-soft: #12301f; --fail: #ff7b7f; --fail-soft: #3a1617; --pr: #b99aff; --pr-soft: #271d3a; --wait: #e6b450; --wait-soft: #33290f; --done-ring: #4ade80; --focus: #7aa7ff; --scrim: rgb(0 0 0 / .6); --ds-page: #0b0c0e; --ds-surf: #1a1c20; --ds-surf2: #121417; --ds-ink: #eef0f3; --ds-muted: #9aa1ab; --ds-line: #2a2e35; --ds-you: #ff7a63; --ds-yous: #3a1d18; --ds-agent: #7aa7ff; --ds-agents: #17233a; --ds-pass: #4ade80; --ds-passs: #12301f; --ds-fail: #ff7b7f; --ds-fails: #3a1617; --ds-merge: #b99aff; --ds-merges: #271d3a; --ds-block: #e6b450; --ds-blocks: #33290f; --ds-gold: #d4ae4f; --ds-idle: #4a5059; --ds-focus: #7aa7ff; --ds-shadow: none; --ds-scrim: rgb(0 0 0 / .6); color-scheme: dark } }
+:root[data-theme="dark"] { --page: #0b0c0e; --bg: #0b0c0e; --sheet: #1a1c20; --ink: #eef0f3; --muted: #9aa1ab; --line: #2a2e35; --coral: #ff7a63; --coral-ink: #ff7a63; --coral-soft: #3a1d18; --you: #ff7a63; --agent: #7aa7ff; --agent-soft: #17233a; --pass: #4ade80; --pass-soft: #12301f; --fail: #ff7b7f; --fail-soft: #3a1617; --pr: #b99aff; --pr-soft: #271d3a; --wait: #e6b450; --wait-soft: #33290f; --done-ring: #4ade80; --focus: #7aa7ff; --scrim: rgb(0 0 0 / .6); --ds-page: #0b0c0e; --ds-surf: #1a1c20; --ds-surf2: #121417; --ds-ink: #eef0f3; --ds-muted: #9aa1ab; --ds-line: #2a2e35; --ds-you: #ff7a63; --ds-yous: #3a1d18; --ds-agent: #7aa7ff; --ds-agents: #17233a; --ds-pass: #4ade80; --ds-passs: #12301f; --ds-fail: #ff7b7f; --ds-fails: #3a1617; --ds-merge: #b99aff; --ds-merges: #271d3a; --ds-block: #e6b450; --ds-blocks: #33290f; --ds-gold: #d4ae4f; --ds-idle: #4a5059; --ds-focus: #7aa7ff; --ds-shadow: none; --ds-scrim: rgb(0 0 0 / .6); color-scheme: dark }
+
+/* ---- Desk design system: one palette, one type scale, one project tab bar (shared by every screen) ---- */
+body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif }
+.dtabs { position: absolute; left: 12px; right: 12px; bottom: 14px; z-index: 4; display: grid; grid-template-columns: 1fr 1fr 60px 1fr 1fr; align-items: center;
+  background: color-mix(in srgb, var(--ds-surf) 94%, transparent); border: 1px solid var(--ds-line); border-radius: 26px; padding: 4px 4px; box-shadow: 0 6px 22px rgb(0 0 0 / .12) }
+.dtab { border: 0; background: none; display: grid; justify-items: center; gap: 1px; font: 600 .64rem system-ui, sans-serif; color: var(--ds-muted); cursor: pointer; min-height: 44px; position: relative }
+.dtab svg { width: 21px; height: 21px } .dtab[aria-current="page"] { color: var(--ds-ink) } .dtab[aria-current="page"]::after { content: ""; position: absolute; bottom: 1px; width: 16px; height: 3px; border-radius: 2px; background: var(--ds-you) }
+.dtab .badge { position: absolute; top: 1px; right: 24%; min-width: 15px; height: 15px; border-radius: 8px; background: var(--ds-you); color: #fff; font-size: .58rem; font-weight: 800; display: grid; place-items: center; padding: 0 4px }
+.dplus { width: 50px; height: 50px; border-radius: 50%; border: 0; background: var(--ds-you); color: #fff; font-size: 1.6rem; line-height: 1; cursor: pointer; justify-self: center; margin-top: -22px; box-shadow: 0 6px 16px color-mix(in srgb, var(--ds-you) 40%, transparent) }
+.code, .src, .id { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace }
+
+/* coral is kept for "you"; the phase on screen and phase progress use gold, as on Home's checklist; iterations are neutral */
+.ph[aria-pressed="true"] .n { background: var(--ds-gold) !important; color: #fff } .big span, .big small { color: var(--ds-gold) !important }
+.dots .w { background: var(--ds-gold) !important }
+.note.iter span { color: var(--ds-ink) !important }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Screen 4 of 7: Timeline</h1>
+    <p class="lede">One line through each phase's work, in the order it happened, modelled on your Structured screenshot. Milestones head their part of the line. Reviews, failures, your decisions and stalls sit on it where they happened, and repeat passes are labelled as numbered iterations. Tap a phase at the top to move between phases, and tap any step for a plain-English summary. There are no clock times or durations: the line shows only order.</p>
+  </header>
+  <div class="stage"><div class="phone" id="phone"></div></div>
+  <section class="notes">
+    <h2>What's on this screen, and why</h2>
+    <ul>
+      <li><b>Structured's week strip becomes the six phases.</b> The coral circle is the phase on screen. The dots under each phase show its milestones: green when done, coral for the one under way, an empty ring when not started. Tap any phase to see its line.</li>
+      <li><b>Structured's tall capsule</b> marks a milestone, in plain English, with its own colour carried down the dashed line. Round pills are steps, coloured by who acted:
+        <ul>
+          <li>coral: you;</li>
+          <li>blue: an agent;</li>
+          <li>green: a check that passed;</li>
+          <li>red: a check that failed;</li>
+          <li>purple: a change to merge;</li>
+          <li>amber: a blocker.</li>
+        </ul>
+        The circle on the right says whether each step is done, failed, waiting on you, or still to come.</li>
+      <li><b>Structured's notes in the gaps</b> carry the story: the day changes, "Iteration 2 · after your re-specify" when work went back round, and "Nothing moved for 2 h 32 min" where it stalled.</li>
+      <li><b>Confirmation on the timeline.</b> In Design, the last step is waiting on you: PR #61, your saved screenshots. Tap it, then "I merged it". The step ticks off where it sits, and the next step lights up. That's the feedback you asked for, shown in place.</li>
+      <li><b>Real history, plain words.</b> Every step comes from Service Desk's records from 1 to 10 October, and each popup says what happened, why, and what it means for you. Upcoming steps are greyed, and Operate and Review honestly say nothing is planned yet.</li>
+    </ul>
+    <p style="color:var(--muted);font-size:.88rem">Reference: <code>docs/design/references/04-timeline-structured.jpg</code>. Kept from it: the large heading with a coloured accent, the strip of seven days (here six phases) with dots underneath, the white rounded sheet, the dashed vertical line, round and capsule icon pills, the bold title over a small line, the check circles on the right, the small notes in the gaps, and the floating tab bar with a coral +. Changed: times are replaced by day markers, because you asked for order, not durations.</p>
+  </section>
+</div>
+
+<script>
+const IC = {
+  search: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m15 15 5 5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>',
+  doc: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m10 14 2 2 4-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  x: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>',
+  hand: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V6a1.5 1.5 0 0 1 3 0v4M10 10V4.5a1.5 1.5 0 0 1 3 0V10M13 10V5.5a1.5 1.5 0 0 1 3 0V11M16 11V8a1.5 1.5 0 0 1 3 0v6a7 7 0 0 1-7 7h-.5A6.5 6.5 0 0 1 6 17l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L7 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  merge: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="5" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="19" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="12" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 7.5v9M8 6c5 0 7.5 2 8 3.6" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  rocket: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c3.6 2.2 5 6.6 4.3 10.8L12 16.5l-4.3-3.2C7 9.1 8.4 4.7 12 2.5Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9" r="1.8" fill="currentColor"/><path d="M9 17.5c-.7 1.4-.7 2.8 0 4 .9-.6 1.8-1.4 3-2 1.2.6 2.1 1.4 3 2 .7-1.2.7-2.6 0-4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
+  flag: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>',
+  palette: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 1.9-1.2 1.2-2.2-.7-1.1 0-2.3 1.3-2.3H16a5 5 0 0 0 5-5C21 6.8 17 3 12 3Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="7.5" cy="11" r="1.4" fill="currentColor"/><circle cx="11" cy="7.5" r="1.4" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.4" fill="currentColor"/></svg>',
+  bell: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  blocks: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="12.5" width="8" height="8" rx="1.6" fill="none" stroke="currentColor" stroke-width="2"/><rect x="12.5" y="12.5" width="8" height="8" rx="1.6" fill="none" stroke="currentColor" stroke-width="2"/><rect x="8" y="3.5" width="8" height="8" rx="1.6" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>',
+  next: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3"/></svg>',
+  tick: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  loop: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 9v6M14 9v6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  status: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1Z" fill="currentColor"/></svg>',
+  timeline: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="3" fill="currentColor"/><circle cx="6" cy="17" r="3" fill="currentColor"/><path d="M11 7h9M11 17h7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  team: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="9" r="3.2" fill="currentColor"/><circle cx="16.5" cy="9" r="3.2" fill="currentColor"/><path d="M2.5 20c.5-3.5 2.8-5.5 5.5-5.5s5 2 5.5 5.5zM11.5 20c.4-3.5 2.6-5.5 5-5.5s4.6 2 5 5.5z" fill="currentColor"/></svg>',
+  queue: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="4" rx="2" fill="currentColor"/><rect x="4" y="10" width="16" height="4" rx="2" fill="currentColor" opacity=".7"/><rect x="4" y="16" width="10" height="4" rx="2" fill="currentColor" opacity=".45"/></svg>'
+};
+const KIND_IC = { you: 'hand', agent: 'search', pass: 'doc', fail: 'x', pr: 'merge', gate: 'lock', next: 'next' };
+const MS_C = ['var(--ds-ink)'];  // milestones are neutral: colour is kept for meaning (coral = you, blue = agent, green/red = pass/fail, purple = merge, amber = blocker)
+// The project's history, phase by phase, from Service Desk's own records (1-10 Oct). Each step: kind, day, title, who/sub, state, plain summary, source.
+// Rows: ['day', d] day marker · ['ms', title, sub, icon, state] milestone · ['it', text] iteration note · ['stall', text] · [kind, title, sub, state, plain, src] step
+const PH = {
+  Discovery: { st: 'done', ms: ['done', 'done'], rows: [
+    ['ms', 'Know what the desk must do', 'Milestone 1', 'flag', 'done'],
+    ['day', '1 Oct'],
+    ['pass', 'How to host the desk: answered', 'Research Q-001 · passed', 'done', 'After two failed checks, the hosting research passed: it laid out the practical ways to host a phone-first page for one signed-in person.', 'research/Q-001-source-check.md'],
+    ['you', 'You dropped "controlling Claude sessions"', 'Q-003 · your decision', 'done', 'After a failure you closed the first version of this question. It came back as Q-005, limited to published documentation.', 'decisions/Q-003/failure-1.md'],
+    ['pass', 'Spotting GitHub changes quickly: answered', 'Research Q-004 · passed', 'done', 'The research on how fast the desk can notice changes in GitHub passed its check.', 'research/Q-004-source-check.md'],
+    ['it', 'Iteration 2 · after your re-specify'],
+    ['pass', 'Writing to GitHub for you: answered', 'Research Q-002 · passed', 'done', 'It failed three checks and you sent it back with a rewritten question. After one more revision it passed. It explains how the desk can write to your repositories for you.', 'decisions/Q-002/stop-1.md'],
+    ['pass', 'Controlling Claude sessions: answered', 'Research Q-005 · passed after your "confirm"', 'done', 'The narrower version of Q-003 passed after you asked for one more focused check.', 'decisions/Q-005/stop-1.md'],
+    ['day', '2 to 5 Oct'],
+    ['pass', 'Cloudflare\'s free-plan limits: answered', 'Research Q-006 · passed on 4 Oct', 'done', 'The longest one: many failed rounds, a confirm and a re-specify from you, then it passed on 4 Oct.', 'decisions/Q-006/stop-2.md'],
+    ['pass', 'Pre-filled GitHub links: answered', 'Research Q-007 · passed', 'done', 'Confirmed that a link can open GitHub with a file already written, ready for you to commit from your phone. This is why answering from the desk takes two taps.', 'research/Q-007-source-check.md'],
+    ['pass', 'Moving the desk onto its web address: answered', 'Research Q-008 · passed', 'done', 'Confirmed how the new desk can take over the existing address behind Cloudflare Access.', 'research/Q-008-source-check.md'],
+    ['you', 'You dropped the usage-figures research', 'Q-009 · your decision', 'done', 'It failed three checks and you closed it. Usage figures were later solved a different way, by recording them from each session.', 'decisions/Q-009/stop-1.md'],
+    ['ms', 'Agree the project is ready to plan', 'Milestone 2', 'flag', 'done'],
+    ['fail', 'Readiness check failed, three rounds', 'Critic · 1, 4 and 5 Oct', 'fail', 'The Critic checked the project description against its standard three times and failed it each time; you sent it back to be fixed twice.', 'reviews/P-001/_critic-dor.md'],
+    ['you', 'You sent it back once more', 'P-001 · your decision, 5 Oct', 'done', 'After the third failure and the Critic\'s trace, you chose to resubmit.', 'decisions/P-001/stop-3.md'],
+    ['pass', 'Ready to plan', 'Critic · passed, 5 Oct', 'done', 'The fourth readiness check passed.', 'reviews/P-001/_critic-dor.md'],
+    ['you', 'You said: build it', 'P-001 · your decision, 5 Oct', 'done', 'With the readiness check passed, you approved moving to planning and building.', 'decisions/P-001/dor-4.md']] },
+  Design: { st: 'now', ms: ['now', 'done'], rows: [
+    ['ms', 'Agree how the desk looks and feels', 'Milestone 1 · under way', 'palette', 'now'],
+    ['day', '7 Oct'],
+    ['you', 'You added a design step', 'Your ruling', 'done', 'You ruled to add design between the first two milestones and launch: research first, then a design lab, then a trial view on the preview.', 'decisions/questions/P-001-design-step.md'],
+    ['day', '8 Oct'],
+    ['you', 'You answered the design questions', 'Your ruling, 02:39', 'done', 'Your answers about how you want to use the desk shaped the design research that followed.', 'decisions/questions/P-001-design-discovery.md'],
+    ['fail', 'Design research, first try: failed three checks', 'Q-010 · Researcher and Source checker', 'fail', 'Its rule required two independent sources for every claim, and design guidance rarely has that, so it couldn\'t pass.', 'research/Q-010-source-check.md'],
+    ['you', 'You dropped it', 'Q-010 · your decision', 'done', 'You closed it so the question could be asked again with a source rule design guidance can meet.', 'decisions/Q-010/stop-1.md'],
+    ['it', 'Iteration 2 · a fairer source rule'],
+    ['agent', 'Design research, second try', 'Q-012 · Researcher, round 1', 'done', 'The same question with a fairer source rule: a platform\'s own guideline counts on its own.', 'intake/requests/Q-012.toml'],
+    ['fail', 'Source check failed', 'Q-012 · Source checker', 'fail', 'Some cited pages couldn\'t be opened by the tools.', 'research/Q-012-source-check.md'],
+    ['stall', 'Nothing moved for 2 h 32 min: the Orchestrator didn\'t run'],
+    ['fail', 'Revised twice; failed twice more', 'Q-012 · rounds 2 and 3', 'fail', 'Most of the research held up, but it couldn\'t be finished. The checker couldn\'t open three PDFs or Apple\'s accessibility page, and 18 rows went unchecked. The rule says anything unchecked fails. This was the third failure, which is why it came to you.', 'research/Q-012-source-check.md'],
+    ['agent', 'The Critic traced why', 'Q-012 · Critic', 'done', 'Not the Researcher\'s fault: the tools can\'t open some sources, the rules had no case for that, and nine topics was too much for one check.', 'decisions/Q-012/stop-1-notes.md'],
+    ['you', 'You stopped it and asked a smaller question', 'Q-012 · your decision, 21:35', 'done', 'Sending it back unchanged would have failed the same way. So you closed it and started Q-013, which covers the four topics the design lab needed.', 'decisions/Q-012/stop-1.md'],
+    ['it', 'Iteration 3 · narrowed after your drop'],
+    ['pass', 'Design research, narrowed: passed', 'Q-013 · passed first time', 'done', 'Four topics, two levels deep, and a rule that a source the tools can\'t open is listed, not failed. It passed 17 minutes after you started it. (A duplicate session also ran and was ignored: about $1.40 wasted.)', 'research/Q-013-source-check.md'],
+    ['day', '9 Oct'],
+    ['you', 'You set the design direction in the lab', 'Your rulings · PR #59, merged 10 Oct', 'done', 'From the lab pages and your screenshots: an agent panel showing who has the ball, one timeline per project with plain-English milestones under six fixed phases, Chief of Staff sessions recorded, and each project\'s queue kept inside its own card.', 'decisions/questions/P-001-design-lab-1.md'],
+    ['day', '10 Oct'],
+    ['pr', 'Your screenshots saved in the project', 'PR #60 · merged', 'done', 'Your design references were lost when a conversation was condensed. They are now saved in the project, each next to your words, and a rule makes every project do the same (L-0130).', 'docs/design/references/README.md'],
+    ['you', 'Screen 1, Home: agreed', 'With the phase checklist on each card', 'done', 'You liked Home and asked for the six-phase checklist on each project card.', 'docs/design/references/README.md'],
+    ['you', 'Screen 2, Project: agreed', 'Phases listed on the ⓘ', 'done', 'You liked the project view and asked for the phases as a numbered list on its info screen.', 'docs/design/references/README.md'],
+    ['you', 'Screen 3, Team: agreed', 'With plain-English summaries', 'done', 'You asked for each agent\'s page to show its status, its responsibilities in groups and a running log. You then chose written plain-English summaries behind every event.', 'docs/design/references/README.md'],
+    ['pr', 'Merge your new screenshots', 'PR #61 · waiting on you', 'you', 'The checklist and branch-timeline screenshots you sent today, and your plain-English direction, saved with your words. Merge it to keep them in the project.', 'PR #61'],
+    ['next', 'Screen 4, Timeline: this screen', 'Now', 'now', 'You\'re looking at it.', ''],
+    ['next', 'Screens 5 to 7: breakdown, queue, response card', 'Next', 'next', 'Still to design, one at a time, each from its reference.', ''],
+    ['next', 'Try the chosen view on the preview, then your pick', 'Then', 'next', 'The agreed screens get built on the private preview so you can use them for real before choosing.', ''],
+    ['ms', 'Get a phone alert when something needs me', 'Milestone 2 · research done', 'bell', 'done'],
+    ['day', '8 Oct'],
+    ['fail', 'Notifications research: failed three checks', 'Q-011 · Researcher and Source checker', 'fail', 'The memo tied claims to pages that don\'t say them, the Critic found.', 'triage/Q-011.md'],
+    ['you', 'You sent it back rewritten', 'Q-011 · your decision, 14:03', 'done', 'You chose re-specify: try again with a rewritten request.', 'decisions/Q-011/stop-1.md'],
+    ['it', 'Iteration 2 · after your re-specify'],
+    ['fail', 'Failed twice more', 'Q-011 · rounds 2 and 3', 'fail', 'Two more failed checks before the fix held.', 'research/Q-011-source-check.md'],
+    ['stall', 'Nothing moved for 2 h 32 min: the Orchestrator didn\'t run'],
+    ['pass', 'Notifications research: passed', 'Q-011 · recorded 17:05', 'done', 'The research on how the desk can alert your phone passed and was filed.', 'research/Q-011-source-check.md'],
+    ['you', 'You chose phone alerts from the desk', 'Your ruling, 17:13', 'done', 'Alerts will be sent as Web Push to the desk installed on your iPhone, triggered by the Orchestrator\'s run. They get built during Launch.', 'decisions/questions/P-001-notifications.md']] },
+  Build: { st: 'done', ms: ['done', 'done', 'done'], rows: [
+    ['ms', 'Plan how to build it', 'Milestone 1', 'flag', 'done'],
+    ['day', '5 to 6 Oct'],
+    ['fail', 'The plan failed review three times', 'Definer and Critic', 'fail', 'The Definer wrote the plan and the Critic failed it three times.', 'reviews/S-001/plan.md'],
+    ['you', 'You let it try again, then changed its scope', 'P-001 · your decisions, 6 Oct', 'done', 'First you chose "retry". When the plan failed review three times, you chose "re-scope".', 'decisions/P-001/stop-6.md'],
+    ['you', 'You chose the lighter path', 'Your ruling, 6 Oct', 'done', 'Build it in visibility milestones: first see status, then answer from the desk.', 'decisions/questions/P-001-build-path.md'],
+    ['ms', 'See every project\'s status on my phone', 'Milestone 2 · accepted 8 Oct', 'blocks', 'done'],
+    ['day', '7 Oct'],
+    ['pr', 'The first status page', 'PR #40 · merged, deployed to the preview', 'done', 'The desk\'s read-only status page: the first version you could open on your phone.', 'PR #40'],
+    ['pr', 'Fixes from review', 'PR #41 · merged, deployed', 'done', 'The Reviewer\'s nine findings on PR #40, fixed.', 'PR #41'],
+    ['you', 'You accepted it', 'Your ruling, 8 Oct', 'done', 'You accepted the first milestone.', 'decisions/questions/P-001-m1-accept.md'],
+    ['ms', 'Answer and track decisions from the desk', 'Milestone 3 · accepted', 'blocks', 'done'],
+    ['day', '8 Oct'],
+    ['pr', 'Answering from the desk', 'PR #44 · merged, deployed', 'done', 'Answering from the desk, agents and usage, and CI from workflow runs. This is the two-tap answer you use today.', 'PR #44'],
+    ['pr', 'Usage figures on the Agents view', 'PR #52 · merged, deployed a86a2f4', 'done', 'Each session\'s run time, memory use and cost estimate on the Agents view. It took three review rounds: the first found a stale-cache bug.', 'reviews/52/reviewer.md']] },
+  Launch: { st: 'todo', ms: ['todo', 'todo'], rows: [
+    ['ms', 'Replace the old needs-you page', 'Milestone 1 · not started', 'rocket', 'next'],
+    ['gate', 'Must pass first: the scrubbing proof', 'Deferred by you, 8 Oct · ledger L-0007', 'next', 'A safety test that agents can\'t read your GitHub login. You deferred it so the desk could keep moving; it must pass before launch and before close-out.', 'docs/LEDGER.md'],
+    ['next', 'Production deploy, with your approval', 'Not started', 'next', 'The real desk goes live only when you approve the deploy.', ''],
+    ['ms', 'Phone alerts, built', 'Milestone 2 · not started', 'bell', 'next'],
+    ['next', 'Build Web Push alerts from your ruling', 'Not started', 'next', 'From your 8 Oct choice: alerts sent to the desk on your iPhone.', '']] },
+  Operate: { st: 'todo', ms: [], rows: [] },
+  Review: { st: 'todo', ms: [], rows: [] }
+};
+const ORDER = ['Discovery', 'Design', 'Build', 'Launch', 'Operate', 'Review'];
+let phase = 'Design', sheet = null, toast = null, merged = false, just = null;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function rowsHtml() {
+  const rows = PH[phase].rows; if (!rows.length) return `<div class="empty"><b style="color:var(--ink)">Nothing planned yet</b><br>Milestones for ${phase} are set when the project gets there.</div>`;
+  let ms = -1, out = '', day = '';
+  const chip = t => { const m = String(t).match(/^(Q-\d+|P-\d+|PR #\d+)( · )?(.*)$/); return m ? `<span class="id">${esc(m[1])}</span>${esc(m[3])}` : esc(t); };
+  rows.forEach((r, i) => {
+    if (r[0] === 'ms') ms++;
+    const lc = MS_C[Math.max(ms, 0) % MS_C.length], first = i === 0 ? 'first' : '', last = i === rows.length - 1 ? 'last' : '';
+    if (r[0] === 'day') { day = r[1]; out += `<div class="note day" style="--lc:${lc}"><span>${esc(r[1])}</span></div>`; return; }
+    if (r[0] === 'it') { out += `<div class="note iter" style="--lc:${lc}"><span>${IC.loop}${esc(r[1])}</span></div>`; return; }
+    if (r[0] === 'stall') { out += `<div class="note stall" style="--lc:${lc}"><span>${IC.pause}${esc(r[1])}</span></div>`; return; }
+    if (r[0] === 'ms') { out += `<button class="row ms cap k-ms st-${r[4]} ${first} ${last}" style="--lc:${lc}" data-r="${i}"><span class="when"></span><span class="pill">${IC[r[3]]}</span><span class="tx"><small>${esc(r[2])}</small><b>${esc(r[1])}</b></span><span class="ck">${r[4] === 'done' ? IC.tick : ''}</span></button>`; return; }
+    let [k, title, sub, st] = r; if (k === 'pr' && st === 'you' && merged) { st = 'done'; sub = 'PR #61 · merged by you just now'; title = 'Your new screenshots: merged'; }
+    const kk = k === 'next' && st === 'now' ? 'agent' : k;
+    out += `<button class="row k-${kk} st-${st} ${first} ${last} ${just === i ? 'just' : ''}" style="--lc:${lc}" data-r="${i}"><span class="when">${esc(st === 'next' || st === 'now' ? '' : day.replace(' Oct', '·10').replace(' to ', '–'))}</span><span class="pill">${IC[KIND_IC[kk] || 'next']}</span>
+      <span class="tx"><small>${chip(sub)}</small><b>${esc(title)}</b></span><span class="ck">${st === 'done' ? IC.tick : st === 'fail' ? IC.x : ''}</span></button>`;
+  });
+  return out;
+}
+function render() {
+  const P = PH[phase], idx = ORDER.indexOf(phase) + 1;
+  let h = `<div class="head"><div class="proj">Service Desk · Timeline</div><div class="big">${phase} <span>${idx}</span><small>/ 6</small></div>
+    <div class="strip" role="group" aria-label="Phases">${ORDER.map(n => `<button class="ph" data-ph="${n}" aria-pressed="${n === phase}"><span class="nm">${n.slice(0, 3)}</span><span class="n">${ORDER.indexOf(n) + 1}</span>
+      <span class="dots">${(PH[n].ms.length ? PH[n].ms : ['none']).map(m => m === 'none' ? '' : `<i class="${m === 'done' ? 'd' : m === 'now' ? 'w' : 'o'}"></i>`).join('')}</span></button>`).join('')}</div></div>
+    <div class="sheet"><div class="grab"></div><div class="legend"><span><i style="background:var(--coral)"></i>you</span><span><i style="background:var(--agent)"></i>agent</span><span><i style="background:var(--pass)"></i>pass</span><span><i style="background:var(--fail)"></i>fail</span><span><i style="background:var(--pr)"></i>merge</span><span><i style="background:var(--wait)"></i>blocker</span><span>${PH[phase].rows.filter(r => !['day','it','stall','ms'].includes(r[0])).length} steps</span></div><div class="tl" id="tl">${rowsHtml()}</div></div>
+    <nav class="dtabs" aria-label="This project"><button class="dtab" data-nav="Status (screen 2)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1Z" fill="currentColor"/></svg>Status</button><button class="dtab" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="3" fill="currentColor"/><circle cx="6" cy="17" r="3" fill="currentColor"/><path d="M11 7h9M11 17h7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>Timeline</button><button class="dplus" data-nav="Ask for something in this project" aria-label="Ask for something in this project">+</button><button class="dtab" data-nav="Team (screen 3)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="9" r="3.2" fill="currentColor"/><circle cx="16.5" cy="9" r="3.2" fill="currentColor"/><path d="M2.5 20c.5-3.5 2.8-5.5 5.5-5.5s5 2 5.5 5.5zM11.5 20c.4-3.5 2.6-5.5 5-5.5s4.6 2 5 5.5z" fill="currentColor"/></svg>Team</button><button class="dtab" data-nav="Queue (screen 6)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="4" rx="2" fill="currentColor"/><rect x="4" y="10" width="16" height="4" rx="2" fill="currentColor" opacity=".7"/><rect x="4" y="16" width="10" height="4" rx="2" fill="currentColor" opacity=".45"/></svg>Queue<span class="badge">1</span></button></nav>`;
+  if (sheet !== null) {
+    const r = P.rows[sheet];
+    if (r[0] === 'ms') { const steps = []; for (let j = sheet + 1; j < P.rows.length && P.rows[j][0] !== 'ms'; j++) if (!['day', 'it', 'stall'].includes(P.rows[j][0])) steps.push(P.rows[j]);
+      const done = steps.filter(s => s[3] === 'done' || (s[3] === 'you' && merged)).length;
+      h += `<div class="scrim" data-close><div class="bs" role="dialog"><div class="g"></div><span class="sub">${phase} · ${esc(r[2])}</span><h3>${esc(r[1])}</h3>
+        <p class="plain">${steps.length} steps on the line so far: ${done} done, ${steps.filter(s => s[3] === 'fail').length} failed checks along the way, ${steps.filter(s => s[3] === 'next' || s[3] === 'now').length} still to come.</p><button class="go" data-closebtn>Got it</button></div></div>`; }
+    else { const [k, title, sub, st, p, src] = r, waiting = k === 'pr' && st === 'you' && !merged;
+      h += `<div class="scrim" data-close><div class="bs" role="dialog" aria-label="${esc(title)}"><div class="g"></div><span class="sub">${phase} · ${esc(merged && waiting === false && k === 'pr' && st === 'you' ? 'PR #61 · merged by you just now' : sub)}</span><h3>${esc(title)}</h3>
+        <p class="plain">${esc(p)}</p>${src ? `<span class="src">From the record: ${esc(src)}</span>` : ''}
+        ${waiting ? `<button class="go coral" data-gh>Open PR #61 in GitHub</button><button class="go ghost" data-merged>I merged it</button><span class="sub">In the real desk this updates by itself once GitHub shows the merge.</span>` : '<button class="go" data-closebtn>Got it</button>'}</div></div>`; }
+  }
+  if (toast) h += `<div class="toast" role="status"><span>${toast}</span><button data-dismiss>OK</button></div>`;
+  const ph = document.getElementById('phone'), y = ph.querySelector('#tl')?.scrollTop || 0, keep = ph.dataset.p === phase;
+  ph.innerHTML = h; ph.dataset.p = phase; const tl = ph.querySelector('#tl');
+  if (just !== null) { const el = tl.querySelector('.just'); if (el) tl.scrollTop = el.offsetTop - 200; } else tl.scrollTop = keep ? y : 0;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('button, [data-close]'); if (!b) return; const d = b.dataset;
+  if (d.close !== undefined && e.target !== b) return;
+  if (d.ph) { phase = d.ph; sheet = null; just = null; toast = null; }
+  else if (d.r !== undefined) { sheet = +d.r; just = null; }
+  else if (d.closebtn !== undefined || d.close !== undefined) sheet = null;
+  else if (d.gh !== undefined) toast = 'Opens PR #61 in GitHub, where you tap Merge.';
+  else if (d.merged !== undefined) { merged = true; just = sheet; sheet = null; toast = 'Merged. Your screenshots are saved in the project; the timeline moves on to this screen.'; }
+  else if (d.nav) toast = `Opens ${esc(d.nav)}.`;
+  else if (d.dismiss !== undefined) toast = null;
+  else return;
+  render();
+});
+render();
+</script>

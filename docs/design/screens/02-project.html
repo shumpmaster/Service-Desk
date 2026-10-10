@@ -1,0 +1,211 @@
+<title>Screen 2: Project</title>
+<style>
+/* Layout: one full Project screen modelled on the owner's Lifesum reference: a plain header, a big "Current status" title, coloured caps group headings, and one pill-shaped row per phase with an icon, a caps name, a status word and a status circle. */
+:root {
+  --page: #f4f1ec; --bg: #f4f1ec; --card: #ffffff; --ink: #1d1d1f; --muted: #6e6a64; --line: #e6e1d9; --shadow: 0 2px 0 rgb(0 0 0 / .05), 0 6px 14px rgb(0 0 0 / .05);
+  --done: #138a52; --done-soft: #e3f4ea; --now: #a87a1e; --now-soft: #f8efd9; --todo: #8a857d; --you: #e8553e; --you-soft: #fdeceb; --work: #2563eb;
+  --scrim: rgb(15 18 22 / .42); --focus: #2563eb; --gold: #a87a1e;
+  --round: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0e0e0f; --bg: #141416; --card: #1f1f22; --ink: #f2f0ec; --muted: #a8a39b; --line: #2d2c2a; --shadow: none;
+  --done: #4ade80; --done-soft: #12301f; --now: #d4ae4f; --now-soft: #33290f; --todo: #8f8a82; --you: #ff7a63; --you-soft: #3a1d18; --work: #7aa7ff; --scrim: rgb(0 0 0 / .6); --focus: #7aa7ff; --gold: #d4ae4f; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --page: #0e0e0f; --bg: #141416; --card: #1f1f22; --ink: #f2f0ec; --muted: #a8a39b; --line: #2d2c2a; --shadow: none;
+  --done: #4ade80; --done-soft: #12301f; --now: #d4ae4f; --now-soft: #33290f; --todo: #8f8a82; --you: #ff7a63; --you-soft: #3a1d18; --work: #7aa7ff; --scrim: rgb(0 0 0 / .6); --focus: #7aa7ff; --gold: #d4ae4f; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--page); color: var(--ink); font: 15px/1.45 var(--sans); padding-inline: 16px; padding-block: 20px 40px; margin: 0 }
+.wrap { max-width: 780px; margin: 0 auto; display: grid; gap: 16px }
+h1 { font-size: 1.4rem; margin: 0 } .lede { color: var(--muted); margin: 4px 0 0; max-width: 64ch }
+button { font: inherit; color: inherit } button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; align-items: center } .seg span { font-size: .85rem; color: var(--muted); margin-right: 4px }
+.seg button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 8px 14px; min-height: 44px; cursor: pointer; font-size: .9rem }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--card); border-color: var(--ink) }
+.stage { display: flex; justify-content: center }
+.phone { position: relative; width: 100%; max-width: 390px; height: 800px; background: var(--bg); border-radius: 36px; overflow: hidden; box-shadow: 0 14px 40px rgb(0 0 0 / .16); border: 1px solid var(--line) }
+.scroll { height: 100%; overflow-y: auto; padding-bottom: 100px }
+
+.hdr { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; padding: 14px 12px 10px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 92%, #fff); position: sticky; top: 0; z-index: 2 }
+.hdr h2 { margin: 0; text-align: center; font: 700 1.12rem var(--sans) }
+.ib { width: 44px; height: 44px; border-radius: 50%; border: 0; background: none; cursor: pointer; display: grid; place-items: center }
+.ib svg { width: 24px; height: 24px }
+.title { text-align: center; font: 400 2.3rem/1.15 var(--round); letter-spacing: -.01em; margin: 22px 16px 4px }
+.sub0 { text-align: center; color: var(--muted); font-size: .86rem; margin: 0 20px }
+.links { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 14px 14px 0 }
+.lk { border: 0; border-radius: 999px; min-height: 40px; padding: 0 14px; font: 700 .84rem var(--round); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; background: var(--card); box-shadow: var(--shadow) }
+.lk.you { background: var(--you-soft); color: var(--you) } .lk i { width: 8px; height: 8px; border-radius: 50%; background: var(--work); display: inline-block }
+@media (prefers-reduced-motion: no-preference) { .lk i { animation: pulse 1.6s ease-in-out infinite } @keyframes pulse { 50% { opacity: .3 } } }
+.gh { text-align: center; font: 600 .76rem var(--sans); letter-spacing: .14em; text-transform: uppercase; margin: 26px 16px 12px }
+.gh.now { color: var(--now) } .gh.done { color: var(--done) } .gh.todo { color: var(--todo) }
+.list { display: grid; gap: 12px; padding: 0 12px }
+
+/* phase row: the Lifesum pill */
+.ph { background: var(--card); border-radius: 30px; box-shadow: var(--shadow); overflow: hidden }
+.ph > button { width: 100%; border: 0; background: none; display: grid; grid-template-columns: 46px 1fr auto 40px; gap: 12px; align-items: center; padding: 12px 14px 12px 12px; min-height: 68px; cursor: pointer; text-align: left }
+.pic { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center }
+.pic svg { width: 28px; height: 28px }
+.pn { font: 600 .92rem var(--sans); letter-spacing: .1em; text-transform: uppercase }
+.pn small { display: block; letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--muted); font-size: .76rem; margin-top: 1px }
+.sw { font: 500 .84rem var(--sans); letter-spacing: .1em; text-transform: uppercase }
+.sc { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center }
+.sc svg { width: 22px; height: 22px }
+.st-done .sw { color: var(--done) } .st-done .sc { background: var(--done); color: #fff }
+.st-now .sw { color: var(--now) } .st-now .sc { background: var(--now-soft); color: var(--now) }
+.st-todo .sw { color: var(--todo) } .st-todo .sc { border: 2px solid var(--line); color: var(--todo) }
+.st-now.ph { box-shadow: inset 4px 0 0 var(--gold), var(--shadow) }
+/* second level: milestones */
+.ms { border-top: 1px solid var(--line); padding: 6px 16px 12px 70px; display: grid; gap: 2px }
+.mi { display: grid; grid-template-columns: 16px 1fr; gap: 10px; padding: 7px 0; align-items: start; font-size: .88rem }
+.mi svg { width: 16px; height: 16px; margin-top: 2px }
+.mi small { display: block; color: var(--muted); font-size: .78rem }
+.mi.done svg { color: var(--done) } .mi.now svg { color: var(--now) } .mi.todo svg { color: var(--todo) } .mi.gate svg { color: var(--you) }
+.mi.none { grid-template-columns: 1fr; color: var(--muted); font-size: .84rem }
+.more { justify-self: start; border: 0; background: var(--page); border-radius: 999px; min-height: 36px; padding: 0 12px; font: 700 .8rem var(--round); cursor: pointer; margin-top: 4px }
+.term { background: none; border: 0; padding: 0; color: var(--focus); text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; font: inherit }
+
+.scrim { position: absolute; inset: 0; background: var(--scrim); display: grid; align-items: end; z-index: 5 }
+.bs { background: var(--bg); border-radius: 28px 28px 0 0; padding: 10px 18px 24px; display: grid; gap: 12px; max-height: 90%; overflow: auto }
+.bs .g { width: 40px; height: 5px; border-radius: 3px; background: var(--line); justify-self: center }
+.gl { display: grid; gap: 8px } .gl p { margin: 0 } .phl { margin: 0; padding-left: 1.4rem; display: grid; gap: 6px }
+.bs h3 { margin: 0; font: 800 1.15rem var(--round) } .bs p { margin: 0 } .bs .sub { color: var(--muted); font-size: .88rem }
+.four { display: grid; gap: 8px; font-size: .9rem } .four div { display: grid; grid-template-columns: 5.4rem 1fr; gap: 8px } .four b { color: var(--muted); font-weight: 600 }
+.go { border: 0; border-radius: 18px; min-height: 52px; font: 800 1rem var(--round); background: var(--ink); color: var(--bg); cursor: pointer }
+.toast { position: absolute; left: 14px; right: 14px; bottom: 90px; background: var(--card); border-radius: 18px; padding: 12px 14px; box-shadow: 0 10px 28px rgb(0 0 0 / .2); z-index: 6; font-size: .9rem; display: flex; gap: 10px; justify-content: space-between; align-items: center }
+.toast button { border: 0; background: var(--page); border-radius: 999px; min-height: 36px; padding: 0 12px; cursor: pointer; font-weight: 700 }
+.notes { background: var(--card); border-radius: 20px; padding: 16px 18px; display: grid; gap: 10px; border: 1px solid var(--line) }
+.notes h2 { margin: 0; font-size: 1rem } .notes ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 5px } .notes p { margin: 0 }
+
+:root { --page: #eef0f3; --bg: #eef0f3; --card: #ffffff; --ink: #16191d; --muted: #6b7280; --line: #e5e7eb; --shadow: 0 1px 2px rgb(0 0 0 / .05), 0 6px 16px rgb(0 0 0 / .05); --done: #15803d; --done-soft: #e3f4e8; --now: #a87a1e; --now-soft: #fbf1d9; --todo: #6b7280; --you: #e8553e; --you-soft: #fdece8; --work: #2f6fe0; --gold: #a87a1e; --focus: #2f6fe0; --scrim: rgb(15 18 22 / .42); --ds-page: #eef0f3; --ds-surf: #ffffff; --ds-surf2: #f5f6f8; --ds-ink: #16191d; --ds-muted: #6b7280; --ds-line: #e5e7eb; --ds-you: #e8553e; --ds-yous: #fdece8; --ds-agent: #2f6fe0; --ds-agents: #e6eefc; --ds-pass: #15803d; --ds-passs: #e3f4e8; --ds-fail: #c0262d; --ds-fails: #fde7e7; --ds-merge: #7c4dcc; --ds-merges: #efe8fb; --ds-block: #a16207; --ds-blocks: #fbf1d9; --ds-gold: #a87a1e; --ds-idle: #c3c8cf; --ds-focus: #2f6fe0; --ds-shadow: 0 1px 2px rgb(0 0 0 / .05), 0 6px 16px rgb(0 0 0 / .05); --ds-scrim: rgb(15 18 22 / .42) }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #0b0c0e; --bg: #0b0c0e; --card: #1a1c20; --ink: #eef0f3; --muted: #9aa1ab; --line: #2a2e35; --shadow: none; --done: #4ade80; --done-soft: #12301f; --now: #d4ae4f; --now-soft: #33290f; --todo: #9aa1ab; --you: #ff7a63; --you-soft: #3a1d18; --work: #7aa7ff; --gold: #d4ae4f; --focus: #7aa7ff; --scrim: rgb(0 0 0 / .6); --ds-page: #0b0c0e; --ds-surf: #1a1c20; --ds-surf2: #121417; --ds-ink: #eef0f3; --ds-muted: #9aa1ab; --ds-line: #2a2e35; --ds-you: #ff7a63; --ds-yous: #3a1d18; --ds-agent: #7aa7ff; --ds-agents: #17233a; --ds-pass: #4ade80; --ds-passs: #12301f; --ds-fail: #ff7b7f; --ds-fails: #3a1617; --ds-merge: #b99aff; --ds-merges: #271d3a; --ds-block: #e6b450; --ds-blocks: #33290f; --ds-gold: #d4ae4f; --ds-idle: #4a5059; --ds-focus: #7aa7ff; --ds-shadow: none; --ds-scrim: rgb(0 0 0 / .6); color-scheme: dark } }
+:root[data-theme="dark"] { --page: #0b0c0e; --bg: #0b0c0e; --card: #1a1c20; --ink: #eef0f3; --muted: #9aa1ab; --line: #2a2e35; --shadow: none; --done: #4ade80; --done-soft: #12301f; --now: #d4ae4f; --now-soft: #33290f; --todo: #9aa1ab; --you: #ff7a63; --you-soft: #3a1d18; --work: #7aa7ff; --gold: #d4ae4f; --focus: #7aa7ff; --scrim: rgb(0 0 0 / .6); --ds-page: #0b0c0e; --ds-surf: #1a1c20; --ds-surf2: #121417; --ds-ink: #eef0f3; --ds-muted: #9aa1ab; --ds-line: #2a2e35; --ds-you: #ff7a63; --ds-yous: #3a1d18; --ds-agent: #7aa7ff; --ds-agents: #17233a; --ds-pass: #4ade80; --ds-passs: #12301f; --ds-fail: #ff7b7f; --ds-fails: #3a1617; --ds-merge: #b99aff; --ds-merges: #271d3a; --ds-block: #e6b450; --ds-blocks: #33290f; --ds-gold: #d4ae4f; --ds-idle: #4a5059; --ds-focus: #7aa7ff; --ds-shadow: none; --ds-scrim: rgb(0 0 0 / .6); color-scheme: dark }
+
+/* ---- Desk design system: one palette, one type scale, one project tab bar (shared by every screen) ---- */
+body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif }
+.dtabs { position: absolute; left: 12px; right: 12px; bottom: 14px; z-index: 4; display: grid; grid-template-columns: 1fr 1fr 60px 1fr 1fr; align-items: center;
+  background: color-mix(in srgb, var(--ds-surf) 94%, transparent); border: 1px solid var(--ds-line); border-radius: 26px; padding: 4px 4px; box-shadow: 0 6px 22px rgb(0 0 0 / .12) }
+.dtab { border: 0; background: none; display: grid; justify-items: center; gap: 1px; font: 600 .64rem system-ui, sans-serif; color: var(--ds-muted); cursor: pointer; min-height: 44px; position: relative }
+.dtab svg { width: 21px; height: 21px } .dtab[aria-current="page"] { color: var(--ds-ink) } .dtab[aria-current="page"]::after { content: ""; position: absolute; bottom: 1px; width: 16px; height: 3px; border-radius: 2px; background: var(--ds-you) }
+.dtab .badge { position: absolute; top: 1px; right: 24%; min-width: 15px; height: 15px; border-radius: 8px; background: var(--ds-you); color: #fff; font-size: .58rem; font-weight: 800; display: grid; place-items: center; padding: 0 4px }
+.dplus { width: 50px; height: 50px; border-radius: 50%; border: 0; background: var(--ds-you); color: #fff; font-size: 1.6rem; line-height: 1; cursor: pointer; justify-self: center; margin-top: -22px; box-shadow: 0 6px 16px color-mix(in srgb, var(--ds-you) 40%, transparent) }
+.code, .src, .id { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Screen 2 of 7: Project</h1>
+    <p class="lede">Tap a project card on Home to get here. Modelled on your Lifesum screenshot: a big "Current status" title, coloured group headings, and one rounded row per phase, each with a status word and a status circle. Tap a phase to see its milestones in plain English.</p>
+  </header>
+  <div class="seg" role="group" aria-label="State"><span>Show:</span>
+    <button type="button" data-state="now" aria-pressed="true">Right now (10 Oct)</button>
+    <button type="button" data-state="busy" aria-pressed="false">8 Oct, 19:30</button>
+  </div>
+  <div class="stage"><div class="phone" id="phone"></div></div>
+  <section class="notes">
+    <h2>What's on this screen, and why</h2>
+    <ul>
+      <li><b>Lifesum's layout, used for phases.</b> Lifesum's big "Current status" title becomes yours. Its coloured caps headings group the phases into Here now, Done and Still to come. Each phase gets one rounded row: an icon, its name in caps, a status word, and a status circle (a filled tick, a gold ring, or an empty ring), so the state never depends on colour alone.</li>
+      <li><b>Two levels, no more.</b> Tap a phase and its milestones open underneath in plain English, each with its status and one short reason. The phase that's under way opens by default. Going deeper, into each milestone's steps, is the timeline (screen 4).</li>
+      <li><b>The line under the title</b> says what's happening in one sentence. Directly under it, two buttons jump to what needs you (the queue, screen 6) and who has the ball (the team, screen 3), so they're never more than one tap away.</li>
+      <li><b>Order is the operating model's</b>, not the order things happened. Build shows as Done even though Design is still under way, because Build really did finish first.</li>
+      <li><b>A blocker shows where it bites.</b> Launch carries "must pass first: the scrubbing proof", in coral, so you can see what's holding it before it starts.</li>
+      <li><b>Every item is real</b> Service Desk data. The ⓘ explains the six phases; underlined words explain themselves.</li>
+    </ul>
+    <p style="color:var(--muted);font-size:.88rem">Reference: <code>docs/design/references/02-project-phases-lifesum.png</code>. Kept from it: the header bar, the large light title, the tinted caps group headings, the white pill rows with icon, caps label, status word and circle on the right, and the warm grey background. Changed: smileys become plain status circles, and each row opens to show its milestones.</p>
+  </section>
+</div>
+
+<script>
+const IC = {
+  back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  info: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v6M12 7.5h.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  done: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  now: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.6" opacity=".3"/><path d="M12 4a8 8 0 0 1 8 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>',
+  todo: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="currentColor" opacity=".5"/></svg>',
+  gate: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  hand: '<svg viewBox="0 0 24 24" aria-hidden="true" style="width:15px;height:15px"><path d="M7 11V6a1.5 1.5 0 0 1 3 0v4M10 10V4.5a1.5 1.5 0 0 1 3 0V10M13 10V5.5a1.5 1.5 0 0 1 3 0V11M16 11V8a1.5 1.5 0 0 1 3 0v6a7 7 0 0 1-7 7h-.5A6.5 6.5 0 0 1 6 17l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L7 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+// Phase pictures: simple, colourful, in the spirit of Lifesum's illustrated icons.
+const PIC = {
+  Discovery: ['#e7f0ff', '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="14" cy="14" r="8" fill="#9cc2ff" stroke="#2f6fe0" stroke-width="2.5"/><path d="m20 20 7 7" stroke="#2f6fe0" stroke-width="3.5" stroke-linecap="round"/></svg>'],
+  Design: ['#fff1dc', '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4a12 12 0 1 0 0 24c2 0 2.5-1.6 1.6-3-.9-1.5 0-3 1.8-3H22a6 6 0 0 0 6-6C28 9 22.6 4 16 4Z" fill="#ffc46b" stroke="#c97a10" stroke-width="2"/><circle cx="10" cy="14" r="2.2" fill="#e8553e"/><circle cx="15" cy="9.5" r="2.2" fill="#2f6fe0"/><circle cx="21" cy="11" r="2.2" fill="#138a52"/></svg>'],
+  Build: ['#ffe9e4', '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="17" width="10" height="10" rx="2" fill="#ff8a6b" stroke="#c4432a" stroke-width="2"/><rect x="17" y="17" width="10" height="10" rx="2" fill="#ffb199" stroke="#c4432a" stroke-width="2"/><rect x="11" y="5" width="10" height="10" rx="2" fill="#ff8a6b" stroke="#c4432a" stroke-width="2"/></svg>'],
+  Launch: ['#efe7ff', '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3c5 3 7 9 6 15l-6 4-6-4c-1-6 1-12 6-15Z" fill="#b9a2ff" stroke="#6b46d6" stroke-width="2"/><circle cx="16" cy="12" r="2.6" fill="#fff" stroke="#6b46d6" stroke-width="1.6"/><path d="M12 23c-1 2-1 4 0 6 1-1 2-2 4-3 2 1 3 2 4 3 1-2 1-4 0-6" fill="#ffc46b"/></svg>'],
+  Operate: ['#e3f6ec', '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="5" fill="#fff" stroke="#138a52" stroke-width="2.5"/><path d="M16 3v4M16 25v4M3 16h4M25 16h4M6.8 6.8l2.8 2.8M22.4 22.4l2.8 2.8M6.8 25.2l2.8-2.8M22.4 9.6l2.8-2.8" stroke="#138a52" stroke-width="3" stroke-linecap="round"/><circle cx="16" cy="16" r="9" fill="none" stroke="#7fd6a8" stroke-width="2.5"/></svg>'],
+  Review: ['#fdf0f6', '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="7" y="4" width="18" height="24" rx="3" fill="#ffc2da" stroke="#c23b78" stroke-width="2"/><path d="m11 15 3 3 6-6" fill="none" stroke="#c23b78" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 22h10" stroke="#c23b78" stroke-width="2" stroke-linecap="round"/></svg>']
+};
+const ORDER = ['Discovery', 'Design', 'Build', 'Launch', 'Operate', 'Review'];
+const WORD = { done: 'Done', now: 'Under way', todo: 'Not started' };
+const PH = {
+  Discovery: { st: 'done', what: 'Finding out what to build', ms: [['done', 'Know what the desk must do', 'Research Q-001 to Q-009 and the discovery map, early Oct']] },
+  Design: { st: 'now', what: 'Agreeing how it looks and works', ms: [
+    ['now', 'Agree how the desk looks and feels', 'Design research filed 8 Oct · the screens are being shaped with you, Home done'],
+    ['done', 'Get a phone alert when something needs me', 'Research done 8 Oct · you chose desk push via GitHub · built during Launch']] },
+  Build: { st: 'done', what: 'Making it', ms: [
+    ['done', 'See every project\'s status on my phone', 'Accepted 8 Oct (was "M1")'],
+    ['done', 'Answer and track decisions from the desk', 'Accepted 8 Oct (was "M2") · usage figures added 8 Oct']] },
+  Launch: { st: 'todo', what: 'Putting it live for real', ms: [
+    ['gate', 'Must pass first: the scrubbing proof', 'Deferred by you on 8 Oct · ledger L-0007'],
+    ['todo', 'Replace the old needs-you page', 'Was "M3" · production deploy needs your approval']] },
+  Operate: { st: 'todo', what: 'Using it day to day', ms: [] },
+  Review: { st: 'todo', what: 'Looking back and closing out', ms: [] }
+};
+const SCEN = {
+  now: { line: 'Design is under way. Home is agreed; the project view is next.', need: [1, 'to merge'], ball: 'Chief of Staff working' },
+  busy: { line: 'Design is waiting on you: the design research stopped and needs a decision.', need: [1, 'decision'], ball: 'Waiting on you · 2 h 8 min',
+    ms: { Design: [['gate', 'Agree how the desk looks and feels', 'Waiting on your decision: the design research stopped after three failed source checks, 17:20'], ['done', 'Get a phone alert when something needs me', 'Research done 8 Oct, 17:05 · built during Launch']] } }
+};
+const GLOSS = {
+  phases: ['The six phases', '<p>Every project goes through the same six phases, in this order:</p><ol class="phl"><li><b>Discovery</b>: find out what to build</li><li><b>Design</b>: agree how it looks and works</li><li><b>Build</b>: make it</li><li><b>Launch</b>: put it live</li><li><b>Operate</b>: use it day to day</li><li><b>Review</b>: look back and close out</li></ol><p>Work can go back into an earlier phase; the timeline shows that as an iteration.</p>', 'Service Desk finished Build before Design, so Build is ticked while Design is under way.'],
+  'scrubbing proof': ['Scrubbing proof', '<p>A safety test that agents can\'t read your GitHub login. It must pass before launch and before the project closes.</p>', 'You deferred it on 8 Oct so the desk could keep moving (ledger L-0007).'],
+  milestone: ['Milestone', '<p>A result the project is working towards, written in plain words. Each project sets its own; phases are the same for every project.</p>', 'Service Desk\'s current one: "Agree how the desk looks and feels".']
+};
+let scen = 'now', open = { Design: true }, sheet = null, toast = null;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const T = (k, label) => `<button class="term" data-term="${k}">${label || k}</button>`;
+
+function row(name) {
+  const p = { ...PH[name], ms: (SCEN[scen].ms && SCEN[scen].ms[name]) || PH[name].ms }, o = open[name];
+  const ms = !o ? '' : `<div class="ms">${p.ms.length ? p.ms.map(m => `<div class="mi ${m[0]}">${IC[m[0] === 'gate' ? 'gate' : m[0]]}<span>${m[1].startsWith('Must pass first') ? `Must pass first: the ${T('scrubbing proof')}` : esc(m[1])}<small>${esc(m[2])}</small></span></div>`).join('')
+    : '<div class="mi none">No milestones planned yet. They\'re set when the project gets here.</div>'}
+    ${p.ms.length ? `<button class="more" data-tl="${name}">See ${name} on the timeline ›</button>` : ''}</div>`;
+  return `<div class="ph st-${p.st}"><button data-ph="${name}" aria-expanded="${!!o}">
+    <span class="pic" style="background:${PIC[name][0]}">${PIC[name][1]}</span>
+    <span class="pn">${name}<small>${esc(p.what)}${p.ms.length ? ' · ' + p.ms.filter(m => !m[1].startsWith('Must pass')).length + ' ' + (p.ms.filter(m => !m[1].startsWith('Must pass')).length === 1 ? 'milestone' : 'milestones') : ''}</small></span>
+    <span class="sw">${WORD[p.st]}</span><span class="sc">${IC[p.st]}</span></button>${ms}</div>`;
+}
+function group(st, heading) {
+  const names = ORDER.filter(n => PH[n].st === st);
+  return names.length ? `<div class="gh ${st}">${heading}</div><div class="list">${names.map(row).join('')}</div>` : '';
+}
+function render() {
+  const s = SCEN[scen];
+  let h = `<div class="scroll"><div class="hdr"><button class="ib" data-back aria-label="Back to your projects">${IC.back}</button><h2>Service Desk</h2><button class="ib" data-term="phases" aria-label="What are the phases?">${IC.info}</button></div>
+    <div class="title">Current status</div><p class="sub0">${esc(s.line)}</p>
+    <div class="links"><button class="lk you" data-q>${IC.hand}${s.need[0]} ${esc(s.need[1])} ›</button><button class="lk" data-team><i style="background:${scen === 'busy' ? 'var(--you)' : 'var(--work)'}"></i>${esc(s.ball)} ›</button></div>
+    ${group('now', 'Here now')}${group('done', 'Done · 2 of 6 phases')}${group('todo', 'Still to come')}</div>`
+    + `<nav class="dtabs" aria-label="This project"><button class="dtab" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1Z" fill="currentColor"/></svg>Status</button><button class="dtab" data-nav="Timeline (screen 4)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="3" fill="currentColor"/><circle cx="6" cy="17" r="3" fill="currentColor"/><path d="M11 7h9M11 17h7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>Timeline</button><button class="dplus" data-nav="Ask for something in this project" aria-label="Ask for something in this project">+</button><button class="dtab" data-nav="Team (screen 3)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="9" r="3.2" fill="currentColor"/><circle cx="16.5" cy="9" r="3.2" fill="currentColor"/><path d="M2.5 20c.5-3.5 2.8-5.5 5.5-5.5s5 2 5.5 5.5zM11.5 20c.4-3.5 2.6-5.5 5-5.5s4.6 2 5 5.5z" fill="currentColor"/></svg>Team</button><button class="dtab" data-nav="Queue (screen 6)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="4" rx="2" fill="currentColor"/><rect x="4" y="10" width="16" height="4" rx="2" fill="currentColor" opacity=".7"/><rect x="4" y="16" width="10" height="4" rx="2" fill="currentColor" opacity=".45"/></svg>Queue<span class="badge">1</span></button></nav>`;
+  if (sheet) { const g = GLOSS[sheet]; h += `<div class="scrim" data-close><div class="bs" role="dialog" aria-label="${g[0]}"><div class="g"></div><h3>${g[0]}</h3><div class="gl">${g[1]}</div><p class="sub"><b>In this project:</b> ${g[2]}</p><button class="go" data-closebtn>Got it</button></div></div>`; }
+  if (toast) h += `<div class="toast" role="status"><span>${toast}</span><button data-dismiss>OK</button></div>`;
+  const ph = document.getElementById('phone'), y = ph.querySelector('.scroll')?.scrollTop || 0;
+  ph.innerHTML = h; ph.querySelector('.scroll').scrollTop = y;
+  document.querySelectorAll('[data-state]').forEach(b => b.setAttribute('aria-pressed', b.dataset.state === scen));
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('button, [data-close]'); if (!b) return; const d = b.dataset;
+  if (d.close !== undefined && e.target !== b) return;
+  if (d.state) { scen = d.state; sheet = null; toast = null; }
+  else if (d.term) sheet = d.term;
+  else if (d.closebtn !== undefined || d.close !== undefined) sheet = null;
+  else if (d.ph) open[d.ph] = !open[d.ph];
+  else if (d.tl) toast = `Opens the timeline at ${d.tl}: screen 4.`;
+  else if (d.q !== undefined) toast = 'Opens Service Desk\'s queue: screen 6.';
+  else if (d.team !== undefined) toast = 'Opens Service Desk\'s team: screen 3, next.';
+  else if (d.back !== undefined) toast = 'Back to Home (screen 1).';
+  else if (d.nav) toast = `Opens ${esc(d.nav)}.`;
+  else if (d.dismiss !== undefined) toast = null;
+  else return;
+  render();
+});
+render();
+</script>

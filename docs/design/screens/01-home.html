@@ -1,0 +1,276 @@
+<title>Screen 1: Home</title>
+<style>
+/* Layout: one full Home screen modelled on the owner's Abode reference: header, a two-column grid of rounded project cards with a soft action pill, and the coral "start typing" panel at the bottom. */
+:root {
+  --bg: #ffffff; --page: #f4f5f7; --card: #ffffff; --ink: #14213d; --muted: #6b7280; --line: #eceef2; --shadow: 0 1px 2px rgb(20 33 61 / .06), 0 6px 18px rgb(20 33 61 / .06);
+  --coral: #e8553e; --coral-soft: #fdeceb; --ok: #15803d; --ok-soft: #e7f6ec; --bad: #b42318; --bad-soft: #fde8e6; --work: #2563eb; --work-soft: #e6eefc;
+  --scrim: rgb(15 18 22 / .42); --focus: #2563eb; --gold: #a87a1e;
+  --round: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111316; --page: #0b0c0e; --card: #1b1e23; --ink: #eef0f4; --muted: #a0a6b0; --line: #2a2e35; --shadow: none;
+  --coral: #ff7a63; --coral-soft: #3a1d18; --ok: #4ade80; --ok-soft: #132a1c; --bad: #ff8a80; --bad-soft: #3a1714; --work: #7aa7ff; --work-soft: #17233a; --scrim: rgb(0 0 0 / .6); --focus: #7aa7ff; --gold: #d4ae4f; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111316; --page: #0b0c0e; --card: #1b1e23; --ink: #eef0f4; --muted: #a0a6b0; --line: #2a2e35; --shadow: none;
+  --coral: #ff7a63; --coral-soft: #3a1d18; --ok: #4ade80; --ok-soft: #132a1c; --bad: #ff8a80; --bad-soft: #3a1714; --work: #7aa7ff; --work-soft: #17233a; --scrim: rgb(0 0 0 / .6); --focus: #7aa7ff; --gold: #d4ae4f; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--page); color: var(--ink); font: 15px/1.45 var(--sans); padding-inline: 16px; padding-block: 20px 40px; margin: 0 }
+.wrap { max-width: 780px; margin: 0 auto; display: grid; gap: 16px }
+h1 { font-size: 1.4rem; margin: 0 } .lede { color: var(--muted); margin: 4px 0 0; max-width: 64ch }
+button { font: inherit; color: inherit } button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; align-items: center }
+.seg span { font-size: .85rem; color: var(--muted); margin-right: 4px }
+.seg button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 8px 14px; min-height: 44px; cursor: pointer; font-size: .9rem }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--card); border-color: var(--ink) }
+.stage { display: flex; justify-content: center }
+.phone { position: relative; width: 100%; max-width: 390px; height: 780px; background: var(--coral); border-radius: 36px; overflow: hidden; box-shadow: 0 14px 40px rgb(0 0 0 / .16); display: grid; grid-template-rows: 1fr auto }
+
+/* the white sheet holding header + cards, rounded at the bottom like Abode */
+.sheet-main { background: var(--bg); border-radius: 0 0 34px 34px; overflow-y: auto; display: grid; grid-template-rows: auto auto 1fr; min-height: 0 }
+.hdr { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; padding: 16px 16px 12px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 2 }
+.hdr h2 { margin: 0; text-align: center; font: 800 1.3rem/1.2 var(--round); letter-spacing: -.01em }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; font: 700 1rem var(--round) }
+.round { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--page); cursor: pointer; display: grid; place-items: center; font-weight: 800 }
+.summary { padding: 12px 18px 2px; font-size: .88rem; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap }
+.summary b { color: var(--ink) }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px 14px 22px; align-content: start }
+
+.pc { background: var(--card); border: 1px solid var(--line); border-radius: 26px; box-shadow: var(--shadow); padding: 14px; display: flex; flex-direction: column; gap: 8px; text-align: left; min-width: 0 }
+.pc .pill { margin-top: auto }
+.pc .row { display: flex; justify-content: space-between; align-items: start }
+.app { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; color: #fff; box-shadow: inset 0 -3px 0 rgb(0 0 0 / .12) }
+.app svg { width: 26px; height: 26px }
+.info { width: 28px; height: 28px; border-radius: 50%; border: 0; background: var(--page); color: var(--muted); font: 700 .8rem var(--round); cursor: pointer; display: grid; place-items: center }
+.open { background: none; border: 0; padding: 0; text-align: left; cursor: pointer; display: grid; gap: 4px; min-width: 0 }
+.nm { font: 800 1.12rem/1.2 var(--round); overflow-wrap: anywhere }
+.desc { font-size: .84rem; color: var(--muted); line-height: 1.35 }
+.ball { display: flex; gap: 6px; align-items: center; font-size: .76rem; font-weight: 650 }
+.ball i { width: 8px; height: 8px; border-radius: 50%; flex: none; background: currentColor }
+.ball.work { color: var(--work) } .ball.you { color: var(--coral) } .ball.idle { color: var(--muted) } .ball.bad { color: var(--bad) }
+@media (prefers-reduced-motion: no-preference) { .ball.work i { animation: pulse 1.6s ease-in-out infinite } @keyframes pulse { 50% { opacity: .3 } } }
+.pill { border: 0; border-radius: 999px; min-height: 44px; padding: 8px 10px; font: 700 .9rem/1.2 var(--round); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; text-align: center }
+.pill svg { width: 15px; height: 15px; flex: none }
+.pill.you { background: var(--coral-soft); color: var(--coral) } .pill.ok { background: var(--ok-soft); color: var(--ok) } .pill.bad { background: var(--bad-soft); color: var(--bad) }
+.pc.add { border-style: dashed; box-shadow: none; background: none }
+.pc.add .app { background: var(--page); color: var(--muted); box-shadow: none }
+.ck { background: var(--page); border-radius: 14px; padding: 8px 8px 6px; display: grid; gap: 4px; position: relative; overflow: hidden }
+.ck .hd { display: flex; justify-content: space-between; align-items: baseline; font: 800 .68rem/1 var(--round); letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+.ck .hd { gap: 6px } .ck .hd b { color: var(--gold); font-size: .74rem; letter-spacing: 0; text-transform: none; white-space: nowrap }
+.ck .bar { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden } .ck .bar i { display: block; height: 100%; background: var(--gold); border-radius: 2px }
+.ck ol { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 3px }
+.ck li { display: flex; align-items: center; gap: 6px; min-height: 20px; padding: 1px 6px; border-radius: 7px; background: var(--card); border-left: 3px solid transparent; font-size: .72rem; color: var(--muted) }
+.ck li svg { width: 13px; height: 13px; flex: none }
+.ck li.done { color: var(--ink) } .ck li.done svg { color: var(--gold) }
+.ck li.now { border-left-color: var(--gold); color: var(--ink); font-weight: 750 } .ck li.now svg { color: var(--gold) }
+.ck li.now em { margin-left: auto; font-style: normal; font-size: .62rem; font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: .05em }
+.ck li.sk span { display: block; height: 6px; border-radius: 3px; background: var(--line); width: var(--w) }
+.ck .stamp { position: absolute; left: 50%; top: 56%; transform: translate(-50%, -50%) rotate(-9deg); border: 2.5px solid var(--gold); color: var(--gold); border-radius: 999px; padding: 3px 12px; font: 800 .8rem var(--round); letter-spacing: .14em; background: color-mix(in srgb, var(--page) 70%, transparent) }
+@media (prefers-reduced-motion: no-preference) { .ck .stamp { animation: stamp .5s cubic-bezier(.2,1.6,.4,1) both } @keyframes stamp { from { transform: translate(-50%, -50%) rotate(-9deg) scale(1.8); opacity: 0 } } }
+.tag { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted) }
+
+/* bottom: coral band with grabber, then the white "tell your Chief of Staff" panel */
+.dock { padding: 10px 12px 18px; display: grid; gap: 10px }
+.grabber { width: 64px; height: 5px; border-radius: 3px; background: rgb(255 255 255 / .55); justify-self: center }
+.composer { background: var(--bg); border-radius: 30px; padding: 10px; display: grid; grid-template-columns: 40px 1fr 44px; gap: 8px; align-items: center }
+.composer .typing { border: 0; background: var(--page); border-radius: 999px; min-height: 44px; padding: 0 16px; text-align: left; color: var(--muted); cursor: pointer; font: 600 .95rem var(--round); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.composer .mic { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--page); display: grid; place-items: center; cursor: pointer }
+.composer .mic svg { width: 20px; height: 20px }
+
+/* sheets */
+.scrim { position: absolute; inset: 0; background: var(--scrim); display: grid; align-items: end; z-index: 5 }
+.bs { background: var(--bg); border-radius: 28px 28px 0 0; padding: 10px 18px 24px; display: grid; gap: 12px; max-height: 90%; overflow: auto }
+.bs .g { width: 40px; height: 5px; border-radius: 3px; background: var(--line); justify-self: center }
+.bs h3 { margin: 0; font: 800 1.15rem var(--round) } .bs p { margin: 0 } .bs .sub { color: var(--muted); font-size: .88rem }
+.four { display: grid; gap: 8px; font-size: .9rem } .four div { display: grid; grid-template-columns: 5.4rem 1fr; gap: 8px } .four b { color: var(--muted); font-weight: 600 }
+.chips { display: flex; flex-wrap: wrap; gap: 8px }
+.chip { border: 1.5px solid var(--line); background: var(--card); border-radius: 999px; padding: 9px 14px; min-height: 44px; cursor: pointer; font-weight: 600 }
+.chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--bg) }
+textarea { font: inherit; border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; background: var(--page); color: var(--ink); width: 100% }
+.go { border: 0; border-radius: 18px; min-height: 52px; font: 800 1rem var(--round); background: var(--ink); color: var(--bg); cursor: pointer }
+.go:disabled { opacity: .4; cursor: default }
+.toast { position: absolute; left: 14px; right: 14px; bottom: 112px; background: var(--card); border-radius: 18px; padding: 12px 14px; box-shadow: 0 10px 28px rgb(0 0 0 / .2); z-index: 6; font-size: .9rem; display: flex; gap: 10px; justify-content: space-between; align-items: center }
+.toast button { border: 0; background: var(--page); border-radius: 999px; min-height: 36px; padding: 0 12px; cursor: pointer; font-weight: 700 }
+
+.notes { background: var(--card); border-radius: 20px; padding: 16px 18px; display: grid; gap: 10px; border: 1px solid var(--line) }
+.notes h2 { margin: 0; font-size: 1rem } .notes ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 5px } .notes p { margin: 0 }
+.ref { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start }
+@media (max-width: 560px) { .ref { grid-template-columns: 1fr } }
+
+:root { --page: #eef0f3; --bg: #ffffff; --card: #ffffff; --ink: #16191d; --muted: #6b7280; --line: #e5e7eb; --shadow: 0 1px 2px rgb(0 0 0 / .05), 0 6px 16px rgb(0 0 0 / .05); --coral: #e8553e; --coral-soft: #fdece8; --ok: #15803d; --ok-soft: #e3f4e8; --bad: #c0262d; --bad-soft: #fde7e7; --work: #2f6fe0; --work-soft: #e6eefc; --gold: #a87a1e; --focus: #2f6fe0; --scrim: rgb(15 18 22 / .42); --ds-page: #eef0f3; --ds-surf: #ffffff; --ds-surf2: #f5f6f8; --ds-ink: #16191d; --ds-muted: #6b7280; --ds-line: #e5e7eb; --ds-you: #e8553e; --ds-yous: #fdece8; --ds-agent: #2f6fe0; --ds-agents: #e6eefc; --ds-pass: #15803d; --ds-passs: #e3f4e8; --ds-fail: #c0262d; --ds-fails: #fde7e7; --ds-merge: #7c4dcc; --ds-merges: #efe8fb; --ds-block: #a16207; --ds-blocks: #fbf1d9; --ds-gold: #a87a1e; --ds-idle: #c3c8cf; --ds-focus: #2f6fe0; --ds-shadow: 0 1px 2px rgb(0 0 0 / .05), 0 6px 16px rgb(0 0 0 / .05); --ds-scrim: rgb(15 18 22 / .42) }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #0b0c0e; --bg: #1a1c20; --card: #1a1c20; --ink: #eef0f3; --muted: #9aa1ab; --line: #2a2e35; --shadow: none; --coral: #ff7a63; --coral-soft: #3a1d18; --ok: #4ade80; --ok-soft: #12301f; --bad: #ff7b7f; --bad-soft: #3a1617; --work: #7aa7ff; --work-soft: #17233a; --gold: #d4ae4f; --focus: #7aa7ff; --scrim: rgb(0 0 0 / .6); --ds-page: #0b0c0e; --ds-surf: #1a1c20; --ds-surf2: #121417; --ds-ink: #eef0f3; --ds-muted: #9aa1ab; --ds-line: #2a2e35; --ds-you: #ff7a63; --ds-yous: #3a1d18; --ds-agent: #7aa7ff; --ds-agents: #17233a; --ds-pass: #4ade80; --ds-passs: #12301f; --ds-fail: #ff7b7f; --ds-fails: #3a1617; --ds-merge: #b99aff; --ds-merges: #271d3a; --ds-block: #e6b450; --ds-blocks: #33290f; --ds-gold: #d4ae4f; --ds-idle: #4a5059; --ds-focus: #7aa7ff; --ds-shadow: none; --ds-scrim: rgb(0 0 0 / .6); color-scheme: dark } }
+:root[data-theme="dark"] { --page: #0b0c0e; --bg: #1a1c20; --card: #1a1c20; --ink: #eef0f3; --muted: #9aa1ab; --line: #2a2e35; --shadow: none; --coral: #ff7a63; --coral-soft: #3a1d18; --ok: #4ade80; --ok-soft: #12301f; --bad: #ff7b7f; --bad-soft: #3a1617; --work: #7aa7ff; --work-soft: #17233a; --gold: #d4ae4f; --focus: #7aa7ff; --scrim: rgb(0 0 0 / .6); --ds-page: #0b0c0e; --ds-surf: #1a1c20; --ds-surf2: #121417; --ds-ink: #eef0f3; --ds-muted: #9aa1ab; --ds-line: #2a2e35; --ds-you: #ff7a63; --ds-yous: #3a1d18; --ds-agent: #7aa7ff; --ds-agents: #17233a; --ds-pass: #4ade80; --ds-passs: #12301f; --ds-fail: #ff7b7f; --ds-fails: #3a1617; --ds-merge: #b99aff; --ds-merges: #271d3a; --ds-block: #e6b450; --ds-blocks: #33290f; --ds-gold: #d4ae4f; --ds-idle: #4a5059; --ds-focus: #7aa7ff; --ds-shadow: none; --ds-scrim: rgb(0 0 0 / .6); color-scheme: dark }
+
+/* ---- Desk design system: one palette, one type scale, one project tab bar (shared by every screen) ---- */
+body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif }
+.dtabs { position: absolute; left: 12px; right: 12px; bottom: 14px; z-index: 4; display: grid; grid-template-columns: 1fr 1fr 60px 1fr 1fr; align-items: center;
+  background: color-mix(in srgb, var(--ds-surf) 94%, transparent); border: 1px solid var(--ds-line); border-radius: 26px; padding: 4px 4px; box-shadow: 0 6px 22px rgb(0 0 0 / .12) }
+.dtab { border: 0; background: none; display: grid; justify-items: center; gap: 1px; font: 600 .64rem system-ui, sans-serif; color: var(--ds-muted); cursor: pointer; min-height: 44px; position: relative }
+.dtab svg { width: 21px; height: 21px } .dtab[aria-current="page"] { color: var(--ds-ink) } .dtab[aria-current="page"]::after { content: ""; position: absolute; bottom: 1px; width: 16px; height: 3px; border-radius: 2px; background: var(--ds-you) }
+.dtab .badge { position: absolute; top: 1px; right: 24%; min-width: 15px; height: 15px; border-radius: 8px; background: var(--ds-you); color: #fff; font-size: .58rem; font-weight: 800; display: grid; place-items: center; padding: 0 4px }
+.dplus { width: 50px; height: 50px; border-radius: 50%; border: 0; background: var(--ds-you); color: #fff; font-size: 1.6rem; line-height: 1; cursor: pointer; justify-self: center; margin-top: -22px; box-shadow: 0 6px 16px color-mix(in srgb, var(--ds-you) 40%, transparent) }
+.code, .src, .id { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Screen 1 of 7: Home</h1>
+    <p class="lede">Your opening page, modelled on the Abode screenshot: a two-column grid of rounded cards, one per project, each with a soft pill for its one main action, and the coral "start typing" panel at the bottom. Each project's queue stays inside its own card.</p>
+  </header>
+  <div class="seg" role="group" aria-label="State"><span>Show:</span>
+    <button type="button" data-state="now" aria-pressed="true">Right now (10 Oct)</button>
+    <button type="button" data-state="busy" aria-pressed="false">8 Oct, 19:30</button>
+    <button type="button" data-state="problem" aria-pressed="false">A project it can't read</button>
+    <button type="button" data-state="finished" aria-pressed="false">A finished project</button>
+  </div>
+  <div class="stage"><div class="phone" id="phone"></div></div>
+  <section class="notes">
+    <h2>What's on this screen, and why</h2>
+    <ul>
+      <li><b>One card per project</b>, as in Abode. Card contents, top to bottom: its icon, its name, where it is in plain words, <b>the phase checklist</b>, who has the ball, and one pill for the main action.</li>
+      <li><b>The phase checklist</b> follows your reference (saved as 08 and 09 in PR #61). It lists the six phases in order: done ones are ticked, and the one in progress has a gold edge and the word "now". The figure is a real count ("2 of 6"), not a percentage; phases aren't equal in size, so a percentage would overstate. Service Desk's Build is ticked before Design because it really did finish first. A finished project gets the DONE stamp. A project whose phases the desk doesn't know shows empty grey rows, not guesses.</li>
+      <li><b>The pill is that project's queue, summarised.</b> It is coral when something waits on you ("2 to merge", "1 decision"). It is green with "All clear" when nothing does, and red when the desk can't read the project. Tapping it opens that project's queue (screen 6). Nothing from one project appears on another project's card.</li>
+      <li><b>Tap the card</b> to go into the project (screen 2). <b>Tap the ⓘ</b> for what the project is, why it exists, what it means for you and what you can do, in plain words.</li>
+      <li><b>The coral panel at the bottom</b> is Abode's "Start typing…", used to give your Chief of Staff direction. You pick the project first, so you never cross boundaries. It opens GitHub with your request already written, the same two taps as answering.</li>
+      <li><b>Top line:</b> how many things wait on you in total, and when the desk last checked, so you can tell fresh from stale.</li>
+      <li><b>Every figure is real.</b> "Right now" is today's actual state: PRs #59 and #60 are waiting for your merge. "8 Oct, 19:30" is the decision that waited 2 h 8 min. Garden planner is a made-up project, shown only to demonstrate the problem state.</li>
+    </ul>
+    <div class="ref"><p class="sub" style="color:var(--muted)">Reference: <code>docs/design/references/01-home-overview-abode.png</code> (PR #60). Kept from it: the header, the two-column rounded cards, the coloured app icons, the soft coral action pill, the ⓘ, and the coral band with the typing panel. Changed: "Add" becomes each project's own action, and a status line was added so you can see who has the ball.</p></div>
+  </section>
+</div>
+
+<script>
+const IC = {
+  desk: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><rect x="3" y="12.5" width="4" height="6.5" rx="1.6" fill="currentColor"/><rect x="17" y="12.5" width="4" height="6.5" rx="1.6" fill="currentColor"/><path d="M19 19c0 1.5-2 2.5-5 2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  model: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2" fill="currentColor"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2" fill="currentColor" opacity=".7"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2" fill="currentColor" opacity=".7"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" fill="currentColor"/></svg>',
+  garden: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V11M12 11c0-4 3-7 8-7 0 5-3 7-8 7ZM12 14c0-3-2.5-5-7-5 0 4 2.5 5 7 5Z" fill="currentColor"/></svg>',
+  recipe: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3" fill="currentColor"/><path d="M8 10h8M8 14h5" stroke="#d9466f" stroke-width="2" stroke-linecap="round"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  hand: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V6a1.5 1.5 0 0 1 3 0v4M10 10V4.5a1.5 1.5 0 0 1 3 0V10M13 10V5.5a1.5 1.5 0 0 1 3 0V11M16 11V8a1.5 1.5 0 0 1 3 0v6a7 7 0 0 1-7 7h-.5A6.5 6.5 0 0 1 6 17l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L7 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  ok: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+};
+const GRAD = { recipe: 'linear-gradient(145deg,#f7b2c4,#d9466f)', desk: 'linear-gradient(145deg,#ffb547,#f2603a)', model: 'linear-gradient(145deg,#5b8cff,#2747c9)', garden: 'linear-gradient(145deg,#56d48a,#1e9a55)' };
+
+// Each project: what, why, for you, you can (shown behind the ⓘ), and its state per scenario.
+const PROJECTS = {
+  desk: { name: 'Service Desk', id: 'P-001',
+    phases: { Discovery: 'done', Design: 'now', Build: 'done', Launch: 'todo', Operate: 'todo', Review: 'todo' },
+        what: 'This desk: your phone view over every project the agents run for you.',
+    why: 'So you see what needs you, and what the team is doing, without opening GitHub.',
+    states: {
+      now: { desc: 'Agreeing how the desk looks and feels', ball: ['work', 'Chief of Staff: building the screens'], pill: ['you', '1 to merge'], need: 1,
+        mean: 'Your two new checklist screenshots (PR #61) wait for your merge. Design is under way: Home, screen 1 of 7, is being shaped with you.', can: 'Tap "1 to merge" to open it and merge it in GitHub.' },
+      busy: { desc: 'Agreeing how the desk looks and feels', ball: ['you', 'Waiting on you · 2 h 8 min'], pill: ['you', '1 decision'], need: 1,
+        mean: 'The design research stopped after three failed source checks. Nothing moves until you decide.', can: 'Tap "1 decision" to answer it: re-specify, confirm or drop.' },
+      problem: null } },
+  model: { name: 'Operating Model', id: 'v3.0.0', phases: null,
+    what: 'The rules, roles and tools every project runs on.',
+    why: 'So every project is built the same careful way, and lessons carry over.',
+    states: {
+      now: { desc: 'Version 3.0.0 · Rules and tools', ball: ['idle', 'Nothing running'], pill: ['ok', 'All clear'], need: 0,
+        mean: 'Nothing waits on you. Your design-references rule (L-0130) went in on 9 Oct.', can: 'Nothing to do. Tap the card to see its history.' },
+      busy: { desc: 'Version 3.0.0 · Rules and tools', ball: ['idle', 'Its agents aren\'t recorded yet'], pill: ['ok', 'All clear'], need: 0,
+        mean: 'Nothing waits on you. Its agents aren\'t recorded yet, so the desk can\'t say who has the ball.', can: 'Nothing to do.' },
+      problem: null } },
+  garden: { name: 'Garden planner', id: 'example', example: true, phases: 'unknown',
+    what: 'A made-up project, here only to show what a problem looks like.',
+    why: 'If the desk can\'t read a project, it says so on that card alone and tells you the fix.',
+    states: { problem: { desc: 'Made-up example', ball: ['bad', 'Last read: never'], pill: ['bad', 'Can\'t read'], need: 0,
+      mean: 'GitHub refused: the desk\'s read access doesn\'t include this project. The other projects are unaffected.', can: 'Add this project to the desk\'s GitHub token (Settings → Developer settings → token → Repository access).' } } },
+  recipe: { name: 'Recipe box', id: 'example', example: true, phases: { Discovery: 'done', Design: 'done', Build: 'done', Launch: 'done', Operate: 'done', Review: 'done' },
+    what: 'A made-up project, here only to show what a finished project looks like.',
+    why: 'When every phase is done, the card says so at a glance.',
+    states: { finished: { desc: 'Made-up example · closed out', ball: ['idle', 'Team stood down'], pill: ['ok', 'All clear'], need: 0,
+      mean: 'Every phase is done and the project is closed out.', can: 'Nothing to do. Tap the card to see what it delivered.' } } }
+};
+const PHASES = ['Discovery', 'Design', 'Build', 'Launch', 'Operate', 'Review'];
+const CK = { done: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m5 8.2 2 2 4-4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  now: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".35"/><path d="M8 1.4a6.6 6.6 0 0 1 6.6 6.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  todo: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".5"/></svg>' };
+function checklist(p) {
+  if (!p.phases || p.phases === 'unknown') {
+    const w = ['70%', '85%', '55%', '75%', '60%', '80%'];
+    return `<div class="ck" aria-label="Phases ${p.phases ? 'unknown' : 'not tracked'}"><div class="hd"><span>Phases</span><b style="color:var(--muted)">${p.phases ? 'unknown' : 'not tracked'}</b></div>
+      <div class="bar"><i style="width:0"></i></div><ol>${w.map(x => `<li class="sk"><span style="--w:${x}"></span></li>`).join('')}</ol></div>`;
+  }
+  const n = PHASES.filter(ph => p.phases[ph] === 'done').length, all = n === PHASES.length;
+  return `<div class="ck" aria-label="${n} of 6 phases done"><div class="hd"><span>Phases</span><b>${n} of 6</b></div>
+    <div class="bar"><i style="width:${(n / 6 * 100).toFixed(0)}%"></i></div>
+    <ol>${PHASES.map(ph => { const st = p.phases[ph]; return `<li class="${st}">${CK[st]}${ph}${st === 'now' ? '<em>now</em>' : ''}</li>`; }).join('')}</ol>
+    ${all ? '<span class="stamp">✓ DONE</span>' : ''}</div>`;
+}
+const SCEN = { now: { when: 'Sat 10 Oct', checked: 'checked 1 min ago' }, busy: { when: 'Thu 8 Oct · 19:30', checked: 'checked 1 min ago' }, problem: { when: 'Sat 10 Oct', checked: 'checked 1 min ago' }, finished: { when: 'Sat 10 Oct', checked: 'checked 1 min ago' } };
+
+let scen = 'now', sheet = null, target = null, pickProj = null, toast = null;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const stateOf = k => PROJECTS[k].states[scen] || ((scen === 'problem' || scen === 'finished') && !PROJECTS[k].example && PROJECTS[k].states.now) || null;
+const visible = () => Object.keys(PROJECTS).filter(k => stateOf(k));
+
+function card(k) {
+  const p = PROJECTS[k], s = stateOf(k), pi = s.pill[0];
+  return `<div class="pc">
+    <div class="row"><span class="app" style="background:${GRAD[k]}">${IC[k]}</span><button class="info" data-info="${k}" aria-label="About ${esc(p.name)}">i</button></div>
+    <button class="open" data-open="${k}"><span class="nm">${esc(p.name)}</span><span class="desc">${esc(s.desc)}</span></button>
+    ${checklist(p)}
+    <span class="ball ${s.ball[0]}"><i></i>${esc(s.ball[1])}</span>
+    <button class="pill ${pi}" data-pill="${k}">${pi === 'you' ? IC.hand : pi === 'ok' ? IC.ok : IC.lock}${esc(s.pill[1])}</button>
+  </div>`;
+}
+
+function render() {
+  const ks = visible(), need = ks.reduce((n, k) => n + stateOf(k).need, 0);
+  let h = `<div class="sheet-main">
+    <div class="hdr"><span class="avatar" aria-label="You">K</span><h2>Your desk</h2><button class="round" data-help aria-label="What do the words mean?">?</button></div>
+    <div class="summary"><span>${need ? `<b style="color:var(--coral)">${need} ${need === 1 ? 'thing needs' : 'things need'} you</b>` : '<b>Nothing needs you</b>'}</span><span>${SCEN[scen].when} · ${SCEN[scen].checked}</span></div>
+    <div class="grid">${ks.map(card).join('')}
+      <div class="pc add"><div class="row"><span class="app">${IC.plus}</span></div><span class="nm" style="color:var(--muted)">New project</span><span class="desc">Start one with your Chief of Staff</span><button class="pill you" data-newproj>Add</button></div>
+    </div></div>
+    <div class="dock"><div class="grabber"></div><div class="composer"><span class="avatar" style="width:36px;height:36px;font-size:.85rem">K</span>
+      <button class="typing" data-compose>Tell your Chief of Staff…</button><button class="mic" data-compose aria-label="Speak instead">${IC.mic}</button></div></div>`;
+
+  if (sheet === 'info') { const p = PROJECTS[target], s = stateOf(target);
+    h += `<div class="scrim" data-close><div class="bs" role="dialog" aria-label="About ${esc(p.name)}"><div class="g"></div>
+      <div style="display:flex;gap:12px;align-items:center"><span class="app" style="background:${GRAD[target]}">${IC[target]}</span><span><h3>${esc(p.name)}</h3><span class="tag">${esc(p.id)}</span></span></div>
+      <div class="four"><div><b>What it is</b><span>${esc(p.what)}</span></div><div><b>Why</b><span>${esc(p.why)}</span></div>
+      <div><b>For you now</b><span>${esc(s.mean)}</span></div><div><b>You can</b><span>${esc(s.can)}</span></div></div>
+      <button class="go" data-closebtn>Got it</button></div></div>`; }
+  if (sheet === 'help') h += `<div class="scrim" data-close><div class="bs" role="dialog" aria-label="Words on this screen"><div class="g"></div><h3>Words on this screen</h3>
+      <div class="four"><div><b>Phase</b><span>The six fixed stages every project goes through: Discovery, Design, Build, Launch, Operate, Review.</span></div>
+      <div><b>Milestone</b><span>A result this project is working towards, in plain words. Each project has its own.</span></div>
+      <div><b>Who has the ball</b><span>Who is moving the work right now: an agent, the next automatic run, or you.</span></div>
+      <div><b>To merge</b><span>A finished change waiting for you to accept it into the project in GitHub.</span></div>
+      <div><b>Decision</b><span>A question only you can answer. The agents wait until you do.</span></div></div>
+      <button class="go" data-closebtn>Got it</button></div></div>`;
+  if (sheet === 'compose') h += `<div class="scrim" data-close><div class="bs" role="dialog" aria-label="Tell your Chief of Staff"><div class="g"></div><h3>Tell your Chief of Staff</h3>
+      <p class="sub">Which project is this about?</p>
+      <div class="chips">${visible().filter(k => !PROJECTS[k].example).map(k => `<button class="chip" data-pp="${k}" aria-pressed="${pickProj === k}">${esc(PROJECTS[k].name)}</button>`).join('')}</div>
+      <textarea rows="3" aria-label="Your message" placeholder="e.g. Look into which phone alert tools work behind Cloudflare Access"></textarea>
+      <button class="go" data-send ${pickProj ? '' : 'disabled'}>Open in GitHub, request written</button>
+      <p class="sub">Then tap Commit in GitHub. It lands on that project's timeline, and nowhere else.</p></div></div>`;
+  if (toast) h += `<div class="toast" role="status"><span>${toast}</span><button data-dismiss>OK</button></div>`;
+
+  document.getElementById('phone').innerHTML = h;
+  document.querySelectorAll('[data-state]').forEach(b => b.setAttribute('aria-pressed', b.dataset.state === scen));
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button, [data-close]'); if (!b) return; const d = b.dataset;
+  if (d.close !== undefined && e.target !== b) return;
+  if (d.state) { scen = d.state; sheet = null; toast = null; }
+  else if (d.info) { sheet = 'info'; target = d.info; }
+  else if (d.help !== undefined) sheet = 'help';
+  else if (d.compose !== undefined) { sheet = 'compose'; pickProj = null; }
+  else if (d.pp) pickProj = d.pp;
+  else if (d.send !== undefined) { sheet = null; toast = `Opens GitHub with a request for ${esc(PROJECTS[pickProj].name)}, ready to commit.`; }
+  else if (d.closebtn !== undefined || d.close !== undefined) sheet = null;
+  else if (d.open) toast = `Opens ${esc(PROJECTS[d.open].name)}: screen 2, built next.`;
+  else if (d.pill) toast = PROJECTS[d.pill].example ? 'Opens the fix: the steps shown behind ⓘ.' : `Opens ${esc(PROJECTS[d.pill].name)}'s queue: screen 6.`;
+  else if (d.newproj !== undefined) toast = 'Starts a new project with your Chief of Staff (designed later).';
+  else if (d.dismiss !== undefined) toast = null;
+  else return;
+  render();
+});
+render();
+</script>

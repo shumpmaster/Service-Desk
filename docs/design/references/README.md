@@ -84,6 +84,11 @@ Source: a component gallery viewed in a phone browser. The address bar is cut of
 
 Source: forevercomponents.com, a "Branch timeline" component (a git-style graph with lanes, commit messages, branch tags and hashes).
 
+## Direction without an image (10 Oct 2026, verbatim)
+
+- Agent page: "Is there a way to have every recorded responsibility in both the grouped section 2 and the branches show a popup plain English summary when tapped?"
+- Then, shown a template summary and a written one side by side: "Let's do the plain English version". This means each recorded event gets a short written summary that tells the story: what was found, why it mattered, what happened next, and whether the owner might act. The summary is written from the record when the event is recorded, and the record's own quote stays underneath as evidence.
+
 ## How to work from this
 
 Build one full screen at a time, in the order above, each matched to its reference. Fit each

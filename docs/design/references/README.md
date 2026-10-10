@@ -67,6 +67,23 @@ scenarios where i get completely confused at terminology - what were doing - why
 - Overall: "it all lacks an interconnectedness". The owner said: "I want to build page by page …
   You built elements not full views and i was thinking in full views."
 
+## Added 10 Oct 2026: the phase checklist on each Home card
+
+| # | For | Reference | The owner's words (10 Oct 2026, verbatim) |
+|---|---|---|---|
+| 8 | Home cards: phase checklist, in progress | [checklist at 20%](08-home-phase-checklist-start.png) | "Okay I love it so far. Can we incorporate this little checklist view of our phases within the operating model on each card? Size them down a little bit. But I think this view will tell me exactly what I need to see at first glance" |
+| 9 | Home cards: phase checklist, all done | [checklist at 100% with a DONE stamp](09-home-phase-checklist-done.png) | (sent together with 8, same words) |
+
+Source: a component gallery viewed in a phone browser. The address bar is cut off and shows only "…revercomponents.com". "I love it so far" refers to screen 1 (Home) as built in the lab.
+
+## Added 10 Oct 2026: agent cards on the Team screen
+
+| # | For | Reference | The owner's words (10 Oct 2026, verbatim) |
+|---|---|---|---|
+| 10 | Team: each agent's running log | [branch timeline](10-agent-log-branch-timeline.png) | "On these agent cards I want three things. The status indicator you're showing is great. Keep that just the way it is. Then - every agent has their set of responsibilities. I want you to show them all to me. Think of the 3-5 things that each agent is responsible for from a big picture perspective, the decisions, the actions, etc… I want them boiled down for each agent and on their card shown within groups. For example, in my case, decisions - I would want my card to have every decision grouped up under a decisions section. Then the 3rd a running log that looks something like this image" |
+
+Source: forevercomponents.com, a "Branch timeline" component (a git-style graph with lanes, commit messages, branch tags and hashes).
+
 ## How to work from this
 
 Build one full screen at a time, in the order above, each matched to its reference. Fit each

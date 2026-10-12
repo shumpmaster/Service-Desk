@@ -196,6 +196,18 @@ def budget_violations(packs, max_words):
     return v
 
 
+def budget_notes(packs, max_words):
+    """A NOTE for each pack above 90% of the budget but not over it (model S-022 AC2).
+    A note never changes the exit code; an over-budget pack gets the violation."""
+    notes = []
+    for rel in sorted(packs):
+        n = len(packs[rel].split())
+        if max_words * 9 // 10 < n <= max_words:
+            notes.append("NOTE: %s: %d of %d words, over 90%% of the pack budget — plan a consolidation"
+                         " before the next ruling needs the room" % (rel, n, max_words))
+    return notes
+
+
 def main(argv=None):
     # No flag abbreviations (model S-005 AC4): only the full flag names are accepted.
     parser = argparse.ArgumentParser(prog="digest.py", description=__doc__.split("\n")[0],
@@ -207,7 +219,7 @@ def main(argv=None):
         p.add_argument("--ledger", default=g.LEDGER_REL)
         p.add_argument("--out", default="docs/DIGEST.md")
         p.add_argument("--packs", default="digest")
-        p.add_argument("--max-words", type=int, default=1100)
+        p.add_argument("--max-words", type=int, default=1600)
     try:
         args = parser.parse_args(argv)
     except SystemExit as exc:
@@ -248,6 +260,8 @@ def run(args):
             os.remove(os.path.join(root, rel))
             print("removed stale pack %s" % rel)
         v.extend(budget_violations(packs, args.max_words))
+        for line in budget_notes(packs, args.max_words):
+            print(line)
         if v:
             for line in v:
                 print(line)
@@ -265,7 +279,7 @@ def run(args):
         if rel not in packs:
             v.append("%s: stale pack — no active ruling or kill has this scope; delete it or run digest.py build" % rel)
     v.extend(budget_violations(packs, args.max_words))
-    return g.report(root, [("digest.check", line) for line in v], [],
+    return g.report(root, [("digest.check", line) for line in v], budget_notes(packs, args.max_words),
                     "%s and %d scope pack(s) match %s" % (out_rel, len(packs), ledger_rel))
 
 

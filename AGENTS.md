@@ -65,7 +65,7 @@ build/<id>/<task> → `surface_guard.py diff --range` (CI) → full test suite +
 (reviews/<PR>/) → CI green → the orchestrator merges with a merge commit (no squash) → deploy →
 ledger entry + improvement-register row in the same PR.
 
-**PRs lead with what they mean.** Every pull request body you write opens with a heading `## What this means for you`, then one paragraph in plain language: what changes for the owner (what he will see, decide or do differently, and whether any of it is irreversible), before any technical detail. No file paths, code or ids in that paragraph.
+**PRs lead with what they mean.** Every pull request body you write opens with a heading `## What this means for you`, then one paragraph in plain language: what changes for the owner (what they will see, decide or do differently, and whether any of it is irreversible), before any technical detail. No file paths, code or ids in that paragraph.
 
 ## 5. Asking the owner
 questions/<id>.md from questions/_TEMPLATE.md: WHY, OPTIONS, RECOMMENDATION, RISK CLASS,

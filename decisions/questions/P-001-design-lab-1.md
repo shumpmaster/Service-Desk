@@ -1,7 +1,7 @@
 Ruling: the desk's agent panel shows who has the ball; each project keeps its own queue, grouped by kind of action; projects get plain-English milestones under renamed fixed phases; Chief of Staff sessions are recorded like pipeline sessions
 Proxy: none; the owner answered in the session on 2026-10-09 (verbatim below)
 
-Context: the design lab (S-001 MD, AC43 process A), first page https://claude.ai/artifact/PH7AAjCqXvvyZu1bkyG5eW, and the owner's five reference screenshots (Abode, Lifesum, Bevel, Structured, Tiimo), with his notes: home overview; a project's phases; an agent dashboard; one timeline per project rolling up to milestones and phases; "N+2" as the second level of a work breakdown.
+Context: the design lab (S-001 MD, AC43 process A), first page https://claude.ai/artifact/PH7AAjCqXvvyZu1bkyG5eW, and the owner's five reference screenshots (Abode, Lifesum, Bevel, Structured, Tiimo), with the owner's notes: home overview; a project's phases; an agent dashboard; one timeline per project rolling up to milestones and phases; "N+2" as the second level of a work breakdown.
 
 The owner's words:
 - "no made up numbers or scores - the visual was just appealing"; "Absolutely no fake numbers."

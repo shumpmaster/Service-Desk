@@ -1,5 +1,5 @@
 # model S-020 AC7: every pull request body opens with "What this means for you" and a plain paragraph.
-# A red check, not a merge gate: the owner merges PRs himself. The checker script comes from the PR's
+# A red check, not a merge gate: the owner merges PRs themselves. The checker script comes from the PR's
 # base commit; the body is read only from the event payload file, never through an expression, so a
 # hostile body cannot inject a command. GitHub takes this workflow file itself from the PR's merge
 # ref, so a PR can edit it; the owner sees that edit in the diff.

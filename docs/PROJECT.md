@@ -451,7 +451,7 @@ question as put and the owner's words; the owner confirms all of them on the mov
 # Part 2 — The intent
 
 ## Intent
-The owner's purpose, preferences and trade-offs for this project, and what he would hate. Drafted by
+The owner's purpose, preferences and trade-offs for this project, and what they would hate. Drafted by
 the Chief of Staff from conversations, portfolio defaults and past rulings; confirmed on the
 move-to-Build card.
 

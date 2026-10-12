@@ -7,7 +7,7 @@ pack. The model's text governs; if they differ, this copy is a bug to fix.*
 One project document in two parts. *Part 1, the brief* (settled at approval): (1) scope — in, out,
 where it must work; (2) strategy — the chain from deliverables to value; (3) the 25,000-foot plan —
 deliverables two levels deep with dependencies; (4) owners for every deliverable, including the
-owner himself and outside parties; (5) limits — spend ceiling, data boundaries, and the project's
+owner and outside parties; (5) limits — spend ceiling, data boundaries, and the project's
 tier (T1–T3 by v2.5.1's tier triggers), which is its trust level (D-062); (6) value and stop rule —
 this project's own measure, target, date and miss, including the cost to the owner's time; (7) solid
 foundation — every load-bearing unknown answered with evidence, or accepted open by the owner: an

@@ -67,6 +67,34 @@ scenarios where i get completely confused at terminology - what were doing - why
 - Overall: "it all lacks an interconnectedness". The owner said: "I want to build page by page …
   You built elements not full views and i was thinking in full views."
 
+## Added 10 Oct 2026: the phase checklist on each Home card
+
+| # | For | Reference | The owner's words (10 Oct 2026, verbatim) |
+|---|---|---|---|
+| 8 | Home cards: phase checklist, in progress | [checklist at 20%](08-home-phase-checklist-start.png) | "Okay I love it so far. Can we incorporate this little checklist view of our phases within the operating model on each card? Size them down a little bit. But I think this view will tell me exactly what I need to see at first glance" |
+| 9 | Home cards: phase checklist, all done | [checklist at 100% with a DONE stamp](09-home-phase-checklist-done.png) | (sent together with 8, same words) |
+
+Source: a component gallery viewed in a phone browser. The address bar is cut off and shows only "…revercomponents.com". "I love it so far" refers to screen 1 (Home) as built in the lab.
+
+## Added 10 Oct 2026: agent cards on the Team screen
+
+| # | For | Reference | The owner's words (10 Oct 2026, verbatim) |
+|---|---|---|---|
+| 10 | Team: each agent's running log | [branch timeline](10-agent-log-branch-timeline.png) | "On these agent cards I want three things. The status indicator you're showing is great. Keep that just the way it is. Then - every agent has their set of responsibilities. I want you to show them all to me. Think of the 3-5 things that each agent is responsible for from a big picture perspective, the decisions, the actions, etc… I want them boiled down for each agent and on their card shown within groups. For example, in my case, decisions - I would want my card to have every decision grouped up under a decisions section. Then the 3rd a running log that looks something like this image" |
+
+Source: forevercomponents.com, a "Branch timeline" component (a git-style graph with lanes, commit messages, branch tags and hashes).
+
+## Direction without an image (10 Oct 2026, verbatim)
+
+- Agent page: "Is there a way to have every recorded responsibility in both the grouped section 2 and the branches show a popup plain English summary when tapped?"
+- Then, shown a template summary and a written one side by side: "Let's do the plain English version". This means each recorded event gets a short written summary that tells the story: what was found, why it mattered, what happened next, and whether the owner might act. The summary is written from the record when the event is recorded, and the record's own quote stays underneath as evidence.
+
+## Direction without an image: the gate document (10 Oct 2026, verbatim)
+
+- On phase moves: "I want a phase gate review established. I know this will be some additional operating design changes"
+- "the anchor in my mind is that I'm envisioning a neat and organized 1 pager at every gate that compiles all phase related information together for me to rule on in totality"
+- On the first mock-up: "Hmm thes one pagers read very much like a linear technical bullet. In my world the stage gate is the document associated with a formal review designed to "sell the vision, the plan and the risk" of the project moving forward. It's the stage in which the kill or proceed decision is made. The output you gave reads to me as a log of things that have been done."
+
 ## How to work from this
 
 Build one full screen at a time, in the order above, each matched to its reference. Fit each

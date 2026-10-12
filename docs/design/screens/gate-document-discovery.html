@@ -1,0 +1,180 @@
+<meta charset="utf-8">
+<title>Gate Document</title>
+<style>
+* { box-sizing: border-box } body { background: var(--ds-page); color: var(--ds-ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding-inline: 16px; padding-block: 20px 40px; margin: 0 }
+.wrap { max-width: 780px; margin: 0 auto; display: grid; gap: 16px } h1 { font-size: 1.4rem; margin: 0 } .lede { color: var(--ds-muted); margin: 4px 0 0; max-width: 64ch }
+button { font: inherit; color: inherit } button:focus-visible { outline: 3px solid var(--ds-focus); outline-offset: 2px }
+.stage { display: flex; justify-content: center } .phone { position: relative; width: 100%; max-width: 390px; height: 860px; background: var(--ds-page); border-radius: 36px; overflow: hidden; box-shadow: 0 14px 40px rgb(0 0 0 / .16); border: 1px solid var(--ds-line) }
+.scroll { height: 100%; overflow-y: auto; padding: 0 0 24px }
+.hero { background: var(--ds-surf); padding: 16px 14px 12px; display: grid; gap: 8px; border-bottom: 1px solid var(--ds-line) }
+.proj { font: 700 .62rem ui-monospace, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--ds-muted) }
+.hero h2 { margin: 0; font: 800 1.6rem/1.1 ui-rounded, system-ui, sans-serif } .ask { margin: 0; font-size: .92rem; line-height: 1.35 }
+.voices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px } .v { border-radius: 12px; padding: 8px 9px; display: grid; gap: 2px; font-size: .74rem; line-height: 1.3 }
+.v b { font: 800 .6rem ui-monospace, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase } .v.cos { background: var(--ds-passs) } .v.cos b { color: var(--ds-pass) } .v.crit { background: var(--ds-agents) } .v.crit b { color: var(--ds-agent) }
+.sw { justify-self: start; border: 1px solid var(--ds-line); background: var(--ds-surf2); border-radius: 999px; min-height: 32px; padding: 0 12px; font-size: .72rem; font-weight: 700; cursor: pointer }
+.s { margin: 8px 10px 0; background: var(--ds-surf); border-radius: 14px; border: 1px solid var(--ds-line); overflow: hidden; padding-bottom: 4px }
+.s h3, .card h3 { margin: 0; padding: 8px 10px 6px; font: 800 .64rem ui-monospace, Menlo, monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--ds-muted); display: flex; gap: 6px; align-items: center }
+.s h3 i { font-style: normal; width: 18px; height: 18px; border-radius: 50%; background: var(--ds-ink); color: var(--ds-surf); display: grid; place-items: center; font-size: .6rem; letter-spacing: 0 }
+blockquote { margin: 0 10px 2px; font: 800 1.12rem/1.25 ui-rounded, system-ui, sans-serif; border-left: 4px solid var(--ds-gold); padding-left: 10px }
+.ln { width: 100%; border: 0; background: none; text-align: left; display: grid; gap: 2px; padding: 7px 10px; cursor: pointer; border-top: 1px solid var(--ds-line) }
+.s h3 + .ln, blockquote + .ln { border-top: 0 }
+.ln .h { font-weight: 700; font-size: .86rem; line-height: 1.3 } .ln .p { font-size: .8rem; color: var(--ds-ink); line-height: 1.4; opacity: .88 }
+.ln .src { font: .62rem ui-monospace, Menlo, monospace; color: var(--ds-muted); background: var(--ds-surf2); border-radius: 6px; padding: 3px 6px; margin-top: 2px }
+.tag { justify-self: start; font: 800 .58rem ui-monospace, Menlo, monospace; letter-spacing: .06em; text-transform: uppercase; border-radius: 4px; padding: 1px 5px }
+.t-settled { background: var(--ds-passs); color: var(--ds-pass) } .t-open { background: var(--ds-blocks); color: var(--ds-block) } .t-later { background: var(--ds-surf2); color: var(--ds-muted) }
+.plan { margin: 0; padding: 0 10px 4px 30px; display: grid; gap: 3px; font-size: .8rem } .plan li::marker { font: 700 .7rem ui-monospace, Menlo, monospace; color: var(--ds-muted) } .plan b { font-weight: 700 } .plan span { color: var(--ds-muted) } .plan span::before { content: " · " }
+.rk { display: grid; gap: 3px; font-size: .76rem; line-height: 1.35 } .rk em { font: normal 800 .56rem ui-monospace, Menlo, monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--ds-muted); margin-right: 5px }
+.note { display: block; padding: 4px 10px 6px; font-size: .68rem; color: var(--ds-muted) }
+.kv { display: flex; justify-content: space-between; gap: 10px; padding: 5px 10px; font-size: .8rem; border-top: 1px solid var(--ds-line) } .s h3 + .kv { border-top: 0 }
+.kv b { text-align: right; font-weight: 650; font-size: .76rem } .kv .mut { color: var(--ds-muted); font-weight: 500 }
+.stop { border-color: color-mix(in srgb, var(--ds-fail) 40%, var(--ds-line)) } .stop h3 { color: var(--ds-fail) }
+.aph { width: 100%; border: 0; background: none; display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 0 10px 0 0 } .aph span { font-size: .72rem; font-weight: 700; color: var(--ds-agent) }
+.card { margin: 10px 10px 0; background: var(--ds-surf); border-radius: 14px; border: 1px solid var(--ds-line); display: grid; gap: 8px; padding-bottom: 10px }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 10px } .opt { border: 1.5px solid var(--ds-line); background: var(--ds-surf); border-radius: 12px; padding: 7px 9px; text-align: left; cursor: pointer; display: grid; gap: 1px; min-height: 64px; align-content: start }
+.opt small { color: var(--ds-muted); font-size: .68rem; line-height: 1.25 } .opt em { justify-self: start; font: normal 700 .6rem system-ui; color: var(--ds-pass); background: var(--ds-passs); border-radius: 999px; padding: 1px 7px; margin-top: 2px }
+.opt[aria-pressed="true"] { border-color: var(--ds-ink); box-shadow: inset 0 0 0 1px var(--ds-ink) } .opt:disabled { opacity: .45; cursor: default } .opt.kill b { color: var(--ds-fail) }
+.go { margin: 0 10px; border: 0; border-radius: 14px; min-height: 48px; font-weight: 800; background: var(--ds-you); color: #fff; cursor: pointer } .go:disabled { opacity: .4; cursor: default }
+.hint { padding: 0 10px; font-size: .72rem; color: var(--ds-muted) } .ruled { margin: 0 10px; font: 700 .74rem ui-monospace, Menlo, monospace; color: var(--ds-pass) }
+.toast { position: absolute; left: 14px; right: 14px; bottom: 16px; background: var(--ds-surf); border-radius: 16px; padding: 12px 14px; box-shadow: 0 10px 28px rgb(0 0 0 / .2); display: flex; gap: 10px; justify-content: space-between; align-items: center; font-size: .84rem }
+.toast button { border: 0; background: var(--ds-surf2); border-radius: 999px; min-height: 34px; padding: 0 12px; font-weight: 700; cursor: pointer }
+.notes { background: var(--ds-surf); border-radius: 20px; padding: 16px 18px; display: grid; gap: 8px; border: 1px solid var(--ds-line) } .notes h2 { margin: 0; font-size: 1rem } .notes ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 5px }
+:root { --ds-page: #eef0f3; --ds-surf: #ffffff; --ds-surf2: #f5f6f8; --ds-ink: #16191d; --ds-muted: #6b7280; --ds-line: #e5e7eb; --ds-you: #e8553e; --ds-yous: #fdece8; --ds-agent: #2f6fe0; --ds-agents: #e6eefc; --ds-pass: #15803d; --ds-passs: #e3f4e8; --ds-fail: #c0262d; --ds-fails: #fde7e7; --ds-merge: #7c4dcc; --ds-merges: #efe8fb; --ds-block: #a16207; --ds-blocks: #fbf1d9; --ds-gold: #a87a1e; --ds-idle: #c3c8cf; --ds-focus: #2f6fe0; --ds-shadow: 0 1px 2px rgb(0 0 0 / .05), 0 6px 16px rgb(0 0 0 / .05); --ds-scrim: rgb(15 18 22 / .42) }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ds-page: #0b0c0e; --ds-surf: #1a1c20; --ds-surf2: #121417; --ds-ink: #eef0f3; --ds-muted: #9aa1ab; --ds-line: #2a2e35; --ds-you: #ff7a63; --ds-yous: #3a1d18; --ds-agent: #7aa7ff; --ds-agents: #17233a; --ds-pass: #4ade80; --ds-passs: #12301f; --ds-fail: #ff7b7f; --ds-fails: #3a1617; --ds-merge: #b99aff; --ds-merges: #271d3a; --ds-block: #e6b450; --ds-blocks: #33290f; --ds-gold: #d4ae4f; --ds-idle: #4a5059; --ds-focus: #7aa7ff; --ds-shadow: none; --ds-scrim: rgb(0 0 0 / .6); color-scheme: dark } }
+:root[data-theme="dark"] { --ds-page: #0b0c0e; --ds-surf: #1a1c20; --ds-surf2: #121417; --ds-ink: #eef0f3; --ds-muted: #9aa1ab; --ds-line: #2a2e35; --ds-you: #ff7a63; --ds-yous: #3a1d18; --ds-agent: #7aa7ff; --ds-agents: #17233a; --ds-pass: #4ade80; --ds-passs: #12301f; --ds-fail: #ff7b7f; --ds-fails: #3a1617; --ds-merge: #b99aff; --ds-merges: #271d3a; --ds-block: #e6b450; --ds-blocks: #33290f; --ds-gold: #d4ae4f; --ds-idle: #4a5059; --ds-focus: #7aa7ff; --ds-shadow: none; --ds-scrim: rgb(0 0 0 / .6); color-scheme: dark }
+.vw { padding: 2px 10px 6px } .vz { width: 100%; height: auto; display: block } .vz text { font-family: system-ui, sans-serif }
+</style>
+<div class="wrap">
+  <header>
+    <h1>Gate document: Discovery → Design</h1>
+    <p class="lede">The document behind a proceed-or-kill decision. It sells the vision, the plan and the risk, and the record of work done is folded away at the back. This is Service Desk's real gate of 5 October, rewritten from its project brief (Part 1, draft 4) and the phase's records. You ruled "build" (proceed) at 17:14.</p>
+  </header>
+  <div class="stage"><div class="phone" id="phone"></div></div>
+  <section class="notes">
+    <h2>How a gate document works</h2>
+    <ul>
+      <li><b>Every gate has the same shape:</b> the ask at the top, then eight numbered sections:
+        <ol>
+          <li>the vision;</li>
+          <li>what this phase taught us;</li>
+          <li>the plan from here;</li>
+          <li>the risks;</li>
+          <li>cost and limits;</li>
+          <li>what would make us stop;</li>
+          <li>what you're agreeing to;</li>
+          <li>the phase record, folded away.</li>
+        </ol></li>
+      <li><b>Two voices.</b> The Chief of Staff writes the case for proceeding. The Critic writes a separate, independent view and checks that every claim in the case is backed by a record. You see both before you rule. In this mock-up, I wrote both voices from the records: the Critic's real verdict was a pass on round 4.</li>
+      <li><b>Four answers:</b>
+        <ul>
+          <li><b>Proceed.</b></li>
+          <li><b>Hold:</b> stay and finish what's open.</li>
+          <li><b>Recycle:</b> go back into an earlier phase as a numbered iteration, with your reason.</li>
+          <li><b>Kill:</b> close the project. Only you can choose it.</li>
+        </ul></li>
+      <li><b>Honest by rule.</b>
+        <ul>
+          <li>Each line can be tapped to show the record it rests on.</li>
+          <li>Risks only carry a rating when a record supports one, so none here do.</li>
+          <li>Dates and figures say "proposed" or "estimate" where the brief does.</li>
+        </ul></li>
+      <li><b>Visuals where they help:</b> where you are in the six phases, today's way of working against the desk's, how the plan fits the free plan's limits (with the unmeasured one hatched, not guessed), how the deliverables depend on each other, your time caps, and, in the record at the back, the research and checks. Every visual is drawn from the same records as the text, so none adds a figure of its own.</li>
+      <li><b>The Design and Build gates also show the join-up review</b>, as a "does it fit together" finding and a risk.</li>
+    </ul>
+  </section>
+</div>
+<script>
+const R = (t, src) => ({ t, src });
+const PH6 = ['Discovery', 'Design', 'Build', 'Launch', 'Operate', 'Review'];
+const V = {
+  track: () => `<svg class="vz" viewBox="0 0 340 46" role="img" aria-label="Phases: Discovery done, this gate leads into Design">${PH6.map((p, i) => { const x = 18 + i * 61; return `${i ? `<line x1="${x - 52}" y1="16" x2="${x - 9}" y2="16" stroke="var(--ds-line)" stroke-width="2"/>` : ''}<circle cx="${x}" cy="16" r="8" fill="${i === 0 ? 'var(--ds-pass)' : 'var(--ds-surf2)'}" stroke="${i === 0 ? 'var(--ds-pass)' : 'var(--ds-line)'}" stroke-width="2"/><text x="${x}" y="40" text-anchor="middle" font-size="9" fill="var(--ds-muted)" font-family="ui-monospace,Menlo,monospace">${p.slice(0, 4).toUpperCase()}</text>`; }).join('')}
+    <rect x="46" y="4" width="8" height="24" rx="2" fill="var(--ds-gold)"/><text x="50" y="46" text-anchor="middle" font-size="7" font-weight="800" fill="var(--ds-gold)" font-family="ui-monospace,Menlo,monospace">GATE</text></svg>`,
+  flow: () => `<svg class="vz" viewBox="0 0 340 92" role="img" aria-label="Today: hourly page, then GitHub, then act. With the desk: one screen, two taps.">
+    <text x="0" y="12" font-size="9" font-weight="800" fill="var(--ds-muted)" font-family="ui-monospace,Menlo,monospace">TODAY</text>
+    ${[['Hourly page', 0], ['Go to GitHub', 1], ['Act', 2]].map(([t, i]) => `<rect x="${i * 112}" y="18" width="100" height="24" rx="6" fill="var(--ds-fails)"/><text x="${i * 112 + 50}" y="34" text-anchor="middle" font-size="10" fill="var(--ds-ink)">${t}</text>${i < 2 ? `<path d="M${i * 112 + 101} 30 h9" stroke="var(--ds-muted)" stroke-width="1.6" marker-end="url(#ar)"/>` : ''}`).join('')}
+    <text x="0" y="62" font-size="9" font-weight="800" fill="var(--ds-muted)" font-family="ui-monospace,Menlo,monospace">WITH THE DESK</text>
+    <rect x="0" y="68" width="212" height="24" rx="6" fill="var(--ds-passs)"/><text x="106" y="84" text-anchor="middle" font-size="10" fill="var(--ds-ink)">One screen, close to real time</text>
+    <path d="M213 80 h9" stroke="var(--ds-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="224" y="68" width="100" height="24" rx="6" fill="var(--ds-yous)"/><text x="274" y="84" text-anchor="middle" font-size="10" fill="var(--ds-ink)">Answer in 2 taps</text>
+    <defs><marker id="ar" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 6 3 0 6z" fill="var(--ds-muted)"/></marker></defs></svg>`,
+  fit: () => `<svg class="vz" viewBox="0 0 340 74" role="img" aria-label="Requests: about 4,800 a day needed of 100,000 allowed. Processing time per request: limit 10 ms, need not yet measured.">
+    <text x="0" y="10" font-size="9" fill="var(--ds-muted)" font-family="ui-monospace,Menlo,monospace">REQUESTS A DAY · need ≈ 4,800 of 100,000 allowed</text>
+    <rect x="0" y="16" width="340" height="12" rx="6" fill="var(--ds-surf2)"/><rect x="0" y="16" width="${340 * 4800 / 100000}" height="12" rx="6" fill="var(--ds-pass)"/>
+    <text x="0" y="48" font-size="9" fill="var(--ds-muted)" font-family="ui-monospace,Menlo,monospace">PROCESSING PER REQUEST · limit 10 ms · need not measured yet</text>
+    <defs><pattern id="hz" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="6" fill="var(--ds-block)" opacity=".45"/></pattern></defs>
+    <rect x="0" y="54" width="340" height="12" rx="6" fill="url(#hz)" stroke="var(--ds-block)" stroke-dasharray="3 3"/><text x="170" y="64" text-anchor="middle" font-size="9" font-weight="800" fill="var(--ds-block)">? measured during planning (O3)</text></svg>`,
+  plan: () => { const N = [['Foundation', 0, 0, 'done'], ['Read model', 1, 0], ['Screens', 2, 0], ['Acting', 3, 0], ['Security', 2, 1], ['Usage recording', 1, 1], ['Launch', 4, 0.5]];
+    const X = c => 4 + c * 68, Y = r => 8 + r * 40, W = 62, H = 26, cx = n => X(n[1]) + W / 2, cy = n => Y(n[2]) + H / 2;
+    const E = [[0, 1], [1, 2], [2, 3], [0, 4], [4, 3], [5, 2], [3, 6], [4, 6], [5, 6]];
+    return `<svg class="vz" viewBox="0 0 340 92" role="img" aria-label="Plan: foundation, read model, screens, acting, then launch; security gates acting; usage recording feeds the screens.">
+      ${E.map(([a, b]) => { const A = N[a], B = N[b]; return `<path d="M${X(A[1]) + W} ${cy(A)} C${X(A[1]) + W + 8} ${cy(A)} ${X(B[1]) - 8} ${cy(B)} ${X(B[1])} ${cy(B)}" fill="none" stroke="var(--ds-line)" stroke-width="1.6"/>`; }).join('')}
+      ${N.map(n => `<rect x="${X(n[1])}" y="${Y(n[2])}" width="${W}" height="${H}" rx="6" fill="${n[3] ? 'var(--ds-passs)' : n[0] === 'Launch' ? 'var(--ds-yous)' : 'var(--ds-surf2)'}" stroke="${n[3] ? 'var(--ds-pass)' : 'var(--ds-line)'}"/><text x="${cx(n)}" y="${cy(n) + 3}" text-anchor="middle" font-size="8.5" fill="var(--ds-ink)">${n[0]}</text>`).join('')}</svg>`; },
+  research: () => { const seg = (a, b, c) => { const r = 22, C = 2 * Math.PI * r; return `<circle cx="28" cy="28" r="${r}" fill="none" stroke="${c}" stroke-width="9" stroke-dasharray="${C * b} ${C}" stroke-dashoffset="${-C * a}" transform="rotate(-90 28 28)"/>`; };
+    return `<svg class="vz" viewBox="0 0 340 60" role="img" aria-label="Research: 7 of 9 answered, 2 closed. Source checks: 22 failed then 7 passed.">${seg(0, 7 / 9, 'var(--ds-pass)')}${seg(7 / 9, 2 / 9, 'var(--ds-muted)')}
+      <text x="28" y="32" text-anchor="middle" font-size="11" font-weight="800" fill="var(--ds-ink)">7/9</text>
+      <text x="64" y="16" font-size="9" fill="var(--ds-muted)" font-family="ui-monospace,Menlo,monospace">SOURCE CHECKS · 22 failed, then 7 passed</text>
+      ${Array.from({ length: 29 }, (_, i) => `<rect x="${64 + i * 9.4}" y="24" width="7.4" height="14" rx="2" fill="${i < 22 ? 'var(--ds-fail)' : 'var(--ds-pass)'}" opacity="${i < 22 ? .75 : 1}"/>`).join('')}
+      <text x="64" y="54" font-size="9" fill="var(--ds-muted)" font-family="ui-monospace,Menlo,monospace">READINESS CHECK · ✕ ✕ ✕ ✓ passed on round 4</text></svg>`; },
+  time: () => `<svg class="vz" viewBox="0 0 340 40" role="img" aria-label="Your time: at most about 2 hours a week before launch; at most 30 minutes a week after launch."><text x="0" y="10" font-size="9" fill="var(--ds-muted)" font-family="ui-monospace,Menlo,monospace">YOUR TIME A WEEK · caps, before and after launch</text>
+    <rect x="0" y="16" width="${340}" height="10" rx="5" fill="var(--ds-surf2)"/><rect x="0" y="16" width="340" height="10" rx="5" fill="var(--ds-yous)"/><text x="336" y="24" text-anchor="end" font-size="8.5" font-weight="700" fill="var(--ds-you)">≤ 2 h before</text>
+    <rect x="0" y="29" width="${340 * 0.5 / 2}" height="10" rx="5" fill="var(--ds-you)"/><text x="${340 * 0.25 + 4}" y="37" font-size="8.5" font-weight="700" fill="var(--ds-you)">≤ 30 min after</text></svg>`
+};
+let before = true, open = null, appendix = false, pick = null, toast = null;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const LEARN = [
+  ['settled', 'It can run for free on what you already have.', 'Cloudflare Pages behind Access, on the free plan: about 4,800 requests a day for five projects, against 100,000 allowed.', 'docs/PROJECT.md §7 U1 · F-cf-workers-05'],
+  ['open', 'One limit isn\'t known yet: processing time per request.', 'The free plan allows 10 ms of processing per request. A full reload after the desk was closed might need more. This gets measured during planning (O3).', 'docs/PROJECT.md §7 U1 · O3'],
+  ['settled', 'You can answer from the desk without it holding any key that can write.', 'The desk opens GitHub with your answer already written and you commit it. The desk only ever reads.', 'docs/PROJECT.md §3 D4.1 · research Q-007'],
+  ['settled', 'What needs you can reach your phone within five minutes.', 'The page checks GitHub every minute or two while it\'s open. No webhooks are needed.', 'docs/PROJECT.md §7 U4 · research Q-004'],
+  ['settled', 'It can take over the old page\'s address, with instant rollback.', 'It deploys into the same Cloudflare project the old page uses.', 'docs/PROJECT.md §7 · research Q-008 (O5 closed)'],
+  ['later', 'Running agent sessions from the desk is possible, and stays out of the first version.', 'Researched enough for you to decide later.', 'docs/PROJECT.md §7 U3 · research Q-005'],
+  ['open', 'Showing agent usage needs a change to the operating model first.', 'Agents don\'t record their usage yet. You ruled to keep usage in the first version, even if launch moves.', 'docs/PROJECT.md §3 D7']
+];
+const PLAN = [
+  ['Foundation', 'the answers above (done)'], ['Read model', 'one reader of every project\'s records'], ['Screens, phone first', 'projects, decision cards, team, work ahead, your waiting time, agent usage'],
+  ['Acting', 'answering cards in two taps; your planning choices'], ['Security and trust', 'the login and read token, with a security review'], ['Usage recording', 'an operating-model change, built in the model\'s own repository'],
+  ['Launch', 'preview, your launch approval, take over the old address']];
+const RISKS = [
+  ['The processing-time limit is too tight', 'Full reloads fail or slow down on the free plan.', 'Use smaller batches per request, or move to the $5/month plan, which needs your ruling on spend.', 'To be measured during planning (O3)', 'docs/PROJECT.md §5, §7'],
+  ['The usage-recording change runs late', 'The usage screen can\'t ship, and launch moves.', 'You already ruled that usage stays in, even if launch moves.', 'Open: a model change still to specify', 'docs/PROJECT.md §3 D7'],
+  ['The login or the read token is weak', 'Someone else could see your projects.', 'An Access policy on every address that names only your email, the token checked by the desk, and a Reviewer security review before acting goes live.', 'Designed; review comes in Build', 'docs/PROJECT.md §7 U1, D5'],
+  ['It takes more of your time than it saves', 'You spend your evenings on the desk instead of the projects.', 'More than about 2 hours a week before launch counts as a miss, and you rule whether to re-aim or stop.', 'Tracked weekly by the Chief of Staff', 'docs/PROJECT.md §6'],
+  ['The trust level is set too low', 'The desk runs with lighter checks than it should.', 'The brief reads "shared environment" as used by others. You rule on that reading.', 'Your ruling on this card', 'docs/PROJECT.md §5']];
+const AGREE = [['Trust level T1', 'one user, at most two agents at once'], ['Hosting: $0 a month', 'free tiers only (proposed)'], ['AI spend: $0 a month', 'pay-per-use; agents run on your subscription (proposed)'],
+  ['Launch by 11 Nov', 'the Chief of Staff\'s estimate (proposed)'], ['Five value targets', 'no missed decisions; at most 1 false alarm a week; under 30 min a week of upkeep; the old page replaced; answers within 4 hours (median)']];
+const LOG = [['Research answered and checked', '7 of 9'], ['Research closed by you', '2'], ['Confirmed facts filed in the library', '66'], ['Source checks', '22 failed, then 7 passed'],
+  ['Readiness check', 'passed on round 4'], ['Your decisions and rulings', '10 and 13'], ['Your verdicts and merges', '8 and 30'], ['Agent sessions started', '66'], ['Time and cost', 'not recorded (began 8 Oct)']];
+function row(id, inner, src) { const o = open === id; return `<button class="ln" data-o="${id}" aria-expanded="${o}">${inner}${o ? `<span class="src">From the record: ${esc(src)}</span>` : ''}</button>`; }
+function render() {
+  let h = `<div class="scroll">
+    <div class="hero"><span class="proj">Service Desk · Gate 1 of 5 · ${before ? 'for your ruling' : 'ruled 5 Oct, 17:14'}</span>
+      <h2>Proceed into Design?</h2>
+      <p class="ask">Plan and build the desk: one phone screen for everything waiting on you, answered in two taps.</p>
+      <div class="voices"><div class="v cos"><b>Chief of Staff</b><span>Proceed. Every load-bearing question is answered except one limit, which gets measured during planning.</span></div>
+      <div class="v crit"><b>Critic</b><span>Ready. It passed the readiness check on round 4. Watch the processing limit and the usage-recording change.</span></div></div>
+      ${V.track()}<button class="sw" data-sw>${before ? 'Show it after your ruling' : 'Show it before your ruling'}</button></div>
+    <section class="s"><h3><i>1</i>The vision</h3><blockquote>Projects stop stalling while they wait for you.</blockquote><div class="vw">${V.flow()}</div>
+      ${row('v', `<span class="p">Today you find out from a page that refreshes hourly, then go to GitHub to act, and anything the page misses leaves a project waiting. The desk puts what needs you, and the way to answer it, on one phone screen, close to real time, with enough of each project's work to plan what's next.</span>`, 'docs/PROJECT.md §2 Strategy')}</section>
+    <section class="s"><h3><i>2</i>What Discovery taught us</h3><div class="vw">${V.fit()}</div>${LEARN.map((l, i) => row('l' + i, `<span class="tag t-${l[0]}">${l[0] === 'settled' ? 'Settled' : l[0] === 'open' ? 'Open into planning' : 'Later'}</span><span class="h">${esc(l[1])}</span><span class="p">${esc(l[2])}</span>`, l[3])).join('')}</section>
+    <section class="s"><h3><i>3</i>The plan from here</h3><div class="vw">${V.plan()}</div><ol class="plan">${PLAN.map(p => `<li><b>${esc(p[0])}</b><span>${esc(p[1])}</span></li>`).join('')}</ol>
+      ${row('p', `<span class="p">Shortcut: the read-only screens can replace the old page before answering is added. Builder and Reviewer do the building, from specs written by the Definer; you approve the launch.</span>`, 'docs/PROJECT.md §3 "Route to compression", §4')}</section>
+    <section class="s"><h3><i>4</i>The risks</h3>${RISKS.map((r, i) => row('r' + i, `<span class="h">${esc(r[0])}</span><span class="rk"><span><em>If it happens</em>${esc(r[1])}</span><span><em>What we'd do</em>${esc(r[2])}</span><span><em>Now</em>${esc(r[3])}</span></span>`, r[4])).join('')}
+      <span class="note">No risk is rated: the brief doesn't rate them, so neither does this page.</span></section>
+    <section class="s"><h3><i>5</i>Cost and limits</h3><div class="vw">${V.time()}</div><div class="kv"><span>Hosting</span><b>$0 a month · free tiers</b></div><div class="kv"><span>AI spend</span><b>$0 pay-per-use · your subscription</b></div>
+      <div class="kv"><span>Your time</span><b>≤ 2 h a week to launch, ≤ 30 min after</b></div><div class="kv"><span>Projects it watches</span><b>up to 5</b></div><div class="kv"><span>Spent in Discovery</span><b class="mut">not recorded (began 8 Oct)</b></div></section>
+    <section class="s stop"><h3><i>6</i>What would make us stop</h3>${row('k', `<span class="p"><b>Missing the launch date</b> (old page replaced by 11 Nov), or <b>more than about 2 hours a week of your time</b> before launch. Either one is a miss, and you rule: re-aim (for example, launch read-only first) or stop. Stopping costs nothing that exists today: the old page stays live until launch.</span>`, 'docs/PROJECT.md §6 Miss and stop rule')}</section>
+    <section class="s"><h3><i>7</i>What you're agreeing to</h3>${AGREE.map(a => `<div class="kv"><span>${esc(a[0])}</span><b>${esc(a[1])}</b></div>`).join('')}</section>
+    <section class="s ap"><button class="aph" data-ap aria-expanded="${appendix}"><h3><i>8</i>Appendix: the phase record</h3><span>${appendix ? 'Fold away' : 'Show'}</span></button>
+      ${appendix ? `<div class="vw">${V.research()}</div>` + LOG.map(l => `<div class="kv"><span>${esc(l[0])}</span><b>${esc(l[1])}</b></div>`).join('') : ''}</section>
+    <section class="card"><h3>Your ruling</h3>${before ? `<div class="opts">
+      ${[['proceed', 'Proceed', 'Into Design: plan the build', true], ['hold', 'Hold', 'Stay in Discovery to finish something'], ['recycle', 'Recycle', 'Go back a phase. Not possible: this is the first one'], ['kill', 'Kill', 'Close the project. Only you can choose this']]
+        .map(o => `<button class="opt ${o[0]}" data-p="${o[0]}" aria-pressed="${pick === o[0]}" ${o[0] === 'recycle' ? 'disabled' : ''}><b>${o[1]}</b><small>${o[2]}</small>${o[3] ? '<em>Recommended</em>' : ''}</button>`).join('')}</div>
+      <button class="go" ${pick ? '' : 'disabled'} data-gh>Open in GitHub, ruling written</button><span class="hint">Then tap Commit there. That's the second tap.</span>`
+      : `<div class="ruled">✓ Proceed · 5 Oct, 17:14 · you wrote "build" · decisions/P-001/dor-4.md</div>`}</section></div>`;
+  if (toast) h += `<div class="toast" role="status"><span>${toast}</span><button data-dismiss>OK</button></div>`;
+  const ph = document.getElementById('phone'), y = ph.querySelector('.scroll')?.scrollTop || 0; ph.innerHTML = h; ph.querySelector('.scroll').scrollTop = y;
+}
+document.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const d = b.dataset;
+  if (d.sw !== undefined) { before = !before; pick = null; } else if (d.o) open = open === d.o ? null : d.o; else if (d.ap !== undefined) appendix = !appendix;
+  else if (d.p) pick = d.p; else if (d.gh !== undefined) toast = pick === 'kill' ? 'Opens GitHub with "Decision: kill" written. A kill can\'t be written for you; you commit it yourself.' : `Opens GitHub with your ruling (${pick}) written in decisions/P-001/, ready to commit.`;
+  else if (d.dismiss !== undefined) toast = null; else return; render(); });
+render();
+</script>

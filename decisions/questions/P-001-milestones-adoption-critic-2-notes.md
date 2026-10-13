@@ -18,3 +18,7 @@ Chief of Staff's notes; the Critic never sees this file (model L-0119).
   undefined; no milestone covers archiving the old repository (V4); M2B depends on D7's real figures;
   the order mixes phases; Discovery has no project milestone; M3A's "recorded from the desk" could read
   "filled in from the desk for the owner to commit" (a rewording would need the Critic again).
+- Later the same day: the M2 line this check passed was wider than the owner's approved words (see
+  P-001-milestones-ruling-2-notes.md). M2 now reads as the owner ruled (P-001-milestones-ruling-3.md),
+  and the Critic checked all nine lines again (P-001-milestones-adoption-critic-3.md). The other eight
+  lines are unchanged from this check.

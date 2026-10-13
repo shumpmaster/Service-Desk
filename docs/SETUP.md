@@ -26,6 +26,15 @@ run, set up the following in the project repository's Settings.
    `decisions/model-waivers.md`, one line per pair, exactly `<checker role> <doer role>: <reason>`
    (for example `reviewer builder: only one model available this month`); a waiver for `critic`
    also covers Triage.
+
+   A project whose brief names a target-user profile (docs/PROJECT.md section 9, S-025) needs two
+   more variables: `MODEL_USER_REP`, the User representative's model, and `MODEL_CHIEF_OF_STAFF`,
+   the model you run the Chief of Staff on (keep it true; the runner cannot see your own session).
+   The User representative must run on a different model from the Chief of Staff, and no waiver
+   relaxes that pair: while either variable is unset, malformed, or names the same model as the
+   other, every gate of that project stops at a failure card, after the Critic's view and before the
+   gate card, until the variable is fixed and you answer `retry`; that run's log gives the reason. A
+   project whose brief says "The owner is the user." needs neither.
 3. **Pushes and merges to the default branch (S-013, D-079).** The loop commits status, the
    dispatch log, the queue and outcomes to the default branch, and merges finished items into it
    through its merge gate, with the repository's own token. Leave any branch rule that requires

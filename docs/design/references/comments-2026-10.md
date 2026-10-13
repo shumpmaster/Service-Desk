@@ -111,6 +111,19 @@ the end. The screens in [../screens/](../screens/) are the versions that answer 
   The answer: right. In the mock-up it is not wired up. In the real desk it would open a prefilled GitHub
   new-file link the owner commits, like answering a card. It is not in S-001 yet, so it needs adding to
   the plan before it is built.
+- **13 Oct, 21:00**, on a merge card: "For anything that is in my queue that i submit or push in Github -
+  can you put the prefilled message and a text box here. If i am merging a reviewer statement fully
+  prefilled. If it is my own statement,  It will be very beneficial to have the text box/prefilled content
+  store the structure and minimum requirement that is expected in the repo. For example the textbox would
+  be "Verdict: PASS
+  Any suggestions to commit along witht the verdict"
+
+  This way i can read the summary, write up my message and jump straight to github to merge or commit"
+  What changed: every card whose answer is a committed file has a prefilled text box: a reviewer's
+  statement word for word, the owner's own verdict as "Verdict: PASS" and a line for suggestions, or a
+  decision's form. A live line applies the repo's rule; one button opens GitHub's new-file page at the
+  right branch and path with the text in it, or copies it when it is over the 6,000-character link cap. A
+  "13 Oct, review notes" moment shows PR #65's and PR #64's four notes.
 
 ## In the session, 13 Oct
 

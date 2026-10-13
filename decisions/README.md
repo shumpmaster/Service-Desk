@@ -49,3 +49,21 @@ line 1 `Decision: approve`; line 2 empty, or the `Proxy:` line with the owner's 
 question as put and the owner's own words. A profile changed after its approval no longer matches: the
 checks stay red until the owner approves the new text in a new record (`<n>` + 1) and section 9 of the brief
 names it.
+
+The graduation ruling record (model S-023, the owner's answer 28 there) is a ruling put to the owner
+outside a card, for a project whose build ran outside the pipeline and so reaches no `launch` card:
+decisions/questions/<project item>-graduation.md. It is written only when the owner passes the
+project's Launch gate, after the product has really gone live; never before, and never as a
+placeholder. The owner commits it, since a proxy is refused on the launch approval (D-066), so line 2
+is empty. Its form:
+```
+Ruling: proceed — <the product> goes live at <its address> and graduates from the desk
+
+Question, as put: <the Launch-gate question, word for word>
+Options, as put: proceed · hold · recycle into <Phase> · kill
+Case ruled on: docs/gates/<project item>/launch-gate-<n>-case.md (the Critic's view beside it)
+User representative: <not needed — the owner is the user (docs/PROJECT.md section 9), or its record>
+Go-live: <the production deploy the owner approved: run id, date, address>
+The owner's words: "<verbatim>"
+```
+No recommendation goes in it; the Chief of Staff's notes go in the matching `-notes.md` file.

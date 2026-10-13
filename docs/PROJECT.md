@@ -102,6 +102,17 @@ that only the owner passes.
     A governance change in Service-Desk (R3): made in the Orchestrator's lane, reviewed, and
     approved by the owner.
 
+**Milestones** (the owner's rulings: decisions/questions/P-001-milestones-adoption.md and decisions/questions/P-001-milestones-ruling-2.md; the Critic's check: decisions/questions/P-001-milestones-adoption-critic-2.md):
+- Every project's status visible on the phone (M1) · done when every connected project's status, and what waits on the owner, shows on the owner's phone · phase: Build · sprints: PR #40, PR #41
+- Cards answered straight from the desk (M2) · done when each decision card and owner question on the desk links the owner straight to its answer, filled in for the owner to commit on GitHub · phase: Build · sprints: PR #44
+- Agent usage shown on the desk (M2B) · done when each agent session's usage and context figures show on the desk · phase: Build · sprints: PR #44, PR #52
+- What a good desk looks like is known (MD1) · done when source-checked design research sets out what a good desk looks like and why · phase: Design · sprints: Q-013
+- The desk's look and screens chosen (MD2) · done when the owner has picked the desk's look and its screens · phase: Design
+- The chosen design running on the real back end (MD3) · done when the chosen look runs on the desk's real back end, showing real records, on its preview site · phase: Design
+- Work ahead planned and scheduled from the desk (M3A) · done when the owner's chosen order and timing of coming work are recorded from the desk for the Chief of Staff to carry out · phase: Build
+- The desk's value targets shown (M3B) · done when the desk shows each value target (V1 to V5) from the project document against its measure · phase: Build
+- The desk live at the needs-you address (M3C) · done when the owner's needs-you address opens the desk on production · phase: Launch
+
 **Route to compression (Part 2):** D3.1 and D3.2 need only D2, so they can ship to the preview
 before D4. A read-only preview could replace the old page early, with acting following it.
 

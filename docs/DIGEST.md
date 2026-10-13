@@ -1,5 +1,5 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-10-08: 7 active rulings and 0 kills, from 7 ledger entries.
+As of 2026-10-13: 8 active rulings and 0 kills, from 8 ledger entries.
 
 ## Active rulings
 
@@ -17,6 +17,7 @@ As of 2026-10-08: 7 active rulings and 0 kills, from 7 ledger entries.
 | L-0005 | Adopted. governance/checks/session_runner.py, orchestrator_git.py and governance_checks.py are copied from the model at its PR #21 merge (each was identical to the model's 677fe5a copy before). Also … | 2026-10-08 | never |
 | L-0006 | (1) A null figure shows "not available" everywhere, including the threshold percentage, "would have stopped" and the compaction count (PR #49 B1). (2) The drill-down … | 2026-10-08 | never |
 | L-0007 | Deferred. RUNNER.toml stays as it is: session_commands "on", proven_image_version 202609, so on today's 202610 image pipeline builder sessions run with commands forced off (S-016 AC2). … | 2026-10-08 | never |
+| L-0008 | Adopted from the model at c8d31c4. Copied byte for byte: eight tools in governance/checks/, ROUTING.toml, RUNNER.toml, BRIEFS.toml, the orchestrator workflow, the intake forms, the spec … | 2026-10-13 | never |
 
 ## Kills
 None.

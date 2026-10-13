@@ -11,6 +11,7 @@ on:
   push:
     paths:
       - "decisions/**"
+      - "docs/gates/**"
       - "intake/**"
   schedule:
     - cron: "*/30 * * * *"
@@ -131,6 +132,8 @@ jobs:
           MODEL_CRITIC: ${{ vars.MODEL_CRITIC }}
           MODEL_RESEARCHER: ${{ vars.MODEL_RESEARCHER }}
           MODEL_INPUT_READER: ${{ vars.MODEL_INPUT_READER }}
+          MODEL_USER_REP: ${{ vars.MODEL_USER_REP }}
+          MODEL_CHIEF_OF_STAFF: ${{ vars.MODEL_CHIEF_OF_STAFF }}
         run: python3 governance/checks/orchestrator_git.py prepare --decided "$RUNNER_TEMP/art/decided/decided.tar" --decided-hash "$DECIDED" --now "$NOW" --out "$RUNNER_TEMP/prepared" --github-output "$GITHUB_OUTPUT"
       - name: Hand on the pack
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

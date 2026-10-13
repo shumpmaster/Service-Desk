@@ -6,18 +6,31 @@ Usage:
   governance_checks.py questions [--root DIR]
   governance_checks.py reviewers [--root DIR]
   governance_checks.py builders  [--root DIR] [--base REF]
+  governance_checks.py handover  [--root DIR]
   governance_checks.py scope     --base REF [--root DIR] [--files-from FILE] [--default-branch NAME]
   governance_checks.py all       [--root DIR] [--base REF]
   governance_checks.py pr-body   --event FILE
 
-`all` runs sprints, questions, reviewers and builders, and also scope when
---base is given.
+`all` runs sprints, questions, reviewers, builders and handover, and also
+scope when --base is given.
 
 `builders` enforces one active builder per surface (a T2 rule; skipped at T0
 and T1, read from the `tier:` line of AGENTS.md). It sees only git branches:
 build/<id>/<task> refs, local and remote, that are not yet merged into the
 base. Open pull requests cannot be seen without the host's API, so a PR whose
 branch was deleted, or opened from a fork, is invisible to it.
+
+`handover` (model S-026 AC5) reads every file directly in docs/handover/ whose
+name ends in `.md`, except `_TEMPLATE.md`; subfolders are not read, and a
+symbolic link fails. No folder or no such file: it passes. Each file is read as
+UTF-8 (Windows line ends as `\n`): blank lines, at most one `# ` title line,
+then blank lines and the handover form's two instruction lines (exactly as the
+form holds them) are skipped; the next line must be a `What this means for you`
+heading, as for `pr-body`. After it, blank lines and form lines are skipped, and
+the lead paragraph must pass the pull request's rules: 15 to 150 words, no
+backtick and no fenced code, up to the first blank line or the next heading.
+Findings read `<path>: <problem>`. It checks the form, not the plainness, runs
+in every project (v3 or not) and can be made warn-only in enforcement.toml.
 
 `scope` (model S-003) checks that every path changed in BASE...HEAD (or listed
 in FILE) matches a glob in an open sprint's `scope:` line, or in the
@@ -30,7 +43,7 @@ questions and reviews) are always in scope.
 
 In a v3 project (governance/v3.toml exists, model S-009 AC2) sprints are retired:
 `sprints` and `scope` do not run (each passes with a note), and `all` runs
-questions, reviewers and builders only. v3_checks.py scope takes scope from the
+questions, reviewers, builders and handover only. v3_checks.py scope takes scope from the
 spec instead.
 
 `pr-body` (model S-020 AC7) reads a GitHub event payload (the pr-body workflow passes
@@ -434,7 +447,14 @@ def check_pr_body(payload):
     if not lines or not PR_LEAD_RE.match(lines[0].strip()):
         first = lines[0].strip() if lines else ""
         return ["the body's first line is %r, not a '## What this means for you' heading" % first[:80]], []
-    i = 1
+    return lead_problems(lines[1:]), []
+
+
+def lead_problems(lines):
+    """Problems with the lead paragraph in `lines`, the lines after a 'What this means for you' heading
+    (model S-026 J1; shared by `pr-body` and `handover`). Blank lines first are skipped; the lead is then
+    read up to the first blank line or the next heading. An empty list means the lead passes."""
+    i = 0
     while i < len(lines) and not lines[i].strip():
         i += 1
     lead = []
@@ -450,7 +470,68 @@ def check_pr_body(payload):
         problems.append("the 'What this means for you' paragraph holds fenced code")
     elif any("`" in l for l in lead):
         problems.append("the 'What this means for you' paragraph holds a backtick (code belongs after it)")
-    return problems, []
+    return problems
+
+
+# model S-026 AC5: the handover package's plain opening.
+HANDOVER_REL = "docs/handover"
+HANDOVER_SKIP = "_TEMPLATE.md"
+# The handover form's two instruction lines, exactly as template-v3/docs/handover/_TEMPLATE.md holds them
+# (its opening line, and the line under "What this means for you"); a change to the form is made here too.
+HANDOVER_FORM_LINES = (
+    "*Handed from the pipeline to the project's operating team at launch (D-036).*",
+    "*One paragraph in plain English, 15 to 150 words. Start with anything that failed or was skipped, then say "
+    "what changes for the owner, what they will see, decide or do differently, and whether any of it is "
+    "irreversible. No file paths, code or ids (OPERATING_MODEL \u00a72, \"Plain English first\").*",
+)
+
+
+def _skip_form(lines, i):
+    """The index of the first line from i that is neither blank nor one of the form's lines."""
+    while i < len(lines) and (not lines[i].strip() or lines[i].strip() in HANDOVER_FORM_LINES):
+        i += 1
+    return i
+
+
+def handover_problems(text):
+    """Problems with one handover package's opening (model S-026 AC5)."""
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    i = 0
+    while i < len(lines) and not lines[i].strip():
+        i += 1
+    if i < len(lines) and lines[i].startswith("# "):
+        i += 1
+    i = _skip_form(lines, i)
+    first = lines[i].strip() if i < len(lines) else ""
+    if not PR_LEAD_RE.match(first):
+        return ["the first section is %r, not 'What this means for you'" % first[:80]]
+    return lead_problems(lines[_skip_form(lines, i + 1):])
+
+
+def check_handover(root):
+    """(violations, notes): every top-level docs/handover/*.md but _TEMPLATE.md opens plainly (model S-026 AC5)."""
+    folder = os.path.join(root, HANDOVER_REL)
+    if not os.path.isdir(folder):
+        return [], []
+    v = []
+    for name in sorted(os.listdir(folder)):
+        if not name.endswith(".md") or name == HANDOVER_SKIP:
+            continue
+        path = os.path.join(folder, name)
+        rel = "%s/%s" % (HANDOVER_REL, name)
+        if os.path.islink(path):
+            v.append("%s: a symbolic link, not followed; a handover package must be a regular file" % rel)
+            continue
+        if not os.path.isfile(path):
+            continue
+        try:
+            with open(path, "rb") as fh:
+                text = fh.read().decode("utf-8")
+        except UnicodeDecodeError:
+            v.append("%s: not valid UTF-8" % rel)
+            continue
+        v.extend("%s: %s" % (rel, p) for p in handover_problems(text))
+    return v, []
 
 
 def run_pr_body(event):
@@ -476,7 +557,7 @@ def run_pr_body(event):
 V3_RETIRED = ("sprints", "scope")
 
 CHECKS = (("sprints", check_sprints), ("questions", check_questions), ("reviewers", check_reviewers),
-          ("builders", check_builders), ("scope", check_scope))
+          ("builders", check_builders), ("handover", check_handover), ("scope", check_scope))
 
 
 def main(argv=None):
@@ -484,7 +565,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog="governance_checks.py", description=__doc__.split("\n")[0],
                                      allow_abbrev=False)
     sub = parser.add_subparsers(dest="cmd")
-    for name in ("sprints", "questions", "reviewers", "builders", "scope", "all"):
+    for name in ("sprints", "questions", "reviewers", "builders", "handover", "scope", "all"):
         p = sub.add_parser(name, allow_abbrev=False)
         p.add_argument("--root", default=".")
         if name in ("builders", "all"):

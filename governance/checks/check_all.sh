@@ -14,7 +14,8 @@
 #             --default-branch (model S-005 AC3).
 #   governance/v3.toml (model S-009), when present under ROOT, switches on the v3
 #             checks: v3_checks ready, trace and joins, and with BASE_REF
-#             v3_checks scope, freeze and holdouts. Sprints are retired there,
+#             v3_checks scope, freeze, holdouts, milestones (model S-023) and gates
+#             (model S-024). Sprints are retired there,
 #             so the sprint-based scope step does not run (v3_checks scope
 #             replaces it). Without the file the steps are as before. There the
 #             Orchestrator's record checks run too (model S-013 AC1): with BASE_REF
@@ -125,6 +126,8 @@ if [ -n "$BASE" ]; then
     run_step "v3_checks scope --base $BASE" "$PY" "$HERE/v3_checks.py" "${v3_scope_args[@]}"
     run_step "v3_checks freeze --base $BASE" "$PY" "$HERE/v3_checks.py" freeze --base "$BASE" --root "$ROOT"
     run_step "v3_checks holdouts --base $BASE" "$PY" "$HERE/v3_checks.py" holdouts --base "$BASE" --root "$ROOT"
+    run_step "v3_checks milestones --base $BASE" "$PY" "$HERE/v3_checks.py" milestones --base "$BASE" --root "$ROOT"
+    run_step "v3_checks gates --base $BASE" "$PY" "$HERE/v3_checks.py" gates --base "$BASE" --root "$ROOT"
     run_step "record_checks decisions --base $BASE" "$PY" "$HERE/record_checks.py" decisions --base "$BASE" --root "$ROOT"
     merges_args=(merges --base "$BASE" --root "$ROOT")
     if [ -n "$GOV_BRANCH" ]; then

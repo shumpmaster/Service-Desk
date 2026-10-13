@@ -39,6 +39,8 @@ source-checker = ["Read", "Grep", "Glob", "Edit", "Write", "WebFetch", "WebSearc
 reviewer = ["Read", "Grep", "Glob"]
 critic = ["Read", "Grep", "Glob"]
 critic-triage = ["Read", "Grep", "Glob"]
+critic-gate = ["Read", "Grep", "Glob"]
+user-rep = ["Read", "Grep", "Glob"]   # read, search and list files only (S-025 AC4)
 researcher = ["Read", "Grep", "Glob", "WebFetch", "WebSearch"]
 input-reader = ["Read", "Grep", "Glob", "WebFetch", "WebSearch"]
 

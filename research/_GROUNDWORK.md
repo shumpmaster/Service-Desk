@@ -1,9 +1,9 @@
-# Discovery map — <item id> — <the ground, in neutral, industry-free terms> — <YYYY-MM-DD>
+# Groundwork map — <item id> — <the ground, in neutral, industry-free terms> — <YYYY-MM-DD>
 
 This is a map of questions, not graded fact.
 
-*Made by the Researcher when a research request's question begins "Discovery map:" (S-020). It opens
-Shape, and Define of any milestone entering ground that neither the library nor a past project
+*Made by the Researcher when a research request's question begins "Groundwork map:" (S-020). It opens
+Discovery, and Define of any milestone entering ground that neither the library nor a past project
 covers. The owner answers the owner shortlist in about ten minutes; his answers are recorded
 verbatim and added to the intent, and the research shortlist becomes research requests. Worked
 example: Service-Desk's P-001 design discovery (decisions/questions/P-001-design-discovery-notes.md

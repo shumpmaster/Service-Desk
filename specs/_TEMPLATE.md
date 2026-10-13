@@ -4,6 +4,7 @@ status: draft | frozen | superseded   frozen_at: <commit>   workstream: <name>
 work-type: <experiment | feature | fix | refactor | ui | infra | spike>   design_id: <id>   lineage: [<prior ids>]
 mechanism: <one sentence: how this achieves the goal>
 problem: <why; who is affected>
+milestones: <M-ids from the project document's section 3>
 
 ## Acceptance criteria (scenarios; owner-approved)
 Each criterion is a plain scenario with a traceability ID linking it to the project's value target.

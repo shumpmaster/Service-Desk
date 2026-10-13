@@ -18,7 +18,9 @@ branch's checkout) and fails closed on a record it cannot parse, naming the file
              authored by a person in the surface map's humans block, or by `chief-of-staff` with a
              second line `Proxy: done at the owner's request` and at least one more word; a proxy on
              a gate.word ROUTING.toml's [proxy] refused list names fails. Its first line is
-             `Decision: <word>`. Other files under decisions/ are left to surface_guard. Known
+             `Decision: <word>`. model S-025: each decisions/questions/<P-id>-user-profile-<n>.md
+             added or changed is checked the same way, with line 1 `Decision: approve` and line 2
+             empty or the Proxy: line. Other files under decisions/ are left to surface_guard. Known
              limit: a git author name can be forged by anyone holding a push credential; the proxy's
              words are checked for presence, not truth.
   merges     (record-merges; D-067) each commit on HEAD's first-parent line in REF..HEAD with an
@@ -35,10 +37,15 @@ branch's checkout) and fails closed on a record it cannot parse, naming the file
              role its route's action dispatches (`dispatch item-role`: the route's role), a card or
              done line's role is the route's role; its stage is the route's (`then_stage` when the
              route has one and dispatches); a `*` stage or `!x` or `*` role constrains nothing. The
-             card-only ids attempts, usage-limit and dor-re-aim are accepted on card lines only.
-  build-cap  (record-build-cap; D-030, D-051) prints the project items at stage 5 or 6 (in any
-             state) and the research items neither done nor closed; fails only when ROUTING.toml
-             [limits] build_cap is set and the project count is above it.
+             card-only ids attempts, usage-limit, dor-re-aim and gate-recycle are accepted on card lines
+             only. A `gate` line (model S-024) is accepted on a gate route, as is a `card` line written
+             before it; a `pass` line's stage is its route's stage plus one. A project item's routed line
+             (model S-023 AC8) carries `phase`, its stage's phase, and `iteration`, AC6's count; once one
+             of its routed lines holds them, every later one must.
+  build-cap  (record-build-cap; D-030, D-051, model S-023 AC8) prints the project items in Build or
+             Launch (stages 4 to 6) that are neither done nor closed, and the research items neither
+             done nor closed; fails only when ROUTING.toml [limits] build_cap is set and the project
+             count plus the research count is above it.
   grants     (record-grants; D-012, D-058) reports only: the grant format is not defined yet.
   gate       (the merge gate's step 4, on HEAD, the merged tree, for one item) gate-packs,
              gate-handback, gate-freeze; PACKS.toml is read from --default, the default tip.
@@ -66,13 +73,15 @@ import orchestrator as orch  # noqa: E402
 ORCH = g.ORCHESTRATOR
 COS = "chief-of-staff"
 DECISION_PATH_RE = re.compile(r"decisions/([PQE]-[0-9]+)/([a-z]+(?:-[a-z]+)*)-([0-9]+)\.md")
+# model S-025: the owner's approval of the target-user profile, a ruling record outside any card.
+PROFILE_APPROVAL_RE = re.compile(r"decisions/questions/P-[0-9]{3,}-user-profile-[1-9][0-9]*\.md")
 PROXY_RE = re.compile(r"Proxy: done at the owner's request[ \t]+\S")
 ITEM_TIP_RE = re.compile(r"^Item-Tip: ([0-9a-f]{40})[ \t]*$", re.M)
 SHA_RE = re.compile(r"[0-9a-f]{40}")
 HASH_RE = re.compile(r"[0-9a-f]{64}")
 ORCH_DEFAULT_PATHS = ("status/", "dispatch-log/", "queue/")
 RESEARCH_QUESTION_RE = re.compile(r"research/Q-[0-9]+\.md")
-CARD_ONLY_ROUTES = ("attempts", "usage-limit", "dor-re-aim")
+CARD_ONLY_ROUTES = ("attempts", "usage-limit", "dor-re-aim", "gate-recycle")
 OUTCOMES_REL = "status/outcomes.jsonl"
 RISK_REL = "governance/risk-paths.toml"
 PACKS_REL = "governance/PACKS.toml"
@@ -271,8 +280,10 @@ def owner_bound(root, r, records):
     rec = "decisions/%s/launch-%d.md" % (r.item, n)
     card = "queue/%s-launch-%d.md" % (r.item, n)
     text = g.git_text(root, records, rec)
-    if text is None or text.split("\n", 1)[0].rstrip("\r").rstrip() != "Decision: approve":
-        r.problems.append("%s does not start `Decision: approve` (the owner's approval of the R3 change)" % rec)
+    # model S-024: the Launch gate's `proceed` is the owner's approval too, beside the old word `approve`.
+    if text is None or text.split("\n", 1)[0].rstrip("\r").rstrip() not in ("Decision: approve", "Decision: proceed"):
+        r.problems.append("%s does not start `Decision: approve` or `Decision: proceed` (the owner's approval of "
+                          "the R3 change)" % rec)
         return
     authors = git_lines(root, ["log", "-1", "--format=%ae", records, "--", rec])
     humans = surfaces_at(root, r.default).human_emails()
@@ -422,6 +433,12 @@ def check_decisions(root, base):
     findings, notes, seen = [], [], 0
     for c in g.read_commits(root, g.rev_list(root, ["--reverse", "%s..HEAD" % base])):
         for path in changed_paths(root, c.sha, c.parents):
+            if PROFILE_APPROVAL_RE.fullmatch(path):
+                text = g.git_text(root, c.sha, path)
+                if text is not None:
+                    seen += 1
+                    findings += profile_approval_problems(path, text, c, humans)
+                continue
             m = DECISION_PATH_RE.fullmatch(path)
             if not m or path.endswith("-notes.md") or m.group(2) not in orch.GATES:
                 continue
@@ -455,6 +472,31 @@ def check_decisions(root, base):
                                                      "[proxy] refused, D-066)" % (path, c.short, gate, word)))
     notes.append("NOTE: %d owner answer version(s) in %s..HEAD checked" % (seen, base))
     return findings, notes
+
+
+def profile_approval_problems(path, text, c, humans):
+    """model S-025 AC7: a profile approval record's lines 1 and 2, and its writer (as for a card's answer)."""
+    lines = text.split("\n")
+    second = lines[1].rstrip("\r") if len(lines) > 1 else ""
+    out = []
+    if lines[0].rstrip("\r") != "Decision: approve":
+        out.append(("record-decisions", "%s line 1 (commit %s): a profile approval starts `Decision: approve` "
+                                        "(model S-025)" % (path, c.short)))
+    if second.strip() and not PROXY_RE.match(second):
+        out.append(("record-decisions", "%s line 2 (commit %s): neither empty nor `Proxy: done at the owner's "
+                                        "request` with the owner's words (model S-025, D-066)" % (path, c.short)))
+    agent = c.agent_id()
+    if agent is None and c.author_email.lower() in humans:
+        return out
+    if agent != COS:
+        out.append(("record-decisions", "%s (commit %s): written by %s <%s>, neither a person in the humans block "
+                                        "nor chief-of-staff (D-011, model S-025)"
+                    % (path, c.short, c.author_name, c.author_email)))
+    elif not PROXY_RE.match(second):
+        out.append(("record-decisions", "%s line 2 (commit %s): chief-of-staff's record of the owner's approval "
+                                        "needs `Proxy: done at the owner's request` and the owner's words "
+                                        "(model S-025, D-066)" % (path, c.short)))
+    return out
 
 
 def orch_path_ok(path):
@@ -536,6 +578,8 @@ def check_routing(root):
     routes = dict((r["id"], r) for r in routing.routes)
     d = os.path.join(root, "dispatch-log")
     n_lines = 0
+    by_item = {}            # item -> [line objects so far], for model S-023 AC8's iteration count
+    keyed = set()           # project items that have a routed line with `phase`
     for name in sorted(os.listdir(d)) if os.path.isdir(d) else []:
         if not orch.MONTH_FILE_RE.match(name):
             continue
@@ -549,12 +593,19 @@ def check_routing(root):
                 obj = json.loads(line)
             except ValueError:
                 continue            # verify-log names it
-            if not isinstance(obj, dict) or "route" not in obj:
+            if not isinstance(obj, dict):
+                continue
+            item = obj.get("item") if isinstance(obj.get("item"), str) else None
+            if item:
+                by_item.setdefault(item, []).append(obj)
+            if "route" not in obj:
                 continue
             n_lines += 1
-            why = route_problem(routes, obj)
+            why = route_problem(routes, obj) or phase_problem(obj, by_item.get(item, [obj]), item in keyed)
             if why:
                 findings.append(("record-routing", "%s line %d: %s" % (rel, i, why)))
+            if item and item.startswith("P-") and "phase" in obj:
+                keyed.add(item)
     notes.append("NOTE: %d routed line(s) checked against %s" % (n_lines, ROUTING_REL))
     return findings, notes
 
@@ -568,6 +619,15 @@ def route_problem(routes, obj):
     if r is None:
         return "route %r is not in %s" % (rid, ROUTING_REL)
     ract = r["action"]
+    # model S-024: a gate route logs a `gate` line, and a line written before it a `card` line.
+    if ract.startswith("gate ") and action not in ("gate", "card"):
+        return "a %s line on route %s, whose action is %r" % (action, rid, ract)
+    if ract == "pass":
+        if action != "pass":
+            return "a %s line on route %s, whose action is %r" % (action, rid, ract)
+        if obj.get("role") != r["role"] or obj.get("stage") != r["stage"] + 1:
+            return "a pass line's role and stage are its route's role and the stage after its route's"
+        return None
     dispatches = ract == "run-checks" or ract.startswith("dispatch ")
     if action in ("dispatch", "run-checks"):
         if not dispatches:
@@ -588,6 +648,32 @@ def route_problem(routes, obj):
     return None
 
 
+def phase_problem(obj, lines, keyed):
+    """model S-023 AC8: a routed line's `phase` and `iteration`. `lines` are its item's lines so far, this one
+    last; `keyed` says an earlier routed line of the same project item already held the keys."""
+    stage = obj.get("stage")
+    if "phase" in obj and obj["phase"] != orch.PHASE_OF_STAGE.get(stage):
+        return "phase %r, but stage %r is in %s (model S-023)" % (obj["phase"], stage,
+                                                                 orch.PHASE_OF_STAGE.get(stage, "no phase"))
+    if "iteration" in obj:
+        n = obj["iteration"]
+        if not isinstance(n, int) or isinstance(n, bool) or n < 1:
+            return "iteration %r is not a whole number of at least 1 (model S-023)" % (n,)
+    item = obj.get("item")
+    if not (isinstance(item, str) and item.startswith("P-")):
+        return None
+    if "phase" not in obj or "iteration" not in obj:
+        if keyed:
+            return "no phase and iteration, although an earlier routed line of %s holds them (model S-023)" % item
+        return None
+    counted = orch.iterations(lines)
+    want = counted[-1][2] if counted and counted[-1][0] is obj else None
+    if want is not None and obj["iteration"] != want:
+        return "%s iteration %r, but the item's lines give %s i%d (model S-023 AC6)" % (obj["phase"], obj["iteration"],
+                                                                                     obj["phase"], want)
+    return None
+
+
 def check_build_cap(root):
     findings, notes = [], []
     d = os.path.join(root, "status")
@@ -603,7 +689,7 @@ def check_build_cap(root):
             findings.append(("record-build-cap", "%s: the record cannot be read (%s)" % (rel, exc)))
             continue
         active = st.get("state") not in ("done", "closed")
-        if st.get("kind") == "project" and st.get("stage") in (5, 6):      # AC1.4: whatever its state
+        if st.get("kind") == "project" and st.get("stage") in (4, 5, 6) and active:     # model S-023 AC8
             projects += 1
         if st.get("kind") == "research" and active:
             research += 1
@@ -616,7 +702,7 @@ def check_build_cap(root):
         except (OSError, tomllib.TOMLDecodeError) as exc:
             raise g.UsageError("%s: %s" % (ROUTING_REL, exc))
     cap = (routing.get("limits") or {}).get("build_cap")
-    print("project items at stage 5 or 6: %d" % projects)
+    print("project items in Build or Launch (stages 4 to 6), neither done nor closed: %d" % projects)
     print("research items neither done nor closed: %d" % research)
     if cap is None:
         print("build cap: not set (the owner's to define; reported only)")
@@ -624,9 +710,10 @@ def check_build_cap(root):
         raise g.UsageError("%s [limits] build_cap %r is not a whole number" % (ROUTING_REL, cap))
     else:
         print("build cap: %d" % cap)
-        if projects > cap:
-            findings.append(("record-build-cap", "%d project items at stage 5 or 6, above the build cap of %d"
-                             % (projects, cap)))
+        if projects + research > cap:
+            findings.append(("record-build-cap", "%d active project items in Build or Launch and %d active research "
+                                                 "items, %d in all, above the cap of %d"
+                             % (projects, research, projects + research, cap)))
     return findings, notes
 
 

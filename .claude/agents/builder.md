@@ -8,7 +8,7 @@ description: Builder (Builder). Produces the work to the frozen spec and locked 
 *v3 agent file (S-010), from the confirmed role card (D-070). Every session is fresh, one role per task, with only its context pack (governance/PACKS.toml); what you must not see is kept out of your pack, not merely forbidden (D-006).*
 
 ## Duties
-Produce the work to the frozen spec and locked checks (stage 5); run registered experiments exactly as registered (D-047); run the checks in your session before handback (D-045); launch, set up the operating team, and write the handover package (stage 6, D-036).
+Produce the work to the frozen spec and locked checks (stage 5); run registered experiments exactly as registered (D-047); run the checks in your session before handback (D-045); launch, set up the operating team, and write the handover package (stage 6, D-036). Build the product's own monitoring, feedback and review to the frozen spec at stage 5, as any other criterion. At stage 6, run them on the preview and fill the handover package's "Its own monitoring and feedback" section, naming for each where it runs and the record that shows it running.
 
 ## Write lane
 <!-- surface:begin -->

@@ -133,13 +133,16 @@ ENTRY_KEYS = ("item", "route", "action", "role", "stage", "spec", "gate")
 
 # model S-012's session roles (every model S-012 role but `checks`, which has no session) (AC4).
 SESSION_ROLES = ("critic", "researcher", "source-checker", "definer", "definer-freeze", "check-author",
-                 "builder", "reviewer", "critic-triage")
-AGENT_OF = {"definer-freeze": "definer", "critic-triage": "critic"}
+                 "builder", "reviewer", "critic-triage", "critic-gate", "user-rep")
+AGENT_OF = {"definer-freeze": "definer", "critic-triage": "critic", "critic-gate": "critic"}
 PACK_OF = {"definer-freeze": "definer"}          # critic-triage has its own PACKS.toml entry
 CHECKERS = ("critic", "source-checker", "reviewer")  # a verdict line first; `checks` has no session
 CHECK_AUTHOR = "check-author"
 COMMAND_ROLES_EXTRA = ("reviewer",)             # with builder-class roles, get command tools when on
-PLACEHOLDERS = ("spec", "item", "question", "project")
+PLACEHOLDERS = ("spec", "item", "question", "project", "ruling")
+# model S-024 AC8: the owner's ruling record a later-work request names.
+RULING_RE = re.compile(r"decisions/questions/[A-Za-z0-9][A-Za-z0-9.-]*\.md")
+FIXES_LINE_RE = re.compile(r"^Fixes: (S-\d{3,}) (AC\d+(?:, AC\d+)*)$", re.M)
 
 # Every id, route, month and hash is matched whole (re.fullmatch, so no trailing newline) and with
 # ASCII [0-9] (never `\d`, which takes any Unicode digit): ids build paths and session ids (AC10).
@@ -160,9 +163,13 @@ KILL_GRACE_SECONDS = 3      # after the group kill, how long to wait for the out
 GIT_IDENTITY = ("session-runner", "session-runner@checks.invalid")
 
 # model S-016 AC1: each role's model is a repository variable; D-056's pairs, checker -> its doers.
-MODEL_ROLE = {"definer-freeze": "definer", "critic-triage": "critic"}
+MODEL_ROLE = {"definer-freeze": "definer", "critic-triage": "critic", "critic-gate": "critic"}
 CHECKED_BY = {"critic": ("definer", "check-author"), "check-author": ("builder",), "reviewer": ("builder",),
-              "source-checker": ("researcher",)}
+              "source-checker": ("researcher",), "user-rep": ("chief-of-staff",)}
+# model S-025: no waiver ever relaxes this pair.
+NEVER_WAIVED = {("user-rep", "chief-of-staff")}
+# model S-025: the User representative's records, which no gate Critic pack holds (by name, as the notes).
+USER_RECORD_RE = re.compile(r"reviews/[^/]+/_[a-z]+-gate-[0-9]+-user\.md")
 WAIVER_RE = re.compile(r"([a-z][a-z-]*) ([a-z][a-z-]*): (\S.*)")
 
 # model S-013 AC9: a role's model, as the MODEL_* variable must spell it.
@@ -481,13 +488,28 @@ class Config(object):
         if not isinstance(text, str):
             raise g.UsageError("BRIEFS.toml [routes] has no `%s` and no `ready-dispatch`" % entry["route"])
 
+        key = "%s.%s.%s" % (entry["route"], role, entry["stage"])
+        if isinstance(routes.get(key), str):
+            text = routes[key]
+        gate = entry.get("gate")
+        phase = orch.GATE_PHASE.get(gate, "none") if isinstance(gate, str) else "none"
+
         def fill(t):
-            for k, v in (("role", role), ("item", entry["item"]), ("spec", entry["spec"] or "none")):
+            for k, v in (("role", role), ("item", entry["item"]), ("spec", entry["spec"] or "none"),
+                         ("phase", phase), ("gate_n", str(entry.get("gate_n", "none")))):
                 t = t.replace("{%s}" % k, v)
             return t
 
         where = ", ".join(feedback) if feedback else "none"
         ret = common["checker_return"] if role in CHECKERS else common["doer_return"]
+        if role == "critic-gate":
+            if not isinstance(common.get("gate_return"), str):
+                raise g.UsageError("BRIEFS.toml [common] has no `gate_return`")
+            ret = common["gate_return"]
+        if role == "user-rep":                    # model S-025: names the proposal whatever the route
+            if not isinstance(common.get("user_return"), str):
+                raise g.UsageError("BRIEFS.toml [common] has no `user_return`")
+            ret = fill(common["user_return"])
         body = fill(text) + "".join("\n\n" + n for n in notes)
         return ("# Brief — %s, %s\n\n%s\n\n%s\n\nFeedback from earlier rounds in this folder: %s.\n\n%s\n"
                 % (entry["item"], role, fill(common["header"]), body, where, ret))
@@ -505,8 +527,16 @@ def load_entry(path):
         e = json.loads(data.decode("utf-8"))
     except (UnicodeDecodeError, ValueError) as exc:
         raise g.UsageError("the plan entry %s is not JSON: %s" % (path, exc))
-    if not isinstance(e, dict) or sorted(e) != sorted(ENTRY_KEYS):
+    if not isinstance(e, dict) or sorted(set(e) - {"gate_n", "ruling"}) != sorted(ENTRY_KEYS):
         raise g.UsageError("a plan entry holds exactly %s" % ", ".join(ENTRY_KEYS))
+    if "ruling" in e and not (isinstance(e["ruling"], str) and RULING_RE.fullmatch(e["ruling"])):
+        raise g.UsageError("plan entry: ruling %r is not a record under decisions/questions/" % (e["ruling"],))
+    # model S-025: a user-rep entry carries gate_n, as a critic-gate entry does.
+    if ("gate_n" in e) != (e.get("role") in orch.GATE_ROLES):
+        raise g.UsageError("plan entry: gate_n is for a critic-gate or user-rep entry, and only those")
+    if "gate_n" in e and (isinstance(e["gate_n"], bool) or not isinstance(e["gate_n"], int) or e["gate_n"] < 1
+                          or e.get("gate") not in orch.GATE_PHASE):
+        raise g.UsageError("plan entry: a %s entry needs a gate id and a gate_n of at least 1" % e.get("role"))
     if not id_ok(ITEM_RE, e["item"]):
         raise g.UsageError("plan entry: item %r is not an item id" % (e["item"],))
     if e["spec"] is not None and not id_ok(SPEC_RE, e["spec"]):
@@ -552,7 +582,8 @@ def load_waivers(path):
     out = set()
     for line in data.decode("utf-8", "replace").split("\n"):
         m = WAIVER_RE.fullmatch(line.rstrip("\r"))
-        if m and m.group(2) in CHECKED_BY.get(m.group(1), ()) and m.group(3).strip():
+        if m and m.group(2) in CHECKED_BY.get(m.group(1), ()) and m.group(3).strip() \
+                and (m.group(1), m.group(2)) not in NEVER_WAIVED:
             out.add((m.group(1), m.group(2)))
     return out
 
@@ -579,12 +610,33 @@ def role_model(role, environ, waivers):
         if not MODEL_RE.fullmatch(dmodel):
             raise Refused("the repository variable %s is not a model name; refused (model S-013 AC9)" % dvar)
         if dmodel == model:
+            if (base, doer) in NEVER_WAIVED:
+                raise Refused("%s and %s name the same model: the User representative must never run on the Chief "
+                              "of Staff's model (model S-025); no waiver applies" % (var, dvar))
             if (base, doer) not in waivers:
                 raise Refused("%s and %s name the same model: a %s must not run on the %s's model (D-056) unless "
                               "decisions/model-waivers.md on the default branch holds `%s %s: <reason>`; refused "
                               "(model S-016 AC1)" % (var, dvar, base, doer, base, doer))
             used.append([base, doer])
     return model, used
+
+
+# model S-025: the line the runner writes above every User representative record.
+USER_LABEL = (b"*A simulation, not real users: an AI agent playing the target user in docs/users/PROFILE.md. "
+              b"Its verdict is not market evidence.*\n\n")
+
+
+def user_return_verdict(text):
+    """model S-025: the first verdict line (cut at 500 characters) when the return is well formed, else None:
+    a verdict line, and `**What I looked at:**` and `**Reasons:**` each directly followed by a `- ` line."""
+    lines = [l.rstrip("\r") for l in text.split("\n")]
+    verdicts = [l for l in lines if orch.USER_VERDICT_RE.match(l)]
+
+    def bullets_after(head):
+        return any(l == head and i + 1 < len(lines) and lines[i + 1].startswith("- ") for i, l in enumerate(lines))
+    if not verdicts or not bullets_after("**What I looked at:**") or not bullets_after("**Reasons:**"):
+        return None
+    return verdicts[0][:500]
 
 
 def load_control(path, expected, pack=None, what="control file"):
@@ -663,7 +715,7 @@ def manifest_problems(roles, ctl):
     if not isinstance(pe, dict):
         return ["PACKS.toml on the default tip has no [roles.%s]" % name]
     item, spec = entry.get("item"), entry.get("spec")
-    values = {"spec": spec, "item": item, "project": None,
+    values = {"spec": spec, "item": item, "project": None, "ruling": entry.get("ruling"),
               "question": item if isinstance(item, str) and item.startswith("Q-") else None}
 
     def lst(key):
@@ -684,6 +736,8 @@ def manifest_problems(roles, ctl):
             out.append("%s is a holdout path" % rel)
         elif under(n, "decisions") and n.endswith("-notes.md"):
             out.append("%s is the Chief of Staff's notes" % rel)
+        elif role == "critic-gate" and USER_RECORD_RE.fullmatch(n):
+            out.append("%s is the User representative's record (model S-025)" % rel)
         elif not (_any(reads, n) or _any(feedback, n)) or _any(hidden, n):
             out.append("%s is outside what %s may read under PACKS.toml" % (rel, role))
     return out
@@ -745,7 +799,9 @@ def cmd_pack(a):
 
     spec = entry["spec"]
     item = entry["item"]
-    values = {"spec": spec, "item": item, "question": item if item.startswith("Q-") else None, "project": None}
+    ruling = entry.get("ruling")
+    values = {"spec": spec, "item": item, "question": item if item.startswith("Q-") else None, "project": None,
+              "ruling": ruling}
     pe = cfg.pack_entry(role)
     reads = _fill(pe["must_read"] + pe["may_read"], values)
     feedback_p = _fill(pe["include_feedback"], values)
@@ -772,6 +828,8 @@ def cmd_pack(a):
             keep = (is_read or is_fb) and not _any(hidden, n)
             if keep and under(n, "decisions") and n.endswith("-notes.md"):
                 keep = False            # the Chief of Staff's notes, never (AC5), by name
+            if keep and role == "critic-gate" and USER_RECORD_RE.fullmatch(n):
+                keep = False            # model S-025: the User representative's records, never, by name
             if keep and role == "critic-triage" and under(n, "dispatch-log"):
                 m = MONTH_FILE_RE.fullmatch(n.rsplit("/", 1)[-1])
                 keep = bool(m) and n.count("/") == 1 and request_month <= m.group(1) <= now_month
@@ -785,6 +843,15 @@ def cmd_pack(a):
                         feedback.append(rel)
         if not copied and kind != "dir":
             source_paths.append(n)
+    if ruling:
+        # model S-024 AC8: the owner's ruling record must be in the pack, and be a ruling record.
+        rp = os.path.join(pack, *ruling.split("/"))
+        data = read_regular(rp) if ruling in manifest else None
+        text = data.decode("utf-8", "replace") if data is not None else ""
+        if data is None or not text.startswith("Ruling: "):
+            raise g.UsageError("%s, the ruling record of %s, is missing or does not start `Ruling: `" % (ruling, item))
+        if entry["role"] in ("definer-freeze",) and entry["stage"] == 4 and len(FIXES_LINE_RE.findall(text)) != 1:
+            raise g.UsageError("%s holds no single `Fixes:` line, which a fix at Build needs" % ruling)
     write_bytes(os.path.join(pack, agent_rel), agent_bytes)
     manifest[agent_rel] = sha_bytes(agent_bytes)
     supersede = superseded_spec(source, entry) if role == "definer" and entry["stage"] == 3 else None
@@ -811,6 +878,7 @@ def cmd_pack(a):
         "pass_env": cfg.pass_env, "pass_env_cleared": cfg.pass_env_cleared, "brief": brief, "manifest": manifest,
         "source_paths": sorted(set(source_paths)), "source_tip": source_tip, "supersede": supersede,
     }
+
     control.update(cfg.proven)
     print(write_control(a.control, control))
     return 0
@@ -1690,11 +1758,21 @@ def record_path(ctl):
             return "reviews/%s/plan.md" % need_spec()
         if stage == 4:
             return "reviews/%s/_critic-checks.md" % need_spec()
-        if stage == 8:
-            return "reviews/%s/_critic-evidence.md" % item
         raise Refused("no critic record at stage %s" % stage)
     if role == "critic-triage":
         return "triage/%s.md" % item
+    if role == "critic-gate":
+        gate, n = e.get("gate"), e.get("gate_n")
+        if gate not in orch.GATE_PHASE or isinstance(n, bool) or not isinstance(n, int) or n < 1:
+            raise Refused("a critic-gate record needs a gate id and a gate_n of at least 1")
+        return "reviews/%s/_%s-gate-%d-critic.md" % (item, orch.GATE_PHASE[gate], n)
+    if role == "user-rep":
+        gate, n = e.get("gate"), e.get("gate_n")
+        if gate not in orch.GATE_PHASE or isinstance(n, bool) or not isinstance(n, int) or n < 1:
+            raise Refused("a user-rep record needs a gate id and a gate_n of at least 1")
+        return "reviews/%s/_%s-gate-%d-user.md" % (item, orch.GATE_PHASE[gate], n)
+    if role == "reviewer" and stage == 5:
+        return "reviews/%s/_reviewer-build.md" % need_spec()
     if role == "reviewer":
         return "reviews/%s/reviewer.md" % need_spec()
     if role == "researcher":
@@ -1764,16 +1842,29 @@ def cmd_record(a):
         result = res["result"]
         if result == "ok" and not answer.strip():
             result = "error"                      # an empty answer (J4)
-        record, verdict = None, "none"
+        record, verdict, recommendation, user_verdict = None, "none", None, None
         if result == "ok":
+            if role == "user-rep":                # model S-025: the runner writes the label line
+                answer = USER_LABEL + answer
             data, _ = cap(answer, len(answer), lim["record_bytes"])
             write_record(a.dest, rel, data)
             record = rel
             if role in CHECKERS:
                 verdict = review_check.parse_verdict(answer.decode("utf-8", "replace")) or "malformed"
+            elif role == "critic-gate":
+                recs = [l for l in answer.decode("utf-8", "replace").split("\n") if orch.RECOMMENDATION_RE.match(l)]
+                verdict = "none" if recs else "malformed"
+                recommendation = recs[0][:500] if recs else None
+            elif role == "user-rep":
+                user_verdict = user_return_verdict(answer.decode("utf-8", "replace"))
+                verdict = "none" if user_verdict else "malformed"
     e = ctl["entry"]
     obj = {"item": e["item"], "session": ctl["session"], "role": role, "record": record, "result": result,
            "verdict": verdict}
+    if role == "critic-gate" and result == "ok" and recommendation:
+        obj["recommendation"] = recommendation
+    if role == "user-rep" and result == "ok" and user_verdict:
+        obj["user_verdict"] = user_verdict
     if role != "checks" and "usage" in res:
         # model S-020 AC2: copied unchanged when it has exactly the shape; otherwise left out (a bad figure
         # never costs a session its outcome).

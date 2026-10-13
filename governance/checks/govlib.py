@@ -1198,7 +1198,7 @@ def load_risk_paths(root, reviewer_ids):
 ENFORCEMENT_REL = "governance/enforcement.toml"
 ENFORCEMENT_MODES = ("warn", "enforce")
 
-# Every check model S-001 to model S-005, model S-009 and model S-013 define, by its fixed name; `check_all.sh --list-checks` prints them.
+# Every check model S-001 to model S-005, model S-009, model S-013, model S-023 and model S-024 define, by its fixed name; `check_all.sh --list-checks` prints them.
 CHECK_NAMES = (
     "surface_guard.map",               # check: the map's structure, humans and exempt blocks
     "surface_guard.ownership",         # check: every tracked file has exactly one owner
@@ -1217,6 +1217,7 @@ CHECK_NAMES = (
     "governance_checks.questions",
     "governance_checks.reviewers",
     "governance_checks.builders",
+    "governance_checks.handover",
     "governance_checks.scope",
     "review_check.config",             # risk-paths.toml is valid (it defines the required reviews)
     "review_check.lint",               # verdict files are well-formed and from known reviewers
@@ -1235,6 +1236,11 @@ CHECK_NAMES = (
     "v3_checks.freeze",                # freeze --base: a PASS plan review at or before the freezing commit
     "v3_checks.joins",                 # joins: every join of a frozen spec has a marked test
     "v3_checks.holdouts",              # holdouts --base: HOLDOUTS.md changes carry a ledger entry
+    # model S-023: the project's milestones (never erased, the owner's licence, the Critic's check) and their tags.
+    "v3_checks.milestones",            # milestones --base: never erased; Owner-Ruling: and Critic-Check: records
+    "v3_checks.milestone_tags",        # milestones --base: new research requests and draft specs name milestones
+    # model S-024: each phase gate's case.
+    "v3_checks.gates",                 # gates --base: each new or changed case in form, cited, its milestone list
     # model S-013: the Orchestrator's records, on the default branch (v3 only) and inside the merge gate.
     "record-decisions",                # decisions --base: owner answers by a person, or a proxy with its words
     "record-merges",                   # merges --base: each merge re-derived from its own tree
@@ -1254,7 +1260,11 @@ NEVER_WARN = ("surface_guard.map", "ledger_check.append_only", "review_check.own
               "review_check.config", "enforcement.lint",
               # model S-013 AC1: none of the record checks is warn-only (two only report), nor the gate's.
               "record-decisions", "record-merges", "record-routing", "record-build-cap", "record-grants",
-              "gate-packs", "gate-handback", "gate-freeze")
+              "gate-packs", "gate-handback", "gate-freeze",
+              # model S-023 AC8: the owner's rulings on the milestone list can never be switched off.
+              "v3_checks.milestones",
+              # model S-024 AC10: a gate document states nothing the records do not support.
+              "v3_checks.gates")
 
 # Checks that are warn-only below a tier unless enforcement.toml names them (model S-005 AC5):
 # check name -> (the first tier at which it is enforced, the ledger entry its warn-only mode cites).

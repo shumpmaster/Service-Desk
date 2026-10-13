@@ -27,6 +27,7 @@ input-reader       reader      installed  autonomous
 researcher         researcher  installed  autonomous
 critic             reviewer    installed  autonomous
 reviewer           reviewer    installed  autonomous
+user-rep           reviewer    installed  autonomous
 ```
 
 ```surface:orchestrator
@@ -35,6 +36,10 @@ CLAUDE.md
 .gitignore
 .claude/**
 docs/**
+!docs/gates/**/*-case.md
+!docs/gates/**/*-case-*.svg
+!docs/gates/**/*-proposal.md
+!docs/users/PROFILE.md
 !docs/PROJECT.md
 !docs/handover/**
 digest/**
@@ -77,10 +82,14 @@ questions/**
 governance/**
 !governance/HOLDOUTS.md
 .github/**
+docs/gates/**/*-case.md
+docs/gates/**/*-case-*.svg
+docs/gates/**/*-proposal.md
+docs/users/PROFILE.md
 ```
 
 ```surface:input-reader
-# read-only — no write surface (same for researcher, critic, reviewer)
+# read-only — no write surface (same for researcher, critic, reviewer, user-rep)
 ```
 
 ```surface:researcher
@@ -90,6 +99,9 @@ governance/**
 ```
 
 ```surface:reviewer
+```
+
+```surface:user-rep
 ```
 
 Human committers: one `Name <email>` per line. Their commits may touch any path; the guard

@@ -1,11 +1,11 @@
 # Project document — Service Desk
 
-*One document, two parts (D-052). Part 1 is settled when the owner approves the move to Build; Part 2
+*One document, two parts (D-052). Part 1 is settled when the owner approves the move out of Discovery; after that its milestones change only as section 3 says; Part 2
 stays living. The Critic checks Part 1 against the definition of ready.*
 
 # Part 1 — The brief
 
-*Lines in italics are instructions. CI checks that every section below has content beyond its instruction once a spec is frozen (S-009).*
+*Lines in italics are instructions. CI checks that every section below has content beyond its instruction once a spec is frozen (S-009), and section 9 once a project is approved or waits on its Design gate (S-025).*
 
 ## 1. Scope
 *What is in, what is explicitly out, and where it must work (target devices or places).*
@@ -66,7 +66,7 @@ that only the owner passes.
    can trust "quiet" when nothing is waiting. §6 measures each link.
 
 ## 3. The 25,000-foot plan
-*The deliverables two levels deep, with the dependencies between them.*
+*The deliverables two levels deep, with the dependencies between them. The second level is the milestones: each phase's standard milestones come with the model (OPERATING_MODEL.md §4); list here the project's own, at least one, after the standard ones in each phase and side by side with them, one per line, name first: `<plain-English name> (M<id>) · done when <what is achieved> · phase: <Discovery, Design, Build or Launch>`; a milestone added for later work on the product, a fix or an addition filed as a new project item, then gives that item: ` · for: P-<n>`; give each such item at least one, which its spec names in its header. Each is an achievement, never a task: use the name the owner would use, with no codes or ids in it, and say what is achieved, not what someone does. Draft them here during Discovery; the owner approves them at the Design gate. After that, have the Critic check each new or reworded line: a new one before it goes to the owner, a reworded one before it is committed (a rewording needs no owner ruling); add one only with the owner's approval, and drop one, or change its order, its phase or its ` · for:` item, only by the owner's ruling; never delete or renumber one: to drop it, end its line with ` · dropped`. A milestone built outside the pipeline names its sprints after its phase: ` · sprints: PR #40, PR #41`.*
 
 - **D1 Foundation:** the answers to §7's unknowns.
   - D1.1 Hosting and live-update design (U1, U4).
@@ -101,6 +101,17 @@ that only the owner passes.
   - D7.2 Service-Desk adopts that model version, so its sessions carry the records D2.1 reads.
     A governance change in Service-Desk (R3): made in the Orchestrator's lane, reviewed, and
     approved by the owner.
+
+**Milestones** (the owner's rulings: decisions/questions/P-001-milestones-adoption.md and decisions/questions/P-001-milestones-ruling-2.md; the Critic's check: decisions/questions/P-001-milestones-adoption-critic-2.md):
+- Every project's status visible on the phone (M1) · done when every connected project's status, and what waits on the owner, shows on the owner's phone · phase: Build · sprints: PR #40, PR #41
+- Cards answered straight from the desk (M2) · done when each decision card and owner question on the desk links the owner straight to its answer, filled in for the owner to commit on GitHub · phase: Build · sprints: PR #44
+- Agent usage shown on the desk (M2B) · done when each agent session's usage and context figures show on the desk · phase: Build · sprints: PR #44, PR #52
+- What a good desk looks like is known (MD1) · done when source-checked design research sets out what a good desk looks like and why · phase: Design · sprints: Q-013
+- The desk's look and screens chosen (MD2) · done when the owner has picked the desk's look and its screens · phase: Design
+- The chosen design running on the real back end (MD3) · done when the chosen look runs on the desk's real back end, showing real records, on its preview site · phase: Design
+- Work ahead planned and scheduled from the desk (M3A) · done when the owner's chosen order and timing of coming work are recorded from the desk for the Chief of Staff to carry out · phase: Build
+- The desk's value targets shown (M3B) · done when the desk shows each value target (V1 to V5) from the project document against its measure · phase: Build
+- The desk live at the needs-you address (M3C) · done when the owner's needs-you address opens the desk on production · phase: Launch
 
 **Route to compression (Part 2):** D3.1 and D3.2 need only D2, so they can ship to the preview
 before D4. A read-only preview could replace the old page early, with acting following it.
@@ -192,7 +203,7 @@ docs/LEDGER.md. The Chief of Staff owns all four weekly checks (§4). Operations
 loses nothing that exists today. The 5-minute figure in V1 rests on U4.
 
 ## 7. Solid foundation
-*Every load-bearing unknown, each answered with evidence (library entry or research memo), including through research sub-projects if needed.*
+*Every load-bearing unknown, each answered with evidence (library entry or research memo), including through research sub-projects if needed. Name the groundwork map this rests on (research/<Q-id>-memo.md) and the owner's answers to its shortlist, or say why no map was needed.*
 
 *Draft 4, 2026-10-04, Chief of Staff, after the Critic's second definition-of-ready return. U1 to
 U4 rest on library entries, plus a few observations outside the library that are marked C and
@@ -448,12 +459,17 @@ question as put and the owner's words; the owner confirms all of them on the mov
   passed on day 1 (2026-10-01); Q-006 and Q-008 passed on 2026-10-04 (O5 closed, O3 narrowed); Q-007 closed O4 on 2026-10-04, and O6
   stays open into Define.
 
+## 9. The target user
+*Either the one line `The owner is the user.`, or the two lines `Profile: docs/users/PROFILE.md` and `Approved: decisions/questions/<project item>-user-profile-<n>.md`. Build the profile from Discovery's research, in the form docs/users/_PROFILE.md, and have the owner approve it before the definition-of-ready check (S-025).*
+
+The owner is the user.
+
 # Part 2 — The intent
 
 ## Intent
 The owner's purpose, preferences and trade-offs for this project, and what they would hate. Drafted by
 the Chief of Staff from conversations, portfolio defaults and past rulings; confirmed on the
-move-to-Build card.
+move-to-Design card.
 
 *Draft 1, 2026-09-30. Chief of Staff, from the owner's answers in the intent-capture conversation
 on that date, the Operations-Hub record (its MISSION.md, SCOPE.md and docs/research/001, the

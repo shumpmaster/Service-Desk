@@ -65,7 +65,7 @@ build/<id>/<task> → `surface_guard.py diff --range` (CI) → full test suite +
 (reviews/<PR>/) → CI green → the orchestrator merges with a merge commit (no squash) → deploy →
 ledger entry + improvement-register row in the same PR.
 
-**PRs lead with what they mean.** Every pull request body you write opens with a heading `## What this means for you`, then one paragraph in plain language: what changes for the owner (what they will see, decide or do differently, and whether any of it is irreversible), before any technical detail. No file paths, code or ids in that paragraph.
+**Plain English first.** Anything you write for the owner to read (a pull request, a decision card, a gate case, a handover package, a report, a critique digest, or your closing message to the owner) opens with one paragraph in plain English, before any detail. It starts with anything that failed or was skipped, then says what changes for the owner, what they will see, decide or do differently, and whether any of it is irreversible. No file paths, code or ids in that paragraph; record numbers go after the words they support, as cross-references. In a gate case, the ask is that paragraph, and its bracketed citations count as cross-references, not as paths. A pull request body and a handover package open with the heading `## What this means for you` and then that paragraph; CI checks that form, and reviewers and the owner judge whether it is plain.
 
 ## 5. Asking the owner
 questions/<id>.md from questions/_TEMPLATE.md: WHY, OPTIONS, RECOMMENDATION, RISK CLASS,

@@ -1623,7 +1623,11 @@ class Prep(object):
     def entry_file(self, n, e):
         path = os.path.join(self.work, "entry-%d.json" % n)
         with open(path, "w", encoding="utf-8") as fh:
-            json.dump({k: e.get(k) for k in sr.ENTRY_KEYS}, fh)
+            out = {k: e.get(k) for k in sr.ENTRY_KEYS}
+            for k in ("gate_n", "ruling"):
+                if k in e:
+                    out[k] = e[k]
+            json.dump(out, fh)
         return path
 
     def session(self, n, e, rec, hashes):
@@ -2182,8 +2186,17 @@ class Committer(object):
         line = lines[0]
         keys = {"item", "session", "role", "record", "result", "verdict", "control", "record_sha"}
         # model S-020 AC2: `usage` is the one optional key, and only in exactly its shape.
-        if set(line) - {"usage"} != keys or line["item"] != e["item"] or line["role"] != ctl["role"]:
+        if set(line) - {"usage", "recommendation", "user_verdict"} != keys or line["item"] != e["item"] \
+                or line["role"] != ctl["role"]:
             raise Refused("its outcome line is not the session's")
+        if "recommendation" in line and not (ctl["role"] == "critic-gate" and isinstance(line["recommendation"], str)
+                                             and orch.RECOMMENDATION_RE.match(line["recommendation"])):
+            raise Refused("only a critic-gate outcome line may carry a recommendation line")
+        # model S-025: only a user-rep line carries the user representative's verdict line.
+        if "user_verdict" in line and not (ctl["role"] == "user-rep" and isinstance(line["user_verdict"], str)
+                                           and len(line["user_verdict"]) <= 500
+                                           and orch.USER_VERDICT_RE.match(line["user_verdict"])):
+            raise Refused("only a user-rep outcome line may carry a user_verdict line")
         if "usage" in line:
             why = sr.usage_problem(line["usage"])
             if why is not None:
@@ -2489,7 +2502,9 @@ class Committer(object):
             checks = [[os.path.join(HERE, "surface_guard.py"), "diff", "--range", "%s..HEAD" % base, "--branch",
                        branch, "--root", wt],
                       [os.path.join(HERE, "v3_checks.py"), "scope", "--base", base, "--root", wt],
-                      [os.path.join(HERE, "v3_checks.py"), "freeze", "--base", base, "--root", wt]]
+                      [os.path.join(HERE, "v3_checks.py"), "freeze", "--base", base, "--root", wt]
+                      # model S-023 AC8: a role branch's range holds the Definer's freeze, which needs `milestones:`.
+                      + (["--milestones"] if branch.startswith("build/") else [])]
             for argv in checks:
                 proc = subprocess.run([sys.executable] + argv, cwd=wt, env=git_env({"PYTHONDONTWRITEBYTECODE": "1"}),
                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)

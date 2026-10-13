@@ -9,8 +9,12 @@ Usage:
 A pure decision engine. It runs no sessions, touches no git branch and reads no
 work product's content (AC10: it parses only status files, request files,
 ROUTING.toml, the dispatch log, the outcomes file, status/processed.json, the
-first two lines of the one decision record an item waits on, and a spec's
-header up to its `status:` line; it may list file names).
+one decision record an item waits on (whole, up to 64 KiB; model S-024 AC4), and a
+spec's header up to its `status:` line; it may list file names and test paths). Two
+reads more (model S-023, model S-024): a later-work request's `ruling` record, only for
+its first line, when the request is filed; and the Build gate's case, only for a
+`criteria` record holding `Nothing needed:`, only to find its `## Nothing needed in Build`
+line. Whether a phase gate's case exists is a path test.
 
   step        For each work item, works out the one next action (AC3, AC11):
               1. requests: intake/requests/<item>.toml -> status/<item>.toml at the
@@ -34,7 +38,8 @@ header up to its `status:` line; it may list file names).
               each launch-waiting item's branch tip, and whether its decision record was committed
               after the card's last change). With it, an answer to a launch card is applied only when
               the card's `Item-Tip:` line names that tip and the answer is fresh; otherwise the answer
-              is refused with a fresh launch card (route `launch-pass`), and `approve` on a card with
+              is refused with a fresh launch card (route `launch-pass`, or `gate-view` for an item whose
+              card the gate Critic's view raised, model S-024), and `approve` or `proceed` on a card with
               no `Item-Tip:` is refused (the card stays open). The commit job stamps the tip.
   --hold      (model S-013 AC6) CI is not green on the default tip: requests, outcomes and the owner's
               decisions are applied and cards raised, but no session or check run is dispatched
@@ -87,19 +92,46 @@ GENESIS = "0" * 64
 
 KINDS = ("project", "research", "evidence")
 KIND_OF_PREFIX = {"P": "project", "Q": "research", "E": "evidence"}
-STAGES = (2, 3, 4, 5, 6, 8)
+STAGES = (2, 3, 4, 5, 6)
 STATES = ("ready", "dispatched", "returned", "waiting-owner", "done", "closed")
 ROLES = ("critic", "researcher", "source-checker", "definer", "definer-freeze", "check-author", "builder",
-         "reviewer", "checks", "critic-triage")
+         "reviewer", "checks", "critic-triage", "critic-gate", "user-rep")
 VERDICTS = ("PASS", "FAIL", "malformed", "none")
-GATES = ("dor", "dor-fail", "criteria", "launch", "evidence", "stop", "failure")
+GATES = ("dor", "dor-fail", "criteria", "launch", "stop", "failure")
+# model S-024: the three phase gates, the phase each case is named for, and where recycle may go.
+GATE_PHASE = {"dor": "design", "criteria": "build", "launch": "launch"}
+GATE_PASS = {"dor": "dor-pass", "criteria": "plan-pass", "launch": "launch-pass"}
+GATE_TITLE = {"dor": "The Design gate", "criteria": "The Build gate", "launch": "The Launch gate"}
+RECYCLE_INTO = {"dor": ("Discovery",), "criteria": ("Discovery", "Design"),
+                "launch": ("Discovery", "Design", "Build", "Launch")}
+RECOMMENDATION_RE = re.compile(r"^\*\*The Critic's recommendation:\*\* (proceed|hold|recycle into "
+                               r"(Discovery|Design|Build|Launch)|kill)\b")
+GATE_WORDS = ("proceed", "hold", "recycle", "kill")
+# model S-025: the user representative, at every phase gate of a project with a target-user profile.
+PROFILE_REL = "docs/users/PROFILE.md"
+USER_VERDICT_RE = re.compile(r"^\*\*The user representative's verdict:\*\* (approve|reject) — \S.*$")
+GATE_ROLES = ("critic-gate", "user-rep")
+# model S-025: the words that move an item forward over the representative's reject need `User-Override:`.
+FORWARD_WORDS = {"dor": ("proceed", "build"), "criteria": ("proceed", "approve"), "launch": ("proceed", "approve")}
 RESULTS = ("ok", "error", "timeout", "usage-limit")
 CHECKERS = ("critic", "source-checker", "reviewer", "checks")   # verdict PASS or FAIL
-BUDGET_EXEMPT = ("checks", "critic-triage")
+BUDGET_EXEMPT = ("checks", "critic-triage", "critic-gate", "user-rep")
 FROZEN_STAGES = (4, 5, 6)
 # AC5 confirm: the stage's checker (research: the Source checker).
-CONFIRM_CHECKER = {2: "critic", 3: "critic", 4: "critic", 5: "checks", 6: "reviewer", 8: "critic"}
+CONFIRM_CHECKER = {2: "critic", 3: "critic", 4: "critic", 5: "checks", 6: "reviewer"}
 RESPECIFY_WORDS = ("re-specify", "criteria-wrong", "checks-wrong")
+# model S-023 AC2: the six phases over the stages, one map in one place; the desk runs the first four.
+PHASES = ("Discovery", "Design", "Build", "Launch", "Operate", "Review")
+DESK_PHASES = PHASES[:4]
+GRADUATED = "Graduated"
+PHASE_OF_STAGE = {1: "Discovery", 2: "Discovery", 3: "Design", 4: "Build", 5: "Build", 6: "Launch", 7: "Operate",
+                  8: "Review"}
+# model S-023 AC6: the applied gate words that send the work back through a gate it did not pass.
+BOUNDARY_WORDS = {"dor": ("recycle", "re-aim"), "criteria": ("recycle", "revise"), "launch": ("recycle", "revise")}
+# model S-023 AC4: a research request's milestone tag; AC12: a later-work request's ruling record.
+MILESTONE_TAG_RE = re.compile(r"^(?:M[0-9A-Z]{1,7}|(?:Discovery|Design|Build|Launch)-[1-9])$")
+RULING_PATH_RE = re.compile(r"^decisions/questions/[A-Za-z0-9][A-Za-z0-9.-]*\.md$")
+ENTERS = {"Build": (4, "definer-freeze"), "Design": (3, "definer")}
 
 ITEM_RE = re.compile(r"^[PQE]-\d{3,}$")
 SPEC_ID_RE = re.compile(r"^S-(\d{3,})$")
@@ -112,8 +144,9 @@ MONTH_FILE_RE = re.compile(r"^(\d{4}-\d{2})\.jsonl$")
 ROUND_RE = re.compile(r"^(\*|>=\d+|<\d+)$")
 
 FIELD_ORDER = ("kind", "stage", "state", "role", "last_verdict", "plan_round", "build_round", "confirm_used",
-               "attempts", "sessions", "dispatched_at", "usage_limit_since", "gate", "card", "resume", "spec",
-               "superseded", "project", "outcome")
+               "attempts", "sessions", "dispatched_at", "usage_limit_since", "gate", "card", "next_gate", "gate_n",
+               "gate_recommendation", "user_verdict", "resume", "spec",
+               "superseded", "project", "milestone", "outcome")
 REQUIRED = FIELD_ORDER[:10]
 
 
@@ -185,12 +218,18 @@ class Routing:
         if not isinstance(r["round"], str) or not ROUND_RE.match(r["round"]):
             raise UsageError(bad + "round %r" % (r["round"],))
         act = r["action"]
-        ok = act in ("none", "done", "run-checks", "dispatch item-role") \
+        ok = act in ("none", "done", "run-checks", "dispatch item-role", "card next-gate", "pass") \
+            or (act.startswith("gate ") and act[5:] in GATE_PHASE) \
             or (act.startswith("card ") and act[5:] in GATES) \
             or (act.startswith("dispatch ") and act[9:] in ROLES)
         if not ok:
             raise UsageError(bad + "action %r" % (act,))
-        if r.get("condition") not in (None, "frozen", "not-frozen"):
+        if act == "pass" and ("then_stage" not in r or r.get("then_role") not in ROLES):
+            raise UsageError(bad + "a pass route needs then_stage and then_role")
+        if "then_role" in r and act != "pass":
+            raise UsageError(bad + "then_role is only for a pass route")
+        if r.get("condition") not in (None, "frozen", "not-frozen", "case-written", "no-case",
+                                      "frozen-nothing-needed", "user-step", "no-user-step"):
             raise UsageError(bad + "condition %r" % (r["condition"],))
         if "then_stage" in r and r["then_stage"] not in STAGES:
             raise UsageError(bad + "then_stage %r" % (r["then_stage"],))
@@ -230,7 +269,78 @@ def _round_ok(cond, rnd):
     return rnd < int(cond[1:])
 
 
-def route_matches(route, st, is_frozen):
+def is_applied_decision(line):
+    """An applied decision line: `word`, no `route`, a result that is not a refusal (model S-012 AC12)."""
+    return isinstance(line, dict) and "word" in line and "route" not in line \
+        and not str(line.get("result", "")).startswith("refused")
+
+
+def is_graduation(line):
+    """model S-023 AC2: the applied answer at the one Launch gate that sets the project done."""
+    return is_applied_decision(line) and line.get("gate") == "launch" and line.get("word") in ("approve", "proceed") \
+        and str(line.get("result", "")).startswith("done/")
+
+
+def is_boundary(line):
+    """model S-023 AC6: an applied decision line whose word sends the work back through a gate it did not pass."""
+    return is_applied_decision(line) and line.get("word") in BOUNDARY_WORDS.get(line.get("gate"), ())
+
+
+def phase_of_item(st, lines):
+    """model S-023 AC2: a project item's phase, Graduated once its log holds a graduation line; None for
+    research and evidence items, which have no phase of their own."""
+    if st.get("kind") != "project":
+        return None
+    if any(is_graduation(l) for l in lines):
+        return GRADUATED
+    return PHASE_OF_STAGE[st["stage"]]
+
+
+def iterations(lines):
+    """model S-023 AC6: [(line, phase, iteration)] for each routed line (a `route` and a `stage`) of one item's
+    lines in log order. Counts start at 0 per phase; a routed line whose phase is not among the phases reached
+    since the last boundary line opens its phase's next iteration; a boundary line empties that set."""
+    counts, reached, out = {}, set(), []
+    for l in lines:
+        if not isinstance(l, dict):
+            continue
+        if is_boundary(l):
+            reached = set()
+            continue
+        if "route" not in l or l.get("stage") not in PHASE_OF_STAGE:
+            continue
+        phase = PHASE_OF_STAGE[l["stage"]]
+        if phase not in reached:
+            counts[phase] = counts.get(phase, 0) + 1
+            reached.add(phase)
+        out.append((l, phase, counts[phase]))
+    return out
+
+
+def nothing_needed_ruled(lines):
+    """model S-024 AC5: the item's latest applied criteria decision line holds nothing_needed = Build."""
+    for l in reversed(list(lines)):
+        if isinstance(l, dict) and "word" in l and "route" not in l and l.get("gate") == "criteria" \
+                and not str(l.get("result", "")).startswith("refused"):
+            return l.get("nothing_needed") == "Build"
+    return False
+
+
+def checks_locked_since_ruling(lines):
+    """model S-024 AC4: a `checks-pass` line after the item's latest applied criteria decision line."""
+    seen = False
+    for l in lines:
+        if not isinstance(l, dict):
+            continue
+        if "word" in l and "route" not in l and l.get("gate") == "criteria" \
+                and not str(l.get("result", "")).startswith("refused"):
+            seen = False
+        elif l.get("route") == "checks-pass":
+            seen = True
+    return seen
+
+
+def route_matches(route, st, is_frozen, case_written=False, lines=(), user_step=False):
     if route["stage"] != "*" and route["stage"] != st["stage"]:
         return False
     state = route["state"]
@@ -250,7 +360,18 @@ def route_matches(route, st, is_frozen):
     if not _round_ok(route["round"], round_of(st)):
         return False
     cond = route.get("condition")
-    if cond is not None and bool(is_frozen(st.get("spec"))) != (cond == "frozen"):
+    if cond in ("frozen", "not-frozen") and bool(is_frozen(st.get("spec"))) != (cond == "frozen"):
+        return False
+    if cond == "case-written" and not case_written:
+        return False
+    if cond == "no-case" and case_written:
+        return False
+    if cond == "frozen-nothing-needed" and not (is_frozen(st.get("spec")) and nothing_needed_ruled(lines)):
+        return False
+    # model S-025: the user representative's step runs when the profile and this gate's proposal exist.
+    if cond == "user-step" and not user_step:
+        return False
+    if cond == "no-user-step" and user_step:
         return False
     return True
 
@@ -258,10 +379,10 @@ def route_matches(route, st, is_frozen):
 NO_ROUTE = {"id": "no-route", "action": "card failure"}
 
 
-def find_route(routing, st, is_frozen):
+def find_route(routing, st, is_frozen, case_written=False, lines=(), user_step=False):
     """The first route matching the status (AC3)."""
     for r in routing.routes:
-        if route_matches(r, st, is_frozen):
+        if route_matches(r, st, is_frozen, case_written, lines, user_step):
             return r
     return NO_ROUTE
 
@@ -273,7 +394,10 @@ def find_route(routing, st, is_frozen):
 class Context:
     """What the rules need from outside: the table, the clock, a spec's freeze, a new spec id."""
 
-    def __init__(self, routing, now, is_frozen, new_spec):
+    def __init__(self, routing, now, is_frozen, new_spec, case_written=None, lines_of=None, user_step=None):
+        self.case_written = case_written
+        self.user_step = user_step          # model S-025: user_step(item, st), optional
+        self.lines_of = lines_of
         self.routing = routing
         self.now = now
         self.now_s = fmt_time(now)
@@ -289,7 +413,6 @@ REASONS = {
     "plan-pass": "The plan review passed; the acceptance criteria need the owner's approval.",
     "freeze-not-frozen": "The Definer's freeze session returned, but the spec's status line is not `frozen`.",
     "launch-pass": "The launch review passed.",
-    "evidence-return": "The evidence review is back.",
     "no-route": "No route of the routing table matches the item's status.",
 }
 
@@ -325,7 +448,8 @@ def _dispatch(ctx, st, route_id, role, stage, run_checks):
     if stage != st["stage"]:
         st.update(stage=stage, sessions=0, attempts=0)
     exempt = role in BUDGET_EXEMPT
-    if stage in FROZEN_STAGES and not ctx.is_frozen(st.get("spec")):
+    # model S-023 AC12: the Definer's freeze session at stage 4 (a fix spec) is the freeze itself.
+    if stage in FROZEN_STAGES and role != "definer-freeze" and not ctx.is_frozen(st.get("spec")):
         return _card(st, "failure", route_id,
                      "A dispatch at stage %d needs a frozen spec, and %s is not frozen (D-043, D-046)."
                      % (stage, st.get("spec") or "the item's spec"))
@@ -341,13 +465,37 @@ def _dispatch(ctx, st, route_id, role, stage, run_checks):
             "role": role, "stage": stage, "spec": st.get("spec")}
 
 
-def route_item(ctx, st):
+def route_item(ctx, st, item=None):
     """Route one status (AC3). Returns (route id, new status, action or None)."""
-    r = find_route(ctx.routing, st, ctx.is_frozen)
+    lines = ctx.lines_of(item) if (ctx.lines_of and item) else ()
+    cw = bool(ctx.case_written(item, st)) if (ctx.case_written and item and st.get("next_gate")) else False
+    us = bool(ctx.user_step(item, st)) if (ctx.user_step and item and st.get("next_gate")) else False
+    r = find_route(ctx.routing, st, ctx.is_frozen, cw, lines, us)
     rid, act = r["id"], r["action"]
     if act == "none":
         return rid, st, None
     st = dict(st)
+    if act.startswith("gate "):
+        gid = act[5:]
+        seen = [l.get("gate_n") for l in lines if isinstance(l, dict) and l.get("gate") == gid
+                and isinstance(l.get("gate_n"), int)]
+        n = 1 + max(seen + [0])
+        action = {"kind": "gate", "route": rid, "gate": gid, "gate_n": n, "role": st["role"],
+                  "stage": st["stage"], "spec": st.get("spec")}
+        st.update(gate_n=n, next_gate=gid, role="critic-gate", state="ready", sessions=0, attempts=0,
+                  last_verdict="none")
+        st.pop("gate_recommendation", None)
+        st.pop("user_verdict", None)
+        return rid, st, action
+    if act == "card next-gate":
+        gid = st.pop("next_gate")
+        return rid, st, _card(st, gid, rid, REASONS.get(GATE_PASS[gid], ""))
+    if act == "pass":
+        action = {"kind": "pass", "route": rid, "role": st["role"], "stage": st["stage"] + 1,
+                  "spec": st.get("spec"), "nothing_needed": "Build"}
+        st.update(stage=r["then_stage"], role=r["then_role"], state="ready", last_verdict="none", sessions=0,
+                  attempts=0)
+        return rid, st, action
     if act.startswith("card "):
         resume = r.get("resume")
         if resume == "this":
@@ -422,9 +570,10 @@ def valid_words(routing, st, gate):
     return words
 
 
-def apply_decision(ctx, st, word):
+def apply_decision(ctx, st, word, into=None, nothing_needed=None, lines=()):
     """Apply the owner's (or the Chief of Staff's) word to the item's card (AC5).
-    The word must be valid (valid_words). Returns (status, action or None)."""
+    The word must be valid (valid_words). model S-024: `into` is a recycle's phase; `nothing_needed`
+    rides on the log line only; `lines` are the item's log lines. Returns (status, action or None)."""
     st = dict(st)
     gate = st.pop("gate")
     resume = st.pop("resume", None)
@@ -448,6 +597,36 @@ def apply_decision(ctx, st, word):
             st["superseded"] = list(st.get("superseded", [])) + [old]
         st["spec"] = ctx.new_spec()
 
+    if gate in GATE_PHASE:
+        st.pop("gate_recommendation", None)
+        st.pop("user_verdict", None)
+        if word == "hold":
+            st.update(gate_n=st.get("gate_n", 0) + 1, next_gate=gate, role="critic-gate", state="ready",
+                      last_verdict="none", attempts=0)
+            return st, None
+        if word == "kill":
+            close()
+            return st, None
+        if word == "recycle":
+            if into == "Discovery":
+                to(2, "critic", reset=True)
+                return st, _card(st, "dor-fail", "gate-recycle",
+                                 "The owner recycled the project into Discovery: the Chief of Staff revises the "
+                                 "project document and resubmits it.")
+            if into == "Design":
+                if gate != "criteria":
+                    new_spec()
+                to(3, "definer", reset=True)
+            elif into == "Build":
+                if nothing_needed_ruled(lines) and not checks_locked_since_ruling(lines):
+                    to(4, "check-author", reset=True)
+                else:
+                    to(5, "builder", reset=True)
+            else:
+                to(6, "builder", reset=True)
+            return st, None
+        if word == "proceed":
+            word = {"dor": "build", "criteria": "approve", "launch": "approve"}[gate]
     if gate == "dor":
         if word == "build":
             new_spec()
@@ -477,11 +656,6 @@ def apply_decision(ctx, st, word):
             to(6, "builder")
         else:
             close()
-    elif gate == "evidence":
-        if word == "continue":
-            st["state"] = "done"
-        else:
-            close()
     else:  # stop, failure
         if word in ("drop", "re-scope"):
             close()
@@ -501,11 +675,8 @@ def apply_decision(ctx, st, word):
         elif word == "resubmit":
             to(2, "critic", reset=True)
         elif word == "retry":
-            if gate == "stop":              # evidence
-                to(8, "critic", reset=True)
-            else:
-                m = RESUME_RE.match(resume)
-                to(int(m.group(1)), m.group(2))
+            m = RESUME_RE.match(resume)
+            to(int(m.group(1)), m.group(2))
         else:
             raise ValueError("unknown word %r" % (word,))
     return st, None
@@ -519,6 +690,12 @@ def _is_int(v):
     return isinstance(v, int) and not isinstance(v, bool)
 
 
+def user_rejected(st):
+    """model S-025: the status holds the user representative's reject."""
+    m = USER_VERDICT_RE.match(st.get("user_verdict") or "")
+    return bool(m) and m.group(1) == "reject"
+
+
 def check_status(item, st):
     """Errors for a status file's values outside AC1's sets (empty when valid)."""
     errs = []
@@ -530,7 +707,12 @@ def check_status(item, st):
         return errs + ["missing field(s) %s" % ", ".join(missing)]
     if st["kind"] not in KINDS or KIND_OF_PREFIX[item[0]] != st["kind"]:
         errs.append("kind %r (an %s-item is a %s)" % (st["kind"], item[0], KIND_OF_PREFIX[item[0]]))
-    if not _is_int(st["stage"]) or st["stage"] not in STAGES:
+    if _is_int(st["stage"]) and st["stage"] == 8 and st["kind"] == "evidence":
+        # model S-024 AC9: a finished evidence review written before it loads as a record; an open one is skipped.
+        if st.get("state") not in ("done", "closed"):
+            errs.append("an open evidence review at stage 8: the desk no longer runs them (model S-024); close its "
+                        "status by hand")
+    elif not _is_int(st["stage"]) or st["stage"] not in STAGES:
         errs.append("stage %r" % (st["stage"],))
     if st["state"] not in STATES:
         errs.append("state %r" % (st["state"],))
@@ -555,6 +737,18 @@ def check_status(item, st):
         errs.append("gate %r" % (st["gate"],))
     if "card" in st and (not _is_int(st["card"]) or st["card"] < 1):
         errs.append("card %r" % (st["card"],))
+    if "next_gate" in st and (st["next_gate"] not in GATE_PHASE or st.get("role") not in GATE_ROLES):
+        errs.append("next_gate %r" % (st["next_gate"],))
+    if "gate_n" in st and (not _is_int(st["gate_n"]) or st["gate_n"] < 1):
+        errs.append("gate_n %r" % (st["gate_n"],))
+    if "gate_recommendation" in st and not (isinstance(st["gate_recommendation"], str)
+                                            and len(st["gate_recommendation"]) <= 500
+                                            and RECOMMENDATION_RE.match(st["gate_recommendation"])
+                                            and st.get("role") in GATE_ROLES):
+        errs.append("gate_recommendation %r" % (st["gate_recommendation"],))
+    if "user_verdict" in st and not (isinstance(st["user_verdict"], str) and len(st["user_verdict"]) <= 500
+                                     and USER_VERDICT_RE.match(st["user_verdict"]) and st.get("role") == "user-rep"):
+        errs.append("user_verdict %r" % (st["user_verdict"],))
     if "resume" in st and not _valid_resume(st["resume"]):
         errs.append("resume %r" % (st["resume"],))
     if "spec" in st and not (isinstance(st["spec"], str) and SPEC_ID_RE.match(st["spec"])):
@@ -565,6 +759,9 @@ def check_status(item, st):
     if "project" in st and not (isinstance(st["project"], str) and ITEM_RE.match(st["project"])
                                 and st["project"].startswith("P-")):
         errs.append("project %r" % (st["project"],))
+    if "milestone" in st and not (st["kind"] == "research" and isinstance(st["milestone"], str)
+                                  and MILESTONE_TAG_RE.match(st["milestone"])):
+        errs.append("milestone %r (model S-023: only a research item carries one)" % (st["milestone"],))
     if "outcome" in st and not isinstance(st["outcome"], str):
         errs.append("outcome %r" % (st["outcome"],))
     if st.get("state") == "waiting-owner" and ("gate" not in st or "card" not in st):
@@ -604,17 +801,19 @@ def new_status(kind, stage, role, **extra):
 
 
 GATE_QUESTION = {
-    "dor": "The project passed the definition-of-ready check. Build it, re-aim it, or stop?",
+    "dor": "The Design gate: the project passed the definition-of-ready check. The case for moving into Design is "
+           "in the gate document. Proceed, hold, recycle or kill?",
     "dor-fail": "The project failed the definition-of-ready check. Resubmit a revised project document, or stop?",
-    "criteria": "The plan review passed. Approve the acceptance criteria (the spec goes to its freeze), "
-                "revise them, or stop?",
-    "launch": "The launch review passed. Approve the launch, revise it, or stop?",
-    "evidence": "The evidence review of the delivered project is back. Continue, re-aim, or stop?",
+    "criteria": "The Build gate: the plan review passed. The case for freezing the criteria and moving into Build "
+                "is in the gate document. Proceed, hold, recycle or kill?",
+    "launch": "The Launch gate: the launch review passed. The case for going live and graduating the product, with "
+              "its own monitoring and feedback confirmed running, is in the gate document. Proceed, hold, recycle "
+              "or kill?",
     "stop": "The work reached the stop rule. What happens next?",
     "failure": "The work could not go on. What happens next?",
 }
 WORD_EFFECT = {
-    ("dor", "build"): "a new spec id is allocated and the project goes to Define (stage 3, the Definer)",
+    ("dor", "build"): "a new spec id is allocated and the project moves into Design: Define (stage 3, the Definer)",
     ("dor", "re-aim"): "a dor-fail card for the Chief of Staff to revise the project document",
     ("dor-fail", "resubmit"): "back to the definition-of-ready check (stage 2, the Critic); the plan rounds "
                               "are kept, so a third FAIL still leads to Triage and a stop card",
@@ -622,10 +821,35 @@ WORD_EFFECT = {
     ("criteria", "revise"): "back to the Definer (stage 3)",
     ("launch", "approve"): "the project is delivered (done)",
     ("launch", "revise"): "back to the Builder for the launch (stage 6)",
-    ("evidence", "continue"): "the evidence review is done",
-    ("evidence", "re-aim"): "closed (re-aim); the Chief of Staff files new requests",
-    ("stop", "retry"): "the evidence review runs again (stage 8, the Critic), rounds reset",
     ("stop", "resubmit"): "back to the definition-of-ready check (stage 2, the Critic), rounds reset",
+    # model S-024 AC3: each gate's own effects for its four words ("What each answer does").
+    ("dor", "proceed"): "the Design gate is passed: a new spec id is allocated and the project moves into Design "
+                        "(stage 3, the Definer), as `build` does",
+    ("dor", "hold"): "not yet: nothing moves; the Chief of Staff updates the case under the next number, the Critic "
+                     "reads it again, and a fresh card follows (needs a `Reason:` line)",
+    ("dor", "recycle"): "back into Discovery, its next iteration (`Into: Discovery` and a `Reason:` line): a "
+                        "dor-fail card for the Chief of Staff to revise the project document, rounds reset",
+    ("dor", "kill"): "the project is closed (kill)",
+    ("criteria", "proceed"): "the Build gate is passed: the Definer freezes the spec (stage 3, definer-freeze), as "
+                             "`approve` does; with a line `Nothing needed: Build`, on a case holding \"Nothing needed "
+                             "in Build\", the frozen return then passes Build with nothing needed (a `Proxy:` line "
+                             "is refused with it)",
+    ("criteria", "hold"): "not yet: nothing moves; the Chief of Staff updates the case under the next number, the "
+                          "Critic reads it again, and a fresh card follows (needs a `Reason:` line)",
+    ("criteria", "recycle"): "back into Design (`Into: Design`: the Definer, stage 3, same spec) or Discovery "
+                             "(`Into: Discovery`: stage 2, then a dor-fail card), as its next iteration, with a "
+                             "`Reason:` line; rounds reset",
+    ("criteria", "kill"): "the project is closed (kill)",
+    ("launch", "proceed"): "the Launch gate is passed: the product goes live and graduates (done), as `approve` "
+                           "does",
+    ("launch", "hold"): "not yet: nothing moves; the Chief of Staff updates the case under the next number, the "
+                        "Critic reads it again, and a fresh card follows (needs a `Reason:` line)",
+    ("launch", "recycle"): "back into Launch (`Into: Launch`: the Builder, stage 6), Build (`Into: Build`: the "
+                           "Builder, stage 5, or the Check author, stage 4, when Build was passed with nothing "
+                           "needed), Design (`Into: Design`: a new spec superseding the current one, stage 3, the "
+                           "Definer, not a strike) or Discovery (`Into: Discovery`: stage 2, then a dor-fail card), "
+                           "as its next iteration, with a `Reason:` line; rounds reset",
+    ("launch", "kill"): "the project is closed (kill)",
 }
 WORD_EFFECT_ANY = {
     "stop": "closed (stop)",
@@ -651,10 +875,16 @@ def card_text(routing, item, st, action, links, words):
     record = "decisions/%s/%s-%d.md" % (item, gate, n)
     notes = "decisions/%s/%s-%d-notes.md" % (item, gate, n)
     answered = routing.gates.get(gate, {}).get("answered_by", "owner")
+    user = action.get("user")                 # model S-025: "ran", "not-needed", "not-run", or None
     out = ["# Decision card — %s %s-%d" % (item, gate, n), "",
            "item: %s   kind: %s   gate: %s   card: %d   route: %s" % (item, st["kind"], gate, n, action["route"]),
            "answer: write `%s`, first line `Decision: <word>` (one of the words below)." % record,
-           "", "## 1. The decision", GATE_QUESTION.get(gate, ""), "",
+           "", "## 1. The decision", GATE_QUESTION.get(gate, "")]
+    if gate in GATE_PHASE and st.get("gate_n"):
+        out.append("%s, case %d." % (GATE_TITLE[gate], st["gate_n"]))
+        if user == "ran":
+            out.append("You rule on the gate and on the user representative's verdict.")
+    out += ["",
            "## 2. Why it's yours",
            "Route `%s` of governance/ROUTING.toml (model S-012) sends this card to the %s. %s"
            % (action["route"], answered, action.get("reason") or ""), "",
@@ -669,11 +899,30 @@ def card_text(routing, item, st, action, links, words):
     if st.get("resume"):
         out.append("- `retry` returns to stage %s, role %s" % tuple(st["resume"].split("/")))
     out += ["", "## 4. Options"]
-    for w in words:
+    old_words = gate in GATE_PHASE and any(w in GATE_WORDS for w in words)
+    for i, w in enumerate(words):
+        if old_words and w not in GATE_WORDS and (i == 0 or words[i - 1] in GATE_WORDS):
+            out.append("Also accepted, as before:")
         effect = WORD_EFFECT.get((gate, w)) or WORD_EFFECT_ANY.get(w, "")
         refused = " A `Proxy:` line is refused on this word." if "%s.%s" % (gate, w) in routing.proxy_refused else ""
-        out.append("- `%s` — %s.%s" % (w, effect, refused))
-    out += ["", "## 5. Recommendation", "The Chief of Staff's part: `%s`." % notes, "",
+        override = ""
+        if user == "ran" and w in FORWARD_WORDS.get(gate, ()) and user_rejected(st):
+            override = " After the representative's reject, add a line `User-Override: <your reason>`."
+        out.append("- `%s` — %s.%s%s" % (w, effect, refused, override))
+    rec5 = ["The Chief of Staff's part: `%s`." % notes]
+    if gate in GATE_PHASE and st.get("gate_n"):
+        rec5 = ["The Critic: %s" % (st.get("gate_recommendation") or "(the Critic's line is not recorded)"),
+                "The proposer's recommendation is in section 1 of the case. " + rec5[0]]
+        if user == "ran":
+            rec5.insert(1, "The user representative (a simulation, not real users): %s"
+                        % (st.get("user_verdict") or "(the representative's line is not recorded)"))
+        elif user == "not-needed":
+            rec5.insert(1, "The user representative: not needed. The brief records that the owner is the user "
+                           "(docs/PROJECT.md, section 9).")
+        elif user == "not-run":
+            rec5.insert(1, "The user representative did not run: no proposal was written for this gate. Answer "
+                           "`hold` to have it run on an updated case and proposal.")
+    out += ["", "## 5. Recommendation"] + rec5 + ["",
             "## 6. If you don't decide",
             "Nothing moves: the item waits on this card. Waiting never counts as stalled and never uses the "
             "budget (model S-012 AC6).", "",
@@ -718,7 +967,9 @@ class Step:
         self.touched = set()
         self.spec_cache = {}
         self.max_spec = 0
-        self.ctx = Context(self.routing, now, self.is_frozen, self.new_spec)
+        self.item_objs = {}
+        self.ctx = Context(self.routing, now, self.is_frozen, self.new_spec, self.case_written, self.lines_of,
+                           self.user_step)
 
     # -- paths and reading
     def path(self, rel):
@@ -770,8 +1021,49 @@ class Step:
                     item = None
                 if item:
                     self.item_lines.setdefault(item, []).append((rel, i))
+                    self.item_objs.setdefault(item, []).append(json.loads(line))
+
+    def lines_of(self, item):
+        return list(self.item_objs.get(item, [])) + [l for l in self.lines if l.get("item") == item]
+
+    def ruling_of(self, item):
+        """model S-024 AC8: a later-work request's `ruling` (enters Build or Design), or None."""
+        p = self.path("%s/%s.toml" % (REQUESTS_DIR, item))
+        if not os.path.isfile(p):
+            return None
+        try:
+            data = tomllib.loads(self.read_text(p))
+        except (OSError, tomllib.TOMLDecodeError):
+            return None
+        r = data.get("ruling")
+        return r if data.get("enters") in ("Build", "Design") and isinstance(r, str) else None
+
+    def case_path(self, item, st):
+        return "docs/gates/%s/%s-gate-%d-case.md" % (item, GATE_PHASE[st["next_gate"]], st.get("gate_n", 0))
+
+    def proposal_path(self, item, st):
+        return "docs/gates/%s/%s-gate-%d-proposal.md" % (item, GATE_PHASE[st["next_gate"]], st.get("gate_n", 0))
+
+    def has_profile(self):
+        """model S-025: a target-user profile on the checkout (a path test; never opened)."""
+        return os.path.isfile(self.path(PROFILE_REL))
+
+    def case_written(self, item, st):
+        # model S-025: with a target-user profile, the gate waits for the proposal too.
+        if not os.path.isfile(self.path(self.case_path(item, st))):
+            return False
+        return not self.has_profile() or os.path.isfile(self.path(self.proposal_path(item, st)))
+
+    def user_step(self, item, st):
+        """model S-025: the user representative's step runs (the profile and this gate's proposal exist)."""
+        return self.has_profile() and os.path.isfile(self.path(self.proposal_path(item, st)))
 
     def log(self, **fields):
+        item = fields.get("item")
+        if "route" in fields and isinstance(item, str) and item.startswith("P-") and fields.get("stage") in PHASE_OF_STAGE:
+            # model S-023 AC6: a project item's routed line carries its phase and that phase's iteration.
+            fields["phase"] = PHASE_OF_STAGE[fields["stage"]]
+            fields["iteration"] = iterations(self.lines_of(item) + [fields])[-1][2]
         self.lines.append(fields)
 
     def anomaly(self, key, item, message):
@@ -888,28 +1180,59 @@ class Step:
                 refuse("an %s-item is a %s, not a %s" % (item[0], KIND_OF_PREFIX[item[0]], kind))
             elif kind == "research" and not (isinstance(data.get("question"), str) and data["question"].strip()):
                 refuse("a research request needs a `question`")
-            elif kind == "evidence" and not self._done_project(data.get("project")):
-                refuse("the project %r is not a project item in state done" % (data.get("project"),))
+            elif kind == "evidence":
+                refuse("a graduated product owns its own review (model S-023)")
+            elif "milestone" in data and kind == "project":
+                refuse("a project's milestones are in its project document; tag its specs and research instead "
+                       "(model S-023)")
+            elif "milestone" in data and not (isinstance(data["milestone"], str)
+                                              and MILESTONE_TAG_RE.match(data["milestone"])):
+                refuse("milestone %r is neither a project milestone's id (M<id>) nor a standard milestone's "
+                       "(<Phase>-<n>) (model S-023)" % (data["milestone"],))
+            elif kind == "project" and self.later_work_problem(data):
+                refuse(self.later_work_problem(data))
             else:
-                if kind == "project":
+                if kind == "project" and data.get("enters") in ENTERS:
+                    # model S-023 AC12: later work the owner raised starts at Build or Design, with a new spec.
+                    stage, role = ENTERS[data["enters"]]
+                    st = new_status("project", stage, role, spec=self.new_spec())
+                elif kind == "project":
                     st = new_status("project", 2, "critic")
                 elif kind == "research":
                     st = new_status("research", 2, "researcher")
+                    if "milestone" in data:
+                        st["milestone"] = data["milestone"]
                     self.research.append(("%s/%s.md" % (RESEARCH_DIR, item),
                                           "# Research question — %s\n\n*Copied by the Orchestrator from %s "
                                           "(model S-012 AC2).*\n\n## The question\n\n%s\n"
                                           % (item, rel, data["question"].strip())))
-                else:
-                    st = new_status("evidence", 8, "critic", project=data["project"])
                 self.items[item] = st
                 self.all_ids.add(item)
                 self.processed["requests"].append(item)
                 self.trigger[item] = "request:%s" % item
                 self.log(trigger="request", item=item, record=rel, result="created")
 
-    def _done_project(self, pid):
-        st = self.items.get(pid) if isinstance(pid, str) else None
-        return bool(st) and st["kind"] == "project" and st["state"] == "done"
+    def later_work_problem(self, data):
+        """model S-023 AC12: why a project request's `enters` and `ruling` are refused, or None."""
+        enters, ruling = data.get("enters"), data.get("ruling")
+        if "enters" not in data:
+            return ("`ruling` names the owner's record for later work entering at Build or Design, and needs "
+                    "`enters` (model S-023)") if "ruling" in data else None
+        if enters not in ENTERS:
+            return "enters %r is neither \"Build\" nor \"Design\" (model S-023)" % (enters,)
+        if not (isinstance(ruling, str) and RULING_PATH_RE.match(ruling)):
+            return ("enters = %r needs `ruling`, the owner's ruling record under decisions/questions/ "
+                    "(model S-023)" % enters)
+        p = self.path(ruling)
+        first = None
+        if os.path.isfile(p) and not os.path.islink(p):
+            with open(p, encoding="utf-8", errors="replace", newline="") as fh:
+                first = fh.readline()
+        if first is None:
+            return "the ruling record %s is not in the tree (model S-023)" % ruling
+        if not first.startswith("Ruling: "):
+            return "the ruling record %s does not start `Ruling: ` (model S-023)" % ruling
+        return None
 
     # -- phase 2: outcomes and stalls
     def outcomes(self):
@@ -960,6 +1283,14 @@ class Step:
             verdict = obj.get("verdict") if isinstance(obj.get("verdict"), str) else "malformed"
             record = obj.get("record") if isinstance(obj.get("record"), str) else None
             st2, action = apply_outcome(self.ctx, st, result, verdict)
+            rec = obj.get("recommendation")
+            if result == "ok" and st["role"] == "critic-gate" and isinstance(rec, str) and len(rec) <= 500 \
+                    and RECOMMENDATION_RE.match(rec):
+                st2["gate_recommendation"] = rec
+            uv = obj.get("user_verdict")
+            if result == "ok" and st["role"] == "user-rep" and isinstance(uv, str) and len(uv) <= 500 \
+                    and USER_VERDICT_RE.match(uv):
+                st2["user_verdict"] = uv            # model S-025
             self.items[item] = st2
             self.touched.add(item)
             self.trigger[item] = "outcome:%s" % sid
@@ -1004,16 +1335,24 @@ class Step:
                 continue
             if not os.path.isfile(self.path(rel)):
                 continue
-            with open(self.path(rel), encoding="utf-8", newline="") as fh:
-                first = fh.readline()
-                second = fh.readline()
-            self.decide(item, st, rel, first, second)
+            with open(self.path(rel), "rb") as fh:
+                data = fh.read()
+            # model S-024 AC4: the whole record is read, and a refusal is keyed on the hash of all of it.
+            text = data.decode("utf-8", "replace")
+            self.decide(item, st, rel, text, len(data) > 65536)
 
-    def decide(self, item, st, rel, first, second):
-        h = sha(first + second)
+    def decide(self, item, st, rel, text, too_big=False):
+        h = sha(text)
         key = "decision:%s:%s" % (rel, h)
         if key in self.anomaly_keys:
             return
+        if too_big:
+            self.anomaly(key, item, "%s is over 64 KiB; the card stays open" % rel)
+            return
+        rows = text.split("\n")
+        first = rows[0] + ("\n" if len(rows) > 1 else "")
+        second = rows[1] if len(rows) > 1 else ""
+        later = [r.rstrip("\r") for r in rows[2:]]
         gate = st["gate"]
         m = DECISION_RE.match(first.rstrip("\r\n"))
         if not m:
@@ -1037,9 +1376,50 @@ class Step:
             self.anomaly(key, item, "%s: a Proxy: line is refused on `%s` at the %s gate (D-066); the card "
                                     "stays open" % (rel, word, gate))
             return
+        into = None
+        nn_lines = [r for r in later if r.startswith("Nothing needed: ")]
+        reasons = [r for r in later if r.startswith("Reason:") and r[len("Reason:"):].strip()]
+        intos = [r[len("Into: "):].strip() for r in later if r.startswith("Into: ")]
+        problem = None
+        if nn_lines:
+            # model S-024 AC4: only Build, only on the Build gate's `proceed`, in the owner's own words.
+            case = "docs/gates/%s/build-gate-%d-case.md" % (item, st.get("gate_n", 0))
+            named = nn_lines[0][len("Nothing needed: "):]
+            if gate != "criteria":
+                problem = "`Nothing needed:` is read only at the Build gate (the criteria card), not on a %s card " \
+                          "(model S-023)" % gate
+            elif word != "proceed":
+                problem = "`Nothing needed:` goes only with `proceed`, not `%s` (model S-024)" % word
+            elif proxy:
+                problem = "`Nothing needed:` is the owner's own ruling and is refused under a Proxy: line " \
+                          "(model S-024)"
+            elif len(nn_lines) != 1:
+                problem = "the record holds %d `Nothing needed:` lines; one is allowed (model S-024)" % len(nn_lines)
+            elif named != "Build":
+                problem = "`Nothing needed:` names %s: only Build can be passed with nothing needed (model S-023)" \
+                          % (named.strip() or "nothing")
+            elif not (os.path.isfile(self.path(case)) and "## Nothing needed in Build" in
+                      [l.rstrip("\r") for l in self.read_text(self.path(case)).split("\n")]):
+                problem = "`Nothing needed: Build` needs the case %s to hold `## Nothing needed in Build` " \
+                          "(model S-024)" % case
+        if gate in GATE_PHASE and word == "recycle":
+            if len(intos) != 1 or intos[0] not in RECYCLE_INTO[gate]:
+                problem = "recycle needs one `Into:` line naming %s" % ", ".join(RECYCLE_INTO[gate])
+            elif not reasons:
+                problem = "recycle needs a `Reason:` line"
+            else:
+                into = intos[0]
+        if gate in GATE_PHASE and word == "hold" and not reasons:
+            problem = "hold needs a `Reason:` line"
+        if gate in GATE_PHASE and word in FORWARD_WORDS[gate] and user_rejected(st) \
+                and not [r for r in later if r.startswith("User-Override:") and r[len("User-Override:"):].strip()]:
+            problem = "after the user representative's reject, `%s` needs a `User-Override:` line (model S-025)" % word
+        if problem:
+            self.anomaly(key, item, "%s: %s; the card stays open" % (rel, problem))
+            return
         if gate == "launch" and self.item_tips is not None and self.launch_stale(item, st, rel, key, word, h):
             return
-        st2, action = apply_decision(self.ctx, st, word)
+        st2, action = apply_decision(self.ctx, st, word, into, "Build" if nn_lines else None, self.lines_of(item))
         self.items[item] = st2
         self.touched.add(item)
         self.processed["decisions"][rel] = h
@@ -1048,6 +1428,12 @@ class Step:
                       proxy=proxy, result="%s/%d/%s" % (st2["state"], st2["stage"], st2["role"]))
         if word in self.routing.strikes:
             fields["strike"] = bool(self.routing.strikes[word])
+        if into:
+            fields["into"] = into
+        if nn_lines:
+            fields["nothing_needed"] = "Build"
+        if gate in GATE_PHASE and word == "hold":
+            fields.update(gate_n=st2["gate_n"])
         self.log(**fields)
         if action:
             self.act(item, action)
@@ -1060,14 +1446,14 @@ class Step:
         return m.group(1) if m else None
 
     def launch_stale(self, item, st, rel, key, word, h):
-        """model S-013 AC4: True when the answer is not applied: `approve` on a card without a tip (the card
-        stays open), or any answer to a tip that is not the item's current one or that was written before
+        """model S-013 AC4: True when the answer is not applied: `approve` or `proceed` (model S-024) on a card
+        without a tip (the card stays open), or any answer to a tip that is not the item's current one or that was written before
         the card's last stamp (refused with a fresh launch card)."""
         tip = self.launch_card_tip(item, st["card"])
         info = self.item_tips.get(item) if isinstance(self.item_tips, dict) else None
         info = info if isinstance(info, dict) else {}
         if tip is None:
-            if word != "approve":
+            if word not in ("approve", "proceed"):      # model S-024: proceed approves too
                 return False
             self.anomaly(key, item, "%s: the launch card names no Item-Tip:, so it cannot be approved yet "
                                     "(model S-013 AC4); the card stays open" % rel)
@@ -1084,7 +1470,8 @@ class Step:
                if info.get("tip") != tip else "the answer was written before the card's last change")
         self.log(trigger="decision", item=item, record=rel, gate="launch", card=st["card"], word=word,
                  result="refused: %s" % why)
-        action = _card(st2, "launch", "launch-pass",
+        reraise = {"critic-gate": "gate-view", "user-rep": "user-view"}.get(st2.get("role"), "launch-pass")
+        action = _card(st2, "launch", reraise,
                        "The owner's answer to launch card %d was refused: %s. This fresh card names the current "
                        "tip (model S-013 AC4)." % (st["card"], why))
         self.act(item, action)
@@ -1093,7 +1480,7 @@ class Step:
     # -- phase 4: routing
     def route(self):
         for item in sorted(self.items):
-            rid, st2, action = route_item(self.ctx, self.items[item])
+            rid, st2, action = route_item(self.ctx, self.items[item], item)
             if self.hold and action and action["kind"] == "dispatch":
                 continue                    # model S-013 AC6: held, the item keeps its status
             self.items[item] = st2
@@ -1105,19 +1492,61 @@ class Step:
         st = self.items[item]
         trigger = self.trigger.get(item, "step")
         if action["kind"] == "dispatch":
-            self.plan.append({"item": item, "route": action["route"], "action": action["action"],
-                              "role": action["role"], "stage": action["stage"], "spec": action["spec"],
-                              "gate": None})
+            entry = {"item": item, "route": action["route"], "action": action["action"],
+                     "role": action["role"], "stage": action["stage"], "spec": action["spec"], "gate": None}
+            extra = {}
+            if action["role"] in GATE_ROLES and st.get("next_gate"):
+                entry.update(gate=st["next_gate"], gate_n=st["gate_n"])
+                extra = {"gate_n": st["gate_n"]}
+            # model S-025: a user-rep entry never carries the ruling (a user would not see it).
+            ruling = self.ruling_of(item) if action["role"] != "user-rep" else None
+            if ruling:
+                entry["ruling"] = ruling
+            self.plan.append(entry)
             self.log(trigger=trigger, item=item, route=action["route"], action=action["action"],
-                     role=action["role"], gate=None, stage=action["stage"], spec=action["spec"])
+                     role=action["role"], gate=entry["gate"], stage=action["stage"], spec=action["spec"], **extra)
+        elif action["kind"] == "gate":
+            self.log(trigger=trigger, item=item, route=action["route"], action="gate", role=action["role"],
+                     gate=action["gate"], gate_n=action["gate_n"], stage=action["stage"], spec=action["spec"])
+        elif action["kind"] == "pass":
+            self.log(trigger=trigger, item=item, route=action["route"], action="pass", role=action["role"],
+                     gate=None, stage=action["stage"], spec=action["spec"], nothing_needed="Build")
         elif action["kind"] == "done":
             self.log(trigger=trigger, item=item, route=action["route"], action="done", role=st["role"], gate=None,
                      stage=st["stage"])
         else:
             gate, n = action["gate"], action["card"]
+            extra = {"gate_n": st["gate_n"]} if gate in GATE_PHASE and "gate_n" in st else {}
             self.log(trigger=trigger, item=item, route=action["route"], action="card", role=st["role"], gate=gate,
-                     card=n, stage=st["stage"], reason=action.get("reason"))
-            links = []
+                     card=n, stage=st["stage"], reason=action.get("reason"), **extra)
+            if gate in GATE_PHASE and "gate_n" in st:
+                # model S-024 AC3: the paths come from the gate and gate_n; the Orchestrator opens neither file.
+                ph, gn, spec = GATE_PHASE[gate], st["gate_n"], st.get("spec")
+                links = ["the case: `docs/gates/%s/%s-gate-%d-case.md` (default branch)" % (item, ph, gn),
+                         "the Critic's view: `reviews/%s/_%s-gate-%d-critic.md` (branch item/%s)"
+                         % (item, ph, gn, item)]
+                if st.get("role") == "user-rep":
+                    # model S-025: the step ran; the proposal and the representative's record, by path only.
+                    action = dict(action, user="ran")
+                    links += ["the proposal: `docs/gates/%s/%s-gate-%d-proposal.md` (default branch)" % (item, ph, gn),
+                              "the user representative's view: `reviews/%s/_%s-gate-%d-user.md` (branch item/%s)"
+                              % (item, ph, gn, item)]
+                else:
+                    action = dict(action, user="not-run" if self.has_profile() else "not-needed")
+                if gate == "criteria" and spec:
+                    links.append("the plan review, with Design's join-up review: `reviews/%s/plan.md` (branch "
+                                 "item/%s)" % (spec, item))
+                if gate == "launch" and spec:
+                    lines = self.lines_of(item)
+                    if nothing_needed_ruled(lines) and not checks_locked_since_ruling(lines):
+                        links.append("the stage-5 review, with Build's join-up review: (none: Build passed with "
+                                     "nothing needed)")
+                    else:
+                        links.append("the stage-5 review, with Build's join-up review: `reviews/%s/_reviewer-build.md`"
+                                     " (branch item/%s)" % (spec, item))
+                    links.append("the launch review: `reviews/%s/reviewer.md` (branch item/%s)" % (spec, item))
+            else:
+                links = []
             if self.records.get(item):
                 links.append("the recorded return: `%s`" % self.records[item])
             if action.get("budget"):

@@ -183,6 +183,7 @@ button { font: inherit; color: inherit } button:focus-visible { outline: 3px sol
 #phone a.src.lnk { color: var(--ds-agent); text-decoration: underline; text-underline-offset: 2px }
 .pkey { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: center; align-items: center; margin: 4px 0 2px; font: 600 .58rem var(--ds-mono); color: var(--muted); text-transform: uppercase; letter-spacing: var(--ds-track) }
 .pkey b { font-weight: 800 } .pkey span { display: inline-flex; align-items: center; gap: 4px } .pkey i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; box-sizing: border-box }
+.stog { width: 100%; border: 0; background: none; cursor: pointer; text-align: left; min-height: 32px; font: inherit; font-size: .64rem; text-transform: uppercase; letter-spacing: var(--ds-track); color: var(--muted) } .stog b { color: var(--ink) } .std.shut { padding: 2px 0 }
 
 /* ds:begin */
 :root { --page: #eef0f2; --bg: #eef0f2; --sheet: #ffffff; --ink: #0b0d10; --muted: #4b525b; --line: #c9cdd3; --coral: #d23c0f; --coral-ink: #d23c0f; --coral-soft: #fbe4dc; --you: #d23c0f; --agent: #1d5bd6; --agent-soft: #e1e9fa; --pass: #0f7a3a; --pass-soft: #dcefe2; --fail: #b8141d; --fail-soft: #f9dfdf; --pr: #5b3cc4; --pr-soft: #e8e2f8; --wait: #9e5800; --wait-soft: #f6ead3; --done-ring: #0f7a3a; --focus: #1d5bd6; --scrim: rgb(11 13 16 / .5); --ds-page: #eef0f2; --ds-surf: #ffffff; --ds-surf2: #e4e7ea; --ds-ink: #0b0d10; --ds-muted: #4b525b; --ds-line: #c9cdd3; --ds-you: #d23c0f; --ds-yous: #fbe4dc; --ds-agent: #1d5bd6; --ds-agents: #e1e9fa; --ds-pass: #0f7a3a; --ds-passs: #dcefe2; --ds-fail: #b8141d; --ds-fails: #f9dfdf; --ds-merge: #5b3cc4; --ds-merges: #e8e2f8; --ds-block: #9e5800; --ds-blocks: #f6ead3; --ds-gold: #8a6a10; --ds-idle: #b7bdc5; --ds-focus: #1d5bd6; --ds-on: #ffffff; --ds-shadow: none; --ds-scrim: rgb(11 13 16 / .5); --ds-r: 6px; --ds-rs: 4px; --ds-track: .04em; --ds-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --ds-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace }
@@ -369,7 +370,7 @@ const RUNS = [
     ['next', 'Build Web Push alerts from your ruling', 'Not started', 'next', 'From your 8 Oct choice: alerts sent to the desk on your iPhone.', '']] }
 ];
 const ORDER = ['Discovery', 'Design', 'Build', 'Launch'];  // the desk's four phases; Operate and Review are the product's own, after it is done
-let run = 3, sheet = null, toast = null, merged = false, just = null, openMs = {}, stdOpen = {};
+let run = 3, sheet = null, toast = null, merged = false, just = null, openMs = {}, stdOpen = {}, stdShow = {};
 const RUN = () => RUNS[run], runsOf = ph => RUNS.map((r, i) => [r, i]).filter(([r]) => r.ph === ph), label = r => `${r.ph} i${r.it}`;
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -455,7 +456,9 @@ const LEGEND = P => `<div class="legend"><span><i style="background:var(--coral)
 function stdHtml() {
   const r = RUN(), list = STD[r.ph], st = STD_RUN[label(r)] || [];
   const n = k => st.filter(x => x[0] === k).length, parts = ['n', 'u', 'r', 'c', 'x'].filter(k => n(k)).map(k => `${n(k)} ${STATE_WORD[k]}`);
-  return `<div class="std"><div class="sh"><b>Standard milestones</b><span>${parts.join(' · ')}</span></div>
+  const show = !!stdShow[run];
+  if (!show) return `<div class="std shut"><button class="sh stog" data-stdall aria-expanded="false"><b>Standard milestones ▾</b><span>${parts.join(' · ')}</span></button></div><div class="sh own"><b>This project's milestones</b><span>${r.rows.filter(x => x[0] === 'ms').length}</span></div>`;
+  return `<div class="std"><button class="sh stog" data-stdall aria-expanded="true"><b>Standard milestones ▴</b><span>${parts.join(' · ')}</span></button>
     <p class="sexp">${n('u') === list.length ? 'None can show as reached here. ' : ''}The model's checklist for ${r.ph}, the same for every project, shown only as the records show it. Tap one for why.</p>
     ${list.map((m, i) => { const [k, why] = st[i] || ['u', ''], o = !!stdOpen[run + ':' + i];
       return `<button class="sm s-${k}" data-std="${i}" aria-expanded="${o}"><span class="sb">${ST_IC[k]}</span><span class="t"><b>${esc(m[0])}</b>${o ? `<small>Done when ${esc(m[1])}.</small><small class="why">${esc(STATE_WORD[k][0].toUpperCase() + STATE_WORD[k].slice(1))}. ${esc(why)}</small>` : ''}</span><span class="sw">${STATE_WORD[k]}</span></button>`; }).join('')}
@@ -488,6 +491,7 @@ document.addEventListener('click', e => {
   if (d.close !== undefined && e.target !== b) return;
   if (d.ph) { run = d.ph === 'Done' ? -1 : runsOf(d.ph).slice(-1)[0][1]; sheet = null; just = null; toast = null; }
   else if (d.run !== undefined) { run = +d.run; sheet = null; just = null; toast = null; }
+  else if (d.stdall !== undefined) { stdShow[run] = !stdShow[run]; just = null; }
   else if (d.std !== undefined) { const key = run + ':' + d.std; stdOpen[key] = !stdOpen[key]; just = null; }
   else if (d.ms !== undefined) { const key = run + ':' + d.ms; openMs[key] = !openMs[key]; just = null; }
   else if (d.r !== undefined) { sheet = +d.r; just = null; }

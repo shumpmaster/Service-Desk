@@ -103,6 +103,9 @@ the end. The screens in [../screens/](../screens/) are the versions that answer 
   project never kept as files now name the record that holds the result: decisions/P-001/dor-fail-2.md,
   decisions/P-001/dor-4.md, queue/P-001-stop-6.md, decisions/Q-010/stop-1.md and
   decisions/Q-012/stop-1.md.
+- **13 Oct, 22:08**, on the standard milestones box: "Can we make the milestones collapsable?"
+  What changed: the box starts closed, showing its heading and its count by state; tapping the heading
+  opens the list.
 
 ## Screen 6, Queue
 

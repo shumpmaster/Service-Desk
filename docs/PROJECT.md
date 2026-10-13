@@ -102,9 +102,9 @@ that only the owner passes.
     A governance change in Service-Desk (R3): made in the Orchestrator's lane, reviewed, and
     approved by the owner.
 
-**Milestones** (the owner's rulings: decisions/questions/P-001-milestones-adoption.md and decisions/questions/P-001-milestones-ruling-2.md; the Critic's check: decisions/questions/P-001-milestones-adoption-critic-2.md):
+**Milestones** (the owner's rulings: decisions/questions/P-001-milestones-adoption.md, decisions/questions/P-001-milestones-ruling-2.md and decisions/questions/P-001-milestones-ruling-3.md for M2; the Critic's checks: decisions/questions/P-001-milestones-adoption-critic-2.md and, for M2, decisions/questions/P-001-milestones-adoption-critic-3.md):
 - Every project's status visible on the phone (M1) · done when every connected project's status, and what waits on the owner, shows on the owner's phone · phase: Build · sprints: PR #40, PR #41
-- Cards answered straight from the desk (M2) · done when each decision card and owner question on the desk links the owner straight to its answer, filled in for the owner to commit on GitHub · phase: Build · sprints: PR #44
+- Cards answered straight from the desk (M2) · done when each card on the desk links the owner straight to its answer · phase: Build · sprints: PR #44
 - Agent usage shown on the desk (M2B) · done when each agent session's usage and context figures show on the desk · phase: Build · sprints: PR #44, PR #52
 - What a good desk looks like is known (MD1) · done when source-checked design research sets out what a good desk looks like and why · phase: Design · sprints: Q-013
 - The desk's look and screens chosen (MD2) · done when the owner has picked the desk's look and its screens · phase: Design

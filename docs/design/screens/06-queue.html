@@ -1,0 +1,210 @@
+<meta charset="utf-8">
+<title>Queue and Response</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box } body { background: var(--ds-page); color: var(--ds-ink); font: 15px/1.45 var(--ds-font); padding-inline: 16px; padding-block: 20px 40px; margin: 0 }
+.wrap { max-width: 780px; margin: 0 auto; display: grid; gap: 16px } h1 { font-size: 1.4rem; margin: 0 } .lede { color: var(--ds-muted); margin: 4px 0 0; max-width: 64ch }
+button { font: inherit; color: inherit } button:focus-visible { outline: 3px solid var(--ds-focus); outline-offset: 2px }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; align-items: center } .seg span { font-size: .85rem; color: var(--ds-muted) }
+.seg button { border: 1px solid var(--ds-line); background: var(--ds-surf); border-radius: var(--ds-rs); padding: 8px 14px; min-height: 44px; cursor: pointer; font-size: .9rem } .seg button[aria-pressed="true"] { background: var(--ds-ink); color: var(--ds-surf) }
+.stage { display: flex; justify-content: center } .phone { position: relative; width: 100%; max-width: 390px; height: 820px; background: var(--ds-surf); border-radius: 36px; overflow: hidden; box-shadow: 0 14px 40px rgb(0 0 0 / .16); border: 1px solid var(--ds-line) }
+.scroll { height: 100%; overflow-y: auto; padding-bottom: 100px }
+.qhead { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; padding: 14px 10px 4px } .qhead h2 { margin: 0; text-align: center; font: 700 1.2rem var(--ds-font) }
+.ib { width: 44px; height: 44px; border: 0; background: none; border-radius: 50%; cursor: pointer; display: grid; place-items: center } .ib svg { width: 22px; height: 22px }
+.qsub { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 4px 16px 6px; font-size: .74rem; color: var(--ds-muted) }
+.pill { background: var(--ds-yous); color: var(--ds-you); font-weight: 800; border-radius: var(--ds-rs); padding: 4px 10px; font-size: .76rem }
+.gt { display: flex; justify-content: space-between; align-items: baseline; margin: 14px 16px 6px; color: var(--gc); font: 650 1.02rem var(--ds-font) } .gt small { font-size: .76rem; color: var(--ds-muted); font-weight: 600 }
+.gt.empty { margin: 8px 16px 2px; font-size: .84rem; opacity: .55 }
+.grp { margin: 0 12px; border: 1px solid var(--ds-line); border-left: 5px solid var(--gc); border-radius: var(--ds-r); overflow: hidden }
+.it { width: 100%; border: 0; border-bottom: 1px solid var(--ds-line); background: var(--ds-surf); text-align: left; padding: 10px 12px; display: grid; gap: 4px; cursor: pointer; min-height: 56px }
+.it:last-child { border-bottom: 0 } .it.blocked { cursor: default; background: var(--ds-surf2) } .it.blocked .tt { color: var(--ds-muted) }
+.tt { font-size: .9rem; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere } .cd { font: 700 .66rem var(--ds-mono); background: var(--ds-surf2); border: 1px solid var(--ds-line); border-radius: 4px; padding: 0 4px; margin-right: 6px; vertical-align: 1px }
+.mt { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: .72rem; color: var(--ds-muted) } .mt svg { width: 13px; height: 13px } .mt .w { margin-left: auto; font-family: var(--ds-mono) }
+.first { color: var(--ds-you); background: var(--ds-yous); border-radius: 4px; padding: 0 5px; font-size: .66rem }
+.newit { margin: 12px 12px 0; width: calc(100% - 24px); border: 1px dashed var(--ds-line); background: none; border-radius: var(--ds-rs); min-height: 46px; color: var(--ds-agent); font-weight: 600; text-align: left; padding: 0 12px; cursor: pointer }
+.dfold { margin: 14px 12px 4px; border: 0; background: none; display: flex; gap: 6px; align-items: center; color: var(--ds-pass); font-weight: 700; font-size: .86rem; cursor: pointer; min-height: 40px } .dfold svg { width: 16px; height: 16px }
+.grp.done { --gc: var(--ds-pass) } .grp.done .it { cursor: default; opacity: .8 }
+.calm { margin: 18px 12px 6px; border-radius: var(--ds-r); background: var(--ds-passs); padding: 16px; display: grid; gap: 4px; justify-items: center; text-align: center } .calm svg { width: 36px; height: 36px; color: var(--ds-pass) } .calm span { font-size: .8rem; color: var(--ds-muted) }
+.scrim { position: absolute; inset: 0; background: var(--ds-scrim); display: grid; align-items: end; z-index: 5 }
+.sheet { background: var(--ds-surf2); border-radius: var(--ds-r) var(--ds-r) 0 0; padding: 10px 16px 22px; display: grid; gap: 10px; max-height: 88%; overflow: auto }
+.grab { width: 44px; height: 5px; border-radius: 3px; background: var(--ds-line); justify-self: center }
+.ch { display: flex; gap: 8px; align-items: center } .sk { font-size: .72rem; color: var(--ds-muted); font-family: var(--ds-mono) } .sheet h3 { margin: 0; font-size: 1.12rem; line-height: 1.25 }
+.rows { background: var(--ds-surf); border-radius: var(--ds-r); overflow: hidden } .r { padding: 10px 14px; border-bottom: 1px solid var(--ds-line); display: grid; gap: 2px } .r:last-child { border-bottom: 0 }
+.r span { font-size: .7rem; font-weight: 700; color: var(--ds-muted); text-transform: uppercase; letter-spacing: var(--ds-track) } .r p { margin: 0; font-size: .86rem; line-height: 1.4 }
+.r.next p { font-weight: 600 } .lbl { font-weight: 700; font-size: .9rem; margin: 2px 2px 0 }
+.chips { display: flex; flex-wrap: wrap; gap: 8px } .chip { border: 1.5px solid var(--ds-line); background: var(--ds-surf); border-radius: var(--ds-rs); padding: 9px 16px; min-height: 44px; cursor: pointer; font-weight: 600; display: inline-flex; gap: 6px; align-items: center }
+.chip em { font: normal 700 .62rem var(--ds-font); color: var(--ds-pass); background: var(--ds-passs); border-radius: var(--ds-rs); padding: 2px 6px } .chip[aria-pressed="true"] { background: var(--ds-ink); color: var(--ds-surf); border-color: var(--ds-ink) }
+.sub { margin: 0; font-size: .78rem; color: var(--ds-muted) }
+.go { border: 0; border-radius: var(--ds-rs); min-height: 52px; font-weight: 800; background: var(--ds-you); color: #fff; cursor: pointer } .go:disabled { opacity: .4; cursor: default } .go.ghost { background: var(--ds-surf); color: var(--ds-ink) }
+.ghbox { background: var(--ds-surf); border: 1px solid var(--ds-line); border-radius: var(--ds-r); padding: 12px; display: grid; gap: 10px; font-size: .86rem } .ghbtn { justify-self: start; background: #1f883d; color: #fff; border-radius: 6px; padding: 6px 12px; font-weight: 700; font-size: .8rem }
+.toast { position: absolute; left: 12px; right: 12px; bottom: 86px; z-index: 6; background: var(--ds-surf); border: 1px solid var(--ds-line); border-radius: var(--ds-r); padding: 10px 12px; box-shadow: none; display: grid; grid-template-columns: 22px 1fr; gap: 6px 8px; align-items: center; font-size: .84rem }
+.toast svg { width: 22px; height: 22px; color: var(--ds-pass) } .toast button { grid-column: 2; justify-self: start; border: 0; background: var(--ds-surf2); border-radius: var(--ds-rs); min-height: 34px; padding: 0 12px; font-weight: 700; cursor: pointer; font-size: .78rem }
+.notes { background: var(--ds-surf); border-radius: var(--ds-r); padding: 16px 18px; display: grid; gap: 8px; border: 1px solid var(--ds-line) } .notes h2 { margin: 0; font-size: 1rem } .notes ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 5px }
+/* v3.3.0: the gate card's link to its case */
+.lnk { justify-self: start; border: 1px solid var(--ds-line); background: var(--ds-surf2); border-radius: var(--ds-rs); min-height: 40px; padding: 0 12px; margin-top: 4px; font-weight: 700; font-size: .84rem; cursor: pointer }
+.ghbox code { line-height: 1.5 }
+/* ds:begin */
+:root { --ds-page: #eef0f2; --ds-surf: #ffffff; --ds-surf2: #e4e7ea; --ds-ink: #0b0d10; --ds-muted: #4b525b; --ds-line: #c9cdd3; --ds-you: #d23c0f; --ds-yous: #fbe4dc; --ds-agent: #1d5bd6; --ds-agents: #e1e9fa; --ds-pass: #0f7a3a; --ds-passs: #dcefe2; --ds-fail: #b8141d; --ds-fails: #f9dfdf; --ds-merge: #5b3cc4; --ds-merges: #e8e2f8; --ds-block: #9e5800; --ds-blocks: #f6ead3; --ds-gold: #8a6a10; --ds-idle: #b7bdc5; --ds-focus: #1d5bd6; --ds-on: #ffffff; --ds-shadow: none; --ds-scrim: rgb(11 13 16 / .5); --ds-r: 6px; --ds-rs: 4px; --ds-track: .04em; --ds-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --ds-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ds-page: #0c0d0f; --ds-surf: #16181c; --ds-surf2: #101215; --ds-ink: #f1f3f5; --ds-muted: #a3a9b2; --ds-line: #363b43; --ds-you: #ff6a3d; --ds-yous: #3d1b10; --ds-agent: #6ea0ff; --ds-agents: #14223b; --ds-pass: #3fb950; --ds-passs: #112b19; --ds-fail: #ff6b6b; --ds-fails: #3b1516; --ds-merge: #a78bfa; --ds-merges: #261d3d; --ds-block: #e3a33b; --ds-blocks: #33260c; --ds-gold: #d4ae4f; --ds-idle: #4a5059; --ds-focus: #6ea0ff; --ds-on: #0b0d10; --ds-shadow: none; --ds-scrim: rgb(0 0 0 / .62); color-scheme: dark } }
+:root[data-theme="dark"] { --ds-page: #0c0d0f; --ds-surf: #16181c; --ds-surf2: #101215; --ds-ink: #f1f3f5; --ds-muted: #a3a9b2; --ds-line: #363b43; --ds-you: #ff6a3d; --ds-yous: #3d1b10; --ds-agent: #6ea0ff; --ds-agents: #14223b; --ds-pass: #3fb950; --ds-passs: #112b19; --ds-fail: #ff6b6b; --ds-fails: #3b1516; --ds-merge: #a78bfa; --ds-merges: #261d3d; --ds-block: #e3a33b; --ds-blocks: #33260c; --ds-gold: #d4ae4f; --ds-idle: #4a5059; --ds-focus: #6ea0ff; --ds-on: #0b0d10; --ds-shadow: none; --ds-scrim: rgb(0 0 0 / .62); color-scheme: dark }
+
+/* ---- Desk design system: one palette, one type scale, one project tab bar (shared by every screen) ----
+   Theme D2, Field ops in Inter: Inter for text, monospace only for codes, ids, hashes and times, uppercase tracked headings
+   and small labels, 6px cards, 4px chips and buttons, 1px hairlines instead of shadows, solid status blocks. */
+body { font-family: var(--ds-font); -webkit-font-smoothing: antialiased; font-feature-settings: "cv05", "cv08" }
+input, textarea, select, button { font-family: inherit }
+h1, .notes h2 { text-transform: uppercase; letter-spacing: var(--ds-track) } h1 { font-weight: 800 }
+.toast { border: 1px solid var(--ds-line) } .bs { border-top: 1px solid var(--ds-line) }
+.dtabs { position: absolute; left: 10px; right: 10px; bottom: 12px; z-index: 4; display: grid; grid-template-columns: 1fr 1fr 60px 1fr 1fr; align-items: center;
+  background: var(--ds-surf); border: 1px solid var(--ds-line); border-radius: var(--ds-r); padding: 3px }
+.dtab { border: 0; background: none; display: grid; justify-items: center; align-content: center; gap: 2px; font: 700 .58rem/1.1 var(--ds-font); letter-spacing: var(--ds-track); text-transform: uppercase; color: var(--ds-muted); cursor: pointer; min-height: 44px; position: relative }
+.dtab svg { width: 20px; height: 20px } .dtab[aria-current="page"] { color: var(--ds-ink) } .dtab[aria-current="page"]::after { content: ""; position: absolute; bottom: 0; width: 22px; height: 3px; border-radius: 0; background: var(--ds-you) }
+.dtab .badge { position: absolute; top: 2px; right: 22%; min-width: 16px; height: 15px; border-radius: var(--ds-rs); background: var(--ds-you); color: var(--ds-on); font-size: .58rem; font-weight: 800; letter-spacing: 0; display: grid; place-items: center; padding: 0 4px; font-variant-numeric: tabular-nums }
+.dplus { width: 48px; height: 48px; border-radius: var(--ds-r); border: 0; background: var(--ds-you); color: var(--ds-on); font: 400 1.6rem/1 var(--ds-font); cursor: pointer; justify-self: center; margin-top: -20px }
+.code, .src, .id { font-family: var(--ds-mono) }
+
+.phone { background: var(--ds-page) }
+.qhead h2 { font: 800 1.05rem var(--ds-font); text-transform: uppercase; letter-spacing: var(--ds-track) }
+.pill { background: var(--ds-you); color: var(--ds-on) }
+.gt { font: 800 .8rem var(--ds-font); text-transform: uppercase; letter-spacing: var(--ds-track); margin: 12px 12px 5px } .gt small { letter-spacing: 0 } .gt.empty { font-size: .72rem }
+.grp { margin: 0 10px; border-left-width: 4px } .it { padding: 7px 10px; gap: 3px; min-height: 48px } .tt { font-size: .86rem }
+.first { background: var(--ds-you); color: var(--ds-on); font-weight: 700 }
+.chip { font-weight: 650 } .chip em { background: var(--ds-pass); color: var(--ds-on) }
+.lbl { text-transform: uppercase; letter-spacing: var(--ds-track); font-size: .72rem; font-weight: 800 }
+.go { color: var(--ds-on); font-size: .92rem; padding: 0 12px } .go.ghost { color: var(--ds-ink); border: 1px solid var(--ds-line) }
+.pill { white-space: nowrap } .gt.empty { opacity: .75 } .scrim .sheet { border-top: 1px solid var(--ds-line) }
+/* ds:end */
+</style>
+<div class="wrap">
+  <header>
+    <h1>Screens 6 and 7: Queue and response card</h1>
+    <p class="lede">Everything waiting on you in one project, grouped by the kind of action it needs, modelled on your monday.com screenshot. Tap an item and the response card slides up, modelled on your Linear screenshot: each answer is spelled out, the recommendation is labelled but never preselected, and it takes two taps through GitHub. Switch between today, a busy moment on 8 October, and the Design gate of 5 October.</p>
+  </header>
+  <div class="seg" role="group" aria-label="Moment"><span>Show:</span><button data-m="now" aria-pressed="true">Right now (11 Oct)</button><button data-m="busy" aria-pressed="false">8 Oct, 17:46 (replay)</button><button data-m="gate" aria-pressed="false">5 Oct, the Design gate (replay)</button></div>
+  <div class="stage"><div class="phone" id="phone"></div></div>
+  <section class="notes">
+    <h2>What's on these screens, and why</h2>
+    <ul>
+      <li><b>The queue is monday.com's board,</b> with one group per kind of action: Decisions, Gate rulings, Verdicts to write, Merges and Deploys. Each group has its title and count, and its rows have a coloured edge. A group with nothing in it shrinks to a single line, so a quiet project stays short. Everything here belongs to this project only.</li>
+      <li><b>Each row answers what it is, how long it has waited, and whether you can act on it yet.</b> An item that depends on another says so ("after PR #54 and your verdict") and can't be opened until it's ready. The one to do first is marked.</li>
+      <li><b>The response card is Linear's sheet:</b> grouped rows with one answer per chip.
+        <ul>
+          <li>Pick a chip and the card spells out, in plain words, what happens next with that answer.</li>
+          <li>The Chief of Staff's recommendation is labelled, never preselected.</li>
+          <li><b>Your verdicts get no recommendation at all:</b> that word is yours alone.</li>
+        </ul></li>
+      <li><b>A gate ruling's card</b> opens with one plain sentence, bad news first, then links the one-page case and the Critic's independent view, and gives the user representative's line. You are Service Desk's only user, so that line reads "not needed". Its four answers are proceed, hold, recycle and kill; hold and recycle need a one-line reason, and the older words (build, re-aim, stop) still work.</li>
+      <li><b>Two taps.</b> The card opens GitHub with your answer already written, and you tap Commit there. The desk holds no key that can write.</li>
+      <li><b>Confirmation, monday-style:</b> a small toast at the bottom says what happened next and offers "See it on the timeline", where the step ticks off (screen 4). Meanwhile, the row moves to a "Done today" fold at the bottom of the queue.</li>
+      <li><b>Real items only.</b>
+        <ul>
+          <li>"Right now" shows today's one item, PR #61.</li>
+          <li>"8 Oct, 17:46" replays a busy moment: the Q-012 decision had waited 24 minutes, PRs #54 and #55 were ready to merge, and PR #52 was waiting on the Reviewer before your verdict.</li>
+          <li>The merge timings come from the records; that all four were open together at 17:46 is reconstructed from them.</li>
+          <li>"5 Oct, the Design gate" replays Service Desk's one real gate ruling, before you answered it at 17:14. How long it had waited isn't recorded, so the row doesn't say.</li>
+        </ul></li>
+    </ul>
+    <p style="color:var(--ds-muted);font-size:.88rem">References: <code>06-queue-monday.png</code> for the group titles, coloured edges, "+ New item" (here "+ Ask for something") and the confirmation toast. <code>07-response-card-linear.png</code> for the sheet over the list, the grouped rounded rows, the chips and the grabber.</p>
+  </section>
+</div>
+<script>
+const IC = {
+  hand: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V6a1.5 1.5 0 0 1 3 0v4M10 10V4.5a1.5 1.5 0 0 1 3 0V10M13 10V5.5a1.5 1.5 0 0 1 3 0V11M16 11V8a1.5 1.5 0 0 1 3 0v6a7 7 0 0 1-7 7h-.5A6.5 6.5 0 0 1 6 17l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L7 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  ok: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m7.5 12.3 3 3 6-6.3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  more: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></svg>'
+};
+const GROUPS = [['dec', 'Decisions', 'var(--ds-you)'], ['gate', 'Gate rulings', 'var(--ds-gold)'], ['ver', 'Verdicts to write', 'var(--ds-ink)'], ['mrg', 'Merges', 'var(--ds-merge)'], ['dep', 'Deploys', 'var(--ds-agent)']];
+const ITEMS = {
+  now: [
+    { id: 'pr61', g: 'mrg', t: 'Design: your new references, the agreed screens, and where design stands', code: 'PR #61', s: 'Checks pass · records only', wait: 'waiting since 10 Oct', first: true,
+      card: { kind: 'merge', what: 'Saves into the project the screenshots you sent on 10 Oct (08 to 10) and your direction in words, word for word. It also adds the agreed screens 1 to 4, the gate-document mock-up, and a one-page note on where design stands.', why: 'So design work starts from the project, not from a conversation that can be condensed (rule L-0130).', checks: 'Governance checks pass. Records only, so no review is needed (risk class R0).',
+        opts: [['merge', 'Merge', 'It becomes part of the project. The timeline ticks off "Merge your new screenshots" and moves on to screen 4.'], ['wait', 'Not now', 'It stays in your queue. Nothing else waits on it.']], rec: null } }],
+  busy: [
+    { id: 'q12', g: 'dec', t: 'Design research stopped: what next?', code: 'Q-012', s: 'Three source checks failed', wait: 'waiting 24 min', first: true,
+      card: { kind: 'decision', what: 'The second try at the design research failed its source check three times, so the stop rule sent it to you.', why: 'The Critic found it isn\'t the Researcher\'s fault: the tools can\'t open some sources (Apple\'s page and three PDFs), and nine topics was more than one check could cover.', checks: 'Critic\'s trace on file · the Chief of Staff\'s recommendation on file',
+        opts: [['re-specify', 'Re-specify', 'Sends the same question back to the Researcher with its rounds reset. It would likely stop the same way: the question can\'t change, and the pages still can\'t be opened.'],
+          ['confirm', 'Confirm', 'One more focused check, offered once. It would hit the same unopenable pages.'],
+          ['drop', 'Drop', 'Closes this research. The Chief of Staff files a narrower question (four topics, two levels deep) that the design lab needs first.']], rec: 'drop', file: 'decisions/Q-012/stop-1.md' } },
+    { id: 'pr54', g: 'mrg', t: 'Spec: what counts as an impossible usage figure', code: 'PR #54', s: 'Reviewer passed 17:32 · checks green', wait: 'ready 14 min',
+      card: { kind: 'merge', what: 'Clarifies in the spec which usage figures the desk treats as impossible (for example a negative number), and how it rounds them.', why: 'PR #52 depends on this rule; the Reviewer asked for it in writing first.', checks: 'Reviewer: PASS · governance checks green',
+        opts: [['merge', 'Merge', 'It goes into the project. PR #52 can then take your verdict.'], ['wait', 'Not now', 'PR #52 keeps waiting behind it.']], rec: null } },
+    { id: 'pr55', g: 'mrg', t: 'Ledger: the usage display rulings, and the Reviewer\'s record', code: 'PR #55', s: 'Records only · checks green', wait: 'ready',
+      card: { kind: 'merge', what: 'Records the rulings on how usage is shown (ledger L-0006) and files the Reviewer\'s verdict on PR #54.', why: 'Rulings only count once written down.', checks: 'Records only · governance checks green',
+        opts: [['merge', 'Merge', 'The rulings are on record.'], ['wait', 'Not now', 'Nothing else waits on it.']], rec: null } },
+    { id: 'v52', g: 'ver', t: 'Your verdict: usage figures on the Agents view', code: 'PR #52', s: 'Waiting for the Reviewer\'s round 3', wait: 'after #54 and the Reviewer', blocked: true }
+  ],
+  gate: [
+    { id: 'dg1', g: 'gate', t: 'The Design gate: proceed into Design?', code: 'P-001', s: 'Critic: ready · case 1', wait: 'waiting on you', first: true,
+      card: { kind: 'gate', what: 'Discovery took four readiness checks to pass, and two things are still open: one free-plan limit isn\'t measured yet, and showing agent usage needs a change to the operating model first. The case says proceed into Design to plan the build.',
+        why: 'Only you can pass a gate. This one closes Discovery: the readiness check passed on round 4.', checks: 'The Critic\'s view is on file, with every claim in the case checked against its record.',
+        extra: [['The case', 'One page by the Chief of Staff: the ask, the vision, what Discovery taught us, the plan, the risks, cost, what would make us stop, and what you agree to.', 'doc'],
+          ['The Critic\'s view', '"Ready. It passed the readiness check on round 4. Watch the processing limit and the usage-recording change."'],
+          ['The user representative', 'Not needed. The brief records that you are the user (docs/PROJECT.md, section 9).']],
+        opts: [['proceed', 'Proceed', 'Passes the Design gate. Service Desk moves into Design, and the Definer starts the plan.'],
+          ['hold', 'Hold', 'Not yet. Nothing moves: the Chief of Staff updates the case, the Critic reads it again, and you get a fresh card. Add a one-line reason.'],
+          ['recycle', 'Recycle', 'Works Discovery through again, as Discovery i2: the Chief of Staff revises the brief, with its rounds reset. Add a one-line reason.'],
+          ['kill', 'Kill', 'Closes the project. Only you can write this one.']], rec: 'proceed', also: 'build, re-aim, stop', file: 'decisions/P-001/dor-4.md' } }
+  ]
+};
+const DONE_NOW = [];
+let m = 'now', open = null, pick = null, step = 0, toast = null, done = {}, showDone = false;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function queue() {
+  const items = ITEMS[m].filter(i => !done[i.id]), nDone = ITEMS[m].filter(i => done[i.id]);
+  const nav = `<div class="qhead"><button class="ib" aria-label="Back to the project">${IC.back}</button><h2>Queue</h2><button class="ib" aria-label="More">${IC.more}</button></div>
+    <div class="qsub"><span class="pill">${items.filter(i => !i.blocked).length} waiting on you</span>${items.some(i => i.blocked) ? `<span>+ ${items.filter(i => i.blocked).length} not ready yet</span>` : ""}<span>Service Desk · ${m === 'now' ? 'checked 1 min ago' : m === 'gate' ? 'replay, 5 Oct, before 17:14' : 'replay, 8 Oct 17:46'}</span></div>`;
+  const groups = GROUPS.map(([g, name, c]) => { const list = items.filter(i => i.g === g);
+    if (!list.length) return `<div class="gt empty" style="--gc:${c}"><span>${name}</span><small>none</small></div>`;
+    return `<div class="gt" style="--gc:${c}"><span>${name}</span><small>${list.length}</small></div><div class="grp" style="--gc:${c}">
+      ${list.map(i => `<button class="it ${i.blocked ? 'blocked' : ''}" data-i="${i.id}" ${i.blocked ? 'aria-disabled="true"' : ''}><span class="tt"><span class="cd">${esc(i.code)}</span>${esc(i.t)}</span>
+        <span class="mt">${i.first ? '<b class="first">Do first</b>' : ''}${i.blocked ? IC.lock : ''}<span>${esc(i.s)}</span><span class="w">${esc(i.wait)}</span></span></button>`).join('')}</div>`; }).join('');
+  const doneFold = nDone.length ? `<button class="dfold" data-df>${IC.ok} Done today · ${nDone.length} ${showDone ? '▴' : '▾'}</button>${showDone ? `<div class="grp done">${nDone.map(i => `<div class="it">${'<span class="tt"><span class="cd">' + esc(i.code) + '</span>' + esc(i.t) + '</span><span class="mt"><span>' + esc(done[i.id]) + '</span></span>'}</div>`).join('')}</div>` : ''}` : '';
+  const calm = items.length ? '' : `<div class="calm">${IC.ok}<b>Nothing waits on you in Service Desk</b><span>You'll get an alert when something does.</span></div>`;
+  return nav + calm + groups + doneFold + `<button class="newit">+ Ask for something in this project</button>`;
+}
+function card(i) {
+  const c = i.card, chosen = c.opts.find(o => o[0] === pick);
+  if (step === 1) return `<div class="scrim"><div class="sheet"><div class="grab"></div><span class="sk">github.com · ${c.kind === 'merge' ? esc(i.code) : esc(c.file)}</span>
+    <div class="ghbox">${c.kind === 'merge' ? `<b>${esc(i.code)}</b> · ${esc(i.t)}<div class="ghbtn">Merge pull request</div>` : `<code>Decision: ${esc(pick)}${pick === 'recycle' ? '<br>Into: Discovery' : ''}${pick === 'hold' || pick === 'recycle' ? '<br>Reason: (your words)' : ''}</code><div class="ghbtn">Commit changes</div>`}</div>
+    <p class="sub">This stands in for GitHub opening with your answer ready.</p><button class="go" data-commit>${c.kind === 'merge' ? 'Merge' : 'Commit'} (tap 2 of 2)</button></div></div>`;
+  return `<div class="scrim" data-close><div class="sheet" role="dialog" aria-label="${esc(i.t)}"><div class="grab"></div>
+    <div class="ch"><span class="cd">${esc(i.code)}</span><span class="sk">${GROUPS.find(g => g[0] === i.g)[1]} · ${esc(i.wait)}</span></div><h3>${esc(i.t)}</h3>
+    <div class="rows"><div class="r"><span>What it is</span><p>${esc(c.what)}</p></div><div class="r"><span>Why it's here</span><p>${esc(c.why)}</p></div><div class="r"><span>Checked</span><p>${esc(c.checks)}</p></div>${(c.extra || []).map(x => `<div class="r ${x[2] ? 'doc' : ''}"><span>${esc(x[0])}</span><p>${esc(x[1])}</p>${x[2] ? '<button class="lnk" data-doc>Open the gate document ›</button>' : ''}</div>`).join('')}</div>
+    <div class="lbl">Your answer</div><div class="chips">${c.opts.map(o => `<button class="chip" data-p="${o[0]}" aria-pressed="${pick === o[0]}">${esc(o[1])}${c.rec === o[0] ? '<em>Recommended</em>' : ''}</button>`).join('')}</div>
+    <div class="rows"><div class="r next"><span>What happens next</span><p>${chosen ? esc(chosen[2]) : 'Pick an answer to see what it does.'}</p></div></div>
+    ${c.also ? `<p class="sub">Also accepted, as before: ${esc(c.also)}.</p>` : ''}
+    ${c.rec ? `<p class="sub">The Chief of Staff recommends <b>${esc(c.rec)}</b>, with its reasons on file. It's labelled, not chosen for you.</p>` : ''}
+    <button class="go" data-gh ${pick && pick !== 'wait' ? '' : 'disabled'}>${c.kind === 'merge' ? 'Open in GitHub to merge' : 'Open in GitHub, answer written'} (tap 1 of 2)</button>
+    ${pick === 'wait' ? '<button class="go ghost" data-closebtn>Leave it in the queue</button>' : ''}</div></div>`;
+}
+function render() {
+  let h = `<div class="scroll">${queue()}</div>
+    <nav class="dtabs" aria-label="This project"><button class="dtab">S</button></nav>`;
+  h = h.replace('<nav class="dtabs" aria-label="This project"><button class="dtab">S</button></nav>', TABBAR.replace('BADGE', String(ITEMS[m].filter(i => !done[i.id] && !i.blocked).length || '')));
+  const it = open && ITEMS[m].find(x => x.id === open); if (it) h += card(it);
+  if (toast) h += `<div class="toast" role="status">${IC.ok}<span>${toast}</span><button data-tl>See it on the timeline</button></div>`;
+  const ph = document.getElementById('phone'), y = ph.querySelector('.scroll')?.scrollTop || 0; ph.innerHTML = h; ph.querySelector('.scroll').scrollTop = y;
+  document.querySelectorAll('[data-m]').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === m));
+}
+document.addEventListener('click', e => { const b = e.target.closest('button, [data-close]'); if (!b) return; const d = b.dataset;
+  if (d.close !== undefined && e.target !== b) return;
+  if (d.m) { m = d.m; open = null; toast = null; done = {}; }
+  else if (d.i) { const it = ITEMS[m].find(x => x.id === d.i); if (it.blocked) { toast = null; return; } open = d.i; pick = null; step = 0; toast = null; }
+  else if (d.p) pick = d.p;
+  else if (d.gh !== undefined) step = 1;
+  else if (d.commit !== undefined) { const it = ITEMS[m].find(x => x.id === open);
+    done[open] = it.card.kind === 'merge' ? 'Merged by you just now' : `You chose ${pick} just now`;
+    toast = it.id === 'dg1' ? ({ proceed: 'Recorded: proceed. Service Desk moves into Design; the Definer starts the plan.', hold: 'Recorded: hold. Nothing moves; the Chief of Staff updates the case for a fresh card.', recycle: 'Recorded: recycle. Discovery i2 starts: the Chief of Staff revises the brief.', kill: 'Recorded: kill. Service Desk is closed.' })[pick] : it.id === 'q12' ? 'Recorded: drop. Q-012 is closed; the Chief of Staff files the narrower question next.' : it.id === 'pr54' ? 'Merged. PR #52 can now take your verdict once the Reviewer passes it.' : `Merged ${it.code}. It's now part of the project.`;
+    if (it.id === 'pr54') { const v = ITEMS.busy.find(x => x.id === 'v52'); v.s = 'Waiting for the Reviewer\'s round 3'; v.wait = 'after the Reviewer'; }
+    open = null; pick = null; step = 0; }
+  else if (d.closebtn !== undefined || d.close !== undefined) { open = null; pick = null; step = 0; }
+  else if (d.df !== undefined) showDone = !showDone;
+  else if (d.doc !== undefined) toast = 'Opens the gate document: the case on one page, with the Critic\'s view beside it.';
+  else if (d.tl !== undefined) toast = 'Opens the Timeline (screen 4), with this step ticked off where it sits.';
+  else return; render(); });
+const TABBAR = `<nav class="dtabs" aria-label="This project"><button class="dtab" data-nav="Status (screen 2)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1Z" fill="currentColor"/></svg>Status</button><button class="dtab" data-nav="Timeline (screen 4)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="3" fill="currentColor"/><circle cx="6" cy="17" r="3" fill="currentColor"/><path d="M11 7h9M11 17h7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>Timeline</button><button class="dplus" data-nav="Ask for something in this project" aria-label="Ask for something in this project">+</button><button class="dtab" data-nav="Team (screen 3)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="9" r="3.2" fill="currentColor"/><circle cx="16.5" cy="9" r="3.2" fill="currentColor"/><path d="M2.5 20c.5-3.5 2.8-5.5 5.5-5.5s5 2 5.5 5.5zM11.5 20c.4-3.5 2.6-5.5 5-5.5s4.6 2 5 5.5z" fill="currentColor"/></svg>Team</button><button class="dtab" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="4" rx="2" fill="currentColor"/><rect x="4" y="10" width="16" height="4" rx="2" fill="currentColor" opacity=".7"/><rect x="4" y="16" width="10" height="4" rx="2" fill="currentColor" opacity=".45"/></svg>Queue<span class="badge">BADGE</span></button></nav>`;
+render();
+</script>

@@ -1,20 +1,21 @@
 # Design: where it stands
 
-*Kept by the Orchestrator. Updated 10 Oct 2026. The owner's references and words are in
-[references/](references/README.md); the agreed screens are in [screens/](screens/). Open any screen
+*Kept by the Orchestrator. Updated 13 Oct 2026. The owner's references and words are in
+[references/](references/README.md), and every comment the owner left on the screens from 10 to 13 Oct is in
+[references/comments-2026-10.md](references/comments-2026-10.md), word for word; the agreed screens are in [screens/](screens/). Open any screen
 file in a browser: each is a self-contained mock-up built from Service Desk's real records.*
 
 ## Screens, one full view at a time
 
 | # | Screen | Reference | State | File |
 |---|---|---|---|---|
-| 1 | Home: one card per project, with its phase checklist and its own queue pill | Abode (01); checklist (08, 09) | Agreed | [01-home.html](screens/01-home.html) |
-| 2 | Project: the six phases, milestones one tap down | Lifesum (02) | Agreed | [02-project.html](screens/02-project.html) |
-| 3 | Team: every member's status light; each one's page shows status, responsibilities in groups, a running log drawn as a branch timeline, and a plain-English summary behind every item | Bevel (03); branch timeline (10) | Agreed | [03-team.html](screens/03-team.html) |
-| 4 | Timeline: one line per phase, milestones, numbered iterations, stalls, confirmation in place | Structured (04) | Agreed, made denser | [04-timeline.html](screens/04-timeline.html) |
-| 5 | Breakdown and task lists | Tiimo (05) | Open: may become the milestone's detail on the timeline instead of a screen | — |
-| 6 | Queue, grouped by kind of action, inside each project | monday.com (06) | Next | — |
-| 7 | Response card: prefilled options, recommendation labelled not preselected, two taps | Linear (07) | Next, with 6 | — |
+| 1 | Home: one card per project, with its four desk phases then Done, and its own queue pill | Abode (01); checklist (08, 09) | Agreed; quiet line icons, "Done" for "Graduated", no New project card (13 Oct) | [01-home.html](screens/01-home.html) |
+| 2 | Project: the phases in order, the current one marked in place, milestones one tap down | Lifesum (02) | Agreed; phases in order (13 Oct) | [02-project.html](screens/02-project.html) |
+| 3 | Team: your queue's next lines at the top, then every member's status light; each one's page shows status, responsibilities in groups, a running log drawn as a branch timeline (newest at the top, a shade per lane, now and up next), a plain-English summary behind every item, and a Working now sheet for the task in progress | Bevel (03); branch timeline (10) | Agreed; reworked 13 Oct | [03-team.html](screens/03-team.html) |
+| 4 | Timeline: one line per phase run, newest at the top, standard and own milestones, iterations, stalls, every step linked to its record, confirmation in place | Structured (04) | Agreed; lighter, newest first, linked (13 Oct) | [04-timeline.html](screens/04-timeline.html) |
+| 5 | Breakdown and task lists | Tiimo (05) | Folded into screen 4: a milestone's detail opens in place | — |
+| 6 | Queue, grouped by kind of action, inside each project, with the response card | monday.com (06) | Drafted; "Ask for something" is not wired and not yet in S-001 | [06-queue.html](screens/06-queue.html) |
+| 7 | Response card: prefilled options, recommendation labelled not preselected, two taps | Linear (07) | Drafted inside screen 6 | [06-queue.html](screens/06-queue.html) |
 | — | Gate document: the case to proceed or kill at every phase gate | Owner's direction (README) | Agreed shape; part of model spec S-024 | [gate-document-discovery.html](screens/gate-document-discovery.html) |
 
 ## The shared look (join-up pass, 10 Oct)
@@ -31,13 +32,18 @@ Milestones are neutral. Every project screen has the same bottom bar: Status · 
 
 ## What the screens need that the records don't hold yet
 
-These are operating-model changes, to be specified and built before the desk can show them for real:
-- **The six fixed phases, required plain-English milestones, and iteration records.** Model spec S-023, in draft.
-- **Phase gates with the gate document.** Model spec S-024, in draft. The join-up review is folded into it.
-- **A larger digest word budget**, so new rules fit. Model spec S-022, in draft.
-- **Chief of Staff sessions recorded like pipeline sessions.** A follow-up spec.
+The operating model now has most of what the screens show (v3.3.0: S-022 to S-026, landing here in PR #65): the six phases with standard milestones and iterations, phase gates with the gate document, the user representative, and plain English first. Still to be specified:
+- **Chief of Staff sessions recorded like pipeline sessions**, so its Working now sheet can show a start time and a cost.
 - **A written plain-English summary for each recorded event**, by the Chief of Staff, stating only what the record supports. The owner's direction of 10 Oct.
-- **A recorded "who has the ball" state and deploy approvals tied to the owner.** To be specified.
+- **A recorded "who has the ball" state and deploy approvals tied to the owner.**
+- **"Ask for something in this project"** as a prefilled new-file link, added to S-001.
+
+## Where design work is kept
+
+Screens are drafted and commented on as private Claude artifacts, the links listed at the end of
+[references/comments-2026-10.md](references/comments-2026-10.md). An artifact page is a working copy. Each agreed version is
+saved here, with the owner's comments word for word, so later work starts from the project, not from a
+conversation (model rule L-0130).
 
 ## How we work
 

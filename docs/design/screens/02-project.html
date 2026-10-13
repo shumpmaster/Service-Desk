@@ -1,11 +1,14 @@
+<meta charset="utf-8">
 <title>Screen 2: Project</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* Layout: one full Project screen modelled on the owner's Lifesum reference: a plain header, a big "Current status" title, coloured caps group headings, and one pill-shaped row per phase with an icon, a caps name, a status word and a status circle. */
 :root {
   --page: #f4f1ec; --bg: #f4f1ec; --card: #ffffff; --ink: #1d1d1f; --muted: #6e6a64; --line: #e6e1d9; --shadow: 0 2px 0 rgb(0 0 0 / .05), 0 6px 14px rgb(0 0 0 / .05);
   --done: #138a52; --done-soft: #e3f4ea; --now: #a87a1e; --now-soft: #f8efd9; --todo: #8a857d; --you: #e8553e; --you-soft: #fdeceb; --work: #2563eb;
   --scrim: rgb(15 18 22 / .42); --focus: #2563eb; --gold: #a87a1e;
-  --round: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --round: var(--ds-font); --sans: var(--ds-font);
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --page: #0e0e0f; --bg: #141416; --card: #1f1f22; --ink: #f2f0ec; --muted: #a8a39b; --line: #2d2c2a; --shadow: none;
@@ -20,7 +23,7 @@ body { background: var(--page); color: var(--ink); font: 15px/1.45 var(--sans); 
 h1 { font-size: 1.4rem; margin: 0 } .lede { color: var(--muted); margin: 4px 0 0; max-width: 64ch }
 button { font: inherit; color: inherit } button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px }
 .seg { display: flex; flex-wrap: wrap; gap: 6px; align-items: center } .seg span { font-size: .85rem; color: var(--muted); margin-right: 4px }
-.seg button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 8px 14px; min-height: 44px; cursor: pointer; font-size: .9rem }
+.seg button { border: 1px solid var(--line); background: var(--card); border-radius: var(--ds-rs); padding: 8px 14px; min-height: 44px; cursor: pointer; font-size: .9rem }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--card); border-color: var(--ink) }
 .stage { display: flex; justify-content: center }
 .phone { position: relative; width: 100%; max-width: 390px; height: 800px; background: var(--bg); border-radius: 36px; overflow: hidden; box-shadow: 0 14px 40px rgb(0 0 0 / .16); border: 1px solid var(--line) }
@@ -33,27 +36,27 @@ button { font: inherit; color: inherit } button:focus-visible { outline: 3px sol
 .title { text-align: center; font: 400 2.3rem/1.15 var(--round); letter-spacing: -.01em; margin: 22px 16px 4px }
 .sub0 { text-align: center; color: var(--muted); font-size: .86rem; margin: 0 20px }
 .links { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 14px 14px 0 }
-.lk { border: 0; border-radius: 999px; min-height: 40px; padding: 0 14px; font: 700 .84rem var(--round); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; background: var(--card); box-shadow: var(--shadow) }
+.lk { border: 0; border-radius: var(--ds-rs); min-height: 40px; padding: 0 14px; font: 700 .84rem var(--round); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; background: var(--card); box-shadow: none }
 .lk.you { background: var(--you-soft); color: var(--you) } .lk i { width: 8px; height: 8px; border-radius: 50%; background: var(--work); display: inline-block }
 @media (prefers-reduced-motion: no-preference) { .lk i { animation: pulse 1.6s ease-in-out infinite } @keyframes pulse { 50% { opacity: .3 } } }
-.gh { text-align: center; font: 600 .76rem var(--sans); letter-spacing: .14em; text-transform: uppercase; margin: 26px 16px 12px }
+.gh { text-align: center; font: 600 .76rem var(--sans); letter-spacing: var(--ds-track); text-transform: uppercase; margin: 26px 16px 12px }
 .gh.now { color: var(--now) } .gh.done { color: var(--done) } .gh.todo { color: var(--todo) }
 .list { display: grid; gap: 12px; padding: 0 12px }
 
 /* phase row: the Lifesum pill */
-.ph { background: var(--card); border-radius: 30px; box-shadow: var(--shadow); overflow: hidden }
+.ph { background: var(--card); border-radius: var(--ds-r); box-shadow: none; overflow: hidden }
 .ph > button { width: 100%; border: 0; background: none; display: grid; grid-template-columns: 46px 1fr auto 40px; gap: 12px; align-items: center; padding: 12px 14px 12px 12px; min-height: 68px; cursor: pointer; text-align: left }
 .pic { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center }
 .pic svg { width: 28px; height: 28px }
-.pn { font: 600 .92rem var(--sans); letter-spacing: .1em; text-transform: uppercase }
+.pn { font: 600 .92rem var(--sans); letter-spacing: var(--ds-track); text-transform: uppercase }
 .pn small { display: block; letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--muted); font-size: .76rem; margin-top: 1px }
-.sw { font: 500 .84rem var(--sans); letter-spacing: .1em; text-transform: uppercase }
+.sw { font: 500 .84rem var(--sans); letter-spacing: var(--ds-track); text-transform: uppercase }
 .sc { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center }
 .sc svg { width: 22px; height: 22px }
 .st-done .sw { color: var(--done) } .st-done .sc { background: var(--done); color: #fff }
 .st-now .sw { color: var(--now) } .st-now .sc { background: var(--now-soft); color: var(--now) }
 .st-todo .sw { color: var(--todo) } .st-todo .sc { border: 2px solid var(--line); color: var(--todo) }
-.st-now.ph { box-shadow: inset 4px 0 0 var(--gold), var(--shadow) }
+.st-now.ph { box-shadow: inset 4px 0 0 var(--gold) }
 /* second level: milestones */
 .ms { border-top: 1px solid var(--line); padding: 6px 16px 12px 70px; display: grid; gap: 2px }
 .mi { display: grid; grid-template-columns: 16px 1fr; gap: 10px; padding: 7px 0; align-items: start; font-size: .88rem }
@@ -61,34 +64,69 @@ button { font: inherit; color: inherit } button:focus-visible { outline: 3px sol
 .mi small { display: block; color: var(--muted); font-size: .78rem }
 .mi.done svg { color: var(--done) } .mi.now svg { color: var(--now) } .mi.todo svg { color: var(--todo) } .mi.gate svg { color: var(--you) }
 .mi.none { grid-template-columns: 1fr; color: var(--muted); font-size: .84rem }
-.more { justify-self: start; border: 0; background: var(--page); border-radius: 999px; min-height: 36px; padding: 0 12px; font: 700 .8rem var(--round); cursor: pointer; margin-top: 4px }
+.more { justify-self: start; border: 0; background: var(--page); border-radius: var(--ds-rs); min-height: 36px; padding: 0 12px; font: 700 .8rem var(--round); cursor: pointer; margin-top: 4px }
 .term { background: none; border: 0; padding: 0; color: var(--focus); text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; font: inherit }
 
 .scrim { position: absolute; inset: 0; background: var(--scrim); display: grid; align-items: end; z-index: 5 }
-.bs { background: var(--bg); border-radius: 28px 28px 0 0; padding: 10px 18px 24px; display: grid; gap: 12px; max-height: 90%; overflow: auto }
+.bs { background: var(--bg); border-radius: var(--ds-r) var(--ds-r) 0 0; padding: 10px 18px 24px; display: grid; gap: 12px; max-height: 90%; overflow: auto }
 .bs .g { width: 40px; height: 5px; border-radius: 3px; background: var(--line); justify-self: center }
 .gl { display: grid; gap: 8px } .gl p { margin: 0 } .phl { margin: 0; padding-left: 1.4rem; display: grid; gap: 6px }
 .bs h3 { margin: 0; font: 800 1.15rem var(--round) } .bs p { margin: 0 } .bs .sub { color: var(--muted); font-size: .88rem }
 .four { display: grid; gap: 8px; font-size: .9rem } .four div { display: grid; grid-template-columns: 5.4rem 1fr; gap: 8px } .four b { color: var(--muted); font-weight: 600 }
-.go { border: 0; border-radius: 18px; min-height: 52px; font: 800 1rem var(--round); background: var(--ink); color: var(--bg); cursor: pointer }
-.toast { position: absolute; left: 14px; right: 14px; bottom: 90px; background: var(--card); border-radius: 18px; padding: 12px 14px; box-shadow: 0 10px 28px rgb(0 0 0 / .2); z-index: 6; font-size: .9rem; display: flex; gap: 10px; justify-content: space-between; align-items: center }
-.toast button { border: 0; background: var(--page); border-radius: 999px; min-height: 36px; padding: 0 12px; cursor: pointer; font-weight: 700 }
-.notes { background: var(--card); border-radius: 20px; padding: 16px 18px; display: grid; gap: 10px; border: 1px solid var(--line) }
+.go { border: 0; border-radius: var(--ds-rs); min-height: 52px; font: 800 1rem var(--round); background: var(--ink); color: var(--bg); cursor: pointer }
+.toast { position: absolute; left: 14px; right: 14px; bottom: 90px; background: var(--card); border-radius: var(--ds-r); padding: 12px 14px; box-shadow: none; z-index: 6; font-size: .9rem; display: flex; gap: 10px; justify-content: space-between; align-items: center }
+.toast button { border: 0; background: var(--page); border-radius: var(--ds-rs); min-height: 36px; padding: 0 12px; cursor: pointer; font-weight: 700 }
+.notes { background: var(--card); border-radius: var(--ds-r); padding: 16px 18px; display: grid; gap: 10px; border: 1px solid var(--line) }
 .notes h2 { margin: 0; font-size: 1rem } .notes ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 5px } .notes p { margin: 0 }
 
-:root { --page: #eef0f3; --bg: #eef0f3; --card: #ffffff; --ink: #16191d; --muted: #6b7280; --line: #e5e7eb; --shadow: 0 1px 2px rgb(0 0 0 / .05), 0 6px 16px rgb(0 0 0 / .05); --done: #15803d; --done-soft: #e3f4e8; --now: #a87a1e; --now-soft: #fbf1d9; --todo: #6b7280; --you: #e8553e; --you-soft: #fdece8; --work: #2f6fe0; --gold: #a87a1e; --focus: #2f6fe0; --scrim: rgb(15 18 22 / .42); --ds-page: #eef0f3; --ds-surf: #ffffff; --ds-surf2: #f5f6f8; --ds-ink: #16191d; --ds-muted: #6b7280; --ds-line: #e5e7eb; --ds-you: #e8553e; --ds-yous: #fdece8; --ds-agent: #2f6fe0; --ds-agents: #e6eefc; --ds-pass: #15803d; --ds-passs: #e3f4e8; --ds-fail: #c0262d; --ds-fails: #fde7e7; --ds-merge: #7c4dcc; --ds-merges: #efe8fb; --ds-block: #a16207; --ds-blocks: #fbf1d9; --ds-gold: #a87a1e; --ds-idle: #c3c8cf; --ds-focus: #2f6fe0; --ds-shadow: 0 1px 2px rgb(0 0 0 / .05), 0 6px 16px rgb(0 0 0 / .05); --ds-scrim: rgb(15 18 22 / .42) }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #0b0c0e; --bg: #0b0c0e; --card: #1a1c20; --ink: #eef0f3; --muted: #9aa1ab; --line: #2a2e35; --shadow: none; --done: #4ade80; --done-soft: #12301f; --now: #d4ae4f; --now-soft: #33290f; --todo: #9aa1ab; --you: #ff7a63; --you-soft: #3a1d18; --work: #7aa7ff; --gold: #d4ae4f; --focus: #7aa7ff; --scrim: rgb(0 0 0 / .6); --ds-page: #0b0c0e; --ds-surf: #1a1c20; --ds-surf2: #121417; --ds-ink: #eef0f3; --ds-muted: #9aa1ab; --ds-line: #2a2e35; --ds-you: #ff7a63; --ds-yous: #3a1d18; --ds-agent: #7aa7ff; --ds-agents: #17233a; --ds-pass: #4ade80; --ds-passs: #12301f; --ds-fail: #ff7b7f; --ds-fails: #3a1617; --ds-merge: #b99aff; --ds-merges: #271d3a; --ds-block: #e6b450; --ds-blocks: #33290f; --ds-gold: #d4ae4f; --ds-idle: #4a5059; --ds-focus: #7aa7ff; --ds-shadow: none; --ds-scrim: rgb(0 0 0 / .6); color-scheme: dark } }
-:root[data-theme="dark"] { --page: #0b0c0e; --bg: #0b0c0e; --card: #1a1c20; --ink: #eef0f3; --muted: #9aa1ab; --line: #2a2e35; --shadow: none; --done: #4ade80; --done-soft: #12301f; --now: #d4ae4f; --now-soft: #33290f; --todo: #9aa1ab; --you: #ff7a63; --you-soft: #3a1d18; --work: #7aa7ff; --gold: #d4ae4f; --focus: #7aa7ff; --scrim: rgb(0 0 0 / .6); --ds-page: #0b0c0e; --ds-surf: #1a1c20; --ds-surf2: #121417; --ds-ink: #eef0f3; --ds-muted: #9aa1ab; --ds-line: #2a2e35; --ds-you: #ff7a63; --ds-yous: #3a1d18; --ds-agent: #7aa7ff; --ds-agents: #17233a; --ds-pass: #4ade80; --ds-passs: #12301f; --ds-fail: #ff7b7f; --ds-fails: #3a1617; --ds-merge: #b99aff; --ds-merges: #271d3a; --ds-block: #e6b450; --ds-blocks: #33290f; --ds-gold: #d4ae4f; --ds-idle: #4a5059; --ds-focus: #7aa7ff; --ds-shadow: none; --ds-scrim: rgb(0 0 0 / .6); color-scheme: dark }
+/* the owner's comment (13 Oct): one ordered list; the current phase emphasised in place, quietly, in the D2 shape */
+.gh.seq { color: var(--muted); text-align: left; margin: 18px 14px 8px }
+.st-now.ph { border-color: var(--gold) !important; box-shadow: inset 4px 0 0 var(--gold); margin: 0 -3px; position: relative; z-index: 1 }
+.nowtag { display: inline-block; margin-left: 8px; vertical-align: 2px; font: 800 .58rem/1 var(--ds-font); letter-spacing: var(--ds-track); text-transform: uppercase; color: var(--ds-on); background: var(--gold); border-radius: var(--ds-rs); padding: 3px 5px }
+/* the owner's comment (13 Oct) on Home's icons, carried here: quiet outline pictures, a hairline tile, thin strokes */
+.pic { border: 1px solid var(--line) } .pic svg [stroke-width] { stroke-width: 1.6 }
+/* v3.3.0: the run label, the standard milestones toggle and list, the earlier run's line, and the Done row */
+.pn .it { font-style: normal; text-transform: none; letter-spacing: 0; color: var(--gold) }
+.stdt { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; width: 100%; border: 0; background: none; padding: 8px 0 4px; min-height: 40px; cursor: pointer; text-align: left; font-size: .84rem; font-weight: 700 }
+.stdt small { color: var(--muted); font-weight: 600; font-size: .74rem; text-align: right }
+.stdl { display: grid; gap: 0; margin-bottom: 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--page) }
+.smi { display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; align-items: start; padding: 5px 8px; font-size: .8rem; border-top: 1px solid var(--line) } .smi:first-child { border-top: 0 }
+.smi svg { width: 14px; height: 14px; margin-top: 2px } .smi em { font-style: normal; font-size: .64rem; font-weight: 800; text-transform: uppercase; letter-spacing: var(--ds-track); color: var(--muted); margin-top: 2px; white-space: nowrap }
+.smi.s-r svg, .smi.s-c svg, .smi.s-r em, .smi.s-c em { color: var(--done) } .smi.s-n svg, .smi.s-n em { color: var(--ds-fail) } .smi.s-u svg { color: var(--muted) }
+.smi.key { grid-template-columns: 1fr; font-size: .76rem }
+.own { font-size: .84rem; font-weight: 700; padding: 8px 0 0; border-top: 1px solid var(--line); margin-top: 4px }
+.mi.earlier { grid-template-columns: 1fr; gap: 0; border-top: 1px solid var(--line); margin-top: 4px; padding-top: 8px; font-size: .8rem; color: var(--muted) } .mi.earlier b { color: var(--ink) }
 
-/* ---- Desk design system: one palette, one type scale, one project tab bar (shared by every screen) ---- */
-body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif }
-.dtabs { position: absolute; left: 12px; right: 12px; bottom: 14px; z-index: 4; display: grid; grid-template-columns: 1fr 1fr 60px 1fr 1fr; align-items: center;
-  background: color-mix(in srgb, var(--ds-surf) 94%, transparent); border: 1px solid var(--ds-line); border-radius: 26px; padding: 4px 4px; box-shadow: 0 6px 22px rgb(0 0 0 / .12) }
-.dtab { border: 0; background: none; display: grid; justify-items: center; gap: 1px; font: 600 .64rem system-ui, sans-serif; color: var(--ds-muted); cursor: pointer; min-height: 44px; position: relative }
-.dtab svg { width: 21px; height: 21px } .dtab[aria-current="page"] { color: var(--ds-ink) } .dtab[aria-current="page"]::after { content: ""; position: absolute; bottom: 1px; width: 16px; height: 3px; border-radius: 2px; background: var(--ds-you) }
-.dtab .badge { position: absolute; top: 1px; right: 24%; min-width: 15px; height: 15px; border-radius: 8px; background: var(--ds-you); color: #fff; font-size: .58rem; font-weight: 800; display: grid; place-items: center; padding: 0 4px }
-.dplus { width: 50px; height: 50px; border-radius: 50%; border: 0; background: var(--ds-you); color: #fff; font-size: 1.6rem; line-height: 1; cursor: pointer; justify-self: center; margin-top: -22px; box-shadow: 0 6px 16px color-mix(in srgb, var(--ds-you) 40%, transparent) }
-.code, .src, .id { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace }
+/* ds:begin */
+:root { --page: #eef0f2; --bg: #eef0f2; --card: #ffffff; --ink: #0b0d10; --muted: #4b525b; --line: #c9cdd3; --shadow: none; --done: #0f7a3a; --done-soft: #dcefe2; --now: #8a6a10; --now-soft: #f6ead3; --todo: #4b525b; --you: #d23c0f; --you-soft: #fbe4dc; --work: #1d5bd6; --gold: #8a6a10; --focus: #1d5bd6; --scrim: rgb(11 13 16 / .5); --ds-page: #eef0f2; --ds-surf: #ffffff; --ds-surf2: #e4e7ea; --ds-ink: #0b0d10; --ds-muted: #4b525b; --ds-line: #c9cdd3; --ds-you: #d23c0f; --ds-yous: #fbe4dc; --ds-agent: #1d5bd6; --ds-agents: #e1e9fa; --ds-pass: #0f7a3a; --ds-passs: #dcefe2; --ds-fail: #b8141d; --ds-fails: #f9dfdf; --ds-merge: #5b3cc4; --ds-merges: #e8e2f8; --ds-block: #9e5800; --ds-blocks: #f6ead3; --ds-gold: #8a6a10; --ds-idle: #b7bdc5; --ds-focus: #1d5bd6; --ds-on: #ffffff; --ds-shadow: none; --ds-scrim: rgb(11 13 16 / .5); --pic-disc-bg: #eef0f2; --pic-disc-fill: #eef0f2; --pic-disc-ink: #4b525b; --pic-design-bg: #eef0f2; --pic-design-fill: #eef0f2; --pic-design-ink: #4b525b; --pic-design-d1: #4b525b; --pic-design-d2: #4b525b; --pic-design-d3: #4b525b; --pic-build-bg: #eef0f2; --pic-build-fill: #eef0f2; --pic-build-fill2: #eef0f2; --pic-build-ink: #4b525b; --pic-launch-bg: #eef0f2; --pic-launch-fill: #eef0f2; --pic-launch-ink: #4b525b; --pic-launch-win: #eef0f2; --pic-launch-flame: #4b525b; --pic-grad-bg: #eef0f2; --pic-grad-fill: #eef0f2; --pic-grad-ink: #4b525b; --pic-grad-ring: #4b525b; --ds-r: 6px; --ds-rs: 4px; --ds-track: .04em; --ds-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --ds-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #0c0d0f; --bg: #0c0d0f; --card: #16181c; --ink: #f1f3f5; --muted: #a3a9b2; --line: #363b43; --shadow: none; --done: #3fb950; --done-soft: #112b19; --now: #d4ae4f; --now-soft: #33260c; --todo: #a3a9b2; --you: #ff6a3d; --you-soft: #3d1b10; --work: #6ea0ff; --gold: #d4ae4f; --focus: #6ea0ff; --scrim: rgb(0 0 0 / .62); --ds-page: #0c0d0f; --ds-surf: #16181c; --ds-surf2: #101215; --ds-ink: #f1f3f5; --ds-muted: #a3a9b2; --ds-line: #363b43; --ds-you: #ff6a3d; --ds-yous: #3d1b10; --ds-agent: #6ea0ff; --ds-agents: #14223b; --ds-pass: #3fb950; --ds-passs: #112b19; --ds-fail: #ff6b6b; --ds-fails: #3b1516; --ds-merge: #a78bfa; --ds-merges: #261d3d; --ds-block: #e3a33b; --ds-blocks: #33260c; --ds-gold: #d4ae4f; --ds-idle: #4a5059; --ds-focus: #6ea0ff; --ds-on: #0b0d10; --ds-shadow: none; --ds-scrim: rgb(0 0 0 / .62); --pic-disc-bg: #101215; --pic-disc-fill: #101215; --pic-disc-ink: #a3a9b2; --pic-design-bg: #101215; --pic-design-fill: #101215; --pic-design-ink: #a3a9b2; --pic-design-d1: #a3a9b2; --pic-design-d2: #a3a9b2; --pic-design-d3: #a3a9b2; --pic-build-bg: #101215; --pic-build-fill: #101215; --pic-build-fill2: #101215; --pic-build-ink: #a3a9b2; --pic-launch-bg: #101215; --pic-launch-fill: #101215; --pic-launch-ink: #a3a9b2; --pic-launch-win: #101215; --pic-launch-flame: #a3a9b2; --pic-grad-bg: #101215; --pic-grad-fill: #101215; --pic-grad-ink: #a3a9b2; --pic-grad-ring: #a3a9b2; color-scheme: dark } }
+:root[data-theme="dark"] { --page: #0c0d0f; --bg: #0c0d0f; --card: #16181c; --ink: #f1f3f5; --muted: #a3a9b2; --line: #363b43; --shadow: none; --done: #3fb950; --done-soft: #112b19; --now: #d4ae4f; --now-soft: #33260c; --todo: #a3a9b2; --you: #ff6a3d; --you-soft: #3d1b10; --work: #6ea0ff; --gold: #d4ae4f; --focus: #6ea0ff; --scrim: rgb(0 0 0 / .62); --ds-page: #0c0d0f; --ds-surf: #16181c; --ds-surf2: #101215; --ds-ink: #f1f3f5; --ds-muted: #a3a9b2; --ds-line: #363b43; --ds-you: #ff6a3d; --ds-yous: #3d1b10; --ds-agent: #6ea0ff; --ds-agents: #14223b; --ds-pass: #3fb950; --ds-passs: #112b19; --ds-fail: #ff6b6b; --ds-fails: #3b1516; --ds-merge: #a78bfa; --ds-merges: #261d3d; --ds-block: #e3a33b; --ds-blocks: #33260c; --ds-gold: #d4ae4f; --ds-idle: #4a5059; --ds-focus: #6ea0ff; --ds-on: #0b0d10; --ds-shadow: none; --ds-scrim: rgb(0 0 0 / .62); --pic-disc-bg: #101215; --pic-disc-fill: #101215; --pic-disc-ink: #a3a9b2; --pic-design-bg: #101215; --pic-design-fill: #101215; --pic-design-ink: #a3a9b2; --pic-design-d1: #a3a9b2; --pic-design-d2: #a3a9b2; --pic-design-d3: #a3a9b2; --pic-build-bg: #101215; --pic-build-fill: #101215; --pic-build-fill2: #101215; --pic-build-ink: #a3a9b2; --pic-launch-bg: #101215; --pic-launch-fill: #101215; --pic-launch-ink: #a3a9b2; --pic-launch-win: #101215; --pic-launch-flame: #a3a9b2; --pic-grad-bg: #101215; --pic-grad-fill: #101215; --pic-grad-ink: #a3a9b2; --pic-grad-ring: #a3a9b2; color-scheme: dark }
+
+/* ---- Desk design system: one palette, one type scale, one project tab bar (shared by every screen) ----
+   Theme D2, Field ops in Inter: Inter for text, monospace only for codes, ids, hashes and times, uppercase tracked headings
+   and small labels, 6px cards, 4px chips and buttons, 1px hairlines instead of shadows, solid status blocks. */
+body { font-family: var(--ds-font); -webkit-font-smoothing: antialiased; font-feature-settings: "cv05", "cv08" }
+input, textarea, select, button { font-family: inherit }
+h1, .notes h2 { text-transform: uppercase; letter-spacing: var(--ds-track) } h1 { font-weight: 800 }
+.toast { border: 1px solid var(--ds-line) } .bs { border-top: 1px solid var(--ds-line) }
+.dtabs { position: absolute; left: 10px; right: 10px; bottom: 12px; z-index: 4; display: grid; grid-template-columns: 1fr 1fr 60px 1fr 1fr; align-items: center;
+  background: var(--ds-surf); border: 1px solid var(--ds-line); border-radius: var(--ds-r); padding: 3px }
+.dtab { border: 0; background: none; display: grid; justify-items: center; align-content: center; gap: 2px; font: 700 .58rem/1.1 var(--ds-font); letter-spacing: var(--ds-track); text-transform: uppercase; color: var(--ds-muted); cursor: pointer; min-height: 44px; position: relative }
+.dtab svg { width: 20px; height: 20px } .dtab[aria-current="page"] { color: var(--ds-ink) } .dtab[aria-current="page"]::after { content: ""; position: absolute; bottom: 0; width: 22px; height: 3px; border-radius: 0; background: var(--ds-you) }
+.dtab .badge { position: absolute; top: 2px; right: 22%; min-width: 16px; height: 15px; border-radius: var(--ds-rs); background: var(--ds-you); color: var(--ds-on); font-size: .58rem; font-weight: 800; letter-spacing: 0; display: grid; place-items: center; padding: 0 4px; font-variant-numeric: tabular-nums }
+.dplus { width: 48px; height: 48px; border-radius: var(--ds-r); border: 0; background: var(--ds-you); color: var(--ds-on); font: 400 1.6rem/1 var(--ds-font); cursor: pointer; justify-self: center; margin-top: -20px }
+.code, .src, .id { font-family: var(--ds-mono) }
+
+/* the owner's comment (11 Oct): milestone lists start in line with the phase icons */
+.ms { padding-left: 12px !important } .mi { grid-template-columns: 46px 1fr; gap: 12px } .mi svg { justify-self: center } .more { margin-left: 58px }
+.hdr { background: var(--card) } .hdr h2 { font: 800 1rem var(--ds-font); text-transform: uppercase; letter-spacing: var(--ds-track) }
+.title { font: 800 1.45rem/1.15 var(--ds-font); text-transform: uppercase; letter-spacing: var(--ds-track); margin: 16px 16px 4px }
+.lk { border: 1px solid var(--line) } .lk.you { background: var(--you); color: var(--ds-on); border-color: var(--you) }
+.gh { font-weight: 800; margin: 18px 16px 8px } .list { gap: 8px; padding: 0 10px }
+.ph { border: 1px solid var(--line) } .ph > button { min-height: 56px; padding: 8px 10px; gap: 10px } .pn { font-weight: 700 }
+.st-done .sc { color: var(--ds-on) } .st-now .sc { background: var(--now); color: var(--ds-on) }
+.bs h3 { font-weight: 750 } .go { font-weight: 700 }
+/* ds:end */
 </style>
 
 <div class="wrap">
@@ -104,12 +142,12 @@ body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif }
   <section class="notes">
     <h2>What's on this screen, and why</h2>
     <ul>
-      <li><b>Lifesum's layout, used for phases.</b> Lifesum's big "Current status" title becomes yours. Its coloured caps headings group the phases into Here now, Done and Still to come. Each phase gets one rounded row: an icon, its name in caps, a status word, and a status circle (a filled tick, a gold ring, or an empty ring), so the state never depends on colour alone.</li>
-      <li><b>Two levels, no more.</b> Tap a phase and its milestones open underneath in plain English, each with its status and one short reason. The phase that's under way opens by default. Going deeper, into each milestone's steps, is the timeline (screen 4).</li>
+      <li><b>Lifesum's layout, used for phases.</b> Lifesum's big "Current status" title becomes yours. The phases are listed strictly in order, Discovery, Design, Build, Launch, then Done, which is not a phase but where the project stands once you pass the Launch gate. The current phase is not lifted to the top: it stays in its place and is marked there, with a gold bar down its left edge, a gold hairline round its tile, a quiet raised edge and a small NOW tag by its name. Every row keeps its state word (finished, under way, not started, not yet). Operate and Review are the product's own after the Launch gate, so the desk doesn't show them. Each phase gets one rounded row: an icon, its name in caps, a status word, and a status circle (a filled tick, a gold ring, or an empty ring), so the state never depends on colour alone.</li>
+      <li><b>Two levels, no more.</b> Tap a phase and its milestones open underneath in plain English: first the model's standard milestones for that phase (a count, tap for the list), then this project's own, each with its status and one short reason. The phase that's under way opens by default. A standard milestone shows only what a record shows, so most of Service Desk's read "not recorded". Going deeper, into each milestone's steps, is the timeline (screen 4).</li>
       <li><b>The line under the title</b> says what's happening in one sentence. Directly under it, two buttons jump to what needs you (the queue, screen 6) and who has the ball (the team, screen 3), so they're never more than one tap away.</li>
-      <li><b>Order is the operating model's</b>, not the order things happened. Build shows as Done even though Design is still under way, because Build really did finish first.</li>
+      <li><b>Order is the operating model's</b>, not the order things happened. Service Desk came back to Design after Build, so Design shows as <b>Design i2</b>, its second run, with one line about Design i1, and Build stays Finished.</li>
       <li><b>A blocker shows where it bites.</b> Launch carries "must pass first: the scrubbing proof", in coral, so you can see what's holding it before it starts.</li>
-      <li><b>Every item is real</b> Service Desk data. The ⓘ explains the six phases; underlined words explain themselves.</li>
+      <li><b>Every item is real</b> Service Desk data. The ⓘ explains the four phases and Done; underlined words explain themselves.</li>
     </ul>
     <p style="color:var(--muted);font-size:.88rem">Reference: <code>docs/design/references/02-project-phases-lifesum.png</code>. Kept from it: the header bar, the large light title, the tinted caps group headings, the white pill rows with icon, caps label, status word and circle on the right, and the warm grey background. Changed: smileys become plain status circles, and each row opens to show its milestones.</p>
   </section>
@@ -125,65 +163,84 @@ const IC = {
   gate: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
   hand: '<svg viewBox="0 0 24 24" aria-hidden="true" style="width:15px;height:15px"><path d="M7 11V6a1.5 1.5 0 0 1 3 0v4M10 10V4.5a1.5 1.5 0 0 1 3 0V10M13 10V5.5a1.5 1.5 0 0 1 3 0V11M16 11V8a1.5 1.5 0 0 1 3 0v6a7 7 0 0 1-7 7h-.5A6.5 6.5 0 0 1 6 17l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L7 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 };
-// Phase pictures: simple, colourful, in the spirit of Lifesum's illustrated icons.
+// Phase pictures: simple, colourful, in the spirit of Lifesum's illustrated icons. Colours are tokens (--pic-*, ds/unify.py) with dark-mode values.
 const PIC = {
-  Discovery: ['#e7f0ff', '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="14" cy="14" r="8" fill="#9cc2ff" stroke="#2f6fe0" stroke-width="2.5"/><path d="m20 20 7 7" stroke="#2f6fe0" stroke-width="3.5" stroke-linecap="round"/></svg>'],
-  Design: ['#fff1dc', '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4a12 12 0 1 0 0 24c2 0 2.5-1.6 1.6-3-.9-1.5 0-3 1.8-3H22a6 6 0 0 0 6-6C28 9 22.6 4 16 4Z" fill="#ffc46b" stroke="#c97a10" stroke-width="2"/><circle cx="10" cy="14" r="2.2" fill="#e8553e"/><circle cx="15" cy="9.5" r="2.2" fill="#2f6fe0"/><circle cx="21" cy="11" r="2.2" fill="#138a52"/></svg>'],
-  Build: ['#ffe9e4', '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="17" width="10" height="10" rx="2" fill="#ff8a6b" stroke="#c4432a" stroke-width="2"/><rect x="17" y="17" width="10" height="10" rx="2" fill="#ffb199" stroke="#c4432a" stroke-width="2"/><rect x="11" y="5" width="10" height="10" rx="2" fill="#ff8a6b" stroke="#c4432a" stroke-width="2"/></svg>'],
-  Launch: ['#efe7ff', '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3c5 3 7 9 6 15l-6 4-6-4c-1-6 1-12 6-15Z" fill="#b9a2ff" stroke="#6b46d6" stroke-width="2"/><circle cx="16" cy="12" r="2.6" fill="#fff" stroke="#6b46d6" stroke-width="1.6"/><path d="M12 23c-1 2-1 4 0 6 1-1 2-2 4-3 2 1 3 2 4 3 1-2 1-4 0-6" fill="#ffc46b"/></svg>'],
-  Operate: ['#e3f6ec', '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="5" fill="#fff" stroke="#138a52" stroke-width="2.5"/><path d="M16 3v4M16 25v4M3 16h4M25 16h4M6.8 6.8l2.8 2.8M22.4 22.4l2.8 2.8M6.8 25.2l2.8-2.8M22.4 9.6l2.8-2.8" stroke="#138a52" stroke-width="3" stroke-linecap="round"/><circle cx="16" cy="16" r="9" fill="none" stroke="#7fd6a8" stroke-width="2.5"/></svg>'],
-  Review: ['#fdf0f6', '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="7" y="4" width="18" height="24" rx="3" fill="#ffc2da" stroke="#c23b78" stroke-width="2"/><path d="m11 15 3 3 6-6" fill="none" stroke="#c23b78" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 22h10" stroke="#c23b78" stroke-width="2" stroke-linecap="round"/></svg>']
+  Discovery: ['var(--pic-disc-bg)', '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="14" cy="14" r="8" stroke-width="2.5" style="fill:var(--pic-disc-fill);stroke:var(--pic-disc-ink)"/><path d="m20 20 7 7" stroke-width="3.5" stroke-linecap="round" style="stroke:var(--pic-disc-ink)"/></svg>'],
+  Design: ['var(--pic-design-bg)', '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4a12 12 0 1 0 0 24c2 0 2.5-1.6 1.6-3-.9-1.5 0-3 1.8-3H22a6 6 0 0 0 6-6C28 9 22.6 4 16 4Z" stroke-width="2" style="fill:var(--pic-design-fill);stroke:var(--pic-design-ink)"/><circle cx="10" cy="14" r="2.2" style="fill:var(--pic-design-d1)"/><circle cx="15" cy="9.5" r="2.2" style="fill:var(--pic-design-d2)"/><circle cx="21" cy="11" r="2.2" style="fill:var(--pic-design-d3)"/></svg>'],
+  Build: ['var(--pic-build-bg)', '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="17" width="10" height="10" rx="2" stroke-width="2" style="fill:var(--pic-build-fill);stroke:var(--pic-build-ink)"/><rect x="17" y="17" width="10" height="10" rx="2" stroke-width="2" style="fill:var(--pic-build-fill2);stroke:var(--pic-build-ink)"/><rect x="11" y="5" width="10" height="10" rx="2" stroke-width="2" style="fill:var(--pic-build-fill);stroke:var(--pic-build-ink)"/></svg>'],
+  Launch: ['var(--pic-launch-bg)', '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3c5 3 7 9 6 15l-6 4-6-4c-1-6 1-12 6-15Z" stroke-width="2" style="fill:var(--pic-launch-fill);stroke:var(--pic-launch-ink)"/><circle cx="16" cy="12" r="2.6" stroke-width="1.6" style="fill:var(--pic-launch-win);stroke:var(--pic-launch-ink)"/><path d="M12 23c-1 2-1 4 0 6 1-1 2-2 4-3 2 1 3 2 4 3 1-2 1-4 0-6" style="fill:var(--pic-launch-flame)"/></svg>'],
+  Done: ['var(--pic-grad-bg)', '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M9 28V5" stroke-width="2.6" stroke-linecap="round" style="stroke:var(--pic-grad-ink)"/><path d="M9 6h15l-3.5 5.5L24 17H9Z" stroke-width="2.2" stroke-linejoin="round" style="fill:var(--pic-grad-fill);stroke:var(--pic-grad-ink)"/><circle cx="9" cy="28" r="2.4" style="fill:var(--pic-grad-ring)"/></svg>']
 };
-const ORDER = ['Discovery', 'Design', 'Build', 'Launch', 'Operate', 'Review'];
-const WORD = { done: 'Done', now: 'Under way', todo: 'Not started' };
+// the desk's four phases (POOM v3.3.0, S-023); Operate and Review are the product's own once it is done, so the desk doesn't show them
+const ORDER = ['Discovery', 'Design', 'Build', 'Launch'];
+const STD = {"Discovery": [["An idea worth exploring", "the idea is logged and you have agreed to look into it"], ["Success defined", "the value target: what it must improve, by how much, by when, and when we'd stop"], ["The expert's questions answered", "the groundwork map, and you have answered its short list of questions"], ["The right problem chosen", "a plain problem statement, checked against how others have solved it"], ["What already exists is known", "research to the depth needed, every source checked"], ["The risks are known", "the pre-mortem; its risks shape the research"], ["Scope, limits and owners agreed", "in and out, the spend ceiling, the trust level, who owns each deliverable"], ["A brief ready to rule on", "the Critic passes the brief; your Design gate follows"]], "Design": [["Done defined in real scenarios", "criteria by scenario"], ["How the pieces connect is mapped", "join sheets"], ["Every unknown has a test", "registered experiments, each with a fallback"], ["Every fact is backed by evidence", "the facts relied on, each with a source"], ["The design fits together", "the join-up review closing Design"], ["A plan that passed review", "the Critic's plan review passes and the plan freezes; your Build gate follows"]], "Build": [["Tests written before the work", "locked checks plus hidden tests, by the check author"], ["The work is built", "built to the frozen plan, its own checks passing"], ["Independently reviewed and passing", "the Reviewer tries to break it; it holds against the hidden tests too"], ["The experiments are answered", "each registered experiment has a recorded result"], ["Everything built fits together", "the join-up review closing Build"]], "Launch": [["It's live", "integrated and live for its users"], ["An operating team is in place", "who runs it day to day is set up"], ["It's handed over", "the handover package is complete; you approve the launch"], ["Its own monitoring and feedback works", "its own monitoring, feedback and review are confirmed running at, or just before, the Launch gate"], ["Done", "you pass the Launch gate and it leaves the desk, running on its own; the lessons for the operating model are recorded at handover"]]};
+const STATE_WORD = {"r": "reached", "n": "not reached", "u": "not recorded", "c": "carried over", "x": "not needed"};
+const STD_RUN = {"Discovery i1": [["u", "Your request shows the idea logged, but your agreement to look into it is kept in the portfolio's idea list, not in this project."], ["r", "The value targets, V1 to V5, are in the project document."], ["u", "There was no groundwork map: that step came later."], ["u", "No record can show this one yet."], ["r", "Each research question, Q-001 to Q-009, was checked or closed before the readiness check passed."], ["u", "No record can show this one yet."], ["r", "Scope, limits and owners are filled in, and the readiness check passed."], ["r", "The readiness check passed on 5 Oct, on round 4."]], "Design i1": [["r", "The plan, S-001, was written and sent to its review."], ["u", "The plan now holds Design i2's changes too, so only the latest Design round can read this."], ["u", "No record can show this one yet."], ["u", "The plan now holds Design i2's changes too, so only the latest Design round can read this."], ["u", "No record can show this one yet."], ["n", "The plan failed its review three times, and you changed its scope instead."]], "Build i1": [["u", "This round ran outside the pipeline, so no record can show it."], ["u", "This round ran outside the pipeline, so no record can show it."], ["u", "This round ran outside the pipeline, so no record can show it."], ["u", "This round ran outside the pipeline, so no record can show it."], ["u", "This round ran outside the pipeline, so no record can show it."]], "Design i2": [["u", "This round ran outside the pipeline, so no record can show it."], ["u", "This round ran outside the pipeline, so no record can show it."], ["u", "This round ran outside the pipeline, so no record can show it."], ["u", "This round ran outside the pipeline, so no record can show it."], ["u", "This round ran outside the pipeline, so no record can show it."], ["u", "This round ran outside the pipeline, so no record can show it."]], "Launch i1": [["u", "Not started, and it will run outside the pipeline, so no record can show it."], ["u", "Not started, and it will run outside the pipeline, so no record can show it."], ["u", "Not started, and it will run outside the pipeline, so no record can show it."], ["u", "Not started, and it will run outside the pipeline, so no record can show it."], ["u", "Not started, and it will run outside the pipeline, so no record can show it."]]};
+
+const WORD = { done: 'Finished', now: 'Under way', todo: 'Not started' };
+// each phase's latest run, "<Phase> i<n>" (S-023); the label is shown where the phase was worked through again
 const PH = {
-  Discovery: { st: 'done', what: 'Finding out what to build', ms: [['done', 'Know what the desk must do', 'Research Q-001 to Q-009 and the discovery map, early Oct']] },
-  Design: { st: 'now', what: 'Agreeing how it looks and works', ms: [
+  Discovery: { st: 'done', run: 'Discovery i1', what: 'Finding out what to build', ms: [['done', 'Know what the desk must do', 'Research Q-001 to Q-009 and the discovery map, early Oct']] },
+  Design: { st: 'now', run: 'Design i2', again: true, what: 'Back in Design after Build', ms: [
     ['now', 'Agree how the desk looks and feels', 'Design research filed 8 Oct · the screens are being shaped with you, Home done'],
     ['done', 'Get a phone alert when something needs me', 'Research done 8 Oct · you chose desk push via GitHub · built during Launch']] },
-  Build: { st: 'done', what: 'Making it', ms: [
+  Build: { st: 'done', run: 'Build i1', what: 'Making it', ms: [
     ['done', 'See every project\'s status on my phone', 'Accepted 8 Oct (was "M1")'],
     ['done', 'Answer and track decisions from the desk', 'Accepted 8 Oct (was "M2") · usage figures added 8 Oct']] },
-  Launch: { st: 'todo', what: 'Putting it live for real', ms: [
+  Launch: { st: 'todo', run: 'Launch i1', what: 'Putting it live for real', ms: [
     ['gate', 'Must pass first: the scrubbing proof', 'Deferred by you on 8 Oct · ledger L-0007'],
-    ['todo', 'Replace the old needs-you page', 'Was "M3" · production deploy needs your approval']] },
-  Operate: { st: 'todo', what: 'Using it day to day', ms: [] },
-  Review: { st: 'todo', what: 'Looking back and closing out', ms: [] }
+    ['todo', 'Replace the old needs-you page', 'Was "M3" · production deploy needs your approval']] }
 };
+// earlier runs of a phase, one plain line each (the timeline holds their detail)
+const EARLIER = { Design: [['Design i1', 'The plan failed its review three times on 5 and 6 Oct, so you changed its scope and chose to build milestone by milestone.']] };
 const SCEN = {
-  now: { line: 'Design is under way. Home is agreed; the project view is next.', need: [1, 'to merge'], ball: 'Chief of Staff working' },
-  busy: { line: 'Design is waiting on you: the design research stopped and needs a decision.', need: [1, 'decision'], ball: 'Waiting on you · 2 h 8 min',
+  now: { line: 'You\'re in Design again, as Design i2, after Build. Home is agreed; the project view is next.', need: [1, 'to merge'], ball: 'Chief of Staff working' },
+  busy: { line: 'Design i2 is waiting on you: the design research stopped and needs a decision.', need: [1, 'decision'], ball: 'Waiting on you · 2 h 8 min',
     ms: { Design: [['gate', 'Agree how the desk looks and feels', 'Waiting on your decision: the design research stopped after three failed source checks, 17:20'], ['done', 'Get a phone alert when something needs me', 'Research done 8 Oct, 17:05 · built during Launch']] } }
 };
 const GLOSS = {
-  phases: ['The six phases', '<p>Every project goes through the same six phases, in this order:</p><ol class="phl"><li><b>Discovery</b>: find out what to build</li><li><b>Design</b>: agree how it looks and works</li><li><b>Build</b>: make it</li><li><b>Launch</b>: put it live</li><li><b>Operate</b>: use it day to day</li><li><b>Review</b>: look back and close out</li></ol><p>Work can go back into an earlier phase; the timeline shows that as an iteration.</p>', 'Service Desk finished Build before Design, so Build is ticked while Design is under way.'],
-  'scrubbing proof': ['Scrubbing proof', '<p>A safety test that agents can\'t read your GitHub login. It must pass before launch and before the project closes.</p>', 'You deferred it on 8 Oct so the desk could keep moving (ledger L-0007).'],
+  phases: ['The four phases', '<p>The desk takes every project through the same four phases, in this order. You rule three gates: into Design, into Build, and one Launch gate at the end of Launch.</p><ol class="phl"><li><b>Discovery</b>: find out what to build</li><li><b>Design</b>: agree how it looks and works</li><li><b>Build</b>: make it</li><li><b>Launch</b>: get it ready to go live and hand it over</li></ol><p>Your ruling at the Launch gate is the go-live and the finish together. After that the project shows as <b>Done</b>: it runs, monitors and reviews itself, off the desk.</p><p>A phase worked through again is its next iteration, shown as "Design i2".</p>', 'Service Desk came back to Design after Build, so this is Design i2, and Build stays finished.'],
+  standard: ['Standard milestones', '<p>The operating model\'s own checklist for each phase, the same for every project: 24 in all. They come first in each phase, then the project\'s own.</p><p>Each shows only what a record shows: <b>reached</b>, <b>not reached</b>, <b>not recorded</b> (no record can show it yet), <b>carried over</b> from the phase\'s last run, or <b>not needed</b> (only for a Build you passed with nothing needed).</p>', 'Service Desk was built outside the pipeline after Discovery, so most of its standard milestones show as not recorded.'],
+  'scrubbing proof': ['Scrubbing proof', '<p>A safety test that agents can\'t read your GitHub login. It must pass before the Launch gate, where the project goes live and is done.</p>', 'You deferred it on 8 Oct so the desk could keep moving (ledger L-0007).'],
   milestone: ['Milestone', '<p>A result the project is working towards, written in plain words. Each project sets its own; phases are the same for every project.</p>', 'Service Desk\'s current one: "Agree how the desk looks and feels".']
 };
 let scen = 'now', open = { Design: true }, sheet = null, toast = null;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const T = (k, label) => `<button class="term" data-term="${k}">${label || k}</button>`;
 
+const ST_IC = { r: IC.done, n: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg>', u: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3"/></svg>', c: IC.done, x: IC.todo };
+let stdOpen = {};
+function stdBlock(name, p) {
+  const st = STD_RUN[p.run] || [], cnt = k => st.filter(x => x[0] === k).length, parts = ['n', 'u', 'r', 'c', 'x'].filter(k => cnt(k)).map(k => `${cnt(k)} ${STATE_WORD[k]}`), o = stdOpen[name];
+  return `<button class="stdt" data-std="${name}" aria-expanded="${!!o}"><span>Standard milestones</span><small>${parts.join(' · ')} ${o ? '▴' : '▾'}</small></button>`
+    + (o ? `<div class="stdl">${STD[name].map((m, i) => { const k = (st[i] || ['u'])[0]; return `<div class="smi s-${k}">${ST_IC[k]}<span>${esc(m[0])}</span><em>${STATE_WORD[k]}</em></div>`; }).join('')}<div class="smi key">${T('standard', 'What these states mean')}</div></div>` : '');
+}
 function row(name) {
   const p = { ...PH[name], ms: (SCEN[scen].ms && SCEN[scen].ms[name]) || PH[name].ms }, o = open[name];
-  const ms = !o ? '' : `<div class="ms">${p.ms.length ? p.ms.map(m => `<div class="mi ${m[0]}">${IC[m[0] === 'gate' ? 'gate' : m[0]]}<span>${m[1].startsWith('Must pass first') ? `Must pass first: the ${T('scrubbing proof')}` : esc(m[1])}<small>${esc(m[2])}</small></span></div>`).join('')
+  const ms = !o ? '' : `<div class="ms">${stdBlock(name, p)}<div class="own">This project's milestones</div>${p.ms.length ? p.ms.map(m => `<div class="mi ${m[0]}">${IC[m[0] === 'gate' ? 'gate' : m[0]]}<span>${m[1].startsWith('Must pass first') ? `Must pass first: the ${T('scrubbing proof')}` : esc(m[1])}<small>${esc(m[2])}</small></span></div>`).join('')
     : '<div class="mi none">No milestones planned yet. They\'re set when the project gets here.</div>'}
-    ${p.ms.length ? `<button class="more" data-tl="${name}">See ${name} on the timeline ›</button>` : ''}</div>`;
+    ${(EARLIER[name] || []).map(e => `<div class="mi earlier"><b>${esc(e[0])}</b><span>${esc(e[1])}</span></div>`).join('')}
+    <button class="more" data-tl="${name}">See ${p.again ? esc(p.run) : name} on the timeline ›</button></div>`;
   return `<div class="ph st-${p.st}"><button data-ph="${name}" aria-expanded="${!!o}">
     <span class="pic" style="background:${PIC[name][0]}">${PIC[name][1]}</span>
-    <span class="pn">${name}<small>${esc(p.what)}${p.ms.length ? ' · ' + p.ms.filter(m => !m[1].startsWith('Must pass')).length + ' ' + (p.ms.filter(m => !m[1].startsWith('Must pass')).length === 1 ? 'milestone' : 'milestones') : ''}</small></span>
+    <span class="pn">${p.again ? `${name} <i class="it">i${p.run.split(' i')[1]}</i>` : name}${p.st === 'now' ? '<b class="nowtag">Now</b>' : ''}<small>${esc(p.what)}${p.ms.length ? ' · ' + p.ms.filter(m => !m[1].startsWith('Must pass')).length + ' ' + (p.ms.filter(m => !m[1].startsWith('Must pass')).length === 1 ? 'milestone' : 'milestones') : ''}</small></span>
     <span class="sw">${WORD[p.st]}</span><span class="sc">${IC[p.st]}</span></button>${ms}</div>`;
 }
 function group(st, heading) {
-  const names = ORDER.filter(n => PH[n].st === st);
-  return names.length ? `<div class="gh ${st}">${heading}</div><div class="list">${names.map(row).join('')}</div>` : '';
+  const names = ORDER.filter(n => PH[n].st === st), grad = st === 'todo';
+  return names.length || grad ? `<div class="gh ${st}">${heading}</div><div class="list">${names.map(row).join('')}${grad ? gradRow() : ''}</div>` : '';
+}
+// Done is not a phase: it is where the project stands once you pass the Launch gate
+function gradRow() {
+  return `<div class="ph st-todo grad"><button data-term="phases" aria-label="Done: not yet. What does it mean?"><span class="pic" style="background:${PIC.Done[0]}">${PIC.Done[1]}</span>
+    <span class="pn">Done<small>When you pass the Launch gate: it goes live and runs on its own</small></span><span class="sw">Not yet</span><span class="sc">${IC.todo}</span></button></div>`;
 }
 function render() {
   const s = SCEN[scen];
   let h = `<div class="scroll"><div class="hdr"><button class="ib" data-back aria-label="Back to your projects">${IC.back}</button><h2>Service Desk</h2><button class="ib" data-term="phases" aria-label="What are the phases?">${IC.info}</button></div>
     <div class="title">Current status</div><p class="sub0">${esc(s.line)}</p>
     <div class="links"><button class="lk you" data-q>${IC.hand}${s.need[0]} ${esc(s.need[1])} ›</button><button class="lk" data-team><i style="background:${scen === 'busy' ? 'var(--you)' : 'var(--work)'}"></i>${esc(s.ball)} ›</button></div>
-    ${group('now', 'Here now')}${group('done', 'Done · 2 of 6 phases')}${group('todo', 'Still to come')}</div>`
+    <div class="gh seq">The four phases, in order · 2 of 4 finished</div><div class="list">${ORDER.map(row).join('')}${gradRow()}</div></div>`
     + `<nav class="dtabs" aria-label="This project"><button class="dtab" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1Z" fill="currentColor"/></svg>Status</button><button class="dtab" data-nav="Timeline (screen 4)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="3" fill="currentColor"/><circle cx="6" cy="17" r="3" fill="currentColor"/><path d="M11 7h9M11 17h7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>Timeline</button><button class="dplus" data-nav="Ask for something in this project" aria-label="Ask for something in this project">+</button><button class="dtab" data-nav="Team (screen 3)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="9" r="3.2" fill="currentColor"/><circle cx="16.5" cy="9" r="3.2" fill="currentColor"/><path d="M2.5 20c.5-3.5 2.8-5.5 5.5-5.5s5 2 5.5 5.5zM11.5 20c.4-3.5 2.6-5.5 5-5.5s4.6 2 5 5.5z" fill="currentColor"/></svg>Team</button><button class="dtab" data-nav="Queue (screen 6)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="4" rx="2" fill="currentColor"/><rect x="4" y="10" width="16" height="4" rx="2" fill="currentColor" opacity=".7"/><rect x="4" y="16" width="10" height="4" rx="2" fill="currentColor" opacity=".45"/></svg>Queue<span class="badge">1</span></button></nav>`;
   if (sheet) { const g = GLOSS[sheet]; h += `<div class="scrim" data-close><div class="bs" role="dialog" aria-label="${g[0]}"><div class="g"></div><h3>${g[0]}</h3><div class="gl">${g[1]}</div><p class="sub"><b>In this project:</b> ${g[2]}</p><button class="go" data-closebtn>Got it</button></div></div>`; }
   if (toast) h += `<div class="toast" role="status"><span>${toast}</span><button data-dismiss>OK</button></div>`;
@@ -198,7 +255,8 @@ document.addEventListener('click', e => {
   else if (d.term) sheet = d.term;
   else if (d.closebtn !== undefined || d.close !== undefined) sheet = null;
   else if (d.ph) open[d.ph] = !open[d.ph];
-  else if (d.tl) toast = `Opens the timeline at ${d.tl}: screen 4.`;
+  else if (d.std) stdOpen[d.std] = !stdOpen[d.std];
+  else if (d.tl) toast = `Opens the timeline at ${d.tl === 'Design' ? 'Design i2' : d.tl}: screen 4.`;
   else if (d.q !== undefined) toast = 'Opens Service Desk\'s queue: screen 6.';
   else if (d.team !== undefined) toast = 'Opens Service Desk\'s team: screen 3, next.';
   else if (d.back !== undefined) toast = 'Back to Home (screen 1).';

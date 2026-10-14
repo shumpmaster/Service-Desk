@@ -149,3 +149,16 @@ options_considered: "Merge nothing"; "Full authority".
 decided_by: owner ("Merge low-risk only (Recommended)", 2026-10-14, decisions/questions/P-001-overnight-merges.md)
 proposed_by: orchestrator
 reversibility: reversible
+
+## L-0011 — Model v3.3.2 adopted: S-029's tool fixes and the last owner-pronoun line
+date: 2026-10-14
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The model is at v3.3.2 (its PRs #29 to #31: S-028, S-029 and S-030, 7fe41d1). Bring Service Desk to it, as said on 2026-10-14 when PR #67 opened: the follow-up fixes, the stop rule, and the definition of ready's owner line?
+decision: Copied byte for byte from the model at 7fe41d1: governance/checks/ governance_checks.py, orchestrator.py, orchestrator_git.py, session_runner.py and v3_checks.py (S-029). governance/standards/definition-of-ready.md takes the model's "including the owner and outside parties" (S-028; L-0009 left it for this sync) and names 7fe41d1 and 3.3.2 as its source. decisions/README.md takes the template's reworded Reason line (S-029 AC10). OPERATING_MODEL_VERSION reads 3.3.2. S-030's stop rule is not copied: it changes the model repository's own working rules only (its AC1 and AC3; v3 projects are unchanged). The pull-request-body workflow and the project document's intent line already carried S-028's wording here.
+licenses_next: The push-run check fix (a model spec, then this project's workflow).
+decided_by: owner (merges this pull request, after adding their review notes)
+proposed_by: orchestrator
+reversibility: reversible

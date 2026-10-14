@@ -170,6 +170,8 @@ CHECKED_BY = {"critic": ("definer", "check-author"), "check-author": ("builder",
 NEVER_WAIVED = {("user-rep", "chief-of-staff")}
 # model S-025: the User representative's records, which no gate Critic pack holds (by name, as the notes).
 USER_RECORD_RE = re.compile(r"reviews/[^/]+/_[a-z]+-gate-[0-9]+-user\.md")
+# model S-029 AC4: the only proposals a User representative's pack holds, by name (the gates check's form).
+PROPOSAL_NAME_RE = re.compile(r"docs/gates/[PQE]-[0-9]{3,}/(design|build|launch)-gate-[1-9][0-9]*-proposal\.md")
 WAIVER_RE = re.compile(r"([a-z][a-z-]*) ([a-z][a-z-]*): (\S.*)")
 
 # model S-013 AC9: a role's model, as the MODEL_* variable must spell it.
@@ -738,6 +740,8 @@ def manifest_problems(roles, ctl):
             out.append("%s is the Chief of Staff's notes" % rel)
         elif role == "critic-gate" and USER_RECORD_RE.fullmatch(n):
             out.append("%s is the User representative's record (model S-025)" % rel)
+        elif role == "user-rep" and n.endswith("-proposal.md") and not PROPOSAL_NAME_RE.fullmatch(rel):
+            out.append("%s is not named docs/gates/<item>/<phase>-gate-<n>-proposal.md (model S-029)" % rel)
         elif not (_any(reads, n) or _any(feedback, n)) or _any(hidden, n):
             out.append("%s is outside what %s may read under PACKS.toml" % (rel, role))
     return out
@@ -830,6 +834,8 @@ def cmd_pack(a):
                 keep = False            # the Chief of Staff's notes, never (AC5), by name
             if keep and role == "critic-gate" and USER_RECORD_RE.fullmatch(n):
                 keep = False            # model S-025: the User representative's records, never, by name
+            if keep and role == "user-rep" and n.endswith("-proposal.md") and not PROPOSAL_NAME_RE.fullmatch(rel):
+                keep = False            # model S-029 AC4: only a proposal named as the gates check reads one
             if keep and role == "critic-triage" and under(n, "dispatch-log"):
                 m = MONTH_FILE_RE.fullmatch(n.rsplit("/", 1)[-1])
                 keep = bool(m) and n.count("/") == 1 and request_month <= m.group(1) <= now_month

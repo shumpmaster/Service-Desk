@@ -1794,12 +1794,11 @@ def criteria_strays(text):
     for lineno, line in section(text, _CRITERIA_HEADING_RE) or []:
         if _CRITERION_RE.match(line):
             inside = True
-        elif inside and line[:1] in (" ", "\t") and line.strip():
-            pass
+        elif not line.strip() or (inside and line[:1] in (" ", "\t")):
+            pass                    # model S-029 AC9: a blank line does not end a criterion
         else:
             inside = False
-            if line.strip():
-                out.append((lineno, line))
+            out.append((lineno, line))
     return out
 
 
@@ -1807,16 +1806,19 @@ def criterion_blocks(text):
     """[(AC<n>, block)] of a spec's Acceptance criteria section: each bullet `- AC<n>` or `- **AC<n>` with its
     indented continuation lines, byte for byte."""
     body = section(text, _CRITERIA_HEADING_RE) or []
-    out, cur = [], None
+    out, cur, blanks = [], None, []
     for _, line in body:
         m = _CRITERION_RE.match(line)
         if m:
-            cur = ["AC" + m.group(1), [line]]
+            cur, blanks = ["AC" + m.group(1), [line]], []
             out.append(cur)
-        elif cur is not None and line[:1] in (" ", "\t") and line.strip():
-            cur[1].append(line)
+        elif not line.strip():
+            blanks.append(line)     # model S-029 AC9: kept only when an indented line follows
+        elif cur is not None and line[:1] in (" ", "\t"):
+            cur[1] += blanks + [line]
+            blanks = []
         else:
-            cur = None
+            cur, blanks = None, []
     return [(n, "\n".join(b)) for n, b in out]
 
 
@@ -1858,6 +1860,22 @@ SCREEN_RE = re.compile(r"^- (?P<name>\S.*?) \[(?P<path>docs/design/screens/[A-Za
 NO_SCREENS_RE = re.compile(r"^No screens: \S")
 PROPOSAL_WORD_LIMIT = 200
 USER_RECORD_CITED = "a case never carries the user representative's verdict; it reaches the owner on the card (model S-025)"
+
+
+def record_lines(full):
+    """A record's lines, split on "\n" only; a final newline ends the last line (model S-029 AC8)."""
+    with open(full, encoding="utf-8", errors="replace", newline="") as fh:
+        rows = fh.read().split("\n")
+    return rows[:-1] if rows and rows[-1] == "" else rows
+
+
+def carries_verdict(path, rows, ln):
+    """model S-029 AC5: whether a citation shows the user representative's reject: any line of a decision record
+    that holds a `User-Override:` line, or a dispatch log's cited part (line ln, or all of it) naming one."""
+    if path.startswith("decisions/"):
+        return any(r.startswith("User-Override:") for r in rows)
+    part = [rows[ln - 1]] if ln is not None and ln <= len(rows) else rows
+    return path.startswith("dispatch-log/") and any("User-Override:" in r for r in part)
 
 
 def changed_cases(root, base, pattern=CASE_RE):
@@ -2028,11 +2046,13 @@ def case_problems(root, rel, tree, tl, cited_ok, form_instructions):
             bad(i, "the cited record %s is not a file in the case's tree" % path)
         elif path not in cited_ok:
             bad(i, "the cited record %s is not one the Critic's gate pack holds" % path)
-        elif ln is not None:
-            with open(full, encoding="utf-8", errors="replace", newline="") as fh:
-                count = len(fh.read().splitlines())         # a final newline ends the last line
-            if int(ln) > count:
+        else:
+            rows = record_lines(full)
+            if ln is not None and int(ln) > len(rows):
                 bad(i, "%s has no line %s" % (path, ln))
+            elif carries_verdict(path, rows, int(ln) if ln is not None else None):     # model S-029 AC5
+                v.append("%s line %d: cites %s: %s; the cited part holds it (model S-029)"
+                         % (rel, i + 1, path, USER_RECORD_CITED))
     paths = set(mm.group("path") for _, mm in cited)
     # The ruling record, and the Launch gate's own records.
     req = _toml_file(os.path.join(tree, "intake", "requests", "%s.toml" % item)) or {}
@@ -2098,8 +2118,7 @@ def case_problems(root, rel, tree, tl, cited_ok, form_instructions):
                 full = os.path.join(tree, *mm.group("path").split("/"))
                 if not os.path.isfile(full) or os.path.islink(full):
                     continue
-                with open(full, encoding="utf-8", errors="replace") as fh:
-                    rec = fh.read().split("\n")
+                rec = record_lines(full)            # model S-029 AC8: the same lines as the citation check
                 hay = [rec[int(mm.group("line")) - 1]] if mm.group("line") and int(mm.group("line")) <= len(rec) \
                     else rec
                 if any(num in NUMBER_RE.findall(h) for h in hay):
@@ -2209,8 +2228,7 @@ def proposal_problems(root, rel, tree, cited_ok, form_instructions, spec):
                 full = os.path.join(tree, *sm.group("path").split("/"))
                 specline = None
                 if os.path.isfile(full) and not os.path.islink(full):
-                    with open(full, encoding="utf-8", errors="replace", newline="") as fh:
-                        rows = fh.read().splitlines()
+                    rows = record_lines(full)          # model S-029 AC8: the same lines as the citation check
                     ln = int(sm.group("line"))
                     specline = rows[ln - 1] if ln <= len(rows) else None
                 if specline is None:

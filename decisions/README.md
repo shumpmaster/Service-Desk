@@ -10,7 +10,7 @@ On a phase gate's card, three more lines may follow line 2, in any order (S-024)
 not read:
 - `Into: <Phase>`: needed once with `recycle`, naming a phase that gate allows. The Design gate allows
   Discovery; the Build gate, Discovery or Design; the Launch gate, Discovery, Design, Build or Launch.
-- `Reason: <text>`: needed once, with text, with `recycle` and with `hold`.
+- `Reason: <text>`: needed with `recycle` and with `hold`: at least one such line, with text.
 - `Nothing needed: Build`: passes Build with nothing needed. It is valid only on the Build gate's card
   (`criteria`), with `proceed`, with line 2 empty (never by proxy), once in the record, and only when the
   case holds a line `## Nothing needed in Build`. Only Build can be passed this way.

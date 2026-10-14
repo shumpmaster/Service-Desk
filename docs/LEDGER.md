@@ -175,3 +175,16 @@ licenses_next: The sandbox pull request (AC43 B), then the owner-approved previe
 decided_by: owner ("These are the screens I want" and "Phone's own font", 2026-10-14, decisions/questions/P-001-design-pick.md)
 proposed_by: orchestrator
 reversibility: reversible
+
+## L-0013 — The Orchestrator commits the Reviewer's verdict files verbatim; the owner's verdict stays the owner's
+date: 2026-10-14
+type: delegation
+supersedes: []
+scope: project
+expires: never
+asked: The Reviewer's verdict has to be saved as reviews/<PR>/reviewer.md before a pull request can go green. Who should add it?
+decision: The Orchestrator commits it, word for word from the Reviewer's return, on PR #72 and future pull requests, as CLAUDE.md and reviews/README.md already describe. The owner's own verdict file (owner.md) is never written by an agent. PR #70's reviewer.md, which it merged without, is added under this entry; its owner.md is still the owner's to add. The record: decisions/questions/P-001-reviewer-verdict-files.md.
+licenses_next: reviews/72/reviewer.md and reviews/70/reviewer.md in PR #72.
+decided_by: owner ("You add it (Recommended)", 2026-10-14, decisions/questions/P-001-reviewer-verdict-files.md)
+proposed_by: orchestrator
+reversibility: reversible

@@ -1,12 +1,12 @@
 # Definition of ready — leaving Discovery (D-052)
 
 *Copied verbatim from the operating model (OPERATING_MODEL.md, "Definition of ready: leaving
-Discovery", model commit c8d31c4, model version 3.3.0) so the Critic's definition-of-ready check has its checklist in its
+Discovery", model commit 7fe41d1, model version 3.3.2) so the Critic's definition-of-ready check has its checklist in its
 pack. The model's text governs; if they differ, this copy is a bug to fix.*
 
 One project document in two parts. *Part 1, the brief* (settled at approval; its project milestones then change only as §3 "Milestones, sprints and steps" says): (1) scope — in, out, where it must work; (2) strategy — the chain
 from deliverables to value; (3) the 25,000-foot plan — deliverables two levels deep with
-dependencies, the second level being the phases' milestones, standard and the project's own (S-023); (4) owners for every deliverable, including the owner himself and outside parties;
+dependencies, the second level being the phases' milestones, standard and the project's own (S-023); (4) owners for every deliverable, including the owner and outside parties;
 (5) limits — spend ceiling, data boundaries, and the project's tier (T1–T3 by v2.5.1's tier
 triggers), which is its trust level (D-062); (6) value and stop rule — this project's own measure, target, date and miss, including the
 cost to the owner's time; (7) solid foundation — every load-bearing unknown answered with

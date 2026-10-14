@@ -1335,14 +1335,22 @@ class Step:
                 continue
             if not os.path.isfile(self.path(rel)):
                 continue
+            # model S-024 AC4: the whole record is read, and a refusal is keyed on the hash of all of it;
+            # model S-029 AC7: read and hashed in chunks, so no more than 64 KiB and one chunk is held.
+            head, size, whole = b"", 0, hashlib.sha256()
             with open(self.path(rel), "rb") as fh:
-                data = fh.read()
-            # model S-024 AC4: the whole record is read, and a refusal is keyed on the hash of all of it.
-            text = data.decode("utf-8", "replace")
-            self.decide(item, st, rel, text, len(data) > 65536)
+                for chunk in iter(lambda: fh.read(65536), b""):
+                    whole.update(chunk)
+                    size += len(chunk)
+                    if len(head) <= 65536:
+                        head += chunk
+            if size > 65536:
+                self.decide(item, st, rel, None, True, whole.hexdigest())
+            else:
+                self.decide(item, st, rel, head.decode("utf-8", "replace"))
 
-    def decide(self, item, st, rel, text, too_big=False):
-        h = sha(text)
+    def decide(self, item, st, rel, text, too_big=False, digest=None):
+        h = digest or sha(text)
         key = "decision:%s:%s" % (rel, h)
         if key in self.anomaly_keys:
             return

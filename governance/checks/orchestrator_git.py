@@ -1373,7 +1373,7 @@ def cmd_ci_runs(a):
             if wait <= 0:
                 break
             nxt = start + CI_WAIT_EVERY * k
-            if doc is not None and not seen_run and nxt - start >= CI_ABSENT_STOP:
+            if doc is not None and not seen_run and CI_WAIT_EVERY * k >= CI_ABSENT_STOP:  # model S-029 AC1
                 _sleep(min(nxt, deadline) - _clock())
                 print("NOTE: no governance run on %s after %d seconds; not waiting for it" % (sha[:12], CI_ABSENT_STOP))
                 break

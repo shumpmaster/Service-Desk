@@ -21,14 +21,17 @@ base. Open pull requests cannot be seen without the host's API, so a PR whose
 branch was deleted, or opened from a fork, is invisible to it.
 
 `handover` (model S-026 AC5) reads every file directly in docs/handover/ whose
-name ends in `.md`, except `_TEMPLATE.md`; subfolders are not read, and a
-symbolic link fails. No folder or no such file: it passes. Each file is read as
-UTF-8 (Windows line ends as `\n`): blank lines, at most one `# ` title line,
-then blank lines and the handover form's two instruction lines (exactly as the
-form holds them) are skipped; the next line must be a `What this means for you`
-heading, as for `pr-body`. After it, blank lines and form lines are skipped, and
-the lead paragraph must pass the pull request's rules: 15 to 150 words, no
-backtick and no fenced code, up to the first blank line or the next heading.
+name ends in `.md` or `.markdown`, in any case (model S-029 AC3), except
+`_TEMPLATE.md`; subfolders are not read, and a symbolic link fails. No folder or
+no such file: it passes. Each file is read as UTF-8 (Windows line ends as `\n`,
+a leading byte order mark dropped, model S-029 AC3): blank lines, at most one
+`# ` title line, then blank lines and the handover form's two instruction lines
+(exactly as the form holds them) are skipped; the next line must be a `What this
+means for you` heading, as for `pr-body`. After it, blank lines and form lines
+are skipped, and the lead paragraph must pass the pull request's rules: 15 to 150
+words, no backtick and no fenced code, up to the first blank line or the next
+heading. A lead holding at least half of the form's instruction line, in runs of
+three words, holds the form's line and fails (model S-029 AC2).
 Findings read `<path>: <problem>`. It checks the form, not the plainness, runs
 in every project (v3 or not) and can be made warn-only in enforcement.toml.
 
@@ -450,10 +453,8 @@ def check_pr_body(payload):
     return lead_problems(lines[1:]), []
 
 
-def lead_problems(lines):
-    """Problems with the lead paragraph in `lines`, the lines after a 'What this means for you' heading
-    (model S-026 J1; shared by `pr-body` and `handover`). Blank lines first are skipped; the lead is then
-    read up to the first blank line or the next heading. An empty list means the lead passes."""
+def lead_lines(lines):
+    """The lead paragraph's lines: blank lines first are skipped, then up to the first blank line or heading."""
     i = 0
     while i < len(lines) and not lines[i].strip():
         i += 1
@@ -461,6 +462,14 @@ def lead_problems(lines):
     while i < len(lines) and lines[i].strip() and not PR_HEADING_RE.match(lines[i]):
         lead.append(lines[i])
         i += 1
+    return lead
+
+
+def lead_problems(lines):
+    """Problems with the lead paragraph in `lines`, the lines after a 'What this means for you' heading
+    (model S-026 J1; shared by `pr-body` and `handover`). Blank lines first are skipped; the lead is then
+    read up to the first blank line or the next heading. An empty list means the lead passes."""
+    lead = lead_lines(lines)
     problems = []
     words = len(" ".join(lead).split())
     if not PR_LEAD_WORDS[0] <= words <= PR_LEAD_WORDS[1]:
@@ -493,8 +502,21 @@ def _skip_form(lines, i):
     return i
 
 
+def _shingles(text):
+    """The set of three-word runs in text, read as lowercase letters and digits only."""
+    w = re.findall(r"[^\W_]+", text.lower())
+    return set(zip(w, w[1:], w[2:]))
+
+
+# model S-029 AC2: a lead holding at least half of the instruction line's three-word runs holds the form's
+# instruction line, or most of it, and fails with its own finding (no word count).
+HANDOVER_COPY_SHARE = 0.5
+
+
 def handover_problems(text):
-    """Problems with one handover package's opening (model S-026 AC5)."""
+    """Problems with one handover package's opening (model S-026 AC5; model S-029 AC2)."""
+    if text.startswith("\ufeff"):
+        text = text[1:]
     lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
     i = 0
     while i < len(lines) and not lines[i].strip():
@@ -505,7 +527,12 @@ def handover_problems(text):
     first = lines[i].strip() if i < len(lines) else ""
     if not PR_LEAD_RE.match(first):
         return ["the first section is %r, not 'What this means for you'" % first[:80]]
-    return lead_problems(lines[_skip_form(lines, i + 1):])
+    rest = lines[_skip_form(lines, i + 1):]
+    form = _shingles(HANDOVER_FORM_LINES[1])
+    if len(form & _shingles(" ".join(lead_lines(rest)))) >= HANDOVER_COPY_SHARE * len(form):
+        return ["the 'What this means for you' paragraph holds the form's instruction line, or most of it; "
+                "delete it and keep only your own paragraph"]
+    return lead_problems(rest)
 
 
 def check_handover(root):
@@ -515,7 +542,7 @@ def check_handover(root):
         return [], []
     v = []
     for name in sorted(os.listdir(folder)):
-        if not name.endswith(".md") or name == HANDOVER_SKIP:
+        if not name.lower().endswith((".md", ".markdown")) or name == HANDOVER_SKIP:    # model S-029 AC3
             continue
         path = os.path.join(folder, name)
         rel = "%s/%s" % (HANDOVER_REL, name)

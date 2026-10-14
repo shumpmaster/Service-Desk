@@ -77,3 +77,82 @@ export function findAll(node, pred, out = []) {
 }
 export const byClass = (node, cls) => findAll(node, (e) => ` ${e.className} `.includes(` ${cls} `));
 export const linksIn = (node) => findAll(node, (e) => e.tag === 'a').map((a) => ({ href: a.attrs.href, text: a.textContent, el: a }));
+
+// ---------------------------------------------------------------------------
+// The sandbox page itself (src/public/sandbox.js) under the fake DOM, fake timers and the fake
+// desk function, so the screens drawn and the taps followed are the page's own.
+
+let loads = 0;
+export async function loadSandbox({ config, repos, hash = '#/', now: start = Date.parse('2026-10-14T15:00:00Z'), store = null }) {
+  const { fakeServer } = await import('./fake-desk.mjs');
+  const names = ['document', 'window', 'location', 'Node', 'setTimeout', 'clearTimeout', 'setInterval', 'navigator', 'localStorage'];
+  const saved = Object.fromEntries(names.map((k) => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
+  let now = start;
+  const realNow = Date.now;
+  const timers = new Map();
+  let seq = 0;
+  const winListeners = {};
+  const docListeners = {};
+  const els = { view: new El0('main'), 'screen-state': new El0('p'), foot: new El0('footer') };
+  const head = new El0('head');
+  const set = (k, v) => Object.defineProperty(globalThis, k, { value: v, configurable: true, writable: true });
+  set('Node', Node0);
+  set('document', {
+    activeElement: null, title: '', visibilityState: 'visible', head, documentElement: new El0('html'),
+    createElement: (t) => new El0(t), createElementNS: (ns, t) => new El0(t), createTextNode: (t) => new Text0(t),
+    getElementById: (id) => els[id] || null,
+    addEventListener: (t, fn) => { (docListeners[t] ||= []).push(fn); },
+  });
+  const loc = { hash, search: '?sandbox' };
+  set('location', loc);
+  set('window', { scrollY: 0, scrollTo() {}, addEventListener: (t, fn) => { (winListeners[t] ||= []).push(fn); },
+    setTimeout: (fn, ms) => globalThis.setTimeout(fn, ms) });
+  set('setTimeout', (fn, ms) => { const id = ++seq; timers.set(id, { at: now + Math.max(0, ms || 0), fn, id }); return id; });
+  set('clearTimeout', (id) => { timers.delete(id); });
+  set('setInterval', () => 0);
+  set('navigator', { clipboard: { writeText: async () => {} } });
+  set('localStorage', store);
+  Date.now = () => now;
+  const server = fakeServer(repos, config, { now: () => now });
+  const flush = async () => { for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r)); };
+  const mod = await import(`../../src/public/sandbox.js?load=${++loads}`);
+  const desk = mod.startSandbox({ config, call: (p, b) => server.call(p, b) });
+  const app = {
+    els, desk, server, flush, view: els.view, head,
+    get now() { return now; },
+    async advance(ms) {
+      const until = now + ms;
+      for (;;) {
+        let next = null;
+        for (const t of timers.values()) if (t.at <= until && (!next || t.at < next.at || (t.at === next.at && t.id < next.id))) next = t;
+        if (!next) break;
+        timers.delete(next.id);
+        now = next.at;
+        next.fn();
+        await flush();
+      }
+      now = until;
+      await flush();
+    },
+    async go(h) {
+      loc.hash = h;
+      for (const fn of winListeners.hashchange || []) fn();
+      await flush();
+    },
+    async visibility(state) {
+      document.visibilityState = state;
+      for (const fn of docListeners.visibilitychange || []) fn();
+      await flush();
+    },
+    text: () => els.view.textContent,
+    restore() {
+      Date.now = realNow;
+      desk.stop();
+      for (const k of names) {
+        if (saved[k]) Object.defineProperty(globalThis, k, saved[k]);
+        else delete globalThis[k];
+      }
+    },
+  };
+  return app;
+}

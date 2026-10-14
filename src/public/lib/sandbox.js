@@ -906,7 +906,7 @@ export function teamView(project, model, snap, j, q, ball, now, tz) {
     if (working) return { id, label: label(id), status: 'Working', last: `on ${working.id}`, lit: true, glow: true, item: working.id };
     const lastOut = [...rows].reverse().find((e) => e.shape === 'outcome' && e.role === id);
     const lastAny = [...rows].reverse().find((e) => e.role === id && (e.shape === 'outcome' || e.shape === 'dispatch'));
-    if (lastOut && nowMs - Date.parse(lastOut.time) < JUST_FINISHED_MS) {
+    if (lastOut && nowMs - Date.parse(lastOut.time) >= 0 && nowMs - Date.parse(lastOut.time) < JUST_FINISHED_MS) {
       return { id, label: label(id), status: 'Just finished', last: entryWords(lastOut, whenText(new Date(lastOut.time), now, tz)), lit: true, glow: false };
     }
     return { id, label: label(id), status: 'Idle', last: lastAny ? `last: ${entryWords(lastAny, whenText(new Date(lastAny.time), now, tz))}` : 'not recorded in what the desk reads', lit: false, glow: false };

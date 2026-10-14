@@ -4,7 +4,7 @@ This is a map of questions, not graded fact.
 
 *Made by the Researcher when a research request's question begins "Groundwork map:" (S-020). It opens
 Discovery, and Define of any milestone entering ground that neither the library nor a past project
-covers. The owner answers the owner shortlist in about ten minutes; his answers are recorded
+covers. The owner answers the owner shortlist in about ten minutes; their answers are recorded
 verbatim and added to the intent, and the research shortlist becomes research requests. Worked
 example: Service-Desk's P-001 design discovery (decisions/questions/P-001-design-discovery-notes.md
 there), which found nine gaps in a research question drafted without one.*

@@ -121,3 +121,17 @@ licenses_next: The pronoun pull request (S-001 directly, EXP-005 by a supersedin
 decided_by: owner (multiple-choice answers in the session, 2026-10-13, recorded in decisions/questions/P-001-v33-sync.md, P-001-milestones-ruling-2.md and P-001-milestones-ruling-3.md; merges this pull request)
 proposed_by: orchestrator
 reversibility: reversible
+
+## L-0009 — EXP-005's wording refers to the owner without gendered pronouns; the pronoun fixes land
+date: 2026-10-14
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The second pull request agreed on 2026-10-13 ("Two PRs (Recommended)", decisions/questions/P-001-v33-sync.md:7): S-001's wording directly (it is a draft), research/_GROUNDWORK.md:7 to match the model's form after its S-028, and EXP-005, which is frozen, by this entry rather than an edit?
+decision: EXP-005 (experiments/EXP-005-md-glance-test.md) stays frozen and unedited. Wherever it says "he", "him" or "his" for the person running the glance test (lines 23, 24, 31, 32, 33, 36, 47, 48 and 49), read "the owner", "they" or "their": the test, its steps and its scoring do not change. S-001 and research/_GROUNDWORK.md:7 are reworded in place. governance/standards/definition-of-ready.md keeps the model's wording until the next model sync (R3).
+licenses_next: The next model sync (v3.3.2), which copies the definition of ready's reworded line.
+decided_by: owner ("Two PRs (Recommended)", 2026-10-13, decisions/questions/P-001-v33-sync.md:7)
+proposed_by: orchestrator
+reversibility: reversible
+

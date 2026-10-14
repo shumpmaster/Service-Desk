@@ -7,7 +7,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
 import { fixture, CONFIG, SRC, fakeClock } from './helpers.mjs';
 import { repo, pr, fakeServer } from './fake-desk.mjs';
 import { loadSandbox, byClass, linksIn, findAll, j11Files } from './sandbox-helpers.mjs';
@@ -458,6 +457,10 @@ test('AC49: every Working now value against its record, and "–" wherever a rec
   const noSched = workingNow(P, { ...model, items: [{ ...model.items[0], running: { role: 'builder', since: null }, asOf: null }] }, {}, { workflow: null }, 'builder', {}, now, 'UTC');
   assert.deepEqual(noSched.tiles.map((t) => t.value), ['–', '–', '–', '–']);
   assert.equal(noSched.tiles[3].why, 'schedule not readable');
+  // Review N4: a start later than the device's clock is "–" with the reason, never a value.
+  const ahead = workingNow(P, { ...model, items: [{ ...model.items[0], running: { role: 'builder', since: new Date(NOW + 5 * 60e3) } }] }, {}, null, 'builder', {}, now, 'UTC');
+  assert.equal(ahead.tiles[1].value, '–');
+  assert.match(ahead.tiles[1].why, /later than this device's clock/);
   const cos = workingNow(P, model, {}, null, 'chief-of-staff', {}, now, 'UTC');
   assert.deepEqual([cos.tiles[0].value, cos.tiles[1].value, cos.lines[2].value], ['–', '–', '–']);
   assert.match(cos.tiles[0].why, /not recorded: its sessions aren't logged yet/);
@@ -482,6 +485,31 @@ test('AC49: a member\'s page — fixed groups counted from records only, "not re
   assert.match(owner.groups[2].why, /^not recorded/);
   const cos = memberPage(P, model, snap, j, q, tv, 'chief-of-staff', now, 'UTC');
   assert.ok(cos.groups.every((g) => g.count === null && /not recorded/.test(g.why)));
+});
+
+test('AC49 (review B1): under each group\'s count the page draws its latest record, or "not recorded" with the reason, never "none yet" over a count', async () => {
+  const setup = twoProjects();
+  setup.repos.Alpha.commit({ 'decisions/questions/Alpha-old.md': 'Ruling: A\n', 'decisions/P-002/stop-1.md': 'Decision: drop\n' });
+  const app = await opened(setup, '#/p/Alpha/team/owner');
+  try {
+    const groups = byClass(app.view, 'sb-card').filter((c) => c.tag === 'details');
+    assert.equal(groups.length, 4);
+    for (const g of groups) {
+      const count = byClass(g, 'sb-gcount')[0].textContent;
+      const under = byClass(g, 'sb-latest')[0].textContent;
+      if (/^\d+$/.test(count) && Number(count) > 0) {
+        assert.notEqual(under, 'none yet', `${g.textContent}`);
+        assert.match(under, /^latest: /);
+      }
+      if (count === 'not recorded') assert.match(under, /^not recorded/);
+    }
+    const rulings = groups.find((g) => g.textContent.startsWith('Rulings'));
+    assert.match(byClass(rulings, 'sb-latest')[0].textContent, /^latest: (decisions\/questions\/Alpha-old\.md, |not recorded \()/);
+    const decisions = groups.find((g) => g.textContent.startsWith('Decisions'));
+    assert.match(byClass(decisions, 'sb-latest')[0].textContent, /^latest: not recorded \(no decision entry in the dispatch log/);
+  } finally {
+    app.restore();
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -564,18 +592,45 @@ test('AC42: H5\'s extremes — 5 projects, 12+ waits, long titles — every scre
   }
 });
 
-test('AC42: no overflow at 360 px by construction — text wraps anywhere, the page never scrolls sideways, no fixed width over 360 px', () => {
+// A real 360 px measure needs a browser, which the suite doesn't have (no packages, AC42): the
+// pull request carries the Chromium check of every route. Here, what can be checked without one:
+// text may wrap anywhere, nothing has a fixed width over 360 px, and no long unbroken text is drawn
+// outside an element that wraps it.
+test('AC42: nothing is fixed wider than a 360 px screen, and every drawn text sits where it may wrap', async () => {
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
   assert.match(css, /\.sb-screen, \.sb-screen \* \{ overflow-wrap: anywhere; word-break: break-word; min-width: 0; \}/);
-  assert.match(css, /html\.sb body \{[^}]*overflow-x: hidden;/);
-  for (const m of css.matchAll(/(?:^|[;{\s])(?:min-)?width:\s*(\d+)px/g)) assert.ok(Number(m[1]) <= 360, `width ${m[1]}px`);
-  assert.match(css, /\.sb-sheet \{[^}]*overflow-x: hidden;/);
+  for (const m of css.matchAll(/(?:^|[;{\s])(?:min-|max-)?width:\s*(\d+)px/g)) {
+    assert.ok(Number(m[1]) <= 560, `width ${m[1]}px`);
+    if (!/max-width/.test(m[0])) assert.ok(Number(m[1]) <= 360, `fixed width ${m[1]}px`);
+  }
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*white-space:\s*(nowrap|pre)\s*[;}][^{}]*)\}/g)) {
+    // only the visually hidden label (1 px, clipped) may not wrap
+    assert.ok(m[1].trim() === '.sb-vh', `${m[1].trim()}: white-space: ${m[3]} would stop text wrapping`);
+  }
+  for (const m of css.matchAll(/grid-template-columns:\s*([^;}]+)/g)) {
+    for (const px of m[1].matchAll(/(\d+)px/g)) assert.ok(Number(px[1]) <= 60, `a ${px[1]}px column`);
+  }
+  // On H5's extremes every screen's long words are drawn inside .sb-screen or a sheet (which wrap).
+  const app = await opened(extremes());
+  try {
+    for (const p of app.desk.states.keys()) {
+      for (const s of ['', '/timeline', '/team', '/queue']) {
+        await app.go(`#/p/${encodeURIComponent(p)}${s}`);
+        for (const top of app.view.children) {
+          assert.ok(/\bsb-(screen|scrim|sheet)\b/.test(top.className), `${p}${s}: ${top.className} is not a wrapping container`);
+        }
+      }
+    }
+  } finally {
+    app.restore();
+  }
 });
 
 test('AC42: no packages, the security headers and CSP unchanged, nothing from another origin, reduced motion respected, never colour alone', () => {
   const pkg = JSON.parse(readFileSync(`${SRC}/package.json`, 'utf8'));
   assert.equal(pkg.dependencies, undefined);
-  const at = (p) => execFileSync('git', ['show', `33d390a:src/public/${p}`], { cwd: SRC }).toString();
+  // The accepted page's copies (tests/desk/fixtures/accepted-m2/): desk-build has no history to read.
+  const at = (p) => fixture(`accepted-m2/${p}`);
   assert.equal(readFileSync(`${SRC}/public/_headers`, 'utf8'), at('_headers'));
   assert.equal(readFileSync(`${SRC}/public/index.html`, 'utf8'), at('index.html'));
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');

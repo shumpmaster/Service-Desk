@@ -23,6 +23,12 @@ export const DEFERRED_WORDS = 'Deferred: waiting on your ruling';
 export const JUST_FINISHED_MS = 30 * 60e3; // AC49: "Just finished" for 30 minutes (C, to tune in the lab)
 export const OWNER_NEXT_LINES = 3; // AC49: the owner's tile shows the next 3 queue lines (C)
 
+/**
+ * AC50: "Done", never "Graduated", on every screen. The model's own word stays in its records and
+ * tables (Launch-5's name, a record's text); the desk translates it wherever it draws it.
+ */
+export const deskWords = (s) => String(s).replace(/\bGraduated\b/g, 'Done');
+
 const enc = (s) => String(s).split('/').map(encodeURIComponent).join('/');
 export const fileLink = (project, path) => `https://github.com/${project.repo}/blob/${enc(project.defaultBranch)}/${enc(path)}`;
 export const pullLink = (project, n) => `https://github.com/${project.repo}/pull/${n}`;
@@ -206,7 +212,7 @@ export function sprintLink(project, tree, tl, s) {
 export function phaseMilestones(project, tree, tl, ph) {
   const run = ph.run;
   if (!run) return { standard: [], own: [], counts: '', runLabel: null };
-  const standard = run.standard.map((s) => ({ id: s.id, name: s.name, word: standardWord(s.state), from: s.from }));
+  const standard = run.standard.map((s) => ({ id: s.id, name: deskWords(s.name), word: standardWord(s.state), from: s.from }));
   const own = [];
   for (const r of ph.runs) {
     for (const m of r.project) {
@@ -722,7 +728,7 @@ export function timelineView(project, tree, tl, pv, j, runKey, tz = 'UTC') {
     const all = runs.filter((r) => r.phase === phase);
     const latest = all.length ? all[all.length - 1] : null;
     const dots = latest ? [
-      ...latest.standard.map((s) => ({ name: s.name, word: standardWord(s.state), kind: dotKind(standardWord(s.state), latest === now) })),
+      ...latest.standard.map((s) => ({ name: deskWords(s.name), word: standardWord(s.state), kind: dotKind(standardWord(s.state), latest === now) })),
       ...latest.project.map((m) => ({ name: m.name, word: projectMilestoneWord(latest, m), kind: dotKind(projectMilestoneWord(latest, m), latest === now) })),
     ] : [];
     if (dots.some((d) => d.kind === 'hatched')) hatched = true;
@@ -850,7 +856,7 @@ export function timelineView(project, tree, tl, pv, j, runKey, tz = 'UTC') {
     sentence = `${bits.length ? bits.join('; ') : `${c.n} steps`}.`;
     sentence = sentence[0].toUpperCase() + sentence.slice(1);
   }
-  const standard = shown.standard.map((s) => ({ id: s.id, name: s.name, word: standardWord(s.state) }));
+  const standard = shown.standard.map((s) => ({ id: s.id, name: deskWords(s.name), word: standardWord(s.state) }));
   const switcher = runs.filter((r) => r.phase === shown.phase).map((r) => ({ key: runKeyOf(r), label: r.label(), current: r === shown }));
   return {
     ok: true, title: `${shown.label()}${shown === now ? ' · now' : ''}`, strip, switcher,
@@ -916,6 +922,19 @@ export function teamView(project, model, snap, j, q, ball, now, tz) {
 
 const newest = (list) => [...list].reverse();
 
+/**
+ * The owner's Rulings group (AC49): the latest is the ruling whose answer file's oldest commit
+ * (J2's history read, as AC20) is newest; with no such read, "not recorded" with the reason.
+ */
+function rulingsGroup(paths, snap, link, now, tz) {
+  const history = (snap && snap.history) || new Map();
+  const timed = paths.map((p) => ({ p, at: history.get(p) && history.get(p).oldest ? Date.parse(history.get(p).oldest) : null }));
+  const known = timed.filter((x) => Number.isFinite(x.at)).sort((a, b) => b.at - a.at);
+  const latest = known.length ? `latest: ${known[0].p}, ${whenText(new Date(known[0].at), now, tz)}` : null;
+  return { title: 'Rulings', count: paths.length, latest, latestWhy: 'latest: not recorded (no commit time read for the ruling files yet)',
+    items: [...known.map((x) => x.p), ...timed.filter((x) => !Number.isFinite(x.at)).map((x) => x.p).sort().reverse()].map((p) => ({ text: p, link: link(p) })), why: null };
+}
+
 /** A member's page (AC49): status, what they are responsible for, and the running log. */
 export function memberPage(project, model, snap, j, q, tv, id, now, tz) {
   const tree = (snap && snap.tree) || new Map();
@@ -929,8 +948,9 @@ export function memberPage(project, model, snap, j, q, tv, id, now, tz) {
     const decisions = newest(rows.filter((e) => e.shape === 'decision'));
     page = { id, label: 'You', status: tv.owner.status, groups: [
       { title: 'Decisions', count: decisionFiles.length, latest: decisions[0] ? `latest: ${entryWords(decisions[0], at(decisions[0]))}` : null,
+        latestWhy: 'latest: not recorded (no decision entry in the dispatch log the desk reads)',
         items: decisionFiles.slice().reverse().map((p) => ({ text: p, link: link(p) })), why: null },
-      { title: 'Rulings', count: rulingFiles.length, latest: null, items: rulingFiles.slice().reverse().map((p) => ({ text: p, link: link(p) })), why: null },
+      rulingsGroup(rulingFiles, snap, link, now, tz),
       { title: 'Verdicts', count: null, latest: null, items: [], why: `${NOT_RECORDED}: verdict files land on pull-request branches, and the desk reads only ${project.defaultBranch}` },
       { title: 'Merges', count: null, latest: null, items: [], why: `${NOT_RECORDED}: the desk reads only open pull requests, and status/merges.jsonl holds the Orchestrator's merges, not yours` },
     ], logEntries: rows.filter((e) => e.shape === 'decision' || e.shape === 'card') };
@@ -1022,7 +1042,8 @@ export function workingNow(project, model, snap, j, id, page, now, tz) {
     doing: `${it.running.role} on ${it.id}, ${String(it.stage).replace(/^[0-9]+ /, '')}`,
     tiles: [
       { label: 'Started', ...(since ? { value: whenText(since, now, tz), why: null } : dash(`${NOT_RECORDED}: no dispatched_at in status/${it.id}.toml`)) },
-      { label: 'Time so far', ...(since ? { value: durationText(now - since), why: 'counted from the start' } : dash(NOT_RECORDED)) },
+      { label: 'Time so far', ...(!since ? dash(NOT_RECORDED) : now - since < 0 ? dash("not available: the start is later than this device's clock")
+        : { value: durationText(now - since), why: 'counted from the start' }) },
       { label: 'Last check-in', ...(it.asOf ? { value: whenText(it.asOf, now, tz), why: 'the latest dispatch-log entry naming it' } : dash(NOT_RECORDED)) },
       { label: 'Next check-in', ...(due ? { value: hhmm(due, tz), why: "the Orchestrator's next run by its schedule" } : dash('schedule not readable')) },
     ],

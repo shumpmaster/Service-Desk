@@ -23,7 +23,7 @@ import { createSeen } from './lib/seen.js';
 import {
   SANDBOX_MARKER, DEFERRED_WORDS, NOT_RECORDED, NOT_AVAILABLE, V25_NOT_RECORDED, OWNER_NEXT_LINES,
   j11Records, timelineOf, phaseView, finishedWords, phaseMilestones, whereLine, queueView, pillView, ballLines,
-  sheetView, trackerSteps, doneToday, cardBoxText, questionBoxText, VERDICT_START, ruleLine, boxPlan, GROUPS, treeLink,
+  sheetView, trackerSteps, doneToday, cardBoxText, questionBoxText, VERDICT_START, ruleLine, boxPlan, GROUPS, treeLink, deskWords,
 } from './lib/sandbox.js';
 import { timelineView, teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
 
@@ -39,13 +39,14 @@ function h(tag, attrs = {}, ...children) {
   for (const [k, v] of Object.entries(attrs || {})) {
     if (v == null || v === false) continue;
     if (k === 'class') el.className = v;
-    else if (k === 'html') el.innerHTML = v;
+    else if (k === 'html') el.innerHTML = deskWords(v); // renderMarkdown's escaped output; the word has no markup
     else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
-    else el.setAttribute(k, v === true ? '' : v);
+    else el.setAttribute(k, v === true ? '' : (k === 'href' ? v : deskWords(v)));
   }
+  // AC50: every drawn word goes through deskWords, so "Graduated" from a record or a table reads "Done".
   for (const c of children.flat(Infinity)) {
     if (c == null || c === false) continue;
-    el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+    el.append(c instanceof Node ? c : document.createTextNode(deskWords(String(c))));
   }
   return el;
 }
@@ -573,7 +574,7 @@ function renderMember(p, tv, id, sub, idx, now) {
   body.push(h('h2', { class: 'sb-h2' }, 'Responsible for'));
   body.push(h('div', { class: 'sb-resp' }, page.groups.map((g) => h('details', { class: 'sb-card' },
     h('summary', {}, h('strong', {}, g.title), h('span', { class: 'sb-gcount' }, g.count == null ? NOT_RECORDED : String(g.count)),
-      h('span', { class: 'sb-muted small sb-latest' }, g.latest || (g.count == null ? g.why : 'none yet'))),
+      h('span', { class: 'sb-muted small sb-latest' }, g.latest || (g.count == null ? g.why : g.count === 0 ? 'none yet' : g.latestWhy || 'latest: not recorded'))),
     g.items && g.items.length ? h('ul', { class: 'sb-qlist' }, g.items.map((it) => h('li', {}, it.link ? ext(it.link, it.text) : it.text))) : h('p', { class: 'sb-muted small' }, g.why || 'None.')))));
   body.push(h('h2', { class: 'sb-h2' }, 'Running log'));
   if (page.upNext.length) body.push(h('div', { class: 'sb-upnext' }, h('p', { class: 'sb-eyebrow' }, 'Up next (from the records)'), h('ul', {}, page.upNext.map((u) => h('li', {}, u)))));

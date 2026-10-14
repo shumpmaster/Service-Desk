@@ -11,7 +11,8 @@ import { parseSurfaces, parseOrchWorkflow, nextCronRun, parseRequest, isGroundwo
 import { j11Records, timelineOf, phaseView, finishedWords, phaseMilestones, nowRun, timelineView, standardWord, whereLine,
   teamView, ballLines } from '../../src/lib/sandbox.js';
 import { neededReads } from '../../src/lib/model.js';
-import { j11Snapshot, j11Files, traceNotes, treePaths, SD3 } from './sandbox-helpers.mjs';
+import { j11Snapshot, j11Files, traceNotes, treePaths, SD3, loadSandbox, linksIn } from './sandbox-helpers.mjs';
+import { repo } from './fake-desk.mjs';
 import { readFileSync } from 'node:fs';
 import { SRC } from './helpers.mjs';
 
@@ -241,13 +242,50 @@ test('AC51: no clock times and no durations on the line, only order (with a mark
   assert.match(tv.run.sentence, /^\d+ returns? failed/, 'bad news first');
 });
 
-test('AC50 + AC41: no element is sized by a fraction of phases, and no screen text of the sandbox reads "Graduated"', () => {
+test('AC50 + AC41: no element is sized by a fraction of phases', () => {
   const page = pageSource();
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
   assert.doesNotMatch(page, /\.style\./, 'the sandbox sets no inline sizes');
   assert.doesNotMatch(css.replace(/width: 100%/g, ''), /width:\s*calc\(|width:\s*\d+(\.\d+)?%/, 'no width by fraction (only full width)');
-  const lib = readFileSync(`${SRC}/lib/sandbox.js`, 'utf8');
-  for (const [name, text] of [['sandbox.js', page], ['lib/sandbox.js', lib]]) {
-    for (const m of text.matchAll(/'[^'\n]*'|`[^`\n]*`|"[^"\n]*"/g)) assert.ok(!/Graduated/.test(m[0]), `${name}: ${m[0]}`);
+});
+
+/** Every word, attribute and markdown the page drew under `node`. */
+function drawn(node) {
+  let out = node.textContent || '';
+  const walk = (n) => {
+    for (const c of n.children || []) {
+      if (c.attrs) out += ` ${Object.values(c.attrs).join(' ')} ${c.innerHTML || ''}`;
+      walk(c);
+    }
+  };
+  walk(node);
+  return out;
+}
+
+test('AC50 (review B2): no drawn text on any route of the sandbox, on the fixture\'s records, reads "Graduated"; Launch-5 reads "Done"', async () => {
+  const files = j11Files();
+  const config = { ownerLogin: 'shumpmaster', ownerTimeZone: 'America/Chicago', v5Clock: { days: ['Mon'], from: '07:00', to: '22:00' }, linkCap: 6000,
+    projects: [SD3] };
+  const app = await loadSandbox({ config, repos: { 'Service-Desk': repo(files) }, now: Date.parse('2026-10-14T15:00:00Z') });
+  try {
+    await app.advance(1000);
+    const seen = new Set();
+    const queue = ['#/'];
+    let launch5 = false;
+    while (queue.length && seen.size < 500) {
+      const h = queue.shift();
+      if (seen.has(h)) continue;
+      seen.add(h);
+      await app.go(h);
+      const text = drawn(app.view);
+      assert.doesNotMatch(text, /Graduated/, `${h} draws "Graduated"`);
+      if (/Done\s*Launch-5/.test(app.view.textContent)) launch5 = true;
+      for (const l of linksIn(app.view)) if (l.href && l.href.startsWith('#/') && !seen.has(l.href)) queue.push(l.href);
+    }
+    assert.ok(seen.size > 30, `${seen.size} routes`);
+    assert.ok(seen.has('#/p/Service-Desk/timeline/Launch-i1'));
+    assert.ok(launch5, 'Launch-5 is drawn as "Done"');
+  } finally {
+    app.restore();
   }
 });

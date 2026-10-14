@@ -138,6 +138,9 @@ h1, .notes h2 { text-transform: uppercase; letter-spacing: var(--ds-track) } h1 
 .ck .hd { font-weight: 800 } .ck .stamp { font-weight: 800 }
 .bs h3 { font-weight: 750 } .go { font-weight: 700 }
 /* ds:end */
+/* the stress test (14 Oct): the checklist wraps instead of clipping, whatever font loads */
+.ck ol { grid-template-columns: minmax(0, 1fr) } .ck li { min-width: 0; flex-wrap: wrap; row-gap: 0; overflow-wrap: anywhere }
+.ck .hd { flex-wrap: wrap; row-gap: 2px } .ck li.now em { margin-left: auto }
 </style>
 
 <div class="wrap">
@@ -150,11 +153,13 @@ h1, .notes h2 { text-transform: uppercase; letter-spacing: var(--ds-track) } h1 
     <button type="button" data-state="busy" aria-pressed="false">8 Oct, 19:30</button>
     <button type="button" data-state="problem" aria-pressed="false">A project it can't read</button>
     <button type="button" data-state="finished" aria-pressed="false">A finished project</button>
+    <button type="button" data-state="stress" aria-pressed="false">Stress test: 5 projects, 12 waits</button>
   </div>
   <div class="stage"><div class="phone" id="phone"></div></div>
   <section class="notes">
     <h2>What's on this screen, and why</h2>
     <ul>
+      <li><b>Rests on the design research</b> (Q-013, source-checked, row numbers in brackets): One box per project with only its state, who has the ball and one pill (rows 1.1 and 1.2: what you often need up front, detail on request); a tap opens that project's own detail or queue, not a general screen (1.3); the time the desk last checked (2.3); "Can't read" and "unknown" said in words, never left blank (2.6); every state carried by a word and an icon as well as colour (2.5, 4.1).</li>
       <li><b>One card per project</b>, as in Abode. Card contents, top to bottom: its icon, its name, where it is in plain words, <b>the phase checklist</b>, who has the ball, and one pill for the main action.</li>
       <li><b>The phase checklist</b> follows your reference (saved as 08 and 09 in PR #61). It lists the desk's four phases in order, then Done: finished ones are ticked, and the one in progress has a gold edge and the word "now". Operate and Review are not on it: they are the product's own once it is done. The figure is a real count ("2 of 4"), not a percentage; phases aren't equal in size, so a percentage would overstate. Service Desk's Build is ticked while Design is under way because the project came back to Design after Build, so Design reads "Design i2", its second run. A finished project gets the DONE stamp. A project whose phases the desk doesn't know shows empty grey rows, not guesses.</li>
       <li><b>The pill is that project's queue, summarised.</b> It is coral when something waits on you ("2 to merge", "1 decision"). It is green with "All clear" when nothing does, and red when the desk can't read the project. Tapping it opens that project's queue (screen 6). Nothing from one project appears on another project's card.</li>
@@ -162,6 +167,7 @@ h1, .notes h2 { text-transform: uppercase; letter-spacing: var(--ds-track) } h1 
       <li><b>The coral panel at the bottom</b> is Abode's "Start typing…", used to give your Chief of Staff direction. You pick the project first, so you never cross boundaries. It opens GitHub with your request already written, the same two taps as answering.</li>
       <li><b>Top line:</b> how many things wait on you in total, and when the desk last checked, so you can tell fresh from stale.</li>
       <li><b>Every figure is real.</b> "Right now" is today's actual state: PRs #59 and #60 are waiting for your merge. "8 Oct, 19:30" is the decision that waited 2 h 8 min. Garden planner is a made-up project, shown only to demonstrate the problem state.</li>
+      <li><b>Stress test</b> (the last button): five projects, twelve waits, a very long name and a long status line, all made up, to check that nothing breaks, overflows or scrolls sideways on a 360 px phone (the hard limits in the desk's plan). It is a test of the layout, not data.</li>
     </ul>
     <div class="ref"><p class="sub" style="color:var(--muted)">Reference: <code>docs/design/references/01-home-overview-abode.png</code> (PR #60). Kept from it: the header, the two-column rounded cards, the coloured app icons, the soft coral action pill, the ⓘ, and the coral band with the typing panel. Changed: "Add" becomes each project's own action, and a status line was added so you can see who has the ball.</p></div>
   </section>
@@ -180,7 +186,7 @@ const IC = {
   mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
 };
 // the card icons' tiles: one quiet tile for every project (the owner's comment of 13 Oct), so no project's icon pops
-const GRAD = { recipe: 'var(--ds-surf2)', desk: 'var(--ds-surf2)', model: 'var(--ds-surf2)', garden: 'var(--ds-surf2)' };
+const GRAD = { north: 'var(--ds-surf2)', ledger: 'var(--ds-surf2)', recipe: 'var(--ds-surf2)', desk: 'var(--ds-surf2)', model: 'var(--ds-surf2)', garden: 'var(--ds-surf2)' };
 
 // Each project: what, why, for you, you can (shown behind the ⓘ), and its state per scenario.
 const PROJECTS = {
@@ -193,6 +199,8 @@ const PROJECTS = {
         mean: 'Your two new checklist screenshots (PR #61) wait for your merge. Design is under way: Home, screen 1 of 7, is being shaped with you.', can: 'Tap "1 to merge" to open it and merge it in GitHub.' },
       busy: { desc: 'Agreeing how the desk looks and feels', ball: ['you', 'Waiting on you · 2 h 8 min'], pill: ['you', '1 decision'], need: 1,
         mean: 'The design research stopped after three failed source checks. Nothing moves until you decide.', can: 'Tap "1 decision" to answer it: re-specify, confirm or drop.' },
+      stress: { desc: 'Agreeing how the desk looks and feels', ball: ['you', 'Waiting on you · 3 h 40 min'], pill: ['you', '4 waiting'], need: 4,
+        mean: 'Made-up for the stress test: four things wait on you.', can: 'Tap "4 waiting" to open its queue.' },
       problem: null } },
   model: { name: 'Operating Model', id: 'v3.0.0', phases: null,
     what: 'The rules, roles and tools every project runs on.',
@@ -202,12 +210,26 @@ const PROJECTS = {
         mean: 'Nothing waits on you. Your design-references rule (L-0130) went in on 9 Oct.', can: 'Nothing to do. Tap the card to see its history.' },
       busy: { desc: 'Version 3.0.0 · Rules and tools', ball: ['idle', 'Its agents aren\'t recorded yet'], pill: ['ok', 'All clear'], need: 0,
         mean: 'Nothing waits on you. Its agents aren\'t recorded yet, so the desk can\'t say who has the ball.', can: 'Nothing to do.' },
+      stress: { desc: 'Version 3.3.2 · Rules and tools', ball: ['idle', 'Nothing running'], pill: ['you', '1 waiting'], need: 1,
+        mean: 'Made-up for the stress test: one thing waits on you.', can: 'Tap "1 waiting" to open its queue.' },
       problem: null } },
   garden: { name: 'Garden planner', id: 'example', example: true, phases: 'unknown',
     what: 'A made-up project, here only to show what a problem looks like.',
     why: 'If the desk can\'t read a project, it says so on that card alone and tells you the fix.',
-    states: { problem: { desc: 'Made-up example', ball: ['bad', 'Last read: never'], pill: ['bad', 'Can\'t read'], need: 0,
+    states: { stress: { desc: 'Made-up example', ball: ['bad', 'Last read: never'], pill: ['bad', 'Can\'t read'], need: 0,
+      mean: 'GitHub refused: the desk\'s read access doesn\'t include this project. The other projects are unaffected.', can: 'Add this project to the desk\'s GitHub token.' },
+      problem: { desc: 'Made-up example', ball: ['bad', 'Last read: never'], pill: ['bad', 'Can\'t read'], need: 0,
       mean: 'GitHub refused: the desk\'s read access doesn\'t include this project. The other projects are unaffected.', can: 'Add this project to the desk\'s GitHub token (Settings → Developer settings → token → Repository access).' } } },
+  north: { name: 'Northwind customer onboarding and billing reconciliation', id: 'example', example: true,
+    phases: { Discovery: 'done', Design: 'done', Build: 'now', Launch: 'todo' }, iter: { Build: 3 },
+    what: 'A made-up project with a very long name, here only to test the layout.', why: 'Long names must wrap, never push the card sideways.',
+    states: { stress: { desc: 'Made-up stress test · the third run of Build, after two sends back to fix failing checks on the reconciliation report',
+      ball: ['you', 'Waiting on you · since Mon 12 Oct'], pill: ['you', '7 waiting'], need: 7,
+      mean: 'Made-up: seven things wait on you here, to test a full queue.', can: 'Nothing: this project does not exist.' } } },
+  ledger: { name: 'Household ledger', id: 'example', example: true, phases: { Discovery: 'now', Design: 'todo', Build: 'todo', Launch: 'todo' },
+    what: 'A made-up project, here only to test the layout.', why: 'A fifth project fills the grid.',
+    states: { stress: { desc: 'Made-up stress test · research under way', ball: ['work', 'Researcher: reading sources'], pill: ['ok', 'All clear'], need: 0,
+      mean: 'Made-up: nothing waits on you.', can: 'Nothing: this project does not exist.' } } },
   recipe: { name: 'Recipe box', id: 'example', example: true, phases: { Discovery: 'done', Design: 'done', Build: 'done', Launch: 'done' }, graduated: true,
     what: 'A made-up project, here only to show what a finished project looks like.',
     why: 'When a project is done, the card says so at a glance.',
@@ -233,11 +255,13 @@ function checklist(p) {
       <li class="grad ${all ? 'done' : 'todo'}">${all ? CK.done : CK.flag}Done</li></ol>
     ${all ? '<span class="stamp">✓ DONE</span>' : ''}</div>`;
 }
-const SCEN = { now: { when: 'Sat 10 Oct', checked: 'checked 1 min ago' }, busy: { when: 'Thu 8 Oct · 19:30', checked: 'checked 1 min ago' }, problem: { when: 'Sat 10 Oct', checked: 'checked 1 min ago' }, finished: { when: 'Sat 10 Oct', checked: 'checked 1 min ago' } };
+const SCEN = { now: { when: 'Sat 10 Oct', checked: 'checked 1 min ago' }, busy: { when: 'Thu 8 Oct · 19:30', checked: 'checked 1 min ago' }, problem: { when: 'Sat 10 Oct', checked: 'checked 1 min ago' }, finished: { when: 'Sat 10 Oct', checked: 'checked 1 min ago' }, stress: { when: 'Made-up stress test', checked: 'checked 1 min ago' } };
 
 let scen = 'now', sheet = null, target = null, pickProj = null, toast = null;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const stateOf = k => PROJECTS[k].states[scen] || ((scen === 'problem' || scen === 'finished') && !PROJECTS[k].example && PROJECTS[k].states.now) || null;
+// the stress test's made-up projects reuse the plain tile glyph
+IC.north = IC.north || IC.recipe; IC.ledger = IC.ledger || IC.recipe;
 const visible = () => Object.keys(PROJECTS).filter(k => stateOf(k));
 
 function card(k) {

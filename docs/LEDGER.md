@@ -162,3 +162,16 @@ licenses_next: The push-run check fix (a model spec, then this project's workflo
 decided_by: owner (merges this pull request, after adding their review notes)
 proposed_by: orchestrator
 reversibility: reversible
+
+## L-0012 — The design lab ends: the owner picks the five agreed screens, with the phone's own font
+date: 2026-10-14
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: Are the five agreed screens the desk's design (S-001 AC43, questions/P-001-design-pick.md), and how should the desk get its font, given that its security headers block Inter from Google?
+decision: The five screens (Home, Project, Team, Timeline, and Queue with its response card) are the one design direction, and the design lab ends (AC43 A; AC44 step 1). The owner picked after trying the built candidate on a private page fed by a snapshot of both projects' records. The desk uses the phone's own font; no font file is added. The record of the questions and answers: decisions/questions/P-001-design-pick.md.
+licenses_next: The sandbox pull request (AC43 B), then the owner-approved preview deploy and the owner's confirmation on live data (AC44 steps 2 and 3).
+decided_by: owner ("These are the screens I want" and "Phone's own font", 2026-10-14, decisions/questions/P-001-design-pick.md)
+proposed_by: orchestrator
+reversibility: reversible

@@ -1,0 +1,153 @@
+NOTE: Discovery i1
+NOTE:   Discovery-1 "An idea worth exploring": not recorded
+NOTE:   Discovery-2 "Success defined": reached
+NOTE:   Discovery-3 "The expert's questions answered": not recorded
+NOTE:   Discovery-4 "The right problem chosen": not recorded
+NOTE:   Discovery-5 "What already exists is known": reached
+NOTE:   Discovery-6 "The risks are known": not recorded
+NOTE:   Discovery-7 "Scope, limits and owners agreed": reached
+NOTE:   Discovery-8 "A brief ready to rule on": reached
+NOTE:   untagged
+NOTE:     sprint Q-001
+NOTE:       step 2026-10-01T01:46:42Z researcher stage 2
+NOTE:       step 2026-10-01T02:17:21Z source-checker stage 2
+NOTE:       step 2026-10-01T09:15:57Z researcher stage 2
+NOTE:       step 2026-10-01T10:45:54Z source-checker stage 2
+NOTE:       step 2026-10-01T11:28:52Z researcher stage 2
+NOTE:       step 2026-10-01T12:19:35Z source-checker stage 2
+NOTE:     sprint Q-004
+NOTE:       step 2026-10-01T01:46:42Z researcher stage 2
+NOTE:       step 2026-10-01T02:17:21Z source-checker stage 2
+NOTE:       step 2026-10-01T09:15:57Z researcher stage 2
+NOTE:       step 2026-10-01T10:45:54Z source-checker stage 2
+NOTE:       step 2026-10-01T11:28:52Z researcher stage 2
+NOTE:       step 2026-10-01T12:19:35Z source-checker stage 2
+NOTE:     sprint Q-002
+NOTE:       step 2026-10-01T01:46:42Z researcher stage 2
+NOTE:       step 2026-10-01T02:17:21Z source-checker stage 2
+NOTE:       step 2026-10-01T09:15:57Z researcher stage 2
+NOTE:       step 2026-10-01T10:45:54Z source-checker stage 2
+NOTE:       step 2026-10-01T11:28:52Z researcher stage 2
+NOTE:       step 2026-10-01T12:19:35Z source-checker stage 2
+NOTE:       step 2026-10-01T12:26:37Z critic-triage stage 2
+NOTE:       step 2026-10-01T14:48:25Z researcher stage 2
+NOTE:       step 2026-10-01T15:52:24Z source-checker stage 2
+NOTE:       step 2026-10-01T16:06:59Z researcher stage 2
+NOTE:       step 2026-10-01T16:23:47Z source-checker stage 2
+NOTE:     sprint Q-005
+NOTE:       step 2026-10-01T10:45:54Z researcher stage 2
+NOTE:       step 2026-10-01T11:28:52Z source-checker stage 2
+NOTE:       step 2026-10-01T12:19:35Z researcher stage 2
+NOTE:       step 2026-10-01T12:26:37Z source-checker stage 2
+NOTE:       step 2026-10-01T12:37:25Z researcher stage 2
+NOTE:       step 2026-10-01T14:48:25Z source-checker stage 2
+NOTE:       step 2026-10-01T15:52:24Z critic-triage stage 2
+NOTE:       step 2026-10-01T16:23:47Z source-checker stage 2
+NOTE:     sprint Q-006
+NOTE:       step 2026-10-02T00:15:15Z researcher stage 2
+NOTE:       step 2026-10-02T00:28:43Z source-checker stage 2
+NOTE:       step 2026-10-02T01:17:15Z researcher stage 2
+NOTE:       step 2026-10-02T07:17:46Z source-checker stage 2
+NOTE:       step 2026-10-02T14:00:18Z researcher stage 2
+NOTE:       step 2026-10-02T19:26:38Z source-checker stage 2
+NOTE:       step 2026-10-02T23:10:04Z critic-triage stage 2
+NOTE:       step 2026-10-03T23:12:05Z source-checker stage 2
+NOTE:       step 2026-10-03T23:22:50Z critic-triage stage 2
+NOTE:       step 2026-10-04T00:26:09Z researcher stage 2
+NOTE:       step 2026-10-04T00:36:58Z source-checker stage 2
+NOTE:       step 2026-10-04T01:21:06Z researcher stage 2
+NOTE:       step 2026-10-04T01:28:40Z source-checker stage 2
+NOTE:       step 2026-10-04T04:23:15Z researcher stage 2
+NOTE:       step 2026-10-04T10:42:00Z source-checker stage 2
+NOTE:     sprint Q-008
+NOTE:       step 2026-10-04T04:23:15Z researcher stage 2
+NOTE:       step 2026-10-04T10:42:00Z source-checker stage 2
+NOTE:     sprint Q-007
+NOTE:       step 2026-10-04T04:23:15Z researcher stage 2
+NOTE:       step 2026-10-04T10:42:00Z source-checker stage 2
+NOTE:       step 2026-10-04T14:51:12Z researcher stage 2
+NOTE:       step 2026-10-04T15:12:08Z source-checker stage 2
+NOTE:     step 2026-10-01T17:18:13Z critic stage 2
+NOTE:     decision 2026-10-04T01:12:58Z dor-fail resubmit
+NOTE:     step 2026-10-04T01:21:06Z critic stage 2
+NOTE:     decision 2026-10-05T10:33:02Z dor-fail resubmit
+NOTE:     step 2026-10-05T12:50:37Z critic stage 2
+NOTE:     step 2026-10-05T16:01:20Z critic-triage stage 2
+NOTE:     decision 2026-10-05T17:02:20Z stop resubmit
+NOTE:     step 2026-10-05T17:08:25Z critic stage 2
+NOTE:     decision 2026-10-05T17:14:13Z dor build
+NOTE: Design i1
+NOTE:   Design-1 "Done defined in real scenarios": reached
+NOTE:   Design-2 "How the pieces connect is mapped": not recorded
+NOTE:   Design-3 "Every unknown has a test": not recorded
+NOTE:   Design-4 "Every fact is backed by evidence": not recorded
+NOTE:   Design-5 "The design fits together": not recorded
+NOTE:   Design-6 "A plan that passed review": not reached
+NOTE:   untagged
+NOTE:     sprint Q-011
+NOTE:       step 2026-10-08T12:05:36Z researcher stage 2
+NOTE:       step 2026-10-08T12:17:22Z source-checker stage 2
+NOTE:       step 2026-10-08T12:21:41Z researcher stage 2
+NOTE:       step 2026-10-08T12:29:13Z source-checker stage 2
+NOTE:       step 2026-10-08T12:33:35Z researcher stage 2
+NOTE:       step 2026-10-08T12:42:25Z source-checker stage 2
+NOTE:       step 2026-10-08T13:53:49Z critic-triage stage 2
+NOTE:       step 2026-10-08T14:06:26Z researcher stage 2
+NOTE:       step 2026-10-08T14:11:23Z source-checker stage 2
+NOTE:       step 2026-10-08T14:15:12Z researcher stage 2
+NOTE:       step 2026-10-08T14:19:21Z source-checker stage 2
+NOTE:       step 2026-10-08T14:27:26Z researcher stage 2
+NOTE:       step 2026-10-08T16:59:31Z source-checker stage 2
+NOTE:     step 2026-10-05T17:20:55Z definer stage 3
+NOTE:     step 2026-10-05T22:50:13Z definer stage 3
+NOTE:     decision 2026-10-06T16:16:12Z failure retry
+NOTE:     step 2026-10-06T16:16:12Z definer stage 3
+NOTE:     step 2026-10-06T16:23:48Z critic stage 3
+NOTE:     step 2026-10-06T16:26:39Z definer stage 3
+NOTE:     step 2026-10-06T16:32:21Z critic stage 3
+NOTE:     step 2026-10-06T16:35:05Z definer stage 3
+NOTE:     step 2026-10-06T16:40:19Z critic stage 3
+NOTE:     step 2026-10-06T18:48:58Z critic-triage stage 3
+NOTE:     decision 2026-10-06T21:31:02Z stop re-scope
+NOTE: Build i1
+NOTE:   Build-1 "Tests written before the work": not recorded
+NOTE:   Build-2 "The work is built": not recorded
+NOTE:   Build-3 "Independently reviewed and passing": not recorded
+NOTE:   Build-4 "The experiments are answered": not recorded
+NOTE:   Build-5 "Everything built fits together": not recorded
+NOTE:   M1 "Every project's status visible on the phone"
+NOTE:     sprint PR #40
+NOTE:     sprint PR #41
+NOTE:   M2 "Cards answered straight from the desk"
+NOTE:     sprint PR #44
+NOTE:   M2B "Agent usage shown on the desk"
+NOTE:     sprint PR #44
+NOTE:     sprint PR #52
+NOTE: Design i2
+NOTE:   Design-1 "Done defined in real scenarios": not recorded
+NOTE:   Design-2 "How the pieces connect is mapped": not recorded
+NOTE:   Design-3 "Every unknown has a test": not recorded
+NOTE:   Design-4 "Every fact is backed by evidence": not recorded
+NOTE:   Design-5 "The design fits together": not recorded
+NOTE:   Design-6 "A plan that passed review": not recorded
+NOTE:   MD1 "What a good desk looks like is known"
+NOTE:     sprint Q-013
+NOTE:       step 2026-10-08T21:42:17Z researcher stage 2
+NOTE:       step 2026-10-08T21:48:30Z source-checker stage 2
+NOTE:   MD2 "The desk's look and screens chosen"
+NOTE:   MD3 "The chosen design running on the real back end"
+NOTE: Build i2
+NOTE:   Build-1 "Tests written before the work": not recorded
+NOTE:   Build-2 "The work is built": not recorded
+NOTE:   Build-3 "Independently reviewed and passing": not recorded
+NOTE:   Build-4 "The experiments are answered": not recorded
+NOTE:   Build-5 "Everything built fits together": not recorded
+NOTE:   M3A "Work ahead planned and scheduled from the desk"
+NOTE:   M3B "The desk's value targets shown"
+NOTE: Launch i1
+NOTE:   Launch-1 "It's live": not recorded
+NOTE:   Launch-2 "An operating team is in place": not recorded
+NOTE:   Launch-3 "It's handed over": not recorded
+NOTE:   Launch-4 "Its own monitoring and feedback works": not recorded
+NOTE:   Launch-5 "Graduated": not recorded
+NOTE:   M3C "The desk live at the needs-you address"

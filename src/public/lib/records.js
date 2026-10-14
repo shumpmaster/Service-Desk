@@ -174,10 +174,15 @@ export function parseMergeCard(text) {
   return out;
 }
 
-/** status/merges.jsonl (the merge gate's own merges): [{ item, tip }] and notes. */
+/**
+ * status/merges.jsonl (the merge gate's own merges): [{ item, tip }], notes, and `rows`: every line
+ * that is a JSON object with an `item` string, as written, which J11's timeline reads (its `merge`
+ * commit for AC51's link and its `spec`; v3_checks.read_merges).
+ */
 export function parseMerges(text) {
   const merges = [];
   const notes = [];
+  const rows = [];
   lines(text).forEach((l, i) => {
     if (l.trim() === '') return;
     let v;
@@ -187,13 +192,14 @@ export function parseMerges(text) {
       notes.push(`${MERGES_PATH} line ${i + 1} is not JSON; skipped`);
       return;
     }
+    if (v && typeof v === 'object' && !Array.isArray(v) && typeof v.item === 'string') rows.push(v);
     if (!v || typeof v.item !== 'string' || typeof v.item_tip !== 'string') {
       notes.push(`${MERGES_PATH} line ${i + 1} has no item and item_tip strings; skipped`);
       return;
     }
     merges.push({ item: v.item, tip: v.item_tip });
   });
-  return { merges, notes };
+  return { merges, notes, rows };
 }
 
 /** A compare answer's status (J1: ahead, identical, behind or diverged), or null. */
@@ -483,10 +489,15 @@ export function typeCheckEntry(e, shape, where) {
   return { entry, notes };
 }
 
-/** Parse a dispatch-log month. Returns { entries: [{...e, shape, line}], notes }. */
+/**
+ * Parse a dispatch-log month. Returns { entries: [{...e, shape, line}], notes, rows }. `rows` holds
+ * every line that is a JSON object, as written and in order: the model's timeline reads them so
+ * (J11; v3_checks.read_log), shapes or not.
+ */
 export function parseLog(text, label = 'dispatch log') {
   const entries = [];
   const notes = [];
+  const rows = [];
   lines(text).forEach((l, i) => {
     if (l.trim() === '') return;
     let e;
@@ -496,6 +507,7 @@ export function parseLog(text, label = 'dispatch log') {
       notes.push(`${label} line ${i + 1} is not JSON; skipped`);
       return;
     }
+    if (e && typeof e === 'object' && !Array.isArray(e)) rows.push(e);
     const shape = entryShape(e);
     if (!shape) {
       notes.push(`${label} line ${i + 1} matches no known shape; skipped`);
@@ -509,7 +521,7 @@ export function parseLog(text, label = 'dispatch log') {
     notes.push(...checked.notes);
     entries.push({ ...checked.entry, shape, line: i + 1, label });
   });
-  return { entries, notes };
+  return { entries, notes, rows };
 }
 
 /** The words for one log entry (J9's headline forms). `t` is the formatted time. */

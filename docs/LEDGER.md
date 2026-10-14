@@ -135,3 +135,17 @@ decided_by: owner ("Two PRs (Recommended)", 2026-10-13, decisions/questions/P-00
 proposed_by: orchestrator
 reversibility: reversible
 
+
+## L-0010 — Overnight delegation: the Orchestrator merges records-only pull requests until the owner is back
+date: 2026-10-14
+type: delegation
+supersedes: []
+scope: project
+expires: 2026-10-15
+asked: While the owner sleeps, may the Orchestrator merge low-risk pull requests itself?
+decision: Yes, for records-only pull requests (risk class R0) with CI green and any required review passed; each one is listed for the owner in the morning. Code (R1 here), R2, R3, every deploy and every choice that is the owner's (the design pick, gate approvals, owner verdicts) wait for the owner. The record of the question and the option texts: decisions/questions/P-001-overnight-merges.md. PR #67 was merged under it.
+licenses_next: Merging the records-only pull requests prepared overnight, the S-001 design revision among them.
+options_considered: "Merge nothing"; "Full authority".
+decided_by: owner ("Merge low-risk only (Recommended)", 2026-10-14, decisions/questions/P-001-overnight-merges.md)
+proposed_by: orchestrator
+reversibility: reversible

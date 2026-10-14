@@ -11,6 +11,7 @@
 | L-0007 | Deferred. RUNNER.toml stays as it is: session_commands "on", proven_image_version 202609, so on today's 202610 image pipeline builder sessions run with commands forced off (S-016 AC2). … | 2026-10-08 | never |
 | L-0008 | Adopted from the model at c8d31c4. Copied byte for byte: eight tools in governance/checks/, ROUTING.toml, RUNNER.toml, BRIEFS.toml, the orchestrator workflow, the intake forms, the spec … | 2026-10-13 | never |
 | L-0009 | EXP-005 (experiments/EXP-005-md-glance-test.md) stays frozen and unedited. Wherever it says "he", "him" or "his" for the person running the glance test (lines 23, 24, 31, 32, … | 2026-10-14 | never |
+| L-0010 | Yes, for records-only pull requests (risk class R0) with CI green and any required review passed; each one is listed for the owner in the … | 2026-10-14 | 2026-10-15 |
 
 ## Kills
 None.

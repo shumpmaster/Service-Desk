@@ -11,6 +11,8 @@ import {
   stageName, timeLimitMinutes,
 } from './records.js';
 import { whenText, durationText } from './timefmt.js';
+import { j11Kind, parseJ11, PROJECT_DOC_PATH, SURFACES_PATH, ORCH_WORKFLOW_PATH, SPEC_PATH_RE, REQUEST_PATH_RE,
+  GATE_PHASE } from './j11.js';
 import { cardRows, questionRows, cardSummary, v5Waits, sessionRows, timelines, V25_NO_CARDS, V25_ANSWERED } from './asked.js';
 
 export const NOT_RECORDED = 'not recorded';
@@ -40,6 +42,8 @@ export function recordKind(path, model) {
     if (path === MERGES_PATH) return 'merges';
     if (path === OUTCOMES_PATH) return 'outcomes';
     if (questionAnswerName(path)) return 'ruling';
+    const j = j11Kind(path); // J11 (MD sandbox): read only when the sandbox asks (neededReads' ctx.j11)
+    if (j) return j;
   } else {
     if (path === LEDGER_PATH) return 'ledger';
     if (isSprintPath(path)) return 'sprint';
@@ -53,8 +57,8 @@ export function parseRecord(kind, text, path) {
     case 'status': return parseStatus(text, path);
     case 'routing': return parseRouting(text);
     case 'log': {
-      const { entries, notes } = parseLog(text, path);
-      return { entries, notes };
+      const { entries, notes, rows } = parseLog(text, path);
+      return { entries, notes, rows };
     }
     case 'card': return { text, ...parseCard(text) };
     case 'answer': return { verdict: parseAnswer(text) };
@@ -66,6 +70,8 @@ export function parseRecord(kind, text, path) {
     case 'question': return { text, ...parseQuestion(text, (questionName(path) || path)) };
     case 'ledger': return parseLedger(text);
     case 'sprint': return parseSprint(text);
+    case 'project-doc': case 'surfaces': case 'orch-workflow': case 'spec': case 'request': case 'gate-case':
+      return parseJ11(kind, text, path);
     default: return null;
   }
 }
@@ -224,6 +230,24 @@ export function neededReads(project, tree, records, now, ctx = {}) {
       const qh = history.get(qpath);
       if (!qh) optHist.push(qpath);
       else if (qh.oldest) addTo(optBlobs, path);
+    }
+
+    // J11 (the MD sandbox only, ctx.j11): the records its screens read, all optional, so they never
+    // hold a read back or make it fail, and each is read once per blob sha.
+    if (ctx.j11) {
+      const opt = (path) => addTo(optBlobs, path);
+      opt(PROJECT_DOC_PATH);
+      opt(SURFACES_PATH);
+      opt(ORCH_WORKFLOW_PATH);
+      opt(MERGES_PATH);
+      for (const path of [...tree.keys()].sort()) {
+        if (LOG_RE.test(path) || (SPEC_PATH_RE.test(path) && !path.startsWith('specs/_')) || REQUEST_PATH_RE.test(path)) opt(path);
+      }
+      for (const card of openCards(tree)) {
+        const phase = GATE_PHASE[card.gate];
+        if (phase) opt(`docs/gates/${card.item}/${phase}-gate-${card.n}-case.md`);
+      }
+      for (const path of tree.keys()) if (/^decisions\/questions\/P-[0-9]+-(groundwork|discovery)\.md$/.test(path)) opt(path);
     }
   } else {
     add(LEDGER_PATH);
@@ -547,6 +571,7 @@ export function buildModel(input) {
     flagged, activity, notes, ci, headline, items, openItems, questions, pulls, otherPulls,
     sprint: null, answeredCards, rulings, timeAsked, logLoaded, v5Waits: v5Waits(askedCards, nowMs, config),
     sessions, timelines: timelines(sessions, askedCards, nowMs),
+    allEntries: entries, // the two log months' entries, in order (the MD sandbox's tracker and Done today, AC52)
   };
 }
 
@@ -578,7 +603,7 @@ function finishV25({ project, records, tree, flagged, activity, notes, ci, quest
     name: project.name, model: project.model, repo: project.repo, defaultBranch: project.defaultBranch,
     flagged, activity, notes, ci, headline, items: null, openItems: null, questions, pulls, otherPulls,
     sprint, itemsText: V25_NOT_RECORDED, runningText: V25_NOT_RECORDED,
-    answeredCards: {}, rulings: {}, v5Waits: [], sessions: null, timelines: [],
+    answeredCards: {}, rulings: {}, v5Waits: [], sessions: null, timelines: [], allEntries: [],
     logLoaded: true,
     timeAsked: { cards: null, cardsText: V25_NO_CARDS, summary: null, ready: true,
       questions: questionRows('v2.5', tree, records, history, now.getTime()).rows, questionsPending: 0, answeredText: V25_ANSWERED },

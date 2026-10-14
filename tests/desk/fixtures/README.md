@@ -34,3 +34,9 @@
   fixtures hold only the lines S-001 J9 quotes from it at 677fe5a (the open sprint's title and
   status line, the last ledger entry's heading, `date:` and `licenses_next:` lines), in the files'
   real form, with placeholder text where the spec quotes nothing.
+- `j11-3117150/`: Service-Desk's records at 3117150 and the model's timeline for that commit, the
+  oracle of J11's join test and AC50's and AC51's tests (its own README says how it was made).
+- `md-extremes/`: discovery map H5's extremes for AC42 (5 connected projects, 12 waits, long
+  titles). NOT real records: written for the test, in the real records' forms.
+- `accepted-m2/`: `_headers` and `index.html` as main had them at 33d390a, for AC42's
+  "unchanged or stricter" check without git history (its README says why).

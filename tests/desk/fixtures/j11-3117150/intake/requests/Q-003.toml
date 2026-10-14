@@ -1,0 +1,10 @@
+kind = "research"
+question = """
+What can a web application do, today, to start, send messages to, monitor, or stop Claude Code sessions or Claude Agent SDK agents that work on GitHub repositories?
+
+Cover the documented routes (for example cloud sessions on claude.ai, the Claude Agent SDK, Claude Code in GitHub Actions, and any API for sessions), and for each: what it can and cannot do, the credentials it needs and where they must live, the cost model, rate or usage limits, and how session output can be read back. State plainly where documentation is missing or unclear.
+
+The decision it serves: an informed ruling by the owner on whether Service Desk should later include running project work from the desk (docs/PROJECT.md §7 U3). Nothing is built from this answer without that ruling.
+
+Depth: 3, a graded memo. Topics: claude-code, agents, automation, cost.
+"""

@@ -2,7 +2,7 @@
 // panel and EXP-004 links). Renders the read model with DOM text nodes; record text goes through
 // the escaping markdown renderer only. Routes: #/ (Universe), #/p/<project>, and under it
 // card/<path>, q/<name>, hold/<path>, merge/<path>, asked and agents; ?exp=001 and ?exp=004 are
-// the experiment panels.
+// the experiment panels; ?sandbox is MD's sandbox view (sandbox.js), and without it nothing of it runs.
 
 import CONFIG from './lib/config.js';
 import { createDesk, callFunction } from './lib/scheduler.js';
@@ -635,5 +635,6 @@ function startExp001() {
 const exp = params.get('exp');
 if (exp === '001') startExp001();
 else if (exp === '004') startExp004();
+else if (params.has('sandbox')) import('./sandbox.js').then((m) => m.startSandbox()); // MD's sandbox view (AC43 B)
 else startDesk();
 

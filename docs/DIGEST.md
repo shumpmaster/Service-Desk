@@ -1,5 +1,5 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-10-14: 11 active rulings and 0 kills, from 11 ledger entries.
+As of 2026-10-14: 13 active rulings and 0 kills, from 13 ledger entries.
 
 ## Active rulings
 
@@ -21,6 +21,8 @@ As of 2026-10-14: 11 active rulings and 0 kills, from 11 ledger entries.
 | L-0009 | EXP-005 (experiments/EXP-005-md-glance-test.md) stays frozen and unedited. Wherever it says "he", "him" or "his" for the person running the glance test (lines 23, 24, 31, 32, … | 2026-10-14 | never |
 | L-0010 | Yes, for records-only pull requests (risk class R0) with CI green and any required review passed; each one is listed for the owner in the … | 2026-10-14 | 2026-10-15 |
 | L-0011 | Copied byte for byte from the model at 7fe41d1: governance/checks/ governance_checks.py, orchestrator.py, orchestrator_git.py, session_runner.py and v3_checks.py (S-029). governance/standards/definition-of-ready.md takes the model's "including the owner and … | 2026-10-14 | never |
+| L-0012 | The five screens (Home, Project, Team, Timeline, and Queue with its response card) are the one design direction, and the design lab ends (AC43 A; … | 2026-10-14 | never |
+| L-0013 | The Orchestrator commits it, word for word from the Reviewer's return, on PR #72 and future pull requests, as CLAUDE.md and reviews/README.md already describe. The … | 2026-10-14 | never |
 
 ## Kills
 None.

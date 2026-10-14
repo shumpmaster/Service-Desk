@@ -20,11 +20,7 @@ file in a browser: each is a self-contained mock-up built from Service Desk's re
 
 ## The pick
 
-The lab ends when the owner picks a direction (S-001 AC43). The question is open:
-[questions/P-001-design-pick.md](../../questions/P-001-design-pick.md). It carries the Chief of Staff's check of
-every screen against the plan's hard limits (14 Oct): nothing scrolls sideways at 360 px, motion stops when reduced
-motion is on, and each screen names the design research rows it rests on (Q-013). One gap is the build's to close:
-the screens load Inter from Google, which the desk's security headers forbid, so the desk carries its own copy.
+The owner picked the five screens on 14 Oct, after trying the built candidate on a snapshot of the real records: "These are the screens I want" ([decisions/questions/P-001-design-pick.md](../../decisions/questions/P-001-design-pick.md)). The desk uses the phone's own font, not Inter. The lab ends here; the owner confirms the candidate again on the preview, against live data.
 
 ## The shared look (join-up pass, 10 Oct)
 

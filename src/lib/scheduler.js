@@ -11,10 +11,10 @@ export const STALE_MS = 180_000;
 export const BLOB_BATCH = 25;
 const MAX_BLOB_CALLS_PER_CYCLE = 6;
 // The blob cache holds parsed records, so its key names the parse's shape: bump it whenever a
-// parser's output changes (v2: model S-020's frozen `usage` form, J10), and list the old keys here
+// parser's output changes (v2: model S-020's frozen `usage` form, J10; v3: J11's log rows and merge shas), and list the old keys here
 // so their entries are dropped, not left to fill storage.
-export const BLOB_CACHE_KEY = 'desk-blobs-v2';
-export const OLD_BLOB_CACHE_KEYS = ['desk-blobs-v1'];
+export const BLOB_CACHE_KEY = 'desk-blobs-v3';
+export const OLD_BLOB_CACHE_KEYS = ['desk-blobs-v1', 'desk-blobs-v2'];
 const HISTORY_CACHE_KEY = 'desk-history-v1';
 const COMPARE_CACHE_KEY = 'desk-compare-v1';
 
@@ -80,7 +80,7 @@ function newProjectState(project) {
  * Create the desk's reader.
  * opts: { config, call(path, body) → Promise<{ ok, status, json?, reason?, words? }>, clock:
  *   { now(), setTimeout(fn, ms), clearTimeout(id) }, store (createStore), isVisible(),
- *   onChange() }
+ *   onChange(), j11 (true in the MD sandbox only: also read J11's optional records) }
  */
 export function createDesk(opts) {
   const { config, call, clock, store } = opts;
@@ -161,7 +161,8 @@ export function createDesk(opts) {
   function missing(st) {
     const now = new Date(clock.now());
     const records = recordsFor(st);
-    const need = neededReads(st.project, st.tree, records, now, { history: historyFor(st), head: st.head, compare: compareFor(st) });
+    const need = neededReads(st.project, st.tree, records, now, { history: historyFor(st), head: st.head, compare: compareFor(st),
+      j11: Boolean(opts.j11) });
     const byPath = new Map();
     const shasOf = (list) => {
       const out = [];
@@ -310,7 +311,10 @@ export function createDesk(opts) {
     for (; calls < MAX_BLOB_CALLS_PER_CYCLE; calls++) {
       const need = missing(st);
       if (!need.optional.shas.length && !need.optional.history.length) break;
-      const [batch] = batches(need.optional.shas, need.optional.history, BLOB_BATCH);
+      // The MD sandbox (opts.j11) asks for its optional blobs before the rulings' history reads, so
+      // its screens fill in the first cycle; without it the order is M2's.
+      const [batch] = opts.j11 && need.optional.shas.length ? batches(need.optional.shas, [], BLOB_BATCH)
+        : batches(need.optional.shas, need.optional.history, BLOB_BATCH);
       const { res, progress } = await blobCall(st, need, batch);
       // An optional read that fails is tried again on a later cycle; it never fails the project,
       // except a rate limit, which every read must respect.
@@ -431,6 +435,12 @@ export function createDesk(opts) {
     });
   };
   desk.cacheSize = () => blobCache.size;
+  /** J11 (the MD sandbox): the project's tree, its parsed records and its run pages, as last read. */
+  desk.snapshot = (name) => {
+    const st = states.get(name);
+    return { tree: st.tree, records: recordsFor(st), history: historyFor(st), head: st.head,
+      pullPages: st.pullRaws || [], checkPages: st.checksRead ? st.checkRaws : null, lastSuccessAt: st.lastSuccessAt };
+  };
   return desk;
 }
 

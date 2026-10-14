@@ -23,7 +23,7 @@ import { createSeen } from './lib/seen.js';
 import {
   SANDBOX_MARKER, DEFERRED_WORDS, NOT_RECORDED, NOT_AVAILABLE, V25_NOT_RECORDED, OWNER_NEXT_LINES,
   j11Records, timelineOf, phaseView, finishedWords, phaseMilestones, whereLine, queueView, pillView, ballLines,
-  sheetView, trackerSteps, doneToday, cardBoxText, questionBoxText, VERDICT_START, ruleLine, boxPlan, GROUPS, treeLink, deskWords,
+  sheetView, trackerSteps, doneToday, cardBoxText, questionBoxText, VERDICT_START, ruleLine, boxPlan, GROUPS, treeLink,
 } from './lib/sandbox.js';
 import { timelineView, teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
 
@@ -39,14 +39,15 @@ function h(tag, attrs = {}, ...children) {
   for (const [k, v] of Object.entries(attrs || {})) {
     if (v == null || v === false) continue;
     if (k === 'class') el.className = v;
-    else if (k === 'html') el.innerHTML = deskWords(v); // renderMarkdown's escaped output; the word has no markup
+    else if (k === 'html') el.innerHTML = v; // only ever renderMarkdown's escaped output
     else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
-    else el.setAttribute(k, v === true ? '' : (k === 'href' ? v : deskWords(v)));
+    else el.setAttribute(k, v === true ? '' : v);
   }
-  // AC50: every drawn word goes through deskWords, so "Graduated" from a record or a table reads "Done".
+  // Record text is drawn exactly as written. AC50's "Done" for "Graduated" is applied to the desk's
+  // own labels and the model's milestone names only (lib/sandbox.js, deskWords).
   for (const c of children.flat(Infinity)) {
     if (c == null || c === false) continue;
-    el.append(c instanceof Node ? c : document.createTextNode(deskWords(String(c))));
+    el.append(c instanceof Node ? c : document.createTextNode(String(c)));
   }
   return el;
 }

@@ -24,8 +24,9 @@ export const JUST_FINISHED_MS = 30 * 60e3; // AC49: "Just finished" for 30 minut
 export const OWNER_NEXT_LINES = 3; // AC49: the owner's tile shows the next 3 queue lines (C)
 
 /**
- * AC50: "Done", never "Graduated", on every screen. The model's own word stays in its records and
- * tables (Launch-5's name, a record's text); the desk translates it wherever it draws it.
+ * AC50: "Done", never "Graduated", as a label on the screen. Applied to the model's milestone names
+ * the desk draws from its table (Launch-5 is "Graduated" there); record text (log lines, cards,
+ * questions, pull-request titles) is always drawn exactly as written.
  */
 export const deskWords = (s) => String(s).replace(/\bGraduated\b/g, 'Done');
 

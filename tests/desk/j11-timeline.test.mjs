@@ -262,29 +262,58 @@ function drawn(node) {
   return out;
 }
 
-test('AC50 (review B2): no drawn text on any route of the sandbox, on the fixture\'s records, reads "Graduated"; Launch-5 reads "Done"', async () => {
+async function crawl(app, onRoute) {
+  const seen = new Set();
+  const queue = ['#/'];
+  while (queue.length && seen.size < 500) {
+    const h = queue.shift();
+    if (seen.has(h)) continue;
+    seen.add(h);
+    await app.go(h);
+    onRoute(h);
+    for (const l of linksIn(app.view)) if (l.href && l.href.startsWith('#/') && !seen.has(l.href)) queue.push(l.href);
+  }
+  return seen;
+}
+
+const CONFIG1 = { ownerLogin: 'shumpmaster', ownerTimeZone: 'America/Chicago', v5Clock: { days: ['Mon'], from: '07:00', to: '22:00' }, linkCap: 6000,
+  projects: [SD3] };
+
+test('AC50 (review B2): "Graduated" is never a label or a milestone name on any route of the 3117150 fixture; Launch-5 reads "Done"', async () => {
+  // The fixture's record files hold no "Graduated" (only the model's table does), so on these
+  // records any "Graduated" drawn would be a desk label or a milestone name.
   const files = j11Files();
-  const config = { ownerLogin: 'shumpmaster', ownerTimeZone: 'America/Chicago', v5Clock: { days: ['Mon'], from: '07:00', to: '22:00' }, linkCap: 6000,
-    projects: [SD3] };
-  const app = await loadSandbox({ config, repos: { 'Service-Desk': repo(files) }, now: Date.parse('2026-10-14T15:00:00Z') });
+  assert.ok(Object.values(files).every((t) => !t.includes('Graduated')));
+  const app = await loadSandbox({ config: CONFIG1, repos: { 'Service-Desk': repo(files) }, now: Date.parse('2026-10-14T15:00:00Z') });
   try {
     await app.advance(1000);
-    const seen = new Set();
-    const queue = ['#/'];
     let launch5 = false;
-    while (queue.length && seen.size < 500) {
-      const h = queue.shift();
-      if (seen.has(h)) continue;
-      seen.add(h);
-      await app.go(h);
-      const text = drawn(app.view);
-      assert.doesNotMatch(text, /Graduated/, `${h} draws "Graduated"`);
+    const seen = await crawl(app, (h) => {
+      assert.doesNotMatch(drawn(app.view), /Graduated/, `${h} draws "Graduated"`);
       if (/Done\s*Launch-5/.test(app.view.textContent)) launch5 = true;
-      for (const l of linksIn(app.view)) if (l.href && l.href.startsWith('#/') && !seen.has(l.href)) queue.push(l.href);
-    }
+    });
     assert.ok(seen.size > 30, `${seen.size} routes`);
     assert.ok(seen.has('#/p/Service-Desk/timeline/Launch-i1'));
     assert.ok(launch5, 'Launch-5 is drawn as "Done"');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC50: a record\'s own text holding "Graduated" is drawn exactly as written; the milestone label still reads "Done"', async () => {
+  const files = { ...j11Files(),
+    'questions/P-001-graduation-wording.md': '# Ruling needed: keep the word Graduated in the model\'s records?\n\nWHY: The model writes Graduated.\nOPTIONS:\n  A. Keep Graduated.\n  B. Change it.\nRECOMMENDATION: A\nRISK CLASS: R0\nREVERSIBILITY: reversible\nBLAST RADIUS: none\nDEFAULT: A\nTIMEOUT: 24\n' };
+  const app = await loadSandbox({ config: CONFIG1, repos: { 'Service-Desk': repo(files) }, now: Date.parse('2026-10-14T15:00:00Z') });
+  try {
+    await app.advance(1000);
+    await app.go('#/p/Service-Desk/queue');
+    assert.ok(app.view.textContent.includes("keep the word Graduated in the model's records?"), 'the queue row quotes the record');
+    await app.go('#/p/Service-Desk/queue/q%3AP-001-graduation-wording');
+    assert.ok(app.view.textContent.includes('The model writes Graduated.'), 'the sheet quotes WHY unchanged');
+    assert.ok(drawn(app.view).includes('Keep Graduated.'), 'and its options unchanged');
+    await app.go('#/p/Service-Desk/timeline/Launch-i1');
+    assert.match(app.view.textContent, /Done\s*Launch-5/);
+    assert.doesNotMatch(app.view.textContent, /Graduated/, 'no label on the timeline reads "Graduated"');
   } finally {
     app.restore();
   }

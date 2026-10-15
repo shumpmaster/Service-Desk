@@ -13,6 +13,7 @@ export const SPEC_PATH_RE = /^specs\/(S-\d{3,})(?=-|\.md$)[^/]*\.md$/;
 export const REQUEST_PATH_RE = /^intake\/requests\/(Q-\d{3,})\.toml$/;
 export const GATE_CASE_RE = /^docs\/gates\/([PQE]-\d{3,})\/(design|build|launch)-gate-(\d+)-case\.md$/;
 export const HANDOVER_PREFIX = 'docs/handover/';
+export const README_PATH = 'README.md'; // AC54: read for every connected project, a v2.5 one too
 export const HANDOVER_TEMPLATE = 'docs/handover/_TEMPLATE.md';
 
 /** A card gate's phase for its gate document (docs/gates/_GATE.md:4): dor → design, criteria → build, launch → launch. */
@@ -27,6 +28,7 @@ export function j11Kind(path) {
   if (SPEC_PATH_RE.test(path) && !path.startsWith('specs/_')) return 'spec';
   if (REQUEST_PATH_RE.test(path)) return 'request';
   if (GATE_CASE_RE.test(path)) return 'gate-case';
+  if (path === README_PATH) return 'readme-root';
   return null;
 }
 
@@ -39,11 +41,64 @@ export function parseJ11(kind, text, path) {
     case 'spec': return parseSpecDoc(text, path);
     case 'request': return parseRequest(text);
     case 'gate-case': return parseGateCase(text);
+    case 'readme-root': return { summary: readmeSummary(text) };
     default: return null;
   }
 }
 
 const split = (text) => String(text == null ? '' : text).split('\n');
+
+// ---------------------------------------------------------------------------
+// README.md (AC54 (a)): the brief project summary on each Home card
+
+const README_NOT_PARAGRAPH_RE = /^(?:#|-|\*|\+|>|\||<|```|~~~|\d+\.)/;
+const README_FENCE_RE = /^(```|~~~)/;
+
+/** Inline Markdown as plain text (AC54): emphasis marks and backticks dropped, a link shows only its text. */
+export function plainInline(s) {
+  return String(s)
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]+)\]\[[^\]]*\]/g, '$1')
+    .replace(/`/g, '')
+    .replace(/(\*\*|__)(?=\S)([\s\S]*?\S)\1/g, '$2')
+    .replace(/(^|[^\w*])\*(?=\S)([^*]*?\S)\*(?=$|[^\w*])/g, '$1$2')
+    .replace(/(^|[^\w])_(?=\S)([^_]*?\S)_(?=$|[^\w])/g, '$1$2')
+    .replace(/~~(?=\S)([\s\S]*?\S)~~/g, '$1');
+}
+
+/**
+ * The first paragraph after the title (AC54; the parsing rules are the Definer's, C): the title is
+ * the first line starting `# `; a block is a run of non-blank lines; the summary is the first
+ * block after the title whose first line doesn't start with `#`, `-`, `*`, `+`, `>`, `|`, `<`, a
+ * code fence or a number and a full stop; other blocks are skipped; a heading ends the search.
+ * Its lines are joined with single spaces and its inline Markdown shown as plain text. Null when
+ * there is no title or no such paragraph.
+ */
+export function readmeSummary(text) {
+  const lines = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n');
+  const t = lines.findIndex((l) => l.startsWith('# '));
+  if (t < 0) return null;
+  let i = t + 1;
+  while (i < lines.length) {
+    while (i < lines.length && !lines[i].trim()) i++;
+    if (i >= lines.length) return null;
+    const first = lines[i].replace(/^ {0,3}/, '');
+    if (first.startsWith('#')) return null; // a heading after the title ends the search
+    if (README_FENCE_RE.test(first)) {
+      const fence = README_FENCE_RE.exec(first)[1];
+      i++;
+      while (i < lines.length && !lines[i].replace(/^ {0,3}/, '').startsWith(fence)) i++;
+      i++;
+      continue;
+    }
+    const block = [];
+    while (i < lines.length && lines[i].trim()) block.push(lines[i++]);
+    if (README_NOT_PARAGRAPH_RE.test(first)) continue;
+    return plainInline(block.map((l) => l.trim()).join(' '));
+  }
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // docs/PROJECT.md (v3_checks.py: part1_sections, value_targets, milestone_lines)

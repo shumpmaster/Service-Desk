@@ -1,6 +1,8 @@
 # Service Desk
 
-The owner's control panel, redesigned under the AI Build Operating Model v3 (the model's L-0115, D-081). What it is for is being captured in docs/PROJECT.md.
+The owner's phone-first desk over every project the agents run: one card per project showing what waits on the owner, what the team is doing and where the work is heading, with each answer opened in GitHub ready to commit. It reads the projects' records and holds no write access.
+
+Redesigned under the AI Build Operating Model v3 (the model's L-0115, D-081); its brief is docs/PROJECT.md.
 
 This project runs under the AI Build Operating Model
 (version: governance/OPERATING_MODEL_VERSION). Start with AGENTS.md. In a v2.x project,

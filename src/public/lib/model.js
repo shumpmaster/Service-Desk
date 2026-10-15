@@ -12,7 +12,7 @@ import {
 } from './records.js';
 import { whenText, durationText } from './timefmt.js';
 import { j11Kind, parseJ11, PROJECT_DOC_PATH, SURFACES_PATH, ORCH_WORKFLOW_PATH, SPEC_PATH_RE, REQUEST_PATH_RE,
-  GATE_PHASE } from './j11.js';
+  GATE_PHASE, README_PATH } from './j11.js';
 import { cardRows, questionRows, cardSummary, v5Waits, sessionRows, timelines, V25_NO_CARDS, V25_ANSWERED } from './asked.js';
 
 export const NOT_RECORDED = 'not recorded';
@@ -26,6 +26,18 @@ export function logMonths(now) {
   const fmt = (yy, mm) => `${yy}-${String(mm + 1).padStart(2, '0')}`;
   const prev = m === 0 ? fmt(y - 1, 11) : fmt(y, m - 1);
   return [prev, fmt(y, m)];
+}
+
+/**
+ * Only the owner's rulings count (AC52, AC55; plan review round 1, B1): a file in
+ * decisions/questions/ whose line 1 starts `Ruling:`, or `Decision:` for a target-user profile
+ * approval (`<item>-user-profile-<n>.md`). A `-notes.md` file or a Critic's verdict is not one.
+ */
+export function isOwnerRuling(path, rec) {
+  const name = questionAnswerName(path);
+  if (!name || !rec || typeof rec.line1 !== 'string') return false;
+  if (/^Ruling:/.test(rec.line1)) return true;
+  return /-user-profile-[0-9]+$/.test(name) && /^Decision:/.test(rec.line1);
 }
 
 /** The kind of record a path holds, for parsing and caching (null: not read by the desk). */
@@ -48,6 +60,7 @@ export function recordKind(path, model) {
     if (path === LEDGER_PATH) return 'ledger';
     if (isSprintPath(path)) return 'sprint';
   }
+  if (path === README_PATH) return 'readme-root'; // AC54: the summary, for every project (read only with ctx.j11)
   return null;
 }
 
@@ -66,11 +79,15 @@ export function parseRecord(kind, text, path) {
     case 'merge-card': return { text, ...parseMergeCard(text) };
     case 'merges': return parseMerges(text);
     case 'outcomes': return parseOutcomes(text);
-    case 'ruling': return { ruling: parseRuling(text), proxy: /^Proxy:/m.test(String(text)) };
+    case 'ruling': {
+      // line1 and line2Proxy: the owner's "Your last action" and "Done today" (AC52, AC55, MD sandbox).
+      const ls = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n');
+      return { ruling: parseRuling(text), proxy: /^Proxy:/m.test(String(text)), line1: ls[0] || '', line2Proxy: /^Proxy:/.test(ls[1] || '') };
+    }
     case 'question': return { text, ...parseQuestion(text, (questionName(path) || path)) };
     case 'ledger': return parseLedger(text);
     case 'sprint': return parseSprint(text);
-    case 'project-doc': case 'surfaces': case 'orch-workflow': case 'spec': case 'request': case 'gate-case':
+    case 'project-doc': case 'surfaces': case 'orch-workflow': case 'spec': case 'request': case 'gate-case': case 'readme-root':
       return parseJ11(kind, text, path);
     default: return null;
   }
@@ -248,11 +265,26 @@ export function neededReads(project, tree, records, now, ctx = {}) {
         if (phase) opt(`docs/gates/${card.item}/${phase}-gate-${card.n}-case.md`);
       }
       for (const path of tree.keys()) if (/^decisions\/questions\/P-[0-9]+-(groundwork|discovery)\.md$/.test(path)) opt(path);
+      // AC52's "Done today" and AC55's "Your last action": the owner's rulings, newest first by their
+      // oldest commit, read until one older than a day and a half is known to be the owner's.
+      const rulings = [...tree.keys()].filter((p) => questionAnswerName(p) && history.get(p) && history.get(p).oldest)
+        .sort((a, b) => Date.parse(history.get(b).oldest) - Date.parse(history.get(a).oldest));
+      for (const path of rulings) {
+        const rec = records.get(path);
+        if (!rec || rec.line1 === undefined) {
+          opt(path);
+          continue;
+        }
+        if (isOwnerRuling(path, rec) && now - Date.parse(history.get(path).oldest) > 36 * 3600e3) break;
+      }
     }
   } else {
     add(LEDGER_PATH);
     for (const path of tree.keys()) if (isSprintPath(path)) add(path);
   }
+  // AC54 (the MD sandbox only): README.md's first paragraph, for every project, a v2.5 one too.
+  // Optional like J11's other reads: it never holds a read back or makes it fail.
+  if (ctx.j11) addTo(optBlobs, README_PATH);
   for (const q of openQuestions(tree, project.model)) {
     add(q.path);
     if (!hist.includes(q.path)) hist.push(q.path);

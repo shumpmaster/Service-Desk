@@ -6,6 +6,7 @@
 // available") or "–" with the reason, never a value of the desk's own, a zero, or a bar sized by a
 // fraction. Codes come after the plain words.
 
+import { isOwnerRuling } from './model.js';
 import { STATUS_RE, LOG_RE, MERGES_PATH, parseCardPath, questionAnswerName, parseWorkflowRuns, stageName, entryWords,
   OUTCOMES_PATH, ROUTING_PATH, entryShape, timeLimitMinutes, parseAnswerPath } from './records.js';
 import { PROJECT_DOC_PATH, SURFACES_PATH, ORCH_WORKFLOW_PATH, SPEC_PATH_RE, REQUEST_PATH_RE, HANDOVER_PREFIX,
@@ -714,25 +715,101 @@ export function sheetView(project, model, snap, j, row) {
   return { ...base, what: row.text, why: f.words || NOT_RECORDED, options: [], recommendation: null, links: [{ text: 'Its status file', href: f.link }] };
 }
 
-/** "Done today" (AC52): cards answered today by their `decision` entry's time, questions by their answer file's oldest commit. */
-export function doneToday(project, model, snap, now, tz) {
-  const today = dayKey(now, tz);
-  const out = [];
-  for (const e of (model && model.allEntries) || []) {
-    if (e.shape !== 'decision' || typeof e.record !== 'string') continue;
-    const at = Date.parse(e.time);
-    if (!Number.isFinite(at) || dayKey(new Date(at), tz) !== today) continue;
-    const card = /^decisions\/([A-Z]+-[0-9]+)\/(.+)\.md$/.exec(e.record);
-    out.push({ text: `${card ? `${card[1]} ${card[2]}` : e.record}: you answered ${e.word}`, at, words: `at ${hhmm(new Date(at), tz)}` });
-  }
+// ---------------------------------------------------------------------------
+// AC55 and AC52: the owner's recorded actions
+
+const NO_TIME = '\u0000';
+/** J9's decision words with no time ("P-001: you answered dor-4 with build", " (proxy)" kept). */
+export const decisionWords = (e) => entryWords({ ...e, shape: 'decision' }, NO_TIME).replace(`, ${NO_TIME}`, '');
+
+/** A ruling's words (AC52, AC55): its first line without the leading `Ruling:` (or `Decision:`), whole. */
+export function rulingWords(rec) {
+  return String(rec.line1).replace(/^(Ruling|Decision):\s*/, '');
+}
+
+/** The decision entries the desk reads (J2): every month once J11's reads are in, else J9's two. */
+function decisionEntries(model, j) {
+  const rows = j && j.ready ? j.logRows.map((o) => ({ ...o, shape: entryShape(o) })) : (model && model.allEntries) || [];
+  return rows.filter((e) => e.shape === 'decision' && typeof e.time === 'string' && Number.isFinite(Date.parse(e.time)));
+}
+
+/**
+ * The owner's recorded actions in a project (AC52, AC55): card answers (the dispatch log's decision
+ * entries) and rulings (decisions/questions/<name>.md whose line 1 is the owner's), each with its
+ * time, words, code and link. `pending` lists what has not arrived yet (a ruling's commit time, or
+ * the line 1 of one that may be the latest). Every other file there is ignored, never shown.
+ */
+export function ownerActions(project, model, snap, j) {
+  const tree = (snap && snap.tree) || new Map();
+  const records = (snap && snap.records) || new Map();
   const history = (snap && snap.history) || new Map();
-  for (const [path, h] of history) {
-    const name = questionAnswerName(path);
-    if (!name || !h || !h.oldest) continue;
-    const at = Date.parse(h.oldest);
-    if (dayKey(new Date(at), tz) === today) out.push({ text: `${name}: ruled`, at, words: `at ${hhmm(new Date(at), tz)}` });
+  const out = [];
+  for (const e of decisionEntries(model, j)) {
+    const rec = typeof e.record === 'string' ? e.record : `decisions/${e.item}/${e.gate}-${e.card}.md`;
+    const card = /^decisions\/([A-Z]+-[0-9]+)\/(.+)\.md$/.exec(rec);
+    out.push({ kind: 'card', at: Date.parse(e.time), words: decisionWords(e), code: card ? `${card[1]} ${card[2]}` : rec,
+      link: treeLink(project, tree, rec), proxy: e.proxy === true, path: rec });
   }
-  return out.sort((a, b) => b.at - a.at);
+  const pending = [];
+  const rulings = [];
+  for (const path of tree.keys()) {
+    const name = questionAnswerName(path);
+    if (!name) continue;
+    const h = history.get(path);
+    if (!h) {
+      pending.push(path);
+      continue;
+    }
+    if (!h.oldest) continue;
+    rulings.push({ path, name, at: Date.parse(h.oldest) });
+  }
+  for (const r of rulings) {
+    const rec = records.get(r.path);
+    if (!rec || rec.line1 === undefined) {
+      r.unread = true;
+      continue;
+    }
+    if (!isOwnerRuling(r.path, rec)) continue;
+    out.push({ kind: 'ruling', at: r.at, words: rulingWords(rec), code: r.name, link: treeLink(project, tree, r.path), proxy: rec.line2Proxy === true, path: r.path });
+  }
+  out.sort((a, b) => b.at - a.at);
+  // A ruling not read yet that is newer than the newest known action may be the latest.
+  const newest = out.length ? out[0].at : -Infinity;
+  for (const r of rulings) if (r.unread && r.at >= newest) pending.push(r.path);
+  return { actions: out, pending };
+}
+
+export const MERGES_WHY = "your merges aren't recorded in what the desk reads";
+
+/**
+ * "Your last action" (AC55): the latest of the owner's recorded actions, as "<words> · <time>",
+ * then its code; "not recorded" with none; "not available yet" until every ruling's time (and the
+ * line 1 of any that could be the latest) has arrived; a v2.5 project's own words.
+ */
+export function lastAction(project, model, snap, j, now, tz) {
+  if (project.model !== 'v3') return { state: 'v25', text: 'Your last action: not recorded (operating model v2.5.1 records rulings in the ledger)', merges: MERGES_WHY };
+  if (!snap || !snap.tree) return { state: 'pending', text: 'Your last action: not available yet', merges: MERGES_WHY };
+  const { actions, pending } = ownerActions(project, model, snap, j);
+  if (pending.length) return { state: 'pending', text: 'Your last action: not available yet', why: `${pending.length} ruling record${pending.length === 1 ? '' : 's'} still being read`, merges: MERGES_WHY };
+  if (!actions.length) return { state: 'none', text: `Your last action: ${NOT_RECORDED}`, merges: MERGES_WHY };
+  const a = actions[0];
+  return { state: 'ok', action: a, words: `${a.words}${a.kind === 'ruling' && a.proxy ? ' (proxy)' : ''}`, when: whenText(new Date(a.at), now, tz),
+    text: `Your last action: ${a.words}${a.kind === 'ruling' && a.proxy ? ' (proxy)' : ''} · ${whenText(new Date(a.at), now, tz)}`, code: a.code, link: a.link, merges: MERGES_WHY };
+}
+
+/**
+ * "Done today" (AC52): the owner's actions answered today (in ownerTimeZone), newest first, each
+ * saying what was ruled, in words, with its code after (note 10): a card by its decision entry's
+ * time and J9's decision words; a ruling by its answer file's oldest commit and its line 1
+ * without `Ruling:` (or a profile approval's `Decision:`). Only the owner's rulings count.
+ */
+export function doneToday(project, model, snap, now, tz, j = null) {
+  const today = dayKey(now, tz);
+  const { actions } = ownerActions(project, model, snap, j);
+  return actions.filter((a) => dayKey(new Date(a.at), tz) === today).map((a) => ({
+    kind: a.kind, text: `${a.words}${a.kind === 'ruling' && a.proxy ? ' (proxy)' : ''}`, code: a.code, link: a.link, at: a.at,
+    words: `at ${hhmm(new Date(a.at), tz)}`,
+  }));
 }
 
 export { stageName, entryWords, PHASE_OF_STAGE, OUTCOMES_PATH, ROUTING_PATH, whenText, durationText, tidyNote, newFileUrl, parseCardPath };

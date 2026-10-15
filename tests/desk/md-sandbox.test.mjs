@@ -71,9 +71,11 @@ test('AC48: each card, pill and bar tap goes to the screen it names; every proje
     await app.go('#/p/Alpha');
     const hrefs = byClass(app.view, 'sb-btn').map((b) => b.attrs.href);
     assert.deepEqual(hrefs, ['#/p/Alpha/queue', '#/p/Alpha/team'], 'two buttons open the queue and the team');
-    // AC36: every M1 and M2 view stays reachable (the current desk's views, one tap down).
+    // AC36, as AC55 changed it (2026-10-15): inside the sandbox the M1 and M2 detail is reached
+    // through the views rebuilt in the new design, never through a link to the accepted views.
     const links = linksIn(app.view).map((l) => l.href);
-    for (const h of ['./#/p/Alpha', './#/p/Alpha/asked', './#/p/Alpha/agents']) assert.ok(links.includes(h), h);
+    for (const h of ['#/p/Alpha/pipeline', '#/p/Alpha/asked', '#/p/Alpha/agents']) assert.ok(links.includes(h), h);
+    assert.ok(!links.some((h) => h && h.startsWith('./#')), 'no link to an accepted view');
   } finally {
     app.restore();
   }
@@ -230,8 +232,10 @@ test('AC52: each tracker step and each "Done today" time against its record', ()
   const p = trackerSteps(project, { flag: { kind: 'pr' }, stillOpen: false }, { tree: new Map() }, []);
   assert.match(p[0].words, /no longer open/);
   assert.match(p[1].words, /not recorded/);
-  const done = doneToday(project, { allEntries: entries }, { history: new Map([['decisions/questions/X.md', { oldest: iso(NOW - 600e3) }]]) }, new Date(NOW), 'America/Chicago');
-  assert.deepEqual(done.map((d) => d.text), ['X: ruled', 'P-002 criteria-1: you answered proceed']);
+  // Note 10 (2026-10-15): each row says what was ruled, in words (a ruling's line 1, J9's decision words), with its code after.
+  const done = doneToday(project, { allEntries: entries }, { tree: new Map([['decisions/questions/X.md', {}]]), records: new Map([['decisions/questions/X.md', { line1: 'Ruling: B, the smaller screen', line2Proxy: false }]]),
+    history: new Map([['decisions/questions/X.md', { oldest: iso(NOW - 600e3) }]]) }, new Date(NOW), 'America/Chicago');
+  assert.deepEqual(done.map((d) => [d.text, d.code]), [['B, the smaller screen', 'X'], ['P-002: you answered criteria-1 with proceed', 'P-002 criteria-1']]);
   assert.equal(done[1].words, 'at 09:01', 'the decision entry\'s time, in ownerTimeZone');
 });
 
@@ -242,7 +246,7 @@ test('AC52: a pull request that leaves the queue while the page is open shows in
     setup.repos.Alpha.pulls = [];
     await app.advance(POLL_MS);
     await app.go('#/p/Alpha/queue');
-    assert.match(app.text(), /Alpha: a change to merge \(PR #80\): no longer open, time not recorded/);
+    assert.match(app.text(), /Alpha: a change to merge PR #80 no longer open, time not recorded/);
   } finally {
     app.restore();
   }

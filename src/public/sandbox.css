@@ -358,3 +358,32 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 .sb-pc .sb-ball .sb-light { margin-top: 4px; }
 .sb-pc .sb-muted { font-size: .74rem; }
 .sb-pc .sb-pill { font-size: .8rem; }
+
+/* Status: "Your last action" just above the waiting bar (AC55). */
+.sb-last { border-left: 3px solid var(--you); background: var(--surf); border-radius: var(--rs); padding: 6px 10px; margin: 4px 0 2px; }
+.sb-last-t { margin: 0; font-size: .9rem; }
+.sb-last-l { font-weight: 800; color: var(--you); }
+.sb-last .sb-why { font-size: .74rem; }
+.sb-last a.code { text-decoration: underline; }
+
+/* The rebuilt detail views (AC55): Pipeline, Time asked and Agents, in the shared look. */
+.sb-items, .sb-asks, .sb-sessions, .sb-tlx { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sb-item { background: var(--surf); border: 1px solid var(--line); border-left: 4px solid var(--agent); border-radius: var(--r); padding: 8px 12px; }
+.sb-item p { margin: 2px 0; }
+.sb-item-l { display: flex; gap: 8px; align-items: center; font-size: .9rem; }
+.sb-item-l.you { color: var(--you); font-weight: 700; }
+.sb-item-l.you::before { content: "◆"; font-size: .7rem; }
+.sb-wait-b { display: grid; gap: 2px; padding: 8px 10px; }
+.sb-ask { display: grid; gap: 2px; background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 8px 12px; }
+.sb-ask.open { border-left: 4px solid var(--you); }
+.sb-sess { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 4px 12px; }
+.sb-sess > details > summary { cursor: pointer; min-height: 44px; display: grid; gap: 2px; align-content: center; }
+.sb-sess-h { display: flex; gap: 8px; align-items: center; }
+.sb-usage { margin: 4px 0 8px; padding-left: 16px; }
+.sb-tlx-ev { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
+.sb-tlx-e { display: grid; gap: 2px; }
+.sb-axis { display: block; width: 100%; height: 8px; }
+.sb-axis .track { fill: var(--line); }
+.sb-axis .bar { fill: var(--agent); }
+.sb-axis .bar.card { fill: var(--you); }
+.sb-axis .bar.open { opacity: .6; }

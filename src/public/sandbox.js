@@ -14,10 +14,10 @@
 import DEFAULT_CONFIG from './lib/config.js';
 import { createDesk, callFunction, errorText } from './lib/scheduler.js';
 import { createStore } from './lib/store.js';
-import { safeBox, orderBoxes, screenState } from './lib/universe.js';
+import { safeBox, orderBoxes, screenState, boxStateText } from './lib/universe.js';
 import { renderMarkdown } from './lib/markdown.js';
 import { hhmm, durationText, whenText } from './lib/timefmt.js';
-import { v5Footer } from './lib/asked.js';
+import { v5Footer, usageLines, notReadText } from './lib/asked.js';
 import { routeParts, guardRender, boot, SIGNED_OUT_STATE } from './lib/page.js';
 import { createSeen } from './lib/seen.js';
 import {
@@ -26,7 +26,7 @@ import {
   sheetView, trackerSteps, doneToday, cardBoxText, questionBoxText, VERDICT_START, ruleLine, boxPlan, GROUPS, treeLink, waitWords, youWaitText,
 } from './lib/sandbox.js';
 import { timelineView, teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
-import { summaryView, latestText, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords } from './lib/sandbox.js';
+import { summaryView, latestText, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
 
 let CONFIG = DEFAULT_CONFIG; // J7; the tests pass their own (AC42's five projects)
 let TZ = CONFIG.ownerTimeZone;
@@ -240,7 +240,7 @@ function noteDepartures(name, q) {
       if (now.has(k)) continue;
       const r = s.last.get(k);
       if (r && (r.kind === 'pr' || r.kind === 'hold' || r.kind === 'merge') && !s.left.some((x) => x.key === k)) {
-        s.left.push({ key: k, text: `${r.text}${r.code ? ` (${r.code})` : ''}: no longer open, time not recorded` });
+        s.left.push({ key: k, title: r.text, code: r.code, text: `${r.text}${r.code ? ` (${r.code})` : ''}: no longer open, time not recorded` });
       }
     }
   }
@@ -520,6 +520,7 @@ function renderStatus(p) {
     marker(),
     projectHeader(name, 'Current status'),
     h('p', { class: 'sb-lead' }, where.sentence),
+    lastActionNode(p),
     h('div', { class: 'sb-actions' },
       h('a', { class: `sb-btn ${q.waiting ? 'you' : ''}`, href: go('p', name, 'queue') }, queueWords),
       h('a', { class: 'sb-btn ghost', href: go('p', name, 'team') }, ball[0].who === 'you' ? null : h('span', { class: `sb-light${ball.some((b) => b.lit) ? ' lit' : ''}`, 'aria-hidden': 'true' }), `Team: ${ball[0].text} ›`)),
@@ -540,12 +541,14 @@ function renderStatus(p) {
         h('dt', {}, 'Items'), h('dd', {}, V25_NOT_RECORDED))));
   }
   body.push(h('p', {}, opener('info', go('p', name, 'info'), { class: 'sb-infobtn' }, icon('info'), 'About the phases')));
+  // AC55 (note 7): "More detail" opens the Pipeline, Time asked and Agents views drawn in the new
+  // design inside the sandbox; nothing here links to the accepted views.
   body.push(h('details', { class: 'sb-card sb-more', key: 'more-detail-fold' }, h('summary', { key: 'more-detail' }, h('span', { class: 'sb-h2 flat' }, 'More detail')),
     h('p', { class: 'sb-muted small' }, `CI on ${project.defaultBranch}: ${model ? model.ci : NOT_RECORDED}`),
     h('ul', { class: 'sb-links' },
-      h('li', {}, h('a', { href: `./#/p/${encodeURIComponent(name)}` }, 'Pipeline, waits, CI and activity'), h('span', { class: 'sb-muted small' }, ' (the current desk view)')),
-      h('li', {}, h('a', { href: `./#/p/${encodeURIComponent(name)}/asked` }, 'Time asked of you'), h('span', { class: 'sb-muted small' }, ' (the current desk view)')),
-      project.model === 'v3' ? h('li', {}, h('a', { href: `./#/p/${encodeURIComponent(name)}/agents` }, 'Agents and usage'), h('span', { class: 'sb-muted small' }, ' (the current desk view)')) : null)));
+      h('li', {}, h('a', { href: go('p', name, 'pipeline'), key: 'more:pipeline' }, project.model === 'v3' ? 'Pipeline: items and waits' : 'Reduced view and waits')),
+      h('li', {}, h('a', { href: go('p', name, 'asked'), key: 'more:asked' }, 'Time asked of you')),
+      h('li', {}, h('a', { href: go('p', name, 'agents'), key: 'more:agents' }, 'Agents: sessions, timeline and usage')))));
   const out = [h('section', { class: 'sb-screen' }, body, bottomBar(name, 'status', q.waiting))];
   if (nav.route.sheet === 'info') {
     out.push(sheetFrame(go('p', name), 'About the phases', [
@@ -553,6 +556,182 @@ function renderStatus(p) {
       h('p', { class: 'sb-muted small' }, 'The desk shows the first four, then Done: where a project stands once you pass its Launch gate. A finished phase reads "Finished".')]));
   }
   return out;
+}
+
+/** "Your last action" (AC55, note 6): just above the bar that says whether anything waits on the owner. */
+function lastActionNode(p) {
+  const la = lastAction(p.project, p.model, p.snap, p.j, new Date(Date.now()), TZ);
+  const name = p.project.name;
+  return h('div', { class: 'sb-last', key: 'last-action' },
+    la.state === 'ok'
+      ? h('p', { class: 'sb-last-t' }, h('span', { class: 'sb-last-l' }, 'Your last action: '), la.words, ' · ',
+        h('span', { live: () => whenText(new Date(la.action.at), new Date(Date.now()), TZ) }), ' ', la.link ? ext(la.link, la.code, 'code') : code(la.code))
+      : h('p', { class: 'sb-last-t' }, la.text),
+    h('details', { class: 'sb-why', key: `last-why:${name}` }, h('summary', {}, 'Your merges?'), h('p', { class: 'small' }, `Not in this line: ${la.merges} (the desk reads only open pull requests).`)));
+}
+
+// ---------------------------------------------------------------------------
+// AC55: the Pipeline, Time asked and Agents views, in the new design, with the same facts as the
+// accepted views (AC9–AC12, AC20–AC23): the same values and words, from the same records.
+
+const whenOr = (d) => (d ? whenText(new Date(d), new Date(Date.now()), TZ) : 'not recorded');
+
+function detailScreen(p, title, kids) {
+  const name = p.project.name;
+  return h('section', { class: 'sb-screen sb-detail' }, marker(), projectHeader(name, title), kids, bottomBar(name, 'status', p.q.waiting));
+}
+
+/** AC11 and AC12's waits, each opening its response sheet in the queue (never the accepted views). */
+function waitsNode(p) {
+  const m = p.model;
+  const name = p.project.name;
+  if (!m.flagged.length) return h('p', { class: 'sb-muted' }, 'Nothing waiting on you here.');
+  return h('ul', { class: 'sb-qlist' }, m.flagged.map((f) => {
+    const target = f.kind === 'pr' ? ext(f.link, f.title) : opener(`wait:${f.key}`, go('p', name, 'queue', f.key), {}, f.title);
+    return h('li', { class: 'sb-qrow g-decisions sb-wait' }, h('div', { class: 'sb-wait-b' }, h('span', { class: 'sb-qt' }, target),
+      h('span', { class: 'sb-muted small' }, f.words, f.card && f.card.cantParse ? ` · can't parse: ${f.card.cantParse}` : '')));
+  }));
+}
+
+function renderPipeline(p) {
+  const m = p.model;
+  const kids = [];
+  kids.push(h('p', { class: 'sb-lead small' }, boxStateText(p.box, TZ)));
+  kids.push(h('p', { class: 'sb-muted small' }, `CI on ${m.defaultBranch}: ${m.ci}`));
+  kids.push(h('h2', { class: 'sb-h2' }, 'Waiting on you'), waitsNode(p));
+  if (m.model !== 'v3') {
+    kids.push(h('h2', { class: 'sb-h2' }, 'Reduced view (operating model v2.5.1)'),
+      h('dl', { class: 'sb-dl sb-card' },
+        h('dt', {}, 'Sprint'), h('dd', {}, m.sprint.title || m.sprint.note),
+        h('dt', {}, 'Headline'), h('dd', {}, m.headline.text),
+        h('dt', {}, 'Next'), h('dd', {}, m.headline.next || 'not recorded'),
+        h('dt', {}, 'As of'), h('dd', {}, m.headline.asOf || 'not recorded'),
+        h('dt', {}, 'Items'), h('dd', {}, m.itemsText),
+        h('dt', {}, 'Running now'), h('dd', {}, m.runningText)));
+  } else {
+    const open = m.items.filter((i) => !i.finished);
+    const done = m.items.filter((i) => i.finished);
+    kids.push(h('h2', { class: 'sb-h2' }, 'Pipeline'), h('p', { class: 'sb-lead small' }, 'Latest: ', m.headline.text));
+    kids.push(open.length ? h('ul', { class: 'sb-items' }, open.map((i) => {
+      if (i.loading) return h('li', { class: 'sb-item' }, `${i.id}: loading…`);
+      if (i.unreadable) return h('li', { class: 'sb-item' }, `${i.id}: can't read status `, ext(i.link, 'status file'));
+      const rows = [h('p', { class: 'sb-item-h' }, h('strong', {}, i.id), ` (${i.kind}) — stage ${i.stage}, ${i.state}`)];
+      if (i.running) rows.push(h('p', { class: 'sb-item-l' }, h('span', { class: 'sb-light lit', 'aria-hidden': 'true' }), `Running now: ${i.running.role}, for ${i.running.elapsed}${i.running.pastLimit ? ' (past its limit)' : ''}`));
+      if (i.waiting) {
+        const label = `Waiting on you: card ${i.waiting.gate}-${i.waiting.card}`;
+        let what;
+        if (i.waiting.answered) what = `${label} — answered${i.waiting.verdict ? `: ${i.waiting.verdict}` : ''}${i.waiting.recording ? ' (recording…)' : ''}`;
+        else if (i.waiting.path) what = opener(`wait-item:${i.id}`, go('p', p.project.name, 'queue', `card:${i.waiting.path}`), {}, label);
+        else what = label;
+        rows.push(h('p', { class: `sb-item-l${i.waiting.answered ? '' : ' you'}` }, what));
+      }
+      if (i.next) rows.push(h('p', { class: 'sb-item-l' }, i.next));
+      rows.push(h('p', { class: 'sb-muted small' }, `as of ${i.asOf ? whenOr(i.asOf) : 'not recorded'}`));
+      return h('li', { class: 'sb-item' }, rows);
+    })) : h('p', { class: 'sb-muted' }, 'No open items.'));
+    if (done.length) {
+      kids.push(h('details', { class: 'sb-card', key: 'pipe-done' }, h('summary', {}, `${done.length} finished`),
+        h('ul', { class: 'sb-qlist' }, done.map((i) => h('li', {}, `${i.id} (${i.kind}): ${i.finished}`)))));
+    }
+  }
+  kids.push(h('h2', { class: 'sb-h2' }, 'Activity'));
+  kids.push(m.activity.length ? h('ul', { class: 'sb-qlist' }, m.activity.map((a) => h('li', {}, a.link ? ext(a.link, a.text) : a.text)))
+    : h('p', { class: 'sb-muted' }, 'No recent activity.'));
+  if (m.notes.length) {
+    kids.push(h('details', { class: 'sb-card', key: 'pipe-notes' }, h('summary', {}, `${m.notes.length} notes`),
+      h('ul', { class: 'sb-qlist' }, m.notes.map((n) => h('li', { class: 'small' }, n)))));
+  }
+  return detailScreen(p, m.model === 'v3' ? 'Pipeline' : 'Reduced view', kids);
+}
+
+const askWait = (ms) => (ms == null ? 'not recorded' : durationText(ms));
+const proxyWords = (x) => (x === true ? 'proxy' : x === false ? 'not a proxy' : 'proxy not recorded');
+
+function askedRow(r) {
+  let answered;
+  if (r.state === 'answered') answered = whenOr(r.answeredAt);
+  else if (r.state === 'recording') answered = 'recording…';
+  else if (r.state === 'withdrawn') answered = 'withdrawn';
+  else answered = 'open';
+  let wait = r.state === 'open' ? `${askWait(r.waitMs)} so far` : askWait(r.waitMs);
+  if (r.raisedLoading) wait = 'loading…';
+  return h('li', { class: `sb-ask${r.state === 'open' ? ' open' : ''}` }, h('strong', {}, r.label),
+    h('span', { class: 'sb-muted small' }, `raised ${r.raisedAt != null ? whenOr(r.raisedAt) : r.raisedLoading ? 'loading…' : 'not recorded'} · answered ${answered} · wait ${wait}`
+      + (r.state === 'answered' ? ` · ${proxyWords(r.proxy)}` : '')
+      + (r.word ? ` · ${r.word}` : '') + (r.ruling ? ` · Ruling: ${r.ruling}` : '')));
+}
+
+function renderAsked(p) {
+  const name = p.project.name;
+  const t = p.model.timeAsked;
+  const ready = p.box.read.read === 'ok' && t.ready;
+  const unread = notReadText([name]);
+  const kids = [];
+  if (t.cards) {
+    let summary;
+    if (!ready) summary = `Last 14 days: ${unread}`;
+    else if (t.summary.count) summary = `Last 14 days: ${t.summary.count} card${t.summary.count === 1 ? '' : 's'}, median wait ${durationText(t.summary.medianMs)} (open cards with their wait so far)`;
+    else summary = 'Last 14 days: no cards';
+    kids.push(h('p', { class: 'sb-lead' }, summary));
+    let list;
+    if (!ready) list = h('p', { class: 'sb-muted' }, `Cards: ${unread}.`);
+    else if (t.cards.length) list = h('ul', { class: 'sb-asks' }, t.cards.map(askedRow));
+    else list = h('p', { class: 'sb-muted' }, 'No cards raised in the last 30 days.');
+    kids.push(h('h2', { class: 'sb-h2' }, 'Cards, last 30 days'), list);
+  } else kids.push(h('p', { class: 'sb-lead' }, t.cardsText));
+  let qlist;
+  if (!ready) qlist = [h('p', { class: 'sb-muted' }, `Owner questions: ${unread}.`)];
+  else {
+    qlist = [t.questions.length ? h('ul', { class: 'sb-asks' }, t.questions.map(askedRow))
+      : h('p', { class: 'sb-muted' }, t.questionsPending ? 'None listed yet.' : 'No owner questions in the last 30 days.')];
+    if (t.questionsPending) qlist.push(h('p', { class: 'sb-muted' }, `Loading: ${t.questionsPending} answered question${t.questionsPending === 1 ? '' : 's'} not checked yet.`));
+  }
+  kids.push(h('h2', { class: 'sb-h2' }, 'Owner questions, last 30 days'), ...qlist);
+  if (t.answeredText) kids.push(h('p', { class: 'sb-muted' }, t.answeredText));
+  return detailScreen(p, 'Time asked of you', kids);
+}
+
+function sessionNode(s) {
+  const end = s.running ? `running, ${durationText(s.runMs)} so far` : s.noOutcome ? 'no outcome recorded' : `${whenOr(s.end)}, ran ${durationText(s.runMs)}`;
+  const result = s.result ? ` · ${s.result}${s.verdict && s.verdict !== 'none' ? `, verdict ${s.verdict}` : ''}` : '';
+  return h('li', { class: 'sb-sess' }, h('details', { key: `sess:${s.item}:${s.role}:${s.start ? new Date(s.start).getTime() : ''}` },
+    h('summary', {}, h('span', { class: 'sb-sess-h' }, h('strong', {}, `${s.item} ${s.role}`), s.retry ? h('span', { class: 'sb-tag' }, 'retry') : null),
+      h('span', { class: 'sb-muted small' }, `started ${whenOr(s.start)} · ended ${end}${result}`)),
+    h('ul', { class: 'sb-usage' }, usageLines(s).map((l) => h('li', { class: 'sb-muted small' }, l)))));
+}
+
+/** AC22's per-item timeline keeps its time axis: each bar drawn in SVG at its place on the item's span. */
+function timeBar(tl, e) {
+  const span = Math.max(1, tl.to - tl.from);
+  const x = ((e.start - tl.from) / span) * 100;
+  const w = Math.max(1, (((e.end ?? e.start) - e.start) / span) * 100);
+  const svg = document.createElementNS(SVGNS, 'svg');
+  svg.setAttribute('viewBox', '0 0 100 6');
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.setAttribute('class', 'sb-axis');
+  svg.setAttribute('aria-hidden', 'true');
+  const track = document.createElementNS(SVGNS, 'rect');
+  for (const [k, v] of Object.entries({ x: 0, y: 2.5, width: 100, height: 1, class: 'track' })) track.setAttribute(k, String(v));
+  const bar = document.createElementNS(SVGNS, 'rect');
+  for (const [k, v] of Object.entries({ x: x.toFixed(1), y: 0, width: Math.min(w, 100 - x).toFixed(1), height: 6, class: `bar ${e.kind}${e.open ? ' open' : ''}` })) bar.setAttribute(k, String(v));
+  svg.append(track, bar);
+  return svg;
+}
+
+function renderAgents(p) {
+  const m = p.model;
+  if (!m.sessions) return detailScreen(p, 'Agents', [h('p', { class: 'sb-lead' }, m.runningText)]);
+  return detailScreen(p, 'Agents', [
+    h('h2', { class: 'sb-h2' }, 'Sessions, last 14 days'),
+    m.sessions.length ? h('ul', { class: 'sb-sessions' }, m.sessions.map(sessionNode)) : h('p', { class: 'sb-muted' }, 'No sessions in the last 14 days.'),
+    h('h2', { class: 'sb-h2' }, 'Timeline by item'),
+    m.timelines.length ? h('ul', { class: 'sb-tlx' }, m.timelines.map((tl) => h('li', { class: 'sb-card' }, h('strong', {}, tl.item),
+      h('ol', { class: 'sb-tlx-ev' }, tl.events.map((e) => {
+        const label = e.kind === 'card' ? `${e.label}: waiting on you` : `${e.label} session`;
+        const until = e.end == null ? 'no end recorded' : e.open ? 'now' : whenOr(e.end);
+        return h('li', { class: `sb-tlx-e ${e.kind}` }, timeBar(tl, e), h('span', { class: 'sb-muted small' }, `${label}, ${whenOr(e.start)} to ${until}`));
+      }))))) : h('p', { class: 'sb-muted' }, 'Nothing to show.'),
+  ]);
 }
 
 // ---------------------------------------------------------------------------
@@ -586,10 +765,13 @@ function renderQueue(p, key) {
     }
     return h('section', { class: `sb-group g-${g.key}`, key: `group:${g.key}` }, head, h('ul', { class: 'sb-qlist' }, g.items.map((r) => queueRow(p, r, s))));
   })));
-  const done = doneToday(project, p.model, p.snap, new Date(Date.now()), TZ);
+  // "Done today" (AC52, note 10): what was ruled, in words, with its code after.
+  const done = doneToday(project, p.model, p.snap, new Date(Date.now()), TZ, p.j);
   body.push(h('details', { class: 'sb-card sb-donetoday', key: 'done-today' }, h('summary', {}, `Done today (${done.length + s.left.length})`),
-    done.length || s.left.length ? h('ul', { class: 'sb-qlist' }, done.map((d) => h('li', {}, d.text, ' ', h('span', { class: 'sb-muted small' }, d.words))),
-      s.left.map((x) => h('li', {}, x.text))) : h('p', { class: 'sb-muted small' }, 'Nothing answered today yet.')));
+    done.length || s.left.length ? h('ul', { class: 'sb-qlist sb-done' }, done.map((d) => h('li', { class: 'sb-done-r', key: `done:${d.kind}:${d.code}` },
+      h('span', { class: 'sb-done-w' }, d.text), ' ', d.link ? ext(d.link, d.code, 'code') : code(d.code), ' ', h('span', { class: 'sb-muted small' }, d.words))),
+    s.left.map((x) => h('li', { class: 'sb-done-r' }, h('span', { class: 'sb-done-w' }, x.title), ' ', code(x.code), ' ', h('span', { class: 'sb-muted small' }, 'no longer open, time not recorded'))))
+      : h('p', { class: 'sb-muted small' }, 'Nothing answered today yet.')));
   const out = [h('section', { class: 'sb-screen' }, body, bottomBar(name, 'queue', q.waiting))];
   if (key != null) out.push(sheet(p, key));
   return out;
@@ -1184,7 +1366,10 @@ export function startSandbox(opts = {}) {
           else if (r.kind === 'team') {
             const [sub, idx] = r.sheet ? r.sheet.split(':') : [null, null];
             node = renderTeam(b, r.member || null, sub, idx);
-          } else node = renderStatus(b);
+          } else if (r.kind === 'pipeline') node = renderPipeline(b);
+          else if (r.kind === 'asked') node = renderAsked(b);
+          else if (r.kind === 'agents') node = renderAgents(b);
+          else node = renderStatus(b);
         } catch (err) {
           node = h('section', { class: 'sb-screen' }, marker(), projectHeader(name, 'Current status'),
             h('p', { class: 'sb-stale' }, `Can't show this project: ${errorText(err)}`));

@@ -675,6 +675,15 @@ export function oneLine(words) {
   return { text: b, joined: /\n/.test(raw.trim()) || a !== b };
 }
 
+/**
+ * A gate card's Reason: made into one line (AC53, build review N2): each line break, with the
+ * spaces around it, becomes one space, and nothing else changes; "; " stays as the owner wrote it
+ * (the "; " to ", " rule is for numbered rulings only).
+ */
+export function reasonLine(words) {
+  return String(words == null ? '' : words).replace(/\r\n?/g, '\n').replace(/[ \t]*\n[ \t]*/g, ' ').trim();
+}
+
 const tidyWords = (w) => String(w == null ? '' : w).replace(/\r\n?/g, '\n').replace(/\s+$/, '').replace(/^\s*\n/, '');
 
 /**
@@ -689,7 +698,7 @@ export function composeAnswer(ctx, answers = {}) {
     let text = `Decision: ${word}\n\n`;
     const words = tidyWords(a1.words);
     if (ctx.gateCard && word === 'recycle') text += 'Into: \n';
-    if (ctx.gateCard && (word === 'hold' || word === 'recycle')) text += `Reason: ${oneLine(words).text}\n`;
+    if (ctx.gateCard && (word === 'hold' || word === 'recycle')) text += `Reason: ${reasonLine(words)}\n`;
     else if (words) {
       // On a phase-gate card each line of the note is indented by two spaces, so no note line can be read as a field (N5).
       text += `${ctx.gateCard ? words.split('\n').map((l) => `  ${l}`).join('\n') : words}\n`;

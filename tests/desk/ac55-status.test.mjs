@@ -111,6 +111,9 @@ function detailRepos() {
 // Words that only move about the accepted page (its links back and across, its headings naming the page).
 const NAV = /^(← All projects|← Service-Desk|← Personal-Org-Operating-Model|Time asked of you|Agents| · |Time asked of you — .*|Agents — .*|Service-Desk|Personal-Org-Operating-Model)$/;
 
+/** The sandbox's own navigation words, and nothing else: its marker, Home, Back and the bottom bar's four tabs. */
+const SB_NAV = /^(Sandbox: candidate design|Home|Back|Status|Timeline|Team|Queue)$/;
+
 /** Each element's own text (its text-node children, joined) and each leaf's text, in the accepted view. */
 function facts(view) {
   const out = new Set();
@@ -138,10 +141,12 @@ for (const [kind, acceptedHash, sandboxHash] of [
       const route = `#/p/${name}${acceptedHash ? `/${acceptedHash}` : ''}`;
       const acc = await loadApp({ hash: route, repos: detailRepos(), now: WHEN });
       let accepted;
+      let acceptedText;
       try {
         await acc.advance(1000);
         await acc.advance(POLL_MS);
         accepted = facts(acc.els.view);
+        acceptedText = acc.els.view.textContent.replace(/\s+/g, ' ');
       } finally {
         acc.restore();
       }
@@ -155,6 +160,10 @@ for (const [kind, acceptedHash, sandboxHash] of [
         const text = sb.view.textContent.replace(/\s+/g, ' ');
         for (const f of accepted) assert.ok(text.includes(f), `${kind} for ${name}: "${f}" is missing`);
         assert.doesNotMatch(text, /Can't show/);
+        // And the other way (build review N1): every value and word of the sandbox's view is in the
+        // accepted view, the sandbox's navigation words aside (its marker, Home and Back, the bottom bar's tabs).
+        const extra = facts(sb.view).filter((f) => !SB_NAV.test(f) && !acceptedText.includes(f));
+        assert.deepEqual(extra, [], `${kind} for ${name}: the sandbox shows words the accepted view does not`);
       } finally {
         sb.restore();
       }

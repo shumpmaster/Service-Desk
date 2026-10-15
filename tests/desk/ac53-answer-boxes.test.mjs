@@ -103,6 +103,10 @@ test('AC53 (note 15): a card carries only its card form; the owner\'s words go i
   assert.equal(composeAnswer({ kind: 'card', gateCard: false }, { 1: { choice: 're-scope', words: 'Lighter path.\nSee the notes.' } }).text, 'Decision: re-scope\n\nLighter path.\nSee the notes.\n');
   assert.equal(composeAnswer({ kind: 'card', gateCard: true }, { 1: { choice: 'hold', words: 'waiting for\nthe screens' } }).text, 'Decision: hold\n\nReason: waiting for the screens\n');
   assert.equal(composeAnswer({ kind: 'card', gateCard: true }, { 1: { choice: 'recycle', words: 'the plan missed a screen' } }).text, 'Decision: recycle\n\nInto: \nReason: the plan missed a screen\n');
+  // Build review N2: Reason: joins line breaks only; "; " stays as written (the ", " rule is for numbered rulings).
+  assert.equal(composeAnswer({ kind: 'card', gateCard: true }, { 1: { choice: 'hold', words: 'the screens first; then the copy\n  and the  tests;\r\nlater' } }).text,
+    'Decision: hold\n\nReason: the screens first; then the copy and the  tests; later\n');
+  assert.equal(composeAnswer({ kind: 'card', gateCard: true }, { 1: { choice: 'recycle', words: 'a; b' } }).text, 'Decision: recycle\n\nInto: \nReason: a; b\n');
   const note = composeAnswer({ kind: 'card', gateCard: true }, { 1: { choice: 'proceed', words: 'Into: build\nReason: none\nNothing needed: x\nUser-Override: y' } }).text;
   assert.equal(note, 'Decision: proceed\n\n  Into: build\n  Reason: none\n  Nothing needed: x\n  User-Override: y\n');
   // No note line can be read as a field: none starts a line with a gate card's field words.

@@ -163,14 +163,15 @@ html.sb :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .sb-pill.bad::before { content: "!"; margin-right: 6px; color: var(--block); }
 .sb-v5 { color: var(--muted); font-size: .84rem; margin: 14px 0; }
 /* Home's bottom band: neutral grey with a hairline above it (AC48), deferred. */
-.sb-band { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surf2); border-top: 1px solid var(--line); padding: 10px 16px 14px; }
+.sb-band { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; background: var(--surf2); border-top: 1px solid var(--line); padding: 10px 16px 14px; }
 .sb-band > * { max-width: 528px; margin-left: auto; margin-right: auto; }
 .sb-composer { width: 100%; min-height: 44px; display: flex; gap: 10px; align-items: center; padding: 0 14px; border: 1px solid var(--line); border-radius: var(--rs);
   background: var(--surf); color: var(--muted); font: 600 .95rem var(--font); cursor: not-allowed; text-align: left; }
 .sb-deferred { margin: 4px auto 0; font-size: .74rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track); }
 
-/* The bottom bar inside a project (AC48): Status · Timeline · Team · Queue, Home's neutral look. */
-.sb-dock { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surf2); border-top: 1px solid var(--line); padding: 4px 8px 8px; }
+/* The bottom bar inside a project (AC48): Status · Timeline · Team · Queue, Home's neutral look.
+   Above every tile, capsule and control on the screens (z-index up to 2), below a sheet and its scrim (5, 6). */
+.sb-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surf2); border-top: 1px solid var(--line); padding: 4px 8px 8px; }
 .sb-tab { display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 52px; text-decoration: none; color: var(--muted); position: relative;
   font: 700 .62rem/1.1 var(--font); letter-spacing: var(--track); text-transform: uppercase; }
 .sb-tab[aria-current="page"] { color: var(--ink); }

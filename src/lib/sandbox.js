@@ -509,6 +509,8 @@ export function cardBoxText(word, gateCard) {
 }
 export const questionBoxText = (letter, name) => `Ruling: ${letter}\n\nQuestion: questions/${name}.md\n`;
 
+const andOr = (xs) => (xs.length < 2 ? String(xs[0]) : `${xs.slice(0, -1).join(', ')} or ${xs[xs.length - 1]}`);
+
 /**
  * The rule line (AC53): what is wrong with the box's text for its form, or that it is in form. It
  * covers these forms only (verdict, card, question); the Orchestrator applies the rest.
@@ -531,6 +533,7 @@ export function ruleLine(form, text, opts = {}) {
     const words = opts.words || [];
     if (!m) return { ok: false, words: 'Line 1 must be "Decision: <word>".' };
     const word = m[1].trim();
+    if (!word) return { ok: false, words: `Pick one of the card's words above: ${(opts.words || []).join(', ')}.` };
     if (!words.includes(word)) return { ok: false, words: `"${word}" is not one of this card's words: ${words.join(', ')}.` };
     if (opts.gateCard) {
       const later = lines.slice(2);
@@ -545,7 +548,7 @@ export function ruleLine(form, text, opts = {}) {
   }
   if (form === 'question') {
     const m = /^Ruling: (.+)$/.exec(lines[0] || '');
-    if (!m) return { ok: false, words: 'Line 1 must be "Ruling: <letter>".' };
+    if (!m) return { ok: false, words: opts.letters && opts.letters.length ? `Line 1 must be "Ruling: <letter>": pick ${andOr(opts.letters)} above.` : 'Line 1 must be "Ruling: <letter>".' };
     return { ok: true, words: `In form: line 1 is "Ruling: ${m[1]}".` };
   }
   return { ok: true, words: '' };
@@ -584,6 +587,153 @@ export function boxPlan(project, linkCap, target, text) {
   return { offer: 'link', url: link.url, copy: link.copy, branch: project.defaultBranch, path: target.path,
     words: link.copy ? 'Too long to prefill, or this repository takes no prefilled content: the button copies the text and opens the page with only the file name.' : null,
     warning: project.webCommitsToDefault === false ? webCommitsWarning(project.defaultBranch, target.form === 'card' ? 'card' : 'question') : null };
+}
+
+// ---------------------------------------------------------------------------
+// AC53, extended by trial-view note 15: one question and its own answer box per question asked,
+// and the ruling file they prefill.
+
+export const CANT_SPLIT = "This question file couldn't be split into questions";
+export const NO_RECOMMENDATION = 'no recommendation given';
+
+/**
+ * A question file's OPTIONS: block (questions/_TEMPLATE.md): the lines after `OPTIONS:` that start
+ * with two spaces, up to the first that doesn't. Returns { found, lines } (the block's lines exactly).
+ */
+export function optionsBlock(text) {
+  const all = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n');
+  const i = all.findIndex((l) => /^OPTIONS:/.test(l));
+  if (i < 0) return { found: false, lines: [] };
+  const out = [];
+  for (let k = i + 1; k < all.length && /^ {2}/.test(all[k]); k++) out.push(all[k]);
+  return { found: true, lines: out };
+}
+
+/** The `RECOMMENDATION:` line's text, after the label, or null. */
+function recommendationLine(text) {
+  const l = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n').find((x) => /^RECOMMENDATION:/.test(x));
+  return l ? l.replace(/^RECOMMENDATION:\s*/, '').trim() : null;
+}
+
+/**
+ * A number's recommendation (AC53): the words `RECOMMENDATION: ` removed, the rest split at `; `,
+ * the part that starts with that number and a space ("1 " never matches "10 "), without its number,
+ * with a final full stop dropped. Null when there is none.
+ */
+export function numberRecommendation(recLine, n) {
+  if (!recLine) return null;
+  const part = recLine.split('; ').find((x) => x.startsWith(`${n} `));
+  if (!part) return null;
+  return part.slice(String(n).length + 1).replace(/\.$/, '').trim() || null;
+}
+
+/**
+ * The questions an owner question file puts (AC53): lettered (one question, its letters as
+ * choices), numbered (one question per number, no choices), or, when it can't be split, one box
+ * with the file shown whole. Returns { form: 'lettered' | 'numbered' | 'fallback', why, title,
+ * block, questions: [{ n, text, choices: [{ value, text }], recommendation }] }.
+ */
+export function questionQuestions(text, title) {
+  const { found, lines } = optionsBlock(text);
+  const fallback = (why) => ({ form: 'fallback', why, title, block: lines, questions: [] });
+  if (!found) return fallback('it has no OPTIONS: line');
+  // Each item line starts with exactly two spaces; a line indented further continues the one above (C).
+  const items = [];
+  for (const l of lines) {
+    if (/^ {3,}\S/.test(l)) {
+      if (!items.length) return fallback('its OPTIONS: block starts with a continuation line');
+      items[items.length - 1].text += ` ${l.trim()}`;
+    } else if (/^ {2}\S/.test(l)) items.push({ line: l, text: l.slice(2) });
+  }
+  if (!items.length) return fallback('its OPTIONS: block is empty');
+  const lettered = items.map((x) => /^([A-Z])\. ([\s\S]*)$/.exec(x.text));
+  const numbered = items.map((x) => /^([0-9]+)\. ([\s\S]*)$/.exec(x.text));
+  const rec = recommendationLine(text);
+  if (lettered.every(Boolean)) {
+    const letter = rec ? (/^([A-Z])\b/.exec(rec) || [null, null])[1] : null;
+    return { form: 'lettered', why: null, title, block: lines, recLetter: letter,
+      questions: [{ n: 1, text: title, choices: lettered.map((m) => ({ value: m[1], text: m[2].trim() })), recommendation: rec ? rec : null }] };
+  }
+  if (numbered.every(Boolean)) {
+    const ns = numbered.map((m) => Number(m[1]));
+    if (ns.some((n, i) => n !== i + 1)) return fallback('its numbers are repeated, missing or out of order');
+    return { form: 'numbered', why: null, title, block: lines,
+      questions: numbered.map((m, i) => ({ n: ns[i], text: m[2].trim(), choices: [], recommendation: numberRecommendation(rec, ns[i]) })) };
+  }
+  return fallback(lettered.some(Boolean) && numbered.some(Boolean) ? 'its lettered and numbered lines are mixed' : 'its lines are neither lettered nor numbered');
+}
+
+/**
+ * One numbered answer made into one line (AC53, C): each line break, with the spaces around it,
+ * becomes one space; then each `; ` becomes `, `, so `; ` only ever separates numbers. Returns
+ * { text, joined } (joined: the answer held a line break or `; `).
+ */
+export function oneLine(words) {
+  const raw = String(words == null ? '' : words).replace(/\r\n?/g, '\n');
+  const a = raw.replace(/[ \t]*\n[ \t]*/g, ' ').trim();
+  const b = a.replace(/; /g, ', ');
+  return { text: b, joined: /\n/.test(raw.trim()) || a !== b };
+}
+
+const tidyWords = (w) => String(w == null ? '' : w).replace(/\r\n?/g, '\n').replace(/\s+$/, '').replace(/^\s*\n/, '');
+
+/**
+ * The ruling file's text from the answers (AC53, note 15), in the form decisions/README.md
+ * requires. answers: { [n]: { choice, words } }. ctx: { kind: 'card', gateCard } or { kind:
+ * 'question', name, qs } (questionQuestions' result). Returns { text, joined: [n] }.
+ */
+export function composeAnswer(ctx, answers = {}) {
+  const a1 = answers[1] || {};
+  if (ctx.kind === 'card') {
+    const word = a1.choice || '';
+    let text = `Decision: ${word}\n\n`;
+    const words = tidyWords(a1.words);
+    if (ctx.gateCard && word === 'recycle') text += 'Into: \n';
+    if (ctx.gateCard && (word === 'hold' || word === 'recycle')) text += `Reason: ${oneLine(words).text}\n`;
+    else if (words) {
+      // On a phase-gate card each line of the note is indented by two spaces, so no note line can be read as a field (N5).
+      text += `${ctx.gateCard ? words.split('\n').map((l) => `  ${l}`).join('\n') : words}\n`;
+    }
+    return { text, joined: [] };
+  }
+  const { qs, name } = ctx;
+  const q = `Question: questions/${name}.md\n`;
+  if (qs.form === 'lettered') {
+    const words = tidyWords(a1.words);
+    return { text: `Ruling: ${a1.choice || ''}\n\n${q}\nQuestion, as put: ${qs.title}\nOptions, as put:\n${qs.block.join('\n')}\n${words ? `\n${words}\n` : ''}`, joined: [] };
+  }
+  if (qs.form === 'numbered') {
+    const parts = [];
+    const joined = [];
+    for (const x of qs.questions) {
+      const one = oneLine((answers[x.n] || {}).words);
+      if (!one.text) continue;
+      parts.push(`${x.n} ${one.text}`);
+      if (one.joined) joined.push(x.n);
+    }
+    return { text: `Ruling: ${parts.join('; ')}\n\n${q}\nQuestions, as put:\n${qs.block.join('\n')}\n`, joined };
+  }
+  const words = tidyWords(a1.words);
+  return { text: `Ruling: \n\n${q}${words ? `\n${words}\n` : ''}`, joined: [] };
+}
+
+const andList = (ns) => (ns.length < 2 ? String(ns[0]) : `${ns.slice(0, -1).join(', ')} and ${ns[ns.length - 1]}`);
+
+/**
+ * The rule line for a numbered ruling (AC53, note 15): line 1 starts `Ruling: `; it names any
+ * number with no answer yet, and says which answers were joined into one line. The button stays.
+ */
+export function numberedRuleLine(text, qs, joined = []) {
+  const first = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n')[0];
+  if (!/^Ruling: /.test(first)) return { ok: false, words: 'Line 1 must start "Ruling: ", then each answered number and its answer, joined by "; ".' };
+  const got = new Set(first.slice(8).split('; ').map((x) => (/^([0-9]+) \S/.exec(x) || [])[1]).filter(Boolean).map(Number));
+  const missing = qs.questions.map((x) => x.n).filter((n) => !got.has(n));
+  const bits = [];
+  if (!got.size) bits.push('No answer yet: line 1 names no number.');
+  else bits.push(`In form: line 1 is "Ruling: " with ${got.size} answer${got.size === 1 ? '' : 's'}.`);
+  if (missing.length && got.size) bits.push(`No answer yet for ${andList(missing)}.`);
+  for (const n of joined) bits.push(`Answer ${n} joined into one line (line breaks became spaces, "; " became ", ").`);
+  return { ok: got.size > 0, words: bits.join(' ') };
 }
 
 // ---------------------------------------------------------------------------
@@ -663,6 +813,7 @@ export function sheetView(project, model, snap, j, row) {
       options = [...std, ...listed.filter((o) => !GATE_STANDARD_WORDS.includes(o.value))];
     }
     const out = { ...base, what: p && p.title ? p.title : `card ${c.gate}-${c.n}`, why: cardSection(p && p.text, 2) || NOT_RECORDED,
+      question: cardSection(p && p.text, 1) || (p && p.title) || NOT_RECORDED,
       options, recommendation: cardSection(p && p.text, 5), gateCard, loading: !p,
       box: { form: 'card', path: c.answerPath, words: options.map((o) => o.value), gateCard },
       fullText: p ? p.text : null };
@@ -685,6 +836,7 @@ export function sheetView(project, model, snap, j, row) {
     const q = f.question;
     const p = q.parsed;
     return { ...base, what: p ? p.title : q.title, why: p && p.why ? p.why : 'not given',
+      qs: p ? questionQuestions(p.text, p.title) : null,
       options: p ? p.options.map((o) => ({ value: o.letter, text: o.text, then: o.text })) : [], loading: !p,
       recommendation: p && p.recommendation ? p.recommendation : null,
       reversibility: p ? p.reversibility || 'not given' : null,

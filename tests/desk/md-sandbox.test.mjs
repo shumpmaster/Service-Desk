@@ -158,14 +158,18 @@ test('AC52: the recommendation is labelled and never preselected; a verdict has 
     const chips = byClass(app.view, 'sb-chip');
     assert.equal(chips.length, 2);
     assert.ok(chips.every((c) => c.attrs['aria-checked'] === 'false'), 'nothing preselected');
-    assert.match(app.text(), /Recommendation B — no\./);
-    assert.equal(findAll(app.view, (e) => e.tag === 'textarea').length, 0);
+    // AC53 as note 15 extended it (2026-10-15): the recommendation is labelled "Recommended", the
+    // ruling file is prefilled from the start (no letter until one is picked), and a lettered
+    // question's ruling carries the question and its options as they were put.
+    assert.match(app.text(), /Recommended B — no\./);
+    const box = () => findAll(app.view, (e) => e.tag === 'textarea' && /^box:/.test(e.dataset.k || ''))[0];
+    assert.match(box().value, /^Ruling: \n/, 'nothing picked for the owner');
     chips[0].click();
     await app.flush();
-    const ta = findAll(app.view, (e) => e.tag === 'textarea')[0];
-    assert.equal(ta.value, 'Ruling: A\n\nQuestion: questions/Alpha-pick.md\n');
+    const ta = box();
+    assert.equal(ta.value, "Ruling: A\n\nQuestion: questions/Alpha-pick.md\n\nQuestion, as put: Alpha's question\nOptions, as put:\n  A. Yes.\n  B. No.\n");
     const go = byClass(app.view, 'sb-go')[0];
-    assert.equal(go.attrs.href, 'https://github.com/shumpmaster/Alpha/new/main?filename=decisions%2Fquestions%2FAlpha-pick.md&value=Ruling%3A%20A%0A%0AQuestion%3A%20questions%2FAlpha-pick.md%0A');
+    assert.equal(go.attrs.href, `https://github.com/shumpmaster/Alpha/new/main?filename=decisions%2Fquestions%2FAlpha-pick.md&value=${encodeURIComponent(ta.value)}`);
     // The PR's sheet: no chips, its own verdict box at the head branch, "not recorded" whether it exists.
     await app.go('#/p/Alpha/queue/pr%3A80');
     assert.equal(byClass(app.view, 'sb-chip').length, 0, 'a verdict has no recommendation and no chips');
@@ -207,7 +211,7 @@ test('AC52: a gate ruling\'s sheet quotes its case, links the case only when the
     assert.match(app.text(), /The Critic's view: no file recorded/);
     assert.match(app.text(), /User representative: not needed/);
     assert.deepEqual(byClass(app.view, 'sb-chip').map((c) => c.textContent), ['proceed', 'hold', 'recycle', 'kill']);
-    assert.match(app.text(), /Recommendation The case recommends proceed\./);
+    assert.match(app.text(), /Recommended The case recommends proceed\./);
   } finally {
     app.restore();
   }
@@ -310,7 +314,7 @@ test('AC53: the rule line follows the typing, and the button stays available', a
   try {
     byClass(app.view, 'sb-chip').find((c) => c.textContent === 'hold').click();
     await app.flush();
-    const ta = findAll(app.view, (e) => e.tag === 'textarea')[0];
+    const ta = findAll(app.view, (e) => e.tag === 'textarea' && /^box:/.test(e.dataset.k || ''))[0]; // the answer file's box (AC53, note 15)
     assert.equal(ta.value, 'Decision: hold\n\nReason: \n');
     assert.match(byClass(app.view, 'sb-rule')[0].textContent, /needs a "Reason:" line with text/);
     assert.equal(byClass(app.view, 'sb-go').length, 1, 'the button stays');

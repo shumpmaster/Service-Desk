@@ -392,3 +392,13 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 .sb-done-r { padding: 6px 0; border-top: 1px solid var(--line); font-size: .9rem; }
 .sb-done-r:first-child { border-top: 0; }
 .sb-done-r a.code { text-decoration: underline; }
+
+/* The answer boxes (AC53, note 15): each question on its own, then its own answer box. */
+.sb-answers { display: grid; gap: 4px; }
+.sb-q { border: 1px solid var(--line); border-left: 4px solid var(--you); border-radius: var(--r); padding: 8px 12px; background: var(--page); }
+.sb-q-t { font-weight: 650; }
+.sb-words-l { display: grid; gap: 2px; margin-top: 6px; }
+.sb-words { display: block; width: 100%; min-height: 3.2em; font: .9rem/1.4 var(--font); border: 1px solid var(--line); border-radius: var(--rs); padding: 8px 10px;
+  background: var(--surf); color: var(--ink); resize: vertical; }
+.sb-final { border-top: 1px solid var(--line); padding-top: 8px; }
+.sb-btn.small { min-height: 44px; font-size: .82rem; margin: 6px 0; }

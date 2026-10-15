@@ -27,6 +27,7 @@ import {
 } from './lib/sandbox.js';
 import { timelineView, teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
 import { summaryView, latestText, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
+import { composeAnswer, numberedRuleLine, CANT_SPLIT, NO_RECOMMENDATION } from './lib/sandbox.js';
 
 let CONFIG = DEFAULT_CONFIG; // J7; the tests pass their own (AC42's five projects)
 let TZ = CONFIG.ownerTimeZone;
@@ -41,7 +42,8 @@ const SVGNS = 'http://www.w3.org/2000/svg';
  */
 function on(el, type, fn) {
   if (!el._on) el._on = {};
-  if (!(type in el._on)) el.addEventListener(type, (e) => (el._on[type] ? el._on[type](e) : undefined));
+  // The handler gets the element that is on the screen (a redraw may have kept an older one).
+  if (!(type in el._on)) el.addEventListener(type, (e) => (el._on[type] ? el._on[type](e, el) : undefined));
   el._on[type] = fn;
 }
 
@@ -227,7 +229,7 @@ const go = (...parts) => `#/${enc(...parts)}`;
 
 const session = new Map(); // project → { opened: Set(key), last: Map(key → row), left: [{ key, text }], prev: Set(key) }
 function sessionOf(name) {
-  if (!session.has(name)) session.set(name, { opened: new Set(), last: new Map(), left: [], prev: null, drafts: new Map(), chosen: new Map() });
+  if (!session.has(name)) session.set(name, { opened: new Set(), last: new Map(), left: [], prev: null, drafts: new Map(), chosen: new Map(), answers: new Map() });
   return session.get(name);
 }
 
@@ -807,13 +809,15 @@ function textBox(p, row, target, startText, onOpened) {
   if (!draft.edited) draft.text = startText;
   s.drafts.set(key, draft);
   const ta = h('textarea', { rows: '6', key: `box:${key}`, 'data-keep': key, 'aria-label': 'The text GitHub will commit', spellcheck: 'false',
-    oninput: (e) => {
-      draft.text = e && e.target && typeof e.target.value === 'string' ? e.target.value : ta.value;
+    oninput: (e, self) => {
+      draft.text = self.value;
       draft.edited = true;
       render();
     } });
   ta.value = draft.text;
-  const r = ruleLine(target.form, draft.text, target);
+  const r = target.numbered ? numberedRuleLine(draft.text, target.numbered, target.joined) : ruleLine(target.form, draft.text, target);
+  const rebuild = draft.edited && draft.text !== startText
+    ? h('button', { type: 'button', class: 'sb-btn ghost small', key: `rebuild:${key}`, onclick: () => { draft.edited = false; render(); } }, 'Rebuild from my answers') : null;
   const plan = boxPlan(p.project, CONFIG.linkCap, target, draft.text);
   const nodes = [];
   if (plan.warning) nodes.push(h('p', { class: 'sb-warn' }, plan.warning));
@@ -830,10 +834,70 @@ function textBox(p, row, target, startText, onOpened) {
       onOpened();
     } }, plan.copy ? 'Copy and open GitHub' : 'Open GitHub with this written'));
   } else if (plan.offer === 'copy') nodes.push(copyButton(plan.copy, key));
-  return h('div', { class: 'sb-box' }, ta,
+  return h('div', { class: 'sb-box' }, ta, rebuild,
     h('p', { class: `sb-rule ${r.ok ? 'ok' : 'warn'}`, role: 'status' }, r.words),
     h('p', { class: 'sb-muted small' }, plan.path ? `Writes ${plan.path} on ${plan.branch}` : ''),
     h('div', { class: 'sb-act' }, nodes));
+}
+
+/**
+ * AC53 (note 15): each question on its own, followed by its own answer box (its choices when it
+ * lists them, the recommendation labelled and never picked, and a text box for the owner's own
+ * words); the answers then prefill the ruling file the owner commits, in the box below. Every
+ * answer is kept through a refresh (AC56).
+ */
+function answerBoxes(p, row, v, opened) {
+  const s = sessionOf(p.project.name);
+  const key = row.key;
+  if (!s.answers.has(key)) s.answers.set(key, {});
+  const answers = s.answers.get(key);
+  const isCard = v.kind === 'card';
+  const qs = isCard ? null : v.qs;
+  const questions = isCard
+    ? [{ n: 1, text: v.question, choices: v.options.map((o) => ({ value: o.value, text: '' })), recommendation: v.recommendation || null }]
+    : qs.questions;
+  const box = isCard ? v.box : { ...v.box, letters: qs.form === 'lettered' ? qs.questions[0].choices.map((c) => c.value) : [] };
+  const set = (n, patch) => {
+    answers[n] = { ...(answers[n] || {}), ...patch };
+    render();
+  };
+  const out = [];
+  if (!isCard && qs.form === 'fallback') {
+    out.push(h('div', { class: 'sb-sec sb-q', key: 'q:whole' }, h('p', { class: 'sb-warn' }, CANT_SPLIT, ` (${qs.why}).`),
+      h('article', { class: 'sb-record', html: renderMarkdown(v.fullText || '') }),
+      h('p', { class: 'small' }, ext(v.links[0] && v.links[0].href, 'The question on GitHub') || 'The question: no file recorded'),
+      wordsBox(key, 1, answers, set, 'Your answer, in your own words')));
+  } else {
+    questions.forEach((q) => {
+      const a = answers[q.n] || {};
+      out.push(h('div', { class: 'sb-sec sb-q', key: `q:${q.n}` },
+        h('h3', {}, questions.length > 1 ? `Question ${q.n}` : 'The question'),
+        h('p', { class: 'sb-q-t' }, q.text),
+        q.choices.length ? h('div', { class: 'sb-chips', role: 'radiogroup', 'aria-label': questions.length > 1 ? `Question ${q.n}: options` : 'Options' }, q.choices.map((c) => h('button', {
+          type: 'button', class: `sb-chip${a.choice === c.value ? ' on' : ''}`, role: 'radio', 'aria-checked': a.choice === c.value ? 'true' : 'false', key: `chip:${q.n}:${c.value}`,
+          onclick: () => set(q.n, { choice: c.value }),
+        }, h('strong', {}, c.value), c.text ? ` ${c.text}` : ''))) : null,
+        h('p', { class: 'sb-rec' }, q.recommendation ? [h('span', { class: 'sb-tag' }, 'Recommended'), ' ', q.recommendation, h('span', { class: 'sb-muted small' }, ' (labelled, never picked for you)')]
+          : h('span', { class: 'sb-muted small' }, NO_RECOMMENDATION)),
+        isCard && a.choice ? h('p', { class: 'small' }, h('strong', {}, 'What happens next: '), (v.options.find((o) => o.value === a.choice) || {}).then || NOT_RECORDED) : null,
+        wordsBox(key, q.n, answers, set, isCard && v.gateCard && (a.choice === 'hold' || a.choice === 'recycle') ? 'Your reason (it goes on the Reason: line)' : 'Your own words')));
+    });
+  }
+  const composed = composeAnswer(isCard ? { kind: 'card', gateCard: v.gateCard } : { kind: 'question', name: v.box.name, qs }, answers);
+  const target = qs && qs.form === 'numbered' ? { ...box, numbered: qs, joined: composed.joined } : box;
+  out.push(h('div', { class: 'sb-sec sb-final', key: 'final' }, h('h3', {}, isCard ? 'The answer file' : 'The ruling file'),
+    h('p', { class: 'sb-muted small' }, 'Filled in from your answers above; you can edit it before you commit.'),
+    textBox(p, row, target, composed.text, opened)));
+  return h('div', { class: 'sb-answers' }, out);
+}
+
+/** The owner's own words for one question: a text box kept per item and number (AC53, AC56). */
+function wordsBox(key, n, answers, set, label) {
+  const a = answers[n] || {};
+  const ta = h('textarea', { rows: '3', key: `words:${key}:${n}`, 'aria-label': label, class: 'sb-words',
+    oninput: (e, self) => set(n, { words: self.value }) });
+  ta.value = a.words || '';
+  return h('label', { class: 'sb-words-l' }, h('span', { class: 'small' }, label), ta);
 }
 
 function sheet(p, key) {
@@ -875,21 +939,8 @@ function sheet(p, key) {
       h('p', { class: 'sb-muted small' }, `Whether reviews/${row.flag.pr.number}/owner.md already exists on its branch: ${NOT_RECORDED} (the desk reads only ${project.defaultBranch}).`),
       textBox(p, row, v.verdictBox, VERDICT_START, opened)));
     parts.push(h('div', { class: 'sb-sec' }, h('h3', {}, "The Reviewer's statement · Commit it unchanged"), h('p', { class: 'sb-muted small' }, v.reviewerBox.words)));
-  } else if (v.options && v.options.length) {
-    const chosen = s.chosen.get(key) || null;
-    parts.push(h('div', { class: 'sb-sec' }, h('h3', {}, 'Your answer'),
-      h('div', { class: 'sb-chips', role: 'radiogroup', 'aria-label': 'Options' }, v.options.map((o) => h('button', {
-        type: 'button', class: `sb-chip${chosen === o.value ? ' on' : ''}`, role: 'radio', 'aria-checked': chosen === o.value ? 'true' : 'false', key: `chip:${o.value}`,
-        onclick: () => {
-          s.chosen.set(key, o.value);
-          const d = s.drafts.get(`${row.key}:${v.box.form}`);
-          if (d) d.edited = false;
-          render();
-        },
-      }, h('strong', {}, o.value), o.text && v.kind === 'question' ? ` ${o.text}` : ''))),
-      v.recommendation ? h('p', { class: 'sb-rec' }, h('span', { class: 'sb-tag' }, 'Recommendation'), ' ', v.recommendation, h('span', { class: 'sb-muted small' }, ' (labelled, never picked for you)')) : null,
-      chosen ? h('p', { class: 'small' }, h('strong', {}, 'What happens next: '), (v.options.find((o) => o.value === chosen) || {}).then || NOT_RECORDED) : h('p', { class: 'sb-muted small' }, 'Pick an option: the box below fills in.'),
-      chosen ? textBox(p, row, v.box, v.box.form === 'card' ? cardBoxText(chosen, v.gateCard) : questionBoxText(chosen, v.box.name), opened) : null));
+  } else if ((v.kind === 'card' && v.options && v.options.length) || (v.kind === 'question' && v.qs)) {
+    parts.push(answerBoxes(p, row, v, opened));
   } else if (v.loading) {
     parts.push(h('p', { class: 'sb-muted' }, 'Reading the record…'));
   } else {

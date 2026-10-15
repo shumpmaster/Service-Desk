@@ -63,3 +63,5 @@ How each is read:
 The batch closed, the owner's words verbatim (2026-10-15): "That’s everything for this batch"
 
 Note 7 settled: "Note 7: the Status screen's "More detail" links open the old desk's Pipeline, Time asked and Agents pages. What should they do?" Answer: "Rebuild in new design (Recommended)" (option text: "Those three views get drawn in the new look inside the trial view, so you never land somewhere that looks like a different app. It makes this batch's build bigger."). The other options offered: "Keep, label clearly" and "Remove the links".
+
+Milestones on the Timeline (plan review round 1, N7), asked 2026-10-15: "How should Timeline milestones stand out?" Answer: "Bold headings, no colour (Recommended)" (option text: "Larger, heavier heading rows with a shape marker, so they're easy to spot. Colours keep their one meaning each across the desk."). The other option offered: "A colour per milestone".

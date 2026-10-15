@@ -358,7 +358,9 @@ function latestControl(p, col) {
       bubbleOpen(name, 'key');
     },
     onblur: () => {
-      bubble.pointerFocus = null;
+      // Only this control's own pressed pointer is forgotten here: when a tap moves focus from this
+      // control to another, the other's pointerdown has already marked the focus that follows as its tap's.
+      if (bubble.pointerFocus === name) bubble.pointerFocus = null;
       if (bubble.escaped === name) bubble.escaped = null; // focus left: it may open on focus again
       setTimeout(() => {
         const a = document.activeElement;
@@ -1309,6 +1311,7 @@ const bubble = {
   escaped: null, // a bubble closed with Escape stays closed while focus stays on its control
   pointer: null,
   pointerFocus: null, // a pointer pressed on this control: the focus that follows is its tap's, not the keyboard's
+  returnTo: null, // a bubble closed by a tap outside: its control takes the focus back when the tap's click lands
   hover: { ctl: false, bubble: false },
   close() {
     this.open = null;
@@ -1339,6 +1342,7 @@ function bubbleOpen(name, via) {
 /** A tap on the control: opens it, and a second tap closes it (AC54 (b)). A mouse click on a hovered bubble keeps it. */
 function bubbleTap(name, e) {
   const pointer = (e && e.pointerType) || bubble.pointer;
+  if (bubble.pointerFocus === name) bubble.pointerFocus = null; // the tap is done; a later focus is the keyboard's
   if (bubble.open === name) {
     if (bubble.via === 'hover' && pointer === 'mouse') {
       bubble.via = 'tap';
@@ -1376,14 +1380,43 @@ function closeBubbleByEscape() {
   focusKey(`latest:${name}`);
 }
 
-/** A tap outside an open bubble closes it (AC54, AC56). */
+/** Whether a tapped element sits in something that takes focus itself (a link, a control, a field). */
+function inFocusable(t) {
+  for (let n = t; n && n.tagName; n = n.parentNode) {
+    const tag = String(n.tagName).toLowerCase();
+    if (['a', 'button', 'input', 'textarea', 'select', 'summary'].includes(tag)) return true;
+    if (n.getAttribute && n.getAttribute('tabindex') != null) return true;
+  }
+  return false;
+}
+
+/**
+ * A tap outside an open bubble closes it, with focus back on its control (AC54, AC56). A tap on
+ * something that takes focus itself (another card's control, a link) leaves the focus to it. The
+ * focus goes back once the tap's click has landed, after the browser has moved focus for the press,
+ * and the control does not reopen on it.
+ */
 function outsideTap(e) {
+  bubble.returnTo = null;
   if (!bubble.open) return;
   const t = e && e.target;
   const inBubble = t && t.closest && (t.closest('[data-bubble]') || (t.closest('[data-k]') && t.closest('[data-k]').getAttribute('data-k') === `latest:${bubble.open}`));
   if (inBubble) return;
+  const name = bubble.open;
   bubble.close();
+  if (!inFocusable(t)) bubble.returnTo = name;
   render();
+}
+
+/** The click that ends a tap outside: the closed bubble's control takes the focus back. */
+function outsideTapEnd() {
+  const name = bubble.returnTo;
+  bubble.returnTo = null;
+  if (!name || bubble.open) return;
+  const a = document.activeElement;
+  if (a && a !== document.body && inFocusable(a)) return; // the tap gave focus to something of its own
+  bubble.escaped = name;
+  focusKey(`latest:${name}`);
 }
 
 /** Below the control, or above it when below would leave the viewport (AC54: wholly inside it at 360 px). */
@@ -1537,6 +1570,7 @@ export function startSandbox(opts = {}) {
     if (bubble.open) closeBubbleByEscape();
   });
   document.addEventListener('pointerdown', outsideTap);
+  document.addEventListener('click', outsideTapEnd);
   document.addEventListener('visibilitychange', () => {
     if (isVisible()) seen.visible();
     else seen.hidden();

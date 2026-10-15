@@ -88,8 +88,8 @@ test('AC56 close: every sheet has "Close" at its top (44 px), and the control, a
         const close = byClass(top, 'sb-close')[0];
         assert.equal(close.attrs['aria-label'], 'Close');
         assert.equal(document.activeElement, close, `${what}: focus moves into the sheet`);
-        if (how === 'control') close.click();
-        else if (how === 'outside') byClass(app.view, 'sb-scrim')[0].click();
+        if (how === 'control') await app.tap(close);
+        else if (how === 'outside') await app.tap(byClass(app.view, 'sb-scrim')[0]); // a real tap: the press takes focus off the sheet first
         else await app.key('Escape');
         await app.flush();
         assert.equal(sheetEl(app), null, `${what}: closed by ${how}`);
@@ -108,22 +108,18 @@ test('AC56 close: the "Latest" bubble has "Close" at its top, and the control, a
     for (const how of ['control', 'outside', 'escape']) {
       await app.advance(2000);
       const ctl = keyed(app, 'latest:Alpha');
-      ctl.dispatch('pointerdown', { pointerType: 'touch' });
-      ctl.click();
-      await app.flush();
+      await app.tap(ctl); // a real tap: the press, the focus it gives, the click
       const bub = keyed(app, 'bubble:Alpha');
       assert.ok(bub);
       const close = byClass(bub.children[0], 'sb-close')[0];
       assert.equal(close.attrs['aria-label'], 'Close');
       if (how === 'control') close.click();
-      else if (how === 'outside') await app.tapOutside();
+      else if (how === 'outside') await app.tap(app.view); // the page's background: the press takes focus off the control, as in a browser
       else await app.key('Escape');
       await app.flush();
       assert.equal(keyed(app, 'bubble:Alpha'), null, `closed by ${how}`);
-      if (how !== 'outside') {
-        assert.equal(document.activeElement, keyed(app, 'latest:Alpha'), `focus back on the control (${how})`);
-        assert.equal(keyed(app, 'bubble:Alpha'), null, 'and it does not reopen');
-      }
+      assert.equal(document.activeElement, keyed(app, 'latest:Alpha'), `focus back on the control (${how})`);
+      assert.equal(keyed(app, 'bubble:Alpha'), null, `and it does not reopen (${how})`);
     }
   } finally {
     app.restore();

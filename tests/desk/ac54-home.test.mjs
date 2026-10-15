@@ -199,6 +199,83 @@ test('AC54 (b): it opens on hover, on a tap and on keyboard focus, and closes on
   }
 });
 
+test('AC54 (b) + AC56 (build review B1): one tap on another card\'s "Latest" opens its bubble, after another control had focus or another bubble was open, in a browser\'s real focus order', async () => {
+  const setup = extremes();
+  const app = await openHome(setup.config, setup.repos);
+  try {
+    const names = setup.config.projects.map((p) => p.name).filter((n) => latest(app, n)); // the cards shown (closed groups hide theirs)
+    const open = () => names.filter((n) => bubbleOf(app, n));
+    assert.ok(names.length >= 3 && names.includes('Alpha') && names.includes('Beta') && names.includes('Gamma'), `cards shown: ${names}`);
+    const trace = [];
+    for (const n of names) for (const t of ['pointerdown', 'blur', 'focusout', 'focus', 'focusin', 'click']) latest(app, n).addEventListener(t, () => trace.push(`${t}:${n}`));
+    // The review's touch steps: tap Alpha (opens), tap it again (closes), then tap Beta once.
+    await app.tap(latest(app, 'Alpha'));
+    assert.deepEqual(open(), ['Alpha'], 'a tap opens Alpha\'s');
+    await app.tap(latest(app, 'Alpha'));
+    assert.deepEqual(open(), [], 'a second tap closes it');
+    trace.length = 0;
+    await app.tap(latest(app, 'Beta'));
+    assert.deepEqual(trace, ['pointerdown:Beta', 'blur:Alpha', 'focusout:Alpha', 'focus:Beta', 'focusin:Beta', 'click:Beta'], 'the browser\'s order: the old control loses focus between the press and the click');
+    assert.deepEqual(open(), ['Beta'], 'one tap opens Beta\'s, with Alpha\'s control having had focus');
+    // Straight from an open bubble to each other card's control: one tap each.
+    for (const n of names.filter((x) => x !== 'Beta')) {
+      await app.tap(latest(app, n));
+      assert.deepEqual(open(), [n], `one tap opens ${n}'s, straight from the open one`);
+      assert.equal(document.activeElement, latest(app, n));
+    }
+    // From the keyboard's bubble: focus on Alpha's control opens it; a tap on Beta's opens Beta's.
+    await app.tap(latest(app, names[names.length - 1])); // closes the open one
+    assert.deepEqual(open(), []);
+    latest(app, 'Alpha').focus();
+    await app.flush();
+    assert.deepEqual(open(), ['Alpha'], 'keyboard focus opens Alpha\'s');
+    await app.tap(latest(app, 'Beta'));
+    await app.advance(10);
+    assert.deepEqual(open(), ['Beta'], 'one tap on Beta\'s, after the keyboard\'s bubble');
+    // A tap outside, on the page, then a tap on Gamma's: one tap opens it.
+    await app.tap(app.view);
+    assert.deepEqual(open(), [], 'a tap outside closes it');
+    assert.equal(document.activeElement, latest(app, 'Beta'), 'with focus back on its control (AC56)');
+    await app.tap(latest(app, 'Gamma'));
+    assert.deepEqual(open(), ['Gamma'], 'and one tap on Gamma\'s then opens it');
+    // A tap outside that lands on another card's control: the old bubble closes, the tapped one opens and keeps the focus.
+    await app.tap(latest(app, 'Alpha'));
+    assert.deepEqual(open(), ['Alpha']);
+    assert.equal(document.activeElement, latest(app, 'Alpha'));
+    // Later keyboard focus on Gamma's control still opens it: the tap outside left nothing behind.
+    latest(app, 'Gamma').focus();
+    await app.flush();
+    assert.deepEqual(open(), ['Gamma'], 'keyboard focus on a control whose bubble a tap closed opens it');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC54 (b) (build review B1): with a mouse, hover then click keeps the bubble open, with or without another control having had focus', async () => {
+  const setup = extremes();
+  const app = await openHome(setup.config, setup.repos);
+  try {
+    const names = setup.config.projects.map((p) => p.name).filter((n) => latest(app, n)); // the cards shown (closed groups hide theirs)
+    const open = () => names.filter((n) => bubbleOf(app, n));
+    // No control had focus yet.
+    await app.tap(latest(app, 'Alpha'), { pointerType: 'mouse' });
+    assert.deepEqual(open(), ['Alpha'], 'hover opens it and the click keeps it');
+    latest(app, 'Alpha').dispatch('pointerleave', { pointerType: 'mouse' });
+    await app.advance(300);
+    assert.deepEqual(open(), ['Alpha'], 'clicked, it stays when the pointer leaves');
+    // Alpha's control has focus; hover Beta's (it opens), then click it: it stays open.
+    latest(app, 'Beta').dispatch('pointerenter', { pointerType: 'mouse' });
+    await app.flush();
+    assert.deepEqual(open(), ['Beta'], 'hover opens Beta\'s');
+    await app.tap(latest(app, 'Beta'), { pointerType: 'mouse', hover: false });
+    assert.deepEqual(open(), ['Beta'], 'the click after the hover keeps it open');
+    await app.tap(latest(app, 'Beta'), { pointerType: 'mouse', hover: false });
+    assert.deepEqual(open(), [], 'a second click closes it');
+  } finally {
+    app.restore();
+  }
+});
+
 test('AC54 (b): at 360 px the bubble spans the grid inside the gutters, above or below the control, wrapping, never clipped (the CSS; the browser check is in the pull request)', () => {
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
   assert.match(css, /\.sb-bubble\.col-l \{ left: 0; right: calc\(-100% - 8px\); \}/, 'a left-column card\'s bubble spans both columns');

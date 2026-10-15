@@ -53,22 +53,50 @@ export function j11Snapshot(extra = {}) {
 
 export class Node0 {
   constructor() { this.children = []; this.text = null; this.parent = null; }
-  append(...cs) { this.text = null; for (const c of cs) { const n = typeof c === 'string' ? new Text0(c) : c; n.parent = this; this.children.push(n); } }
-  replaceChildren(...cs) { this.children = []; this.append(...cs); }
+  get nodeType() { return 1; }
+  get childNodes() { return this.children; }
+  get parentNode() { return this.parent; }
+  append(...cs) { this.text = null; for (const c of cs) { const n = typeof c === 'string' ? new Text0(c) : c; if (n.parent) n.parent.removeChild(n); n.parent = this; this.children.push(n); } }
+  appendChild(n) { this.append(n); return n; }
+  insertBefore(n, ref) {
+    if (ref == null) return this.appendChild(n);
+    if (n.parent) n.parent.removeChild(n);
+    this.text = null;
+    const i = this.children.indexOf(ref);
+    n.parent = this;
+    this.children.splice(i < 0 ? this.children.length : i, 0, n);
+    return n;
+  }
+  removeChild(n) { const i = this.children.indexOf(n); if (i >= 0) this.children.splice(i, 1); n.parent = null; return n; }
+  replaceChildren(...cs) { for (const c of this.children) c.parent = null; this.children = []; this.append(...cs); }
   contains(n) { if (n === this) return true; return this.children.some((c) => c.contains && c.contains(n)); }
   get textContent() { return this.text != null ? this.text : this.children.map((c) => c.textContent).join(''); }
-  set textContent(v) { this.children = []; this.text = String(v); }
+  set textContent(v) { for (const c of this.children) c.parent = null; this.children = []; this.text = String(v); }
 }
-class Text0 extends Node0 { constructor(t) { super(); this.text = t; } }
+class Text0 extends Node0 { constructor(t) { super(); this.text = t; } get nodeType() { return 3; } }
 export class El0 extends Node0 {
   constructor(tag) {
     super(); this.tag = tag; this.attrs = {}; this.className = ''; this.innerHTML = ''; this.listeners = {}; this.value = ''; this.dataset = {};
+    this.scrollTop = 0; this.selectionStart = 0; this.selectionEnd = 0;
     this.classList = { add: (c) => { this.className = `${this.className} ${c}`.trim(); } };
   }
+  get tagName() { return this.tag.toUpperCase(); }
   setAttribute(k, v) { this.attrs[k] = String(v); if (k.startsWith('data-')) this.dataset[k.slice(5)] = String(v); if (k === 'class') this.className = String(v); }
-  getAttribute(k) { return k === 'class' ? this.className : this.attrs[k]; }
+  getAttribute(k) { return k === 'class' ? (this.className || null) : (k in this.attrs ? this.attrs[k] : null); }
+  hasAttribute(k) { return k === 'class' ? Boolean(this.className) : k in this.attrs; }
+  removeAttribute(k) { delete this.attrs[k]; if (k.startsWith('data-')) delete this.dataset[k.slice(5)]; if (k === 'class') this.className = ''; }
+  getAttributeNames() { return [...(this.className ? ['class'] : []), ...Object.keys(this.attrs)]; }
   addEventListener(t, fn) { (this.listeners[t] ||= []).push(fn); }
-  click() { for (const fn of this.listeners.click || []) fn({ preventDefault() {} }); }
+  dispatch(t, ev = {}) { const e = { type: t, target: this, preventDefault() {}, stopPropagation() {}, ...ev }; for (const fn of this.listeners[t] || []) fn(e); return e; }
+  click() { this.dispatch('click'); }
+  focus() { globalThis.document.activeElement = this; this.dispatch('focus'); }
+  blur() { if (globalThis.document.activeElement === this) globalThis.document.activeElement = null; this.dispatch('blur'); }
+  setSelectionRange(a, b) { this.selectionStart = a; this.selectionEnd = b; }
+  closest(sel) {
+    const m = /^\[data-([a-z-]+)\]$/.exec(sel);
+    for (let n = this; n && n instanceof El0; n = n.parent) if (m ? m[1] in n.dataset : false) return n;
+    return null;
+  }
 }
 
 export function findAll(node, pred, out = []) {
@@ -105,11 +133,13 @@ export async function loadSandbox({ config, repos, hash = '#/', now: start = Dat
   });
   const loc = { hash, search: '?sandbox' };
   set('location', loc);
-  set('window', { scrollY: 0, scrollTo() {}, addEventListener: (t, fn) => { (winListeners[t] ||= []).push(fn); },
+  const scrolls = [];
+  const intervals = [];
+  set('window', { scrollY: 0, innerWidth: 360, innerHeight: 740, scrollTo(x, y) { scrolls.push([x, y]); }, addEventListener: (t, fn) => { (winListeners[t] ||= []).push(fn); },
     setTimeout: (fn, ms) => globalThis.setTimeout(fn, ms) });
   set('setTimeout', (fn, ms) => { const id = ++seq; timers.set(id, { at: now + Math.max(0, ms || 0), fn, id }); return id; });
   set('clearTimeout', (id) => { timers.delete(id); });
-  set('setInterval', () => 0);
+  set('setInterval', (fn, ms) => { intervals.push({ fn, ms }); return intervals.length; });
   set('navigator', { clipboard: { writeText: async () => {} } });
   set('localStorage', store);
   Date.now = () => now;
@@ -118,7 +148,13 @@ export async function loadSandbox({ config, repos, hash = '#/', now: start = Dat
   const mod = await import(`../../src/public/sandbox.js?load=${++loads}`);
   const desk = mod.startSandbox({ config, call: (p, b) => server.call(p, b) });
   const app = {
-    els, desk, server, flush, view: els.view, head,
+    els, desk, server, flush, view: els.view, head, scrolls, loc, module: mod,
+    /** The sandbox's 15-second tick (setInterval), run once. */
+    async tick() { for (const i of intervals) if (i.ms === 15_000) i.fn(); await flush(); },
+    /** A key pressed on the document (Escape and the like). */
+    async key(k) { for (const fn of docListeners.keydown || []) fn({ key: k, target: document.activeElement, preventDefault() {} }); await flush(); },
+    /** A tap on the document's background, outside any sheet or bubble. */
+    async tapOutside(target = els.view) { for (const t of ['pointerdown', 'click']) for (const fn of docListeners[t] || []) fn({ type: t, target, pointerType: 'touch', preventDefault() {} }); await flush(); },
     get now() { return now; },
     async advance(ms) {
       const until = now + ms;

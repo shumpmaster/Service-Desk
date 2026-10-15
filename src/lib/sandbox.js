@@ -378,6 +378,9 @@ export function nextOrchestratorRun(j, now) {
   return cron ? nextCronRun(cron, now) : null;
 }
 
+/** AC49's first line, from the oldest item's raised time (AC20's rule); time-dependent (AC56's tick). */
+export const youWaitText = (oldest, nowMs) => `Waiting on you, ${oldest != null ? `the oldest for ${durationText(nowMs - oldest)}` : 'wait not recorded'}`;
+
 /**
  * Who has the ball (AC49), each line that holds, in order: waiting on you; an agent working; checks
  * running; queued for the next Orchestrator run; else "Nothing under way". Returns [{ who, text, lit }].
@@ -389,7 +392,7 @@ export function ballLines(project, model, snap, j, q, now, tz) {
   if (q.waiting > 0) {
     const raised = q.rows.map((r) => r.raisedAt).filter((x) => x != null);
     const oldest = raised.length ? Math.min(...raised) : null;
-    out.push({ who: 'you', text: `Waiting on you, ${oldest != null ? `the oldest for ${durationText(nowMs - oldest)}` : 'wait not recorded'}`, lit: false });
+    out.push({ who: 'you', text: youWaitText(oldest, nowMs), oldest, lit: false });
   }
   for (const i of (model && model.items) || []) {
     if (i.state === 'dispatched') out.push({ who: 'agent', text: `${i.running ? i.running.role : NOT_RECORDED} working on ${i.id}`, lit: true, item: i.id });
@@ -888,7 +891,7 @@ export function teamView(project, model, snap, j, q, ball, now, tz) {
   const owner = {
     waiting: q.waiting > 0,
     status: q.waiting ? `Waiting on you: ${q.waiting} in your queue` : 'Idle: nothing in your queue',
-    next: q.rows.slice(0, OWNER_NEXT_LINES).map((r) => ({ text: r.text, code: r.code, wait: r.wait })),
+    next: q.rows.slice(0, OWNER_NEXT_LINES).map((r) => ({ text: r.text, code: r.code, wait: r.wait, raisedAt: r.raisedAt })),
   };
   if (project.model !== 'v3') {
     return { owner, members: [{ id: 'chief-of-staff', label: 'Chief of Staff', status: "Its sessions aren't recorded", last: NOT_RECORDED, lit: false, glow: false }],
@@ -1044,7 +1047,7 @@ export function workingNow(project, model, snap, j, id, page, now, tz) {
     tiles: [
       { label: 'Started', ...(since ? { value: whenText(since, now, tz), why: null } : dash(`${NOT_RECORDED}: no dispatched_at in status/${it.id}.toml`)) },
       { label: 'Time so far', ...(!since ? dash(NOT_RECORDED) : now - since < 0 ? dash("not available: the start is later than this device's clock")
-        : { value: durationText(now - since), why: 'counted from the start' }) },
+        : { value: durationText(now - since), why: 'counted from the start', since: since.getTime() }) },
       { label: 'Last check-in', ...(it.asOf ? { value: whenText(it.asOf, now, tz), why: 'the latest dispatch-log entry naming it' } : dash(NOT_RECORDED)) },
       { label: 'Next check-in', ...(due ? { value: hhmm(due, tz), why: "the Orchestrator's next run by its schedule" } : dash('schedule not readable')) },
     ],

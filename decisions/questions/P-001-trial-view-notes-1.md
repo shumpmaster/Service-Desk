@@ -50,3 +50,12 @@ How each is read:
 11. The Team screen's running log (11:30): the branch line is drawn wrongly (lanes start and end at angles, dots off the line). Fix the drawing on every member's log.
 12. The Timeline does not match the agreed screen 4 (docs/design/screens/04-timeline.html: one line per phase run, newest at the top, tinted icon tiles on a thin line, iterations, stalls and confirmations in place), and its flow and critical points are hard to grasp. Rebuild it to the agreed screen.
 13. The Timeline's milestones are too plain to notice, and the grouping (steps under the milestone they belong to; the standard milestones box folding away) does not work on the real timeline. Make milestones stand out as headings on the line, and group each phase run's steps under their milestones as the agreed screen does.
+
+Notes 14 and 15, the owner's message verbatim (2026-10-15):
+"Two more things to add - 1 it seems like every time the app refreshes it will revert popups in utilizing or it will close pages.
+
+2 whereever a ruling is requested can you format it in a question, then answer box that would then prefill my rulings?"
+
+How each is read:
+14. Each minute's refresh redraws the screen and loses what the owner was doing: an open sheet or bubble closes, a page jumps back, typed text or a picked option is lost. A refresh must keep the screen as the owner left it: the same screen, any open sheet or bubble, the scroll position, and anything typed or picked; new data fills in around it. Only the owner closes what they opened.
+15. Wherever a ruling is asked of the owner (an owner question in questions/, a decision card, a gate card), the sheet shows each question on its own, followed by its own answer box: the options as choices when the question lists them, the recommendation labelled but not picked, and a text box for the owner's own words. The answers then prefill the ruling file the owner commits (decisions/questions/<name>.md for a question, the card's answer file for a card), each answer under its question's number, in the form the project's rules require. A question file holding several numbered questions (such as questions/P-001-design-lab-open.md) gets one question-and-answer pair per number.

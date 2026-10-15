@@ -78,21 +78,242 @@ test('AC54 (a): the cards show the README summary for a v3 and a v2.5 project; a
   }
 });
 
-test('AC54 (a) + AC42: at 360 px the 600-character summary is in the card whole: no clipping, ellipsis, line clamp or overflow', async () => {
+test('AC54 (a) + AC42 (2026-10-15): the card holds the 600-character summary whole; its box is exactly three lines high and hides only what follows, with no ellipsis, line clamp or scrolling', async () => {
   const long = readmeSummary(tv('README-600.md'));
   assert.equal(long.length, 600);
   const config = { ...CONFIG, projects: [v3('Alpha')] };
   const app = await openHome(config, { Alpha: repo({ 'governance/ROUTING.toml': ROUTING, 'README.md': tv('README-600.md') }) });
   try {
-    assert.equal(byClass(card(app, 'Alpha'), 'sb-sum')[0].textContent, long);
+    assert.equal(byClass(card(app, 'Alpha'), 'sb-sum')[0].textContent, long, 'word for word: nothing shortened');
+    clipLines(app, 'Alpha', 31);
+    await app.resize(360);
+    assert.equal(byClass(card(app, 'Alpha'), 'sb-sum')[0].textContent, long, 'clipped, the card still holds the whole text');
+    assert.doesNotMatch(card(app, 'Alpha').textContent, /…|\.\.\./, 'no ellipsis');
   } finally {
     app.restore();
   }
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
-  for (const sel of ['.sb-sum', '.sb-pc-main', '.sb-pc', '.sb-grid', '.sb-hgroup', '.sb-bubble', '.sb-bubble-t']) {
+  // Nothing else on the card clips, clamps, scrolls or keeps text on one line.
+  for (const sel of ['.sb-sum', '.sb-sumbox', '.sb-pc-main', '.sb-pc-rest', '.sb-pc', '.sb-grid', '.sb-hgroup', '.sb-bubble', '.sb-bubble-t']) {
     for (const m of css.matchAll(new RegExp(`(?:^|[},\\s])${sel.replace('.', '\\.')}\\s*(?:,[^{]*)?\\{([^}]*)\\}`, 'g'))) {
       assert.doesNotMatch(m[1], /line-clamp|text-overflow|overflow(-x|-y)?:\s*(hidden|clip|scroll|auto)|max-height|white-space:\s*nowrap/, `${sel}: ${m[1]}`);
     }
+  }
+  // The summary's box: three lines' height exactly (3 x its line height), the rest hidden, never scrolled, no ellipsis.
+  const clip = /\n\.sb-sumclip \{([^}]*)\}/.exec(css);
+  assert.ok(clip, 'the summary box has its rule');
+  assert.match(clip[1], /font-size: \.8rem; line-height: 1\.35; height: 4\.05em;/, 'its height is three of its lines (3 x 1.35em)');
+  assert.match(clip[1], /overflow: hidden; overflow: clip;/, 'it hides the lines after the third and is no scroll container where the browser has `clip`');
+  assert.doesNotMatch(clip[1], /line-clamp|text-overflow|scroll|auto|max-height|nowrap/);
+  assert.match(css, /\.sb-sum \{ margin: 0; font-size: \.8rem; line-height: 1\.35;/, 'the text has the box\'s line height');
+  assert.match(css, /\nbutton\.sb-sum \{[^}]*height: 100%;[^}]*font: inherit; line-height: inherit;/, 'the button is the box\'s three lines, in the same type');
+  assert.doesNotMatch(css, /line-clamp|text-overflow:\s*ellipsis/, 'no line clamp or ellipsis anywhere in the sandbox');
+});
+
+// The fake DOM cannot lay out text, so a test says how tall the summary's text is, as the browser
+// would measure it: its box is three lines (52 px at 17.28 px a line) and the text `lines` lines.
+const LINE = 17.28;
+function clipLines(app, name, lines) {
+  const c = findAll(app.view, (e) => e.dataset && e.dataset.k === `sumclip:${name}`)[0];
+  assert.ok(c, `${name}'s summary box`);
+  c.clientHeight = Math.round(3 * LINE);
+  c.scrollHeight = Math.round(Math.max(3, lines) * LINE);
+  return c;
+}
+const sumCtl = (app, name) => findAll(app.view, (e) => e.dataset && e.dataset.k === `sum:${name}`)[0] || null;
+const sumBubble = (app, name) => findAll(app.view, (e) => e.dataset && e.dataset.k === `sumbubble:${name}`)[0] || null;
+const sumClip = (app, name) => findAll(app.view, (e) => e.dataset && e.dataset.k === `sumclip:${name}`)[0] || null;
+
+/** Alpha with the 600-character summary and Beta with a one-line summary: one grid row. */
+function longAndShort() {
+  const config = { ...CONFIG, projects: [v3('Alpha'), v3('Beta')] };
+  const repos = { Alpha: fullRepo('Alpha'), Beta: fullRepo('Beta') };
+  repos.Alpha.commit({ 'README.md': tv('README-600.md') });
+  repos.Beta.commit({ 'README.md': '# Beta\n\nA one-line summary.\n' });
+  return { config, repos };
+}
+
+test('AC54 (a) (2026-10-15): at 360 px the 600-character summary shows three lines with the fade and is a button named "Show the whole summary of <name>"; a one-line summary shows whole with no fade and no control; both boxes take three lines\' height', async () => {
+  const { config, repos } = longAndShort();
+  const app = await openHome(config, repos);
+  try {
+    const long = readmeSummary(tv('README-600.md'));
+    assert.equal(sumCtl(app, 'Alpha'), null, 'until the browser has measured it, the summary is plain text');
+    clipLines(app, 'Alpha', 31);
+    clipLines(app, 'Beta', 1);
+    await app.resize(360);
+    const a = sumCtl(app, 'Alpha');
+    assert.ok(a, 'the summary runs past three lines: it is a control');
+    assert.equal(a.tag, 'button', 'a real button');
+    assert.equal(a.attrs.type, 'button');
+    assert.ok(!('tabindex' in a.attrs) && !('disabled' in a.attrs), 'in the tab order');
+    assert.equal(a.attrs['aria-label'], 'Show the whole summary of Alpha');
+    assert.equal(a.attrs['aria-expanded'], 'false');
+    assert.equal(a.textContent, long, 'its text is the whole summary; the box shows the first three lines');
+    assert.ok(a.className.split(' ').includes('sb-sum'));
+    assert.ok(sumClip(app, 'Alpha').className.split(' ').includes('over'), 'the fade at the cut');
+    // Three lines or fewer: whole, no fade, no control; the same three-line box.
+    assert.equal(sumCtl(app, 'Beta'), null, 'a one-line summary has no control');
+    assert.equal(byClass(card(app, 'Beta'), 'sb-sum')[0].tag, 'p');
+    assert.equal(byClass(card(app, 'Beta'), 'sb-sum')[0].textContent, 'A one-line summary.');
+    assert.ok(!sumClip(app, 'Beta').className.split(' ').includes('over'), 'and no fade');
+    assert.equal(byClass(card(app, 'Beta'), 'sb-sumclip').length, 1, 'in the same three-line box (its height is the CSS\'s, checked above and in the browser)');
+    // The two cards sit in one grid row: the grid stretches its cards to the row's height.
+    assert.equal(card(app, 'Alpha').parent, card(app, 'Beta').parent);
+    assert.ok(card(app, 'Alpha').className.includes('col-l') && card(app, 'Beta').className.includes('col-r'));
+    const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
+    for (const m of css.matchAll(/(?:^|\n)([^{}\n]*\.sb-grid[^{}\n]*)\{([^}]*)\}/g)) {
+      assert.doesNotMatch(m[2], /align-items|place-items|grid-auto-rows/, `the grid stretches the cards in a row to one height (${m[1].trim()})`);
+    }
+    assert.doesNotMatch(/\n\.sb-pc \{([^}]*)\}/.exec(css)[1], /align-self|height:/, 'a card takes its row\'s height');
+    // The fade ends in the card's own background, in both themes.
+    assert.match(css, /\.sb-sumclip\.over::after \{[^}]*background: linear-gradient\(to right, transparent, var\(--surf\) 85%\);/);
+    assert.match(/\n\.sb-pc \{([^}]*)\}/.exec(css)[1], /background: var\(--surf\);/, 'the card\'s background is --surf');
+    for (const theme of [/html\.sb \{([^}]*)\}/, /html\.sb:not\(\[data-theme="light"\]\) \{([^}]*)\}/, /html\.sb\[data-theme="dark"\] \{([^}]*)\}/]) {
+      assert.match(theme.exec(css)[1], /--surf: #[0-9a-f]{6};/, `--surf in ${theme}`);
+    }
+    // The button is a separate tap target: not inside the card's link, which still opens the Project screen.
+    const main = byClass(card(app, 'Alpha'), 'sb-pc-main')[0];
+    assert.equal(main.attrs.href, '#/p/Alpha');
+    assert.ok(!findAll(main, (e) => e === a).length, 'the control is not inside the link');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC54 (a) (2026-10-15): a tap, Enter and Space open the whole summary in a bubble; its Close, a tap outside, Escape and a second tap close it, focus back on the summary; a tap on it never opens the Project screen', async () => {
+  const { config, repos } = longAndShort();
+  const app = await openHome(config, repos);
+  try {
+    const long = readmeSummary(tv('README-600.md'));
+    clipLines(app, 'Alpha', 31);
+    await app.resize(360);
+    const ctl = () => sumCtl(app, 'Alpha');
+    const closedWithFocus = (how) => {
+      assert.equal(sumBubble(app, 'Alpha'), null, `closed by ${how}`);
+      assert.equal(document.activeElement, ctl(), `focus back on the summary (${how})`);
+      assert.equal(ctl().attrs['aria-expanded'], 'false');
+    };
+    for (const how of ['second tap', 'Close', 'outside', 'Escape']) {
+      await app.tap(ctl()); // a real tap: the press, the focus it gives, the click
+      const bub = sumBubble(app, 'Alpha');
+      assert.ok(bub, `a tap opens it (${how})`);
+      assert.equal(app.loc.hash, '#/', 'and opens no Project screen');
+      assert.equal(ctl().attrs['aria-expanded'], 'true');
+      assert.equal(ctl().attrs['aria-controls'], bub.attrs.id);
+      assert.equal(bub.attrs.role, 'dialog');
+      assert.equal(byClass(bub, 'sb-bubble-t')[0].textContent, long, 'the whole summary, word for word');
+      assert.equal(bub.children[0], byClass(bub, 'sb-bubble-top')[0], 'its Close sits at its top');
+      const close = byClass(bub.children[0], 'sb-close')[0];
+      assert.equal(close.attrs['aria-label'], 'Close');
+      if (how === 'second tap') await app.tap(ctl());
+      else if (how === 'Close') await app.tap(close);
+      else if (how === 'outside') await app.tap(app.view); // the page's background: the press takes focus off the control
+      else await app.key('Escape');
+      closedWithFocus(how);
+    }
+    for (const key of ['Enter', ' ']) {
+      ctl().focus();
+      ctl().dispatch('keydown', { key });
+      await app.flush();
+      assert.ok(sumBubble(app, 'Alpha'), `${key === ' ' ? 'Space' : key} opens it`);
+      assert.equal(byClass(sumBubble(app, 'Alpha'), 'sb-bubble-t')[0].textContent, long);
+      await app.key('Escape');
+      closedWithFocus(`Escape after ${key === ' ' ? 'Space' : key}`);
+    }
+    assert.equal(app.loc.hash, '#/');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC54 (a) (2026-10-15): one bubble at a time: opening the summary closes "Latest", and opening "Latest" by a tap or by hover closes the summary', async () => {
+  const { config, repos } = longAndShort();
+  const app = await openHome(config, repos);
+  try {
+    clipLines(app, 'Alpha', 31);
+    await app.resize(360);
+    const open = () => [bubbleOf(app, 'Alpha') && 'latest:Alpha', bubbleOf(app, 'Beta') && 'latest:Beta', sumBubble(app, 'Alpha') && 'sum:Alpha'].filter(Boolean);
+    await app.tap(latest(app, 'Alpha'));
+    assert.deepEqual(open(), ['latest:Alpha']);
+    await app.tap(sumCtl(app, 'Alpha'));
+    assert.deepEqual(open(), ['sum:Alpha'], 'opening the summary closes the "Latest" bubble');
+    await app.tap(latest(app, 'Beta'));
+    assert.deepEqual(open(), ['latest:Beta'], 'a tap on "Latest" closes the summary');
+    await app.tap(sumCtl(app, 'Alpha'));
+    assert.deepEqual(open(), ['sum:Alpha']);
+    latest(app, 'Alpha').dispatch('pointerenter', { pointerType: 'mouse' });
+    await app.flush();
+    assert.deepEqual(open(), ['latest:Alpha'], 'hovering "Latest" closes the summary');
+    latest(app, 'Alpha').dispatch('pointerleave', { pointerType: 'mouse' });
+    await app.advance(300);
+    assert.deepEqual(open(), []);
+    // Keyboard: "Latest" opens on focus; Enter on the summary then opens the summary in its place.
+    latest(app, 'Alpha').focus();
+    await app.flush();
+    assert.deepEqual(open(), ['latest:Alpha']);
+    sumCtl(app, 'Alpha').focus();
+    sumCtl(app, 'Alpha').dispatch('keydown', { key: 'Enter' });
+    await app.advance(10);
+    assert.deepEqual(open(), ['sum:Alpha']);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC54 (a) (2026-10-15): judged again when the width changes: a summary past three lines at 360 px and within three at 414 px loses its fade and control at 414 px, and gains them back at 360 px', async () => {
+  const crossing = readmeSummary(tv('README-crossing.md'));
+  assert.equal(crossing, 'A summary of four lines at 360 pixels and three lines at 414 pixels.');
+  const config = { ...CONFIG, projects: [v3('Gamma')] };
+  const repos = { Gamma: fullRepo('Gamma') };
+  repos.Gamma.commit({ 'README.md': tv('README-crossing.md') });
+  const app = await openHome(config, repos);
+  try {
+    // R4: the fixture is measured in the browser to cross the mark (four lines at 360 px, three at
+    // 414 px; the browser check confirms that first). Here the browser's measures are given.
+    clipLines(app, 'Gamma', 4);
+    await app.resize(360);
+    assert.ok(sumCtl(app, 'Gamma'), 'at 360 px: the control');
+    assert.ok(sumClip(app, 'Gamma').className.includes('over'), 'at 360 px: the fade');
+    await app.tap(sumCtl(app, 'Gamma'));
+    assert.ok(sumBubble(app, 'Gamma'), 'its bubble open');
+    clipLines(app, 'Gamma', 3);
+    await app.resize(414);
+    assert.equal(sumCtl(app, 'Gamma'), null, 'at 414 px: no control');
+    assert.ok(!sumClip(app, 'Gamma').className.includes('over'), 'at 414 px: no fade');
+    assert.equal(sumBubble(app, 'Gamma'), null, 'and the bubble of a summary that now fits is gone');
+    assert.equal(byClass(card(app, 'Gamma'), 'sb-sum')[0].textContent, crossing, 'the whole text');
+    clipLines(app, 'Gamma', 4);
+    await app.resize(360);
+    assert.ok(sumCtl(app, 'Gamma') && sumClip(app, 'Gamma').className.includes('over'), 'back at 360 px: the fade and the control again');
+    assert.equal(sumBubble(app, 'Gamma'), null, 'and the bubble closed at 414 px stays closed');
+    // Nothing measured (no width yet): the last answer stands, the screen is not redrawn for it.
+    const c = sumClip(app, 'Gamma');
+    delete c.clientHeight;
+    delete c.scrollHeight;
+    await app.resize(360);
+    assert.ok(sumCtl(app, 'Gamma'));
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC54 (a) (2026-10-15): "no summary in this project\'s README" and "summary not available" sit in the same three-line box and never get the control', async () => {
+  const config = { ...CONFIG, projects: [v3('Alpha'), v3('Beta')] };
+  const repos = { Alpha: fullRepo('Alpha'), Beta: fullRepo('Beta') };
+  const app = await openHome(config, repos);
+  try {
+    for (const n of ['Alpha', 'Beta']) {
+      assert.equal(byClass(card(app, n), 'sb-sumclip').length, 1);
+      clipLines(app, n, 5); // even if it measured past three lines
+    }
+    await app.resize(360);
+    for (const n of ['Alpha', 'Beta']) {
+      assert.equal(sumCtl(app, n), null, `${n}: no control for the desk's own words`);
+      assert.match(byClass(card(app, n), 'sb-sum')[0].textContent, /no summary in this project's README|summary not available/);
+    }
+  } finally {
+    app.restore();
   }
 });
 

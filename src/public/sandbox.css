@@ -102,8 +102,27 @@ html.sb :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .sb-new { font-size: .66rem; font-weight: 700; color: var(--muted); border: 1px solid var(--line); border-radius: var(--rs); padding: 1px 5px; }
 .sb-new::before { content: "● "; }
 .sb-nm { margin: 0; font: 750 .95rem/1.2 var(--font); }
+/* The summary (AC54 (a), 2026-10-15): its box always takes exactly three lines' height and hides
+   the lines after the third; the card holds the whole text. Nothing scrolls in it and nothing adds
+   an ellipsis: when the text runs past three lines, the third line fades at its end into the card's
+   background (--surf, in each theme). `overflow: clip` (where a browser has it) makes the box no
+   scroll container, so focus never scrolls the text in it. The box lets a tap through to the
+   card's link, except on the summary's own button and its bubble. */
+.sb-sumbox { position: relative; pointer-events: none; }
+.sb-sumclip { position: relative; font-size: .8rem; line-height: 1.35; height: 4.05em; overflow: hidden; overflow: clip; }
+.sb-sumclip.over::after { content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1.35em; pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--surf) 85%); }
+.sb-sumclip:has(.sb-sum:focus-visible) { outline: 2px solid var(--focus); outline-offset: 1px; }
 .sb-sum { margin: 0; font-size: .8rem; line-height: 1.35; color: var(--ink); }
 .sb-sum.none { color: var(--muted); font-style: italic; }
+button.sb-sum { display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: none; font: inherit; line-height: inherit;
+  text-align: left; color: var(--ink); cursor: pointer; pointer-events: auto; }
+button.sb-sum:focus-visible { outline: none; }
+.sb-sumbox > .sb-bubble { pointer-events: auto; top: calc(100% + 4px); }
+.sb-sumbox > .sb-bubble.col-l { left: -8px; right: calc(-100% - 32px); }
+.sb-sumbox > .sb-bubble.col-r { right: -8px; left: calc(-100% - 32px); }
+.sb-sumbox > .sb-bubble.up { top: auto; bottom: calc(100% + 4px); }
+.sb-pc-rest { display: flex; flex-direction: column; gap: 5px; pointer-events: none; } /* a tap on it is the card's link's */
 .sb-why { position: relative; z-index: 2; font-size: .72rem; color: var(--muted); }
 .sb-why > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
 .sb-why p { margin: 2px 0 0; }

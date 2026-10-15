@@ -19,64 +19,7 @@ import {
 } from '../../src/lib/sandbox.js';
 import { buildModel } from '../../src/lib/model.js';
 
-const NOW = Date.parse('2026-10-14T15:00:00Z');
-const iso = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z');
-const md = (p) => fixture(`md-extremes/${p}`);
-const om = (p) => fixture(`orchestrator-m2/${p}`);
-
-const v3 = (name) => ({ name, repo: `shumpmaster/${name}`, defaultBranch: 'main', model: 'v3', planning: false,
-  webCommitsToDefault: true, contentPrefill: true, contentParam: 'value' });
-const v25 = (name) => ({ ...v3(name), model: 'v2.5' });
-
-/**
- * A v3 project holding one item of each group (AC52's fixture): a card and a question (Decisions),
- * a hold card (Decisions, C), a Build-gate card (Gate rulings), a PR from a branch with a slash and
- * a merge card (Merges), and a deploy waiting for approval (Deploys, shown not counted).
- */
-function fullRepo(tag, { long = false } = {}) {
-  const raised = (min) => iso(NOW - min * 60e3);
-  const log = [
-    { item: 'P-002', action: 'dispatch', role: 'critic', route: 'plan-review', stage: 3, time: raised(300), trigger: 'step', gate: null },
-    { item: 'P-002', trigger: 'outcome', session: `P-002:plan-review:${raised(300)}`, role: 'critic', result: 'ok', verdict: 'PASS', record: 'reviews/P-002/plan.md', time: raised(280) },
-    { item: 'P-002', action: 'card', card: 1, gate: 'criteria', role: 'critic', route: 'build-gate', stage: 4, time: raised(270), trigger: 'x' },
-    { item: 'Q-020', action: 'card', card: 1, gate: 'stop', role: 'critic-triage', route: 'third-fail', stage: 2, time: raised(200), trigger: 'x' },
-    { item: 'P-003', action: 'dispatch', role: 'builder', route: 'ready-dispatch', stage: 5, time: raised(20), trigger: 'step', gate: null },
-  ].map((o) => JSON.stringify(o)).join('\n');
-  const files = {
-    'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml'),
-    [`dispatch-log/2026-10.jsonl`]: `${log}\n`,
-    'dispatch-log/2026-09.jsonl': '',
-    'status/P-002.toml': 'kind = "project"\nstage = 4\nstate = "waiting-owner"\nrole = "critic"\ngate = "criteria"\ncard = 1\n',
-    'status/Q-020.toml': 'kind = "research"\nstage = 2\nstate = "waiting-owner"\nrole = "critic-triage"\ngate = "stop"\ncard = 1\n',
-    'status/P-003.toml': `kind = "project"\nstage = 5\nstate = "dispatched"\nrole = "builder"\ndispatched_at = "${raised(20)}"\n`,
-    'queue/P-002-criteria-1.md': md('gate-card.md').replace(/P-002/g, 'P-002'),
-    'docs/gates/P-002/build-gate-1-case.md': md('gate-case.md'),
-    'queue/Q-020-stop-1.md': long ? md('long-card.md') : md('long-card.md').replace(/^Research Q-020 failed.*$/m, `Research Q-020 (${tag}) failed: re-specify, drop or retry?`),
-    [`questions/${tag}-pick.md`]: long ? md('long-question.md') : `# Ruling needed: ${tag}'s question\n\nWHY: a test.\nOPTIONS:\n  A. Yes.\n  B. No.\nRECOMMENDATION: B — no.\nRISK CLASS: R0\nREVERSIBILITY: reversible\nBLAST RADIUS: none\nDEFAULT: B\nTIMEOUT: 24\n`,
-    'questions/_TEMPLATE.md': fixture('service-desk/questions/_TEMPLATE.md'),
-    'queue/ci-hold-4a2448939173.md': om('queue/ci-hold-4a2448939173.md'),
-    'queue/P-002-merge-conflict.md': om('queue/P-002-merge-conflict.md'),
-    'docs/PROJECT.md': j11Files()['docs/PROJECT.md'],
-    'governance/SURFACES.md': j11Files()['governance/SURFACES.md'],
-    '.github/workflows/orchestrator.yml': j11Files()['.github/workflows/orchestrator.yml'],
-    'reviews/P-002/plan.md': 'Verdict: PASS\n',
-  };
-  const r = repo(files, [pr(80, `${tag}: a change to merge`, { head: 'build/builder/md-sandbox', headRepo: `shumpmaster/${tag}` })],
-    [{ name: 'governance', status: 'completed', conclusion: 'failure' }, { name: 'desk-deploy', status: 'waiting', conclusion: null }]);
-  r.history[`questions/${tag}-pick.md`] = [{ commit: { committer: { date: raised(400) } } }];
-  return r;
-}
-
-function twoProjects() {
-  const config = { ...CONFIG, projects: [v3('Alpha'), v3('Beta')] };
-  return { config, repos: { Alpha: fullRepo('Alpha'), Beta: fullRepo('Beta') } };
-}
-
-async function opened(setup = twoProjects(), hash = '#/') {
-  const app = await loadSandbox({ ...setup, hash, now: NOW });
-  await app.advance(1000);
-  return app;
-}
+import { NOW, iso, md, om, v3, v25, fullRepo, twoProjects, opened, extremes } from './sandbox-fixtures.mjs';
 
 // ---------------------------------------------------------------------------
 // AC48
@@ -89,7 +32,9 @@ test('AC48: Home — one card per project in AC8\'s order, each with its icon, n
     assert.equal(cards.length, 2);
     for (const c of cards) {
       assert.equal(byClass(c, 'sb-app').length, 1, 'a quiet line icon');
-      assert.equal(byClass(c, 'sb-where').length, 1);
+      // AC54 (2026-10-14): the card shows the README summary in AC37's place; AC37's line opens from "Latest".
+      assert.equal(byClass(c, 'sb-sum').length, 1);
+      assert.equal(byClass(c, 'sb-latest').length, 1);
       assert.equal(byClass(c, 'sb-ck').length, 1);
       assert.equal(byClass(c, 'sb-ball').length, 1);
       assert.equal(byClass(c, 'sb-pill').length, 1);
@@ -126,9 +71,11 @@ test('AC48: each card, pill and bar tap goes to the screen it names; every proje
     await app.go('#/p/Alpha');
     const hrefs = byClass(app.view, 'sb-btn').map((b) => b.attrs.href);
     assert.deepEqual(hrefs, ['#/p/Alpha/queue', '#/p/Alpha/team'], 'two buttons open the queue and the team');
-    // AC36: every M1 and M2 view stays reachable (the current desk's views, one tap down).
+    // AC36, as AC55 changed it (2026-10-15): inside the sandbox the M1 and M2 detail is reached
+    // through the views rebuilt in the new design, never through a link to the accepted views.
     const links = linksIn(app.view).map((l) => l.href);
-    for (const h of ['./#/p/Alpha', './#/p/Alpha/asked', './#/p/Alpha/agents']) assert.ok(links.includes(h), h);
+    for (const h of ['#/p/Alpha/pipeline', '#/p/Alpha/asked', '#/p/Alpha/agents']) assert.ok(links.includes(h), h);
+    assert.ok(!links.some((h) => h && h.startsWith('./#')), 'no link to an accepted view');
   } finally {
     app.restore();
   }
@@ -211,14 +158,18 @@ test('AC52: the recommendation is labelled and never preselected; a verdict has 
     const chips = byClass(app.view, 'sb-chip');
     assert.equal(chips.length, 2);
     assert.ok(chips.every((c) => c.attrs['aria-checked'] === 'false'), 'nothing preselected');
-    assert.match(app.text(), /Recommendation B — no\./);
-    assert.equal(findAll(app.view, (e) => e.tag === 'textarea').length, 0);
+    // AC53 as note 15 extended it (2026-10-15): the recommendation is labelled "Recommended", the
+    // ruling file is prefilled from the start (no letter until one is picked), and a lettered
+    // question's ruling carries the question and its options as they were put.
+    assert.match(app.text(), /Recommended B — no\./);
+    const box = () => findAll(app.view, (e) => e.tag === 'textarea' && /^box:/.test(e.dataset.k || ''))[0];
+    assert.match(box().value, /^Ruling: \n/, 'nothing picked for the owner');
     chips[0].click();
     await app.flush();
-    const ta = findAll(app.view, (e) => e.tag === 'textarea')[0];
-    assert.equal(ta.value, 'Ruling: A\n\nQuestion: questions/Alpha-pick.md\n');
+    const ta = box();
+    assert.equal(ta.value, "Ruling: A\n\nQuestion: questions/Alpha-pick.md\n\nQuestion, as put: Alpha's question\nOptions, as put:\n  A. Yes.\n  B. No.\n");
     const go = byClass(app.view, 'sb-go')[0];
-    assert.equal(go.attrs.href, 'https://github.com/shumpmaster/Alpha/new/main?filename=decisions%2Fquestions%2FAlpha-pick.md&value=Ruling%3A%20A%0A%0AQuestion%3A%20questions%2FAlpha-pick.md%0A');
+    assert.equal(go.attrs.href, `https://github.com/shumpmaster/Alpha/new/main?filename=decisions%2Fquestions%2FAlpha-pick.md&value=${encodeURIComponent(ta.value)}`);
     // The PR's sheet: no chips, its own verdict box at the head branch, "not recorded" whether it exists.
     await app.go('#/p/Alpha/queue/pr%3A80');
     assert.equal(byClass(app.view, 'sb-chip').length, 0, 'a verdict has no recommendation and no chips');
@@ -260,7 +211,7 @@ test('AC52: a gate ruling\'s sheet quotes its case, links the case only when the
     assert.match(app.text(), /The Critic's view: no file recorded/);
     assert.match(app.text(), /User representative: not needed/);
     assert.deepEqual(byClass(app.view, 'sb-chip').map((c) => c.textContent), ['proceed', 'hold', 'recycle', 'kill']);
-    assert.match(app.text(), /Recommendation The case recommends proceed\./);
+    assert.match(app.text(), /Recommended The case recommends proceed\./);
   } finally {
     app.restore();
   }
@@ -285,8 +236,10 @@ test('AC52: each tracker step and each "Done today" time against its record', ()
   const p = trackerSteps(project, { flag: { kind: 'pr' }, stillOpen: false }, { tree: new Map() }, []);
   assert.match(p[0].words, /no longer open/);
   assert.match(p[1].words, /not recorded/);
-  const done = doneToday(project, { allEntries: entries }, { history: new Map([['decisions/questions/X.md', { oldest: iso(NOW - 600e3) }]]) }, new Date(NOW), 'America/Chicago');
-  assert.deepEqual(done.map((d) => d.text), ['X: ruled', 'P-002 criteria-1: you answered proceed']);
+  // Note 10 (2026-10-15): each row says what was ruled, in words (a ruling's line 1, J9's decision words), with its code after.
+  const done = doneToday(project, { allEntries: entries }, { tree: new Map([['decisions/questions/X.md', {}]]), records: new Map([['decisions/questions/X.md', { line1: 'Ruling: B, the smaller screen', line2Proxy: false }]]),
+    history: new Map([['decisions/questions/X.md', { oldest: iso(NOW - 600e3) }]]) }, new Date(NOW), 'America/Chicago');
+  assert.deepEqual(done.map((d) => [d.text, d.code]), [['B, the smaller screen', 'X'], ['P-002: you answered criteria-1 with proceed', 'P-002 criteria-1']]);
   assert.equal(done[1].words, 'at 09:01', 'the decision entry\'s time, in ownerTimeZone');
 });
 
@@ -297,7 +250,7 @@ test('AC52: a pull request that leaves the queue while the page is open shows in
     setup.repos.Alpha.pulls = [];
     await app.advance(POLL_MS);
     await app.go('#/p/Alpha/queue');
-    assert.match(app.text(), /Alpha: a change to merge \(PR #80\): no longer open, time not recorded/);
+    assert.match(app.text(), /Alpha: a change to merge PR #80 no longer open, time not recorded/);
   } finally {
     app.restore();
   }
@@ -361,7 +314,7 @@ test('AC53: the rule line follows the typing, and the button stays available', a
   try {
     byClass(app.view, 'sb-chip').find((c) => c.textContent === 'hold').click();
     await app.flush();
-    const ta = findAll(app.view, (e) => e.tag === 'textarea')[0];
+    const ta = findAll(app.view, (e) => e.tag === 'textarea' && /^box:/.test(e.dataset.k || ''))[0]; // the answer file's box (AC53, note 15)
     assert.equal(ta.value, 'Decision: hold\n\nReason: \n');
     assert.match(byClass(app.view, 'sb-rule')[0].textContent, /needs a "Reason:" line with text/);
     assert.equal(byClass(app.view, 'sb-go').length, 1, 'the button stays');
@@ -554,19 +507,6 @@ test('AC40: a 5 s window doesn\'t move "last looked", a 10 s one does; items bef
 // ---------------------------------------------------------------------------
 // AC42
 
-function extremes() {
-  const projects = [v3('Alpha'), v3('Beta'), v3('Gamma'), v25('Delta'), v3('Epsilon-with-a-very-long-project-name-that-wraps')];
-  const config = { ...CONFIG, projects };
-  const repos = {};
-  for (const p of projects) {
-    if (p.model === 'v2.5') {
-      repos[p.name] = repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md'), 'docs/sprints/m1.4-v3-build.md': fixture('poom/docs/sprints/m1.4-v3-build.md'),
-        'questions/Delta-1.md': md('long-question.md') });
-    } else repos[p.name] = fullRepo(p.name, { long: true });
-  }
-  return { config, repos };
-}
-
 test('AC42: H5\'s extremes — 5 projects, 12+ waits, long titles — every screen of every project renders without an error', async () => {
   const setup = extremes();
   const app = await opened(setup);
@@ -574,6 +514,8 @@ test('AC42: H5\'s extremes — 5 projects, 12+ waits, long titles — every scre
     assert.match(app.text(), /waiting on you in all/);
     const total = Number(/(\d+) waiting on you in all/.exec(app.text())[1]);
     assert.ok(total >= 12, `${total} waits`);
+    // AC54: the v2.5 project sits in "Closed or not applicable", which starts closed; open every group.
+    for (const b of byClass(app.view, 'sb-hg-btn')) if (b.attrs['aria-expanded'] === 'false') { b.click(); await app.flush(); }
     assert.equal(byClass(app.view, 'sb-pc').length, 5);
     for (const p of setup.config.projects) {
       for (const s of ['', '/timeline', '/team', '/queue', '/team/owner', '/team/orchestrator', '/team/builder/now', '/team/critic/e/0']) {

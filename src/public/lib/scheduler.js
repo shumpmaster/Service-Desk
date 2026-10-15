@@ -11,10 +11,10 @@ export const STALE_MS = 180_000;
 export const BLOB_BATCH = 25;
 const MAX_BLOB_CALLS_PER_CYCLE = 6;
 // The blob cache holds parsed records, so its key names the parse's shape: bump it whenever a
-// parser's output changes (v2: model S-020's frozen `usage` form, J10; v3: J11's log rows and merge shas), and list the old keys here
-// so their entries are dropped, not left to fill storage.
-export const BLOB_CACHE_KEY = 'desk-blobs-v3';
-export const OLD_BLOB_CACHE_KEYS = ['desk-blobs-v1', 'desk-blobs-v2'];
+// parser's output changes (v2: model S-020's frozen `usage` form, J10; v3: J11's log rows and merge shas; v4: a ruling's
+// line 1 and its line-2 `Proxy:`, AC52 and AC55), and list the old keys here so their entries are dropped, not left to fill storage.
+export const BLOB_CACHE_KEY = 'desk-blobs-v4';
+export const OLD_BLOB_CACHE_KEYS = ['desk-blobs-v1', 'desk-blobs-v2', 'desk-blobs-v3'];
 const HISTORY_CACHE_KEY = 'desk-history-v1';
 const COMPARE_CACHE_KEY = 'desk-compare-v1';
 

@@ -220,14 +220,18 @@ test('AC56 refresh, Timeline: a milestone\'s detail and the standard milestones 
   const setup = twoProjects();
   const app = await opened(setup, '#/p/Alpha/timeline');
   try {
-    const folds = findAll(app.view, (e) => e.tag === 'details');
-    assert.ok(folds.length >= 2);
-    for (const f of folds) f.setAttribute('open', '');
+    const std = findAll(app.view, (e) => e.tag === 'details' && /^std:/.test(e.dataset.k || ''))[0];
+    std.setAttribute('open', '');
+    const msBtn = findAll(app.view, (e) => e.tag === 'button' && /^tlms-btn:/.test(e.dataset.k || ''))[0];
+    msBtn.click();
+    await app.flush();
+    assert.equal(msBtn.attrs['aria-expanded'], 'true');
+    const detail = findAll(app.view, (e) => /^tldetail:/.test(e.dataset.k || ''))[0];
+    assert.ok(detail, "the milestone's detail is open in place");
     await everyRefresh(app, setup);
-    for (const f of folds) {
-      assert.ok(app.view.contains(f), 'the same fold');
-      assert.ok('open' in f.attrs, `${f.dataset.k} stays open`);
-    }
+    assert.ok(app.view.contains(std) && 'open' in std.attrs, 'the standard milestones box stays open');
+    assert.equal(msBtn.attrs['aria-expanded'], 'true', "the milestone's detail stays open");
+    assert.ok(app.view.contains(detail));
   } finally {
     app.restore();
   }

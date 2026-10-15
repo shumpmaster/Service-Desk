@@ -195,7 +195,9 @@ test('AC51: the runs, their labels, a switch between Design i1 and i2, and the s
   assert.deepEqual(d1.run.standard.map((s) => s.word), ['reached', 'not recorded', 'not recorded', 'not recorded', 'not recorded', 'not reached']);
   const b1 = timelineView(SD3, snap.tree, tl, pv, j, 'Build-i1', 'UTC');
   const m1 = b1.run.parts.find((x) => x.code === 'M1');
-  assert.deepEqual(m1.steps.filter((s) => !s.day).map((s) => s.text), ['Pull request #40', 'Pull request #41']);
+  // Trial-view notes 12 and 13: a run's steps sit under their milestone, then each sprint, newest first.
+  assert.deepEqual(m1.sprints.map((s) => s.id), ['PR #41', 'PR #40']);
+  assert.deepEqual(m1.steps.filter((s) => !s.day).map((s) => s.text), ['Pull request #41', 'Pull request #40']);
   const md1 = tv.run.parts.find((x) => x.code === 'MD1');
   assert.ok(md1.detail.includes('Pieces of work: Q-013'));
 });
@@ -209,8 +211,11 @@ test('AC51: newest at the top; every link is a path the tree holds, a pull reque
   for (const r of tl.runs()) {
     const tv = timelineView(SD3, snap.tree, tl, pv, j, `${r.phase}-i${r.iteration}`, 'UTC');
     for (const part of tv.run.parts) {
-      const real = part.steps.filter((s) => !s.day && Number.isFinite(s.pos) && s.pos >= 0);
-      for (let i = 1; i < real.length; i++) assert.ok(real[i - 1].pos > real[i].pos, 'newest first');
+      // Newest first within each sprint (trial-view notes 12 and 13 group a run's steps by milestone and sprint).
+      for (const sp of part.sprints) {
+        const real = sp.steps.filter((s) => !s.day && Number.isFinite(s.pos) && s.pos >= 0);
+        for (let i = 1; i < real.length; i++) assert.ok(real[i - 1].pos > real[i].pos, 'newest first');
+      }
       for (const s of part.steps) {
         if (s.day) continue;
         steps++;

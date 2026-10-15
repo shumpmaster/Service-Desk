@@ -292,25 +292,49 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 .sb-key { margin: 2px 0 10px; font-size: .74rem; color: var(--muted); }
 .sb-switch { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
 .sb-run { margin-top: 6px; }
-.sb-line { list-style: none; margin: 10px 0; padding: 0 0 0 10px; border-left: 1px solid var(--line); display: grid; gap: 10px; }
-.sb-part > details > summary, .sb-part > .sb-ph { list-style: none; }
-.sb-mhead > summary { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; min-height: 44px; cursor: pointer; padding: 6px 0; }
-.sb-mhead > summary strong { font-weight: 650; }
-.sb-mhead > summary em { margin-left: auto; font-style: normal; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
-.sb-part-h { margin: 4px 0; font: 800 .7rem/1.3 var(--font); text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
-.sb-mdetail { padding: 0 0 6px; }
-.sb-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.sb-step { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; font-size: .86rem; }
-.sb-step > div { display: grid; gap: 1px; }
-.sb-step-i { width: 22px; height: 22px; display: grid; place-items: center; border-radius: var(--rs); border: 1px solid var(--line); font-size: .7rem; background: var(--agents); color: var(--agent); }
-.sb-step.who-you .sb-step-i { background: var(--yous); color: var(--you); }
-.sb-step.who-pass .sb-step-i { background: var(--passs); color: var(--pass); }
-.sb-step.who-fail .sb-step-i { background: var(--fails); color: var(--fail); }
-.sb-step.who-merge .sb-step-i { background: var(--merges); color: var(--merge); }
-.sb-step.who-block .sb-step-i { background: var(--blocks); color: var(--block); }
-.sb-step a { text-decoration: underline; }
+/* The line (AC51, notes 12 and 13): one thin line through the icon column, unbroken from the run's
+   first row to its last; each tile centred on it (the column is 40 px, the line at its centre). */
+.sb-tl { list-style: none; margin: 10px 0; padding: 0; position: relative; }
+.sb-tl::before { content: ""; position: absolute; left: 19.5px; width: 1px; top: 18px; bottom: 18px; background: var(--line); }
+.sb-tl-row { position: relative; display: grid; grid-template-columns: 40px 1fr 28px; align-items: center; gap: 0 8px; min-height: 44px; padding: 4px 0; }
+.sb-tl-tile { justify-self: center; width: 24px; height: 24px; display: grid; place-items: center; border-radius: var(--rs); border: 1px solid var(--line);
+  background: var(--agents); color: var(--agent); font-size: .72rem; position: relative; z-index: 1; }
+.sb-tl-row.who-you .sb-tl-tile { background: var(--yous); color: var(--you); border-color: var(--you); }
+.sb-tl-row.who-agent .sb-tl-tile { border-color: var(--agent); }
+.sb-tl-row.who-pass .sb-tl-tile { background: var(--passs); color: var(--pass); border-color: var(--pass); }
+.sb-tl-row.who-fail .sb-tl-tile { background: var(--fails); color: var(--fail); border-color: var(--fail); }
+.sb-tl-row.who-merge .sb-tl-tile { background: var(--merges); color: var(--merge); border-color: var(--merge); }
+.sb-tl-row.who-block .sb-tl-tile { background: var(--blocks); color: var(--block); border-color: var(--block); }
+.sb-tl-tx { display: grid; gap: 1px; }
+.sb-tl-tx b { font-weight: 600; font-size: .84rem; line-height: 1.25; }
+.sb-tl-tx small { color: var(--muted); font-size: .72rem; }
+.sb-tl-tx small a { text-decoration: underline; }
+/* Milestones: bold neutral headings on the line, a taller capsule tile (shape, size and weight; no colour of their own). */
+.sb-tl-row.ms { min-height: 56px; margin-top: 8px; }
+.sb-tl-tile.cap { width: 26px; height: 40px; border-radius: 13px; background: var(--surf); color: var(--ink); border: 2px solid var(--ink); }
+.sb-tl-row.ms.other .sb-tl-tile.cap { border-style: dashed; color: var(--muted); border-color: var(--muted); }
+.sb-tl-shape { font-size: .7rem; }
+.sb-tl-lbl { font: 800 .64rem/1.2 var(--font) !important; text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
+.sb-tl-h { margin: 0; font: 800 1.02rem/1.25 var(--font); color: var(--ink); }
+.sb-tl-msbtn { all: unset; cursor: pointer; display: block; min-height: 24px; font: inherit; color: inherit; }
+.sb-tl-msbtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.sb-tl-msbtn[aria-expanded="false"]::after { content: " ▾"; color: var(--muted); font-size: .75em; }
+.sb-tl-msbtn[aria-expanded="true"]::after { content: " ▴"; color: var(--muted); font-size: .75em; }
+.sb-tl-row.sprint .sb-tl-tile.sp { width: 12px; height: 12px; border-radius: 50%; background: var(--surf); color: transparent; border: 1.5px solid var(--muted); }
+.sb-tl-sp { margin: 0; font: 750 .8rem/1.25 var(--font); color: var(--muted); }
+.sb-tl-ck { justify-self: center; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font-size: .62rem; font-weight: 800; }
+.sb-tl-ck.none { border-color: transparent; }
+.sb-tl-ck.st-done { border-color: var(--pass); color: var(--pass); }
+.sb-tl-ck.st-failed { border-color: var(--fail); color: var(--fail); }
+.sb-tl-ck.st-you { border-color: var(--you); color: var(--you); box-shadow: 0 0 0 2px var(--yous); }
+.sb-tl-ck.st-now { border-color: var(--agent); border-style: dashed; }
+.sb-tl-row.st-plain .sb-tl-tx b { color: var(--muted); }
+.sb-tl-note { position: relative; display: grid; grid-template-columns: 40px 1fr; gap: 0 8px; min-height: 28px; align-items: center; }
+.sb-tl-nt { grid-column: 2; font-size: .76rem; color: var(--muted); }
+.sb-tl-note.day .sb-tl-nt { font-weight: 800; text-transform: uppercase; letter-spacing: var(--track); color: var(--ink); font-size: .68rem; }
+.sb-tl-note.iter .sb-tl-nt { color: var(--you); font-weight: 700; }
+.sb-tl-note.detail .sb-tl-nt { color: var(--ink); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 6px 10px; }
 .sb-note { color: var(--block); font-weight: 600; }
-.sb-day { font: 700 .68rem/1.3 var(--font); color: var(--muted); text-transform: uppercase; letter-spacing: var(--track); border-top: 1px dashed var(--line); padding-top: 4px; }
 
 /* Team (AC49) */
 .sb-you { display: block; text-decoration: none; background: var(--surf); border: 1px solid var(--line); border-left: 4px solid var(--you); border-radius: var(--r); padding: 12px 14px; margin: 12px 0; }

@@ -959,20 +959,62 @@ function sheet(p, key) {
 // ---------------------------------------------------------------------------
 // Timeline (AC51) and Team (AC49)
 
-function stepNode(st) {
-  if (st.day) return h('li', { class: 'sb-day' }, st.day);
-  return h('li', { class: `sb-step who-${st.who}` }, h('span', { class: 'sb-step-i', 'aria-hidden': 'true' }, st.mark),
-    h('div', {}, h('span', {}, st.text, st.note ? h('span', { class: 'sb-note' }, ` · ${st.note}`) : null),
-      h('span', { class: 'sb-muted small' }, st.link ? ext(st.link, 'From the record') : 'no file recorded')));
+// AC51 (notes 12 and 13): one line per phase run, a thin line through the icon column, each step a
+// tinted tile on it with its title, a small line and a state circle; milestones as bold neutral
+// headings; each run's steps under their milestone and sprint.
+
+const STATE_WORDS = { done: 'done', failed: 'failed', you: 'waiting on you', now: 'under way', plain: 'still to come' };
+const STATE_MARK = { done: '✓', failed: '✗', you: '◆', now: '', plain: '' };
+function stateCircle(state) {
+  return h('span', { class: `sb-tl-ck st-${state}` }, h('span', { 'aria-hidden': 'true' }, STATE_MARK[state] || ''), h('span', { class: 'sb-vh' }, STATE_WORDS[state] || state));
 }
 
-function partNode(part) {
-  const head = part.kind.startsWith('ms')
-    ? h('details', { class: 'sb-mhead', key: `ms:${part.code}`, open: part.open ? true : null },
-      h('summary', {}, h('strong', {}, part.heading), ' ', code(part.code), h('em', {}, part.word)),
-      h('div', { class: 'sb-mdetail' }, h('p', { class: 'sb-muted small' }, part.detail)))
-    : h('h3', { class: 'sb-part-h' }, part.heading);
-  return h('li', { class: `sb-part ${part.kind}` }, head, h('ol', { class: 'sb-steps' }, part.steps.map(stepNode)));
+function stepNode(st, ms, sprint) {
+  if (st.day) return h('li', { class: 'sb-tl-note day' }, h('span', { class: 'sb-tl-nt' }, st.day));
+  return h('li', { class: `sb-tl-row step who-${st.who} st-${st.state || 'done'}`, 'data-ms': ms, 'data-sprint': sprint, 'data-time': st.time || '', 'data-role': st.role || '' },
+    h('span', { class: 'sb-tl-tile', 'aria-hidden': 'true' }, st.mark),
+    h('div', { class: 'sb-tl-tx' }, h('b', {}, st.text),
+      h('small', {}, st.note ? h('span', { class: 'sb-note' }, `${st.note} · `) : null, st.link ? ext(st.link, 'From the record') : 'no file recorded')),
+    stateCircle(st.state || 'done'));
+}
+
+function msRows(p, run, part) {
+  const name = p.project.name;
+  const s = sessionOf(name);
+  const k = `${run.key}:${part.code || part.kind}`;
+  const open = Boolean(s.tlOpen && s.tlOpen.has(k));
+  const rows = [];
+  const isMs = part.kind.startsWith('ms') || part.kind === 'std';
+  const msId = part.code || 'untagged';
+  if (isMs) {
+    rows.push(h('li', { class: `sb-tl-row ms${part.kind === 'ms under' ? ' under' : ''}`, key: `tlms:${k}` },
+      h('span', { class: 'sb-tl-tile cap', 'aria-hidden': 'true' }, h('span', { class: 'sb-tl-shape' }, '▮')),
+      h('div', { class: 'sb-tl-tx' }, h('small', { class: 'sb-tl-lbl' }, `${part.code} · ${part.word}`),
+        h('h3', { class: 'sb-tl-h' }, h('button', { type: 'button', class: 'sb-tl-msbtn', key: `tlms-btn:${k}`, 'aria-expanded': open ? 'true' : 'false',
+          onclick: () => {
+            if (!s.tlOpen) s.tlOpen = new Set();
+            if (s.tlOpen.has(k)) s.tlOpen.delete(k);
+            else s.tlOpen.add(k);
+            render();
+          } }, part.heading, h('span', { class: 'sb-vh' }, ` (${part.code}, ${part.word}): ${open ? 'shown' : 'tap for its detail'}`)))),
+      stateCircle(part.word === 'work filed' ? 'now' : 'plain')));
+    if (open) rows.push(h('li', { class: 'sb-tl-note detail', key: `tldetail:${k}` }, h('span', { class: 'sb-tl-nt' }, part.detail)));
+  } else {
+    rows.push(h('li', { class: 'sb-tl-row ms other', key: `tlms:${k}` },
+      h('span', { class: 'sb-tl-tile cap', 'aria-hidden': 'true' }, h('span', { class: 'sb-tl-shape' }, '▯')),
+      h('div', { class: 'sb-tl-tx' }, h('small', { class: 'sb-tl-lbl' }, 'No milestone'), h('h3', { class: 'sb-tl-h' }, part.heading)),
+      stateCircle('plain')));
+  }
+  if (isMs && !part.sprints.length) rows.push(h('li', { class: 'sb-tl-note' }, h('span', { class: 'sb-tl-nt' }, 'No work filed yet.')));
+  for (const sp of part.sprints) {
+    rows.push(h('li', { class: 'sb-tl-row sprint', 'data-ms': msId, 'data-sprint': sp.id },
+      h('span', { class: 'sb-tl-tile sp', 'aria-hidden': 'true' }, '•'),
+      h('div', { class: 'sb-tl-tx' }, h('h4', { class: 'sb-tl-sp' }, sp.own ? sp.heading : ['Sprint ', sp.heading]),
+        h('small', {}, sp.link ? ext(sp.link, sp.isPr ? 'The pull request' : 'From the record') : 'no file recorded')),
+      h('span', { class: 'sb-tl-ck none', 'aria-hidden': 'true' })));
+    if (!sp.isPr) for (const st of sp.steps) rows.push(stepNode(st, msId, sp.id));
+  }
+  return rows;
 }
 
 function renderTimeline(p, runKey) {
@@ -983,6 +1025,7 @@ function renderTimeline(p, runKey) {
     body.push(h('section', { class: 'sb-card' }, h('p', {}, tv.words)));
     return h('section', { class: 'sb-screen' }, body, bottomBar(name, 'timeline', p.q.waiting));
   }
+  // The phase strip picks the phase; the switch picks its run (one run on screen at a time).
   body.push(h('div', { class: 'sb-strip', role: 'list' }, tv.strip.map((ph) => h('a', {
     role: 'listitem', class: `sb-strip-ph${ph.current ? ' cur' : ''}${ph.done ? ' doneph' : ''}`,
     href: ph.runKey ? go('p', name, 'timeline', ph.runKey) : null, 'aria-current': ph.current ? 'true' : null,
@@ -990,15 +1033,17 @@ function renderTimeline(p, runKey) {
   h('span', { class: 'sb-dots' }, ph.dots.map((d) => h('span', { class: `sb-d ${d.kind}`, title: `${d.name}: ${d.word}`, 'aria-label': `${d.name}: ${d.word}` })))))));
   body.push(h('p', { class: 'sb-key' }, tv.key));
   if (tv.switcher.length > 1) {
-    body.push(h('div', { class: 'sb-switch' }, tv.switcher.map((s) => h('a', { class: `sb-chip${s.current ? ' on' : ''}`, href: go('p', name, 'timeline', s.key) }, s.label))));
+    body.push(h('div', { class: 'sb-switch', role: 'group', 'aria-label': 'Runs of this phase' }, tv.switcher.map((x) => h('a', { class: `sb-chip${x.current ? ' on' : ''}`, href: go('p', name, 'timeline', x.key), 'aria-current': x.current ? 'true' : null }, x.label))));
   }
   const r = tv.run;
+  const lines = r.parts.flatMap((part) => msRows(p, r, part));
+  if (r.iterNote) lines.push(h('li', { class: `sb-tl-note${r.iterNote.yours ? ' iter' : ''}` }, h('span', { class: 'sb-tl-nt' }, r.iterNote.text)));
   body.push(h('section', { class: 'sb-run', key: `run:${r.key}` },
     h('h2', { class: 'sb-h2' }, r.label),
     h('p', { class: 'sb-lead small' }, r.sentence),
     h('details', { class: 'sb-std', key: `std:${r.key}` }, h('summary', {}, h('span', {}, 'Standard milestones'), h('span', { class: 'sb-muted' }, r.standardCounts)),
-      h('ul', { class: 'sb-mlist' }, r.standard.map((s) => h('li', {}, msMark(s.word), h('span', {}, s.name, ' ', code(s.id)), h('em', {}, s.word))))),
-    h('ol', { class: 'sb-line' }, r.parts.map(partNode))));
+      h('ul', { class: 'sb-mlist' }, r.standard.map((x) => h('li', {}, msMark(x.word), h('span', {}, x.name, ' ', code(x.id)), h('em', {}, x.word))))),
+    h('ol', { class: 'sb-tl', key: `line:${r.key}` }, lines)));
   return h('section', { class: 'sb-screen' }, body, bottomBar(name, 'timeline', p.q.waiting));
 }
 

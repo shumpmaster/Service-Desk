@@ -1058,6 +1058,20 @@ export function timelineView(project, tree, tl, pv, j, runKey, tz = 'UTC') {
   strip.push({ phase: 'Done', short: 'Done', iters: pv.done ? 'Done' : '', dots: [], current: false, runKey: null, done: pv.done, dashed: !pv.done });
 
   // The run's steps: its item's own lines, and its milestones' sprints with theirs.
+  const stepState = (o, shape, w) => {
+    if (shape === 'outcome') return w.bad ? 'failed' : 'done';
+    if (shape === 'dispatch') {
+      if (outcomeOf(o)) return 'done';
+      // No outcome for its session key: an outcome of the same item and role after it still ends it.
+      const lines = tl.byItem.get(o.item) || [];
+      const at = lines.findIndex(([, x]) => x === o);
+      return lines.slice(at + 1).some(([, x]) => x.trigger === 'outcome' && x.role === o.role) ? 'done' : 'now';
+    }
+    // A card waits on the owner until its answer file is on the default branch; then it ticks off where it sits.
+    if (shape === 'card') return tree && tree.has(`decisions/${o.item}/${o.gate}-${o.card}.md`) ? 'done' : 'you';
+    if (shape === 'anomaly') return 'failed';
+    return 'done';
+  };
   const stepsFor = (lines) => {
     const out = [];
     let lastDecision = null;
@@ -1085,7 +1099,8 @@ export function timelineView(project, tree, tl, pv, j, runKey, tz = 'UTC') {
       if (shape === 'decision') lastDecision = o;
       if (shape === 'card') note = 'waited on you';
       const at = Date.parse(o.time);
-      out.push({ pos, at: Number.isFinite(at) ? at : null, ...w, note, link: stepLink(project, tree, o, shape, ctx), shape });
+      out.push({ pos, at: Number.isFinite(at) ? at : null, ...w, note, link: stepLink(project, tree, o, shape, ctx), shape, state: stepState(o, shape, w),
+        time: typeof o.time === 'string' ? o.time : null, role: typeof o.role === 'string' ? o.role : null, item: o.item || null });
     }
     return out;
   };
@@ -1103,20 +1118,21 @@ export function timelineView(project, tree, tl, pv, j, runKey, tz = 'UTC') {
   const withMerge = (item, steps) => {
     const mg = (j && j.merges ? j.merges : []).filter((m) => m.item === item);
     for (const m of mg) steps.push({ pos: Infinity, at: null, text: `${item} merged into ${project.defaultBranch}`, who: 'merge', mark: '⇄', note: null,
-      link: m.merge ? commitLink(project, m.merge) : null, shape: 'merge' });
+      link: m.merge ? commitLink(project, m.merge) : null, shape: 'merge', state: 'done', time: null, role: null, item });
     return steps;
   };
+  /** Newest at the top, with a marker where the day changes; no clock time and no duration (ruling 2). */
   const newestFirst = (steps) => {
-    const s = [...steps].sort((a, b) => b.pos - a.pos);
+    const st = [...steps].sort((a, b) => b.pos - a.pos);
     const out = [];
     let day = null;
-    for (const st of s) {
-      if (st.at != null) {
-        const d = dayWords(st.at, tz);
+    for (const x of st) {
+      if (x.at != null) {
+        const d = dayWords(x.at, tz);
         if (day !== null && d !== day) out.push({ day: `${day}` });
         day = d;
       }
-      out.push(st);
+      out.push(x);
     }
     return out;
   };
@@ -1125,45 +1141,58 @@ export function timelineView(project, tree, tl, pv, j, runKey, tz = 'UTC') {
     const passes = steps.filter((x) => x.good).length;
     const dec = steps.filter((x) => x.shape === 'decision').length;
     const cards = steps.filter((x) => x.shape === 'card').length;
-    return { fails, passes, dec, cards, n: steps.filter((x) => x.shape !== 'merge').length };
+    return { fails, passes, dec, cards, n: steps.filter((x) => x.shape !== 'merge' && !x.day).length };
   };
+  const latestPos = (steps) => Math.max(-1, ...steps.filter((x) => Number.isFinite(x.pos)).map((x) => x.pos));
+  /** A sprint (a piece of work) on the line: its heading, its link, and its steps newest first. */
+  const sprintOf = (sid, roles) => {
+    const pr = /^PR #(\d+)$/.exec(sid);
+    if (pr) {
+      return { id: sid, heading: `Pull request #${pr[1]}`, link: pullLink(project, pr[1]), isPr: true,
+        steps: [{ pos: -1, at: null, text: `Pull request #${pr[1]}`, who: 'merge', mark: '⇄', note: null, link: pullLink(project, pr[1]), shape: 'pr', state: 'plain', time: null, role: null, item: null }] };
+    }
+    for (const [, o] of tl.byItem.get(sid) || []) if (o.role && roles) roles.add(o.role);
+    const steps = withMerge(sid, stepsFor(tl.byItem.get(sid) || []));
+    return { id: sid, heading: sid, link: sprintLink(project, tree, tl, sid), isPr: false, steps: newestFirst(steps), last: latestPos(steps) };
+  };
+  /** Sprints newest first: by their latest step; pull requests, which hold no step, after them, the latest number first. */
+  const orderSprints = (list) => [...list.filter((x) => !x.isPr).sort((a, b) => b.last - a.last), ...list.filter((x) => x.isPr).sort((a, b) => Number(b.id.slice(4)) - Number(a.id.slice(4)))];
+  const flat = (sprints) => sprints.flatMap((x) => x.steps);
 
   const parts = [];
   for (const m of shown.project) {
     const word = projectMilestoneWord(shown, m);
-    let steps = [];
     const roles = new Set();
     const pieces = shown.sprints[m.id] || [];
-    for (const sid of pieces) {
-      const pr = /^PR #(\d+)$/.exec(sid);
-      if (pr) {
-        steps.push({ pos: -1, at: null, text: `Pull request #${pr[1]}`, who: 'merge', mark: '⇄', note: null, link: pullLink(project, pr[1]), shape: 'pr' });
-        continue;
-      }
-      const st = withMerge(sid, stepsFor(tl.byItem.get(sid) || []));
-      for (const [, o] of tl.byItem.get(sid) || []) if (o.role) roles.add(o.role);
-      steps = steps.concat(st);
-    }
-    const c = summarise(steps);
-    parts.push({ kind: word === 'work filed' ? 'ms under' : 'ms', heading: m.name, code: m.id, word, open: false,
+    const sprints = orderSprints(pieces.map((sid) => sprintOf(sid, roles)));
+    const c = summarise(flat(sprints));
+    parts.push({ kind: word === 'work filed' ? 'ms under' : 'ms', heading: m.name, code: m.id, word, open: false, sprints,
       detail: `${c.n} step${c.n === 1 ? '' : 's'} so far${c.n ? `: ${c.fails} failed, ${c.passes} passed` : ''}. Pieces of work: ${pieces.length ? pieces.join(', ') : 'none filed'}. `
-        + `Who: ${roles.size ? [...roles].join(', ') : NOT_RECORDED}.`, steps: newestFirst(steps) });
+        + `Who: ${roles.size ? [...roles].join(', ') : NOT_RECORDED}.`, steps: flat(sprints) });
   }
-  let own = [];
-  if (shown.isItemRun) own = withMerge(shown.item, stepsFor(itemLines(shown.item, shown)));
-  const untagged = [];
-  for (const sid of shown.untagged) untagged.push(...withMerge(sid, stepsFor(tl.byItem.get(sid) || [])));
-  for (const id of Object.keys(shown.sprints)) {
-    if (!shown.standard.some((s) => s.id === id)) continue;
-    for (const sid of shown.sprints[id]) untagged.push(...withMerge(sid, stepsFor(tl.byItem.get(sid) || [])));
+  // Sprints the model's timeline ties to one of the run's standard milestones sit under it.
+  const stdParts = [];
+  for (const sm of shown.standard) {
+    const ids = shown.sprints[sm.id] || [];
+    if (!ids.length) continue;
+    const roles = new Set();
+    const sprints = orderSprints(ids.map((sid) => sprintOf(sid, roles)));
+    stdParts.push({ kind: 'std', heading: deskWords(sm.name), code: sm.id, word: standardWord(sm.state), open: false, sprints,
+      detail: `Pieces of work: ${ids.join(', ')}. Who: ${roles.size ? [...roles].join(', ') : NOT_RECORDED}.`, steps: flat(sprints) });
+  }
+  // Not tied to a milestone (C): the model's untagged sprints, and the run's item's own steps.
+  const loose = orderSprints(shown.untagged.map((sid) => sprintOf(sid, null)));
+  if (shown.isItemRun) {
+    const own = withMerge(shown.item, stepsFor(itemLines(shown.item, shown)));
+    if (own.length) loose.push({ id: shown.item, heading: `${shown.item}'s own steps`, link: null, isPr: false, own: true, steps: newestFirst(own), last: latestPos(own) });
   }
   const ordered = [
     ...parts.filter((x) => x.kind === 'ms under').reverse(),
-    ...(own.length ? [{ kind: 'item', heading: `${shown.item}'s own steps`, code: null, word: '', steps: newestFirst(own) }] : []),
     ...parts.filter((x) => x.kind === 'ms').reverse(),
-    ...(untagged.length ? [{ kind: 'other', heading: 'Other work in this run', code: null, word: '', steps: newestFirst(untagged) }] : []),
+    ...stdParts,
+    ...(loose.length ? [{ kind: 'other', heading: 'Not tied to a milestone', code: null, word: '', sprints: loose, steps: flat(loose) }] : []),
   ];
-  const all = [...own, ...untagged, ...parts.flatMap((x) => x.steps.filter((s) => !s.day))];
+  const all = ordered.flatMap((x) => x.steps.filter((st) => !st.day));
   const c = summarise(all);
   let sentence;
   if (!c.n) sentence = 'No recorded steps in this run yet.';
@@ -1176,12 +1205,20 @@ export function timelineView(project, tree, tl, pv, j, runKey, tz = 'UTC') {
     sentence = `${bits.length ? bits.join('; ') : `${c.n} steps`}.`;
     sentence = sentence[0].toUpperCase() + sentence.slice(1);
   }
-  const standard = shown.standard.map((s) => ({ id: s.id, name: deskWords(s.name), word: standardWord(s.state) }));
+  // An iteration note where a run began after a gate sent the work back (AC51).
+  let iterNote = null;
+  if (shown.iteration > 1) {
+    const before = (shown.item ? tl.byItem.get(shown.item) || [] : []).filter(([pos, o]) => pos < shown.first && entryShape(o) === 'decision');
+    const d = before.length ? before[before.length - 1][1] : null;
+    iterNote = d ? { text: `${shown.label()} began after your answer to ${d.gate}-${d.card}: ${d.word}`, yours: true }
+      : { text: `${shown.label()}: the ${ITER_WORDS[shown.iteration] || `${shown.iteration}th`} time through ${shown.phase}; the answer that sent the work back is ${NOT_RECORDED} in this run`, yours: false };
+  }
+  const standard = shown.standard.map((x) => ({ id: x.id, name: deskWords(x.name), word: standardWord(x.state) }));
   const switcher = runs.filter((r) => r.phase === shown.phase).map((r) => ({ key: runKeyOf(r), label: r.label(), current: r === shown }));
   return {
     ok: true, title: `${shown.label()}${shown === now ? ' · now' : ''}`, strip, switcher,
     key: `Milestones · reached · under way · not started${hatched ? ' · not recorded' : ''}`,
-    run: { label: shown.label(), key: runKeyOf(shown), now: shown === now, sentence, standard, standardCounts: countByState(standard.map((s) => s.word)), parts: ordered },
+    run: { label: shown.label(), key: runKeyOf(shown), now: shown === now, sentence, standard, standardCounts: countByState(standard.map((x) => x.word)), parts: ordered, iterNote },
   };
 }
 

@@ -1048,41 +1048,92 @@ function renderMember(p, tv, id, sub, idx, now) {
   return out;
 }
 
-/** The running log as a branch timeline (AC49): newest at the top, a lane per item, a shade per lane. */
+/** The running log's geometry (AC49): rows ROW_H tall, the main line at X(0), lane places 14 px apart. */
+export const ROW_H = 44;
+const LANE_X = (slot) => 9 + slot * 14;
+const branchLayouts = new Map(); // the drawing's key → { layout, family }, for fitting it to the rows the browser laid out
+
+/**
+ * The running log as a branch timeline (AC49, note 11): newest at the top; one drawing behind all
+ * its rows (branchLayout's shapes), a lane per item, a shade of the member's colour per lane.
+ */
 function branchLog(p, page) {
-  const lanes = page.lanes;
-  const w = 14 + lanes.length * 12;
-  return h('ol', { class: 'sb-branch' }, page.log.map((e, i) => {
-    const s = document.createElementNS(SVGNS, 'svg');
-    s.setAttribute('viewBox', `0 0 ${w} 40`);
-    s.setAttribute('width', String(w));
-    s.setAttribute('height', '40');
-    s.setAttribute('class', 'sb-lanes');
-    s.setAttribute('aria-hidden', 'true');
-    const line = (x1, y1, x2, y2, cls) => {
-      const l = document.createElementNS(SVGNS, 'path');
-      l.setAttribute('d', `M${x1} ${y1} L${x2} ${y2}`);
-      l.setAttribute('class', cls);
-      s.append(l);
-    };
-    line(6, 0, 6, 40, 'main');
-    lanes.forEach((ln, li) => {
-      if (e.activeLanes.includes(ln)) line(18 + li * 12, 0, 18 + li * 12, 40, `lane shade-${li % 4}`);
-    });
-    const li = lanes.indexOf(e.lane);
-    const x = li >= 0 ? 18 + li * 12 : 6;
-    if (e.joins && li >= 0) line(x, 20, 6, 32, `lane shade-${li % 4}`);
-    if (e.opens && li >= 0) line(6, 36, x, 22, `lane shade-${li % 4}`);
-    const dot = document.createElementNS(SVGNS, 'circle');
-    dot.setAttribute('cx', String(x));
-    dot.setAttribute('cy', '20');
-    dot.setAttribute('r', e.now ? '5' : '3.5');
-    dot.setAttribute('class', `dot shade-${li >= 0 ? li % 4 : 'main'}${e.now ? ' now' : ''}`);
-    s.append(dot);
-    const href = e.now ? go('p', p.project.name, 'team', page.id, 'now') : go('p', p.project.name, 'team', page.id, 'e', String(i));
-    return h('li', { class: `sb-brow${e.now ? ' now' : ''}` }, s,
-      opener(e.now ? 'log:now' : `log:${i}`, href, {}, h('span', {}, e.text), e.now ? h('span', { class: 'sb-nowtag' }, 'now') : null, h('span', { class: 'sb-muted small' }, e.lane || 'project')));
-  }));
+  const L = page.layout;
+  const key = `branch:${page.id}`;
+  const family = page.id === 'owner' ? 'you' : 'agent';
+  branchLayouts.set(key, { layout: L, family });
+  const svg = document.createElementNS(SVGNS, 'svg');
+  svg.setAttribute('class', `sb-lanes fam-${family}`);
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  drawBranch(svg, L, page.log.map((_, i) => i * ROW_H + ROW_H / 2), page.log.length * ROW_H);
+  return h('div', { class: 'sb-branch', key },
+    svg,
+    h('ol', { class: 'sb-brows' }, page.log.map((e, i) => {
+      const href = e.now ? go('p', p.project.name, 'team', page.id, 'now') : go('p', p.project.name, 'team', page.id, 'e', String(i));
+      const lane = L.lanes.find((l) => l.id === e.lane);
+      return h('li', { class: `sb-brow${e.now ? ' now' : ''}`, key: `brow:${i}` },
+        opener(e.now ? 'log:now' : `log:${i}`, href, {}, h('span', { class: 'sb-brow-t' }, e.text), e.now ? h('span', { class: 'sb-nowtag' }, 'now') : null,
+          h('span', { class: `sb-brow-lane${lane ? ` shade-${lane.shade}` : ''}` }, e.lane || 'project')));
+    })));
+}
+
+/** Draw branchLayout's shapes into `svg`, each row's centre at centres[i] (the drawing's own rows, or the browser's). */
+function drawBranch(svg, L, centres, height) {
+  const width = LANE_X(L.slots) + 12;
+  svg.setAttribute('width', String(width));
+  svg.setAttribute('height', String(Math.max(1, Math.ceil(height))));
+  svg.setAttribute('viewBox', `0 0 ${width} ${Math.max(1, Math.ceil(height))}`);
+  const kids = [];
+  const el = (tag, attrs) => {
+    const n = document.createElementNS(SVGNS, tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+    kids.push(n);
+    return n;
+  };
+  const y = (i) => centres[i];
+  const r = (v) => Math.round(v * 10) / 10;
+  const x0 = LANE_X(0);
+  const bend = ROW_H * 0.6;
+  if (L.rows) el('line', { x1: x0, y1: r(y(0)), x2: x0, y2: r(height), class: 'main', 'data-kind': 'main' });
+  for (const l of L.lanes) {
+    const x = LANE_X(l.slot);
+    const cls = `lane shade-${l.shade}`;
+    el('line', { x1: x, y1: r(y(l.top)), x2: x, y2: r(l.edge ? height : y(l.bottom)), class: cls, 'data-kind': 'lane', 'data-lane': l.id });
+    if (l.fork) {
+      el('path', { d: `M${x0} ${r(y(l.bottom) + bend)} Q${x0} ${r(y(l.bottom))} ${x} ${r(y(l.bottom))}`, class: cls, 'data-kind': 'fork', 'data-lane': l.id, 'data-row': l.bottom });
+    }
+    if (l.join != null) {
+      el('path', { d: `M${x} ${r(y(l.join))} Q${x} ${r(y(l.join) - bend)} ${x0} ${r(y(l.join) - bend)}`, class: cls, 'data-kind': 'join', 'data-lane': l.id, 'data-row': l.join });
+    }
+    if (l.stub) el('line', { x1: x, y1: r(y(l.top)), x2: x, y2: r(y(l.top) - 14), class: `${cls} stub`, 'data-kind': 'stub', 'data-lane': l.id });
+  }
+  for (const d of L.dots) {
+    const lane = L.lanes.find((l) => l.slot === d.slot && l.top <= d.row && l.bottom >= d.row);
+    const cls = `dot ${lane ? `shade-${lane.shade}` : 'shade-main'}${d.now ? ' now' : ''}`;
+    if (d.now) el('circle', { cx: LANE_X(d.slot), cy: r(y(d.row)), r: 8, class: 'ring', 'data-kind': 'ring', 'data-row': d.row });
+    el('circle', { cx: LANE_X(d.slot), cy: r(y(d.row)), r: d.now ? 5 : 4.5, class: cls, 'data-kind': 'dot', 'data-row': d.row, 'data-slot': d.slot });
+  }
+  svg.replaceChildren(...kids);
+}
+
+/** In the browser: redraw each running log at the centres of the rows as laid out, should a row have wrapped taller. */
+function fitBranches() {
+  const view = document.getElementById('view');
+  if (!view || !view.querySelectorAll) return;
+  for (const box of view.querySelectorAll('.sb-branch')) {
+    const entry = branchLayouts.get(box.getAttribute('data-k'));
+    const svg = box.querySelector('svg');
+    const list = box.querySelector('ol');
+    if (!entry || !svg || !list) continue;
+    const rows = [...list.children];
+    if (!rows.length || typeof rows[0].offsetTop !== 'number') continue;
+    const top = list.offsetTop;
+    const centres = rows.map((li) => li.offsetTop - top + li.offsetHeight / 2);
+    const height = list.offsetHeight;
+    const off = centres.some((c, i) => Math.abs(c - (i * ROW_H + ROW_H / 2)) > 0.5) || Math.abs(height - rows.length * ROW_H) > 0.5;
+    if (off) drawBranch(svg, entry.layout, centres, height);
+  }
 }
 
 /**
@@ -1381,6 +1432,7 @@ export function startSandbox(opts = {}) {
     const fresh = document.createElement('main');
     for (const n of [nodes].flat(Infinity)) if (n) fresh.append(n);
     morphChildren(view, fresh);
+    fitBranches();
   };
   render = guardRender(draw, (state) => {
     if (stateEl) stateEl.textContent = state.text;
@@ -1446,6 +1498,7 @@ export function startSandbox(opts = {}) {
     desk.visibilityChanged();
   });
   window.addEventListener('pagehide', () => seen.hidden());
+  window.addEventListener('resize', () => fitBranches());
   // The 15-second tick (AC56) changes only the text that depends on the time, in place.
   setInterval(() => { if (isVisible()) tick(view); }, 15_000);
   boot(render, desk);

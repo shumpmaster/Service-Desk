@@ -1313,34 +1313,80 @@ export function memberPage(project, model, snap, j, q, tv, id, now, tz) {
   }
   // The running log, newest at the top, a lane per item (the main line is the project).
   const entries = newest(page.logEntries).slice(0, 60);
-  const lanes = [...new Set(entries.map((e) => e.item).filter(Boolean))];
-  const span = new Map();
-  entries.forEach((e, i) => {
-    if (!e.item) return;
-    const s = span.get(e.item) || { top: i, bottom: i };
-    s.bottom = i;
-    span.set(e.item, s);
-  });
   const merged = new Set(((j && j.merges) || []).map((m) => m.item));
   const items = (model && model.items) || [];
   const working = items.find((i) => i.state === 'dispatched' && i.running && i.running.role === id) || null;
-  const log = entries.map((e, i) => {
-    const sp = span.get(e.item);
-    const filed = merged.has(e.item) || (e.shape === 'outcome' && typeof e.record === 'string');
+  const log = entries.map((e) => {
     const isNow = Boolean(working && e.shape === 'dispatch' && e.item === working.id && working.running && working.running.since
       && Date.parse(e.time) === working.running.since.getTime());
-    return { text: entryWords(e, at(e)), lane: e.item || null, entry: e, now: isNow,
-      activeLanes: lanes.filter((ln) => { const s = span.get(ln); return s && s.top < i && s.bottom > i; }),
-      opens: sp ? sp.bottom === i : false, joins: sp ? sp.top === i && filed : false };
+    return { text: entryWords(e, at(e)), lane: e.item || null, entry: e, now: isNow };
   });
+  const layout = branchLayout(log, (lane, rows) => {
+    // Filed: its line in status/merges.jsonl, or its newest row a record of the work filed (AC49): an
+    // outcome with its `record`; for the owner's lanes, a decision with its answer file (`record`);
+    // for the Orchestrator's, the item's `done` line.
+    const topRow = log[rows[0]].entry;
+    return merged.has(lane) || ((topRow.shape === 'outcome' || topRow.shape === 'decision') && typeof topRow.record === 'string') || topRow.shape === 'done';
+  });
+  const lanes = layout.lanes.map((l) => l.id);
   const upNext = [];
   if (working) {
     const it = items.find((x) => x.id === working.id);
     upNext.push('Next: the Orchestrator routes its return (what the model does next, not a record)');
     if (it && it.next) upNext.push(it.next);
   }
-  return { ...page, log, lanes, working: Boolean(working), workingItem: working ? working.id : null, upNext,
+  return { ...page, log, lanes, layout, working: Boolean(working), workingItem: working ? working.id : null, upNext,
     logWords: id === 'chief-of-staff' ? "Its sessions aren't recorded, so there is no running log." : 'not recorded in what the desk reads' };
+}
+
+/**
+ * The running log's branch drawing (AC49, note 11), as the agreed screen 3 draws it: one drawing
+ * behind every row; the main line and each lane straight and vertical at one place across; a lane
+ * leaves the main line with one curve at its oldest row and joins back with one curve at the row
+ * where its work is filed, or ends in a short dashed stub; a lane already open at the oldest row
+ * shown runs in straight from the edge; lanes open at the same time sit at different places; each
+ * row's dot on its own lane's line. Rows are newest first: row 0 is the top.
+ * filed(lane, rowIndexes newest first) says whether the lane's work is filed.
+ * Returns { rows: n, slots, lanes: [{ id, slot, shade, top, bottom, fork, join, stub, edge }],
+ * dots: [{ row, slot (0 is the main line), now }] }.
+ */
+export function branchLayout(log, filed) {
+  const n = log.length;
+  const byLane = new Map();
+  log.forEach((r, i) => {
+    if (!r.lane) return;
+    if (!byLane.has(r.lane)) byLane.set(r.lane, []);
+    byLane.get(r.lane).push(i);
+  });
+  const lanes = [...byLane.entries()].map(([id, rows]) => ({ id, rows, top: rows[0], bottom: rows[rows.length - 1] }));
+  // Places across, like a git graph: from the oldest row up, a lane takes the lowest free place when
+  // it opens and frees it above its top row, so lanes open at the same time never share one.
+  const used = new Map(); // slot → lane
+  for (const l of [...lanes].sort((a, b) => b.bottom - a.bottom || a.top - b.top)) {
+    let slot = 1;
+    for (;;) {
+      const other = used.get(slot);
+      // a row's gap between two lanes in one place, so a join and the next fork never meet
+      if (!other || !other.some((o) => !(o.top > l.bottom + 1 || o.bottom < l.top - 1))) break;
+      slot++;
+    }
+    l.slot = slot;
+    if (!used.has(slot)) used.set(slot, []);
+    used.get(slot).push(l);
+  }
+  let shade = 0;
+  for (const l of [...lanes].sort((a, b) => b.bottom - a.bottom)) l.shade = shade++ % 4;
+  for (const l of lanes) {
+    l.edge = l.bottom === n - 1; // already open at the oldest row shown: runs in from the edge, no fork
+    l.fork = !l.edge;
+    const isFiled = Boolean(filed && filed(l.id, l.rows));
+    l.join = isFiled ? l.top : null;
+    l.stub = !isFiled;
+    delete l.rows;
+  }
+  const slotOf = new Map(lanes.map((l) => [l.id, l.slot]));
+  const dots = log.map((r, i) => ({ row: i, slot: r.lane ? slotOf.get(r.lane) : 0, now: Boolean(r.now) }));
+  return { rows: n, slots: Math.max(0, ...lanes.map((l) => l.slot)), lanes, dots };
 }
 
 /** The Working now sheet (AC49): one line, four tiles and three short lines, each from a record or "–" with the reason. */

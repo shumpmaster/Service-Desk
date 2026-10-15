@@ -9,7 +9,7 @@
 import { STATUS_RE, LOG_RE, MERGES_PATH, parseCardPath, questionAnswerName, parseWorkflowRuns, stageName, entryWords,
   OUTCOMES_PATH, ROUTING_PATH, entryShape, timeLimitMinutes, parseAnswerPath } from './records.js';
 import { PROJECT_DOC_PATH, SURFACES_PATH, ORCH_WORKFLOW_PATH, SPEC_PATH_RE, REQUEST_PATH_RE, HANDOVER_PREFIX,
-  HANDOVER_TEMPLATE, GATE_PHASE, GATE_WORDS, isGroundwork, nextCronRun } from './j11.js';
+  HANDOVER_TEMPLATE, GATE_PHASE, GATE_WORDS, isGroundwork, nextCronRun, README_PATH } from './j11.js';
 import { buildTimeline, DESK_PHASES, PHASE_OF_STAGE } from './timeline.js';
 import { durationText, whenText, dayKey, hhmm } from './timefmt.js';
 import { newFileUrl, cappedNewFileLink, tidyNote, HOLD_NO_ANSWER, mergeNoAnswer, V25_RULING_NOTE, webCommitsWarning } from './links.js';
@@ -259,6 +259,93 @@ export function whereLine(project, model, tl, pv) {
   if (upcoming.length) sentence += ` Next up: ${upcoming.join('; ')}.`;
   if (next && nextNames.length) sentence += ` Then ${next.phase}: ${nextNames.join('; ')}.`;
   return { sentence, parts };
+}
+
+// ---------------------------------------------------------------------------
+// AC54: Home's brief summary, the "Latest" bubble and the three groups
+
+export const NO_SUMMARY = "no summary in this project's README";
+export const SUMMARY_NOT_AVAILABLE = 'summary not available';
+
+/**
+ * The card's brief summary (AC54 (a)): README.md's first paragraph, whole; "no summary in this
+ * project's README" when the file, its title or a paragraph is missing; "summary not available",
+ * with the reason one tap away, before the read arrives or when it fails. Never a summary of the
+ * desk's own (AC41). Returns { text, why, ok }.
+ */
+export function summaryView(project, box, snap) {
+  const tree = snap && snap.tree;
+  if (!tree) {
+    const why = box && box.read && box.read.read === 'cant-read' ? `the project can't be read: ${box.read.words}` : "the project's files haven't been read yet";
+    return { ok: false, text: SUMMARY_NOT_AVAILABLE, why };
+  }
+  if (!tree.has(README_PATH)) return { ok: false, text: NO_SUMMARY, why: 'there is no README.md at the root of its default branch' };
+  const rec = snap.records ? snap.records.get(README_PATH) : undefined;
+  if (rec === undefined || rec === null) {
+    return { ok: false, text: SUMMARY_NOT_AVAILABLE, why: 'README.md has not been read yet, or its read failed; the desk tries again on its next read' };
+  }
+  if (!rec.summary) return { ok: false, text: NO_SUMMARY, why: 'README.md has no title, or no plain paragraph after it before the next heading' };
+  return { ok: true, text: rec.summary, why: null };
+}
+
+/**
+ * The "Latest" bubble's text (AC54 (b)): for a v3 project AC37's where-it's-heading line, for a
+ * v2.5 project its latest ledger entry's title (AC10's headline), character for character.
+ */
+export function latestText(project, model, where) {
+  if (project.model !== 'v3') {
+    const t = model && model.headline ? model.headline.text : null;
+    return t || NOT_RECORDED;
+  }
+  return where.sentence;
+}
+
+export const HOME_GROUPS = [
+  { key: 'active', title: 'Active', open: true },
+  { key: 'done', title: 'Done', open: false },
+  { key: 'closed', title: 'Closed or not applicable', open: false },
+];
+export const HOME_GROUPS_KEY = 'desk-home-groups-v1';
+
+/**
+ * Which of Home's groups a project sits in (AC54 (d)), checked in order: a v2.5 project is Closed
+ * or not applicable (not run through its phases); a v3 project Done by AC50's rule is Done; a v3
+ * project whose every project item is closed with an outcome other than `re-scope` is Closed;
+ * every other project is Active, including one whose records haven't been read or can't be, and
+ * one closed with `re-scope` (the Definer's reading, C; design-lab open question 11).
+ * Returns { group, why }.
+ */
+export function homeGroupOf(project, snap, pv) {
+  if (project.model !== 'v3') return { group: 'closed', why: 'not run through its phases (operating model v2.5.1)' };
+  if (pv && pv.done) return { group: 'done', why: 'Done by the model\'s timeline or its graduation ruling' };
+  const tree = snap && snap.tree;
+  if (!tree) return { group: 'active', why: 'not read yet' };
+  const items = [];
+  for (const path of [...tree.keys()].sort()) {
+    const m = STATUS_RE.exec(path);
+    if (!m) continue;
+    const r = snap.records ? snap.records.get(path) : null;
+    if (!r || !r.ok) return { group: 'active', why: `status/${m[1]}.toml not read yet` };
+    if (r.fields.kind === 'project') items.push({ id: m[1], state: r.fields.state, outcome: r.fields.outcome });
+  }
+  if (!items.length) return { group: 'active', why: 'no project item' };
+  if (items.every((i) => i.state === 'closed' && i.outcome !== 're-scope')) {
+    return { group: 'closed', why: `closed: ${items.map((i) => `${i.id} ${i.outcome || NOT_RECORDED}`).join(', ')}` };
+  }
+  const rescoped = items.filter((i) => i.state === 'closed' && i.outcome === 're-scope').map((i) => i.id);
+  return { group: 'active', why: rescoped.length ? `${rescoped.join(', ')} closed with re-scope: Active until you rule (question 11)` : 'a project item is open' };
+}
+
+const projectsWord = (n) => `${n} project${n === 1 ? '' : 's'}`;
+
+/** A group's header words (AC54 (d)): its count, what waits on the owner and what can't be read, open or closed. */
+export function groupHeaderWords(boxes) {
+  const waiting = boxes.reduce((n, b) => n + (b.waiting || 0), 0);
+  const cant = boxes.filter((b) => b.cantRead).length;
+  const parts = [projectsWord(boxes.length)];
+  if (waiting) parts.push(`${waiting} waiting on you`);
+  if (cant) parts.push(`${cant} can't be read`);
+  return { count: projectsWord(boxes.length), waiting: waiting ? `${waiting} waiting on you` : null, cant: cant ? `${cant} can't be read` : null, words: parts.join(' · ') };
 }
 
 // ---------------------------------------------------------------------------

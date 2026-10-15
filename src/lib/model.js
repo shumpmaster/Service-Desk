@@ -12,7 +12,7 @@ import {
 } from './records.js';
 import { whenText, durationText } from './timefmt.js';
 import { j11Kind, parseJ11, PROJECT_DOC_PATH, SURFACES_PATH, ORCH_WORKFLOW_PATH, SPEC_PATH_RE, REQUEST_PATH_RE,
-  GATE_PHASE } from './j11.js';
+  GATE_PHASE, README_PATH } from './j11.js';
 import { cardRows, questionRows, cardSummary, v5Waits, sessionRows, timelines, V25_NO_CARDS, V25_ANSWERED } from './asked.js';
 
 export const NOT_RECORDED = 'not recorded';
@@ -48,6 +48,7 @@ export function recordKind(path, model) {
     if (path === LEDGER_PATH) return 'ledger';
     if (isSprintPath(path)) return 'sprint';
   }
+  if (path === README_PATH) return 'readme-root'; // AC54: the summary, for every project (read only with ctx.j11)
   return null;
 }
 
@@ -70,7 +71,7 @@ export function parseRecord(kind, text, path) {
     case 'question': return { text, ...parseQuestion(text, (questionName(path) || path)) };
     case 'ledger': return parseLedger(text);
     case 'sprint': return parseSprint(text);
-    case 'project-doc': case 'surfaces': case 'orch-workflow': case 'spec': case 'request': case 'gate-case':
+    case 'project-doc': case 'surfaces': case 'orch-workflow': case 'spec': case 'request': case 'gate-case': case 'readme-root':
       return parseJ11(kind, text, path);
     default: return null;
   }
@@ -253,6 +254,9 @@ export function neededReads(project, tree, records, now, ctx = {}) {
     add(LEDGER_PATH);
     for (const path of tree.keys()) if (isSprintPath(path)) add(path);
   }
+  // AC54 (the MD sandbox only): README.md's first paragraph, for every project, a v2.5 one too.
+  // Optional like J11's other reads: it never holds a read back or makes it fail.
+  if (ctx.j11) addTo(optBlobs, README_PATH);
   for (const q of openQuestions(tree, project.model)) {
     add(q.path);
     if (!hist.includes(q.path)) hist.push(q.path);

@@ -5,7 +5,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { byClass, findAll } from './sandbox-helpers.mjs';
-import { twoProjects, opened } from './sandbox-fixtures.mjs';
+import { twoProjects, opened, v3, fullRepo } from './sandbox-fixtures.mjs';
+import { repo } from './fake-desk.mjs';
+import { j11Files } from './sandbox-helpers.mjs';
+import { CONFIG } from './helpers.mjs';
 
 const all = (node) => findAll(node, () => true);
 const keyed = (app, k) => findAll(app.view, (e) => e.dataset && e.dataset.k === k)[0] || null;
@@ -94,6 +97,61 @@ test('AC56 close: every sheet has "Close" at its top (44 px), and the control, a
         assert.equal(document.activeElement, keyed(app, openerKey), `${what}: focus back on its opener (${how})`);
       }
     }
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC56 close: the "Latest" bubble has "Close" at its top, and the control, a tap outside and Escape each close it, focus back on its control without reopening it', async () => {
+  const app = await opened(twoProjects(), '#/');
+  try {
+    for (const how of ['control', 'outside', 'escape']) {
+      await app.advance(2000);
+      const ctl = keyed(app, 'latest:Alpha');
+      ctl.dispatch('pointerdown', { pointerType: 'touch' });
+      ctl.click();
+      await app.flush();
+      const bub = keyed(app, 'bubble:Alpha');
+      assert.ok(bub);
+      const close = byClass(bub.children[0], 'sb-close')[0];
+      assert.equal(close.attrs['aria-label'], 'Close');
+      if (how === 'control') close.click();
+      else if (how === 'outside') await app.tapOutside();
+      else await app.key('Escape');
+      await app.flush();
+      assert.equal(keyed(app, 'bubble:Alpha'), null, `closed by ${how}`);
+      if (how !== 'outside') {
+        assert.equal(document.activeElement, keyed(app, 'latest:Alpha'), `focus back on the control (${how})`);
+        assert.equal(keyed(app, 'bubble:Alpha'), null, 'and it does not reopen');
+      }
+    }
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC56 refresh, Home: the Done group opened, the Active group closed, and a "Latest" bubble open all stay through every kind of refresh', async () => {
+  const setup = { config: { ...CONFIG, projects: [v3('Alpha'), v3('Done-one')] },
+    repos: { Alpha: fullRepo('Alpha'), 'Done-one': repo({ ...j11Files(), 'decisions/questions/P-001-graduation.md': 'Ruling: graduate\n' }) } };
+  const app = await opened(setup, '#/');
+  try {
+    await app.advance(POLL_MS);
+    keyed(app, 'hgroup-btn:done').click();
+    keyed(app, 'hgroup-btn:active').click();
+    await app.flush();
+    const ctl = keyed(app, 'latest:Done-one');
+    ctl.dispatch('pointerdown', { pointerType: 'touch' });
+    ctl.click();
+    await app.flush();
+    const bub = keyed(app, 'bubble:Done-one');
+    assert.ok(bub, 'the bubble is open');
+    app.scrolls.length = 0;
+    await everyRefresh(app, setup);
+    assert.equal(keyed(app, 'hgroup-btn:done').attrs['aria-expanded'], 'true', 'Done stays open');
+    assert.equal(keyed(app, 'hgroup-btn:active').attrs['aria-expanded'], 'false', 'Active stays closed');
+    assert.equal(keyed(app, 'bubble:Done-one'), bub, 'the same bubble, still open');
+    assert.match(app.text(), /waiting on you in all/, 'with the changed data shown');
+    assert.deepEqual(app.scrolls, []);
   } finally {
     app.restore();
   }

@@ -26,6 +26,7 @@ import {
   sheetView, trackerSteps, doneToday, cardBoxText, questionBoxText, VERDICT_START, ruleLine, boxPlan, GROUPS, treeLink, waitWords, youWaitText,
 } from './lib/sandbox.js';
 import { timelineView, teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
+import { summaryView, latestText, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords } from './lib/sandbox.js';
 
 let CONFIG = DEFAULT_CONFIG; // J7; the tests pass their own (AC42's five projects)
 let TZ = CONFIG.ownerTimeZone;
@@ -328,20 +329,84 @@ function ballNode(ball, compact) {
     b.who === 'you' ? h('span', { live: () => youWaitText(b.oldest, Date.now()) }) : b.text)));
 }
 
-function homeCard(p, seen, now) {
-  const { project, box, pill, pv, where, ball, q } = p;
+/** The "Latest" control and, when open, its bubble (AC54 (b)): one open at a time, never clipped. */
+function latestControl(p, col) {
+  const name = p.project.name;
+  const isOpen = bubble.open === name;
+  const id = `latest-${enc(name).replace(/[^A-Za-z0-9_-]/g, '_')}`;
+  const ctl = h('button', {
+    type: 'button', class: `sb-latest${isOpen ? ' on' : ''}`, key: `latest:${name}`, 'aria-label': 'Latest', 'aria-expanded': isOpen ? 'true' : 'false',
+    'aria-controls': isOpen ? id : null,
+    onpointerdown: (e) => { bubble.pointer = e && e.pointerType ? e.pointerType : 'touch'; bubble.pointerFocus = name; },
+    onpointerenter: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(name, true, 'ctl'); },
+    onpointerleave: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(name, false, 'ctl'); },
+    onclick: (e) => bubbleTap(name, e),
+    onkeydown: (e) => {
+      if (!e || (e.key !== 'Enter' && e.key !== ' ')) return;
+      if (e.preventDefault) e.preventDefault();
+      bubbleOpen(name, 'key');
+    },
+    onfocus: () => {
+      // On focus from the keyboard (a pointer's own focus is its tap); not after Escape (AC54).
+      if (bubble.pointerFocus === name) {
+        bubble.pointerFocus = null;
+        return;
+      }
+      if (bubble.escaped === name) return;
+      bubbleOpen(name, 'key');
+    },
+    onblur: () => {
+      bubble.pointerFocus = null;
+      if (bubble.escaped === name) bubble.escaped = null; // focus left: it may open on focus again
+      setTimeout(() => {
+        const a = document.activeElement;
+        const inside = a && a.closest && a.closest('[data-bubble]');
+        if (bubble.open === name && bubble.via === 'key' && !inside) {
+          bubble.close();
+          render();
+        }
+      }, 0);
+    },
+  }, icon('latest'), h('span', { class: 'sb-latest-w' }, 'Latest'));
+  const out = [ctl];
+  if (isOpen) {
+    out.push(h('div', {
+      class: `sb-bubble ${col} ${bubble.place === 'up' ? 'up' : 'down'}`, id, role: 'dialog', 'aria-label': `Latest: ${name}`, key: `bubble:${name}`, 'data-bubble': name,
+      onpointerenter: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(name, true, 'bubble'); },
+      onpointerleave: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(name, false, 'bubble'); },
+    }, h('div', { class: 'sb-bubble-top' }, h('p', { class: 'sb-eyebrow' }, 'Latest'),
+      closeControl(() => { bubble.close(); bubble.escaped = name; render(); focusKey(`latest:${name}`); }, `bubble-close:${name}`)),
+    h('p', { class: 'sb-bubble-t' }, latestText(p.project, p.model, p.where))));
+  }
+  return out;
+}
+
+function homeCard(p, seen, col) {
+  const { project, box, pill, pv, ball, q } = p;
   const name = project.name;
   const newCount = q.rows.filter((r) => seen.isNew(r.raisedAt)).length;
-  return h('article', { class: 'sb-pc' },
+  const sum = summaryView(project, box, p.snap);
+  return h('article', { class: `sb-pc ${col}`, key: `card:${name}` },
+    h('div', { class: 'sb-pc-top' }, h('span', { class: 'sb-app' }, icon('project')),
+      newCount ? h('span', { class: 'sb-new' }, `${newCount} new`) : null,
+      latestControl(p, col)),
     h('a', { class: 'sb-pc-main', href: go('p', name) },
-      h('div', { class: 'sb-pc-top' }, h('span', { class: 'sb-app' }, icon('project')),
-        newCount ? h('span', { class: 'sb-new' }, `${newCount} new since you last looked`) : null),
       h('h2', { class: 'sb-nm' }, name),
-      h('p', { class: 'sb-where' }, where.sentence),
+      h('p', { class: `sb-sum${sum.ok ? '' : ' none'}` }, sum.text),
       checklist(pv),
       ballNode(ball, true),
       readLine(box)),
-    h('a', { class: `sb-pill ${pill.kind}`, href: go('p', name, 'queue') }, pill.text));
+    sum.ok ? null : h('details', { class: 'sb-why', key: `sum-why:${name}` }, h('summary', {}, 'Why'), h('p', { class: 'small' }, sum.why)),
+    newCount ? h('p', { class: 'sb-vh' }, `${newCount} new since you last looked`) : null,
+    pillNode(box, q, name));
+}
+
+/** The pill (AC48): its words and its look both depend on the time ("All clear" goes stale), so both are live. */
+function pillNode(box, q, name) {
+  const el = h('a', { class: `sb-pill ${pillView(box, q, Date.now()).kind}`, href: go('p', name, 'queue'), key: `pill:${name}`,
+    live: () => pillView(box, q, Date.now()).text });
+  el._liveClass = () => `sb-pill ${pillView(box, q, Date.now()).kind}`;
+  return el;
 }
 
 function renderHome(desk, built, seen, now) {
@@ -349,6 +414,42 @@ function renderHome(desk, built, seen, now) {
   const total = built.reduce((n, b) => n + (b.box.flaggedCount || 0), 0);
   const s = screenState(built.map((b) => b.box), desk.signedOut);
   const lastRead = Math.max(...built.map((b) => (b.box.read && b.box.read.since) || 0));
+  const placed = order.map((box) => {
+    const b = built.find((x) => x.box === box);
+    let group = 'active';
+    try {
+      if (!b.error) group = homeGroupOf(b.project, b.snap, b.pv).group;
+    } catch {
+      group = 'active';
+    }
+    return { b, box, group };
+  });
+  const groups = HOME_GROUPS.map((g) => {
+    const members = placed.filter((x) => x.group === g.key);
+    const words = groupHeaderWords(members.map((x) => ({ waiting: x.b.q ? x.b.q.waiting : x.box.flaggedCount || 0,
+      cantRead: Boolean(x.box.drawError || (x.box.read && x.box.read.read === 'cant-read')) })));
+    const isOpen = homeGroups.isOpen(g.key);
+    const id = `grp-${g.key}`;
+    return h('section', { class: `sb-hgroup${isOpen ? ' open' : ''}`, key: `hgroup:${g.key}` },
+      h('h2', { class: 'sb-hg-h' }, h('button', { type: 'button', class: 'sb-hg-btn', key: `hgroup-btn:${g.key}`, 'aria-expanded': isOpen ? 'true' : 'false', 'aria-controls': id,
+        onclick: () => { homeGroups.toggle(g.key); render(); } },
+      h('span', { class: 'sb-hg-mark', 'aria-hidden': 'true' }, isOpen ? '▾' : '▸'),
+      h('span', { class: 'sb-hg-t' }, g.title),
+      h('span', { class: 'sb-hg-n' }, words.count),
+      words.waiting ? h('span', { class: 'sb-hg-you' }, words.waiting) : null,
+      words.cant ? h('span', { class: 'sb-hg-bad' }, words.cant) : null,
+      h('span', { class: 'sb-vh' }, isOpen ? ' (open)' : ' (closed)'))),
+      isOpen ? h('div', { class: 'sb-grid', id }, members.map(({ b, box }, i) => {
+        const col = i % 2 ? 'col-r' : 'col-l';
+        try {
+          if (b.error) throw b.error;
+          return homeCard(b, seen, col);
+        } catch (err) {
+          return h('article', { class: `sb-pc bad ${col}`, key: `card:${box.name}` }, h('h2', { class: 'sb-nm' }, box.name),
+            h('p', { class: 'sb-stale' }, box.drawError || `Can't show this project: ${errorText(err)}`));
+        }
+      })) : null);
+  });
   return h('section', { class: 'sb-screen sb-home' },
     marker(),
     h('header', { class: 'sb-hdr home' }, h('div', { class: 'sb-hdr-t' }, h('h1', {}, 'Your desk'))),
@@ -356,16 +457,7 @@ function renderHome(desk, built, seen, now) {
       desk.signedOut ? SIGNED_OUT_STATE.text : total ? `${total} waiting on you in all` : s.text,
       lastRead ? h('span', { class: 'sb-muted' }, ` · last read ${hhmm(new Date(lastRead), TZ)}`) : null),
     seen.words ? h('p', { class: 'sb-muted small' }, seen.words) : null,
-    h('div', { class: 'sb-grid' }, order.map((box) => {
-      const b = built.find((x) => x.box === box);
-      try {
-        if (b.error) throw b.error;
-        return homeCard(b, seen, now);
-      } catch (err) {
-        return h('article', { class: 'sb-pc bad' }, h('h2', { class: 'sb-nm' }, box.name),
-          h('p', { class: 'sb-stale' }, box.drawError || `Can't show this project: ${errorText(err)}`));
-      }
-    })),
+    h('div', { class: 'sb-hgroups' }, groups),
     h('p', { class: 'sb-v5' }, v5Line(built)),
     h('div', { class: 'sb-band' },
       h('button', { type: 'button', class: 'sb-composer', 'aria-disabled': 'true', disabled: true },
@@ -884,10 +976,137 @@ function focusPending() {
 const bubble = {
   open: null, // the project's name
   via: null, // 'hover' | 'tap' | 'key'
+  place: null, // 'down' | 'up': below or above, to fit the viewport
   escaped: null, // a bubble closed with Escape stays closed while focus stays on its control
+  pointer: null,
+  pointerFocus: null, // a pointer pressed on this control: the focus that follows is its tap's, not the keyboard's
+  hover: { ctl: false, bubble: false },
   close() {
     this.open = null;
     this.via = null;
+    this.place = null;
+    this.hover = { ctl: false, bubble: false };
+  },
+};
+
+function focusKey(k) {
+  nav.focusNext = k;
+  focusPending();
+}
+
+function bubbleOpen(name, via) {
+  if (bubble.open === name) {
+    if (via !== 'hover') bubble.via = via;
+  } else {
+    bubble.close();
+    bubble.open = name;
+    bubble.via = via;
+  }
+  bubble.escaped = null;
+  render();
+  placeBubble();
+}
+
+/** A tap on the control: opens it, and a second tap closes it (AC54 (b)). A mouse click on a hovered bubble keeps it. */
+function bubbleTap(name, e) {
+  const pointer = (e && e.pointerType) || bubble.pointer;
+  if (bubble.open === name) {
+    if (bubble.via === 'hover' && pointer === 'mouse') {
+      bubble.via = 'tap';
+      return;
+    }
+    bubble.close();
+    render();
+    return;
+  }
+  bubbleOpen(name, 'tap');
+}
+
+/** With a pointer: open on hover over the control; close once the pointer has left both the control and the bubble. */
+function bubbleHover(name, inside, part) {
+  if (inside) {
+    bubble.hover[part] = true;
+    if (bubble.open !== name) bubbleOpen(name, 'hover');
+    return;
+  }
+  if (bubble.open !== name) return;
+  bubble.hover[part] = false;
+  setTimeout(() => {
+    if (bubble.open === name && bubble.via === 'hover' && !bubble.hover.ctl && !bubble.hover.bubble) {
+      bubble.close();
+      render();
+    }
+  }, 120);
+}
+
+function closeBubbleByEscape() {
+  const name = bubble.open;
+  bubble.close();
+  bubble.escaped = name;
+  render();
+  focusKey(`latest:${name}`);
+}
+
+/** A tap outside an open bubble closes it (AC54, AC56). */
+function outsideTap(e) {
+  if (!bubble.open) return;
+  const t = e && e.target;
+  const inBubble = t && t.closest && (t.closest('[data-bubble]') || (t.closest('[data-k]') && t.closest('[data-k]').getAttribute('data-k') === `latest:${bubble.open}`));
+  if (inBubble) return;
+  bubble.close();
+  render();
+}
+
+/** Below the control, or above it when below would leave the viewport (AC54: wholly inside it at 360 px). */
+function placeBubble() {
+  if (!bubble.open || bubble.place) return;
+  const view = document.getElementById('view');
+  const el = view ? findKey(view, `bubble:${bubble.open}`) : null;
+  bubble.place = 'down';
+  if (!el || !el.getBoundingClientRect || typeof window.innerHeight !== 'number') return;
+  try {
+    const r = el.getBoundingClientRect();
+    const card = el.parentNode && el.parentNode.getBoundingClientRect ? el.parentNode.getBoundingClientRect() : null;
+    const band = document.querySelector ? document.querySelector('.sb-band') : null;
+    const bottom = window.innerHeight - (band && band.getBoundingClientRect ? band.getBoundingClientRect().height : 0);
+    if (r.bottom > bottom && card && card.top - r.height >= 8) {
+      bubble.place = 'up';
+      el.setAttribute('class', el.getAttribute('class').replace(/\bdown\b/, 'up'));
+    }
+    const r2 = el.getBoundingClientRect();
+    if ((r2.top < 0 || r2.bottom > bottom) && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+  } catch {
+    // placement is a courtesy; the bubble still opens below
+  }
+}
+
+/** Home's groups' open or closed state (AC54 (d)), kept on the device under its own key, wrapped as J5's storage is. */
+const homeGroups = {
+  store: null,
+  state: null,
+  load(store) {
+    this.store = store;
+    const start = Object.fromEntries(HOME_GROUPS.map((g) => [g.key, g.open]));
+    let saved = null;
+    try {
+      saved = store ? store.getJSON(HOME_GROUPS_KEY, null) : null;
+    } catch {
+      saved = null;
+    }
+    this.state = { ...start };
+    if (saved && typeof saved === 'object') for (const g of HOME_GROUPS) if (typeof saved[g.key] === 'boolean') this.state[g.key] = saved[g.key];
+  },
+  isOpen(k) {
+    return this.state ? Boolean(this.state[k]) : HOME_GROUPS.find((g) => g.key === k).open;
+  },
+  toggle(k) {
+    if (!this.state) this.load(null);
+    this.state[k] = !this.state[k];
+    try {
+      if (this.store) this.store.setJSON(HOME_GROUPS_KEY, this.state);
+    } catch {
+      // storage failing costs only the memory of the groups (AC54)
+    }
   },
 };
 
@@ -921,6 +1140,7 @@ export function startSandbox(opts = {}) {
   const clock = { now: () => Date.now(), setTimeout: (fn, ms) => setTimeout(fn, ms), clearTimeout: (id) => clearTimeout(id) };
   const isVisible = () => document.visibilityState === 'visible';
   const seen = createSeen({ store, now: () => Date.now() });
+  homeGroups.load(store);
   const desk = createDesk({ config: CONFIG, call, clock, store, isVisible, onChange: () => render(), j11: true });
   nav.start();
   /** Every redraw patches the screen in place (AC56), so a refresh keeps it as the owner left it. */
@@ -983,6 +1203,7 @@ export function startSandbox(opts = {}) {
     }
     if (bubble.open) closeBubbleByEscape();
   });
+  document.addEventListener('pointerdown', outsideTap);
   document.addEventListener('visibilitychange', () => {
     if (isVisible()) seen.visible();
     else seen.hidden();
@@ -1008,8 +1229,6 @@ export function tick(root) {
     }
   });
 }
-
-function closeBubbleByEscape() {}
 
 /** Redraw now, as any refresh would (tests: "a redraw with no new data at all"). */
 export function refresh() {

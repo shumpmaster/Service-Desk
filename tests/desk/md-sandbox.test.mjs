@@ -32,7 +32,9 @@ test('AC48: Home — one card per project in AC8\'s order, each with its icon, n
     assert.equal(cards.length, 2);
     for (const c of cards) {
       assert.equal(byClass(c, 'sb-app').length, 1, 'a quiet line icon');
-      assert.equal(byClass(c, 'sb-where').length, 1);
+      // AC54 (2026-10-14): the card shows the README summary in AC37's place; AC37's line opens from "Latest".
+      assert.equal(byClass(c, 'sb-sum').length, 1);
+      assert.equal(byClass(c, 'sb-latest').length, 1);
       assert.equal(byClass(c, 'sb-ck').length, 1);
       assert.equal(byClass(c, 'sb-ball').length, 1);
       assert.equal(byClass(c, 'sb-pill').length, 1);
@@ -504,6 +506,8 @@ test('AC42: H5\'s extremes — 5 projects, 12+ waits, long titles — every scre
     assert.match(app.text(), /waiting on you in all/);
     const total = Number(/(\d+) waiting on you in all/.exec(app.text())[1]);
     assert.ok(total >= 12, `${total} waits`);
+    // AC54: the v2.5 project sits in "Closed or not applicable", which starts closed; open every group.
+    for (const b of byClass(app.view, 'sb-hg-btn')) if (b.attrs['aria-expanded'] === 'false') { b.click(); await app.flush(); }
     assert.equal(byClass(app.view, 'sb-pc').length, 5);
     for (const p of setup.config.projects) {
       for (const s of ['', '/timeline', '/team', '/queue', '/team/owner', '/team/orchestrator', '/team/builder/now', '/team/critic/e/0']) {

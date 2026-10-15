@@ -387,3 +387,8 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 .sb-axis .bar { fill: var(--agent); }
 .sb-axis .bar.card { fill: var(--you); }
 .sb-axis .bar.open { opacity: .6; }
+
+/* "Done today" (AC52, note 10): what was ruled, in words, then its code. */
+.sb-done-r { padding: 6px 0; border-top: 1px solid var(--line); font-size: .9rem; }
+.sb-done-r:first-child { border-top: 0; }
+.sb-done-r a.code { text-decoration: underline; }

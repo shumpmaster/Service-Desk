@@ -107,7 +107,7 @@ that only the owner passes.
 - Cards answered straight from the desk (M2) · done when each card on the desk links the owner straight to its answer · phase: Build · sprints: PR #44
 - Agent usage shown on the desk (M2B) · done when each agent session's usage and context figures show on the desk · phase: Build · sprints: PR #44, PR #52
 - What a good desk looks like is known (MD1) · done when source-checked design research sets out what a good desk looks like and why · phase: Design · sprints: Q-013
-- The desk's look and screens chosen (MD2) · done when the owner has picked the desk's look and its screens · phase: Design
+- The desk's look and screens chosen (MD2) · done when the owner has picked the desk's look and its screens · phase: Design · sprints: PR #72, PR #74, PR #75, PR #77
 - The chosen design running on the real back end (MD3) · done when the chosen look runs on the desk's real back end, showing real records, on its preview site · phase: Design
 - Work ahead planned and scheduled from the desk (M3A) · done when the owner's chosen order and timing of coming work are recorded from the desk for the Chief of Staff to carry out · phase: Build
 - The desk's value targets shown (M3B) · done when the desk shows each value target (V1 to V5) from the project document against its measure · phase: Build

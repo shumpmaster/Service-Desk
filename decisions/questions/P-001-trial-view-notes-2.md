@@ -129,3 +129,12 @@ The owner's approval of the mockup, verbatim (2026-10-16), after version 6:
 "This is it, approve all of these changes, begin any rework you need to get working on, I will finish out the batch in parallel and respond back with the rest of it"
 
 How it is read: mockup version 6 (docs/design/mockups/status-and-timeline.html) is approved as the design for notes 1 to 27, including the proposed status icons of note 23 as drawn. Spec, plan review, build and build review start now on notes 1 to 27. The batch stays open: the owner's further notes join it as they arrive.
+
+Follow-up question and the owner's answer (2026-10-16), after the owner asked: "Okay one ask though, given the work we just put into this page, are their changes / additions you would make to the other tabs to remain consistent and coherent"
+"Which of these changes to the other screens should join batch 2? I'd mock up the ones you pick before anything is built." Answer (all four options picked): "Home tile phases (Recommended), Queue: why it matters, Team: what each is on, One phase marker everywhere". The option texts, as offered:
+- "Home tile phases (Recommended)": "The tile still lists phases top-down with green checks and says \"Build finished\", the very mix-up that started batch 2. Make it match Status: bottom up, a small branch drawing, plain circles with icons, a phase-colour stripe, and \"Design, second time through\" instead of \"2 of 4 phases finished\"."
+- "Queue: why it matters": "Each item waiting on you names the milestone it unblocks and why that milestone exists, with its Context facts one tap away. The Queue's five coloured icons go neutral; only the coral diamond (needs you) keeps colour."
+- "Team: what each is on": "Each agent card names the sprint it's working on and the milestone it feeds, with a link into the Timeline. Status shown with the same circle icons as the Timeline instead of bare dots."
+- "One phase marker everywhere": "Every project screen's header carries the current phase band (e.g. \"Design · run 2\" in Design's colour), so Status, Timeline, Team and Queue all say where the project is in the same way. The old Pipeline page under \"More detail\" folds into the Timeline, since they now show the same thing."
+
+How it is read: these are notes 28 to 31 of batch 2 (Home tile, Queue, Team, phase marker), to be mocked up before anything is built and added to the spec once the owner approves the mockup.

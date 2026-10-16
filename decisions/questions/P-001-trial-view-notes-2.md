@@ -14,3 +14,17 @@ How it is read:
 - "Anywhere we have chronological phases like this" covers the Status screen's phase list and Home's phase checklist; the Timeline already draws runs and is checked against this.
 - A mockup comes first, for the owner to judge, before any spec change.
 - The batch stays open until the owner says it is done.
+
+The owner's answers on the mockup (docs/design/mockups/phase-branches.html, published privately as "Phase Branch Mockup"), verbatim, 2026-10-16:
+"This is the exact picture I had in mind. Every box list it’s runs as well, but in smaller de emphasized text, yes to point 3."
+The mockup's three questions, as put: 1. "Is this the picture you had in mind: one column of dots per run, branching right?" 2. "On the Status screen, should each phase box list every run (as here), or only the latest run with the earlier ones one tap away?" 3. "Should the Timeline screen use the same branch drawing, or keep its strip of runs?"
+
+How it is read:
+- 1: yes, one column of dots per run, branching right.
+- 2: every phase box lists all its runs; the earlier runs are in smaller, de-emphasized text, and the latest run reads at full size.
+- 3: the Timeline screen uses the same branch drawing.
+
+2. The owner's note, verbatim (same message):
+"Additionally, when a phase was completed but branched off, make the dot fill lighter than a fully completed phase"
+
+How it is read: a phase that finished in a run the work later branched away from (here Design i1 and Build i1, which run 2 went back over) has a lighter-filled dot than a phase that finished and stands (here Discovery). The difference is also said in words, never by colour alone.

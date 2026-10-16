@@ -159,9 +159,55 @@ export function nowRun(tl) {
 }
 
 /**
+ * The runs of the branch drawing (AC57's Terms, C): the model's phase runs in its order; the first
+ * starts run 1, and each later one whose phase is the same as, or comes before, the phase of the run
+ * just before it starts a new run (the work went back). Returns { runs, k: Map(run → its run number), count }.
+ */
+export function columnsOf(tl) {
+  const runs = tl ? tl.runs().filter((r) => DESK_PHASES.includes(r.phase)) : [];
+  const k = new Map();
+  let n = 0;
+  let prev = null;
+  for (const r of runs) {
+    if (!prev || DESK_PHASES.indexOf(r.phase) <= DESK_PHASES.indexOf(prev.phase)) n++;
+    k.set(r, n);
+    prev = r;
+  }
+  return { runs, k, count: n };
+}
+
+/**
+ * Which of AC50's two rules gave the now run: 'open' (the earliest run holding a project milestone
+ * not dropped with no work filed: one milestone is then next to reach), 'latest' (every one has work
+ * filed: the run holding the latest recorded step), or null (no now run).
+ */
+export function nowRule(tl) {
+  if (!tl) return null;
+  const runs = tl.runs().filter((r) => DESK_PHASES.includes(r.phase));
+  if (runs.some((r) => r.project.some((m) => !m.dropped && !(r.sprints[m.id] || []).length))) return 'open';
+  return nowRun(tl) ? 'latest' : null;
+}
+
+/**
+ * A phase run's state against the now run (AC57's Terms): 'finished' (before it, its phase run no
+ * more after it: finished and standing), 'gone back over' (before it, its phase run again later),
+ * 'now', 'still to come' (after it), or 'not recorded' with no now run.
+ */
+export function runStateOf(r, runs, now) {
+  if (!now) return 'not recorded';
+  const i = runs.indexOf(r);
+  const ni = runs.indexOf(now);
+  if (i === ni) return 'now';
+  if (i > ni) return 'still to come';
+  return runs.slice(i + 1).some((x) => x.phase === r.phase) ? 'gone back over' : 'finished';
+}
+
+/**
  * The four phases, then Done (AC50). Returns { tracked, phases: [{ phase, word, now, iteration,
  * run, runs }], finished, done, nowRun, words }. Untracked (v2.5, or no timeline yet): tracked
- * false, with `why` in words.
+ * false, with `why` in words. Each phase's word (trial-view notes 2, note 1) is the state of its
+ * latest run in the model's timeline, the first rule that fits giving it: "Now" (with " · run <k>"
+ * when the project has more than one run), "Finished", "Run <k> still to come", "Not started".
  */
 export function phaseView(project, tl, tree, j) {
   if (project.model !== 'v3') return { tracked: false, why: 'Phases not tracked', detail: V25_NOT_RECORDED, phases: [], finished: null, done: false };
@@ -176,16 +222,17 @@ export function phaseView(project, tl, tree, j) {
   if (!runs.length || !now) {
     return { tracked: true, nowRun: null, done, finished: null, phases: DESK_PHASES.map((phase) => ({ phase, word: NOT_RECORDED, now: false, runs: runs.filter((r) => r.phase === phase), run: null })) };
   }
+  const cols = columnsOf(tl);
   const nowIdx = runs.indexOf(now);
   const phases = DESK_PHASES.map((phase) => {
     const all = runs.filter((r) => r.phase === phase);
-    const upTo = runs.slice(0, nowIdx + 1).filter((r) => r.phase === phase);
-    const latest = upTo.length ? upTo[upTo.length - 1] : null;
+    const latest = all.length ? all[all.length - 1] : null;
     let word;
-    if (latest === now) word = 'now';
-    else if (latest) word = 'Finished';
+    if (phase === now.phase) word = `Now${cols.count > 1 ? ` · run ${cols.k.get(now)}` : ''}`;
+    else if (latest && runs.indexOf(latest) < nowIdx) word = 'Finished';
+    else if (latest && all.some((r) => runs.indexOf(r) < nowIdx)) word = `Run ${cols.k.get(latest)} still to come`;
     else word = 'Not started';
-    return { phase, word, now: latest === now, iteration: latest ? latest.iteration : null, run: latest || all[0] || null, runs: all };
+    return { phase, word, now: phase === now.phase, iteration: phase === now.phase ? now.iteration : latest ? latest.iteration : null, run: latest, runs: all };
   });
   return { tracked: true, nowRun: now, done, phases, finished: phases.filter((p) => p.word === 'Finished').length };
 }

@@ -5,6 +5,11 @@
 
 import { neededReads, parseRecord, recordKind, buildModel } from './model.js';
 import { parseTree, parseHistory, parseCardPath, compareStatus } from './records.js';
+import { judgePulls, mergePulls, PULLS_KEY, PULLS_MAX_PAGES, PULLS_RATE_MS } from './pulls.js';
+import { dayKey } from './timefmt.js';
+
+// J12 (2026-10-16): the pull-request read counts 5 of a blob call's budget of 25.
+export const PULLS_COST = 5;
 
 export const POLL_MS = 60_000;
 export const STALE_MS = 180_000;
@@ -12,9 +17,11 @@ export const BLOB_BATCH = 25;
 const MAX_BLOB_CALLS_PER_CYCLE = 6;
 // The blob cache holds parsed records, so its key names the parse's shape: bump it whenever a
 // parser's output changes (v2: model S-020's frozen `usage` form, J10; v3: J11's log rows and merge shas; v4: a ruling's
-// line 1 and its line-2 `Proxy:`, AC52 and AC55), and list the old keys here so their entries are dropped, not left to fill storage.
-export const BLOB_CACHE_KEY = 'desk-blobs-v4';
-export const OLD_BLOB_CACHE_KEYS = ['desk-blobs-v1', 'desk-blobs-v2', 'desk-blobs-v3'];
+// line 1 and its line-2 `Proxy:`, AC52 and AC55; v5: docs/PROJECT.md's why lines, standard lines and Purpose items,
+// an answer's `Reason:` and the review verdict files, AC57 to AC61 and AC70), and list the old keys
+// here so their entries are dropped, not left to fill storage.
+export const BLOB_CACHE_KEY = 'desk-blobs-v5';
+export const OLD_BLOB_CACHE_KEYS = ['desk-blobs-v1', 'desk-blobs-v2', 'desk-blobs-v3', 'desk-blobs-v4'];
 const HISTORY_CACHE_KEY = 'desk-history-v1';
 const COMPARE_CACHE_KEY = 'desk-compare-v1';
 
@@ -73,6 +80,9 @@ function newProjectState(project) {
     project, head: null, tree: null, etags: {}, pages: new Map(), pullUrls: [], checkUrls: [],
     checksState: 'ok', checksRead: false, pending: false, lastPollStart: -Infinity, retryUntil: 0,
     lastSuccessAt: null, failure: null, timer: null, withdrawn: [], partialTree: false, polls: 0, blobCalls: 0,
+    headAt: null,
+    // J12: what the device keeps of the project's pull requests, and where its reads stand.
+    j12: { pulls: null, day: null, head: null, tooMany: false, cold: null, wait: null, failure: null, fieldError: null },
   };
 }
 
@@ -94,6 +104,21 @@ export function createDesk(opts) {
   // head, and stays one); `<project>:<tip>@<head>` → the answer at that head ('behind', 'diverged'
   // or 'failed'), asked again only when the head changes.
   const compareCache = new Map(Object.entries((store && store.getJSON(COMPARE_CACHE_KEY, {})) || {}));
+  // J12: kept on the device under their own key, in a store of their own (opts.pullsStore), so that a
+  // write that fails there turns off only this key, never the blob cache.
+  const pullsStore = opts.pullsStore || null;
+  if (opts.j11) {
+    let saved = {};
+    try {
+      saved = (pullsStore && pullsStore.getJSON(PULLS_KEY, {})) || {};
+    } catch {
+      saved = {};
+    }
+    for (const st of states.values()) {
+      const e = saved[st.project.name];
+      if (e && Array.isArray(e.pulls)) Object.assign(st.j12, { pulls: e.pulls, day: e.day || null, head: e.head || null, tooMany: e.tooMany === true });
+    }
+  }
   const desk = {
     openedAt: clock.now(), visibleSince: clock.now(), signedOut: false, running: false, states,
   };
@@ -121,6 +146,68 @@ export function createDesk(opts) {
       if (at < 0 || heads.has(`${k.slice(0, k.indexOf(':'))}:${k.slice(at + 1)}`)) compares[k] = v;
     }
     store.setJSON(COMPARE_CACHE_KEY, compares);
+  }
+
+  function persistPulls() {
+    if (!pullsStore) return;
+    const out = {};
+    for (const st of states.values()) {
+      const j = st.j12;
+      if (j.pulls) out[st.project.name] = { day: j.day, head: j.head, tooMany: j.tooMany, pulls: j.pulls };
+    }
+    try {
+      pullsStore.setJSON(PULLS_KEY, out);
+    } catch {
+      // a failed write costs only what this key keeps; the pull requests stay in memory for the window
+    }
+  }
+
+  /**
+   * The J12 read a project needs now, or null (J12, "When the page reads it"; v3 projects in the MD
+   * sandbox only): the next page of a cold read under way; a cold read (the first load on this device,
+   * and the first each day after midnight in ownerTimeZone), from the first page; or, on a head
+   * change, the first page only. After a rate limit or a failed read, none until the next head change
+   * and for 60 minutes, whichever is later (C).
+   */
+  function pullsDue(st) {
+    if (!opts.j11 || st.project.model !== 'v3' || !st.head) return null;
+    const j = st.j12;
+    const now = clock.now();
+    if (j.wait && (now < j.wait.until || st.head === j.wait.head)) return null;
+    if (j.cold) return { after: j.cold.after, cold: true };
+    if (j.pulls == null || j.day !== dayKey(new Date(now), config.ownerTimeZone)) return { after: null, cold: true };
+    if (j.head !== st.head) return { after: null, cold: false };
+    return null;
+  }
+
+  /** One J12 answer (raw, or null), for the read `asked` made at the project's head. */
+  function applyPulls(st, asked, raw) {
+    const j = st.j12;
+    const now = clock.now();
+    const v = judgePulls(raw);
+    if (!v.ok) {
+      j.failure = v.reason;
+      j.rate = v.rate;
+      j.cold = null;
+      j.wait = { until: now + PULLS_RATE_MS, head: st.head };
+      return;
+    }
+    j.failure = null;
+    j.rate = false;
+    j.wait = null;
+    j.fieldError = v.fieldError;
+    j.pulls = mergePulls(j.pulls || [], v.pulls);
+    if (asked.cold) {
+      const page = (j.cold ? j.cold.page : 0) + 1;
+      if (v.hasNext && v.cursor && page < PULLS_MAX_PAGES) j.cold = { after: v.cursor, page };
+      else {
+        j.cold = null;
+        j.day = dayKey(new Date(now), config.ownerTimeZone);
+        j.tooMany = v.hasNext;
+        j.head = st.head;
+      }
+    } else j.head = st.head;
+    persistPulls();
   }
 
   function recordsFor(st) {
@@ -238,6 +325,7 @@ export function createDesk(opts) {
       st.tree = tree.blobs;
       st.partialTree = tree.truncated;
       st.head = r.head.sha;
+      st.headAt = r.head.committedAt || null; // AC71: the head commit's time, a movement
     }
     if (lost) {
       // A 304 for a page this window never held: forget the ETags so the next poll reads in full.
@@ -253,10 +341,16 @@ export function createDesk(opts) {
     st.blobCalls++;
     const body = { project: st.project.name, blobs: batch.blobs, history: batch.history };
     if (batch.compare.length) body.compare = batch.compare;
+    if (batch.pulls) body.pulls = { after: batch.pulls.after };
     const res = await call('/api/blobs', body);
-    if (!res.ok) return { res, progress: false };
+    if (!res.ok) {
+      if (batch.pulls) applyPulls(st, batch.pulls, null);
+      return { res, progress: false };
+    }
     const r = res.json;
     let progress = false;
+    // The call answered: its `pulls` is J12's answer (null when it failed or the call stopped first).
+    if (batch.pulls) applyPulls(st, batch.pulls, r && Object.prototype.hasOwnProperty.call(r, 'pulls') ? r.pulls : null);
     for (const [sha, text] of Object.entries(r.blobs || {})) {
       if (text == null) continue;
       for (const b of need.byPath.values()) {
@@ -284,7 +378,7 @@ export function createDesk(opts) {
       progress = true;
     }
     persist();
-    return { res, progress };
+    return { res, progress, pulled: Boolean(batch.pulls) };
   }
 
   /**
@@ -300,7 +394,11 @@ export function createDesk(opts) {
     for (; calls < MAX_BLOB_CALLS_PER_CYCLE; calls++) {
       const need = missing(st);
       if (!need.shas.length && !need.history.length && !need.compare.length) break;
-      const [batch] = batches(need.shas, need.history, BLOB_BATCH, need.compare);
+      // J12 rides in the cycle's first blob call when one is due (A3: a head change adds its first
+      // page to that minute's call), within what is left of the budget.
+      const pl = calls === 0 ? pullsDue(st) : null;
+      const [batch] = batches(need.shas, need.history, pl ? BLOB_BATCH - PULLS_COST : BLOB_BATCH, need.compare);
+      if (pl) batch.pulls = pl;
       const { res, progress } = await blobCall(st, need, batch);
       if (!res.ok) return res;
       if (res.json.state !== 'ok') return { ok: false, reason: res.json.reason || 'github', retryAfter: res.json.retryAfter };
@@ -310,19 +408,23 @@ export function createDesk(opts) {
     if (left.shas.length || left.history.length || left.compare.length) return { ok: false, pending: true };
     for (; calls < MAX_BLOB_CALLS_PER_CYCLE; calls++) {
       const need = missing(st);
-      if (!need.optional.shas.length && !need.optional.history.length) break;
+      const pl = pullsDue(st);
+      if (!need.optional.shas.length && !need.optional.history.length && !pl) break;
+      const budget = pl ? BLOB_BATCH - PULLS_COST : BLOB_BATCH;
       // The MD sandbox (opts.j11) asks for its optional blobs before the rulings' history reads, so
       // its screens fill in the first cycle; without it the order is M2's.
-      const [batch] = opts.j11 && need.optional.shas.length ? batches(need.optional.shas, [], BLOB_BATCH)
-        : batches(need.optional.shas, need.optional.history, BLOB_BATCH);
-      const { res, progress } = await blobCall(st, need, batch);
+      const [batch] = opts.j11 && need.optional.shas.length ? batches(need.optional.shas, [], budget)
+        : batches(need.optional.shas, need.optional.history, budget);
+      const b = batch || { blobs: [], history: [], compare: [] };
+      if (pl) b.pulls = pl;
+      const { res, progress, pulled } = await blobCall(st, need, b);
       // An optional read that fails is tried again on a later cycle; it never fails the project,
       // except a rate limit, which every read must respect.
       if (!res.ok || res.json.state !== 'ok') {
         if (res.ok && res.json.reason === 'rate-limit') return { ok: false, reason: 'rate-limit', retryAfter: res.json.retryAfter };
         break;
       }
-      if (!progress) break;
+      if (!progress && !pulled) break;
     }
     return { ok: true };
   }
@@ -438,8 +540,11 @@ export function createDesk(opts) {
   /** J11 (the MD sandbox): the project's tree, its parsed records and its run pages, as last read. */
   desk.snapshot = (name) => {
     const st = states.get(name);
-    return { tree: st.tree, records: recordsFor(st), history: historyFor(st), head: st.head,
-      pullPages: st.pullRaws || [], checkPages: st.checksRead ? st.checkRaws : null, lastSuccessAt: st.lastSuccessAt };
+    const j = st.j12;
+    return { tree: st.tree, records: recordsFor(st), history: historyFor(st), head: st.head, headAt: st.headAt,
+      pullPages: st.pullRaws || [], checkPages: st.checksRead ? st.checkRaws : null, lastSuccessAt: st.lastSuccessAt,
+      // J12: the pull requests kept (null until a read has answered on this device), and how the reads stand.
+      pulls: { list: j.pulls, failure: j.failure, rate: j.rate === true, tooMany: j.tooMany, fieldError: j.fieldError, reading: Boolean(j.cold) } };
   };
   return desk;
 }

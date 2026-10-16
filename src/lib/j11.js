@@ -15,6 +15,9 @@ export const GATE_CASE_RE = /^docs\/gates\/([PQE]-\d{3,})\/(design|build|launch)
 export const HANDOVER_PREFIX = 'docs/handover/';
 export const README_PATH = 'README.md'; // AC54: read for every connected project, a v2.5 one too
 export const HANDOVER_TEMPLATE = 'docs/handover/_TEMPLATE.md';
+// AC60's review mark and AC72's check (J11, 2026-10-16): a verdict file under reviews/<n>/; names
+// starting `_`, and README.md, are not verdicts (reviews/README.md).
+export const REVIEW_VERDICT_RE = /^reviews\/([0-9]+)\/((?!_)(?!README\.md$)[^/]+\.md)$/;
 
 /** A card gate's phase for its gate document (docs/gates/_GATE.md:4): dor → design, criteria → build, launch → launch. */
 export const GATE_PHASE = { dor: 'design', criteria: 'build', launch: 'launch' };
@@ -29,6 +32,7 @@ export function j11Kind(path) {
   if (REQUEST_PATH_RE.test(path)) return 'request';
   if (GATE_CASE_RE.test(path)) return 'gate-case';
   if (path === README_PATH) return 'readme-root';
+  if (REVIEW_VERDICT_RE.test(path)) return 'review-verdict';
   return null;
 }
 
@@ -42,11 +46,23 @@ export function parseJ11(kind, text, path) {
     case 'request': return parseRequest(text);
     case 'gate-case': return parseGateCase(text);
     case 'readme-root': return { summary: readmeSummary(text) };
+    case 'review-verdict': return { verdict: verdictOf(text) };
     default: return null;
   }
 }
 
 const split = (text) => String(text == null ? '' : text).split('\n');
+
+/**
+ * A verdict file's verdict (reviews/README.md): the first line starting `Verdict:` at column 0
+ * decides it: 'PASS', 'FAIL', 'other' (a `Verdict:` line with any other word), or null (none).
+ */
+export function verdictOf(text) {
+  const l = split(text).map((x) => x.replace(/\r+$/, '')).find((x) => x.startsWith('Verdict:'));
+  if (l == null) return null;
+  const w = l.slice(8).trim();
+  return w === 'PASS' || w === 'FAIL' ? w : 'other';
+}
 
 // ---------------------------------------------------------------------------
 // README.md (AC54 (a)): the brief project summary on each Home card
@@ -166,9 +182,30 @@ const NAME_ID_RE = /\b(?:[SDPQE]-\d{3,}|L-\d{4,}|AC\d+|J\d+|V\d+|M\d[0-9A-Z]{0,6
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
+ * A milestone line's why end (AC61 (a), model S-032 AC4): ` · why: <reason>` at the line's end, after
+ * any ` · sprints:` and ` · dropped`; the reason at least one character, starting and ending with a
+ * non-space character and holding no ` · `. Returns { line (the line without its why), why, bad }:
+ * `bad` names why a why end is out of form (empty, or holding ` · `, which is also how a part after
+ * it, such as ` · dropped`, reads); with no why end, why and bad are null.
+ */
+export function whyEnd(line) {
+  const s = String(line);
+  const i = s.indexOf(' · why:');
+  if (i < 0) return { line: s, why: null, bad: null };
+  const rest = s.slice(i + ' · why:'.length);
+  const reason = rest.startsWith(' ') ? rest.slice(1) : null;
+  if (reason == null || !reason.length || /^\s/.test(reason) || /\s$/.test(reason)) return { line: s.slice(0, i), why: null, bad: 'its why is empty, or starts or ends with a space' };
+  if (reason.includes(' · ')) return { line: s.slice(0, i), why: null, bad: 'its why holds " · ", or has another part after it' };
+  return { line: s.slice(0, i), why: reason, bad: null };
+}
+
+/**
  * Part 1 section 3's milestone lines (v3_checks.milestone_lines): { milestones: [{ lineno, id, name,
- * done, phase, forItem, sprints, dropped }], problems: [{ lineno, message }] }. A line out of form is
- * skipped with a problem (J11's awkward case); the rest still show.
+ * done, phase, forItem, sprints, dropped, why }], problems: [{ lineno, message }] }. A line out of
+ * form is skipped with a problem (J11's awkward case); the rest still show. From 2026-10-16 (AC61
+ * (a)) a line's why end is taken off before the line is matched, so a why never changes its name,
+ * "done when", phase, sprints or `· dropped`; a line whose why end is out of form is skipped with a
+ * problem, as S-032's reader has it.
  */
 export function milestoneLines(text) {
   const sec = part1Sections(text || '')[3];
@@ -177,30 +214,35 @@ export function milestoneLines(text) {
   const raw = [];
   sec.body.forEach((line, j) => {
     const n = sec.lineno + 1 + j;
-    const s = line.replace(/\r+$/, '');
-    if (CODE_FIRST_RE.test(s)) {
+    const full = line.replace(/\r+$/, '');
+    if (CODE_FIRST_RE.test(full)) {
       problems.push({ lineno: n, message: 'a milestone written code first: write the name first: <name> (M<id>) · …' });
       return;
     }
-    if (!MILESTONE_MARK_RE.test(s)) return;
-    const m = MILESTONE_LINE_RE.exec(s);
+    if (!MILESTONE_MARK_RE.test(full)) return;
+    const w = whyEnd(full);
+    if (w.bad) {
+      problems.push({ lineno: n, message: `a milestone line out of form: ${w.bad}` });
+      return;
+    }
+    const m = MILESTONE_LINE_RE.exec(w.line);
     if (!m) {
       problems.push({ lineno: n, message: 'not in the milestone form' });
       return;
     }
-    raw.push({ n, g: m.groups });
+    raw.push({ n, g: m.groups, why: w.why });
   });
   const ids = raw.map((r) => r.g.id);
   const seen = new Set();
   const milestones = [];
-  for (const { n, g } of raw) {
+  for (const { n, g, why } of raw) {
     if (seen.has(g.id)) {
       problems.push({ lineno: n, message: `milestone id ${g.id} is repeated` });
       continue;
     }
     seen.add(g.id);
     const ms = { lineno: n, id: g.id, name: g.name, done: g.done, phase: g.phase, forItem: g.for || null,
-      sprints: g.sprints ? g.sprints.split(', ') : [], dropped: Boolean(g.dropped) };
+      sprints: g.sprints ? g.sprints.split(', ') : [], dropped: Boolean(g.dropped), why };
     let bad = null;
     if (ms.name.includes('`')) bad = 'a backtick';
     else if (NAME_ID_RE.test(ms.name)) bad = `the code ${NAME_ID_RE.exec(ms.name)[0]}`;
@@ -218,22 +260,111 @@ export function milestoneLines(text) {
   return { milestones, problems };
 }
 
+export const STANDARD_LINE_IDS = ['Discovery-1', 'Discovery-2', 'Discovery-3', 'Discovery-4', 'Discovery-5', 'Discovery-6', 'Discovery-7',
+  'Discovery-8', 'Design-1', 'Design-2', 'Design-3', 'Design-4', 'Design-5', 'Design-6', 'Build-1', 'Build-2', 'Build-3', 'Build-4',
+  'Build-5', 'Launch-1', 'Launch-2', 'Launch-3', 'Launch-4', 'Launch-5'];
+const STANDARD_START_RE = /^(?:- )?(\S+) \(standard\)/;
+const STANDARD_LINE_RE = /^(?:- )?((?:Discovery|Design|Build|Launch)-[0-9]+) \(standard\) · (taken on|skipped) · why: (.*)$/;
+
+/**
+ * Section 3's standard-milestone lines (AC61 (b), model S-032 AC5): `<Phase>-<n> (standard) · taken
+ * on · why: <reason>` or `… · skipped · why: <reason>`, after an optional `- `, the reason as a
+ * milestone's why. Returns { standard: { id: { state: 'taken on' | 'skipped', why, lineno } },
+ * problems }. A line that starts `<id> (standard)` but is not in that form, or names no standard
+ * milestone, is skipped with a problem; when two lines name the same milestone, the first counts and
+ * the second is a problem.
+ */
+export function standardLines(text) {
+  const sec = part1Sections(text || '')[3];
+  const standard = {};
+  const problems = [];
+  if (!sec) return { standard, problems };
+  sec.body.forEach((line, j) => {
+    const n = sec.lineno + 1 + j;
+    const s = line.replace(/\r+$/, '');
+    const start = STANDARD_START_RE.exec(s);
+    if (!start) return;
+    const m = STANDARD_LINE_RE.exec(s);
+    const reason = m ? m[3] : null;
+    if (!STANDARD_LINE_IDS.includes(start[1])) {
+      problems.push({ lineno: n, message: `a standard-milestone line names ${start[1]}, which is no standard milestone` });
+      return;
+    }
+    if (!m || !reason || /^\s|\s$/.test(reason) || reason.includes(' · ')) {
+      problems.push({ lineno: n, message: 'a standard-milestone line out of form: <Phase>-<n> (standard) · taken on (or skipped) · why: <reason>' });
+      return;
+    }
+    if (standard[m[1]]) {
+      problems.push({ lineno: n, message: `standard milestone ${m[1]} is repeated: the first line counts` });
+      return;
+    }
+    standard[m[1]] = { state: m[2], why: reason, lineno: n };
+  });
+  return { standard, problems };
+}
+
+/**
+ * The first two items of the list under `### Purpose` in docs/PROJECT.md's `## Intent` section
+ * (AC59's "What we're delivering" and "Where we started"): each whole, its lines joined with single
+ * spaces and its inline Markdown as plain text, as AC54 (a) reads a README. Returns { found, items }:
+ * found is 'no-intent', 'no-purpose' or 'ok'; items has at most two strings.
+ */
+export function purposeItems(text) {
+  const lines = split(text).map((l) => l.replace(/\r+$/, ''));
+  const intent = lines.findIndex((l) => /^## +Intent\s*$/.test(l));
+  if (intent < 0) return { found: 'no-intent', items: [] };
+  let end = lines.findIndex((l, i) => i > intent && /^#{1,2} /.test(l));
+  if (end < 0) end = lines.length;
+  const p = lines.findIndex((l, i) => i > intent && i < end && /^### +Purpose\s*$/.test(l));
+  if (p < 0) return { found: 'no-purpose', items: [] };
+  const items = [];
+  let cur = null;
+  for (let i = p + 1; i < end; i++) {
+    const l = lines[i];
+    if (/^#/.test(l)) break;
+    if (/^- /.test(l)) {
+      if (cur) items.push(cur);
+      cur = [l.slice(2).trim()];
+    } else if (cur && /^\s+\S/.test(l)) cur.push(l.trim());
+    else if (cur && !l.trim()) continue;
+    else if (cur) {
+      items.push(cur);
+      cur = null;
+      break;
+    }
+  }
+  if (cur) items.push(cur);
+  return { found: items.length ? 'ok' : 'no-purpose', items: items.slice(0, 2).map((x) => plainInline(x.join(' '))) };
+}
+
+/** A text's first sentence (AC59, C): up to and including the first full stop followed by a space or by the text's end. */
+export function firstSentence(text) {
+  const s = String(text);
+  const m = /\.(?= |$)/.exec(s);
+  return m ? s.slice(0, m.index + 1) : s;
+}
+
 export const OWNER_IS_USER = 'The owner is the user.';
 
 /**
  * docs/PROJECT.md, cut down to what the sandbox shows and the timeline reads: section 3's milestones,
  * section 6's value targets, whether sections 1, 4 and 5 hold a line beyond their instructions
- * (Discovery-7's file part), and section 9's "The owner is the user." (AC52).
+ * (Discovery-7's file part), and section 9's "The owner is the user." (AC52); from 2026-10-16, each
+ * milestone's why (AC61 (a)), section 3's standard-milestone lines (AC61 (b)) and the Intent's
+ * Purpose items (AC59). `problems` names each line out of form or repeated (AC61, AC68's record notes).
  */
 export function parseProjectDoc(text) {
   const secs = part1Sections(text || '');
-  const { milestones, problems } = milestoneLines(text);
+  const { milestones, problems: msProblems } = milestoneLines(text);
+  const std = standardLines(text);
+  const problems = [...msProblems, ...std.problems].sort((a, b) => a.lineno - b.lineno);
   const filled = (n) => Boolean(secs[n]) && secs[n].body.some((l) => l.trim() && !isInstructionLine(l));
   const s9 = secs[9] ? secs[9].body.map((l) => l.trim()).filter((l) => l && !isInstructionLine(l)) : null;
   return {
     milestones, problems, valueTargets: valueTargets(text),
     scopeLimitsOwnersFilled: filled(1) && filled(4) && filled(5),
     section9: s9, ownerIsUser: Boolean(s9 && s9.includes(OWNER_IS_USER)),
+    standard: std.standard, purpose: purposeItems(text),
   };
 }
 
@@ -399,23 +530,37 @@ export function parseSpecDoc(text, path) {
 
 export const GROUNDWORK_PREFIXES = ['Groundwork map:', 'Discovery map:'];
 
-/** { question: first non-empty line of the `question` string, or null }. */
+/**
+ * { question: first non-empty line of the `question` string, or null; sentence: the question's
+ * first sentence (AC60's research title, C): its text up to and including the first `.`, `?` or `!`
+ * followed by a space or the text's end, its line breaks as spaces }.
+ */
 export function parseRequest(text) {
   const lines = split(text);
   const i = lines.findIndex((l) => /^question\s*=/.test(l));
-  if (i < 0) return { question: null };
+  if (i < 0) return { question: null, sentence: null };
   const after = lines[i].replace(/^question\s*=\s*/, '');
   const single = /^"((?:[^"\\]|\\.)*)"\s*$/.exec(after);
-  if (single) return { question: single[1].trim() || null };
+  if (single) return { question: single[1].trim() || null, sentence: sentenceOf(single[1]) };
   if (after.startsWith('"""')) {
     const rest = [after.slice(3), ...lines.slice(i + 1)];
+    const body = [];
     for (const l of rest) {
-      const t = l.replace(/"""\s*$/, '').trim();
-      if (t) return { question: t };
-      if (/"""\s*$/.test(l)) break;
+      const end = /"""\s*$/.test(l);
+      body.push(l.replace(/"""\s*$/, ''));
+      if (end) break;
     }
+    const first = body.map((l) => l.trim()).find(Boolean) || null;
+    return { question: first, sentence: sentenceOf(body.join('\n')) };
   }
-  return { question: null };
+  return { question: null, sentence: null };
+}
+
+function sentenceOf(text) {
+  const s = String(text).replace(/\s+/g, ' ').trim();
+  if (!s) return null;
+  const m = /[.?!](?= |$)/.exec(s);
+  return m ? s.slice(0, m.index + 1) : s;
 }
 
 export const isGroundwork = (req) => Boolean(req && req.question && GROUNDWORK_PREFIXES.some((p) => req.question.startsWith(p)));

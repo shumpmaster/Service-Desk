@@ -12,7 +12,7 @@ import {
 } from './records.js';
 import { whenText, durationText } from './timefmt.js';
 import { j11Kind, parseJ11, PROJECT_DOC_PATH, SURFACES_PATH, ORCH_WORKFLOW_PATH, SPEC_PATH_RE, REQUEST_PATH_RE,
-  GATE_PHASE, README_PATH } from './j11.js';
+  GATE_PHASE, README_PATH, REVIEW_VERDICT_RE } from './j11.js';
 import { cardRows, questionRows, cardSummary, v5Waits, sessionRows, timelines, V25_NO_CARDS, V25_ANSWERED } from './asked.js';
 
 export const NOT_RECORDED = 'not recorded';
@@ -74,7 +74,8 @@ export function parseRecord(kind, text, path) {
       return { entries, notes, rows };
     }
     case 'card': return { text, ...parseCard(text) };
-    case 'answer': return { verdict: parseAnswer(text) };
+    // reason: the first `Reason:` line's words (AC70: why a run began, from its boundary decision's record).
+    case 'answer': return { verdict: parseAnswer(text), reason: answerReason(text) };
     case 'hold': return { text, ...parseHoldCard(text) };
     case 'merge-card': return { text, ...parseMergeCard(text) };
     case 'merges': return parseMerges(text);
@@ -87,11 +88,22 @@ export function parseRecord(kind, text, path) {
     case 'question': return { text, ...parseQuestion(text, (questionName(path) || path)) };
     case 'ledger': return parseLedger(text);
     case 'sprint': return parseSprint(text);
-    case 'project-doc': case 'surfaces': case 'orch-workflow': case 'spec': case 'request': case 'gate-case': case 'readme-root':
+    case 'project-doc': case 'surfaces': case 'orch-workflow': case 'spec': case 'request': case 'gate-case': case 'readme-root': case 'review-verdict':
       return parseJ11(kind, text, path);
     default: return null;
   }
 }
+
+/** An answer file's first `Reason:` line, its words after the label as written (AC70), or null. */
+export function answerReason(text) {
+  const l = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n').find((x) => x.startsWith('Reason:'));
+  if (l == null) return null;
+  const w = l.slice(7).replace(/^ /, '');
+  return w.trim() ? w : null;
+}
+
+/** The gate words that send work back through a gate it did not pass (model S-023 AC6; orchestrator.py BOUNDARY_WORDS). */
+export const BOUNDARY_WORDS = { dor: ['recycle', 're-aim'], criteria: ['recycle', 'revise'], launch: ['recycle', 'revise'] };
 
 function openCards(tree) {
   const cards = [];
@@ -265,6 +277,17 @@ export function neededReads(project, tree, records, now, ctx = {}) {
         if (phase) opt(`docs/gates/${card.item}/${phase}-gate-${card.n}-case.md`);
       }
       for (const path of tree.keys()) if (/^decisions\/questions\/P-[0-9]+-(groundwork|discovery)\.md$/.test(path)) opt(path);
+      // From 2026-10-16: AC60's review marks and AC72's check (every verdict file under reviews/<n>/,
+      // names starting `_` and README.md not read) and AC70's reasons (the answer record each boundary
+      // decision line names: the gate word that sent the work back).
+      for (const path of [...tree.keys()].sort()) if (REVIEW_VERDICT_RE.test(path)) opt(path);
+      for (const path of [...tree.keys()].filter((x) => LOG_RE.test(x)).sort()) {
+        const log = records.get(path);
+        for (const row of (log && log.rows) || []) {
+          if (!row || typeof row !== 'object' || typeof row.record !== 'string' || Object.prototype.hasOwnProperty.call(row, 'route')) continue;
+          if ((BOUNDARY_WORDS[row.gate] || []).includes(row.word) && parseAnswerPath(row.record)) opt(row.record);
+        }
+      }
       // AC52's "Done today" and AC55's "Your last action": the owner's rulings, newest first by their
       // oldest commit, read until one older than a day and a half is known to be the owner's.
       const rulings = [...tree.keys()].filter((p) => questionAnswerName(p) && history.get(p) && history.get(p).oldest)

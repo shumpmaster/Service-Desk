@@ -111,6 +111,11 @@ p { margin: 0; }
 .plist.inbox .prow { grid-template-columns: 0 minmax(0, 1fr); }
 .plist.inbox .phase { padding-left: calc(var(--railw) + 12px); }
 .plist.inbox svg.rail { z-index: 1; }
+.plist .phead { cursor: pointer; }
+.plist .phead::after { content: "▾"; font: var(--t-meta); color: var(--faint); margin-left: var(--s1); }
+.plist .phase.folded .phead::after { content: "▸"; }
+.plist .prow.end .phead { cursor: default; } .plist .prow.end .phead::after { content: none; }
+.plist .phase.folded > :not(.phead) { display: none; }
 .plist.tint { gap: 2px; }
 .plist.tint .phase { border: 0; box-shadow: none; background: none; }
 .plist.tint .prow { border-radius: var(--r); background: color-mix(in srgb, var(--ph) 9%, transparent); }
@@ -184,7 +189,7 @@ details.tasks[open] > summary { border-bottom: 1px solid var(--line); }
 .band.next { position: static; border-bottom-style: dashed; color: var(--muted); }
 .band.next .chip { background: none; border: 2px dashed var(--idle); width: 6px; height: 6px; }
 .seg { display: grid; gap: var(--s5); padding-block: var(--s4); position: relative; }
-.seg::before { content: ""; position: absolute; left: -19px; top: 0; bottom: 0; width: 3px; border-radius: 2px; background: var(--ph); opacity: .55; }
+.seg::before { content: ""; position: absolute; left: -19px; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--ph); opacity: .45; }
 .entry { position: relative; display: grid; gap: var(--s2); min-width: 0; }
 .entry .dot { position: absolute; left: -26px; top: 2px; width: 17px; height: 17px; border-radius: 50%; background: var(--surf); border: 3px solid var(--ph); box-sizing: border-box; }
 .entry.newest .dot { background: var(--ph); box-shadow: 0 0 0 4px var(--golds); }
@@ -200,8 +205,10 @@ details.tasks[open] > summary { border-bottom: 1px solid var(--line); }
 .bul .whyb { --bc: var(--b-why); --bbg: var(--b-why-bg); }
 .bul .done { --bc: var(--idle); --bbg: transparent; }
 .bul .done .k { padding-left: 0; color: var(--muted); }
+.fact { display: block; } .fact + .fact { margin-top: var(--s1); }
+.src { display: block; font: var(--t-meta); color: var(--faint); }
 .ask { display: block; font: var(--t-meta); color: var(--b-ctx); margin-top: 2px; }
-.seg.plan::before { opacity: .35; background: repeating-linear-gradient(var(--ph) 0 6px, transparent 6px 11px); }
+.seg.plan::before { opacity: .3; background: repeating-linear-gradient(var(--ph) 0 6px, transparent 6px 11px); }
 .entry.planned .dot { border-style: dashed; border-width: 2px; }
 .entry.planned .etitle { color: var(--muted); }
 .nowline { position: relative; margin: var(--s2) 0 0 -26px; padding: var(--s2) 0 var(--s2) 26px; border-top: 2px solid var(--gold); display: flex; align-items: baseline; gap: var(--s2);
@@ -225,18 +232,18 @@ ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
 </style>
 
 <div class="wrap">
-  <span class="marker">Mockup for batch 2 · version 5 · not built yet</span>
+  <span class="marker">Mockup for batch 2 · version 6 · not built yet</span>
   <div class="intro">
     <h1>The Status page and the new Timeline</h1>
-    <p class="lead">Service-Desk as its records stand on 16 October. New in this version: on the Timeline, status icons inside plain circles instead of coloured dots, and sprints under each milestone, each linking to its own tasks.</p>
+    <p class="lead">Service-Desk as its records stand on 16 October. New in this version: Status uses your pick, B, with each phase in its own box that folds away; the Timeline's line is lighter; and Context lists the facts that led to the why, each with its source.</p>
   </div>
 
   <section class="screen" aria-labelledby="st">
     <h2 id="st">Status · the phases and every milestone</h2>
-    <p class="lead">Read it from the bottom up. Each run has its own column of dots on the left. Run 1 climbs from Discovery to Build; run 2 branches out to the right at Design and climbs on to Done. Inside each box, milestones go from the first at the bottom to the last at the top, tied by a light line with its arrow pointing up.</p>
+    <p class="lead">Read it from the bottom up. Each run has its own column of dots on the left. Run 1 climbs from Discovery to Build; run 2 branches out to the right at Design and climbs on to Done. Inside each box, milestones go from the first at the bottom to the last at the top, tied by a light line with its arrow pointing up. Tap a phase's name to fold it to one line; Discovery is folded here.</p>
     <div class="key"><span><i class="k-done"></i>finished</span><span><i class="k-past"></i>finished, then gone back over</span><span><i class="k-now"></i>now</span><span><i class="k-todo"></i>still to come</span><span><i class="k-off"></i>not taken on, or not recorded</span></div>
 
-    <div class="plist panel" id="sd">
+    <div class="plist inbox" id="sd">
       <div class="prow end" data-ph="done"><div></div><div class="phase">
         <div class="phead"><span class="pname">Done</span><span class="pstate">After the Launch gate</span></div>
       </div></div>
@@ -294,7 +301,7 @@ ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
         </div>
       </div></div>
 
-      <div class="prow" data-ph="disc"><div></div><div class="phase">
+      <div class="prow" data-ph="disc"><div></div><div class="phase folded">
         <div class="phead"><span class="pname">Discovery</span><span class="pstate">Finished</span></div>
         <div class="run">
           <div class="rhead"><span class="rtag r1">Run 1</span><span class="mstate">Discovery i1 · finished</span></div>
@@ -311,34 +318,6 @@ ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
           </div>
         </div>
       </div></div>
-    </div>
-
-    <div class="opts">
-      <h3 class="optsh">Three ways to give the branch drawing its own background</h3>
-      <div class="opt"><p class="optk">A · One panel <span class="rec">shown above · suggested</span></p><p class="optd">The drawing and the phases share one white sheet, like a page in a plan. Phases are rows divided by thin lines; the current one is tinted.</p>
-        <div class="plist mini panel">
-          <div class="prow end"><div></div><div class="phase"><div class="phead"><span class="pname">Done</span></div></div></div>
-          <div class="prow" data-ph="launch"><div></div><div class="phase"><div class="phead"><span class="pname">Launch</span><span class="pstate">not started</span></div></div></div>
-          <div class="prow" data-ph="build"><div></div><div class="phase"><div class="phead"><span class="pname">Build</span><span class="pstate">run 2 to come</span></div></div></div>
-          <div class="prow now" data-ph="des"><div></div><div class="phase"><div class="phead"><span class="pname">Design</span><span class="pstate now">now · run 2</span></div></div></div>
-          <div class="prow" data-ph="disc"><div></div><div class="phase"><div class="phead"><span class="pname">Discovery</span><span class="pstate">finished</span></div></div></div>
-        </div></div>
-      <div class="opt"><p class="optk">B · Dots inside each box</p><p class="optd">Each phase keeps its own box and its dots sit inside it, on the left. The lines cross the gaps between boxes.</p>
-        <div class="plist mini inbox">
-          <div class="prow end"><div></div><div class="phase"><div class="phead"><span class="pname">Done</span></div></div></div>
-          <div class="prow" data-ph="launch"><div></div><div class="phase"><div class="phead"><span class="pname">Launch</span><span class="pstate">not started</span></div></div></div>
-          <div class="prow" data-ph="build"><div></div><div class="phase"><div class="phead"><span class="pname">Build</span><span class="pstate">run 2 to come</span></div></div></div>
-          <div class="prow now" data-ph="des"><div></div><div class="phase"><div class="phead"><span class="pname">Design</span><span class="pstate now">now · run 2</span></div></div></div>
-          <div class="prow" data-ph="disc"><div></div><div class="phase"><div class="phead"><span class="pname">Discovery</span><span class="pstate">finished</span></div></div></div>
-        </div></div>
-      <div class="opt"><p class="optk">C · Tinted rows</p><p class="optd">No boxes: each phase is a faint band of its own colour, running under both the dots and the text.</p>
-        <div class="plist mini tint">
-          <div class="prow end"><div></div><div class="phase"><div class="phead"><span class="pname">Done</span></div></div></div>
-          <div class="prow" data-ph="launch"><div></div><div class="phase"><div class="phead"><span class="pname">Launch</span><span class="pstate">not started</span></div></div></div>
-          <div class="prow" data-ph="build"><div></div><div class="phase"><div class="phead"><span class="pname">Build</span><span class="pstate">run 2 to come</span></div></div></div>
-          <div class="prow now" data-ph="des"><div></div><div class="phase"><div class="phead"><span class="pname">Design</span><span class="pstate now">now · run 2</span></div></div></div>
-          <div class="prow" data-ph="disc"><div></div><div class="phase"><div class="phead"><span class="pname">Discovery</span><span class="pstate">finished</span></div></div></div>
-        </div></div>
     </div>
 
     <div class="note">
@@ -415,7 +394,7 @@ ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
               <p class="etitle">The answer choices have room, Home's bar is gone, and long rulings stop at three lines</p>
               <ul class="bul">
                 <li class="tech"><span class="k">Technical</span><span class="v">S-001 AC48, AC52–AC56 · sandbox.js, sandbox.css · 317 tests</span></li>
-                <li class="ctx"><span class="k">Context</span><span class="v"><span class="ask">Asked:</span> "Your eleven answers went in as one very long first line, about 1,800 characters, with a stray "11 Ruling:" at the start. The desk will show that line whole under "Your last action" and "Done today". What should happen?" <span class="ask">You chose:</span> "Desk clips long lines"</span></li>
+                <li class="ctx"><span class="k">Context</span><span class="v"><span class="fact">The answer choices sat close together on the phone.<span class="src">your screenshot, 16 Oct</span></span><span class="fact">Your eleven design-lab answers were filed as one first line about 1,800 characters long, which the desk would have shown whole.<span class="src">P-001-design-lab-answers-followup.md</span></span></span></li>
                 <li class="whyb"><span class="k">Why</span><span class="v q">"One thing to change here. The answer choices are a little tight"</span></li>
               </ul>
               <a class="tlink" href="#" onclick="return false">Tasks in this sprint <span aria-hidden="true">→</span></a>
@@ -425,7 +404,7 @@ ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
               <p class="etitle">Your ruling on GitHub app links recorded: they open in the phone's browser</p>
               <ul class="bul">
                 <li class="tech"><span class="k">Technical</span><span class="v">decisions/questions/P-001-github-app-links.md · records only</span></li>
-                <li class="ctx"><span class="k">Context</span><span class="v"><span class="ask">Asked:</span> "The GitHub phone app grabs github.com links, and it can't create a file from a link, so your ruling lands nowhere. How should we get around it?" <span class="ask">You chose:</span> "Phone setting"</span></li>
+                <li class="ctx"><span class="k">Context</span><span class="v"><span class="fact">The GitHub phone app takes over github.com links and can't create a file from one, so the desk's prefilled ruling links failed inside it.<span class="src">P-001-github-app-links.md</span></span></span></li>
                 <li class="whyb"><span class="k">Why</span><span class="v q">"This link pulled me through the app version of GitHub and it didn’t really work out."</span></li>
               </ul>
               <a class="tlink" href="#" onclick="return false">Tasks in this sprint <span aria-hidden="true">→</span></a>
@@ -435,7 +414,7 @@ ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
               <p class="etitle">Each Home tile's summary stops at three lines, the whole text one tap away</p>
               <ul class="bul">
                 <li class="tech"><span class="k">Technical</span><span class="v">S-001 AC54(a), AC56 · 292 tests</span></li>
-                <li class="ctx"><span class="k">Context</span><span class="v"><span class="ask">Asked:</span> "The project summary is what makes each tile so tall: about 600 characters squeezed into a half-width column. How should the tile handle it?" <span class="ask">You chose:</span> "Clip to 3 lines"</span></li>
+                <li class="ctx"><span class="k">Context</span><span class="v"><span class="fact">Each tile's project summary was about 600 characters in a half-width column, which made the tiles very tall.<span class="src">P-001-tile-summary-clip.md</span></span></span></li>
                 <li class="whyb"><span class="k">Why</span><span class="v q">"Oooh I don’t love the current tile size."</span></li>
               </ul>
               <a class="tlink" href="#" onclick="return false">Tasks in this sprint <span aria-hidden="true">→</span></a>
@@ -445,7 +424,7 @@ ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
               <p class="etitle">Your fifteen notes on the trial view built</p>
               <ul class="bul">
                 <li class="tech"><span class="k">Technical</span><span class="v">S-001 AC54–AC56 added · 285 tests</span></li>
-                <li class="ctx"><span class="k">Context</span><span class="v"><span class="ask">Asked:</span> "Where should each card's brief project summary come from? (The desk never writes its own words about a project.)" <span class="ask">You chose:</span> "README's first paragraph"</span></li>
+                <li class="ctx"><span class="k">Context</span><span class="v"><span class="fact">The desk never writes its own words about a project, so each card's summary has to come from a record.<span class="src">the desk's rule · S-001</span></span><span class="fact">Each project's README already opens with what the project is.<span class="src">P-001-trial-view-notes-1.md</span></span></span></li>
                 <li class="whyb"><span class="k">Why</span><span class="v">Your trial-view notes 1 to 15 (14–15 Oct)</span></li>
               </ul>
               <a class="tlink" href="#" onclick="return false">Tasks in this sprint <span aria-hidden="true">→</span></a>
@@ -569,6 +548,7 @@ ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
   <section class="screen" aria-labelledby="fy">
     <h2 id="fy">Worth knowing</h2>
     <ul class="list">
+      <li>Context is what was true that led to the why: a limit found in testing, a fact about the records, a review finding, a research result, an earlier ruling, or a note of yours. Each fact names its source. The agents write these lines into each sprint's record when they file it; the desk only shows them. Here they are drafted from the real question files.</li>
       <li>Every why that reads "not recorded yet" is flagged in coral on purpose: a milestone with no why is the "wait, why are we doing that?" moment. The one real why shown (M2B) is your own words from the plan. Why lines for every milestone need a small change to the operating model.</li>
       <li>"Not tied to a milestone" gathers the sprints that don't say which milestone they feed. Today that is most of them, including the last four. Filing sprints against milestones as they're planned closes this.</li>
       <li>What we're delivering and where we started are quoted from the project's plan (docs/PROJECT.md), never written by the desk.</li>
@@ -616,5 +596,6 @@ document.querySelectorAll('.plist').forEach((host) => {
     });
   };
   layout(); addEventListener('resize', layout); if (document.fonts) document.fonts.ready.then(layout);
+  host.querySelectorAll('.phead').forEach((h) => h.addEventListener('click', () => { h.parentElement.classList.toggle('folded'); layout(); }));
 });
 </script>

@@ -1,0 +1,231 @@
+<title>Audit Additions Mockup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one phone-width column; each pick drawn as a phone screen frame, using the tokens of the approved Status and Timeline mockup. */
+:root {
+  --page: #eef0f2; --surf: #ffffff; --ink: #0b0d10; --muted: #4b525b; --faint: #6b727b; --soft: #9aa1a9; --line: #d6d9de; --tie: #c3c8cf;
+  --pass: #0f7a3a; --passl: #a9d8b9; --gold: #8a6a10; --golds: #f4ecd2; --idle: #b7bdc5; --fail: #b8141d;
+  --note: #fbe4dc; --you: #d23c0f; --quote: #f4f5f7; --run1: #4b525b; --run2: #8a6a10;
+  /* one colour per phase, used on both screens */
+  --ph-disc: #0f766e; --ph-des: #9d2f7e; --ph-build: #5c6a10; --ph-launch: #7a5a48;
+  /* one colour per Timeline bullet */
+  --b-tech: #3e4a59; --b-tech-bg: #e2e7ee; --b-ctx: #7d5200; --b-ctx-bg: #f6ead0; --b-why: #b3330b; --b-why-bg: #fbe1d8;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* one spacing scale: 4, 8, 12, 20, 32 */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 20px; --s5: 32px;
+  /* one type scale, each role looking different */
+  --t-screen: 800 1.45rem/1.2 var(--font);
+  --t-section: 800 .74rem/1.3 var(--font);
+  --t-item: 700 1rem/1.3 var(--font);
+  --t-body: 400 .94rem/1.5 var(--font);
+  --t-meta: 600 .78rem/1.35 var(--font);
+  --t-quote: 400 .9rem/1.45 var(--font);
+  --t-code: 500 .74rem/1.3 var(--mono);
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0c0d0f; --surf: #16181c; --ink: #f1f3f5; --muted: #a3a9b2; --faint: #8b929b; --soft: #626973; --line: #30353c; --tie: #3d434b;
+  --pass: #3fb950; --passl: #275f3a; --gold: #d4ae4f; --golds: #2c2410; --idle: #4a5059; --fail: #ff6b6b;
+  --note: #3d1b10; --you: #ff6a3d; --quote: #1d2025; --run1: #a3a9b2; --run2: #d4ae4f;
+  --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
+  --b-tech: #c3cbd6; --b-tech-bg: #262c34; --b-ctx: #e8c06a; --b-ctx-bg: #2e2410; --b-why: #ff8a63; --b-why-bg: #3a1a10; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --page: #0c0d0f; --surf: #16181c; --ink: #f1f3f5; --muted: #a3a9b2; --faint: #8b929b; --soft: #626973; --line: #30353c; --tie: #3d434b;
+  --pass: #3fb950; --passl: #275f3a; --gold: #d4ae4f; --golds: #2c2410; --idle: #4a5059; --fail: #ff6b6b;
+  --note: #3d1b10; --you: #ff6a3d; --quote: #1d2025; --run1: #a3a9b2; --run2: #d4ae4f;
+  --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
+  --b-tech: #c3cbd6; --b-tech-bg: #262c34; --b-ctx: #e8c06a; --b-ctx-bg: #2e2410; --b-why: #ff8a63; --b-why-bg: #3a1a10; color-scheme: dark }
+body { background: var(--page); color: var(--ink); font: var(--t-body); margin: 0; }
+.wrap { max-width: 440px; margin: 0 auto; padding-block: var(--s4) 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: var(--s5); }
+p { margin: 0; }
+.marker { justify-self: start; border: 1px dashed var(--muted); border-radius: var(--r); padding: var(--s1) var(--s3); font: var(--t-meta); color: var(--muted); }
+.intro, .screen { display: grid; gap: var(--s3); min-width: 0; }
+.intro h1 { margin: 0; font: var(--t-screen); text-wrap: balance; }
+.screen h2 { margin: 0; font: 800 1.15rem/1.3 var(--font); }
+.lead { color: var(--muted); }
+.cap { font: var(--t-meta); color: var(--faint); }
+.code { font: var(--t-code); color: var(--faint); }
+.note { background: var(--note); border-radius: var(--r); padding: var(--s3); }
+.note.small { font-size: .88rem; }
+[data-ph="disc"] { --ph: var(--ph-disc); } [data-ph="des"] { --ph: var(--ph-des); } [data-ph="build"] { --ph: var(--ph-build); } [data-ph="launch"] { --ph: var(--ph-launch); }
+.chip { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--ph); flex: none; }
+.ic { width: 18px; height: 18px; border-radius: 50%; box-sizing: border-box; background: var(--surf); border: 1.5px solid var(--muted); display: inline-grid; place-items: center; font: 800 10px/1 var(--font); color: var(--ink); flex: none; }
+.i-reached::after { content: "✓"; }
+.i-prog::after { content: ""; width: 9px; height: 9px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid var(--ink); background: linear-gradient(90deg, var(--ink) 50%, transparent 50%); }
+.i-plan { border-style: dashed; }
+.i-unrec { border-style: dashed; border-color: var(--soft); } .i-unrec::after { content: "?"; color: var(--soft); }
+.i-flag { width: 11px; height: 11px; border-radius: 2px; transform: rotate(45deg); background: var(--note); border: 2px solid var(--you); margin: 0 3px; }
+.key { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s3); font: var(--t-meta); color: var(--muted); }
+.key span { display: inline-flex; align-items: center; gap: 6px; }
+/* a phone-width screen frame */
+.phone { background: var(--page); border: 1px solid var(--line); border-radius: 12px; padding: var(--s3); display: grid; gap: var(--s3); }
+.hdr { display: flex; gap: var(--s2); align-items: center; }
+.navb { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surf); display: grid; place-items: center; font: 700 1rem/1 var(--font); color: var(--muted); }
+.proj { font: var(--t-section); letter-spacing: .07em; color: var(--muted); }
+.scr { font: var(--t-screen); font-size: 1.3rem; }
+.hsub { font: var(--t-meta); color: var(--muted); }
+.phband { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; padding: var(--s2) var(--s3); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); box-shadow: inset 3px 0 0 var(--ph); color: var(--ink); text-decoration: none; }
+.phband b { font: 800 .9rem/1.3 var(--font); color: var(--ph); }
+.phband .sub { font: var(--t-meta); color: var(--muted); }
+.phband .go { margin-left: auto; font: var(--t-meta); color: var(--ph-des); }
+/* Home tile */
+.homegrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); align-items: start; }
+.tile { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3); display: grid; gap: var(--s2); min-width: 0; }
+.tile.ghost { background: none; border-style: dashed; color: var(--soft); font: var(--t-meta); min-height: 120px; }
+.tname { font: 800 1.05rem/1.25 var(--font); }
+.tsum { font: .82rem/1.4 var(--font); color: var(--muted); }
+.tnow { display: flex; gap: 6px; align-items: center; font: 700 .8rem/1.3 var(--font); color: var(--ph); }
+.tphases { position: relative; display: grid; gap: 3px; }
+.tphases svg { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 1; }
+.trow { display: grid; gap: 0; padding: 4px 6px 4px 40px; border: 1px solid var(--line); border-radius: 4px; background: var(--surf); box-shadow: inset 2px 0 0 var(--ph, transparent); }
+.trow.now { border-color: var(--gold); background: var(--golds); }
+.trow.end { border-style: dashed; box-shadow: none; }
+.tp { font: 700 .8rem/1.25 var(--font); }
+.ts { font: 600 .64rem/1.3 var(--font); letter-spacing: .03em; text-transform: uppercase; color: var(--muted); }
+.ts.now { color: var(--gold); }
+.twait { display: flex; gap: 6px; align-items: flex-start; font: 700 .78rem/1.35 var(--font); color: var(--you); }
+.twait .ic { margin-top: 3px; }
+/* Queue */
+.qgroup { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3); display: grid; gap: var(--s2); }
+.qh { display: flex; align-items: center; gap: var(--s2); font: var(--t-section); letter-spacing: .07em; text-transform: uppercase; }
+.qh .qn { margin-left: auto; color: var(--muted); }
+.qi { font-style: normal; width: 18px; text-align: center; color: var(--muted); font-size: .8rem; }
+.qitem { border-left: 3px solid var(--you); background: var(--quote); border-radius: 0 var(--r) var(--r) 0; padding: var(--s2) var(--s3); display: grid; gap: var(--s2); }
+.qt { font: var(--t-item); }
+.qm { font: var(--t-meta); color: var(--muted); }
+.unblocks { display: grid; gap: 2px; padding-top: var(--s2); border-top: 1px solid var(--line); }
+.uk, .wk { font: var(--t-section); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.uw { font: var(--t-meta); color: var(--you); }
+.uw .wk { color: var(--b-why); background: var(--b-why-bg); padding: 1px 6px; border-radius: 3px; margin-right: 4px; }
+.drafted { font: var(--t-meta); color: var(--faint); font-style: italic; }
+details.facts > summary { cursor: pointer; font: var(--t-meta); color: var(--b-ctx); }
+details.facts { border-left: 3px solid var(--b-ctx); padding-left: var(--s2); }
+.fact { margin-top: var(--s1); font: var(--t-body); font-size: .9rem; }
+.src { display: block; font: var(--t-meta); color: var(--faint); }
+/* Team */
+.you { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); box-shadow: inset 3px 0 0 var(--you); padding: var(--s3); display: grid; gap: var(--s2); }
+.yk { display: flex; align-items: center; gap: var(--s2); font: 800 .95rem/1.3 var(--font); color: var(--you); }
+.ynext { font: var(--t-body); font-size: .9rem; }
+.tag { font: var(--t-section); border: 1px solid var(--ink); border-radius: 3px; padding: 0 5px; margin-right: 4px; }
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+.card { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3) var(--s2); display: grid; gap: 3px; align-content: start; min-width: 0; }
+.cn { display: flex; align-items: center; gap: 6px; font: 800 .92rem/1.25 var(--font); }
+.cs { font: var(--t-meta); }
+.cl { font: var(--t-meta); color: var(--muted); font-weight: 500; }
+.cf { font: .78rem/1.35 var(--font); color: var(--ink); margin-top: 2px; }
+.cf.miss { color: var(--you); font-weight: 600; }
+.tlink { font: 700 .78rem/1.3 var(--font); color: var(--ph-des); text-decoration: none; }
+ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
+:root { --b-ctx: #ad606a; --b-why: #756592; --b-tech: #4b525b; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --b-ctx: #bc7e8d; --b-why: #c7adcb; --b-tech: #a3a9b2; } }
+:root[data-theme="dark"] { --b-ctx: #bc7e8d; --b-why: #c7adcb; --b-tech: #a3a9b2; }
+.made { font: var(--t-section); letter-spacing: .07em; text-transform: uppercase; color: var(--you); }
+.mile { display: grid; gap: 4px; }
+.mtitle { font: 800 1rem/1.3 var(--font); }
+.wl { font: var(--t-meta); }
+.wk { font: var(--t-section); letter-spacing: .06em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; margin-right: 4px; color: var(--muted); background: var(--quote); }
+.wk.old { color: var(--you); background: var(--note); }
+.miss-old { color: var(--you); } .miss { color: var(--muted); }
+.flag, .flag-old { display: flex; align-items: center; gap: 8px; font: var(--t-meta); color: var(--muted); }
+.flag-old, .flag.mine { color: var(--you); }
+.dia { width: 11px; height: 11px; transform: rotate(45deg); border-radius: 2px; background: var(--muted); flex: none; margin: 0 2px; }
+.dia.old, .dia.mine { background: var(--you); }
+.phase { background: var(--surf); border: 1px solid var(--gold); border-radius: var(--r); padding: var(--s3); display: grid; gap: var(--s3); box-shadow: inset 3px 0 0 var(--ph-des); }
+.phead { display: flex; justify-content: space-between; } .pname { font: 800 1.1rem/1.25 var(--font); }
+.pstate { font: var(--t-meta); text-transform: uppercase; letter-spacing: .04em; } .pstate.now { color: var(--gold); }
+.branchwhy { border-left: 2px solid var(--run2); padding-left: var(--s3); display: grid; gap: 4px; }
+.bk { font: var(--t-section); letter-spacing: .06em; text-transform: uppercase; color: var(--run2); }
+.bq { font: var(--t-quote); }
+.more { font: var(--t-meta); color: var(--soft); }
+.stall { display: flex; gap: 6px; align-items: flex-start; font: 700 .8rem/1.35 var(--font); color: var(--muted); }
+.stall .ic { margin-top: 2px; }
+.i-x::after { content: "✕"; }
+.safe { display: flex; gap: 8px; align-items: center; font: 700 .88rem/1.35 var(--font); }
+.safe.ok { color: var(--pass); } .safe.bad { color: var(--fail); }
+.qitem + .qitem { margin-top: var(--s2); }
+.bul { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.bul li { padding-left: 8px; border-left: 3px solid var(--c); display: grid; gap: 2px; }
+.bul .k { font: var(--t-section); letter-spacing: .06em; text-transform: uppercase; color: var(--c); }
+.sw { display: flex; gap: 10px; align-items: center; font: var(--t-meta); color: var(--muted); }
+.sw i { width: 32px; height: 18px; border-radius: 4px; }
+</style>
+<div class="wrap">
+  <span class="marker">Mockup for batch 2, notes 32 to 35, and the re-picked colours · not built yet</span>
+  <div class="intro">
+    <h1>Four additions from the audit</h1>
+    <p class="lead">Your four picks, drawn the same way as the approved screens, plus the two re-picked bullet colours to confirm.</p>
+  </div>
+
+  <section class="screen">
+    <h2>1 · Coral only for what needs you</h2>
+    <p class="lead">Gaps the agents fill (a missing why line, sprints that need filing) turn slate grey and say who fills them. Coral stays for the things only you can do.</p>
+    <p class="cap">Before</p>
+    <div class="phone">
+      <div class="mile"><span class="mtitle">The desk's look and screens chosen</span> <span class="code">MD2</span>
+        <p class="wl miss-old"><span class="wk old">Why</span> not recorded yet</p></div>
+      <p class="flag-old"><i class="dia old"></i>Not tied to a milestone · 14 sprints · needs filing</p>
+    </div>
+    <p class="cap">After</p>
+    <div class="phone">
+      <div class="mile"><span class="mtitle">The desk's look and screens chosen</span> <span class="code">MD2</span>
+        <p class="wl miss"><span class="wk">Why</span> not recorded yet · for the agents to add</p></div>
+      <p class="flag"><i class="dia"></i>Not tied to a milestone · 14 sprints · for the agents to file</p>
+      <p class="flag mine"><i class="dia mine"></i>Waiting on you, the oldest for 2 d 0 h</p>
+    </div>
+  </section>
+
+  <section class="screen">
+    <h2>2 · Why it went back</h2>
+    <p class="lead">Where a new run branches off, the ruling that started it sits beside the branch, quoted from its record, one tap from the whole ruling.</p>
+    <div class="phone">
+      <div class="phase now"><div class="phead"><span class="pname">Design</span><span class="pstate now">Now · run 2</span></div>
+        <div class="branchwhy"><span class="bk">Run 2 began · 7 Oct</span>
+          <p class="bq">"add a design step between M2 and M3, with research first, a design lab, and a sandbox view in the desk"</p>
+          <p class="src">your ruling · decisions/questions/P-001-design-step.md · tap for the whole ruling</p></div>
+        <p class="more">Run 2's milestones, as approved…</p>
+      </div>
+    </div>
+    <p class="cap">On the Timeline the same quote opens the band where the run starts. If no record names the reason, it reads "why it went back: not recorded".</p>
+  </section>
+
+  <section class="screen">
+    <h2>3 · Stalled-project signal</h2>
+    <p class="lead">When nothing has moved on a project for a set number of days (no commit, no merge, no agent run) and nothing waits on you, its Home tile says so, so a quiet desk can't hide a stopped project.</p>
+    <div class="homegrid">
+      <div class="tile"><span class="made">Made-up example</span><p class="tname">A project</p><p class="tnow" data-ph="build"><span class="chip"></span>Build, first time through</p>
+        <p class="stall"><i class="ic i-plan"></i>No movement for 5 days · last: PR #12 merged, 11 Oct</p><p class="cap">Nothing waits on you.</p></div>
+      <div class="tile"><p class="tname">Service-Desk</p><p class="tnow" data-ph="des"><span class="chip"></span>Design, second time through</p><p class="cap">Moving: last change today.</p></div>
+    </div>
+    <p class="cap">Grey, not coral: it's a heads-up, not a decision. The number of days is yours to set (question below).</p>
+  </section>
+
+  <section class="screen">
+    <h2>4 · Safe to approve, on each waiting deploy</h2>
+    <p class="lead">Before you approve a deploy, the Queue checks it for you: does the commit being deployed match a pull request the Reviewer passed?</p>
+    <div class="phone">
+      <div class="qgroup"><div class="qh"><i class="qi">▸</i><span>Deploys</span><span class="qn">1</span></div>
+        <div class="qitem"><p class="qt">Preview deploy · desk-deploy</p><p class="qm">commit 3119b1d · waiting for your approval</p>
+          <p class="safe ok"><i class="ic i-reached"></i>Matches PR #77's merge · Reviewer PASS</p>
+          <p class="src">reviews/77/reviewer.md · the merge commit on main</p></div>
+        <div class="qitem"><span class="made">Made-up example</span><p class="qt">Preview deploy · desk-deploy</p><p class="qm">commit 4a1c9e2 · waiting for your approval</p>
+          <p class="safe bad"><i class="ic i-x"></i>Doesn't match a reviewed pull request: don't approve</p>
+          <p class="src">no merge of a passed pull request has this commit</p></div>
+      </div>
+    </div>
+    <p class="cap">The desk only checks and says; you still approve on GitHub, as today.</p>
+  </section>
+
+  <section class="screen">
+    <h2>5 · The re-picked bullet colours</h2>
+    <p class="lead">Measured this time with the standard colour-difference formula (CIEDE2000), against every colour that means something on the desk, in light and dark. Every pair with a new colour is now at least 15 apart, well clear of the 10 the spec will test for.</p>
+    <ul class="bul">
+      <li style="--c:var(--b-tech)"><span class="k">Technical · slate (unchanged)</span><span>S-001 AC54(a), AC56 · 292 tests</span></li>
+      <li style="--c:var(--b-ctx)"><span class="k">Context · dusty rose (was steel blue)</span><span>Each tile's project summary was about 600 characters in a half-width column, which made the tiles very tall.</span></li>
+      <li style="--c:var(--b-why)"><span class="k">Why · muted violet (was lilac)</span><span>"Oooh I don’t love the current tile size."</span></li>
+    </ul>
+    <div class="sw"><i style="background:var(--b-ctx)"></i><span>Context: light #ad606a · dark #bc7e8d</span></div>
+    <div class="sw"><i style="background:var(--b-why)"></i><span>Why: light #756592 · dark #c7adcb</span></div>
+    <p class="cap">One older pair, not from this batch, is also close: "blocked" amber and gold in dark mode. It can be fixed in the same pass if you like.</p>
+  </section>
+</div>

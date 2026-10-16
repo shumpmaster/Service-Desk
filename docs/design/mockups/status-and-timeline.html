@@ -1,0 +1,265 @@
+<title>Status and Timeline Mockup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one phone-width column; two screens stacked (Status, then Timeline), each built on one spacing scale and one type scale. */
+:root {
+  --page: #eef0f2; --surf: #ffffff; --ink: #0b0d10; --muted: #4b525b; --faint: #6b727b; --line: #d6d9de;
+  --pass: #0f7a3a; --passl: #9fd0b0; --gold: #8a6a10; --golds: #f4ecd2; --idle: #b7bdc5; --fail: #b8141d;
+  --note: #fbe4dc; --you: #d23c0f; --quote: #f4f5f7; --run1: #4b525b; --run2: #8a6a10;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* one spacing scale: 4, 8, 12, 20, 32 */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 20px; --s5: 32px;
+  /* one type scale, each role looking different */
+  --t-screen: 800 1.45rem/1.2 var(--font);      /* screen title */
+  --t-section: 800 .74rem/1.3 var(--font);      /* uppercase section label */
+  --t-item: 700 1rem/1.3 var(--font);           /* an item's name */
+  --t-body: 400 .94rem/1.5 var(--font);         /* running text */
+  --t-meta: 600 .78rem/1.35 var(--font);        /* states, dates, counts */
+  --t-quote: 400 .9rem/1.45 var(--font);        /* words quoted from a record */
+  --t-code: 500 .74rem/1.3 var(--mono);         /* ids and codes */
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0c0d0f; --surf: #16181c; --ink: #f1f3f5; --muted: #a3a9b2; --faint: #8b929b; --line: #30353c;
+  --pass: #3fb950; --passl: #24603a; --gold: #d4ae4f; --golds: #2c2410; --idle: #4a5059; --fail: #ff6b6b;
+  --note: #3d1b10; --you: #ff6a3d; --quote: #1d2025; --run1: #a3a9b2; --run2: #d4ae4f; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --page: #0c0d0f; --surf: #16181c; --ink: #f1f3f5; --muted: #a3a9b2; --faint: #8b929b; --line: #30353c;
+  --pass: #3fb950; --passl: #24603a; --gold: #d4ae4f; --golds: #2c2410; --idle: #4a5059; --fail: #ff6b6b;
+  --note: #3d1b10; --you: #ff6a3d; --quote: #1d2025; --run1: #a3a9b2; --run2: #d4ae4f; color-scheme: dark }
+body { background: var(--page); color: var(--ink); font: var(--t-body); }
+.wrap { max-width: 440px; margin: 0 auto; padding-block: var(--s4) 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: var(--s5); }
+p { margin: 0; }
+.marker { justify-self: start; border: 1px dashed var(--muted); border-radius: var(--r); padding: var(--s1) var(--s3); font: var(--t-meta); color: var(--muted); }
+.intro { display: grid; gap: var(--s3); }
+.intro h1 { margin: 0; font: var(--t-screen); text-wrap: balance; }
+.lead { color: var(--muted); }
+.screen { display: grid; gap: var(--s4); }
+.screen > h2 { margin: 0; font: var(--t-screen); }
+.label { font: var(--t-section); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.code { font: var(--t-code); color: var(--faint); }
+.quote { font: var(--t-quote); background: var(--quote); border-left: 3px solid var(--line); padding: var(--s2) var(--s3); border-radius: 0 var(--r) var(--r) 0; }
+.note { background: var(--note); border-radius: var(--r); padding: var(--s3); font: var(--t-body); }
+.made { font: var(--t-section); letter-spacing: .07em; text-transform: uppercase; color: var(--you); }
+
+/* Status: phases, each listing its runs and every milestone */
+.phase { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3); display: grid; gap: var(--s3); }
+.phase.now { border-color: var(--gold); box-shadow: inset 3px 0 0 var(--gold); }
+.phead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2); flex-wrap: wrap; }
+.pname { font: 800 1.12rem/1.25 var(--font); }
+.pstate { font: var(--t-meta); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.pstate.now { color: var(--gold); }
+.run { display: grid; gap: var(--s2); }
+.run + .run { border-top: 1px solid var(--line); padding-top: var(--s3); }
+.run.old { opacity: .8; }
+.run.old .mname { font-weight: 500; font-size: .9rem; }
+.rhead { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
+.rtag { font: 700 .7rem/1.4 var(--font); letter-spacing: .05em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; border: 1px solid currentColor; }
+.r1 { color: var(--run1); } .r2 { color: var(--run2); }
+.ms { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 2px var(--s2); align-items: start; }
+.ms + .ms { margin-top: var(--s1); }
+.ms i { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; box-sizing: border-box; }
+.i-done { background: var(--pass); } .i-past { background: var(--passl); border: 1.5px solid var(--pass); }
+.i-now { border: 2.5px solid var(--gold); } .i-todo { border: 2px solid var(--idle); } .i-nr { border: 2px dashed var(--idle); }
+.i-not { background: var(--fail); }
+.mname { font: var(--t-item); }
+.mline { grid-column: 2; display: flex; gap: var(--s2); flex-wrap: wrap; align-items: baseline; }
+.mstate { font: var(--t-meta); color: var(--muted); }
+.why { grid-column: 2; font: var(--t-quote); color: var(--faint); font-style: italic; }
+.std { font: var(--t-meta); color: var(--muted); margin-top: var(--s1); }
+
+/* Timeline: one continuous feed, newest at the top */
+.feed { position: relative; display: grid; gap: var(--s4); padding-left: 26px; }
+.feed::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 0; width: 2px; background: linear-gradient(var(--line), var(--line) 85%, transparent); }
+.entry { position: relative; display: grid; gap: var(--s2); }
+.entry .dot { position: absolute; left: -26px; top: 4px; width: 16px; height: 16px; border-radius: 50%; background: var(--surf); border: 2px solid var(--muted); box-sizing: border-box; }
+.entry.newest .dot { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 4px var(--golds); }
+.ehead { grid-column: 1 / -1; display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
+.date { font: var(--t-meta); color: var(--muted); font-variant-numeric: tabular-nums; }
+.etitle { font: var(--t-item); font-size: 1.04rem; }
+.bul { display: grid; gap: var(--s2); margin: 0; padding: 0; list-style: none; }
+.bul li { display: grid; gap: 2px; }
+.bul .k { font: var(--t-section); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+.bul .v { min-width: 0; }
+.bul .v.tech { font: var(--t-code); font-size: .8rem; color: var(--muted); padding-top: 2px; }
+.marks { display: flex; gap: var(--s2); margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+.mk { font: var(--t-meta); white-space: nowrap; display: inline-flex; gap: 4px; align-items: center; }
+.mk.ok { color: var(--pass); } .mk.nr { color: var(--faint); }
+.boundary { position: relative; font: var(--t-section); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.boundary::before { content: ""; position: absolute; left: -24px; top: 4px; width: 12px; height: 12px; transform: rotate(45deg); background: var(--page); border: 2px solid var(--muted); box-sizing: border-box; }
+.boundary span { display: block; font: var(--t-body); text-transform: none; letter-spacing: 0; color: var(--faint); margin-top: 2px; }
+ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
+</style>
+
+<div class="wrap">
+  <span class="marker">Mockup for batch 2 · not built yet</span>
+  <div class="intro">
+    <h1>The Status page and the new Timeline</h1>
+    <p class="lead">Service-Desk as its records stand on 16 October. Both screens use one spacing scale and one type scale (your notes on spacing and text), so headings, names, states, quoted words and codes each look different.</p>
+  </div>
+
+  <section class="screen" aria-labelledby="st">
+    <h2 id="st">Status · the phases and every milestone</h2>
+    <p class="lead">Each phase lists its runs, newest at full size and earlier ones quieter. Under each run are the standard milestones and the project's own, in order, each with its state and a short why. No why lines exist in the plan yet, so each one reads "not recorded".</p>
+
+    <div class="phase">
+      <div class="phead"><span class="pname">Discovery</span><span class="pstate">Finished</span></div>
+      <div class="run">
+        <div class="rhead"><span class="rtag r1">Run 1</span><span class="mstate">Discovery i1 · finished</span></div>
+        <div class="std">Standard milestones · 4 reached · 4 not recorded</div>
+        <div class="ms"><i class="i-nr"></i><span class="mname">An idea worth exploring <span class="code">Discovery-1</span></span><span class="mline"><span class="mstate">Not recorded</span></span><span class="why">why: not recorded</span></div>
+        <div class="ms"><i class="i-done"></i><span class="mname">Success defined <span class="code">Discovery-2</span></span><span class="mline"><span class="mstate">Reached</span></span><span class="why">why: not recorded</span></div>
+        <div class="ms"><i class="i-nr"></i><span class="mname">The expert's questions answered <span class="code">Discovery-3</span></span><span class="mline"><span class="mstate">Not recorded</span></span><span class="why">why: not recorded</span></div>
+        <div class="ms"><i class="i-nr"></i><span class="mname">The right problem chosen <span class="code">Discovery-4</span></span><span class="mline"><span class="mstate">Not recorded</span></span><span class="why">why: not recorded</span></div>
+        <div class="ms"><i class="i-done"></i><span class="mname">What already exists is known <span class="code">Discovery-5</span></span><span class="mline"><span class="mstate">Reached</span></span><span class="why">why: not recorded</span></div>
+        <div class="ms"><i class="i-nr"></i><span class="mname">The risks are known <span class="code">Discovery-6</span></span><span class="mline"><span class="mstate">Not recorded</span></span><span class="why">why: not recorded</span></div>
+        <div class="ms"><i class="i-done"></i><span class="mname">Scope, limits and owners agreed <span class="code">Discovery-7</span></span><span class="mline"><span class="mstate">Reached</span></span><span class="why">why: not recorded</span></div>
+        <div class="ms"><i class="i-done"></i><span class="mname">A brief ready to rule on <span class="code">Discovery-8</span></span><span class="mline"><span class="mstate">Reached</span></span><span class="why">why: not recorded</span></div>
+      </div>
+    </div>
+
+    <div class="phase now">
+      <div class="phead"><span class="pname">Design</span><span class="pstate now">Now · run 2</span></div>
+      <div class="run">
+        <div class="rhead"><span class="rtag r2">Run 2</span><span class="mstate" style="color:var(--gold)">Design i2 · now</span></div>
+        <div class="ms"><i class="i-now"></i><span class="mname">What a good desk looks like is known <span class="code">MD1</span></span><span class="mline"><span class="mstate">Work filed</span></span><span class="why">why: not recorded</span></div>
+        <div class="ms"><i class="i-todo"></i><span class="mname">The desk's look and screens chosen <span class="code">MD2</span></span><span class="mline"><span class="mstate">No work filed yet</span></span><span class="why">why: not recorded</span></div>
+        <div class="ms"><i class="i-todo"></i><span class="mname">The chosen design running on the real back end <span class="code">MD3</span></span><span class="mline"><span class="mstate">No work filed yet</span></span><span class="why">why: not recorded</span></div>
+        <div class="std">Standard milestones · 6 not recorded</div>
+        <div class="ms"><i class="i-nr"></i><span class="mname">Done defined in real scenarios <span class="code">Design-1</span></span><span class="mline"><span class="mstate">Not recorded</span></span><span class="why">why: not recorded</span></div>
+        <div class="ms"><i class="i-nr"></i><span class="mname">A plan that passed review <span class="code">Design-6</span></span><span class="mline"><span class="mstate">Not recorded</span></span><span class="why">why: not recorded</span></div>
+        <p class="mstate">and 4 more, one tap away</p>
+      </div>
+      <div class="run old">
+        <div class="rhead"><span class="rtag r1">Run 1</span><span class="mstate">Design i1 · finished, then gone back over</span></div>
+        <div class="ms"><i class="i-past"></i><span class="mname">Done defined in real scenarios <span class="code">Design-1</span></span><span class="mline"><span class="mstate">Reached</span></span></div>
+        <div class="ms"><i class="i-not"></i><span class="mname">A plan that passed review <span class="code">Design-6</span></span><span class="mline"><span class="mstate">Not reached</span></span></div>
+        <p class="mstate">and 4 not recorded, one tap away</p>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phead"><span class="pname">Build</span><span class="pstate">Run 2 still to come</span></div>
+      <div class="run">
+        <div class="rhead"><span class="rtag r2">Run 2</span><span class="mstate">Build i2 · still to come</span></div>
+        <div class="ms"><i class="i-todo"></i><span class="mname">Work ahead planned and scheduled from the desk <span class="code">M3A</span></span><span class="mline"><span class="mstate">No work filed yet</span></span><span class="why">why: not recorded</span></div>
+        <div class="ms"><i class="i-todo"></i><span class="mname">The desk's value targets shown <span class="code">M3B</span></span><span class="mline"><span class="mstate">No work filed yet</span></span><span class="why">why: not recorded</span></div>
+      </div>
+      <div class="run old">
+        <div class="rhead"><span class="rtag r1">Run 1</span><span class="mstate">Build i1 · finished, then gone back over</span></div>
+        <div class="ms"><i class="i-past"></i><span class="mname">Every project's status visible on the phone <span class="code">M1</span></span><span class="mline"><span class="mstate">Work filed: PR #40, #41</span></span></div>
+        <div class="ms"><i class="i-past"></i><span class="mname">Cards answered straight from the desk <span class="code">M2</span></span><span class="mline"><span class="mstate">Work filed: PR #44</span></span></div>
+        <div class="ms"><i class="i-past"></i><span class="mname">Agent usage shown on the desk <span class="code">M2B</span></span><span class="mline"><span class="mstate">Work filed: PR #44, #52</span></span></div>
+        <p class="mstate">Standard milestones · 5 not recorded, one tap away</p>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phead"><span class="pname">Launch</span><span class="pstate">Not started</span></div>
+      <div class="run">
+        <div class="ms"><i class="i-todo"></i><span class="mname">The desk live at the needs-you address <span class="code">M3C</span></span><span class="mline"><span class="mstate">No work filed yet</span></span><span class="why">why: not recorded</span></div>
+      </div>
+    </div>
+
+    <div class="note">
+      <span class="made">Made-up example of a why line</span>
+      <p style="margin-top:var(--s2)">Once the plan holds why lines, a skipped standard milestone would read like this:</p>
+      <div class="ms" style="margin-top:var(--s2)"><i class="i-nr"></i><span class="mname">The experiments are answered <span class="code">Build-4</span></span><span class="mline"><span class="mstate">Skipped</span></span><span class="why">why: the desk runs no experiments; each change is checked by its own tests</span></div>
+    </div>
+  </section>
+
+  <section class="screen" aria-labelledby="tl">
+    <h2 id="tl">Timeline · one feed, newest at the top</h2>
+    <p class="lead">From the start of the project to now, with no break between phases. Each entry: a plain-English title, then technical, context and why, each from a record. The marks beside the date show its checks.</p>
+
+    <div class="feed">
+      <div class="entry newest"><span class="dot" aria-hidden="true"></span>
+        <div class="ehead"><span class="date">16 Oct</span><span class="code">PR #77</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk ok">✓ review</span><span class="mk ok">✓ checks</span></div></div>
+        <div style="display:grid;gap:var(--s2);min-width:0">
+          <p class="etitle">The answer choices have room, Home's bar is gone, and long rulings stop at three lines</p>
+          <ul class="bul">
+            <li><span class="k">Technical</span><span class="v tech">S-001 AC48, AC52–AC56 · sandbox.js, sandbox.css · 317 tests</span></li>
+            <li><span class="k">Context</span><span class="v">Design i2 · milestone: not recorded (not filed against MD2)</span></li>
+            <li><span class="k">Why</span><span class="v quote">"One thing to change here. The answer choices are a little tight"</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="entry"><span class="dot" aria-hidden="true"></span>
+        <div class="ehead"><span class="date">15 Oct</span><span class="code">PR #76</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk nr">– review</span><span class="mk nr">– checks</span></div></div>
+        <div style="display:grid;gap:var(--s2);min-width:0">
+          <p class="etitle">Your ruling on GitHub app links recorded: they open in the phone's browser</p>
+          <ul class="bul">
+            <li><span class="k">Technical</span><span class="v tech">decisions/questions/P-001-github-app-links.md · records only</span></li>
+            <li><span class="k">Context</span><span class="v">Design i2 · no milestone</span></li>
+            <li><span class="k">Why</span><span class="v quote">"This link pulled me through the app version of GitHub and it didn’t really work out."</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="entry"><span class="dot" aria-hidden="true"></span>
+        <div class="ehead"><span class="date">15 Oct</span><span class="code">PR #75</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk ok">✓ review</span><span class="mk ok">✓ checks</span></div></div>
+        <div style="display:grid;gap:var(--s2);min-width:0">
+          <p class="etitle">Each Home tile's summary stops at three lines, the whole text one tap away</p>
+          <ul class="bul">
+            <li><span class="k">Technical</span><span class="v tech">S-001 AC54(a), AC56 · 292 tests</span></li>
+            <li><span class="k">Context</span><span class="v">Design i2 · milestone: not recorded</span></li>
+            <li><span class="k">Why</span><span class="v quote">"Oooh I don’t love the current tile size."</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="entry"><span class="dot" aria-hidden="true"></span>
+        <div class="ehead"><span class="date">15 Oct</span><span class="code">PR #74</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk ok">✓ review</span><span class="mk ok">✓ checks</span></div></div>
+        <div style="display:grid;gap:var(--s2);min-width:0">
+          <p class="etitle">Your fifteen notes on the trial view built</p>
+          <ul class="bul">
+            <li><span class="k">Technical</span><span class="v tech">S-001 AC54–AC56 added · 285 tests</span></li>
+            <li><span class="k">Context</span><span class="v">Design i2 · milestone: not recorded</span></li>
+            <li><span class="k">Why</span><span class="v">Your trial-view notes 1 to 15 (14–15 Oct)</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="boundary">Design run 2 began<span>After Build run 1, the work went back to Design for the new look</span></p>
+
+      <div class="entry"><span class="dot" aria-hidden="true"></span>
+        <div class="ehead"><span class="date">8 Oct</span><span class="code">PR #52</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk ok">✓ review</span></div></div>
+        <div style="display:grid;gap:var(--s2);min-width:0">
+          <p class="etitle">The Agents view shows each session's tokens, run time, context use and cost estimate</p>
+          <ul class="bul">
+            <li><span class="k">Technical</span><span class="v tech">build/builder/desk-usage-names</span></li>
+            <li><span class="k">Context</span><span class="v">Build i1 · Agent usage shown on the desk (M2B)</span></li>
+            <li><span class="k">Why</span><span class="v">not recorded</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="entry"><span class="dot" aria-hidden="true"></span>
+        <div class="ehead"><span class="date">7 Oct</span><span class="code">PR #40</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk ok">✓ review</span></div></div>
+        <div style="display:grid;gap:var(--s2);min-width:0">
+          <p class="etitle">The desk's read-only status page</p>
+          <ul class="bul">
+            <li><span class="k">Technical</span><span class="v tech">S-001 AC1–AC15</span></li>
+            <li><span class="k">Context</span><span class="v">Build i1 · Every project's status visible on the phone (M1)</span></li>
+            <li><span class="k">Why</span><span class="v">not recorded</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="boundary">… and on back to the start<span>Build run 1, Design run 1 and Discovery, down to the project's start</span></p>
+    </div>
+  </section>
+
+  <section class="screen" aria-labelledby="fy">
+    <h2 id="fy">Worth knowing</h2>
+    <ul class="list">
+      <li>The titles are each pull request's plain-English opening line; the why is the note or ruling of yours it carried, quoted. Where a record holds neither, the desk says "not recorded".</li>
+      <li>The trial-view pull requests (#72 to #77) are not yet filed against MD2 in the plan, so the desk can't tie them to a milestone. Filing them is a small plan fix.</li>
+      <li>Text boxes will use 16 px text, so the phone stops zooming in when you tap one.</li>
+    </ul>
+  </section>
+</div>

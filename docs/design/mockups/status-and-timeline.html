@@ -84,8 +84,8 @@ p { margin: 0; }
 .std { font: var(--t-meta); color: var(--muted); }
 /* a run's milestones, tied by a light line running down in the order the work goes */
 .mslist { position: relative; display: grid; gap: var(--s2); }
-.mslist::before { content: ""; position: absolute; left: 4px; top: 3px; bottom: 10px; width: 2px; background: var(--tie); border-radius: 1px; }
-.mslist::after { content: ""; position: absolute; left: 1px; top: 1px; width: 6px; height: 6px; border-left: 2px solid var(--tie); border-top: 2px solid var(--tie); transform: rotate(45deg); }
+.mslist::before { content: ""; position: absolute; left: 4.5px; top: 4px; bottom: 10px; width: 1px; background: var(--tie); }
+.mslist::after { content: ""; position: absolute; left: 1px; top: 1px; width: 4px; height: 4px; left: 2.5px; top: 2px; border-left: 1px solid var(--tie); border-top: 1px solid var(--tie); transform: rotate(45deg); }
 .ms { position: relative; display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 2px var(--s2); align-items: start; }
 .ms i { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; box-sizing: border-box; background: var(--surf); position: relative; z-index: 1; }
 .i-done { background: var(--pass) !important; } .i-past { background: var(--passl) !important; border: 1.5px solid var(--pass); }
@@ -100,7 +100,67 @@ p { margin: 0; }
 .ms.off .mname .code, .ms.off .mstate, .ms.off .why { color: var(--soft); }
 .more { font: var(--t-meta); color: var(--soft); padding-left: 22px; }
 
-.track { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--railw, 50px) - 8px); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); box-sizing: border-box; }
+.plist.panel { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3) var(--s3) var(--s3) var(--s2); gap: 0; }
+.plist.panel .phase { border: 0; border-radius: 0; background: none; padding: var(--s3) 0 var(--s3) var(--s3); }
+.plist.panel .prow + .prow .phase { border-top: 1px solid var(--line); }
+.plist.panel .prow.now .phase { background: var(--golds); border-radius: var(--r); }
+.plist.panel .prow.end .phase { padding-block: var(--s2); }
+.plist.mini .pname { font-size: .95rem; }
+.plist.mini .phase { padding-block: var(--s2); }
+.plist.inbox { gap: var(--s2); }
+.plist.inbox .prow { grid-template-columns: 0 minmax(0, 1fr); }
+.plist.inbox .phase { padding-left: calc(var(--railw) + 12px); }
+.plist.inbox svg.rail { z-index: 1; }
+.plist.tint { gap: 2px; }
+.plist.tint .phase { border: 0; box-shadow: none; background: none; }
+.plist.tint .prow { border-radius: var(--r); background: color-mix(in srgb, var(--ph) 9%, transparent); }
+.plist.tint .prow.end { background: none; border: 1px dashed var(--line); }
+.plist.tint .prow.now { outline: 1.5px solid var(--gold); }
+.opts { display: grid; gap: var(--s4); }
+.optsh { margin: 0; font: var(--t-item); }
+.opt { display: grid; gap: var(--s2); }
+.optk { font: var(--t-item); }
+.rec { font: var(--t-meta); color: var(--pass); margin-left: var(--s1); }
+.optd { color: var(--muted); font: var(--t-body); }
+.track { display: none; position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--railw, 50px) - 8px); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); box-sizing: border-box; }
+/* Timeline as a breakdown: phase > milestone > tasks (folded) */
+.goal { display: grid; gap: var(--s2); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3); margin-left: -26px; }
+.goal .label { font: var(--t-section); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.goal.finish { border-top: 3px solid var(--ink); }
+.goal.start { border-bottom: 3px solid var(--ink); margin-top: var(--s3); }
+.gq { font: 600 1rem/1.45 var(--font); }
+.gsrc { font: var(--t-meta); color: var(--faint); }
+.gline { font: var(--t-body); color: var(--muted); }
+.mile { position: relative; display: grid; gap: var(--s1); min-width: 0; }
+.mile .dot { position: absolute; left: -27px; top: 2px; width: 19px; height: 19px; border-radius: 50%; box-sizing: border-box; background: var(--surf); border: 3px solid var(--ph); }
+.mile.reached .dot { background: var(--pass); border-color: var(--pass); }
+.mile.past .dot { background: var(--passl); border: 2px solid var(--pass); }
+.mile.notreached .dot { background: var(--fail); border-color: var(--fail); }
+.mile.planned .dot { border-style: dashed; border-width: 2px; border-color: var(--ph); }
+.mile.cur .dot { border: 3px solid var(--gold); box-shadow: 0 0 0 4px var(--golds); }
+.mile.flag .dot { width: 15px; height: 15px; left: -25px; top: 3px; border-radius: 3px; transform: rotate(45deg); background: var(--note); border: 2px solid var(--you); }
+.mhead { display: flex; flex-wrap: wrap; gap: 2px var(--s2); align-items: baseline; }
+.mtitle { font: 800 1.06rem/1.3 var(--font); }
+.mile.planned .mtitle { color: var(--muted); }
+.mile.flag .mtitle { color: var(--you); font-size: .95rem; }
+.mile.small .mhead { gap: 2px var(--s2); }
+.mst { font: var(--t-meta); color: var(--muted); }
+.mst.now { color: var(--gold); } .mst.bad { color: var(--fail); } .mst.warn { color: var(--you); }
+.dw { font: var(--t-body); color: var(--ink); }
+.dwk, .wk { font: var(--t-section); letter-spacing: .06em; text-transform: uppercase; margin-right: 4px; }
+.dwk { color: var(--muted); }
+.wl { font: var(--t-body); }
+.wl .wk { color: var(--b-why); background: var(--b-why-bg); padding: 1px 6px; border-radius: 3px; }
+.wl.miss { color: var(--you); font: var(--t-meta); }
+.wl .q { font: var(--t-quote); }
+.wsrc { display: block; font: var(--t-meta); color: var(--faint); }
+.notask, .stdline { font: var(--t-meta); color: var(--soft); }
+details.tasks { margin-top: var(--s1); border: 1px solid var(--line); border-radius: var(--r); background: var(--surf); }
+details.tasks > summary { cursor: pointer; padding: var(--s2) var(--s3); font: var(--t-meta); color: var(--muted); list-style-position: inside; }
+details.tasks[open] > summary { border-bottom: 1px solid var(--line); }
+.task { position: relative; display: grid; gap: var(--s2); padding: var(--s3) var(--s3) var(--s3) 28px; }
+.task + .task { border-top: 1px solid var(--line); }
+.task .tdot { position: absolute; left: 11px; top: 17px; width: 8px; height: 8px; border-radius: 50%; background: var(--ph); }
 /* Timeline: one continuous feed, newest at the top, the rail coloured by phase */
 .feed { display: grid; padding-left: 26px; }
 .band { position: sticky; top: 0; z-index: 2; margin-left: -26px; padding: var(--s2) 0 var(--s2) var(--s1); background: var(--page);
@@ -109,7 +169,7 @@ p { margin: 0; }
 .band .sub { margin-left: auto; font: var(--t-meta); letter-spacing: 0; text-transform: none; color: var(--faint); }
 .band.next { position: static; border-bottom-style: dashed; color: var(--muted); }
 .band.next .chip { background: none; border: 2px dashed var(--idle); width: 6px; height: 6px; }
-.seg { display: grid; gap: var(--s4); padding-block: var(--s4); position: relative; }
+.seg { display: grid; gap: var(--s5); padding-block: var(--s4); position: relative; }
 .seg::before { content: ""; position: absolute; left: -19px; top: 0; bottom: 0; width: 3px; border-radius: 2px; background: var(--ph); opacity: .55; }
 .entry { position: relative; display: grid; gap: var(--s2); min-width: 0; }
 .entry .dot { position: absolute; left: -26px; top: 2px; width: 17px; height: 17px; border-radius: 50%; background: var(--surf); border: 3px solid var(--ph); box-sizing: border-box; }
@@ -141,6 +201,9 @@ p { margin: 0; }
 .marks { display: flex; gap: var(--s2); margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
 .mk { font: var(--t-meta); white-space: nowrap; }
 .mk.ok { color: var(--pass); } .mk.nr { color: var(--faint); }
+.levels { display: grid; gap: var(--s1); font: var(--t-meta); color: var(--muted); border-left: 2px solid var(--line); padding-left: var(--s3); }
+.levels span { display: grid; grid-template-columns: 5.6em minmax(0, 1fr); }
+.levels b { color: var(--ink); }
 .bkey { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .bkey span { font: var(--t-section); letter-spacing: .06em; text-transform: uppercase; color: var(--bc); background: var(--bbg); padding: 1px 6px; border-radius: 3px; }
 ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
@@ -148,10 +211,10 @@ ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
 </style>
 
 <div class="wrap">
-  <span class="marker">Mockup for batch 2 · version 3 · not built yet</span>
+  <span class="marker">Mockup for batch 2 · version 4 · not built yet</span>
   <div class="intro">
     <h1>The Status page and the new Timeline</h1>
-    <p class="lead">Service-Desk as its records stand on 16 October. New in this version: both screens read from the bottom up, from the project's start to the finish line. The branch drawing has its own background, the Timeline's Context is the conversation behind each ruling, and planned work sits above Now.</p>
+    <p class="lead">Service-Desk as its records stand on 16 October. New in this version: lighter connecting lines and three background options for the branch drawing on Status, and the Timeline rebuilt as the project's breakdown: what we're delivering, its phases, their milestones, and the tasks that feed each one.</p>
   </div>
 
   <section class="screen" aria-labelledby="st">
@@ -159,7 +222,7 @@ ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
     <p class="lead">Read it from the bottom up. Each run has its own column of dots on the left. Run 1 climbs from Discovery to Build; run 2 branches out to the right at Design and climbs on to Done. Inside each box, milestones go from the first at the bottom to the last at the top, tied by a light line with its arrow pointing up.</p>
     <div class="key"><span><i class="k-done"></i>finished</span><span><i class="k-past"></i>finished, then gone back over</span><span><i class="k-now"></i>now</span><span><i class="k-todo"></i>still to come</span><span><i class="k-off"></i>not taken on, or not recorded</span></div>
 
-    <div class="plist" id="sd">
+    <div class="plist panel" id="sd">
       <div class="prow end" data-ph="done"><div></div><div class="phase">
         <div class="phead"><span class="pname">Done</span><span class="pstate">After the Launch gate</span></div>
       </div></div>
@@ -236,6 +299,34 @@ ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
       </div></div>
     </div>
 
+    <div class="opts">
+      <h3 class="optsh">Three ways to give the branch drawing its own background</h3>
+      <div class="opt"><p class="optk">A · One panel <span class="rec">shown above · suggested</span></p><p class="optd">The drawing and the phases share one white sheet, like a page in a plan. Phases are rows divided by thin lines; the current one is tinted.</p>
+        <div class="plist mini panel">
+          <div class="prow end"><div></div><div class="phase"><div class="phead"><span class="pname">Done</span></div></div></div>
+          <div class="prow" data-ph="launch"><div></div><div class="phase"><div class="phead"><span class="pname">Launch</span><span class="pstate">not started</span></div></div></div>
+          <div class="prow" data-ph="build"><div></div><div class="phase"><div class="phead"><span class="pname">Build</span><span class="pstate">run 2 to come</span></div></div></div>
+          <div class="prow now" data-ph="des"><div></div><div class="phase"><div class="phead"><span class="pname">Design</span><span class="pstate now">now · run 2</span></div></div></div>
+          <div class="prow" data-ph="disc"><div></div><div class="phase"><div class="phead"><span class="pname">Discovery</span><span class="pstate">finished</span></div></div></div>
+        </div></div>
+      <div class="opt"><p class="optk">B · Dots inside each box</p><p class="optd">Each phase keeps its own box and its dots sit inside it, on the left. The lines cross the gaps between boxes.</p>
+        <div class="plist mini inbox">
+          <div class="prow end"><div></div><div class="phase"><div class="phead"><span class="pname">Done</span></div></div></div>
+          <div class="prow" data-ph="launch"><div></div><div class="phase"><div class="phead"><span class="pname">Launch</span><span class="pstate">not started</span></div></div></div>
+          <div class="prow" data-ph="build"><div></div><div class="phase"><div class="phead"><span class="pname">Build</span><span class="pstate">run 2 to come</span></div></div></div>
+          <div class="prow now" data-ph="des"><div></div><div class="phase"><div class="phead"><span class="pname">Design</span><span class="pstate now">now · run 2</span></div></div></div>
+          <div class="prow" data-ph="disc"><div></div><div class="phase"><div class="phead"><span class="pname">Discovery</span><span class="pstate">finished</span></div></div></div>
+        </div></div>
+      <div class="opt"><p class="optk">C · Tinted rows</p><p class="optd">No boxes: each phase is a faint band of its own colour, running under both the dots and the text.</p>
+        <div class="plist mini tint">
+          <div class="prow end"><div></div><div class="phase"><div class="phead"><span class="pname">Done</span></div></div></div>
+          <div class="prow" data-ph="launch"><div></div><div class="phase"><div class="phead"><span class="pname">Launch</span><span class="pstate">not started</span></div></div></div>
+          <div class="prow" data-ph="build"><div></div><div class="phase"><div class="phead"><span class="pname">Build</span><span class="pstate">run 2 to come</span></div></div></div>
+          <div class="prow now" data-ph="des"><div></div><div class="phase"><div class="phead"><span class="pname">Design</span><span class="pstate now">now · run 2</span></div></div></div>
+          <div class="prow" data-ph="disc"><div></div><div class="phase"><div class="phead"><span class="pname">Discovery</span><span class="pstate">finished</span></div></div></div>
+        </div></div>
+    </div>
+
     <div class="note">
       <span class="made">Made-up example of a why line</span>
       <p style="margin-top:var(--s2)">Once the plan holds why lines, a standard milestone this project skips would read like this, softened like the others it doesn't take on:</p>
@@ -244,190 +335,221 @@ ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
   </section>
 
   <section class="screen" aria-labelledby="tl">
-    <h2 id="tl">Timeline · from the start, up to the finish line</h2>
-    <p class="lead">Read it from the bottom up: the project's start at the bottom, what's done, then Now, then the planned milestones above it, up to the finish line. The desk opens it at Now. The line down the left takes each phase's colour, dashed where the work is still planned, and the phase's name stays pinned at the top while you scroll through it.</p>
-    <div class="bkey"><span class="tech" style="--bc:var(--b-tech);--bbg:var(--b-tech-bg)">Technical</span><span style="--bc:var(--b-ctx);--bbg:var(--b-ctx-bg)">Context</span><span style="--bc:var(--b-why);--bbg:var(--b-why-bg)">Why</span><span style="--bc:var(--muted);--bbg:transparent">Done when (planned)</span></div>
+    <h2 id="tl">Timeline · the project, broken down over time</h2>
+    <p class="lead">Read it from the bottom up. Where we started is at the bottom, then each phase in the order it ran, with its milestones in the order they're delivered. Each milestone says what done looks like and why we're doing it. The tasks that feed it are folded underneath, one tap away. Above Now is what's still to come, up to what we're delivering at the top. The desk opens it at Now.</p>
+    <div class="levels"><span><b>Project</b> what we're delivering</span><span><b>Phase</b> coloured band, pinned while you scroll</span><span><b>Milestone</b> big dot: done when · why</span><span><b>Task</b> folded: title · technical · context · why</span></div>
+    <div class="bkey"><span style="--bc:var(--b-tech);--bbg:var(--b-tech-bg)">Technical</span><span style="--bc:var(--b-ctx);--bbg:var(--b-ctx-bg)">Context</span><span style="--bc:var(--b-why);--bbg:var(--b-why-bg)">Why</span></div>
 
     <div class="feed">
-      <div class="band finish"><span class="chip"></span>The finish line<span class="sub">Done · after the Launch gate</span></div>
+      <div class="goal finish"><span class="label">What we're delivering</span>
+        <p class="gq">"I envisioned the service desk to be more of real time interactive planning, scheduling and interactive workbench."</p>
+        <p class="gsrc">The project's purpose, in your words · docs/PROJECT.md, Intent</p>
+        <p class="gline">Finish line: <b>Done</b>, after the Launch gate</p>
+      </div>
 
-      <div class="band" data-ph="launch"><span class="chip"></span>Launch · planned<span class="sub">not started</span></div>
+      <div class="band" data-ph="launch"><span class="chip"></span>Launch<span class="sub">planned</span></div>
       <div class="seg plan" data-ph="launch">
-        <div class="entry planned"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">planned</span><span class="code">M3C</span><div class="marks"><span class="mk nr">○ no work filed yet</span></div></div>
-          <p class="etitle">The desk live at the needs-you address</p>
-          <ul class="bul">
-            <li class="done"><span class="k">Done when</span><span class="v">the owner's needs-you address opens the desk on production</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v">not recorded</span></li>
-          </ul>
+        <div class="mile planned"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">The desk live at the needs-you address</span><span class="code">M3C</span><span class="mst">planned</span></div>
+          <p class="dw"><span class="dwk">Done when</span> the owner's needs-you address opens the desk on production</p>
+          <p class="wl miss"><span class="wk">Why</span> not recorded yet</p>
+          <p class="notask">No tasks planned yet</p>
         </div>
       </div>
 
-      <div class="band" data-ph="build"><span class="chip"></span>Build · run 2 · planned<span class="sub">still to come</span></div>
+      <div class="band" data-ph="build"><span class="chip"></span>Build · run 2<span class="sub">planned</span></div>
       <div class="seg plan" data-ph="build">
-        <div class="entry planned"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">planned</span><span class="code">M3B</span><div class="marks"><span class="mk nr">○ no work filed yet</span></div></div>
-          <p class="etitle">The desk's value targets shown</p>
-          <ul class="bul">
-            <li class="done"><span class="k">Done when</span><span class="v">the desk shows each value target (V1 to V5) from the project document against its measure</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v">not recorded</span></li>
-          </ul>
+        <div class="mile planned"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">The desk's value targets shown</span><span class="code">M3B</span><span class="mst">planned</span></div>
+          <p class="dw"><span class="dwk">Done when</span> the desk shows each value target (V1 to V5) from the project document against its measure</p>
+          <p class="wl miss"><span class="wk">Why</span> not recorded yet</p>
+          <p class="notask">No tasks planned yet</p>
         </div>
-        <div class="entry planned"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">planned</span><span class="code">M3A</span><div class="marks"><span class="mk nr">○ no work filed yet</span></div></div>
-          <p class="etitle">Work ahead planned and scheduled from the desk</p>
-          <ul class="bul">
-            <li class="done"><span class="k">Done when</span><span class="v">the owner's chosen order and timing of coming work are recorded from the desk for the Chief of Staff to carry out</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v">not recorded</span></li>
-          </ul>
+        <div class="mile planned"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">Work ahead planned and scheduled from the desk</span><span class="code">M3A</span><span class="mst">planned</span></div>
+          <p class="dw"><span class="dwk">Done when</span> the owner's chosen order and timing of coming work are recorded from the desk for the Chief of Staff to carry out</p>
+          <p class="wl miss"><span class="wk">Why</span> not recorded yet</p>
+          <p class="notask">No tasks planned yet</p>
         </div>
       </div>
 
       <div class="band" data-ph="des"><span class="chip"></span>Design · run 2<span class="sub">now</span></div>
       <div class="seg plan" data-ph="des">
-        <div class="entry planned"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">planned</span><span class="code">MD3</span><div class="marks"><span class="mk nr">○ no work filed yet</span></div></div>
-          <p class="etitle">The chosen design running on the real back end</p>
-          <ul class="bul">
-            <li class="done"><span class="k">Done when</span><span class="v">the chosen look runs on the desk's real back end, showing real records, on its preview site</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v">not recorded</span></li>
-          </ul>
+        <div class="mile planned"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">The chosen design running on the real back end</span><span class="code">MD3</span><span class="mst">planned</span></div>
+          <p class="dw"><span class="dwk">Done when</span> the chosen look runs on the desk's real back end, showing real records, on its preview site</p>
+          <p class="wl miss"><span class="wk">Why</span> not recorded yet</p>
+          <p class="notask">No tasks planned yet</p>
         </div>
-        <div class="entry planned"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">in progress</span><span class="code">MD2</span><div class="marks"><span class="mk nr">○ no work filed against it yet</span></div></div>
-          <p class="etitle">The desk's look and screens chosen</p>
-          <ul class="bul">
-            <li class="done"><span class="k">Done when</span><span class="v">the owner has picked the desk's look and its screens</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v">not recorded</span></li>
-          </ul>
+        <div class="mile planned cur"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">The desk's look and screens chosen</span><span class="code">MD2</span><span class="mst now">next to reach</span></div>
+          <p class="dw"><span class="dwk">Done when</span> the owner has picked the desk's look and its screens</p>
+          <p class="wl miss"><span class="wk">Why</span> not recorded yet</p>
+          <p class="notask">No tasks filed against it yet: see the flag below</p>
         </div>
       </div>
       <div class="nowline"><span>Now · 16 Oct</span><span class="sub">ahead above · done below</span></div>
       <div class="seg" data-ph="des">
-        <div class="entry newest"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">16 Oct</span><span class="code">PR #77</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk ok">✓ review</span><span class="mk ok">✓ checks</span></div></div>
-          <p class="etitle">The answer choices have room, Home's bar is gone, and long rulings stop at three lines</p>
-          <ul class="bul">
-            <li class="tech"><span class="k">Technical</span><span class="v">S-001 AC48, AC52–AC56 · sandbox.js, sandbox.css · 317 tests · Design i2 · milestone: not recorded</span></li>
-            <li class="ctx"><span class="k">Context</span><span class="v"><span class="ask">Asked:</span> "Your eleven answers went in as one very long first line, about 1,800 characters, with a stray "11 Ruling:" at the start. The desk will show that line whole under "Your last action" and "Done today". What should happen?" <span class="ask">You chose:</span> "Desk clips long lines"</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v q">"One thing to change here. The answer choices are a little tight"</span></li>
-          </ul>
+        <div class="mile flag"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">Not tied to a milestone</span><span class="mst warn">4 tasks · needs filing</span></div>
+          <p class="wl">These tasks don't say which milestone they feed, so the desk asks the question you never want to ask: "why are we doing this?" They look like MD2 work; filing them is a small plan fix.</p>
+          <details class="tasks" open><summary>4 tasks</summary>
+            <div class="task"><span class="tdot" aria-hidden="true"></span>
+              <div class="ehead"><span class="date">16 Oct</span><span class="code">PR #77</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk ok">✓ review</span><span class="mk ok">✓ checks</span></div></div>
+              <p class="etitle">The answer choices have room, Home's bar is gone, and long rulings stop at three lines</p>
+              <ul class="bul">
+                <li class="tech"><span class="k">Technical</span><span class="v">S-001 AC48, AC52–AC56 · sandbox.js, sandbox.css · 317 tests</span></li>
+                <li class="ctx"><span class="k">Context</span><span class="v"><span class="ask">Asked:</span> "Your eleven answers went in as one very long first line, about 1,800 characters, with a stray "11 Ruling:" at the start. The desk will show that line whole under "Your last action" and "Done today". What should happen?" <span class="ask">You chose:</span> "Desk clips long lines"</span></li>
+                <li class="whyb"><span class="k">Why</span><span class="v q">"One thing to change here. The answer choices are a little tight"</span></li>
+              </ul>
+            </div>
+            <div class="task"><span class="tdot" aria-hidden="true"></span>
+              <div class="ehead"><span class="date">15 Oct</span><span class="code">PR #76</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk nr">– review</span><span class="mk nr">– checks</span></div></div>
+              <p class="etitle">Your ruling on GitHub app links recorded: they open in the phone's browser</p>
+              <ul class="bul">
+                <li class="tech"><span class="k">Technical</span><span class="v">decisions/questions/P-001-github-app-links.md · records only</span></li>
+                <li class="ctx"><span class="k">Context</span><span class="v"><span class="ask">Asked:</span> "The GitHub phone app grabs github.com links, and it can't create a file from a link, so your ruling lands nowhere. How should we get around it?" <span class="ask">You chose:</span> "Phone setting"</span></li>
+                <li class="whyb"><span class="k">Why</span><span class="v q">"This link pulled me through the app version of GitHub and it didn’t really work out."</span></li>
+              </ul>
+            </div>
+            <div class="task"><span class="tdot" aria-hidden="true"></span>
+              <div class="ehead"><span class="date">15 Oct</span><span class="code">PR #75</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk ok">✓ review</span><span class="mk ok">✓ checks</span></div></div>
+              <p class="etitle">Each Home tile's summary stops at three lines, the whole text one tap away</p>
+              <ul class="bul">
+                <li class="tech"><span class="k">Technical</span><span class="v">S-001 AC54(a), AC56 · 292 tests</span></li>
+                <li class="ctx"><span class="k">Context</span><span class="v"><span class="ask">Asked:</span> "The project summary is what makes each tile so tall: about 600 characters squeezed into a half-width column. How should the tile handle it?" <span class="ask">You chose:</span> "Clip to 3 lines"</span></li>
+                <li class="whyb"><span class="k">Why</span><span class="v q">"Oooh I don’t love the current tile size."</span></li>
+              </ul>
+            </div>
+            <div class="task"><span class="tdot" aria-hidden="true"></span>
+              <div class="ehead"><span class="date">15 Oct</span><span class="code">PR #74</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk ok">✓ review</span><span class="mk ok">✓ checks</span></div></div>
+              <p class="etitle">Your fifteen notes on the trial view built</p>
+              <ul class="bul">
+                <li class="tech"><span class="k">Technical</span><span class="v">S-001 AC54–AC56 added · 285 tests</span></li>
+                <li class="ctx"><span class="k">Context</span><span class="v"><span class="ask">Asked:</span> "Where should each card's brief project summary come from? (The desk never writes its own words about a project.)" <span class="ask">You chose:</span> "README's first paragraph"</span></li>
+                <li class="whyb"><span class="k">Why</span><span class="v">Your trial-view notes 1 to 15 (14–15 Oct)</span></li>
+              </ul>
+            </div>
+          </details>
         </div>
-        <div class="entry"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">15 Oct</span><span class="code">PR #76</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk nr">– review</span><span class="mk nr">– checks</span></div></div>
-          <p class="etitle">Your ruling on GitHub app links recorded: they open in the phone's browser</p>
-          <ul class="bul">
-            <li class="tech"><span class="k">Technical</span><span class="v">decisions/questions/P-001-github-app-links.md · records only · Design i2 · no milestone</span></li>
-            <li class="ctx"><span class="k">Context</span><span class="v"><span class="ask">Asked:</span> "The GitHub phone app grabs github.com links, and it can't create a file from a link, so your ruling lands nowhere. How should we get around it?" <span class="ask">You chose:</span> "Phone setting"</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v q">"This link pulled me through the app version of GitHub and it didn’t really work out."</span></li>
-          </ul>
+        <div class="mile reached"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">What a good desk looks like is known</span><span class="code">MD1</span><span class="mst">work filed</span></div>
+          <p class="dw"><span class="dwk">Done when</span> source-checked design research sets out what a good desk looks like and why</p>
+          <p class="wl miss"><span class="wk">Why</span> not recorded yet</p>
+          <details class="tasks"><summary>1 task feeds this</summary>
+            <div class="task"><span class="tdot" aria-hidden="true"></span>
+              <div class="ehead"><span class="date">8 Oct</span><span class="code">Q-013</span><div class="marks"><span class="mk ok">✓ source-checked</span></div></div>
+              <p class="etitle">Research: how a phone-first status dashboard for one person overseeing several projects should be designed</p>
+              <ul class="bul">
+                <li class="tech"><span class="k">Technical</span><span class="v">research/Q-013-memo.md · Q-013-source-check.md</span></li>
+                <li class="ctx"><span class="k">Context</span><span class="v">not recorded</span></li>
+                <li class="whyb"><span class="k">Why</span><span class="v">not recorded</span></li>
+              </ul>
+            </div>
+          </details>
         </div>
-        <div class="entry"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">15 Oct</span><span class="code">PR #75</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk ok">✓ review</span><span class="mk ok">✓ checks</span></div></div>
-          <p class="etitle">Each Home tile's summary stops at three lines, the whole text one tap away</p>
-          <ul class="bul">
-            <li class="tech"><span class="k">Technical</span><span class="v">S-001 AC54(a), AC56 · 292 tests · Design i2 · milestone: not recorded</span></li>
-            <li class="ctx"><span class="k">Context</span><span class="v"><span class="ask">Asked:</span> "The project summary is what makes each tile so tall: about 600 characters squeezed into a half-width column. How should the tile handle it?" <span class="ask">You chose:</span> "Clip to 3 lines"</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v q">"Oooh I don’t love the current tile size."</span></li>
-          </ul>
-        </div>
-        <div class="entry"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">15 Oct</span><span class="code">PR #74</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk ok">✓ review</span><span class="mk ok">✓ checks</span></div></div>
-          <p class="etitle">Your fifteen notes on the trial view built</p>
-          <ul class="bul">
-            <li class="tech"><span class="k">Technical</span><span class="v">S-001 AC54–AC56 added · 285 tests · Design i2 · milestone: not recorded</span></li>
-            <li class="ctx"><span class="k">Context</span><span class="v"><span class="ask">Asked:</span> "Where should each card's brief project summary come from? (The desk never writes its own words about a project.)" <span class="ask">You chose:</span> "README's first paragraph"</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v">Your trial-view notes 1 to 15 (14–15 Oct)</span></li>
-          </ul>
-        </div>
+        <p class="stdline">6 standard Design milestones · not recorded for this run</p>
       </div>
 
       <div class="band" data-ph="build"><span class="chip"></span>Build · run 1<span class="sub">7 to 8 Oct · gone back over</span></div>
       <div class="seg" data-ph="build">
-        <div class="entry"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">8 Oct</span><span class="code">PR #52</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk ok">✓ review</span></div></div>
-          <p class="etitle">The Agents view shows each session's tokens, run time, context use and cost estimate</p>
-          <ul class="bul">
-            <li class="tech"><span class="k">Technical</span><span class="v">build/builder/desk-usage-names · Build i1 · M2B</span></li>
-            <li class="ctx"><span class="k">Context</span><span class="v">not recorded</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v">not recorded</span></li>
-          </ul>
+        <div class="mile past"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">Agent usage shown on the desk</span><span class="code">M2B</span><span class="mst">work filed · gone back over</span></div>
+          <p class="dw"><span class="dwk">Done when</span> each agent session's usage and context figures show on the desk</p>
+          <p class="wl"><span class="wk">Why</span> <span class="q">"It's important for me to see timelines and context windows to be able to drive things."</span> <span class="wsrc">your words, 4 Oct · docs/PROJECT.md</span></p>
+          <details class="tasks" open><summary>2 tasks feed this</summary>
+            <div class="task"><span class="tdot" aria-hidden="true"></span>
+              <div class="ehead"><span class="date">8 Oct</span><span class="code">PR #52</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk ok">✓ review</span></div></div>
+              <p class="etitle">The Agents view shows each session's tokens, run time, context use and cost estimate</p>
+              <ul class="bul">
+                <li class="tech"><span class="k">Technical</span><span class="v">build/builder/desk-usage-names</span></li>
+                <li class="ctx"><span class="k">Context</span><span class="v">not recorded</span></li>
+                <li class="whyb"><span class="k">Why</span><span class="v">not recorded</span></li>
+              </ul>
+            </div>
+            <div class="task"><span class="tdot" aria-hidden="true"></span>
+              <div class="ehead"><span class="date">8 Oct</span><span class="code">PR #44</span><div class="marks"><span class="mk ok">✓ merged</span></div></div>
+              <p class="etitle">M2: answering from the desk, agents and usage, CI from workflow runs, hold and merge cards</p>
+              <ul class="bul">
+                <li class="tech"><span class="k">Technical</span><span class="v">build/builder/m2-answering · also feeds M2</span></li>
+                <li class="ctx"><span class="k">Context</span><span class="v">not recorded</span></li>
+                <li class="whyb"><span class="k">Why</span><span class="v">not recorded</span></li>
+              </ul>
+            </div>
+          </details>
         </div>
-        <div class="entry"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">7 Oct</span><span class="code">PR #40</span><div class="marks"><span class="mk ok">✓ merged</span><span class="mk ok">✓ review</span></div></div>
-          <p class="etitle">The desk's read-only status page</p>
-          <ul class="bul">
-            <li class="tech"><span class="k">Technical</span><span class="v">S-001 AC1–AC15 · Build i1 · M1</span></li>
-            <li class="ctx"><span class="k">Context</span><span class="v">not recorded</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v">not recorded</span></li>
-          </ul>
+        <div class="mile past"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">Cards answered straight from the desk</span><span class="code">M2</span><span class="mst">work filed · gone back over</span></div>
+          <p class="dw"><span class="dwk">Done when</span> each card on the desk links the owner straight to its answer</p>
+          <p class="wl miss"><span class="wk">Why</span> not recorded yet</p>
+          <details class="tasks"><summary>1 task feeds this · PR #44</summary></details>
         </div>
-        <div class="entry"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">7 Oct</span><span class="code">PR #38</span><div class="marks"><span class="mk ok">✓ merged</span></div></div>
-          <p class="etitle">Ledger: P-001 built from its draft spec (L-0003); Service-Desk made public (L-0004)</p>
-          <ul class="bul">
-            <li class="tech"><span class="k">Technical</span><span class="v">docs/LEDGER.md · records only · Build i1 begins</span></li>
-            <li class="ctx"><span class="k">Context</span><span class="v"><span class="ask">Asked (L-0003):</span> "May the Builder build from specs/S-001.md while it stays status: draft?" <span class="ask">Ruled:</span> "Yes, for S-001 only, until P-001 launches (S-001 AC28) or is stopped."</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v">not recorded</span></li>
-          </ul>
+        <div class="mile past"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">Every project's status visible on the phone</span><span class="code">M1</span><span class="mst">work filed · gone back over</span></div>
+          <p class="dw"><span class="dwk">Done when</span> every connected project's status, and what waits on the owner, shows on the owner's phone</p>
+          <p class="wl miss"><span class="wk">Why</span> not recorded yet</p>
+          <details class="tasks"><summary>2 tasks feed this · PR #40, #41</summary></details>
         </div>
+        <div class="mile flag small"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">Not tied to a milestone</span><span class="mst warn">1 task · PR #38, the ledger entries that started Build</span></div>
+        </div>
+        <p class="stdline">5 standard Build milestones · not recorded for this run</p>
       </div>
 
       <div class="band" data-ph="des"><span class="chip"></span>Design · run 1<span class="sub">to 6 Oct · gone back over</span></div>
       <div class="seg" data-ph="des">
-        <div class="entry"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">6 Oct</span><span class="code">PR #36</span><div class="marks"><span class="mk ok">✓ merged</span></div></div>
-          <p class="etitle">S-001: owner approval on every deploy</p>
-          <ul class="bul">
-            <li class="tech"><span class="k">Technical</span><span class="v">specs/S-001 · Reviewer rounds 3 to 5 · Design i1 · Design-6</span></li>
-            <li class="ctx"><span class="k">Context</span><span class="v">not recorded</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v">not recorded</span></li>
-          </ul>
+        <div class="mile notreached"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">A plan that passed review</span><span class="code">Design-6</span><span class="mst bad">not reached</span></div>
+          <p class="wl miss"><span class="wk">Why</span> not recorded yet</p>
         </div>
+        <div class="mile past"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">Done defined in real scenarios</span><span class="code">Design-1</span><span class="mst">reached · gone back over</span></div>
+          <p class="wl miss"><span class="wk">Why</span> not recorded yet</p>
+        </div>
+        <div class="mile flag small"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">Not tied to a milestone</span><span class="mst warn">1 task · PR #36, owner approval on every deploy</span></div>
+        </div>
+        <p class="stdline">4 standard Design milestones · not recorded for this run</p>
       </div>
 
-      <div class="band" data-ph="disc"><span class="chip"></span>Discovery · run 1<span class="sub">30 Sep to 5 Oct</span></div>
+      <div class="band" data-ph="disc"><span class="chip"></span>Discovery<span class="sub">30 Sep to 5 Oct · finished</span></div>
       <div class="seg" data-ph="disc">
-        <div class="entry"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">1 Oct</span><span class="code">PR #14</span><div class="marks"><span class="mk ok">✓ merged</span></div></div>
-          <p class="etitle">Critic pack: the definition of ready and the §7 evidence (P-001)</p>
-          <ul class="bul">
-            <li class="tech"><span class="k">Technical</span><span class="v">build/chief-of-staff/dor-pack · Discovery i1 · Discovery-8</span></li>
-            <li class="ctx"><span class="k">Context</span><span class="v">not recorded</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v">not recorded</span></li>
-          </ul>
+        <div class="mile reached"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">A brief ready to rule on</span><span class="code">Discovery-8</span><span class="mst">reached</span></div>
+          <p class="wl miss"><span class="wk">Why</span> not recorded yet</p>
         </div>
-        <div class="entry"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">30 Sep</span><span class="code">PR #2</span><div class="marks"><span class="mk ok">✓ merged</span></div></div>
-          <p class="etitle">Service Desk intent and brief draft, and its research requests</p>
-          <ul class="bul">
-            <li class="tech"><span class="k">Technical</span><span class="v">build/chief-of-staff/intent-capture · Discovery i1</span></li>
-            <li class="ctx"><span class="k">Context</span><span class="v">not recorded</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v">not recorded</span></li>
-          </ul>
+        <div class="mile reached"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">Scope, limits and owners agreed</span><span class="code">Discovery-7</span><span class="mst">reached</span></div>
+          <p class="wl miss"><span class="wk">Why</span> not recorded yet</p>
         </div>
-        <div class="entry"><span class="dot" aria-hidden="true"></span>
-          <div class="ehead"><span class="date">30 Sep</span><span class="code">PR #1</span><div class="marks"><span class="mk ok">✓ merged</span></div></div>
-          <p class="etitle">Found Service Desk from the v3 template (operating model 3.0.0)</p>
-          <ul class="bul">
-            <li class="tech"><span class="k">Technical</span><span class="v">claude/new-session-yxwr2g</span></li>
-            <li class="ctx"><span class="k">Context</span><span class="v">not recorded</span></li>
-            <li class="whyb"><span class="k">Why</span><span class="v">not recorded</span></li>
-          </ul>
+        <div class="mile reached"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">What already exists is known</span><span class="code">Discovery-5</span><span class="mst">reached</span></div>
+          <p class="wl miss"><span class="wk">Why</span> not recorded yet</p>
         </div>
+        <div class="mile reached"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">Success defined</span><span class="code">Discovery-2</span><span class="mst">reached</span></div>
+          <p class="wl miss"><span class="wk">Why</span> not recorded yet</p>
+        </div>
+        <div class="mile flag small"><span class="dot" aria-hidden="true"></span>
+          <div class="mhead"><span class="mtitle">Not tied to a milestone</span><span class="mst warn">31 tasks · PR #1 to #31, up to 5 Oct</span></div>
+        </div>
+        <p class="stdline">4 standard Discovery milestones · not recorded</p>
       </div>
-      <div class="band start"><span class="chip"></span>The start · 30 Sep</div>
+
+      <div class="goal start"><span class="label">Where we started</span>
+        <p class="gq">Service Desk replaces Operations-Hub, which is a read-only page answering "does anything need me?" and linking out to GitHub.</p>
+        <p class="gsrc">docs/PROJECT.md, Intent · the project began 30 Sep</p>
+      </div>
     </div>
   </section>
 
   <section class="screen" aria-labelledby="fy">
     <h2 id="fy">Worth knowing</h2>
     <ul class="list">
-      <li>The mockup shows a few entries from each phase; the real feed lists every pull request, and above Now every planned milestone, each with its "done when" line from the plan.</li>
-      <li>Context is the conversation behind a change: the question you were asked and the answer you chose, quoted from the question file, or the ledger's "asked" line. Where neither exists, as for the oldest pull requests, it reads "not recorded". What used to be in Context (the phase and milestone) has moved into Technical.</li>
-      <li>Each colour is backed by words, so nothing depends on colour alone: the phase name is pinned above its stretch of the line, and each bullet keeps its label.</li>
-      <li>Titles are each pull request's plain-English opening line. The oldest pull requests' opening lines were written in technical terms, so the desk shows them as recorded.</li>
-      <li>The trial-view pull requests (#72 to #77) aren't filed against MD2 in the plan yet, so the desk can't tie them to a milestone. Filing them is a small plan fix.</li>
+      <li>Every why that reads "not recorded yet" is flagged in coral on purpose: a milestone with no why is the "wait, why are we doing that?" moment. The one real why shown (M2B) is your own words from the plan. Why lines for every milestone need a small change to the operating model.</li>
+      <li>"Not tied to a milestone" gathers the tasks that don't say which milestone they feed. Today that is most of them, including the last four. Filing tasks against milestones as they're planned closes this.</li>
+      <li>What we're delivering and where we started are quoted from the project's plan (docs/PROJECT.md), never written by the desk.</li>
+      <li>The phase dates and the 31 Discovery tasks are read from the project's merge history.</li>
       <li>Text boxes will use 16 px text, so the phone stops zooming in when you tap one.</li>
     </ul>
   </section>
@@ -439,30 +561,30 @@ const RUNS = [
   { lane: 0, steps: [[0, 'done'], [1, 'past'], [2, 'past']] },
   { lane: 1, steps: [[1, 'now'], [2, 'todo'], [3, 'todo'], [4, 'todo']] } ];
 const NS = 'http://www.w3.org/2000/svg';
-(() => {
-  const host = document.getElementById('sd'), gap = 20, railw = 10 + RUNS.length * gap;
+document.querySelectorAll('.plist').forEach((host) => {
+  const gap = host.classList.contains('mini') ? 14 : 20, railw = 10 + RUNS.length * gap;
   host.style.setProperty('--railw', railw + 'px');
   const rows = [...host.querySelectorAll('.prow')].reverse(); // rows[p]: Discovery is p 0, at the bottom
   const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('class', 'rail'); const track = document.createElement('div'); track.className = 'track'; host.prepend(track, svg);
   const add = (tag, attrs) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); svg.append(n); return n; };
-  const chevron = (x, y, col, up) => add('path', { d: up ? `M${x - 3.5},${y + 2} L${x},${y - 2} L${x + 3.5},${y + 2}` : `M${x - 3.5},${y - 2} L${x},${y + 2} L${x + 3.5},${y - 2}`, fill: 'none', style: `stroke:${col}`, 'stroke-width': 1.6, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+  const chevron = (x, y, col, up) => add('path', { d: up ? `M${x - 3.5},${y + 2} L${x},${y - 2} L${x + 3.5},${y + 2}` : `M${x - 3.5},${y - 2} L${x},${y + 2} L${x + 3.5},${y - 2}`, fill: 'none', style: `stroke:${col}`, 'stroke-width': 1.1, 'stroke-opacity': .7, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
   const layout = () => {
     const hb = host.getBoundingClientRect(); svg.setAttribute('width', railw); svg.setAttribute('height', hb.height); svg.replaceChildren();
     const y = rows.map((r) => { const b = r.querySelector('.pname').getBoundingClientRect(); return b.top - hb.top + b.height / 2; });
-    const x = (lane) => 8 + lane * gap, col = (ri) => `var(--run${ri + 1})`;
+    const x = (lane) => (host.classList.contains('inbox') ? 18 : 8) + lane * gap, col = (ri) => `var(--run${ri + 1})`;
     RUNS.forEach((run, ri) => {
       const pts = run.steps.map(([p]) => [x(run.lane), y[p]]);
       for (let k = 1; k < pts.length; k++) {
-        add('line', { x1: pts[k - 1][0], y1: pts[k - 1][1], x2: pts[k][0], y2: pts[k][1], style: `stroke:${col(ri)}`, 'stroke-width': 2, 'stroke-dasharray': run.steps[k][1] === 'todo' ? '3 4' : '' });
+        add('line', { x1: pts[k - 1][0], y1: pts[k - 1][1], x2: pts[k][0], y2: pts[k][1], style: `stroke:${col(ri)}`, 'stroke-width': 1.25, 'stroke-opacity': .7, 'stroke-dasharray': run.steps[k][1] === 'todo' ? '2 4' : '' });
         chevron(pts[k][0], (pts[k - 1][1] + pts[k][1]) / 2, col(ri), pts[k][1] < pts[k - 1][1]);
       }
       if (ri > 0) { // the branch: from the previous run's last dot, up and out to this run's first dot
         const prev = RUNS[ri - 1], p = prev.steps[prev.steps.length - 1][0];
         const x0 = x(prev.lane), y0 = y[p], x1 = x(run.lane), y1 = y[run.steps[0][0]];
-        add('path', { d: `M${x0},${y0} C${x0 + gap * .9},${y0} ${x1},${y0 - (y0 - y1) * .25} ${x1},${y1}`, fill: 'none', style: `stroke:${col(ri)}`, 'stroke-width': 2 });
+        add('path', { d: `M${x0},${y0} C${x0 + gap * .9},${y0} ${x1},${y0 - (y0 - y1) * .25} ${x1},${y1}`, fill: 'none', style: `stroke:${col(ri)}`, 'stroke-width': 1.25, 'stroke-opacity': .7 });
       }
       run.steps.forEach(([, s], k) => {
-        const [cx, cy] = pts[k], r = 6;
+        const [cx, cy] = pts[k], r = host.classList.contains('mini') ? 4.5 : 6;
         if (s === 'done') add('circle', { cx, cy, r, style: 'fill:var(--pass)' });
         else if (s === 'past') add('circle', { cx, cy, r, style: 'fill:var(--passl);stroke:var(--pass)', 'stroke-width': 1.5 });
         else if (s === 'now') { add('circle', { cx, cy, r: r + 3, style: 'fill:none;stroke:var(--gold)', 'stroke-width': 1.5, class: 'pulse' }); add('circle', { cx, cy, r, style: 'fill:var(--surf);stroke:var(--gold)', 'stroke-width': 2.5 }); }
@@ -471,5 +593,5 @@ const NS = 'http://www.w3.org/2000/svg';
     });
   };
   layout(); addEventListener('resize', layout); if (document.fonts) document.fonts.ready.then(layout);
-})();
+});
 </script>

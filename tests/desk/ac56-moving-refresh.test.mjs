@@ -8,7 +8,8 @@ import { byClass, findAll } from './sandbox-helpers.mjs';
 import { twoProjects, opened, v3, fullRepo } from './sandbox-fixtures.mjs';
 import { repo } from './fake-desk.mjs';
 import { j11Files } from './sandbox-helpers.mjs';
-import { CONFIG } from './helpers.mjs';
+import { readFileSync } from 'node:fs';
+import { CONFIG, SRC } from './helpers.mjs';
 
 const all = (node) => findAll(node, () => true);
 const keyed = (app, k) => findAll(app.view, (e) => e.dataset && e.dataset.k === k)[0] || null;
@@ -126,6 +127,43 @@ test('AC56 close: the "Latest" bubble has "Close" at its top, and the control, a
   }
 });
 
+/** The browser's measure of a card's summary (the fake DOM lays out no text): its box three lines, its text `lines` lines. */
+function clipLines(app, name, lines) {
+  const c = keyed(app, `sumclip:${name}`);
+  assert.ok(c, `${name}'s summary box`);
+  c.clientHeight = 52;
+  c.scrollHeight = Math.round(lines * 17.28);
+}
+const LONG_README = '# Long\n\nA summary long enough to run past three lines on the card, so that its first three lines show with the fade and the whole of it opens in a bubble.\n';
+
+test('AC56 close: the whole-summary bubble has "Close" at its top, and the control, a tap outside and Escape each close it, focus back on the summary control', async () => {
+  const setup = twoProjects();
+  setup.repos.Alpha.commit({ 'README.md': LONG_README });
+  const app = await opened(setup, '#/');
+  try {
+    clipLines(app, 'Alpha', 5);
+    await app.resize(360);
+    for (const how of ['control', 'outside', 'escape']) {
+      const ctl = keyed(app, 'sum:Alpha');
+      assert.ok(ctl, 'the summary control');
+      await app.tap(ctl);
+      const bub = keyed(app, 'sumbubble:Alpha');
+      assert.ok(bub, `open (${how})`);
+      assert.equal(bub.children[0], byClass(bub, 'sb-bubble-top')[0], 'the close control sits at the top');
+      const close = byClass(bub.children[0], 'sb-close')[0];
+      assert.equal(close.attrs['aria-label'], 'Close');
+      assert.match(readFileSync(`${SRC}/public/sandbox.css`, 'utf8'), /\.sb-close \{[^}]*min-width: 44px; min-height: 44px;/, 'its target is 44 by 44');
+      if (how === 'control') await app.tap(close);
+      else if (how === 'outside') await app.tap(app.view);
+      else await app.key('Escape');
+      assert.equal(keyed(app, 'sumbubble:Alpha'), null, `closed by ${how}`);
+      assert.equal(document.activeElement, keyed(app, 'sum:Alpha'), `focus back on the summary control (${how})`);
+    }
+  } finally {
+    app.restore();
+  }
+});
+
 test('AC56 refresh, Home: the Done group opened, the Active group closed, and a "Latest" bubble open all stay through every kind of refresh', async () => {
   const setup = { config: { ...CONFIG, projects: [v3('Alpha'), v3('Done-one')] },
     repos: { Alpha: fullRepo('Alpha'), 'Done-one': repo({ ...j11Files(), 'decisions/questions/P-001-graduation.md': 'Ruling: graduate\n' }) } };
@@ -146,6 +184,38 @@ test('AC56 refresh, Home: the Done group opened, the Active group closed, and a 
     assert.equal(keyed(app, 'hgroup-btn:done').attrs['aria-expanded'], 'true', 'Done stays open');
     assert.equal(keyed(app, 'hgroup-btn:active').attrs['aria-expanded'], 'false', 'Active stays closed');
     assert.equal(keyed(app, 'bubble:Done-one'), bub, 'the same bubble, still open');
+    assert.match(app.text(), /waiting on you in all/, 'with the changed data shown');
+    assert.deepEqual(app.scrolls, []);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC56 refresh, Home (step 1b): the same groups, with a card\'s whole-summary bubble open in place of "Latest", all stay through every kind of refresh', async () => {
+  const setup = { config: { ...CONFIG, projects: [v3('Alpha'), v3('Done-one')] },
+    repos: { Alpha: fullRepo('Alpha'), 'Done-one': repo({ ...j11Files(), 'decisions/questions/P-001-graduation.md': 'Ruling: graduate\n', 'README.md': LONG_README }) } };
+  const app = await opened(setup, '#/');
+  try {
+    await app.advance(POLL_MS);
+    keyed(app, 'hgroup-btn:done').click();
+    keyed(app, 'hgroup-btn:active').click();
+    await app.flush();
+    clipLines(app, 'Done-one', 5);
+    await app.resize(360);
+    const ctl = keyed(app, 'sum:Done-one');
+    assert.ok(ctl, 'the summary control');
+    await app.tap(ctl);
+    const bub = keyed(app, 'sumbubble:Done-one');
+    assert.ok(bub, 'the summary bubble is open');
+    assert.equal(keyed(app, 'bubble:Done-one'), null, 'in place of the "Latest" bubble: one bubble at a time');
+    app.scrolls.length = 0;
+    await everyRefresh(app, setup);
+    assert.equal(keyed(app, 'hgroup-btn:done').attrs['aria-expanded'], 'true', 'Done stays open');
+    assert.equal(keyed(app, 'hgroup-btn:active').attrs['aria-expanded'], 'false', 'Active stays closed');
+    assert.equal(keyed(app, 'sumbubble:Done-one'), bub, 'the same bubble, still open');
+    assert.equal(keyed(app, 'sum:Done-one'), ctl, 'on the same control');
+    assert.equal(ctl.attrs['aria-expanded'], 'true');
+    assert.equal(document.activeElement, ctl, 'which keeps the focus');
     assert.match(app.text(), /waiting on you in all/, 'with the changed data shown');
     assert.deepEqual(app.scrolls, []);
   } finally {

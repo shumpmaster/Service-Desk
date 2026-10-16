@@ -204,6 +204,12 @@ export async function loadSandbox({ config, repos, hash = '#/', now: start = Dat
       now = until;
       await flush();
     },
+    /** The window resized (a turned phone, a resized window): its width changes and its resize listeners run. */
+    async resize(width) {
+      window.innerWidth = width;
+      for (const fn of winListeners.resize || []) fn();
+      await flush();
+    },
     async go(h) {
       loc.hash = h;
       for (const fn of winListeners.hashchange || []) fn();

@@ -334,38 +334,39 @@ function ballNode(ball, compact) {
 /** The "Latest" control and, when open, its bubble (AC54 (b)): one open at a time, never clipped. */
 function latestControl(p, col) {
   const name = p.project.name;
-  const isOpen = bubble.open === name;
+  const k = `latest:${name}`; // the control's key, and the open bubble's name in `bubble`
+  const isOpen = bubble.open === k;
   const id = `latest-${enc(name).replace(/[^A-Za-z0-9_-]/g, '_')}`;
   const ctl = h('button', {
-    type: 'button', class: `sb-latest${isOpen ? ' on' : ''}`, key: `latest:${name}`, 'aria-label': 'Latest', 'aria-expanded': isOpen ? 'true' : 'false',
+    type: 'button', class: `sb-latest${isOpen ? ' on' : ''}`, key: k, 'aria-label': 'Latest', 'aria-expanded': isOpen ? 'true' : 'false',
     'aria-controls': isOpen ? id : null,
-    onpointerdown: (e) => { bubble.pointer = e && e.pointerType ? e.pointerType : 'touch'; bubble.pointerFocus = name; },
-    onpointerenter: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(name, true, 'ctl'); },
-    onpointerleave: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(name, false, 'ctl'); },
-    onclick: (e) => bubbleTap(name, e),
+    onpointerdown: (e) => { bubble.pointer = e && e.pointerType ? e.pointerType : 'touch'; bubble.pointerFocus = k; },
+    onpointerenter: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(k, true, 'ctl'); },
+    onpointerleave: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(k, false, 'ctl'); },
+    onclick: (e) => bubbleTap(k, e),
     onkeydown: (e) => {
       if (!e || (e.key !== 'Enter' && e.key !== ' ')) return;
       if (e.preventDefault) e.preventDefault();
-      bubbleOpen(name, 'key');
+      bubbleOpen(k, 'key');
     },
     onfocus: () => {
       // On focus from the keyboard (a pointer's own focus is its tap); not after Escape (AC54).
-      if (bubble.pointerFocus === name) {
+      if (bubble.pointerFocus === k) {
         bubble.pointerFocus = null;
         return;
       }
-      if (bubble.escaped === name) return;
-      bubbleOpen(name, 'key');
+      if (bubble.escaped === k) return;
+      bubbleOpen(k, 'key');
     },
     onblur: () => {
       // Only this control's own pressed pointer is forgotten here: when a tap moves focus from this
       // control to another, the other's pointerdown has already marked the focus that follows as its tap's.
-      if (bubble.pointerFocus === name) bubble.pointerFocus = null;
-      if (bubble.escaped === name) bubble.escaped = null; // focus left: it may open on focus again
+      if (bubble.pointerFocus === k) bubble.pointerFocus = null;
+      if (bubble.escaped === k) bubble.escaped = null; // focus left: it may open on focus again
       setTimeout(() => {
         const a = document.activeElement;
         const inside = a && a.closest && a.closest('[data-bubble]');
-        if (bubble.open === name && bubble.via === 'key' && !inside) {
+        if (bubble.open === k && bubble.via === 'key' && !inside) {
           bubble.close();
           render();
         }
@@ -375,14 +376,55 @@ function latestControl(p, col) {
   const out = [ctl];
   if (isOpen) {
     out.push(h('div', {
-      class: `sb-bubble ${col} ${bubble.place === 'up' ? 'up' : 'down'}`, id, role: 'dialog', 'aria-label': `Latest: ${name}`, key: `bubble:${name}`, 'data-bubble': name,
-      onpointerenter: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(name, true, 'bubble'); },
-      onpointerleave: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(name, false, 'bubble'); },
+      class: `sb-bubble ${col} ${bubble.place === 'up' ? 'up' : 'down'}`, id, role: 'dialog', 'aria-label': `Latest: ${name}`, key: bubbleKey(k), 'data-bubble': k,
+      onpointerenter: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(k, true, 'bubble'); },
+      onpointerleave: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(k, false, 'bubble'); },
     }, h('div', { class: 'sb-bubble-top' }, h('p', { class: 'sb-eyebrow' }, 'Latest'),
-      closeControl(() => { bubble.close(); bubble.escaped = name; render(); focusKey(`latest:${name}`); }, `bubble-close:${name}`)),
+      closeControl(() => { bubble.close(); bubble.escaped = k; render(); focusKey(k); }, `bubble-close:${name}`)),
     h('p', { class: 'sb-bubble-t' }, latestText(p.project, p.model, p.where))));
   }
   return out;
+}
+
+/**
+ * The card's summary (AC54 (a)): its first three lines, in a box that always takes exactly three
+ * lines' height. When the whole summary runs past three lines at the card's width as drawn (the
+ * browser measures it, `measureSummaries`, again on each redraw and when the width changes), the
+ * third line fades into the card's background and the three lines are a button of their own that
+ * opens the whole summary, word for word, in a bubble (the "Latest" bubble's machinery: one open at
+ * a time). The card always holds the whole summary; the box only hides the lines after the third.
+ */
+function summaryBox(name, sum, col) {
+  const k = `sum:${name}`;
+  const over = sum.ok && summaryOver.get(name) === true;
+  const isOpen = over && bubble.open === k;
+  const id = `sumbub-${enc(name).replace(/[^A-Za-z0-9_-]/g, '_')}`;
+  const cls = `sb-sum${sum.ok ? '' : ' none'}`;
+  const text = over
+    ? h('button', {
+      type: 'button', class: cls, key: k, 'aria-label': `Show the whole summary of ${name}`, 'aria-expanded': isOpen ? 'true' : 'false',
+      'aria-controls': isOpen ? id : null,
+      onpointerdown: (e) => { bubble.pointer = e && e.pointerType ? e.pointerType : 'touch'; },
+      onclick: (e) => bubbleTap(k, e),
+      onkeydown: (e) => {
+        if (!e || (e.key !== 'Enter' && e.key !== ' ')) return;
+        if (e.preventDefault) e.preventDefault();
+        if (bubble.open === k) {
+          bubble.close();
+          render();
+          focusKey(k);
+        } else bubbleOpen(k, 'key');
+      },
+    }, sum.text)
+    : h('p', { class: cls }, sum.text);
+  return h('div', { class: 'sb-sumbox', key: `sumbox:${name}` },
+    // Nothing scrolls in the box: where a browser lacks `overflow: clip`, focus scrolling the text is undone.
+    h('div', { class: `sb-sumclip${over ? ' over' : ''}`, key: `sumclip:${name}`, 'data-sum': name, onscroll: (e, el) => { if (el.scrollTop) el.scrollTop = 0; } }, text),
+    isOpen ? h('div', {
+      class: `sb-bubble ${col} ${bubble.place === 'up' ? 'up' : 'down'}`, id, role: 'dialog', 'aria-label': `Summary: ${name}`, key: bubbleKey(k), 'data-bubble': k,
+    }, h('div', { class: 'sb-bubble-top' }, h('p', { class: 'sb-eyebrow' }, 'Summary'),
+      closeControl(() => { bubble.close(); render(); focusKey(k); }, `sumbubble-close:${name}`)),
+    h('p', { class: 'sb-bubble-t' }, sum.text)) : null);
 }
 
 function homeCard(p, seen, col) {
@@ -390,13 +432,15 @@ function homeCard(p, seen, col) {
   const name = project.name;
   const newCount = q.rows.filter((r) => seen.isNew(r.raisedAt)).length;
   const sum = summaryView(project, box, p.snap);
+  // The card's link holds its name; the whole card opens the Project screen through it (its ::after),
+  // except the controls that sit above it: "Latest", the summary's button, "Why" and the pill.
   return h('article', { class: `sb-pc ${col}`, key: `card:${name}` },
     h('div', { class: 'sb-pc-top' }, h('span', { class: 'sb-app' }, icon('project')),
       newCount ? h('span', { class: 'sb-new' }, `${newCount} new`) : null,
       latestControl(p, col)),
-    h('a', { class: 'sb-pc-main', href: go('p', name) },
-      h('h2', { class: 'sb-nm' }, name),
-      h('p', { class: `sb-sum${sum.ok ? '' : ' none'}` }, sum.text),
+    h('a', { class: 'sb-pc-main', href: go('p', name) }, h('h2', { class: 'sb-nm' }, name)),
+    summaryBox(name, sum, col),
+    h('div', { class: 'sb-pc-rest' },
       checklist(pv),
       ballNode(ball, true),
       readLine(box)),
@@ -1303,12 +1347,15 @@ function focusPending() {
   }
 }
 
-/** The "Latest" bubble on Home (AC54): which card's is open, and how it was opened. */
+/**
+ * Home's bubbles (AC54): the "Latest" bubble and the whole-summary bubble. One is open at a time:
+ * `open` names it by its control's key (`latest:<name>` or `sum:<name>`).
+ */
 const bubble = {
-  open: null, // the project's name
+  open: null, // the open bubble's control key
   via: null, // 'hover' | 'tap' | 'key'
   place: null, // 'down' | 'up': below or above, to fit the viewport
-  escaped: null, // a bubble closed with Escape stays closed while focus stays on its control
+  escaped: null, // a "Latest" bubble closed with Escape stays closed while focus stays on its control
   pointer: null,
   pointerFocus: null, // a pointer pressed on this control: the focus that follows is its tap's, not the keyboard's
   returnTo: null, // a bubble closed by a tap outside: its control takes the focus back when the tap's click lands
@@ -1321,17 +1368,20 @@ const bubble = {
   },
 };
 
+/** The bubble element's key for a control's key: `bubble:<name>` for "Latest", `sumbubble:<name>` for the summary. */
+const bubbleKey = (k) => (k.startsWith('sum:') ? `sumbubble:${k.slice(4)}` : `bubble:${k.slice(7)}`);
+
 function focusKey(k) {
   nav.focusNext = k;
   focusPending();
 }
 
-function bubbleOpen(name, via) {
-  if (bubble.open === name) {
+function bubbleOpen(k, via) {
+  if (bubble.open === k) {
     if (via !== 'hover') bubble.via = via;
   } else {
     bubble.close();
-    bubble.open = name;
+    bubble.open = k;
     bubble.via = via;
   }
   bubble.escaped = null;
@@ -1339,33 +1389,36 @@ function bubbleOpen(name, via) {
   placeBubble();
 }
 
-/** A tap on the control: opens it, and a second tap closes it (AC54 (b)). A mouse click on a hovered bubble keeps it. */
-function bubbleTap(name, e) {
+/** A tap on the control: opens it, and a second tap closes it (AC54). A mouse click on a hovered bubble keeps it. */
+function bubbleTap(k, e) {
   const pointer = (e && e.pointerType) || bubble.pointer;
-  if (bubble.pointerFocus === name) bubble.pointerFocus = null; // the tap is done; a later focus is the keyboard's
-  if (bubble.open === name) {
+  if (bubble.pointerFocus === k) bubble.pointerFocus = null; // the tap is done; a later focus is the keyboard's
+  if (bubble.open === k) {
     if (bubble.via === 'hover' && pointer === 'mouse') {
       bubble.via = 'tap';
       return;
     }
     bubble.close();
     render();
+    // The summary's control keeps the focus (a phone's tap may not give a button focus); the
+    // "Latest" control already has it, and focusing it again would reopen it.
+    if (k.startsWith('sum:')) focusKey(k);
     return;
   }
-  bubbleOpen(name, 'tap');
+  bubbleOpen(k, 'tap');
 }
 
 /** With a pointer: open on hover over the control; close once the pointer has left both the control and the bubble. */
-function bubbleHover(name, inside, part) {
+function bubbleHover(k, inside, part) {
   if (inside) {
     bubble.hover[part] = true;
-    if (bubble.open !== name) bubbleOpen(name, 'hover');
+    if (bubble.open !== k) bubbleOpen(k, 'hover');
     return;
   }
-  if (bubble.open !== name) return;
+  if (bubble.open !== k) return;
   bubble.hover[part] = false;
   setTimeout(() => {
-    if (bubble.open === name && bubble.via === 'hover' && !bubble.hover.ctl && !bubble.hover.bubble) {
+    if (bubble.open === k && bubble.via === 'hover' && !bubble.hover.ctl && !bubble.hover.bubble) {
       bubble.close();
       render();
     }
@@ -1373,11 +1426,11 @@ function bubbleHover(name, inside, part) {
 }
 
 function closeBubbleByEscape() {
-  const name = bubble.open;
+  const k = bubble.open;
   bubble.close();
-  bubble.escaped = name;
+  bubble.escaped = k;
   render();
-  focusKey(`latest:${name}`);
+  focusKey(k);
 }
 
 /** Whether a tapped element sits in something that takes focus itself (a link, a control, a field). */
@@ -1400,30 +1453,30 @@ function outsideTap(e) {
   bubble.returnTo = null;
   if (!bubble.open) return;
   const t = e && e.target;
-  const inBubble = t && t.closest && (t.closest('[data-bubble]') || (t.closest('[data-k]') && t.closest('[data-k]').getAttribute('data-k') === `latest:${bubble.open}`));
+  const inBubble = t && t.closest && (t.closest('[data-bubble]') || (t.closest('[data-k]') && t.closest('[data-k]').getAttribute('data-k') === bubble.open));
   if (inBubble) return;
-  const name = bubble.open;
+  const k = bubble.open;
   bubble.close();
-  if (!inFocusable(t)) bubble.returnTo = name;
+  if (!inFocusable(t)) bubble.returnTo = k;
   render();
 }
 
 /** The click that ends a tap outside: the closed bubble's control takes the focus back. */
 function outsideTapEnd() {
-  const name = bubble.returnTo;
+  const k = bubble.returnTo;
   bubble.returnTo = null;
-  if (!name || bubble.open) return;
+  if (!k || bubble.open) return;
   const a = document.activeElement;
   if (a && a !== document.body && inFocusable(a)) return; // the tap gave focus to something of its own
-  bubble.escaped = name;
-  focusKey(`latest:${name}`);
+  bubble.escaped = k;
+  focusKey(k);
 }
 
-/** Below the control, or above it when below would leave the viewport (AC54: wholly inside it at 360 px). */
+/** Below its control, or above it when below would leave the viewport (AC54: wholly inside it at 360 px). */
 function placeBubble() {
   if (!bubble.open || bubble.place) return;
   const view = document.getElementById('view');
-  const el = view ? findKey(view, `bubble:${bubble.open}`) : null;
+  const el = view ? findKey(view, bubbleKey(bubble.open)) : null;
   bubble.place = 'down';
   if (!el || !el.getBoundingClientRect || typeof window.innerHeight !== 'number') return;
   try {
@@ -1435,10 +1488,49 @@ function placeBubble() {
       bubble.place = 'up';
       el.setAttribute('class', el.getAttribute('class').replace(/\bdown\b/, 'up'));
     }
+    // Still not wholly in view: scroll it in, clear of Home's band at the bottom.
     const r2 = el.getBoundingClientRect();
-    if ((r2.top < 0 || r2.bottom > bottom) && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+    if (r2.top < 0 && el.scrollIntoView) el.scrollIntoView({ block: 'start' });
+    else if (r2.bottom > bottom && typeof window.scrollBy === 'function') window.scrollBy(0, Math.min(r2.bottom - bottom + 8, r2.top - 8));
+    else if (r2.bottom > bottom && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
   } catch {
     // placement is a courtesy; the bubble still opens below
+  }
+}
+
+/**
+ * Whether each card's summary runs past three lines (AC54 (a)), as drawn: its box is three lines
+ * high and hides the rest, so the summary runs past three lines when the box's content is taller
+ * than the box. Measured after every redraw and when the width changes; when the answer changes for
+ * a card, the screen is drawn again (before the browser paints). Where nothing can be measured, the
+ * last answer stands (none: the summary shows as it fits).
+ */
+const summaryOver = new Map();
+function measureSummaries() {
+  const view = document.getElementById('view');
+  if (!view) return;
+  let changed = false;
+  eachElement(view, (el) => {
+    const name = el.getAttribute && el.getAttribute('data-sum');
+    if (name == null) return;
+    const [sh, ch] = [el.scrollHeight, el.clientHeight];
+    if (typeof sh !== 'number' || typeof ch !== 'number' || !ch) return;
+    const over = sh > ch + 1;
+    if (summaryOver.get(name) !== over) {
+      summaryOver.set(name, over);
+      changed = true;
+      // A summary that now fits has no control, so its bubble closes.
+      if (!over && bubble.open === `sum:${name}`) bubble.close();
+    }
+  });
+  // A guard: a few redraws in a row from measuring alone, then the answers stand until the next one.
+  measureSummaries.runs = changed ? (measureSummaries.runs || 0) + 1 : 0;
+  if (changed && !measureSummaries.queued && measureSummaries.runs <= 3) {
+    measureSummaries.queued = true;
+    Promise.resolve().then(() => {
+      measureSummaries.queued = false;
+      render();
+    });
   }
 }
 
@@ -1511,6 +1603,7 @@ export function startSandbox(opts = {}) {
     for (const n of [nodes].flat(Infinity)) if (n) fresh.append(n);
     morphChildren(view, fresh);
     fitBranches();
+    measureSummaries();
   };
   render = guardRender(draw, (state) => {
     if (stateEl) stateEl.textContent = state.text;
@@ -1577,7 +1670,10 @@ export function startSandbox(opts = {}) {
     desk.visibilityChanged();
   });
   window.addEventListener('pagehide', () => seen.hidden());
-  window.addEventListener('resize', () => fitBranches());
+  window.addEventListener('resize', () => {
+    fitBranches();
+    measureSummaries(); // a turned phone or a resized window: judged again at the new width (AC54 (a))
+  });
   // The 15-second tick (AC56) changes only the text that depends on the time, in place.
   setInterval(() => { if (isVisible()) tick(view); }, 15_000);
   boot(render, desk);

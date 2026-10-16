@@ -70,3 +70,18 @@ How it is read:
 - 12 (direction line): a light line ties the phases, and the milestones inside each phase, together, with small arrowheads showing which way the work runs. Drawn in the second version running from the start at the top down to Done, the order the phases are listed in; whether the owner meant the list to read from the bottom up is asked in chat.
 - 13 (phase colours): each phase has its own colour. On the Timeline, the line down the left takes the colour of the phase each entry belongs to, and the phase's name stays pinned at the top while its stretch scrolls by. The phase boxes on Status carry the same colour. The name is always in words too, never colour alone.
 - 14 (bullet colours): Technical, Context and Why each have their own colour, on the label and down the bullet's left edge; each keeps its label.
+
+Notes 15 to 18, on mockup version 2, the owner's message verbatim (2026-10-16), which also answers the question put in chat ("Did you mean the Status list should flip so it reads from the bottom up, with the newest at the top like the Timeline? Or is downward fine?"):
+"I was always envisioning phases > milestones > tasks to read bottom up. So discovery would be at the bottom and the final thing done would be at the top. 
+
+But I absolutely love the look right now - only comment the branching timeline should have its own background - it shouldnt just sit on top of grey space.
+
+As for the timeline, context is currently showing what i would consider technical. Context for me is more alligned with what are the elements at play that are driving the why to exist? Almost a conversational recording of what we were discussing that lead to particular rulings?
+
+And the other thing on the timeline - How would planned items show up? In my head scrolling from bottom to top shows you everything that has happened from the begginning all the way to everything that has yet to come to get to the finish line."
+
+How it is read:
+- 15 (bottom up): phases, milestones and tasks read from the bottom up everywhere: Discovery at the bottom, Done at the top; inside a phase, the first milestone at the bottom and the last at the top. The direction line's arrows point up. This replaces the reading of note 12 as drawn in version 2.
+- 16 (background): the branch drawing on Status sits on its own surface, not on the page's grey.
+- 17 (Context): Context is the conversation that led to the change: the question the owner was asked and the answer they chose, quoted from the question file, or a ledger entry's "asked" line and its ruling. "not recorded" where no such record exists. The phase and milestone move into Technical.
+- 18 (planned items): the Timeline runs from the project's start at the bottom, through what is done, to Now, then every planned milestone above Now, each with its "done when" line from the plan and its why line, up to the finish line. The desk opens it at Now. Planned stretches have dashed rail and dots.

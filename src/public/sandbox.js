@@ -919,10 +919,10 @@ function answerBoxes(p, row, v, opened) {
       out.push(h('div', { class: 'sb-sec sb-q', key: `q:${q.n}` },
         h('h3', {}, questions.length > 1 ? `Question ${q.n}` : 'The question'),
         h('p', { class: 'sb-q-t' }, q.text),
-        q.choices.length ? h('div', { class: 'sb-chips', role: 'radiogroup', 'aria-label': questions.length > 1 ? `Question ${q.n}: options` : 'Options' }, q.choices.map((c) => h('button', {
+        q.choices.length ? h('div', { class: `sb-chips${q.choices.some((c) => c.text) ? ' sb-choices' : ''}`, role: 'radiogroup', 'aria-label': questions.length > 1 ? `Question ${q.n}: options` : 'Options' }, q.choices.map((c) => h('button', {
           type: 'button', class: `sb-chip${a.choice === c.value ? ' on' : ''}`, role: 'radio', 'aria-checked': a.choice === c.value ? 'true' : 'false', key: `chip:${q.n}:${c.value}`,
           onclick: () => set(q.n, { choice: c.value }),
-        }, h('strong', {}, c.value), c.text ? ` ${c.text}` : ''))) : null,
+        }, c.text ? choiceFace(c) : h('strong', {}, c.value)))) : null,
         h('p', { class: 'sb-rec' }, q.recommendation ? [h('span', { class: 'sb-tag' }, 'Recommended'), ' ', q.recommendation, h('span', { class: 'sb-muted small' }, ' (labelled, never picked for you)')]
           : h('span', { class: 'sb-muted small' }, NO_RECOMMENDATION)),
         isCard && a.choice ? h('p', { class: 'small' }, h('strong', {}, 'What happens next: '), (v.options.find((o) => o.value === a.choice) || {}).then || NOT_RECORDED) : null,
@@ -935,6 +935,15 @@ function answerBoxes(p, row, v, opened) {
     h('p', { class: 'sb-muted small' }, 'Filled in from your answers above; you can edit it before you commit.'),
     textBox(p, row, target, composed.text, opened)));
   return h('div', { class: 'sb-answers' }, out);
+}
+
+/**
+ * A lettered choice (P-001-answer-choice-spacing): its letter in a column of its own, apart from its
+ * text, and the wrapped lines lined up under the text. The space between them is a real character,
+ * kept out of sight, so the choice reads "C Drop it", never "CDrop it".
+ */
+function choiceFace(c) {
+  return [h('strong', { class: 'sb-choice-l' }, c.value), h('span', { class: 'sb-vh' }, ' '), h('span', { class: 'sb-choice-t' }, c.text)];
 }
 
 /** The owner's own words for one question: a text box kept per item and number (AC53, AC56). */

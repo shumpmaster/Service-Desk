@@ -185,6 +185,80 @@ test('AC53 (note 15), on the page: the numbered question file shows eleven quest
   }
 });
 
+// The owner's note of 16 Oct (decisions/questions/P-001-answer-choice-spacing.md): the answer
+// choices get more room. Each letter is its own element in its own column, apart from its text, and
+// a real space between them, so the choice reads "C Drop it", never "CDrop it". Card chips (option
+// words, no text) keep their own look.
+const LONG = `# Ruling needed: approve S-031, so the false red check on working branches is fixed
+
+WHY: a test.
+OPTIONS:
+  A. Approve and build — the spec is frozen as reviewed (round 3 PASS), the Tools builder writes the test then the three trigger lines, the Reviewer checks it, and you merge.
+  B. Change it first — say what; it goes back to plan review, and the builder waits for the new draft before writing anything.
+  C. Drop it — push runs stay as they are, and each false red on a working branch keeps needing a note saying nothing is wrong.
+RECOMMENDATION: A. The full suite passed on the reviewer's prototype.
+RISK CLASS: R0
+`;
+
+test('AC53 (owner\'s note, 16 Oct): each lettered choice holds its letter as its own element, set apart from its text, and its name has a space between them', async () => {
+  const app = await openSheet({ 'questions/P-001-long-choices.md': LONG }, '#/p/Alpha/queue/q%3AP-001-long-choices');
+  try {
+    const group = byClass(app.view, 'sb-chips')[0];
+    assert.ok(byClass(app.view, 'sb-choices')[0] === group, 'the lettered choices take the stacked, full-width layout');
+    const chips = byClass(group, 'sb-chip');
+    assert.equal(chips.length, 3);
+    const opts = questionQuestions(LONG, 'approve S-031, so the false red check on working branches is fixed').questions[0].choices;
+    chips.forEach((c, i) => {
+      const parts = c.children.filter((e) => e.tag);
+      assert.deepEqual(parts.map((e) => e.attrs.class), ['sb-choice-l', 'sb-vh', 'sb-choice-t'], 'letter, a hidden space, then the text: three elements');
+      assert.equal(parts[0].textContent, opts[i].value, 'the letter alone in its element');
+      assert.equal(parts[1].textContent, ' ', 'a real space, kept out of sight');
+      assert.equal(parts[2].textContent, opts[i].text, 'the words exactly as in the file');
+      assert.equal(c.textContent, `${opts[i].value} ${opts[i].text}`, 'its accessible name: the letter, a space, the text');
+      assert.doesNotMatch(c.textContent, /^[A-Z]\S/, 'never "CDrop it"');
+    });
+    assert.deepEqual(chips.map((c) => c.textContent.slice(0, 2)), ['A ', 'B ', 'C '], 'same letters, same order');
+    assert.match(byClass(app.view, 'sb-rec')[0].textContent, /^Recommended A\. The full suite/, 'the "Recommended" label stays');
+    assert.ok(words(app, 1), 'the own-words box stays');
+    chips[2].click();
+    await app.flush();
+    assert.equal(byClass(app.view, 'sb-chip')[2].attrs['aria-checked'], 'true');
+    assert.match(finalBox(app).value, /^Ruling: C\n/);
+  } finally {
+    app.restore();
+  }
+  // The look, pinned in the stylesheet: the letter's own column with a gap, the text's column for
+  // its wrapped lines, full-width boxes, more padding inside and more space between, 44 px kept.
+  const css = readFileSync(new URL('../../src/public/sandbox.css', import.meta.url), 'utf8');
+  const rule = (sel) => {
+    const m = css.match(new RegExp(`(?:^|\\n)${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} \\{([^}]*)\\}`));
+    assert.ok(m, `a rule for ${sel}`);
+    return m[1];
+  };
+  assert.match(rule('.sb-chips.sb-choices'), /flex-direction: column/);
+  assert.match(rule('.sb-chips.sb-choices'), /gap: 12px/);
+  const chip = rule('.sb-choices .sb-chip');
+  assert.match(chip, /display: grid/);
+  assert.match(chip, /grid-template-columns: auto minmax\(0, 1fr\) auto/);
+  assert.match(chip, /width: 100%/);
+  assert.match(chip, /padding: 12px 16px/);
+  assert.match(rule('.sb-choice-l'), /grid-column: 1/);
+  assert.match(rule('.sb-choice-l'), /margin-right: 12px/);
+  assert.match(rule('.sb-choice-t'), /grid-column: 2/);
+  assert.match(rule('.sb-chip'), /min-height: 44px/);
+});
+
+test('AC53 (owner\'s note, 16 Oct): a card\'s option words keep their chips, with no letter column', async () => {
+  const app = await openSheet({ 'queue/P-001-stop-6.md': fixture('service-desk/queue/P-001-stop-6.md') }, '#/p/Alpha/queue/card%3Aqueue%2FP-001-stop-6.md');
+  try {
+    assert.equal(byClass(app.view, 'sb-choices').length, 0);
+    assert.equal(byClass(app.view, 'sb-choice-l').length, 0);
+    assert.deepEqual(byClass(app.view, 'sb-chip').map((c) => c.textContent), ['re-specify', 'criteria-wrong', 'confirm', 're-scope', 'drop']);
+  } finally {
+    app.restore();
+  }
+});
+
 test('AC53 (note 15), on the page: a file that can\'t be split shows the file whole, its link, one text box and the line saying so', async () => {
   const app = await openSheet({ 'questions/P-009-mixed.md': '# Ruling needed: a mixed file\n\nWHY: x\nOPTIONS:\n  A. one\n  2. two\nRECOMMENDATION: A\n' }, '#/p/Alpha/queue/q%3AP-009-mixed');
   try {

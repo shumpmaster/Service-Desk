@@ -124,3 +124,8 @@ How it is read:
 - 25 (background, ruled): option B. Each phase on Status keeps its own box, with its dots inside it on the left; tapping a phase's name folds the box to one line and back.
 - 26 (Timeline line): the coloured line down the Timeline's left is thinner and lighter.
 - 27 (Context): agreed. Context is what was true or existed that led to the why: a limit found in testing, a fact about the records, a review finding, a check result, a research result, an earlier ruling, and sometimes a note of the owner's. Each fact names its source. The owner's question-and-answer is not Context; the answer is the ruling the sprint carries out. The agents write the Context facts into each sprint's record when they file it, and the desk only shows them; "not recorded" where none exist. This joins the why lines as a records change for the operating model.
+
+The owner's approval of the mockup, verbatim (2026-10-16), after version 6:
+"This is it, approve all of these changes, begin any rework you need to get working on, I will finish out the batch in parallel and respond back with the rest of it"
+
+How it is read: mockup version 6 (docs/design/mockups/status-and-timeline.html) is approved as the design for notes 1 to 27, including the proposed status icons of note 23 as drawn. Spec, plan review, build and build review start now on notes 1 to 27. The batch stays open: the owner's further notes join it as they arrive.

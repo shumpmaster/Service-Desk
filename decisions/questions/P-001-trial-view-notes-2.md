@@ -175,3 +175,10 @@ How it is read:
 - Planned as their own work after this batch: (a) one box on the desk to ask for something, give an instruction or note a new idea, written into that project's records; (b) a visual indicator of how long the agents believe they will be working on each task and sprint, from their own recorded estimates, never a predetermined or assigned date.
 - Scheduled as their own work after this batch: every ask of the owner filed in its project, with the model changes behind it (Chief of Staff sessions recorded, milestones marked "reached", S-032); M3A redesigned around milestones, mockup first; upkeep fixes (warning before the read access expires, criteria for M3B, adding projects beyond five).
 - Not taken: while-you-were-away, usage and limits, the launch date check.
+
+Questions on the audit-additions mockup (docs/design/mockups/audit-additions.html), and the owner's answers (2026-10-16):
+1. "Does the audit-additions mockup look right, with the re-picked Context and Why colours?" Answer: "Approve as drawn (Recommended)" (option text: "Notes 32 to 35 and the dusty rose and muted violet colours go into the spec as shown."). The other option offered: "Changes needed".
+2. "How many days with no movement before a project's tile shows the stalled signal?" Answer: "3 days (Recommended)" (option text: "Long enough to skip a quiet weekend, short enough to catch a stop within the week."). The other options offered: "5 days", "7 days".
+3. "One older colour pair, not from this batch, is close in dark mode: the \"blocked\" amber and the gold. Fix it in the same pass?" Answer: "Yes, fix it too (Recommended)" (option text: "Shift the dark-mode gold slightly so the two can't be confused; light mode stays as is."). The other option offered: "Leave it".
+
+How it is read: notes 32 to 35 go into the spec as drawn; the stalled signal shows after 3 days with no movement and nothing waiting on the owner; Context is dusty rose (light #ad606a, dark #bc7e8d) and Why muted violet (light #756592, dark #c7adcb); dark-mode gold moves from #d4ae4f to #c9b04f so it stands apart from the dark "blocked" amber (light mode unchanged).

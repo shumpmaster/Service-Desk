@@ -298,6 +298,9 @@ export function neededReads(project, tree, records, now, ctx = {}) {
           opt(path);
           continue;
         }
+        // AC66: a ruling's "Done today" link reads the Milestone: line of its question, when the tree still holds it.
+        const qp = `questions/${questionAnswerName(path)}.md`;
+        if (tree.has(qp)) opt(qp);
         if (isOwnerRuling(path, rec) && now - Date.parse(history.get(path).oldest) > 36 * 3600e3) break;
       }
     }

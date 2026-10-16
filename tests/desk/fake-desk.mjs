@@ -57,7 +57,9 @@ export function fakeServer(repos, config, clock) {
       const pullsRaw = JSON.stringify(r.pulls);
       const runs = r.runs.map((x, i) => ({ path: x.path || `.github/workflows/${x.name}.yml`, name: x.name || x.path,
         event: x.event || 'push', status: x.status, conclusion: x.conclusion, run_number: x.run_number || i + 1,
-        head_sha: head, html_url: `https://github.com/${project.repo}/actions/runs/${i + 1}` }));
+        head_sha: x.headSha || head, html_url: `https://github.com/${project.repo}/actions/runs/${i + 1}`,
+        // AC72: a run's title (GitHub's `display_title`), when the fixture gives one.
+        ...(x.title != null ? { display_title: x.title } : {}) }));
       const runLists = ['push', 'workflow_dispatch'].map((ev) => {
         const url = u.runs(head, ev);
         const list = runs.filter((x) => x.event === ev);

@@ -786,7 +786,7 @@ function statusKey(key) {
 function beganNode(b) {
   if (b.missing) return h('p', { class: 'sb-began gap', key: `began:${b.k}` }, b.words);
   return h('div', { class: 'sb-began', key: `began:${b.k}` }, h('p', { class: 'sb-began-h' }, b.head),
-    b.quote ? h('p', { class: 'sb-q' }, `"${b.quote}"`) : b.plain ? h('p', { class: 'sb-began-p' }, b.plain, ' ', code(b.code)) : h('p', { class: 'sb-muted' }, b.words),
+    b.quote ? h('p', { class: 'sb-quote' }, `"${b.quote}"`) : b.plain ? h('p', { class: 'sb-began-p' }, b.plain, ' ', code(b.code)) : h('p', { class: 'sb-muted' }, b.words),
     h('p', { class: 'sb-src' }, b.source.href ? ext(b.source.href, b.source.words) : b.source.words));
 }
 
@@ -1078,7 +1078,7 @@ function queueRow(p, row, s) {
         : u.missing ? h('p', { class: 'sb-unb-l gap' }, 'Unblocks: milestone not recorded')
           : u.milestones.map((m) => [h('p', { class: 'sb-unb-l' }, h('span', { class: 'sb-lbl' }, 'Unblocks'), ' ', m.name ? h('b', {}, m.name) : null, ' ', code(m.code),
             u.byPr ? h('span', { class: 'sb-meta' }, ' · named by its pull request, not yet in the plan') : null),
-          m.why ? h('p', { class: 'sb-wl' }, h('span', { class: 'sb-lbl' }, 'Why'), ' ', h('span', { class: 'sb-q' }, m.why.text), h('span', { class: 'sb-src' }, m.why.source))
+          m.why ? h('p', { class: 'sb-wl' }, h('span', { class: 'sb-lbl' }, 'Why'), ' ', h('span', { class: 'sb-quote' }, m.why.text), h('span', { class: 'sb-src' }, m.why.source))
             : h('p', { class: 'sb-wl gap' }, h('span', { class: 'sb-lbl' }, 'Why'), ' not recorded yet · for the agents to add')]),
       foldButton(name, ck, false, { class: 'sb-fold ctx' }, 'Context · the facts behind this ask'),
       open ? (u.context ? h('ul', { class: 'sb-facts', key: `facts:${row.key}` }, u.context.map((c) => h('li', {}, c.fact,
@@ -1396,7 +1396,7 @@ function sprintNode(s) {
   const ctx = s.context
     ? s.context.map((c) => h('span', { class: 'sb-fact' }, c.fact, c.exception ? null : h('span', { class: 'sb-src' }, c.source || 'source not recorded')))
     : h('span', { class: 'gap' }, 'not recorded');
-  const why = s.why ? s.why.map((x) => h('span', { class: 'sb-q sb-para' }, x)) : h('span', { class: 'gap' }, 'not recorded');
+  const why = s.why ? s.why.map((x) => h('span', { class: 'sb-quote sb-para' }, x)) : h('span', { class: 'gap' }, 'not recorded');
   return h('div', { class: 'sb-task', key: `sprint:${s.key}`, 'data-sprint': s.id },
     h('div', { class: 'sb-ehead' }, h('span', { class: 'sb-date' }, s.date), ' ', code(s.code), h('span', { class: 'sb-marks' }, s.marks.map(markNode))),
     h('p', { class: 'sb-etitle' }, s.title), s.none ? h('p', { class: 'sb-meta' }, `no milestone: ${s.none}`) : null,
@@ -1419,7 +1419,7 @@ function mileNode(p, x) {
     ic(x.icon, 'sb-mdot'),
     h('p', { class: 'sb-mhead' }, h('span', { class: 'sb-mtitle' }, x.name), ' ', code(x.code), ' ', h('span', { class: `sb-mst${x.icon === 'next' ? ' now' : ''}` }, x.words)),
     x.doneWhen ? h('p', { class: 'sb-dw' }, h('span', { class: 'sb-lbl' }, 'Done when'), ' ', x.doneWhen) : null,
-    x.why ? h('p', { class: 'sb-wl' }, h('span', { class: 'sb-lbl' }, 'Why'), ' ', h('span', { class: 'sb-q' }, x.why.text), h('span', { class: 'sb-src' }, x.why.source))
+    x.why ? h('p', { class: 'sb-wl' }, h('span', { class: 'sb-lbl' }, 'Why'), ' ', h('span', { class: 'sb-quote' }, x.why.text), h('span', { class: 'sb-src' }, x.why.source))
       : h('p', { class: 'sb-wl gap' }, h('span', { class: 'sb-lbl' }, 'Why'), ' not recorded yet · for the agents to add'),
     x.sprints.length ? foldButton(name, fk, false, { class: 'sb-fold', 'data-sprints': x.key }, x.fold) : h('p', { class: 'sb-meta' }, x.fold),
     x.sprints.length && open ? h('div', { class: 'sb-tasks', key: `tasks:${x.key}` }, x.sprints.map(sprintNode)) : null,

@@ -78,7 +78,7 @@ html.sb p { margin: 0; }
 .sb-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .sb-screen { display: grid; gap: var(--s3); padding-bottom: var(--s4); }
 .sb-meta { font: var(--t-meta); color: var(--muted); }
-.sb-q { font: var(--t-quote); }
+.sb-q, .sb-quote { font: var(--t-quote); } /* quoted record text (AC62); .sb-quote never takes the owner's coral (AC69) */
 .sb-src { display: block; font: var(--t-meta); color: var(--muted); }
 .sb-lbl { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--muted); }
 /* AC69: a gap the agents fill reads in slate, saying who fills it; coral (--you) is only for what waits on the owner. */
@@ -394,7 +394,7 @@ p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 .sb-unb-l { font: var(--t-meta); }
 .sb-unb-l b { font: var(--t-meta); color: var(--ink); }
 .sb-unb-t { font: var(--t-meta); }
-.sb-facts { list-style: none; margin: 0; padding: 0 0 0 var(--s2); display: grid; gap: var(--s1); border-left: 3px solid var(--b-ctx); font: var(--t-body); }
+.sb-facts { list-style: none; margin: 0; padding: 0 0 0 var(--s2); display: grid; gap: var(--s1); border-left: 3px solid var(--line); font: var(--t-body); }
 .sb-donetoday ul { margin-top: var(--s2); }
 .sb-donetoday > summary .sb-ic { margin-right: var(--s1); }
 .sb-safe { display: grid; gap: var(--s1); margin-top: var(--s2); }

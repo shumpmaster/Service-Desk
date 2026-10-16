@@ -230,7 +230,7 @@ test('AC55 (draft 4, N3): a clipped proxy ruling\'s bubble holds line 1 only, wo
   }
 });
 
-test('AC55 (draft 4, B1): while the whole-line bubble is open, a poll bringing a new ruling whose time is unread leaves the line and the bubble as they were, scrolled where they were, with "A newer action is arriving. Close this to see it."; once closed, the line reads "not available yet", then the new ruling', async () => {
+test('AC55 (draft 4, B1): while the whole-line bubble is open, a poll bringing a new ruling whose time is unread leaves the line and the bubble as they were, scrolled where they were, with "This has changed since you opened it. Close this to see the latest."; once closed, the line reads "not available yet", then the new ruling', async () => {
   const setup = longRuling();
   const app = await loadSandbox({ ...setup, hash: '#/p/Alpha', now: NOW });
   try {
@@ -265,11 +265,14 @@ test('AC55 (draft 4, B1): while the whole-line bubble is open, a poll bringing a
     assert.equal(findKeyed(app, 'line:last'), ctl, 'on the same control');
     const note = byClass(bub, 'sb-bubble-note')[0];
     assert.ok(note, 'it says so');
-    assert.equal(note.textContent, 'A newer action is arriving. Close this to see it.');
+    assert.equal(note.textContent, 'This has changed since you opened it. Close this to see the latest.');
     assert.doesNotMatch(app.text(), /not available yet/, 'the line stays as it was while the bubble is open');
     await app.tap(byClass(bub, 'sb-close')[0]);
     assert.equal(findKeyed(app, 'linebubble:last'), null, 'closed by the owner');
     assert.match(byClass(app.view, 'sb-last')[0].textContent, /^Your last action: not available yet/, 'then the line shows its new state');
+    assert.equal(findKeyed(app, 'line:last'), null, 'its control has gone with the old line');
+    assert.equal(document.activeElement, findKeyed(app, 'last-action'), 'so focus goes to the "Your last action" line (draft 5)');
+    assert.equal(findKeyed(app, 'last-action').attrs.tabindex, '-1', 'which can take it');
     holdHistory = false;
     app.server.call = call;
     await app.advance(POLL_MS);
@@ -277,6 +280,66 @@ test('AC55 (draft 4, B1): while the whole-line bubble is open, a poll bringing a
     lineLines(app, 'last', 1); // the browser's measure of the new, short line
     await app.resize(360);
     assert.match(byClass(app.view, 'sb-last')[0].textContent, /^Your last action: C, the newest · 09:59 P-001-newer/, 'and the new ruling once its time arrives');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC55 (build review 2, N-R2-2): after a hold, closed and opened again, the bubble shows the new line, with no notice', async () => {
+  const setup = longRuling();
+  const app = await loadSandbox({ ...setup, hash: '#/p/Alpha', now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    lineLines(app, 'last', 47);
+    await app.resize(360);
+    await app.tap(findKeyed(app, 'line:last'));
+    // A newer long ruling arrives with its time: the line would change under the open bubble.
+    const NEWER = `Ruling: ${'a newer long ruling, '.repeat(40)}end`;
+    setup.repos.Alpha.commit({ 'decisions/questions/P-001-newer-long.md': `${NEWER}\n` });
+    setup.repos.Alpha.history['decisions/questions/P-001-newer-long.md'] = [{ commit: { committer: { date: iso(NOW - 60e3) } } }];
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    const held = findKeyed(app, 'linebubble:last');
+    assert.equal(byClass(held, 'sb-bubble-t')[0].textContent, DESIGN_LAB_WORDS, 'held: the old words');
+    assert.equal(byClass(held, 'sb-bubble-note')[0].textContent, 'This has changed since you opened it. Close this to see the latest.');
+    await app.key('Escape');
+    assert.match(byClass(app.view, 'sb-last')[0].textContent, /^Your last action: a newer long ruling/, 'closed: the new line');
+    lineLines(app, 'last', 20);
+    await app.resize(414);
+    await app.resize(360);
+    const ctl = findKeyed(app, 'line:last');
+    assert.equal(ctl.attrs['aria-label'], 'Show the whole of P-001-newer-long');
+    await app.tap(ctl);
+    const again = findKeyed(app, 'linebubble:last');
+    assert.equal(byClass(again, 'sb-bubble-t')[0].textContent, NEWER.replace(/^Ruling: /, ''), 'opened again: the new line, not the held one');
+    assert.equal(byClass(again, 'sb-bubble-note').length, 0, 'and no notice');
+    await app.advance(POLL_MS);
+    assert.equal(findKeyed(app, 'linebubble:last'), again, 'a refresh with nothing changed: no notice');
+    assert.equal(byClass(again, 'sb-bubble-note').length, 0);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC55 (build review 2, N-R2-3): a card answer keeps the one-line form "Your last action: <words> · <time>" then its code', async () => {
+  const setup = twoProjects();
+  const log = `${setup.repos.Alpha.files['dispatch-log/2026-10.jsonl']}${JSON.stringify({ item: 'P-002', trigger: 'decision', gate: 'criteria', card: 1, word: 'proceed', record: 'decisions/P-002/criteria-1.md', time: iso(NOW - 20 * 60e3) })}\n`;
+  setup.repos.Alpha.commit({ 'dispatch-log/2026-10.jsonl': log, 'decisions/P-002/criteria-1.md': 'Decision: proceed\n' });
+  const app = await loadSandbox({ ...setup, hash: '#/p/Alpha', now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    const line = byClass(byClass(app.view, 'sb-last')[0], 'sb-last-t')[0];
+    assert.equal(line.tag, 'p', 'one paragraph');
+    assert.equal(line.textContent, 'Your last action: P-002: you answered criteria-1 with proceed · 09:40 P-002 criteria-1');
+    const sep = byClass(line, 'sb-sep')[0];
+    const when = byClass(line, 'sb-last-when')[0];
+    assert.ok(sep && sep.parent === line && when.parent === line, 'the " · ", the time and the code sit in the same line as the words');
+    assert.equal(byClass(line, 'sb-line-m').length + byClass(line, 'sb-lineclip').length, 0, 'never moved to a line of its own, never clipped');
+    const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
+    assert.doesNotMatch(css, /\.sb-sep \{[^}]*display: none/, 'the separator is never hidden');
+    assert.doesNotMatch(css, /\.sb-last-when \{[^}]*display: block/, 'nor the time put on its own line');
   } finally {
     app.restore();
   }

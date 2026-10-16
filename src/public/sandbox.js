@@ -666,7 +666,7 @@ function lastActionNode(p) {
   let notice = null;
   if (bubble.open === 'line:last' && heldLast && heldLast.name === name) {
     la = heldLast.la;
-    if (laSig(fresh) !== laSig(la)) notice = NEWER_ARRIVING;
+    if (laSig(fresh) !== laSig(la)) notice = HELD_NOTICE;
   } else if (bubble.open === 'line:last' && fresh.state === 'ok') heldLast = { name, la: fresh };
   else heldLast = null;
   const lead = h('span', { class: 'sb-last-l' }, 'Your last action: ');
@@ -680,12 +680,14 @@ function lastActionNode(p) {
       ? h('div', { class: 'sb-last-t' }, lineBox('last', { words: la.action.words, recCode: la.code, title: 'Your last action', lead, mark: proxy ? ' (proxy)' : null, after, notice }))
       : h('p', { class: 'sb-last-t' }, lead, h('span', { class: 'sb-line-w' }, la.words), after(true));
   }
-  return h('div', { class: 'sb-last', key: 'last-action' }, line,
+  // tabindex -1: where focus goes when a held bubble closes and its control has gone (AC56, draft 5).
+  return h('div', { class: 'sb-last', key: 'last-action', tabindex: '-1' }, line,
     h('details', { class: 'sb-why', key: `last-why:${name}` }, h('summary', {}, 'Your merges?'), h('p', { class: 'small' }, `Not in this line: ${la.merges} (the desk reads only open pull requests).`)));
 }
 /** What "Your last action" shows, as one string, to tell whether a refresh would change it. */
 const laSig = (la) => `${la.state}|${la.text}|${la.code || ''}`;
-const NEWER_ARRIVING = 'A newer action is arriving. Close this to see it.';
+/** The one notice of a held whole-line bubble (AC55, draft 6): its line or row changed under it. */
+const HELD_NOTICE = 'This has changed since you opened it. Close this to see the latest.';
 let heldLast = null; // { name, la }: the line as it was when its bubble opened
 
 // ---------------------------------------------------------------------------
@@ -884,12 +886,27 @@ function renderQueue(p, key) {
     return h('section', { class: `sb-group g-${g.key}`, key: `group:${g.key}` }, head, h('ul', { class: 'sb-qlist' }, g.items.map((r) => queueRow(p, r, s))));
   })));
   // "Done today" (AC52, note 10): what was ruled, in words, with its code after.
-  const done = doneToday(project, p.model, p.snap, new Date(Date.now()), TZ, p.j);
+  // While a row's whole-line bubble is open, a refresh leaves the fold as it was (AC55's hold, for
+  // "Done today": draft 5), the day turning at midnight included; the bubble says so when it changed.
+  const freshDone = doneToday(project, p.model, p.snap, new Date(Date.now()), TZ, p.j);
+  let done = freshDone;
+  let notice = null;
+  const rowOpen = bubble.open && bubble.open.startsWith('line:done:');
+  if (rowOpen && heldDone && heldDone.name === name) {
+    done = heldDone.done;
+    // The notice is the open row's: it says so when a refresh would remove or change that row.
+    const openRow = (rows) => rows.find((d) => `line:done:${d.code}` === bubble.open);
+    const was = openRow(done);
+    const is = openRow(freshDone);
+    if (!was || !is || doneSig([was]) !== doneSig([is])) notice = HELD_NOTICE;
+  } else if (rowOpen) heldDone = { name, done: freshDone };
+  else heldDone = null;
   // Opening the fold lays its rows out: a ruling's line is judged against three lines then (AC52).
-  body.push(h('details', { class: 'sb-card sb-donetoday', key: 'done-today', ontoggle: () => measureClips() }, h('summary', {}, `Done today (${done.length + s.left.length})`),
+  body.push(h('details', { class: 'sb-card sb-donetoday', key: 'done-today', ontoggle: () => measureClips() }, h('summary', { key: 'done-today-h' }, `Done today (${done.length + s.left.length})`),
     done.length || s.left.length ? h('ul', { class: 'sb-qlist sb-done' }, done.map((d) => h('li', { class: 'sb-done-r', key: `done:${d.kind}:${d.code}` },
       d.clip
         ? lineBox(`done:${d.code}`, { words: d.line, recCode: d.code, title: 'Done today', wcls: 'sb-done-w', mark: d.proxy ? ' (proxy)' : null,
+          notice: bubble.open === `line:done:${d.code}` ? notice : null,
           after: () => [' ', d.link ? ext(d.link, d.code, 'code') : code(d.code), ' ', h('span', { class: 'sb-muted small' }, d.words)] })
         : [h('span', { class: 'sb-done-w' }, d.text), ' ', d.link ? ext(d.link, d.code, 'code') : code(d.code), ' ', h('span', { class: 'sb-muted small' }, d.words)])),
     s.left.map((x) => h('li', { class: 'sb-done-r' }, h('span', { class: 'sb-done-w' }, x.title), ' ', code(x.code), ' ', h('span', { class: 'sb-muted small' }, 'no longer open, time not recorded'))))
@@ -898,6 +915,10 @@ function renderQueue(p, key) {
   if (key != null) out.push(sheet(p, key));
   return out;
 }
+
+/** What "Done today" rows show, as one string, to tell whether a refresh would change them. */
+const doneSig = (rows) => rows.map((d) => `${d.kind}|${d.code}|${d.text}|${d.at}`).join('\n');
+let heldDone = null; // { name, done }: the fold's rows as they were when a row's bubble opened
 
 function trackerNode(steps) {
   return h('ol', { class: 'sb-tracker' }, steps.map((st) => h('li', { class: st.done ? 'done' : '' }, circle(st.done ? 'tick' : 'empty'), st.words)));
@@ -1420,7 +1441,10 @@ function focusPending() {
   nav.focusNext = null;
   if (!k) return;
   const view = document.getElementById('view');
-  const el = view ? findKey(view, k) : null;
+  let el = view ? findKey(view, k) : null;
+  // A held whole-line bubble closed, its control gone with the old line or row: focus goes to the
+  // line or fold heading it belonged to (AC56, draft 5).
+  if (!el && view && k.startsWith('line:')) el = findKey(view, k === 'line:last' ? 'last-action' : 'done-today-h');
   if (el && el.focus) {
     try {
       el.focus();
@@ -1667,7 +1691,13 @@ function measureClips() {
     measureClips.queued = true;
     Promise.resolve().then(() => {
       measureClips.queued = false;
+      const a = document.activeElement;
+      const ak = a && a.getAttribute ? a.getAttribute('data-k') : null;
       render();
+      // A line that now fits has no control: if that control had the focus (a held bubble just
+      // closed onto a new, shorter line), focus goes to the line or fold heading (AC56, draft 5).
+      const view = document.getElementById('view');
+      if (ak && ak.startsWith('line:') && view && !findKey(view, ak)) focusKey(ak);
     });
   }
 }

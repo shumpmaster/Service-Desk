@@ -4,8 +4,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { POLL_MS } from '../../src/lib/scheduler.js';
-import { byClass, findAll } from './sandbox-helpers.mjs';
-import { twoProjects, opened, v3, fullRepo, longRuling, lineLines } from './sandbox-fixtures.mjs';
+import { byClass, findAll, loadSandbox } from './sandbox-helpers.mjs';
+import { NOW, DESIGN_LAB_PATH, twoProjects, opened, v3, fullRepo, longRuling, lineLines } from './sandbox-fixtures.mjs';
 import { repo } from './fake-desk.mjs';
 import { j11Files } from './sandbox-helpers.mjs';
 import { readFileSync } from 'node:fs';
@@ -225,7 +225,7 @@ test('AC56 refresh, Status (step 2b, 2026-10-16): "Your last action"\'s whole-li
   }
 });
 
-test('AC56 refresh, Status (step 2b, draft 4): with that bubble open and scrolled part way, a poll bringing a new ruling whose time is still unread leaves it open, unchanged and scrolled where it was, saying "A newer action is arriving. Close this to see it."; closed by the owner, the line reads "not available yet", then the new ruling once its time arrives', async () => {
+test('AC56 refresh, Status (step 2b, draft 4): with that bubble open and scrolled part way, a poll bringing a new ruling whose time is still unread leaves it open, unchanged and scrolled where it was, saying "This has changed since you opened it. Close this to see the latest."; closed by the owner, the line reads "not available yet", then the new ruling once its time arrives', async () => {
   const { app, setup } = await longLine('#/p/Alpha', 'last');
   try {
     const ctl = keyed(app, 'line:last');
@@ -245,12 +245,14 @@ test('AC56 refresh, Status (step 2b, draft 4): with that bubble open and scrolle
     assert.equal(keyed(app, 'linebubble:last'), bub, 'the same bubble, still open');
     assert.equal(bub.scrollTop, 300, 'at the same scroll position');
     assert.equal(byClass(bub, 'sb-bubble-t')[0].textContent, words, 'unchanged');
-    assert.equal(byClass(bub, 'sb-bubble-note')[0].textContent, 'A newer action is arriving. Close this to see it.');
+    assert.equal(byClass(bub, 'sb-bubble-note')[0].textContent, 'This has changed since you opened it. Close this to see the latest.');
     assert.equal(keyed(app, 'line:last'), ctl);
     assert.deepEqual(app.scrolls, []);
     await app.key('Escape');
     assert.equal(keyed(app, 'linebubble:last'), null, 'closed only by the owner');
     assert.match(byClass(app.view, 'sb-last')[0].textContent, /^Your last action: not available yet/);
+    assert.equal(keyed(app, 'line:last'), null, 'its control gone');
+    assert.equal(document.activeElement, keyed(app, 'last-action'), 'focus on the "Your last action" line (draft 5)');
     app.server.call = call;
     await app.advance(POLL_MS); // its history read arrives
     await app.advance(POLL_MS);
@@ -280,6 +282,122 @@ test('AC56 refresh, Queue (step 3b, 2026-10-16): "Done today" opened, with a rul
     assert.equal(keyed(app, 'line:done:P-001-design-lab-open'), ctl);
     assert.equal(ctl.attrs['aria-expanded'], 'true');
     assert.deepEqual(app.scrolls, []);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC56 close (draft 5): a held "Your last action" bubble closed onto a new, short ruling: the control goes once the line is measured, and focus goes to the "Your last action" line', async () => {
+  const { app, setup } = await longLine('#/p/Alpha', 'last');
+  try {
+    await app.tap(keyed(app, 'line:last'));
+    setup.repos.Alpha.commit({ 'decisions/questions/Alpha-short-newest.md': 'Ruling: a later short one\n' });
+    setup.repos.Alpha.history['decisions/questions/Alpha-short-newest.md'] = [{ commit: { committer: { date: new Date(app.now).toISOString() } } }];
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    assert.ok(byClass(keyed(app, 'linebubble:last'), 'sb-bubble-note').length, 'held, with the notice');
+    await app.key('Escape');
+    lineLines(app, 'last', 1); // the browser measures the new line: one line
+    await app.resize(360);
+    assert.match(byClass(app.view, 'sb-last')[0].textContent, /^Your last action: a later short one · /);
+    assert.equal(keyed(app, 'line:last'), null, 'no control for a short line');
+    assert.equal(document.activeElement, keyed(app, 'last-action'), 'focus on the "Your last action" line, not lost');
+  } finally {
+    app.restore();
+  }
+});
+
+for (const how of ['Close', 'Escape', 'outside', 'second tap']) {
+  test(`AC56 refresh, Queue (step 3b, draft 5): "Done today" open with a ruling row's bubble open and scrolled part way, the clock run past midnight in ownerTimeZone and a poll that drops the row: the bubble stays, unchanged, with the notice; closed (${how}), the fold shows its new state and focus is on its header`, async () => {
+    const setup = longRuling();
+    // Asia/Tokyo: NOW (15:00Z) is midnight there; the rulings were filed at 23:50 and 23:30 the day before.
+    setup.config = { ...setup.config, ownerTimeZone: 'Asia/Tokyo' };
+    const app = await loadSandbox({ ...setup, hash: '#/p/Alpha/queue', now: NOW - 3 * 60e3 });
+    try {
+      await app.advance(1000);
+      await app.advance(POLL_MS);
+      const fold = keyed(app, 'done-today');
+      fold.setAttribute('open', '');
+      lineLines(app, 'done:P-001-design-lab-open', 47);
+      await app.resize(360);
+      assert.match(keyed(app, 'done-today-h').textContent, /^Done today \(2\)$/, 'before midnight: two rulings today');
+      const ctl = keyed(app, 'line:done:P-001-design-lab-open');
+      await app.tap(ctl);
+      const bub = keyed(app, 'linebubble:done:P-001-design-lab-open');
+      assert.ok(bub);
+      bub.scrollTop = 300;
+      const words = byClass(bub, 'sb-bubble-t')[0].textContent;
+      app.scrolls.length = 0;
+      await app.advance(3 * POLL_MS); // past midnight in Tokyo, with the polls that follow
+      await app.tick();
+      app.module.refresh();
+      await app.flush();
+      assert.ok(Date.now() > NOW, 'the clock is past midnight');
+      assert.equal(keyed(app, 'linebubble:done:P-001-design-lab-open'), bub, 'the same bubble, still open');
+      assert.equal(bub.scrollTop, 300, 'at the same scroll position');
+      assert.equal(byClass(bub, 'sb-bubble-t')[0].textContent, words, 'unchanged');
+      assert.equal(byClass(bub, 'sb-bubble-note')[0].textContent, 'This has changed since you opened it. Close this to see the latest.');
+      assert.ok('open' in keyed(app, 'done-today').attrs, 'the fold stays open');
+      assert.deepEqual(app.scrolls, []);
+      if (how === 'Close') await app.tap(byClass(bub, 'sb-close')[0]);
+      else if (how === 'Escape') await app.key('Escape');
+      else if (how === 'outside') await app.tap(app.view);
+      else await app.tap(keyed(app, 'line:done:P-001-design-lab-open'));
+      assert.equal(keyed(app, 'linebubble:done:P-001-design-lab-open'), null, `closed by the owner (${how})`);
+      assert.equal(keyed(app, 'done-today-h').textContent, 'Done today (0)', 'the fold shows its new state: the rulings were yesterday');
+      assert.equal(keyed(app, 'line:done:P-001-design-lab-open'), null, 'the row and its control are gone');
+      assert.equal(document.activeElement, keyed(app, 'done-today-h'), 'focus on "Done today"\'s header');
+    } finally {
+      app.restore();
+    }
+  });
+}
+
+test('AC56 refresh, Queue (step 3b, draft 5): a "Done today" row\'s bubble open: a new row today holds the fold as it was, with no notice (that row did not change); a change to that row adds the notice; closed and opened again, the bubble and fold show the latest, with no notice', async () => {
+  const setup = longRuling();
+  const app = await loadSandbox({ ...setup, hash: '#/p/Alpha/queue', now: NOW });
+  const ID = 'done:P-001-design-lab-open';
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    keyed(app, 'done-today').setAttribute('open', '');
+    lineLines(app, ID, 47);
+    await app.resize(360);
+    assert.equal(keyed(app, 'done-today-h').textContent, 'Done today (2)');
+    await app.tap(keyed(app, `line:${ID}`));
+    const bub = keyed(app, `linebubble:${ID}`);
+    const words = byClass(bub, 'sb-bubble-t')[0].textContent;
+    // Another ruling filed today: the open row itself is unchanged.
+    setup.repos.Alpha.commit({ 'decisions/questions/P-001-later.md': 'Ruling: C, a later one\n' });
+    setup.repos.Alpha.history['decisions/questions/P-001-later.md'] = [{ commit: { committer: { date: new Date(app.now).toISOString() } } }];
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    assert.equal(keyed(app, `linebubble:${ID}`), bub, 'the same bubble, still open');
+    assert.equal(keyed(app, 'done-today-h').textContent, 'Done today (2)', 'the fold held as it was: nothing moves under the open bubble');
+    assert.equal(byClass(bub, 'sb-bubble-note').length, 0, 'no notice: its own row has not changed');
+    // Now the open row's own record changes.
+    const CHANGED = `Ruling: ${'a reworded design-lab ruling, '.repeat(40)}end`;
+    setup.repos.Alpha.commit({ [DESIGN_LAB_PATH]: `${CHANGED}\n` });
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    assert.equal(keyed(app, `linebubble:${ID}`), bub, 'still the same bubble');
+    assert.equal(byClass(bub, 'sb-bubble-t')[0].textContent, words, 'unchanged');
+    assert.equal(byClass(bub, 'sb-bubble-note')[0].textContent, 'This has changed since you opened it. Close this to see the latest.');
+    await app.key('Escape');
+    assert.equal(keyed(app, `linebubble:${ID}`), null, 'closed by the owner');
+    assert.equal(keyed(app, 'done-today-h').textContent, 'Done today (3)', 'the fold shows its new state');
+    lineLines(app, ID, 40);
+    await app.resize(414);
+    await app.resize(360);
+    await app.tap(keyed(app, `line:${ID}`));
+    const again = keyed(app, `linebubble:${ID}`);
+    assert.ok(again, 'opened again');
+    assert.equal(byClass(again, 'sb-bubble-t')[0].textContent, CHANGED.replace(/^Ruling: /, ''), 'the new words, not the held ones');
+    assert.equal(byClass(again, 'sb-bubble-note').length, 0, 'and no notice');
+    assert.equal(keyed(app, 'done-today-h').textContent, 'Done today (3)', 'the fold as it is now, not as it was held');
+    await app.advance(POLL_MS);
+    assert.equal(keyed(app, `linebubble:${ID}`), again, 'a refresh with nothing changed keeps it');
+    assert.equal(byClass(again, 'sb-bubble-note').length, 0, 'with no notice');
   } finally {
     app.restore();
   }

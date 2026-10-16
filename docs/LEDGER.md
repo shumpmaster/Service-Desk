@@ -191,7 +191,7 @@ reversibility: reversible
 
 ## L-0014 — Trial-view notes 2: S-001's areas widened to the batch's record files, which its records commits had tagged "Spec: S-001"
 date: 2026-10-16
-type: decision
+type: ruling
 supersedes: []
 scope: project
 expires: never

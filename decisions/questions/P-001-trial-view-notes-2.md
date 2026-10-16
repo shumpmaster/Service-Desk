@@ -182,3 +182,8 @@ Questions on the audit-additions mockup (docs/design/mockups/audit-additions.htm
 3. "One older colour pair, not from this batch, is close in dark mode: the \"blocked\" amber and the gold. Fix it in the same pass?" Answer: "Yes, fix it too (Recommended)" (option text: "Shift the dark-mode gold slightly so the two can't be confused; light mode stays as is."). The other option offered: "Leave it".
 
 How it is read: notes 32 to 35 go into the spec as drawn; the stalled signal shows after 3 days with no movement and nothing waiting on the owner; Context is dusty rose (light #ad606a, dark #bc7e8d) and Why muted violet (light #756592, dark #c7adcb); dark-mode gold moves from #d4ae4f to #c9b04f so it stands apart from the dark "blocked" amber (light mode unchanged).
+
+The plan stop rule (a FAIL at plan review round 3 or later goes to the owner): the question put to the owner after round 3 (reviews/S-001-trial-view-2/_plan-review-round3-verbatim.md), and the owner's answer (2026-10-16):
+"The desk spec failed plan review round 3 on one small, clear finding (the safe-to-approve check reads the wrong commit for hand-started deploys). How should it go on?" Answer: "Fix, recheck the fixes (Recommended)" (option text: "The spec writer fixes the finding and the five tidy-ups; the reviewer checks only those changes (not a full new round), and on a pass the Builder starts on notes 1 to 35."). The other options offered: "Fix, full round 4", "Drop safe-to-approve".
+
+How it is read: the Definer fixes round 3's B1 and N1 to N5; the Reviewer checks only that change (a recheck, not a full round 4); on a PASS the Builder starts on notes 1 to 35.

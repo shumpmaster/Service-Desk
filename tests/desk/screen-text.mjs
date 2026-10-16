@@ -56,7 +56,7 @@ export function textRuns(el, skip) {
 export function routeKind(route) {
   const parts = route.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
   if (parts[0] !== 'p') return 'home';
-  if (!parts[2]) return 'status';
+  if (!parts[2] || parts[2] === 'info') return 'status'; // `info` is the Status screen with its sheet open
   return parts[2];
 }
 
@@ -79,6 +79,30 @@ export function OLD_REBUILT(route) {
     }
     if (kind === 'queue' && (has(el, 'sb-qrow') || has(el, 'sb-shape') || has(el, 'sb-done-r'))) return true;
     if (kind === 'team' && route.split('/').length === 4 && (has(el, 'sb-tiles') || has(el, 'sb-you'))) return true;
+    return false;
+  };
+}
+
+/**
+ * The same parts as the sandbox draws them now (trial-view notes 2): Home's phase rows (AC65);
+ * the phase marker (AC68); the Status screen's phase boxes, their key and heading (AC57, AC58), and
+ * "More detail"'s Record notes line (AC68); the whole Timeline but its header and bottom bar
+ * (AC59, AC60); the Queue's rows, "Done today"'s rows and the group marks (AC66, AC69, AC72); the
+ * Team screen's cards, its key and the owner's tile (AC67).
+ */
+export function NEW_REBUILT(route) {
+  const kind = routeKind(route);
+  return (el) => {
+    if (has(el, 'sb-tph') || has(el, 'sb-pmark')) return true;
+    if (kind === 'status' && (has(el, 'sb-pboxes') || has(el, 'sb-pbox') || has(el, 'sb-skey') || (el.attrs && el.attrs['data-k'] === 'phases-h'))) return true;
+    if (el.attrs && (el.attrs['data-k'] === 'more:pipeline' || el.attrs['data-k'] === 'more:notes')) return true;
+    if (kind === 'timeline') {
+      const screen = el.parent && has(el.parent, 'sb-screen');
+      if (screen && !has(el, 'sb-marker') && !has(el, 'sb-hdr') && !has(el, 'sb-dock')) return true;
+      if (has(el, 'sb-sub')) return true;
+    }
+    if (kind === 'queue' && (has(el, 'sb-qrow') || has(el, 'sb-shape') || has(el, 'sb-done-r') || has(el, 'sb-gmark') || has(el, 'sb-needs'))) return true;
+    if (kind === 'team' && route.split('/').length === 4 && (has(el, 'sb-tiles') || has(el, 'sb-you') || has(el, 'sb-tkey'))) return true;
     return false;
   };
 }

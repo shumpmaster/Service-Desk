@@ -259,7 +259,7 @@ button.sb-sum:focus-visible { outline: none; }
 .sb-tph.cols-2 { --rail: 40px; } .sb-tph.cols-3 { --rail: 52px; } .sb-tph.cols-4 { --rail: 64px; }
 .sb-where { display: flex; gap: var(--s2); align-items: center; font: var(--t-meta); color: var(--ph, var(--muted)); }
 .sb-trows { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s1); }
-.sb-trow { display: grid; padding: var(--s1) var(--s2) var(--s1) var(--rail); border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf);
+.sb-trow { display: grid; padding: var(--s1) var(--s2) var(--s1) var(--rail); /* AC62: the room kept for the branch drawing */ border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf);
   box-shadow: inset 2px 0 0 var(--ph, transparent); }
 .sb-trow.now { border-color: var(--gold); background: var(--golds); }
 .sb-trow.end { border-style: dashed; box-shadow: none; }
@@ -335,7 +335,7 @@ button.sb-sum:focus-visible { outline: none; }
 .sb-pboxes.cols-2 { --rail: 46px; } .sb-pboxes.cols-3 { --rail: 62px; } .sb-pboxes.cols-4 { --rail: 78px; }
 .sb-pboxes > .sb-rail { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 1; }
 .sb-pbox { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); display: grid; gap: var(--s3);
-  padding: var(--s3) var(--s3) var(--s3) var(--rail); box-shadow: inset 3px 0 0 var(--ph); }
+  padding: var(--s3) var(--s3) var(--s3) var(--rail); /* AC62: the room kept for the branch drawing */ box-shadow: inset 3px 0 0 var(--ph); }
 .sb-pbox.now { border-color: var(--gold); }
 .sb-pbox.end { border-style: dashed; box-shadow: none; padding-top: var(--s2); padding-bottom: var(--s2); }
 .sb-pbox-h { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
@@ -411,7 +411,7 @@ p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
   @keyframes sb-up { from { transform: translateY(16px); opacity: .6; } }
 }
 .sb-sheet-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); position: sticky; top: -8px; background: var(--surf); padding: var(--s1) 0; z-index: 1; }
-.sb-sheet-top .sb-grab { margin: 0 0 0 calc(50% - 20px); }
+.sb-sheet-top .sb-grab { margin: 0 0 0 calc(50% - 20px); /* AC62: an offset that centres the grab handle */ }
 .sb-grab { display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: var(--s1) auto var(--s3); }
 .sb-left { border: 1px solid var(--block); border-left: 4px solid var(--block); border-radius: var(--r); padding: var(--s2) var(--s3); background: var(--blocks); margin: var(--s2) 0; }
 .sb-left p { margin: 0 0 var(--s1); }

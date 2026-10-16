@@ -560,3 +560,36 @@ test('AC64: no milestone row or band name starts with a code; Technical is never
     app.restore();
   }
 });
+
+test('AC60 + J12 (build review round 1, B2): while a J12 failure is set, every pull-request part shows "not available" with the reason one tap away, never what an earlier read kept', async () => {
+  const m = models({ now: NOW16 });
+  const reason = "the pull requests' read failed: GitHub could not be reached";
+  // A list kept from before PR #52 merged, without PR #44, and today's read failed.
+  const kept = m.snap.pulls.list.map((p) => (p.number === 52 ? { ...p, state: 'OPEN', mergedAt: null, mergeCommit: null } : p)).filter((p) => p.number !== 44);
+  const snap = { ...m.snap, pulls: { list: kept, failure: reason, tooMany: false, fieldError: null } };
+  const feed = feedView(runsContext(SD3, snap, m.j, m.tl, m.pv), { pulls: [] }, NOW16, 'America/Chicago');
+  const m2b = row(feed, 'Build-i1', 'M2B');
+  assert.deepEqual(m2b.sprints.map((s) => [s.id, s.missing, s.reason, s.marks || null]), [['PR #44', 'not available', reason, null], ['PR #52', 'not available', reason, null]]);
+  for (const b of feed.blocks) for (const x of rowsOf(b)) for (const s of x.sprints || []) if (/^PR #/.test(s.id)) assert.equal(s.missing, 'not available', s.id);
+  assert.ok(!feed.blocks.some((b) => rowsOf(b).some((x) => x.kind === 'untied' && x.sprints.some((s) => /^PR #/.test(s.id)))), 'no pull request placed from the old list');
+  assert.deepEqual(feed.notes, [`Pull requests: not available (${reason})`]);
+  // On the page: the reason one tap away.
+  const app = await openSD('#/p/Service-Desk/timeline', { repoOpts: {} });
+  try {
+    app.server.call = ((call) => (path, body) => call(path, body).then((res) => (body && body.pulls && res.json ? { ...res, json: { ...res.json, pulls: null } } : res)))(app.server.call);
+    app.desk.states.get('Service-Desk').j12.wait = null;
+    app.desk.states.get('Service-Desk').j12.head = 'f'.repeat(40);
+    await app.advance(61_000);
+    await app.tap(keyed(app, 'fold:sprints:Build-i1:M2B'));
+    const tasks = keyed(app, 'tasks:Build-i1:M2B');
+    assert.match(tasks.textContent, /PR #44 not available/);
+    assert.match(tasks.textContent, /PR #52 not available/);
+    assert.doesNotMatch(tasks.textContent, /✓ merged/);
+    // The reason, behind its "Why" control when it has one.
+    const why = findAll(tasks, (e) => e.tag === 'button' && e.attrs['aria-expanded'] === 'false');
+    for (const w of why) await app.tap(w);
+    assert.match(keyed(app, 'tasks:Build-i1:M2B').textContent, /the pull requests' read failed/);
+  } finally {
+    app.restore();
+  }
+});

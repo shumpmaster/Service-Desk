@@ -54,14 +54,23 @@ export function parseJ11(kind, text, path) {
 const split = (text) => String(text == null ? '' : text).split('\n');
 
 /**
- * A verdict file's verdict (reviews/README.md): the first line starting `Verdict:` at column 0
- * decides it: 'PASS', 'FAIL', 'other' (a `Verdict:` line with any other word), or null (none).
+ * A verdict file's verdict, as governance/checks/review_check.py's parse_verdict decides it: one
+ * leading BOM dropped; lines split on LF only, one trailing CR dropped; any line holding `Verdict:`
+ * anywhere but at its start makes the file malformed; otherwise the first line that starts with
+ * `Verdict:` after leading whitespace and format (Cf) characters decides, and it must read exactly
+ * `Verdict: PASS` or `Verdict: FAIL`, then only spaces or tabs. Returns 'PASS', 'FAIL', 'other'
+ * (malformed: a `Verdict:` line that decides neither) or null (no `Verdict:` at all).
  */
+const LEAD_RE = /^[\s\x1c-\x1f\x85\p{Cf}]*/u;
 export function verdictOf(text) {
-  const l = split(text).map((x) => x.replace(/\r+$/, '')).find((x) => x.startsWith('Verdict:'));
-  if (l == null) return null;
-  const w = l.slice(8).trim();
-  return w === 'PASS' || w === 'FAIL' ? w : 'other';
+  let s = String(text == null ? '' : text);
+  if (s.startsWith('\ufeff')) s = s.slice(1);
+  const lines = s.split('\n').map((l) => (l.endsWith('\r') ? l.slice(0, -1) : l));
+  if (!lines.some((l) => l.includes('Verdict:'))) return null;
+  if (lines.some((l) => l.includes('Verdict:') && !l.startsWith('Verdict:'))) return 'other';
+  const line = lines.find((l) => l.replace(LEAD_RE, '').startsWith('Verdict:'));
+  const m = /^Verdict: (PASS|FAIL)[ \t]*$/.exec(line);
+  return m ? m[1] : 'other';
 }
 
 // ---------------------------------------------------------------------------

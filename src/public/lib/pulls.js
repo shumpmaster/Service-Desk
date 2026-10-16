@@ -130,7 +130,7 @@ export function prBodyParts(body) {
 export function keptPull(n, checks) {
   return {
     number: n.number, title: n.title, state: n.state, mergedAt: n.mergedAt || null, createdAt: n.createdAt || null,
-    closedAt: n.closedAt || null, head: typeof n.headRefName === 'string' ? n.headRefName : null,
+    head: typeof n.headRefName === 'string' ? n.headRefName : null,
     mergeCommit: n.mergeCommit && typeof n.mergeCommit.oid === 'string' ? n.mergeCommit.oid : null,
     checks, parts: prBodyParts(n.body),
   };

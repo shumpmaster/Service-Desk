@@ -41,7 +41,7 @@ export async function openSD(hash = '#/p/Service-Desk', { repoOpts = {}, more = 
 export function models({ ac61 = false, answer = pullsAnswer(), extra = {}, now = NOW } = {}) {
   const snap = j11Snapshot({ ...(ac61 ? { 'docs/PROJECT.md': AC61_DOC } : {}), ...extra });
   const v = answer == null ? null : judgePulls(typeof answer === 'string' ? answer : answer);
-  snap.pulls = v && v.ok ? { list: v.pulls, failure: null, tooMany: false, fieldError: v.fieldError } : { list: null, failure: v ? v.reason : 'not read', tooMany: false };
+  snap.pulls = v && v.ok ? { list: v.pulls, failure: null, tooMany: false, fieldError: v.fieldError, current: true } : { list: null, failure: v ? v.reason : 'not read', tooMany: false };
   const j = j11Records(SD3, snap);
   const tl = timelineOf(j);
   const pv = phaseView(SD3, tl, snap.tree, j);

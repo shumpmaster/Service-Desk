@@ -64,12 +64,22 @@ test('J11 (trial-view notes 2): reviews/<n>/*.md verdict files are optional read
   for (const r of reviews) assert.ok(paths.includes(r), r);
   for (const r of Object.keys(extra)) assert.ok(!paths.includes(r), `${r} is not read`);
   assert.ok(!plain.optional.blobs.some((b) => b.path.startsWith('reviews/')), 'only with the sandbox\'s flag');
-  // The verdict, by reviews/README.md's rule: the first line starting `Verdict:` at column 0 decides, and it must read exactly PASS or FAIL.
+  // The verdict, as governance/checks/review_check.py's parse_verdict decides it (build review round 1, N3):
+  // 'other' wherever parse_verdict says malformed, null with no `Verdict:` at all.
   const v = (text) => parseRecord('review-verdict', text, 'reviews/1/x.md').verdict;
   assert.equal(v('# Review\n\nVerdict: PASS\n'), 'PASS');
   assert.equal(v('Verdict: FAIL\nVerdict: PASS\n'), 'FAIL');
   assert.equal(v('Verdict: FAIL — two blockers\nVerdict: PASS\n'), 'other', 'the first decides, and it is not exactly PASS or FAIL');
-  assert.equal(v('  Verdict: PASS\n'), null, 'not at the start of a line');
+  assert.equal(v('  Verdict: PASS\n'), 'other', 'not at the start of a line: malformed');
+  // The five cases of build review round 1 (N3), each as parse_verdict reads it.
+  assert.equal(v('Verdict:PASS\n'), 'other', 'no space after the colon');
+  assert.equal(v('Verdict:  PASS\n'), 'other', 'two spaces after the colon');
+  assert.equal(v('Verdict: PASS\nThe return said Verdict: FAIL mid-line\n'), 'other', 'a later line quoting Verdict: mid-line');
+  assert.equal(v('  Verdict: FAIL\nVerdict: PASS\n'), 'other', 'an indented Verdict: line first');
+  assert.equal(v('\ufeffVerdict: FAIL\nVerdict: PASS\n'), 'FAIL', 'one leading BOM dropped: a real FAIL stays FAIL');
+  assert.equal(v('\ufeff\ufeffVerdict: PASS\n'), 'other', 'only one BOM is dropped');
+  assert.equal(v('Verdict: PASS \t\r\n'), 'PASS', 'trailing spaces, a tab and one CR allowed');
+  assert.equal(v('Verdict: PASS\r\r\n'), 'other', 'only one CR dropped');
   assert.equal(v('Verdict: PASS with notes\n'), 'other');
   assert.equal(v('Verdict: maybe\n'), 'other');
   assert.equal(v('No verdict here.\n'), null);

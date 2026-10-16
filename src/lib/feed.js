@@ -321,13 +321,15 @@ function reviewMark(ctx, n) {
 /** The pull requests J12 holds, by number, and why they are missing when they are. */
 function pullsIndex(snap, model) {
   const p = snap && snap.pulls;
-  const list = p && p.list ? p.list : null;
+  // J12's awkward cases: after a refusal, a rate limit or a failed read, every pull-request part of
+  // AC60 shows "not available" with the reason, never what an earlier read kept as if it were current.
+  const failed = Boolean(p && p.failure);
+  const list = p && p.list && !failed ? p.list : null;
   const by = new Map((list || []).map((x) => [x.number, x]));
   let missing = null;
-  if (!list) missing = p && p.failure ? p.failure : "the pull requests haven't been read yet";
-  else if (p.failure) missing = null; // a later read failed: what is kept still shows
+  if (!list) missing = failed ? p.failure : "the pull requests haven't been read yet";
   // An open one's title and body come from J1's open list on every poll (J12).
-  for (const o of (model && model.pulls) || []) {
+  for (const o of (failed ? [] : (model && model.pulls)) || []) {
     if (!Number.isInteger(o.number)) continue;
     const kept = by.get(o.number);
     by.set(o.number, { ...(kept || { mergedAt: null, mergeCommit: null, checks: null, createdAt: o.createdAt || null }), number: o.number, title: o.title,
@@ -738,7 +740,7 @@ export function stalledLine(project, box, snap, j, model, group, waiting, nowMs,
   if (project.model !== 'v3' || group !== 'active' || waiting > 0) return null;
   const read = box && box.read;
   if (!read || read.read !== 'ok' || read.since == null || nowMs - read.since > 180e3) return null;
-  if (!snap || !snap.pulls || !snap.pulls.list || !j || !j.ready) return null;
+  if (!snap || !snap.pulls || !snap.pulls.list || snap.pulls.failure || !j || !j.ready) return null;
   const moves = [];
   for (const pr of snap.pulls.list) if (pr.mergedAt) moves.push({ at: t(pr.mergedAt), rank: 0, words: `PR #${pr.number} merged` });
   for (const pr of (model && model.pulls) || []) if (pr.updatedAt) moves.push({ at: t(pr.updatedAt), rank: 1, words: `PR #${pr.number} updated` });
@@ -784,7 +786,11 @@ export function deployCheck(project, snap, run) {
   const sha = deployCommit(run);
   if (!sha) return cant("the deploy's commit isn't readable from its title");
   const p = snap && snap.pulls;
+  // Never a pass, or a "don't approve", from a list that is not current (J12 failed, the read at the
+  // current head not answered yet, or a cold read under way): "Can't check this deploy yet".
   if (!p || !p.list) return cant(`the pull requests' merge commits aren't read yet${p && p.failure ? ` (${p.failure})` : ''}`);
+  if (p.failure) return cant(p.failure);
+  if (p.current === false) return cant("the pull requests at the current head aren't read yet");
   const pr = p.list.find((x) => x.mergeCommit === sha && x.mergedAt);
   if (!pr) return { kind: 'bad', words: "Doesn't match a reviewed pull request: don't approve", reason: 'no merge of a passed pull request has this commit', sha };
   const path = `reviews/${pr.number}/reviewer.md`;

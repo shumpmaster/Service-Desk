@@ -544,7 +544,9 @@ export function createDesk(opts) {
     return { tree: st.tree, records: recordsFor(st), history: historyFor(st), head: st.head, headAt: st.headAt,
       pullPages: st.pullRaws || [], checkPages: st.checksRead ? st.checkRaws : null, lastSuccessAt: st.lastSuccessAt,
       // J12: the pull requests kept (null until a read has answered on this device), and how the reads stand.
-      pulls: { list: j.pulls, failure: j.failure, rate: j.rate === true, tooMany: j.tooMany, fieldError: j.fieldError, reading: Boolean(j.cold) } };
+      // current: the kept list is today's read at this head, with no failure since and no cold read under way (AC72).
+      pulls: { list: j.pulls, failure: j.failure, rate: j.rate === true, tooMany: j.tooMany, fieldError: j.fieldError, reading: Boolean(j.cold),
+        current: Boolean(j.pulls) && !j.failure && !j.cold && j.head === st.head } };
   };
   return desk;
 }

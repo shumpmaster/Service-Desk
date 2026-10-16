@@ -246,6 +246,14 @@ test('AC72: what the row says — matches a passed PR\'s merge (with its sources
   const failed = { ...pass, pulls: { list: null, failure: 'GitHub\'s GraphQL rate limit' } };
   assert.deepEqual(bad(failed).slice(0, 2), ['cant', "Can't check this deploy yet"], 'J12\'s read failed: never a pass by default');
   assert.deepEqual(bad(pass, { event: 'workflow_dispatch', headSha: M77, title: 'deploy abc — no full sha' }), ['cant', "Can't check this deploy yet", "the deploy's commit isn't readable from its title"]);
+  // Build review round 1, B1: a list kept from an earlier read is not current — J12's read since has
+  // failed, or the read at the current head has not answered (or a cold read is under way). Then
+  // "Can't check this deploy yet", never a pass and never a "don't approve" from the old list.
+  const stale = { ...pass, pulls: { ...pass.pulls, list: pass.pulls.list.filter((x) => x.number !== 77), failure: "the pull requests' read failed: GitHub could not be reached" } };
+  assert.deepEqual(bad(stale), ['cant', "Can't check this deploy yet", "the pull requests' read failed: GitHub could not be reached"], 'a kept list with a failure');
+  assert.deepEqual(bad({ ...pass, pulls: { ...pass.pulls, failure: 'GitHub\'s GraphQL rate limit: x' } })[0], 'cant', 'even when the old list would pass');
+  const notYet = { ...pass, pulls: { ...pass.pulls, list: pass.pulls.list.filter((x) => x.number !== 77), current: false } };
+  assert.deepEqual(bad(notYet), ['cant', "Can't check this deploy yet", "the pull requests at the current head aren't read yet"], 'a head change whose read has not answered');
   const reading = { ...pass, records: new Map([...pass.records].filter(([p]) => p !== 'reviews/77/reviewer.md')) };
   assert.equal(deployCheck(SD3, reading, push).kind, 'cant', 'the verdict\'s blob not yet arrived');
 });

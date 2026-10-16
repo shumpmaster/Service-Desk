@@ -135,7 +135,7 @@ test('J12: each of the answer\'s own errors — data null (the first message as 
 test('J12: the kept fields only — number, title, state, the times, head branch, merge commit, check state, and AC61\'s parts of the body; never the rest of the body', () => {
   const n = node(950, { body: '## What this means for you\nA paragraph.\n\nMilestone: MD3\n\n## Context\n- A fact (source: docs/PROJECT.md)\n\n## Why\nBecause.\n\n## Changes\nA SECRET-LOOKING LINE THE DESK NEVER KEEPS\n', checks: 'FAILURE' });
   const k = keptPull(n, 'FAILURE');
-  assert.deepEqual(Object.keys(k).sort(), ['checks', 'closedAt', 'createdAt', 'head', 'mergeCommit', 'mergedAt', 'number', 'parts', 'state', 'title']);
+  assert.deepEqual(Object.keys(k).sort(), ['checks', 'createdAt', 'head', 'mergeCommit', 'mergedAt', 'number', 'parts', 'state', 'title']);
   assert.deepEqual(k.parts, { milestone: { ids: ['MD3'] }, context: [{ fact: 'A fact', source: 'docs/PROJECT.md', exception: false }], why: ['Because.'] });
   assert.doesNotMatch(JSON.stringify(k), /SECRET-LOOKING|A paragraph|What this means/);
   for (const p of judgePulls(pullsAnswer()).pulls) assert.ok(!('body' in p), `#${p.number}: no body kept`);
@@ -318,4 +318,42 @@ test('J12: what is kept on the device under desk-pulls-v1 (a working store) hold
   await again.clock.runUntil(again.clock.now() + 2 * POLL_MS);
   again.desk.stop();
   assert.equal(asked, 0, 'the same day, the same head: no read');
+});
+
+test('J12 + AC72 (build review round 1, B1): the snapshot says when the kept list is current — not before the read at this head has answered, not after a failed read, not during a cold read', async () => {
+  const backing = new Map();
+  const st = { getItem: (k) => (backing.has(k) ? backing.get(k) : null), setItem: (k, v) => backing.set(k, String(v)), removeItem: (k) => backing.delete(k) };
+  const r = sdRepo();
+  const first = deskOn(r, { store: createStore(st), pullsStore: createStore(st) });
+  first.desk.start();
+  await first.clock.runUntil(first.clock.now() + 2 * POLL_MS);
+  first.desk.stop();
+  assert.equal(first.desk.snapshot(SD3.name).pulls.current, true);
+  // The next load: the kept list is read back, but no read at this load's head has answered yet.
+  const again = deskOn(r, { store: createStore(st), pullsStore: createStore(st), start: first.clock.now() });
+  const before = again.desk.snapshot(SD3.name).pulls;
+  assert.equal(before.list.length, 72);
+  assert.equal(before.current, false, 'kept, but not yet read at the current head');
+  again.desk.start();
+  await again.clock.runUntil(again.clock.now() + 2 * POLL_MS);
+  assert.equal(again.desk.snapshot(SD3.name).pulls.current, true);
+  // A head change whose read fails: the old list is kept, and is not current.
+  r.pullsAnswer = null;
+  r.commit({ 'status/P-003.toml': 'kind = "project"\nstage = 5\nstate = "dispatched"\nrole = "builder"\nsessions = 9\n' });
+  await again.clock.runUntil(again.clock.now() + 2 * POLL_MS);
+  again.desk.stop();
+  const after = again.desk.snapshot(SD3.name).pulls;
+  assert.equal(after.list.length, 72);
+  assert.ok(after.failure);
+  assert.equal(after.current, false);
+  // A cold read under way (page 1 of several answered): not current.
+  const asked = [];
+  const r3 = sdRepo();
+  r3.pullsAnswer = pagedAnswer(3, asked);
+  const c = deskOn(r3);
+  c.desk.start();
+  await c.clock.runUntil(c.clock.now() + 1500);
+  const mid = c.desk.snapshot(SD3.name).pulls;
+  if (mid.reading) assert.equal(mid.current, false);
+  c.desk.stop();
 });

@@ -471,11 +471,11 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 .sb-goal.start { border-bottom: 3px solid var(--ink); margin-top: var(--s3); }
 .sb-gq { font: var(--t-quote); }
 .sb-blk { position: relative; display: grid; }
-.sb-band { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; background: var(--page);
+.sb-pband { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; background: var(--page);
   margin-left: -26px; /* AC62: the band spans the line's room */ padding: var(--s2) 0 var(--s2) var(--s1); border-bottom: 2px solid var(--ph); color: var(--ph); }
-.sb-band.plan { border-bottom-style: dashed; }
-.sb-band-n { margin: 0; font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--ph); }
-.sb-band-s { margin-left: auto; font: var(--t-meta); color: var(--muted); }
+.sb-pband.plan { border-bottom-style: dashed; }
+.sb-pband-n { margin: 0; font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--ph); }
+.sb-pband-s { margin-left: auto; font: var(--t-meta); color: var(--muted); }
 .sb-seg { position: relative; display: grid; gap: var(--s5); padding: var(--s4) 0; }
 .sb-seg:empty { padding: 0; }
 .sb-seg::before { content: ""; position: absolute; left: -19px; /* AC62: the line, through each milestone's circle */ top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--ph); opacity: .45; }

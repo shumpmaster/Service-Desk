@@ -35,7 +35,8 @@ test('AC48: Home — one card per project in AC8\'s order, each with its icon, n
       // AC54 (2026-10-14): the card shows the README summary in AC37's place; AC37's line opens from "Latest".
       assert.equal(byClass(c, 'sb-sum').length, 1);
       assert.equal(byClass(c, 'sb-latest').length, 1);
-      assert.equal(byClass(c, 'sb-ck').length, 1);
+      // AC58 and AC65 (2026-10-16): the phases sit in their own small boxes with the compact branch drawing.
+      assert.equal(byClass(c, 'sb-tph').length, 1);
       assert.equal(byClass(c, 'sb-ball').length, 1);
       assert.equal(byClass(c, 'sb-pill').length, 1);
     }
@@ -89,7 +90,9 @@ test('AC48: each card, pill and bar tap goes to the screen it names; every proje
     // AC36, as AC55 changed it (2026-10-15): inside the sandbox the M1 and M2 detail is reached
     // through the views rebuilt in the new design, never through a link to the accepted views.
     const links = linksIn(app.view).map((l) => l.href);
-    for (const h of ['#/p/Alpha/pipeline', '#/p/Alpha/asked', '#/p/Alpha/agents']) assert.ok(links.includes(h), h);
+    for (const h of ['#/p/Alpha/asked', '#/p/Alpha/agents']) assert.ok(links.includes(h), h);
+    // AC68 (2026-10-16): a v3 project's Pipeline view folds into the Timeline; "More detail" no longer offers it.
+    assert.ok(!links.includes('#/p/Alpha/pipeline'), 'no Pipeline link for a v3 project');
     assert.ok(!links.some((h) => h && h.startsWith('./#')), 'no link to an accepted view');
   } finally {
     app.restore();
@@ -147,7 +150,8 @@ test('AC52: every item sits in one group by the action it needs; order by raised
   try {
     const groups = byClass(app.view, 'sb-group');
     const titles = groups.map((g) => byClass(g, 'sb-gh')[0].textContent);
-    assert.deepEqual(titles.map((t) => t.replace(/[◆▲✎⇄⏵]/, '').replace(/(\d+|none|not recorded)$/, '')),
+    // AC66 (2026-10-16): the groups' marks are neutral; a group holding what waits on the owner says "needs you".
+    assert.deepEqual(titles.map((t) => t.replace(/^[◇▲✎⇄▸]/, '').replace(/needs you/g, '').replace(/(\d+|none|not recorded)$/, '')),
       ['Decisions', 'Gate rulings', 'Verdicts to write', 'Merges', 'Deploys']);
     const rows = (i) => byClass(groups[i], 'sb-qt').map((r) => r.textContent);
     assert.equal(rows(0).length, 3, 'a card, a question and a hold card');
@@ -373,24 +377,27 @@ test('AC49: who has the ball, each case — an open card, a dispatched status, a
     ['Waiting on you', 'builder working on P-3', 'Checks running', 'Next Orchestrator run']);
 });
 
-test('AC49: the Team screen — your tile with the next three queue lines, one tile per member, the Chief of Staff "not recorded", a lit light only while working', async () => {
+test('AC49 + AC67: the Team screen — your tile with the next three queue lines, one card per member, the Chief of Staff "not recorded", the circle icons in place of the lights', async () => {
   const app = await opened(twoProjects(), '#/p/Alpha/team');
   try {
     const you = byClass(app.view, 'sb-you')[0];
     assert.equal(findAll(you, (e) => e.tag === 'li').length, 3, 'the next three lines');
-    assert.match(you.textContent, /Waiting on you: 6 in your queue/);
+    assert.match(you.textContent, /You · waiting on you: 6 in your queue/);
     const tiles = byClass(app.view, 'sb-tile');
-    const ids = tiles.map((t) => t.attrs.href.split('/').pop());
+    const id = (t) => byClass(t, 'sb-tile-n')[0].attrs.href.split('/').pop();
+    const ids = tiles.map(id);
     assert.equal(ids.filter((x) => x === 'chief-of-staff').length, 1);
     assert.ok(ids.includes('orchestrator') && ids.includes('builder') && ids.includes('reviewer'));
-    const cos = tiles.find((t) => t.attrs.href.endsWith('chief-of-staff'));
+    const cos = tiles.find((t) => id(t) === 'chief-of-staff');
     assert.match(cos.textContent, /Its sessions aren't recorded/);
-    const builder = tiles.find((t) => t.attrs.href.endsWith('/builder'));
+    assert.equal(byClass(cos, 'i-unrec').length, 1, 'the question mark in a dashed circle');
+    const builder = tiles.find((t) => id(t) === 'builder');
     assert.match(builder.textContent, /Working/);
-    assert.ok(byClass(builder, 'sb-light')[0].className.includes('lit'));
-    const critic = tiles.find((t) => t.attrs.href.endsWith('/critic'));
+    assert.equal(byClass(builder, 'i-half').length, 1, 'working: the half-filled circle');
+    const critic = tiles.find((t) => id(t) === 'critic');
     assert.match(critic.textContent, /Idle/);
-    assert.ok(!byClass(critic, 'sb-light')[0].className.includes('lit'));
+    assert.equal(byClass(critic, 'i-planned').length, 1, 'idle: the empty dashed circle');
+    assert.equal(byClass(app.view, 'sb-light').length, 0, 'no light on the Team screen (AC67)');
     assert.doesNotMatch(app.text(), /usage/i, 'no usage card on the Team screen');
   } finally {
     app.restore();

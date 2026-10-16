@@ -22,10 +22,10 @@ import { routeParts, guardRender, boot, SIGNED_OUT_STATE } from './lib/page.js';
 import { createSeen } from './lib/seen.js';
 import {
   SANDBOX_MARKER, NOT_RECORDED, NOT_AVAILABLE, V25_NOT_RECORDED, OWNER_NEXT_LINES,
-  j11Records, timelineOf, phaseView, finishedWords, phaseMilestones, whereLine, queueView, pillView, ballLines,
+  j11Records, timelineOf, phaseView, whereLine, queueView, pillView, ballLines,
   sheetView, trackerSteps, doneToday, cardBoxText, questionBoxText, VERDICT_START, ruleLine, boxPlan, GROUPS, treeLink, waitWords, youWaitText,
 } from './lib/sandbox.js';
-import { timelineView, teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
+import { teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
 import { summaryView, latestText, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
 import { composeAnswer, numberedRuleLine, CANT_SPLIT, NO_RECOMMENDATION } from './lib/sandbox.js';
 import { prBodyParts } from './lib/pulls.js';
@@ -320,17 +320,14 @@ function drawRail(svg, shape, ys, height, kind) {
   const kids = [];
   const r1 = (v) => Math.round(v * 10) / 10;
   const el = (tag, attrs) => {
-    const n = document.createElementNS(SVGNS, tag);
-    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
-    kids.push(n);
-    return n;
+    kids.push({ tag, attrs });
   };
   const shade = (k) => `run${Math.min(k, 3)}`;
   for (const l of shape.lines) {
     const x = X(l.k);
     const y1 = r1(Y(l.from));
     const y2 = r1(Y(l.to));
-    el('line', { x1: x, y1, x2: x, y2, class: `ln ${shade(l.k)}${l.dashed ? ' dash' : ''}`, 'data-kind': 'line', 'data-k': l.k, 'data-dashed': l.dashed ? '1' : '0' });
+    el('line', { x1: x, y1, x2: x, y2, class: `ln ${shade(l.k)}${l.dashed ? ' dash' : ''}`, 'data-kind': 'line', 'data-col': l.k, 'data-dashed': l.dashed ? '1' : '0' });
     const ym = r1((y1 + y2) / 2);
     el('path', { d: `M${x - 3} ${r1(ym + 2)}L${x} ${r1(ym - 2)}L${x + 3} ${r1(ym + 2)}`, class: `arr ${shade(l.k)}`, 'data-kind': 'arrow', 'data-dir': y2 < y1 ? 'up' : 'down' });
   }
@@ -345,20 +342,34 @@ function drawRail(svg, shape, ys, height, kind) {
     const cx = X(d.k);
     const cy = r1(Y(d.row));
     const mark = kind === 'tile' ? d.icon : d.mark;
-    el('circle', { cx, cy, r: g.r, class: `dot m-${mark}`, 'data-kind': 'dot', 'data-phase': d.phase, 'data-k': d.k, 'data-mark': mark });
+    el('circle', { cx, cy, r: g.r, class: `dot m-${mark}`, 'data-kind': 'dot', 'data-phase': d.phase, 'data-col': d.k, 'data-mark': mark });
     if (mark === 'half') el('path', { d: `M${cx} ${r1(cy - g.r + 1.5)}A${g.r - 1.5} ${g.r - 1.5} 0 0 0 ${cx} ${r1(cy + g.r - 1.5)}Z`, class: 'dot-in half', 'data-kind': 'glyph' });
     if (mark === 'check' || mark === 'pastcheck') {
       el('path', { d: `M${r1(cx - 2.6)} ${r1(cy + 0.2)}l1.8 1.8 3.6-3.8`, class: `dot-in ${mark}`, 'data-kind': 'glyph' });
     }
   }
-  svg.replaceChildren(...kids);
+  // The same shapes as drawn already: their places are set in place, so no element changes but where it sits (AC57's "Still and plain").
+  const now = [...svg.childNodes];
+  if (now.length === kids.length && now.every((n, i) => String(n.tagName || n.tag).toLowerCase() === kids[i].tag)) {
+    now.forEach((n, i) => {
+      for (const [k, v] of Object.entries(kids[i].attrs)) if (n.getAttribute(k) !== String(v)) n.setAttribute(k, String(v));
+    });
+    return;
+  }
+  svg.replaceChildren(...kids.map(({ tag, attrs }) => {
+    const n = document.createElementNS(SVGNS, tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+    return n;
+  }));
 }
 
 /** In the browser: each drawing redrawn with every dot level with its phase name's row, as laid out (and again after a fold or a new width). */
 function fitRails() {
   const view = document.getElementById('view');
-  if (!view || !view.querySelectorAll) return;
-  for (const box of view.querySelectorAll('[data-rail]')) fitRail(box);
+  if (!view) return;
+  const boxes = [];
+  eachElement(view, (el) => { if (el.getAttribute && el.getAttribute('data-rail')) boxes.push(el); });
+  for (const box of boxes) fitRail(box);
 }
 /** One drawing fitted to its box's phase names (the fake DOM's tests call it with their own measures). */
 export function fitRail(box) {
@@ -1467,8 +1478,8 @@ function renderTimeline(p) {
     return h('section', { class: 'sb-screen' }, body, bottomBar(name, 'timeline', p.q.waiting));
   }
   const blocks = fv.blocks.map((b) => h('section', { class: `sb-blk ${b.band.cls}${b.plan ? ' plan' : ''}`, key: `blk:${b.key}`, 'data-run': b.key },
-    h('div', { class: `sb-band${b.plan ? ' plan' : ''}`, key: `band:${b.key}` }, h('span', { class: 'sb-phchip', 'aria-hidden': 'true' }),
-      h('h2', { class: 'sb-band-n' }, b.band.name), h('span', { class: 'sb-band-s' }, b.band.words)),
+    h('div', { class: `sb-pband${b.plan ? ' plan' : ''}`, key: `band:${b.key}` }, h('span', { class: 'sb-phchip', 'aria-hidden': 'true' }),
+      h('h2', { class: 'sb-pband-n' }, b.band.name), h('span', { class: 'sb-pband-s' }, b.band.words)),
     b.began ? beganNode(b.began) : null,
     b.nowLine ? [
       b.plannedRows.length ? h('div', { class: 'sb-seg plan', key: `seg:${b.key}:plan` }, b.plannedRows.map((x) => feedRow(p, x))) : null,
@@ -1497,7 +1508,7 @@ function scrollToTarget(target) {
   if (!el || !el.getBoundingClientRect) return Boolean(el);
   let blk = el.parentNode;
   while (blk && !(blk.getAttribute && blk.getAttribute('data-run'))) blk = blk.parentNode;
-  const band = blk ? findClass(blk, 'sb-band') : null;
+  const band = blk ? findClass(blk, 'sb-pband') : null;
   const bh = band && band.getBoundingClientRect ? band.getBoundingClientRect().height : 0;
   const y = (window.scrollY || 0) + el.getBoundingClientRect().top - bh - 8;
   window.scrollTo(0, Math.max(0, Math.round(y)));

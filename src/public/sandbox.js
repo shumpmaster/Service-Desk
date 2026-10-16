@@ -1833,8 +1833,9 @@ const nav = {
     // The Timeline scrolls to Now (or to a sprint) only when it is opened, never on a refresh (AC56, AC59).
     this.scrollTo = moved && next.kind === 'timeline' ? next.at : null;
     if (this.scrollTo && this.scrollTo.sprint) this.openSprint = { name: next.name, sprint: this.scrollTo.sprint };
+    const toTop = moved && !this.scrollTo;
     render();
-    if (moved && !this.scrollTo) window.scrollTo(0, 0);
+    if (toTop) window.scrollTo(0, 0);
     focusPending();
   },
 };

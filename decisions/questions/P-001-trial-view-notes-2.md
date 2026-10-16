@@ -28,3 +28,16 @@ How it is read:
 "Additionally, when a phase was completed but branched off, make the dot fill lighter than a fully completed phase"
 
 How it is read: a phase that finished in a run the work later branched away from (here Design i1 and Build i1, which run 2 went back over) has a lighter-filled dot than a phase that finished and stands (here Discovery). The difference is also said in words, never by colour alone.
+
+Notes 3 to 9, the owner's message verbatim (2026-10-16, headed "Trial-View Notes", numbered 1 to 7 by the owner; with a screenshot, docs/design/references/trial-view/2026-10-16-release-changelog-example.png, and a code snippet kept whole, byte for byte, at docs/design/references/trial-view/2026-10-16-release-changelog-snippet.html, which the owner's point 7 is):
+"Trial-View Notes
+
+1. Unsure how to describe it, but the general spacing of things. I dont hate it, but there are spots that seem too spaced, and then some spots that seem too tight. 
+2. Is there a way to "fix" the window so that i cant zoom in to a page? 
+3. General polish of text. There is a lot of text throughout the service desk - which i want specifically - however if all of the text is formatted almost identically it all kind of blurs together. 
+4. When i look at the status page, i see two things that i want to address. The milestone groupings are great, but what is missing on this page is the "holistic phase & milestone look" what i mean by that is that when we show the standard milestones that we DONT do for a particular project, it doesnt easily translate to what we DO take on - in chronologgical order. The other thing is that every milestone within the phases should have a short snippet of "why this phase was included or not included"
+5. Right now on the timeline page the phases seem discrete. I want them to be complete, from start to finish. 
+6. I have a code snippet for a tyoe of list component i want to take place of the timeline - please see point 7 below. The screenshot attached shows the general look. Its a dynamic release timeline that i want to adapt. I want the title of each "release" point to be a plain english description of the specific task. Then a technical sub bullet. Then a "context/what" bullet. Then a why bullet. I do still like the checkmarks and such on the right side of the screen. 
+7. [the code snippet, kept whole at the path above]"
+
+In this batch these are notes 3 (owner's 1), 4 (owner's 2), 5 (owner's 3), 6 (owner's 4), 7 (owner's 5), 8 (owner's 6) and 9 (owner's 7, the snippet). How each is read is recorded with the owner's answers to the follow-up questions.

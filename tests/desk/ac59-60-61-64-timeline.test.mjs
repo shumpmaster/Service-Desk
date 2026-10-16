@@ -593,3 +593,12 @@ test('AC60 + J12 (build review round 1, B2): while a J12 failure is set, every p
     app.restore();
   }
 });
+
+test('AC60 (draft 6, N6a): only a merged pull request is placed by its own Milestone: line; an open one naming MD3 is not on the Timeline (it is in the Queue)', () => {
+  const open = node(950, { mergedAt: null, body: '## What this means for you\nA change.\n\nMilestone: MD3\n', title: 'An open one naming MD3 (made up, NOT a real record)' });
+  const merged = node(951, { mergedAt: '2026-10-12T12:00:00Z', body: '## What this means for you\nA change.\n\nMilestone: MD3\n', title: 'A merged one naming MD3 (made up)' });
+  const { feed } = models({ answer: answerOf([open, merged, ...pullNodes()]), now: NOW16 });
+  const md3 = row(feed, 'Design-i2', 'MD3');
+  assert.deepEqual(md3.named.map((x) => x.id), ['PR #951']);
+  assert.ok(!feed.blocks.some((b) => rowsOf(b).some((x) => [...(x.sprints || []), ...(x.named || [])].some((y) => y.id === 'PR #950'))));
+});

@@ -322,7 +322,7 @@ function drawRail(svg, shape, ys, height, kind) {
   const el = (tag, attrs) => {
     kids.push({ tag, attrs });
   };
-  const shade = (k) => `run${Math.min(k, 3)}`;
+  const shade = runShade;
   for (const l of shape.lines) {
     const x = X(l.k);
     const y1 = r1(Y(l.from));
@@ -784,10 +784,19 @@ function statusKey(key) {
 
 /** Why a run began (AC70): its date, the ruling's reason quoted, its source one tap from the whole record; or the slate "not recorded". */
 function beganNode(b) {
-  if (b.missing) return h('p', { class: 'sb-began gap', key: `began:${b.k}` }, b.words);
-  return h('div', { class: 'sb-began', key: `began:${b.k}` }, h('p', { class: 'sb-began-h' }, b.head),
+  if (b.missing) {
+    return h('p', { class: `sb-began gap ${runShade(b.k)}`, key: `began:${b.k}` }, h('span', { class: 'sb-began-k' }, b.head),
+      h('span', { class: 'gap' }, b.words.slice(b.head.length)));
+  }
+  return h('div', { class: `sb-began ${runShade(b.k)}`, key: `began:${b.k}` }, h('p', { class: 'sb-began-h' }, b.head),
     b.quote ? h('p', { class: 'sb-quote' }, `"${b.quote}"`) : b.plain ? h('p', { class: 'sb-began-p' }, b.plain, ' ', code(b.code)) : h('p', { class: 'sb-muted' }, b.words),
     h('p', { class: 'sb-src' }, b.source.href ? ext(b.source.href, b.source.words) : b.source.words));
+}
+
+/** A run's own shade (AC57, draft 6): run 1, run 2, then runs 3 and 4 in turn (run 5 as run 3, run 6 as run 4). */
+export function runShade(k) {
+  const n = Number(k) || 1;
+  return `run${n <= 2 ? n : 3 + ((n - 3) % 2)}`;
 }
 
 /** One milestone on the Status screen (AC57): its mark, name, code, state in words and why line; softened for rules 1 and 9. */
@@ -805,7 +814,7 @@ function runNode(p, r) {
   const gOpen = isOpenFold(name, gk, false);
   return h('div', { class: `sb-prun${r.latest ? '' : ' old'}`, key: `prun:${r.key}`, 'data-run': r.key },
     r.began ? beganNode(r.began) : null,
-    h('p', { class: 'sb-rhead' }, h('span', { class: `sb-rtag run${Math.min(r.k, 3)}` }, r.tag), ' ', h('span', { class: 'sb-rwords' }, `· ${r.head}`)),
+    h('p', { class: 'sb-rhead' }, h('span', { class: `sb-rtag ${runShade(r.k)}` }, r.tag), ' ', h('span', { class: 'sb-rwords' }, `· ${r.head}`)),
     r.stdLine ? h('p', { class: 'sb-stdline' }, r.stdLine) : null,
     r.gatherWords ? foldButton(name, gk, false, { class: 'sb-more' }, r.gatherWords) : null,
     r.gatherWords && gOpen ? h('ol', { class: 'sb-mslist gathered', key: `gathered:${r.key}` }, r.gathered.map(msItem)) : null,

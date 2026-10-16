@@ -225,43 +225,72 @@ test('J12: a head change reads the first page only, replacing what it holds and 
   desk.stop();
 });
 
-test('J12: a rate limit (200 or 403) or a failed read — no J12 read until the next head change or for 60 minutes, whichever is later; the REST polls go on at their pace; the project is never "Can\'t read" for it', async () => {
-  for (const answer of [madeUp('rate-limited').body, madeUp('rate-limited-403').body, null, madeUp('data-null').body]) {
+test('J12 (draft 6, N2): a RATE_LIMITED answer (200 or 403) — no J12 read for 60 minutes, then read again with no head change needed; the REST polls go on at their pace; the project is never "Can\'t read" for it', async () => {
+  for (const answer of [madeUp('rate-limited').body, madeUp('rate-limited-403').body]) {
     const r = sdRepo();
     let n = 0;
-    r.pullsAnswer = () => { n++; return answer; };
+    r.pullsAnswer = () => { n++; return n === 1 ? answer : pullsAnswer(); };
     const start = Date.parse('2026-10-14T15:00:00Z');
     const { clock, desk, server } = deskOn(r, { start });
     desk.start();
-    await clock.runUntil(clock.now() + 2 * POLL_MS);
+    await clock.runUntil(start + 2 * POLL_MS);
     assert.equal(n, 1);
     const snap = desk.snapshot(SD3.name);
-    assert.equal(snap.pulls.rate, answer != null && /RATE_LIMITED/.test(answer));
+    assert.equal(snap.pulls.rate, true);
     assert.ok(snap.pulls.failure);
+    assert.equal(snap.pulls.current, false);
     assert.equal(desk.states.get(SD3.name).failure, null, 'not "Can\'t read"');
-    // The read failed at the desk's opening (t0). A head change two minutes later: no read until 60 minutes have passed.
-    const t0 = start;
+    // A head change within the 60 minutes: still no read.
     r.commit({ 'status/P-003.toml': 'kind = "project"\nstage = 5\nstate = "dispatched"\nrole = "builder"\nsessions = 2\n' });
     const pollsBefore = server.calls.filter((c) => c.path === '/api/poll').length;
-    await clock.runUntil(t0 + 59 * 60e3);
-    assert.equal(n, 1, 'a head change within the 60 minutes: no read');
+    await clock.runUntil(start + 59 * 60e3);
+    assert.equal(n, 1, 'no read within the 60 minutes, head change or not');
     const polls = server.calls.filter((c) => c.path === '/api/poll').length - pollsBefore;
     assert.ok(polls >= 56, `${polls} polls in 57 minutes: REST not slowed`);
-    await clock.runUntil(t0 + 61 * 60e3);
-    assert.equal(n, 2, '60 minutes passed, the head had changed: read again');
+    await clock.runUntil(start + 61 * 60e3);
+    assert.equal(n, 2, 'after 60 minutes: read again');
+    assert.equal(desk.snapshot(SD3.name).pulls.failure, null);
     desk.stop();
-    // The other way round: 60 minutes pass with no head change, so none until the head changes.
-    const r2 = sdRepo();
-    let n2 = 0;
-    r2.pullsAnswer = () => { n2++; return answer; };
-    const b = deskOn(r2, { start });
-    b.desk.start();
-    await b.clock.runUntil(start + 75 * 60e3);
-    assert.equal(n2, 1, 'no head change: no read after 60 minutes');
-    r2.commit({ 'status/P-003.toml': 'kind = "project"\nstage = 5\nstate = "dispatched"\nrole = "builder"\nsessions = 3\n' });
-    await b.clock.runUntil(b.clock.now() + 2 * POLL_MS);
-    assert.equal(n2, 2, 'the head changed after the 60 minutes: read again');
-    b.desk.stop();
+  }
+  // A quiet project (no head change at all): read again after the 60 minutes all the same.
+  const q = sdRepo();
+  let m = 0;
+  q.pullsAnswer = () => { m++; return m === 1 ? madeUp('rate-limited').body : pullsAnswer(); };
+  const start = Date.parse('2026-10-14T15:00:00Z');
+  const b = deskOn(q, { start });
+  b.desk.start();
+  await b.clock.runUntil(start + 59 * 60e3);
+  assert.equal(m, 1);
+  await b.clock.runUntil(start + 62 * 60e3);
+  assert.equal(m, 2, 'no head change needed');
+  assert.ok(b.desk.snapshot(SD3.name).pulls.list.length > 0);
+  b.desk.stop();
+});
+
+test('J12 (draft 6, N2): any other failed read (null, data null) is tried again on a later cycle, as J11\'s optional reads are — never twice in one cycle, no head change needed', async () => {
+  for (const answer of [null, madeUp('data-null').body]) {
+    const r = sdRepo();
+    const at = [];
+    let n = 0;
+    r.pullsAnswer = () => { n++; at.push(clockRef.clock.now()); return n <= 2 ? answer : pullsAnswer(); };
+    const clockRef = deskOn(r);
+    const { clock, desk } = clockRef;
+    desk.start();
+    await clock.runUntil(clock.now() + 1500);
+    assert.equal(n, 1, 'one read in the first cycle, not retried within it');
+    assert.equal(desk.snapshot(SD3.name).pulls.rate, false);
+    assert.ok(desk.snapshot(SD3.name).pulls.failure);
+    await clock.runUntil(clock.now() + POLL_MS);
+    assert.equal(n, 2, 'tried again on the next cycle, with no head change');
+    await clock.runUntil(clock.now() + POLL_MS);
+    assert.equal(n, 3);
+    assert.equal(desk.snapshot(SD3.name).pulls.failure, null);
+    assert.equal(desk.snapshot(SD3.name).pulls.current, true);
+    assert.ok(at[1] - at[0] >= POLL_MS - 1000, 'a cycle apart');
+    // Then nothing more without a reason to read.
+    await clock.runUntil(clock.now() + 3 * POLL_MS);
+    assert.equal(n, 3);
+    desk.stop();
   }
 });
 

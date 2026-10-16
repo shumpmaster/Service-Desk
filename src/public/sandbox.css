@@ -18,7 +18,7 @@ html.sb {
   --gold: #8a6a10; --golds: #f4ecd2; --idle: #b7bdc5; --focus: #1d5bd6; --on: #ffffff; --scrim: rgb(11 13 16 / .5);
   --ph-disc: #0f766e; --ph-des: #9d2f7e; --ph-build: #5c6a10; --ph-launch: #7a5a48;
   --b-tech: var(--muted); --b-ctx: #ad606a; --b-why: #756592;
-  --run1: var(--muted); --run2: var(--gold); --run3: var(--agent);
+  --run1: var(--muted); --run2: var(--gold); --run3: #7b828a; --run4: #7f8669; /* AC57 (draft 6): runs 3 and 4 neutral-tinted, none of AC48's 14; run 5 on as runs 3 and 4 in turn */
   --shade0: #1d5bd6; --shade1: #5b8be6; --shade2: #0f3f9e; --shade3: #8fb0ee;
   --you0: #d23c0f; --you1: #f07a50; --you2: #9c2a08; --you3: #f4a283;
   --r: 6px; --rs: 4px; --track: .07em;
@@ -44,6 +44,7 @@ html.sb {
     --gold: #c9b04f; --golds: #2c2410; --idle: #4a5059; --focus: #6ea0ff; --on: #0b0d10; --scrim: rgb(0 0 0 / .62);
     --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
     --b-ctx: #bc7e8d; --b-why: #c7adcb;
+    --run3: #8d8d77; --run4: #c3d0c3;
     --shade0: #6ea0ff; --shade1: #9cbcff; --shade2: #3f74d8; --shade3: #c2d5ff;
     --you0: #ff6a3d; --you1: #ff9a76; --you2: #d9481c; --you3: #ffc2ad;
     color-scheme: dark;
@@ -56,6 +57,7 @@ html.sb[data-theme="dark"] {
   --gold: #c9b04f; --golds: #2c2410; --idle: #4a5059; --focus: #6ea0ff; --on: #0b0d10; --scrim: rgb(0 0 0 / .62);
   --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
   --b-ctx: #bc7e8d; --b-why: #c7adcb;
+  --run3: #8d8d77; --run4: #c3d0c3;
   --shade0: #6ea0ff; --shade1: #9cbcff; --shade2: #3f74d8; --shade3: #c2d5ff;
   --you0: #ff6a3d; --you1: #ff9a76; --you2: #d9481c; --you3: #ffc2ad;
   color-scheme: dark;
@@ -271,10 +273,11 @@ button.sb-sum:focus-visible { outline: none; }
 /* The branch drawing (AC57, AC58, AC65): one column of dots per run, thin light lines joining each dot
    to the next one up, with a small arrowhead half way pointing up, dashed into a still-to-come dot,
    and one curve out to the right where each later run starts. As version 6 draws them: 1.25 px at 70%
-   opacity. Run 1 neutral, run 2 gold, a third run blue. Nothing loops or pulses. */
+   opacity. Run 1 neutral, run 2 gold, runs 3 and 4 their own neutral-tinted shades, later runs those two
+   in turn. Nothing loops or pulses. */
 .sb-rail .ln, .sb-rail .arr { fill: none; stroke-width: 1.25px; stroke-opacity: .7; stroke-linecap: round; stroke-linejoin: round; }
 .sb-rail .ln.dash { stroke-dasharray: 2 4; }
-.sb-rail .run1 { stroke: var(--run1); } .sb-rail .run2 { stroke: var(--run2); } .sb-rail .run3 { stroke: var(--run3); }
+.sb-rail .run1 { stroke: var(--run1); } .sb-rail .run2 { stroke: var(--run2); } .sb-rail .run3 { stroke: var(--run3); } .sb-rail .run4 { stroke: var(--run4); }
 .sb-rail .dot { stroke-width: 2; }
 .sb-rail .dot.m-filled { fill: var(--pass); stroke: var(--pass); }
 .sb-rail .dot.m-light { fill: var(--passl); stroke: var(--pass); stroke-width: 1.5; }
@@ -348,7 +351,7 @@ button.sb-sum:focus-visible { outline: none; }
 .sb-rhead { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; font: var(--t-meta); color: var(--muted); }
 .sb-rtag { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; border: 1px solid currentColor; border-radius: 3px;
   padding: 1px 6px; /* AC62: a tag's inner padding, as drawn */ }
-.sb-rtag.run1 { color: var(--run1); } .sb-rtag.run2 { color: var(--run2); } .sb-rtag.run3 { color: var(--run3); }
+.sb-rtag.run1 { color: var(--run1); } .sb-rtag.run2 { color: var(--run2); } .sb-rtag.run3 { color: var(--run3); } .sb-rtag.run4 { color: var(--run4); }
 .sb-stdline { font: var(--t-meta); color: var(--muted); }
 /* A run's milestones, tied by a thin light line with a small arrowhead at its top, pointing up: 1 px in the --tie grey. */
 .sb-mslist { position: relative; list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
@@ -368,8 +371,11 @@ button.sb-sum:focus-visible { outline: none; }
 .sb-prun.old .sb-mwhy { font: var(--t-meta); }
 .sb-prun.old .sb-rtag { color: var(--muted); }
 /* AC70: why a run began, beside the curve where it starts. */
-.sb-began { display: grid; gap: var(--s1); border-left: 2px solid var(--run2); padding-left: var(--s3); font: var(--t-meta); }
-.sb-began-h { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--muted); }
+.sb-began { display: grid; gap: var(--s1); border-left: 2px solid var(--rk, var(--run2)); padding-left: var(--s3); font: var(--t-meta); }
+/* "Run <k> began" in its run's own shade (AC70, draft 6); a "not recorded" reason stays slate (AC69). */
+.sb-began.run2 { --rk: var(--run2); } .sb-began.run3 { --rk: var(--run3); } .sb-began.run4 { --rk: var(--run4); }
+.sb-began-h, .sb-began-k { color: var(--rk, var(--run2)); }
+.sb-began-h { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; }
 .sb-began-p { font: var(--t-body); }
 p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 

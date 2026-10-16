@@ -88,11 +88,15 @@ test('AC70: "Run 2 began · why it went back: not recorded" for Design i2 with J
     const began = byClass(run, 'sb-began')[0];
     assert.equal(began.textContent, 'Run 2 began · why it went back: not recorded');
     assert.match(began.className, /\bgap\b/, 'slate (AC69)');
+    // Draft 6 (N4): "Run 2 began" in its run's own shade, the "not recorded" reason slate.
+    assert.match(began.className, /\brun2\b/);
+    assert.deepEqual(began.children.filter((c) => c.tag).map((c) => [c.className, c.textContent]), [['sb-began-k', 'Run 2 began'], ['gap', ' · why it went back: not recorded']]);
     assert.equal(run.children.indexOf(began), 0, 'at the top of the run, where its curve comes in');
     await app.go('#/p/Service-Desk/timeline');
     const blk = findAll(app.view, (e) => e.attrs && e.attrs['data-run'] === 'Design-i2')[0];
     const tb = byClass(blk, 'sb-began')[0];
     assert.equal(tb.textContent, began.textContent);
+    assert.match(tb.className, /\brun2\b/, 'the same shade on the Timeline');
     const band = byClass(blk, 'sb-pband')[0];
     assert.ok(blk.children.indexOf(tb) === blk.children.indexOf(band) + 1, 'under the band');
     // No other run starts a new column.

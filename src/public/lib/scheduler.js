@@ -82,7 +82,7 @@ function newProjectState(project) {
     lastSuccessAt: null, failure: null, timer: null, withdrawn: [], partialTree: false, polls: 0, blobCalls: 0,
     headAt: null,
     // J12: what the device keeps of the project's pull requests, and where its reads stand.
-    j12: { pulls: null, day: null, head: null, tooMany: false, cold: null, wait: null, failure: null, fieldError: null },
+    j12: { pulls: null, day: null, head: null, tooMany: false, cold: null, wait: null, failure: null, fieldError: null, failedCycle: null },
   };
 }
 
@@ -166,14 +166,16 @@ export function createDesk(opts) {
    * The J12 read a project needs now, or null (J12, "When the page reads it"; v3 projects in the MD
    * sandbox only): the next page of a cold read under way; a cold read (the first load on this device,
    * and the first each day after midnight in ownerTimeZone), from the first page; or, on a head
-   * change, the first page only. After a rate limit or a failed read, none until the next head change
-   * and for 60 minutes, whichever is later (C).
+   * change, the first page only. After a RATE_LIMITED answer, none for 60 minutes, then the read
+   * again (draft 6, N2); after any other failed read, the read again on a later cycle, as J11's
+   * optional reads are (never twice in one cycle).
    */
   function pullsDue(st) {
     if (!opts.j11 || st.project.model !== 'v3' || !st.head) return null;
     const j = st.j12;
     const now = clock.now();
-    if (j.wait && (now < j.wait.until || st.head === j.wait.head)) return null;
+    if (j.wait && now < j.wait.until) return null;
+    if (j.failedCycle != null && j.failedCycle === st.polls) return null;
     if (j.cold) return { after: j.cold.after, cold: true };
     if (j.pulls == null || j.day !== dayKey(new Date(now), config.ownerTimeZone)) return { after: null, cold: true };
     if (j.head !== st.head) return { after: null, cold: false };
@@ -189,12 +191,14 @@ export function createDesk(opts) {
       j.failure = v.reason;
       j.rate = v.rate;
       j.cold = null;
-      j.wait = { until: now + PULLS_RATE_MS, head: st.head };
+      j.wait = v.rate ? { until: now + PULLS_RATE_MS } : null;
+      j.failedCycle = st.polls;
       return;
     }
     j.failure = null;
     j.rate = false;
     j.wait = null;
+    j.failedCycle = null;
     j.fieldError = v.fieldError;
     j.pulls = mergePulls(j.pulls || [], v.pulls);
     if (asked.cold) {

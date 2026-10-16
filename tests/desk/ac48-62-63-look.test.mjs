@@ -251,3 +251,35 @@ test('AC63: every text box\'s text is at least 16 px, from a rule no later rule 
     assert.doesNotMatch(text, /touches\.length\s*[>=]=?\s*2|touchmove/, `${name}: no script cancels a two-finger touch`);
   }
 });
+
+test('AC48 + AC57 (draft 6, N4): runs 3 and 4 take their own neutral-tinted shades, each at least 10 from the 14 and from each other in its theme, at least 3:1 against the page and the cards; run 5 on reuse them in turn', async () => {
+  const want = { light: { '--run3': '#7b828a', '--run4': '#7f8669' }, dark: { '--run3': '#8d8d77', '--run4': '#c3d0c3' } };
+  const block = (open) => { const i = RAW.indexOf(open); return RAW.slice(i, RAW.indexOf('}', i)); };
+  const read = (text) => Object.fromEntries([...text.matchAll(/(--[a-z0-9-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
+  const lum = (hex) => {
+    const c = [0, 2, 4].map((i) => parseInt(hex.slice(1 + i, 3 + i), 16) / 255).map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  };
+  const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+  for (const which of ['light', 'dark']) {
+    const all = which === 'light' ? read(block('html.sb {')) : { ...read(block('html.sb {')), ...read(block('html.sb[data-theme="dark"] {')) };
+    if (which === 'dark') {
+      const media = read(block('html.sb:not([data-theme="light"]) {'));
+      for (const k of ['--run3', '--run4']) assert.equal(media[k], want.dark[k], `${k} in the media query's dark block`);
+    }
+    const t = theme(which);
+    for (const k of ['--run3', '--run4']) {
+      assert.equal(all[k], want[which][k], `${which} ${k}`);
+      for (const m of MEANING) {
+        const d = de2000(hexLab(all[k]), hexLab(t[m]));
+        assert.ok(d >= 10, `${which}: ${k} and ${m} differ by ${d.toFixed(2)}`);
+      }
+      for (const bg of ['--page', '--surf']) assert.ok(contrast(all[k], all[bg]) >= 3, `${which}: ${k} on ${bg} ${contrast(all[k], all[bg]).toFixed(2)}:1`);
+    }
+    assert.ok(de2000(hexLab(all['--run3']), hexLab(all['--run4'])) >= 10, `${which}: run 3 and run 4 apart`);
+  }
+  assert.doesNotMatch(RAW, /--run3: var\(--agent\)/, 'no longer the agent blue');
+  for (const sel of ['.sb-rail .run4', '.sb-rtag.run4', '.sb-began.run3', '.sb-began.run4']) assert.ok(RAW.includes(sel), sel);
+  const { runShade } = await import('../../src/public/sandbox.js');
+  assert.deepEqual([1, 2, 3, 4, 5, 6, 7].map(runShade), ['run1', 'run2', 'run3', 'run4', 'run3', 'run4', 'run3']);
+});

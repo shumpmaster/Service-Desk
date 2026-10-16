@@ -146,3 +146,11 @@ Follow-up questions on the spec for notes 1 to 27 (the Definer's open list in sp
 4. "Four smaller readings the spec makes. Agree with all of them? (1) The Timeline shows runs as coloured bands, not the branch drawing, as in the version you approved. (2) Sprints that name no milestone sit under \"Not tied to a milestone\" in the run they were merged in; for Service-Desk that is 18 pull requests (#59 to #77) in Design run 2, not the mockup's 4, until they're filed against milestones. (3) A milestone from a run you later went back over never says \"reached\" unless a record says so; it says \"work filed · gone back over\". (4) \"Where we started\" quotes only the plan's first sentence about replacing Operations-Hub." Answer: "Agree with all four (Recommended)" (option text: "Build them as written."). The other option offered: "I want to change one".
 
 How it is read: a sprint's title is its pull request's own title; the phase and bullet colours are re-picked so no colour on the desk has two meanings, and the new swatches go to the owner before the build; the gold ring means "next to reach" on every screen, and work under way is the half-filled circle on every screen; the Definer's open readings 1, 3, 4 and 6 stand as written.
+
+The owner's approvals and the close of the batch, verbatim (2026-10-16):
+"Yes on the swatches, yes on the other screens, as for the rest of the batch - I cant find anything at the moment. And I obviously dont know what i dont know, if you have a way to audit for those missing elements that i might not even thinking of that would be X factors or would be massive hinderances then please do - if not - i think thats thhe full last batch"
+
+How it is read:
+- The colour swatches (docs/design/mockups/colour-swatches.html) are approved: the phase and bullet colours in the spec stand.
+- The other-screens mockup (docs/design/mockups/other-screens.html) is approved: notes 28 to 31 go into the spec.
+- The owner has no further notes. The orchestrator runs an audit for missing elements, both things that would set the desk apart and things that would badly hold it back, and brings its findings to the owner as proposals; any the owner takes join this batch. Otherwise the batch is closed at note 31.

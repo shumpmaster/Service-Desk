@@ -129,10 +129,10 @@ for (const [w, h] of [[360, 740], [414, 896]]) {
       // The time and the code follow the box, outside the control; a tap on them opens nothing.
       const meta = byClass(line, 'sb-line-m')[0];
       assert.ok(meta && !findAll(ctl, (e) => e === meta).length, 'the time and code sit outside the button');
-      assert.match(meta.textContent, /^ · 09:50 P-001-design-lab-open$/);
+      assert.match(meta.textContent, /^09:50 P-001-design-lab-open$/, 'clipped, the time and code start their own line');
       const code = linksIn(meta).find((l) => l.text === 'P-001-design-lab-open');
       assert.equal(code.href, 'https://github.com/shumpmaster/Alpha/blob/main/decisions/questions/P-001-design-lab-open.md');
-      await app.tap(meta.children[1]);
+      await app.tap(byClass(meta, 'sb-last-when')[0]);
       await app.tap(code.el);
       assert.equal(findKeyed(app, 'linebubble:last'), null, 'a tap on the time or the code does not open the bubble');
       assert.equal(app.loc.hash, '#/p/Alpha');
@@ -171,7 +171,10 @@ for (const [w, h] of [[360, 740], [414, 896]]) {
       await app.resize(w);
       assert.equal(findKeyed(app, 'line:last'), null, 'a short ruling has no control');
       assert.ok(!findKeyed(app, 'lineclip:last').className.includes('over'), 'and no fade');
-      assert.match(byClass(app.view, 'sb-last')[0].textContent, /^Your last action: B, keep it as it is · 09:55 P-002-short/);
+      // Draft 4 (N1): the one-line form, "<words> · <time>" then the code, all in the line itself.
+      const shortLine = findKeyed(app, 'lineclip:last');
+      assert.match(shortLine.textContent, /^Your last action: B, keep it as it is · 09:55 P-002-short$/, 'words, time and code on one line');
+      assert.equal(byClass(byClass(app.view, 'sb-last')[0], 'sb-line-m').length, 0, 'nothing moved to a line of its own');
     } finally {
       undo();
       app.restore();
@@ -204,6 +207,106 @@ test('AC55 (2026-10-16): a card answer and a profile approval are never clipped 
   }
 });
 
+test('AC55 (draft 4, N3): a clipped proxy ruling\'s bubble holds line 1 only, word for word; "(proxy)" sits outside it, after the clipped words', async () => {
+  const setup = longRuling();
+  setup.repos.Alpha.commit({ 'decisions/questions/P-001-design-lab-open.md': DESIGN_LAB_OPEN.replace('\n', '\nProxy: done at the owner\'s request\n') });
+  const app = await loadSandbox({ ...setup, hash: '#/p/Alpha', now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    lineLines(app, 'last', 47);
+    await app.resize(360);
+    const ctl = findKeyed(app, 'line:last');
+    assert.equal(byClass(ctl, 'sb-line-w')[0].textContent, DESIGN_LAB_WORDS);
+    assert.doesNotMatch(ctl.textContent, /\(proxy\)/, 'not in the control');
+    const meta = byClass(byClass(app.view, 'sb-last')[0], 'sb-line-m')[0];
+    assert.match(meta.textContent, /^\(proxy\) · 09:50 P-001-design-lab-open$/, 'after the clipped words, outside the control');
+    await app.tap(ctl);
+    const bub = findKeyed(app, 'linebubble:last');
+    assert.equal(byClass(bub, 'sb-bubble-t')[0].textContent, DESIGN_LAB_WORDS, 'line 1 only, word for word');
+    assert.doesNotMatch(bub.textContent, /\(proxy\)/, 'no "(proxy)" in the bubble');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC55 (draft 4, B1): while the whole-line bubble is open, a poll bringing a new ruling whose time is unread leaves the line and the bubble as they were, scrolled where they were, with "A newer action is arriving. Close this to see it."; once closed, the line reads "not available yet", then the new ruling', async () => {
+  const setup = longRuling();
+  const app = await loadSandbox({ ...setup, hash: '#/p/Alpha', now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    lineLines(app, 'last', 47);
+    await app.resize(360);
+    const ctl = findKeyed(app, 'line:last');
+    await app.tap(ctl);
+    const bub = findKeyed(app, 'linebubble:last');
+    bub.scrollTop = 120;
+    const textBefore = byClass(bub, 'sb-bubble-t')[0].textContent;
+    // A new ruling lands; its history read is held back, so its time is not yet read.
+    setup.repos.Alpha.commit({ 'decisions/questions/P-001-newer.md': 'Ruling: C, the newest\n' });
+    setup.repos.Alpha.history['decisions/questions/P-001-newer.md'] = [{ commit: { committer: { date: iso(NOW - 60e3) } } }];
+    const call = app.server.call;
+    let holdHistory = true;
+    app.server.call = async (path, body) => {
+      if (holdHistory && body && Array.isArray(body.history) && body.history.includes('decisions/questions/P-001-newer.md')) {
+        const r = await call(path, { ...body, history: body.history.filter((x) => x !== 'decisions/questions/P-001-newer.md') });
+        return r;
+      }
+      return call(path, body);
+    };
+    await app.advance(POLL_MS);
+    await app.tick();
+    // The data now says "not available yet": what lastAction alone would draw.
+    assert.equal(lastAction(v3('Alpha'), app.desk.model('Alpha'), app.desk.snapshot('Alpha'), null, new Date(app.now), 'America/Chicago').state, 'pending', 'the fixture: the line would change');
+    assert.equal(findKeyed(app, 'linebubble:last'), bub, 'the same bubble, still open');
+    assert.equal(bub.scrollTop, 120, 'at the same scroll position');
+    assert.equal(byClass(bub, 'sb-bubble-t')[0].textContent, textBefore, 'unchanged');
+    assert.equal(findKeyed(app, 'line:last'), ctl, 'on the same control');
+    const note = byClass(bub, 'sb-bubble-note')[0];
+    assert.ok(note, 'it says so');
+    assert.equal(note.textContent, 'A newer action is arriving. Close this to see it.');
+    assert.doesNotMatch(app.text(), /not available yet/, 'the line stays as it was while the bubble is open');
+    await app.tap(byClass(bub, 'sb-close')[0]);
+    assert.equal(findKeyed(app, 'linebubble:last'), null, 'closed by the owner');
+    assert.match(byClass(app.view, 'sb-last')[0].textContent, /^Your last action: not available yet/, 'then the line shows its new state');
+    holdHistory = false;
+    app.server.call = call;
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    lineLines(app, 'last', 1); // the browser's measure of the new, short line
+    await app.resize(360);
+    assert.match(byClass(app.view, 'sb-last')[0].textContent, /^Your last action: C, the newest · 09:59 P-001-newer/, 'and the new ruling once its time arrives');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC55 + AC54 (build review 1, N2): a turned phone places an open bubble again, so it stays inside the screen and clear of the bottom bar', async () => {
+  const setup = longRuling();
+  const app = await loadSandbox({ ...setup, hash: '#/p/Alpha', now: NOW });
+  const undo = layout(El0, { bubbleTop: 200, bubbleH: 200 });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    lineLines(app, 'last', 47);
+    await app.resize(360);
+    await app.tap(findKeyed(app, 'line:last'));
+    const bub = findKeyed(app, 'linebubble:last');
+    assert.ok(bub.className.split(' ').includes('down'), `at 360×740 it fits below (${bub.className})`);
+    window.innerHeight = 360; // turned: 740×360, the bubble's 200..400 now runs under the bar
+    await app.resize(740);
+    assert.equal(findKeyed(app, 'linebubble:last'), bub, 'still open, the same bubble');
+    assert.ok(bub.className.split(' ').includes('held'), `placed again for the new screen: held inside it (${bub.className})`);
+    window.innerHeight = 740;
+    await app.resize(360);
+    assert.ok(bub.className.split(' ').includes('down'), `turned back: below its control again (${bub.className})`);
+  } finally {
+    undo();
+    app.restore();
+  }
+});
+
 test('AC55 + AC54 (2026-10-16): every bubble is held to the viewport\'s height less a margin, clear of the bottom bar, scrolling up and down inside itself and never sideways, its "Close" row in view (the CSS; the browser check is in the pull request)', () => {
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const rule = (sel) => {
@@ -214,7 +317,13 @@ test('AC55 + AC54 (2026-10-16): every bubble is held to the viewport\'s height l
   const b = rule('.sb-bubble');
   assert.match(b, /max-height: calc\(100vh - var\(--sb-clear, 0px\) - 16px\); max-height: calc\(100dvh - var\(--sb-clear, 0px\) - 16px\);/, 'the viewport\'s height less 8 px at each end and the bar');
   assert.match(b, /overflow-y: auto; overflow-x: hidden;/, 'up and down inside itself, never sideways');
-  assert.match(rule('.sb-screen:has(> .sb-dock)'), /--sb-clear: 65px;/, 'on the project screens, the bottom bar\'s height (65 px, as Chromium draws it)');
+  // Build review 1, N4: the room kept clear is the bar's own height, one value for both.
+  assert.match(rule('.sb-screen:has(> .sb-dock)'), /--sb-clear: var\(--sb-dock-h\);/, 'on the project screens, the room kept clear is the bottom bar\'s height');
+  assert.match(rule('.sb-dock'), /height: var\(--sb-dock-h\); overflow: hidden;/, 'and the bar is drawn at exactly that height');
+  assert.match(css, /html\.sb \{[^}]*--sb-dock-h: 65px;/, 'set once (65 px: 52 px tabs, 4 + 8 px padding, 1 px hairline)');
+  assert.match(rule('.sb-tab'), /min-height: 52px;/, 'the tabs fit the bar: 52 + 12 + 1 = 65');
+  assert.match(rule('.sb-dock'), /padding: 4px 8px 8px;/);
+  assert.match(rule('.sb-dock'), /border-top: 1px solid/);
   assert.match(rule('.sb-bubble-top'), /position: sticky; top: -6px; background: var\(--surf\);/, 'its top row, with "Close", stays in view while it scrolls');
   const held = /\n(\.sb-bubble\.held,[^{]*)\{([^}]*)\}/.exec(css);
   assert.ok(held, 'the held rule');

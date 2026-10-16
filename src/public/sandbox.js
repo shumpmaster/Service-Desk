@@ -430,17 +430,22 @@ function summaryBox(name, sum, col) {
  * A ruling's line 1 where the sandbox shows it (AC55's "Your last action", AC52's "Done today"; the
  * owner's follow-up ruling, answer 2): when its words take more than three lines at the width as
  * drawn (measured as the summary is, `measureClips`), the box shows the first three, faded at the
- * cut, and is a button of its own, "Show the whole of <code>", opening the whole line, word for word,
- * in a bubble (AC54 (a)'s machinery: one open at a time, closed as AC56 says). Three lines or fewer:
- * whole, at its own height, no fade, no control. `id` names it on its screen; `lead` is text shown
- * before the words inside the box ("Your last action: "); `wcls` is the words' own class.
+ * cut, and is a button of its own, "Show the whole of <code>", opening line 1, word for word, in a
+ * bubble (AC54 (a)'s machinery: one open at a time, closed as AC56 says); `mark` (" (proxy)") and
+ * `after` (the time and code) follow the box, outside the button and the bubble. Three lines or
+ * fewer: the one-line form, words, mark and `after` on the same line, at its own height, no fade, no
+ * control. `id` names it on its screen; `lead` is text before the words ("Your last action: "),
+ * `wcls` the words' own class, `after(inline)` gives the nodes that follow, and `notice` a line the
+ * open bubble adds when a refresh would change the line under it (AC55, draft 4).
  */
-function lineBox(id, words, recCode, title, lead = null, wcls = 'sb-line-w') {
+function lineBox(id, { words, recCode, title, lead = null, wcls = 'sb-line-w', mark = null, after = () => [], notice = null }) {
   const k = `line:${id}`;
+  lineText.set(id, words);
   const over = lineOver.get(id) === true;
   const isOpen = over && bubble.open === k;
   const bid = `linebub-${id.replace(/[^A-Za-z0-9_-]/g, '_')}`;
-  const inner = [lead, h('span', { class: wcls }, words)];
+  // Short, the mark follows the words as part of the line ("… (proxy)"); clipped, it follows the box.
+  const inner = [lead, h('span', { class: wcls }, over ? words : `${words}${mark || ''}`)];
   const text = over
     ? h('button', {
       type: 'button', class: 'sb-line', key: k, 'aria-label': `Show the whole of ${recCode}`, 'aria-expanded': isOpen ? 'true' : 'false',
@@ -457,15 +462,17 @@ function lineBox(id, words, recCode, title, lead = null, wcls = 'sb-line-w') {
         } else bubbleOpen(k, 'key');
       },
     }, inner)
-    : h('span', { class: 'sb-line' }, inner);
-  return h('div', { class: 'sb-linebox', key: `linebox:${id}` },
+    : h('span', { class: 'sb-line' }, inner, after(true));
+  return [h('div', { class: 'sb-linebox', key: `linebox:${id}` },
     // Nothing scrolls in the box: where a browser lacks `overflow: clip`, focus scrolling the text is undone.
     h('div', { class: `sb-lineclip${over ? ' over' : ''}`, key: `lineclip:${id}`, 'data-line': id, onscroll: (e, el) => { if (el.scrollTop) el.scrollTop = 0; } }, text),
     isOpen ? h('div', {
       class: `sb-bubble sb-linebub ${placeClass()}`, id: bid, role: 'dialog', 'aria-label': `${title}: ${recCode}`, key: bubbleKey(k), 'data-bubble': k,
     }, h('div', { class: 'sb-bubble-top' }, h('p', { class: 'sb-eyebrow' }, title),
       closeControl(() => { bubble.close(); render(); focusKey(k); }, `linebubble-close:${id}`)),
-    h('p', { class: 'sb-bubble-t' }, words)) : null);
+    h('p', { class: 'sb-bubble-t' }, words),
+    notice ? h('p', { class: 'sb-bubble-note', role: 'status', key: 'line-notice' }, notice) : null) : null),
+  over ? h('span', { class: 'sb-line-m' }, mark ? h('span', { class: 'sb-line-mark' }, mark.trim()) : null, after(Boolean(mark))) : null];
 }
 
 function homeCard(p, seen, col) {
@@ -651,18 +658,35 @@ function renderStatus(p) {
  * away (lineBox); the time and code follow, outside the control.
  */
 function lastActionNode(p) {
-  const la = lastAction(p.project, p.model, p.snap, p.j, new Date(Date.now()), TZ);
+  const fresh = lastAction(p.project, p.model, p.snap, p.j, new Date(Date.now()), TZ);
   const name = p.project.name;
+  // While its whole-line bubble is open, a refresh leaves the line and the bubble as they were
+  // (AC55, draft 4; AC56): what changed waits until the owner closes it, and the bubble says so.
+  let la = fresh;
+  let notice = null;
+  if (bubble.open === 'line:last' && heldLast && heldLast.name === name) {
+    la = heldLast.la;
+    if (laSig(fresh) !== laSig(la)) notice = NEWER_ARRIVING;
+  } else if (bubble.open === 'line:last' && fresh.state === 'ok') heldLast = { name, la: fresh };
+  else heldLast = null;
   const lead = h('span', { class: 'sb-last-l' }, 'Your last action: ');
-  return h('div', { class: 'sb-last', key: 'last-action' },
-    la.state === 'ok'
-      ? h('div', { class: 'sb-last-t' },
-        la.action.clip ? lineBox('last', la.words, la.code, 'Your last action', lead) : h('span', {}, lead, h('span', { class: 'sb-line-w' }, la.words)),
-        h('span', { class: 'sb-line-m' }, h('span', { class: 'sb-sep' }, ' · '),
-          h('span', { live: () => whenText(new Date(la.action.at), new Date(Date.now()), TZ) }), ' ', la.link ? ext(la.link, la.code, 'code') : code(la.code)))
-      : h('p', { class: 'sb-last-t' }, la.text),
+  let line;
+  if (la.state !== 'ok') line = h('p', { class: 'sb-last-t' }, la.text);
+  else {
+    const proxy = la.action.kind === 'ruling' && la.action.proxy;
+    const after = (sep) => [sep ? h('span', { class: 'sb-sep' }, ' · ') : null, h('span', { class: 'sb-last-when', live: () => whenText(new Date(la.action.at), new Date(Date.now()), TZ) }),
+      ' ', la.link ? ext(la.link, la.code, 'code') : code(la.code)];
+    line = la.action.clip
+      ? h('div', { class: 'sb-last-t' }, lineBox('last', { words: la.action.words, recCode: la.code, title: 'Your last action', lead, mark: proxy ? ' (proxy)' : null, after, notice }))
+      : h('p', { class: 'sb-last-t' }, lead, h('span', { class: 'sb-line-w' }, la.words), after(true));
+  }
+  return h('div', { class: 'sb-last', key: 'last-action' }, line,
     h('details', { class: 'sb-why', key: `last-why:${name}` }, h('summary', {}, 'Your merges?'), h('p', { class: 'small' }, `Not in this line: ${la.merges} (the desk reads only open pull requests).`)));
 }
+/** What "Your last action" shows, as one string, to tell whether a refresh would change it. */
+const laSig = (la) => `${la.state}|${la.text}|${la.code || ''}`;
+const NEWER_ARRIVING = 'A newer action is arriving. Close this to see it.';
+let heldLast = null; // { name, la }: the line as it was when its bubble opened
 
 // ---------------------------------------------------------------------------
 // AC55: the Pipeline, Time asked and Agents views, in the new design, with the same facts as the
@@ -864,7 +888,10 @@ function renderQueue(p, key) {
   // Opening the fold lays its rows out: a ruling's line is judged against three lines then (AC52).
   body.push(h('details', { class: 'sb-card sb-donetoday', key: 'done-today', ontoggle: () => measureClips() }, h('summary', {}, `Done today (${done.length + s.left.length})`),
     done.length || s.left.length ? h('ul', { class: 'sb-qlist sb-done' }, done.map((d) => h('li', { class: 'sb-done-r', key: `done:${d.kind}:${d.code}` },
-      d.clip ? lineBox(`done:${d.code}`, d.text, d.code, 'Done today', null, 'sb-done-w') : h('span', { class: 'sb-done-w' }, d.text), ' ', d.link ? ext(d.link, d.code, 'code') : code(d.code), ' ', h('span', { class: 'sb-muted small' }, d.words))),
+      d.clip
+        ? lineBox(`done:${d.code}`, { words: d.line, recCode: d.code, title: 'Done today', wcls: 'sb-done-w', mark: d.proxy ? ' (proxy)' : null,
+          after: () => [' ', d.link ? ext(d.link, d.code, 'code') : code(d.code), ' ', h('span', { class: 'sb-muted small' }, d.words)] })
+        : [h('span', { class: 'sb-done-w' }, d.text), ' ', d.link ? ext(d.link, d.code, 'code') : code(d.code), ' ', h('span', { class: 'sb-muted small' }, d.words)])),
     s.left.map((x) => h('li', { class: 'sb-done-r' }, h('span', { class: 'sb-done-w' }, x.title), ' ', code(x.code), ' ', h('span', { class: 'sb-muted small' }, 'no longer open, time not recorded'))))
       : h('p', { class: 'sb-muted small' }, 'Nothing answered today yet.')));
   const out = [h('section', { class: 'sb-screen' }, body, bottomBar(name, 'queue', q.waiting))];
@@ -1598,6 +1625,18 @@ function placeBubble() {
 const summaryOver = new Map();
 /** The same for a ruling's line (AC55, AC52): its box holds at most three lines (CSS) and hides the rest. */
 const lineOver = new Map();
+const lineText = new Map(); // id → the words drawn (lineBox)
+const lineAt = new Map(); // id → { text, width } when last judged over
+/**
+ * Short, the one-line form also holds the time and code in the box, so a line whose words alone
+ * fit in three lines may still run past them with the time and code; once judged over at a width,
+ * it stays over for the same words at that width (no flip back and forth), and is judged afresh
+ * when either changes.
+ */
+function lineStaysOver(id) {
+  const at = lineAt.get(id);
+  return Boolean(at && at.text === lineText.get(id) && at.width === window.innerWidth);
+}
 function measureClips() {
   const view = document.getElementById('view');
   if (!view) return;
@@ -1609,7 +1648,11 @@ function measureClips() {
     if (sum == null && line == null) return;
     const [sh, ch] = [el.scrollHeight, el.clientHeight];
     if (typeof sh !== 'number' || typeof ch !== 'number' || !ch) return;
-    const over = sh > ch + 1;
+    let over = sh > ch + 1;
+    if (line != null) {
+      if (over && lineOver.get(line) !== true) lineAt.set(line, { text: lineText.get(line), width: window.innerWidth });
+      else if (lineOver.get(line) === true && lineStaysOver(line)) over = true;
+    }
     const [map, name, k] = sum != null ? [summaryOver, sum, `sum:${sum}`] : [lineOver, line, `line:${line}`];
     if (map.get(name) !== over) {
       map.set(name, over);
@@ -1768,6 +1811,12 @@ export function startSandbox(opts = {}) {
   window.addEventListener('resize', () => {
     fitBranches();
     measureClips(); // a turned phone or a resized window: judged again at the new width (AC54 (a))
+    // An open bubble is placed again for the new screen: inside it, clear of the bottom bar (N2).
+    if (bubble.open) {
+      bubble.place = null;
+      render();
+      placeBubble();
+    }
   });
   // The 15-second tick (AC56) changes only the text that depends on the time, in place.
   setInterval(() => { if (isVisible()) tick(view); }, 15_000);

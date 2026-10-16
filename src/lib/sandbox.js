@@ -971,6 +971,7 @@ export function doneToday(project, model, snap, now, tz, j = null) {
   const { actions } = ownerActions(project, model, snap, j);
   return actions.filter((a) => dayKey(new Date(a.at), tz) === today).map((a) => ({
     kind: a.kind, text: `${a.words}${a.kind === 'ruling' && a.proxy ? ' (proxy)' : ''}`, code: a.code, link: a.link, at: a.at, clip: a.clip === true,
+    line: a.words, proxy: a.kind === 'ruling' && a.proxy === true,
     words: `at ${hhmm(new Date(a.at), tz)}`,
   }));
 }

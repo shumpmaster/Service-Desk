@@ -225,6 +225,43 @@ test('AC56 refresh, Status (step 2b, 2026-10-16): "Your last action"\'s whole-li
   }
 });
 
+test('AC56 refresh, Status (step 2b, draft 4): with that bubble open and scrolled part way, a poll bringing a new ruling whose time is still unread leaves it open, unchanged and scrolled where it was, saying "A newer action is arriving. Close this to see it."; closed by the owner, the line reads "not available yet", then the new ruling once its time arrives', async () => {
+  const { app, setup } = await longLine('#/p/Alpha', 'last');
+  try {
+    const ctl = keyed(app, 'line:last');
+    await app.tap(ctl);
+    const bub = keyed(app, 'linebubble:last');
+    bub.scrollTop = 300;
+    const words = byClass(bub, 'sb-bubble-t')[0].textContent;
+    setup.repos.Alpha.commit({ 'decisions/questions/Alpha-newest.md': 'Ruling: D\n' });
+    setup.repos.Alpha.history['decisions/questions/Alpha-newest.md'] = [{ commit: { committer: { date: new Date(app.now).toISOString() } } }];
+    const call = app.server.call;
+    app.server.call = (path, body) => call(path, body && Array.isArray(body.history) ? { ...body, history: body.history.filter((x) => !x.endsWith('Alpha-newest.md')) } : body);
+    app.scrolls.length = 0;
+    await app.advance(POLL_MS); // the poll: the new ruling's file, its time held back
+    await app.tick(); // the 15-second tick
+    app.module.refresh(); // a redraw with nothing new
+    await app.flush();
+    assert.equal(keyed(app, 'linebubble:last'), bub, 'the same bubble, still open');
+    assert.equal(bub.scrollTop, 300, 'at the same scroll position');
+    assert.equal(byClass(bub, 'sb-bubble-t')[0].textContent, words, 'unchanged');
+    assert.equal(byClass(bub, 'sb-bubble-note')[0].textContent, 'A newer action is arriving. Close this to see it.');
+    assert.equal(keyed(app, 'line:last'), ctl);
+    assert.deepEqual(app.scrolls, []);
+    await app.key('Escape');
+    assert.equal(keyed(app, 'linebubble:last'), null, 'closed only by the owner');
+    assert.match(byClass(app.view, 'sb-last')[0].textContent, /^Your last action: not available yet/);
+    app.server.call = call;
+    await app.advance(POLL_MS); // its history read arrives
+    await app.advance(POLL_MS);
+    lineLines(app, 'last', 1);
+    await app.resize(360);
+    assert.match(byClass(app.view, 'sb-last')[0].textContent, /^Your last action: D · /);
+  } finally {
+    app.restore();
+  }
+});
+
 test('AC56 refresh, Queue (step 3b, 2026-10-16): "Done today" opened, with a ruling row\'s whole-line bubble open and scrolled part way, all stay through every kind of refresh', async () => {
   const { app, setup } = await longLine('#/p/Alpha/queue', 'done:P-001-design-lab-open');
   try {

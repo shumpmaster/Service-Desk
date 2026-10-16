@@ -13,6 +13,7 @@ html.sb {
   --shade0: #1d5bd6; --shade1: #5b8be6; --shade2: #0f3f9e; --shade3: #8fb0ee;
   --you0: #d23c0f; --you1: #f07a50; --you2: #9c2a08; --you3: #f4a283;
   --r: 6px; --rs: 4px; --track: .04em;
+  --sb-dock-h: 65px; /* the project screens' bottom bar: its height, and the room every bubble keeps clear of it */
   --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   color-scheme: light;
@@ -195,7 +196,7 @@ button.sb-sum:focus-visible { outline: none; }
 
 /* The bottom bar inside a project (AC48): Status · Timeline · Team · Queue, Home's neutral look.
    Above every tile, capsule and control on the screens (z-index up to 2), below a sheet and its scrim (5, 6). */
-.sb-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surf2); border-top: 1px solid var(--line); padding: 4px 8px 8px; }
+.sb-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; height: var(--sb-dock-h); overflow: hidden; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surf2); border-top: 1px solid var(--line); padding: 4px 8px 8px; }
 .sb-tab { display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 52px; text-decoration: none; color: var(--muted); position: relative;
   font: 700 .62rem/1.1 var(--font); letter-spacing: var(--track); text-transform: uppercase; }
 .sb-tab[aria-current="page"] { color: var(--ink); }
@@ -449,10 +450,11 @@ button.sb-line { display: block; width: 100%; height: 100%; padding: 0; border: 
 button.sb-line:focus-visible { outline: none; }
 .sb-linebox > .sb-bubble { top: calc(100% + 4px); left: -4px; right: -4px; }
 .sb-linebox > .sb-bubble.up { top: auto; bottom: calc(100% + 4px); }
-.sb-linebox + .sb-line-m { display: block; }
-.sb-linebox + .sb-line-m .sb-sep { display: none; } /* the time starts its own line */
+.sb-linebox + .sb-line-m { display: block; } /* clipped: the mark, time and code start their own line */
+.sb-bubble-note { position: sticky; bottom: -12px; margin: 8px -12px -12px; padding: 6px 12px 8px; background: var(--surf); border-top: 1px solid var(--line);
+  font-size: .82rem; font-weight: 700; }
 /* The project screens' bottom bar is fixed at the foot of the screen: every bubble on them keeps clear of it. */
-.sb-screen:has(> .sb-dock) { --sb-clear: 65px; }
+.sb-screen:has(> .sb-dock) { --sb-clear: var(--sb-dock-h); }
 .sb-last-l { font-weight: 800; color: var(--you); }
 .sb-last .sb-why { font-size: .74rem; }
 .sb-last a.code { text-decoration: underline; }

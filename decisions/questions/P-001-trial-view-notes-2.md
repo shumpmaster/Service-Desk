@@ -56,3 +56,17 @@ How notes 3 to 9 are read:
 - 7 and 8 (Timeline): the Timeline becomes one continuous feed, from the project's start to now, newest at the top, in the style of the owner's snippet (a thin rail with a dot per entry). Each entry's title is a plain-English description of the task, then three bullets: technical, context or what, and why. The checkmarks and status marks on the right stay. Each line is taken from a record, or reads "not recorded".
 - 9: the snippet is a style reference. Its invented copy, its looping animation and its version badges are not carried over; the feed shows only the project's real records.
 - The batch stays open; mockups start now.
+
+Notes 10 to 14, on the batch-2 mockup (docs/design/mockups/status-and-timeline.html, first version), the owner's message verbatim (2026-10-16):
+"What happened to the visual branching idea I stated previously. 
+
+I like how these are all laid out, I think on the phases and milestones if we incorporate the visual branching, then maybe soften the text color for not utilized milestones and add a simple light directional line that ties the milestones/phases from the bottom to the top to indicate direction - if those changes get made I think I will love it. 
+
+And then, for the timeline rework, I love it. Two things to add phase color indicators so that 1 clean scroll would visually show all phases as you scroll by. Then color coding of the sub bullets for the “why, what…” on the timeline. Just so it’s easily visible"
+
+How it is read:
+- 10 (branching): the first version of the mockup dropped the branch drawing from notes 1 and 2; that was the orchestrator's miss. The Status page carries it: one column of dots per run beside the phase boxes, run 2 branching right at Design.
+- 11 (soften): milestones the project does not take on, and those no record says it reached, have softer text than those it does.
+- 12 (direction line): a light line ties the phases, and the milestones inside each phase, together, with small arrowheads showing which way the work runs. Drawn in the second version running from the start at the top down to Done, the order the phases are listed in; whether the owner meant the list to read from the bottom up is asked in chat.
+- 13 (phase colours): each phase has its own colour. On the Timeline, the line down the left takes the colour of the phase each entry belongs to, and the phase's name stays pinned at the top while its stretch scrolls by. The phase boxes on Status carry the same colour. The name is always in words too, never colour alone.
+- 14 (bullet colours): Technical, Context and Why each have their own colour, on the label and down the bullet's left edge; each keeps its label.

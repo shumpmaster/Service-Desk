@@ -1,0 +1,79 @@
+<title>Desk Colour Swatches</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one phone-width column: the desk's colours that already mean something, then the new phase and bullet colours, then a sample band and bullets. */
+:root {
+  --page: #eef0f2; --surf: #ffffff; --ink: #0b0d10; --muted: #4b525b; --line: #d6d9de;
+  --you: #d23c0f; --agent: #1d5bd6; --pass: #0f7a3a; --fail: #b8141d; --merge: #5b3cc4; --block: #9e5800; --gold: #8a6a10;
+  --ph-disc: #0f766e; --ph-des: #9d2f7e; --ph-build: #5c6a10; --ph-launch: #7a5a48;
+  --b-tech: #4b525b; --b-ctx: #35628a; --b-why: #8a4f9e;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0c0d0f; --surf: #16181c; --ink: #f1f3f5; --muted: #a3a9b2; --line: #30353c;
+  --you: #ff6a3d; --agent: #6ea0ff; --pass: #3fb950; --fail: #ff6b6b; --merge: #a78bfa; --block: #e3a33b; --gold: #d4ae4f;
+  --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
+  --b-tech: #a3a9b2; --b-ctx: #81b0dc; --b-why: #cd8fe3; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --page: #0c0d0f; --surf: #16181c; --ink: #f1f3f5; --muted: #a3a9b2; --line: #30353c;
+  --you: #ff6a3d; --agent: #6ea0ff; --pass: #3fb950; --fail: #ff6b6b; --merge: #a78bfa; --block: #e3a33b; --gold: #d4ae4f;
+  --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
+  --b-tech: #a3a9b2; --b-ctx: #81b0dc; --b-why: #cd8fe3; color-scheme: dark }
+body { margin: 0; background: var(--page); color: var(--ink); font: 400 .94rem/1.5 var(--font); }
+.wrap { max-width: 440px; margin: 0 auto; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 28px; }
+h1 { margin: 0; font: 800 1.45rem/1.2 var(--font); }
+h2 { margin: 0; font: 800 .74rem/1.3 var(--font); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+p { margin: 0; } .lead { color: var(--muted); }
+section { display: grid; gap: 10px; }
+.sw { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 4px 12px; align-items: center; background: var(--surf); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+.sw i { width: 36px; height: 24px; border-radius: 4px; background: var(--c); grid-row: span 2; }
+.sw b { color: var(--c); font: 800 .95rem/1.2 var(--font); }
+.sw span { font: 600 .78rem/1.35 var(--font); color: var(--muted); }
+.band { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 2px solid var(--c); color: var(--c); font: 800 .74rem/1.3 var(--font); letter-spacing: .07em; text-transform: uppercase; }
+.band::before { content: ""; width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
+.bul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.bul li { padding-left: 8px; border-left: 3px solid var(--c); display: grid; gap: 2px; }
+.bul .k { font: 800 .72rem/1.3 var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--c); }
+.note { background: var(--surf); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; color: var(--muted); font-size: .88rem; }
+</style>
+<div class="wrap">
+  <h1>New colours for phases and bullets</h1>
+  <p class="lead">Your pick: every colour on the desk means one thing. These are the proposed shades, each checked against the colours the desk already uses, in light and dark. Switch your phone to dark mode to see the dark set.</p>
+
+  <section><h2>Already taken: keep their one meaning</h2>
+    <div class="sw" style="--c:var(--you)"><i></i><b>Coral</b><span>needs you</span></div>
+    <div class="sw" style="--c:var(--agent)"><i></i><b>Blue</b><span>an agent is on it · links</span></div>
+    <div class="sw" style="--c:var(--pass)"><i></i><b>Green</b><span>passed · merged</span></div>
+    <div class="sw" style="--c:var(--fail)"><i></i><b>Red</b><span>failed</span></div>
+    <div class="sw" style="--c:var(--merge)"><i></i><b>Purple</b><span>merges</span></div>
+    <div class="sw" style="--c:var(--block)"><i></i><b>Amber</b><span>blocked</span></div>
+    <div class="sw" style="--c:var(--gold)"><i></i><b>Gold</b><span>now · next to reach</span></div>
+  </section>
+
+  <section><h2>New: one per phase</h2>
+    <div class="sw" style="--c:var(--ph-disc)"><i></i><b>Teal</b><span>Discovery (was violet, too near merges' purple)</span></div>
+    <div class="sw" style="--c:var(--ph-des)"><i></i><b>Magenta</b><span>Design (was the agents' blue exactly)</span></div>
+    <div class="sw" style="--c:var(--ph-build)"><i></i><b>Olive</b><span>Build (was teal)</span></div>
+    <div class="sw" style="--c:var(--ph-launch)"><i></i><b>Clay</b><span>Launch (was magenta)</span></div>
+  </section>
+
+  <section><h2>New: one per Timeline bullet</h2>
+    <div class="sw" style="--c:var(--b-tech)"><i></i><b>Slate</b><span>Technical (unchanged: a grey, so it carries no meaning of its own)</span></div>
+    <div class="sw" style="--c:var(--b-ctx)"><i></i><b>Steel blue</b><span>Context (was amber, too near blocked)</span></div>
+    <div class="sw" style="--c:var(--b-why)"><i></i><b>Lilac</b><span>Why (was coral, too near needs you)</span></div>
+  </section>
+
+  <section><h2>How they look in place</h2>
+    <div class="band" style="--c:var(--ph-launch)">Launch · planned</div>
+    <div class="band" style="--c:var(--ph-build)">Build · run 2 · planned</div>
+    <div class="band" style="--c:var(--ph-des)">Design · run 2 · now</div>
+    <div class="band" style="--c:var(--ph-disc)">Discovery</div>
+    <ul class="bul">
+      <li style="--c:var(--b-tech)"><span class="k">Technical</span><span>S-001 AC54(a), AC56 · 292 tests</span></li>
+      <li style="--c:var(--b-ctx)"><span class="k">Context</span><span>Each tile's project summary was about 600 characters in a half-width column, which made the tiles very tall.</span></li>
+      <li style="--c:var(--b-why)"><span class="k">Why</span><span>"Oooh I don’t love the current tile size."</span></li>
+    </ul>
+  </section>
+
+  <p class="note">Every new colour passes the readability standard for text on its background (contrast 4.5 to 1 or more), and none sits close to another colour on the desk. The nearest pairs are Build's olive beside the passed green (light), and Launch's clay beside the grey text (dark); both are still clearly apart. Every colour also keeps its name beside it.</p>
+</div>

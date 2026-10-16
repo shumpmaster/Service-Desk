@@ -385,9 +385,10 @@ test('AC55 + AC54 (2026-10-16): every bubble is held to the viewport\'s height l
   assert.match(rule('.sb-dock'), /height: var\(--sb-dock-h\); overflow: hidden;/, 'and the bar is drawn at exactly that height');
   assert.match(css, /html\.sb \{[^}]*--sb-dock-h: 65px;/, 'set once (65 px: 52 px tabs, 4 + 8 px padding, 1 px hairline)');
   assert.match(rule('.sb-tab'), /min-height: 52px;/, 'the tabs fit the bar: 52 + 12 + 1 = 65');
-  assert.match(rule('.sb-dock'), /padding: 4px 8px 8px;/);
+  assert.match(rule('.sb-dock'), /padding: var\(--s1\) var\(--s2\) var\(--s2\);/, 'AC62: 4, 8 and 8 px from the one scale');
   assert.match(rule('.sb-dock'), /border-top: 1px solid/);
-  assert.match(rule('.sb-bubble-top'), /position: sticky; top: -6px; background: var\(--surf\);/, 'its top row, with "Close", stays in view while it scrolls');
+  assert.match(rule('.sb-bubble-top'), /position: sticky; top: -8px; background: var\(--surf\);/, 'its top row, with "Close", stays in view while it scrolls');
+  assert.match(rule('.sb-bubble'), /padding: var\(--s2\) var\(--s3\) var\(--s3\);/, 'its top padding (8 px, AC62) is what the sticky row rises by');
   const held = /\n(\.sb-bubble\.held,[^{]*)\{([^}]*)\}/.exec(css);
   assert.ok(held, 'the held rule');
   for (const sel of ['.sb-sumbox > .sb-bubble.held', '.sb-linebox > .sb-bubble.held', '.sb-bubble.held.col-l', '.sb-bubble.held.col-r', '.sb-sumbox > .sb-bubble.held.col-l', '.sb-sumbox > .sb-bubble.held.col-r']) {
@@ -395,8 +396,10 @@ test('AC55 + AC54 (2026-10-16): every bubble is held to the viewport\'s height l
   }
   assert.match(held[2], /position: fixed; top: 8px; bottom: auto; left: max\(16px, calc\(50% - 264px\)\); right: max\(16px, calc\(50% - 264px\)\);/, 'held in the viewport, inside the gutters');
   // The line box: at most three lines, the rest hidden, a fade into the row's background, no ellipsis.
-  assert.match(rule('.sb-lineclip'), /line-height: 1\.4; max-height: 4\.2em; overflow: hidden; overflow: clip;/);
-  assert.match(rule('.sb-lineclip.over'), /height: 4\.2em;/);
+  // AC62 (2026-10-16): a ruling's words take the quoted record's role (.9rem at 1.45): three lines are 4.35em.
+  assert.match(css, /--t-quote: 400 \.9rem\/1\.45 var\(--font\);/);
+  assert.match(rule('.sb-lineclip'), /font: var\(--t-quote\); max-height: 4\.35em; overflow: hidden; overflow: clip;/);
+  assert.match(rule('.sb-lineclip.over'), /height: 4\.35em;/);
   assert.match(rule('.sb-lineclip.over::after'), /background: linear-gradient\(to right, transparent, var\(--surf\) 85%\);/);
   assert.match(rule('.sb-last'), /background: var\(--surf\);/, 'the fade ends in "Your last action"\'s background');
   assert.match(rule('.sb-card'), /background: var\(--surf\);/, 'and in "Done today"\'s');
@@ -451,6 +454,10 @@ for (const [kind, acceptedHash, sandboxHash] of [
 ]) {
   for (const name of ['Service-Desk', 'Personal-Org-Operating-Model']) {
     if (kind === 'Agents' && name !== 'Service-Desk') continue;
+    // AC68 (2026-10-16): a v3 project's Pipeline view folds into the Timeline, the Queue and the Team
+    // screen; its route opens the Timeline (AC68's test). The facts of AC9's no sandbox screen shows
+    // are listed in the sandbox pull request (AC36). The v2.5 reduced view stays, with the same facts.
+    if (kind === 'Pipeline' && name === 'Service-Desk') continue;
     test(`AC55: the rebuilt ${kind} view for ${name} shows the same values and words as the accepted view`, async () => {
       const route = `#/p/${name}${acceptedHash ? `/${acceptedHash}` : ''}`;
       const acc = await loadApp({ hash: route, repos: detailRepos(), now: WHEN });
@@ -507,7 +514,9 @@ test('AC55: no element of the sandbox links to an accepted M1 or M2 view, on any
         }
       }
     }
-    assert.ok(seen.has('#/p/Service-Desk/pipeline') && seen.has('#/p/Service-Desk/asked') && seen.has('#/p/Service-Desk/agents'));
+    // AC68: no Pipeline link for a v3 project; the v2.5 project keeps its reduced view.
+    assert.ok(!seen.has('#/p/Service-Desk/pipeline') && seen.has('#/p/Service-Desk/asked') && seen.has('#/p/Service-Desk/agents'));
+    assert.ok(seen.has('#/p/Personal-Org-Operating-Model/pipeline'));
     assert.ok(seen.size > 20, `${seen.size} routes`);
   } finally {
     app.restore();

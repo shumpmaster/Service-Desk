@@ -159,9 +159,55 @@ export function nowRun(tl) {
 }
 
 /**
+ * The runs of the branch drawing (AC57's Terms, C): the model's phase runs in its order; the first
+ * starts run 1, and each later one whose phase is the same as, or comes before, the phase of the run
+ * just before it starts a new run (the work went back). Returns { runs, k: Map(run → its run number), count }.
+ */
+export function columnsOf(tl) {
+  const runs = tl ? tl.runs().filter((r) => DESK_PHASES.includes(r.phase)) : [];
+  const k = new Map();
+  let n = 0;
+  let prev = null;
+  for (const r of runs) {
+    if (!prev || DESK_PHASES.indexOf(r.phase) <= DESK_PHASES.indexOf(prev.phase)) n++;
+    k.set(r, n);
+    prev = r;
+  }
+  return { runs, k, count: n };
+}
+
+/**
+ * Which of AC50's two rules gave the now run: 'open' (the earliest run holding a project milestone
+ * not dropped with no work filed: one milestone is then next to reach), 'latest' (every one has work
+ * filed: the run holding the latest recorded step), or null (no now run).
+ */
+export function nowRule(tl) {
+  if (!tl) return null;
+  const runs = tl.runs().filter((r) => DESK_PHASES.includes(r.phase));
+  if (runs.some((r) => r.project.some((m) => !m.dropped && !(r.sprints[m.id] || []).length))) return 'open';
+  return nowRun(tl) ? 'latest' : null;
+}
+
+/**
+ * A phase run's state against the now run (AC57's Terms): 'finished' (before it, its phase run no
+ * more after it: finished and standing), 'gone back over' (before it, its phase run again later),
+ * 'now', 'still to come' (after it), or 'not recorded' with no now run.
+ */
+export function runStateOf(r, runs, now) {
+  if (!now) return 'not recorded';
+  const i = runs.indexOf(r);
+  const ni = runs.indexOf(now);
+  if (i === ni) return 'now';
+  if (i > ni) return 'still to come';
+  return runs.slice(i + 1).some((x) => x.phase === r.phase) ? 'gone back over' : 'finished';
+}
+
+/**
  * The four phases, then Done (AC50). Returns { tracked, phases: [{ phase, word, now, iteration,
  * run, runs }], finished, done, nowRun, words }. Untracked (v2.5, or no timeline yet): tracked
- * false, with `why` in words.
+ * false, with `why` in words. Each phase's word (trial-view notes 2, note 1) is the state of its
+ * latest run in the model's timeline, the first rule that fits giving it: "Now" (with " · run <k>"
+ * when the project has more than one run), "Finished", "Run <k> still to come", "Not started".
  */
 export function phaseView(project, tl, tree, j) {
   if (project.model !== 'v3') return { tracked: false, why: 'Phases not tracked', detail: V25_NOT_RECORDED, phases: [], finished: null, done: false };
@@ -176,52 +222,28 @@ export function phaseView(project, tl, tree, j) {
   if (!runs.length || !now) {
     return { tracked: true, nowRun: null, done, finished: null, phases: DESK_PHASES.map((phase) => ({ phase, word: NOT_RECORDED, now: false, runs: runs.filter((r) => r.phase === phase), run: null })) };
   }
+  const cols = columnsOf(tl);
   const nowIdx = runs.indexOf(now);
   const phases = DESK_PHASES.map((phase) => {
     const all = runs.filter((r) => r.phase === phase);
-    const upTo = runs.slice(0, nowIdx + 1).filter((r) => r.phase === phase);
-    const latest = upTo.length ? upTo[upTo.length - 1] : null;
+    const latest = all.length ? all[all.length - 1] : null;
     let word;
-    if (latest === now) word = 'now';
-    else if (latest) word = 'Finished';
+    if (phase === now.phase) word = `Now${cols.count > 1 ? ` · run ${cols.k.get(now)}` : ''}`;
+    else if (latest && runs.indexOf(latest) < nowIdx) word = 'Finished';
+    else if (latest && all.some((r) => runs.indexOf(r) < nowIdx)) word = `Run ${cols.k.get(latest)} still to come`;
     else word = 'Not started';
-    return { phase, word, now: latest === now, iteration: latest ? latest.iteration : null, run: latest || all[0] || null, runs: all };
+    return { phase, word, now: phase === now.phase, iteration: phase === now.phase ? now.iteration : latest ? latest.iteration : null, run: latest, runs: all };
   });
   return { tracked: true, nowRun: now, done, phases, finished: phases.filter((p) => p.word === 'Finished').length };
 }
 
-export const finishedWords = (pv) => (pv.tracked && pv.finished != null ? `${pv.finished} of 4 phases finished` : pv.why || 'Phases not tracked');
-
-/** Counts by state, in a fixed order, for a box heading ("3 reached · 2 not recorded"). */
-export function countByState(words) {
-  const order = ['reached', 'carried over', 'under way', 'work filed', 'not reached', 'no work filed yet', 'not needed', 'not recorded', 'dropped'];
-  const c = new Map();
-  for (const w of words) c.set(w, (c.get(w) || 0) + 1);
-  return [...c.entries()].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0])).map(([w, n]) => `${n} ${w}`).join(' · ');
-}
-
-/** A sprint's link (AC51): its pull request, or its item's latest outcome `record` when the tree holds it. */
+/** A sprint's link (AC51's link rule): its pull request, or its item's latest outcome `record` when the tree holds it. */
 export function sprintLink(project, tree, tl, s) {
   const pr = /^PR #(\d+)$/.exec(s);
   if (pr) return pullLink(project, pr[1]);
   let record = null;
   for (const [, o] of (tl && tl.byItem.get(s)) || []) if (o.trigger === 'outcome' && typeof o.record === 'string') record = o.record;
   return treeLink(project, tree, record);
-}
-
-/** The milestones of one phase (AC50's tap): the standard ones of its run, then the project's own. */
-export function phaseMilestones(project, tree, tl, ph) {
-  const run = ph.run;
-  if (!run) return { standard: [], own: [], counts: '', runLabel: null };
-  const standard = run.standard.map((s) => ({ id: s.id, name: deskWords(s.name), word: standardWord(s.state), from: s.from }));
-  const own = [];
-  for (const r of ph.runs) {
-    for (const m of r.project) {
-      own.push({ id: m.id, name: m.name, done: m.done, word: projectMilestoneWord(r, m), run: r.label(),
-        sprints: (r.sprints[m.id] || []).map((s) => ({ id: s, link: sprintLink(project, tree, tl, s) })) });
-    }
-  }
-  return { standard, own, counts: countByState(standard.map((s) => s.word)), runLabel: run.label() };
 }
 
 // ---------------------------------------------------------------------------
@@ -979,259 +1001,13 @@ export function doneToday(project, model, snap, now, tz, j = null) {
 export { stageName, entryWords, PHASE_OF_STAGE, OUTCOMES_PATH, ROUTING_PATH, whenText, durationText, tidyNote, newFileUrl, parseCardPath };
 
 // ---------------------------------------------------------------------------
-// AC51: the Timeline — one line of work per project, in order, without a time scale
-
-const SHORT = { Discovery: 'Dis', Design: 'Des', Build: 'Bui', Launch: 'Lau' };
-export const runKeyOf = (r) => `${r.phase}-i${r.iteration}`;
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-function dayWords(ms, tz) {
-  const k = dayKey(new Date(ms), tz).split('-');
-  return `${Number(k[2])} ${MONTHS[Number(k[1]) - 1]}`;
-}
-
-/** The milestone dot's kind (AC51): filled, ringed (under way), empty, or hatched (not recorded / not needed). */
-export function dotKind(word, inNowRun) {
-  if (word === 'reached' || word === 'carried over') return 'filled';
-  if (word === 'work filed' || (word === 'not reached' && inNowRun)) return 'ringed';
-  if (word === 'not recorded' || word === 'not needed') return 'hatched';
-  return 'empty';
-}
+// AC51's Timeline is rebuilt by AC59 and AC60 (trial-view notes 2): its model is lib/feed.js's
+// feedView. What stays of AC51 is its link rule (treeLink above) and AC22's own timeline in the
+// Agents view.
 
 /** A log row's shape (J9), or its own action words for a routed row of another kind. */
 function shapeOf(o) {
   return entryShape(o) || (o && typeof o.action === 'string' ? o.action : null);
-}
-
-/** One step's words, with no clock time and no duration (ruling 2). */
-export function stepText(o, shape) {
-  const stage = Number.isInteger(o.stage) ? stageName(o.stage).replace(/^[0-9]+ /, '') : null;
-  switch (shape) {
-    case 'dispatch': return { text: `${o.role || NOT_RECORDED} started${stage ? ` (${stage})` : ''}`, who: 'agent', mark: '→' };
-    case 'outcome': {
-      const bad = o.result === 'error' || o.verdict === 'FAIL';
-      const v = o.verdict && o.verdict !== 'none' ? `, verdict ${o.verdict}` : '';
-      return { text: `${o.role || NOT_RECORDED} ${bad ? 'failed' : 'finished'}: ${o.result || NOT_RECORDED}${v}`, who: bad ? 'fail' : 'pass', mark: bad ? '✗' : '✓', bad, good: !bad };
-    }
-    case 'card': return { text: `Card ${o.gate}-${o.card} raised for you`, who: 'you', mark: '◆' };
-    case 'decision': return { text: `You answered ${o.gate}-${o.card}: ${o.word}${o.proxy === true ? ' (proxy)' : ''}`, who: 'you', mark: '◆' };
-    case 'done': return { text: `${o.item} done`, who: 'agent', mark: '✓' };
-    case 'anomaly': return { text: 'Orchestrator anomaly', who: 'block', mark: '!' };
-    case 'request': return { text: `${o.item} created`, who: 'agent', mark: '+' };
-    default: return { text: `${o.action || o.trigger || 'entry'}`, who: 'agent', mark: '·' };
-  }
-}
-
-/** The record a step links to (AC51's link rule), only when the tree holds the path. */
-function stepLink(project, tree, o, shape, ctx) {
-  if (shape === 'outcome') return treeLink(project, tree, o.record);
-  if (shape === 'dispatch') {
-    const out = ctx.outcomeOf(o);
-    return out ? treeLink(project, tree, out.record) : treeLink(project, tree, `status/${o.item}.toml`);
-  }
-  if (shape === 'card') return treeLink(project, tree, `queue/${o.item}-${o.gate}-${o.card}.md`);
-  if (shape === 'decision') return treeLink(project, tree, typeof o.record === 'string' ? o.record : `decisions/${o.item}/${o.gate}-${o.card}.md`);
-  if (shape === 'anomaly') return treeLink(project, tree, ctx.monthOf(o));
-  return null;
-}
-
-/**
- * The Timeline screen's model (AC51). runKey picks the run on screen (default the now run).
- * Returns { ok, words } until the records are in.
- */
-export function timelineView(project, tree, tl, pv, j, runKey, tz = 'UTC') {
-  if (project.model !== 'v3') return { ok: false, words: V25_NOT_RECORDED, title: null };
-  if (!tl || !pv.tracked) return { ok: false, words: `The timeline: ${NOT_AVAILABLE} until the project's records are read.`, title: null };
-  const runs = tl.runs().filter((r) => DESK_PHASES.includes(r.phase));
-  if (!runs.length) return { ok: false, words: `No runs: the phases are ${NOT_RECORDED}.`, title: null };
-  const now = pv.nowRun;
-  const shown = runs.find((r) => runKeyOf(r) === runKey) || now || runs[runs.length - 1];
-  const rowsByPos = new Map(tl.log.map(([pos, o]) => [pos, o]));
-  const monthOf = (o) => {
-    const pos = tl.log.find(([, x]) => x === o);
-    return pos && j && j.logSource ? j.logSource[pos[0]] : null;
-  };
-  const outcomes = new Map();
-  for (const [, o] of tl.log) if (o.trigger === 'outcome' && typeof o.session === 'string') outcomes.set(o.session, o);
-  const outcomeOf = (d) => outcomes.get(`${d.item}:${d.route}:${d.time}`) || null;
-  const ctx = { outcomeOf, monthOf };
-  let hatched = false;
-
-  const strip = DESK_PHASES.map((phase) => {
-    const all = runs.filter((r) => r.phase === phase);
-    const latest = all.length ? all[all.length - 1] : null;
-    const dots = latest ? [
-      ...latest.standard.map((s) => ({ name: deskWords(s.name), word: standardWord(s.state), kind: dotKind(standardWord(s.state), latest === now) })),
-      ...latest.project.map((m) => ({ name: m.name, word: projectMilestoneWord(latest, m), kind: dotKind(projectMilestoneWord(latest, m), latest === now) })),
-    ] : [];
-    if (dots.some((d) => d.kind === 'hatched')) hatched = true;
-    return { phase, short: SHORT[phase], iters: all.map((r) => `i${r.iteration}`).join(' '), dots, current: shown.phase === phase,
-      runKey: latest ? runKeyOf(latest) : null };
-  });
-  strip.push({ phase: 'Done', short: 'Done', iters: pv.done ? 'Done' : '', dots: [], current: false, runKey: null, done: pv.done, dashed: !pv.done });
-
-  // The run's steps: its item's own lines, and its milestones' sprints with theirs.
-  const stepState = (o, shape, w) => {
-    if (shape === 'outcome') return w.bad ? 'failed' : 'done';
-    if (shape === 'dispatch') {
-      if (outcomeOf(o)) return 'done';
-      // No outcome for its session key: an outcome of the same item and role after it still ends it.
-      const lines = tl.byItem.get(o.item) || [];
-      const at = lines.findIndex(([, x]) => x === o);
-      return lines.slice(at + 1).some(([, x]) => x.trigger === 'outcome' && x.role === o.role) ? 'done' : 'now';
-    }
-    // A card waits on the owner until its answer file is on the default branch; then it ticks off where it sits.
-    if (shape === 'card') return tree && tree.has(`decisions/${o.item}/${o.gate}-${o.card}.md`) ? 'done' : 'you';
-    if (shape === 'anomaly') return 'failed';
-    return 'done';
-  };
-  const stepsFor = (lines) => {
-    const out = [];
-    let lastDecision = null;
-    let round = 1;
-    const lastOutcome = new Map();
-    for (const [pos, o] of lines) {
-      const shape = shapeOf(o);
-      if (!shape || shape === 'request') continue;
-      const w = stepText(o, shape);
-      let note = null;
-      if (shape === 'dispatch') {
-        const prev = lastOutcome.get(o.role);
-        if (prev && prev.result === 'error') note = 'Second try';
-        else if (lastDecision && /re-specify|resubmit|retry/.test(lastDecision.word || '')) {
-          round++;
-          note = `Round ${round} · after your ${lastDecision.word}`;
-        }
-        lastDecision = null;
-        // A stall note only where a session ran past its limit (J9); it gives no length (ruling 2).
-        const ended = outcomeOf(o);
-        const ran = ended ? Date.parse(ended.time) - Date.parse(o.time) : NaN;
-        if (Number.isFinite(ran) && ran > timeLimitMinutes(j ? j.routing : null, o.role).minutes * 60e3) note = note ? `${note} · ran past its time limit` : 'ran past its time limit';
-      }
-      if (shape === 'outcome') lastOutcome.set(o.role, o);
-      if (shape === 'decision') lastDecision = o;
-      if (shape === 'card') note = 'waited on you';
-      const at = Date.parse(o.time);
-      out.push({ pos, at: Number.isFinite(at) ? at : null, ...w, note, link: stepLink(project, tree, o, shape, ctx), shape, state: stepState(o, shape, w),
-        time: typeof o.time === 'string' ? o.time : null, role: typeof o.role === 'string' ? o.role : null, item: o.item || null });
-    }
-    return out;
-  };
-  const itemLines = (item, run) => {
-    const lines = tl.byItem.get(item) || [];
-    if (!run || !run.isItemRun) return lines;
-    // The run's span: from its first routed line to the next run of the item.
-    const itemRuns = runs.filter((r) => r.item === item && r.isItemRun).sort((a, b) => a.first - b.first);
-    const nextRun = itemRuns[itemRuns.indexOf(run) + 1];
-    const end = nextRun ? nextRun.first : Infinity;
-    const owned = new Set([...run.routed, ...run.decisions].map(([p]) => p));
-    return lines.filter(([p, o]) => owned.has(p) || (p >= run.first && p < end && !Object.prototype.hasOwnProperty.call(o, 'route')
-      && !(o.word !== undefined && !owned.has(p))));
-  };
-  const withMerge = (item, steps) => {
-    const mg = (j && j.merges ? j.merges : []).filter((m) => m.item === item);
-    for (const m of mg) steps.push({ pos: Infinity, at: null, text: `${item} merged into ${project.defaultBranch}`, who: 'merge', mark: '⇄', note: null,
-      link: m.merge ? commitLink(project, m.merge) : null, shape: 'merge', state: 'done', time: null, role: null, item });
-    return steps;
-  };
-  /** Newest at the top, with a marker where the day changes; no clock time and no duration (ruling 2). */
-  const newestFirst = (steps) => {
-    const st = [...steps].sort((a, b) => b.pos - a.pos);
-    const out = [];
-    let day = null;
-    for (const x of st) {
-      if (x.at != null) {
-        const d = dayWords(x.at, tz);
-        if (day !== null && d !== day) out.push({ day: `${day}` });
-        day = d;
-      }
-      out.push(x);
-    }
-    return out;
-  };
-  const summarise = (steps) => {
-    const fails = steps.filter((x) => x.bad).length;
-    const passes = steps.filter((x) => x.good).length;
-    const dec = steps.filter((x) => x.shape === 'decision').length;
-    const cards = steps.filter((x) => x.shape === 'card').length;
-    return { fails, passes, dec, cards, n: steps.filter((x) => x.shape !== 'merge' && !x.day).length };
-  };
-  const latestPos = (steps) => Math.max(-1, ...steps.filter((x) => Number.isFinite(x.pos)).map((x) => x.pos));
-  /** A sprint (a piece of work) on the line: its heading, its link, and its steps newest first. */
-  const sprintOf = (sid, roles) => {
-    const pr = /^PR #(\d+)$/.exec(sid);
-    if (pr) {
-      return { id: sid, heading: `Pull request #${pr[1]}`, link: pullLink(project, pr[1]), isPr: true,
-        steps: [{ pos: -1, at: null, text: `Pull request #${pr[1]}`, who: 'merge', mark: '⇄', note: null, link: pullLink(project, pr[1]), shape: 'pr', state: 'plain', time: null, role: null, item: null }] };
-    }
-    for (const [, o] of tl.byItem.get(sid) || []) if (o.role && roles) roles.add(o.role);
-    const steps = withMerge(sid, stepsFor(tl.byItem.get(sid) || []));
-    return { id: sid, heading: sid, link: sprintLink(project, tree, tl, sid), isPr: false, steps: newestFirst(steps), last: latestPos(steps) };
-  };
-  /** Sprints newest first: by their latest step; pull requests, which hold no step, after them, the latest number first. */
-  const orderSprints = (list) => [...list.filter((x) => !x.isPr).sort((a, b) => b.last - a.last), ...list.filter((x) => x.isPr).sort((a, b) => Number(b.id.slice(4)) - Number(a.id.slice(4)))];
-  const flat = (sprints) => sprints.flatMap((x) => x.steps);
-
-  const parts = [];
-  for (const m of shown.project) {
-    const word = projectMilestoneWord(shown, m);
-    const roles = new Set();
-    const pieces = shown.sprints[m.id] || [];
-    const sprints = orderSprints(pieces.map((sid) => sprintOf(sid, roles)));
-    const c = summarise(flat(sprints));
-    parts.push({ kind: word === 'work filed' ? 'ms under' : 'ms', heading: m.name, code: m.id, word, open: false, sprints,
-      detail: `${c.n} step${c.n === 1 ? '' : 's'} so far${c.n ? `: ${c.fails} failed, ${c.passes} passed` : ''}. Pieces of work: ${pieces.length ? pieces.join(', ') : 'none filed'}. `
-        + `Who: ${roles.size ? [...roles].join(', ') : NOT_RECORDED}.`, steps: flat(sprints) });
-  }
-  // Sprints the model's timeline ties to one of the run's standard milestones sit under it.
-  const stdParts = [];
-  for (const sm of shown.standard) {
-    const ids = shown.sprints[sm.id] || [];
-    if (!ids.length) continue;
-    const roles = new Set();
-    const sprints = orderSprints(ids.map((sid) => sprintOf(sid, roles)));
-    stdParts.push({ kind: 'std', heading: deskWords(sm.name), code: sm.id, word: standardWord(sm.state), open: false, sprints,
-      detail: `Pieces of work: ${ids.join(', ')}. Who: ${roles.size ? [...roles].join(', ') : NOT_RECORDED}.`, steps: flat(sprints) });
-  }
-  // Not tied to a milestone (C): the model's untagged sprints, and the run's item's own steps.
-  const loose = orderSprints(shown.untagged.map((sid) => sprintOf(sid, null)));
-  if (shown.isItemRun) {
-    const own = withMerge(shown.item, stepsFor(itemLines(shown.item, shown)));
-    if (own.length) loose.push({ id: shown.item, heading: `${shown.item}'s own steps`, link: null, isPr: false, own: true, steps: newestFirst(own), last: latestPos(own) });
-  }
-  const ordered = [
-    ...parts.filter((x) => x.kind === 'ms under').reverse(),
-    ...parts.filter((x) => x.kind === 'ms').reverse(),
-    ...stdParts,
-    ...(loose.length ? [{ kind: 'other', heading: 'Not tied to a milestone', code: null, word: '', sprints: loose, steps: flat(loose) }] : []),
-  ];
-  const all = ordered.flatMap((x) => x.steps.filter((st) => !st.day));
-  const c = summarise(all);
-  let sentence;
-  if (!c.n) sentence = 'No recorded steps in this run yet.';
-  else {
-    const bits = [];
-    if (c.fails) bits.push(`${c.fails} return${c.fails === 1 ? '' : 's'} failed${c.passes ? ` and ${c.passes} passed` : ''}`);
-    else if (c.passes) bits.push(`${c.passes} return${c.passes === 1 ? '' : 's'} passed, none failed`);
-    if (c.cards) bits.push(`${c.cards} card${c.cards === 1 ? '' : 's'} waited on you`);
-    if (c.dec) bits.push(`you made ${c.dec} decision${c.dec === 1 ? '' : 's'}`);
-    sentence = `${bits.length ? bits.join('; ') : `${c.n} steps`}.`;
-    sentence = sentence[0].toUpperCase() + sentence.slice(1);
-  }
-  // An iteration note where a run began after a gate sent the work back (AC51).
-  let iterNote = null;
-  if (shown.iteration > 1) {
-    const before = (shown.item ? tl.byItem.get(shown.item) || [] : []).filter(([pos, o]) => pos < shown.first && entryShape(o) === 'decision');
-    const d = before.length ? before[before.length - 1][1] : null;
-    iterNote = d ? { text: `${shown.label()} began after your answer to ${d.gate}-${d.card}: ${d.word}`, yours: true }
-      : { text: `${shown.label()}: the ${ITER_WORDS[shown.iteration] || `${shown.iteration}th`} time through ${shown.phase}; the answer that sent the work back is ${NOT_RECORDED} in this run`, yours: false };
-  }
-  const standard = shown.standard.map((x) => ({ id: x.id, name: deskWords(x.name), word: standardWord(x.state) }));
-  const switcher = runs.filter((r) => r.phase === shown.phase).map((r) => ({ key: runKeyOf(r), label: r.label(), current: r === shown }));
-  return {
-    ok: true, title: `${shown.label()}${shown === now ? ' · now' : ''}`, strip, switcher,
-    key: `Milestones · reached · under way · not started${hatched ? ' · not recorded' : ''}`,
-    run: { label: shown.label(), key: runKeyOf(shown), now: shown === now, sentence, standard, standardCounts: countByState(standard.map((x) => x.word)), parts: ordered, iterNote },
-  };
 }
 
 // ---------------------------------------------------------------------------

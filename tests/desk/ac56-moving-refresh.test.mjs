@@ -10,6 +10,9 @@ import { repo } from './fake-desk.mjs';
 import { j11Files } from './sandbox-helpers.mjs';
 import { readFileSync } from 'node:fs';
 import { CONFIG, SRC } from './helpers.mjs';
+import { SD3 } from './sandbox-helpers.mjs';
+import { pullsAnswer } from './j12-fixture.mjs';
+import { railLayout } from './tv2-fixtures.mjs';
 
 const all = (node) => findAll(node, () => true);
 const keyed = (app, k) => findAll(app.view, (e) => e.dataset && e.dataset.k === k)[0] || null;
@@ -521,22 +524,69 @@ test('AC56 refresh, Queue: an open, scrolled sheet with a choice picked and text
   }
 });
 
-test('AC56 refresh, Timeline: a milestone\'s detail and the standard milestones box, opened, stay open', async () => {
+/** Service-Desk at 3117150 with J12's answer, beside Alpha (whose records every refresh changes). */
+function withSD() {
   const setup = twoProjects();
-  const app = await opened(setup, '#/p/Alpha/timeline');
+  const sd = repo(j11Files());
+  sd.pullsAnswer = pullsAnswer();
+  setup.config = { ...setup.config, projects: [...setup.config.projects, SD3] };
+  setup.repos['Service-Desk'] = sd;
+  return setup;
+}
+
+test('AC56 refresh, Timeline (step 4, 2026-10-16: AC59, AC60): scrolled away from Now, one milestone\'s sprints opened and a "Not tied to a milestone" line\'s sprints opened: each stays as it was, and the screen does not scroll back to Now', async () => {
+  const setup = withSD();
+  const app = await opened(setup, '#/p/Service-Desk/timeline');
   try {
-    const std = findAll(app.view, (e) => e.tag === 'details' && /^std:/.test(e.dataset.k || ''))[0];
-    std.setAttribute('open', '');
-    const msBtn = findAll(app.view, (e) => e.tag === 'button' && /^tlms-btn:/.test(e.dataset.k || ''))[0];
-    msBtn.click();
-    await app.flush();
-    assert.equal(msBtn.attrs['aria-expanded'], 'true');
-    const detail = findAll(app.view, (e) => /^tldetail:/.test(e.dataset.k || ''))[0];
-    assert.ok(detail, "the milestone's detail is open in place");
+    await app.advance(POLL_MS);
+    const fold = (k) => keyed(app, `fold:sprints:${k}`);
+    const ms = fold('Build-i1:M2B');
+    const untied = fold('Design-i2:untied');
+    assert.ok(ms && untied, 'both folds drawn');
+    assert.equal(ms.attrs['aria-expanded'], 'false', 'every list starts folded');
+    await app.tap(ms);
+    await app.tap(untied);
+    assert.equal(fold('Build-i1:M2B').attrs['aria-expanded'], 'true');
+    const tasks = keyed(app, 'tasks:Build-i1:M2B');
+    assert.ok(tasks, 'its sprints are open');
+    window.scrollY = 2400; // the owner scrolled away from Now
+    app.scrolls.length = 0;
     await everyRefresh(app, setup);
-    assert.ok(app.view.contains(std) && 'open' in std.attrs, 'the standard milestones box stays open');
-    assert.equal(msBtn.attrs['aria-expanded'], 'true', "the milestone's detail stays open");
-    assert.ok(app.view.contains(detail));
+    assert.equal(fold('Build-i1:M2B').attrs['aria-expanded'], 'true', 'the milestone\'s sprints stay open');
+    assert.equal(fold('Design-i2:untied').attrs['aria-expanded'], 'true', 'and the untied ones');
+    assert.equal(keyed(app, 'tasks:Build-i1:M2B'), tasks, 'the same element');
+    assert.deepEqual(app.scrolls, [], 'no scroll back to Now on a refresh');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC56 refresh, Status (step 4b, 2026-10-16: AC57): one phase box folded and another opened from folded, and an earlier run\'s gathered standard milestones opened: each stays as it was, and the drawing\'s dots stay level with their phase names', async () => {
+  const setup = withSD();
+  const app = await opened(setup, '#/p/Service-Desk');
+  const ys = { Done: 40, Launch: 140, Build: 300, Design: 560, Discovery: 820 };
+  try {
+    await app.advance(POLL_MS);
+    const name = (ph) => findAll(keyed(app, `pbox:${ph}`), (e) => e.tag === 'button' && e.attrs['data-pname'] === ph)[0];
+    await app.tap(name('Launch')); // fold an open box
+    await app.tap(name('Discovery')); // open the one that starts folded
+    await app.tap(keyed(app, 'fold:gather:Design-i1'));
+    assert.equal(name('Launch').attrs['aria-expanded'], 'false');
+    assert.equal(name('Discovery').attrs['aria-expanded'], 'true');
+    assert.ok(keyed(app, 'gathered:Design-i1'));
+    await everyRefresh(app, setup);
+    assert.equal(name('Launch').attrs['aria-expanded'], 'false', 'Launch stays folded');
+    assert.equal(name('Discovery').attrs['aria-expanded'], 'true', 'Discovery stays open');
+    assert.ok(keyed(app, 'gathered:Design-i1'), 'the gathered milestones stay open');
+    const undo = railLayout(ys);
+    try {
+      app.module.refresh();
+      await app.flush();
+      const dots = findAll(byClass(keyed(app, 'pboxes'), 'sb-rail')[0], (e) => e.attrs['data-kind'] === 'dot');
+      for (const d of dots) assert.ok(Math.abs(Number(d.attrs.cy) - ys[d.attrs['data-phase']]) <= 1, `${d.attrs['data-phase']}: level with its name after the refresh`);
+    } finally {
+      undo();
+    }
   } finally {
     app.restore();
   }

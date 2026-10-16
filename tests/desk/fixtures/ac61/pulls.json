@@ -1,0 +1,23 @@
+{
+ "note": "NOT real records: made-up pull requests, merged into main after Design i2 began (8 Oct), whose bodies are written in AC61 (c)'s forms (model S-032's draft of 2026-10-16), for AC57's, AC60's and AC61's tests. tests/desk/fixtures/README.md lists them.",
+ "nodes": [
+  { "number": 901, "title": "Made up: the Status screen read from the bottom up", "createdAt": "2026-10-10T09:00:00Z", "mergedAt": "2026-10-10T12:00:00Z",
+    "body": "## What this means for you\n\nThe Status screen now reads from the bottom up.\n\nMilestone: MD3\n\n## Context\n- The owner's notes asked for the phases to read from the bottom up (source: decisions/questions/P-001-trial-view-notes-2.md)\n- Version 6 of the mockup was approved (source: docs/design/mockups/status-and-timeline.html)\n\n## Why\nSo a glance shows where the work is.\n\nAnd a second paragraph, kept as its own.\n" },
+  { "number": 902, "title": "Made up: headings written another way", "createdAt": "2026-10-10T13:00:00Z", "mergedAt": "2026-10-10T14:00:00Z",
+    "body": "## What this means for you\n\nNothing changes for you.\n\nMilestone: MD1\n\n### Context:\n- A fact under a level-three heading with a colon (source: research/Q-013-memo.md)\n\n# why\nThe why under a level-one heading in lower case.\n" },
+  { "number": 903, "title": "Made up: a standard milestone named by its pull request", "createdAt": "2026-10-11T09:00:00Z", "mergedAt": "2026-10-11T10:00:00Z",
+    "body": "## What this means for you\n\nEvery fact checked.\n\nMilestone: Design-4\n\n## Context\n- The facts were listed with their sources (source: specs/S-001.md)\n\n## Why\nSo every fact is backed.\n" },
+  { "number": 904, "title": "Made up: a records-only change", "createdAt": "2026-10-11T11:00:00Z", "mergedAt": "2026-10-11T12:00:00Z",
+    "body": "## What this means for you\n\nA record filed.\n\nMilestone: none (a records-only change)\n\n## Context\n- none beyond the ruling quoted in Why.\n\n## Why\n> \"Just file it.\"\n" },
+  { "number": 905, "title": "Made up: the exception bullet and a quoted Why", "createdAt": "2026-10-12T09:00:00Z", "mergedAt": "2026-10-12T10:00:00Z",
+    "body": "## What this means for you\n\nA quoted ruling.\n\n## Context\n- None beyond the ruling quoted in Why\n\n## Why\n\"One thing to change here. The answer choices are a little tight\"\n" },
+  { "number": 906, "title": "Made up: a bullet missing its source", "createdAt": "2026-10-12T11:00:00Z", "mergedAt": "2026-10-12T12:00:00Z",
+    "body": "## What this means for you\n\nA fact with no source.\n\n## Context\n- A fact whose source is not named\n- A fact with one (source: docs/PROJECT.md)\n\n## Why\nTo show the gap.\n" },
+  { "number": 907, "title": "Made up: a bullet that runs on to an indented line", "createdAt": "2026-10-13T09:00:00Z", "mergedAt": "2026-10-13T10:00:00Z",
+    "body": "## What this means for you\n\nA long fact.\n\n## Context\n- A fact that runs on\n  to a second, indented line (source: docs/PROJECT.md)\nNot a bullet: never shown.\n\n## Why\nTo join it.\n" },
+  { "number": 908, "title": "Made up: none of these forms", "createdAt": "2026-10-13T11:00:00Z", "mergedAt": "2026-10-13T12:00:00Z",
+    "body": "## What this means for you\n\nA change with no Milestone line, Context or Why.\n" },
+  { "number": 909, "title": "Made up: an id the plan does not hold", "createdAt": "2026-10-13T13:00:00Z", "mergedAt": "2026-10-13T14:00:00Z",
+    "body": "## What this means for you\n\nIt names a milestone that is not in the plan.\n\nMilestone: MZ9\n" }
+ ]
+}

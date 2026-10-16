@@ -108,11 +108,15 @@ test('AC54 (a) + AC42 (2026-10-15): the card holds the 600-character summary who
   // The summary's box: three lines' height exactly (3 x its line height), the rest hidden, never scrolled, no ellipsis.
   const clip = /\n\.sb-sumclip \{([^}]*)\}/.exec(css);
   assert.ok(clip, 'the summary box has its rule');
-  assert.match(clip[1], /font-size: \.8rem; line-height: 1\.35; height: 4\.05em;/, 'its height is three of its lines (3 x 1.35em)');
+  // AC62 (2026-10-16): the summary takes the quoted record's role; its box is three of that role's lines.
+  const quote = /--t-quote: \d+ [\d.]+rem\/([\d.]+) var\(--font\);/.exec(css);
+  assert.ok(quote, 'the quoted record role');
+  const lh = Number(quote[1]);
+  assert.match(clip[1], new RegExp(`font: var\\(--t-quote\\); height: ${String(Math.round(3 * lh * 100) / 100).replace('.', '\\.')}em;`), `its height is three of its lines (3 x ${lh}em)`);
   assert.match(clip[1], /overflow: hidden; overflow: clip;/, 'it hides the lines after the third and is no scroll container where the browser has `clip`');
   assert.doesNotMatch(clip[1], /line-clamp|text-overflow|scroll|auto|max-height|nowrap/);
-  assert.match(css, /\.sb-sum \{ margin: 0; font-size: \.8rem; line-height: 1\.35;/, 'the text has the box\'s line height');
-  assert.match(css, /\nbutton\.sb-sum \{[^}]*height: 100%;[^}]*font: inherit; line-height: inherit;/, 'the button is the box\'s three lines, in the same type');
+  assert.match(css, /\.sb-sum \{ margin: 0; font: var\(--t-quote\);/, 'the text has the box\'s role, and so its line height');
+  assert.match(css, /\nbutton\.sb-sum \{[^}]*height: 100%;[^}]*font: var\(--t-quote\);/, 'the button is the box\'s three lines, in the same type');
   assert.doesNotMatch(css, /line-clamp|text-overflow:\s*ellipsis/, 'no line clamp or ellipsis anywhere in the sandbox');
 });
 
@@ -269,7 +273,7 @@ test('AC54 (a) (2026-10-15): one bubble at a time: opening the summary closes "L
 
 test('AC54 (a) (2026-10-15): judged again when the width changes: a summary past three lines at 360 px and within three at 414 px loses its fade and control at 414 px, and gains them back at 360 px', async () => {
   const crossing = readmeSummary(tv('README-crossing.md'));
-  assert.equal(crossing, 'A summary of four lines at 360 pixels and three lines at 414 pixels.');
+  assert.equal(crossing, 'A summary of four lines at 360 pixels and three at 414 pixels.');
   const config = { ...CONFIG, projects: [v3('Gamma')] };
   const repos = { Gamma: fullRepo('Gamma') };
   repos.Gamma.commit({ 'README.md': tv('README-crossing.md') });
@@ -507,7 +511,8 @@ test('AC54 (b): at 360 px the bubble spans the grid inside the gutters, above or
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
   assert.match(css, /\.sb-bubble\.col-l \{ left: 0; right: calc\(-100% - 8px\); \}/, 'a left-column card\'s bubble spans both columns');
   assert.match(css, /\.sb-bubble\.col-r \{ right: 0; left: calc\(-100% - 8px\); \}/);
-  assert.match(css, /\.sb-grid \{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; \}/, 'the grid\'s gap is the bubble\'s 8 px');
+  assert.match(css, /\.sb-grid \{ display: grid; grid-template-columns: 1fr 1fr; gap: var\(--s2\); \}/, 'the grid\'s gap is the bubble\'s 8 px (AC62: --s2)');
+  assert.match(css, /--s2: 8px;/);
   assert.match(css, /\.sb-bubble\.up \{ top: auto; bottom: calc\(100% \+ 4px\); \}/, 'placed above to fit');
   const block = /@media \(prefers-reduced-motion: no-preference\) \{\s*\.sb-bubble \{ animation/.test(css);
   assert.ok(block, 'its motion only without reduced motion');

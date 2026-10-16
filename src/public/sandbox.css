@@ -13,6 +13,7 @@ html.sb {
   --shade0: #1d5bd6; --shade1: #5b8be6; --shade2: #0f3f9e; --shade3: #8fb0ee;
   --you0: #d23c0f; --you1: #f07a50; --you2: #9c2a08; --you3: #f4a283;
   --r: 6px; --rs: 4px; --track: .04em;
+  --sb-dock-h: 65px; /* the project screens' bottom bar: its height, and the room every bubble keeps clear of it */
   --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   color-scheme: light;
@@ -130,14 +131,24 @@ button.sb-sum:focus-visible { outline: none; }
   border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf); color: var(--muted); font: 700 .7rem/1 var(--font); cursor: pointer; }
 .sb-latest .ic { width: 16px; height: 16px; }
 .sb-latest.on { color: var(--ink); border-color: var(--ink); }
-/* The bubble spans the group's grid (both columns), below the card's top row or above the card, so it is never clipped. */
+/* The bubble spans the group's grid (both columns), below the card's top row or above the card, so it is never clipped.
+   Every bubble (AC54, AC55, 2026-10-16) is held to the viewport's height less a margin at each end, and
+   clear of the project screens' bottom bar (--sb-clear, set on those screens below): taller content
+   scrolls up and down inside it, never sideways, and its top row, with "Close", stays in view (sticky). */
 .sb-bubble { position: absolute; z-index: 8; top: 48px; background: var(--surf); color: var(--ink); border: 1px solid var(--ink); border-radius: var(--r);
-  padding: 6px 12px 12px; box-shadow: 0 6px 18px rgb(0 0 0 / .18); }
+  padding: 6px 12px 12px; box-shadow: 0 6px 18px rgb(0 0 0 / .18);
+  max-height: calc(100vh - var(--sb-clear, 0px) - 16px); max-height: calc(100dvh - var(--sb-clear, 0px) - 16px);
+  overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
 .sb-bubble.col-l { left: 0; right: calc(-100% - 8px); }
 .sb-bubble.col-r { right: 0; left: calc(-100% - 8px); }
 .sb-bubble.up { top: auto; bottom: calc(100% + 4px); }
-.sb-bubble-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sb-bubble-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; position: sticky; top: -6px; background: var(--surf); }
 .sb-bubble-t { margin: 4px 0 0; font-size: .9rem; line-height: 1.4; }
+/* Held: taller than the room, or where the page cannot scroll it into the room, the bubble is held
+   in the viewport itself, inside the page's gutters, a margin from the top and clear of the bottom bar. */
+.sb-bubble.held, .sb-sumbox > .sb-bubble.held, .sb-linebox > .sb-bubble.held, .sb-bubble.held.col-l, .sb-bubble.held.col-r,
+.sb-sumbox > .sb-bubble.held.col-l, .sb-sumbox > .sb-bubble.held.col-r {
+  position: fixed; top: 8px; bottom: auto; left: max(16px, calc(50% - 264px)); right: max(16px, calc(50% - 264px)); }
 @media (prefers-reduced-motion: no-preference) {
   .sb-bubble { animation: sb-pop .12s ease-out; }
   @keyframes sb-pop { from { opacity: .4; transform: translateY(-4px); } }
@@ -181,16 +192,11 @@ button.sb-sum:focus-visible { outline: none; }
 .sb-pill.bad { background: var(--blocks); border-color: var(--block); color: var(--ink); }
 .sb-pill.bad::before { content: "!"; margin-right: 6px; color: var(--block); }
 .sb-v5 { color: var(--muted); font-size: .84rem; margin: 14px 0; }
-/* Home's bottom band: neutral grey with a hairline above it (AC48), deferred. */
-.sb-band { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; background: var(--surf2); border-top: 1px solid var(--line); padding: 10px 16px 14px; }
-.sb-band > * { max-width: 528px; margin-left: auto; margin-right: auto; }
-.sb-composer { width: 100%; min-height: 44px; display: flex; gap: 10px; align-items: center; padding: 0 14px; border: 1px solid var(--line); border-radius: var(--rs);
-  background: var(--surf); color: var(--muted); font: 600 .95rem var(--font); cursor: not-allowed; text-align: left; }
-.sb-deferred { margin: 4px auto 0; font-size: .74rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track); }
+/* Home has no bottom band (AC48, 2026-10-16): the owner dropped the "Tell your Chief of Staff…" bar it held. */
 
 /* The bottom bar inside a project (AC48): Status · Timeline · Team · Queue, Home's neutral look.
    Above every tile, capsule and control on the screens (z-index up to 2), below a sheet and its scrim (5, 6). */
-.sb-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surf2); border-top: 1px solid var(--line); padding: 4px 8px 8px; }
+.sb-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; height: var(--sb-dock-h); overflow: hidden; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surf2); border-top: 1px solid var(--line); padding: 4px 8px 8px; }
 .sb-tab { display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 52px; text-decoration: none; color: var(--muted); position: relative;
   font: 700 .62rem/1.1 var(--font); letter-spacing: var(--track); text-transform: uppercase; }
 .sb-tab[aria-current="page"] { color: var(--ink); }
@@ -277,6 +283,15 @@ button.sb-sum:focus-visible { outline: none; }
   font: 600 .92rem/1.25 var(--font); text-align: left; text-decoration: none; display: inline-flex; align-items: center; }
 .sb-chip.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
 .sb-chip.on::before { content: "● "; }
+/* Lettered choices (P-001-answer-choice-spacing): one full-width box each, stacked with room
+   between; the letter in its own column, apart from its text, and wrapped lines under the text.
+   The picked mark sits in a third column, so the text never moves when a choice is picked. */
+.sb-chips.sb-choices { flex-direction: column; flex-wrap: nowrap; gap: 12px; margin: 10px 0; }
+.sb-choices .sb-chip { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; width: 100%;
+  padding: 12px 16px; line-height: 1.35; }
+.sb-choice-l { grid-column: 1; grid-row: 1; min-width: 1.1em; margin-right: 12px; font-weight: 800; }
+.sb-choice-t { grid-column: 2; grid-row: 1; min-width: 0; overflow-wrap: anywhere; }
+.sb-choices .sb-chip.on::before { content: "●"; grid-column: 3; grid-row: 1; margin-left: 10px; }
 .sb-rec { font-size: .9rem; }
 .sb-tag { display: inline-block; font: 800 .64rem/1.3 var(--font); text-transform: uppercase; letter-spacing: var(--track); border: 1px solid currentColor; border-radius: var(--rs); padding: 1px 5px; color: var(--muted); }
 .sb-box textarea { display: block; width: 100%; min-height: 8em; font: .88rem/1.4 var(--mono); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px;
@@ -420,6 +435,26 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 /* Status: "Your last action" just above the waiting bar (AC55). */
 .sb-last { border-left: 3px solid var(--you); background: var(--surf); border-radius: var(--rs); padding: 6px 10px; margin: 4px 0 2px; }
 .sb-last-t { margin: 0; font-size: .9rem; }
+/* A ruling's line 1 (AC55, AC52; 2026-10-16): at most three lines in its box, the rest hidden, never
+   scrolled, no ellipsis; past three lines the third fades at its end into the row's background
+   (--surf, in each theme) and the box is a button opening the whole line in a bubble. A shorter line
+   takes its own height. The time and code follow the box, outside it. */
+.sb-linebox { position: relative; }
+.sb-lineclip { position: relative; line-height: 1.4; max-height: 4.2em; overflow: hidden; overflow: clip; }
+.sb-lineclip.over { height: 4.2em; } /* the button is exactly the three lines it shows */
+.sb-lineclip.over::after { content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1.4em; pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--surf) 85%); }
+.sb-lineclip:has(.sb-line:focus-visible) { outline: 2px solid var(--focus); outline-offset: 1px; }
+button.sb-line { display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: none; font: inherit; line-height: inherit;
+  text-align: left; color: var(--ink); cursor: pointer; }
+button.sb-line:focus-visible { outline: none; }
+.sb-linebox > .sb-bubble { top: calc(100% + 4px); left: -4px; right: -4px; }
+.sb-linebox > .sb-bubble.up { top: auto; bottom: calc(100% + 4px); }
+.sb-linebox + .sb-line-m { display: block; } /* clipped: the mark, time and code start their own line */
+.sb-bubble-note { position: sticky; bottom: -12px; margin: 8px -12px -12px; padding: 6px 12px 8px; background: var(--surf); border-top: 1px solid var(--line);
+  font-size: .82rem; font-weight: 700; }
+/* The project screens' bottom bar is fixed at the foot of the screen: every bubble on them keeps clear of it. */
+.sb-screen:has(> .sb-dock) { --sb-clear: var(--sb-dock-h); }
 .sb-last-l { font-weight: 800; color: var(--you); }
 .sb-last .sb-why { font-size: .74rem; }
 .sb-last a.code { text-decoration: underline; }

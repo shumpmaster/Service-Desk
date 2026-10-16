@@ -171,7 +171,7 @@ test('AC51: no clock time or duration on the line, on any run', async () => {
   }
 });
 
-test('AC51 + AC48 (build review B2): the bottom bar and Home\'s band sit above every tile, capsule and control of the screens, and below a sheet and its scrim (the CSS; the browser\'s elementFromPoint check is in the pull request)', () => {
+test('AC51 + AC48 (build review B2; 2026-10-16, no band on Home): the project screens\' bottom bar sits above every tile, capsule and control of the screens, and below a sheet and its scrim (the CSS; the browser\'s elementFromPoint check is in the pull request)', () => {
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const z = (sel) => {
     const m = new RegExp(`(?:^|\\n)${sel.replace(/\./g, '\\.')} \\{([^}]*)\\}`).exec(css);
@@ -180,12 +180,14 @@ test('AC51 + AC48 (build review B2): the bottom bar and Home\'s band sit above e
     assert.ok(v, `${sel} has a z-index of its own`);
     return Number(v[1]);
   };
-  const bars = { '.sb-dock': z('.sb-dock'), '.sb-band': z('.sb-band') };
+  const bars = { '.sb-dock': z('.sb-dock') };
+  // AC48 (2026-10-16): Home has no bottom band, so there is no `.sb-band` to stack.
+  assert.doesNotMatch(css, /\.sb-band\b/, 'no `.sb-band` rule');
   const overlays = { '.sb-scrim': z('.sb-scrim'), '.sb-sheet': z('.sb-sheet') };
   // Every other rule with a z-index is something on the screens (a tile, a capsule, a card's control), the bubble aside.
   const others = [...css.matchAll(/([^{}]+)\{([^}]*z-index:\s*(-?\d+)[^}]*)\}/g)]
     .map((m) => [m[1].trim(), Number(m[3])])
-    .filter(([sel]) => !['.sb-dock', '.sb-band', '.sb-scrim', '.sb-sheet', '.sb-bubble', '.sb-sheet-top'].some((s) => sel.split(/\s*,\s*/).includes(s)) && !sel.startsWith('.sb-sheet'));
+    .filter(([sel]) => !['.sb-dock', '.sb-scrim', '.sb-sheet', '.sb-bubble', '.sb-sheet-top'].some((s) => sel.split(/\s*,\s*/).includes(s)) && !sel.startsWith('.sb-sheet'));
   assert.ok(others.some(([sel]) => /sb-tl-tile/.test(sel)), 'the Timeline tile is among them');
   for (const [bar, zb] of Object.entries(bars)) {
     for (const [sel, zo] of others) assert.ok(zb > zo, `${bar} (${zb}) above ${sel} (${zo})`);

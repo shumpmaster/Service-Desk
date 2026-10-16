@@ -28,6 +28,9 @@ import {
 import { timelineView, teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
 import { summaryView, latestText, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
 import { composeAnswer, numberedRuleLine, CANT_SPLIT, NO_RECOMMENDATION } from './lib/sandbox.js';
+import { prBodyParts } from './lib/pulls.js';
+import { runsContext, statusPhases, tilePhases, markerView, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, TEAM_KEY, itemFeeds,
+  stalledLine, deployRows, FEED_ICONS_KEY } from './lib/feed.js';
 
 let CONFIG = DEFAULT_CONFIG; // J7; the tests pass their own (AC42's five projects)
 let TZ = CONFIG.ownerTimeZone;
@@ -223,6 +226,160 @@ const enc = (...parts) => parts.map(encodeURIComponent).join('/');
 const go = (...parts) => `#/${enc(...parts)}`;
 
 // ---------------------------------------------------------------------------
+// Trial-view notes 2 (AC57 to AC72): plain-circle marks, folds, the phase marker.
+
+/** A plain-circle icon (AC59, AC65, AC67): `kind` is check, pastcheck, half, next, planned, cross, skip, unrec, flag or you. Its words always sit beside it. */
+const ic = (kind, extra = '') => h('span', { class: `sb-ic i-${kind}${extra ? ` ${extra}` : ''}`, 'aria-hidden': 'true' });
+
+/** The folds the owner opened or closed in a project, kept for the window through every refresh (AC56). */
+function foldsOf(name) {
+  const s = sessionOf(name);
+  if (!s.folds) s.folds = new Map();
+  return s.folds;
+}
+const isOpenFold = (name, key, dflt) => (foldsOf(name).has(key) ? foldsOf(name).get(key) : dflt);
+function setFold(name, key, open) {
+  foldsOf(name).set(key, open);
+}
+
+/**
+ * A disclosure control (AC57, AC59, AC60, AC66): a real button, opened and closed by a tap, a click,
+ * or Enter or Space, its state its accessible state and a mark beside its words, never colour alone.
+ */
+function foldButton(name, key, dflt, attrs, ...kids) {
+  const open = isOpenFold(name, key, dflt);
+  const toggle = () => {
+    setFold(name, key, !isOpenFold(name, key, dflt));
+    render();
+  };
+  return h('button', { type: 'button', ...attrs, key: `fold:${key}`, 'aria-expanded': open ? 'true' : 'false', onclick: toggle,
+    onkeydown: (e) => {
+      if (!e || (e.key !== 'Enter' && e.key !== ' ')) return;
+      if (e.preventDefault) e.preventDefault();
+      toggle();
+    } }, ...kids, h('span', { class: 'sb-fmark', 'aria-hidden': 'true' }, open ? '▾' : '▸'));
+}
+
+/**
+ * The phase marker (AC68), under the project's name and the screen's title on Status, Timeline, Team
+ * and Queue: the now phase in its colour, its run and the next milestone to reach. A real link,
+ * "Open the Timeline at Now"; a tap, Enter or Space opens the Timeline scrolled to Now (one screen
+ * step), and on the Timeline itself scrolls back to Now.
+ */
+function markerNode(p, screen) {
+  const mv = markerView(p.ctx);
+  if (!mv.link) return h('p', { class: 'sb-pmark none', key: 'pmark' }, h('b', { class: 'sb-pmark-run' }, mv.words));
+  const href = go('p', p.project.name, 'timeline');
+  const open = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (screen === 'timeline') scrollToTarget({ now: true });
+    else nav.to(href);
+  };
+  return h('a', { class: `sb-pmark${mv.cls ? ` ${mv.cls}` : ''}`, key: 'pmark', href, 'aria-label': 'Open the Timeline at Now',
+    onclick: (e) => { if (screen === 'timeline') open(e); },
+    onkeydown: (e) => { if (e && (e.key === 'Enter' || e.key === ' ')) open(e); } },
+  mv.run ? [h('span', { class: 'sb-phchip', 'aria-hidden': 'true' }), h('b', { class: 'sb-pmark-run' }, mv.run), ' ', h('span', { class: 'sb-pmark-sub' }, mv.next)]
+    : h('b', { class: 'sb-pmark-run' }, mv.words),
+  ' ', h('span', { class: 'sb-pmark-go' }, 'Timeline ›'));
+}
+
+// The branch drawing (AC57, AC58, AC65): one column per run; its geometry, before the browser's
+// measure fits each dot to its phase name's row.
+const RAIL = {
+  status: { x0: 16, gap: 16, r: 6, rowH: 72 },
+  tile: { x0: 11, gap: 13, r: 5, rowH: 30 },
+};
+const ROWS_TOP_DOWN = ['Done', 'Launch', 'Build', 'Design', 'Discovery'];
+const railShapes = new Map(); // a drawing's key → { shape, kind }, for fitting it to the rows as laid out
+
+/** The drawing: hidden from assistive technology (the words carry it), drawn at nominal rows until the browser lays them out. */
+function railSvg(key, shape, kind) {
+  railShapes.set(key, { shape, kind });
+  const svg = document.createElementNS(SVGNS, 'svg');
+  svg.setAttribute('class', `sb-rail rail-${kind}`);
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  const g = RAIL[kind];
+  const ys = {};
+  ROWS_TOP_DOWN.forEach((ph, i) => { ys[ph] = i * g.rowH + g.rowH / 2; });
+  drawRail(svg, shape, ys, ROWS_TOP_DOWN.length * g.rowH, kind);
+  return svg;
+}
+
+const PHASE_OF_ROW = ['Discovery', 'Design', 'Build', 'Launch', 'Done'];
+
+/** Draw a branch shape into `svg`, each phase's row centred at ys[phase]. */
+function drawRail(svg, shape, ys, height, kind) {
+  const g = RAIL[kind];
+  const X = (k) => g.x0 + (k - 1) * g.gap;
+  const Y = (row) => ys[PHASE_OF_ROW[row]];
+  const width = X(Math.max(1, shape.cols)) + g.r + 6;
+  svg.setAttribute('width', String(width));
+  svg.setAttribute('height', String(Math.max(1, Math.ceil(height))));
+  svg.setAttribute('viewBox', `0 0 ${width} ${Math.max(1, Math.ceil(height))}`);
+  const kids = [];
+  const r1 = (v) => Math.round(v * 10) / 10;
+  const el = (tag, attrs) => {
+    const n = document.createElementNS(SVGNS, tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+    kids.push(n);
+    return n;
+  };
+  const shade = (k) => `run${Math.min(k, 3)}`;
+  for (const l of shape.lines) {
+    const x = X(l.k);
+    const y1 = r1(Y(l.from));
+    const y2 = r1(Y(l.to));
+    el('line', { x1: x, y1, x2: x, y2, class: `ln ${shade(l.k)}${l.dashed ? ' dash' : ''}`, 'data-kind': 'line', 'data-k': l.k, 'data-dashed': l.dashed ? '1' : '0' });
+    const ym = r1((y1 + y2) / 2);
+    el('path', { d: `M${x - 3} ${r1(ym + 2)}L${x} ${r1(ym - 2)}L${x + 3} ${r1(ym + 2)}`, class: `arr ${shade(l.k)}`, 'data-kind': 'arrow', 'data-dir': y2 < y1 ? 'up' : 'down' });
+  }
+  for (const c of shape.curves) {
+    const x0 = X(c.fromK);
+    const y0 = r1(Y(c.fromRow));
+    const x1 = X(c.toK);
+    const y1 = r1(Y(c.toRow));
+    el('path', { d: `M${x0} ${y0}C${r1(x0 + g.gap * 0.9)} ${y0} ${x1} ${r1(y0 - (y0 - y1) * 0.25)} ${x1} ${y1}`, class: `ln curve ${shade(c.toK)}`, 'data-kind': 'curve', 'data-from': c.fromK, 'data-to': c.toK });
+  }
+  for (const d of shape.dots) {
+    const cx = X(d.k);
+    const cy = r1(Y(d.row));
+    const mark = kind === 'tile' ? d.icon : d.mark;
+    el('circle', { cx, cy, r: g.r, class: `dot m-${mark}`, 'data-kind': 'dot', 'data-phase': d.phase, 'data-k': d.k, 'data-mark': mark });
+    if (mark === 'half') el('path', { d: `M${cx} ${r1(cy - g.r + 1.5)}A${g.r - 1.5} ${g.r - 1.5} 0 0 0 ${cx} ${r1(cy + g.r - 1.5)}Z`, class: 'dot-in half', 'data-kind': 'glyph' });
+    if (mark === 'check' || mark === 'pastcheck') {
+      el('path', { d: `M${r1(cx - 2.6)} ${r1(cy + 0.2)}l1.8 1.8 3.6-3.8`, class: `dot-in ${mark}`, 'data-kind': 'glyph' });
+    }
+  }
+  svg.replaceChildren(...kids);
+}
+
+/** In the browser: each drawing redrawn with every dot level with its phase name's row, as laid out (and again after a fold or a new width). */
+function fitRails() {
+  const view = document.getElementById('view');
+  if (!view || !view.querySelectorAll) return;
+  for (const box of view.querySelectorAll('[data-rail]')) fitRail(box);
+}
+/** One drawing fitted to its box's phase names (the fake DOM's tests call it with their own measures). */
+export function fitRail(box) {
+  const entry = railShapes.get(box.getAttribute('data-rail'));
+  if (!entry || !box.getBoundingClientRect) return;
+  const svg = findClass(box, 'sb-rail');
+  if (!svg) return;
+  const top = box.getBoundingClientRect().top;
+  const ys = {};
+  eachElement(box, (el) => {
+    const ph = el.getAttribute && el.getAttribute('data-pname');
+    if (ph && el.getBoundingClientRect) {
+      const r = el.getBoundingClientRect();
+      ys[ph] = r.top - top + r.height / 2;
+    }
+  });
+  if (ROWS_TOP_DOWN.some((ph) => typeof ys[ph] !== 'number' || !Number.isFinite(ys[ph]))) return;
+  drawRail(svg, entry.shape, ys, box.getBoundingClientRect().height, entry.kind);
+}
+
+// ---------------------------------------------------------------------------
 // State kept for the open window only (never stored): what was opened in GitHub, and items that
 // left the queue while the page was open (AC52's confirmation and "Done today").
 
@@ -259,8 +416,12 @@ function buildProject(desk, project, box, now) {
   const pv = phaseView(project, tl, snap.tree, j);
   const q = queueView(project, model, snap, now.getTime());
   noteDepartures(project.name, q);
-  return { project, box, model, snap, j, tl, pv, q, where: whereLine(project, model, tl, pv),
-    ball: ballLines(project, model, snap, j, q, now, TZ), pill: pillView(box, q, now.getTime()) };
+  const ctx = runsContext(project, snap, j, tl, pv);
+  let feed = null;
+  return { project, box, model, snap, j, tl, pv, q, ctx, where: whereLine(project, model, tl, pv),
+    ball: ballLines(project, model, snap, j, q, now, TZ), pill: pillView(box, q, now.getTime()),
+    // The Timeline's model (AC59, AC60), built once per drawing when a screen needs it.
+    feed: () => feed || (feed = feedView(ctx, model, now.getTime(), TZ)) };
 }
 
 // ---------------------------------------------------------------------------
@@ -312,21 +473,28 @@ function readLine(box) {
 // ---------------------------------------------------------------------------
 // Home (AC35, AC48, AC50's checklist, AC49's ball line, AC52's pill)
 
-function checklist(pv) {
-  const rows = pv.tracked && pv.phases.length ? pv.phases : ['Discovery', 'Design', 'Build', 'Launch'].map((phase) => ({ phase, word: null }));
-  return h('div', { class: `sb-ck${pv.done ? ' done' : ''}` },
-    h('p', { class: 'sb-ck-hd' }, h('span', {}, 'Phases'), h('span', {}, finishedWords(pv))),
-    h('ol', {}, rows.map((p) => h('li', { class: p.now ? 'now' : p.word === 'Finished' ? 'fin' : '' },
-      circle(p.word === 'Finished' ? 'tick' : p.now ? 'ring' : 'empty'),
-      h('span', { class: 'sb-ck-name' }, p.phase),
-      p.word ? h('em', {}, p.now ? `now${p.iteration > 1 ? ` · i${p.iteration}` : ''}` : p.word === 'Finished' ? 'Finished' : p.word) : null)),
-    h('li', { class: 'sb-ck-done' }, circle(pv.done ? 'tick' : 'empty'), h('span', { class: 'sb-ck-name' }, 'Done'), h('em', {}, pv.done ? 'Done' : ''))),
-    pv.done ? h('span', { class: 'sb-stamp', 'aria-hidden': 'true' }, 'DONE') : null);
+/**
+ * The Home tile's phases (AC65, AC58): the where-it-is line after a chip in the now phase's colour;
+ * then each phase in its own small box, from the top Done to Discovery, with its stripe and the
+ * tile's words; and beside them, inside the boxes on the left, the compact branch drawing in plain
+ * circles with icons. Not a control of its own: a tap on it is the card's (AC48, AC54).
+ */
+function tileNode(p) {
+  const tv = tilePhases(p.ctx);
+  const name = p.project.name;
+  const rk = `tile:${name}`;
+  return h('div', { class: `sb-tph${tv.done ? ' done' : ''}${tv.shape ? ` cols-${tv.shape.cols}` : ''}`, key: `tph:${name}`, 'data-rail': tv.shape ? rk : null },
+    h('p', { class: `sb-where${tv.cls ? ` ${tv.cls}` : ''}` }, tv.cls ? h('span', { class: 'sb-phchip', 'aria-hidden': 'true' }) : null, tv.line),
+    h('ol', { class: 'sb-trows' }, tv.rows.map((r) => h('li', { class: `sb-trow ${r.cls}${r.now ? ' now' : ''}${r.done ? ' end' : ''}` },
+      h('span', { class: 'sb-tp', 'data-pname': r.phase }, r.phase), r.word ? h('span', { class: `sb-ts${r.now ? ' now' : ''}` }, r.word) : null))),
+    tv.shape ? railSvg(rk, tv.shape, 'tile') : null,
+    tv.done ? h('span', { class: 'sb-stamp', 'aria-hidden': 'true' }, 'DONE') : null);
 }
 
+/** Who has the ball (AC49), each line with its mark: the coral diamond for what waits on the owner, the half-filled circle for work under way (AC67: no light, no glow). */
 function ballNode(ball, compact) {
   return h('ul', { class: 'sb-ball' }, (compact ? ball.slice(0, 2) : ball).map((b) => h('li', { class: `who-${b.who}` },
-    h('span', { class: `sb-light${b.lit ? ' lit' : ''}`, 'aria-hidden': 'true' }),
+    b.who === 'you' ? ic('you') : b.lit ? ic('half') : null,
     b.who === 'you' ? h('span', { live: () => youWaitText(b.oldest, Date.now()) }) : b.text)));
 }
 
@@ -475,8 +643,8 @@ function lineBox(id, { words, recCode, title, lead = null, wcls = 'sb-line-w', m
   over ? h('span', { class: 'sb-line-m' }, mark ? h('span', { class: 'sb-line-mark' }, mark.trim()) : null, after(Boolean(mark))) : null];
 }
 
-function homeCard(p, seen, col) {
-  const { project, box, pill, pv, ball, q } = p;
+function homeCard(p, seen, col, group) {
+  const { project, box, ball, q } = p;
   const name = project.name;
   const newCount = q.rows.filter((r) => seen.isNew(r.raisedAt)).length;
   const sum = summaryView(project, box, p.snap);
@@ -489,12 +657,29 @@ function homeCard(p, seen, col) {
     h('a', { class: 'sb-pc-main', href: go('p', name) }, h('h2', { class: 'sb-nm' }, name)),
     summaryBox(name, sum, col),
     h('div', { class: 'sb-pc-rest' },
-      checklist(pv),
+      tileNode(p),
       ballNode(ball, true),
+      stallNode(p, group),
       readLine(box)),
     sum.ok ? null : h('details', { class: 'sb-why', key: `sum-why:${name}` }, h('summary', {}, 'Why'), h('p', { class: 'small' }, sum.why)),
     newCount ? h('p', { class: 'sb-vh' }, `${newCount} new since you last looked`) : null,
     pillNode(box, q, name));
+}
+
+/**
+ * The stalled line (AC71), under who has the ball, in slate: after 72 hours with no movement and
+ * nothing waiting on the owner. It depends on the time, so the 15-second tick works it out again.
+ */
+function stallNode(p, group) {
+  const line = () => {
+    try {
+      const st = stalledLine(p.project, p.box, p.snap, p.j, p.model, group, p.q.waiting, Date.now(), TZ);
+      return st ? st.words : '';
+    } catch {
+      return '';
+    }
+  };
+  return h('p', { class: 'sb-stall', key: `stall:${p.project.name}`, live: line });
 }
 
 /** The pill (AC48): its words and its look both depend on the time ("All clear" goes stale), so both are live. */
@@ -539,7 +724,7 @@ function renderHome(desk, built, seen, now) {
         const col = i % 2 ? 'col-r' : 'col-l';
         try {
           if (b.error) throw b.error;
-          return homeCard(b, seen, col);
+          return homeCard(b, seen, col, g.key);
         } catch (err) {
           return h('article', { class: `sb-pc bad ${col}`, key: `card:${box.name}` }, h('h2', { class: 'sb-nm' }, box.name),
             h('p', { class: 'sb-stale' }, box.drawError || `Can't show this project: ${errorText(err)}`));
@@ -576,34 +761,67 @@ function v5Line(built) {
 
 const SIX = ['Discovery', 'Design', 'Build', 'Launch', 'Operate', 'Review'];
 
-function phaseRow(p, ph, openByDefault) {
-  const m = phaseMilestones(p.project, p.snap.tree, p.tl, ph);
-  const word = ph.now ? `${ph.phase} i${ph.iteration}` : ph.word;
-  const det = h('details', { class: `sb-phase${ph.now ? ' now' : ''}`, key: `phase:${ph.phase}`, open: openByDefault ? true : null },
-    h('summary', {},
-      circle(ph.word === 'Finished' ? 'tick' : ph.now ? 'ring' : 'empty'),
-      h('span', { class: 'sb-ph-name' }, ph.phase),
-      ph.now ? h('span', { class: 'sb-nowtag' }, 'NOW') : null,
-      h('span', { class: 'sb-ph-word' }, word)),
-    h('div', { class: 'sb-ms' },
-      m.runLabel ? h('p', { class: 'sb-muted small' }, `From the model's timeline, ${m.runLabel}`) : h('p', { class: 'sb-muted small' }, `No run of this phase: ${NOT_RECORDED}`),
-      m.standard.length ? h('details', { class: 'sb-std', key: `phase-std:${ph.phase}` },
-        h('summary', {}, h('span', {}, 'Standard milestones'), h('span', { class: 'sb-muted' }, m.counts)),
-        h('ul', { class: 'sb-mlist' }, m.standard.map((s) => h('li', {}, msMark(s.word), h('span', {}, s.name, ' ', code(s.id)),
-          h('em', {}, s.from ? `${s.word} from ${s.from}` : s.word))))) : null,
-      m.own.length ? h('ul', { class: 'sb-mlist own' }, m.own.map((o) => h('li', {}, msMark(o.word),
-        h('div', {}, h('strong', {}, o.name), ' ', code(o.id),
-          h('p', { class: 'sb-muted small' }, `Done when ${o.done}`),
-          o.sprints.length ? h('p', { class: 'small' }, 'Sprints: ', o.sprints.map((s, i) => [i ? ', ' : '', s.link ? ext(s.link, s.id) : h('span', {}, s.id, ' (no file recorded)')])) : null),
-        h('em', {}, o.word)))) : h('p', { class: 'sb-muted small' }, "This project's own milestones: none in this phase")));
-  return det;
+/** A milestone's or a run's mark on the Status screen (AC57): beside its words, never alone. */
+const mk = (mark) => h('span', { class: `sb-mk m-${mark}`, 'aria-hidden': 'true' });
+
+/** The key above the boxes (AC57): each entry with its mark; the gold ring is "next to reach", never "now" alone. */
+function statusKey(key) {
+  return h('div', { class: 'sb-skey', key: 'status-key' },
+    h('p', { class: 'sb-keyh' }, 'Runs'), h('p', { class: 'sb-keyl' }, key.runs.map(([m, w]) => h('span', { class: 'sb-keye' }, mk(m), w))),
+    h('p', { class: 'sb-keyh' }, 'Milestones'), h('p', { class: 'sb-keyl' }, key.milestones.map(([m, w]) => h('span', { class: 'sb-keye' }, mk(m), w))));
 }
 
-function msMark(word) {
-  if (word === 'reached' || word === 'carried over') return circle('tick');
-  if (word === 'work filed' || word === 'not reached') return circle('ring');
-  if (word === 'not recorded' || word === 'not needed') return circle('hatch');
-  return circle('empty');
+/** Why a run began (AC70): its date, the ruling's reason quoted, its source one tap from the whole record; or the slate "not recorded". */
+function beganNode(b) {
+  if (b.missing) return h('p', { class: 'sb-began gap', key: `began:${b.k}` }, b.words);
+  return h('div', { class: 'sb-began', key: `began:${b.k}` }, h('p', { class: 'sb-began-h' }, b.head),
+    b.quote ? h('p', { class: 'sb-q' }, `"${b.quote}"`) : b.plain ? h('p', { class: 'sb-began-p' }, b.plain, ' ', code(b.code)) : h('p', { class: 'sb-muted' }, b.words),
+    h('p', { class: 'sb-src' }, b.source.href ? ext(b.source.href, b.source.words) : b.source.words));
+}
+
+/** One milestone on the Status screen (AC57): its mark, name, code, state in words and why line; softened for rules 1 and 9. */
+function msItem(m) {
+  return h('li', { class: `sb-ms${m.soft ? ' soft' : ''}`, key: `ms:${m.code}` }, mk(m.mark),
+    h('span', { class: 'sb-mname' }, m.name, ' ', code(m.code)),
+    h('span', { class: 'sb-mstate' }, m.words),
+    h('span', { class: `sb-mwhy${m.why.recorded ? '' : ' none'}` }, m.why.text));
+}
+
+/** A run in its phase's box (AC57): "Run <k> · <Phase> i<n> · <state>", its milestones from the last at the top, AC70's line where it began. */
+function runNode(p, r) {
+  const name = p.project.name;
+  const gk = `gather:${r.key}`;
+  const gOpen = isOpenFold(name, gk, false);
+  return h('div', { class: `sb-prun${r.latest ? '' : ' old'}`, key: `prun:${r.key}`, 'data-run': r.key },
+    r.began ? beganNode(r.began) : null,
+    h('p', { class: 'sb-rhead' }, h('span', { class: `sb-rtag run${Math.min(r.k, 3)}` }, r.tag), ' ', h('span', { class: 'sb-rwords' }, `· ${r.head}`)),
+    r.stdLine ? h('p', { class: 'sb-stdline' }, r.stdLine) : null,
+    r.gatherWords ? foldButton(name, gk, false, { class: 'sb-more' }, r.gatherWords) : null,
+    r.gatherWords && gOpen ? h('ol', { class: 'sb-mslist gathered', key: `gathered:${r.key}` }, r.gathered.map(msItem)) : null,
+    h('ol', { class: 'sb-mslist', key: `mslist:${r.key}` }, [...r.milestones, ...r.standard].map(msItem)));
+}
+
+/**
+ * The Status screen's phases (AC57): read from the bottom up, Discovery at the bottom and Done at
+ * the top, each in its own box with its colour stripe, folding on a tap of its name; one column of
+ * dots per run inside the boxes on the left, branching right where the work went back.
+ */
+function statusBoxes(p) {
+  const sv = statusPhases(p.ctx, TZ);
+  if (!sv.tracked) return [h('section', { class: 'sb-card', key: 'phases-untracked' }, h('h2', { class: 'sb-h2' }, sv.why), h('p', { class: 'sb-muted' }, p.pv.detail || ''))];
+  const name = p.project.name;
+  const boxes = sv.boxes.map((b) => {
+    const fk = `pbox:${b.phase}`;
+    const open = b.foldable ? isOpenFold(name, fk, !b.startFolded) : true;
+    const head = h('div', { class: 'sb-pbox-h' },
+      b.foldable ? foldButton(name, fk, !b.startFolded, { class: 'sb-pname', 'data-pname': b.phase }, b.phase)
+        : h('span', { class: 'sb-pname', 'data-pname': b.phase }, b.phase),
+      h('span', { class: `sb-pstate${b.now ? ' now' : ''}` }, b.word));
+    return h('section', { class: `sb-pbox ${b.cls}${b.now ? ' now' : ''}${b.done ? ' end' : ''}${open ? '' : ' folded'}`, key: `pbox:${b.phase}`, 'data-phase': b.phase },
+      head, open ? b.runs.map((r) => runNode(p, r)) : null);
+  });
+  return [h('h2', { class: 'sb-h2', key: 'phases-h' }, 'The phases, read from the bottom up'), statusKey(sv.key),
+    h('div', { class: `sb-pboxes cols-${sv.shape.cols}`, key: 'pboxes', 'data-rail': `status:${name}` }, boxes, railSvg(`status:${name}`, sv.shape, 'status'))];
 }
 
 function renderStatus(p) {
@@ -613,21 +831,17 @@ function renderStatus(p) {
   const body = [
     marker(),
     projectHeader(name, 'Current status'),
+    markerNode(p, 'status'),
     h('p', { class: 'sb-lead' }, where.sentence),
     lastActionNode(p),
     h('div', { class: 'sb-actions' },
       h('a', { class: `sb-btn ${q.waiting ? 'you' : ''}`, href: go('p', name, 'queue') }, queueWords),
-      h('a', { class: 'sb-btn ghost', href: go('p', name, 'team') }, ball[0].who === 'you' ? null : h('span', { class: `sb-light${ball.some((b) => b.lit) ? ' lit' : ''}`, 'aria-hidden': 'true' }), `Team: ${ball[0].text} ›`)),
+      h('a', { class: 'sb-btn ghost', href: go('p', name, 'team') }, ball[0].who !== 'you' && ball.some((b) => b.lit) ? ic('half') : null, `Team: ${ball[0].text} ›`)),
     readLine(p.box),
   ];
   if (!pv.tracked) {
     body.push(h('section', { class: 'sb-card' }, h('h2', { class: 'sb-h2' }, pv.why), h('p', { class: 'sb-muted' }, pv.detail)));
-  } else {
-    body.push(h('h2', { class: 'sb-h2' }, `The four phases, in order · ${finishedWords(pv)}`));
-    body.push(h('div', { class: 'sb-phases' }, pv.phases.map((ph) => phaseRow(p, ph, ph.now)),
-      h('div', { class: `sb-phase done-row${pv.done ? ' done' : ''}` }, circle(pv.done ? 'tick' : 'empty'), h('span', { class: 'sb-ph-name' }, 'Done'),
-        h('span', { class: 'sb-ph-word' }, pv.done ? 'Done' : 'after the Launch gate'))));
-  }
+  } else body.push(...statusBoxes(p));
   if (project.model !== 'v3' && model) {
     body.push(h('section', { class: 'sb-card' }, h('h2', { class: 'sb-h2' }, 'Reduced view (operating model v2.5.1)'),
       h('dl', { class: 'sb-dl' }, h('dt', {}, 'Sprint'), h('dd', {}, model.sprint.title || model.sprint.note),
@@ -639,10 +853,12 @@ function renderStatus(p) {
   // design inside the sandbox; nothing here links to the accepted views.
   body.push(h('details', { class: 'sb-card sb-more', key: 'more-detail-fold' }, h('summary', { key: 'more-detail' }, h('span', { class: 'sb-h2 flat' }, 'More detail')),
     h('p', { class: 'sb-muted small' }, `CI on ${project.defaultBranch}: ${model ? model.ci : NOT_RECORDED}`),
+    // AC68: a v3 project's Pipeline view folds into the Timeline; its record notes get their own screen.
     h('ul', { class: 'sb-links' },
-      h('li', {}, h('a', { href: go('p', name, 'pipeline'), key: 'more:pipeline' }, project.model === 'v3' ? 'Pipeline: items and waits' : 'Reduced view and waits')),
+      project.model === 'v3' ? null : h('li', {}, h('a', { href: go('p', name, 'pipeline'), key: 'more:pipeline' }, 'Reduced view and waits')),
       h('li', {}, h('a', { href: go('p', name, 'asked'), key: 'more:asked' }, 'Time asked of you')),
-      h('li', {}, h('a', { href: go('p', name, 'agents'), key: 'more:agents' }, 'Agents: sessions, timeline and usage')))));
+      h('li', {}, h('a', { href: go('p', name, 'agents'), key: 'more:agents' }, 'Agents: sessions, timeline and usage')),
+      project.model === 'v3' && recordNotes(p).length ? h('li', {}, h('a', { href: go('p', name, 'notes'), key: 'more:notes' }, `Record notes (${recordNotes(p).length})`)) : null)));
   const out = [h('section', { class: 'sb-screen' }, body, bottomBar(name, 'status', q.waiting))];
   if (nav.route.sheet === 'info') {
     out.push(sheetFrame(go('p', name), 'About the phases', [
@@ -713,47 +929,21 @@ function waitsNode(p) {
   }));
 }
 
+/** The v2.5 reduced view and its waits (AC10, AC55); a v3 project's Pipeline view folds into the Timeline (AC68). */
 function renderPipeline(p) {
   const m = p.model;
   const kids = [];
   kids.push(h('p', { class: 'sb-lead small' }, boxStateText(p.box, TZ)));
   kids.push(h('p', { class: 'sb-muted small' }, `CI on ${m.defaultBranch}: ${m.ci}`));
   kids.push(h('h2', { class: 'sb-h2' }, 'Waiting on you'), waitsNode(p));
-  if (m.model !== 'v3') {
-    kids.push(h('h2', { class: 'sb-h2' }, 'Reduced view (operating model v2.5.1)'),
-      h('dl', { class: 'sb-dl sb-card' },
-        h('dt', {}, 'Sprint'), h('dd', {}, m.sprint.title || m.sprint.note),
-        h('dt', {}, 'Headline'), h('dd', {}, m.headline.text),
-        h('dt', {}, 'Next'), h('dd', {}, m.headline.next || 'not recorded'),
-        h('dt', {}, 'As of'), h('dd', {}, m.headline.asOf || 'not recorded'),
-        h('dt', {}, 'Items'), h('dd', {}, m.itemsText),
-        h('dt', {}, 'Running now'), h('dd', {}, m.runningText)));
-  } else {
-    const open = m.items.filter((i) => !i.finished);
-    const done = m.items.filter((i) => i.finished);
-    kids.push(h('h2', { class: 'sb-h2' }, 'Pipeline'), h('p', { class: 'sb-lead small' }, 'Latest: ', m.headline.text));
-    kids.push(open.length ? h('ul', { class: 'sb-items' }, open.map((i) => {
-      if (i.loading) return h('li', { class: 'sb-item' }, `${i.id}: loading…`);
-      if (i.unreadable) return h('li', { class: 'sb-item' }, `${i.id}: can't read status `, ext(i.link, 'status file'));
-      const rows = [h('p', { class: 'sb-item-h' }, h('strong', {}, i.id), ` (${i.kind}) — stage ${i.stage}, ${i.state}`)];
-      if (i.running) rows.push(h('p', { class: 'sb-item-l' }, h('span', { class: 'sb-light lit', 'aria-hidden': 'true' }), `Running now: ${i.running.role}, for ${i.running.elapsed}${i.running.pastLimit ? ' (past its limit)' : ''}`));
-      if (i.waiting) {
-        const label = `Waiting on you: card ${i.waiting.gate}-${i.waiting.card}`;
-        let what;
-        if (i.waiting.answered) what = `${label} — answered${i.waiting.verdict ? `: ${i.waiting.verdict}` : ''}${i.waiting.recording ? ' (recording…)' : ''}`;
-        else if (i.waiting.path) what = opener(`wait-item:${i.id}`, go('p', p.project.name, 'queue', `card:${i.waiting.path}`), {}, label);
-        else what = label;
-        rows.push(h('p', { class: `sb-item-l${i.waiting.answered ? '' : ' you'}` }, what));
-      }
-      if (i.next) rows.push(h('p', { class: 'sb-item-l' }, i.next));
-      rows.push(h('p', { class: 'sb-muted small' }, `as of ${i.asOf ? whenOr(i.asOf) : 'not recorded'}`));
-      return h('li', { class: 'sb-item' }, rows);
-    })) : h('p', { class: 'sb-muted' }, 'No open items.'));
-    if (done.length) {
-      kids.push(h('details', { class: 'sb-card', key: 'pipe-done' }, h('summary', {}, `${done.length} finished`),
-        h('ul', { class: 'sb-qlist' }, done.map((i) => h('li', {}, `${i.id} (${i.kind}): ${i.finished}`)))));
-    }
-  }
+  kids.push(h('h2', { class: 'sb-h2' }, 'Reduced view (operating model v2.5.1)'),
+    h('dl', { class: 'sb-dl sb-card' },
+      h('dt', {}, 'Sprint'), h('dd', {}, m.sprint.title || m.sprint.note),
+      h('dt', {}, 'Headline'), h('dd', {}, m.headline.text),
+      h('dt', {}, 'Next'), h('dd', {}, m.headline.next || 'not recorded'),
+      h('dt', {}, 'As of'), h('dd', {}, m.headline.asOf || 'not recorded'),
+      h('dt', {}, 'Items'), h('dd', {}, m.itemsText),
+      h('dt', {}, 'Running now'), h('dd', {}, m.runningText)));
   kids.push(h('h2', { class: 'sb-h2' }, 'Activity'));
   kids.push(m.activity.length ? h('ul', { class: 'sb-qlist' }, m.activity.map((a) => h('li', {}, a.link ? ext(a.link, a.text) : a.text)))
     : h('p', { class: 'sb-muted' }, 'No recent activity.'));
@@ -761,7 +951,7 @@ function renderPipeline(p) {
     kids.push(h('details', { class: 'sb-card', key: 'pipe-notes' }, h('summary', {}, `${m.notes.length} notes`),
       h('ul', { class: 'sb-qlist' }, m.notes.map((n) => h('li', { class: 'small' }, n)))));
   }
-  return detailScreen(p, m.model === 'v3' ? 'Pipeline' : 'Reduced view', kids);
+  return detailScreen(p, 'Reduced view', kids);
 }
 
 const askWait = (ms) => (ms == null ? 'not recorded' : durationText(ms));
@@ -857,12 +1047,68 @@ function renderAgents(p) {
 // ---------------------------------------------------------------------------
 // Queue and the response sheet (AC52, AC53)
 
+/**
+ * A queue row (AC52, as AC66 changed it): what it is and how long it has waited, opening its
+ * response sheet; then the milestone it unblocks and that milestone's why, each from a record; and
+ * the facts behind the ask one tap away. An item that waits on the owner keeps the coral edge (AC69).
+ */
 function queueRow(p, row, s) {
   const opened = s.opened.has(row.key);
-  return h('li', { class: `sb-qrow g-${row.group}`, key: `qrow:${row.key}` },
-    opener(`row:${row.key}`, go('p', p.project.name, 'queue', row.key), {},
-      h('span', { class: 'sb-qt' }, row.text, ' ', code(row.code)),
-      h('span', { class: 'sb-muted small' }, h('span', { live: () => waitWords(row.raisedAt, Date.now()) }), opened ? ' · opened in GitHub' : '')));
+  const name = p.project.name;
+  const out = [opener(`row:${row.key}`, go('p', name, 'queue', row.key), { class: 'sb-qa' },
+    h('span', { class: 'sb-qt' }, row.text, ' ', code(row.code)),
+    h('span', { class: 'sb-muted small' }, h('span', { live: () => waitWords(row.raisedAt, Date.now()) }), opened ? ' · opened in GitHub' : ''))];
+  if (p.project.model === 'v3') {
+    const u = unblocksOf(p.ctx, row);
+    const ck = `ctx:${row.key}`;
+    const open = isOpenFold(name, ck, false);
+    out.push(h('div', { class: 'sb-unb', key: `unb:${row.key}` },
+      u.none ? h('p', { class: 'sb-unb-l' }, `Unblocks no milestone: ${u.none}`)
+        : u.missing ? h('p', { class: 'sb-unb-l gap' }, 'Unblocks: milestone not recorded')
+          : u.milestones.map((m) => [h('p', { class: 'sb-unb-l' }, h('span', { class: 'sb-lbl' }, 'Unblocks'), ' ', m.name ? h('b', {}, m.name) : null, ' ', code(m.code),
+            u.byPr ? h('span', { class: 'sb-meta' }, ' · named by its pull request, not yet in the plan') : null),
+          m.why ? h('p', { class: 'sb-wl' }, h('span', { class: 'sb-lbl' }, 'Why'), ' ', h('span', { class: 'sb-q' }, m.why.text), h('span', { class: 'sb-src' }, m.why.source))
+            : h('p', { class: 'sb-wl gap' }, h('span', { class: 'sb-lbl' }, 'Why'), ' not recorded yet · for the agents to add')]),
+      foldButton(name, ck, false, { class: 'sb-fold ctx' }, 'Context · the facts behind this ask'),
+      open ? (u.context ? h('ul', { class: 'sb-facts', key: `facts:${row.key}` }, u.context.map((c) => h('li', {}, c.fact,
+        c.exception ? null : h('span', { class: 'sb-src' }, c.source || 'source not recorded'))))
+        : h('p', { class: 'sb-meta gap', key: `facts:${row.key}` }, 'Context: not recorded')) : null));
+  }
+  return h('li', { class: `sb-qrow g-${row.group}`, key: `qrow:${row.key}` }, out);
+}
+
+/** A waiting deploy's row (AC52, AC72): the run, linked, and whether its commit is a reviewed pull request's merge; the approval stays on GitHub. */
+function deployRow(p, d, check) {
+  const name = p.project.name;
+  const k = `deploy-why:${d.key}`;
+  return h('li', { class: 'sb-qrow g-deploys', key: `qrow:${d.key}` }, h('p', {}, ext(d.link, d.text) || d.text, ' ', code(d.code)),
+    check ? h('div', { class: `sb-safe ${check.kind}`, key: `safe:${d.key}` },
+      h('p', { class: 'sb-safe-l' }, check.kind === 'ok' ? ic('check') : check.kind === 'bad' ? ic('cross') : ic('unrec'), check.words),
+      check.sources ? h('p', { class: 'sb-src' }, check.sources.map((x, i) => [i ? ' · ' : '', x.href ? ext(x.href, x.words) : x.words]))
+        : check.kind === 'bad' ? h('p', { class: 'sb-src' }, check.reason)
+          : [foldButton(name, k, false, { class: 'sb-fold soft' }, 'Why'), isOpenFold(name, k, false) ? h('p', { class: 'sb-meta' }, check.reason) : null]) : null);
+}
+
+const milestoneLineOf = (text) => prBodyParts(text).milestone;
+
+/** Where a "Done today" row's sprint is on the Timeline (AC66): a link there, or "sprint: not recorded" in slate. */
+function doneLink(p, kind, codeText) {
+  const name = p.project.name;
+  const fv = p.project.model === 'v3' ? p.feed() : null;
+  const none = h('span', { class: 'sb-meta gap' }, ' · sprint: not recorded');
+  if (!fv || !fv.ok) return none;
+  let sprint = null;
+  let ms = null;
+  if (kind === 'card') sprint = String(codeText).split(' ')[0];
+  else if (kind === 'pr') sprint = codeText;
+  else if (kind === 'ruling') {
+    const rec = p.snap && p.snap.records ? p.snap.records.get(`questions/${codeText}.md`) : null;
+    const ml = rec && rec.text ? milestoneLineOf(rec.text) : null;
+    if (ml && ml.ids && ml.ids.length && fv.msIndex.has(ml.ids[0])) ms = ml.ids[0];
+  }
+  if (sprint && fv.index.has(sprint)) return [' ', h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'sprint', sprint) }, 'On the Timeline')];
+  if (ms) return [' ', h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'ms', ms) }, 'On the Timeline')];
+  return none;
 }
 
 function renderQueue(p, key) {
@@ -870,18 +1116,25 @@ function renderQueue(p, key) {
   const name = project.name;
   const s = sessionOf(name);
   const fresh = p.box.read && p.box.read.read === 'ok';
-  const body = [marker(), projectHeader(name, 'Queue', q.waiting ? `${q.waiting} waiting on you` : null)];
+  const body = [marker(), projectHeader(name, 'Queue', q.waiting ? `${q.waiting} waiting on you` : null), markerNode(p, 'queue')];
   if (!q.waiting && fresh) body.push(h('p', { class: 'sb-lead' }, `Nothing waits on you in ${name}`));
   else if (!q.waiting) body.push(readLine(p.box));
   body.push(h('div', { class: 'sb-groups' }, q.groups.map((g) => {
-    const head = h('h2', { class: `sb-gh g-${g.key}` }, h('span', { 'aria-hidden': 'true', class: 'sb-shape' }, g.shape), g.title,
+    // AC66: the groups' marks go neutral; one holding anything that waits on the owner shows the coral diamond, "needs you".
+    const needs = ['decisions', 'gates', 'merges'].includes(g.key) && g.items.length > 0;
+    const head = h('h2', { class: `sb-gh g-${g.key}` }, needs ? h('span', { class: 'sb-gmark you' }, ic('you'), h('span', { class: 'sb-vh' }, 'needs you'))
+      : h('span', { 'aria-hidden': 'true', class: 'sb-gmark' }, GROUP_MARK[g.key]), g.title,
+      needs ? h('span', { class: 'sb-needs', 'aria-hidden': 'true' }, 'needs you') : null,
       h('span', { class: 'sb-gcount' }, g.count == null ? NOT_RECORDED : g.count ? String(g.count) : 'none'));
     if (g.line) return h('section', { class: `sb-group g-${g.key} empty`, key: `group:${g.key}` }, head, h('p', { class: 'sb-muted small' }, g.line));
     if (!g.items.length) return h('section', { class: `sb-group g-${g.key} empty`, key: `group:${g.key}` }, head);
     if (g.key === 'deploys') {
       return h('section', { class: `sb-group g-${g.key}`, key: `group:${g.key}` }, head,
         h('p', { class: 'sb-muted small' }, 'Shown, not counted: a deploy waiting for approval is not one of the things that need you. Its approver: not recorded.'),
-        h('ul', { class: 'sb-qlist' }, g.items.map((d) => h('li', { class: 'sb-qrow g-deploys', key: `qrow:${d.key}` }, ext(d.link, d.text) || d.text, ' ', code(d.code)))));
+        h('ul', { class: 'sb-qlist' }, g.items.map((d) => {
+          const dr = deployRows(project, p.snap).find((x) => `deploy:${x.run.path}:${x.run.runNumber}` === d.key);
+          return deployRow(p, d, dr ? dr.check : null);
+        })));
     }
     return h('section', { class: `sb-group g-${g.key}`, key: `group:${g.key}` }, head, h('ul', { class: 'sb-qlist' }, g.items.map((r) => queueRow(p, r, s))));
   })));
@@ -902,14 +1155,15 @@ function renderQueue(p, key) {
   } else if (rowOpen) heldDone = { name, done: freshDone };
   else heldDone = null;
   // Opening the fold lays its rows out: a ruling's line is judged against three lines then (AC52).
-  body.push(h('details', { class: 'sb-card sb-donetoday', key: 'done-today', ontoggle: () => measureClips() }, h('summary', { key: 'done-today-h' }, `Done today (${done.length + s.left.length})`),
+  body.push(h('details', { class: 'sb-card sb-donetoday', key: 'done-today', ontoggle: () => measureClips() }, h('summary', { key: 'done-today-h' }, ic('check'), `Done today (${done.length + s.left.length})`),
     done.length || s.left.length ? h('ul', { class: 'sb-qlist sb-done' }, done.map((d) => h('li', { class: 'sb-done-r', key: `done:${d.kind}:${d.code}` },
       d.clip
         ? lineBox(`done:${d.code}`, { words: d.line, recCode: d.code, title: 'Done today', wcls: 'sb-done-w', mark: d.proxy ? ' (proxy)' : null,
           notice: bubble.open === `line:done:${d.code}` ? notice : null,
-          after: () => [' ', d.link ? ext(d.link, d.code, 'code') : code(d.code), ' ', h('span', { class: 'sb-muted small' }, d.words)] })
-        : [h('span', { class: 'sb-done-w' }, d.text), ' ', d.link ? ext(d.link, d.code, 'code') : code(d.code), ' ', h('span', { class: 'sb-muted small' }, d.words)])),
-    s.left.map((x) => h('li', { class: 'sb-done-r' }, h('span', { class: 'sb-done-w' }, x.title), ' ', code(x.code), ' ', h('span', { class: 'sb-muted small' }, 'no longer open, time not recorded'))))
+          after: () => [' ', d.link ? ext(d.link, d.code, 'code') : code(d.code), ' ', h('span', { class: 'sb-muted small' }, d.words), doneLink(p, d.kind, d.code)] })
+        : [h('span', { class: 'sb-done-w' }, d.text), ' ', d.link ? ext(d.link, d.code, 'code') : code(d.code), ' ', h('span', { class: 'sb-muted small' }, d.words), doneLink(p, d.kind, d.code)])),
+    s.left.map((x) => h('li', { class: 'sb-done-r' }, h('span', { class: 'sb-done-w' }, x.title), ' ', code(x.code), ' ', h('span', { class: 'sb-muted small' }, 'no longer open, time not recorded'),
+      doneLink(p, /^PR #/.test(x.code || '') ? 'pr' : 'other', x.code))))
       : h('p', { class: 'sb-muted small' }, 'Nothing answered today yet.')));
   const out = [h('section', { class: 'sb-screen' }, body, bottomBar(name, 'queue', q.waiting))];
   if (key != null) out.push(sheet(p, key));
@@ -1109,111 +1363,215 @@ function sheet(p, key) {
 // ---------------------------------------------------------------------------
 // Timeline (AC51) and Team (AC49)
 
-// AC51 (notes 12 and 13): one line per phase run, a thin line through the icon column, each step a
-// tinted tile on it with its title, a small line and a state circle; milestones as bold neutral
-// headings; each run's steps under their milestone and sprint.
+// AC59, AC60 and AC61 (trial-view notes 2): the Timeline as the project's breakdown, read from the
+// bottom up: what we're delivering at the top, each phase run as a coloured band pinned while its
+// stretch scrolls by, its milestones in delivery order with their status icons, "Done when" and why,
+// their sprints folded under them, the gold Now line, and where we started at the bottom.
 
-const STATE_WORDS = { done: 'done', failed: 'failed', you: 'waiting on you', now: 'under way', plain: 'still to come' };
-const STATE_MARK = { done: '✓', failed: '✗', you: '◆', now: '', plain: '' };
-function stateCircle(state) {
-  return h('span', { class: `sb-tl-ck st-${state}` }, h('span', { 'aria-hidden': 'true' }, STATE_MARK[state] || ''), h('span', { class: 'sb-vh' }, STATE_WORDS[state] || state));
+/** A sprint's mark (AC60): a mark and a word, never colour alone; its reason one tap away when it has one. */
+function markNode(m) {
+  const words = `${m.mark ? `${m.mark} ` : ''}${m.word}`;
+  if (!m.why) return h('span', { class: 'sb-mkw' }, words);
+  return h('details', { class: 'sb-mkw sb-why' }, h('summary', {}, words), h('p', { class: 'sb-meta' }, m.why));
 }
 
-function stepNode(st, ms, sprint) {
-  if (st.day) return h('li', { class: 'sb-tl-note day' }, h('span', { class: 'sb-tl-nt' }, st.day));
-  return h('li', { class: `sb-tl-row step who-${st.who} st-${st.state || 'done'}`, 'data-ms': ms, 'data-sprint': sprint, 'data-time': st.time || '', 'data-role': st.role || '' },
-    h('span', { class: 'sb-tl-tile', 'aria-hidden': 'true' }, st.mark),
-    h('div', { class: 'sb-tl-tx' }, h('b', {}, st.text),
-      h('small', {}, st.note ? h('span', { class: 'sb-note' }, `${st.note} · `) : null, st.link ? ext(st.link, 'From the record') : 'no file recorded')),
-    stateCircle(st.state || 'done'));
-}
-
-function msRows(p, run, part) {
-  const name = p.project.name;
-  const s = sessionOf(name);
-  const k = `${run.key}:${part.code || part.kind}`;
-  const open = Boolean(s.tlOpen && s.tlOpen.has(k));
-  const rows = [];
-  const isMs = part.kind.startsWith('ms') || part.kind === 'std';
-  const msId = part.code || 'untagged';
-  if (isMs) {
-    rows.push(h('li', { class: `sb-tl-row ms${part.kind === 'ms under' ? ' under' : ''}`, key: `tlms:${k}` },
-      h('span', { class: 'sb-tl-tile cap', 'aria-hidden': 'true' }, h('span', { class: 'sb-tl-shape' }, '▮')),
-      h('div', { class: 'sb-tl-tx' }, h('small', { class: 'sb-tl-lbl' }, `${part.code} · ${part.word}`),
-        h('h3', { class: 'sb-tl-h' }, h('button', { type: 'button', class: 'sb-tl-msbtn', key: `tlms-btn:${k}`, 'aria-expanded': open ? 'true' : 'false',
-          onclick: () => {
-            if (!s.tlOpen) s.tlOpen = new Set();
-            if (s.tlOpen.has(k)) s.tlOpen.delete(k);
-            else s.tlOpen.add(k);
-            render();
-          } }, part.heading, h('span', { class: 'sb-vh' }, ` (${part.code}, ${part.word}): ${open ? 'shown' : 'tap for its detail'}`)))),
-      stateCircle(part.word === 'work filed' ? 'now' : 'plain')));
-    if (open) rows.push(h('li', { class: 'sb-tl-note detail', key: `tldetail:${k}` }, h('span', { class: 'sb-tl-nt' }, part.detail)));
-  } else {
-    rows.push(h('li', { class: 'sb-tl-row ms other', key: `tlms:${k}` },
-      h('span', { class: 'sb-tl-tile cap', 'aria-hidden': 'true' }, h('span', { class: 'sb-tl-shape' }, '▯')),
-      h('div', { class: 'sb-tl-tx' }, h('small', { class: 'sb-tl-lbl' }, 'No milestone'), h('h3', { class: 'sb-tl-h' }, part.heading)),
-      stateCircle('plain')));
+/** One sprint, top to bottom (AC60): date, code and marks; its title as recorded; Technical, Context and Why; and the link to its tasks. */
+function sprintNode(s) {
+  if (s.missing) {
+    return h('div', { class: 'sb-task', key: `sprint:${s.key}`, 'data-sprint': s.id },
+      h('p', { class: 'sb-ehead' }, code(s.code), ' ', h('span', { class: 'sb-meta' }, s.missing)),
+      s.reason ? h('details', { class: 'sb-why' }, h('summary', {}, 'Why'), h('p', { class: 'sb-meta' }, s.reason)) : null);
   }
-  if (isMs && !part.sprints.length) rows.push(h('li', { class: 'sb-tl-note' }, h('span', { class: 'sb-tl-nt' }, 'No work filed yet.')));
-  for (const sp of part.sprints) {
-    rows.push(h('li', { class: 'sb-tl-row sprint', 'data-ms': msId, 'data-sprint': sp.id },
-      h('span', { class: 'sb-tl-tile sp', 'aria-hidden': 'true' }, '•'),
-      h('div', { class: 'sb-tl-tx' }, h('h4', { class: 'sb-tl-sp' }, sp.own ? sp.heading : ['Sprint ', sp.heading]),
-        h('small', {}, sp.link ? ext(sp.link, sp.isPr ? 'The pull request' : 'From the record') : 'no file recorded')),
-      h('span', { class: 'sb-tl-ck none', 'aria-hidden': 'true' })));
-    if (!sp.isPr) for (const st of sp.steps) rows.push(stepNode(st, msId, sp.id));
-  }
-  return rows;
+  const ctx = s.context
+    ? s.context.map((c) => h('span', { class: 'sb-fact' }, c.fact, c.exception ? null : h('span', { class: 'sb-src' }, c.source || 'source not recorded')))
+    : h('span', { class: 'gap' }, 'not recorded');
+  const why = s.why ? s.why.map((x) => h('span', { class: 'sb-q sb-para' }, x)) : h('span', { class: 'gap' }, 'not recorded');
+  return h('div', { class: 'sb-task', key: `sprint:${s.key}`, 'data-sprint': s.id },
+    h('div', { class: 'sb-ehead' }, h('span', { class: 'sb-date' }, s.date), ' ', code(s.code), h('span', { class: 'sb-marks' }, s.marks.map(markNode))),
+    h('p', { class: 'sb-etitle' }, s.title), s.none ? h('p', { class: 'sb-meta' }, `no milestone: ${s.none}`) : null,
+    h('ul', { class: 'sb-bul' },
+      h('li', { class: 'b-tech' }, h('span', { class: 'sb-k' }, 'Technical'), h('span', { class: 'sb-v code' }, s.technical.map((x, i) => [i ? ' · ' : '', x.href ? ext(x.href, x.text) : x.text]))),
+      h('li', { class: 'b-ctx' }, h('span', { class: 'sb-k' }, 'Context'), h('span', { class: 'sb-v' }, ctx)),
+      h('li', { class: 'b-why' }, h('span', { class: 'sb-k' }, 'Why'), h('span', { class: 'sb-v' }, why))),
+    s.tasks.href ? [h('p', { class: 'sb-tlink-p' }, ext(s.tasks.href, 'Tasks in this sprint →', 'sb-tlink')), h('p', { class: 'sb-meta' }, s.tasks.line)]
+      : h('p', { class: 'sb-meta gap' }, s.tasks.none));
 }
 
-function renderTimeline(p, runKey) {
+/** A milestone row on the Timeline (AC59): its icon in a plain neutral circle on the line, name, code, words, "Done when", why, and its sprints folded under it. */
+function mileNode(p, x) {
   const name = p.project.name;
-  const tv = timelineView(p.project, p.snap.tree, p.tl, p.pv, p.j, runKey, TZ);
-  const body = [marker(), projectHeader(name, 'Timeline', tv.title)];
-  if (!tv.ok) {
-    body.push(h('section', { class: 'sb-card' }, h('p', {}, tv.words)));
+  const fk = `sprints:${x.key}`;
+  const nk = `named:${x.key}`;
+  const open = isOpenFold(name, fk, false);
+  const nOpen = isOpenFold(name, nk, false);
+  return h('div', { class: `sb-mile${x.icon === 'planned' || x.icon === 'next' ? ' planned' : ''}`, key: `mile:${x.key}`, 'data-ms': x.code },
+    ic(x.icon, 'sb-mdot'),
+    h('p', { class: 'sb-mhead' }, h('span', { class: 'sb-mtitle' }, x.name), ' ', code(x.code), ' ', h('span', { class: `sb-mst${x.icon === 'next' ? ' now' : ''}` }, x.words)),
+    x.doneWhen ? h('p', { class: 'sb-dw' }, h('span', { class: 'sb-lbl' }, 'Done when'), ' ', x.doneWhen) : null,
+    x.why ? h('p', { class: 'sb-wl' }, h('span', { class: 'sb-lbl' }, 'Why'), ' ', h('span', { class: 'sb-q' }, x.why.text), h('span', { class: 'sb-src' }, x.why.source))
+      : h('p', { class: 'sb-wl gap' }, h('span', { class: 'sb-lbl' }, 'Why'), ' not recorded yet · for the agents to add'),
+    x.sprints.length ? foldButton(name, fk, false, { class: 'sb-fold', 'data-sprints': x.key }, x.fold) : h('p', { class: 'sb-meta' }, x.fold),
+    x.sprints.length && open ? h('div', { class: 'sb-tasks', key: `tasks:${x.key}` }, x.sprints.map(sprintNode)) : null,
+    x.namedFold ? foldButton(name, nk, false, { class: 'sb-fold', 'data-sprints': `${x.key}:named` }, x.namedFold) : null,
+    x.namedFold && nOpen ? h('div', { class: 'sb-tasks', key: `named:${x.key}` }, x.named.map(sprintNode)) : null);
+}
+
+/** The run's "Not tied to a milestone" line (AC60, AC69): the slate diamond, its count, who files them, the fixed sentence and its sprints folded. */
+function untiedNode(p, x) {
+  const name = p.project.name;
+  const fk = `sprints:${x.key}`;
+  const open = isOpenFold(name, fk, false);
+  return h('div', { class: 'sb-mile untied', key: `mile:${x.key}`, 'data-ms': 'untied' },
+    ic('flag', 'sb-mdot'),
+    h('p', { class: 'sb-mhead' }, h('span', { class: 'sb-mtitle' }, x.name), ' ', h('span', { class: 'sb-mst gap' }, x.words)),
+    h('p', { class: 'sb-meta' }, x.sentence),
+    foldButton(name, fk, false, { class: 'sb-fold', 'data-sprints': x.key }, `${x.sprints.length} sprint${x.sprints.length === 1 ? '' : 's'}`),
+    open ? h('div', { class: 'sb-tasks', key: `tasks:${x.key}` }, x.sprints.map(sprintNode)) : null);
+}
+
+/** A run's gathered standard milestones (AC59): one line, listing them in place on a tap. */
+function gatherNode(p, x) {
+  const name = p.project.name;
+  const open = isOpenFold(name, x.key, false);
+  return h('div', { class: 'sb-gather', key: `gather:${x.key}` }, foldButton(name, x.key, false, { class: 'sb-fold soft' }, x.words),
+    open ? h('ul', { class: 'sb-glist' }, x.items.map((i) => h('li', {}, i.name, ' ', code(i.code), ' ', h('span', { class: 'sb-meta' }, i.words)))) : null);
+}
+
+function feedRow(p, x) {
+  if (x.kind === 'ms') return mileNode(p, x);
+  if (x.kind === 'untied') return untiedNode(p, x);
+  return gatherNode(p, x);
+}
+
+/** "What we're delivering" and "Where we started" (AC59), quoted from docs/PROJECT.md's Intent, or "not recorded". */
+function goalNode(g, kind) {
+  return h('article', { class: `sb-goal ${kind}`, key: `goal:${kind}` }, h('p', { class: 'sb-lbl' }, g.label),
+    h('p', { class: `sb-gq${g.recorded ? '' : ' gap'}` }, g.text),
+    h('p', { class: 'sb-src' }, g.source.href ? ext(g.source.href, g.source.words) : g.source.words),
+    g.finish ? h('p', { class: 'sb-meta' }, g.finish) : null);
+}
+
+/** The keys above the feed (AC59, AC60): the status icons in words, and the three bullet colours. */
+function feedKeys(fv) {
+  return h('div', { class: 'sb-fkeys', key: 'feed-keys' },
+    h('p', { class: 'sb-keyh' }, 'Status icons'), h('p', { class: 'sb-keyl' }, fv.iconsKey.map(([k, w]) => h('span', { class: 'sb-keye' }, ic(k), w))),
+    h('p', { class: 'sb-keyl sb-bkey' }, fv.bulletsKey.map((b, i) => h('span', { class: `sb-k ${['b-tech', 'b-ctx', 'b-why'][i]}` }, b))));
+}
+
+function renderTimeline(p) {
+  const name = p.project.name;
+  const fv = p.feed();
+  const body = [marker(), projectHeader(name, 'Timeline'), markerNode(p, 'timeline')];
+  if (!fv.ok) {
+    body.push(h('section', { class: 'sb-card' }, h('p', {}, fv.words)));
     return h('section', { class: 'sb-screen' }, body, bottomBar(name, 'timeline', p.q.waiting));
   }
-  // The phase strip picks the phase; the switch picks its run (one run on screen at a time).
-  body.push(h('div', { class: 'sb-strip', role: 'list' }, tv.strip.map((ph) => h('a', {
-    role: 'listitem', class: `sb-strip-ph${ph.current ? ' cur' : ''}${ph.done ? ' doneph' : ''}`,
-    href: ph.runKey ? go('p', name, 'timeline', ph.runKey) : null, 'aria-current': ph.current ? 'true' : null,
-  }, h('span', { class: 'sb-strip-n' }, ph.short), h('span', { class: 'sb-strip-i' }, ph.iters || '–'),
-  h('span', { class: 'sb-dots' }, ph.dots.map((d) => h('span', { class: `sb-d ${d.kind}`, title: `${d.name}: ${d.word}`, 'aria-label': `${d.name}: ${d.word}` })))))));
-  body.push(h('p', { class: 'sb-key' }, tv.key));
-  if (tv.switcher.length > 1) {
-    body.push(h('div', { class: 'sb-switch', role: 'group', 'aria-label': 'Runs of this phase' }, tv.switcher.map((x) => h('a', { class: `sb-chip${x.current ? ' on' : ''}`, href: go('p', name, 'timeline', x.key), 'aria-current': x.current ? 'true' : null }, x.label))));
-  }
-  const r = tv.run;
-  const lines = r.parts.flatMap((part) => msRows(p, r, part));
-  if (r.iterNote) lines.push(h('li', { class: `sb-tl-note${r.iterNote.yours ? ' iter' : ''}` }, h('span', { class: 'sb-tl-nt' }, r.iterNote.text)));
-  body.push(h('section', { class: 'sb-run', key: `run:${r.key}` },
-    h('h2', { class: 'sb-h2' }, r.label),
-    h('p', { class: 'sb-lead small' }, r.sentence),
-    h('details', { class: 'sb-std', key: `std:${r.key}` }, h('summary', {}, h('span', {}, 'Standard milestones'), h('span', { class: 'sb-muted' }, r.standardCounts)),
-      h('ul', { class: 'sb-mlist' }, r.standard.map((x) => h('li', {}, msMark(x.word), h('span', {}, x.name, ' ', code(x.id)), h('em', {}, x.word))))),
-    h('ol', { class: 'sb-tl', key: `line:${r.key}` }, lines)));
+  const blocks = fv.blocks.map((b) => h('section', { class: `sb-blk ${b.band.cls}${b.plan ? ' plan' : ''}`, key: `blk:${b.key}`, 'data-run': b.key },
+    h('div', { class: `sb-band${b.plan ? ' plan' : ''}`, key: `band:${b.key}` }, h('span', { class: 'sb-phchip', 'aria-hidden': 'true' }),
+      h('h2', { class: 'sb-band-n' }, b.band.name), h('span', { class: 'sb-band-s' }, b.band.words)),
+    b.began ? beganNode(b.began) : null,
+    b.nowLine ? [
+      b.plannedRows.length ? h('div', { class: 'sb-seg plan', key: `seg:${b.key}:plan` }, b.plannedRows.map((x) => feedRow(p, x))) : null,
+      h('div', { class: 'sb-nowline', key: 'nowline', 'data-now': '1' }, h('span', { class: 'sb-now-t' }, b.nowLine.words), ' ',
+        h('span', { class: 'sb-now-s' }, b.nowLine.sub), b.nowLine.note ? h('span', { class: 'sb-now-s' }, ` · ${b.nowLine.note}`) : null)] : null,
+    h('div', { class: `sb-seg${b.plan ? ' plan' : ''}`, key: `seg:${b.key}` }, b.rows.map((x) => feedRow(p, x)))));
+  body.push(feedKeys(fv), h('div', { class: 'sb-feed', key: 'feed' }, goalNode(fv.top, 'finish'), blocks, goalNode(fv.bottom, 'start')));
+  for (const n of fv.notes) body.push(h('p', { class: 'sb-meta sb-feednote' }, n));
   return h('section', { class: 'sb-screen' }, body, bottomBar(name, 'timeline', p.q.waiting));
 }
 
+/**
+ * Where the Timeline opens (AC59): with the Now line just under the pinned band; or, from a link to
+ * one of its sprints (AC66, AC67), with that sprint's milestone's sprints opened and the sprint in
+ * view. Only when the owner opens the Timeline, never on a refresh (AC56).
+ */
+function scrollToTarget(target) {
+  const view = document.getElementById('view');
+  if (!view || typeof window.scrollTo !== 'function') return false;
+  let el = null;
+  if (target.now) el = findKey(view, 'nowline');
+  else {
+    const [attr, want] = target.ms ? ['data-ms', target.ms] : ['data-sprint', target.sprint];
+    eachElement(view, (e) => { if (!el && e.getAttribute && e.getAttribute(attr) === want) el = e; });
+  }
+  if (!el || !el.getBoundingClientRect) return Boolean(el);
+  let blk = el.parentNode;
+  while (blk && !(blk.getAttribute && blk.getAttribute('data-run'))) blk = blk.parentNode;
+  const band = blk ? findClass(blk, 'sb-band') : null;
+  const bh = band && band.getBoundingClientRect ? band.getBoundingClientRect().height : 0;
+  const y = (window.scrollY || 0) + el.getBoundingClientRect().top - bh - 8;
+  window.scrollTo(0, Math.max(0, Math.round(y)));
+  return true;
+}
+
+/** Opening the Timeline at a sprint: its milestone's sprints opened first (AC66, AC67). */
+function openSprintFolds(p, sprint) {
+  const fv = p.feed();
+  if (!fv.ok) return;
+  const at = fv.index.get(sprint);
+  if (at) setFold(p.project.name, `sprints:${at.row}`, true);
+}
+
+/** Record notes (AC68): each record line or field skipped (AC31) and each plan line out of form or repeated (AC61), word for word. */
+function recordNotes(p) {
+  const out = [...((p.model && p.model.notes) || [])];
+  const doc = p.j && p.j.projectDoc;
+  for (const x of (doc && doc.problems) || []) out.push(`docs/PROJECT.md line ${x.lineno}: ${x.message}`);
+  return out;
+}
+function renderNotes(p) {
+  const notes = recordNotes(p);
+  return detailScreen(p, 'Record notes', [notes.length ? h('ul', { class: 'sb-qlist' }, notes.map((n) => h('li', { class: 'sb-meta' }, n))) : h('p', { class: 'sb-muted' }, 'No record notes.')]);
+}
+
+/**
+ * The Team screen (AC49, as AC67 changed its cards): who has the ball; the owner's tile with its
+ * next lines and what each unblocks; and one card per member, its state in a plain circle with its
+ * word, its last recorded work with its date, the milestone that work feeds, and a link into the
+ * Timeline at that sprint. No light and no glow: nothing on a card moves.
+ */
 function renderTeam(p, member, sub, idx) {
   const name = p.project.name;
   const now = new Date(Date.now());
   const tv = teamView(p.project, p.model, p.snap, p.j, p.q, p.ball, now, TZ);
   if (member) return renderMember(p, tv, member, sub, idx, now);
-  const body = [marker(), projectHeader(name, 'Team')];
+  const body = [marker(), projectHeader(name, 'Team'), markerNode(p, 'team')];
   body.push(h('h2', { class: 'sb-h2' }, 'Who has the ball'), ballNode(p.ball, false));
   if (tv.note) body.push(h('p', { class: 'sb-muted small' }, tv.note));
   const you = tv.owner;
-  body.push(h('a', { class: 'sb-you', href: go('p', name, 'team', 'owner') },
-    h('p', { class: 'sb-eyebrow' }, 'You'),
-    h('p', { class: `sb-you-st ${you.waiting ? 'you' : ''}` }, you.status),
-    you.next.length ? h('ol', { class: 'sb-next' }, you.next.map((n, i) => h('li', {}, h('span', { class: 'sb-tag' }, i === 0 ? 'Next' : i === 1 ? 'Then' : 'Later'),
-      h('span', {}, n.text, ' ', code(n.code), h('span', { class: 'sb-muted small', live: () => ` · ${waitWords(n.raisedAt, Date.now())}` }))))) : h('p', { class: 'sb-muted small' }, 'Nothing in your queue.')));
-  body.push(h('div', { class: 'sb-tiles' }, tv.members.map((m) => h('a', { class: `sb-tile${m.lit ? ' lit' : ''}`, href: go('p', name, 'team', m.id) },
-    h('span', { class: `sb-light${m.lit ? ' lit' : ''}${m.glow ? ' glow' : ''}`, 'aria-hidden': 'true' }),
-    h('strong', {}, m.label), h('span', { class: 'sb-tile-st' }, m.status), h('span', { class: 'sb-muted small' }, m.last)))));
+  const fv = p.project.model === 'v3' ? p.feed() : null;
+  const unb = (r) => {
+    if (p.project.model !== 'v3' || !r.flag) return null;
+    const u = unblocksOf(p.ctx, r);
+    if (u.none) return ` · unblocks no milestone: ${u.none}`;
+    return u.milestones.length ? ` · unblocks ${u.milestones.map((m) => m.code).join(', ')}` : ' · unblocks: milestone not recorded';
+  };
+  body.push(h('div', { class: 'sb-you', key: 'you-tile' },
+    h('a', { class: 'sb-you-a', href: go('p', name, 'team', 'owner') }, h('p', { class: `sb-you-st ${you.waiting ? 'you' : ''}` }, you.waiting ? ic('you') : null,
+      you.waiting ? `You · waiting on you: ${p.q.waiting} in your queue` : `You · ${you.status}`)),
+    you.next.length ? h('ol', { class: 'sb-next' }, you.next.map((n, i) => {
+      const row = p.q.rows[i];
+      return h('li', {}, h('span', { class: 'sb-tag' }, i === 0 ? 'Next' : i === 1 ? 'Then' : 'Later'),
+        h('span', {}, n.text, ' ', code(n.code), h('span', { class: 'sb-muted small', live: () => ` · ${waitWords(n.raisedAt, Date.now())}` }),
+          h('span', { class: `sb-unb-t${row && /not recorded/.test(unb(row) || '') ? ' gap' : ''}` }, row ? unb(row) : null)));
+    })) : h('p', { class: 'sb-muted small' }, 'Nothing in your queue.')));
+  body.push(h('p', { class: 'sb-keyl sb-tkey' }, TEAM_KEY.map(([k, w]) => h('span', { class: 'sb-keye' }, ic(k), w))));
+  const rows = tv.rows || [];
+  body.push(h('div', { class: 'sb-tiles' }, tv.members.map((m) => {
+    const v3 = p.project.model === 'v3' && m.id !== 'chief-of-staff';
+    const work = v3 ? memberWork(p.ctx, fv, rows, m.id, TZ) : null;
+    const item = m.status === 'Working' ? m.item : work ? work.item : null;
+    const last = m.id === 'chief-of-staff' ? NOT_RECORDED : m.status === 'Working' ? m.last : work ? work.last : m.last;
+    const feeds = v3 && item ? { feeds: itemFeeds(p.ctx, item) } : null;
+    const place = item && fv && fv.ok ? fv.index.get(item) : null;
+    return h('div', { class: 'sb-tile', key: `tile:${m.id}`, 'data-member': m.id },
+      h('a', { class: 'sb-tile-n', href: go('p', name, 'team', m.id) }, ic(memberIcon(m.status)), h('strong', {}, m.label)),
+      h('span', { class: 'sb-tile-st' }, m.status),
+      h('span', { class: 'sb-muted small' }, last),
+      feeds ? (feeds.feeds ? h('span', { class: 'sb-feeds' }, 'feeds ', h('b', {}, feeds.feeds.code), ` · ${feeds.feeds.name}`)
+        : h('span', { class: 'sb-feeds gap' }, 'feeds: not tied to a milestone')) : null,
+      place ? h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'sprint', item) }, 'On the Timeline ›') : null);
+  })));
   return h('section', { class: 'sb-screen' }, body, bottomBar(name, 'team', p.q.waiting));
 }
 
@@ -1377,14 +1735,18 @@ export function parseRoute(hash) {
   if (r0 !== 'p' || !name) return { key: 'home', screen: '#/', kind: 'home', name: null, sheet: null };
   const base = { name, sheet: null };
   if (kind === 'queue') return { ...base, key: `p/${name}/queue`, screen: go('p', name, 'queue'), kind, sheet: rest.length ? rest.join('/') : null };
-  if (kind === 'timeline') return { ...base, key: `p/${name}/timeline`, screen: rest[0] ? go('p', name, 'timeline', rest[0]) : go('p', name, 'timeline'), kind, run: rest[0] || null };
+  // AC59: the Timeline opens at Now; `timeline/sprint/<id>` at a sprint and `timeline/ms/<code>` at a milestone (AC66, AC67).
+  if (kind === 'timeline') {
+    const at = (rest[0] === 'sprint' || rest[0] === 'ms') && rest[1] ? { [rest[0]]: rest[1] } : { now: true };
+    return { ...base, key: `p/${name}/timeline`, screen: at.now ? go('p', name, 'timeline') : go('p', name, 'timeline', rest[0], rest[1]), kind, at };
+  }
   if (kind === 'team') {
     const member = rest[0] || null;
     if (!member) return { ...base, key: `p/${name}/team`, screen: go('p', name, 'team'), kind };
     const sheet = rest[1] === 'now' ? 'now' : rest[1] === 'e' && rest[2] != null ? `e:${rest[2]}` : null;
     return { ...base, key: `p/${name}/team/${member}`, screen: go('p', name, 'team', member), kind, member, sheet };
   }
-  if (kind === 'pipeline' || kind === 'asked' || kind === 'agents') return { ...base, key: `p/${name}/${kind}`, screen: go('p', name, kind), kind };
+  if (kind === 'pipeline' || kind === 'asked' || kind === 'agents' || kind === 'notes') return { ...base, key: `p/${name}/${kind}`, screen: go('p', name, kind), kind };
   return { ...base, key: `p/${name}`, screen: go('p', name), kind: 'status', sheet: kind === 'info' ? 'info' : null };
 }
 
@@ -1409,29 +1771,59 @@ const nav = {
     this.to(this.history[this.history.length - 1].hash);
   },
   start() {
+    const r0 = parseRoute(location.hash);
+    const proj = r0.name ? CONFIG.projects.find((x) => x.name === r0.name) : null;
+    if (r0.kind === 'pipeline' && proj && proj.model === 'v3') {
+      // AC68: opened on a v3 project's Pipeline route, the sandbox shows the Timeline at Now in its place.
+      const to = go('p', r0.name, 'timeline');
+      try {
+        if (typeof location.replace === 'function') location.replace(to);
+        else location.hash = to;
+      } catch {
+        location.hash = to;
+      }
+    }
     this.route = parseRoute(location.hash);
     this.lastHash = location.hash;
     this.history = [{ key: this.route.key, hash: this.route.screen }];
+    this.scrollTo = this.route.kind === 'timeline' ? this.route.at : null;
+    if (this.scrollTo && this.scrollTo.sprint) this.openSprint = { name: this.route.name, sprint: this.scrollTo.sprint };
   },
   changed() {
     if (location.hash === this.lastHash) return;
+    let next = parseRoute(location.hash);
+    // AC68: a v3 project's Pipeline route opens the Timeline at Now in its place, replacing the
+    // history entry rather than adding one, so "Back" never returns to it.
+    const proj = next.name ? CONFIG.projects.find((x) => x.name === next.name) : null;
+    if (next.kind === 'pipeline' && proj && proj.model === 'v3') {
+      const to = go('p', next.name, 'timeline');
+      try {
+        if (typeof location.replace === 'function') location.replace(to);
+        else location.hash = to;
+      } catch {
+        location.hash = to;
+      }
+      next = parseRoute(to);
+    }
     this.lastHash = location.hash;
     const prev = this.route;
-    const next = parseRoute(location.hash);
     this.route = next;
     const top = this.history[this.history.length - 1];
     if (this.backing) this.backing = false;
     else if (!top || top.key !== next.key) this.history.push({ key: next.key, hash: next.screen });
     else top.hash = next.screen;
-    const moved = prev.key !== next.key || prev.run !== next.run;
+    const moved = prev.key !== next.key || JSON.stringify(prev.at || null) !== JSON.stringify(next.at || null);
     if (!moved && prev.sheet && !next.sheet) this.focusNext = this.sheetOpener;
     else if (!prev.sheet && next.sheet) {
       this.sheetOpener = this.opener;
       this.focusNext = 'sheet-close';
     } else if (moved) this.focusNext = null;
     if (moved) bubble.close();
+    // The Timeline scrolls to Now (or to a sprint) only when it is opened, never on a refresh (AC56, AC59).
+    this.scrollTo = moved && next.kind === 'timeline' ? next.at : null;
+    if (this.scrollTo && this.scrollTo.sprint) this.openSprint = { name: next.name, sprint: this.scrollTo.sprint };
     render();
-    if (moved) window.scrollTo(0, 0);
+    if (moved && !this.scrollTo) window.scrollTo(0, 0);
     focusPending();
   },
 };
@@ -1771,7 +2163,13 @@ export function startSandbox(opts = {}) {
     for (const n of [nodes].flat(Infinity)) if (n) fresh.append(n);
     morphChildren(view, fresh);
     fitBranches();
+    fitRails();
     measureClips();
+    // The Timeline just opened: scroll to its Now line (or the sprint) once it is drawn (AC59).
+    if (nav.scrollTo && nav.route.kind === 'timeline') {
+      const t = nav.scrollTo;
+      if (scrollToTarget(t)) nav.scrollTo = null;
+    }
   };
   render = guardRender(draw, (state) => {
     if (stateEl) stateEl.textContent = state.text;
@@ -1804,11 +2202,17 @@ export function startSandbox(opts = {}) {
       } else {
         try {
           if (r.kind === 'queue') node = renderQueue(b, r.sheet);
-          else if (r.kind === 'timeline') node = renderTimeline(b, r.run);
+          else if (r.kind === 'timeline') {
+            if (nav.openSprint && nav.openSprint.name === name) {
+              openSprintFolds(b, nav.openSprint.sprint);
+              nav.openSprint = null;
+            }
+            node = renderTimeline(b);
+          } else if (r.kind === 'notes') node = renderNotes(b);
           else if (r.kind === 'team') {
             const [sub, idx] = r.sheet ? r.sheet.split(':') : [null, null];
             node = renderTeam(b, r.member || null, sub, idx);
-          } else if (r.kind === 'pipeline') node = renderPipeline(b);
+          } else if (r.kind === 'pipeline') node = b.project.model === 'v3' ? renderTimeline(b) : renderPipeline(b);
           else if (r.kind === 'asked') node = renderAsked(b);
           else if (r.kind === 'agents') node = renderAgents(b);
           else node = renderStatus(b);
@@ -1840,6 +2244,7 @@ export function startSandbox(opts = {}) {
   window.addEventListener('pagehide', () => seen.hidden());
   window.addEventListener('resize', () => {
     fitBranches();
+    fitRails();
     measureClips(); // a turned phone or a resized window: judged again at the new width (AC54 (a))
     // An open bubble is placed again for the new screen: inside it, clear of the bottom bar (N2).
     if (bubble.open) {

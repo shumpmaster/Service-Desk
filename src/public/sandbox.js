@@ -21,7 +21,7 @@ import { v5Footer, usageLines, notReadText } from './lib/asked.js';
 import { routeParts, guardRender, boot, SIGNED_OUT_STATE } from './lib/page.js';
 import { createSeen } from './lib/seen.js';
 import {
-  SANDBOX_MARKER, DEFERRED_WORDS, NOT_RECORDED, NOT_AVAILABLE, V25_NOT_RECORDED, OWNER_NEXT_LINES,
+  SANDBOX_MARKER, NOT_RECORDED, NOT_AVAILABLE, V25_NOT_RECORDED, OWNER_NEXT_LINES,
   j11Records, timelineOf, phaseView, finishedWords, phaseMilestones, whereLine, queueView, pillView, ballLines,
   sheetView, trackerSteps, doneToday, cardBoxText, questionBoxText, VERDICT_START, ruleLine, boxPlan, GROUPS, treeLink, waitWords, youWaitText,
 } from './lib/sandbox.js';
@@ -178,7 +178,6 @@ const ICONS = {
   home: ['M4 11l8-6 8 6', 'M6 10v9h12v-9'],
   chevron: ['M9 6l6 6-6 6'],
   info: ['M12 8h.01', 'M11 12h1v5h1', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z'],
-  chat: ['M5 6h14v9H9l-4 4z'],
   close: ['M6 6l12 12', 'M18 6L6 18'],
   latest: ['M12 8v4l2.5 2.5', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z'],
 };
@@ -376,7 +375,7 @@ function latestControl(p, col) {
   const out = [ctl];
   if (isOpen) {
     out.push(h('div', {
-      class: `sb-bubble ${col} ${bubble.place === 'up' ? 'up' : 'down'}`, id, role: 'dialog', 'aria-label': `Latest: ${name}`, key: bubbleKey(k), 'data-bubble': k,
+      class: `sb-bubble ${col} ${placeClass()}`, id, role: 'dialog', 'aria-label': `Latest: ${name}`, key: bubbleKey(k), 'data-bubble': k,
       onpointerenter: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(k, true, 'bubble'); },
       onpointerleave: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(k, false, 'bubble'); },
     }, h('div', { class: 'sb-bubble-top' }, h('p', { class: 'sb-eyebrow' }, 'Latest'),
@@ -389,7 +388,7 @@ function latestControl(p, col) {
 /**
  * The card's summary (AC54 (a)): its first three lines, in a box that always takes exactly three
  * lines' height. When the whole summary runs past three lines at the card's width as drawn (the
- * browser measures it, `measureSummaries`, again on each redraw and when the width changes), the
+ * browser measures it, `measureClips`, again on each redraw and when the width changes), the
  * third line fades into the card's background and the three lines are a button of their own that
  * opens the whole summary, word for word, in a bubble (the "Latest" bubble's machinery: one open at
  * a time). The card always holds the whole summary; the box only hides the lines after the third.
@@ -421,10 +420,59 @@ function summaryBox(name, sum, col) {
     // Nothing scrolls in the box: where a browser lacks `overflow: clip`, focus scrolling the text is undone.
     h('div', { class: `sb-sumclip${over ? ' over' : ''}`, key: `sumclip:${name}`, 'data-sum': name, onscroll: (e, el) => { if (el.scrollTop) el.scrollTop = 0; } }, text),
     isOpen ? h('div', {
-      class: `sb-bubble ${col} ${bubble.place === 'up' ? 'up' : 'down'}`, id, role: 'dialog', 'aria-label': `Summary: ${name}`, key: bubbleKey(k), 'data-bubble': k,
+      class: `sb-bubble ${col} ${placeClass()}`, id, role: 'dialog', 'aria-label': `Summary: ${name}`, key: bubbleKey(k), 'data-bubble': k,
     }, h('div', { class: 'sb-bubble-top' }, h('p', { class: 'sb-eyebrow' }, 'Summary'),
       closeControl(() => { bubble.close(); render(); focusKey(k); }, `sumbubble-close:${name}`)),
     h('p', { class: 'sb-bubble-t' }, sum.text)) : null);
+}
+
+/**
+ * A ruling's line 1 where the sandbox shows it (AC55's "Your last action", AC52's "Done today"; the
+ * owner's follow-up ruling, answer 2): when its words take more than three lines at the width as
+ * drawn (measured as the summary is, `measureClips`), the box shows the first three, faded at the
+ * cut, and is a button of its own, "Show the whole of <code>", opening line 1, word for word, in a
+ * bubble (AC54 (a)'s machinery: one open at a time, closed as AC56 says); `mark` (" (proxy)") and
+ * `after` (the time and code) follow the box, outside the button and the bubble. Three lines or
+ * fewer: the one-line form, words, mark and `after` on the same line, at its own height, no fade, no
+ * control. `id` names it on its screen; `lead` is text before the words ("Your last action: "),
+ * `wcls` the words' own class, `after(inline)` gives the nodes that follow, and `notice` a line the
+ * open bubble adds when a refresh would change the line under it (AC55, draft 4).
+ */
+function lineBox(id, { words, recCode, title, lead = null, wcls = 'sb-line-w', mark = null, after = () => [], notice = null }) {
+  const k = `line:${id}`;
+  lineText.set(id, words);
+  const over = lineOver.get(id) === true;
+  const isOpen = over && bubble.open === k;
+  const bid = `linebub-${id.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+  // Short, the mark follows the words as part of the line ("… (proxy)"); clipped, it follows the box.
+  const inner = [lead, h('span', { class: wcls }, over ? words : `${words}${mark || ''}`)];
+  const text = over
+    ? h('button', {
+      type: 'button', class: 'sb-line', key: k, 'aria-label': `Show the whole of ${recCode}`, 'aria-expanded': isOpen ? 'true' : 'false',
+      'aria-controls': isOpen ? bid : null,
+      onpointerdown: (e) => { bubble.pointer = e && e.pointerType ? e.pointerType : 'touch'; },
+      onclick: (e) => bubbleTap(k, e),
+      onkeydown: (e) => {
+        if (!e || (e.key !== 'Enter' && e.key !== ' ')) return;
+        if (e.preventDefault) e.preventDefault();
+        if (bubble.open === k) {
+          bubble.close();
+          render();
+          focusKey(k);
+        } else bubbleOpen(k, 'key');
+      },
+    }, inner)
+    : h('span', { class: 'sb-line' }, inner, after(true));
+  return [h('div', { class: 'sb-linebox', key: `linebox:${id}` },
+    // Nothing scrolls in the box: where a browser lacks `overflow: clip`, focus scrolling the text is undone.
+    h('div', { class: `sb-lineclip${over ? ' over' : ''}`, key: `lineclip:${id}`, 'data-line': id, onscroll: (e, el) => { if (el.scrollTop) el.scrollTop = 0; } }, text),
+    isOpen ? h('div', {
+      class: `sb-bubble sb-linebub ${placeClass()}`, id: bid, role: 'dialog', 'aria-label': `${title}: ${recCode}`, key: bubbleKey(k), 'data-bubble': k,
+    }, h('div', { class: 'sb-bubble-top' }, h('p', { class: 'sb-eyebrow' }, title),
+      closeControl(() => { bubble.close(); render(); focusKey(k); }, `linebubble-close:${id}`)),
+    h('p', { class: 'sb-bubble-t' }, words),
+    notice ? h('p', { class: 'sb-bubble-note', role: 'status', key: 'line-notice' }, notice) : null) : null),
+  over ? h('span', { class: 'sb-line-m' }, mark ? h('span', { class: 'sb-line-mark' }, mark.trim()) : null, after(Boolean(mark))) : null];
 }
 
 function homeCard(p, seen, col) {
@@ -506,11 +554,9 @@ function renderHome(desk, built, seen, now) {
       lastRead ? h('span', { class: 'sb-muted' }, ` · last read ${hhmm(new Date(lastRead), TZ)}`) : null),
     seen.words ? h('p', { class: 'sb-muted small' }, seen.words) : null,
     h('div', { class: 'sb-hgroups' }, groups),
-    h('p', { class: 'sb-v5' }, v5Line(built)),
-    h('div', { class: 'sb-band' },
-      h('button', { type: 'button', class: 'sb-composer', 'aria-disabled': 'true', disabled: true },
-        icon('chat'), h('span', {}, 'Tell your Chief of Staff…')),
-      h('p', { class: 'sb-deferred' }, DEFERRED_WORDS)));
+    // No bottom band (AC48, 2026-10-16: the owner dropped the "Tell your Chief of Staff…" bar, the
+    // band's only content): with no sheet or bubble open, nothing is fixed to the bottom of Home.
+    h('p', { class: 'sb-v5' }, v5Line(built)));
 }
 
 function v5Line(built) {
@@ -606,17 +652,43 @@ function renderStatus(p) {
   return out;
 }
 
-/** "Your last action" (AC55, note 6): just above the bar that says whether anything waits on the owner. */
+/**
+ * "Your last action" (AC55, note 6): just above the bar that says whether anything waits on the owner.
+ * A ruling's words longer than three lines are clipped to three, faded, with the whole line one tap
+ * away (lineBox); the time and code follow, outside the control.
+ */
 function lastActionNode(p) {
-  const la = lastAction(p.project, p.model, p.snap, p.j, new Date(Date.now()), TZ);
+  const fresh = lastAction(p.project, p.model, p.snap, p.j, new Date(Date.now()), TZ);
   const name = p.project.name;
-  return h('div', { class: 'sb-last', key: 'last-action' },
-    la.state === 'ok'
-      ? h('p', { class: 'sb-last-t' }, h('span', { class: 'sb-last-l' }, 'Your last action: '), la.words, ' · ',
-        h('span', { live: () => whenText(new Date(la.action.at), new Date(Date.now()), TZ) }), ' ', la.link ? ext(la.link, la.code, 'code') : code(la.code))
-      : h('p', { class: 'sb-last-t' }, la.text),
+  // While its whole-line bubble is open, a refresh leaves the line and the bubble as they were
+  // (AC55, draft 4; AC56): what changed waits until the owner closes it, and the bubble says so.
+  let la = fresh;
+  let notice = null;
+  if (bubble.open === 'line:last' && heldLast && heldLast.name === name) {
+    la = heldLast.la;
+    if (laSig(fresh) !== laSig(la)) notice = HELD_NOTICE;
+  } else if (bubble.open === 'line:last' && fresh.state === 'ok') heldLast = { name, la: fresh };
+  else heldLast = null;
+  const lead = h('span', { class: 'sb-last-l' }, 'Your last action: ');
+  let line;
+  if (la.state !== 'ok') line = h('p', { class: 'sb-last-t' }, la.text);
+  else {
+    const proxy = la.action.kind === 'ruling' && la.action.proxy;
+    const after = (sep) => [sep ? h('span', { class: 'sb-sep' }, ' · ') : null, h('span', { class: 'sb-last-when', live: () => whenText(new Date(la.action.at), new Date(Date.now()), TZ) }),
+      ' ', la.link ? ext(la.link, la.code, 'code') : code(la.code)];
+    line = la.action.clip
+      ? h('div', { class: 'sb-last-t' }, lineBox('last', { words: la.action.words, recCode: la.code, title: 'Your last action', lead, mark: proxy ? ' (proxy)' : null, after, notice }))
+      : h('p', { class: 'sb-last-t' }, lead, h('span', { class: 'sb-line-w' }, la.words), after(true));
+  }
+  // tabindex -1: where focus goes when a held bubble closes and its control has gone (AC56, draft 5).
+  return h('div', { class: 'sb-last', key: 'last-action', tabindex: '-1' }, line,
     h('details', { class: 'sb-why', key: `last-why:${name}` }, h('summary', {}, 'Your merges?'), h('p', { class: 'small' }, `Not in this line: ${la.merges} (the desk reads only open pull requests).`)));
 }
+/** What "Your last action" shows, as one string, to tell whether a refresh would change it. */
+const laSig = (la) => `${la.state}|${la.text}|${la.code || ''}`;
+/** The one notice of a held whole-line bubble (AC55, draft 6): its line or row changed under it. */
+const HELD_NOTICE = 'This has changed since you opened it. Close this to see the latest.';
+let heldLast = null; // { name, la }: the line as it was when its bubble opened
 
 // ---------------------------------------------------------------------------
 // AC55: the Pipeline, Time asked and Agents views, in the new design, with the same facts as the
@@ -814,16 +886,39 @@ function renderQueue(p, key) {
     return h('section', { class: `sb-group g-${g.key}`, key: `group:${g.key}` }, head, h('ul', { class: 'sb-qlist' }, g.items.map((r) => queueRow(p, r, s))));
   })));
   // "Done today" (AC52, note 10): what was ruled, in words, with its code after.
-  const done = doneToday(project, p.model, p.snap, new Date(Date.now()), TZ, p.j);
-  body.push(h('details', { class: 'sb-card sb-donetoday', key: 'done-today' }, h('summary', {}, `Done today (${done.length + s.left.length})`),
+  // While a row's whole-line bubble is open, a refresh leaves the fold as it was (AC55's hold, for
+  // "Done today": draft 5), the day turning at midnight included; the bubble says so when it changed.
+  const freshDone = doneToday(project, p.model, p.snap, new Date(Date.now()), TZ, p.j);
+  let done = freshDone;
+  let notice = null;
+  const rowOpen = bubble.open && bubble.open.startsWith('line:done:');
+  if (rowOpen && heldDone && heldDone.name === name) {
+    done = heldDone.done;
+    // The notice is the open row's: it says so when a refresh would remove or change that row.
+    const openRow = (rows) => rows.find((d) => `line:done:${d.code}` === bubble.open);
+    const was = openRow(done);
+    const is = openRow(freshDone);
+    if (!was || !is || doneSig([was]) !== doneSig([is])) notice = HELD_NOTICE;
+  } else if (rowOpen) heldDone = { name, done: freshDone };
+  else heldDone = null;
+  // Opening the fold lays its rows out: a ruling's line is judged against three lines then (AC52).
+  body.push(h('details', { class: 'sb-card sb-donetoday', key: 'done-today', ontoggle: () => measureClips() }, h('summary', { key: 'done-today-h' }, `Done today (${done.length + s.left.length})`),
     done.length || s.left.length ? h('ul', { class: 'sb-qlist sb-done' }, done.map((d) => h('li', { class: 'sb-done-r', key: `done:${d.kind}:${d.code}` },
-      h('span', { class: 'sb-done-w' }, d.text), ' ', d.link ? ext(d.link, d.code, 'code') : code(d.code), ' ', h('span', { class: 'sb-muted small' }, d.words))),
+      d.clip
+        ? lineBox(`done:${d.code}`, { words: d.line, recCode: d.code, title: 'Done today', wcls: 'sb-done-w', mark: d.proxy ? ' (proxy)' : null,
+          notice: bubble.open === `line:done:${d.code}` ? notice : null,
+          after: () => [' ', d.link ? ext(d.link, d.code, 'code') : code(d.code), ' ', h('span', { class: 'sb-muted small' }, d.words)] })
+        : [h('span', { class: 'sb-done-w' }, d.text), ' ', d.link ? ext(d.link, d.code, 'code') : code(d.code), ' ', h('span', { class: 'sb-muted small' }, d.words)])),
     s.left.map((x) => h('li', { class: 'sb-done-r' }, h('span', { class: 'sb-done-w' }, x.title), ' ', code(x.code), ' ', h('span', { class: 'sb-muted small' }, 'no longer open, time not recorded'))))
       : h('p', { class: 'sb-muted small' }, 'Nothing answered today yet.')));
   const out = [h('section', { class: 'sb-screen' }, body, bottomBar(name, 'queue', q.waiting))];
   if (key != null) out.push(sheet(p, key));
   return out;
 }
+
+/** What "Done today" rows show, as one string, to tell whether a refresh would change them. */
+const doneSig = (rows) => rows.map((d) => `${d.kind}|${d.code}|${d.text}|${d.at}`).join('\n');
+let heldDone = null; // { name, done }: the fold's rows as they were when a row's bubble opened
 
 function trackerNode(steps) {
   return h('ol', { class: 'sb-tracker' }, steps.map((st) => h('li', { class: st.done ? 'done' : '' }, circle(st.done ? 'tick' : 'empty'), st.words)));
@@ -1346,7 +1441,10 @@ function focusPending() {
   nav.focusNext = null;
   if (!k) return;
   const view = document.getElementById('view');
-  const el = view ? findKey(view, k) : null;
+  let el = view ? findKey(view, k) : null;
+  // A held whole-line bubble closed, its control gone with the old line or row: focus goes to the
+  // line or fold heading it belonged to (AC56, draft 5).
+  if (!el && view && k.startsWith('line:')) el = findKey(view, k === 'line:last' ? 'last-action' : 'done-today-h');
   if (el && el.focus) {
     try {
       el.focus();
@@ -1357,13 +1455,14 @@ function focusPending() {
 }
 
 /**
- * Home's bubbles (AC54): the "Latest" bubble and the whole-summary bubble. One is open at a time:
- * `open` names it by its control's key (`latest:<name>` or `sum:<name>`).
+ * The sandbox's bubbles: Home's "Latest" and whole-summary bubbles (AC54), and the whole-line
+ * bubbles of "Your last action" and "Done today" (AC55, AC52). One is open at a time: `open` names
+ * it by its control's key (`latest:<name>`, `sum:<name>` or `line:<id>`).
  */
 const bubble = {
   open: null, // the open bubble's control key
   via: null, // 'hover' | 'tap' | 'key'
-  place: null, // 'down' | 'up': below or above, to fit the viewport
+  place: null, // 'down' | 'up' | 'held': below or above its control, or held in the viewport (taller than the room)
   escaped: null, // a "Latest" bubble closed with Escape stays closed while focus stays on its control
   pointer: null,
   pointerFocus: null, // a pointer pressed on this control: the focus that follows is its tap's, not the keyboard's
@@ -1377,8 +1476,14 @@ const bubble = {
   },
 };
 
-/** The bubble element's key for a control's key: `bubble:<name>` for "Latest", `sumbubble:<name>` for the summary. */
-const bubbleKey = (k) => (k.startsWith('sum:') ? `sumbubble:${k.slice(4)}` : `bubble:${k.slice(7)}`);
+/** The bubble element's key for a control's key: `bubble:<name>` for "Latest", `sumbubble:<name>` for the summary, `linebubble:<id>` for a whole line. */
+function bubbleKey(k) {
+  if (k.startsWith('sum:')) return `sumbubble:${k.slice(4)}`;
+  if (k.startsWith('line:')) return `linebubble:${k.slice(5)}`;
+  return `bubble:${k.slice(7)}`;
+}
+/** The open bubble's place, as its class. */
+const placeClass = () => (bubble.place === 'up' || bubble.place === 'held' ? bubble.place : 'down');
 
 function focusKey(k) {
   nav.focusNext = k;
@@ -1409,9 +1514,9 @@ function bubbleTap(k, e) {
     }
     bubble.close();
     render();
-    // The summary's control keeps the focus (a phone's tap may not give a button focus); the
-    // "Latest" control already has it, and focusing it again would reopen it.
-    if (k.startsWith('sum:')) focusKey(k);
+    // The summary's and a whole line's control keep the focus (a phone's tap may not give a button
+    // focus); the "Latest" control already has it, and focusing it again would reopen it.
+    if (!k.startsWith('latest:')) focusKey(k);
     return;
   }
   bubbleOpen(k, 'tap');
@@ -1481,7 +1586,26 @@ function outsideTapEnd() {
   focusKey(k);
 }
 
-/** Below its control, or above it when below would leave the viewport (AC54: wholly inside it at 360 px). */
+/** The first element under `root` with the class `cls`. */
+function findClass(root, cls) {
+  let out = null;
+  eachElement(root, (e) => { if (!out && ` ${e.getAttribute ? e.getAttribute('class') || '' : ''} `.includes(` ${cls} `)) out = e; });
+  return out;
+}
+
+function setPlace(el, place) {
+  bubble.place = place;
+  el.setAttribute('class', el.getAttribute('class').replace(/\b(down|up|held)\b/, place));
+}
+
+/**
+ * Where the open bubble sits (AC54, AC55, AC56): wholly inside the viewport, a margin from its
+ * edges, and clear of the project screens' bottom bar (Home has none). Below its control; above it
+ * when below would leave that room; scrolled into it when neither fits as it stands. A bubble taller
+ * than the room (its height is held to it, CSS) or one the page cannot scroll into it is held in the
+ * viewport itself, scrolling up and down inside, its "Close" in view at its top.
+ */
+const BUBBLE_MARGIN = 8;
 function placeBubble() {
   if (!bubble.open || bubble.place) return;
   const view = document.getElementById('view');
@@ -1489,19 +1613,27 @@ function placeBubble() {
   bubble.place = 'down';
   if (!el || !el.getBoundingClientRect || typeof window.innerHeight !== 'number') return;
   try {
-    const r = el.getBoundingClientRect();
-    const card = el.parentNode && el.parentNode.getBoundingClientRect ? el.parentNode.getBoundingClientRect() : null;
-    const band = document.querySelector ? document.querySelector('.sb-band') : null;
-    const bottom = window.innerHeight - (band && band.getBoundingClientRect ? band.getBoundingClientRect().height : 0);
-    if (r.bottom > bottom && card && card.top - r.height >= 8) {
-      bubble.place = 'up';
-      el.setAttribute('class', el.getAttribute('class').replace(/\bdown\b/, 'up'));
+    const dock = findClass(view, 'sb-dock');
+    const dockTop = dock && dock.getBoundingClientRect ? dock.getBoundingClientRect().top : window.innerHeight;
+    const top = BUBBLE_MARGIN;
+    const bottom = Math.min(window.innerHeight, dockTop) - BUBBLE_MARGIN;
+    let r = el.getBoundingClientRect();
+    if (el.scrollHeight > el.clientHeight + 1 || r.height > bottom - top) {
+      setPlace(el, 'held');
+      return;
     }
-    // Still not wholly in view: scroll it in, clear of Home's band at the bottom.
-    const r2 = el.getBoundingClientRect();
-    if (r2.top < 0 && el.scrollIntoView) el.scrollIntoView({ block: 'start' });
-    else if (r2.bottom > bottom && typeof window.scrollBy === 'function') window.scrollBy(0, Math.min(r2.bottom - bottom + 8, r2.top - 8));
-    else if (r2.bottom > bottom && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+    const anchor = el.offsetParent || el.parentNode;
+    const a = anchor && anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : null;
+    if (r.bottom > bottom && a && a.top - 4 - r.height >= top) {
+      setPlace(el, 'up');
+      r = el.getBoundingClientRect();
+    }
+    if (typeof window.scrollBy === 'function') {
+      if (r.top < top) window.scrollBy(0, r.top - top);
+      else if (r.bottom > bottom) window.scrollBy(0, Math.min(r.bottom - bottom, r.top - top));
+    }
+    r = el.getBoundingClientRect();
+    if (r.top < top - 0.5 || r.bottom > bottom + 0.5) setPlace(el, 'held'); // the page could not scroll far enough
   } catch {
     // placement is a courtesy; the bubble still opens below
   }
@@ -1515,30 +1647,57 @@ function placeBubble() {
  * last answer stands (none: the summary shows as it fits).
  */
 const summaryOver = new Map();
-function measureSummaries() {
+/** The same for a ruling's line (AC55, AC52): its box holds at most three lines (CSS) and hides the rest. */
+const lineOver = new Map();
+const lineText = new Map(); // id → the words drawn (lineBox)
+const lineAt = new Map(); // id → { text, width } when last judged over
+/**
+ * Short, the one-line form also holds the time and code in the box, so a line whose words alone
+ * fit in three lines may still run past them with the time and code; once judged over at a width,
+ * it stays over for the same words at that width (no flip back and forth), and is judged afresh
+ * when either changes.
+ */
+function lineStaysOver(id) {
+  const at = lineAt.get(id);
+  return Boolean(at && at.text === lineText.get(id) && at.width === window.innerWidth);
+}
+function measureClips() {
   const view = document.getElementById('view');
   if (!view) return;
   let changed = false;
   eachElement(view, (el) => {
-    const name = el.getAttribute && el.getAttribute('data-sum');
-    if (name == null) return;
+    if (!el.getAttribute) return;
+    const sum = el.getAttribute('data-sum');
+    const line = el.getAttribute('data-line');
+    if (sum == null && line == null) return;
     const [sh, ch] = [el.scrollHeight, el.clientHeight];
     if (typeof sh !== 'number' || typeof ch !== 'number' || !ch) return;
-    const over = sh > ch + 1;
-    if (summaryOver.get(name) !== over) {
-      summaryOver.set(name, over);
+    let over = sh > ch + 1;
+    if (line != null) {
+      if (over && lineOver.get(line) !== true) lineAt.set(line, { text: lineText.get(line), width: window.innerWidth });
+      else if (lineOver.get(line) === true && lineStaysOver(line)) over = true;
+    }
+    const [map, name, k] = sum != null ? [summaryOver, sum, `sum:${sum}`] : [lineOver, line, `line:${line}`];
+    if (map.get(name) !== over) {
+      map.set(name, over);
       changed = true;
-      // A summary that now fits has no control, so its bubble closes.
-      if (!over && bubble.open === `sum:${name}`) bubble.close();
+      // A text that now fits has no control, so its bubble closes.
+      if (!over && bubble.open === k) bubble.close();
     }
   });
   // A guard: a few redraws in a row from measuring alone, then the answers stand until the next one.
-  measureSummaries.runs = changed ? (measureSummaries.runs || 0) + 1 : 0;
-  if (changed && !measureSummaries.queued && measureSummaries.runs <= 3) {
-    measureSummaries.queued = true;
+  measureClips.runs = changed ? (measureClips.runs || 0) + 1 : 0;
+  if (changed && !measureClips.queued && measureClips.runs <= 3) {
+    measureClips.queued = true;
     Promise.resolve().then(() => {
-      measureSummaries.queued = false;
+      measureClips.queued = false;
+      const a = document.activeElement;
+      const ak = a && a.getAttribute ? a.getAttribute('data-k') : null;
       render();
+      // A line that now fits has no control: if that control had the focus (a held bubble just
+      // closed onto a new, shorter line), focus goes to the line or fold heading (AC56, draft 5).
+      const view = document.getElementById('view');
+      if (ak && ak.startsWith('line:') && view && !findKey(view, ak)) focusKey(ak);
     });
   }
 }
@@ -1612,7 +1771,7 @@ export function startSandbox(opts = {}) {
     for (const n of [nodes].flat(Infinity)) if (n) fresh.append(n);
     morphChildren(view, fresh);
     fitBranches();
-    measureSummaries();
+    measureClips();
   };
   render = guardRender(draw, (state) => {
     if (stateEl) stateEl.textContent = state.text;
@@ -1681,7 +1840,13 @@ export function startSandbox(opts = {}) {
   window.addEventListener('pagehide', () => seen.hidden());
   window.addEventListener('resize', () => {
     fitBranches();
-    measureSummaries(); // a turned phone or a resized window: judged again at the new width (AC54 (a))
+    measureClips(); // a turned phone or a resized window: judged again at the new width (AC54 (a))
+    // An open bubble is placed again for the new screen: inside it, clear of the bottom bar (N2).
+    if (bubble.open) {
+      bubble.place = null;
+      render();
+      placeBubble();
+    }
   });
   // The 15-second tick (AC56) changes only the text that depends on the time, in place.
   setInterval(() => { if (isVisible()) tick(view); }, 15_000);

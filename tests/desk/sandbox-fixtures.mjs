@@ -1,6 +1,8 @@
 // The MD sandbox tests' shared fixtures (spec S-001, AC42's H5 extremes, AC48–AC56): projects
 // holding one item of each queue group, and the page opened on them.
-import { fixture, CONFIG } from './helpers.mjs';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fixture, CONFIG, SRC } from './helpers.mjs';
 import { repo, pr } from './fake-desk.mjs';
 import { loadSandbox, j11Files } from './sandbox-helpers.mjs';
 
@@ -76,3 +78,71 @@ export function extremes() {
   return { config, repos };
 }
 
+
+// ---------------------------------------------------------------------------
+// The design-lab answers (2026-10-16): the owner's real record as filed, whose line 1 runs to about
+// 1,800 characters (decisions/questions/P-001-design-lab-open.md), read from the tree as it stands.
+
+export const DESIGN_LAB_OPEN = readFileSync(join(SRC, '..', 'decisions', 'questions', 'P-001-design-lab-open.md'), 'utf8');
+/** Its words as the desk shows them: line 1 without its leading `Ruling: ` (AC52, AC55). */
+export const DESIGN_LAB_WORDS = DESIGN_LAB_OPEN.split('\n')[0].replace(/^Ruling:\s*/, '');
+export const DESIGN_LAB_PATH = 'decisions/questions/P-001-design-lab-open.md';
+
+/**
+ * Alpha with the owner's real record as its latest ruling, answered 10 minutes before NOW, and a
+ * short ruling 30 minutes before; Beta with a short ruling as its latest. Both today.
+ */
+export function longRuling() {
+  const setup = twoProjects();
+  const at = (min) => [{ commit: { committer: { date: iso(NOW - min * 60e3) } } }];
+  setup.repos.Alpha.commit({ [DESIGN_LAB_PATH]: DESIGN_LAB_OPEN, 'decisions/questions/P-001-short.md': 'Ruling: A, as recommended\n' });
+  Object.assign(setup.repos.Alpha.history, { [DESIGN_LAB_PATH]: at(10), 'decisions/questions/P-001-short.md': at(30) });
+  setup.repos.Beta.commit({ 'decisions/questions/P-002-short.md': 'Ruling: B, keep it as it is\n' });
+  Object.assign(setup.repos.Beta.history, { 'decisions/questions/P-002-short.md': at(5) });
+  return setup;
+}
+
+/**
+ * The browser's measure of a ruling's line box (the fake DOM lays out no text): it holds at most
+ * three lines (60.5 px at 20.16 px a line, as Chromium draws .9rem at 1.4) and its words `lines` lines.
+ */
+export function lineLines(app, id, lines) {
+  const c = findKeyed(app, `lineclip:${id}`);
+  if (!c) throw new Error(`no line box ${id}`);
+  const LINE = 20.16;
+  c.clientHeight = Math.round(Math.min(3, lines) * LINE);
+  c.scrollHeight = Math.round(lines * LINE);
+  return c;
+}
+export const findKeyed = (app, k) => {
+  const walk = (n) => {
+    for (const c of n.children || []) {
+      if (c.dataset && c.dataset.k === k) return c;
+      const f = walk(c);
+      if (f) return f;
+    }
+    return null;
+  };
+  return walk(app.view);
+};
+
+/**
+ * Lay the page out as a browser would, for the bubble's placement: every element gets a box, the
+ * project screens' bottom bar its 65 px at the foot of the viewport, and an open bubble the height
+ * `bubbleH` (its content, before the CSS holds it) from `bubbleTop`. Returns a function that undoes it.
+ */
+export function layout(El, { bubbleTop = 200, bubbleH = 1400 } = {}) {
+  const saved = Object.getOwnPropertyDescriptor(El.prototype, 'getBoundingClientRect');
+  El.prototype.getBoundingClientRect = function rect() {
+    const vh = globalThis.window.innerHeight;
+    const cls = ` ${this.className} `;
+    if (cls.includes(' sb-dock ')) return { top: vh - 65, bottom: vh, left: 0, right: globalThis.window.innerWidth, height: 65, width: globalThis.window.innerWidth };
+    if (cls.includes(' sb-bubble ')) return { top: bubbleTop, bottom: bubbleTop + bubbleH, left: 16, right: globalThis.window.innerWidth - 16, height: bubbleH, width: globalThis.window.innerWidth - 32 };
+    return { top: 100, bottom: 160, left: 16, right: globalThis.window.innerWidth - 16, height: 60, width: globalThis.window.innerWidth - 32 };
+  };
+  globalThis.window.scrollBy = () => {};
+  return () => {
+    if (saved) Object.defineProperty(El.prototype, 'getBoundingClientRect', saved);
+    else delete El.prototype.getBoundingClientRect;
+  };
+}

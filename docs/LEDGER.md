@@ -188,3 +188,17 @@ licenses_next: reviews/72/reviewer.md and reviews/70/reviewer.md in PR #72.
 decided_by: owner ("You add it (Recommended)", 2026-10-14, decisions/questions/P-001-reviewer-verdict-files.md)
 proposed_by: orchestrator
 reversibility: reversible
+
+## L-0014 — Trial-view notes 2: S-001's areas widened to the batch's record files, which its records commits had tagged "Spec: S-001"
+date: 2026-10-16
+type: decision
+supersedes: []
+scope: project
+expires: never
+asked: The records commits of trial-view notes 2 (the owner's notes, the approved mockups, the audits and the MD2 sprints line) carried a "Spec: S-001" trailer, so v3_checks scope reads them as S-001 work outside its Areas touched. Earlier batches made such commits with no Spec: trailer. Rewriting the commit messages was refused as tampering with the audit trail. How to fix it?
+decision: This entry widens S-001's areas, for the commits of orch/trial-view-2, to exactly the record files the check flags. Nothing is rewritten, and the history stays as made. From now on, records commits carry no "Spec:" trailer. The record: decisions/questions/P-001-batch2-records-scope.md.
+extends_scope: decisions/questions/P-001-trial-view-notes-2.md, docs/PROJECT.md, docs/design/mockups/status-and-timeline.html, docs/design/mockups/other-screens.html, docs/design/mockups/audit-additions.html, docs/design/mockups/colour-swatches.html, docs/design/audits/2026-10-16-gap-audit-against-goals.md, docs/design/audits/2026-10-16-user-rep-missing-elements.md
+licenses_next: The trial-view notes 2 pull request from orch/trial-view-2.
+decided_by: owner ("Ledger entry (Recommended)", 2026-10-16, decisions/questions/P-001-batch2-records-scope.md)
+proposed_by: orchestrator
+reversibility: reversible

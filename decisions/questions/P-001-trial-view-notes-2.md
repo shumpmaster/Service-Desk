@@ -85,3 +85,18 @@ How it is read:
 - 16 (background): the branch drawing on Status sits on its own surface, not on the page's grey.
 - 17 (Context): Context is the conversation that led to the change: the question the owner was asked and the answer they chose, quoted from the question file, or a ledger entry's "asked" line and its ruling. "not recorded" where no such record exists. The phase and milestone move into Technical.
 - 18 (planned items): the Timeline runs from the project's start at the bottom, through what is done, to Now, then every planned milestone above Now, each with its "done when" line from the plan and its why line, up to the finish line. The desk opens it at Now. Planned stretches have dashed rail and dots.
+
+Notes 19 to 21, on mockup version 3, the owner's message verbatim (2026-10-16):
+"Phases and milestones section - reduce the weight on the line connecting things. The branch background doesnt look right - do you have better visual suggestions? Other than that i like it. 
+
+For the timeline section keep the intention in mind, the timeline represents the chronological ledger of ideation > execution of a project > visualized as an " N+2" WBS. 
+
+Remember - I am not a coding expert, i might play around on project ideas that i have no prior experience in, Im a generalist with wide skill set and an ability to learn very quickly - but i undertand process flow & business impact, and i have a very structural system oriented mindset. 
+
+If im the boss - i would ask the following question to my team: "What are we trying to deliver? Where are we starting from? We are going to deliver it via these few phases, what  do we need to generally accomplish in each phase, ie what are our milestones? I dont need to see your specific action plans for delivering each milestone, but i expect to be able to access them if i want and Understand exactly how they will feed achievement of those milestones. Our plan will be built by the chronological order of delivering those milestones. Most importantly - at no point should we look at a milestone and say "wait why are we doing that?""
+
+How it is read:
+- 19 (line weight): the lines connecting phases and milestones on Status are thinner and lighter.
+- 20 (background): the strip behind the branch drawing in version 3 is replaced. Version 4 offers three options: A, one panel holding the drawing and the phases (suggested, shown in full); B, the dots inside each phase's box; C, tinted rows in each phase's colour. The owner picks one.
+- 21 (Timeline as a breakdown): the Timeline is the project's chronological ledger from idea to delivery, drawn as a work breakdown two levels below the project: project, then phases, then milestones, with the tasks that feed each milestone folded underneath, one tap away. It opens with what the project is delivering (top) and where it started (bottom), quoted from docs/PROJECT.md. Each milestone shows what done looks like and why it is being done; a missing why is flagged. Tasks that name no milestone are gathered under a flagged "Not tied to a milestone" line. The milestones are ordered by when they are delivered, read from the bottom up.
+- The owner's description of themself (a generalist who understands process flow and business impact, not a coding expert) is a standing guide for how the desk presents every project: in plain terms, structured from goal to phases to milestones to tasks, with technical detail one step down.

@@ -112,3 +112,15 @@ How it is read:
 - 22: a question about option A against option B for the branch drawing's background; answered in chat. The choice stays open.
 - 23 (icons): on the Timeline, milestone and sprint statuses are shown by an icon inside a plain circle, not by colour. Kept as they are: the filled diamond (needs filing) and the "next to reach" ring. Proposed in version 5 for the rest: reached, a check; reached then gone back over, a lighter check; in progress (work filed), a half-filled circle; planned, an empty dashed circle; not reached, a cross; skipped, a dash; not recorded, a question mark in a dashed circle. The owner picks or changes these.
 - 24 (sprints): the levels are project, phases, milestones, sprints, tasks. Under each milestone the Timeline shows the sprints that deliver it (in this project a sprint is a pull request or a research run, as docs/PROJECT.md's "sprints:" lines name them). Each sprint links to its own breakdown of tasks, by agents or the owner, which is the most granular level and is not shown on the Timeline itself.
+
+Notes 25 to 27, on mockup version 5, the owner's message verbatim (2026-10-16), after the orchestrator's answer to note 22 (why A over B):
+"Lets do B - simply because i like the ability to cleanly collapse and draw distinction between phases. 
+
+Final thing is just drop the weight of the timeline line slightly. 
+
+And then answer this question - context isnt always "my comments", do we agree with that? Context is more specifically about what are the things that are true or exist that lead to the why?"
+
+How it is read:
+- 25 (background, ruled): option B. Each phase on Status keeps its own box, with its dots inside it on the left; tapping a phase's name folds the box to one line and back.
+- 26 (Timeline line): the coloured line down the Timeline's left is thinner and lighter.
+- 27 (Context): agreed. Context is what was true or existed that led to the why: a limit found in testing, a fact about the records, a review finding, a check result, a research result, an earlier ruling, and sometimes a note of the owner's. Each fact names its source. The owner's question-and-answer is not Context; the answer is the ruling the sprint carries out. The agents write the Context facts into each sprint's record when they file it, and the desk only shows them; "not recorded" where none exist. This joins the why lines as a records change for the operating model.

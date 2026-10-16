@@ -20,6 +20,7 @@ import {
 import { buildModel } from '../../src/lib/model.js';
 
 import { NOW, iso, md, om, v3, v25, fullRepo, twoProjects, opened, extremes } from './sandbox-fixtures.mjs';
+import { pullsAnswer } from './j12-fixture.mjs';
 
 // ---------------------------------------------------------------------------
 // AC48
@@ -613,20 +614,23 @@ test('AC42: no packages, the security headers and CSP unchanged, nothing from an
 // ---------------------------------------------------------------------------
 // AC14 with J11's reads
 
-test('AC14 (with J11\'s reads, AC42): 5 projects, 16 window-hours, 10 openings, 100 head changes → fewer than 10,000 calls, no early retries', async () => {
+test('AC14 (with J11\'s and J12\'s reads, AC42): 5 projects, 16 window-hours, 10 openings, 100 head changes → fewer than 10,000 calls, no early retries', async () => {
   const DAY = Date.parse('2026-11-03T00:00:00Z');
   const HOUR = 3_600_000;
   const base = extremes();
   const config = base.config;
   const clock = fakeClock(DAY);
   const repos = base.repos;
+  // J12 (2026-10-16): each v3 project answers its pull requests' read with J12's built fixture
+  // (NOT as GitHub sent it); every opening is a new window with a memory-only store, so each is cold.
+  for (const p of config.projects) if (p.model === 'v3') repos[p.name].pullsAnswer = pullsAnswer();
   const server = fakeServer(repos, config, clock);
   const windowMs = (16 * HOUR) / 10;
   let changes = 0;
   for (let o = 0; o < 10; o++) {
     const open = DAY + o * 2.4 * HOUR;
     await clock.runUntil(open);
-    const desk = createDesk({ config, call: (p, b) => server.call(p, b), clock, store: createStore(null), isVisible: () => true, j11: true });
+    const desk = createDesk({ config, call: (p, b) => server.call(p, b), clock, store: createStore(null), pullsStore: createStore(null), isVisible: () => true, j11: true });
     desk.start();
     for (let c = 0; c < 10; c++) {
       await clock.runUntil(open + ((c + 0.5) * windowMs) / 10);
@@ -649,6 +653,13 @@ test('AC14 (with J11\'s reads, AC42): 5 projects, 16 window-hours, 10 openings, 
   assert.ok(polls <= 4_800 + 50, `${polls} polls`);
   // A3: about one more /api/blobs call per cold load for J11's blobs.
   assert.ok(blobs <= 150 + 100 + 50, `${blobs} blob calls`);
+  // J12 rides in the blob calls (no call of its own): a cold read per opening per v3 project (one
+  // page here), and the first page again on each of their head changes.
+  const pullReads = calls.filter((c) => c.path === '/api/blobs' && c.body.pulls).length;
+  const v3Changes = 100 * 4 / 5;
+  assert.ok(pullReads >= 10 * 4, `${pullReads} J12 reads: at least one cold read per opening per v3 project`);
+  assert.ok(pullReads <= 10 * 4 * 3 + v3Changes, `${pullReads} J12 reads`);
+  assert.ok(calls.filter((c) => c.body.pulls).every((c) => c.path === '/api/blobs'));
   const byProject = new Map();
   for (const c of calls) {
     if (!byProject.has(c.project)) byProject.set(c.project, []);

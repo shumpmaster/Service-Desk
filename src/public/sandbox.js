@@ -2167,7 +2167,10 @@ export function startSandbox(opts = {}) {
   const isVisible = () => document.visibilityState === 'visible';
   const seen = createSeen({ store, now: () => Date.now() });
   homeGroups.load(store);
-  const desk = createDesk({ config: CONFIG, call, clock, store, isVisible, onChange: () => render(), j11: true });
+  // J12: the pull requests are kept under their own key in a store of their own, so a write that
+  // fails there (the device's storage full) turns off only that key, never the blob cache.
+  const pullsStore = createStore();
+  const desk = createDesk({ config: CONFIG, call, clock, store, pullsStore, isVisible, onChange: () => render(), j11: true });
   nav.start();
   /** Every redraw patches the screen in place (AC56), so a refresh keeps it as the owner left it. */
   const show = (nodes) => {

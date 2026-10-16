@@ -429,7 +429,7 @@ export function feedView(ctx, model, nowMs, tz) {
       const pr = pulls.by.get(n);
       if (!pr) {
         const why = pulls.list && !pulls.tooMany ? 'not recorded in what the desk reads' : NOT_AVAILABLE;
-        const reason = pulls.list ? (pulls.tooMany ? TOO_MANY_WORDS : 'J12 holds no pull request of this number into the default branch') : pulls.missing;
+        const reason = pulls.list ? (pulls.tooMany ? TOO_MANY_WORDS : 'the pull requests the desk reads hold none of this number into the default branch') : pulls.missing;
         return { key, id: sid, code: sid, missing: why, reason, technical: [{ text: feeds }] };
       }
       const also = (listed.get(sid) || []).map((x) => x.ms).filter((x) => x !== msId);

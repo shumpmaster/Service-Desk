@@ -9,9 +9,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildTimeline } from '../../src/lib/timeline.js';
 import { parseSurfaces, parseOrchWorkflow, nextCronRun, parseRequest, isGroundwork, milestoneLines, parseProjectDoc,
-  parseSpecDoc, j11Kind } from '../../src/lib/j11.js';
+  parseSpecDoc, j11Kind, purposeItems } from '../../src/lib/j11.js';
 import { j11Records, timelineOf, phaseView, nowRun, standardWord, whereLine, teamView, ballLines } from '../../src/lib/sandbox.js';
-import { neededReads } from '../../src/lib/model.js';
+import { neededReads, parseRecord } from '../../src/lib/model.js';
 import { j11Snapshot, j11Files, traceNotes, treePaths, SD3, loadSandbox, linksIn } from './sandbox-helpers.mjs';
 import { repo } from './fake-desk.mjs';
 import { readFileSync } from 'node:fs';
@@ -49,6 +49,41 @@ test('J11: its reads are J6 blob reads, all optional, and only with the sandbox\
   for (const p of ['docs/PROJECT.md', 'governance/SURFACES.md', '.github/workflows/orchestrator.yml', 'status/merges.jsonl', 'specs/S-001.md',
     'intake/requests/Q-010.toml']) assert.ok(added.includes(p), `${p} is an optional read`);
   assert.ok(plain.optional.blobs.every((b) => !j11Kind(b.path)), 'without ?sandbox nothing of J11 is read');
+});
+
+test('J11 (trial-view notes 2): reviews/<n>/*.md verdict files are optional reads with the sandbox\'s flag; files starting with `_` and README.md are not; each boundary decision\'s record is read', () => {
+  const extra = { 'reviews/44/_plan-review-round1-verbatim.md': 'Verdict: FAIL\n', 'reviews/44/README.md': 'Verdict: FAIL\n', 'reviews/S-001-trial-view-2/x.md': 'Verdict: PASS\n',
+    'reviews/44/notes/deeper.md': 'Verdict: PASS\n' };
+  const snap = j11Snapshot(extra);
+  const now = new Date('2026-10-16T12:00:00Z');
+  const plain = neededReads(SD3, snap.tree, snap.records, now, {});
+  const sb = neededReads(SD3, snap.tree, snap.records, now, { j11: true });
+  const paths = sb.optional.blobs.map((b) => b.path);
+  const reviews = treePaths().filter((x) => /^reviews\/\d+\/[^/_][^/]*\.md$/.test(x) && !/README\.md$/.test(x));
+  assert.ok(reviews.length >= 30, `${reviews.length} verdict files at 3117150`);
+  for (const r of reviews) assert.ok(paths.includes(r), r);
+  for (const r of Object.keys(extra)) assert.ok(!paths.includes(r), `${r} is not read`);
+  assert.ok(!plain.optional.blobs.some((b) => b.path.startsWith('reviews/')), 'only with the sandbox\'s flag');
+  // The verdict, by reviews/README.md's rule: the first line starting `Verdict:` at column 0 decides, and it must read exactly PASS or FAIL.
+  const v = (text) => parseRecord('review-verdict', text, 'reviews/1/x.md').verdict;
+  assert.equal(v('# Review\n\nVerdict: PASS\n'), 'PASS');
+  assert.equal(v('Verdict: FAIL\nVerdict: PASS\n'), 'FAIL');
+  assert.equal(v('Verdict: FAIL — two blockers\nVerdict: PASS\n'), 'other', 'the first decides, and it is not exactly PASS or FAIL');
+  assert.equal(v('  Verdict: PASS\n'), null, 'not at the start of a line');
+  assert.equal(v('Verdict: PASS with notes\n'), 'other');
+  assert.equal(v('Verdict: maybe\n'), 'other');
+  assert.equal(v('No verdict here.\n'), null);
+});
+
+test('J11 (trial-view notes 2): the Intent\'s Purpose items (AC59\'s cards) and a research request\'s first sentence', () => {
+  const doc = parseProjectDoc(j11Files()['docs/PROJECT.md']);
+  assert.equal(doc.purpose.items.length, 2);
+  assert.match(doc.purpose.items[0], /^"I envisioned the service desk/);
+  assert.equal(purposeItems('# P\n\n## Intent\n\n### Purpose\n\n- One **bold** item\n- Two `code` item\n- Three\n').items.join(' | '), 'One bold item | Two code item');
+  assert.equal(purposeItems('# P\n\n## Other\n').found, 'no-intent');
+  const rq = parseRequest('id = "Q-099"\nquestion = "Is this one? And that one."\n', 'intake/requests/Q-099.toml');
+  assert.equal(rq.sentence, 'Is this one?');
+  assert.equal(parseRequest('id = "Q-098"\nquestion = "No end mark at all"\n', 'intake/requests/Q-098.toml').sentence, 'No end mark at all');
 });
 
 test('J11: the Orchestrator\'s schedule — only */<n> * * * * is understood; anything else, or no file, gives "due time not available"', () => {

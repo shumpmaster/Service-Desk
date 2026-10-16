@@ -45,3 +45,26 @@
   review round 2, R4).
 - `accepted-m2/`: `_headers` and `index.html` as main had them at 33d390a, for AC42's
   "unchanged or stricter" check without git history (its README says why).
+- `github/j12-pulls-built.json` (2026-10-16, J12): **NOT as GitHub sent it.** GitHub's GraphQL
+  API is not reachable from the agents' sessions (`gh api graphql` answers 403 there), so J12's
+  answer is built in GraphQL's answer shape from REST answers for Service-Desk, a public
+  repository, recorded on 2026-10-16 with `gh api`:
+  `repos/shumpmaster/Service-Desk/pulls?state=all&per_page=100` (and `&page=2`, empty: 72 pull
+  requests in all) and `repos/shumpmaster/Service-Desk/commits/<head sha>/check-runs?per_page=100`
+  for #40, #44, #52, #75 and #77, whose check rollups the tests need (null for the rest). Built by
+  `node tests/desk/tools/j12-fixture.mjs <dir>`, whose header gives each field's mapping. Its
+  `endCursor` is made up. A real recording replaces it once Setup CS13 has made it.
+- `github/j12-made-up-data-null.json`, `-rate-limited.json`, `-rate-limited-403.json` and
+  `-field-error.json` (2026-10-16, J12): **MADE UP**, not recordings: J12's answers with an error
+  (a `data: null` answer, a `RATE_LIMITED` one in a 200 and in a 403, and the field error for the
+  check rollup with the rest of the answer present), in the shape GitHub's GraphQL documentation
+  gives.
+- `ac61/` (2026-10-16, AC61): NOT real records. `docs/PROJECT.md` is the 3117150 fixture's with
+  why ends on M2B and MD1, two out-of-form whys (MZ1, MZ2), and standard-milestone lines in S-032's
+  draft forms (taken on, skipped, one out of form, one repeated, one naming no standard
+  milestone); `pulls.json` holds made-up pull requests #901 to #909 with `Milestone:` lines and
+  `## Context` / `## Why` sections in each form AC61 (c) reads.
+- `ac62-text-2c1acb6.json` (2026-10-16, AC62): every sandbox screen's text at commit 2c1acb6,
+  outside the parts AC57 to AC60 and AC65 to AC68 rebuild, drawn by the page itself from
+  `tests/desk/screen-text.mjs`'s fixtures; made by `node tests/desk/tools/ac62-snapshot.mjs` in a
+  checkout of 2c1acb6's `src/` (the file's header says how).

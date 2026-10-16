@@ -273,7 +273,7 @@ test('AC54 (a) (2026-10-15): one bubble at a time: opening the summary closes "L
 
 test('AC54 (a) (2026-10-15): judged again when the width changes: a summary past three lines at 360 px and within three at 414 px loses its fade and control at 414 px, and gains them back at 360 px', async () => {
   const crossing = readmeSummary(tv('README-crossing.md'));
-  assert.equal(crossing, 'A summary of four lines at 360 pixels and three lines at 414 pixels.');
+  assert.equal(crossing, 'A summary of four lines at 360 pixels and three at 414 pixels.');
   const config = { ...CONFIG, projects: [v3('Gamma')] };
   const repos = { Gamma: fullRepo('Gamma') };
   repos.Gamma.commit({ 'README.md': tv('README-crossing.md') });

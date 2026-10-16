@@ -40,7 +40,8 @@
   titles). NOT real records: written for the test, in the real records' forms.
 - `trial-view/`: AC54's README fixtures. `README-crossing.md` is NOT a real record: written for
   AC54 (a)'s width-change case, its paragraph runs to four lines at a 360 px phone's card width and
-  three at 414 px in Chromium's default sans-serif. The fake DOM cannot measure lines, so the
+  three at 414 px in Chromium's default sans-serif (re-worded on 2026-10-16, when AC62 set the
+  summary in the quoted-text role, so that it still crosses). The fake DOM cannot measure lines, so the
   browser check confirms it crosses the three-line mark before it checks anything else (plan
   review round 2, R4).
 - `accepted-m2/`: `_headers` and `index.html` as main had them at 33d390a, for AC42's

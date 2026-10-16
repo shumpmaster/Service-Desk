@@ -20,7 +20,6 @@ export const NOT_RECORDED = 'not recorded';
 export const NOT_AVAILABLE = 'not available';
 export const V25_NOT_RECORDED = "not recorded in this repository's records (operating model v2.5.1)";
 export const SANDBOX_MARKER = 'Sandbox: candidate design';
-export const DEFERRED_WORDS = 'Deferred: waiting on your ruling';
 export const JUST_FINISHED_MS = 30 * 60e3; // AC49: "Just finished" for 30 minutes (C, to tune in the lab)
 export const OWNER_NEXT_LINES = 3; // AC49: the owner's tile shows the next 3 queue lines (C)
 
@@ -931,7 +930,10 @@ export function ownerActions(project, model, snap, j) {
       continue;
     }
     if (!isOwnerRuling(r.path, rec)) continue;
-    out.push({ kind: 'ruling', at: r.at, words: rulingWords(rec), code: r.name, link: treeLink(project, tree, r.path), proxy: rec.line2Proxy === true, path: r.path });
+    // `clip`: a ruling's line 1 (not a profile approval's `Decision:`) is clipped to three lines on
+    // display when longer (AC52, AC55; the owner's follow-up ruling, answer 2). The record is never edited.
+    out.push({ kind: 'ruling', at: r.at, words: rulingWords(rec), code: r.name, link: treeLink(project, tree, r.path), proxy: rec.line2Proxy === true, path: r.path,
+      clip: /^Ruling:/.test(String(rec.line1)) });
   }
   out.sort((a, b) => b.at - a.at);
   // A ruling not read yet that is newer than the newest known action may be the latest.
@@ -968,7 +970,7 @@ export function doneToday(project, model, snap, now, tz, j = null) {
   const today = dayKey(now, tz);
   const { actions } = ownerActions(project, model, snap, j);
   return actions.filter((a) => dayKey(new Date(a.at), tz) === today).map((a) => ({
-    kind: a.kind, text: `${a.words}${a.kind === 'ruling' && a.proxy ? ' (proxy)' : ''}`, code: a.code, link: a.link, at: a.at,
+    kind: a.kind, text: `${a.words}${a.kind === 'ruling' && a.proxy ? ' (proxy)' : ''}`, code: a.code, link: a.link, at: a.at, clip: a.clip === true,
     words: `at ${hhmm(new Date(a.at), tz)}`,
   }));
 }

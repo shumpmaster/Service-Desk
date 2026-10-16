@@ -6,8 +6,10 @@ import assert from 'node:assert/strict';
 import { CONFIG, fixture } from './helpers.mjs';
 import { repo, pr } from './fake-desk.mjs';
 import { loadApp, findAll as findAllApp } from './page-harness.mjs';
-import { loadSandbox, byClass, findAll, linksIn } from './sandbox-helpers.mjs';
-import { NOW, iso, v3, v25, fullRepo, twoProjects } from './sandbox-fixtures.mjs';
+import { readFileSync } from 'node:fs';
+import { SRC } from './helpers.mjs';
+import { loadSandbox, byClass, findAll, linksIn, El0 } from './sandbox-helpers.mjs';
+import { NOW, iso, v3, v25, fullRepo, twoProjects, DESIGN_LAB_OPEN, DESIGN_LAB_WORDS, longRuling, lineLines, findKeyed, layout } from './sandbox-fixtures.mjs';
 import { lastAction, ownerActions, doneToday } from '../../src/lib/sandbox.js';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 
@@ -87,6 +89,146 @@ test('AC55: the line sits just above the waiting bar, with its link and its code
   } finally {
     app.restore();
   }
+});
+
+// ---------------------------------------------------------------------------
+// A long ruling line, clipped (the owner's follow-up ruling of 2026-10-16, answer 2)
+
+test('AC55 (2026-10-16): the owner\'s real record is one line 1 of about 1,800 characters, read as the desk reads it', () => {
+  const line1 = DESIGN_LAB_OPEN.split('\n')[0];
+  assert.ok(line1.length > 1700 && line1.length < 1900, `${line1.length} characters`);
+  assert.ok(line1.startsWith('Ruling: 11 Ruling: 1 I see no need for it if it’s not doing anything right now., 2 Yes, 3 Agree, 4 Agree, 5 Yes, 6 Yes, 7 Under decisions, 8 Keep, 9 Linked, 10 Go with the recommendation., 11 Yes'));
+  assert.ok(DESIGN_LAB_WORDS.startsWith('11 Ruling: 1 I see no need'));
+  assert.ok(DESIGN_LAB_WORDS.endsWith('(only dropped or killed ones go under Closed)?'), 'to the end of line 1');
+});
+
+for (const [w, h] of [[360, 740], [414, 896]]) {
+  test(`AC55 (2026-10-16) at ${w}×${h}: with the owner's real record as the latest ruling, "Your last action" shows its first three lines faded, then its time and code outside the control; the control "Show the whole of P-001-design-lab-open" opens a bubble whose text is the words exactly, held in the viewport above the bottom bar; Escape, a tap outside, "Close" and a second tap each close it, focus back on the control`, async () => {
+    const setup = longRuling();
+    const app = await loadSandbox({ ...setup, hash: '#/p/Alpha', now: NOW });
+    const undo = layout(El0);
+    try {
+      window.innerHeight = h;
+      await app.advance(1000);
+      await app.advance(POLL_MS);
+      const line = byClass(app.view, 'sb-last')[0];
+      assert.equal(line.textContent.replace(/Your merges\?.*$/, ''), `Your last action: ${DESIGN_LAB_WORDS} · 09:50 P-001-design-lab-open`, 'the whole line, word for word, then the time and code');
+      assert.equal(findKeyed(app, 'line:last'), null, 'until the browser has measured it, the line is plain text');
+      lineLines(app, 'last', 47);
+      await app.resize(w);
+      const ctl = findKeyed(app, 'line:last');
+      assert.ok(ctl, 'past three lines: a control');
+      assert.equal(ctl.tag, 'button');
+      assert.equal(ctl.attrs.type, 'button');
+      assert.ok(!('tabindex' in ctl.attrs) && !('disabled' in ctl.attrs), 'in the tab order');
+      assert.equal(ctl.attrs['aria-label'], 'Show the whole of P-001-design-lab-open');
+      assert.equal(ctl.attrs['aria-expanded'], 'false');
+      assert.equal(byClass(ctl, 'sb-line-w')[0].textContent, DESIGN_LAB_WORDS, 'the page holds the whole line; the box shows three lines of it');
+      assert.ok(findKeyed(app, 'lineclip:last').className.split(' ').includes('over'), 'the fade at the cut');
+      assert.doesNotMatch(line.textContent, /…$|\.\.\.$/, 'no ellipsis added');
+      // The time and the code follow the box, outside the control; a tap on them opens nothing.
+      const meta = byClass(line, 'sb-line-m')[0];
+      assert.ok(meta && !findAll(ctl, (e) => e === meta).length, 'the time and code sit outside the button');
+      assert.match(meta.textContent, /^ · 09:50 P-001-design-lab-open$/);
+      const code = linksIn(meta).find((l) => l.text === 'P-001-design-lab-open');
+      assert.equal(code.href, 'https://github.com/shumpmaster/Alpha/blob/main/decisions/questions/P-001-design-lab-open.md');
+      await app.tap(meta.children[1]);
+      await app.tap(code.el);
+      assert.equal(findKeyed(app, 'linebubble:last'), null, 'a tap on the time or the code does not open the bubble');
+      assert.equal(app.loc.hash, '#/p/Alpha');
+      for (const how of ['Escape', 'outside', 'Close', 'second tap']) {
+        await app.tap(findKeyed(app, 'line:last'));
+        const bub = findKeyed(app, 'linebubble:last');
+        assert.ok(bub, `a tap opens it (${how})`);
+        assert.equal(bub.attrs.role, 'dialog');
+        assert.equal(ctl.attrs['aria-expanded'], 'true');
+        assert.equal(ctl.attrs['aria-controls'], bub.attrs.id);
+        assert.equal(byClass(bub, 'sb-bubble-t')[0].textContent, DESIGN_LAB_WORDS, 'the whole line, word for word, from "11 Ruling: 1 I see no need…" to its end');
+        assert.ok(bub.className.split(' ').includes('held'), `taller than the viewport: held in it (${bub.className})`);
+        assert.equal(bub.children[0], byClass(bub, 'sb-bubble-top')[0], '"Close" at its top');
+        const close = byClass(bub.children[0], 'sb-close')[0];
+        assert.equal(close.attrs['aria-label'], 'Close');
+        if (how === 'Escape') await app.key('Escape');
+        else if (how === 'outside') await app.tap(app.view);
+        else if (how === 'Close') await app.tap(close);
+        else await app.tap(findKeyed(app, 'line:last'));
+        assert.equal(findKeyed(app, 'linebubble:last'), null, `closed by ${how}`);
+        assert.equal(document.activeElement, findKeyed(app, 'line:last'), `focus back on the control (${how})`);
+        assert.equal(ctl.attrs['aria-expanded'], 'false');
+      }
+      for (const key of ['Enter', ' ']) {
+        ctl.focus();
+        ctl.dispatch('keydown', { key });
+        await app.flush();
+        assert.ok(findKeyed(app, 'linebubble:last'), `${key === ' ' ? 'Space' : key} opens it`);
+        ctl.dispatch('keydown', { key });
+        await app.flush();
+        assert.equal(findKeyed(app, 'linebubble:last'), null, `${key === ' ' ? 'Space' : key} again closes it`);
+      }
+      // A ruling of three lines or fewer: whole, at its own height, no fade, no control.
+      await app.go('#/p/Beta');
+      lineLines(app, 'last', 1);
+      await app.resize(w);
+      assert.equal(findKeyed(app, 'line:last'), null, 'a short ruling has no control');
+      assert.ok(!findKeyed(app, 'lineclip:last').className.includes('over'), 'and no fade');
+      assert.match(byClass(app.view, 'sb-last')[0].textContent, /^Your last action: B, keep it as it is · 09:55 P-002-short/);
+    } finally {
+      undo();
+      app.restore();
+    }
+  });
+}
+
+test('AC55 (2026-10-16): a card answer and a profile approval are never clipped (rulings only); the clip judged again when the width changes', async () => {
+  const setup = longRuling();
+  setup.repos.Beta.commit({ 'decisions/questions/P-002-user-profile-1.md': `Decision: ${'approve '.repeat(80)}\n` });
+  setup.repos.Beta.history['decisions/questions/P-002-user-profile-1.md'] = [{ commit: { committer: { date: iso(NOW - 60e3) } } }];
+  const app = await loadSandbox({ ...setup, hash: '#/p/Beta', now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    assert.match(byClass(app.view, 'sb-last')[0].textContent, /^Your last action: approve approve/);
+    assert.equal(findKeyed(app, 'lineclip:last'), null, 'a profile approval has no line box: never clipped');
+    await app.go('#/p/Alpha');
+    lineLines(app, 'last', 4);
+    await app.resize(360);
+    assert.ok(findKeyed(app, 'line:last'), 'four lines at 360 px: the control');
+    await app.tap(findKeyed(app, 'line:last'));
+    assert.ok(findKeyed(app, 'linebubble:last'));
+    lineLines(app, 'last', 3);
+    await app.resize(414);
+    assert.equal(findKeyed(app, 'line:last'), null, 'three lines at 414 px: no control');
+    assert.equal(findKeyed(app, 'linebubble:last'), null, 'and its bubble is gone');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC55 + AC54 (2026-10-16): every bubble is held to the viewport\'s height less a margin, clear of the bottom bar, scrolling up and down inside itself and never sideways, its "Close" row in view (the CSS; the browser check is in the pull request)', () => {
+  const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const rule = (sel) => {
+    const m = new RegExp(`(?:^|\\n)${sel.replace(/[.()>]/g, (c) => `\\${c}`)} \\{([^}]*)\\}`).exec(css);
+    assert.ok(m, `${sel} has its rule`);
+    return m[1];
+  };
+  const b = rule('.sb-bubble');
+  assert.match(b, /max-height: calc\(100vh - var\(--sb-clear, 0px\) - 16px\); max-height: calc\(100dvh - var\(--sb-clear, 0px\) - 16px\);/, 'the viewport\'s height less 8 px at each end and the bar');
+  assert.match(b, /overflow-y: auto; overflow-x: hidden;/, 'up and down inside itself, never sideways');
+  assert.match(rule('.sb-screen:has(> .sb-dock)'), /--sb-clear: 65px;/, 'on the project screens, the bottom bar\'s height (65 px, as Chromium draws it)');
+  assert.match(rule('.sb-bubble-top'), /position: sticky; top: -6px; background: var\(--surf\);/, 'its top row, with "Close", stays in view while it scrolls');
+  const held = /\n(\.sb-bubble\.held,[^{]*)\{([^}]*)\}/.exec(css);
+  assert.ok(held, 'the held rule');
+  for (const sel of ['.sb-sumbox > .sb-bubble.held', '.sb-linebox > .sb-bubble.held', '.sb-bubble.held.col-l', '.sb-bubble.held.col-r', '.sb-sumbox > .sb-bubble.held.col-l', '.sb-sumbox > .sb-bubble.held.col-r']) {
+    assert.ok(held[1].split(',').map((x) => x.trim()).includes(sel), `it outweighs the placed rules: ${sel}`);
+  }
+  assert.match(held[2], /position: fixed; top: 8px; bottom: auto; left: max\(16px, calc\(50% - 264px\)\); right: max\(16px, calc\(50% - 264px\)\);/, 'held in the viewport, inside the gutters');
+  // The line box: at most three lines, the rest hidden, a fade into the row's background, no ellipsis.
+  assert.match(rule('.sb-lineclip'), /line-height: 1\.4; max-height: 4\.2em; overflow: hidden; overflow: clip;/);
+  assert.match(rule('.sb-lineclip.over'), /height: 4\.2em;/);
+  assert.match(rule('.sb-lineclip.over::after'), /background: linear-gradient\(to right, transparent, var\(--surf\) 85%\);/);
+  assert.match(rule('.sb-last'), /background: var\(--surf\);/, 'the fade ends in "Your last action"\'s background');
+  assert.match(rule('.sb-card'), /background: var\(--surf\);/, 'and in "Done today"\'s');
+  assert.doesNotMatch(css, /line-clamp|text-overflow:\s*ellipsis/);
 });
 
 // ---------------------------------------------------------------------------

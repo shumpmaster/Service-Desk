@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { byClass, findAll } from './sandbox-helpers.mjs';
-import { twoProjects, opened, v3, fullRepo } from './sandbox-fixtures.mjs';
+import { twoProjects, opened, v3, fullRepo, longRuling, lineLines } from './sandbox-fixtures.mjs';
 import { repo } from './fake-desk.mjs';
 import { j11Files } from './sandbox-helpers.mjs';
 import { readFileSync } from 'node:fs';
@@ -159,6 +159,90 @@ test('AC56 close: the whole-summary bubble has "Close" at its top, and the contr
       assert.equal(keyed(app, 'sumbubble:Alpha'), null, `closed by ${how}`);
       assert.equal(document.activeElement, keyed(app, 'sum:Alpha'), `focus back on the summary control (${how})`);
     }
+  } finally {
+    app.restore();
+  }
+});
+
+/** A screen with the owner's real record (2026-10-16): its whole-line control, measured past three lines. */
+async function longLine(hash, id) {
+  const setup = longRuling();
+  const app = await opened(setup, hash);
+  await app.advance(POLL_MS);
+  if (id.startsWith('done:')) keyed(app, 'done-today').setAttribute('open', '');
+  lineLines(app, id, 47);
+  await app.resize(360);
+  return { app, setup };
+}
+
+for (const [where, hash, id] of [['"Your last action"', '#/p/Alpha', 'last'], ['"Done today"', '#/p/Alpha/queue', 'done:P-001-design-lab-open']]) {
+  test(`AC56 close (2026-10-16): ${where}'s whole-line bubble has "Close" at its top, and the control, a tap outside and Escape each close it, focus back on its control`, async () => {
+    const { app } = await longLine(hash, id);
+    try {
+      for (const how of ['control', 'outside', 'escape']) {
+        const ctl = keyed(app, `line:${id}`);
+        assert.ok(ctl, 'the whole-line control');
+        await app.tap(ctl);
+        const bub = keyed(app, `linebubble:${id}`);
+        assert.ok(bub, `open (${how})`);
+        assert.equal(bub.attrs.role, 'dialog');
+        assert.equal(bub.children[0], byClass(bub, 'sb-bubble-top')[0], 'the close control sits at the top');
+        const close = byClass(bub.children[0], 'sb-close')[0];
+        assert.equal(close.attrs['aria-label'], 'Close');
+        assert.match(readFileSync(`${SRC}/public/sandbox.css`, 'utf8'), /\.sb-close \{[^}]*min-width: 44px; min-height: 44px;/, 'its target is 44 by 44');
+        if (how === 'control') await app.tap(close);
+        else if (how === 'outside') await app.tap(app.view);
+        else await app.key('Escape');
+        assert.equal(keyed(app, `linebubble:${id}`), null, `closed by ${how}`);
+        assert.equal(document.activeElement, keyed(app, `line:${id}`), `focus back on its control (${how})`);
+      }
+      assert.equal(app.loc.hash, hash, 'a bubble is not a screen: nothing moved');
+    } finally {
+      app.restore();
+    }
+  });
+}
+
+test('AC56 refresh, Status (step 2b, 2026-10-16): "Your last action"\'s whole-line bubble open, scrolled part way, with the screen scrolled and focus on its control, all stay through every kind of refresh', async () => {
+  const { app, setup } = await longLine('#/p/Alpha', 'last');
+  try {
+    const ctl = keyed(app, 'line:last');
+    await app.tap(ctl);
+    const bub = keyed(app, 'linebubble:last');
+    assert.ok(bub);
+    bub.scrollTop = 300; // part way down the owner's 1,800 characters
+    app.scrolls.length = 0;
+    await everyRefresh(app, setup);
+    assert.match(app.text(), /Current status/, 'the same screen');
+    assert.equal(keyed(app, 'linebubble:last'), bub, 'the same bubble, still open');
+    assert.equal(bub.scrollTop, 300, 'scrolled where it was');
+    assert.equal(keyed(app, 'line:last'), ctl, 'on the same control');
+    assert.equal(ctl.attrs['aria-expanded'], 'true');
+    assert.equal(document.activeElement, ctl, 'which keeps the focus');
+    assert.deepEqual(app.scrolls, [], 'no refresh moves the screen\'s scroll');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC56 refresh, Queue (step 3b, 2026-10-16): "Done today" opened, with a ruling row\'s whole-line bubble open and scrolled part way, all stay through every kind of refresh', async () => {
+  const { app, setup } = await longLine('#/p/Alpha/queue', 'done:P-001-design-lab-open');
+  try {
+    const fold = keyed(app, 'done-today');
+    const ctl = keyed(app, 'line:done:P-001-design-lab-open');
+    await app.tap(ctl);
+    const bub = keyed(app, 'linebubble:done:P-001-design-lab-open');
+    assert.ok(bub);
+    bub.scrollTop = 300;
+    app.scrolls.length = 0;
+    await everyRefresh(app, setup);
+    assert.equal(keyed(app, 'done-today'), fold);
+    assert.ok('open' in fold.attrs, '"Done today" stays open');
+    assert.equal(keyed(app, 'linebubble:done:P-001-design-lab-open'), bub, 'the same bubble, still open');
+    assert.equal(bub.scrollTop, 300, 'scrolled part way, where it was');
+    assert.equal(keyed(app, 'line:done:P-001-design-lab-open'), ctl);
+    assert.equal(ctl.attrs['aria-expanded'], 'true');
+    assert.deepEqual(app.scrolls, []);
   } finally {
     app.restore();
   }

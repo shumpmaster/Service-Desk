@@ -15,7 +15,7 @@ import { createStore } from '../../src/lib/store.js';
 import { createSeen, MARKERS_OFF, SEEN_KEY } from '../../src/lib/seen.js';
 import {
   pillView, queueView, groupOf, ballLines, ruleLine, boxPlan, cardBoxText, questionBoxText, VERDICT_START, newFileAtBranch,
-  sheetView, trackerSteps, doneToday, workingNow, memberPage, teamView, SANDBOX_MARKER, DEFERRED_WORDS,
+  sheetView, trackerSteps, doneToday, workingNow, memberPage, teamView, SANDBOX_MARKER,
 } from '../../src/lib/sandbox.js';
 import { buildModel } from '../../src/lib/model.js';
 
@@ -43,9 +43,24 @@ test('AC48: Home — one card per project in AC8\'s order, each with its icon, n
     assert.match(app.text(), /12 waiting on you in all/, 'a count in all, never a combined list');
     assert.match(app.text(), /Median answer time/, "AC21's V5 line stays on Home");
     assert.doesNotMatch(app.text(), /New project/);
-    const band = byClass(v, 'sb-composer')[0];
-    assert.ok(band.attrs.disabled !== undefined, 'the Tell your Chief of Staff bar opens and writes nothing');
-    assert.ok(app.text().includes(DEFERRED_WORDS));
+    // 2026-10-16 (decisions/questions/P-001-design-lab-open.md, answer 1): no bar, no deferred
+    // words, and nothing fixed to the bottom of Home's screen, with no sheet or bubble open.
+    assert.equal(byClass(v, 'sb-sheet').length + byClass(v, 'sb-scrim').length + byClass(v, 'sb-bubble').length, 0, 'no sheet or bubble open');
+    assert.doesNotMatch(app.text(), /Tell your Chief of Staff/, 'no "Tell your Chief of Staff…" bar');
+    assert.doesNotMatch(app.text(), /Deferred: waiting on your ruling/i, 'no deferred words');
+    assert.equal(findAll(v, (e) => e.tag === 'button' && 'disabled' in e.attrs).length, 0, 'no disabled bar');
+    for (const cls of ['sb-band', 'sb-composer', 'sb-deferred', 'sb-dock']) assert.equal(byClass(v, cls).length, 0, `no .${cls} on Home`);
+    // Every rule that fixes or sticks something to the screen, against every element on Home.
+    const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const pinned = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].filter((m) => /position:\s*(fixed|sticky)/.test(m[2]))
+      .flatMap((m) => m[1].split(',').map((x) => x.trim().split(/[\s>+~]+/).pop()));
+    assert.ok(pinned.includes('.sb-dock') && pinned.includes('.sb-sheet'), `the rules found: ${pinned.join(' ')}`);
+    const homeEls = findAll(v, () => true);
+    for (const sel of pinned) {
+      const classes = sel.split('.').filter(Boolean).map((c) => c.replace(/[:[].*$/, ''));
+      const hit = homeEls.filter((e) => classes.every((c) => ` ${e.className} `.includes(` ${c} `)));
+      assert.equal(hit.length, 0, `nothing on Home matches ${sel}, which is fixed or sticky`);
+    }
   } finally {
     app.restore();
   }

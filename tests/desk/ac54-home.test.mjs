@@ -96,7 +96,13 @@ test('AC54 (a) + AC42 (2026-10-15): the card holds the 600-character summary who
   // Nothing else on the card clips, clamps, scrolls or keeps text on one line.
   for (const sel of ['.sb-sum', '.sb-sumbox', '.sb-pc-main', '.sb-pc-rest', '.sb-pc', '.sb-grid', '.sb-hgroup', '.sb-bubble', '.sb-bubble-t']) {
     for (const m of css.matchAll(new RegExp(`(?:^|[},\\s])${sel.replace('.', '\\.')}\\s*(?:,[^{]*)?\\{([^}]*)\\}`, 'g'))) {
-      assert.doesNotMatch(m[1], /line-clamp|text-overflow|overflow(-x|-y)?:\s*(hidden|clip|scroll|auto)|max-height|white-space:\s*nowrap/, `${sel}: ${m[1]}`);
+      // From 2026-10-16 (AC54 (a) and (b), AC55's rule for a bubble taller than the viewport): the
+      // bubble alone is held to the viewport's height less a margin and scrolls up and down inside
+      // itself, never sideways. Only those declarations are allowed it; the summary never scrolls.
+      const decl = sel === '.sb-bubble'
+        ? m[1].replace(/max-height: calc\(100d?vh - var\(--sb-clear, 0px\) - 16px\);/g, '').replace('overflow-y: auto; overflow-x: hidden;', '')
+        : m[1];
+      assert.doesNotMatch(decl, /line-clamp|text-overflow|overflow(-x|-y)?:\s*(hidden|clip|scroll|auto)|max-height|white-space:\s*nowrap/, `${sel}: ${m[1]}`);
     }
   }
   // The summary's box: three lines' height exactly (3 x its line height), the rest hidden, never scrolled, no ellipsis.

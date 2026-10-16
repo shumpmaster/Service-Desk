@@ -85,7 +85,8 @@ test('AC49 (note 11): every member\'s running log in the roster fixture, the Chi
   const app = await loadSandbox({ config, repos: { 'Service-Desk': repo(j11Files()) }, hash: '#/p/Service-Desk/team', now: NOW });
   try {
     await app.advance(1000);
-    const ids = byClass(app.view, 'sb-tile').map((t) => t.attrs.href.split('/').pop());
+    // AC67 (2026-10-16): each card is a box whose name links to the member's page.
+    const ids = byClass(app.view, 'sb-tile-n').map((t) => t.attrs.href.split('/').pop());
     assert.ok(ids.includes('chief-of-staff') && ids.includes('researcher') && ids.includes('orchestrator'), ids.join(' '));
     let lanes = 0;
     let drawn = 0;

@@ -235,15 +235,16 @@ test('AC53 (owner\'s note, 16 Oct): each lettered choice holds its letter as its
     assert.ok(m, `a rule for ${sel}`);
     return m[1];
   };
+  // AC62 (2026-10-16): the spacing comes from the one scale, --s3 (12 px) and --s4 (20 px).
   assert.match(rule('.sb-chips.sb-choices'), /flex-direction: column/);
-  assert.match(rule('.sb-chips.sb-choices'), /gap: 12px/);
+  assert.match(rule('.sb-chips.sb-choices'), /gap: var\(--s3\)/);
   const chip = rule('.sb-choices .sb-chip');
   assert.match(chip, /display: grid/);
   assert.match(chip, /grid-template-columns: auto minmax\(0, 1fr\) auto/);
   assert.match(chip, /width: 100%/);
-  assert.match(chip, /padding: 12px 16px/);
+  assert.match(chip, /padding: var\(--s3\) var\(--s4\)/);
   assert.match(rule('.sb-choice-l'), /grid-column: 1/);
-  assert.match(rule('.sb-choice-l'), /margin-right: 12px/);
+  assert.match(rule('.sb-choice-l'), /margin-right: var\(--s3\)/);
   assert.match(rule('.sb-choice-t'), /grid-column: 2/);
   assert.match(rule('.sb-chip'), /min-height: 44px/);
 });

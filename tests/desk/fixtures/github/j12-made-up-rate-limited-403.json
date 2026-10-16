@@ -1,0 +1,5 @@
+{
+ "note": "MADE UP: an answer with an error, in the shape GitHub's GraphQL documentation gives, for J12's join test. Not a recording.",
+ "status": 403,
+ "body": "{\"errors\": [{\"type\": \"RATE_LIMITED\", \"message\": \"API rate limit already exceeded for user ID 1.\"}]}"
+}

@@ -1,16 +1,17 @@
 // J11 and the timeline the sandbox draws (spec S-001, MD): the model's timeline ported to the page,
 // checked against what `v3_checks.py trace` printed for Service-Desk at 3117150 (the fixture), and
-// J11's awkward cases. AC50 (phases, the now run, milestones) and AC51 (the Timeline screen).
+// J11's awkward cases. AC50 (phases, the now run, milestones), as trial-view notes 2 changed it:
+// each phase's word from its latest run. AC51's Timeline screen is AC59 and AC60's now
+// (tests/desk/ac59-60-timeline.test.mjs); its link rule stays (tests/desk/ac51-timeline-line.test.mjs).
 // join-test: S-001/J11
-// ac-test: S-001/AC50 ac-test: S-001/AC51
+// ac-test: S-001/AC50
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildTimeline } from '../../src/lib/timeline.js';
 import { parseSurfaces, parseOrchWorkflow, nextCronRun, parseRequest, isGroundwork, milestoneLines, parseProjectDoc,
-  parseSpecDoc, j11Kind } from '../../src/lib/j11.js';
-import { j11Records, timelineOf, phaseView, finishedWords, phaseMilestones, nowRun, timelineView, standardWord, whereLine,
-  teamView, ballLines } from '../../src/lib/sandbox.js';
-import { neededReads } from '../../src/lib/model.js';
+  parseSpecDoc, j11Kind, purposeItems } from '../../src/lib/j11.js';
+import { j11Records, timelineOf, phaseView, nowRun, standardWord, whereLine, teamView, ballLines } from '../../src/lib/sandbox.js';
+import { neededReads, parseRecord } from '../../src/lib/model.js';
 import { j11Snapshot, j11Files, traceNotes, treePaths, SD3, loadSandbox, linksIn } from './sandbox-helpers.mjs';
 import { repo } from './fake-desk.mjs';
 import { readFileSync } from 'node:fs';
@@ -48,6 +49,51 @@ test('J11: its reads are J6 blob reads, all optional, and only with the sandbox\
   for (const p of ['docs/PROJECT.md', 'governance/SURFACES.md', '.github/workflows/orchestrator.yml', 'status/merges.jsonl', 'specs/S-001.md',
     'intake/requests/Q-010.toml']) assert.ok(added.includes(p), `${p} is an optional read`);
   assert.ok(plain.optional.blobs.every((b) => !j11Kind(b.path)), 'without ?sandbox nothing of J11 is read');
+});
+
+test('J11 (trial-view notes 2): reviews/<n>/*.md verdict files are optional reads with the sandbox\'s flag; files starting with `_` and README.md are not; each boundary decision\'s record is read', () => {
+  const extra = { 'reviews/44/_plan-review-round1-verbatim.md': 'Verdict: FAIL\n', 'reviews/44/README.md': 'Verdict: FAIL\n', 'reviews/S-001-trial-view-2/x.md': 'Verdict: PASS\n',
+    'reviews/44/notes/deeper.md': 'Verdict: PASS\n' };
+  const snap = j11Snapshot(extra);
+  const now = new Date('2026-10-16T12:00:00Z');
+  const plain = neededReads(SD3, snap.tree, snap.records, now, {});
+  const sb = neededReads(SD3, snap.tree, snap.records, now, { j11: true });
+  const paths = sb.optional.blobs.map((b) => b.path);
+  const reviews = treePaths().filter((x) => /^reviews\/\d+\/[^/_][^/]*\.md$/.test(x) && !/README\.md$/.test(x));
+  assert.ok(reviews.length >= 30, `${reviews.length} verdict files at 3117150`);
+  for (const r of reviews) assert.ok(paths.includes(r), r);
+  for (const r of Object.keys(extra)) assert.ok(!paths.includes(r), `${r} is not read`);
+  assert.ok(!plain.optional.blobs.some((b) => b.path.startsWith('reviews/')), 'only with the sandbox\'s flag');
+  // The verdict, as governance/checks/review_check.py's parse_verdict decides it (build review round 1, N3):
+  // 'other' wherever parse_verdict says malformed, null with no `Verdict:` at all.
+  const v = (text) => parseRecord('review-verdict', text, 'reviews/1/x.md').verdict;
+  assert.equal(v('# Review\n\nVerdict: PASS\n'), 'PASS');
+  assert.equal(v('Verdict: FAIL\nVerdict: PASS\n'), 'FAIL');
+  assert.equal(v('Verdict: FAIL — two blockers\nVerdict: PASS\n'), 'other', 'the first decides, and it is not exactly PASS or FAIL');
+  assert.equal(v('  Verdict: PASS\n'), 'other', 'not at the start of a line: malformed');
+  // The five cases of build review round 1 (N3), each as parse_verdict reads it.
+  assert.equal(v('Verdict:PASS\n'), 'other', 'no space after the colon');
+  assert.equal(v('Verdict:  PASS\n'), 'other', 'two spaces after the colon');
+  assert.equal(v('Verdict: PASS\nThe return said Verdict: FAIL mid-line\n'), 'other', 'a later line quoting Verdict: mid-line');
+  assert.equal(v('  Verdict: FAIL\nVerdict: PASS\n'), 'other', 'an indented Verdict: line first');
+  assert.equal(v('\ufeffVerdict: FAIL\nVerdict: PASS\n'), 'FAIL', 'one leading BOM dropped: a real FAIL stays FAIL');
+  assert.equal(v('\ufeff\ufeffVerdict: PASS\n'), 'other', 'only one BOM is dropped');
+  assert.equal(v('Verdict: PASS \t\r\n'), 'PASS', 'trailing spaces, a tab and one CR allowed');
+  assert.equal(v('Verdict: PASS\r\r\n'), 'other', 'only one CR dropped');
+  assert.equal(v('Verdict: PASS with notes\n'), 'other');
+  assert.equal(v('Verdict: maybe\n'), 'other');
+  assert.equal(v('No verdict here.\n'), null);
+});
+
+test('J11 (trial-view notes 2): the Intent\'s Purpose items (AC59\'s cards) and a research request\'s first sentence', () => {
+  const doc = parseProjectDoc(j11Files()['docs/PROJECT.md']);
+  assert.equal(doc.purpose.items.length, 2);
+  assert.match(doc.purpose.items[0], /^"I envisioned the service desk/);
+  assert.equal(purposeItems('# P\n\n## Intent\n\n### Purpose\n\n- One **bold** item\n- Two `code` item\n- Three\n').items.join(' | '), 'One bold item | Two code item');
+  assert.equal(purposeItems('# P\n\n## Other\n').found, 'no-intent');
+  const rq = parseRequest('id = "Q-099"\nquestion = "Is this one? And that one."\n', 'intake/requests/Q-099.toml');
+  assert.equal(rq.sentence, 'Is this one?');
+  assert.equal(parseRequest('id = "Q-098"\nquestion = "No end mark at all"\n', 'intake/requests/Q-098.toml').sentence, 'No end mark at all');
 });
 
 test('J11: the Orchestrator\'s schedule — only */<n> * * * * is understood; anything else, or no file, gives "due time not available"', () => {
@@ -105,7 +151,6 @@ test('J11 awkward case: no dispatch-log line for any project item — no runs, e
   const empty = buildTimeline({ project: null, logRows: [] });
   const pv2 = phaseView(SD3, empty, new Map(), { ready: true });
   assert.deepEqual(pv2.phases.map((p) => p.word), ['not recorded', 'not recorded', 'not recorded', 'not recorded']);
-  assert.equal(finishedWords(pv2), 'Phases not tracked');
 });
 
 test('J11: research questions are read from intake/requests (the groundwork prefix); a missing record keeps the view "not available"', () => {
@@ -125,14 +170,24 @@ test('J11: research questions are read from intake/requests (the groundwork pref
 // ---------------------------------------------------------------------------
 // AC50
 
-test('AC50: Service-Desk at 3117150 — Discovery Finished, Design now (Design i2), Build Finished, Launch Not started, not Done', () => {
+test('AC50 (trial-view notes 2, note 1): Service-Desk at 3117150 — Discovery Finished, Design Now · run 2, Build Run 2 still to come (not Finished), Launch Not started, not Done', () => {
   const { snap, j, tl } = fixtureTimeline();
   const pv = phaseView(SD3, tl, snap.tree, j);
-  assert.deepEqual(pv.phases.map((p) => [p.phase, p.word]), [['Discovery', 'Finished'], ['Design', 'now'], ['Build', 'Finished'], ['Launch', 'Not started']]);
+  assert.deepEqual(pv.phases.map((p) => [p.phase, p.word]), [['Discovery', 'Finished'], ['Design', 'Now · run 2'], ['Build', 'Run 2 still to come'], ['Launch', 'Not started']]);
+  assert.notEqual(pv.phases[2].word, 'Finished', 'Build no longer reads "Finished": the work is back in Design');
   assert.equal(nowRun(tl).label(), 'Design i2', 'the expected now run: MD2 is its first milestone with no sprint');
   assert.equal(pv.phases[1].iteration, 2);
   assert.equal(pv.done, false);
-  assert.equal(finishedWords(pv), '2 of 4 phases finished', 'the count is in words');
+});
+
+test('AC50 (note 1): the words\' rule order and <k>, the run (the column), never the iteration — a made-up project of three runs (NOT a real record)', () => {
+  // The model's timeline lines for runs Discovery i1, Design i1, Build i1, Design i2, Build i2, Launch i1, Build i3 and Launch i2, with Build i3 now.
+  const mk = (phase, iteration, own = []) => ({ phase, iteration, project: own, sprints: Object.fromEntries(own.map((m) => [m.id, m.filed ? ['PR #1'] : []])), standard: [], label() { return `${phase} i${iteration}`; } });
+  const runs = [mk('Discovery', 1), mk('Design', 1), mk('Build', 1, [{ id: 'M1', filed: true }]), mk('Design', 2), mk('Build', 2, [{ id: 'M2', filed: true }]),
+    mk('Launch', 1), mk('Build', 3, [{ id: 'M3', filed: false }]), mk('Launch', 2)];
+  const tl = { runs: () => runs, first: null, graduated: false, byItem: new Map() };
+  const pv = phaseView(SD3, tl, new Map(), { ready: true });
+  assert.deepEqual(pv.phases.map((p) => [p.phase, p.word]), [['Discovery', 'Finished'], ['Design', 'Finished'], ['Build', 'Now · run 3'], ['Launch', 'Run 3 still to come']]);
 });
 
 test('AC50: each standard milestone\'s state word is the model\'s, run by run, as the fixture\'s lines give it', () => {
@@ -153,14 +208,7 @@ test('AC50: each standard milestone\'s state word is the model\'s, run by run, a
     }
   }
   assert.equal(checked, 35);
-  // The Status screen's tap: the now phase's run and its milestones, in the words AC50 allows.
-  const design = phaseMilestones(SD3, snap.tree, tl, pv.phases[1]);
-  assert.equal(design.runLabel, 'Design i2');
-  assert.deepEqual(design.own.map((o) => [o.id, o.word]), [['MD1', 'work filed'], ['MD2', 'no work filed yet'], ['MD3', 'no work filed yet']]);
-  const build = phaseMilestones(SD3, snap.tree, tl, pv.phases[2]);
-  assert.deepEqual(build.own.map((o) => [o.id, o.word]), [['M1', 'work filed'], ['M2', 'work filed'], ['M2B', 'work filed'], ['M3A', 'no work filed yet'], ['M3B', 'no work filed yet']]);
-  for (const o of [...design.own, ...build.own]) assert.notEqual(o.word, 'reached', 'a project milestone never reads "reached"');
-  assert.deepEqual(build.own[0].sprints.map((s) => s.link), ['https://github.com/shumpmaster/Service-Desk/pull/40', 'https://github.com/shumpmaster/Service-Desk/pull/41']);
+  void pv;
 });
 
 test('AC50: a project is Done when its graduation ruling is on the default branch; "Done", never "Graduated", in the words', () => {
@@ -174,77 +222,7 @@ test('AC50: a project is Done when its graduation ruling is on the default branc
 test('AC50: a v2.5 project shows "Phases not tracked", never a guess', () => {
   const pv = phaseView({ ...SD3, model: 'v2.5' }, null, new Map(), null);
   assert.equal(pv.tracked, false);
-  assert.equal(finishedWords(pv), 'Phases not tracked');
-});
-
-// ---------------------------------------------------------------------------
-// AC51
-
-test('AC51: the runs, their labels, a switch between Design i1 and i2, and the strip of four phases then Done', () => {
-  const { snap, j, tl } = fixtureTimeline();
-  const pv = phaseView(SD3, tl, snap.tree, j);
-  const tv = timelineView(SD3, snap.tree, tl, pv, j, null, 'America/Chicago');
-  assert.equal(tv.ok, true);
-  assert.equal(tv.run.label, 'Design i2', 'opens on the now run');
-  assert.deepEqual(tv.switcher.map((s) => s.label), ['Design i1', 'Design i2']);
-  assert.deepEqual(tv.strip.map((s) => [s.phase, s.iters]), [['Discovery', 'i1'], ['Design', 'i1 i2'], ['Build', 'i1 i2'], ['Launch', 'i1'], ['Done', '']]);
-  assert.equal(tv.strip[4].dashed, true, 'Done stays dashed until the Launch gate is passed');
-  assert.match(tv.key, /^Milestones · reached · under way · not started · not recorded$/);
-  // The standard milestones' states and the sprints, against the fixture's lines.
-  const d1 = timelineView(SD3, snap.tree, tl, pv, j, 'Design-i1', 'UTC');
-  assert.deepEqual(d1.run.standard.map((s) => s.word), ['reached', 'not recorded', 'not recorded', 'not recorded', 'not recorded', 'not reached']);
-  const b1 = timelineView(SD3, snap.tree, tl, pv, j, 'Build-i1', 'UTC');
-  const m1 = b1.run.parts.find((x) => x.code === 'M1');
-  // Trial-view notes 12 and 13: a run's steps sit under their milestone, then each sprint, newest first.
-  assert.deepEqual(m1.sprints.map((s) => s.id), ['PR #41', 'PR #40']);
-  assert.deepEqual(m1.steps.filter((s) => !s.day).map((s) => s.text), ['Pull request #41', 'Pull request #40']);
-  const md1 = tv.run.parts.find((x) => x.code === 'MD1');
-  assert.ok(md1.detail.includes('Pieces of work: Q-013'));
-});
-
-test('AC51: newest at the top; every link is a path the tree holds, a pull request or a merge commit; a step with no file says so', () => {
-  const { snap, j, tl } = fixtureTimeline();
-  const pv = phaseView(SD3, tl, snap.tree, j);
-  const paths = new Set(treePaths());
-  let steps = 0;
-  let noFile = 0;
-  for (const r of tl.runs()) {
-    const tv = timelineView(SD3, snap.tree, tl, pv, j, `${r.phase}-i${r.iteration}`, 'UTC');
-    for (const part of tv.run.parts) {
-      // Newest first within each sprint (trial-view notes 12 and 13 group a run's steps by milestone and sprint).
-      for (const sp of part.sprints) {
-        const real = sp.steps.filter((s) => !s.day && Number.isFinite(s.pos) && s.pos >= 0);
-        for (let i = 1; i < real.length; i++) assert.ok(real[i - 1].pos > real[i].pos, 'newest first');
-      }
-      for (const s of part.steps) {
-        if (s.day) continue;
-        steps++;
-        if (s.link == null) {
-          noFile++;
-          continue;
-        }
-        const m = /^https:\/\/github\.com\/shumpmaster\/Service-Desk\/(?:blob\/main\/(.+)|pull\/\d+|commit\/[0-9a-f]{40})$/.exec(s.link);
-        assert.ok(m, s.link);
-        if (m[1]) assert.ok(paths.has(decodeURIComponent(m[1])), `${m[1]} is in the tree`);
-      }
-    }
-  }
-  assert.ok(steps > 50, `${steps} steps`);
-  assert.ok(noFile > 0, 'some steps hold no file');
-  // The page draws a step without a link as "no file recorded".
-  const src = pageSource();
-  assert.ok(src.includes("st.link ? ext(st.link, 'From the record') : 'no file recorded'"));
-});
-
-test('AC51: no clock times and no durations on the line, only order (with a marker where the day changes)', () => {
-  const { snap, j, tl } = fixtureTimeline();
-  const pv = phaseView(SD3, tl, snap.tree, j);
-  const tv = timelineView(SD3, snap.tree, tl, pv, j, 'Design-i1', 'UTC');
-  const words = tv.run.parts.flatMap((p) => p.steps.map((s) => s.day || `${s.text} ${s.note || ''}`)).join('\n');
-  assert.doesNotMatch(words, /\b\d{1,2}:\d{2}\b/, 'no clock times');
-  assert.doesNotMatch(words, /\b\d+ (?:min|h|s|d)\b/, 'no durations');
-  assert.ok(tv.run.parts.some((p) => p.steps.some((s) => s.day)), 'a day marker');
-  assert.match(tv.run.sentence, /^\d+ returns? failed/, 'bad news first');
+  assert.equal(pv.why, 'Phases not tracked');
 });
 
 test('AC50 + AC41: no element is sized by a fraction of phases', () => {
@@ -298,7 +276,7 @@ test('AC50 (review B2): "Graduated" is never a label or a milestone name on any 
       if (/Done\s*Launch-5/.test(app.view.textContent)) launch5 = true;
     });
     assert.ok(seen.size > 30, `${seen.size} routes`);
-    assert.ok(seen.has('#/p/Service-Desk/timeline/Launch-i1'));
+    assert.ok(seen.has('#/p/Service-Desk/timeline'));
     assert.ok(launch5, 'Launch-5 is drawn as "Done"');
   } finally {
     app.restore();
@@ -316,8 +294,9 @@ test('AC50: a record\'s own text holding "Graduated" is drawn exactly as written
     await app.go('#/p/Service-Desk/queue/q%3AP-001-graduation-wording');
     assert.ok(app.view.textContent.includes('The model writes Graduated.'), 'the sheet quotes WHY unchanged');
     assert.ok(drawn(app.view).includes('Keep Graduated.'), 'and its options unchanged');
-    await app.go('#/p/Service-Desk/timeline/Launch-i1');
-    assert.match(app.view.textContent, /Done\s*Launch-5/);
+    await app.go('#/p/Service-Desk');
+    assert.match(app.view.textContent, /Done\s*Launch-5/, 'the Status screen\'s Launch box names Launch-5 "Done"');
+    await app.go('#/p/Service-Desk/timeline');
     assert.doesNotMatch(app.view.textContent, /Graduated/, 'no label on the timeline reads "Graduated"');
   } finally {
     app.restore();

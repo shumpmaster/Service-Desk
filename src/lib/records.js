@@ -2,6 +2,8 @@
 // Pure functions over text: no network, no DOM. Shared by the page (as a copy under
 // public/lib/, kept identical by the build) and the tests.
 
+import { prBodyParts } from './pulls.js';
+
 // ---------------------------------------------------------------------------
 // Paths (J2, J9)
 
@@ -727,6 +729,10 @@ export function parsePulls(pages) {
         headRepo: (p.head && p.head.repo && typeof p.head.repo.full_name === 'string') ? p.head.repo.full_name : null,
         login: p.user && p.user.login,
         createdAt: p.created_at,
+        // From 2026-10-16: an open pull request's `updated_at` (AC71's movement) and, of its body, only
+        // the parts AC61 (c) reads: its `Milestone:` line, Context and Why (J12, "What the page keeps").
+        updatedAt: typeof p.updated_at === 'string' ? p.updated_at : null,
+        parts: prBodyParts(p.body),
       });
     }
   });
@@ -803,7 +809,9 @@ export function parseWorkflowRuns(pages) {
       }
       runs.push({ path: r.path.replace(/@.*$/, ''), name: typeof r.name === 'string' ? r.name : r.path,
         event: r.event, status: r.status, conclusion: r.conclusion, runNumber: r.run_number,
-        headSha: typeof r.head_sha === 'string' ? r.head_sha : null, url: typeof r.html_url === 'string' ? r.html_url : null });
+        headSha: typeof r.head_sha === 'string' ? r.head_sha : null, url: typeof r.html_url === 'string' ? r.html_url : null,
+        // AC72: a hand-started deploy's commit is in its title, `deploy <sha> — <note>` (desk-deploy's run-name).
+        title: typeof r.display_title === 'string' ? r.display_title : null });
     }
   });
   return { runs, notes };

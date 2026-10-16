@@ -1,134 +1,208 @@
-/* The MD sandbox's shared look (spec S-001, AC48 "The shared look"; AC42). One palette, each colour
-   with one meaning on every screen: coral the owner, blue an agent, green and red pass and fail,
-   purple a change to merge, amber a blocker, gold phase progress. Milestones are neutral. Colour
-   never carries meaning alone: a word, an icon or a shape goes with it. Hand-built CSS and SVG, the
-   system font stack (no web font: the CSP forbids other origins), light and dark. Loaded only
-   under ?sandbox; every rule is scoped to html.sb. */
+/* The MD sandbox's shared look (spec S-001, AC48 "The shared look"; AC42; AC62). One palette, each
+   colour with one meaning on every screen: coral the owner, blue an agent, green and red pass and
+   fail, purple a change to merge, amber a blocker, gold phase progress; from trial-view notes 2, one
+   colour per phase (on the phase boxes' stripes and the Timeline's bands, line and chips only) and
+   one per Timeline bullet; slate (the muted grey) is Technical's and a gap the agents fill (AC69).
+   Milestones are neutral. Colour never carries meaning alone: a word, an icon or a shape goes with
+   it. Hand-built CSS and SVG, the system font stack (no web font: the CSP forbids other origins),
+   light and dark. Loaded only under ?sandbox; every rule is scoped to html.sb.
+
+   AC62: one spacing scale, 4, 8, 12, 20 and 32 px (--s1 to --s5), and one type scale of seven roles
+   (--t-screen, --t-section, --t-item, --t-body, --t-meta, --t-quote, --t-code). Every margin, padding
+   and gap is 0 or one of the five, but the values marked "AC62:" with why; every font is a role. */
 
 html.sb {
-  --page: #eef0f2; --surf: #ffffff; --surf2: #e4e7ea; --ink: #0b0d10; --muted: #4b525b; --line: #c9cdd3;
-  --you: #d23c0f; --yous: #fbe4dc; --agent: #1d5bd6; --agents: #e1e9fa; --pass: #0f7a3a; --passs: #dcefe2;
+  --page: #eef0f2; --surf: #ffffff; --surf2: #e4e7ea; --ink: #0b0d10; --muted: #4b525b; --line: #c9cdd3; --soft: #8a919a; --tie: #c3c8cf;
+  --you: #d23c0f; --yous: #fbe4dc; --agent: #1d5bd6; --agents: #e1e9fa; --pass: #0f7a3a; --passs: #dcefe2; --passl: #a9d8b9;
   --fail: #b8141d; --fails: #f9dfdf; --merge: #5b3cc4; --merges: #e8e2f8; --block: #9e5800; --blocks: #f6ead3;
   --gold: #8a6a10; --golds: #f4ecd2; --idle: #b7bdc5; --focus: #1d5bd6; --on: #ffffff; --scrim: rgb(11 13 16 / .5);
+  --ph-disc: #0f766e; --ph-des: #9d2f7e; --ph-build: #5c6a10; --ph-launch: #7a5a48;
+  --b-tech: var(--muted); --b-ctx: #ad606a; --b-why: #756592;
+  --run1: var(--muted); --run2: var(--gold); --run3: #7b828a; --run4: #7f8669; /* AC57 (draft 6): runs 3 and 4 neutral-tinted, none of AC48's 14; run 5 on as runs 3 and 4 in turn */
   --shade0: #1d5bd6; --shade1: #5b8be6; --shade2: #0f3f9e; --shade3: #8fb0ee;
   --you0: #d23c0f; --you1: #f07a50; --you2: #9c2a08; --you3: #f4a283;
-  --r: 6px; --rs: 4px; --track: .04em;
-  --sb-dock-h: 65px; /* the project screens' bottom bar: its height, and the room every bubble keeps clear of it */
+  --r: 6px; --rs: 4px; --track: .07em;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 20px; --s5: 32px;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --t-screen: 800 1.45rem/1.2 var(--font);
+  --t-section: 800 .74rem/1.3 var(--font);
+  --t-item: 700 1rem/1.3 var(--font);
+  --t-body: 400 .94rem/1.5 var(--font);
+  --t-meta: 600 .78rem/1.35 var(--font);
+  --t-quote: 400 .9rem/1.45 var(--font);
+  --t-code: 500 .74rem/1.3 var(--mono);
+  --sb-dock-h: 65px; /* the project screens' bottom bar: its height, and the room every bubble keeps clear of it */
+  --rail: 28px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   html.sb:not([data-theme="light"]) {
-    --page: #0c0d0f; --surf: #16181c; --surf2: #101215; --ink: #f1f3f5; --muted: #a3a9b2; --line: #363b43;
-    --you: #ff6a3d; --yous: #3d1b10; --agent: #6ea0ff; --agents: #14223b; --pass: #3fb950; --passs: #112b19;
+    --page: #0c0d0f; --surf: #16181c; --surf2: #101215; --ink: #f1f3f5; --muted: #a3a9b2; --line: #363b43; --soft: #6f7680; --tie: #3d434b;
+    --you: #ff6a3d; --yous: #3d1b10; --agent: #6ea0ff; --agents: #14223b; --pass: #3fb950; --passs: #112b19; --passl: #275f3a;
     --fail: #ff6b6b; --fails: #3b1516; --merge: #a78bfa; --merges: #261d3d; --block: #e3a33b; --blocks: #33260c;
-    --gold: #d4ae4f; --golds: #2c2410; --idle: #4a5059; --focus: #6ea0ff; --on: #0b0d10; --scrim: rgb(0 0 0 / .62);
+    --gold: #c9b04f; --golds: #2c2410; --idle: #4a5059; --focus: #6ea0ff; --on: #0b0d10; --scrim: rgb(0 0 0 / .62);
+    --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
+    --b-ctx: #bc7e8d; --b-why: #c7adcb;
+    --run3: #8d8d77; --run4: #c3d0c3;
     --shade0: #6ea0ff; --shade1: #9cbcff; --shade2: #3f74d8; --shade3: #c2d5ff;
     --you0: #ff6a3d; --you1: #ff9a76; --you2: #d9481c; --you3: #ffc2ad;
     color-scheme: dark;
   }
 }
 html.sb[data-theme="dark"] {
-  --page: #0c0d0f; --surf: #16181c; --surf2: #101215; --ink: #f1f3f5; --muted: #a3a9b2; --line: #363b43;
-  --you: #ff6a3d; --yous: #3d1b10; --agent: #6ea0ff; --agents: #14223b; --pass: #3fb950; --passs: #112b19;
+  --page: #0c0d0f; --surf: #16181c; --surf2: #101215; --ink: #f1f3f5; --muted: #a3a9b2; --line: #363b43; --soft: #6f7680; --tie: #3d434b;
+  --you: #ff6a3d; --yous: #3d1b10; --agent: #6ea0ff; --agents: #14223b; --pass: #3fb950; --passs: #112b19; --passl: #275f3a;
   --fail: #ff6b6b; --fails: #3b1516; --merge: #a78bfa; --merges: #261d3d; --block: #e3a33b; --blocks: #33260c;
-  --gold: #d4ae4f; --golds: #2c2410; --idle: #4a5059; --focus: #6ea0ff; --on: #0b0d10; --scrim: rgb(0 0 0 / .62);
+  --gold: #c9b04f; --golds: #2c2410; --idle: #4a5059; --focus: #6ea0ff; --on: #0b0d10; --scrim: rgb(0 0 0 / .62);
+  --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
+  --b-ctx: #bc7e8d; --b-why: #c7adcb;
+  --run3: #8d8d77; --run4: #c3d0c3;
   --shade0: #6ea0ff; --shade1: #9cbcff; --shade2: #3f74d8; --shade3: #c2d5ff;
   --you0: #ff6a3d; --you1: #ff9a76; --you2: #d9481c; --you3: #ffc2ad;
   color-scheme: dark;
 }
 
-html.sb, html.sb body { background: var(--page); color: var(--ink); font: 16px/1.45 var(--font); }
-html.sb body { max-width: 560px; margin: 0 auto; padding: 0 16px 120px; overflow-x: hidden; }
+html.sb, html.sb body { background: var(--page); color: var(--ink); }
+html.sb body { font: var(--t-body); max-width: 560px; margin: 0 auto; overflow-x: hidden;
+  padding: 0 16px 120px; /* AC62: the page's 16 px side gutter, and the room kept for the bottom bar */
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); /* AC62: the gutter with the safe areas */ }
 html.sb header#top, html.sb footer#foot { display: none; }
 html.sb main#view { display: block; }
 html.sb *, html.sb *::before, html.sb *::after { box-sizing: border-box; }
 html.sb a { color: inherit; }
 html.sb :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+html.sb p { margin: 0; }
 .sb-screen, .sb-screen * { overflow-wrap: anywhere; word-break: break-word; min-width: 0; }
-.small { font-size: .82rem; }
+.small { font: var(--t-meta); }
 .sb-muted { color: var(--muted); }
-.code { font-family: var(--mono); font-size: .76em; color: var(--muted); white-space: normal; }
+.code { font: var(--t-code); color: var(--muted); white-space: normal; }
 .sb-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sb-screen { display: grid; gap: var(--s3); padding-bottom: var(--s4); }
+.sb-meta { font: var(--t-meta); color: var(--muted); }
+.sb-q, .sb-quote { font: var(--t-quote); } /* quoted record text (AC62); .sb-quote never takes the owner's coral (AC69) */
+.sb-src { display: block; font: var(--t-meta); color: var(--muted); }
+.sb-lbl { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--muted); }
+/* AC69: a gap the agents fill reads in slate, saying who fills it; coral (--you) is only for what waits on the owner. */
+.gap, .sb-meta.gap, .sb-wl.gap, .sb-began.gap, .sb-feeds.gap, .sb-unb-l.gap, .sb-unb-t.gap { color: var(--muted); }
 
 /* The marker on every screen (AC43: "Sandbox: candidate design"). */
-.sb-marker { margin: 8px 0 0; padding: 4px 10px; display: inline-flex; gap: 8px; align-items: center; border: 1px dashed var(--muted);
-  border-radius: var(--rs); font: 700 .78rem/1.3 var(--font); color: var(--muted); }
+.sb-marker { margin: var(--s2) 0 0; padding: var(--s1) var(--s3); justify-self: start; display: inline-flex; gap: var(--s2); align-items: center; border: 1px dashed var(--muted);
+  border-radius: var(--rs); font: var(--t-meta); color: var(--muted); }
 .sb-dot { width: 8px; height: 8px; border: 1.5px solid var(--muted); border-radius: 2px; transform: rotate(45deg); }
 
 /* Headers */
-.sb-hdr { display: flex; gap: 10px; align-items: flex-start; padding: 12px 0 6px; }
-.sb-hdr h1 { margin: 0; font: 800 1.35rem/1.15 var(--font); text-transform: uppercase; letter-spacing: var(--track); }
-.sb-eyebrow { margin: 0; font: 700 .7rem/1.3 var(--font); text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
-.sb-sub { margin: 2px 0 0; color: var(--muted); font-size: .9rem; }
-.sb-navs { display: flex; gap: 6px; flex: none; }
+.sb-hdr { display: flex; gap: var(--s3); align-items: flex-start; padding: var(--s3) 0 0; }
+.sb-hdr h1 { margin: 0; font: var(--t-screen); }
+.sb-eyebrow { margin: 0; font: var(--t-section); text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
+.sb-sub { margin: var(--s1) 0 0; color: var(--muted); font: var(--t-meta); }
+.sb-navs { display: flex; gap: var(--s2); flex: none; }
 .sb-back, .sb-prev, .sb-close { display: grid; place-items: center; min-width: 44px; min-height: 44px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surf); color: var(--ink); position: relative; cursor: pointer; padding: 0; }
 .ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
-.sb-top { margin: 4px 0 10px; font-weight: 700; font-size: 1.02rem; }
+.sb-top { margin: 0; font: var(--t-item); }
 .sb-top.you { color: var(--you); }
 .sb-top.quiet { color: var(--pass); }
-.sb-lead { margin: 6px 0 12px; font-size: 1rem; }
-.sb-h2 { margin: 18px 0 8px; font: 800 .74rem/1.3 var(--font); text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
-.sb-stale { color: var(--block); font-weight: 600; margin: 6px 0; }
+.sb-lead { margin: 0; font: var(--t-body); }
+.sb-h2 { margin: var(--s4) 0 0; font: var(--t-section); text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
+.sb-stale { color: var(--block); font: var(--t-meta); margin: 0; }
 .sb-stale::before { content: "! "; }
-.sb-card { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; margin: 10px 0; }
-.sb-card > summary, .sb-std > summary, details.sb-sec > summary { cursor: pointer; min-height: 44px; display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.sb-card { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3); margin: 0; }
+.sb-card > summary, .sb-std > summary, details.sb-sec > summary { cursor: pointer; min-height: 44px; display: flex; gap: var(--s2); align-items: center; justify-content: space-between; flex-wrap: wrap; }
+
+/* The plain-circle icons (AC59, AC65, AC67): a neutral circle with an icon inside, never a colour of its own,
+   each with its words beside it. The gold ring is "next to reach"; the half-filled circle is work under way;
+   the empty dashed circle is "planned" or "still to come" (and "Idle" on the Team screen); the coral diamond
+   is what waits on the owner; the slate diamond is for the agents to file (AC69). */
+.sb-ic { display: inline-grid; place-items: center; flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--muted); background: var(--surf); color: var(--ink);
+  font: var(--t-code); font-size: 10px; /* AC62: a mark drawn as text is an icon, sized to its circle */ vertical-align: middle; position: relative; }
+.sb-ic.i-check::after { content: "✓"; }
+.sb-ic.i-pastcheck { border-color: var(--soft); color: var(--soft); }
+.sb-ic.i-pastcheck::after { content: "✓"; }
+.sb-ic.i-half::after { content: ""; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--ink); background: linear-gradient(90deg, var(--ink) 50%, transparent 50%); }
+.sb-ic.i-next { border: 3px solid var(--gold); }
+.sb-ic.i-planned { border-style: dashed; }
+.sb-ic.i-cross::after { content: "✕"; }
+.sb-ic.i-skip { border-color: var(--soft); color: var(--soft); }
+.sb-ic.i-skip::after { content: "–"; }
+.sb-ic.i-unrec { border-style: dashed; border-color: var(--soft); color: var(--soft); }
+.sb-ic.i-unrec::after { content: "?"; }
+.sb-ic.i-flag, .sb-ic.i-you { width: 11px; height: 11px; border-radius: 2px; transform: rotate(45deg); border: 0; margin: 0 var(--s1); }
+.sb-ic.i-flag { background: var(--muted); }
+.sb-ic.i-you { background: var(--you); }
+
+/* Folds (AC57, AC59, AC60, AC66): a real button, its state as its accessible state and a mark beside its words. */
+.sb-fold, .sb-more, .sb-pname { appearance: none; background: none; border: 0; padding: 0; margin: 0; color: inherit; cursor: pointer; text-align: left; display: inline-flex; gap: var(--s1); align-items: center; min-height: 44px; }
+.sb-fold, .sb-more { font: var(--t-meta); color: var(--muted); }
+.sb-fmark { font: var(--t-meta); color: var(--muted); }
+
+/* The phase marker (AC68): under the project's name, the now phase in its colour, a tap to the Timeline at Now. */
+.ph-disc { --ph: var(--ph-disc); } .ph-des { --ph: var(--ph-des); } .ph-build { --ph: var(--ph-build); } .ph-launch { --ph: var(--ph-launch); } .ph-done { --ph: var(--idle); }
+.sb-phchip { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--ph, var(--idle)); flex: none; }
+.sb-pmark { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; min-height: 44px; padding: var(--s2) var(--s3); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r);
+  box-shadow: inset 3px 0 0 var(--ph, var(--line)); text-decoration: none; color: var(--ink); }
+.sb-pmark-run { font: var(--t-item); color: var(--ph, var(--ink)); }
+.sb-pmark-sub { font: var(--t-meta); color: var(--muted); }
+.sb-pmark-go { margin-left: auto; font: var(--t-meta); color: var(--muted); }
+.sb-pmark.none { color: var(--muted); }
+.sb-pmark.none .sb-pmark-run { color: var(--muted); }
 
 /* Home (AC48, AC54): three collapsible groups, each a two-column grid of condensed cards. */
-.sb-hgroups { display: grid; gap: 12px; }
+.sb-hgroups { display: grid; gap: var(--s3); }
 .sb-hg-h { margin: 0; }
-.sb-hg-btn { width: 100%; min-height: 44px; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; padding: 6px 10px; border: 1px solid var(--line);
-  border-radius: var(--r); background: var(--surf2); color: var(--ink); font: 800 .8rem/1.3 var(--font); text-transform: uppercase; letter-spacing: var(--track); text-align: left; cursor: pointer; }
+.sb-hg-btn { width: 100%; min-height: 44px; display: flex; flex-wrap: wrap; gap: var(--s1) var(--s3); align-items: center; padding: var(--s2) var(--s3); border: 1px solid var(--line);
+  border-radius: var(--r); background: var(--surf2); color: var(--ink); font: var(--t-section); text-transform: uppercase; letter-spacing: var(--track); text-align: left; cursor: pointer; }
 .sb-hg-mark { width: 14px; flex: none; }
 .sb-hg-t { flex: 1 1 auto; }
-.sb-hg-n { color: var(--muted); font-weight: 700; }
-.sb-hg-you, .sb-hg-bad { flex-basis: 100%; padding-left: 24px; text-transform: none; letter-spacing: 0; font-weight: 700; }
+.sb-hg-n { color: var(--muted); }
+.sb-hg-you, .sb-hg-bad { flex-basis: 100%; padding-left: var(--s4); text-transform: none; letter-spacing: 0; font: var(--t-meta); }
 .sb-hg-you { color: var(--you); }
 .sb-hg-you::before { content: "◆ "; }
 .sb-hg-bad { color: var(--block); }
 .sb-hg-bad::before { content: "! "; }
-.sb-hgroup .sb-grid { margin-top: 8px; }
-.sb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.sb-pc { position: relative; background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.sb-hgroup .sb-grid { margin-top: var(--s2); }
+.sb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+.sb-pc { position: relative; background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2); display: flex; flex-direction: column; gap: var(--s2); }
 .sb-pc.bad { border-color: var(--block); }
-.sb-pc-main { text-decoration: none; display: flex; flex-direction: column; gap: 5px; }
+.sb-pc-main { text-decoration: none; display: flex; flex-direction: column; gap: var(--s1); }
 /* The whole card opens the Project screen; the Latest control and the pill sit above that link. */
 .sb-pc-main::after { content: ""; position: absolute; inset: 0; border-radius: var(--r); }
 .sb-pc-main:focus-visible { outline: none; }
 .sb-pc-main:focus-visible::after { outline: 2px solid var(--focus); outline-offset: 2px; }
-.sb-pc-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.sb-pc-top { display: flex; justify-content: space-between; align-items: center; gap: var(--s2); }
 .sb-app { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border: 1px solid var(--line); border-radius: var(--r); color: var(--muted); background: var(--surf2); }
 .sb-app .ic { width: 20px; height: 20px; }
-.sb-new { font-size: .66rem; font-weight: 700; color: var(--muted); border: 1px solid var(--line); border-radius: var(--rs); padding: 1px 5px; }
+.sb-new { font: var(--t-meta); color: var(--muted); border: 1px solid var(--line); border-radius: var(--rs);
+  padding: 1px 6px; /* AC62: a label chip's inner padding, as drawn */ }
 .sb-new::before { content: "● "; }
-.sb-nm { margin: 0; font: 750 .95rem/1.2 var(--font); }
+.sb-nm { margin: 0; font: var(--t-item); }
 /* The summary (AC54 (a), 2026-10-15): its box always takes exactly three lines' height and hides
    the lines after the third; the card holds the whole text. Nothing scrolls in it and nothing adds
    an ellipsis: when the text runs past three lines, the third line fades at its end into the card's
    background (--surf, in each theme). `overflow: clip` (where a browser has it) makes the box no
    scroll container, so focus never scrolls the text in it. The box lets a tap through to the
-   card's link, except on the summary's own button and its bubble. */
+   card's link, except on the summary's own button and its bubble. Its role is the quoted record's
+   (AC62): .9rem at 1.45, three lines 4.35em. */
 .sb-sumbox { position: relative; pointer-events: none; }
-.sb-sumclip { position: relative; font-size: .8rem; line-height: 1.35; height: 4.05em; overflow: hidden; overflow: clip; }
-.sb-sumclip.over::after { content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1.35em; pointer-events: none;
+.sb-sumclip { position: relative; font: var(--t-quote); height: 4.35em; overflow: hidden; overflow: clip; }
+.sb-sumclip.over::after { content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1.45em; pointer-events: none;
   background: linear-gradient(to right, transparent, var(--surf) 85%); }
 .sb-sumclip:has(.sb-sum:focus-visible) { outline: 2px solid var(--focus); outline-offset: 1px; }
-.sb-sum { margin: 0; font-size: .8rem; line-height: 1.35; color: var(--ink); }
+.sb-sum { margin: 0; font: var(--t-quote); color: var(--ink); }
 .sb-sum.none { color: var(--muted); font-style: italic; }
-button.sb-sum { display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: none; font: inherit; line-height: inherit;
+button.sb-sum { display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: none; font: var(--t-quote);
   text-align: left; color: var(--ink); cursor: pointer; pointer-events: auto; }
 button.sb-sum:focus-visible { outline: none; }
 .sb-sumbox > .sb-bubble { pointer-events: auto; top: calc(100% + 4px); }
 .sb-sumbox > .sb-bubble.col-l { left: -8px; right: calc(-100% - 32px); }
 .sb-sumbox > .sb-bubble.col-r { right: -8px; left: calc(-100% - 32px); }
 .sb-sumbox > .sb-bubble.up { top: auto; bottom: calc(100% + 4px); }
-.sb-pc-rest { display: flex; flex-direction: column; gap: 5px; pointer-events: none; } /* a tap on it is the card's link's */
-.sb-why { position: relative; z-index: 2; font-size: .72rem; color: var(--muted); }
+.sb-pc-rest { display: flex; flex-direction: column; gap: var(--s2); pointer-events: none; } /* a tap on it is the card's link's */
+.sb-why { position: relative; z-index: 2; font: var(--t-meta); color: var(--muted); }
 .sb-why > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
-.sb-why p { margin: 2px 0 0; }
-.sb-latest { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: 4px; min-width: 44px; min-height: 44px; padding: 0 8px; margin: -4px -4px -4px 0;
-  border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf); color: var(--muted); font: 700 .7rem/1 var(--font); cursor: pointer; }
+.sb-why p { margin: var(--s1) 0 0; }
+.sb-latest { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: var(--s1); min-width: 44px; min-height: 44px; padding: 0 var(--s2);
+  margin: -4px -4px -4px 0; /* AC62: an offset that keeps the 44 px target on the card's top row */
+  border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf); color: var(--muted); font: var(--t-meta); cursor: pointer; }
 .sb-latest .ic { width: 16px; height: 16px; }
 .sb-latest.on { color: var(--ink); border-color: var(--ink); }
 /* The bubble spans the group's grid (both columns), below the card's top row or above the card, so it is never clipped.
@@ -136,35 +210,27 @@ button.sb-sum:focus-visible { outline: none; }
    clear of the project screens' bottom bar (--sb-clear, set on those screens below): taller content
    scrolls up and down inside it, never sideways, and its top row, with "Close", stays in view (sticky). */
 .sb-bubble { position: absolute; z-index: 8; top: 48px; background: var(--surf); color: var(--ink); border: 1px solid var(--ink); border-radius: var(--r);
-  padding: 6px 12px 12px; box-shadow: 0 6px 18px rgb(0 0 0 / .18);
+  padding: var(--s2) var(--s3) var(--s3); box-shadow: 0 6px 18px rgb(0 0 0 / .18);
   max-height: calc(100vh - var(--sb-clear, 0px) - 16px); max-height: calc(100dvh - var(--sb-clear, 0px) - 16px);
   overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
 .sb-bubble.col-l { left: 0; right: calc(-100% - 8px); }
 .sb-bubble.col-r { right: 0; left: calc(-100% - 8px); }
 .sb-bubble.up { top: auto; bottom: calc(100% + 4px); }
-.sb-bubble-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; position: sticky; top: -6px; background: var(--surf); }
-.sb-bubble-t { margin: 4px 0 0; font-size: .9rem; line-height: 1.4; }
+.sb-bubble-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); position: sticky; top: -8px; background: var(--surf); }
+.sb-bubble-t { margin: var(--s1) 0 0; font: var(--t-quote); }
 /* Held: taller than the room, or where the page cannot scroll it into the room, the bubble is held
    in the viewport itself, inside the page's gutters, a margin from the top and clear of the bottom bar. */
 .sb-bubble.held, .sb-sumbox > .sb-bubble.held, .sb-linebox > .sb-bubble.held, .sb-bubble.held.col-l, .sb-bubble.held.col-r,
 .sb-sumbox > .sb-bubble.held.col-l, .sb-sumbox > .sb-bubble.held.col-r {
   position: fixed; top: 8px; bottom: auto; left: max(16px, calc(50% - 264px)); right: max(16px, calc(50% - 264px)); }
+/* A sheet or a bubble the owner opened may come in, gently, without reduced motion; nothing else moves (AC57's "Still and plain"). */
 @media (prefers-reduced-motion: no-preference) {
   .sb-bubble { animation: sb-pop .12s ease-out; }
   @keyframes sb-pop { from { opacity: .4; transform: translateY(-4px); } }
 }
-.sb-ck { background: var(--page); border-radius: var(--r); padding: 6px; position: relative; overflow: hidden; }
-.sb-ck-hd { display: flex; justify-content: space-between; gap: 8px; margin: 0 0 6px; font: 800 .66rem/1.2 var(--font); text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
-.sb-ck ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
-.sb-ck li { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-height: 22px; padding: 1px 5px; border-radius: var(--rs); background: var(--surf); border-left: 3px solid transparent; font-size: .78rem; color: var(--muted); }
-.sb-ck li.fin { color: var(--ink); }
-.sb-ck li.now { border-left-color: var(--gold); color: var(--ink); font-weight: 700; box-shadow: inset 0 0 0 1px var(--gold); }
-.sb-ck li em { margin-left: auto; font-style: normal; font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: var(--track); }
-.sb-ck li.now em { color: var(--gold); }
-.sb-ck-done { border-top: 1px dashed var(--line); }
-.sb-ck-name { flex: 1; }
 .sb-stamp { position: absolute; left: 50%; top: 55%; transform: translate(-50%, -50%) rotate(-9deg); border: 2.5px solid var(--gold); color: var(--gold);
-  border-radius: var(--rs); padding: 3px 12px; font: 800 .8rem var(--font); letter-spacing: .14em; background: var(--page); }
+  border-radius: var(--rs); font: var(--t-section); letter-spacing: .14em; background: var(--page);
+  padding: 1px 6px; /* AC62: a label chip's inner padding */ }
 .circ { width: 16px; height: 16px; flex: none; }
 .circ circle { fill: none; stroke: var(--idle); stroke-width: 1.6; }
 .circ.tick circle { fill: var(--pass); stroke: var(--pass); }
@@ -172,228 +238,320 @@ button.sb-sum:focus-visible { outline: none; }
 .circ.ring circle { stroke: var(--gold); stroke-width: 2.4; }
 .circ.hatch circle { stroke: var(--muted); stroke-dasharray: 2 2; }
 .circ.hatch path { stroke: var(--muted); stroke-width: 1.2; }
-.sb-ball { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: .84rem; }
-.sb-ball li { display: flex; gap: 8px; align-items: center; }
-.sb-ball li.who-you { color: var(--you); font-weight: 600; }
-.sb-ball li.who-you::before { content: "◆"; font-size: .7rem; }
-.sb-light { width: 10px; height: 10px; flex: none; border-radius: 50%; border: 1.5px solid var(--idle); background: transparent; }
-.sb-light.lit { background: var(--agent); border-color: var(--agent); }
-.sb-ball li.who-you .sb-light { display: none; }
-@media (prefers-reduced-motion: no-preference) {
-  .sb-light.glow { animation: sb-glow 1.6s ease-in-out infinite; }
-  @keyframes sb-glow { 50% { box-shadow: 0 0 0 4px var(--agents); } }
-}
-.sb-pill { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 6px 8px; border-radius: var(--rs); text-decoration: none;
-  font: 700 .86rem/1.2 var(--font); text-align: center; border: 1px solid var(--line); background: var(--surf2); color: var(--ink); }
+.sb-ball { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s1); font: var(--t-meta); }
+.sb-ball li { display: flex; gap: var(--s2); align-items: center; }
+.sb-ball li.who-you { color: var(--you); }
+.sb-pill { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; min-height: 44px; padding: var(--s2); border-radius: var(--rs); text-decoration: none;
+  font: var(--t-meta); text-align: center; border: 1px solid var(--line); background: var(--surf2); color: var(--ink); }
 .sb-pill.you { background: var(--you); border-color: var(--you); color: var(--on); }
-.sb-pill.you::before { content: "◆"; margin-right: 6px; }
+.sb-pill.you::before { content: "◆"; margin-right: 6px; /* AC62: the gap between a mark and its word */ }
 .sb-pill.ok { background: var(--passs); border-color: var(--pass); color: var(--ink); }
-.sb-pill.ok::before { content: "✓"; margin-right: 6px; color: var(--pass); }
+.sb-pill.ok::before { content: "✓"; margin-right: 6px; /* AC62: the gap between a mark and its word */ color: var(--pass); }
 .sb-pill.bad { background: var(--blocks); border-color: var(--block); color: var(--ink); }
-.sb-pill.bad::before { content: "!"; margin-right: 6px; color: var(--block); }
-.sb-v5 { color: var(--muted); font-size: .84rem; margin: 14px 0; }
+.sb-pill.bad::before { content: "!"; margin-right: 6px; /* AC62: the gap between a mark and its word */ color: var(--block); }
+.sb-v5 { color: var(--muted); font: var(--t-meta); margin: var(--s3) 0; }
 /* Home has no bottom band (AC48, 2026-10-16): the owner dropped the "Tell your Chief of Staff…" bar it held. */
+/* AC71: the stalled line, in slate (a heads-up, not a decision for the owner). */
+.sb-stall { margin: 0; font: var(--t-meta); color: var(--muted); }
+.sb-stall:empty { display: none; }
+
+/* The Home tile's phases (AC65, AC58): five small boxes, bottom up, each with its stripe; the compact
+   branch drawing inside the boxes on the left; the where-it-is line above them. */
+.sb-tph { position: relative; display: grid; gap: var(--s1); --rail: 26px; }
+.sb-tph.cols-2 { --rail: 40px; } .sb-tph.cols-3 { --rail: 52px; } .sb-tph.cols-4 { --rail: 64px; }
+.sb-where { display: flex; gap: var(--s2); align-items: center; font: var(--t-meta); color: var(--ph, var(--muted)); }
+.sb-trows { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s1); }
+.sb-trow { display: grid; padding: var(--s1) var(--s2) var(--s1) var(--rail); /* AC62: the room kept for the branch drawing */ border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf);
+  box-shadow: inset 2px 0 0 var(--ph, transparent); }
+.sb-trow.now { border-color: var(--gold); background: var(--golds); }
+.sb-trow.end { border-style: dashed; box-shadow: none; }
+.sb-tp { font: var(--t-meta); color: var(--ink); }
+.sb-ts { font: var(--t-meta); color: var(--muted); }
+.sb-ts.now { color: var(--gold); }
+.sb-tph > .sb-rail { position: absolute; left: 0; overflow: visible; pointer-events: none; z-index: 1; }
+
+/* The branch drawing (AC57, AC58, AC65): one column of dots per run, thin light lines joining each dot
+   to the next one up, with a small arrowhead half way pointing up, dashed into a still-to-come dot,
+   and one curve out to the right where each later run starts. As version 6 draws them: 1.25 px at 70%
+   opacity. Run 1 neutral, run 2 gold, runs 3 and 4 their own neutral-tinted shades, later runs those two
+   in turn. Nothing loops or pulses. */
+.sb-rail .ln, .sb-rail .arr { fill: none; stroke-width: 1.25px; stroke-opacity: .7; stroke-linecap: round; stroke-linejoin: round; }
+.sb-rail .ln.dash { stroke-dasharray: 2 4; }
+.sb-rail .run1 { stroke: var(--run1); } .sb-rail .run2 { stroke: var(--run2); } .sb-rail .run3 { stroke: var(--run3); } .sb-rail .run4 { stroke: var(--run4); }
+.sb-rail .dot { stroke-width: 2; }
+.sb-rail .dot.m-filled { fill: var(--pass); stroke: var(--pass); }
+.sb-rail .dot.m-light { fill: var(--passl); stroke: var(--pass); stroke-width: 1.5; }
+.sb-rail .dot.m-gold { fill: var(--surf); stroke: var(--gold); stroke-width: 2.5; }
+.sb-rail .dot.m-half { fill: var(--surf); stroke: var(--ink); stroke-width: 1.5; }
+.sb-rail .dot.m-todo { fill: var(--surf); stroke: var(--idle); }
+.sb-rail .dot.m-dashed { fill: var(--surf); stroke: var(--idle); stroke-dasharray: 2 2; }
+.sb-rail .dot-in.half { fill: var(--ink); stroke: none; }
+.sb-rail.rail-tile .dot { fill: var(--surf); stroke: var(--muted); stroke-width: 1.2; }
+.sb-rail.rail-tile .dot.m-check { stroke: var(--muted); }
+.sb-rail.rail-tile .dot.m-pastcheck { stroke: var(--soft); }
+.sb-rail.rail-tile .dot.m-next { stroke: var(--gold); stroke-width: 2.5; }
+.sb-rail.rail-tile .dot.m-half { stroke: var(--ink); }
+.sb-rail.rail-tile .dot.m-planned, .sb-rail.rail-tile .dot.m-unrec { stroke-dasharray: 2 2; }
+.sb-rail .dot-in.check, .sb-rail .dot-in.pastcheck { fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.sb-rail .dot-in.pastcheck { stroke: var(--soft); }
 
 /* The bottom bar inside a project (AC48): Status · Timeline · Team · Queue, Home's neutral look.
-   Above every tile, capsule and control on the screens (z-index up to 2), below a sheet and its scrim (5, 6). */
-.sb-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; height: var(--sb-dock-h); overflow: hidden; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surf2); border-top: 1px solid var(--line); padding: 4px 8px 8px; }
-.sb-tab { display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 52px; text-decoration: none; color: var(--muted); position: relative;
-  font: 700 .62rem/1.1 var(--font); letter-spacing: var(--track); text-transform: uppercase; }
+   Above every tile, capsule and control on the screens (z-index up to 3), below a sheet and its scrim (5, 6). */
+.sb-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; height: var(--sb-dock-h); overflow: hidden; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surf2); border-top: 1px solid var(--line); padding: var(--s1) var(--s2) var(--s2); }
+.sb-tab { display: grid; justify-items: center; align-content: center; gap: var(--s1); min-height: 52px; text-decoration: none; color: var(--muted); position: relative;
+  font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; }
 .sb-tab[aria-current="page"] { color: var(--ink); }
 .sb-tab[aria-current="page"]::after { content: ""; position: absolute; bottom: 2px; width: 22px; height: 3px; background: var(--ink); }
-.sb-badge { position: absolute; top: 2px; right: 22%; min-width: 16px; height: 16px; border-radius: var(--rs); background: var(--you); color: var(--on); font-size: .6rem; display: grid; place-items: center; padding: 0 4px; }
+.sb-badge { position: absolute; top: 2px; right: 22%; min-width: 16px; height: 16px; border-radius: var(--rs); background: var(--you); color: var(--on);
+  font: var(--t-code); font-size: 10px; /* AC62: the badge's count, sized to its icon */ display: grid; place-items: center; padding: 0 var(--s1); }
 
 /* Status */
-.sb-actions { display: grid; gap: 8px; margin: 8px 0; }
-.sb-btn { display: flex; gap: 8px; align-items: center; justify-content: center; min-height: 44px; padding: 8px 12px; border-radius: var(--rs); text-decoration: none;
-  font: 700 .92rem/1.2 var(--font); background: var(--surf); border: 1px solid var(--line); color: var(--ink); cursor: pointer; }
+.sb-actions { display: grid; gap: var(--s2); margin: 0; }
+.sb-btn { display: flex; gap: var(--s2); align-items: center; justify-content: center; min-height: 44px; padding: var(--s2) var(--s3); border-radius: var(--rs); text-decoration: none;
+  font: var(--t-item); background: var(--surf); border: 1px solid var(--line); color: var(--ink); cursor: pointer; }
 .sb-btn.you { background: var(--you); border-color: var(--you); color: var(--on); }
-.sb-btn.you::before { content: "◆"; font-size: .75rem; }
-.sb-phases { display: grid; gap: 6px; }
-.sb-phase { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); border-left: 4px solid var(--line); }
-.sb-phase.now { border-color: var(--gold); border-left-color: var(--gold); }
-.sb-phase > summary, .sb-phase.done-row { display: flex; gap: 10px; align-items: center; min-height: 52px; padding: 6px 12px; cursor: pointer; list-style: none; }
-.sb-phase > summary::-webkit-details-marker { display: none; }
-.sb-phase.done-row { cursor: default; border-style: dashed; color: var(--muted); }
-.sb-phase.done-row.done { border-style: solid; border-color: var(--gold); color: var(--ink); }
-.sb-ph-name { font-weight: 750; flex: 1; }
-.sb-ph-word { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
-.sb-phase.now .sb-ph-word { color: var(--gold); }
-.sb-nowtag { font: 800 .62rem/1 var(--font); letter-spacing: var(--track); color: var(--gold); border: 1px solid var(--gold); border-radius: var(--rs); padding: 3px 5px; }
-.sb-ms { padding: 0 12px 10px 38px; }
-.sb-std { border-top: 1px solid var(--line); margin-top: 6px; }
-.sb-mlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.sb-mlist li { display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; align-items: start; font-size: .86rem; padding: 4px 0; border-top: 1px solid var(--line); }
+.sb-btn.you::before { content: "◆"; }
+.sb-info ol { margin: var(--s2) 0; padding-left: var(--s4); }
+.sb-links { margin: var(--s2) 0 0; padding-left: var(--s4); display: grid; gap: var(--s2); }
+.sb-links a { font: var(--t-item); text-decoration: underline; }
+.sb-dl dt { font: var(--t-item); margin-top: var(--s2); } .sb-dl dd { margin: 0; }
+.sb-mlist { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s1); }
+.sb-mlist li { display: grid; grid-template-columns: 16px 1fr auto; gap: var(--s2); align-items: start; font: var(--t-body); padding: var(--s1) 0; border-top: 1px solid var(--line); }
 .sb-mlist li:first-child { border-top: 0; }
-.sb-mlist li em { font-style: normal; font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: var(--track); text-align: right; }
-.sb-mlist.own li { grid-template-columns: 16px 1fr; }
-.sb-mlist.own li em { grid-column: 2; text-align: left; }
-.sb-mlist p { margin: 2px 0 0; }
-.sb-info ol { margin: 6px 0; padding-left: 22px; }
-.sb-links { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 6px; }
-.sb-links a { font-weight: 600; text-decoration: underline; }
-.sb-dl dt { font-weight: 700; margin-top: 6px; } .sb-dl dd { margin: 0; }
 
-/* Queue (AC52): each group a title, a count, rows with a coloured edge and a shape, never colour alone. */
-.sb-groups { display: grid; gap: 10px; margin-top: 8px; }
-.sb-group { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 4px 12px 8px; }
-.sb-group.empty { padding-bottom: 4px; }
-.sb-gh { display: flex; gap: 8px; align-items: center; margin: 6px 0; font: 800 .76rem/1.3 var(--font); text-transform: uppercase; letter-spacing: var(--track); }
+/* AC57: the Status screen's phases, read from the bottom up. Each phase in its own box with its colour
+   stripe, folding on a tap of its name; the dots inside the boxes on the left (option B); the now phase
+   marked where it sits, with a gold border. Done's box is dashed with no stripe. */
+.sb-skey { display: grid; gap: var(--s1); }
+.sb-keyh { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--muted); }
+.sb-keyl { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s3); font: var(--t-meta); color: var(--muted); }
+.sb-keye { display: inline-flex; align-items: center; gap: 6px; /* AC62: the gap between a mark and its word */ }
+.sb-mk { display: inline-block; flex: none; width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--idle); background: var(--surf); }
+.sb-mk.m-filled { background: var(--pass); border-color: var(--pass); }
+.sb-mk.m-light { background: var(--passl); border: 1.5px solid var(--pass); }
+.sb-mk.m-gold { border: 2.5px solid var(--gold); }
+.sb-mk.m-half { border: 1.5px solid var(--ink); background: linear-gradient(90deg, var(--ink) 50%, var(--surf) 50%); }
+.sb-mk.m-empty, .sb-mk.m-todo { border: 2px solid var(--idle); }
+.sb-mk.m-dashed { border: 2px dashed var(--idle); }
+.sb-mk.m-red { background: var(--fail); border-color: var(--fail); }
+.sb-pboxes { position: relative; display: grid; gap: var(--s3); --rail: 30px; }
+.sb-pboxes.cols-2 { --rail: 46px; } .sb-pboxes.cols-3 { --rail: 62px; } .sb-pboxes.cols-4 { --rail: 78px; }
+.sb-pboxes > .sb-rail { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 1; }
+.sb-pbox { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); display: grid; gap: var(--s3);
+  padding: var(--s3) var(--s3) var(--s3) var(--rail); /* AC62: the room kept for the branch drawing */ box-shadow: inset 3px 0 0 var(--ph); }
+.sb-pbox.now { border-color: var(--gold); }
+.sb-pbox.end { border-style: dashed; box-shadow: none; padding-top: var(--s2); padding-bottom: var(--s2); }
+.sb-pbox-h { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.sb-pname { font: var(--t-item); }
+.sb-pbox.end .sb-pname { min-height: 44px; display: inline-flex; align-items: center; }
+.sb-pstate { margin-left: auto; font: var(--t-meta); text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
+.sb-pstate.now { color: var(--gold); }
+.sb-prun { display: grid; gap: var(--s2); }
+.sb-prun + .sb-prun { border-top: 1px solid var(--line); padding-top: var(--s3); }
+.sb-rhead { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; font: var(--t-meta); color: var(--muted); }
+.sb-rtag { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; border: 1px solid currentColor; border-radius: 3px;
+  padding: 1px 6px; /* AC62: a tag's inner padding, as drawn */ }
+.sb-rtag.run1 { color: var(--run1); } .sb-rtag.run2 { color: var(--run2); } .sb-rtag.run3 { color: var(--run3); } .sb-rtag.run4 { color: var(--run4); }
+.sb-stdline { font: var(--t-meta); color: var(--muted); }
+/* A run's milestones, tied by a thin light line with a small arrowhead at its top, pointing up: 1 px in the --tie grey. */
+.sb-mslist { position: relative; list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.sb-mslist::before { content: ""; position: absolute; left: 5px; /* AC62: puts the line through the marks */ top: 4px; bottom: 10px; width: 1px; background: var(--tie); }
+.sb-mslist::after { content: ""; position: absolute; left: 3px; /* AC62: puts the arrowhead on the line */ top: 2px; width: 4px; height: 4px; border-left: 1px solid var(--tie); border-top: 1px solid var(--tie); transform: rotate(45deg); }
+.sb-ms { position: relative; display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 2px var(--s2); /* AC62: 2 px between a milestone's own lines */ align-items: start; }
+.sb-ms > .sb-mk { margin-top: 5px; /* AC62: puts the mark on its line */ position: relative; z-index: 1; }
+.sb-mname { font: var(--t-item); }
+.sb-mstate { grid-column: 2; font: var(--t-meta); color: var(--muted); }
+.sb-mwhy { grid-column: 2; font: var(--t-quote); color: var(--muted); font-style: italic; }
+/* Softer text (note 11): what the project hasn't taken on, or no record says it did. */
+.sb-ms.soft .sb-mname { color: var(--soft); font-weight: 500; }
+.sb-ms.soft .code, .sb-ms.soft .sb-mstate, .sb-ms.soft .sb-mwhy { color: var(--soft); }
+/* An earlier run: smaller and quieter, each part one role down (AC57, AC62), never a size of its own. */
+.sb-prun.old .sb-mname { font: var(--t-body); color: var(--muted); }
+.sb-prun.old .sb-mstate { font: var(--t-code); }
+.sb-prun.old .sb-mwhy { font: var(--t-meta); }
+.sb-prun.old .sb-rtag { color: var(--muted); }
+/* AC70: why a run began, beside the curve where it starts. */
+.sb-began { display: grid; gap: var(--s1); border-left: 2px solid var(--rk, var(--run2)); padding-left: var(--s3); font: var(--t-meta); }
+/* "Run <k> began" in its run's own shade (AC70, draft 6); a "not recorded" reason stays slate (AC69). */
+.sb-began.run2 { --rk: var(--run2); } .sb-began.run3 { --rk: var(--run3); } .sb-began.run4 { --rk: var(--run4); }
+.sb-began-h, .sb-began-k { color: var(--rk, var(--run2)); }
+.sb-began-h { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; }
+.sb-began-p { font: var(--t-body); }
+p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
+
+/* Queue (AC52, as AC66 changed it): each group a title, a count and a neutral mark; a group holding
+   anything that waits on the owner shows the coral diamond, "needs you". Rows that wait on the owner
+   keep the coral edge (AC69); every other mark and edge is the muted grey. */
+.sb-groups { display: grid; gap: var(--s3); margin-top: 0; }
+.sb-group { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s1) var(--s3) var(--s2); }
+.sb-group.empty { padding-bottom: var(--s1); }
+.sb-gh { display: flex; gap: var(--s2); align-items: center; margin: var(--s2) 0; font: var(--t-section); text-transform: uppercase; letter-spacing: var(--track); }
 .sb-gcount { margin-left: auto; color: var(--muted); }
-.sb-shape { width: 16px; text-align: center; }
-.g-decisions .sb-shape, .sb-qrow.g-decisions { color: var(--you); }
-.g-gates .sb-shape { color: var(--gold); }
-.g-verdicts .sb-shape { color: var(--pass); }
-.g-merges .sb-shape { color: var(--merge); }
-.g-deploys .sb-shape { color: var(--block); }
-.sb-qlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.sb-qrow { border-left: 4px solid var(--line); border-radius: var(--rs); background: var(--page); color: var(--ink); }
-.sb-qrow.g-decisions { border-left-color: var(--you); color: var(--ink); }
-.sb-qrow.g-gates { border-left-color: var(--gold); }
-.sb-qrow.g-merges { border-left-color: var(--merge); }
-.sb-qrow.g-deploys { border-left-color: var(--block); padding: 8px 10px; }
-.sb-qrow a { display: grid; gap: 2px; padding: 8px 10px; min-height: 44px; text-decoration: none; }
-.sb-qt { font-weight: 650; }
-.sb-donetoday ul { margin-top: 6px; }
+.sb-gmark { width: 16px; text-align: center; color: var(--muted); }
+.sb-gmark.you { color: var(--you); }
+.sb-needs { font: var(--t-meta); text-transform: none; letter-spacing: 0; color: var(--you); }
+.sb-qlist { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.sb-qrow { border-left: 4px solid var(--muted); border-radius: var(--rs); background: var(--page); color: var(--ink); }
+.sb-qrow.g-decisions, .sb-qrow.g-gates, .sb-qrow.g-merges { border-left-color: var(--you); }
+.sb-qrow.g-deploys { padding: var(--s2) var(--s3); }
+.sb-qrow a.sb-qa, .sb-qrow > a { display: grid; gap: var(--s1); padding: var(--s2) var(--s3); min-height: 44px; text-decoration: none; }
+.sb-qt { font: var(--t-item); }
+.sb-unb { display: grid; gap: var(--s1); margin: 0 var(--s3) var(--s2); padding-top: var(--s2); border-top: 1px solid var(--line); }
+.sb-unb-l { font: var(--t-meta); }
+.sb-unb-l b { font: var(--t-meta); color: var(--ink); }
+.sb-unb-t { font: var(--t-meta); }
+.sb-facts { list-style: none; margin: 0; padding: 0 0 0 var(--s2); display: grid; gap: var(--s1); border-left: 3px solid var(--line); font: var(--t-body); }
+.sb-donetoday ul { margin-top: var(--s2); }
+.sb-donetoday > summary .sb-ic { margin-right: var(--s1); }
+.sb-safe { display: grid; gap: var(--s1); margin-top: var(--s2); }
+.sb-safe-l { display: flex; gap: var(--s2); align-items: center; font: var(--t-item); }
+.sb-tlink { font: var(--t-meta); text-decoration: underline; color: var(--ink); }
 
 /* The response sheet, and the Team's sheets */
 .sb-scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 5; }
 .sb-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; max-height: 88vh; overflow-y: auto; overflow-x: hidden; background: var(--surf);
-  border-top: 1px solid var(--line); border-radius: var(--r) var(--r) 0 0; padding: 8px 16px 28px; max-width: 560px; margin: 0 auto; }
+  border-top: 1px solid var(--line); border-radius: var(--r) var(--r) 0 0; max-width: 560px; margin: 0 auto;
+  padding: var(--s2) 16px var(--s5); /* AC62: the page's 16 px side gutter */ }
 @media (prefers-reduced-motion: no-preference) {
   .sb-sheet { animation: sb-up .18s ease-out; }
   @keyframes sb-up { from { transform: translateY(16px); opacity: .6; } }
 }
-.sb-sheet-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; position: sticky; top: -8px; background: var(--surf); padding: 4px 0; z-index: 1; }
-.sb-sheet-top .sb-grab { margin: 0 0 0 calc(50% - 20px); }
-.sb-grab { display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: 2px auto 10px; }
-.sb-left { border: 1px solid var(--block); border-left: 4px solid var(--block); border-radius: var(--r); padding: 8px 12px; background: var(--blocks); margin: 8px 0; }
-.sb-left p { margin: 0 0 4px; }
-.sb-infobtn { display: inline-flex; gap: 8px; align-items: center; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf); font: 700 .9rem/1.2 var(--font); text-decoration: none; }
+.sb-sheet-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); position: sticky; top: -8px; background: var(--surf); padding: var(--s1) 0; z-index: 1; }
+.sb-sheet-top .sb-grab { margin: 0 0 0 calc(50% - 20px); /* AC62: an offset that centres the grab handle */ }
+.sb-grab { display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: var(--s1) auto var(--s3); }
+.sb-left { border: 1px solid var(--block); border-left: 4px solid var(--block); border-radius: var(--r); padding: var(--s2) var(--s3); background: var(--blocks); margin: var(--s2) 0; }
+.sb-left p { margin: 0 0 var(--s1); }
+.sb-infobtn { display: inline-flex; gap: var(--s2); align-items: center; min-height: 44px; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf); font: var(--t-item); text-decoration: none; }
 .sb-infobtn .ic { width: 18px; height: 18px; }
 .sb-more > summary .sb-h2.flat { margin: 0; }
-.sb-six { margin: 6px 0; padding-left: 22px; }
-.sb-sheet-t { margin: 2px 0 4px; font: 800 1.08rem/1.25 var(--font); }
-.sb-sec { margin: 12px 0; }
-.sb-sec h3 { margin: 0 0 4px; font: 800 .72rem/1.3 var(--font); text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
-.sb-sec p { margin: 0 0 4px; }
-.sb-sec blockquote { margin: 4px 0; padding: 6px 10px; border-left: 3px solid var(--gold); background: var(--page); }
-.sb-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
-.sb-chip { min-height: 44px; padding: 8px 14px; border: 1.5px solid var(--line); border-radius: var(--rs); background: var(--surf); color: var(--ink); cursor: pointer;
-  font: 600 .92rem/1.25 var(--font); text-align: left; text-decoration: none; display: inline-flex; align-items: center; }
+.sb-six { margin: var(--s2) 0; padding-left: var(--s4); }
+.sb-sheet-t { margin: var(--s1) 0; font: var(--t-screen); }
+.sb-sec { margin: var(--s3) 0; }
+.sb-sec h3 { margin: 0 0 var(--s1); font: var(--t-section); text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
+.sb-sec p { margin: 0 0 var(--s1); }
+.sb-sec blockquote { margin: var(--s1) 0; padding: var(--s2) var(--s3); border-left: 3px solid var(--gold); background: var(--page); font: var(--t-quote); }
+.sb-chips { display: flex; flex-wrap: wrap; gap: var(--s2); margin: var(--s2) 0; }
+.sb-chip { min-height: 44px; padding: var(--s2) var(--s3); border: 1.5px solid var(--line); border-radius: var(--rs); background: var(--surf); color: var(--ink); cursor: pointer;
+  font: var(--t-item); text-align: left; text-decoration: none; display: inline-flex; align-items: center; }
 .sb-chip.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
 .sb-chip.on::before { content: "● "; }
 /* Lettered choices (P-001-answer-choice-spacing): one full-width box each, stacked with room
    between; the letter in its own column, apart from its text, and wrapped lines under the text.
    The picked mark sits in a third column, so the text never moves when a choice is picked. */
-.sb-chips.sb-choices { flex-direction: column; flex-wrap: nowrap; gap: 12px; margin: 10px 0; }
+.sb-chips.sb-choices { flex-direction: column; flex-wrap: nowrap; gap: var(--s3); margin: var(--s3) 0; }
 .sb-choices .sb-chip { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; width: 100%;
-  padding: 12px 16px; line-height: 1.35; }
-.sb-choice-l { grid-column: 1; grid-row: 1; min-width: 1.1em; margin-right: 12px; font-weight: 800; }
+  padding: var(--s3) var(--s4); font: var(--t-body); }
+.sb-choice-l { grid-column: 1; grid-row: 1; min-width: 1.1em; margin-right: var(--s3); font: var(--t-item); }
 .sb-choice-t { grid-column: 2; grid-row: 1; min-width: 0; overflow-wrap: anywhere; }
-.sb-choices .sb-chip.on::before { content: "●"; grid-column: 3; grid-row: 1; margin-left: 10px; }
-.sb-rec { font-size: .9rem; }
-.sb-tag { display: inline-block; font: 800 .64rem/1.3 var(--font); text-transform: uppercase; letter-spacing: var(--track); border: 1px solid currentColor; border-radius: var(--rs); padding: 1px 5px; color: var(--muted); }
-.sb-box textarea { display: block; width: 100%; min-height: 8em; font: .88rem/1.4 var(--mono); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px;
+.sb-choices .sb-chip.on::before { content: "●"; grid-column: 3; grid-row: 1; margin-left: var(--s3); }
+.sb-rec { font: var(--t-body); }
+.sb-tag { display: inline-block; font: var(--t-section); text-transform: uppercase; letter-spacing: var(--track); border: 1px solid currentColor; border-radius: var(--rs); color: var(--muted);
+  padding: 1px 6px; /* AC62: a tag's inner padding, as drawn */ }
+/* AC63: every text box's text is at least 16 px, so the iPhone never zooms in on a tap; pinch-to-zoom is left alone. */
+.sb-box textarea { display: block; width: 100%; min-height: 8em; font: 400 16px/1.4 var(--mono); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2) var(--s3);
   background: var(--page); color: var(--ink); resize: vertical; }
-.sb-rule { margin: 6px 0 2px; font-size: .84rem; font-weight: 600; }
+.sb-rule { margin: var(--s2) 0 var(--s1); font: var(--t-meta); }
 .sb-rule.ok { color: var(--pass); } .sb-rule.ok::before { content: "✓ "; }
 .sb-rule.warn { color: var(--block); } .sb-rule.warn::before { content: "! "; }
-html.sb a.sb-go { display: flex; align-items: center; justify-content: center; min-height: 52px; margin: 8px 0; border-radius: var(--rs); text-decoration: none;
-  font: 800 1rem var(--font); background: var(--ink); color: var(--surf); }
-.sb-warn { color: var(--block); background: var(--blocks); border: 1px solid var(--block); border-radius: var(--r); padding: 8px; font-size: .86rem; }
-.sb-strong { font-weight: 700; }
-.sb-confirm { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; background: var(--page); margin: 10px 0; }
-.sb-tracker { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 4px; font-size: .86rem; }
-.sb-tracker li { display: flex; gap: 8px; align-items: flex-start; color: var(--muted); }
+html.sb a.sb-go { display: flex; align-items: center; justify-content: center; min-height: 52px; margin: var(--s2) 0; border-radius: var(--rs); text-decoration: none;
+  font: var(--t-item); background: var(--ink); color: var(--surf); }
+.sb-warn { color: var(--block); background: var(--blocks); border: 1px solid var(--block); border-radius: var(--r); padding: var(--s2); font: var(--t-meta); }
+.sb-strong { font: var(--t-item); }
+.sb-confirm { border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3); background: var(--page); margin: var(--s3) 0; }
+.sb-tracker { list-style: none; margin: var(--s2) 0; padding: 0; display: grid; gap: var(--s1); font: var(--t-meta); }
+.sb-tracker li { display: flex; gap: var(--s2); align-items: flex-start; color: var(--muted); }
 .sb-tracker li.done { color: var(--ink); }
-.sb-record { background: var(--page); border-radius: var(--r); padding: 10px; font-size: .88rem; }
-.sb-record pre, .sb-quote { white-space: pre-wrap; font: .78rem/1.4 var(--mono); background: var(--page); padding: 8px; border-radius: var(--rs); overflow-wrap: anywhere; }
+.sb-record { background: var(--page); border-radius: var(--r); padding: var(--s3); font: var(--t-quote); }
+.sb-record pre, .sb-quote { white-space: pre-wrap; font: var(--t-code); background: var(--page); padding: var(--s2); border-radius: var(--rs); overflow-wrap: anywhere; }
 
-/* Timeline (AC51): lighter — tinted tiles, a 1 px line, outline ticks, lighter titles. No time scale. */
-.sb-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 10px 0 4px; }
-.sb-strip-ph { display: grid; justify-items: center; gap: 2px; padding: 6px 2px; min-height: 64px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surf);
-  text-decoration: none; font-size: .72rem; }
-.sb-strip-ph.cur { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
-.sb-strip-ph:last-child { border-style: dashed; }
-.sb-strip-ph.doneph { border-style: solid; border-color: var(--gold); }
-.sb-strip-n { font-weight: 800; text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
-.sb-strip-i { font-weight: 700; }
-.sb-dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; max-width: 100%; }
-.sb-d { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--muted); }
-.sb-d.filled { background: var(--ink); border-color: var(--ink); }
-.sb-d.ringed { border: 2px solid var(--gold); }
-.sb-d.hatched { border-style: dashed; background: repeating-linear-gradient(45deg, var(--muted) 0 1px, transparent 1px 3px); }
-.sb-key { margin: 2px 0 10px; font-size: .74rem; color: var(--muted); }
-.sb-switch { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
-.sb-run { margin-top: 6px; }
-/* The line (AC51, notes 12 and 13): one thin line through the icon column, unbroken from the run's
-   first row to its last; each tile centred on it (the column is 40 px, the line at its centre). */
-.sb-tl { list-style: none; margin: 10px 0; padding: 0; position: relative; }
-.sb-tl::before { content: ""; position: absolute; left: 19.5px; width: 1px; top: 18px; bottom: 18px; background: var(--line); }
-.sb-tl-row { position: relative; display: grid; grid-template-columns: 40px 1fr 28px; align-items: center; gap: 0 8px; min-height: 44px; padding: 4px 0; }
-.sb-tl-tile { justify-self: center; width: 24px; height: 24px; display: grid; place-items: center; border-radius: var(--rs); border: 1px solid var(--line);
-  background: var(--agents); color: var(--agent); font-size: .72rem; position: relative; z-index: 1; }
-.sb-tl-row.who-you .sb-tl-tile { background: var(--yous); color: var(--you); border-color: var(--you); }
-.sb-tl-row.who-agent .sb-tl-tile { border-color: var(--agent); }
-.sb-tl-row.who-pass .sb-tl-tile { background: var(--passs); color: var(--pass); border-color: var(--pass); }
-.sb-tl-row.who-fail .sb-tl-tile { background: var(--fails); color: var(--fail); border-color: var(--fail); }
-.sb-tl-row.who-merge .sb-tl-tile { background: var(--merges); color: var(--merge); border-color: var(--merge); }
-.sb-tl-row.who-block .sb-tl-tile { background: var(--blocks); color: var(--block); border-color: var(--block); }
-.sb-tl-tx { display: grid; gap: 1px; }
-.sb-tl-tx b { font-weight: 600; font-size: .84rem; line-height: 1.25; }
-.sb-tl-tx small { color: var(--muted); font-size: .72rem; }
-.sb-tl-tx small a { text-decoration: underline; }
-/* Milestones: bold neutral headings on the line, a taller capsule tile (shape, size and weight; no colour of their own). */
-.sb-tl-row.ms { min-height: 56px; margin-top: 8px; }
-.sb-tl-tile.cap { width: 26px; height: 40px; border-radius: 13px; background: var(--surf); color: var(--ink); border: 2px solid var(--ink); }
-.sb-tl-row.ms.other .sb-tl-tile.cap { border-style: dashed; color: var(--muted); border-color: var(--muted); }
-.sb-tl-shape { font-size: .7rem; }
-.sb-tl-lbl { font: 800 .64rem/1.2 var(--font) !important; text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
-.sb-tl-h { margin: 0; font: 800 1.02rem/1.25 var(--font); color: var(--ink); }
-.sb-tl-msbtn { all: unset; cursor: pointer; display: block; min-height: 24px; font: inherit; color: inherit; }
-.sb-tl-msbtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.sb-tl-msbtn[aria-expanded="false"]::after { content: " ▾"; color: var(--muted); font-size: .75em; }
-.sb-tl-msbtn[aria-expanded="true"]::after { content: " ▴"; color: var(--muted); font-size: .75em; }
-.sb-tl-row.sprint .sb-tl-tile.sp { width: 12px; height: 12px; border-radius: 50%; background: var(--surf); color: transparent; border: 1.5px solid var(--muted); }
-.sb-tl-sp { margin: 0; font: 750 .8rem/1.25 var(--font); color: var(--muted); }
-.sb-tl-ck { justify-self: center; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font-size: .62rem; font-weight: 800; }
-.sb-tl-ck.none { border-color: transparent; }
-.sb-tl-ck.st-done { border-color: var(--pass); color: var(--pass); }
-.sb-tl-ck.st-failed { border-color: var(--fail); color: var(--fail); }
-.sb-tl-ck.st-you { border-color: var(--you); color: var(--you); box-shadow: 0 0 0 2px var(--yous); }
-.sb-tl-ck.st-now { border-color: var(--agent); border-style: dashed; }
-.sb-tl-row.st-plain .sb-tl-tx b { color: var(--muted); }
-.sb-tl-note { position: relative; display: grid; grid-template-columns: 40px 1fr; gap: 0 8px; min-height: 28px; align-items: center; }
-.sb-tl-nt { grid-column: 2; font-size: .76rem; color: var(--muted); }
-.sb-tl-note.day .sb-tl-nt { font-weight: 800; text-transform: uppercase; letter-spacing: var(--track); color: var(--ink); font-size: .68rem; }
-.sb-tl-note.iter .sb-tl-nt { color: var(--you); font-weight: 700; }
-.sb-tl-note.detail .sb-tl-nt { color: var(--ink); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 6px 10px; }
-.sb-note { color: var(--block); font-weight: 600; }
+/* AC59 and AC60: the Timeline, read from the bottom up. Each run is a block with its band, pinned while
+   its stretch scrolls by; the line runs down the left in the band's phase colour, as thin and light as
+   version 6 draws it (2 px at 45%), dashed and lighter (30%) where it is planned; each milestone a plain
+   neutral circle with its status icon, centred on the line; the gold Now line across. No clock times. */
+.sb-fkeys { display: grid; gap: var(--s1); }
+.sb-bkey { gap: var(--s2); }
+.sb-feed { display: grid; gap: 0; padding-left: 26px; /* AC62: the room for the line and its circles */ }
+.sb-goal { display: grid; gap: var(--s2); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3);
+  margin-left: -26px; /* AC62: the card spans the line's room */ }
+.sb-goal.finish { border-top: 3px solid var(--ink); }
+.sb-goal.start { border-bottom: 3px solid var(--ink); margin-top: var(--s3); }
+.sb-gq { font: var(--t-quote); }
+.sb-blk { position: relative; display: grid; }
+.sb-pband { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; background: var(--page);
+  margin-left: -26px; /* AC62: the band spans the line's room */ padding: var(--s2) 0 var(--s2) var(--s1); border-bottom: 2px solid var(--ph); color: var(--ph); }
+.sb-pband.plan { border-bottom-style: dashed; }
+.sb-pband-n { margin: 0; font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--ph); }
+.sb-pband-s { margin-left: auto; font: var(--t-meta); color: var(--muted); }
+.sb-seg { position: relative; display: grid; gap: var(--s5); padding: var(--s4) 0; }
+.sb-seg:empty { padding: 0; }
+.sb-seg::before { content: ""; position: absolute; left: -19px; /* AC62: the line, through each milestone's circle */ top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--ph); opacity: .45; }
+.sb-seg.plan::before { opacity: .3; background: repeating-linear-gradient(var(--ph) 0 6px, transparent 6px 11px); }
+.sb-mile { position: relative; display: grid; gap: var(--s1); min-width: 0; }
+.sb-mile > .sb-mdot { position: absolute; left: -28px; /* AC62: puts the circle on the line */ top: 1px; width: 20px; height: 20px; }
+.sb-mile.untied > .sb-mdot { left: -25px; /* AC62: puts the diamond on the line */ top: 4px; width: 13px; height: 13px; }
+.sb-mhead { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s2); align-items: baseline; }
+.sb-mtitle { font: var(--t-item); }
+.sb-mile.planned .sb-mtitle { color: var(--muted); }
+.sb-mst { font: var(--t-meta); color: var(--muted); }
+.sb-mst.now { color: var(--gold); }
+.sb-dw { font: var(--t-body); }
+.sb-wl { font: var(--t-body); }
+.sb-wl.gap { font: var(--t-meta); }
+.sb-nowline { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s2); border-top: 2px solid var(--gold);
+  margin: var(--s2) 0 0 -26px; /* AC62: the line spans the line's room */ padding: var(--s2) 0 var(--s2) 26px; /* AC62: its words sit beside the line */ }
+.sb-now-t { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--gold); }
+.sb-now-s { font: var(--t-meta); color: var(--muted); }
+.sb-gather { font: var(--t-meta); color: var(--muted); }
+.sb-glist { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s1); font: var(--t-meta); }
+.sb-tasks { display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surf); }
+.sb-task { display: grid; gap: var(--s2); padding: var(--s3); }
+.sb-task + .sb-task { border-top: 1px solid var(--line); }
+.sb-ehead { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: baseline; }
+.sb-date { font: var(--t-meta); color: var(--muted); }
+.sb-marks { display: flex; flex-wrap: wrap; gap: var(--s2); margin-left: auto; justify-content: flex-end; }
+.sb-mkw { font: var(--t-meta); }
+.sb-mkw.sb-why { z-index: auto; }
+.sb-etitle { font: var(--t-item); }
+.sb-bul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.sb-bul li { display: grid; gap: var(--s1); padding-left: var(--s2); border-left: 3px solid var(--bc); }
+.b-tech { --bc: var(--b-tech); } .b-ctx { --bc: var(--b-ctx); } .b-why { --bc: var(--b-why); }
+.sb-k { justify-self: start; font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--bc); border: 1px solid var(--bc); border-radius: 3px;
+  padding: 1px 6px; /* AC62: a label chip's inner padding, as drawn */ }
+.sb-v { display: grid; gap: var(--s1); }
+.sb-v.code { display: block; }
+.sb-fact { display: block; font: var(--t-body); }
+.sb-para { display: block; }
+.sb-tlink-p { margin: 0; }
+.sb-feednote { margin: var(--s2) 0 0; }
 
-/* Team (AC49) */
-.sb-you { display: block; text-decoration: none; background: var(--surf); border: 1px solid var(--line); border-left: 4px solid var(--you); border-radius: var(--r); padding: 12px 14px; margin: 12px 0; }
-.sb-you-st { margin: 4px 0; font-weight: 750; }
+/* Team (AC49, as AC67 changed its cards): each member's state in a plain circle with its word, no light and no glow. */
+.sb-you { display: block; background: var(--surf); border: 1px solid var(--line); border-left: 4px solid var(--you); border-radius: var(--r); padding: var(--s3); margin: var(--s3) 0; }
+.sb-you-a { display: block; text-decoration: none; min-height: 44px; }
+.sb-you-st { margin: var(--s1) 0; font: var(--t-item); display: flex; align-items: center; gap: var(--s2); }
 .sb-you-st.you { color: var(--you); }
-.sb-you-st.you::before { content: "◆ "; }
-.sb-next { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
-.sb-next li { display: grid; grid-template-columns: 52px 1fr; gap: 8px; align-items: start; font-size: .88rem; border-top: 1px solid var(--line); padding-top: 6px; }
-.sb-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.sb-tile { display: grid; gap: 2px; align-content: start; text-decoration: none; background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 10px; min-height: 92px; }
-.sb-tile.lit { border-color: var(--agent); }
-.sb-tile-st { font-size: .8rem; font-weight: 700; }
+.sb-next { list-style: none; margin: var(--s2) 0 0; padding: 0; display: grid; gap: var(--s2); }
+.sb-next li { display: grid; grid-template-columns: 52px 1fr; gap: var(--s2); align-items: start; font: var(--t-body); border-top: 1px solid var(--line); padding-top: var(--s2); }
+.sb-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+.sb-tile { display: grid; gap: var(--s1); align-content: start; background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3) var(--s2); min-height: 92px; }
+.sb-tile-n { display: flex; gap: var(--s2); align-items: center; min-height: 44px; text-decoration: none; font: var(--t-item); }
+.sb-tile-n strong { font: var(--t-item); }
+.sb-tile-st { font: var(--t-meta); }
+.sb-feeds { font: var(--t-meta); }
+.sb-feeds b { font: var(--t-meta); }
 .sb-resp { display: grid; gap: 0; }
-.sb-resp .sb-card { margin: 6px 0; padding: 4px 12px; }
+.sb-resp .sb-card { margin: var(--s2) 0; padding: var(--s1) var(--s3); }
 .sb-latest { flex-basis: 100%; }
-.sb-upnext { background: var(--surf); border: 1px dashed var(--line); border-radius: var(--r); padding: 8px 12px; margin: 6px 0; }
-.sb-upnext ul { margin: 4px 0 0; padding-left: 18px; font-size: .86rem; }
-.sb-branch { display: flex; align-items: flex-start; gap: 6px; background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 0 10px 0 4px; }
+.sb-upnext { background: var(--surf); border: 1px dashed var(--line); border-radius: var(--r); padding: var(--s2) var(--s3); margin: var(--s2) 0; }
+.sb-upnext ul { margin: var(--s1) 0 0; padding-left: var(--s4); font: var(--t-body); }
+.sb-branch { display: flex; align-items: flex-start; gap: var(--s2); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 0 var(--s3) 0 var(--s1); }
 .sb-brows { list-style: none; margin: 0; padding: 0; flex: 1 1 auto; }
 .sb-brow { min-height: 44px; display: flex; align-items: center; }
-.sb-brow a { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; padding: 4px 0; text-decoration: none; font-size: .82rem; line-height: 1.3; flex: 1; min-height: 44px; align-content: center; }
+.sb-brow a { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s2); padding: var(--s1) 0; text-decoration: none; font: var(--t-meta); flex: 1; min-height: 44px; align-content: center; }
 .sb-brow.now .sb-brow-t { font-weight: 750; }
-.sb-brow-lane { font: 700 .66rem/1.3 var(--mono); color: var(--muted); }
-/* The drawing (AC49): one SVG behind the rows; straight vertical lines, a curve out and back, shades per lane. */
+.sb-brow-lane { font: var(--t-code); color: var(--muted); }
+.sb-nowtag { font: var(--t-section); letter-spacing: var(--track); color: var(--gold); border: 1px solid var(--gold); border-radius: var(--rs);
+  padding: 1px 6px; /* AC62: a tag's inner padding */ }
+/* The running log's drawing (AC49): one SVG behind the rows; straight vertical lines, a curve out and back, shades per lane. */
 .sb-lanes { flex: none; display: block; overflow: visible; }
 .sb-lanes .main { stroke: var(--muted); stroke-width: 1.6; fill: none; }
 .sb-lanes .lane { stroke-width: 2; fill: none; }
@@ -410,71 +568,64 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 .sb-lanes.fam-you .dot.shade-2 { fill: var(--you2); } .sb-lanes.fam-you .dot.shade-3 { fill: var(--you3); }
 .sb-lanes .ring { fill: none; stroke: var(--agent); stroke-width: 2; }
 .sb-brow-lane.shade-0, .sb-brow-lane.shade-1, .sb-brow-lane.shade-2, .sb-brow-lane.shade-3 { color: var(--ink); }
-.sb-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
-.sb-kpi { display: grid; gap: 2px; border: 1px solid var(--line); border-radius: var(--r); padding: 8px 10px; background: var(--page); }
-.sb-kpi strong { font-size: 1.05rem; }
-.sb-kv { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 4px; font-size: .9rem; }
+.sb-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); margin: var(--s2) 0; }
+.sb-kpi { display: grid; gap: var(--s1); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2) var(--s3); background: var(--page); }
+.sb-kpi strong { font: var(--t-item); }
+.sb-kv { list-style: none; margin: var(--s2) 0; padding: 0; display: grid; gap: var(--s1); font: var(--t-body); }
 
 @media (forced-colors: active) {
-  .sb-light.lit, .circ.tick circle { forced-color-adjust: none; }
+  .circ.tick circle, .sb-mk, .sb-ic { forced-color-adjust: none; }
 }
 
 .sb-info > summary { justify-content: flex-start; }
 .sb-info .ic { width: 18px; height: 18px; }
 
-/* Home's condensed cards (AC54 (c)): two columns at 360 px, so the phase rows stack their words. */
-.sb-pc .sb-ck-hd { flex-direction: column; gap: 2px; }
-.sb-pc .sb-ck li { display: grid; grid-template-columns: 16px 1fr; gap: 0 6px; font-size: .74rem; }
-.sb-pc .sb-ck li em { grid-column: 2; margin-left: 0; font-size: .6rem; }
-.sb-pc .sb-ball { font-size: .76rem; }
+/* Home's condensed cards (AC54 (c)): two columns at 360 px. */
 .sb-pc .sb-ball li { align-items: flex-start; }
-.sb-pc .sb-ball .sb-light { margin-top: 4px; }
-.sb-pc .sb-muted { font-size: .74rem; }
-.sb-pc .sb-pill { font-size: .8rem; }
+.sb-pc .sb-muted { font: var(--t-meta); }
 
 /* Status: "Your last action" just above the waiting bar (AC55). */
-.sb-last { border-left: 3px solid var(--you); background: var(--surf); border-radius: var(--rs); padding: 6px 10px; margin: 4px 0 2px; }
-.sb-last-t { margin: 0; font-size: .9rem; }
+.sb-last { border-left: 3px solid var(--you); background: var(--surf); border-radius: var(--rs); padding: var(--s2) var(--s3); margin: 0; }
+.sb-last-t { margin: 0; font: var(--t-quote); }
 /* A ruling's line 1 (AC55, AC52; 2026-10-16): at most three lines in its box, the rest hidden, never
    scrolled, no ellipsis; past three lines the third fades at its end into the row's background
    (--surf, in each theme) and the box is a button opening the whole line in a bubble. A shorter line
-   takes its own height. The time and code follow the box, outside it. */
+   takes its own height. The time and code follow the box, outside it. Its role is the quoted record's
+   (AC62): .9rem at 1.45, three lines 4.35em. */
 .sb-linebox { position: relative; }
-.sb-lineclip { position: relative; line-height: 1.4; max-height: 4.2em; overflow: hidden; overflow: clip; }
-.sb-lineclip.over { height: 4.2em; } /* the button is exactly the three lines it shows */
-.sb-lineclip.over::after { content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1.4em; pointer-events: none;
+.sb-lineclip { position: relative; font: var(--t-quote); max-height: 4.35em; overflow: hidden; overflow: clip; }
+.sb-lineclip.over { height: 4.35em; } /* the button is exactly the three lines it shows */
+.sb-lineclip.over::after { content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1.45em; pointer-events: none;
   background: linear-gradient(to right, transparent, var(--surf) 85%); }
 .sb-lineclip:has(.sb-line:focus-visible) { outline: 2px solid var(--focus); outline-offset: 1px; }
-button.sb-line { display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: none; font: inherit; line-height: inherit;
+button.sb-line { display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: none; font: var(--t-quote);
   text-align: left; color: var(--ink); cursor: pointer; }
 button.sb-line:focus-visible { outline: none; }
 .sb-linebox > .sb-bubble { top: calc(100% + 4px); left: -4px; right: -4px; }
 .sb-linebox > .sb-bubble.up { top: auto; bottom: calc(100% + 4px); }
 .sb-linebox + .sb-line-m { display: block; } /* clipped: the mark, time and code start their own line */
-.sb-bubble-note { position: sticky; bottom: -12px; margin: 8px -12px -12px; padding: 6px 12px 8px; background: var(--surf); border-top: 1px solid var(--line);
-  font-size: .82rem; font-weight: 700; }
+.sb-bubble-note { position: sticky; bottom: -12px; margin: var(--s2) -12px -12px; /* AC62: the notice spans the bubble's padding */ padding: var(--s2) var(--s3); background: var(--surf); border-top: 1px solid var(--line);
+  font: var(--t-meta); }
 /* The project screens' bottom bar is fixed at the foot of the screen: every bubble on them keeps clear of it. */
 .sb-screen:has(> .sb-dock) { --sb-clear: var(--sb-dock-h); }
-.sb-last-l { font-weight: 800; color: var(--you); }
-.sb-last .sb-why { font-size: .74rem; }
+.sb-last-l { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--you); }
+.sb-last .sb-why { font: var(--t-meta); }
 .sb-last a.code { text-decoration: underline; }
 
-/* The rebuilt detail views (AC55): Pipeline, Time asked and Agents, in the shared look. */
-.sb-items, .sb-asks, .sb-sessions, .sb-tlx { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.sb-item { background: var(--surf); border: 1px solid var(--line); border-left: 4px solid var(--agent); border-radius: var(--r); padding: 8px 12px; }
-.sb-item p { margin: 2px 0; }
-.sb-item-l { display: flex; gap: 8px; align-items: center; font-size: .9rem; }
-.sb-item-l.you { color: var(--you); font-weight: 700; }
-.sb-item-l.you::before { content: "◆"; font-size: .7rem; }
-.sb-wait-b { display: grid; gap: 2px; padding: 8px 10px; }
-.sb-ask { display: grid; gap: 2px; background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 8px 12px; }
+/* The rebuilt detail views (AC55): Time asked, Agents, the v2.5 reduced view, and the record notes (AC68), in the shared look. */
+.sb-items, .sb-asks, .sb-sessions, .sb-tlx { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.sb-item { background: var(--surf); border: 1px solid var(--line); border-left: 4px solid var(--agent); border-radius: var(--r); padding: var(--s2) var(--s3); }
+.sb-item p { margin: var(--s1) 0; }
+.sb-item-l { display: flex; gap: var(--s2); align-items: center; font: var(--t-body); }
+.sb-wait-b { display: grid; gap: var(--s1); padding: var(--s2) var(--s3); }
+.sb-ask { display: grid; gap: var(--s1); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2) var(--s3); }
 .sb-ask.open { border-left: 4px solid var(--you); }
-.sb-sess { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 4px 12px; }
-.sb-sess > details > summary { cursor: pointer; min-height: 44px; display: grid; gap: 2px; align-content: center; }
-.sb-sess-h { display: flex; gap: 8px; align-items: center; }
-.sb-usage { margin: 4px 0 8px; padding-left: 16px; }
-.sb-tlx-ev { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
-.sb-tlx-e { display: grid; gap: 2px; }
+.sb-sess { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s1) var(--s3); }
+.sb-sess > details > summary { cursor: pointer; min-height: 44px; display: grid; gap: var(--s1); align-content: center; }
+.sb-sess-h { display: flex; gap: var(--s2); align-items: center; }
+.sb-usage { margin: var(--s1) 0 var(--s2); padding-left: var(--s3); }
+.sb-tlx-ev { list-style: none; margin: var(--s2) 0 0; padding: 0; display: grid; gap: var(--s2); }
+.sb-tlx-e { display: grid; gap: var(--s1); }
 .sb-axis { display: block; width: 100%; height: 8px; }
 .sb-axis .track { fill: var(--line); }
 .sb-axis .bar { fill: var(--agent); }
@@ -482,16 +633,17 @@ button.sb-line:focus-visible { outline: none; }
 .sb-axis .bar.open { opacity: .6; }
 
 /* "Done today" (AC52, note 10): what was ruled, in words, then its code. */
-.sb-done-r { padding: 6px 0; border-top: 1px solid var(--line); font-size: .9rem; }
+.sb-done-r { padding: var(--s2) 0; border-top: 1px solid var(--line); font: var(--t-quote); }
 .sb-done-r:first-child { border-top: 0; }
 .sb-done-r a.code { text-decoration: underline; }
 
 /* The answer boxes (AC53, note 15): each question on its own, then its own answer box. */
-.sb-answers { display: grid; gap: 4px; }
-.sb-q { border: 1px solid var(--line); border-left: 4px solid var(--you); border-radius: var(--r); padding: 8px 12px; background: var(--page); }
-.sb-q-t { font-weight: 650; }
-.sb-words-l { display: grid; gap: 2px; margin-top: 6px; }
-.sb-words { display: block; width: 100%; min-height: 3.2em; font: .9rem/1.4 var(--font); border: 1px solid var(--line); border-radius: var(--rs); padding: 8px 10px;
+.sb-answers { display: grid; gap: var(--s1); }
+.sb-q { border: 1px solid var(--line); border-left: 4px solid var(--you); border-radius: var(--r); padding: var(--s2) var(--s3); background: var(--page); }
+.sb-q-t { font: var(--t-item); }
+.sb-words-l { display: grid; gap: var(--s1); margin-top: var(--s2); }
+/* AC63: the per-question words box, at least 16 px. */
+.sb-words { display: block; width: 100%; min-height: 3.2em; font: 400 16px/1.4 var(--font); border: 1px solid var(--line); border-radius: var(--rs); padding: var(--s2) var(--s3);
   background: var(--surf); color: var(--ink); resize: vertical; }
-.sb-final { border-top: 1px solid var(--line); padding-top: 8px; }
-.sb-btn.small { min-height: 44px; font-size: .82rem; margin: 6px 0; }
+.sb-final { border-top: 1px solid var(--line); padding-top: var(--s2); }
+.sb-btn.small { min-height: 44px; font: var(--t-meta); margin: var(--s2) 0; }

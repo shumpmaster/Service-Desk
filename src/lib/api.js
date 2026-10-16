@@ -4,7 +4,7 @@
 // are ever sent, so no other origin can read a response.
 
 import { checkAccess } from './access.js';
-import { pollProject, readBlobs, BLOB_BATCH, SHA_RE, HISTORY_PATH_RE } from './github.js';
+import { pollProject, readBlobs, BLOB_BATCH, SHA_RE, HISTORY_PATH_RE, PULLS_COST, PULLS_CURSOR_RE } from './github.js';
 import CONFIG from './config.js';
 
 // J6: the branch, up to 3 PR pages and up to 3 pages for each of J1's 3a and 3b: at most 10
@@ -59,9 +59,18 @@ function validateBlobs(body, config) {
   if (compare.some((c) => !c || typeof c !== 'object' || Array.isArray(c) || typeof c.base !== 'string'
     || typeof c.head !== 'string' || !SHA_RE.test(c.base) || !SHA_RE.test(c.head))) return { error: 'bad compare' };
   const pairs = [...new Map(compare.map((c) => [`${c.base}...${c.head}`, { base: c.base, head: c.head }])).values()];
-  const budget = new Set(blobs).size + 2 * new Set(history).size + pairs.length;
+  // J12 (2026-10-16): the optional `pulls` field, { after: null | "<cursor>" }; a v3 project's only.
+  let pulls = null;
+  if (body.pulls != null) {
+    const pl = body.pulls;
+    if (typeof pl !== 'object' || Array.isArray(pl) || Object.keys(pl).some((k) => k !== 'after')) return { error: 'bad pulls' };
+    if (pl.after != null && (typeof pl.after !== 'string' || !PULLS_CURSOR_RE.test(pl.after))) return { error: 'bad pulls cursor' };
+    if (project.model !== 'v3') return { error: 'pulls are read for v3 projects only' };
+    pulls = { after: pl.after == null ? null : pl.after };
+  }
+  const budget = new Set(blobs).size + 2 * new Set(history).size + pairs.length + (pulls ? PULLS_COST : 0);
   if (budget > BLOB_BATCH) return { error: `budget ${budget} is over ${BLOB_BATCH}` };
-  return { req: { project, blobs: [...new Set(blobs)], history: [...new Set(history)], compare: pairs } };
+  return { req: { project, blobs: [...new Set(blobs)], history: [...new Set(history)], compare: pairs, ...(pulls ? { pulls } : {}) } };
 }
 
 /**

@@ -1,0 +1,187 @@
+<title>Phase Branch Mockup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one phone-width column; each phase list has a thin branch rail on the left (one lane per run) and the phase rows beside it. */
+:root {
+  --page: #eef0f2; --surf: #ffffff; --surf2: #e4e7ea; --ink: #0b0d10; --muted: #4b525b; --line: #c9cdd3;
+  --pass: #0f7a3a; --gold: #8a6a10; --golds: #f4ecd2; --idle: #b7bdc5; --note: #fbe4dc; --you: #d23c0f;
+  --run1: #4b525b; --run2: #8a6a10; --run3: #1d5bd6; --passl: #9fd0b0;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0c0d0f; --surf: #16181c; --surf2: #101215; --ink: #f1f3f5; --muted: #a3a9b2; --line: #363b43;
+  --pass: #3fb950; --gold: #d4ae4f; --golds: #2c2410; --idle: #4a5059; --note: #3d1b10; --you: #ff6a3d;
+  --run1: #a3a9b2; --run2: #d4ae4f; --run3: #6ea0ff; --passl: #24603a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --page: #0c0d0f; --surf: #16181c; --surf2: #101215; --ink: #f1f3f5; --muted: #a3a9b2; --line: #363b43;
+  --pass: #3fb950; --gold: #d4ae4f; --golds: #2c2410; --idle: #4a5059; --note: #3d1b10; --you: #ff6a3d;
+  --run1: #a3a9b2; --run2: #d4ae4f; --run3: #6ea0ff; --passl: #24603a; color-scheme: dark }
+body { background: var(--page); color: var(--ink); font: 16px/1.45 var(--font); }
+.wrap { max-width: 440px; margin: 0 auto; padding-block: 20px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 22px; }
+.marker { justify-self: start; border: 1px dashed var(--muted); border-radius: var(--r); padding: 4px 10px;
+  font: 700 .8rem/1.3 var(--font); color: var(--muted); }
+h1 { margin: 0; font-size: 1.5rem; line-height: 1.2; text-wrap: balance; }
+h2 { margin: 0; font: 800 .78rem/1.3 var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+p { margin: 0; }
+.lead { color: var(--muted); max-width: 62ch; }
+.card { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 12px; }
+.note { background: var(--note); border-radius: var(--r); padding: 10px 12px; font-size: .9rem; }
+.made { font: 700 .72rem/1.3 var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--you); }
+
+/* the phase list with its branch rail */
+.plist { position: relative; display: grid; gap: 8px; }
+.plist svg.rail { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.prow { display: grid; grid-template-columns: var(--railw) minmax(0, 1fr); align-items: start; }
+.pbody { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; display: grid; gap: 6px; min-width: 0; }
+.prow.now .pbody { border-color: var(--gold); box-shadow: inset 3px 0 0 var(--gold); }
+.prow.end .pbody { border-style: dashed; }
+.pname { font-weight: 800; font-size: 1.05rem; }
+.run { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 8px; align-items: baseline; }
+.run + .run { border-top: 1px solid var(--line); padding-top: 6px; }
+.rtag { font: 700 .72rem/1.4 var(--font); letter-spacing: .05em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+.r1 .rtag { color: var(--run1); border: 1px solid var(--run1); }
+.r2 .rtag { color: var(--run2); border: 1px solid var(--run2); }
+.r3 .rtag { color: var(--run3); border: 1px solid var(--run3); }
+.rstate { font: 700 .78rem/1.4 var(--font); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.rstate.now { color: var(--gold); }
+.ms { grid-column: 2; font-size: .86rem; color: var(--muted); }
+.ms b { color: var(--ink); font-weight: 600; }
+.code { font-family: var(--mono); font-size: .76em; color: var(--muted); }
+.run.old { font-size: .82em; opacity: .78; }
+.run.old .rtag { font-size: .64rem; }
+.run.old .rstate { font-size: .7rem; }
+.run.old .ms { font-size: .78rem; }
+.run.old .ms b { font-weight: 500; color: var(--muted); }
+
+.key { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .82rem; color: var(--muted); }
+.key span { display: inline-flex; align-items: center; gap: 6px; }
+.key i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; }
+.k-done { background: var(--pass); }
+.k-past { background: var(--passl); }
+.k-now { border: 2.5px solid var(--gold); box-sizing: border-box; }
+.k-todo { border: 2px solid var(--idle); box-sizing: border-box; }
+
+/* Home tile: the same idea, compact */
+.tile { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; display: grid; gap: 8px; max-width: 200px; }
+.tile .tname { font-weight: 800; }
+.tile .plist { gap: 2px; }
+.tile .pbody { border: 0; padding: 3px 0 3px 2px; background: none; box-shadow: none; gap: 0; }
+.tile .pname { font-size: .86rem; font-weight: 600; }
+.tile .rstate { font-size: .66rem; }
+.tile .prow.now .pname { color: var(--gold); font-weight: 800; }
+ul.qs { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+@media (prefers-reduced-motion: no-preference) { .pulse { animation: p 2.4s ease-in-out infinite; } @keyframes p { 50% { opacity: .45 } } }
+</style>
+
+<div class="wrap">
+  <span class="marker">Mockup for your notes · version 2 · not built yet</span>
+  <h1>Phases that run again branch to the right</h1>
+  <p class="lead">Your note: when the project goes back to an earlier phase, the new run starts a second column of dots beside it, so the list still reads top to bottom and shows where the work branched. Below is Service-Desk as its records stand today, then a made-up project with three runs, then the same idea on a Home tile.</p>
+
+  <section class="card">
+    <h2>Service-Desk · the four phases, in order</h2>
+    <div class="key"><span><i class="k-done"></i>finished</span><span><i class="k-past"></i>finished, then gone back over</span><span><i class="k-now"></i>now</span><span><i class="k-todo"></i>still to come</span><span>the curve marks where run 2 branched</span></div>
+    <div class="plist" id="sd"></div>
+    <p class="note">Run 1 reads down the left: Discovery, Design, Build. After Build, the work went back to Design for the new look, so run 2 branches out to the right at Design and carries on down: Design now, then Build again, Launch and Done. Nothing says Build is done for good.</p>
+  </section>
+
+  <section class="card">
+    <span class="made">Made-up example: not a real project</span>
+    <h2>A project with three runs</h2>
+    <div class="plist" id="three"></div>
+    <p class="note">Run 2 went back to Design after Build; run 3 went back again, this time only to Build, after a failed check at the Launch gate. Each run gets its own column.</p>
+  </section>
+
+  <section class="card">
+    <h2>The same on a Home tile</h2>
+    <div class="tile">
+      <div class="tname">Service-Desk</div>
+      <div class="plist" id="tile"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>From your answers</h2>
+    <ul class="qs">
+      <li>One column of dots per run, branching right: as you pictured it.</li>
+      <li>Every phase box lists all its runs. Earlier runs are in smaller, quieter text; the latest run reads at full size.</li>
+      <li>A phase that finished but was then gone back over has a lighter dot than one that finished and stands, and says so in words.</li>
+      <li>The Timeline screen will use the same branch drawing.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const PHASES = ['Discovery', 'Design', 'Build', 'Launch', 'Done'];
+// runs: each has a lane, the phase index it starts at, and its phases' states and milestones (from the records)
+const SD = { runs: [
+  { lane: 0, from: 0, steps: [
+    { p: 0, s: 'done', label: 'Discovery i1', st: 'Finished' },
+    { p: 1, s: 'past', label: 'Design i1', st: 'Finished, then gone back over' },
+    { p: 2, s: 'past', label: 'Build i1', st: 'Finished, then gone back over', ms: [['Every project’s status visible on the phone', 'M1'], ['Cards answered straight from the desk', 'M2'], ['Agent usage shown on the desk', 'M2B']] } ] },
+  { lane: 1, from: 1, steps: [
+    { p: 1, s: 'now', label: 'Design i2', st: 'Now', ms: [['What a good desk looks like is known', 'MD1', 'work filed'], ['The desk’s look and screens chosen', 'MD2', 'no work filed yet'], ['The chosen design running on the real back end', 'MD3', 'no work filed yet']] },
+    { p: 2, s: 'todo', label: 'Build i2', st: 'Still to come', ms: [['Work ahead planned and scheduled from the desk', 'M3A'], ['The desk’s value targets shown', 'M3B']] },
+    { p: 3, s: 'todo', label: 'Launch', st: 'Not started', ms: [['The desk live at the needs-you address', 'M3C']] },
+    { p: 4, s: 'todo', label: 'Done', st: 'After the Launch gate' } ] } ] };
+const THREE = { runs: [
+  { lane: 0, from: 0, steps: [{ p: 0, s: 'done', label: 'Discovery i1', st: 'Finished' }, { p: 1, s: 'past', label: 'Design i1', st: 'Finished, then gone back over' }, { p: 2, s: 'past', label: 'Build i1', st: 'Finished, then gone back over' }] },
+  { lane: 1, from: 1, steps: [{ p: 1, s: 'done', label: 'Design i2', st: 'Finished' }, { p: 2, s: 'past', label: 'Build i2', st: 'Finished, then gone back over' }, { p: 3, s: 'past', label: 'Launch i1', st: 'Gate failed, then gone back over' }] },
+  { lane: 2, from: 2, steps: [{ p: 2, s: 'now', label: 'Build i3', st: 'Now' }, { p: 3, s: 'todo', label: 'Launch i2', st: 'Still to come' }, { p: 4, s: 'todo', label: 'Done', st: 'After the Launch gate' }] } ] };
+const NS = 'http://www.w3.org/2000/svg';
+const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
+
+function draw(id, data, compact) {
+  const host = document.getElementById(id);
+  const lanes = data.runs.length, gap = compact ? 13 : 20, railw = 10 + lanes * gap;
+  host.style.setProperty('--railw', railw + 'px');
+  const rows = PHASES.map((name, i) => {
+    const row = el('div', 'prow'); const rail = el('div'); const body = el('div', 'pbody');
+    body.append(el('div', 'pname', name));
+    const steps = data.runs.flatMap((r, ri) => r.steps.filter((s) => s.p === i).map((s) => ({ ...s, ri })));
+    if (steps.some((s) => s.s === 'now')) row.classList.add('now');
+    if (i === 4) row.classList.add('end');
+    if (!compact) for (const s of steps) {
+      const run = el('div', `run r${s.ri + 1}` + (s !== steps[steps.length - 1] ? ' old' : ''));
+      run.append(el('span', 'rtag', `Run ${s.ri + 1}`), el('span', 'rstate' + (s.s === 'now' ? ' now' : ''), `${s.label} · ${s.st}`));
+      for (const m of s.ms || []) { const d = el('div', 'ms'); const b = el('b', null, m[0]); d.append(b, ' ', el('span', 'code', m[1])); if (m[2]) d.append(` · ${m[2]}`); run.append(d); }
+      body.append(run);
+    } else if (steps.length) {
+      const last = steps[steps.length - 1];
+      body.append(el('span', 'rstate' + (last.s === 'now' ? ' now' : ''), steps.length > 1 ? `${last.st} · run ${last.ri + 1}` : last.st));
+    }
+    row.append(rail, body); host.append(row); return row;
+  });
+  const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('class', 'rail'); host.prepend(svg);
+  const layout = () => {
+    const hb = host.getBoundingClientRect(); svg.setAttribute('width', railw); svg.setAttribute('height', hb.height);
+    svg.replaceChildren();
+    const y = rows.map((r) => { const b = r.querySelector('.pname').getBoundingClientRect(); return b.top - hb.top + b.height / 2; });
+    const x = (lane) => 8 + lane * gap;
+    const col = (ri) => `var(--run${ri + 1})`;
+    const add = (tag, attrs) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); svg.append(n); return n; };
+    data.runs.forEach((run, ri) => {
+      const pts = run.steps.map((s) => [x(run.lane), y[s.p]]);
+      for (let k = 1; k < pts.length; k++) add('line', { x1: pts[k - 1][0], y1: pts[k - 1][1], x2: pts[k][0], y2: pts[k][1], style: `stroke:${col(ri)}`, 'stroke-width': 2, 'stroke-dasharray': run.steps[k].s === 'todo' ? '3 4' : '' });
+      if (ri > 0) { // the branch: from the previous run's last step, up and out to this run's first step
+        const prev = data.runs[ri - 1], p = prev.steps[prev.steps.length - 1];
+        const x0 = x(prev.lane), y0 = y[p.p], x1 = x(run.lane), y1 = y[run.steps[0].p];
+        add('path', { d: `M${x0},${y0} C${x0 + gap * .9},${y0} ${x1},${y0 - (y0 - y1) * .25} ${x1},${y1}`, fill: 'none', style: `stroke:${col(ri)}`, 'stroke-width': 2 });
+      }
+      run.steps.forEach((s, k) => {
+        const [cx, cy] = pts[k], r = compact ? 4.5 : 6;
+        if (s.s === 'done') add('circle', { cx, cy, r, style: 'fill:var(--pass)' });
+        else if (s.s === 'past') add('circle', { cx, cy, r, style: 'fill:var(--passl);stroke:var(--pass)', 'stroke-width': 1.5 });
+        else if (s.s === 'now') { add('circle', { cx, cy, r: r + 3, style: 'fill:none;stroke:var(--gold)', 'stroke-width': 1.5, class: 'pulse' }); add('circle', { cx, cy, r, style: 'fill:var(--surf);stroke:var(--gold)', 'stroke-width': 2.5 }); }
+        else add('circle', { cx, cy, r, style: 'fill:var(--surf);stroke:var(--idle)', 'stroke-width': 2 });
+      });
+    });
+  };
+  layout(); addEventListener('resize', layout);
+}
+draw('sd', SD); draw('three', THREE); draw('tile', SD, true);
+</script>

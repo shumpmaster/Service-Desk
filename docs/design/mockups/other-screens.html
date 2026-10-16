@@ -1,0 +1,247 @@
+<title>Other Screens Mockup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one phone-width column; each pick drawn as a phone screen frame, using the tokens of the approved Status and Timeline mockup. */
+:root {
+  --page: #eef0f2; --surf: #ffffff; --ink: #0b0d10; --muted: #4b525b; --faint: #6b727b; --soft: #9aa1a9; --line: #d6d9de; --tie: #c3c8cf;
+  --pass: #0f7a3a; --passl: #a9d8b9; --gold: #8a6a10; --golds: #f4ecd2; --idle: #b7bdc5; --fail: #b8141d;
+  --note: #fbe4dc; --you: #d23c0f; --quote: #f4f5f7; --run1: #4b525b; --run2: #8a6a10;
+  /* one colour per phase, used on both screens */
+  --ph-disc: #6d45c8; --ph-des: #1d5bd6; --ph-build: #0b7a84; --ph-launch: #b0306a;
+  /* one colour per Timeline bullet */
+  --b-tech: #3e4a59; --b-tech-bg: #e2e7ee; --b-ctx: #7d5200; --b-ctx-bg: #f6ead0; --b-why: #b3330b; --b-why-bg: #fbe1d8;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* one spacing scale: 4, 8, 12, 20, 32 */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 20px; --s5: 32px;
+  /* one type scale, each role looking different */
+  --t-screen: 800 1.45rem/1.2 var(--font);
+  --t-section: 800 .74rem/1.3 var(--font);
+  --t-item: 700 1rem/1.3 var(--font);
+  --t-body: 400 .94rem/1.5 var(--font);
+  --t-meta: 600 .78rem/1.35 var(--font);
+  --t-quote: 400 .9rem/1.45 var(--font);
+  --t-code: 500 .74rem/1.3 var(--mono);
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0c0d0f; --surf: #16181c; --ink: #f1f3f5; --muted: #a3a9b2; --faint: #8b929b; --soft: #626973; --line: #30353c; --tie: #3d434b;
+  --pass: #3fb950; --passl: #275f3a; --gold: #d4ae4f; --golds: #2c2410; --idle: #4a5059; --fail: #ff6b6b;
+  --note: #3d1b10; --you: #ff6a3d; --quote: #1d2025; --run1: #a3a9b2; --run2: #d4ae4f;
+  --ph-disc: #a98bff; --ph-des: #6ea0ff; --ph-build: #3cc3cc; --ph-launch: #ff7ab8;
+  --b-tech: #c3cbd6; --b-tech-bg: #262c34; --b-ctx: #e8c06a; --b-ctx-bg: #2e2410; --b-why: #ff8a63; --b-why-bg: #3a1a10; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --page: #0c0d0f; --surf: #16181c; --ink: #f1f3f5; --muted: #a3a9b2; --faint: #8b929b; --soft: #626973; --line: #30353c; --tie: #3d434b;
+  --pass: #3fb950; --passl: #275f3a; --gold: #d4ae4f; --golds: #2c2410; --idle: #4a5059; --fail: #ff6b6b;
+  --note: #3d1b10; --you: #ff6a3d; --quote: #1d2025; --run1: #a3a9b2; --run2: #d4ae4f;
+  --ph-disc: #a98bff; --ph-des: #6ea0ff; --ph-build: #3cc3cc; --ph-launch: #ff7ab8;
+  --b-tech: #c3cbd6; --b-tech-bg: #262c34; --b-ctx: #e8c06a; --b-ctx-bg: #2e2410; --b-why: #ff8a63; --b-why-bg: #3a1a10; color-scheme: dark }
+body { background: var(--page); color: var(--ink); font: var(--t-body); margin: 0; }
+.wrap { max-width: 440px; margin: 0 auto; padding-block: var(--s4) 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: var(--s5); }
+p { margin: 0; }
+.marker { justify-self: start; border: 1px dashed var(--muted); border-radius: var(--r); padding: var(--s1) var(--s3); font: var(--t-meta); color: var(--muted); }
+.intro, .screen { display: grid; gap: var(--s3); min-width: 0; }
+.intro h1 { margin: 0; font: var(--t-screen); text-wrap: balance; }
+.screen h2 { margin: 0; font: 800 1.15rem/1.3 var(--font); }
+.lead { color: var(--muted); }
+.cap { font: var(--t-meta); color: var(--faint); }
+.code { font: var(--t-code); color: var(--faint); }
+.note { background: var(--note); border-radius: var(--r); padding: var(--s3); }
+.note.small { font-size: .88rem; }
+[data-ph="disc"] { --ph: var(--ph-disc); } [data-ph="des"] { --ph: var(--ph-des); } [data-ph="build"] { --ph: var(--ph-build); } [data-ph="launch"] { --ph: var(--ph-launch); }
+.chip { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--ph); flex: none; }
+.ic { width: 18px; height: 18px; border-radius: 50%; box-sizing: border-box; background: var(--surf); border: 1.5px solid var(--muted); display: inline-grid; place-items: center; font: 800 10px/1 var(--font); color: var(--ink); flex: none; }
+.i-reached::after { content: "✓"; }
+.i-prog::after { content: ""; width: 9px; height: 9px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid var(--ink); background: linear-gradient(90deg, var(--ink) 50%, transparent 50%); }
+.i-plan { border-style: dashed; }
+.i-unrec { border-style: dashed; border-color: var(--soft); } .i-unrec::after { content: "?"; color: var(--soft); }
+.i-flag { width: 11px; height: 11px; border-radius: 2px; transform: rotate(45deg); background: var(--note); border: 2px solid var(--you); margin: 0 3px; }
+.key { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s3); font: var(--t-meta); color: var(--muted); }
+.key span { display: inline-flex; align-items: center; gap: 6px; }
+/* a phone-width screen frame */
+.phone { background: var(--page); border: 1px solid var(--line); border-radius: 12px; padding: var(--s3); display: grid; gap: var(--s3); }
+.hdr { display: flex; gap: var(--s2); align-items: center; }
+.navb { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surf); display: grid; place-items: center; font: 700 1rem/1 var(--font); color: var(--muted); }
+.proj { font: var(--t-section); letter-spacing: .07em; color: var(--muted); }
+.scr { font: var(--t-screen); font-size: 1.3rem; }
+.hsub { font: var(--t-meta); color: var(--muted); }
+.phband { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; padding: var(--s2) var(--s3); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); box-shadow: inset 3px 0 0 var(--ph); color: var(--ink); text-decoration: none; }
+.phband b { font: 800 .9rem/1.3 var(--font); color: var(--ph); }
+.phband .sub { font: var(--t-meta); color: var(--muted); }
+.phband .go { margin-left: auto; font: var(--t-meta); color: var(--ph-des); }
+/* Home tile */
+.homegrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); align-items: start; }
+.tile { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3); display: grid; gap: var(--s2); min-width: 0; }
+.tile.ghost { background: none; border-style: dashed; color: var(--soft); font: var(--t-meta); min-height: 120px; }
+.tname { font: 800 1.05rem/1.25 var(--font); }
+.tsum { font: .82rem/1.4 var(--font); color: var(--muted); }
+.tnow { display: flex; gap: 6px; align-items: center; font: 700 .8rem/1.3 var(--font); color: var(--ph); }
+.tphases { position: relative; display: grid; gap: 3px; }
+.tphases svg { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 1; }
+.trow { display: grid; gap: 0; padding: 4px 6px 4px 40px; border: 1px solid var(--line); border-radius: 4px; background: var(--surf); box-shadow: inset 2px 0 0 var(--ph, transparent); }
+.trow.now { border-color: var(--gold); background: var(--golds); }
+.trow.end { border-style: dashed; box-shadow: none; }
+.tp { font: 700 .8rem/1.25 var(--font); }
+.ts { font: 600 .64rem/1.3 var(--font); letter-spacing: .03em; text-transform: uppercase; color: var(--muted); }
+.ts.now { color: var(--gold); }
+.twait { display: flex; gap: 6px; align-items: flex-start; font: 700 .78rem/1.35 var(--font); color: var(--you); }
+.twait .ic { margin-top: 3px; }
+/* Queue */
+.qgroup { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3); display: grid; gap: var(--s2); }
+.qh { display: flex; align-items: center; gap: var(--s2); font: var(--t-section); letter-spacing: .07em; text-transform: uppercase; }
+.qh .qn { margin-left: auto; color: var(--muted); }
+.qi { font-style: normal; width: 18px; text-align: center; color: var(--muted); font-size: .8rem; }
+.qitem { border-left: 3px solid var(--you); background: var(--quote); border-radius: 0 var(--r) var(--r) 0; padding: var(--s2) var(--s3); display: grid; gap: var(--s2); }
+.qt { font: var(--t-item); }
+.qm { font: var(--t-meta); color: var(--muted); }
+.unblocks { display: grid; gap: 2px; padding-top: var(--s2); border-top: 1px solid var(--line); }
+.uk, .wk { font: var(--t-section); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.uw { font: var(--t-meta); color: var(--you); }
+.uw .wk { color: var(--b-why); background: var(--b-why-bg); padding: 1px 6px; border-radius: 3px; margin-right: 4px; }
+.drafted { font: var(--t-meta); color: var(--faint); font-style: italic; }
+details.facts > summary { cursor: pointer; font: var(--t-meta); color: var(--b-ctx); }
+details.facts { border-left: 3px solid var(--b-ctx); padding-left: var(--s2); }
+.fact { margin-top: var(--s1); font: var(--t-body); font-size: .9rem; }
+.src { display: block; font: var(--t-meta); color: var(--faint); }
+/* Team */
+.you { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); box-shadow: inset 3px 0 0 var(--you); padding: var(--s3); display: grid; gap: var(--s2); }
+.yk { display: flex; align-items: center; gap: var(--s2); font: 800 .95rem/1.3 var(--font); color: var(--you); }
+.ynext { font: var(--t-body); font-size: .9rem; }
+.tag { font: var(--t-section); border: 1px solid var(--ink); border-radius: 3px; padding: 0 5px; margin-right: 4px; }
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+.card { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3) var(--s2); display: grid; gap: 3px; align-content: start; min-width: 0; }
+.cn { display: flex; align-items: center; gap: 6px; font: 800 .92rem/1.25 var(--font); }
+.cs { font: var(--t-meta); }
+.cl { font: var(--t-meta); color: var(--muted); font-weight: 500; }
+.cf { font: .78rem/1.35 var(--font); color: var(--ink); margin-top: 2px; }
+.cf.miss { color: var(--you); font-weight: 600; }
+.tlink { font: 700 .78rem/1.3 var(--font); color: var(--ph-des); text-decoration: none; }
+ul.list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--s2); }
+</style>
+
+<div class="wrap">
+  <span class="marker">Mockup for batch 2, notes 28 to 31 · not built yet</span>
+  <div class="intro">
+    <h1>The other screens, made to match</h1>
+    <p class="lead">Your four picks, drawn on Service-Desk's records as the preview snapshot holds them (16 Oct, 12:02 AM). They use the same icons, phase colours, spacing and type as the Status and Timeline you approved.</p>
+  </div>
+
+  <!-- 31 · the phase marker, shown once, then on every screen below -->
+  <section class="screen">
+    <h2>1 · One phase marker on every project screen</h2>
+    <p class="lead">Under the project's name, every project screen (Status, Timeline, Team, Queue) carries the same band: the current phase in its colour, which run it is, and where in the plan that sits. Tap it to open the Timeline at Now.</p>
+    <div class="phone">
+      <div class="hdr"><span class="navb">‹</span><span class="navb">⌂</span><div><p class="proj">SERVICE-DESK</p><p class="scr">Queue</p></div></div>
+      <a class="phband" data-ph="des" href="#" onclick="return false"><span class="chip"></span><b>Design · run 2</b><span class="sub">now · next to reach: MD2</span><span class="go">Timeline ›</span></a>
+    </div>
+    <div class="note small"><b>"More detail" loses Pipeline.</b> The old Pipeline page shows the phases, milestones and work filed, which the new Timeline now shows better. Its link goes; Time asked and Agents stay.</div>
+  </section>
+
+  <!-- 28 · Home tile -->
+  <section class="screen">
+    <h2>2 · The Home tile's phases</h2>
+    <p class="lead">Today's tile lists the phases top down, with green checks, and calls Build "finished". The new tile reads bottom up like Status: each phase in its own small box, a small branch drawing for the two runs, the same icons in plain circles, and plain words for where the project is.</p>
+    <div class="homegrid">
+      <div class="tile">
+        <p class="tname">Service-Desk</p>
+        <p class="tsum">The owner's phone-first desk over every project the agents run: one…</p>
+        <p class="tnow" data-ph="des"><span class="chip"></span>Design, second time through</p>
+        <div class="tphases" id="tile">
+          <div class="trow end"><span class="tp">Done</span></div>
+          <div class="trow" data-ph="launch"><span class="tp">Launch</span><span class="ts">not started</span></div>
+          <div class="trow" data-ph="build"><span class="tp">Build</span><span class="ts">run 2 to come</span></div>
+          <div class="trow now" data-ph="des"><span class="tp">Design</span><span class="ts now">now · run 2</span></div>
+          <div class="trow" data-ph="disc"><span class="tp">Discovery</span><span class="ts">finished</span></div>
+        </div>
+        <p class="twait"><i class="ic i-flag"></i>Waiting on you, the oldest for 2 d 0 h</p>
+      </div>
+      <div class="tile ghost"><p>Your other projects' tiles sit here, two to a row.</p></div>
+    </div>
+    <p class="cap">"2 of 4 phases finished" goes: it counted Build as finished while the work was back in Design.</p>
+  </section>
+
+  <!-- 29 · Queue -->
+  <section class="screen">
+    <h2>3 · Queue: why each item matters</h2>
+    <p class="lead">Each thing waiting on you says which milestone it unblocks and why that milestone exists, with the facts behind the ask one tap away. The group icons go neutral; only the coral diamond, "needs you", keeps its colour.</p>
+    <div class="phone">
+      <div class="hdr"><span class="navb">‹</span><span class="navb">⌂</span><div><p class="proj">SERVICE-DESK</p><p class="scr">Queue</p><p class="hsub">1 waiting on you</p></div></div>
+      <div class="phband" data-ph="des"><span class="chip"></span><b>Design · run 2</b><span class="sub">now · next to reach: MD2</span></div>
+      <div class="qgroup"><div class="qh"><i class="ic i-flag"></i><span>Decisions</span><span class="qn">1</span></div>
+        <div class="qitem">
+          <p class="qt">eleven short questions on the desk's screens <span class="code">P-001-design-lab-open</span></p>
+          <p class="qm">waiting 2 d 0 h</p>
+          <div class="unblocks"><span class="uk">Unblocks</span><span><b>The desk's look and screens chosen</b> <span class="code">MD2</span></span><span class="uw"><span class="wk">Why</span> not recorded yet</span><span class="drafted">drafted here: the question file doesn't name its milestone yet; the operating-model change (S-032) adds that line</span></div>
+          <details class="facts"><summary>Context · the facts behind this ask</summary>
+            <p class="fact">These questions were first asked only in a session, so the desk couldn't see them; every ask of the owner is now filed as a question in its project.<span class="src">P-001-trial-view-notes-1.md, note 5</span></p>
+          </details>
+        </div>
+      </div>
+      <div class="qgroup"><div class="qh"><i class="qi">▲</i><span>Gate rulings</span><span class="qn">none</span></div></div>
+      <div class="qgroup"><div class="qh"><i class="qi">✎</i><span>Verdicts to write</span><span class="qn">not recorded</span></div></div>
+      <div class="qgroup"><div class="qh"><i class="qi">⇄</i><span>Merges</span><span class="qn">none</span></div></div>
+      <div class="qgroup"><div class="qh"><i class="qi">▸</i><span>Deploys</span><span class="qn">none</span></div></div>
+      <div class="qgroup done"><div class="qh"><i class="ic i-reached"></i><span>Done today</span><span class="qn">0</span></div><p class="qm">Each item you finish links to its sprint on the Timeline.</p></div>
+    </div>
+  </section>
+
+  <!-- 30 · Team -->
+  <section class="screen">
+    <h2>4 · Team: what each one is on</h2>
+    <p class="lead">Each card says what that member is doing, using the Timeline's icons, then the sprint they last worked on and the milestone it feeds, with a link into the Timeline at that sprint.</p>
+    <div class="key"><span><i class="ic i-prog"></i>working</span><span><i class="ic i-plan"></i>idle</span><span><i class="ic i-flag"></i>waiting on you</span><span><i class="ic i-unrec"></i>not recorded</span></div>
+    <div class="phone">
+      <div class="hdr"><span class="navb">‹</span><span class="navb">⌂</span><div><p class="proj">SERVICE-DESK</p><p class="scr">Team</p></div></div>
+      <div class="phband" data-ph="des"><span class="chip"></span><b>Design · run 2</b><span class="sub">now · next to reach: MD2</span></div>
+      <div class="you"><p class="yk"><i class="ic i-flag"></i>You · waiting on you: 1 in your queue</p><p class="ynext"><span class="tag">Next</span> eleven short questions on the desk's screens · unblocks MD2</p></div>
+      <div class="cards">
+        <div class="card"><p class="cn"><i class="ic i-plan"></i>Orchestrator</p><p class="cs">Idle</p><p class="cl">last: Q-013 done, Oct 8</p><p class="cf">feeds <b>MD1</b> · What a good desk looks like is known</p><a class="tlink" href="#" onclick="return false">On the Timeline ›</a></div>
+        <div class="card"><p class="cn"><i class="ic i-plan"></i>Researcher</p><p class="cs">Idle</p><p class="cl">last: Q-013 finished, Oct 8</p><p class="cf">feeds <b>MD1</b> · What a good desk looks like is known</p><a class="tlink" href="#" onclick="return false">On the Timeline ›</a></div>
+        <div class="card"><p class="cn"><i class="ic i-plan"></i>Source checker</p><p class="cs">Idle</p><p class="cl">last: Q-013 checked, PASS, Oct 8</p><p class="cf">feeds <b>MD1</b> · What a good desk looks like is known</p><a class="tlink" href="#" onclick="return false">On the Timeline ›</a></div>
+        <div class="card"><p class="cn"><i class="ic i-plan"></i>Definer</p><p class="cs">Idle</p><p class="cl">last: P-001 definer finished, Oct 6</p><p class="cf miss">feeds: not tied to a milestone</p></div>
+        <div class="card"><p class="cn"><i class="ic i-plan"></i>Critic</p><p class="cs">Idle</p><p class="cl">last: P-001 critic finished, FAIL, Oct 6</p><p class="cf miss">feeds: not tied to a milestone</p></div>
+        <div class="card"><p class="cn"><i class="ic i-unrec"></i>Builder</p><p class="cs">Not recorded</p><p class="cl">not recorded in what the desk reads</p></div>
+        <div class="card"><p class="cn"><i class="ic i-unrec"></i>Chief of Staff</p><p class="cs">Its sessions aren't recorded</p><p class="cl">not recorded</p></div>
+      </div>
+      <p class="cap">… and the other four members, as today.</p>
+    </div>
+  </section>
+
+  <section class="screen">
+    <h2>Worth knowing</h2>
+    <ul class="list">
+      <li>Every link to a milestone comes from a record: the plan's "sprints:" lines (Q-013 is MD1's), or, once S-032 is adopted, a "Milestone:" line on each question and pull request. Until then the desk says "not tied to a milestone" or "not recorded".</li>
+      <li>The Queue's Context facts and the milestone's why come from the same records as the Timeline's, so the two screens never disagree.</li>
+      <li>Nothing here adds colour beyond the phase colours and the coral "needs you" diamond.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+// The tile's branch drawing: run 1 lane on the left, run 2 to its right; dots level with each phase name.
+(() => {
+  const host = document.getElementById('tile'), NS = 'http://www.w3.org/2000/svg';
+  const rows = [...host.querySelectorAll('.trow')].reverse(); // Discovery is 0, at the bottom
+  const RUNS = [{ lane: 0, steps: [[0, 'done'], [1, 'past'], [2, 'past']] }, { lane: 1, steps: [[1, 'now'], [2, 'todo'], [3, 'todo'], [4, 'todo']] }];
+  const svg = document.createElementNS(NS, 'svg'); host.prepend(svg);
+  const add = (t, a) => { const n = document.createElementNS(NS, t); for (const k in a) n.setAttribute(k, a[k]); svg.append(n); return n; };
+  const draw = () => {
+    const hb = host.getBoundingClientRect(); svg.setAttribute('width', 40); svg.setAttribute('height', hb.height); svg.replaceChildren();
+    const y = rows.map((r) => { const b = r.querySelector('.tp').getBoundingClientRect(); return b.top - hb.top + b.height / 2; });
+    const x = (l) => 11 + l * 15, col = (ri) => `var(--run${ri + 1})`;
+    RUNS.forEach((run, ri) => {
+      const pts = run.steps.map(([p]) => [x(run.lane), y[p]]);
+      for (let k = 1; k < pts.length; k++) add('line', { x1: pts[k - 1][0], y1: pts[k - 1][1], x2: pts[k][0], y2: pts[k][1], style: `stroke:${col(ri)}`, 'stroke-width': 1, 'stroke-opacity': .7, 'stroke-dasharray': run.steps[k][1] === 'todo' ? '2 3' : '' });
+      if (ri > 0) { const prev = RUNS[ri - 1], p = prev.steps[prev.steps.length - 1][0], x0 = x(prev.lane), y0 = y[p], x1 = x(run.lane), y1 = y[run.steps[0][0]];
+        add('path', { d: `M${x0},${y0} C${x0 + 12},${y0} ${x1},${y0 - (y0 - y1) * .25} ${x1},${y1}`, fill: 'none', style: `stroke:${col(ri)}`, 'stroke-width': 1, 'stroke-opacity': .7 }); }
+      run.steps.forEach(([, s], k) => {
+        const [cx, cy] = pts[k], r = 5.5;
+        if (s === 'now') { add('circle', { cx, cy, r: r + 2.5, style: 'fill:none;stroke:var(--golds)', 'stroke-width': 3 }); add('circle', { cx, cy, r, style: 'fill:var(--surf);stroke:var(--gold)', 'stroke-width': 2.5 }); return; }
+        const c = add('circle', { cx, cy, r, style: `fill:var(--surf);stroke:${s === 'past' ? 'var(--soft)' : 'var(--muted)'}`, 'stroke-width': 1.2, 'stroke-dasharray': s === 'todo' ? '2 2' : '' });
+        if (s === 'done' || s === 'past') { const t = add('text', { x: cx, y: cy + 3, 'text-anchor': 'middle', style: `fill:${s === 'past' ? 'var(--soft)' : 'var(--ink)'};font:800 8px system-ui` }); t.textContent = '✓'; }
+      });
+    });
+  };
+  draw(); addEventListener('resize', draw); if (document.fonts) document.fonts.ready.then(draw);
+})();
+</script>

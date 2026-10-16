@@ -57,7 +57,9 @@ export function fakeServer(repos, config, clock) {
       const pullsRaw = JSON.stringify(r.pulls);
       const runs = r.runs.map((x, i) => ({ path: x.path || `.github/workflows/${x.name}.yml`, name: x.name || x.path,
         event: x.event || 'push', status: x.status, conclusion: x.conclusion, run_number: x.run_number || i + 1,
-        head_sha: head, html_url: `https://github.com/${project.repo}/actions/runs/${i + 1}` }));
+        head_sha: x.headSha || head, html_url: `https://github.com/${project.repo}/actions/runs/${i + 1}`,
+        // AC72: a run's title (GitHub's `display_title`), when the fixture gives one.
+        ...(x.title != null ? { display_title: x.title } : {}) }));
       const runLists = ['push', 'workflow_dispatch'].map((ev) => {
         const url = u.runs(head, ev);
         const list = runs.filter((x) => x.event === ev);
@@ -84,6 +86,13 @@ export function fakeServer(repos, config, clock) {
         checkNext: r.checksForbidden ? [] : runLists.map((l) => (l.is304 ? null : false)),
         checksState: r.checksForbidden ? 'cant-read' : 'ok', tree } };
     }
+    // J12 (2026-10-16): the blob call's optional `pulls` field, answered raw from the repository's
+    // `pullsAnswer` (a raw text, or a function of the cursor giving one, or null for a failed read).
+    let pullsOut;
+    if (body.pulls) {
+      const a = r.pullsAnswer;
+      pullsOut = typeof a === 'function' ? a(body.pulls.after == null ? null : body.pulls.after) : a == null ? null : a;
+    }
     const texts = new Map(Object.values(r.files).map((t) => [gitSha(t), t]));
     const blobs = {};
     for (const s of body.blobs) blobs[s] = texts.has(s) ? texts.get(s) : null;
@@ -95,7 +104,7 @@ export function fakeServer(repos, config, clock) {
       const ans = r.compare ? r.compare(c.base, c.head) : null;
       compare[key] = ans == null ? null : JSON.stringify({ status: ans });
     }
-    return { ok: true, status: 200, json: { ...base, state: 'ok', blobs, history, compare } };
+    return { ok: true, status: 200, json: { ...base, state: 'ok', blobs, history, compare, ...(body.pulls ? { pulls: pullsOut === undefined ? null : pullsOut } : {}) } };
   }
   return { call, calls };
 }

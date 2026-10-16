@@ -15,6 +15,32 @@ export const HISTORY_PATH_RE = /^((decisions\/)?questions\/[^/]+\.md|queue\/ci-h
 // J1 3a and 3b: the workflow-run lists read for the head (AC29), push runs then dispatch runs.
 export const RUN_EVENTS = ['push', 'workflow_dispatch'];
 
+// J12 (2026-10-16, AC60, AC61, AC72): the one GraphQL query, its text fixed here; the page sends only
+// its cursor. The default branch's pull requests, newest first by creation, 100 to a page, with the
+// fields the Timeline and the Queue's deploy check use, and the check rollup of each one's last commit.
+export const GRAPHQL_URL = `${'https://api.github.com'}/graphql`;
+export const PULLS_PAGE = 100;
+export const PULLS_COST = 5; // J12: the read counts 5 against the blob call's budget of 25 (C)
+export const PULLS_CURSOR_RE = /^[A-Za-z0-9+/=_-]{1,200}$/;
+export const PULLS_QUERY = `query($owner: String!, $name: String!, $base: String!, $after: String) {
+  repository(owner: $owner, name: $name) {
+    pullRequests(baseRefName: $base, first: ${PULLS_PAGE}, after: $after, orderBy: {field: CREATED_AT, direction: DESC}) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        number title body state createdAt mergedAt closedAt headRefName
+        mergeCommit { oid }
+        commits(last: 1) { nodes { commit { statusCheckRollup { state } } } }
+      }
+    }
+  }
+}`;
+
+/** J12's variables for a project (J7) and a cursor: the repository's owner and name, its default branch, and `after`. */
+export function pullsVariables(project, after) {
+  const [owner, name] = String(project.repo).split('/');
+  return { owner, name, base: project.defaultBranch, after: after == null ? null : after };
+}
+
 const JSON_ACCEPT = 'application/vnd.github+json';
 const RAW_ACCEPT = 'application/vnd.github.raw+json';
 
@@ -84,6 +110,20 @@ function makeGetter(token, fetchImpl, counter) {
       return await fetchImpl(url, { method: 'GET', headers });
     } catch {
       return null; // network failure reaching GitHub
+    }
+  };
+}
+
+/** The one POST the function makes (J12): the fixed query to GitHub's GraphQL endpoint, with the read token. */
+function makePoster(token, fetchImpl, counter) {
+  return async (url, body) => {
+    counter.n++;
+    try {
+      return await fetchImpl(url, { method: 'POST', headers: {
+        Authorization: `Bearer ${token}`, Accept: 'application/json', 'Content-Type': 'application/json', 'User-Agent': 'service-desk',
+      }, body: JSON.stringify(body) });
+    } catch {
+      return null;
     }
   };
 }
@@ -337,15 +377,20 @@ async function pool(tasks, limit) {
 }
 
 /**
- * The blob call (J1, J6). req: { project, blobs: [sha], history: [path], compare: [{ base, head }] }
- * (already validated).
+ * The blob call (J1, J6). req: { project, blobs: [sha], history: [path], compare: [{ base, head }],
+ * pulls?: { after } } (already validated).
  * At most six requests wait at once. A failure stops new requests; nothing is retried.
+ * J12's `pulls` (2026-10-16): the fixed GraphQL query, answered raw as `pulls` (the page judges the
+ * answer, its errors included); `null` when GitHub could not be reached or the call stopped first. A
+ * 401 (the token failing) stops the call as for every read; GraphQL's own rate limit is J12's alone,
+ * so its answer goes back to the page like any other, and the REST reads are not stopped for it (C).
  */
 export async function readBlobs(req, deps) {
   const { project } = req;
   const nowMs = deps.now();
   const counter = { n: 0 };
   const get = makeGetter(deps.token, deps.fetch, counter);
+  const post = makePoster(deps.token, deps.fetch, counter);
   const u = urlsFor(project);
   const out = {
     project: project.name, readAt: new Date(nowMs).toISOString(), state: 'ok', reason: null,
@@ -356,6 +401,16 @@ export async function readBlobs(req, deps) {
     if (!failure || f.reason === 'rate-limit') failure = f;
   };
   const tasks = [];
+  if (req.pulls) {
+    out.pulls = null;
+    tasks.push(async () => {
+      if (failure) return;
+      const res = await post(GRAPHQL_URL, { query: PULLS_QUERY, variables: pullsVariables(project, req.pulls.after) });
+      if (!res) return;
+      if (res.status === 401) return fail(failFrom(res, nowMs));
+      out.pulls = await res.text();
+    });
+  }
   for (const sha of req.blobs) {
     out.blobs[sha] = null;
     tasks.push(async () => {

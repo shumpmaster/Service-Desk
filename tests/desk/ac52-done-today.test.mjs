@@ -77,7 +77,8 @@ for (const [w, h] of [[360, 740], [414, 896]]) {
       const [row] = rows;
       const codeEl = byClass(row, 'code')[0];
       assert.ok(!findAll(ctl, (e) => e === codeEl).length, 'its code sits after the control, outside it');
-      assert.match(row.textContent, /P-001-design-lab-open at 09:50$/);
+      // AC66 (2026-10-16): then the row's sprint on the Timeline, or "sprint: not recorded" (a ruling whose question names no milestone).
+      assert.match(row.textContent, /P-001-design-lab-open at 09:50 · sprint: not recorded$/);
       await app.tap(codeEl);
       assert.equal(findKeyed(app, 'linebubble:done:P-001-design-lab-open'), null, 'a tap on the code opens no bubble');
       await app.tap(ctl);

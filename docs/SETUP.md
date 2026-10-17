@@ -57,7 +57,6 @@ run, set up the following in the project repository's Settings.
    `RUNNER.toml` by a rule change. Until then sessions simply run without commands. The session
    jobs install `bubblewrap` and `socat`. Leave `pass_env_cleared = false` unless a proof run that
    searched those variables' values passed.
-
 5. **Merge commits keep each pull request's Context and Why (model S-032).** So that the facts and the reason behind each change live in the project's own history, not only on GitHub's pull-request page, set this once: in the repository's Settings, under "Pull Requests", keep **Allow merge commits** selected, open the dropdown under it, and choose the pull request title and description as the default message; when you merge, accept that default. A merge commit's first line is then the pull request's title instead of "Merge pull request #<n> from …"; the checks read both. Look at the first merge commit after the change on GitHub: its first line should end with the pull request's number, as `(#<n>)`. If it does not, tell the Chief of Staff: the checks cannot then tie that pull request to its milestone.
 
 ## What the proof does

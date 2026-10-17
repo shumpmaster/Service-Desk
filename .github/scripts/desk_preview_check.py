@@ -12,7 +12,8 @@ lookalike workflow pushed on another branch can't count) whose head commit is on
 origin/main (so a tag named main can't count either; desk_pick_commit.sh has just
 fetched origin/main), takes each such run's `preview`
 job that concluded success, and compares the newest one's commit, read from the run's
-title (`deploy <sha> — ...`, the workflow's run-name), with SHA. Preview jobs only run in
+title (`deploy <sha>` for a push run, `deploy <sha> — <note>` for a hand-started one: the
+workflow's run-name, S-001 Setup CS14), with SHA. Preview jobs only run in
 the `preview` environment, behind the owner's approval, on main.
 """
 import json

@@ -12,7 +12,7 @@
 # registry) with install scripts off. The Cloudflare token is in the one step that needs it.
 # Every action is pinned by commit.
 name: desk-deploy
-run-name: deploy ${{ github.event_name == 'push' && github.sha || inputs.sha }} — ${{ github.event.head_commit.message || inputs.note }}
+run-name: deploy ${{ github.event_name == 'push' && github.sha || format('{0} — {1}', inputs.sha, inputs.note) }}
 
 on:
   push:

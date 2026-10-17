@@ -1,21 +1,26 @@
 // ac-test: S-001/AC14 — drives the page's real poll scheduler with a fake clock and a fake
 // function: 5 connected projects, 16 window-hours in a day over 10 openings, 100 head changes.
 // Fewer than 10,000 function calls are made, and none is a retry sooner than the next poll.
+// From 2026-10-17 (the desk follow-ups) the same day again with J12 failing all day for all 5
+// projects, v3 projects in the sandbox: fewer than 10,000 calls, no J12 read sooner than J12's
+// backoff allows, at most 43 J12 reads a project after a failed one and 53 in all.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDesk, POLL_MS } from '../../src/lib/scheduler.js';
+import { pullsBackoffMs } from '../../src/lib/pulls.js';
 import { createStore } from '../../src/lib/store.js';
 import { fakeClock, fixture, CONFIG } from './helpers.mjs';
 import { repo, fakeServer } from './fake-desk.mjs';
+import { madeUp } from './j12-fixture.mjs';
 
 const DAY = Date.parse('2026-11-03T00:00:00Z');
 const HOUR = 3_600_000;
 
-function fiveProjects() {
-  const base = CONFIG.projects;
+function fiveProjects({ allV3 = false } = {}) {
+  const base = allV3 ? [CONFIG.projects.find((p) => p.model === 'v3')] : CONFIG.projects;
   const projects = [];
   for (let i = 0; i < 5; i++) {
-    const t = base[i % 2];
+    const t = base[i % base.length];
     projects.push({ ...t, name: `${t.name}-${i}`, repo: `shumpmaster/${t.name}-${i}` });
   }
   return { ...CONFIG, projects };
@@ -39,10 +44,15 @@ function repoFor(p) {
   });
 }
 
-async function simulate({ failEvery = 0 } = {}) {
-  const config = fiveProjects();
+// `j12`, when given, is the J12 answer every read gets all day (null for a failed read, or a raw
+// text): all 5 projects are then v3 projects in the sandbox (j11), so each makes J12's reads.
+async function simulate({ failEvery = 0, j12 } = {}) {
+  const sandbox = j12 !== undefined;
+  const config = fiveProjects({ allV3: sandbox });
   const clock = fakeClock(DAY);
   const repos = Object.fromEntries(config.projects.map((p) => [p.name, repoFor(p)]));
+  if (sandbox) for (const r of Object.values(repos)) r.pullsAnswer = j12;
+  const opened = [];
   const server = fakeServer(repos, config, clock);
   let n = 0;
   const failed = [];
@@ -64,7 +74,8 @@ async function simulate({ failEvery = 0 } = {}) {
   for (let o = 0; o < openings; o++) {
     const open = DAY + o * 2.4 * HOUR;
     await clock.runUntil(open);
-    const desk = createDesk({ config, call, clock, store: createStore(null), isVisible: () => true });
+    opened.push(open);
+    const desk = createDesk({ config, call, clock, store: createStore(null), isVisible: () => true, ...(sandbox ? { j11: true } : {}) });
     desk.start();
     for (let c = 0; c < changesPerOpening; c++) {
       await clock.runUntil(open + ((c + 0.5) * windowMs) / changesPerOpening);
@@ -77,7 +88,7 @@ async function simulate({ failEvery = 0 } = {}) {
     await clock.runUntil(open + windowMs);
     desk.stop();
   }
-  return { calls: server.calls, failed, changes, n, config };
+  return { calls: server.calls, failed, changes, n, config, opened, windowMs };
 }
 
 function checkSpacing(calls, failed) {
@@ -120,3 +131,42 @@ test('AC14: with failed and refused calls mixed in, still no retry sooner than t
   assert.ok(calls.length + failed.length < 10_000);
   checkSpacing(calls, failed);
 });
+
+// J12's reads in the day, per project and opening: [{ project, opening, at }].
+function j12Reads(calls, opened) {
+  return calls.filter((c) => c.path === '/api/blobs' && c.body.pulls)
+    .map((c) => ({ project: c.project, at: c.at, opening: opened.filter((o) => o <= c.at).length - 1 }));
+}
+
+for (const [what, answer] of [['"pulls": null', null], ['a `data: null` answer', madeUp('data-null').body]]) {
+  test(`AC14 (the desk follow-ups, 2026-10-17): J12 failing all day for all 5 projects (${what}) → fewer than 10,000 calls, no J12 read sooner than its backoff allows, at most 43 J12 reads a project after a failed one, 53 in all`, async (t) => {
+    const { calls, changes, config, opened, windowMs } = await simulate({ j12: answer });
+    assert.equal(changes, 100);
+    assert.ok(config.projects.every((p) => p.model === 'v3'));
+    assert.ok(calls.length < 10_000, `${calls.length} calls`);
+    checkSpacing(calls, []);
+    const reads = j12Reads(calls, opened);
+    let most = 0;
+    for (const p of config.projects) {
+      const mine = reads.filter((x) => x.project === p.name);
+      let after = 0;
+      for (let o = 0; o < opened.length; o++) {
+        const at = mine.filter((x) => x.opening === o).map((x) => x.at);
+        assert.ok(at.length >= 1, `${p.name}: opening ${o} made its first J12 read`);
+        assert.ok(at[0] - opened[o] < 2 * POLL_MS, `${p.name}: opening ${o}'s first J12 read in its first cycles`);
+        assert.ok(at.every((x) => x <= opened[o] + windowMs), 'only while the window is open');
+        // Each later read waits at least the backoff's step after the one before: 5, 10, 20, 40, then 60.
+        for (let k = 1; k < at.length; k++) {
+          assert.ok(at[k] - at[k - 1] >= pullsBackoffMs(k - 1), `${p.name}, opening ${o}: J12 read ${k + 1} came ${(at[k] - at[k - 1]) / 60e3} min after the last, sooner than the ${pullsBackoffMs(k - 1) / 60e3}-minute wait`);
+        }
+        after += at.length - 1;
+      }
+      assert.ok(after <= 43, `${p.name}: ${after} J12 reads after a failed one`);
+      assert.ok(mine.length <= 53, `${p.name}: ${mine.length} J12 reads in all`);
+      most = Math.max(most, mine.length);
+    }
+    const polls = calls.filter((c) => c.path === '/api/poll').length;
+    const blobs = calls.filter((c) => c.path === '/api/blobs').length;
+    t.diagnostic(`AC14 with J12 failing (${what}): ${calls.length} calls (${polls} polls, ${blobs} blob calls), ${reads.length} J12 reads, at most ${most} a project`);
+  });
+}

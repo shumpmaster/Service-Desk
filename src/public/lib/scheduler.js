@@ -5,7 +5,7 @@
 
 import { neededReads, parseRecord, recordKind, buildModel } from './model.js';
 import { parseTree, parseHistory, parseCardPath, compareStatus } from './records.js';
-import { judgePulls, mergePulls, PULLS_KEY, PULLS_MAX_PAGES, PULLS_RATE_MS } from './pulls.js';
+import { judgePulls, mergePulls, pullsBackoffMs, PULLS_KEY, PULLS_MAX_PAGES, PULLS_RATE_MS } from './pulls.js';
 import { dayKey } from './timefmt.js';
 
 // J12 (2026-10-16): the pull-request read counts 5 of a blob call's budget of 25.
@@ -82,7 +82,9 @@ function newProjectState(project) {
     lastSuccessAt: null, failure: null, timer: null, withdrawn: [], partialTree: false, polls: 0, blobCalls: 0,
     headAt: null,
     // J12: what the device keeps of the project's pull requests, and where its reads stand.
-    j12: { pulls: null, day: null, head: null, tooMany: false, cold: null, wait: null, failure: null, fieldError: null, failedCycle: null },
+    // `step` counts failed reads in a row (RATE_LIMITED aside), for J12's backoff; in memory only, so
+    // each opening starts it again.
+    j12: { pulls: null, day: null, head: null, tooMany: false, cold: null, wait: null, failure: null, fieldError: null, step: 0 },
   };
 }
 
@@ -167,15 +169,15 @@ export function createDesk(opts) {
    * sandbox only): the next page of a cold read under way; a cold read (the first load on this device,
    * and the first each day after midnight in ownerTimeZone), from the first page; or, on a head
    * change, the first page only. After a RATE_LIMITED answer, none for 60 minutes, then the read
-   * again (draft 6, N2); after any other failed read, the read again on a later cycle, as J11's
-   * optional reads are (never twice in one cycle).
+   * again (draft 6, N2); after any other failed read, none until J12's backoff has passed (5, 10, 20,
+   * 40, then 60 minutes; the desk follow-ups of 2026-10-17). During either wait no J12 read is made,
+   * head change or not; when it ends, the read made is whatever is due then.
    */
   function pullsDue(st) {
     if (!opts.j11 || st.project.model !== 'v3' || !st.head) return null;
     const j = st.j12;
     const now = clock.now();
     if (j.wait && now < j.wait.until) return null;
-    if (j.failedCycle != null && j.failedCycle === st.polls) return null;
     if (j.cold) return { after: j.cold.after, cold: true };
     if (j.pulls == null || j.day !== dayKey(new Date(now), config.ownerTimeZone)) return { after: null, cold: true };
     if (j.head !== st.head) return { after: null, cold: false };
@@ -191,14 +193,20 @@ export function createDesk(opts) {
       j.failure = v.reason;
       j.rate = v.rate;
       j.cold = null;
-      j.wait = v.rate ? { until: now + PULLS_RATE_MS } : null;
-      j.failedCycle = st.polls;
+      if (v.rate) {
+        // A rate limit: its plain 60 minutes; the backoff's step neither advances nor resets.
+        j.wait = { until: now + PULLS_RATE_MS };
+      } else {
+        // Any other failed read: J12's backoff, one step further for each failure in a row.
+        j.wait = { until: now + pullsBackoffMs(j.step) };
+        j.step = (j.step || 0) + 1;
+      }
       return;
     }
     j.failure = null;
     j.rate = false;
     j.wait = null;
-    j.failedCycle = null;
+    j.step = 0;
     j.fieldError = v.fieldError;
     j.pulls = mergePulls(j.pulls || [], v.pulls);
     if (asked.cold) {
@@ -422,8 +430,8 @@ export function createDesk(opts) {
       const b = batch || { blobs: [], history: [], compare: [] };
       if (pl) b.pulls = pl;
       const { res, progress, pulled } = await blobCall(st, need, b);
-      // An optional read that fails is tried again on a later cycle; it never fails the project,
-      // except a rate limit, which every read must respect.
+      // An optional read that fails is tried again on a later cycle (a J12 read after its backoff);
+      // it never fails the project, except a rate limit, which every read must respect.
       if (!res.ok || res.json.state !== 'ok') {
         if (res.ok && res.json.reason === 'rate-limit') return { ok: false, reason: 'rate-limit', retryAfter: res.json.retryAfter };
         break;

@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { handle } from '../../src/lib/api.js';
 import { _resetKeyCache } from '../../src/lib/access.js';
 import { GRAPHQL_URL, PULLS_QUERY, PULLS_COST } from '../../src/lib/github.js';
-import { judgePulls, keptPull, mergePulls, PULLS_KEY, PULLS_MAX, TOO_MANY_WORDS, CANT_READ_CHECKS } from '../../src/lib/pulls.js';
+import { judgePulls, keptPull, mergePulls, pullsBackoffMs, PULLS_BACKOFF_MS, PULLS_KEY, PULLS_MAX, PULLS_RATE_MS, TOO_MANY_WORDS, CANT_READ_CHECKS } from '../../src/lib/pulls.js';
 import { createDesk, POLL_MS } from '../../src/lib/scheduler.js';
 import { createStore } from '../../src/lib/store.js';
 import { j11Records, timelineOf, phaseView } from '../../src/lib/sandbox.js';
@@ -267,31 +267,165 @@ test('J12 (draft 6, N2): a RATE_LIMITED answer (200 or 403) — no J12 read for 
   b.desk.stop();
 });
 
-test('J12 (draft 6, N2): any other failed read (null, data null) is tried again on a later cycle, as J11\'s optional reads are — never twice in one cycle, no head change needed', async () => {
-  for (const answer of [null, madeUp('data-null').body]) {
+// J12's backoff (2026-10-17, the desk follow-ups; build review round 2 of trial-view notes 2, N1),
+// driven by the scheduler's fake clock.
+const MIN = 60e3;
+const T0 = Date.parse('2026-10-14T15:00:00Z');
+const gaps = (at) => at.slice(1).map((t, i) => t - at[i]);
+/** Each gap is the wait it should be, within the one poll cycle a due read may wait for. */
+function assertWaits(at, waitsMin, what) {
+  const g = gaps(at);
+  assert.equal(g.length, waitsMin.length, `${what}: ${at.length} reads, gaps ${g.map((x) => x / MIN)}`);
+  g.forEach((x, i) => {
+    assert.ok(x >= waitsMin[i] * MIN, `${what}: read ${i + 2} came ${x / MIN} min after the last, before the ${waitsMin[i]}-minute wait`);
+    assert.ok(x < waitsMin[i] * MIN + POLL_MS, `${what}: read ${i + 2} came ${x / MIN} min after the last, not at the first cycle after the ${waitsMin[i]}-minute wait`);
+  });
+}
+
+test('J12 backoff: after failures in a row (null, data null, a failed blob call), the next J12 read comes 5, 10, 20 and 40 minutes later, then 60 and 60 again; none in between, no head change needed', async () => {
+  assert.deepEqual(PULLS_BACKOFF_MS.map((x) => x / MIN), [5, 10, 20, 40, 60]);
+  assert.deepEqual([0, 1, 2, 3, 4, 5, 9].map((k) => pullsBackoffMs(k) / MIN), [5, 10, 20, 40, 60, 60, 60]);
+  assert.equal(PULLS_RATE_MS, 60 * MIN, 'no wait in the backoff is longer than a rate limit\'s');
+  for (const kind of ['null', 'data-null', 'call-fails']) {
     const r = sdRepo();
     const at = [];
-    let n = 0;
-    r.pullsAnswer = () => { n++; at.push(clockRef.clock.now()); return n <= 2 ? answer : pullsAnswer(); };
-    const clockRef = deskOn(r);
-    const { clock, desk } = clockRef;
-    desk.start();
-    await clock.runUntil(clock.now() + 1500);
-    assert.equal(n, 1, 'one read in the first cycle, not retried within it');
-    assert.equal(desk.snapshot(SD3.name).pulls.rate, false);
-    assert.ok(desk.snapshot(SD3.name).pulls.failure);
-    await clock.runUntil(clock.now() + POLL_MS);
-    assert.equal(n, 2, 'tried again on the next cycle, with no head change');
-    await clock.runUntil(clock.now() + POLL_MS);
-    assert.equal(n, 3);
-    assert.equal(desk.snapshot(SD3.name).pulls.failure, null);
-    assert.equal(desk.snapshot(SD3.name).pulls.current, true);
-    assert.ok(at[1] - at[0] >= POLL_MS - 1000, 'a cycle apart');
-    // Then nothing more without a reason to read.
-    await clock.runUntil(clock.now() + 3 * POLL_MS);
-    assert.equal(n, 3);
-    desk.stop();
+    const box = {};
+    r.pullsAnswer = () => { at.push(box.clock.now()); return kind === 'data-null' ? madeUp('data-null').body : null; };
+    const d = deskOn(r, { start: T0 });
+    box.clock = d.clock;
+    let call = d.server.call;
+    if (kind === 'call-fails') {
+      // The function fails every blob call that carries J12's read (a refusal or a network failure).
+      const desk = createDesk({ config: { ...CONFIG, projects: [SD3] }, clock: d.clock, store: createStore(null), pullsStore: createStore(null), isVisible: () => true, j11: true,
+        call: async (path, body) => {
+          if (path === '/api/blobs' && body.pulls) { at.push(d.clock.now()); return { ok: false, status: 0, reason: 'network' }; }
+          return call(path, body);
+        } });
+      d.desk = desk;
+    }
+    d.desk.start();
+    await d.clock.runUntil(T0 + 200 * MIN);
+    d.desk.stop();
+    assertWaits(at, [5, 10, 20, 40, 60, 60], kind);
+    const snap = d.desk.snapshot(SD3.name).pulls;
+    assert.ok(snap.failure, `${kind}: the failure is shown`);
+    assert.equal(snap.rate, false);
+    assert.equal(d.desk.states.get(SD3.name).failure, null, `${kind}: the project is never "Can't read" for it`);
   }
+});
+
+test('J12 backoff: no J12 read during a wait, a head change in the wait included; when it ends, the read is what is due then (the first page, for the head change)', async () => {
+  const r = sdRepo();
+  const asked = [];
+  const box = {};
+  let fail = false;
+  r.pullsAnswer = (after) => { asked.push({ at: box.clock.now(), after }); return fail ? null : pullsAnswer(); };
+  const d = deskOn(r, { start: T0 });
+  box.clock = d.clock;
+  d.desk.start();
+  await d.clock.runUntil(T0 + 2 * MIN);
+  assert.equal(asked.length, 1, 'the cold read answered');
+  const sessions = (n) => ({ 'status/P-003.toml': `kind = "project"\nstage = 5\nstate = "dispatched"\nrole = "builder"\nsessions = ${n}\n` });
+  // A head change whose read fails: a 5-minute wait.
+  fail = true;
+  r.commit(sessions(3));
+  await d.clock.runUntil(T0 + 4 * MIN);
+  assert.equal(asked.length, 2, 'the head change read the first page');
+  const failedAt = asked[1].at;
+  // Two more head changes inside the wait: no read.
+  r.commit(sessions(4));
+  await d.clock.runUntil(failedAt + 2 * MIN);
+  r.commit(sessions(5));
+  fail = false;
+  await d.clock.runUntil(failedAt + 5 * MIN - 1);
+  assert.equal(asked.length, 2, 'no J12 read in the wait, head changes or not');
+  await d.clock.runUntil(failedAt + 5 * MIN + POLL_MS);
+  assert.equal(asked.length, 3, 'read once when the wait ends');
+  assert.ok(asked[2].at - failedAt >= 5 * MIN);
+  assert.equal(asked[2].after, null, 'the first page, for the head change');
+  const snap = d.desk.snapshot(SD3.name).pulls;
+  assert.equal(snap.failure, null);
+  assert.equal(snap.current, true, 'at the current head');
+  await d.clock.runUntil(d.clock.now() + 5 * MIN);
+  assert.equal(asked.length, 3, 'then nothing more without a reason to read');
+  d.desk.stop();
+});
+
+test('J12 backoff: a read that answers resets it, so the next failure waits 5 minutes again', async () => {
+  const r = sdRepo();
+  const at = [];
+  const box = {};
+  // fail, fail, fail (waits 5, 10, 20), answer, then fail and fail again after a head change.
+  const plan = [null, null, null, 'ok', null, null];
+  r.pullsAnswer = () => { at.push(box.clock.now()); const a = plan[at.length - 1]; return a === 'ok' ? pullsAnswer() : null; };
+  const d = deskOn(r, { start: T0 });
+  box.clock = d.clock;
+  d.desk.start();
+  await d.clock.runUntil(T0 + 40 * MIN);
+  assertWaits(at, [5, 10, 20], 'before the answer');
+  assert.equal(d.desk.snapshot(SD3.name).pulls.failure, null, 'the fourth read answered');
+  await d.clock.runUntil(T0 + 50 * MIN);
+  assert.equal(at.length, 4, 'no read without a reason to read');
+  const changed = d.clock.now();
+  r.commit({ 'status/P-003.toml': 'kind = "project"\nstage = 5\nstate = "dispatched"\nrole = "builder"\nsessions = 5\n' });
+  await d.clock.runUntil(changed + 10 * MIN);
+  d.desk.stop();
+  assert.equal(at.length, 6, `the head change's read and one retry: ${gaps(at).map((x) => x / MIN)}`);
+  assert.ok(at[4] - changed < 2 * POLL_MS, 'the head change read at once');
+  assertWaits(at.slice(4), [5], 'after the reset');
+});
+
+test('J12 backoff: a RATE_LIMITED answer waits its plain 60 minutes and leaves the step as it was — neither advances nor resets it', async () => {
+  for (const rl of ['rate-limited', 'rate-limited-403']) {
+    const r = sdRepo();
+    const at = [];
+    const box = {};
+    // fail (5), fail (10), RATE_LIMITED (60), then fails: 20, 40, 60.
+    r.pullsAnswer = () => { at.push(box.clock.now()); return at.length === 3 ? madeUp(rl).body : null; };
+    const d = deskOn(r, { start: T0 });
+    box.clock = d.clock;
+    d.desk.start();
+    await d.clock.runUntil(T0 + 20 * MIN);
+    assert.equal(at.length, 3);
+    assert.equal(d.desk.snapshot(SD3.name).pulls.rate, true);
+    await d.clock.runUntil(T0 + 220 * MIN);
+    d.desk.stop();
+    assertWaits(at, [5, 10, 60, 20, 40, 60], rl);
+  }
+  // A rate limit on the first read leaves the step at the start: the next failure waits 5.
+  const r = sdRepo();
+  const at = [];
+  const box = {};
+  r.pullsAnswer = () => { at.push(box.clock.now()); return at.length === 1 ? madeUp('rate-limited').body : null; };
+  const d = deskOn(r, { start: T0 });
+  box.clock = d.clock;
+  d.desk.start();
+  await d.clock.runUntil(T0 + 80 * MIN);
+  d.desk.stop();
+  assertWaits(at, [60, 5, 10], 'a rate limit first');
+});
+
+test('J12 backoff: it lives in memory, so a page reload starts it again at 5 minutes', async () => {
+  const r = sdRepo();
+  const at = [];
+  const box = {};
+  r.pullsAnswer = () => { at.push(box.clock.now()); return null; };
+  const backing = new Map();
+  const st = { getItem: (k) => (backing.has(k) ? backing.get(k) : null), setItem: (k, v) => backing.set(k, String(v)), removeItem: (k) => backing.delete(k) };
+  const first = deskOn(r, { start: T0, store: createStore(st), pullsStore: createStore(st) });
+  box.clock = first.clock;
+  first.desk.start();
+  await first.clock.runUntil(T0 + 40 * MIN);
+  first.desk.stop();
+  assertWaits(at, [5, 10, 20], 'the first opening');
+  assert.ok(!backing.has(PULLS_KEY) || !/"step"|"wait"|"failure"/.test(backing.get(PULLS_KEY)), 'nothing of the backoff is kept on the device');
+  at.length = 0;
+  const again = deskOn(r, { start: T0 + 41 * MIN, store: createStore(st), pullsStore: createStore(st) });
+  box.clock = again.clock;
+  again.desk.start();
+  await again.clock.runUntil(T0 + 60 * MIN);
+  again.desk.stop();
+  assertWaits(at, [5, 10], 'after the reload: 5 again, then 10');
 });
 
 test('J12: a write that fails to desk-pulls-v1 (the storage full) turns off that key only; the blob cache keeps being written and read', async () => {

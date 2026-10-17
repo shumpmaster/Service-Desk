@@ -40,7 +40,7 @@ owner's own words. Any commentary by the Chief of Staff
 goes in the matching `-notes.md` file. The Critic reads ruling records, so it can check a brief
 that relies on an owner's ruling; it never sees `-notes.md` files (model L-0119).
 
-A ruling put to the owner outside a card (for example a change to a project's milestones) is recorded in decisions/questions/<project>-<topic>.md; its first line is `Ruling: <what the owner ruled>`, then any `Proxy:` line, the question and its options as put, and the owner's own words.
+A ruling put to the owner outside a card (for example a change to a project's milestones) is recorded in decisions/questions/<project>-<topic>.md; its first line is `Ruling: <what the owner ruled>`, then any `Proxy:` line, the question and its options as put, and the owner's own words. An answer to a filed question (S-033) has the question's name, carries the question's `Milestone:` line on its own line after line 1 and after any `Proxy:` and `Profile-Sha256:` lines, and, when the Chief of Staff records it, has the `Proxy:` line as its second line.
 
 The owner's approval of a project's target-user profile (S-025) is a ruling record of its own,
 decisions/questions/<project item>-user-profile-<n>.md (`<n>` from 1), in the ruling-record form above:

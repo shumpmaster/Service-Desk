@@ -10,6 +10,7 @@ Usage:
   v3_checks.py holdouts --base REF [--root DIR]
   v3_checks.py milestones --base REF [--root DIR]
   v3_checks.py gates    --base REF [--root DIR]
+  v3_checks.py sessions [--base REF] [--root DIR] [--branch NAME --default-branch NAME]
 
 Every subcommand runs only in a v3 project: one with a governance/v3.toml file
 (its presence is the switch; its content is not read). Without it, each one
@@ -131,13 +132,39 @@ model S-032 adds (why and context):
             removed, a line first added as skipped) needs an Owner-Ruling: record
             naming it instead.
 
+model S-033 adds (every ask filed):
+  trace     also reads a project milestone's optional ` · reached: <yyyy-mm-dd>` part, after any ` · sprints:`
+            and before any ` · dropped` or ` · why:`; a date that is not a real date is out of form.
+  milestones also, while the project is approved or waits on its Design gate at REF, each commit in REF..HEAD
+            that adds a milestone's reached part, or changes its date, carries an `Owner-Ruling:` trailer naming
+            a decisions/questions/ record whose first line begins `Ruling: accept` and names the id (whole, on
+            that line), or is `Ruling: <letter>` with a `Question: questions/<its own name>.md` line whose
+            option for that letter, in the tree before the record was added, begins (after its indent)
+            `<letter>. accept` and names the id; one that removes it names a record whose first line begins
+            `Ruling: reopen` and names the id. A first line ending `(defaulted)` never counts. A merge is
+            judged only for what differs from all its parents. A date later than the commit's committer date,
+            read in UTC, and a line that is both reached and dropped, are findings. While the project is neither
+            approved nor waiting on its Design gate at REF, any reached part at HEAD is a finding: none can be
+            reached before the milestones are approved.
+  sessions  (AC6) every sessions/chief-of-staff/<session id>.jsonl file (the id of 1 to 100 of A-Z a-z 0-9 _ -,
+            a regular file): each line one JSON object, a start (event, session, time, doing), helper (event,
+            session, role, started, ended, reported: tokens, tool_uses and duration_ms, each a whole number or
+            null) or end line (event, session, time, usage: model S-020's usage object), with no key missing
+            or extra; every time UTC ISO-8601 (`Z` or `+00:00`); a start or end line's time never earlier
+            than the previous start or end line's, a helper's started not after its ended; each line's session
+            the file's name. With --base, a line changed or removed since REF is a finding. With --base and
+            --branch equal to --default-branch (a run of the default branch), each commit in REF..HEAD by
+            `chief-of-staff` after the commit that added the first session file whose Agent-Session: has no
+            start line at HEAD is a NOTE, never a failure.
+
 Findings are reported under the check names v3_checks.<subcommand>, which
-governance/enforcement.toml can set to warn-only, apart from v3_checks.milestones
-and v3_checks.gates.
+governance/enforcement.toml can set to warn-only, apart from v3_checks.milestones,
+v3_checks.gates and v3_checks.sessions.
 Exit 0 = pass, 1 = rule violated, 2 = usage or parse error.
 """
 
 import argparse
+import datetime
 import json
 import os
 import posixpath
@@ -366,8 +393,10 @@ BRIEF_IDS = ("Discovery-5", "Discovery-7", "Discovery-8")
 MILESTONE_MARK_RE = re.compile(r"\(M[0-9A-Z]{1,7}\) · ")
 # model S-032 AC4: a why is at least one character, starts and ends with a non-space and holds no ` · `.
 WHY_RE = r"\S(?:(?:(?! · ).)*\S)?"
+# model S-033 AC7: ` · reached: <yyyy-mm-dd>`, after ` · sprints:` and before ` · dropped`.
 OPTIONAL_PARTS_RE = (r"(?: · for: (?P<for>P-\d{3,}))?"
                      r"(?: · sprints: (?P<sprints>(?:PR #\d+|[PQE]-\d{3,})(?:, (?:PR #\d+|[PQE]-\d{3,}))*))?"
+                     r"(?: · reached: (?P<reached>\d{4}-\d{2}-\d{2}))?"
                      r"(?P<dropped> · dropped)?")
 MILESTONE_LINE_RE = re.compile(
     r"^(?:- )?(?P<name>\S.*?) \((?P<id>M[0-9A-Z]{1,7})\) · done when (?P<done>\S.*?) · "
@@ -397,6 +426,7 @@ class Milestone(object):
         self.id, self.name, self.done, self.phase = m.group("id"), m.group("name"), m.group("done"), m.group("phase")
         self.for_item = m.group("for")
         self.sprints = m.group("sprints").split(", ") if m.group("sprints") else []
+        self.reached = m.group("reached")
         self.dropped = bool(m.group("dropped"))
         self.why = m.group("why")
 
@@ -408,6 +438,7 @@ class Milestone(object):
         """The line without its leading `- `."""
         return (self.part() + (" · for: %s" % self.for_item if self.for_item else "")
                 + (" · sprints: %s" % ", ".join(self.sprints) if self.sprints else "")
+                + (" · reached: %s" % self.reached if self.reached else "")
                 + (" · dropped" if self.dropped else "") + (" · why: %s" % self.why if self.why else ""))
 
     def quote_re(self):
@@ -481,10 +512,10 @@ def milestone_lines(text):
         if not MILESTONE_MARK_RE.search(s):
             continue
         m = MILESTONE_LINE_RE.match(s)
-        if not m:
+        if not m or (m.group("reached") and not g.valid_date(m.group("reached"))):
             problems.append((n, "not in the milestone form `<name> (M<id>) · done when <what is achieved> · phase: "
                                 "<Discovery|Design|Build|Launch>` (optionally ` · for: P-<n>`, ` · sprints: …`, "
-                                "` · dropped`, ` · why: <reason>`)"))
+                                "` · reached: <yyyy-mm-dd>`, ` · dropped`, ` · why: <reason>`)"))
             continue
         raw.append((n, m))
     ids = [m.group("id") for _, m in raw]
@@ -1838,6 +1869,21 @@ def check_milestones(root, base):
                     f.append(("v3_checks.milestones", "%s's standard line %s %s: needs a Critic-Check: trailer naming "
                                                       "the Critic's PASS record that quotes '%s' (model S-032 AC5)%s"
                               % (s.id, what, gate, quoted, "; " + "; ".join(reasons) if reasons else "")))
+    # model S-033 AC7: a milestone reached, only by the owner's own ruling, never a default.
+    if approved_ref or waiting_ref:
+        f += [("v3_checks.milestones", msg) for msg in reached_findings(root, commits, at_head)]
+    else:
+        # None can be reached before the milestones are approved (model S-033, build review round 1, note 6).
+        for m in new_list:
+            if m.reached:
+                f.append(("v3_checks.milestones", "%s is marked reached (%s) while the project is neither approved "
+                                                  "nor waiting on its Design gate at %s: no milestone can be reached "
+                                                  "before the milestones are approved; take the ` · reached:` part "
+                                                  "out (model S-033 AC7)" % (m.id, m.reached, base)))
+    for m in new_list:
+        if m.reached and m.dropped:
+            f.append(("v3_checks.milestones", "%s is marked both reached and dropped: a milestone is one or the "
+                                              "other (model S-033 AC7)" % m.id))
     # Tags on new work.
     live = set(i for i, m in new.items() if not m.dropped)
     for c in commits:
@@ -1887,6 +1933,296 @@ def check_milestones(root, base):
                  % ("approved" if approved_ref else ("waiting on its Design gate" if waiting_ref else "not approved"),
                     base, "approved" if approved_head else "not approved", len(new_list)))
     return f, notes
+
+
+# model S-033 AC7: the owner's acceptance (or reopening) of a milestone, on the record's first line or, for a
+# desk's letter answer, in the named question's option.
+ACCEPT_FIRST_RE = re.compile(r"^Ruling: accept\b")
+REOPEN_FIRST_RE = re.compile(r"^Ruling: reopen\b")
+LETTER_FIRST_RE = re.compile(r"^Ruling: ([A-Z])[ \t]*$")
+QUESTION_LINE_RE = re.compile(r"^Question: questions/([^/\s]+)\.md[ \t]*$")
+OPTION_LINE_RE = re.compile(r"^[ \t]+([A-Z])\. (.*)$")
+_ABSENT = object()
+
+
+def _added_before(root, path):
+    """The first parent of the latest commit at or before HEAD that added `path`, or None."""
+    out = g.git(root, ["log", "--diff-filter=A", "--format=%H", "-n", "1", "HEAD", "--", path]).decode().strip()
+    if not out:
+        return None
+    c = g.read_commits(root, [out])[0]
+    return c.parents[0] if c.parents else None
+
+
+def reached_licence(root, path, mid, word, at_head):
+    """Why the record at `path` (read at HEAD) does not license `word` (accept or reopen) for `mid`, or None."""
+    why = ruling_path_problem(path)
+    if why:
+        return why
+    if not path.startswith("decisions/questions/"):
+        return "not a decisions/questions/ record"
+    t = at_head(path)
+    if t is None:
+        return "no such file at HEAD"
+    lines = t.replace("\r\n", "\n").split("\n")
+    first = lines[0].rstrip()
+    if first.endswith("(defaulted)"):
+        return "a defaulted ruling is not the owner's own"
+    if (ACCEPT_FIRST_RE if word == "accept" else REOPEN_FIRST_RE).match(first):
+        return None if _whole(mid, first) else "its first line does not name %s" % mid
+    lm = LETTER_FIRST_RE.match(first)
+    if word != "accept" or not lm:
+        return "its first line does not begin `Ruling: %s`%s" % (word, "" if word != "accept" else
+                                                                   " and is not a letter answer")
+    names = [m.group(1) for m in (QUESTION_LINE_RE.match(l) for l in lines) if m]
+    own = posixpath.basename(path)[:-len(".md")]
+    if not names:
+        return "a letter answer with no `Question: questions/<name>.md` line"
+    if names[0] != own:
+        return "its Question: line names questions/%s.md, not its own name %s" % (names[0], own)
+    before = _added_before(root, path)
+    q = g.git_text(root, before, "questions/%s.md" % own) if before else None
+    if q is None:
+        return "questions/%s.md is not in the tree before the record was added" % own
+    letter = lm.group(1)
+    for line in q.replace("\r\n", "\n").split("\n"):
+        om = OPTION_LINE_RE.match(line)
+        if om and om.group(1) == letter:
+            opt = om.group(2)
+            if re.match(r"accept\b", opt) and _whole(mid, opt):
+                return None
+            return "option %s of questions/%s.md does not begin `%s. accept` and name %s" % (letter, own, letter, mid)
+    return "questions/%s.md has no option %s" % (own, letter)
+
+
+def _committer_date(root, sha):
+    ts = int(g.git(root, ["show", "-s", "--format=%ct", sha]).decode().strip())
+    return datetime.datetime.fromtimestamp(ts, datetime.timezone.utc).date().isoformat()
+
+
+def reached_findings(root, commits, at_head):
+    """model S-033 AC7: each commit that adds, changes or removes a milestone's reached part carries the owner's
+    record for it, and no reached date is later than its commit's committer date (UTC)."""
+    out, cache = [], {}
+
+    def reached_at(rev):
+        if rev not in cache:
+            cache[rev] = dict((m.id, m.reached) for m in milestones_at(root, rev))
+        return cache[rev]
+    for c in commits:
+        if not c.parents:
+            continue
+        now = reached_at(c.sha)
+        before = [reached_at(p) for p in c.parents]
+        for mid, new in now.items():
+            olds = [b.get(mid, _ABSENT) for b in before]
+            if new in olds:
+                continue                  # unchanged, or a merge taking one side's mark
+            old = olds[0] if olds[0] is not _ABSENT else None
+            if new is None and old is None:
+                continue
+            rulings = c.trailer("Owner-Ruling")
+            word = "reopen" if new is None else "accept"
+            reasons = [(p, reached_licence(root, p, mid, word, at_head)) for p in rulings]
+            if not any(why is None for _, why in reasons):
+                if old is None:
+                    what = "%s marked reached (%s) in commit %s" % (mid, new, c.short)
+                elif new is None:
+                    what = "%s's reached mark removed in commit %s" % (mid, c.short)
+                else:
+                    what = "%s's reached date changed from %s to %s in commit %s" % (mid, old, new, c.short)
+                need = ("whose first line begins `Ruling: reopen` and names %s" % mid if word == "reopen" else
+                        "whose first line begins `Ruling: accept` and names %s, or a letter answer whose question's "
+                        "option accepts it" % mid)
+                out.append("%s: needs an Owner-Ruling: trailer on that commit naming the owner's decisions/questions/ "
+                           "record %s (model S-033 AC7)%s"
+                           % (what, need, "".join("; Owner-Ruling: %s: %s" % r for r in reasons)))
+            if new is not None:
+                day = _committer_date(root, c.sha)
+                if new > day:
+                    out.append("%s is marked reached on %s, later than commit %s's committer date %s (UTC) "
+                               "(model S-033 AC7)" % (mid, new, c.short, day))
+    return out
+
+
+# --------------------------------------------------------------------------
+# model S-033 AC6: the Chief of Staff's session lines
+
+SESSIONS_REL = "sessions/chief-of-staff"
+SESSION_ID_RE = re.compile(r"[A-Za-z0-9_-]{1,100}")
+SESSION_FILE_RE = re.compile(r"([A-Za-z0-9_-]{1,100})\.jsonl")
+SESSION_KEYS = {"start": ("event", "session", "time", "doing"),
+                "helper": ("event", "session", "role", "started", "ended", "reported"),
+                "end": ("event", "session", "time", "usage")}
+REPORTED_KEYS = ("tokens", "tool_uses", "duration_ms")
+UTC_RE = re.compile(r"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?(?:Z|\+00:00)")
+
+
+def utc_time(value):
+    """A datetime for a UTC ISO-8601 time (`yyyy-mm-ddThh:mm:ss[.f]Z` or `+00:00`), or None."""
+    m = UTC_RE.fullmatch(value) if isinstance(value, str) else None
+    if not m:
+        return None
+    try:
+        frac = int((m.group(7) or "0")[:6].ljust(6, "0"))
+        return datetime.datetime(*(int(x) for x in m.groups()[:6]), microsecond=frac)
+    except ValueError:
+        return None
+
+
+def _one_object(text):
+    def pairs(items):
+        keys = [k for k, _ in items]
+        if len(set(keys)) != len(keys):
+            raise ValueError("a repeated key")
+        return dict(items)
+
+    def constant(name):
+        raise ValueError("%s is not JSON" % name)
+    return json.loads(text, object_pairs_hook=pairs, parse_constant=constant)
+
+
+def _count(v):
+    return v is None or (type(v) is int and v >= 0)
+
+
+def session_line_problems(sid, n, obj, prev):
+    """Problems with one parsed line of session `sid`'s file; `prev` holds the last start or end time."""
+    import session_runner as sr
+    out = []
+    if not isinstance(obj, dict):
+        return ["line %d: not one JSON object" % n]
+    event = obj.get("event")
+    if "event" not in obj:
+        return ["line %d: missing key event" % n]
+    if not isinstance(event, str):
+        return ["line %d: event has the wrong type (a string)" % n]
+    if event not in SESSION_KEYS:
+        return ["line %d: unknown event %r (start, helper or end)" % (n, event)]
+    keys = SESSION_KEYS[event]
+    out += ["line %d: missing key %s" % (n, k) for k in keys if k not in obj]
+    out += ["line %d: extra key %s" % (n, k) for k in sorted(obj) if k not in keys]
+    if "session" in obj:
+        if not isinstance(obj["session"], str):
+            out.append("line %d: session has the wrong type (a string)" % n)
+        elif obj["session"] != sid:
+            out.append("line %d: the file's name is not its lines' session (%r)" % (n, obj["session"]))
+    for k in ("doing", "role"):
+        if k in obj and k in keys and not (isinstance(obj[k], str) and obj[k].strip()):
+            out.append("line %d: %s has the wrong type (a non-empty string)" % (n, k))
+    times = {}
+    for k in ("time", "started", "ended"):
+        if k in obj and k in keys:
+            t = utc_time(obj[k])
+            if t is None:
+                out.append("line %d: %s %r is not UTC ISO-8601 (yyyy-mm-ddThh:mm:ssZ)" % (n, k, obj[k]))
+            else:
+                times[k] = t
+    if event == "helper":
+        rep = obj.get("reported")
+        if "reported" in obj and not isinstance(rep, dict):
+            out.append("line %d: reported has the wrong type (an object)" % n)
+        elif isinstance(rep, dict):
+            out += ["line %d: reported: missing key %s" % (n, k) for k in REPORTED_KEYS if k not in rep]
+            out += ["line %d: reported: extra key %s" % (n, k) for k in sorted(rep) if k not in REPORTED_KEYS]
+            out += ["line %d: reported %s has the wrong type (a whole number or null)" % (n, k)
+                    for k in REPORTED_KEYS if k in rep and not _count(rep[k])]
+        if "started" in times and "ended" in times and times["started"] > times["ended"]:
+            out.append("line %d: the helper started after it ended" % n)
+    if event == "end" and "usage" in obj:
+        why = sr.usage_problem(obj["usage"])
+        if why:
+            out.append("line %d: the usage object is not model S-020's (%s)" % (n, why))
+    if event in ("start", "end") and "time" in times:
+        if prev[0] is not None and times["time"] < prev[0]:
+            out.append("line %d: its time is earlier than the time of the previous start or end line" % n)
+        prev[0] = times["time"]
+    return out
+
+
+def _session_lines(text):
+    lines = text.split("\n")
+    return lines[:-1] if lines and lines[-1] == "" else lines
+
+
+def _has_start(text, sid):
+    for line in _session_lines(text or ""):
+        try:
+            obj = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(obj, dict) and obj.get("event") == "start" and obj.get("session") == sid:
+            return True
+    return False
+
+
+def check_sessions(root, base=None, branch=None, default_branch=None):
+    """model S-033 AC6: (findings, notes) for the Chief of Staff's session files."""
+    if base is not None:
+        g.verify_commit(root, base)
+    v, notes = [], []
+    folder = os.path.join(root, SESSIONS_REL)
+    files = {}
+    if os.path.isdir(folder):
+        for name in sorted(os.listdir(folder)):
+            rel = "%s/%s" % (SESSIONS_REL, name)
+            path = os.path.join(folder, name)
+            m = SESSION_FILE_RE.fullmatch(name)
+            if not m or os.path.islink(path) or not os.path.isfile(path):
+                v.append("%s: not a session file: a session file is a regular file <session id>.jsonl, its id 1 to "
+                         "100 of A-Z a-z 0-9 _ - (model S-033 AC6)" % rel)
+                continue
+            try:
+                with open(path, "rb") as fh:
+                    text = fh.read().decode("utf-8")
+            except UnicodeDecodeError:
+                v.append("%s: not valid UTF-8 (model S-033 AC6)" % rel)
+                continue
+            files[rel] = text
+            prev = [None]
+            for n, line in enumerate(_session_lines(text), 1):
+                try:
+                    obj = _one_object(line)
+                except (ValueError, RecursionError):
+                    obj = None
+                v += ["%s %s (model S-033 AC6)" % (rel, p) for p in session_line_problems(m.group(1), n, obj, prev)]
+    if base is not None:
+        for rel in sorted(_ls(root, base, SESSIONS_REL)):
+            old = g.git_blob(root, base, rel)
+            if old is None or not SESSION_FILE_RE.fullmatch(posixpath.basename(rel)):
+                continue
+            ol = _session_lines(old.decode("utf-8", "replace"))
+            nl = _session_lines(files[rel]) if rel in files else None
+            if nl is None or nl[:len(ol)] != ol:
+                v.append("%s: a line changed or removed since the base %s: only lines added to its end are allowed "
+                         "(model S-033 AC6)" % (rel, base))
+    if base is not None and branch and default_branch and branch == default_branch:
+        notes += presence_notes(root, base)
+    notes.append("NOTE: %d session file(s) in %s/" % (len(files), SESSIONS_REL))
+    return v, notes
+
+
+def presence_notes(root, base):
+    """model S-033 AC6: on a default-branch run, each chief-of-staff commit in the range after the first session
+    file's commit whose session has no start line at HEAD."""
+    first = g.git(root, ["log", "--diff-filter=A", "--reverse", "--format=%H", "HEAD", "--",
+                         SESSIONS_REL + "/"]).decode().split()
+    if not first:
+        return []
+    first = first[0]
+    out = []
+    for c in g.read_commits(root, g.rev_list(root, ["--reverse", "%s..HEAD" % base])):
+        if c.sha == first or c.agent_id() != CHIEF_OF_STAFF or not g.git_ok(root, ["merge-base", "--is-ancestor",
+                                                                                   first, c.sha]):
+            continue
+        for sid in c.trailer("Agent-Session"):
+            if not SESSION_ID_RE.fullmatch(sid):
+                out.append("NOTE: commit %s by chief-of-staff (Agent-Session: %s): the session id is not 1 to 100 of "
+                           "A-Z a-z 0-9 _ -, so the session cannot record (model S-033 AC6)" % (c.short, sid))
+            elif not _has_start(g.git_text(root, "HEAD", "%s/%s.jsonl" % (SESSIONS_REL, sid)), sid):
+                out.append("NOTE: commit %s by chief-of-staff (Agent-Session: %s): no start line for it on the "
+                           "default branch yet (model S-033 AC6)" % (c.short, sid))
+    return out
 
 
 def fix_spec_problems(root, rel, sid, text):
@@ -2497,7 +2833,7 @@ def check_gates(root, base):
 
 CHECKS = {"ready": check_ready, "trace": check_trace, "joins": check_joins,
           "scope": check_scope, "freeze": check_freeze, "holdouts": check_holdouts,
-          "milestones": check_milestones, "gates": check_gates}
+          "milestones": check_milestones, "gates": check_gates, "sessions": check_sessions}
 RANGE_CHECKS = ("scope", "freeze", "holdouts", "milestones", "gates")
 OK_MESSAGES = {
     "ready": "the project document's Part 1 is complete, or no spec is frozen yet",
@@ -2510,6 +2846,7 @@ OK_MESSAGES = {
                   "and new work names its milestone",
     "gates": "every gate case added or changed is in its form, cites only records the Critic can open, and lists "
              "the closing phases' milestones as the timeline gives them",
+    "sessions": "the Chief of Staff's session lines are in their form",
 }
 
 
@@ -2518,7 +2855,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog="v3_checks.py", description=__doc__.split("\n")[0],
                                      allow_abbrev=False)
     sub = parser.add_subparsers(dest="cmd")
-    for name in ("ready", "trace", "joins", "scope", "freeze", "holdouts", "milestones", "gates"):
+    for name in ("ready", "trace", "joins", "scope", "freeze", "holdouts", "milestones", "gates", "sessions"):
         p = sub.add_parser(name, allow_abbrev=False)
         p.add_argument("--root", default=".")
         if name in RANGE_CHECKS:
@@ -2527,6 +2864,10 @@ def main(argv=None):
             p.add_argument("--default-branch")
         if name == "freeze":
             p.add_argument("--milestones", action="store_true")
+        if name == "sessions":
+            p.add_argument("--base")
+            p.add_argument("--branch")
+            p.add_argument("--default-branch")
     try:
         args = parser.parse_args(argv)
     except SystemExit as exc:
@@ -2546,6 +2887,8 @@ def main(argv=None):
         elif args.cmd == "milestones":
             found, notes = check_milestones(args.root, args.base)
             return g.report(args.root, found, notes, OK_MESSAGES[args.cmd])
+        elif args.cmd == "sessions":
+            v, notes = check_sessions(args.root, args.base, args.branch, args.default_branch)
         elif args.cmd in RANGE_CHECKS:
             v, notes = CHECKS[args.cmd](args.root, args.base)
         else:

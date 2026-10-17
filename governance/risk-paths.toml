@@ -21,7 +21,7 @@ R3 = [                    # irreversible or gate-bearing: owner approval (A4)
 R2 = ["src/ui/**", "config/**"]            # user-facing behavior, config, compatible schema
 R1 = ["src/**", "tests/**"]                # ordinary source with tests
 R0 = ["docs/**", "digest/**", "specs/**", "experiments/**", "questions/**", "reviews/**", "triage/**",
-      "research/**", "library/**", "intake/**", "status/**", "dispatch-log/**", "queue/**", "decisions/**",
+      "research/**", "library/**", "intake/**", "status/**", "dispatch-log/**", "queue/**", "decisions/**", "sessions/**",
       "README.md", "CLAUDE.md"]
 
 [reviews]                 # verdicts a change needs, by its class: reviews/<PR>/<reviewer-id>.md

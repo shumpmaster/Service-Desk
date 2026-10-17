@@ -15,7 +15,10 @@
 #   governance/v3.toml (model S-009), when present under ROOT, switches on the v3
 #             checks: v3_checks ready, trace and joins, and with BASE_REF
 #             v3_checks scope, freeze, holdouts, milestones (model S-023) and gates
-#             (model S-024). Sprints are retired there,
+#             (model S-024), and v3_checks sessions (model S-033 AC6; with BASE_REF, and on a
+#             default-branch run, GOV_BRANCH equal to GOV_DEFAULT_BRANCH, its presence notes).
+#             There governance_checks all also takes BASE_REF, for the questions check's
+#             reused-name finding (model S-033 AC2). Sprints are retired there,
 #             so the sprint-based scope step does not run (v3_checks scope
 #             replaces it). Without the file the steps are as before. There the
 #             Orchestrator's record checks run too (model S-013 AC1): with BASE_REF
@@ -103,7 +106,13 @@ else
   run_step "ledger_check check" "$PY" "$HERE/ledger_check.py" check --root "$ROOT"
 fi
 run_step "digest check" "$PY" "$HERE/digest.py" check --root "$ROOT"
-run_step "governance_checks all" "$PY" "$HERE/governance_checks.py" all --root "$ROOT"
+# model S-033 AC2: the base goes to governance_checks only in a v3 project (where it reaches the questions
+# check, and scope is retired); the step keeps its label.
+gc_args=(all --root "$ROOT")
+if [ "$V3" -eq 1 ] && [ -n "$BASE" ]; then
+  gc_args+=(--base "$BASE")
+fi
+run_step "governance_checks all" "$PY" "$HERE/governance_checks.py" "${gc_args[@]}"
 if [ -n "$BASE" ] && [ -n "$PR" ]; then
   review_args=(pr "$PR" --base "$BASE" --root "$ROOT")
   if [ -n "$GOV_SUMMARY_DIR" ]; then
@@ -146,6 +155,17 @@ if [ "$V3" -eq 1 ]; then
   run_step "v3_checks ready" "$PY" "$HERE/v3_checks.py" ready --root "$ROOT"
   run_step "v3_checks trace" "$PY" "$HERE/v3_checks.py" trace --root "$ROOT"
   run_step "v3_checks joins" "$PY" "$HERE/v3_checks.py" joins --root "$ROOT"
+  # model S-033 AC6: the Chief of Staff's session lines.
+  sessions_args=(sessions --root "$ROOT")
+  sessions_label="v3_checks sessions"
+  if [ -n "$BASE" ]; then
+    sessions_args+=(--base "$BASE")
+    sessions_label="v3_checks sessions --base $BASE"
+    if [ -n "$GOV_BRANCH" ] && [ -n "$GOV_DEFAULT_BRANCH" ]; then
+      sessions_args+=(--branch "$GOV_BRANCH" --default-branch "$GOV_DEFAULT_BRANCH")
+    fi
+  fi
+  run_step "$sessions_label" "$PY" "$HERE/v3_checks.py" "${sessions_args[@]}"
   run_step "record_checks routing" "$PY" "$HERE/record_checks.py" routing --root "$ROOT"
   run_step "record_checks build-cap" "$PY" "$HERE/record_checks.py" build-cap --root "$ROOT"
   run_step "record_checks grants" "$PY" "$HERE/record_checks.py" grants --root "$ROOT"

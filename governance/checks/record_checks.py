@@ -31,7 +31,12 @@ branch's checkout) and fails closed on a record it cannot parse, naming the file
              Every other first-parent commit by `orchestrator` touches only status/**,
              dispatch-log/**, queue/** and (builder's reading, model S-012 AC2) the research question copy
              research/Q-nnn.md. status/merges.jsonl is never trusted. Skipped on an item/ or build/
-             branch (--branch), whose first-parent line is not the default branch's.
+             branch (--branch), whose first-parent line is not the default branch's. model S-033 AC4:
+             a first-parent commit carrying `Merged-By:` has two parents, github-actions[bot] as its
+             author, one `Merged-By: orchestrator`, a diff against its first parent (renames off,
+             judged against that parent's tree) that is one or more of the asks-merge kinds
+             (asks_merge.classify), a `Delegation:` naming an asks-merge grant standing in its first
+             parent's ledger (asks_merge.grant_problem), and its second parent as its `Merged-Head:`.
   routing    (record-routing; D-042) orchestrator.py verify-log passes, and each dispatch-log line
              with a `route` names a route of ROUTING.toml; a dispatch or check-run line's role is the
              role its route's action dispatches (`dispatch item-role`: the route's role), a card or
@@ -508,10 +513,16 @@ def check_merges(root, base, branch=None):
     if branch and branch.startswith(("item/", "build/")):
         return [], ["NOTE: %s is not the default branch; record-merges judges only the default branch's "
                     "first-parent line" % branch]
+    import asks_merge   # model S-033 AC4 (imported here: asks_merge reads this module's PROXY_RE)
     findings, notes = [], []
-    merges = 0
+    merges = asks = 0
     commits = g.read_commits(root, g.rev_list(root, ["--first-parent", "--reverse", "%s..HEAD" % base]))
     for c in commits:
+        if c.trailer("Merged-By"):
+            asks += 1
+            findings += [("record-merges", "commit %s: %s" % (c.short, m))
+                         for m in asks_merge.merged_by_problems(root, c)]
+            continue
         items = c.trailer("Item")
         if items:
             merges += 1
@@ -528,7 +539,8 @@ def check_merges(root, base, branch=None):
             findings.append(("record-merges", "commit %s by orchestrator (no Item: trailer) changes %s, outside "
                                               "status/**, dispatch-log/** and queue/**"
                              % (c.short, ", ".join(bad[:8]))))
-    notes.append("NOTE: %d first-parent commit(s) in %s..HEAD, %d item merge(s)" % (len(commits), base, merges))
+    notes.append("NOTE: %d first-parent commit(s) in %s..HEAD, %d item merge(s), %d asks-merge merge(s)"
+                 % (len(commits), base, merges, asks))
     return findings, notes
 
 

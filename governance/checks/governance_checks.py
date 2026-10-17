@@ -3,7 +3,7 @@
 
 Usage:
   governance_checks.py sprints   [--root DIR]
-  governance_checks.py questions [--root DIR]
+  governance_checks.py questions [--root DIR] [--base REF]
   governance_checks.py reviewers [--root DIR]
   governance_checks.py builders  [--root DIR] [--base REF]
   governance_checks.py handover  [--root DIR]
@@ -12,7 +12,8 @@ Usage:
   governance_checks.py pr-body   --event FILE [--root DIR]
 
 `all` runs sprints, questions, reviewers, builders and handover, and also
-scope when --base is given.
+scope when --base is given. In a v3 project, where scope is retired, the base
+goes to `questions` only; check_all.sh passes it only there (model S-033 AC2).
 
 `builders` enforces one active builder per surface (a T2 rule; skipped at T0
 and T1, read from the `tier:` line of AGENTS.md). It sees only git branches:
@@ -71,6 +72,19 @@ quotes). The line ending Context is the Why heading. Each Why line is read as th
 `>` and one space or tab dropped, and Why must hold words, not only "not recorded", "none", "n/a" or "tbd".
 Anything may follow Why. Each problem is one finding; a body whose first line is not the lead heading gets
 that one finding only. Without --root's governance/v3.toml, only the lead is read, with the output as before.
+
+`questions` (model S-033 AC2), where governance/v3.toml exists, also reads each questions/*.md file not
+starting with `_`: its first `Milestone:` line in column 0 must be in model S-032's form (as `pr-body` reads
+it); it must have a Context section (a heading read as the desk reads it, running to the next such heading
+or the end) holding at least one bullet `- ` in column 0 (an indented line straight after a bullet's line
+continues it, as for `pr-body`), every bullet holding ` (source: `, and nowhere the words "not recorded"
+(case ignored); and REVERSIBILITY is the word after its label on the first line beginning `RISK CLASS:` in
+column 0 (the template's shared line), up to the next space: `reversible`, `costly` or `irreversible`; a file
+holding more than one `REVERSIBILITY:` label, or one whose only label is not on that line, is reported.
+With --base REF, a question file at HEAD that is not at REF and whose answer record
+decisions/questions/<name>.md is at REF is a reused name; without a base that finding is not run. A
+question file whose answer record exists (and is not a reused name) is a NOTE: it is answered, and the Chief
+of Staff deletes it. Outside a v3 project the check is unchanged.
 
 Exit 0 = pass, 1 = rule violated, 2 = usage or parse error.
 """
@@ -259,8 +273,11 @@ def check_scope(root, base, files=None, default_branch=None):
     return v, notes
 
 
-def check_questions(root):
+def check_questions(root, base=None):
     v, notes = [], []
+    v3 = g.is_v3(root)
+    if base is not None and v3:
+        g.verify_commit(root, base)
     names = [n for n in _md_files(root, QUESTIONS_REL) if not n.startswith("_")]
     if not names:
         notes.append("NOTE: no open question files in %s/" % QUESTIONS_REL)
@@ -271,7 +288,91 @@ def check_questions(root):
                    if not re.search(r"(?m)(^|\s)%s" % re.escape(lab), text)]
         if missing:
             v.append("%s: question is missing required label(s): %s" % (rel, ", ".join(missing)))
+        if not v3:
+            continue
+        v.extend("%s: %s (model S-033 AC2)" % (rel, p) for p in v3_question_problems(text))
+        answer = "%s/%s" % (ANSWERS_REL, name)
+        if base is not None and g.git_blob(root, base, rel) is None and g.git_blob(root, base, answer) is not None:
+            v.append("%s: added in the range, but its answer record %s is already on the base %s: a reused name; "
+                     "file the question under a new name (model S-033 AC2)" % (rel, answer, base))
+        elif os.path.isfile(os.path.join(root, answer)):
+            notes.append("NOTE: %s is answered (%s); the Chief of Staff deletes it in a pull request of its own "
+                         "(model S-033 AC4 kind (d))" % (rel, answer))
     return v, notes
+
+
+# model S-033 AC2: a v3 question names its milestone, lists its facts, and states its reversibility.
+ANSWERS_REL = "decisions/questions"
+REVERSIBILITY_WORDS = ("reversible", "costly", "irreversible")
+_REVERSIBILITY_RE = re.compile(r"(?:^|\s)REVERSIBILITY:[ \t]*([^\s]*)")
+_REVERSIBILITY_LABEL_RE = re.compile(r"(?m)(?:^|\s)REVERSIBILITY:")
+
+
+def reversibility(text):
+    """The word after the `REVERSIBILITY:` label (at the line's start or after white space) on the first line
+    beginning `RISK CLASS:` in column 0, the template's shared line, up to the next space: '' when nothing
+    follows on the line, None when that line holds no label or there is no such line (model S-033 AC2; a label
+    elsewhere is never read: model S-033, build review round 1, note 5)."""
+    for line in (text or "").replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        if line.startswith("RISK CLASS:"):
+            m = _REVERSIBILITY_RE.search(line)
+            return m.group(1) if m else None
+    return None
+
+
+def reversibility_labels(text):
+    """How many `REVERSIBILITY:` labels (at a line's start or after white space) the text holds anywhere."""
+    return len(_REVERSIBILITY_LABEL_RE.findall(text or ""))
+
+
+def question_milestone(text):
+    """The first column-0 `Milestone:` line of a question file or answer record, trailing space dropped, or
+    None (model S-033 J1)."""
+    for line in (text or "").replace("\r\n", "\n").split("\n"):
+        if line.startswith("Milestone:"):
+            return line.rstrip(" \t\r")
+    return None
+
+
+def v3_question_problems(text):
+    """Problems with a v3 question file's form (model S-033 AC2): its milestone line, its Context section and its
+    reversibility. An empty list means it passes."""
+    problems = []
+    lines = (text or "").replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    line = question_milestone(text)
+    if line is None:
+        problems.append("no 'Milestone:' line in column 0: a question names the milestone it unblocks, "
+                        "'Milestone: M<id>' or 'Milestone: none (<why it serves none>)'")
+    else:
+        why = _milestone_problem(line)
+        if why:
+            problems.append(why)
+    heads = [i for i, l in enumerate(lines) if PR_CONTEXT_RE.match(l)]
+    if not heads:
+        problems.append("no '## Context' section: list the facts behind the question, each '- <fact> (source: "
+                        "<record>)'")
+    else:
+        i = heads[0]
+        body = lines[i + 1:_section(lines, i + 1)]
+        # Bullets as model S-032 reads them: `- ` in column 0, an indented line straight after one continuing it.
+        bullets = _bullets(body)[0]
+        if not bullets:
+            problems.append("the Context section holds no bullet '- <fact> (source: <record>)'")
+        for b in bullets:
+            if PR_SOURCE not in b:
+                problems.append("a Context bullet has no ' (source: <record>)': %r" % b)
+        if any("not recorded" in l.lower() for l in body):
+            problems.append("the Context section says \"not recorded\": give each fact its record, or leave it "
+                            "out")
+    word, labels = reversibility(text), reversibility_labels(text)
+    if labels > 1:
+        problems.append("it holds %d 'REVERSIBILITY:' labels: keep the one on the 'RISK CLASS:' line, and write "
+                        "the word without its colon anywhere else" % labels)
+    elif labels == 1 and word is None:
+        problems.append("its 'REVERSIBILITY:' label is not on the 'RISK CLASS:' line (column 0), where it is read")
+    if word is not None and word not in REVERSIBILITY_WORDS:
+        problems.append("REVERSIBILITY is %r, not one of: %s" % (word, ", ".join(REVERSIBILITY_WORDS)))
+    return problems
 
 
 def front_matter(text):
@@ -755,7 +856,7 @@ def main(argv=None):
     for name in ("sprints", "questions", "reviewers", "builders", "handover", "scope", "all"):
         p = sub.add_parser(name, allow_abbrev=False)
         p.add_argument("--root", default=".")
-        if name in ("builders", "all"):
+        if name in ("builders", "questions", "all"):
             p.add_argument("--base")
         if name == "scope":
             p.add_argument("--base", required=True)
@@ -787,8 +888,14 @@ def main(argv=None):
                          % (g.V3_SWITCH_REL, " and ".join("the %s check" % n for n in retired)))
     for name, fn in selected:
         try:
-            if name == "builders":
+            if name == "builders" and not (v3 and args.cmd == "all"):
                 v, n = fn(args.root, args.base)
+            elif name == "builders":
+                # model S-033 AC2: in a v3 project `all` takes the base for `questions`; builders keeps the
+                # default branch as its base, as check_all.sh ran it before.
+                v, n = fn(args.root)
+            elif name == "questions":
+                v, n = fn(args.root, getattr(args, "base", None))
             elif name == "scope":
                 files = g.read_file_list(args.files_from) if getattr(args, "files_from", None) else None
                 v, n = fn(args.root, args.base, files, getattr(args, "default_branch", None))

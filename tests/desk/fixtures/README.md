@@ -62,9 +62,12 @@
   gives.
 - `ac61/` (2026-10-16, AC61): NOT real records. `docs/PROJECT.md` is the 3117150 fixture's with
   why ends on M2B and MD1, two out-of-form whys (MZ1, MZ2), and standard-milestone lines in S-032's
-  draft forms (taken on, skipped, one out of form, one repeated, one naming no standard
-  milestone); `pulls.json` holds made-up pull requests #901 to #909 with `Milestone:` lines and
-  `## Context` / `## Why` sections in each form AC61 (c) reads.
+  forms (written to its draft of 2026-10-16, whose forms the frozen S-032 keeps for these lines:
+  taken on, skipped, one out of form, one repeated, one naming no standard milestone);
+  `pulls.json` holds made-up pull requests #901 to #909 with `Milestone:` lines and
+  `## Context` / `## Why` sections in each form AC61 (c) reads. The three display leniencies
+  AC61 names (2026-10-17, the desk follow-ups: closing `#`s on a heading, `Milestone:M2`, Why
+  before Context) are made-up bodies written inline in AC61's test, NOT real records.
 - `ac62-text-2c1acb6.json` (2026-10-16, AC62): every sandbox screen's text at commit 2c1acb6,
   outside the parts AC57 to AC60 and AC65 to AC68 rebuild, drawn by the page itself from
   `tests/desk/screen-text.mjs`'s fixtures; made by `node tests/desk/tools/ac62-snapshot.mjs` in a

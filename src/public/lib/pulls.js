@@ -10,6 +10,17 @@ export const PULLS_MAX = 300; // J12: at most 3 pages of 100 are read, and at mo
 export const PULLS_MAX_PAGES = 3;
 export const PULLS_KEY = 'desk-pulls-v1'; // J12: the device's own store for them, apart from the blob cache
 export const PULLS_RATE_MS = 60 * 60e3; // J12: after a RATE_LIMITED answer, no read for 60 minutes, then the read again (C; draft 6)
+// J12's backoff (2026-10-17, the desk follow-ups; build review round 2 of trial-view notes 2, N1): after
+// any other failed read, the next J12 read comes 5, 10, 20 and 40 minutes after failures in a row,
+// then every 60 minutes until a read answers; an answer sets it back to the start. A RATE_LIMITED
+// answer keeps PULLS_RATE_MS and leaves the step as it was. Held in memory, so each opening starts at 5.
+export const PULLS_BACKOFF_MS = Object.freeze([5, 10, 20, 40, 60].map((m) => m * 60e3));
+
+/** The wait after the failure that follows `step` failures in a row (0 for the first): 5, 10, 20, 40, then 60 minutes. */
+export function pullsBackoffMs(step) {
+  const i = Number.isInteger(step) && step > 0 ? step : 0;
+  return PULLS_BACKOFF_MS[Math.min(i, PULLS_BACKOFF_MS.length - 1)];
+}
 export const TOO_MANY_WORDS = 'older pull requests not read (over 300)';
 export const CANT_READ_CHECKS = "the desk's token can't read checks";
 export const NO_CHECKS = 'no checks recorded for this pull request';
@@ -17,8 +28,12 @@ export const NO_CHECKS = 'no checks recorded for this pull request';
 const CHECK_STATES = new Set(['SUCCESS', 'FAILURE', 'ERROR', 'PENDING', 'EXPECTED']);
 
 // ---------------------------------------------------------------------------
-// AC61 (c): a pull request body's `Milestone:` line, Context and Why (model S-032 AC6, its draft of
-// 2026-10-16). The desk reads exactly these and checks no form (S-032's own check does that).
+// AC61 (c): a pull request body's `Milestone:` line, Context and Why (model S-032 AC6, as frozen on
+// 2026-10-16 at 24987db, merged in Personal-Org-Operating-Model at c816cec, and adopted here with
+// model v3.4.0, L-0015). For a body in S-032's form these read as S-032's forms say, as its draft 1
+// (7108d1d) did, so the reader is unchanged. The desk reads exactly these and checks no form
+// (S-032's `pr-body` check does that in the project's own CI); a body out of form is read as AC61's
+// "Where the desk differs from S-032" says, its display leniencies included.
 
 const MILESTONE_RE = /^Milestone:[ \t]*(.*)$/;
 const NONE_RE = /^none \((.+)\)$/;

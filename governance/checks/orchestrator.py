@@ -88,6 +88,7 @@ QUEUE_DIR = "queue"
 DECISIONS_DIR = "decisions"
 LOG_DIR = "dispatch-log"
 RESEARCH_DIR = "research"
+SPECS_DIR = "specs"               # the project's specs folder, which --spec-dir mirrors (model S-033 AC5)
 GENESIS = "0" * 64
 
 KINDS = ("project", "research", "evidence")
@@ -130,6 +131,8 @@ PHASE_OF_STAGE = {1: "Discovery", 2: "Discovery", 3: "Design", 4: "Build", 5: "B
 BOUNDARY_WORDS = {"dor": ("recycle", "re-aim"), "criteria": ("recycle", "revise"), "launch": ("recycle", "revise")}
 # model S-023 AC4: a research request's milestone tag; AC12: a later-work request's ruling record.
 MILESTONE_TAG_RE = re.compile(r"^(?:M[0-9A-Z]{1,7}|(?:Discovery|Design|Build|Launch)-[1-9])$")
+# model S-033 AC5: a spec header's `milestones:` line, as v3_checks.SPEC_MILESTONES_RE reads it.
+CARD_MILESTONES_RE = re.compile(r"^milestones: (M[0-9A-Z]{1,7}(?:, M[0-9A-Z]{1,7})*)$")
 RULING_PATH_RE = re.compile(r"^decisions/questions/[A-Za-z0-9][A-Za-z0-9.-]*\.md$")
 ENTERS = {"Build": (4, "definer-freeze"), "Design": (3, "definer")}
 
@@ -870,7 +873,13 @@ WORD_EFFECT_ANY = {
 }
 
 
-def card_text(routing, item, st, action, links, words):
+def card_text(routing, item, st, action, links, words, milestone=None, spec_path=None):
+    """A decision card: its header lines, the seven parts of D-019 and, for a launch card, section 8 (model S-013
+    AC4).
+    model S-033 AC5: a `Milestone: <ids>` line straight under the `answer:` line when `milestone` (the spec
+    header's `milestones:` value, or a research request's tag) is recorded, and, after section 7 and before any
+    section 8, `## Context`: a bullet for each fact of sections 1 to 3 that comes from a record, with its source
+    (the status file; `spec_path`, the spec's file, when known; the gate case for a gate card)."""
     gate, n = action["gate"], action["card"]
     record = "decisions/%s/%s-%d.md" % (item, gate, n)
     notes = "decisions/%s/%s-%d-notes.md" % (item, gate, n)
@@ -878,8 +887,10 @@ def card_text(routing, item, st, action, links, words):
     user = action.get("user")                 # model S-025: "ran", "not-needed", "not-run", or None
     out = ["# Decision card — %s %s-%d" % (item, gate, n), "",
            "item: %s   kind: %s   gate: %s   card: %d   route: %s" % (item, st["kind"], gate, n, action["route"]),
-           "answer: write `%s`, first line `Decision: <word>` (one of the words below)." % record,
-           "", "## 1. The decision", GATE_QUESTION.get(gate, "")]
+           "answer: write `%s`, first line `Decision: <word>` (one of the words below)." % record]
+    if milestone:
+        out.append("Milestone: %s" % milestone)
+    out += ["", "## 1. The decision", GATE_QUESTION.get(gate, "")]
     if gate in GATE_PHASE and st.get("gate_n"):
         out.append("%s, case %d." % (GATE_TITLE[gate], st["gate_n"]))
         if user == "ran":
@@ -928,6 +939,15 @@ def card_text(routing, item, st, action, links, words):
             "budget (model S-012 AC6).", "",
             "## 7. Who has checked it"]
     out += ["- %s" % l for l in links] or ["- (no record)"]
+    status = "status/%s.toml" % item
+    out += ["", "## Context",
+            "- stage %d, role %s, last verdict %s (source: %s)" % (st["stage"], st["role"], st["last_verdict"], status),
+            "- plan round %d, build round %d (source: %s)" % (st["plan_round"], st["build_round"], status)]
+    if st.get("spec") and spec_path:
+        out.append("- the spec, %s (source: %s)" % (st["spec"], spec_path))
+    if gate in GATE_PHASE and st.get("gate_n"):
+        out.append("- the %s gate's case %d (source: docs/gates/%s/%s-gate-%d-case.md)"
+                   % (GATE_PHASE[gate].capitalize(), st["gate_n"], item, GATE_PHASE[gate], st["gate_n"]))
     if gate == "launch":
         out += ["", LAUNCH_SECTION, LAUNCH_UNSTAMPED]
     return "\n".join(out) + "\n"
@@ -1102,6 +1122,22 @@ class Step:
                             break
             self.spec_cache[spec] = status == "frozen"
         return self.spec_cache[spec]
+
+    def card_milestone(self, st, spec_name):
+        """model S-033 AC5: the milestones the card's item serves, as recorded: its spec header's `milestones:`
+        line, or a research item's tag from its request; None when neither is recorded."""
+        if spec_name:
+            with open(os.path.join(self.spec_dir, spec_name), encoding="utf-8") as fh:
+                for line in fh:
+                    if line.startswith("## "):
+                        break
+                    m = CARD_MILESTONES_RE.match(line.rstrip("\r\n"))
+                    if m:
+                        return m.group(1)
+        if st.get("kind") == "research" and isinstance(st.get("milestone"), str) \
+                and MILESTONE_TAG_RE.match(st["milestone"]):
+            return st["milestone"]
+        return None
 
     def note_spec(self, sid):
         m = SPEC_ID_RE.match(sid) if isinstance(sid, str) else None
@@ -1569,8 +1605,11 @@ class Step:
             if st.get("spec"):
                 links.append("the spec: %s" % st["spec"])
             words = valid_words(self.routing, st, gate)
+            name = self.spec_names().get(st.get("spec")) if st.get("spec") else None
             self.cards.append(("%s/%s-%s-%d.md" % (QUEUE_DIR, item, gate, n),
-                               card_text(self.routing, item, st, action, links, words)))
+                               card_text(self.routing, item, st, action, links, words,
+                                         milestone=self.card_milestone(st, name),
+                                         spec_path="%s/%s" % (SPECS_DIR, name) if name else None)))
             rec = "%s/%s/%s-%d.md" % (DECISIONS_DIR, item, gate, n)
             if os.path.exists(self.path(rec)):
                 self.anomaly("stray:%s" % rec, item, "%s existed before its card; it is never applied" % rec)

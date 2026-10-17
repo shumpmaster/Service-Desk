@@ -215,3 +215,30 @@ licenses_next: Pull requests in this project carry the Milestone line and the Co
 decided_by: owner (asked for the sync on 2026-10-17; merges this pull request)
 proposed_by: orchestrator
 reversibility: reversible
+
+## L-0016 — Model v3.5.0 adopted: every ask filed, the Chief of Staff's sessions recorded, a milestone's reached
+date: 2026-10-17
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The model is at v3.5.0 (its PR #35: S-033, 90f53e3). Bring Service Desk to it, as the owner asked on 2026-10-17 ("Proceed"): every ruling put to the owner filed first as a question with its milestone and context, the Chief of Staff's session lines, a milestone's reached mark by the owner's ruling, and the asks-merge workflow?
+decision: Copied byte for byte from the model at 90f53e3: governance/checks/ governance_checks.py, v3_checks.py, record_checks.py, govlib.py, orchestrator.py, check_all.sh and the new asks_merge.py. The model's new template workflow .github/workflows/asks-merge.yml is copied with desk-build added to its trigger list, since desk-build checks every pull request here, and its setup-step number set to 6. The model's template changes are carried into this project's own copies: AGENTS.md's S-033 paragraphs; decisions/README.md's answer form; docs/PROJECT.md's section 3 reached sentence; docs/SETUP.md's asks-merge step, numbered 6 here; sessions/chief-of-staff/** in the Chief of Staff's lane (questions/** already was); sessions/** in R0; and the v3 question template, with its Milestone line and Context section. The answered question file questions/P-001-design-lab-open.md is removed; the AC66 desk test that read it now reads its frozen copy, tests/desk/fixtures/trial-view/P-001-design-lab-open.md, byte for byte the same (the Builder, under S-001). OPERATING_MODEL_VERSION reads 3.5.0. Nothing written before is rewritten.
+licenses_next: From this merge on, every ruling put to the owner here is filed first as a question, and the Chief of Staff records its sessions in sessions/chief-of-staff/. S-001's next revision has the desk read the new records (open questions with their milestone and context, the Chief of Staff's sessions, a milestone's reached mark) and accept the reached part before any line carries one; only then is M1 marked reached from its acceptance record, and the owner is asked about M2 and M2B through filed questions.
+decided_by: owner (asked for the sync on 2026-10-17; merges this pull request)
+proposed_by: orchestrator
+reversibility: reversible
+
+## L-0017 — The asks-merge delegation: the Orchestrator's asks-merge workflow merges pull requests that only file or close the owner's asks or add the Chief of Staff's session lines
+date: 2026-10-17
+type: delegation
+supersedes: []
+scope: project
+expires: never
+asked: May the Orchestrator's asks-merge workflow merge pull requests that only file a question, close one with a reversible answer, tidy away one already answered, or add the Chief of Staff's session lines, once every check on the exact commit has passed, so a filed ask reaches the desk within minutes? (Model S-033 AC4.)
+decision: asks-merge: granted, until the owner withdraws it by a later delegation entry superseding this one, with a decision beginning "asks-merge withdrawn:". The workflow merges only the four kinds S-033 AC4 lists, each merge commit naming this entry; code, specs, deploys, verdicts, decision cards, unasked rulings, withdrawals, timeouts and answers that cannot be undone wait for the owner. No agent session merges a pull request.
+licenses_next: The asks-merge workflow's merges in this project, from this pull request's merge on.
+options_considered: "You merge each ask"; "Desk reads unmerged asks"; "Record after only".
+decided_by: owner ("Agents merge asks (Recommended)", 2026-10-17, decisions/questions/P-001-asks-merge.md)
+proposed_by: orchestrator
+reversibility: reversible

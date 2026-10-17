@@ -79,6 +79,7 @@ docs/PROJECT.md
 intake/**
 decisions/**
 questions/**
+sessions/chief-of-staff/**
 governance/**
 !governance/HOLDOUTS.md
 .github/**

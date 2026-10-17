@@ -1,5 +1,5 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-10-17: 14 active rulings and 0 kills, from 15 ledger entries.
+As of 2026-10-17: 16 active rulings and 0 kills, from 17 ledger entries.
 
 ## Active rulings
 
@@ -24,6 +24,8 @@ As of 2026-10-17: 14 active rulings and 0 kills, from 15 ledger entries.
 | L-0013 | The Orchestrator commits it, word for word from the Reviewer's return, on PR #72 and future pull requests, as CLAUDE.md and reviews/README.md already describe. The … | 2026-10-14 | never |
 | L-0014 | This entry widens S-001's areas, for the commits of orch/trial-view-2, to exactly the record files the check flags. Nothing is rewritten, and the history stays … | 2026-10-16 | never |
 | L-0015 | Copied byte for byte from the model at c816cec: governance/checks/ governance_checks.py and v3_checks.py (S-032). The model's changes to its v3 template are carried into this … | 2026-10-17 | never |
+| L-0016 | Copied byte for byte from the model at 90f53e3: governance/checks/ governance_checks.py, v3_checks.py, record_checks.py, govlib.py, orchestrator.py, check_all.sh and the new asks_merge.py. The model's new template workflow … | 2026-10-17 | never |
+| L-0017 | asks-merge: granted, until the owner withdraws it by a later delegation entry superseding this one, with a decision beginning "asks-merge withdrawn:". The workflow merges only … | 2026-10-17 | never |
 
 ## Kills
 None.

@@ -75,6 +75,8 @@ REVERSIBILITY, BLAST RADIUS, DEFAULT, TIMEOUT. Reversible questions adopt the re
 timeout (logged DEFAULTED). Irreversible questions never default. Batch at <cadence>.
 Plain English first; codes as cross-references; lead with failures.
 
+In a v3 project (model S-033), every ruling put to the owner, including one asked in a session, is filed first as `questions/<name>.md` from questions/_TEMPLATE.md, with a `Milestone:` line and a `## Context` section; the ask may be put once its pull request is open. The answer goes in `decisions/questions/<name>.md`, under the same name and with the owner's exact words, in a pull request that also deletes the question file, opened once the question file is on the default branch. An answer the owner records themselves (for example through the desk's answer link) closes the question at once; the Chief of Staff then deletes the leftover question file in a pull request of its own. A ruling the owner gives unasked is recorded as before, with no question file. Where the owner has granted the asks-merge delegation, the Orchestrator's asks-merge workflow merges a pull request that only files a question, closes one with a reversible answer, tidies away a question already answered, or adds the Chief of Staff's session lines, once every check on it has passed; such pull requests' commits carry no `Spec:` trailer, and no agent session merges a pull request itself.
+
 ## 6. Models
 | Role | Requirement | Current |
 | --- | --- | --- |

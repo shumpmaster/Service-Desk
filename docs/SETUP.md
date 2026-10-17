@@ -39,13 +39,15 @@ run, set up the following in the project repository's Settings.
    dispatch log, the queue and outcomes to the default branch, and merges finished items into it
    through its merge gate, with the repository's own token. Leave any branch rule that requires
    pull requests off for the default branch: the gate runs every check before merging, a
-   governance run re-checks every push, and while that run is red, missing or still running the
-   loop starts no new sessions (your stop and drop decisions still apply). The workflow's own
-   token cannot push `.github/**`, so an item that changes workflow files is merged by you by hand;
-   the gate raises a card saying so. If the project gains collaborators, revisit a GitHub App.
-   `.github/workflows/governance.yml` runs the governance checks on every push and pull request,
-   and when the Orchestrator starts it after a push. It uses the runner's own Python (3.11 or newer
-   is needed; GitHub's Ubuntu 24 runners carry 3.12), since no pinned setup action is recorded.
+   governance run re-checks every push to the default branch, and while that run is red, missing or
+   still running the loop starts no new sessions (your stop and drop decisions still apply). The
+   workflow's own token cannot push `.github/**`, so an item that changes workflow files is merged
+   by you by hand; the gate raises a card saying so. If the project gains collaborators, revisit a
+   GitHub App. `.github/workflows/governance.yml` runs the governance checks on every pull request
+   and every push to the default branch or a `build/` branch (if your default branch is not main,
+   rename it in the push trigger), and when the Orchestrator starts it after a push. It uses the
+   runner's own Python (3.11 or newer is needed; GitHub's Ubuntu 24 runners carry 3.12), since no
+   pinned setup action is recorded.
 4. **Sessions run commands (D-077, S-016 AC2).** `session_commands` is `"on"` in
    `governance/RUNNER.toml`, but commands run only while the pinned Claude Code version and the
    runner image match the last passing proof (`proven_version`, `proven_image_os`,
@@ -55,6 +57,7 @@ run, set up the following in the project repository's Settings.
    `RUNNER.toml` by a rule change. Until then sessions simply run without commands. The session
    jobs install `bubblewrap` and `socat`. Leave `pass_env_cleared = false` unless a proof run that
    searched those variables' values passed.
+5. **Merge commits keep each pull request's Context and Why (model S-032).** So that the facts and the reason behind each change live in the project's own history, not only on GitHub's pull-request page, set this once: in the repository's Settings, under "Pull Requests", keep **Allow merge commits** selected, open the dropdown under it, and choose the pull request title and description as the default message; when you merge, accept that default. A merge commit's first line is then the pull request's title instead of "Merge pull request #<n> from …"; the checks read both. Look at the first merge commit after the change on GitHub: its first line should end with the pull request's number, as `(#<n>)`. If it does not, tell the Chief of Staff: the checks cannot then tie that pull request to its milestone.
 
 ## What the proof does
 The proof runs from the default branch only (in environment mode). Its first job, the guard,

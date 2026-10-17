@@ -9,7 +9,7 @@ Usage:
   governance_checks.py handover  [--root DIR]
   governance_checks.py scope     --base REF [--root DIR] [--files-from FILE] [--default-branch NAME]
   governance_checks.py all       [--root DIR] [--base REF]
-  governance_checks.py pr-body   --event FILE
+  governance_checks.py pr-body   --event FILE [--root DIR]
 
 `all` runs sprints, questions, reviewers, builders and handover, and also
 scope when --base is given.
@@ -55,6 +55,22 @@ non-blank line, after any leading HTML comment, must be a heading `What this mea
 level, an optional colon, case ignored), and the lead paragraph after it (up to the first blank line
 or the next heading) must have 15 to 150 words, no backtick and no fenced code. A null body fails;
 an unreadable payload exits 2. It checks the form, not the plainness, and is not part of `all`.
+
+In a v3 project (model S-032 AC6: governance/v3.toml under --root DIR, default `.`, which in the pr-body
+job is the base commit's checkout), the body then goes on, in this order: after at least one blank line
+(a line straight after the lead is part of it), a line in column 0, `Milestone: <ids>` (milestone ids
+`M<id>` or the model's 24 standard ids, separated by `, `) or `Milestone: none (<reason>)` (a reason with
+no parenthesis, not "not recorded"); then a Context heading and a Why heading, each read as the desk reads
+headings (`#` to `######` in column 0, a space or tab, the word, an optional colon, case ignored), each
+section running to the next line the desk reads as a heading, or the end. Context holds only bullets,
+`- <fact> (source: <record>)` starting in column 0 (an indented line straight after a bullet's line
+continues it, a blank line ends it), each with a fact and a record that is not "not recorded", "none" or
+"unknown"; or exactly one bullet `- none beyond the ruling quoted in Why` (case ignored, only a final full
+stop allowed), and then Why quotes the ruling (a line starting `>` with words after it, or words in double
+quotes). The line ending Context is the Why heading. Each Why line is read as the desk reads it, a leading
+`>` and one space or tab dropped, and Why must hold words, not only "not recorded", "none", "n/a" or "tbd".
+Anything may follow Why. Each problem is one finding; a body whose first line is not the lead heading gets
+that one finding only. Without --root's governance/v3.toml, only the lead is read, with the output as before.
 
 Exit 0 = pass, 1 = rule violated, 2 = usage or parse error.
 """
@@ -425,10 +441,11 @@ PR_FENCE_RE = re.compile(r"^\s{0,3}(```|~~~)")
 PR_LEAD_WORDS = (15, 150)
 
 
-def check_pr_body(payload):
+def check_pr_body(payload, root=None):
     """(problems, notes) for a GitHub event payload (model S-020 AC7). Blank lines straight after the
     heading are skipped; the lead paragraph is then read up to the first blank line or the next
-    heading, whichever comes first."""
+    heading, whichever comes first. When `root` holds governance/v3.toml, the body must then go on with
+    a `Milestone:` line, a Context section and a Why section (model S-032 AC6)."""
     if not isinstance(payload, dict):
         raise g.UsageError("the event payload is not a JSON object")
     pr = payload.get("pull_request")
@@ -450,7 +467,10 @@ def check_pr_body(payload):
     if not lines or not PR_LEAD_RE.match(lines[0].strip()):
         first = lines[0].strip() if lines else ""
         return ["the body's first line is %r, not a '## What this means for you' heading" % first[:80]], []
-    return lead_problems(lines[1:]), []
+    problems = lead_problems(lines[1:])
+    if root is not None and g.is_v3(root):
+        problems += context_problems(lines[1:])
+    return problems, []
 
 
 def lead_lines(lines):
@@ -479,6 +499,146 @@ def lead_problems(lines):
         problems.append("the 'What this means for you' paragraph holds fenced code")
     elif any("`" in l for l in lead):
         problems.append("the 'What this means for you' paragraph holds a backtick (code belongs after it)")
+    return problems
+
+
+# model S-032 AC6: in a v3 project the body goes on with its milestone, its Context and its Why.
+# The model's 24 standard milestones, as v3_checks.STANDARD_IDS holds them (the pr-body job holds only this
+# file and govlib.py, so it cannot import v3_checks; a test compares the two).
+PR_STANDARD_IDS = tuple("%s-%d" % (phase, n) for phase, count in
+                        (("Discovery", 8), ("Design", 6), ("Build", 5), ("Launch", 5)) for n in range(1, count + 1))
+PR_MILESTONE_ID_RE = re.compile(r"^M[0-9A-Z]{1,7}$")
+PR_MILESTONE_NONE_RE = re.compile(r"^none \(([^()]*)\)$")
+# The section headings and ends exactly as the desk reads them (Service-Desk src/lib/pulls.js:25, HEADING_RE).
+PR_DESK_HEADING_RE = re.compile(r"^#{1,6}[ \t]+(.+?)[ \t]*#*[ \t]*$")
+PR_CONTEXT_RE = re.compile(r"^#{1,6}[ \t]+Context[ \t]*:?[ \t]*$", re.IGNORECASE)
+PR_WHY_RE = re.compile(r"^#{1,6}[ \t]+Why[ \t]*:?[ \t]*$", re.IGNORECASE)
+PR_CONTINUATION_RE = re.compile(r"^[ \t]+\S")
+PR_SOURCE = " (source: "
+# The exception bullet exactly as the desk reads it (Service-Desk src/lib/pulls.js:27, EXCEPTION_RE).
+PR_RULING_ONLY_RE = re.compile(r"none beyond the ruling quoted in why\.?", re.IGNORECASE)
+# A Why line as the desk reads its text: a leading `>` and one space or tab dropped (src/lib/pulls.js:114).
+PR_QUOTE_MARK_RE = re.compile(r"^>[ \t]?")
+PR_EMPTY_WORDS = ("not recorded", "none", "unknown")
+PR_EMPTY_WHY = ("not recorded", "none", "n/a", "tbd")
+PR_QUOTE_RE = re.compile("\"[^\"]+\"|“[^”]+”")
+
+
+def _bare(text):
+    """text trimmed, case ignored, a final full stop dropped."""
+    t = text.strip().lower()
+    return t[:-1].rstrip() if t.endswith(".") else t
+
+
+def _section(lines, i):
+    """The index of the line ending the section that starts at lines[i]: the next desk heading, or the end."""
+    while i < len(lines) and not PR_DESK_HEADING_RE.match(lines[i]):
+        i += 1
+    return i
+
+
+def _milestone_problem(line):
+    """Why `line` is not a `Milestone:` line in form, or None."""
+    value = line[len("Milestone:"):]
+    if not value.startswith(" ") or not value.strip():
+        return "the 'Milestone:' line names no milestone: %r" % line
+    value = value[1:].rstrip(" \t")
+    m = PR_MILESTONE_NONE_RE.match(value)
+    if m:
+        if not m.group(1).strip() or _bare(m.group(1)) == "not recorded":
+            return "the 'Milestone: none (<reason>)' line gives no reason: %r" % line
+        return None
+    if value == "none" or value.startswith("none "):
+        return "the 'Milestone:' line is not 'Milestone: none (<why it serves none>)': %r" % line
+    for mid in value.split(", "):
+        if not (PR_MILESTONE_ID_RE.match(mid) or mid in PR_STANDARD_IDS):
+            return ("the 'Milestone:' line names %r, neither a milestone id (M<id>) nor a standard milestone "
+                    "(Discovery-1 to Launch-5): %r" % (mid, line))
+    return None
+
+
+def _bullets(lines):
+    """([bullet text], problems) of a Context section's lines: a bullet starts `- ` in column 0; an indented line
+    straight after a bullet's line continues it; a blank line ends it; any other line is not a bullet."""
+    bullets, problems, open_ = [], [], False
+    for line in lines:
+        if not line.strip():
+            open_ = False
+        elif line.startswith("- "):
+            bullets.append([line.strip()])
+            open_ = True
+        elif open_ and PR_CONTINUATION_RE.match(line):
+            bullets[-1].append(line.strip())
+        else:
+            open_ = False
+            problems.append("a line in the Context section is not a bullet '- <fact> (source: <record>)': %r" % line)
+    return [" ".join(b).strip() for b in bullets], problems
+
+
+def context_problems(lines):
+    """Problems with what follows the lead paragraph in a v3 project's body (model S-032 AC6): `lines` are the
+    lines after the 'What this means for you' heading."""
+    problems = []
+    i = 0
+    while i < len(lines) and not lines[i].strip():
+        i += 1
+    i += len(lead_lines(lines[i:]))
+    after_lead = i
+    while i < len(lines) and not lines[i].strip():
+        i += 1
+    if i < len(lines) and i > after_lead and lines[i].lstrip(" \t").startswith("Milestone:"):
+        if lines[i].startswith("Milestone:"):
+            why = _milestone_problem(lines[i].rstrip(" \t"))
+            if why:
+                problems.append(why)
+        else:
+            problems.append("the 'Milestone:' line does not start in column 0: %r" % lines[i])
+        i += 1
+    elif i < len(lines):
+        problems.append("the line after the 'What this means for you' paragraph is %r, not a 'Milestone:' line"
+                        % lines[i][:80])
+    else:
+        problems.append("there is no 'Milestone:' line after the 'What this means for you' paragraph")
+    while i < len(lines) and not lines[i].strip():
+        i += 1
+    if i >= len(lines):
+        return problems + ["there is no '## Context' section"]
+    if not PR_CONTEXT_RE.match(lines[i]):
+        if PR_WHY_RE.match(lines[i]):
+            return problems + ["the Why section comes before the Context section: '## Context' comes first"]
+        return problems + ["the line after the 'Milestone:' line is %r, not a '## Context' heading" % lines[i][:80]]
+    end = _section(lines, i + 1)
+    bullets, bad = _bullets(lines[i + 1:end])
+    problems += bad
+    ruling_only = any(PR_RULING_ONLY_RE.fullmatch(b[2:].strip()) for b in bullets)
+    if not bullets:
+        problems.append("the Context section holds no bullet '- <fact> (source: <record>)'")
+    elif ruling_only and len(bullets) > 1:
+        problems.append("the bullet '- none beyond the ruling quoted in Why' must be the Context section's only one")
+    elif not ruling_only:
+        for b in bullets:
+            k = b.rfind(PR_SOURCE)
+            if k < 1 or not b.endswith(")"):
+                problems.append("a Context bullet is not '- <fact> (source: <record>)': %r" % b)
+            elif not b[2:k].strip():
+                problems.append("a Context bullet has no fact before its source: %r" % b)
+            elif not b[k + len(PR_SOURCE):-1].strip() or _bare(b[k + len(PR_SOURCE):-1]) in PR_EMPTY_WORDS:
+                problems.append("a Context bullet's source is not a record: %r" % b)
+    if end >= len(lines):
+        return problems + ["there is no '## Why' section after the Context section"]
+    if not PR_WHY_RE.match(lines[end]):
+        return problems + ["the heading after the Context section is %r, not '## Why'" % lines[end][:80]]
+    why = [l for l in lines[end + 1:_section(lines, end + 1)] if l.strip()]
+    words = " ".join(w for w in (PR_QUOTE_MARK_RE.sub("", l).strip() for l in why) if w)
+    if not words:
+        problems.append("the Why section is empty")
+    elif _bare(words) in PR_EMPTY_WHY:
+        problems.append("the Why section says only %r: give the reason" % words)
+    elif ruling_only and len(bullets) == 1 and not (any(l.startswith(">") and PR_QUOTE_MARK_RE.sub("", l).strip()
+                                                         for l in why)
+                                                     or PR_QUOTE_RE.search("\n".join(why))):
+        problems.append("the Context section cites only the ruling, so the Why section must quote it (a line "
+                        "starting '>' and its words, or the ruling's words in double quotes)")
     return problems
 
 
@@ -561,11 +721,11 @@ def check_handover(root):
     return v, []
 
 
-def run_pr_body(event):
+def run_pr_body(event, root="."):
     try:
         with open(event, "rb") as fh:
             payload = json.loads(fh.read().decode("utf-8"))
-        problems, notes = check_pr_body(payload)
+        problems, notes = check_pr_body(payload, root=root)
     except (OSError, UnicodeDecodeError, ValueError, g.UsageError) as exc:
         print("ERROR: pr-body: cannot read the event payload %s: %s" % (event, exc), file=sys.stderr)
         return 2
@@ -603,6 +763,7 @@ def main(argv=None):
             p.add_argument("--default-branch")
     p = sub.add_parser("pr-body", allow_abbrev=False)
     p.add_argument("--event", required=True)
+    p.add_argument("--root", default=".")
     try:
         args = parser.parse_args(argv)
     except SystemExit as exc:
@@ -611,7 +772,7 @@ def main(argv=None):
         parser.print_usage(sys.stderr)
         return 2
     if args.cmd == "pr-body":
-        return run_pr_body(args.event)
+        return run_pr_body(args.event, args.root)
     # `all` gains scope only when a base is given.
     selected = [c for c in CHECKS if args.cmd == c[0] or (args.cmd == "all" and (c[0] != "scope" or args.base))]
     violations, notes, errors = [], [], []

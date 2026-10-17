@@ -299,3 +299,39 @@ test('AC72: on the page — each waiting deploy\'s row with its words, source an
     app.restore();
   }
 });
+
+test('AC72 (the desk follow-ups, 2026-10-17): a push run titled `deploy <sha>` alone, as from Setup CS14 — its `name` and `display_title` both, as GitHub gives them — reads "deploy <sha>: waiting for approval" with "Matches PR #77\'s merge · Reviewer PASS" under it; a hand-started run keeps `deploy <sha> — <note>`', async () => {
+  const r = sdRepo({ extra: { 'reviews/77/reviewer.md': 'Verdict: PASS\n\nMade up for the test (NOT a real record).\n' } });
+  const head = r.head();
+  // J12's built answer with PR #77's merge commit made the fake repository's head (NOT as GitHub sent it).
+  r.pullsAnswer = answerOf(pullNodes().map((n) => (n.number === 77 ? { ...n, mergeCommit: { oid: head } } : n)));
+  // Made-up waiting runs (NOT real records): a push run in CS14's title form, its `name` and
+  // `display_title` the same, and a hand-started run naming the same commit with a note.
+  r.runs.push({ name: `deploy ${head}`, title: `deploy ${head}`, path: '.github/workflows/desk-deploy.yml', status: 'waiting', conclusion: null, event: 'push', run_number: 12 },
+    { name: `deploy ${head} — preview redeploy`, title: `deploy ${head} — preview redeploy`, path: '.github/workflows/desk-deploy.yml', status: 'waiting', conclusion: null,
+      event: 'workflow_dispatch', run_number: 13, headSha: head });
+  const app = await loadSandbox({ config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': r }, hash: '#/p/Service-Desk/queue', now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(61_000);
+    await app.advance(61_000);
+    const group = findAll(app.view, (e) => e.dataset && e.dataset.k === 'group:deploys')[0];
+    const rows = byClass(group, 'sb-qrow');
+    assert.equal(rows.length, 2);
+    const push = rows.find((x) => x.textContent.includes('run 12'));
+    const hand = rows.find((x) => x.textContent.includes('run 13'));
+    assert.ok(push.textContent.includes(`deploy ${head}: waiting for approval`), push.textContent);
+    assert.ok(!/ — /.test(push.textContent.split(': waiting for approval')[0]), 'the push run\'s title is `deploy <sha>` alone');
+    assert.ok(linksIn(push).some((l) => /\/actions\/runs\/\d+$/.test(l.href)), 'linked to the run');
+    const safe = byClass(push, 'sb-safe')[0];
+    assert.equal(byClass(safe, 'sb-safe-l')[0].textContent, "Matches PR #77's merge · Reviewer PASS");
+    assert.deepEqual(linksIn(safe).map((l) => [l.text, l.href]), [['reviews/77/reviewer.md', 'https://github.com/shumpmaster/Service-Desk/blob/main/reviews/77/reviewer.md'],
+      ['the merge commit on main', `https://github.com/shumpmaster/Service-Desk/commit/${head}`]]);
+    // The hand-started run keeps its note; its commit is read from that title (AC72's parse).
+    assert.ok(hand.textContent.includes(`deploy ${head} — preview redeploy: waiting for approval`), hand.textContent);
+    assert.equal(byClass(byClass(hand, 'sb-safe')[0], 'sb-safe-l')[0].textContent, "Matches PR #77's merge · Reviewer PASS");
+    for (const row of rows) assert.doesNotMatch(row.textContent, /\bApprove\b/, 'no row offers an approval of its own');
+  } finally {
+    app.restore();
+  }
+});

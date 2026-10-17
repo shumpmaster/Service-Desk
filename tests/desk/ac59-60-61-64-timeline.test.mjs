@@ -1,6 +1,6 @@
 // AC59 (the Timeline as the project's breakdown, read from the bottom up), AC60 (each milestone's
-// sprints), AC61 (the records the why lines, Context and Why come from, in model S-032's draft
-// forms) and AC64 (plain terms first), trial-view notes 2, notes 6 to 9, 13, 14, 17, 18, 21, 23, 24,
+// sprints), AC61 (the records the why lines, Context and Why come from, in the forms of model S-032,
+// frozen 2026-10-16 and adopted with model v3.4.0 on 2026-10-17, with the display leniencies AC61 names) and AC64 (plain terms first), trial-view notes 2, notes 6 to 9, 13, 14, 17, 18, 21, 23, 24,
 // 26 and 27 (2026-10-16). From J11's fixture (Service-Desk at 3117150), J12's fixture (built from
 // REST answers, NOT as GitHub sent it) and AC61's fixture (NOT real records).
 // ac-test: S-001/AC59 ac-test: S-001/AC60 ac-test: S-001/AC61 ac-test: S-001/AC64
@@ -11,7 +11,7 @@ import { SRC, CONFIG } from './helpers.mjs';
 import { loadSandbox, linksIn, treePaths, traceNotes, j11Files, El0 } from './sandbox-helpers.mjs';
 import { models, openSD, keyed, sdRepo, ac61Answer, AC61_DOC, byClass, findAll, SD3, pullNodes, answerOf, node } from './tv2-fixtures.mjs';
 import { madeUp } from './j12-fixture.mjs';
-import { prBodyParts, contextBullet } from '../../src/lib/pulls.js';
+import { prBodyParts, contextBullet, keptPull } from '../../src/lib/pulls.js';
 import { parseProjectDoc, purposeItems, milestoneLines, standardLines } from '../../src/lib/j11.js';
 import { feedView, runsContext } from '../../src/lib/feed.js';
 
@@ -496,6 +496,25 @@ test('AC61 (c): the Milestone: line for each id kind; both heading forms; each C
   assert.deepEqual(nodes[907].context, [{ fact: 'A fact that runs on to a second, indented line', source: 'docs/PROJECT.md', exception: false }], 'joined with one space; the line that is no bullet is not shown');
   assert.deepEqual([nodes[908].context, nodes[908].why], [null, null]);
   assert.deepEqual(contextBullet('A fact (source: )'), { fact: 'A fact', source: 'not recorded', exception: false }, 'an empty source shows "not recorded"');
+});
+
+test('AC61 (the desk follow-ups, 2026-10-17): three display leniencies — closing #s on a Context or Why heading, `Milestone:M2` with no space, and Why before Context — each read as the form reads it', () => {
+  // Made-up bodies (NOT real records), each one S-032's `pr-body` check would fail.
+  const lead = '## What this means for you\nA paragraph in plain English.\n\n';
+  const closing = prBodyParts(`${lead}Milestone: MD3\n\n## Context ##\n- A fact under a heading with closing hashes (source: docs/PROJECT.md)\n\n### Why ###\nThe why under one too.\n`);
+  assert.deepEqual(closing.milestone, { ids: ['MD3'] });
+  assert.deepEqual(closing.context, [{ fact: 'A fact under a heading with closing hashes', source: 'docs/PROJECT.md', exception: false }], '## Context ##');
+  assert.deepEqual(closing.why, ['The why under one too.'], '### Why ###');
+  const nospace = prBodyParts(`${lead}Milestone:M2\n\n## Context\n- A fact (source: reviews/77/reviewer.md)\n\n## Why\nBecause.\n`);
+  assert.deepEqual(nospace.milestone, { ids: ['M2'] }, 'Milestone:M2');
+  assert.deepEqual(prBodyParts(`${lead}Milestone:none (a records-only change)\n`).milestone, { none: 'a records-only change' }, 'Milestone:none (…)');
+  const order = prBodyParts(`${lead}## Why\nThe why, first.\n\nIts second paragraph.\n\n## Context\n- A fact after the why (source: docs/PROJECT.md)\n\nMilestone: MD1, Design-4\n`);
+  assert.deepEqual(order.why, ['The why, first.', 'Its second paragraph.'], 'Why before Context');
+  assert.deepEqual(order.context, [{ fact: 'A fact after the why', source: 'docs/PROJECT.md', exception: false }]);
+  assert.deepEqual(order.milestone, { ids: ['MD1', 'Design-4'] }, 'the Milestone: line after both sections');
+  // The same parts are what J12 keeps of such a body.
+  const kept = keptPull(node(960, { body: `${lead}## Why ##\nW.\n\n## Context ##\n- F (source: S)\n\nMilestone:M2\n` }), 'SUCCESS');
+  assert.deepEqual(kept.parts, { milestone: { ids: ['M2'] }, context: [{ fact: 'F', source: 'S', exception: false }], why: ['W.'] });
 });
 
 test('AC61: on the page, the why text word for word on Status and the Timeline; each Context fact with its source, "source not recorded", and the Why; "not recorded" for each with J11\'s fixture as it is', async () => {

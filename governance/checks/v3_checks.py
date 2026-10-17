@@ -66,7 +66,8 @@ specs/*.md file as spec_check reads it; "frozen" is its status word.
 
 model S-023 adds the project's milestones (Part 1 section 3, one per line:
 `<name> (M<id>) · done when <what is achieved> · phase: <phase>`, optionally
-` · for: P-<n>`, ` · sprints: PR #<n>, <item>` and ` · dropped`), the standard
+` · for: P-<n>`, ` · sprints: PR #<n>, <item>`, ` · dropped` and, last, ` · why:
+<reason>` (model S-032 AC4: a reason holding no ` · `)), the standard
 milestones (STANDARD_MILESTONES) and the timeline (`timeline`):
   ready     also, once the project is approved (a status/P-*.toml holds a spec),
             section 3 lists at least one milestone not marked dropped.
@@ -111,6 +112,24 @@ model S-025 adds:
             record or decisions/, cited lines in sections 1, 2 and 5 (at most 200
             counted words), scenarios quoted word for word from the item's spec,
             screens that exist; and a case citing a User representative record fails.
+
+model S-032 adds (why and context):
+  trace     also fails a standard milestone's line (`<Phase>-<n> (standard) · taken
+            on|skipped · why: <reason>`, with or without `- `) out of form, naming
+            no standard milestone, or a second line for one id; and a sprint's
+            `PR #<n>` is also merged by a two-parent merge commit whose first line
+            ends ` (#<n>)` (the pull request's title, AC9).
+  milestones also: a change of a milestone's why is a rewording (a Critic-Check:
+            record quoting the whole new line, why and all, no Owner-Ruling:
+            record). While the project is approved or waits on its Design gate
+            at REF, a standard line added or changed needs a Critic-Check: record
+            quoting it whole (one removed needs nothing); once its gate is ruled
+            (Discovery's and Design's: the project is approved; Build's and
+            Launch's: at REF, a status at stage 4 or later, a project item's
+            routed dispatch-log line at stage 4 or later, or a Build or Launch
+            milestone with a sprint), anything that drops work (taken on to skipped, a line
+            removed, a line first added as skipped) needs an Owner-Ruling: record
+            naming it instead.
 
 Findings are reported under the check names v3_checks.<subcommand>, which
 governance/enforcement.toml can set to warn-only, apart from v3_checks.milestones
@@ -345,10 +364,20 @@ REDO = {
 BRIEF_IDS = ("Discovery-5", "Discovery-7", "Discovery-8")
 
 MILESTONE_MARK_RE = re.compile(r"\(M[0-9A-Z]{1,7}\) · ")
+# model S-032 AC4: a why is at least one character, starts and ends with a non-space and holds no ` · `.
+WHY_RE = r"\S(?:(?:(?! · ).)*\S)?"
+OPTIONAL_PARTS_RE = (r"(?: · for: (?P<for>P-\d{3,}))?"
+                     r"(?: · sprints: (?P<sprints>(?:PR #\d+|[PQE]-\d{3,})(?:, (?:PR #\d+|[PQE]-\d{3,}))*))?"
+                     r"(?P<dropped> · dropped)?")
 MILESTONE_LINE_RE = re.compile(
     r"^(?:- )?(?P<name>\S.*?) \((?P<id>M[0-9A-Z]{1,7})\) · done when (?P<done>\S.*?) · "
-    r"phase: (?P<phase>Discovery|Design|Build|Launch)(?: · for: (?P<for>P-\d{3,}))?"
-    r"(?: · sprints: (?P<sprints>(?:PR #\d+|[PQE]-\d{3,})(?:, (?:PR #\d+|[PQE]-\d{3,}))*))?(?P<dropped> · dropped)?$")
+    r"phase: (?P<phase>Discovery|Design|Build|Launch)" + OPTIONAL_PARTS_RE + r"(?: · why: (?P<why>" + WHY_RE + r"))?$")
+# The same optional parts, unnamed, for reading a Critic's quote (model S-032 AC4).
+QUOTED_PARTS_RE = re.sub(r"\(\?P<\w+>", "(?:", OPTIONAL_PARTS_RE)
+# model S-032 AC5: a standard milestone's line in Part 1 section 3.
+STANDARD_MARK_RE = re.compile(r"^(?:- )?(?:Discovery|Design|Build|Launch)-\d+ \(standard\)")
+STANDARD_LINE_RE = re.compile(r"^(?:- )?(?P<id>(?:Discovery|Design|Build|Launch)-\d+) \(standard\) · "
+                              r"(?P<plan>taken on|skipped) · why: (?P<why>" + WHY_RE + r")$")
 CODE_FIRST_RE = re.compile(r"^(?:- )?M[0-9A-Z]{1,7}:")
 NAME_ID_RE = re.compile(r"\b(?:[SDPQE]-\d{3,}|L-\d{4,}|AC\d+|J\d+|V\d+|M\d[0-9A-Z]{0,6})\b")
 SPEC_MILESTONES_RE = re.compile(r"^milestones: (M[0-9A-Z]{1,7})((?:, M[0-9A-Z]{1,7})*)$")
@@ -359,6 +388,7 @@ ITEM_ID_RE = re.compile(r"^[PQE]-\d{3,}$")
 RULING_FIRST_RE = re.compile(r"^(?:Decision: [A-Za-z-]+[ \t]*|Ruling: \S.*)$")
 GROUNDWORK_PREFIXES = ("Groundwork map:", "Discovery map:")
 MERGE_PR_RE = re.compile(r"^Merge pull request #(\d+) from ")
+MERGE_TITLE_RE = re.compile(r" \(#(\d+)\)$")      # model S-032 AC9: `<pull request title> (#<n>)`
 
 
 class Milestone(object):
@@ -368,10 +398,70 @@ class Milestone(object):
         self.for_item = m.group("for")
         self.sprints = m.group("sprints").split(", ") if m.group("sprints") else []
         self.dropped = bool(m.group("dropped"))
+        self.why = m.group("why")
 
     def part(self):
         """The `<name> (<id>) · done when <done> · phase: <phase>` part the Critic's record quotes (AC8)."""
         return "%s (%s) · done when %s · phase: %s" % (self.name, self.id, self.done, self.phase)
+
+    def whole(self):
+        """The line without its leading `- `."""
+        return (self.part() + (" · for: %s" % self.for_item if self.for_item else "")
+                + (" · sprints: %s" % ", ".join(self.sprints) if self.sprints else "")
+                + (" · dropped" if self.dropped else "") + (" · why: %s" % self.why if self.why else ""))
+
+    def quote_re(self):
+        """A record line that covers this line (model S-032 AC4): after an optional `- ` or backtick, part(),
+        any optional parts, then exactly ` · why: <its why>` and the line's end or a backtick; for a line
+        without a why, anything but ` · why:`."""
+        head = r"^(?:- |`)?" + re.escape(self.part())
+        if self.why is None:
+            return re.compile(head + r"(?!.* · why:)")
+        return re.compile(head + QUOTED_PARTS_RE + re.escape(" · why: " + self.why) + r"(?:[ \t\r]*$|`)")
+
+
+class StandardLine(object):
+    """model S-032 AC5: `<Phase>-<n> (standard) · taken on|skipped · why: <reason>`."""
+
+    def __init__(self, lineno, m):
+        self.lineno = lineno
+        self.id, self.plan, self.why = m.group("id"), m.group("plan"), m.group("why")
+        self.phase = self.id.split("-", 1)[0]
+
+    def text(self):
+        """The whole line from its id to the end of its why, as the Critic's record quotes it."""
+        return "%s (standard) · %s · why: %s" % (self.id, self.plan, self.why)
+
+
+def standard_lines(text):
+    """(lines, problems) of Part 1 section 3 (model S-032 AC5): [StandardLine] in order, and [(line number,
+    message)] for a standard line out of form, an id that is not a standard milestone, or a second line for
+    one id. No standard line is required."""
+    sec = part1_sections(text or "").get(3)
+    if sec is None:
+        return [], []
+    heading, lineno0, body = sec
+    out, problems, seen = [], [], set()
+    for j, line in enumerate(body):
+        n = lineno0 + 1 + j
+        s = line.rstrip("\r")
+        if not STANDARD_MARK_RE.match(s):
+            continue
+        m = STANDARD_LINE_RE.match(s)
+        if not m:
+            problems.append((n, "a standard milestone's line is not in the form `<Phase>-<n> (standard) · taken on "
+                                "· why: <reason>` or `<Phase>-<n> (standard) · skipped · why: <reason>`"))
+            continue
+        sl = StandardLine(n, m)
+        if sl.id not in STANDARD_IDS:
+            problems.append((n, "%s is not a standard milestone (Discovery-1 to Launch-5)" % sl.id))
+        elif sl.id in seen:
+            problems.append((n, "standard milestone %s has a second line: one line holds for every run of its phase"
+                                % sl.id))
+        else:
+            seen.add(sl.id)
+            out.append(sl)
+    return out, problems
 
 
 def milestone_lines(text):
@@ -394,7 +484,7 @@ def milestone_lines(text):
         if not m:
             problems.append((n, "not in the milestone form `<name> (M<id>) · done when <what is achieved> · phase: "
                                 "<Discovery|Design|Build|Launch>` (optionally ` · for: P-<n>`, ` · sprints: …`, "
-                                "` · dropped`)"))
+                                "` · dropped`, ` · why: <reason>`)"))
             continue
         raw.append((n, m))
     ids = [m.group("id") for _, m in raw]
@@ -540,7 +630,8 @@ def research_question(root, item):
 
 
 def merged_pr_numbers(repo):
-    """The pull-request numbers of merge commits `Merge pull request #<n> from …` reachable from HEAD."""
+    """The pull-request numbers of merge commits reachable from HEAD whose first line is `Merge pull request #<n>
+    from …`, or, for a merge commit with two parents, ends ` (#<n>)` (model S-032 AC9: the pull request's title)."""
     try:
         if not g.git_ok(repo, ["rev-parse", "--verify", "-q", "HEAD^{commit}"]):
             return set()
@@ -549,7 +640,8 @@ def merged_pr_numbers(repo):
         for c in g.read_commits(repo, shas):
             if not c.is_merge():
                 continue
-            m = MERGE_PR_RE.match(c.message.split("\n", 1)[0])
+            first = c.message.split("\n", 1)[0]
+            m = MERGE_PR_RE.match(first) or (MERGE_TITLE_RE.search(first) if len(c.parents) == 2 else None)
             if m:
                 out.add(int(m.group(1)))
         return out
@@ -1432,6 +1524,8 @@ def milestone_trace(root):
     ms, problems = milestone_lines(text)
     for n, msg in problems:
         v.append("%s line %d: %s (model S-023 AC3)" % (PROJECT_REL, n, msg))
+    for n, msg in standard_lines(text)[1]:
+        v.append("%s line %d: %s (model S-032 AC5)" % (PROJECT_REL, n, msg))
     ids = set(m.id for m in ms)
     merged = set(mg["item"] for mg in read_merges(root))
     prs = None
@@ -1448,8 +1542,9 @@ def milestone_trace(root):
                 if prs is None:
                     prs = merged_pr_numbers(root)
                 if n not in prs:
-                    v.append("%s has no merge commit `Merge pull request #%d from …` reachable from HEAD: a sprint "
-                             "is built, reviewed and merged (model S-023 AC5)" % (where, n))
+                    v.append("%s has no merge commit `Merge pull request #%d from …` or `<title> (#%d)` reachable "
+                             "from HEAD: a sprint is built, reviewed and merged (model S-023 AC5, model S-032 AC9)"
+                             % (where, n, n))
             elif s not in merged:
                 v.append("%s has no line in status/merges.jsonl (model S-023 AC5)" % where)
     for rel, sid, spec_text in specs_with_status(root, ("draft", "frozen", "superseded")):
@@ -1529,6 +1624,31 @@ def ruling_path_problem(path):
     return None
 
 
+def build_gate_passed(root, rev, statuses, milestones):
+    """model S-032 AC5: the Build gate was passed at `rev`: a project status file stands at stage 4 or later, the
+    dispatch log holds a project item's routed line at stage 4 or later (even if a recycle has since sent the
+    project back), or a project milestone of phase Build or Launch lists a sprint (a project built outside the
+    pipeline)."""
+    def late(stage):
+        return isinstance(stage, int) and not isinstance(stage, bool) and stage >= 4
+    if any(k.startswith("P-") and late(st.get("stage")) for k, st in statuses.items()):
+        return True
+    if any(m.phase in ("Build", "Launch") and m.sprints for m in milestones):
+        return True
+    for rel in _ls(root, rev, "dispatch-log"):
+        if not re.fullmatch(r"dispatch-log/[0-9]{4}-[0-9]{2}\.jsonl", rel):
+            continue
+        for line in (g.git_blob(root, rev, rel) or b"").decode("utf-8", "replace").split("\n"):
+            try:
+                obj = json.loads(line) if line.strip() else None
+            except ValueError:
+                continue
+            if (isinstance(obj, dict) and "route" in obj and isinstance(obj.get("item"), str)
+                    and obj["item"].startswith("P-") and late(obj.get("stage"))):
+                return True
+    return False
+
+
 def check_milestones(root, base):
     """model S-023 AC8: never erased, changed only with the owner's record, Critic-checked, and new work tagged.
     Returns [(check name, finding)], [note]."""
@@ -1602,8 +1722,8 @@ def check_milestones(root, base):
         for mid, m in old.items():
             if mid not in new:
                 f.append(("v3_checks.milestones", "%s is in %s section 3 at %s but not at HEAD: a milestone is never "
-                                                  "deleted or renumbered; to drop it, end its line with ` · dropped` "
-                                                  "(model S-023 AC8)" % (mid, PROJECT_REL, base)))
+                                                  "deleted or renumbered; to drop it, add ` · dropped` before any "
+                                                  "` · why:` (model S-023 AC8)" % (mid, PROJECT_REL, base)))
             elif m.dropped and not new[mid].dropped:
                 f.append(("v3_checks.milestones", "%s was marked dropped at %s and is not at HEAD: a dropped milestone "
                                                   "stays dropped (model S-023 AC8)" % (mid, base)))
@@ -1643,33 +1763,38 @@ def check_milestones(root, base):
             seen.add((mid, what))
             if not licensed(mid):
                 f.append(("v3_checks.milestones", why_not(mid, what)))
+    ruling_paths = set(p for _, p in rulings)
+
+    def critic_record(quote_re, quoted):
+        """(the first Critic-Check: record that is the Critic's PASS record and holds a line quote_re matches,
+        [why each other one is not])."""
+        reasons = []
+        for _, p in checks:
+            why = ruling_path_problem(p)
+            t = at_head(p) if why is None else None
+            if why is None and p in ruling_paths:
+                why = "it is also an Owner-Ruling: record; the Critic's check is a file of its own"
+            elif why is None and t is None:
+                why = "no such file at HEAD"
+            elif why is None and t.startswith(("Decision:", "Ruling:")):
+                why = "it starts like an owner's record, not the Critic's"
+            elif why is None and review_check.parse_verdict(t) != "PASS":
+                why = "its verdict is not PASS"
+            elif why is None and not any(quote_re.match(l) for l in t.split("\n")):
+                why = "it does not quote %r at the start of a line" % quoted
+            if why is None:
+                return p, reasons
+            reasons.append("Critic-Check: %s: %s" % (p, why))
+        return None, reasons
+
     if approved_ref:
-        ruling_paths = set(p for _, p in rulings)
         for m in new_list:
             o = old.get(m.id)
-            if o is not None and (o.name, o.done) == (m.name, m.done):
+            if o is not None and (o.name, o.done, o.why) == (m.name, m.done, m.why):
                 continue
             what = "added after approval" if o is None else "reworded after approval"
-            part = m.part()
-            found, reasons = None, []
-            for _, p in checks:
-                why = ruling_path_problem(p)
-                t = at_head(p) if why is None else None
-                if why is None and p in ruling_paths:
-                    why = "it is also an Owner-Ruling: record; the Critic's check is a file of its own"
-                elif why is None and t is None:
-                    why = "no such file at HEAD"
-                elif why is None and t.startswith(("Decision:", "Ruling:")):
-                    why = "it starts like an owner's record, not the Critic's"
-                elif why is None and review_check.parse_verdict(t) != "PASS":
-                    why = "its verdict is not PASS"
-                elif why is None and not any(re.match(r"^(?:- |`)?" + re.escape(part), l)
-                                             for l in t.split("\n")):
-                    why = "it does not quote %r at the start of a line" % part
-                if why is None:
-                    found = p
-                    break
-                reasons.append("Critic-Check: %s: %s" % (p, why))
+            part = m.part() if m.why is None else m.whole()
+            found, reasons = critic_record(m.quote_re(), part)
             if found is None:
                 f.append(("v3_checks.milestones", "%s %s: needs a Critic-Check: trailer naming the Critic's PASS "
                                                   "record that quotes '%s' (model S-023 AC8)%s"
@@ -1678,6 +1803,41 @@ def check_milestones(root, base):
                                        for _, p in rulings) and found not in hold_text(m.id):
                 f.append(("v3_checks.milestones", "%s added after approval: the owner's ruling record that licenses it "
                                                   "names no Critic-Check: record %s (model S-023 AC8)" % (m.id, found)))
+    if approved_ref or waiting_ref:
+        # model S-032 AC5: who may change a standard milestone's line. Discovery's and Design's are ruled with
+        # the Design gate (the project is approved), Build's and Launch's with the Build gate.
+        ruled = {"Discovery": approved_ref, "Design": approved_ref}
+        ruled["Build"] = ruled["Launch"] = build_gate_passed(root, base, st_ref, old.values())
+        old_std = dict((s.id, s) for s in standard_lines(g.git_text(root, base, PROJECT_REL))[0])
+        new_std = standard_lines(g.git_text(root, "HEAD", PROJECT_REL))[0]
+        new_ids = set(s.id for s in new_std)
+        for s in new_std + [o for i, o in old_std.items() if i not in new_ids]:
+            o, n = old_std.get(s.id), (s if s.id in new_ids else None)
+            gate = "after its gate" if ruled[s.phase] else "before its gate"
+            if n is None:
+                what, owner = "removed", ruled[s.phase]
+            elif o is None:
+                what, owner = "first added as %s" % n.plan, ruled[s.phase] and n.plan == "skipped"
+            elif (o.plan, o.why) != (n.plan, n.why):
+                what = ("changed from %s to %s" % (o.plan, n.plan)) if o.plan != n.plan else "given another why"
+                owner = ruled[s.phase] and (o.plan, n.plan) == ("taken on", "skipped")
+            else:
+                continue
+            if owner:
+                if not any(ruling_why(p, s.id) is None for _, p in rulings):
+                    reasons = ["Owner-Ruling: %s: %s" % (p, ruling_why(p, s.id)) for _, p in rulings]
+                    f.append(("v3_checks.milestones", "%s's standard line %s %s: dropping work needs an "
+                                                      "Owner-Ruling: trailer, on a commit that changes %s, naming the "
+                                                      "owner's ruling record that names %s (model S-032 AC5)%s"
+                              % (s.id, what, gate, PROJECT_REL, s.id, "; " + "; ".join(reasons) if reasons else "")))
+            elif n is not None:
+                quoted = n.text()
+                found, reasons = critic_record(re.compile(r"^(?:- |`)?" + re.escape(quoted) + r"(?:[ \t\r]*$|`)"),
+                                               quoted)
+                if found is None:
+                    f.append(("v3_checks.milestones", "%s's standard line %s %s: needs a Critic-Check: trailer naming "
+                                                      "the Critic's PASS record that quotes '%s' (model S-032 AC5)%s"
+                              % (s.id, what, gate, quoted, "; " + "; ".join(reasons) if reasons else "")))
     # Tags on new work.
     live = set(i for i, m in new.items() if not m.dropped)
     for c in commits:

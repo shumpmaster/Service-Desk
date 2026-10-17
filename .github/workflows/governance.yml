@@ -8,7 +8,9 @@
 name: governance
 
 on:
+  # model S-031: push runs on main and build/ branches; a pull request's run checks every other branch against its base. If your default branch is not main, rename it here.
   push:
+    branches: [main, 'build/**']
   pull_request:
   workflow_dispatch:
     inputs:

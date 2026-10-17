@@ -24,6 +24,7 @@ Where the carried text below conflicts with these changes, these changes win.
   changes for a user; the code itself is covered by the Reviewer and CI (D-065).
 - Untrusted text is read only by the Input reader (D-064).
 - The checks that can never be warn-only are govlib's NEVER_WARN list: beside those named in §9 below, S-013's record and gate checks (record-decisions, record-merges, record-routing, record-build-cap, record-grants, gate-packs, gate-handback, gate-freeze), `v3_checks.milestones` (S-023) and `v3_checks.gates` (S-024).
+- Push runs check only the default branch and `build/` branches; every other branch is checked by its pull request's run, so `surface_guard diff --range` (§9 below) runs in CI on every pull request and on those pushes (model S-031).
 
 ---
 

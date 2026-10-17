@@ -202,3 +202,16 @@ licenses_next: The trial-view notes 2 pull request from orch/trial-view-2.
 decided_by: owner ("Ledger entry (Recommended)", 2026-10-16, decisions/questions/P-001-batch2-records-scope.md)
 proposed_by: orchestrator
 reversibility: reversible
+
+## L-0015 — Model v3.4.0 adopted: S-031's push trigger and S-032's why lines and pull-request Context and Why
+date: 2026-10-17
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The model is at v3.4.0 (its PRs #33 and #34: S-031 and S-032, c816cec). Bring Service Desk to it, as the owner asked on 2026-10-17 ("go ahead with the Service-Desk sync."): the push-run check fix, and the why lines on milestones and the Context and Why on every pull request?
+decision: Copied byte for byte from the model at c816cec: governance/checks/ governance_checks.py and v3_checks.py (S-032). The model's changes to its v3 template are carried into this project's own copies, which differ from the template elsewhere: the governance workflow's push trigger reads `branches: [main, 'build/**']` (S-031); docs/SETUP.md takes S-031's corrected push sentences and S-032's merge-commit step, numbered 5 here; the playbook's new line; the Critic's card's two sentences; AGENTS.md's "Context and why" paragraph; and docs/PROJECT.md's section 3 instruction line. OPERATING_MODEL_VERSION reads 3.4.0. The owner has turned on the merge-commit setting ("I changed the merge settings so we are good to go", 2026-10-17). Nothing written before is rewritten: the plan's milestone lines take their why lines, and the standard milestones their lines, as each is next drafted or reworded.
+licenses_next: Pull requests in this project carry the Milestone line and the Context and Why sections from this pull request on; S-001's AC61 is aligned with the model's final forms in its next revision.
+decided_by: owner (asked for the sync on 2026-10-17; merges this pull request)
+proposed_by: orchestrator
+reversibility: reversible

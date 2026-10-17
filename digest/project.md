@@ -15,6 +15,7 @@
 | L-0012 | The five screens (Home, Project, Team, Timeline, and Queue with its response card) are the one design direction, and the design lab ends (AC43 A; … | 2026-10-14 | never |
 | L-0013 | The Orchestrator commits it, word for word from the Reviewer's return, on PR #72 and future pull requests, as CLAUDE.md and reviews/README.md already describe. The … | 2026-10-14 | never |
 | L-0014 | This entry widens S-001's areas, for the commits of orch/trial-view-2, to exactly the record files the check flags. Nothing is rewritten, and the history stays … | 2026-10-16 | never |
+| L-0015 | Copied byte for byte from the model at c816cec: governance/checks/ governance_checks.py and v3_checks.py (S-032). The model's changes to its v3 template are carried into this … | 2026-10-17 | never |
 
 ## Kills
 None.

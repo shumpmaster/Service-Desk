@@ -44,8 +44,8 @@
   summary in the quoted-text role, so that it still crosses). The fake DOM cannot measure lines, so the
   browser check confirms it crosses the three-line mark before it checks anything else (plan
   review round 2, R4).
-  `P-001-design-lab-open.md` is the real question file, copied unchanged with `git show` at dc97190
-  (its last version: the model 3.5.0 sync tidied the answered question away), read by AC53's and
+  `P-001-design-lab-open.md` is the real question file, added at bdb50a3; identical to its last
+  version at dc97190 (the model 3.5.0 sync tidied the answered question away), read by AC53's and
   AC66's tests.
 - `accepted-m2/`: `_headers` and `index.html` as main had them at 33d390a, for AC42's
   "unchanged or stricter" check without git history (its README says why).

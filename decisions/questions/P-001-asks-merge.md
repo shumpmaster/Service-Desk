@@ -11,4 +11,6 @@ Options, as put:
 
 The owner's answer: "Agents merge asks (Recommended)".
 
+After the model's third plan review, the owner ruled "Fix, recheck the fixes (Recommended)" on a fix that lets the same workflow tidy away a question file whose answer the owner has already recorded, as "closing a question file" (the model's reviews/S-033/_owner-answers.md, answer 2); that is why the ruling above names it.
+
 Later, the owner approved S-033 as built for every project ("A. Approve and build (Recommended)", the model's reviews/S-033/_owner-answers.md, answer 3) and asked for this project's sync: "Proceed" (2026-10-17), after the session wrote "The Service-Desk sync to 3.5.0 is next … That's the step where your "Agents merge asks" permission takes effect for Service-Desk. Say "go ahead" and I'll begin." The owner merges the pull request that records this ruling and grants it in the ledger; the workflow does not merge it.

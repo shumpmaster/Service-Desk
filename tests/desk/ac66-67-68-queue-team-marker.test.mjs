@@ -7,7 +7,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { SRC } from './helpers.mjs';
+import { FIX, SRC } from './helpers.mjs';
 import { pr } from './fake-desk.mjs';
 import { byClass, findAll, linksIn, loadSandbox } from './sandbox-helpers.mjs';
 import { NOW, iso, md, twoProjects, opened, v25, fullRepo } from './sandbox-fixtures.mjs';
@@ -15,7 +15,8 @@ import { openSD, keyed, models, AC61_DOC, SD3, CONFIG, j11Files, sdRepo, railLay
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { markerView, runsContext } from '../../src/lib/feed.js';
 
-const REAL_QUESTION = readFileSync(`${SRC}/../questions/P-001-design-lab-open.md`, 'utf8');
+// The live file was tidied away by the model 3.5.0 sync (S-033); this fixture is its last version (dc97190).
+const REAL_QUESTION = readFileSync(`${FIX}/trial-view/P-001-design-lab-open.md`, 'utf8');
 const q = (title, extra = '') => `# Ruling needed: ${title}\n\nWHY: a test.\nOPTIONS:\n  A. Yes.\n  B. No.\nRECOMMENDATION: B — no.\nRISK CLASS: R0\nREVERSIBILITY: reversible\nBLAST RADIUS: none\nDEFAULT: B\nTIMEOUT: 24\n${extra}`;
 
 /** AC52's two projects, Alpha with AC66's added records (NOT real records). */

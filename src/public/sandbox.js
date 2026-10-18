@@ -12,6 +12,7 @@
 //   renderer. Nothing loads from another origin (the CSP is unchanged).
 
 import DEFAULT_CONFIG from './lib/config.js';
+import { usageEntry } from './lib/usage.js';
 import { createDesk, callFunction, errorText } from './lib/scheduler.js';
 import { createStore } from './lib/store.js';
 import { safeBox, orderBoxes, screenState, boxStateText } from './lib/universe.js';
@@ -31,7 +32,13 @@ import { composeAnswer, numberedRuleLine, CANT_SPLIT, NO_RECOMMENDATION } from '
 import { runsContext, statusPhases, tilePhases, markerView, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, TEAM_KEY, itemFeeds,
   stalledLine, deployRows, FEED_ICONS_KEY, doneTarget, JOB_MERGE_WORDS } from './lib/feed.js';
 
+import {
+  NOTIFY_WORDS, NOTIFY_STORE_KEY, COPY_DONE_WORDS, SHOW_AGAIN_WORDS, SEND_TEST_WORDS, copySteps, testSteps, notifyState, onTopLine,
+  isStandalone, permissionOf, currentSubscription, subscriptionValue, turnOn, USAGE_TITLE, usageView, RECHECK_WORDS, recheckOutcome,
+} from './lib/notifyview.js';
+
 let CONFIG = DEFAULT_CONFIG; // J7; the tests pass their own (AC42's five projects)
+let DESK = null; // the reader, once started: AC77's re-read and "Answer it here instead", AC78's figures
 let TZ = CONFIG.ownerTimeZone;
 const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -700,6 +707,105 @@ function pillNode(box, q, name) {
   return el;
 }
 
+// ---------------------------------------------------------------------------
+// AC75: "Notifications", in More detail and on Home's top line until it is on; AC78: "GitHub Actions this month"
+
+const ns = { subscribed: null, value: null, error: null, showValue: false, busy: false, store: null, looked: false };
+const pushKey = () => (CONFIG.push && typeof CONFIG.push.vapidPublicKey === 'string' ? CONFIG.push.vapidPublicKey : null);
+const gNav = () => (typeof navigator === 'undefined' ? null : navigator);
+const gWin = () => (typeof window === 'undefined' ? null : window);
+const gNotif = () => (typeof Notification === 'undefined' ? null : Notification);
+function copiedMark() {
+  try {
+    const v = ns.store ? ns.store.getJSON(NOTIFY_STORE_KEY, null) : null;
+    return Boolean(v && v.copied === true && ns.value && v.value === ns.value);
+  } catch {
+    return false;
+  }
+}
+const notifyEnv = () => ({ standalone: isStandalone(gWin(), gNav()), key: pushKey(), permission: permissionOf(gNotif()), subscribed: ns.subscribed, copied: copiedMark() });
+function lookSubscription() {
+  if (ns.looked) return;
+  ns.looked = true;
+  const env = notifyEnv();
+  if (!env.standalone || env.permission !== 'granted') {
+    ns.subscribed = false;
+    return;
+  }
+  currentSubscription(gWin(), gNav()).then((sub) => {
+    ns.subscribed = Boolean(sub);
+    ns.value = sub ? subscriptionValue(sub) : null;
+    render();
+  }, () => {
+    ns.subscribed = false;
+    render();
+  });
+}
+function notifyNode(compact) {
+  lookSubscription();
+  const state = notifyState(notifyEnv());
+  const kids = [];
+  const k = compact ? 'top' : 'more';
+  if (state === 'ask') {
+    kids.push(h('button', { type: 'button', class: 'sb-btn', key: `notify-on:${k}`, onclick: () => {
+      if (ns.busy) return;
+      ns.busy = true;
+      ns.error = null;
+      turnOn({ win: gWin(), nav: gNav(), Notif: gNotif(), key: pushKey() }).then((r) => {
+        ns.busy = false;
+        if (r.ok) {
+          ns.subscribed = true;
+          ns.value = r.value;
+          ns.showValue = true;
+        } else ns.error = r.state === 'denied' ? null : r.words;
+        render();
+      });
+    } }, NOTIFY_WORDS.ask));
+    if (ns.error) kids.push(h('p', { class: 'sb-warn' }, ns.error));
+  } else if (state === 'copy' || (state === 'on' && ns.showValue)) {
+    kids.push(h('p', { class: 'small' }, NOTIFY_WORDS.copy), h('pre', { class: 'sb-value' }, ns.value || ''), copyButton(ns.value || '', `notify:${k}`, 'Copy'));
+    if (!compact) kids.push(h('ol', { class: 'sb-steps small' }, copySteps(CONFIG).map((x) => h('li', {}, x))));
+    kids.push(h('button', { type: 'button', class: 'sb-btn ghost', key: `notify-done:${k}`, onclick: () => {
+      try {
+        if (ns.store) ns.store.setJSON(NOTIFY_STORE_KEY, { copied: true, value: ns.value });
+      } catch {
+        // kept for this window only
+      }
+      ns.showValue = false;
+      render();
+    } }, COPY_DONE_WORDS));
+  } else if (state === 'on') {
+    const t = testSteps(CONFIG);
+    kids.push(h('p', { class: 'small' }, NOTIFY_WORDS.on, ' ', h('button', { type: 'button', class: 'sb-btn ghost small', key: `notify-again:${k}`, onclick: () => {
+      currentSubscription(gWin(), gNav()).then((sub) => {
+        ns.value = sub ? subscriptionValue(sub) : ns.value;
+        ns.showValue = true;
+        render();
+      });
+    } }, SHOW_AGAIN_WORDS)));
+    if (!compact) {
+      kids.push(h('details', { class: 'small', key: `notify-test:${k}` }, h('summary', {}, SEND_TEST_WORDS),
+        h('ol', { class: 'sb-steps' }, t.steps.map((x) => h('li', {}, x))), t.link ? h('p', {}, ext(t.link, 'Open desk-notify on GitHub')) : null));
+    }
+  } else kids.push(h('p', { class: `small ${state === 'denied' ? 'sb-warn' : 'sb-muted'}` }, NOTIFY_WORDS[state]));
+  return h('div', { class: `sb-notify n-${state}`, key: `notify:${k}` }, kids);
+}
+function usageNode() {
+  const v = usageView({ cfg: (usageEntry(CONFIG) || {}).cfg, // AC78: J7's actionsUsage, from the entry holding it (draft 9)
+    reads: DESK ? DESK.usage : null, nowMs: Date.now(), tz: TZ, whenText });
+  const kids = [h('h3', { class: 'sb-h3' }, USAGE_TITLE)];
+  if (v.state !== 'ok') kids.push(h('p', { class: 'small usage-words' }, v.words));
+  else {
+    // A native progress element draws the fill itself: no inline size (AC41, AC50), words always beside it.
+    kids.push(h('p', { class: 'small' }, h('span', { class: 'usage-month' }, v.month), ': ', h('span', { class: 'usage-words' }, v.words)),
+      h('progress', { class: 'sb-actions-bar', max: '100', value: String(v.bar), role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100',
+        'aria-valuenow': String(v.bar), 'aria-label': `${USAGE_TITLE}: ${v.words}` }, `${v.bar}%`));
+    if (v.estimate) kids.push(h('p', { class: 'small' }, v.estimate), h('p', { class: 'sb-muted small' }, v.estimateNote));
+    kids.push(h('p', { class: 'sb-muted small' }, v.reset), h('p', { class: 'sb-muted small' }, v.asOf));
+  }
+  return h('section', { class: 'sb-actions-usage', key: 'actions-usage', id: 'actions-usage' }, kids);
+}
+
 function renderHome(desk, built, seen, now) {
   const order = orderBoxes(built.map((b) => b.box));
   const total = built.reduce((n, b) => n + (b.box.flaggedCount || 0), 0);
@@ -748,6 +854,7 @@ function renderHome(desk, built, seen, now) {
       desk.signedOut ? SIGNED_OUT_STATE.text : total ? `${total} waiting on you in all` : s.text,
       lastRead ? h('span', { class: 'sb-muted' }, ` · last read ${hhmm(new Date(lastRead), TZ)}`) : null),
     seen.words ? h('p', { class: 'sb-muted small' }, seen.words) : null,
+    onTopLine(notifyState(notifyEnv())) ? notifyNode(true) : null,
     h('div', { class: 'sb-hgroups' }, groups),
     // No bottom band (AC48, 2026-10-16: the owner dropped the "Tell your Chief of Staff…" bar, the
     // band's only content): with no sheet or bubble open, nothing is fixed to the bottom of Home.
@@ -877,7 +984,10 @@ function renderStatus(p) {
       project.model === 'v3' ? null : h('li', {}, h('a', { href: go('p', name, 'pipeline'), key: 'more:pipeline' }, 'Reduced view and waits')),
       h('li', {}, h('a', { href: go('p', name, 'asked'), key: 'more:asked' }, 'Time asked of you')),
       h('li', {}, h('a', { href: go('p', name, 'agents'), key: 'more:agents' }, 'Agents: sessions, timeline and usage')),
-      project.model === 'v3' && recordNotes(p).length ? h('li', {}, h('a', { href: go('p', name, 'notes'), key: 'more:notes' }, `Record notes (${recordNotes(p).length})`)) : null)));
+      project.model === 'v3' && recordNotes(p).length ? h('li', {}, h('a', { href: go('p', name, 'notes'), key: 'more:notes' }, `Record notes (${recordNotes(p).length})`)) : null),
+    // AC75 and AC78: the desk's own lines, the same in every project's More detail.
+    h('section', { class: 'sb-notify-line', key: 'notify-line' }, h('h3', { class: 'sb-h3' }, 'Notifications'), notifyNode(false)),
+    usageNode()));
   const out = [h('section', { class: 'sb-screen' }, body, bottomBar(name, 'status', q.waiting))];
   if (nav.route.sheet === 'info') {
     out.push(sheetFrame(go('p', name), 'About the phases', [
@@ -1076,7 +1186,9 @@ function queueRow(p, row, s) {
   const name = p.project.name;
   const out = [opener(`row:${row.key}`, go('p', name, 'queue', row.key), { class: 'sb-qa' },
     h('span', { class: 'sb-qt' }, row.text, ' ', code(row.code)),
-    h('span', { class: 'sb-muted small' }, h('span', { live: () => waitWords(row.raisedAt, Date.now()) }), opened ? ' · opened in GitHub' : ''))];
+    h('span', { class: 'sb-muted small' }, h('span', { live: () => waitWords(row.raisedAt, Date.now()) }), opened ? ' · opened in GitHub' : ''),
+    // AC77: an answer record's own pull request, still here and counted, says whose answer it records.
+    row.flag && row.flag.answerWords ? h('span', { class: 'sb-muted small sb-answer-pr' }, row.flag.answerWords) : null)];
   if (p.project.model === 'v3') {
     const u = unblocksOf(p.ctx, row);
     const ck = `ctx:${row.key}`;
@@ -1129,7 +1241,7 @@ function renderQueue(p, key) {
   else if (!q.waiting) body.push(readLine(p.box));
   body.push(h('div', { class: 'sb-groups' }, q.groups.map((g) => {
     // AC66: the groups' marks go neutral; one holding anything that waits on the owner shows the coral diamond, "needs you".
-    const needs = ['decisions', 'gates', 'merges'].includes(g.key) && g.items.length > 0;
+    const needs = (['decisions', 'gates', 'merges'].includes(g.key) || (g.key === 'deploys' && q.deploysCounted)) && g.items.length > 0;
     const head = h('h2', { class: `sb-gh g-${g.key}` }, needs ? h('span', { class: 'sb-gmark you' }, ic('you'), h('span', { class: 'sb-vh' }, 'needs you'))
       : h('span', { 'aria-hidden': 'true', class: 'sb-gmark' }, GROUP_MARK[g.key]), g.title,
       needs ? h('span', { class: 'sb-needs', 'aria-hidden': 'true' }, 'needs you') : null,
@@ -1138,7 +1250,8 @@ function renderQueue(p, key) {
     if (!g.items.length) return h('section', { class: `sb-group g-${g.key} empty`, key: `group:${g.key}` }, head);
     if (g.key === 'deploys') {
       return h('section', { class: `sb-group g-${g.key}`, key: `group:${g.key}` }, head,
-        h('p', { class: 'sb-muted small' }, 'Shown, not counted: a deploy waiting for approval is not one of the things that need you. Its approver: not recorded.'),
+        h('p', { class: 'sb-muted small' }, q.deploysCounted ? 'Each waits for your approval on GitHub. Its approver: not recorded.'
+          : 'Shown, not counted: a deploy waiting for approval is not one of the things that need you. Its approver: not recorded.'),
         h('ul', { class: 'sb-qlist' }, g.items.map((d) => {
           const dr = deployRows(project, p.snap).find((x) => `deploy:${x.run.path}:${x.run.runNumber}` === d.key);
           return deployRow(p, d, dr ? dr.check : null);
@@ -1146,6 +1259,17 @@ function renderQueue(p, key) {
     }
     return h('section', { class: `sb-group g-${g.key}`, key: `group:${g.key}` }, head, h('ul', { class: 'sb-qlist' }, g.items.map((r) => queueRow(p, r, s))));
   })));
+  // AC77: a question asked in a session, or whose answer is on its way: shown, not counted, no answer link.
+  if (q.asking.length) {
+    body.push(h('section', { class: 'sb-card sb-asking', key: 'asking' }, h('h2', { class: 'sb-h2' }, 'Asked in your session'),
+      h('ul', { class: 'sb-qlist' }, q.asking.map((a) => h('li', { class: 'sb-qrow', key: `asking:${a.name}` },
+        h('p', { class: 'sb-qt' }, a.title, ' ', code(a.name)),
+        h('p', { class: 'sb-strong small', role: 'status' }, a.words, a.pr ? [' · ', ext(a.pr.url, `PR #${a.pr.number}`)] : null),
+        a.state === 'held' ? h('button', { type: 'button', class: 'sb-btn ghost small', key: `answer-here:${a.name}`, onclick: () => { if (DESK) DESK.answerHere(name, a.name); } },
+          'Answer it here instead') : null,
+        a.parsed ? h('details', { class: 'small', key: `asking-text:${a.name}` }, h('summary', {}, 'The question and its options, to read'),
+          h('article', { class: 'sb-record', html: renderMarkdown(a.parsed.text || '') })) : null)))));
+  }
   // "Done today" (AC52, note 10): what was ruled, in words, with its code after.
   // While a row's whole-line bubble is open, a refresh leaves the fold as it was (AC55's hold, for
   // "Done today": draft 5), the day turning at midnight included; the bubble says so when it changed.
@@ -1199,6 +1323,7 @@ function copyButton(text, key, label = 'Copy the text') {
   } }, said || label);
 }
 const copied = new Map();
+const rechecks = new Map(); // AC77: what the re-read before an answer link found, per box, for this window
 
 /**
  * A prefilled text box (AC53): the box, its rule line (updated as the owner types) and its one
@@ -1225,8 +1350,37 @@ function textBox(p, row, target, startText, onOpened) {
   const nodes = [];
   if (plan.warning) nodes.push(h('p', { class: 'sb-warn' }, plan.warning));
   if (plan.words) nodes.push(h('p', { class: 'sb-muted small' }, plan.words));
+  const said = rechecks.get(key);
   if (plan.offer === 'link') {
-    nodes.push(h('a', { class: 'sb-go', key: `go:${key}`, href: plan.url, rel: 'noopener noreferrer', target: '_blank', onclick: () => {
+    const guard = row.kind === 'card' ? { target: { kind: 'card', path: row.flag.card.path }, answerPath: row.flag.card.answerPath }
+      : row.kind === 'question' ? { target: { kind: 'question', name: row.flag.question.name }, answerPath: `decisions/questions/${row.flag.question.name}.md` } : null;
+    nodes.push(h('a', { class: 'sb-go', key: `go:${key}`, href: plan.url, rel: 'noopener noreferrer', target: '_blank', onclick: (e) => {
+      // AC77: a project read more than 30 seconds ago is read again first; the link opens only if the item is still open.
+      if (guard && DESK && DESK.needsRecheck(p.project.name)) {
+        if (e && e.preventDefault) e.preventDefault();
+        rechecks.set(key, { words: RECHECK_WORDS.checking });
+        render();
+        DESK.recheck(p.project.name, guard.answerPath).then((r) => {
+          if (!r.ok) rechecks.set(key, { words: RECHECK_WORDS.failed, anyway: plan.url });
+          else {
+            const o = recheckOutcome(DESK.model(p.project.name), guard.target);
+            if (o.kind === 'open') {
+              rechecks.delete(key);
+              let w = null;
+              try {
+                w = window.open(plan.url, '_blank');
+                if (w) w.opener = null;
+              } catch {
+                w = null;
+              }
+              if (!w) rechecks.set(key, { words: 'Still open:', anyway: plan.url, again: 'open GitHub' });
+              else onOpened();
+            } else rechecks.set(key, { words: o.words, pr: o.pr || null });
+          }
+          render();
+        });
+        return;
+      }
       if (plan.copy) {
         try {
           navigator.clipboard.writeText(plan.copy).catch(() => {});
@@ -1237,6 +1391,11 @@ function textBox(p, row, target, startText, onOpened) {
       onOpened();
     } }, plan.copy ? 'Copy and open GitHub' : 'Open GitHub with this written'));
   } else if (plan.offer === 'copy') nodes.push(copyButton(plan.copy, key));
+  if (said) {
+    nodes.push(h('div', { class: 'sb-recheck', role: 'status', key: `recheck:${key}` }, h('p', { class: 'sb-strong small' }, said.words),
+      said.pr ? h('p', { class: 'small' }, ext(said.pr.url, `PR #${said.pr.number}, which records it`)) : null,
+      said.anyway ? h('p', { class: 'small' }, h('a', { href: said.anyway, rel: 'noopener noreferrer', target: '_blank', key: `anyway:${key}` }, said.again || RECHECK_WORDS.anyway)) : null));
+  }
   return h('div', { class: 'sb-box' }, ta, rebuild,
     h('p', { class: `sb-rule ${r.ok ? 'ok' : 'warn'}`, role: 'status' }, r.words),
     h('p', { class: 'sb-muted small' }, plan.path ? `Writes ${plan.path} on ${plan.branch}` : ''),
@@ -2172,6 +2331,9 @@ export function startSandbox(opts = {}) {
   // fails there (the device's storage full) turns off only that key, never the blob cache.
   const pullsStore = createStore();
   const desk = createDesk({ config: CONFIG, call, clock, store, pullsStore, isVisible, onChange: () => render(), j11: true });
+  DESK = desk;
+  ns.store = store;
+  ns.looked = false;
   nav.start();
   /** Every redraw patches the screen in place (AC56), so a refresh keeps it as the owner left it. */
   const show = (nodes) => {

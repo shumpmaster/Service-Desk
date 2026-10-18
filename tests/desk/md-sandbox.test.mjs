@@ -597,7 +597,12 @@ test('AC42: no packages, the security headers and CSP unchanged, nothing from an
   // The accepted page's copies (tests/desk/fixtures/accepted-m2/): desk-build has no history to read.
   const at = (p) => fixture(`accepted-m2/${p}`);
   assert.equal(readFileSync(`${SRC}/public/_headers`, 'utf8'), at('_headers'));
-  assert.equal(readFileSync(`${SRC}/public/index.html`, 'utf8'), at('index.html'));
+  // From 2026-10-18 the page adds AC75's two links, the manifest's and the Home Screen icon's, and
+  // nothing else: the CSP and every other line are the accepted page's.
+  const AC75_LINKS = '<link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">\n<link rel="apple-touch-icon" href="/icons/desk-180.png">\n';
+  const html = readFileSync(`${SRC}/public/index.html`, 'utf8');
+  assert.ok(html.includes(AC75_LINKS));
+  assert.equal(html.replace(AC75_LINKS, ''), at('index.html'));
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
   const page = readFileSync(`${SRC}/public/sandbox.js`, 'utf8');
   assert.doesNotMatch(css, /@import|url\(|@font-face/, 'no web font, image or stylesheet from anywhere');

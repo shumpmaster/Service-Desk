@@ -1,0 +1,11 @@
+{
+ "note": "GET /repos/shumpmaster/Service-Desk/pulls?state=open&per_page=100, recorded 2026-10-18 with gh api",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json; charset=utf-8",
+  "etag": "\"7144e3f60dc96d0d76db66173a589a153c670234cce5a11793b450338115695b\"",
+  "x-ratelimit-remaining": "14971",
+  "x-ratelimit-reset": "1792341984"
+ },
+ "body": "[]"
+}

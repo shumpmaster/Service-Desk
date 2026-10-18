@@ -289,7 +289,9 @@ test('The cache: blobs are fetched by sha once and kept in storage; a broken sto
   d1.start();
   await s.clock.runUntil(START + 1000);
   d1.stop();
-  const blobCalls = () => s.server.calls.filter((c) => c.path === '/api/blobs').length;
+  // From 2026-10-18 each opening also reads the account's Actions use (J21, AC78) in a blob call of
+  // its own when nothing else rides it; that call fetches no blob, so it is not counted here.
+  const blobCalls = () => s.server.calls.filter((c) => c.path === '/api/blobs' && !(c.body.usage && !c.body.blobs.length && !c.body.history.length)).length;
   const before = blobCalls();
   const d2 = createDesk({ config: CONFIG, call: s.server.call, clock: s.clock, store: createStore(storage), isVisible: () => true });
   d2.start();

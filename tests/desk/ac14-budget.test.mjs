@@ -4,6 +4,8 @@
 // From 2026-10-17 (the desk follow-ups) the same day again with J12 failing all day for all 5
 // projects, v3 projects in the sandbox: fewer than 10,000 calls, no J12 read sooner than J12's
 // backoff allows, at most 43 J12 reads a project after a failed one and 53 in all.
+// From 2026-10-18 (notifications): the same day with three open pull requests changing heads every 10
+// minutes, 288 head changes: one J20 read per pull request per head an opening sees, under 10,000 calls.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDesk, POLL_MS } from '../../src/lib/scheduler.js';
@@ -170,3 +172,64 @@ for (const [what, answer] of [['"pulls": null', null], ['a `data: null` answer',
     t.diagnostic(`AC14 with J12 failing (${what}): ${calls.length} calls (${polls} polls, ${blobs} blob calls), ${reads.length} J12 reads, at most ${most} a project`);
   });
 }
+
+// From 2026-10-18 (notifications, A3; review round 3, N8; build review round 1, Desk 9): the same day,
+// 5 projects and their 100 default-branch changes, with three open pull requests in the first v3
+// project changing heads every 10 minutes of window time for the 16 hours: 3 × 6 × 16 = 288 head
+// changes. Exactly one J20 read per open pull request per head an opening sees (each change it sees,
+// and each opening's first look, since nothing is kept between openings), and the day under 10,000.
+test('AC14 (notifications): 5 projects, 100 head changes and 288 open pull request head changes: one J20 read per pull request per head an opening sees; under 10,000 calls', async (t) => {
+  const config = fiveProjects();
+  const clock = fakeClock(DAY);
+  const repos = Object.fromEntries(config.projects.map((p) => [p.name, repoFor(p)]));
+  const sd = config.projects.find((p) => p.model === 'v3');
+  const own = (n, sha) => ({ number: n, title: `Made-up #${n}`, html_url: `https://github.com/${sd.repo}/pull/${n}`, draft: false, base: { ref: 'main' },
+    head: { ref: `cos/x-${n}`, sha, repo: { full_name: sd.repo } }, user: { login: 'shumpmaster' }, created_at: '2026-11-03T00:00:00Z', state: 'open' });
+  const NUMS = [21, 22, 23];
+  repos[sd.name].prFiles = Object.fromEntries(NUMS.map((n) => [n, [{ filename: `src/f${n}.js`, status: 'modified' }]]));
+  const server = fakeServer(repos, config, clock);
+  const openings = 10;
+  const windowMs = (16 * HOUR) / openings;
+  let windowMin = 0;
+  let prChanges = 0;
+  let changes = 0;
+  const setHeads = () => {
+    const k = Math.floor(windowMin / 10);
+    repos[sd.name].pulls = NUMS.map((n) => own(n, `${n}${k}`.padStart(40, '0')));
+  };
+  setHeads();
+  const seen = new Set();
+  for (let o = 0; o < openings; o++) {
+    const open = DAY + o * 2.4 * HOUR;
+    await clock.runUntil(open);
+    const desk = createDesk({ config, call: server.call, clock, store: createStore(null), isVisible: () => true });
+    desk.start();
+    for (let m = 1; m * 60_000 <= windowMs; m++) {
+      await clock.runUntil(open + m * 60_000 - 30_000);
+      for (const p of repos[sd.name].pulls) seen.add(`${o}|${p.number}|${p.head.sha}`);
+      // The default branches' 10 changes an opening, as the day above.
+      if (m % 9 === 5 && changes < (o + 1) * 10) {
+        const p = config.projects[changes % 5];
+        const r = repos[p.name];
+        if (p.model === 'v3') r.commit({ [`status/Q-00${1 + (changes % 9)}.toml`]: `kind = "research"\nstage = 2\nstate = "done"\nsessions = ${100 + changes}\n` });
+        else r.commit({ 'docs/LEDGER.md': `${r.files['docs/LEDGER.md']}\n## L-${1000 + changes} — change ${changes}\ndate: 2026-11-03\n` });
+        changes++;
+      }
+      await clock.runUntil(open + m * 60_000);
+      const before = Math.floor(windowMin / 10);
+      windowMin += 1;
+      if (Math.floor(windowMin / 10) !== before) {
+        prChanges += NUMS.length;
+        setHeads();
+      }
+    }
+    desk.stop();
+  }
+  const reads = server.calls.filter((c) => c.path === '/api/blobs').reduce((n, c) => n + (c.body.files || []).length, 0);
+  t.diagnostic(`AC14 notifications: ${changes} default-branch changes, ${prChanges} pull request head changes, ${reads} J20 reads, ${server.calls.length} calls`);
+  assert.equal(changes, 100);
+  assert.equal(prChanges, 288, '3 × 6 × 16');
+  assert.equal(reads, seen.size, 'one J20 read per pull request per head an opening sees');
+  assert.ok(reads <= prChanges + NUMS.length * openings, 'the head changes plus each opening\'s first look');
+  assert.ok(server.calls.length < 10_000, `${server.calls.length} calls`);
+});

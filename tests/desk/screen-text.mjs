@@ -96,6 +96,10 @@ export function NEW_REBUILT(route) {
     if (has(el, 'sb-tph') || has(el, 'sb-pmark')) return true;
     if (kind === 'status' && (has(el, 'sb-pboxes') || has(el, 'sb-pbox') || has(el, 'sb-skey') || (el.attrs && el.attrs['data-k'] === 'phases-h'))) return true;
     if (el.attrs && (el.attrs['data-k'] === 'more:pipeline' || el.attrs['data-k'] === 'more:notes')) return true;
+    // From 2026-10-18 (notifications): the parts AC75, AC77 and AC78 add, new words rather than changed
+    // ones: the "Notifications" control (Home's top line and More detail), "GitHub Actions this month",
+    // and the Queue's "Asked in your session".
+    if (has(el, 'sb-notify') || has(el, 'sb-notify-line') || has(el, 'sb-actions-usage') || has(el, 'sb-asking')) return true;
     if (kind === 'timeline') {
       const screen = el.parent && has(el.parent, 'sb-screen');
       if (screen && !has(el, 'sb-marker') && !has(el, 'sb-hdr') && !has(el, 'sb-dock')) return true;

@@ -1,0 +1,349 @@
+{
+ "note": "asks_merge.run driven by a fake API (NOT real records); its printed lines, and a log in GitHub's form",
+ "scenarios": [
+  {
+   "scenario": "merged",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: merged (kinds a) at aaaaaaaaaaaa under L-0017",
+    "OK: 1 merge(s); the governance run on main starts from dddddddddddddddddddddddddddddddddddddddd"
+   ],
+   "log": "2026-10-18T12:50:00.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:00.1234568Z PR #7: merged (kinds a) at aaaaaaaaaaaa under L-0017\n2026-10-18T12:50:00.1234569Z OK: 1 merge(s); the governance run on main starts from dddddddddddddddddddddddddddddddddddddddd\n",
+   "reason": null,
+   "merged": true
+  },
+  {
+   "scenario": "head unreadable",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: its head cannot be read"
+   ],
+   "log": "2026-10-18T12:50:01.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:01.1234568Z PR #7: waits: its head cannot be read\n",
+   "reason": "its head cannot be read",
+   "merged": false
+  },
+  {
+   "scenario": "a fork's branch",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: its branch is not in this repository"
+   ],
+   "log": "2026-10-18T12:50:02.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:02.1234568Z PR #7: waits: its branch is not in this repository\n",
+   "reason": "its branch is not in this repository",
+   "merged": false
+  },
+  {
+   "scenario": "another base",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: its base is not the default branch"
+   ],
+   "log": "2026-10-18T12:50:03.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:03.1234568Z PR #7: waits: its base is not the default branch\n",
+   "reason": "its base is not the default branch",
+   "merged": false
+  },
+  {
+   "scenario": "no title",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: its title or description cannot be read"
+   ],
+   "log": "2026-10-18T12:50:04.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:04.1234568Z PR #7: waits: its title or description cannot be read\n",
+   "reason": "its title or description cannot be read",
+   "merged": false
+  },
+  {
+   "scenario": "a trailer line in the description",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: its description carries a Merged-By:, Delegation: or Merged-Head: line"
+   ],
+   "log": "2026-10-18T12:50:05.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:05.1234568Z PR #7: waits: its description carries a Merged-By:, Delegation: or Merged-Head: line\n",
+   "reason": "its description carries a Merged-By:, Delegation: or Merged-Head: line",
+   "merged": false
+  },
+  {
+   "scenario": "the tip unreadable",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: the default branch's tip cannot be read"
+   ],
+   "log": "2026-10-18T12:50:06.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:06.1234568Z PR #7: waits: the default branch's tip cannot be read\n",
+   "reason": "the default branch's tip cannot be read",
+   "merged": false
+  },
+  {
+   "scenario": "the compare unreadable",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: the compare of the default branch and its head cannot be read"
+   ],
+   "log": "2026-10-18T12:50:07.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:07.1234568Z PR #7: waits: the compare of the default branch and its head cannot be read\n",
+   "reason": "the compare of the default branch and its head cannot be read",
+   "merged": false
+  },
+  {
+   "scenario": "300 files",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: its diff lists 300 files or more, more than the compare shows whole"
+   ],
+   "log": "2026-10-18T12:50:08.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:08.1234568Z PR #7: waits: its diff lists 300 files or more, more than the compare shows whole\n",
+   "reason": "its diff lists 300 files or more, more than the compare shows whole",
+   "merged": false
+  },
+  {
+   "scenario": "commits not all listed",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: the compare lists 1 of its 2 commits, not every one"
+   ],
+   "log": "2026-10-18T12:50:09.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:09.1234568Z PR #7: waits: the compare lists 1 of its 2 commits, not every one\n",
+   "reason": "the compare lists 1 of its 2 commits, not every one",
+   "merged": false
+  },
+  {
+   "scenario": "code in the diff",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: src/x.js (added) is not a change the asks-merge delegation covers"
+   ],
+   "log": "2026-10-18T12:50:10.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:10.1234568Z PR #7: waits: src/x.js (added) is not a change the asks-merge delegation covers\n",
+   "reason": "src/x.js (added) is not a change the asks-merge delegation covers",
+   "merged": false
+  },
+  {
+   "scenario": "not text",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: questions/N1.md in the head cannot be read as text"
+   ],
+   "log": "2026-10-18T12:50:11.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:11.1234568Z PR #7: waits: questions/N1.md in the head cannot be read as text\n",
+   "reason": "questions/N1.md in the head cannot be read as text",
+   "merged": false
+  },
+  {
+   "scenario": "a file unreadable",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: questions/N1.md at aaaaaaaaaaaa cannot be read (HTTP 502)"
+   ],
+   "log": "2026-10-18T12:50:12.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:12.1234568Z PR #7: waits: questions/N1.md at aaaaaaaaaaaa cannot be read (HTTP 502)\n",
+   "reason": "questions/N1.md at aaaaaaaaaaaa cannot be read (HTTP 502)",
+   "merged": false
+  },
+  {
+   "scenario": "could not be judged",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: it could not be judged (AttributeError)"
+   ],
+   "log": "2026-10-18T12:50:13.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:13.1234568Z PR #7: waits: it could not be judged (AttributeError)\n",
+   "reason": "it could not be judged (AttributeError)",
+   "merged": false
+  },
+  {
+   "scenario": "checks unreadable",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: its check runs or statuses cannot be read whole"
+   ],
+   "log": "2026-10-18T12:50:14.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:14.1234568Z PR #7: waits: its check runs or statuses cannot be read whole\n",
+   "reason": "its check runs or statuses cannot be read whole",
+   "merged": false
+  },
+  {
+   "scenario": "a check run unreadable",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: a check run cannot be read"
+   ],
+   "log": "2026-10-18T12:50:15.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:15.1234568Z PR #7: waits: a check run cannot be read\n",
+   "reason": "a check run cannot be read",
+   "merged": false
+  },
+  {
+   "scenario": "no check run yet",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: no counted check run on the head yet"
+   ],
+   "log": "2026-10-18T12:50:16.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:16.1234568Z PR #7: waits: no counted check run on the head yet\n",
+   "reason": "no counted check run on the head yet",
+   "merged": false
+  },
+  {
+   "scenario": "only the Orchestrator's check",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: no counted check run on the head yet"
+   ],
+   "log": "2026-10-18T12:50:17.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:17.1234568Z PR #7: waits: no counted check run on the head yet\n",
+   "reason": "no counted check run on the head yet",
+   "merged": false
+  },
+  {
+   "scenario": "a check running",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: check run 'build' (.github/workflows/desk-build.yml) is in_progress/None"
+   ],
+   "log": "2026-10-18T12:50:18.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:18.1234568Z PR #7: waits: check run 'build' (.github/workflows/desk-build.yml) is in_progress/None\n",
+   "reason": "check run 'build' (.github/workflows/desk-build.yml) is in_progress/None",
+   "merged": false
+  },
+  {
+   "scenario": "a check queued",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: check run 'build' (.github/workflows/desk-build.yml) is queued/None"
+   ],
+   "log": "2026-10-18T12:50:19.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:19.1234568Z PR #7: waits: check run 'build' (.github/workflows/desk-build.yml) is queued/None\n",
+   "reason": "check run 'build' (.github/workflows/desk-build.yml) is queued/None",
+   "merged": false
+  },
+  {
+   "scenario": "a check failed",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: check run 'build' (.github/workflows/desk-build.yml) is completed/failure"
+   ],
+   "log": "2026-10-18T12:50:20.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:20.1234568Z PR #7: waits: check run 'build' (.github/workflows/desk-build.yml) is completed/failure\n",
+   "reason": "check run 'build' (.github/workflows/desk-build.yml) is completed/failure",
+   "merged": false
+  },
+  {
+   "scenario": "a check cancelled, then run again to success",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: merged (kinds a) at aaaaaaaaaaaa under L-0017",
+    "OK: 1 merge(s); the governance run on main starts from dddddddddddddddddddddddddddddddddddddddd"
+   ],
+   "log": "2026-10-18T12:50:21.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:21.1234568Z PR #7: merged (kinds a) at aaaaaaaaaaaa under L-0017\n2026-10-18T12:50:21.1234569Z OK: 1 merge(s); the governance run on main starts from dddddddddddddddddddddddddddddddddddddddd\n",
+   "reason": null,
+   "merged": true
+  },
+  {
+   "scenario": "an app's check failed",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: check run 'lint' (some-app) is completed/failure"
+   ],
+   "log": "2026-10-18T12:50:22.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:22.1234568Z PR #7: waits: check run 'lint' (some-app) is completed/failure\n",
+   "reason": "check run 'lint' (some-app) is completed/failure",
+   "merged": false
+  },
+  {
+   "scenario": "a status pending",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: status 'ci/x' is pending"
+   ],
+   "log": "2026-10-18T12:50:23.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:23.1234568Z PR #7: waits: status 'ci/x' is pending\n",
+   "reason": "status 'ci/x' is pending",
+   "merged": false
+  },
+  {
+   "scenario": "a status failed",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: status 'ci/x' is failure"
+   ],
+   "log": "2026-10-18T12:50:24.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:24.1234568Z PR #7: waits: status 'ci/x' is failure\n",
+   "reason": "status 'ci/x' is failure",
+   "merged": false
+  },
+  {
+   "scenario": "a status in error",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: status 'ci/x' is error"
+   ],
+   "log": "2026-10-18T12:50:25.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:25.1234568Z PR #7: waits: status 'ci/x' is error\n",
+   "reason": "status 'ci/x' is error",
+   "merged": false
+  },
+  {
+   "scenario": "owner-questions pending only",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: merged (kinds a) at aaaaaaaaaaaa under L-0017",
+    "OK: 1 merge(s); the governance run on main starts from dddddddddddddddddddddddddddddddddddddddd"
+   ],
+   "log": "2026-10-18T12:50:26.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:26.1234568Z PR #7: merged (kinds a) at aaaaaaaaaaaa under L-0017\n2026-10-18T12:50:26.1234569Z OK: 1 merge(s); the governance run on main starts from dddddddddddddddddddddddddddddddddddddddd\n",
+   "reason": null,
+   "merged": true
+  },
+  {
+   "scenario": "a status unreadable",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: a commit status cannot be read"
+   ],
+   "log": "2026-10-18T12:50:27.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:27.1234568Z PR #7: waits: a commit status cannot be read\n",
+   "reason": "a commit status cannot be read",
+   "merged": false
+  },
+  {
+   "scenario": "the grant withdrawn",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: the grant L-0017 no longer stands: it is not in the default branch's ledger"
+   ],
+   "log": "2026-10-18T12:50:28.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:28.1234568Z PR #7: waits: the grant L-0017 no longer stands: it is not in the default branch's ledger\n",
+   "reason": "the grant L-0017 no longer stands: it is not in the default branch's ledger",
+   "merged": false
+  },
+  {
+   "scenario": "GitHub refused the merge",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "PR #7: waits: GitHub refused the merge (HTTP 409: conflict)"
+   ],
+   "log": "2026-10-18T12:50:29.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:29.1234568Z PR #7: waits: GitHub refused the merge (HTTP 409: conflict)\n",
+   "reason": "GitHub refused the merge (HTTP 409: conflict)",
+   "merged": false
+  },
+  {
+   "scenario": "judged nothing (the open pull requests unreadable)",
+   "exit": 0,
+   "printed": [
+    "NOTE: the asks-merge grant is L-0017",
+    "NOTE: the open pull requests cannot be read; nothing is merged"
+   ],
+   "log": "2026-10-18T12:50:30.1234567Z NOTE: the asks-merge grant is L-0017\n2026-10-18T12:50:30.1234568Z NOTE: the open pull requests cannot be read; nothing is merged\n",
+   "reason": null,
+   "merged": false
+  }
+ ]
+}

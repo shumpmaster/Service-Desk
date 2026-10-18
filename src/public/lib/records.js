@@ -772,6 +772,10 @@ export function parsePulls(pages) {
         // response J1 already reads, so it costs no request.
         headRepo: (p.head && p.head.repo && typeof p.head.repo.full_name === 'string') ? p.head.repo.full_name : null,
         login: p.user && p.user.login,
+        // From 2026-10-18: the head's sha (J20 reads a pull request's files again only when it changes)
+        // and the author's association (AC74: an outside author's title never reaches the lock screen).
+        headSha: (p.head && typeof p.head.sha === 'string') ? p.head.sha : null,
+        association: typeof p.author_association === 'string' ? p.author_association : null,
         createdAt: p.created_at,
         // From 2026-10-16: an open pull request's `updated_at` (AC71's movement) and, of its body, only
         // the parts AC61 (c) reads: its `Milestone:` line, Context and Why (J12, "What the page keeps").
@@ -823,7 +827,9 @@ export function reduceChecks(runs) {
 export const DEPLOY_WORKFLOW = '.github/workflows/desk-deploy.yml';
 export const ORCHESTRATOR_WORKFLOW = '.github/workflows/orchestrator.yml';
 export const GOVERNANCE_WORKFLOW = '.github/workflows/governance.yml';
-export const ACTIVITY_WORKFLOWS = [DEPLOY_WORKFLOW, ORCHESTRATOR_WORKFLOW];
+// From 2026-10-18 (Workflows 3 and 4): a notification sender's runs are activity, "Notifications: <conclusion>".
+export const NOTIFY_WORKFLOW = '.github/workflows/desk-notify.yml';
+export const ACTIVITY_WORKFLOWS = [DEPLOY_WORKFLOW, ORCHESTRATOR_WORKFLOW, NOTIFY_WORKFLOW];
 
 /**
  * Parse raw workflow-run pages (J1's 3a and 3b, in J6's `checks`) into runs:
@@ -851,7 +857,7 @@ export function parseWorkflowRuns(pages) {
         notes.push(`workflow-run page ${i + 1}: a run without a path or run_number; skipped`);
         continue;
       }
-      runs.push({ path: r.path.replace(/@.*$/, ''), name: typeof r.name === 'string' ? r.name : r.path,
+      runs.push({ id: Number.isInteger(r.id) ? r.id : null, path: r.path.replace(/@.*$/, ''), name: typeof r.name === 'string' ? r.name : r.path,
         event: r.event, status: r.status, conclusion: r.conclusion, runNumber: r.run_number,
         headSha: typeof r.head_sha === 'string' ? r.head_sha : null, url: typeof r.html_url === 'string' ? r.html_url : null,
         // AC72: a hand-started deploy's commit is in its title, `deploy <sha> — <note>` (desk-deploy's run-name).
@@ -902,6 +908,7 @@ export function reduceWorkflowRuns(runs) {
   for (const [path, r] of latest) {
     if (path === DEPLOY_WORKFLOW) activity.push({ text: deployWords(r), url: r.url });
     else if (path === ORCHESTRATOR_WORKFLOW) activity.push({ text: `Orchestrator run: ${runWord(r)}`, url: r.url });
+    else if (path === NOTIFY_WORKFLOW) activity.push({ text: `Notifications: ${runWord(r)}`, url: r.url });
     else counted.push(r);
   }
   return { ci: reduceChecks(counted), activity, governance: latest.get(GOVERNANCE_WORKFLOW) || null, latest };

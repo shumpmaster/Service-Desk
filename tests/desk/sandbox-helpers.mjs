@@ -124,9 +124,9 @@ export const linksIn = (node) => findAll(node, (e) => e.tag === 'a').map((a) => 
 // desk function, so the screens drawn and the taps followed are the page's own.
 
 let loads = 0;
-export async function loadSandbox({ config, repos, hash = '#/', now: start = Date.parse('2026-10-14T15:00:00Z'), store = null }) {
+export async function loadSandbox({ config, repos, hash = '#/', now: start = Date.parse('2026-10-14T15:00:00Z'), store = null, win = {}, globals = {} }) {
   const { fakeServer } = await import('./fake-desk.mjs');
-  const names = ['document', 'window', 'location', 'Node', 'setTimeout', 'clearTimeout', 'setInterval', 'navigator', 'localStorage'];
+  const names = ['document', 'window', 'location', 'Node', 'setTimeout', 'clearTimeout', 'setInterval', 'navigator', 'localStorage', 'Notification'];
   const saved = Object.fromEntries(names.map((k) => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
   let now = start;
   const realNow = Date.now;
@@ -149,12 +149,13 @@ export async function loadSandbox({ config, repos, hash = '#/', now: start = Dat
   const scrolls = [];
   const intervals = [];
   set('window', { scrollY: 0, innerWidth: 360, innerHeight: 740, scrollTo(x, y) { scrolls.push([x, y]); }, addEventListener: (t, fn) => { (winListeners[t] ||= []).push(fn); },
-    setTimeout: (fn, ms) => globalThis.setTimeout(fn, ms) });
+    setTimeout: (fn, ms) => globalThis.setTimeout(fn, ms), ...win });
   set('setTimeout', (fn, ms) => { const id = ++seq; timers.set(id, { at: now + Math.max(0, ms || 0), fn, id }); return id; });
   set('clearTimeout', (id) => { timers.delete(id); });
   set('setInterval', (fn, ms) => { intervals.push({ fn, ms }); return intervals.length; });
-  set('navigator', { clipboard: { writeText: async () => {} } });
+  set('navigator', { clipboard: { writeText: async () => {} }, ...(globals.navigator || {}) });
   set('localStorage', store);
+  set('Notification', globals.Notification); // AC75's control (from 2026-10-18); none by default
   Date.now = () => now;
   const server = fakeServer(repos, config, { now: () => now });
   const flush = async () => { for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r)); };

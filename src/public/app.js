@@ -441,21 +441,38 @@ function copyButton(text) {
  * and the pull request's link; still open, GitHub opens; the re-read failing, "The desk couldn't
  * check just now" with "Open GitHub anyway".
  */
+const rechecked = new Map(); // AC77: what a re-read found, per item, for the item's view
+const recheckKey = (project, t) => `${project}|${t.kind}|${t.name || t.path}`;
+function recheckNote(project, target) {
+  const o = rechecked.get(recheckKey(project, target));
+  if (!o) return null;
+  return h('div', { class: 'recheck', role: 'status' }, h('p', { class: o.kind === 'failed' ? 'warn' : 'answered' }, o.words),
+    o.pr ? h('p', {}, ext(o.pr.url, `Open PR #${o.pr.number}, which records it`)) : null,
+    o.anyway ? h('p', {}, h('a', { class: 'go anyway', href: o.anyway, rel: 'noopener noreferrer', target: '_blank' }, o.again || RECHECK_WORDS.anyway)) : null);
+}
+
 function guardedLink(plan, guard, label) {
   const a = h('a', { class: 'go', href: plan.url, rel: 'noopener noreferrer', target: '_blank' }, label);
   if (!guard) return a;
-  const say = h('div', { class: 'recheck', role: 'status' });
+  const say = h('div', { class: 'recheck-live', role: 'status' });
   a.addEventListener('click', (e) => {
     if (!DESK || !DESK.needsRecheck(guard.project)) return; // read within 30 s: GitHub opens as today
     if (e && e.preventDefault) e.preventDefault();
     say.replaceChildren(h('p', { class: 'muted' }, RECHECK_WORDS.checking));
+    const rk = recheckKey(guard.project, guard.target);
+    rechecked.delete(rk);
     DESK.recheck(guard.project, guard.answerPath).then((r) => {
       if (!r.ok) {
-        say.replaceChildren(h('p', { class: 'warn' }, RECHECK_WORDS.failed),
-          h('p', {}, h('a', { class: 'go anyway', href: plan.url, rel: 'noopener noreferrer', target: '_blank' }, RECHECK_WORDS.anyway)));
+        rechecked.set(rk, { kind: 'failed', words: RECHECK_WORDS.failed, anyway: plan.url });
+        RENDER();
         return;
       }
       const o = recheckOutcome(DESK.model(guard.project), guard.target);
+      // Kept for the item's view, which the re-read may have redrawn as answered or being recorded.
+      if (o.kind !== 'open') {
+        rechecked.set(rk, o);
+        RENDER();
+      }
       if (o.kind === 'open') {
         say.replaceChildren();
         let w = null;
@@ -466,7 +483,10 @@ function guardedLink(plan, guard, label) {
           w = null;
         }
         // A browser that blocks the window after the check: one more tap opens it.
-        if (!w) say.replaceChildren(h('p', {}, h('a', { class: 'go', href: plan.url, rel: 'noopener noreferrer', target: '_blank' }, 'Still open: open GitHub')));
+        if (!w) {
+          rechecked.set(rk, { kind: 'blocked', words: 'It still waits on you:', anyway: plan.url, again: 'open GitHub' });
+          RENDER();
+        }
       } else {
         say.replaceChildren(h('p', { class: 'answered' }, o.words), o.pr ? h('p', {}, ext(o.pr.url, `Open PR #${o.pr.number}, which records it`)) : null);
       }
@@ -563,7 +583,7 @@ function renderCard(desk, name, path) {
       const done = m.answeredCards && m.answeredCards[path];
       if (done) {
         // AC16: the answer file already exists — no link.
-        return h('section', {}, backTo(name), h('h2', {}, path),
+        return h('section', {}, backTo(name), h('h2', {}, path), recheckNote(name, { kind: 'card', path }),
           h('p', { class: 'answered' }, `already answered: ${done.verdict || 'not recorded'}`));
       }
       return h('section', {}, backTo(name), h('p', {}, `${path} is not waiting on you (answered, withdrawn, or not read yet).`));
@@ -575,6 +595,7 @@ function renderCard(desk, name, path) {
       h('h2', {}, f.title),
       h('p', { class: 'muted' }, `Raised ${c.raisedAt ? when(c.raisedAt) : 'not recorded'}`),
       c.cantParse ? h('p', { class: 'flag' }, `Can't parse: ${c.cantParse}. It stays flagged until answered.`) : null,
+      recheckNote(name, { kind: 'card', path: c.path }),
       h('p', {}, 'Answer path: ', h('code', {}, parsed && parsed.answerPath ? parsed.answerPath : c.answerPath)),
       parsed && parsed.options.length
         ? answerBox(project, target, parsed.options.map((o) => ({ value: o.word, text: o.text.replace(/^`[^`]+`\s*/, '') })))
@@ -593,7 +614,7 @@ function renderQuestion(desk, name, qname) {
     if (!f) {
       const done = m.rulings && m.rulings[qname];
       if (done) {
-        return h('section', {}, backTo(name), h('h2', {}, `questions/${qname}.md`),
+        return h('section', {}, backTo(name), h('h2', {}, `questions/${qname}.md`), recheckNote(name, { kind: 'question', name: qname }),
           h('p', { class: 'answered' }, `already answered: ${done.ruling || 'not recorded'}`));
       }
       return h('section', {}, backTo(name), h('p', {}, `questions/${qname}.md is not waiting on you (answered, deleted, or not read yet).`));
@@ -617,6 +638,7 @@ function renderQuestion(desk, name, qname) {
         h('dt', {}, 'REVERSIBILITY'), h('dd', {}, given(p.reversibility)),
         h('dt', {}, 'BLAST RADIUS'), h('dd', {}, given(p.blastRadius)),
         h('dt', {}, 'DEFAULT'), h('dd', {}, defaultLabel(p, q.raisedAt, (d) => dateTimeText(d, TZ)))),
+      recheckNote(name, { kind: 'question', name: qname }),
       p.options.length
         ? answerBox(project, target, p.options.map((o) => ({ value: o.letter, text: o.text, recommended: o.letter === p.recommendationLetter })))
         : null,
@@ -634,7 +656,7 @@ function askingView(project, name, a) {
   const p = a.parsed;
   const options = p && p.options.length ? h('ul', { class: 'options' }, p.options.map((o) => h('li', {}, `${o.letter}. ${o.text}`))) : null;
   return h('section', { class: `asking asking-${a.state}` }, bannerFor(), backTo(name),
-    h('h2', {}, a.title),
+    h('h2', {}, a.title), recheckNote(name, { kind: 'question', name: a.name }),
     h('p', { class: 'answered', role: 'status' }, a.words),
     a.pr ? h('p', {}, ext(a.pr.url, `PR #${a.pr.number}: ${a.pr.title}`)) : null,
     a.state === 'held' ? h('p', {}, h('button', { type: 'button', class: 'answer-here', onclick: () => { if (DESK) DESK.answerHere(name, a.name); } },

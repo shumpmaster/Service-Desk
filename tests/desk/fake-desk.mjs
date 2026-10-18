@@ -55,7 +55,7 @@ export function fakeServer(repos, config, clock) {
       const u = urlsFor(project);
       const head = r.head();
       const pullsRaw = JSON.stringify(r.pulls);
-      const runs = r.runs.map((x, i) => ({ path: x.path || `.github/workflows/${x.name}.yml`, name: x.name || x.path,
+      const runs = r.runs.map((x, i) => ({ id: x.id ?? 1000 + i, path: x.path || `.github/workflows/${x.name}.yml`, name: x.name || x.path,
         event: x.event || 'push', status: x.status, conclusion: x.conclusion, run_number: x.run_number || i + 1,
         head_sha: x.headSha || head, html_url: `https://github.com/${project.repo}/actions/runs/${i + 1}`,
         // AC72: a run's title (GitHub's `display_title`), when the fixture gives one.

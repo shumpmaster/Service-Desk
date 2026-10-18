@@ -104,6 +104,7 @@ function deskKey(name, f) {
   if (f.kind === 'status-card') return `${name}|missing-card|status/${f.key.slice('status:'.length)}.toml`;
   if (f.kind === 'question') return `${name}|question|${f.question.path}`;
   if (f.kind === 'pr') return `${name}|pr|${f.pr.number}`;
+  if (f.kind === 'deploy') return `${name}|deploy|${f.deploy.id}`;
   throw new Error(f.kind);
 }
 
@@ -142,12 +143,15 @@ test('AC73, J16: the sender\'s set equals the desk\'s flagged items for the same
   const c = await collect({ project, config, checkout: co.open(), gh: makeGitHub({ token: 't', fetch: w.fetch }), nowMs: T0, stateKey: KEY_STATE, cand: {} });
   const files = { ...real, ...madeUp, ...m2 };
   const dates = (p) => (Object.prototype.hasOwnProperty.call(real, p) && !Object.prototype.hasOwnProperty.call(madeUp, p) ? BASE_DATE : LATER_DATE);
+  // From 2026-10-18 the desk counts AC52's Deploys itself: the waiting runs on the head, in J1's lists.
+  const deployRuns = w.waiting.filter((r) => r.head_sha === co.head).map((r, i) => ({ ...r, path: '.github/workflows/desk-deploy.yml', name: 'desk-deploy',
+    event: 'push', run_number: 40 + i }));
   const model = deskModel(project, files, dates, [JSON.stringify(w.pulls)],
-    [JSON.stringify({ workflow_runs: w.headRuns.push }), JSON.stringify({ workflow_runs: [] })], new Map([['1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d', 'failed']]));
+    [JSON.stringify({ workflow_runs: [...w.headRuns.push, ...deployRuns] }), JSON.stringify({ workflow_runs: [] })], new Map([['1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d', 'failed']]));
   const desk = model.flagged.map((f) => deskKey(project.name, f));
-  const deploysOnHead = w.waiting.filter((r) => r.head_sha === co.head).map((r) => `${project.name}|deploy|${r.id}`);
+  assert.ok(desk.includes('Service-Desk|deploy|7001'), 'the desk\'s own flagged items hold the deploy');
   const less = new Set(['Service-Desk|pr|107', 'Service-Desk|pr|965', 'Service-Desk|question|questions/N-held.md', 'Service-Desk|question|questions/N-recorded.md']);
-  const expected = [...desk.filter((k) => !less.has(k)), ...deploysOnHead].sort();
+  const expected = desk.filter((k) => !less.has(k)).sort();
   assert.deepEqual(c.set.map((x) => x.key), expected);
   assert.ok(less.size === [...less].filter((k) => desk.includes(k)).length, 'each left-out item is one the desk flags');
 });

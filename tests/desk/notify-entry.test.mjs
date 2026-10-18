@@ -38,3 +38,14 @@ test('J16: the entry point stops at its first step (exit 1) on the wrong reposit
   assert.equal(r.status, 0);
   assert.match(r.stdout, /no triggering run id \(DESK_NOTIFY_RUN_ID\); nothing done/);
 });
+
+test('J16: an internal error exits 2 and prints only its kind and where it was thrown, never its message', () => {
+  const preload = join(SRC, '..', 'tests', 'desk', 'tools', 'notify-throw-preload.mjs');
+  const r = spawnSync(process.execPath, ['--import', preload, RUN, '--project', 'Service-Desk'],
+    { env: { ...clean, GITHUB_REPOSITORY: 'shumpmaster/Service-Desk', GITHUB_EVENT_NAME: 'schedule' }, encoding: 'utf8', timeout: 30000 });
+  assert.equal(r.status, 2);
+  assert.match(r.stdout, /^desk-notify: internal error \(TypeError\)/);
+  assert.match(r.stdout, /src\/notify\/run\.mjs/, 'where it was thrown');
+  assert.doesNotMatch(r.stdout + r.stderr, /DESK_SECRET_LOOKALIKE|made-up message/, 'never its message');
+  assert.equal(r.stdout.trim().split('\n').length, 1, 'one line');
+});

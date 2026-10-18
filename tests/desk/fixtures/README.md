@@ -107,3 +107,36 @@ that did it. The model's code is run from this repository's `governance/checks/`
   - The model's `v3_checks milestones` reports a line both reached and dropped
     (governance/checks/v3_checks.py:1884); it needs a `--base` and the repository's history, so it
     is not run on the fixture.
+- `s033/` (J2, J3, AC3, AC53, AC66): model S-033's question, card and answer forms.
+  - **Real records**, copied unchanged with `git show`: `questions/_TEMPLATE.md` at 368effa (S-033's form);
+    `decisions/questions/P-001-asks-merge.md` at 368effa (a ruling with its `Proxy:` line on line 2,
+    asked before S-033 was adopted, so no `Milestone:` line); `questions/P-001-asks-merge-on-desk.md`
+    and `questions/P-001-cos-sessions-on-desk.md` at 3f206a5 (the first questions filed in S-033's
+    form) and their answers `decisions/questions/<same name>.md` at d727b64 (the Chief of Staff's
+    form: `Proxy:` on line 2, `Milestone: MD2` on line 3).
+  - **Real-on-real** (NOT real records; the model's own code made or passed them): made by
+    `python3 tests/desk/tools/s033-fixtures.py tests/desk/fixtures/s033`, which also copies the real
+    records above. Its output on 2026-10-18:
+    ```
+    governance_checks.py questions: exit 0
+    OK: questions check passed
+    card_text: queue/P-002-stop-1.md (Milestone: M2, spec specs/S-002-made-up.md), queue/P-003-launch-2.md (a launch gate card, no milestone, no spec) and queue/Q-013-stop-2.md (a research item's stop card, no milestone: AC66 falls to its item)
+    closing_problem(S033-milestone): None
+    closing_problem(P-001-asks-merge-on-desk, the real question at 3f206a5, the real answer at d727b64): None
+    closing_problem(P-001-cos-sessions-on-desk, the real question at 3f206a5, the real answer at d727b64): None
+    ```
+    - `questions/S033-milestone.md`, `-two.md`, `-standard.md` and `-none.md`: written from the
+      template for a project milestone (MD3), two ids (M2, M2B), a standard id (Design-6) and
+      `none (a records-only question)`; `python3 governance/checks/governance_checks.py questions --root <a v3 root holding only them>`
+      passes them (exit 0, above);
+    - `queue/P-002-stop-1.md`, `queue/P-003-launch-2.md` and `queue/Q-013-stop-2.md`: written by
+      `card_text` (governance/checks/orchestrator.py) with this repository's
+      governance/ROUTING.toml: one with `Milestone: M2` and a spec path, a launch gate card with
+      neither (its `## Context` before `## 8.`), and a research item's stop card with neither;
+    - `decisions/questions/S033-milestone.md`: the Chief of Staff's answer form, which
+      `closing_problem` (governance/checks/asks_merge.py, the asks-merge job's check of kind (b))
+      passes against `questions/S033-milestone.md` (None, above).
+  - **Made from decisions/README.md:43 and J3, checked by no model code** (written inline in
+    tests/desk/s033-records.test.mjs, NOT real records): the owner's own form (`Ruling:` with the
+    `Milestone:` line on line 3), the answer box's (with the line after `Question:`) and the accepted
+    link's (without it). No model code reads these forms' `Milestone:` line.

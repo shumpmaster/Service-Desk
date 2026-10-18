@@ -222,6 +222,44 @@ export function parseAnswer(text) {
   return m ? m[1].trim() : null;
 }
 
+// ---------------------------------------------------------------------------
+// Model S-033's `Milestone:` lines (J2, from 2026-10-17; L-0016): a question's, an answer record's and a card's.
+
+/**
+ * The first column-0 `Milestone:` line of a text, trailing white space dropped, or null
+ * (governance_checks.question_milestone, model S-033 J1). With `afterLine1`, line 1 is skipped, as the
+ * model reads an answer record's line (asks_merge._answer_milestone).
+ */
+export function firstMilestoneLine(text, afterLine1 = false) {
+  const ls = String(text == null ? '' : text).replace(/\r\n/g, '\n').split('\n');
+  for (const l of afterLine1 ? ls.slice(1) : ls) if (l.startsWith('Milestone:')) return l.replace(/[ \t\r]+$/, '');
+  return null;
+}
+
+/**
+ * A `Milestone:` line's value in AC61 (c)'s form: { none: <reason> } for `none (<reason>)`, else
+ * { ids }, the value split on ", "; null for no line. The desk reads it and checks no form (the
+ * model's checks do, in the project's own CI).
+ */
+export function milestoneValue(line) {
+  if (line == null) return null;
+  const v = String(line).replace(/^Milestone:/, '').trim();
+  const none = /^none \((.+)\)$/.exec(v);
+  return none ? { none: none[1].trim() } : { ids: v.split(', ').map((x) => x.trim()).filter(Boolean) };
+}
+
+/**
+ * A card's own `Milestone:` line (model S-033 AC5, `card_text`): the line directly under its
+ * `answer:` line, when it starts `Milestone:`; otherwise null (the card has no milestone of its
+ * own, and AC66 falls to its item).
+ */
+export function cardMilestoneLine(text) {
+  const ls = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n');
+  const i = ls.findIndex((l) => /^answer:/.test(l));
+  const next = i >= 0 ? ls[i + 1] : undefined;
+  return next != null && next.startsWith('Milestone:') ? next.replace(/[ \t]+$/, '') : null;
+}
+
 /** Line 1 of a ruling file: the text after `Ruling: `, or null. */
 export function parseRuling(text) {
   const first = lines(text)[0] || '';

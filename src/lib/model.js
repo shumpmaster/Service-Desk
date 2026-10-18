@@ -6,7 +6,7 @@ import {
   parseCardPath, parseAnswerPath, questionName, questionAnswerName, classifyQueuePath,
   STATUS_RE, LOG_RE, ROUTING_PATH, LEDGER_PATH, isSprintPath, HOLD_RE, MERGES_PATH, OUTCOMES_PATH,
   parseMergeCardPath, parseHoldCard, parseMergeCard, parseMerges,
-  parseCard, parseAnswer, parseRuling, parseOutcomes, parseQuestion, parseStatus, parseRouting, parseLog, parseSprint,
+  parseCard, parseAnswer, parseRuling, firstMilestoneLine, parseOutcomes, parseQuestion, parseStatus, parseRouting, parseLog, parseSprint,
   parseLedger, parsePulls, classifyPull, parseWorkflowRuns, reduceWorkflowRuns, entryWords, markRetries,
   stageName, timeLimitMinutes,
 } from './records.js';
@@ -83,7 +83,9 @@ export function parseRecord(kind, text, path) {
     case 'ruling': {
       // line1 and line2Proxy: the owner's "Your last action" and "Done today" (AC52, AC55, MD sandbox).
       const ls = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n');
-      return { ruling: parseRuling(text), proxy: /^Proxy:/m.test(String(text)), line1: ls[0] || '', line2Proxy: /^Proxy:/.test(ls[1] || '') };
+      // milestone (J2, AC66; model S-033's J1, from 2026-10-17): the first column-0 `Milestone:` line after line 1, or null.
+      return { ruling: parseRuling(text), proxy: /^Proxy:/m.test(String(text)), line1: ls[0] || '', line2Proxy: /^Proxy:/.test(ls[1] || ''),
+        milestone: firstMilestoneLine(text, true) };
     }
     case 'question': return { text, ...parseQuestion(text, (questionName(path) || path)) };
     case 'ledger': return parseLedger(text);

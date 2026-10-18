@@ -13,7 +13,7 @@
 import { DESK_PHASES, isAppliedDecision } from './timeline.js';
 import { NOT_RECORDED, NOT_AVAILABLE, deskWords, standardWord, treeLink, pullLink, commitLink, columnsOf, nowRule, runStateOf,
   queueView, hasWorkFiled, reachedDateWords } from './sandbox.js';
-import { entryShape, entryWords, parseWorkflowRuns, questionName } from './records.js';
+import { entryShape, entryWords, parseWorkflowRuns, questionName, firstMilestoneLine, milestoneValue, cardMilestoneLine } from './records.js';
 import { dayKey, zonedToUtc } from './timefmt.js';
 import { checksMark, prBodyParts, TOO_MANY_WORDS } from './pulls.js';
 import { REVIEW_VERDICT_RE } from './j11.js';
@@ -657,9 +657,15 @@ function msRow(ctx, r, kind, m, x, sprints, named) {
 // ---------------------------------------------------------------------------
 // AC66: the Queue's "Unblocks", each milestone's why, and the Context fold
 
-/** A record's own `Milestone:` line and `Context` section, in AC61 (c)'s form (a question file or a card). */
-function ownParts(text) {
-  return prBodyParts(text);
+/**
+ * A record's own `Milestone:` line and `## Context` section, in AC61 (c)'s form (J2; model S-033 AC2
+ * and AC5, from 2026-10-17): for a question file, its first `Milestone:` line in column 0; for a
+ * card, the line directly under its `answer:` line; and for each, its Context section, from its
+ * heading to the next heading or the file's end (a card's stops before any `## 8.`).
+ */
+function ownParts(text, kind) {
+  const line = kind === 'card' ? cardMilestoneLine(text) : firstMilestoneLine(text);
+  return { milestone: milestoneValue(line), context: prBodyParts(text).context };
 }
 
 /** A milestone's plain name and why, by its code (AC66): a project milestone's (AC61 (a)) or a standard one's (AC61 (b)). */
@@ -691,12 +697,12 @@ function planMilestonesOf(ctx, sid) {
 export function unblocksOf(ctx, row) {
   const f = row.flag;
   let parts = null;
-  if (f.kind === 'question') parts = ownParts(f.question.parsed ? f.question.parsed.text : '');
-  else if (f.kind === 'card') parts = ownParts(f.card.parsed ? f.card.parsed.text : '');
+  if (f.kind === 'question') parts = ownParts(f.question.parsed ? f.question.parsed.text : '', 'question');
+  else if (f.kind === 'card') parts = ownParts(f.card.parsed ? f.card.parsed.text : '', 'card');
   else if (f.kind === 'pr') parts = f.pr.parts || prBodyParts('');
   const context = parts && parts.context && parts.context.length ? parts.context : null;
   const known = (ids) => ids.map((id) => milestoneInfo(ctx, id) || { code: id, name: null, why: null });
-  if ((f.kind === 'question' || f.kind === 'card') && parts && parts.milestone) {
+  if ((f.kind === 'question' || f.kind === 'card') && parts && parts.milestone && (parts.milestone.none || parts.milestone.ids.length)) {
     if (parts.milestone.none) return { none: parts.milestone.none, milestones: [], context };
     return { milestones: known(parts.milestone.ids), context };
   }
@@ -712,6 +718,45 @@ export function unblocksOf(ctx, row) {
   }
   return { missing: true, milestones: [], context };
 }
+
+/**
+ * Where a "Done today" row's sprint is on the Timeline (AC66), from the Timeline's model `feed` and
+ * the records as last read: { sprint } or { ms } to link to; { job: true } for a merge J12 marks as
+ * the asks-merge job's that no plan line lists ("not on the Timeline: merged by the automatic job");
+ * or null ("sprint: not recorded").
+ * - a card answered: its item, when the item is a sprint on the Timeline;
+ * - a pull request: its own sprint (AC60); a job's merge has none unless a plan line lists it, when
+ *   the plan wins and it links there (J12; the owner's answer "B. Off the Timeline (Recommended)");
+ * - a ruling (from 2026-10-17, model S-033's J1): the milestone named by its answer record's first
+ *   `Milestone:` line after line 1, so it still links once its question is tidied away; for an
+ *   answer with none, its question file's, while the tree holds that file (J2); otherwise none.
+ */
+export function doneTarget(feed, snap, kind, code) {
+  if (!feed || !feed.ok) return null;
+  const tree = (snap && snap.tree) || new Map();
+  const records = (snap && snap.records) || new Map();
+  if (kind === 'card' || kind === 'pr') {
+    const sprint = kind === 'card' ? String(code).split(' ')[0] : String(code);
+    if (feed.index.has(sprint)) return { sprint };
+    const n = kind === 'pr' && /^PR #\d+$/.test(sprint) ? Number(sprint.slice(4)) : null;
+    const kept = n != null && snap && snap.pulls && snap.pulls.list && !snap.pulls.failure ? snap.pulls.list.find((x) => x.number === n) : null;
+    return kept && kept.mergedAt && kept.job === true ? { job: true } : null;
+  }
+  if (kind === 'ruling') {
+    const ans = tree.has(`decisions/questions/${code}.md`) ? records.get(`decisions/questions/${code}.md`) : null;
+    let line = ans && ans.milestone ? ans.milestone : null;
+    if (!line) {
+      const qp = `questions/${code}.md`;
+      const q = tree.has(qp) ? records.get(qp) : null;
+      line = q && q.text ? firstMilestoneLine(q.text) : null;
+    }
+    const v = milestoneValue(line);
+    const id = v && v.ids ? v.ids.find((x) => feed.msIndex.has(x)) : null;
+    return id ? { ms: id } : null;
+  }
+  return null;
+}
+export const JOB_MERGE_WORDS = 'not on the Timeline: merged by the automatic job';
 
 /** AC66's neutral group marks; a group holding anything that waits on the owner shows the coral diamond instead. */
 export const GROUP_MARK = { decisions: '◇', gates: '▲', verdicts: '✎', merges: '⇄', deploys: '▸' };

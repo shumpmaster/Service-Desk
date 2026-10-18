@@ -8,7 +8,7 @@ import { handle } from '../../src/lib/api.js';
 import { _resetKeyCache } from '../../src/lib/access.js';
 import { GRAPHQL_URL, PULLS_QUERY, PULLS_COST } from '../../src/lib/github.js';
 import { judgePulls, keptPull, mergePulls, pullsBackoffMs, PULLS_BACKOFF_MS, PULLS_KEY, PULLS_MAX, PULLS_RATE_MS, TOO_MANY_WORDS, CANT_READ_CHECKS } from '../../src/lib/pulls.js';
-import { createDesk, POLL_MS } from '../../src/lib/scheduler.js';
+import { createDesk, POLL_MS, BLOB_CACHE_KEY } from '../../src/lib/scheduler.js';
 import { createStore } from '../../src/lib/store.js';
 import { j11Records, timelineOf, phaseView } from '../../src/lib/sandbox.js';
 import { runsContext, feedView } from '../../src/lib/feed.js';
@@ -447,8 +447,8 @@ test('J12: a write that fails to desk-pulls-v1 (the storage full) turns off that
   desk.stop();
   assert.equal(pullsStore.usable, false, 'the pulls store turned itself off');
   assert.equal(store.usable, true, 'the blob cache\'s store did not');
-  assert.ok(backing.has('desk-blobs-v5'), 'the blob cache written');
-  assert.ok(Object.keys(JSON.parse(backing.get('desk-blobs-v5'))).length > 10);
+  assert.ok(backing.has(BLOB_CACHE_KEY), 'the blob cache written');
+  assert.ok(Object.keys(JSON.parse(backing.get(BLOB_CACHE_KEY))).length > 10);
   assert.equal(backing.has(PULLS_KEY), false);
   assert.equal(desk.snapshot(SD3.name).pulls.list.length, 72, 'held in memory for the open window');
   // A second load reads the blob cache back.

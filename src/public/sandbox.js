@@ -28,9 +28,8 @@ import {
 import { teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
 import { summaryView, latestText, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
 import { composeAnswer, numberedRuleLine, CANT_SPLIT, NO_RECOMMENDATION } from './lib/sandbox.js';
-import { prBodyParts } from './lib/pulls.js';
 import { runsContext, statusPhases, tilePhases, markerView, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, TEAM_KEY, itemFeeds,
-  stalledLine, deployRows, FEED_ICONS_KEY } from './lib/feed.js';
+  stalledLine, deployRows, FEED_ICONS_KEY, doneTarget, JOB_MERGE_WORDS } from './lib/feed.js';
 
 let CONFIG = DEFAULT_CONFIG; // J7; the tests pass their own (AC42's five projects)
 let TZ = CONFIG.ownerTimeZone;
@@ -1109,26 +1108,15 @@ function deployRow(p, d, check) {
           : [foldButton(name, k, false, { class: 'sb-fold soft' }, 'Why'), isOpenFold(name, k, false) ? h('p', { class: 'sb-meta' }, check.reason) : null]) : null);
 }
 
-const milestoneLineOf = (text) => prBodyParts(text).milestone;
-
 /** Where a "Done today" row's sprint is on the Timeline (AC66): a link there, or "sprint: not recorded" in slate. */
 function doneLink(p, kind, codeText) {
   const name = p.project.name;
   const fv = p.project.model === 'v3' ? p.feed() : null;
-  const none = h('span', { class: 'sb-meta gap' }, ' · sprint: not recorded');
-  if (!fv || !fv.ok) return none;
-  let sprint = null;
-  let ms = null;
-  if (kind === 'card') sprint = String(codeText).split(' ')[0];
-  else if (kind === 'pr') sprint = codeText;
-  else if (kind === 'ruling') {
-    const rec = p.snap && p.snap.records ? p.snap.records.get(`questions/${codeText}.md`) : null;
-    const ml = rec && rec.text ? milestoneLineOf(rec.text) : null;
-    if (ml && ml.ids && ml.ids.length && fv.msIndex.has(ml.ids[0])) ms = ml.ids[0];
-  }
-  if (sprint && fv.index.has(sprint)) return [' ', h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'sprint', sprint) }, 'On the Timeline')];
-  if (ms) return [' ', h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'ms', ms) }, 'On the Timeline')];
-  return none;
+  const at = doneTarget(fv, p.snap, kind, codeText);
+  if (at && at.sprint) return [' ', h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'sprint', at.sprint) }, 'On the Timeline')];
+  if (at && at.ms) return [' ', h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'ms', at.ms) }, 'On the Timeline')];
+  if (at && at.job) return h('span', { class: 'sb-meta' }, ` · ${JOB_MERGE_WORDS}`);
+  return h('span', { class: 'sb-meta gap' }, ' · sprint: not recorded');
 }
 
 function renderQueue(p, key) {
@@ -1230,7 +1218,7 @@ function textBox(p, row, target, startText, onOpened) {
       render();
     } });
   ta.value = draft.text;
-  const r = target.numbered ? numberedRuleLine(draft.text, target.numbered, target.joined) : ruleLine(target.form, draft.text, target);
+  const r = target.numbered ? numberedRuleLine(draft.text, target.numbered, target.joined, target.milestone || null) : ruleLine(target.form, draft.text, target);
   const rebuild = draft.edited && draft.text !== startText
     ? h('button', { type: 'button', class: 'sb-btn ghost small', key: `rebuild:${key}`, onclick: () => { draft.edited = false; render(); } }, 'Rebuild from my answers') : null;
   const plan = boxPlan(p.project, CONFIG.linkCap, target, draft.text);
@@ -1298,7 +1286,7 @@ function answerBoxes(p, row, v, opened) {
         wordsBox(key, q.n, answers, set, isCard && v.gateCard && (a.choice === 'hold' || a.choice === 'recycle') ? 'Your reason (it goes on the Reason: line)' : 'Your own words')));
     });
   }
-  const composed = composeAnswer(isCard ? { kind: 'card', gateCard: v.gateCard } : { kind: 'question', name: v.box.name, qs }, answers);
+  const composed = composeAnswer(isCard ? { kind: 'card', gateCard: v.gateCard } : { kind: 'question', name: v.box.name, qs, milestone: v.box.milestone || null }, answers);
   const target = qs && qs.form === 'numbered' ? { ...box, numbered: qs, joined: composed.joined } : box;
   out.push(h('div', { class: 'sb-sec sb-final', key: 'final' }, h('h3', {}, isCard ? 'The answer file' : 'The ruling file'),
     h('p', { class: 'sb-muted small' }, 'Filled in from your answers above; you can edit it before you commit.'),

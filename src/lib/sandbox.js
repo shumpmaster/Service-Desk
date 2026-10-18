@@ -8,7 +8,7 @@
 
 import { isOwnerRuling } from './model.js';
 import { STATUS_RE, LOG_RE, MERGES_PATH, parseCardPath, questionAnswerName, parseWorkflowRuns, stageName, entryWords,
-  OUTCOMES_PATH, ROUTING_PATH, entryShape, timeLimitMinutes, parseAnswerPath } from './records.js';
+  OUTCOMES_PATH, ROUTING_PATH, entryShape, timeLimitMinutes, parseAnswerPath, firstMilestoneLine } from './records.js';
 import { PROJECT_DOC_PATH, SURFACES_PATH, ORCH_WORKFLOW_PATH, SPEC_PATH_RE, REQUEST_PATH_RE, HANDOVER_PREFIX,
   HANDOVER_TEMPLATE, GATE_PHASE, GATE_WORDS, isGroundwork, nextCronRun, README_PATH } from './j11.js';
 import { buildTimeline, DESK_PHASES, PHASE_OF_STAGE } from './timeline.js';
@@ -557,7 +557,26 @@ export function cardBoxText(word, gateCard) {
   if (gateCard && (word === 'hold' || word === 'recycle')) text += 'Reason: \n';
   return text;
 }
-export const questionBoxText = (letter, name) => `Ruling: ${letter}\n\nQuestion: questions/${name}.md\n`;
+/**
+ * A question's answer box (AC53, J3's sandbox part): `Ruling: <letter>`, an empty line and the
+ * `Question:` line, then, from 2026-10-17, the question's `Milestone:` line when it has one (J2),
+ * copied as the question has it with trailing spaces dropped, as decisions/README.md:43 asks of an
+ * answer to a filed question (model S-033). The accepted views' answer link (links.js) is unchanged.
+ */
+export const questionBoxText = (letter, name, milestone = null) => `Ruling: ${letter}\n\nQuestion: questions/${name}.md\n${milestone ? `${milestone}\n` : ''}`;
+
+/**
+ * The rule line's words on an answer's `Milestone:` line (AC53, from 2026-10-17): null when the
+ * question has none, or the answer's first `Milestone:` line in column 0 after line 1 holds the
+ * same value; otherwise the sentence naming the line it should hold.
+ */
+export function milestoneRuleWords(text, questionLine) {
+  if (!questionLine) return null;
+  const want = questionLine.replace(/^Milestone:/, '').trim();
+  const got = firstMilestoneLine(text, true);
+  if (got != null && got.replace(/^Milestone:/, '').trim() === want) return null;
+  return `The answer's Milestone line should read \`${questionLine}\`, as the question's does.`;
+}
 
 const andOr = (xs) => (xs.length < 2 ? String(xs[0]) : `${xs.slice(0, -1).join(', ')} or ${xs[xs.length - 1]}`);
 
@@ -598,8 +617,10 @@ export function ruleLine(form, text, opts = {}) {
   }
   if (form === 'question') {
     const m = /^Ruling: (.+)$/.exec(lines[0] || '');
-    if (!m) return { ok: false, words: opts.letters && opts.letters.length ? `Line 1 must be "Ruling: <letter>": pick ${andOr(opts.letters)} above.` : 'Line 1 must be "Ruling: <letter>".' };
-    return { ok: true, words: `In form: line 1 is "Ruling: ${m[1]}".` };
+    const ms = milestoneRuleWords(text, opts.milestone);
+    if (!m) return { ok: false, words: `${opts.letters && opts.letters.length ? `Line 1 must be "Ruling: <letter>": pick ${andOr(opts.letters)} above.` : 'Line 1 must be "Ruling: <letter>".'}${ms ? ` ${ms}` : ''}` };
+    if (ms) return { ok: false, words: `Line 1 is "Ruling: ${m[1]}". ${ms}` };
+    return { ok: true, words: `In form: line 1 is "Ruling: ${m[1]}"${opts.milestone ? `, and the Milestone line is the question's` : ''}.` };
   }
   return { ok: true, words: '' };
 }
@@ -756,7 +777,8 @@ export function composeAnswer(ctx, answers = {}) {
     return { text, joined: [] };
   }
   const { qs, name } = ctx;
-  const q = `Question: questions/${name}.md\n`;
+  // From 2026-10-17 the question's `Milestone:` line follows the `Question:` line (AC53, J2).
+  const q = `Question: questions/${name}.md\n${ctx.milestone ? `${ctx.milestone}\n` : ''}`;
   if (qs.form === 'lettered') {
     const words = tidyWords(a1.words);
     return { text: `Ruling: ${a1.choice || ''}\n\n${q}\nQuestion, as put: ${qs.title}\nOptions, as put:\n${qs.block.join('\n')}\n${words ? `\n${words}\n` : ''}`, joined: [] };
@@ -782,9 +804,10 @@ const andList = (ns) => (ns.length < 2 ? String(ns[0]) : `${ns.slice(0, -1).join
  * The rule line for a numbered ruling (AC53, note 15): line 1 starts `Ruling: `; it names any
  * number with no answer yet, and says which answers were joined into one line. The button stays.
  */
-export function numberedRuleLine(text, qs, joined = []) {
+export function numberedRuleLine(text, qs, joined = [], milestone = null) {
   const first = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n')[0];
-  if (!/^Ruling: /.test(first)) return { ok: false, words: 'Line 1 must start "Ruling: ", then each answered number and its answer, joined by "; ".' };
+  const ms = milestoneRuleWords(text, milestone);
+  if (!/^Ruling: /.test(first)) return { ok: false, words: `Line 1 must start "Ruling: ", then each answered number and its answer, joined by "; ".${ms ? ` ${ms}` : ''}` };
   const got = new Set(first.slice(8).split('; ').map((x) => (/^([0-9]+) \S/.exec(x) || [])[1]).filter(Boolean).map(Number));
   const missing = qs.questions.map((x) => x.n).filter((n) => !got.has(n));
   const bits = [];
@@ -792,7 +815,8 @@ export function numberedRuleLine(text, qs, joined = []) {
   else bits.push(`In form: line 1 is "Ruling: " with ${got.size} answer${got.size === 1 ? '' : 's'}.`);
   if (missing.length && got.size) bits.push(`No answer yet for ${andList(missing)}.`);
   for (const n of joined) bits.push(`Answer ${n} joined into one line (line breaks became spaces, "; " became ", ").`);
-  return { ok: got.size > 0, words: bits.join(' ') };
+  if (ms) bits.push(ms);
+  return { ok: got.size > 0 && !ms, words: bits.join(' ') };
 }
 
 // ---------------------------------------------------------------------------
@@ -899,7 +923,8 @@ export function sheetView(project, model, snap, j, row) {
       options: p ? p.options.map((o) => ({ value: o.letter, text: o.text, then: o.text })) : [], loading: !p,
       recommendation: p && p.recommendation ? p.recommendation : null,
       reversibility: p ? p.reversibility || 'not given' : null,
-      box: { form: 'question', path: `decisions/questions/${q.name}.md`, name: q.name },
+      // milestone: the question's own `Milestone:` line (J2), which the answer box carries (AC53, from 2026-10-17).
+      box: { form: 'question', path: `decisions/questions/${q.name}.md`, name: q.name, milestone: p ? firstMilestoneLine(p.text) : null },
       fullText: p ? p.text : null,
       links: [{ text: 'The question on GitHub', href: treeLink(project, tree, q.path) }] };
   }

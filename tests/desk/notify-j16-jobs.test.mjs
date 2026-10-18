@@ -1,7 +1,8 @@
 // join-test: S-001/J16 — the asks-merge job's candidates: the four kinds by path against the model's
 // `classify`; rule (b)'s reading of the job's log against the model's own `run` (each of its waits
 // reasons, written into a log in GitHub's form); one real asks-merge job log; a retried reason that
-// lasts; rules (a) to (d) on made-up runs, jobs, logs and statuses; and `find_grant`'s verdicts.
+// lasts; rules (a) to (d) on made-up runs, jobs, logs and statuses; `find_grant`'s verdicts; and (draft
+// 7) the candidate's lists read to 10 pages, the job's own cap.
 
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,7 +12,7 @@ import { jobKindsByPath, splitChanges } from '../../src/lib/prfiles.js';
 import { logVerdict, logLines, reasonKind, judgeCandidate, latestChecks } from '../../src/notify/jobcand.mjs';
 import { findGrant } from '../../src/notify/grant.mjs';
 import { openCheckout } from '../../src/notify/checkout.mjs';
-import { collect } from '../../src/notify/collect.mjs';
+import { collect, CANDIDATE_MAX_PAGES } from '../../src/notify/collect.mjs';
 import { makeGitHub } from '../../src/notify/gh.mjs';
 import { FIX } from './helpers.mjs';
 import { NOTIFY_FIX, T0, MIN, buildRepo, checkoutOf, filesUnder, makeWorld, pull, testConfig, makeVapid, cleanScratch } from './notify-helpers.mjs';
@@ -249,4 +250,35 @@ test('J16 (d): with no standing grant, a pull request of the job\'s kinds waits 
   w.files[7] = Array.from({ length: 300 }, (_, i) => ({ filename: `questions/N${i}.md`, status: 'added' }));
   const c2 = await collect({ project: config.projects[0], config, checkout: co2.open(), gh: makeGitHub({ token: 't', fetch: w.fetch }), nowMs: T0, stateKey: 'k'.repeat(64), cand: {} });
   assert.ok(c2.set.some((x) => x.key === 'Service-Desk|pr|7'));
+});
+
+// Draft 7 (Critic round 5, note 12): a candidate's check runs, statuses and workflow runs are read to
+// 10 pages of 100, the job's own `PAGES = 10` (asks_merge.py:79); more than that is no job candidate,
+// so it waits as any pull request (the job can't read further either, so it won't merge it).
+test('J16 (draft 7): a candidate\'s check runs, statuses and workflow runs read to 10 pages; an eleventh needed makes it no candidate', async () => {
+  assert.equal(CANDIDATE_MAX_PAGES, 10);
+  const records = filesUnder(join(NOTIFY_FIX, 'sd-ef8daf4'));
+  const config = testConfig(makeVapid());
+  const many = {
+    checkRuns: (n) => Array.from({ length: n }, (_, i) => ok(i + 1, '2026-10-18T11:40:00Z', `build-${i}`)),
+    statuses: (n) => Array.from({ length: n }, (_, i) => ({ id: i + 1, context: `ci/made-up-${i}`, state: 'success' })),
+    workflowRuns: (n) => [...WR, ...Array.from({ length: n - WR.length }, (_, i) => ({ check_suite_id: 1000 + i, path: '.github/workflows/made-up.yml' }))],
+  };
+  const lists = { checkRuns: 'check-runs', statuses: 'statuses', workflowRuns: 'actions/runs?head_sha' };
+  for (const kind of Object.keys(many)) {
+    for (const [count, candidate] of [[1000, true], [1001, false]]) {
+      const w = makeWorld();
+      w.pulls = [pull(7, { sha: SHA })];
+      w.files[7] = [{ filename: 'questions/N1.md', status: 'added' }];
+      w.checks[SHA] = { checkRuns: [ok(1)], workflowRuns: WR, statuses: [], [kind]: many[kind](count) };
+      const c = await collect({ project: config.projects[0], config, checkout: checkoutOf({ base: records }).open(),
+        gh: makeGitHub({ token: 't', fetch: w.fetch }), nowMs: T0, stateKey: 'k'.repeat(64), cand: {} });
+      assert.equal(c.read, true);
+      const pages = w.ghCalls.filter((x) => x.path.includes(lists[kind]) && x.path.includes(SHA)).length;
+      assert.equal(pages, 10, `${kind} ${count}: ten pages read, never an eleventh`);
+      // A candidate whose checks all passed, with no judging run since, is left to the job; no candidate waits as any pull request.
+      assert.equal(c.set.some((x) => x.key === 'Service-Desk|pr|7'), !candidate, `${kind} ${count}`);
+      assert.equal(Object.keys(c.cand).length, candidate ? 1 : 0, `${kind} ${count}`);
+    }
+  }
 });

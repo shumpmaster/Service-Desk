@@ -155,19 +155,39 @@ export function ownRun(run, repo, defaultBranch) {
     && run.head_branch === defaultBranch && TRIGGERS.includes(run.event) && run.conclusion === 'success';
 }
 
+const ID_RE = /^[1-9][0-9]{0,19}$/;
+const sameId = (v, id) => (typeof v === 'number' || typeof v === 'string') && String(v) === id;
+
+/**
+ * Whether a listed `desk-notify-state` artifact passes the checks of J18's that the artifact list
+ * itself carries (AC76, draft 7, Critic round 5, finding 1): its `workflow_run` has `head_branch` the
+ * default branch (main) and `repository_id` and `head_repository_id` both this repository's id. The
+ * list does not carry the workflow's path, and no run is read by id.
+ */
+export function datingArtifact(a, repoId, defaultBranch) {
+  const w = a && a.workflow_run;
+  return Boolean(w) && a.name === ARTIFACT && typeof a.created_at === 'string' && Number.isFinite(Date.parse(a.created_at))
+    && w.head_branch === defaultBranch && sameId(w.repository_id, repoId) && sameId(w.head_repository_id, repoId);
+}
+
 /**
  * The sender's own runs list, or a run's artifact list, failed (the Orchestrator's ruling for AC76,
- * draft 6): the failure is dated from the newest `desk-notify-state` artifact's created time, read
- * from the repository's artifacts by name (one page). Returns { kind: 'unreadable', why: 'read',
- * unreadableSince, atOnce }: atOnce when that read also fails or finds no artifact, so AC76's issue
- * opens at once; otherwise it opens once unreadableSince is 30 minutes old.
+ * draft 6; draft 7, finding 1): the failure is dated from the created time of the newest
+ * `desk-notify-state` artifact that passes `datingArtifact`, read from the repository's artifacts by
+ * name, newest first, one page of 100. A branch's or a fork's artifact is passed over, so it can never
+ * keep the issue shut. Returns { kind: 'unreadable', why: 'read', unreadableSince, atOnce }: atOnce when
+ * the repository's id (GITHUB_REPOSITORY_ID) is missing, or that read fails, or its page has none that
+ * passes, so AC76's issue opens at once; otherwise it opens once unreadableSince is 30 minutes old.
  */
-export async function datedFailure(gh, repo) {
+export async function datedFailure(gh, repo, repoId, defaultBranch) {
+  const atOnce = { kind: 'unreadable', why: 'read', unreadableSince: null, atOnce: true };
+  const id = typeof repoId === 'string' ? repoId.trim() : '';
+  if (!ID_RE.test(id)) return atOnce;
   const r = await gh.get(`/repos/${repo}/actions/artifacts?name=${ARTIFACT}&per_page=100`);
   const list = r.status === 200 && r.json && Array.isArray(r.json.artifacts) ? r.json.artifacts : null;
-  const times = (list || []).filter((x) => x && x.name === ARTIFACT && typeof x.created_at === 'string')
-    .map((x) => Date.parse(x.created_at)).filter(Number.isFinite);
-  if (!times.length) return { kind: 'unreadable', why: 'read', unreadableSince: null, atOnce: true };
+  if (!list) return atOnce;
+  const times = list.filter((x) => datingArtifact(x, id, defaultBranch)).map((x) => Date.parse(x.created_at));
+  if (!times.length) return atOnce;
   return { kind: 'unreadable', why: 'read', unreadableSince: new Date(Math.max(...times)).toISOString(), atOnce: false };
 }
 
@@ -175,14 +195,14 @@ export async function datedFailure(gh, repo) {
  * Find and read the last good state (J18). Returns { kind: 'state', state, at } | { kind: 'none' } |
  * { kind: 'unreadable', why: 'read' | 'forged' | 'form', unreadableSince: ISO|null, atOnce? } (unreadableSince: since when it has
  * been unreadable, the first later run's time; null when this run is the first; for a failed runs or artifact list,
- * datedFailure's).
+ * datedFailure's). repoId: the runner's GITHUB_REPOSITORY_ID, for datedFailure's checks.
  */
-export async function lookupState({ gh, repo, defaultBranch, stateKey }) {
+export async function lookupState({ gh, repo, repoId, defaultBranch, stateKey }) {
   let r = await gh.get(`/repos/${repo}/actions/workflows/${WORKFLOW_FILE}/runs?status=success&per_page=100`);
   if (r.status >= 400 && r.status < 500 && r.status !== 401 && r.status !== 403 && r.status !== 404) {
     r = await gh.get(`/repos/${repo}/actions/workflows/${WORKFLOW_FILE}/runs?status=completed&per_page=100`);
   }
-  if (r.status !== 200 || !r.json || !Array.isArray(r.json.workflow_runs)) return datedFailure(gh, repo);
+  if (r.status !== 200 || !r.json || !Array.isArray(r.json.workflow_runs)) return datedFailure(gh, repo, repoId, defaultBranch);
   const runs = r.json.workflow_runs.filter((x) => ownRun(x, repo, defaultBranch))
     .sort((a, b) => (Date.parse(b.created_at) - Date.parse(a.created_at)) || (b.id - a.id));
   // Since when the state has been unreadable: the first of the sender's runs after the one whose
@@ -194,7 +214,7 @@ export async function lookupState({ gh, repo, defaultBranch, stateKey }) {
   };
   for (const run of runs) {
     const a = await gh.get(`/repos/${repo}/actions/runs/${run.id}/artifacts?name=${ARTIFACT}&per_page=10`);
-    if (a.status !== 200 || !a.json || !Array.isArray(a.json.artifacts)) return datedFailure(gh, repo);
+    if (a.status !== 200 || !a.json || !Array.isArray(a.json.artifacts)) return datedFailure(gh, repo, repoId, defaultBranch);
     const art = a.json.artifacts.find((x) => x && x.name === ARTIFACT && x.expired !== true && x.workflow_run && x.workflow_run.id === run.id);
     if (!art) continue;
     const unreadableSince = since(run);

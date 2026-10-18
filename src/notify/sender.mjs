@@ -82,14 +82,16 @@ export async function runSender(o) {
     }
 
     // The last state (J18).
-    const st = await lookupState({ gh, repo, defaultBranch: project.defaultBranch, stateKey: S.stateKey });
+    const st = await lookupState({ gh, repo, repoId: env.GITHUB_REPOSITORY_ID, defaultBranch: project.defaultBranch, stateKey: S.stateKey });
     const nowMs = o.now();
     if (st.kind === 'unreadable') {
       say(`state: unreadable (${st.why}); nothing sent and nothing saved`);
       const reasons = [];
       if (st.why === 'forged') reasons.push({ code: 'forged' });
-      // A failed read, 30 minutes in a row; a failed list that cannot be dated (draft 6) at once.
-      else if (st.atOnce || (st.unreadableSince && nowMs - Date.parse(st.unreadableSince) >= UNREAD_ISSUE_MS)) reasons.push({ code: 'state-unread' });
+      // A failed list that cannot be dated (draft 6) at once, in its own words (draft 7, note 8); any
+      // other failed read once 30 minutes in a row.
+      else if (st.atOnce) reasons.push({ code: 'state-undated' });
+      else if (st.unreadableSince && nowMs - Date.parse(st.unreadableSince) >= UNREAD_ISSUE_MS) reasons.push({ code: 'state-unread' });
       if (reasons.length) await syncIssue({ gh, repo, owner: config.ownerLogin, reasons, goodPush: false, log: say });
       return 0;
     }
@@ -118,6 +120,9 @@ export async function runSender(o) {
       say(`not read (${c.why}); the last set is kept`);
       if (bootstrap) {
         say('state: nothing saved, so the next run starts again');
+        // The lookup answered with "no state" (J18), so a memory line in AC76's issue goes now
+        // (draft 7, note 8); nothing else can be named without a state.
+        await syncIssue({ gh, repo, owner: config.ownerLogin, reasons: [], goodPush: false, log: say });
         return 0;
       }
     }

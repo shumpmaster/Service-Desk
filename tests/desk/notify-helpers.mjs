@@ -16,6 +16,8 @@ import { FIX } from './helpers.mjs';
 
 export const NOTIFY_FIX = join(FIX, 'notify');
 export const REPO = 'shumpmaster/Service-Desk';
+/** A made-up repository id (the runner's GITHUB_REPOSITORY_ID), NOT Service-Desk's real one. */
+export const REPO_ID = 700001;
 export const API = 'https://api.github.com';
 export const T0 = Date.parse('2026-10-18T12:00:00Z');
 export const MIN = 60e3;
@@ -253,10 +255,27 @@ export function makeWorld(init = {}) {
   function route(method, u, init2) {
     const p = u.pathname;
     const q = u.searchParams;
+    // A list answered 100 to a page, with GitHub's Link header while more remain (J16's 10-page cap).
+    const paged = (all, key) => {
+      const page = Number(q.get('page') || 1);
+      const slice = all.slice((page - 1) * 100, page * 100);
+      const more = all.length > page * 100;
+      const next = new URLSearchParams(q);
+      next.set('page', String(page + 1));
+      return json(200, key ? { [key]: slice } : slice, { 'x-ratelimit-remaining': String(w.remaining),
+        ...(more ? { link: `<${API}${p}?${next}>; rel="next"` } : {}) });
+    };
     for (const [prefix, status] of Object.entries(w.fail)) if ((p + u.search).startsWith(prefix)) return json(status, { message: 'made-up failure' });
     const rem = { 'x-ratelimit-remaining': String(w.remaining) };
     const base = `/repos/${REPO}`;
-    if (method === 'GET' && p === `${base}/pulls` && q.get('state') === 'closed') return json(200, w.closed || [], rem);
+    if (method === 'GET' && p === `${base}/pulls` && q.get('state') === 'closed') {
+      // 100 to a page, newest updated first as given, with GitHub's Link header while more remain.
+      const all = w.closed || [];
+      const page = Number(q.get('page') || 1);
+      const more = all.length > page * 100;
+      return json(200, all.slice((page - 1) * 100, page * 100),
+        { ...rem, ...(more ? { link: `<${API}${p}?state=closed&sort=updated&direction=desc&per_page=100&page=${page + 1}>; rel="next"` } : {}) });
+    }
     if (method === 'GET' && p === `${base}/pulls`) return json(200, q.get('page') && q.get('page') !== '1' ? [] : w.pulls, rem);
     let m = /^\/repos\/[^/]+\/[^/]+\/pulls\/(\d+)\/files$/.exec(p);
     if (m) {
@@ -270,14 +289,14 @@ export function makeWorld(init = {}) {
     if (p === `${base}/actions/runs` && q.get('head_sha')) {
       const c = w.checks[q.get('head_sha')];
       if (q.get('event')) return json(200, { workflow_runs: (w.headRuns && w.headRuns[q.get('event')]) || [] }, rem);
-      return json(200, { workflow_runs: (c && c.workflowRuns) || [] }, rem);
+      return paged((c && c.workflowRuns) || [], 'workflow_runs');
     }
     m = /^\/repos\/[^/]+\/[^/]+\/actions\/runs\/(\d+)$/.exec(p);
     if (m) return w.runs[m[1]] ? json(200, w.runs[m[1]], rem) : json(404, { message: 'Not Found' }, rem);
     m = /^\/repos\/[^/]+\/[^/]+\/commits\/([0-9a-f]{40})\/check-runs$/.exec(p);
-    if (m) return json(200, { check_runs: (w.checks[m[1]] && w.checks[m[1]].checkRuns) || [] }, rem);
+    if (m) return paged((w.checks[m[1]] && w.checks[m[1]].checkRuns) || [], 'check_runs');
     m = /^\/repos\/[^/]+\/[^/]+\/commits\/([0-9a-f]{40})\/statuses$/.exec(p);
-    if (m) return listRoute((w.checks[m[1]] && w.checks[m[1]].statuses) || []);
+    if (m) return paged((w.checks[m[1]] && w.checks[m[1]].statuses) || [], null);
     m = /^\/repos\/[^/]+\/[^/]+\/commits\/([0-9a-f]{40})$/.exec(p);
     if (m) return w.commits[m[1]] ? json(200, { sha: m[1], commit: { committer: { date: w.commits[m[1]] } } }, rem) : json(404, {}, rem);
     if (p === `${base}/actions/workflows/asks-merge.yml/runs`) return json(200, { workflow_runs: w.asksRuns }, rem);
@@ -330,6 +349,12 @@ export function makeWorld(init = {}) {
   return w;
 }
 
+/** An artifact's `workflow_run` as GitHub lists it, for one of the sender's own runs on main (made up). */
+export function ownWorkflowRun(id, o = {}) {
+  return { id, repository_id: o.repositoryId ?? REPO_ID, head_repository_id: o.headRepositoryId ?? REPO_ID, head_branch: o.headBranch ?? 'main',
+    head_sha: 'f'.repeat(40) };
+}
+
 /** A made-up open pull request in REST's form. */
 export function pull(n, o = {}) {
   return { number: n, title: o.title ?? `A made-up pull request #${n}`, html_url: `https://github.com/${REPO}/pull/${n}`, draft: o.draft ?? false,
@@ -373,7 +398,7 @@ export function harness(opts) {
     const id = h.nextRun++;
     const outDir = join(h.outRoot, String(id));
     const logs = [];
-    const env = { GITHUB_REPOSITORY: project.repo, GITHUB_EVENT_NAME: o.event || 'schedule', GITHUB_TOKEN: 'made-up-workflow-token',
+    const env = { GITHUB_REPOSITORY: project.repo, GITHUB_REPOSITORY_ID: String(REPO_ID), GITHUB_EVENT_NAME: o.event || 'schedule', GITHUB_TOKEN: 'made-up-workflow-token',
       DESK_VAPID_PRIVATE_KEY: vapid.pem, DESK_VAPID_SUBJECT: 'mailto:owner@example.invalid', DESK_PUSH_SUBSCRIPTION: (o.sub || h.sub).value,
       DESK_NOTIFY_STATE_KEY: h.stateKey, ...(opts.billingToken ? { DESK_BILLING_TOKEN: opts.billingToken } : {}), ...h.env, ...(o.env || {}) };
     if (o.test) env.DESK_NOTIFY_TEST = o.test;
@@ -389,7 +414,8 @@ export function harness(opts) {
       head_branch: 'main', event: o.event || 'schedule', status: 'completed', conclusion: o.conclusion || (code === 0 ? 'success' : 'failure'), created_at: at });
     if (wrote && !o.noUpload) {
       const zip = makeZip({ 'state.json': readFileSync(join(outDir, 'state.json')), 'state.sig': readFileSync(join(outDir, 'state.sig')) });
-      world.artifacts.push({ id: id + 50000, name: 'desk-notify-state', expired: false, size_in_bytes: zip.length, created_at: at, workflow_run: { id }, zip });
+      world.artifacts.push({ id: id + 50000, name: 'desk-notify-state', expired: false, size_in_bytes: zip.length, created_at: at,
+        workflow_run: ownWorkflowRun(id), zip });
     }
     run.payloads = run.pushes.map((p) => {
       try {

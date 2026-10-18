@@ -1,14 +1,15 @@
 // join-test: S-001/J18 — a sender's memory between runs, with a fake artifact store: new keys against
 // the last state; a project not read keeping its keys; a key leaving and returning; the bootstrap
 // summary; unreadable states sending nothing; the lookup bounded to one page of successful runs; the
-// sealed parts; the subscription's hash; and no key matched to its item without the state key.
+// sealed parts; the subscription's hash; no key matched to its item without the state key; and (draft
+// 7) the `recorded` part kept across runs, dropped when its question leaves, and counted toward 5,000.
 
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { stateFiles, emptyState, keyHash, openPart, sealPart, verifyState, formProblem, LIMITS } from '../../src/notify/state.mjs';
 import { readZip } from '../../src/notify/zip.mjs';
-import { REPO, MIN, checkoutOf, harness, makeZip, makeSubscription, cleanScratch } from './notify-helpers.mjs';
+import { REPO, MIN, checkoutOf, harness, makeZip, makeSubscription, cleanScratch, pull } from './notify-helpers.mjs';
 
 after(cleanScratch);
 
@@ -212,4 +213,58 @@ test('J18: a run that dies after sending and before its upload: the next run sen
   assert.equal(r3.pushes[0].headers.get('topic'), r2.pushes[0].headers.get('topic'));
   assert.equal(r3.payloads[0].notification.tag, r2.payloads[0].notification.tag);
   void MIN;
+});
+
+// Draft 7 (Critic round 5, note 11): the `recorded` part. The question's answer is recorded by an
+// open pull request (made up); its keyed hash is kept with when a run first saw it, run after run,
+// while the question stays open, and dropped when it leaves (answered or gone).
+const ANSWERING = [{ filename: 'decisions/questions/N-r.md', status: 'added' }];
+
+test('J18 (draft 7): `recorded` kept across runs with its first time, dropped when its question leaves', async () => {
+  const h = harness({ checkout: co(['N-r', 'N-other']) });
+  await h.run();
+  h.world.pulls = [pull(120, { title: 'Record the answer to N-r' })];
+  h.world.files[120] = ANSWERING;
+  let r = await h.run();
+  const qh = keyHash(h.stateKey, 'Service-Desk|question|questions/N-r.md');
+  const first = h.state(r).recorded[qh];
+  assert.ok(first, 'seen being recorded');
+  assert.deepEqual(Object.keys(h.state(r).recorded), [qh], 'only that question');
+  r = await h.run();
+  assert.equal(h.state(r).recorded[qh], first, 'kept, with when a run first saw it');
+  // The pull request closes unmerged: the entry stays, so the question waits at once.
+  h.world.pulls = [];
+  r = await h.run();
+  assert.equal(h.state(r).recorded[qh], first);
+  assert.deepEqual(r.payloads.map((p) => p.notification.body), ['Waits on you: a question: Made-up N-r']);
+  // A project not read keeps it as it was.
+  h.world.fail[`/repos/${REPO}/pulls?`] = 502;
+  r = await h.run();
+  assert.equal(h.state(r).recorded[qh], first);
+  delete h.world.fail[`/repos/${REPO}/pulls?`];
+  // The question leaves (answered, or its file gone): dropped.
+  h.checkout = co(['N-other']);
+  r = await h.run();
+  assert.deepEqual(h.state(r).recorded, {});
+});
+
+test('J18 (draft 7): recorded questions count with the keys and job candidates toward the 5,000; a state over it is not used', async () => {
+  const hex = (i, p) => `${p}${i.toString(16).padStart(31, '0')}`;
+  const s = emptyState('2026-10-18T12:00:00.000Z');
+  for (let i = 0; i < 3000; i++) s.keys[hex(i, 'a')] = { sent: s.at };
+  for (let i = 0; i < 1000; i++) s.cand[hex(i, 'b')] = { seen: s.at, retried: null };
+  for (let i = 0; i < 1000; i++) s.recorded[hex(i, 'c')] = s.at;
+  assert.equal(Object.keys(s.keys).length + Object.keys(s.cand).length + Object.keys(s.recorded).length, LIMITS.keys);
+  assert.equal(formProblem(s), null, '5,000 in all: used');
+  s.recorded[hex(1000, 'c')] = s.at;
+  assert.equal(formProblem(s), 'too many keys', '5,001 with the recorded questions: not used');
+  // In a run: such a state is unreadable, so nothing is sent and nothing saved.
+  const h = harness({ checkout: co(['N-a']) });
+  await h.run();
+  addArtifact(h, { ...s, project: { read: true, unreadSince: null } });
+  h.checkout = co(['N-a', 'N-b']);
+  const r = await h.run();
+  assert.ok(r.logs.some((l) => /state: unreadable \(form\)/.test(l)), r.logs.join('\n'));
+  assert.equal(r.pushes.length, 0);
+  assert.equal(r.wrote, false);
 });

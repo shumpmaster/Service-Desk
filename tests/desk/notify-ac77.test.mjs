@@ -3,7 +3,8 @@
 // minutes, ordinary at 8 hours with one push; end lines before, at and after the raised time; the
 // real session file at ccf320f with the real question, unchanged and with the one added line; the
 // answer's pull request opening, merging and closing unmerged; a fork's ignored; a v3 withdrawal and
-// a v2.5 deletion; a line in another form or place ignored; in a v3 and a v2.5 project.
+// a v2.5 deletion; a line in another form or place ignored; in a v3 and a v2.5 project; and (draft
+// 7) the closed read's drafts, its pages and their timing, and a found end kept in J18.
 
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -247,4 +248,64 @@ test('AC77 (draft 6): a closed pull request that only withdraws the question (v3
   delete h.world.fail[`/repos/${REPO}/pulls?state=closed`];
   r = await h.run();
   assert.deepEqual(r.payloads.map((p) => p.notification.body), ['Waits on you: a question: Which piece of later work comes next?']);
+});
+
+// Draft 7 (Critic round 5, notes 5 and 6): a closed draft ends nothing; the next page is read only
+// while a full page's last pull request was updated after the earliest raised time, up to 3 pages,
+// a fourth needed a failed read; a found end is kept in J18, so the next run needs no find.
+const CLOSED = `/repos/${REPO}/pulls?state=closed&sort=updated&direction=desc&per_page=100`;
+const ANSWER_FILE = [{ filename: 'decisions/questions/P-001-next-work.md', status: 'added' }];
+/** Made-up merged pull requests (they end nothing and their files are never read), updated at `at`. */
+const fillers = (from, count, at) => Array.from({ length: count }, (_, i) => closedPull(from + i, { merged: at, closed: at, updated: at }));
+async function heldRun() {
+  const h = await startedAt(RAISED_MS - 2 * MIN);
+  h.checkout = checkoutOf({ base: { ...base, [SESSION_PATH]: realSession }, later: [{ files: { 'questions/P-001-next-work.md': askedQuestion }, date: RAISED }] });
+  const r = await h.run();
+  assert.equal(r.pushes.length, 0, 'held');
+  return h;
+}
+const closedPages = (r) => r.ghCalls.filter((c) => c.path.startsWith(CLOSED)).map((c) => c.path.slice(CLOSED.length) || '&page=1');
+
+test('AC77 (draft 7): a closed draft that records the answer ends nothing, and its files are not read', async () => {
+  const h = await heldRun();
+  h.world.closed = [closedPull(87, { draft: true, closed: '2026-10-18T12:30:00Z', updated: '2026-10-18T12:30:00Z' })];
+  h.world.files[87] = ANSWER_FILE;
+  const r = await h.run();
+  assert.equal(r.pushes.length, 0, 'still held');
+  assert.ok(r.logs.some((l) => /1 held in a session/.test(l)));
+  assert.ok(!r.ghCalls.some((c) => /pulls\/87\/files/.test(c.path)));
+});
+
+test('AC77 (draft 7): a full first page whose last was updated after the raised time reads a second, which finds the end; the end kept in J18, so the next run needs no find', async () => {
+  const h = await heldRun();
+  h.world.closed = [...fillers(1000, 100, '2026-10-18T13:00:00Z'), closedPull(88, { closed: '2026-10-18T12:30:00Z', updated: '2026-10-18T12:30:00Z' })];
+  h.world.files[88] = ANSWER_FILE;
+  let r = await h.run();
+  assert.deepEqual(closedPages(r), ['&page=1', '&page=2']);
+  assert.deepEqual(r.payloads.map((p) => p.notification.body), ['Waits on you: a question: Which piece of later work comes next?']);
+  assert.equal(Object.keys(h.state(r).recorded).length, 1, 'the found end, kept by keyed hash');
+  // The pull request drops off the pages: the end stands, with no find and no second push.
+  h.world.closed = [];
+  r = await h.run();
+  assert.equal(r.pushes.length, 0);
+  assert.deepEqual(closedPages(r), [], 'no question held now: no closed read');
+  assert.equal(Object.keys(h.state(r).recorded).length, 1);
+});
+
+test('AC77 (draft 7): a full page whose last was updated at or before the raised time ends the read there', async () => {
+  const h = await heldRun();
+  h.world.closed = [...fillers(1000, 99, '2026-10-18T13:00:00Z'), ...fillers(1099, 1, RAISED), ...fillers(1100, 50, '2026-10-18T10:00:00Z')];
+  const r = await h.run();
+  assert.deepEqual(closedPages(r), ['&page=1'], 'the second page is older than the raised time: not read');
+  assert.equal(h.state(r).project.read, true);
+});
+
+test('AC77 (draft 7): a fourth page needed is a failed read: the hold kept, the project "not read", three pages and never a fourth', async () => {
+  const h = await heldRun();
+  h.world.closed = fillers(1000, 350, '2026-10-18T13:00:00Z');
+  const r = await h.run();
+  assert.deepEqual(closedPages(r), ['&page=1', '&page=2', '&page=3']);
+  assert.equal(r.pushes.length, 0);
+  assert.ok(r.logs.some((l) => /not read \(closed pull requests \(over 3 pages\)\)/.test(l)), r.logs.join('\n'));
+  assert.equal(h.state(r).project.read, false);
 });

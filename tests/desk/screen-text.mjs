@@ -103,9 +103,16 @@ export function NEW_REBUILT(route) {
     }
     if (kind === 'queue' && (has(el, 'sb-qrow') || has(el, 'sb-shape') || has(el, 'sb-done-r') || has(el, 'sb-gmark') || has(el, 'sb-needs'))) return true;
     if (kind === 'team' && route.split('/').length === 4 && (has(el, 'sb-tiles') || has(el, 'sb-you') || has(el, 'sb-tkey'))) return true;
+    // From 2026-10-17 (model 3.5.0's records): AC49 as changed in place gives a v3 project's Chief of Staff
+    // page its status, groups and running log from its session lines (J13), so those parts are rebuilt
+    // too; its header, marker and bottom bar, and a v2.5 project's page, stay word for word.
+    if (kind === 'team' && V3_NAMES.includes(routeParts(route)[1]) && routeParts(route)[3] === 'chief-of-staff'
+      && (has(el, 'sb-sub') || has(el, 'sb-resp') || has(el, 'sb-branch') || has(el, 'sb-logw'))) return true;
     return false;
   };
 }
+const V3_NAMES = ['Service-Desk', 'Alpha'];
+const routeParts = (route) => route.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
 
 /** The routes drawn: Home, then for each project every screen, its sheets, its members' pages and the "More detail" views. */
 export async function discoverRoutes(app) {

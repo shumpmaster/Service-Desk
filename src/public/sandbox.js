@@ -1566,18 +1566,21 @@ function renderTeam(p, member, sub, idx) {
   body.push(h('p', { class: 'sb-keyl sb-tkey' }, TEAM_KEY.map(([k, w]) => h('span', { class: 'sb-keye' }, ic(k), w))));
   const rows = tv.rows || [];
   body.push(h('div', { class: 'sb-tiles' }, tv.members.map((m) => {
-    const v3 = p.project.model === 'v3' && m.id !== 'chief-of-staff';
-    const work = v3 ? memberWork(p.ctx, fv, rows, m.id, TZ) : null;
+    const isCos = m.id === 'chief-of-staff';
+    const v3 = p.project.model === 'v3' && !isCos;
+    const work = v3 ? memberWork(p.ctx, fv, rows, m.id, TZ, m.helper || null) : null;
     const item = m.status === 'Working' ? m.item : work ? work.item : null;
-    const last = m.id === 'chief-of-staff' ? NOT_RECORDED : m.status === 'Working' ? m.last : work ? work.last : m.last;
+    // The Chief of Staff's card (AC67, J13): "last: <doing>, <date>" from its session lines, which name no item or sprint.
+    const last = isCos ? (m.card || NOT_RECORDED) : m.status === 'Working' ? m.last : work ? work.last : m.last;
     const feeds = v3 && item ? { feeds: itemFeeds(p.ctx, item) } : null;
+    const noFeeds = (isCos && p.project.model === 'v3') || (work && work.helper && m.status !== 'Working');
     const place = item && fv && fv.ok ? fv.index.get(item) : null;
     return h('div', { class: 'sb-tile', key: `tile:${m.id}`, 'data-member': m.id },
       h('a', { class: 'sb-tile-n', href: go('p', name, 'team', m.id) }, ic(memberIcon(m.status)), h('strong', {}, m.label)),
       h('span', { class: 'sb-tile-st' }, m.status),
       h('span', { class: 'sb-muted small' }, last),
       feeds ? (feeds.feeds ? h('span', { class: 'sb-feeds' }, 'feeds ', h('b', {}, feeds.feeds.code), ` · ${feeds.feeds.name}`)
-        : h('span', { class: 'sb-feeds gap' }, 'feeds: not tied to a milestone')) : null,
+        : h('span', { class: 'sb-feeds gap' }, 'feeds: not tied to a milestone')) : noFeeds ? h('span', { class: 'sb-feeds gap' }, 'feeds: not recorded') : null,
       place ? h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'sprint', item) }, 'On the Timeline ›') : null);
   })));
   return h('section', { class: 'sb-screen' }, body, bottomBar(name, 'team', p.q.waiting));
@@ -1595,7 +1598,7 @@ function renderMember(p, tv, id, sub, idx, now) {
     g.items && g.items.length ? h('ul', { class: 'sb-qlist' }, g.items.map((it) => h('li', {}, it.link ? ext(it.link, it.text) : it.text))) : h('p', { class: 'sb-muted small' }, g.why || 'None.')))));
   body.push(h('h2', { class: 'sb-h2' }, 'Running log'));
   if (page.upNext.length) body.push(h('div', { class: 'sb-upnext' }, h('p', { class: 'sb-eyebrow' }, 'Up next (from the records)'), h('ul', {}, page.upNext.map((u) => h('li', {}, u)))));
-  if (!page.log.length) body.push(h('p', { class: 'sb-muted' }, page.logWords));
+  if (!page.log.length) body.push(h('p', { class: `sb-muted${page.sessionLines ? ' sb-logw' : ''}` }, page.logWords));
   else body.push(branchLog(p, page));
   const out = [h('section', { class: 'sb-screen' }, body, bottomBar(name, 'team', p.q.waiting))];
   if (sub === 'now') {
@@ -1724,6 +1727,7 @@ function summaryNode(p, id, sm) {
   const back = go('p', p.project.name, 'team', id);
   return sheetFrame(back, 'Summary', [
     h('div', { class: 'sb-sec' }, h('h3', {}, 'What happened'), h('p', {}, sm.what), sm.quote ? h('pre', { class: 'sb-quote' }, sm.quote) : null,
+      sm.figures ? h('ul', { class: 'sb-kv sb-figs' }, sm.figures.map((f) => h('li', {}, f))) : null,
       h('p', { class: 'small' }, sm.link ? ext(sm.link, 'From the record') : 'no file recorded')),
     h('div', { class: 'sb-sec' }, h('h3', {}, 'Why'), h('p', {}, sm.why)),
     h('div', { class: 'sb-sec' }, h('h3', {}, 'For you'), h('p', {}, sm.forYou)),

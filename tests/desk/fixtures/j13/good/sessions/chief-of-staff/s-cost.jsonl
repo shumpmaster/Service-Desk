@@ -1,0 +1,2 @@
+{"event": "start", "session": "s-cost", "time": "2026-10-17T10:00:00Z", "doing": "A made-up piece whose end line has a cost"}
+{"event": "end", "session": "s-cost", "time": "2026-10-17T10:20:00Z", "usage": {"input_tokens": null, "output_tokens": null, "cache_read_input_tokens": null, "cache_creation_input_tokens": null, "num_turns": null, "duration_ms": 1200000, "context_window": null, "autocompact_threshold": null, "context_peak": null, "compactions": null, "derived": ["context_peak"], "would_have_stopped": null, "cost_usd_estimate": 1.234}}

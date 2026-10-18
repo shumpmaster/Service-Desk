@@ -179,3 +179,68 @@ that did it. The model's code is run from this repository's `governance/checks/`
 - `github/j12-made-up-field-error.json` (2026-10-18): its two merged nodes gained a made-up merge
   message (`<title> (#<n>)`, a blank line, the body) and the author `shumpmaster`, in the query's new
   shape. Still MADE UP.
+- `j13/` (J13, AC49, AC67): the Chief of Staff's session files, made by
+  `python3 tests/desk/tools/j13-fixtures.py tests/desk/fixtures/j13`:
+  - `real/sessions/chief-of-staff/session_012RJPVKAoLga2RkqLYRDcBY.jsonl`: **real**, the first
+    session file on the default branch (one start line), copied unchanged from 21bc250 with `git show`;
+  - `good/sessions/chief-of-staff/*.jsonl`: **NOT real records** (real-on-real: written in S-033
+    AC6's forms and passed by the model's own check). `s-ended` (a piece ended, a `definer` helper
+    with figures and a `ux-researcher` helper, whose role the roster lacks, with `null`s; its end
+    line's usage `duration_ms` only), `s-open` (under way, with a `definer` helper), `s-two` (a second
+    session under way), `s-restart` (a start after a start), `s-old` (left open since 03:30),
+    `s-orphan` (an end line before any start and one after an end) and `s-cost` (a made-up end line
+    with a cost). `python3 governance/checks/v3_checks.py sessions --root <a v3 root holding them>`
+    passes them; its output is `good/check.txt`:
+    ```
+- `j13/` (J13, AC49, AC67): the Chief of Staff's session files, made by
+  `python3 tests/desk/tools/j13-fixtures.py tests/desk/fixtures/j13`:
+  - `real/sessions/chief-of-staff/session_012RJPVKAoLga2RkqLYRDcBY.jsonl`: **real**, the first
+    session file on the default branch (one start line), copied unchanged from 21bc250 with `git show`;
+  - `good/sessions/chief-of-staff/*.jsonl`: **NOT real records** (real-on-real: written in S-033
+    AC6's forms and passed by the model's own check): `s-ended` (a piece ended, a `definer` helper
+    with figures and a `ux-researcher` helper, whose role the roster lacks, with `null`s; its end
+    line's usage `duration_ms` only), `s-open` (under way, with a `definer` helper), `s-two` (a second
+    session under way), `s-restart` (a start after a start), `s-old` (left open since 03:30),
+    `s-orphan` (an end line before any start and one after an end) and `s-cost` (a made-up end line
+    with a cost). `python3 governance/checks/v3_checks.py sessions --root <a v3 root holding them>`
+    passes them; its output, `good/check.txt`:
+    ```
+    exit 0
+    NOTE: 7 session file(s) in sessions/chief-of-staff/
+    OK: the Chief of Staff's session lines are in their form
+    ```
+  - `bad/sessions/chief-of-staff/s-bad.jsonl`: **NOT a real record**: line 1 in form; lines 2 to 20
+    one for each finding the desk mirrors (it names and skips them); lines 21 to 23 for those it reads
+    as written (a repeated key, `1.0` for a count, a time earlier than the line before); line 24 an end
+    line whose usage has a figure of the wrong kind and line 26 one whose usage is not an object (read by
+    J10's rule); line 25 in form. The same command's output, the model's failure beside each line,
+    `bad/check.txt`:
+    ```
+    exit 1
+    NOTE: 1 session file(s) in sessions/chief-of-staff/
+    sessions/chief-of-staff/s-bad.jsonl line 2: not one JSON object (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 3: not one JSON object (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 4: missing key event (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 5: event has the wrong type (a string) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 6: unknown event 'pause' (start, helper or end) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 7: missing key doing (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 8: extra key note (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 9: session has the wrong type (a string) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 10: the file's name is not its lines' session ('other') (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 11: doing has the wrong type (a non-empty string) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 12: role has the wrong type (a non-empty string) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 13: time '2026-10-17 09:11:00' is not UTC ISO-8601 (yyyy-mm-ddThh:mm:ssZ) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 14: time '2026-02-30T09:12:00Z' is not UTC ISO-8601 (yyyy-mm-ddThh:mm:ssZ) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 15: reported has the wrong type (an object) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 16: reported: missing key duration_ms (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 17: reported: extra key cost (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 18: reported tokens has the wrong type (a whole number or null) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 19: reported tokens has the wrong type (a whole number or null) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 20: the helper started after it ended (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 21: not one JSON object (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 22: reported tokens has the wrong type (a whole number or null) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 23: its time is earlier than the time of the previous start or end line (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 24: the usage object is not model S-020's (cost_usd_estimate is not a finite number from 0 to 10^6 or null) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 26: the usage object is not model S-020's (not an object) (model S-033 AC6)
+    FAIL: 24 violation(s)
+    ```

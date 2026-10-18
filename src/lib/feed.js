@@ -792,10 +792,15 @@ export function itemFeeds(ctx, item) {
  * entry, with its date; the milestone that item feeds as a sprint, from the plan's lists; and, when
  * it is a sprint on the Timeline, where.
  */
-export function memberWork(ctx, feed, rows, id, tz) {
+export function memberWork(ctx, feed, rows, id, tz, helper = null) {
   let e = null;
   if (id === 'orchestrator') e = [...rows].reverse().find((x) => Object.prototype.hasOwnProperty.call(x, 'route') || x.shape === 'decision') || null;
   else e = [...rows].reverse().find((x) => x.shape === 'outcome' && x.role === id) || null;
+  // A helper line naming the member, later than its latest outcome entry, is its last work (J13, AC67;
+  // from 2026-10-17): it names no item, so "feeds: not recorded" and no link.
+  if (helper && Number.isFinite(helper.at) && (!e || helper.at > t(e.time))) {
+    return { last: `last: a helper session for the Chief of Staff, ${dayWords(helper.at, tz)}`, item: null, feeds: null, link: null, helper: true };
+  }
   if (!e) return { last: 'not recorded in what the desk reads', feeds: null, link: null };
   const at = t(e.time);
   const last = `last: ${headlineWords(e) || NOT_RECORDED}${Number.isFinite(at) ? `, ${dayWords(at, tz)}` : ''}`;

@@ -15,7 +15,7 @@ import { NOT_RECORDED, NOT_AVAILABLE, deskWords, standardWord, treeLink, pullLin
   queueView, hasWorkFiled, reachedDateWords } from './sandbox.js';
 import { entryShape, entryWords, parseWorkflowRuns, questionName, firstMilestoneLine, milestoneValue, cardMilestoneLine } from './records.js';
 import { dayKey, zonedToUtc } from './timefmt.js';
-import { checksMark, prBodyParts, TOO_MANY_WORDS } from './pulls.js';
+import { checksMark, prBodyParts, pullRead, TOO_MANY_WORDS } from './pulls.js';
 import { REVIEW_VERDICT_RE } from './j11.js';
 import { BOUNDARY_WORDS } from './model.js';
 
@@ -340,7 +340,9 @@ function pullsIndex(snap, model) {
   // AC60 shows "not available" with the reason, never what an earlier read kept as if it were current.
   const failed = Boolean(p && p.failure);
   const list = p && p.list && !failed ? p.list : null;
-  const by = new Map((list || []).map((x) => [x.number, x]));
+  // A merged entry without the job's yes or no has not been read by J12 (J12, 2026-10-17): it is
+  // shown as a listed pull request J12 lacks, and placed nowhere else.
+  const by = new Map((list || []).filter(pullRead).map((x) => [x.number, x]));
   let missing = null;
   if (!list) missing = failed ? p.failure : "the pull requests haven't been read yet";
   // An open one's title and body come from J1's open list on every poll (J12).
@@ -420,7 +422,11 @@ export function feedView(ctx, model, nowMs, tz) {
   for (const pr of pulls.list || []) {
     if (!pr.mergedAt) continue; // an open one is in the Queue (AC52); a closed one was never merged
     const sid = `PR #${pr.number}`;
-    if (listed.has(sid)) continue;
+    if (listed.has(sid)) continue; // the plan wins, a job's merge included (AC60)
+    // The asks-merge job's merges are never a sprint (AC60; the owner's answer "B. Off the Timeline
+    // (Recommended)"): not by their Milestone: line, not untied, and no part of a run's times (AC59).
+    // One J12 has not read is placed nowhere but under a plan line that lists it.
+    if (pr.job === true || !pullRead(pr)) continue;
     const ml = pr.parts && pr.parts.milestone;
     const run = placeByTime(t(pr.mergedAt));
     if (ml && ml.ids) {

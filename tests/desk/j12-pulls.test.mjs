@@ -80,7 +80,7 @@ test('J12: the function sends the fixed query text only, with the variables from
   const [owner, name] = SDV3.repo.split('/');
   assert.deepEqual(sent.variables, { owner, name, base: SDV3.defaultBranch, after: 'Q1VSU09S' });
   assert.match(PULLS_QUERY, /pullRequests\(baseRefName: \$base, first: 100, after: \$after, orderBy: \{field: CREATED_AT, direction: DESC\}\)/);
-  for (const field of ['number', 'title', 'body', 'state', 'createdAt', 'mergedAt', 'closedAt', 'headRefName', 'mergeCommit { oid }', 'statusCheckRollup { state }', 'hasNextPage', 'endCursor']) assert.ok(PULLS_QUERY.includes(field), field);
+  for (const field of ['number', 'title', 'body', 'state', 'createdAt', 'mergedAt', 'closedAt', 'headRefName', 'mergeCommit { oid message author { name } }', 'statusCheckRollup { state }', 'hasNextPage', 'endCursor']) assert.ok(PULLS_QUERY.includes(field), field);
   assert.equal(json.pulls, pullsAnswer(), 'raw, unparsed');
   assert.equal(json.state, 'ok');
 });
@@ -135,7 +135,9 @@ test('J12: each of the answer\'s own errors — data null (the first message as 
 test('J12: the kept fields only — number, title, state, the times, head branch, merge commit, check state, and AC61\'s parts of the body; never the rest of the body', () => {
   const n = node(950, { body: '## What this means for you\nA paragraph.\n\nMilestone: MD3\n\n## Context\n- A fact (source: docs/PROJECT.md)\n\n## Why\nBecause.\n\n## Changes\nA SECRET-LOOKING LINE THE DESK NEVER KEEPS\n', checks: 'FAILURE' });
   const k = keptPull(n, 'FAILURE');
-  assert.deepEqual(Object.keys(k).sort(), ['checks', 'createdAt', 'head', 'mergeCommit', 'mergedAt', 'number', 'parts', 'state', 'title']);
+  assert.deepEqual(Object.keys(k).sort(), ['checks', 'createdAt', 'head', 'job', 'mergeCommit', 'mergedAt', 'number', 'parts', 'state', 'title'],
+    'from 2026-10-17 the job\'s yes or no, never the merge commit\'s message');
+  assert.equal(k.job, false);
   assert.deepEqual(k.parts, { milestone: { ids: ['MD3'] }, context: [{ fact: 'A fact', source: 'docs/PROJECT.md', exception: false }], why: ['Because.'] });
   assert.doesNotMatch(JSON.stringify(k), /SECRET-LOOKING|A paragraph|What this means/);
   for (const p of judgePulls(pullsAnswer()).pulls) assert.ok(!('body' in p), `#${p.number}: no body kept`);
@@ -428,7 +430,7 @@ test('J12 backoff: it lives in memory, so a page reload starts it again at 5 min
   assertWaits(at, [5, 10], 'after the reload: 5 again, then 10');
 });
 
-test('J12: a write that fails to desk-pulls-v1 (the storage full) turns off that key only; the blob cache keeps being written and read', async () => {
+test('J12: a write that fails to the kept list\'s key (desk-pulls-v2) (the storage full) turns off that key only; the blob cache keeps being written and read', async () => {
   const backing = new Map();
   const failing = {
     getItem: (k) => (backing.has(k) ? backing.get(k) : null),
@@ -456,7 +458,7 @@ test('J12: a write that fails to desk-pulls-v1 (the storage full) turns off that
   assert.ok(again.desk.cacheSize() > 10);
 });
 
-test('J12: what is kept on the device under desk-pulls-v1 (a working store) holds no body text beyond AC61\'s parts, and is read again on the next load', async () => {
+test('J12: what is kept on the device under the kept list\'s key (desk-pulls-v2) (a working store) holds no body text beyond AC61\'s parts, and is read again on the next load', async () => {
   const backing = new Map();
   const st = { getItem: (k) => (backing.has(k) ? backing.get(k) : null), setItem: (k, v) => backing.set(k, String(v)), removeItem: (k) => backing.delete(k) };
   const r = sdRepo();

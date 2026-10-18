@@ -28,7 +28,7 @@ export const PULLS_QUERY = `query($owner: String!, $name: String!, $base: String
       pageInfo { hasNextPage endCursor }
       nodes {
         number title body state createdAt mergedAt closedAt headRefName
-        mergeCommit { oid }
+        mergeCommit { oid message author { name } }
         commits(last: 1) { nodes { commit { statusCheckRollup { state } } } }
       }
     }

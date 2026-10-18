@@ -5,7 +5,7 @@
 
 import { neededReads, parseRecord, recordKind, buildModel } from './model.js';
 import { parseTree, parseHistory, parseCardPath, compareStatus } from './records.js';
-import { judgePulls, mergePulls, pullsBackoffMs, PULLS_KEY, PULLS_MAX_PAGES, PULLS_RATE_MS } from './pulls.js';
+import { judgePulls, mergePulls, pullsBackoffMs, PULLS_KEY, OLD_PULLS_KEYS, PULLS_MAX_PAGES, PULLS_RATE_MS } from './pulls.js';
 import { dayKey } from './timefmt.js';
 
 // J12 (2026-10-16): the pull-request read counts 5 of a blob call's budget of 25.
@@ -112,6 +112,8 @@ export function createDesk(opts) {
   // write that fails there turns off only this key, never the blob cache.
   const pullsStore = opts.pullsStore || null;
   if (opts.j11) {
+    // J12's kept list moved to desk-pulls-v2 (2026-10-17): v1's entries lack the job's yes or no, so they are removed and read again.
+    if (pullsStore && pullsStore.remove) for (const k of OLD_PULLS_KEYS) pullsStore.remove(k);
     let saved = {};
     try {
       saved = (pullsStore && pullsStore.getJSON(PULLS_KEY, {})) || {};

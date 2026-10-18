@@ -8,7 +8,11 @@ import { plainInline } from './j11.js';
 export const NOT_RECORDED = 'not recorded';
 export const PULLS_MAX = 300; // J12: at most 3 pages of 100 are read, and at most 300 kept, the newest
 export const PULLS_MAX_PAGES = 3;
-export const PULLS_KEY = 'desk-pulls-v1'; // J12: the device's own store for them, apart from the blob cache
+// J12: the device's own store for them, apart from the blob cache. v2 from 2026-10-17 (model 3.5.0's
+// records, draft 5): each kept entry holds whether its merge is the asks-merge job's, so the key moved
+// on and v1 is removed on load, every entry read again from J12.
+export const PULLS_KEY = 'desk-pulls-v2';
+export const OLD_PULLS_KEYS = ['desk-pulls-v1'];
 export const PULLS_RATE_MS = 60 * 60e3; // J12: after a RATE_LIMITED answer, no read for 60 minutes, then the read again (C; draft 6)
 // J12's backoff (2026-10-17, the desk follow-ups; build review round 2 of trial-view notes 2, N1): after
 // any other failed read, the next J12 read comes 5, 10, 20 and 40 minutes after failures in a row,
@@ -139,17 +143,119 @@ export function prBodyParts(body) {
 }
 
 // ---------------------------------------------------------------------------
+// J12, the asks-merge job's merges (from 2026-10-17; the owner's answer "B. Off the Timeline
+// (Recommended)", decisions/questions/P-001-asks-merge-on-desk.md).
+
+const TRAILER_RE = /^([A-Za-z0-9-]+)[ \t]*:([^\n]*)$/; // Python's `.`: anything but a line feed
+const GIT_PREFIXES = ['Signed-off-by: ', '(cherry picked from commit '];
+const isBlank = (l) => !l.trim();
+const startsSpace = (l) => /^\s/.test(l);
+
+/**
+ * [[key, value]] from a commit message's final trailer paragraph, as the model's
+ * `govlib.parse_trailers` finds it (governance/checks/govlib.py:660, following `git
+ * interpret-trailers --parse`): CRLF made LF; trailing blank and `#` comment lines dropped; the title
+ * (up to the first blank line) never holds trailers; the last paragraph is a trailer block when every
+ * line of it is a trailer or a continuation, or when it holds a git-generated line (`Signed-off-by: `,
+ * "(cherry picked from commit ") and at least a quarter of it is trailers; comment lines skipped,
+ * continuation lines unfolded, values stripped, keys as spelled.
+ */
+export function parseTrailers(message, commentChar = '#') {
+  const lines = String(message == null ? '' : message).replace(/\r\n/g, '\n').split('\n');
+  while (lines.length && (isBlank(lines[lines.length - 1]) || lines[lines.length - 1].startsWith(commentChar))) lines.pop();
+  let i = 0;
+  while (i < lines.length && (lines[i].startsWith(commentChar) || !isBlank(lines[i]))) i++;
+  const endOfTitle = i;
+  let end = lines.length;
+  while (end > endOfTitle && isBlank(lines[end - 1])) end--;
+  let start = end;
+  while (start > endOfTitle && !isBlank(lines[start - 1])) start--;
+  if (start <= endOfTitle || start >= end) return [];
+  let trailerLines = 0;
+  let nonTrailer = 0;
+  let possibleCont = 0;
+  let recognized = false;
+  for (const line of lines.slice(start, end).reverse()) {
+    if (line.startsWith(commentChar)) {
+      nonTrailer += possibleCont;
+      possibleCont = 0;
+      continue;
+    }
+    if (GIT_PREFIXES.some((x) => line.startsWith(x))) {
+      trailerLines++;
+      possibleCont = 0;
+      recognized = true;
+      continue;
+    }
+    if (TRAILER_RE.test(line)) {
+      trailerLines++;
+      possibleCont = 0;
+    } else if (startsSpace(line.slice(0, 1))) possibleCont++;
+    else {
+      nonTrailer += 1 + possibleCont;
+      possibleCont = 0;
+    }
+  }
+  nonTrailer += possibleCont;
+  if (!((recognized && trailerLines * 3 >= nonTrailer) || (trailerLines && !nonTrailer))) return [];
+  const out = [];
+  let current = null;
+  for (const line of lines.slice(start, end).filter((l) => !l.startsWith(commentChar))) {
+    const m = TRAILER_RE.exec(line);
+    if (m) {
+      current = [m[1], m[2].trim()];
+      out.push(current);
+    } else if (startsSpace(line.slice(0, 1)) && current) {
+      const extra = line.trim();
+      if (extra) current[1] = `${current[1]} ${extra}`.trim();
+    } else current = null;
+  }
+  return out;
+}
+
+export const JOB_AUTHOR = 'github-actions[bot]'; // asks_merge.BOT (governance/checks/asks_merge.py:76)
+
+/**
+ * Whether a merge is the asks-merge job's (J12): its merge commit's final trailer paragraph holds
+ * exactly one `Merged-By` trailer (the key in any case), `orchestrator`, and its author's name is
+ * `github-actions[bot]`, as the model's `merged_by_problems` checks (asks_merge.py:371-382). A `null`
+ * merge commit is not the job's (false). A merge commit with no message string gives null: J12 has
+ * not read it (J12's "lacks the field").
+ */
+export function isJobMerge(mergeCommit) {
+  if (mergeCommit == null) return false;
+  if (typeof mergeCommit !== 'object' || typeof mergeCommit.message !== 'string') return null;
+  const author = mergeCommit.author && typeof mergeCommit.author.name === 'string' ? mergeCommit.author.name : null;
+  const by = parseTrailers(mergeCommit.message).filter(([k]) => k.toLowerCase() === 'merged-by').map(([, v]) => v);
+  return author === JOB_AUTHOR && by.length === 1 && by[0] === 'orchestrator';
+}
+
+// ---------------------------------------------------------------------------
 // J12: the GraphQL answer, judged by the page (the function does not parse it).
 
-/** A pull request as the page keeps it (J12, "What the page keeps"): never the rest of its body. */
+/**
+ * A pull request as the page keeps it (J12, "What the page keeps"): never the rest of its body, and
+ * of its merge commit's message only `job`, whether the merge is the asks-merge job's (from
+ * 2026-10-17; left out when J12's answer gives no message, so the entry reads as one J12 has not read).
+ */
 export function keptPull(n, checks) {
-  return {
+  const out = {
     number: n.number, title: n.title, state: n.state, mergedAt: n.mergedAt || null, createdAt: n.createdAt || null,
     head: typeof n.headRefName === 'string' ? n.headRefName : null,
     mergeCommit: n.mergeCommit && typeof n.mergeCommit.oid === 'string' ? n.mergeCommit.oid : null,
     checks, parts: prBodyParts(n.body),
   };
+  const job = isJobMerge(n.mergeCommit);
+  if (job !== null) out.job = job;
+  return out;
 }
+
+/**
+ * Whether J12 has read a kept pull request's merge (J12, AC60): a merged entry without the job's yes
+ * or no (one kept before the key moved, or an answer with no message) has not been read, and is
+ * placed only under a plan line that lists it, shown as a listed pull request J12 lacks.
+ */
+export const pullRead = (p) => Boolean(p) && (!p.mergedAt || typeof p.job === 'boolean');
 
 /** The check rollup state of a node's last commit (J12): one of CHECK_STATES, or null. */
 function rollupOf(n) {

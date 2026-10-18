@@ -140,3 +140,42 @@ that did it. The model's code is run from this repository's `governance/checks/`
     tests/desk/s033-records.test.mjs, NOT real records): the owner's own form (`Ruling:` with the
     `Milestone:` line on line 3), the answer box's (with the line after `Question:`) and the accepted
     link's (without it). No model code reads these forms' `Milestone:` line.
+- `github/j12-pulls-built.json` and `github/j12-asks-merge.json` (J12, AC59, AC60, AC66; the owner's
+  answer "B. Off the Timeline (Recommended)"): **NOT as GitHub sent them.** From 2026-10-17 J12's query
+  asks for `mergeCommit { oid message author { name } }`; GraphQL is not reachable from the agents'
+  sessions, so both are built in GraphQL's answer shape from REST answers for Service-Desk (a public
+  repository), recorded on 2026-10-18 with
+  `gh api repos/shumpmaster/Service-Desk/commits/<oid> > <dir>/commit-<oid>.json` (each merge commit
+  of the built fixture, and 21bc250) and `gh api repos/shumpmaster/Service-Desk/pulls/84 > <dir>/pull-84.json`,
+  then `python3 tests/desk/tools/j12-merge-messages.py <dir>`, which maps `commit.message` to
+  `mergeCommit.message` and `commit.author.name` to `mergeCommit.author.name`:
+  - `j12-pulls-built.json` keeps every other field as `tests/desk/tools/j12-fixture.mjs` built it on
+    2026-10-16 and gains each of its 71 merge commits' message and author (none is the job's);
+  - `j12-asks-merge.json`: #84 (**real-on-real**, from pulls/84 and commits/21bc250) and #951 to #959
+    (**MADE UP**): the line quoted mid-text with an ordinary final paragraph (#951), the trailer
+    paragraph by `shumpmaster` (#952), `Merged-By: someone` (#953), two `Merged-By` trailers (#954),
+    the trailer mixed with a plain line (#955), the job's merge whose body names MD3 (#956), a `#`
+    comment line after the trailers (#957), `Signed-off-by: A <a@x>` and `Merged-By: orchestrator` with
+    two plain lines (#958), and a job's merge for a made-up plan line to list under MD3 (#959);
+  - beside every message, in each file's `model` field (outside the answer's body), the model's own
+    `govlib.parse_trailers` output, the author, and whether the model's rule (one
+    `Merged-By: orchestrator`, author `github-actions[bot]`) makes it the job's. The script printed:
+    ```
+    #84 author github-actions[bot] parse_trailers [('Merged-By', 'orchestrator'), ('Delegation', 'L-0017'), ('Merged-Head', '6c34acb6a72d6d94c791c65e4084269d9a6a3974')] -> the job's
+    #951 author github-actions[bot] parse_trailers [] -> not the job's
+    #952 author shumpmaster parse_trailers [('Merged-By', 'orchestrator'), ('Delegation', 'L-0017'), ('Merged-Head', 'cccccccccccccccccccccccccccccccccccccccc')] -> not the job's
+    #953 author github-actions[bot] parse_trailers [('Merged-By', 'someone'), ('Delegation', 'L-0017')] -> not the job's
+    #954 author github-actions[bot] parse_trailers [('Merged-By', 'orchestrator'), ('Merged-By', 'orchestrator')] -> not the job's
+    #955 author github-actions[bot] parse_trailers [] -> not the job's
+    #956 author github-actions[bot] parse_trailers [('Merged-By', 'orchestrator'), ('Delegation', 'L-0017'), ('Merged-Head', 'cccccccccccccccccccccccccccccccccccccccc')] -> the job's
+    #957 author github-actions[bot] parse_trailers [('Merged-By', 'orchestrator'), ('Delegation', 'L-0017'), ('Merged-Head', 'cccccccccccccccccccccccccccccccccccccccc')] -> the job's
+    #958 author github-actions[bot] parse_trailers [('Signed-off-by', 'A <a@x>'), ('Merged-By', 'orchestrator')] -> the job's
+    #959 author github-actions[bot] parse_trailers [('Merged-By', 'orchestrator'), ('Delegation', 'L-0017'), ('Merged-Head', 'cccccccccccccccccccccccccccccccccccccccc')] -> the job's
+    built fixture: 71 merge commits, 0 the job's
+    ```
+  - **Not known yet:** that GraphQL gives the job's merge commits' `author.name` as
+    `github-actions[bot]`, the git author name REST gives at 21bc250. Setup CS13's recording confirms
+    it; until then J12's author check rests on REST.
+- `github/j12-made-up-field-error.json` (2026-10-18): its two merged nodes gained a made-up merge
+  message (`<title> (#<n>)`, a blank line, the body) and the author `shumpmaster`, in the query's new
+  shape. Still MADE UP.

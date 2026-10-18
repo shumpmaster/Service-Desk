@@ -1,0 +1,46 @@
+{
+ "note": "asks_merge.find_grant on each case of grant-cases.json",
+ "verdicts": [
+  {
+   "case": "the real ledger, brought in a plain commit",
+   "grant": "L-0017",
+   "reasons": []
+  },
+  {
+   "case": "superseded by a withdrawal",
+   "grant": null,
+   "reasons": [
+    "L-0017: L-9001 supersedes it"
+   ]
+  },
+  {
+   "case": "its decided_by record absent",
+   "grant": null,
+   "reasons": [
+    "L-0017: its decided_by names no decisions/questions/ record present there"
+   ]
+  },
+  {
+   "case": "no ledger",
+   "grant": null,
+   "reasons": []
+  },
+  {
+   "case": "arrived in a merge carrying Merged-By",
+   "grant": null,
+   "reasons": [
+    "L-0017: it arrived in merge b2e7ffae859e, which carries a Merged-By: trailer: a grant is never merged under itself"
+   ]
+  },
+  {
+   "case": "arrived in a plain merge",
+   "grant": "L-0017",
+   "reasons": []
+  },
+  {
+   "case": "a later entry that is not a grant",
+   "grant": "L-0017",
+   "reasons": []
+  }
+ ]
+}

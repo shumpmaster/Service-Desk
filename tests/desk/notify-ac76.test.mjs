@@ -1,0 +1,269 @@
+// ac-test: S-001/AC76 — failures: a fake push service answering 201, 429 then 201, 503 three times,
+// 404, 410, 403 BadJwtToken then 201 after a new JWT, BadJwtToken over five runs in an hour (one new
+// JWT only), VapidPkHashMismatch (no new JWT) and `test: fail` (one request); fake GitHub reads
+// failing; the 6-hour give-up counted, not named; the issue opened, updated and closed with no item's
+// title, path or number in it; the keys' check at the first step; and the state read failing or forged.
+
+import { test, after } from 'node:test';
+import assert from 'node:assert/strict';
+import { REPO, MIN, HOUR, checkoutOf, harness, makeSubscription, makeVapid, testConfig, pull, cleanScratch } from './notify-helpers.mjs';
+import { emptyState, stateFiles } from '../../src/notify/state.mjs';
+import { makeZip } from './notify-helpers.mjs';
+
+after(cleanScratch);
+
+const base = { 'questions/_TEMPLATE.md': '# Ruling needed: <title>\n' };
+const Q = (t) => `# Ruling needed: ${t}\n\nMilestone: none (made up)\n\nWHY: made up\n`;
+const co = (names) => checkoutOf({ base, later: names.map((n, i) => ({ files: { [`questions/${n}.md`]: Q(`Secret-ish title ${n}`) }, date: `2026-10-18T11:${String(10 + i).padStart(2, '0')}:00+00:00` })) });
+const jwtOf = (p) => /t=([^,]+),/.exec(p.headers.get('authorization'))[1];
+const openIssue = (h) => h.world.issues.find((i) => i.state === 'open');
+
+/** A started harness: the bootstrap is done; then one new question waits each time `add` is called. */
+async function started() {
+  const h = harness({ checkout: co([]) });
+  await h.run();
+  h.names = [];
+  h.add = (n) => {
+    h.names.push(n);
+    h.checkout = co(h.names);
+  };
+  return h;
+}
+
+function noItemIn(text) {
+  assert.ok(!/Secret-ish|questions\/|N-[a-z]|#\d/.test(text), `an item's words in: ${text.slice(0, 200)}`);
+}
+
+test('AC76: 429 then 201 is retried once after 5 seconds; 503 three times, after 5 and 30 seconds, then kept unsent and sent next run', async () => {
+  const h = await started();
+  h.add('N-a');
+  const answers = [{ status: 429 }, { status: 201 }];
+  h.world.push = () => answers.shift() || { status: 201 };
+  h.clock.sleeps.length = 0;
+  const r = await h.run();
+  assert.equal(r.pushes.length, 2);
+  assert.deepEqual(h.clock.sleeps, [5000]);
+  assert.equal(r.pushes[1].at - r.pushes[0].at, 5000);
+  h.add('N-b');
+  h.world.push = () => ({ status: 503 });
+  h.clock.sleeps.length = 0;
+  const r2 = await h.run();
+  assert.equal(r2.pushes.length, 3);
+  assert.deepEqual(h.clock.sleeps, [5000, 30000]);
+  assert.equal(r2.code, 0);
+  const st = h.state(r2);
+  assert.equal(Object.values(st.keys).filter((e) => e.unsent && e.fail === 'later').length, 1);
+  h.world.push = () => ({ status: 201 });
+  const r3 = await h.run();
+  assert.equal(r3.pushes.length, 1);
+  assert.equal(r3.payloads[0].notification.body, 'Waits on you: a question: Secret-ish title N-b');
+  assert.equal(Object.values(h.state(r3).keys).filter((e) => e.unsent).length, 0);
+});
+
+test('AC76: one unsent for 6 hours is given up, counted in the issue by project and number only', async () => {
+  const h = await started();
+  h.add('N-a');
+  h.add('N-b');
+  h.world.push = () => ({ status: 503 });
+  await h.run({ after: 3 * HOUR });
+  const almost = await h.run({ after: 3 * HOUR });
+  assert.equal(almost.pushes.length, 3, '3 hours on: still tried');
+  const r = await h.run({ after: 5 * MIN });
+  assert.equal(r.pushes.length, 0, 'given up: not tried again');
+  assert.ok(r.logs.some((l) => /given up: 2 \(2 this run\)/.test(l)));
+  const issue = openIssue(h);
+  assert.ok(issue);
+  assert.match(issue.body, /Service-Desk: 2 notifications were given up after 6 hours/);
+  noItemIn(issue.body);
+  // Still not sent while they wait, even once the push service answers again.
+  h.world.push = () => ({ status: 201 });
+  assert.equal((await h.run()).pushes.length, 0);
+  // Once they stop waiting, the count goes and the issue closes.
+  h.names = [];
+  h.checkout = co([]);
+  await h.run();
+  assert.equal(openIssue(h), undefined);
+});
+
+test('AC76: 410 and 404: the issue opens, nothing is sent until DESK_PUSH_SUBSCRIPTION changes, then "Notifications are back on" and it closes', async () => {
+  for (const status of [410, 404]) {
+    const h = await started();
+    h.add('N-a');
+    h.world.push = () => ({ status });
+    const r = await h.run();
+    assert.equal(r.pushes.length, 1);
+    const issue = openIssue(h);
+    assert.equal(issue.title, 'Desk notifications have stopped');
+    assert.deepEqual(issue.labels, ['desk-notify']);
+    assert.deepEqual(issue.assignees, ['shumpmaster']);
+    assert.match(issue.body, /subscription has expired or is no longer valid/);
+    assert.match(issue.body, /Setup N5/);
+    assert.match(issue.body, /Setup N6/);
+    assert.match(issue.body, /Setup N8/);
+    noItemIn(issue.body);
+    // Nothing more, run after run, new things included.
+    h.add('N-b');
+    assert.equal((await h.run()).pushes.length, 0);
+    assert.equal((await h.run({ test: 'true' })).pushes.length, 0);
+    // The owner turns notifications on again and updates the secret.
+    h.sub = makeSubscription();
+    h.world.push = () => ({ status: 201 });
+    const r4 = await h.run();
+    assert.equal(r4.payloads[0].notification.body, 'Notifications are back on');
+    assert.deepEqual(r4.payloads.slice(1).map((p) => p.notification.title), ['Service-Desk', 'Service-Desk']);
+    assert.equal(openIssue(h), undefined);
+    assert.equal(h.world.issues[0].state, 'closed');
+  }
+});
+
+test('AC76: 403 BadJwtToken: the item kept unsent and tried each run, one new JWT in an hour, then 201 closes the issue', async () => {
+  const h = await started();
+  h.add('N-a');
+  const r0 = await h.run({ after: 1 * MIN }); // sent with the first JWT, minted now
+  const first = jwtOf(r0.pushes[0]);
+  h.add('N-b');
+  h.world.push = () => ({ status: 403, body: { reason: 'BadJwtToken' } });
+  const jwts = [];
+  const runs = [];
+  for (let i = 0; i < 5; i++) {
+    const r = await h.run({ after: 15 * MIN });
+    runs.push(r);
+    jwts.push(...r.pushes.map(jwtOf));
+  }
+  // Five runs within the hour after the first JWT and one at 61 minutes: one new JWT only, never more.
+  assert.ok(runs.every((r) => r.code === 0));
+  assert.ok(runs.every((r) => r.pushes.length >= 1));
+  assert.equal(new Set(jwts).size, 2);
+  assert.equal(jwts[0], first);
+  assert.match(openIssue(h).body, /\(403, BadJwtToken\)/);
+  assert.match(openIssue(h).body, /at most once an hour/);
+  h.world.push = () => ({ status: 201 });
+  const r = await h.run();
+  assert.equal(r.pushes.length, 1);
+  assert.equal(openIssue(h), undefined);
+});
+
+test('AC76: 403 VapidPkHashMismatch: no new JWT, the issue says so, and the sender keeps trying each run', async () => {
+  const h = await started();
+  h.add('N-a');
+  h.world.push = () => ({ status: 403, body: { reason: 'VapidPkHashMismatch' } });
+  const r1 = await h.run({ after: 61 * MIN });
+  const r2 = await h.run();
+  assert.equal(r1.pushes.length, 1, 'no retry with a new JWT');
+  assert.equal(r2.pushes.length, 1, 'tried again the next run');
+  assert.match(openIssue(h).body, /\(403, VapidPkHashMismatch\)/);
+  assert.match(openIssue(h).body, /makes no new signature for this/);
+  for (const status of [400, 401]) {
+    const g = await started();
+    g.add('N-a');
+    g.world.push = () => ({ status });
+    const r = await g.run();
+    assert.equal(r.code, 0);
+    assert.match(openIssue(g).body, new RegExp(`\\(${status}\\)`));
+  }
+});
+
+test('AC76: test: fail opens the issue marked "(test)", closed on the next good push', async () => {
+  const h = await started();
+  h.world.push = () => ({ status: 403, body: { reason: 'VapidPkHashMismatch' } });
+  const r = await h.run({ test: 'fail' });
+  assert.equal(r.pushes.length, 1);
+  assert.match(openIssue(h).body, /^- \(test\) The test from GitHub \(`test: fail`\) was refused by the push service, as a test should be \(403, VapidPkHashMismatch\)/m);
+  h.world.push = () => ({ status: 201 });
+  await h.run();
+  assert.ok(openIssue(h), 'no push yet: still open');
+  h.add('N-a');
+  await h.run();
+  assert.equal(openIssue(h), undefined);
+});
+
+test('AC76: the keys\' check at the first step: exit 1, the issue, no push and no state', async () => {
+  const vapid = makeVapid();
+  const other = makeVapid();
+  const h = harness({ checkout: co(['N-a']), vapid, config: testConfig(other) });
+  const r = await h.run();
+  assert.equal(r.code, 1);
+  assert.equal(r.pushes.length, 0);
+  assert.equal(r.wrote, false);
+  assert.match(openIssue(h).body, /notification keys don't match/);
+  // A missing secret: exit 1, named, never printed; no issue for it.
+  const g = harness({ checkout: co(['N-a']) });
+  g.env.DESK_NOTIFY_STATE_KEY = '';
+  const r2 = await g.run();
+  assert.equal(r2.code, 1);
+  assert.ok(r2.logs.some((l) => /the secret DESK_NOTIFY_STATE_KEY is missing/.test(l)));
+  // A malformed subscription.
+  const k = harness({ checkout: co(['N-a']) });
+  k.env.DESK_PUSH_SUBSCRIPTION = '{"endpoint": "https://push.example.invalid/x", "keys": {}}';
+  const r3 = await k.run();
+  assert.equal(r3.code, 1);
+  assert.ok(r3.logs.some((l) => /the secret DESK_PUSH_SUBSCRIPTION is not in its form/.test(l)));
+  assert.ok(!r3.logs.join('\n').includes('push.example.invalid'));
+});
+
+test('AC76: a project unread keeps its set; at 30 minutes in a row the issue says so, and closes once it reads again', async () => {
+  const h = await started();
+  h.add('N-a');
+  await h.run();
+  h.world.fail[`/repos/${REPO}/pulls?`] = 502;
+  h.add('N-b');
+  for (let i = 0; i < 6; i++) {
+    const r = await h.run();
+    assert.equal(r.pushes.length, 0);
+  }
+  assert.equal(openIssue(h), undefined, '25 minutes: no issue yet');
+  await h.run();
+  assert.match(openIssue(h).body, /Desk notifications can't read Service-Desk/);
+  noItemIn(openIssue(h).body);
+  delete h.world.fail[`/repos/${REPO}/pulls?`];
+  const r = await h.run();
+  assert.equal(r.pushes.length, 1, 'what started waiting meanwhile, once');
+  assert.equal(openIssue(h), undefined);
+});
+
+test('AC76: the state unreadable sends nothing (issue after 30 minutes in a row); forged, the issue at once', async () => {
+  const h = await started();
+  h.add('N-a');
+  h.world.fail[`/repos/${REPO}/actions/artifacts/`] = 502;
+  for (let i = 0; i < 6; i++) {
+    const r = await h.run();
+    assert.equal(r.pushes.length, 0);
+    assert.equal(r.wrote, false);
+  }
+  assert.equal(openIssue(h), undefined);
+  await h.run();
+  assert.match(openIssue(h).body, /memory could not be read for 30 minutes/);
+  delete h.world.fail[`/repos/${REPO}/actions/artifacts/`];
+  const r = await h.run();
+  assert.equal(r.pushes.length, 1);
+  assert.equal(openIssue(h), undefined);
+  // Forged.
+  const g = await started();
+  const s = emptyState(new Date(g.clock.now()).toISOString());
+  const forged = stateFiles('a forger, 32 characters or more, made up', s);
+  const id = g.nextRun++;
+  g.world.stateRuns.push({ id, path: '.github/workflows/desk-notify.yml', repository: { full_name: REPO }, head_repository: { full_name: REPO },
+    head_branch: 'main', event: 'schedule', status: 'completed', conclusion: 'success', created_at: new Date(g.clock.now()).toISOString() });
+  g.world.artifacts.push({ id: 90000, name: 'desk-notify-state', expired: false, size_in_bytes: 10, created_at: '2026-10-18T12:00:00Z', workflow_run: { id },
+    zip: makeZip({ 'state.json': forged.json, 'state.sig': forged.sig }) });
+  g.add('N-a');
+  const rf = await g.run();
+  assert.equal(rf.pushes.length, 0);
+  assert.match(openIssue(g).body, /memory could not be trusted/);
+});
+
+test('AC76: the issue updated as its reasons change, and only then; no item\'s title, path or number in any body', async () => {
+  const h = await started();
+  h.world.pulls = [pull(77, { title: 'Secret-ish pull request' })];
+  h.world.push = () => ({ status: 403, body: { reason: 'BadJwtToken' } });
+  await h.run();
+  const n = h.world.ghCalls.filter((c) => c.method !== 'GET' && c.path.includes('/issues')).length;
+  await h.run();
+  assert.equal(h.world.ghCalls.filter((c) => c.method !== 'GET' && c.path.includes('/issues')).length, n, 'unchanged: not rewritten');
+  h.world.fail[`/repos/${REPO}/pulls?`] = 502;
+  for (let i = 0; i < 7; i++) await h.run();
+  const issue = openIssue(h);
+  assert.match(issue.body, /BadJwtToken/);
+  assert.match(issue.body, /can't read Service-Desk/);
+  for (const i of h.world.issues) noItemIn(i.body);
+});

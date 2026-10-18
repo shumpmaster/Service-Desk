@@ -1,0 +1,11 @@
+{
+ "note": "GET /repos/shumpmaster/Service-Desk/pulls/84/files?per_page=100, recorded 2026-10-18 with gh api",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json; charset=utf-8",
+  "etag": "W/\"34bb84d33e515cd7f1576917d521f3dc182498a571ab674defd166e55f8ac02a\"",
+  "x-ratelimit-remaining": "14967",
+  "x-ratelimit-reset": "1792341984"
+ },
+ "body": "[{\"sha\":\"5e1981fdd7ce85dbcf402852bc784a405ddaedab\",\"filename\":\"sessions/chief-of-staff/session_012RJPVKAoLga2RkqLYRDcBY.jsonl\",\"status\":\"added\",\"additions\":1,\"deletions\":0,\"changes\":1,\"blob_url\":\"https://github.com/shumpmaster/Service-Desk/blob/6c34acb6a72d6d94c791c65e4084269d9a6a3974/sessions%2Fchief-of-staff%2Fsession_012RJPVKAoLga2RkqLYRDcBY.jsonl\",\"raw_url\":\"https://github.com/shumpmaster/Service-Desk/raw/6c34acb6a72d6d94c791c65e4084269d9a6a3974/sessions%2Fchief-of-staff%2Fsession_012RJPVKAoLga2RkqLYRDcBY.jsonl\",\"contents_url\":\"https://api.github.com/repos/shumpmaster/Service-Desk/contents/sessions%2Fchief-of-staff%2Fsession_012RJPVKAoLga2RkqLYRDcBY.jsonl?ref=6c34acb6a72d6d94c791c65e4084269d9a6a3974\",\"patch\":\"@@ -0,0 +1 @@\\n+{\\\"event\\\": \\\"start\\\", \\\"session\\\": \\\"session_012RJPVKAoLga2RkqLYRDcBY\\\", \\\"time\\\": \\\"2026-10-17T22:11:23Z\\\", \\\"doing\\\": \\\"Revising the desk plan (S-001) so the desk reads the records model 3.5.0 added: open questions with their milestone and facts, the Chief of Staff sessions, and milestones reached\\\"}\"}]"
+}

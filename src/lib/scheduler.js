@@ -5,7 +5,7 @@
 
 import { neededReads, parseRecord, recordKind, buildModel, canRecord, recordingAnswers } from './model.js';
 import { parseTree, parseHistory, parseCardPath, compareStatus, parsePulls, questionName } from './records.js';
-import { parseFilePages, splitChanges, recordedAnswers } from './prfiles.js';
+import { parseFilePages, splitChanges, recordedAnswers, closedCanEnd } from './prfiles.js';
 import { judgePulls, mergePulls, pullsBackoffMs, PULLS_KEY, OLD_PULLS_KEYS, PULLS_MAX_PAGES, PULLS_RATE_MS } from './pulls.js';
 import { dayKey } from './timefmt.js';
 
@@ -26,9 +26,10 @@ const MAX_BLOB_CALLS_PER_CYCLE = 6;
 export const BLOB_CACHE_KEY = 'desk-blobs-v6';
 export const OLD_BLOB_CACHE_KEYS = ['desk-blobs-v1', 'desk-blobs-v2', 'desk-blobs-v3', 'desk-blobs-v4', 'desk-blobs-v5'];
 const HISTORY_CACHE_KEY = 'desk-history-v1';
-// AC77 (2026-10-18): what this device keeps of questions asked in a session, per project: the
-// questions whose answer's pull request it saw (open, or closed unmerged after the question was
-// raised), those the owner chose to answer here instead, and when it first saw each open question.
+// AC77 (2026-10-18; draft 7): what this device keeps of questions asked in a session, per project:
+// `recorded`, each question whose answer's pull request it saw recording, with that pull request's
+// number; `ended`, those it found closed unmerged; `here`, those the owner chose to answer here
+// instead; and `seen`, when it first saw each open question. Names and numbers only.
 export const ASKING_KEY = 'desk-asking-v1';
 // J20: an open pull request's files are read once per head sha; a failed read is tried again after this.
 export const FILES_RETRY_MS = 5 * 60_000;
@@ -38,7 +39,10 @@ export const RECHECK_AFTER_MS = 30_000;
 // J21 (AC78): the account's Actions use, at most once an hour while an opening stays open.
 export const USAGE_EVERY_MS = 3600_000;
 export const USAGE_COST = 5;
-export const CLOSED_COST = 1;
+// AC77 (draft 7): the closed read counts its worst case, 3 pages; a single pull request read, 1.
+export const CLOSED_COST = 3;
+export const PR_COST = 1;
+export const PRS_PER_CALL = 10;
 const COMPARE_CACHE_KEY = 'desk-compare-v1';
 
 export const REASON_WORDS = {
@@ -102,8 +106,16 @@ function newProjectState(project) {
     // each opening starts it again.
     j12: { pulls: null, day: null, head: null, tooMany: false, cold: null, wait: null, failure: null, fieldError: null, step: 0 },
     // J20 (2026-10-18): each pull request's files by head sha, in memory for this opening; a failed
-    // read's time, so it is tried again only after FILES_RETRY_MS. AC77's closed read: once an opening.
-    files: new Map(), filesTried: new Map(), filesReads: 0, closed: { state: 'none', pulls: [] }, recheckedAt: null,
+    // read's time, so it is tried again only after FILES_RETRY_MS.
+    files: new Map(), filesTried: new Map(), filesReads: 0, recheckedAt: null,
+    // AC77's closed read (drafts 6 to 8): 'none' (due), 'done' (answered: not made again at the polls
+    // that follow) or 'failed' (tried again at the next poll); `poll` is the cycle it was tried in.
+    // `gen` counts the times it was asked for again (a `?open=` arrival, a return to the foreground);
+    // `settled`: the read asked for last has answered or failed, so a tapped item may show (AC74).
+    closed: { state: 'none', pulls: [], poll: null }, closedGen: 0, closedSettled: false,
+    // AC77 (draft 7, finding 2b): a recorded answer's pull request that left the open list, read by
+    // number: number → { state: 'open' | 'merged' | 'closed' | 'failed', poll }.
+    single: new Map(),
   };
 }
 
@@ -151,7 +163,12 @@ export function createDesk(opts) {
   }
   for (const st of states.values()) {
     const e = askingSaved[st.project.name] || {};
-    st.asking = { recordedBefore: new Set(Array.isArray(e.recorded) ? e.recorded : []), hereInstead: new Set(Array.isArray(e.here) ? e.here : []),
+    // `recorded` as a list (the form before draft 7, with no numbers) is dropped: the reads find the same ends.
+    const rec = e.recorded && typeof e.recorded === 'object' && !Array.isArray(e.recorded) ? e.recorded : {};
+    st.asking = {
+      recorded: new Map(Object.entries(rec).filter(([, v]) => Number.isInteger(v) && v > 0)),
+      ended: new Set(Array.isArray(e.ended) ? e.ended.filter((x) => typeof x === 'string') : []),
+      hereInstead: new Set(Array.isArray(e.here) ? e.here : []),
       seen: new Map(Object.entries(e.seen && typeof e.seen === 'object' ? e.seen : {}).filter(([, v]) => Number.isFinite(v))) };
   }
   const desk = {
@@ -168,7 +185,8 @@ export function createDesk(opts) {
       const a = st.asking;
       const open = st.tree ? new Set([...st.tree.keys()].map(questionName).filter(Boolean)) : null;
       const keep = (n) => !open || open.has(n);
-      out[st.project.name] = { recorded: [...a.recordedBefore].filter(keep), here: [...a.hereInstead].filter(keep),
+      out[st.project.name] = { recorded: Object.fromEntries([...a.recorded].filter(([n]) => keep(n))), ended: [...a.ended].filter(keep),
+        here: [...a.hereInstead].filter(keep),
         seen: Object.fromEntries([...a.seen].filter(([p]) => !st.tree || st.tree.has(p))) };
     }
     try {
@@ -182,9 +200,11 @@ export function createDesk(opts) {
   const pullsOf = (st) => parsePulls(st.pullRaws || []).pulls;
 
   /**
-   * AC77, J20: what the device notes after a read: each open question first seen now; and each
-   * question whose answer an open pull request records (its hold ends then, so a pull request that
-   * closes unmerged leaves the question open, AC77), or one closed unmerged after it was raised did.
+   * AC77, J20: what the device notes after a read: each open question first seen now; each question
+   * whose answer an open pull request records, with that pull request's number (its hold ends then,
+   * so that pull request closing unmerged leaves the question open); and each question whose hold a
+   * closed pull request ended, found by the closed read (closed unmerged after the question was
+   * raised) or by the single read of its recorded pull request (draft 7).
    */
   function noteAsking(st) {
     if (!st.tree) return;
@@ -197,11 +217,12 @@ export function createDesk(opts) {
         changed = true;
       }
     }
-    for (const n of recordingAnswers(st.project, pullsOf(st), st.files).keys()) {
-      if (!a.recordedBefore.has(n)) {
-        a.recordedBefore.add(n);
+    for (const [n, pr] of recordingAnswers(st.project, pullsOf(st), st.files)) {
+      if (a.recorded.get(n) !== pr.number) {
+        a.recorded.set(n, pr.number);
         changed = true;
       }
+      if (a.ended.delete(n)) changed = true;
     }
     if (st.closed.state === 'done') {
       const history = historyFor(st);
@@ -211,14 +232,56 @@ export function createDesk(opts) {
         for (const n of recordedAnswers(f.changes, st.project.model)) {
           const h = history.get(`questions/${n}.md`);
           const raised = h && h.oldest ? Date.parse(h.oldest) : NaN;
-          if (Number.isFinite(raised) && c.closedMs > raised && !a.recordedBefore.has(n)) {
-            a.recordedBefore.add(n);
-            changed = true;
-          }
+          if (!Number.isFinite(raised) || !(c.closedMs > raised)) continue;
+          const r = a.recorded.get(n);
+          if (r != null && r !== c.number) continue; // another pull request records it: that one decides
+          if (r === c.number) a.recorded.delete(n);
+          if (!a.ended.has(n)) a.ended.add(n);
+          changed = true;
         }
       }
     }
+    for (const [n, num] of [...a.recorded]) {
+      const one = st.single.get(num);
+      if (one && one.state === 'closed') {
+        a.recorded.delete(n);
+        a.ended.add(n);
+        changed = true;
+      }
+    }
+    // An entry whose question has left (answered or gone) is dropped, so the record stays pruned.
+    const gone = (n) => !st.tree.has(`questions/${n}.md`);
+    for (const n of [...a.recorded.keys()]) if (gone(n) && a.recorded.delete(n)) changed = true;
+    for (const set of [a.ended, a.hereInstead]) for (const n of [...set]) if (gone(n) && set.delete(n)) changed = true;
+    for (const p of [...a.seen.keys()]) if (!st.tree.has(p) && a.seen.delete(p)) changed = true;
     if (changed) persistAsking();
+  }
+
+  /** Each held question's raised time (ms), or NaN while its history read has not arrived. */
+  function raisedTimes(st, held) {
+    const history = historyFor(st);
+    return held.map((q) => {
+      const h = history.get(q.path);
+      return h && h.oldest ? Date.parse(h.oldest) : NaN;
+    });
+  }
+
+  /**
+   * AC77 (draft 7, finding 2b): the recorded answers' pull requests to read by number now: the
+   * question still open, its pull request gone from the open list, and no answer yet that settles it
+   * (merged or closed); a failed or "still open" answer is read again at the next poll.
+   */
+  function singlesDue(st) {
+    if (!st.tree) return [];
+    const open = new Set(pullsOf(st).map((p) => p.number));
+    const out = [];
+    for (const [n, num] of st.asking.recorded) {
+      if (!st.tree.has(`questions/${n}.md`) || open.has(num) || out.includes(num)) continue;
+      const one = st.single.get(num);
+      if (one && (one.state === 'merged' || one.state === 'closed' || one.poll === st.polls)) continue;
+      out.push(num);
+    }
+    return out.slice(0, PRS_PER_CALL);
   }
 
   /** The held questions (AC77), from the model the page would draw now. */
@@ -231,8 +294,10 @@ export function createDesk(opts) {
   }
 
   /**
-   * The extra reads a blob call can carry now (J20, AC77's closed read, J21): { files: [n], closed,
-   * usage }. Each is optional: a failure never touches "read successfully".
+   * The extra reads a blob call can carry now (J20, AC77's closed and single reads, J21): { files: [n],
+   * closed: null | { since }, prs: [n], usage }. Each is optional: a failure never touches "read
+   * successfully". The closed read is made only once every held question's raised time has arrived,
+   * with the earliest as its limit (draft 7, finding 2a); while one is unread it waits.
    */
   function extrasDue(st) {
     const now = clock.now();
@@ -247,47 +312,58 @@ export function createDesk(opts) {
     };
     for (const pr of pullsOf(st)) if (canRecord(pr, st.project)) want(pr.number, pr.headSha);
     if (st.closed.state === 'done') for (const c of st.closed.pulls) want(c.number, c.headSha);
-    let closed = false;
-    if (st.closed.state === 'none' && st.tree && heldQuestions(st).length) closed = true;
+    let closed = null;
+    const due = st.closed.state === 'none' || (st.closed.state === 'failed' && st.closed.poll !== st.polls);
+    const held = due && st.tree ? heldQuestions(st) : [];
+    if (held.length) {
+      const raised = raisedTimes(st, held);
+      if (raised.every(Number.isFinite)) closed = { since: new Date(Math.min(...raised)).toISOString() };
+    }
+    const prs = singlesDue(st);
     const u = desk.usage;
     const cfg = config.actionsUsage;
     const usage = Boolean(cfg && cfg.reported !== false && !u.asking && (u.at == null || u.forced || now - u.at >= USAGE_EVERY_MS));
-    return { files: files.slice(0, FILES_PER_CALL), closed, usage, any: files.length > 0 || closed || usage };
+    return { files: files.slice(0, FILES_PER_CALL), closed, prs, usage, any: files.length > 0 || Boolean(closed) || prs.length > 0 || usage };
   }
 
-  /** AC77's closed read: the closed pull requests that could have recorded a held question's answer. */
-  function applyClosed(st, raw) {
-    if (raw == null) {
-      st.closed = { state: 'failed', pulls: [] }; // the hold stands; not read again this opening
+  /**
+   * AC77's closed read (drafts 6 and 7): the closed pull requests that could have recorded a held
+   * question's answer: own-branch, non-draft, into the default branch, closed unmerged after `since`.
+   * No answer (a failed read, or a fourth page needed) keeps the hold, and is tried at the next poll.
+   */
+  function applyClosed(st, ans, sinceMs) {
+    if (!ans || !Array.isArray(ans.pulls)) {
+      st.closed = { state: 'failed', pulls: [], poll: st.polls };
       return;
     }
-    let list;
-    try {
-      list = JSON.parse(raw);
-    } catch {
-      list = null;
-    }
-    if (!Array.isArray(list)) {
-      st.closed = { state: 'failed', pulls: [] };
-      return;
-    }
-    const history = historyFor(st);
-    const raised = heldQuestions(st).map((q) => {
-      const h = history.get(q.path);
-      return h && h.oldest ? Date.parse(h.oldest) : NaN;
-    }).filter(Number.isFinite);
-    const since = raised.length ? Math.min(...raised) : Infinity;
     const pulls = [];
-    for (const p of list) {
-      if (!p || !Number.isInteger(p.number) || p.merged_at != null || typeof p.closed_at !== 'string') continue;
-      const closedMs = Date.parse(p.closed_at);
-      if (!(closedMs > since) || !p.base || p.base.ref !== st.project.defaultBranch) continue;
-      const headRepo = p.head && p.head.repo && p.head.repo.full_name;
-      if (typeof headRepo !== 'string' || headRepo.toLowerCase() !== String(st.project.repo).toLowerCase()) continue;
-      if (!p.head || typeof p.head.sha !== 'string') continue;
-      pulls.push({ number: p.number, headSha: p.head.sha, closedMs });
+    for (const p of ans.pulls) {
+      if (!closedCanEnd(p, st.project, sinceMs) || !p.head || typeof p.head.sha !== 'string') continue;
+      pulls.push({ number: p.number, headSha: p.head.sha, closedMs: Date.parse(p.closed_at) });
     }
-    st.closed = { state: 'done', pulls };
+    st.closed = { state: 'done', pulls, poll: st.polls };
+  }
+
+  /** AC77 (draft 7, finding 2b): a single pull request's answer, kept for this opening. */
+  function applySingle(st, n, p) {
+    let state = 'failed';
+    if (p && p.number === n) {
+      if (p.state === 'open') state = 'open';
+      else if (p.state === 'closed') state = p.merged_at != null ? 'merged' : 'closed';
+    }
+    st.single.set(n, { state, poll: st.polls });
+  }
+
+  /**
+   * AC77 (draft 8): run the closed read again for a project holding a question (a `?open=` arrival,
+   * a return to the foreground). Returns whether it holds one.
+   */
+  function closedAgain(st) {
+    if (!st.tree || !heldQuestions(st).length) return false;
+    st.closed = { state: 'none', pulls: [], poll: null };
+    st.closedGen++;
+    st.closedSettled = false;
+    return true;
   }
 
   const cacheKey = (kind, sha) => `${kind}:${sha}`;
@@ -520,7 +596,8 @@ export function createDesk(opts) {
     if (batch.compare.length) body.compare = batch.compare;
     if (batch.pulls) body.pulls = { after: batch.pulls.after };
     if (batch.files && batch.files.length) body.files = batch.files;
-    if (batch.closed) body.closed = true;
+    if (batch.closed) body.closed = batch.closed;
+    if (batch.prs && batch.prs.length) body.prs = batch.prs;
     if (batch.usage) {
       body.usage = true;
       desk.usage.asking = true;
@@ -543,7 +620,11 @@ export function createDesk(opts) {
       } else st.filesTried.set(n, { headSha: heads.get(n) || null, at: clock.now() });
     }
     if (batch.closed) {
-      applyClosed(st, r0 && Object.prototype.hasOwnProperty.call(r0, 'closed') ? r0.closed : null);
+      applyClosed(st, r0 && Object.prototype.hasOwnProperty.call(r0, 'closed') ? r0.closed : null, Date.parse(batch.closed.since));
+      extras = true;
+    }
+    for (const n of batch.prs || []) {
+      applySingle(st, n, r0 && r0.prs ? r0.prs[n] : null);
       extras = true;
     }
     if (batch.usage) {
@@ -626,7 +707,8 @@ export function createDesk(opts) {
       const pl = pullsDue(st);
       const ex = extrasDue(st);
       if (!need.optional.shas.length && !need.optional.history.length && !pl && !ex.any) break;
-      const budget = BLOB_BATCH - (pl ? PULLS_COST : 0) - ex.files.length - (ex.closed ? CLOSED_COST : 0) - (ex.usage ? USAGE_COST : 0);
+      const budget = BLOB_BATCH - (pl ? PULLS_COST : 0) - ex.files.length - (ex.closed ? CLOSED_COST : 0) - ex.prs.length * PR_COST
+        - (ex.usage ? USAGE_COST : 0);
       // The MD sandbox (opts.j11) asks for its optional blobs before the rulings' history reads, so
       // its screens fill in the first cycle; without it the order is M2's.
       const [batch] = opts.j11 && need.optional.shas.length ? batches(need.optional.shas, [], budget)
@@ -634,7 +716,8 @@ export function createDesk(opts) {
       const b = batch || { blobs: [], history: [], compare: [] };
       if (pl) b.pulls = pl;
       if (ex.files.length) b.files = ex.files;
-      if (ex.closed) b.closed = true;
+      if (ex.closed) b.closed = ex.closed;
+      if (ex.prs.length) b.prs = ex.prs;
       if (ex.usage) b.usage = true;
       const { res, progress, pulled, extras } = await blobCall(st, need, b);
       // An optional read that fails is tried again on a later cycle (a J12 read after its backoff);
@@ -650,6 +733,7 @@ export function createDesk(opts) {
 
   async function cycle(st) {
     st.pending = true;
+    const gen = st.closedGen;
     const start = clock.now();
     st.lastPollStart = start;
     st.polls++;
@@ -696,6 +780,21 @@ export function createDesk(opts) {
       if (outcome.reason === 'signed-out') words = 'Signed out — reload to sign in';
       fail(st, outcome.reason, words);
     }
+    // AC77 (draft 8): a closed read due but not made this cycle (a held question's raised time not
+    // read, or the read stopped first) counts as failed: the hold stands, a tapped item may show, and
+    // it is tried again at the next poll. Asked for again while this cycle was past its reads, the
+    // next cycle runs now instead.
+    let again = false;
+    try {
+      if (st.closed.state === 'none' && st.tree && heldQuestions(st).length) {
+        if (st.closedGen !== gen) again = true;
+        else st.closed = { state: 'failed', pulls: [], poll: st.polls };
+      }
+    } catch {
+      // a model that can't be built holds no question to wait for
+    }
+    st.closedSettled = st.closed.state !== 'none';
+    if (again) st.lastPollStart = -Infinity;
     st.pending = false;
     // A throw while the page renders (or builds the model it renders) must never stop polling
     // (review N4): the next poll is scheduled whatever onChange does.
@@ -731,10 +830,19 @@ export function createDesk(opts) {
       st.timer = null;
     }
   };
+  /** Run a cycle as soon as it may (not before a rate limit's retryAfter, never two at once). */
+  function soon(st) {
+    st.lastPollStart = -Infinity;
+    schedule(st);
+  }
   desk.visibilityChanged = () => {
     if (isVisible()) {
       desk.visibleSince = clock.now();
-      for (const st of states.values()) schedule(st);
+      // AC77 (draft 8): a return to the foreground runs the closed read again for a project holding a question.
+      for (const st of states.values()) {
+        if (closedAgain(st)) soon(st);
+        else schedule(st);
+      }
     } else {
       for (const st of states.values()) {
         if (st.timer != null) clock.clearTimeout(st.timer);
@@ -753,8 +861,29 @@ export function createDesk(opts) {
       project: st.project, config, tree: st.tree, records: recordsFor(st), history: historyFor(st),
       pullPages: st.pullRaws || [], checkPages: st.checksRead ? st.checkRaws : null, checksState: st.checksState,
       now: new Date(clock.now()), withdrawn: st.withdrawn, compare: compareFor(st),
-      asking: { files: st.files, recordedBefore: st.asking.recordedBefore, hereInstead: st.asking.hereInstead, seen: st.asking.seen },
+      asking: { files: st.files, recorded: st.asking.recorded, ended: st.asking.ended, hereInstead: st.asking.hereInstead, seen: st.asking.seen },
     });
+  };
+  /**
+   * AC74, AC77 (draft 8): a `?open=` arrival on a page already loaded (the service worker's message):
+   * the closed read runs again, now, for each project holding a question.
+   */
+  desk.arrival = () => {
+    for (const st of states.values()) if (closedAgain(st) && desk.running) soon(st);
+  };
+  /**
+   * AC74 (draft 8): whether a tapped item in this project may show: it holds no question, or the
+   * closed read asked for last has answered or failed (a raised time not read counting as failed).
+   */
+  desk.closedSettled = (name) => {
+    const st = states.get(name);
+    if (!st || !st.tree) return true;
+    if (st.closedSettled) return true;
+    try {
+      return heldQuestions(st).length === 0;
+    } catch {
+      return true;
+    }
   };
   /** AC77: "Answer it here instead", on this device only. */
   desk.answerHere = (name, qname) => {

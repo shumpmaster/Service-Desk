@@ -4,7 +4,7 @@
 // are ever sent, so no other origin can read a response.
 
 import { checkAccess } from './access.js';
-import { pollProject, readBlobs, BLOB_BATCH, SHA_RE, HISTORY_PATH_RE, PULLS_COST, PULLS_CURSOR_RE, USAGE_COST, CLOSED_COST, MAX_FILES_PRS } from './github.js';
+import { pollProject, readBlobs, BLOB_BATCH, SHA_RE, HISTORY_PATH_RE, PULLS_COST, PULLS_CURSOR_RE, USAGE_COST, CLOSED_COST, MAX_FILES_PRS, PR_COST, MAX_PRS } from './github.js';
 import CONFIG from './config.js';
 
 // J6: the branch, up to 3 PR pages and up to 3 pages for each of J1's 3a and 3b: at most 10
@@ -46,6 +46,8 @@ function validatePoll(body, config) {
   return { req: { project, head: body.head || null, etags } };
 }
 
+const ISO_RE = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{1,9})?Z$/;
+
 function validateBlobs(body, config) {
   const project = projectByName(body.project, config);
   if (!project) return { error: 'unknown project' };
@@ -76,17 +78,32 @@ function validateBlobs(body, config) {
     files = [...new Set(body.files)];
     if (files.length > MAX_FILES_PRS) return { error: 'too many files' };
   }
-  // AC77 (draft 6): the optional `closed` field, one page of the closed pull requests, counting 1.
-  if (body.closed != null && body.closed !== true) return { error: 'bad closed' };
-  const closed = body.closed === true;
+  // AC77 (draft 6; draft 7, Critic round 5, finding 5): the optional `closed` field, { since: <ISO
+  // instant> }, the earliest held question's raised time: the closed pull requests, 1 to 3 pages,
+  // counting 3 (its worst case).
+  let closed = null;
+  if (body.closed != null) {
+    const c = body.closed;
+    if (typeof c !== 'object' || Array.isArray(c) || Object.keys(c).some((k) => k !== 'since') || typeof c.since !== 'string'
+      || !ISO_RE.test(c.since) || !Number.isFinite(Date.parse(c.since))) return { error: 'bad closed' };
+    closed = { sinceMs: Date.parse(c.since) };
+  }
+  // AC77 (draft 7, finding 2b): the optional `prs` field, pull request numbers each read alone
+  // (`GET pulls/<n>`), each counting 1: a recorded answer's pull request that left the open list.
+  let prs = null;
+  if (body.prs != null) {
+    if (!Array.isArray(body.prs) || body.prs.some((n) => !Number.isInteger(n) || n < 1 || n > 1e9)) return { error: 'bad prs' };
+    prs = [...new Set(body.prs)];
+    if (prs.length > MAX_PRS) return { error: 'too many prs' };
+  }
   // J21 (2026-10-18, draft 4): the optional `usage` field, the account's Actions use, counting 5.
   if (body.usage != null && body.usage !== true) return { error: 'bad usage' };
   const usage = body.usage === true;
   const budget = new Set(blobs).size + 2 * new Set(history).size + pairs.length + (pulls ? PULLS_COST : 0)
-    + (files ? files.length : 0) + (closed ? CLOSED_COST : 0) + (usage ? USAGE_COST : 0);
+    + (files ? files.length : 0) + (closed ? CLOSED_COST : 0) + (prs ? prs.length * PR_COST : 0) + (usage ? USAGE_COST : 0);
   if (budget > BLOB_BATCH) return { error: `budget ${budget} is over ${BLOB_BATCH}` };
   return { req: { project, blobs: [...new Set(blobs)], history: [...new Set(history)], compare: pairs, ...(pulls ? { pulls } : {}),
-    ...(files ? { files } : {}), ...(closed ? { closed } : {}), ...(usage ? { usage: { config: config.actionsUsage || null } } : {}),
+    ...(files ? { files } : {}), ...(closed ? { closed } : {}), ...(prs ? { prs } : {}), ...(usage ? { usage: { config: config.actionsUsage || null } } : {}),
     spare: BLOB_BATCH - budget } };
 }
 

@@ -1,9 +1,11 @@
 // The desk function's GitHub reader (spec S-001, J1). It makes conditional REST reads with the
 // read token and hands the raw bodies back; the only body it parses is the branch's (and a
-// blob's JSON form, when GitHub ignores the raw media type, and a compare answer, which it cuts
-// down to its status before returning it). It never retries.
+// blob's JSON form, when GitHub ignores the raw media type, a compare answer, which it cuts
+// down to its status before returning it, and AC77's closed and single pull requests, cut to the
+// fields the page reads). It never retries.
 
 import { readUsage } from './usage.js';
+import { CLOSED_MAX_PAGES, closedNeedsNext } from './prfiles.js';
 
 export const API = 'https://api.github.com';
 export const BLOB_BATCH = 25; // EXP-001 may lower it to 12, then 6.
@@ -17,8 +19,11 @@ export const HISTORY_PATH_RE = /^((decisions\/)?questions\/[^/]+\.md|queue\/ci-h
 // J20 (2026-10-18): open pull requests' files, one page counting 1 of the blob call's budget.
 export const FILES_PAGES = 3;
 export const MAX_FILES_PRS = 25;
-// AC77 (draft 6): one page of the closed pull requests, newest updated first, counting 1.
-export const CLOSED_COST = 1;
+// AC77 (draft 6; draft 7, finding 5): the closed pull requests, newest updated first, 1 to 3 pages,
+// counting 3 (its worst case); and (finding 2b) single pull requests read by number, each counting 1.
+export const CLOSED_COST = CLOSED_MAX_PAGES;
+export const PR_COST = 1;
+export const MAX_PRS = 10;
 // J21 (draft 4): the account's Actions use, 3 to 5 requests, counting 5.
 export const USAGE_COST = 5;
 // J1 3a and 3b: the workflow-run lists read for the head (AC29), push runs then dispatch runs.
@@ -70,7 +75,20 @@ export function urlsFor(project) {
     history: (path) => `${base}/commits?path=${encodeURIComponent(path)}&sha=${encodeURIComponent(project.defaultBranch)}&per_page=100`,
     files: (n) => `${base}/pulls/${n}/files?per_page=100`,
     closed: `${base}/pulls?state=closed&sort=updated&direction=desc&per_page=100`,
+    pull: (n) => `${base}/pulls/${n}`,
   };
+}
+
+/**
+ * A pull request (REST's form) cut to what AC77's reads use: never its title, body or any other text.
+ */
+export function keptPull(p) {
+  if (!p || typeof p !== 'object') return null;
+  const str = (v) => (typeof v === 'string' ? v : null);
+  return { number: Number.isInteger(p.number) ? p.number : null, state: str(p.state), draft: typeof p.draft === 'boolean' ? p.draft : null,
+    merged_at: str(p.merged_at), closed_at: str(p.closed_at), updated_at: str(p.updated_at),
+    base: { ref: p.base ? str(p.base.ref) : null },
+    head: { sha: p.head ? str(p.head.sha) : null, repo: p.head && p.head.repo ? { full_name: str(p.head.repo.full_name) } : null } };
 }
 
 export function pageUrl(base, n) {
@@ -492,13 +510,45 @@ export async function readBlobs(req, deps) {
       out.files[n] = pages;
     });
   }
+  // AC77's closed read (draft 7): 1 to 3 pages, the next only while a full page's last pull request
+  // was updated after `since`; a fourth needed, a page that is not a list, or a failure is a null
+  // answer (the hold stands), never a failed call. Each pull request cut to the fields the page reads.
   if (req.closed) {
     out.closed = null;
     tasks.push(async () => {
       if (failure) return;
-      const res = await get(u.closed);
+      const pulls = [];
+      for (let page = 1; page <= CLOSED_MAX_PAGES + 1; page++) {
+        if (page > CLOSED_MAX_PAGES) return; // a fourth page needed: a failed read
+        const res = await get(pageUrl(u.closed, page));
+        if (!res || !res.ok) return optionalFail(res);
+        let list;
+        try {
+          list = JSON.parse(await res.text());
+        } catch {
+          return;
+        }
+        if (!Array.isArray(list)) return;
+        for (const p of list) pulls.push(keptPull(p));
+        if (!closedNeedsNext(list, linkPage(res.headers.get('Link'), 'next') != null, req.closed.sinceMs)) break;
+      }
+      out.closed = { pulls };
+    });
+  }
+  // AC77 (draft 7, finding 2b): each recorded answer's pull request that left the open list, alone.
+  for (const n of req.prs || []) {
+    out.prs = out.prs || {};
+    out.prs[n] = null;
+    tasks.push(async () => {
+      if (failure) return;
+      const res = await get(u.pull(n));
       if (!res || !res.ok) return optionalFail(res);
-      out.closed = await res.text();
+      try {
+        const p = JSON.parse(await res.text());
+        if (p && Number.isInteger(p.number)) out.prs[n] = keptPull(p);
+      } catch {
+        // not JSON: a null answer, read again at the next poll
+      }
     });
   }
   if (req.usage) {

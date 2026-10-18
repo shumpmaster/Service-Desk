@@ -11,6 +11,8 @@
 const DESK_TITLE = 'Service Desk';
 const FALLBACK_BODY = 'Something waits on you: open the desk';
 const AGAIN_BODY = 'Desk notifications need turning on again: open the desk';
+// AC74 (draft 8): how long an open desk has to take a tap's address before it is navigated instead.
+const HANDOVER_MS = 1000;
 
 function origin() {
   return self.location.origin;
@@ -57,6 +59,29 @@ self.addEventListener('push', (event) => {
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
+/** Hand an open desk window the address; resolves true once the page says it took it. */
+function handOver(client, target) {
+  if (typeof MessageChannel !== 'function' || typeof client.postMessage !== 'function') return Promise.resolve(false);
+  return new Promise((resolve) => {
+    const ch = new MessageChannel();
+    const timer = setTimeout(() => {
+      ch.port1.close();
+      resolve(false);
+    }, HANDOVER_MS);
+    ch.port1.onmessage = (e) => {
+      clearTimeout(timer);
+      ch.port1.close();
+      resolve(Boolean(e && e.data && e.data.ok === true));
+    };
+    try {
+      client.postMessage({ kind: 'desk-open', navigate: target }, [ch.port2]);
+    } catch (e) {
+      clearTimeout(timer);
+      resolve(false);
+    }
+  });
+}
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const data = event.notification.data || {};
@@ -69,8 +94,15 @@ self.addEventListener('notificationclick', (event) => {
         return false;
       }
     });
-    if (own && typeof own.navigate === 'function') {
-      return own.navigate(target).then((c) => (c || own).focus(), () => self.clients.openWindow(target));
+    if (own) {
+      // AC74, AC77 (draft 8): an open desk is focused and handed the address, so it stays loaded and
+      // runs its closed read again before showing the item; a page that doesn't take it within a
+      // second is navigated instead.
+      const navigate = () => (typeof own.navigate === 'function'
+        ? own.navigate(target).then((c) => (c || own).focus(), () => self.clients.openWindow(target))
+        : self.clients.openWindow(target));
+      const focus = typeof own.focus === 'function' ? Promise.resolve().then(() => own.focus()).catch(() => null) : Promise.resolve();
+      return focus.then(() => handOver(own, target)).then((taken) => (taken ? null : navigate()));
     }
     return self.clients.openWindow(target);
   }));

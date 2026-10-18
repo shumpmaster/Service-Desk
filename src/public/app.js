@@ -205,6 +205,9 @@ function followOpening(desk, bx) {
   }
   const b = bx.find((x) => x.name === project.name);
   if (!b || !b.read || b.read.read === 'checking') return; // still reading: decide once it is read
+  // AC74, AC77 (draft 8): in a project holding a question, the item shows only once the closed read
+  // run for this arrival has answered or failed.
+  if (typeof desk.closedSettled === 'function' && !desk.closedSettled(project.name)) return;
   opening.done = true;
   const m = b.model;
   const f = m && m.flagged.find((x) => {
@@ -212,6 +215,13 @@ function followOpening(desk, bx) {
     return w && w.key === t.key;
   });
   const name = project.name;
+  // A tapped question still held, or being recorded: shown as such, never "That no longer waits on you" (draft 8).
+  const held = !f && t.itemKind === 'question' && m && Array.isArray(m.asking) ? m.asking.find((a) => a.path === t.id) : null;
+  if (held) {
+    location.hash = href(name, 'q', held.name);
+    opening.banner = { hash: location.hash, words: OPENED_WORDS, key: t.key };
+    return;
+  }
   if (!f) {
     location.hash = href(name);
     opening.banner = { hash: location.hash, words: b.read.read === 'cant-read' ? `${OPENED_WORDS}: the desk can't read this project just now` : GONE_WORDS };
@@ -881,6 +891,29 @@ function startDesk() {
   }
   window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
   document.addEventListener('visibilitychange', () => desk.visibilityChanged());
+  // AC74, AC77 (draft 8): a tap reaching this page already loaded (sw.js hands it the address): the
+  // item to open is taken from it, and the closed read runs again before it shows. The reply tells
+  // the service worker the page took it, so it need not navigate.
+  try {
+    const sw = typeof navigator !== 'undefined' ? navigator.serviceWorker : null;
+    if (sw && typeof sw.addEventListener === 'function') {
+      sw.addEventListener('message', (e) => {
+        const d = e && e.data;
+        if (!d || d.kind !== 'desk-open' || typeof d.navigate !== 'string') return;
+        const q = /\?[^#]*/.exec(d.navigate);
+        Object.assign(opening, { target: openTarget(q ? q[0] : ''), done: false, banner: null });
+        desk.arrival();
+        try {
+          if (e.ports && e.ports[0]) e.ports[0].postMessage({ ok: true });
+        } catch {
+          // the service worker then navigates the window instead
+        }
+        render();
+      });
+    }
+  } catch {
+    // no service worker here: a tap then loads the page afresh
+  }
   setInterval(() => { if (isVisible()) render(); }, 15_000);
   boot(render, desk); // desk.start() runs even if the first render throws (review N6)
 }

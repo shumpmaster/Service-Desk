@@ -30,7 +30,11 @@ repeat in part.
   in GitHub; "Send a test from GitHub" has the test's steps.
 - **A GitHub issue "Desk notifications have stopped"** (labelled `desk-notify`, assigned to you):
   a sender can no longer send, and the issue says why in plain words. It closes by itself once
-  sending works again.
+  sending works again. A line saying the sender's memory could not be read means it is holding
+  everything back until it can read its saved state again; nothing is lost. The line "GitHub
+  didn't say for how long" can appear at once after a short GitHub failure, even on the very first
+  runs, and goes by itself at the next run that reads the state, or finds none. Only the line
+  saying the memory "could not be trusted" needs your Chief of Staff.
 
 ### Turning notifications on again (about 8 minutes)
 

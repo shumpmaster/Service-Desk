@@ -116,6 +116,30 @@ for (const root of ['functions', 'lib', 'public']) {
   }
 }
 
+// The notification sender (J16, Toolchain: "a Node program with no dependencies"): notify/ imports
+// only Node's built-ins (`node:`) and modules under notify/ and lib/.
+const NOTIFY_ROOTS = ['notify', 'lib'];
+if (existsSync(join(SRC, 'notify'))) {
+  for (const file of walk(join(SRC, 'notify'))) {
+    const text = readFileSync(file, 'utf8');
+    const rel = relative(SRC, file);
+    for (const m of text.matchAll(IMPORT_RE)) {
+      const spec = m[1] || m[2] || m[3];
+      if (spec.startsWith('node:')) continue;
+      if (!spec.startsWith('./') && !spec.startsWith('../')) {
+        errors.push(`${rel} imports "${spec}"; the sender imports only node: built-ins and its own modules`);
+        continue;
+      }
+      const target = relative(SRC, resolve(dirname(file), spec));
+      if (target.startsWith('..') || !NOTIFY_ROOTS.includes(target.split(/[\\/]/)[0])) {
+        errors.push(`${rel} imports ${spec}, outside notify/ and lib/`);
+      } else if (!existsSync(resolve(dirname(file), spec))) {
+        errors.push(`${rel} imports ${spec}, which doesn't exist`);
+      }
+    }
+  }
+}
+
 if (errors.length) {
   for (const e of errors) console.error(`build: ${e}`);
   process.exit(1);

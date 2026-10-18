@@ -4,7 +4,7 @@
 // are ever sent, so no other origin can read a response.
 
 import { checkAccess } from './access.js';
-import { pollProject, readBlobs, BLOB_BATCH, SHA_RE, HISTORY_PATH_RE, PULLS_COST, PULLS_CURSOR_RE } from './github.js';
+import { pollProject, readBlobs, BLOB_BATCH, SHA_RE, HISTORY_PATH_RE, PULLS_COST, PULLS_CURSOR_RE, USAGE_COST, CLOSED_COST, MAX_FILES_PRS } from './github.js';
 import CONFIG from './config.js';
 
 // J6: the branch, up to 3 PR pages and up to 3 pages for each of J1's 3a and 3b: at most 10
@@ -68,9 +68,26 @@ function validateBlobs(body, config) {
     if (project.model !== 'v3') return { error: 'pulls are read for v3 projects only' };
     pulls = { after: pl.after == null ? null : pl.after };
   }
-  const budget = new Set(blobs).size + 2 * new Set(history).size + pairs.length + (pulls ? PULLS_COST : 0);
+  // J20 (2026-10-18): the optional `files` field, open pull requests' numbers, each one page of its
+  // files counting 1 (a second or third page uses what the call's budget has left).
+  let files = null;
+  if (body.files != null) {
+    if (!Array.isArray(body.files) || body.files.some((n) => !Number.isInteger(n) || n < 1 || n > 1e9)) return { error: 'bad files' };
+    files = [...new Set(body.files)];
+    if (files.length > MAX_FILES_PRS) return { error: 'too many files' };
+  }
+  // AC77 (draft 6): the optional `closed` field, one page of the closed pull requests, counting 1.
+  if (body.closed != null && body.closed !== true) return { error: 'bad closed' };
+  const closed = body.closed === true;
+  // J21 (2026-10-18, draft 4): the optional `usage` field, the account's Actions use, counting 5.
+  if (body.usage != null && body.usage !== true) return { error: 'bad usage' };
+  const usage = body.usage === true;
+  const budget = new Set(blobs).size + 2 * new Set(history).size + pairs.length + (pulls ? PULLS_COST : 0)
+    + (files ? files.length : 0) + (closed ? CLOSED_COST : 0) + (usage ? USAGE_COST : 0);
   if (budget > BLOB_BATCH) return { error: `budget ${budget} is over ${BLOB_BATCH}` };
-  return { req: { project, blobs: [...new Set(blobs)], history: [...new Set(history)], compare: pairs, ...(pulls ? { pulls } : {}) } };
+  return { req: { project, blobs: [...new Set(blobs)], history: [...new Set(history)], compare: pairs, ...(pulls ? { pulls } : {}),
+    ...(files ? { files } : {}), ...(closed ? { closed } : {}), ...(usage ? { usage: { config: config.actionsUsage || null } } : {}),
+    spare: BLOB_BATCH - budget } };
 }
 
 /**
@@ -109,7 +126,8 @@ export async function handle(context, kind, deps = {}) {
     return reply(200, { project: v.req.project.name, readAt: new Date(now()).toISOString(), state: 'cant-read',
       reason: 'token', retryAfter: null, cost: { github: 0, bytes: 0 } });
   }
-  const ghDeps = { token, fetch: fetchImpl, now };
+  // GITHUB_BILLING_TOKEN (Setup N12) is read only for J21's usage read, never sent back or logged.
+  const ghDeps = { token, fetch: fetchImpl, now, billingToken: typeof env.GITHUB_BILLING_TOKEN === 'string' ? env.GITHUB_BILLING_TOKEN.trim() : '' };
   const out = kind === 'poll' ? await pollProject(v.req, ghDeps) : await readBlobs(v.req, ghDeps);
   const github = out.githubRequests;
   delete out.githubRequests;

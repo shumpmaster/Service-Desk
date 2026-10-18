@@ -16,6 +16,12 @@ import { usageLines, v5Footer, notReadText } from './lib/asked.js';
 import { createRun, summarize, resultMarkdown, rawTable } from './lib/exp001.js';
 import { routeParts, guardRender, boot, SIGNED_OUT_STATE } from './lib/page.js';
 import { errorText } from './lib/scheduler.js';
+import { flaggedWait } from './lib/waiting.js';
+import {
+  openTarget, OPENED_WORDS, GONE_WORDS, NOTIFY_WORDS, NOTIFY_STORE_KEY, COPY_DONE_WORDS, SHOW_AGAIN_WORDS, SEND_TEST_WORDS,
+  copySteps, testSteps, notifyState, onTopLine, isStandalone, permissionOf, currentSubscription, subscriptionValue, turnOn,
+  USAGE_TITLE, usageView, RECHECK_WORDS, recheckOutcome,
+} from './lib/notifyview.js';
 
 const TZ = CONFIG.ownerTimeZone;
 const view = document.getElementById('view');
@@ -46,6 +52,206 @@ const clock = {
 };
 const isVisible = () => document.visibilityState === 'visible';
 const params = new URLSearchParams(location.search);
+let DESK = null; // the desk's reader, once started (AC77's re-read and "Answer it here instead" use it)
+let RENDER = () => {};
+
+// ---------------------------------------------------------------------------
+// AC75: the "Notifications" control, in More detail and on Home's top line until it is on
+
+const pushKey = CONFIG.push && typeof CONFIG.push.vapidPublicKey === 'string' ? CONFIG.push.vapidPublicKey : null;
+const ns = { subscribed: null, value: null, error: null, showValue: false, busy: false, store: null, looked: false };
+const nav = () => (typeof navigator === 'undefined' ? null : navigator);
+const win = () => (typeof window === 'undefined' ? null : window);
+const Notif = () => (typeof Notification === 'undefined' ? null : Notification);
+const copiedMark = () => {
+  try {
+    const v = ns.store ? ns.store.getJSON(NOTIFY_STORE_KEY, null) : null;
+    return Boolean(v && v.copied === true && ns.value && v.value === ns.value);
+  } catch {
+    return false;
+  }
+};
+function notifyEnv() {
+  return { standalone: isStandalone(win(), nav()), key: pushKey, permission: permissionOf(Notif()), subscribed: ns.subscribed, copied: copiedMark() };
+}
+/** Look up this device's subscription once (no permission is asked: J19). */
+function lookSubscription() {
+  if (ns.looked) return;
+  ns.looked = true;
+  const env = notifyEnv();
+  if (!env.standalone || env.permission !== 'granted') {
+    ns.subscribed = false;
+    return;
+  }
+  currentSubscription(win(), nav()).then((sub) => {
+    ns.subscribed = Boolean(sub);
+    ns.value = sub ? subscriptionValue(sub) : null;
+    RENDER();
+  }, () => {
+    ns.subscribed = false;
+    RENDER();
+  });
+}
+/** The tap (J19): the only place the desk asks iOS for permission. */
+function onTurnOn() {
+  if (ns.busy) return;
+  ns.busy = true;
+  ns.error = null;
+  turnOn({ win: win(), nav: nav(), Notif: Notif(), key: pushKey }).then((r) => {
+    ns.busy = false;
+    if (r.ok) {
+      ns.subscribed = true;
+      ns.value = r.value;
+      ns.showValue = true;
+    } else ns.error = r.state === 'denied' ? null : r.words;
+    RENDER();
+  });
+}
+function notifyControl(compact) {
+  lookSubscription();
+  const state = notifyState(notifyEnv());
+  const out = [];
+  if (state === 'ask') {
+    out.push(h('button', { type: 'button', class: 'notify-on', onclick: onTurnOn }, NOTIFY_WORDS.ask));
+    if (ns.error) out.push(h('p', { class: 'warn' }, ns.error));
+  } else if (state === 'copy' || (state === 'on' && ns.showValue)) {
+    out.push(h('p', {}, NOTIFY_WORDS.copy), h('pre', { class: 'copy notify-value' }, ns.value || ''), copyButton(ns.value || ''));
+    if (!compact) out.push(h('ol', { class: 'steps' }, copySteps(CONFIG).map((x) => h('li', {}, x))));
+    out.push(h('button', { type: 'button', class: 'notify-done', onclick: () => {
+      try {
+        if (ns.store) ns.store.setJSON(NOTIFY_STORE_KEY, { copied: true, value: ns.value });
+      } catch {
+        // kept for this window only
+      }
+      ns.showValue = false;
+      RENDER();
+    } }, COPY_DONE_WORDS));
+  } else if (state === 'on') {
+    const t = testSteps(CONFIG);
+    out.push(h('p', { class: 'answered' }, NOTIFY_WORDS.on),
+      h('p', {}, h('button', { type: 'button', class: 'notify-again', onclick: () => {
+        currentSubscription(win(), nav()).then((sub) => {
+          ns.value = sub ? subscriptionValue(sub) : ns.value;
+          ns.showValue = true;
+          RENDER();
+        });
+      } }, SHOW_AGAIN_WORDS)));
+    if (!compact) {
+      out.push(h('details', { class: 'notify-test' }, h('summary', {}, SEND_TEST_WORDS),
+        h('ol', { class: 'steps' }, t.steps.map((x) => h('li', {}, x))), t.link ? h('p', {}, ext(t.link, 'Open desk-notify on GitHub')) : null));
+    }
+  } else {
+    out.push(h('p', { class: state === 'denied' ? 'warn' : 'muted' }, NOTIFY_WORDS[state]));
+  }
+  return h('div', { class: `notify notify-${state}` }, out);
+}
+
+// ---------------------------------------------------------------------------
+// AC78: "GitHub Actions this month"
+
+function usageLine() {
+  const v = usageView({ cfg: CONFIG.actionsUsage, reads: DESK ? DESK.usage : null, nowMs: Date.now(), tz: TZ, whenText });
+  const kids = [h('h3', {}, USAGE_TITLE)];
+  if (v.state !== 'ok') kids.push(h('p', { class: 'usage-words' }, v.words));
+  else {
+    // A native progress element draws the fill itself, with no inline size; its words always beside it (AC78).
+    const bar = h('progress', { class: 'usage-bar', max: '100', value: String(v.bar), role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100',
+      'aria-valuenow': String(v.bar), 'aria-label': `${USAGE_TITLE}: ${v.words}` }, `${v.bar}%`);
+    kids.push(h('p', {}, h('span', { class: 'usage-month' }, v.month), ': ', h('span', { class: 'usage-words' }, v.words)), bar);
+    if (v.estimate) kids.push(h('p', { class: 'usage-estimate' }, v.estimate), h('p', { class: 'muted' }, v.estimateNote));
+    kids.push(h('p', { class: 'muted' }, v.reset), h('p', { class: 'muted usage-asof' }, v.asOf));
+  }
+  return h('section', { class: 'usage', id: 'actions-usage' }, kids);
+}
+
+let moreOpen = false;
+function moreDetail() {
+  const d = h('details', { class: 'more', id: 'more-detail', open: moreOpen ? 'open' : null,
+    ontoggle: (e) => { moreOpen = Boolean(e && e.target && e.target.open); } },
+  h('summary', {}, 'More detail'),
+  h('section', { class: 'notify-line' }, h('h3', {}, 'Notifications'), notifyControl(false)),
+  usageLine());
+  return d;
+}
+
+// ---------------------------------------------------------------------------
+// AC74: `?open=<key>` — the tap on a notification
+
+const opening = { target: openTarget(location.search), done: false, banner: null };
+try {
+  if (opening.target && typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', `${location.pathname || '/'}${location.hash || ''}`);
+} catch {
+  // the address keeps its ?open=; a reload opens the item again
+}
+let scrollTo = null; // an element id to bring into view after the next draw
+
+/** Follow the notification once the project it names has been read (AC74). */
+function followOpening(desk, bx) {
+  if (!opening.target || opening.done) return;
+  const t = opening.target;
+  if (t.kind === 'usage') {
+    opening.done = true;
+    moreOpen = true;
+    scrollTo = 'actions-usage';
+    location.hash = '#/';
+    return;
+  }
+  const project = t.kind === 'item' ? projectByName(t.project) : null;
+  if (!project) {
+    opening.done = true;
+    opening.banner = { hash: '#/', words: GONE_WORDS };
+    location.hash = '#/';
+    return;
+  }
+  const b = bx.find((x) => x.name === project.name);
+  if (!b || !b.read || b.read.read === 'checking') return; // still reading: decide once it is read
+  opening.done = true;
+  const m = b.model;
+  const f = m && m.flagged.find((x) => {
+    const w = flaggedWait(project.name, x);
+    return w && w.key === t.key;
+  });
+  const name = project.name;
+  if (!f) {
+    location.hash = href(name);
+    opening.banner = { hash: location.hash, words: b.read.read === 'cant-read' ? `${OPENED_WORDS}: the desk can't read this project just now` : GONE_WORDS };
+    return;
+  }
+  if (f.kind === 'card') location.hash = href(name, 'card', f.card.path);
+  else if (f.kind === 'question') location.hash = href(name, 'q', f.question.name);
+  else if (f.kind === 'hold') location.hash = href(name, 'hold', f.hold.path);
+  else if (f.kind === 'merge') location.hash = href(name, 'merge', f.merge.path);
+  else {
+    location.hash = href(name);
+    scrollTo = itemId(f.key);
+  }
+  opening.banner = { hash: location.hash, words: OPENED_WORDS, key: f.key };
+}
+const itemId = (key) => `item-${String(key).replace(/[^A-Za-z0-9_-]/g, '-')}`;
+function bannerFor() {
+  const b = opening.banner;
+  if (!b || b.hash !== location.hash) return null;
+  return h('p', { class: b.words === OPENED_WORDS ? 'opened' : 'gone', role: 'status' }, b.words);
+}
+function bringIntoView() {
+  if (!scrollTo) return;
+  const id = scrollTo;
+  scrollTo = null;
+  const el = find0(view, (n) => n.attrs ? n.attrs.id === id : n.id === id);
+  try {
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center' });
+  } catch {
+    // no scrolling here; the item is on the screen anyway
+  }
+}
+function find0(node, pred) {
+  for (const c of (node && (node.children || node.childNodes)) || []) {
+    if (c && pred(c)) return c;
+    const r = find0(c, pred);
+    if (r) return r;
+  }
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // The desk
@@ -71,7 +277,8 @@ function cantShowBox(b, err) {
 }
 
 function renderUniverse(desk, list = orderBoxes(boxes(desk))) {
-  return h('section', {},
+  const top = onTopLine(notifyState(notifyEnv())) ? h('div', { class: 'notify-top' }, notifyControl(true)) : null;
+  return h('section', {}, bannerFor(), top,
     list.map((b) => {
       if (b.drawError) return cantShowBox(b);
       try {
@@ -80,7 +287,7 @@ function renderUniverse(desk, list = orderBoxes(boxes(desk))) {
         b.drawError = `Can't show this project: ${errorText(err)}`;
         return cantShowBox(b);
       }
-    }));
+    }), moreDetail());
 }
 
 function universeBox(b) {
@@ -105,8 +312,17 @@ function universeBox(b) {
 
 const href = (name, ...parts) => `#/p/${[name, ...parts].map(encodeURIComponent).join('/')}`;
 
+/** AC77: the questions asked in a session, or whose answer is on its way: shown, not counted. */
+function askingList(m, name) {
+  if (!m.asking || !m.asking.length) return null;
+  return [h('h3', {}, 'Asked in your session'), h('ul', { class: 'plain' }, m.asking.map((a) => h('li', {},
+    h('a', { class: 'item', href: href(name, 'q', a.name) }, `Question: ${a.title}`),
+    h('div', { class: 'muted' }, a.words, a.pr ? [' · ', ext(a.pr.url, `PR #${a.pr.number}`)] : null))))];
+}
+
 function flaggedList(m, name) {
   if (!m.flagged.length) return h('p', { class: 'muted' }, 'Nothing waiting on you here.');
+  const opened = opening.banner && opening.banner.key;
   return h('ul', { class: 'plain flagged-list' }, m.flagged.map((f) => {
     let target;
     if (f.kind === 'card') target = h('a', { class: 'item', href: href(name, 'card', f.card.path) }, f.title);
@@ -114,8 +330,9 @@ function flaggedList(m, name) {
     else if (f.kind === 'hold') target = h('a', { class: 'item', href: href(name, 'hold', f.hold.path) }, f.title);
     else if (f.kind === 'merge') target = h('a', { class: 'item', href: href(name, 'merge', f.merge.path) }, f.title);
     else target = ext(f.link, f.title);
-    return h('li', {}, h('span', { class: 'flag' }, '● '), target, h('div', { class: 'muted' }, f.words,
-      f.card && f.card.cantParse ? ` · can't parse: ${f.card.cantParse}` : ''));
+    return h('li', { id: itemId(f.key), class: opened === f.key ? 'opened-item' : null }, h('span', { class: 'flag' }, '● '), target,
+      opened === f.key ? h('span', { class: 'tag' }, OPENED_WORDS) : null,
+      h('div', { class: 'muted' }, f.words, f.card && f.card.cantParse ? ` · can't parse: ${f.card.cantParse}` : ''));
   }));
 }
 
@@ -181,7 +398,7 @@ function renderProject(desk, name) {
 
 function projectView(box, name) {
   const m = box.model;
-  return h('section', {},
+  return h('section', {}, bannerFor(),
     h('p', {}, h('a', { href: '#/' }, '← All projects')),
     h('h2', {}, name),
     h('p', { class: 'state' }, boxStateText(box, TZ)),
@@ -190,6 +407,7 @@ function projectView(box, name) {
       m.model === 'v3' ? [' · ', h('a', { href: href(name, 'agents') }, 'Agents')] : null),
     h('h3', {}, 'Waiting on you'),
     flaggedList(m, name),
+    askingList(m, name),
     pipeline(m, name),
     h('h3', {}, 'Activity'),
     m.activity.length ? h('ul', { class: 'plain' }, m.activity.map((a) => h('li', {}, a.link ? ext(a.link, a.text) : a.text)))
@@ -217,7 +435,47 @@ function copyButton(text) {
   return btn;
 }
 
-function planNodes(plan) {
+/**
+ * AC77: a tap on an answer link when the project's last read is more than 30 seconds old reads it
+ * again first, then: answered, "Already answered: …" and nothing opens; being recorded, its words
+ * and the pull request's link; still open, GitHub opens; the re-read failing, "The desk couldn't
+ * check just now" with "Open GitHub anyway".
+ */
+function guardedLink(plan, guard, label) {
+  const a = h('a', { class: 'go', href: plan.url, rel: 'noopener noreferrer', target: '_blank' }, label);
+  if (!guard) return a;
+  const say = h('div', { class: 'recheck', role: 'status' });
+  a.addEventListener('click', (e) => {
+    if (!DESK || !DESK.needsRecheck(guard.project)) return; // read within 30 s: GitHub opens as today
+    if (e && e.preventDefault) e.preventDefault();
+    say.replaceChildren(h('p', { class: 'muted' }, RECHECK_WORDS.checking));
+    DESK.recheck(guard.project, guard.answerPath).then((r) => {
+      if (!r.ok) {
+        say.replaceChildren(h('p', { class: 'warn' }, RECHECK_WORDS.failed),
+          h('p', {}, h('a', { class: 'go anyway', href: plan.url, rel: 'noopener noreferrer', target: '_blank' }, RECHECK_WORDS.anyway)));
+        return;
+      }
+      const o = recheckOutcome(DESK.model(guard.project), guard.target);
+      if (o.kind === 'open') {
+        say.replaceChildren();
+        let w = null;
+        try {
+          w = window.open(plan.url, '_blank');
+          if (w) w.opener = null;
+        } catch {
+          w = null;
+        }
+        // A browser that blocks the window after the check: one more tap opens it.
+        if (!w) say.replaceChildren(h('p', {}, h('a', { class: 'go', href: plan.url, rel: 'noopener noreferrer', target: '_blank' }, 'Still open: open GitHub')));
+      } else {
+        say.replaceChildren(h('p', { class: 'answered' }, o.words), o.pr ? h('p', {}, ext(o.pr.url, `Open PR #${o.pr.number}, which records it`)) : null);
+      }
+    });
+  });
+  return [a, say];
+}
+
+function planNodes(plan, guard = null) {
   if (plan.offer === 'none') return [h('p', { class: 'answered' }, plan.words)];
   if (plan.offer === 'choose') return [h('p', { class: 'muted' }, 'Pick an option to get the answer.')];
   if (plan.offer === 'copy') {
@@ -227,8 +485,7 @@ function planNodes(plan) {
   if (plan.warning) out.push(h('p', { class: 'warn' }, plan.warning));
   if (plan.copy) out.push(h('p', {}, plan.words), h('pre', { class: 'copy' }, plan.copy), copyButton(plan.copy));
   else out.push(h('details', {}, h('summary', {}, 'What will be committed'), h('pre', { class: 'copy' }, plan.content)));
-  out.push(h('p', {}, h('a', { class: 'go', href: plan.url, rel: 'noopener noreferrer', target: '_blank' },
-    `Open GitHub to commit ${plan.path}`)));
+  out.push(h('p', {}, guardedLink(plan, guard, `Open GitHub to commit ${plan.path}`)));
   out.push(h('p', { class: 'muted' }, 'The desk writes nothing to GitHub: you commit the answer on the page that opens.'));
   return out;
 }
@@ -244,7 +501,9 @@ function answerBox(project, target, choices) {
   // The listeners go through the draft, so a note box kept across redraws (N5) updates the latest
   // result area with the latest target (an answer that arrived meanwhile included).
   draft.target = target;
-  draft.update = () => result.replaceChildren(...planNodes(answerPlan(project, CONFIG.linkCap, draft.target, draft.choice, draft.note)));
+  const guard = { project: project.name, answerPath: target.kind === 'card' ? target.answerPath : `decisions/questions/${target.name}.md`,
+    target: target.kind === 'card' ? { kind: 'card', path: target.path } : { kind: 'question', name: target.name } };
+  draft.update = () => result.replaceChildren(...planNodes(answerPlan(project, CONFIG.linkCap, draft.target, draft.choice, draft.note), guard));
   draft.update();
   const first = answerPlan(project, CONFIG.linkCap, target, null, '');
   if (first.offer === 'none') return h('div', { class: 'answer' }, h('h3', {}, 'Answer'), result);
@@ -278,7 +537,7 @@ function refreshAnswer(desk, name, kind, rest) {
     if (!card) return;
     const f = m.flagged.find((x) => x.kind === 'card' && x.card.path === path);
     const done = m.answeredCards && m.answeredCards[path];
-    target = { kind: 'card', answerPath: card.answerPath, item: card.item,
+    target = { kind: 'card', path, answerPath: card.answerPath, item: card.item,
       options: f && f.card.parsed ? f.card.parsed.options.map((o) => o.word) : [], answered: f ? null : (done || { verdict: null }) };
   } else {
     const qname = rest.join('/');
@@ -311,8 +570,8 @@ function renderCard(desk, name, path) {
     }
     const c = f.card;
     const parsed = c.parsed;
-    const target = { kind: 'card', answerPath: c.answerPath, item: c.item, options: parsed ? parsed.options.map((o) => o.word) : [], answered: null };
-    return h('section', {}, backTo(name),
+    const target = { kind: 'card', path: c.path, answerPath: c.answerPath, item: c.item, options: parsed ? parsed.options.map((o) => o.word) : [], answered: null };
+    return h('section', {}, bannerFor(), backTo(name),
       h('h2', {}, f.title),
       h('p', { class: 'muted' }, `Raised ${c.raisedAt ? when(c.raisedAt) : 'not recorded'}`),
       c.cantParse ? h('p', { class: 'flag' }, `Can't parse: ${c.cantParse}. It stays flagged until answered.`) : null,
@@ -329,6 +588,8 @@ function renderQuestion(desk, name, qname) {
   return guardedView(desk, name, (box, project) => {
     const m = box.model;
     const f = m.flagged.find((x) => x.kind === 'question' && x.question.name === qname);
+    const held = !f && (m.asking || []).find((x) => x.name === qname);
+    if (held) return askingView(project, name, held);
     if (!f) {
       const done = m.rulings && m.rulings[qname];
       if (done) {
@@ -342,7 +603,7 @@ function renderQuestion(desk, name, qname) {
     const given = (v) => (v == null || v === '' ? 'not given' : v);
     if (!p) return h('section', {}, backTo(name), h('h2', {}, f.title), h('p', {}, 'Loading the question…'));
     const target = { kind: 'question', name: qname, options: p.options.map((o) => o.letter), answered: null };
-    return h('section', {}, backTo(name),
+    return h('section', {}, bannerFor(), backTo(name),
       h('h2', {}, p.title),
       h('p', { class: 'muted' }, `Raised ${q.raisedAt ? when(q.raisedAt) : 'not recorded'}`),
       h('dl', { class: 'fields' },
@@ -364,6 +625,24 @@ function renderQuestion(desk, name, qname) {
   });
 }
 
+/**
+ * AC77: a question being asked in a session ("Being asked in your session: answer there"), or whose
+ * answer is on its way ("Your answer is being recorded", with its pull request): its title and
+ * options to read, and no answer link, no answer box and no "Open in GitHub" to answer.
+ */
+function askingView(project, name, a) {
+  const p = a.parsed;
+  const options = p && p.options.length ? h('ul', { class: 'options' }, p.options.map((o) => h('li', {}, `${o.letter}. ${o.text}`))) : null;
+  return h('section', { class: `asking asking-${a.state}` }, bannerFor(), backTo(name),
+    h('h2', {}, a.title),
+    h('p', { class: 'answered', role: 'status' }, a.words),
+    a.pr ? h('p', {}, ext(a.pr.url, `PR #${a.pr.number}: ${a.pr.title}`)) : null,
+    a.state === 'held' ? h('p', {}, h('button', { type: 'button', class: 'answer-here', onclick: () => { if (DESK) DESK.answerHere(name, a.name); } },
+      'Answer it here instead')) : null,
+    p ? [h('h3', {}, 'Options'), options || h('p', { class: 'muted' }, 'not given'),
+      h('h3', {}, 'Full text'), h('article', { class: 'record', html: renderMarkdown(p.text) })] : h('p', {}, 'Loading the question…'));
+}
+
 // AC46: a hold card — what it says, and no answer link.
 function renderHold(desk, name, path) {
   return guardedView(desk, name, (box, project) => {
@@ -371,7 +650,7 @@ function renderHold(desk, name, path) {
     if (!f) return h('section', {}, backTo(name), h('p', {}, `${path} is not waiting on you (cleared, replaced, or not read yet).`));
     const p = f.hold.parsed;
     const nr = (v) => (v == null ? 'not recorded' : v);
-    return h('section', {}, backTo(name),
+    return h('section', {}, bannerFor(), backTo(name),
       h('h2', {}, f.title),
       h('p', {}, "the default branch's governance run is not green"),
       h('dl', { class: 'fields' },
@@ -394,7 +673,7 @@ function renderMerge(desk, name, path) {
     const p = mc.parsed;
     const sec = (title, text) => [h('h3', {}, title),
       text != null ? h('article', { class: 'record', html: renderMarkdown(text) }) : h('p', {}, p ? 'not given' : 'Loading the card…')];
-    return h('section', {}, backTo(name),
+    return h('section', {}, bannerFor(), backTo(name),
       h('h2', {}, f.title),
       h('dl', { class: 'fields' },
         h('dt', {}, 'item'), h('dd', {}, mc.item),
@@ -512,6 +791,8 @@ function startDesk() {
   const desk = createDesk({
     config: CONFIG, call: (path, body) => callFunction(path, body), clock, store, isVisible, onChange: () => render(),
   });
+  DESK = desk;
+  ns.store = store;
   const setState = (state) => {
     stateEl.textContent = state.text;
     stateEl.className = state.className;
@@ -523,10 +804,12 @@ function startDesk() {
     setState(state);
     view.replaceChildren(h('section', {}, h('p', { class: 'flag' }, state.text), h('p', {}, h('a', { href: '#/' }, 'All projects'))));
   }, () => desk.signedOut);
+  RENDER = () => render();
   function draw() {
     // AC32: the signed-out line is set first, before any box is built.
     if (desk.signedOut) setState(SIGNED_OUT_STATE);
     const bx = boxes(desk);
+    followOpening(desk, bx); // AC74: a notification's tap, once its project is read
     const [r0, name, kind, ...rest] = routeParts(location.hash); // malformed → Universe (review N6)
     const y = window.scrollY;
     let node;
@@ -556,6 +839,7 @@ function startDesk() {
     } else {
       view.replaceChildren(node);
       window.scrollTo(0, y);
+      bringIntoView();
     }
     footer(bx);
   }

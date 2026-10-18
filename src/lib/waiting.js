@@ -51,6 +51,32 @@ export function outsideAuthor(association) {
 }
 
 /**
+ * The AC73 key and kind of one of the desk's flagged items (buildModel's `flagged`), or null for an
+ * item AC73 does not name. The desk's `?open=<key>` tap (AC74) and the sender's set both read it.
+ * A deploy's key is its run's id (J1's run lists, in a `deploysNeedOwner` project).
+ */
+export function flaggedWait(projectName, f) {
+  if (!f) return null;
+  if (f.kind === 'card') {
+    const c = f.card;
+    const kind = GATE_RULINGS.includes(c.gate) ? 'gate' : 'card';
+    return { kind, id: c.path, key: waitKey(projectName, kind, c.path), what: (c.parsed && c.parsed.title) || `${c.item} ${c.gate}-${c.n}` };
+  }
+  if (f.kind === 'hold') return { kind: 'hold', id: f.hold.path, key: waitKey(projectName, 'hold', f.hold.path), what: HOLD_WHAT };
+  if (f.kind === 'merge') return { kind: 'merge', id: f.merge.path, key: waitKey(projectName, 'merge', f.merge.path), what: f.title };
+  if (f.kind === 'status-card') {
+    const id = `status/${String(f.key).replace(/^status:/, '')}.toml`;
+    return { kind: 'missing-card', id, key: waitKey(projectName, 'missing-card', id), what: f.title.replace(/: waiting on you: /, ': ') };
+  }
+  if (f.kind === 'question') return { kind: 'question', id: f.question.path, key: waitKey(projectName, 'question', f.question.path), what: f.question.title };
+  if (f.kind === 'pr') return { kind: 'pr', id: String(f.pr.number), key: waitKey(projectName, 'pr', f.pr.number), what: f.pr.title };
+  if (f.kind === 'deploy' && f.deploy && f.deploy.id != null) {
+    return { kind: 'deploy', id: String(f.deploy.id), key: waitKey(projectName, 'deploy', f.deploy.id), what: f.deploy.title };
+  }
+  return null;
+}
+
+/**
  * AC73's set for one project, from the desk's read model of it.
  * input: { project (J7 entry), model (buildModel's answer), deploys: [{ id, title }] (the runs whose
  *   `status` is `waiting`), jobCandidates: Set(pr number) the asks-merge job may still merge (J16),
@@ -68,25 +94,19 @@ export function waitingSet(input) {
   const out = [];
   const add = (kind, id, what, extra = {}) => out.push({ key: waitKey(name, kind, id), kind, id: String(id), what, ...extra });
   for (const f of (model && model.flagged) || []) {
-    if (f.kind === 'card') {
-      const c = f.card;
-      const kind = GATE_RULINGS.includes(c.gate) ? 'gate' : 'card';
-      add(kind, c.path, (c.parsed && c.parsed.title) || `${c.item} ${c.gate}-${c.n}`);
-    } else if (f.kind === 'hold') {
-      add('hold', f.hold.path, HOLD_WHAT);
-    } else if (f.kind === 'merge') {
-      add('merge', f.merge.path, f.title);
-    } else if (f.kind === 'status-card') {
-      add('missing-card', `status/${String(f.key).replace(/^status:/, '')}.toml`, f.title.replace(/: waiting on you: /, ': '));
-    } else if (f.kind === 'question') {
-      if (held.has(f.question.name)) continue;
-      add('question', f.question.path, f.question.title);
-    } else if (f.kind === 'pr') {
+    // The desk's own deploys are the head's only (J1); the sender lists every waiting run (below).
+    if (f.kind === 'deploy') continue;
+    const w = flaggedWait(name, f);
+    if (!w) continue;
+    if (w.kind === 'question' && held.has(f.question.name)) continue;
+    if (w.kind === 'pr') {
       const n = f.pr.number;
       if (jobs.has(n)) continue;
       const isOutside = outside.has(n);
       add('pr', n, isOutside ? null : f.pr.title, { outside: isOutside });
+      continue;
     }
+    add(w.kind, w.id, w.what);
   }
   if (project.deploysNeedOwner === true) {
     for (const d of input.deploys || []) add('deploy', d.id, d.title || 'a deploy');

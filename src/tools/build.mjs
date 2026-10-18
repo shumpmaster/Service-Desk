@@ -15,13 +15,15 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, statSync, mkdirSy
 import { join, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateConfig } from '../lib/configcheck.js';
+import { drawIcon, SIZES as ICON_SIZES } from './icons.mjs';
 
 const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const WRITE = process.argv.includes('--write');
 
 // The modules the page loads; each is copied to public/lib/ unchanged.
-export const PAGE_LIB = ['asked.js', 'config.js', 'cos.js', 'exp001.js', 'feed.js', 'j11.js', 'links.js', 'markdown.js', 'model.js', 'page.js', 'pulls.js',
-  'records.js', 'sandbox.js', 'scheduler.js', 'seen.js', 'store.js', 'timefmt.js', 'timeline.js', 'universe.js'];
+export const PAGE_LIB = ['asked.js', 'asking.js', 'config.js', 'cos.js', 'exp001.js', 'feed.js', 'j11.js', 'links.js', 'markdown.js', 'model.js',
+  'notifyview.js', 'page.js', 'prfiles.js', 'pulls.js', 'records.js', 'sandbox.js', 'scheduler.js', 'seen.js', 'store.js', 'timefmt.js', 'timeline.js',
+  'universe.js', 'usage.js', 'waiting.js'];
 const DEPENDENCY_BLOCKS = ['dependencies', 'optionalDependencies', 'peerDependencies', 'bundleDependencies',
   'bundledDependencies'];
 const LIFECYCLE = ['preinstall', 'install', 'postinstall', 'preprepare', 'prepare', 'postprepare', 'prepack',
@@ -138,6 +140,20 @@ if (existsSync(join(SRC, 'notify'))) {
       }
     }
   }
+}
+
+// AC75: the Home Screen web app's manifest and icons, as committed.
+try {
+  const m = JSON.parse(read('public/manifest.webmanifest'));
+  if (m.name !== 'Service Desk' || m.short_name !== 'Desk' || m.start_url !== '/' || m.scope !== '/' || m.display !== 'standalone') {
+    errors.push('public/manifest.webmanifest: name, short_name, start_url, scope or display is not AC75\'s');
+  }
+} catch (e) {
+  errors.push(`public/manifest.webmanifest is missing or not JSON: ${e.message}`);
+}
+for (const size of ICON_SIZES) {
+  const f = join(SRC, 'public', 'icons', `desk-${size}.png`);
+  if (!existsSync(f) || !readFileSync(f).equals(drawIcon(size))) errors.push(`public/icons/desk-${size}.png is stale or missing; run \`node src/tools/icons.mjs\``);
 }
 
 if (errors.length) {

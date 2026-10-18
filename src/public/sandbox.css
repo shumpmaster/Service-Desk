@@ -647,3 +647,18 @@ button.sb-line:focus-visible { outline: none; }
   background: var(--surf); color: var(--ink); resize: vertical; }
 .sb-final { border-top: 1px solid var(--line); padding-top: var(--s2); }
 .sb-btn.small { min-height: 44px; font: var(--t-meta); margin: var(--s2) 0; }
+
+/* Notifications (AC75, AC77, AC78; 2026-10-18): the "Notifications" control, "GitHub Actions this
+   month" and the Queue's "Asked in your session", in the shared look and its scales. */
+html.sb .sb-notify { margin: var(--s2) 0; display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+html.sb .sb-notify > p { margin: 0; font: var(--t-body); }
+html.sb .sb-notify .sb-value { flex: 1 1 100%; max-width: 100%; margin: 0; padding: var(--s2); white-space: pre-wrap; word-break: break-all; font: var(--t-code);
+  background: var(--surf2); border: 1px solid var(--line); border-radius: var(--rs); }
+html.sb .sb-steps { flex: 1 1 100%; margin: 0; padding-left: var(--s4); font: var(--t-body); }
+html.sb .sb-notify-line, html.sb .sb-actions-usage { margin: var(--s3) 0 0; }
+html.sb .sb-h3 { margin: 0 0 var(--s1); font: var(--t-item); }
+html.sb .sb-actions-usage p { margin: var(--s1) 0; }
+html.sb .sb-actions-bar { display: block; width: 100%; height: 12px; margin: var(--s1) 0; accent-color: var(--agent); }
+html.sb .sb-asking .sb-qrow { padding: var(--s2) 0; }
+html.sb .sb-asking p { margin: var(--s1) 0; }
+html.sb .sb-recheck p { margin: var(--s1) 0; }

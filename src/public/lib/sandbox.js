@@ -416,6 +416,7 @@ export const GROUPS = [
 export function groupOf(f) {
   if (f.kind === 'card') return GATE_WORDS.includes(f.card.gate) ? 'gates' : 'decisions';
   if (f.kind === 'pr' || f.kind === 'merge') return 'merges';
+  if (f.kind === 'deploy') return 'deploys'; // counted in a deploysNeedOwner project (AC52, 2026-10-18)
   return 'decisions'; // question, hold (C), status-card
 }
 
@@ -453,7 +454,9 @@ export function waitingDeploys(checkPages) {
  */
 export function queueView(project, model, snap, nowMs) {
   const rows = [];
+  const counted = project.deploysNeedOwner === true;
   for (const f of (model && model.flagged) || []) {
+    if (f.kind === 'deploy') continue; // the Deploys group's own rows, below
     const w = rowWords(f);
     rows.push({ key: f.key, kind: f.kind, group: groupOf(f), text: w.text, code: w.code, raisedAt: f.raisedAt ? t(f.raisedAt) : null,
       wait: waitWords(f.raisedAt, nowMs), flag: f });
@@ -466,7 +469,12 @@ export function queueView(project, model, snap, nowMs) {
     if (br == null) return -1;
     return ar - br || (a.key < b.key ? -1 : 1);
   };
-  const deploys = waitingDeploys(snap && snap.checkPages);
+  // AC52: in a project J7 marks `deploysNeedOwner`, a waiting deploy is one of the model's flagged
+  // items and counts (the group, the pill, Home's top line, Quiet); elsewhere it is shown, not counted.
+  const deploys = counted
+    ? ((model && model.flagged) || []).filter((f) => f.kind === 'deploy').map((f) => ({ key: f.key, kind: 'deploy', group: 'deploys',
+      text: `${f.deploy.name}: waiting for approval`, code: `run ${f.deploy.runNumber}`, link: f.link, raisedAt: null, approver: NOT_RECORDED, flag: f }))
+    : waitingDeploys(snap && snap.checkPages);
   const groups = GROUPS.map((g) => {
     let items = rows.filter((r) => r.group === g.key).sort(order);
     let line = null;
@@ -478,7 +486,9 @@ export function queueView(project, model, snap, nowMs) {
     return { ...g, items, count: g.key === 'verdicts' ? null : items.length, line };
   });
   const ordered = groups.filter((g) => g.key !== 'deploys').flatMap((g) => g.items);
-  return { groups, waiting: rows.length, rows: ordered, deploys };
+  return { groups, waiting: rows.length + (counted ? deploys.length : 0), rows: ordered, deploys, deploysCounted: counted,
+    // AC77: questions asked in a session, or whose answer is on its way: shown, not counted.
+    asking: (model && model.asking) || [] };
 }
 
 /** The pill on a Home card (AC48). */
@@ -495,6 +505,8 @@ export function pillView(box, q, nowMs) {
     if (dec) parts.push(`${dec} decision${dec === 1 ? '' : 's'}`);
     if (gate) parts.push(`${gate} gate ruling${gate === 1 ? '' : 's'}`);
     if (mer) parts.push(`${mer} to merge`);
+    const dep = q.deploysCounted ? n('deploys') : 0;
+    if (dep) parts.push(`${dep} deploy${dep === 1 ? '' : 's'} to approve`);
     return { kind: 'you', text: parts.join(' · ') };
   }
   if (read.read === 'checking') return { kind: 'idle', text: 'Checking…' };

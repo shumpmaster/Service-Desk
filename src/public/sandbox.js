@@ -1184,7 +1184,9 @@ function queueRow(p, row, s) {
   const name = p.project.name;
   const out = [opener(`row:${row.key}`, go('p', name, 'queue', row.key), { class: 'sb-qa' },
     h('span', { class: 'sb-qt' }, row.text, ' ', code(row.code)),
-    h('span', { class: 'sb-muted small' }, h('span', { live: () => waitWords(row.raisedAt, Date.now()) }), opened ? ' · opened in GitHub' : ''))];
+    h('span', { class: 'sb-muted small' }, h('span', { live: () => waitWords(row.raisedAt, Date.now()) }), opened ? ' · opened in GitHub' : ''),
+    // AC77: an answer record's own pull request, still here and counted, says whose answer it records.
+    row.flag && row.flag.answerWords ? h('span', { class: 'sb-muted small sb-answer-pr' }, row.flag.answerWords) : null)];
   if (p.project.model === 'v3') {
     const u = unblocksOf(p.ctx, row);
     const ck = `ctx:${row.key}`;

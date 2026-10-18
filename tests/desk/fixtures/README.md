@@ -339,3 +339,23 @@ address `https://desk.example.invalid`, never in src/config/projects.json.
   public repository).
 - RFC 8291's worked example (Appendix A) is written into tests/desk/notify-j17-push.test.mjs: its inputs and
   its message, which the sender's encryption reproduces byte for byte.
+
+## The desk's receiving side (2026-10-18, S-001 notifications, the brief's steps 3 and 3b)
+
+The desk-side tests (notify-ac52-deploys, notify-ac74-desk, notify-ac75, notify-ac77-desk, notify-ac78-desk,
+notify-j20-desk) add no fixture file. What they read:
+
+- `notify/ac77-real/` (above): **real**, and the `asked/` copy real except its one added line, read here by the
+  page as the sender reads them (AC77's real-record cases on the desk).
+- `notify/made-up/questions/N-open.md` and `queue/P-951-stop-1.md` (above): **NOT real**, the same made-up
+  records the sender's tests use, for the `/?open=` tap.
+- `github/notify-pull-107-files.json` and `notify-pull-108-files.json` (above): **real**, for J20's read in the
+  function's blob call.
+- Everything else is **NOT real** and written inline in the tests: made-up pull requests, their files, closed
+  pull requests, waiting deploy runs (run 7001, desk-deploy run 40), session lines, questions, and every billing
+  answer for AC78 and J21 (made up from research Q-015's documented fields; no real billing figure is in this
+  public repository). Every VAPID key and push subscription is made for the test run and thrown away, and the
+  public key that AC75's sandbox case uses goes in that test's own config only, never in
+  src/config/projects.json (which has no `push` until the owner's key, Setup N1).
+- `tools/notify-throw-preload.mjs` is a test tool, not a fixture: it makes the sender's config read throw, for
+  the exit-2 test in notify-entry.test.mjs.

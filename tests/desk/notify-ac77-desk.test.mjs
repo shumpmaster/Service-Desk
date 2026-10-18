@@ -404,3 +404,36 @@ test('AC77 in the sandbox: the held question is out of the Queue\'s Decisions an
     app.restore();
   }
 });
+
+test('AC77 in the sandbox: the answer\'s pull request in Merges with its added words; the re-read on a stale answer link says "Already answered" and opens nothing', async () => {
+  const files = { [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION, '.github/workflows/asks-merge.yml': 'name: asks-merge\n' };
+  let app = await loadSandbox({ config: CONFIG, repos: repos(files, [answerPr(90)], { repo: { prFiles: { 90: ADDS_ANSWER } } }), hash: '#/p/Service-Desk/queue', now: RAISED_MS + 10 * MIN });
+  try {
+    await app.advance(1000);
+    await app.advance(60_000);
+    assert.ok(app.text().includes('Your answer to Which piece of later work comes next?: the automatic job merges it, usually within minutes'));
+    assert.ok(byClass(app.view, 'sb-asking')[0].textContent.includes(RECORDING_WORDS));
+  } finally {
+    app.restore();
+  }
+  const opened = [];
+  const rs = repos({ 'questions/N-x.md': v3q('') });
+  app = await loadSandbox({ config: CONFIG, repos: rs, hash: '#/p/Service-Desk/queue/q%3AN-x', now: RAISED_MS + 10 * MIN, win: { open: (u) => { opened.push(u); return {}; } } });
+  try {
+    await app.advance(1000);
+    await app.advance(60_000);
+    const chip = sbFindAll(app.view, (e) => e.tag === 'button' && e.attrs.role === 'radio')[0];
+    await app.tap(chip);
+    const go = byClass(app.view, 'sb-go')[0];
+    assert.ok(go, 'the answer link');
+    await app.advance(31_000);
+    rs['Service-Desk'].commit({ 'decisions/questions/N-x.md': 'Ruling: A — made up\n' });
+    const e = go.dispatch('click');
+    await app.flush();
+    assert.equal(opened.length, 0, 'nothing opens');
+    assert.ok(app.text().includes('Already answered: Ruling: A — made up'));
+    void e;
+  } finally {
+    app.restore();
+  }
+});

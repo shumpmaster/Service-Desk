@@ -390,7 +390,7 @@ test('AC49 + AC67: the Team screen — your tile with the next three queue lines
     assert.equal(ids.filter((x) => x === 'chief-of-staff').length, 1);
     assert.ok(ids.includes('orchestrator') && ids.includes('builder') && ids.includes('reviewer'));
     const cos = tiles.find((t) => id(t) === 'chief-of-staff');
-    assert.match(cos.textContent, /Its sessions aren't recorded/);
+    assert.match(cos.textContent, /No session recorded yet/, 'from 2026-10-17 (J13): no session file in this fixture');
     assert.equal(byClass(cos, 'i-unrec').length, 1, 'the question mark in a dashed circle');
     const builder = tiles.find((t) => id(t) === 'builder');
     assert.match(builder.textContent, /Working/);
@@ -439,7 +439,7 @@ test('AC49: every Working now value against its record, and "–" wherever a rec
   assert.match(ahead.tiles[1].why, /later than this device's clock/);
   const cos = workingNow(P, model, {}, null, 'chief-of-staff', {}, now, 'UTC');
   assert.deepEqual([cos.tiles[0].value, cos.tiles[1].value, cos.lines[2].value], ['–', '–', '–']);
-  assert.match(cos.tiles[0].why, /not recorded: its sessions aren't logged yet/);
+  assert.match(cos.tiles[0].why, /not recorded: no piece of its work is under way/, 'from 2026-10-17 (J13): no session file, so nothing under way');
 });
 
 test('AC49: a member\'s page — fixed groups counted from records only, "not recorded" where no record fills one; the running log newest first', () => {

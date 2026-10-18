@@ -185,7 +185,7 @@ test('AC67: each card\'s state icon and word, with the key above; no light, no g
     const tiles = byClass(app.view, 'sb-tile');
     const id = (t) => byClass(t, 'sb-tile-n')[0].attrs.href.split('/').pop();
     const icon = (t) => byClass(t, 'sb-ic')[0].className.match(/i-[a-z]+/)[0];
-    const want = { builder: ['i-half', 'Working'], critic: ['i-check', 'Just finished'], researcher: ['i-planned', 'Idle'], 'chief-of-staff': ['i-unrec', "Its sessions aren't recorded"] };
+    const want = { builder: ['i-half', 'Working'], critic: ['i-check', 'Just finished'], researcher: ['i-planned', 'Idle'], 'chief-of-staff': ['i-unrec', 'No session recorded yet'] }; // from 2026-10-17, J13: no session file in this fixture
     for (const [m, [ic, word]] of Object.entries(want)) {
       const t = tiles.find((x) => id(x) === m);
       if (m === 'critic') continue; // the critic's outcome is 280 minutes old in this fixture: Idle (AC49's own test covers "Just finished")

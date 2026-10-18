@@ -216,7 +216,20 @@ test('AC62: every word kept — each sandbox screen\'s text, outside the parts A
   const routes = Object.keys(snap);
   assert.equal(routes.length, 55);
   const now = await screenTexts(routes, NEW_REBUILT);
-  for (const r of routes) assert.deepEqual(now[r], snap[r], r);
+  // From 2026-10-17 (model 3.5.0's records): on a v3 project's Chief of Staff page, AC49 as changed in
+  // place rebuilds its status line, its "Responsible for" groups and its running log from the session
+  // lines (J13), which NEW_REBUILT leaves out; the snapshot's runs for those parts are left out the same
+  // way, and every other word of the page (its header, the two headings, the bottom bar) still compared.
+  const cosParts = (runs) => {
+    const a = runs.indexOf('Responsible for');
+    const b = runs.indexOf('Running log');
+    const c = runs.indexOf('Status', b);
+    return [...runs.slice(0, runs.indexOf('Chief of Staff') + 1), ...runs.slice(a, a + 1), ...runs.slice(b, b + 1), ...runs.slice(c)];
+  };
+  const rebuiltCos = ['#/p/Service-Desk/team/chief-of-staff', '#/p/Alpha/team/chief-of-staff'];
+  for (const r of routes) assert.deepEqual(now[r], rebuiltCos.includes(r) ? cosParts(snap[r]) : snap[r], r);
+  assert.deepEqual(cosParts(snap[rebuiltCos[0]]), ['Sandbox: candidate design', 'Back', 'Home', 'Service-Desk', 'Chief of Staff', 'Responsible for', 'Running log', 'Status', 'Timeline', 'Team', 'Queue']);
+  assert.ok(snap['#/p/Delta/team/chief-of-staff'].includes("Its sessions aren't recorded"), 'the v2.5 project\'s page is compared whole, unchanged');
 });
 
 // ---------------------------------------------------------------------------

@@ -8,13 +8,15 @@
 
 import { isOwnerRuling } from './model.js';
 import { STATUS_RE, LOG_RE, MERGES_PATH, parseCardPath, questionAnswerName, parseWorkflowRuns, stageName, entryWords,
-  OUTCOMES_PATH, ROUTING_PATH, entryShape, timeLimitMinutes, parseAnswerPath } from './records.js';
+  OUTCOMES_PATH, ROUTING_PATH, entryShape, timeLimitMinutes, parseAnswerPath, firstMilestoneLine } from './records.js';
 import { PROJECT_DOC_PATH, SURFACES_PATH, ORCH_WORKFLOW_PATH, SPEC_PATH_RE, REQUEST_PATH_RE, HANDOVER_PREFIX,
   HANDOVER_TEMPLATE, GATE_PHASE, GATE_WORDS, isGroundwork, nextCronRun, README_PATH } from './j11.js';
 import { buildTimeline, DESK_PHASES, PHASE_OF_STAGE } from './timeline.js';
 import { durationText, whenText, dayKey, hhmm } from './timefmt.js';
 import { newFileUrl, cappedNewFileLink, tidyNote, HOLD_NO_ANSWER, mergeNoAnswer, V25_RULING_NOTE, webCommitsWarning } from './links.js';
 import { STALE_MS } from './scheduler.js';
+import { cosSessions, helperLines, latestEndAt, ENDED_UNRECORDED } from './cos.js';
+import { runTimeText, costText } from './asked.js';
 
 export const NOT_RECORDED = 'not recorded';
 export const NOT_AVAILABLE = 'not available';
@@ -121,9 +123,37 @@ export function standardWord(state) {
   return state;
 }
 
-/** A project milestone's state (AC50): dropped, work filed, or no work filed yet. Never "reached". */
-export function projectMilestoneWord(run, m) {
+/**
+ * Whether a project milestone counts as one with work filed (AC50): a sprint listed or tied to it,
+ * or, from 2026-10-17 (J11, model S-033 AC7), its line marked ` · reached:`, whether or not it lists
+ * sprints, so a reached milestone never makes a run "now" and is never the next to reach.
+ */
+export function hasWorkFiled(run, m) {
+  return Boolean(m.reached) || (run.sprints[m.id] || []).length > 0;
+}
+
+const MONTH_WORDS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * A reached part's date as the desk shows dates (AC50): "7 Oct", with the year when it is not this
+ * year ("7 Oct 2025"). It is the line's calendar date as written, never moved by a time zone (C);
+ * "this year" is the owner's, in ownerTimeZone.
+ */
+export function reachedDateWords(date, nowMs, tz) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(date));
+  if (!m) return NOT_RECORDED;
+  const year = Number.isFinite(nowMs) ? dayKey(new Date(nowMs), tz || 'UTC').slice(0, 4) : null;
+  return `${Number(m[3])} ${MONTH_WORDS[Number(m[2]) - 1]}${year === m[1] ? '' : ` ${m[1]}`}`;
+}
+
+/**
+ * A project milestone's state (AC50): dropped, work filed, no work filed yet, or, from 2026-10-17,
+ * "reached <date>" for a line that carries ` · reached:` (and only such a line); a line both reached
+ * and dropped reads "dropped" (J11).
+ */
+export function projectMilestoneWord(run, m, nowMs, tz) {
   if (m.dropped) return 'dropped';
+  if (m.reached) return `reached ${reachedDateWords(m.reached, nowMs, tz)}`;
   return (run.sprints[m.id] || []).length ? 'work filed' : 'no work filed yet';
 }
 
@@ -144,7 +174,7 @@ function runLastPos(run, tl) {
 export function nowRun(tl) {
   if (!tl) return null;
   const runs = tl.runs().filter((r) => DESK_PHASES.includes(r.phase));
-  const open = runs.find((r) => r.project.some((m) => !m.dropped && !(r.sprints[m.id] || []).length));
+  const open = runs.find((r) => r.project.some((m) => !m.dropped && !hasWorkFiled(r, m)));
   if (open) return open;
   let best = null;
   let bestPos = -1;
@@ -184,7 +214,7 @@ export function columnsOf(tl) {
 export function nowRule(tl) {
   if (!tl) return null;
   const runs = tl.runs().filter((r) => DESK_PHASES.includes(r.phase));
-  if (runs.some((r) => r.project.some((m) => !m.dropped && !(r.sprints[m.id] || []).length))) return 'open';
+  if (runs.some((r) => r.project.some((m) => !m.dropped && !hasWorkFiled(r, m)))) return 'open';
   return nowRun(tl) ? 'latest' : null;
 }
 
@@ -267,7 +297,8 @@ export function whereLine(project, model, tl, pv) {
   if (!tl || !pv.tracked) return { sentence: `Where it's heading: ${NOT_AVAILABLE} until the project's records are read.`, parts: [] };
   const now = pv.nowRun;
   if (!now) return { sentence: `Phase: ${NOT_RECORDED}.`, parts: [{ label: 'Phase', text: NOT_RECORDED, source: null }] };
-  const upcoming = now.project.filter((m) => !m.dropped && !(now.sprints[m.id] || []).length).map((m) => m.name);
+  // A milestone marked reached (J11) is never upcoming work (AC37, AC50; 2026-10-17).
+  const upcoming = now.project.filter((m) => !m.dropped && !hasWorkFiled(now, m)).map((m) => m.name);
   const runs = tl.runs().filter((r) => DESK_PHASES.includes(r.phase));
   const next = runs[runs.indexOf(now) + 1] || null;
   const nextNames = next ? next.project.filter((m) => !m.dropped).map((m) => m.name) : [];
@@ -506,6 +537,8 @@ export function ballLines(project, model, snap, j, q, now, tz) {
   for (const i of (model && model.items) || []) {
     if (i.state === 'dispatched') out.push({ who: 'agent', text: `${i.running ? i.running.role : NOT_RECORDED} working on ${i.id}`, lit: true, item: i.id });
   }
+  // The Chief of Staff working (from 2026-10-17, J13): a piece of work of one of its sessions under way, once however many.
+  if (cosSessions(snap, nowMs).pieces.some((x) => x.state === 'working')) out.push({ who: 'cos', text: 'Chief of Staff working', lit: true });
   if (runningChecks(snap && snap.checkPages).length) out.push({ who: 'checks', text: 'Checks running', lit: false });
   if (((model && model.items) || []).some((i) => i.state === 'ready' || i.state === 'returned')) {
     const due = nextOrchestratorRun(j, now);
@@ -528,7 +561,26 @@ export function cardBoxText(word, gateCard) {
   if (gateCard && (word === 'hold' || word === 'recycle')) text += 'Reason: \n';
   return text;
 }
-export const questionBoxText = (letter, name) => `Ruling: ${letter}\n\nQuestion: questions/${name}.md\n`;
+/**
+ * A question's answer box (AC53, J3's sandbox part): `Ruling: <letter>`, an empty line and the
+ * `Question:` line, then, from 2026-10-17, the question's `Milestone:` line when it has one (J2),
+ * copied as the question has it with trailing spaces dropped, as decisions/README.md:43 asks of an
+ * answer to a filed question (model S-033). The accepted views' answer link (links.js) is unchanged.
+ */
+export const questionBoxText = (letter, name, milestone = null) => `Ruling: ${letter}\n\nQuestion: questions/${name}.md\n${milestone ? `${milestone}\n` : ''}`;
+
+/**
+ * The rule line's words on an answer's `Milestone:` line (AC53, from 2026-10-17): null when the
+ * question has none, or the answer's first `Milestone:` line in column 0 after line 1 holds the
+ * same value; otherwise the sentence naming the line it should hold.
+ */
+export function milestoneRuleWords(text, questionLine) {
+  if (!questionLine) return null;
+  const want = questionLine.replace(/^Milestone:/, '').trim();
+  const got = firstMilestoneLine(text, true);
+  if (got != null && got.replace(/^Milestone:/, '').trim() === want) return null;
+  return `The answer's Milestone line should read \`${questionLine}\`, as the question's does.`;
+}
 
 const andOr = (xs) => (xs.length < 2 ? String(xs[0]) : `${xs.slice(0, -1).join(', ')} or ${xs[xs.length - 1]}`);
 
@@ -569,8 +621,10 @@ export function ruleLine(form, text, opts = {}) {
   }
   if (form === 'question') {
     const m = /^Ruling: (.+)$/.exec(lines[0] || '');
-    if (!m) return { ok: false, words: opts.letters && opts.letters.length ? `Line 1 must be "Ruling: <letter>": pick ${andOr(opts.letters)} above.` : 'Line 1 must be "Ruling: <letter>".' };
-    return { ok: true, words: `In form: line 1 is "Ruling: ${m[1]}".` };
+    const ms = milestoneRuleWords(text, opts.milestone);
+    if (!m) return { ok: false, words: `${opts.letters && opts.letters.length ? `Line 1 must be "Ruling: <letter>": pick ${andOr(opts.letters)} above.` : 'Line 1 must be "Ruling: <letter>".'}${ms ? ` ${ms}` : ''}` };
+    if (ms) return { ok: false, words: `Line 1 is "Ruling: ${m[1]}". ${ms}` };
+    return { ok: true, words: `In form: line 1 is "Ruling: ${m[1]}"${opts.milestone ? `, and the Milestone line is the question's` : ''}.` };
   }
   return { ok: true, words: '' };
 }
@@ -727,7 +781,8 @@ export function composeAnswer(ctx, answers = {}) {
     return { text, joined: [] };
   }
   const { qs, name } = ctx;
-  const q = `Question: questions/${name}.md\n`;
+  // From 2026-10-17 the question's `Milestone:` line follows the `Question:` line (AC53, J2).
+  const q = `Question: questions/${name}.md\n${ctx.milestone ? `${ctx.milestone}\n` : ''}`;
   if (qs.form === 'lettered') {
     const words = tidyWords(a1.words);
     return { text: `Ruling: ${a1.choice || ''}\n\n${q}\nQuestion, as put: ${qs.title}\nOptions, as put:\n${qs.block.join('\n')}\n${words ? `\n${words}\n` : ''}`, joined: [] };
@@ -753,9 +808,10 @@ const andList = (ns) => (ns.length < 2 ? String(ns[0]) : `${ns.slice(0, -1).join
  * The rule line for a numbered ruling (AC53, note 15): line 1 starts `Ruling: `; it names any
  * number with no answer yet, and says which answers were joined into one line. The button stays.
  */
-export function numberedRuleLine(text, qs, joined = []) {
+export function numberedRuleLine(text, qs, joined = [], milestone = null) {
   const first = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n')[0];
-  if (!/^Ruling: /.test(first)) return { ok: false, words: 'Line 1 must start "Ruling: ", then each answered number and its answer, joined by "; ".' };
+  const ms = milestoneRuleWords(text, milestone);
+  if (!/^Ruling: /.test(first)) return { ok: false, words: `Line 1 must start "Ruling: ", then each answered number and its answer, joined by "; ".${ms ? ` ${ms}` : ''}` };
   const got = new Set(first.slice(8).split('; ').map((x) => (/^([0-9]+) \S/.exec(x) || [])[1]).filter(Boolean).map(Number));
   const missing = qs.questions.map((x) => x.n).filter((n) => !got.has(n));
   const bits = [];
@@ -763,7 +819,8 @@ export function numberedRuleLine(text, qs, joined = []) {
   else bits.push(`In form: line 1 is "Ruling: " with ${got.size} answer${got.size === 1 ? '' : 's'}.`);
   if (missing.length && got.size) bits.push(`No answer yet for ${andList(missing)}.`);
   for (const n of joined) bits.push(`Answer ${n} joined into one line (line breaks became spaces, "; " became ", ").`);
-  return { ok: got.size > 0, words: bits.join(' ') };
+  if (ms) bits.push(ms);
+  return { ok: got.size > 0 && !ms, words: bits.join(' ') };
 }
 
 // ---------------------------------------------------------------------------
@@ -870,7 +927,8 @@ export function sheetView(project, model, snap, j, row) {
       options: p ? p.options.map((o) => ({ value: o.letter, text: o.text, then: o.text })) : [], loading: !p,
       recommendation: p && p.recommendation ? p.recommendation : null,
       reversibility: p ? p.reversibility || 'not given' : null,
-      box: { form: 'question', path: `decisions/questions/${q.name}.md`, name: q.name },
+      // milestone: the question's own `Milestone:` line (J2), which the answer box carries (AC53, from 2026-10-17).
+      box: { form: 'question', path: `decisions/questions/${q.name}.md`, name: q.name, milestone: p ? firstMilestoneLine(p.text) : null },
       fullText: p ? p.text : null,
       links: [{ text: 'The question on GitHub', href: treeLink(project, tree, q.path) }] };
   }
@@ -1023,7 +1081,75 @@ function shapedRows(model, j) {
 }
 
 const MEMBER_LABEL = { 'chief-of-staff': 'Chief of Staff', orchestrator: 'Orchestrator' };
-const label = (id) => MEMBER_LABEL[id] || id.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
+const label = (id) => (Object.prototype.hasOwnProperty.call(MEMBER_LABEL, id) ? MEMBER_LABEL[id] : id.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase()));
+
+// ---------------------------------------------------------------------------
+// J13: the Chief of Staff's session lines on the Team screen (AC49, AC67; from 2026-10-17)
+
+/** A day in the owner's zone, "8 Oct" (AC67's dates), as feed.js's dayWords writes it. */
+function dayWordsOf(ms, tz) {
+  const k = dayKey(new Date(ms), tz).split('-');
+  return `${Number(k[2])} ${MONTH_WORDS[Number(k[1]) - 1]}`;
+}
+const fig = (v, unit) => (typeof v === 'number' ? `${v.toLocaleString('en-US')} ${unit}` : `${unit} ${NOT_RECORDED}`);
+const runTime = (v) => (typeof v === 'number' ? runTimeText(v) : `run time ${NOT_RECORDED}`);
+
+/** A helper line's words (AC49): "<role> helper · <started> to <ended> · <tokens> tokens · <tool_uses> tool uses · <run time>", each null figure "not recorded". */
+export function helperWords(l, now, tz) {
+  const r = l.reported || {};
+  return `${l.role} helper · ${whenText(new Date(l.startedAt), now, tz)} to ${whenText(new Date(l.at), now, tz)} · ${fig(r.tokens, 'tokens')} · ${fig(r.tool_uses, 'tool uses')} · ${runTime(r.duration_ms)}`;
+}
+/** An end line's words (AC49): "Handed back · <its usage's run time>". */
+export const endWords = (l) => `Handed back · ${runTime(l.usage && l.usage.duration_ms)}`;
+export const HELPER_FOR_COS = 'a helper session for the Chief of Staff';
+
+/**
+ * The Chief of Staff's state from its session lines (AC49, J13): { cs, status, last (AC49's words,
+ * with a time), card (AC67's "last:", with a date), piece (the piece the tile names), working }.
+ */
+export function cosView(snap, now, tz) {
+  const nowMs = now.getTime();
+  const cs = cosSessions(snap, nowMs);
+  if (cs.state === 'none') return { cs, status: 'No session recorded yet', last: NOT_RECORDED, card: `last: ${NOT_RECORDED}`, piece: null, working: [] };
+  if (cs.state === 'reading') {
+    const why = `${NOT_AVAILABLE}: its session files are still being read`;
+    return { cs, status: NOT_AVAILABLE, last: why, card: `last: ${why}`, piece: null, working: [] };
+  }
+  const working = cs.pieces.filter((x) => x.state === 'working');
+  // The latest recorded work: each piece at its end (or its start), each end line with no open piece at its time.
+  const events = [...cs.pieces.map((x) => ({ at: x.end ? x.end.at : x.start.at, piece: x })), ...cs.orphans.map((o) => ({ at: o.line.at, orphan: o }))]
+    .filter((e) => Number.isFinite(e.at)).sort((a, b) => a.at - b.at);
+  const latest = working.length ? { piece: [...working].sort((a, b) => a.start.at - b.start.at).pop() } : events[events.length - 1] || null;
+  let last = NOT_RECORDED;
+  let card = `last: ${NOT_RECORDED}`;
+  if (latest && latest.piece) {
+    const x = latest.piece;
+    if (x.state === 'ended') {
+      last = `${x.start.doing}, ${whenText(new Date(x.end.at), now, tz)}`;
+      card = `last: ${x.start.doing}, ${dayWordsOf(x.end.at, tz)}`;
+    } else if (x.state === 'unrecorded') {
+      last = `${x.start.doing}, ${ENDED_UNRECORDED}`;
+      card = `last: ${x.start.doing}, ${dayWordsOf(x.start.at, tz)}, ${ENDED_UNRECORDED}`;
+    } else {
+      last = `${x.start.doing}, since ${whenText(new Date(x.start.at), now, tz)}`;
+      card = `last: ${x.start.doing}, ${dayWordsOf(x.start.at, tz)}`;
+    }
+  } else if (latest && latest.orphan) {
+    last = `Handed back (no recorded start), ${whenText(new Date(latest.orphan.line.at), now, tz)}`;
+    card = `last: handed back (no recorded start), ${dayWordsOf(latest.orphan.line.at, tz)}`;
+  }
+  const endAt = latestEndAt(cs);
+  let status = 'Idle';
+  if (working.length) status = 'Working';
+  else if (endAt != null && nowMs - endAt >= 0 && nowMs - endAt < JUST_FINISHED_MS) status = 'Just finished';
+  return { cs, status, last, card, piece: latest && latest.piece ? latest.piece : null, working };
+}
+
+/** A roster member's latest helper line (J13; AC49, AC67), or null: `role` is its id. */
+function memberHelper(cs, id) {
+  const mine = helperLines(cs).filter((h) => h.line.role === id && Number.isFinite(h.line.at)).sort((a, b) => a.line.at - b.line.at);
+  return mine.length ? mine[mine.length - 1] : null;
+}
 
 /** The Team screen (AC49). */
 export function teamView(project, model, snap, j, q, ball, now, tz) {
@@ -1035,6 +1161,7 @@ export function teamView(project, model, snap, j, q, ball, now, tz) {
     next: q.rows.slice(0, OWNER_NEXT_LINES).map((r) => ({ text: r.text, code: r.code, wait: r.wait, raisedAt: r.raisedAt })),
   };
   if (project.model !== 'v3') {
+    // A v2.5 project: J13 does not apply (v3 only); its Team screen keeps what it showed.
     return { owner, members: [{ id: 'chief-of-staff', label: 'Chief of Staff', status: "Its sessions aren't recorded", last: NOT_RECORDED, lit: false, glow: false }],
       note: `Agents: ${V25_NOT_RECORDED}`, rows };
   }
@@ -1047,8 +1174,11 @@ export function teamView(project, model, snap, j, q, ball, now, tz) {
   }
   const ids = ['chief-of-staff', 'orchestrator', ...roster.filter((r) => r !== 'chief-of-staff' && r !== 'orchestrator')];
   const items = (model && model.items) || [];
+  const cv = cosView(snap, now, tz);
   const members = ids.map((id) => {
-    if (id === 'chief-of-staff') return { id, label: label(id), status: "Its sessions aren't recorded", last: NOT_RECORDED, lit: false, glow: false };
+    if (id === 'chief-of-staff') {
+      return { id, label: label(id), status: cv.status, last: cv.last, card: cv.card, lit: cv.status === 'Working' || cv.status === 'Just finished', glow: false, cos: cv };
+    }
     if (id === 'orchestrator') {
       const last = [...rows].reverse().find((e) => Object.prototype.hasOwnProperty.call(e, 'route') || e.shape === 'decision');
       return { id, label: label(id), status: 'Idle', last: last ? `last: ${entryWords(last, whenText(new Date(last.time), now, tz))}` : `not recorded in what the desk reads`, lit: false, glow: false };
@@ -1057,9 +1187,17 @@ export function teamView(project, model, snap, j, q, ball, now, tz) {
     if (working) return { id, label: label(id), status: 'Working', last: `on ${working.id}`, lit: true, glow: true, item: working.id };
     const lastOut = [...rows].reverse().find((e) => e.shape === 'outcome' && e.role === id);
     const lastAny = [...rows].reverse().find((e) => e.role === id && (e.shape === 'outcome' || e.shape === 'dispatch'));
-    if (lastOut && nowMs - Date.parse(lastOut.time) >= 0 && nowMs - Date.parse(lastOut.time) < JUST_FINISHED_MS) {
+    // A helper line naming this member is its recorded work (J13, AC49): it is the member's latest when
+    // later than its latest outcome entry, and gives "Just finished", never "Working".
+    const hl = cv.cs.state === 'ok' ? memberHelper(cv.cs, id) : null;
+    const helperLatest = hl && (!lastOut || hl.line.at > Date.parse(lastOut.time)) ? hl : null;
+    const helper = helperLatest ? { at: hl.line.at, line: hl.line, path: hl.path } : null;
+    const helperText = helperLatest ? `${HELPER_FOR_COS}, ${whenText(new Date(hl.line.at), now, tz)}` : null;
+    if (lastOut && nowMs - Date.parse(lastOut.time) >= 0 && nowMs - Date.parse(lastOut.time) < JUST_FINISHED_MS && !helperLatest) {
       return { id, label: label(id), status: 'Just finished', last: entryWords(lastOut, whenText(new Date(lastOut.time), now, tz)), lit: true, glow: false };
     }
+    if (helperLatest && nowMs - hl.line.at >= 0 && nowMs - hl.line.at < JUST_FINISHED_MS) return { id, label: label(id), status: 'Just finished', last: helperText, lit: true, glow: false, helper };
+    if (helperLatest) return { id, label: label(id), status: 'Idle', last: `last: ${helperText}`, lit: false, glow: false, helper };
     return { id, label: label(id), status: 'Idle', last: lastAny ? `last: ${entryWords(lastAny, whenText(new Date(lastAny.time), now, tz))}` : 'not recorded in what the desk reads', lit: false, glow: false };
   });
   return { owner, members, note, rows };
@@ -1099,7 +1237,10 @@ export function memberPage(project, model, snap, j, q, tv, id, now, tz) {
       { title: 'Verdicts', count: null, latest: null, items: [], why: `${NOT_RECORDED}: verdict files land on pull-request branches, and the desk reads only ${project.defaultBranch}` },
       { title: 'Merges', count: null, latest: null, items: [], why: `${NOT_RECORDED}: the desk reads only open pull requests, and status/merges.jsonl holds the Orchestrator's merges, not yours` },
     ], logEntries: rows.filter((e) => e.shape === 'decision' || e.shape === 'card') };
+  } else if (id === 'chief-of-staff' && project.model === 'v3') {
+    return cosPage(project, snap, tv, now, tz);
   } else if (id === 'chief-of-staff') {
+    // A v2.5 project (J13 is v3 only): as before.
     const nr = `${NOT_RECORDED}: its sessions aren't logged yet (a model change)`;
     page = { id, label: 'Chief of Staff', status: "Its sessions aren't recorded", groups: [
       { title: 'Sessions', count: null, items: [], why: nr }, { title: 'Questions put to you', count: null, items: [], why: nr },
@@ -1146,6 +1287,16 @@ export function memberPage(project, model, snap, j, q, tv, id, now, tz) {
       && Date.parse(e.time) === working.running.since.getTime());
     return { text: entryWords(e, at(e)), lane: e.item || null, entry: e, now: isNow };
   });
+  // J13 (from 2026-10-17): each helper line naming this member, a row of its own on the main line at its `ended`, with the Chief of Staff's words.
+  if (id !== 'owner' && id !== 'orchestrator') {
+    const cs = cosSessions(snap, now.getTime());
+    const mine = cs.state === 'ok' ? helperLines(cs).filter((x) => x.line.role === id && Number.isFinite(x.line.at)).sort((a, b) => b.line.at - a.line.at) : [];
+    for (const x of mine) {
+      const row = { text: helperWords(x.line, now, tz), lane: null, entry: { shape: 'cos-helper', time: x.line.ended, line: x.line, path: x.path }, now: false };
+      const i = log.findIndex((r) => Date.parse(r.entry.time) < x.line.at);
+      log.splice(i < 0 ? log.length : i, 0, row);
+    }
+  }
   const layout = branchLayout(log, (lane, rows) => {
     // Filed: its line in status/merges.jsonl, or its newest row a record of the work filed (AC49): an
     // outcome with its `record`; for the owner's lanes, a decision with its answer file (`record`);
@@ -1162,6 +1313,73 @@ export function memberPage(project, model, snap, j, q, tv, id, now, tz) {
   }
   return { ...page, log, lanes, layout, working: Boolean(working), workingItem: working ? working.id : null, upNext,
     logWords: id === 'chief-of-staff' ? "Its sessions aren't recorded, so there is no running log." : 'not recorded in what the desk reads' };
+}
+
+/**
+ * The Chief of Staff's page (AC49, J13; from 2026-10-17): its status; "Pieces of work" and "Helpers"
+ * counted from its session lines, with the groups no record fills "not recorded"; and its running
+ * log, each piece of work a lane that leaves the main line at its start line's row and joins back at
+ * its end line's row (a piece under way ends in the dashed stub, its latest row ringed "now"; one
+ * ended unrecorded ends in the dashed stub with "ended, time not recorded" on its last row); an end
+ * line with no open piece, and a helper with none, on the main line. No "Up next".
+ */
+function cosPage(project, snap, tv, now, tz) {
+  const tree = (snap && snap.tree) || new Map();
+  const tile = tv.members.find((m) => m.id === 'chief-of-staff');
+  const cv = tile && tile.cos ? tile.cos : cosView(snap, now, tz);
+  const cs = cv.cs;
+  const t = (ms) => whenText(new Date(ms), now, tz);
+  const link = (path) => treeLink(project, tree, path);
+  const na = cs.state === 'reading' ? `${NOT_AVAILABLE}: its session files are still being read` : null;
+  const none = cs.state === 'none' ? `${NOT_RECORDED}: no session file on ${project.defaultBranch} yet` : null;
+  const helpers = helperLines(cs).filter((x) => Number.isFinite(x.line.at)).sort((a, b) => a.line.at - b.line.at);
+  const pieces = cs.pieces;
+  const pieceWords = (x) => `${x.start.doing} · ${x.state === 'ended' ? `handed back ${t(x.end.at)}` : x.state === 'unrecorded' ? ENDED_UNRECORDED : 'under way'}`;
+  const noRecord = `${NOT_RECORDED}: no record the desk reads ties these to the Chief of Staff`;
+  const files = cs.paths.filter((x) => !cs.missing.includes(x));
+  const groups = [
+    { title: 'Sessions', count: na || none ? null : files.length, latest: files.length ? `latest: ${files[files.length - 1]}` : null,
+      items: [...files].reverse().map((x) => ({ text: x, link: link(x) })), why: na || none || (files.length ? null : 'none yet') },
+    { title: 'Pieces of work', count: na || none ? null : pieces.length, latest: pieces.length ? `latest: ${pieceWords(pieces[pieces.length - 1])}` : null,
+      items: [...pieces].reverse().map((x) => ({ text: pieceWords(x), link: link(x.path) })), why: na || none || (pieces.length ? null : 'none yet') },
+    { title: 'Helpers', count: na || none ? null : helpers.length, latest: helpers.length ? `latest: ${helperWords(helpers[helpers.length - 1].line, now, tz)}` : null,
+      items: [...helpers].reverse().map((x) => ({ text: helperWords(x.line, now, tz), link: link(x.path) })), why: na || none || (helpers.length ? null : 'none yet') },
+    { title: 'Questions put to you', count: null, items: [], why: noRecord },
+    { title: 'Notes and records', count: null, items: [], why: noRecord },
+  ];
+  // The rows, each at its line's time; newest at the top.
+  const rows = [];
+  const byLane = new Map();
+  for (const x of pieces) {
+    const lane = `${x.session} line ${x.start.n}`; // the piece by its start line: its file and line
+    byLane.set(lane, x);
+    rows.push({ at: x.start.at, text: `Started: ${x.start.doing} · ${t(x.start.at)}`, lane, entry: { shape: 'cos-start', line: x.start, path: x.path, time: x.start.time } });
+    for (const hl of x.helpers) rows.push({ at: hl.at, text: helperWords(hl, now, tz), lane, entry: { shape: 'cos-helper', line: hl, path: x.path, time: hl.ended } });
+    if (x.end) rows.push({ at: x.end.at, text: `${endWords(x.end)} · ${t(x.end.at)}`, lane, entry: { shape: 'cos-end', line: x.end, path: x.path, time: x.end.time } });
+  }
+  for (const o of cs.orphans) {
+    rows.push({ at: o.line.at, text: `Handed back (no recorded start) · ${runTime(o.line.usage && o.line.usage.duration_ms)} · ${t(o.line.at)}`, lane: null,
+      entry: { shape: 'cos-end', line: o.line, path: o.path, time: o.line.time } });
+  }
+  for (const hl of cs.looseHelpers) {
+    rows.push({ at: hl.line.at, text: `${helperWords(hl.line, now, tz)} · a helper with no recorded piece of work`, lane: null,
+      entry: { shape: 'cos-helper', line: hl.line, path: hl.path, time: hl.line.ended } });
+  }
+  const sorted = rows.map((r, i) => [r, i]).sort((a, b) => b[0].at - a[0].at || b[1] - a[1]).map(([r]) => r).slice(0, 60);
+  // A lane's last (newest) row: "now" while under way; "ended, time not recorded" when it ended unrecorded.
+  const seen = new Set();
+  const log = sorted.map((r) => {
+    const x = r.lane ? byLane.get(r.lane) : null;
+    const first = r.lane && !seen.has(r.lane);
+    if (r.lane) seen.add(r.lane);
+    const now0 = Boolean(first && x && x.state === 'working');
+    const text = first && x && x.state === 'unrecorded' ? `${r.text} · ${ENDED_UNRECORDED}` : r.text;
+    return { text, lane: r.lane, entry: r.entry, now: now0 };
+  });
+  const layout = branchLayout(log, (lane) => Boolean(byLane.get(lane) && byLane.get(lane).state === 'ended'));
+  return { id: 'chief-of-staff', label: 'Chief of Staff', status: cv.status, groups, logEntries: [], log, lanes: layout.lanes.map((l) => l.id), layout,
+    working: cv.working.length > 0, workingItem: null, upNext: [], cos: cv, sessionLines: true,
+    logWords: na || (none ? `No session recorded yet: ${none}.` : 'No session line recorded yet.') };
 }
 
 /**
@@ -1219,9 +1437,13 @@ export function workingNow(project, model, snap, j, id, page, now, tz) {
   const items = (model && model.items) || [];
   const it = items.find((i) => i.state === 'dispatched' && i.running && i.running.role === id);
   const dash = (why) => ({ value: '–', why });
+  if (id === 'chief-of-staff') {
+    const cv = page && page.cos ? page.cos : cosView(snap, now, tz);
+    if (cv.piece) return cosWorkingNow(cv.cs, cv.piece, now, tz);
+  }
   if (id === 'chief-of-staff' || !it) {
-    const nr = "not recorded: its sessions aren't logged yet";
-    return { doing: id === 'chief-of-staff' ? 'Chief of Staff' : `${label(id)}: not working now`,
+    const nr = id === 'chief-of-staff' ? `${NOT_RECORDED}: no piece of its work is under way` : NOT_RECORDED;
+    return { doing: `${label(id)}: not working now`,
       tiles: [{ label: 'Started', ...dash(nr) }, { label: 'Time so far', ...dash(nr) }, { label: 'Last check-in', ...dash(NOT_RECORDED) }, { label: 'Next check-in', ...dash(NOT_RECORDED) }],
       lines: [{ label: 'Update', value: '–', why: NOT_RECORDED }, { label: 'Next', value: '–', why: NOT_RECORDED }, { label: 'Cost', value: '–', why: nr }] };
   }
@@ -1246,11 +1468,63 @@ export function workingNow(project, model, snap, j, id, page, now, tz) {
   };
 }
 
+export const COS_COST_NR = "not recorded: the Chief of Staff can't read its own cost";
+
+/**
+ * The Working now sheet for a piece of the Chief of Staff's work (AC49, J13), from its lines:
+ * Doing, Started, Time so far, Last check-in, Next check-in, Update, Next and Cost.
+ */
+export function cosWorkingNow(cs, piece, now, tz) {
+  const dash = (why) => ({ value: '–', why });
+  const nowMs = now.getTime();
+  const file = cs.pieces.filter((x) => x.path === piece.path);
+  const times = [...file.flatMap((x) => [x.start.at, ...x.helpers.map((hl) => hl.at), ...(x.end ? [x.end.at] : [])]),
+    ...cs.orphans.filter((o) => o.path === piece.path).map((o) => o.line.at), ...cs.looseHelpers.filter((o) => o.path === piece.path).map((o) => o.line.at)].filter(Number.isFinite);
+  const lastAt = times.length ? Math.max(...times) : null;
+  const helper = [...piece.helpers].filter((hl) => Number.isFinite(hl.at)).sort((a, b) => a.at - b.at).pop() || null;
+  const since = piece.start.at;
+  const cost = piece.end && piece.end.usage && typeof piece.end.usage.cost_usd_estimate === 'number'
+    ? { value: costText(piece.end.usage.cost_usd_estimate), why: "from its end line's usage" } : dash(COS_COST_NR);
+  return {
+    doing: `Chief of Staff: ${piece.start.doing}`,
+    tiles: [
+      { label: 'Started', value: whenText(new Date(since), now, tz), why: null },
+      { label: 'Time so far', ...(nowMs - since < 0 ? dash("not available: the start is later than this device's clock") : { value: durationText(nowMs - since), why: 'counted from the start', since }) },
+      { label: 'Last check-in', ...(lastAt != null ? { value: whenText(new Date(lastAt), now, tz), why: "the latest time among the session's lines" } : dash(NOT_RECORDED)) },
+      { label: 'Next check-in', ...dash('the Chief of Staff runs on no schedule') },
+    ],
+    lines: [
+      { label: 'Update', value: helper ? helperWords(helper, now, tz) : '–', why: helper ? null : 'no helper recorded yet' },
+      { label: 'Next', value: 'hands the work back to you', why: "a fixed statement of the model's rule (S-033 AC6: an end line when it hands the work back), not a record" },
+      { label: 'Cost', ...cost },
+    ],
+  };
+}
+
+/** An end line's usage figures for its summary sheet (AC49, J13): each as AC23 shows it, `null` "not recorded". */
+export function cosUsageLines(u) {
+  const f = (k) => (u && typeof u[k] === 'number' ? u[k].toLocaleString('en-US') : NOT_RECORDED);
+  return [
+    `Tokens: input ${f('input_tokens')}, output ${f('output_tokens')}, cache read ${f('cache_read_input_tokens')}, cache write ${f('cache_creation_input_tokens')} · turns ${f('num_turns')}`,
+    `Run time: ${runTime(u && u.duration_ms)}`,
+    `Context peak: ${f('context_peak')}; window ${f('context_window')}; compaction threshold ${f('autocompact_threshold')}`,
+    `Would have stopped: ${u && typeof u.would_have_stopped === 'boolean' ? (u.would_have_stopped ? 'yes' : 'no') : NOT_RECORDED}`,
+    `Compactions: ${f('compactions')}`,
+    `Cost: ${u && typeof u.cost_usd_estimate === 'number' ? costText(u.cost_usd_estimate) : NOT_RECORDED}`,
+  ];
+}
+
 /** The summary sheet behind a log row (AC49): What happened, Why, For you; the standard summary only. */
 export function summarySheet(project, snap, row, q) {
   const tree = (snap && snap.tree) || new Map();
   const e = row.entry;
   const shape = e.shape;
+  // A session line's row (J13): its words and the line as written, linked to its file; Why and For you not recorded.
+  if (/^cos-/.test(shape)) {
+    const why = 'not recorded in the session line';
+    return { what: row.text, quote: e.line.raw, link: treeLink(project, tree, e.path), why, forYou: why,
+      figures: shape === 'cos-end' ? cosUsageLines(e.line.usage) : null };
+  }
   const quote = (() => {
     const o = { ...e };
     for (const k of ['shape', 'pos', 'month', 'line', 'label', 'retry', 'prev']) delete o[k];

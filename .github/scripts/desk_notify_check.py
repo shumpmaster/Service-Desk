@@ -16,7 +16,11 @@ each fault, when:
     permissions other than `{}`.
 Beyond Workflow 3's list, as the same rules' safer readings: desk-notify has one job, `notify`; its
 secrets appear only in the env of the step that runs the sender; it uses only checkout, setup-node
-and upload-artifact (so no artifact is downloaded); and no checkout names another repository.
+and upload-artifact (so no artifact is downloaded); and no checkout names another repository. After
+the Reviewer's security review: the gate's text, whitespace-normalised, is Workflow 3's gate or its
+"if neither carries it" fallback; the job's only run: step is exactly the sender's command; the
+upload step's `if:` is exactly the state-file test; no container, services, step shell or defaults;
+and no workflow- or job-level env holds a value from the event or the inputs.
 
   desk_notify_check.py [NOTIFY_YML READY_YML]
 
@@ -46,6 +50,21 @@ READY_TYPES = {"ready_for_review", "converted_to_draft", "closed"}
 ALLOWED_ACTIONS = {"actions/checkout", "actions/setup-node", "actions/upload-artifact"}
 DEFAULT_BRANCH_REF = "${{ github.event.repository.default_branch }}"
 SENDER = "src/notify/run.mjs"
+SEND_RUN = "node src/notify/run.mjs --project Service-Desk"
+UPLOAD_IF = "hashFiles('desk-notify-state/state.json') != ''"
+# The gate's text, whitespace-normalised, must be one of these: Workflow 3's gate, or its "if neither
+# carries it" fallback, which admits no workflow_run run at all. The evaluator below runs as well.
+GATE_FORMS = (
+    "vars.DESK_NOTIFY_ON == 'true' && (github.event_name != 'workflow_run' || "
+    "(github.event.workflow_run.head_repository.full_name == github.repository && "
+    "(github.event.action == 'completed' || github.event.workflow_run.name == 'desk-deploy') && "
+    "(github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'pull_request' || "
+    "github.event.workflow_run.event == 'workflow_dispatch' || github.event.workflow_run.event == 'schedule' || "
+    "(github.event.workflow_run.event == 'workflow_run' && "
+    "github.event.workflow_run.path == '.github/workflows/asks-merge.yml'))))",
+    "vars.DESK_NOTIFY_ON == 'true' && github.event_name != 'workflow_run'",
+)
+EVENT_EXPR = re.compile(r"\$\{\{[^}]*\b(?:github\.event|inputs)\b", re.IGNORECASE)
 PINNED = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[^@\s]+)?@[0-9a-f]{40}$")
 SECRETS_WORD = re.compile(r"\bsecrets\b", re.IGNORECASE)
 
@@ -660,7 +679,17 @@ def check_gate(expr, name="desk-notify.yml"):
     if beyond:
         out.append(("notify-gate-admits-more", f"{name}: the notify job's gate admits a triggering event beyond "
                                                "Workflow 3's"))
+    if not out and _gate_text(expr) not in GATE_FORMS:
+        # The evaluator tries a fixed set of values, so a clause naming a value it does not try (a fork
+        # by name, a branch, a conclusion) could pass it; the text must be Workflow 3's as well.
+        out.append(("notify-gate-text", f"{name}: the notify job's gate is not Workflow 3's gate, word for word"))
     return out
+
+
+def _gate_text(expr):
+    s = " ".join(str(expr).split())
+    m = re.match(r"^\$\{\{(.*)\}\}$", s)
+    return " ".join(m.group(1).split()) if m else s
 
 
 # ---------------------------------------------------------------------------------------------
@@ -796,6 +825,31 @@ def check_notify(text, name="desk-notify.yml"):
         out.append(("notify-job-concurrency", f"{name}: the notify job's concurrency (group desk-notify, "
                                               "cancel-in-progress false) is missing"))
     out += check_gate(job.get("if"), name)
+
+    # What runs, and how (the Reviewer's finding 3).
+    for scope, holder in (("the workflow", doc), ("the notify job", job)):
+        if "defaults" in holder:
+            out.append(("notify-shell", f"{name}: {scope} sets defaults (a run shell or directory)"))
+        env_block = holder.get("env")
+        if env_block is not None and any(EVENT_EXPR.search(str(v)) or EVENT_EXPR.search(str(k))
+                                         for k, v in (env_block.items() if isinstance(env_block, dict)
+                                                      else [("", env_block)])):
+            out.append(("notify-event-env", f"{name}: {scope}'s env holds a value from the event"))
+    for job_id, j in jobs.items():
+        if isinstance(j, dict) and ("container" in j or "services" in j):
+            out.append(("notify-container", f"{name}: job {job_id} runs a container or services"))
+        for step in _steps(j):
+            if "shell" in step:
+                out.append(("notify-shell", f"{name}: job {job_id} has a step with its own shell"))
+    run_steps = [st for st in _steps(job) if "run" in st]
+    # A run: holding `${{` already fails as run-expression, the more specific reason.
+    if (len(run_steps) != 1 or str(run_steps[0].get("run")).strip() != SEND_RUN) \
+            and not any("${{" in str(st.get("run")) for st in run_steps):
+        out.append(("notify-send-run", f"{name}: the notify job's only run: step is not exactly `{SEND_RUN}`"))
+    uploads = [st for st in _steps(job)
+               if isinstance(st.get("uses"), str) and st["uses"].split("@")[0].lower() == "actions/upload-artifact"]
+    if any(_norm(st.get("if")) != UPLOAD_IF for st in uploads):
+        out.append(("notify-upload-if", f"{name}: an upload step's `if:` is not exactly `{UPLOAD_IF}`"))
 
     # Actions used, and where secrets appear.
     for job_id, j in jobs.items():

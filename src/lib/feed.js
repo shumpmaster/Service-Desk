@@ -12,10 +12,10 @@
 
 import { DESK_PHASES, isAppliedDecision } from './timeline.js';
 import { NOT_RECORDED, NOT_AVAILABLE, deskWords, standardWord, treeLink, pullLink, commitLink, columnsOf, nowRule, runStateOf,
-  queueView } from './sandbox.js';
-import { entryShape, entryWords, parseWorkflowRuns, questionName } from './records.js';
-import { dayKey } from './timefmt.js';
-import { checksMark, prBodyParts, TOO_MANY_WORDS } from './pulls.js';
+  queueView, hasWorkFiled, reachedDateWords } from './sandbox.js';
+import { entryShape, entryWords, parseWorkflowRuns, questionName, firstMilestoneLine, milestoneValue, cardMilestoneLine } from './records.js';
+import { dayKey, zonedToUtc } from './timefmt.js';
+import { checksMark, prBodyParts, pullRead, TOO_MANY_WORDS } from './pulls.js';
 import { REVIEW_VERDICT_RE } from './j11.js';
 import { BOUNDARY_WORDS } from './model.js';
 
@@ -47,18 +47,23 @@ export function sprintList(ids) {
 // ---------------------------------------------------------------------------
 // The shared rules: runs, their states, and each milestone's mark (AC57's ordered rules, AC59's icons)
 
-/** The pieces every screen here needs from the model's timeline, once per project. */
-export function runsContext(project, snap, j, tl, pv) {
+/**
+ * The pieces every screen here needs from the model's timeline, once per project. `nowMs` and `tz`
+ * (the clock and ownerTimeZone) give a reached date its year only when it is not this year (AC50).
+ */
+export function runsContext(project, snap, j, tl, pv, nowMs, tz) {
   const cols = columnsOf(tl);
   const now = pv && pv.nowRun ? pv.nowRun : null;
   const rule = nowRule(tl);
   const state = new Map(cols.runs.map((r) => [r, runStateOf(r, cols.runs, now)]));
   let next = null;
   if (now && rule === 'open') {
-    next = [...now.project].sort((a, b) => a.lineno - b.lineno).find((m) => !m.dropped && !(now.sprints[m.id] || []).length) || null;
+    // A milestone marked reached counts as work filed (AC50, from 2026-10-17): never the next to reach.
+    next = [...now.project].sort((a, b) => a.lineno - b.lineno).find((m) => !m.dropped && !hasWorkFiled(now, m)) || null;
   }
   const doc = (j && j.projectDoc) || {};
-  return { project, snap, j, tl, pv, cols, now, rule, state, next, standard: doc.standard || {}, tree: (snap && snap.tree) || new Map() };
+  return { project, snap, j, tl, pv, cols, now, rule, state, next, standard: doc.standard || {}, tree: (snap && snap.tree) || new Map(),
+    nowMs: Number.isFinite(nowMs) ? nowMs : Date.now(), tz: tz || 'UTC' };
 }
 
 /** A run's words: "finished", "finished, then gone back over", "now", "still to come" or "not recorded". */
@@ -88,8 +93,18 @@ export function milestoneRule(ctx, run, kind, m) {
   }
   const sprints = run.sprints[m.id] || [];
   const filed = sprints.length > 0;
-  const words = m.dropped ? 'Dropped' : filed ? `Work filed: ${sprintList(sprints)}` : 'No work filed yet';
-  if (m.dropped) return { rule: 1, status: words, feed: 'dropped', soft: true };
+  if (m.dropped) return { rule: 1, status: 'Dropped', feed: 'dropped', soft: true };
+  // A line carrying ` · reached: <date>` (J11, model S-033 AC7; from 2026-10-17), and only such a
+  // line, says "reached", with its date, its sprints still listed (AC50, AC57, AC59). It is never the
+  // next to reach (AC50) and never "Still to come" (AC57's rule 3): rule 4 in a run gone back over,
+  // rule 5 everywhere else.
+  if (m.reached) {
+    const d = reachedDateWords(m.reached, ctx.nowMs, ctx.tz);
+    const status = `Reached ${d}${filed ? ` · work filed: ${sprintList(sprints)}` : ''}`;
+    if (st === 'gone back over') return { rule: 4, status, feed: `reached ${d} · gone back over`, soft: false, reached: d };
+    return { rule: 5, status, feed: `reached ${d}`, soft: false, reached: d };
+  }
+  const words = filed ? `Work filed: ${sprintList(sprints)}` : 'No work filed yet';
   if (ctx.next && run === ctx.now && m.id === ctx.next.id) return { rule: 2, status: `${words} · next to reach`, feed: 'next to reach', soft: false };
   if (st === 'still to come') return { rule: 3, status: words, feed: 'planned', soft: false };
   if (filed && st === 'gone back over') return { rule: 4, status: words, feed: 'work filed · gone back over', soft: false };
@@ -325,7 +340,9 @@ function pullsIndex(snap, model) {
   // AC60 shows "not available" with the reason, never what an earlier read kept as if it were current.
   const failed = Boolean(p && p.failure);
   const list = p && p.list && !failed ? p.list : null;
-  const by = new Map((list || []).map((x) => [x.number, x]));
+  // A merged entry without the job's yes or no has not been read by J12 (J12, 2026-10-17): it is
+  // shown as a listed pull request J12 lacks, and placed nowhere else.
+  const by = new Map((list || []).filter(pullRead).map((x) => [x.number, x]));
   let missing = null;
   if (!list) missing = failed ? p.failure : "the pull requests haven't been read yet";
   // An open one's title and body come from J1's open list on every poll (J12).
@@ -405,7 +422,11 @@ export function feedView(ctx, model, nowMs, tz) {
   for (const pr of pulls.list || []) {
     if (!pr.mergedAt) continue; // an open one is in the Queue (AC52); a closed one was never merged
     const sid = `PR #${pr.number}`;
-    if (listed.has(sid)) continue;
+    if (listed.has(sid)) continue; // the plan wins, a job's merge included (AC60)
+    // The asks-merge job's merges are never a sprint (AC60; the owner's answer "B. Off the Timeline
+    // (Recommended)"): not by their Milestone: line, not untied, and no part of a run's times (AC59).
+    // One J12 has not read is placed nowhere but under a plan line that lists it.
+    if (pr.job === true || !pullRead(pr)) continue;
     const ml = pr.parts && pr.parts.milestone;
     const run = placeByTime(t(pr.mergedAt));
     if (ml && ml.ids) {
@@ -512,7 +533,12 @@ export function feedView(ctx, model, nowMs, tz) {
       const sprints = (r.sprints[m.id] || []).map((sid) => sprintView(sid, r, m.id));
       const named2 = (named.get(m.id) || []).filter((e) => e.run === r).map((e) => sprintView(`PR #${e.pr.number}`, r, m.id));
       const row = msRow(ctx, r, 'own', m, x, sprints, named2);
-      if (!sprints.length) noWork.push(row);
+      // A milestone marked reached (J11, from 2026-10-17) is never planned (AC59). With no dated
+      // sprint it takes its reached date for its place, so it sits below Now (C); with a dated sprint
+      // it keeps its latest sprint's date, so marking it reached never moves it.
+      const reachedAt = m.reached ? reachedOrderMs(m.reached, tz) : null;
+      if (latestAt(sprints) == null && reachedAt != null) dated.push({ ...row, at: reachedAt });
+      else if (!sprints.length) noWork.push(row);
       else if (latestAt(sprints) == null) noDate.push(row);
       else dated.push({ ...row, at: latestAt(sprints) });
     }
@@ -601,6 +627,16 @@ export function feedView(ctx, model, nowMs, tz) {
   return { ok: true, top, bottom, blocks: order, notes, index, msIndex, iconsKey: FEED_ICONS_KEY, bulletsKey: ['Technical', 'Context', 'Why'] };
 }
 
+/**
+ * Where a reached date sits among the Timeline's dated rows (AC59, C): the start of that calendar day
+ * in the owner's zone, so a sprint merged later that day sorts above it. Only the order uses it: the
+ * words show the date as written (AC50).
+ */
+function reachedOrderMs(date, tz) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(date));
+  return m ? zonedToUtc(Number(m[1]), Number(m[2]), Number(m[3]), 0, 0, tz || 'UTC') : null;
+}
+
 const firstSentenceOf = (s) => {
   const m = /\.(?= |$)/.exec(s);
   return m ? s.slice(0, m.index + 1) : s;
@@ -627,9 +663,15 @@ function msRow(ctx, r, kind, m, x, sprints, named) {
 // ---------------------------------------------------------------------------
 // AC66: the Queue's "Unblocks", each milestone's why, and the Context fold
 
-/** A record's own `Milestone:` line and `Context` section, in AC61 (c)'s form (a question file or a card). */
-function ownParts(text) {
-  return prBodyParts(text);
+/**
+ * A record's own `Milestone:` line and `## Context` section, in AC61 (c)'s form (J2; model S-033 AC2
+ * and AC5, from 2026-10-17): for a question file, its first `Milestone:` line in column 0; for a
+ * card, the line directly under its `answer:` line; and for each, its Context section, from its
+ * heading to the next heading or the file's end (a card's stops before any `## 8.`).
+ */
+function ownParts(text, kind) {
+  const line = kind === 'card' ? cardMilestoneLine(text) : firstMilestoneLine(text);
+  return { milestone: milestoneValue(line), context: prBodyParts(text).context };
 }
 
 /** A milestone's plain name and why, by its code (AC66): a project milestone's (AC61 (a)) or a standard one's (AC61 (b)). */
@@ -661,12 +703,12 @@ function planMilestonesOf(ctx, sid) {
 export function unblocksOf(ctx, row) {
   const f = row.flag;
   let parts = null;
-  if (f.kind === 'question') parts = ownParts(f.question.parsed ? f.question.parsed.text : '');
-  else if (f.kind === 'card') parts = ownParts(f.card.parsed ? f.card.parsed.text : '');
+  if (f.kind === 'question') parts = ownParts(f.question.parsed ? f.question.parsed.text : '', 'question');
+  else if (f.kind === 'card') parts = ownParts(f.card.parsed ? f.card.parsed.text : '', 'card');
   else if (f.kind === 'pr') parts = f.pr.parts || prBodyParts('');
   const context = parts && parts.context && parts.context.length ? parts.context : null;
   const known = (ids) => ids.map((id) => milestoneInfo(ctx, id) || { code: id, name: null, why: null });
-  if ((f.kind === 'question' || f.kind === 'card') && parts && parts.milestone) {
+  if ((f.kind === 'question' || f.kind === 'card') && parts && parts.milestone && (parts.milestone.none || parts.milestone.ids.length)) {
     if (parts.milestone.none) return { none: parts.milestone.none, milestones: [], context };
     return { milestones: known(parts.milestone.ids), context };
   }
@@ -682,6 +724,45 @@ export function unblocksOf(ctx, row) {
   }
   return { missing: true, milestones: [], context };
 }
+
+/**
+ * Where a "Done today" row's sprint is on the Timeline (AC66), from the Timeline's model `feed` and
+ * the records as last read: { sprint } or { ms } to link to; { job: true } for a merge J12 marks as
+ * the asks-merge job's that no plan line lists ("not on the Timeline: merged by the automatic job");
+ * or null ("sprint: not recorded").
+ * - a card answered: its item, when the item is a sprint on the Timeline;
+ * - a pull request: its own sprint (AC60); a job's merge has none unless a plan line lists it, when
+ *   the plan wins and it links there (J12; the owner's answer "B. Off the Timeline (Recommended)");
+ * - a ruling (from 2026-10-17, model S-033's J1): the milestone named by its answer record's first
+ *   `Milestone:` line after line 1, so it still links once its question is tidied away; for an
+ *   answer with none, its question file's, while the tree holds that file (J2); otherwise none.
+ */
+export function doneTarget(feed, snap, kind, code) {
+  if (!feed || !feed.ok) return null;
+  const tree = (snap && snap.tree) || new Map();
+  const records = (snap && snap.records) || new Map();
+  if (kind === 'card' || kind === 'pr') {
+    const sprint = kind === 'card' ? String(code).split(' ')[0] : String(code);
+    if (feed.index.has(sprint)) return { sprint };
+    const n = kind === 'pr' && /^PR #\d+$/.test(sprint) ? Number(sprint.slice(4)) : null;
+    const kept = n != null && snap && snap.pulls && snap.pulls.list && !snap.pulls.failure ? snap.pulls.list.find((x) => x.number === n) : null;
+    return kept && kept.mergedAt && kept.job === true ? { job: true } : null;
+  }
+  if (kind === 'ruling') {
+    const ans = tree.has(`decisions/questions/${code}.md`) ? records.get(`decisions/questions/${code}.md`) : null;
+    let line = ans && ans.milestone ? ans.milestone : null;
+    if (!line) {
+      const qp = `questions/${code}.md`;
+      const q = tree.has(qp) ? records.get(qp) : null;
+      line = q && q.text ? firstMilestoneLine(q.text) : null;
+    }
+    const v = milestoneValue(line);
+    const id = v && v.ids ? v.ids.find((x) => feed.msIndex.has(x)) : null;
+    return id ? { ms: id } : null;
+  }
+  return null;
+}
+export const JOB_MERGE_WORDS = 'not on the Timeline: merged by the automatic job';
 
 /** AC66's neutral group marks; a group holding anything that waits on the owner shows the coral diamond instead. */
 export const GROUP_MARK = { decisions: '◇', gates: '▲', verdicts: '✎', merges: '⇄', deploys: '▸' };
@@ -711,10 +792,15 @@ export function itemFeeds(ctx, item) {
  * entry, with its date; the milestone that item feeds as a sprint, from the plan's lists; and, when
  * it is a sprint on the Timeline, where.
  */
-export function memberWork(ctx, feed, rows, id, tz) {
+export function memberWork(ctx, feed, rows, id, tz, helper = null) {
   let e = null;
   if (id === 'orchestrator') e = [...rows].reverse().find((x) => Object.prototype.hasOwnProperty.call(x, 'route') || x.shape === 'decision') || null;
   else e = [...rows].reverse().find((x) => x.shape === 'outcome' && x.role === id) || null;
+  // A helper line naming the member, later than its latest outcome entry, is its last work (J13, AC67;
+  // from 2026-10-17): it names no item, so "feeds: not recorded" and no link.
+  if (helper && Number.isFinite(helper.at) && (!e || helper.at > t(e.time))) {
+    return { last: `last: a helper session for the Chief of Staff, ${dayWords(helper.at, tz)}`, item: null, feeds: null, link: null, helper: true };
+  }
   if (!e) return { last: 'not recorded in what the desk reads', feeds: null, link: null };
   const at = t(e.time);
   const last = `last: ${headlineWords(e) || NOT_RECORDED}${Number.isFinite(at) ? `, ${dayWords(at, tz)}` : ''}`;

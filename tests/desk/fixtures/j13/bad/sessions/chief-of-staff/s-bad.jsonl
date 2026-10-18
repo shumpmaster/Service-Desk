@@ -1,0 +1,33 @@
+{"event": "start", "session": "s-bad", "time": "2026-10-17T09:00:00Z", "doing": "A piece in a file with out-of-form lines"}
+not json
+{"event": "start", "session": "s-bad", "time": NaN, "doing": "x"}
+{"session": "s-bad", "time": "2026-10-17T09:01:00Z", "doing": "no event"}
+{"event": 5, "session": "s-bad", "time": "2026-10-17T09:02:00Z", "doing": "x"}
+{"event": "pause", "session": "s-bad", "time": "2026-10-17T09:03:00Z"}
+{"event": "start", "session": "s-bad", "time": "2026-10-17T09:04:00Z"}
+{"event": "start", "session": "s-bad", "time": "2026-10-17T09:05:00Z", "doing": "x", "note": "extra"}
+{"event": "start", "session": 7, "time": "2026-10-17T09:06:00Z", "doing": "x"}
+{"event": "start", "session": "other", "time": "2026-10-17T09:07:00Z", "doing": "x"}
+{"event": "start", "session": "s-bad", "time": "2026-10-17T09:08:00Z", "doing": "   "}
+{"event": "helper", "session": "s-bad", "role": "", "started": "2026-10-17T09:09:00Z", "ended": "2026-10-17T09:10:00Z", "reported": {"tokens": null, "tool_uses": null, "duration_ms": null}}
+{"event": "start", "session": "s-bad", "time": "2026-10-17 09:11:00", "doing": "x"}
+{"event": "start", "session": "s-bad", "time": "2026-02-30T09:12:00Z", "doing": "x"}
+{"event": "helper", "session": "s-bad", "role": "definer", "started": "2026-10-17T09:13:00Z", "ended": "2026-10-17T09:14:00Z", "reported": []}
+{"event": "helper", "session": "s-bad", "role": "definer", "started": "2026-10-17T09:15:00Z", "ended": "2026-10-17T09:16:00Z", "reported": {"tokens": 1, "tool_uses": 1}}
+{"event": "helper", "session": "s-bad", "role": "definer", "started": "2026-10-17T09:17:00Z", "ended": "2026-10-17T09:18:00Z", "reported": {"tokens": 1, "tool_uses": 1, "duration_ms": 1, "cost": 2}}
+{"event": "helper", "session": "s-bad", "role": "definer", "started": "2026-10-17T09:19:00Z", "ended": "2026-10-17T09:20:00Z", "reported": {"tokens": true, "tool_uses": null, "duration_ms": null}}
+{"event": "helper", "session": "s-bad", "role": "definer", "started": "2026-10-17T09:21:00Z", "ended": "2026-10-17T09:22:00Z", "reported": {"tokens": -1, "tool_uses": null, "duration_ms": null}}
+{"event": "helper", "session": "s-bad", "role": "definer", "started": "2026-10-17T09:24:00Z", "ended": "2026-10-17T09:23:00Z", "reported": {"tokens": null, "tool_uses": null, "duration_ms": null}}
+{"event": "start", "session": "s-bad", "time": "2026-10-17T09:40:00Z", "doing": "first", "doing": "a repeated key"}
+{"event": "helper", "session": "s-bad", "role": "definer", "started": "2026-10-17T09:41:00Z", "ended": "2026-10-17T09:42:00Z", "reported": {"tokens": 1.0, "tool_uses": 2, "duration_ms": 60000}}
+{"event": "start", "session": "s-bad", "time": "2026-10-17T08:00:00Z", "doing": "A start earlier than the line before"}
+{"event": "end", "session": "s-bad", "time": "2026-10-17T09:50:00Z", "usage": {"input_tokens": null, "output_tokens": null, "cache_read_input_tokens": null, "cache_creation_input_tokens": null, "num_turns": null, "duration_ms": 600000, "context_window": null, "autocompact_threshold": null, "context_peak": null, "compactions": null, "derived": ["context_peak"], "would_have_stopped": null, "cost_usd_estimate": "a lot"}}
+{"event": "start", "session": "s-bad", "time": "2026-10-17T10:00:00Z", "doing": "A piece whose end line's usage is not an object"}
+{"event": "end", "session": "s-bad", "time": "2026-10-17T10:30:00Z", "usage": "none"}
+{"event": "constructor", "session": "s-bad"}
+{"event": "__proto__", "session": "s-bad"}
+{"event": "toString", "session": "s-bad"}
+{"event": "hasOwnProperty", "session": "s-bad"}
+{"event": "start", "session": "s-bad", "time": "2026-10-17T10:31:00Z", "doing": "\u001c"}
+{"event": "start", "session": "s-bad", "time": "2026-10-17T10:32:00Z", "doing": "\u0085"}
+{"event": "helper", "session": "s-bad", "role": "definer", "started": "2026-10-17T10:33:00.000005Z", "ended": "2026-10-17T10:33:00.000001Z", "reported": {"tokens": null, "tool_uses": null, "duration_ms": null}}

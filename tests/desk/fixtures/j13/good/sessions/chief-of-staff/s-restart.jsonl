@@ -1,0 +1,3 @@
+{"event": "start", "session": "s-restart", "time": "2026-10-17T06:00:00Z", "doing": "A first piece that never handed back"}
+{"event": "start", "session": "s-restart", "time": "2026-10-17T06:30:00Z", "doing": "A second piece"}
+{"event": "end", "session": "s-restart", "time": "2026-10-17T07:00:00Z", "usage": {"input_tokens": null, "output_tokens": null, "cache_read_input_tokens": null, "cache_creation_input_tokens": null, "num_turns": null, "duration_ms": 1800000, "context_window": null, "autocompact_threshold": null, "context_peak": null, "compactions": null, "derived": ["context_peak"], "would_have_stopped": null, "cost_usd_estimate": null}}

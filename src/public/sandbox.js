@@ -28,9 +28,8 @@ import {
 import { teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
 import { summaryView, latestText, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
 import { composeAnswer, numberedRuleLine, CANT_SPLIT, NO_RECOMMENDATION } from './lib/sandbox.js';
-import { prBodyParts } from './lib/pulls.js';
 import { runsContext, statusPhases, tilePhases, markerView, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, TEAM_KEY, itemFeeds,
-  stalledLine, deployRows, FEED_ICONS_KEY } from './lib/feed.js';
+  stalledLine, deployRows, FEED_ICONS_KEY, doneTarget, JOB_MERGE_WORDS } from './lib/feed.js';
 
 let CONFIG = DEFAULT_CONFIG; // J7; the tests pass their own (AC42's five projects)
 let TZ = CONFIG.ownerTimeZone;
@@ -427,7 +426,7 @@ function buildProject(desk, project, box, now) {
   const pv = phaseView(project, tl, snap.tree, j);
   const q = queueView(project, model, snap, now.getTime());
   noteDepartures(project.name, q);
-  const ctx = runsContext(project, snap, j, tl, pv);
+  const ctx = runsContext(project, snap, j, tl, pv, now.getTime(), TZ);
   let feed = null;
   return { project, box, model, snap, j, tl, pv, q, ctx, where: whereLine(project, model, tl, pv),
     ball: ballLines(project, model, snap, j, q, now, TZ), pill: pillView(box, q, now.getTime()),
@@ -1109,26 +1108,15 @@ function deployRow(p, d, check) {
           : [foldButton(name, k, false, { class: 'sb-fold soft' }, 'Why'), isOpenFold(name, k, false) ? h('p', { class: 'sb-meta' }, check.reason) : null]) : null);
 }
 
-const milestoneLineOf = (text) => prBodyParts(text).milestone;
-
 /** Where a "Done today" row's sprint is on the Timeline (AC66): a link there, or "sprint: not recorded" in slate. */
 function doneLink(p, kind, codeText) {
   const name = p.project.name;
   const fv = p.project.model === 'v3' ? p.feed() : null;
-  const none = h('span', { class: 'sb-meta gap' }, ' · sprint: not recorded');
-  if (!fv || !fv.ok) return none;
-  let sprint = null;
-  let ms = null;
-  if (kind === 'card') sprint = String(codeText).split(' ')[0];
-  else if (kind === 'pr') sprint = codeText;
-  else if (kind === 'ruling') {
-    const rec = p.snap && p.snap.records ? p.snap.records.get(`questions/${codeText}.md`) : null;
-    const ml = rec && rec.text ? milestoneLineOf(rec.text) : null;
-    if (ml && ml.ids && ml.ids.length && fv.msIndex.has(ml.ids[0])) ms = ml.ids[0];
-  }
-  if (sprint && fv.index.has(sprint)) return [' ', h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'sprint', sprint) }, 'On the Timeline')];
-  if (ms) return [' ', h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'ms', ms) }, 'On the Timeline')];
-  return none;
+  const at = doneTarget(fv, p.snap, kind, codeText);
+  if (at && at.sprint) return [' ', h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'sprint', at.sprint) }, 'On the Timeline')];
+  if (at && at.ms) return [' ', h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'ms', at.ms) }, 'On the Timeline')];
+  if (at && at.job) return h('span', { class: 'sb-meta' }, ` · ${JOB_MERGE_WORDS}`);
+  return h('span', { class: 'sb-meta gap' }, ' · sprint: not recorded');
 }
 
 function renderQueue(p, key) {
@@ -1230,7 +1218,7 @@ function textBox(p, row, target, startText, onOpened) {
       render();
     } });
   ta.value = draft.text;
-  const r = target.numbered ? numberedRuleLine(draft.text, target.numbered, target.joined) : ruleLine(target.form, draft.text, target);
+  const r = target.numbered ? numberedRuleLine(draft.text, target.numbered, target.joined, target.milestone || null) : ruleLine(target.form, draft.text, target);
   const rebuild = draft.edited && draft.text !== startText
     ? h('button', { type: 'button', class: 'sb-btn ghost small', key: `rebuild:${key}`, onclick: () => { draft.edited = false; render(); } }, 'Rebuild from my answers') : null;
   const plan = boxPlan(p.project, CONFIG.linkCap, target, draft.text);
@@ -1298,7 +1286,7 @@ function answerBoxes(p, row, v, opened) {
         wordsBox(key, q.n, answers, set, isCard && v.gateCard && (a.choice === 'hold' || a.choice === 'recycle') ? 'Your reason (it goes on the Reason: line)' : 'Your own words')));
     });
   }
-  const composed = composeAnswer(isCard ? { kind: 'card', gateCard: v.gateCard } : { kind: 'question', name: v.box.name, qs }, answers);
+  const composed = composeAnswer(isCard ? { kind: 'card', gateCard: v.gateCard } : { kind: 'question', name: v.box.name, qs, milestone: v.box.milestone || null }, answers);
   const target = qs && qs.form === 'numbered' ? { ...box, numbered: qs, joined: composed.joined } : box;
   out.push(h('div', { class: 'sb-sec sb-final', key: 'final' }, h('h3', {}, isCard ? 'The answer file' : 'The ruling file'),
     h('p', { class: 'sb-muted small' }, 'Filled in from your answers above; you can edit it before you commit.'),
@@ -1578,18 +1566,21 @@ function renderTeam(p, member, sub, idx) {
   body.push(h('p', { class: 'sb-keyl sb-tkey' }, TEAM_KEY.map(([k, w]) => h('span', { class: 'sb-keye' }, ic(k), w))));
   const rows = tv.rows || [];
   body.push(h('div', { class: 'sb-tiles' }, tv.members.map((m) => {
-    const v3 = p.project.model === 'v3' && m.id !== 'chief-of-staff';
-    const work = v3 ? memberWork(p.ctx, fv, rows, m.id, TZ) : null;
+    const isCos = m.id === 'chief-of-staff';
+    const v3 = p.project.model === 'v3' && !isCos;
+    const work = v3 ? memberWork(p.ctx, fv, rows, m.id, TZ, m.helper || null) : null;
     const item = m.status === 'Working' ? m.item : work ? work.item : null;
-    const last = m.id === 'chief-of-staff' ? NOT_RECORDED : m.status === 'Working' ? m.last : work ? work.last : m.last;
+    // The Chief of Staff's card (AC67, J13): "last: <doing>, <date>" from its session lines, which name no item or sprint.
+    const last = isCos ? (m.card || NOT_RECORDED) : m.status === 'Working' ? m.last : work ? work.last : m.last;
     const feeds = v3 && item ? { feeds: itemFeeds(p.ctx, item) } : null;
+    const noFeeds = (isCos && p.project.model === 'v3') || (work && work.helper && m.status !== 'Working');
     const place = item && fv && fv.ok ? fv.index.get(item) : null;
     return h('div', { class: 'sb-tile', key: `tile:${m.id}`, 'data-member': m.id },
       h('a', { class: 'sb-tile-n', href: go('p', name, 'team', m.id) }, ic(memberIcon(m.status)), h('strong', {}, m.label)),
       h('span', { class: 'sb-tile-st' }, m.status),
       h('span', { class: 'sb-muted small' }, last),
       feeds ? (feeds.feeds ? h('span', { class: 'sb-feeds' }, 'feeds ', h('b', {}, feeds.feeds.code), ` · ${feeds.feeds.name}`)
-        : h('span', { class: 'sb-feeds gap' }, 'feeds: not tied to a milestone')) : null,
+        : h('span', { class: 'sb-feeds gap' }, 'feeds: not tied to a milestone')) : noFeeds ? h('span', { class: 'sb-feeds gap' }, 'feeds: not recorded') : null,
       place ? h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'sprint', item) }, 'On the Timeline ›') : null);
   })));
   return h('section', { class: 'sb-screen' }, body, bottomBar(name, 'team', p.q.waiting));
@@ -1607,7 +1598,7 @@ function renderMember(p, tv, id, sub, idx, now) {
     g.items && g.items.length ? h('ul', { class: 'sb-qlist' }, g.items.map((it) => h('li', {}, it.link ? ext(it.link, it.text) : it.text))) : h('p', { class: 'sb-muted small' }, g.why || 'None.')))));
   body.push(h('h2', { class: 'sb-h2' }, 'Running log'));
   if (page.upNext.length) body.push(h('div', { class: 'sb-upnext' }, h('p', { class: 'sb-eyebrow' }, 'Up next (from the records)'), h('ul', {}, page.upNext.map((u) => h('li', {}, u)))));
-  if (!page.log.length) body.push(h('p', { class: 'sb-muted' }, page.logWords));
+  if (!page.log.length) body.push(h('p', { class: `sb-muted${page.sessionLines ? ' sb-logw' : ''}` }, page.logWords));
   else body.push(branchLog(p, page));
   const out = [h('section', { class: 'sb-screen' }, body, bottomBar(name, 'team', p.q.waiting))];
   if (sub === 'now') {
@@ -1736,6 +1727,7 @@ function summaryNode(p, id, sm) {
   const back = go('p', p.project.name, 'team', id);
   return sheetFrame(back, 'Summary', [
     h('div', { class: 'sb-sec' }, h('h3', {}, 'What happened'), h('p', {}, sm.what), sm.quote ? h('pre', { class: 'sb-quote' }, sm.quote) : null,
+      sm.figures ? h('ul', { class: 'sb-kv sb-figs' }, sm.figures.map((f) => h('li', {}, f))) : null,
       h('p', { class: 'small' }, sm.link ? ext(sm.link, 'From the record') : 'no file recorded')),
     h('div', { class: 'sb-sec' }, h('h3', {}, 'Why'), h('p', {}, sm.why)),
     h('div', { class: 'sb-sec' }, h('h3', {}, 'For you'), h('p', {}, sm.forYou)),

@@ -6,11 +6,12 @@ import {
   parseCardPath, parseAnswerPath, questionName, questionAnswerName, classifyQueuePath,
   STATUS_RE, LOG_RE, ROUTING_PATH, LEDGER_PATH, isSprintPath, HOLD_RE, MERGES_PATH, OUTCOMES_PATH,
   parseMergeCardPath, parseHoldCard, parseMergeCard, parseMerges,
-  parseCard, parseAnswer, parseRuling, parseOutcomes, parseQuestion, parseStatus, parseRouting, parseLog, parseSprint,
+  parseCard, parseAnswer, parseRuling, firstMilestoneLine, parseOutcomes, parseQuestion, parseStatus, parseRouting, parseLog, parseSprint,
   parseLedger, parsePulls, classifyPull, parseWorkflowRuns, reduceWorkflowRuns, entryWords, markRetries,
   stageName, timeLimitMinutes,
 } from './records.js';
 import { whenText, durationText } from './timefmt.js';
+import { SESSION_PATH_RE, parseSessionFile } from './cos.js';
 import { j11Kind, parseJ11, PROJECT_DOC_PATH, SURFACES_PATH, ORCH_WORKFLOW_PATH, SPEC_PATH_RE, REQUEST_PATH_RE,
   GATE_PHASE, README_PATH, REVIEW_VERDICT_RE } from './j11.js';
 import { cardRows, questionRows, cardSummary, v5Waits, sessionRows, timelines, V25_NO_CARDS, V25_ANSWERED } from './asked.js';
@@ -56,6 +57,7 @@ export function recordKind(path, model) {
     if (questionAnswerName(path)) return 'ruling';
     const j = j11Kind(path); // J11 (MD sandbox): read only when the sandbox asks (neededReads' ctx.j11)
     if (j) return j;
+    if (SESSION_PATH_RE.test(path)) return 'cos-session'; // J13 (MD sandbox): the Chief of Staff's session lines
   } else {
     if (path === LEDGER_PATH) return 'ledger';
     if (isSprintPath(path)) return 'sprint';
@@ -83,11 +85,14 @@ export function parseRecord(kind, text, path) {
     case 'ruling': {
       // line1 and line2Proxy: the owner's "Your last action" and "Done today" (AC52, AC55, MD sandbox).
       const ls = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n');
-      return { ruling: parseRuling(text), proxy: /^Proxy:/m.test(String(text)), line1: ls[0] || '', line2Proxy: /^Proxy:/.test(ls[1] || '') };
+      // milestone (J2, AC66; model S-033's J1, from 2026-10-17): the first column-0 `Milestone:` line after line 1, or null.
+      return { ruling: parseRuling(text), proxy: /^Proxy:/m.test(String(text)), line1: ls[0] || '', line2Proxy: /^Proxy:/.test(ls[1] || ''),
+        milestone: firstMilestoneLine(text, true) };
     }
     case 'question': return { text, ...parseQuestion(text, (questionName(path) || path)) };
     case 'ledger': return parseLedger(text);
     case 'sprint': return parseSprint(text);
+    case 'cos-session': return parseSessionFile(text, path);
     case 'project-doc': case 'surfaces': case 'orch-workflow': case 'spec': case 'request': case 'gate-case': case 'readme-root': case 'review-verdict':
       return parseJ11(kind, text, path);
     default: return null;
@@ -281,6 +286,8 @@ export function neededReads(project, tree, records, now, ctx = {}) {
       // names starting `_` and README.md not read) and AC70's reasons (the answer record each boundary
       // decision line names: the gate word that sent the work back).
       for (const path of [...tree.keys()].sort()) if (REVIEW_VERDICT_RE.test(path)) opt(path);
+      // J13 (2026-10-17): each of the Chief of Staff's session files, a small blob read once per sha.
+      for (const path of [...tree.keys()].sort()) if (SESSION_PATH_RE.test(path)) opt(path);
       for (const path of [...tree.keys()].filter((x) => LOG_RE.test(x)).sort()) {
         const log = records.get(path);
         for (const row of (log && log.rows) || []) {

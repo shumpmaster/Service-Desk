@@ -1,0 +1,3 @@
+exit 0
+NOTE: 9 session file(s) in sessions/chief-of-staff/
+OK: the Chief of Staff's session lines are in their form

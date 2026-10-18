@@ -15,6 +15,10 @@ export default {
     "to": "22:00"
   },
   "linkCap": 6000,
+  "push": {
+    "vapidPublicKey": "BB_bmBhW2WPgp57cIjHbtz2e0ZoNe63DWr058d10YFwB8S_x4raE5UlWSgWn2yEAKTBc9Jl22jqyNk_sG9mC4Oc",
+    "deskUrl": "https://service-desk-preview.pages.dev"
+  },
   "projects": [
     {
       "name": "Service-Desk",

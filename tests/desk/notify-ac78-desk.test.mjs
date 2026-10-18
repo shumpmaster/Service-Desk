@@ -16,7 +16,7 @@ import { createDesk } from '../../src/lib/scheduler.js';
 import { createStore } from '../../src/lib/store.js';
 import { usageView, USAGE_WORDS } from '../../src/lib/notifyview.js';
 import { whenText } from '../../src/lib/timefmt.js';
-import { makeKey, signJwt, goodClaims, certsRoute, request, fakeFetch, ENV, NOW, fakeClock, fixture, CONFIG } from './helpers.mjs';
+import { makeKey, signJwt, goodClaims, certsRoute, request, fakeFetch, ENV, NOW, fakeClock, fixture, CONFIG, withUsage } from './helpers.mjs';
 import { repo, fakeServer } from './fake-desk.mjs';
 import { loadApp, findAll } from './page-harness.mjs';
 
@@ -159,7 +159,7 @@ test('J21: the function reads with GITHUB_BILLING_TOKEN, never the read token, a
   const refused = await usageCall(env, billing({ statuses: { summary: 401, usage: 401 } }));
   assert.equal(JSON.parse(refused.text).usage.state, 'refused');
   const off = billing();
-  const notRep = await usageCall(env, off, { ...CONFIG, actionsUsage: { ...CFG, reported: false } });
+  const notRep = await usageCall(env, off, withUsage(CONFIG, { ...CFG, reported: false }));
   assert.equal(JSON.parse(notRep.text).usage.state, 'not-reported');
   assert.equal(off.calls.length, 0, 'no read while reported is false');
 });
@@ -210,8 +210,8 @@ test('AC78, J21: the page reads once at an opening, at most once an hour while i
   assert.equal(usageCalls(server).length, 4, 'afresh at a second opening within the hour: nothing kept across openings');
   desk.stop();
   // With reported: false, none is made.
-  const s2 = fakeServer(world(), { ...CONFIG, actionsUsage: { ...CFG, reported: false } }, clock);
-  const d2 = createDesk({ config: { ...CONFIG, actionsUsage: { ...CFG, reported: false } }, call: s2.call, clock, store: createStore(null), isVisible: () => true });
+  const s2 = fakeServer(world(), withUsage(CONFIG, { ...CFG, reported: false }), clock);
+  const d2 = createDesk({ config: withUsage(CONFIG, { ...CFG, reported: false }), call: s2.call, clock, store: createStore(null), isVisible: () => true });
   d2.start();
   await clock.runUntil(OCT2 + 70 * 60_000);
   assert.equal(usageCalls(s2).length, 0);

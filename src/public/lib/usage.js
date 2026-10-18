@@ -5,6 +5,17 @@
 // and in Node alike. It never returns or logs the token.
 
 export const USAGE_API = 'https://api.github.com';
+
+/**
+ * J7's `actionsUsage` (draft 9, build review round 1, Sec 5): it sits in the entry of the one project
+ * whose sender reads the account's use (Service-Desk). The page shows its one account-wide line from
+ * it. Returns { project, cfg } (cfg as written, unchecked), or null when no entry, or more than one,
+ * holds it (the build fails on the second; configcheck.js).
+ */
+export function usageEntry(config) {
+  const ps = config && Array.isArray(config.projects) ? config.projects.filter((p) => p && p.actionsUsage !== undefined) : [];
+  return ps.length === 1 ? { project: ps[0].name, cfg: ps[0].actionsUsage } : null;
+}
 export const REPOS_MAX_PAGES = 3;
 export const LINUX_PRICE = 0.006; // GitHub's price for standard Linux 2-core runners from 2026-01-01 (Q-015 F4.1, F4.2)
 export const STATES = ['ok', 'not-configured', 'refused', 'not-found', 'unavailable', 'not-reported'];

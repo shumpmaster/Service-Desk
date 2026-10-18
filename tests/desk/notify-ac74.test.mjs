@@ -74,6 +74,17 @@ test('AC74: a pull request, a deploy, and an outside author\'s pull request with
   r = await h.run();
   assert.equal(r.payloads[0].notification.body, 'Waits on you: a deploy to approve: deploy 1234567');
   assert.equal(r.payloads[0].notification.navigate, `${D}/?open=${encodeURIComponent('Service-Desk|deploy|9001')}`);
+  // Draft 9 (build review round 1, Sec 8): a waiting run from another repository (a fork's) puts no
+  // title on the lock screen: its kind's words alone, as for an outside author's pull request.
+  h.world.waiting.push({ id: 9002, status: 'waiting', display_title: 'Words a fork author chose', head_repository: { full_name: 'someone/Service-Desk' } });
+  r = await h.run();
+  assert.deepEqual(r.payloads.map((p) => p.notification.body), ['Waits on you: a deploy to approve']);
+  assert.ok(!JSON.stringify(r.payloads).includes('fork author'));
+  assert.equal(r.payloads[0].notification.navigate, `${D}/?open=${encodeURIComponent('Service-Desk|deploy|9002')}`);
+  // A run whose head repository GitHub doesn't give: no title either.
+  h.world.waiting.push({ id: 9003, status: 'waiting', display_title: 'Unknown origin', head_repository: null });
+  r = await h.run();
+  assert.deepEqual(r.payloads.map((p) => p.notification.body), ['Waits on you: a deploy to approve']);
 });
 
 test('AC74: no push for one that stopped waiting, for a held question, or for a job candidate; a key that stops and starts again is sent again', async () => {

@@ -12,6 +12,7 @@
 //   renderer. Nothing loads from another origin (the CSP is unchanged).
 
 import DEFAULT_CONFIG from './lib/config.js';
+import { usageEntry } from './lib/usage.js';
 import { createDesk, callFunction, errorText } from './lib/scheduler.js';
 import { createStore } from './lib/store.js';
 import { safeBox, orderBoxes, screenState, boxStateText } from './lib/universe.js';
@@ -790,7 +791,8 @@ function notifyNode(compact) {
   return h('div', { class: `sb-notify n-${state}`, key: `notify:${k}` }, kids);
 }
 function usageNode() {
-  const v = usageView({ cfg: CONFIG.actionsUsage, reads: DESK ? DESK.usage : null, nowMs: Date.now(), tz: TZ, whenText });
+  const v = usageView({ cfg: (usageEntry(CONFIG) || {}).cfg, // AC78: J7's actionsUsage, from the entry holding it (draft 9)
+    reads: DESK ? DESK.usage : null, nowMs: Date.now(), tz: TZ, whenText });
   const kids = [h('h3', { class: 'sb-h3' }, USAGE_TITLE)];
   if (v.state !== 'ok') kids.push(h('p', { class: 'small usage-words' }, v.words));
   else {

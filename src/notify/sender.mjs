@@ -173,7 +173,7 @@ export async function runSender(o) {
           mint();
           continue;
         }
-        if (r.kind === 'too-large' && !recut) {
+        if (r.kind === 'too-large' && !recut && !quiet) { // AC78's cost push is tried once, with no re-send
           recut = true;
           text = payload({ title: words.title, body: cut(body, BODY_CUT_413), navigate, tag: topic });
           continue;
@@ -211,7 +211,9 @@ export async function runSender(o) {
 
     // Usage (AC78): read about hourly, before the bootstrap summary that may name it.
     let usagePart = prev.usage ? openPart(S.stateKey, 'usage', prev.usage) : null;
-    const us = await usageStep({ config, token: S.billingToken, fetch: o.fetch, nowMs: o.now(), part: usagePart,
+    // Only the sender of the project whose J7 entry holds `actionsUsage` reads usage (J21, Workflow 3's
+    // sender only; draft 9, Sec 5), whatever secrets are set.
+    const us = await usageStep({ config, project, token: S.billingToken, fetch: o.fetch, nowMs: o.now(), part: usagePart,
       bootstrap, apiBase: o.billingApiBase });
     usagePart = us.part;
 
@@ -226,7 +228,7 @@ export async function runSender(o) {
         const h = keyHash(S.stateKey, item.key);
         const e = prev.keys[h];
         if (!bootstrap && e && (e.sent || e.gaveUp)) next.keys[h] = e;
-        else if (!bootstrap && e && e.unsent && ['later', 'other'].includes(e.fail) && t0 - Date.parse(e.unsent) >= GIVE_UP_MS) {
+        else if (!bootstrap && e && e.unsent && ['later', 'other'].includes(e.fail) && t0 - Date.parse(e.retrySince || e.unsent) >= GIVE_UP_MS) {
           next.keys[h] = { gaveUp: nowIso };
           gaveUpNow++;
         } else {
@@ -235,8 +237,19 @@ export async function runSender(o) {
         }
       }
     }
+    // "Unsent since" keeps its first time; the 6-hour give-up clock (AC76), `retrySince`, runs only
+    // through "try later" and unnamed answers: it starts at the first such failure, never at a time the
+    // item was kept unsent because the subscription was gone or the sender refused (draft 9, Sec 2).
+    const retried = (f) => f === 'later' || f === 'other';
     const markUnsent = (list, fail) => {
-      for (const x of list) next.keys[x.h] = { unsent: (x.e && x.e.unsent) || nowIso, fail };
+      for (const x of list) {
+        const unsent = (x.e && x.e.unsent) || nowIso;
+        if (!retried(fail)) next.keys[x.h] = { unsent, fail };
+        else {
+          const since = x.e && x.e.unsent && retried(x.e.fail) ? (x.e.retrySince || x.e.unsent) : nowIso;
+          next.keys[x.h] = { unsent, fail, retrySince: since };
+        }
+      }
     };
     const failOf = (r) => (r.kind === 'gone' ? 'gone' : r.kind === 'refused' ? 'refused' : r.kind === 'later' ? 'later' : 'other');
     if (c.read && toSend.length) {
@@ -329,9 +342,9 @@ async function failTest({ o, gh, S, say }) {
 
 /** `test: usage` (Workflow 3, EXP-006 case 11): one J21 read; statuses and whether fields came, never a figure or a name. */
 async function usageTest({ o, S, say }) {
-  const cfg = usageConfig(o.config);
+  const cfg = usageConfig(o.config, o.project);
   if (!cfg) {
-    say('test usage: actionsUsage is not set up in src/config/projects.json');
+    say("test usage: this project's entry in src/config/projects.json holds no actionsUsage in form, so its sender reads no usage");
     return 0;
   }
   if (!S.billingToken) {

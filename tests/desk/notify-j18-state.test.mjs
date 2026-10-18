@@ -227,13 +227,14 @@ test('J18 (draft 7): `recorded` kept across runs with its first time, dropped wh
   h.world.files[120] = ANSWERING;
   let r = await h.run();
   const qh = keyHash(h.stateKey, 'Service-Desk|question|questions/N-r.md');
-  const first = h.state(r).recorded[qh];
+  const first = h.state(r).recorded[qh].seen;
   assert.ok(first, 'seen being recorded');
   assert.deepEqual(Object.keys(h.state(r).recorded), [qh], 'only that question');
   r = await h.run();
-  assert.equal(h.state(r).recorded[qh], first, 'kept, with when a run first saw it');
-  // The pull request closes unmerged: the entry stays, so the question waits at once.
+  assert.equal(h.state(r).recorded[qh].seen, first, 'kept, with when a run first saw it');
+  // The pull request closes unmerged (read by number, draft 9): the entry stays, so the question waits at once.
   h.world.pulls = [];
+  h.world.prs = { 120: { ...pull(120), state: 'closed', closed_at: '2026-10-18T12:20:00Z', merged_at: null } };
   r = await h.run();
   assert.equal(h.state(r).recorded[qh], first);
   assert.deepEqual(r.payloads.map((p) => p.notification.body), ['Waits on you: a question: Made-up N-r']);

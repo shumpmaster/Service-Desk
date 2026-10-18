@@ -109,7 +109,8 @@ export function waitingSet(input) {
     add(w.kind, w.id, w.what);
   }
   if (project.deploysNeedOwner === true) {
-    for (const d of input.deploys || []) add('deploy', d.id, d.title || 'a deploy');
+    // A run with no title, or one from outside the repository (its title is not used), reads in its kind's words alone.
+    for (const d of input.deploys || []) add('deploy', d.id, d.title || null, { untitled: !d.title });
   }
   out.sort((x, y) => (x.key < y.key ? -1 : x.key > y.key ? 1 : 0));
   return out;

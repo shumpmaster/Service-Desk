@@ -8,6 +8,7 @@ import { parseTree, parseHistory, parseCardPath, compareStatus, parsePulls, ques
 import { parseFilePages, splitChanges, recordedAnswers, closedCanEnd } from './prfiles.js';
 import { judgePulls, mergePulls, pullsBackoffMs, PULLS_KEY, OLD_PULLS_KEYS, PULLS_MAX_PAGES, PULLS_RATE_MS } from './pulls.js';
 import { dayKey } from './timefmt.js';
+import { usageEntry } from './usage.js';
 
 // J12 (2026-10-16): the pull-request read counts 5 of a blob call's budget of 25.
 export const PULLS_COST = 5;
@@ -321,7 +322,8 @@ export function createDesk(opts) {
     }
     const prs = singlesDue(st);
     const u = desk.usage;
-    const cfg = config.actionsUsage;
+    const ue = usageEntry(config);
+    const cfg = ue ? ue.cfg : null;
     const usage = Boolean(cfg && cfg.reported !== false && !u.asking && (u.at == null || u.forced || now - u.at >= USAGE_EVERY_MS));
     return { files: files.slice(0, FILES_PER_CALL), closed, prs, usage, any: files.length > 0 || Boolean(closed) || prs.length > 0 || usage };
   }

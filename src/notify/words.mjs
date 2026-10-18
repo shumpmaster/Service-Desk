@@ -26,6 +26,7 @@ export function itemWords(item, projectName, cutTo = BODY_CUT) {
   let body;
   if (item.kind === 'hold') body = `Waits on you: ${KINDS.hold}: ${HOLD_WHAT}`;
   else if (item.kind === 'pr' && item.outside) body = 'Waits on you: a pull request from someone outside the project';
+  else if (item.kind === 'deploy' && item.untitled) body = `Waits on you: ${KINDS.deploy}`;
   else body = `Waits on you: ${KINDS[item.kind]}: ${cut(clean(item.what) || 'untitled', cutTo)}`;
   return { title: projectName, body };
 }

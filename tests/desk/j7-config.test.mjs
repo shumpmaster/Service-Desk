@@ -80,13 +80,19 @@ test('AC15: package.json has no dependency block or lifecycle script, wrangler p
 });
 
 // From 2026-10-18 (notifications): `push`, `deploysNeedOwner` and `actionsUsage`, wrong kinds among them.
-test('J7 (2026-10-18): deploysNeedOwner on Service-Desk only; actionsUsage as given, in Service-Desk\'s entry (draft 9); no push until the owner\'s key (Setup N1)', () => {
+test('J7 (2026-10-18): deploysNeedOwner on Service-Desk only; actionsUsage as given, in Service-Desk\'s entry (draft 9); push holds the owner\'s public key (Setup N1, CS18) and the preview\'s address', () => {
   assert.deepEqual(CONFIG.projects.map((p) => [p.name, p.deploysNeedOwner === true]), [['Service-Desk', true], ['Personal-Org-Operating-Model', false]]);
   assert.equal('deploysNeedOwner' in CONFIG.projects[1], false, 'absent means false');
   assert.deepEqual(CONFIG.projects[0].actionsUsage, { account: 'shumpmaster', includedMinutes: 3000 });
   assert.equal('actionsUsage' in CONFIG, false, 'not at the top level');
   assert.equal('actionsUsage' in CONFIG.projects[1], false, 'Workflow 4\'s project holds none, so its sender reads no usage');
-  assert.equal(CONFIG.push, undefined, 'a missing push alone builds; the desk says "Notifications aren\'t set up yet"');
+  assert.deepEqual(CONFIG.push, { vapidPublicKey: 'BB_bmBhW2WPgp57cIjHbtz2e0ZoNe63DWr058d10YFwB8S_x4raE5UlWSgWn2yEAKTBc9Jl22jqyNk_sG9mC4Oc',
+    deskUrl: 'https://service-desk-preview.pages.dev' }, 'J7\'s push, as the owner handed it over; the preview\'s address until launch (Setup N10)');
+  assert.deepEqual(GENERATED.push, CONFIG.push, 'and in the generated config the function and the page read');
+  // The no-push path, with a fixture config: a missing push alone builds; the desk says "Notifications aren't set up yet".
+  const { push: _committed, ...noPush } = CONFIG;
+  assert.equal(noPush.push, undefined);
+  assert.deepEqual(validateConfig(noPush), [], 'a missing push alone builds; the desk says "Notifications aren\'t set up yet"');
 });
 
 test('J7 (2026-10-18): a wrong-kind deploysNeedOwner, actionsUsage or reported fails the build with a message; push missing builds, malformed fails', () => {

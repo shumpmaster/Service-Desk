@@ -22,6 +22,11 @@ export default {
       "defaultBranch": "main",
       "model": "v3",
       "planning": true,
+      "deploysNeedOwner": true,
+      "actionsUsage": {
+        "account": "shumpmaster",
+        "includedMinutes": 3000
+      },
       "webCommitsToDefault": true,
       "contentPrefill": true,
       "contentParam": "value"

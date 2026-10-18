@@ -4,7 +4,8 @@
   "linkCap": 6000,
   "projects": [
     { "name": "Service-Desk", "repo": "shumpmaster/Service-Desk", "defaultBranch": "main",
-      "model": "v3", "planning": true,
+      "model": "v3", "planning": true, "deploysNeedOwner": true,
+      "actionsUsage": { "account": "shumpmaster", "includedMinutes": 3000 },
       "webCommitsToDefault": true, "contentPrefill": true, "contentParam": "value" },
     { "name": "Personal-Org-Operating-Model", "repo": "shumpmaster/Personal-Org-Operating-Model",
       "defaultBranch": "main", "model": "v2.5", "planning": false,

@@ -1,0 +1,3 @@
+Verdict: PASS
+
+The Reviewer passed this pull request's build in its second round, in two parts reviewed in parallel: part 1, the security review and the sender, and part 2, the desk side. Both parts passed, each in the words "PASS with notes"; this file holds the plain PASS that the check on it allows. Their reports, word for word, are in reviews/S-001-notifications/_build-review-round2-security-verbatim.md and _build-review-round2-desk-verbatim.md, beside round 1's (both FAIL, fixed in 203378c and 818267c). They are kept there because each report quotes its verdict line inside its own text, and the check on this file allows the verdict line only at the start of a line (governance/checks/review_check.py). The notes left open are named in those reports; none is blocking.

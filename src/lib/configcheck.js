@@ -1,6 +1,8 @@
 // The build's check of src/config/projects.json (spec S-001, J7; AC26's limit of 5).
 // Returns a list of errors; an empty list passes.
 
+import { decodeVapidKey } from './notifyview.js';
+
 export const MAX_PROJECTS = 5;
 const MODELS = new Set(['v3', 'v2.5']);
 const DAYS = new Set(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
@@ -26,6 +28,34 @@ export function validateConfig(c) {
     }
   }
   if (!Number.isInteger(c.linkCap) || c.linkCap < 100) errors.push('linkCap must be an integer of at least 100');
+  // From 2026-10-18 (AC74, AC75, J19): `push`; missing alone builds, and the desk says "Notifications aren't set up yet".
+  if (c.push !== undefined) {
+    const p = c.push;
+    if (!p || typeof p !== 'object' || Array.isArray(p)) errors.push('push must be { vapidPublicKey, deskUrl }');
+    else {
+      if (!decodeVapidKey(p.vapidPublicKey)) errors.push('push.vapidPublicKey must be 87 characters of base64url decoding to 65 bytes starting 0x04 (Setup N1)');
+      let u = null;
+      try {
+        u = typeof p.deskUrl === 'string' ? new URL(p.deskUrl) : null;
+      } catch {
+        u = null;
+      }
+      if (!u || u.protocol !== 'https:' || u.search || u.hash || u.username || u.password || !/^https:\/\/[^/]+\/?$/.test(p.deskUrl)) {
+        errors.push('push.deskUrl must be the desk\'s https address, with no path, query or fragment');
+      }
+    }
+  }
+  // From 2026-10-18, draft 4 (AC78, J21): `actionsUsage`; missing builds, and the line reads "not set up
+  // yet". From draft 9 (build review round 1, Sec 5) it sits in one project's entry, never at the top level.
+  if (c.actionsUsage !== undefined) errors.push('actionsUsage sits in the entry of the project whose sender reads it (Service-Desk), not at the top level');
+  const usageProblems = (a, at) => {
+    if (!a || typeof a !== 'object' || Array.isArray(a)) return [`${at} must be { account, includedMinutes }`];
+    const out = [];
+    if (typeof a.account !== 'string' || !/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(a.account)) out.push(`${at}.account must be a GitHub login`);
+    if (!Number.isInteger(a.includedMinutes) || a.includedMinutes <= 0) out.push(`${at}.includedMinutes must be a whole number above 0`);
+    if (a.reported !== undefined && typeof a.reported !== 'boolean') out.push(`${at}.reported must be true or false`);
+    return out;
+  };
   if (!Array.isArray(c.projects) || c.projects.length === 0) {
     errors.push('projects must be a non-empty list');
     return errors;
@@ -51,9 +81,13 @@ export function validateConfig(c) {
     for (const k of ['planning', 'webCommitsToDefault', 'contentPrefill']) {
       if (typeof p[k] !== 'boolean') errors.push(`${at}.${k} must be true or false`);
     }
+    // From 2026-10-18 (Terms, AC52): absent means false; a value that is not true or false fails.
+    if (p.deploysNeedOwner !== undefined && typeof p.deploysNeedOwner !== 'boolean') errors.push(`${at}.deploysNeedOwner must be true or false`);
+    if (p.actionsUsage !== undefined) errors.push(...usageProblems(p.actionsUsage, `${at}.actionsUsage`));
     if (typeof p.contentParam !== 'string' || !/^[A-Za-z0-9_]+$/.test(p.contentParam)) {
       errors.push(`${at}.contentParam must be a parameter name`);
     }
   });
+  if (c.projects.filter((p) => p && p.actionsUsage !== undefined).length > 1) errors.push('only one project\'s entry may hold actionsUsage (its sender alone reads the usage)');
   return errors;
 }

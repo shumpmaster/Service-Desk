@@ -22,6 +22,15 @@ export const CONFIG = JSON.parse(readFileSync(join(SRC, 'config', 'projects.json
 export const SD = CONFIG.projects.find((p) => p.name === 'Service-Desk');
 export const POOM = CONFIG.projects.find((p) => p.name === 'Personal-Org-Operating-Model');
 
+/** A copy of a J7 config with `actionsUsage` set to `usage` in the named project's entry (draft 9) and in no other. */
+export function withUsage(config, usage, project = 'Service-Desk') {
+  return { ...config, projects: config.projects.map((p) => {
+    const { actionsUsage, ...rest } = p;
+    void actionsUsage;
+    return p.name === project && usage !== undefined ? { ...rest, actionsUsage: usage } : rest;
+  }) };
+}
+
 /** A Response from a recorded fixture or a plain description. */
 export function response({ status = 200, headers = {}, body = '' }) {
   const h = new Headers();

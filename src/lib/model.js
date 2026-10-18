@@ -15,6 +15,8 @@ import { SESSION_PATH_RE, parseSessionFile } from './cos.js';
 import { j11Kind, parseJ11, PROJECT_DOC_PATH, SURFACES_PATH, ORCH_WORKFLOW_PATH, SPEC_PATH_RE, REQUEST_PATH_RE,
   GATE_PHASE, README_PATH, REVIEW_VERDICT_RE } from './j11.js';
 import { cardRows, questionRows, cardSummary, v5Waits, sessionRows, timelines, V25_NO_CARDS, V25_ANSWERED } from './asked.js';
+import { askedInSession, questionHold } from './asking.js';
+import { recordedAnswers } from './prfiles.js';
 
 export const NOT_RECORDED = 'not recorded';
 export const CI_CANT_READ = "can't read CI (the read token needs Actions: read)";
@@ -321,8 +323,69 @@ export function neededReads(project, tree, records, now, ctx = {}) {
   for (const q of openQuestions(tree, project.model)) {
     add(q.path);
     if (!hist.includes(q.path)) hist.push(q.path);
+    // AC77 (2026-10-18): a v3 question asked in a session needs that session's file, for its end lines.
+    const rec = records.get(q.path);
+    const sid = project.model === 'v3' && rec && typeof rec.text === 'string' ? askedInSession(rec.text, 'v3') : null;
+    if (sid) add(sessionPathOf(sid));
   }
   return { blobs: want, history: hist, compare, optional: { blobs: optBlobs, history: optHist.filter((p) => !hist.includes(p)) } };
+}
+
+/** The Chief of Staff's session file for a session id (J13). */
+export const sessionPathOf = (sid) => `sessions/chief-of-staff/${sid}.jsonl`;
+export const ASKS_MERGE_PATH = '.github/workflows/asks-merge.yml';
+/** AC77's words for a question being asked in a session, and for one whose answer is on its way. */
+export const HELD_WORDS = 'Being asked in your session: answer there';
+export const RECORDING_WORDS = 'Your answer is being recorded';
+
+/** Whether an open pull request can record an answer (J20): open, not a draft, into the default branch, from the project's own branches. */
+export function canRecord(pr, project) {
+  return Boolean(pr) && !pr.draft && pr.base === project.defaultBranch && typeof pr.headRepo === 'string'
+    && pr.headRepo.toLowerCase() === String(project.repo).toLowerCase();
+}
+
+/**
+ * The open questions whose answer an open pull request records (J20, AC77), from J20's file reads
+ * kept by head sha: Map(name → pull request). files: Map(number → { headSha, changes }); a pull
+ * request whose files were read at another head counts for nothing until read again.
+ */
+export function recordingAnswers(project, pulls, files) {
+  const out = new Map();
+  if (!files) return out;
+  for (const pr of pulls || []) {
+    if (!canRecord(pr, project)) continue;
+    const f = files.get(pr.number);
+    if (!f || !f.changes || (pr.headSha && f.headSha !== pr.headSha)) continue;
+    for (const n of recordedAnswers(f.changes, project.model)) if (!out.has(n)) out.set(n, pr);
+  }
+  return out;
+}
+
+/**
+ * AC77 (draft 7, finding 2b), on the page: what this device's record of a question says, beyond an
+ * open pull request recording it now. { recording, over, pr }:
+ * - its recorded pull request has left the open list: still "being recorded" (recording), with that
+ *   pull request's link, until the single read finds it closed unmerged (then `ended`) or, merged,
+ *   until the tree shows the answer (the question then is no longer open);
+ * - that pull request still open but no longer recording it (a draft now, or files read at its new
+ *   head without the answer): the hold is over (over), so it waits; files not yet read at a new head:
+ *   still "being recorded";
+ * - found closed unmerged (`ended`): the hold is over.
+ */
+function seenRecording(project, name, pulls, asking, recording) {
+  const none = { recording: false, over: false, pr: null };
+  if (recording.has(name)) return none;
+  const num = asking.recorded ? asking.recorded.get(name) : undefined;
+  if (Number.isInteger(num)) {
+    const open = (pulls || []).find((p) => p.number === num);
+    const link = { number: num, url: `https://github.com/${project.repo}/pull/${num}`, title: open ? open.title : null };
+    if (!open) return { recording: true, over: false, pr: link };
+    if (!canRecord(open, project)) return { recording: false, over: true, pr: null };
+    const f = asking.files ? asking.files.get(num) : null;
+    if (!f || (open.headSha && f.headSha !== open.headSha)) return { recording: true, over: false, pr: link };
+    return { recording: false, over: true, pr: null };
+  }
+  return { recording: false, over: Boolean(asking.ended && asking.ended.has(name)), pr: null };
 }
 
 function blobUrl(project, path) {
@@ -333,7 +396,13 @@ function blobUrl(project, path) {
  * Build the project's read model.
  * input: { project, config, tree: Map|null, records: Map(path → parsed), history: Map(path →
  *   { oldest, newest }), pullPages, checkPages, checksState: 'ok'|'cant-read', now: Date,
- *   withdrawn: [path] }
+ *   withdrawn: [path], asking? }
+ * asking (the page only, AC77): { files: Map(number → { headSha, changes }) (J20), recorded:
+ *   Map(name → number) (an answer's pull request was seen recording it), ended: Set(name) (one was
+ *   found closed unmerged after it was raised, draft 7), hereInstead:
+ *   Set(name) ("Answer it here instead" on this device), seen: Map(path → ms) (first seen here) }.
+ *   With it, a question held or being recorded leaves `flagged` for `asking`; without it (the
+ *   sender, which judges holds itself) every open question is flagged as before.
  */
 export function buildModel(input) {
   const { project, config, now } = input;
@@ -381,8 +450,27 @@ export function buildModel(input) {
   }
   if (ci === 'failing') activity.push({ kind: 'ci', text: `CI failing on ${project.defaultBranch}'s head` });
 
-  // --- Owner questions (both models; AC3, AC12)
+  // --- Deploys (AC52, from 2026-10-18): in a v3 project J7 marks `deploysNeedOwner`, a run in J1's
+  // lists waiting for an environment approval needs the owner: counted, in the pill and Quiet.
+  if (project.model === 'v3' && project.deploysNeedOwner === true && ciKnown) {
+    const seenRuns = new Set();
+    for (const r of parseWorkflowRuns(input.checkPages).runs) {
+      if (r.status !== 'waiting') continue;
+      const key = `deploy:${r.path}:${r.runNumber}`;
+      if (seenRuns.has(key)) continue;
+      seenRuns.add(key);
+      flagged.push({ kind: 'deploy', key, title: `${r.title || r.name}: waiting for your approval`, link: r.url, raisedAt: null,
+        words: `run ${r.runNumber}; its approver: ${NOT_RECORDED}`,
+        deploy: { id: r.id, path: r.path, runNumber: r.runNumber, title: r.title || r.name, name: r.name, url: r.url } });
+    }
+  }
+
+  // --- Owner questions (both models; AC3, AC12), and AC77's holds on the page
   const questions = [];
+  const asking = input.asking || null;
+  const askingRows = [];
+  const recording = asking ? recordingAnswers(project, pulls, asking.files) : new Map();
+  const nowMs0 = now.getTime();
   for (const q of openQuestions(tree, project.model)) {
     const rec = records.get(q.path);
     const h = history.get(q.path);
@@ -390,8 +478,37 @@ export function buildModel(input) {
     const title = rec ? rec.title : q.name;
     const row = { ...q, title, parsed: rec || null, raisedAt, link: blobUrl(project, q.path) };
     questions.push(row);
+    if (asking) {
+      const text = rec && typeof rec.text === 'string' ? rec.text : '';
+      const sid = askedInSession(text, project.model);
+      const sessionFile = sid && project.model === 'v3' ? records.get(sessionPathOf(sid)) || null : null;
+      const seenMs = asking.seen ? asking.seen.get(q.path) : null;
+      const seenRec = seenRecording(project, q.name, pulls, asking, recording);
+      let hold = questionHold({ model: project.model, text, raisedMs: raisedAt ? raisedAt.getTime() : null, seenMs, sessionFile,
+        nowMs: nowMs0, recording: recording.has(q.name) || seenRec.recording, recordedBefore: seenRec.over });
+      if (hold.state === 'held' && asking.hereInstead && asking.hereInstead.has(q.name)) hold = { state: 'open', session: hold.session };
+      if (hold.state !== 'open') {
+        const pr = recording.get(q.name) || seenRec.pr || null;
+        askingRows.push({ ...row, state: hold.state, session: hold.session, words: hold.state === 'held' ? HELD_WORDS : RECORDING_WORDS,
+          pr: pr ? { number: pr.number, url: pr.url, title: pr.title } : null });
+        continue;
+      }
+    }
     flagged.push({ kind: 'question', key: `q:${q.name}`, title: `Question: ${title}`, link: row.link, raisedAt,
       words: `raised ${raisedAt ? t(raisedAt) : NOT_RECORDED}`, question: row });
+  }
+  // AC77: an answer record's own pull request stays in Merges, counted, with its added words.
+  if (recording.size) {
+    const job = tree.has(ASKS_MERGE_PATH);
+    for (const f of flagged) {
+      if (f.kind !== 'pr') continue;
+      const names = [...recording].filter(([, pr]) => pr.number === f.pr.number).map(([n]) => n);
+      if (!names.length) continue;
+      const titles = names.map((n) => (questions.find((x) => x.name === n) || { title: n }).title);
+      f.answerTo = names.map((n, i) => ({ name: n, title: titles[i] }));
+      f.answerWords = titles.map((x) => `Your answer to ${x}${job ? ': the automatic job merges it, usually within minutes' : ''}`).join(' · ');
+      f.words = `${f.words} · ${f.answerWords}`;
+    }
   }
 
   // --- Queue paths (J2)
@@ -404,7 +521,7 @@ export function buildModel(input) {
   for (const path of input.withdrawn || []) activity.push({ kind: 'withdrawn', text: `withdrawn: ${path}` });
 
   if (!isV3) {
-    return finishV25({ project, records, tree, flagged, activity, notes, ci, questions, otherPulls, pulls, t, history, now });
+    return finishV25({ project, records, tree, flagged, activity, notes, ci, questions, otherPulls, pulls, t, history, now, askingRows, recording });
   }
 
   // --- Dispatch log (J9)
@@ -616,7 +733,7 @@ export function buildModel(input) {
     const name = questionAnswerName(path);
     if (!name) continue;
     const rec = records.get(path);
-    rulings[name] = { ruling: (rec && rec.ruling) || null };
+    rulings[name] = { ruling: (rec && rec.ruling) || null, line1: rec && typeof rec.line1 === 'string' ? rec.line1 : null };
   }
 
   // --- Time asked (AC20), V5 (AC21), agents and usage (AC22, AC23)
@@ -633,14 +750,15 @@ export function buildModel(input) {
   const openItems = items.filter((i) => !i.finished);
   return {
     name: project.name, model: project.model, repo: project.repo, defaultBranch: project.defaultBranch,
-    flagged, activity, notes, ci, headline, items, openItems, questions, pulls, otherPulls,
+    flagged, activity, notes, ci, headline, items, openItems, questions, pulls, otherPulls, asking: askingRows,
+    recording: [...recording.keys()],
     sprint: null, answeredCards, rulings, timeAsked, logLoaded, v5Waits: v5Waits(askedCards, nowMs, config),
     sessions, timelines: timelines(sessions, askedCards, nowMs),
     allEntries: entries, // the two log months' entries, in order (the MD sandbox's tracker and Done today, AC52)
   };
 }
 
-function finishV25({ project, records, tree, flagged, activity, notes, ci, questions, otherPulls, pulls, t, history, now }) {
+function finishV25({ project, records, tree, flagged, activity, notes, ci, questions, otherPulls, pulls, t, history, now, askingRows, recording }) {
   const open = [];
   let sprintFiles = 0;
   for (const path of [...tree.keys()].sort()) {
@@ -666,7 +784,8 @@ function finishV25({ project, records, tree, flagged, activity, notes, ci, quest
   }
   return {
     name: project.name, model: project.model, repo: project.repo, defaultBranch: project.defaultBranch,
-    flagged, activity, notes, ci, headline, items: null, openItems: null, questions, pulls, otherPulls,
+    flagged, activity, notes, ci, headline, items: null, openItems: null, questions, pulls, otherPulls, asking: askingRows,
+    recording: [...recording.keys()],
     sprint, itemsText: V25_NOT_RECORDED, runningText: V25_NOT_RECORDED,
     answeredCards: {}, rulings: {}, v5Waits: [], sessions: null, timelines: [], allEntries: [],
     logLoaded: true,

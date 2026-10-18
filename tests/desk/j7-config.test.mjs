@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { validateConfig, MAX_PROJECTS } from '../../src/lib/configcheck.js';
 import GENERATED from '../../src/lib/config.js';
-import { CONFIG, SRC } from './helpers.mjs';
+import { CONFIG, SRC, withUsage } from './helpers.mjs';
 
 test('J7: the committed config holds the launch values and passes the build\'s check', () => {
   assert.deepEqual(validateConfig(CONFIG), []);
@@ -77,4 +77,39 @@ test('AC15: package.json has no dependency block or lifecycle script, wrangler p
   for (const [name, p] of Object.entries(lock.packages)) {
     if (p.resolved) assert.ok(p.resolved.startsWith('https://registry.npmjs.org/'), name);
   }
+});
+
+// From 2026-10-18 (notifications): `push`, `deploysNeedOwner` and `actionsUsage`, wrong kinds among them.
+test('J7 (2026-10-18): deploysNeedOwner on Service-Desk only; actionsUsage as given, in Service-Desk\'s entry (draft 9); no push until the owner\'s key (Setup N1)', () => {
+  assert.deepEqual(CONFIG.projects.map((p) => [p.name, p.deploysNeedOwner === true]), [['Service-Desk', true], ['Personal-Org-Operating-Model', false]]);
+  assert.equal('deploysNeedOwner' in CONFIG.projects[1], false, 'absent means false');
+  assert.deepEqual(CONFIG.projects[0].actionsUsage, { account: 'shumpmaster', includedMinutes: 3000 });
+  assert.equal('actionsUsage' in CONFIG, false, 'not at the top level');
+  assert.equal('actionsUsage' in CONFIG.projects[1], false, 'Workflow 4\'s project holds none, so its sender reads no usage');
+  assert.equal(CONFIG.push, undefined, 'a missing push alone builds; the desk says "Notifications aren\'t set up yet"');
+});
+
+test('J7 (2026-10-18): a wrong-kind deploysNeedOwner, actionsUsage or reported fails the build with a message; push missing builds, malformed fails', () => {
+  const sd = CONFIG.projects[0];
+  for (const v of ['yes', 1, null, 'true']) {
+    const errs = validateConfig({ ...CONFIG, projects: [{ ...sd, deploysNeedOwner: v }, CONFIG.projects[1]] });
+    assert.ok(errs.some((e) => e === 'projects[0].deploysNeedOwner must be true or false'), `${JSON.stringify(v)}: ${errs.join('; ')}`);
+  }
+  assert.deepEqual(validateConfig({ ...CONFIG, projects: [{ ...sd, deploysNeedOwner: false }, CONFIG.projects[1]] }), []);
+  const au = (a) => validateConfig(withUsage(CONFIG, a));
+  const at = 'projects[0].actionsUsage';
+  assert.deepEqual(au({ account: 'shumpmaster', includedMinutes: 3000, reported: false }), []);
+  assert.deepEqual(validateConfig(withUsage(CONFIG, undefined)), [], 'missing builds: the line reads "not set up yet"');
+  assert.ok(au({ account: 'not a login!', includedMinutes: 3000 }).includes(`${at}.account must be a GitHub login`));
+  for (const n of [0, -5, 2.5, '3000', null]) assert.ok(au({ account: 'shumpmaster', includedMinutes: n }).includes(`${at}.includedMinutes must be a whole number above 0`), String(n));
+  for (const r of ['yes', 1, null]) assert.ok(au({ account: 'shumpmaster', includedMinutes: 3000, reported: r }).includes(`${at}.reported must be true or false`), String(r));
+  assert.ok(au('yes').includes(`${at} must be { account, includedMinutes }`));
+  // Draft 9 (Sec 5): the old top-level form, or two entries holding it, fails the build.
+  const cfg = { account: 'shumpmaster', includedMinutes: 3000 };
+  assert.ok(validateConfig({ ...withUsage(CONFIG, undefined), actionsUsage: cfg }).some((e) => /actionsUsage sits in the entry of the project/.test(e)));
+  const two = withUsage(CONFIG, cfg);
+  two.projects[1] = { ...two.projects[1], actionsUsage: cfg };
+  assert.ok(validateConfig(two).some((e) => /only one project's entry may hold actionsUsage/.test(e)));
+  assert.ok(validateConfig({ ...CONFIG, push: { vapidPublicKey: 'short', deskUrl: 'https://service-desk-preview.pages.dev' } }).some((e) => e.startsWith('push.vapidPublicKey')));
+  // The build itself refuses one, with its message.
 });

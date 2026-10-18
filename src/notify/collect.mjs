@@ -11,7 +11,7 @@ import { parseFilePages, splitChanges, recordedAnswers, jobKindsByPath, FILES_MA
 import { ReadFailed } from './gh.mjs';
 import { findGrant, ASKS_MERGE_WORKFLOW } from './grant.mjs';
 import { judgeCandidate, ASKS_MERGE_RUNS } from './jobcand.mjs';
-import { keyHash } from './state.mjs';
+import { keyHash, recordedEntry, readRecorded } from './state.mjs';
 
 export const DEPLOY_POLL_MS = 15e3;
 export const DEPLOY_WAIT_MS = 120e3;
@@ -115,14 +115,29 @@ export async function collect(input) {
       files.set(pr.number, { changes: splitChanges(parsed.files), capped: parsed.capped || r.more });
     }
 
-    // AC77: questions being recorded or held.
-    const recording = new Set();
-    for (const f of files.values()) for (const n of recordedAnswers(f.changes, project.model)) recording.add(n);
+    // AC77: questions being recorded or held. Each recording question → the open pull request recording it.
+    const recordingBy = new Map();
+    for (const [num, f] of files) for (const n of recordedAnswers(f.changes, project.model)) if (!recordingBy.has(n)) recordingBy.set(n, num);
+    const openNumbers = new Set(model.pulls.map((p) => p.number));
+    // A recorded answer's pull request that has left the open list, read by number (draft 9, the
+    // Orchestrator's ruling on build review round 1, Sec 1): 'open', 'merged' or 'closed' (unmerged).
+    const singles = new Map();
+    const single = async (n) => {
+      if (!singles.has(n)) {
+        const r = await gh.get(`/repos/${repo}/pulls/${n}`);
+        if (r.status !== 200 || !r.json || r.json.number !== n || typeof r.json.state !== 'string') throw new ReadFailed('a recorded pull request', r.status);
+        singles.set(n, r.json.state === 'open' ? 'open' : r.json.merged_at != null ? 'merged' : 'closed');
+      }
+      return singles.get(n);
+    };
+
     const held = new Set();
     let heldCount = 0;
     let recordingCount = 0;
     const sessionFiles = new Map();
-    // A question whose answer's pull request was seen open: its hold ended then (AC77), kept by keyed hash (J18).
+    // A question whose answer's pull request was seen open: its hold ended then (AC77), kept by keyed
+    // hash (J18), with that pull request's number (sealed, in recordedPr) while it can still decide:
+    // closed unmerged, the question waits again; merged, it is answered, and never notified.
     const recorded = {};
     const holds = [];
     for (const q of model.questions) {
@@ -132,9 +147,33 @@ export async function collect(input) {
       let sessionFile = null;
       const text = rec && typeof rec.text === 'string' ? rec.text : '';
       const qh = keyHash(stateKey, `${project.name}|question|${q.path}`);
-      const before = (input.recorded || {})[qh] || null;
-      if (recording.has(q.name) || before) recorded[qh] = before || now.toISOString();
-      const hold0 = questionHold({ model: project.model, text, raisedMs, nowMs, recording: recording.has(q.name), recordedBefore: Boolean(before), sessionFile: null });
+      const raw = (input.recorded || {})[qh];
+      const before = raw ? readRecorded(stateKey, raw) : null;
+      const seenIso = before && before.seen ? before.seen : now.toISOString();
+      const rn = recordingBy.get(q.name);
+      let recordingNow = rn != null;
+      let over = false;
+      if (rn != null) recorded[qh] = recordedEntry(stateKey, seenIso, rn);
+      else if (before) {
+        const n = before.number;
+        if (Number.isInteger(n) && !openNumbers.has(n)) {
+          // Never inferred from its absence: it may have merged after this run's checkout.
+          const s = await single(n);
+          if (s === 'closed') {
+            over = true; // open again; the end kept, with no number left to read
+            recorded[qh] = seenIso;
+          } else {
+            recordingNow = true; // merged (answered: the next checkout holds the answer) or still open
+            recorded[qh] = recordedEntry(stateKey, seenIso, n);
+          }
+        } else {
+          // Still open but no longer recording it (a draft now, or a new head), or an end the closed
+          // read found: the hold is over, so it waits.
+          over = true;
+          recorded[qh] = recordedEntry(stateKey, seenIso, n);
+        }
+      }
+      const hold0 = questionHold({ model: project.model, text, raisedMs, nowMs, recording: recordingNow, recordedBefore: over, sessionFile: null });
       if (hold0.state === 'held' && isV3) {
         const path = `sessions/chief-of-staff/${hold0.session}.jsonl`;
         if (SESSION_PATH_RE.test(path) && tree.has(path)) {
@@ -253,7 +292,10 @@ export async function collect(input) {
       if (r.status !== 200 || !r.json || !Array.isArray(r.json.workflow_runs)) throw new ReadFailed('waiting runs', r.status);
       for (const run of r.json.workflow_runs) {
         if (run && Number.isInteger(run.id) && run.status === 'waiting') {
-          deploys.push({ id: run.id, title: typeof run.display_title === 'string' ? run.display_title : null });
+          // Its title only when the run is this repository's own (draft 9, build review round 1, Sec 8): a
+          // fork's run never puts its author's words on the lock screen.
+          const own = sameRepo(run.head_repository && run.head_repository.full_name, repo);
+          deploys.push({ id: run.id, title: own && typeof run.display_title === 'string' ? run.display_title : null });
         }
       }
     }

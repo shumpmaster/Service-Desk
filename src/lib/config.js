@@ -15,10 +15,6 @@ export default {
     "to": "22:00"
   },
   "linkCap": 6000,
-  "actionsUsage": {
-    "account": "shumpmaster",
-    "includedMinutes": 3000
-  },
   "projects": [
     {
       "name": "Service-Desk",
@@ -27,6 +23,10 @@ export default {
       "model": "v3",
       "planning": true,
       "deploysNeedOwner": true,
+      "actionsUsage": {
+        "account": "shumpmaster",
+        "includedMinutes": 3000
+      },
       "webCommitsToDefault": true,
       "contentPrefill": true,
       "contentParam": "value"

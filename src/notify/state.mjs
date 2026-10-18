@@ -7,9 +7,11 @@
 // state.json: { form, at, sub (the subscription's keyed hash), gone (the hash of one the push service
 // said is gone), refused ({ status, reason, since } while the push service refuses the sender), jwt
 // (sealed: the JWT, when minted, its audience), project ({ read, unreadSince }), keys ({ hash: { sent }
-// | { unsent, fail } | { gaveUp } }), cand (J16's job candidates: { hash of key and head: { seen,
-// retried } }), recorded (AC77's questions whose answer's pull request was seen: { hash: when }),
-// usage (sealed: AC78's month, step, pending step and read times) }.
+// | { unsent, fail, retrySince? } | { gaveUp } }; retrySince, draft 9: the first try-later or unnamed
+// failure, AC76's give-up clock), cand (J16's job candidates: { hash of key and head: { seen,
+// retried } }), recorded (AC77's questions whose answer's pull request was seen: { hash: when } for an
+// end found, or { hash: { seen, pr } } with that pull request's number sealed as the JWT is, draft 9;
+// a number is never in clear), usage (sealed: AC78's month, step, pending step and read times) }.
 
 import { createHmac, createCipheriv, createDecipheriv, hkdfSync, randomBytes, timingSafeEqual } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -75,6 +77,19 @@ export function signBytes(stateKey, bytes) {
   return createHmac('sha256', keyBytes(stateKey)).update(bytes).digest('hex');
 }
 
+const PR_PART = 'recorded-pr';
+/** A recorded question's entry (J18, draft 9): its first-seen time, with its pull request's number sealed. */
+export function recordedEntry(stateKey, seen, number) {
+  return Number.isInteger(number) ? { seen, pr: sealPart(stateKey, PR_PART, { n: number }) } : seen;
+}
+/** A recorded entry read: { seen, number|null } (a number that can't be opened reads as none). */
+export function readRecorded(stateKey, v) {
+  if (typeof v === 'string') return { seen: v, number: null };
+  if (!v || typeof v !== 'object') return { seen: null, number: null };
+  const p = openPart(stateKey, PR_PART, v.pr);
+  return { seen: v.seen, number: p && Number.isInteger(p.n) ? p.n : null };
+}
+
 /** A state with nothing in it yet. */
 export function emptyState(nowIso) {
   return { form: FORM, at: nowIso, sub: null, gone: null, refused: null, jwt: null,
@@ -101,7 +116,8 @@ export function formProblem(s) {
     const e = s.keys[k];
     if (!HASH_RE.test(k) || !e || typeof e !== 'object') return 'a key';
     const ok = (isIso(e.sent) && Object.keys(e).length === 1) || (isIso(e.gaveUp) && Object.keys(e).length === 1)
-      || (isIso(e.unsent) && ['later', 'refused', 'gone', 'other'].includes(e.fail) && Object.keys(e).length === 2);
+      || (isIso(e.unsent) && ['later', 'refused', 'gone', 'other'].includes(e.fail) && Object.keys(e).length === 2)
+      || (isIso(e.unsent) && ['later', 'other'].includes(e.fail) && isIso(e.retrySince) && Object.keys(e).length === 3);
     if (!ok) return 'a key';
   }
   for (const k of cands) {
@@ -112,7 +128,11 @@ export function formProblem(s) {
     if (!s.recorded || typeof s.recorded !== 'object' || Array.isArray(s.recorded)) return 'its recorded questions';
     const rs = Object.keys(s.recorded);
     if (keys.length + cands.length + rs.length > LIMITS.keys) return 'too many keys';
-    for (const k of rs) if (!HASH_RE.test(k) || !isIso(s.recorded[k])) return 'a recorded question';
+    for (const k of rs) {
+      const v = s.recorded[k];
+      const ok = isIso(v) || (v && typeof v === 'object' && !Array.isArray(v) && isIso(v.seen) && typeof v.pr === 'string' && Object.keys(v).length === 2);
+      if (!HASH_RE.test(k) || !ok) return 'a recorded question';
+    }
   }
   return null;
 }

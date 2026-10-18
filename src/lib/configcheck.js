@@ -45,16 +45,17 @@ export function validateConfig(c) {
       }
     }
   }
-  // From 2026-10-18, draft 4 (AC78, J21): `actionsUsage`; missing builds, and the line reads "not set up yet".
-  if (c.actionsUsage !== undefined) {
-    const a = c.actionsUsage;
-    if (!a || typeof a !== 'object' || Array.isArray(a)) errors.push('actionsUsage must be { account, includedMinutes }');
-    else {
-      if (typeof a.account !== 'string' || !/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(a.account)) errors.push('actionsUsage.account must be a GitHub login');
-      if (!Number.isInteger(a.includedMinutes) || a.includedMinutes <= 0) errors.push('actionsUsage.includedMinutes must be a whole number above 0');
-      if (a.reported !== undefined && typeof a.reported !== 'boolean') errors.push('actionsUsage.reported must be true or false');
-    }
-  }
+  // From 2026-10-18, draft 4 (AC78, J21): `actionsUsage`; missing builds, and the line reads "not set up
+  // yet". From draft 9 (build review round 1, Sec 5) it sits in one project's entry, never at the top level.
+  if (c.actionsUsage !== undefined) errors.push('actionsUsage sits in the entry of the project whose sender reads it (Service-Desk), not at the top level');
+  const usageProblems = (a, at) => {
+    if (!a || typeof a !== 'object' || Array.isArray(a)) return [`${at} must be { account, includedMinutes }`];
+    const out = [];
+    if (typeof a.account !== 'string' || !/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(a.account)) out.push(`${at}.account must be a GitHub login`);
+    if (!Number.isInteger(a.includedMinutes) || a.includedMinutes <= 0) out.push(`${at}.includedMinutes must be a whole number above 0`);
+    if (a.reported !== undefined && typeof a.reported !== 'boolean') out.push(`${at}.reported must be true or false`);
+    return out;
+  };
   if (!Array.isArray(c.projects) || c.projects.length === 0) {
     errors.push('projects must be a non-empty list');
     return errors;
@@ -82,9 +83,11 @@ export function validateConfig(c) {
     }
     // From 2026-10-18 (Terms, AC52): absent means false; a value that is not true or false fails.
     if (p.deploysNeedOwner !== undefined && typeof p.deploysNeedOwner !== 'boolean') errors.push(`${at}.deploysNeedOwner must be true or false`);
+    if (p.actionsUsage !== undefined) errors.push(...usageProblems(p.actionsUsage, `${at}.actionsUsage`));
     if (typeof p.contentParam !== 'string' || !/^[A-Za-z0-9_]+$/.test(p.contentParam)) {
       errors.push(`${at}.contentParam must be a parameter name`);
     }
   });
+  if (c.projects.filter((p) => p && p.actionsUsage !== undefined).length > 1) errors.push('only one project\'s entry may hold actionsUsage (its sender alone reads the usage)');
   return errors;
 }

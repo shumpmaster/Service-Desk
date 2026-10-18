@@ -154,6 +154,9 @@ export function fakeServer(repos, config, clock) {
         }
       }
     }
+    // `onClosed(n)`, called after the n-th closed read's answer is made and before it returns: a test's
+    // way to act while that read is in flight (draft 9, Desk 7).
+    if (body.closed && r.onClosed) r.onClosed(r.closedCalls);
     // AC77's single read (draft 7): `prAnswers[n]` (a pull request in REST's form, or a function of
     // the read's count giving one), or a null answer for a number it lacks or `prFail` names.
     if (Array.isArray(body.prs)) {

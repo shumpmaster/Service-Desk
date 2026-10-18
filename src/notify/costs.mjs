@@ -3,16 +3,22 @@
 // encrypted usage part, one notification each time the estimate passes a new $50 step. Nothing here
 // logs: no figure, step or send of it ever reaches a log line, an issue or the state in clear.
 
-import { readUsage, computeUsage, costStep } from '../lib/usage.js';
+import { readUsage, computeUsage, costStep, usageEntry } from '../lib/usage.js';
 import { usageSummaryLine } from './words.mjs';
 
 export const READ_EVERY_MS = 60 * 60e3;
 export const UNREAD_ISSUE_MS = 24 * 3600e3;
 const LOGIN_RE = /^[A-Za-z0-9-]{1,39}$/;
 
-/** J7's `actionsUsage`, when it is in form; else null (no read). */
-export function usageConfig(config) {
-  const a = config && config.actionsUsage;
+/**
+ * J7's `actionsUsage` for this sender's project, when that project's entry holds it and it is in
+ * form; else null, so no read (draft 9, Sec 5: only that project's sender reads usage, whatever
+ * secrets are set).
+ */
+export function usageConfig(config, project) {
+  const e = usageEntry(config);
+  if (!e || !project || e.project !== project.name) return null;
+  const a = e.cfg;
   if (!a || typeof a !== 'object' || typeof a.account !== 'string' || !LOGIN_RE.test(a.account)) return null;
   if (!Number.isInteger(a.includedMinutes) || a.includedMinutes <= 0) return null;
   if (!(a.reported === undefined || a.reported === true || a.reported === false)) return null;
@@ -40,7 +46,7 @@ export function usageReason(part, nowMs) {
  * ym } | null, summaryLine, read: boolean, state }.
  */
 export async function usageStep(input) {
-  const cfg = usageConfig(input.config);
+  const cfg = usageConfig(input.config, input.project);
   const nowMs = input.nowMs;
   const part = input.part ? { ...input.part } : null;
   const out = { part, push: null, summaryLine: null, read: false, state: null };

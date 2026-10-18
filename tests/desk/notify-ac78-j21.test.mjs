@@ -253,7 +253,7 @@ test('AC78: no token, figure or step in any log line, issue body or the state\'s
 
 test('AC78: "Not reported": reported false makes no read; two empty 200 answers on the 2nd give no step push and no issue', async () => {
   const h = costHarness({ est: 400 });
-  h.config.actionsUsage = { account: 'shumpmaster', includedMinutes: 3000, reported: false };
+  h.config.projects[0].actionsUsage = { account: 'shumpmaster', includedMinutes: 3000, reported: false };
   await h.run({ after: HOUR });
   await h.run({ after: HOUR });
   assert.equal(h.world.usageCalls.length, 0);
@@ -295,4 +295,32 @@ test('AC78: refused (401 or 403) opens the issue at once; any other failure afte
   const p = openPart(h.stateKey, 'usage', h.state().usage);
   assert.equal(p.step, 0);
   void MIN;
+});
+
+// Draft 9 (build review round 1, Sec 3): the cost push is tried once a read, with no 413 re-send.
+test('AC78 (draft 9): a 413 to the cost push is not re-sent within the run: one request, sent at the next read', async () => {
+  const c = costHarness({ est: 10 });
+  await c.run({ after: HOUR });
+  c.est = 60;
+  c.world.push = () => ({ status: 413 });
+  const r1 = await c.run({ after: HOUR });
+  assert.equal(r1.pushes.length, 1, 'exactly one request');
+  c.world.push = () => ({ status: 201 });
+  const r2 = await c.run({ after: HOUR });
+  assert.equal(c.costPushes(r2).length, 1, 'kept, and sent at the next read');
+});
+
+// Draft 9 (Sec 5): usage is read only for the project whose J7 entry holds actionsUsage, whatever
+// secrets are set: Workflow 4's sender (Personal-Org-Operating-Model) never reads it, nor its `test: usage`.
+test('J21 (draft 9): a sender whose project\'s entry holds no actionsUsage reads no usage, even with DESK_BILLING_TOKEN set', async () => {
+  const h = harness({ project: 'Personal-Org-Operating-Model', checkout: checkoutOf({ base: { 'docs/LEDGER.md': '# Ledger\n' } }), billingToken: TOKEN, clock: clock(OCT2) });
+  h.world.usage = () => ({ status: 200, body: { usageItems: [] } });
+  for (let i = 0; i < 3; i++) await h.run({ after: HOUR });
+  const t = await h.run({ test: 'usage' });
+  assert.equal(h.world.usageCalls.length, 0, 'no usage request');
+  assert.ok(t.logs.some((l) => /holds no actionsUsage in form, so its sender reads no usage/.test(l)), t.logs.join('\n'));
+  // Service-Desk's sender, whose entry holds it, does read.
+  const sd = costHarness({ est: 10 });
+  await sd.run({ after: HOUR });
+  assert.equal(sd.reads(), 1);
 });

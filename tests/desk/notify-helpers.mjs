@@ -153,10 +153,10 @@ export function testConfig(vapid, extra = {}) {
   return {
     ownerLogin: 'shumpmaster', ownerTimeZone: 'America/Chicago', v5Clock: null, linkCap: 6000,
     push: { vapidPublicKey: vapid.publicB64, deskUrl: 'https://desk.example.invalid' },
-    actionsUsage: { account: 'shumpmaster', includedMinutes: 3000 },
     projects: [
       { name: 'Service-Desk', repo: REPO, defaultBranch: 'main', model: 'v3', planning: true, webCommitsToDefault: true,
-        contentPrefill: true, contentParam: 'value', deploysNeedOwner: true },
+        contentPrefill: true, contentParam: 'value', deploysNeedOwner: true,
+        actionsUsage: { account: 'shumpmaster', includedMinutes: 3000 } },
       { name: 'Personal-Org-Operating-Model', repo: 'shumpmaster/Personal-Org-Operating-Model', defaultBranch: 'main', model: 'v2.5',
         planning: false, webCommitsToDefault: true, contentPrefill: true, contentParam: 'value' },
     ],
@@ -211,7 +211,7 @@ const json = (status, body, headers = {}) => ({ status, body: typeof body === 's
 
 /**
  * The world the sender reads: a fake GitHub (REST and downloads) and a fake push service.
- * world: { pulls: [pr], files: { n: [file] }, waiting: [run], runs: { id: run }, checks: { sha: {...} },
+ * world: { pulls: [pr], files: { n: [file] }, prs: { n: pr } (GET pulls/<n>), closed: [pr], waiting: [run], runs: { id: run }, checks: { sha: {...} },
  *   asksRuns: [run], jobs: { runId: [job] }, logs: { jobId: text }, commits: { sha: date },
  *   issues: [issue], usage: { summary, usage, repos }, fail: { pathPrefix: status }, remaining,
  *   push: (req) → { status, body } }.
@@ -277,7 +277,14 @@ export function makeWorld(init = {}) {
         { ...rem, ...(more ? { link: `<${API}${p}?state=closed&sort=updated&direction=desc&per_page=100&page=${page + 1}>; rel="next"` } : {}) });
     }
     if (method === 'GET' && p === `${base}/pulls`) return json(200, q.get('page') && q.get('page') !== '1' ? [] : w.pulls, rem);
-    let m = /^\/repos\/[^/]+\/[^/]+\/pulls\/(\d+)\/files$/.exec(p);
+    // One pull request by number (draft 9): `w.prs[n]`, else one in `w.closed` or the open list; else 404.
+    let m = /^\/repos\/[^/]+\/[^/]+\/pulls\/(\d+)$/.exec(p);
+    if (m && method === 'GET') {
+      const n = Number(m[1]);
+      const one = (w.prs && w.prs[n]) || (w.closed || []).find((x) => x.number === n) || w.pulls.find((x) => x.number === n);
+      return one ? json(200, { state: 'open', merged_at: null, ...one }, rem) : json(404, { message: 'Not Found' }, rem);
+    }
+    m = /^\/repos\/[^/]+\/[^/]+\/pulls\/(\d+)\/files$/.exec(p);
     if (m) {
       const all = w.files[m[1]] || [];
       const page = Number(q.get('page') || 1);
@@ -285,7 +292,11 @@ export function makeWorld(init = {}) {
       const more = all.length > page * 100;
       return json(200, slice, { ...rem, ...(more ? { link: `<${API}${p}?per_page=100&page=${page + 1}>; rel="next"` } : {}) });
     }
-    if (p === `${base}/actions/runs` && q.get('status') === 'waiting') return json(200, { total_count: w.waiting.length, workflow_runs: w.waiting }, rem);
+    // A waiting run is this repository's own unless the test says otherwise (GitHub's `head_repository`).
+    if (p === `${base}/actions/runs` && q.get('status') === 'waiting') {
+      const runs = w.waiting.map((r) => ({ head_repository: { full_name: REPO }, ...r }));
+      return json(200, { total_count: runs.length, workflow_runs: runs }, rem);
+    }
     if (p === `${base}/actions/runs` && q.get('head_sha')) {
       const c = w.checks[q.get('head_sha')];
       if (q.get('event')) return json(200, { workflow_runs: (w.headRuns && w.headRuns[q.get('event')]) || [] }, rem);

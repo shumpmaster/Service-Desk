@@ -14,6 +14,7 @@ import { askedInSession, questionHold, endedAfter } from '../../src/lib/asking.j
 import { parseSessionFile } from '../../src/lib/cos.js';
 import { FIX } from './helpers.mjs';
 import { NOTIFY_FIX, REPO, MIN, HOUR, checkoutOf, filesUnder, harness, clock, pull, cleanScratch } from './notify-helpers.mjs';
+import { readRecorded } from '../../src/notify/state.mjs';
 
 after(cleanScratch);
 
@@ -129,9 +130,11 @@ test('AC77: the answer\'s pull request: opening holds it as "being recorded" (no
   assert.deepEqual(r.payloads.map((p) => p.notification.body), ['Waits on you: a pull request to merge: Your answer on the next work']);
   assert.equal((await h.run()).pushes.length, 0, 'still being recorded');
   // It closes unmerged, well inside the 8 hours and with no end line: the hold ended when it opened,
-  // so the question waits from that moment, one push.
+  // so the question waits from that moment, one push. The sender reads it by number (draft 9).
   h.world.pulls = [];
+  h.world.prs = { 90: { ...pull(90), state: 'closed', closed_at: '2026-10-18T12:20:00Z', merged_at: null } };
   const rc = await h.run();
+  assert.equal(rc.ghCalls.filter((c) => c.path === `/repos/${REPO}/pulls/90`).length, 1, 'read by number, not inferred');
   assert.deepEqual(rc.payloads.map((p) => p.notification.body), ['Waits on you: a question: Which piece of later work comes next?']);
   assert.equal((await h.run()).pushes.length, 0, 'once');
   // Being recorded outlasts the 8 hours.
@@ -308,4 +311,73 @@ test('AC77 (draft 7): a fourth page needed is a failed read: the hold kept, the 
   assert.equal(r.pushes.length, 0);
   assert.ok(r.logs.some((l) => /not read \(closed pull requests \(over 3 pages\)\)/.test(l)), r.logs.join('\n'));
   assert.equal(h.state(r).project.read, false);
+});
+
+// Draft 9 (build review round 1, Sec 1, the Reviewer's race.mjs): an answer's pull request that merges
+// after the run's checkout and before its open-pulls read. The question is still in the checkout with
+// no answer, and no open pull request records it; the sender reads that pull request by number rather
+// than inferring "closed unmerged": merged, the question is answered and not notified; closed unmerged,
+// it waits again; a failed read makes the project "not read".
+const RACE_Q = (asked) => `# Ruling needed: A made-up question\n\nMilestone: none (made up)\n${asked ? 'Asked in session: s-x\n' : ''}WHY: made up\n`;
+const RACE_FILES = [{ filename: 'decisions/questions/P-900-x.md', status: 'added' }, { filename: 'questions/P-900-x.md', status: 'removed' }];
+async function raceSetUp(asked) {
+  const h = harness({ checkout: checkoutOf({ base }), clock: clock(Date.parse('2026-10-18T12:00:00Z')) });
+  await h.run({ after: MIN });
+  h.checkout = checkoutOf({ base, later: [{ files: { 'questions/P-900-x.md': RACE_Q(asked) }, date: '2026-10-18T12:00:30+00:00' }] });
+  const r1 = await h.run();
+  assert.equal(r1.pushes.length, asked ? 0 : 1, 'filed: held, or one push');
+  h.world.pulls = [pull(5, { head: 'cos/answer', title: 'Record the answer' })];
+  h.world.files = { 5: RACE_FILES };
+  const r2 = await h.run();
+  assert.ok(r2.logs.some((l) => /1 being recorded/.test(l)));
+  h.world.pulls = []; // it merges after the next run's checkout: the checkout is unchanged
+  return h;
+}
+
+test('AC77 (draft 9): an answer\'s pull request merged between the checkout and the open-pulls read: read by number, not notified', async () => {
+  for (const asked of [false, true]) {
+    const h = await raceSetUp(asked);
+    h.world.prs = { 5: { ...pull(5), state: 'closed', merged_at: '2026-10-18T12:20:00Z', closed_at: '2026-10-18T12:20:00Z' } };
+    const r3 = await h.run();
+    assert.equal(r3.pushes.length, 0, `asked=${asked}: an answered question is never notified`);
+    assert.equal(r3.ghCalls.filter((c) => c.path === `/repos/${REPO}/pulls/5`).length, 1);
+    assert.ok(r3.logs.some((l) => /1 being recorded/.test(l)), r3.logs.join('\n'));
+    // The next run's checkout holds the answer: nothing sent, the entry dropped, no read by number.
+    h.checkout = checkoutOf({ base, later: [{ files: { 'questions/P-900-x.md': RACE_Q(asked) }, date: '2026-10-18T12:00:30+00:00' },
+      { files: { 'questions/P-900-x.md': null, 'decisions/questions/P-900-x.md': 'Ruling: A\n' }, date: '2026-10-18T12:20:00+00:00' }] });
+    const r4 = await h.run();
+    assert.equal(r4.pushes.length, 0);
+    assert.ok(!r4.ghCalls.some((c) => c.path === `/repos/${REPO}/pulls/5`));
+    assert.deepEqual(h.state(r4).recorded, {});
+  }
+});
+
+test('AC77 (draft 9): closed unmerged instead, it waits again with one push; the read failing makes the project "not read"', async () => {
+  let h = await raceSetUp(true);
+  h.world.prs = { 5: { ...pull(5), state: 'closed', merged_at: null, closed_at: '2026-10-18T12:20:00Z' } };
+  let r = await h.run();
+  assert.deepEqual(r.payloads.map((p) => p.notification.body), ['Waits on you: a question: A made-up question']);
+  r = await h.run();
+  assert.equal(r.pushes.length, 0, 'once');
+  assert.ok(!r.ghCalls.some((c) => c.path === `/repos/${REPO}/pulls/5`), 'the end kept: no read again');
+  h = await raceSetUp(true);
+  h.world.fail[`/repos/${REPO}/pulls/5`] = 502;
+  r = await h.run();
+  assert.equal(r.pushes.length, 0);
+  assert.ok(r.logs.some((l) => /not read \(a recorded pull request\)/.test(l)), r.logs.join('\n'));
+  assert.equal(h.state(r).project.read, false);
+});
+
+test('J18 (draft 9): the recorded pull request\'s number is kept sealed: not in the state in clear, readable only with the state key', async () => {
+  const h = await raceSetUp(false);
+  const s = h.state(h.runs[h.runs.length - 1]);
+  const [[qh, v]] = Object.entries(s.recorded);
+  // In clear: the keyed hash and when it was first seen; the number sealed, as the JWT is.
+  assert.match(qh, /^[0-9a-f]{32}$/);
+  assert.deepEqual(Object.keys(v).sort(), ['pr', 'seen']);
+  assert.match(v.seen, /^\d{4}-\d\d-\d\dT[0-9:.]+Z$/);
+  assert.equal(typeof v.pr, 'string');
+  assert.ok(!JSON.stringify(v).includes('"n"'), 'nothing of the number in clear');
+  assert.deepEqual(readRecorded(h.stateKey, v), { seen: v.seen, number: 5 });
+  assert.equal(readRecorded('another key, 32 characters or more, made up', v).number, null, 'unreadable without the state key');
 });

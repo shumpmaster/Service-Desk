@@ -448,3 +448,37 @@ test('AC76 (draft 7): an at-once line closes at a run that finds "no state", wit
     assert.equal(r.pushes.length, projectRead ? 1 : 0, projectRead ? 'the start-up summary' : 'nothing sent while not read');
   }
 });
+
+// Draft 9 (build review round 1, Sec 2, the Reviewer's giveup.mjs): the 6-hour give-up clock starts at
+// the item's first try-later or unnamed failure, never at a time it was kept unsent because the
+// subscription was gone or the sender refused.
+for (const [what, held] of [['gone (410)', { status: 410 }], ['refused (403)', { status: 403, body: { reason: 'VapidPkHashMismatch' } }]]) {
+  test(`AC76 (draft 9): an item kept unsent 7 hours while ${what}, then one "try later", is not given up; it is sent next run`, async () => {
+    const h = await started();
+    h.add('N-a');
+    h.world.push = () => held;
+    await h.run({ after: 7 * HOUR });
+    const e0 = Object.values(h.state().keys)[0];
+    assert.equal(e0.fail, held.status === 410 ? 'gone' : 'refused');
+    // Sending resumes (a new subscription for 410, the push service accepting for 403); the item gets 429 three times.
+    if (held.status === 410) h.sub = makeSubscription();
+    let n = 0;
+    h.world.push = () => (held.status === 410 && n++ === 0 ? { status: 201 } : { status: 429 });
+    let r = await h.run();
+    const e1 = Object.values(h.state(r).keys)[0];
+    assert.equal(e1.fail, 'later');
+    assert.equal(e1.unsent, e0.unsent, '"unsent since" keeps its first time');
+    assert.ok(Date.parse(e1.retrySince) > Date.parse(e0.unsent) + 6 * HOUR, 'the give-up clock starts at the first try-later');
+    h.world.push = () => ({ status: 201 });
+    r = await h.run();
+    assert.equal(r.pushes.length, 1, 'sent, not given up');
+    assert.ok(r.logs.some((l) => /given up: 0/.test(l)), r.logs.join('\n'));
+    // And a try-later that lasts is still given up 6 hours after its first failure.
+    const g = await started();
+    g.add('N-b');
+    g.world.push = () => ({ status: 429 });
+    await g.run({ after: 6 * HOUR });
+    const rg = await g.run();
+    assert.ok(rg.logs.some((l) => /given up: 1 \(1 this run\)/.test(l)), rg.logs.join('\n'));
+  });
+}

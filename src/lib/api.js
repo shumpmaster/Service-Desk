@@ -6,6 +6,7 @@
 import { checkAccess } from './access.js';
 import { pollProject, readBlobs, BLOB_BATCH, SHA_RE, HISTORY_PATH_RE, PULLS_COST, PULLS_CURSOR_RE, USAGE_COST, CLOSED_COST, MAX_FILES_PRS, PR_COST, MAX_PRS } from './github.js';
 import CONFIG from './config.js';
+import { usageEntry } from './usage.js';
 
 // J6: the branch, up to 3 PR pages and up to 3 pages for each of J1's 3a and 3b: at most 10
 // entries, under 3 KB.
@@ -103,7 +104,7 @@ function validateBlobs(body, config) {
     + (files ? files.length : 0) + (closed ? CLOSED_COST : 0) + (prs ? prs.length * PR_COST : 0) + (usage ? USAGE_COST : 0);
   if (budget > BLOB_BATCH) return { error: `budget ${budget} is over ${BLOB_BATCH}` };
   return { req: { project, blobs: [...new Set(blobs)], history: [...new Set(history)], compare: pairs, ...(pulls ? { pulls } : {}),
-    ...(files ? { files } : {}), ...(closed ? { closed } : {}), ...(prs ? { prs } : {}), ...(usage ? { usage: { config: config.actionsUsage || null } } : {}),
+    ...(files ? { files } : {}), ...(closed ? { closed } : {}), ...(prs ? { prs } : {}), ...(usage ? { usage: { config: usageEntry(config) ? usageEntry(config).cfg : null } } : {}),
     spare: BLOB_BATCH - budget } };
 }
 

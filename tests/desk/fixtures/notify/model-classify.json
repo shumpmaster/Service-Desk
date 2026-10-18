@@ -1,0 +1,249 @@
+{
+ "note": "asks_merge.classify on made-up diffs (NOT real records); every file in a form the job takes",
+ "cases": [
+  {
+   "case": "filing",
+   "changes": [
+    [
+     "A",
+     "questions/N1.md"
+    ]
+   ],
+   "kinds": [
+    "a"
+   ],
+   "problems": []
+  },
+  {
+   "case": "closing",
+   "changes": [
+    [
+     "D",
+     "questions/N2.md"
+    ],
+    [
+     "A",
+     "decisions/questions/N2.md"
+    ]
+   ],
+   "kinds": [
+    "b"
+   ],
+   "problems": []
+  },
+  {
+   "case": "session added",
+   "changes": [
+    [
+     "A",
+     "sessions/chief-of-staff/s1.jsonl"
+    ]
+   ],
+   "kinds": [
+    "c"
+   ],
+   "problems": []
+  },
+  {
+   "case": "session lines added",
+   "changes": [
+    [
+     "M",
+     "sessions/chief-of-staff/s1.jsonl"
+    ]
+   ],
+   "kinds": [
+    "c"
+   ],
+   "problems": []
+  },
+  {
+   "case": "tidying",
+   "changes": [
+    [
+     "D",
+     "questions/N3.md"
+    ]
+   ],
+   "kinds": [
+    "d"
+   ],
+   "problems": []
+  },
+  {
+   "case": "filing and a session",
+   "changes": [
+    [
+     "A",
+     "questions/N1.md"
+    ],
+    [
+     "A",
+     "sessions/chief-of-staff/s1.jsonl"
+    ]
+   ],
+   "kinds": [
+    "a",
+    "c"
+   ],
+   "problems": []
+  },
+  {
+   "case": "code",
+   "changes": [
+    [
+     "A",
+     "src/x.js"
+    ]
+   ],
+   "kinds": [],
+   "problems": [
+    "src/x.js (added) is not a change the asks-merge delegation covers"
+   ]
+  },
+  {
+   "case": "filing and code",
+   "changes": [
+    [
+     "A",
+     "questions/N1.md"
+    ],
+    [
+     "M",
+     "src/lib/model.js"
+    ]
+   ],
+   "kinds": [
+    "a"
+   ],
+   "problems": [
+    "src/lib/model.js (changed) is not a change the asks-merge delegation covers"
+   ]
+  },
+  {
+   "case": "a question changed",
+   "changes": [
+    [
+     "M",
+     "questions/N1.md"
+    ]
+   ],
+   "kinds": [],
+   "problems": [
+    "questions/N1.md (changed) is not a change the asks-merge delegation covers"
+   ]
+  },
+  {
+   "case": "the template",
+   "changes": [
+    [
+     "A",
+     "questions/_TEMPLATE.md"
+    ]
+   ],
+   "kinds": [],
+   "problems": [
+    "questions/_TEMPLATE.md (added) is not a change the asks-merge delegation covers"
+   ]
+  },
+  {
+   "case": "an answer alone",
+   "changes": [
+    [
+     "A",
+     "decisions/questions/N2.md"
+    ]
+   ],
+   "kinds": [],
+   "problems": [
+    "decisions/questions/N2.md: an answer record added without deleting questions/N2.md"
+   ]
+  },
+  {
+   "case": "a question in a folder",
+   "changes": [
+    [
+     "A",
+     "questions/sub/N1.md"
+    ]
+   ],
+   "kinds": [],
+   "problems": [
+    "questions/sub/N1.md (added) is not a change the asks-merge delegation covers"
+   ]
+  },
+  {
+   "case": "a session file deleted",
+   "changes": [
+    [
+     "D",
+     "sessions/chief-of-staff/s1.jsonl"
+    ]
+   ],
+   "kinds": [],
+   "problems": [
+    "sessions/chief-of-staff/s1.jsonl (deleted) is not a change the asks-merge delegation covers"
+   ]
+  },
+  {
+   "case": "an answer named _x",
+   "changes": [
+    [
+     "A",
+     "decisions/questions/_x.md"
+    ]
+   ],
+   "kinds": [],
+   "problems": [
+    "decisions/questions/_x.md (added) is not a change the asks-merge delegation covers"
+   ]
+  },
+  {
+   "case": "a card",
+   "changes": [
+    [
+     "A",
+     "queue/P-001-stop-9.md"
+    ]
+   ],
+   "kinds": [],
+   "problems": [
+    "queue/P-001-stop-9.md (added) is not a change the asks-merge delegation covers"
+   ]
+  },
+  {
+   "case": "a session file badly named",
+   "changes": [
+    [
+     "A",
+     "sessions/chief-of-staff/s 1.jsonl"
+    ]
+   ],
+   "kinds": [],
+   "problems": [
+    "sessions/chief-of-staff/s 1.jsonl (added) is not a change the asks-merge delegation covers"
+   ]
+  },
+  {
+   "case": "a decision card's answer",
+   "changes": [
+    [
+     "A",
+     "decisions/P-001/stop-9.md"
+    ]
+   ],
+   "kinds": [],
+   "problems": [
+    "decisions/P-001/stop-9.md (added) is not a change the asks-merge delegation covers"
+   ]
+  },
+  {
+   "case": "empty",
+   "changes": [],
+   "kinds": [],
+   "problems": [
+    "the diff is empty"
+   ]
+  }
+ ]
+}

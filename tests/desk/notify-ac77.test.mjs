@@ -1,0 +1,198 @@
+// ac-test: S-001/AC77 — the sender's side (the desk's words, its answer link and its re-read are the
+// brief's step 3): a question asked in a session held, still held at 54 minutes and at 7 hours 59
+// minutes, ordinary at 8 hours with one push; end lines before, at and after the raised time; the
+// real session file at ccf320f with the real question, unchanged and with the one added line; the
+// answer's pull request opening, merging and closing unmerged; a fork's ignored; a v3 withdrawal and
+// a v2.5 deletion; a line in another form or place ignored; in a v3 and a v2.5 project.
+
+import { test, after } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { askedInSession, questionHold, endedAfter } from '../../src/lib/asking.js';
+import { parseSessionFile } from '../../src/lib/cos.js';
+import { FIX } from './helpers.mjs';
+import { NOTIFY_FIX, MIN, HOUR, checkoutOf, filesUnder, harness, clock, pull, cleanScratch } from './notify-helpers.mjs';
+
+after(cleanScratch);
+
+const SID = 'session_012RJPVKAoLga2RkqLYRDcBY';
+const SESSION_PATH = `sessions/chief-of-staff/${SID}.jsonl`;
+const realQuestion = readFileSync(join(NOTIFY_FIX, 'ac77-real/questions/P-001-next-work.md'), 'utf8');
+const askedQuestion = readFileSync(join(NOTIFY_FIX, 'ac77-real/asked/questions/P-001-next-work.md'), 'utf8');
+const realSession = readFileSync(join(NOTIFY_FIX, `ac77-real/${SESSION_PATH}`), 'utf8');
+const RAISED = '2026-10-18T11:26:23+00:00'; // ccf320f's commit time
+const RAISED_MS = Date.parse(RAISED);
+const base = { 'questions/_TEMPLATE.md': '# Ruling needed: <title>\n' };
+const v3q = (line) => `# Ruling needed: A made-up question\n\nMilestone: none (made up)\n${line}\nWHY: made up\n`;
+const start = (t) => `{"event": "start", "session": "s-x", "time": "${t}", "doing": "made-up work"}`;
+const end = (t) => `{"event": "end", "session": "s-x", "time": "${t}", "usage": null}`;
+
+test('AC77: the line is read only in its model\'s place and form', () => {
+  assert.equal(askedInSession(askedQuestion, 'v3'), SID);
+  assert.equal(askedInSession(realQuestion, 'v3'), null);
+  assert.equal(askedInSession(v3q('Asked in session: s-x'), 'v3'), 's-x');
+  for (const bad of ['Asked in session: s x', ' Asked in session: s-x', 'Asked in session:s-x', 'Asked in session: s-x ', 'asked in session: s-x',
+    `Asked in session: ${'x'.repeat(101)}`]) {
+    assert.equal(askedInSession(v3q(bad), 'v3'), null, bad);
+  }
+  // Not directly after the Milestone line: ignored.
+  assert.equal(askedInSession('# Ruling needed: x\n\nMilestone: M1\n\nAsked in session: s-x\n', 'v3'), null);
+  assert.equal(askedInSession('# Ruling needed: x\n\nAsked in session: s-x\n', 'v3'), null, 'no Milestone line in v3');
+  // v2.5: the first line after `# Ruling needed:` that is not blank.
+  assert.equal(askedInSession('# Ruling needed: x\n\n\nAsked in session: s-x\nWHY: y\n', 'v2.5'), 's-x');
+  assert.equal(askedInSession('# Ruling needed: x\n\nWHY: y\nAsked in session: s-x\n', 'v2.5'), null);
+  assert.equal(askedInSession('# Ruling needed: x\r\n\r\nAsked in session: s-x\r\n', 'v2.5'), 's-x');
+});
+
+test('AC77: the hold ends only at an end line after the raised time, or 8 hours on', () => {
+  const raised = Date.parse('2026-10-18T11:00:00Z');
+  const file = (...lines) => parseSessionFile(`${lines.join('\n')}\n`, 'sessions/chief-of-staff/s-x.jsonl');
+  const hold = (f, nowMs) => questionHold({ model: 'v3', text: v3q('Asked in session: s-x'), raisedMs: raised, nowMs, sessionFile: f }).state;
+  const at = (m) => raised + m * MIN;
+  assert.equal(hold(null, at(54)), 'held');
+  assert.equal(hold(null, at(8 * 60 - 1)), 'held');
+  assert.equal(hold(null, at(8 * 60)), 'open');
+  assert.equal(hold(file(start('2026-10-18T10:00:00Z'), end('2026-10-18T10:59:59Z')), at(10)), 'held', 'an earlier piece\'s end line');
+  assert.equal(hold(file(start('2026-10-18T11:05:00Z')), at(10)), 'held', 'a start line after the raised time');
+  assert.equal(hold(file(start('2026-10-18T10:00:00Z'), end('2026-10-18T11:00:00Z')), at(10)), 'held', 'an end line at exactly the raised time');
+  assert.equal(hold(file(start('2026-10-18T10:00:00Z'), end('2026-10-18T11:00:00.000001Z')), at(10)), 'open', 'a microsecond after');
+  assert.equal(hold(file(start('2026-10-18T10:00:00Z'), end('2026-10-18T11:20:00Z')), at(30)), 'open');
+  // A line out of form ends nothing.
+  assert.equal(hold(file('{"event": "end", "session": "s-x", "time": "2026-10-18T11:20:00Z"}'), at(30)), 'held');
+  // The raised time unread (the page only): no end line ends it; the 8 hours run from first sight.
+  assert.equal(questionHold({ model: 'v3', text: v3q('Asked in session: s-x'), raisedMs: null, seenMs: at(0), nowMs: at(30),
+    sessionFile: file(end('2026-10-18T11:20:00Z')) }).state, 'held');
+  // v2.5: sessions are not recorded there; only the 8 hours end it.
+  assert.equal(questionHold({ model: 'v2.5', text: '# Ruling needed: x\n\nAsked in session: s-x\n', raisedMs: raised, nowMs: at(30),
+    sessionFile: file(end('2026-10-18T11:20:00Z')) }).state, 'held');
+  assert.equal(endedAfter(null, raised), false);
+  assert.equal(questionHold({ model: 'v3', text: v3q(''), raisedMs: raised, nowMs: at(1), recording: true }).state, 'recording');
+});
+
+/** A harness on a fake clock from `startMs`, its bootstrap done on records with no question in them. */
+async function startedAt(startMs, project = 'Service-Desk', baseFiles = base) {
+  const h = harness({ checkout: checkoutOf({ base: baseFiles }), clock: clock(startMs), project });
+  const r = await h.run({ after: 1 * MIN });
+  assert.equal(r.pushes.length, 1);
+  return h;
+}
+
+test('AC77: the real session file at ccf320f, with the real question: the copy with the line held and no push; the unchanged one ordinary, one push', async () => {
+  // (i) the copy that adds the one line: held; the 03:08:21Z end line ends nothing.
+  const h = await startedAt(RAISED_MS - 2 * MIN);
+  h.checkout = checkoutOf({ base: { ...base, [SESSION_PATH]: realSession }, later: [{ files: { 'questions/P-001-next-work.md': askedQuestion }, date: RAISED }] });
+  h.clock.t = RAISED_MS + 54 * MIN;
+  const r = await h.run();
+  assert.equal(r.pushes.length, 0, 'held at 54 minutes');
+  assert.ok(r.logs.some((l) => /1 held in a session/.test(l)));
+  // 7 hours 59 minutes after the raised time: still held. Then 8 hours: ordinary, one push.
+  h.clock.t = RAISED_MS + 8 * HOUR - 1 * MIN;
+  assert.equal((await h.run({ after: 1 * MIN })).pushes.length, 0, 'held at 7 hours 59 minutes');
+  const r8 = await h.run();
+  assert.equal(r8.pushes.length, 1, 'ordinary at 8 hours');
+  assert.equal(r8.payloads[0].notification.body, 'Waits on you: a question: Which piece of later work comes next?');
+  assert.equal((await h.run()).pushes.length, 0, 'once');
+  // (ii) the real question unchanged: ordinary, one push.
+  const g = await startedAt(RAISED_MS - 2 * MIN);
+  g.checkout = checkoutOf({ base: { ...base, [SESSION_PATH]: realSession }, later: [{ files: { 'questions/P-001-next-work.md': realQuestion }, date: RAISED }] });
+  const rg = await g.run();
+  assert.equal(rg.pushes.length, 1);
+  assert.equal(rg.payloads[0].notification.navigate, `https://desk.example.invalid/?open=${encodeURIComponent('Service-Desk|question|questions/P-001-next-work.md')}`);
+});
+
+test('AC77: an end line after the raised time, landing later, ends the hold with one push', async () => {
+  const h = await startedAt(RAISED_MS - 2 * MIN);
+  const files0 = { ...base, [SESSION_PATH]: realSession };
+  const q = { 'questions/P-001-next-work.md': askedQuestion };
+  h.checkout = checkoutOf({ base: files0, later: [{ files: q, date: RAISED }] });
+  assert.equal((await h.run()).pushes.length, 0);
+  const ended = `${realSession}{"event": "end", "session": "${SID}", "time": "2026-10-18T12:10:00Z", "usage": null}\n`;
+  h.checkout = checkoutOf({ base: files0, later: [{ files: q, date: RAISED }, { files: { [SESSION_PATH]: ended }, date: '2026-10-18T12:10:30+00:00' }] });
+  const r = await h.run();
+  assert.equal(r.pushes.length, 1);
+  assert.equal(r.payloads[0].notification.body, 'Waits on you: a question: Which piece of later work comes next?');
+});
+
+test('AC77: the answer\'s pull request: opening holds it as "being recorded" (no push); merging ends it; closing unmerged opens it again, one push', async () => {
+  const h = await startedAt(RAISED_MS - 2 * MIN);
+  const files0 = { ...base, [SESSION_PATH]: realSession };
+  h.checkout = checkoutOf({ base: files0, later: [{ files: { 'questions/P-001-next-work.md': askedQuestion }, date: RAISED }] });
+  assert.equal((await h.run()).pushes.length, 0);
+  // The answer's pull request opens: being recorded, though the 8 hours pass.
+  h.world.pulls = [pull(90, { title: 'Your answer on the next work' })];
+  h.world.files[90] = [{ filename: 'decisions/questions/P-001-next-work.md', status: 'added' }, { filename: 'questions/P-001-next-work.md', status: 'removed' }];
+  // No grant in these records, so the answer's pull request itself waits as any pull request (AC77: it still shows in Merges).
+  const r = await h.run();
+  assert.ok(r.logs.some((l) => /1 being recorded/.test(l)));
+  assert.deepEqual(r.payloads.map((p) => p.notification.body), ['Waits on you: a pull request to merge: Your answer on the next work']);
+  assert.equal((await h.run()).pushes.length, 0, 'still being recorded');
+  // It closes unmerged, well inside the 8 hours and with no end line: the hold ended when it opened,
+  // so the question waits from that moment, one push.
+  h.world.pulls = [];
+  const rc = await h.run();
+  assert.deepEqual(rc.payloads.map((p) => p.notification.body), ['Waits on you: a question: Which piece of later work comes next?']);
+  assert.equal((await h.run()).pushes.length, 0, 'once');
+  // Being recorded outlasts the 8 hours.
+  const k = await startedAt(RAISED_MS - 2 * MIN);
+  k.checkout = checkoutOf({ base: files0, later: [{ files: { 'questions/P-001-next-work.md': askedQuestion }, date: RAISED }] });
+  k.world.pulls = [pull(95)];
+  k.world.files[95] = [{ filename: 'decisions/questions/P-001-next-work.md', status: 'added' }];
+  await k.run();
+  k.clock.t = RAISED_MS + 9 * HOUR;
+  const rk = await k.run();
+  assert.ok(!rk.payloads.some((p) => /a question/.test(p.notification.body)), 'still being recorded after 8 hours');
+  // Merged instead: the question is answered and gone, nothing sent.
+  const g = await startedAt(RAISED_MS - 2 * MIN);
+  g.checkout = checkoutOf({ base: files0, later: [{ files: { 'questions/P-001-next-work.md': askedQuestion }, date: RAISED }] });
+  g.world.pulls = [pull(91)];
+  g.world.files[91] = [{ filename: 'decisions/questions/P-001-next-work.md', status: 'added' }];
+  await g.run();
+  g.world.pulls = [];
+  g.checkout = checkoutOf({ base: files0, later: [{ files: { 'questions/P-001-next-work.md': askedQuestion }, date: RAISED },
+    { files: { 'decisions/questions/P-001-next-work.md': 'Ruling: A\n' }, date: '2026-10-18T12:30:00+00:00' }] });
+  assert.equal((await g.run()).pushes.length, 0);
+});
+
+test('AC77: a fork\'s pull request adding the answer is ignored; a v3 withdrawal is not "being recorded"', async () => {
+  for (const [files, headRepo, label] of [
+    [[{ filename: 'decisions/questions/N-open.md', status: 'added' }], 'someone/Service-Desk', 'a fork'],
+    [[{ filename: 'questions/N-open.md', status: 'removed' }], undefined, 'a withdrawal in v3'],
+    [[{ filename: 'decisions/questions/N-open-notes.md', status: 'added' }], undefined, 'a notes file']]) {
+    const h = await startedAt(Date.parse('2026-10-18T12:00:00Z'));
+    h.world.pulls = [pull(92, { headRepo, association: headRepo ? 'NONE' : 'OWNER' })];
+    h.world.files[92] = files;
+    h.checkout = checkoutOf({ base, later: [{ files: { 'questions/N-open.md': v3q('') }, date: '2026-10-18T12:00:30+00:00' }] });
+    const r = await h.run();
+    assert.ok(r.payloads.some((p) => p.notification.body === 'Waits on you: a question: A made-up question'), label);
+  }
+  // A draft adding the answer is not "being recorded" either.
+  const h = await startedAt(Date.parse('2026-10-18T12:00:00Z'));
+  h.world.pulls = [pull(93, { draft: true })];
+  h.world.files[93] = [{ filename: 'decisions/questions/N-open.md', status: 'added' }];
+  h.checkout = checkoutOf({ base, later: [{ files: { 'questions/N-open.md': v3q('') }, date: '2026-10-18T12:00:30+00:00' }] });
+  assert.equal((await h.run()).pushes.length, 1);
+});
+
+test('AC77: in a v2.5 project (poom/\'s placeholder form): the line held; a deletion reads as being recorded', async () => {
+  const poom = filesUnder(join(FIX, 'poom'));
+  const v25 = filesUnder(join(NOTIFY_FIX, 'poom-made-up'));
+  const fetchFor = (h) => {
+    const f = h.world.fetch;
+    h.world.fetch = (url, init) => f(String(url).replace('/repos/shumpmaster/Personal-Org-Operating-Model/', '/repos/shumpmaster/Service-Desk/'), init);
+  };
+  const h = harness({ checkout: checkoutOf({ base: poom }), clock: clock(Date.parse('2026-10-18T11:20:00Z')), project: 'Personal-Org-Operating-Model' });
+  fetchFor(h);
+  await h.run({ after: 1 * MIN });
+  h.world.pulls = [pull(94, { headRepo: 'shumpmaster/Personal-Org-Operating-Model' })];
+  h.world.files[94] = [{ filename: 'questions/N-v25-recorded.md', status: 'removed' }];
+  h.checkout = checkoutOf({ base: poom, later: [{ files: v25, date: '2026-10-18T11:30:00+00:00' }] });
+  const r = await h.run();
+  assert.deepEqual(r.payloads.map((p) => p.notification.body).sort(), ['Waits on you: a pull request to merge: A made-up pull request #94',
+    'Waits on you: a question: A made-up v2.5 question']);
+  assert.ok(r.logs.some((l) => /1 held in a session, 1 being recorded, 0 the automatic job/.test(l)));
+  // 8 hours on, the v2.5 hold ends: one push.
+  h.clock.t = Date.parse('2026-10-18T19:30:00Z');
+  const r2 = await h.run();
+  assert.deepEqual(r2.payloads.map((p) => p.notification.body), ['Waits on you: a question: A made-up v2.5 question being asked in a session']);
+});

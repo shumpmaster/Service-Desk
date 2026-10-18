@@ -244,3 +244,98 @@ that did it. The model's code is run from this repository's `governance/checks/`
     sessions/chief-of-staff/s-bad.jsonl line 33: the helper started after it ended (model S-033 AC6)
     FAIL: 31 violation(s)
     ```
+
+## The notification sender (2026-10-18, S-001 notifications, the brief's step 2)
+
+The sender's tests (tests/desk/notify-*.test.mjs) need no network and no secret: every VAPID key, push
+subscription and state key in them is made for the test run (tests/desk/notify-helpers.mjs) and thrown away,
+and J7's `push` and `actionsUsage` entries are given in the tests' own config (`testConfig`), with the made-up
+address `https://desk.example.invalid`, never in src/config/projects.json.
+
+- `github/asks-merge-job-117691950060-excerpt.log`: **real (an excerpt).** The log of one asks-merge `merge`
+  job in Service-Desk: job 117691950060, run 39133048850, 2026-10-18, fetched by the Chief of Staff through
+  the GitHub API (`repos/shumpmaster/Service-Desk/actions/jobs/117691950060/logs`, Setup CS18): the run step's
+  output with some cleanup lines left out, copied unchanged (sha256
+  `8baf8d45efaf3b7e59278735b2959311810e50cd0a5becb3fa4b6a5391967a30`). It holds one line for a pull request,
+  `PR #103: waits: check run 'build' (.github/workflows/desk-build.yml) is in_progress/None` (J16's rule (b)).
+- `github/notify-pulls-open.json`, `notify-pulls-recent.json`, `notify-pull-107-files.json`,
+  `notify-pull-108-files.json` and `notify-pull-84-files.json`: **real** REST answers for Service-Desk (a
+  public repository), recorded once on 2026-10-18 with
+  `python3 tests/desk/tools/notify-record.py tests/desk/fixtures/github` (`gh api -i`), in this folder's form.
+  The open list was empty when recorded (`[]`), so AC73's test serves pull requests #107 and #108 from
+  `notify-pulls-recent.json` (`pulls?state=all&per_page=8`) as open ones: real objects, their `state` set to
+  `open` by the test. Its output:
+  ```
+  notify-pulls-open.json: 200, 2 bytes
+  notify-pulls-recent.json: 200, 134523 bytes
+  notify-pull-107-files.json: 200, 4828 bytes
+  notify-pull-108-files.json: 200, 7329 bytes
+  notify-pull-84-files.json: 200, 1046 bytes
+  ```
+- `notify/`, made by `python3 tests/desk/tools/notify-fixtures.py tests/desk/fixtures/notify`, which runs the
+  model's own code from this repository's `governance/checks/` (read only):
+  - `sd-ef8daf4/`: **real.** Service-Desk's records at ef8daf4 that the desk's readers and the sender read
+    (`queue/`, `decisions/`, `questions/`, `status/`, `dispatch-log/`, `sessions/chief-of-staff/`,
+    `governance/ROUTING.toml`, `docs/LEDGER.md`, `.github/workflows/asks-merge.yml`), copied unchanged with
+    `git show`: 131 files. Every card there is answered and no question is open, so they give AC73 no item
+    of their own; they give it the real grant (L-0017) and its `decided_by` record.
+  - `ac77-real/questions/P-001-next-work.md` and
+    `ac77-real/sessions/chief-of-staff/session_012RJPVKAoLga2RkqLYRDcBY.jsonl`: **real**, as they stand at
+    ccf320f (the end line at 03:08:21Z, then the start at 11:26:22Z; the question raised at 11:26:23Z).
+    `ac77-real/asked/questions/P-001-next-work.md`: **real except one added line**,
+    `Asked in session: session_012RJPVKAoLga2RkqLYRDcBY`, directly after its `Milestone: M3A` line (the
+    real question was filed before the line existed; AC77, review round 4, B1).
+  - `model-classify.json`: **real-on-real** (NOT real records): `classify` (asks_merge.py:117) on 18 made-up
+    diffs, with readers giving every file a form the job takes, so the verdict turns on the paths.
+  - `model-waits.json`: **real-on-real** (NOT real records): the model's own `run` (asks_merge.py:600)
+    driven by a fake API, one pull request a scenario, each giving one of its `waits` reasons (27), a merge
+    (3) or nothing judged (1); its printed lines, and the same lines written into a log in GitHub's form, a
+    timestamp before each. `find_grant` is replaced for these scenarios only (the grant L-0017 given), and
+    the ledger it reads at the tip is the real one at ef8daf4.
+  - `grant-cases.json` and `model-grants.json`: **real-on-real** (NOT real records): seven made-up histories
+    (the real ledger at ef8daf4, changed where the case says), written into scratch repositories with git's
+    plumbing (`build_repo`; tests/desk/notify-helpers.mjs `buildRepo` writes them again the same way), and
+    `find_grant`'s verdict on each.
+
+  The script printed, on 2026-10-18 (its full output, 59 lines, is the tool's to reproduce; these are the
+  verdicts the tests compare):
+  ```
+  sd-ef8daf4: 131 files copied from ef8daf4
+  ac77-real: the question and the session file at ccf320f; the asked copy adds one line after line 3
+  classify(filing): kinds a, problems 0
+  classify(closing): kinds b, problems 0
+  classify(session added): kinds c, problems 0
+  classify(session lines added): kinds c, problems 0
+  classify(tidying): kinds d, problems 0
+  classify(filing and a session): kinds ac, problems 0
+  classify(<each of the 12 other diffs>): kinds -, problems 1   ("filing and code": kinds a, problems 1)
+  run(merged): exit 0, PR #7: merged (kinds a) at aaaaaaaaaaaa under L-0017
+  run(no check run yet): exit 0, PR #7: waits: no counted check run on the head yet
+  run(a check running): exit 0, PR #7: waits: check run 'build' (.github/workflows/desk-build.yml) is in_progress/None
+  run(GitHub refused the merge): exit 0, PR #7: waits: GitHub refused the merge (HTTP 409: conflict)
+  run(judged nothing (the open pull requests unreadable)): exit 0, no PR line
+  find_grant(this repository, ef8daf4): L-0017 []
+  find_grant(the real ledger, brought in a plain commit): L-0017
+  find_grant(superseded by a withdrawal): None
+  find_grant(its decided_by record absent): None
+  find_grant(no ledger): None
+  find_grant(arrived in a merge carrying Merged-By): None
+  find_grant(arrived in a plain merge): L-0017
+  find_grant(a later entry that is not a grant): L-0017
+  ```
+  - `made-up/`: **NOT real records**, written for AC73, AC74 and AC77 in the real records' forms, for the
+    kinds no record on main holds: a decision card (`queue/P-951-stop-1.md`), a gate ruling
+    (`queue/P-952-criteria-1.md`), a card that went missing (`status/P-950.toml`, `waiting-owner` with no card
+    file), an open question, a question held by AC77 (`questions/N-held.md`, with its session file
+    `sessions/chief-of-staff/s-made-up.jsonl`, one start line) and a question whose answer is being recorded.
+    The hold card and the merge card are `orchestrator-m2/`'s (made up, above).
+  - `poom-made-up/questions/`: **NOT real records**: three v2.5 questions in poom/'s placeholder form (an
+    open one, one held by AC77, one whose answer is being recorded); no file of that private project is
+    copied.
+- Written inline in the tests, **NOT real records**: the pull requests other than #107 and #108, their
+  files, check runs, statuses, workflow runs, asks-merge runs, jobs and logs (J16's rules (a) to (d));
+  the deploys; the push service's answers (AC76); and every billing answer (AC78, J21), made up from research
+  Q-015's documented fields in the form GitHub's REST reference gives (no real billing figure is in this
+  public repository).
+- RFC 8291's worked example (Appendix A) is written into tests/desk/notify-j17-push.test.mjs: its inputs and
+  its message, which the sender's encryption reproduces byte for byte.

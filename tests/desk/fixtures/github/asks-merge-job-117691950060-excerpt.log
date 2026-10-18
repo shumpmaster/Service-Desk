@@ -1,0 +1,13 @@
+2026-10-18T13:47:00.9186351Z ##[group]Run python3 governance/checks/asks_merge.py run --root . --default-branch "$DEFAULT_BRANCH"
+2026-10-18T13:47:00.9189458Z [36;1mpython3 governance/checks/asks_merge.py run --root . --default-branch "$DEFAULT_BRANCH"[0m
+2026-10-18T13:47:00.9364150Z shell: /usr/bin/bash -e {0}
+2026-10-18T13:47:00.9365347Z env:
+2026-10-18T13:47:00.9376153Z   GH_TOKEN: ***
+2026-10-18T13:47:00.9377151Z   DEFAULT_BRANCH: main
+2026-10-18T13:47:00.9378200Z ##[endgroup]
+2026-10-18T13:47:05.1267939Z NOTE: the asks-merge grant is L-0017
+2026-10-18T13:47:05.1268546Z PR #103: waits: check run 'build' (.github/workflows/desk-build.yml) is in_progress/None
+2026-10-18T13:47:05.1494526Z Post job cleanup.
+2026-10-18T13:47:05.2350069Z [command]/usr/bin/git version
+2026-10-18T13:47:05.2389596Z git version 2.55.0
+2026-10-18T13:47:05.3379771Z Cleaning up orphan processes

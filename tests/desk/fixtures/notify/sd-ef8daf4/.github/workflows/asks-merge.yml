@@ -1,0 +1,51 @@
+# The asks-merge delegation (model S-033 AC4). Where the owner has granted it by a ledger entry (docs/SETUP.md
+# step 6), this one job merges a pull request that only files a question, closes one with a reversible answer,
+# tidies away a question already answered, or adds the Chief of Staff's session lines, once every check on
+# its head has passed; each merge commit names the grant, and a governance run on the default branch follows.
+# It holds only the workflow's own token, no secret and no Environment, and does not depend on the
+# Orchestrator loop's token mode or its hold. It checks out only the default branch, without credentials,
+# and never runs a pull request's code: governance/checks/asks_merge.py reads pull-request files as data,
+# through the API, since a workflow_run job holds a write token. A project adds its own pull-request check
+# workflows to the workflow_run list at adoption. Every action is pinned by commit, its release tag in a
+# comment (model S-016 AC8).
+name: asks-merge
+
+on:
+  workflow_run:
+    workflows: [governance, pr-body, desk-build]
+    types: [completed]
+  # A fallback: GitHub may run a schedule late.
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  statuses: read
+  actions: write
+
+# Its own group, apart from the Orchestrator loop's; a waiting run is never cancelled.
+concurrency:
+  group: asks-merge
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    # A completed check run of a pull request only; the governance run this job starts never re-triggers it.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      # The default branch with its history (the ledger's), and no token left on disk.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Merge the filed asks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: python3 governance/checks/asks_merge.py run --root . --default-branch "$DEFAULT_BRANCH"

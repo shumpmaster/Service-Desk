@@ -100,3 +100,33 @@ export function jobKindsByPath(changes) {
   }
   return true;
 }
+
+// AC77's closed read (draft 7, Critic round 5, finding 5; J1's limit): the project's closed pull
+// requests, newest updated first, 100 to a page, read by both the sender and the desk's function.
+export const CLOSED_MAX_PAGES = 3;
+
+/**
+ * Whether AC77's closed read goes on to the next page: the page names a next one (it is full), and
+ * its last pull request was updated after `sinceMs`, the earliest held question's raised time (or its
+ * time can't be read: the safe side). Past that, every later pull request was updated, so closed, at
+ * or before the raised time, and ends nothing. Needing a fourth page is a failed read (AC77).
+ */
+export function closedNeedsNext(list, hasNext, sinceMs) {
+  if (!hasNext || !Array.isArray(list) || !list.length) return false;
+  const last = list[list.length - 1];
+  const t = last && typeof last.updated_at === 'string' ? Date.parse(last.updated_at) : NaN;
+  return !(Number.isFinite(t) && t <= sinceMs);
+}
+
+/**
+ * Whether a closed pull request (REST's form) can end a held question's hold (AC77, J20): from the
+ * project's own branches into the default branch, closed unmerged, not a draft (`draft` false), and
+ * closed after `sinceMs`. Its files are then read to see whose answer it recorded.
+ */
+export function closedCanEnd(p, project, sinceMs) {
+  if (!p || !Number.isInteger(p.number) || p.merged_at != null || typeof p.closed_at !== 'string') return false;
+  if (p.draft !== false) return false; // a closed draft never ends a hold (draft 7, note 6)
+  if (!(Date.parse(p.closed_at) > sinceMs) || !p.base || p.base.ref !== project.defaultBranch) return false;
+  const headRepo = p.head && p.head.repo && p.head.repo.full_name;
+  return typeof headRepo === 'string' && headRepo.toLowerCase() === String(project.repo).toLowerCase();
+}

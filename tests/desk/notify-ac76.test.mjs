@@ -1,4 +1,5 @@
-// ac-test: S-001/AC76 — failures: a fake push service answering 201, 429 then 201, 503 three times,
+// ac-test: S-001/AC76 — failures (and, draft 7, the second read's checks, the memory issues' words and
+// their closing): a fake push service answering 201, 429 then 201, 503 three times,
 // 404, 410, 403 BadJwtToken then 201 after a new JWT, BadJwtToken over five runs in an hour (one new
 // JWT only), VapidPkHashMismatch (no new JWT) and `test: fail` (one request); fake GitHub reads
 // failing; the 6-hour give-up counted, not named; the issue opened, updated and closed with no item's
@@ -6,8 +7,9 @@
 
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { REPO, MIN, HOUR, checkoutOf, harness, makeSubscription, makeVapid, testConfig, pull, cleanScratch } from './notify-helpers.mjs';
-import { emptyState, stateFiles } from '../../src/notify/state.mjs';
+import { REPO, REPO_ID, MIN, HOUR, checkoutOf, harness, makeSubscription, makeVapid, testConfig, pull, cleanScratch, ownWorkflowRun } from './notify-helpers.mjs';
+import { emptyState, stateFiles, datingArtifact } from '../../src/notify/state.mjs';
+import { reasonText } from '../../src/notify/issue.mjs';
 import { makeZip } from './notify-helpers.mjs';
 
 after(cleanScratch);
@@ -327,4 +329,122 @@ test('AC76 (draft 6): an issue that can\'t be opened is logged, and the run ends
   assert.equal(r.pushes.length, 0);
   assert.ok(r.logs.some((l) => /issue: the open issues could not be read/.test(l)), r.logs.join('\n'));
   assert.equal(h.world.issues.length, 0);
+});
+
+// Draft 7 (Critic round 5, finding 1 and note 8): the second read passes over any artifact whose
+// `workflow_run` is not on main with this repository's id as both `repository_id` and
+// `head_repository_id`, reads no run by id, and takes the newest that passes; a page with none
+// passing, or no GITHUB_REPOSITORY_ID, opens the issue at once, in its own words. Each memory line
+// goes at the first run whose lookup reads a state again, or answers with none.
+const ARTIFACTS_READ = `/repos/${REPO}/actions/artifacts?name=desk-notify-state&per_page=100`;
+const RUNS_LIST = `/repos/${REPO}/actions/workflows/desk-notify.yml/runs`;
+const WORDS_30 = "The sender's memory could not be read for 30 minutes or more, so it sends nothing until it can.";
+const WORDS_AT_ONCE = "The sender's memory could not be read, and GitHub didn't say for how long, so it sends nothing until it can. If this was a passing GitHub failure, this closes by itself.";
+const WORDS_FORGED = "The sender's memory could not be trusted: its saved state's signature does not match, so the sender sends nothing until a good state is read.";
+
+/** A newer `desk-notify-state` artifact that is not the sender's own (made up; never readable as a state). */
+function otherArtifact(h, o) {
+  const id = h.nextRun++;
+  h.world.artifacts.push({ id: id + 50000, name: 'desk-notify-state', expired: false, size_in_bytes: 10, created_at: new Date(h.clock.now()).toISOString(),
+    workflow_run: ownWorkflowRun(id, o), zip: Buffer.from('not a zip') });
+}
+
+test('AC76 (draft 7): a branch\'s, a fork\'s and another repository\'s newer artifacts are passed over; the sender\'s own older artifact dates the failure', async () => {
+  for (const o of [{ headBranch: 'cos/made-up' }, { headRepositoryId: 700002 }, { repositoryId: 700002 }]) {
+    const h = await started(); // its own artifact at the bootstrap run
+    h.add('N-a');
+    h.clock.advance(10 * MIN);
+    otherArtifact(h, o); // 15 minutes after the bootstrap's
+    h.clock.advance(10 * MIN);
+    otherArtifact(h, o); // 25 minutes after
+    h.world.fail[RUNS_LIST] = 502;
+    let r = await h.run({ after: 1 * MIN }); // own artifact 25 minutes old
+    assert.equal(openIssue(h), undefined, `${JSON.stringify(o)}: 25 minutes from its own artifact: no issue`);
+    assert.equal(r.ghCalls.filter((c) => c.path === ARTIFACTS_READ).length, 1, 'one page, newest first');
+    assert.ok(!r.ghCalls.some((c) => /\/actions\/runs\/\d+($|\?)/.test(c.path.split('?')[0]) || /\/actions\/runs\/\d+\/artifacts/.test(c.path)), 'no run read by id');
+    r = await h.run({ after: 1 * MIN }); // 26 minutes
+    h.clock.advance(3 * MIN);
+    r = await h.run(); // 30 minutes: the issue, which a newer look-alike would have kept shut
+    assert.equal(r.wrote, false);
+    assert.equal(r.pushes.length, 0);
+    assert.ok(openIssue(h).body.includes(WORDS_30), JSON.stringify(o));
+    assert.ok(!openIssue(h).body.includes(WORDS_AT_ONCE));
+  }
+  // The checks by themselves: the id compared as GitHub gives it (a number), and as the runner's string.
+  const a = { name: 'desk-notify-state', created_at: '2026-10-18T12:00:00Z', workflow_run: ownWorkflowRun(1) };
+  assert.equal(datingArtifact(a, String(REPO_ID), 'main'), true);
+  assert.equal(datingArtifact({ ...a, workflow_run: { ...a.workflow_run, head_branch: 'dev' } }, String(REPO_ID), 'main'), false);
+  assert.equal(datingArtifact({ ...a, workflow_run: { ...a.workflow_run, head_repository_id: 1 } }, String(REPO_ID), 'main'), false);
+  assert.equal(datingArtifact({ ...a, workflow_run: { id: 1 } }, String(REPO_ID), 'main'), false, 'no ids listed: passed over');
+});
+
+test('AC76 (draft 7): a page with none passing, or no GITHUB_REPOSITORY_ID, opens the issue at once, in its own words', async () => {
+  // Only look-alikes on the page: at once.
+  let h = await started();
+  h.world.artifacts.length = 0;
+  otherArtifact(h, { headBranch: 'cos/made-up' });
+  otherArtifact(h, { headRepositoryId: 700002 });
+  h.world.fail[RUNS_LIST] = 502;
+  let r = await h.run();
+  assert.equal(r.wrote, false);
+  assert.equal(r.pushes.length, 0);
+  assert.ok(openIssue(h).body.includes(WORDS_AT_ONCE), openIssue(h) && openIssue(h).body);
+  assert.ok(!openIssue(h).body.includes(WORDS_30));
+  noItemIn(openIssue(h).body);
+  // No repository id from the runner: at once, without the second read.
+  h = await started();
+  h.env.GITHUB_REPOSITORY_ID = '';
+  h.world.fail[RUNS_LIST] = 502;
+  r = await h.run();
+  assert.ok(!r.ghCalls.some((c) => c.path === ARTIFACTS_READ), 'nothing to check the artifacts against: no read');
+  assert.ok(openIssue(h).body.includes(WORDS_AT_ONCE));
+  assert.equal(r.code, 0);
+});
+
+test('AC76 (draft 7): each memory issue\'s words', () => {
+  assert.equal(reasonText({ code: 'state-unread' }), WORDS_30);
+  assert.equal(reasonText({ code: 'state-undated' }), WORDS_AT_ONCE);
+  assert.equal(reasonText({ code: 'forged' }), WORDS_FORGED);
+});
+
+test('AC76 (draft 7): the at-once and 30-minute lines close at the next run that reads a state', async () => {
+  // At once (the runs list and the artifacts read failing), then a run whose lookup reads the state.
+  let h = await started();
+  h.add('N-a');
+  h.world.fail[RUNS_LIST] = 502;
+  h.world.fail[`/repos/${REPO}/actions/artifacts?name=`] = 503;
+  await h.run();
+  assert.ok(openIssue(h).body.includes(WORDS_AT_ONCE));
+  delete h.world.fail[RUNS_LIST];
+  delete h.world.fail[`/repos/${REPO}/actions/artifacts?name=`];
+  let r = await h.run();
+  assert.equal(r.pushes.length, 1, 'what waited meanwhile, once');
+  assert.equal(openIssue(h), undefined, 'closed: the state was read');
+  // 30 minutes, then a run that reads the state.
+  h = await started();
+  h.add('N-a');
+  h.world.fail[`/repos/${REPO}/actions/artifacts/`] = 502;
+  for (let i = 0; i < 7; i++) await h.run();
+  assert.ok(openIssue(h).body.includes(WORDS_30));
+  delete h.world.fail[`/repos/${REPO}/actions/artifacts/`];
+  r = await h.run();
+  assert.equal(openIssue(h), undefined);
+});
+
+test('AC76 (draft 7): an at-once line closes at a run that finds "no state", with the project read or not', async () => {
+  for (const projectRead of [true, false]) {
+    // The first runs: no artifact yet, and the runs list failing gives the issue at once.
+    const h = harness({ checkout: co(['N-a']) });
+    h.world.fail[RUNS_LIST] = 502;
+    let r = await h.run();
+    assert.equal(r.wrote, false);
+    assert.ok(openIssue(h).body.includes(WORDS_AT_ONCE));
+    // The list answers, with no run that saved a state: "no state".
+    delete h.world.fail[RUNS_LIST];
+    if (!projectRead) h.world.fail[`/repos/${REPO}/pulls?`] = 502;
+    r = await h.run();
+    assert.ok(r.logs.some((l) => /state: none/.test(l)), r.logs.join('\n'));
+    assert.equal(openIssue(h), undefined, `closed (project read: ${projectRead})`);
+    assert.equal(r.pushes.length, projectRead ? 1 : 0, projectRead ? 'the start-up summary' : 'nothing sent while not read');
+  }
 });

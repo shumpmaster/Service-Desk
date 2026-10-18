@@ -237,7 +237,7 @@ test('J19, J7: the public key decodes to 65 bytes starting 0x04, 87 characters; 
 // ---------------------------------------------------------------------------
 // The service worker, with a faked `self`
 
-function loadWorker(origin = 'https://desk.example.invalid') {
+function loadWorker(origin = 'https://desk.example.invalid', ctx = {}) {
   const listeners = {};
   const shown = [];
   const opened = [];
@@ -253,7 +253,7 @@ function loadWorker(origin = 'https://desk.example.invalid') {
       openWindow: async (url) => { opened.push(url); return { url }; },
     },
   };
-  vm.runInNewContext(readFileSync(join(PUBLIC, 'sw.js'), 'utf8'), { self, URL, console });
+  vm.runInNewContext(readFileSync(join(PUBLIC, 'sw.js'), 'utf8'), { self, URL, console, ...ctx });
   const fire = async (type, ev) => {
     const waits = [];
     listeners[type]({ ...ev, waitUntil: (p) => waits.push(p) });
@@ -285,13 +285,38 @@ test('AC75: a tap opens the desk at the navigate address on its own origin, at i
   assert.equal(w.opened[2], 'https://desk.example.invalid/');
   await tap(undefined);
   assert.equal(w.opened[3], 'https://desk.example.invalid/');
-  // An open desk window is navigated and focused, not a second one opened.
+  // An open desk window that can't be handed the address (no MessageChannel here): focused, then
+  // navigated and focused, not a second one opened.
   const focused = [];
   const client = { url: 'https://desk.example.invalid/#/', navigate: async (u) => { focused.push(['navigate', u]); return client; }, focus: async () => { focused.push(['focus']); } };
   w.clientsList.push({ url: 'https://elsewhere.example.invalid/', navigate: async () => { throw new Error('never'); } }, client);
   await tap('https://desk.example.invalid/?open=actions-usage');
-  assert.deepEqual(focused, [['navigate', 'https://desk.example.invalid/?open=actions-usage'], ['focus']]);
+  assert.deepEqual(focused, [['focus'], ['navigate', 'https://desk.example.invalid/?open=actions-usage'], ['focus']]);
   assert.equal(w.opened.length, 4);
+});
+
+test('AC74, AC75 (draft 8): an open desk is focused and handed the address, staying loaded; one that doesn\'t take it within a second is navigated', async () => {
+  for (const takes of [true, false]) {
+    const w = loadWorker('https://desk.example.invalid', { MessageChannel, setTimeout, clearTimeout });
+    const did = [];
+    const client = { url: 'https://desk.example.invalid/#/p/Service-Desk',
+      postMessage: (data, ports) => {
+        did.push(['message', data]);
+        if (takes) ports[0].postMessage({ ok: true });
+        else ports[0].close();
+      },
+      navigate: async (u) => { did.push(['navigate', u]); return client; }, focus: async () => { did.push(['focus']); } };
+    w.clientsList.push(client);
+    const t0 = Date.now();
+    await w.fire('notificationclick', { notification: { data: { navigate: 'https://desk.example.invalid/?open=Service-Desk%7Cpr%7C108' }, close() {} } });
+    const msg = ['message', { kind: 'desk-open', navigate: 'https://desk.example.invalid/?open=Service-Desk%7Cpr%7C108' }];
+    if (takes) assert.deepEqual(JSON.parse(JSON.stringify(did)), [['focus'], msg], 'taken: no navigation, the page stays loaded');
+    else {
+      assert.deepEqual(JSON.parse(JSON.stringify(did)), [['focus'], msg, ['navigate', 'https://desk.example.invalid/?open=Service-Desk%7Cpr%7C108'], ['focus']]);
+      assert.ok(Date.now() - t0 >= 900, 'after about a second');
+    }
+    assert.equal(w.opened.length, 0);
+  }
 });
 
 test('AC75: pushsubscriptionchange shows "Desk notifications need turning on again: open the desk"', async () => {
@@ -300,4 +325,39 @@ test('AC75: pushsubscriptionchange shows "Desk notifications need turning on aga
   assert.equal(w.shown[0].title, 'Service Desk');
   assert.equal(w.shown[0].options.body, 'Desk notifications need turning on again: open the desk');
   assert.equal(w.shown[0].options.data.navigate, 'https://desk.example.invalid/');
+});
+
+// Draft 8 (the owner's ruling "A. Keep the fold (Recommended)", decisions/questions/P-001-notify-more-detail.md):
+// on the accepted page, a "More detail" fold at the bottom of Home, closed until tapped, holding the
+// Notifications line and the Actions line and nothing else; a `?open=actions-usage` tap opens it at that line.
+test('AC75 (draft 8): the accepted Home\'s "More detail" fold: at the bottom, closed at load, the two lines only; opened by ?open=actions-usage', async () => {
+  let app = await loadApp({ repos: repos() });
+  try {
+    await app.advance(1000);
+    const folds = findAll(app.els.view, (e) => e.attrs && e.attrs.id === 'more-detail');
+    assert.equal(folds.length, 1);
+    const more = folds[0];
+    assert.equal(more.tag, 'details');
+    assert.equal(more.attrs.open == null, true, 'closed at load');
+    const home = app.els.view.children[app.els.view.children.length - 1];
+    assert.ok(home === more || findAll(home, (e) => e === more).length === 1, 'at the bottom of Home');
+    const kids = more.children.filter((c) => c.tag);
+    assert.deepEqual(kids.map((c) => c.tag), ['summary', 'section', 'section'], 'its summary and two lines, nothing else');
+    assert.equal(kids[0].textContent, 'More detail');
+    assert.equal(kids[1].className, 'notify-line');
+    assert.ok(kids[1].textContent.startsWith('Notifications'));
+    assert.equal(kids[2].attrs.id, 'actions-usage');
+    assert.ok(kids[2].textContent.startsWith('GitHub Actions this month'));
+  } finally {
+    app.restore();
+  }
+  app = await loadApp({ repos: repos(), search: '?open=actions-usage' });
+  try {
+    await app.advance(1000);
+    const more = findAll(app.els.view, (e) => e.attrs && e.attrs.id === 'more-detail')[0];
+    assert.equal(more.attrs.open, 'open', 'opened by the tap');
+    assert.ok(app.scrolled().some((e) => e.attrs.id === 'actions-usage'), 'at the Actions line');
+  } finally {
+    app.restore();
+  }
 });

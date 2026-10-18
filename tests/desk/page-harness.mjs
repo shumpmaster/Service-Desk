@@ -115,6 +115,8 @@ export async function loadApp({ hash = '', repos, breakView = false, now: start 
     /** The fake desk function's calls, with their bodies. */
     calls: () => server.calls,
     state: () => els['screen-state'],
+    /** Fire a document event (from 2026-10-18: `visibilitychange`, after setting doc.visibilityState). */
+    fire: (type) => { for (const fn of docListeners[type] || []) fn({}); },
     async advance(ms) {
       const until = now + ms;
       for (;;) {

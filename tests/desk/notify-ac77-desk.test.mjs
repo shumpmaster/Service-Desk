@@ -165,9 +165,10 @@ test('AC77: the answer\'s pull request opening: "Your answer is being recorded",
   }
 });
 
-test('AC77: within one opening, the answer\'s pull request merging leaves the question answered; closing unmerged shows it waiting again, with its link', async () => {
+test('AC77: within one opening, the answer\'s pull request merging leaves the question answered; closing unmerged (read by number, draft 7) shows it waiting again, with its link', async () => {
   const r = repos({ [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, [answerPr(91)]);
   r['Service-Desk'].prFiles = { 91: ADDS_ANSWER };
+  r['Service-Desk'].prAnswers = { 91: { ...answerPr(91), state: 'closed', closed_at: '2026-10-18T11:45:00Z', merged_at: null } };
   const app = await loadApp({ repos: r, now: RAISED_MS + 10 * MIN, hash: '#/p/Service-Desk/q/P-001-next-work' });
   try {
     await app.advance(1000);
@@ -178,6 +179,7 @@ test('AC77: within one opening, the answer\'s pull request merging leaves the qu
     assert.ok(!projectText(app).includes(RECORDING_WORDS) && !projectText(app).includes(HELD_WORDS));
     assert.ok(pick(app), 'waiting, with its answer link');
     assert.equal(app.state().textContent, '1 waiting on you');
+    assert.deepEqual(app.calls().filter((c) => c.body.prs).map((c) => c.body.prs), [[91]], 'one read by number');
   } finally {
     app.restore();
   }
@@ -367,7 +369,9 @@ test('AC77 (draft 6): closed before the raised time, merged, from a fork, or int
   try {
     await app.advance(3 * 60_000);
     assert.ok(projectText(app).includes(HELD_WORDS), 'the hold stands');
-    assert.equal(app.calls().filter((c) => c.path === '/api/blobs' && c.body.closed).length, 1, 'not tried again this opening');
+    assert.equal(app.state().textContent, 'Quiet', '"read successfully" and the counts untouched');
+    // Draft 8 (note B): tried again at each next poll, once a poll.
+    assert.equal(app.calls().filter((c) => c.path === '/api/blobs' && c.body.closed).length, 4, 'the first cycle and each of the three polls after');
   } finally {
     app.restore();
   }

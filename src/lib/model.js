@@ -361,6 +361,33 @@ export function recordingAnswers(project, pulls, files) {
   return out;
 }
 
+/**
+ * AC77 (draft 7, finding 2b), on the page: what this device's record of a question says, beyond an
+ * open pull request recording it now. { recording, over, pr }:
+ * - its recorded pull request has left the open list: still "being recorded" (recording), with that
+ *   pull request's link, until the single read finds it closed unmerged (then `ended`) or, merged,
+ *   until the tree shows the answer (the question then is no longer open);
+ * - that pull request still open but no longer recording it (a draft now, or files read at its new
+ *   head without the answer): the hold is over (over), so it waits; files not yet read at a new head:
+ *   still "being recorded";
+ * - found closed unmerged (`ended`): the hold is over.
+ */
+function seenRecording(project, name, pulls, asking, recording) {
+  const none = { recording: false, over: false, pr: null };
+  if (recording.has(name)) return none;
+  const num = asking.recorded ? asking.recorded.get(name) : undefined;
+  if (Number.isInteger(num)) {
+    const open = (pulls || []).find((p) => p.number === num);
+    const link = { number: num, url: `https://github.com/${project.repo}/pull/${num}`, title: open ? open.title : null };
+    if (!open) return { recording: true, over: false, pr: link };
+    if (!canRecord(open, project)) return { recording: false, over: true, pr: null };
+    const f = asking.files ? asking.files.get(num) : null;
+    if (!f || (open.headSha && f.headSha !== open.headSha)) return { recording: true, over: false, pr: link };
+    return { recording: false, over: true, pr: null };
+  }
+  return { recording: false, over: Boolean(asking.ended && asking.ended.has(name)), pr: null };
+}
+
 function blobUrl(project, path) {
   return `https://github.com/${project.repo}/blob/${encodeURIComponent(project.defaultBranch)}/${path.split('/').map(encodeURIComponent).join('/')}`;
 }
@@ -370,8 +397,9 @@ function blobUrl(project, path) {
  * input: { project, config, tree: Map|null, records: Map(path → parsed), history: Map(path →
  *   { oldest, newest }), pullPages, checkPages, checksState: 'ok'|'cant-read', now: Date,
  *   withdrawn: [path], asking? }
- * asking (the page only, AC77): { files: Map(number → { headSha, changes }) (J20), recordedBefore:
- *   Set(name) (an answer's pull request was seen open, or found closed unmerged), hereInstead:
+ * asking (the page only, AC77): { files: Map(number → { headSha, changes }) (J20), recorded:
+ *   Map(name → number) (an answer's pull request was seen recording it), ended: Set(name) (one was
+ *   found closed unmerged after it was raised, draft 7), hereInstead:
  *   Set(name) ("Answer it here instead" on this device), seen: Map(path → ms) (first seen here) }.
  *   With it, a question held or being recorded leaves `flagged` for `asking`; without it (the
  *   sender, which judges holds itself) every open question is flagged as before.
@@ -455,11 +483,12 @@ export function buildModel(input) {
       const sid = askedInSession(text, project.model);
       const sessionFile = sid && project.model === 'v3' ? records.get(sessionPathOf(sid)) || null : null;
       const seenMs = asking.seen ? asking.seen.get(q.path) : null;
+      const seenRec = seenRecording(project, q.name, pulls, asking, recording);
       let hold = questionHold({ model: project.model, text, raisedMs: raisedAt ? raisedAt.getTime() : null, seenMs, sessionFile,
-        nowMs: nowMs0, recording: recording.has(q.name), recordedBefore: Boolean(asking.recordedBefore && asking.recordedBefore.has(q.name)) });
+        nowMs: nowMs0, recording: recording.has(q.name) || seenRec.recording, recordedBefore: seenRec.over });
       if (hold.state === 'held' && asking.hereInstead && asking.hereInstead.has(q.name)) hold = { state: 'open', session: hold.session };
       if (hold.state !== 'open') {
-        const pr = recording.get(q.name) || null;
+        const pr = recording.get(q.name) || seenRec.pr || null;
         askingRows.push({ ...row, state: hold.state, session: hold.session, words: hold.state === 'held' ? HELD_WORDS : RECORDING_WORDS,
           pr: pr ? { number: pr.number, url: pr.url, title: pr.title } : null });
         continue;

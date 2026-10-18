@@ -58,24 +58,75 @@ test('J20: three pages read through Link, each counting 1 of the budget; a fourt
   assert.equal(r.gh.filter((c) => /\/files/.test(c.url)).length, 1);
 });
 
-test('J6: `files` and `closed` refused when out of form; each number counts 1 and `closed` 1 against the 25', async () => {
+test('J6: `files`, `closed` and `prs` refused when out of form; each number counts 1, `closed` 3 (its worst case) against the 25', async () => {
+  const since = '2026-10-18T11:26:23.000Z';
   for (const [body, why] of [[{ files: 'x' }, 'bad files'], [{ files: [0] }, 'bad files'], [{ files: [1.5] }, 'bad files'], [{ files: ['7'] }, 'bad files'],
-    [{ closed: 'yes' }, 'bad closed'], [{ files: Array.from({ length: 26 }, (_, i) => i + 1) }, 'too many files'],
-    [{ files: [1, 2, 3], blobs: Array.from({ length: 22 }, (_, i) => i.toString(16).padStart(40, 'b')), closed: true }, 'budget 26 is over 25']]) {
+    [{ closed: 'yes' }, 'bad closed'], [{ closed: true }, 'bad closed'], [{ closed: {} }, 'bad closed'], [{ closed: { since: 'yesterday' } }, 'bad closed'],
+    [{ closed: { since, more: 1 } }, 'bad closed'], [{ prs: [0] }, 'bad prs'], [{ prs: '5' }, 'bad prs'],
+    [{ prs: Array.from({ length: 11 }, (_, i) => i + 1) }, 'too many prs'],
+    [{ files: Array.from({ length: 26 }, (_, i) => i + 1) }, 'too many files'],
+    [{ files: [1, 2, 3], blobs: Array.from({ length: 19 }, (_, i) => i.toString(16).padStart(40, 'b')), closed: { since }, prs: [4] }, 'budget 26 is over 25']]) {
     const { res } = await blobCall(body, []);
     assert.equal(res.status, 400, why);
     assert.equal((await res.json()).error, why);
   }
 });
 
-test('AC77 (draft 6), J6: `closed` reads one page of the closed pull requests, newest updated first; a failure is a null answer, not a failed call', async () => {
-  let r = await blobCall({ closed: true }, [(url) => (url === `${API}/pulls?state=closed&sort=updated&direction=desc&per_page=100` ? { status: 200, body: '[{"number":1}]' } : undefined)]);
-  assert.equal(r.json.closed, '[{"number":1}]');
+// AC77 (draft 7, finding 5): the closed read pages while a full page's last pull request was updated
+// after `since`, up to 3; a fourth needed, or a failure, is a null answer, never a failed call; each pull
+// request cut to the fields the page reads.
+const CLOSED_URL = `${API}/pulls?state=closed&sort=updated&direction=desc&per_page=100`;
+function closedRoutes(pages) {
+  return [(url) => {
+    if (!url.startsWith(CLOSED_URL)) return undefined;
+    const m = /&page=(\d+)$/.exec(url);
+    const n = m ? Number(m[1]) : 1;
+    const list = pages[n - 1] || [];
+    return { status: 200, headers: n < pages.length ? { Link: `<${CLOSED_URL}&page=${n + 1}>; rel="next"` } : {}, body: JSON.stringify(list) };
+  }];
+}
+const cpr = (n, updated, o = {}) => ({ number: n, title: 'Secret-ish title', body: 'Secret-ish body', state: 'closed', draft: false, merged_at: null,
+  closed_at: updated, updated_at: updated, base: { ref: 'main' }, head: { sha: 'a'.repeat(40), repo: { full_name: 'shumpmaster/Service-Desk' } }, ...o });
+const full = (from, updated) => Array.from({ length: 100 }, (_, i) => cpr(from + i, updated));
+
+test('AC77 (draft 7), J6: `closed` reads the next page only while a full page\'s last was updated after `since`, up to 3; a fourth needed or a failure is null', async () => {
+  const since = '2026-10-18T11:26:23.000Z';
+  // One page, not full: one request; the fields kept, never a title or body.
+  let r = await blobCall({ closed: { since } }, closedRoutes([[cpr(1, '2026-10-18T12:00:00Z')]]));
   assert.equal(r.gh.length, 1);
-  r = await blobCall({ closed: true, files: [9] }, [(url) => (/state=closed|\/files/.test(url) ? { status: 502, body: 'bad gateway' } : undefined)]);
+  assert.equal(r.json.closed.pulls.length, 1);
+  assert.deepEqual(Object.keys(r.json.closed.pulls[0]).sort(), ['base', 'closed_at', 'draft', 'head', 'merged_at', 'number', 'state', 'updated_at']);
+  assert.ok(!JSON.stringify(r.json).includes('Secret-ish'));
+  // A full first page whose last was updated after `since`: the second is read.
+  r = await blobCall({ closed: { since } }, closedRoutes([full(1, '2026-10-18T13:00:00Z'), [cpr(200, '2026-10-18T12:00:00Z')]]));
+  assert.equal(r.gh.length, 2);
+  assert.equal(r.json.closed.pulls.length, 101);
+  // A full page whose last was updated at `since`: no next page.
+  r = await blobCall({ closed: { since } }, closedRoutes([full(1, since), [cpr(200, '2026-10-18T10:00:00Z')]]));
+  assert.equal(r.gh.length, 1);
+  // Three full pages all after `since`, a fourth there: a failed read, three requests.
+  r = await blobCall({ closed: { since } }, closedRoutes([full(1, '2026-10-18T13:00:00Z'), full(101, '2026-10-18T13:00:00Z'), full(201, '2026-10-18T13:00:00Z'), [cpr(400, '2026-10-18T12:00:00Z')]]));
+  assert.equal(r.gh.length, 3, 'never a fourth');
+  assert.equal(r.json.state, 'ok');
+  assert.equal(r.json.closed, null);
+  // A failure: a null answer, not a failed call.
+  r = await blobCall({ closed: { since }, files: [9] }, [(url) => (/state=closed|\/files/.test(url) ? { status: 502, body: 'bad gateway' } : undefined)]);
   assert.equal(r.json.state, 'ok');
   assert.equal(r.json.closed, null);
   assert.equal(r.json.files[9], null);
+});
+
+test('AC77 (draft 7), J6: `prs` reads each pull request alone, cut to the kept fields; a failure is a null answer', async () => {
+  const r = await blobCall({ prs: [91, 92] }, [
+    (url) => (url === `${API}/pulls/91` ? { status: 200, body: JSON.stringify(cpr(91, '2026-10-18T12:00:00Z', { merged_at: '2026-10-18T12:00:00Z' })) } : undefined),
+    (url) => (url === `${API}/pulls/92` ? { status: 502, body: 'bad gateway' } : undefined),
+  ]);
+  assert.equal(r.json.state, 'ok');
+  assert.equal(r.gh.length, 2, 'one request each');
+  assert.equal(r.json.prs[91].merged_at, '2026-10-18T12:00:00Z');
+  assert.equal(r.json.prs[91].state, 'closed');
+  assert.ok(!JSON.stringify(r.json).includes('Secret-ish'));
+  assert.equal(r.json.prs[92], null);
 });
 
 // ---------------------------------------------------------------------------

@@ -2,7 +2,8 @@
 // poll and blob calls from in-memory repositories, honours the page's ETags the way the real
 // function does (a null page for a matching ETag), and records every call with the fake time.
 
-import { urlsFor, pageUrl } from '../../src/lib/github.js';
+import { urlsFor, pageUrl, keptPull } from '../../src/lib/github.js';
+import { closedNeedsNext, CLOSED_MAX_PAGES } from '../../src/lib/prfiles.js';
 import { createHash } from 'node:crypto';
 
 const etagOf = (s) => `"${createHash('sha1').update(s).digest('hex')}"`;
@@ -97,7 +98,10 @@ export function fakeServer(repos, config, clock) {
     const blobs = {};
     for (const s of body.blobs) blobs[s] = texts.has(s) ? texts.get(s) : null;
     const history = {};
-    for (const p of body.history) history[p] = [JSON.stringify(r.history[p] || [{ commit: { committer: { date: '2026-10-06T10:00:00Z' } } }])];
+    // From 2026-10-18: `historyFail(path)` true gives that path a null answer (a failed history read).
+    for (const p of body.history) {
+      history[p] = r.historyFail && r.historyFail(p) ? null : [JSON.stringify(r.history[p] || [{ commit: { committer: { date: '2026-10-06T10:00:00Z' } } }])];
+    }
     const compare = {};
     for (const c of body.compare || []) {
       const key = `${c.base}...${c.head}`;
@@ -122,7 +126,45 @@ export function fakeServer(repos, config, clock) {
         extra.files[n] = pages;
       }
     }
-    if (body.closed) extra.closed = r.closedFail ? null : JSON.stringify(r.closedPulls || []);
+    // AC77's closed read (draft 7) as the function makes it: `closedPulls` newest updated first, 100
+    // to a page, the next page only while a full page's last was updated after `since`, up to 3 (a
+    // fourth needed: null); each page read counted in `closedPagesRead`. `closedFail`: null (true, or a
+    // function of the call's count giving true for a failure).
+    if (body.closed) {
+      r.closedCalls = (r.closedCalls || 0) + 1;
+      const failNow = typeof r.closedFail === 'function' ? r.closedFail(r.closedCalls) : r.closedFail;
+      if (failNow) extra.closed = null;
+      else {
+        const all = r.closedPulls || [];
+        const since = Date.parse(body.closed.since);
+        const pulls = [];
+        extra.closed = null;
+        for (let page = 1; page <= CLOSED_MAX_PAGES + 1; page++) {
+          if (page > CLOSED_MAX_PAGES) {
+            pulls.length = 0;
+            break;
+          }
+          r.closedPagesRead = (r.closedPagesRead || 0) + 1;
+          const list = all.slice((page - 1) * 100, page * 100);
+          pulls.push(...list.map(keptPull));
+          if (!closedNeedsNext(list, all.length > page * 100, since)) {
+            extra.closed = { pulls };
+            break;
+          }
+        }
+      }
+    }
+    // AC77's single read (draft 7): `prAnswers[n]` (a pull request in REST's form, or a function of
+    // the read's count giving one), or a null answer for a number it lacks or `prFail` names.
+    if (Array.isArray(body.prs)) {
+      extra.prs = {};
+      for (const n of body.prs) {
+        r.prReads = (r.prReads || 0) + 1;
+        const a = r.prAnswers ? r.prAnswers[n] : null;
+        const v = typeof a === 'function' ? a(r.prReads) : a;
+        extra.prs[n] = (r.prFail || []).includes(n) || !v ? null : keptPull(v);
+      }
+    }
     if (body.usage) {
       const a = typeof r.usageAnswer === 'function' ? r.usageAnswer(clock.now()) : r.usageAnswer;
       extra.usage = a || { state: 'not-configured', asOf: new Date(clock.now()).toISOString(), period: null, summary: { ok: false, items: [] }, usage: { ok: false, items: [] }, publicRepos: null };

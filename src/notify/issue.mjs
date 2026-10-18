@@ -14,7 +14,8 @@ const STEPS_SUBSCRIPTION = [
 
 /**
  * A reason's words. reason: { code, project?, count?, status?, word?, why? }.
- * Codes: keys, gone, refused, unread, forged, state-unread, gave-up, usage, test.
+ * Codes: keys, gone, refused, unread, forged, state-unread (a failed read, 30 minutes or more), state-undated
+ * (a failed read GitHub gave no time for, at once: AC76, draft 7), gave-up, usage, test.
  */
 export function reasonText(r) {
   switch (r.code) {
@@ -29,6 +30,7 @@ export function reasonText(r) {
     case 'unread': return `Desk notifications can't read ${r.project}: its records could not be read for 30 minutes or more. Nothing is lost: what started waiting meanwhile is sent once it reads again.`;
     case 'forged': return "The sender's memory could not be trusted: its saved state's signature does not match, so the sender sends nothing until a good state is read.";
     case 'state-unread': return "The sender's memory could not be read for 30 minutes or more, so it sends nothing until it can.";
+    case 'state-undated': return "The sender's memory could not be read, and GitHub didn't say for how long, so it sends nothing until it can. If this was a passing GitHub failure, this closes by itself.";
     case 'gave-up': return `${r.project}: ${r.count} ${r.count === 1 ? 'notification was' : 'notifications were'} given up after 6 hours of the push service saying "try later". The desk shows everything when you open it.`;
     case 'usage': return `GitHub Actions use can't be read: ${r.why}.`;
     case 'test': return `${TEST_MARK} The test from GitHub (\`test: fail\`) ${r.status >= 200 && r.status < 300 ? 'was accepted by the push service although it was signed with a key that is not yours' : `was refused by the push service, as a test should be (${r.status}${r.word ? `, ${r.word}` : ''})`}. This closes on the next notification that is sent.`;
@@ -38,7 +40,7 @@ export function reasonText(r) {
 
 /** The issue's body for a list of reasons, in a fixed order so a body that has not changed is not rewritten. */
 export function issueBody(reasons, keptTestLine = null) {
-  const order = ['keys', 'gone', 'refused', 'forged', 'state-unread', 'unread', 'gave-up', 'usage', 'test'];
+  const order = ['keys', 'gone', 'refused', 'forged', 'state-unread', 'state-undated', 'unread', 'gave-up', 'usage', 'test'];
   const sorted = [...reasons].sort((a, b) => order.indexOf(a.code) - order.indexOf(b.code)
     || String(a.project || '').localeCompare(String(b.project || '')));
   const lines = sorted.map((r) => `- ${reasonText(r)}`);

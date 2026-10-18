@@ -7,7 +7,7 @@ import { neededReads, buildModel, recordKind, parseRecord } from '../lib/model.j
 import { SESSION_PATH_RE, parseSessionFile } from '../lib/cos.js';
 import { waitingSet, outsideAuthor } from '../lib/waiting.js';
 import { questionHold } from '../lib/asking.js';
-import { parseFilePages, splitChanges, recordedAnswers, jobKindsByPath, FILES_MAX_PAGES } from '../lib/prfiles.js';
+import { parseFilePages, splitChanges, recordedAnswers, jobKindsByPath, FILES_MAX_PAGES, CLOSED_MAX_PAGES, closedNeedsNext, closedCanEnd } from '../lib/prfiles.js';
 import { ReadFailed } from './gh.mjs';
 import { findGrant, ASKS_MERGE_WORKFLOW } from './grant.mjs';
 import { judgeCandidate, ASKS_MERGE_RUNS } from './jobcand.mjs';
@@ -15,6 +15,10 @@ import { keyHash } from './state.mjs';
 
 export const DEPLOY_POLL_MS = 15e3;
 export const DEPLOY_WAIT_MS = 120e3;
+// J16's awkward cases (draft 7, Critic round 5, note 12): a job candidate's check runs, statuses and
+// workflow runs are read to 10 pages of 100, the asks-merge job's own `PAGES = 10` (asks_merge.py:79,
+// past which its `get_pages`, :448-460, reads nothing, so the job does not merge it either).
+export const CANDIDATE_MAX_PAGES = 10;
 const sameRepo = (a, b) => typeof a === 'string' && typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
 
 /** Read every record the desk's readers need from the checkout, as the page would through J6. */
@@ -144,21 +148,30 @@ export async function collect(input) {
       const hold = sessionFile ? questionHold({ model: project.model, text, raisedMs, nowMs, recording: false, recordedBefore: false, sessionFile }) : hold0;
       holds.push({ q, qh, raisedMs, hold });
     }
-    // The Orchestrator's ruling (draft 6): for a project with a question still held, one page of its
-    // closed pull requests, newest updated first; an own-branch one into the default branch, closed
+    // The Orchestrator's ruling (draft 6; draft 7, Critic round 5, findings 5 and 6): for a project
+    // with a question still held, its closed pull requests, newest updated first, 100 to a page; the
+    // next page only while a full page's last one was updated after the earliest raised time, up to 3
+    // pages, a fourth needed a failed read. An own-branch, non-draft one into the default branch, closed
     // unmerged after that question's raised time, whose files record its answer (J20), ends the hold:
     // the question waits again and notifies. A failed read makes the project "not read" (AC76).
     const stillHeld = holds.filter((x) => x.hold.state === 'held' && Number.isFinite(x.raisedMs));
     if (stillHeld.length) {
       const since = Math.min(...stillHeld.map((x) => x.raisedMs));
-      const cl = await gh.get(`/repos/${repo}/pulls?state=closed&sort=updated&direction=desc&per_page=100`);
-      if (cl.status !== 200 || !Array.isArray(cl.json)) throw new ReadFailed('closed pull requests', cl.status);
+      const closedUrl = `/repos/${repo}/pulls?state=closed&sort=updated&direction=desc&per_page=100`;
+      const closedList = [];
+      for (let page = 1; ; page++) {
+        if (page > CLOSED_MAX_PAGES) throw new ReadFailed('closed pull requests (over 3 pages)', 200);
+        const cl = await gh.get(page === 1 ? closedUrl : `${closedUrl}&page=${page}`);
+        if (cl.status !== 200 || !Array.isArray(cl.json)) throw new ReadFailed('closed pull requests', cl.status);
+        closedList.push(...cl.json);
+        if (!closedNeedsNext(cl.json, /rel="next"/.test(cl.link || ''), since)) break;
+      }
       const ended = new Map(); // question name → the latest close that records its answer
-      for (const p of cl.json) {
-        if (!p || !Number.isInteger(p.number) || p.merged_at != null || typeof p.closed_at !== 'string') continue;
+      const readNumbers = new Set();
+      for (const p of closedList) {
+        if (!closedCanEnd(p, project, since) || readNumbers.has(p.number)) continue;
+        readNumbers.add(p.number);
         const closedMs = Date.parse(p.closed_at);
-        if (!(closedMs > since) || !p.base || p.base.ref !== project.defaultBranch) continue;
-        if (!sameRepo(p.head && p.head.repo && p.head.repo.full_name, repo)) continue;
         const r = await gh.list(`/repos/${repo}/pulls/${p.number}/files?per_page=100`, { maxPages: FILES_MAX_PAGES });
         if (!r.ok) throw new ReadFailed('closed pull request files', r.status);
         const parsed = parseFilePages(r.pages);
@@ -211,9 +224,9 @@ export async function collect(input) {
         };
         for (const pr of candidates) {
           const sha = extra.get(pr.number).headSha;
-          const ck = await gh.list(`/repos/${repo}/commits/${sha}/check-runs?per_page=100`, { key: 'check_runs', maxPages: 3 });
-          const wr = await gh.list(`/repos/${repo}/actions/runs?head_sha=${sha}&per_page=100`, { key: 'workflow_runs', maxPages: 3 });
-          const st = await gh.list(`/repos/${repo}/commits/${sha}/statuses?per_page=100`, { maxPages: 3 });
+          const ck = await gh.list(`/repos/${repo}/commits/${sha}/check-runs?per_page=100`, { key: 'check_runs', maxPages: CANDIDATE_MAX_PAGES });
+          const wr = await gh.list(`/repos/${repo}/actions/runs?head_sha=${sha}&per_page=100`, { key: 'workflow_runs', maxPages: CANDIDATE_MAX_PAGES });
+          const st = await gh.list(`/repos/${repo}/commits/${sha}/statuses?per_page=100`, { maxPages: CANDIDATE_MAX_PAGES });
           if (!ck.ok || !wr.ok || !st.ok) throw new ReadFailed('job candidate checks', [ck, wr, st].find((x) => !x.ok).status);
           if (ck.more || wr.more || st.more) continue; // too many to judge whole: it waits as any pull request
           const hk = keyHash(stateKey, `${project.name}|pr|${pr.number}|${sha}`);

@@ -10,7 +10,8 @@
 // `desk-notify-state` in the current directory), only when the run built a state.
 //
 // Every value from the event or a secret comes from the environment (Workflow 3: through `env:`):
-//   GITHUB_REPOSITORY, GITHUB_EVENT_NAME, GITHUB_API_URL   set by the runner
+//   GITHUB_REPOSITORY, GITHUB_REPOSITORY_ID, GITHUB_EVENT_NAME, GITHUB_API_URL   set by the runner
+//                               (GITHUB_REPOSITORY_ID: AC76's dating read; missing, a failed state lookup opens the issue at once)
 //   GITHUB_TOKEN                the workflow's own token
 //   DESK_NOTIFY_RUN_ID          github.event.workflow_run.id, for a workflow_run event
 //   DESK_NOTIFY_TEST            inputs.test: "", "true", "fail" or "usage"

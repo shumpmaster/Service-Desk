@@ -256,6 +256,7 @@ export function makeWorld(init = {}) {
     for (const [prefix, status] of Object.entries(w.fail)) if ((p + u.search).startsWith(prefix)) return json(status, { message: 'made-up failure' });
     const rem = { 'x-ratelimit-remaining': String(w.remaining) };
     const base = `/repos/${REPO}`;
+    if (method === 'GET' && p === `${base}/pulls` && q.get('state') === 'closed') return json(200, w.closed || [], rem);
     if (method === 'GET' && p === `${base}/pulls`) return json(200, q.get('page') && q.get('page') !== '1' ? [] : w.pulls, rem);
     let m = /^\/repos\/[^/]+\/[^/]+\/pulls\/(\d+)\/files$/.exec(p);
     if (m) {

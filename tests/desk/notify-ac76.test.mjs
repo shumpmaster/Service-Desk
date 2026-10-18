@@ -281,14 +281,14 @@ for (const [what, failPrefix] of [
     h.add('N-a');
     h.world.fail[failPrefix] = 502;
     // The last good artifact was uploaded by the bootstrap run, 5 minutes before this run.
-    let r = await h.run({ after: 20 * MIN });
+    let r = await h.run({ after: 24 * MIN });
     assert.equal(r.pushes.length, 0);
     assert.equal(r.wrote, false);
     assert.ok(r.ghCalls.some((c) => c.path === `/repos/${REPO}/actions/artifacts?name=desk-notify-state&per_page=100`), 'one page of the artifacts by name');
     assert.equal(openIssue(h), undefined, '5 minutes old: no issue');
-    r = await h.run(); // 25 minutes old
-    assert.equal(openIssue(h), undefined, '25 minutes old: no issue');
-    r = await h.run(); // 30 minutes old
+    r = await h.run({ after: 2 * MIN }); // 29 minutes old
+    assert.equal(openIssue(h), undefined, '29 minutes old: no issue');
+    r = await h.run(); // 31 minutes old: "30 minutes or more"
     assert.match(openIssue(h).body, /memory could not be read for 30 minutes/);
     noItemIn(openIssue(h).body);
     assert.equal(r.code, 0);

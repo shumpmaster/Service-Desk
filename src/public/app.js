@@ -670,7 +670,8 @@ function askingView(project, name, a) {
   return h('section', { class: `asking asking-${a.state}` }, bannerFor(), backTo(name),
     h('h2', {}, a.title), recheckNote(name, { kind: 'question', name: a.name }),
     h('p', { class: 'answered', role: 'status' }, a.words),
-    a.pr ? h('p', {}, ext(a.pr.url, `PR #${a.pr.number}: ${a.pr.title}`)) : null,
+    // A recorded pull request that has left the open list has no title here: "PR #<n>" alone (draft 9, Desk 3).
+    a.pr ? h('p', {}, ext(a.pr.url, a.pr.title ? `PR #${a.pr.number}: ${a.pr.title}` : `PR #${a.pr.number}`)) : null,
     a.state === 'held' ? h('p', {}, h('button', { type: 'button', class: 'answer-here', onclick: () => { if (DESK) DESK.answerHere(name, a.name); } },
       'Answer it here instead')) : null,
     p ? [h('h3', {}, 'Options'), options || h('p', { class: 'muted' }, 'not given'),
@@ -905,6 +906,9 @@ function startDesk() {
         const q = /\?[^#]*/.exec(d.navigate);
         Object.assign(opening, { target: openTarget(q ? q[0] : ''), done: false, banner: null });
         desk.arrival();
+        // AC78, J21: a cost notification's tap reads the usage again (draft 9, Desk 2); a tap that loads
+        // the page reads it at the opening, as every opening does.
+        if (opening.target && opening.target.kind === 'usage') desk.refreshUsage();
         try {
           if (e.ports && e.ports[0]) e.ports[0].postMessage({ ok: true });
         } catch {

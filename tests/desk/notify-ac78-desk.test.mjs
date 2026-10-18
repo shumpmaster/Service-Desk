@@ -238,3 +238,43 @@ test('AC78: on the page, More detail shows the line with its bar and aria values
     app.restore();
   }
 });
+
+// Draft 9 (build review round 1, Desk 2; the Reviewer's probe A): a cost notification's tap reads the
+// usage again, through the page's own wiring, whether it reaches an open desk (sw.js's handover) or
+// loads the page (the opening's read).
+test('AC78, J21 (draft 9): a cost tap reaching an open desk reads the usage again; one that loads the page reads it at the opening and opens the fold', async () => {
+  const usageAnswer = (now) => ({ state: 'ok', asOf: new Date(now).toISOString(), period: { y: 2026, m: 10, day: 2, ym: '2026-10' },
+    summary: { ok: true, items: [sItem({ netAmount: 0 })] }, usage: { ok: true, items: [uItem({ quantity: 100 })] }, publicRepos: [] });
+  const quiet = () => ({ 'Service-Desk': repo({ 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml') }, [], [{ name: 'governance', status: 'completed', conclusion: 'success' }]),
+    'Personal-Org-Operating-Model': repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md') }, [], [{ name: 'tests', status: 'completed', conclusion: 'success' }]) });
+  const nav = { listeners: [], replies: [] };
+  nav.serviceWorker = { addEventListener: (t, fn) => { if (t === 'message') nav.listeners.push(fn); } };
+  let r = quiet();
+  r['Service-Desk'].usageAnswer = usageAnswer;
+  let app = await loadApp({ repos: r, now: OCT2, hash: '#/', globals: { navigator: nav } });
+  const reads = () => app.calls().filter((c) => c.path === '/api/blobs' && c.body.usage).length;
+  try {
+    await app.advance(1000);
+    assert.equal(reads(), 1, 'at the opening');
+    await app.advance(10 * 60_000);
+    assert.equal(reads(), 1);
+    for (const fn of nav.listeners) fn({ data: { kind: 'desk-open', navigate: 'https://desk.example.invalid/?open=actions-usage' }, ports: [{ postMessage: (m) => nav.replies.push(m) }] });
+    await app.advance(1000);
+    assert.deepEqual(nav.replies, [{ ok: true }]);
+    assert.equal(reads(), 2, 'read again on the tap, not an hour on');
+    const more = findAll(app.els.view, (e) => e.attrs && e.attrs.id === 'more-detail')[0];
+    assert.equal(more.attrs.open, 'open');
+  } finally {
+    app.restore();
+  }
+  r = quiet();
+  r['Service-Desk'].usageAnswer = usageAnswer;
+  app = await loadApp({ repos: r, now: OCT2, hash: '', search: '?open=actions-usage' });
+  try {
+    await app.advance(1000);
+    assert.equal(app.calls().filter((c) => c.path === '/api/blobs' && c.body.usage).length, 1, 'read at the opening the tap made');
+    assert.equal(findAll(app.els.view, (e) => e.attrs && e.attrs.id === 'more-detail')[0].attrs.open, 'open');
+  } finally {
+    app.restore();
+  }
+});

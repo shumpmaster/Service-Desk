@@ -441,3 +441,32 @@ test('AC77 in the sandbox: the answer\'s pull request in Merges with its added w
     app.restore();
   }
 });
+
+// Draft 9 (build review round 1, Desk 1; the Reviewer's probe C): the re-read before an answer link
+// needs each open pull request's files read at its current head. A pull request read at an older head
+// whose read at the new head fails is a failed re-read: "The desk couldn't check just now", and
+// GitHub's answer page does not open.
+test('AC77 (draft 9): the re-read with a pull request\'s files failing at its new head says "The desk couldn\'t check just now" and opens nothing', async () => {
+  const opened = [];
+  const at = (sha) => ({ ...answerPr(97), head: { ref: 'cos/a', sha, repo: { full_name: 'shumpmaster/Service-Desk' } } });
+  const rs = repos({ [QPATH]: REAL_Q }, [at('c'.repeat(40))], { repo: { prFiles: { 97: [{ filename: 'README.md', status: 'modified' }] } } });
+  const app = await loadApp({ repos: rs, now: RAISED_MS + 10 * MIN, hash: '#/p/Service-Desk/q/P-001-next-work', win: { open: (u) => { opened.push(u); return {}; } } });
+  try {
+    await app.advance(1000);
+    const link = pick(app);
+    assert.ok(link, 'an ordinary question: its answer link');
+    await app.advance(31_000);
+    // A new head that records the answer; its files read fails.
+    rs['Service-Desk'].pulls = [at('d'.repeat(40))];
+    rs['Service-Desk'].prFiles = { 97: ADDS_ANSWER };
+    rs['Service-Desk'].filesFail = [97];
+    const e = link.click();
+    assert.equal(e.defaultPrevented, true);
+    await app.flush();
+    const said = findAll(app.els.view, (x) => x.className === 'recheck')[0];
+    assert.ok(said && said.textContent.includes("The desk couldn't check just now"), said ? said.textContent : 'nothing said');
+    assert.deepEqual(opened, [], 'no stale answer link opened');
+  } finally {
+    app.restore();
+  }
+});

@@ -318,22 +318,54 @@ test('AC74, AC77 (draft 8): that read failing, the tapped question shows held, n
   }
 });
 
-test('AC77 (draft 8): a return to the foreground runs the closed read again', async () => {
+test('AC77 (drafts 8 and 9): a return to the foreground runs the closed read again, riding the next poll: at once 60 seconds or more after the last poll, else at its 60-second mark', async () => {
   const r = repos([], { closedPulls: [] });
   const app = await open(r, { hash: '#/' });
+  const polls = () => app.calls().filter((c) => c.path === '/api/poll' && c.body.project === 'Service-Desk');
   try {
     await app.advance(MIN);
     assert.equal(closedCalls(app).length, 1);
+    const lastPoll = polls()[polls().length - 1].at;
+    // Away 70 seconds: the return polls at once, and the closed read rides that poll.
     app.doc.visibilityState = 'hidden';
     app.fire('visibilitychange');
-    await app.advance(20_000);
+    await app.advance(70_000);
     r['Service-Desk'].closedPulls = [closedPr(98, { closed: '2026-10-18T11:45:00Z' })];
     r['Service-Desk'].prFiles = { 98: ADDS_ANSWER };
     app.doc.visibilityState = 'visible';
     app.fire('visibilitychange');
     await app.advance(1000);
-    assert.equal(closedCalls(app).length, 2, 'again, at once');
+    assert.ok(polls()[polls().length - 1].at > lastPoll + 60_000, 'a poll at once');
+    assert.equal(closedCalls(app).length, 2, 'the closed read again, in that poll\'s cycle');
     assert.equal(app.state().textContent, '1 waiting on you');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC77 (draft 9, Desk 5; the Reviewer\'s probe G): five returns within 25 seconds of a poll make no poll of their own; the next poll, at its 60-second mark, carries the closed read', async () => {
+  const r = repos([], { closedPulls: [] });
+  const app = await open(r, { hash: '#/' });
+  const polls = () => app.calls().filter((c) => c.path === '/api/poll' && c.body.project === 'Service-Desk');
+  try {
+    await app.advance(MIN);
+    const n0 = polls().length;
+    const c0 = closedCalls(app).length;
+    const last = polls()[n0 - 1].at;
+    for (let i = 0; i < 5; i++) {
+      app.doc.visibilityState = 'hidden';
+      app.fire('visibilitychange');
+      await app.advance(2000);
+      app.doc.visibilityState = 'visible';
+      app.fire('visibilitychange');
+      await app.advance(3000);
+    }
+    assert.equal(polls().length, n0, 'no poll of their own: A2\'s one poll a minute holds');
+    assert.equal(closedCalls(app).length, c0);
+    await app.advance(last + 60_000 - polls()[n0 - 1].at - 25_000 + 1000);
+    assert.equal(polls().length, n0 + 1, 'the poll at the 60-second mark');
+    assert.equal(polls()[n0].at, last + 60_000);
+    assert.equal(closedCalls(app).length, c0 + 1, 'with the closed read riding it');
   } finally {
     app.restore();
   }
@@ -349,6 +381,89 @@ test('AC74, AC77 (draft 8): a held question whose history read fails: no closed 
     assert.ok(text(app).includes(HELD_WORDS));
     assert.ok(text(app).includes(OPENED_WORDS));
     assert.ok(!text(app).includes(GONE_WORDS));
+  } finally {
+    app.restore();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Draft 9 (build review round 1, the desk's part)
+
+test('AC74, AC77 (draft 9, Desk 5): a tap\'s closed read is a blob call of its own, made at once, with no poll before it', async () => {
+  const nav = swNavigator();
+  const r = repos([], { closedPulls: [] });
+  const app = await open(r, { hash: '#/', navigator: nav });
+  try {
+    await app.advance(MIN);
+    const n = app.calls().length;
+    r['Service-Desk'].closedPulls = [closedPr(98, { closed: '2026-10-18T11:45:00Z' })];
+    r['Service-Desk'].prFiles = { 98: ADDS_ANSWER };
+    nav.tap(KEY);
+    await app.flush();
+    const after = app.calls().slice(n);
+    assert.equal(after[0].path, '/api/blobs', 'no poll first');
+    assert.deepEqual({ ...after[0].body, project: undefined }, { project: undefined, blobs: [], history: [], closed: { since: '2026-10-18T11:26:23.000Z' } }, 'the closed read alone');
+    assert.deepEqual(after[1].body.files, [98], 'then the found pull request\'s files');
+    assert.equal(after.filter((c) => c.path === '/api/poll').length, 0);
+    assert.equal(app.loc.hash, '#/p/Service-Desk/q/P-001-next-work');
+    assert.equal(app.state().textContent, '1 waiting on you');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC74, AC77 (draft 9, Desk 7): a tap during a closed read in flight waits for a fresh read issued after it; the earlier answer settles nothing', async () => {
+  const nav = swNavigator();
+  const r = repos([], { closedPulls: [], closedFail: (n) => n === 1 });
+  // The second read (the retry at the next poll) is in flight when the pull request closes and the tap arrives.
+  r['Service-Desk'].onClosed = (n) => {
+    if (n !== 2) return;
+    r['Service-Desk'].closedPulls = [closedPr(98, { closed: '2026-10-18T11:45:00Z' })];
+    r['Service-Desk'].prFiles = { 98: ADDS_ANSWER };
+    nav.tap(KEY);
+  };
+  const app = await open(r, { hash: '#/', navigator: nav });
+  try {
+    assert.equal(closedCalls(app).length, 1, 'the opening\'s read failed');
+    await app.advance(MIN);
+    assert.equal(closedCalls(app).length, 3, 'the retry, and a fresh read for the tap');
+    assert.equal(app.loc.hash, '#/p/Service-Desk/q/P-001-next-work');
+    assert.ok(!text(app).includes(HELD_WORDS), 'shown from the fresh read: waiting, not held');
+    assert.equal(app.state().textContent, '1 waiting on you');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC77 (draft 9, Desk 4; the Reviewer\'s probe E): a found closed pull request whose file read fails is read again at the next poll', async () => {
+  const r = repos([], { closedPulls: [closedPr(98, { closed: '2026-10-18T11:35:00Z' })], prFiles: { 98: ADDS_ANSWER }, filesFail: [98] });
+  const app = await open(r);
+  const reads98 = () => app.calls().filter((c) => c.path === '/api/blobs' && (c.body.files || []).includes(98)).length;
+  try {
+    assert.ok(text(app).includes(HELD_WORDS), 'its file read failed: the hold stands');
+    const n = reads98();
+    r['Service-Desk'].filesFail = [];
+    await app.advance(MIN);
+    assert.equal(reads98(), n + 1, 'tried again at the next poll, not after 5 minutes');
+    assert.ok(!text(app).includes(HELD_WORDS));
+    assert.equal(app.state().textContent, '1 waiting on you');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC77 (draft 9, Desk 3; the Reviewer\'s probe B): a recorded pull request that has left the open list reads "PR #<n>" alone, never ": null"', async () => {
+  const r = repos([answerPr(91)], { prFiles: { 91: ADDS_ANSWER }, prAnswers: { 91: closedPr(91, { merged: '2026-10-18T11:50:00Z', closed: '2026-10-18T11:50:00Z' }) } });
+  const app = await open(r);
+  const prLink = () => findAll(app.els.view, (e) => e.tag === 'a' && /\/pull\/91$/.test(e.attrs.href || '')).map((a) => a.textContent);
+  try {
+    await app.advance(MIN);
+    assert.ok(prLink().some((t) => t === 'PR #91: Record the answer to the next work'), 'open: with its title');
+    r['Service-Desk'].pulls = [];
+    await app.advance(2 * MIN);
+    assert.ok(text(app).includes(RECORDING_WORDS));
+    assert.ok(prLink().includes('PR #91'), JSON.stringify(prLink()));
+    assert.ok(!text(app).includes('null'));
   } finally {
     app.restore();
   }

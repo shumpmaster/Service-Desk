@@ -4,8 +4,8 @@
 // each page 1 of the call's budget, at most three pages; read again only when a head changes; a
 // failed read leaving the question ordinary; and AC77's closed read (draft 6) in the same call.
 // join-test: S-001/J6 (the `files` and `closed` fields: their form, their budget, their refusals).
-// ac-test: S-001/AC14 (A3: three open pull requests changing heads every 10 minutes for 16 window
-// hours: one J20 read per open pull request per head an opening sees, and the day under 10,000 calls).
+// (AC14's notifications case, three open pull requests changing heads every 10 minutes for 16 window
+// hours across AC42's 5 projects, is in ac14-budget.test.mjs from draft 9, build review round 1, Desk 9.)
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -184,47 +184,4 @@ test('J20: a failed read leaves the question ordinary, waiting with its link, an
   await clock.runUntil(NOW0 + 7 * 60_000);
   assert.equal(desk.model('Service-Desk').asking[0].state, 'recording', 'read again after its wait');
   desk.stop();
-});
-
-test('AC14 (A3; review round 3, N8): three open pull requests changing heads every 10 minutes for 16 window-hours: exactly one J20 read per pull request per head an opening sees; the day under 10,000 calls', async (t) => {
-  const DAY = Date.parse('2026-11-03T00:00:00Z');
-  const HOUR = 3_600_000;
-  const clock = fakeClock(DAY);
-  const repos = world([own(21, '1'.repeat(40)), own(22, '2'.repeat(40)), own(23, '3'.repeat(40))]);
-  repos['Service-Desk'].prFiles = { 21: [{ filename: 'src/a.js', status: 'modified' }], 22: [{ filename: 'src/b.js', status: 'modified' }], 23: [{ filename: 'src/c.js', status: 'modified' }] };
-  const server = fakeServer(repos, CONFIG, clock);
-  const openings = 10;
-  const windowMs = (16 * HOUR) / openings;
-  const seen = new Set(); // (opening, number, head) the page could see
-  let changes = 0;
-  let windowTime = 0;
-  const setHeads = () => {
-    const k = Math.floor(windowTime / (10 * 60_000));
-    repos['Service-Desk'].pulls = [21, 22, 23].map((n) => own(n, `${n}${k}`.padStart(40, '0')));
-  };
-  for (let o = 0; o < openings; o++) {
-    const open = DAY + o * 2.4 * HOUR;
-    await clock.runUntil(open);
-    setHeads();
-    const desk = createDesk({ config: CONFIG, call: server.call, clock, store: createStore(null), isVisible: () => true });
-    desk.start();
-    for (let t = 0; t < windowMs; t += 60_000) {
-      // The heads change every 10 minutes of window time (3 × 6 × 16 = 288 changes in the day).
-      const before = Math.floor(windowTime / 600_000);
-      windowTime += 60_000;
-      if (Math.floor(windowTime / 600_000) !== before && t + 60_000 < windowMs) {
-        changes += 3;
-        setHeads();
-      }
-      await clock.runUntil(open + t + 60_000);
-      for (const p of repos['Service-Desk'].pulls) seen.add(`${o}|${p.number}|${p.head.sha}`);
-    }
-    desk.stop();
-  }
-  const reads = server.calls.filter((c) => c.path === '/api/blobs').reduce((n, c) => n + (c.body.files || []).length, 0);
-  t.diagnostic(`J20 on the page: ${changes} head changes, ${reads} reads, ${server.calls.length} calls`);
-  assert.ok(changes >= 280 && changes <= 288, `${changes} head changes`);
-  assert.equal(reads, seen.size, 'one read per pull request per head an opening sees: the head changes, plus each opening\'s first look');
-  assert.ok(reads <= changes + 3 * openings);
-  assert.ok(server.calls.length < 10_000, `${server.calls.length} calls`);
 });

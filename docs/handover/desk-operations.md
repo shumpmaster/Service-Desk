@@ -36,7 +36,7 @@ repeat in part.
   runs, and goes by itself at the next run that reads the state, or finds none. Only the line
   saying the memory "could not be trusted" needs your Chief of Staff.
 
-### Turning notifications on again (about 8 minutes)
+### Turning notifications on again (about 8 minutes; 9 if the phone must first drop a dead subscription)
 
 Do this when the issue says the subscription is gone or invalid, when the phone shows "Desk
 notifications need turning on again: open the desk", after a new phone or after removing the desk
@@ -46,6 +46,12 @@ from the Home Screen, and once at launch, when the desk's address changes (N10).
    the Home Screen first, and remove the preview's icon afterwards).
 2. More detail, "Turn on notifications", then Allow (N5). If it already says "On for this phone",
    tap "Show the value again".
+   - **If the issue says the subscription is gone, but the phone still says "On for this phone"**,
+     the phone is still holding the dead subscription, and "Show the value again" would show that
+     same dead value. Drop it first. Press and hold the desk's Home Screen icon, choose to remove
+     it, and confirm. Then, in Safari, open the desk, Share, Add to Home Screen, and open it from the
+     new icon. Removing the desk from the Home Screen ends its subscription (spec J19). Now
+     "Turn on notifications", then Allow, gives a new value. Carry on with step 3.
 3. Tap "Copy", then update the subscription in both projects (below).
 4. Tap "I've added it to GitHub" on the desk.
 5. Send a test in each project (below). The issue closes on the next good send.
@@ -84,18 +90,21 @@ Each project has its own switch, the repository variable `DESK_NOTIFY_ON` (N7).
   on you now", instead of one notification each.
 - To silence the phone without touching GitHub: iPhone Settings, Notifications, Service Desk.
 
-### If the notification keys may have leaked (about 15 minutes, with your Chief of Staff)
+### If the notification keys may have leaked (with your Chief of Staff)
 
-The spec's rollback, for a key pair or subscription that may have been copied out:
+The spec's rollback, for a key pair or subscription that may have been copied out. It is three
+short jobs, each under 10 minutes, with a wait between the first two while the new key is deployed.
+Nothing that waits on you is lost meanwhile: the desk shows it all when you open it.
 
-1. Turn the switch off in both projects (above).
-2. Make a new key pair on your computer (N1) and send the new public key to your Chief of Staff;
-   the Builder changes `push.vapidPublicKey` in `src/config/projects.json`, and the
-   operating-model project's pin moves to that commit (CS16).
-3. In both projects, update `DESK_VAPID_PRIVATE_KEY` with the new private key's text (N4, N9).
-4. After the change is deployed, turn notifications on again on the phone and update the
-   subscription in both projects (above); the new subscription ends the old one.
-5. Turn the switches back on and send a test in each project.
+1. **Now (about 5 minutes).** Turn the switch off in both projects (above). Make a new key pair
+   on your computer (N1) and send the new public key to your Chief of Staff. The Builder changes
+   `push.vapidPublicKey` in `src/config/projects.json`, and the operating-model project's pin moves
+   to that commit (CS16).
+2. **Once that change is deployed (about 4 minutes).** In both projects, update
+   `DESK_VAPID_PRIVATE_KEY` with the new private key's text (N4, N9).
+3. **Then (about 9 minutes).** Turn notifications on again on the phone and update the
+   subscription in both projects (above); the new subscription ends the old one. Turn the
+   switches back on, and send a test in each project.
 
 ## GitHub Actions use on the desk
 

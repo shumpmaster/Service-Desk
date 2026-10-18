@@ -1,5 +1,7 @@
 # Running the desk: operating notes
 
+## What this means for you
+
 These notes are for you and your Chief of Staff, for the jobs that keep the desk working. This first
 part covers the phone notifications and the GitHub Actions line on the desk: how to turn
 notifications on again when they stop, how to update the phone's subscription in both projects,

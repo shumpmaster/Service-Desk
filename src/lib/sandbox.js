@@ -121,9 +121,37 @@ export function standardWord(state) {
   return state;
 }
 
-/** A project milestone's state (AC50): dropped, work filed, or no work filed yet. Never "reached". */
-export function projectMilestoneWord(run, m) {
+/**
+ * Whether a project milestone counts as one with work filed (AC50): a sprint listed or tied to it,
+ * or, from 2026-10-17 (J11, model S-033 AC7), its line marked ` · reached:`, whether or not it lists
+ * sprints, so a reached milestone never makes a run "now" and is never the next to reach.
+ */
+export function hasWorkFiled(run, m) {
+  return Boolean(m.reached) || (run.sprints[m.id] || []).length > 0;
+}
+
+const MONTH_WORDS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * A reached part's date as the desk shows dates (AC50): "7 Oct", with the year when it is not this
+ * year ("7 Oct 2025"). It is the line's calendar date as written, never moved by a time zone (C);
+ * "this year" is the owner's, in ownerTimeZone.
+ */
+export function reachedDateWords(date, nowMs, tz) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(date));
+  if (!m) return NOT_RECORDED;
+  const year = Number.isFinite(nowMs) ? dayKey(new Date(nowMs), tz || 'UTC').slice(0, 4) : null;
+  return `${Number(m[3])} ${MONTH_WORDS[Number(m[2]) - 1]}${year === m[1] ? '' : ` ${m[1]}`}`;
+}
+
+/**
+ * A project milestone's state (AC50): dropped, work filed, no work filed yet, or, from 2026-10-17,
+ * "reached <date>" for a line that carries ` · reached:` (and only such a line); a line both reached
+ * and dropped reads "dropped" (J11).
+ */
+export function projectMilestoneWord(run, m, nowMs, tz) {
   if (m.dropped) return 'dropped';
+  if (m.reached) return `reached ${reachedDateWords(m.reached, nowMs, tz)}`;
   return (run.sprints[m.id] || []).length ? 'work filed' : 'no work filed yet';
 }
 
@@ -144,7 +172,7 @@ function runLastPos(run, tl) {
 export function nowRun(tl) {
   if (!tl) return null;
   const runs = tl.runs().filter((r) => DESK_PHASES.includes(r.phase));
-  const open = runs.find((r) => r.project.some((m) => !m.dropped && !(r.sprints[m.id] || []).length));
+  const open = runs.find((r) => r.project.some((m) => !m.dropped && !hasWorkFiled(r, m)));
   if (open) return open;
   let best = null;
   let bestPos = -1;
@@ -184,7 +212,7 @@ export function columnsOf(tl) {
 export function nowRule(tl) {
   if (!tl) return null;
   const runs = tl.runs().filter((r) => DESK_PHASES.includes(r.phase));
-  if (runs.some((r) => r.project.some((m) => !m.dropped && !(r.sprints[m.id] || []).length))) return 'open';
+  if (runs.some((r) => r.project.some((m) => !m.dropped && !hasWorkFiled(r, m)))) return 'open';
   return nowRun(tl) ? 'latest' : null;
 }
 
@@ -267,7 +295,8 @@ export function whereLine(project, model, tl, pv) {
   if (!tl || !pv.tracked) return { sentence: `Where it's heading: ${NOT_AVAILABLE} until the project's records are read.`, parts: [] };
   const now = pv.nowRun;
   if (!now) return { sentence: `Phase: ${NOT_RECORDED}.`, parts: [{ label: 'Phase', text: NOT_RECORDED, source: null }] };
-  const upcoming = now.project.filter((m) => !m.dropped && !(now.sprints[m.id] || []).length).map((m) => m.name);
+  // A milestone marked reached (J11) is never upcoming work (AC37, AC50; 2026-10-17).
+  const upcoming = now.project.filter((m) => !m.dropped && !hasWorkFiled(now, m)).map((m) => m.name);
   const runs = tl.runs().filter((r) => DESK_PHASES.includes(r.phase));
   const next = runs[runs.indexOf(now) + 1] || null;
   const nextNames = next ? next.project.filter((m) => !m.dropped).map((m) => m.name) : [];

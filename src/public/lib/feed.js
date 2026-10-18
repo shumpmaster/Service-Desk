@@ -12,9 +12,9 @@
 
 import { DESK_PHASES, isAppliedDecision } from './timeline.js';
 import { NOT_RECORDED, NOT_AVAILABLE, deskWords, standardWord, treeLink, pullLink, commitLink, columnsOf, nowRule, runStateOf,
-  queueView } from './sandbox.js';
+  queueView, hasWorkFiled, reachedDateWords } from './sandbox.js';
 import { entryShape, entryWords, parseWorkflowRuns, questionName } from './records.js';
-import { dayKey } from './timefmt.js';
+import { dayKey, zonedToUtc } from './timefmt.js';
 import { checksMark, prBodyParts, TOO_MANY_WORDS } from './pulls.js';
 import { REVIEW_VERDICT_RE } from './j11.js';
 import { BOUNDARY_WORDS } from './model.js';
@@ -47,18 +47,23 @@ export function sprintList(ids) {
 // ---------------------------------------------------------------------------
 // The shared rules: runs, their states, and each milestone's mark (AC57's ordered rules, AC59's icons)
 
-/** The pieces every screen here needs from the model's timeline, once per project. */
-export function runsContext(project, snap, j, tl, pv) {
+/**
+ * The pieces every screen here needs from the model's timeline, once per project. `nowMs` and `tz`
+ * (the clock and ownerTimeZone) give a reached date its year only when it is not this year (AC50).
+ */
+export function runsContext(project, snap, j, tl, pv, nowMs, tz) {
   const cols = columnsOf(tl);
   const now = pv && pv.nowRun ? pv.nowRun : null;
   const rule = nowRule(tl);
   const state = new Map(cols.runs.map((r) => [r, runStateOf(r, cols.runs, now)]));
   let next = null;
   if (now && rule === 'open') {
-    next = [...now.project].sort((a, b) => a.lineno - b.lineno).find((m) => !m.dropped && !(now.sprints[m.id] || []).length) || null;
+    // A milestone marked reached counts as work filed (AC50, from 2026-10-17): never the next to reach.
+    next = [...now.project].sort((a, b) => a.lineno - b.lineno).find((m) => !m.dropped && !hasWorkFiled(now, m)) || null;
   }
   const doc = (j && j.projectDoc) || {};
-  return { project, snap, j, tl, pv, cols, now, rule, state, next, standard: doc.standard || {}, tree: (snap && snap.tree) || new Map() };
+  return { project, snap, j, tl, pv, cols, now, rule, state, next, standard: doc.standard || {}, tree: (snap && snap.tree) || new Map(),
+    nowMs: Number.isFinite(nowMs) ? nowMs : Date.now(), tz: tz || 'UTC' };
 }
 
 /** A run's words: "finished", "finished, then gone back over", "now", "still to come" or "not recorded". */
@@ -88,8 +93,18 @@ export function milestoneRule(ctx, run, kind, m) {
   }
   const sprints = run.sprints[m.id] || [];
   const filed = sprints.length > 0;
-  const words = m.dropped ? 'Dropped' : filed ? `Work filed: ${sprintList(sprints)}` : 'No work filed yet';
-  if (m.dropped) return { rule: 1, status: words, feed: 'dropped', soft: true };
+  if (m.dropped) return { rule: 1, status: 'Dropped', feed: 'dropped', soft: true };
+  // A line carrying ` · reached: <date>` (J11, model S-033 AC7; from 2026-10-17), and only such a
+  // line, says "reached", with its date, its sprints still listed (AC50, AC57, AC59). It is never the
+  // next to reach (AC50) and never "Still to come" (AC57's rule 3): rule 4 in a run gone back over,
+  // rule 5 everywhere else.
+  if (m.reached) {
+    const d = reachedDateWords(m.reached, ctx.nowMs, ctx.tz);
+    const status = `Reached ${d}${filed ? ` · work filed: ${sprintList(sprints)}` : ''}`;
+    if (st === 'gone back over') return { rule: 4, status, feed: `reached ${d} · gone back over`, soft: false, reached: d };
+    return { rule: 5, status, feed: `reached ${d}`, soft: false, reached: d };
+  }
+  const words = filed ? `Work filed: ${sprintList(sprints)}` : 'No work filed yet';
   if (ctx.next && run === ctx.now && m.id === ctx.next.id) return { rule: 2, status: `${words} · next to reach`, feed: 'next to reach', soft: false };
   if (st === 'still to come') return { rule: 3, status: words, feed: 'planned', soft: false };
   if (filed && st === 'gone back over') return { rule: 4, status: words, feed: 'work filed · gone back over', soft: false };
@@ -512,7 +527,12 @@ export function feedView(ctx, model, nowMs, tz) {
       const sprints = (r.sprints[m.id] || []).map((sid) => sprintView(sid, r, m.id));
       const named2 = (named.get(m.id) || []).filter((e) => e.run === r).map((e) => sprintView(`PR #${e.pr.number}`, r, m.id));
       const row = msRow(ctx, r, 'own', m, x, sprints, named2);
-      if (!sprints.length) noWork.push(row);
+      // A milestone marked reached (J11, from 2026-10-17) is never planned (AC59). With no dated
+      // sprint it takes its reached date for its place, so it sits below Now (C); with a dated sprint
+      // it keeps its latest sprint's date, so marking it reached never moves it.
+      const reachedAt = m.reached ? reachedOrderMs(m.reached, tz) : null;
+      if (latestAt(sprints) == null && reachedAt != null) dated.push({ ...row, at: reachedAt });
+      else if (!sprints.length) noWork.push(row);
       else if (latestAt(sprints) == null) noDate.push(row);
       else dated.push({ ...row, at: latestAt(sprints) });
     }
@@ -599,6 +619,16 @@ export function feedView(ctx, model, nowMs, tz) {
   const msIndex = new Map();
   for (const b of order) for (const row of [...(b.plannedRows || []), ...b.rows]) if (row.kind === 'ms' && !msIndex.has(row.code)) msIndex.set(row.code, { run: b.key, row: row.key });
   return { ok: true, top, bottom, blocks: order, notes, index, msIndex, iconsKey: FEED_ICONS_KEY, bulletsKey: ['Technical', 'Context', 'Why'] };
+}
+
+/**
+ * Where a reached date sits among the Timeline's dated rows (AC59, C): the start of that calendar day
+ * in the owner's zone, so a sprint merged later that day sorts above it. Only the order uses it: the
+ * words show the date as written (AC50).
+ */
+function reachedOrderMs(date, tz) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(date));
+  return m ? zonedToUtc(Number(m[1]), Number(m[2]), Number(m[3]), 0, 0, tz || 'UTC') : null;
 }
 
 const firstSentenceOf = (s) => {

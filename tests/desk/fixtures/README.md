@@ -75,3 +75,35 @@
   outside the parts AC57 to AC60 and AC65 to AC68 rebuild, drawn by the page itself from
   `tests/desk/screen-text.mjs`'s fixtures; made by `node tests/desk/tools/ac62-snapshot.mjs` in a
   checkout of 2c1acb6's `src/` (the file's header says how).
+
+## Model 3.5.0's records (2026-10-17, S-001 revision of that date)
+
+Each fixture below is made or checked by the model's own code where it has any, with the command
+that did it. The model's code is run from this repository's `governance/checks/` at 9f5fa73
+(model v3.5.0). None of these is a real record unless it says so.
+
+- `j11-reached/` (J11, AC50, AC57, AC59, AC65, AC68): **NOT a real record.**
+  - `docs/PROJECT.md` is J11's fixture's `docs/PROJECT.md` (Service-Desk at 3117150) with M1's line
+    ending ` · reached: 2026-10-07` and MD2's, which lists no sprints, ending
+    ` · reached: 2026-10-16`, and four lines out of form added after M3C: MX1 `2026-02-30`, MX2
+    the part before ` · sprints:`, MX3 after ` · dropped`, MX4 after ` · why:`.
+  - `both/docs/PROJECT.md` is the same with two more lines after MD3: MX5, both ` · reached:` and
+    ` · dropped`, and MX6, a reached line with sprints and a why. It is a separate file because
+    the model's timeline prints a milestone line for each, so `trace` on it is not J11's `NOTE:`
+    lines unchanged (below).
+  - `model-verdicts.json` is the model's verdict on every line of both files (real-on-real):
+    `python3 tests/desk/tools/milestone-verdicts.py tests/desk/fixtures/j11-reached/docs/PROJECT.md tests/desk/fixtures/j11-reached/both/docs/PROJECT.md > tests/desk/fixtures/j11-reached/model-verdicts.json`,
+    which runs `milestone_lines` from governance/checks/v3_checks.py. It reads M1 (reached
+    2026-10-07), M2, M2B, MD1, MD2 (reached 2026-10-16), MD3, M3A, M3B and M3C and skips lines
+    115 to 118 (MX1 to MX4) of `docs/PROJECT.md`; in `both/` it also reads MX5 (reached and
+    dropped) and MX6 (reached 2026-10-15, its why kept) and skips lines 117 to 120.
+  - The timeline: in a scratch checkout of 3117150 (`git archive 3117150 | tar -x -C <dir>`) with
+    its `governance/checks/` replaced by 9f5fa73's, `python3 governance/checks/v3_checks.py trace --root .`
+    prints J11's `trace-notes.txt` lines (and the two lines that are not the timeline); with
+    `j11-reached/docs/PROJECT.md` copied over `docs/PROJECT.md` it prints J11's `NOTE:` lines unchanged
+    (`diff` empty, checked 2026-10-18); with `j11-reached/both/docs/PROJECT.md` it prints them with
+    three lines added in Design i2, after MD3: `MX5 "A milestone both reached and dropped" (dropped)`,
+    `MX6 "A milestone reached with its why"` and `sprint PR #54`.
+  - The model's `v3_checks milestones` reports a line both reached and dropped
+    (governance/checks/v3_checks.py:1884); it needs a `--base` and the repository's history, so it
+    is not run on the fixture.

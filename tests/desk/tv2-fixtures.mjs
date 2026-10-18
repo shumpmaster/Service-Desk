@@ -45,7 +45,7 @@ export function models({ ac61 = false, answer = pullsAnswer(), extra = {}, now =
   const j = j11Records(SD3, snap);
   const tl = timelineOf(j);
   const pv = phaseView(SD3, tl, snap.tree, j);
-  const ctx = runsContext(SD3, snap, j, tl, pv);
+  const ctx = runsContext(SD3, snap, j, tl, pv, now, TZ);
   const feed = feedView(ctx, { pulls: [] }, now, TZ);
   return { snap, j, tl, pv, ctx, feed };
 }

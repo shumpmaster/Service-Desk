@@ -1,0 +1,228 @@
+{
+  "tests/desk/fixtures/j11-reached/docs/PROJECT.md": {
+    "read": [
+      {
+        "lineno": 106,
+        "id": "M1",
+        "reached": "2026-10-07",
+        "dropped": false,
+        "why": null,
+        "sprints": [
+          "PR #40",
+          "PR #41"
+        ]
+      },
+      {
+        "lineno": 107,
+        "id": "M2",
+        "reached": null,
+        "dropped": false,
+        "why": null,
+        "sprints": [
+          "PR #44"
+        ]
+      },
+      {
+        "lineno": 108,
+        "id": "M2B",
+        "reached": null,
+        "dropped": false,
+        "why": null,
+        "sprints": [
+          "PR #44",
+          "PR #52"
+        ]
+      },
+      {
+        "lineno": 109,
+        "id": "MD1",
+        "reached": null,
+        "dropped": false,
+        "why": null,
+        "sprints": [
+          "Q-013"
+        ]
+      },
+      {
+        "lineno": 110,
+        "id": "MD2",
+        "reached": "2026-10-16",
+        "dropped": false,
+        "why": null,
+        "sprints": []
+      },
+      {
+        "lineno": 111,
+        "id": "MD3",
+        "reached": null,
+        "dropped": false,
+        "why": null,
+        "sprints": []
+      },
+      {
+        "lineno": 112,
+        "id": "M3A",
+        "reached": null,
+        "dropped": false,
+        "why": null,
+        "sprints": []
+      },
+      {
+        "lineno": 113,
+        "id": "M3B",
+        "reached": null,
+        "dropped": false,
+        "why": null,
+        "sprints": []
+      },
+      {
+        "lineno": 114,
+        "id": "M3C",
+        "reached": null,
+        "dropped": false,
+        "why": null,
+        "sprints": []
+      }
+    ],
+    "skipped": [
+      {
+        "lineno": 115,
+        "message": "not in the milestone form `<name> (M<id>) · done when <what is achieved> · phase: <Discovery|Design|Build|Launch>` (optionally ` · for: P-<n>`, ` · sprints: …`, ` · reached: <yyyy-mm-dd>`, ` · dropped`, ` · why: <reason>`)"
+      },
+      {
+        "lineno": 116,
+        "message": "not in the milestone form `<name> (M<id>) · done when <what is achieved> · phase: <Discovery|Design|Build|Launch>` (optionally ` · for: P-<n>`, ` · sprints: …`, ` · reached: <yyyy-mm-dd>`, ` · dropped`, ` · why: <reason>`)"
+      },
+      {
+        "lineno": 117,
+        "message": "not in the milestone form `<name> (M<id>) · done when <what is achieved> · phase: <Discovery|Design|Build|Launch>` (optionally ` · for: P-<n>`, ` · sprints: …`, ` · reached: <yyyy-mm-dd>`, ` · dropped`, ` · why: <reason>`)"
+      },
+      {
+        "lineno": 118,
+        "message": "not in the milestone form `<name> (M<id>) · done when <what is achieved> · phase: <Discovery|Design|Build|Launch>` (optionally ` · for: P-<n>`, ` · sprints: …`, ` · reached: <yyyy-mm-dd>`, ` · dropped`, ` · why: <reason>`)"
+      }
+    ]
+  },
+  "tests/desk/fixtures/j11-reached/both/docs/PROJECT.md": {
+    "read": [
+      {
+        "lineno": 106,
+        "id": "M1",
+        "reached": "2026-10-07",
+        "dropped": false,
+        "why": null,
+        "sprints": [
+          "PR #40",
+          "PR #41"
+        ]
+      },
+      {
+        "lineno": 107,
+        "id": "M2",
+        "reached": null,
+        "dropped": false,
+        "why": null,
+        "sprints": [
+          "PR #44"
+        ]
+      },
+      {
+        "lineno": 108,
+        "id": "M2B",
+        "reached": null,
+        "dropped": false,
+        "why": null,
+        "sprints": [
+          "PR #44",
+          "PR #52"
+        ]
+      },
+      {
+        "lineno": 109,
+        "id": "MD1",
+        "reached": null,
+        "dropped": false,
+        "why": null,
+        "sprints": [
+          "Q-013"
+        ]
+      },
+      {
+        "lineno": 110,
+        "id": "MD2",
+        "reached": "2026-10-16",
+        "dropped": false,
+        "why": null,
+        "sprints": []
+      },
+      {
+        "lineno": 111,
+        "id": "MD3",
+        "reached": null,
+        "dropped": false,
+        "why": null,
+        "sprints": []
+      },
+      {
+        "lineno": 112,
+        "id": "MX5",
+        "reached": "2026-10-07",
+        "dropped": true,
+        "why": null,
+        "sprints": []
+      },
+      {
+        "lineno": 113,
+        "id": "MX6",
+        "reached": "2026-10-15",
+        "dropped": false,
+        "why": "the owner accepted it in the trial view",
+        "sprints": [
+          "PR #54"
+        ]
+      },
+      {
+        "lineno": 114,
+        "id": "M3A",
+        "reached": null,
+        "dropped": false,
+        "why": null,
+        "sprints": []
+      },
+      {
+        "lineno": 115,
+        "id": "M3B",
+        "reached": null,
+        "dropped": false,
+        "why": null,
+        "sprints": []
+      },
+      {
+        "lineno": 116,
+        "id": "M3C",
+        "reached": null,
+        "dropped": false,
+        "why": null,
+        "sprints": []
+      }
+    ],
+    "skipped": [
+      {
+        "lineno": 117,
+        "message": "not in the milestone form `<name> (M<id>) · done when <what is achieved> · phase: <Discovery|Design|Build|Launch>` (optionally ` · for: P-<n>`, ` · sprints: …`, ` · reached: <yyyy-mm-dd>`, ` · dropped`, ` · why: <reason>`)"
+      },
+      {
+        "lineno": 118,
+        "message": "not in the milestone form `<name> (M<id>) · done when <what is achieved> · phase: <Discovery|Design|Build|Launch>` (optionally ` · for: P-<n>`, ` · sprints: …`, ` · reached: <yyyy-mm-dd>`, ` · dropped`, ` · why: <reason>`)"
+      },
+      {
+        "lineno": 119,
+        "message": "not in the milestone form `<name> (M<id>) · done when <what is achieved> · phase: <Discovery|Design|Build|Launch>` (optionally ` · for: P-<n>`, ` · sprints: …`, ` · reached: <yyyy-mm-dd>`, ` · dropped`, ` · why: <reason>`)"
+      },
+      {
+        "lineno": 120,
+        "message": "not in the milestone form `<name> (M<id>) · done when <what is achieved> · phase: <Discovery|Design|Build|Launch>` (optionally ` · for: P-<n>`, ` · sprints: …`, ` · reached: <yyyy-mm-dd>`, ` · dropped`, ` · why: <reason>`)"
+      }
+    ]
+  }
+}

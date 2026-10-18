@@ -427,7 +427,7 @@ function buildProject(desk, project, box, now) {
   const pv = phaseView(project, tl, snap.tree, j);
   const q = queueView(project, model, snap, now.getTime());
   noteDepartures(project.name, q);
-  const ctx = runsContext(project, snap, j, tl, pv);
+  const ctx = runsContext(project, snap, j, tl, pv, now.getTime(), TZ);
   let feed = null;
   return { project, box, model, snap, j, tl, pv, q, ctx, where: whereLine(project, model, tl, pv),
     ball: ballLines(project, model, snap, j, q, now, TZ), pill: pillView(box, q, now.getTime()),

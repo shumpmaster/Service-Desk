@@ -185,7 +185,20 @@ export function valueTargets(text) {
 const MILESTONE_MARK_RE = /\(M[0-9A-Z]{1,7}\) · /;
 const MILESTONE_LINE_RE = new RegExp('^(?:- )?(?<name>\\S.*?) \\((?<id>M[0-9A-Z]{1,7})\\) · done when (?<done>\\S.*?) · '
   + 'phase: (?<phase>Discovery|Design|Build|Launch)(?: · for: (?<for>P-\\d{3,}))?'
-  + '(?: · sprints: (?<sprints>(?:PR #\\d+|[PQE]-\\d{3,})(?:, (?:PR #\\d+|[PQE]-\\d{3,}))*))?(?<dropped> · dropped)?$');
+  + '(?: · sprints: (?<sprints>(?:PR #\\d+|[PQE]-\\d{3,})(?:, (?:PR #\\d+|[PQE]-\\d{3,}))*))?'
+  // model S-033 AC7 (L-0016, 2026-10-17): ` · reached: <yyyy-mm-dd>`, after ` · sprints:` and before ` · dropped`
+  // (v3_checks.py OPTIONAL_PARTS_RE); the why end, after both, is taken off before the line is matched.
+  + '(?: · reached: (?<reached>\\d{4}-\\d{2}-\\d{2}))?(?<dropped> · dropped)?$');
+
+/** A real calendar date in `yyyy-mm-dd` (govlib.valid_date): `2026-02-30` is not one. */
+export function validDate(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s == null ? '' : s));
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  if (y < 1 || mo < 1 || mo > 12 || d < 1) return false;
+  const days = [31, (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0 ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1];
+  return d <= days;
+}
 const CODE_FIRST_RE = /^(?:- )?M[0-9A-Z]{1,7}:/;
 const NAME_ID_RE = /\b(?:[SDPQE]-\d{3,}|L-\d{4,}|AC\d+|J\d+|V\d+|M\d[0-9A-Z]{0,6})\b/;
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -210,7 +223,10 @@ export function whyEnd(line) {
 
 /**
  * Part 1 section 3's milestone lines (v3_checks.milestone_lines): { milestones: [{ lineno, id, name,
- * done, phase, forItem, sprints, dropped, why }], problems: [{ lineno, message }] }. A line out of
+ * done, phase, forItem, sprints, reached, dropped, why }], problems: [{ lineno, message }] }. From
+ * 2026-10-17 (J11, model S-033 AC7) `reached` is the line's ` · reached: <yyyy-mm-dd>` date as written,
+ * or null; a date that is no real calendar date, or the part out of its place, skips the line as the
+ * model's reader does. A line out of
  * form is skipped with a problem (J11's awkward case); the rest still show. From 2026-10-16 (AC61
  * (a)) a line's why end is taken off before the line is matched, so a why never changes its name,
  * "done when", phase, sprints or `· dropped`; a line whose why end is out of form is skipped with a
@@ -235,7 +251,7 @@ export function milestoneLines(text) {
       return;
     }
     const m = MILESTONE_LINE_RE.exec(w.line);
-    if (!m) {
+    if (!m || (m.groups.reached && !validDate(m.groups.reached))) {
       problems.push({ lineno: n, message: 'not in the milestone form' });
       return;
     }
@@ -251,7 +267,9 @@ export function milestoneLines(text) {
     }
     seen.add(g.id);
     const ms = { lineno: n, id: g.id, name: g.name, done: g.done, phase: g.phase, forItem: g.for || null,
-      sprints: g.sprints ? g.sprints.split(', ') : [], dropped: Boolean(g.dropped), why };
+      sprints: g.sprints ? g.sprints.split(', ') : [], reached: g.reached || null, dropped: Boolean(g.dropped), why };
+    // Both reached and dropped (v3_checks.py's `milestones` finding): read, shown as dropped, and named (J11).
+    if (ms.reached && ms.dropped) problems.push({ lineno: n, message: `${ms.id} is marked both reached and dropped: it shows as dropped` });
     let bad = null;
     if (ms.name.includes('`')) bad = 'a backtick';
     else if (NAME_ID_RE.test(ms.name)) bad = `the code ${NAME_ID_RE.exec(ms.name)[0]}`;

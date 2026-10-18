@@ -1,0 +1,3 @@
+Verdict: PASS
+
+The Reviewer's security review passed this pull request in its second round, for the whole branch at d5a03a2, in the words "PASS with notes"; this file holds the plain PASS that the check on it allows. Both rounds' reports, word for word, are in reviews/S-001-cs15/_security-review-round1-verbatim.md and _security-review-round2-verbatim.md. They are kept there because each report quotes its verdict line inside its own text, and the check on this file allows the verdict line only at the start of a line (governance/checks/review_check.py). The notes left open are named in the round-2 report; none is blocking.

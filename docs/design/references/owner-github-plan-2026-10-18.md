@@ -15,3 +15,9 @@ The owner, asked "Is a payment method on file, and what does October's Actions u
 Why it was asked: plan review round 3 estimated from run timestamps (C) that Personal-Org-Operating-Model's existing runs used about 4,100 minutes from 1 to 17 October (reviews/S-001-notifications/_plan-review-round3-verbatim.md, N1). The account's billing figures cannot be read from the session.
 
 So, as of 2026-10-18, minutes beyond the included 3,000 are being charged to the owner's card; Workflow 4's minutes would be charged too.
+
+## The owner's instruction on cost, the same day
+
+Verbatim, in the session on 2026-10-18, after the billing answer: "I’m not concerned about the pricing to the point I want to approve things constantly. For the time being I simply want an action count, shown as a percent bar of some sort. Once the actions begin to surpass my allotted amount, I want an estimation of cost and a notification at $50 increments."
+
+How it is read: no owner approval step for Actions cost; the desk shows the account's Actions use as a percent bar of the included minutes, and once past them an estimated cost, with a notification at each $50 step.

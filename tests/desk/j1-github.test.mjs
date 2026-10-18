@@ -321,6 +321,19 @@ test('J1/AC29: desk-deploy waiting and rejected runs, and a failed Orchestrator 
   assert.equal(reduceWorkflowRuns(parseWorkflowRuns([pageOf(run(dd, 5, 'completed', 'success'))]).runs).ci, 'none');
 });
 
+test('J1 (2026-10-18): a head whose only failing run is desk-notify\'s reads passing; the sender\'s latest run is activity, "Notifications: <conclusion>"', () => {
+  const dn = '.github/workflows/desk-notify.yml';
+  const ok = run('.github/workflows/governance.yml', 3, 'completed', 'success');
+  let red = reduceWorkflowRuns(parseWorkflowRuns([pageOf(ok, run(dn, 7, 'completed', 'failure'))]).runs);
+  assert.equal(red.ci, 'passing');
+  assert.deepEqual(red.activity.map((a) => a.text), ['Notifications: failure']);
+  red = reduceWorkflowRuns(parseWorkflowRuns([pageOf(ok, run(dn, 7, 'completed', 'failure'), run(dn, 8, 'in_progress', null))]).runs);
+  assert.equal(red.ci, 'passing', 'a sender run under way is not "running" CI');
+  assert.deepEqual(red.activity.map((a) => a.text), ['Notifications: in_progress']);
+  // A run's id is kept: AC73's deploy key is the run's id.
+  assert.equal(parseWorkflowRuns([pageOf({ ...run(dn, 9, 'completed', 'success'), id: 123 })]).runs[0].id, 123);
+});
+
 test('J1 CI reduction rule, case by case', () => {
   const r = (status, conclusion) => ({ status, conclusion });
   for (const bad of ['failure', 'timed_out', 'action_required', 'startup_failure']) {

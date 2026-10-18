@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { askedInSession, questionHold, endedAfter } from '../../src/lib/asking.js';
 import { parseSessionFile } from '../../src/lib/cos.js';
 import { FIX } from './helpers.mjs';
-import { NOTIFY_FIX, MIN, HOUR, checkoutOf, filesUnder, harness, clock, pull, cleanScratch } from './notify-helpers.mjs';
+import { NOTIFY_FIX, REPO, MIN, HOUR, checkoutOf, filesUnder, harness, clock, pull, cleanScratch } from './notify-helpers.mjs';
 
 after(cleanScratch);
 
@@ -195,4 +195,56 @@ test('AC77: in a v2.5 project (poom/\'s placeholder form): the line held; a dele
   h.clock.t = Date.parse('2026-10-18T19:30:00Z');
   const r2 = await h.run();
   assert.deepEqual(r2.payloads.map((p) => p.notification.body), ['Waits on you: a question: A made-up v2.5 question being asked in a session']);
+});
+
+// The Orchestrator's ruling (draft 6): for a project with a question still held, the sender reads one
+// page of its closed pull requests each run; an answer's pull request closed unmerged after the raised
+// time ends the hold, and the question waits again and notifies; a failed read keeps the hold and is a
+// failed read under AC76 (the project "not read").
+const closedPull = (n, o = {}) => ({ ...pull(n, o), state: 'closed', closed_at: o.closed ?? '2026-10-18T11:40:00Z', merged_at: o.merged ?? null });
+
+test('AC77 (draft 6): an answer\'s pull request opened and closed unmerged between two runs ends the hold, one push; the closed read only while a question is held', async () => {
+  const h = await startedAt(RAISED_MS - 2 * MIN);
+  const files0 = { ...base, [SESSION_PATH]: realSession };
+  assert.ok(!h.runs[0].ghCalls.some((c) => /state=closed/.test(c.path)), 'no held question: no closed read');
+  h.checkout = checkoutOf({ base: files0, later: [{ files: { 'questions/P-001-next-work.md': askedQuestion }, date: RAISED }] });
+  let r = await h.run();
+  assert.equal(r.pushes.length, 0);
+  assert.equal(r.ghCalls.filter((c) => c.path === `/repos/${REPO}/pulls?state=closed&sort=updated&direction=desc&per_page=100`).length, 1, 'one page, each run');
+  // Closed before the raised time, merged, from a fork, or into another branch: none ends it.
+  h.world.closed = [closedPull(80, { closed: '2026-10-18T11:00:00Z' }), closedPull(81, { merged: '2026-10-18T11:40:00Z' }),
+    closedPull(82, { headRepo: 'someone/Service-Desk' }), closedPull(83, { base: 'dev' })];
+  for (const n of [80, 81, 82, 83]) h.world.files[n] = [{ filename: 'decisions/questions/P-001-next-work.md', status: 'added' }];
+  r = await h.run();
+  assert.equal(r.pushes.length, 0, 'still held');
+  assert.ok(!r.ghCalls.some((c) => /pulls\/(80|81|82|83)\/files/.test(c.path)), 'their files are not read');
+  // An own-branch one, closed unmerged after the raised time, that records the answer: the hold ends.
+  h.world.closed.push(closedPull(84, { closed: '2026-10-18T12:30:00Z' }));
+  h.world.files[84] = [{ filename: 'decisions/questions/P-001-next-work.md', status: 'added' }];
+  r = await h.run();
+  assert.deepEqual(r.payloads.map((p) => p.notification.body), ['Waits on you: a question: Which piece of later work comes next?']);
+  r = await h.run();
+  assert.equal(r.pushes.length, 0, 'once');
+  assert.ok(!r.ghCalls.some((c) => /state=closed/.test(c.path)), 'no question held now: no closed read');
+});
+
+test('AC77 (draft 6): a closed pull request that only withdraws the question (v3) ends nothing; a failed closed read keeps the hold and the project is not read', async () => {
+  const h = await startedAt(RAISED_MS - 2 * MIN);
+  const files0 = { ...base, [SESSION_PATH]: realSession };
+  h.checkout = checkoutOf({ base: files0, later: [{ files: { 'questions/P-001-next-work.md': askedQuestion }, date: RAISED }] });
+  await h.run();
+  h.world.closed = [closedPull(85, { closed: '2026-10-18T12:30:00Z' })];
+  h.world.files[85] = [{ filename: 'questions/P-001-next-work.md', status: 'removed' }];
+  let r = await h.run();
+  assert.equal(r.pushes.length, 0, 'a withdrawal is not an answer in v3');
+  h.world.fail[`/repos/${REPO}/pulls?state=closed`] = 502;
+  h.world.closed.push(closedPull(86, { closed: '2026-10-18T12:40:00Z' }));
+  h.world.files[86] = [{ filename: 'decisions/questions/P-001-next-work.md', status: 'added' }];
+  r = await h.run();
+  assert.equal(r.pushes.length, 0, 'the hold kept');
+  assert.ok(r.logs.some((l) => /not read/.test(l)), r.logs.join('\n'));
+  assert.equal(h.state(r).project.read, false);
+  delete h.world.fail[`/repos/${REPO}/pulls?state=closed`];
+  r = await h.run();
+  assert.deepEqual(r.payloads.map((p) => p.notification.body), ['Waits on you: a question: Which piece of later work comes next?']);
 });

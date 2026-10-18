@@ -88,7 +88,8 @@ export async function runSender(o) {
       say(`state: unreadable (${st.why}); nothing sent and nothing saved`);
       const reasons = [];
       if (st.why === 'forged') reasons.push({ code: 'forged' });
-      else if (st.unreadableSince && nowMs - Date.parse(st.unreadableSince) >= UNREAD_ISSUE_MS) reasons.push({ code: 'state-unread' }); // a failed read, 30 minutes in a row
+      // A failed read, 30 minutes in a row; a failed list that cannot be dated (draft 6) at once.
+      else if (st.atOnce || (st.unreadableSince && nowMs - Date.parse(st.unreadableSince) >= UNREAD_ISSUE_MS)) reasons.push({ code: 'state-unread' });
       if (reasons.length) await syncIssue({ gh, repo, owner: config.ownerLogin, reasons, goodPush: false, log: say });
       return 0;
     }

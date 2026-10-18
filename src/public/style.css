@@ -65,3 +65,19 @@ ol.timeline > li { margin: 6px 0; }
 .bar { display: block; height: 100%; min-width: 3px; background: var(--link); }
 .bar.card { background: var(--flag); }
 .bar.open { opacity: 0.6; }
+/* Notifications (AC74, AC75, AC77, AC78; 2026-10-18). */
+.notify-top { margin: 10px 0 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+.notify-top p { margin: 0; }
+.notify button, .answer-here { min-height: 44px; padding: 8px 14px; font: inherit; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--fg); margin: 4px 8px 4px 0; }
+.notify button.notify-on { border-color: var(--link); color: var(--link); font-weight: 600; }
+pre.notify-value { max-width: 100%; white-space: pre-wrap; word-break: break-all; font-size: 0.8rem; }
+ol.steps { padding-left: 20px; margin: 6px 0; }
+details.more { margin: 18px 0; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+details.more > summary { font-weight: 600; min-height: 32px; }
+details.more h3 { margin: 12px 0 4px; font-size: 1rem; }
+progress.usage-bar { display: block; width: 100%; height: 12px; margin: 6px 0; accent-color: var(--link); }
+.usage-estimate { font-weight: 600; margin: 4px 0; }
+.opened, .gone { margin: 10px 0; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); font-weight: 600; }
+.gone { color: var(--warn); background: var(--warn-bg); }
+li.opened-item { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 4px; }
+.recheck p { margin: 4px 0; }

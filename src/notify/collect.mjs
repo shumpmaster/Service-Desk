@@ -120,6 +120,7 @@ export async function collect(input) {
     const sessionFiles = new Map();
     // A question whose answer's pull request was seen open: its hold ended then (AC77), kept by keyed hash (J18).
     const recorded = {};
+    const holds = [];
     for (const q of model.questions) {
       const rec = records.get(q.path);
       const h = history.get(q.path);
@@ -141,6 +142,38 @@ export async function collect(input) {
         }
       }
       const hold = sessionFile ? questionHold({ model: project.model, text, raisedMs, nowMs, recording: false, recordedBefore: false, sessionFile }) : hold0;
+      holds.push({ q, qh, raisedMs, hold });
+    }
+    // The Orchestrator's ruling (draft 6): for a project with a question still held, one page of its
+    // closed pull requests, newest updated first; an own-branch one into the default branch, closed
+    // unmerged after that question's raised time, whose files record its answer (J20), ends the hold:
+    // the question waits again and notifies. A failed read makes the project "not read" (AC76).
+    const stillHeld = holds.filter((x) => x.hold.state === 'held' && Number.isFinite(x.raisedMs));
+    if (stillHeld.length) {
+      const since = Math.min(...stillHeld.map((x) => x.raisedMs));
+      const cl = await gh.get(`/repos/${repo}/pulls?state=closed&sort=updated&direction=desc&per_page=100`);
+      if (cl.status !== 200 || !Array.isArray(cl.json)) throw new ReadFailed('closed pull requests', cl.status);
+      const ended = new Map(); // question name → the latest close that records its answer
+      for (const p of cl.json) {
+        if (!p || !Number.isInteger(p.number) || p.merged_at != null || typeof p.closed_at !== 'string') continue;
+        const closedMs = Date.parse(p.closed_at);
+        if (!(closedMs > since) || !p.base || p.base.ref !== project.defaultBranch) continue;
+        if (!sameRepo(p.head && p.head.repo && p.head.repo.full_name, repo)) continue;
+        const r = await gh.list(`/repos/${repo}/pulls/${p.number}/files?per_page=100`, { maxPages: FILES_MAX_PAGES });
+        if (!r.ok) throw new ReadFailed('closed pull request files', r.status);
+        const parsed = parseFilePages(r.pages);
+        if (!parsed.ok) throw new ReadFailed('closed pull request files', 200);
+        for (const n of recordedAnswers(splitChanges(parsed.files), project.model)) ended.set(n, Math.max(ended.get(n) || 0, closedMs));
+      }
+      for (const x of stillHeld) {
+        const at = ended.get(x.q.name);
+        if (at && at > x.raisedMs) {
+          x.hold = { state: 'open', session: x.hold.session };
+          recorded[x.qh] = recorded[x.qh] || now.toISOString();
+        }
+      }
+    }
+    for (const { q, hold } of holds) {
       if (hold.state === 'recording') recordingCount++;
       if (hold.state === 'held') heldCount++;
       if (hold.state !== 'open') held.add(q.name);

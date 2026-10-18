@@ -55,7 +55,7 @@ export function fakeServer(repos, config, clock) {
       const u = urlsFor(project);
       const head = r.head();
       const pullsRaw = JSON.stringify(r.pulls);
-      const runs = r.runs.map((x, i) => ({ path: x.path || `.github/workflows/${x.name}.yml`, name: x.name || x.path,
+      const runs = r.runs.map((x, i) => ({ id: x.id ?? 1000 + i, path: x.path || `.github/workflows/${x.name}.yml`, name: x.name || x.path,
         event: x.event || 'push', status: x.status, conclusion: x.conclusion, run_number: x.run_number || i + 1,
         head_sha: x.headSha || head, html_url: `https://github.com/${project.repo}/actions/runs/${i + 1}`,
         // AC72: a run's title (GitHub's `display_title`), when the fixture gives one.
@@ -104,7 +104,30 @@ export function fakeServer(repos, config, clock) {
       const ans = r.compare ? r.compare(c.base, c.head) : null;
       compare[key] = ans == null ? null : JSON.stringify({ status: ans });
     }
-    return { ok: true, status: 200, json: { ...base, state: 'ok', blobs, history, compare, ...(body.pulls ? { pulls: pullsOut === undefined ? null : pullsOut } : {}) } };
+    // From 2026-10-18: J20's `files` (the repository's `prFiles[n]`, a list of { filename, status },
+    // answered 100 to a page; `filesFail` names numbers that fail), AC77's `closed` (`closedPulls`, or
+    // null when `closedFail`) and J21's `usage` (`usageAnswer`, an answer or a function of the time;
+    // with none, as the function answers with no billing token: not-configured).
+    const extra = {};
+    if (Array.isArray(body.files)) {
+      extra.files = {};
+      for (const n of body.files) {
+        if ((r.filesFail || []).includes(n) || !(r.prFiles && r.prFiles[n])) {
+          extra.files[n] = null;
+          continue;
+        }
+        const all = r.prFiles[n];
+        const pages = [];
+        for (let i = 0; i < Math.max(1, Math.ceil(all.length / 100)) && i < 3; i++) pages.push(JSON.stringify(all.slice(i * 100, (i + 1) * 100)));
+        extra.files[n] = pages;
+      }
+    }
+    if (body.closed) extra.closed = r.closedFail ? null : JSON.stringify(r.closedPulls || []);
+    if (body.usage) {
+      const a = typeof r.usageAnswer === 'function' ? r.usageAnswer(clock.now()) : r.usageAnswer;
+      extra.usage = a || { state: 'not-configured', asOf: new Date(clock.now()).toISOString(), period: null, summary: { ok: false, items: [] }, usage: { ok: false, items: [] }, publicRepos: null };
+    }
+    return { ok: true, status: 200, json: { ...base, state: 'ok', blobs, history, compare, ...extra, ...(body.pulls ? { pulls: pullsOut === undefined ? null : pullsOut } : {}) } };
   }
   return { call, calls };
 }

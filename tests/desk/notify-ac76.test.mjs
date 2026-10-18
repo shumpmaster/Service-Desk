@@ -267,3 +267,64 @@ test('AC76: the issue updated as its reasons change, and only then; no item\'s t
   assert.match(issue.body, /can't read Service-Desk/);
   for (const i of h.world.issues) noItemIn(i.body);
 });
+
+// The Orchestrator's ruling for AC76 (draft 6): a failed list of the sender's own runs, or of a run's
+// artifacts, is dated from the newest desk-notify-state artifact's created time (one page of the
+// repository's artifacts by name); more than 30 minutes old, the issue opens; that read failing, or
+// finding no artifact, opens it at once; an issue that can't be opened is logged and the run ends as before.
+for (const [what, failPrefix] of [
+  ['the runs list', `/repos/${REPO}/actions/workflows/desk-notify.yml/runs`],
+  ['a run\'s artifact list', `/repos/${REPO}/actions/runs/`],
+]) {
+  test(`AC76 (draft 6): ${what} failing is dated from the newest state artifact: no issue under 30 minutes, the issue once it is older`, async () => {
+    const h = await started();
+    h.add('N-a');
+    h.world.fail[failPrefix] = 502;
+    // The last good artifact was uploaded by the bootstrap run, 5 minutes before this run.
+    let r = await h.run({ after: 24 * MIN });
+    assert.equal(r.pushes.length, 0);
+    assert.equal(r.wrote, false);
+    assert.ok(r.ghCalls.some((c) => c.path === `/repos/${REPO}/actions/artifacts?name=desk-notify-state&per_page=100`), 'one page of the artifacts by name');
+    assert.equal(openIssue(h), undefined, '5 minutes old: no issue');
+    r = await h.run({ after: 2 * MIN }); // 29 minutes old
+    assert.equal(openIssue(h), undefined, '29 minutes old: no issue');
+    r = await h.run(); // 31 minutes old: "30 minutes or more"
+    assert.match(openIssue(h).body, /memory could not be read for 30 minutes/);
+    noItemIn(openIssue(h).body);
+    assert.equal(r.code, 0);
+    delete h.world.fail[failPrefix];
+    r = await h.run();
+    assert.equal(r.pushes.length, 1);
+    assert.equal(openIssue(h), undefined, 'closed once it reads again');
+  });
+}
+
+test('AC76 (draft 6): a failed runs list whose artifacts read also fails, or finds none, opens the issue at once', async () => {
+  const h = await started();
+  h.world.fail[`/repos/${REPO}/actions/workflows/desk-notify.yml/runs`] = 502;
+  h.world.fail[`/repos/${REPO}/actions/artifacts?name=`] = 503;
+  let r = await h.run();
+  assert.equal(r.wrote, false);
+  assert.match(openIssue(h).body, /memory could not be read/);
+  // None found: a world with no artifact at all (seven days without a run, say).
+  const g = await started();
+  g.world.artifacts.length = 0;
+  g.world.fail[`/repos/${REPO}/actions/runs/`] = 502;
+  // The runs list answers but every artifact list fails: dated from the artifacts by name, which hold none.
+  r = await g.run();
+  assert.equal(r.pushes.length, 0);
+  assert.match(openIssue(g).body, /memory could not be read/);
+});
+
+test('AC76 (draft 6): an issue that can\'t be opened is logged, and the run ends as before (exit 0, nothing sent or saved)', async () => {
+  const h = await started();
+  h.world.fail[`/repos/${REPO}/actions/workflows/desk-notify.yml/runs`] = 502;
+  h.world.fail[`/repos/${REPO}/actions/artifacts?name=`] = 503;
+  h.world.fail[`/repos/${REPO}/issues`] = 500;
+  const r = await h.run();
+  assert.equal(r.code, 0);
+  assert.equal(r.wrote, false);
+  assert.equal(r.pushes.length, 0);
+  assert.ok(r.logs.some((l) => /issue: the open issues could not be read/.test(l)), r.logs.join('\n'));
+  assert.equal(h.world.issues.length, 0);
+});

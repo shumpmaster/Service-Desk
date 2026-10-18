@@ -3,6 +3,8 @@
 // blob's JSON form, when GitHub ignores the raw media type, and a compare answer, which it cuts
 // down to its status before returning it). It never retries.
 
+import { readUsage } from './usage.js';
+
 export const API = 'https://api.github.com';
 export const BLOB_BATCH = 25; // EXP-001 may lower it to 12, then 6.
 export const MAX_PAGES = 3;
@@ -12,6 +14,13 @@ export const MAX_PARALLEL = 6;
 export const SHA_RE = /^[0-9a-f]{40}$/;
 // J6: owner questions and their rulings (J2), and from M2 the Orchestrator's hold cards (AC46).
 export const HISTORY_PATH_RE = /^((decisions\/)?questions\/[^/]+\.md|queue\/ci-hold-[0-9a-f]{12}\.md)$/;
+// J20 (2026-10-18): open pull requests' files, one page counting 1 of the blob call's budget.
+export const FILES_PAGES = 3;
+export const MAX_FILES_PRS = 25;
+// AC77 (draft 6): one page of the closed pull requests, newest updated first, counting 1.
+export const CLOSED_COST = 1;
+// J21 (draft 4): the account's Actions use, 3 to 5 requests, counting 5.
+export const USAGE_COST = 5;
 // J1 3a and 3b: the workflow-run lists read for the head (AC29), push runs then dispatch runs.
 export const RUN_EVENTS = ['push', 'workflow_dispatch'];
 
@@ -59,6 +68,8 @@ export function urlsFor(project) {
     blob: (sha) => `${base}/git/blobs/${sha}`,
     compare: (b, h) => `${base}/compare/${b}...${h}?per_page=1`,
     history: (path) => `${base}/commits?path=${encodeURIComponent(path)}&sha=${encodeURIComponent(project.defaultBranch)}&per_page=100`,
+    files: (n) => `${base}/pulls/${n}/files?per_page=100`,
+    closed: `${base}/pulls?state=closed&sort=updated&direction=desc&per_page=100`,
   };
 }
 
@@ -453,6 +464,56 @@ export async function readBlobs(req, deps) {
         return;
       }
       out.compare[key] = await compareFromResponse(res);
+    });
+  }
+  // J20: each pull request's files, raw pages; a second or third page only while the budget lasts.
+  // A failed read is a null answer (the question stays ordinary); only a rate limit or a 401 stops the call.
+  let spare = Number.isInteger(req.spare) ? req.spare : 0;
+  const optionalFail = (res) => {
+    const f = failFrom(res, nowMs);
+    if (f.reason === 'rate-limit' || (f.reason === 'token' && f.status === 401)) fail(f);
+  };
+  for (const n of req.files || []) {
+    out.files = out.files || {};
+    out.files[n] = null;
+    tasks.push(async () => {
+      if (failure) return;
+      const pages = [];
+      for (let page = 1; page <= FILES_PAGES; page++) {
+        if (page > 1) {
+          if (spare < 1) return; // the budget is spent: no answer, read again later
+          spare--;
+        }
+        const res = await get(pageUrl(u.files(n), page));
+        if (!res || !res.ok) return optionalFail(res);
+        pages.push(await res.text());
+        if (linkPage(res.headers.get('Link'), 'next') == null) break;
+      }
+      out.files[n] = pages;
+    });
+  }
+  if (req.closed) {
+    out.closed = null;
+    tasks.push(async () => {
+      if (failure) return;
+      const res = await get(u.closed);
+      if (!res || !res.ok) return optionalFail(res);
+      out.closed = await res.text();
+    });
+  }
+  if (req.usage) {
+    out.usage = null;
+    tasks.push(async () => {
+      if (failure) return;
+      const cfg = req.usage.config;
+      const counted = (url, init) => {
+        counter.n++;
+        return deps.fetch(url, init);
+      };
+      const r = cfg ? await readUsage({ account: cfg.account, token: deps.billingToken || '', fetch: counted, nowMs, reported: cfg.reported })
+        : { state: 'not-configured', asOf: new Date(nowMs).toISOString(), period: null, summary: { ok: false, items: [] }, usage: { ok: false, items: [] }, publicRepos: null };
+      // The kept fields only (J21): never the token, and no status codes.
+      out.usage = { state: r.state, asOf: r.asOf, period: r.period, summary: r.summary, usage: r.usage, publicRepos: r.publicRepos };
     });
   }
   await pool(tasks, MAX_PARALLEL);

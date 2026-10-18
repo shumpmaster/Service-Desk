@@ -256,6 +256,7 @@ export function makeWorld(init = {}) {
     for (const [prefix, status] of Object.entries(w.fail)) if ((p + u.search).startsWith(prefix)) return json(status, { message: 'made-up failure' });
     const rem = { 'x-ratelimit-remaining': String(w.remaining) };
     const base = `/repos/${REPO}`;
+    if (method === 'GET' && p === `${base}/pulls` && q.get('state') === 'closed') return json(200, w.closed || [], rem);
     if (method === 'GET' && p === `${base}/pulls`) return json(200, q.get('page') && q.get('page') !== '1' ? [] : w.pulls, rem);
     let m = /^\/repos\/[^/]+\/[^/]+\/pulls\/(\d+)\/files$/.exec(p);
     if (m) {
@@ -297,6 +298,12 @@ export function makeWorld(init = {}) {
     }
     m = /^\/repos\/[^/]+\/[^/]+\/actions\/runs\/(\d+)\/artifacts$/.exec(p);
     if (m) return json(200, { artifacts: w.artifacts.filter((a) => a.workflow_run.id === Number(m[1])) }, rem);
+    // The repository's artifacts by name (J18's fallback; draft 6, dating a failed list).
+    if (p === `${base}/actions/artifacts`) {
+      const list = w.artifacts.filter((a) => a.name === q.get('name')).map(({ zip, ...a }) => a)
+        .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, 100);
+      return json(200, { total_count: list.length, artifacts: list }, rem);
+    }
     m = /^\/repos\/[^/]+\/[^/]+\/actions\/artifacts\/(\d+)\/zip$/.exec(p);
     if (m) {
       const a = w.artifacts.find((x) => x.id === Number(m[1]));

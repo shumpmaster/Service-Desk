@@ -156,16 +156,33 @@ export function ownRun(run, repo, defaultBranch) {
 }
 
 /**
+ * The sender's own runs list, or a run's artifact list, failed (the Orchestrator's ruling for AC76,
+ * draft 6): the failure is dated from the newest `desk-notify-state` artifact's created time, read
+ * from the repository's artifacts by name (one page). Returns { kind: 'unreadable', why: 'read',
+ * unreadableSince, atOnce }: atOnce when that read also fails or finds no artifact, so AC76's issue
+ * opens at once; otherwise it opens once unreadableSince is 30 minutes old.
+ */
+export async function datedFailure(gh, repo) {
+  const r = await gh.get(`/repos/${repo}/actions/artifacts?name=${ARTIFACT}&per_page=100`);
+  const list = r.status === 200 && r.json && Array.isArray(r.json.artifacts) ? r.json.artifacts : null;
+  const times = (list || []).filter((x) => x && x.name === ARTIFACT && typeof x.created_at === 'string')
+    .map((x) => Date.parse(x.created_at)).filter(Number.isFinite);
+  if (!times.length) return { kind: 'unreadable', why: 'read', unreadableSince: null, atOnce: true };
+  return { kind: 'unreadable', why: 'read', unreadableSince: new Date(Math.max(...times)).toISOString(), atOnce: false };
+}
+
+/**
  * Find and read the last good state (J18). Returns { kind: 'state', state, at } | { kind: 'none' } |
- * { kind: 'unreadable', why: 'read' | 'forged' | 'form', unreadableSince: ISO|null } (unreadableSince: since when it has
- * been unreadable, the first later run's time; null when this run is the first).
+ * { kind: 'unreadable', why: 'read' | 'forged' | 'form', unreadableSince: ISO|null, atOnce? } (unreadableSince: since when it has
+ * been unreadable, the first later run's time; null when this run is the first; for a failed runs or artifact list,
+ * datedFailure's).
  */
 export async function lookupState({ gh, repo, defaultBranch, stateKey }) {
   let r = await gh.get(`/repos/${repo}/actions/workflows/${WORKFLOW_FILE}/runs?status=success&per_page=100`);
   if (r.status >= 400 && r.status < 500 && r.status !== 401 && r.status !== 403 && r.status !== 404) {
     r = await gh.get(`/repos/${repo}/actions/workflows/${WORKFLOW_FILE}/runs?status=completed&per_page=100`);
   }
-  if (r.status !== 200 || !r.json || !Array.isArray(r.json.workflow_runs)) return { kind: 'unreadable', why: 'read', unreadableSince: null };
+  if (r.status !== 200 || !r.json || !Array.isArray(r.json.workflow_runs)) return datedFailure(gh, repo);
   const runs = r.json.workflow_runs.filter((x) => ownRun(x, repo, defaultBranch))
     .sort((a, b) => (Date.parse(b.created_at) - Date.parse(a.created_at)) || (b.id - a.id));
   // Since when the state has been unreadable: the first of the sender's runs after the one whose
@@ -177,7 +194,7 @@ export async function lookupState({ gh, repo, defaultBranch, stateKey }) {
   };
   for (const run of runs) {
     const a = await gh.get(`/repos/${repo}/actions/runs/${run.id}/artifacts?name=${ARTIFACT}&per_page=10`);
-    if (a.status !== 200 || !a.json || !Array.isArray(a.json.artifacts)) return { kind: 'unreadable', why: 'read', unreadableSince: null };
+    if (a.status !== 200 || !a.json || !Array.isArray(a.json.artifacts)) return datedFailure(gh, repo);
     const art = a.json.artifacts.find((x) => x && x.name === ARTIFACT && x.expired !== true && x.workflow_run && x.workflow_run.id === run.id);
     if (!art) continue;
     const unreadableSince = since(run);

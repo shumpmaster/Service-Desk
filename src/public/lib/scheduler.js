@@ -3,8 +3,9 @@
 // calls its tree change needs. A failed or rate-limited read is never retried before the next
 // scheduled poll; a rate-limited project isn't polled again before its retryAfter.
 
-import { neededReads, parseRecord, recordKind, buildModel } from './model.js';
-import { parseTree, parseHistory, parseCardPath, compareStatus } from './records.js';
+import { neededReads, parseRecord, recordKind, buildModel, canRecord, recordingAnswers } from './model.js';
+import { parseTree, parseHistory, parseCardPath, compareStatus, parsePulls, questionName } from './records.js';
+import { parseFilePages, splitChanges, recordedAnswers } from './prfiles.js';
 import { judgePulls, mergePulls, pullsBackoffMs, PULLS_KEY, OLD_PULLS_KEYS, PULLS_MAX_PAGES, PULLS_RATE_MS } from './pulls.js';
 import { dayKey } from './timefmt.js';
 
@@ -25,6 +26,19 @@ const MAX_BLOB_CALLS_PER_CYCLE = 6;
 export const BLOB_CACHE_KEY = 'desk-blobs-v6';
 export const OLD_BLOB_CACHE_KEYS = ['desk-blobs-v1', 'desk-blobs-v2', 'desk-blobs-v3', 'desk-blobs-v4', 'desk-blobs-v5'];
 const HISTORY_CACHE_KEY = 'desk-history-v1';
+// AC77 (2026-10-18): what this device keeps of questions asked in a session, per project: the
+// questions whose answer's pull request it saw (open, or closed unmerged after the question was
+// raised), those the owner chose to answer here instead, and when it first saw each open question.
+export const ASKING_KEY = 'desk-asking-v1';
+// J20: an open pull request's files are read once per head sha; a failed read is tried again after this.
+export const FILES_RETRY_MS = 5 * 60_000;
+export const FILES_PER_CALL = 10;
+// AC77: before an answer link opens, a project read more than this long ago is read again first.
+export const RECHECK_AFTER_MS = 30_000;
+// J21 (AC78): the account's Actions use, at most once an hour while an opening stays open.
+export const USAGE_EVERY_MS = 3600_000;
+export const USAGE_COST = 5;
+export const CLOSED_COST = 1;
 const COMPARE_CACHE_KEY = 'desk-compare-v1';
 
 export const REASON_WORDS = {
@@ -87,6 +101,9 @@ function newProjectState(project) {
     // `step` counts failed reads in a row (RATE_LIMITED aside), for J12's backoff; in memory only, so
     // each opening starts it again.
     j12: { pulls: null, day: null, head: null, tooMany: false, cold: null, wait: null, failure: null, fieldError: null, step: 0 },
+    // J20 (2026-10-18): each pull request's files by head sha, in memory for this opening; a failed
+    // read's time, so it is tried again only after FILES_RETRY_MS. AC77's closed read: once an opening.
+    files: new Map(), filesTried: new Map(), filesReads: 0, closed: { state: 'none', pulls: [] }, recheckedAt: null,
   };
 }
 
@@ -125,9 +142,153 @@ export function createDesk(opts) {
       if (e && Array.isArray(e.pulls)) Object.assign(st.j12, { pulls: e.pulls, day: e.day || null, head: e.head || null, tooMany: e.tooMany === true });
     }
   }
+  // AC77: kept on the device, per project (see ASKING_KEY).
+  let askingSaved = {};
+  try {
+    askingSaved = (store && store.getJSON(ASKING_KEY, {})) || {};
+  } catch {
+    askingSaved = {};
+  }
+  for (const st of states.values()) {
+    const e = askingSaved[st.project.name] || {};
+    st.asking = { recordedBefore: new Set(Array.isArray(e.recorded) ? e.recorded : []), hereInstead: new Set(Array.isArray(e.here) ? e.here : []),
+      seen: new Map(Object.entries(e.seen && typeof e.seen === 'object' ? e.seen : {}).filter(([, v]) => Number.isFinite(v))) };
+  }
   const desk = {
     openedAt: clock.now(), visibleSince: clock.now(), signedOut: false, running: false, states,
+    // J21 (AC78): the usage read, per opening, in the page's memory only.
+    usage: { current: null, lastGood: null, at: null, forced: false, asking: false, reads: 0 },
   };
+
+  /** Keep AC77's per-device record, pruned to the questions still open. */
+  function persistAsking() {
+    if (!store) return;
+    const out = {};
+    for (const st of states.values()) {
+      const a = st.asking;
+      const open = st.tree ? new Set([...st.tree.keys()].map(questionName).filter(Boolean)) : null;
+      const keep = (n) => !open || open.has(n);
+      out[st.project.name] = { recorded: [...a.recordedBefore].filter(keep), here: [...a.hereInstead].filter(keep),
+        seen: Object.fromEntries([...a.seen].filter(([p]) => !st.tree || st.tree.has(p))) };
+    }
+    try {
+      store.setJSON(ASKING_KEY, out);
+    } catch {
+      // a failed write costs only this device's memory of the holds
+    }
+  }
+
+  /** The project's open pull requests, as last read. */
+  const pullsOf = (st) => parsePulls(st.pullRaws || []).pulls;
+
+  /**
+   * AC77, J20: what the device notes after a read: each open question first seen now; and each
+   * question whose answer an open pull request records (its hold ends then, so a pull request that
+   * closes unmerged leaves the question open, AC77), or one closed unmerged after it was raised did.
+   */
+  function noteAsking(st) {
+    if (!st.tree) return;
+    const a = st.asking;
+    const now = clock.now();
+    let changed = false;
+    for (const path of st.tree.keys()) {
+      if (questionName(path) && !a.seen.has(path)) {
+        a.seen.set(path, now);
+        changed = true;
+      }
+    }
+    for (const n of recordingAnswers(st.project, pullsOf(st), st.files).keys()) {
+      if (!a.recordedBefore.has(n)) {
+        a.recordedBefore.add(n);
+        changed = true;
+      }
+    }
+    if (st.closed.state === 'done') {
+      const history = historyFor(st);
+      for (const c of st.closed.pulls) {
+        const f = st.files.get(c.number);
+        if (!f || f.headSha !== c.headSha) continue;
+        for (const n of recordedAnswers(f.changes, st.project.model)) {
+          const h = history.get(`questions/${n}.md`);
+          const raised = h && h.oldest ? Date.parse(h.oldest) : NaN;
+          if (Number.isFinite(raised) && c.closedMs > raised && !a.recordedBefore.has(n)) {
+            a.recordedBefore.add(n);
+            changed = true;
+          }
+        }
+      }
+    }
+    if (changed) persistAsking();
+  }
+
+  /** The held questions (AC77), from the model the page would draw now. */
+  function heldQuestions(st) {
+    try {
+      return (desk.model(st.project.name).asking || []).filter((x) => x.state === 'held');
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * The extra reads a blob call can carry now (J20, AC77's closed read, J21): { files: [n], closed,
+   * usage }. Each is optional: a failure never touches "read successfully".
+   */
+  function extrasDue(st) {
+    const now = clock.now();
+    const files = [];
+    const want = (n, headSha) => {
+      if (!headSha || files.includes(n)) return;
+      const f = st.files.get(n);
+      if (f && f.headSha === headSha) return;
+      const tried = st.filesTried.get(n);
+      if (tried && tried.headSha === headSha && now - tried.at < FILES_RETRY_MS) return;
+      files.push(n);
+    };
+    for (const pr of pullsOf(st)) if (canRecord(pr, st.project)) want(pr.number, pr.headSha);
+    if (st.closed.state === 'done') for (const c of st.closed.pulls) want(c.number, c.headSha);
+    let closed = false;
+    if (st.closed.state === 'none' && st.tree && heldQuestions(st).length) closed = true;
+    const u = desk.usage;
+    const cfg = config.actionsUsage;
+    const usage = Boolean(cfg && cfg.reported !== false && !u.asking && (u.at == null || u.forced || now - u.at >= USAGE_EVERY_MS));
+    return { files: files.slice(0, FILES_PER_CALL), closed, usage, any: files.length > 0 || closed || usage };
+  }
+
+  /** AC77's closed read: the closed pull requests that could have recorded a held question's answer. */
+  function applyClosed(st, raw) {
+    if (raw == null) {
+      st.closed = { state: 'failed', pulls: [] }; // the hold stands; not read again this opening
+      return;
+    }
+    let list;
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      list = null;
+    }
+    if (!Array.isArray(list)) {
+      st.closed = { state: 'failed', pulls: [] };
+      return;
+    }
+    const history = historyFor(st);
+    const raised = heldQuestions(st).map((q) => {
+      const h = history.get(q.path);
+      return h && h.oldest ? Date.parse(h.oldest) : NaN;
+    }).filter(Number.isFinite);
+    const since = raised.length ? Math.min(...raised) : Infinity;
+    const pulls = [];
+    for (const p of list) {
+      if (!p || !Number.isInteger(p.number) || p.merged_at != null || typeof p.closed_at !== 'string') continue;
+      const closedMs = Date.parse(p.closed_at);
+      if (!(closedMs > since) || !p.base || p.base.ref !== st.project.defaultBranch) continue;
+      const headRepo = p.head && p.head.repo && p.head.repo.full_name;
+      if (typeof headRepo !== 'string' || headRepo.toLowerCase() !== String(st.project.repo).toLowerCase()) continue;
+      if (!p.head || typeof p.head.sha !== 'string') continue;
+      pulls.push({ number: p.number, headSha: p.head.sha, closedMs });
+    }
+    st.closed = { state: 'done', pulls };
+  }
 
   const cacheKey = (kind, sha) => `${kind}:${sha}`;
 
@@ -358,10 +519,47 @@ export function createDesk(opts) {
     const body = { project: st.project.name, blobs: batch.blobs, history: batch.history };
     if (batch.compare.length) body.compare = batch.compare;
     if (batch.pulls) body.pulls = { after: batch.pulls.after };
+    if (batch.files && batch.files.length) body.files = batch.files;
+    if (batch.closed) body.closed = true;
+    if (batch.usage) {
+      body.usage = true;
+      desk.usage.asking = true;
+    }
+    const heads = new Map();
+    for (const pr of pullsOf(st)) heads.set(pr.number, pr.headSha);
+    for (const c of st.closed.pulls) if (!heads.has(c.number)) heads.set(c.number, c.headSha);
     const res = await call('/api/blobs', body);
+    const r0 = res.ok ? res.json : null;
+    let extras = false;
+    // J20: each answer kept by the head sha it was asked at; a failed one tried again later.
+    for (const n of batch.files || []) {
+      st.filesReads++;
+      const raw = r0 && r0.files ? r0.files[n] : null;
+      const parsed = Array.isArray(raw) ? parseFilePages(raw) : { ok: false };
+      if (parsed.ok) {
+        st.files.set(n, { headSha: heads.get(n) || null, changes: splitChanges(parsed.files), capped: parsed.capped });
+        st.filesTried.delete(n);
+        extras = true;
+      } else st.filesTried.set(n, { headSha: heads.get(n) || null, at: clock.now() });
+    }
+    if (batch.closed) {
+      applyClosed(st, r0 && Object.prototype.hasOwnProperty.call(r0, 'closed') ? r0.closed : null);
+      extras = true;
+    }
+    if (batch.usage) {
+      const u = desk.usage;
+      u.asking = false;
+      u.at = clock.now();
+      u.forced = false;
+      u.reads++;
+      u.current = r0 && r0.usage && typeof r0.usage.state === 'string' ? r0.usage : { state: 'unavailable', asOf: new Date(clock.now()).toISOString() };
+      if (u.current.state === 'ok') u.lastGood = u.current;
+      extras = true;
+    }
+    if (extras) noteAsking(st);
     if (!res.ok) {
       if (batch.pulls) applyPulls(st, batch.pulls, null);
-      return { res, progress: false };
+      return { res, progress: false, extras };
     }
     const r = res.json;
     let progress = false;
@@ -394,7 +592,7 @@ export function createDesk(opts) {
       progress = true;
     }
     persist();
-    return { res, progress, pulled: Boolean(batch.pulls) };
+    return { res, progress, pulled: Boolean(batch.pulls), extras };
   }
 
   /**
@@ -422,25 +620,30 @@ export function createDesk(opts) {
     }
     const left = missing(st);
     if (left.shas.length || left.history.length || left.compare.length) return { ok: false, pending: true };
+    noteAsking(st);
     for (; calls < MAX_BLOB_CALLS_PER_CYCLE; calls++) {
       const need = missing(st);
       const pl = pullsDue(st);
-      if (!need.optional.shas.length && !need.optional.history.length && !pl) break;
-      const budget = pl ? BLOB_BATCH - PULLS_COST : BLOB_BATCH;
+      const ex = extrasDue(st);
+      if (!need.optional.shas.length && !need.optional.history.length && !pl && !ex.any) break;
+      const budget = BLOB_BATCH - (pl ? PULLS_COST : 0) - ex.files.length - (ex.closed ? CLOSED_COST : 0) - (ex.usage ? USAGE_COST : 0);
       // The MD sandbox (opts.j11) asks for its optional blobs before the rulings' history reads, so
       // its screens fill in the first cycle; without it the order is M2's.
       const [batch] = opts.j11 && need.optional.shas.length ? batches(need.optional.shas, [], budget)
         : batches(need.optional.shas, need.optional.history, budget);
       const b = batch || { blobs: [], history: [], compare: [] };
       if (pl) b.pulls = pl;
-      const { res, progress, pulled } = await blobCall(st, need, b);
+      if (ex.files.length) b.files = ex.files;
+      if (ex.closed) b.closed = true;
+      if (ex.usage) b.usage = true;
+      const { res, progress, pulled, extras } = await blobCall(st, need, b);
       // An optional read that fails is tried again on a later cycle (a J12 read after its backoff);
       // it never fails the project, except a rate limit, which every read must respect.
       if (!res.ok || res.json.state !== 'ok') {
         if (res.ok && res.json.reason === 'rate-limit') return { ok: false, reason: 'rate-limit', retryAfter: res.json.retryAfter };
         break;
       }
-      if (!progress && !pulled) break;
+      if (!progress && !pulled && !extras) break;
     }
     return { ok: true };
   }
@@ -550,7 +753,85 @@ export function createDesk(opts) {
       project: st.project, config, tree: st.tree, records: recordsFor(st), history: historyFor(st),
       pullPages: st.pullRaws || [], checkPages: st.checksRead ? st.checkRaws : null, checksState: st.checksState,
       now: new Date(clock.now()), withdrawn: st.withdrawn, compare: compareFor(st),
+      asking: { files: st.files, recordedBefore: st.asking.recordedBefore, hereInstead: st.asking.hereInstead, seen: st.asking.seen },
     });
+  };
+  /** AC77: "Answer it here instead", on this device only. */
+  desk.answerHere = (name, qname) => {
+    const st = states.get(name);
+    if (!st) return;
+    st.asking.hereInstead.add(qname);
+    persistAsking();
+    try {
+      onChange();
+    } catch {
+      // as in cycle
+    }
+  };
+  /** J21 (AC78): read the usage again at the next blob call (a cost notification's tap). */
+  desk.refreshUsage = () => {
+    if (desk.usage.at != null) desk.usage.forced = true;
+    const first = states.values().next().value;
+    if (first && desk.running && !first.pending) {
+      if (first.timer != null) clock.clearTimeout(first.timer);
+      first.timer = null;
+      cycle(first);
+    }
+  };
+  /** Whether an answer link needs AC77's re-read first: the project's last read is more than 30 seconds old. */
+  desk.needsRecheck = (name) => {
+    const st = states.get(name);
+    if (!st) return false;
+    const last = Math.max(st.lastSuccessAt == null ? -Infinity : st.lastSuccessAt, st.recheckedAt == null ? -Infinity : st.recheckedAt);
+    return !(clock.now() - last <= RECHECK_AFTER_MS);
+  };
+  /**
+   * AC77's re-read before an answer link opens: one poll call, then at most one blob call with J20's
+   * files for any new open pull request and, when the answer path has appeared, its blob. Returns
+   * { ok } (false: the re-read failed, "The desk couldn't check just now").
+   */
+  desk.recheck = async (name, answerPath) => {
+    const st = states.get(name);
+    if (!st) return { ok: false };
+    try {
+      const etags = {};
+      for (const [u, tag] of Object.entries(st.etags)) etags[u] = tag;
+      const res = await call('/api/poll', { project: st.project.name, head: st.head, etags: st.head ? etags : {} });
+      if (!res.ok || res.json.state === 'cant-read') return { ok: false };
+      const out = applyPoll(st, res.json);
+      if (!out.ok) return { ok: false };
+      const files = [];
+      for (const pr of pullsOf(st)) {
+        if (!canRecord(pr, st.project) || !pr.headSha) continue;
+        const f = st.files.get(pr.number);
+        if (!f || f.headSha !== pr.headSha) files.push(pr.number);
+      }
+      const need = { byPath: new Map() };
+      const blobs = [];
+      const e = answerPath && st.tree ? st.tree.get(answerPath) : null;
+      const kind = e ? recordKind(answerPath, st.project.model) : null;
+      if (e && kind && !blobCache.has(cacheKey(kind, e.sha))) {
+        blobs.push(e.sha);
+        need.byPath.set(answerPath, { path: answerPath, sha: e.sha, kind });
+      }
+      if (files.length || blobs.length) {
+        const r = await blobCall(st, need, { blobs, history: [], compare: [], files: files.slice(0, FILES_PER_CALL) });
+        if (!r.res.ok || r.res.json.state !== 'ok') return { ok: false };
+        if (blobs.length && !r.progress) return { ok: false };
+        if (files.some((n) => !st.files.has(n))) return { ok: false };
+      }
+      noteAsking(st);
+      st.recheckedAt = clock.now();
+      return { ok: true };
+    } catch {
+      return { ok: false };
+    } finally {
+      try {
+        onChange();
+      } catch {
+        // as in cycle
+      }
+    }
   };
   desk.cacheSize = () => blobCache.size;
   /** J11 (the MD sandbox): the project's tree, its parsed records and its run pages, as last read. */

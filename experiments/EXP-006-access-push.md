@@ -23,6 +23,16 @@ second signal, with a stated wait if neither signal carries the field (Critic no
 runs admitted by `path`, and the runs list's `status=success` filter (review N5); case 11 registers
 research Q-015's unknowns for AC78 (U-1, U-2, the form of `repositoryName`, U-3).*
 
+*Draft 5 (2026-10-18), after round 4 (reviews/S-001-notifications/_critic-round4-verbatim.md and
+_plan-review-round4-verbatim.md; the owner's ruling "Fix, then build (Recommended)",
+decisions/questions/P-001-notify-round4.md) and the source checks of Q-014 (PASS) and Q-015 (FAIL on
+F1.5): case 11's first call now also settles U-11, whether GitHub reports Actions use for this
+account at all (its REST usage page says user endpoints "are only applicable if the user has
+purchased their own Copilot plan"), tries the classic token on a 404 too (review N7), and compares
+the estimate in dollars by percent as well as the minutes (review N8); case 10 checks the job-level
+concurrency claim (review N4); case 9's second part matches each Workflow 4 run to its ready run by
+`event` and id (review N10).*
+
 spec: S-001 (AC74 to AC78, J16 to J21; Workflows 3 and 4)   milestone: none (notifications are
 not yet a milestone); run on the preview once the notifications pull requests are merged and
 deployed there and Workflow 3 is on (Setup N1 to N8); cases 5g and 9 also after Workflow 4 is on
@@ -53,10 +63,13 @@ issue assignment pushes to GitHub Mobile is not documented). Apple's page "Sendi
 notifications in web apps and browsers" (403 with a `reason`; "Don't refresh your JWT more
 frequently than once per hour"). GitHub's billing documentation (Pro: 3,000 Actions minutes a month
 for the account; each job rounded up to a whole minute). research/Q-014-memo.md (not yet
-source-checked): F3.3 and F6.2, UNKNOWN or C. research/Q-015-memo.md (not yet source-checked):
-U-1 (a fine-grained token with Plan: read, the REST data against the tutorial), U-2 (no documented
-classic scope), U-3 (the usage data's lag), the form of `repositoryName` (F1.1, optional, not
-described). library/facts/L-F8.md (a workflow's own token starts no run, except dispatches).
+source-checked: PASS, research/Q-014-source-check.md): F3.3 and F6.2, UNKNOWN or C, F6.2's
+`head_repository` with no cited source (S16 does not name it). research/Q-015-memo.md
+(source-checked: FAIL on F1.5, research/Q-015-source-check.md): U-1 (a fine-grained token with Plan:
+read, a documented conflict between the REST data and the tutorial), U-2 (no documented classic
+scope), U-3 (the usage data's lag), U-11 (the REST usage page: user endpoints "are only applicable
+if the user has purchased their own Copilot plan", github/docs 9c32d33), the form of
+`repositoryName` (F1.1, optional, not described), and whether `/usage` pages its results. library/facts/L-F8.md (a workflow's own token starts no run, except dispatches).
 
 ## Hypothesis
 Behind the preview's Cloudflare Access application, on the owner's iPhone:
@@ -89,12 +102,16 @@ Behind the preview's Cloudflare Access application, on the owner's iPhone:
     asks-merge run started by `workflow_run` has `event` `workflow_run` and `path`
     `.github/workflows/asks-merge.yml` and passes the gate; REST
     `actions/workflows/desk-notify.yml/runs` lists that run with `head_branch` `main`; and its
-    `status=success` filter lists only runs that concluded `success` (Q-014 F6.2 and F3.3);
-11. a fine-grained token of the account with only Plan: Read-only reads
+    `status=success` filter lists only runs that concluded `success` (Q-014 F6.2 and F3.3); and
+    no pending `notify` job was replaced by a run whose job the gate skipped (the job-level
+    concurrency claim, C);
+11. GitHub reports this account's Actions use through
     `/users/shumpmaster/settings/billing/usage/summary` and `/usage` with `year` and `month` (200,
-    with the fields AC78 uses), and the desk's private-repository minutes for the month are within
-    5% of what GitHub's billing page shows for private repositories, read the same hour (Q-015
-    U-1, U-3).
+    with Actions items and the fields AC78 uses), although the account has no Copilot plan of its
+    own (Q-015 U-11); a fine-grained token of the account with only Plan: Read-only reads them
+    (U-1); the desk's private-repository minutes for the month are within 5% of what GitHub's
+    billing page shows for private repositories; and the desk's estimate is within 5% of the
+    metered amount that page shows for Actions, both read the same hour (U-3).
 
 ## Method
 1. The owner does S-001 Setup N5 to N8 on the iPhone and records its iOS version. Cases 1 to 3 are
@@ -123,14 +140,21 @@ Behind the preview's Cloudflare Access application, on the owner's iPhone:
 8. Case 10: the Chief of Staff reads one `workflow_run` run of Workflow 3 that its origin gate let
    through, its triggering run through REST, one run that an asks-merge `workflow_run` run started,
    and the REST listing of the workflow's runs with and without `status=success`, and records the
-   fields. Case 9's second part: the Chief of Staff reads, after case 5g, whether each ready
-   workflow run there was followed by a Workflow 4 run.
-9. Case 11: after Setup N12, the owner runs desk-notify with `test: usage`; the Chief of Staff
-   reads the log's statuses and field names (no figure is logged); if refused, the owner follows
-   N12 step 4 and the scope that worked is recorded; the owner then compares the desk's line with
-   GitHub's billing page (Settings, Billing and licensing, Usage, Actions, private repositories),
-   noting both figures and times on the phone, not in a public file, and tells the Chief of Staff
-   only the difference in percent and the lag; the Chief of Staff also records the form of
+   fields. For the concurrency claim, the Chief of Staff lists, over case 5's two days, every
+   desk-notify run whose `notify` job was cancelled, and for each reads whether the run that took
+   its place in the group had a job that ran or one the gate skipped. Case 9's second part: the
+   Chief of Staff lists, after case 5g, each run of the operating-model project's ready workflow,
+   and for each looks for a Workflow 4 run with `event` `workflow_run` whose triggering run
+   (`workflow_run.id` in its payload, read through REST) is that ready run's id.
+9. Case 11: after Setup N12 (its preview deploy included), the owner runs desk-notify with
+   `test: usage`; the Chief of Staff reads the log's statuses and field names (no figure is
+   logged): first whether any Actions item came back at all (U-11), then the token's answer; if
+   refused or not found (401, 403 or 404), the owner follows N12 step 5 and the kind and scope
+   that worked, or that none did, is recorded; where the use is reported, the owner then compares
+   the desk's line with GitHub's billing page (Settings, Billing and licensing, Usage, Actions,
+   private repositories): its minutes and its metered amount, noting both figures and times on
+   the phone, not in a public file, and tells the Chief of Staff only the two differences in
+   percent and the lag; the Chief of Staff also records the form of
    `repositoryName` from the `test: usage` log's line naming it (with or without the owner, never a
    name).
 10. For each push, the Chief of Staff takes from the run's log the time of the push service's
@@ -143,8 +167,9 @@ Behind the preview's Cloudflare Access application, on the owner's iPhone:
   its showing on the phone. A run GitHub delayed is counted as measured, with the delay noted.
 - For case 9: the account's minutes in the week and Workflow 4's, the month projected from
   them, and whether the skipped ready job started Workflow 4.
-- For case 11: the difference in percent between the desk's minutes and GitHub's page, and the
-  lag in minutes; no billing figure is recorded in the result, which is public.
+- For case 11: whether Actions use is reported at all; the token kind and scope that worked;
+  the differences in percent between the desk's minutes and estimate and GitHub's page; and the
+  lag in minutes. No billing figure is recorded in the result, which is public.
 
 ## Sample
 One iPhone, the owner's; each case once, and case 5 once for each of its routes, over at most two
@@ -186,10 +211,18 @@ days (case 9 over a week). The small sample is by design: there is one owner and
     admits no `workflow_run` run, and AC74 states the 5-minute check's wait; failing on asks-merge's
     `path`: asks-merge's runs are admitted by `name` and `event` instead; failing on
     `status=success`: J18's lookup uses `status=completed`, its page bounded as before, and J18
-    relies on its other checks and the HMAC;
-  - case 11 failing with a fine-grained token: the classic token of Setup N12 step 4, its scope
-    recorded; with every token kind: AC78's line reads "can't be read: the usage token was refused",
-    and the owner is told; the desk's minutes more than 5% from GitHub's page: AC78's counting rule
+    relies on its other checks and the HMAC; skipped runs found to conclude `success`: J18's lookup
+    starts from the artifacts listed by name; a pending job replaced by a skipped one: the
+    concurrency is reviewed, and AC74 states the delay as up to the next 5-minute check;
+  - case 11 finding no Actions items, or a refusal or 404 with every token kind: GitHub does not
+    report Actions use to the desk for this account; the Builder sets J7's
+    `actionsUsage.reported` to `false` in the fix-forward pull request, AC78's line reads "Not
+    reported" with no bar and no $50 notifications, the owner is told, and Setup N11's e-mails
+    become recommended; the unused tokens are deleted;
+  - case 11 failing with a fine-grained token only: the classic token of Setup N12 step 5, its
+    scope recorded;
+  - the desk's estimate more than 5% from GitHub's metered amount: AC78's estimate rule (the
+    summary against `/usage`, prices assumed) is reviewed and fixed forward; the desk's minutes more than 5% from GitHub's page: AC78's counting rule
     (public repositories, items without `repositoryName`) is reviewed and fixed forward; the lag is
     stated beside "as of".
 

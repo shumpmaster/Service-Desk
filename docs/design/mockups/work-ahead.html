@@ -53,8 +53,6 @@ h1, h2, h3 { margin: 0; text-wrap: balance; }
 .state b { color: var(--gold); letter-spacing: .04em; text-transform: uppercase; }
 .state.rec { background: var(--quote); }
 .state.rec b { color: var(--pass); }
-.goal { display: flex; gap: var(--s2); align-items: baseline; font: var(--t-meta); color: var(--muted); }
-.goal b { color: var(--ink); }
 
 /* One row per milestone, in your order */
 .plan { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); counter-reset: ord; }
@@ -70,13 +68,18 @@ h1, h2, h3 { margin: 0; text-wrap: balance; }
 .st { padding: 0 6px; border-radius: 3px; border: 1px solid currentColor; font: 700 .68rem/1.5 var(--font); letter-spacing: .04em; text-transform: uppercase; }
 .st.prog { color: var(--gold); } .st.todo { color: var(--faint); } .st.wait { color: var(--you); }
 .done { font: var(--t-meta); font-weight: 400; color: var(--muted); }
-.aim { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s1); font: var(--t-meta); color: var(--muted); }
-.aim input { font: var(--t-meta); color: var(--ink); background: var(--page); border: 1px solid var(--line); border-radius: var(--r); padding: 2px 6px; min-width: 0; }
-.aim .late { color: var(--you); }
+.est { display: flex; align-items: baseline; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s1); font: var(--t-meta); color: var(--ink); }
+.ek { font: var(--t-section); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.ex { font: 700 .66rem/1.5 var(--font); letter-spacing: .04em; text-transform: uppercase; color: var(--faint); border: 1px dashed var(--faint); border-radius: 3px; padding: 0 5px; }
+.eta { font: var(--t-meta); color: var(--muted); }
+.eta b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.finish { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3); display: grid; gap: var(--s1); }
+.finish .big { font: 800 1.15rem/1.3 var(--font); font-variant-numeric: tabular-nums; }
+.finish .vs { font: var(--t-meta); color: var(--muted); }
 .move { display: grid; gap: var(--s1); }
 .move button { width: 36px; height: 32px; border: 1px solid var(--line); border-radius: var(--r); background: var(--page); color: var(--ink); font: 700 .9rem/1 var(--font); cursor: pointer; }
 .move button:disabled { opacity: .35; cursor: default; }
-button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+button:focus-visible, summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .launchline { display: flex; align-items: center; gap: var(--s2); font: var(--t-meta); color: var(--ph-launch); }
 .launchline::before, .launchline::after { content: ""; flex: 1; border-top: 1.5px dashed var(--ph-launch); }
 
@@ -112,9 +115,9 @@ details.more[open] { display: grid; gap: var(--s2); }
 
 <div class="wrap">
   <div class="intro">
-    <span class="marker">Mockup · M3A · not built</span>
+    <span class="marker">Mockup · M3A · version 2 · not built</span>
     <h1>Work ahead: planning by milestones</h1>
-    <p class="lead">You plan by milestones in order, so "Work ahead" lists Service-Desk's milestones that aren't reached yet. You put them in the order you want and give any of them a date to aim for. "Record plan" opens GitHub with the plan filled in; you commit it, and your Chief of Staff works to it. The milestones and their states below are the real ones from the project document today. Try the arrows and the dates.</p>
+    <p class="lead">You plan by milestones in order, so "Work ahead" lists Service-Desk's milestones that aren't reached yet. You put them in the order you want. Each shows a rough estimate of how long it will take, and the order gives a rough finish for each, so you know what to expect: estimates, never deadlines. "Record plan" opens GitHub with your order filled in; you commit it, and your Chief of Staff works to it. The milestones and their states are the real ones from the project document today; the estimate figures are examples, since none has been made yet. Try the arrows.</p>
   </div>
 
   <section class="screen" aria-labelledby="s1">
@@ -122,53 +125,52 @@ details.more[open] { display: grid; gap: var(--s2); }
     <div class="phone">
       <div class="hdr"><span class="navb" aria-hidden="true">‹</span><span class="navb" aria-hidden="true">⌂</span><div><p class="proj">ALL PROJECTS</p><p class="scr">Work ahead</p><p class="hsub">6 milestones to go · 3 reached</p></div></div>
       <div class="state" id="state"><b>Draft</b><span>not recorded · no plan recorded yet</span></div>
-      <p class="goal"><span>Goal</span><b>Live at the needs-you address by 11 Nov</b><span class="code">V4</span></p>
+      <div class="finish"><p class="ek">Rough finish, in this order</p><p class="big" id="finish"></p>
+        <p class="vs">From the estimates below, added up in your order from today. An expectation, never a deadline. Your launch target was 11 Nov (V4).</p></div>
 
       <ol class="plan" id="plan" aria-label="Milestones in your order">
-        <li class="ms" data-ph="des" data-id="MD1"><span class="ord" aria-hidden="true"></span>
+        <li class="ms" data-ph="des" data-id="MD1" data-min="0" data-max="0"><span class="ord" aria-hidden="true"></span>
           <div class="body"><p class="mname">What a good desk looks like is known</p>
             <p class="mmeta"><span class="code">MD1</span><span class="phase">Design</span><span class="st wait">work done · accept?</span></p>
             <p class="done">Done when source-checked design research sets out what a good desk looks like and why.</p>
-            <label class="aim">Aim for <input type="date" id="d-MD1"></label></div>
+            <p class="est"><span class="ek">Estimate</span><span>no work left · waiting on your acceptance</span></p><p class="eta" data-eta></p></div>
           <div class="move"><button type="button" data-up aria-label="Move MD1 up">▲</button><button type="button" data-down aria-label="Move MD1 down">▼</button></div></li>
-        <li class="ms" data-ph="des" data-id="MD2"><span class="ord" aria-hidden="true"></span>
+        <li class="ms" data-ph="des" data-id="MD2" data-min="0" data-max="0"><span class="ord" aria-hidden="true"></span>
           <div class="body"><p class="mname">The desk's look and screens chosen</p>
             <p class="mmeta"><span class="code">MD2</span><span class="phase">Design</span><span class="st wait">work done · accept?</span></p>
             <p class="done">Done when you have picked the desk's look and its screens.</p>
-            <label class="aim">Aim for <input type="date" id="d-MD2"></label></div>
+            <p class="est"><span class="ek">Estimate</span><span>no work left · waiting on your acceptance</span></p><p class="eta" data-eta></p></div>
           <div class="move"><button type="button" data-up aria-label="Move MD2 up">▲</button><button type="button" data-down aria-label="Move MD2 down">▼</button></div></li>
-        <li class="ms" data-ph="des" data-id="MD3"><span class="ord" aria-hidden="true"></span>
+        <li class="ms" data-ph="des" data-id="MD3" data-min="3" data-max="5"><span class="ord" aria-hidden="true"></span>
           <div class="body"><p class="mname">The chosen design running on the real back end</p>
             <p class="mmeta"><span class="code">MD3</span><span class="phase">Design</span><span class="st prog">in progress</span></p>
             <p class="done">Done when the chosen look runs on the desk's real back end, showing real records, on its preview site.</p>
-            <label class="aim">Aim for <input type="date" id="d-MD3"></label></div>
+            <p class="est"><span class="ek">Estimate</span><span>about 3–5 days of work</span><span class="ex">example figure</span></p><p class="eta" data-eta></p></div>
           <div class="move"><button type="button" data-up aria-label="Move MD3 up">▲</button><button type="button" data-down aria-label="Move MD3 down">▼</button></div></li>
-        <li class="ms" data-ph="build" data-id="M3A"><span class="ord" aria-hidden="true"></span>
+        <li class="ms" data-ph="build" data-id="M3A" data-min="4" data-max="7"><span class="ord" aria-hidden="true"></span>
           <div class="body"><p class="mname">Work ahead planned and scheduled from the desk</p>
             <p class="mmeta"><span class="code">M3A</span><span class="phase">Build</span><span class="st todo">not started</span></p>
             <p class="done">Done when your chosen order and timing of coming work are recorded from the desk for the Chief of Staff to carry out.</p>
-            <label class="aim">Aim for <input type="date" id="d-M3A"></label></div>
+            <p class="est"><span class="ek">Estimate</span><span>about 4–7 days of work</span><span class="ex">example figure</span></p><p class="eta" data-eta></p></div>
           <div class="move"><button type="button" data-up aria-label="Move M3A up">▲</button><button type="button" data-down aria-label="Move M3A down">▼</button></div></li>
-        <li class="ms" data-ph="build" data-id="M3B"><span class="ord" aria-hidden="true"></span>
+        <li class="ms" data-ph="build" data-id="M3B" data-min="2" data-max="4"><span class="ord" aria-hidden="true"></span>
           <div class="body"><p class="mname">The desk's value targets shown</p>
             <p class="mmeta"><span class="code">M3B</span><span class="phase">Build</span><span class="st todo">not started</span></p>
             <p class="done">Done when the desk shows each value target (V1 to V5) against its measure.</p>
-            <label class="aim">Aim for <input type="date" id="d-M3B"></label></div>
+            <p class="est"><span class="ek">Estimate</span><span>about 2–4 days of work</span><span class="ex">example figure</span></p><p class="eta" data-eta></p></div>
           <div class="move"><button type="button" data-up aria-label="Move M3B up">▲</button><button type="button" data-down aria-label="Move M3B down">▼</button></div></li>
-        <li class="ms" data-ph="launch" data-id="M3C"><span class="ord" aria-hidden="true"></span>
+        <li class="ms" data-ph="launch" data-id="M3C" data-min="2" data-max="3"><span class="ord" aria-hidden="true"></span>
           <div class="body"><p class="mname">The desk live at the needs-you address</p>
             <p class="mmeta"><span class="code">M3C</span><span class="phase">Launch</span><span class="st todo">not started</span></p>
             <p class="done">Done when your needs-you address opens the desk on production.</p>
-            <label class="aim">Aim for <input type="date" id="d-M3C" value="2026-11-11"></label></div>
+            <p class="est"><span class="ek">Estimate</span><span>about 2–3 days of work</span><span class="ex">example figure</span></p><p class="eta" data-eta></p></div>
           <div class="move"><button type="button" data-up aria-label="Move M3C up">▲</button><button type="button" data-down aria-label="Move M3C down">▼</button></div></li>
       </ol>
-      <p class="launchline">launch target · 11 Nov</p>
 
       <div class="group">
         <p class="gh">Not milestones yet</p>
-        <p class="hsub">Your picks from the 16 Oct audit. Each needs your approval as a milestone before it can be planned.</p>
+        <p class="hsub">Your picks from the 16 Oct audit. Tap one to file a question adding it as a milestone; once you approve it, it can be planned here. (Your "how long the agents think it will take" pick is now the estimates on this screen.)</p>
         <div class="mini"><span class="t">Ask or jot box</span><span>on Home</span></div>
-        <div class="mini"><span class="t">How long the agents think their work will take</span><span>their own estimates</span></div>
         <div class="mini"><span class="t">Upkeep fixes</span><span>read-access warning, more than five projects</span></div>
         <div class="mini"><span class="t">Phone notifications</span><span>ruled in on 8 Oct</span></div>
       </div>
@@ -190,28 +192,24 @@ details.more[open] { display: grid; gap: var(--s2); }
 
   <section class="screen" aria-labelledby="s2">
     <h2 id="s2">2 · The record it makes</h2>
-    <p class="lead">"Record plan" opens GitHub's new-file page with this filled in, the same way you answer cards. Until you commit it, the plan reads "Draft, not recorded". Once it is on main, the screen says "Current plan" with the time you recorded it. Your Chief of Staff works through the milestones in this order; nothing acts on it automatically.</p>
+    <p class="lead">"Record plan" opens GitHub's new-file page with your order filled in, the same way you answer cards. Until you commit it, the plan reads "Draft, not recorded". Once it is on main, the screen says "Current plan" with the time you recorded it. Your Chief of Staff works through the milestones in this order; nothing acts on it automatically. The estimates are the agents' record, not yours, so they stay out of your plan file.</p>
     <div class="file">
       <p class="fpath" id="fpath">Service-Desk / docs/planning/2026-10-18T1130Z-01.md</p>
       <pre id="fbody"></pre>
     </div>
     <div class="state rec"><b>Current plan</b><span>recorded 18 Oct, 11:30 · after you commit</span></div>
-    <div class="note"><p class="made">Changed from today's plan for M3A</p><p>The spec planned "Work ahead" as a list of pipeline items (ready, dispatched…) with "not before" dates. This mockup plans milestones in order with dates to aim for, as you asked on 16 Oct. The file keeps the same place and naming, so earlier plans still sort in time order.</p></div>
+    <div class="note"><p class="made">Your answers, as built here</p><p>You order milestones only; the Chief of Staff orders the work inside each one. There are no set dates: the timing is there for rough estimates, so you can set expectations. Your audit picks that aren't milestones yet show under "Not milestones yet".</p></div>
   </section>
 
   <section class="screen" aria-labelledby="s3">
-    <h2 id="s3">3 · Three questions for you</h2>
+    <h2 id="s3">3 · Two questions for you</h2>
     <div class="qs">
-      <div class="q"><h3>1. What do you put in order?</h3>
-        <ol type="A"><li><b>Milestones only.</b> Your Chief of Staff orders the work inside each one. <span class="rec">Recommended</span></li>
-          <li><b>Milestones, and the items inside them.</b> Each milestone opens to its items, which you can reorder too.</li></ol></div>
-      <div class="q"><h3>2. What kind of date?</h3>
-        <ol type="A"><li><b>A date to aim for.</b> When you'd like it reached; the row turns coral if the date passes. <span class="rec">Recommended</span></li>
-          <li><b>A "not before" date.</b> When work on it may start, as the spec has it today.</li>
-          <li><b>Both.</b> Two date boxes per row.</li></ol></div>
-      <div class="q"><h3>3. Your audit picks that aren't milestones yet</h3>
-        <ol type="A"><li><b>Show them under "Not milestones yet".</b> Tapping one files a question to add it as a milestone, so it can be planned. <span class="rec">Recommended</span></li>
-          <li><b>Leave them off.</b> They appear only once added as milestones.</li></ol></div>
+      <div class="q"><h3>1. Who makes the estimates?</h3>
+        <ol type="A"><li><b>The Chief of Staff, one per milestone.</b> It estimates each milestone when it is planned and again as work moves, and records the estimate in Service-Desk with its date. <span class="rec">Recommended</span></li>
+          <li><b>Each agent, for its own pieces.</b> The desk adds them up per milestone. Finer, but it needs a change to the operating model first, and estimates appear only once each piece is planned.</li></ol></div>
+      <div class="q"><h3>2. The rough finish</h3>
+        <ol type="A"><li><b>Show a rough finish for each milestone</b>, added up in your order from today, as a range of dates. <span class="rec">Recommended</span></li>
+          <li><b>Estimates only.</b> Each milestone shows how long it should take, with no dates.</li></ol></div>
     </div>
   </section>
 </div>
@@ -222,31 +220,32 @@ details.more[open] { display: grid; gap: var(--s2); }
   const count = document.getElementById('count');
   const state = document.getElementById('state');
   const fbody = document.getElementById('fbody');
+  const finish = document.getElementById('finish');
   const start = [...plan.children].map(li => li.dataset.id).join(',');
-  let edits = 0;
+  const today = new Date(Date.UTC(2026, 9, 18));
+  const fmt = d => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const plus = n => new Date(today.getTime() + n * 86400000);
 
   function rows() { return [...plan.children]; }
   function refresh() {
     const list = rows();
+    let lo = 0, hi = 0;
     list.forEach((li, i) => {
       li.querySelector('[data-up]').disabled = i === 0;
       li.querySelector('[data-down]').disabled = i === list.length - 1;
+      const a = Number(li.dataset.min), b = Number(li.dataset.max);
+      lo += a; hi += b;
+      const eta = li.querySelector('[data-eta]');
+      eta.innerHTML = a === 0 && b === 0 ? 'Rough finish: <b>once you accept it</b>'
+        : `Rough finish: <b>${fmt(plus(lo))} – ${fmt(plus(hi))}</b>`;
     });
-    const changed = list.map(li => li.dataset.id).join(',') !== start || edits > 0;
+    finish.textContent = `${fmt(plus(lo))} – ${fmt(plus(hi))}`;
+    const changed = list.map(li => li.dataset.id).join(',') !== start;
     count.textContent = changed ? 'Changed · not recorded' : 'No changes yet';
     state.querySelector('span').textContent = changed ? 'not recorded · your changes are on this phone only' : 'not recorded · no plan recorded yet';
-    const today = '2026-10-18';
-    list.forEach(li => {
-      const input = li.querySelector('input');
-      const lab = li.querySelector('.aim');
-      lab.classList.toggle('late', !!input.value && input.value < today);
-    });
     const lines = ['Plan: 2026-10-18T1130Z-01', 'Supersedes: none', '',
-      '| Order | Project | Milestone | Aim for |', '|---|---|---|---|'];
-    list.forEach((li, i) => {
-      const d = li.querySelector('input').value || '—';
-      lines.push(`| ${i + 1} | Service-Desk | ${li.dataset.id} | ${d} |`);
-    });
+      '| Order | Project | Milestone |', '|---|---|---|'];
+    list.forEach((li, i) => lines.push(`| ${i + 1} | Service-Desk | ${li.dataset.id} |`));
     fbody.textContent = lines.join('\n');
   }
   plan.addEventListener('click', e => {
@@ -260,7 +259,6 @@ details.more[open] { display: grid; gap: var(--s2); }
     b.focus();
     refresh();
   });
-  plan.addEventListener('input', () => { edits++; refresh(); });
   document.getElementById('record').addEventListener('click', () => {
     document.getElementById('s2').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   });

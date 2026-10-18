@@ -2,8 +2,9 @@
 # pull request and on pushes to main that touch src/** or tests/**. It holds no secret, uses no
 # environment and uploads nothing, so a pull request's code never meets a credential here and
 # nothing is handed on to another workflow. The config check runs first: wrangler.toml keys,
-# and no lifecycle scripts or dependencies block in src/package.json. Before M1 (no src/) the
-# job passes with a note. Every action is pinned by commit.
+# and no lifecycle scripts or dependencies block in src/package.json. Then the notification
+# workflows' check and its test (Workflow 3): desk-notify.yml and desk-notify-ready.yml as Workflow 3
+# gives them. Before M1 (no src/) the build passes with a note. Every action is pinned by commit.
 name: desk-build
 
 on:
@@ -33,6 +34,12 @@ jobs:
 
       - name: Config check
         run: python3 .github/scripts/desk_config_check.py src
+
+      - name: Notification workflows check
+        run: python3 .github/scripts/desk_notify_check.py
+
+      - name: Notification workflows check, its test
+        run: python3 .github/scripts/test_desk_notify_check.py
 
       - name: Build and test
         run: |

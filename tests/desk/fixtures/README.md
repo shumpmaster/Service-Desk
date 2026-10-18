@@ -184,19 +184,6 @@ that did it. The model's code is run from this repository's `governance/checks/`
   - `real/sessions/chief-of-staff/session_012RJPVKAoLga2RkqLYRDcBY.jsonl`: **real**, the first
     session file on the default branch (one start line), copied unchanged from 21bc250 with `git show`;
   - `good/sessions/chief-of-staff/*.jsonl`: **NOT real records** (real-on-real: written in S-033
-    AC6's forms and passed by the model's own check). `s-ended` (a piece ended, a `definer` helper
-    with figures and a `ux-researcher` helper, whose role the roster lacks, with `null`s; its end
-    line's usage `duration_ms` only), `s-open` (under way, with a `definer` helper), `s-two` (a second
-    session under way), `s-restart` (a start after a start), `s-old` (left open since 03:30),
-    `s-orphan` (an end line before any start and one after an end) and `s-cost` (a made-up end line
-    with a cost). `python3 governance/checks/v3_checks.py sessions --root <a v3 root holding them>`
-    passes them; its output is `good/check.txt`:
-    ```
-- `j13/` (J13, AC49, AC67): the Chief of Staff's session files, made by
-  `python3 tests/desk/tools/j13-fixtures.py tests/desk/fixtures/j13`:
-  - `real/sessions/chief-of-staff/session_012RJPVKAoLga2RkqLYRDcBY.jsonl`: **real**, the first
-    session file on the default branch (one start line), copied unchanged from 21bc250 with `git show`;
-  - `good/sessions/chief-of-staff/*.jsonl`: **NOT real records** (real-on-real: written in S-033
     AC6's forms and passed by the model's own check): `s-ended` (a piece ended, a `definer` helper
     with figures and a `ux-researcher` helper, whose role the roster lacks, with `null`s; its end
     line's usage `duration_ms` only), `s-open` (under way, with a `definer` helper), `s-two` (a second

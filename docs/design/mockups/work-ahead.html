@@ -1,0 +1,269 @@
+<title>Work Ahead Mockup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one phone-width column. The Work ahead screen first (a draft you can reorder and date), then the record it makes, then three questions.
+   Built on the trial view's own tokens, spacing scale and type scale (docs/design/mockups/status-and-timeline.html), so it reads as the same desk. */
+:root {
+  --page: #eef0f2; --surf: #ffffff; --ink: #0b0d10; --muted: #4b525b; --faint: #6b727b; --line: #d6d9de;
+  --pass: #0f7a3a; --passl: #a9d8b9; --gold: #8a6a10; --golds: #f4ecd2; --idle: #b7bdc5; --you: #d23c0f; --note: #fbe4dc; --quote: #f4f5f7;
+  --ph-des: #1d5bd6; --ph-build: #0b7a84; --ph-launch: #b0306a;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 20px; --s5: 32px;
+  --t-screen: 800 1.45rem/1.2 var(--font);
+  --t-section: 800 .74rem/1.3 var(--font);
+  --t-item: 700 1rem/1.3 var(--font);
+  --t-body: 400 .94rem/1.5 var(--font);
+  --t-meta: 600 .78rem/1.35 var(--font);
+  --t-code: 500 .74rem/1.3 var(--mono);
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0c0d0f; --surf: #16181c; --ink: #f1f3f5; --muted: #a3a9b2; --faint: #8b929b; --line: #30353c;
+  --pass: #3fb950; --passl: #275f3a; --gold: #d4ae4f; --golds: #2c2410; --idle: #4a5059; --you: #ff6a3d; --note: #3d1b10; --quote: #1d2025;
+  --ph-des: #6ea0ff; --ph-build: #3cc3cc; --ph-launch: #ff7ab8; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --page: #0c0d0f; --surf: #16181c; --ink: #f1f3f5; --muted: #a3a9b2; --faint: #8b929b; --line: #30353c;
+  --pass: #3fb950; --passl: #275f3a; --gold: #d4ae4f; --golds: #2c2410; --idle: #4a5059; --you: #ff6a3d; --note: #3d1b10; --quote: #1d2025;
+  --ph-des: #6ea0ff; --ph-build: #3cc3cc; --ph-launch: #ff7ab8; color-scheme: dark }
+body { background: var(--page); color: var(--ink); font: var(--t-body); margin: 0; }
+.wrap { max-width: 440px; margin: 0 auto; padding-block: var(--s4) 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: var(--s5); }
+p { margin: 0; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+.marker { justify-self: start; border: 1px dashed var(--muted); border-radius: var(--r); padding: var(--s1) var(--s3); font: var(--t-meta); color: var(--muted); }
+.intro { display: grid; gap: var(--s3); }
+.intro h1, .screen > h2 { font: var(--t-screen); }
+.lead { color: var(--muted); }
+.screen { display: grid; gap: var(--s4); min-width: 0; }
+.code { font: var(--t-code); color: var(--faint); }
+[data-ph="des"] { --ph: var(--ph-des); } [data-ph="build"] { --ph: var(--ph-build); } [data-ph="launch"] { --ph: var(--ph-launch); }
+
+/* The phone frame and its header, as in the other mockups */
+.phone { background: var(--page); border: 1px solid var(--line); border-radius: 12px; padding: var(--s3); display: grid; gap: var(--s3); min-width: 0; }
+.hdr { display: flex; gap: var(--s2); align-items: center; }
+.navb { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surf); display: grid; place-items: center; font: 700 1rem/1 var(--font); color: var(--muted); flex: none; }
+.proj { font: var(--t-section); letter-spacing: .07em; color: var(--muted); }
+.scr { font: 800 1.2rem/1.2 var(--font); }
+.hsub { font: var(--t-meta); color: var(--muted); }
+
+/* The plan's state: draft until the file is on main */
+.state { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; background: var(--golds); border-radius: var(--r); padding: var(--s2) var(--s3); font: var(--t-meta); }
+.state b { color: var(--gold); letter-spacing: .04em; text-transform: uppercase; }
+.state.rec { background: var(--quote); }
+.state.rec b { color: var(--pass); }
+.goal { display: flex; gap: var(--s2); align-items: baseline; font: var(--t-meta); color: var(--muted); }
+.goal b { color: var(--ink); }
+
+/* One row per milestone, in your order */
+.plan { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); counter-reset: ord; }
+.ms { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3); display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: var(--s2) var(--s3); align-items: start; box-shadow: inset 3px 0 0 var(--ph); counter-increment: ord; }
+.ms.moved { border-color: var(--gold); }
+.ord { font: 800 1.1rem/1.3 var(--font); color: var(--muted); font-variant-numeric: tabular-nums; }
+.ord::before { content: counter(ord); }
+.body { display: grid; gap: var(--s1); min-width: 0; }
+.mname { font: var(--t-item); }
+.mmeta { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s2); align-items: center; font: var(--t-meta); color: var(--muted); }
+.phase { display: inline-flex; align-items: center; gap: 5px; }
+.phase::before { content: ""; width: 9px; height: 9px; border-radius: 3px; background: var(--ph); }
+.st { padding: 0 6px; border-radius: 3px; border: 1px solid currentColor; font: 700 .68rem/1.5 var(--font); letter-spacing: .04em; text-transform: uppercase; }
+.st.prog { color: var(--gold); } .st.todo { color: var(--faint); } .st.wait { color: var(--you); }
+.done { font: var(--t-meta); font-weight: 400; color: var(--muted); }
+.aim { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s1); font: var(--t-meta); color: var(--muted); }
+.aim input { font: var(--t-meta); color: var(--ink); background: var(--page); border: 1px solid var(--line); border-radius: var(--r); padding: 2px 6px; min-width: 0; }
+.aim .late { color: var(--you); }
+.move { display: grid; gap: var(--s1); }
+.move button { width: 36px; height: 32px; border: 1px solid var(--line); border-radius: var(--r); background: var(--page); color: var(--ink); font: 700 .9rem/1 var(--font); cursor: pointer; }
+.move button:disabled { opacity: .35; cursor: default; }
+button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.launchline { display: flex; align-items: center; gap: var(--s2); font: var(--t-meta); color: var(--ph-launch); }
+.launchline::before, .launchline::after { content: ""; flex: 1; border-top: 1.5px dashed var(--ph-launch); }
+
+.group { display: grid; gap: var(--s2); }
+.gh { font: var(--t-section); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.mini { background: var(--surf); border: 1px dashed var(--line); border-radius: var(--r); padding: var(--s2) var(--s3); display: flex; gap: var(--s2); align-items: baseline; flex-wrap: wrap; font: var(--t-meta); }
+.mini .t { color: var(--ink); font-weight: 700; }
+.mini.reached .t::before { content: "✓ "; color: var(--pass); }
+details.more summary { cursor: pointer; font: var(--t-meta); color: var(--muted); }
+details.more[open] { display: grid; gap: var(--s2); }
+
+.bar { position: sticky; bottom: 0; background: var(--page); border-top: 1px solid var(--line); padding-top: var(--s3); display: flex; gap: var(--s2); align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.bar p { font: var(--t-meta); color: var(--muted); }
+.primary { border: 0; border-radius: var(--r); background: var(--ink); color: var(--page); font: 700 .95rem/1 var(--font); padding: 12px 16px; cursor: pointer; }
+.ghost { border: 1px solid var(--line); border-radius: var(--r); background: var(--surf); color: var(--ink); font: 600 .85rem/1 var(--font); padding: 10px 12px; cursor: pointer; }
+
+/* The record the plan makes */
+.file { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); display: grid; min-width: 0; }
+.fpath { font: var(--t-code); color: var(--muted); padding: var(--s2) var(--s3); border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.file pre { margin: 0; padding: var(--s3); font: var(--t-code); color: var(--ink); overflow-x: auto; white-space: pre; }
+.note { background: var(--note); border-radius: var(--r); padding: var(--s3); font: var(--t-body); }
+.made { font: var(--t-section); letter-spacing: .07em; text-transform: uppercase; color: var(--you); }
+
+/* Questions for you */
+.qs { display: grid; gap: var(--s3); counter-reset: q; }
+.q { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3); display: grid; gap: var(--s2); }
+.q h3 { font: var(--t-item); }
+.q ol { margin: 0; padding-left: 1.3em; display: grid; gap: var(--s1); color: var(--muted); }
+.q li b { color: var(--ink); }
+.rec { color: var(--pass); font-weight: 700; }
+@media (prefers-reduced-motion: no-preference) { .ms { transition: border-color .2s; } }
+</style>
+
+<div class="wrap">
+  <div class="intro">
+    <span class="marker">Mockup · M3A · not built</span>
+    <h1>Work ahead: planning by milestones</h1>
+    <p class="lead">You plan by milestones in order, so "Work ahead" lists Service-Desk's milestones that aren't reached yet. You put them in the order you want and give any of them a date to aim for. "Record plan" opens GitHub with the plan filled in; you commit it, and your Chief of Staff works to it. The milestones and their states below are the real ones from the project document today. Try the arrows and the dates.</p>
+  </div>
+
+  <section class="screen" aria-labelledby="s1">
+    <h2 id="s1">1 · Work ahead</h2>
+    <div class="phone">
+      <div class="hdr"><span class="navb" aria-hidden="true">‹</span><span class="navb" aria-hidden="true">⌂</span><div><p class="proj">ALL PROJECTS</p><p class="scr">Work ahead</p><p class="hsub">6 milestones to go · 3 reached</p></div></div>
+      <div class="state" id="state"><b>Draft</b><span>not recorded · no plan recorded yet</span></div>
+      <p class="goal"><span>Goal</span><b>Live at the needs-you address by 11 Nov</b><span class="code">V4</span></p>
+
+      <ol class="plan" id="plan" aria-label="Milestones in your order">
+        <li class="ms" data-ph="des" data-id="MD1"><span class="ord" aria-hidden="true"></span>
+          <div class="body"><p class="mname">What a good desk looks like is known</p>
+            <p class="mmeta"><span class="code">MD1</span><span class="phase">Design</span><span class="st wait">work done · accept?</span></p>
+            <p class="done">Done when source-checked design research sets out what a good desk looks like and why.</p>
+            <label class="aim">Aim for <input type="date" id="d-MD1"></label></div>
+          <div class="move"><button type="button" data-up aria-label="Move MD1 up">▲</button><button type="button" data-down aria-label="Move MD1 down">▼</button></div></li>
+        <li class="ms" data-ph="des" data-id="MD2"><span class="ord" aria-hidden="true"></span>
+          <div class="body"><p class="mname">The desk's look and screens chosen</p>
+            <p class="mmeta"><span class="code">MD2</span><span class="phase">Design</span><span class="st wait">work done · accept?</span></p>
+            <p class="done">Done when you have picked the desk's look and its screens.</p>
+            <label class="aim">Aim for <input type="date" id="d-MD2"></label></div>
+          <div class="move"><button type="button" data-up aria-label="Move MD2 up">▲</button><button type="button" data-down aria-label="Move MD2 down">▼</button></div></li>
+        <li class="ms" data-ph="des" data-id="MD3"><span class="ord" aria-hidden="true"></span>
+          <div class="body"><p class="mname">The chosen design running on the real back end</p>
+            <p class="mmeta"><span class="code">MD3</span><span class="phase">Design</span><span class="st prog">in progress</span></p>
+            <p class="done">Done when the chosen look runs on the desk's real back end, showing real records, on its preview site.</p>
+            <label class="aim">Aim for <input type="date" id="d-MD3"></label></div>
+          <div class="move"><button type="button" data-up aria-label="Move MD3 up">▲</button><button type="button" data-down aria-label="Move MD3 down">▼</button></div></li>
+        <li class="ms" data-ph="build" data-id="M3A"><span class="ord" aria-hidden="true"></span>
+          <div class="body"><p class="mname">Work ahead planned and scheduled from the desk</p>
+            <p class="mmeta"><span class="code">M3A</span><span class="phase">Build</span><span class="st todo">not started</span></p>
+            <p class="done">Done when your chosen order and timing of coming work are recorded from the desk for the Chief of Staff to carry out.</p>
+            <label class="aim">Aim for <input type="date" id="d-M3A"></label></div>
+          <div class="move"><button type="button" data-up aria-label="Move M3A up">▲</button><button type="button" data-down aria-label="Move M3A down">▼</button></div></li>
+        <li class="ms" data-ph="build" data-id="M3B"><span class="ord" aria-hidden="true"></span>
+          <div class="body"><p class="mname">The desk's value targets shown</p>
+            <p class="mmeta"><span class="code">M3B</span><span class="phase">Build</span><span class="st todo">not started</span></p>
+            <p class="done">Done when the desk shows each value target (V1 to V5) against its measure.</p>
+            <label class="aim">Aim for <input type="date" id="d-M3B"></label></div>
+          <div class="move"><button type="button" data-up aria-label="Move M3B up">▲</button><button type="button" data-down aria-label="Move M3B down">▼</button></div></li>
+        <li class="ms" data-ph="launch" data-id="M3C"><span class="ord" aria-hidden="true"></span>
+          <div class="body"><p class="mname">The desk live at the needs-you address</p>
+            <p class="mmeta"><span class="code">M3C</span><span class="phase">Launch</span><span class="st todo">not started</span></p>
+            <p class="done">Done when your needs-you address opens the desk on production.</p>
+            <label class="aim">Aim for <input type="date" id="d-M3C" value="2026-11-11"></label></div>
+          <div class="move"><button type="button" data-up aria-label="Move M3C up">▲</button><button type="button" data-down aria-label="Move M3C down">▼</button></div></li>
+      </ol>
+      <p class="launchline">launch target · 11 Nov</p>
+
+      <div class="group">
+        <p class="gh">Not milestones yet</p>
+        <p class="hsub">Your picks from the 16 Oct audit. Each needs your approval as a milestone before it can be planned.</p>
+        <div class="mini"><span class="t">Ask or jot box</span><span>on Home</span></div>
+        <div class="mini"><span class="t">How long the agents think their work will take</span><span>their own estimates</span></div>
+        <div class="mini"><span class="t">Upkeep fixes</span><span>read-access warning, more than five projects</span></div>
+        <div class="mini"><span class="t">Phone notifications</span><span>ruled in on 8 Oct</span></div>
+      </div>
+
+      <details class="more"><summary>Reached · 3</summary>
+        <div class="mini reached"><span class="t">Every project's status visible on the phone</span><span class="code">M1</span><span>7 Oct</span></div>
+        <div class="mini reached"><span class="t">Cards answered straight from the desk</span><span class="code">M2</span><span>18 Oct</span></div>
+        <div class="mini reached"><span class="t">Agent usage shown on the desk</span><span class="code">M2B</span><span>18 Oct</span></div>
+      </details>
+
+      <div class="group">
+        <p class="gh">Personal-Org-Operating-Model</p>
+        <div class="mini"><span class="t">No milestones</span><span>it still runs on the older pipeline, so there is nothing to order here; it shows its open sprint when it has one (none today)</span></div>
+      </div>
+
+      <div class="bar"><p id="count">No changes yet</p><button type="button" class="primary" id="record">Record plan</button></div>
+    </div>
+  </section>
+
+  <section class="screen" aria-labelledby="s2">
+    <h2 id="s2">2 · The record it makes</h2>
+    <p class="lead">"Record plan" opens GitHub's new-file page with this filled in, the same way you answer cards. Until you commit it, the plan reads "Draft, not recorded". Once it is on main, the screen says "Current plan" with the time you recorded it. Your Chief of Staff works through the milestones in this order; nothing acts on it automatically.</p>
+    <div class="file">
+      <p class="fpath" id="fpath">Service-Desk / docs/planning/2026-10-18T1130Z-01.md</p>
+      <pre id="fbody"></pre>
+    </div>
+    <div class="state rec"><b>Current plan</b><span>recorded 18 Oct, 11:30 · after you commit</span></div>
+    <div class="note"><p class="made">Changed from today's plan for M3A</p><p>The spec planned "Work ahead" as a list of pipeline items (ready, dispatched…) with "not before" dates. This mockup plans milestones in order with dates to aim for, as you asked on 16 Oct. The file keeps the same place and naming, so earlier plans still sort in time order.</p></div>
+  </section>
+
+  <section class="screen" aria-labelledby="s3">
+    <h2 id="s3">3 · Three questions for you</h2>
+    <div class="qs">
+      <div class="q"><h3>1. What do you put in order?</h3>
+        <ol type="A"><li><b>Milestones only.</b> Your Chief of Staff orders the work inside each one. <span class="rec">Recommended</span></li>
+          <li><b>Milestones, and the items inside them.</b> Each milestone opens to its items, which you can reorder too.</li></ol></div>
+      <div class="q"><h3>2. What kind of date?</h3>
+        <ol type="A"><li><b>A date to aim for.</b> When you'd like it reached; the row turns coral if the date passes. <span class="rec">Recommended</span></li>
+          <li><b>A "not before" date.</b> When work on it may start, as the spec has it today.</li>
+          <li><b>Both.</b> Two date boxes per row.</li></ol></div>
+      <div class="q"><h3>3. Your audit picks that aren't milestones yet</h3>
+        <ol type="A"><li><b>Show them under "Not milestones yet".</b> Tapping one files a question to add it as a milestone, so it can be planned. <span class="rec">Recommended</span></li>
+          <li><b>Leave them off.</b> They appear only once added as milestones.</li></ol></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const plan = document.getElementById('plan');
+  const count = document.getElementById('count');
+  const state = document.getElementById('state');
+  const fbody = document.getElementById('fbody');
+  const start = [...plan.children].map(li => li.dataset.id).join(',');
+  let edits = 0;
+
+  function rows() { return [...plan.children]; }
+  function refresh() {
+    const list = rows();
+    list.forEach((li, i) => {
+      li.querySelector('[data-up]').disabled = i === 0;
+      li.querySelector('[data-down]').disabled = i === list.length - 1;
+    });
+    const changed = list.map(li => li.dataset.id).join(',') !== start || edits > 0;
+    count.textContent = changed ? 'Changed · not recorded' : 'No changes yet';
+    state.querySelector('span').textContent = changed ? 'not recorded · your changes are on this phone only' : 'not recorded · no plan recorded yet';
+    const today = '2026-10-18';
+    list.forEach(li => {
+      const input = li.querySelector('input');
+      const lab = li.querySelector('.aim');
+      lab.classList.toggle('late', !!input.value && input.value < today);
+    });
+    const lines = ['Plan: 2026-10-18T1130Z-01', 'Supersedes: none', '',
+      '| Order | Project | Milestone | Aim for |', '|---|---|---|---|'];
+    list.forEach((li, i) => {
+      const d = li.querySelector('input').value || '—';
+      lines.push(`| ${i + 1} | Service-Desk | ${li.dataset.id} | ${d} |`);
+    });
+    fbody.textContent = lines.join('\n');
+  }
+  plan.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const li = b.closest('li');
+    if (b.hasAttribute('data-up') && li.previousElementSibling) plan.insertBefore(li, li.previousElementSibling);
+    if (b.hasAttribute('data-down') && li.nextElementSibling) plan.insertBefore(li.nextElementSibling, li);
+    rows().forEach(r => r.classList.remove('moved'));
+    li.classList.add('moved');
+    b.focus();
+    refresh();
+  });
+  plan.addEventListener('input', () => { edits++; refresh(); });
+  document.getElementById('record').addEventListener('click', () => {
+    document.getElementById('s2').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  });
+  refresh();
+})();
+</script>

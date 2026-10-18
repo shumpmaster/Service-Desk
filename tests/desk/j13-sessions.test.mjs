@@ -407,6 +407,14 @@ test('AC67 (J13): the Chief of Staff\'s icon for each of AC49\'s status words; i
   }
 });
 
+test('AC49 (build review round 2, N5): a roster member named `constructor` is labelled from its id, never from a name every object inherits', () => {
+  const j = { ready: true, tree: new Map(), surfaces: { ok: true, members: [{ id: 'constructor' }, { id: 'to-string' }, { id: 'chief-of-staff' }] }, logRows: [], logSource: [], merges: [] };
+  const tv = teamView(SD3, { items: [] }, snapOf([]), j, EMPTY_Q, [], at('12:00'), TZ);
+  assert.equal(tv.members.find((m) => m.id === 'constructor').label, 'Constructor');
+  assert.equal(tv.members.find((m) => m.id === 'to-string').label, 'To string');
+  assert.equal(tv.members.find((m) => m.id === 'chief-of-staff').label, 'Chief of Staff');
+});
+
 test('AC49 (J13): the Agents list under "More detail" stays as it is (the owner\'s answer A: Team screen only)', () => {
   const src = readFileSync(join(FIX, '..', '..', '..', 'src', 'lib', 'asked.js'), 'utf8');
   assert.doesNotMatch(src, /chief-of-staff|cos\.js|sessions\/chief-of-staff/, 'the Agents view reads no session line');

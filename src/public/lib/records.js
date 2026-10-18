@@ -424,7 +424,13 @@ export function parseStatus(text, path = 'status file') {
       notes.push(`${path} line ${i + 1} skipped (value is not JSON): ${l.slice(0, 80)}`);
       return;
     }
-    const type = STATUS_TYPES[m[1]];
+    // A `__proto__` key would set the parsed file's prototype, and an inherited name is no field type
+    // (build review round 2, N4): the first is skipped with a note, the second read as an unknown field.
+    if (m[1] === '__proto__') {
+      notes.push(`${path} line ${i + 1} skipped (__proto__ is not a status field)`);
+      return;
+    }
+    const type = Object.prototype.hasOwnProperty.call(STATUS_TYPES, m[1]) ? STATUS_TYPES[m[1]] : null;
     if (type && !hasType(v, type)) {
       notes.push(`${path} line ${i + 1} field ${m[1]}: expected ${TYPE_WORDS[type]}; skipped`);
       return;

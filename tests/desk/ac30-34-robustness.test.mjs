@@ -111,6 +111,18 @@ test('AC31: each J9 status field type with a wrong-typed value is named (file, l
   assert.ok(bad.notes.some((n) => n.startsWith('status/P-009.toml line 1 field state: expected one of ready,')));
 });
 
+test('AC31 (build review round 2, N4): a `__proto__` line never sets the parsed file\'s prototype, and gives no done state; an inherited name is an unknown field', () => {
+  const r = parseStatus('__proto__ = {"state": "done"}\n', 'status/P-010.toml');
+  assert.equal(r.ok, false, 'no valid state');
+  assert.notEqual(r.fields.state, 'done');
+  assert.equal(Object.getPrototypeOf(r.fields), Object.prototype);
+  assert.ok(r.notes.some((n) => n === 'status/P-010.toml line 1 skipped (__proto__ is not a status field)'), r.notes.join(' | '));
+  const both = parseStatus('state = "waiting-owner"\n__proto__ = {"state": "done"}\nconstructor = 5\n', 'status/P-010.toml');
+  assert.equal(both.fields.state, 'waiting-owner');
+  assert.equal(both.fields.constructor, 5, 'read as an unknown field, as `mystery` is');
+  assert.deepEqual(JSON.parse(JSON.stringify(both.fields)), { state: 'waiting-owner', constructor: 5 }, 'the same after the parsed cache\'s round trip');
+});
+
 test('AC31: a skipped field shows "not recorded", never a wrong value or zero, and a skipped card never un-flags', () => {
   const status = 'kind = "project"\nstage = "three"\nstate = "waiting-owner"\ngate = "stop"\ncard = "6"\n';
   const base = { project: SD, config: CONFIG, now: new Date(START), pullPages: [], checkPages: [] };

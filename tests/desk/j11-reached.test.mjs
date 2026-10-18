@@ -102,6 +102,14 @@ test('J11 (reached): `v3_checks.py trace` printed J11\'s NOTE lines unchanged fo
   assert.deepEqual(tl.lines(), traceNotes(), 'the page\'s timeline for the reached fixture prints J11\'s NOTE lines');
   const readme = readFileSync(join(FIX, 'README.md'), 'utf8');
   assert.match(readme, /j11-reached\/docs\/PROJECT\.md[\s\S]*prints J11's `NOTE:` lines unchanged/, 'the recording is listed with its command');
+  // The second file (J11's test sentence, draft 8): `trace` printed J11's NOTE lines with exactly the three
+  // lines the README records added, in Design i2 after MD3; the page's timeline prints the same, in place.
+  const added = ['  MX5 "A milestone both reached and dropped" (dropped)', '  MX6 "A milestone reached with its why"', '    sprint PR #54'];
+  for (const l of added) assert.ok(readme.includes(`\`${l.trim()}\``), `the README records ${l.trim()}`);
+  const base = traceNotes();
+  const md3 = base.findIndex((l) => /^ {2}MD3 /.test(l));
+  assert.equal(base[md3 + 1], 'Build i2', 'MD3 is Design i2\'s last line in J11\'s NOTE lines');
+  assert.deepEqual(reachedModels(BOTH).tl.lines(), [...base.slice(0, md3 + 1), ...added, ...base.slice(md3 + 1)]);
 });
 
 // ---------------------------------------------------------------------------

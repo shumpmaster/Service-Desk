@@ -1,0 +1,2 @@
+{"event": "start", "session": "s-year50", "time": "0050-03-01T00:00:00Z", "doing": "A start in the year 50"}
+{"event": "end", "session": "s-year50", "time": "0050-03-01T01:00:00.5+00:00", "usage": {"input_tokens": null, "output_tokens": null, "cache_read_input_tokens": null, "cache_creation_input_tokens": null, "num_turns": null, "duration_ms": 3600500, "context_window": null, "autocompact_threshold": null, "context_peak": null, "compactions": null, "derived": ["context_peak"], "would_have_stopped": null, "cost_usd_estimate": null}}

@@ -16,7 +16,7 @@ import { repo, gitSha } from './fake-desk.mjs';
 import { loadSandbox, byClass, findAll, linksIn, j11Files, SD3 } from './sandbox-helpers.mjs';
 import { v3 } from './sandbox-fixtures.mjs';
 import { checkDrawing } from './branch-check.mjs';
-import { SESSION_PATH_RE, parseSessionFile, piecesOf, cosSessions, utcTime, COS_OPEN_MS } from '../../src/lib/cos.js';
+import { SESSION_PATH_RE, parseSessionFile, piecesOf, cosSessions, utcTime, utcParts, COS_OPEN_MS } from '../../src/lib/cos.js';
 import { ballLines, teamView, memberPage, workingNow, cosWorkingNow, cosView, summarySheet, helperWords, endWords, cosUsageLines, COS_COST_NR,
   queueView } from '../../src/lib/sandbox.js';
 import { memberIcon, memberWork } from '../../src/lib/feed.js';
@@ -93,10 +93,11 @@ test('J13: the files `v3_checks sessions` passes read with no note; each piece\'
 test('J13: each line the desk mirrors is named in the notes and skipped, the rest of its file used; each it does not mirror is read as written, with the model\'s failure beside it', () => {
   const model = readFileSync(join(DIR, 'bad', 'check.txt'), 'utf8');
   const failed = [...model.matchAll(/s-bad\.jsonl line (\d+):/g)].map((m) => Number(m[1]));
-  assert.deepEqual(failed, [...Array.from({ length: 23 }, (_, i) => i + 2), 26], 'the model fails lines 2 to 24 and 26');
+  const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
+  assert.deepEqual(failed, [...range(2, 24), ...range(26, 33)], 'the model fails lines 2 to 24 and 26 to 33');
   const f = parseSessionFile(BAD, P('s-bad'));
   const skipped = f.notes.filter((n) => /; skipped$/.test(n)).map((n) => Number(/line (\d+):/.exec(n)[1]));
-  assert.deepEqual(skipped, Array.from({ length: 19 }, (_, i) => i + 2), 'lines 2 to 20: the findings the desk mirrors');
+  assert.deepEqual(skipped, [...range(2, 20), ...range(27, 33)], 'lines 2 to 20 and 27 to 33: the findings the desk mirrors');
   const readLines = f.lines.map((l) => l.n);
   assert.deepEqual(readLines, [1, 21, 22, 23, 24, 25, 26]);
   // Not mirrored, read as written: a repeated key (JSON.parse keeps the last), 1.0 for a count, a time earlier than the line before.
@@ -127,6 +128,48 @@ test('J13: each line the desk mirrors is named in the notes and skipped, the res
   assert.match(why(19), /reported tokens: not a whole number/);
   assert.match(why(20), /started after it ended/);
   for (const n of [2, 13, 20]) assert.match(why(n), new RegExp(`^sessions/chief-of-staff/s-bad\\.jsonl line ${n}: `), 'file, line and reason');
+  // Build review round 1, B1: an event naming a property every object inherits is an unknown event, as the model's dict has it.
+  assert.match(why(27), /unknown event "constructor"/);
+  assert.match(why(28), /unknown event "__proto__"/);
+  assert.match(why(29), /unknown event "toString"/);
+  assert.match(why(30), /unknown event "hasOwnProperty"/);
+  for (const n of [27, 28, 29, 30]) assert.match(model, new RegExp(`line ${n}: unknown event '`), `line ${n}: the model's verdict`);
+  // N1: U+001C and U+0085 are white space, as Python's str.strip has them.
+  assert.match(why(31), /doing is not a string holding a character other than white space/);
+  assert.match(why(32), /doing is not a string holding a character other than white space/);
+  // N3: read to the microsecond, as the model's utc_time keeps it.
+  assert.match(why(33), /started after it ended/);
+});
+
+test('J13 (build review round 1): a file with such lines leaves the project read, "All clear", and the rest of the file used', async () => {
+  const files = { 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml'), 'governance/SURFACES.md': SURFACES,
+    [P('s-ended')]: `${GOOD['s-ended']}{"event": "constructor"}\n{"event": "__proto__", "session": "s-ended"}\n` };
+  const app = await loadSandbox({ config: { ...CONFIG, projects: [v3('Alpha')] }, repos: { Alpha: repo(files) }, hash: '#/', now: at('12:00').getTime() });
+  try {
+    await app.advance(1000);
+    await app.advance(61_000);
+    assert.match(app.text(), /All clear/);
+    assert.doesNotMatch(app.text(), /Can't read/);
+    await app.go('#/p/Alpha/team');
+    assert.match(findAll(app.view, (e) => e.dataset && e.dataset.member === 'chief-of-staff')[0].textContent, /Idle/, 'the rest of the file used');
+  } finally {
+    app.restore();
+  }
+});
+
+test('J13 (build review round 1, N1 and N3): a doing of U+FEFF alone is read, as Python keeps it; years 0001 to 0099 are real years; times compared to the microsecond', () => {
+  assert.deepEqual(parseSessionFile(GOOD['s-edge'], P('s-edge')).notes, [], 'both lines read: the model passes them (good/check.txt)');
+  assert.equal(parseSessionFile(GOOD['s-edge'], P('s-edge')).lines[0].doing, '\ufeff');
+  const y = parseSessionFile(GOOD['s-year50'], P('s-year50'));
+  assert.deepEqual(y.notes, []);
+  assert.equal(new Date(y.lines[0].at).getUTCFullYear(), 50);
+  assert.equal(y.lines[1].at - y.lines[0].at, 3600500);
+  assert.equal(utcTime('0001-01-01T00:00:00Z'), new Date('0001-01-01T00:00:00Z').getTime(), 'the year 1, not 1901');
+  assert.equal(utcTime('0000-01-01T00:00:00Z'), null, 'year 0 is no year to Python');
+  assert.equal(utcTime('0099-02-29T00:00:00Z'), null, '99 is no leap year');
+  assert.equal(utcTime('0096-02-29T00:00:00Z'), new Date('0096-02-29T00:00:00Z').getTime());
+  assert.deepEqual(utcParts('2026-10-17T10:33:00.0000059Z'), { ms: Date.parse('2026-10-17T10:33:00Z'), us: 5 }, 'the fraction\'s first six digits');
+  assert.deepEqual(utcParts('2026-10-17T10:33:00.123456Z'), { ms: Date.parse('2026-10-17T10:33:00.123Z'), us: 456 });
 });
 
 test('J13: an end line\'s usage by J10\'s one rule — a wrong-kind figure marks only its key, "not recorded" and named, and the line still closes its piece; a usage that is not an object gives every figure "not recorded"', () => {

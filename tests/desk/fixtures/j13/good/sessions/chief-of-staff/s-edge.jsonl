@@ -1,0 +1,2 @@
+{"event": "start", "session": "s-edge", "time": "2026-10-17T11:40:00Z", "doing": "\ufeff"}
+{"event": "helper", "session": "s-edge", "role": "definer", "started": "2026-10-17T11:41:00.000001Z", "ended": "2026-10-17T11:41:00.000002Z", "reported": {"tokens": 1, "tool_uses": 1, "duration_ms": 1}}

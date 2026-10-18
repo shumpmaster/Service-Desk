@@ -1081,7 +1081,7 @@ function shapedRows(model, j) {
 }
 
 const MEMBER_LABEL = { 'chief-of-staff': 'Chief of Staff', orchestrator: 'Orchestrator' };
-const label = (id) => MEMBER_LABEL[id] || id.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
+const label = (id) => (Object.prototype.hasOwnProperty.call(MEMBER_LABEL, id) ? MEMBER_LABEL[id] : id.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase()));
 
 // ---------------------------------------------------------------------------
 // J13: the Chief of Staff's session lines on the Team screen (AC49, AC67; from 2026-10-17)

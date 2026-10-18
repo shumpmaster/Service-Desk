@@ -85,6 +85,17 @@ test('J12 (asks-merge): the desk\'s yes or no, and its trailers, agree with `par
   // Each checked against the model's own parse_trailers (python3 -c, 2026-10-18).
   assert.deepEqual(parseTrailers('t\n\nplain\nwords\nmore\nKey: a\n(cherry picked from commit abc)'), [['Key', 'a']], 'a git line, and a quarter or more trailers');
   assert.deepEqual(parseTrailers('t\n\none\ntwo\nthree\nfour\nfive\nsix\nseven\n(cherry picked from commit abc)'), [], 'a git line, but under a quarter trailers');
+  // Build review round 1, N1: white space as Python has it (U+001C to U+001F and U+0085 count, U+FEFF does not);
+  // each expected value is govlib.parse_trailers' own output (python3 -c, 2026-10-18).
+  const m90 = 'File a question (#90)\n\nbody text\n\n';
+  assert.deepEqual(parseTrailers(`${m90}Merged-By: orchestrator\x1c\nDelegation: L-0017\nMerged-Head: abc`), [['Merged-By', 'orchestrator'], ['Delegation', 'L-0017'], ['Merged-Head', 'abc']]);
+  assert.deepEqual(parseTrailers(`${m90}Merged-By: orchestrator\ufeff\nDelegation: L-0017`), [['Merged-By', 'orchestrator\ufeff'], ['Delegation', 'L-0017']]);
+  assert.deepEqual(parseTrailers(`${m90}Merged-By: orchestrator\n\x85continued\nDelegation: L-0017`), [['Merged-By', 'orchestrator continued'], ['Delegation', 'L-0017']], 'U+0085 starts a continuation');
+  assert.deepEqual(parseTrailers('File a question (#90)\n\nbody text\n\x1c\nMerged-By: orchestrator'), [['Merged-By', 'orchestrator']], 'a line of U+001C is blank');
+  assert.deepEqual(parseTrailers('File a question (#90)\n\nbody text\n\ufeff\nMerged-By: orchestrator'), [], 'a line of U+FEFF is not blank');
+  const bot = (message) => isJobMerge({ oid: 'x', message, author: { name: 'github-actions[bot]' } });
+  assert.equal(bot(`${m90}Merged-By: orchestrator\x1c\nDelegation: L-0017\nMerged-Head: abc`), true, 'the model reads orchestrator: the job\'s');
+  assert.equal(bot(`${m90}Merged-By: orchestrator\ufeff\nDelegation: L-0017`), false, 'the model reads orchestrator\ufeff: not the job\'s');
 });
 
 test('J12 (asks-merge): the kept entry holds the yes or no and never the message', () => {

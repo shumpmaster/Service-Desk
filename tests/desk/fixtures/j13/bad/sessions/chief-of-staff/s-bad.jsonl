@@ -24,3 +24,10 @@ not json
 {"event": "end", "session": "s-bad", "time": "2026-10-17T09:50:00Z", "usage": {"input_tokens": null, "output_tokens": null, "cache_read_input_tokens": null, "cache_creation_input_tokens": null, "num_turns": null, "duration_ms": 600000, "context_window": null, "autocompact_threshold": null, "context_peak": null, "compactions": null, "derived": ["context_peak"], "would_have_stopped": null, "cost_usd_estimate": "a lot"}}
 {"event": "start", "session": "s-bad", "time": "2026-10-17T10:00:00Z", "doing": "A piece whose end line's usage is not an object"}
 {"event": "end", "session": "s-bad", "time": "2026-10-17T10:30:00Z", "usage": "none"}
+{"event": "constructor", "session": "s-bad"}
+{"event": "__proto__", "session": "s-bad"}
+{"event": "toString", "session": "s-bad"}
+{"event": "hasOwnProperty", "session": "s-bad"}
+{"event": "start", "session": "s-bad", "time": "2026-10-17T10:31:00Z", "doing": "\u001c"}
+{"event": "start", "session": "s-bad", "time": "2026-10-17T10:32:00Z", "doing": "\u0085"}
+{"event": "helper", "session": "s-bad", "role": "definer", "started": "2026-10-17T10:33:00.000005Z", "ended": "2026-10-17T10:33:00.000001Z", "reported": {"tokens": null, "tool_uses": null, "duration_ms": null}}

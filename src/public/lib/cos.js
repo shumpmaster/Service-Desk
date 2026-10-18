@@ -13,6 +13,12 @@
 // one rule and never skips its line.
 
 import { USAGE_KEYS, USAGE_OTHER_KEYS } from './records.js';
+import { pyStrip } from './pulls.js';
+
+// A key of a parsed line is read only when the line holds it itself: never one inherited from
+// Object.prototype, so an `event` of "constructor", "__proto__" or "toString" is an unknown event
+// (build review round 1, B1), as the model's dict lookup has it.
+const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
 export const SESSIONS_DIR = 'sessions/chief-of-staff/';
 export const SESSION_PATH_RE = /^sessions\/chief-of-staff\/([A-Za-z0-9_-]{1,100})\.jsonl$/; // v3_checks SESSION_FILE_RE
@@ -38,20 +44,33 @@ export function sessionIdOf(path) {
  * fraction, then `Z` or `+00:00`, and a real date and time. Milliseconds, or null.
  */
 export function utcTime(v) {
+  const p = utcParts(v);
+  return p ? p.ms : null;
+}
+
+/**
+ * A UTC time to the microsecond, as the model's `utc_time` keeps it (the fraction's first six
+ * digits): { ms, us } (us: the microseconds past ms, 0 to 999), or null. Years 0001 to 0099 are
+ * real years, as Python's datetime has them (build review round 1, N3).
+ */
+export function utcParts(v) {
   const m = typeof v === 'string' ? UTC_RE.exec(v) : null;
   if (!m) return null;
   const [y, mo, d, h, mi, s] = m.slice(1, 7).map(Number);
-  const ms = Number((m[7] || '0').slice(0, 3).padEnd(3, '0'));
+  const frac = Number((m[7] || '0').slice(0, 6).padEnd(6, '0'));
   if (y < 1 || mo < 1 || mo > 12 || d < 1 || h > 23 || mi > 59 || s > 59) return null;
-  const t = Date.UTC(y, mo - 1, d, h, mi, s, ms);
-  const back = new Date(t);
-  if (back.getUTCFullYear() !== y || back.getUTCMonth() !== mo - 1 || back.getUTCDate() !== d) return null;
-  // Date.UTC treats years 0 to 99 as 1900 to 1999: rebuild such a year by hand.
-  return y < 100 ? (() => { const x = new Date(Date.UTC(2000, mo - 1, d, h, mi, s, ms)); x.setUTCFullYear(y); return x.getTime(); })() : t;
+  // setUTCFullYear takes the year as written (Date.UTC would read 0 to 99 as 1900 to 1999).
+  const x = new Date(0);
+  x.setUTCFullYear(y, mo - 1, d);
+  x.setUTCHours(h, mi, s, Math.floor(frac / 1000));
+  if (x.getUTCFullYear() !== y || x.getUTCMonth() !== mo - 1 || x.getUTCDate() !== d) return null;
+  return { ms: x.getTime(), us: frac % 1000 };
 }
+const laterThan = (a, b) => a.ms > b.ms || (a.ms === b.ms && a.us > b.us);
 
 const isCount = (v) => v === null || (typeof v === 'number' && Number.isInteger(v) && v >= 0);
-const filled = (v) => typeof v === 'string' && v.trim().length > 0;
+// Python's `obj[k].strip()`: a string holding a character other than white space, in Python's sense (N1).
+const filled = (v) => typeof v === 'string' && pyStrip(v).length > 0;
 
 /**
  * Why one parsed line is out of form, in the findings the page mirrors (J13), or null. `sid` is
@@ -59,11 +78,11 @@ const filled = (v) => typeof v === 'string' && v.trim().length > 0;
  */
 export function lineProblem(sid, obj) {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return 'not one JSON object';
-  if (!('event' in obj)) return 'missing key event';
+  if (!own(obj, 'event')) return 'missing key event';
   if (typeof obj.event !== 'string') return 'event is not a string';
-  const keys = KEYS[obj.event];
+  const keys = own(KEYS, obj.event) ? KEYS[obj.event] : null;
   if (!keys) return `unknown event ${JSON.stringify(obj.event)} (start, helper or end)`;
-  const missing = keys.filter((k) => !(k in obj));
+  const missing = keys.filter((k) => !own(obj, k));
   if (missing.length) return `missing key ${missing.join(', ')}`;
   const extra = Object.keys(obj).filter((k) => !keys.includes(k)).sort();
   if (extra.length) return `extra key ${extra.join(', ')}`;
@@ -74,13 +93,13 @@ export function lineProblem(sid, obj) {
   if (obj.event === 'helper') {
     const rep = obj.reported;
     if (!rep || typeof rep !== 'object' || Array.isArray(rep)) return 'reported is not an object';
-    const rm = REPORTED_KEYS.filter((k) => !(k in rep));
+    const rm = REPORTED_KEYS.filter((k) => !own(rep, k));
     if (rm.length) return `reported: missing key ${rm.join(', ')}`;
     const rx = Object.keys(rep).filter((k) => !REPORTED_KEYS.includes(k)).sort();
     if (rx.length) return `reported: extra key ${rx.join(', ')}`;
     const bad = REPORTED_KEYS.filter((k) => !isCount(rep[k]));
     if (bad.length) return `reported ${bad.join(', ')}: not a whole number of 0 or more, or null`;
-    if (utcTime(obj.started) > utcTime(obj.ended)) return 'the helper started after it ended';
+    if (laterThan(utcParts(obj.started), utcParts(obj.ended))) return 'the helper started after it ended';
   }
   return null;
 }
@@ -102,7 +121,7 @@ export function readUsage(u, where) {
     return { usage: out, notes };
   }
   for (const k of all) {
-    if (!(k in u)) {
+    if (!own(u, k)) {
       out[k] = NOT_RECORDED;
       notes.push(`${where}: usage.${k} is missing; shown as not recorded`);
       continue;

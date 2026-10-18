@@ -70,6 +70,12 @@ GOOD = {
                  start("s-orphan", "05:10:00Z", "A short piece"),
                  end("s-orphan", "05:20:00Z", duration_ms=600000),
                  end("s-orphan", "05:25:00Z", duration_ms=900000)],
+    # Build review round 1: a doing of U+FEFF alone, which Python's strip keeps (N1), and times in the
+    # year 50, which Python's datetime takes (N3); a helper whose times differ by a microsecond, in order.
+    "s-edge": [start("s-edge", "11:40:00Z", "\ufeff"),
+               helper("s-edge", "definer", "11:41:00.000001Z", "11:41:00.000002Z", 1, 1, 1)],
+    "s-year50": [{"event": "start", "session": "s-year50", "time": "0050-03-01T00:00:00Z", "doing": "A start in the year 50"},
+                 {"event": "end", "session": "s-year50", "time": "0050-03-01T01:00:00.5+00:00", "usage": usage(duration_ms=3600500)}],
     # A made-up end line with a cost (no tool gives the Chief of Staff its cost today).
     "s-cost": [start("s-cost", "10:00:00Z", "A made-up piece whose end line has a cost"),
                end("s-cost", "10:20:00Z", duration_ms=1200000, cost_usd_estimate=1.234)],
@@ -110,6 +116,16 @@ BAD = [
     json.dumps(dict(end(B, "09:50:00Z", duration_ms=600000), usage=dict(usage(duration_ms=600000), cost_usd_estimate="a lot"))),  # 24
     json.dumps(start(B, "10:00:00Z", "A piece whose end line's usage is not an object")),        # 25
     json.dumps({"event": "end", "session": B, "time": D + "10:30:00Z", "usage": "none"}),         # 26
+    # Build review round 1, B1: an `event` that names a property every JavaScript object inherits.
+    json.dumps({"event": "constructor", "session": B}),                                            # 27
+    '{"event": "__proto__", "session": "s-bad"}',                                                  # 28
+    json.dumps({"event": "toString", "session": B}),                                               # 29
+    json.dumps({"event": "hasOwnProperty", "session": B}),                                         # 30
+    # N1: white space as Python's str.strip has it: U+001C and U+0085 are white space.
+    json.dumps({"event": "start", "session": B, "time": D + "10:31:00Z", "doing": "\x1c"}),       # 31
+    json.dumps({"event": "start", "session": B, "time": D + "10:32:00Z", "doing": "\x85"}),       # 32
+    # N3: a helper started after it ended by half a microsecond's difference read to the microsecond.
+    json.dumps(helper(B, "definer", "10:33:00.000005Z", "10:33:00.000001Z")),                    # 33
 ]
 
 

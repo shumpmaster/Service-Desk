@@ -188,20 +188,26 @@ that did it. The model's code is run from this repository's `governance/checks/`
     with figures and a `ux-researcher` helper, whose role the roster lacks, with `null`s; its end
     line's usage `duration_ms` only), `s-open` (under way, with a `definer` helper), `s-two` (a second
     session under way), `s-restart` (a start after a start), `s-old` (left open since 03:30),
-    `s-orphan` (an end line before any start and one after an end) and `s-cost` (a made-up end line
-    with a cost). `python3 governance/checks/v3_checks.py sessions --root <a v3 root holding them>`
-    passes them; its output, `good/check.txt`:
+    `s-orphan` (an end line before any start and one after an end), `s-cost` (a made-up end line
+    with a cost), and, from build review round 1, `s-edge` (a `doing` of U+FEFF alone, which Python's
+    strip keeps; a helper whose times differ by one microsecond, in order) and `s-year50` (times in
+    the year 50, with a fraction and `+00:00`).
+    `python3 governance/checks/v3_checks.py sessions --root <a v3 root holding them>` passes them;
+    its output, `good/check.txt`:
     ```
     exit 0
-    NOTE: 7 session file(s) in sessions/chief-of-staff/
+    NOTE: 9 session file(s) in sessions/chief-of-staff/
     OK: the Chief of Staff's session lines are in their form
     ```
   - `bad/sessions/chief-of-staff/s-bad.jsonl`: **NOT a real record**: line 1 in form; lines 2 to 20
     one for each finding the desk mirrors (it names and skips them); lines 21 to 23 for those it reads
     as written (a repeated key, `1.0` for a count, a time earlier than the line before); line 24 an end
     line whose usage has a figure of the wrong kind and line 26 one whose usage is not an object (read by
-    J10's rule); line 25 in form. The same command's output, the model's failure beside each line,
-    `bad/check.txt`:
+    J10's rule); line 25 in form; and, from build review round 1, lines 27 to 30 an `event` of
+    `constructor`, `__proto__`, `toString` and `hasOwnProperty` (B1), lines 31 and 32 a `doing` of
+    U+001C and of U+0085 (N1), and line 33 a helper that started a few microseconds after it ended
+    (N3), each of which the desk names and skips. The same command's output, the model's failure
+    beside each line, `bad/check.txt`:
     ```
     exit 1
     NOTE: 1 session file(s) in sessions/chief-of-staff/
@@ -229,5 +235,12 @@ that did it. The model's code is run from this repository's `governance/checks/`
     sessions/chief-of-staff/s-bad.jsonl line 23: its time is earlier than the time of the previous start or end line (model S-033 AC6)
     sessions/chief-of-staff/s-bad.jsonl line 24: the usage object is not model S-020's (cost_usd_estimate is not a finite number from 0 to 10^6 or null) (model S-033 AC6)
     sessions/chief-of-staff/s-bad.jsonl line 26: the usage object is not model S-020's (not an object) (model S-033 AC6)
-    FAIL: 24 violation(s)
+    sessions/chief-of-staff/s-bad.jsonl line 27: unknown event 'constructor' (start, helper or end) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 28: unknown event '__proto__' (start, helper or end) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 29: unknown event 'toString' (start, helper or end) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 30: unknown event 'hasOwnProperty' (start, helper or end) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 31: doing has the wrong type (a non-empty string) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 32: doing has the wrong type (a non-empty string) (model S-033 AC6)
+    sessions/chief-of-staff/s-bad.jsonl line 33: the helper started after it ended (model S-033 AC6)
+    FAIL: 31 violation(s)
     ```

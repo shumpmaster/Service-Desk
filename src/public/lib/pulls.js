@@ -148,8 +148,18 @@ export function prBodyParts(body) {
 
 const TRAILER_RE = /^([A-Za-z0-9-]+)[ \t]*:([^\n]*)$/; // Python's `.`: anything but a line feed
 const GIT_PREFIXES = ['Signed-off-by: ', '(cherry picked from commit '];
-const isBlank = (l) => !l.trim();
-const startsSpace = (l) => /^\s/.test(l);
+// Python's white space (str.isspace, str.strip with no argument), which `parse_trailers` uses; it differs
+// from JavaScript's \s and trim(): U+001C to U+001F and U+0085 count, U+FEFF does not (build review
+// round 1, N1).
+const PY_SPACE = '\t\n\v\f\r\x1c\x1d\x1e\x1f \x85\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000';
+const PY_EDGES_RE = new RegExp(`^[${PY_SPACE}]+|[${PY_SPACE}]+$`, 'g');
+const PY_SPACE_RE = new RegExp(`^[${PY_SPACE}]$`);
+/** Python's str.strip() with no argument. */
+export const pyStrip = (s) => String(s).replace(PY_EDGES_RE, '');
+/** Python's str.isspace() for one character (false for the empty string). */
+export const pyIsSpace = (c) => PY_SPACE_RE.test(c);
+const isBlank = (l) => !pyStrip(l);
+const startsSpace = (c) => c.length === 1 && pyIsSpace(c);
 
 /**
  * [[key, value]] from a commit message's final trailer paragraph, as the model's
@@ -203,11 +213,11 @@ export function parseTrailers(message, commentChar = '#') {
   for (const line of lines.slice(start, end).filter((l) => !l.startsWith(commentChar))) {
     const m = TRAILER_RE.exec(line);
     if (m) {
-      current = [m[1], m[2].trim()];
+      current = [m[1], pyStrip(m[2])];
       out.push(current);
     } else if (startsSpace(line.slice(0, 1)) && current) {
-      const extra = line.trim();
-      if (extra) current[1] = `${current[1]} ${extra}`.trim();
+      const extra = pyStrip(line);
+      if (extra) current[1] = pyStrip(`${current[1]} ${extra}`);
     } else current = null;
   }
   return out;

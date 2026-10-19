@@ -28,6 +28,7 @@ researcher         researcher  installed  autonomous
 critic             reviewer    installed  autonomous
 reviewer           reviewer    installed  autonomous
 user-rep           reviewer    installed  autonomous
+design-reviewer    reviewer    installed  autonomous
 ```
 
 ```surface:orchestrator
@@ -90,7 +91,7 @@ docs/users/PROFILE.md
 ```
 
 ```surface:input-reader
-# read-only — no write surface (same for researcher, critic, reviewer, user-rep)
+# read-only — no write surface (same for researcher, critic, reviewer, user-rep, design-reviewer)
 ```
 
 ```surface:researcher
@@ -103,6 +104,9 @@ docs/users/PROFILE.md
 ```
 
 ```surface:user-rep
+```
+
+```surface:design-reviewer
 ```
 
 Human committers: one `Name <email>` per line. Their commits may touch any path; the guard

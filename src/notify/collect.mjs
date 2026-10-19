@@ -246,12 +246,15 @@ export async function collect(input) {
       if (candidates.length) {
         const ar = await gh.get(`/repos/${repo}${ASKS_MERGE_RUNS}`);
         if (ar.status !== 200 || !ar.json || !Array.isArray(ar.json.workflow_runs)) throw new ReadFailed('asks-merge runs', ar.status);
-        // A judging run's commit must be on the default branch (security review round 1, C): a run whose
-        // head_sha is not the checkout's HEAD or an ancestor of it (a dispatch on a tag named like the
-        // default branch) judges nothing. Checked in the full-history checkout.
+        // A dispatched judging run's commit must be on the default branch (security review round 1, C; desk
+        // review round 2, R1): a `workflow_dispatch` run whose head_sha is not the checkout's HEAD or an
+        // ancestor of it (a dispatch on a tag named like the default branch) judges nothing. `workflow_run`
+        // and `schedule` runs, which a tag cannot start, are taken as before, so a real run on a commit
+        // newer than this checkout still counts. Checked in the full-history checkout.
         const onDefault = new Map();
         const asksRuns = ar.json.workflow_runs.filter((r) => {
-          const sha = r && r.head_sha;
+          if (!r || r.event !== 'workflow_dispatch') return true;
+          const sha = r.head_sha;
           if (!onDefault.has(sha)) onDefault.set(sha, checkout.isAncestor(sha, checkout.head) === true);
           return onDefault.get(sha);
         });

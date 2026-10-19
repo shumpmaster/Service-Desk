@@ -484,6 +484,11 @@ export async function judgeAll(js, project, cands, nowMs) {
       count(pr, 'forged');
       continue;
     }
+    // Not judged within 45 minutes of its checks completing: counted, with no words of its own (R2).
+    if (p.v.unjudged) {
+      count(pr, 'unjudged');
+      continue;
+    }
     if (p.v.left) {
       if (p.v.rule === 'b') h.sticky = 'b';
       const words = p.v.rule === 'c' ? (nowMs - h.firstSeenMs >= NO_CHECK_WORDS_AFTER_MS ? NO_CHECK_WORDS : null) : LEFT_WORDS;

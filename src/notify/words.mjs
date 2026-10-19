@@ -12,13 +12,18 @@ export function clean(text) {
   return String(text == null ? '' : text).replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-/** The tap's address for a key: `<deskUrl>/?open=<key>`, the key URL-encoded (AC74). */
+// From 2026-10-19 (the owner's ruling "A. Go live now, switch later (Recommended)",
+// decisions/questions/P-001-notify-which-view.md): every tap opens the sandbox view, the owner's page,
+// until MD3 makes it the desk; then the `sandbox` flag goes (AC74, J17).
+
+/** The tap's address for a key: `<deskUrl>/?sandbox&open=<key>`, the key URL-encoded (AC74). */
 export function openUrl(deskUrl, key) {
-  return `${deskUrl}/?open=${encodeURIComponent(key)}`;
+  return `${deskUrl}/?sandbox&open=${encodeURIComponent(key)}`;
 }
 
+/** A tap that opens Home (the grouped, start-up, "back on" and test notifications): `<deskUrl>/?sandbox`. */
 export function homeUrl(deskUrl) {
-  return `${deskUrl}/`;
+  return `${deskUrl}/?sandbox`;
 }
 
 /** One item's notification (AC74): title the project's name; body "Waits on you: <kind words>: <what>". */

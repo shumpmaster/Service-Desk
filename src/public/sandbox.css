@@ -421,6 +421,8 @@ p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 .sb-grab { display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: var(--s1) auto var(--s3); }
 .sb-left { border: 1px solid var(--block); border-left: 4px solid var(--block); border-radius: var(--r); padding: var(--s2) var(--s3); background: var(--blocks); margin: var(--s2) 0; }
 .sb-left p { margin: 0 0 var(--s1); }
+/* AC74 (2026-10-19): the tap's line, "Opened from a notification" or "That no longer waits on you". */
+.sb-tap { margin: var(--s2) 0; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: var(--r); background: var(--surf); font: var(--t-item); }
 .sb-infobtn { display: inline-flex; gap: var(--s2); align-items: center; min-height: 44px; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf); font: var(--t-item); text-decoration: none; }
 .sb-infobtn .ic { width: 18px; height: 18px; }
 .sb-more > summary .sb-h2.flat { margin: 0; }

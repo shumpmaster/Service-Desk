@@ -17,9 +17,8 @@ import { usageLines, v5Footer, notReadText } from './lib/asked.js';
 import { createRun, summarize, resultMarkdown, rawTable } from './lib/exp001.js';
 import { routeParts, guardRender, boot, SIGNED_OUT_STATE } from './lib/page.js';
 import { errorText } from './lib/scheduler.js';
-import { flaggedWait } from './lib/waiting.js';
 import {
-  openTarget, OPENED_WORDS, GONE_WORDS, NOTIFY_WORDS, NOTIFY_STORE_KEY, COPY_DONE_WORDS, SHOW_AGAIN_WORDS, SEND_TEST_WORDS,
+  openTarget, tapDecision, sandboxAddress, CANT_READ_WORDS, OPENED_WORDS, GONE_WORDS, NOTIFY_WORDS, NOTIFY_STORE_KEY, COPY_DONE_WORDS, SHOW_AGAIN_WORDS, SEND_TEST_WORDS,
   copySteps, testSteps, notifyState, onTopLine, isStandalone, permissionOf, currentSubscription, subscriptionValue, turnOn,
   USAGE_TITLE, usageView, RECHECK_WORDS, recheckOutcome,
 } from './lib/notifyview.js';
@@ -179,56 +178,51 @@ function moreDetail() {
 // ---------------------------------------------------------------------------
 // AC74: `?open=<key>` — the tap on a notification
 
-const opening = { target: openTarget(location.search), done: false, banner: null };
-try {
-  if (opening.target && typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', `${location.pathname || '/'}${location.hash || ''}`);
-} catch {
-  // the address keeps its ?open=; a reload opens the item again
+// Read when the accepted view starts (startDesk), never at load: a `?open=` address that loads this
+// file is first forwarded to the sandbox, which reads it itself (2026-10-19).
+const opening = { target: null, done: true, banner: null };
+function takeOpening() {
+  Object.assign(opening, { target: openTarget(location.search), done: false, banner: null });
+  if (!opening.target) opening.done = true;
+  try {
+    if (opening.target && typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', `${location.pathname || '/'}${location.hash || ''}`);
+  } catch {
+    // the address keeps its ?open=; a reload opens the item again
+  }
 }
 let scrollTo = null; // an element id to bring into view after the next draw
 
-/** Follow the notification once the project it names has been read (AC74). */
+/**
+ * Follow the notification once the project it names has been read (AC74), by the rules shared with
+ * the sandbox (tapDecision). From 2026-10-19 a `?open=` load is forwarded to the sandbox (below), so
+ * this view follows a tap only if that forward could not be made.
+ */
 function followOpening(desk, bx) {
   if (!opening.target || opening.done) return;
+  const d = tapDecision({ target: opening.target, projects: CONFIG.projects, settled: (n) => desk.closedSettled(n),
+    box: (n) => bx.find((x) => x.name === n) || null });
+  if (!d || d.kind === 'wait') return;
+  opening.done = true;
   const t = opening.target;
-  if (t.kind === 'usage') {
-    opening.done = true;
+  if (d.kind === 'usage') {
     moreOpen = true;
     scrollTo = 'actions-usage';
     location.hash = '#/';
     return;
   }
-  const project = t.kind === 'item' ? projectByName(t.project) : null;
-  if (!project) {
-    opening.done = true;
-    opening.banner = { hash: '#/', words: GONE_WORDS };
-    location.hash = '#/';
-    return;
-  }
-  const b = bx.find((x) => x.name === project.name);
-  if (!b || !b.read || b.read.read === 'checking') return; // still reading: decide once it is read
-  // AC74, AC77 (draft 8): in a project holding a question, the item shows only once the closed read
-  // run for this arrival has answered or failed.
-  if (typeof desk.closedSettled === 'function' && !desk.closedSettled(project.name)) return;
-  opening.done = true;
-  const m = b.model;
-  const f = m && m.flagged.find((x) => {
-    const w = flaggedWait(project.name, x);
-    return w && w.key === t.key;
-  });
-  const name = project.name;
-  // A tapped question still held, or being recorded: shown as such, never "That no longer waits on you" (draft 8).
-  const held = !f && t.itemKind === 'question' && m && Array.isArray(m.asking) ? m.asking.find((a) => a.path === t.id) : null;
-  if (held) {
-    location.hash = href(name, 'q', held.name);
+  const name = d.project ? d.project.name : null;
+  if (d.kind === 'held') {
+    // A tapped question still held, or being recorded: shown as such, never "That no longer waits on you" (draft 8).
+    location.hash = href(name, 'q', d.row.name);
     opening.banner = { hash: location.hash, words: OPENED_WORDS, key: t.key };
     return;
   }
-  if (!f) {
-    location.hash = href(name);
-    opening.banner = { hash: location.hash, words: b.read.read === 'cant-read' ? `${OPENED_WORDS}: the desk can't read this project just now` : GONE_WORDS };
+  if (d.kind !== 'item') {
+    location.hash = name ? href(name) : '#/';
+    opening.banner = { hash: location.hash, words: d.kind === 'cant-read' ? CANT_READ_WORDS : GONE_WORDS };
     return;
   }
+  const f = d.f;
   if (f.kind === 'card') location.hash = href(name, 'card', f.card.path);
   else if (f.kind === 'question') location.hash = href(name, 'q', f.question.name);
   else if (f.kind === 'hold') location.hash = href(name, 'hold', f.hold.path);
@@ -822,6 +816,7 @@ function renderAgents(desk, name) {
 }
 
 function startDesk() {
+  takeOpening();
   const store = createStore();
   const desk = createDesk({
     config: CONFIG, call: (path, body) => callFunction(path, body), clock, store, isVisible, onChange: () => render(),
@@ -903,18 +898,15 @@ function startDesk() {
       sw.addEventListener('message', (e) => {
         const d = e && e.data;
         if (!d || d.kind !== 'desk-open' || typeof d.navigate !== 'string') return;
+        // From 2026-10-19 a tap opens the sandbox (AC74): this view goes there, with the tap's address.
+        // (sw.js hands a tap only to a sandbox window; this covers an older service worker.)
         const q = /\?[^#]*/.exec(d.navigate);
-        Object.assign(opening, { target: openTarget(q ? q[0] : ''), done: false, banner: null });
-        desk.arrival();
-        // AC78, J21: a cost notification's tap reads the usage again (draft 9, Desk 2); a tap that loads
-        // the page reads it at the opening, as every opening does.
-        if (opening.target && opening.target.kind === 'usage') desk.refreshUsage();
+        if (!forwardToSandbox(q ? q[0] : '')) return;
         try {
           if (e.ports && e.ports[0]) e.ports[0].postMessage({ ok: true });
         } catch {
-          // the service worker then navigates the window instead
+          // the service worker then navigates the window, which forwards in the same way
         }
-        render();
       });
     }
   } catch {
@@ -977,9 +969,29 @@ function startExp001() {
   document.addEventListener('visibilitychange', () => { if (!isVisible() && run.state === 'running') progress(run); });
 }
 
+/**
+ * AC74 from 2026-10-19 (the owner's ruling "A. Go live now, switch later (Recommended)"): a tap's
+ * `?open=` address opens the sandbox, the owner's page: the same address with `sandbox` added, in
+ * place of this one. Returns whether it went.
+ */
+function forwardToSandbox(search) {
+  const to = sandboxAddress(location.pathname || '/', search, location.hash || '');
+  try {
+    if (typeof location.replace === 'function') {
+      location.replace(to);
+      return true;
+    }
+  } catch {
+    // fall through: this view follows the tap itself
+  }
+  return false;
+}
+
 const exp = params.get('exp');
 if (exp === '001') startExp001();
 else if (exp === '004') startExp004();
 else if (params.has('sandbox')) import('./sandbox.js').then((m) => m.startSandbox()); // MD's sandbox view (AC43 B)
-else startDesk();
+else if (params.has('open') && forwardToSandbox(location.search)) {
+  // a notification's tap (sent before the change, or by a sender not yet moved): on to the sandbox
+} else startDesk(); // plain "/": the accepted view, unchanged (AC43)
 

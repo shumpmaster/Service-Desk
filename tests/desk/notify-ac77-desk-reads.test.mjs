@@ -22,9 +22,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fixture } from './helpers.mjs';
+import { fixture, CONFIG } from './helpers.mjs';
 import { repo, pr } from './fake-desk.mjs';
 import { loadApp, findAll } from './page-harness.mjs';
+import { loadSandbox } from './sandbox-helpers.mjs';
 import { NOTIFY_FIX } from './notify-helpers.mjs';
 import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { HELD_WORDS, RECORDING_WORDS } from '../../src/lib/model.js';
@@ -70,6 +71,18 @@ async function open(r, { now = RAISED_MS + 10 * MIN, hash = '#/p/Service-Desk/q/
   await app.advance(1000);
   return app;
 }
+/**
+ * From 2026-10-19 a tap opens the sandbox (the owner's ruling "A. Go live now, switch later
+ * (Recommended)"): the sandbox loaded, through the same handles as `open` gives.
+ */
+async function openSb(r, { now = RAISED_MS + 10 * MIN, hash = '#/', navigator, search = '?sandbox' } = {}) {
+  const sb = await loadSandbox({ config: CONFIG, repos: r, now, hash, search, globals: { ...(navigator ? { navigator } : {}) } });
+  await sb.advance(1000);
+  return { ...sb, calls: () => sb.server.calls, state: () => sb.els['screen-state'], advance: (ms) => sb.advance(ms), flush: () => sb.flush(), restore: () => sb.restore() };
+}
+const SB_WAITING = '#/p/Service-Desk/queue/q%3AP-001-next-work'; // the sandbox's response sheet for the question
+const SB_HELD = '#/p/Service-Desk/queue'; // the Queue, where "Asked in your session" shows a held question
+
 /** A page whose service worker can hand it a tap's address (sw.js's handover), and the replies it gave. */
 function swNavigator() {
   const nav = { listeners: [], replies: [] };
@@ -278,7 +291,7 @@ test('AC77 (draft 7): a found end is kept on the device across openings, ended w
 test('AC74, AC77 (draft 8): a tap reaching an already-open desk runs the closed read before the question shows; closed unmerged meanwhile, it shows waiting', async () => {
   const nav = swNavigator();
   const r = repos([], { closedPulls: [] });
-  const app = await open(r, { hash: '#/', navigator: nav });
+  const app = await openSb(r, { navigator: nav });
   try {
     await app.advance(MIN);
     assert.equal(closedCalls(app).length, 1, 'the opening\'s read');
@@ -288,9 +301,10 @@ test('AC74, AC77 (draft 8): a tap reaching an already-open desk runs the closed 
     nav.tap(KEY);
     assert.deepEqual(nav.replies, [{ ok: true }], 'the page took the address: no reload');
     assert.equal(app.loc.hash, '#/', 'not shown before the read answers');
+    assert.ok(!text(app).includes(OPENED_WORDS));
     await app.advance(1000);
     assert.equal(closedCalls(app).length, 2, 'the closed read again, for the arrival');
-    assert.equal(app.loc.hash, '#/p/Service-Desk/q/P-001-next-work');
+    assert.equal(app.loc.hash, SB_WAITING);
     assert.ok(text(app).includes(OPENED_WORDS));
     assert.ok(!text(app).includes(HELD_WORDS));
     assert.equal(app.state().textContent, '1 waiting on you', 'waiting, as the phone said');
@@ -302,14 +316,14 @@ test('AC74, AC77 (draft 8): a tap reaching an already-open desk runs the closed 
 test('AC74, AC77 (draft 8): that read failing, the tapped question shows held, never "That no longer waits on you"', async () => {
   const nav = swNavigator();
   const r = repos([], { closedPulls: [] });
-  const app = await open(r, { hash: '#/', navigator: nav });
+  const app = await openSb(r, { navigator: nav });
   try {
     await app.advance(MIN);
     r['Service-Desk'].closedFail = true;
     nav.tap(KEY);
     await app.advance(1000);
     assert.equal(closedCalls(app).length, 2);
-    assert.equal(app.loc.hash, '#/p/Service-Desk/q/P-001-next-work');
+    assert.equal(app.loc.hash, SB_HELD);
     assert.ok(text(app).includes(HELD_WORDS));
     assert.ok(text(app).includes(OPENED_WORDS));
     assert.ok(!text(app).includes(GONE_WORDS));
@@ -373,11 +387,11 @@ test('AC77 (draft 9, Desk 5; the Reviewer\'s probe G): five returns within 25 se
 
 test('AC74, AC77 (draft 8): a held question whose history read fails: no closed read, the hold standing, and a tap showing it held', async () => {
   const r = repos([], { historyFail: (p) => p === QPATH, closedPulls: [closedPr(98, { closed: '2026-10-18T11:35:00Z' })], prFiles: { 98: ADDS_ANSWER } });
-  const app = await open(r, { hash: '', search: `?open=${encodeURIComponent(KEY)}` });
+  const app = await openSb(r, { hash: '', search: `?sandbox&open=${encodeURIComponent(KEY)}` });
   try {
     await app.advance(MIN);
     assert.equal(closedCalls(app).length, 0, 'no closed read');
-    assert.equal(app.loc.hash, '#/p/Service-Desk/q/P-001-next-work');
+    assert.equal(app.loc.hash, SB_HELD);
     assert.ok(text(app).includes(HELD_WORDS));
     assert.ok(text(app).includes(OPENED_WORDS));
     assert.ok(!text(app).includes(GONE_WORDS));
@@ -392,7 +406,7 @@ test('AC74, AC77 (draft 8): a held question whose history read fails: no closed 
 test('AC74, AC77 (draft 9, Desk 5): a tap\'s closed read is a blob call of its own, made at once, with no poll before it', async () => {
   const nav = swNavigator();
   const r = repos([], { closedPulls: [] });
-  const app = await open(r, { hash: '#/', navigator: nav });
+  const app = await openSb(r, { navigator: nav });
   try {
     await app.advance(MIN);
     const n = app.calls().length;
@@ -405,7 +419,7 @@ test('AC74, AC77 (draft 9, Desk 5): a tap\'s closed read is a blob call of its o
     assert.deepEqual({ ...after[0].body, project: undefined }, { project: undefined, blobs: [], history: [], closed: { since: '2026-10-18T11:26:23.000Z' } }, 'the closed read alone');
     assert.deepEqual(after[1].body.files, [98], 'then the found pull request\'s files');
     assert.equal(after.filter((c) => c.path === '/api/poll').length, 0);
-    assert.equal(app.loc.hash, '#/p/Service-Desk/q/P-001-next-work');
+    assert.equal(app.loc.hash, SB_WAITING);
     assert.equal(app.state().textContent, '1 waiting on you');
   } finally {
     app.restore();
@@ -422,12 +436,12 @@ test('AC74, AC77 (draft 9, Desk 7): a tap during a closed read in flight waits f
     r['Service-Desk'].prFiles = { 98: ADDS_ANSWER };
     nav.tap(KEY);
   };
-  const app = await open(r, { hash: '#/', navigator: nav });
+  const app = await openSb(r, { navigator: nav });
   try {
     assert.equal(closedCalls(app).length, 1, 'the opening\'s read failed');
     await app.advance(MIN);
     assert.equal(closedCalls(app).length, 3, 'the retry, and a fresh read for the tap');
-    assert.equal(app.loc.hash, '#/p/Service-Desk/q/P-001-next-work');
+    assert.equal(app.loc.hash, SB_WAITING);
     assert.ok(!text(app).includes(HELD_WORDS), 'shown from the fresh read: waiting, not held');
     assert.equal(app.state().textContent, '1 waiting on you');
   } finally {

@@ -100,7 +100,7 @@ test('AC77: the real session file at ccf320f, with the real question: the copy w
   g.checkout = checkoutOf({ base: { ...base, [SESSION_PATH]: realSession }, later: [{ files: { 'questions/P-001-next-work.md': realQuestion }, date: RAISED }] });
   const rg = await g.run();
   assert.equal(rg.pushes.length, 1);
-  assert.equal(rg.payloads[0].notification.navigate, `https://desk.example.invalid/?open=${encodeURIComponent('Service-Desk|question|questions/P-001-next-work.md')}`);
+  assert.equal(rg.payloads[0].notification.navigate, `https://desk.example.invalid/?sandbox&open=${encodeURIComponent('Service-Desk|question|questions/P-001-next-work.md')}`);
 });
 
 test('AC77: an end line after the raised time, landing later, ends the hold with one push', async () => {

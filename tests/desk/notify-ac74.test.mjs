@@ -2,7 +2,7 @@
 // per newly waiting key, with its title, body and tap address; none for a key already sent, one that
 // stopped waiting, a job candidate or a held question; a key that stops and starts again sent again;
 // three new keys in one grouped push; a body cut at 140 characters; an outside author's pull request
-// with no title. (The desk's side of the tap, `/?open=<key>`, is the brief's step 3.)
+// with no title. (The desk's side of the tap, `/?sandbox&open=<key>` from 2026-10-19, is in notify-ac74-desk.test.mjs.)
 
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -44,7 +44,7 @@ test('AC74: one notification per newly waiting thing, its title the project, its
     h.checkout = later(files);
     const r = await h.run();
     assert.equal(r.pushes.length, 1, key);
-    assert.deepEqual(r.payloads[0].notification, { title: 'Service-Desk', body, navigate: `${D}/?open=${encodeURIComponent(key)}`, tag: r.pushes[0].headers.get('topic') }, key);
+    assert.deepEqual(r.payloads[0].notification, { title: 'Service-Desk', body, navigate: `${D}/?sandbox&open=${encodeURIComponent(key)}`, tag: r.pushes[0].headers.get('topic') }, key);
     // Sent once, never repeated.
     assert.equal((await h.run()).pushes.length, 0, key);
   }
@@ -55,7 +55,7 @@ test('AC74: a pull request, a deploy, and an outside author\'s pull request with
   h.world.pulls = [pull(41, { title: 'Add the made-up thing' })];
   let r = await h.run();
   assert.equal(r.payloads[0].notification.body, 'Waits on you: a pull request to merge: Add the made-up thing');
-  assert.equal(r.payloads[0].notification.navigate, `${D}/?open=${encodeURIComponent('Service-Desk|pr|41')}`);
+  assert.equal(r.payloads[0].notification.navigate, `${D}/?sandbox&open=${encodeURIComponent('Service-Desk|pr|41')}`);
   h.world.pulls.push(pull(42, { title: 'Words a stranger chose', headRepo: 'someone/Service-Desk', association: 'NONE', login: 'someone' }));
   r = await h.run();
   assert.equal(r.payloads[0].notification.body, 'Waits on you: a pull request from someone outside the project');
@@ -73,14 +73,14 @@ test('AC74: a pull request, a deploy, and an outside author\'s pull request with
   h.world.waiting = [{ id: 9001, status: 'waiting', display_title: 'deploy 1234567' }];
   r = await h.run();
   assert.equal(r.payloads[0].notification.body, 'Waits on you: a deploy to approve: deploy 1234567');
-  assert.equal(r.payloads[0].notification.navigate, `${D}/?open=${encodeURIComponent('Service-Desk|deploy|9001')}`);
+  assert.equal(r.payloads[0].notification.navigate, `${D}/?sandbox&open=${encodeURIComponent('Service-Desk|deploy|9001')}`);
   // Draft 9 (build review round 1, Sec 8): a waiting run from another repository (a fork's) puts no
   // title on the lock screen: its kind's words alone, as for an outside author's pull request.
   h.world.waiting.push({ id: 9002, status: 'waiting', display_title: 'Words a fork author chose', head_repository: { full_name: 'someone/Service-Desk' } });
   r = await h.run();
   assert.deepEqual(r.payloads.map((p) => p.notification.body), ['Waits on you: a deploy to approve']);
   assert.ok(!JSON.stringify(r.payloads).includes('fork author'));
-  assert.equal(r.payloads[0].notification.navigate, `${D}/?open=${encodeURIComponent('Service-Desk|deploy|9002')}`);
+  assert.equal(r.payloads[0].notification.navigate, `${D}/?sandbox&open=${encodeURIComponent('Service-Desk|deploy|9002')}`);
   // A run whose head repository GitHub doesn't give: no title either.
   h.world.waiting.push({ id: 9003, status: 'waiting', display_title: 'Unknown origin', head_repository: null });
   r = await h.run();
@@ -116,7 +116,7 @@ test('AC74: no push for one that stopped waiting, for a held question, or for a 
   j.world.checks[sha].checkRuns = [run('completed', 'failure')];
   const rj2 = await j.run();
   assert.equal(rj2.pushes.length, 1);
-  assert.equal(rj2.payloads[0].notification.navigate, `${D}/?open=${encodeURIComponent('Service-Desk|pr|81')}`);
+  assert.equal(rj2.payloads[0].notification.navigate, `${D}/?sandbox&open=${encodeURIComponent('Service-Desk|pr|81')}`);
 });
 
 test('AC74: three or more newly waiting in one run give one grouped notification opening Home', async () => {
@@ -125,7 +125,7 @@ test('AC74: three or more newly waiting in one run give one grouped notification
   h.checkout = later(pick('questions/N-open.md'));
   const r = await h.run();
   assert.equal(r.pushes.length, 1);
-  assert.deepEqual(r.payloads[0].notification, { title: 'Service Desk', body: '3 things now wait on you in Service-Desk', navigate: `${D}/`, tag: r.pushes[0].headers.get('topic') });
+  assert.deepEqual(r.payloads[0].notification, { title: 'Service Desk', body: '3 things now wait on you in Service-Desk', navigate: `${D}/?sandbox`, tag: r.pushes[0].headers.get('topic') });
   assert.equal((await h.run()).pushes.length, 0);
   // Two new: one each.
   h.world.pulls.push(pull(63), pull(64));
@@ -149,4 +149,14 @@ test('AC74: the body cut to 140 characters with "…", record text beyond the ti
   h.world.pulls = [pull(71, { title: 'Line one\nline two\u0007' })];
   const r2 = await h.run();
   assert.equal(r2.payloads[0].notification.body, 'Waits on you: a pull request to merge: Line one line two');
+});
+
+// From 2026-10-19 (the owner's ruling "A. Go live now, switch later (Recommended)"): every tap opens
+// the sandbox view: an item's at `/?sandbox&open=<key>`, Home's at `/?sandbox` (AC74, J17).
+test('AC74, J17 (2026-10-19): the tap addresses open the sandbox: /?sandbox&open=<key> for an item, /?sandbox for Home', async () => {
+  const { openUrl, homeUrl } = await import('../../src/notify/words.mjs');
+  assert.equal(openUrl('https://service-desk-preview.pages.dev', 'Service-Desk|question|questions/N-a.md'),
+    'https://service-desk-preview.pages.dev/?sandbox&open=Service-Desk%7Cquestion%7Cquestions%2FN-a.md');
+  assert.equal(openUrl('https://service-desk-preview.pages.dev', 'actions-usage'), 'https://service-desk-preview.pages.dev/?sandbox&open=actions-usage');
+  assert.equal(homeUrl('https://service-desk-preview.pages.dev'), 'https://service-desk-preview.pages.dev/?sandbox');
 });

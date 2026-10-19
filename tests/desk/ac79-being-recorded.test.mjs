@@ -288,7 +288,7 @@ test('AC79\'s log form: filtered lines give the same logVerdict as the whole log
 // ---------------------------------------------------------------------------
 // The staged reads, the cap and the grant's epoch, on the page's own module.
 
-test('AC79: the cap: a head needing its head time, a log and a re-read (3 calls, judged); a fourth needed counts until a new head', async () => {
+test('AC79: the cap: a head needing its head time, a log and a re-read (3 calls, judged); a fourth needed counts until its head changes, the same head too; a new head in the same opening is judged', async () => {
   // No counted check: the head time is needed, and fails every time; each poll changes (a new runs page).
   const w = world({ checkRuns: [], workflowRuns: [], created: '2026-10-18T11:55:00Z', asksRuns: [arun(1, '2026-10-18T11:30:00Z')], logs: { 101: log(GRANT) } });
   const p = pageJobs(pageCtx(w, RECORDS));
@@ -301,17 +301,21 @@ test('AC79: the cap: a head needing its head time, a log and a re-read (3 calls,
   assert.equal(p.calls.commitTime.filter((x) => x === SHA).length, 3);
   assert.equal(h.capped, true);
   assert.deepEqual([p.js.verdicts.get(7).state, p.js.verdicts.get(7).why], ['count', 'capped']);
-  // A new head starts again, and is judged.
+  // The same head after the cap: a check run starts, which would let it be judged; it still counts until its head changes.
+  w.checks[SHA] = { checkRuns: [{ ...ok(4), status: 'in_progress', conclusion: null, completed_at: null }], workflowRuns: WR, statuses: [] };
+  for (let i = 8; i < 11; i++) await p.poll(T0 + i * MIN);
+  assert.deepEqual([p.js.verdicts.get(7).state, p.js.verdicts.get(7).why], ['count', 'capped'], 'the same head stays counted');
+  assert.equal(p.js.heads.get(SHA).calls, CALLS_PER_HEAD, 'and no fourth call');
+  // A new head in the same opening starts again, and is judged.
   const sha2 = 'd'.repeat(40);
-  w.pulls = [pull(7, { sha: sha2 })];
+  w.pulls = [pull(7, { sha: sha2, created: '2026-10-18T11:55:00Z' })];
+  w.files[7] = [{ filename: 'questions/N1.md', status: 'added' }];
   w.checks[sha2] = { checkRuns: [{ ...ok(5), status: 'in_progress', conclusion: null, completed_at: null }], workflowRuns: WR, statuses: [] };
-  const ctx2 = pageCtx(w, RECORDS);
-  Object.assign(p, {});
-  const p2 = pageJobs(ctx2);
-  await p2.poll(T0 + 10 * MIN);
-  await p2.poll(T0 + 11 * MIN);
-  await p2.poll(T0 + 12 * MIN);
-  assert.equal(p2.js.verdicts.get(7).state, 'recording');
+  Object.assign(p.ctxRef, pageCtx(w, RECORDS)); // the same opening, its pull request now at the new head
+  for (let i = 11; i < 14; i++) await p.poll(T0 + i * MIN);
+  assert.equal(p.js.verdicts.get(7).head, sha2);
+  assert.equal(p.js.verdicts.get(7).state, 'recording', 'a new head within the same opening is judged');
+  assert.equal(p.js.heads.get(SHA).capped, true, 'the old head keeps its cap for the opening');
 });
 
 test('AC79: a failed log answer kept for its run and not asked again; the grant read failing waits for the next opening or ledger change', async () => {
@@ -425,4 +429,68 @@ test('AC79: a failed or refused poll part counts every candidate and leaves the 
   delete w.fail[`/repos/${REPO}/commits/${SHA}/check-runs`];
   await p.poll(T0 + 4 * MIN);
   assert.equal(p.js.verdicts.get(7).state, 'recording');
+});
+
+// Build review round 1, A: a decided_by record deleted, the ledger unchanged. The sender's find_grant finds
+// no grant, so it counts; the page checks the kept ledger text against each cycle's tree, so it counts too.
+test('AC79 rule (d): the grant\'s decided_by record deleted with the ledger unchanged: the sender counts, the page counts, in a fresh opening and within one', async () => {
+  const running = [{ ...ok(1), status: 'in_progress', conclusion: null, completed_at: null }];
+  const base = { checkRuns: running, asksRuns: [arun(1, '2026-10-18T11:30:00Z')], logs: { 101: log(GRANT) } };
+  const named = [...new Set(String(RECORDS['docs/LEDGER.md']).match(/decisions\/questions\/[A-Za-z0-9][A-Za-z0-9._-]*\.md/g))].filter((x) => RECORDS[x]);
+  assert.ok(named.includes('decisions/questions/P-001-asks-merge.md'));
+  const gone = { ...RECORDS };
+  for (const n of named) delete gone[n];
+  const r = await both(world(base), { records: gone });
+  assert.equal(r.senderLeft, true, 'the sender counts');
+  assert.equal(r.v.state, 'count', 'the page counts');
+  // Within one opening: recording, then the record goes (the ledger's sha unchanged), then it comes back.
+  const w = world(base);
+  const p = pageJobs(pageCtx(w, RECORDS));
+  for (let i = 0; i < 4; i++) await p.poll(T0 + i * MIN);
+  assert.equal(p.js.verdicts.get(7).state, 'recording');
+  const ledgerReads = p.calls.ledger;
+  p.ctxRef.tree = new Map([...p.ctxRef.tree].filter(([path]) => !named.includes(path)));
+  await p.poll(T0 + 4 * MIN);
+  assert.deepEqual([p.js.verdicts.get(7).state, p.js.verdicts.get(7).why], ['count', 'grant'], 'counted at the next cycle');
+  assert.equal(p.calls.ledger, ledgerReads, 'from the kept text, with no new read');
+  p.ctxRef.tree = pageCtx(w, RECORDS).tree;
+  for (let i = 5; i < 8; i++) await p.poll(T0 + i * MIN);
+  assert.equal(p.js.verdicts.get(7).state, 'recording', 'the record back: the grant stands again');
+});
+
+// Build review round 1, C: the newest judging run's merge job did not run: the grant line comes from the
+// next judging run whose merge job ran; the grant is not marked failed.
+test('AC79: a grant read whose merge job did not run moves on to the next judging run whose job ran', async () => {
+  const running = [{ ...ok(1), status: 'in_progress', conclusion: null, completed_at: null }];
+  const w = world({ checkRuns: running, asksRuns: [arun(2, '2026-10-18T11:50:00Z'), arun(1, '2026-10-18T11:30:00Z')],
+    jobs: { 2: [{ id: 102, name: 'merge', status: 'completed', conclusion: 'skipped' }] }, logs: { 101: log(GRANT) } });
+  const p = pageJobs(pageCtx(w, RECORDS));
+  for (let i = 0; i < 5; i++) await p.poll(T0 + i * MIN);
+  assert.equal(p.js.logs.get('2').ran, false);
+  assert.equal(p.js.grant.failed, false);
+  assert.deepEqual(p.calls.jobLog, ['2', '1'], 'the newest first, then the next');
+  assert.equal(p.js.verdicts.get(7).state, 'recording');
+});
+
+// Build review round 1, D: before the first judgment answers, the pull request counts.
+test('AC79: before the first judgment answers, a candidate counts', async () => {
+  const running = [{ ...ok(1), status: 'in_progress', conclusion: null, completed_at: null }];
+  const p = pageJobs(pageCtx(world({ checkRuns: running, asksRuns: [arun(1, '2026-10-18T11:30:00Z')], logs: { 101: log(GRANT) } }), RECORDS));
+  let v = await p.poll(T0);
+  assert.deepEqual([v.get(7).state, v.get(7).why], ['count', 'unread'], 'the first cycle: the ledger only, nothing judged');
+  // The next cycle's poll reads the lists, its blob call the grant line, then the judgment answers.
+  v = await p.poll(T0 + MIN);
+  assert.equal(v.get(7).state, 'recording', 'then judged');
+  // And a new candidate in the same opening counts until its own first judgment.
+  const w = p.ctxRef.world;
+  const sha8 = 'e'.repeat(40);
+  w.pulls.push(pull(8, { sha: sha8 }));
+  w.files[8] = [{ filename: 'questions/N8.md', status: 'added' }];
+  w.checks[sha8] = { checkRuns: running, workflowRuns: WR, statuses: [] };
+  Object.assign(p.ctxRef, pageCtx(w, RECORDS));
+  v = await p.poll(T0 + 2 * MIN);
+  assert.deepEqual([v.get(8).state, v.get(8).why], ['count', 'unread'], 'the new one counts');
+  assert.equal(v.get(7).state, 'recording');
+  v = await p.poll(T0 + 3 * MIN);
+  assert.equal(v.get(8).state, 'recording');
 });

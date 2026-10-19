@@ -44,7 +44,7 @@ export function pageJobs(ctx) {
         return ctx.failCall && ctx.failCall(calls.blob) ? null : answer;
       } });
   }
-  return { js, poll, calls };
+  return { js, poll, calls, ctxRef: ctx };
 }
 
 /** The page's verdicts after enough polls for every read to settle (a fresh opening, the same records). */

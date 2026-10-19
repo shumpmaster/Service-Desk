@@ -160,6 +160,7 @@ test('AC77: the answer\'s pull request opening: "Your answer is being recorded",
     app.loc.hash = '#/p/Service-Desk';
     await app.advance(60_000);
     assert.ok(projectText(app).includes('Your answer to Which piece of later work comes next?'));
+    assert.ok(!projectText(app).includes('the automatic job merges it, usually within minutes'), 'the 17 October words are gone (AC79)');
   } finally {
     app.restore();
   }
@@ -416,6 +417,7 @@ test('AC77 in the sandbox: the answer\'s pull request in Merges with its added w
     await app.advance(1000);
     await app.advance(60_000);
     assert.ok(app.text().includes('Your answer to Which piece of later work comes next?'));
+    assert.ok(!app.text().includes('the automatic job merges it, usually within minutes'), 'the 17 October words are gone (AC79)');
     assert.ok(byClass(app.view, 'sb-asking')[0].textContent.includes(RECORDING_WORDS));
   } finally {
     app.restore();

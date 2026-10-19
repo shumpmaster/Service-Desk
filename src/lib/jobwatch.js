@@ -44,7 +44,8 @@ export function newJobsState() {
     heads: new Map(), // sha → head state, for the opening
     active: new Set(), // the heads read now (at most 5)
     logs: new Map(), // run id (string) → { state: 'ok', ran, job, lines } | { state: 'failed' } | { state: 'too-large' }
-    ledger: { sha: null, form: undefined, failed: false },
+    // The ledger's text is kept for the opening, so its form is checked again against each cycle's tree.
+    ledger: { sha: null, form: undefined, failed: false, text: null },
     // The grant line's epoch: `since` the page time it saw the ledger (−∞ at the opening); a failed grant
     // read is not retried until the next opening or the next change of the ledger's sha.
     grant: { since: -Infinity, failed: false },
@@ -185,13 +186,22 @@ export function applyPollAnswer(js, sent, answer) {
   }
 }
 
+/**
+ * AC79 (build review round 1, A): the ledger's form check against the tree as it stands now, every
+ * cycle, so a decided_by record deleted with the ledger unchanged leaves no grant on the page (the
+ * sender's find_grant finds none either), and the page counts.
+ */
+export function recheckForm(js, tree) {
+  if (typeof js.ledger.text === 'string') js.ledger.form = formGrant(js.ledger.text, (p) => tree.has(p));
+}
+
 /** Note the ledger's sha in the tree: a change starts the grant line's epoch again (AC79). */
 export function noteLedger(js, tree, nowMs) {
   const e = tree ? tree.get(LEDGER_REL) : null;
   const sha = e ? e.sha : null;
   if (sha === js.ledger.sha) return;
   const first = js.ledger.sha === null && js.ledger.form === undefined;
-  js.ledger = { sha, form: sha ? undefined : null, failed: false };
+  js.ledger = { sha, form: sha ? undefined : null, failed: false, text: null };
   js.grant = { since: first ? -Infinity : nowMs, failed: false };
   js.changed = true;
 }
@@ -355,7 +365,10 @@ export function applyReads(js, plan, answer, has) {
   const a = answer && typeof answer === 'object' ? answer : {};
   if (plan.blobs.length) {
     const text = a.blobs ? a.blobs[plan.blobs[0]] : null;
-    if (typeof text === 'string') js.ledger.form = formGrant(text, has);
+    if (typeof text === 'string') {
+      js.ledger.text = text;
+      js.ledger.form = formGrant(text, has);
+    }
     else js.ledger.failed = true;
   }
   for (const sha of plan.commitTime) {
@@ -375,7 +388,9 @@ export function applyReads(js, plan, answer, has) {
     else if (L.ran === false) kept = { state: 'ok', ran: false, job: L.job && typeof L.job === 'object' ? L.job : null, lines: [] };
     else kept = { state: 'failed' };
     js.logs.set(String(id), kept);
-    if (id === plan.grantRun && (kept.state !== 'ok' || !kept.ran)) js.grant.failed = true;
+    // A grant run whose merge job did not run is no failure: the next judging run whose job ran is read
+    // instead, at the next poll where something changed (build review round 1, C).
+    if (id === plan.grantRun && kept.state !== 'ok') js.grant.failed = true;
   }
 }
 
@@ -400,6 +415,12 @@ export async function judgeAll(js, project, cands, nowMs) {
     if (g.noneByJob && !h.sticky) h.sticky = 'd'; // the job's own log: no grant stands (rule (d))
     if (h.sticky) {
       count(pr, 'left', LEFT_WORDS, h.sticky);
+      continue;
+    }
+    // A head that would need a fourth AC79 blob call counts until its head changes, even if later reads
+    // would let it be judged (the spec's words; build review round 1, B).
+    if (h.capped) {
+      count(pr, 'capped');
       continue;
     }
     if (!listsReady(js, h)) {
@@ -448,6 +469,7 @@ export async function runPhase(js, ctx) {
       return js.verdicts;
     }
     noteLedger(js, tree, ctx.nowMs);
+    recheckForm(js, tree);
     const cands = pathCandidates(project, ctx.flaggedPulls, ctx.files);
     if (!cands.length) {
       js.active = new Set();

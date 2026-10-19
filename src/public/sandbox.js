@@ -35,9 +35,61 @@ import { runsContext, statusPhases, tilePhases, markerView, feedView, unblocksOf
 import {
   NOTIFY_WORDS, NOTIFY_STORE_KEY, COPY_DONE_WORDS, SHOW_AGAIN_WORDS, SEND_TEST_WORDS, copySteps, testSteps, notifyState, onTopLine,
   isStandalone, permissionOf, currentSubscription, subscriptionValue, turnOn, USAGE_TITLE, usageView, RECHECK_WORDS, recheckOutcome,
+  openTarget, tapDecision, sandboxAddress, OPENED_WORDS, GONE_WORDS, CANT_READ_WORDS,
 } from './lib/notifyview.js';
 
 let CONFIG = DEFAULT_CONFIG; // J7; the tests pass their own (AC42's five projects)
+
+// ---------------------------------------------------------------------------
+// AC74 from 2026-10-19 (the owner's ruling "A. Go live now, switch later (Recommended)"): a
+// notification's tap opens the sandbox, `?sandbox&open=<key>`, with AC74's and AC77's tap rules
+// (tapDecision, shared with the accepted view) drawn in the sandbox's own design.
+
+/** The tap being followed: { target, done, banner: { hash, words, key } | null, more: project name | null }. */
+const opening = { target: null, done: true, banner: null, more: null };
+let openMore = null; // a project whose More detail opens at AC78's line on its next drawing
+let scrollToRow = null; // a tapped row's id, brought into view on its next drawing
+/** A queue row's element id, from its key. */
+const rowId = (key) => `row-${String(key).replace(/[^A-Za-z0-9_-]/g, '-')}`;
+
+/**
+ * Follow a tap once its project is read and AC77's closed read for it has answered or failed: the
+ * screen to go to, { hash, words, key } (words null: no line), or null while there is nothing to do.
+ */
+function followOpening(desk, built) {
+  if (!opening.target || opening.done) return null;
+  const d = tapDecision({ target: opening.target, projects: CONFIG.projects, settled: (n) => desk.closedSettled(n),
+    box: (n) => {
+      const b = built.find((x) => x.project.name === n);
+      return b ? { read: b.box.read, model: b.error ? null : b.model } : null;
+    } });
+  if (!d || d.kind === 'wait') return null;
+  opening.done = true;
+  const t = opening.target;
+  if (d.kind === 'usage') {
+    // AC78's line, in the More detail of the project whose entry holds `actionsUsage` (J7, draft 9).
+    const e = usageEntry(CONFIG);
+    const name = e ? e.project : CONFIG.projects[0].name;
+    openMore = name;
+    return { hash: go('p', name), words: null, key: null };
+  }
+  const name = d.project ? d.project.name : null;
+  // A deploy has no response sheet: its row in the Queue's Deploys; anything else opens its sheet.
+  if (d.kind === 'item') {
+    if (d.f.kind === 'deploy') scrollToRow = rowId(d.f.key);
+    return { hash: d.f.kind === 'deploy' ? go('p', name, 'queue') : go('p', name, 'queue', d.f.key), words: OPENED_WORDS, key: t.key };
+  }
+  if (d.kind === 'held') return { hash: go('p', name, 'queue'), words: OPENED_WORDS, key: t.key }; // under "Asked in your session"
+  if (d.kind === 'cant-read') return { hash: go('p', name), words: CANT_READ_WORDS, key: null };
+  return { hash: name ? go('p', name) : '#/', words: GONE_WORDS, key: null };
+}
+
+/** The tap's line, on the screen it opened, until the owner moves on. */
+function tapBanner() {
+  const b = opening.banner;
+  if (!b || b.hash !== location.hash) return null;
+  return h('p', { class: `sb-tap ${b.words === GONE_WORDS ? 'gone' : 'opened'}`, role: 'status', key: 'tap-banner' }, b.words);
+}
 let DESK = null; // the reader, once started: AC77's re-read and "Answer it here instead", AC78's figures
 let TZ = CONFIG.ownerTimeZone;
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -977,7 +1029,7 @@ function renderStatus(p) {
   body.push(h('p', {}, opener('info', go('p', name, 'info'), { class: 'sb-infobtn' }, icon('info'), 'About the phases')));
   // AC55 (note 7): "More detail" opens the Pipeline, Time asked and Agents views drawn in the new
   // design inside the sandbox; nothing here links to the accepted views.
-  body.push(h('details', { class: 'sb-card sb-more', key: 'more-detail-fold' }, h('summary', { key: 'more-detail' }, h('span', { class: 'sb-h2 flat' }, 'More detail')),
+  body.push(h('details', { class: 'sb-card sb-more', key: 'more-detail-fold', open: openMore === name ? '' : null }, h('summary', { key: 'more-detail' }, h('span', { class: 'sb-h2 flat' }, 'More detail')),
     h('p', { class: 'sb-muted small' }, `CI on ${project.defaultBranch}: ${model ? model.ci : NOT_RECORDED}`),
     // AC68: a v3 project's Pipeline view folds into the Timeline; its record notes get their own screen.
     h('ul', { class: 'sb-links' },
@@ -1212,7 +1264,7 @@ function queueRow(p, row, s) {
 function deployRow(p, d, check) {
   const name = p.project.name;
   const k = `deploy-why:${d.key}`;
-  return h('li', { class: 'sb-qrow g-deploys', key: `qrow:${d.key}` }, h('p', {}, ext(d.link, d.text) || d.text, ' ', code(d.code)),
+  return h('li', { class: 'sb-qrow g-deploys', key: `qrow:${d.key}`, id: rowId(d.key) }, h('p', {}, ext(d.link, d.text) || d.text, ' ', code(d.code)),
     check ? h('div', { class: `sb-safe ${check.kind}`, key: `safe:${d.key}` },
       h('p', { class: 'sb-safe-l' }, check.kind === 'ok' ? ic('check') : check.kind === 'bad' ? ic('cross') : ic('unrec'), check.words),
       check.sources ? h('p', { class: 'sb-src' }, check.sources.map((x, i) => [i ? ' · ' : '', x.href ? ext(x.href, x.words) : x.words]))
@@ -2334,6 +2386,14 @@ export function startSandbox(opts = {}) {
   DESK = desk;
   ns.store = store;
   ns.looked = false;
+  // AC74: `?sandbox&open=<key>`: followed once its project is read; the address keeps `?sandbox` only.
+  Object.assign(opening, { target: openTarget(location.search), done: false, banner: null });
+  if (!opening.target) opening.done = true;
+  try {
+    if (opening.target && typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', sandboxAddress(location.pathname, '', location.hash));
+  } catch {
+    // the address keeps its ?open=; a reload follows it again
+  }
   nav.start();
   /** Every redraw patches the screen in place (AC56), so a refresh keeps it as the owner left it. */
   const show = (nodes) => {
@@ -2365,6 +2425,15 @@ export function startSandbox(opts = {}) {
         return { project, box, error: err };
       }
     });
+    // AC74: a notification's tap, once its project is read: going there draws that screen (nav.to renders).
+    const tap = followOpening(desk, built);
+    if (tap) {
+      opening.banner = tap.words ? { hash: tap.hash, words: tap.words, key: tap.key } : null;
+      if (location.hash !== tap.hash) {
+        nav.to(tap.hash);
+        return;
+      }
+    }
     const s = screenState(built.map((b) => b.box), desk.signedOut);
     if (stateEl) stateEl.textContent = desk.signedOut ? SIGNED_OUT_STATE.text : s.text;
     document.title = `Sandbox — ${desk.signedOut ? SIGNED_OUT_STATE.text : s.text}`;
@@ -2400,9 +2469,56 @@ export function startSandbox(opts = {}) {
         }
       }
     } else node = renderHome(desk, built, seen, now.getTime());
-    show(node);
+    show([tapBanner(), node]);
+    // AC78: a cost tap opens that project's More detail at the line (a fold already drawn keeps its
+    // state through the morph, so it is opened here), and brings the line into view.
+    if (openMore && r.name === openMore) {
+      const fold = findKey(view, 'more-detail-fold');
+      if (fold && fold.setAttribute) fold.setAttribute('open', '');
+      let line = null;
+      eachElement(view, (e) => { if (!line && e.getAttribute && e.getAttribute('id') === 'actions-usage') line = e; });
+      if (line && line.getBoundingClientRect && typeof window.scrollTo === 'function') {
+        window.scrollTo(0, Math.max(0, Math.round((window.scrollY || 0) + line.getBoundingClientRect().top - 8)));
+      }
+      if (fold) openMore = null;
+    }
+    if (scrollToRow) {
+      let row = null;
+      eachElement(view, (e) => { if (!row && e.getAttribute && e.getAttribute('id') === scrollToRow) row = e; });
+      if (row) {
+        scrollToRow = null;
+        if (row.getBoundingClientRect && typeof window.scrollTo === 'function') {
+          window.scrollTo(0, Math.max(0, Math.round((window.scrollY || 0) + row.getBoundingClientRect().top - 8)));
+        }
+      }
+    }
   }
   window.addEventListener('hashchange', () => nav.changed());
+  // AC74, AC77: a tap reaching this window already open (sw.js hands the sandbox its address): the
+  // closed read runs again before the item shows, and a cost tap reads the usage again (AC78). The
+  // reply tells the service worker the page took it, so it need not navigate.
+  try {
+    const sw = typeof navigator !== 'undefined' ? navigator.serviceWorker : null;
+    if (sw && typeof sw.addEventListener === 'function') {
+      sw.addEventListener('message', (e) => {
+        const d = e && e.data;
+        if (!d || d.kind !== 'desk-open' || typeof d.navigate !== 'string') return;
+        const q = /\?[^#]*/.exec(d.navigate);
+        const target = openTarget(q ? q[0] : '');
+        Object.assign(opening, { target, done: !target, banner: null });
+        desk.arrival();
+        if (target && target.kind === 'usage') desk.refreshUsage();
+        try {
+          if (e.ports && e.ports[0]) e.ports[0].postMessage({ ok: true });
+        } catch {
+          // the service worker then navigates the window instead
+        }
+        render();
+      });
+    }
+  } catch {
+    // no service worker here: a tap then loads the page afresh
+  }
   // Escape closes the open sheet, or the open bubble (AC54, AC56).
   document.addEventListener('keydown', (e) => {
     if (!e || e.key !== 'Escape') return;

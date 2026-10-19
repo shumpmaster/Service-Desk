@@ -3,7 +3,7 @@
 // Notification), so the tests drive it with fakes. No network: the desk sends the subscription
 // nowhere (J19); the usage figures arrive in the blob call (J21) and are worded here.
 
-import { parseWaitKey, ACTIONS_USAGE_OPEN } from './waiting.js';
+import { parseWaitKey, flaggedWait, ACTIONS_USAGE_OPEN } from './waiting.js';
 import { computeUsage, dollars } from './usage.js';
 
 /** base64url (no padding) → bytes, or null when it is not base64url. */
@@ -47,6 +47,49 @@ export function openTarget(search) {
 
 export const OPENED_WORDS = 'Opened from a notification';
 export const GONE_WORDS = 'That no longer waits on you';
+export const CANT_READ_WORDS = `${OPENED_WORDS}: the desk can't read this project just now`;
+
+/**
+ * AC74's tap rules, shared by both views (from 2026-10-19 the tap opens the sandbox, which draws
+ * them in its own design). input: { target (openTarget's), projects (J7's), box(name) → { read,
+ * model } | null, settled(name) → whether AC77's closed read for the arrival has answered or
+ * failed }. Returns one of:
+ * - { kind: 'wait' }: still reading the project, or waiting for that closed read: decide later;
+ * - { kind: 'usage' }: AC78's line;
+ * - { kind: 'item', project, f }: the flagged item that waits;
+ * - { kind: 'held', project, row }: a question still held or being recorded (AC77): shown as such,
+ *   never as "That no longer waits on you" (draft 8);
+ * - { kind: 'cant-read', project }: the project can't be read just now: never claimed stopped;
+ * - { kind: 'gone', project|null }: it truly stopped waiting (or names no project).
+ */
+export function tapDecision({ target, projects, box, settled }) {
+  if (!target) return null;
+  if (target.kind === 'usage') return { kind: 'usage' };
+  const project = target.kind === 'item' ? (projects || []).find((p) => p && p.name === target.project) : null;
+  if (!project) return { kind: 'gone', project: null };
+  const b = box(project.name);
+  if (!b || !b.read || b.read.read === 'checking') return { kind: 'wait' };
+  if (settled && !settled(project.name)) return { kind: 'wait' };
+  const m = b.model;
+  const f = m && Array.isArray(m.flagged) ? m.flagged.find((x) => {
+    const w = flaggedWait(project.name, x);
+    return w && w.key === target.key;
+  }) : null;
+  if (f) return { kind: 'item', project, f };
+  const row = target.itemKind === 'question' && m && Array.isArray(m.asking) ? m.asking.find((a) => a.path === target.id) : null;
+  if (row) return { kind: 'held', project, row };
+  if (b.read.read === 'cant-read') return { kind: 'cant-read', project };
+  return { kind: 'gone', project };
+}
+
+/**
+ * The same address in the sandbox view (2026-10-19, the owner's ruling "A. Go live now, switch later
+ * (Recommended)"): `sandbox` first, every other parameter and the hash kept.
+ */
+export function sandboxAddress(pathname, search, hash = '') {
+  const rest = String(search || '').replace(/^\?/, '').split('&').filter((x) => x && x !== 'sandbox' && !x.startsWith('sandbox='));
+  return `${pathname || '/'}?sandbox${rest.length ? `&${rest.join('&')}` : ''}${hash || ''}`;
+}
 
 // ---------------------------------------------------------------------------
 // AC75: the "Notifications" control

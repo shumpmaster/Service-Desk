@@ -19,6 +19,7 @@ import { whenText } from '../../src/lib/timefmt.js';
 import { makeKey, signJwt, goodClaims, certsRoute, request, fakeFetch, ENV, NOW, fakeClock, fixture, CONFIG, withUsage } from './helpers.mjs';
 import { repo, fakeServer } from './fake-desk.mjs';
 import { loadApp, findAll } from './page-harness.mjs';
+import { loadSandbox, byClass, findAll as sbFindAll } from './sandbox-helpers.mjs';
 
 const CFG = { account: 'shumpmaster', includedMinutes: 3000 };
 const TZ = 'America/Chicago';
@@ -241,8 +242,9 @@ test('AC78: on the page, More detail shows the line with its bar and aria values
 
 // Draft 9 (build review round 1, Desk 2; the Reviewer's probe A): a cost notification's tap reads the
 // usage again, through the page's own wiring, whether it reaches an open desk (sw.js's handover) or
-// loads the page (the opening's read).
-test('AC78, J21 (draft 9): a cost tap reaching an open desk reads the usage again; one that loads the page reads it at the opening and opens the fold', async () => {
+// loads the page (the opening's read). From 2026-10-19 the tap opens the sandbox, so both are the
+// sandbox's: its More detail opens at the line.
+test('AC78, J21 (draft 9; 2026-10-19): a cost tap reaching an open sandbox reads the usage again; one that loads it reads it at the opening and opens its More detail', async () => {
   const usageAnswer = (now) => ({ state: 'ok', asOf: new Date(now).toISOString(), period: { y: 2026, m: 10, day: 2, ym: '2026-10' },
     summary: { ok: true, items: [sItem({ netAmount: 0 })] }, usage: { ok: true, items: [uItem({ quantity: 100 })] }, publicRepos: [] });
   const quiet = () => ({ 'Service-Desk': repo({ 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml') }, [], [{ name: 'governance', status: 'completed', conclusion: 'success' }]),
@@ -251,29 +253,40 @@ test('AC78, J21 (draft 9): a cost tap reaching an open desk reads the usage agai
   nav.serviceWorker = { addEventListener: (t, fn) => { if (t === 'message') nav.listeners.push(fn); } };
   let r = quiet();
   r['Service-Desk'].usageAnswer = usageAnswer;
-  let app = await loadApp({ repos: r, now: OCT2, hash: '#/', globals: { navigator: nav } });
-  const reads = () => app.calls().filter((c) => c.path === '/api/blobs' && c.body.usage).length;
+  let app = await loadSandbox({ config: CONFIG, repos: r, now: OCT2, hash: '#/', globals: { navigator: nav } });
+  const reads = () => app.server.calls.filter((c) => c.path === '/api/blobs' && c.body.usage).length;
   try {
     await app.advance(1000);
     assert.equal(reads(), 1, 'at the opening');
     await app.advance(10 * 60_000);
     assert.equal(reads(), 1);
-    for (const fn of nav.listeners) fn({ data: { kind: 'desk-open', navigate: 'https://desk.example.invalid/?open=actions-usage' }, ports: [{ postMessage: (m) => nav.replies.push(m) }] });
+    for (const fn of nav.listeners) fn({ data: { kind: 'desk-open', navigate: 'https://desk.example.invalid/?sandbox&open=actions-usage' }, ports: [{ postMessage: (m) => nav.replies.push(m) }] });
     await app.advance(1000);
     assert.deepEqual(nav.replies, [{ ok: true }]);
     assert.equal(reads(), 2, 'read again on the tap, not an hour on');
-    const more = findAll(app.els.view, (e) => e.attrs && e.attrs.id === 'more-detail')[0];
-    assert.equal(more.attrs.open, 'open');
+    assert.equal(app.loc.hash, '#/p/Service-Desk');
+    const more = byClass(app.view, 'sb-more')[0];
+    assert.ok(more && 'open' in more.attrs, 'its More detail open');
+    assert.ok(sbFindAll(more, (e) => e.attrs && e.attrs.id === 'actions-usage').length);
   } finally {
     app.restore();
   }
   r = quiet();
   r['Service-Desk'].usageAnswer = usageAnswer;
-  app = await loadApp({ repos: r, now: OCT2, hash: '', search: '?open=actions-usage' });
+  app = await loadSandbox({ config: CONFIG, repos: r, now: OCT2, hash: '', search: '?sandbox&open=actions-usage' });
   try {
     await app.advance(1000);
-    assert.equal(app.calls().filter((c) => c.path === '/api/blobs' && c.body.usage).length, 1, 'read at the opening the tap made');
-    assert.equal(findAll(app.els.view, (e) => e.attrs && e.attrs.id === 'more-detail')[0].attrs.open, 'open');
+    assert.equal(app.server.calls.filter((c) => c.path === '/api/blobs' && c.body.usage).length, 1, 'read at the opening the tap made');
+    const more = byClass(app.view, 'sb-more')[0];
+    assert.ok(more && 'open' in more.attrs);
+  } finally {
+    app.restore();
+  }
+  // An older address reaching the accepted view goes on to the sandbox.
+  app = await loadApp({ repos: quiet(), now: OCT2, hash: '', search: '?open=actions-usage' });
+  try {
+    await app.advance(1000);
+    assert.deepEqual(app.replaced, ['/?sandbox&open=actions-usage']);
   } finally {
     app.restore();
   }

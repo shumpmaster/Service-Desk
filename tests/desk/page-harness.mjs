@@ -91,7 +91,9 @@ export async function loadApp({ hash = '', repos, breakView = false, now: start 
   };
   set('document', doc);
   set('window', { scrollY: 0, scrollTo() {}, addEventListener() {}, ...win });
-  set('location', { hash, search });
+  // From 2026-10-19: `replace` records where the accepted view sends a `?open=` address (to the sandbox).
+  const replaced = [];
+  set('location', { hash, search, pathname: '/', replace: (u) => { replaced.push(u); } });
   // From 2026-10-18: the browser objects AC75's control reads, faked per test (none by default).
   set('navigator', globals.navigator || {});
   set('Notification', globals.Notification);
@@ -113,6 +115,8 @@ export async function loadApp({ hash = '', repos, breakView = false, now: start 
   const app = {
     els, timers, fetchCalls, flush, doc, server, scrolled: () => FakeElement.scrolled, loc: globalThis.location,
     /** The fake desk function's calls, with their bodies. */
+    /** Where the page replaced its own address (location.replace), in order. */
+    replaced,
     calls: () => server.calls,
     state: () => els['screen-state'],
     /** Fire a document event (from 2026-10-18: `visibilitychange`, after setting doc.visibilityState). */

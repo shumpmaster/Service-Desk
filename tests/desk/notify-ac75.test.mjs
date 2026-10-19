@@ -77,7 +77,9 @@ test('AC75: the manifest\'s fields, its three icons at 180, 192 and 512 px, and 
   const m = JSON.parse(readFileSync(join(PUBLIC, 'manifest.webmanifest'), 'utf8'));
   assert.equal(m.name, 'Service Desk');
   assert.equal(m.short_name, 'Desk');
-  assert.equal(m.start_url, '/');
+  // From 2026-10-19: the icon opens the owner's page, the sandbox, until MD3; `id` "/" keeps the app the same one.
+  assert.equal(m.start_url, '/?sandbox');
+  assert.equal(m.id, '/');
   assert.equal(m.scope, '/');
   assert.equal(m.display, 'standalone');
   assert.deepEqual(m.icons.map((i) => [i.src, i.sizes, i.type]), [
@@ -302,8 +304,8 @@ test('AC75: the service worker shows the payload\'s notification with its tag; a
 test('AC75: a tap opens the desk at the navigate address on its own origin, at its root for another origin, and focuses an open desk window', async () => {
   const w = loadWorker();
   const tap = (navigate) => w.fire('notificationclick', { notification: { data: { navigate }, close() {} } });
-  await tap('https://desk.example.invalid/?open=Service-Desk%7Cpr%7C108');
-  assert.deepEqual(w.opened, ['https://desk.example.invalid/?open=Service-Desk%7Cpr%7C108']);
+  await tap('https://desk.example.invalid/?sandbox&open=Service-Desk%7Cpr%7C108');
+  assert.deepEqual(w.opened, ['https://desk.example.invalid/?sandbox&open=Service-Desk%7Cpr%7C108']);
   await tap('https://evil.example.invalid/phish');
   assert.equal(w.opened[1], 'https://desk.example.invalid/', 'another origin: the desk\'s root');
   await tap('javascript:alert(1)');
@@ -320,11 +322,11 @@ test('AC75: a tap opens the desk at the navigate address on its own origin, at i
   assert.equal(w.opened.length, 4);
 });
 
-test('AC74, AC75 (draft 8): an open desk is focused and handed the address, staying loaded; one that doesn\'t take it within a second is navigated', async () => {
+test('AC74, AC75 (draft 8; 2026-10-19): an open sandbox window is focused and handed the address, staying loaded; one that doesn\'t take it within a second is navigated', async () => {
   for (const takes of [true, false]) {
     const w = loadWorker('https://desk.example.invalid', { MessageChannel, setTimeout, clearTimeout });
     const did = [];
-    const client = { url: 'https://desk.example.invalid/#/p/Service-Desk',
+    const client = { url: 'https://desk.example.invalid/?sandbox#/p/Service-Desk',
       postMessage: (data, ports) => {
         did.push(['message', data]);
         if (takes) ports[0].postMessage({ ok: true });
@@ -333,11 +335,11 @@ test('AC74, AC75 (draft 8): an open desk is focused and handed the address, stay
       navigate: async (u) => { did.push(['navigate', u]); return client; }, focus: async () => { did.push(['focus']); } };
     w.clientsList.push(client);
     const t0 = Date.now();
-    await w.fire('notificationclick', { notification: { data: { navigate: 'https://desk.example.invalid/?open=Service-Desk%7Cpr%7C108' }, close() {} } });
-    const msg = ['message', { kind: 'desk-open', navigate: 'https://desk.example.invalid/?open=Service-Desk%7Cpr%7C108' }];
+    await w.fire('notificationclick', { notification: { data: { navigate: 'https://desk.example.invalid/?sandbox&open=Service-Desk%7Cpr%7C108' }, close() {} } });
+    const msg = ['message', { kind: 'desk-open', navigate: 'https://desk.example.invalid/?sandbox&open=Service-Desk%7Cpr%7C108' }];
     if (takes) assert.deepEqual(JSON.parse(JSON.stringify(did)), [['focus'], msg], 'taken: no navigation, the page stays loaded');
     else {
-      assert.deepEqual(JSON.parse(JSON.stringify(did)), [['focus'], msg, ['navigate', 'https://desk.example.invalid/?open=Service-Desk%7Cpr%7C108'], ['focus']]);
+      assert.deepEqual(JSON.parse(JSON.stringify(did)), [['focus'], msg, ['navigate', 'https://desk.example.invalid/?sandbox&open=Service-Desk%7Cpr%7C108'], ['focus']]);
       assert.ok(Date.now() - t0 >= 900, 'after about a second');
     }
     assert.equal(w.opened.length, 0);
@@ -376,13 +378,46 @@ test('AC75 (draft 8): the accepted Home\'s "More detail" fold: at the bottom, cl
   } finally {
     app.restore();
   }
+  // From 2026-10-19 the tap opens the sandbox: the accepted view sends `?open=actions-usage` on to
+  // `?sandbox&open=actions-usage`, where More detail opens at the line.
   app = await loadApp({ repos: repos(), search: '?open=actions-usage' });
   try {
     await app.advance(1000);
-    const more = findAll(app.els.view, (e) => e.attrs && e.attrs.id === 'more-detail')[0];
-    assert.equal(more.attrs.open, 'open', 'opened by the tap');
-    assert.ok(app.scrolled().some((e) => e.attrs.id === 'actions-usage'), 'at the Actions line');
+    assert.deepEqual(app.replaced, ['/?sandbox&open=actions-usage'], 'sent on to the sandbox');
   } finally {
     app.restore();
   }
+  const sb = await loadSandbox({ config: CONFIG, repos: repos(), hash: '', search: '?sandbox&open=actions-usage' });
+  try {
+    await sb.advance(1000);
+    const more = byClass(sb.view, 'sb-more')[0];
+    assert.ok(more && 'open' in more.attrs, 'opened by the tap');
+    assert.ok(sbFindAll(more, (e) => e.attrs && e.attrs.id === 'actions-usage').length, 'at the Actions line');
+  } finally {
+    sb.restore();
+  }
+});
+
+// From 2026-10-19: the tap is handed only to a window already showing the sandbox; an open accepted-view
+// window is navigated to the address instead (it stays as it is at plain "/" otherwise).
+test('AC74, AC75 (2026-10-19): an accepted-view window is navigated, never handed the tap; with a sandbox window open too, the sandbox one is handed it', async () => {
+  const TAP = 'https://desk.example.invalid/?sandbox&open=Service-Desk%7Cpr%7C108';
+  const tap = (w) => w.fire('notificationclick', { notification: { data: { navigate: TAP }, close() {} } });
+  // The accepted view alone: focused and navigated, no message.
+  let w = loadWorker('https://desk.example.invalid', { MessageChannel, setTimeout, clearTimeout });
+  let did = [];
+  const accepted = { url: 'https://desk.example.invalid/#/p/Service-Desk', postMessage: () => did.push(['message']),
+    navigate: async (u) => { did.push(['navigate', u]); return accepted; }, focus: async () => { did.push(['focus']); } };
+  w.clientsList.push(accepted);
+  await tap(w);
+  assert.deepEqual(did, [['focus'], ['navigate', TAP], ['focus']]);
+  assert.equal(w.opened.length, 0);
+  // Both open: the sandbox window takes it; the accepted one is left alone.
+  w = loadWorker('https://desk.example.invalid', { MessageChannel, setTimeout, clearTimeout });
+  did = [];
+  const sandbox = { url: 'https://desk.example.invalid/?sandbox#/', postMessage: (data, ports) => { did.push(['sandbox message', data.navigate]); ports[0].postMessage({ ok: true }); },
+    navigate: async () => { did.push(['sandbox navigate']); return sandbox; }, focus: async () => { did.push(['sandbox focus']); } };
+  w.clientsList.push(accepted, sandbox);
+  await tap(w);
+  assert.deepEqual(did, [['sandbox focus'], ['sandbox message', TAP]]);
 });

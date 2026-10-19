@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Linear-Inspired Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* The redesign direction with Linear's general theme as a starting point, not a copy: a white ground, thin rows with a
+   small status glyph, grey section headings, floating rounded sheets and bar, a dark toast. Ours: IBM Plex Sans and
+   Plex Mono, vermilion meaning "needs you" only, our words, three labelled tabs (Waiting, Plan, Projects).
+   Text sizes from the audit's scale, 20, 15, 13 and 11 px, plus 14 px for row titles (the one exception, as Linear
+   sets its row titles a step above body meta). Weights 400, 600 and 700. Colour only on status glyphs, the needs-you
+   badge and the one accent button in a sheet. */
+:root, .theme-light {
+  --page: #ffffff; --surface: #f4f4f2; --line: #e6e5e1; --ink: #17181b; --ink2: #5d6068;
+  --accent: #d23c0f; --green: #12733a; --crimson: #b3162a;
+  --shadow: 0 6px 24px rgb(23 24 27 / .10), 0 1px 3px rgb(23 24 27 / .06); --scrim: rgb(23 24 27 / .28);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0e0f11; --surface: #1a1b1f; --line: #2a2c31; --ink: #eeedea; --ink2: #a3a6ad;
+  --accent: #ff6a3d; --green: #4cc06a; --crimson: #ff6b78;
+  --shadow: 0 6px 24px rgb(0 0 0 / .5), 0 0 0 1px rgb(255 255 255 / .04); --scrim: rgb(0 0 0 / .55); color-scheme: dark } }
+:root[data-theme="dark"], .theme-dark {
+  --page: #0e0f11; --surface: #1a1b1f; --line: #2a2c31; --ink: #eeedea; --ink2: #a3a6ad;
+  --accent: #ff6a3d; --green: #4cc06a; --crimson: #ff6b78;
+  --shadow: 0 6px 24px rgb(0 0 0 / .5), 0 0 0 1px rgb(255 255 255 / .04); --scrim: rgb(0 0 0 / .55); color-scheme: dark }
+:root, .theme-light, .theme-dark { --on-accent: var(--page); }
+:root {
+  --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --t-title: 700 20px/1.25 var(--font);
+  --t-body: 400 15px/1.45 var(--font);
+  --t-row: 400 14px/1.35 var(--font);
+  --t-head: 400 13px/1.35 var(--font);
+  --t-link: 600 13px/1.3 var(--font);
+  --t-meta: 400 11px/1.4 var(--font);
+  --t-label: 600 11px/1.4 var(--font);
+  --t-mono: 400 11px/1.4 var(--mono);
+  --hit: 36px;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { background: var(--page); color: var(--ink); }
+body { margin: 0; font: var(--t-body); overflow-x: hidden; }
+p, h1, h2, h3, h4, ol, ul { margin: 0; }
+ol, ul { list-style: none; padding: 0; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* The page around the frames */
+.wrap { max-width: 1340px; margin: 0 auto; padding: 24px max(16px, env(safe-area-inset-left, 0px)) 48px; display: grid; gap: 32px; }
+.intro { display: grid; gap: 12px; max-width: 680px; }
+.intro h1 { font: var(--t-title); }
+.intro p { color: var(--ink2); }
+.tag { justify-self: start; font: var(--t-label); color: var(--ink2); border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; }
+.frames { display: grid; gap: 40px 28px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 414px), 414px)); justify-content: center; align-items: start; }
+.fr { display: grid; gap: 8px; min-width: 0; }
+.fr > h2 { font: var(--t-link); }
+.fr > .cap { font: var(--t-meta); color: var(--ink2); min-height: 3em; }
+.notes { display: grid; gap: 8px; max-width: 680px; }
+.notes h2 { font: var(--t-link); }
+.notes ul { display: grid; gap: 4px; padding-left: 1.2em; list-style: disc; }
+.notes li { font: var(--t-meta); color: var(--ink2); }
+
+/* A phone: 414×896; the screen scrolls; the bar floats */
+.phone { position: relative; width: min(414px, 100%); height: 896px; overflow: hidden; background: var(--page); color: var(--ink); border: 1px solid var(--line); border-radius: 24px; font: var(--t-body); }
+.scr { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; padding: 16px 16px 104px; display: grid; gap: 14px; align-content: start; scrollbar-width: none; }
+.scr::-webkit-scrollbar { display: none; }
+
+/* Top: the large bold title at the left, a floating pill of icon buttons at the right */
+.top { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 44px; }
+.top .title { font: var(--t-title); }
+.trial { display: inline-block; vertical-align: 2px; margin-left: 6px; font: var(--t-label); color: var(--ink2); border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; line-height: 18px; }
+.ibar { display: flex; gap: 2px; padding: 2px; border-radius: 22px; background: var(--page); box-shadow: var(--shadow); }
+.ib, .round { width: 40px; height: 40px; border-radius: 20px; display: grid; place-items: center; color: var(--ink); }
+.round { box-shadow: var(--shadow); background: var(--page); }
+svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sub { font: var(--t-meta); color: var(--ink2); margin-top: -8px; }
+.mono { font: var(--t-mono); color: var(--ink2); }
+
+/* Section headings: small and grey, with the count */
+.sh { font: var(--t-head); color: var(--ink2); padding: 8px 0 2px; }
+
+/* Rows: a status glyph, the title, a grey id and age line, a quiet trailing action */
+.g { width: 18px; text-align: center; font: 600 13px/1.35 var(--font); }
+.g.you { color: var(--accent); }
+.g.ok { color: var(--green); }
+.g.pend { color: var(--ink2); }
+.row { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 2px 10px; align-items: start; padding: 8px 0; position: relative; background: var(--page); }
+ol > li + li .row { border-top: 1px solid var(--line); }
+.rt { display: grid; gap: 2px; min-width: 0; }
+.rtitle { font: var(--t-row); overflow-wrap: break-word; }
+.done .rtitle, .row.ok .rtitle { color: var(--ink2); }
+.act { min-height: var(--hit); min-width: var(--hit); display: inline-flex; align-items: center; justify-content: flex-end; font: var(--t-link); color: var(--ink2); margin: -8px 0; white-space: nowrap; }
+.reason { font: var(--t-meta); color: var(--ink); }
+
+/* Option L: three lanes left to right, compact rows, no fills */
+.lanes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: start; }
+.lane { min-width: 0; display: grid; align-content: start; }
+.lane .lsh { font: var(--t-label); color: var(--ink2); padding: 2px 0 6px; border-bottom: 1px solid var(--line); min-height: 40px; }
+.lane.dn { border-left: 1px dashed var(--line); padding-left: 8px; margin-left: -4px; }
+.lrow { display: grid; gap: 3px; padding: 8px 0 2px; border-bottom: 1px solid var(--line); min-width: 0; }
+.lrow .lt { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 4px; align-items: start; }
+.lrow .g { width: 14px; text-align: left; }
+.lrow .rtitle { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.lrow .mono, .lrow .reason, .lrow .conf { padding-left: 18px; }
+.lrow .act { justify-content: flex-end; margin: 0; }
+.conf { font: var(--t-meta); color: var(--ink2); }
+
+/* Swipe right for Done: the row slides and shows what letting go does */
+.swipe { position: relative; overflow: hidden; touch-action: pan-y; }
+.swipe .reveal { position: absolute; inset: 0 auto 0 0; width: 100%; display: flex; align-items: center; padding-left: 12px; background: var(--ink); color: var(--page); font: var(--t-link); }
+.swipe .row { transition: transform .15s; }
+.swipe.mid .row { transform: translateX(132px); }
+
+/* The floating bar: three labelled tabs in a rounded pill */
+.bar { position: absolute; left: 16px; right: 16px; bottom: 16px; height: 60px; border-radius: 30px; background: var(--page); box-shadow: var(--shadow); display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; }
+.tab { display: grid; justify-items: center; align-content: center; gap: 1px; border-radius: 26px; font: var(--t-label); color: var(--ink2); position: relative; min-height: 52px; }
+.tab svg.i { width: 20px; height: 20px; }
+.tab[aria-current="page"] { color: var(--ink); background: var(--surface); }
+.badge { position: absolute; top: 4px; left: calc(50% + 6px); min-width: 18px; height: 18px; border-radius: 9px; background: var(--accent); color: var(--on-accent); font: var(--t-label); line-height: 18px; text-align: center; padding: 0 5px; }
+
+/* The dark toast, above the bar */
+.toast { position: absolute; left: 16px; right: 16px; bottom: 88px; min-height: 44px; border-radius: 12px; background: var(--ink); color: var(--page); display: flex; align-items: center; gap: 10px; padding: 0 6px 0 14px; font: var(--t-link); box-shadow: var(--shadow); }
+.toast .tk { color: var(--page); }
+.toast span.msg { flex: 1; }
+.toast button { min-height: var(--hit); padding: 0 10px; color: var(--page); font: var(--t-link); text-decoration: underline; text-underline-offset: 2px; }
+
+/* Floating rounded sheets */
+.scrim { position: absolute; inset: 0; background: var(--scrim); }
+.sheet { position: absolute; left: 8px; right: 8px; bottom: 8px; border-radius: 28px; background: var(--page); box-shadow: var(--shadow); padding: 8px 18px 18px; display: grid; gap: 12px; align-content: start; }
+.grab { justify-self: center; width: 36px; height: 5px; border-radius: 3px; background: var(--line); }
+.sheet .st { font: var(--t-title); }
+.sheet .body { font: var(--t-body); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { min-height: var(--hit); display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border-radius: 18px; background: var(--surface); font: var(--t-link); color: var(--ink); }
+.chip[aria-checked="true"] { background: var(--page); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.chip .rec { font: var(--t-label); color: var(--ink2); }
+.pill { display: flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 22px; background: var(--accent); color: var(--on-accent); font: var(--t-link); }
+.slist { display: grid; }
+.sitem { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 44px; font: var(--t-row); width: 100%; }
+.sitem .v { font: var(--t-mono); color: var(--ink2); }
+.sitem .ck { color: var(--ink); font: var(--t-link); }
+.sitem + .sitem { border-top: 1px solid var(--line); }
+.prop { justify-self: start; font: var(--t-label); color: var(--ink2); border: 1px dashed var(--ink2); border-radius: 4px; padding: 0 6px; }
+
+/* Plan and project rows */
+.prow { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 2px 10px; align-items: start; padding: 10px 0; min-height: 44px; width: 100%; }
+ol > li + li > .prow { border-top: 1px solid var(--line); }
+.prow .v { font: var(--t-mono); color: var(--ink2); text-align: right; white-space: nowrap; }
+.prow .v.w { font: var(--t-meta); color: var(--ink); }
+.body { font: var(--t-body); }
+.strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.seg { display: grid; gap: 4px; font: var(--t-meta); color: var(--ink2); }
+.seg::before { content: ""; height: 4px; border-radius: 2px; background: var(--line); }
+.seg.past::before { background: var(--ink2); }
+.seg.now { font: var(--t-label); color: var(--ink); }
+.seg.now::before { background: var(--ink); }
+.nowdiv { display: flex; align-items: center; gap: 8px; font: 600 11px/1.4 var(--mono); color: var(--ink); padding: 6px 0 0; letter-spacing: .04em; }
+.nowdiv::after { content: ""; flex: 1; border-top: 1px solid var(--ink); }
+
+/* All clear: one icon and one line */
+.clear { display: grid; justify-items: center; gap: 8px; text-align: center; padding-top: 220px; }
+.clear svg { width: 56px; height: 56px; fill: none; stroke: var(--ink2); stroke-width: 1.2; stroke-linejoin: round; stroke-linecap: round; }
+.clear p { font: var(--t-body); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="intro">
+    <span class="tag">Mockup · Linear-inspired · a starting point, not a copy of Linear · not built</span>
+    <h1>The desk, with Linear's general theme</h1>
+    <p>Your words: "Can you mockup what the integration of linear UI elements would look like? Keep in mind im not trying to recreate linear, just just using the general theme as a design starting point". From Linear: a white ground, thin rows with a small status glyph, grey section headings, a large bold title with icon buttons at the right, floating rounded sheets and bar, a dark toast. Ours: IBM Plex Sans and Plex Mono, vermilion meaning "needs you" only, our words, and three labelled tabs. The items are real ones from 19 Oct, shown as examples; ages and times come from their GitHub records, as at 12:20 on 19 Oct (Chicago time); "checked 2 min ago" and "At work now" are examples.</p>
+  </div>
+
+  <div class="frames">
+    <section class="fr"><h2>1 · Waiting, option L: lanes</h2><p class="cap">Your three lanes, left to right, as compact rows with no fills: a glyph, the title, a grey id and age line, and a quiet trailing action. Drag to Done as on board v5.</p>
+      <div class="phone theme-light" data-screen="lanes"></div></section>
+    <section class="fr"><h2>2 · Waiting, option G: one grouped list</h2><p class="cap">One list in three groups, as Linear's app groups by status. Swipe a row right for Done: #130 is shown part-way; the toast confirms #126.</p>
+      <div class="phone theme-light" data-screen="grouped" data-swipe="130" data-toast></div></section>
+    <section class="fr"><h2>3 · A card's sheet</h2><p class="cap">A floating sheet. The options are chips, the recommendation tagged and never picked for you; shown after you tap "Answer C". One accent button.</p>
+      <div class="phone theme-light" data-screen="sheet"></div></section>
+    <section class="fr"><h2>4 · Snooze: proposal, not ruled</h2><p class="cap">Linear's snooze, as a proposal: hide a card from Waiting until a time you pick. It is not in any ruling, and needs yours.</p>
+      <div class="phone theme-light" data-screen="snooze"></div></section>
+    <section class="fr"><h2>5 · Plan</h2><p class="cap">The milestones ahead in order, as thin rows: a glyph, the title, a grey code and phase line, the rough finish at the right.</p>
+      <div class="phone theme-light" data-screen="plan"></div></section>
+    <section class="fr"><h2>6 · A project's page</h2><p class="cap">The sentence, the phase strip, who is at work, and the project's own milestones around NOW. No Overview and Issues tabs: one page fits.</p>
+      <div class="phone theme-light" data-screen="project"></div></section>
+    <section class="fr"><h2>7 · Waiting, all clear</h2><p class="cap">One icon and one line, with when it was checked. "⋯" holds Show done.</p>
+      <div class="phone theme-light" data-screen="clear"></div></section>
+    <section class="fr"><h2>8 · Option G, dark</h2><p class="cap">Frame 2's list in the phone's dark setting.</p>
+      <div class="phone theme-dark" data-screen="grouped"></div></section>
+  </div>
+
+  <section class="notes">
+    <h2>Taken from Linear, and kept ours</h2>
+    <ul>
+      <li>Taken: the white ground, thin rows and hairlines, the status glyph at the row's start, small grey section headings with a count, the large bold title with an icon pill at the right, floating rounded sheets, check-mark lists, snooze, the dark toast, the floating rounded bar.</li>
+      <li>Ours: Plex Sans and Plex Mono, vermilion for "needs you" only, our own glyphs (◆ needs you, ↩ kicked back, ✓ done), our words, and the bar's three tabs keep their labels, which Linear's icon-only bar drops.</li>
+      <li>One departure from the audit's brief: the floating bar, sheets and icon pill use a soft shadow, as Linear's do; the brief said no shadows.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(() => {
+  const GH = 'https://github.com/shumpmaster/Service-Desk';
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const I = {
+    filter: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>',
+    more: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>',
+    order: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4"/></svg>',
+    back: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
+    clock: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>',
+    Waiting: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h4l2 3h4l2-3h4"/><path d="M5 6h14l1 7v5H4v-5z"/></svg>',
+    Plan: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h1M4 12h1M4 18h1"/></svg>',
+    Projects: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z"/></svg>',
+  };
+  const ibar = (a, b, la, lb) => `<div class="ibar"><button type="button" class="ib" aria-label="${la}">${I[a]}</button><button type="button" class="ib" aria-label="${lb}">${I[b]}</button></div>`;
+  const bar = (active, badge) => `<nav class="bar" aria-label="Main">${['Waiting', 'Plan', 'Projects'].map((t, i) =>
+    `<a class="tab" href="#" ${i === active ? 'aria-current="page"' : ''}>${I[t]}<span>${t}</span>${t === 'Waiting' && badge ? `<span class="badge">${badge}</span>` : ''}</a>`).join('')}</nav>`;
+  const head = (title, right, sub) => `<header class="top"><h3 class="title">${title}<span class="trial">Trial</span></h3>${right}</header>${sub ? `<p class="sub">${sub}</p>` : ''}`;
+
+  // The same real items as before (19 Oct), ages as at 12:20 Chicago time from their GitHub records
+  const ITEMS = [
+    { id: '135', lane: 'wait', title: "Show the automatic job's pull requests as being recorded", ref: '#135', age: '22 m', act: 'Verdict', url: `${GH}/pull/135` },
+    { id: 'qa', lane: 'wait', title: "How should a question's card fill in your answer?", ref: 'question', age: '43 m', act: 'Answer', url: '#' },
+    { id: 'qd', lane: 'wait', title: 'How long do finished cards stay in Done?', ref: 'question', age: '43 m', act: 'Answer', url: '#' },
+    { id: '130', lane: 'wait', title: 'Make two notification files high-risk', ref: '#130', age: '1 h 35 m', act: 'Verdict', url: `${GH}/pull/130` },
+    { id: 'q', lane: 'wait', title: 'Approve the new wording of M3A?', ref: 'question', age: '1 h 13 m', act: 'Answer', url: '#' },
+    { id: '128', lane: 'kick', title: 'Merge: Work ahead (M3A)', ref: '#128', age: '1 h 53 m', act: 'Merge', url: `${GH}/pull/128`, reason: "GitHub doesn't show it merged yet" },
+    { id: '126', lane: 'done', title: 'Merge: the first rough estimates', ref: '#126', time: '11:00', pend: true },
+    { id: '127', lane: 'done', title: 'Merge: your later-work list', ref: '#127', time: '11:01' },
+  ];
+  const glyph = (x) => (x.lane === 'wait' ? '<span class="g you" aria-label="Needs you">◆</span>' : x.lane === 'kick' ? '<span class="g you" aria-label="Kicked back">↩</span>'
+    : `<span class="g ${x.pend ? 'pend' : 'ok'}" aria-label="Done">✓</span>`);
+  const metaLine = (x) => `Service-Desk · ${x.ref} · ${x.lane === 'done' ? `done ${x.time}` : x.age}`;
+  const actLink = (x) => (x.lane === 'done' ? (x.pend ? '<button type="button" class="act">Undo</button>' : '')
+    : `<a class="act" href="${x.url}" ${x.url !== '#' ? 'target="_blank" rel="noopener"' : ''}>${x.act} ↗</a>`);
+
+  // Option L: lanes
+  const lrow = (x) => `<li class="lrow"><div class="lt">${glyph(x)}<span class="rtitle">${esc(x.title)}</span></div>
+    <span class="mono">${x.ref} · ${x.lane === 'done' ? x.time : x.age}</span>${x.reason ? `<span class="reason">${esc(x.reason)}</span>` : ''}${x.pend ? '<span class="conf">confirming with GitHub</span>' : ''}${actLink(x)}</li>`;
+  const lanes = () => `<div class="scr">${head('Waiting', ibar('filter', 'more', 'Filter', 'More'), 'checked 2 min ago · examples from 19 Oct')}
+      <div class="lanes">
+        ${[['wait', 'Waiting on you'], ['kick', 'Kicked back'], ['done', 'Done']].map(([k, n]) => { const l = ITEMS.filter((x) => x.lane === k);
+          return `<section class="lane${k === 'done' ? ' dn' : ''}"><h4 class="lsh">${n} · ${l.length}</h4><ol>${l.map(lrow).join('')}</ol></section>`; }).join('')}
+      </div></div>${bar(0, 6)}`;
+
+  // Option G: one grouped list
+  const grow = (x, swipe) => {
+    const r = `<div class="row${x.lane === 'done' ? ' ok' : ''}">${glyph(x)}<span class="rt"><span class="rtitle">${esc(x.title)}</span><span class="mono">${metaLine(x)}</span>${x.reason ? `<span class="reason">${esc(x.reason)}</span>` : ''}${x.pend ? '<span class="conf">confirming with GitHub</span>' : ''}</span>${actLink(x)}</div>`;
+    return x.lane === 'done' ? `<li>${r}</li>` : `<li class="swipe${swipe === x.id ? ' mid' : ''}" data-id="${x.id}"><span class="reveal" aria-hidden="true">✓ Done</span>${r}</li>`;
+  };
+  const grouped = (swipe, toast) => `<div class="scr">${head('Waiting', ibar('filter', 'more', 'Filter', 'More'), 'checked 2 min ago · examples from 19 Oct')}
+      ${[['wait', 'Waiting on you'], ['kick', 'Kicked back'], ['done', 'Done']].map(([k, n]) => { const l = ITEMS.filter((x) => x.lane === k);
+        return `<section><h4 class="sh">${n} · ${l.length}</h4><ol>${l.map((x) => grow(x, swipe)).join('')}</ol></section>`; }).join('')}
+    </div>${toast ? '<div class="toast" role="status"><span class="tk" aria-hidden="true">✓</span><span class="msg">Marked done · #126</span><button type="button">Undo</button></div>' : ''}${bar(0, 6)}`;
+
+  // The question's sheet
+  const OPTS = {
+    A: 'One button, you type the letter after "Ruling:".',
+    B: 'One button, with the recommended letter filled in.',
+    C: 'One button per option, each opening a fully filled-in file.',
+  };
+  const answerUrl = (l) => `${GH}/new/main?filename=${encodeURIComponent('decisions/questions/P-001-board-answer.md')}&value=${encodeURIComponent(`Ruling: ${l}\n\nQuestion: questions/P-001-board-answer.md\nMilestone: MD2\n`)}`;
+  const sheet = (pick) => `<div class="scrim"></div><div class="sheet" role="dialog" aria-label="How should a question's card fill in your answer?">
+      <span class="grab" aria-hidden="true"></span>
+      <p class="mono">Service-Desk · P-001-board-answer · waiting 43 m</p>
+      <h3 class="st">How should a question's card fill in your answer?</h3>
+      <p class="body">A question's card links to its answer file on GitHub. How much of that file is filled in for you?</p>
+      <div class="chips" role="radiogroup" aria-label="Your answer">${['A', 'B', 'C'].map((l) => `<button type="button" class="chip" role="radio" data-l="${l}" aria-checked="${l === pick}">Answer ${l}${l === 'C' ? ' <span class="rec">Rec.</span>' : ''}</button>`).join('')}</div>
+      <p class="mono" data-desc>${pick}: ${esc(OPTS[pick])}</p>
+      <a class="pill" data-go href="${answerUrl(pick)}" target="_blank" rel="noopener">Answer ${pick} on GitHub ↗</a>
+      <div class="slist">
+        <button type="button" class="sitem"><span class="g ok" aria-hidden="true">✓</span><span>Done</span><span class="v">swipe right also works</span></button>
+        <button type="button" class="sitem">${I.clock}<span>Snooze</span><span class="v">proposal</span></button>
+        <button type="button" class="sitem"><span aria-hidden="true">▸</span><span>More</span><span class="v">the full question, the file it writes</span></button>
+      </div></div>`;
+
+  // Snooze: a proposal, times from 12:20 on Monday 19 Oct
+  const snooze = () => `<div class="scrim"></div><div class="sheet" role="dialog" aria-label="Snooze">
+      <span class="grab" aria-hidden="true"></span>
+      <h3 class="st">Snooze</h3>
+      <span class="prop">Proposal, not ruled</span>
+      <p class="mono">Make two notification files high-risk · #130</p>
+      <div class="slist">
+        ${[['In an hour', '13:20'], ['Tomorrow', 'Tue 20 Oct, 09:00'], ['Next week', 'Mon 26 Oct, 09:00']].map(([w, t]) => `<button type="button" class="sitem">${I.clock}<span>${w}</span><span class="v">${t}</span></button>`).join('')}
+      </div>
+      <p class="mono">The card leaves Waiting until then, and comes back at the top.</p></div>`;
+
+  // Plan: Service-Desk's milestones ahead in the project document's order; rough finishes from the Chief of Staff's
+  // estimates of 19 Oct, added up in order from 19 Oct
+  const AHEAD = [
+    ['◆', 'you', 'What a good desk looks like is known', 'MD1 · Design · accept', 'once you accept it', true],
+    ['◆', 'you', "The desk's look and screens chosen", 'MD2 · Design · accept', 'once you accept it', true],
+    ['◐', '', 'The chosen design running on the real back end', 'MD3 · Design · in progress', '22–25 Oct'],
+    ['◐', '', 'Work ahead planned from the desk', 'M3A · Build · in progress', '23–28 Oct'],
+    ['○', 'pend', "The desk's value targets shown", 'M3B · Build · not started', '27 Oct – 5 Nov'],
+    ['○', 'pend', 'The desk live at the needs-you address', 'M3C · Launch · not started', '30 Oct – 11 Nov'],
+  ];
+  const prow = ([g, c, t, m, v, w]) => `<li><button type="button" class="prow"><span class="g ${c}" aria-hidden="true">${g}</span><span class="rt"><span class="rtitle">${esc(t)}</span><span class="mono">${m}</span></span><span class="v${w ? ' w' : ''}">${v}</span></button></li>`;
+  const plan = () => `<div class="scr">${head('Plan', ibar('order', 'more', 'Change order', 'More'), "Service-Desk · rough finish from today, 19 Oct · an expectation, never a deadline")}
+      <section><h4 class="sh">Milestones ahead · 6</h4><ol>${AHEAD.map(prow).join('')}</ol></section>
+      <section><h4 class="sh">Later work, not milestones yet · 2</h4><ol>
+        ${[['Ask or jot box', 'W1'], ['Upkeep fixes', 'W2']].map(([t, c]) => `<li><button type="button" class="prow"><span class="g pend" aria-hidden="true">○</span><span class="rt"><span class="rtitle">${t}</span><span class="mono">${c}</span></span><span class="v">›</span></button></li>`).join('')}</ol></section>
+    </div>${bar(1, 6)}`;
+
+  // A project's page
+  const project = () => `<div class="scr">
+      <header class="top"><button type="button" class="round" aria-label="Back to Projects">${I.back}</button>${ibar('filter', 'more', 'Filter', 'More')}</header>
+      <h3 class="title" style="font:var(--t-title)">Service-Desk<span class="trial">Trial</span></h3>
+      <p class="body">Design, second time through. Next: the chosen design running on the real back end.</p>
+      <ol class="strip" aria-label="Phases"><li class="seg past">Discovery</li><li class="seg now">Design</li><li class="seg">Build</li><li class="seg">Launch</li></ol>
+      <section><h4 class="sh">At work now</h4><ol><li><button type="button" class="prow"><span class="g" aria-hidden="true">●</span><span class="rt"><span class="rtitle">The Orchestrator, on the redesign mockup</span><span class="mono">example</span></span><span class="v">›</span></button></li></ol></section>
+      <section><h4 class="sh">Milestones</h4><ol>
+        <li><button type="button" class="prow"><span class="g ok" aria-hidden="true">✓</span><span class="rt"><span class="rtitle">3 reached</span><span class="mono">M1 · M2 · M2B</span></span><span class="v">▸</span></button></li></ol>
+        <p class="nowdiv">NOW · 19 OCT</p>
+        <ol>${AHEAD.map(prow).join('')}</ol></section>
+    </div>${bar(2, 6)}`;
+
+  const clear = () => `<div class="scr">${head('Waiting', ibar('filter', 'more', 'Filter', 'More: show done'))}
+      <div class="clear"><svg viewBox="0 0 56 56" aria-hidden="true"><path d="M8 32h12l4 6h8l4-6h12"/><path d="M12 14h32l4 18v12H8V32z"/><path d="M22 24l5 5 8-9"/></svg>
+        <p>Nothing waiting on you</p><p class="mono">checked 2 min ago · 2 projects</p></div>
+    </div>${bar(0, 0)}`;
+
+  const SCREENS = { lanes, grouped: (ph) => grouped(ph.dataset.swipe, ph.hasAttribute('data-toast')), sheet: () => grouped() + sheet('C'), snooze: () => grouped() + snooze(), plan, project, clear };
+  document.querySelectorAll('.phone').forEach((ph) => { ph.innerHTML = SCREENS[ph.dataset.screen](ph); });
+
+  // The sheet's chips: tap one to choose it; the accent button then opens that answer, filled in
+  document.addEventListener('click', (e) => {
+    const c = e.target.closest('.chip'); if (!c) return;
+    const sh = c.closest('.sheet'), l = c.dataset.l;
+    sh.querySelectorAll('.chip').forEach((x) => x.setAttribute('aria-checked', String(x === c)));
+    sh.querySelector('[data-desc]').textContent = `${l}: ${OPTS[l]}`;
+    const go = sh.querySelector('[data-go]'); go.href = answerUrl(l); go.textContent = `Answer ${l} on GitHub ↗`;
+  });
+  // Swipe right for Done (option G): a row follows the finger; past 96 px it is marked done
+  document.querySelectorAll('.swipe').forEach((li) => {
+    const row = li.querySelector('.row'); let s = null;
+    li.addEventListener('pointerdown', (e) => { if (e.target.closest('a, button')) return; s = { x: e.clientX, id: e.pointerId }; li.classList.remove('mid'); row.style.transition = 'none'; });
+    li.addEventListener('pointermove', (e) => { if (!s || e.pointerId !== s.id) return; const dx = Math.max(0, e.clientX - s.x); row.style.transform = `translateX(${dx}px)`; });
+    const end = (e) => { if (!s) return; const dx = Math.max(0, e.clientX - s.x); s = null; row.style.transition = ''; row.style.transform = '';
+      if (dx > 96) { row.querySelector('.g').className = 'g pend'; row.querySelector('.g').textContent = '✓'; row.classList.add('ok'); const a = row.querySelector('.act'); if (a) a.outerHTML = '<button type="button" class="act">Undo</button>'; } };
+    li.addEventListener('pointerup', end); li.addEventListener('pointercancel', () => { s = null; row.style.transform = ''; });
+  });
+})();
+</script>
+</body>
+</html>

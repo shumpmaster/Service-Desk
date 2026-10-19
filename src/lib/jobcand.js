@@ -20,6 +20,10 @@ export const MAX_LOGS = 5; // log reads per candidate per run (C)
 // A head commit time more than this after the reader's clock is no head time (security review round 1,
 // D): the committer date is the author's to set, and a future one would hold rule (c) off for ever.
 export const FUTURE_HEAD_MS = 10 * 60e3;
+// A candidate whose counted checks have all completed and that no judging run has judged within this long
+// after the last of them waits on the owner (security build review round 2, R2; J16 draft 6): a job that
+// never reaches it (stopped, broken or disabled) never leaves it unseen.
+export const UNJUDGED_MS = 45 * 60e3;
 const STAMP_RE = /^\d{4}-\d\d-\d\dT[0-9:.]+Z /;
 const WAITS_RE = /^PR #(\d+): waits: (.+)$/;
 const MERGED_RE = /^PR #(\d+): merged\b/;
@@ -161,6 +165,7 @@ export async function judgeCandidate(input) {
   const runs = (input.asksRuns || []).filter((r) => isJudgingRun(r, input.defaultBranch) && ms(r.run_started_at) > done)
     .sort((x, y) => ms(y.run_started_at) - ms(x.run_started_at) || y.id - x.id);
   const verdicts = [];
+  let judged = false; // a successful, well-formed run gave a verdict for it (a merged line included)
   let logs = 0;
   for (const run of runs) {
     if (logs >= MAX_LOGS) break;
@@ -171,16 +176,21 @@ export async function judgeCandidate(input) {
     const text = await input.readLog(job.id);
     if (text == null) continue;
     // A forged log is no one's words: it judges nothing, and a candidate it names that no newer
-    // well-formed run has judged waits on the owner (security review round 1, A).
-    if (!logWellFormed(text)) {
+    // well-formed, successful run has judged waits on the owner (security review round 1, A). A merge
+    // job that completed but not with `success` (failure, timed_out, …) is the same case: it may have
+    // stopped right after a forged line, before the named pull request's own (security round 2, R1).
+    if (job.conclusion !== 'success' || !logWellFormed(text)) {
       if (!verdicts.length && logNames(text, input.number)) return { left: true, rule: 'b', retriedMs: input.retriedMs, forged: true };
       continue;
     }
     const v = logVerdict(text, input.number);
     if (!v) continue; // judged nothing, or not this pull request
+    judged = true;
     if (v.merged) break;
     verdicts.push({ at: ms(run.run_started_at), kind: reasonKind(v.waits) });
   }
+  // Never judged within 45 minutes of its checks completing: it waits (security round 2, R2).
+  if (!judged && input.nowMs - done >= UNJUDGED_MS) return { left: true, rule: 'b', retriedMs: input.retriedMs, unjudged: true };
   if (!verdicts.length) return { left: false, rule: null, retriedMs: input.retriedMs };
   const newest = verdicts[0];
   if (newest.kind === 'final') return { left: true, rule: 'b', retriedMs: input.retriedMs };

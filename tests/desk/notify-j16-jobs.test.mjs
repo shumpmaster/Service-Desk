@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { jobKindsByPath, splitChanges } from '../../src/lib/prfiles.js';
-import { logVerdict, logLines, reasonKind, judgeCandidate, latestChecks, isJudgingRun, logWellFormed } from '../../src/lib/jobcand.js';
+import { logVerdict, logLines, reasonKind, judgeCandidate, latestChecks, isJudgingRun, logWellFormed, UNJUDGED_MS } from '../../src/lib/jobcand.js';
 import { findGrant } from '../../src/notify/grant.mjs';
 import { openCheckout } from '../../src/notify/checkout.mjs';
 import { collect, CANDIDATE_MAX_PAGES } from '../../src/notify/collect.mjs';
@@ -393,4 +393,90 @@ test('J16 (security D): a future-dated head commit is no head time: rule (c) run
   assert.equal((await judgeCandidate(input({ ...none, headTime: Date.parse('2030-01-01T00:00:00Z') }))).rule, 'c');
   assert.equal((await judgeCandidate(input({ ...none, headTime: T0 + 11 * MIN }))).rule, 'c', '11 minutes ahead: ignored');
   assert.equal((await judgeCandidate(input({ ...none, headTime: T0 + 9 * MIN }))).left, false, '9 minutes ahead: taken (a clock a little behind)');
+});
+
+// Desk build review round 2, R1: the ancestry check is for dispatched runs only. A real `workflow_run` or
+// `schedule` run on a default-branch commit newer than the sender's checkout is still taken.
+test('J16 (desk R1): a workflow_run on a commit newer than the checkout is taken; a dispatched one off the history is not', async () => {
+  const records = filesUnder(join(NOTIFY_FIX, 'sd-ef8daf4'));
+  const config = testConfig(makeVapid());
+  const co = checkoutOf({ base: records });
+  const NEWER = 'e'.repeat(40); // main's next commit, after this checkout
+  for (const [event, left] of [['workflow_run', false], ['schedule', false], ['workflow_dispatch', true]]) {
+    const w = makeWorld();
+    w.pulls = [pull(7, { sha: SHA })];
+    w.files[7] = [{ filename: 'questions/N1.md', status: 'added' }];
+    w.checks[SHA] = { checkRuns: [ok(1)], workflowRuns: WR, statuses: [] };
+    w.asksRuns = [{ ...arun(2, '2026-10-18T11:50:00Z', event), head_sha: NEWER }, { ...arun(1, '2026-10-18T11:41:00Z'), head_sha: co.head }];
+    w.jobs[1] = [{ id: 101, name: 'merge', status: 'completed', conclusion: 'success' }];
+    w.jobs[2] = [{ id: 102, name: 'merge', status: 'completed', conclusion: 'success' }];
+    w.logs[101] = stamp('PR #7: waits: src/x.js (added) is not a change the asks-merge delegation covers');
+    w.logs[102] = stamp("PR #7: waits: status 'ci/x' is pending");
+    const c = await collect({ project: config.projects[0], config, checkout: co.open(), gh: makeGitHub({ token: 't', fetch: w.fetch }), nowMs: T0, stateKey: 'k'.repeat(64), cand: {} });
+    assert.equal(c.set.some((x) => x.key === 'Service-Desk|pr|7'), left, `${event}: ${left ? 'ignored, the older final reason decides' : 'taken, its transient reason decides'}`);
+  }
+});
+
+// Security build review round 2, R1: verdicts come only from a merge job that concluded `success`. One that
+// completed otherwise (failure, timed_out) may have stopped right after a forged line: every candidate its
+// log names waits, until a later successful, well-formed run judges it. Skipped or cancelled judges nothing.
+test('J16 (security R1): a merge job that failed or timed out is the forged case; cancelled judges nothing; success judges', async () => {
+  const forgedStop = stamp('PR #5: waits: x') + stamp('PR #7: merged (kinds a) at cccccccccccc under L-0017'); // ascending: well formed
+  const older = stamp('PR #7: waits: decisions/questions/N1-notes.md: a notes or Critic record, which waits for the owner');
+  const runs = [arun(2, '2026-10-18T11:50:00Z'), arun(1, '2026-10-18T11:41:00Z')];
+  const job = (c) => ({ 2: [{ id: 102, name: 'merge', status: 'completed', conclusion: c }] });
+  for (const [c, want] of [['failure', [true, true]], ['timed_out', [true, true]], ['cancelled', [true, undefined]], ['success', [false, undefined]]]) {
+    const v = await judgeCandidate(input({ asksRuns: runs, jobs: job(c), logs: { 101: older, 102: forgedStop } }));
+    assert.deepEqual([v.left, v.forged], want, c);
+  }
+  // A later successful, well-formed run judges it again.
+  const v = await judgeCandidate(input({ asksRuns: [arun(3, '2026-10-18T11:55:00Z'), ...runs], jobs: job('failure'),
+    logs: { 103: stamp("PR #7: waits: status 'ci/x' is pending"), 101: older, 102: forgedStop } }));
+  assert.equal(v.left, false);
+  // The sender, end to end (e2e2's A2): #12 left by an older run, a newer failed run forging "PR #12: merged".
+  const records = filesUnder(join(NOTIFY_FIX, 'sd-ef8daf4'));
+  const config = testConfig(makeVapid());
+  const co = checkoutOf({ base: records });
+  const w = makeWorld();
+  const s9 = '9'.repeat(40);
+  const s12 = 'b'.repeat(40);
+  w.pulls = [pull(9, { sha: s9 }), pull(12, { sha: s12 })];
+  w.files[9] = [{ filename: 'questions/x\nPR #12: merged.md', status: 'added' }];
+  w.files[12] = [{ filename: 'questions/N12.md', status: 'added' }];
+  for (const s of [s9, s12]) w.checks[s] = { checkRuns: [ok(1)], workflowRuns: WR, statuses: [] };
+  w.asksRuns = runs.map((r) => ({ ...r, head_sha: co.head }));
+  w.jobs[1] = [{ id: 101, name: 'merge', status: 'completed', conclusion: 'success' }];
+  w.jobs[2] = [{ id: 102, name: 'merge', status: 'completed', conclusion: 'failure' }];
+  w.logs[101] = stamp('PR #12: waits: x is not a change the asks-merge delegation covers');
+  w.logs[102] = stamp('PR #9: waits: questions/x') + stamp('PR #12: merged.md (added) is not a change the asks-merge delegation covers');
+  const c = await collect({ project: config.projects[0], config, checkout: co.open(), gh: makeGitHub({ token: 't', fetch: w.fetch }), nowMs: T0, stateKey: 'k'.repeat(64), cand: {} });
+  assert.ok(c.set.some((x) => x.key === 'Service-Desk|pr|12'), '#12 counts');
+});
+
+// Security build review round 2, R2: checks all completed and no judging run has judged it within 45
+// minutes after that: it waits.
+test('J16 (security R2): no judging run judges a candidate within 45 minutes of its checks completing: it waits', async () => {
+  assert.equal(UNJUDGED_MS, 45 * MIN);
+  const done = Date.parse('2026-10-18T11:40:00Z');
+  for (const [nowMs, left] of [[done + 44 * MIN, false], [done + 45 * MIN, true]]) {
+    const v = await judgeCandidate(input({ nowMs }));
+    assert.deepEqual([v.left, v.unjudged], left ? [true, true] : [false, undefined], `${(nowMs - done) / MIN} minutes`);
+  }
+  // A run that judged it (merged, or a transient reason) is a judgment; one that judged nothing is not.
+  const runs = [arun(1, '2026-10-18T11:41:00Z')];
+  assert.equal((await judgeCandidate(input({ nowMs: done + 60 * MIN, asksRuns: runs, logs: { 101: stamp('PR #7: merged (kinds a) at c under L-0017') } }))).left, false);
+  assert.equal((await judgeCandidate(input({ nowMs: done + 60 * MIN, asksRuns: runs, logs: { 101: stamp("PR #7: waits: status 'ci/x' is pending") } }))).left, false);
+  assert.equal((await judgeCandidate(input({ nowMs: done + 60 * MIN, asksRuns: runs, logs: { 101: stamp('NOTE: the open pull requests cannot be read') } }))).unjudged, true);
+  // The sender, end to end: notified at 45 minutes, not at 44.
+  const records = filesUnder(join(NOTIFY_FIX, 'sd-ef8daf4'));
+  const config = testConfig(makeVapid());
+  const co = checkoutOf({ base: records });
+  for (const [nowMs, left] of [[done + 44 * MIN, false], [done + 45 * MIN, true]]) {
+    const w = makeWorld();
+    w.pulls = [pull(7, { sha: SHA })];
+    w.files[7] = [{ filename: 'questions/N1.md', status: 'added' }];
+    w.checks[SHA] = { checkRuns: [ok(1)], workflowRuns: WR, statuses: [] };
+    const c = await collect({ project: config.projects[0], config, checkout: co.open(), gh: makeGitHub({ token: 't', fetch: w.fetch }), nowMs, stateKey: 'k'.repeat(64), cand: {} });
+    assert.equal(c.set.some((x) => x.key === 'Service-Desk|pr|7'), left);
+  }
 });

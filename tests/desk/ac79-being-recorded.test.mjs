@@ -560,3 +560,51 @@ test('AC79 (security D): a future-dated head commit: rule (c) runs from created_
   const r = await both(world({ ...none, created: '2026-10-18T11:20:00Z', commits: { [SHA]: '2030-01-01T00:00:00Z' } }));
   assert.deepEqual([r.v.state, r.v.rule], ['count', 'c'], 'the page counts from created_at, 40 minutes ago');
 });
+
+// Desk build review round 2, R1: a real workflow_run on a default-branch commit newer than the sender's
+// checkout is taken by both sides (the reviewer's r3 case: the newer run's transient reason decides).
+test('AC79 (desk R1): a workflow_run on a commit newer than the sender\'s checkout: taken by the sender and the page alike', async () => {
+  const w = world({ asksRuns: [{ ...arun(2, '2026-10-18T11:50:00Z'), head_sha: 'e'.repeat(40) }, arun(1, '2026-10-18T11:41:00Z')],
+    logs: { 101: log(GRANT, 'PR #7: waits: src/x.js (added) is not a change the asks-merge delegation covers'), 102: log(GRANT, "PR #7: waits: status 'ci/x' is pending") } });
+  const r = await both(w);
+  assert.deepEqual([r.senderLeft, r.v.state], [false, 'recording']);
+});
+
+// Security build review round 2, R1: verdicts only from a merge job that concluded `success`; failure or
+// timed_out is the forged case (every candidate its log names counts); cancelled judges nothing.
+test('AC79 (security R1): a newer run whose merge job failed or timed out, its log forging "PR #12: merged": both sides count #12', async () => {
+  const s12 = 'b'.repeat(40);
+  const s9 = '9'.repeat(40);
+  for (const [conclusion, why] of [['failure', 'forged'], ['timed_out', 'forged'], ['cancelled', 'left']]) {
+    const w = world({ pulls: [pull(9, { sha: s9 }), pull(12, { sha: s12 })], asksRuns: [arun(2, '2026-10-18T11:50:00Z', { conclusion: 'failure' }), arun(1, '2026-10-18T11:41:00Z')],
+      jobs: { 2: [{ id: 102, name: 'merge', status: 'completed', conclusion }] },
+      logs: { 101: log(GRANT, 'PR #12: waits: x is not a change the asks-merge delegation covers'), 102: log(GRANT, 'PR #9: waits: questions/x', 'PR #12: merged.md (added) is not a change the asks-merge delegation covers') } });
+    w.files[9] = [{ filename: 'questions/x\nPR #12: merged.md', status: 'added' }];
+    w.files[12] = [{ filename: 'questions/N12.md', status: 'added' }];
+    for (const s of [s9, s12]) w.checks[s] = { checkRuns: [ok(1)], workflowRuns: WR, statuses: [] };
+    const r = await both(w, { n: 12 });
+    assert.equal(r.senderLeft, true, `${conclusion}: the sender counts #12`);
+    assert.deepEqual([r.v.state, r.v.why], ['count', why], `${conclusion}: the page counts #12`);
+  }
+  // The same newer run concluding success: its (well-formed) merged line is a verdict, so neither counts.
+  const w = world({ pulls: [pull(12, { sha: s12 })], asksRuns: [arun(2, '2026-10-18T11:50:00Z'), arun(1, '2026-10-18T11:41:00Z')],
+    logs: { 101: log(GRANT, 'PR #12: waits: x is not a change the asks-merge delegation covers'), 102: log(GRANT, 'PR #12: merged (kinds a) at cccccccccccc under L-0017') } });
+  w.files[12] = [{ filename: 'questions/N12.md', status: 'added' }];
+  w.checks[s12] = { checkRuns: [ok(1)], workflowRuns: WR, statuses: [] };
+  const r = await both(w, { n: 12 });
+  assert.deepEqual([r.senderLeft, r.v.state], [false, 'recording']);
+});
+
+// Security build review round 2, R2: a candidate no judging run judges within 45 minutes of its checks
+// completing counts on both sides, with no special words.
+test('AC79 (security R2): unjudged 45 minutes after its checks completed: the sender notifies, the page counts with no words', async () => {
+  const done = Date.parse('2026-10-18T11:40:00Z');
+  const base = { asksRuns: [arun(1, '2026-10-18T11:30:00Z')], logs: { 101: log(GRANT) } };
+  let r = await both(world(base), { nowMs: done + 44 * MIN });
+  assert.deepEqual([r.senderLeft, r.v.state], [false, 'recording'], '44 minutes');
+  r = await both(world(base), { nowMs: done + 45 * MIN });
+  assert.deepEqual([r.senderLeft, r.v.state, r.v.why, r.v.words], [true, 'count', 'unjudged', null], '45 minutes');
+  // Every run stopping before it (e2e2's A3): judged by none, so it counts at 45 minutes too.
+  r = await both(world({ asksRuns: [arun(2, '2026-10-18T11:50:00Z'), arun(1, '2026-10-18T11:30:00Z')], logs: { 101: log(GRANT), 102: log(GRANT, 'PR #3: waits: x') } }), { nowMs: done + 45 * MIN });
+  assert.deepEqual([r.senderLeft, r.v.state], [true, 'count']);
+});

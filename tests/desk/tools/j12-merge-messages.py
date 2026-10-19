@@ -61,9 +61,9 @@ for n in answer["data"]["repository"]["pullRequests"]["nodes"]:
     model[str(n["number"])] = verdict(mc["message"], mc["author"]["name"])
 built["body"] = json.dumps(answer)
 built["note"] = ("NOT as GitHub sent it: J12's answer built in GraphQL's answer shape from REST answers for "
-                 "shumpmaster/Service-Desk, 2026-10-16 (tests/desk/tools/j12-fixture.mjs says how; "
-                 "tests/desk/fixtures/README.md lists it), each merge commit's message and author added on "
-                 "2026-10-18 from commits/<oid> (tests/desk/tools/j12-merge-messages.py). The endCursor is made up.")
+                 "shumpmaster/Service-Desk, recorded 2026-10-19 (tests/desk/tools/j12-fixture.mjs says how, changed "
+                 "paths included; tests/desk/fixtures/README.md lists it), each merge commit's message and author "
+                 "added from commits/<oid> (tests/desk/tools/j12-merge-messages.py). The endCursor is made up.")
 built["model"] = model
 with open(path, "w", encoding="utf-8") as fh:
     fh.write(json.dumps(built, indent=1) + "\n")

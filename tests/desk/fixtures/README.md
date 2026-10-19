@@ -397,3 +397,22 @@ The desk-side tests (notify-ac52-deploys, notify-ac74-desk, notify-ac75, notify-
   no changed paths, so read as not estimate-only). The made-up pull requests #970 to #980 in
   j12-ac60-ac66-estimates.test.mjs, with their changed paths and `files` errors, are **MADE UP**,
   in the shape GitHub's GraphQL documentation gives.
+
+## The job's pull requests, being recorded (2026-10-19, S-001 AC79, the brief's step 7)
+
+The AC79 tests (ac79-being-recorded, ac79-desk, and AC79's cases in ac14-budget, notify-ac73-set,
+notify-ac77-desk, notify-j16-jobs and j6-j8-function) add no fixture file. What they read:
+
+- `notify/sd-ef8daf4/docs/LEDGER.md`, `decisions/questions/P-001-asks-merge.md` and
+  `.github/workflows/asks-merge.yml` (above): **real**, for the ledger's form check, the grant L-0017 and the
+  record its `decided_by` names, and the job's workflow in the tree.
+- `notify/grant-cases.json` and `model-grants.json` (above): **real-on-real**, for the form check against
+  `find_grant`'s verdicts (the page never trusts more than `find_grant`; the one case it cannot see is the
+  `Merged-By:` arrival).
+- `github/asks-merge-job-117691950060-excerpt.log` (above): **real (an excerpt)**, for the log form's filtered
+  lines against the whole log.
+- `notify/ac77-real/questions/P-001-next-work.md` (above): **real**, the question an answer record's pull
+  request records, for "Your answer to <question>".
+- Everything else is **NOT real** and written inline in the tests: the candidates' pull requests and files,
+  their check runs, statuses and workflow runs, the asks-merge runs, their jobs and logs (each line in GitHub's
+  form, a timestamp before it), the head commits' times, and the failures.

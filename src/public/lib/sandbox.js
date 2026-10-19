@@ -422,6 +422,7 @@ export function groupOf(f) {
 
 /** An item's plain words and code (AC52: what it is, in plain words, with its code after). */
 export function rowWords(f) {
+  if (f.kind === 'pr-recording') return { text: f.pr.title, code: `PR #${f.pr.number}` };
   if (f.kind === 'card') {
     const title = f.card.parsed && f.card.parsed.title ? f.card.parsed.title : `card ${f.card.gate}-${f.card.n}`;
     return { text: title, code: `${f.card.item} ${f.card.gate}-${f.card.n}` };
@@ -475,6 +476,13 @@ export function queueView(project, model, snap, nowMs) {
     ? ((model && model.flagged) || []).filter((f) => f.kind === 'deploy').map((f) => ({ key: f.key, kind: 'deploy', group: 'deploys',
       text: `${f.deploy.name}: waiting for approval`, code: `run ${f.deploy.runNumber}`, link: f.link, raisedAt: null, approver: NOT_RECORDED, flag: f }))
     : waitingDeploys(snap && snap.checkPages);
+  // AC79 (2026-10-19): the asks-merge job's pull requests it may still merge, under Merges after the
+  // counted ones, "Being recorded by the automatic job": in no count, opening only their GitHub link.
+  const recording = ((model && model.beingRecorded) || []).map((f) => {
+    const w = rowWords(f);
+    return { key: `rec:${f.key}`, kind: 'pr-recording', group: 'merges', text: w.text, code: w.code, link: f.link, words: f.recordingWords,
+      answerWords: f.answerWords || null, flag: f };
+  });
   const groups = GROUPS.map((g) => {
     let items = rows.filter((r) => r.group === g.key).sort(order);
     let line = null;
@@ -483,7 +491,7 @@ export function queueView(project, model, snap, nowMs) {
       line = `${NOT_RECORDED}: no record the desk reads names the verdicts a pull request needs. Your own verdict opens from each pull request in Merges.`;
     }
     if (g.key === 'deploys') items = deploys;
-    return { ...g, items, count: g.key === 'verdicts' ? null : items.length, line };
+    return { ...g, items, count: g.key === 'verdicts' ? null : items.length, line, recording: g.key === 'merges' ? recording : [] };
   });
   const ordered = groups.filter((g) => g.key !== 'deploys').flatMap((g) => g.items);
   return { groups, waiting: rows.length + (counted ? deploys.length : 0), rows: ordered, deploys, deploysCounted: counted,

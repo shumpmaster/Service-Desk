@@ -396,6 +396,12 @@ p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 .sb-qrow.g-deploys { padding: var(--s2) var(--s3); }
 .sb-qrow a.sb-qa, .sb-qrow > a { display: grid; gap: var(--s1); padding: var(--s2) var(--s3); min-height: 44px; text-decoration: none; }
 .sb-qt { font: var(--t-item); }
+/* AC79: a pull request the automatic job may still merge: the softer activity style, no coral, no count. */
+.sb-reclist { margin-top: var(--s2); }
+.sb-qrow.sb-recrow { border-left: 4px solid var(--soft); background: var(--surf); color: var(--muted); }
+.sb-qrow.sb-recrow .sb-qt { color: var(--muted); }
+.sb-rec-words { font: var(--t-meta); }
+.sb-qrow .sb-left-pr { font: var(--t-meta); font-weight: 700; color: var(--ink); }
 .sb-unb { display: grid; gap: var(--s1); margin: 0 var(--s3) var(--s2); padding-top: var(--s2); border-top: 1px solid var(--line); }
 .sb-unb-l { font: var(--t-meta); }
 .sb-unb-l b { font: var(--t-meta); color: var(--ink); }

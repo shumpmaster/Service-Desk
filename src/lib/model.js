@@ -359,6 +359,8 @@ export const ASKS_MERGE_PATH = '.github/workflows/asks-merge.yml';
 /** AC77's words for a question being asked in a session, and for one whose answer is on its way. */
 export const HELD_WORDS = 'Being asked in your session: answer there';
 export const RECORDING_WORDS = 'Your answer is being recorded';
+/** AC79's words for a pull request the asks-merge job may still merge itself (shown, not counted). */
+export const BEING_RECORDED_WORDS = 'Being recorded by the automatic job';
 
 /** Whether an open pull request can record an answer (J20): open, not a draft, into the default branch, from the project's own branches. */
 export function canRecord(pr, project) {
@@ -425,6 +427,11 @@ function blobUrl(project, path) {
  *   Set(name) ("Answer it here instead" on this device), seen: Map(path → ms) (first seen here) }.
  *   With it, a question held or being recorded leaves `flagged` for `asking`; without it (the
  *   sender, which judges holds itself) every open question is flagged as before.
+ * jobs (the page only, AC79): Map(number → { head, state: 'recording' | 'count', words }), the page's
+ *   verdicts on the asks-merge job's candidates (src/lib/jobwatch.js). A pull request whose verdict at
+ *   its current head is 'recording' leaves `flagged` for `beingRecorded` (and the activity), "Being
+ *   recorded by the automatic job"; one counted with words keeps them (`leftWords`). Without it (the
+ *   sender, which judges with J16 itself) every pull request is flagged as before.
  */
 export function buildModel(input) {
   const { project, config, now } = input;
@@ -519,17 +526,38 @@ export function buildModel(input) {
     flagged.push({ kind: 'question', key: `q:${q.name}`, title: `Question: ${title}`, link: row.link, raisedAt,
       words: `raised ${raisedAt ? t(raisedAt) : NOT_RECORDED}`, question: row });
   }
-  // AC77: an answer record's own pull request stays in Merges, counted, with its added words.
+  // AC77: an answer record's own pull request says whose answer it records, "Your answer to <question>"
+  // (from 2026-10-19, AC79: counted, or "Being recorded by the automatic job" while the job may merge it).
   if (recording.size) {
-    const job = tree.has(ASKS_MERGE_PATH);
     for (const f of flagged) {
       if (f.kind !== 'pr') continue;
       const names = [...recording].filter(([, pr]) => pr.number === f.pr.number).map(([n]) => n);
       if (!names.length) continue;
       const titles = names.map((n) => (questions.find((x) => x.name === n) || { title: n }).title);
       f.answerTo = names.map((n, i) => ({ name: n, title: titles[i] }));
-      f.answerWords = titles.map((x) => `Your answer to ${x}${job ? ': the automatic job merges it, usually within minutes' : ''}`).join(' · ');
+      f.answerWords = titles.map((x) => `Your answer to ${x}`).join(' · ');
       f.words = `${f.words} · ${f.answerWords}`;
+    }
+  }
+  // AC79 (2026-10-19): the asks-merge job's pull requests it may still merge: shown, not counted.
+  const beingRecorded = [];
+  if (input.jobs instanceof Map && input.jobs.size) {
+    for (let i = flagged.length - 1; i >= 0; i--) {
+      const f = flagged[i];
+      if (f.kind !== 'pr') continue;
+      const v = input.jobs.get(f.pr.number);
+      if (!v || v.head !== f.pr.headSha) continue;
+      if (v.state === 'recording') {
+        flagged.splice(i, 1);
+        beingRecorded.unshift({ ...f, kind: 'pr-recording', recordingWords: BEING_RECORDED_WORDS });
+      } else if (v.state === 'count' && v.words) {
+        f.leftWords = v.words;
+        f.words = `${f.words} · ${v.words}`;
+      }
+    }
+    for (const r of beingRecorded) {
+      activity.push({ kind: 'pr-recording', text: `PR #${r.pr.number}: ${r.pr.title} · ${BEING_RECORDED_WORDS}${r.answerWords ? ` · ${r.answerWords}` : ''}`,
+        link: r.link, recording: true, number: r.pr.number });
     }
   }
 
@@ -543,7 +571,7 @@ export function buildModel(input) {
   for (const path of input.withdrawn || []) activity.push({ kind: 'withdrawn', text: `withdrawn: ${path}` });
 
   if (!isV3) {
-    return finishV25({ project, records, tree, flagged, activity, notes, ci, questions, otherPulls, pulls, t, history, now, askingRows, recording });
+    return finishV25({ project, records, tree, flagged, activity, notes, ci, questions, otherPulls, pulls, t, history, now, askingRows, recording, beingRecorded });
   }
 
   // --- Dispatch log (J9)
@@ -773,14 +801,14 @@ export function buildModel(input) {
   return {
     name: project.name, model: project.model, repo: project.repo, defaultBranch: project.defaultBranch,
     flagged, activity, notes, ci, headline, items, openItems, questions, pulls, otherPulls, asking: askingRows,
-    recording: [...recording.keys()],
+    recording: [...recording.keys()], beingRecorded,
     sprint: null, answeredCards, rulings, timeAsked, logLoaded, v5Waits: v5Waits(askedCards, nowMs, config),
     sessions, timelines: timelines(sessions, askedCards, nowMs),
     allEntries: entries, // the two log months' entries, in order (the MD sandbox's tracker and Done today, AC52)
   };
 }
 
-function finishV25({ project, records, tree, flagged, activity, notes, ci, questions, otherPulls, pulls, t, history, now, askingRows, recording }) {
+function finishV25({ project, records, tree, flagged, activity, notes, ci, questions, otherPulls, pulls, t, history, now, askingRows, recording, beingRecorded }) {
   const open = [];
   let sprintFiles = 0;
   for (const path of [...tree.keys()].sort()) {
@@ -808,7 +836,7 @@ function finishV25({ project, records, tree, flagged, activity, notes, ci, quest
   return {
     name: project.name, model: project.model, repo: project.repo, defaultBranch: project.defaultBranch,
     flagged, activity, notes, ci, headline, items: null, openItems: null, questions, pulls, otherPulls, asking: askingRows,
-    recording: [...recording.keys()],
+    recording: [...recording.keys()], beingRecorded: beingRecorded || [],
     sprint, itemsText: V25_NOT_RECORDED, runningText: V25_NOT_RECORDED,
     answeredCards: {}, rulings: {}, v5Waits: [], sessions: null, timelines: [], allEntries: [],
     logLoaded: true,

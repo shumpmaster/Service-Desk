@@ -431,3 +431,30 @@ test('J6 (AC79): commitTime and jobLog: a sixth answered null, a jobLog entry no
   assert.deepEqual(sk.jobLog['1'], { job: { status: 'completed', conclusion: 'skipped' }, ran: false, lines: null, tooLarge: false });
   assert.ok(!k.calls.some((c) => /\/logs$/.test(c.url)));
 });
+
+test('J6 (AC79; security review round 1, F and G): the commit and jobs reads refuse redirects; odd entries answer null, never a 400; jobLog null for a v2.5 project', async () => {
+  _resetKeyCache();
+  const jwt = await signJwt(key, goodClaims());
+  const sha = HEADS[0];
+  const f = fakeFetch([certsRoute([key]),
+    (url) => (/\/commits\/[0-9a-f]{40}$/.test(url) ? { status: 301, headers: { Location: 'https://api.github.com/repositories/1/commits/x' } } : undefined),
+    (url) => (/\/actions\/runs\/\d+\/jobs\?per_page=30$/.test(url) ? { status: 302, headers: { Location: 'https://elsewhere.example.invalid/jobs' } } : undefined)]);
+  const res = await call('blobs', request('/api/blobs', { jwt, body: { project: 'Service-Desk', blobs: [], history: [],
+    commitTime: [sha, 7, 'x'.repeat(101), { a: 1 }], jobLog: ['11', 12, 'y'.repeat(101), null] } }), f);
+  assert.equal(res.status, 200, 'never a 400 for an odd entry');
+  const body = await res.json();
+  assert.equal(body.commitTime[sha], null, 'a redirected commit read is a failed read');
+  assert.equal(body.jobLog['11'], null, 'a redirected jobs read is a failed read');
+  for (const k of ['7', '{"a":1}']) assert.equal(body.commitTime[k], null, k);
+  assert.equal(body.commitTime['x'.repeat(100)], null, 'an over-long entry answers null');
+  for (const k of ['12', 'null']) assert.equal(body.jobLog[k], null, k);
+  assert.ok(f.calls.filter((c) => c.url.startsWith('https://api.github.com/repos/')).every((c) => c.init.redirect === 'manual'));
+  assert.ok(!f.calls.some((c) => /repositories\/1|elsewhere/.test(c.url)), 'no redirect followed');
+  assert.equal(body.cost.github, 2, 'one commit read and one jobs read');
+  // A v2.5 project: every jobLog entry answers null, and nothing is read.
+  const g = fakeFetch([certsRoute([key])]);
+  const r2 = await call('blobs', request('/api/blobs', { jwt, body: { project: 'Personal-Org-Operating-Model', blobs: [], history: [], jobLog: ['11'] } }), g);
+  assert.equal(r2.status, 200);
+  assert.equal((await r2.json()).jobLog['11'], null);
+  assert.equal(githubCalls(g).length, 0);
+});

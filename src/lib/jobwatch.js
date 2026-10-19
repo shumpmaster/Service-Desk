@@ -36,6 +36,10 @@ const LIST_KEY = { checkRuns: 'check_runs', statuses: null, workflowRuns: 'workf
 const SHA_RE = /^[0-9a-f]{40}$/;
 const GRANT_RE = /^NOTE: the asks-merge grant is (L-\d{4,}[a-z]?)\b/;
 const NO_GRANT_RE = /^NOTE: no asks-merge grant stands/;
+const PR_NUM_RE = /^PR #(\d+):/;
+// The page cannot check that a dispatched run's commit is on the default branch (a tag can be named like
+// it), so it takes no grant line from a `workflow_dispatch` run (security review round 1, C).
+const DISPATCH = 'workflow_dispatch';
 
 /** A fresh opening's state for one project. */
 export function newJobsState() {
@@ -209,11 +213,31 @@ export function noteLedger(js, tree, nowMs) {
 const ms = (t) => (typeof t === 'string' ? Date.parse(t) : NaN);
 const runDone = (r) => r && r.status === 'completed' && r.conclusion !== 'skipped' && r.conclusion !== 'cancelled';
 
-/** The judging runs whose `merge` job may have run, newest first (J16 rule (b), AC79's grant line). */
-function grantRuns(js, project) {
+/** The judging runs whose `merge` job may have run since the grant's epoch, newest first, dispatched ones included. */
+function judgingRuns(js, project) {
   return ((js.runs && js.runs.list) || []).filter((r) => isJudgingRun(r, project.defaultBranch) && runDone(r)
     && ms(r.run_started_at) > js.grant.since)
     .sort((x, y) => ms(y.run_started_at) - ms(x.run_started_at) || y.id - x.id);
+}
+
+/** The runs a grant line may come from (J16 rule (b), AC79): judging runs, never a dispatched one. */
+const grantRuns = (js, project) => judgingRuns(js, project).filter((r) => r.event !== DISPATCH);
+
+/** The pull request numbers a kept log names in its `PR #n:` lines. */
+const namedIn = (lines) => new Set((lines || []).map((l) => PR_NUM_RE.exec(l)).filter(Boolean).map((m) => Number(m[1])));
+
+/**
+ * Security review round 1, C: when the newest judging run is a `workflow_dispatch` run, every candidate
+ * it names counts (the page cannot check its commit is the default branch's). { want: run id | null,
+ * all: true (its log unread or failed: every candidate counts) | false, names: Set }, or null.
+ */
+function dispatchOnTop(js, project) {
+  const top = judgingRuns(js, project)[0];
+  if (!top || top.event !== DISPATCH) return null;
+  const L = js.logs.get(String(top.id));
+  if (!L) return { want: String(top.id), all: true, names: new Set() };
+  if (L.state !== 'ok') return { want: null, all: true, names: new Set() };
+  return { want: null, all: false, names: L.ran ? namedIn(L.lines) : new Set() };
 }
 
 /**
@@ -225,6 +249,12 @@ function grantRuns(js, project) {
  * - no such run read yet, a run with no grant line, another id, or a failed read: no grant (counts).
  */
 export function grantOnPage(js, project) {
+  const g = grantFrom(js, project);
+  g.dispatch = js.ledger.form ? dispatchOnTop(js, project) : null;
+  return g;
+}
+
+function grantFrom(js, project) {
   const form = js.ledger.form;
   if (form === null || js.ledger.failed) return { stands: false, noneByJob: false, want: null, failed: js.ledger.failed };
   // A failed grant read: every pull request counts until the next opening or ledger change (AC79).
@@ -269,6 +299,8 @@ const runById = (js, id) => ((js.runs && js.runs.list) || []).find((r) => r && S
 async function pass(js, project, h, nowMs) {
   const needs = { headTime: false, runs: [] };
   let failed = false;
+  let naming = null; // the newest run whose log names this pull request
+  const lines = (L) => (L.lines || []).join('\n');
   const v = await judgeCandidate({
     number: h.number, checkRuns: h.lists.checkRuns, workflowRuns: h.lists.workflowRuns, statuses: h.lists.statuses,
     asksRuns: (js.runs && js.runs.list) || [], defaultBranch: project.defaultBranch,
@@ -292,7 +324,8 @@ async function pass(js, project, h, nowMs) {
         failed = true;
         return null;
       }
-      return (L.lines || []).join('\n');
+      if (naming == null && namedIn(L.lines).has(h.number)) naming = String(id);
+      return lines(L);
     },
     headTime: async () => {
       if (h.headTime === undefined) {
@@ -303,7 +336,8 @@ async function pass(js, project, h, nowMs) {
     },
     seenMs: ms(h.createdAt), retriedMs: null, nowMs,
   });
-  return { v, needs, failed };
+  const run = naming == null ? null : runById(js, naming);
+  return { v, needs, failed, dispatched: Boolean(run && run.event === DISPATCH) };
 }
 
 const listsReady = (js, h) => Boolean(js.runs) && !js.runsFailed && LISTS.every((l) => Array.isArray(h.lists[l]) && !h.failed[l] && !h.more[l]);
@@ -324,6 +358,7 @@ export async function planReads(js, project, nowMs) {
       plan.jobLog.push(g.want);
       plan.grantRun = g.want;
     }
+    if (g.dispatch && g.dispatch.want && !plan.jobLog.includes(g.dispatch.want)) plan.jobLog.push(g.dispatch.want);
     for (const h of js.heads.values()) {
       if (!js.active.has(h.sha) || h.sticky || h.capped || !listsReady(js, h)) continue;
       const p = await pass(js, project, h, nowMs);
@@ -423,6 +458,11 @@ export async function judgeAll(js, project, cands, nowMs) {
       count(pr, 'capped');
       continue;
     }
+    // The newest judging run is a dispatched one: every candidate it names counts (security C).
+    if (g.dispatch && (g.dispatch.all || g.dispatch.names.has(pr.number))) {
+      count(pr, 'dispatch');
+      continue;
+    }
     if (!listsReady(js, h)) {
       count(pr, js.runsFailed || LISTS.some((l) => h.failed[l]) ? 'failed' : LISTS.some((l) => h.more[l]) ? 'next-page' : 'unread');
       continue;
@@ -432,6 +472,16 @@ export async function judgeAll(js, project, cands, nowMs) {
       p = await pass(js, project, h, nowMs);
     } catch {
       count(pr, 'page');
+      continue;
+    }
+    // A verdict from a dispatched run, or a forged log naming it, counts with no words and is not held
+    // as left: a later well-formed run on the default branch judges it again (security A and C).
+    if (p.dispatched) {
+      count(pr, 'dispatch');
+      continue;
+    }
+    if (p.v.forged) {
+      count(pr, 'forged');
       continue;
     }
     if (p.v.left) {

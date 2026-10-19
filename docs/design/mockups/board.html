@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Board Mockup</title>
+<style>
+/* Layout: one column of labelled phone frames, each a state of the proposed board; a wide frame shows the
+   two lanes side by side. Tokens, type roles and spacing scale copied from src/public/sandbox.css (AC48, AC62),
+   so it reads as the same desk: coral only for what waits on the owner, green only for a confirmed done. */
+:root {
+  --page: #eef0f2; --surf: #ffffff; --surf2: #e4e7ea; --ink: #0b0d10; --muted: #4b525b; --line: #c9cdd3; --soft: #8a919a;
+  --you: #d23c0f; --yous: #fbe4dc; --pass: #0f7a3a; --passs: #dcefe2; --gold: #8a6a10; --golds: #f4ecd2;
+  --focus: #1d5bd6; --on: #ffffff; --shadow: rgb(11 13 16 / .18);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 20px; --s5: 32px;
+  --t-screen: 800 1.45rem/1.2 var(--font);
+  --t-section: 800 .74rem/1.3 var(--font);
+  --t-item: 700 1rem/1.3 var(--font);
+  --t-body: 400 .94rem/1.5 var(--font);
+  --t-meta: 600 .78rem/1.35 var(--font);
+  --t-code: 500 .74rem/1.3 var(--mono);
+  --r: 6px; --rs: 4px; --track: .07em;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0c0d0f; --surf: #16181c; --surf2: #101215; --ink: #f1f3f5; --muted: #a3a9b2; --line: #363b43; --soft: #6f7680;
+  --you: #ff6a3d; --yous: #3d1b10; --pass: #3fb950; --passs: #112b19; --gold: #c9b04f; --golds: #2c2410;
+  --focus: #6ea0ff; --on: #0b0d10; --shadow: rgb(0 0 0 / .55); color-scheme: dark } }
+:root[data-theme="dark"], .theme-dark {
+  --page: #0c0d0f; --surf: #16181c; --surf2: #101215; --ink: #f1f3f5; --muted: #a3a9b2; --line: #363b43; --soft: #6f7680;
+  --you: #ff6a3d; --yous: #3d1b10; --pass: #3fb950; --passs: #112b19; --gold: #c9b04f; --golds: #2c2410;
+  --focus: #6ea0ff; --on: #0b0d10; --shadow: rgb(0 0 0 / .55); color-scheme: dark }
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { background: var(--page); color: var(--ink); }
+body { font: var(--t-body); margin: 0; overflow-x: hidden; }
+p, h1, h2, h3, ol, ul { margin: 0; }
+h1, h2, h3 { text-wrap: balance; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.wrap { max-width: 900px; margin: 0 auto; padding-block: var(--s4) 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: var(--s5); }
+.intro { display: grid; gap: var(--s3); max-width: 600px; }
+.marker { justify-self: start; border: 1px dashed var(--muted); border-radius: var(--r); padding: var(--s1) var(--s3); font: var(--t-meta); color: var(--muted); }
+.intro h1 { font: var(--t-screen); }
+.lead { color: var(--muted); }
+.code { font: var(--t-code); color: var(--muted); }
+.ex { font: 700 .66rem/1.5 var(--font); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); border: 1px dashed var(--soft); border-radius: 3px; padding: 0 5px; white-space: nowrap; }
+
+/* The frames: one per state, phone width; side by side when the page is wide */
+.frames { display: grid; gap: var(--s5) var(--s4); grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); align-items: start; }
+.state { display: grid; gap: var(--s2); min-width: 0; max-width: 440px; }
+.state.wide { grid-column: 1 / -1; max-width: none; }
+.state > h2 { font: var(--t-item); }
+.state > .sub { font: var(--t-meta); color: var(--muted); }
+.phone { background: var(--page); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: var(--s3); min-width: 0; }
+.phone.fixed { height: 600px; overflow: hidden; position: relative; }
+.phone.fixed .board { container-type: normal; position: static; } /* (b): Done pins to the frame's foot, as it pins to the screen's */
+
+/* The board: the top line, then "Waiting on you", then Done (a drop zone and a short list) below it on a phone */
+.board { container-type: inline-size; position: relative; }
+.bgrid { display: grid; gap: var(--s4); grid-template-areas: "top" "wait" "drop" "done"; }
+.top { grid-area: top; font: var(--t-screen); }
+.lh { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--muted); display: flex; gap: var(--s2); align-items: center; }
+.lh .mk { color: var(--you); }
+.wait { grid-area: wait; display: grid; gap: var(--s3); align-content: start; grid-template-rows: auto; min-height: min(62svh, 560px); }
+.wait.none { grid-template-rows: auto 1fr; align-content: stretch; }
+.cards { list-style: none; padding: 0; display: grid; gap: var(--s3); }
+.empty { border: 1px dashed var(--line); border-radius: var(--r); padding: var(--s5) var(--s3); display: grid; align-content: center; justify-items: center; gap: var(--s2); text-align: center; color: var(--muted); font: var(--t-meta); }
+.empty .tick { font: 800 1.6rem/1 var(--font); color: var(--pass); }
+
+/* A card: what is needed, the project, the one step. A small "Why" fold and "Done ✓" sit at its foot. */
+.card { background: var(--surf); border: 1px solid var(--line); border-left: 4px solid var(--you); border-radius: var(--r); padding: var(--s3) var(--s3) var(--s2);
+  display: grid; gap: var(--s2); position: relative; touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: grab; }
+.ct { font: var(--t-item); padding-right: 36px; overflow-wrap: anywhere; }
+.grip { position: absolute; top: 0; right: 0; width: 44px; height: 44px; display: grid; place-items: center; color: var(--soft); font: 700 1.1rem/1 var(--font); touch-action: none; cursor: grab; }
+.cm { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s2); align-items: center; font: var(--t-meta); color: var(--muted); margin-top: calc(-1 * var(--s1)); }
+.step { display: flex; align-items: center; justify-content: center; gap: var(--s2); min-height: 48px; padding: var(--s2) var(--s3); border-radius: var(--rs);
+  background: var(--you); color: var(--on); font: var(--t-item); text-decoration: none; text-align: center; margin-top: var(--s1); }
+.step:active { filter: brightness(.92); }
+.cfoot { display: flex; align-items: flex-start; gap: var(--s2); }
+.why { flex: 1; min-width: 0; }
+.why summary { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; gap: 6px; font: var(--t-meta); color: var(--muted); cursor: pointer; list-style: none; padding-right: var(--s2); }
+.why summary::-webkit-details-marker { display: none; }
+.why summary::before { content: "▸"; font-size: .7rem; }
+.why[open] summary::before { content: "▾"; }
+.why p { font: var(--t-meta); font-weight: 400; color: var(--muted); padding-bottom: var(--s2); }
+.donebtn, .undo { min-height: 44px; min-width: 44px; padding: 0 var(--s3); border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf); color: var(--ink); font: var(--t-meta); cursor: pointer; flex: none; }
+.note { border-radius: var(--rs); padding: var(--s2) var(--s3); font: var(--t-meta); font-weight: 400; background: var(--yous); color: var(--ink); }
+.note b { color: var(--you); font-weight: 700; }
+.note.next { background: var(--surf2); }
+.note.next b { color: var(--ink); }
+
+/* Drag: the card left behind is a dashed slot; the lifted copy follows the finger */
+.card.ph { border: 1px dashed var(--soft); background: transparent; box-shadow: none; }
+.card.ph > * { visibility: hidden; }
+.lifted { position: fixed; z-index: 50; pointer-events: none; margin: 0; box-shadow: 0 12px 28px var(--shadow); transform: rotate(-1.5deg); cursor: grabbing; }
+.phone.fixed .lifted { position: absolute; }
+
+/* Done: the drop zone, then the short list, then the quiet line for the automatic job */
+.drop { grid-area: drop; border: 2px dashed var(--line); border-radius: var(--r); padding: var(--s3); display: grid; gap: var(--s1); background: var(--page); min-height: 72px; align-content: center; }
+.drop .hint { font: var(--t-meta); font-weight: 400; color: var(--muted); }
+.dragging .drop { position: sticky; bottom: var(--s3); z-index: 40; min-height: 96px; align-content: end; border-color: var(--muted); background: var(--surf2);
+  box-shadow: 0 0 0 var(--s3) var(--page), 0 -6px 22px var(--shadow); } /* the page colour round it hides the cards scrolling under it */
+.drop.over { border-style: solid; border-color: var(--ink); background: var(--surf); }
+.drop.over .hint { color: var(--ink); font-weight: 700; }
+.phone.fixed .drop { position: absolute; left: var(--s3); right: var(--s3); bottom: var(--s3); }
+.done { grid-area: done; display: grid; gap: var(--s2); align-content: start; }
+.dlist { list-style: none; padding: 0; display: grid; gap: var(--s2); }
+.drow { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2) var(--s3); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s1) var(--s3); align-items: center; }
+.drow .dt { font: var(--t-meta); font-size: .86rem; overflow-wrap: anywhere; }
+.drow .dm { font: var(--t-meta); font-weight: 400; color: var(--muted); }
+.drow .ds { font: var(--t-meta); color: var(--muted); }
+.drow.ok .dt { color: var(--muted); }
+.drow.ok .ds { color: var(--ink); white-space: nowrap; }
+.drow.ok .tick { color: var(--pass); }
+.drow .side { display: grid; justify-items: end; gap: var(--s1); }
+.dots::after { content: "…"; }
+@media (prefers-reduced-motion: no-preference) {
+  .dots::after { content: ""; animation: dots 1.4s steps(4, end) infinite; display: inline-block; width: 1em; text-align: left; }
+  @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75%, 100% { content: "…"; } }
+  .card { transition: box-shadow .15s; }
+}
+.local { font: var(--t-meta); font-weight: 400; color: var(--muted); }
+.job { font: var(--t-meta); font-weight: 400; color: var(--muted); padding: var(--s1) 0; }
+
+/* At 700px and wider: the two lanes side by side as columns */
+@container (min-width: 700px) {
+  .bgrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "top top" "wait drop" "wait done"; grid-template-rows: auto auto 1fr; align-items: start; }
+  .wait { min-height: 0; }
+  .dragging .drop { position: static; box-shadow: none; }
+}
+
+/* Below the frames: how each card's one step is chosen */
+.rules { display: grid; gap: var(--s3); max-width: 600px; }
+.rules h2 { font: var(--t-item); }
+.rules ul { padding-left: 1.2em; display: grid; gap: var(--s2); color: var(--muted); }
+.rules li b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="intro">
+    <span class="marker">Mockup · the board · the Orchestrator's proposal · not built</span>
+    <h1>Waiting on you, as a board</h1>
+    <p class="lead">Two lanes: what waits on you, and Done. Each card has one button, for the one step that clears it, opening GitHub as prefilled as GitHub allows. When you've done it, drag the card to Done (on a phone, press and hold first), or tap "Done ✓". The desk then checks GitHub's records. The cards are today's real items. Try it in any frame: the demo fakes GitHub's answer in seconds, not minutes.</p>
+  </div>
+
+  <div class="frames">
+    <section class="state"><h2>(a) Five waiting on you</h2><p class="sub">Today's items, as they would show. Nothing in Done yet.</p>
+      <div class="phone"><div class="board" data-frame="a"></div></div></section>
+    <section class="state"><h2>(b) A card mid-drag</h2><p class="sub">While you drag, Done pins to the bottom of the screen.</p>
+      <div class="phone fixed"><div class="board" data-frame="b"></div></div></section>
+    <section class="state"><h2>(c) Two cards checking</h2><p class="sub">Marked on this phone; not counted while the desk checks GitHub.</p>
+      <div class="phone"><div class="board" data-frame="c"></div></div></section>
+    <section class="state"><h2>(d) One back, still waiting</h2><p class="sub">GitHub confirmed two; #128 came back after about 5 minutes. Times are examples.</p>
+      <div class="phone"><div class="board" data-frame="d"></div></div></section>
+    <section class="state"><h2>(e) Nothing waiting on you</h2><p class="sub">Times are examples.</p>
+      <div class="phone"><div class="board" data-frame="e"></div></div></section>
+    <section class="state"><h2>(f) Dark mode</h2><p class="sub">State (a) in the phone's dark setting.</p>
+      <div class="phone theme-dark"><div class="board" data-frame="f"></div></div></section>
+    <section class="state wide"><h2>At 700px and wider</h2><p class="sub">The same board on a tablet or computer: the lanes sit side by side. (On a phone this frame shows the phone layout.)</p>
+      <div class="phone"><div class="board" data-frame="w"></div></div></section>
+  </div>
+
+  <section class="rules">
+    <h2>How each card's one step is chosen</h2>
+    <ul>
+      <li><b>Merge on GitHub</b> opens the pull request's page, where GitHub's merge button is. For a pull request that needs nothing else from you.</li>
+      <li><b>Add your verdict</b> opens GitHub's new-file page for <span class="code">reviews/&lt;n&gt;/owner.md</span> on the pull request's branch, with "Verdict: PASS" filled in. Only for a pull request whose risk class needs your verdict (R3); it then reads "Step 1 of 2: add your verdict", and once GitHub shows the verdict, "Step 2 of 2: merge".</li>
+      <li><b>Answer</b> opens the answer file for a question, filled in with the question and its options; you put your letter after "Ruling:".</li>
+      <li><b>Approve the deploy</b> opens the deploy run that is waiting for your approval.</li>
+      <li>A card leaves "Waiting on you" only when GitHub's records show the step done. Pull requests the automatic job merges itself are never cards: they are counted in the quiet line under Done.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(() => {
+  const REPO = 'shumpmaster/Service-Desk';
+  const GH = `https://github.com/${REPO}`;
+  const enc = encodeURIComponent;
+  const newFile = (branch, path, text) => `${GH}/new/${branch.split('/').map(enc).join('/')}?filename=${enc(path)}&value=${enc(text)}`;
+  const VERDICT = 'Verdict: PASS\n\nAny suggestions to commit along with the verdict:\n\n';
+  const ANSWER = 'Ruling: \n\nQuestion: questions/P-001-m3a-done-when.md\nMilestone: M3A\n'
+    + 'Question, as put: Approve the new wording of M3A, the Work ahead milestone?\nOptions, as put:\n'
+    + '  A. Approve the new line — "Work ahead planned from the desk (M3A) · done when the desk shows each milestone ahead with the Chief of Staff\'s rough estimate and a rough finish, the owner\'s chosen order of them is recorded from the desk for the Chief of Staff to carry out, and later work that is not a milestone yet can be asked for from the desk as a milestone · phase: Build · why: the owner wants to choose the order of the milestones ahead and to know roughly how long each will take, to set expectations". Its name drops "and scheduled". Work ahead shows this line on M3A\'s row.\n'
+    + '  B. Keep the current line — It stays as written, and M3A is accepted against it with "timing" read as my rough estimates and the rough finish.\n';
+
+  // Today's real items (19 Oct). Each card offers the one step that clears it.
+  const ITEMS = {
+    126: { title: 'Merge: the first rough estimates', ref: '#126', steps: [['Merge on GitHub', `${GH}/pull/126`]], why: 'It needs no verdict from you, only the merge.' },
+    127: { title: 'Merge: your later-work list', ref: '#127', steps: [['Merge on GitHub', `${GH}/pull/127`]], why: 'It needs no verdict from you, only the merge.' },
+    128: { title: 'Merge: Work ahead (M3A)', ref: '#128', steps: [['Merge on GitHub', `${GH}/pull/128`]], why: 'It needs no verdict from you, only the merge.' },
+    130: { title: 'Make two notification files high-risk', ref: '#130',
+      steps: [['Step 1 of 2: add your verdict', newFile('cos/cs23-r3-paths', 'reviews/130/owner.md', VERDICT)], ['Step 2 of 2: merge', `${GH}/pull/130`]],
+      why: 'A high-risk (R3) change, so it needs your verdict before the merge.' },
+    q: { title: 'Approve the new wording of M3A?', ref: 'question', steps: [['Answer', newFile('main', 'decisions/questions/P-001-m3a-done-when.md', ANSWER)]],
+      why: 'Recommended: A, the new line. On GitHub, put A or B after "Ruling:", then commit.' },
+  };
+  const ALL = ['126', '127', '128', '130', 'q'];
+  const ok = (id, t) => ({ id, st: 'ok', t });
+  const FRAMES = {
+    a: { wait: ALL.map((id) => ({ id })), done: [], job: 1 },
+    b: { wait: ALL.map((id) => ({ id })), done: [], job: 1, drag: '127' },
+    c: { wait: [{ id: '128' }, { id: '130' }, { id: 'q' }], done: [{ id: '127', st: 'checking' }, { id: '126', st: 'checking' }], job: 1 },
+    d: { wait: [{ id: '128', bounced: true }, { id: '130' }, { id: 'q' }], done: [ok('127', '16:07'), ok('126', '16:06')], job: 1 },
+    e: { wait: [], done: [ok('q', '16:31'), ok('130', '16:24'), ok('128', '16:12'), ok('127', '16:07'), ok('126', '16:06')], job: 0 },
+    f: { wait: ALL.map((id) => ({ id })), done: [], job: 1 },
+    w: { wait: [{ id: '128' }, { id: '130' }, { id: 'q' }], done: [{ id: '127', st: 'checking' }, { id: '126', st: 'checking' }], job: 1 },
+  };
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const now = () => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+  function cardHTML(w) {
+    const it = ITEMS[w.id];
+    const [label, url] = it.steps[w.step || 0];
+    const note = w.bounced ? `<p class="note"><b>Still waiting:</b> GitHub doesn't show it merged yet</p>`
+      : w.next ? `<p class="note next"><b>Your verdict is in.</b> One step left.</p>` : '';
+    return `<li class="card" data-id="${w.id}">
+      <p class="ct">${esc(it.title)}</p><span class="grip" aria-hidden="true">⠿</span>
+      <p class="cm"><span>Service-Desk</span>${it.ref.startsWith('#') ? `<span class="code">${it.ref}</span>` : ''}<span class="ex">example from 19 Oct</span></p>
+      ${note}
+      <a class="step" href="${url}" target="_blank" rel="noopener"><span>${esc(label)}&nbsp;<span aria-hidden="true">↗</span></span></a>
+      <div class="cfoot"><details class="why"><summary>Why</summary><p>${esc(it.why)}</p></details>
+        <button type="button" class="donebtn" data-done="${w.id}" aria-label="Done: ${esc(it.title)}">Done ✓</button></div>
+    </li>`;
+  }
+  function rowHTML(d) {
+    const it = ITEMS[d.id];
+    const meta = `Service-Desk${it.ref.startsWith('#') ? ` · ${it.ref}` : ''}`;
+    if (d.st === 'checking') return `<li class="drow checking"><div><p class="dt">${esc(it.title)}</p><p class="dm">${meta}</p>
+        <p class="ds">Checking<span class="dots"></span> <span class="local">· marked on this phone only</span></p></div>
+        <button type="button" class="undo" data-undo="${d.id}" aria-label="Undo: ${esc(it.title)}">Undo</button></li>`;
+    return `<li class="drow ok"><div><p class="dt">${esc(it.title)}</p><p class="dm">${meta}</p></div>
+      <p class="ds"><span class="tick">Done ✓</span> ${d.t}</p></li>`;
+  }
+
+  function render(board) {
+    const s = board._s;
+    const n = s.wait.length;
+    board.innerHTML = `<div class="bgrid">
+      <p class="top" aria-live="polite">${n ? `${n} waiting on you` : 'Nothing waiting on you'}</p>
+      <section class="wait${n ? '' : ' none'}" aria-label="Waiting on you"><h3 class="lh"><span class="mk" aria-hidden="true">◆</span>Waiting on you</h3>
+        ${n ? `<ol class="cards">${s.wait.map(cardHTML).join('')}</ol>` : `<p class="empty"><span class="tick" aria-hidden="true">✓</span>When something needs you, it shows here.</p>`}</section>
+      <div class="drop" aria-hidden="true"><h3 class="lh">Done</h3><p class="hint">Drag a card here once you've done it</p></div>
+      <section class="done" aria-label="Done">
+        ${s.done.length ? `<ol class="dlist">${s.done.map(rowHTML).join('')}</ol>` : ''}
+        <p class="job">Being recorded by the automatic job: ${s.job}</p></section></div>`;
+  }
+
+  // The demo's stand-in for GitHub's answer: seconds here, about 5 minutes on the desk.
+  function check(board, id) {
+    const s = board._s;
+    clearTimeout((s.timers ||= {})[id]);
+    const w = s.wait.find((x) => x.id === id) || { id };
+    s.wait = s.wait.filter((x) => x.id !== id);
+    s.done.unshift({ id, st: 'checking', from: w });
+    render(board);
+    const twoStep = ITEMS[id].steps.length === 2 && !w.step;
+    const bounce = id === '128' && !w.bounced;
+    s.timers[id] = setTimeout(() => {
+      const d = s.done.find((x) => x.id === id && x.st === 'checking');
+      if (!d) return;
+      if (twoStep || bounce) {
+        s.done = s.done.filter((x) => x !== d);
+        s.wait.unshift(twoStep ? { id, step: 1, next: true } : { id, bounced: true });
+      } else { d.st = 'ok'; d.t = now(); }
+      render(board);
+    }, bounce ? 6000 : 3000);
+  }
+  function undo(board, id) {
+    const s = board._s;
+    clearTimeout((s.timers || {})[id]);
+    const d = s.done.find((x) => x.id === id);
+    s.done = s.done.filter((x) => x !== d);
+    s.wait.unshift(d.from || { id });
+    render(board);
+  }
+
+  // Drag with plain pointer events: a mouse drags at once, a finger after a 350 ms press (or at once on the grip).
+  function enableDrag(board) {
+    let p = null;
+    const drop = () => board.querySelector('.drop');
+    const overDrop = (x, y) => { const r = drop().getBoundingClientRect(); return x >= r.left - 16 && x <= r.right + 16 && y >= r.top - 24 && y <= r.bottom + 24; };
+    function start() {
+      const r = p.card.getBoundingClientRect();
+      p.ghost = p.card.cloneNode(true);
+      p.ghost.classList.add('lifted');
+      Object.assign(p.ghost.style, { width: `${r.width}px`, left: `${r.left}px`, top: `${r.top}px` });
+      p.dx = p.x - r.left; p.dy = p.y - r.top;
+      board.querySelector('.bgrid').classList.add('dragging');
+      board.closest('.phone').appendChild(p.ghost);
+      p.card.classList.add('ph');
+      p.on = true;
+      if (navigator.vibrate && p.type !== 'mouse') navigator.vibrate(10);
+      tick();
+    }
+    function tick() {
+      if (!p || !p.on) return;
+      const edge = 56, h = innerHeight;
+      if (p.y < edge) scrollBy(0, -8);
+      else if (p.y > h - edge && !overDrop(p.x, p.y)) scrollBy(0, 8);
+      requestAnimationFrame(tick);
+    }
+    function move(x, y) {
+      p.ghost.style.left = `${x - p.dx}px`; p.ghost.style.top = `${y - p.dy}px`;
+      drop().classList.toggle('over', overDrop(x, y));
+    }
+    function end(commit) {
+      if (!p) return;
+      clearTimeout(p.timer);
+      const q = p; p = null;
+      if (!q.on) return;
+      const hit = commit && overDrop(q.x, q.y);
+      q.ghost.remove();
+      q.card.classList.remove('ph');
+      board.querySelector('.bgrid').classList.remove('dragging');
+      drop().classList.remove('over');
+      if (hit) check(board, q.card.dataset.id);
+    }
+    board.addEventListener('pointerdown', (e) => {
+      const card = e.target.closest('.card');
+      if (!card || e.button !== 0 || e.target.closest('a, button, summary, .why p')) return;
+      const grip = !!e.target.closest('.grip');
+      p = { card, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, type: e.pointerType, on: false, id: e.pointerId };
+      try { card.setPointerCapture(e.pointerId); } catch (_) { /* demo only */ }
+      if (e.pointerType !== 'mouse') {
+        if (grip) start(); else p.timer = setTimeout(() => p && start(), 350);
+      }
+    });
+    board.addEventListener('pointermove', (e) => {
+      if (!p || e.pointerId !== p.id) return;
+      p.x = e.clientX; p.y = e.clientY;
+      const far = Math.hypot(p.x - p.sx, p.y - p.sy);
+      if (!p.on) {
+        if (p.type === 'mouse' && far > 4) start();
+        else if (p.type !== 'mouse' && far > 8) { clearTimeout(p.timer); p = null; return; } // a scroll, not a press
+        else return;
+      }
+      e.preventDefault();
+      move(p.x, p.y);
+    });
+    board.addEventListener('pointerup', () => end(true));
+    board.addEventListener('pointercancel', () => end(false));
+    board.addEventListener('touchmove', (e) => { if (p && p.on) e.preventDefault(); }, { passive: false });
+    board.addEventListener('contextmenu', (e) => { if (e.target.closest('.card')) e.preventDefault(); });
+    board.addEventListener('click', (e) => {
+      const d = e.target.closest('[data-done]'); if (d) check(board, d.dataset.done);
+      const u = e.target.closest('[data-undo]'); if (u) undo(board, u.dataset.undo);
+    });
+  }
+
+  // (b): a still of the drag, the card lifted over the pinned Done zone.
+  function still(board) {
+    board.querySelector('.bgrid').classList.add('dragging');
+    const card = board.querySelector(`.card[data-id="${board._s.drag}"]`);
+    const phone = board.closest('.phone');
+    const pr = phone.getBoundingClientRect(), cr = card.getBoundingClientRect();
+    const g = card.cloneNode(true);
+    g.classList.add('lifted');
+    card.classList.add('ph');
+    const d = board.querySelector('.drop');
+    d.classList.add('over');
+    d.querySelector('.hint').textContent = 'Let go to mark it done';
+    phone.appendChild(g);
+    g.style.width = `${cr.width}px`;
+    g.style.left = `${cr.left - pr.left + 10}px`;
+    g.style.top = `${d.offsetTop - g.offsetHeight + 30}px`;
+  }
+
+  document.querySelectorAll('.board').forEach((board) => {
+    const f = FRAMES[board.dataset.frame];
+    board._s = { wait: f.wait.map((x) => ({ ...x })), done: f.done.map((x) => ({ ...x })), job: f.job, drag: f.drag };
+    render(board);
+    if (f.drag) still(board); else enableDrag(board);
+  });
+})();
+</script>
+</body>
+</html>

@@ -6,7 +6,8 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createPublicKey, verify } from 'node:crypto';
 import { encrypt, mintJwt, parseSubscription, parseVapidKey, decodePublicKey, payload, answerKind, cut } from '../../src/notify/webpush.mjs';
-import { firstStep } from '../../src/notify/secrets.mjs';
+import { firstStep, pushConfig } from '../../src/notify/secrets.mjs';
+import { CONFIG } from './helpers.mjs';
 import { harness, makeVapid, makeSubscription, testConfig, decryptPush, checkoutOf, cleanScratch, MIN, HOUR } from './notify-helpers.mjs';
 
 after(cleanScratch);
@@ -85,6 +86,28 @@ test('J17: the keys\' check at the first step, and each secret missing or malfor
   assert.equal(firstStep({ ...env, DESK_NOTIFY_STATE_KEY: 'short' }, testConfig(v)).problem, 'malformed');
   assert.equal(firstStep(env, { ...testConfig(v), push: undefined }).problem, 'config');
   assert.equal(firstStep(env, { ...testConfig(v), push: { vapidPublicKey: 'x', deskUrl: 'https://d.example.invalid' } }).problem, 'config');
+});
+
+// The committed J7 (src/config/projects.json), with the owner's public key (Setup N1, CS18). The
+// owner's private key is never here: a throwaway key's public half is put in a copy of the real config.
+test('J17, J7: the sender\'s first step on the committed config: push is in form, the key a P-256 point; with a matching private key the step passes, with any other it stops at the keys\' check', () => {
+  const real = pushConfig(CONFIG);
+  assert.ok(real, 'J7\'s committed push is in form');
+  assert.equal(real.vapidPublicKey.length, 87);
+  assert.equal(real.publicRaw.length, 65);
+  assert.equal(real.publicRaw[0], 0x04, 'uncompressed');
+  const jwk = { kty: 'EC', crv: 'P-256', x: real.publicRaw.subarray(1, 33).toString('base64url'), y: real.publicRaw.subarray(33).toString('base64url') };
+  assert.equal(createPublicKey({ key: jwk, format: 'jwk' }).asymmetricKeyDetails.namedCurve, 'prime256v1', 'a point on P-256');
+  assert.equal(real.deskUrl, 'https://service-desk-preview.pages.dev', 'the tap opens the preview until launch');
+  const v = makeVapid();
+  const s = makeSubscription();
+  const env = { GITHUB_TOKEN: 't', DESK_VAPID_PRIVATE_KEY: v.pem, DESK_VAPID_SUBJECT: 'mailto:o@example.invalid', DESK_PUSH_SUBSCRIPTION: s.value,
+    DESK_NOTIFY_STATE_KEY: 'a'.repeat(64) };
+  const matching = { ...CONFIG, push: { ...CONFIG.push, vapidPublicKey: v.publicB64 } };
+  const r = firstStep(env, matching);
+  assert.equal(r.ok, true, 'a private key whose public half is J7\'s passes');
+  assert.equal(r.secrets.push.deskUrl, 'https://service-desk-preview.pages.dev');
+  assert.deepEqual(firstStep(env, CONFIG), { ok: false, problem: 'keys', name: 'DESK_VAPID_PRIVATE_KEY' }, 'the throwaway key is not the owner\'s');
 });
 
 test('J17: the answers', () => {

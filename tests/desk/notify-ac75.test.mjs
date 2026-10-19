@@ -123,9 +123,9 @@ test('AC75: each state\'s words, from display-mode, the public key and the permi
   assert.ok(copySteps(CONFIG).some((x) => x.includes('DESK_PUSH_SUBSCRIPTION')));
 });
 
-test('AC75, J7: on the accepted page with J7 as committed (no push key yet), the desk says "Notifications aren\'t set up yet" from the Home Screen; in Safari, how to add it', async () => {
-  assert.equal(CONFIG.push, undefined, 'no push object until the owner hands over the key (Setup N1)');
-  for (const [standalone, words] of [[true, NOTIFY_WORDS['no-key']], [false, NOTIFY_WORDS['not-standalone']]]) {
+test('AC75, J7: on the accepted page with J7 as committed (the owner\'s key, Setup N1, CS18), the desk offers "Turn on notifications" from the Home Screen, never asking on load; in Safari, how to add it', async () => {
+  assert.ok(decodeVapidKey(CONFIG.push.vapidPublicKey), 'J7\'s push holds the owner\'s public key (Setup N1, CS18)');
+  for (const [standalone, words] of [[true, NOTIFY_WORDS.ask], [false, NOTIFY_WORDS['not-standalone']]]) {
     const b = browser({ standalone });
     const app = await loadApp({ repos: repos(), win: b.win, globals: { Notification: b.Notification, navigator: b.navigator } });
     try {
@@ -134,12 +134,35 @@ test('AC75, J7: on the accepted page with J7 as committed (no push key yet), the
       assert.ok(more, 'More detail on Home');
       assert.ok(more.textContent.includes('Notifications'));
       assert.ok(more.textContent.includes(words), words);
+      assert.ok(!more.textContent.includes(NOTIFY_WORDS['no-key']), 'the key is set up: never "aren\'t set up yet"');
       const top = findAll(app.els.view, (e) => e.className === 'notify-top')[0];
       assert.ok(top && top.textContent.includes(words), 'and on Home\'s top line');
       assert.equal(b.calls.requestPermission, 0, 'never asked on load');
     } finally {
       app.restore();
     }
+  }
+});
+
+test('AC75, J7: with no push (a fixture config: J7 without its push object), the desk says "Notifications aren\'t set up yet" from the Home Screen, in More detail and on Home\'s top line, with no button', async () => {
+  const { push: _committed, ...noPush } = CONFIG;
+  assert.equal(noPush.push, undefined, 'the fixture has no push object');
+  assert.deepEqual(validateConfig(noPush), [], 'a missing push alone builds');
+  const b = browser({ standalone: true });
+  const app = await loadSandbox({ config: noPush, repos: repos(), hash: '#/p/Service-Desk', win: b.win,
+    globals: { Notification: b.Notification, navigator: b.navigator } });
+  try {
+    await app.advance(1000);
+    const line = byClass(app.view, 'sb-notify-line')[0];
+    assert.ok(line, 'the Notifications line in More detail');
+    assert.ok(line.textContent.includes(NOTIFY_WORDS['no-key']), line.textContent);
+    assert.equal(sbFindAll(app.view, (e) => e.tag === 'button' && e.textContent === NOTIFY_WORDS.ask).length, 0, 'no "Turn on notifications" without a key');
+    await app.go('#/');
+    const top = byClass(app.view, 'sb-notify').find((n) => n.attrs['data-k'] === 'notify:top');
+    assert.ok(top && top.textContent.includes(NOTIFY_WORDS['no-key']), 'and on Home\'s top line');
+    assert.equal(b.calls.requestPermission, 0, 'never asked');
+  } finally {
+    app.restore();
   }
 });
 
@@ -226,7 +249,9 @@ test('J19, J7: the public key decodes to 65 bytes starting 0x04, 87 characters; 
   for (const k of bad) assert.equal(decodeVapidKey(k), null, String(k));
   const ok = { ...CONFIG, push: { vapidPublicKey: vapid.publicB64, deskUrl: 'https://service-desk-preview.pages.dev' } };
   assert.deepEqual(validateConfig(ok), []);
-  assert.deepEqual(validateConfig(CONFIG), [], 'a missing push alone builds');
+  assert.deepEqual(validateConfig(CONFIG), [], 'the committed key passes the build\'s check');
+  const { push: _committed, ...noPush } = CONFIG;
+  assert.deepEqual(validateConfig(noPush), [], 'a missing push alone builds');
   for (const k of bad.slice(0, 5)) assert.ok(validateConfig({ ...ok, push: { ...ok.push, vapidPublicKey: k } }).some((e) => e.includes('push.vapidPublicKey')));
   for (const u of ['http://service-desk-preview.pages.dev', 'https://x.pages.dev/path', 'https://x.pages.dev/?a=1', 'not a url', 7]) {
     assert.ok(validateConfig({ ...ok, push: { ...ok.push, deskUrl: u } }).some((e) => e.includes('push.deskUrl')), String(u));

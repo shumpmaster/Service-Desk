@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Desk Mockup v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* The desk, mockup v2 (19 Oct). Not built. Linear's general theme as a starting point, not a copy: a white ground,
+   hairline rows, small grey section heads, a large title with a round icon pill, floating rounded sheets and bar.
+   Ours: IBM Plex Sans with Plex Mono for ids and times; vermilion means only "needs you"; phase colours from the
+   approved swatches (docs/design/mockups/colour-swatches.html), always with the phase's name.
+   Type, sized as close to Linear's as we can: 24, 18, 15, 13, 12 and 11 px; weights 400, 500, 600.
+   Text boxes keep 16 px (decisions/questions/P-001-text-box-size.md). */
+:root {
+  --bg: #ffffff; --bg2: #f7f7f8; --card: #fbfbfb; --chip: #f1f1f3; --line: #e7e7ea; --line2: #d6d6db;
+  --ink: #18191c; --ink2: #5c5f66; --ink3: #6a6d75;
+  --you: #c9380c; --on-you: #ffffff; --ok: #12733a; --bad: #b3162a; --gold: #8a6a10;
+  --ph-disc: #0f766e; --ph-des: #9d2f7e; --ph-build: #5c6a10; --ph-launch: #7a5a48;
+  --b-tech: #5c5f66; --b-ctx: #ad606a; --b-why: #756592;
+  --shadow: 0 8px 28px rgb(24 25 28 / .12), 0 1px 3px rgb(24 25 28 / .08); --scrim: rgb(24 25 28 / .32);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1012; --bg2: #141517; --card: #17181b; --chip: #212226; --line: #26282c; --line2: #34363c;
+  --ink: #ecedef; --ink2: #a2a5ac; --ink3: #9a9da5;
+  --you: #ff6a3d; --on-you: #0f1012; --ok: #4cc06a; --bad: #ff6b78; --gold: #c9b04f;
+  --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
+  --b-tech: #a2a5ac; --b-ctx: #bc7e8d; --b-why: #c7adcb;
+  --shadow: 0 8px 28px rgb(0 0 0 / .55), 0 0 0 1px rgb(255 255 255 / .05); --scrim: rgb(0 0 0 / .58); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1012; --bg2: #141517; --card: #17181b; --chip: #212226; --line: #26282c; --line2: #34363c;
+  --ink: #ecedef; --ink2: #a2a5ac; --ink3: #9a9da5;
+  --you: #ff6a3d; --on-you: #0f1012; --ok: #4cc06a; --bad: #ff6b78; --gold: #c9b04f;
+  --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
+  --b-tech: #a2a5ac; --b-ctx: #bc7e8d; --b-why: #c7adcb;
+  --shadow: 0 8px 28px rgb(0 0 0 / .55), 0 0 0 1px rgb(255 255 255 / .05); --scrim: rgb(0 0 0 / .58); color-scheme: dark }
+/* Each phone frame fixes its own theme, so the frames read the same whatever the page's */
+.theme-light {
+  --bg: #ffffff; --bg2: #f7f7f8; --card: #fbfbfb; --chip: #f1f1f3; --line: #e7e7ea; --line2: #d6d6db;
+  --ink: #18191c; --ink2: #5c5f66; --ink3: #6a6d75;
+  --you: #c9380c; --on-you: #ffffff; --ok: #12733a; --bad: #b3162a; --gold: #8a6a10;
+  --ph-disc: #0f766e; --ph-des: #9d2f7e; --ph-build: #5c6a10; --ph-launch: #7a5a48;
+  --b-tech: #5c5f66; --b-ctx: #ad606a; --b-why: #756592;
+  --shadow: 0 8px 28px rgb(24 25 28 / .12), 0 1px 3px rgb(24 25 28 / .08); --scrim: rgb(24 25 28 / .32); color-scheme: light }
+.theme-dark {
+  --bg: #0f1012; --bg2: #141517; --card: #17181b; --chip: #212226; --line: #26282c; --line2: #34363c;
+  --ink: #ecedef; --ink2: #a2a5ac; --ink3: #9a9da5;
+  --you: #ff6a3d; --on-you: #0f1012; --ok: #4cc06a; --bad: #ff6b78; --gold: #c9b04f;
+  --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
+  --b-tech: #a2a5ac; --b-ctx: #bc7e8d; --b-why: #c7adcb;
+  --shadow: 0 8px 28px rgb(0 0 0 / .55), 0 0 0 1px rgb(255 255 255 / .05); --scrim: rgb(0 0 0 / .58); color-scheme: dark }
+:root {
+  --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --t-title: 600 24px/1.2 var(--font);      /* a screen's title */
+  --t-sheet: 600 18px/1.3 var(--font);      /* a sheet's title */
+  --t-lead: 400 15px/1.45 var(--font);      /* the one sentence; a sheet's question text */
+  --t-row: 500 13px/1.35 var(--font);       /* a row's title */
+  --t-body: 400 13px/1.45 var(--font);      /* body and quoted record text */
+  --t-small: 400 12px/1.4 var(--font);      /* secondary lines, board titles use 500 */
+  --t-label: 500 11px/1.35 var(--font);     /* section and lane heads, buttons on the board */
+  --t-mono: 400 11px/1.4 var(--mono);       /* ids, ages, times */
+  --t-input: 400 16px/1.4 var(--font);      /* anything you type in: 16 px, so the phone never zooms */
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--ink); }
+body { margin: 0; font: var(--t-body); overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+p, h1, h2, h3, h4, h5, ol, ul { margin: 0; }
+ol, ul { list-style: none; padding: 0; }
+a { color: inherit; text-decoration: none; }
+b, strong { font-weight: 600; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* ---------- the page around the frames ---------- */
+.wrap { max-width: 1360px; margin: 0 auto; padding: 24px 16px 56px; display: grid; gap: 32px; }
+.intro { display: grid; gap: 10px; max-width: 720px; }
+.intro h1 { font: var(--t-title); }
+.intro p, .notes li { font: var(--t-body); color: var(--ink2); }
+.tagline { justify-self: start; font: var(--t-label); color: var(--ink2); border: 1px solid var(--line2); border-radius: 4px; padding: 2px 8px; }
+.frames { display: grid; gap: 44px 28px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 414px), 414px)); justify-content: center; align-items: start; }
+.fr { display: grid; gap: 8px; min-width: 0; }
+.fr > h2 { font: var(--t-row); }
+.fr > .cap { font: var(--t-small); color: var(--ink2); min-height: 3.6em; }
+.notes { display: grid; gap: 8px; max-width: 720px; }
+.notes h2 { font: var(--t-row); }
+.notes ul { display: grid; gap: 6px; padding-left: 1.2em; list-style: disc; }
+.shot { width: 100%; max-width: 414px; border: 1px solid var(--line); border-radius: 28px; display: block; }
+
+/* ---------- a phone ---------- */
+.phone { position: relative; width: min(414px, 100%); height: 896px; overflow: hidden; background: var(--bg); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 28px; font: var(--t-body); }
+.scr { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; padding: 14px 16px 112px; display: grid; gap: 12px; align-content: start; scrollbar-width: none; }
+.scr::-webkit-scrollbar { display: none; }
+body.single { overflow: hidden; }
+body.single .wrap { padding: 0; display: block; max-width: none; }
+body.single .phone { width: 100vw; height: 100vh; border: 0; border-radius: 0; }
+body.full { overflow: visible; }
+body.full .phone { height: auto; overflow: visible; }
+body.full .scr { position: relative; overflow: visible; padding-bottom: 24px; }
+body.full .bar { display: none; }
+body.full .tph, body.full .thead { position: static; }
+
+/* ---------- shared bits ---------- */
+.mono { font: var(--t-mono); color: var(--ink2); }
+.small { font: var(--t-small); color: var(--ink2); }
+.ink { color: var(--ink); }
+.ex { display: inline-block; font: var(--t-label); color: var(--ink2); border: 1px dashed var(--ink2); border-radius: 4px; padding: 0 4px; line-height: 15px; vertical-align: 1px; white-space: nowrap; }
+.real { font: var(--t-label); color: var(--ink2); }
+svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+svg.s { width: 16px; height: 16px; flex: none; }
+svg.k { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.you { color: var(--you); }
+.okc { color: var(--ok); }
+.badc { color: var(--bad); }
+
+/* the top: large title, a round icon pill */
+.top { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 44px; }
+.top.back { grid-template-columns: auto minmax(0, 1fr) auto; }
+.title { font: var(--t-title); letter-spacing: -.01em; overflow-wrap: anywhere; }
+.pill { display: flex; gap: 0; padding: 2px; border-radius: 24px; background: var(--bg); box-shadow: var(--shadow); }
+.ib, .round { width: 44px; height: 44px; border-radius: 22px; display: grid; place-items: center; color: var(--ink); }
+.round { box-shadow: var(--shadow); background: var(--bg); }
+.sub { font: var(--t-small); color: var(--ink2); margin-top: -6px; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: center; }
+.quiet { display: flex; flex-wrap: wrap; gap: 0 6px; align-items: center; }
+.ql { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; font: var(--t-small); color: var(--ink2); }
+.ql b { font-weight: 500; color: var(--ink); }
+
+/* section heads: small, grey, with a count */
+.sh { display: flex; align-items: center; justify-content: space-between; gap: 8px; font: var(--t-label); color: var(--ink2); padding-top: 10px; min-height: 28px; }
+.sh .c { font: var(--t-mono); }
+
+/* rows: an icon, the title, a grey line, a quiet trailing value */
+.rows { display: grid; }
+.row { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 2px 10px; align-items: start; padding: 9px 0; min-height: 40px; width: 100%; }
+.rows > li + li > .row, .rows > li + li > details > summary { border-top: 1px solid var(--line); }
+.row .ic { padding-top: 1px; }
+.row .rt { display: grid; gap: 2px; min-width: 0; }
+.row .tt { font: var(--t-row); overflow-wrap: break-word; }
+.row .tt.soft { color: var(--ink2); font-weight: 400; }
+.row .v { font: var(--t-mono); color: var(--ink2); text-align: right; white-space: nowrap; padding-top: 1px; }
+.row .v.w { font: var(--t-small); }
+.chev { color: var(--ink2); font: var(--t-small); }
+
+/* ---------- the board ---------- */
+.lanes { display: grid; grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr) minmax(0, 1fr); gap: 6px; align-items: start; }
+.lane { min-width: 0; display: grid; gap: 6px; align-content: start; }
+.lh { font: 600 11px/1.3 var(--font); color: var(--ink); padding: 4px 0 6px; border-bottom: 1px solid var(--line); height: 44px; display: flex; flex-direction: column; justify-content: flex-end; }
+.lh .c { font: var(--t-mono); color: var(--ink2); }
+.grp { display: flex; align-items: center; gap: 4px; min-height: 26px; font: var(--t-label); color: var(--ink2); width: 100%; flex-wrap: wrap; padding-top: 2px; }
+.grp .n { color: var(--ink); overflow-wrap: anywhere; }
+.grp .c { font: var(--t-mono); }
+.card { display: grid; gap: 3px; padding: 6px 7px 7px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); min-width: 0; }
+.card .kd { display: flex; align-items: center; gap: 4px; font: var(--t-label); color: var(--ink2); min-width: 0; }
+.card .kd svg { color: var(--you); }
+.card.done .kd svg, .card.conf .kd svg { color: var(--ink2); }
+.card .t { font: 500 12px/1.33 var(--font); overflow-wrap: break-word; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.card.done .t { color: var(--ink2); font-weight: 400; }
+.card .m { font: var(--t-mono); color: var(--ink2); overflow-wrap: anywhere; }
+.card .mk { display: flex; gap: 4px; align-items: flex-start; font: var(--t-label); color: var(--ink); }
+.card .mk svg { margin-top: 1px; }
+.card .why { font: var(--t-small); font-size: 11px; color: var(--ink); }
+.step { display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-height: 28px; padding: 0 8px; border: 1px solid var(--line2); border-radius: 6px; font: var(--t-label); color: var(--ink); background: var(--bg); white-space: nowrap; justify-self: start; }
+.steps { display: flex; flex-wrap: wrap; gap: 4px; }
+.undo { min-height: 28px; padding: 0 4px; font: var(--t-label); color: var(--ink2); text-decoration: underline; text-underline-offset: 2px; }
+.gatebtns { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.gatebtns .step { width: 100%; padding: 0 2px; min-height: 26px; }
+.card.gate { border-color: var(--line2); border-width: 1px 1px 1px 1px; background: var(--bg); }
+.card.gate .gl { font: var(--t-small); font-size: 11px; color: var(--ink); }
+.card.gate .gl span { color: var(--ink2); }
+.drow { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 2px 4px; padding: 5px 0 6px; border-bottom: 1px solid var(--line); min-width: 0; }
+.drow svg { color: var(--ok); margin-top: 1px; }
+.drow .t { font: 400 12px/1.33 var(--font); color: var(--ink2); overflow-wrap: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.drow .m { grid-column: 2; font: var(--t-mono); color: var(--ink2); }
+.empty { font: var(--t-small); font-size: 11px; color: var(--ink2); padding: 4px 0; }
+.more { display: inline-flex; align-items: center; min-height: 28px; font: var(--t-label); color: var(--ink2); }
+.filter { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fchip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 4px 0 12px; border-radius: 16px; background: var(--chip); font: var(--t-label); color: var(--ink); }
+.fchip .x { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 14px; }
+
+/* ---------- the floating bar ---------- */
+.bar { position: absolute; left: 16px; right: 16px; bottom: 14px; height: 60px; border-radius: 30px; background: var(--bg); box-shadow: var(--shadow); display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; z-index: 3; }
+.tab { display: grid; justify-items: center; align-content: center; gap: 1px; border-radius: 26px; font: var(--t-label); color: var(--ink2); position: relative; min-height: 52px; }
+.tab[aria-current="page"] { color: var(--ink); background: var(--chip); }
+.badge { position: absolute; top: 4px; left: calc(50% + 6px); min-width: 18px; height: 18px; border-radius: 9px; background: var(--you); color: var(--on-you); font: 600 11px/18px var(--font); text-align: center; padding: 0 5px; }
+
+/* ---------- sheets ---------- */
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 4; }
+.sheet { position: absolute; left: 8px; right: 8px; bottom: 8px; max-height: calc(100% - 56px); overflow-y: auto; border-radius: 26px; background: var(--bg); box-shadow: var(--shadow); padding: 6px 16px 18px; display: grid; gap: 12px; align-content: start; z-index: 5; scrollbar-width: none; }
+.grab { justify-self: center; width: 36px; height: 5px; border-radius: 3px; background: var(--line2); }
+.shead { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 8px; align-items: start; margin-top: -4px; }
+.x44 { width: 44px; height: 44px; border-radius: 22px; display: grid; place-items: center; background: var(--chip); color: var(--ink); }
+.stitle { font: var(--t-sheet); overflow-wrap: break-word; }
+.lead { font: var(--t-lead); }
+.marks { display: grid; gap: 6px; }
+.mark { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: start; font: var(--t-small); color: var(--ink); }
+.mark b { font-weight: 600; }
+.opts { display: grid; gap: 8px; }
+.opt { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.opt .ot { display: grid; gap: 2px; min-width: 0; }
+.opt .ol { font: var(--t-row); }
+.opt .od { font: var(--t-small); color: var(--ink2); }
+.opt .rec { font: var(--t-label); color: var(--ink); background: var(--chip); border-radius: 4px; padding: 1px 5px; justify-self: start; }
+.abtn { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 12px; border-radius: 18px; background: var(--chip); font: var(--t-label); font-size: 12px; color: var(--ink); white-space: nowrap; }
+.abtn.danger { box-shadow: inset 0 0 0 1px var(--line2); background: var(--bg); }
+.field { display: grid; gap: 6px; }
+.field label { font: var(--t-label); color: var(--ink2); }
+textarea { font: var(--t-input); color: var(--ink); background: var(--bg2); border: 1px solid var(--line2); border-radius: 10px; padding: 10px 12px; min-height: 64px; width: 100%; resize: vertical; }
+textarea::placeholder { color: var(--ink3); }
+.slist { display: grid; }
+.sitem { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 44px; font: var(--t-row); width: 100%; }
+.sitem + .sitem { border-top: 1px solid var(--line); }
+.sitem .v { font: var(--t-small); color: var(--ink2); }
+.quote { font: var(--t-body); color: var(--ink); border-left: 2px solid var(--line2); padding: 2px 0 2px 10px; }
+.quote.clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
+.blk { display: grid; gap: 4px; }
+.blk h4 { font: var(--t-label); color: var(--ink2); }
+.verd { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 8px; align-items: baseline; }
+.verd .vw { font: var(--t-row); }
+.inl { font-weight: 500; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.lnk { font: var(--t-label); font-size: 12px; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; min-height: 28px; display: inline-flex; align-items: center; }
+
+/* ---------- a project's page ---------- */
+.seg { display: inline-grid; grid-auto-flow: column; gap: 2px; padding: 2px; border-radius: 10px; background: var(--chip); justify-self: start; }
+.seg a { min-height: 32px; min-width: 88px; padding: 0 12px; display: grid; place-items: center; border-radius: 8px; font: var(--t-label); font-size: 12px; color: var(--ink2); }
+.seg a[aria-current="page"] { background: var(--bg); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+.strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.ph { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.ph .bar3 { height: 3px; border-radius: 2px; background: var(--phc); }
+.ph.plan .bar3 { background: repeating-linear-gradient(90deg, var(--phc) 0 6px, transparent 6px 10px); opacity: .7; }
+.ph.past .bar3 { opacity: .55; }
+.ph .pn { display: flex; align-items: center; gap: 5px; font: var(--t-label); font-size: 12px; color: var(--ink); }
+.ph .ps { font: var(--t-label); font-weight: 400; color: var(--ink2); }
+.ph.now .pn { font-weight: 600; }
+.ph-disc { --phc: var(--ph-disc); } .ph-des { --phc: var(--ph-des); } .ph-build { --phc: var(--ph-build); } .ph-launch { --phc: var(--ph-launch); }
+.dot { width: 8px; height: 8px; border-radius: 2px; background: var(--phc); flex: none; display: inline-block; }
+.std { display: grid; }
+.std > li + li { border-top: 1px solid var(--line); }
+.stdr { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 14px; gap: 2px 10px; align-items: center; min-height: 44px; width: 100%; padding: 8px 0; }
+.stdr .sn { font: var(--t-row); }
+.stdr .sd { grid-column: 2 / 4; font: var(--t-small); color: var(--ink2); }
+.stdr .sd b { font-weight: 500; color: var(--ink); }
+.stdr .sv { font: var(--t-small); color: var(--ink2); text-align: right; }
+.stdr .sv b { font-weight: 500; color: var(--ink); }
+.stdl { display: grid; gap: 0; padding: 0 0 10px 20px; position: relative; }
+.stdl::before { content: ""; position: absolute; left: 4px; top: 6px; bottom: 14px; width: 1px; background: var(--line2); }
+.stdl .arrow { position: absolute; left: -1px; top: -2px; font: 400 11px/1 var(--font); color: var(--ink2); }
+.runh { font: var(--t-label); color: var(--ink2); padding: 8px 0 2px; }
+.subh { font: var(--t-label); font-weight: 400; color: var(--ink2); padding: 6px 0 0; }
+.sm { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: start; padding: 6px 0; }
+.sm .smt { display: grid; gap: 1px; min-width: 0; }
+.sm .smn { font: var(--t-row); font-weight: 400; }
+.sm .smn .id { font: var(--t-mono); color: var(--ink2); margin-right: 4px; }
+.sm .sms { font: var(--t-small); color: var(--ink2); }
+.sm.soft .smn { color: var(--ink2); }
+.sm.old .smn { font-size: 12px; color: var(--ink2); }
+.callout { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; padding: 10px 12px; border-radius: 10px; background: var(--bg2); font: var(--t-small); color: var(--ink); }
+.callout.youc { box-shadow: inset 0 0 0 1px var(--you); background: var(--bg); }
+.meter { height: 4px; border-radius: 2px; background: var(--line); position: relative; overflow: hidden; margin-top: 4px; }
+.meter i { position: absolute; inset: 0 auto 0 0; background: var(--ink2); }
+.meter.y i { background: var(--you); }
+.notused { display: grid; gap: 0; }
+.notused li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+.notused .nt { font: var(--t-row); font-weight: 400; color: var(--ink2); }
+.notused .nw { font: var(--t-small); color: var(--ink2); }
+.exbanner { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border: 1px dashed var(--ink2); border-radius: 10px; font: var(--t-small); color: var(--ink); }
+
+/* ---------- the Timeline ---------- */
+.goal { display: grid; gap: 4px; padding: 10px 12px; border-radius: 10px; background: var(--bg2); }
+.goal h4 { font: var(--t-label); color: var(--ink2); }
+.goal q { font: var(--t-body); quotes: "\201C" "\201D"; }
+.feed { position: relative; display: grid; }
+.tblk { position: relative; display: grid; padding-bottom: 6px; }
+.thead { position: sticky; top: -14px; z-index: 2; background: var(--bg); display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; align-items: center; margin: -14px -16px 0; padding: 8px 16px; border-bottom: 1px solid var(--line); }
+.thead .tn { font: 600 15px/1.3 var(--font); overflow-wrap: anywhere; }
+.thead .round { box-shadow: none; background: var(--chip); }
+.tph { position: sticky; top: 46px; z-index: 1; background: var(--bg); display: flex; align-items: center; gap: 8px; min-height: 36px; border-bottom: 1px solid var(--line); margin: 0 -16px; padding: 0 16px; }
+.tph .pn { font: 600 12px/1.3 var(--font); }
+.tph .pd { margin-left: auto; font: var(--t-mono); color: var(--ink2); text-align: right; }
+.tseg { position: relative; padding-left: 26px; }
+.tseg::before { content: ""; position: absolute; left: 7px; top: 0; bottom: 0; width: 1.5px; background: var(--phc); opacity: .55; }
+.tseg.plan::before { background: repeating-linear-gradient(var(--phc) 0 4px, transparent 4px 8px); opacity: .7; }
+.began { font: var(--t-small); color: var(--ink2); padding: 8px 0 2px; }
+.ms { position: relative; display: grid; gap: 3px; padding: 10px 0 8px; }
+.ms > .msi { position: absolute; left: -26px; top: 10px; background: var(--bg); border-radius: 8px; }
+.ms .mst { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
+.ms .mstt { font: var(--t-row); }
+.ms .msm { font: var(--t-mono); color: var(--ink2); }
+.ms .msd { font: var(--t-small); color: var(--ink2); }
+.ms .msd b { font-weight: 500; color: var(--ink); }
+.tseg > .fold { display: flex; }
+.fold { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; font: var(--t-label); color: var(--ink2); }
+.nowl { display: flex; align-items: center; gap: 8px; margin: 4px 0; font: 500 11px/1.4 var(--mono); color: var(--ink); letter-spacing: .04em; min-height: 28px; }
+.nowl::before { content: ""; width: 16px; height: 2px; background: var(--ink); }
+.nowl::after { content: ""; flex: 1; border-top: 1px solid var(--ink); }
+.nowl .s { font: var(--t-small); letter-spacing: 0; color: var(--ink2); }
+.sps { display: grid; gap: 0; margin-top: 4px; border-top: 1px solid var(--line); }
+.sp { display: grid; gap: 6px; padding: 10px 0 12px; border-bottom: 1px solid var(--line); }
+.sp .sph { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.sp .spm { font: var(--t-mono); color: var(--ink2); }
+.sp .stats { display: flex; gap: 8px; font: var(--t-label); font-weight: 400; color: var(--ink2); white-space: nowrap; }
+.sp .stats span { display: inline-flex; align-items: center; gap: 2px; }
+.sp .spt { font: var(--t-row); }
+.bl { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 8px; align-items: start; padding-left: 8px; border-left: 2px solid var(--bc, var(--line2)); }
+.bl .bn { font: var(--t-label); color: var(--bc, var(--ink2)); padding-top: 1px; }
+.bl .bt { font: var(--t-small); color: var(--ink); overflow-wrap: anywhere; }
+.bl .bt .src { color: var(--ink2); }
+.bl .bt.mono { font: var(--t-mono); color: var(--ink2); }
+.bl .bt.nr { color: var(--ink2); }
+.bl.tech { --bc: var(--b-tech); } .bl.ctx { --bc: var(--b-ctx); } .bl.why { --bc: var(--b-why); }
+.plain .bl { --bc: var(--line2); }
+.plain .bl .bn { color: var(--ink2); }
+.cmp { display: grid; grid-template-columns: 1fr; gap: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="intro">
+    <span class="tagline">Mockup · the desk, version 2 · not built · 19 Oct</span>
+    <h1>The desk, mockup v2</h1>
+    <p>Your board, your project pages, the Timeline you like, and a first look at the level above your projects, drawn as your rulings of 19 Oct add up. Linear's general look is the starting point, not a copy. Items from Service-Desk and Personal-Org-Operating-Model are real ones from their records, shown as examples from 19 Oct at 16:30 (Chicago time). Everything for <b>Members Letter</b> is made up, to show a project that uses every part of the model, and is marked "Example" wherever it appears. The README beside this file says which ruling each choice follows and what is left for you to judge.</p>
+  </div>
+  <div class="frames" id="frames"></div>
+  <section class="notes">
+    <h2>Left for you to judge (not ruled)</h2>
+    <ul>
+      <li>Three tabs (Waiting, Plan, Projects), with ideas in Plan and the portfolio at the foot of Projects, or a fourth Portfolio tab.</li>
+      <li>Technical, Context and Why on the Timeline: labels with their own colours (frame 7a), or labels in grey (frame 7b).</li>
+      <li>One "why not written yet" line per phase list, in place of the same words on every standard milestone.</li>
+      <li>Whether a pull request waiting on a domain reviewer's verdict counts under "With the agents".</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(() => {
+  const GH = 'https://github.com/shumpmaster/Service-Desk';
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  // ---------- icons ----------
+  const I = {
+    filter: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>',
+    more: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.1"/><circle cx="12" cy="12" r="1.1"/><circle cx="19" cy="12" r="1.1"/></svg>',
+    back: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
+    close: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    order: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4"/></svg>',
+    Waiting: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h4l2 3h4l2-3h4"/><path d="M5 6h14l1 7v5H4v-5z"/></svg>',
+    Plan: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h1M4 12h1M4 18h1"/></svg>',
+    Projects: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z"/></svg>',
+  };
+  // the kinds of ask, told apart by icon and word, never by colour (S-001 AC38)
+  const K = {
+    pr: '<svg class="k" viewBox="0 0 16 16" aria-hidden="true"><circle cx="4" cy="3.5" r="1.6"/><circle cx="4" cy="12.5" r="1.6"/><circle cx="12" cy="12.5" r="1.6"/><path d="M4 5.1v5.8M12 10.9V7a2 2 0 0 0-2-2H7.5M9 3.5L7.5 5 9 6.5"/></svg>',
+    q: '<svg class="k" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.3"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"/><circle cx="8" cy="11.6" r=".5" fill="currentColor"/></svg>',
+    gate: '<svg class="k" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3.5h12M3 6h10M4.5 3.5V14M11.5 3.5V14"/></svg>',
+    deploy: '<svg class="k" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13.5V3M4 7l4-4 4 4M3 13.5h10"/></svg>',
+    spend: '<svg class="k" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 11.5a5.5 5.5 0 1 1 11 0"/><path d="M8 11.5l3-3.5"/></svg>',
+    stop: '<svg class="k" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 2h5L14 5.5v5L10.5 14h-5L2 10.5v-5z"/><path d="M8 5v3.5M8 10.8v.2"/></svg>',
+    kick: '<svg class="k" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4L2.5 7.5 6 11"/><path d="M3 7.5h7a3.5 3.5 0 0 1 0 7H8"/></svg>',
+    done: '<svg class="k" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>',
+    lock: '<svg class="k" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="7" width="9" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>',
+    clock: '<svg class="k" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6V8l2.4 1.6"/></svg>',
+    agents: '<svg class="k" viewBox="0 0 16 16" aria-hidden="true"><circle cx="6" cy="5.5" r="2.3"/><path d="M2 13.5a4 4 0 0 1 8 0M10.5 3.5a2.3 2.3 0 0 1 0 4.4M12 9.6a4 4 0 0 1 2 3.9"/></svg>',
+    eye: '<svg class="k" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>',
+    proj: '<svg class="k" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4.5h4.5l1.3 1.3H14V13H2z"/></svg>',
+  };
+  // milestone and sprint statuses: an icon inside a plain circle (trial-view notes 2, note 23)
+  const ST = (kind) => {
+    const c = '<circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.4"/>';
+    const d = '<circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2.2 2"/>';
+    const body = {
+      reached: `${c}<path d="M5 8.2l2 2 4-4.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+      gone: `<g opacity=".5">${c}<path d="M5 8.2l2 2 4-4.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></g>`,
+      progress: `${c}<path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/>`,
+      planned: d,
+      next: '<circle cx="8" cy="8" r="6" fill="none" stroke="var(--gold)" stroke-width="2.2"/>',
+      notreached: `${c}<path d="M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>`,
+      skipped: `${c}<path d="M5 8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
+      norec: `${d}<path d="M6.5 6.5a1.6 1.6 0 1 1 2.2 1.5c-.4.2-.7.5-.7.9v.3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="11.2" r=".6" fill="currentColor"/>`,
+      cant: `${c}<path d="M3.7 12.3l8.6-8.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>`,
+      you: '<path d="M8 1.8l6.2 6.2L8 14.2 1.8 8z" fill="var(--you)"/>',
+      filing: '<path d="M8 2.5l5.5 5.5L8 13.5 2.5 8z" fill="var(--ink2)"/>',
+    }[kind];
+    const words = { reached: 'reached', gone: 'reached, then gone back over', progress: 'in progress', planned: 'planned', next: 'next to reach', notreached: 'not reached', skipped: 'skipped', norec: 'not recorded yet', cant: 'no record for this in the model', you: 'needs you', filing: 'for the agents to file' }[kind];
+    const col = kind === 'gone' || kind === 'planned' || kind === 'norec' || kind === 'cant' || kind === 'skipped' ? 'var(--ink2)' : 'var(--ink)';
+    return `<svg class="s" viewBox="0 0 16 16" role="img" aria-label="${words}" style="color:${col}">${body}</svg>`;
+  };
+
+  // ---------- frame chrome ----------
+  const TABS = ['Waiting', 'Plan', 'Projects'];
+  const bar = (active, badge = 8) => `<nav class="bar" aria-label="Main">${TABS.map((t, i) =>
+    `<a class="tab" href="#" ${i === active ? 'aria-current="page"' : ''}>${I[t]}<span>${t}</span>${t === 'Waiting' && badge ? `<span class="badge" aria-label="${badge} need you">${badge}</span>` : ''}</a>`).join('')}</nav>`;
+  const pill = (...btns) => `<div class="pill">${btns.map(([ic, l]) => `<button type="button" class="ib" aria-label="${l}">${I[ic]}</button>`).join('')}</div>`;
+  const ex = '<span class="ex">Example</span>';
+
+  // ---------- the projects ----------
+  const PROJ = {
+    sd: { name: 'Service-Desk' },
+    ml: { name: 'Members Letter', ex: true },
+    poom: { name: 'Personal-Org-Operating-Model' },
+  };
+
+  // ---------- the board's cards ----------
+  // Service-Desk: real, from its records, as at 16:30 on 19 Oct (Chicago). Members Letter: made up (inventory §6).
+  const CARDS = [
+    { p: 'sd', lane: 'wait', kind: 'pr', word: 'Pull request', title: 'Set up the Design reviewer', meta: '#148 · R3 · 35 m', step: 'Verdict', bad: '1 check failing' },
+    { p: 'sd', lane: 'wait', kind: 'q', word: 'Question', title: 'Is the redesign mockup the direction for your whole page?', meta: 'MD2 · 2 h 53 m', step: 'Answer', mark: ['clock', 'Settles as C · Wed 13:37'] },
+    { p: 'ml', lane: 'wait', kind: 'gate', word: 'Gate · Launch', title: 'Ready to go live?', meta: 'P-3 · 3 h', critic: 'concerns', user: 'reject' },
+    { p: 'ml', lane: 'wait', kind: 'q', word: 'Question', title: 'Send the first paid issue to every member?', meta: 'question · 20 m', step: 'Answer', mark: ['lock', 'Can’t be undone'] },
+    { p: 'ml', lane: 'wait', kind: 'deploy', word: 'Deploy', title: 'The sign-up fix, to the shared site', meta: 'run 41 · 1 h', step: 'Approve', why: 'Matches #11 · Reviewer PASS' },
+    { p: 'ml', lane: 'wait', kind: 'spend', word: 'Spend', title: '82% of the $20 monthly ceiling', meta: 'Oct · 2 h', step: 'Answer', why: 'Paused at 80%' },
+    { p: 'ml', lane: 'wait', kind: 'pr', word: 'Pull request', title: 'Retry failed card payments', meta: '#14 · 4 h', step: 'Verdict', why: 'Security review: PASS' },
+    { p: 'ml', lane: 'kick', kind: 'pr', word: 'Pull request', title: 'Welcome email template', meta: '#13 · 7 m', step: 'Merge', why: 'GitHub doesn’t show it merged' },
+    { p: 'sd', lane: 'done', title: 'Answered C: one board, grouped by project', meta: '16:11' },
+    { p: 'sd', lane: 'done', title: 'The automatic job’s pull requests show as being recorded', meta: '#135 · 12:28' },
+    { p: 'sd', lane: 'done', title: 'M3A’s new line in the project document', meta: '#133 · 11:16' },
+    { p: 'ml', lane: 'done', kind: 'pr', title: 'Unsubscribe link in every letter', meta: '#16 · moved 1 m ago', conf: true, step: 'Merge' },
+  ];
+  const gateBtns = () => `<div class="gatebtns">${['Proceed', 'Hold', 'Recycle', 'Kill'].map((w) => `<a class="step" href="#" aria-label="${w} (opens the filled-in answer)">${w}</a>`).join('')}</div>`;
+  const card = (c) => {
+    if (c.lane === 'done') {
+      if (!c.conf) return `<li class="drow">${K.done}<span class="t">${esc(c.title)}</span><span class="m">${esc(c.meta)}</span></li>`;
+      return `<li class="card conf"><span class="kd">${K.clock}<span>Confirming with GitHub</span></span>
+        <span class="t">${esc(c.title)}</span><span class="m">${esc(c.meta)}</span>
+        <span class="steps"><a class="step" href="#">${c.step} ↗</a><button type="button" class="undo">Undo</button></span></li>`;
+    }
+    if (c.kind === 'gate') {
+      return `<li class="card gate"><span class="kd">${K.gate}<span>${c.word}</span></span><span class="t">${esc(c.title)}</span>
+        <span class="gl"><span>Critic:</span> ${c.critic}</span><span class="gl"><span>User rep:</span> ${c.user}</span>
+        <span class="m">${esc(c.meta)}</span>${gateBtns()}</li>`;
+    }
+    const kicon = c.lane === 'kick' ? K.kick : K[c.kind];
+    return `<li class="card"><span class="kd">${kicon}<span>${c.lane === 'kick' ? 'Kicked back' : c.word}</span></span>
+      <span class="t">${esc(c.title)}</span><span class="m">${esc(c.meta)}</span>
+      ${c.mark ? `<span class="mk">${K[c.mark[0]]}<span>${esc(c.mark[1])}</span></span>` : ''}
+      ${c.why ? `<span class="why">${esc(c.why)}</span>` : ''}${c.bad ? `<span class="why badc">✕ ${esc(c.bad)}</span>` : ''}
+      <a class="step" href="#">${c.step} ↗</a></li>`;
+  };
+  const grpHead = (p, n) => `<button type="button" class="grp" aria-label="Show only ${PROJ[p].name}">${K.proj}<span class="n">${PROJ[p].name}</span>${PROJ[p].ex ? ex : ''}<span class="c">${n}</span></button>`;
+  const LANES = [['wait', 'Waiting on you'], ['kick', 'Kicked back'], ['done', 'Done · last 24 h']];
+  const board = ({ only = null, moreDone = true } = {}) => {
+    const cs = CARDS.filter((c) => !only || c.p === only);
+    return `<div class="lanes">${LANES.map(([k, n]) => {
+      const lane = cs.filter((c) => c.lane === k);
+      const groups = ['sd', 'ml', 'poom'].map((p) => [p, lane.filter((c) => c.p === p)]).filter(([, l]) => l.length);
+      return `<section class="lane" aria-label="${n}"><h3 class="lh"><span>${n}</span>${k === 'done' ? '' : `<span class="c">${lane.length}</span>`}</h3>
+        ${groups.length ? groups.map(([p, l]) => `${only ? '' : grpHead(p, l.length)}<ol class="lane">${l.map(card).join('')}</ol>
+          ${k === 'done' && p === 'sd' && moreDone ? '<a class="more" href="#">More today ›</a>' : ''}`).join('') : '<p class="empty">Nothing here</p>'}</section>`;
+    }).join('')}</div>`;
+  };
+  const waitingHead = (sub) => `<header class="top"><h2 class="title">Waiting</h2>${pill(['filter', 'Filter'], ['more', 'More'])}</header>${sub}`;
+  const quietLines = (only) => `<div class="quiet">
+      ${only ? '' : `<a class="ql" href="#">${K.agents}<span>With the agents: <b>2</b></span>${ex}<span class="chev">›</span></a>`}
+      ${only ? '' : `<span class="ql">${K.eye}<span>Nothing waiting: Personal-Org-Operating-Model</span></span>`}
+    </div>`;
+  const waiting = ({ only = null } = {}) => `<div class="scr">
+      ${waitingHead(`<p class="sub"><span>checked 1 min ago</span><span>·</span><span>examples from 19 Oct, 16:30</span></p>`)}
+      ${only ? `<div class="filter"><span class="fchip">${K.proj}${PROJ[only].name}<button type="button" class="x" aria-label="Show all projects">${I.close.replace('class="i"', 'class="k"')}</button></span><span class="small">1 of 3 projects</span></div>` : quietLines()}
+      ${board({ only })}
+      ${only ? '<p class="small">With the agents: 0 · Being recorded by the automatic job: 0</p>' : ''}
+    </div>${bar(0, only ? 8 : 8)}`;
+
+  // ---------- sheets ----------
+  const sheetHead = (meta, title) => `<span class="grab" aria-hidden="true"></span><div class="shead"><div class="blk"><p class="mono">${meta}</p><h3 class="stitle">${esc(title)}</h3></div><button type="button" class="x44" aria-label="Close">${I.close}</button></div>`;
+  const answerHref = (file, l) => `${GH}/new/main?filename=${encodeURIComponent(file)}&value=${encodeURIComponent(`Ruling: ${l}\n`)}`;
+  // A question that can't be undone (Members Letter, an example)
+  const sheetIrrev = () => `<div class="scrim"></div><div class="sheet" role="dialog" aria-label="Send the first paid issue to every member?">
+      ${sheetHead(`Members Letter ${ex} · question · waiting 20 m`, 'Send the first paid issue to every member?')}
+      <p class="lead">The first paid issue is ready and checked. Sending it starts the members' billing month.</p>
+      <div class="marks">
+        <p class="mark">${K.lock}<span><b>Can't be undone.</b> An email can't be unsent. Never settles itself: it waits for you (per the question file).</span></p>
+        <p class="mark">${K.eye}<span>Blast radius: every member's inbox · risk R2</span></p>
+      </div>
+      <div class="opts" role="list">
+        ${[['A', 'Send now', 'To all members at once.', false], ['B', 'Send to 10 first', 'Then to the rest tomorrow, if nothing bounces.', true], ['C', 'Hold', 'Until the Launch gate is ruled.', false]].map(([l, t, d, r]) =>
+          `<div class="opt" role="listitem"><div class="ot"><span class="ol">${l}. ${t}</span><span class="od">${d}</span>${r ? '<span class="rec">Recommended</span>' : ''}</div><a class="abtn" href="#">Answer ${l} ↗</a></div>`).join('')}
+      </div>
+      <div class="field"><label for="w-irrev">Your own words, if you want them in the answer</label><textarea id="w-irrev" placeholder="Optional"></textarea></div>
+      <div class="slist"><button type="button" class="sitem">${K.done}<span>Move to Done</span><span class="v">then answer on GitHub</span></button>
+        <button type="button" class="sitem"><span aria-hidden="true">▸</span><span>The whole question</span><span class="v">and the file each answer writes</span></button></div>
+    </div>`;
+  // Service-Desk's real open question, which settles itself at its timeout
+  const sheetReal = () => `<div class="scrim"></div><div class="sheet" role="dialog" aria-label="Is the redesign mockup the direction for your whole page?">
+      ${sheetHead('Service-Desk · P-001-redesign-direction · MD2 · waiting 2 h 53 m', 'Is the redesign mockup the direction for your whole page?')}
+      <p class="lead">The audit found the desk shows you its records, not your to-do list. The mockup redraws your page around three tabs.</p>
+      <div class="marks">
+        <p class="mark">${K.clock}<span><b>Settles itself as C</b> on Wed 21 Oct, 13:37 if left (per the question file: 48 hours). Reversible.</span></p>
+      </div>
+      <div class="opts" role="list">
+        ${[['A', 'Yes, this direction', 'The whole page this way, the board first.', true], ['B', 'Yes, with changes', 'Tell me what to change; the mockup is redone first.', false], ['C', 'Board only for now', 'Build the board; leave the other screens.', false]].map(([l, t, d, r]) =>
+          `<div class="opt" role="listitem"><div class="ot"><span class="ol">${l}. ${t}</span><span class="od">${d}</span>${r ? '<span class="rec">Recommended</span>' : ''}</div><a class="abtn" href="${answerHref('decisions/questions/P-001-redesign-direction.md', l)}" target="_blank" rel="noopener">Answer ${l} ↗</a></div>`).join('')}
+      </div>
+      <div class="field"><label for="w-real">Your own words, if you want them in the answer</label><textarea id="w-real" placeholder="Optional"></textarea></div>
+    </div>`;
+  // A gate ruling (Members Letter's Launch gate, an example)
+  const sheetGate = () => `<div class="scrim"></div><div class="sheet" role="dialog" aria-label="Launch gate: ready to go live?">
+      ${sheetHead(`Members Letter ${ex} · gate · P-3 · waiting 3 h`, 'Launch gate: ready to go live?')}
+      <div class="blk"><h4>The case opens</h4><p class="quote clamp">Members Letter is built and passing: sign-up, billing through the card provider, the weekly digest and unsubscribe. The operating team is named and its monitoring is set up. One finding is open: the user representative rejects the sign-up flow, which asks for a card before a sample letter.</p><a class="lnk" href="#">Read the whole case ↗</a></div>
+      <div class="blk"><h4>Their views</h4>
+        <div class="verd"><span class="vw">Critic</span><span class="small ink">Concerns: the handover package names no on-call hours.</span>
+          <span class="vw">User representative</span><span class="small ink">Reject: "I'd leave at the card form. Show me a letter first."</span></div></div>
+      <p class="small">Launch's standard milestones: 4 taken on, 1 after the gate · definition of ready: passed</p>
+      <div class="opts" role="list">
+        ${[['Proceed', 'Launch goes ahead; the operating team takes over.', false], ['Hold', 'Stays in Build; nothing moves until you say.', false], ['Recycle', 'Back to Design for run 3, with your reason.', true], ['Kill', 'Stops the project for good.', false]].map(([w, d, r]) =>
+          `<div class="opt" role="listitem"><div class="ot"><span class="ol">${w}</span><span class="od">${d}</span>${r ? '<span class="rec">Chief of Staff recommends</span>' : ''}${w === 'Kill' ? `<span class="mk small ink" style="display:flex;gap:4px;align-items:center">${K.lock}Can't be undone</span>` : ''}</div><a class="abtn${w === 'Kill' ? ' danger' : ''}" href="#">${w} ↗</a></div>`).join('')}
+      </div>
+      <div class="field"><label for="w-gate">Your reason (the answer file asks for one on Recycle or Kill)</label><textarea id="w-gate" placeholder="Optional for Proceed and Hold"></textarea></div>
+    </div>`;
+
+  // ---------- a project's page ----------
+  const projTop = (name, meta, seg, tag = '') => `<header class="top back"><button type="button" class="round" aria-label="Back">${I.back}</button><span></span>${pill(['more', 'More'])}</header>
+      <div class="blk"><h2 class="title">${name} ${tag}</h2><p class="mono">${meta}</p></div>
+      ${seg ? `<nav class="seg" aria-label="${name}"><a href="#" ${seg === 'o' ? 'aria-current="page"' : ''}>Overview</a><a href="#" ${seg === 't' ? 'aria-current="page"' : ''}>Timeline</a></nav>` : ''}`;
+  const strip = (segs) => `<ol class="strip" aria-label="Phases, start to finish">${segs.map(([cls, name, st, icon, state]) =>
+      `<li class="ph ${cls} ${state || ''}"><span class="bar3" aria-hidden="true"></span><span class="pn">${ST(icon)}${name}</span><span class="ps">${st}</span></li>`).join('')}</ol>`;
+  // one line per phase, read from the bottom up (trial-view notes 2, note 15): Launch at the top, Discovery at the foot
+  const stdFold = (rows) => `<ol class="std">${rows.map(([cls, name, value, detail, open]) =>
+      `<li><button type="button" class="stdr ${cls}" aria-expanded="${open ? 'true' : 'false'}"><span class="dot" aria-hidden="true"></span><span class="sn">${name}</span><span class="sv">${value}</span><span class="chev">${open ? '▾' : '▸'}</span>${detail ? `<span class="sd">${detail}</span>` : ''}</button>${open || ''}</li>`).join('')}</ol>`;
+
+  const SD_STD = (open) => stdFold([
+    ['ph-launch', 'Launch', 'planned', 'Yours: M3C · Standard: <b>0 of 5</b>, not recorded yet'],
+    ['ph-build', 'Build', 'run 2 ahead', 'Yours: M3A in progress, M3B · run 1: M1, M2, M2B reached · Standard: <b>0 of 5</b> recorded'],
+    ['ph-des', 'Design', 'run 2 · now', 'Yours: MD1, MD2, MD3 in progress · Standard: <b>0 of 6</b> recorded', open === 'Design' ? sdDesignOpen() : ''],
+    ['ph-disc', 'Discovery', 'finished', 'Standard: <b>4 of 8</b> reached'],
+  ]);
+  const sm = (icon, id, name, state, cls = '') => `<li class="sm ${cls}">${ST(icon)}<span class="smt"><span class="smn"><span class="id">${id}</span>${esc(name)}</span><span class="sms">${state}</span></span></li>`;
+  const sdDesignOpen = () => `<div class="stdl"><span class="arrow" aria-hidden="true">▲</span>
+      <p class="runh">Run 2 · 8 Oct – now · went through pull requests, outside the pipeline</p>
+      <p class="subh">Yours</p>
+      <ol>${sm('progress', 'MD3', 'The chosen design running on the real back end', 'work filed · rough finish 22–25 Oct')}
+        ${sm('progress', 'MD2', 'The desk’s look and screens chosen', 'work filed · only your acceptance remains')}
+        ${sm('next', 'MD1', 'What a good desk looks like is known', 'next to reach · only your acceptance remains')}</ol>
+      <p class="subh">The model's standard six</p>
+      <ol>${[
+        ['norec', 'Design-6', 'A plan that passed review', 'not recorded yet'],
+        ['cant', 'Design-5', 'The design fits together', 'no record for this in the model yet'],
+        ['norec', 'Design-4', 'Every fact is backed by evidence', 'not recorded yet'],
+        ['cant', 'Design-3', 'Every unknown has a test', 'no record for this in the model yet'],
+        ['norec', 'Design-2', 'How the pieces connect is mapped', 'not recorded yet'],
+        ['norec', 'Design-1', 'Done defined in real scenarios', 'not recorded yet'],
+      ].map(([i, id, n, s]) => sm(i, id, n, s, 'soft')).join('')}</ol>
+      <p class="runh">Run 1 · 5–8 Oct · gone back over</p>
+      <ol>${sm('notreached', 'Design-6', 'A plan that passed review', 'not reached', 'old')}${sm('gone', 'Design-1', 'Done defined in real scenarios', 'reached', 'old')}
+        <li class="sm old">${ST('norec')}<span class="smt"><span class="smn">Design-2 to Design-5</span><span class="sms">not recorded, or no record in the model</span></span></li></ol>
+      <p class="callout">${K.eye}<span>Why each is taken on or skipped: not written yet. Service-Desk's Chief of Staff writes its 24 lines (your ruling, P-001-standard-milestones).</span></p>
+    </div>`;
+  const sdOverview = () => `<div class="scr">
+      ${projTop('Service-Desk', 'v3 · model 3.5.0 · T1', 'o')}
+      <p class="lead">Design, second time through. Next: the chosen design running on the real back end.</p>
+      ${strip([['ph-disc', 'Discovery', 'finished', 'reached', 'past'], ['ph-des', 'Design', 'run 2 · now', 'progress', 'now'], ['ph-build', 'Build', 'run 1 gone back over · run 2 ahead', 'gone', 'plan'], ['ph-launch', 'Launch', 'planned', 'planned', 'plan']])}
+      <p class="small">Design ran again from 8 Oct · why it went back: not recorded<br>Your last action: answered C, one board grouped by project · 16:11</p>
+      <ol class="rows">
+        <li><a class="row" href="#">${ST('you')}<span class="rt"><span class="tt">2 wait on you</span><span class="small">Your verdict on #148 · the redesign question</span></span><span class="chev">›</span></a></li>
+        <li><a class="row" href="#">${K.agents}<span class="rt"><span class="tt soft">At work now: no agent run recorded since 8 Oct</span><span class="small">Work goes through pull requests · with the agents: 0</span></span><span class="chev">›</span></a></li>
+      </ol>
+      <h3 class="sh"><span>Milestones by phase · yours and the model's 24</span><span class="c">↑ start at the foot</span></h3>
+      ${SD_STD()}
+      <h3 class="sh"><span>The rest</span></h3>
+      <ol class="rows">
+        <li><a class="row" href="#">${ST('planned')}<span class="rt"><span class="tt">Value targets V1 to V5</span><span class="small">Measured from launch · V4, replacing the old page, by 11 Nov (proposed)</span></span><span class="chev">›</span></a></li>
+        <li><a class="row" href="#">${ST('progress')}<span class="rt"><span class="tt">Experiments</span><span class="small">6 registered · 4 results filed</span></span><span class="chev">›</span></a></li>
+        <li><a class="row" href="#"><span></span><span class="rt"><span class="tt soft">Details</span><span class="small">Agents and usage · time asked of you · CI · record notes</span></span><span class="chev">›</span></a></li>
+      </ol>
+    </div>${bar(2)}`;
+  const sdStdOpen = () => `<div class="scr" data-scroll="std">
+      ${projTop('Service-Desk', 'v3 · model 3.5.0 · T1', 'o')}
+      <h3 class="sh"><span>Milestones by phase · yours and the model's 24</span><span class="c">↑ start at the foot</span></h3>
+      ${SD_STD('Design')}
+    </div>${bar(2)}`;
+  const mlStdOpen = () => `<div class="scr" data-scroll="std">
+      ${projTop('Members Letter', 'v3 · model 3.4.0 · T2', 'o', ex)}
+      <h3 class="sh"><span>Milestones by phase · all 24 standard lines written</span><span class="c">↑ start at the foot</span></h3>
+      ${stdFold([
+        ['ph-launch', 'Launch', 'gate waits on you', 'Yours: ML4 · Standard: <b>0 of 5</b>, 5 taken on'],
+        ['ph-build', 'Build', 'run 2 · now', 'Yours: ML3 · Standard: <b>4 of 5</b> reached; Build-4 waits on EXP-2'],
+        ['ph-des', 'Design', '2 runs · finished', 'Yours: ML2 reached · Standard: <b>5 of 6</b> reached, 1 skipped', `<div class="stdl"><span class="arrow" aria-hidden="true">▲</span>
+          <p class="runh">Run 2 · 12–20 Oct · finished</p>
+          <p class="subh">Yours</p>
+          <ol>${sm('reached', 'ML2', 'Sign-up a reader would finish', 'reached 20 Oct · why: run 1’s sign-up lost the user representative')}</ol>
+          <p class="subh">The model's standard six</p>
+          <ol>${sm('reached', 'Design-6', 'A plan that passed review', 'reached 20 Oct · why: the build needs a reviewed plan')}
+            ${sm('reached', 'Design-5', 'The design fits together', 'reached 19 Oct · why: billing and sign-up meet at the card form')}
+            ${sm('reached', 'Design-4', 'Every fact is backed by evidence', 'reached 17 Oct · why: card-provider limits come from its own pages')}
+            ${sm('reached', 'Design-3', 'Every unknown has a test', 'reached 15 Oct · why: open rate and sign-up wording are unknowns · EXP-1, EXP-2')}
+            ${sm('skipped', 'Design-2', 'How the pieces connect is mapped', 'skipped · why: one small service and one provider; nothing else to connect', 'soft')}
+            ${sm('reached', 'Design-1', 'Done defined in real scenarios', 'reached 13 Oct · why: the user representative needs scenarios to judge')}</ol>
+          <p class="runh">Run 1 · 2–11 Oct · sent back at the Build gate</p>
+          <ol><li class="sm old">${ST('gone')}<span class="smt"><span class="smn">5 reached, 1 skipped</span><span class="sms">Why it went back: the user representative rejected the sign-up flow</span></span></li></ol>
+        </div>`],
+        ['ph-disc', 'Discovery', 'finished', 'Yours: ML1 reached · Standard: <b>7 of 8</b> reached, 1 skipped'],
+      ])}
+      <p class="callout">${K.eye}<span>Three states, told apart: <b>skipped</b> (a line says why), <b>not recorded yet</b> (the agents can fill it), and <b>no record in the model</b> (no one can, until the model changes). See Service-Desk's Design for the other two.</span></p>
+    </div>${bar(2)}`;
+
+  // ---------- the Timeline ----------
+  const bullets = (tech, ctx, why) => `<div class="bl tech"><span class="bn">Technical</span><span class="bt mono">${tech}</span></div>
+      <div class="bl ctx"><span class="bn">Context</span><span class="bt">${ctx}</span></div>
+      <div class="bl why"><span class="bn">Why</span><span class="bt">${why}</span></div>`;
+  const timeline = (plain) => `<div class="scr" data-scroll="now">
+      <header class="thead"><button type="button" class="round" aria-label="Back">${I.back}</button><span class="tn">Service-Desk</span><nav class="seg" aria-label="Service-Desk"><a href="#">Overview</a><a href="#" aria-current="page">Timeline</a></nav></header>
+      <div class="goal"><h4>What we're delivering · your words, docs/PROJECT.md</h4><q>I envisioned the service desk to be more of real time interactive planning, scheduling and interactive workbench.</q><p class="mono">Finish line: Done, after the Launch gate</p></div>
+      <div class="feed${plain ? ' plain' : ''}">
+        <section class="tblk ph-launch"><h3 class="tph"><span class="dot" aria-hidden="true"></span><span class="pn">Launch</span><span class="pd">planned</span></h3>
+          <div class="tseg plan">
+            <div class="ms"><span class="msi">${ST('planned')}</span><div class="mst"><span class="mstt">The desk live at the needs-you address</span></div><span class="msm">M3C · planned · rough finish 30 Oct – 11 Nov</span></div>
+            <button type="button" class="fold" aria-expanded="false">5 standard Launch milestones ▸</button>
+          </div></section>
+        <section class="tblk ph-build"><h3 class="tph"><span class="dot" aria-hidden="true"></span><span class="pn">Build · run 2</span><span class="pd">planned</span></h3>
+          <div class="tseg plan">
+            <div class="ms"><span class="msi">${ST('planned')}</span><div class="mst"><span class="mstt">The desk's value targets shown</span></div><span class="msm">M3B · planned · 27 Oct – 5 Nov</span><p class="msd"><b>Why</b> not recorded yet · for the agents to add</p></div>
+            <div class="ms"><span class="msi">${ST('progress')}</span><div class="mst"><span class="mstt">Work ahead planned from the desk</span></div><span class="msm">M3A · work filed · 23–28 Oct</span><p class="msd"><b>Why</b> the owner wants to choose the order of the milestones ahead and to know roughly how long each will take, to set expectations</p><button type="button" class="fold" aria-expanded="false">2 sprints ▸</button></div>
+          </div></section>
+        <p class="nowl" data-now>NOW · 19 OCT <span class="s">ahead above · done below</span></p>
+        <section class="tblk ph-des"><h3 class="tph"><span class="dot" aria-hidden="true"></span><span class="pn">Design · run 2</span><span class="pd">8 Oct – now</span></h3>
+          <div class="tseg">
+            <p class="began">Run 2 began 8 Oct · why it went back: not recorded</p>
+            <div class="ms"><span class="msi">${ST('progress')}</span><div class="mst"><span class="mstt">The chosen design running on the real back end</span></div><span class="msm">MD3 · work filed · 22–25 Oct</span>
+              <p class="msd"><b>Done when</b> the chosen look runs on the desk's real back end, showing real records, on its preview site</p>
+              <button type="button" class="fold" aria-expanded="true">1 sprint ▾</button>
+              <div class="sps">
+                <article class="sp"><div class="sph"><span class="spm">18 Oct · PR #89</span><span class="stats"><span>✓ merged</span><span>✓ review</span><span>✓ checks</span></span></div>
+                  <h4 class="spt">The desk reads model 3.5.0's records: asks' milestones and facts, the Chief of Staff's sessions, reached milestones</h4>
+                  ${bullets('Design i2 · MD3 · orch/s001-model-3.5.0-records',
+                    'The model’s 3.5.0 sync left the desk to read the new records before any milestone is marked reached <span class="src">· docs/LEDGER.md, L-0016</span> <a class="inl" href="#">2 more ▸</a>',
+                    'MD3 is the chosen look running on real records; the M1 mark and the M2/M2B questions wait on this.')}
+                  <a class="lnk" href="${GH}/pull/89/commits" target="_blank" rel="noopener">Tasks in this sprint ↗</a></article>
+              </div></div>
+            <div class="ms"><span class="msi">${ST('progress')}</span><div class="mst"><span class="mstt">The desk's look and screens chosen</span></div><span class="msm">MD2 · work filed · only your acceptance remains</span><button type="button" class="fold" aria-expanded="false">4 sprints ▸</button></div>
+            <div class="ms"><span class="msi">${ST('next')}</span><div class="mst"><span class="mstt">What a good desk looks like is known</span></div><span class="msm">MD1 · next to reach · only your acceptance remains</span><button type="button" class="fold" aria-expanded="false">1 sprint ▸</button></div>
+            <div class="ms"><span class="msi">${ST('filing')}</span><div class="mst"><span class="mstt">Not tied to a milestone</span></div><span class="msm">sprints for the agents to file</span><button type="button" class="fold" aria-expanded="false">Show them ▸</button></div>
+            <button type="button" class="fold" aria-expanded="false">6 standard Design milestones · run 2: none recorded ▸</button>
+          </div></section>
+        <section class="tblk ph-build"><h3 class="tph"><span class="dot" aria-hidden="true"></span><span class="pn">Build · run 1</span><span class="pd">7–8 Oct · gone back over</span></h3>
+          <div class="tseg">
+            <div class="ms"><span class="msi">${ST('gone')}</span><div class="mst"><span class="mstt">Agent usage shown on the desk</span></div><span class="msm">M2B · reached 18 Oct</span><button type="button" class="fold" aria-expanded="false">2 sprints ▸</button></div>
+            <div class="ms"><span class="msi">${ST('gone')}</span><div class="mst"><span class="mstt">Cards answered straight from the desk</span></div><span class="msm">M2 · reached 18 Oct</span><button type="button" class="fold" aria-expanded="false">1 sprint ▸</button></div>
+            <div class="ms"><span class="msi">${ST('gone')}</span><div class="mst"><span class="mstt">Every project's status visible on the phone</span></div><span class="msm">M1 · reached 7 Oct</span><button type="button" class="fold" aria-expanded="false">2 sprints ▸</button></div>
+          </div></section>
+        <section class="tblk ph-des"><h3 class="tph"><span class="dot" aria-hidden="true"></span><span class="pn">Design · run 1</span><span class="pd">5–8 Oct · gone back over</span></h3>
+          <div class="tseg"><button type="button" class="fold" aria-expanded="false">6 standard Design milestones · 1 reached ▸</button></div></section>
+        <section class="tblk ph-disc"><h3 class="tph"><span class="dot" aria-hidden="true"></span><span class="pn">Discovery</span><span class="pd">30 Sep – 5 Oct · finished</span></h3>
+          <div class="tseg"><button type="button" class="fold" aria-expanded="false">8 standard Discovery milestones · 4 reached ▸</button><button type="button" class="fold" aria-expanded="false">13 research sprints ▸</button></div></section>
+      </div>
+      <div class="goal"><h4>Where we started · docs/PROJECT.md, Intent</h4><q>Service Desk replaces Operations-Hub, which is a read-only page answering "does anything need me?" and linking out to GitHub.</q></div>
+    </div>${bar(2)}`;
+
+  // ---------- POOM: the older pipeline ----------
+  const poom = () => `<div class="scr">
+      ${projTop('Personal-Org-Operating-Model', 'v2.5.1 pipeline · T1 · publishes model 3.5.0', null)}
+      <p class="lead">Sprint m1.4 is open. Nothing waits on you.</p>
+      <ol class="strip" aria-label="Sprints">${[['m1.1', 'closed', 'reached'], ['m1.2', 'closed', 'reached'], ['m1.3', 'closed', 'reached'], ['m1.4', 'open', 'progress']].map(([n, s, i]) =>
+        `<li class="ph" style="--phc:var(--ink2)"><span class="bar3" aria-hidden="true"></span><span class="pn">${ST(i)}<span class="mono ink">${n}</span></span><span class="ps">${s}</span></li>`).join('')}</ol>
+      <ol class="rows">
+        <li><a class="row" href="#">${ST('reached')}<span class="rt"><span class="tt">Nothing waiting on you</span><span class="small">No open pull requests · checked 1 min ago</span></span><span class="chev">›</span></a></li>
+        <li><a class="row" href="#">${ST('reached')}<span class="rt"><span class="tt">CI on main: passing</span><span class="mono">ci · 17 Oct</span></span><span class="chev">›</span></a></li>
+        <li><a class="row" href="#"><span></span><span class="rt"><span class="tt">Latest in the ledger</span><span class="mono">L-0146 · 17 Oct · model 3.5.0 built</span></span><span class="chev">›</span></a></li>
+        <li><a class="row" href="#"><span></span><span class="rt"><span class="tt soft">Records</span><span class="mono">146 ledger entries · 32 specs · 2 roster rows</span></span><span class="chev">›</span></a></li>
+      </ol>
+      <h3 class="sh"><span>Not used by this project</span><span class="c">older pipeline</span></h3>
+      <ul class="notused">
+        <li>${ST('skipped')}<span><span class="nt">Phases, gates and standard milestones</span><br><span class="nw">They come with the v3 pipeline. This project runs v2.5.1's sprints and ledger.</span></span></li>
+        <li>${ST('skipped')}<span><span class="nt">The Timeline</span><br><span class="nw">Also v3. Its sprints are the strip above.</span></span></li>
+        <li>${ST('skipped')}<span><span class="nt">Questions and cards</span><br><span class="nw">No questions or queue folder: it asks you through pull requests.</span></span></li>
+        <li>${ST('skipped')}<span><span class="nt">Agent runs</span><br><span class="nw">No dispatch log.</span></span></li>
+      </ul>
+    </div>${bar(2)}`;
+
+  // ---------- Members Letter: everything at once (an example) ----------
+  const ml = () => `<div class="scr">
+      ${projTop('Members Letter', 'v3 · model 3.4.0, one behind · T2', 'o', ex)}
+      <p class="exbanner">${K.eye}<span>A made-up project, to show every part of the model at once. Every name, number and date on this page is an example.</span></p>
+      <p class="lead">Build, second time through. The Launch gate waits on you.</p>
+      ${strip([['ph-disc', 'Discovery', 'finished', 'reached', 'past'], ['ph-des', 'Design', '2 runs · finished', 'reached', 'past'], ['ph-build', 'Build', 'run 2 · now', 'progress', 'now'], ['ph-launch', 'Launch', 'gate waits on you', 'you', 'plan']])}
+      <p class="small">Design ran again from 12 Oct · why it went back: at the Build gate the user representative rejected the sign-up flow</p>
+      <a class="callout youc" href="#">${K.spend.replace('class="k"', 'class="k you"')}<span><b>Spend: $16.40 of $20 this month (82%).</b> New runs paused at 80% until you answer.<span class="meter y" aria-hidden="true"><i style="width:82%"></i></span></span></a>
+      <ol class="rows">
+        <li><a class="row" href="#">${ST('you')}<span class="rt"><span class="tt">5 wait on you</span><span class="small">The Launch gate · a question that can't be undone · a deploy · spend · a verdict</span></span><span class="chev">›</span></a></li>
+        <li><a class="row" href="#">${K.agents}<span class="rt"><span class="tt">At work now: 2</span><span class="small">Builder on #15, the agents' fixes · Security reviewer on #12</span></span><span class="chev">›</span></a></li>
+        <li><a class="row" href="#">${K.eye}<span class="rt"><span class="tt soft">Security review</span><span class="small">On src/auth/** and src/billing/** · #12: its verdict is still to come</span></span><span class="chev">›</span></a></li>
+      </ol>
+      <h3 class="sh"><span>Experiments</span><span class="c">2</span></h3>
+      <ol class="rows">
+        <li><a class="row" href="#">${ST('reached')}<span class="rt"><span class="tt">A weekly digest lifts the open rate</span><span class="mono">EXP-1 · result filed: passed, 41% against 35%</span></span><span class="chev">›</span></a></li>
+        <li><a class="row" href="#">${ST('progress')}<span class="rt"><span class="tt">Plainer sign-up wording</span><span class="mono">EXP-2 · running · a miss would bring you a kill card</span></span><span class="chev">›</span></a></li>
+      </ol>
+      <h3 class="sh"><span>Milestones by phase · all 24 standard lines written</span><span class="c">↑ start at the foot</span></h3>
+      ${stdFold([['ph-launch', 'Launch', 'gate waits on you', 'Yours: ML4 · Standard: <b>0 of 5</b>, 5 taken on'], ['ph-build', 'Build', 'run 2 · now', 'Yours: ML3 · Standard: <b>4 of 5</b> reached'], ['ph-des', 'Design', '2 runs · finished', 'Yours: ML2 · Standard: <b>5 of 6</b>, 1 skipped'], ['ph-disc', 'Discovery', 'finished', 'Yours: ML1 · Standard: <b>7 of 8</b>, 1 skipped']])}
+      <h3 class="sh"><span>Value and limits</span></h3>
+      <ol class="rows">
+        <li><a class="row" href="#">${ST('progress')}<span class="rt"><span class="tt">V1: open rate at least 35% by 1 Dec</span><span class="small">41% in EXP-1 · stop rule: under 25% for 4 weeks</span></span><span class="chev">›</span></a></li>
+        <li><a class="row" href="#">${ST('progress')}<span class="rt"><span class="tt">Research sub-project: pricing</span><span class="small">$3 of its $5 budget · 2 of 5 days left · counts toward the cap</span></span><span class="chev">›</span></a></li>
+        <li><a class="row" href="#"><span></span><span class="rt"><span class="tt soft">T2 parts</span><span class="small">Backup: Sam (example) · holdouts passing · 1 break-glass, closed in 2 days · 1 delegation grant</span></span><span class="chev">›</span></a></li>
+      </ol>
+    </div>${bar(2)}`;
+
+  // ---------- Projects, with the portfolio at its foot ----------
+  const tile = (name, tag, summary, phase, phcls, icon, waits, soft) => `<a class="card" href="#" style="padding:10px;gap:6px;border-radius:10px">
+      <span class="row" style="padding:0;min-height:0;grid-template-columns:minmax(0,1fr);"><span class="tt">${name} ${tag || ''}</span></span>
+      <span class="small${soft ? '' : ' ink'}" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;${soft ? 'font-style:italic' : ''}">${summary}</span>
+      <span class="ph ${phcls}" style="gap:3px"><span class="bar3" aria-hidden="true"></span><span class="pn" style="font-size:11px">${ST(icon)}${phase}</span></span>
+      <span class="small ${waits ? 'ink' : ''}" style="display:flex;gap:4px;align-items:center">${waits ? `${ST('you')}${waits}` : 'Nothing waiting'}</span></a>`;
+  const projects = () => `<div class="scr">
+      <header class="top"><h2 class="title">Projects</h2>${pill(['more', 'More'])}</header>
+      <p class="sub"><span>3 projects · checked 1 min ago</span></p>
+      <h3 class="sh"><span>Active</span><span class="c">2 ▾</span></h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${tile('Service-Desk', '', 'The owner’s phone-first desk over every project the agents run: one card per project showing what waits on the owner, what the team is doing and where the work is heading, with each answer opened in GitHub ready to commit.', 'Design · run 2', 'ph-des', 'progress', '2 wait on you')}
+        ${tile('Members Letter', ex, 'A paid members’ newsletter with sign-ups (example).', 'Build · run 2', 'ph-build', 'progress', '5 wait on you')}
+      </div>
+      <h3 class="sh"><span>Closed or not run by the desk</span><span class="c">1 ▾</span></h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${tile('Personal-Org-Operating-Model', '', 'Its README’s first paragraph shows here; not copied into this mockup, as the repository is private.', 'Older pipeline · m1.4', '', 'progress', '', true)}
+      </div>
+      <h3 class="sh"><span>Done</span><span class="c">0 ▸</span></h3>
+      <h3 class="sh" style="padding-top:18px;border-top:1px solid var(--line)"><span>Across your projects · read only</span><span class="c">portfolio</span></h3>
+      <ol class="rows">
+        <li><a class="row" href="#">${ST('norec')}<span class="rt"><span class="tt">The cap on work at once</span><span class="small">In Build or Launch: Members Letter ${ex} · research: 1 ${ex} · your cap: not set yet (OM §3)</span></span><span class="chev">›</span></a></li>
+        <li><a class="row" href="#">${ST('reached')}<span class="rt"><span class="tt">Decisions across projects</span><span class="small">None in the portfolio's queue · a card there waits on Waiting, under "Portfolio"</span></span><span class="chev">›</span></a></li>
+        <li><a class="row" href="#">${ST('norec')}<span class="rt"><span class="tt">Scorecard</span><span class="small">Targets not set yet (OM §10) · your time across projects: not recorded yet</span></span><span class="chev">›</span></a></li>
+        <li><a class="row" href="#"><span></span><span class="rt"><span class="tt">Model versions · latest 3.5.0</span><span class="small">Service-Desk 3.5.0 · Personal-Org-Operating-Model runs v2.5.1, publishes 3.5.0 · Members Letter 3.4.0, one behind ${ex}</span></span><span class="chev">›</span></a></li>
+        <li><a class="row" href="#"><span></span><span class="rt"><span class="tt soft">Rulings, standing intent, library facts, track records</span><span class="small">Rarely needed · intent not written yet</span></span><span class="chev">›</span></a></li>
+      </ol>
+      <p class="small">The desk reads your portfolio repository and never changes it (your ruling, P-001-portfolio-read). Ideas are in Plan.</p>
+    </div>${bar(2)}`;
+
+  // ---------- Plan ----------
+  const prow = (icon, t, m, v, w) => `<li><a class="row" href="#">${ST(icon)}<span class="rt"><span class="tt">${t}</span><span class="mono">${m}</span></span><span class="v${w ? ' w' : ''}">${v}</span></a></li>`;
+  const plan = () => `<div class="scr">
+      <header class="top"><h2 class="title">Plan</h2>${pill(['order', 'Change the order'], ['more', 'More'])}</header>
+      <p class="sub"><span>Rough finish from today, 19 Oct · an expectation, never a deadline</span></p>
+      <h3 class="sh"><span>${K.proj} Service-Desk · milestones ahead</span><span class="c">6</span></h3>
+      <ol class="rows">
+        ${prow('next', 'What a good desk looks like is known', 'MD1 · Design', 'your acceptance', true)}
+        ${prow('progress', 'The desk’s look and screens chosen', 'MD2 · Design', 'your acceptance', true)}
+        ${prow('progress', 'The chosen design running on the real back end', 'MD3 · Design · 3–6 days', '22–25 Oct')}
+        ${prow('progress', 'Work ahead planned from the desk', 'M3A · Build · 1–3 days', '23–28 Oct')}
+        ${prow('planned', 'The desk’s value targets shown', 'M3B · Build · 4–8 days', '27 Oct – 5 Nov')}
+        ${prow('planned', 'The desk live at the needs-you address', 'M3C · Launch · 3–6 days', '30 Oct – 11 Nov')}
+      </ol>
+      <h3 class="sh"><span>${K.proj} Members Letter ${ex} · milestones ahead</span><span class="c">2</span></h3>
+      <ol class="rows">
+        ${prow('you', 'Ready to go live', 'Launch gate · waits on you', 'after your ruling', true)}
+        ${prow('planned', 'Members read it every week', 'ML4 · Launch · 5–9 days', '26 Oct – 1 Nov')}
+      </ol>
+      <h3 class="sh"><span>Not milestones yet</span><span class="c">2</span></h3>
+      <ol class="rows">
+        ${prow('planned', 'Ask or jot box', 'W1 · Service-Desk', '›', true)}
+        ${prow('planned', 'Upkeep fixes', 'W2 · Service-Desk', '›', true)}
+      </ol>
+      <h3 class="sh"><span>Ideas · from the portfolio</span><span class="c">2</span></h3>
+      <ol class="rows">
+        ${prow('planned', 'One idea, captured', 'portfolio · ideas/IDEAS.md · captured', '›', true)}
+        ${prow('progress', `A reading-list app ${ex}`, 'shaping · you agreed to explore it', '›', true)}
+      </ol>
+      <p class="small">The order is the project documents' until you change it here. Ideas move to a project once you agree to explore one.</p>
+    </div>${bar(1)}`;
+
+  // ---------- the current Timeline, for comparison ----------
+  const current = () => `<img class="shot" src="desk-v2/7c-current-timeline-414.png" alt="The current trial view's Timeline, rendered from the tests' fixtures" width="414" height="896">`;
+
+  // ---------- the frames ----------
+  const FR = [
+    { id: '1', t: '1 · Waiting, grouped by project', c: 'One board, three lanes at once, each project’s cards together under its name. A gate card has its own kind. Above the board: "With the agents" and the project with nothing waiting.', s: () => waiting() },
+    { id: '2', t: '2 · Waiting, one project', c: 'After a tap on "Service-Desk": only its cards. The chip’s ✕ shows every project again.', s: () => waiting({ only: 'sd' }) },
+    { id: '3', t: '3 · A question that can’t be undone', c: 'One answer button per option, the recommendation labelled and not chosen. "Can’t be undone" says it never settles itself. A box for your own words, at 16 px.', s: () => waiting() + sheetIrrev() },
+    { id: '3b', t: '3b · A question that settles itself', c: 'Service-Desk’s real open question: reversible, and it names a default, C, at its 48-hour timeout. Each button opens its answer file, filled in.', s: () => waiting() + sheetReal() },
+    { id: '4', t: '4 · A gate ruling', c: 'The case’s opening (whole case one tap away), the Critic’s view, the user representative’s verdict, then the four choices as buttons, each saying what follows.', s: () => waiting() + sheetGate() },
+    { id: '5', t: '5 · Service-Desk’s page', c: 'The sentence, the phase strip in phase colours, what waits and who is at work, its own milestones, and the 24 standard milestones folded to one line per phase.', s: sdOverview },
+    { id: '6', t: '6 · Standard milestones, Design open', c: 'Read from the bottom up. Run 2 in full; run 1 smaller. "Not recorded yet" and "no record in the model" look and read differently. One line says why no "why" is written yet.', s: sdStdOpen },
+    { id: '6b', t: '6b · Skipped ones, named (Members Letter)', c: 'A project that wrote all 24 lines: a skipped milestone reads "skipped" with its why, softer, never as missing.', s: mlStdOpen },
+    { id: '7a', t: '7a · Timeline, cleaned up: labels with colours', c: 'The feed as built, newest at the top, opened at Now: phase headers that stay pinned, a thin rail, one icon per status, and Technical, Context and Why with their own colours.', s: () => timeline(false) },
+    { id: '7b', t: '7b · Timeline, cleaned up: labels in grey', c: 'The same, with Technical, Context and Why in grey. Whether the labels and their colours stay is yours to judge.', s: () => timeline(true) },
+    { id: '7c', t: '7c · The Timeline today, for comparison', c: 'The trial view as built, rendered from the tests’ fixtures (Service-Desk’s records at 3117150 and pull requests to #77, so it reads 16 Oct), with a sprint fold open.', img: current },
+    { id: '8', t: '8 · Personal-Org-Operating-Model’s page', c: 'The older pipeline: sprints in place of phases, the ledger’s latest, CI. What it doesn’t use is said as "not used", not as missing.', s: poom },
+    { id: '9', t: '9 · Members Letter’s page (example)', c: 'Everything at once: the gate waiting, a spend alert, two agents at work, a security review, experiments, a research sub-project, T2 parts.', s: ml },
+    { id: '10', t: '10 · Projects, with the portfolio', c: 'Your projects in their three groups, as two-column tiles, then what only a view across projects can show: the cap, cross-project decisions, the scorecard, model versions.', s: projects },
+    { id: '11', t: '11 · Plan', c: 'Milestones ahead in order, per project, each with the Chief of Staff’s rough finish; work that isn’t a milestone yet; then ideas from the portfolio.', s: plan },
+    { id: '12', t: '12 · Frame 1, dark', c: 'The board in the phone’s dark setting.', s: () => waiting(), dark: true },
+  ];
+
+  const params = new URLSearchParams(location.search);
+  const only = params.get('frame');
+  const host = document.getElementById('frames');
+  if (only) {
+    document.body.classList.add('single');
+    if (params.has('full')) document.body.classList.add('full');
+    const f = FR.find((x) => x.id === only);
+    const dark = params.get('theme') ? params.get('theme') === 'dark' : f.dark;
+    host.outerHTML = `<div class="phone ${dark ? 'theme-dark' : 'theme-light'}" data-frame="${f.id}">${f.s ? f.s() : f.img()}</div>`;
+    document.querySelectorAll('.intro, .notes').forEach((n) => n.remove());
+  } else {
+    host.innerHTML = FR.map((f) => `<section class="fr"><h2>${f.t}</h2><p class="cap">${f.c}</p>${f.s ? `<div class="phone ${f.dark ? 'theme-dark' : 'theme-light'}" data-frame="${f.id}">${f.s()}</div>` : f.img()}</section>`).join('');
+  }
+  // The Timeline opens at Now, with its pinned phase header above (trial-view notes 2, note 18)
+  if (!params.has('full')) {
+    document.querySelectorAll('.scr[data-scroll="now"]').forEach((s) => {
+      const n = s.querySelector('[data-now]');
+      if (n) s.scrollTop = n.offsetTop - 64;
+    });
+    // the open phase list starts near the top of the frame
+    document.querySelectorAll('.scr[data-scroll="std"]').forEach((s) => {
+      const n = s.querySelector('.sh');
+      if (n) s.scrollTop = n.offsetTop - 14;
+    });
+  }
+  // Sheets close on Escape or a tap on the scrim (trial-view notes 1, note 9); in a mockup, they simply hide
+  document.addEventListener('click', (e) => {
+    const x = e.target.closest('.x44, .scrim');
+    if (!x) return;
+    const ph = x.closest('.phone');
+    ph.querySelectorAll('.scrim, .sheet').forEach((n) => { n.hidden = true; });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') document.querySelectorAll('.scrim, .sheet').forEach((n) => { n.hidden = true; });
+  });
+})();
+</script>
+</body>
+</html>

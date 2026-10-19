@@ -40,15 +40,27 @@ Where two rulings, or a ruling and the spec, seem to disagree on a point no late
 the reviewer names both and asks. It never picks a side.
 
 **The redesign direction.** "A direction the owner has ruled" means one thing here: the owner's
-answer, in words, to questions/P-001-redesign-direction.md. That question is on hold while the
-inventory is done (docs/design/references/owner-request-2026-10-19-scope.md: "The redesign-direction
-question is held"), and its timeout default does not apply while it is held. Until the owner
-answers it:
+answer, in words, to questions/P-001-redesign-direction.md. The orchestrator holds that question
+while the inventory is done (its summary in docs/design/references/owner-request-2026-10-19-scope.md:
+"The redesign-direction question is held"), and its timeout default does not apply while it is
+held. Until the owner answers it:
 - a change is judged against the agreed screens and the standing rulings, with checklist part A;
-- the rulings on the board, the tabs and the typeface are standing rulings, applied through part A;
-  they do not switch on part B;
+- the rulings on the board, the tabs and the typeface are standing rulings, applied through part A
+  whatever the direction answer says; they do not switch on part B. If the direction answer, when
+  it comes, disagrees with one of them (for example, answer C with P-001-redesign-nav.md's tabs),
+  that is a question for the owner, not for the reviewer to settle;
 - part B (the design audit's brief) applies only after that answer, and only as far as it says;
 - no mockup counts as chosen unless a ruling chose it.
+
+**Sized like Linear.** P-001-redesign-conflicts.md items 3 and 5 and P-001-text-box-size.md rule
+that sizes, and the Timeline's visual formatting, follow Linear's. The repository holds no measure
+of Linear's sizes, so the owner ruled that "sized like Linear" "is measured against the mockup you
+approve next, and not enforced until then" (decisions/questions/P-001-design-reviewer-stop.md,
+answer A). So:
+- until the owner's approval of that mockup is recorded, no size and no visual formatting is judged
+  against Linear; the one size rule enforced now is text-box-size A's 16 px for text boxes (item 9);
+- once it is recorded, sizes and the Timeline's formatting are measured against that approved
+  mockup, and only as far as the approval says.
 
 ## The owner's standing rulings
 
@@ -94,7 +106,8 @@ The agreed screens, and the owner's changes to them
     gathered and flagged (notes 7, 8, 18, 21, 24).
   - Each phase its own colour; Technical, Context and Why each their own colour, always with the
     name in words (notes 13, 14); shades re-picked so no colour has two meanings; the swatches
-    approved.
+    approved. Note 13 is narrowed by P-001-redesign-conflicts.md item 4: phases may be marked by
+    some colour or by icons, so a phase marked by icons alone is not a finding.
   - Timeline statuses as an icon inside a plain circle, not by colour (note 23).
   - Home's tile: phases bottom up, a small branch drawing, circle icons, a phase-colour stripe, and
     a plain line such as "Design, second time through" in place of "2 of 4 phases finished"
@@ -127,12 +140,14 @@ The redesign's five conflicts (2026-10-19)
   2. Every standard milestone stays shown, the skipped ones too, shown with care (folded, as
      P-001-standard-milestones.md rules).
   3. The Timeline as built stays: one feed, newest at the top, its structure cleaned up and given
-     Linear's visual formatting. Whether the Technical, Context and Why labels stay is not ruled.
+     Linear's visual formatting (measured as "Sized like Linear" above says). Whether the
+     Technical, Context and Why labels stay is not ruled.
   4. Some colour or icons may mark phases. Whether Technical, Context and Why keep their own
      colours is not ruled.
   5. Text boxes and element sizes follow Linear's as closely as possible.
 - **P-001-text-box-size.md**: A — text boxes keep text at least 16 px, so the phone never zooms;
-  everything else is sized like Linear.
+  everything else is sized like Linear. The 16 px rule is enforced now; "sized like Linear" only
+  once the next mockup is approved, as above.
 
 What waits on the owner, and how it reads
 - **P-001-design-discovery.md**: "I want to glance for a few seconds, but pick up enough information
@@ -140,7 +155,7 @@ What waits on the owner, and how it reads
   facilitates a drill down workflow. I want to naturally live at that car dashboard level - but not
   get hit in the face with it right off the bat." Kinds of decision told apart visually, without
   ranking them (answer 6). "New since you last looked" markers: "Yes absolutely, I want to know all
-  the agents that are working, what they're working on, why they're working on it, what has
+  the agents that are working, what they’re working on, why they’re working on it, what has
   changed, etc…" (answer 8).
 - **P-001-design-lab-1.md**: "Absolutely no fake numbers." The agent panel shows who has the ball.
   Each project keeps its own queue, grouped by kind of action; "I don't like to "cross boundaries"
@@ -164,11 +179,27 @@ What waits on the owner, and how it reads
   **P-001-dor-fixes-round3.md**, question 3, a day earlier.
 - **P-001-s001-owner-questions.md**: the desk shows times in America/Chicago; a v2.5 project's ruling
   is offered as text to copy.
+- **P-001-acting-route.md**: A — the desk answers through prefilled GitHub links: each card's answer
+  button opens GitHub's new-file page with the answer filled in, and the owner taps Commit; the desk
+  holds no write credential.
+- **P-001-github-app-links.md**: answer links stay as they are, pointing at GitHub's new-file page;
+  the owner's phone opens github.com links in the browser, not the GitHub app.
+- **P-001-notifications.md**: phone notifications are Web Push to the desk installed on the owner's
+  iPhone Home Screen, sent by the Orchestrator's GitHub run when it raises a card. The file also
+  records that permission is asked after a tap, never on load, and that the tap opens the card.
+- **P-001-notify-job-merges.md**: A — a pull request the automatic job will merge sends no
+  notification; only what truly needs the owner does, including one the job leaves for the owner.
 
 Work ahead
 - **P-001-m3a-date.md**, **P-001-m3a-finish.md**, **P-001-m3a-order.md**, **P-001-m3a-picks.md**: no
   owner-set date; a rough finish range "labelled an expectation, never a deadline"; the owner orders
   milestones only; picks that aren't milestones yet sit under "Not milestones yet".
+- **P-001-m3a-when.md**: A — Work ahead is built now in the trial view, tried on the preview first;
+  it joins the desk when the chosen design is accepted. **P-001-m3a-done-when.md**: A — M3A is done
+  when the desk shows each milestone ahead with the Chief of Staff's rough estimate and a rough
+  finish, the owner's chosen order is recorded from the desk, and later work that is not a milestone
+  yet can be asked for from the desk as a milestone. **P-001-m3a-estimator.md**: A — the Chief of
+  Staff makes one rough estimate per milestone, recorded in Service-Desk with its date.
 - **P-001-portfolio-read.md**, **P-001-portfolio-plan.md**: the desk reads the portfolio repository,
   read only; the plan and estimates move there once it does; Work ahead looks the same.
 
@@ -212,8 +243,7 @@ src/public/sandbox.css (#8a919a light, #6f7680 dark) measures 3.18:1 on the ligh
 
 1. Rulings: does the change keep every standing ruling above that covers what it touches, and the
    agreed screens as those rulings changed them? Name the ruling it breaks.
-2. Spec: does it keep the S-001 criteria it touches among AC35 to AC41, AC48 to AC72 and AC77 to
-   AC79, where no later ruling replaces them?
+2. Spec: does it keep the S-001 criteria it touches among AC35 to AC41, AC48 to AC79, where no later ruling replaces them?
 3. Waiting is real: does everything counted as waiting need the owner now, and does everything not
    counted show as its ruling says? (P-001-build-path.md question 1, P-001-answer-pr-on-desk.md,
    P-001-board-after-agents.md, P-001-notify-deploys.md; PROJECT.md intent, "False alarms")
@@ -267,9 +297,11 @@ src/public/sandbox.css (#8a919a light, #6f7680 dark) measures 3.18:1 on the ligh
     (P-001-trial-view-notes-1.md, notes 9 and 14; S-001 AC56)
 16. Long text: is a long summary or ruling line shown as three lines, faded, with the whole text one
     tap away? (P-001-tile-summary-clip.md; P-001-design-lab-answers-followup.md)
-17. Answering: does each question have its own answer box, with one choice per option, the
-    recommendation labelled and not picked, and room around each choice? (P-001-board-answer.md;
-    P-001-trial-view-notes-1.md, note 15; P-001-answer-choice-spacing.md)
+17. Answering: where a ruling asks for an answer box (a sheet that answers a question, as
+    P-001-trial-view-notes-1.md note 15 rules), does each question have its own, with one choice per
+    option, the recommendation labelled and not picked, and room around each choice? A board card
+    whose answer is one button per option, each opening a filled-in answer file, passes.
+    (P-001-board-answer.md, C; P-001-trial-view-notes-1.md, note 15; P-001-answer-choice-spacing.md)
 18. Kinds of decision: do different kinds of ask look different, without one drawn as more urgent
     for its kind alone? (P-001-design-discovery.md, answer 6; S-001 AC38)
 19. Plain words first: does each line say what it is in plain words, with codes after it in small
@@ -294,9 +326,10 @@ src/public/sandbox.css (#8a919a light, #6f7680 dark) measures 3.18:1 on the ligh
 Each item applies only after the owner answers questions/P-001-redesign-direction.md, only as far as
 that answer says, and never against a standing ruling or a conflict listed below. "Brief N" is
 docs/design/audit-2026-10-19.md §6; "principle N" is
-docs/design/references/research-2026-10-19-modern-mobile-design.md §12. Brief 3 (no empty fields)
-and brief 4 (four text sizes) are left out: P-001-redesign-conflicts.md and P-001-text-box-size.md
-now rule those points.
+docs/design/references/research-2026-10-19-modern-mobile-design.md §12. Two briefs are left out.
+Brief 3 (no empty fields) is an open conflict with standing rulings and the spec: see conflict 1.
+Brief 4 (four text sizes) is replaced by P-001-redesign-conflicts.md item 5 and
+P-001-text-box-size.md, measured as "Sized like Linear" says.
 
 26. Does every screen's title say its job in six words or fewer? (brief 1)
 27. At 414×896, does the top 400 CSS px of the opening screen hold the waiting count and the first
@@ -343,7 +376,9 @@ not enforced. The reviewer never picks a side.
    Team and Timeline into other screens. The built project screens carry a bar, "Status · Timeline ·
    Team · Queue" (S-001 AC48; the lab's "+" is not built), and P-001-design-lab-1.md (each project
    keeps its own queue) and P-001-design-lab-open.md answer 2 (Team inside each project) keep those
-   screens. P-001-redesign-nav.md rules the app-level tabs, not whether the project bar stays.
+   screens. The Timeline is already kept by P-001-redesign-conflicts.md item 3, so only Queue, Team
+   and the project bar are open here. P-001-redesign-nav.md rules the app-level tabs, not whether
+   the project bar stays.
 4. **Technical, Context and Why.** Audit §4.14 cuts the Timeline's Technical, Context and Why labels,
    and brief 5 allows one accent and two status colours. P-001-trial-view-notes-2.md notes 7, 8 and
    14 give them labels and colours of their own; P-001-redesign-conflicts.md, items 3 and 4, leaves
@@ -356,6 +391,14 @@ not enforced. The reviewer never picks a side.
    detail" fold. P-001-trial-view-notes-1.md note 3 and P-001-tile-summary-clip.md keep the two-column
    grid; P-001-trial-view-notes-2.md notes 1, 2 and 25 keep the runs and the branch drawing;
    P-001-notify-more-detail.md keeps the fold on the current desk's Home.
+8. **"Not tied to a milestone".** Audit §4.14 cuts the Timeline's "Not tied to a milestone" blocks.
+   P-001-trial-view-notes-2.md keeps them: note 21 gathers tasks that name no milestone under a
+   flagged "Not tied to a milestone" line, and the owner agreed to reading (2) of the spec follow-up
+   question 4 ("Agree with all four"), which puts such sprints under it in the run they merged in.
+9. **Team's tiles and logs.** Audit §4.7 cuts Team's role tiles to one "At work now" line and moves
+   the running logs to Details. P-001-trial-view-notes-1.md note 11 has each member's running log
+   drawn right, and P-001-trial-view-notes-2.md note 30 gives each agent card the sprint it is on and
+   the milestone it feeds; P-001-design-lab-1.md ruling 1 keeps the agent panel.
 
 ## Evidence
 

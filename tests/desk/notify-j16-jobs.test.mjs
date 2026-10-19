@@ -460,7 +460,7 @@ test('J16 (security R2): no judging run judges a candidate within 45 minutes of 
   const done = Date.parse('2026-10-18T11:40:00Z');
   for (const [nowMs, left] of [[done + 44 * MIN, false], [done + 45 * MIN, true]]) {
     const v = await judgeCandidate(input({ nowMs }));
-    assert.deepEqual([v.left, v.unjudged], left ? [true, true] : [false, undefined], `${(nowMs - done) / MIN} minutes`);
+    assert.deepEqual([v.left, v.rule, v.unjudged], left ? [true, 'e', true] : [false, null, undefined], `${(nowMs - done) / MIN} minutes`);
   }
   // A run that judged it (merged, or a transient reason) is a judgment; one that judged nothing is not.
   const runs = [arun(1, '2026-10-18T11:41:00Z')];

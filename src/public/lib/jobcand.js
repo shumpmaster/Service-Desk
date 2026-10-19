@@ -189,8 +189,8 @@ export async function judgeCandidate(input) {
     if (v.merged) break;
     verdicts.push({ at: ms(run.run_started_at), kind: reasonKind(v.waits) });
   }
-  // Never judged within 45 minutes of its checks completing: it waits (security round 2, R2).
-  if (!judged && input.nowMs - done >= UNJUDGED_MS) return { left: true, rule: 'b', retriedMs: input.retriedMs, unjudged: true };
+  // (e) never judged within 45 minutes of its checks completing: it waits (security round 2, R2; J16 (e)).
+  if (!judged && input.nowMs - done >= UNJUDGED_MS) return { left: true, rule: 'e', retriedMs: input.retriedMs, unjudged: true };
   if (!verdicts.length) return { left: false, rule: null, retriedMs: input.retriedMs };
   const newest = verdicts[0];
   if (newest.kind === 'final') return { left: true, rule: 'b', retriedMs: input.retriedMs };

@@ -333,6 +333,18 @@ function reviewMark(ctx, n) {
   return { mark: '–', word: 'review', why: 'review not recorded: a verdict file decides neither PASS nor FAIL' };
 }
 
+/**
+ * AC60's estimate-only exception (from 2026-10-19, draft 4 of "Work ahead by milestones"): a merged
+ * pull request of the planning project (J7's `"planning": true`) whose only changed path is
+ * `intake/estimates.jsonl` (J12's `estimate`) and whose body's `Milestone:` line, trimmed, is exactly
+ * `none (a rough estimate)`. Changed paths J12 has not read are not estimate-only.
+ */
+export function estimateMerge(project, pr) {
+  // The `Milestone:` line is matched whole and exactly (J12 keeps that yes or no, `estimateLine`):
+  // `none ( a rough estimate)` or `none (a rough estimate )` is another line, placed as any.
+  return Boolean(project && project.planning === true && pr && pr.mergedAt && pr.estimate === true && pr.estimateLine === true);
+}
+
 /** The pull requests J12 holds, by number, and why they are missing when they are. */
 function pullsIndex(snap, model) {
   const p = snap && snap.pulls;
@@ -427,6 +439,10 @@ export function feedView(ctx, model, nowMs, tz) {
     // (Recommended)"): not by their Milestone: line, not untied, and no part of a run's times (AC59).
     // One J12 has not read is placed nowhere but under a plan line that lists it.
     if (pr.job === true || !pullRead(pr)) continue;
+    // The Chief of Staff's estimates are never a sprint either (AC60, from 2026-10-19): off the
+    // Timeline as the job's merges are, whoever merged them, by the same rules, the plan's exception
+    // included (listed ones are placed above).
+    if (estimateMerge(project, pr)) continue;
     const ml = pr.parts && pr.parts.milestone;
     const run = placeByTime(t(pr.mergedAt));
     if (ml && ml.ids) {
@@ -669,7 +685,7 @@ function msRow(ctx, r, kind, m, x, sprints, named) {
  * card, the line directly under its `answer:` line; and for each, its Context section, from its
  * heading to the next heading or the file's end (a card's stops before any `## 8.`).
  */
-function ownParts(text, kind) {
+export function ownParts(text, kind) {
   const line = kind === 'card' ? cardMilestoneLine(text) : firstMilestoneLine(text);
   return { milestone: milestoneValue(line), context: prBodyParts(text).context };
 }
@@ -737,7 +753,7 @@ export function unblocksOf(ctx, row) {
  *   `Milestone:` line after line 1, so it still links once its question is tidied away; for an
  *   answer with none, its question file's, while the tree holds that file (J2); otherwise none.
  */
-export function doneTarget(feed, snap, kind, code) {
+export function doneTarget(feed, snap, kind, code, project = null) {
   if (!feed || !feed.ok) return null;
   const tree = (snap && snap.tree) || new Map();
   const records = (snap && snap.records) || new Map();
@@ -746,7 +762,10 @@ export function doneTarget(feed, snap, kind, code) {
     if (feed.index.has(sprint)) return { sprint };
     const n = kind === 'pr' && /^PR #\d+$/.test(sprint) ? Number(sprint.slice(4)) : null;
     const kept = n != null && snap && snap.pulls && snap.pulls.list && !snap.pulls.failure ? snap.pulls.list.find((x) => x.number === n) : null;
-    return kept && kept.mergedAt && kept.job === true ? { job: true } : null;
+    if (kept && kept.mergedAt && kept.job === true) return { job: true };
+    // AC66 (from 2026-10-19): an estimate-only merge, whoever merged it, unless a plan line lists it (above).
+    if (kept && estimateMerge(project, kept)) return { estimate: true };
+    return null;
   }
   if (kind === 'ruling') {
     const ans = tree.has(`decisions/questions/${code}.md`) ? records.get(`decisions/questions/${code}.md`) : null;
@@ -763,6 +782,8 @@ export function doneTarget(feed, snap, kind, code) {
   return null;
 }
 export const JOB_MERGE_WORDS = 'not on the Timeline: merged by the automatic job';
+/** AC66's words for an estimate-only merge's "Done today" row (from 2026-10-19). */
+export const ESTIMATE_MERGE_WORDS = 'not on the Timeline: a rough estimate';
 
 /** AC66's neutral group marks; a group holding anything that waits on the owner shows the coral diamond instead. */
 export const GROUP_MARK = { decisions: '◇', gates: '▲', verdicts: '✎', merges: '⇄', deploys: '▸' };

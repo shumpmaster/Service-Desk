@@ -115,6 +115,7 @@ must_not_see = ["docs/PROJECT.md", "docs/gates/**/*-case.md", "docs/gates/**/*-c
 must_read = ["governance/domains/design/README.md", "src/public/**", "{ruling}"]
 may_read = ["specs/{spec}.md", "docs/PROJECT.md", "docs/design/**", "src/**", "tests/**",
             "decisions/**",  # the owner's ruling records; the Chief of Staff's -notes.md never enter a pack
+            "questions/**",  # the open questions, so an open one is never taken as ruled
             "library/**", "docs/playbooks/**"]
 # "The builder's summary of its own work."
 must_not_see = ["docs/reports/**"]

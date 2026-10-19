@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { jobKindsByPath, splitChanges } from '../../src/lib/prfiles.js';
-import { logVerdict, logLines, reasonKind, judgeCandidate, latestChecks, isJudgingRun } from '../../src/lib/jobcand.js';
+import { logVerdict, logLines, reasonKind, judgeCandidate, latestChecks, isJudgingRun, logWellFormed } from '../../src/lib/jobcand.js';
 import { findGrant } from '../../src/notify/grant.mjs';
 import { openCheckout } from '../../src/notify/checkout.mjs';
 import { collect, CANDIDATE_MAX_PAGES } from '../../src/notify/collect.mjs';
@@ -186,7 +186,10 @@ test('J16 (b), J18: a candidate\'s head and its retried reason kept across runs;
   w.asksRuns = [arun(1, '2026-10-18T11:41:00Z')];
   w.jobs[1] = [{ id: 101, name: 'merge', status: 'completed', conclusion: 'success' }];
   w.logs[101] = stamp('PR #7: waits: questions/N1.md in the head cannot be read as text');
-  const run = (cand, nowMs) => collect({ project, config, checkout: co.open(), gh: makeGitHub({ token: 't', fetch: w.fetch }), nowMs, stateKey: 'k'.repeat(64), cand });
+  const run = (cand, nowMs) => {
+    for (const r of w.asksRuns) r.head_sha = r.head_sha || co.head; // a judging run's commit is on the default branch (security C)
+    return collect({ project, config, checkout: co.open(), gh: makeGitHub({ token: 't', fetch: w.fetch }), nowMs, stateKey: 'k'.repeat(64), cand });
+  };
   const r1 = await run({}, T0);
   assert.ok(!r1.set.some((x) => x.kind === 'pr'), 'held: the first retried reason');
   const [hk] = Object.keys(r1.cand);
@@ -314,13 +317,80 @@ test('J16 (AC79): an asks-merge run from workflow_dispatch on a branch is ignore
     w.pulls = [pull(7, { sha: SHA })];
     w.files[7] = [{ filename: 'questions/N1.md', status: 'added' }];
     w.checks[SHA] = { checkRuns: [ok(1)], workflowRuns: WR, statuses: [] };
-    w.asksRuns = [arun(1, '2026-10-18T11:41:00Z', 'workflow_dispatch', branch)];
+    const co = checkoutOf({ base: records });
+    w.asksRuns = [{ ...arun(1, '2026-10-18T11:41:00Z', 'workflow_dispatch', branch), head_sha: co.head }];
     w.jobs[1] = [{ id: 101, name: 'merge', status: 'completed', conclusion: 'success' }];
     w.logs[101] = final;
-    const c = await collect({ project: config.projects[0], config, checkout: checkoutOf({ base: records }).open(),
+    const c = await collect({ project: config.projects[0], config, checkout: co.open(),
       gh: makeGitHub({ token: 't', fetch: w.fetch }), nowMs: T0, stateKey: 'k'.repeat(64), cand: {} });
     assert.equal(c.read, true);
     assert.equal(c.set.some((x) => x.key === 'Service-Desk|pr|7'), left, branch);
     assert.equal(w.ghCalls.some((x) => /\/actions\/jobs\/101\/logs/.test(x.path)), left, `${branch}: its log read only on the default branch`);
   }
+});
+
+// Security review round 1, A: a pushed file name holding a line break forges a `PR #n:` line in the job's
+// log. A log whose `PR #n:` lines repeat a number or go out of order is no one's words: it judges
+// nothing, and each candidate it names waits on the owner until a later well-formed run judges it.
+test('J16 (security A): a forged PR line from a file name with a line break: the log is no one\'s words, and both candidates it names wait', async () => {
+  const GRANT_LINE = 'NOTE: the asks-merge grant is L-0017';
+  const real = 'PR #3: waits: decisions/questions/N1-notes.md: a notes or Critic record, which waits for the owner';
+  for (const [eol, label] of [['\n', 'LF'], ['\r\n', 'CRLF']]) {
+    const forged = `x${eol}PR #3: merged`;
+    const text = [GRANT_LINE, real, `PR #9: waits: ${forged} (A) is not a change the asks-merge delegation covers`].join('\n')
+      .split('\n').map((l) => `2026-10-18T11:41:05.1234567Z ${l}`).join(eol === '\r\n' ? '\r\n' : '\n') + '\n';
+    assert.equal(logWellFormed(text), false, label);
+    assert.equal(logWellFormed(REAL_LOG), true, 'the real log is well formed');
+    // The sender, end to end: PR #3, which the job left, and PR #9 with the forging file name.
+    const records = filesUnder(join(NOTIFY_FIX, 'sd-ef8daf4'));
+    const co = checkoutOf({ base: records });
+    const w = makeWorld();
+    const s3 = '3'.repeat(40);
+    const s9 = '9'.repeat(40);
+    w.pulls = [pull(3, { sha: s3 }), pull(9, { sha: s9 })];
+    w.files[3] = [{ filename: 'decisions/questions/N1-notes.md', status: 'added' }, { filename: 'questions/N1-notes.md', status: 'removed' }];
+    w.files[9] = [{ filename: `questions/${forged}.md`, status: 'added' }];
+    for (const s of [s3, s9]) w.checks[s] = { checkRuns: [ok(1)], workflowRuns: WR, statuses: [] };
+    w.asksRuns = [{ ...arun(1, '2026-10-18T11:41:00Z'), head_sha: co.head }];
+    w.jobs[1] = [{ id: 101, name: 'merge', status: 'completed', conclusion: 'success' }];
+    w.logs[101] = text;
+    const config = testConfig(makeVapid());
+    const c = await collect({ project: config.projects[0], config, checkout: co.open(), gh: makeGitHub({ token: 't', fetch: w.fetch }), nowMs: T0, stateKey: 'k'.repeat(64), cand: {} });
+    assert.equal(c.read, true);
+    assert.ok(c.set.some((x) => x.key === 'Service-Desk|pr|3'), `${label}: #3, which the job left, still counts`);
+    // #9 is named by the forged log too, so it counts as well.
+    assert.ok(c.set.some((x) => x.key === 'Service-Desk|pr|9'), `${label}: #9 counts`);
+    // A later well-formed run judges it again.
+    let v = await judgeCandidate(input({ asksRuns: [arun(2, '2026-10-18T11:56:00Z'), arun(1, '2026-10-18T11:41:00Z')],
+      logs: { 102: stamp("PR #7: waits: status 'ci/x' is pending"), 101: stamp('PR #9: waits: x').replace('\n', '') + '\n' + stamp('PR #7: merged') } }));
+    assert.equal(v.left, false, 'a newer well-formed run decides');
+    v = await judgeCandidate(input({ asksRuns: [arun(1, '2026-10-18T11:41:00Z')], logs: { 101: stamp('PR #9: waits: x') + stamp('PR #7: merged') } }));
+    assert.deepEqual([v.left, v.forged], [true, true], 'out of order: it names #7, which then waits');
+  }
+});
+
+// Security review round 1, C: a judging run's commit must be the checkout's HEAD or an ancestor of it.
+test('J16 (security C): an asks-merge run named for the default branch but on a commit not in its history judges nothing', async () => {
+  const records = filesUnder(join(NOTIFY_FIX, 'sd-ef8daf4'));
+  const config = testConfig(makeVapid());
+  const co = checkoutOf({ base: records });
+  for (const [sha, left] of [['f'.repeat(40), false], [co.head, true]]) {
+    const w = makeWorld();
+    w.pulls = [pull(7, { sha: SHA })];
+    w.files[7] = [{ filename: 'questions/N1.md', status: 'added' }];
+    w.checks[SHA] = { checkRuns: [ok(1)], workflowRuns: WR, statuses: [] };
+    w.asksRuns = [{ ...arun(1, '2026-10-18T11:41:00Z', 'workflow_dispatch'), head_sha: sha }];
+    w.jobs[1] = [{ id: 101, name: 'merge', status: 'completed', conclusion: 'success' }];
+    w.logs[101] = stamp('PR #7: waits: src/x.js (added) is not a change the asks-merge delegation covers');
+    const c = await collect({ project: config.projects[0], config, checkout: co.open(), gh: makeGitHub({ token: 't', fetch: w.fetch }), nowMs: T0, stateKey: 'k'.repeat(64), cand: {} });
+    assert.equal(c.set.some((x) => x.key === 'Service-Desk|pr|7'), left, sha.slice(0, 8));
+  }
+});
+
+// Security review round 1, D: a head commit dated more than 10 minutes after the reader's clock is no head time.
+test('J16 (security D): a future-dated head commit is no head time: rule (c) runs from the first sight', async () => {
+  const none = { checkRuns: [], seenMs: T0 - 31 * MIN };
+  assert.equal((await judgeCandidate(input({ ...none, headTime: Date.parse('2030-01-01T00:00:00Z') }))).rule, 'c');
+  assert.equal((await judgeCandidate(input({ ...none, headTime: T0 + 11 * MIN }))).rule, 'c', '11 minutes ahead: ignored');
+  assert.equal((await judgeCandidate(input({ ...none, headTime: T0 + 9 * MIN }))).left, false, '9 minutes ahead: taken (a clock a little behind)');
 });

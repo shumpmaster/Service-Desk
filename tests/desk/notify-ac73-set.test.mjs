@@ -59,7 +59,7 @@ function sdWorld(head) {
   w.checks[sha('5')] = { checkRuns: [], workflowRuns: [], statuses: [] };
   w.commits[sha('5')] = '2026-10-18T11:55:00Z';
   // A judging run on the default branch (2026-10-19, AC79: real workflow_run runs report it, Facts relied on).
-  w.asksRuns = [{ id: 501, event: 'workflow_run', head_branch: 'main', status: 'completed', conclusion: 'success', run_started_at: '2026-10-18T11:41:00Z' }];
+  w.asksRuns = [{ id: 501, event: 'workflow_run', head_branch: 'main', head_sha: head, status: 'completed', conclusion: 'success', run_started_at: '2026-10-18T11:41:00Z' }];
   w.jobs[501] = [{ id: 601, name: 'merge', status: 'completed', conclusion: 'success' }];
   w.logs[601] = '2026-10-18T11:41:05.1234567Z NOTE: the asks-merge grant is L-0017\n'
     + '2026-10-18T11:41:05.2234567Z PR #963: waits: decisions/questions/N-recorded.md: a notes or Critic record, which waits for the owner\n';

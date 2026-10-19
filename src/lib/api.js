@@ -139,19 +139,22 @@ function validateBlobs(body, config) {
   // that is not digits are answered null, never refused.
   let commitTime = null;
   let commitTimeNull = [];
+  // An entry that is not a string, or is over 100 characters, answers null under its own text, never a
+  // refusal of the call (J6; security review round 1, G); a v2.5 project's jobLog entries all answer null.
+  const entryKey = (x) => String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 100);
   if (body.commitTime != null) {
-    if (!Array.isArray(body.commitTime) || body.commitTime.some((x) => typeof x !== 'string' || x.length > 100)) return { error: 'bad commitTime' };
-    const all = [...new Set(body.commitTime)];
-    commitTime = all.filter((x) => SHA_RE.test(x)).slice(0, MAX_COMMIT_TIMES);
-    commitTimeNull = all.filter((x) => !commitTime.includes(x));
+    if (!Array.isArray(body.commitTime)) return { error: 'bad commitTime' };
+    const ok = [...new Set(body.commitTime.filter((x) => typeof x === 'string' && x.length <= 100 && SHA_RE.test(x)))];
+    commitTime = ok.slice(0, MAX_COMMIT_TIMES);
+    commitTimeNull = [...new Set(body.commitTime.map(entryKey))].filter((k) => !commitTime.includes(k));
   }
   let jobLog = null;
   let jobLogNull = [];
   if (body.jobLog != null) {
-    if (!Array.isArray(body.jobLog) || body.jobLog.some((x) => typeof x !== 'string' || x.length > 100)) return { error: 'bad jobLog' };
-    const all = [...new Set(body.jobLog)];
-    jobLog = all.filter((x) => /^[0-9]{1,20}$/.test(x)).slice(0, MAX_JOB_LOGS);
-    jobLogNull = all.filter((x) => !jobLog.includes(x));
+    if (!Array.isArray(body.jobLog)) return { error: 'bad jobLog' };
+    const ok = project.model === 'v3' ? [...new Set(body.jobLog.filter((x) => typeof x === 'string' && /^[0-9]{1,20}$/.test(x)))] : [];
+    jobLog = ok.slice(0, MAX_JOB_LOGS);
+    jobLogNull = [...new Set(body.jobLog.map(entryKey))].filter((k) => !jobLog.includes(k));
   }
   // J21 (2026-10-18, draft 4): the optional `usage` field, the account's Actions use, counting 5.
   if (body.usage != null && body.usage !== true) return { error: 'bad usage' };

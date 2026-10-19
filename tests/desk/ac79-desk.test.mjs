@@ -78,6 +78,10 @@ test('AC79 on the scheduler: 304s make no blob call, a 200 makes one; a run\'s l
   const clock = fakeClock(T0);
   const rs = repos({ pulls: [own(7, 'File a made-up question')], prFiles: { 7: FILING }, jobs: recordingJobs() });
   let { server, desk } = openDesk(rs, clock);
+  // Before the first judgment answers (the first cycle reads the tree, the files and the ledger): counted.
+  await clock.runUntil(T0 + 1000);
+  assert.deepEqual(desk.model('Service-Desk').flagged.filter((f) => f.kind === 'pr').map((f) => f.pr.number), [7], 'counted before the first judgment');
+  assert.equal(desk.model('Service-Desk').beingRecorded.length, 0);
   await clock.runUntil(T0 + 4 * MIN);
   const model = desk.model('Service-Desk');
   assert.equal(model.flagged.filter((f) => f.kind === 'pr').length, 0, 'not counted');

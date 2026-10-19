@@ -246,6 +246,15 @@ export async function collect(input) {
       if (candidates.length) {
         const ar = await gh.get(`/repos/${repo}${ASKS_MERGE_RUNS}`);
         if (ar.status !== 200 || !ar.json || !Array.isArray(ar.json.workflow_runs)) throw new ReadFailed('asks-merge runs', ar.status);
+        // A judging run's commit must be on the default branch (security review round 1, C): a run whose
+        // head_sha is not the checkout's HEAD or an ancestor of it (a dispatch on a tag named like the
+        // default branch) judges nothing. Checked in the full-history checkout.
+        const onDefault = new Map();
+        const asksRuns = ar.json.workflow_runs.filter((r) => {
+          const sha = r && r.head_sha;
+          if (!onDefault.has(sha)) onDefault.set(sha, checkout.isAncestor(sha, checkout.head) === true);
+          return onDefault.get(sha);
+        });
         const jobsCache = new Map();
         const logCache = new Map();
         const readJobs = async (id) => {
@@ -273,7 +282,7 @@ export async function collect(input) {
           const prev = (input.cand || {})[hk];
           const seenIso = prev ? prev.seen : now.toISOString();
           const v = await judgeCandidate({ number: pr.number, checkRuns: ck.items, workflowRuns: wr.items, statuses: st.items,
-            asksRuns: ar.json.workflow_runs, readJobs, readLog,
+            asksRuns, readJobs, readLog,
             headTime: async () => {
               const c = await gh.get(`/repos/${repo}/commits/${sha}`);
               const d = c.status === 200 && c.json && c.json.commit && c.json.commit.committer && c.json.commit.committer.date;

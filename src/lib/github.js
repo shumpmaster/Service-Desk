@@ -451,7 +451,7 @@ export function keptLogLines(text) {
  * tooLarge }, or null for a failed read (a rate limit or a 401 stops the call, as for every read).
  */
 async function jobLogForm(get, u, id, deps, counter, optionalFail) {
-  const jr = await get(u.runJobs(id));
+  const jr = await get(u.runJobs(id), { redirect: 'manual' }); // a redirect is a failed read (security F)
   if (!jr || !jr.ok) {
     optionalFail(jr);
     return null;
@@ -739,7 +739,7 @@ export async function readBlobs(req, deps) {
     out.commitTime[sha] = null;
     tasks.push(async () => {
       if (failure) return;
-      const res = await get(u.commit(sha));
+      const res = await get(u.commit(sha), { redirect: 'manual' }); // a redirect is a failed read (security F)
       if (!res || !res.ok) return optionalFail(res);
       try {
         const c = JSON.parse(await res.text());

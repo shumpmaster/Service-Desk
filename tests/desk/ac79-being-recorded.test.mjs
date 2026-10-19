@@ -79,7 +79,10 @@ function pageCtx(w, records) {
  * left #n, the page counts it. Returns { senderLeft, v (the page's verdict, or undefined: no candidate), counts }.
  */
 async function both(w, { records = RECORDS, nowMs = T0, n = 7 } = {}) {
-  const c = await collect({ project: PROJECT, config: CONFIG, checkout: checkout(records).open(), gh: makeGitHub({ token: 't', fetch: w.fetch }),
+  // A judging run's commit is the default branch's head unless the case says otherwise (security C).
+  const co = checkout(records);
+  for (const r of w.asksRuns) if (!r.head_sha) r.head_sha = co.head;
+  const c = await collect({ project: PROJECT, config: CONFIG, checkout: co.open(), gh: makeGitHub({ token: 't', fetch: w.fetch }),
     nowMs, stateKey: 'k'.repeat(64), cand: {} });
   assert.equal(c.read, true, c.why);
   const { verdicts, page } = await settledVerdicts(pageCtx(w, records), nowMs);
@@ -288,7 +291,7 @@ test('AC79\'s log form: filtered lines give the same logVerdict as the whole log
 // ---------------------------------------------------------------------------
 // The staged reads, the cap and the grant's epoch, on the page's own module.
 
-test('AC79: the cap: a head needing its head time, a log and a re-read (3 calls, judged); a fourth needed counts until a new head', async () => {
+test('AC79: the cap: a head needing its head time, a log and a re-read (3 calls, judged); a fourth needed counts until its head changes, the same head too; a new head in the same opening is judged', async () => {
   // No counted check: the head time is needed, and fails every time; each poll changes (a new runs page).
   const w = world({ checkRuns: [], workflowRuns: [], created: '2026-10-18T11:55:00Z', asksRuns: [arun(1, '2026-10-18T11:30:00Z')], logs: { 101: log(GRANT) } });
   const p = pageJobs(pageCtx(w, RECORDS));
@@ -301,17 +304,21 @@ test('AC79: the cap: a head needing its head time, a log and a re-read (3 calls,
   assert.equal(p.calls.commitTime.filter((x) => x === SHA).length, 3);
   assert.equal(h.capped, true);
   assert.deepEqual([p.js.verdicts.get(7).state, p.js.verdicts.get(7).why], ['count', 'capped']);
-  // A new head starts again, and is judged.
+  // The same head after the cap: a check run starts, which would let it be judged; it still counts until its head changes.
+  w.checks[SHA] = { checkRuns: [{ ...ok(4), status: 'in_progress', conclusion: null, completed_at: null }], workflowRuns: WR, statuses: [] };
+  for (let i = 8; i < 11; i++) await p.poll(T0 + i * MIN);
+  assert.deepEqual([p.js.verdicts.get(7).state, p.js.verdicts.get(7).why], ['count', 'capped'], 'the same head stays counted');
+  assert.equal(p.js.heads.get(SHA).calls, CALLS_PER_HEAD, 'and no fourth call');
+  // A new head in the same opening starts again, and is judged.
   const sha2 = 'd'.repeat(40);
-  w.pulls = [pull(7, { sha: sha2 })];
+  w.pulls = [pull(7, { sha: sha2, created: '2026-10-18T11:55:00Z' })];
+  w.files[7] = [{ filename: 'questions/N1.md', status: 'added' }];
   w.checks[sha2] = { checkRuns: [{ ...ok(5), status: 'in_progress', conclusion: null, completed_at: null }], workflowRuns: WR, statuses: [] };
-  const ctx2 = pageCtx(w, RECORDS);
-  Object.assign(p, {});
-  const p2 = pageJobs(ctx2);
-  await p2.poll(T0 + 10 * MIN);
-  await p2.poll(T0 + 11 * MIN);
-  await p2.poll(T0 + 12 * MIN);
-  assert.equal(p2.js.verdicts.get(7).state, 'recording');
+  Object.assign(p.ctxRef, pageCtx(w, RECORDS)); // the same opening, its pull request now at the new head
+  for (let i = 11; i < 14; i++) await p.poll(T0 + i * MIN);
+  assert.equal(p.js.verdicts.get(7).head, sha2);
+  assert.equal(p.js.verdicts.get(7).state, 'recording', 'a new head within the same opening is judged');
+  assert.equal(p.js.heads.get(SHA).capped, true, 'the old head keeps its cap for the opening');
 });
 
 test('AC79: a failed log answer kept for its run and not asked again; the grant read failing waits for the next opening or ledger change', async () => {
@@ -425,4 +432,131 @@ test('AC79: a failed or refused poll part counts every candidate and leaves the 
   delete w.fail[`/repos/${REPO}/commits/${SHA}/check-runs`];
   await p.poll(T0 + 4 * MIN);
   assert.equal(p.js.verdicts.get(7).state, 'recording');
+});
+
+// Build review round 1, A: a decided_by record deleted, the ledger unchanged. The sender's find_grant finds
+// no grant, so it counts; the page checks the kept ledger text against each cycle's tree, so it counts too.
+test('AC79 rule (d): the grant\'s decided_by record deleted with the ledger unchanged: the sender counts, the page counts, in a fresh opening and within one', async () => {
+  const running = [{ ...ok(1), status: 'in_progress', conclusion: null, completed_at: null }];
+  const base = { checkRuns: running, asksRuns: [arun(1, '2026-10-18T11:30:00Z')], logs: { 101: log(GRANT) } };
+  const named = [...new Set(String(RECORDS['docs/LEDGER.md']).match(/decisions\/questions\/[A-Za-z0-9][A-Za-z0-9._-]*\.md/g))].filter((x) => RECORDS[x]);
+  assert.ok(named.includes('decisions/questions/P-001-asks-merge.md'));
+  const gone = { ...RECORDS };
+  for (const n of named) delete gone[n];
+  const r = await both(world(base), { records: gone });
+  assert.equal(r.senderLeft, true, 'the sender counts');
+  assert.equal(r.v.state, 'count', 'the page counts');
+  // Within one opening: recording, then the record goes (the ledger's sha unchanged), then it comes back.
+  const w = world(base);
+  const p = pageJobs(pageCtx(w, RECORDS));
+  for (let i = 0; i < 4; i++) await p.poll(T0 + i * MIN);
+  assert.equal(p.js.verdicts.get(7).state, 'recording');
+  const ledgerReads = p.calls.ledger;
+  p.ctxRef.tree = new Map([...p.ctxRef.tree].filter(([path]) => !named.includes(path)));
+  await p.poll(T0 + 4 * MIN);
+  assert.deepEqual([p.js.verdicts.get(7).state, p.js.verdicts.get(7).why], ['count', 'grant'], 'counted at the next cycle');
+  assert.equal(p.calls.ledger, ledgerReads, 'from the kept text, with no new read');
+  p.ctxRef.tree = pageCtx(w, RECORDS).tree;
+  for (let i = 5; i < 8; i++) await p.poll(T0 + i * MIN);
+  assert.equal(p.js.verdicts.get(7).state, 'recording', 'the record back: the grant stands again');
+});
+
+// Build review round 1, C: the newest judging run's merge job did not run: the grant line comes from the
+// next judging run whose merge job ran; the grant is not marked failed.
+test('AC79: a grant read whose merge job did not run moves on to the next judging run whose job ran', async () => {
+  const running = [{ ...ok(1), status: 'in_progress', conclusion: null, completed_at: null }];
+  const w = world({ checkRuns: running, asksRuns: [arun(2, '2026-10-18T11:50:00Z'), arun(1, '2026-10-18T11:30:00Z')],
+    jobs: { 2: [{ id: 102, name: 'merge', status: 'completed', conclusion: 'skipped' }] }, logs: { 101: log(GRANT) } });
+  const p = pageJobs(pageCtx(w, RECORDS));
+  for (let i = 0; i < 5; i++) await p.poll(T0 + i * MIN);
+  assert.equal(p.js.logs.get('2').ran, false);
+  assert.equal(p.js.grant.failed, false);
+  assert.deepEqual(p.calls.jobLog, ['2', '1'], 'the newest first, then the next');
+  assert.equal(p.js.verdicts.get(7).state, 'recording');
+});
+
+// Build review round 1, D: before the first judgment answers, the pull request counts.
+test('AC79: before the first judgment answers, a candidate counts', async () => {
+  const running = [{ ...ok(1), status: 'in_progress', conclusion: null, completed_at: null }];
+  const p = pageJobs(pageCtx(world({ checkRuns: running, asksRuns: [arun(1, '2026-10-18T11:30:00Z')], logs: { 101: log(GRANT) } }), RECORDS));
+  let v = await p.poll(T0);
+  assert.deepEqual([v.get(7).state, v.get(7).why], ['count', 'unread'], 'the first cycle: the ledger only, nothing judged');
+  // The next cycle's poll reads the lists, its blob call the grant line, then the judgment answers.
+  v = await p.poll(T0 + MIN);
+  assert.equal(v.get(7).state, 'recording', 'then judged');
+  // And a new candidate in the same opening counts until its own first judgment.
+  const w = p.ctxRef.world;
+  const sha8 = 'e'.repeat(40);
+  w.pulls.push(pull(8, { sha: sha8 }));
+  w.files[8] = [{ filename: 'questions/N8.md', status: 'added' }];
+  w.checks[sha8] = { checkRuns: running, workflowRuns: WR, statuses: [] };
+  Object.assign(p.ctxRef, pageCtx(w, RECORDS));
+  v = await p.poll(T0 + 2 * MIN);
+  assert.deepEqual([v.get(8).state, v.get(8).why], ['count', 'unread'], 'the new one counts');
+  assert.equal(v.get(7).state, 'recording');
+  v = await p.poll(T0 + 3 * MIN);
+  assert.equal(v.get(8).state, 'recording');
+});
+
+// Security review round 1, A: a file name with a line break forges `PR #3: merged` in the job's log. The
+// log is no one's words, so both the sender and the page count every candidate it names.
+test('AC79 (security A): PR #3 left by the job and PR #9 whose file is "x\\nPR #3: merged": the sender counts #3, the page counts #3; LF and CRLF', async () => {
+  const real = 'PR #3: waits: decisions/questions/N1-notes.md: a notes or Critic record, which waits for the owner';
+  const s3 = '3'.repeat(40);
+  const s9 = '9'.repeat(40);
+  for (const eol of ['\n', '\r\n']) {
+    const forged = `x${eol}PR #3: merged`;
+    const text = [GRANT, real, `PR #9: waits: ${forged} (A) is not a change the asks-merge delegation covers`].join('\n')
+      .split('\n').map((l) => `2026-10-18T11:41:05.1234567Z ${l}`).join(eol) + eol;
+    // #3 alone, before: left by the job, counted by both.
+    let w = world({ pulls: [pull(3, { sha: s3 })], asksRuns: [arun(1, '2026-10-18T11:41:00Z')], logs: { 101: log(GRANT, real) } });
+    w.files[3] = [{ filename: 'decisions/questions/N1-notes.md', status: 'added' }, { filename: 'questions/N1-notes.md', status: 'removed' }];
+    w.checks[s3] = { checkRuns: [ok(1)], workflowRuns: WR, statuses: [] };
+    let r = await both(w, { n: 3 });
+    assert.deepEqual([r.senderLeft, r.v.state], [true, 'count']);
+    // #9 opened with the forging name.
+    w = world({ pulls: [pull(3, { sha: s3 }), pull(9, { sha: s9 })], asksRuns: [arun(1, '2026-10-18T11:41:00Z')], logs: { 101: text } });
+    w.files[3] = [{ filename: 'decisions/questions/N1-notes.md', status: 'added' }, { filename: 'questions/N1-notes.md', status: 'removed' }];
+    w.files[9] = [{ filename: `questions/${forged}.md`, status: 'added' }];
+    for (const s of [s3, s9]) w.checks[s] = { checkRuns: [ok(1)], workflowRuns: WR, statuses: [] };
+    r = await both(w, { n: 3 });
+    assert.equal(r.senderLeft, true, `${JSON.stringify(eol)}: the sender counts #3`);
+    assert.deepEqual([r.v.state, r.v.why], ['count', 'forged'], `${JSON.stringify(eol)}: the page counts #3`);
+    const { verdicts } = await settledVerdicts(pageCtx(w, RECORDS), T0);
+    assert.deepEqual([verdicts.get(9).state, verdicts.get(9).why], ['count', 'forged'], '#9, a candidate by path, counts too');
+  }
+});
+
+// Security review round 1, C: the page cannot check a dispatched run's commit, so it takes no grant line
+// from one and counts every candidate the newest judging run, when dispatched, names.
+test('AC79 (security C): a workflow_dispatch run as the newest judging run: the candidates it names count; the grant line comes from the run before', async () => {
+  const running = [{ ...ok(1), status: 'in_progress', conclusion: null, completed_at: null }];
+  const d = arun(2, '2026-10-18T11:50:00Z', { event: 'workflow_dispatch' });
+  // It names #7 (with a grant line naming another entry): #7 counts; no grant line taken from it.
+  let w = world({ checkRuns: running, asksRuns: [d, arun(1, '2026-10-18T11:30:00Z')],
+    logs: { 101: log(GRANT), 102: log('NOTE: the asks-merge grant is L-0099', 'PR #7: merged (kinds a) at cccccccccccc under L-0099') } });
+  let { verdicts, page } = await settledVerdicts(pageCtx(w, RECORDS), T0);
+  assert.deepEqual([verdicts.get(7).state, verdicts.get(7).why], ['count', 'dispatch']);
+  assert.ok(page.calls.jobLog.includes('2') && page.calls.jobLog.includes('1'), 'its log read for the names; the grant line from run 1');
+  // It names another pull request only: #7 is judged, the grant from run 1 standing.
+  w = world({ checkRuns: running, asksRuns: [d, arun(1, '2026-10-18T11:30:00Z')], logs: { 101: log(GRANT), 102: log(GRANT, 'PR #5: waits: x') } });
+  ({ verdicts } = await settledVerdicts(pageCtx(w, RECORDS), T0));
+  assert.equal(verdicts.get(7).state, 'recording');
+  // As the newest verdict for a candidate after its checks: counted, not held as left.
+  w = world({ asksRuns: [arun(3, '2026-10-18T11:45:00Z', { event: 'workflow_dispatch' }), arun(1, '2026-10-18T11:30:00Z')],
+    logs: { 101: log(GRANT), 103: log(GRANT, 'PR #7: merged (kinds a) at cccccccccccc under L-0017') } });
+  const r = await both(w);
+  assert.deepEqual([r.v.state, r.v.why], ['count', 'dispatch']);
+  // A dispatched run on a commit not in the default branch's history: the sender ignores it, the page counts.
+  const w2 = world({ asksRuns: [{ ...arun(3, '2026-10-18T11:45:00Z', { event: 'workflow_dispatch' }), head_sha: 'f'.repeat(40) }, arun(1, '2026-10-18T11:30:00Z')],
+    logs: { 101: log(GRANT), 103: log(GRANT, 'PR #7: waits: x is final') } });
+  const r2 = await both(w2);
+  assert.deepEqual([r2.senderLeft, r2.v.state], [false, 'count'], 'the page counts where the sender cannot be told by that run');
+});
+
+// Security review round 1, D: a head commit dated in the future is no head time, on both sides.
+test('AC79 (security D): a future-dated head commit: rule (c) runs from created_at on the page and first sight on the sender', async () => {
+  const none = { checkRuns: [], workflowRuns: [], asksRuns: [arun(1, '2026-10-18T11:30:00Z')], logs: { 101: log(GRANT) } };
+  const r = await both(world({ ...none, created: '2026-10-18T11:20:00Z', commits: { [SHA]: '2030-01-01T00:00:00Z' } }));
+  assert.deepEqual([r.v.state, r.v.rule], ['count', 'c'], 'the page counts from created_at, 40 minutes ago');
 });

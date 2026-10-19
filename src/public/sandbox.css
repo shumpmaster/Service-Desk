@@ -718,4 +718,7 @@ html.sb .sb-wa-bar { position: sticky; bottom: 0; margin: var(--s4) 0 0; padding
   background: var(--page); border-top: 1px solid var(--line); }
 html.sb .sb-wa-rec { background: var(--ink); color: var(--page); border-color: var(--ink); }
 html.sb .sb-wa-rec[disabled] { opacity: .5; cursor: default; }
-html.sb .sb-wa-why { flex: 1 1 100%; }
+html.sb .sb-wa-why, html.sb .sb-wa-copy { flex: 1 1 100%; }
+html.sb .sb-wa-copy { display: grid; gap: var(--s2); margin: var(--s2) 0 0; }
+html.sb .sb-wa-copy .sb-value { margin: 0; padding: var(--s2); white-space: pre-wrap; word-break: break-all; font: var(--t-code);
+  background: var(--surf2); border: 1px solid var(--line); border-radius: var(--rs); }

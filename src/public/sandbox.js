@@ -908,7 +908,7 @@ function renderHome(desk, built, seen, now) {
       desk.signedOut ? SIGNED_OUT_STATE.text : total ? `${total} waiting on you in all` : s.text,
       lastRead ? h('span', { class: 'sb-muted' }, ` · last read ${hhmm(new Date(lastRead), TZ)}`) : null),
     // AC24's way in (from 2026-10-18): one control, "Work ahead", just under Home's top line.
-    h('p', { class: 'sb-wa-link', key: 'wa-link' }, h('a', { href: '#/work', key: 'work-ahead' }, WA.control, h('span', { 'aria-hidden': 'true' }, ' ›'))),
+    h('p', { class: 'sb-wa-link', key: 'wa-link' }, h('a', { href: '#/work', key: 'work-ahead' }, `${WA.control} ›`)),
     seen.words ? h('p', { class: 'sb-muted small' }, seen.words) : null,
     onTopLine(notifyState(notifyEnv())) ? notifyNode(true) : null,
     h('div', { class: 'sb-hgroups' }, groups),
@@ -2082,9 +2082,13 @@ function recordNode(v) {
       // the copy button below still holds it
     }
   } }, WA.record);
-  if (!link.copy) return [a];
-  return [a, h('p', { class: 'sb-muted small sb-wa-why' }, 'Too long for a link: GitHub opens with the file name only; paste the plan copied here'),
-    copyButton(link.copy, 'wa-record', 'Copy the plan')];
+  return [a];
+}
+
+/** AC17's fallback, seen (J3, J15): why the link opens with the file name only, the text, and a "Copy" button. */
+function copyFallback(words, text, key, label) {
+  return h('div', { class: 'sb-wa-copy', key: `wa-copy:${key}` }, h('p', { class: 'sb-muted small' }, words),
+    h('pre', { class: 'sb-value' }, text), copyButton(text, key, label));
 }
 
 /** "Not milestones yet" (AC24, J15). */
@@ -2105,6 +2109,7 @@ function laterNode(v) {
             // the text is short; AC17's fallback is the copy button
           }
         } }, x.words);
+        if (x.ask.link.copy) act = [act, copyFallback(x.ask.copyWords, x.ask.link.copy, `wa-ask:${x.item.w}`, 'Copy the ask')];
       } else if (x.state === 'question') act = h('a', { class: 'sb-wa-ask', key: `wa-q:${x.item.w}`, href: go('p', v.planner, 'queue') }, x.words);
       else if (x.state === 'answered' && x.line1 != null) {
         act = h('div', { class: 'sb-wa-ans' }, lineBox(`wa-ans:${x.item.w}`, { words: x.line1, recCode: x.answerPath.replace(/^decisions\/questions\/|\.md$/g, ''), title: 'Answered',
@@ -2137,7 +2142,7 @@ function renderWorkAhead(built, nowMs) {
   const v = workView(nowMs);
   if (v.setAside) {
     planDraft.write(null);
-    planDraft.aside = true;
+    planDraft.aside = v.setAside === 'notice'; // the owner's own plan landing clears the draft silently (C)
     planDraft.moved = null;
     waMemo = null;
     return renderWorkAhead(built, nowMs);
@@ -2145,7 +2150,7 @@ function renderWorkAhead(built, nowMs) {
   if (v.ready && !v.changed && planDraft.read()) planDraft.write(null); // moved back to the order it started from
   waDay = v.today;
   const body = [marker(), projectHeader(v.header.eyebrow, v.header.title, v.header.sub)];
-  body.push(h('p', { class: `sb-wa-state ${v.stateLine.kind}`, key: 'wa-state' }, h('b', {}, v.stateLine.lead), ' ', h('span', {}, v.stateLine.rest)));
+  body.push(h('p', { class: `sb-wa-state ${v.stateLine.kind}`, key: 'wa-state' }, v.stateLine.lead ? [h('b', {}, v.stateLine.lead), ' '] : null, h('span', {}, v.stateLine.rest)));
   if (planDraft.aside) body.push(h('p', { class: 'sb-wa-notice', role: 'status', key: 'wa-aside' }, WA.setAside));
   if (planDraft.failed) body.push(h('p', { class: 'sb-muted small', key: 'wa-nokeep' }, WA.draftNotKept));
   body.push(h('section', { class: 'sb-wa-card', key: 'wa-card' }, h('p', { class: 'sb-wa-k' }, WA.cardTitle), h('p', { class: 'sb-wa-big' }, v.card),
@@ -2167,6 +2172,8 @@ function renderWorkAhead(built, nowMs) {
     body.push(h('p', { class: 'small' }, h('a', { href: go('p', v.planner, 'notes'), key: 'wa-notes' }, `Record notes (${v.notes.length})`)));
   }
   body.push(h('div', { class: 'sb-wa-bar', key: 'wa-bar' }, h('p', { class: 'sb-muted small', role: 'status' }, v.changed ? WA.changed : WA.noChanges), recordNode(v)));
+  // AC17's fallback for the plan, under the bar rather than in it, so the sticky bar stays one line high.
+  if (v.record.ok && v.record.link.copy) body.push(copyFallback(v.record.copyWords, v.record.link.copy, 'wa-record', 'Copy the plan'));
   return h('section', { class: 'sb-screen sb-wa' }, body);
 }
 

@@ -64,6 +64,24 @@ function waitingOn(rows, id) {
 }
 
 /**
+ * AC17's fallback words for a link that copies (J3, J15): they name the cause, a link too long, or a
+ * repository that takes no prefilled content (build review round 1, F). null when the link holds it all.
+ */
+export function copyWords(project, link, what) {
+  if (!link || !link.copy) return null;
+  if (project && project.contentPrefill === false) return WA.copyPrefill(what);
+  return WA.copyLength(what);
+}
+
+/** J15's ask for a piece of later work, its path, body and link (AC17's fallback words with it). */
+function askOf(planner, item, nowMs, linkCap) {
+  const path = askPath(item.w, nowMs);
+  const body = askBody(item);
+  const link = cappedNewFileLink(planner, path, body, linkCap);
+  return { path, body, link, copyWords: copyWords(planner, link, 'the ask') };
+}
+
+/**
  * Work ahead's view. input:
  * - config: J7 (its projects, linkCap);
  * - entries: [{ project, j, ctx, rows (the Queue's rows), model (J9's, for a v2.5 project), error }] in J7's order;
@@ -141,11 +159,13 @@ export function workAheadView({ config, entries, snaps, nowMs, tz, draft }) {
   // so a drawing before the reads are in never sets a draft aside or drops it.
   const ready = !unread.length && (!planner || Boolean(psnap && psnap.tree)) && plan.kind !== 'unread';
   if (draft) {
-    if (ready && (draft.base || null) !== (pf.current || null)) setAside = true;
-    else {
-      const d = draft.order.filter((k, i) => byKey.has(k) && draft.order.indexOf(k) === i);
-      order = [...d, ...baseOrder.filter((k) => !d.includes(k))];
-    }
+    const d = draft.order.filter((k, i) => byKey.has(k) && draft.order.indexOf(k) === i);
+    const drafted = [...d, ...baseOrder.filter((k) => !d.includes(k))];
+    // A newer plan landed: the draft is set aside. When that plan's order is the draft's own (the
+    // owner recorded it), it is cleared silently; the notice shows only when the orders differ (the
+    // Orchestrator's ruling on build review round 1, C).
+    if (ready && (draft.base || null) !== (pf.current || null)) setAside = drafted.join('\n') === baseOrder.join('\n') ? 'quiet' : 'notice';
+    else order = drafted;
   }
   const changed = order.join('\n') !== baseOrder.join('\n');
   if (changed) keep = { base: pf.current || null, order };
@@ -200,7 +220,11 @@ export function workAheadView({ config, entries, snaps, nowMs, tz, draft }) {
   if (!changed && (plan.kind === 'current' || plan.kind === 'empty')) {
     const t = planTime(plan.name);
     stateLine = { kind: 'current', lead: WA.current, rest: `recorded ${dateWords(dayKey(new Date(t), tz), today)}, ${hhmm(new Date(t), tz)}` };
-  } else stateLine = { kind: 'draft', lead: 'Draft', rest: `not recorded · ${changed ? WA.draftChanged : plan.kind === 'none' ? WA.draftNoPlan : WA.draftChanged}` };
+  } else if (changed) stateLine = { kind: 'draft', lead: 'Draft', rest: `not recorded · ${WA.draftChanged}` };
+  else if (plan.kind === 'none') stateLine = { kind: 'draft', lead: 'Draft', rest: `not recorded · ${WA.draftNoPlan}` };
+  // No move made, with a plan that can't be read or isn't read yet: nothing has changed (the
+  // Orchestrator's ruling on build review round 1, D).
+  else stateLine = { kind: 'draft', lead: null, rest: WA.noChanges };
   let orderLine = null;
   if (plan.kind === 'none') orderLine = WA.noPlan;
   else if (plan.kind === 'cant') orderLine = `Your latest plan can't be read: ${plan.name}; shown in the project document's order`;
@@ -208,13 +232,17 @@ export function workAheadView({ config, entries, snaps, nowMs, tz, draft }) {
 
   // "Record plan": J4's form, every row in the order shown.
   let record = { ok: false, words: WA.cantRecord };
-  if (planner) {
+  // Offered only once every read is in and a milestone shows, so it never records a plan with no
+  // rows over the owner's current one (build review round 1, B).
+  if (planner && (!ready || !rows.length)) record = { ok: false, words: WA.recordOff };
+  else if (planner) {
     const name = nextPlanName(ptree, nowMs);
     if (!name) record = { ok: false, words: 'Every plan name for this minute is taken; try again in a minute' };
     else {
       const path = planPath(name);
       const body = planBody(name, pf.current, rows.map((r) => ({ project: r.project.name, milestone: r.code })));
-      record = { ok: true, path, body, link: cappedNewFileLink(planner, path, body, config.linkCap), project: planner.name };
+      const link = cappedNewFileLink(planner, path, body, config.linkCap);
+      record = { ok: true, path, body, link, copyWords: copyWords(planner, link, 'the plan'), project: planner.name };
     }
   }
 
@@ -228,7 +256,7 @@ export function workAheadView({ config, entries, snaps, nowMs, tz, draft }) {
         const lr = laterRows({ list: rec, tree: ptree, history: psnap.history || new Map(), records: precs, held: held.get(planner.name) || new Set(), tz, todayKey: today });
         notes.push(...lr.notes);
         later = { kind: 'ok', rows: lr.rows.map((x) => (x.state === 'tap'
-          ? { ...x, ask: { path: askPath(x.item.w, nowMs), body: askBody(x.item), link: cappedNewFileLink(planner, askPath(x.item.w, nowMs), askBody(x.item), config.linkCap) } }
+          ? { ...x, ask: askOf(planner, x.item, nowMs, config.linkCap) }
           : x)), notAdded: lr.notAdded };
       }
     }

@@ -26,8 +26,8 @@ const DOC = j77Files()['docs/PROJECT.md'];
 /** docs/PROJECT.md with a made-up sprint on one milestone's plan line (NOT the real record). */
 const withSprint = (id, sprint) => DOC.replace(new RegExp(`(\\(${id}\\) · done when [^\\n]*? · phase: [A-Za-z]+)\\n`), `$1 · sprints: ${sprint}\n`);
 
-async function open({ now = NOW, extra = {}, store = memStore(), hash = '#/work', projects = null, poom = poomFiles(), sd = SD } = {}) {
-  const setup = waSetup({ extra, projects, poom, sd });
+async function open({ now = NOW, extra = {}, store = memStore(), hash = '#/work', projects = null, poom = poomFiles(), sd = SD, linkCap } = {}) {
+  const setup = waSetup({ extra, projects, poom, sd, linkCap });
   const app = await loadSandbox({ ...setup, hash, now, store });
   app.repos = setup.repos;
   await app.advance(1000);
@@ -657,6 +657,136 @@ test('AC24: a J7 with no `planning: true` entry — section 3\'s order, "Record 
     assert.match(app.text(), /Can't record plans: no project is set for planning/);
     assert.ok(SIX.every((id) => inRow(app, id, 'sb-wa-est') === 'Estimate: not available'));
     assert.equal(card(app), 'not available');
+  } finally {
+    app.restore();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Build review round 1 (B to F, H), at the page
+
+/** Open with one blob's read failing on every try (its text), as a failed optional read. */
+async function openFailing(text, opts = {}) {
+  const setup = waSetup({ extra: opts.extra || {} });
+  const app = await loadSandbox({ ...setup, hash: '#/work', now: NOW, store: memStore() });
+  app.repos = setup.repos;
+  const orig = app.server.call;
+  app.server.call = async (p, b) => {
+    const r = await orig(p, b);
+    if (p === '/api/blobs' && r.json && r.json.blobs && gitSha(text) in r.json.blobs) r.json.blobs[gitSha(text)] = null;
+    return r;
+  };
+  await app.advance(1000);
+  await app.advance(61_000);
+  return app;
+}
+
+test('AC24 (build review round 1, B): while the milestones or the current plan are unread, "Record plan" is inactive with "Record plan is off until your milestones are read", and no link is built', async () => {
+  const name = '2026-10-18T1130Z-01';
+  const plan = planText(name, ['M3A', 'MD3']);
+  for (const [why, text] of [['the plan', plan], ['the milestone list', DOC]]) {
+    const app = await openFailing(text, { extra: { [`docs/planning/${name}.md`]: plan } });
+    try {
+      const rec = findKeyed(app, 'wa-record');
+      assert.equal(rec.tag, 'button', why);
+      assert.ok('disabled' in rec.attrs, why);
+      assert.match(app.text(), /Record plan is off until your milestones are read/, why);
+      assert.equal(findAll(app.view, (e) => e.tag === 'a' && /\/new\/main\?filename=docs%2Fplanning/.test(e.attrs.href || '')).length, 0, `${why}: no plan link`);
+    } finally {
+      app.restore();
+    }
+  }
+});
+
+test('AC24 (build review round 1, C): the owner records their own draft — once it lands the draft clears silently, with no set-aside notice; a plan in another order still gives the notice', async () => {
+  const store = memStore();
+  const app = await open({ store });
+  try {
+    await app.tap(btn(app, `wa-up:${key('M3A')}`));
+    const u = new URL(findKeyed(app, 'wa-record').attrs.href);
+    waSetupRepo(app).commit({ [u.searchParams.get('filename')]: u.searchParams.get('value') });
+    await app.advance(61_000);
+    assert.deepEqual(codesOf(app), ['MD1', 'MD2', 'M3A', 'MD3', 'M3B', 'M3C']);
+    assert.doesNotMatch(app.text(), /A newer plan was recorded; your draft was set aside/);
+    assert.match(byClass(app.view, 'sb-wa-state')[0].textContent, /^Current plan recorded 18 Oct, 13:01$/);
+    assert.equal(store.m.has(DRAFT_KEY), false, 'the draft cleared');
+    assert.match(app.text(), /No changes yet/);
+    // A draft in another order when a plan lands: the notice.
+    await app.tap(btn(app, `wa-down:${key('MD1')}`));
+    const other = '2026-10-18T1803Z-01';
+    waSetupRepo(app).commit({ [`docs/planning/${other}.md`]: planText(other, ['M3C', 'MD1', 'MD2', 'MD3', 'M3A', 'M3B'], '2026-10-18T1801Z-01') });
+    await app.advance(61_000);
+    assert.match(app.text(), /A newer plan was recorded; your draft was set aside/);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC24 (build review round 1, D): with no move made and a plan that can\'t be read or isn\'t read yet, the state line reads "No changes yet"; "your changes are on this phone only" only once a row has moved', async () => {
+  const name = '2026-10-18T1130Z-01';
+  const cant = await open({ extra: { [`docs/planning/${name}.md`]: '| Order | Project | Item | Not before (UTC) |\n|---|---|---|---|\n' } });
+  try {
+    assert.equal(byClass(cant.view, 'sb-wa-state')[0].textContent, 'No changes yet');
+    assert.doesNotMatch(cant.text(), /your changes are on this phone only/);
+    await cant.tap(btn(cant, `wa-up:${key('M3A')}`));
+    assert.equal(byClass(cant.view, 'sb-wa-state')[0].textContent, 'Draft not recorded · your changes are on this phone only');
+  } finally {
+    cant.restore();
+  }
+  const plan = planText(name, ['M3A', 'MD3']);
+  const unread = await openFailing(plan, { extra: { [`docs/planning/${name}.md`]: plan } });
+  try {
+    assert.equal(byClass(unread.view, 'sb-wa-state')[0].textContent, 'No changes yet');
+  } finally {
+    unread.restore();
+  }
+});
+
+test('AC24 (build review round 1, E and F): J15\'s ask and "Record plan" show AC17\'s fallback when the link copies — words naming the cause, the text, and a copy button', async () => {
+  const fallback = (app, k) => findKeyed(app, `wa-copy:${k}`);
+  // Too long for a link (a cap below the ask's and the plan's length).
+  const long = await open({ extra: { 'intake/later-work.md': LATER }, linkCap: 150 });
+  try {
+    for (const [k, what] of [['wa-ask:W1', 'the ask'], ['wa-record', 'the plan']]) {
+      const f = fallback(long, k);
+      assert.ok(f, k);
+      assert.equal(byClass(f, 'sb-muted')[0].textContent, `Too long for a link: GitHub opens with the file name only; copy ${what} below, then paste it there`);
+      assert.equal(findKeyed(long, `copy:${k}`).tag, 'button');
+    }
+    assert.equal(byClass(fallback(long, 'wa-ask:W1'), 'sb-value')[0].textContent, 'Ask: add W1 as a milestone\nLater work: Ask or jot box (W1)\nFrom: the owner, through the desk\'s Work ahead\n');
+    const ask = new URL(findKeyed(long, 'wa-ask:W1').attrs.href);
+    assert.equal(ask.searchParams.get('value'), null, 'the page opens with the file name only');
+    assert.equal(ask.searchParams.get('filename'), 'intake/milestone-asks/W1-2026-10-18T1801Z.md');
+  } finally {
+    long.restore();
+  }
+  // The repository takes no prefilled content: AC17's other cause, in its own words.
+  const noPrefill = await open({ extra: { 'intake/later-work.md': LATER }, sd: { ...SD, contentPrefill: false } });
+  try {
+    for (const [k, what] of [['wa-ask:W2', 'the ask'], ['wa-record', 'the plan']]) {
+      assert.equal(byClass(fallback(noPrefill, k), 'sb-muted')[0].textContent,
+        `This repository doesn't take prefilled content: GitHub opens with the file name only; copy ${what} below, then paste it there`);
+    }
+    assert.doesNotMatch(noPrefill.text(), /Too long for a link/);
+  } finally {
+    noPrefill.restore();
+  }
+  // Within the cap, with prefilled content: no fallback.
+  const plain = await open({ extra: { 'intake/later-work.md': LATER } });
+  try {
+    assert.equal(fallback(plain, 'wa-ask:W1'), null);
+    assert.equal(fallback(plain, 'wa-record'), null);
+  } finally {
+    plain.restore();
+  }
+});
+
+test('AC24 (build review round 1, H): the Home control draws "Work ahead ›", its space one text with the words', async () => {
+  const app = await open({ hash: '#/' });
+  try {
+    const link = findKeyed(app, 'work-ahead');
+    assert.equal(link.children.length, 1);
+    assert.equal(link.children[0].textContent, 'Work ahead ›');
   } finally {
     app.restore();
   }

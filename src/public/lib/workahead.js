@@ -58,6 +58,10 @@ export const WA = Object.freeze({
   changed: 'Changed · not recorded',
   record: 'Record plan',
   cantRecord: "Can't record plans: no project is set for planning",
+  recordOff: 'Record plan is off until your milestones are read',
+  // AC17's fallback (build review round 1, E and F): the words name the cause.
+  copyLength: (what) => `Too long for a link: GitHub opens with the file name only; copy ${what} below, then paste it there`,
+  copyPrefill: (what) => `This repository doesn't take prefilled content: GitHub opens with the file name only; copy ${what} below, then paste it there`,
   draftNotKept: 'draft not kept on this device',
   setAside: 'A newer plan was recorded; your draft was set aside',
   reached: 'Reached',
@@ -200,6 +204,11 @@ export function planBody(name, supersedes, rows) {
 // ---------------------------------------------------------------------------
 // J14: the estimates
 
+/** A time whose fields are a real moment: they come back the same from the date they parse to (no 30 Feb, no 24:00). */
+const realTime = (s) => {
+  const ms = Date.parse(s);
+  return Number.isFinite(ms) && new Date(ms).toISOString().slice(0, 19) === s.slice(0, 19);
+};
 const ISO_UTC_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?(Z|\+00:00)$/;
 const EST_KEYS = ['time', 'project', 'milestone', 'low_days', 'high_days', 'note', 'session'];
 const wholeDays = (v) => Number.isInteger(v) && v >= 0 && v <= MAX_DAYS;
@@ -232,7 +241,7 @@ export function parseEstimates(text) {
     const extra = keys.filter((k) => !EST_KEYS.includes(k));
     if (missing.length) return bad(`missing ${missing.join(', ')}`);
     if (extra.length) return bad(`an extra key: ${extra.join(', ')}`);
-    if (typeof v.time !== 'string' || !ISO_UTC_RE.test(v.time) || !Number.isFinite(Date.parse(v.time))) return bad('its time is not a UTC time ending Z or +00:00');
+    if (typeof v.time !== 'string' || !ISO_UTC_RE.test(v.time) || !realTime(v.time)) return bad('its time is not a UTC time ending Z or +00:00');
     if (typeof v.project !== 'string' || !v.project) return bad('its project is not a name');
     if (typeof v.milestone !== 'string' || !v.milestone) return bad('its milestone is not an id');
     if (!wholeDays(v.low_days) || !wholeDays(v.high_days)) return bad(`low_days and high_days must be whole numbers from 0 to ${MAX_DAYS}`);

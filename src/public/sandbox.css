@@ -696,8 +696,9 @@ html.sb .sb-wa-done { font: var(--t-meta); font-weight: 400; color: var(--muted)
 html.sb .sb-wa-est { margin: var(--s1) 0 0; font: var(--t-meta); }
 html.sb .sb-wa-est.missing, html.sb .sb-wa-est.na { color: var(--muted); }
 html.sb .sb-wa-note, html.sb .sb-wa-newer { color: var(--muted); font: var(--t-meta); }
-html.sb .sb-lineclip.two { max-height: 2.9em; }
-html.sb .sb-lineclip.two.over { height: 2.9em; } /* the button is exactly the two lines it shows */
+html.sb .sb-wa-note .sb-lineclip, html.sb .sb-wa-note button.sb-line { font: var(--t-meta); font-weight: 400; color: var(--muted); }
+html.sb .sb-lineclip.two { max-height: 2.7em; }
+html.sb .sb-lineclip.two.over { height: 2.7em; } /* the button is exactly the two lines it shows, at the meta role's 1.35 */
 html.sb .sb-wa-fin { font: var(--t-meta); color: var(--muted); }
 html.sb .sb-wa-fin b { color: var(--ink); font-variant-numeric: tabular-nums; }
 html.sb .sb-wa-you a { color: var(--you); font: var(--t-meta); text-decoration: underline; }

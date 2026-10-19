@@ -360,3 +360,40 @@ The desk-side tests (notify-ac52-deploys, notify-ac74-desk, notify-ac75, notify-
   src/config/projects.json (which has no `push` until the owner's key, Setup N1).
 - `tools/notify-throw-preload.mjs` is a test tool, not a fixture: it makes the sender's config read throw, for
   the exit-2 test in notify-entry.test.mjs.
+- `j11-77bfeae/` (2026-10-19, S-001 AC24, Work ahead by milestones): **real.** Service-Desk's records
+  at 77bfeae, the ones J11 and the model's timeline read, copied unchanged with `git show
+  77bfeae:<path>` as `j11-3117150/` was, with `tree.txt` (`git ls-tree -r --name-only 77bfeae`) and
+  `trace-notes.txt`, the `NOTE:` lines of `python3 governance/checks/v3_checks.py trace --root .` run
+  in a `git archive 77bfeae` copy, the oracle of AC24's test (MD1 to MD3 in Design i2, the now run;
+  M3A and M3B in Build i2; M3C in Launch i1; M1, M2 and M2B reached). Its own README lists the
+  records. No file of Personal-Org-Operating-Model is in it.
+- Work ahead's made-up records (2026-10-19, S-001 AC24, J4, J14, J15; tests/desk/wa-fixtures.mjs,
+  ac24-work-ahead.test.mjs, j4-j14-j15-work-ahead.test.mjs): **NOT real records.** Every J4 plan
+  (`docs/planning/<name>.md`), J14 estimate line (`intake/estimates.jsonl`; the worked example's
+  figures are the mockup's, every line's `session` is `session_made_up_for_tests`), J15 later-work
+  list (`intake/later-work.md`; its first two lines are Setup CS20's as the spec gives them, the rest
+  made up), ask (`intake/milestone-asks/`), later-work question and answer, and the made-up plan-line
+  edits to 77bfeae's `docs/PROJECT.md` (a sprint on M3A or MD3, a dropped M3D) is written by the tests
+  in J4's, J14's and J15's forms; none is copied from any repository. The question naming MD3 is the
+  real `notify/ac77-real/questions/P-001-next-work.md` with its `Milestone:` line and title changed,
+  so it is NOT a real record either. Personal-Org-Operating-Model is read in `poom/`'s placeholder
+  form only (its open sprint's title as the spec quotes it at 90f53e3, "m1.4 — v3 build: specs,
+  tools, template and agent files"); for AC24's "sprint unclear" case the same placeholder sprint
+  is used twice, under a second made-up name.
+- `github/j12-pulls-built.json`, rebuilt on 2026-10-19 (S-001 J12, AC60's estimate-only exception,
+  draft 5 of "Work ahead by milestones"): **NOT as GitHub sent it.** Built again through
+  `tests/desk/tools/j12-fixture.mjs`, which now also maps each pull request's `changed_files` from
+  REST `pulls/<n>` to `changedFiles` and the first two paths of REST `pulls/<n>/files` to
+  `files { nodes { path } }`, from REST answers recorded on 2026-10-19:
+  `gh api 'repos/shumpmaster/Service-Desk/pulls?state=all&per_page=100'` (pages 1 to 3),
+  `gh api repos/shumpmaster/Service-Desk/pulls/<n>` and `.../pulls/<n>/files?per_page=100` for each
+  pull request kept, `.../commits/<head sha>/check-runs?per_page=100` for #40, #44, #52, #75 and #77,
+  then `node tests/desk/tools/j12-fixture.mjs <dir> --upto 77` (the 72 pull requests the fixture held
+  when first built, so every earlier case is unchanged) and
+  `python3 tests/desk/tools/j12-merge-messages.py <dir>` (with `commits/<oid>` for each merge
+  commit, `pulls/84` and `commits/21bc250`). Compared with the fixture it replaces, every field but
+  the two new ones is the same for all 72; none is estimate-only (16 change one path, none of them
+  `intake/estimates.jsonl`). `j12-asks-merge.json` came out of the same run unchanged (its nodes have
+  no changed paths, so read as not estimate-only). The made-up pull requests #970 to #980 in
+  j12-ac60-ac66-estimates.test.mjs, with their changed paths and `files` errors, are **MADE UP**,
+  in the shape GitHub's GraphQL documentation gives.

@@ -10,9 +10,15 @@ export const PULLS_MAX = 300; // J12: at most 3 pages of 100 are read, and at mo
 export const PULLS_MAX_PAGES = 3;
 // J12: the device's own store for them, apart from the blob cache. v2 from 2026-10-17 (model 3.5.0's
 // records, draft 5): each kept entry holds whether its merge is the asks-merge job's, so the key moved
-// on and v1 is removed on load, every entry read again from J12.
-export const PULLS_KEY = 'desk-pulls-v2';
-export const OLD_PULLS_KEYS = ['desk-pulls-v1'];
+// on and v1 is removed on load, every entry read again from J12. v3 from 2026-10-19 (draft 4 of "Work
+// ahead by milestones"): each kept entry also holds whether it is estimate-only (AC60), so the key
+// moved on again and v2 is removed on load too.
+export const PULLS_KEY = 'desk-pulls-v3';
+export const OLD_PULLS_KEYS = ['desk-pulls-v1', 'desk-pulls-v2'];
+/** AC60's estimate-only exception (J14): the one path such a pull request changes. */
+export const ESTIMATE_PATH = 'intake/estimates.jsonl';
+/** AC60: an estimate pull request's `Milestone:` line, exactly, after trimming. */
+export const ESTIMATE_MILESTONE = 'none (a rough estimate)';
 export const PULLS_RATE_MS = 60 * 60e3; // J12: after a RATE_LIMITED answer, no read for 60 minutes, then the read again (C; draft 6)
 // J12's backoff (2026-10-17, the desk follow-ups; build review round 2 of trial-view notes 2, N1): after
 // any other failed read, the next J12 read comes 5, 10, 20 and 40 minutes after failures in a row,
@@ -244,16 +250,29 @@ export function isJobMerge(mergeCommit) {
 // J12: the GraphQL answer, judged by the page (the function does not parse it).
 
 /**
+ * Whether a pull request changes `intake/estimates.jsonl` only (J12, from 2026-10-19): yes when
+ * `changedFiles` is 1 and that one path is it; no otherwise, and no when its changed paths are not
+ * read (missing, `null`, or a field error on `changedFiles` or `files`: `unread`).
+ */
+export function estimateOnly(n, unread = false) {
+  if (unread || !n || n.changedFiles !== 1 || !n.files || !Array.isArray(n.files.nodes) || n.files.nodes.length !== 1) return false;
+  const f = n.files.nodes[0];
+  return Boolean(f) && f.path === ESTIMATE_PATH;
+}
+
+/**
  * A pull request as the page keeps it (J12, "What the page keeps"): never the rest of its body, and
  * of its merge commit's message only `job`, whether the merge is the asks-merge job's (from
- * 2026-10-17; left out when J12's answer gives no message, so the entry reads as one J12 has not read).
+ * 2026-10-17; left out when J12's answer gives no message, so the entry reads as one J12 has not read);
+ * of its changed paths only `estimate`, whether it changes `intake/estimates.jsonl` only (from
+ * 2026-10-19; never the paths). `filesUnread`: the answer's field error on its changed paths.
  */
-export function keptPull(n, checks) {
+export function keptPull(n, checks, filesUnread = false) {
   const out = {
     number: n.number, title: n.title, state: n.state, mergedAt: n.mergedAt || null, createdAt: n.createdAt || null,
     head: typeof n.headRefName === 'string' ? n.headRefName : null,
     mergeCommit: n.mergeCommit && typeof n.mergeCommit.oid === 'string' ? n.mergeCommit.oid : null,
-    checks, parts: prBodyParts(n.body),
+    checks, parts: prBodyParts(n.body), estimate: estimateOnly(n, filesUnread),
   };
   const job = isJobMerge(n.mergeCommit);
   if (job !== null) out.job = job;
@@ -306,8 +325,11 @@ export function judgePulls(raw) {
   }
   const fieldErr = errors.find((e) => e && Array.isArray(e.path) && e.path[e.path.length - 1] === 'statusCheckRollup');
   const fieldError = fieldErr ? (typeof fieldErr.message === 'string' ? fieldErr.message : 'no message') : null;
+  // From 2026-10-19: an error whose path ends in `changedFiles` or `files`, judged as the check
+  // rollup's is: the rest is used, and the changed paths are "not read", so none is estimate-only.
+  const filesUnread = errors.some((e) => e && Array.isArray(e.path) && ['changedFiles', 'files'].includes(e.path[e.path.length - 1]));
   const pulls = conn.nodes.filter((n) => n && Number.isInteger(n.number) && typeof n.title === 'string')
-    .map((n) => keptPull(n, fieldError ? { error: fieldError } : { state: rollupOf(n) }));
+    .map((n) => keptPull(n, fieldError ? { error: fieldError } : { state: rollupOf(n) }, filesUnread));
   const info = conn.pageInfo || {};
   return { ok: true, pulls, hasNext: info.hasNextPage === true, cursor: typeof info.endCursor === 'string' ? info.endCursor : null, fieldError };
 }

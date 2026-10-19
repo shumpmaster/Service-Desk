@@ -14,6 +14,7 @@ import { whenText, durationText } from './timefmt.js';
 import { SESSION_PATH_RE, parseSessionFile } from './cos.js';
 import { j11Kind, parseJ11, PROJECT_DOC_PATH, SURFACES_PATH, ORCH_WORKFLOW_PATH, SPEC_PATH_RE, REQUEST_PATH_RE,
   GATE_PHASE, README_PATH, REVIEW_VERDICT_RE } from './j11.js';
+import { PLAN_PATH_RE, ESTIMATES_PATH, LATER_WORK_PATH, LATER_Q_RE, planFiles, planPath, parsePlan, parseEstimates, parseLaterWork } from './workahead.js';
 import { cardRows, questionRows, cardSummary, v5Waits, sessionRows, timelines, V25_NO_CARDS, V25_ANSWERED } from './asked.js';
 import { askedInSession, questionHold } from './asking.js';
 import { recordedAnswers } from './prfiles.js';
@@ -60,6 +61,11 @@ export function recordKind(path, model) {
     const j = j11Kind(path); // J11 (MD sandbox): read only when the sandbox asks (neededReads' ctx.j11)
     if (j) return j;
     if (SESSION_PATH_RE.test(path)) return 'cos-session'; // J13 (MD sandbox): the Chief of Staff's session lines
+    // Work ahead (AC24; from 2026-10-18): J4's plans, J14's estimates and J15's later-work list, read
+    // only in the planning project and only when the sandbox asks (neededReads' ctx.j11).
+    if (PLAN_PATH_RE.test(path)) return 'work-plan';
+    if (path === ESTIMATES_PATH) return 'estimates';
+    if (path === LATER_WORK_PATH) return 'later-work';
   } else {
     if (path === LEDGER_PATH) return 'ledger';
     if (isSprintPath(path)) return 'sprint';
@@ -95,6 +101,10 @@ export function parseRecord(kind, text, path) {
     case 'ledger': return parseLedger(text);
     case 'sprint': return parseSprint(text);
     case 'cos-session': return parseSessionFile(text, path);
+    // Work ahead (AC24): each parsed without the clock or J7, so it is cached by blob sha as the rest are.
+    case 'work-plan': return { name: PLAN_PATH_RE.exec(path || '') ? PLAN_PATH_RE.exec(path)[1] : null, ...parsePlan(text) };
+    case 'estimates': return { lines: parseEstimates(text) };
+    case 'later-work': return parseLaterWork(text);
     case 'project-doc': case 'surfaces': case 'orch-workflow': case 'spec': case 'request': case 'gate-case': case 'readme-root': case 'review-verdict':
       return parseJ11(kind, text, path);
     default: return null;
@@ -295,6 +305,18 @@ export function neededReads(project, tree, records, now, ctx = {}) {
         for (const row of (log && log.rows) || []) {
           if (!row || typeof row !== 'object' || typeof row.record !== 'string' || Object.prototype.hasOwnProperty.call(row, 'route')) continue;
           if ((BOUNDARY_WORDS[row.gate] || []).includes(row.word) && parseAnswerPath(row.record)) opt(row.record);
+        }
+      }
+      // Work ahead (AC24; J4, J14, J15), in the planning project only: the current plan (never an
+      // earlier one), the estimates, the later-work list, and each later-work answer's line 1.
+      if (project.planning === true) {
+        const { current } = planFiles(tree);
+        if (current) opt(planPath(current));
+        opt(ESTIMATES_PATH);
+        opt(LATER_WORK_PATH);
+        for (const path of [...tree.keys()].sort()) {
+          const m = LATER_Q_RE.exec(path);
+          if (m && m[1]) opt(path);
         }
       }
       // AC52's "Done today" and AC55's "Your last action": the owner's rulings, newest first by their
@@ -768,9 +790,10 @@ function finishV25({ project, records, tree, flagged, activity, notes, ci, quest
     if (rec && rec.open) open.push({ path, title: rec.title || path });
   }
   let sprint;
-  if (open.length === 1) sprint = { title: open[0].title, note: null };
-  else if (sprintFiles === 0) sprint = { title: null, note: 'sprint: not found' };
-  else sprint = { title: null, note: 'sprint unclear' };
+  // `open` and `path` (from 2026-10-18, AC24's v2.5 group): how many sprint files say open, and the one's path.
+  if (open.length === 1) sprint = { title: open[0].title, note: null, open: 1, path: open[0].path };
+  else if (sprintFiles === 0) sprint = { title: null, note: 'sprint: not found', open: 0, path: null };
+  else sprint = { title: null, note: 'sprint unclear', open: open.length, path: null };
   const ledger = records.get(LEDGER_PATH);
   let headline;
   if (!tree.has(LEDGER_PATH)) {

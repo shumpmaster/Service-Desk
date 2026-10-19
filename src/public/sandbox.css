@@ -664,3 +664,58 @@ html.sb .sb-actions-bar { display: block; width: 100%; height: 12px; margin: var
 html.sb .sb-asking .sb-qrow { padding: var(--s2) 0; }
 html.sb .sb-asking p { margin: var(--s1) 0; }
 html.sb .sb-recheck p { margin: var(--s1) 0; }
+
+/* Work ahead (AC24; M3A, from 2026-10-18): the mockup's screen (docs/design/mockups/work-ahead.html,
+   version 2) in the shared look and its scales. Each row's left edge is its phase's colour; the row
+   moved last keeps a gold edge, with "moved" in its words. Nothing moves unless the owner acts. */
+html.sb .sb-wa-link { margin: var(--s2) 0 0; font: var(--t-item); }
+html.sb .sb-wa-link a { text-decoration: underline; display: inline-flex; align-items: center; min-height: 44px; }
+html.sb .sb-wa-state { margin: var(--s3) 0 0; display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; padding: var(--s2) var(--s3);
+  border-radius: var(--r); background: var(--golds); font: var(--t-meta); }
+html.sb .sb-wa-state b { color: var(--gold); text-transform: uppercase; letter-spacing: var(--track); }
+html.sb .sb-wa-state.current { background: var(--surf2); }
+html.sb .sb-wa-state.current b { color: var(--pass); }
+html.sb .sb-wa-notice { margin: var(--s2) 0 0; padding: var(--s2) var(--s3); border: 1px solid var(--gold); border-radius: var(--r); font: var(--t-meta); }
+html.sb .sb-wa-card { margin: var(--s3) 0 0; padding: var(--s3); display: grid; gap: var(--s1); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); }
+html.sb .sb-wa-k { font: var(--t-section); text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
+html.sb .sb-wa-big { font: var(--t-screen); font-variant-numeric: tabular-nums; }
+html.sb .sb-wa-order { margin: var(--s3) 0 0; }
+html.sb .sb-wa-plan { list-style: none; margin: var(--s3) 0 0; padding: 0; display: grid; gap: var(--s2); }
+html.sb .sb-wa-row { --ph: var(--idle); display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: var(--s2) var(--s3); align-items: start;
+  padding: var(--s3); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); box-shadow: inset 3px 0 0 var(--ph); }
+html.sb .sb-wa-row.moved { border-color: var(--gold); box-shadow: inset 3px 0 0 var(--ph), 0 0 0 1px var(--gold); }
+html.sb .sb-wa-ord { font: var(--t-item); color: var(--muted); font-variant-numeric: tabular-nums; }
+html.sb .sb-wa-body { display: grid; gap: var(--s1); min-width: 0; }
+html.sb .sb-wa-name { font: var(--t-item); }
+html.sb .sb-wa-meta { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s2); align-items: center; font: var(--t-meta); color: var(--muted); }
+html.sb .sb-wa-ph { display: inline-flex; align-items: center; gap: var(--s1); }
+html.sb .sb-wa-ph::before { content: ""; width: 9px; height: 9px; border-radius: 3px; background: var(--ph); }
+html.sb .sb-wa-st { display: inline-flex; align-items: center; gap: var(--s1); color: var(--ink); }
+html.sb .sb-wa-tag { font: var(--t-meta); color: var(--muted); }
+html.sb .sb-wa-done { font: var(--t-meta); font-weight: 400; color: var(--muted); }
+html.sb .sb-wa-est { margin: var(--s1) 0 0; font: var(--t-meta); }
+html.sb .sb-wa-est.missing, html.sb .sb-wa-est.na { color: var(--muted); }
+html.sb .sb-wa-note, html.sb .sb-wa-newer { color: var(--muted); font: var(--t-meta); }
+html.sb .sb-wa-note .sb-lineclip, html.sb .sb-wa-note button.sb-line { font: var(--t-meta); font-weight: 400; color: var(--muted); }
+html.sb .sb-lineclip.two { max-height: 2.7em; }
+html.sb .sb-lineclip.two.over { height: 2.7em; } /* the button is exactly the two lines it shows, at the meta role's 1.35 */
+html.sb .sb-wa-fin { font: var(--t-meta); color: var(--muted); }
+html.sb .sb-wa-fin b { color: var(--ink); font-variant-numeric: tabular-nums; }
+html.sb .sb-wa-you a { color: var(--you); font: var(--t-meta); text-decoration: underline; }
+html.sb .sb-wa-you a::before { content: "◆ "; }
+html.sb .sb-wa-move { display: grid; gap: var(--s1); }
+html.sb .sb-wa-mv { min-width: 44px; min-height: 44px; border: 1px solid var(--line); border-radius: var(--r); background: var(--page); color: var(--ink); font: var(--t-meta); cursor: pointer; }
+html.sb .sb-wa-mv[aria-disabled="true"] { opacity: .35; cursor: default; }
+html.sb .sb-wa-group { margin: var(--s4) 0 0; display: grid; gap: var(--s2); }
+html.sb .sb-wa-group > .sb-h2 { margin: 0; }
+html.sb .sb-wa-later { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+html.sb .sb-wa-mini { padding: var(--s2) var(--s3); display: grid; gap: var(--s1); background: var(--surf); border: 1px dashed var(--line); border-radius: var(--r); font: var(--t-meta); }
+html.sb .sb-wa-t { font-weight: 700; }
+html.sb .sb-wa-mini.reached .sb-wa-t::before { content: "✓ "; color: var(--pass); }
+html.sb .sb-wa-ask { display: inline-flex; align-items: center; min-height: 44px; text-decoration: underline; }
+html.sb .sb-wa-fold { justify-self: start; }
+html.sb .sb-wa-bar { position: sticky; bottom: 0; margin: var(--s4) 0 0; padding: var(--s3) 0; display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; justify-content: space-between;
+  background: var(--page); border-top: 1px solid var(--line); }
+html.sb .sb-wa-rec { background: var(--ink); color: var(--page); border-color: var(--ink); }
+html.sb .sb-wa-rec[disabled] { opacity: .5; cursor: default; }
+html.sb .sb-wa-why { flex: 1 1 100%; }

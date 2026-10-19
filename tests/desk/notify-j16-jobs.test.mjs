@@ -1,15 +1,18 @@
 // join-test: S-001/J16 — the asks-merge job's candidates: the four kinds by path against the model's
 // `classify`; rule (b)'s reading of the job's log against the model's own `run` (each of its waits
 // reasons, written into a log in GitHub's form); one real asks-merge job log; a retried reason that
-// lasts; rules (a) to (d) on made-up runs, jobs, logs and statuses; `find_grant`'s verdicts; and (draft
-// 7) the candidate's lists read to 10 pages, the job's own cap.
+// lasts; rules (a) to (d) on made-up runs, jobs, logs and statuses; `find_grant`'s verdicts; (draft
+// 7) the candidate's lists read to 10 pages, the job's own cap; and (2026-10-19, AC79) the judgment and
+// the ledger's form check imported from src/lib/, judging runs on the default branch only: an
+// asks-merge run from `workflow_dispatch` on a branch, its `PR #` and grant lines ignored by the sender,
+// the same run on the default branch counted.
 
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { jobKindsByPath, splitChanges } from '../../src/lib/prfiles.js';
-import { logVerdict, logLines, reasonKind, judgeCandidate, latestChecks } from '../../src/notify/jobcand.mjs';
+import { logVerdict, logLines, reasonKind, judgeCandidate, latestChecks, isJudgingRun } from '../../src/lib/jobcand.js';
 import { findGrant } from '../../src/notify/grant.mjs';
 import { openCheckout } from '../../src/notify/checkout.mjs';
 import { collect, CANDIDATE_MAX_PAGES } from '../../src/notify/collect.mjs';
@@ -101,9 +104,11 @@ function input(o = {}) {
   return { number: 7, checkRuns: o.checkRuns || [ok(1)], workflowRuns: WR, statuses: o.statuses || [], asksRuns: o.asksRuns || [],
     readJobs: async (id) => (o.jobs || {})[id] || [{ id: id + 100, name: 'merge', status: 'completed', conclusion: 'success' }],
     readLog: async (id) => (Object.prototype.hasOwnProperty.call(logs, id) ? logs[id] : null),
-    headTime: async () => (o.headTime === undefined ? null : o.headTime), seenMs: o.seenMs ?? T0 - 10 * MIN, retriedMs: o.retriedMs ?? null, nowMs: o.nowMs ?? T0 };
+    headTime: async () => (o.headTime === undefined ? null : o.headTime), seenMs: o.seenMs ?? T0 - 10 * MIN, retriedMs: o.retriedMs ?? null, nowMs: o.nowMs ?? T0,
+    defaultBranch: o.defaultBranch ?? 'main' };
 }
-const arun = (id, at, event = 'workflow_run') => ({ id, event, run_started_at: at });
+// Real workflow_run and schedule runs report the default branch (Facts relied on, 2026-10-19).
+const arun = (id, at, event = 'workflow_run', branch = 'main') => ({ id, event, run_started_at: at, head_branch: branch });
 
 test('J16 (a): a counted check not success, or a counted status failed, leaves it at once; the Orchestrator\'s runs and owner-questions are not counted', async () => {
   assert.equal((await judgeCandidate(input({ checkRuns: [{ ...ok(1), conclusion: 'failure' }] }))).rule, 'a');
@@ -280,5 +285,42 @@ test('J16 (draft 7): a candidate\'s check runs, statuses and workflow runs read 
       assert.equal(c.set.some((x) => x.key === 'Service-Desk|pr|7'), !candidate, `${kind} ${count}`);
       assert.equal(Object.keys(c.cand).length, candidate ? 1 : 0, `${kind} ${count}`);
     }
+  }
+});
+
+// 2026-10-19 (AC79; the plan review's E(i), round 2): judging runs are those on the default branch only,
+// in the shared judgment, so in the sender too (R3). A `workflow_dispatch` of a changed job on a branch
+// can print a grant line or a `PR #` line that neither the sender nor the page takes.
+test('J16 (AC79): an asks-merge run from workflow_dispatch on a branch is ignored, its PR and grant lines with it; the same run on the default branch counts', async () => {
+  const final = '2026-10-18T11:50:00.0000000Z NOTE: the asks-merge grant is L-0017\n'
+    + stamp('PR #7: waits: src/x.js (added) is not a change the asks-merge delegation covers');
+  let v = await judgeCandidate(input({ asksRuns: [arun(1, '2026-10-18T11:41:00Z', 'workflow_dispatch', 'cos/try-a-changed-job')], logs: { 101: final } }));
+  assert.equal(v.left, false, 'a branch\'s dispatch judges nothing');
+  v = await judgeCandidate(input({ asksRuns: [arun(1, '2026-10-18T11:41:00Z', 'workflow_dispatch', 'main')], logs: { 101: final } }));
+  assert.deepEqual([v.left, v.rule], [true, 'b'], 'the same run on the default branch');
+  // A run with no head_branch judges nothing; the default branch is the project's, from J7.
+  v = await judgeCandidate(input({ asksRuns: [{ id: 1, event: 'schedule', run_started_at: '2026-10-18T11:41:00Z' }], logs: { 101: final } }));
+  assert.equal(v.left, false);
+  v = await judgeCandidate(input({ asksRuns: [arun(1, '2026-10-18T11:41:00Z', 'schedule', 'trunk')], logs: { 101: final }, defaultBranch: 'trunk' }));
+  assert.equal(v.left, true);
+  assert.equal(isJudgingRun(arun(1, 'x', 'push', 'main'), 'main'), false, 'a push run is never a judging run');
+  // Without the default branch, the judgment refuses loudly rather than leave nothing.
+  await assert.rejects(judgeCandidate(input({ defaultBranch: '' })), /defaultBranch/);
+  // The sender, end to end: the branch's dispatch run is not read at all; on main it leaves the pull request.
+  const records = filesUnder(join(NOTIFY_FIX, 'sd-ef8daf4'));
+  const config = testConfig(makeVapid());
+  for (const [branch, left] of [['cos/try-a-changed-job', false], ['main', true]]) {
+    const w = makeWorld();
+    w.pulls = [pull(7, { sha: SHA })];
+    w.files[7] = [{ filename: 'questions/N1.md', status: 'added' }];
+    w.checks[SHA] = { checkRuns: [ok(1)], workflowRuns: WR, statuses: [] };
+    w.asksRuns = [arun(1, '2026-10-18T11:41:00Z', 'workflow_dispatch', branch)];
+    w.jobs[1] = [{ id: 101, name: 'merge', status: 'completed', conclusion: 'success' }];
+    w.logs[101] = final;
+    const c = await collect({ project: config.projects[0], config, checkout: checkoutOf({ base: records }).open(),
+      gh: makeGitHub({ token: 't', fetch: w.fetch }), nowMs: T0, stateKey: 'k'.repeat(64), cand: {} });
+    assert.equal(c.read, true);
+    assert.equal(c.set.some((x) => x.key === 'Service-Desk|pr|7'), left, branch);
+    assert.equal(w.ghCalls.some((x) => /\/actions\/jobs\/101\/logs/.test(x.path)), left, `${branch}: its log read only on the default branch`);
   }
 });

@@ -59,6 +59,9 @@ export const CANT_READ_WORDS = `${OPENED_WORDS}: the desk can't read this projec
  * - { kind: 'item', project, f }: the flagged item that waits;
  * - { kind: 'held', project, row }: a question still held or being recorded (AC77): shown as such,
  *   never as "That no longer waits on you" (draft 8);
+ * - { kind: 'recording', project, row }: a pull request the desk shows "Being recorded by the automatic
+ *   job" (AC79), in the minute or so before it counts it again: shown as such, never "That no longer
+ *   waits on you";
  * - { kind: 'cant-read', project }: the project can't be read just now: never claimed stopped;
  * - { kind: 'gone', project|null }: it truly stopped waiting (or names no project).
  */
@@ -78,6 +81,8 @@ export function tapDecision({ target, projects, box, settled }) {
   if (f) return { kind: 'item', project, f };
   const row = target.itemKind === 'question' && m && Array.isArray(m.asking) ? m.asking.find((a) => a.path === target.id) : null;
   if (row) return { kind: 'held', project, row };
+  const rec = target.itemKind === 'pr' && m && Array.isArray(m.beingRecorded) ? m.beingRecorded.find((r) => String(r.pr.number) === target.id) : null;
+  if (rec) return { kind: 'recording', project, row: rec };
   if (b.read.read === 'cant-read') return { kind: 'cant-read', project };
   return { kind: 'gone', project };
 }

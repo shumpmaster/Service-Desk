@@ -217,6 +217,13 @@ function followOpening(desk, bx) {
     opening.banner = { hash: location.hash, words: OPENED_WORDS, key: t.key };
     return;
   }
+  if (d.kind === 'recording') {
+    // AC79: its row among the activity, "Being recorded by the automatic job", until the desk counts it again.
+    location.hash = href(name);
+    scrollTo = itemId(`rec:${d.row.key}`);
+    opening.banner = { hash: location.hash, words: OPENED_WORDS, key: t.key };
+    return;
+  }
   if (d.kind !== 'item') {
     location.hash = name ? href(name) : '#/';
     opening.banner = { hash: location.hash, words: d.kind === 'cant-read' ? CANT_READ_WORDS : GONE_WORDS };
@@ -416,7 +423,9 @@ function projectView(box, name) {
     askingList(m, name),
     pipeline(m, name),
     h('h3', {}, 'Activity'),
-    m.activity.length ? h('ul', { class: 'plain' }, m.activity.map((a) => h('li', {}, a.link ? ext(a.link, a.text) : a.text)))
+    // AC79: a pull request being recorded by the automatic job sits here, among the activity, never flagged.
+    m.activity.length ? h('ul', { class: 'plain' }, m.activity.map((a) => h('li', a.recording ? { class: 'recording', id: itemId(`rec:pr:${a.number}`) } : {},
+      a.link ? ext(a.link, a.text) : a.text)))
       : h('p', { class: 'muted' }, 'No recent activity.'),
     m.notes.length ? h('details', {}, h('summary', {}, `${m.notes.length} notes`),
       h('ul', {}, m.notes.map((n) => h('li', { class: 'note' }, n)))) : null);

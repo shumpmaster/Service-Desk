@@ -6,6 +6,7 @@
 // backoff allows, at most 43 J12 reads a project after a failed one and 53 in all.
 // From 2026-10-18 (notifications): the same day with three open pull requests changing heads every 10
 // minutes, 288 head changes: one J20 read per pull request per head an opening sees, under 10,000 calls.
+// From 2026-10-19 (AC79, draft 4): that day with every head a job candidate in all 5 projects (below).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDesk, POLL_MS } from '../../src/lib/scheduler.js';
@@ -232,4 +233,151 @@ test('AC14 (notifications): 5 projects, 100 head changes and 288 open pull reque
   assert.equal(reads, seen.size, 'one J20 read per pull request per head an opening sees');
   assert.ok(reads <= prChanges + NUMS.length * openings, 'the head changes plus each opening\'s first look');
   assert.ok(server.calls.length < 10_000, `${server.calls.length} calls`);
+});
+
+// From 2026-10-19 (AC79; draft 4; A3's sum, 7,577): the notifications day again with every pull request
+// head a job candidate, in all 5 projects (v3, in the sandbox, J12 failing in all 5), 5 candidate heads
+// open in each across all 10 openings, 288 head changes, 100 default-branch changes each a ledger change,
+// the asks-merge runs page changing every 5 minutes, the grant read failing all day (the newest judging
+// run's log fails) and half the heads with no counted check and a failing head-time read. Asserts: fewer
+// than 10,000 calls; no AC79 blob call in a poll whose conditional reads all answered 304 (nothing else
+// changing); at most 3 AC79 blob calls per candidate head in an opening, the failing ones included; a
+// failed grant read asked again only at the next opening or ledger change; and each completed run's log
+// read at most once per opening. The reads are made up (NOT real records); the ledger is Service-Desk's
+// real one at ef8daf4, with its grant record.
+test('AC14 (AC79): every head a job candidate in 5 projects, 288 head changes, 100 ledger changes, the grant read failing: under 10,000 calls, the cap held', async (t) => {
+  const { readFileSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const { NOTIFY_FIX } = await import('./notify-helpers.mjs');
+  const sdFile = (p) => readFileSync(join(NOTIFY_FIX, 'sd-ef8daf4', p), 'utf8');
+  const config = fiveProjects({ allV3: true });
+  const clock = fakeClock(DAY);
+  const repos = Object.fromEntries(config.projects.map((p) => [p.name, repoFor(p)]));
+  const LEDGER = sdFile('docs/LEDGER.md');
+  const NUMS = [31, 32, 33, 34, 35];
+  const iso = (ms) => new Date(ms).toISOString();
+  const gens = Object.fromEntries(config.projects.map((p) => [p.name, 0]));
+  const sha = (name, n, g) => `${name.length}${n}${g}`.replace(/[^0-9]/g, '').padStart(40, 'a').slice(-40);
+  const ok = (id) => ({ id, name: 'build', status: 'completed', conclusion: 'success', completed_at: iso(DAY), check_suite: { id: 10 } });
+  for (const p of config.projects) {
+    const r = repos[p.name];
+    r.commit({ 'docs/LEDGER.md': LEDGER, 'decisions/questions/P-001-asks-merge.md': sdFile('decisions/questions/P-001-asks-merge.md'),
+      '.github/workflows/asks-merge.yml': sdFile('.github/workflows/asks-merge.yml') });
+    r.pullsAnswer = null; // J12 failing all day
+    r.prFiles = Object.fromEntries(NUMS.map((n) => [n, [{ filename: `questions/N${n}.md`, status: 'added' }]]));
+    r.jobs = { asksRuns: [], checks: {}, runJobs: {}, logs: {}, commits: {}, fail: { logs: [], commitTime: [] } };
+  }
+  const setHeads = (p) => {
+    const r = repos[p.name];
+    const g = gens[p.name];
+    r.pulls = NUMS.map((n) => ({ number: n, title: `Made-up #${n}`, html_url: `https://github.com/${p.repo}/pull/${n}`, draft: false, base: { ref: 'main' },
+      head: { ref: `cos/x-${n}`, sha: sha(p.name, n, g), repo: { full_name: p.repo } }, user: { login: 'shumpmaster' }, created_at: iso(DAY), state: 'open' }));
+    for (const pr of r.pulls) {
+      // Half the heads have no counted check, and their head-time read fails: they spend their cap.
+      const none = pr.number % 2 === 1;
+      r.jobs.checks[pr.head.sha] = { checkRuns: none ? [] : [ok(pr.number)], statuses: [], workflowRuns: none ? [] : [{ check_suite_id: 10, path: '.github/workflows/desk-build.yml' }] };
+      if (none) r.jobs.fail.commitTime.push(pr.head.sha);
+    }
+  };
+  for (const p of config.projects) setHeads(p);
+  // The asks-merge runs: a skipped run every 5 minutes (the page changes), a judging run every 15 whose log fails.
+  let runId = 1;
+  const addRuns = (at) => {
+    for (const p of config.projects) {
+      const J = repos[p.name].jobs;
+      const id = runId++;
+      const judging = Math.floor((at - DAY) / 60e3) % 15 === 0;
+      J.asksRuns = [{ id, event: 'workflow_run', head_branch: 'main', status: 'completed', conclusion: judging ? 'success' : 'skipped', run_started_at: iso(at), updated_at: iso(at) },
+        ...J.asksRuns].slice(0, 30);
+      J.runJobs[id] = [{ id: id * 10, name: 'merge', status: 'completed', conclusion: judging ? 'success' : 'skipped' }];
+      if (judging) J.fail.logs.push(String(id));
+    }
+  };
+  const server = fakeServer(repos, config, clock);
+  // Each poll's answer, for the "all 304" check: per project, the latest poll's state.
+  const lastPoll = new Map();
+  const ac79 = [];
+  const call = async (path, body) => {
+    const res = await server.call(path, body);
+    if (path === '/api/poll') {
+      const j = res.json && res.json.jobs;
+      const all304 = Boolean(body.jobs) && j != null && (j.runs === null || j.runs === undefined) && Object.values(j.heads || {}).every((x) => x && Object.values(x).every((v) => v === null))
+        && res.json.pulls && res.json.pulls.every((x) => x === null) && res.json.tree == null;
+      lastPoll.set(body.project, { at: clock.now(), all304 });
+    } else if (body.jobLog || body.commitTime || (Array.isArray(body.blobs) && body.blobs.length === 1 && !body.files && !body.pulls && body.history.length === 0
+      && repos[body.project].files['docs/LEDGER.md'] && gitShaOf(repos[body.project].files['docs/LEDGER.md']) === body.blobs[0])) {
+      ac79.push({ project: body.project, at: clock.now(), body, poll: lastPoll.get(body.project) });
+    }
+    return res;
+  };
+  const { gitSha: gitShaOf } = await import('./fake-desk.mjs');
+  const openings = 10;
+  const windowMs = (16 * HOUR) / openings;
+  let changes = 0;
+  let prChanges = 0;
+  const ledgerChanges = Object.fromEntries(config.projects.map((p) => [p.name, []]));
+  const perOpening = [];
+  const failedEpochs = Object.fromEntries(config.projects.map((p) => [p.name, new Set()]));
+  let maxCalls = 0;
+  for (let o = 0; o < openings; o++) {
+    const open = DAY + o * 2.4 * HOUR;
+    await clock.runUntil(open);
+    const desk = createDesk({ config, call, clock, store: createStore(null), isVisible: () => true, j11: true });
+    desk.start();
+    for (let m = 1; m * 60_000 <= windowMs; m++) {
+      await clock.runUntil(open + m * 60_000 - 30_000);
+      if (m % 5 === 0) addRuns(open + m * 60_000 - 30_000);
+      // 10 default-branch changes an opening, each a ledger change.
+      if (m % 9 === 5 && changes < (o + 1) * 10) {
+        const p = config.projects[changes % 5];
+        const r = repos[p.name];
+        r.commit({ 'docs/LEDGER.md': `${r.files['docs/LEDGER.md']}\n## L-${2000 + changes} — a made-up reading ${changes}\ndate: 2026-11-03\ntype: reading\n` });
+        ledgerChanges[p.name].push(clock.now());
+        changes++;
+      }
+      // 288 pull request head changes in the day: 30 an opening (the 29th minute of every 3, in turn), then 18 in the last.
+      if (m % 3 === 0 && prChanges < 288 && prChanges < (o + 1) * 29) {
+        const p = config.projects[prChanges % 5];
+        gens[p.name] += 1;
+        setHeads(p);
+        prChanges += 1;
+      }
+      await clock.runUntil(open + m * 60_000);
+      // The grant line's epochs (the opening, then each ledger change) in which its read failed.
+      for (const p of config.projects) {
+        const g = desk.states.get(p.name).jobs.grant;
+        if (g.failed) failedEpochs[p.name].add(`${o}|${g.since}`);
+      }
+    }
+    desk.stop();
+    // The cap, per candidate head in this opening.
+    for (const p of config.projects) {
+      for (const h of desk.states.get(p.name).jobs.heads.values()) {
+        assert.ok(h.calls <= 3, `${p.name} opening ${o}: head ${h.sha.slice(0, 8)} had ${h.calls} AC79 blob calls`);
+        maxCalls = Math.max(maxCalls, h.calls);
+      }
+    }
+    perOpening.push({ open, end: open + windowMs });
+  }
+  assert.ok(Object.values(failedEpochs).some((x) => x.size > 0), 'the grant read did fail');
+  assert.equal(maxCalls, 3, 'some heads spent their whole cap');
+  const calls = server.calls.length;
+  t.diagnostic(`AC14 (AC79): ${calls} calls, ${ac79.length} AC79 blob calls, ${changes} ledger changes, ${prChanges} head changes`);
+  assert.equal(changes, 100);
+  assert.ok(prChanges >= 280, `${prChanges} head changes`);
+  assert.ok(calls < 10_000, `${calls} calls`);
+  // No AC79 blob call in a poll whose conditional reads all answered 304 (and nothing else changed).
+  for (const c of ac79) assert.ok(!(c.poll && c.poll.all304 && c.at - c.poll.at < 60_000), `${c.project}: an AC79 blob call after an all-304 poll`);
+  // Each completed run's log read at most once per opening; the failing grant run's too.
+  for (const { open, end } of perOpening) {
+    for (const p of config.projects) {
+      const asked = ac79.filter((c) => c.project === p.name && c.at >= open && c.at <= end).flatMap((c) => c.body.jobLog || []);
+      assert.equal(new Set(asked).size, asked.length, `${p.name}: a log asked twice in one opening`);
+      // A failed grant read is asked again only at the next opening or ledger change: one failed epoch at most for each.
+      const o = perOpening.findIndex((x) => x.open === open);
+      const epochs = [...failedEpochs[p.name]].filter((e) => e.startsWith(`${o}|`)).length;
+      const lc = ledgerChanges[p.name].filter((x) => x >= open && x <= end).length;
+      assert.ok(epochs <= 1 + lc, `${p.name}: ${epochs} failed grant epochs with ${lc} ledger changes`);
+    }
+  }
 });

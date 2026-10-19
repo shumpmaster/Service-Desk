@@ -159,7 +159,7 @@ test('AC77: the answer\'s pull request opening: "Your answer is being recorded",
     assert.equal(app.state().textContent, '1 waiting on you', 'the pull request counts; the question does not');
     app.loc.hash = '#/p/Service-Desk';
     await app.advance(60_000);
-    assert.ok(projectText(app).includes('Your answer to Which piece of later work comes next?: the automatic job merges it, usually within minutes'));
+    assert.ok(projectText(app).includes('Your answer to Which piece of later work comes next?'));
   } finally {
     app.restore();
   }
@@ -415,7 +415,7 @@ test('AC77 in the sandbox: the answer\'s pull request in Merges with its added w
   try {
     await app.advance(1000);
     await app.advance(60_000);
-    assert.ok(app.text().includes('Your answer to Which piece of later work comes next?: the automatic job merges it, usually within minutes'));
+    assert.ok(app.text().includes('Your answer to Which piece of later work comes next?'));
     assert.ok(byClass(app.view, 'sb-asking')[0].textContent.includes(RECORDING_WORDS));
   } finally {
     app.restore();

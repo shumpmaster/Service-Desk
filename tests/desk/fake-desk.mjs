@@ -2,7 +2,8 @@
 // poll and blob calls from in-memory repositories, honours the page's ETags the way the real
 // function does (a null page for a matching ETag), and records every call with the fake time.
 
-import { urlsFor, pageUrl, keptPull } from '../../src/lib/github.js';
+import { urlsFor, pageUrl, keptPull, keptLogLines, JOB_LOG_CHARS } from '../../src/lib/github.js';
+import { jobsPart } from '../../src/lib/api.js';
 import { closedNeedsNext, CLOSED_MAX_PAGES } from '../../src/lib/prfiles.js';
 import { createHash } from 'node:crypto';
 
@@ -32,6 +33,62 @@ export function pr(number, title, { draft = false, base = 'main', head = `featur
   return { number, title, html_url: `https://github.com/shumpmaster/Service-Desk/pull/${number}`, draft,
     base: { ref: base }, head: { ref: head, repo: headRepo == null ? null : { full_name: headRepo } }, user: { login },
     created_at: '2026-10-06T12:00:00Z', state: 'open' };
+}
+
+/**
+ * AC79's reads for a repository (2026-10-19), from its `jobs` field (NOT real records, made up per test):
+ * { asksRuns: [run], checks: { sha: { checkRuns, statuses, workflowRuns } }, runJobs: { runId: [job] },
+ * logs: { jobId: text }, commits: { sha: iso }, next: { sha: [list] }, fail: { runs, heads: [sha],
+ * logs: [runId], commitTime: [sha], part } }. The poll's `jobs` part is answered with ETags honoured (a
+ * matching one answers null, a 304), as the function answers it; `reads` counts each conditional request.
+ */
+function jobsAnswer(r, project, part) {
+  const J = r.jobs || {};
+  const F = J.fail || {};
+  const v = jobsPart(part, project);
+  if (!v || F.part) return null;
+  J.reads = (J.reads || 0) + (v.runs ? 1 : 0) + 3 * v.heads.length;
+  const out = { heads: {}, etags: { heads: {} }, next: {} };
+  const answer = (raw, sent, failed) => {
+    if (failed) return { page: false, etag: null };
+    const tag = etagOf(raw);
+    return sent === tag ? { page: null, etag: tag } : { page: raw, etag: tag };
+  };
+  if (v.runs) {
+    const a = answer(JSON.stringify({ total_count: (J.asksRuns || []).length, workflow_runs: J.asksRuns || [] }), v.runs.etag, F.runs);
+    out.runs = a.page;
+    out.etags.runs = a.etag;
+  }
+  for (const hd of v.heads) {
+    const c = (J.checks || {})[hd.sha] || { checkRuns: [], statuses: [], workflowRuns: [] };
+    const raws = { checkRuns: JSON.stringify({ total_count: c.checkRuns.length, check_runs: c.checkRuns }), statuses: JSON.stringify(c.statuses),
+      workflowRuns: JSON.stringify({ total_count: c.workflowRuns.length, workflow_runs: c.workflowRuns }) };
+    out.heads[hd.sha] = {};
+    out.etags.heads[hd.sha] = {};
+    for (const l of ['checkRuns', 'statuses', 'workflowRuns']) {
+      const a = answer(raws[l], hd.etags[l], (F.heads || []).includes(hd.sha));
+      out.heads[hd.sha][l] = a.page;
+      out.etags.heads[hd.sha][l] = a.etag;
+    }
+    if (J.next && J.next[hd.sha]) out.next[hd.sha] = J.next[hd.sha];
+  }
+  for (const sha of v.extra) out.heads[sha] = null;
+  return out;
+}
+
+/** AC79's log form, as the function makes it, from the repository's `jobs` field. */
+function jobLogAnswer(J, id) {
+  if ((J.fail && J.fail.logs || []).includes(id)) return null;
+  const jobs = (J.runJobs || {})[id];
+  if (!Array.isArray(jobs)) return null;
+  const job = jobs.find((j) => j.name === 'merge');
+  if (!job) return { job: null, ran: false, lines: null, tooLarge: false };
+  const kept = { status: job.status, conclusion: job.conclusion };
+  if (job.status !== 'completed' || job.conclusion == null || ['skipped', 'cancelled'].includes(job.conclusion)) return { job: kept, ran: false, lines: null, tooLarge: false };
+  const text = (J.logs || {})[job.id];
+  if (text == null) return null;
+  if (text.length > JOB_LOG_CHARS) return { job: kept, ran: true, lines: null, tooLarge: true };
+  return { job: kept, ran: true, lines: keptLogLines(text), tooLarge: false };
 }
 
 /**
@@ -85,7 +142,7 @@ export function fakeServer(repos, config, clock) {
         checks: r.checksForbidden ? [] : runLists.map((l) => (l.is304 ? null : l.raw)),
         checkUrls: r.checksForbidden ? [] : runLists.map((l) => l.url),
         checkNext: r.checksForbidden ? [] : runLists.map((l) => (l.is304 ? null : false)),
-        checksState: r.checksForbidden ? 'cant-read' : 'ok', tree } };
+        checksState: r.checksForbidden ? 'cant-read' : 'ok', tree, ...(body.jobs !== undefined ? { jobs: jobsAnswer(r, project, body.jobs) } : {}) } };
     }
     // J12 (2026-10-16): the blob call's optional `pulls` field, answered raw from the repository's
     // `pullsAnswer` (a raw text, or a function of the cursor giving one, or null for a failed read).
@@ -167,6 +224,17 @@ export function fakeServer(repos, config, clock) {
         const v = typeof a === 'function' ? a(r.prReads) : a;
         extra.prs[n] = (r.prFail || []).includes(n) || !v ? null : keptPull(v);
       }
+    }
+    // AC79 (2026-10-19): the head commits' times and the log form, from the repository's `jobs` field.
+    if (Array.isArray(body.commitTime)) {
+      const J = r.jobs || {};
+      extra.commitTime = {};
+      for (const sha of body.commitTime) extra.commitTime[sha] = (J.fail && J.fail.commitTime || []).includes(sha) ? null : ((J.commits || {})[sha] || null);
+    }
+    if (Array.isArray(body.jobLog)) {
+      const J = r.jobs || {};
+      extra.jobLog = {};
+      for (const id of body.jobLog) extra.jobLog[id] = jobLogAnswer(J, id);
     }
     if (body.usage) {
       const a = typeof r.usageAnswer === 'function' ? r.usageAnswer(clock.now()) : r.usageAnswer;

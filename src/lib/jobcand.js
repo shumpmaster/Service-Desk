@@ -3,6 +3,12 @@
 // sends no notification; only what truly needs the owner does, including one the job leaves for
 // the owner"). A job candidate waits on the owner from the first of rules (a) to (d); until then it
 // is not in the set. Rule (d), the grant, is decided before this module is asked.
+//
+// From 2026-10-19 (AC79) this module lives in src/lib/ and is shared: the sender (src/notify/collect.mjs)
+// and the page (src/lib/jobwatch.js) both judge with it, so the desk's "Being recorded by the automatic
+// job" is the sender's own rule. It imports nothing, and stays pure. It is an R3 path (Setup CS23): the
+// sender runs it with the notification secrets. A judging run is one on the project's default branch only
+// (`defaultBranch`, AC79, J16: a `workflow_dispatch` of a changed job on a branch counts for nothing).
 
 export const ORCH_WORKFLOW = '.github/workflows/orchestrator.yml';
 export const EXEMPT_STATUS = 'owner-questions';
@@ -85,13 +91,26 @@ export function latestStatuses(statuses) {
 const ms = (t) => (typeof t === 'string' ? Date.parse(t) : NaN);
 
 /**
+ * A judging asks-merge run (J16 rule (b), AC79): started by `workflow_run`, `schedule` or
+ * `workflow_dispatch`, on the project's default branch. A run on any other branch, or with no
+ * `head_branch`, judges nothing.
+ */
+export function isJudgingRun(run, defaultBranch) {
+  return Boolean(run) && JUDGING_EVENTS.includes(run.event) && typeof defaultBranch === 'string' && defaultBranch !== ''
+    && run.head_branch === defaultBranch;
+}
+
+/**
  * Judge one job candidate (rules (a) to (c)). input: { number, checkRuns, workflowRuns, statuses,
  * asksRuns (the latest asks-merge runs), readJobs(runId) → jobs|null, readLog(jobId) → text|null,
  * headTime() → ms|null (asked only for rule (c)), seenMs (the first run of this sender that saw this
  * head), retriedMs (kept: the first judging run's run_started_at that gave a retried reason on this
- * head, or null), nowMs }. Returns { left: boolean, rule, retriedMs }.
+ * head, or null), nowMs, defaultBranch (the project's, J7: only runs whose `head_branch` is it judge) }.
+ * Returns { left: boolean, rule, retriedMs }.
  */
 export async function judgeCandidate(input) {
+  // Without the default branch no run could judge, so nothing would ever be left: refuse loudly instead.
+  if (typeof input.defaultBranch !== 'string' || input.defaultBranch === '') throw new TypeError('judgeCandidate needs the project\'s defaultBranch');
   const checks = latestChecks(input.checkRuns, input.workflowRuns);
   // (a) a counted check concluded other than success, or a counted status failed.
   if (checks.some((r) => r.status === 'completed' && r.conclusion !== 'success')) return { left: true, rule: 'a', retriedMs: input.retriedMs };
@@ -107,7 +126,7 @@ export async function judgeCandidate(input) {
   if (!checks.every((r) => r.status === 'completed' && r.conclusion === 'success')) return { left: false, rule: null, retriedMs: input.retriedMs };
   const done = Math.max(...checks.map((r) => ms(r.completed_at)));
   if (!Number.isFinite(done)) return { left: false, rule: null, retriedMs: input.retriedMs };
-  const runs = (input.asksRuns || []).filter((r) => r && JUDGING_EVENTS.includes(r.event) && ms(r.run_started_at) > done)
+  const runs = (input.asksRuns || []).filter((r) => isJudgingRun(r, input.defaultBranch) && ms(r.run_started_at) > done)
     .sort((x, y) => ms(y.run_started_at) - ms(x.run_started_at) || y.id - x.id);
   const verdicts = [];
   let logs = 0;

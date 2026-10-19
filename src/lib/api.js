@@ -4,7 +4,8 @@
 // are ever sent, so no other origin can read a response.
 
 import { checkAccess } from './access.js';
-import { pollProject, readBlobs, BLOB_BATCH, SHA_RE, HISTORY_PATH_RE, PULLS_COST, PULLS_CURSOR_RE, USAGE_COST, CLOSED_COST, MAX_FILES_PRS, PR_COST, MAX_PRS } from './github.js';
+import { pollProject, readBlobs, BLOB_BATCH, SHA_RE, HISTORY_PATH_RE, PULLS_COST, PULLS_CURSOR_RE, USAGE_COST, CLOSED_COST, MAX_FILES_PRS, PR_COST, MAX_PRS,
+  JOBS_MAX_HEADS, JOB_LISTS, COMMIT_TIME_COST, JOB_LOG_COST, MAX_COMMIT_TIMES, MAX_JOB_LOGS } from './github.js';
 import CONFIG from './config.js';
 import { usageEntry } from './usage.js';
 
@@ -44,7 +45,43 @@ function validatePoll(body, config) {
   if (entries.length > MAX_ETAGS) return { error: 'too many etags' };
   if (entries.some(([k, v]) => typeof k !== 'string' || typeof v !== 'string')) return { error: 'bad etags' };
   if (new TextEncoder().encode(JSON.stringify(etags)).length > MAX_ETAG_BYTES) return { error: 'etags too large' };
-  return { req: { project, head: body.head || null, etags } };
+  const req = { project, head: body.head || null, etags };
+  // AC79 (J6): the optional `jobs` part, never refused: a malformed one is answered `null`.
+  if (body.jobs !== undefined) req.jobs = jobsPart(body.jobs, project);
+  return { req };
+}
+
+const ETAG_OK = (v) => v == null || (typeof v === 'string' && v.length <= 200);
+const plain = (v) => v != null && typeof v === 'object' && !Array.isArray(v);
+
+/**
+ * AC79's `jobs` part (J6): `{ "runs": { "etag" }, "heads": [{ "sha", "etags": { checkRuns, statuses,
+ * workflowRuns } }] }`, both optional, for a v3 project. Returns { runs, heads (the first 5), extra (the
+ * sixth and later shas, answered null) }, or null when malformed (answered null, never refused).
+ */
+export function jobsPart(jobs, project) {
+  if (!plain(jobs) || project.model !== 'v3' || Object.keys(jobs).some((k) => k !== 'runs' && k !== 'heads')) return null;
+  let runs = null;
+  if (jobs.runs != null) {
+    if (!plain(jobs.runs) || Object.keys(jobs.runs).some((k) => k !== 'etag') || !ETAG_OK(jobs.runs.etag)) return null;
+    runs = { etag: jobs.runs.etag == null ? null : jobs.runs.etag };
+  }
+  const heads = [];
+  const extra = [];
+  if (jobs.heads != null) {
+    if (!Array.isArray(jobs.heads)) return null;
+    const seen = new Set();
+    for (const hd of jobs.heads) {
+      if (!plain(hd) || Object.keys(hd).some((k) => k !== 'sha' && k !== 'etags') || typeof hd.sha !== 'string' || !SHA_RE.test(hd.sha)) return null;
+      const et = hd.etags == null ? {} : hd.etags;
+      if (!plain(et) || Object.keys(et).some((k) => !JOB_LISTS.includes(k)) || !Object.values(et).every(ETAG_OK)) return null;
+      if (seen.has(hd.sha)) continue;
+      seen.add(hd.sha);
+      if (heads.length < JOBS_MAX_HEADS) heads.push({ sha: hd.sha, etags: Object.fromEntries(JOB_LISTS.map((l) => [l, et[l] || null])) });
+      else extra.push(hd.sha);
+    }
+  }
+  return { runs, heads, extra };
 }
 
 const ISO_RE = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{1,9})?Z$/;
@@ -97,14 +134,35 @@ function validateBlobs(body, config) {
     prs = [...new Set(body.prs)];
     if (prs.length > MAX_PRS) return { error: 'too many prs' };
   }
+  // AC79 (J6): the optional `commitTime` (head commits' times, each 1) and `jobLog` (the log form for a
+  // run id, each 3), at most 5 of each; a sixth, a commitTime entry that is not a sha and a jobLog entry
+  // that is not digits are answered null, never refused.
+  let commitTime = null;
+  let commitTimeNull = [];
+  if (body.commitTime != null) {
+    if (!Array.isArray(body.commitTime) || body.commitTime.some((x) => typeof x !== 'string' || x.length > 100)) return { error: 'bad commitTime' };
+    const all = [...new Set(body.commitTime)];
+    commitTime = all.filter((x) => SHA_RE.test(x)).slice(0, MAX_COMMIT_TIMES);
+    commitTimeNull = all.filter((x) => !commitTime.includes(x));
+  }
+  let jobLog = null;
+  let jobLogNull = [];
+  if (body.jobLog != null) {
+    if (!Array.isArray(body.jobLog) || body.jobLog.some((x) => typeof x !== 'string' || x.length > 100)) return { error: 'bad jobLog' };
+    const all = [...new Set(body.jobLog)];
+    jobLog = all.filter((x) => /^[0-9]{1,20}$/.test(x)).slice(0, MAX_JOB_LOGS);
+    jobLogNull = all.filter((x) => !jobLog.includes(x));
+  }
   // J21 (2026-10-18, draft 4): the optional `usage` field, the account's Actions use, counting 5.
   if (body.usage != null && body.usage !== true) return { error: 'bad usage' };
   const usage = body.usage === true;
   const budget = new Set(blobs).size + 2 * new Set(history).size + pairs.length + (pulls ? PULLS_COST : 0)
-    + (files ? files.length : 0) + (closed ? CLOSED_COST : 0) + (prs ? prs.length * PR_COST : 0) + (usage ? USAGE_COST : 0);
+    + (files ? files.length : 0) + (closed ? CLOSED_COST : 0) + (prs ? prs.length * PR_COST : 0) + (usage ? USAGE_COST : 0)
+    + (commitTime ? commitTime.length * COMMIT_TIME_COST : 0) + (jobLog ? jobLog.length * JOB_LOG_COST : 0);
   if (budget > BLOB_BATCH) return { error: `budget ${budget} is over ${BLOB_BATCH}` };
   return { req: { project, blobs: [...new Set(blobs)], history: [...new Set(history)], compare: pairs, ...(pulls ? { pulls } : {}),
     ...(files ? { files } : {}), ...(closed ? { closed } : {}), ...(prs ? { prs } : {}), ...(usage ? { usage: { config: usageEntry(config) ? usageEntry(config).cfg : null } } : {}),
+    ...(commitTime ? { commitTime, commitTimeNull } : {}), ...(jobLog ? { jobLog, jobLogNull } : {}),
     spare: BLOB_BATCH - budget } };
 }
 

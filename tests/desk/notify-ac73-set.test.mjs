@@ -8,6 +8,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { neededReads, buildModel, parseRecord } from '../../src/lib/model.js';
+import { parsePulls } from '../../src/lib/records.js';
+import { parseFilePages, splitChanges } from '../../src/lib/prfiles.js';
+import { settledVerdicts } from './jobs-page.mjs';
 import { collect } from '../../src/notify/collect.mjs';
 import { makeGitHub, BudgetStop } from '../../src/notify/gh.mjs';
 import { FIX } from './helpers.mjs';
@@ -55,7 +58,8 @@ function sdWorld(head) {
   w.checks[sha('4')] = { checkRuns: [build(3, 'completed', 'failure', '2026-10-18T11:40:00Z')], workflowRuns: wruns, statuses: [] };
   w.checks[sha('5')] = { checkRuns: [], workflowRuns: [], statuses: [] };
   w.commits[sha('5')] = '2026-10-18T11:55:00Z';
-  w.asksRuns = [{ id: 501, event: 'workflow_run', run_started_at: '2026-10-18T11:41:00Z' }];
+  // A judging run on the default branch (2026-10-19, AC79: real workflow_run runs report it, Facts relied on).
+  w.asksRuns = [{ id: 501, event: 'workflow_run', head_branch: 'main', status: 'completed', conclusion: 'success', run_started_at: '2026-10-18T11:41:00Z' }];
   w.jobs[501] = [{ id: 601, name: 'merge', status: 'completed', conclusion: 'success' }];
   w.logs[601] = '2026-10-18T11:41:05.1234567Z NOTE: the asks-merge grant is L-0017\n'
     + '2026-10-18T11:41:05.2234567Z PR #963: waits: decisions/questions/N-recorded.md: a notes or Critic record, which waits for the owner\n';
@@ -83,7 +87,7 @@ const expectedSd = [
 ];
 
 /** The desk's page layer: the same files, read as J6 hands them to the page (no git), into buildModel. */
-function deskModel(project, files, dates, pullPages, checkPages, compareMap) {
+function deskModel(project, files, dates, pullPages, checkPages, compareMap, jobs) {
   const tree = new Map(Object.keys(files).map((p) => [p, { sha: `blob-${p}`, size: files[p].length }]));
   const records = new Map();
   const history = new Map();
@@ -93,7 +97,20 @@ function deskModel(project, files, dates, pullPages, checkPages, compareMap) {
     for (const p of need.history) if (!history.has(p)) history.set(p, { oldest: dates(p), newest: null });
   }
   return buildModel({ project, config: testConfig(makeVapid()), tree, records, history, pullPages, checkPages, checksState: 'ok', compare: compareMap,
-    now: new Date(T0), withdrawn: [] });
+    now: new Date(T0), withdrawn: [], ...(jobs ? { jobs } : {}) });
+}
+
+/** The page's AC79 verdicts on the same world the sender read: the real function code and the page's own module. */
+async function pageVerdicts(project, files, w) {
+  const tree = new Map(Object.keys(files).map((p) => [p, { sha: `blob-${p}`, size: files[p].length }]));
+  const { pulls } = parsePulls([JSON.stringify(w.pulls)]);
+  const fileMap = new Map();
+  for (const p of pulls) {
+    if (!w.files[p.number]) continue;
+    const parsed = parseFilePages([JSON.stringify(w.files[p.number])]);
+    fileMap.set(p.number, { headSha: p.headSha, changes: splitChanges(parsed.files), capped: parsed.capped });
+  }
+  return (await settledVerdicts({ project, world: w, tree, ledgerText: files['docs/LEDGER.md'].toString('utf8'), pulls, files: fileMap }, T0)).verdicts;
 }
 
 /** Each desk flagged item's key, written out here from AC73's table (not from src/lib/waiting.js). */
@@ -134,6 +151,8 @@ test('AC73, J16: the set from real records at ef8daf4 and made-up ones: each key
 });
 
 test('AC73, J16: the sender\'s set equals the desk\'s flagged items for the same records, less the job\'s candidates and AC77\'s questions', async () => {
+  // From 2026-10-19 (AC79) the desk is given the same job reads as the sender, through the function's own
+  // code, and its own judgment leaves the job's candidates out ("Being recorded by the automatic job").
   const co = sdCheckout();
   const w = sdWorld(co.head);
   // Every fixture deploy on the current head, so the desk's head-only list and the sender's agree.
@@ -146,11 +165,16 @@ test('AC73, J16: the sender\'s set equals the desk\'s flagged items for the same
   // From 2026-10-18 the desk counts AC52's Deploys itself: the waiting runs on the head, in J1's lists.
   const deployRuns = w.waiting.filter((r) => r.head_sha === co.head).map((r, i) => ({ ...r, path: '.github/workflows/desk-deploy.yml', name: 'desk-deploy',
     event: 'push', run_number: 40 + i }));
+  const jobs = await pageVerdicts(project, files, w);
   const model = deskModel(project, files, dates, [JSON.stringify(w.pulls)],
-    [JSON.stringify({ workflow_runs: [...w.headRuns.push, ...deployRuns] }), JSON.stringify({ workflow_runs: [] })], new Map([['1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d', 'failed']]));
+    [JSON.stringify({ workflow_runs: [...w.headRuns.push, ...deployRuns] }), JSON.stringify({ workflow_runs: [] })], new Map([['1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d', 'failed']]), jobs);
   const desk = model.flagged.map((f) => deskKey(project.name, f));
   assert.ok(desk.includes('Service-Desk|deploy|7001'), 'the desk\'s own flagged items hold the deploy');
-  const less = new Set(['Service-Desk|pr|107', 'Service-Desk|pr|965', 'Service-Desk|question|questions/N-held.md', 'Service-Desk|question|questions/N-recorded.md']);
+  // The job's candidates it may still merge are the desk's being-recorded rows, not its flagged items.
+  assert.deepEqual(model.beingRecorded.map((f) => f.pr.number).sort(), [107, 965]);
+  assert.equal(jobs.get(963).state, 'count');
+  assert.equal(jobs.get(964).state, 'count');
+  const less = new Set(['Service-Desk|question|questions/N-held.md', 'Service-Desk|question|questions/N-recorded.md']);
   const expected = desk.filter((k) => !less.has(k)).sort();
   assert.deepEqual(c.set.map((x) => x.key), expected);
   assert.ok(less.size === [...less].filter((k) => desk.includes(k)).length, 'each left-out item is one the desk flags');

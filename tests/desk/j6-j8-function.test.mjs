@@ -4,7 +4,7 @@
 // no GitHub call; a POST without a JSON content type, or with a foreign Origin, is refused.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handle } from '../../src/lib/api.js';
+import { handle, jobsPart } from '../../src/lib/api.js';
 import { _resetKeyCache, accessSettings } from '../../src/lib/access.js';
 import { urlsFor } from '../../src/lib/github.js';
 import { onRequest as pollFn } from '../../src/functions/api/poll.js';
@@ -286,4 +286,148 @@ test('J6: the Pages Functions route to the handler (file-based routing: function
     const res = await fn({ request: request('/api/poll', {}), env: ENV });
     assert.equal(res.status, 403); // no JWT: refused before anything else
   }
+});
+
+// ---------------------------------------------------------------------------
+// From 2026-10-19 (AC79): the poll call's optional `jobs` part, and the blob call's `commitTime` and `jobLog`.
+
+const HEADS = ['1', '2', '3', '4', '5', '6'].map((c) => c.repeat(40));
+const jobsRoutes = (extra = []) => [
+  ...extra,
+  ...steadyRoutes(),
+  (url) => (/\/commits\/[0-9a-f]{40}\/check-runs\?per_page=100$/.test(url) ? { status: 200, headers: { ETag: '"cr"' }, body: '{"total_count":0,"check_runs":[]}' } : undefined),
+  (url) => (/\/commits\/[0-9a-f]{40}\/statuses\?per_page=100$/.test(url) ? { status: 200, headers: { ETag: '"st"' }, body: '[]' } : undefined),
+];
+
+test('J6 (AC79): a malformed jobs part, and a sixth head, are answered null, the poll\'s other parts intact and the project read', async () => {
+  _resetKeyCache();
+  const jwt = await signJwt(key, goodClaims());
+  for (const jobs of [42, { heads: 'x' }, { heads: [{ sha: 'nope' }] }, { runs: { etag: 7 } }, { other: true }, { heads: [{ sha: HEADS[0], etags: { files: 'x' } }] }]) {
+    const f = fakeFetch(jobsRoutes());
+    const res = await call('poll', request('/api/poll', { jwt, body: { project: 'Service-Desk', head: null, etags: {}, jobs } }), f);
+    assert.equal(res.status, 200, JSON.stringify(jobs));
+    const body = await res.json();
+    assert.equal(body.state, 'ok');
+    assert.equal(body.jobs, null, `${JSON.stringify(jobs)}: answered null, never refused`);
+    assert.ok(body.head && body.tree != null, 'the core reads intact');
+    assert.ok(!githubCalls(f).some((c) => /check-runs|statuses|asks-merge/.test(c.url)), 'nothing of the part read');
+  }
+  // A sixth head: the first five read, the sixth answered null.
+  const f = fakeFetch(jobsRoutes());
+  const res = await call('poll', request('/api/poll', { jwt, body: { project: 'Service-Desk', head: null, etags: {}, jobs: { heads: HEADS.map((sha) => ({ sha })) } } }), f);
+  const body = await res.json();
+  assert.equal(body.state, 'ok');
+  assert.deepEqual(Object.keys(body.jobs.heads).sort(), [...HEADS].sort());
+  assert.equal(body.jobs.heads[HEADS[5]], null);
+  for (const sha of HEADS.slice(0, 5)) assert.equal(typeof body.jobs.heads[sha].checkRuns, 'string');
+  // A v2.5 project's part is malformed (no asks-merge job there).
+  assert.equal(jobsPart({ heads: [{ sha: HEADS[0] }] }, { model: 'v2.5' }), null);
+  assert.deepEqual(jobsPart({ heads: [{ sha: HEADS[0] }, { sha: HEADS[0] }] }, SD).heads.length, 1, 'a head named twice is read once');
+});
+
+test('J6 (AC79): each conditional list answered 304 as null with its ETag; a failed one false; a next page named; no redirect followed', async () => {
+  _resetKeyCache();
+  const jwt = await signJwt(key, goodClaims());
+  const sha = HEADS[0];
+  const f = fakeFetch(jobsRoutes([
+    (url, init, h) => (url.endsWith('/actions/workflows/asks-merge.yml/runs?per_page=30') ? (h.get('If-None-Match') === '"runs"' ? { status: 304, headers: { ETag: '"runs"' } } : { status: 200, headers: { ETag: '"runs"' }, body: '{"workflow_runs":[]}' }) : undefined),
+    (url, init, h) => (url === `${U.checkRuns(sha)}` && h.get('If-None-Match') === '"cr"' ? { status: 304, headers: { ETag: '"cr"' } } : undefined),
+    (url) => (url === U.statuses(sha) ? { status: 200, headers: { ETag: '"st2"', Link: `<${U.statuses(sha)}&page=2>; rel="next"` }, body: '[]' } : undefined),
+    (url) => (url === U.workflowRuns(sha) ? { status: 301, headers: { Location: 'https://api.github.com/repositories/1/actions/runs' } } : undefined),
+  ]));
+  const res = await call('poll', request('/api/poll', { jwt, body: { project: 'Service-Desk', head: null, etags: {},
+    jobs: { runs: { etag: '"runs"' }, heads: [{ sha, etags: { checkRuns: '"cr"' } }] } } }), f);
+  const body = await res.json();
+  assert.equal(body.jobs.runs, null, '304: null');
+  assert.equal(body.jobs.etags.runs, '"runs"');
+  assert.equal(body.jobs.heads[sha].checkRuns, null);
+  assert.equal(body.jobs.heads[sha].statuses, '[]');
+  assert.equal(body.jobs.etags.heads[sha].statuses, '"st2"');
+  assert.deepEqual(body.jobs.next[sha], ['statuses']);
+  assert.equal(body.jobs.heads[sha].workflowRuns, false, 'a redirect is a failed read, never followed');
+  const wr = f.calls.filter((c) => c.url === U.workflowRuns(sha));
+  assert.equal(wr.length, 1);
+  assert.equal(wr[0].init.redirect, 'manual');
+  assert.ok(!f.calls.some((c) => c.url.startsWith('https://api.github.com/repositories/')));
+  assert.equal(body.state, 'ok', 'the project still read');
+});
+
+test('J1 (AC79): the jobs part is read last and answered null when it would take the call past 30 GitHub requests', async () => {
+  _resetKeyCache();
+  const jwt = await signJwt(key, goodClaims());
+  // Full core lists (3 pages each of PRs, 3a and 3b: 11 requests with the branch and the tree) leave 19: a full part needs 16.
+  const paged = (base) => (url) => {
+    if (!url.startsWith(base)) return undefined;
+    const p = Number((/[?&]page=(\d)/.exec(url) || [0, 1])[1]);
+    return { status: 200, headers: p < 3 ? { Link: `<${base}&page=${p + 1}>; rel="next"` } : {}, body: '[]' };
+  };
+  const head = JSON.parse(branch.body).commit.sha;
+  const core = [paged(U.pulls), paged(U.runs(head, 'push')), paged(U.runs(head, 'workflow_dispatch'))];
+  const jobs = { runs: { etag: null }, heads: HEADS.slice(0, 5).map((sha) => ({ sha })) };
+  let f = fakeFetch(jobsRoutes(core));
+  let body = await (await call('poll', request('/api/poll', { jwt, body: { project: 'Service-Desk', head: null, etags: {}, jobs } }), f)).json();
+  assert.ok(body.jobs && Object.keys(body.jobs.heads).length === 5, '11 + 16 = 27: within 30');
+  assert.ok(body.cost.github <= 30, `${body.cost.github} requests`);
+  // Each core list request redirected once (a renamed repository): the counts pass 30, so the part is null, the core intact.
+  f = fakeFetch(jobsRoutes(core));
+  const wrap = async (url, init) => {
+    const res = await f(url, init);
+    if (/\/pulls\?|\/actions\/runs\?head_sha=[0-9a-f]{40}&event=/.test(url)) Object.defineProperty(res, 'redirected', { value: true });
+    return res;
+  };
+  wrap.calls = f.calls;
+  body = await (await call('poll', request('/api/poll', { jwt, body: { project: 'Service-Desk', head: null, etags: {}, jobs } }), wrap)).json();
+  assert.equal(body.jobs, null, 'its requests would pass 30');
+  assert.equal(body.state, 'ok');
+  assert.ok(body.cost.github <= 30);
+});
+
+test('J6 (AC79): commitTime and jobLog: a sixth answered null, a jobLog entry not digits null; 1 and 3 of the budget each; the log\'s redirect fetched with no Authorization', async () => {
+  _resetKeyCache();
+  const jwt = await signJwt(key, goodClaims());
+  const shas = HEADS;
+  const runs = ['11', '12', '13', '14', '15', '16'];
+  const f = fakeFetch([
+    certsRoute([key]),
+    (url) => (/\/commits\/[0-9a-f]{40}$/.test(url) ? { status: 200, body: JSON.stringify({ commit: { committer: { date: '2026-10-18T11:20:00Z' } } }) } : undefined),
+    (url) => {
+      const m = /\/actions\/runs\/(\d+)\/jobs\?per_page=30$/.exec(url);
+      return m ? { status: 200, body: JSON.stringify({ jobs: [{ id: Number(m[1]) * 10, name: 'merge', status: 'completed', conclusion: 'success' }] }) } : undefined;
+    },
+    (url) => {
+      const m = /\/actions\/jobs\/(\d+)\/logs$/.exec(url);
+      return m ? { status: 302, headers: { Location: `https://logs.example.invalid/${m[1]}` } } : undefined;
+    },
+    (url) => (url.startsWith('https://logs.example.invalid/') ? { status: 200, body: '2026-10-18T11:41:05.1Z NOTE: the asks-merge grant is L-0017\r\n2026-10-18T11:41:05.2Z noise\r\n2026-10-18T11:41:05.3Z PR #7: waits: x\r\n' } : undefined),
+  ]);
+  const res = await call('blobs', request('/api/blobs', { jwt, body: { project: 'Service-Desk', blobs: [], history: [], commitTime: shas, jobLog: [...runs.slice(0, 2), 'x1', ...runs.slice(2)] } }), f);
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.commitTime[shas[5]], null, 'a sixth commitTime answered null');
+  assert.equal(body.commitTime[shas[0]], '2026-10-18T11:20:00Z');
+  assert.equal(body.jobLog.x1, null, 'not digits: null');
+  assert.equal(body.jobLog['16'], null, 'a sixth jobLog answered null');
+  assert.deepEqual(body.jobLog['11'], { job: { status: 'completed', conclusion: 'success' }, ran: true, lines: ['NOTE: the asks-merge grant is L-0017', 'PR #7: waits: x'], tooLarge: false });
+  assert.equal(body.cost.github, 5 + 5 * 3, '1 per head time, 3 per log form');
+  const target = f.calls.filter((c) => c.url.startsWith('https://logs.example.invalid/'));
+  assert.equal(target.length, 5);
+  assert.ok(target.every((c) => c.headers.get('Authorization') == null), 'no token on the redirect\'s address');
+  assert.ok(f.calls.filter((c) => /\/logs$/.test(c.url)).every((c) => c.init.redirect === 'manual' && /^Bearer /.test(c.headers.get('Authorization'))));
+  // The budget: 5 head times and 5 logs are 20; with 6 blobs, 26 is refused.
+  const over = await call('blobs', request('/api/blobs', { jwt, body: { project: 'Service-Desk', blobs: shas, history: [], commitTime: shas.slice(0, 5), jobLog: runs.slice(0, 5) } }), fakeFetch([certsRoute([key])]));
+  assert.equal(over.status, 400);
+  assert.match((await over.json()).error, /budget 26/);
+  // A log longer than 65,536 characters answers "too large".
+  const g = fakeFetch([certsRoute([key]),
+    (url) => (/\/jobs\?per_page=30$/.test(url) ? { status: 200, body: JSON.stringify({ jobs: [{ id: 5, name: 'merge', status: 'completed', conclusion: 'success' }] }) } : undefined),
+    (url) => (/\/jobs\/5\/logs$/.test(url) ? { status: 302, headers: { Location: 'https://logs.example.invalid/5' } } : undefined),
+    (url) => (url === 'https://logs.example.invalid/5' ? { status: 200, body: 'x'.repeat(65537) } : undefined)]);
+  const big = await (await call('blobs', request('/api/blobs', { jwt, body: { project: 'Service-Desk', blobs: [], history: [], jobLog: ['1'] } }), g)).json();
+  assert.deepEqual(big.jobLog['1'], { job: { status: 'completed', conclusion: 'success' }, ran: true, lines: null, tooLarge: true });
+  // A merge job skipped: no log asked for.
+  const k = fakeFetch([certsRoute([key]),
+    (url) => (/\/jobs\?per_page=30$/.test(url) ? { status: 200, body: JSON.stringify({ jobs: [{ id: 5, name: 'merge', status: 'completed', conclusion: 'skipped' }] }) } : undefined)]);
+  const sk = await (await call('blobs', request('/api/blobs', { jwt, body: { project: 'Service-Desk', blobs: [], history: [], jobLog: ['1'] } }), k)).json();
+  assert.deepEqual(sk.jobLog['1'], { job: { status: 'completed', conclusion: 'skipped' }, ran: false, lines: null, tooLarge: false });
+  assert.ok(!k.calls.some((c) => /\/logs$/.test(c.url)));
 });

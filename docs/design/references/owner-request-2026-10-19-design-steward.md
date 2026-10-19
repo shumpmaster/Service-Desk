@@ -10,3 +10,13 @@ Said by the owner in the Chief of Staff's session (session_012RJPVKAoLga2RkqLYRD
 > as well as many of the screens shown https://mobbin.com/search/apps/ios?content_type=screens&q=project+management
 
 Context: it came right after the Chief of Staff asked how the board should be scoped across projects (decisions pending: questions/P-001-board-scope.md, P-001-board-done-button.md). The Chief of Staff's reading of "Approved - as for 2", to be confirmed by the owner: "Approved" answers the Done-card button question, and "as for 2" leaves the board's project grouping open.
+
+## Follow-ups of 2026-10-19, word for word
+
+The owner shared 36 Linear Mobile iOS screenshots (an upload, "Linear_Mobile_iOS_Screens.zip", screens curated by Mobbin) and asked: "How does the redesign mockup allign with the screenshots from linear mobile attached here?"
+
+After the Chief of Staff's comparison:
+
+> Can you mockup what the integration of linear UI elements would look like? Keep in mind im not trying to recreate linear, just just using the general theme as a design starting point
+>
+> Additionally- how does the design review process work? Is it a new agent? Or a milestone? Or what - because im pleased with that initial proposal so far.

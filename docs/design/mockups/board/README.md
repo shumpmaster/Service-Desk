@@ -4,6 +4,42 @@ Screenshots of [../board.html](../board.html), the Orchestrator's proposal for t
 board (the owner's request of 19 Oct: [../../references/owner-request-2026-10-19-board.md](../../references/owner-request-2026-10-19-board.md)).
 Taken with Playwright Chromium at device scale 2, each one of a single labelled frame.
 
+## Version 4: lanes left to right, two options to pick from
+
+The owner, after version 3: "I wanted Left to right lanes. Not vertical". On every width the lanes now run left
+to right: Waiting on you | Kicked back | Done. The page shows two phone options side by side, both with version
+3's behaviour (Done at once, confirmed with GitHub per step, kicked back on a mismatch after about 5 minutes).
+`board.html?view=1` or `?view=2` opens one option full screen, as on a phone; the shots below are taken that way.
+The state shown is five waiting, one kicked back and two done, from items that waited on the owner on 19 Oct
+(#135 and two board questions join version 3's five); the times are examples.
+
+- **Option 1, all three lanes at once.** Three columns share the screen. Compact cards: the title clipped to
+  three lines, a tiny "Service-Desk #n" line, one short button ("Verdict ↗", "Merge ↗", "Answer ↗"). A tap on the
+  card opens a sheet with the whole title, why, the step and "Done ✓"; press and hold drags a card into Done.
+- **Option 2, swipe between lanes.** Each lane is 85% of the screen, the next peeking in at the right; the lanes
+  snap. Tabs with counts jump between them. Press and hold a card and drag it to the right edge, where a
+  "Done ✓" target appears, or tap "Done ✓".
+
+| File | State | Viewport |
+|---|---|---|
+| option1-360-v4.png | Option 1: five waiting, one kicked back, two done | 360 × 740 |
+| option1-414-v4.png | Option 1: the same | 414 × 896 |
+| option1-dark-414-v4.png | Option 1 in dark mode | 414 × 896 |
+| option1-sheet-414-v4.png | Option 1: a tap on a card opens its sheet (after one card was dragged to Done) | 414 × 896 |
+| option2-360-v4.png | Option 2: the Waiting lane, Kicked back peeking in | 360 × 740 |
+| option2-414-v4.png | Option 2: the same | 414 × 896 |
+| option2-mid-swipe-414-v4.png | Option 2 part-way between Waiting on you and Kicked back | 414 × 896 |
+| option2-drag-414-v4.png | Option 2: a card dragged to the right edge's "Done ✓" target | 414 × 896 |
+| page-1024-v4.png | The page: the two options side by side, labelled | 1024 × 900 |
+
+Checked for version 4 at 360, 414 and 1024, light and dark: the page never scrolls sideways, and the only thing
+that does is option 2's lane strip; every button, link and fold is at least 44 × 44 px. Option 1's columns are
+104 px wide at 360 and 122 px at 414; option 2's lanes are 85% of the screen. Tried: a touch long-press drag into
+Done in each option, the sheet's "Done ✓", the tabs, a sideways swipe on a card (it scrolls the lanes and does not
+drag), #135's verdict bringing its Step 2 card, and no script errors.
+
+Versions 1 to 3 drew the lanes stacked; their files are kept below for the record.
+
 ## Version 3: Done at once, then confirmed
 
 The owner's clarification: "My intention is that if i move a card over and then pass my verdict or update - the

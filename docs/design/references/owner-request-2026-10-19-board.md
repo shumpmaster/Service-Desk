@@ -21,3 +21,7 @@ After mockup version 2:
 > This was my thought - do you see issues with that?
 
 The Orchestrator's answer in the session: no blocking issues; the check confirms each card's own step, not the whole item; a grace of about 5 minutes before "Kicked back", since some steps take a minute or two to show on GitHub; the owner's Done marks are kept on that device only, since the desk cannot write. Mockup version 3 (docs/design/mockups/board.html) draws this.
+
+After mockup version 3:
+
+> I wanted Left to right lanes. Not vertical

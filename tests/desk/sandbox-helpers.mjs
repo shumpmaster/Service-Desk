@@ -124,9 +124,9 @@ export const linksIn = (node) => findAll(node, (e) => e.tag === 'a').map((a) => 
 // desk function, so the screens drawn and the taps followed are the page's own.
 
 let loads = 0;
-export async function loadSandbox({ config, repos, hash = '#/', now: start = Date.parse('2026-10-14T15:00:00Z'), store = null }) {
+export async function loadSandbox({ config, repos, hash = '#/', search = '?sandbox', now: start = Date.parse('2026-10-14T15:00:00Z'), store = null, win = {}, globals = {} }) {
   const { fakeServer } = await import('./fake-desk.mjs');
-  const names = ['document', 'window', 'location', 'Node', 'setTimeout', 'clearTimeout', 'setInterval', 'navigator', 'localStorage'];
+  const names = ['document', 'window', 'location', 'Node', 'setTimeout', 'clearTimeout', 'setInterval', 'navigator', 'localStorage', 'Notification', 'history'];
   const saved = Object.fromEntries(names.map((k) => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
   let now = start;
   const realNow = Date.now;
@@ -144,24 +144,28 @@ export async function loadSandbox({ config, repos, hash = '#/', now: start = Dat
     getElementById: (id) => els[id] || null,
     addEventListener: (t, fn) => { (docListeners[t] ||= []).push(fn); },
   });
-  const loc = { hash, search: '?sandbox' };
+  // From 2026-10-19 the tap's `?sandbox&open=<key>` (search); history.replaceState records the address left after it.
+  const loc = { hash, search, pathname: '/' };
   set('location', loc);
+  const addresses = [];
+  set('history', { replaceState: (s0, t, u) => { addresses.push(u); } });
   const scrolls = [];
   const intervals = [];
   set('window', { scrollY: 0, innerWidth: 360, innerHeight: 740, scrollTo(x, y) { scrolls.push([x, y]); }, addEventListener: (t, fn) => { (winListeners[t] ||= []).push(fn); },
-    setTimeout: (fn, ms) => globalThis.setTimeout(fn, ms) });
+    setTimeout: (fn, ms) => globalThis.setTimeout(fn, ms), ...win });
   set('setTimeout', (fn, ms) => { const id = ++seq; timers.set(id, { at: now + Math.max(0, ms || 0), fn, id }); return id; });
   set('clearTimeout', (id) => { timers.delete(id); });
   set('setInterval', (fn, ms) => { intervals.push({ fn, ms }); return intervals.length; });
-  set('navigator', { clipboard: { writeText: async () => {} } });
+  set('navigator', { clipboard: { writeText: async () => {} }, ...(globals.navigator || {}) });
   set('localStorage', store);
+  set('Notification', globals.Notification); // AC75's control (from 2026-10-18); none by default
   Date.now = () => now;
   const server = fakeServer(repos, config, { now: () => now });
   const flush = async () => { for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r)); };
   const mod = await import(`../../src/public/sandbox.js?load=${++loads}`);
   const desk = mod.startSandbox({ config, call: (p, b) => server.call(p, b) });
   const app = {
-    els, desk, server, flush, view: els.view, head, scrolls, loc, module: mod,
+    els, desk, server, flush, view: els.view, head, scrolls, loc, module: mod, addresses,
     /** The sandbox's 15-second tick (setInterval), run once. */
     async tick() { for (const i of intervals) if (i.ms === 15_000) i.fn(); await flush(); },
     /** A key pressed on the document (Escape and the like). */

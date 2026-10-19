@@ -49,15 +49,26 @@ class FakeElement extends FakeNode {
   addEventListener(type, fn) {
     (this.listeners[type] ||= []).push(fn);
   }
+  /** A tap: each click listener with an event whose preventDefault is recorded (e.defaultPrevented). */
+  click() {
+    const e = { type: 'click', target: this, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }, stopPropagation() {} };
+    for (const fn of this.listeners.click || []) fn(e);
+    return e;
+  }
+  scrollIntoView() {
+    FakeElement.scrolled.push(this);
+  }
 }
+FakeElement.scrolled = [];
 
 /**
  * Load app.js once under fake globals. opts: { hash, repos, breakView, now (ms, default the real clock) }. Returns handles to drive
  * it: the screen-state and view elements, the timers, the calls made, and `advance(ms)`.
  */
 let loads = 0;
-export async function loadApp({ hash = '', repos, breakView = false, now: start = null }) {
-  const names = ['document', 'window', 'location', 'Node', 'setTimeout', 'clearTimeout', 'setInterval', 'fetch'];
+export async function loadApp({ hash = '', repos, breakView = false, now: start = null, search = '', win = {}, globals = {} }) {
+  const names = ['document', 'window', 'location', 'Node', 'setTimeout', 'clearTimeout', 'setInterval', 'fetch', 'navigator', 'Notification', 'localStorage', 'history',
+    ...Object.keys(globals).filter((k) => !['navigator', 'Notification', 'localStorage', 'history'].includes(k))];
   const saved = Object.fromEntries(names.map((k) => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
   let now = start == null ? Date.now() : start;
   const realNow = Date.now;
@@ -79,8 +90,17 @@ export async function loadApp({ hash = '', repos, breakView = false, now: start 
     addEventListener: (type, fn) => { (docListeners[type] ||= []).push(fn); },
   };
   set('document', doc);
-  set('window', { scrollY: 0, scrollTo() {}, addEventListener() {} });
-  set('location', { hash, search: '' });
+  set('window', { scrollY: 0, scrollTo() {}, addEventListener() {}, ...win });
+  // From 2026-10-19: `replace` records where the accepted view sends a `?open=` address (to the sandbox).
+  const replaced = [];
+  set('location', { hash, search, pathname: '/', replace: (u) => { replaced.push(u); } });
+  // From 2026-10-18: the browser objects AC75's control reads, faked per test (none by default).
+  set('navigator', globals.navigator || {});
+  set('Notification', globals.Notification);
+  set('localStorage', globals.localStorage);
+  set('history', globals.history);
+  for (const [k, v] of Object.entries(globals)) if (!['navigator', 'Notification', 'localStorage', 'history'].includes(k)) set(k, v);
+  FakeElement.scrolled = [];
   set('setTimeout', (fn, ms) => { const id = ++seq; timers.set(id, { at: now + Math.max(0, ms || 0), fn, id }); return id; });
   set('clearTimeout', (id) => { timers.delete(id); });
   set('setInterval', () => 0);
@@ -93,8 +113,14 @@ export async function loadApp({ hash = '', repos, breakView = false, now: start 
   Date.now = () => now;
   const flush = async () => { for (let i = 0; i < 8; i++) await new Promise((r) => setImmediate(r)); };
   const app = {
-    els, timers, fetchCalls, flush, doc,
+    els, timers, fetchCalls, flush, doc, server, scrolled: () => FakeElement.scrolled, loc: globalThis.location,
+    /** The fake desk function's calls, with their bodies. */
+    /** Where the page replaced its own address (location.replace), in order. */
+    replaced,
+    calls: () => server.calls,
     state: () => els['screen-state'],
+    /** Fire a document event (from 2026-10-18: `visibilitychange`, after setting doc.visibilityState). */
+    fire: (type) => { for (const fn of docListeners[type] || []) fn({}); },
     async advance(ms) {
       const until = now + ms;
       for (;;) {

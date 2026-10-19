@@ -15,6 +15,10 @@ export default {
     "to": "22:00"
   },
   "linkCap": 6000,
+  "push": {
+    "vapidPublicKey": "BFTM_IZawd-WOl_Mgf5RzLMAtGYwL7lIO9y9p2gVOQYwAjjIphr6q_TN4hiLCLasXYhdGhQqDHUuEyX40BMC8bM",
+    "deskUrl": "https://service-desk-preview.pages.dev"
+  },
   "projects": [
     {
       "name": "Service-Desk",
@@ -22,6 +26,11 @@ export default {
       "defaultBranch": "main",
       "model": "v3",
       "planning": true,
+      "deploysNeedOwner": true,
+      "actionsUsage": {
+        "account": "shumpmaster",
+        "includedMinutes": 3000
+      },
       "webCommitsToDefault": true,
       "contentPrefill": true,
       "contentParam": "value"

@@ -1,0 +1,109 @@
+# Fixture for test_desk_notify_check.py: a copy of the real file with one fault, a checkout ref of the triggering run's head_sha.
+# Not a workflow: GitHub runs only files directly in .github/workflows/.
+# The desk's notifications (spec S-001, Workflow 3; AC73 to AC78, J16 to J21; Setup CS15). One job
+# runs the sender, src/notify/run.mjs, from the default branch: when any of the seven workflows below
+# ends (and when desk-deploy starts, so a deploy waiting for the owner is seen), on the owner's own
+# pushes to main, every 5 minutes, and by hand. A run started by workflow_run runs this file from the
+# default branch and is admitted by the main-only `notify` Environment whatever branch or fork the
+# triggering run came from (research Q-014), so the Environment keeps the secrets only from a dispatch
+# or a copy of this file on another branch. The job's `if:` is the gate: the switch DESK_NOTIFY_ON,
+# which the owner sets last (Setup N7) and clears to stop it, then the origin gate, which admits a
+# workflow_run run only from this repository's own runs of the events listed. Before it reads any
+# secret, the program reads the triggering run again through REST and requires it to be this
+# repository's. Nothing from the triggering run is used: the checkout is the default branch's with no
+# token left on disk, no artifact is downloaded, and every value from the event or a secret reaches
+# the program through env:, never as an expression in a run: line. The secrets are in the one step
+# that sends. The job, not the workflow, holds the concurrency group, so the many skipped runs never
+# take a pending job's place. No pull_request_target and no pull_request. desk-build runs
+# .github/scripts/desk_notify_check.py on every pull request to hold these rules. Every action is
+# pinned by commit.
+name: desk-notify
+
+on:
+  # The end of each of these runs; `requested` matters only for desk-deploy (the gate). Branches are
+  # not filtered: a pull request's head branch varies, and the gate and the program decide.
+  workflow_run:
+    workflows: [governance, orchestrator, asks-merge, pr-body, desk-build, desk-deploy, desk-notify-ready]
+    types: [completed, requested]
+  # The owner's own commits (the workflows' own pushes start no push run; their runs are caught above).
+  push:
+    branches: [main]
+  # The 5-minute check, off the top of the hour.
+  schedule:
+    - cron: "2-59/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      test:
+        description: 'Leave empty for an ordinary run. "true": send a test. "fail": a test the push service should refuse. "usage": one Actions usage read (Setup N12).'
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+  checks: read
+  statuses: read
+  issues: write
+
+jobs:
+  notify:
+    # The switch, then the origin gate (Workflow 3). For workflow_run: this repository's own run, its
+    # end (or desk-deploy's start), and a run of a push, a pull request, a dispatch or a schedule, or
+    # one of asks-merge's own workflow_run-started runs, which always run the default branch's file.
+    if: >-
+      vars.DESK_NOTIFY_ON == 'true' &&
+      (github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.head_repository.full_name == github.repository &&
+      (github.event.action == 'completed' || github.event.workflow_run.name == 'desk-deploy') &&
+      (github.event.workflow_run.event == 'push' ||
+      github.event.workflow_run.event == 'pull_request' ||
+      github.event.workflow_run.event == 'workflow_dispatch' ||
+      github.event.workflow_run.event == 'schedule' ||
+      (github.event.workflow_run.event == 'workflow_run' &&
+      github.event.workflow_run.path == '.github/workflows/asks-merge.yml'))))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: notify
+    # One job at a time; a waiting job is never cancelled. A skipped job never enters the group.
+    concurrency:
+      group: desk-notify
+      cancel-in-progress: false
+    steps:
+      # The default branch with its history, never the triggering run's ref, and no token left on disk.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      # One exact Node version (the sender needs 20 or later; its tests ran on 22). No install step:
+      # the sender has no dependencies. No package-manager cache in a job that holds secrets.
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22.22.0"
+          package-manager-cache: false
+
+      # The one step that sends, and the only one that holds a secret.
+      - name: Send
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DESK_NOTIFY_RUN_ID: ${{ github.event.workflow_run.id }}
+          DESK_NOTIFY_TEST: ${{ inputs.test }}
+          DESK_VAPID_PRIVATE_KEY: ${{ secrets.DESK_VAPID_PRIVATE_KEY }}
+          DESK_VAPID_SUBJECT: ${{ secrets.DESK_VAPID_SUBJECT }}
+          DESK_PUSH_SUBSCRIPTION: ${{ secrets.DESK_PUSH_SUBSCRIPTION }}
+          DESK_NOTIFY_STATE_KEY: ${{ secrets.DESK_NOTIFY_STATE_KEY }}
+          DESK_BILLING_TOKEN: ${{ secrets.DESK_BILLING_TOKEN }}
+        run: node src/notify/run.mjs --project Service-Desk
+
+      # The state (J18), only when the program wrote it: the directory's files at the artifact's root.
+      - name: Keep the state
+        if: hashFiles('desk-notify-state/state.json') != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: desk-notify-state
+          path: desk-notify-state/
+          retention-days: 7
+          if-no-files-found: error

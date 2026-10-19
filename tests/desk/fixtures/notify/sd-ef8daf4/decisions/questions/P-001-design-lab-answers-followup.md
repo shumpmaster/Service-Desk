@@ -1,0 +1,10 @@
+Ruling: waiting deploys start counting as needing the owner only after the operating model records who approves each deploy; and the desk clips any long ruling line to its first three lines, with the whole text one tap away, leaving the owner's file as written
+Proxy: done at the owner's request (the owner answered two follow-up questions in the session on 2026-10-16, after answering the eleven design-lab questions in decisions/questions/P-001-design-lab-open.md; each is quoted verbatim below)
+
+Follow-up questions and answers:
+1. "On question 6 you said deploys waiting for your approval should count as needing you. For now the desk can't tell who approves a deploy, except in Service-Desk, where you're the only approver. When should it start counting them?" Answer: "After the model change (Recommended)" (option text: "The desk counts waiting deploys once the operating model records who approves each one, so it works the same for every project. Until then, deploys keep showing in their own group without adding to your count."). The other option offered: "Now, Service-Desk only".
+2. "Your eleven answers went in as one very long first line, about 1,800 characters, with a stray \"11 Ruling:\" at the start. The desk will show that line whole under \"Your last action\" and \"Done today\". What should happen?" Answer: "Desk clips long lines (Recommended)" (option text: "The desk shows the first three lines of any long ruling, with the whole text one tap away, the same as the tile summaries. This also covers any future long ruling. Your file stays exactly as you wrote it."). The other options offered: "Leave it as is", "I'll re-file it".
+
+How it is read:
+- Answer 6 of the eleven ("Yes") stands; the desk acts on it once the model change "deploy approvals tied to the owner" lands. Until then, AC52's Deploys line stays as built.
+- Wherever the sandbox shows a ruling's line 1 (AC55's "Your last action", AC52's "Done today"), a line longer than three lines shows its first three, faded, with the whole line one tap away, as AC54's tile summary does. The owner's file is never edited.

@@ -1,0 +1,21 @@
+# Fixture for test_desk_notify_check.py: a copy of the real file with one fault, permissions: read-all.
+# Not a workflow: GitHub runs only files directly in .github/workflows/.
+# The no-secret ready workflow (spec S-001, Workflow 3; Setup CS15). Its only purpose is to finish,
+# so desk-notify's workflow_run sees within minutes a pull request marked ready, turned back to draft
+# or closed. It has no permissions, no checkout, no secret and no Environment, and runs one step that
+# runs `true`. desk-build's .github/scripts/desk_notify_check.py holds these rules.
+name: desk-notify-ready
+
+on:
+  pull_request:
+    types: [ready_for_review, converted_to_draft, closed]
+
+permissions: read-all
+
+jobs:
+  ready:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Finish
+        run: "true"

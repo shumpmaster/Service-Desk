@@ -421,6 +421,8 @@ p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 .sb-grab { display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: var(--s1) auto var(--s3); }
 .sb-left { border: 1px solid var(--block); border-left: 4px solid var(--block); border-radius: var(--r); padding: var(--s2) var(--s3); background: var(--blocks); margin: var(--s2) 0; }
 .sb-left p { margin: 0 0 var(--s1); }
+/* AC74 (2026-10-19): the tap's line, "Opened from a notification" or "That no longer waits on you". */
+.sb-tap { margin: var(--s2) 0; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: var(--r); background: var(--surf); font: var(--t-item); }
 .sb-infobtn { display: inline-flex; gap: var(--s2); align-items: center; min-height: 44px; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf); font: var(--t-item); text-decoration: none; }
 .sb-infobtn .ic { width: 18px; height: 18px; }
 .sb-more > summary .sb-h2.flat { margin: 0; }
@@ -647,3 +649,18 @@ button.sb-line:focus-visible { outline: none; }
   background: var(--surf); color: var(--ink); resize: vertical; }
 .sb-final { border-top: 1px solid var(--line); padding-top: var(--s2); }
 .sb-btn.small { min-height: 44px; font: var(--t-meta); margin: var(--s2) 0; }
+
+/* Notifications (AC75, AC77, AC78; 2026-10-18): the "Notifications" control, "GitHub Actions this
+   month" and the Queue's "Asked in your session", in the shared look and its scales. */
+html.sb .sb-notify { margin: var(--s2) 0; display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+html.sb .sb-notify > p { margin: 0; font: var(--t-body); }
+html.sb .sb-notify .sb-value { flex: 1 1 100%; max-width: 100%; margin: 0; padding: var(--s2); white-space: pre-wrap; word-break: break-all; font: var(--t-code);
+  background: var(--surf2); border: 1px solid var(--line); border-radius: var(--rs); }
+html.sb .sb-steps { flex: 1 1 100%; margin: 0; padding-left: var(--s4); font: var(--t-body); }
+html.sb .sb-notify-line, html.sb .sb-actions-usage { margin: var(--s3) 0 0; }
+html.sb .sb-h3 { margin: 0 0 var(--s1); font: var(--t-item); }
+html.sb .sb-actions-usage p { margin: var(--s1) 0; }
+html.sb .sb-actions-bar { display: block; width: 100%; height: 12px; margin: var(--s1) 0; accent-color: var(--agent); }
+html.sb .sb-asking .sb-qrow { padding: var(--s2) 0; }
+html.sb .sb-asking p { margin: var(--s1) 0; }
+html.sb .sb-recheck p { margin: var(--s1) 0; }

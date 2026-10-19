@@ -27,6 +27,8 @@ header#top { position: sticky; top: 0; background: var(--bg); padding: 10px 0 6p
 .box.flagged .state, .flag { color: var(--flag); }
 .box.cant-read .state { color: var(--warn); }
 .muted, .note { color: var(--muted); font-size: 0.92rem; }
+/* AC79: a pull request being recorded by the automatic job: activity, softer, never flagged. */
+li.recording, li.recording a { color: var(--muted); }
 ul.plain { list-style: none; padding: 0; margin: 6px 0; }
 ul.plain > li { padding: 6px 0; border-top: 1px solid var(--line); }
 ul.plain > li:first-child { border-top: 0; }

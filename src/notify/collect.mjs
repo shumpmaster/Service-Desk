@@ -10,7 +10,8 @@ import { questionHold } from '../lib/asking.js';
 import { parseFilePages, splitChanges, recordedAnswers, jobKindsByPath, FILES_MAX_PAGES, CLOSED_MAX_PAGES, closedNeedsNext, closedCanEnd } from '../lib/prfiles.js';
 import { ReadFailed } from './gh.mjs';
 import { findGrant, ASKS_MERGE_WORKFLOW } from './grant.mjs';
-import { judgeCandidate, ASKS_MERGE_RUNS } from './jobcand.mjs';
+// J16's pure judgment, shared with the page's AC79 (src/lib/ from 2026-10-19; R3, Setup CS23).
+import { judgeCandidate, ASKS_MERGE_RUNS } from '../lib/jobcand.js';
 import { keyHash, recordedEntry, readRecorded } from './state.mjs';
 
 export const DEPLOY_POLL_MS = 15e3;
@@ -245,6 +246,18 @@ export async function collect(input) {
       if (candidates.length) {
         const ar = await gh.get(`/repos/${repo}${ASKS_MERGE_RUNS}`);
         if (ar.status !== 200 || !ar.json || !Array.isArray(ar.json.workflow_runs)) throw new ReadFailed('asks-merge runs', ar.status);
+        // A dispatched judging run's commit must be on the default branch (security review round 1, C; desk
+        // review round 2, R1): a `workflow_dispatch` run whose head_sha is not the checkout's HEAD or an
+        // ancestor of it (a dispatch on a tag named like the default branch) judges nothing. `workflow_run`
+        // and `schedule` runs, which a tag cannot start, are taken as before, so a real run on a commit
+        // newer than this checkout still counts. Checked in the full-history checkout.
+        const onDefault = new Map();
+        const asksRuns = ar.json.workflow_runs.filter((r) => {
+          if (!r || r.event !== 'workflow_dispatch') return true;
+          const sha = r.head_sha;
+          if (!onDefault.has(sha)) onDefault.set(sha, checkout.isAncestor(sha, checkout.head) === true);
+          return onDefault.get(sha);
+        });
         const jobsCache = new Map();
         const logCache = new Map();
         const readJobs = async (id) => {
@@ -272,13 +285,15 @@ export async function collect(input) {
           const prev = (input.cand || {})[hk];
           const seenIso = prev ? prev.seen : now.toISOString();
           const v = await judgeCandidate({ number: pr.number, checkRuns: ck.items, workflowRuns: wr.items, statuses: st.items,
-            asksRuns: ar.json.workflow_runs, readJobs, readLog,
+            asksRuns, readJobs, readLog,
             headTime: async () => {
               const c = await gh.get(`/repos/${repo}/commits/${sha}`);
               const d = c.status === 200 && c.json && c.json.commit && c.json.commit.committer && c.json.commit.committer.date;
               return typeof d === 'string' ? Date.parse(d) : null;
             },
-            seenMs: Date.parse(seenIso), retriedMs: prev && prev.retried ? Date.parse(prev.retried) : null, nowMs });
+            seenMs: Date.parse(seenIso), retriedMs: prev && prev.retried ? Date.parse(prev.retried) : null, nowMs,
+            // AC79 (2026-10-19): only runs on the default branch judge (a branch's dispatch counts for nothing).
+            defaultBranch: project.defaultBranch });
           cand[hk] = { seen: seenIso, retried: Number.isFinite(v.retriedMs) ? new Date(v.retriedMs).toISOString() : null };
           if (!v.left) jobs.add(pr.number);
         }

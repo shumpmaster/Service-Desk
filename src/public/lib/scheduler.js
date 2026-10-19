@@ -4,11 +4,12 @@
 // scheduled poll; a rate-limited project isn't polled again before its retryAfter.
 
 import { neededReads, parseRecord, recordKind, buildModel, canRecord, recordingAnswers } from './model.js';
-import { parseTree, parseHistory, parseCardPath, compareStatus, parsePulls, questionName } from './records.js';
+import { parseTree, parseHistory, parseCardPath, compareStatus, parsePulls, questionName, classifyPull } from './records.js';
 import { parseFilePages, splitChanges, recordedAnswers, closedCanEnd } from './prfiles.js';
 import { judgePulls, mergePulls, pullsBackoffMs, PULLS_KEY, OLD_PULLS_KEYS, PULLS_MAX_PAGES, PULLS_RATE_MS } from './pulls.js';
 import { dayKey } from './timefmt.js';
 import { usageEntry } from './usage.js';
+import { newJobsState, partDue, runPhase, pollPart, applyPollAnswer } from './jobwatch.js';
 
 // J12 (2026-10-16): the pull-request read counts 5 of a blob call's budget of 25.
 export const PULLS_COST = 5;
@@ -119,6 +120,9 @@ function newProjectState(project) {
     // AC77 (draft 7, finding 2b): a recorded answer's pull request that left the open list, read by
     // number: number → { state: 'open' | 'merged' | 'closed' | 'failed', poll }.
     single: new Map(),
+    // AC79 (2026-10-19): the asks-merge job's candidates, their conditional reads and the page's verdicts,
+    // in memory for this opening only (src/lib/jobwatch.js).
+    jobs: newJobsState(), jobsCalls: 0,
   };
 }
 
@@ -720,6 +724,25 @@ export function createDesk(opts) {
     return { res, progress, pulled: Boolean(batch.pulls), extras };
   }
 
+  /** AC79: whether this poll carries the `jobs` part (src/lib/jobwatch.js `partDue`). */
+  const jobsDue = (st) => partDue(st.jobs, st.project, st.tree);
+
+  /**
+   * AC79's staged judgment, after the cycle's own reads (src/lib/jobwatch.js `runPhase`): in a poll where
+   * something changed, one blob call of its own for what the dry pass says is needed, within the cap of 3
+   * a head per opening; then the verdicts. It never touches the project's read.
+   */
+  async function jobsPhase(st) {
+    const flaggedPulls = pullsOf(st).filter((pr) => classifyPull(pr, st.project).flagged);
+    await runPhase(st.jobs, { project: st.project, tree: st.tree, flaggedPulls, files: st.files, nowMs: clock.now(),
+      blobCall: async (body) => {
+        st.blobCalls++;
+        st.jobsCalls++;
+        const res = await call('/api/blobs', { project: st.project.name, history: [], ...body });
+        return res.ok && res.json ? res.json : null;
+      } });
+  }
+
   /**
    * The blob calls a cycle makes, at most MAX_BLOB_CALLS_PER_CYCLE. The needed reads come first;
    * once they are all in, the optional ones (AC20's rulings) use what is left of the cap.
@@ -786,17 +809,24 @@ export function createDesk(opts) {
     let res = null;
     let outcome;
     try {
-      res = await call('/api/poll', { project: st.project.name, head: st.head, etags: st.head ? etags : {} });
+      // AC79: the candidates' conditional reads ride the poll call, read last by the function (J1, J6).
+      const jobsSent = jobsDue(st);
+      const pollBody = { project: st.project.name, head: st.head, etags: st.head ? etags : {} };
+      if (jobsSent) pollBody.jobs = pollPart(st.jobs);
+      res = await call('/api/poll', pollBody);
       if (!res.ok) {
         outcome = res;
       } else if (res.json.state === 'cant-read') {
         outcome = { ok: false, reason: res.json.reason || 'github', retryAfter: res.json.retryAfter, words: res.json.words };
       } else {
+        if (jobsSent) applyPollAnswer(st.jobs, new Set(pollBody.jobs.heads.map((x) => x.sha)), res.json.jobs);
         outcome = applyPoll(st, res.json);
         if (st.tree) {
           const blobs = await blobPhase(st);
           // A blob failure outranks the poll's own outcome; "still checking" only replaces a success.
           if (!blobs.ok && (outcome.ok || !blobs.pending)) outcome = blobs;
+          // AC79: optional, after the project's own reads; it never touches the outcome.
+          await jobsPhase(st);
         }
       }
     } catch (err) {
@@ -900,6 +930,7 @@ export function createDesk(opts) {
       pullPages: st.pullRaws || [], checkPages: st.checksRead ? st.checkRaws : null, checksState: st.checksState,
       now: new Date(clock.now()), withdrawn: st.withdrawn, compare: compareFor(st),
       asking: { files: st.files, recorded: st.asking.recorded, ended: st.asking.ended, hereInstead: st.asking.hereInstead, seen: st.asking.seen },
+      jobs: st.jobs.verdicts,
     });
   };
   /**

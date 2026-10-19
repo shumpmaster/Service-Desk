@@ -16,7 +16,7 @@ export default {
   },
   "linkCap": 6000,
   "push": {
-    "vapidPublicKey": "BB_bmBhW2WPgp57cIjHbtz2e0ZoNe63DWr058d10YFwB8S_x4raE5UlWSgWn2yEAKTBc9Jl22jqyNk_sG9mC4Oc",
+    "vapidPublicKey": "BFTM_IZawd-WOl_Mgf5RzLMAtGYwL7lIO9y9p2gVOQYwAjjIphr6q_TN4hiLCLasXYhdGhQqDHUuEyX40BMC8bM",
     "deskUrl": "https://service-desk-preview.pages.dev"
   },
   "projects": [

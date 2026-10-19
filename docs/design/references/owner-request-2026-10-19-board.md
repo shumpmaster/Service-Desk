@@ -29,3 +29,11 @@ After mockup version 3:
 After mockup version 4:
 
 > I like option 1 - IF - thefont size and just general element size can be brought down. When im on mobile the text can be small because its closer to my face.
+
+## The owner's approval of mockup version 5, 2026-10-19
+
+Asked in the session: "Board v5 (above): all three lanes, smaller text, every card on one screen. Is this the look to build?", with the options "Yes, plan and build it (Recommended)" ("I write it into the plan, it goes through the checks and the build, then the trial view first. Two small choices below come with it.") and "Close, but change something" ("Tell me what, and I'll redo the mockup first.").
+
+The owner's answer: "Yes, plan and build it (Recommended)".
+
+This ask was put without being filed first as a question, a slip by the Chief of Staff against "file every ask"; it is recorded here, word for word, instead. The two choices asked with it were filed (pull request #132) and their answers are recorded in decisions/questions/P-001-board-answer.md and P-001-board-done-keep.md.

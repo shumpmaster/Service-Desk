@@ -119,3 +119,21 @@ test('J7 (2026-10-18): a wrong-kind deploysNeedOwner, actionsUsage or reported f
   assert.ok(validateConfig({ ...CONFIG, push: { vapidPublicKey: 'short', deskUrl: 'https://service-desk-preview.pages.dev' } }).some((e) => e.startsWith('push.vapidPublicKey')));
   // The build itself refuses one, with its message.
 });
+
+// From 2026-10-18 (Work ahead by milestones, draft 4): J7's `planning` rules. Plans, estimates and
+// the later-work list live in one v3 project's tree, so the build allows one `"planning": true`, on
+// a v3 entry; `planning: false` on a v2.5 entry is fine; a value not a boolean fails as before.
+test('J7 (Work ahead): two planning entries fail; planning true on a v2.5 entry fails; "yes" fails; planning false on a v2.5 entry builds', () => {
+  const [sd, poom] = CONFIG.projects;
+  assert.equal(sd.planning, true);
+  assert.equal(poom.planning, false);
+  assert.deepEqual(validateConfig(CONFIG), [], 'the launch values: planning true on Service-Desk (v3), false on the v2.5 project');
+  const two = validateConfig({ ...CONFIG, projects: [sd, { ...sd, name: 'Other', repo: 'shumpmaster/Other' }] });
+  assert.ok(two.some((e) => e.includes('only one project may hold "planning": true')), two.join('; '));
+  const onV25 = validateConfig({ ...CONFIG, projects: [{ ...sd, planning: false }, { ...poom, planning: true }] });
+  assert.ok(onV25.some((e) => e.includes('planning is true on a v2.5 project')), onV25.join('; '));
+  const yes = validateConfig({ ...CONFIG, projects: [{ ...sd, planning: 'yes' }, poom] });
+  assert.ok(yes.length >= 1 && yes.some((e) => e.includes('planning')), yes.join('; '));
+  assert.deepEqual(validateConfig({ ...CONFIG, projects: [sd, { ...poom, planning: false }] }), []);
+  assert.deepEqual(validateConfig({ ...CONFIG, projects: [{ ...sd, planning: false }, poom] }), [], 'no planning entry builds: Work ahead says it can\'t record plans');
+});

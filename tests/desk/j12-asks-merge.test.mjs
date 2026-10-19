@@ -118,9 +118,12 @@ function deskOn(r, { pullsStore = createStore(null), start = Date.parse('2026-10
   return { clock, server, desk, pullCalls: () => server.calls.filter((c) => c.path === '/api/blobs' && c.body.pulls) };
 }
 
-test('J12 (asks-merge): the kept list is under desk-pulls-v2; desk-pulls-v1 is removed on load and its entries read again from J12; the requests per J12 read are unchanged', async () => {
-  assert.equal(PULLS_KEY, 'desk-pulls-v2');
-  assert.deepEqual(OLD_PULLS_KEYS, ['desk-pulls-v1']);
+// From 2026-10-19 (draft 4 of "Work ahead by milestones") the kept list moved on again, to
+// desk-pulls-v3 (j12-ac60-ac66-estimates.test.mjs checks v2's removal); a v1 entry is still removed on
+// load and read again, as here.
+test('J12 (asks-merge): the kept list moved on from desk-pulls-v1 (to desk-pulls-v3 from 2026-10-19); desk-pulls-v1 is removed on load and its entries read again from J12; the requests per J12 read are unchanged', async () => {
+  assert.equal(PULLS_KEY, 'desk-pulls-v3');
+  assert.deepEqual(OLD_PULLS_KEYS, ['desk-pulls-v1', 'desk-pulls-v2']);
   // A v1 entry, as a device that loaded the desk before this deploy holds it: no job's yes or no.
   const v1 = { [SD3.name]: { day: '2026-10-18', head: null, tooMany: false, pulls: judgePulls(pullsAnswer()).pulls.map((p) => { const q = { ...p }; delete q.job; return q; }) } };
   const backing = new Map([['desk-pulls-v1', JSON.stringify(v1)]]);
@@ -132,7 +135,7 @@ test('J12 (asks-merge): the kept list is under desk-pulls-v2; desk-pulls-v1 is r
   await clock.runUntil(clock.now() + 3 * POLL_MS);
   desk.stop();
   assert.equal(pullCalls().length, 1, 'one J12 read, one blob call carrying it, as before: no request added');
-  const kept = JSON.parse(backing.get('desk-pulls-v2'))[SD3.name].pulls;
+  const kept = JSON.parse(backing.get(PULLS_KEY))[SD3.name].pulls;
   assert.ok(kept.every((p) => typeof p.job === 'boolean'), 'every entry read again from J12, with its yes or no');
   assert.deepEqual(kept.filter((p) => p.job).map((p) => p.number).sort((a, b) => a - b), JOB);
 });

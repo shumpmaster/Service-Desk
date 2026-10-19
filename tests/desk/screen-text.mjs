@@ -100,6 +100,9 @@ export function NEW_REBUILT(route) {
     // ones: the "Notifications" control (Home's top line and More detail), "GitHub Actions this month",
     // and the Queue's "Asked in your session".
     if (has(el, 'sb-notify') || has(el, 'sb-notify-line') || has(el, 'sb-actions-usage') || has(el, 'sb-asking')) return true;
+    // From 2026-10-18 (Work ahead, AC24): Home's one new control, "Work ahead", new words too; nothing
+    // else on Home changes (AC24, "The way in"), and every other word is still compared.
+    if (kind === 'home' && has(el, 'sb-wa-link')) return true;
     if (kind === 'timeline') {
       const screen = el.parent && has(el.parent, 'sb-screen');
       if (screen && !has(el, 'sb-marker') && !has(el, 'sb-hdr') && !has(el, 'sb-dock')) return true;

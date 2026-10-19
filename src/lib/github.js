@@ -6,6 +6,7 @@
 
 import { readUsage } from './usage.js';
 import { CLOSED_MAX_PAGES, closedNeedsNext } from './prfiles.js';
+import { logLines, ASKS_MERGE_RUNS } from './jobcand.js';
 
 export const API = 'https://api.github.com';
 export const BLOB_BATCH = 25; // EXP-001 may lower it to 12, then 6.
@@ -28,6 +29,27 @@ export const MAX_PRS = 10;
 export const USAGE_COST = 5;
 // J1 3a and 3b: the workflow-run lists read for the head (AC29), push runs then dispatch runs.
 export const RUN_EVENTS = ['push', 'workflow_dispatch'];
+// J1's own limit (C): at most 30 GitHub requests per invocation, under the 50 subrequests Free allows.
+// From 2026-10-19 the poll call enforces it for AC79's `jobs` part, read last (the plan review's note 1,
+// round 3): that part is answered `null` when it would take the call past 30; the core reads are never cut.
+export const J1_REQUEST_LIMIT = 30;
+// AC79 (J6): the poll call's optional `jobs` part: at most 5 candidate heads, each with its check runs,
+// statuses and workflow runs, and the project's latest 30 asks-merge runs, first pages only, each a
+// conditional request; a sixth head is answered `null`.
+export const JOBS_MAX_HEADS = 5;
+export const JOB_LISTS = ['checkRuns', 'statuses', 'workflowRuns'];
+// AC79 (J6): the blob call's `commitTime` (each 1 of the budget) and `jobLog` (each 3: the run's jobs, the
+// merge job's log, and the address the log is sent to), at most 5 of each; a sixth is answered `null`.
+export const COMMIT_TIME_COST = 1;
+export const JOB_LOG_COST = 3;
+export const MAX_COMMIT_TIMES = 5;
+export const MAX_JOB_LOGS = 5;
+// AC79's log form (the Critic's R, round 2): at most this many characters of a job log are read, as the
+// compare answer's scan cap, so the Worker's CPU stays far from Error 1102; a longer log is "too large".
+export const JOB_LOG_CHARS = 65536;
+const RUN_ID_RE = /^[0-9]{1,20}$/;
+// The lines AC79's log form keeps, in their order: a pull request's verdict and the job's grant line.
+export const KEPT_LOG_PREFIXES = ['PR #', 'NOTE: the asks-merge grant is ', 'NOTE: no asks-merge grant stands'];
 
 // J12 (2026-10-16, AC60, AC61, AC72): the one GraphQL query, its text fixed here; the page sends only
 // its cursor. The default branch's pull requests, newest first by creation, 100 to a page, with the
@@ -76,6 +98,14 @@ export function urlsFor(project) {
     files: (n) => `${base}/pulls/${n}/files?per_page=100`,
     closed: `${base}/pulls?state=closed&sort=updated&direction=desc&per_page=100`,
     pull: (n) => `${base}/pulls/${n}`,
+    // AC79 (J1, J16's own reads): a candidate head's lists, the asks-merge runs, a commit, a run's jobs, a job's log.
+    checkRuns: (sha) => `${base}/commits/${sha}/check-runs?per_page=100`,
+    statuses: (sha) => `${base}/commits/${sha}/statuses?per_page=100`,
+    workflowRuns: (sha) => `${base}/actions/runs?head_sha=${sha}&per_page=100`,
+    asksRuns: `${base}${ASKS_MERGE_RUNS}`,
+    commit: (sha) => `${base}/commits/${sha}`,
+    runJobs: (id) => `${base}/actions/runs/${id}/jobs?per_page=30`,
+    jobLogs: (id) => `${base}/actions/jobs/${id}/logs`,
   };
 }
 
@@ -126,7 +156,7 @@ export function failureOf(res, nowMs) {
 }
 
 function makeGetter(token, fetchImpl, counter) {
-  return async (url, { etag = null, accept = JSON_ACCEPT } = {}) => {
+  return async (url, { etag = null, accept = JSON_ACCEPT, redirect = null } = {}) => {
     counter.n++;
     const headers = {
       Authorization: `Bearer ${token}`,
@@ -136,7 +166,10 @@ function makeGetter(token, fetchImpl, counter) {
     };
     if (etag) headers['If-None-Match'] = etag;
     try {
-      return await fetchImpl(url, { method: 'GET', headers });
+      const res = await fetchImpl(url, redirect ? { method: 'GET', headers, redirect } : { method: 'GET', headers });
+      // J1: redirect hops count too (F-cf-workers-02); a followed redirect is at least one more.
+      if (res && res.redirected) counter.n++;
+      return res;
     } catch {
       return null; // network failure reaching GitHub
     }
@@ -319,8 +352,157 @@ export async function pollProject(req, deps) {
     if (f instanceof Failure) return failWith(f);
     return failWith(new Failure('github'));
   }
+  // 5. AC79's `jobs` part, read last; optional, so nothing in it touches the state above.
+  if (req.jobs !== undefined) out.jobs = await readJobs(get, u, req.jobs, counter);
   out.githubRequests = counter.n;
   return out;
+}
+
+/**
+ * AC79's `jobs` part of the poll call (J1, J6), already validated: { runs: { etag } | null, heads:
+ * [{ sha, etags }], extra: [sha] } or null (malformed). Each list is one conditional request, first
+ * page only, with no redirect followed (a 3xx is a failed read, so each request is exactly one
+ * subrequest). Answered: `"<raw page>"` (200), `null` (304), or `false` (failed or refused: that
+ * candidate counts); `next` names each head list GitHub says has a next page; `etags` gives each list's
+ * new ETag. The whole part is `null` when malformed, or when its requests would take the call past
+ * J1's 30.
+ */
+async function readJobs(get, u, jobs, counter) {
+  if (jobs == null) return null;
+  const need = (jobs.runs ? 1 : 0) + JOB_LISTS.length * jobs.heads.length;
+  if (counter.n + need > J1_REQUEST_LIMIT) return null;
+  const out = { heads: {}, etags: { heads: {} }, next: {} };
+  const one = async (url, etag) => {
+    const res = await get(url, { etag, redirect: 'manual' });
+    if (res && res.status === 304) return { page: null, etag: res.headers.get('ETag') || etag, next: false };
+    if (!res || res.status !== 200) return { page: false, etag: null, next: false };
+    let page;
+    try {
+      page = await res.text();
+    } catch {
+      return { page: false, etag: null, next: false };
+    }
+    return { page, etag: res.headers.get('ETag') || null, next: linkPage(res.headers.get('Link'), 'next') != null };
+  };
+  const tasks = [];
+  if (jobs.runs) {
+    tasks.push(async () => {
+      const r = await one(u.asksRuns, jobs.runs.etag);
+      out.runs = r.page;
+      out.etags.runs = r.etag;
+    });
+  }
+  for (const hd of jobs.heads) {
+    out.heads[hd.sha] = {};
+    out.etags.heads[hd.sha] = {};
+    for (const list of JOB_LISTS) {
+      tasks.push(async () => {
+        const r = await one(u[list](hd.sha), hd.etags[list] || null);
+        out.heads[hd.sha][list] = r.page;
+        out.etags.heads[hd.sha][list] = r.etag;
+        if (r.next) (out.next[hd.sha] = out.next[hd.sha] || []).push(list);
+      });
+    }
+  }
+  for (const sha of jobs.extra) if (!Object.prototype.hasOwnProperty.call(out.heads, sha)) out.heads[sha] = null;
+  await pool(tasks, MAX_PARALLEL);
+  return out;
+}
+
+/** Read at most `cap` characters of a response's text: { text } or { tooLarge: true }. */
+async function cappedText(res, cap) {
+  const len = Number(res.headers.get('Content-Length'));
+  if (Number.isFinite(len) && len > cap * 4) return { tooLarge: true };
+  if (!res.body || typeof res.body.getReader !== 'function') {
+    const t = await res.text();
+    return t.length > cap ? { tooLarge: true } : { text: t };
+  }
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let text = '';
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      text += dec.decode(value, { stream: true });
+      if (text.length > cap) return { tooLarge: true };
+    }
+    text += dec.decode();
+  } finally {
+    try {
+      await reader.cancel();
+    } catch {
+      // already closed
+    }
+  }
+  return text.length > cap ? { tooLarge: true } : { text };
+}
+
+/** The lines AC79's log form keeps from a job log, in their order (J16's `logLines`, CRLF handled). */
+export function keptLogLines(text) {
+  return logLines(text).filter((l) => KEPT_LOG_PREFIXES.some((p) => l.startsWith(p)));
+}
+
+/**
+ * AC79's log form for one asks-merge run (J6): the run's jobs, the one named `merge`, and, if it
+ * completed and ran, its log, asked for with `redirect: 'manual'` and the address it is sent to fetched
+ * with no `Authorization` header (as the sender, src/notify/gh.mjs `download`). At most
+ * JOB_LOG_CHARS characters are read. Answers { job: { status, conclusion } | null, ran, lines,
+ * tooLarge }, or null for a failed read (a rate limit or a 401 stops the call, as for every read).
+ */
+async function jobLogForm(get, u, id, deps, counter, optionalFail) {
+  const jr = await get(u.runJobs(id));
+  if (!jr || !jr.ok) {
+    optionalFail(jr);
+    return null;
+  }
+  let jobs;
+  try {
+    const body = JSON.parse(await jr.text());
+    jobs = body && Array.isArray(body.jobs) ? body.jobs : null;
+  } catch {
+    jobs = null;
+  }
+  if (!jobs) return null;
+  const job = jobs.find((j) => j && j.name === 'merge');
+  if (!job) return { job: null, ran: false, lines: null, tooLarge: false };
+  const kept = { status: typeof job.status === 'string' ? job.status : null, conclusion: typeof job.conclusion === 'string' ? job.conclusion : null };
+  if (kept.status !== 'completed' || kept.conclusion == null || kept.conclusion === 'skipped' || kept.conclusion === 'cancelled') {
+    return { job: kept, ran: false, lines: null, tooLarge: false };
+  }
+  if (!Number.isInteger(job.id)) return null; // a job that ran but cannot be named: a failed read
+  let res = await get(u.jobLogs(job.id), { redirect: 'manual' });
+  if (!res) return null;
+  if (res.status >= 300 && res.status < 400) {
+    const loc = res.headers.get('Location');
+    if (!loc || !/^https:\/\//.test(loc)) return null;
+    counter.n++;
+    try {
+      // The address GitHub sends the log to is fetched with no credential.
+      res = await deps.fetch(loc, { method: 'GET', headers: { 'User-Agent': 'service-desk' }, redirect: 'manual' });
+    } catch {
+      return null;
+    }
+  } else if (!res.ok) {
+    optionalFail(res);
+    return null;
+  }
+  if (!res || res.status !== 200) return null;
+  const t = await cappedText(res, JOB_LOG_CHARS).catch(() => null);
+  if (!t) return null;
+  if (t.tooLarge) return { job: kept, ran: true, lines: null, tooLarge: true };
+  return { job: kept, ran: true, lines: keptLogLines(t.text), tooLarge: false };
+}
+
+/**
+ * AC79's `jobs` part alone, as the poll call reads it (for the tests that give the page and the sender
+ * the same reads): jobs as jobsPart validates it; deps { token, fetch, now }. { jobs, githubRequests }.
+ */
+export async function readJobsPart(project, jobs, deps, used = 0) {
+  const counter = { n: used };
+  const get = makeGetter(deps.token, deps.fetch, counter);
+  const out = await readJobs(get, urlsFor(project), jobs, counter);
+  return { jobs: out, githubRequests: counter.n - used };
 }
 
 function decodeBase64Utf8(b64) {
@@ -550,6 +732,40 @@ export async function readBlobs(req, deps) {
         // not JSON: a null answer, read again at the next poll
       }
     });
+  }
+  // AC79 (J6): each head commit's time, the commit's `commit.committer.date`; a failure is a null answer.
+  for (const sha of req.commitTime || []) {
+    out.commitTime = out.commitTime || {};
+    out.commitTime[sha] = null;
+    tasks.push(async () => {
+      if (failure) return;
+      const res = await get(u.commit(sha));
+      if (!res || !res.ok) return optionalFail(res);
+      try {
+        const c = JSON.parse(await res.text());
+        const d = c && c.commit && c.commit.committer && c.commit.committer.date;
+        if (typeof d === 'string' && Number.isFinite(Date.parse(d))) out.commitTime[sha] = d;
+      } catch {
+        // not JSON: a null answer
+      }
+    });
+  }
+  for (const k of req.commitTimeNull || []) {
+    out.commitTime = out.commitTime || {};
+    out.commitTime[k] = null;
+  }
+  // AC79 (J6): the log form, one per run id.
+  for (const id of req.jobLog || []) {
+    out.jobLog = out.jobLog || {};
+    out.jobLog[id] = null;
+    tasks.push(async () => {
+      if (failure) return;
+      out.jobLog[id] = await jobLogForm(get, u, id, deps, counter, optionalFail);
+    });
+  }
+  for (const k of req.jobLogNull || []) {
+    out.jobLog = out.jobLog || {};
+    out.jobLog[k] = null;
   }
   if (req.usage) {
     out.usage = null;

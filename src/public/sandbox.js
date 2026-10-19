@@ -80,6 +80,11 @@ function followOpening(desk, built) {
     return { hash: d.f.kind === 'deploy' ? go('p', name, 'queue') : go('p', name, 'queue', d.f.key), words: OPENED_WORDS, key: t.key };
   }
   if (d.kind === 'held') return { hash: go('p', name, 'queue'), words: OPENED_WORDS, key: t.key }; // under "Asked in your session"
+  if (d.kind === 'recording') {
+    // AC79: its row under Merges, "Being recorded by the automatic job", until the desk counts it again.
+    scrollToRow = rowId(`rec:${d.row.key}`);
+    return { hash: go('p', name, 'queue'), words: OPENED_WORDS, key: t.key };
+  }
   if (d.kind === 'cant-read') return { hash: go('p', name), words: CANT_READ_WORDS, key: null };
   return { hash: name ? go('p', name) : '#/', words: GONE_WORDS, key: null };
 }
@@ -460,7 +465,9 @@ function sessionOf(name) {
 
 function noteDepartures(name, q) {
   const s = sessionOf(name);
-  const now = new Set(q.rows.map((r) => r.key));
+  // AC79: a pull request now "Being recorded by the automatic job" is still open, so it has not left.
+  const recording = q.groups.flatMap((g) => (g.recording || []).map((r) => r.flag.key));
+  const now = new Set([...q.rows.map((r) => r.key), ...recording]);
   for (const r of q.rows) s.last.set(r.key, r);
   if (s.prev) {
     for (const k of s.prev) {
@@ -1239,7 +1246,9 @@ function queueRow(p, row, s) {
   const out = [opener(`row:${row.key}`, go('p', name, 'queue', row.key), { class: 'sb-qa' },
     h('span', { class: 'sb-qt' }, row.text, ' ', code(row.code)),
     h('span', { class: 'sb-muted small' }, h('span', { live: () => waitWords(row.raisedAt, Date.now()) }), opened ? ' · opened in GitHub' : ''),
-    // AC77: an answer record's own pull request, still here and counted, says whose answer it records.
+    // AC79: one the automatic job left for the owner says so, under its title.
+    row.flag && row.flag.leftWords ? h('span', { class: 'sb-strong small sb-left-pr' }, row.flag.leftWords) : null,
+    // AC77: an answer record's own pull request, here and counted, says whose answer it records.
     row.flag && row.flag.answerWords ? h('span', { class: 'sb-muted small sb-answer-pr' }, row.flag.answerWords) : null)];
   if (p.project.model === 'v3') {
     const u = unblocksOf(p.ctx, row);
@@ -1258,6 +1267,18 @@ function queueRow(p, row, s) {
         : h('p', { class: 'sb-meta gap', key: `facts:${row.key}` }, 'Context: not recorded')) : null));
   }
   return h('li', { class: `sb-qrow g-${row.group}`, key: `qrow:${row.key}` }, out);
+}
+
+/**
+ * AC79: a pull request the automatic job may still merge, under Merges after the counted ones: its title,
+ * "Being recorded by the automatic job", in the softer activity style, with no coral and no count; it
+ * opens only its GitHub link (no response sheet, no verdict box).
+ */
+function recordingRow(r) {
+  return h('li', { class: 'sb-qrow sb-recrow', key: `qrow:${r.key}`, id: rowId(r.key) },
+    ext(r.link, [h('span', { class: 'sb-qt' }, r.text, ' ', code(r.code)),
+      h('span', { class: 'sb-muted small sb-rec-words' }, r.words),
+      r.answerWords ? h('span', { class: 'sb-muted small sb-answer-pr' }, r.answerWords) : null], 'sb-qa'));
 }
 
 /** A waiting deploy's row (AC52, AC72): the run, linked, and whether its commit is a reviewed pull request's merge; the approval stays on GitHub. */
@@ -1299,7 +1320,9 @@ function renderQueue(p, key) {
       needs ? h('span', { class: 'sb-needs', 'aria-hidden': 'true' }, 'needs you') : null,
       h('span', { class: 'sb-gcount' }, g.count == null ? NOT_RECORDED : g.count ? String(g.count) : 'none'));
     if (g.line) return h('section', { class: `sb-group g-${g.key} empty`, key: `group:${g.key}` }, head, h('p', { class: 'sb-muted small' }, g.line));
-    if (!g.items.length) return h('section', { class: `sb-group g-${g.key} empty`, key: `group:${g.key}` }, head);
+    // AC79: the pull requests being recorded, after the counted ones, in no count.
+    const rec = (g.recording || []).length ? h('ul', { class: 'sb-qlist sb-reclist', key: `rec:${g.key}` }, g.recording.map(recordingRow)) : null;
+    if (!g.items.length) return h('section', { class: `sb-group g-${g.key} empty`, key: `group:${g.key}` }, head, rec);
     if (g.key === 'deploys') {
       return h('section', { class: `sb-group g-${g.key}`, key: `group:${g.key}` }, head,
         h('p', { class: 'sb-muted small' }, q.deploysCounted ? 'Each waits for your approval on GitHub. Its approver: not recorded.'
@@ -1309,7 +1332,7 @@ function renderQueue(p, key) {
           return deployRow(p, d, dr ? dr.check : null);
         })));
     }
-    return h('section', { class: `sb-group g-${g.key}`, key: `group:${g.key}` }, head, h('ul', { class: 'sb-qlist' }, g.items.map((r) => queueRow(p, r, s))));
+    return h('section', { class: `sb-group g-${g.key}`, key: `group:${g.key}` }, head, h('ul', { class: 'sb-qlist' }, g.items.map((r) => queueRow(p, r, s))), rec);
   })));
   // AC77: a question asked in a session, or whose answer is on its way: shown, not counted, no answer link.
   if (q.asking.length) {
@@ -1527,8 +1550,14 @@ function sheet(p, key) {
   const { project, q } = p;
   const s = sessionOf(project.name);
   const live = q.rows.find((r) => r.key === key);
-  const row = live || s.last.get(key);
   const back = go('p', project.name, 'queue');
+  // AC79: a pull request being recorded by the automatic job has no response sheet and no verdict box,
+  // even at an address kept from when it counted: only its GitHub link.
+  const rec = live ? null : q.groups.flatMap((g) => g.recording || []).find((r) => r.flag.key === key);
+  if (rec) {
+    return sheetFrame(back, 'Response', [h('p', { class: 'sb-strong', role: 'status' }, rec.words), h('p', {}, ext(rec.link, `${rec.text} (${rec.code}) on GitHub`))]);
+  }
+  const row = live || s.last.get(key);
   if (!row) {
     return sheetFrame(back, 'Response', [h('p', {}, 'This item is not in the queue (answered, withdrawn, or not read yet).')]);
   }

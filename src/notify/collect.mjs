@@ -10,7 +10,8 @@ import { questionHold } from '../lib/asking.js';
 import { parseFilePages, splitChanges, recordedAnswers, jobKindsByPath, FILES_MAX_PAGES, CLOSED_MAX_PAGES, closedNeedsNext, closedCanEnd } from '../lib/prfiles.js';
 import { ReadFailed } from './gh.mjs';
 import { findGrant, ASKS_MERGE_WORKFLOW } from './grant.mjs';
-import { judgeCandidate, ASKS_MERGE_RUNS } from './jobcand.mjs';
+// J16's pure judgment, shared with the page's AC79 (src/lib/ from 2026-10-19; R3, Setup CS23).
+import { judgeCandidate, ASKS_MERGE_RUNS } from '../lib/jobcand.js';
 import { keyHash, recordedEntry, readRecorded } from './state.mjs';
 
 export const DEPLOY_POLL_MS = 15e3;
@@ -278,7 +279,9 @@ export async function collect(input) {
               const d = c.status === 200 && c.json && c.json.commit && c.json.commit.committer && c.json.commit.committer.date;
               return typeof d === 'string' ? Date.parse(d) : null;
             },
-            seenMs: Date.parse(seenIso), retriedMs: prev && prev.retried ? Date.parse(prev.retried) : null, nowMs });
+            seenMs: Date.parse(seenIso), retriedMs: prev && prev.retried ? Date.parse(prev.retried) : null, nowMs,
+            // AC79 (2026-10-19): only runs on the default branch judge (a branch's dispatch counts for nothing).
+            defaultBranch: project.defaultBranch });
           cand[hk] = { seen: seenIso, retried: Number.isFinite(v.retriedMs) ? new Date(v.retriedMs).toISOString() : null };
           if (!v.left) jobs.add(pr.number);
         }

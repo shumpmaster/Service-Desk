@@ -1,6 +1,7 @@
 # Ruling needed: Should notifications open your page, the new design, instead of the older view?
 
 Milestone: none (notifications are not yet a milestone; this ruling decides which view the Home Screen icon and a notification's tap open)
+Asked in session: session_012RJPVKAoLga2RkqLYRDcBY
 
 WHY: You use the new design at the preview's address with ?sandbox. As built, the desk's Home Screen icon and every notification tap open the plain address, the older view the new design will replace when you accept it. Notifications work there today, but it isn't the page you use. Making them open the new design is a small change to the spec and the code, with its own review and pull request.
 OPTIONS:

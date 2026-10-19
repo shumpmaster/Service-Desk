@@ -221,9 +221,9 @@ export function workAheadView({ config, entries, snaps, nowMs, tz, draft }) {
     const t = planTime(plan.name);
     stateLine = { kind: 'current', lead: WA.current, rest: `recorded ${dateWords(dayKey(new Date(t), tz), today)}, ${hhmm(new Date(t), tz)}` };
   } else if (changed) stateLine = { kind: 'draft', lead: 'Draft', rest: `not recorded · ${WA.draftChanged}` };
-  else if (plan.kind === 'none') stateLine = { kind: 'draft', lead: 'Draft', rest: `not recorded · ${WA.draftNoPlan}` };
-  // No move made, with a plan that can't be read or isn't read yet: nothing has changed (the
-  // Orchestrator's ruling on build review round 1, D).
+  // No move made, with no plan recorded, a plan that can't be read or one not read yet: nothing has
+  // changed (the Orchestrator's ruling on build review round 1, D; the Definer's draft 6). "No plan
+  // recorded yet" still heads the order.
   else stateLine = { kind: 'draft', lead: null, rest: WA.noChanges };
   let orderLine = null;
   if (plan.kind === 'none') orderLine = WA.noPlan;

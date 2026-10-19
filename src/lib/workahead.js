@@ -51,7 +51,6 @@ export const WA = Object.freeze({
   notInPlan: 'not in your recorded plan',
   noPlan: 'No plan recorded yet',
   draft: 'Draft · not recorded',
-  draftNoPlan: 'no plan recorded yet',
   draftChanged: 'your changes are on this phone only',
   current: 'Current plan',
   noChanges: 'No changes yet',

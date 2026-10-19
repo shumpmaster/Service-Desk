@@ -127,7 +127,9 @@ test('AC24: with no plan, MD1 to M3C in section 3\'s order under "No plan record
   try {
     assert.deepEqual(codesOf(app), SIX);
     assert.match(app.text(), /No plan recorded yet/);
-    assert.equal(byClass(app.view, 'sb-wa-state')[0].textContent, 'Draft not recorded · no plan recorded yet');
+    // Draft 6 (the ruling on build review round 1, D): with no move made, "No changes yet"; "No plan recorded yet" heads the order.
+    assert.equal(byClass(app.view, 'sb-wa-state')[0].textContent, 'No changes yet');
+    assert.equal(findKeyed(app, 'wa-order').textContent, 'No plan recorded yet');
     const fold = findKeyed(app, 'fold:reached');
     assert.equal(fold.textContent, 'Reached · 3▸');
     assert.equal(fold.attrs['aria-expanded'], 'false');
@@ -722,7 +724,16 @@ test('AC24 (build review round 1, C): the owner records their own draft — once
   }
 });
 
-test('AC24 (build review round 1, D): with no move made and a plan that can\'t be read or isn\'t read yet, the state line reads "No changes yet"; "your changes are on this phone only" only once a row has moved', async () => {
+test('AC24 (build review round 1, D; draft 6): with no move made — no plan recorded, a plan that can\'t be read, or one not read yet — the state line reads "No changes yet"; "your changes are on this phone only" only once a row has moved', async () => {
+  const noPlan = await open();
+  try {
+    assert.equal(byClass(noPlan.view, 'sb-wa-state')[0].textContent, 'No changes yet');
+    assert.equal(findKeyed(noPlan, 'wa-order').textContent, 'No plan recorded yet', 'still heading the order');
+    await noPlan.tap(btn(noPlan, `wa-down:${key('MD1')}`));
+    assert.equal(byClass(noPlan.view, 'sb-wa-state')[0].textContent, 'Draft not recorded · your changes are on this phone only');
+  } finally {
+    noPlan.restore();
+  }
   const name = '2026-10-18T1130Z-01';
   const cant = await open({ extra: { [`docs/planning/${name}.md`]: '| Order | Project | Item | Not before (UTC) |\n|---|---|---|---|\n' } });
   try {

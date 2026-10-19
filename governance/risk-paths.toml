@@ -19,6 +19,8 @@ R3 = [                    # irreversible or gate-bearing: owner approval (A4)
   "package-lock.json",
   "src/notify/**",          # the notification sender: runs unattended with the notification secrets (S-001, CS18)
   "src/config/projects.json",  # names the push key, the tap's address and the usage account (S-001, CS18)
+  "src/lib/jobcand.js",        # the job-candidate judgment the sender runs with the notification secrets (S-001, CS23)
+  "src/lib/ledgergrant.js",    # the ledger grant reading the sender runs with the notification secrets (S-001, CS23)
 ]
 R2 = ["src/ui/**", "config/**"]            # user-facing behavior, config, compatible schema
 R1 = ["src/**", "tests/**"]                # ordinary source with tests

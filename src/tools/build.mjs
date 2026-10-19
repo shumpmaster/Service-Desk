@@ -145,8 +145,9 @@ if (existsSync(join(SRC, 'notify'))) {
 // AC75: the Home Screen web app's manifest and icons, as committed.
 try {
   const m = JSON.parse(read('public/manifest.webmanifest'));
-  if (m.name !== 'Service Desk' || m.short_name !== 'Desk' || m.start_url !== '/' || m.scope !== '/' || m.display !== 'standalone') {
-    errors.push('public/manifest.webmanifest: name, short_name, start_url, scope or display is not AC75\'s');
+  // From 2026-10-19: `start_url` "/?sandbox" (the owner's page until MD3) and `id` "/", so the app stays the same one.
+  if (m.name !== 'Service Desk' || m.short_name !== 'Desk' || m.id !== '/' || m.start_url !== '/?sandbox' || m.scope !== '/' || m.display !== 'standalone') {
+    errors.push('public/manifest.webmanifest: name, short_name, id, start_url, scope or display is not AC75\'s');
   }
 } catch (e) {
   errors.push(`public/manifest.webmanifest is missing or not JSON: ${e.message}`);

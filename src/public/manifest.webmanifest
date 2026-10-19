@@ -1,7 +1,8 @@
 {
   "name": "Service Desk",
   "short_name": "Desk",
-  "start_url": "/",
+  "id": "/",
+  "start_url": "/?sandbox",
   "scope": "/",
   "display": "standalone",
   "background_color": "#fafafa",

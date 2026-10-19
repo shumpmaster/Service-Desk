@@ -86,7 +86,7 @@ test('J7 (2026-10-18): deploysNeedOwner on Service-Desk only; actionsUsage as gi
   assert.deepEqual(CONFIG.projects[0].actionsUsage, { account: 'shumpmaster', includedMinutes: 3000 });
   assert.equal('actionsUsage' in CONFIG, false, 'not at the top level');
   assert.equal('actionsUsage' in CONFIG.projects[1], false, 'Workflow 4\'s project holds none, so its sender reads no usage');
-  assert.deepEqual(CONFIG.push, { vapidPublicKey: 'BB_bmBhW2WPgp57cIjHbtz2e0ZoNe63DWr058d10YFwB8S_x4raE5UlWSgWn2yEAKTBc9Jl22jqyNk_sG9mC4Oc',
+  assert.deepEqual(CONFIG.push, { vapidPublicKey: 'BFTM_IZawd-WOl_Mgf5RzLMAtGYwL7lIO9y9p2gVOQYwAjjIphr6q_TN4hiLCLasXYhdGhQqDHUuEyX40BMC8bM',
     deskUrl: 'https://service-desk-preview.pages.dev' }, 'J7\'s push, as the owner handed it over; the preview\'s address until launch (Setup N10)');
   assert.deepEqual(GENERATED.push, CONFIG.push, 'and in the generated config the function and the page read');
   // The no-push path, with a fixture config: a missing push alone builds; the desk says "Notifications aren't set up yet".

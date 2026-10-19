@@ -183,7 +183,7 @@ test('J17: test: true sends "Test from your desk: notifications work", opening H
   const b = await h.run({ test: 'true' });
   assert.deepEqual([a.pushes.length, b.pushes.length], [1, 1]);
   assert.equal(a.payloads[0].notification.body, 'Test from your desk: notifications work');
-  assert.equal(a.payloads[0].notification.navigate, 'https://desk.example.invalid/');
+  assert.equal(a.payloads[0].notification.navigate, 'https://desk.example.invalid/?sandbox');
   assert.equal(a.pushes[0].headers.get('topic'), b.pushes[0].headers.get('topic'));
   assert.equal(a.payloads[0].notification.tag, b.payloads[0].notification.tag);
 });

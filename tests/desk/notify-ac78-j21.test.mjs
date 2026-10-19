@@ -144,7 +144,7 @@ function costHarness(o = {}) {
     return { status: 200, body: [{ name: 'Service-Desk' }] };
   };
   h.reads = () => h.world.usageCalls.filter((c) => c.path.includes('/usage/summary')).length;
-  h.costPushes = (r) => r.payloads.filter((p) => p && p.notification.navigate.endsWith('/?open=actions-usage'));
+  h.costPushes = (r) => r.payloads.filter((p) => p && p.notification.navigate.endsWith('/?sandbox&open=actions-usage'));
   return h;
 }
 
@@ -167,7 +167,7 @@ test('AC78: the $50 steps: $49.99 → $50.01 one push, → $99.00 none, → $151
   let p = await step(50.01);
   assert.equal(p.length, 1);
   assert.deepEqual(p[0].notification, { title: 'Service Desk', body: "GitHub Actions: this month's estimated cost has passed $50 (about $50.01, an estimate)",
-    navigate: 'https://desk.example.invalid/?open=actions-usage', tag: p[0].notification.tag });
+    navigate: 'https://desk.example.invalid/?sandbox&open=actions-usage', tag: p[0].notification.tag });
   assert.equal((await step(99)).length, 0);
   p = await step(151);
   assert.equal(p.length, 1);

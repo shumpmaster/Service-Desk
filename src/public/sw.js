@@ -59,6 +59,15 @@ self.addEventListener('push', (event) => {
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
+/** Whether a window shows the sandbox view (`?sandbox` in its address). */
+function isSandbox(url) {
+  try {
+    return new URL(url).searchParams.has('sandbox');
+  } catch (e) {
+    return false;
+  }
+}
+
 /** Hand an open desk window the address; resolves true once the page says it took it. */
 function handOver(client, target) {
   if (typeof MessageChannel !== 'function' || typeof client.postMessage !== 'function') return Promise.resolve(false);
@@ -87,21 +96,26 @@ self.addEventListener('notificationclick', (event) => {
   const data = event.notification.data || {};
   const target = safeAddress(data.navigate);
   event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-    const own = (list || []).find((c) => {
+    const desks = (list || []).filter((c) => {
       try {
         return new URL(c.url).origin === origin();
       } catch (e) {
         return false;
       }
     });
+    // From 2026-10-19: the tap is handed only to a window already showing the sandbox (the owner's
+    // page); any other desk window (the accepted view) is navigated to the address instead.
+    const sandbox = desks.find((c) => isSandbox(c.url));
+    const own = sandbox || desks[0];
     if (own) {
-      // AC74, AC77 (draft 8): an open desk is focused and handed the address, so it stays loaded and
-      // runs its closed read again before showing the item; a page that doesn't take it within a
-      // second is navigated instead.
+      // AC74, AC77 (draft 8): an open sandbox window is focused and handed the address, so it stays
+      // loaded and runs its closed read again before showing the item; a page that doesn't take it
+      // within a second is navigated instead.
       const navigate = () => (typeof own.navigate === 'function'
         ? own.navigate(target).then((c) => (c || own).focus(), () => self.clients.openWindow(target))
         : self.clients.openWindow(target));
       const focus = typeof own.focus === 'function' ? Promise.resolve().then(() => own.focus()).catch(() => null) : Promise.resolve();
+      if (!sandbox) return focus.then(() => navigate());
       return focus.then(() => handOver(own, target)).then((taken) => (taken ? null : navigate()));
     }
     return self.clients.openWindow(target);

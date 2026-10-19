@@ -33,10 +33,17 @@ the estimate in dollars by percent as well as the minutes (review N8); case 10 c
 concurrency claim (review N4); case 9's second part matches each Workflow 4 run to its ready run by
 `event` and id (review N10).*
 
+*Draft 6 (2026-10-19), after the owner's ruling "A. Go live now, switch later (Recommended)"
+(decisions/questions/P-001-notify-which-view.md, pull request #119): case 12 registers what moving
+the Home Screen icon and the taps to the sandbox view does to an icon added before the change and
+to its subscription (S-001 AC74, AC75, Setup N13). It is added before its own run and changes no
+other case, whether or not cases 1 to 3 have been read.*
+
 spec: S-001 (AC74 to AC78, J16 to J21; Workflows 3 and 4)   milestone: none (notifications are
 not yet a milestone); run on the preview once the notifications pull requests are merged and
 deployed there and Workflow 3 is on (Setup N1 to N8); cases 5g and 9 also after Workflow 4 is on
-(N9); case 11 once Setup N12 is done
+(N9); case 11 once Setup N12 is done; case 12 once the change of 2026-10-19 (S-001 AC75's
+`start_url` "/?sandbox") is deployed to the preview
 runner:
 - **The owner,** on the iPhone, on the preview (about 20 minutes over two days), and the usage
   token's one test run (Setup N12, within its 5 minutes); no agent holds the token.
@@ -111,7 +118,12 @@ Behind the preview's Cloudflare Access application, on the owner's iPhone:
     own (Q-015 U-11); a fine-grained token of the account with only Plan: Read-only reads them
     (U-1); the desk's private-repository minutes for the month are within 5% of what GitHub's
     billing page shows for private repositories; and the desk's estimate is within 5% of the
-    metered amount that page shows for Actions, both read the same hour (U-3).
+    metered amount that page shows for Actions, both read the same hour (U-3);
+12. once the manifest's `start_url` is "/?sandbox": an icon added before the change keeps opening
+    "/" (the older view), since iOS keeps the start address it saved (not documented, C); a tap's
+    `/?sandbox&open=<key>` opens the sandbox view at the item from either icon; and the icon added
+    again from `/?sandbox` opens the sandbox view, and starts with no subscription, so "Turn on
+    notifications" is offered again and the old subscription later answers gone (C).
 
 ## Method
 1. The owner does S-001 Setup N5 to N8 on the iPhone and records its iOS version. Cases 1 to 3 are
@@ -159,6 +171,12 @@ Behind the preview's Cloudflare Access application, on the owner's iPhone:
    name).
 10. For each push, the Chief of Staff takes from the run's log the time of the push service's
    answer, and from GitHub the record's time; the owner notes when each notification showed.
+11. Case 12: after the change is deployed, the owner opens the desk from the old icon and notes
+   which view opens; runs `test: true` and taps it, noting which view opens and at what; then, if
+   the old icon opened the older view, does Setup N13 and notes which view the new icon opens and
+   whether the desk offered "Turn on notifications" again; the Chief of Staff reads from the
+   sender's logs whether a push to the old subscription answered 410 or 404 (no value is ever
+   recorded), and records the answers.
 
 ## Measure
 - Pass or fail for cases 1 to 4, 6, 7 (each of its parts), 8, 10 (each of its parts) and 11, with
@@ -170,6 +188,9 @@ Behind the preview's Cloudflare Access application, on the owner's iPhone:
 - For case 11: whether Actions use is reported at all; the token kind and scope that worked;
   the differences in percent between the desk's minutes and estimate and GitHub's page; and the
   lag in minutes. No billing figure is recorded in the result, which is public.
+- For case 12: which view the old icon opens; which view and item a tap opens; and, if N13 was
+  needed, which view the new icon opens, whether "Turn on notifications" was offered again, and
+  whether the old subscription answered gone.
 
 ## Sample
 One iPhone, the owner's; each case once, and case 5 once for each of its routes, over at most two
@@ -182,7 +203,7 @@ days (case 9 over a week). The small sample is by design: there is one owner and
 
 ## Deciding threshold
 - **Pass:** cases 1 to 4 pass, and (5a) to (5e) and (5g) are each under 5 minutes. (5f), (5h) and
-  cases 6 to 11 decide only their own choices.
+  cases 6 to 12 decide only their own choices.
 - **Fallbacks:**
   - cases 1 or 2, or the service worker, failing because Access answers a fetch with a sign-in
     page: the owner adds S-001 Setup N10's Access exception (one self-hosted application with a
@@ -224,9 +245,14 @@ days (case 9 over a week). The small sample is by design: there is one owner and
   - the desk's estimate more than 5% from GitHub's metered amount: AC78's estimate rule (the
     summary against `/usage`, prices assumed) is reviewed and fixed forward; the desk's minutes more than 5% from GitHub's page: AC78's counting rule
     (public repositories, items without `repositoryName`) is reviewed and fixed forward; the lag is
-    stated beside "as of".
+    stated beside "as of";
+  - case 12 finding a tap opening the older view: the sandbox's address handling is fixed forward;
+    the new icon opening the older view: S-001 Setup N13 is restated and the owner told; the
+    subscription kept after re-adding: N13's update step is recorded as not needed next time.
 
 ## Holdout use
 none
 
-frozen: the last commit that changes this file on build/definer/s001-notifications, before any run
+frozen: the last commit that changes this file on build/definer/s001-notifications, before any run;
+for case 12, the last commit that changes it on build/definer/s001-notify-sandbox, before case 12's
+run

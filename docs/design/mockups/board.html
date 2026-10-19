@@ -97,6 +97,7 @@ a { color: inherit; }
 .donebtn, .undo { min-height: 44px; min-width: 44px; padding: 0 var(--s3); border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf); color: var(--ink); font: var(--t-meta); cursor: pointer; flex: none; }
 .note { border-radius: var(--rs); padding: var(--s2) var(--s3); font: var(--t-meta); font-weight: 400; background: var(--yous); color: var(--ink); }
 .note b { color: var(--you); font-weight: 700; }
+.note.next { background: var(--surf2); }
 
 /* Drag: the card left behind is a dashed slot; the lifted copy follows the finger */
 .card.ph { border: 1px dashed var(--soft); background: transparent; box-shadow: none; }
@@ -122,13 +123,12 @@ a { color: inherit; }
 .drow.ok .ds { color: var(--ink); white-space: nowrap; }
 .drow.ok .tick { color: var(--pass); }
 .drow .side { display: grid; justify-items: end; gap: var(--s1); }
-.dots::after { content: "…"; }
+.drow.pend .ds { color: var(--ink); white-space: nowrap; }
+.drow.pend .tick { color: var(--muted); } /* done on your say-so; the ✓ turns green once GitHub agrees */
+.conf { font: var(--t-meta); font-weight: 400; color: var(--muted); }
 @media (prefers-reduced-motion: no-preference) {
-  .dots::after { content: ""; animation: dots 1.4s steps(4, end) infinite; display: inline-block; width: 1em; text-align: left; }
-  @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75%, 100% { content: "…"; } }
   .card { transition: box-shadow .15s; }
 }
-.local { font: var(--t-meta); font-weight: 400; color: var(--muted); }
 .job { font: var(--t-meta); font-weight: 400; color: var(--muted); padding: var(--s1) 0; }
 
 /* At 700px and wider: three columns, Waiting on you | Kicked back | Done */
@@ -150,9 +150,9 @@ a { color: inherit; }
 <body>
 <div class="wrap">
   <div class="intro">
-    <span class="marker">Mockup · the board · version 2 · the Orchestrator's proposal · not built</span>
+    <span class="marker">Mockup · the board · version 3 · the Orchestrator's proposal · not built</span>
     <h1>Waiting on you, as a board</h1>
-    <p class="lead">What waits on you, and Done. Each card has one button, for the one step that clears it, opening GitHub as prefilled as GitHub allows. When you've done it, drag the card to Done (on a phone, press and hold first), or tap "Done ✓". The desk then checks GitHub's records. If GitHub still doesn't show it done after about 5 minutes, the card moves to Kicked back with the reason, never back where you moved it from. The cards are today's real items. Try it in any frame: the demo fakes GitHub's answer in seconds, not minutes; #128 is kicked back the first time, and GitHub "confirms" it by itself a little later.</p>
+    <p class="lead">What waits on you, and Done. Each card has one button, for the one step that clears it, opening GitHub as prefilled as GitHub allows. When you've done it, drag the card to Done (on a phone, press and hold first), or tap "Done ✓". It is done at once and leaves the count; a small grey note says the desk is confirming it with GitHub, and goes when GitHub agrees. If after about 5 minutes GitHub still doesn't show that step, the card is kicked back, with the reason. The cards are today's real items. Try it in any frame: the demo fakes GitHub's answer in seconds, not minutes; #128 is kicked back the first time, and GitHub "confirms" it by itself a little later.</p>
     <p class="namenote">"Kicked back" is your word; the name is yours to confirm. Your other example was "Hung up".</p>
   </div>
 
@@ -161,14 +161,16 @@ a { color: inherit; }
       <div class="phone"><div class="board" data-frame="a"></div></div></section>
     <section class="state"><h2>(b) A card mid-drag</h2><p class="sub">While you drag, Done pins to the bottom of the screen.</p>
       <div class="phone fixed"><div class="board" data-frame="b"></div></div></section>
-    <section class="state"><h2>(c) Two cards checking</h2><p class="sub">Marked on this phone; not counted while the desk checks GitHub.</p>
+    <section class="state"><h2>(c) Two marked done</h2><p class="sub">Done at once and out of the count, each with the grey note until GitHub agrees. Times are examples.</p>
       <div class="phone"><div class="board" data-frame="c"></div></div></section>
-    <section class="state"><h2>(d) One kicked back</h2><p class="sub">GitHub confirmed two. After about 5 minutes it still didn't show #128 merged, so #128 moved to Kicked back. Times are examples.</p>
+    <section class="state"><h2>(d) One kicked back</h2><p class="sub">GitHub agreed on two. After about 5 minutes it still didn't show #128 merged, so #128 left Done for Kicked back and counts again. Times are examples.</p>
       <div class="phone"><div class="board" data-frame="d"></div></div></section>
     <section class="state"><h2>(e) Nothing waiting on you</h2><p class="sub">Times are examples.</p>
       <div class="phone"><div class="board" data-frame="e"></div></div></section>
     <section class="state"><h2>(f) Dark mode</h2><p class="sub">State (a) in the phone's dark setting.</p>
       <div class="phone theme-dark"><div class="board" data-frame="f"></div></div></section>
+    <section class="state"><h2>(g) #130 after its verdict</h2><p class="sub">GitHub shows reviews/130/owner.md on the branch, so the verdict is done and a new card, Step 2 of 2, waits for the merge. Times are examples.</p>
+      <div class="phone"><div class="board" data-frame="g"></div></div></section>
     <section class="state wide"><h2>At 700px and wider</h2><p class="sub">The same board on a tablet or computer: three columns, Waiting on you, Kicked back and Done. (On a phone this frame shows the phone layout.)</p>
       <div class="phone"><div class="board" data-frame="w"></div></div></section>
   </div>
@@ -177,11 +179,21 @@ a { color: inherit; }
     <h2>How each card's one step is chosen</h2>
     <ul>
       <li><b>Merge on GitHub</b> opens the pull request's page, where GitHub's merge button is. For a pull request that needs nothing else from you.</li>
-      <li><b>Add your verdict</b> opens GitHub's new-file page for <span class="code">reviews/&lt;n&gt;/owner.md</span> on the pull request's branch, with "Verdict: PASS" filled in. Only for a pull request whose risk class needs your verdict (R3); it then reads "Step 1 of 2: add your verdict", and once GitHub shows the verdict, "Step 2 of 2: merge".</li>
+      <li><b>Add your verdict</b> opens GitHub's new-file page for <span class="code">reviews/&lt;n&gt;/owner.md</span> on the pull request's branch, with "Verdict: PASS" filled in. Only for a pull request whose risk class needs your verdict (R3). It reads "Step 1 of 2: add your verdict"; once confirmed, a new card, "Step 2 of 2: merge", appears.</li>
       <li><b>Answer</b> opens the answer file for a question, filled in with the question and its options; you put your letter after "Ruling:".</li>
       <li><b>Approve the deploy</b> opens the deploy run that is waiting for your approval.</li>
-      <li>A card you mark done shows "Checking…" in Done until GitHub's records show its step done. If after about 5 minutes they still don't, it moves to <b>Kicked back</b> with the reason and the same one button, and counts as waiting on you again. From there you drag it to Done or tap "Done ✓" again; if GitHub confirms it later on its own, it moves to Done by itself. It never goes back to "Waiting on you".</li>
       <li>Pull requests the automatic job merges itself are never cards: they are counted in the quiet line under Done.</li>
+    </ul>
+  </section>
+  <section class="rules">
+    <h2>How each card is confirmed</h2>
+    <p class="lead">Your Done counts at once. The desk then checks the one step, as often as it reads GitHub:</p>
+    <ul>
+      <li><b>Merge on GitHub</b>: GitHub shows the pull request merged.</li>
+      <li><b>Add your verdict</b>: <span class="code">reviews/&lt;n&gt;/owner.md</span> is on the pull request's branch.</li>
+      <li><b>Answer</b>: the answer file is on the main branch, or a pull request adding it is open.</li>
+      <li><b>Approve the deploy</b>: the deploy run is no longer waiting.</li>
+      <li>If GitHub still doesn't show the step after about 5 minutes, the card leaves Done for <b>Kicked back</b>, with the reason and its one button, and counts again. From there you drag it to Done or tap "Done ✓" again; if GitHub shows the step later on its own, it goes to Done by itself.</li>
     </ul>
   </section>
 </div>
@@ -210,16 +222,23 @@ a { color: inherit; }
       why: 'Recommended: A, the new line. On GitHub, put A or B after "Ruling:", then commit.' },
   };
   const ALL = ['126', '127', '128', '130', 'q'];
-  const MERGED = "GitHub doesn't show it merged yet";
-  const ok = (id, t) => ({ id, st: 'ok', t });
+  // What the desk checks for each kind of step, and the reason a card shows when kicked back.
+  const KIND = { merge: "GitHub doesn't show it merged yet", verdict: "GitHub doesn't show reviews/130/owner.md on the branch yet",
+    answer: "GitHub shows no answer file, or pull request for one, yet" };
+  const kindOf = (id, step) => (id === 'q' ? 'answer' : id === '130' && !step ? 'verdict' : 'merge');
+  const key = (x) => `${x.id}.${x.step || 0}`;
+  const ok = (id, t, step = 0) => ({ id, step, st: 'ok', t });
+  const pend = (id, t, step = 0) => ({ id, step, st: 'pend', t });
+  const MERGED = KIND.merge;
   const FRAMES = {
     a: { wait: ALL.map((id) => ({ id })), done: [], job: 1 },
     b: { wait: ALL.map((id) => ({ id })), done: [], job: 1, drag: '127' },
-    c: { wait: [{ id: '128' }, { id: '130' }, { id: 'q' }], done: [{ id: '127', st: 'checking' }, { id: '126', st: 'checking' }], job: 1 },
-    d: { kick: [{ id: '128', why: MERGED }], wait: [{ id: '130' }, { id: 'q' }], done: [ok('127', '16:07'), ok('126', '16:06')], job: 1 },
-    e: { wait: [], done: [ok('q', '16:31'), ok('130', '16:24'), ok('128', '16:12'), ok('127', '16:07'), ok('126', '16:06')], job: 0 },
+    c: { wait: [{ id: '128' }, { id: '130' }, { id: 'q' }], done: [pend('127', '16:02'), pend('126', '16:01')], job: 1 },
+    d: { kick: [{ id: '128', why: MERGED }], wait: [{ id: '130' }, { id: 'q' }], done: [ok('127', '16:02'), ok('126', '16:01')], job: 1 },
+    e: { wait: [], done: [ok('q', '16:31'), ok('130', '16:24', 1), ok('130', '16:15'), ok('128', '16:12'), ok('127', '16:02'), ok('126', '16:01')], job: 0 },
     f: { wait: ALL.map((id) => ({ id })), done: [], job: 1 },
-    w: { kick: [{ id: '128', why: MERGED }], wait: [{ id: '130' }, { id: 'q' }], done: [{ id: '127', st: 'checking' }, ok('126', '16:06')], job: 1 },
+    g: { wait: [{ id: '130', step: 1, next: true }, { id: 'q' }], done: [ok('130', '16:15'), ok('128', '16:12'), ok('127', '16:02'), ok('126', '16:01')], job: 1 },
+    w: { kick: [{ id: '128', why: MERGED }], wait: [{ id: '130' }, { id: 'q' }], done: [pend('127', '16:02'), ok('126', '16:01')], job: 1 },
   };
 
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -228,24 +247,24 @@ a { color: inherit; }
   function cardHTML(w) {
     const it = ITEMS[w.id];
     const [label, url] = it.steps[w.step || 0];
-    const note = w.why ? `<p class="note">${esc(w.why)}</p>` : '';
-    return `<li class="card" data-id="${w.id}">
+    const note = w.why ? `<p class="note">${esc(w.why)}</p>` : w.next ? `<p class="note next">Your verdict is in. Next, the merge.</p>` : '';
+    return `<li class="card" data-id="${w.id}" data-key="${key(w)}">
       <p class="ct">${esc(it.title)}</p><span class="grip" aria-hidden="true">⠿</span>
       <p class="cm"><span>Service-Desk</span>${it.ref.startsWith('#') ? `<span class="code">${it.ref}</span>` : ''}<span class="ex">example from 19 Oct</span></p>
       ${note}
       <a class="step" href="${url}" target="_blank" rel="noopener"><span>${esc(label)}&nbsp;<span aria-hidden="true">↗</span></span></a>
       <div class="cfoot"><details class="why"><summary>Why</summary><p>${esc(it.why)}</p></details>
-        <button type="button" class="donebtn" data-done="${w.id}" aria-label="Done: ${esc(it.title)}">Done ✓</button></div>
+        <button type="button" class="donebtn" data-done="${key(w)}" aria-label="Done: ${esc(it.title)}">Done ✓</button></div>
     </li>`;
   }
   function rowHTML(d) {
     const it = ITEMS[d.id];
-    const meta = `Service-Desk${it.ref.startsWith('#') ? ` · ${it.ref}` : ''}`;
-    if (d.st === 'checking') return `<li class="drow checking"><div><p class="dt">${esc(it.title)}</p><p class="dm">${meta}</p>
-        <p class="ds">Checking<span class="dots"></span> <span class="local">· marked on this phone only</span></p></div>
-        <button type="button" class="undo" data-undo="${d.id}" aria-label="Undo: ${esc(it.title)}">Undo</button></li>`;
-    return `<li class="drow ok"><div><p class="dt">${esc(it.title)}</p><p class="dm">${meta}</p></div>
-      <p class="ds"><span class="tick">Done ✓</span> ${d.t}</p></li>`;
+    const stepWords = it.steps.length > 1 ? (d.step ? ' · step 2, the merge' : ' · step 1, your verdict') : '';
+    const meta = `Service-Desk${it.ref.startsWith('#') ? ` · ${it.ref}` : ''}${stepWords}`;
+    const when = `<p class="ds"><span class="tick">Done ✓</span> ${d.t}</p>`;
+    if (d.st === 'pend') return `<li class="drow pend"><div><p class="dt">${esc(it.title)}</p><p class="dm">${meta}</p><p class="conf">confirming with GitHub</p></div>
+        <div class="side">${when}<button type="button" class="undo" data-undo="${key(d)}" aria-label="Undo: ${esc(it.title)}">Undo</button></div></li>`;
+    return `<li class="drow ok"><div><p class="dt">${esc(it.title)}</p><p class="dm">${meta}</p></div>${when}</li>`;
   }
 
   function render(board) {
@@ -261,48 +280,54 @@ a { color: inherit; }
       <div class="drop" aria-hidden="true"><h3 class="lh">Done</h3><p class="hint">Drag a card here once you've done it</p></div>
       <section class="done" aria-label="Done">
         ${s.done.length ? `<ol class="dlist">${s.done.map(rowHTML).join('')}</ol>` : ''}
+        <p class="job">Your Done marks are kept on this phone; other devices show them once GitHub confirms.</p>
         <p class="job">Being recorded by the automatic job: ${s.job}</p></section></div>`;
   }
 
-  // The demo's stand-in for GitHub's answer: seconds here, about 5 minutes on the desk.
-  function check(board, id) {
+  // Your Done counts at once; the desk then confirms the step with GitHub. The demo fakes GitHub's answer in
+  // seconds (about 5 minutes on the desk): #128 is kicked back the first time; the rest are confirmed.
+  function markDone(board, k) {
     const s = board._s;
-    clearTimeout((s.timers ||= {})[id]);
-    clearTimeout((s.auto ||= {})[id]);
-    const lane = s.kick.some((x) => x.id === id) ? 'kick' : 'wait';
-    const w = s[lane].find((x) => x.id === id) || { id };
-    s[lane] = s[lane].filter((x) => x.id !== id);
-    s.done.unshift({ id, st: 'checking', from: { lane, w } });
+    (s.timers ||= {}); (s.auto ||= {});
+    clearTimeout(s.timers[k]); clearTimeout(s.auto[k]);
+    const lane = s.kick.some((x) => key(x) === k) ? 'kick' : 'wait';
+    const w = s[lane].find((x) => key(x) === k);
+    if (!w) return;
+    s[lane] = s[lane].filter((x) => x !== w);
+    const d = { ...pend(w.id, now(), w.step || 0), from: { lane, w } };
+    s.done.unshift(d);
     render(board);
-    // In the demo: #130 with only its verdict done, and #128 the first time, are kicked back; the rest confirm.
-    const twoStep = ITEMS[id].steps.length === 2 && !w.step;
-    const kick = twoStep || (id === '128' && lane === 'wait');
-    s.timers[id] = setTimeout(() => {
-      const d = s.done.find((x) => x.id === id && x.st === 'checking');
-      if (!d) return;
+    const kick = w.id === '128' && lane === 'wait';
+    s.timers[k] = setTimeout(() => {
+      if (!s.done.includes(d)) return; // undone
       if (kick) {
         s.done = s.done.filter((x) => x !== d);
-        s.kick.unshift(twoStep ? { id, step: 1, why: "GitHub shows your verdict, but it isn't merged yet" } : { id, why: MERGED });
-        // GitHub confirms #128 later on its own: it moves to Done by itself.
-        if (!twoStep) s.auto[id] = setTimeout(() => confirmLater(board, id), 15000);
-      } else { d.st = 'ok'; d.t = now(); }
+        s.kick.unshift({ id: w.id, step: w.step || 0, why: KIND[kindOf(w.id, w.step)] });
+        s.auto[k] = setTimeout(() => confirmLater(board, k), 15000); // GitHub shows it later on its own
+      } else {
+        d.st = 'ok';
+        if (kindOf(w.id, w.step) === 'verdict') s.wait.unshift({ id: w.id, step: 1, next: true });
+      }
       render(board);
     }, kick ? 6000 : 3000);
   }
-  function confirmLater(board, id) {
+  function confirmLater(board, k) {
     const s = board._s;
-    if (!s.kick.some((x) => x.id === id)) return;
-    s.kick = s.kick.filter((x) => x.id !== id);
-    s.done.unshift(ok(id, now()));
+    const w = s.kick.find((x) => key(x) === k);
+    if (!w) return;
+    s.kick = s.kick.filter((x) => x !== w);
+    s.done.unshift(ok(w.id, now(), w.step || 0));
     render(board);
   }
-  function undo(board, id) {
+  function undo(board, k) {
     const s = board._s;
-    clearTimeout((s.timers || {})[id]);
-    const d = s.done.find((x) => x.id === id);
+    clearTimeout((s.timers || {})[k]);
+    const d = s.done.find((x) => x.st === 'pend' && key(x) === k);
+    if (!d) return;
     s.done = s.done.filter((x) => x !== d);
-    const from = d.from || { lane: 'wait', w: { id } };
+    const from = d.from || { lane: 'wait', w: { id: d.id, step: d.step } };
     s[from.lane].unshift(from.w);
+    if (from.lane === 'kick') (s.auto ||= {})[k] = setTimeout(() => confirmLater(board, k), 15000); // still watched
     render(board);
   }
 
@@ -345,7 +370,7 @@ a { color: inherit; }
       q.card.classList.remove('ph');
       board.querySelector('.bgrid').classList.remove('dragging');
       drop().classList.remove('over');
-      if (hit) check(board, q.card.dataset.id);
+      if (hit) markDone(board, q.card.dataset.key);
     }
     board.addEventListener('pointerdown', (e) => {
       const card = e.target.closest('.card');
@@ -374,7 +399,7 @@ a { color: inherit; }
     board.addEventListener('touchmove', (e) => { if (p && p.on) e.preventDefault(); }, { passive: false });
     board.addEventListener('contextmenu', (e) => { if (e.target.closest('.card')) e.preventDefault(); });
     board.addEventListener('click', (e) => {
-      const d = e.target.closest('[data-done]'); if (d) check(board, d.dataset.done);
+      const d = e.target.closest('[data-done]'); if (d) markDone(board, d.dataset.done);
       const u = e.target.closest('[data-undo]'); if (u) undo(board, u.dataset.undo);
     });
   }

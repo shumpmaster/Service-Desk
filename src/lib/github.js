@@ -65,6 +65,7 @@ export const PULLS_QUERY = `query($owner: String!, $name: String!, $base: String
       nodes {
         number title body state createdAt mergedAt closedAt headRefName
         mergeCommit { oid message author { name } }
+        changedFiles files(first: 2) { nodes { path } }
         commits(last: 1) { nodes { commit { statusCheckRollup { state } } } }
       }
     }

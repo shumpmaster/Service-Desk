@@ -81,6 +81,9 @@ export function validateConfig(c) {
     for (const k of ['planning', 'webCommitsToDefault', 'contentPrefill']) {
       if (typeof p[k] !== 'boolean') errors.push(`${at}.${k} must be true or false`);
     }
+    // From 2026-10-18 (Work ahead, J7; draft 4): `planning: true` only on a v3 entry, since J4's plans,
+    // J14's estimates and J15's list live in a v3 project's tree; `planning: false` on a v2.5 entry is fine.
+    if (p.planning === true && p.model !== 'v3') errors.push(`${at}.planning is true on a v2.5 project: plans, estimates and the later-work list live in a v3 project`);
     // From 2026-10-18 (Terms, AC52): absent means false; a value that is not true or false fails.
     if (p.deploysNeedOwner !== undefined && typeof p.deploysNeedOwner !== 'boolean') errors.push(`${at}.deploysNeedOwner must be true or false`);
     if (p.actionsUsage !== undefined) errors.push(...usageProblems(p.actionsUsage, `${at}.actionsUsage`));
@@ -88,6 +91,8 @@ export function validateConfig(c) {
       errors.push(`${at}.contentParam must be a parameter name`);
     }
   });
+  // J7 (Work ahead, 2026-10-18): plans, estimates and the later-work list have one home.
+  if (c.projects.filter((p) => p && p.planning === true).length > 1) errors.push('only one project may hold "planning": true (plans, estimates and the later-work list have one home)');
   if (c.projects.filter((p) => p && p.actionsUsage !== undefined).length > 1) errors.push('only one project\'s entry may hold actionsUsage (its sender alone reads the usage)');
   return errors;
 }

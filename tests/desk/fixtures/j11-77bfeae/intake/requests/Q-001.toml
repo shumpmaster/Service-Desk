@@ -1,0 +1,10 @@
+kind = "research"
+question = """
+What are the practical ways to host a web application that one authenticated person uses mainly from a phone, that shows data read from several private GitHub repositories and updates while open, and that writes small text files back to those repositories?
+
+For each option, compare: monthly cost at one user's scale (free-tier limits and the first paid step), the login options that restrict it to one person, where server-side state and secrets can be kept, what the person must set up and maintain over time, and known limits or failure modes. Include at least one option on Cloudflare (the person already uses Cloudflare Pages and Access) and at least one that does not use Cloudflare.
+
+The decision it serves: the hosting design and the spend ceiling of the Service Desk project (docs/PROJECT.md §5, unknown U1).
+
+Depth: 3, a graded memo. Topics: hosting, cloudflare, cost, authentication.
+"""

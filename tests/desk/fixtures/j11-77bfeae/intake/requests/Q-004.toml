@@ -1,0 +1,10 @@
+kind = "research"
+question = """
+How quickly, and how reliably, can changes in several private GitHub repositories (new commits on the default branch, new or changed files in given folders, pull request and check-run state) be detected by a web application?
+
+Compare webhooks (repository and GitHub App), polling the REST and GraphQL APIs (with conditional requests), and any other documented route. For each: typical and worst-case delay, delivery guarantees and what happens on a missed delivery, the rate limits at a polling interval of 1, 5 and 15 minutes across 5 repositories, and what must be hosted to receive or poll.
+
+The decision it serves: the freshness target for Service Desk (docs/PROJECT.md §6 V1) and its change-detection design (§3 D2.2).
+
+Depth: 3, a graded memo. Topics: github, webhooks, polling, latency.
+"""

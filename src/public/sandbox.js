@@ -30,7 +30,9 @@ import { teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js
 import { summaryView, latestText, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
 import { composeAnswer, numberedRuleLine, CANT_SPLIT, NO_RECOMMENDATION } from './lib/sandbox.js';
 import { runsContext, statusPhases, tilePhases, markerView, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, TEAM_KEY, itemFeeds,
-  stalledLine, deployRows, FEED_ICONS_KEY, doneTarget, JOB_MERGE_WORDS } from './lib/feed.js';
+  stalledLine, deployRows, FEED_ICONS_KEY, doneTarget, JOB_MERGE_WORDS, ESTIMATE_MERGE_WORDS } from './lib/feed.js';
+import { WA, DRAFT_KEY, todayOf } from './lib/workahead.js';
+import { workAheadView, readDraft } from './lib/workview.js';
 
 import {
   NOTIFY_WORDS, NOTIFY_STORE_KEY, COPY_DONE_WORDS, SHOW_AGAIN_WORDS, SEND_TEST_WORDS, copySteps, testSteps, notifyState, onTopLine,
@@ -682,7 +684,7 @@ function summaryBox(name, sum, col) {
  * `wcls` the words' own class, `after(inline)` gives the nodes that follow, and `notice` a line the
  * open bubble adds when a refresh would change the line under it (AC55, draft 4).
  */
-function lineBox(id, { words, recCode, title, lead = null, wcls = 'sb-line-w', mark = null, after = () => [], notice = null }) {
+function lineBox(id, { words, recCode, title, lead = null, wcls = 'sb-line-w', mark = null, after = () => [], notice = null, lines = 3 }) {
   const k = `line:${id}`;
   lineText.set(id, words);
   const over = lineOver.get(id) === true;
@@ -709,7 +711,7 @@ function lineBox(id, { words, recCode, title, lead = null, wcls = 'sb-line-w', m
     : h('span', { class: 'sb-line' }, inner, after(true));
   return [h('div', { class: 'sb-linebox', key: `linebox:${id}` },
     // Nothing scrolls in the box: where a browser lacks `overflow: clip`, focus scrolling the text is undone.
-    h('div', { class: `sb-lineclip${over ? ' over' : ''}`, key: `lineclip:${id}`, 'data-line': id, onscroll: (e, el) => { if (el.scrollTop) el.scrollTop = 0; } }, text),
+    h('div', { class: `sb-lineclip${lines === 2 ? ' two' : ''}${over ? ' over' : ''}`, key: `lineclip:${id}`, 'data-line': id, onscroll: (e, el) => { if (el.scrollTop) el.scrollTop = 0; } }, text),
     isOpen ? h('div', {
       class: `sb-bubble sb-linebub ${placeClass()}`, id: bid, role: 'dialog', 'aria-label': `${title}: ${recCode}`, key: bubbleKey(k), 'data-bubble': k,
     }, h('div', { class: 'sb-bubble-top' }, h('p', { class: 'sb-eyebrow' }, title),
@@ -912,6 +914,8 @@ function renderHome(desk, built, seen, now) {
     h('p', { class: `sb-top ${s.quiet ? 'quiet' : total ? 'you' : ''}`, role: 'status' },
       desk.signedOut ? SIGNED_OUT_STATE.text : total ? `${total} waiting on you in all` : s.text,
       lastRead ? h('span', { class: 'sb-muted' }, ` · last read ${hhmm(new Date(lastRead), TZ)}`) : null),
+    // AC24's way in (from 2026-10-18): one control, "Work ahead", just under Home's top line.
+    h('p', { class: 'sb-wa-link', key: 'wa-link' }, h('a', { href: '#/work', key: 'work-ahead' }, `${WA.control} ›`)),
     seen.words ? h('p', { class: 'sb-muted small' }, seen.words) : null,
     onTopLine(notifyState(notifyEnv())) ? notifyNode(true) : null,
     h('div', { class: 'sb-hgroups' }, groups),
@@ -1297,10 +1301,11 @@ function deployRow(p, d, check) {
 function doneLink(p, kind, codeText) {
   const name = p.project.name;
   const fv = p.project.model === 'v3' ? p.feed() : null;
-  const at = doneTarget(fv, p.snap, kind, codeText);
+  const at = doneTarget(fv, p.snap, kind, codeText, p.project);
   if (at && at.sprint) return [' ', h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'sprint', at.sprint) }, 'On the Timeline')];
   if (at && at.ms) return [' ', h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'ms', at.ms) }, 'On the Timeline')];
   if (at && at.job) return h('span', { class: 'sb-meta' }, ` · ${JOB_MERGE_WORDS}`);
+  if (at && at.estimate) return h('span', { class: 'sb-meta' }, ` · ${ESTIMATE_MERGE_WORDS}`);
   return h('span', { class: 'sb-meta gap' }, ' · sprint: not recorded');
 }
 
@@ -1765,6 +1770,15 @@ function recordNotes(p) {
   const out = [...((p.model && p.model.notes) || [])];
   const doc = p.j && p.j.projectDoc;
   for (const x of (doc && doc.problems) || []) out.push(`docs/PROJECT.md line ${x.lineno}: ${x.message}`);
+  // Work ahead's notes (AC24; J4, J14, J15) go to the planning project's, as J14 says.
+  if (p.project.planning === true && p.project.model === 'v3') {
+    try {
+      const v = workView(Date.now());
+      if (v) out.push(...v.notes);
+    } catch {
+      // Work ahead's own screen says what went wrong
+    }
+  }
   return out;
 }
 function renderNotes(p) {
@@ -1975,6 +1989,224 @@ function summaryNode(p, id, sm) {
 }
 
 // ---------------------------------------------------------------------------
+// Work ahead (AC24; J4, J14, J15; M3A, from 2026-10-18): the connected v3 projects' milestones not
+// yet reached, in the owner's order, each with its state, the Chief of Staff's latest rough estimate
+// and a rough finish; the owner's draft order kept on the device; "Record plan" as a J3-form link.
+
+let lastBuilt = null; // the projects as the current drawing built them
+let waDay = null; // the owner's today when Work ahead was last drawn
+let waMemo = null; // Work ahead's view, worked out once per drawing
+
+/**
+ * The owner's draft order, kept on the device under `desk-plan-draft-v1` (AC24), every read and write
+ * wrapped as J5's are: a failure shows "draft not kept on this device", the draft then living in
+ * memory for the open window, and nothing else breaks.
+ */
+const planDraft = {
+  mem: undefined, // undefined: not read yet; null: none
+  failed: false,
+  aside: false, // a newer plan landed and the draft was set aside: said until the next move
+  moved: null, // the key of the row last moved (its gold edge, "moved"), until the next move
+  focus: null, // the control to give the focus back to after a move
+  read() {
+    if (this.mem !== undefined) return this.mem;
+    this.mem = null;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      this.mem = raw == null ? null : readDraft(JSON.parse(raw));
+    } catch {
+      this.failed = true;
+    }
+    return this.mem;
+  },
+  write(v) {
+    this.mem = v;
+    try {
+      if (v) localStorage.setItem(DRAFT_KEY, JSON.stringify(v));
+      else localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      this.failed = true;
+    }
+  },
+};
+
+/** Work ahead's view for this drawing (shared by its screen and the planning project's record notes). */
+function workView(nowMs) {
+  if (waMemo) return waMemo;
+  const built = lastBuilt || [];
+  const entries = built.map((b) => ({ project: b.project, j: b.j || null, ctx: b.ctx || null, rows: b.q ? b.q.rows : [], model: b.model || null,
+    error: b.error || null }));
+  const snaps = new Map(built.filter((b) => b.snap).map((b) => [b.project.name, b.snap]));
+  waMemo = workAheadView({ config: CONFIG, entries, snaps, nowMs, tz: TZ, draft: planDraft.read() });
+  return waMemo;
+}
+
+/** Move a row one place up (-1) or down (+1) in the draft (AC24): every finish follows at once. */
+function moveRow(key, dir) {
+  const v = workView(Date.now());
+  const i = v.order.indexOf(key);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= v.order.length) return;
+  const order = [...v.order];
+  [order[i], order[j]] = [order[j], order[i]];
+  const same = order.join('\n') === v.baseOrder.join('\n');
+  planDraft.write(same ? null : { base: v.plan.name || null, order });
+  planDraft.aside = false;
+  planDraft.moved = key;
+  planDraft.focus = `wa-${dir < 0 ? 'up' : 'down'}:${key}`;
+  render();
+}
+
+/** A move control (AC24): a real button, used by a tap, a click, or Enter or Space; at an end it says it is disabled and does nothing, keeping the focus. */
+function moveButton(r, dir) {
+  const off = dir < 0 ? r.first : r.last;
+  const words = dir < 0 ? WA.moveUp(r.code) : WA.moveDown(r.code);
+  const act = () => { if (!off) moveRow(r.key, dir); };
+  return h('button', { type: 'button', class: 'sb-wa-mv', key: `wa-${dir < 0 ? 'up' : 'down'}:${r.key}`, 'aria-label': words, 'aria-disabled': off ? 'true' : null,
+    onclick: act,
+    onkeydown: (e) => {
+      if (!e || (e.key !== 'Enter' && e.key !== ' ')) return;
+      if (e.preventDefault) e.preventDefault();
+      act();
+    } }, h('span', { 'aria-hidden': 'true' }, dir < 0 ? '▲' : '▼'));
+}
+
+/** One milestone's row (AC24, as the mockup draws it, version 2). */
+function waRow(v, r) {
+  const moved = planDraft.moved === r.key;
+  const est = r.estimate;
+  const kids = [
+    h('p', { class: 'sb-wa-name' }, r.name),
+    h('p', { class: 'sb-wa-meta' }, code(r.code), v.many ? h('span', { class: 'sb-wa-proj' }, r.project.name) : null,
+      r.phase ? h('span', { class: `sb-wa-ph ${r.phaseClass || ''}` }, r.phase) : null,
+      h('span', { class: 'sb-wa-st' }, mk(r.state.mark), r.state.words)),
+    r.notInPlan ? h('p', { class: 'sb-wa-tag' }, WA.notInPlan) : null,
+    r.done ? h('p', { class: 'sb-wa-done' }, `Done when ${r.done}`) : null,
+    h('p', { class: `sb-wa-est ${est.kind}` }, est.kind === 'missing' || est.kind === 'na'
+      ? est.words : [h('span', { class: 'sb-wa-k' }, WA.estimateKey), ' ', h('span', {}, est.words)]),
+    est.note ? h('div', { class: 'sb-wa-note' }, lineBox(`wa-note:${r.key}`, { words: est.note, recCode: `${r.code}'s estimate note`, title: 'Estimate note', lines: 2 })) : null,
+    est.newer ? h('p', { class: 'sb-wa-newer' }, WA.newerUnreadable) : null,
+    r.finish ? h('p', { class: `sb-wa-fin${r.finish.na ? ' na' : ''}` }, `${WA.finish}: `, h('b', {}, r.finish.words)) : null,
+    r.waiting ? h('p', { class: 'sb-wa-you' }, h('a', { href: go('p', r.project.name, 'queue'), key: `wa-q:${r.key}` },
+      `${r.waiting} waiting on you in your Queue`)) : null,
+  ];
+  return h('li', { class: `sb-wa-row${r.phaseClass ? ` ${r.phaseClass}` : ''}${moved ? ' moved' : ''}`, key: `wa-row:${r.key}` },
+    h('span', { class: 'sb-wa-ord' }, h('span', { 'aria-hidden': 'true' }, r.place), h('span', { class: 'sb-vh' }, `${r.placeWords}${moved ? ', moved' : ''}`)),
+    h('div', { class: 'sb-wa-body' }, kids),
+    h('div', { class: 'sb-wa-move' }, moveButton(r, -1), moveButton(r, 1)));
+}
+
+/** "Record plan" (AC24, J4): the J3-form link holding every row in the order shown, or why there is none. */
+function recordNode(v) {
+  if (!v.record.ok) {
+    return [h('button', { type: 'button', class: 'sb-btn sb-wa-rec', key: 'wa-record', disabled: true }, WA.record),
+      h('p', { class: 'sb-muted small sb-wa-why' }, v.record.words)];
+  }
+  const link = v.record.link;
+  const a = h('a', { class: 'sb-btn sb-wa-rec', key: 'wa-record', href: link.url, rel: 'noopener noreferrer', target: '_blank', onclick: () => {
+    if (!link.copy) return;
+    try {
+      navigator.clipboard.writeText(link.copy).catch(() => {});
+    } catch {
+      // the copy button below still holds it
+    }
+  } }, WA.record);
+  return [a];
+}
+
+/** AC17's fallback, seen (J3, J15): why the link opens with the file name only, the text, and a "Copy" button. */
+function copyFallback(words, text, key, label) {
+  return h('div', { class: 'sb-wa-copy', key: `wa-copy:${key}` }, h('p', { class: 'sb-muted small' }, words),
+    h('pre', { class: 'sb-value' }, text), copyButton(text, key, label));
+}
+
+/** "Not milestones yet" (AC24, J15). */
+function laterNode(v) {
+  const kids = [h('h2', { class: 'sb-h2' }, WA.notYet), h('p', { class: 'sb-muted small' }, WA.notYetLine)];
+  if (v.later.kind === 'none') kids.push(h('p', { class: 'sb-muted' }, WA.noLaterWork));
+  else if (v.later.kind === 'na') kids.push(h('p', { class: 'sb-muted' }, `Later work: ${WA.notAvailable}`));
+  else {
+    if (!v.later.rows.length && !v.later.notAdded.length) kids.push(h('p', { class: 'sb-muted' }, WA.noLaterWork));
+    kids.push(h('ul', { class: 'sb-wa-later' }, v.later.rows.map((x) => {
+      let act;
+      if (x.state === 'tap') {
+        act = h('a', { class: 'sb-wa-ask', key: `wa-ask:${x.item.w}`, href: x.ask.link.url, rel: 'noopener noreferrer', target: '_blank', onclick: () => {
+          if (!x.ask.link.copy) return;
+          try {
+            navigator.clipboard.writeText(x.ask.link.copy).catch(() => {});
+          } catch {
+            // the text is short; AC17's fallback is the copy button
+          }
+        } }, x.words);
+        if (x.ask.link.copy) act = [act, copyFallback(x.ask.copyWords, x.ask.link.copy, `wa-ask:${x.item.w}`, 'Copy the ask')];
+      } else if (x.state === 'question') act = h('a', { class: 'sb-wa-ask', key: `wa-q:${x.item.w}`, href: go('p', v.planner, 'queue') }, x.words);
+      else if (x.state === 'answered' && x.line1 != null) {
+        act = h('div', { class: 'sb-wa-ans' }, lineBox(`wa-ans:${x.item.w}`, { words: x.line1, recCode: x.answerPath.replace(/^decisions\/questions\/|\.md$/g, ''), title: 'Answered',
+          lead: x.words.slice(0, x.words.length - x.line1.length) }));
+      } else act = h('p', { class: 'sb-muted small' }, x.words);
+      return h('li', { class: 'sb-wa-mini', key: `wa-later:${x.item.w}` }, h('p', {}, h('span', { class: 'sb-wa-t' }, x.item.name), ' ', h('span', { class: 'sb-muted small' }, x.item.note)), act);
+    })));
+    if (v.later.notAdded.length) {
+      const fk = 'wa-notadded';
+      kids.push(foldButton(WA_FOLDS, fk, false, { class: 'sb-more sb-wa-fold' }, `${WA.notAdded} · ${v.later.notAdded.length}`));
+      if (isOpenFold(WA_FOLDS, fk, false)) {
+        kids.push(h('ul', { class: 'sb-wa-later', key: 'wa-notadded-l' }, v.later.notAdded.map((x) => h('li', { class: 'sb-wa-mini' },
+          h('p', {}, h('span', { class: 'sb-wa-t' }, x.name), ' ', h('span', { class: 'sb-muted small' }, x.note))))));
+      }
+    }
+  }
+  return h('section', { class: 'sb-wa-group', key: 'wa-later' }, kids);
+}
+const WA_FOLDS = '#work'; // the folds' keeper for this screen (AC56: kept through every refresh)
+
+/** "Reached · <m>" and "Dropped · <n>" (AC24): folded, opening on a tap. */
+function foldList(key, words, list, extra) {
+  const open = isOpenFold(WA_FOLDS, key, false);
+  return h('section', { class: 'sb-wa-group', key: `wa-g:${key}` }, foldButton(WA_FOLDS, key, false, { class: 'sb-more sb-wa-fold' }, words),
+    open ? h('ul', { class: 'sb-wa-later', key: `wa-l:${key}` }, list.map((x) => h('li', { class: `sb-wa-mini ${key}` },
+      h('p', {}, h('span', { class: 'sb-wa-t' }, x.name), ' ', code(x.code), extra(x))))) : null);
+}
+
+function renderWorkAhead(built, nowMs) {
+  const v = workView(nowMs);
+  if (v.setAside) {
+    planDraft.write(null);
+    planDraft.aside = v.setAside === 'notice'; // the owner's own plan landing clears the draft silently (C)
+    planDraft.moved = null;
+    waMemo = null;
+    return renderWorkAhead(built, nowMs);
+  }
+  if (v.ready && !v.changed && planDraft.read()) planDraft.write(null); // moved back to the order it started from
+  waDay = v.today;
+  const body = [marker(), projectHeader(v.header.eyebrow, v.header.title, v.header.sub)];
+  body.push(h('p', { class: `sb-wa-state ${v.stateLine.kind}`, key: 'wa-state' }, v.stateLine.lead ? [h('b', {}, v.stateLine.lead), ' '] : null, h('span', {}, v.stateLine.rest)));
+  if (planDraft.aside) body.push(h('p', { class: 'sb-wa-notice', role: 'status', key: 'wa-aside' }, WA.setAside));
+  if (planDraft.failed) body.push(h('p', { class: 'sb-muted small', key: 'wa-nokeep' }, WA.draftNotKept));
+  body.push(h('section', { class: 'sb-wa-card', key: 'wa-card' }, h('p', { class: 'sb-wa-k' }, WA.cardTitle), h('p', { class: 'sb-wa-big' }, v.card),
+    h('p', { class: 'sb-muted small' }, WA.cardNote)));
+  if (v.orderLine) body.push(h('p', { class: 'sb-muted small sb-wa-order', key: 'wa-order' }, v.orderLine));
+  for (const name of v.unread) body.push(h('p', { class: 'sb-muted small' }, `${name}: its milestones are ${NOT_AVAILABLE}`));
+  body.push(v.rows.length ? h('ol', { class: 'sb-wa-plan', key: 'wa-plan', 'aria-label': 'Milestones in your order' }, v.rows.map((r) => waRow(v, r)))
+    : h('p', { class: 'sb-muted' }, 'No milestones to go'));
+  body.push(laterNode(v));
+  if (v.reached.length) body.push(foldList('reached', `${WA.reached} · ${v.reached.length}`, v.reached, (x) => [' ', h('span', { class: 'sb-muted small' }, x.date)]));
+  if (v.dropped.length) body.push(foldList('dropped', `${WA.dropped} · ${v.dropped.length}`, v.dropped, () => null));
+  for (const o of v.older) {
+    const b = built.find((x) => x.project === o.project);
+    const href = o.path && b && b.snap ? treeLink(o.project, b.snap.tree, o.path) : null;
+    body.push(h('section', { class: 'sb-wa-group', key: `wa-old:${o.project.name}` }, h('h2', { class: 'sb-h2' }, o.project.name),
+      h('p', {}, href ? ext(href, o.words) : o.words), h('p', { class: 'sb-muted small' }, WA.olderPipeline)));
+  }
+  if (v.notes.length && v.planner) {
+    body.push(h('p', { class: 'small' }, h('a', { href: go('p', v.planner, 'notes'), key: 'wa-notes' }, `Record notes (${v.notes.length})`)));
+  }
+  body.push(h('div', { class: 'sb-wa-bar', key: 'wa-bar' }, h('p', { class: 'sb-muted small', role: 'status' }, v.changed ? WA.changed : WA.noChanges), recordNode(v)));
+  // AC17's fallback for the plan, under the bar rather than in it, so the sticky bar stays one line high.
+  if (v.record.ok && v.record.link.copy) body.push(copyFallback(v.record.copyWords, v.record.link.copy, 'wa-record', 'Copy the plan'));
+  return h('section', { class: 'sb-screen sb-wa' }, body);
+}
+
+// ---------------------------------------------------------------------------
 // Moving about (AC56): routes, the sandbox's own history of screens, and where the focus goes.
 
 /**
@@ -1984,6 +2216,8 @@ function summaryNode(p, id, sm) {
  */
 export function parseRoute(hash) {
   const [r0, name, kind, ...rest] = routeParts(hash);
+  // AC24 (from 2026-10-18): Work ahead, across projects, a screen of its own.
+  if (r0 === 'work') return { key: 'work', screen: '#/work', kind: 'work', name: null, sheet: null };
   if (r0 !== 'p' || !name) return { key: 'home', screen: '#/', kind: 'home', name: null, sheet: null };
   const base = { name, sheet: null };
   if (kind === 'queue') return { ...base, key: `p/${name}/queue`, screen: go('p', name, 'queue'), kind, sheet: rest.length ? rest.join('/') : null };
@@ -2444,7 +2678,8 @@ export function startSandbox(opts = {}) {
   }, () => desk.signedOut);
   function draw() {
     const now = new Date(Date.now());
-    const built = CONFIG.projects.map((project) => {
+    waMemo = null;
+    const built = lastBuilt = CONFIG.projects.map((project) => {
       const box = safeBox(project.name, () => desk.model(project.name), desk.states.get(project.name), desk, now.getTime());
       if (box.drawError) return { project, box, error: new Error(box.drawError.replace(/^Can't show this project: /, '')) };
       try {
@@ -2497,8 +2732,20 @@ export function startSandbox(opts = {}) {
             h('p', { class: 'sb-stale' }, `Can't show this project: ${errorText(err)}`));
         }
       }
+    } else if (r.kind === 'work') {
+      try {
+        node = renderWorkAhead(built, now.getTime());
+      } catch (err) {
+        node = h('section', { class: 'sb-screen' }, marker(), projectHeader(WA.eyebrow, WA.title), h('p', { class: 'sb-stale' }, `Can't show Work ahead: ${errorText(err)}`));
+      }
     } else node = renderHome(desk, built, seen, now.getTime());
     show([tapBanner(), node]);
+    // AC24: after a move, focus stays on the control used.
+    if (planDraft.focus) {
+      const k = planDraft.focus;
+      planDraft.focus = null;
+      focusKey(k);
+    }
     // AC78: a cost tap opens that project's More detail at the line (a fold already drawn keeps its
     // state through the morph, so it is opened here), and brings the line into view.
     if (openMore && r.name === openMore) {
@@ -2577,7 +2824,12 @@ export function startSandbox(opts = {}) {
     }
   });
   // The 15-second tick (AC56) changes only the text that depends on the time, in place.
-  setInterval(() => { if (isVisible()) tick(view); }, 15_000);
+  setInterval(() => {
+    if (!isVisible()) return;
+    tick(view);
+    // Work ahead's today moves at ownerTimeZone's midnight, on this tick (AC24, step 1): every finish is redrawn.
+    if (nav.route.kind === 'work' && waDay && todayOf(Date.now(), TZ) !== waDay) render();
+  }, 15_000);
   boot(render, desk);
   return desk;
 }

@@ -135,9 +135,11 @@ test('J12: each of the answer\'s own errors — data null (the first message as 
 test('J12: the kept fields only — number, title, state, the times, head branch, merge commit, check state, and AC61\'s parts of the body; never the rest of the body', () => {
   const n = node(950, { body: '## What this means for you\nA paragraph.\n\nMilestone: MD3\n\n## Context\n- A fact (source: docs/PROJECT.md)\n\n## Why\nBecause.\n\n## Changes\nA SECRET-LOOKING LINE THE DESK NEVER KEEPS\n', checks: 'FAILURE' });
   const k = keptPull(n, 'FAILURE');
-  assert.deepEqual(Object.keys(k).sort(), ['checks', 'createdAt', 'head', 'job', 'mergeCommit', 'mergedAt', 'number', 'parts', 'state', 'title'],
-    'from 2026-10-17 the job\'s yes or no, never the merge commit\'s message');
+  assert.deepEqual(Object.keys(k).sort(), ['checks', 'createdAt', 'estimate', 'estimateLine', 'head', 'job', 'mergeCommit', 'mergedAt', 'number', 'parts', 'state', 'title'],
+    'from 2026-10-17 the job\'s yes or no, never the merge commit\'s message; from 2026-10-19 the estimate-only yes or no, never the paths');
   assert.equal(k.job, false);
+  assert.equal(k.estimate, false);
+  assert.equal(k.estimateLine, false, 'from build review round 1 (A): whether the Milestone: line is exactly AC60\'s, never the line itself');
   assert.deepEqual(k.parts, { milestone: { ids: ['MD3'] }, context: [{ fact: 'A fact', source: 'docs/PROJECT.md', exception: false }], why: ['Because.'] });
   assert.doesNotMatch(JSON.stringify(k), /SECRET-LOOKING|A paragraph|What this means/);
   for (const p of judgePulls(pullsAnswer()).pulls) assert.ok(!('body' in p), `#${p.number}: no body kept`);
@@ -430,7 +432,7 @@ test('J12 backoff: it lives in memory, so a page reload starts it again at 5 min
   assertWaits(at, [5, 10], 'after the reload: 5 again, then 10');
 });
 
-test('J12: a write that fails to the kept list\'s key (desk-pulls-v2) (the storage full) turns off that key only; the blob cache keeps being written and read', async () => {
+test('J12: a write that fails to the kept list\'s key (desk-pulls-v3) (the storage full) turns off that key only; the blob cache keeps being written and read', async () => {
   const backing = new Map();
   const failing = {
     getItem: (k) => (backing.has(k) ? backing.get(k) : null),
@@ -458,7 +460,7 @@ test('J12: a write that fails to the kept list\'s key (desk-pulls-v2) (the stora
   assert.ok(again.desk.cacheSize() > 10);
 });
 
-test('J12: what is kept on the device under the kept list\'s key (desk-pulls-v2) (a working store) holds no body text beyond AC61\'s parts, and is read again on the next load', async () => {
+test('J12: what is kept on the device under the kept list\'s key (desk-pulls-v3) (a working store) holds no body text beyond AC61\'s parts, and is read again on the next load', async () => {
   const backing = new Map();
   const st = { getItem: (k) => (backing.has(k) ? backing.get(k) : null), setItem: (k, v) => backing.set(k, String(v)), removeItem: (k) => backing.delete(k) };
   const r = sdRepo();

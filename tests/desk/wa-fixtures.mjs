@@ -92,10 +92,10 @@ export function memStore(init = {}) {
 }
 
 /** The sandbox's setup: Service-Desk at 77bfeae plus `extra` files, and Personal-Org-Operating-Model in poom/'s form. */
-export function waSetup({ extra = {}, sd = SD, poom = poomFiles(), projects = null } = {}) {
+export function waSetup({ extra = {}, sd = SD, poom = poomFiles(), projects = null, linkCap = CONFIG.linkCap } = {}) {
   const files = { ...j77Files(), ...extra };
   const repos = { 'Service-Desk': repo(files), 'Personal-Org-Operating-Model': repo(poom) };
-  return { config: { ...CONFIG, ownerTimeZone: TZ, projects: projects || [sd, POOM] }, repos };
+  return { config: { ...CONFIG, ownerTimeZone: TZ, linkCap, projects: projects || [sd, POOM] }, repos };
 }
 
 // ---------------------------------------------------------------------------

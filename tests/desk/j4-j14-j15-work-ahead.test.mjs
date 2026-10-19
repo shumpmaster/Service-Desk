@@ -369,3 +369,38 @@ test('J4 + J14 + J15: a project not set for planning reads none of them, and the
   assert.ok(v.rows.every((r) => r.estimate.words === 'Estimate: not available'));
   assert.deepEqual(finishes(v).map((x) => x[1]), [null, null, null, null, null, null]);
 });
+
+// Build review round 1, G: a `time` whose fields are no real moment is "not in that form" (J14).
+test('J14 (build review round 1, G): an impossible date or hour — 30 Feb, 31 Apr, 24:00, minute 60 — is malformed and named; a real leap day is read', () => {
+  for (const time of ['2026-02-30T17:00:00Z', '2026-04-31T17:00:00Z', '2026-10-18T24:00:00Z', '2026-10-18T12:60:00+00:00', '2026-02-29T12:00:00Z']) {
+    const [l] = parseEstimates(estLine('MD3', 1, 2, time));
+    assert.equal(l.ok, false, time);
+    assert.equal(l.why, 'its time is not a UTC time ending Z or +00:00', time);
+  }
+  assert.equal(parseEstimates(estLine('MD3', 1, 2, '2028-02-29T12:00:00Z'))[0].ok, true, '2028 is a leap year');
+  assert.equal(parseEstimates(estLine('MD3', 1, 2, '2026-10-18T12:00:00.250Z'))[0].ok, true, 'fractions of a second still read');
+  const v = viewOf({ extra: { [ESTIMATES_PATH]: [estLine('MD3', 3, 5), estLine('MD3', 1, 2, '2026-02-30T17:00:00Z')].join('\n') }, nowMs: NOW });
+  assert.ok(v.notes.includes('estimates line 2: its time is not a UTC time ending Z or +00:00'));
+  const md3 = v.rows.find((r) => r.code === 'MD3');
+  assert.match(md3.estimate.words, /about 3–5 days/);
+  assert.equal(md3.estimate.newer, true, 'its project and milestone read: "a newer estimate line could not be read"');
+});
+
+// Build review round 1, B: "Record plan" only once the reads are in and a milestone shows.
+test('J4 (build review round 1, B): with the milestone list unread, or no milestone to go, "Record plan" is off and no link is built; with everything read it is offered', () => {
+  const name = '2026-10-18T1130Z-01';
+  const extra = { [planPath(name)]: planText(name, ['M3A', 'MD3']) };
+  const unread = viewOf({ extra, nowMs: NOW, omit: ['docs/PROJECT.md'] });
+  assert.equal(unread.ready, false);
+  assert.deepEqual(unread.record, { ok: false, words: 'Record plan is off until your milestones are read' });
+  const planUnread = viewOf({ extra, nowMs: NOW, omit: [planPath(name)] });
+  assert.equal(planUnread.record.ok, false, 'the current plan not read yet');
+  assert.equal(planUnread.record.words, 'Record plan is off until your milestones are read');
+  const allReached = j77Files()['docs/PROJECT.md'].replace(/(\((?:MD1|MD2|MD3|M3A|M3B|M3C)\) · done when [^\n]*?)\n/g, '$1 · reached: 2026-10-18\n');
+  const none = viewOf({ extra: { 'docs/PROJECT.md': allReached }, nowMs: NOW });
+  assert.equal(none.rows.length, 0);
+  assert.equal(none.record.ok, false, 'no row: nothing to record');
+  const ok = viewOf({ extra, nowMs: NOW });
+  assert.equal(ok.record.ok, true);
+  assert.match(ok.record.body, /\| 1 \| Service-Desk \| M3A \|/);
+});

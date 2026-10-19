@@ -25,3 +25,7 @@ The Orchestrator's answer in the session: no blocking issues; the check confirms
 After mockup version 3:
 
 > I wanted Left to right lanes. Not vertical
+
+After mockup version 4:
+
+> I like option 1 - IF - thefont size and just general element size can be brought down. When im on mobile the text can be small because its closer to my face.

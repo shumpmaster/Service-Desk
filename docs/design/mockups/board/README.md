@@ -4,6 +4,32 @@ Screenshots of [../board.html](../board.html), the Orchestrator's proposal for t
 board (the owner's request of 19 Oct: [../../references/owner-request-2026-10-19-board.md](../../references/owner-request-2026-10-19-board.md)).
 Taken with Playwright Chromium at device scale 2, each one of a single labelled frame.
 
+## Version 5: option 1, smaller
+
+The owner picked option 1: "I like option 1 - IF - thefont size and just general element size can be brought
+down. When im on mobile the text can be small because its closer to my face." The page now shows option 1 only,
+with a one-line note that option 2 was not chosen (it stays in version 4's history). Behaviour is version 3's.
+
+- **Smaller on a phone:** top line 17px; lane headings 10px, in capitals; card titles 12px, clipped at four
+  lines; the small card line 10px; buttons drawn 27px tall with 11.5px text; tighter card padding and gaps.
+- **Tap areas:** every button, card and control keeps a real box at least 36px tall, with the small pill drawn
+  inside it, so a small button doesn't cause mis-taps. The page says so in a one-line note.
+- **Fits on screen:** all eight example cards show without scrolling at 414 × 896 (the last ends at 673px), and
+  at 360 × 740 too (at 718px).
+- **Contrast:** every piece of text is at least 4.5:1 in light and dark (lowest 4.78:1, the white on the coral
+  buttons). Small coral marks use a slightly deeper coral (#b8330c) in light mode to keep 4.5:1 on the page colour.
+
+| File | State | Viewport |
+|---|---|---|
+| board-360-v5.png | Five waiting, one kicked back, two done | 360 × 740 |
+| board-414-v5.png | The same | 414 × 896 |
+| board-dark-414-v5.png | The same, dark mode | 414 × 896 |
+| sheet-414-v5.png | A tap on a card opens its sheet: the whole title, why, the step and "Done ✓" | 414 × 896 |
+
+Checked for version 5 at 360, 414 and 1024, light and dark: nothing scrolls sideways; no control or card is
+under 36px; no text under 4.5:1; a touch long-press drag into Done works, as do the sheet's "Done ✓" from Kicked
+back, Undo, and #135's verdict bringing its Step 2 card; no script errors. Shots taken with `board.html?view=1`.
+
 ## Version 4: lanes left to right, two options to pick from
 
 The owner, after version 3: "I wanted Left to right lanes. Not vertical". On every width the lanes now run left

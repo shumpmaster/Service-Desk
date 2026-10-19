@@ -15,7 +15,7 @@ import { NOT_RECORDED, NOT_AVAILABLE, deskWords, standardWord, treeLink, pullLin
   queueView, hasWorkFiled, reachedDateWords } from './sandbox.js';
 import { entryShape, entryWords, parseWorkflowRuns, questionName, firstMilestoneLine, milestoneValue, cardMilestoneLine } from './records.js';
 import { dayKey, zonedToUtc } from './timefmt.js';
-import { checksMark, prBodyParts, pullRead, TOO_MANY_WORDS, ESTIMATE_MILESTONE } from './pulls.js';
+import { checksMark, prBodyParts, pullRead, TOO_MANY_WORDS } from './pulls.js';
 import { REVIEW_VERDICT_RE } from './j11.js';
 import { BOUNDARY_WORDS } from './model.js';
 
@@ -340,9 +340,9 @@ function reviewMark(ctx, n) {
  * `none (a rough estimate)`. Changed paths J12 has not read are not estimate-only.
  */
 export function estimateMerge(project, pr) {
-  if (!project || project.planning !== true || !pr || !pr.mergedAt || pr.estimate !== true) return false;
-  const ml = pr.parts && pr.parts.milestone;
-  return Boolean(ml && typeof ml.none === 'string' && `none (${ml.none})` === ESTIMATE_MILESTONE);
+  // The `Milestone:` line is matched whole and exactly (J12 keeps that yes or no, `estimateLine`):
+  // `none ( a rough estimate)` or `none (a rough estimate )` is another line, placed as any.
+  return Boolean(project && project.planning === true && pr && pr.mergedAt && pr.estimate === true && pr.estimateLine === true);
 }
 
 /** The pull requests J12 holds, by number, and why they are missing when they are. */

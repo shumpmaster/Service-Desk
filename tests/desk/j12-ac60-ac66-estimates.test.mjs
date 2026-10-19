@@ -69,7 +69,7 @@ test('J12 (estimates): one changed path, intake/estimates.jsonl, gives yes; two 
   for (const p of v.pulls) {
     assert.doesNotMatch(JSON.stringify(p), /intake\/estimates\.jsonl|later-work\.md|changedFiles|"files"/, `#${p.number}: no paths kept`);
   }
-  assert.deepEqual(Object.keys(keptPull(est(970), null)).sort(), ['checks', 'createdAt', 'estimate', 'head', 'job', 'mergeCommit', 'mergedAt', 'number', 'parts', 'state', 'title']);
+  assert.deepEqual(Object.keys(keptPull(est(970), null)).sort(), ['checks', 'createdAt', 'estimate', 'estimateLine', 'head', 'job', 'mergeCommit', 'mergedAt', 'number', 'parts', 'state', 'title']);
 });
 
 test('J12 (estimates): `files` null, missing, and a field error whose path ends in `files` or `changedFiles`, each give "not estimate-only" for every pull request, the rest of the answer used', () => {
@@ -207,5 +207,27 @@ test('AC66 (estimates): an estimate-only merge by the owner leaving the queue â€
     } finally {
       page.restore();
     }
+  }
+});
+
+// Build review round 1, A: the `Milestone:` line is compared whole, trimmed, against exactly
+// `none (a rough estimate)`; a space inside the brackets, or another letter case, is another line.
+test('AC60 (estimates; build review round 1, A): the exact match â€” `none ( a rough estimate)` and `none (a rough estimate )` are placed as any pull request; `none (a rough estimate)`, with spaces around the line, is the exception; `none (A rough estimate)` and `none  (a rough estimate)` are not', () => {
+  const cases = [
+    ['Milestone: none ( a rough estimate)\n', false],
+    ['Milestone: none (a rough estimate )\n', false],
+    ['Milestone: none (A rough estimate)\n', false],
+    ['Milestone: none  (a rough estimate)\n', false],
+    ['Milestone: none (a rough estimate)\n', true],
+    ['Milestone:   none (a rough estimate)  \t\n', true],
+  ];
+  let n = 980;
+  for (const [body, want] of cases) {
+    const kept = keptPull(est(++n, { body }), null);
+    assert.equal(kept.estimate, true, 'its only changed path is the estimates');
+    assert.equal(kept.estimateLine, want, JSON.stringify(body));
+    assert.equal(estimateMerge(PLANNER, kept), want, JSON.stringify(body));
+    const { feed } = feedOf(answerOf([est(n, { body })]));
+    assert.equal(ids(feed).includes(`PR #${n}`), !want, `${JSON.stringify(body)}: ${want ? 'off the Timeline' : 'placed as any pull request'}`);
   }
 });

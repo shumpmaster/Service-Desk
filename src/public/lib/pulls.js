@@ -102,16 +102,26 @@ export function contextBullet(text) {
  * context: null | [{ fact, source, exception }], why: null | [paragraph] }. Nothing else of the body
  * is kept (J12).
  */
+/**
+ * A body's `Milestone:` value as AC61 (c) finds it (the first such line after the opening paragraph),
+ * trimmed as a whole and nothing else: AC60's exact match reads it (from 2026-10-19). null with none.
+ */
+export function milestoneLineValue(body) {
+  const lines = String(body == null ? '' : body).replace(/\r\n?/g, '\n').split('\n');
+  for (let i = afterOpening(lines); i < lines.length; i++) {
+    const m = MILESTONE_RE.exec(lines[i]);
+    if (m) return m[1].trim();
+  }
+  return null;
+}
+
 export function prBodyParts(body) {
   const lines = String(body == null ? '' : body).replace(/\r\n?/g, '\n').split('\n');
   let milestone = null;
-  for (let i = afterOpening(lines); i < lines.length; i++) {
-    const m = MILESTONE_RE.exec(lines[i]);
-    if (!m) continue;
-    const v = m[1].trim();
+  const v = milestoneLineValue(body);
+  if (v != null) {
     const none = NONE_RE.exec(v);
     milestone = none ? { none: none[1].trim() } : { ids: v.split(', ').map((x) => x.trim()).filter(Boolean) };
-    break;
   }
   let context = null;
   const ctx = sectionOf(lines, 'context');
@@ -260,19 +270,24 @@ export function estimateOnly(n, unread = false) {
   return Boolean(f) && f.path === ESTIMATE_PATH;
 }
 
+/** Whether a body's `Milestone:` line, trimmed as a whole, is exactly `none (a rough estimate)` (AC60; no inner space or letter case forgiven). */
+export const estimateLine = (body) => milestoneLineValue(body) === ESTIMATE_MILESTONE;
+
 /**
  * A pull request as the page keeps it (J12, "What the page keeps"): never the rest of its body, and
  * of its merge commit's message only `job`, whether the merge is the asks-merge job's (from
  * 2026-10-17; left out when J12's answer gives no message, so the entry reads as one J12 has not read);
  * of its changed paths only `estimate`, whether it changes `intake/estimates.jsonl` only (from
- * 2026-10-19; never the paths). `filesUnread`: the answer's field error on its changed paths.
+ * 2026-10-19; never the paths); and `estimateLine`, whether its `Milestone:` line, trimmed as a whole,
+ * is exactly `none (a rough estimate)` (AC60's exact match, worked out here since the body is not
+ * kept). `filesUnread`: the answer's field error on its changed paths.
  */
 export function keptPull(n, checks, filesUnread = false) {
   const out = {
     number: n.number, title: n.title, state: n.state, mergedAt: n.mergedAt || null, createdAt: n.createdAt || null,
     head: typeof n.headRefName === 'string' ? n.headRefName : null,
     mergeCommit: n.mergeCommit && typeof n.mergeCommit.oid === 'string' ? n.mergeCommit.oid : null,
-    checks, parts: prBodyParts(n.body), estimate: estimateOnly(n, filesUnread),
+    checks, parts: prBodyParts(n.body), estimate: estimateOnly(n, filesUnread), estimateLine: estimateLine(n.body),
   };
   const job = isJobMerge(n.mergeCommit);
   if (job !== null) out.job = job;

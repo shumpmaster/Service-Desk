@@ -332,7 +332,10 @@ function foldButton(name, key, dflt, attrs, ...kids) {
       if (!e || (e.key !== 'Enter' && e.key !== ' ')) return;
       if (e.preventDefault) e.preventDefault();
       toggle();
-    } }, ...kids, h('span', { class: 'sb-fmark', 'aria-hidden': 'true' }, open ? '▾' : '▸'));
+    } }, ...kids, ` ${attrs && attrs.class || ''} `.includes(' v2-fold ')
+    // AC81: on mockup v2's screens the mark is an inline SVG icon, never ▸ as text (no served file holds it).
+    ? vi(open ? 'chevdown' : 'chev')
+    : h('span', { class: 'sb-fmark', 'aria-hidden': 'true' }, open ? '▾' : '▸'));
 }
 
 /**

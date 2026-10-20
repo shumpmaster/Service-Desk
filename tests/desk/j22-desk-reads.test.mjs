@@ -139,3 +139,32 @@ test('AC80: a mark waiting on a failed J20 read asks it at each poll in a blob c
   assert.equal(s.desk.j22('Alpha').headPolls({ number: 1, headSha: H(1) }), 5, 'the head\'s 5, and no more');
   assert.equal(s.desk.j22('Alpha').soloCalls.waited, 5);
 });
+
+test('J20 (2026-10-20): the blob `sha` kept for `reviews/<n>/<id>.md` files only, from the real #148 pages; a removed verdict file present no longer; a verdict file renamed away leaves its old path absent', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const { FIX } = await import('./helpers.mjs');
+  const { parseFilePages, verdictFiles } = await import('../../src/lib/prfiles.js');
+  const pages = [1, 2].map((p) => readFileSync(join(FIX, 'j22', `files-148-p${p}.json`), 'utf8'));
+  const fp = parseFilePages(pages);
+  assert.equal(fp.ok, true);
+  const withSha = fp.files.filter((f) => f.sha);
+  assert.ok(fp.files.length > 100, `${fp.files.length} files over two pages`);
+  assert.ok(withSha.every((f) => /^reviews\/\d+\/[a-z0-9-]+\.md$/.test(f.filename)), 'only verdict files keep their sha');
+  const raw = pages.flatMap((p) => JSON.parse(p));
+  for (const f of withSha) assert.equal(f.sha, raw.find((x) => x.filename === f.filename).sha, `${f.filename}: GitHub's blob sha`);
+  // Made up (NOT real): a removed verdict file, and one renamed away.
+  const made = parseFilePages([JSON.stringify([
+    { filename: 'reviews/9/owner.md', status: 'removed', sha: 'a'.repeat(40) },
+    { filename: 'reviews/9/reviewer.md', status: 'added', sha: 'b'.repeat(40) },
+    { filename: 'notes/old.md', status: 'renamed', previous_filename: 'reviews/9/design.md', sha: 'c'.repeat(40) },
+    { filename: 'src/x.js', status: 'modified', sha: 'd'.repeat(40) },
+  ])]);
+  assert.equal(made.files.find((f) => f.filename === 'src/x.js').sha, undefined);
+  const v = verdictFiles(made.files);
+  assert.deepEqual(Object.fromEntries(v), {
+    'reviews/9/owner.md': { present: false, sha: null },
+    'reviews/9/reviewer.md': { present: true, sha: 'b'.repeat(40) },
+    'reviews/9/design.md': { present: false, sha: null },
+  });
+});

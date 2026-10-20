@@ -381,3 +381,157 @@ test('AC14 (AC79): every head a job candidate in 5 projects, 288 head changes, 1
     }
   }
 });
+
+// From 2026-10-19 (AC80) and 2026-10-20 (desk mockup v2; A3's 9,817): the board's worst cases, on the
+// page's real scheduler. 5 v3 projects in the sandbox, 5 open pull requests each, every one needing a
+// reviewer's verdict by the made-up risk-paths file (NOT real records), each with its verdict file on
+// its branch; 288 head changes in the day, each a verdict commit (a new head, a new verdict file),
+// across the 10 openings. Case 1: every head's J20 read failing all day and a mark waiting on every
+// head (the page's setWaited each minute): at most 5 waited-read calls per head in an opening, none
+// after that bound. Case 2: J20 answering, one pull request a project whose verdict blob fails all
+// day: at most one verdict call per head in an opening, a failing head's retries inside its 5, the
+// failure costing only its own head's call; at most 16 blob calls in any one cycle for a project; at
+// most 3 owner-check heads a poll (J1's 11 + 3 + 16 = 30 is the function's test, j6-j8). Both: fewer
+// than 10,000 calls. J24's portfolio reads are stage 2's and not built yet, so not here.
+async function boardDay({ filesFail }) {
+  const { HEAD_POLLS } = await import('../../src/lib/scheduler.js');
+  const RISK = 'unmatched = "R1"\n[classes]\nR1 = ["src/**"]\nR0 = ["reviews/**"]\n[reviews]\nR0 = []\nR1 = ["reviewer"]\nR2 = ["reviewer"]\nR3 = ["reviewer", "owner"]\n';
+  const config = fiveProjects({ allV3: true });
+  const clock = fakeClock(DAY);
+  const repos = Object.fromEntries(config.projects.map((p) => [p.name, repoFor(p)]));
+  const NUMS = [41, 42, 43, 44, 45];
+  const gens = Object.fromEntries(config.projects.map((p) => [p.name, Object.fromEntries(NUMS.map((n) => [n, 0]))]));
+  const hex = (s) => createHashOf(s);
+  const headOf = (name, n) => hex(`head|${name}|${n}|${gens[name][n]}`);
+  const verdictOf = (name, n) => hex(`verdict|${name}|${n}|${gens[name][n]}`);
+  const failing = new Set();
+  const setPulls = (p) => {
+    const r = repos[p.name];
+    r.pulls = NUMS.map((n) => ({ number: n, title: `Made-up #${n}`, html_url: `https://github.com/${p.repo}/pull/${n}`, draft: false, base: { ref: 'main', repo: { private: false } },
+      head: { ref: `build/builder/x-${n}`, sha: headOf(p.name, n), repo: { full_name: p.repo } }, user: { login: 'shumpmaster' }, created_at: new Date(DAY - n * 60e3).toISOString(), state: 'open' }));
+    r.prFiles = Object.fromEntries(NUMS.map((n) => [n, [{ filename: `src/f${n}.js`, status: 'modified' }, { filename: `reviews/${n}/reviewer.md`, status: 'added', sha: verdictOf(p.name, n) }]]));
+    r.blobs = Object.fromEntries(NUMS.map((n) => [verdictOf(p.name, n), 'Verdict: PASS\n']));
+    r.blobFail = NUMS.filter((n) => n === 45).map((n) => verdictOf(p.name, n));
+    for (const v of r.blobFail) failing.add(v);
+    r.filesFail = filesFail ? [...NUMS] : [];
+  };
+  for (const p of config.projects) {
+    repos[p.name].commit({ 'governance/risk-paths.toml': RISK });
+    setPulls(p);
+  }
+  const server = fakeServer(repos, config, clock);
+  const openings = 10;
+  const windowMs = (16 * HOUR) / openings;
+  let prChanges = 0;
+  const perHead = new Map(); // `${opening}|${project}|${head}` → { waited, verdict }
+  const cycles = new Map(); // `${project}|${poll at}` → blob calls
+  const lastPoll = new Map();
+  let opening = 0;
+  let maxOwnerHeads = 0;
+  const shaToHead = new Map();
+  const waitedCalls = [];
+  const call = async (path, body) => {
+    const res = await server.call(path, body);
+    if (path === '/api/poll') {
+      lastPoll.set(body.project, clock.now());
+      maxOwnerHeads = Math.max(maxOwnerHeads, (body.ownerChecks || []).length);
+      return res;
+    }
+    if (path !== '/api/blobs') return res;
+    const ck = `${body.project}|${lastPoll.get(body.project)}`;
+    cycles.set(ck, (cycles.get(ck) || 0) + 1);
+    const r = repos[body.project];
+    const at = (n) => `${opening}|${body.project}|${r.pulls.find((x) => x.number === n).head.sha}`;
+    const solo = Array.isArray(body.files) && body.files.length === 1 && body.blobs.length === 0 && !body.pulls && !body.usage && (!body.history || body.history.length === 0);
+    if (solo && filesFail) {
+      const k = at(body.files[0]);
+      perHead.set(k, { ...(perHead.get(k) || { waited: 0, verdict: 0 }), waited: (perHead.get(k) || { waited: 0 }).waited + 1 });
+    }
+    const verdictShas = (body.blobs || []).filter((s) => shaToHead.has(s));
+    if (verdictShas.length && !body.files) {
+      const heads = new Set(verdictShas.map((s) => shaToHead.get(s)));
+      assert.equal(heads.size, 1, 'a verdict call holds one head\'s verdict blobs');
+      const k = `${opening}|${body.project}|${[...heads][0]}`;
+      perHead.set(k, { ...(perHead.get(k) || { waited: 0, verdict: 0 }), verdict: (perHead.get(k) || { verdict: 0 }).verdict + 1, failing: verdictShas.some((s) => failing.has(s)) });
+    }
+    return res;
+  };
+  const note = () => { for (const p of config.projects) for (const n of NUMS) shaToHead.set(verdictOf(p.name, n), headOf(p.name, n)); };
+  note();
+  for (let o = 0; o < openings; o++) {
+    opening = o;
+    const open = DAY + o * 2.4 * HOUR;
+    await clock.runUntil(open);
+    const desk = createDesk({ config, call, clock, store: createStore(null), isVisible: () => true, j11: true });
+    desk.start();
+    for (let m = 1; m * 60_000 <= windowMs; m++) {
+      await clock.runUntil(open + m * 60_000 - 30_000);
+      // A mark waits on every head's J20 read (the page tells the reader each minute).
+      if (filesFail) for (const p of config.projects) desk.setWaited(p.name, NUMS);
+      // 288 head changes, each a verdict commit: the 29th minute of every 3, in turn.
+      if (m % 3 === 0 && prChanges < 288 && prChanges < (o + 1) * 29) {
+        const p = config.projects[prChanges % 5];
+        const n = NUMS[Math.floor(prChanges / 5) % 5];
+        gens[p.name][n] += 1;
+        setPulls(p);
+        note();
+        prChanges += 1;
+      }
+      await clock.runUntil(open + m * 60_000);
+      // The reader's own count of each head's 5 (J20's retries, the waited reads, the verdicts' retries).
+      for (const p of config.projects) {
+        const j = desk.j22(p.name);
+        for (const pr of repos[p.name].pulls) {
+          const k = `${o}|${p.name}|${pr.head.sha}`;
+          const e = perHead.get(k) || { waited: 0, verdict: 0 };
+          e.hp = Math.max(e.hp || 0, j.headPolls({ number: pr.number, headSha: pr.head.sha }));
+          perHead.set(k, e);
+        }
+      }
+    }
+    for (const p of config.projects) waitedCalls.push({ opening: o, project: p.name, n: desk.j22(p.name).soloCalls.waited });
+    desk.stop();
+  }
+  return { calls: server.calls.length, perHead, cycles, prChanges, HEAD_POLLS, maxOwnerHeads, failing, waitedCalls };
+}
+const createHashOf = (s) => {
+  let h = 0n;
+  for (const c of s) h = (h * 131n + BigInt(c.codePointAt(0))) % (1n << 160n);
+  return h.toString(16).padStart(40, '0');
+};
+
+test('AC14 (AC80): a mark waiting on each of the 288 heads, every J20 read failing all day: at most 5 waited-read calls per head in an opening, none after; under 10,000 calls', async (t) => {
+  const d = await boardDay({ filesFail: true });
+  const heads = [...d.perHead.values()];
+  const waited = d.waitedCalls.reduce((a, x) => a + x.n, 0);
+  t.diagnostic(`AC14 (AC80, case 1): ${d.calls} calls, ${waited} waited-read calls over ${d.perHead.size} heads seen, ${d.prChanges} head changes`);
+  assert.equal(d.HEAD_POLLS, 5);
+  assert.ok(d.prChanges >= 280, `${d.prChanges} head changes`);
+  assert.ok(heads.length > 100);
+  // Each head's 5, the waited reads' and J20's own retries' together (the reader's own count); the
+  // solo calls beyond them are J20's own retry at its 5-minute wait, the existing cadence.
+  assert.ok(Math.max(...heads.map((x) => x.hp)) <= d.HEAD_POLLS, `at most 5 a head (${Math.max(...heads.map((x) => x.hp))})`);
+  assert.ok(heads.some((x) => x.hp === d.HEAD_POLLS), 'some heads spent their 5');
+  for (const w of d.waitedCalls) {
+    const seen = heads.filter((_, i) => [...d.perHead.keys()][i].startsWith(`${w.opening}|${w.project}|`)).length;
+    assert.ok(w.n <= d.HEAD_POLLS * seen, `${w.project} opening ${w.opening}: ${w.n} waited calls for ${seen} heads`);
+  }
+  assert.ok(waited > 0, 'the waited reads were made');
+  assert.ok(heads.every((x) => x.verdict === 0), 'with no J20 list, no verdict call');
+  assert.ok(d.calls < 10_000, `${d.calls} calls`);
+});
+
+test('AC14 (desk mockup v2): 5 pull requests a project with verdict files on their branches, 288 verdict commits, one verdict blob a project failing all day: at most one verdict call per head in an opening, the failing one\'s retries inside its 5; at most 16 blob calls a cycle; at most 3 owner-check heads a poll; under 10,000 calls', async (t) => {
+  const d = await boardDay({ filesFail: false });
+  const ok = [...d.perHead.values()].filter((x) => !x.failing);
+  const bad = [...d.perHead.values()].filter((x) => x.failing);
+  t.diagnostic(`AC14 (mockup v2, case 2): ${d.calls} calls, ${[...d.perHead.values()].reduce((a, x) => a + x.verdict, 0)} verdict calls over ${d.perHead.size} heads, the most blob calls in a cycle ${Math.max(...d.cycles.values())}`);
+  assert.ok(ok.length > 100 && bad.length > 10);
+  assert.ok(ok.every((x) => x.verdict === 1), 'one verdict call per head an opening sees');
+  // A failing head: its first call (which uses none of its 5), then its retries at J20's 5 minutes, inside its 5.
+  assert.ok(bad.every((x) => x.verdict >= 1 && x.verdict <= 1 + d.HEAD_POLLS), `a failing head's retries inside its 5 (${Math.max(...bad.map((x) => x.verdict))})`);
+  assert.ok(Math.max(...[...d.perHead.values()].map((x) => x.hp || 0)) <= d.HEAD_POLLS);
+  assert.ok(Math.max(...d.cycles.values()) <= 16, 'A3: 6 + 2 × 5 blob calls at most in a cycle');
+  assert.ok(d.maxOwnerHeads <= 3, `${d.maxOwnerHeads} owner-check heads in a poll`);
+  assert.ok(d.calls < 10_000, `${d.calls} calls`);
+});

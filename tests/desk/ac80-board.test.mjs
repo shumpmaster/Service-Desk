@@ -188,6 +188,12 @@ test('AC80: "Done ✓" in a sheet marks the card at once: it heads Done as "Conf
     assert.ok(app.text().includes(WORDS.device), 'the device line under Done');
     await app.go('#/');
     assert.match(app.text(), /7 waiting on you/, 'Home\'s line less the mark');
+    assert.deepEqual(byClass(app.view, 'sb-pill').map((x) => x.textContent), ['3 decisions · 4 to merge'], 'the tile\'s pill (AC48), less the mark');
+    await app.go('#/p/Example');
+    assert.deepEqual(byClass(app.view, 'sb-btn').map((x) => x.textContent), ['3 decisions · 4 to merge ›', 'Team: Waiting on you, the oldest for 3 h 11 min ›'],
+      'the Status screen\'s queue and team lines: the oldest now #127');
+    await app.go('#/p/Example/team');
+    assert.ok(app.text().includes('You · waiting on you: 7 in your queue'), 'the owner\'s tile on the Team screen (AC49)');
     await app.go('#/waiting');
     await app.tap(findAll(lane(app, 'done'), (e) => e.tag === 'button' && e.textContent === 'Undo')[0]);
     assert.ok(titles(app, 'wait').includes('Merge: the first rough estimates'), 'Undo: back in the lane it came from');

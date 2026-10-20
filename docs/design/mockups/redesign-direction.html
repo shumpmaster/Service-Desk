@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Redesign Direction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* The redesign direction from the design audit (docs/design/audit-2026-10-19.md §5 and §6), drawn as eight phone
+   frames at 414×896. Four text sizes (20, 15, 13, 11 px) and three weights (400, 600, 700); IBM Plex Sans with Plex
+   Mono for refs, ages and times. Colours: five neutrals (page, surface, line, ink, ink-2), one accent (vermilion:
+   "needs you" and your action, nothing else) and two status colours (green confirmed, crimson failing), all tokens. */
+:root, .theme-light {
+  --page: #ffffff; --surface: #f3f2ee; --line: #e2e0d9; --ink: #15161a; --ink2: #575a62;
+  --accent: #d23c0f; --green: #12733a; --crimson: #b3162a;
+  --scrim: rgb(21 22 26 / .45);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0d0e10; --surface: #1b1d21; --line: #2e3137; --ink: #eeece8; --ink2: #a4a7af;
+  --accent: #ff6a3d; --green: #4cc06a; --crimson: #ff6b78; --scrim: rgb(0 0 0 / .6); color-scheme: dark } }
+:root[data-theme="dark"], .theme-dark {
+  --page: #0d0e10; --surface: #1b1d21; --line: #2e3137; --ink: #eeece8; --ink2: #a4a7af;
+  --accent: #ff6a3d; --green: #4cc06a; --crimson: #ff6b78; --scrim: rgb(0 0 0 / .6); color-scheme: dark }
+/* Worked out wherever a theme is set, so a dark frame on a light page gets its own */
+:root, .theme-light, .theme-dark { --on-accent: var(--page); --tint: color-mix(in srgb, var(--accent) 7%, var(--page)); }
+:root {
+  --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --t-title: 700 20px/1.25 var(--font);
+  --t-body: 400 15px/1.45 var(--font);
+  --t-item: 600 13px/1.3 var(--font);
+  --t-meta: 400 11px/1.4 var(--font);
+  --t-label: 600 11px/1.4 var(--font);
+  --t-mono: 400 11px/1.4 var(--mono);
+  --hit: 36px;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { background: var(--page); color: var(--ink); }
+body { margin: 0; font: var(--t-body); overflow-x: hidden; }
+p, h1, h2, h3, h4, ol, ul { margin: 0; }
+ol, ul { list-style: none; padding: 0; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* The page around the frames */
+.wrap { max-width: 1340px; margin: 0 auto; padding: 24px max(16px, env(safe-area-inset-left, 0px)) 48px; display: grid; gap: 32px; }
+.intro { display: grid; gap: 12px; max-width: 680px; }
+.intro h1 { font: var(--t-title); }
+.intro p { color: var(--ink2); }
+.tag { justify-self: start; font: var(--t-label); color: var(--ink2); border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; }
+.frames { display: grid; gap: 40px 28px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 414px), 414px)); justify-content: center; align-items: start; }
+.fr { display: grid; gap: 8px; min-width: 0; }
+.fr > h2 { font: var(--t-item); }
+.fr > .cap { font: var(--t-meta); color: var(--ink2); min-height: 3em; }
+
+/* A phone: 414×896, the screen scrolls, the tab bar sits at the foot */
+.phone { position: relative; width: min(414px, 100%); height: 896px; overflow: hidden; background: var(--page); color: var(--ink); border: 1px solid var(--line); border-radius: 24px; font: var(--t-body); }
+.scr { position: absolute; inset: 0 0 64px 0; overflow-y: auto; overflow-x: hidden; padding: 20px 16px 24px; display: grid; gap: 16px; align-content: start; scrollbar-width: none; }
+.scr::-webkit-scrollbar { display: none; }
+.phone.short { height: 470px; }
+
+.hd { display: grid; gap: 4px; }
+.title { font: var(--t-title); }
+.trial { display: inline-block; vertical-align: 3px; margin-left: 6px; font: var(--t-label); color: var(--ink2); border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; line-height: 18px; }
+.meta { font: var(--t-meta); color: var(--ink2); }
+.mono { font: var(--t-mono); color: var(--ink2); }
+.acc { color: var(--accent); }
+.lh { font: var(--t-label); color: var(--ink2); display: flex; gap: 4px; align-items: baseline; flex-wrap: wrap; }
+.lh .n { color: var(--ink); }
+.body { font: var(--t-body); }
+
+/* Tab bar: three labelled tabs, quieter than the content; a badge on Waiting only */
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); background: var(--page); padding: 4px 8px 10px; }
+.tab { display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 48px; font: var(--t-label); color: var(--ink2); position: relative; }
+.tab svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.tab[aria-current="page"] { color: var(--ink); }
+.badge { position: absolute; top: 2px; left: calc(50% + 6px); min-width: 18px; height: 18px; border-radius: 9px; background: var(--accent); color: var(--on-accent); font: var(--t-label); line-height: 18px; text-align: center; padding: 0 5px; }
+
+/* Waiting: the board. Lanes left to right; cards have a fill, no border, no rule, no shadow */
+.lanes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: stretch; }
+.lane { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.lane .lh { min-height: 32px; align-content: start; padding: 0 2px; }
+.lane.done { border-left: 1px dashed var(--line); padding-left: 6px; }
+.card { background: var(--surface); border-radius: 8px; padding: 0 6px 2px; display: grid; min-width: 0; }
+.chead { display: grid; gap: 3px; padding: 8px 2px 2px; min-height: var(--hit); width: 100%; }
+.ct { font: var(--t-item); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: break-word; }
+.reason { background: var(--tint); border-radius: 4px; padding: 3px 5px; font: var(--t-meta); color: var(--ink); margin: 2px 0 0; }
+.hit { display: flex; align-items: center; min-height: var(--hit); width: 100%; }
+.pill { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 30px; border-radius: 6px; background: var(--accent); color: var(--on-accent); font: var(--t-item); }
+.ghost { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 30px; border-radius: 6px; border: 1px solid var(--line); color: var(--ink); font: var(--t-item); padding: 0 12px; }
+.drow { border-bottom: 1px solid var(--line); padding: 6px 2px 4px; display: grid; gap: 2px; min-width: 0; }
+.drow .dt { font: var(--t-item); color: var(--ink2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: break-word; }
+.drow.pend .dt { color: var(--ink); }
+.tick { color: var(--green); }
+.pend .tick { color: var(--ink2); }
+.drow .ghost { min-height: 28px; padding: 0 6px; }
+.donewide .drow { grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 12px; }
+.donewide .drow .mono.r { text-align: right; }
+
+/* The sheet: about 55% high, a grabber, one accent button */
+.scrim { position: absolute; inset: 0; background: var(--scrim); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; height: 55%; background: var(--page); border-radius: 16px 16px 0 0; padding: 8px 16px 16px; display: grid; gap: 12px; align-content: start; overflow: hidden; }
+.grab { justify-self: center; width: 36px; height: 5px; border-radius: 3px; background: var(--line); margin-bottom: 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { min-height: var(--hit); display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 1px solid var(--line); border-radius: 18px; font: var(--t-item); color: var(--ink); }
+.chip[aria-checked="true"] { border: 2px solid var(--ink); padding: 0 11px; }
+.chip .rec { font: var(--t-label); color: var(--ink2); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
+.row2 .hit { width: auto; }
+.more { min-height: var(--hit); display: inline-flex; align-items: center; padding: 0 4px; font: var(--t-item); color: var(--ink2); }
+
+/* Rows: glyph and word at the left, title and meta, one value at the right; hairlines between */
+.rows { display: grid; }
+.row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 2px 10px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--line); min-height: 44px; width: 100%; }
+.rows > li:first-child > .row { border-top: 1px solid var(--line); }
+.st { font: var(--t-label); color: var(--ink); white-space: nowrap; }
+.st.quiet { color: var(--ink2); }
+.rt { display: grid; gap: 2px; min-width: 0; }
+.it { font: var(--t-item); }
+.val { font: var(--t-label); color: var(--ink); text-align: right; max-width: 92px; }
+.val.mono { font-weight: 400; color: var(--ink2); }
+.row.two { grid-template-columns: minmax(0, 1fr) auto; }
+.nowdiv { display: flex; align-items: center; gap: 8px; font: 600 11px/1.4 var(--mono); color: var(--ink); padding: 12px 0 4px; letter-spacing: .04em; }
+.nowdiv::after { content: ""; flex: 1; border-top: 1.5px solid var(--ink); }
+.sec { display: grid; gap: 8px; }
+
+/* The project page */
+.back { min-width: var(--hit); min-height: var(--hit); display: inline-flex; align-items: center; font: var(--t-item); color: var(--ink2); margin: -8px 0 -4px -6px; padding: 0 6px; }
+.strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.seg { display: grid; gap: 4px; font: var(--t-meta); color: var(--ink2); }
+.seg::before { content: ""; height: 6px; border-radius: 3px; background: var(--line); }
+.seg.past::before { background: var(--ink2); }
+.seg.now { font: var(--t-label); color: var(--ink); }
+.seg.now::before { background: var(--ink); }
+.atwork { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; min-height: 44px; padding: 8px 12px; background: var(--surface); border-radius: 8px; font: var(--t-item); width: 100%; }
+
+/* Below the frames */
+.notes { display: grid; gap: 8px; max-width: 680px; }
+.notes h2 { font: var(--t-item); }
+.notes li { font: var(--t-meta); color: var(--ink2); }
+.notes ul { display: grid; gap: 4px; padding-left: 1.2em; list-style: disc; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="intro">
+    <span class="tag">Mockup · the redesign direction · from the design audit of 19 Oct · not built</span>
+    <h1>Waiting, Plan, Projects</h1>
+    <p>The audit's proposed shape, drawn: the approved board as the opening screen, across all projects, and one bar of three tabs. Four text sizes and three weights, IBM Plex Sans with Plex Mono for refs, ages and times, five neutrals, vermilion only for what needs you, green and crimson only for status. The items are real ones from 19 Oct, shown as examples: ages and times come from their GitHub records, as at 12:20 on 19 Oct (Chicago time); "checked 2 min ago" and the "At work now" line are examples.</p>
+  </div>
+
+  <div class="frames">
+    <section class="fr"><h2>1 · Waiting, the opening screen</h2><p class="cap">The board across all projects. One verb pill per card; the title is the count.</p>
+      <div class="phone theme-light" data-screen="waiting" data-tab="0"></div></section>
+    <section class="fr"><h2>2 · The card sheet</h2><p class="cap">About 55% high. A question's options are chips, the recommendation tagged and never picked for you; shown after you tap "Answer C".</p>
+      <div class="phone theme-light" data-screen="sheet" data-tab="0"></div></section>
+    <section class="fr"><h2>3 · Plan</h2><p class="cap">Work ahead: the milestones ahead in order, each with its rough finish. "Change order" brings the arrows and "Record plan".</p>
+      <div class="phone theme-light" data-screen="plan" data-tab="1"></div></section>
+    <section class="fr"><h2>4 · Projects</h2><p class="cap">One row per project, with a glyph only when something is kicked back or CI fails. Details sit at the foot.</p>
+      <div class="phone theme-light" data-screen="projects" data-tab="2"></div></section>
+    <section class="fr"><h2>5 · One project's page</h2><p class="cap">One sentence, the phase strip, who is at work, and the project's own milestones around the NOW line.</p>
+      <div class="phone theme-light" data-screen="project" data-tab="2"></div></section>
+    <section class="fr"><h2>6 · Details, at the foot of Projects</h2><p class="cap">A plain list, scrolled to: Agents and usage, Value targets, Record gaps, Notifications.</p>
+      <div class="phone theme-light short" data-screen="projects" data-tab="2" data-foot></div></section>
+    <section class="fr"><h2>7 · Waiting, all clear</h2><p class="cap">One sentence and when it was checked; the empty lanes collapse and today's Done stays. 19 Oct's real Done list.</p>
+      <div class="phone theme-light" data-screen="clear" data-tab="0"></div></section>
+    <section class="fr"><h2>8 · Waiting, dark</h2><p class="cap">Frame 1 in the phone's dark setting.</p>
+      <div class="phone theme-dark" data-screen="waiting" data-tab="0"></div></section>
+  </div>
+
+  <section class="notes">
+    <h2>What this draws from the audit</h2>
+    <ul>
+      <li>No "not recorded" lines, no standard milestones, no legends, no per-project tab bar; record ids only in mono meta lines.</li>
+      <li>One filled button per card, and one per sheet; every tap area at least 36 px.</li>
+      <li>A failed check reads differently from all clear: "Couldn't reach GitHub · last good check 13:12 · Retry", never "Nothing waiting".</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(() => {
+  const GH = 'https://github.com/shumpmaster/Service-Desk';
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const ICONS = {
+    Waiting: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h4l2 3h4l2-3h4"/><path d="M5 6h14l1 7v5H4v-5z"/></svg>',
+    Plan: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h1M4 12h1M4 18h1"/></svg>',
+    Projects: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z"/></svg>',
+  };
+  const tabbar = (active, badge) => `<nav class="tabbar" aria-label="Main">${['Waiting', 'Plan', 'Projects'].map((t, i) =>
+    `<a class="tab" href="#" ${i === active ? 'aria-current="page"' : ''}>${ICONS[t]}<span>${t}</span>${t === 'Waiting' && badge ? `<span class="badge">${badge}</span>` : ''}</a>`).join('')}</nav>`;
+
+  // Waiting: v5's eight example items, ages as at 12:20 on 19 Oct (Chicago) from their GitHub times
+  const card = (title, ref, age, verb, url, reason) => `<li class="card">
+    <button type="button" class="chead" aria-label="${esc(title)}: open"><span class="ct">${esc(title)}</span><span class="mono">Service-Desk${ref ? ` · ${ref}` : ''} · ${age}</span></button>
+    ${reason ? `<p class="reason">${esc(reason)}</p>` : ''}
+    <a class="hit" href="${url}" target="_blank" rel="noopener"><span class="pill">${verb} ↗</span></a></li>`;
+  const WAIT = [
+    card("Show the automatic job's pull requests as being recorded", '#135', '22 m', 'Verdict', `${GH}/pull/135`),
+    card("How should a question's card fill in your answer?", '', '43 m', 'Answer', `${GH}/blob/main/questions/P-001-board-answer.md`),
+    card('How long do finished cards stay in Done?', '', '43 m', 'Answer', `${GH}/blob/main/questions/P-001-board-done-keep.md`),
+    card('Make two notification files high-risk', '#130', '1 h 35 m', 'Verdict', `${GH}/pull/130`),
+    card('Approve the new wording of M3A?', '', '1 h 13 m', 'Answer', `${GH}/pull/129`),
+  ];
+  const KICK = [card('Merge: Work ahead (M3A)', '#128', '1 h 53 m', 'Merge', `${GH}/pull/128`, "GitHub doesn't show it merged yet")];
+  const drow = (title, ref, time, pend) => `<li class="drow${pend ? ' pend' : ''}"><p class="dt">${esc(title)}</p>
+    <p class="mono">${ref ? `${ref} · ` : ''}<span class="tick">✓</span> ${time}</p>${pend ? '<p class="meta">confirming with GitHub</p><button type="button" class="hit"><span class="ghost">Undo</span></button>' : ''}</li>`;
+  const DONE = [drow('Merge: the first rough estimates', '#126', '11:00', true), drow('Merge: your later-work list', '#127', '11:01')];
+  const waiting = () => `<div class="scr">
+      <header class="hd"><h3 class="title">5 waiting on you · 1 kicked back<span class="trial">Trial</span></h3>
+        <p class="meta">checked 2 min ago · examples from 19 Oct</p></header>
+      <div class="lanes">
+        <section class="lane"><h4 class="lh"><span class="acc" aria-hidden="true">◆</span>Waiting on you <span class="n">5</span></h4><ol class="sec">${WAIT.join('')}</ol></section>
+        <section class="lane"><h4 class="lh"><span class="acc" aria-hidden="true">↩</span>Kicked back <span class="n">1</span></h4><ol class="sec">${KICK.join('')}</ol></section>
+        <section class="lane done"><h4 class="lh">Done <span class="n">2</span></h4><ol>${DONE.join('')}</ol></section>
+      </div></div>${tabbar(0, 6)}`;
+
+  // The sheet for the question card (its options as put in questions/P-001-board-answer.md)
+  const OPTS = {
+    A: 'One button, you type the letter: "Answer" opens the answer file with everything filled in except the letter after "Ruling:".',
+    B: 'One button, recommended letter filled in: "Answer" opens it with the recommended letter already there; you change it if you disagree.',
+    C: 'One button per option: "Answer A", "Answer B" and so on, each opening a fully filled-in file; one tap and commit.',
+  };
+  const answerUrl = (l) => `${GH}/new/main?filename=${encodeURIComponent('decisions/questions/P-001-board-answer.md')}&value=${encodeURIComponent(`Ruling: ${l}\n\nQuestion: questions/P-001-board-answer.md\nMilestone: MD2\n`)}`;
+  const sheet = (pick) => `<div class="scrim"></div><div class="sheet" role="dialog" aria-label="How should a question's card fill in your answer?">
+      <span class="grab" aria-hidden="true"></span>
+      <h3 class="title">How should a question's card fill in your answer?</h3>
+      <p class="mono">Service-Desk · P-001-board-answer · waiting 43 m</p>
+      <p class="body">A question's card links to its answer file on GitHub. How much of that file is filled in for you?</p>
+      <div class="chips" role="radiogroup" aria-label="Your answer">${['A', 'B', 'C'].map((l) => `<button type="button" class="chip" role="radio" data-l="${l}" aria-checked="${l === pick}">Answer ${l}${l === 'C' ? ' <span class="rec">Rec.</span>' : ''}</button>`).join('')}</div>
+      <p class="meta" data-desc>${pick ? `${pick}: ${esc(OPTS[pick])}` : 'Tap the answer you choose.'}</p>
+      <a class="hit" data-go href="${pick ? answerUrl(pick) : '#'}" target="_blank" rel="noopener"><span class="pill">${pick ? `Answer ${pick} on GitHub ↗` : 'Answer on GitHub ↗'}</span></a>
+      <div class="row2"><button type="button" class="hit"><span class="ghost">Done ✓</span></button><button type="button" class="hit"><span class="ghost">Close</span></button><button type="button" class="more">More ▸</button></div>
+    </div>`;
+
+  // Plan: Service-Desk's milestones ahead (docs/PROJECT.md §3), in the project document's order; rough finishes
+  // from the Chief of Staff's estimates of 19 Oct (intake/estimates.jsonl), added up in order from 19 Oct
+  const msRow = (st, title, code, phase, val) => `<li><button type="button" class="row"><span class="st${st.q ? ' quiet' : ''}">${st.g}${st.w}</span>
+    <span class="rt"><span class="it">${esc(title)}</span><span class="mono">${code} · ${phase}</span></span><span class="val${val.m ? ' mono' : ''}">${val.t}</span></button></li>`;
+  const ACCEPT = { g: '<span class="acc" aria-hidden="true">◆ </span>', w: 'Accept' };
+  const DOING = { g: '<span aria-hidden="true">● </span>', w: 'In progress' };
+  const TODO = { g: '<span aria-hidden="true">○ </span>', w: 'Not started', q: true };
+  const AHEAD = [
+    msRow(ACCEPT, 'What a good desk looks like is known', 'MD1', 'Design', { t: 'once you accept it' }),
+    msRow(ACCEPT, "The desk's look and screens chosen", 'MD2', 'Design', { t: 'once you accept it' }),
+    msRow(DOING, 'The chosen design running on the real back end', 'MD3', 'Design', { t: '22–25 Oct', m: 1 }),
+    msRow(DOING, 'Work ahead planned from the desk', 'M3A', 'Build', { t: '23–28 Oct', m: 1 }),
+    msRow(TODO, "The desk's value targets shown", 'M3B', 'Build', { t: '27 Oct – 5 Nov', m: 1 }),
+    msRow(TODO, 'The desk live at the needs-you address', 'M3C', 'Launch', { t: '30 Oct – 11 Nov', m: 1 }),
+  ];
+  const plan = () => `<div class="scr">
+      <header class="hd"><h3 class="title">Plan<span class="trial">Trial</span></h3>
+        <p class="meta">Service-Desk's milestones ahead, in order. Rough finish from today, 19 Oct, from your Chief of Staff's estimates: an expectation, never a deadline.</p></header>
+      <ol class="rows">${AHEAD.join('')}</ol>
+      <ul class="rows"><li><button type="button" class="row two"><span class="rt"><span class="it">Later work, not milestones yet</span><span class="meta">Ask or jot box · Upkeep fixes</span></span><span class="val">2 ›</span></button></li></ul>
+      <button type="button" class="hit" style="width:auto;justify-self:start"><span class="ghost">Change order</span></button>
+    </div>${tabbar(1, 6)}`;
+
+  // Projects, with the Details list at the foot
+  const projects = () => `<div class="scr">
+      <header class="hd"><h3 class="title">Projects<span class="trial">Trial</span></h3><p class="meta">2 projects</p></header>
+      <ul class="rows">
+        <li><button type="button" class="row"><span class="st"><span class="acc" aria-hidden="true">↩ </span>1 back</span><span class="rt"><span class="it">Service-Desk</span><span class="meta">Next: the chosen design running on the real back end</span></span><span class="val">Design</span></button></li>
+        <li><button type="button" class="row"><span class="st quiet"></span><span class="rt"><span class="it">Personal-Org-Operating-Model</span><span class="meta">Sprint m1.4, the v3 build · nothing waiting</span></span><span class="val">Older pipeline</span></button></li>
+      </ul>
+      <section class="sec"><h4 class="lh">Details</h4>
+        <ul class="rows">
+          ${[['Agents and usage', 'Sessions, timelines and context windows'], ['Value targets', 'V1 to V5, with the time asked of you'], ['Record gaps', 'Fields the agents still have to fill in'], ['Notifications', 'Phone notifications and their setup']]
+            .map(([t, m]) => `<li><button type="button" class="row two"><span class="rt"><span class="it">${t}</span><span class="meta">${m}</span></span><span class="val">›</span></button></li>`).join('')}
+        </ul></section>
+    </div>${tabbar(2, 6)}`;
+
+  // One project's page: Service-Desk
+  const project = () => `<div class="scr">
+      <header class="hd"><a class="back" href="#" aria-label="Back to Projects">‹ Projects</a><h3 class="title">Service-Desk<span class="trial">Trial</span></h3></header>
+      <p class="body">Design, second time through. Next: the chosen design running on the real back end.</p>
+      <ol class="strip" aria-label="Phases"><li class="seg past">Discovery</li><li class="seg now">Design</li><li class="seg">Build</li><li class="seg">Launch</li></ol>
+      <button type="button" class="atwork"><span>At work now: the Orchestrator, on the redesign mockup <span class="meta">· example</span></span><span class="meta" aria-hidden="true">›</span></button>
+      <section class="sec"><h4 class="lh">Milestones</h4>
+        <ol class="rows">
+          <li><button type="button" class="row two"><span class="rt"><span class="it">3 reached</span><span class="meta">Every project's status visible on the phone · Cards answered straight from the desk · Agent usage shown on the desk</span></span><span class="val">▸</span></button></li>
+        </ol>
+        <p class="nowdiv">NOW · 19 OCT</p>
+        <ol class="rows">${AHEAD.join('')}</ol></section>
+    </div>${tabbar(2, 6)}`;
+
+  // All clear: 19 Oct's real Done list (Chicago times), the empty lanes collapsed
+  const clear = () => `<div class="scr">
+      <header class="hd"><h3 class="title">Nothing waiting on you<span class="trial">Trial</span></h3><p class="meta">checked 2 min ago · 2 projects</p></header>
+      <section class="sec donewide"><h4 class="lh">Done today <span class="n">7</span></h4>
+        <ol>${[['Show the automatic job\'s pull requests as being recorded', '#135', '12:28'], ['Approve the new wording of M3A?', 'recorded by the automatic job', '11:11'],
+          ['Make two notification files high-risk', '#130', '11:02'], ['Merge: Work ahead (M3A)', '#128', '11:01'], ['Merge: your later-work list', '#127', '11:01'], ['Merge: the first rough estimates', '#126', '11:00'],
+          ["Is the board mockup the direction for the desk's waiting-on-you screen?", 'recorded by the automatic job', '11:49']]
+          .sort((a, b) => b[2].localeCompare(a[2]))
+          .map(([t, r, h]) => `<li class="drow"><span class="rt"><span class="dt">${esc(t)}</span><span class="mono">${r}</span></span><span class="mono r"><span class="tick">✓</span> ${h}</span></li>`).join('')}</ol></section>
+    </div>${tabbar(0, 0)}`;
+
+  const SCREENS = { waiting, sheet: () => waiting() + sheet('C'), plan, projects, project, clear };
+  document.querySelectorAll('.phone').forEach((ph) => {
+    ph.innerHTML = SCREENS[ph.dataset.screen]();
+    if (ph.hasAttribute('data-foot')) { const s = ph.querySelector('.scr'); s.scrollTop = s.scrollHeight; }
+  });
+  // The sheet's chips: tap one to choose it; the one accent button then opens that answer, filled in
+  document.addEventListener('click', (e) => {
+    const c = e.target.closest('.chip');
+    if (!c) return;
+    const sh = c.closest('.sheet'), l = c.dataset.l;
+    sh.querySelectorAll('.chip').forEach((x) => x.setAttribute('aria-checked', String(x === c)));
+    sh.querySelector('[data-desc]').textContent = `${l}: ${OPTS[l]}`;
+    const go = sh.querySelector('[data-go]');
+    go.href = answerUrl(l);
+    go.querySelector('.pill').textContent = `Answer ${l} on GitHub ↗`;
+  });
+})();
+</script>
+</body>
+</html>

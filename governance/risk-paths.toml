@@ -38,3 +38,11 @@ R3 = ["reviewer", "owner"]
 
 # Domain reviewers (e.g. a security reviewer for auth and payments paths) are added per project,
 # with their roster row, agent file and a [paths."<glob>"] table here (v3 template, S-010).
+
+# Design (governance/domains/design/README.md): the page the owner sees. src/public/ is everything the
+# site serves. The page's modules are written in src/lib/ but served from byte-identical copies in
+# src/public/lib/, and the home-screen icons drawn by src/tools/icons.mjs are served from
+# src/public/icons/; src/tools/build.mjs fails a change whose copies are stale, so this one glob
+# also catches those changes. No `risk`: the domain adds a verdict, not a higher class.
+[paths."src/public/**"]
+reviews = ["design-reviewer"]

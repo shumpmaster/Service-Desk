@@ -14,4 +14,4 @@ DEFAULT: B   TIMEOUT: 48
 ## Context
 - M3A's done-when line (source: docs/PROJECT.md, the M3A line, reworded in pull request #133)
 - The build (source: pull request #128)
-- The owner said in the session on 2026-10-20 that they had tried Work ahead on the preview ("I did both of those to dos")
+- The owner said they had tried Work ahead on the preview: "I did both of those to dos" (source: session session_012RJPVKAoLga2RkqLYRDcBY, 2026-10-20)

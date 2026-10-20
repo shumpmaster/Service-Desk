@@ -3,7 +3,9 @@
 Screenshots of [../desk-v2.html](../desk-v2.html), drawn on 19 Oct from the owner's rulings of that day, with a
 Home tab added on 20 Oct at the owner's request (docs/design/references/owner-request-2026-10-20-home.md: "We got
 rid of the home page - im not sure i like that", then "Mock it up in the same style as the mockup you just showed
-me"). The bar on every frame is now **Home · Waiting · Plan**; the Projects tab is gone. It is a
+me"). The bar on every frame is now **Home · Waiting · Plan**; the Projects tab is gone. After seeing Home, the
+owner asked that its tiles "show the phases in a timeline form as well instead of just the one phase" (same file,
+"The owner's change after seeing Home"); frame H5 shows that. It is a
 mockup only: nothing is built. Linear's general look is the starting point, not a copy (the owner's words on
 [../linear-inspired.html](../linear-inspired.html)). Any frame opens alone at `desk-v2.html?frame=<id>`
 (`&theme=dark`, or `&full=1` for the whole length).
@@ -27,9 +29,10 @@ idea comes from inventory §5.
 
 | File | What it shows |
 |---|---|
-| H1-home-414.png, -360 | Home, opening first. (1) A briefing: "8 need you · 7 waiting, 1 kicked back · oldest 4 h · one question settles itself Wed 13:37 · one can't be undone", counted from frame 1's cards and saying it mixes real and example ones; one tap to Waiting. (2) "Since you last looked · 15:40" with "Mark as seen": the four newest of 11 lines, each a tap to where it happened (real for Service-Desk: the Chief of Staff's and the Reviewer's work on #148, answers #151/#152 recorded; one example idea), "7 more" one tap away. (3) One tile per project: phase (colour, icon, words), what waits (vermilion only when it needs the owner), who is at work, the next milestone with its rough finish |
+| H1-home-414.png, -360 | Home, opening first. (1) A briefing: "8 need you · 7 waiting, 1 kicked back · oldest 4 h · one question settles itself Wed 13:37 · one can't be undone", counted from frame 1's cards and saying it mixes real and example ones; one tap to Waiting. (2) "Since you last looked · 15:40" with "Mark as seen": the four newest of 11 lines, each a tap to where it happened (real for Service-Desk: the Chief of Staff's and the Reviewer's work on #148, answers #151/#152 recorded; one example idea), "7 more" one tap away. (3) One tile per project (full width, below the first screen: see H5) |
 | H2-home-dark-414.png, -360 | H1, dark |
 | H3-home-all-clear-414.png, -360 | A made-up moment with everything answered, said so on the frame: "Nothing needs you"; "since you last looked" and the tiles stay |
+| H5-home-tiles-414.png, -360 | Home scrolled to the tiles. Each tile has a compact timeline of the project's phases: Discovery · Design · Build · Launch · Done, left to right in time like the project page's strip. Run 1 is the top row; the later run branches onto a second row under the phase it went back to, joined by a short dashed drop, and the phases it went back over are lighter (trial-view notes 2, notes 1–2). Finished, now and ahead differ by icon (check, half-filled, dashed ring; a lighter check for gone back over; the vermilion diamond for Members Letter's Launch gate) and by line (solid, dashed), as well as by phase colour. The current phase is bold under the strip, and said in words: "Now: Design, run 2 · went back on 8 Oct, why not recorded". Members Letter (Example) is in Build, run 2. Personal-Org-Operating-Model's tile shows sprints m1.1–m1.4 in the same strip, labelled "sprints". Then what waits on you, who is at work, and the next milestone with its rough finish |
 | H4-home-portfolio-foot-414.png, -360 | Home scrolled to its foot: the last tiles, then "Across your projects · read only" (the cap, decisions across projects, the scorecard, model versions, the rare parts), moved here from the foot of Projects |
 | 1-waiting-414.png, -360 | Waiting: one board, three lanes at once, each project's cards together under its name. Quiet lines above: "With the agents: 2" and "Nothing waiting: Personal-Org-Operating-Model". Service-Desk's real verdict and question; Members Letter's gate card (Critic, user representative, four choice buttons), a question that can't be undone, a deploy, a spend alert and a verdict; one card kicked back; Done for the last 24 hours, with one card still "Confirming with GitHub" (step button and Undo) |
 | 2-waiting-one-project-414.png | After a tap on "Service-Desk": only its cards; the chip's ✕ shows all three projects again |
@@ -67,7 +70,10 @@ All rulings are in decisions/questions/. Where two disagree, the later one is fo
   to know all the agents that are working, what they're working on, why they're working on it, what has
   changed"), with a "Mark as seen" control and the since-time; each line opens where it happened.
 - **One tile per project on the front page**, everything about it inside its tile (P-001-design-lab-1.md, ruling 6),
-  with its README summary (P-001-trial-view-notes-1.md, note 1). The board stays one board across projects, as
+  with its README summary (P-001-trial-view-notes-1.md, note 1). Each tile's phases are drawn as a timeline, not
+  only the current phase (the owner's change of 20 Oct), in phase colours with icons (P-001-redesign-conflicts.md,
+  answer 4), branching for a later run (P-001-trial-view-notes-2.md, notes 1–2), left to right like the phase strip
+  on the project page. The board stays one board across projects, as
   P-001-board-scope.md (C) later ruled.
 - **One board, grouped by project**, a tap on a project's name to show only it (P-001-board-scope.md, C).
 - **Three lanes at once, small text** (P-001-board-layout.md, A: "the text can be small because its closer to my
@@ -133,6 +139,9 @@ All rulings are in decisions/questions/. Where two disagree, the later one is fo
    *Recommendation: full width* while each tile carries four facts. This goes against note 3, so it is the owner's call.
 1c. **The README summary on each Home tile** (notes-1, note 1) adds two lines per tile. *Recommendation: keep it*;
    it is the only line that says what each project is.
+1e. **The tile's timeline is drawn left to right in time**, like the project page's strip, with run 2 branching
+   down. The bottom-up rule (notes-2, note 15) covers vertical lists, and a horizontal strip has no "up".
+   *Recommendation: keep it left to right*, so the tile and the project page read the same way.
 1d. **How many "since you last looked" lines before "more"?** Shown: four, so the tiles start on the first screen at
    414 px. *Recommendation: four.*
 2. **Technical, Context and Why: keep the labels' own colours (7a), or grey (7b)?** Not ruled
@@ -156,14 +165,14 @@ All rulings are in decisions/questions/. Where two disagree, the later one is fo
 ## Checks
 
 Playwright with Chromium (`/opt/pw-browsers`), each frame opened alone at 414×896 and 360×740 (frame 7c is a
-screenshot and isn't measured): 38 captures with the Home frames and the full-length Timelines, plus the gallery
+screenshot and isn't measured): 40 captures with the Home frames and the full-length Timelines, plus the gallery
 at 360 and 1280. The headless
 browser can't reach Google Fonts here, so the capture served the same IBM Plex files, fetched beforehand with
 curl. Fonts were confirmed loaded in every capture; the page itself loads them from Google Fonts.
 
 | Check | Result |
 |---|---|
-| Sideways scroll at 360 and 414 (page, every screen and sheet) | none: 0 px in all 38 captures and the gallery |
+| Sideways scroll at 360 and 414 (page, every screen and sheet) | none: 0 px in all 40 captures and the gallery |
 | Tap areas (WCAG 2.5.8, 24 px; links inline in text excepted) | smallest 26 px (the gate card's four buttons); board buttons and "Mark as seen" 28 px; rows 40–44 px; tabs 52 px |
 | Close controls | 44 × 44 px on every sheet |
 | Text contrast (each text element against its effective background, light and dark) | all ≥ 4.5:1; lowest 4.51:1 ("Context", dusty rose, 7a only); next lowest 5.18:1; dark mode lowest 6.69:1; text-box placeholder 4.83:1 |

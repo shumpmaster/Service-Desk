@@ -22,3 +22,7 @@ Alternatives offered: tiles only; or no Home tab, with a one-line briefing above
 ## The owner's answer
 
 > Mock it up in the same style as the mockup you just showed me
+
+## The owner's change after seeing Home (2026-10-20)
+
+> the only thing i would change is that the tiles on the home page need to show the phases in a timeline form as well instead of just the one phase? Make that change - then i will answer your questions again

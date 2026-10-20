@@ -174,6 +174,9 @@ export function createDesk(opts) {
     if (!waitsStore || !waitsKept) return;
     if (!waitsStore.setJSON(WAITS_KEY, waits)) waitsKept = false;
   };
+  // A store that reads but refuses writes (a full quota, some private modes) can't keep the counts
+  // either: a write at the opening finds out before any waited read is decided (round 2, N3).
+  saveWaits();
   if (store && store.remove) for (const k of OLD_BLOB_CACHE_KEYS) store.remove(k);
   const blobCache = new Map(Object.entries((store && store.getJSON(BLOB_CACHE_KEY, {})) || {}));
   const historyCache = new Map(Object.entries((store && store.getJSON(HISTORY_CACHE_KEY, {})) || {}));
@@ -924,6 +927,7 @@ export function createDesk(opts) {
       if (!tried || tried.headSha !== pr.headSha || tried.poll === st.polls) continue; // not a failed read, or tried this poll
       if (headPolls(st, pr) >= HEAD_POLLS) continue;
       usePoll(st, pr);
+      if (!waitsKept) return; // its count could not be written: no waited read (AC80)
       st.j22.waitedCalls++;
       st.j22.lastSolo++;
       const { res } = await blobCall(st, { byPath: new Map() }, { blobs: [], history: [], compare: [], files: [pr.number] });

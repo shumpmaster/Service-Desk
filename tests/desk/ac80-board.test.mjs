@@ -873,3 +873,51 @@ test('AC80 with Part A item 5 (stage 1a\'s build review, round 1, F3): before th
     app.restore();
   }
 });
+
+test('AC80 with Part A item 5 (stage 1a\'s build review, round 2, N1 and F3-r2): with the board filtered to one project not read yet or not readable, the small line under the lanes gives no count — before the first read, with every project down, and with only that project down', async () => {
+  const smallLine = (app) => byClass(app.view, 'v2-qsmall')[0].textContent;
+  const noZero = (app, why) => {
+    assert.doesNotMatch(byClass(app.view, 'v2-quiet')[0].textContent, /\d/, `${why}: no count in the quiet line`);
+    assert.doesNotMatch(byClass(app.view, 'v2-lanes')[0].textContent, /\b0\b|Nothing here/, `${why}: none in the lanes`);
+  };
+  // Before the first read.
+  let app = await loadSandbox({ config: { ...CONFIG, projects: [EX, v3('Alpha')] }, repos: { Example: exampleRepo(), Alpha: fullRepo('Alpha') }, hash: '#/waiting/Example', now: NOW });
+  try {
+    assert.equal(smallLine(app), 'With the agents: not read yet · Being recorded by the automatic job: not read yet');
+    noZero(app, 'pre-read');
+    assert.equal(findAll(byClass(app.view, 'v2-qsmall')[0], (e) => e.tag === 'button').length, 0, 'no fold to open');
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    assert.equal(smallLine(app), 'With the agents: 0 · Being recorded by the automatic job: 0', 'read: its real counts');
+  } finally {
+    app.restore();
+  }
+  // Every project down.
+  const a = exampleRepo();
+  const b = fullRepo('Alpha');
+  a.fail = { kind: 'network' };
+  b.fail = { kind: 'network' };
+  app = await loadSandbox({ config: { ...CONFIG, projects: [EX, v3('Alpha')] }, repos: { Example: a, Alpha: b }, hash: '#/waiting/Example', now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    assert.equal(smallLine(app), "With the agents: can't read · Being recorded by the automatic job: can't read");
+    noZero(app, 'all down');
+  } finally {
+    app.restore();
+  }
+  // Only that project down, the other read.
+  const c = fullRepo('Alpha');
+  c.fail = { kind: 'network' };
+  app = await loadSandbox({ config: { ...CONFIG, projects: [EX, v3('Alpha')] }, repos: { Example: exampleRepo(), Alpha: c }, hash: '#/waiting/Alpha', now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    assert.equal(smallLine(app), "With the agents: can't read · Being recorded by the automatic job: can't read");
+    noZero(app, 'one down');
+    await app.go('#/waiting/Example');
+    assert.equal(smallLine(app), 'With the agents: 0 · Being recorded by the automatic job: 0', 'the read project: its counts');
+  } finally {
+    app.restore();
+  }
+});

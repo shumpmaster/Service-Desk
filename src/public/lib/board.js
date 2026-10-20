@@ -191,7 +191,7 @@ export function projectCards(input) {
     const w = flaggedWait(project.name, f);
     const id = w ? w.key : `${project.name}|${f.key}`;
     const raisedAt = row.raisedAt != null ? row.raisedAt : null;
-    const base = { id, key: f.key, project: project.name, title: '', raisedAt, flag: f, mark: null, failing: null, why: null, note: null,
+    const base = { id, key: f.key, project: project.name, title: '', raisedAt, flag: f, mark: null, why: null, note: null,
       meta: [], buttons: [], critic: null, userRep: null };
     if (f.kind === 'pr') {
       const pr = f.pr;
@@ -209,7 +209,7 @@ export function projectCards(input) {
       cards.push({ ...base, kind: 'pr', kindWord: KIND_WORDS.pr, title: pr.title, number: pr.number, headSha: pr.headSha, headRef: pr.head,
         meta: [`#${pr.number}`, cls].filter(Boolean), why: s.why, note: s.note || null, step, buttons: [step],
         check: oc.read ? oc.description : null, reading: s.reading === true, changes: s.changes === true,
-        failing: null, judge: s, link: pr.url });
+        judge: s, link: pr.url });
       continue;
     }
     if (f.kind === 'question') {

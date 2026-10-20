@@ -176,7 +176,7 @@ test('AC62 + AC81: mockup v2\'s block is the stylesheet\'s last part, so every r
   const sels = [...after.matchAll(/(^|\n)([^{}\n@][^{}]*)\{/g)].map((m) => m[2].trim()).filter((x) => !/^(from|to|\d+%)$/.test(x));
   assert.ok(sels.length > 50, `${sels.length} rules`);
   for (const sel of sels) {
-    for (const one of sel.split(/\s*,\s*/)) assert.match(one, /^(\.v2-|\.v2( |$)|html\.sb \.v2|html\.sb\.v2-page|html\.sb body|html\.sb\[data-theme="dark"\] \.v2|html\.sb\[data-theme="dark"\]\.v2-page|:root|html\.sb:not)/, `${one}: a mockup v2 rule only`);
+    for (const one of sel.split(/\s*,\s*(?![^(]*\))/)) assert.match(one, /^(\.v2-|\.v2( |$)|:where\(\.v2\) |html\.sb \.v2|html\.sb\.v2-page|html\.sb body|html\.sb\[data-theme="dark"\] \.v2|html\.sb\[data-theme="dark"\]\.v2-page|:root|html\.sb:not)/, `${one}: a mockup v2 rule only`);
   }
 });
 

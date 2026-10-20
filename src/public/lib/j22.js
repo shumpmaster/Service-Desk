@@ -534,12 +534,17 @@ export function prStep(pr, ctx, last = null) {
   const neededBefore = (a.state === 'known' && a.needs) || (oc.read && oc.state === 'pending' && oc.description.startsWith(VERDICT_NEEDED))
     || Boolean(last && last.number === pr.number && last.needed);
   const check = oc.read ? oc.description : null;
-  const keep = { number: pr.number, head: pr.headSha, a: a.state === 'known' ? { ...a, list: null } : a, needed: neededBefore };
+  // Rule 7 keeps the owner's verdict too: once the owner's file is on the branch, a new head whose
+  // list is not read yet keeps that verdict, never "Verdict ↗" again (GitHub's new-file page would
+  // refuse a file that exists; J22's rule 1).
+  const sameLast = last && last.number === pr.number;
+  const own = list.state === 'read' ? verdictWord(pr, OWNER, list, ctx) : sameLast && last.own ? last.own : null;
+  const keep = { number: pr.number, head: pr.headSha, a: a.state === 'known' ? { ...a, list: null } : a, needed: neededBefore,
+    own: own && own.where === 'branch' ? { ...own } : null };
   const out = (step, why, extra = {}) => ({ step, why, check, twoStep: 0, reading: false, verdictLink: false, keep, ...extra });
   // Rule 1: the owner's verdict, on its branch, or as GitHub's check reads it.
   if (oc.read && oc.state === 'failure' && oc.description.startsWith(CHANGES)) return out('open', WHY.changes, { changes: true });
   if (oc.read && oc.state === 'success' && oc.description.startsWith(APPROVED)) return out('merge', null, { twoStep: 2, note: STEP2_NOTE });
-  const own = list.state === 'read' ? verdictWord(pr, OWNER, list, ctx) : null;
   if (own && own.where === 'branch') {
     if (own.word === 'unread') return out('open', WHY.reading, { reading: true, failed: own.failed === true, sha: own.sha });
     if (own.word === 'PASS') return out('merge', null, { twoStep: neededBefore ? 2 : 0, note: STEP2_NOTE });

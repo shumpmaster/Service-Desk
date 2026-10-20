@@ -240,3 +240,71 @@ test('AC81: no rule on the new screens sets a width wider than 360 px outside a 
     for (const v of px) assert.ok(v <= 360 || m[1] === 'max-width', `${m[1]}: ${m[2]}`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// The cascade (the design reviewer's F1, stage 1a's build review, round 1): the fake DOM has no
+// cascade, so the stylesheet is read for rules that could out-rank mockup v2's classes.
+
+/** A selector's specificity [ids, classes, elements]; :where() counts nothing, :is() and :not() their weightiest argument. */
+function specificity(sel) {
+  let s = sel;
+  let extra = [0, 0, 0];
+  const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+  const top = (list) => list.split(/,(?![^(]*\))/).map((x) => specificity(x.trim())).reduce((m, x) => (cmp(x, m) > 0 ? x : m), [0, 0, 0]);
+  for (;;) {
+    const m = /:(where|is|not)\(((?:[^()]|\([^()]*\))*)\)/.exec(s);
+    if (!m) break;
+    if (m[1] !== 'where') extra = add(extra, top(m[2]));
+    s = s.slice(0, m.index) + s.slice(m.index + m[0].length);
+  }
+  const ids = (s.match(/#[\w-]+/g) || []).length;
+  const classes = (s.match(/\.[\w-]+|\[[^\]]*\]|:(?!:)[\w-]+/g) || []).length;
+  const els = (s.replace(/\[[^\]]*\]/g, '').match(/(^|[\s>+~])[a-z][\w-]*|::[\w-]+/gi) || []).length;
+  return add(extra, [ids, classes, els]);
+}
+const cmp = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+
+test('AC81 (stage 1a\'s build review, round 1, F1): no rule that reaches mockup v2\'s buttons, links and paragraphs by their element alone out-ranks a v2 class — the resets carry no weight, so the board\'s and the sheet\'s own classes set their type, colour, padding and background', () => {
+  assert.deepEqual(specificity('.v2 button'), [0, 1, 1]);
+  assert.deepEqual(specificity(':where(.v2) button'), [0, 0, 1]);
+  assert.deepEqual(specificity('html.sb a:where(:not(.v2 *))'), [0, 1, 2]);
+  assert.deepEqual(specificity('.v2-tab[aria-current="page"]'), [0, 2, 0]);
+  const PROPS = /(^|;)\s*(font|font-size|font-weight|color|background|background-color|padding[\w-]*|border[\w-]*|margin[\w-]*|list-style|text-decoration)\s*:/;
+  const rules = [...CSS.replace(/@media[^{]*\{/g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1].trim(), body: m[2] }));
+  const offenders = [];
+  for (const r of rules) {
+    if (r.sel.startsWith('@') || !PROPS.test(r.body)) continue;
+    for (const one of r.sel.split(/\s*,\s*(?![^(]*\))/)) {
+      const parts = one.split(/\s*[\s>+~]\s*(?![^(]*\))/);
+      const subject = parts.pop();
+      // Only the scopes that reach every element of mockup v2's screens; a rule inside a container class
+      // of its own (".sb-why p", ".v2-ql b") reaches only that container's elements, as it means to.
+      if (!parts.every((x) => /^(html|html\.sb|body|html\.sb body|\.v2|:where\(\.v2\)|\*)$/.test(x))) continue;
+      // A subject with a class, an id or an attribute of its own reaches only its own elements.
+      if (/[.#[]/.test(subject.replace(/:(where|is|not)\([^)]*\)/g, ''))) continue;
+      if (!/^(a|button|p|h[1-6]|ol|ul|li|b|strong|summary|details|span|svg|textarea)\b/.test(subject)) continue;
+      if (/:not\(\.v2 \*\)/.test(one)) continue; // stops at mockup v2's screens
+      if (cmp(specificity(one), [0, 1, 0]) >= 0) offenders.push(`${one} ${JSON.stringify(specificity(one))}`);
+    }
+  }
+  assert.deepEqual(offenders, [], 'element rules that would out-rank a single v2 class');
+  // And the classes themselves set what the frames draw (AC80; AC81 as settled after round 1).
+  const rule = (sel) => (rules.find((r) => r.sel === sel) || { body: '' }).body;
+  assert.match(rule('.v2-grp'), /font: var\(--t-label\)/, 'a group\'s name 500 11 px');
+  assert.match(rule('.v2-ql'), /font: var\(--t-small\)/, 'a quiet line 400 12 px');
+  assert.match(rule('.v2-undo'), /font: var\(--t-label\)/, '"Undo" 500 11 px');
+  assert.match(rule('.v2-more'), /font: var\(--t-label\)/, '"<n> more" 500 11 px');
+  assert.match(rule('.v2-step'), /font: var\(--t-label\)/, 'a board button 500 11 px');
+  assert.match(rule('.v2-x44'), /background: var\(--chip\)/, 'the sheet\'s close on the --chip circle');
+  assert.match(rule('.v2-abtn'), /padding: 0 12px; border-radius: 18px; background: var\(--chip\)/, '"Done ✓" a pill');
+  assert.match(rule('.v2-abtn.ghost'), /box-shadow: inset 0 0 0 1px var\(--line2\); background: var\(--bg\)/, '"Close" a pill, outlined');
+});
+
+test('AC81 (settled after round 1, F2): text no frame draws takes the nearest role — the record fold\'s headings --t-row, the rest --t-body; the sandbox\'s marker on mockup v2\'s screens --t-label', () => {
+  assert.match(CSS, /\n\.v2-sheet \.sb-record :is\(h1, h2, h3, h4, h5, h6\) \{ font: var\(--t-row\);/);
+  assert.match(CSS, /\n\.v2-sheet \.sb-record \{ font: var\(--t-body\);/);
+  assert.match(CSS, /\n\.v2 \.sb-marker \{ font: var\(--t-label\);/);
+  // Nothing else in the sheet's record sets a size of its own after these.
+  const after = CSS.slice(CSS.indexOf('.v2-sheet .sb-record :is('));
+  assert.doesNotMatch(after, /\.sb-record[^{]*\{[^}]*font(-size)?: (?!var\(--t-(row|body)\))/);
+});

@@ -7,7 +7,8 @@
 // join-test: S-001/J20 (the verdict files' blob `sha`, kept for J22's reads).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createDesk, POLL_MS, FILES_RETRY_MS, HEAD_POLLS } from '../../src/lib/scheduler.js';
+import { createDesk, POLL_MS, FILES_RETRY_MS, HEAD_POLLS, WAITS_KEY } from '../../src/lib/scheduler.js';
+import { createStore } from '../../src/lib/store.js';
 import { CONFIG, fakeClock, NOW } from './helpers.mjs';
 import { repo, pr, fakeServer, gitSha } from './fake-desk.mjs';
 import { RISK_PATHS_PATH } from '../../src/lib/j22.js';
@@ -18,15 +19,22 @@ const RISK = 'unmatched = "R1"\n[classes]\nR3 = [".claude/**"]\nR1 = ["src/**"]\
 const H = (n) => `${String(n).padStart(3, '0')}${'d'.repeat(37)}`;
 const V = (c) => c.repeat(40);
 
-function setup({ pulls, files = {}, priv = false, extraFiles = {}, project = v3('Alpha') } = {}) {
+/** A browser's local storage in memory (`refuse`: every call throws), shared across openings. */
+function backing({ refuse = false } = {}) {
+  const m = new Map();
+  const no = () => { throw new Error('storage refused'); };
+  return { m, getItem: refuse ? no : (k) => (m.has(k) ? m.get(k) : null), setItem: refuse ? no : (k, v) => { m.set(k, String(v)); }, removeItem: refuse ? no : (k) => { m.delete(k); } };
+}
+
+function setup({ pulls, files = {}, priv = false, extraFiles = {}, project = v3('Alpha'), waits = backing(), at = NOW } = {}) {
   const r = repo({ [RISK_PATHS_PATH]: RISK, 'README.md': '# Alpha\n\nA project.\n', ...extraFiles },
     pulls.map(([n, created]) => pr(n, `PR ${n}`, { headRepo: project.repo, sha: H(n), createdAt: created, private: priv })));
   r.prFiles = files;
   const config = { ...CONFIG, projects: [project] };
-  const clock = fakeClock(NOW);
+  const clock = fakeClock(at);
   const server = fakeServer({ [project.name]: r }, config, clock);
-  const desk = createDesk({ config, call: (p, b) => server.call(p, b), clock, store: null, isVisible: () => true, j11: true });
-  return { r, desk, clock, server, config, name: project.name };
+  const desk = createDesk({ config, call: (p, b) => server.call(p, b), clock, store: null, waitsStore: createStore(waits), isVisible: () => true, j11: true });
+  return { r, desk, clock, server, config, name: project.name, waits };
 }
 const polls = (s) => s.server.calls.filter((c) => c.path === '/api/poll');
 
@@ -49,7 +57,7 @@ test('J22: the owner-check part rides the poll call for the heads ownerCheckHead
   assert.ok(polls(q).every((c) => c.body.ownerChecks === undefined));
 });
 
-test('J22: the owner check read, then a 304 keeping the last answer (its ETag sent back); a refused read is "not read" and not asked again in this opening', async () => {
+test('J22: the owner check read, then a 304 keeping the last answer (its ETag sent back); a refused read is "not read", not asked again before 5 minutes', async () => {
   const s = setup({ pulls: [[1, '2026-10-19T10:00:00Z'], [2, '2026-10-19T11:00:00Z']] });
   s.r.statuses = { [H(1)]: { state: 'pending', description: 'Owner: after agents · 2 other finding(s)' } };
   s.r.statusFail = [H(2)];
@@ -60,7 +68,7 @@ test('J22: the owner check read, then a 304 keeping the last answer (its ETag se
   assert.equal(c.ownerCheck(H(2)), null, 'refused: not read');
   await s.clock.runUntil(NOW + 3 * POLL_MS + 1000);
   const last = polls(s).at(-1).body.ownerChecks;
-  assert.deepEqual(last.map((x) => x.sha), [H(1)], 'the refused head is not asked again in this opening');
+  assert.deepEqual(last.map((x) => x.sha), [H(1)], 'the refused head is not asked again before 5 minutes (J22, as settled after round 1)');
   assert.ok(last[0].etag, 'its ETag sent back');
   assert.equal(s.desk.j22('Alpha').ownerCheck(H(1)).state, 'pending', 'a 304 keeps the last answer');
 });
@@ -167,4 +175,76 @@ test('J20 (2026-10-20): the blob `sha` kept for `reviews/<n>/<id>.md` files only
     'reviews/9/reviewer.md': { present: true, sha: 'b'.repeat(40) },
     'reviews/9/design.md': { present: false, sha: null },
   });
+});
+
+/** The waited J20 read's solo calls for pull request n. */
+const soloFor = (s, n) => s.server.calls.filter((c) => c.path === '/api/blobs' && Array.isArray(c.body.files) && c.body.files.length === 1 && c.body.files[0] === n
+  && c.body.blobs.length === 0 && !c.body.pulls && !c.body.usage).length;
+
+test('AC80 (settled after stage 1a\'s build review, round 1, finding 3): a head\'s 5 hold across openings under desk-board-waits-v1 — 3 in one opening, at most 2 in the next; dropped once the head is no longer open; with local storage throwing, no waited read at all', async () => {
+  const waits = backing();
+  const files = { 1: [{ filename: 'src/lib/a.js', status: 'modified' }] };
+  // Opening 1: three polls waited on the failing read.
+  let s = setup({ pulls: [[1, '2026-10-19T10:00:00Z']], files, waits });
+  s.r.filesFail = [1];
+  s.desk.start();
+  await s.clock.runUntil(NOW + 1000);
+  s.desk.setWaited('Alpha', [1]);
+  for (let i = 1; i <= 3; i++) await s.clock.runUntil(NOW + i * POLL_MS + 1000);
+  assert.equal(s.desk.j22('Alpha').soloCalls.waited, 3);
+  s.desk.stop();
+  const kept = JSON.parse(waits.m.get(WAITS_KEY));
+  assert.deepEqual(kept, { Alpha: { [`1@${H(1)}`]: 3 } }, 'by project, pull request number and head sha');
+  // Opening 2, an hour later, the same head still open and still failing: 2 more, never 5 more.
+  s = setup({ pulls: [[1, '2026-10-19T10:00:00Z']], files, waits, at: NOW + 3600e3 });
+  s.r.filesFail = [1];
+  s.desk.start();
+  await s.clock.runUntil(NOW + 3600e3 + 1000);
+  s.desk.setWaited('Alpha', [1]);
+  for (let i = 1; i <= 8; i++) await s.clock.runUntil(NOW + 3600e3 + i * POLL_MS + 1000);
+  assert.equal(s.desk.j22('Alpha').soloCalls.waited, 2, 'goes on from its count, never from 0');
+  assert.equal(JSON.parse(waits.m.get(WAITS_KEY)).Alpha[`1@${H(1)}`], HEAD_POLLS);
+  // The pull request closes: a successful read of the open list drops its entry.
+  s.r.pulls = [];
+  await s.clock.runUntil(NOW + 3600e3 + 10 * POLL_MS + 1000);
+  assert.deepEqual(JSON.parse(waits.m.get(WAITS_KEY)), { Alpha: {} }, 'open heads only');
+  s.desk.stop();
+  // Local storage throwing: no waited read at all; J20's own retry still at its 5 minutes.
+  s = setup({ pulls: [[1, '2026-10-19T10:00:00Z']], files, waits: backing({ refuse: true }) });
+  s.r.filesFail = [1];
+  s.desk.start();
+  await s.clock.runUntil(NOW + 1000);
+  s.desk.setWaited('Alpha', [1]);
+  const before = soloFor(s, 1);
+  for (let i = 1; i <= 8; i++) await s.clock.runUntil(NOW + i * POLL_MS + 1000);
+  assert.equal(s.desk.j22('Alpha').soloCalls.waited, 0, 'no waited read without device storage');
+  assert.ok(soloFor(s, 1) - before <= 2, 'only J20\'s own retries, at its 5-minute wait');
+  s.desk.stop();
+});
+
+test('J22 (settled after round 1, finding 4): an owner-check read answered `false` (a 403 or a 5xx alike) is asked again at the first poll 5 minutes later, never sooner, inside the poll call; the head keeps its place among the 3', async () => {
+  const s = setup({ pulls: [[1, '2026-10-19T10:00:00Z'], [2, '2026-10-19T11:00:00Z'], [3, '2026-10-19T12:00:00Z'], [4, '2026-10-19T13:00:00Z']] });
+  s.r.statusFail = [H(2)];
+  s.desk.start();
+  await s.clock.runUntil(NOW + POLL_MS + 1000);
+  const sent = () => polls(s).map((c) => (c.body.ownerChecks || []).map((x) => x.sha));
+  assert.deepEqual(sent().at(-1), [H(1), H(2), H(3)]);
+  const failedAt = polls(s).at(-1).at;
+  // The next polls before 5 minutes: the head is not asked, and the fourth never takes its place.
+  for (let i = 2; i <= 5; i++) await s.clock.runUntil(NOW + i * POLL_MS + 1000);
+  const between = polls(s).filter((x) => x.at > failedAt && x.at - failedAt < FILES_RETRY_MS);
+  assert.ok(between.length >= 3, `${between.length} polls before 5 minutes`);
+  for (const c of between) {
+    assert.deepEqual((c.body.ownerChecks || []).map((x) => x.sha), [H(1), H(3)], 'not sooner; no fourth head');
+  }
+  assert.equal(s.desk.j22('Alpha').ownerCheck(H(2)), null, 'not read meanwhile');
+  // At the first poll 5 minutes on: asked again, in the poll call (no call of its own).
+  s.r.statusFail = [];
+  s.r.statuses = { [H(2)]: { state: 'success', description: 'Owner not required' } };
+  const calls = s.server.calls.length;
+  await s.clock.runUntil(NOW + 7 * POLL_MS + 1000);
+  const again = polls(s).find((c) => c.at - failedAt >= FILES_RETRY_MS);
+  assert.ok(again && again.body.ownerChecks.some((x) => x.sha === H(2)), 'asked again at the first poll 5 minutes on');
+  assert.equal(s.desk.j22('Alpha').ownerCheck(H(2)).description, 'Owner not required', 'a 200 ends the wait');
+  assert.ok(s.server.calls.slice(calls).every((c) => c.path === '/api/poll' || c.path === '/api/blobs'), 'no call of its own');
 });

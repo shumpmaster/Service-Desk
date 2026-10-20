@@ -214,7 +214,7 @@ test('AC66 (estimates) + AC80: an estimate-only merge by the owner leaving the b
       await page.advance(POLL_MS);
       const r = await sheetOfRow('#980');
       if (!unread) {
-        assert.ok(r.text.includes(ESTIMATE_MERGE_WORDS), r.text);
+        assert.match(r.text, new RegExp(`#980 · ${ESTIMATE_MERGE_WORDS}Close$`), 'its code, then the words, then the sheet\'s "Close"');
         assert.equal(r.tl, undefined, 'no Timeline link');
       } else {
         assert.match(r.tl.href, /^#\/p\/Service-Desk\/timeline\/sprint\/PR(%20| )(%23|#)980$/, 'placed as any pull request: linked to its sprint');

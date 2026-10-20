@@ -302,3 +302,24 @@ test('J22 the verdict word: branch, removed, tree, missing', () => {
   assert.deepEqual([verdictWord(p, 'reviewer', l, c).word, verdictWord(p, 'owner', l, c).word, verdictWord(p, 'x', l, c).word, verdictWord(p, 'y', l, c).word],
     ['PASS', 'missing', 'FAIL', 'missing']);
 });
+
+test('J22 rule 7 keeps the owner\'s verdict across a head change (build review 1, finding 1; made-up, NOT real): an R3 change with the owner\'s PASS on its branch, then a new head whose list is unread, stays "Merge ↗", never "Verdict ↗" again; FAIL stays "Open ↗"', () => {
+  for (const [text, step] of [['Verdict: PASS\n', 'merge'], ['Verdict: FAIL\n', 'open']]) {
+    const A = sha('d');
+    const files = new Map([list(304, A, [['modified', '.claude/agents/x.md'], ['added', 'reviews/304/reviewer.md', sha('6')], ['added', 'reviews/304/owner.md', sha('9')]])]);
+    const blobs = { [sha('6')]: 'Verdict: PASS\n', [sha('9')]: text };
+    const atA = prStep(pr(304, { headSha: A }), ctx({ files, blobs }));
+    assert.equal(atA.step, step, `at head A: ${text.trim()}`);
+    // Head B (main merged into the branch, say): J20 has not read it, or its read failed.
+    for (const filesB of [new Map(), new Map([[304, { headSha: A, changes: [], capped: false, verdicts: new Map() }]])]) {
+      const atB = prStep(pr(304, { headSha: sha('e') }), ctx({ files: filesB, blobs }), atA.keep);
+      assert.equal(atB.step, step, `${text.trim()}: the owner's verdict kept at the unread head`);
+      assert.notEqual(atB.step, 'verdict');
+      if (step === 'merge') assert.deepEqual([atB.twoStep, atB.note], [2, STEP2_NOTE]);
+      else assert.equal(atB.why, 'You asked for changes.');
+      // And kept again at the head after (the keep carries it on).
+      const atC = prStep(pr(304, { headSha: sha('f') }), ctx({ files: new Map(), blobs }), atB.keep);
+      assert.equal(atC.step, step);
+    }
+  }
+});

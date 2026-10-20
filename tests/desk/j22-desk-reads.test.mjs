@@ -20,10 +20,11 @@ const H = (n) => `${String(n).padStart(3, '0')}${'d'.repeat(37)}`;
 const V = (c) => c.repeat(40);
 
 /** A browser's local storage in memory (`refuse`: every call throws), shared across openings. */
-function backing({ refuse = false } = {}) {
+function backing({ refuse = false, refuseWrites = false } = {}) {
   const m = new Map();
   const no = () => { throw new Error('storage refused'); };
-  return { m, getItem: refuse ? no : (k) => (m.has(k) ? m.get(k) : null), setItem: refuse ? no : (k, v) => { m.set(k, String(v)); }, removeItem: refuse ? no : (k) => { m.delete(k); } };
+  return { m, getItem: refuse ? no : (k) => (m.has(k) ? m.get(k) : null), setItem: refuse || refuseWrites ? no : (k, v) => { m.set(k, String(v)); },
+    removeItem: refuse ? no : (k) => { m.delete(k); } };
 }
 
 function setup({ pulls, files = {}, priv = false, extraFiles = {}, project = v3('Alpha'), waits = backing(), at = NOW } = {}) {
@@ -247,4 +248,21 @@ test('J22 (settled after round 1, finding 4): an owner-check read answered `fals
   assert.ok(again && again.body.ownerChecks.some((x) => x.sha === H(2)), 'asked again at the first poll 5 minutes on');
   assert.equal(s.desk.j22('Alpha').ownerCheck(H(2)).description, 'Owner not required', 'a 200 ends the wait');
   assert.ok(s.server.calls.slice(calls).every((c) => c.path === '/api/poll' || c.path === '/api/blobs'), 'no call of its own');
+});
+
+test('AC80 (stage 1a\'s build review, round 2, N3): storage that reads but refuses writes (a full quota) can\'t keep the counts, so no waited read at all, in any opening', async () => {
+  const files = { 1: [{ filename: 'src/lib/a.js', status: 'modified' }] };
+  const waits = backing({ refuseWrites: true });
+  for (let o = 0; o < 3; o++) {
+    const at = NOW + o * 3600e3;
+    const s = setup({ pulls: [[1, '2026-10-19T10:00:00Z'], [2, '2026-10-19T11:00:00Z'], [3, '2026-10-19T12:00:00Z']], files: { ...files, 2: files[1], 3: files[1] }, waits, at });
+    s.r.filesFail = [1, 2, 3];
+    s.desk.start();
+    await s.clock.runUntil(at + 1000);
+    s.desk.setWaited('Alpha', [1, 2, 3]);
+    for (let i = 1; i <= 6; i++) await s.clock.runUntil(at + i * POLL_MS + 1000);
+    assert.equal(s.desk.j22('Alpha').soloCalls.waited, 0, `opening ${o + 1}: no waited read`);
+    s.desk.stop();
+  }
+  assert.equal(waits.m.size, 0, 'nothing could be written');
 });

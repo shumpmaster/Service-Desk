@@ -1716,6 +1716,13 @@ function quietLines(bd, built, only) {
       return h('button', { type: 'button', class: 'v2-qs', key: `ql:${k}`, 'aria-expanded': open ? 'true' : 'false',
         onclick: () => { if (open) boardState.folds.delete(k); else boardState.folds.add(k); render(); } }, `${words}: ${n}`);
     };
+    if (bd.unread) {
+      // The project not read yet, or not readable: no count for an unknown (Part A item 5; stage 1a's
+      // build review, round 2, N1 and F3-r2), the words only, with no fold to open.
+      const w = bd.unread === 'cant' ? BOARD_UNREAD.cant.toLowerCase() : BOARD_UNREAD.pending.toLowerCase();
+      lines.push(h('p', { class: 'v2-small v2-qsmall unknown', key: 'qsmall' }, `${WORDS.agents}: ${w} · ${WORDS.recording}: ${w}`));
+      return h('div', { class: 'v2-quiet under', key: 'quiet' }, lines);
+    }
     lines.push(h('p', { class: 'v2-small v2-qsmall', key: 'qsmall' },
       small('agents', WORDS.agents, q.agents.length), ' · ', small('recording', WORDS.recording, q.recording.length)));
     if (boardState.folds.has('agents')) lines.push(h('div', { class: 'v2-qfold', key: 'fold:agents', role: 'region', 'aria-label': WORDS.agents }, agentsFold()));

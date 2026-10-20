@@ -383,7 +383,8 @@ test('AC14 (AC79): every head a job candidate in 5 projects, 288 head changes, 1
 });
 
 // From 2026-10-19 (AC80) and 2026-10-20 (desk mockup v2; A3's 9,355 and 9,817), as settled after stage
-// 1a's build review, round 1 (finding 3): one combined day. AC79's day above, with its 288 candidate
+// 1a's build review, round 1 (finding 3), and run per worst case after round 2 (N2): each worst case AC14
+// names, at full, in AC79's day. AC79's day above, with its 288 candidate
 // heads in all 5 projects, J12 failing in all 5, a judging run's log and the grant read failing all
 // day and 100 ledger changes, and on top of it the board's and mockup v2's cases: every pull request
 // needs a reviewer's verdict by the made-up risk-paths file (NOT real records); a mark waits on every
@@ -393,7 +394,7 @@ test('AC14 (AC79): every head a job candidate in 5 projects, 288 head changes, 1
 // verdict file). The cache is empty at every opening (the worst case), while the waited reads' 5 a head
 // are kept on the device across openings (desk-board-waits-v1). Then the same day with local storage
 // throwing: no waited read at all. J24's portfolio reads are stage 2's and not built yet.
-async function combinedDay({ storageThrows = false } = {}) {
+async function combinedDay({ worst, storageThrows = false } = {}) {
   const { readFileSync } = await import('node:fs');
   const { join } = await import('node:path');
   const { NOTIFY_FIX } = await import('./notify-helpers.mjs');
@@ -405,7 +406,11 @@ async function combinedDay({ storageThrows = false } = {}) {
   const repos = Object.fromEntries(config.projects.map((p) => [p.name, repoFor(p)]));
   const LEDGER = sdFile('docs/LEDGER.md');
   const NUMS = [31, 32, 33, 34, 35];
-  const WAITED = [31, 33, 35]; // J20 failing all day: waited on
+  // Each worst case AC14 names, at full (stage 1a's build review, round 2, N2): 'waited', a mark on every
+  // head with its J20 read failing all day (all 5 open pull requests a project); 'verdicts', all 5 with
+  // their verdict files on the branch, read, one a project with its verdict blob failing all day.
+  assert.ok(worst === 'waited' || worst === 'verdicts', worst);
+  const WAITED = worst === 'waited' ? [31, 32, 33, 34, 35] : [];
   const iso = (ms) => new Date(ms).toISOString();
   // Each pull request its own generation: one head change moves one pull request's head (288 heads in the day, as A3 counts them).
   const gens = Object.fromEntries(config.projects.map((p) => [p.name, Object.fromEntries([31, 32, 33, 34, 35].map((n) => [n, 0]))]));
@@ -435,7 +440,7 @@ async function combinedDay({ storageThrows = false } = {}) {
       const v = verdictOf(p.name, n, G[n]);
       shaToHead.set(v, headOf(p.name, n, G[n]));
       r.blobs[v] = 'Verdict: PASS\n';
-      if (n === 34) { r.blobFail.push(v); failingVerdicts.add(v); }
+      if (n === 34 && worst === 'verdicts') { r.blobFail.push(v); failingVerdicts.add(v); }
     }
     for (const pr of r.pulls) {
       const none = pr.number % 2 === 1;
@@ -462,12 +467,21 @@ async function combinedDay({ storageThrows = false } = {}) {
   const verdictCalls = new Map(); // `${opening}|${head}` → { n, failing }
   let maxOwnerHeads = 0;
   let opening = 0;
+  const soloLog = new Map(); // `${opening}|${project}|${number}@${head}` → solo calls in the call log
+  const span = new Map(); // the same key → { first, last }: when the reader saw that head open in that opening
   const call = async (path, body) => {
     const res = await server.call(path, body);
     if (path === '/api/poll') {
       lastPoll.set(body.project, clock.now());
       maxOwnerHeads = Math.max(maxOwnerHeads, (body.ownerChecks || []).length);
     } else if (path === '/api/blobs') {
+      // The call log's own count of the waited reads' shape: one pull request's files alone.
+      if (Array.isArray(body.files) && body.files.length === 1 && (body.blobs || []).length === 0 && !body.pulls && !body.usage
+        && (!body.compare || body.compare.length === 0) && (!body.history || body.history.length === 0)) {
+        const pr = repos[body.project].pulls.find((x) => x.number === body.files[0]);
+        const hk = `${opening}|${body.project}|${body.files[0]}@${pr ? pr.head.sha : '?'}`;
+        soloLog.set(hk, (soloLog.get(hk) || 0) + 1);
+      }
       const k = `${body.project}|${lastPoll.get(body.project)}`;
       cycles.set(k, (cycles.get(k) || 0) + 1);
       const vs = (body.blobs || []).filter((s) => shaToHead.has(s));
@@ -491,6 +505,7 @@ async function combinedDay({ storageThrows = false } = {}) {
   let changes = 0;
   let prChanges = 0;
   let waited = 0;
+  const waitedByOpening = [];
   const perHead = new Map(); // `${project}|${number}@${head}` → the most of the head's 5 used, over the day
   for (let o = 0; o < openings; o++) {
     opening = o;
@@ -518,43 +533,85 @@ async function combinedDay({ storageThrows = false } = {}) {
       for (const p of config.projects) {
         const j = desk.j22(p.name);
         for (const pr of repos[p.name].pulls) {
+          // How long each head is open in this opening, for J20's own retries at its 5 minutes.
+          const sk = `${o}|${p.name}|${pr.number}@${pr.head.sha}`;
+          const sp = span.get(sk) || { first: clock.now(), last: clock.now() };
+          sp.last = clock.now();
+          span.set(sk, sp);
           if (!WAITED.includes(pr.number)) continue;
           const k = `${p.name}|${pr.number}@${pr.head.sha}`;
           perHead.set(k, Math.max(perHead.get(k) || 0, j.headPolls({ number: pr.number, headSha: pr.head.sha })));
         }
       }
     }
-    for (const p of config.projects) waited += desk.j22(p.name).soloCalls.waited;
+    for (const p of config.projects) {
+      waited += desk.j22(p.name).soloCalls.waited;
+      waitedByOpening.push({ opening: o, project: p.name, n: desk.j22(p.name).soloCalls.waited });
+    }
     desk.stop();
   }
-  return { calls: server.calls.length, changes, prChanges, waited, perHead, verdictCalls, cycles, maxOwnerHeads, HEAD_POLLS, waitsBacking };
+  return { calls: server.calls.length, changes, prChanges, waited, perHead, verdictCalls, cycles, maxOwnerHeads, HEAD_POLLS, waitsBacking, soloLog, waitedByOpening, span };
 }
 
-test('AC14 (AC80 and desk mockup v2), one combined day: AC79\'s day with the board\'s and mockup v2\'s cases — under 10,000 calls; at most 5 waited-read calls a head over the whole day, kept across openings; one verdict call a head an opening, a failing one\'s retries inside its 5; at most 16 blob calls a cycle; at most 3 owner-check heads a poll', async (t) => {
-  const d = await combinedDay();
+
+const { FILES_RETRY_MS: RETRY } = await import('../../src/lib/scheduler.js');
+
+test('AC14 (AC80), the board\'s worst case at full in AC79\'s day: a mark on every head of all 5 open pull requests a project, each J20 read failing all day — under 10,000 calls; at most 5 waited-read calls a head over the whole day, by the reader\'s own count and by the call log\'s', async (t) => {
+  const d = await combinedDay({ worst: 'waited' });
   const heads = [...d.perHead.values()];
-  const v = [...d.verdictCalls.values()];
-  t.diagnostic(`AC14 (combined day): ${d.calls} calls, ${d.waited} waited-read calls over ${d.perHead.size} waited heads, ${v.reduce((a, x) => a + x.n, 0)} verdict calls, the most blob calls in a cycle ${Math.max(...d.cycles.values())}, ${d.prChanges} head changes, ${d.changes} ledger changes`);
+  const logTotal = [...d.soloLog.values()].reduce((a, b) => a + b, 0);
+  t.diagnostic(`AC14 (AC80 worst case): ${d.calls} calls, ${d.waited} waited-read calls (reader) over ${d.perHead.size} heads, ${logTotal} single-file calls in the log, ${d.prChanges} head changes, ${d.changes} ledger changes`);
   assert.equal(d.changes, 100);
   assert.ok(d.prChanges >= 280, `${d.prChanges} head changes`);
   assert.ok(d.calls < 10_000, `${d.calls} calls`);
-  assert.ok(heads.length > 100);
+  assert.ok(heads.length > 250, `${heads.length} heads waited on`);
+  // The reader's own count, kept across openings.
   assert.ok(Math.max(...heads) <= d.HEAD_POLLS, `at most 5 a head over the day (${Math.max(...heads)})`);
   assert.ok(heads.some((x) => x === d.HEAD_POLLS), 'some heads spent their 5');
-  assert.ok(d.waited <= d.HEAD_POLLS * heads.length, `${d.waited} waited calls for ${heads.length} heads`);
-  assert.ok(d.waited > 0);
+  assert.ok(d.waited <= d.HEAD_POLLS * heads.length && d.waited > 0, `${d.waited} waited calls for ${heads.length} heads`);
+  // The call log's own count, independent of the reader: a waited read is a call of one pull request's
+  // files alone, as J20's own retry at its 5 minutes can be. Per opening and project, every waited read
+  // the reader counts is in the log, and the rest are no more than J20's own retries; per head over the
+  // day, the single-file calls beyond J20's retries are at most 5.
+  const retriesOf = (k) => { const sp = d.span.get(k); return sp ? Math.floor((sp.last - sp.first) / RETRY) + 1 : 1; };
+  for (const w of d.waitedByOpening) {
+    const keys = [...d.soloLog.keys()].filter((k) => k.startsWith(`${w.opening}|${w.project}|`));
+    const log = keys.reduce((a, k) => a + d.soloLog.get(k), 0);
+    const retries = keys.reduce((a, k) => a + retriesOf(k), 0);
+    assert.ok(w.n <= log, `${w.project} opening ${w.opening}: ${w.n} waited reads, ${log} in the log`);
+    assert.ok(log - w.n <= retries, `${w.project} opening ${w.opening}: ${log - w.n} other single-file calls, at most ${retries} J20 retries`);
+  }
+  const day = new Map();
+  for (const [k, n] of d.soloLog) {
+    const hk = k.split('|').slice(1).join('|');
+    day.set(hk, (day.get(hk) || 0) + Math.max(0, n - retriesOf(k)));
+  }
+  assert.ok(Math.max(...day.values()) <= d.HEAD_POLLS, `the log: at most 5 a head over the day beyond J20's retries (${Math.max(...day.values())})`);
+  assert.ok([...d.verdictCalls.values()].every((x) => x.n === 0) || d.verdictCalls.size === 0, 'with no J20 list, no verdict call');
+  assert.ok(Math.max(...d.cycles.values()) <= 16, 'A3: 6 + 2 × 5');
+  assert.ok(d.maxOwnerHeads <= 3);
+});
+
+test('AC14 (desk mockup v2), its worst case at full in AC79\'s day: all 5 open pull requests a project with verdict files on their branches, read, one a project with its verdict blob failing all day — under 10,000 calls; one verdict call a head an opening, a failing one\'s retries inside its 5 and failing only its own head\'s call; at most 16 blob calls a cycle; at most 3 owner-check heads a poll', async (t) => {
+  const d = await combinedDay({ worst: 'verdicts' });
+  const v = [...d.verdictCalls.values()];
+  t.diagnostic(`AC14 (mockup v2 worst case): ${d.calls} calls, ${v.reduce((a, x) => a + x.n, 0)} verdict calls over ${d.verdictCalls.size} heads an opening, ${d.waited} waited-read calls, the most blob calls in a cycle ${Math.max(...d.cycles.values())}, ${d.prChanges} head changes`);
+  assert.equal(d.changes, 100);
+  assert.ok(d.prChanges >= 280);
+  assert.ok(d.calls < 10_000, `${d.calls} calls`);
+  assert.equal(d.waited, 0, 'every J20 read answers: nothing waited on');
   const okV = v.filter((x) => !x.failing);
   const badV = v.filter((x) => x.failing);
-  assert.ok(okV.length > 50 && badV.length > 10, `${okV.length} and ${badV.length}`);
-  assert.ok(okV.every((x) => x.n === 1), 'one verdict call a head an opening sees');
+  assert.ok(okV.length > 200 && badV.length > 40, `${okV.length} and ${badV.length}`);
+  assert.ok(okV.every((x) => x.n === 1), 'one verdict call a head an opening sees: a failing head costs only its own call');
   assert.ok(badV.every((x) => x.n >= 1 && x.n <= 1 + d.HEAD_POLLS), `a failing head: its first call, then its retries inside its 5 (${Math.max(...badV.map((x) => x.n))})`);
   assert.ok(Math.max(...d.cycles.values()) <= 16, 'A3: 6 + 2 × 5');
   assert.ok(d.maxOwnerHeads <= 3);
 });
 
-test('AC14 (AC80), the combined day with local storage throwing: no waited-read call at all; under 10,000 calls', async (t) => {
-  const d = await combinedDay({ storageThrows: true });
-  t.diagnostic(`AC14 (combined day, storage throwing): ${d.calls} calls, ${d.waited} waited-read calls`);
+test('AC14 (AC80), the board\'s worst case with local storage throwing: no waited-read call at all; under 10,000 calls', async (t) => {
+  const d = await combinedDay({ worst: 'waited', storageThrows: true });
+  t.diagnostic(`AC14 (AC80 worst case, storage throwing): ${d.calls} calls, ${d.waited} waited-read calls`);
   assert.equal(d.waited, 0);
   assert.ok(d.calls < 10_000, `${d.calls} calls`);
 });

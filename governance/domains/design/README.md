@@ -39,28 +39,28 @@ edit its own layout, and holds no write credential (decisions/questions/P-001-de
 Where two rulings, or a ruling and the spec, seem to disagree on a point no later ruling settles,
 the reviewer names both and asks. It never picks a side.
 
-**The redesign direction.** "A direction the owner has ruled" means one thing here: the owner's
-answer, in words, to questions/P-001-redesign-direction.md. The orchestrator holds that question
-while the inventory is done (its summary in docs/design/references/owner-request-2026-10-19-scope.md:
-"The redesign-direction question is held"), and its timeout default does not apply while it is
-held. Until the owner answers it:
-- a change is judged against the agreed screens and the standing rulings, with checklist part A;
-- the rulings on the board, the tabs and the typeface are standing rulings, applied through part A
-  whatever the direction answer says; they do not switch on part B. If the direction answer, when
-  it comes, disagrees with one of them (for example, answer C with P-001-redesign-nav.md's tabs),
-  that is a question for the owner, not for the reviewer to settle;
-- part B (the design audit's brief) applies only after that answer, and only as far as it says;
-- no mockup counts as chosen unless a ruling chose it.
+**The redesign direction.** The owner has ruled it: desk mockup v2, with Home, "is the direction
+for the whole desk" (decisions/questions/P-001-redesign-direction-v2.md, A, 2026-10-20). That answer
+also closes questions/P-001-redesign-direction.md (decisions/questions/P-001-redesign-direction.md).
+Mockup v2 as answered is orch/desk-mockup-v2 at d2afcfc: docs/design/mockups/desk-v2.html, with its
+frames and notes in docs/design/mockups/desk-v2/README.md. So:
+- every change is judged with checklist part A, against the standing rulings;
+- a change that carries out the direction is also judged with part B, against mockup v2, only as far
+  as v2 draws the point it touches. A point v2 does not draw is judged by part A alone;
+- where a ruling made after d2afcfc differs from a frame (for example P-001-timeline-labels.md picks
+  frame 7b's grey labels over 7a's coloured ones), the later ruling governs;
+- the rulings on the board, the tabs and the typeface stay standing rulings, applied through part A;
+- no other mockup counts as chosen unless a ruling chose it.
 
 **Sized like Linear.** P-001-redesign-conflicts.md items 3 and 5 and P-001-text-box-size.md rule
-that sizes, and the Timeline's visual formatting, follow Linear's. The repository holds no measure
-of Linear's sizes, so the owner ruled that "sized like Linear" "is measured against the mockup you
-approve next, and not enforced until then" (decisions/questions/P-001-design-reviewer-stop.md,
-answer A). So:
-- until the owner's approval of that mockup is recorded, no size and no visual formatting is judged
-  against Linear; the one size rule enforced now is text-box-size A's 16 px for text boxes (item 9);
-- once it is recorded, sizes and the Timeline's formatting are measured against that approved
-  mockup, and only as far as the approval says.
+that sizes, and the Timeline's visual formatting, follow Linear's. The owner ruled that "sized like
+Linear" "is measured against the mockup you approve next" (decisions/questions/P-001-design-reviewer-stop.md,
+A), and then approved mockup v2, whose answer says the Design reviewer "measures "sized like Linear"
+against it" (P-001-redesign-direction-v2.md). So sizes are measured against the type scale and sizes
+that docs/design/mockups/desk-v2/README.md states ("Sizes as close to Linear's as we could": 24, 18,
+15, 13, 12 and 11 px; weights 400, 500 and 600; text boxes at 16 px; board text 11 and 12 px), as
+set by the `--t-*` tokens in docs/design/mockups/desk-v2.html. The Timeline's formatting is measured
+against frame 7b and its full-length capture. A size the mockup does not state is not a finding.
 
 ## The owner's standing rulings
 
@@ -70,13 +70,14 @@ The agreed screens, and the owner's changes to them
 - **P-001-design-pick.md.** The five agreed screens (Home, Project, Team, Timeline, and Queue with
   its response card) are the desk's one design direction; the design lab ends. They are drawn in
   docs/design/screens/01-home.html, 02-project.html, 03-team.html, 04-timeline.html and
-  06-queue.html. Its font line ("the phone's own font, not Inter") is replaced by
-  P-001-redesign-type.md, below.
+  06-queue.html. As the direction it is replaced by P-001-redesign-direction-v2.md; the screens as
+  built stand until a change carries out mockup v2. Its font line ("the phone's own font, not
+  Inter") is replaced by P-001-redesign-type.md, below.
 - **P-001-trial-view-notes-1.md** (2026-10-14 and 15):
   - Home: each card shows a brief summary from the project's README (shown clipped, as
     P-001-tile-summary-clip.md later ruled); the "latest" line moves into a bubble; the cards stay a
-    two-column grid on the phone; three collapsible groups, Active, Done, and Closed or not
-    applicable.
+    two-column grid on the phone (replaced by P-001-home-tiles.md: full width on the phone); three
+    collapsible groups, Active, Done, and Closed or not applicable.
   - Status: a "Your last action:" line above the waiting bar; "not recorded" when no record gives one.
   - The "More detail" views redrawn in the new design.
   - A back control that goes one screen back, beside the one to Home.
@@ -98,7 +99,9 @@ The agreed screens, and the owner's changes to them
   - A clear type scale: headings, body text, labels, quoted record text and small print each look
     different (note 5). Its "Every word of text stays" is replaced by P-001-redesign-conflicts.md.
   - Status shows every standard milestone with whether the project takes it on, and a "why" line
-    from the project's plan; "why: not recorded" until one exists (note 6). Softer text for those
+    from the project's plan; "why: not recorded" until one exists (note 6). Narrowed by
+    P-001-why-line.md: where no why is written yet, the phase's list says so once, and each milestone
+    shows its why only once there is one. Softer text for those
     it does not take on (note 11).
   - The Timeline: one feed, newest at the top, a work breakdown (project, phases, milestones,
     sprints, tasks one tap away); each entry a plain-English title, then technical, context and
@@ -107,7 +110,8 @@ The agreed screens, and the owner's changes to them
   - Each phase its own colour; Technical, Context and Why each their own colour, always with the
     name in words (notes 13, 14); shades re-picked so no colour has two meanings; the swatches
     approved. Note 13 is narrowed by P-001-redesign-conflicts.md item 4: phases may be marked by
-    some colour or by icons, so a phase marked by icons alone is not a finding.
+    some colour or by icons, so a phase marked by icons alone is not a finding. Note 14's own colours
+    for Technical, Context and Why are replaced by P-001-timeline-labels.md: small grey words.
   - Timeline statuses as an icon inside a plain circle, not by colour (note 23).
   - Home's tile: phases bottom up, a small branch drawing, circle icons, a phase-colour stripe, and
     a plain line such as "Design, second time through" in place of "2 of 4 phases finished"
@@ -164,7 +168,9 @@ What waits on the owner, and how it reads
   counts as "needs you"; other pull requests show as activity only. Narrowed later by
   **P-001-answer-pr-on-desk.md** (one the automatic job may merge shows as "Being recorded by the
   automatic job", not counted) and **P-001-board-after-agents.md** (one still waiting on the agents'
-  fixes is not counted; a quiet line, "With the agents: <n>").
+  fixes is not counted; a quiet line, "With the agents: <n>"), and **P-001-domain-review-count.md**
+  (A: one waiting on a reviewer's verdict joins that line until every reviewer has given a verdict and
+  it needs the owner).
 - **P-001-notify-deploys.md**: a deploy waiting for approval counts as waiting on the owner now. It
   replaces line 1 of P-001-design-lab-answers-followup.md for Service-Desk.
 - **P-001-asks-merge-on-desk.md**: merged asks-merge pull requests leave the Timeline.
@@ -213,20 +219,48 @@ The board, the tabs and the typeface (2026-10-19)
 - **P-001-board-answer.md**: one button per option, the recommendation labelled, not chosen.
 - **P-001-board-done-keep.md**: Done keeps the last 24 hours. **P-001-board-done-button.md**: a Done
   card keeps its step button and "Undo" until GitHub confirms it.
-- **P-001-gate-card.md**: gate rulings get their own card.
+- **P-001-gate-card.md**: gate rulings get their own card. **P-001-gate-buttons.md**: A — its choices
+  show as buttons on the board and in its sheet; a tap only opens a filled-in answer the owner still
+  saves on GitHub.
 - **P-001-standard-milestones.md**: standard milestones folded, one line per phase, skipped ones named.
-- **P-001-redesign-nav.md**: tabs at the bottom, one tap each, Waiting first; "maybe we end up with
-  more than 3 tabs".
+- **P-001-redesign-nav.md**: tabs at the bottom, one tap each; "maybe we end up with more than 3
+  tabs". Its "Waiting opening first" and its Projects tab are replaced by P-001-home-tab.md, below.
 - **P-001-redesign-type.md**: IBM Plex, with Plex Mono for references and times, and one vermilion
   accent meaning only "needs you". It is later than P-001-design-pick.md, and its blast radius is
   the page's typeface, so it replaces design-pick's font line. The desk's "needs you" colour,
   `--you`, is already #d23c0f in light and #ff6a3d in dark, the audit's vermilion.
 
-Still open: questions/P-001-redesign-direction.md (on hold, above).
+Mockup v2 and its details (2026-10-20)
+- **P-001-redesign-direction-v2.md**: A — mockup v2, with Home, is the direction for the whole desk,
+  planned the board first, through the usual checks and build, in the trial view.
+- **P-001-home-tab.md**: A — the desk opens on Home; the bar is Home · Waiting · Plan; Waiting keeps
+  its badge, one tap away; no Projects tab.
+- **P-001-home-tiles.md**: A — project tiles on Home are full width on the phone, one per row; two to
+  a row only on a wider screen.
+- **P-001-portfolio-tab.md**: A — no Portfolio tab yet; the portfolio sits at the foot of Home, and a
+  fourth tab comes when it holds more.
+- **P-001-timeline-labels.md**: A — on the Timeline, Technical, Context and Why are small grey words;
+  colour is left for what needs the owner.
+- **P-001-why-line.md**: A — where no standard milestone's why is written yet, the phase's list says
+  so once; each milestone shows its why only once there is one.
+- **P-001-domain-review-count.md**, **P-001-gate-buttons.md**: above.
+
+This setup
+- **P-001-design-reviewer-stop.md**: A — the round-3 findings fixed, the setup sent to the owner with
+  no fourth review. **P-001-design-reviewer-verdict.md**: A — a fresh Reviewer confirms only that the
+  round-3 findings are fixed; its verdict is recorded, then the setup goes to the owner.
+
+Mockup v2's own "Not ruled" list (desk-v2/README.md) has items with no owner answer yet: 1c (the
+README summary on each tile), 1d (four "since you last looked" lines), 1e (the tile's strip read left
+to right), 5 (own and standard milestones together) and 7 (Plan read top down). They are not rulings;
+where one meets a ruling, it is listed under "Conflicts awaiting the owner".
 
 **Spec points, not owner conflicts.** These are for the Definer to bring into specs/S-001.md, not
 for the owner: S-001 AC42 allows no web font from another origin, so IBM Plex would be served from
-the desk itself; S-001 AC62's "Every word kept" test predates P-001-redesign-conflicts.md, item 1.
+the desk itself; S-001 AC62's "Every word kept" test predates P-001-redesign-conflicts.md, item 1;
+AC54's two-column grid predates P-001-home-tiles.md; AC57's "why: not recorded" on each milestone
+predates P-001-why-line.md; AC48's colours for Technical, Context and Why predate
+P-001-timeline-labels.md; AC57's key above the phase boxes is not drawn in mockup v2 (conflict 2).
 
 ## Refute checklist
 
@@ -242,11 +276,14 @@ src/public/sandbox.css (#8a919a light, #6f7680 dark) measures 3.18:1 on the ligh
 ### Part A: every change, now
 
 1. Rulings: does the change keep every standing ruling above that covers what it touches, and the
-   agreed screens as those rulings changed them? Name the ruling it breaks.
-2. Spec: does it keep the S-001 criteria it touches among AC35 to AC41, AC48 to AC79, where no later ruling replaces them?
+   screens as built and changed by those rulings (or, where it carries out mockup v2, part B)? Name
+   the ruling it breaks.
+2. Spec: does it keep the S-001 criteria it touches among AC35 to AC41 and AC48 to AC79, where no
+   later ruling replaces them?
 3. Waiting is real: does everything counted as waiting need the owner now, and does everything not
    counted show as its ruling says? (P-001-build-path.md question 1, P-001-answer-pr-on-desk.md,
-   P-001-board-after-agents.md, P-001-notify-deploys.md; PROJECT.md intent, "False alarms")
+   P-001-board-after-agents.md, P-001-domain-review-count.md, P-001-notify-deploys.md;
+   PROJECT.md intent, "False alarms")
 4. Quiet is honest: does the screen never say "Quiet" while a project is unread or can't be read,
    showing "Checking…" or "Can't read since HH:MM" instead? (S-001 AC4, AC5; PROJECT.md intent,
    "Missed decisions")
@@ -260,8 +297,9 @@ src/public/sandbox.css (#8a919a light, #6f7680 dark) measures 3.18:1 on the ligh
    "survives the extremes") The made-up "Members Letter" of docs/design/inventory-2026-10-19.md §6,
    which uses every part of the model, has no fixture yet; it joins this item once one exists.
 7. Standard milestones: is every standard milestone shown, the skipped ones too, folded one line
-   per phase; does a skipped one read as skipped, with its why; and does a missing why read
-   "why: not recorded"? (P-001-standard-milestones.md; P-001-redesign-conflicts.md, item 2;
+   per phase; does a skipped one read as skipped, with its why; and where no why is written yet,
+   does the phase's list say so once, with each milestone's why shown once there is one?
+   (P-001-standard-milestones.md; P-001-redesign-conflicts.md, item 2; P-001-why-line.md;
    P-001-trial-view-notes-2.md, notes 6 and 11)
 8. Type roles: do headings, body text, labels, quoted record text and small print each look
    different? (P-001-trial-view-notes-2.md, note 5; P-001-redesign-conflicts.md, item 1)
@@ -291,7 +329,9 @@ src/public/sandbox.css (#8a919a light, #6f7680 dark) measures 3.18:1 on the ligh
     (`--you`, the vermilion) used only for the owner's own things as S-001 AC69 lists them, never on
     a gap the agents fill? AC69's own list, as its test (tests/desk/ac69-72-audit-additions.test.mjs,
     OWNER_CORAL) allows it, includes the "Your last action" line and its label; that use is not a
-    finding. (S-001 AC48, AC69; P-001-trial-view-notes-2.md, note 32; P-001-redesign-type.md)
+    finding. On the Timeline, Technical, Context and Why are grey words, not colours.
+    (S-001 AC48, AC69; P-001-trial-view-notes-2.md, note 32; P-001-redesign-type.md;
+    P-001-timeline-labels.md)
 15. Sheets and refresh: does every sheet and bubble have a visible close control and close on a tap
     outside it or Escape; and does a refresh keep open sheets, scroll position and typed text?
     (P-001-trial-view-notes-1.md, notes 9 and 14; S-001 AC56)
@@ -310,46 +350,57 @@ src/public/sandbox.css (#8a919a light, #6f7680 dark) measures 3.18:1 on the ligh
 20. Times: are times shown in America/Chicago? (P-001-s001-owner-questions.md)
 21. Board: where the change touches the board, does it keep one board grouped by project, all three
     lanes at once, a "kicked back" lane for a card GitHub hasn't confirmed in about 5 minutes, Done
-    holding the last 24 hours, and a Done card's step button and "Undo" until confirmed?
-    (P-001-board-scope.md, P-001-board-layout.md, P-001-board-bounce.md, P-001-board-done-keep.md,
-    P-001-board-done-button.md)
-22. Tabs: where the change touches navigation, are the tabs at the bottom, one tap each, with
-    Waiting opening first? (P-001-redesign-nav.md)
+    holding the last 24 hours, a Done card's step button and "Undo" until confirmed, and a gate
+    card's choices as buttons on the card and in its sheet? (P-001-board-scope.md,
+    P-001-board-layout.md, P-001-board-bounce.md, P-001-board-done-keep.md, P-001-board-done-button.md,
+    P-001-gate-card.md, P-001-gate-buttons.md)
+22. Tabs and Home: where the change touches navigation, does the desk open on Home, with the bar
+    Home · Waiting · Plan at the bottom, Waiting's badge, no Projects tab and no Portfolio tab; and
+    are Home's project tiles full width on the phone, with the portfolio at Home's foot?
+    (P-001-home-tab.md, P-001-home-tiles.md, P-001-portfolio-tab.md, P-001-redesign-nav.md)
 23. Typeface: does every font the change sets use IBM Plex Sans, with Plex Mono for references and
     times? (P-001-redesign-type.md)
 24. Motion: is reduced motion respected? (S-001 AC42)
 25. Dark mode: do items 9 to 14 hold in the dark theme too? (S-001 AC62, "each screen at 360 px in
     the light and dark themes")
 
-### Part B: once the owner answers the redesign direction
+### Part B: a change that carries out the direction (mockup v2)
 
-Each item applies only after the owner answers questions/P-001-redesign-direction.md, only as far as
-that answer says, and never against a standing ruling or a conflict listed below. "Brief N" is
-docs/design/audit-2026-10-19.md §6; "principle N" is
-docs/design/references/research-2026-10-19-modern-mobile-design.md §12. Two briefs are left out.
-Brief 3 (no empty fields) is an open conflict with standing rulings and the spec: see conflict 1.
-Brief 4 (four text sizes) is replaced by P-001-redesign-conflicts.md item 5 and
-P-001-text-box-size.md, measured as "Sized like Linear" says.
+Each item applies to a change that carries out P-001-redesign-direction-v2.md, only as far as mockup
+v2 draws the point, with later rulings applied (see "The redesign direction"). "Frame" and
+"README" mean docs/design/mockups/desk-v2.html and docs/design/mockups/desk-v2/README.md. The audit's
+brief (docs/design/audit-2026-10-19.md §6) was the background to v2 and is not enforced on its own:
+where v2 draws a point, v2 governs; a brief item v2 does not draw is not a finding.
 
-26. Does every screen's title say its job in six words or fewer? (brief 1)
-27. At 414×896, does the top 400 CSS px of the opening screen hold the waiting count and the first
-    waiting item with its verb? (brief 2; principle 1)
-28. Colour from tokens only: at most five neutrals, one accent, two status colours, and ten
-    distinct computed colours per screen per theme? (brief 5; see conflict 4)
-29. Does the accent mark only "needs you" and the primary action? (brief 6)
-30. One filled button per card, and at most one per sheet or screen? (brief 7)
-31. No legend or key on any screen? (brief 8; see conflict 2)
-32. No card inside a card; never border, left rule and shadow together? (brief 9)
-33. One app-level bar of labelled tabs, no per-project tab bar, no link to the screen you are on?
-    (brief 10; see conflict 3)
-34. Does each sheet open at 60% height or less, showing its title, the decision and the action
-    before any scrolling? (brief 11)
-35. At most one free-text box per sheet? (brief 12; see conflict 5)
-36. Do record ids appear only in mono meta lines, never in a title? (brief 13)
-37. Does an empty view show one sentence and "checked N min ago"? (brief 14; principle 12)
-38. Is each main-path screen at most 1,800 CSS px long with fixture data? (brief 15)
-39. Is every tap area at least 36 px? (audit §5, "Card anatomy")
-40. No gradients, no avatars, no shadows? (audit §5, "What makes it distinctive")
+26. Frames: does each screen the change carries out match the frame that draws it, as far as the
+    frame draws it? Name the frame and the difference.
+27. Sizes: are the only text sizes 24, 18, 15, 13, 12 and 11 px, the only weights 400, 500 and 600,
+    text boxes 16 px and board text 11 and 12 px, as the README states and the `--t-*` tokens set?
+    (P-001-redesign-conflicts.md item 5; P-001-text-box-size.md; "Sized like Linear" above)
+28. Home: does the desk open on Home with its briefing, counted from what the board counts, one tap
+    to Waiting; "Since you last looked" with its time and "Mark as seen"; one full-width tile per
+    project with its phases as a timeline; and the portfolio, read only, at its foot? (frames H1,
+    H4, H5; P-001-home-tab.md, P-001-home-tiles.md, P-001-portfolio-tab.md)
+29. Accent: is vermilion used only for "needs you": the kind icons of cards waiting on the owner,
+    the diamond, the badge and the spend alert, with agent-owned gaps in a grey diamond? (README,
+    "IBM Plex Sans with Plex Mono"; P-001-redesign-type.md; P-001-trial-view-notes-2.md, note 32)
+30. Three states: does "not used by this project" read "Not used" or "skipped" with a why, "not
+    recorded yet" show a dashed circle with "?", and "no record in the model" a slashed circle?
+    (README, "The three states told apart"; frames 6, 6b and 8)
+31. Project page: does it show, as frame 5 draws, Overview and Timeline at the top, the one sentence,
+    the phase strip with an icon and words for each phase, why the phase ran again, the last action,
+    what waits and who is at work, then milestones by phase, folded, read from the bottom up?
+32. Timeline: does it match frame 7b: one feed, newest at the top, opened at Now, a compact pinned
+    header and phase bands, a thin rail in the phase's colour, one status icon in a circle per
+    milestone, sprints folded, and Technical, Context and Why in grey? (P-001-redesign-conflicts.md
+    item 3; P-001-timeline-labels.md)
+33. Gate sheet: does it show the case's opening (three lines, faded, the whole case one tap away),
+    the Critic's view, the user representative's verdict, then each choice saying what follows, with
+    "Can't be undone" on the one that can't be? (frame 4; P-001-gate-card.md, P-001-gate-buttons.md)
+34. Undo and timeouts: are "Can't be undone" and "settles itself" told apart on the card and in the
+    sheet, by icon and words, never by colour alone? (README; frames 3 and 3b; S-001 AC38)
+35. Keys: is no legend or key added? Mockup v2 draws none; each icon carries its word (frame 5,
+    "an icon and words for each").
 
 An unverifiable claim is a FAIL. "Looks good" is a FAIL. Taste alone is not a finding: each finding
 names a checklist item, a ruling or a criterion.
@@ -361,44 +412,53 @@ note, not a finding.
 
 ## Conflicts awaiting the owner
 
-Points where the audit's brief and a standing ruling or the spec point different ways, and no later
-ruling settles them. Until the owner rules, the ruling and the spec stand, and the part B item is
-not enforced. The reviewer never picks a side.
+Points where the design audit and a standing ruling or the spec pointed different ways. For each,
+whether mockup v2, as the owner approved it, takes a side. Where it does, the point is settled as
+drawn in v2. Where it doesn't, the point stays open: the ruling and the spec stand, and the reviewer
+never picks a side.
 
-1. **Unknown values in words.** Brief 3 removes any field reading "not recorded", "not available",
-   "none" or "no … yet" from the main path. P-001-redesign-conflicts.md, item 1, lets crowding text
-   be cut, but does not say whether an unknown's line goes. P-001-trial-view-notes-1.md note 6,
-   P-001-trial-view-notes-2.md note 6 ("why: not recorded"), P-001-o6-fallback.md ("not available") and S-001 AC41 ("Unknown
-   shows its words") show them.
-2. **Legends.** Brief 8 and audit §4.4 cut every key. S-001 AC57 puts a key above the phase boxes
-   (plan review round 2, B2).
-3. **Navigation.** Brief 10 allows one app-level bar and no per-project bar; audit §2 folds Queue,
-   Team and Timeline into other screens. The built project screens carry a bar, "Status · Timeline ·
-   Team · Queue" (S-001 AC48; the lab's "+" is not built), and P-001-design-lab-1.md (each project
-   keeps its own queue) and P-001-design-lab-open.md answer 2 (Team inside each project) keep those
-   screens. The Timeline is already kept by P-001-redesign-conflicts.md item 3, so only Queue, Team
-   and the project bar are open here. P-001-redesign-nav.md rules the app-level tabs, not whether
-   the project bar stays.
-4. **Technical, Context and Why.** Audit §4.14 cuts the Timeline's Technical, Context and Why labels,
-   and brief 5 allows one accent and two status colours. P-001-trial-view-notes-2.md notes 7, 8 and
-   14 give them labels and colours of their own; P-001-redesign-conflicts.md, items 3 and 4, leaves
-   both unruled.
-5. **Answer boxes.** Brief 12 and audit §4.5 allow one free-text box per sheet.
-   P-001-trial-view-notes-1.md note 15 gives each question its own text box.
-6. **Reading order.** Audit §4.4 orders lists top-down. P-001-trial-view-notes-2.md note 15 reads
-   phases, milestones and tasks from the bottom up everywhere.
-7. **Other cuts.** Audit §4 also cuts Home's half-width card, Status's phase runs and the "More
-   detail" fold. P-001-trial-view-notes-1.md note 3 and P-001-tile-summary-clip.md keep the two-column
-   grid; P-001-trial-view-notes-2.md notes 1, 2 and 25 keep the runs and the branch drawing;
-   P-001-notify-more-detail.md keeps the fold on the current desk's Home.
-8. **"Not tied to a milestone".** Audit §4.14 cuts the Timeline's "Not tied to a milestone" blocks.
-   P-001-trial-view-notes-2.md keeps them: note 21 gathers tasks that name no milestone under a
-   flagged "Not tied to a milestone" line, and the owner agreed to reading (2) of the spec follow-up
-   question 4 ("Agree with all four"), which puts such sprints under it in the run they merged in.
-9. **Team's tiles and logs.** Audit §4.7 cuts Team's role tiles to one "At work now" line and moves
-   the running logs to Details. P-001-trial-view-notes-1.md note 11 has each member's running log
-   drawn right, and P-001-trial-view-notes-2.md note 30 gives each agent card the sprint it is on and
-   the milestone it feeds; P-001-design-lab-1.md ruling 1 keeps the agent panel.
+Settled as drawn in mockup v2
+1. **Unknown values in words.** Audit brief 3 removed "not recorded" lines. Mockup v2 keeps unknowns
+   as words: "unknowns are words ("not set yet", "not recorded yet")" (README, "No figure presented
+   as real that isn't"), "why it went back" reads "not recorded" when no record gives one (README,
+   "Runs"), and the three states are drawn apart (frames 6, 6b, 8). P-001-why-line.md then sets one
+   such line per phase for missing whys.
+2. **Legends.** Audit §4.4 and brief 8 cut every key; S-001 AC57 puts one above the phase boxes.
+   Mockup v2 draws no key on any frame, and its phase strip gives "an icon and words for each"
+   (README, frame 5). AC57's key is a spec point (above).
+3. **Navigation.** The built project screens carry the bar "Status · Timeline · Team · Queue" (S-001
+   AC48; the lab's "+" is not built). Mockup v2 replaces it: the app bar is Home · Waiting · Plan
+   (P-001-home-tab.md), what waits is one board for all projects, filtered by a tap on a project's
+   name (frames 1 and 2; P-001-board-scope.md), and a project's page has "Overview and Timeline at
+   the top" (frame 5). The Timeline itself is kept by P-001-redesign-conflicts.md item 3. Team is
+   not settled: see 8.
+4. **Technical, Context and Why.** Settled by P-001-timeline-labels.md: the labels stay, as small
+   grey words (frame 7b).
+5. **Reading order of phases and milestones.** Audit §4.4 ordered lists top-down. Mockup v2 reads
+   them from the bottom up, as P-001-trial-view-notes-2.md note 15 rules (README, "Bottom up";
+   frame 5).
+6. **Other cuts.** The two-column grid is replaced by full-width tiles (P-001-home-tiles.md). The
+   runs and the branch drawing stay: every run listed, earlier ones smaller (README, "Runs";
+   frames 6 and H5).
+7. **"Not tied to a milestone".** Audit §4.14 cut it. Mockup v2 keeps it, in a grey diamond, as
+   agent-owned (README, "IBM Plex Sans with Plex Mono": "Agent-owned gaps, such as "Not tied to a
+   milestone", use a grey diamond").
+
+Still open
+8. **Team's screen and logs.** Audit §4.7 cut Team's tiles to one "At work now" line and moved the
+   running logs to Details. Mockup v2 draws "At work now" lines on the project page and tiles
+   (frames 5, 9, H5), but no Team screen and no running log. P-001-design-lab-open.md answer 2
+   (Team inside each project), P-001-trial-view-notes-1.md note 11 (each member's running log) and
+   P-001-trial-view-notes-2.md note 30 (each agent card's sprint and milestone) are not replaced.
+9. **Answer boxes on a sheet with several questions.** Audit brief 12 allowed one free-text box per
+   sheet; P-001-trial-view-notes-1.md note 15 gives each question its own. Mockup v2 draws only
+   one-question sheets (frames 3, 3b, 4), so it does not settle a sheet with several.
+10. **Plan and the tile strip.** P-001-trial-view-notes-2.md note 15 reads phases, milestones and
+    tasks from the bottom up everywhere. Mockup v2 reads Plan top down and draws each tile's phase
+    strip left to right, and lists both as not ruled (README, "Not ruled", items 7 and 1e).
+11. **The "More detail" fold.** P-001-notify-more-detail.md keeps a closed fold on the current
+    desk's Home, holding the notifications switch and the Actions usage bar. Mockup v2 does not draw
+    where those two go in the new design.
 
 ## Evidence
 
@@ -411,6 +471,11 @@ not enforced. The reviewer never picks a side.
 - Check that the fonts loaded before judging type. A capture on Linux falls back to other fonts.
 - Fixture wording ("A made-up…") is not judged; the structure around it is.
 - Keep screenshots outside the repository. The reviewer writes nothing inside it.
+- **Known limit: no ready way to render the fixtures in a real browser yet.** The fixtures under
+  tests/desk/fixtures/ feed a fake DOM in tests/desk/sandbox-helpers.mjs and a fake desk function in
+  tests/desk/fake-desk.mjs, and `md-extremes` is put together in code (tests/desk/sandbox-fixtures.mjs).
+  The first review builds a Playwright setup outside the repository. Mockup v2's README, on frame 7c,
+  notes how one capture served the page's calls from the tests' fake desk function.
 
 **No visible change.** Configuration, the security headers, the service worker and notification
 logic can all change what the owner sees, so a change to them is not exempt by its kind. The path
@@ -426,8 +491,8 @@ Besides each pull request, the design reviewer audits the whole desk:
   its own Design milestones), and
 - once a month.
 
-The audit scores every screen against part A, and against part B once the owner has answered the
-redesign direction, from each project fixture item 6 names (Members Letter once a fixture exists).
+The audit scores every screen against part A, and each screen that carries out mockup v2 against
+part B, from each project fixture item 6 names (Members Letter once a fixture exists).
 It uses the form of docs/design/audit-2026-10-19.md: a short verdict, the job of each screen, a
 scorecard, the bloat list by impact, what to keep, and choices for the owner. It opens with a
 plain-English paragraph. Anything that meets a standing ruling is put as a choice for the owner,

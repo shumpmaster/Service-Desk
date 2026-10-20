@@ -1247,6 +1247,10 @@ function copyButton(text, key, label = 'Copy the text', cls = 'sb-btn ghost') {
   } }, said || label);
 }
 const copied = new Map();
+/** F3: a lane's words while nothing is read: never a 0, never "Nothing here". */
+const BOARD_UNREAD = Object.freeze({ pending: 'Not read yet', cant: "Can't read" });
+/** AC80: a pull request's own checks are not read (the card shows no check line). */
+const PR_CHECKS_WORDS = 'Its own checks: not read by the desk; its GitHub page shows them';
 const rechecks = new Map(); // AC77: what the re-read before an answer link found, per button, for this window
 
 /** Where a confirmed Done row's sprint is on the Timeline (AC66): a link there, or "sprint: not recorded" in slate. */
@@ -1435,6 +1439,12 @@ function boardOf(built, nowMs, only) {
       recordRows: recordDone(b.project, b.model, b.snap, b.j, nowMs), seenRows: boardState.seen.get(name) });
   }
   const view = boardView({ projects, marks: boardState.marks, only, nowMs, tz: TZ });
+  // Part A item 5 (stage 1a's build review, round 1, F3): before any project is read, or when none can
+  // be, an unknown is said in words, never as a 0 or "Nothing here".
+  const shown = only ? built.filter((b) => b.project.name === only) : built;
+  const readState = (b) => (b.box && b.box.read ? b.box.read.read : null);
+  view.unread = shown.some((b) => readState(b) === 'ok') ? null
+    : shown.length && shown.every((b) => readState(b) === 'cant-read') ? 'cant' : 'pending';
   boardState.view = view;
   boardState.cards = new Map(projects.flatMap((p) => p.cards.map((c) => [c.id, c])));
   for (const b of built) {
@@ -1616,7 +1626,7 @@ function cardNode(p, card, lane, only) {
   lane === 'kick' && card.kicked ? h('span', { class: 'v2-why' }, card.kicked.reason) : null,
   card.note ? h('span', { class: 'v2-why' }, card.note) : null,
   card.changes ? h('span', { class: 'v2-why' }, 'You asked for changes') : null,
-  card.failing ? h('span', { class: 'v2-why bad' }, vi('bad'), card.failing) : null,
+  // No check line on a pull request's card: no read gives its own checks (AC80, settled after round 1).
   stepButton(p, card, lane));
 }
 
@@ -1663,9 +1673,11 @@ function laneNode(bd, built, laneKey, only) {
     }
     return [head, h('ol', { class: 'v2-list', key: `list:${laneKey}:${g.project}` }, g.rows.map((c) => cardNode(p, c, laneKey, only)))];
   });
+  const unknown = bd.unread && laneKey !== 'done' && !groups.length;
   return h('section', { class: `v2-lane lane-${laneKey}`, key: `lane:${laneKey}`, 'data-lane': laneKey, 'aria-label': l.title },
-    h('h2', { class: 'v2-lh' }, h('span', {}, l.title), laneKey === 'done' ? null : h('span', { class: 'v2-lc' }, String(l.count))),
-    groups.length ? groups : h('p', { class: 'v2-empty' }, laneKey === 'done' ? WORDS.emptyDone : WORDS.empty));
+    h('h2', { class: 'v2-lh' }, h('span', {}, l.title), laneKey === 'done' || unknown ? null : h('span', { class: 'v2-lc' }, String(l.count))),
+    groups.length ? groups : h('p', { class: `v2-empty${unknown ? ' unknown' : ''}` },
+      unknown ? (bd.unread === 'cant' ? BOARD_UNREAD.cant : BOARD_UNREAD.pending) : laneKey === 'done' ? WORDS.emptyDone : WORDS.empty));
 }
 
 /** A quiet line (AC80): shown only when it has any; a tap opens its fold. */
@@ -1697,10 +1709,17 @@ function quietLines(bd, built, only) {
   const ansFold = () => h('ul', { class: 'v2-flist' }, q.answerRecording.map((a) => h('li', { key: `ansrec:${a.name}` },
     h('span', { class: 'v2-fw strong' }, a.words), h('span', { class: 'v2-ft' }, a.title), a.pr ? ext(a.pr.url, `PR #${a.pr.number}`, 'v2-lnk') : null)));
   if (only) {
-    // Filtered (frame 2): the two counts in one small line under the lanes, each opening its fold.
-    lines.push(h('p', { class: 'v2-qsmall', key: 'qsmall' },
-      quietLine('agents', 'agents', WORDS.agents, q.agents.length, agentsFold), h('span', { 'aria-hidden': 'true' }, ' · '),
-      quietLine('recording', 'eye', WORDS.recording, q.recording.length, recFold)));
+    // Filtered (frame 2): the two counts in one small line under the lanes, "With the agents: <n> ·
+    // Being recorded by the automatic job: <n>", each count's words a control opening its fold below.
+    const small = (k, words, n) => {
+      const open = boardState.folds.has(k);
+      return h('button', { type: 'button', class: 'v2-qs', key: `ql:${k}`, 'aria-expanded': open ? 'true' : 'false',
+        onclick: () => { if (open) boardState.folds.delete(k); else boardState.folds.add(k); render(); } }, `${words}: ${n}`);
+    };
+    lines.push(h('p', { class: 'v2-small v2-qsmall', key: 'qsmall' },
+      small('agents', WORDS.agents, q.agents.length), ' · ', small('recording', WORDS.recording, q.recording.length)));
+    if (boardState.folds.has('agents')) lines.push(h('div', { class: 'v2-qfold', key: 'fold:agents', role: 'region', 'aria-label': WORDS.agents }, agentsFold()));
+    if (boardState.folds.has('recording')) lines.push(h('div', { class: 'v2-qfold', key: 'fold:recording', role: 'region', 'aria-label': WORDS.recording }, recFold()));
   } else {
     if (q.agents.length) lines.push(quietLine('agents', 'agents', WORDS.agents, q.agents.length, agentsFold));
     if (bd.nothingWaiting.length) lines.push(h('p', { class: 'v2-ql still', key: 'ql:nothing' }, vi('eye'), h('span', {}, `${WORDS.nothing}: ${bd.nothingWaiting.join(', ')}`)));
@@ -1860,7 +1879,10 @@ function cardSheet(bd, built, only, sheetId) {
       f.leftWords ? h('p', { class: 'v2-mark', key: 'left-words' }, vi('kick'), h('span', {}, f.leftWords)) : null,
       f.answerWords ? h('p', { class: 'v2-body', key: 'answer-words' }, f.answerWords) : null));
   }
-  parts.push(blk('What was checked', h('p', { class: 'v2-body' }, v.checked)));
+  parts.push(blk('What was checked', h('p', { class: 'v2-body' }, v.checked),
+    // AC80 (settled after stage 1a's build review, round 1): no read gives a pull request's own checks,
+    // so its card has no check line, and its sheet says so, never letting a missing line pass for passing.
+    card.kind === 'pr' ? h('p', { class: 'v2-small', key: 'own-checks' }, PR_CHECKS_WORDS) : null));
   // AC66: the milestone it unblocks, its why, and the facts behind the ask one tap away.
   if (project.model === 'v3' && ['question', 'card', 'gate', 'pr'].includes(card.kind)) {
     const u = unblocksOf(p.ctx, row);
@@ -3045,7 +3067,9 @@ export function startSandbox(opts = {}) {
   // J12: the pull requests are kept under their own key in a store of their own, so a write that
   // fails there (the device's storage full) turns off only that key, never the blob cache.
   const pullsStore = createStore();
-  const desk = createDesk({ config: CONFIG, call, clock, store, pullsStore, isVisible, onChange: () => render(), j11: true });
+  // AC80: the waited reads' 5 a head, kept across openings under desk-board-waits-v1.
+  const waitsStore = createStore();
+  const desk = createDesk({ config: CONFIG, call, clock, store, pullsStore, waitsStore, isVisible, onChange: () => render(), j11: true });
   DESK = desk;
   ns.store = store;
   ns.looked = false;

@@ -47,7 +47,10 @@ export const CLOSED_COST = 3;
 export const PR_COST = 1;
 export const PRS_PER_CALL = 10;
 // AC80 (2026-10-19; draft 4): a pull request head's solo blob calls, the waited J20 read and the
-// verdict call's retries together, are at most this many in an opening, whoever waits on it (A3).
+// verdict call's retries together, are at most this many, whoever waits on it (A3). From the points
+// settled after stage 1a's build review, round 1 (finding 3), the count holds across openings, kept on
+// the device under WAITS_KEY by project, pull request number and head sha.
+export const WAITS_KEY = 'desk-board-waits-v1';
 export const HEAD_POLLS = 5;
 const COMPARE_CACHE_KEY = 'desk-compare-v1';
 
@@ -128,11 +131,11 @@ function newProjectState(project) {
     // in memory for this opening only (src/lib/jobwatch.js).
     jobs: newJobsState(), jobsCalls: 0,
     // AC80, J22 (2026-10-19; rule 0 from 2026-10-20), in memory for this opening only: GitHub's owner
-    // check by head sha ({ read, state, description, etag }), the heads whose read was refused (not
-    // asked again this opening), each verdict blob's word by sha ({ state: 'read', verdict } |
+    // check by head sha ({ read, state, description, etag }), the heads whose read answered `false`
+    // (sha → when; asked again FILES_RETRY_MS later), each verdict blob's word by sha ({ state: 'read', verdict } |
     // { state: 'failed', at }), each pull request head's solo calls (HEAD_POLLS), and the pull
     // requests the page's marks wait on J20 for (`desk.setWaited`).
-    j22: { checks: new Map(), refused: new Set(), verdicts: new Map(), headPolls: new Map(), waited: new Set(), verdictCalls: 0, waitedCalls: 0,
+    j22: { checks: new Map(), refused: new Map(), verdicts: new Map(), headPolls: new Map(), waited: new Set(), verdictCalls: 0, waitedCalls: 0,
       lastSolo: 0 },
   };
 }
@@ -140,7 +143,8 @@ function newProjectState(project) {
 /**
  * Create the desk's reader.
  * opts: { config, call(path, body) → Promise<{ ok, status, json?, reason?, words? }>, clock:
- *   { now(), setTimeout(fn, ms), clearTimeout(id) }, store (createStore), isVisible(),
+ *   { now(), setTimeout(fn, ms), clearTimeout(id) }, store (createStore), pullsStore and waitsStore
+ *   (createStore each, J12's list and AC80's waited-read counts, kept apart from the cache), isVisible(),
  *   onChange(), j11 (true in the MD sandbox only: also read J11's optional records) }
  */
 export function createDesk(opts) {
@@ -148,6 +152,28 @@ export function createDesk(opts) {
   const onChange = opts.onChange || (() => {});
   const isVisible = opts.isVisible || (() => true);
   const states = new Map(config.projects.map((p) => [p.name, newProjectState(p)]));
+  // AC80: each head's 5, kept on the device (opts.waitsStore, a store of its own as J12's is), read once
+  // at the opening: { project: { "<number>@<head sha>": polls used } }. When that store can't be read or
+  // written, the counts live in memory for this opening and no waited read is made at all.
+  const waitsStore = opts.waitsStore || null;
+  let waits = {};
+  let waitsKept = false;
+  if (waitsStore) {
+    const v = waitsStore.getJSON(WAITS_KEY, {});
+    waitsKept = Boolean(waitsStore.usable);
+    if (waitsKept && v && typeof v === 'object' && !Array.isArray(v)) {
+      for (const [proj, heads] of Object.entries(v)) {
+        if (!heads || typeof heads !== 'object') continue;
+        const ok = {};
+        for (const [k, n] of Object.entries(heads)) if (/^\d+@[0-9a-f]{40}$/.test(k) && Number.isInteger(n) && n >= 0) ok[k] = Math.min(n, 1000);
+        waits[proj] = ok;
+      }
+    }
+  }
+  const saveWaits = () => {
+    if (!waitsStore || !waitsKept) return;
+    if (!waitsStore.setJSON(WAITS_KEY, waits)) waitsKept = false;
+  };
   if (store && store.remove) for (const k of OLD_BLOB_CACHE_KEYS) store.remove(k);
   const blobCache = new Map(Object.entries((store && store.getJSON(BLOB_CACHE_KEY, {})) || {}));
   const historyCache = new Map(Object.entries((store && store.getJSON(HISTORY_CACHE_KEY, {})) || {}));
@@ -768,7 +794,14 @@ export function createDesk(opts) {
   /** J22: the owner-check part of this poll call: [{ sha, etag }] for the heads `ownerCheckHeads` chooses, or null. */
   function ownerChecksDue(st) {
     if (!opts.j11 || !checksRead(st)) return null;
-    const heads = ownerCheckHeads(pullsOf(st), j22Ctx(st)).filter((pr) => !st.j22.refused.has(pr.headSha));
+    // A head not read (`false`: a 403, a 5xx or a network failure alike) keeps its place among the 3 and
+    // is asked again at the first poll FILES_RETRY_MS later, inside this poll call (J22, settled after
+    // stage 1a's build review, round 1, finding 4).
+    const now = clock.now();
+    const heads = ownerCheckHeads(pullsOf(st), j22Ctx(st)).filter((pr) => {
+      const at = st.j22.refused.get(pr.headSha);
+      return at == null || now - at >= FILES_RETRY_MS;
+    });
     if (!heads.length) return null;
     return heads.map((pr) => {
       const c = st.j22.checks.get(pr.headSha);
@@ -780,16 +813,18 @@ export function createDesk(opts) {
   function applyOwnerChecks(st, sent, answers, etags) {
     const heads = new Set(pullsOf(st).map((p) => p.headSha));
     for (const sha of [...st.j22.checks.keys()]) if (!heads.has(sha)) st.j22.checks.delete(sha);
+    for (const sha of [...st.j22.refused.keys()]) if (!heads.has(sha)) st.j22.refused.delete(sha);
     if (!answers || typeof answers !== 'object') return;
     for (const { sha } of sent) {
       const a = answers[sha];
-      if (a === null) continue; // 304: the last answer stands (none: still not read)
+      if (a === null) { st.j22.refused.delete(sha); continue; } // 304: the last answer stands (none: still not read)
       if (typeof a !== 'string') {
-        // Not read (a failed or refused read): "not read", never "not required"; not asked again this opening.
+        // Not read (a failed or refused read): "not read", never "not required"; asked again 5 minutes on.
         st.j22.checks.delete(sha);
-        st.j22.refused.add(sha);
+        st.j22.refused.set(sha, clock.now());
         continue;
       }
+      st.j22.refused.delete(sha); // a 200 ends the wait, as a 304 does
       const e = ownerCheckFrom(a);
       const etag = etags && typeof etags[sha] === 'string' ? etags[sha] : null;
       if (e === undefined) st.j22.checks.delete(sha); // malformed: not read
@@ -799,8 +834,28 @@ export function createDesk(opts) {
   }
 
   const headKey = (pr) => `${pr.number}@${pr.headSha}`;
-  const headPolls = (st, pr) => st.j22.headPolls.get(headKey(pr)) || 0;
-  const usePoll = (st, pr) => st.j22.headPolls.set(headKey(pr), headPolls(st, pr) + 1);
+  const headPolls = (st, pr) => {
+    const kept = (waits[st.project.name] || {})[headKey(pr)] || 0;
+    return Math.max(kept, st.j22.headPolls.get(headKey(pr)) || 0);
+  };
+  const usePoll = (st, pr) => {
+    const n = headPolls(st, pr) + 1;
+    st.j22.headPolls.set(headKey(pr), n);
+    if (waitsKept) {
+      waits[st.project.name] = { ...(waits[st.project.name] || {}), [headKey(pr)]: n };
+      saveWaits();
+    }
+  };
+  /** After a successful read of the open list: drop the kept counts of heads it no longer shows open. */
+  const pruneWaits = (st) => {
+    const mine = waits[st.project.name];
+    if (!mine) return;
+    const open = new Set(pullsOf(st).filter((p) => p.headSha).map(headKey));
+    const next = Object.fromEntries(Object.entries(mine).filter(([k]) => open.has(k)));
+    if (Object.keys(next).length === Object.keys(mine).length) return;
+    waits[st.project.name] = next;
+    saveWaits();
+  };
   /** AC52's order: `created_at`, oldest first; two alike by the lower number. */
   const byRaised = (a, b) => {
     const t = (p) => (Number.isFinite(Date.parse(p.createdAt)) ? Date.parse(p.createdAt) : Infinity);
@@ -859,6 +914,8 @@ export function createDesk(opts) {
    * most HEAD_POLLS for that head in this opening, whoever waits on it (`desk.setWaited`).
    */
   async function waitedPhase(st) {
+    // No device storage for the counts: no waited read at all, the mark waiting on J20's own retry.
+    if (!waitsKept) return;
     for (const pr of pullsOf(st).filter((p) => st.j22.waited.has(p.number)).sort(byRaised)) {
       if (!pr.headSha || !ownBranch(pr, st.project)) continue;
       const f = st.files.get(pr.number);
@@ -974,6 +1031,7 @@ export function createDesk(opts) {
       } else {
         if (jobsSent) applyPollAnswer(st.jobs, new Set(pollBody.jobs.heads.map((x) => x.sha)), res.json.jobs);
         outcome = applyPoll(st, res.json);
+        if (outcome.ok) pruneWaits(st);
         if (pollBody.ownerChecks) applyOwnerChecks(st, pollBody.ownerChecks, res.json.ownerChecks, res.json.ownerCheckEtags);
         if (st.tree) {
           st.j22.lastSolo = 0;

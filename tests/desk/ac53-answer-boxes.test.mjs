@@ -217,6 +217,7 @@ test('AC53 (owner\'s note, 16 Oct) + AC80: each lettered choice holds its letter
       assert.equal(parts[1].textContent, ' ', 'a real space between');
       assert.equal(parts[2].textContent, choices[i].text, 'the words exactly as in the file');
       assert.doesNotMatch(name.textContent, /^[A-Z]\.\S/, 'never "C.Drop it"');
+      assert.equal(name.textContent, `${choices[i].value}. ${choices[i].text}`, 'its accessible name: the letter, a space, the text');
     });
     assert.deepEqual(opts.map((o) => byClass(o, 'v2-abtn')[0].textContent), ['Answer A ↗', 'Answer B ↗', 'Answer C ↗']);
     assert.deepEqual(opts.map((o) => byClass(o, 'v2-rec').length), [1, 0, 0], 'the "Recommended" label stays, on A only');

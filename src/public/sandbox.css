@@ -70,9 +70,10 @@ html.sb body { font: var(--t-body); max-width: 560px; margin: 0 auto; overflow-x
 html.sb header#top, html.sb footer#foot { display: none; }
 html.sb main#view { display: block; }
 html.sb *, html.sb *::before, html.sb *::after { box-sizing: border-box; }
-html.sb a { color: inherit; }
+/* Mockup v2's screens (`.v2`) set their own links and paragraphs (AC81): these two resets stop at them, with no weight added. */
+html.sb a:where(:not(.v2 *)) { color: inherit; }
 html.sb :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-html.sb p { margin: 0; }
+html.sb p:where(:not(.v2 *)) { margin: 0; }
 .sb-screen, .sb-screen * { overflow-wrap: anywhere; word-break: break-word; min-width: 0; }
 .small { font: var(--t-meta); }
 .sb-muted { color: var(--muted); }
@@ -813,11 +814,13 @@ html.sb.v2-page, html.sb.v2-page body { background: var(--bg); color: var(--ink)
 html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /* AC81: every screen keeps room for the bar at its foot, with the safe areas */ }
 .v2 { font: var(--t-body); color: var(--ink); }
 .v2 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.v2 p, .v2 h1, .v2 h2, .v2 h3, .v2 ol, .v2 ul { margin: 0; }
-.v2 ol, .v2 ul { list-style: none; padding: 0; }
-.v2 a { color: inherit; text-decoration: none; }
-.v2 b, .v2 strong { font-weight: 600; }
-.v2 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+/* The resets carry no weight (:where), so every v2 class below outranks them (stage 1a's build review,
+   round 1, the design reviewer's F1: a `.v2 button` reset had out-ranked the board's button classes). */
+:where(.v2) :where(p, h1, h2, h3, ol, ul) { margin: 0; }
+:where(.v2) :where(ol, ul) { list-style: none; padding: 0; }
+:where(.v2) a { color: inherit; text-decoration: none; }
+:where(.v2) :where(b, strong) { font-weight: 600; }
+:where(.v2) button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
 .v2-k { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .v2-i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .v2-k .fill, .v2-i .fill { fill: currentColor; stroke: none; }
@@ -850,6 +853,7 @@ html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /*
 .v2-sub { font: var(--t-small); color: var(--ink2); margin-top: -6px; }
 .v2-quiet { display: flex; flex-wrap: wrap; gap: 0 10px; align-items: center; }
 .v2-quiet.under { display: grid; gap: 4px; }
+.v2-qs { font: var(--t-small); color: var(--ink2); min-height: 24px; text-decoration: underline; text-underline-offset: 2px; }
 .v2-ql { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; font: var(--t-small); color: var(--ink2); }
 .v2-ql b { font-weight: 500; color: var(--ink); }
 .v2-ql.bad { color: var(--bad); }
@@ -857,7 +861,7 @@ html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /*
 .v2-qfold { flex-basis: 100%; padding: 4px 0 8px; }
 .v2-flist { display: grid; gap: 8px; }
 .v2-flist > li { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
-.v2-ft { font: var(--t-row); overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: 2px; }
+.v2-ft { font: var(--t-row); overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: 2px; display: block; min-height: 24px; padding: 3px 0; /* a tap target at least 24 px tall (AC80) */ }
 .v2-fw { font: var(--t-small); color: var(--ink2); }
 .v2-fw.strong { color: var(--ink); }
 .v2-fd > summary { font: var(--t-label); color: var(--ink2); min-height: 28px; display: flex; align-items: center; cursor: pointer; }
@@ -889,7 +893,7 @@ html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /*
 .v2-gl { font: 400 11px/1.4 var(--font); color: var(--ink); overflow-wrap: anywhere; }
 .v2-gk { color: var(--ink2); }
 .v2-step { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-height: 28px; padding: 0 8px; border: 1px solid var(--line2);
-  border-radius: 6px; font: 500 12px/1.35 var(--font); color: var(--ink); background: var(--bg); justify-self: start; max-width: 100%; text-align: center; }
+  border-radius: 6px; font: var(--t-label); /* AC81, settled after round 1: the board's buttons 500 11 px */ color: var(--ink); background: var(--bg); justify-self: start; max-width: 100%; text-align: center; }
 .v2-step.off { color: var(--ink2); }
 .v2-steps { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .v2-undo { position: relative; z-index: 1; min-height: 28px; padding: 0 4px; font: var(--t-label); color: var(--ink2); text-decoration: underline; text-underline-offset: 2px; }
@@ -943,4 +947,9 @@ html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /*
 .v2-src { display: block; font: var(--t-small); color: var(--ink2); }
 .v2-facts { display: grid; gap: 4px; font: var(--t-small); padding-left: 1.1em; list-style: disc; }
 .v2-sheet .sb-record { font: var(--t-body); overflow-wrap: anywhere; }
+/* AC81 (settled after round 1): a heading inside quoted record text takes --t-row, the rest --t-body. */
+.v2-sheet .sb-record :is(h1, h2, h3, h4, h5, h6) { font: var(--t-row); margin: 8px 0 4px; }
+.v2-sheet .sb-record :is(p, li, td, th, blockquote) { font: var(--t-body); }
+/* AC81: the sandbox's marker on a screen built to mockup v2 is --t-label, as the mockup's own tags. */
+.v2 .sb-marker { font: var(--t-label); color: var(--ink2); border-color: var(--line2); }
 .v2-sheet .gap { color: var(--ink2); }

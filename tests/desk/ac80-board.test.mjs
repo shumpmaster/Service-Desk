@@ -13,6 +13,7 @@ import { CONFIG, FIX, SRC, fixture } from './helpers.mjs';
 import { repo, pr } from './fake-desk.mjs';
 import { loadSandbox, byClass, findAll, linksIn, El0 } from './sandbox-helpers.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
+import { AGENTS_WORDS } from '../../src/lib/j22.js';
 import { KICK_BACK_MINUTES, DONE_KEEP_HOURS, MARKS_KEY, HOLD_MS, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, WORDS, markDone, judgeMarks, noMarks } from '../../src/lib/board.js';
 import { twoProjects, v3, fullRepo } from './sandbox-fixtures.mjs';
 import { waSetup, memStore } from './wa-fixtures.mjs';
@@ -35,7 +36,8 @@ function exampleRepo() {
     'README.md': '# Example\n\nNOT a real project: made up for AC80\'s test.\n',
   };
   const at = (min) => iso(NOW - min * 60e3);
-  const mk = (n, title, head, created) => ({ ...pr(n, title, { head, headRepo: EX.repo, sha: sha(n), createdAt: created }), html_url: `https://github.com/${EX.repo}/pull/${n}` });
+  // A public repository's pull requests (J1's `base.repo.private` false), so J22's owner check is read.
+  const mk = (n, title, head, created) => ({ ...pr(n, title, { head, headRepo: EX.repo, sha: sha(n), createdAt: created, private: false }), html_url: `https://github.com/${EX.repo}/pull/${n}` });
   const pulls = [
     mk(135, "Show the automatic job's pull requests as being recorded", 'orch/job-prs-recorded', at(35)),
     mk(130, 'Make two notification files high-risk', 'cos/cs23-r3-paths', at(50)),
@@ -646,7 +648,7 @@ test('AC80: the CSS — three lanes side by side at every width, every board con
   assert.match(rule('.v2-dt'), /font: 400 12px\/[\d.]+ var\(--font\);/, 'a Done row\'s title 400 12 px');
   assert.match(rule('.v2-grp'), /font: var\(--t-label\);/, 'a group\'s name 500 11 px');
   // Every control on the board: a tap target at least 24 px tall.
-  for (const sel of ['.v2-grp', '.v2-ql', '.v2-more', '.v2-x', '.v2-lnk']) {
+  for (const sel of ['.v2-grp', '.v2-ql', '.v2-qs', '.v2-more', '.v2-x', '.v2-lnk', '.v2-ft', '.v2-undo', '.v2-fold']) {
     const h = /min-height: (\d+)px/.exec(rule(sel)) || /(?:^|;)\s*height: (\d+)px/.exec(rule(sel)) || /(?:^|\s)height: (\d+)px/.exec(rule(sel));
     assert.ok(h && Number(h[1]) >= 24, `${sel}: ${h && h[1]} px`);
   }
@@ -683,4 +685,191 @@ test('AC80: going to the agents is no end — a marked card with the agents leav
   out = judgeMarks(marks, EX, { ...base, pulls: [{ number: 127, headSha: sha(127) }], current: new Map([[PR(127), card(127, 'merge')]]) }, T + KICK_BACK_MINUTES * 60e3 - 1000);
   assert.equal(out.marks[PR(127)].kicked, null);
   assert.equal(out.marks[PR(127)].confirmedAt, null);
+});
+
+test('AC80 (settled after stage 1a\'s build review, round 1, finding 2): no pull request card has a check line; its sheet says "Its own checks: not read by the desk; its GitHub page shows them"; no other kind\'s sheet says it', async () => {
+  const { app } = await openExample();
+  try {
+    for (const c of cardsIn(app, 'wait')) {
+      assert.doesNotMatch(c.textContent, /check failing|checks? (pass|fail)/i, 'no check line on a card');
+      assert.equal(byClass(c, 'v2-why bad').length, 0);
+    }
+    for (const n of [126, 135]) {
+      const sh = await openSheet(app, PR(n));
+      assert.equal(keyed(app, 'own-checks').textContent, 'Its own checks: not read by the desk; its GitHub page shows them');
+      const blk = byClass(sh, 'v2-blk').find((b) => byClass(b, 'v2-bh')[0] && byClass(b, 'v2-bh')[0].textContent === 'What was checked');
+      assert.ok(blk.contains(keyed(app, 'own-checks')), 'under AC29\'s line, in "What was checked"');
+    }
+    await openSheet(app, Q('P-001-board-answer'));
+    assert.equal(keyed(app, 'own-checks'), null, 'a question\'s sheet: not said');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC80 (settled after round 1, finding 7): a gate card\'s Critic line reads "Critic: its view is on GitHub" when the tree holds the Critic\'s file, "Critic: not recorded" when it doesn\'t', async () => {
+  for (const [withFile, words] of [[true, 'Critic: its view is on GitHub'], [false, 'Critic: not recorded']]) {
+    const r = fullRepo('Alpha');
+    if (withFile) r.commit({ 'reviews/P-002/_build-gate-1-critic.md': 'Verdict: PASS\n\nMade up (NOT a real record).\n' });
+    const app = await loadSandbox({ config: { ...CONFIG, projects: [v3('Alpha')] }, repos: { Alpha: r }, hash: '#/waiting', now: Date.parse('2026-10-14T15:00:00Z') });
+    try {
+      await app.advance(1000);
+      await app.advance(POLL_MS);
+      const gate = cardsIn(app, 'wait').find((c) => byClass(c, 'v2-kd')[0].textContent.startsWith('Gate'));
+      assert.equal(byClass(gate, 'v2-gl')[0].textContent, words);
+    } finally {
+      app.restore();
+    }
+  }
+});
+
+// ---------------------------------------------------------------------------
+// J22's rule 0 on the page (stage 1a's build review, round 1, finding 6; made-up, NOT real)
+
+/** The Example project with #140, an R1 change needing the Reviewer's verdict, opened before every other pull request. */
+function with140({ reviewer = null, owner = null, check = null } = {}) {
+  const r = exampleRepo();
+  r.pulls.push({ ...pr(140, 'A made-up code change', { head: 'build/builder/x-140', headRepo: EX.repo, sha: sha(140), createdAt: iso(NOW - 400 * 60e3), private: false }), html_url: `https://github.com/${EX.repo}/pull/140` });
+  const files140 = (head, rev, own) => {
+    const out = [{ filename: 'src/x.js', status: 'modified' }];
+    if (rev) out.push({ filename: 'reviews/140/reviewer.md', status: 'added', sha: rev });
+    if (own) out.push({ filename: 'reviews/140/owner.md', status: 'added', sha: own });
+    return out;
+  };
+  r.prFiles[140] = files140(sha(140), reviewer && 'e'.repeat(40), owner && '9'.repeat(40));
+  r.blobs = {};
+  if (reviewer && reviewer !== 'unread') r.blobs['e'.repeat(40)] = reviewer;
+  if (reviewer === 'unread') r.blobFail = ['e'.repeat(40)];
+  if (check) r.statuses = { [sha(140)]: check };
+  r.files140 = files140;
+  return r;
+}
+const counts = async (app) => {
+  const out = { badge: badge(app), lane: byClass(lane(app, 'wait'), 'v2-lc')[0].textContent, agents: keyed(app, 'ql:agents') ? keyed(app, 'ql:agents').textContent : null };
+  await app.go('#/');
+  out.home = (/(\d+) waiting on you/.exec(app.text()) || [])[1] || null;
+  out.pill = byClass(app.view, 'sb-pill').map((x) => x.textContent).join(' | ');
+  await app.go('#/waiting');
+  return out;
+};
+
+test('AC80 + J22 rule 0, on the page: a Reviewer\'s verdict reading FAIL and an owner check reading "Owner: after agents" put the pull request "With the agents", left out of every count (badge, lane, Home\'s line, the tile); a verdict on the branch whose blob is unread counts as given, so a card', async () => {
+  for (const [name, setup, withAgents, words] of [
+    ['FAIL', { reviewer: 'Verdict: FAIL\n' }, true, 'Reviewer asked for changes'],
+    ['Owner: after agents', { reviewer: 'Verdict: PASS\n', check: { state: 'pending', description: 'Owner: after agents · 2 other finding(s)' } }, true, AGENTS_WORDS],
+    ['unread', { reviewer: 'unread' }, false, null],
+  ]) {
+    const { app } = await openExample({ repos: { Example: with140(setup) } });
+    try {
+      await app.advance(POLL_MS);
+      const c = await counts(app);
+      if (withAgents) {
+        assert.equal(c.agents, 'With the agents: 1', name);
+        assert.ok(!titles(app, 'wait').includes('A made-up code change'), `${name}: not a card`);
+        assert.deepEqual([c.badge, c.lane, c.home], ['8', '8', '8'], `${name}: in no count`);
+        await app.tap(keyed(app, 'ql:agents'));
+        assert.ok(byClass(keyed(app, 'fold:agents'), 'v2-fw').some((x) => x.textContent === words), `${name}: ${words}`);
+      } else {
+        assert.equal(c.agents, null, `${name}: not with the agents`);
+        assert.ok(titles(app, 'wait').includes('A made-up code change'), `${name}: a card, the verdict counted as given`);
+        assert.deepEqual([c.badge, c.lane, c.home], ['9', '9', '9'], `${name}: counted`);
+      }
+    } finally {
+      app.restore();
+    }
+  }
+});
+
+test('AC80 + J22: rule 0 is never kept across heads — with the agents at head A, its verdict commit gives head B whose J20 read fails: a card at once and counted, judged by (i) alone', async () => {
+  const r = with140({});
+  const { app } = await openExample({ repos: { Example: r } });
+  try {
+    assert.equal(keyed(app, 'ql:agents').textContent, 'With the agents: 1');
+    assert.equal(badge(app), '8');
+    const p = r.pulls.find((x) => x.number === 140);
+    p.head = { ...p.head, sha: sha(140, 'b') };
+    r.filesFail = [140];
+    await app.advance(POLL_MS);
+    assert.ok(titles(app, 'wait').includes('A made-up code change'), 'a card at once');
+    assert.equal(keyed(app, 'ql:agents'), null);
+    assert.equal(badge(app), '9', 'counted');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC80: a marked "Merge ↗" card whose pull request goes to the agents leaves Done for the "With the agents" fold, its mark dropped, no ✓; once rule 0 no longer holds, a card in "Waiting on you"', async () => {
+  const store = storage();
+  const r = with140({ reviewer: 'Verdict: PASS\n' });
+  const { app } = await openExample({ repos: { Example: r }, store });
+  try {
+    assert.equal(byClass(cardOf(app, PR(140)), 'v2-step')[0].textContent, 'Merge ↗');
+    await markDoneInSheet(app, PR(140));
+    assert.equal(byClass(lane(app, 'done'), 'v2-card conf').length, 1);
+    // The agents push: head B, the Reviewer's verdict at it reading FAIL.
+    const p = r.pulls.find((x) => x.number === 140);
+    p.head = { ...p.head, sha: sha(140, 'b') };
+    r.prFiles[140] = r.files140(sha(140, 'b'), 'd'.repeat(40));
+    r.blobs['d'.repeat(40)] = 'Verdict: FAIL\n';
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    assert.equal(byClass(lane(app, 'done'), 'v2-card conf').length, 0, 'left Done');
+    assert.ok(!byClass(lane(app, 'done'), 'v2-drow').some((x) => x.textContent.includes('A made-up code change')), 'no ✓ row');
+    assert.equal(keyed(app, 'ql:agents').textContent, 'With the agents: 1');
+    assert.equal(JSON.parse(store.backing.get(MARKS_KEY)).marks[PR(140)], undefined, 'its mark dropped');
+    // The Reviewer passes it at head C: a card again in "Waiting on you".
+    p.head = { ...p.head, sha: sha(140, 'c') };
+    r.prFiles[140] = r.files140(sha(140, 'c'), 'c'.repeat(40));
+    r.blobs['c'.repeat(40)] = 'Verdict: PASS\n';
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    assert.ok(titles(app, 'wait').includes('A made-up code change'));
+    assert.equal(keyed(app, 'ql:agents'), null);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC80 with Part A item 5 (stage 1a\'s build review, round 1, F3): before the first read the lanes show no count and no "Nothing here", but "Not read yet"; with every project unreadable, "Can\'t read"; never a 0', async () => {
+  // Before the first read.
+  let app = await loadSandbox({ config: { ...CONFIG, projects: [EX] }, repos: { Example: exampleRepo() }, hash: '#/waiting', now: NOW });
+  try {
+    assert.ok(!app.text().includes('checked'), 'nothing read yet');
+    for (const k of ['wait', 'kick']) {
+      assert.equal(cardsIn(app, k).length, 0);
+      assert.equal(byClass(lane(app, k), 'v2-lc').length, 0, `${k}: no count before a read`);
+      assert.equal(byClass(lane(app, k), 'v2-empty')[0].textContent, 'Not read yet');
+    }
+    assert.doesNotMatch(byClass(app.view, 'v2-lanes')[0].textContent, /\b0\b|Nothing here/);
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    assert.equal(byClass(lane(app, 'wait'), 'v2-lc')[0].textContent, '8', 'read: its count');
+    assert.equal(byClass(lane(app, 'kick'), 'v2-lc')[0].textContent, '0', 'a 0 that is a read value');
+    assert.equal(byClass(lane(app, 'kick'), 'v2-empty')[0].textContent, 'Nothing here');
+  } finally {
+    app.restore();
+  }
+  // Every project unreadable.
+  const a = exampleRepo();
+  const b = fullRepo('Alpha');
+  a.fail = { kind: 'network' };
+  b.fail = { kind: 'network' };
+  app = await loadSandbox({ config: { ...CONFIG, projects: [EX, v3('Alpha')] }, repos: { Example: a, Alpha: b }, hash: '#/waiting', now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    assert.match(app.text(), /Can't read Example since \d\d:\d\d/);
+    for (const k of ['wait', 'kick']) {
+      assert.equal(byClass(lane(app, k), 'v2-lc').length, 0, `${k}: no count`);
+      assert.equal(byClass(lane(app, k), 'v2-empty')[0].textContent, "Can't read");
+    }
+    assert.doesNotMatch(byClass(app.view, 'v2-lanes')[0].textContent, /\b0\b|Nothing here/);
+    assert.equal(badge(app), null);
+    // One project read again: the lanes show real counts.
+    delete b.fail;
+    await app.advance(POLL_MS);
+    assert.ok(byClass(lane(app, 'wait'), 'v2-lc').length === 1, 'a count once a project is read');
+  } finally {
+    app.restore();
+  }
 });

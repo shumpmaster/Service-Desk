@@ -228,7 +228,10 @@ test('AC50: a v2.5 project shows "Phases not tracked", never a guess', () => {
 test('AC50 + AC41: no element is sized by a fraction of phases', () => {
   const page = pageSource();
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
-  assert.doesNotMatch(page, /\.style\./, 'the sandbox sets no inline sizes');
+  // From stage 1a (AC80): a held card follows the finger while it is dragged, by a transform on that
+  // card alone, cleared when it lands; a move, never a size. Nothing else sets an inline style.
+  assert.equal((page.match(/\.style\./g) || []).length, (page.match(/drag\.el\.style\.transform = /g) || []).length, 'the only inline style is the dragged card\'s transform');
+  assert.doesNotMatch(page, /\.style\.(?!transform = )/, 'the sandbox sets no inline sizes');
   assert.doesNotMatch(css.replace(/width: 100%/g, ''), /width:\s*calc\(|width:\s*\d+(\.\d+)?%/, 'no width by fraction (only full width)');
 });
 

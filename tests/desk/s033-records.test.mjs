@@ -148,8 +148,10 @@ test('AC3 (S-033): a question in S-033\'s form is flagged by the same rule, with
 // ---------------------------------------------------------------------------
 // AC66 on the page
 
+// From stage 1a (AC80): the Queue screen goes; each card's "Unblocks" and Context fold are in its sheet over Waiting.
+const sheetOf = async (app, key) => { await app.go(`#/waiting/Alpha/card/${encodeURIComponent(key)}`); };
 const qRow = (app, key) => keyed(app, `unb:${key}`);
-const unbLine = (app, key) => byClass(qRow(app, key), 'sb-unb-l').map((x) => x.textContent);
+const unbLine = (app, key) => byClass(qRow(app, key), 'v2-unb-l').map((x) => x.textContent);
 
 function s033Setup() {
   const setup = twoProjects();
@@ -166,26 +168,30 @@ function s033Setup() {
   return setup;
 }
 
-test('AC66 (S-033): "Unblocks" and the Context fold from a question\'s own lines; a card\'s from the line under `answer:` and its `## Context` before `## 8.`; a card with no line falling to its item', async () => {
-  const app = await opened(s033Setup(), '#/p/Alpha/queue');
+test('AC66 (S-033) + AC80: "Unblocks" and the Context fold from a question\'s own lines; a card\'s from the line under `answer:` and its `## Context` before `## 8.`; a card with no line falling to its item (each in its sheet)', async () => {
+  const app = await opened(s033Setup(), '#/waiting/Alpha');
   try {
     await app.advance(POLL_MS);
-    assert.deepEqual(unbLine(app, 'q:S033-milestone'), ['Unblocks The chosen design running on the real back end MD3']);
-    assert.deepEqual(unbLine(app, 'q:S033-two'), ['Unblocks Cards answered straight from the desk M2', 'Unblocks Agent usage shown on the desk M2B']);
-    assert.deepEqual(unbLine(app, 'q:S033-standard'), ['Unblocks A plan that passed review Design-6']);
-    assert.deepEqual(unbLine(app, 'q:S033-none'), ['Unblocks no milestone: a records-only question']);
-    assert.deepEqual(unbLine(app, 'q:P-001-design-lab-open'), ['Unblocks: milestone not recorded'], 'the old form');
-    assert.deepEqual(unbLine(app, 'card:queue/P-002-stop-1.md'), ['Unblocks Cards answered straight from the desk M2'], 'the card\'s own line');
-    assert.deepEqual(unbLine(app, 'card:queue/Q-013-stop-2.md'), ['Unblocks What a good desk looks like is known MD1'], 'no line: its item Q-013, which MD1 lists');
-    assert.deepEqual(unbLine(app, 'card:queue/P-003-launch-2.md'), ['Unblocks: milestone not recorded'], 'no line, and its item in no plan list');
+    const unb = async (key) => { await sheetOf(app, key); return unbLine(app, key); };
+    assert.deepEqual(await unb('q:S033-milestone'), ['Unblocks The chosen design running on the real back end MD3']);
+    assert.deepEqual(await unb('q:S033-two'), ['Unblocks Cards answered straight from the desk M2', 'Unblocks Agent usage shown on the desk M2B']);
+    assert.deepEqual(await unb('q:S033-standard'), ['Unblocks A plan that passed review Design-6']);
+    assert.deepEqual(await unb('q:S033-none'), ['Unblocks no milestone: a records-only question']);
+    assert.deepEqual(await unb('q:P-001-design-lab-open'), ['Unblocks: milestone not recorded'], 'the old form');
+    assert.deepEqual(await unb('card:queue/P-002-stop-1.md'), ['Unblocks Cards answered straight from the desk M2'], 'the card\'s own line');
+    assert.deepEqual(await unb('card:queue/Q-013-stop-2.md'), ['Unblocks What a good desk looks like is known MD1'], 'no line: its item Q-013, which MD1 lists');
+    assert.deepEqual(await unb('card:queue/P-003-launch-2.md'), ['Unblocks: milestone not recorded'], 'no line, and its item in no plan list');
     // The Context folds.
+    await sheetOf(app, 'q:S033-milestone');
     await app.tap(keyed(app, 'fold:ctx:q:S033-milestone'));
     assert.deepEqual(findAll(keyed(app, 'facts:q:S033-milestone'), (e) => e.tag === 'li').map((x) => x.textContent),
       ['The chosen design is to run on the real back enddocs/PROJECT.md, section 3', 'The sandbox reads the default branch only (it has a second paren (here))specs/S-001.md, J11']);
+    await sheetOf(app, 'card:queue/P-003-launch-2.md');
     await app.tap(keyed(app, 'fold:ctx:card:queue/P-003-launch-2.md'));
     const facts = findAll(keyed(app, 'facts:card:queue/P-003-launch-2.md'), (e) => e.tag === 'li').map((x) => x.textContent);
     assert.deepEqual(facts, ['stage 6, role critic-gate, last verdict PASSstatus/P-003.toml', 'plan round 1, build round 1status/P-003.toml',
       "the Launch gate's case 2docs/gates/P-003/launch-gate-2-case.md"], 'stopping before ## 8.');
+    await sheetOf(app, 'q:P-001-design-lab-open');
     await app.tap(keyed(app, 'fold:ctx:q:P-001-design-lab-open'));
     assert.equal(keyed(app, 'facts:q:P-001-design-lab-open').textContent, 'Context: not recorded');
   } finally {
@@ -193,7 +199,7 @@ test('AC66 (S-033): "Unblocks" and the Context fold from a question\'s own lines
   }
 });
 
-test('AC66 (S-033): "Done today"\'s link for a ruling — from its answer record\'s `Milestone:` line with no question file in the tree; an accepted-link answer from its question while the tree holds it, from the edited question after an edit, and "sprint: not recorded" once it is gone', async () => {
+test('AC66 (S-033) + AC80: a Done row\'s link for a ruling (AC52\'s "Done today" before stage 1a) — from its answer record\'s `Milestone:` line with no question file in the tree; an accepted-link answer from its question while the tree holds it, from the edited question after an edit, and "sprint: not recorded" once it is gone', async () => {
   const setup = twoProjects();
   const A = setup.repos.Alpha;
   const at = (min) => [{ commit: { committer: { date: iso(NOW - min * 60e3) } } }];
@@ -205,27 +211,37 @@ test('AC66 (S-033): "Done today"\'s link for a ruling — from its answer record
     'decisions/questions/S033-milestone.md': questionAnswerContent('A', 'S033-milestone', ''),
   });
   Object.assign(A.history, { 'decisions/questions/P-001-asks-merge-on-desk.md': at(30), 'decisions/questions/S033-milestone.md': at(35) });
-  const app = await loadSandbox({ ...setup, hash: '#/p/Alpha/queue', now: NOW });
-  const rowOf = (codeText) => byClass(keyed(app, 'done-today'), 'sb-done-r').find((r) => byClass(r, 'code').some((c) => c.textContent === codeText));
-  const link = (r) => linksIn(r).find((l) => l.text === 'On the Timeline');
+  const app = await loadSandbox({ ...setup, hash: '#/waiting/Alpha', now: NOW });
+  // The Done row with that code; its small sheet (opened, read, closed again, so the next opening shows the latest).
+  const sheetOfRow = async (codeText) => {
+    await app.go('#/waiting/Alpha');
+    const row = byClass(keyed(app, 'lane:done'), 'v2-drow').find((r) => byClass(r, 'v2-dc').some((c) => c.textContent === codeText));
+    assert.ok(row, `a Done row for ${codeText}`);
+    await app.go(byClass(row, 'v2-dt')[0].attrs.href);
+    const sheet = byClass(app.view, 'v2-sheet')[0];
+    const out = { link: linksIn(sheet).find((l) => l.text === 'On the Timeline'), text: sheet.textContent };
+    await app.go('#/waiting/Alpha');
+    return out;
+  };
   try {
     await app.advance(1000);
     await app.advance(POLL_MS);
     await app.advance(POLL_MS);
-    assert.equal(link(rowOf('P-001-asks-merge-on-desk')).href, '#/p/Alpha/timeline/ms/MD2', 'from the answer record, with no question file');
-    assert.equal(link(rowOf('S033-milestone')).href, '#/p/Alpha/timeline/ms/MD3', 'from its question, while the tree holds it');
+    assert.equal((await sheetOfRow('P-001-asks-merge-on-desk')).link.href, '#/p/Alpha/timeline/ms/MD2', 'from the answer record, with no question file');
+    assert.equal((await sheetOfRow('S033-milestone')).link.href, '#/p/Alpha/timeline/ms/MD3', 'from its question, while the tree holds it');
     // The question is edited after the answer: the desk reads it as the tree holds it now (J2's known limit).
     A.commit({ 'questions/S033-milestone.md': S('questions/S033-milestone.md').replace('Milestone: MD3', 'Milestone: MD1') });
     await app.advance(POLL_MS);
     await app.advance(POLL_MS);
-    assert.equal(link(rowOf('S033-milestone')).href, '#/p/Alpha/timeline/ms/MD1', 'from the edited question');
+    assert.equal((await sheetOfRow('S033-milestone')).link.href, '#/p/Alpha/timeline/ms/MD1', 'from the edited question');
     // Tidied away: "sprint: not recorded".
     A.commit({ 'questions/S033-milestone.md': null });
     await app.advance(POLL_MS);
     await app.advance(POLL_MS);
-    assert.equal(link(rowOf('S033-milestone')), undefined);
-    assert.match(rowOf('S033-milestone').textContent, / · sprint: not recorded$/);
-    assert.equal(link(rowOf('P-001-asks-merge-on-desk')).href, '#/p/Alpha/timeline/ms/MD2', 'the answer that carries its line still links');
+    const gone = await sheetOfRow('S033-milestone');
+    assert.equal(gone.link, undefined);
+    assert.match(gone.text, /S033-milestone · sprint: not recorded/);
+    assert.equal((await sheetOfRow('P-001-asks-merge-on-desk')).link.href, '#/p/Alpha/timeline/ms/MD2', 'the answer that carries its line still links');
   } finally {
     app.restore();
   }
@@ -283,27 +299,28 @@ test('AC53 (S-033): the rule line names a missing or changed `Milestone:` line a
   assert.equal(parseRecord('ruling', back, 'decisions/questions/S033-none.md').milestone, 'Milestone: none (a records-only question)');
 });
 
-test('AC53 (S-033), on the page: a question in S-033\'s form gives a box and a URL with its `Milestone:` line after the `Question:` line; the rule line names a removed line; the accepted view\'s link stays without it (J3)', async () => {
+test('AC53 (S-033) + AC80, on the page: a question in S-033\'s form gives each answer button a file with its `Milestone:` line after the `Question:` line, the owner\'s words never moving it; no rule line; the accepted view\'s link stays without it (J3)', async () => {
   const config = { ...CONFIG, projects: [v3('Alpha')] };
   const files = { 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml'), 'questions/S033-two.md': S('questions/S033-two.md') };
   const app = await loadSandbox({ config, repos: { Alpha: repo(files) }, hash: '#/p/Alpha/queue/q%3AS033-two', now: NOW });
   try {
     await app.advance(1000);
-    const box = findAll(app.view, (e) => e.tag === 'textarea' && /^box:/.test(e.dataset.k || ''))[0];
-    assert.equal(box.value.split('\n').slice(0, 4).join('\n'), 'Ruling: \n\nQuestion: questions/S033-two.md\nMilestone: M2, M2B');
-    const chip = byClass(app.view, 'sb-chip')[0];
-    chip.click();
+    const sheet = () => byClass(app.view, 'v2-sheet')[0];
+    assert.ok(sheet(), 'the old Queue address opens its sheet over Waiting');
+    const fileOf = (label) => {
+      const a = byClass(sheet(), 'v2-abtn').find((x) => x.textContent === label);
+      assert.ok(a, `a button "${label}"`);
+      return { href: a.attrs.href, text: decodeURIComponent(/&value=([^&]*)$/.exec(a.attrs.href)[1]) };
+    };
+    assert.match(fileOf('Answer A ↗').text, /^Ruling: A\n\nQuestion: questions\/S033-two\.md\nMilestone: M2, M2B\n\nQuestion, as put: /, 'the line after the `Question:` line, then the question as put (AC80)');
+    assert.match(fileOf('Answer A ↗').href, /value=Ruling%3A%20A%0A%0AQuestion%3A%20questions%2FS033-two\.md%0AMilestone%3A%20M2%2C%20M2B%0A%0A/);
+    const words = findAll(sheet(), (e) => e.tag === 'textarea' && /^words:/.test(e.dataset.k || ''))[0];
+    assert.ok(words, 'the owner\'s own-words box');
+    words.value = 'Milestone: none\nyes';
+    words.dispatch('input', { target: words });
     await app.flush();
-    const box2 = findAll(app.view, (e) => e.tag === 'textarea' && /^box:/.test(e.dataset.k || ''))[0];
-    assert.match(box2.value, /^Ruling: A\n\nQuestion: questions\/S033-two\.md\nMilestone: M2, M2B\n/);
-    const go = byClass(app.view, 'sb-go')[0];
-    assert.match(go.attrs.href, /value=Ruling%3A%20A%0A%0AQuestion%3A%20questions%2FS033-two\.md%0AMilestone%3A%20M2%2C%20M2B%0A/);
-    assert.match(byClass(app.view, 'sb-rule')[0].textContent, /the Milestone line is the question's/);
-    box2.value = 'Ruling: A\n\nQuestion: questions/S033-two.md\n';
-    box2.dispatch('input', { target: box2 });
-    await app.flush();
-    assert.match(byClass(app.view, 'sb-rule')[0].textContent, /should read `Milestone: M2, M2B`, as the question's does/);
-    assert.equal(byClass(app.view, 'sb-go').length, 1, 'the button stays available');
+    assert.match(fileOf('Answer B ↗').text, /^Ruling: B\n\nQuestion: questions\/S033-two\.md\nMilestone: M2, M2B\n\n/, 'the question\'s line stays where it is');
+    assert.equal(byClass(app.view, 'sb-rule').length, 0, 'no rule line: the desk fills the file');
   } finally {
     app.restore();
   }

@@ -1,0 +1,142 @@
+[
+{
+"sha": "9b82f7684ecb94d9db19547422d979b3d3f2c552",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/89/reviewer.md",
+"status": "added"
+},
+{
+"sha": "78dbf280492ca2f93c2e62ff01d8a576424ecb82",
+"filename": "tests/desk/fixtures/j11-77bfeae/specs/S-001.md",
+"status": "added"
+},
+{
+"sha": "a1c31978948528f754f3f6705b085b231201dac0",
+"filename": "tests/desk/fixtures/j11-77bfeae/status/P-001.toml",
+"status": "added"
+},
+{
+"sha": "5c0a599ffb118b213d4be024c97f79859c4891b2",
+"filename": "tests/desk/fixtures/j11-77bfeae/status/Q-001.toml",
+"status": "added"
+},
+{
+"sha": "c545ae15bd4be212dd14999e0831283debcb386a",
+"filename": "tests/desk/fixtures/j11-77bfeae/status/Q-002.toml",
+"status": "added"
+},
+{
+"sha": "7f9e512edbe8319100f210b6ba377b4b1565ec64",
+"filename": "tests/desk/fixtures/j11-77bfeae/status/Q-003.toml",
+"status": "added"
+},
+{
+"sha": "5c0a599ffb118b213d4be024c97f79859c4891b2",
+"filename": "tests/desk/fixtures/j11-77bfeae/status/Q-004.toml",
+"status": "added"
+},
+{
+"sha": "bb8fba92c2726f4370a8890c9738e40c6ff06003",
+"filename": "tests/desk/fixtures/j11-77bfeae/status/Q-005.toml",
+"status": "added"
+},
+{
+"sha": "ee788c3e515e2ff676ac2c1dad86b2a35e517baa",
+"filename": "tests/desk/fixtures/j11-77bfeae/status/Q-006.toml",
+"status": "added"
+},
+{
+"sha": "b140ab827de70f0d94e9af52242fc8ce8e0b6eaa",
+"filename": "tests/desk/fixtures/j11-77bfeae/status/Q-007.toml",
+"status": "added"
+},
+{
+"sha": "11551b8cc46156710ce3ad52fee76074c9e19780",
+"filename": "tests/desk/fixtures/j11-77bfeae/status/Q-008.toml",
+"status": "added"
+},
+{
+"sha": "74edd7a48911bc52782dfd3cb0e91b564a7e2766",
+"filename": "tests/desk/fixtures/j11-77bfeae/status/Q-009.toml",
+"status": "added"
+},
+{
+"sha": "74edd7a48911bc52782dfd3cb0e91b564a7e2766",
+"filename": "tests/desk/fixtures/j11-77bfeae/status/Q-010.toml",
+"status": "added"
+},
+{
+"sha": "662830d7ce7a99fa09f33903b340830b282c61ff",
+"filename": "tests/desk/fixtures/j11-77bfeae/status/Q-011.toml",
+"status": "added"
+},
+{
+"sha": "74edd7a48911bc52782dfd3cb0e91b564a7e2766",
+"filename": "tests/desk/fixtures/j11-77bfeae/status/Q-012.toml",
+"status": "added"
+},
+{
+"sha": "11551b8cc46156710ce3ad52fee76074c9e19780",
+"filename": "tests/desk/fixtures/j11-77bfeae/status/Q-013.toml",
+"status": "added"
+},
+{
+"sha": "4474ddce4fd54e429e5068583b77dd76c6969f8f",
+"filename": "tests/desk/fixtures/j11-77bfeae/status/merges.jsonl",
+"status": "added"
+},
+{
+"sha": "e97e5de829a3ef2d964a2f1e45e71c8c145d548a",
+"filename": "tests/desk/fixtures/j11-77bfeae/trace-notes.txt",
+"status": "added"
+},
+{
+"sha": "aed43560b5504d045b8b12e0aff675f5d5ed7fb5",
+"filename": "tests/desk/fixtures/j11-77bfeae/tree.txt",
+"status": "added"
+},
+{
+"sha": "c070aeab16336fd23424884d781cd5c3e0abb9bb",
+"filename": "tests/desk/j12-ac60-ac66-estimates.test.mjs",
+"status": "added"
+},
+{
+"sha": "ae7090ebd21ed548d90c2920eb9ab87b19a812d7",
+"filename": "tests/desk/j12-asks-merge.test.mjs",
+"status": "modified"
+},
+{
+"sha": "d2d5ce2c5cf34c65f98bc4b1ed475b4669786eb7",
+"filename": "tests/desk/j12-pulls.test.mjs",
+"status": "modified"
+},
+{
+"sha": "5838d6ffb279133483f4eedf24720e5a3ec9a100",
+"filename": "tests/desk/j4-j14-j15-work-ahead.test.mjs",
+"status": "added"
+},
+{
+"sha": "b75742815da5ef5a5cb2acd8c6ad67809bc09b59",
+"filename": "tests/desk/j7-config.test.mjs",
+"status": "modified"
+},
+{
+"sha": "512266e9c3ccc5426de7446a4bb581651fac5a40",
+"filename": "tests/desk/screen-text.mjs",
+"status": "modified"
+},
+{
+"sha": "424d49067d7747c1bce6a65907814987fa372785",
+"filename": "tests/desk/tools/j12-fixture.mjs",
+"status": "modified"
+},
+{
+"sha": "15019e16c7ef23e45430534754e41e1d35541371",
+"filename": "tests/desk/tools/j12-merge-messages.py",
+"status": "modified"
+},
+{
+"sha": "4d625f235c90bf1caf3769d6a9aaeb14681d1a35",
+"filename": "tests/desk/wa-fixtures.mjs",
+"status": "added"
+}
+]

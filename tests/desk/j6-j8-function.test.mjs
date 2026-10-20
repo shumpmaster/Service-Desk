@@ -4,7 +4,7 @@
 // no GitHub call; a POST without a JSON content type, or with a foreign Origin, is refused.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handle, jobsPart } from '../../src/lib/api.js';
+import { handle, jobsPart, ownerChecksPart } from '../../src/lib/api.js';
 import { _resetKeyCache, accessSettings } from '../../src/lib/access.js';
 import { urlsFor } from '../../src/lib/github.js';
 import { onRequest as pollFn } from '../../src/functions/api/poll.js';
@@ -457,4 +457,76 @@ test('J6 (AC79; security review round 1, F and G): the commit and jobs reads ref
   assert.equal(r2.status, 200);
   assert.equal((await r2.json()).jobLog['11'], null);
   assert.equal(githubCalls(g).length, 0);
+});
+
+// ---------------------------------------------------------------------------
+// From 2026-10-19 (AC80, J22): the poll call's optional `ownerChecks` part, GitHub's combined status
+// at up to 3 heads, read after the core reads and before `jobs`, each a conditional request with no
+// redirect followed.
+
+const statusRoute = (sha, ans) => (url, init, h) => (url === U.status(sha) ? (typeof ans === 'function' ? ans(h) : ans) : undefined);
+const STATUS_BODY = '{"state":"pending","statuses":[{"context":"owner-verdict","state":"pending","description":"Owner: after agents · 2 other finding(s)"}]}';
+
+test('J6 (AC80): the ownerChecks part: a 200 with its body and ETag, a 304 as null, a 403, a malformed part and a fourth head as false; the poll\'s other parts intact', async () => {
+  _resetKeyCache();
+  const jwt = await signJwt(key, goodClaims());
+  const [a, b, c, d] = HEADS;
+  const f = fakeFetch(jobsRoutes([
+    statusRoute(a, { status: 200, headers: { ETag: '"s1"' }, body: STATUS_BODY }),
+    statusRoute(b, (h) => (h.get('If-None-Match') === '"s2"' ? { status: 304, headers: { ETag: '"s2"' } } : { status: 200, body: '{}' })),
+    statusRoute(c, { status: 403, headers: { 'X-RateLimit-Remaining': '4000' }, body: '{"message":"Resource not accessible"}' }),
+  ]));
+  const res = await call('poll', request('/api/poll', { jwt, body: { project: 'Service-Desk', head: null, etags: {},
+    ownerChecks: [{ sha: a, etag: null }, { sha: b, etag: '"s2"' }, { sha: c }, { sha: d }] } }), f);
+  const body = await res.json();
+  assert.equal(body.state, 'ok');
+  assert.ok(body.head && body.tree != null, 'the core reads intact');
+  assert.equal(body.ownerChecks[a], STATUS_BODY);
+  assert.equal(body.ownerCheckEtags[a], '"s1"');
+  assert.equal(body.ownerChecks[b], null, '304: null (the page keeps its last answer)');
+  assert.equal(body.ownerChecks[c], false, 'a refused read: false, never "not required"');
+  assert.equal(body.ownerChecks[d], false, 'a fourth head: false');
+  assert.ok(!githubCalls(f).some((x) => x.url === U.status(d)), 'the fourth is never read');
+  assert.ok(githubCalls(f).filter((x) => /\/status\?per_page=100$/.test(x.url)).every((x) => x.init.redirect === 'manual'), 'no redirect followed');
+  // A malformed part reads nothing: its well-formed shas answered false; one not a list, {}.
+  for (const part of [[{ sha: a }, { sha: 'nope' }], [{ sha: a, extra: 1 }], [{ sha: a, etag: 7 }]]) {
+    const g = fakeFetch(jobsRoutes([statusRoute(a, { status: 200, body: STATUS_BODY })]));
+    const r = await (await call('poll', request('/api/poll', { jwt, body: { project: 'Service-Desk', head: null, etags: {}, ownerChecks: part } }), g)).json();
+    assert.equal(r.state, 'ok', JSON.stringify(part));
+    assert.equal(r.ownerChecks[a], false, JSON.stringify(part));
+    assert.ok(!githubCalls(g).some((x) => /\/status\?/.test(x.url)));
+  }
+  const g = fakeFetch(jobsRoutes());
+  const r = await (await call('poll', request('/api/poll', { jwt, body: { project: 'Service-Desk', head: null, etags: {}, ownerChecks: 'x' } }), g)).json();
+  assert.deepEqual(r.ownerChecks, {});
+  // A non-v3 project's whole part is answered null, as `jobs` is (the limit does not rest on the page alone).
+  assert.equal(ownerChecksPart([{ sha: a }], { model: 'v2.5' }), null);
+  assert.equal(ownerChecksPart([{ sha: a }, { sha: a }], SD).heads.length, 1, 'a head named twice is read once');
+});
+
+test('J1 (AC80): the owner-check reads come after the core reads and before the jobs part; with full core lists, 11 + 3 + 16 = 30 holds', async () => {
+  _resetKeyCache();
+  const jwt = await signJwt(key, goodClaims());
+  const paged = (base) => (url) => {
+    if (!url.startsWith(base)) return undefined;
+    const p = Number((/[?&]page=(\d)/.exec(url) || [0, 1])[1]);
+    return { status: 200, headers: p < 3 ? { Link: `<${base}&page=${p + 1}>; rel="next"` } : {}, body: '[]' };
+  };
+  const head = JSON.parse(branch.body).commit.sha;
+  const core = [paged(U.pulls), paged(U.runs(head, 'push')), paged(U.runs(head, 'workflow_dispatch'))];
+  const status = (url) => (/\/commits\/[0-9a-f]{40}\/status\?per_page=100$/.test(url) ? { status: 200, body: STATUS_BODY } : undefined);
+  const jobs = { runs: { etag: null }, heads: HEADS.slice(0, 5).map((sha) => ({ sha })) };
+  const f = fakeFetch(jobsRoutes([status, ...core]));
+  const body = await (await call('poll', request('/api/poll', { jwt, body: { project: 'Service-Desk', head: null, etags: {}, jobs,
+    ownerChecks: HEADS.slice(0, 3).map((sha) => ({ sha })) } }), f)).json();
+  assert.equal(body.state, 'ok', 'three pages each, the third naming no next');
+  const urls = githubCalls(f).map((x) => x.url);
+  const firstStatus = urls.findIndex((u) => /\/status\?per_page=100$/.test(u));
+  const lastCore = Math.max(...urls.map((u, i) => (/\/pulls\?|\/actions\/runs\?head_sha=[0-9a-f]{40}&event=|\/git\/trees\//.test(u) ? i : -1)));
+  const firstJobs = urls.findIndex((u) => /check-runs|statuses\?|asks-merge|actions\/runs\?head_sha=[0-9a-f]{40}&per_page/.test(u));
+  assert.ok(firstStatus > lastCore, 'after the core reads');
+  assert.ok(firstJobs > Math.max(...urls.map((u, i) => (/\/status\?per_page=100$/.test(u) ? i : -1))), 'before the jobs part');
+  assert.equal(urls.filter((u) => /\/status\?per_page=100$/.test(u)).length, 3);
+  assert.ok(body.jobs && Object.keys(body.jobs.heads).length === 5, 'the jobs part still read: 11 + 3 + 16 = 30');
+  assert.ok(body.cost.github <= 30, `${body.cost.github} requests`);
 });

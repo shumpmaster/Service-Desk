@@ -38,48 +38,56 @@ function ac66Setup({ doc = null } = {}) {
   return setup;
 }
 
-const rowOf = (app, key) => keyed(app, `qrow:${key}`);
+// From stage 1a (AC80): "Unblocks", the milestone's why and the Context fold sit in each card's sheet.
+const sheetOf = async (app, key) => app.go(`#/waiting/Alpha/card/${encodeURIComponent(key)}`);
 const unb = (app, key) => keyed(app, `unb:${key}`);
 
 // ---------------------------------------------------------------------------
 // AC66
 
-test('AC66: each "Unblocks" by its order — the item\'s own Milestone: line, a card\'s item in a plan list, a pull request in a plan list or by its body, "none (<reason>)", and "milestone not recorded" (the real P-001-design-lab-open.md among them)', async () => {
-  const app = await opened(ac66Setup(), '#/p/Alpha/queue');
+test('AC66: each "Unblocks" by its order, in each card\'s sheet (AC80) — the item\'s own Milestone: line, a card\'s item in a plan list, a pull request in a plan list or by its body, "none (<reason>)", and "milestone not recorded" (the real P-001-design-lab-open.md among them)', async () => {
+  const app = await opened(ac66Setup(), '#/waiting/Alpha');
   try {
     await app.advance(POLL_MS);
-    const line = (key) => byClass(unb(app, key), 'sb-unb-l').map((x) => x.textContent);
-    assert.deepEqual(line('q:Alpha-ms'), ['Unblocks What a good desk looks like is known MD1'], '1. its own Milestone: line');
-    assert.deepEqual(line('q:Alpha-none'), ['Unblocks no milestone: a records-only question']);
-    assert.deepEqual(line('card:queue/Q-013-stop-1.md'), ['Unblocks What a good desk looks like is known MD1'], '2. a card on Q-013, which MD1\'s list names');
-    assert.deepEqual(line('pr:44'), ['Unblocks Cards answered straight from the desk M2', 'Unblocks Agent usage shown on the desk M2B'], '3. the plan lists naming PR #44, in section 3\'s order');
-    assert.deepEqual(line('pr:81'), ['Unblocks The chosen design running on the real back end MD3 · named by its pull request, not yet in the plan'], '3. failing those, its body');
-    assert.deepEqual(line('q:P-001-design-lab-open'), ['Unblocks: milestone not recorded'], 'the real record names none');
-    for (const key of ['q:Alpha-pick', 'card:queue/Q-020-stop-1.md', 'card:queue/P-002-criteria-1.md', 'pr:80']) assert.deepEqual(line(key), ['Unblocks: milestone not recorded'], key);
-    assert.match(byClass(unb(app, 'q:P-001-design-lab-open'), 'sb-unb-l')[0].className, /\bgap\b/, 'slate (AC69)');
+    const line = async (key) => {
+      await sheetOf(app, key);
+      return byClass(unb(app, key), 'v2-unb-l').map((x) => x.textContent);
+    };
+    assert.deepEqual(await line('q:Alpha-ms'), ['Unblocks What a good desk looks like is known MD1'], '1. its own Milestone: line');
+    assert.deepEqual(await line('q:Alpha-none'), ['Unblocks no milestone: a records-only question']);
+    assert.deepEqual(await line('card:queue/Q-013-stop-1.md'), ['Unblocks What a good desk looks like is known MD1'], '2. a card on Q-013, which MD1\'s list names');
+    assert.deepEqual(await line('pr:44'), ['Unblocks Cards answered straight from the desk M2', 'Unblocks Agent usage shown on the desk M2B'], '3. the plan lists naming PR #44, in section 3\'s order');
+    assert.deepEqual(await line('pr:81'), ['Unblocks The chosen design running on the real back end MD3 · named by its pull request, not yet in the plan'], '3. failing those, its body');
+    assert.deepEqual(await line('q:P-001-design-lab-open'), ['Unblocks: milestone not recorded'], 'the real record names none');
+    assert.match(byClass(unb(app, 'q:P-001-design-lab-open'), 'v2-unb-l')[0].className, /\bgap\b/, 'slate (AC69)');
+    for (const key of ['q:Alpha-pick', 'card:queue/Q-020-stop-1.md', 'card:queue/P-002-criteria-1.md', 'pr:80']) assert.deepEqual(await line(key), ['Unblocks: milestone not recorded'], key);
   } finally {
     app.restore();
   }
 });
 
-test('AC66: each milestone\'s why beside it — the why line as written with its source (AC61\'s fixture), or the slate "Why not recorded yet · for the agents to add"; no why with no milestone', async () => {
-  const app = await opened(ac66Setup({ doc: AC61_DOC }), '#/p/Alpha/queue');
+test('AC66: each milestone\'s why beside it, in the card\'s sheet — the why line as written with its source (AC61\'s fixture), or the slate "Why not recorded yet · for the agents to add"; no why with no milestone', async () => {
+  const app = await opened(ac66Setup({ doc: AC61_DOC }), '#/waiting/Alpha');
   try {
     await app.advance(POLL_MS);
-    const why = (key) => byClass(unb(app, key), 'sb-wl').map((x) => [x.textContent, /\bgap\b/.test(x.className)]);
-    assert.deepEqual(why('q:Alpha-ms'), [['Why the desk\'s look rests on published design guidance, not on taste docs/PROJECT.md'.replace(' docs', 'docs'), false]]);
-    assert.deepEqual(why('pr:44'), [['Why not recorded yet · for the agents to add', true], ['Why "It\'s important for me to see timelines and context windows to be able to drive things."docs/PROJECT.md', false]]);
-    assert.deepEqual(why('q:Alpha-none'), []);
-    assert.deepEqual(why('q:P-001-design-lab-open'), []);
+    const why = async (key) => {
+      await sheetOf(app, key);
+      return byClass(unb(app, key), 'v2-wl').map((x) => [x.textContent, /\bgap\b/.test(x.className)]);
+    };
+    assert.deepEqual(await why('q:Alpha-ms'), [['Why the desk\'s look rests on published design guidance, not on taste docs/PROJECT.md'.replace(' docs', 'docs'), false]]);
+    assert.deepEqual(await why('pr:44'), [['Why not recorded yet · for the agents to add', true], ['Why "It\'s important for me to see timelines and context windows to be able to drive things."docs/PROJECT.md', false]]);
+    assert.deepEqual(await why('q:Alpha-none'), []);
+    assert.deepEqual(await why('q:P-001-design-lab-open'), []);
   } finally {
     app.restore();
   }
 });
 
-test('AC66: each Context fold — closed to start, opened and closed by a tap, Enter or Space; the facts each with its source, "source not recorded"; "Context: not recorded" otherwise; kept through a refresh', async () => {
-  const app = await opened(ac66Setup(), '#/p/Alpha/queue');
+test('AC66: each Context fold, in the card\'s sheet — closed to start, opened and closed by a tap, Enter or Space; the facts each with its source, "source not recorded"; "Context: not recorded" otherwise; kept through a refresh', async () => {
+  const app = await opened(ac66Setup(), '#/waiting/Alpha');
   try {
     await app.advance(POLL_MS);
+    await sheetOf(app, 'q:Alpha-ms');
     const f = () => keyed(app, 'fold:ctx:q:Alpha-ms');
     assert.equal(f().attrs['aria-expanded'], 'false');
     assert.equal(keyed(app, 'facts:q:Alpha-ms'), null);
@@ -94,8 +102,10 @@ test('AC66: each Context fold — closed to start, opened and closed by a tap, E
     f().dispatch('keydown', { key: ' ', preventDefault() {} });
     await app.flush();
     assert.ok(keyed(app, 'facts:q:Alpha-ms'));
+    await sheetOf(app, 'pr:81');
     await app.tap(keyed(app, 'fold:ctx:pr:81'));
     assert.equal(keyed(app, 'facts:pr:81').textContent, 'A body factdocs/PROJECT.md', 'a pull request: its body\'s Context');
+    await sheetOf(app, 'q:P-001-design-lab-open');
     await app.tap(keyed(app, 'fold:ctx:q:P-001-design-lab-open'));
     const none = keyed(app, 'facts:q:P-001-design-lab-open');
     assert.equal(none.textContent, 'Context: not recorded');
@@ -105,38 +115,35 @@ test('AC66: each Context fold — closed to start, opened and closed by a tap, E
   }
 });
 
-test('AC66 + AC69: the groups\' marks neutral, the coral "needs you" diamond only on the groups holding a waiting item; no group or row rule uses a meaning colour but the muted grey and --you', async () => {
-  const app = await opened(ac66Setup(), '#/p/Alpha/queue');
+test('AC66 + AC69 (changed by AC80): the groups give way to the lanes\' headings; a card\'s kind icon vermilion only while it waits on the owner, grey in Done; nothing in the quiet lines or Done is coral; no lane or card rule uses a meaning colour but the grey inks and --you', async () => {
+  const setup = ac66Setup();
+  const app = await opened(setup, '#/waiting/Alpha');
   try {
     await app.advance(POLL_MS);
-    const heads = byClass(app.view, 'sb-gh').map((g) => [g.className.split(' ')[1], byClass(g, 'sb-gmark')[0].className, byClass(g, 'sb-gmark')[0].textContent]);
-    assert.deepEqual(heads, [['g-decisions', 'sb-gmark you', 'needs you'], ['g-gates', 'sb-gmark you', 'needs you'], ['g-verdicts', 'sb-gmark', '✎'],
-      ['g-merges', 'sb-gmark you', 'needs you'], ['g-deploys', 'sb-gmark', '▸']]);
-    assert.equal(byClass(keyed(app, 'done-today-h'), 'i-check').length, 1, '"Done today" the check');
+    assert.deepEqual(byClass(app.view, 'v2-lh').map((h) => h.children[0].textContent), ['Waiting on you', 'Kicked back', 'Done · last 24 h']);
+    assert.equal(byClass(app.view, 'sb-gh').length, 0, 'no Queue groups');
+    for (const k of byClass(byClass(app.view, 'lane-wait')[0], 'v2-kd')) assert.doesNotMatch(k.className, /\bdone\b/);
+    setup.repos.Alpha.pulls = setup.repos.Alpha.pulls.filter((x) => x.number !== 44);
+    await app.advance(POLL_MS);
+    for (const k of byClass(byClass(app.view, 'lane-done')[0], 'v2-kd')) assert.match(k.className, /\bdone\b/);
   } finally {
     app.restore();
   }
-  // Beta, nothing waiting in Gate rulings: its own neutral mark.
-  const setup = twoProjects();
-  setup.repos.Beta.commit({ 'queue/P-002-criteria-1.md': null, 'status/P-002.toml': 'kind = "project"\nstage = 4\nstate = "ready"\nrole = "critic"\n' });
-  const b = await opened(setup, '#/p/Beta/queue');
-  try {
-    const g = byClass(b.view, 'sb-gh').find((x) => /g-gates/.test(x.className));
-    assert.deepEqual([byClass(g, 'sb-gmark')[0].className, byClass(g, 'sb-gmark')[0].textContent], ['sb-gmark', '▲']);
-    assert.equal(byClass(g, 'sb-needs').length, 0);
-  } finally {
-    b.restore();
-  }
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.match(css, /\.v2-kd \.v2-k \{ color: var\(--you\); \}/, 'the kind icons of cards waiting on the owner');
+  assert.match(css, /\.v2-kd\.done \.v2-k \{ color: var\(--ink2\); \}/, 'grey in Done');
   const meaning = ['--agent', '--pass', '--fail', '--merge', '--block', '--gold', '--ph-disc', '--ph-des', '--ph-build', '--ph-launch', '--b-ctx', '--b-why', '--b-tech',
-    '--agents', '--passs', '--fails', '--merges', '--blocks', '--golds', '--yous'];
+    '--agents', '--passs', '--fails', '--merges', '--blocks', '--golds', '--yous', '--ok', '--bad'];
   for (const m of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
-    if (!/\.sb-(gh|gmark|group|qrow|needs|unb|facts|wl)\b|\.g-(decisions|gates|verdicts|merges|deploys)\b/.test(m[1])) continue;
-    for (const tok of meaning) assert.ok(!m[2].includes(`var(${tok})`), `${m[1].trim()} uses ${tok}`);
+    const sel = m[1].trim();
+    if (!/\.v2-(lane|lh|lc|grp|gn|gc|card|kd|t|m|mk|gl|gk|step|steps|undo|gatebtns|empty|more|ql|qsmall|qfold|flist|ft|fw|unb-l|wl|facts)\b/.test(sel)) continue;
+    if (/\.v2-drow \.v2-k\.ok|\.v2-why\.bad|\.v2-ql\.bad/.test(sel)) continue; // the ✓ of a confirmed Done row (pass) and a failing check or unreadable project (fail), each with its word
+    for (const tok of meaning) assert.ok(!m[2].includes(`var(${tok})`), `${sel} uses ${tok}`);
+    if (/\.v2-(ql|qsmall|qfold|flist|ft|fw|drow|dt|more)\b/.test(sel)) assert.ok(!m[2].includes('var(--you)'), `${sel}: nothing in the quiet lines or Done is coral`);
   }
 });
 
-test('AC66: each "Done today" link\'s target — a card answered on a sprint, a ruling whose question names a milestone, a pull request no longer open — and "sprint: not recorded" otherwise', async () => {
+test('AC66 (changed by AC80): each confirmed Done row\'s sheet links "On the Timeline" — a card answered on a sprint, a ruling whose question names a milestone — and "sprint: not recorded" otherwise', async () => {
   const setup = ac66Setup();
   const A = setup.repos.Alpha;
   const at = (min) => [{ commit: { committer: { date: iso(NOW - min * 60e3) } } }];
@@ -150,20 +157,23 @@ test('AC66: each "Done today" link\'s target — a card answered on a sprint, a 
     'decisions/questions/P-001-plain-pick.md': 'Ruling: B\n',
   });
   Object.assign(A.history, { 'decisions/questions/P-001-ms-pick.md': at(30), 'decisions/questions/P-001-plain-pick.md': at(35) });
-  const app = await loadSandbox({ ...setup, hash: '#/p/Alpha/queue', now: NOW });
+  const app = await loadSandbox({ ...setup, hash: '#/waiting/Alpha', now: NOW });
   try {
     await app.advance(1000);
     await app.advance(POLL_MS);
     await app.advance(POLL_MS);
-    const rows = byClass(keyed(app, 'done-today'), 'sb-done-r');
-    const of = (codeText) => rows.find((r) => byClass(r, 'code').some((c) => c.textContent === codeText));
-    const link = (r) => linksIn(r).find((l) => l.text === 'On the Timeline');
-    assert.equal(link(of('Q-013 stop-1')).href, '#/p/Alpha/timeline/sprint/Q-013', 'a card answered: its item, a sprint on the Timeline');
-    assert.equal(link(of('P-001-ms-pick')).href, '#/p/Alpha/timeline/ms/MD2', 'a ruling: the milestone its question names');
-    for (const c of ['P-002 criteria-1', 'P-001-plain-pick']) {
-      assert.equal(link(of(c)), undefined, c);
-      assert.match(of(c).textContent, / · sprint: not recorded$/, c);
-      assert.match(byClass(of(c), 'gap').at(-1).textContent, /sprint: not recorded/);
+    const sheetLink = async (id) => {
+      await app.go(`#/waiting/Alpha/card/${encodeURIComponent(`${id}#answer`)}`);
+      const sh = byClass(app.view, 'v2-sheet')[0];
+      assert.ok(sh, id);
+      return { sh, link: linksIn(sh).find((l) => l.text === 'On the Timeline') };
+    };
+    assert.equal((await sheetLink('Alpha|card|queue/Q-013-stop-1.md')).link.href, '#/p/Alpha/timeline/sprint/Q-013', 'a card answered: its item, a sprint on the Timeline');
+    assert.equal((await sheetLink('Alpha|question|questions/P-001-ms-pick.md')).link.href, '#/p/Alpha/timeline/ms/MD2', 'a ruling: the milestone its question names');
+    for (const id of ['Alpha|gate|queue/P-002-criteria-1.md', 'Alpha|question|questions/P-001-plain-pick.md']) {
+      const { sh, link } = await sheetLink(id);
+      assert.equal(link, undefined, id);
+      assert.match(sh.textContent, / · sprint: not recorded/, id);
     }
     // The link opens the Timeline at that sprint, its milestone's sprints opened.
     await app.go('#/p/Alpha/timeline/sprint/Q-013');
@@ -241,10 +251,10 @@ test('AC67: the owner\'s tile — "You · waiting on you: <n> in your queue", it
 // ---------------------------------------------------------------------------
 // AC68
 
-test('AC68: the same marker on Status, Timeline, Team and Queue — "Design · run 2", "now · next to reach: MD2", "Timeline ›", in the Design colour; a real link named "Open the Timeline at Now"', async () => {
+test('AC68 (changed by AC81: the Queue screen gone, so three screens): the same marker on Status, Timeline and Team — "Design · run 2", "now · next to reach: MD2", "Timeline ›", in the Design colour; a real link named "Open the Timeline at Now"', async () => {
   const app = await openSD('#/p/Service-Desk');
   try {
-    for (const s of ['', '/timeline', '/team', '/queue']) {
+    for (const s of ['', '/timeline', '/team']) {
       await app.go(`#/p/Service-Desk${s}`);
       const ms = byClass(app.view, 'sb-pmark');
       assert.equal(ms.length, 1, s);
@@ -274,7 +284,7 @@ test('AC68: the marker\'s other forms — no next to reach, Done, which phase is
   assert.deepEqual(markerView({ ...base, project: { ...SD3, model: 'v2.5' } }), { link: false, words: 'Phases not tracked', cls: null });
   const app = await openSD('#/', { more: { Delta: { project: v25('Delta'), repo: fullRepo('Delta') } } });
   try {
-    for (const s of ['', '/timeline', '/team', '/queue']) {
+    for (const s of ['', '/timeline', '/team']) {
       await app.go(`#/p/Delta${s}`);
       const [mk] = byClass(app.view, 'sb-pmark');
       assert.deepEqual([mk.tag, mk.textContent, mk.className], ['p', 'Phases not tracked', 'sb-pmark none'], s);
@@ -348,7 +358,9 @@ test('AC68: "More detail" offers no Pipeline link for v3 and keeps "Reduced view
     const lineno = doc.split('\n').findIndex((l) => /\(MD3\)/.test(l)) + 1;
     assert.deepEqual(notes, ['dispatch-log/2026-10.jsonl line 6 is not JSON; skipped',
       `docs/PROJECT.md line ${lineno}: a milestone line out of form: its why holds " · ", or has another part after it`]);
-    assert.ok(byClass(app.view, 'sb-dock').length, 'its bottom bar');
+    // From stage 1a (AC81): the one bar at its foot, no project bar and no top row; Back returns to Status.
+    assert.equal(byClass(app.view, 'v2-bar').length, 1, 'the bar at its foot');
+    assert.equal(byClass(app.view, 'sb-dock').length + byClass(app.view, 'v2-row').length, 0, 'no project bar, no top row');
     assert.ok(keyed(app, 'nav-back'), 'and the back control');
   } finally {
     app.restore();

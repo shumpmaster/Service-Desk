@@ -1,0 +1,242 @@
+// ac-test: S-001/AC81 — the bar Home · Waiting · Plan at every screen's foot, mockup v2's type and
+// colour, and IBM Plex served by the desk (desk mockup v2, frames H1, 1, 5 and 12; stage 1a, "Until
+// stage 3"). The page is the sandbox's own code under the fake DOM, from the fixtures AC62's test
+// draws (screen-text.mjs: Service-Desk at 3117150, AC52's one-of-each project, a v2.5 project) and
+// AC80's made-up Example project (NOT real records, tests/desk/fixtures/README.md); the stylesheet
+// and the fonts are read as files, as AC42's and AC62's tests read them.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, readdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { join } from 'node:path';
+import { CONFIG, FIX, SRC } from './helpers.mjs';
+import { repo } from './fake-desk.mjs';
+import { loadSandbox, byClass, findAll } from './sandbox-helpers.mjs';
+import { NOW, v3 } from './sandbox-fixtures.mjs';
+import { textSetup } from './screen-text.mjs';
+import { POLL_MS } from '../../src/lib/scheduler.js';
+import { hexLab, de2000 } from './ciede2000.mjs';
+
+const CSS_RAW = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
+const CSS = CSS_RAW.replace(/\/\*[\s\S]*?\*\//g, '');
+const V2 = CSS.slice(CSS.indexOf('@font-face')); // mockup v2's block: the stylesheet's last part (AC62's test)
+const MOCKUP = readFileSync(join(SRC, '..', 'docs', 'design', 'mockups', 'desk-v2.html'), 'utf8');
+const keyed = (app, k) => findAll(app.view, (e) => e.dataset && e.dataset.k === k)[0] || null;
+
+async function opened(hash = '#/', extra = {}) {
+  const app = await loadSandbox({ ...textSetup(), hash, now: NOW, ...extra });
+  await app.advance(1000);
+  await app.advance(61_000);
+  return app;
+}
+const bar = (app) => byClass(app.view, 'v2-bar');
+const tabs = (app) => byClass(bar(app)[0], 'v2-tab');
+const current = (app) => tabs(app).filter((t) => t.attrs['aria-current'] === 'page').map((t) => byClass(t, 'v2-tabw')[0].textContent);
+
+test('AC81: the trial view opens on Home; every screen carries the one bar Home · Waiting · Plan at its foot, its current tab named so; no Projects or Portfolio tab', async () => {
+  const app = await opened('');
+  try {
+    assert.ok(byClass(app.view, 'sb-pc').length, 'Home');
+    for (const [hash, want, row] of [
+      ['#/', 'Home', false],
+      ['#/p/Service-Desk', 'Home', true], ['#/p/Service-Desk/timeline', 'Home', true], ['#/p/Service-Desk/team', 'Home', true],
+      ['#/p/Service-Desk/team/chief-of-staff', 'Home', false], ['#/p/Service-Desk/asked', 'Home', false], ['#/p/Service-Desk/agents', 'Home', false],
+      ['#/p/Alpha/notes', 'Home', false], ['#/p/Delta/pipeline', 'Home', false], ['#/p/Delta', 'Home', true],
+      ['#/waiting', 'Waiting', false], ['#/waiting/Alpha', 'Waiting', false], ['#/work', 'Plan', false],
+    ]) {
+      await app.go(hash);
+      assert.equal(bar(app).length, 1, `${hash}: one bar`);
+      const t = tabs(app);
+      assert.deepEqual(t.map((x) => byClass(x, 'v2-tabw')[0].textContent), ['Home', 'Waiting', 'Plan'], `${hash}: three tabs, in order`);
+      assert.deepEqual(t.map((x) => x.attrs.href), ['#/', '#/waiting', '#/work']);
+      assert.deepEqual(current(app), [want], `${hash}: ${want} current`);
+      assert.equal(byClass(app.view, 'sb-dock').length + byClass(app.view, 'sb-tab').length, 0, `${hash}: no Status · Timeline · Team · Queue bar`);
+      assert.equal(byClass(app.view, 'v2-row').length, row ? 1 : 0, `${hash}: ${row ? 'the' : 'no'} top row`);
+      assert.doesNotMatch(bar(app)[0].textContent, /Projects|Portfolio/);
+      assert.equal(app.view.children[app.view.children.length - 1], bar(app)[0], `${hash}: the bar last, at the foot`);
+    }
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC81: Waiting\'s badge is the board\'s own "Waiting on you" plus "Kicked back", shown only when 1 or more; a refresh keeps the tab', async () => {
+  const app = await opened('#/waiting');
+  try {
+    const n = ['wait', 'kick'].map((k) => Number(byClass(keyed(app, `lane:${k}`), 'v2-lc')[0].textContent)).reduce((a, b) => a + b, 0);
+    assert.ok(n > 0);
+    assert.equal(byClass(bar(app)[0], 'v2-badge')[0].children[0].textContent, String(n));
+    await app.go('#/work');
+    app.module.refresh();
+    await app.flush();
+    assert.deepEqual(current(app), ['Plan'], 'a refresh keeps the tab');
+  } finally {
+    app.restore();
+  }
+  const quiet = await loadSandbox({ config: { ...CONFIG, projects: [v3('Quiet')] }, repos: { Quiet: repo({ 'README.md': '# Quiet\n' }) }, hash: '#/', now: NOW });
+  try {
+    await quiet.advance(1000);
+    await quiet.advance(POLL_MS);
+    assert.equal(byClass(quiet.view, 'v2-badge').length, 0, 'none at 0');
+  } finally {
+    quiet.restore();
+  }
+});
+
+test('AC81 (until stage 3): `p/<name>/queue` opens `waiting/<name>` without adding a history step; a wait row\'s `p/<name>/queue/<key>` opens it with that card\'s sheet, a key no card has with none; Home keeps its cards and its "Work ahead ›"', async () => {
+  const app = await opened('#/');
+  const replaced = [];
+  location.replace = (h) => { replaced.push(h); location.hash = h; };
+  try {
+    assert.ok(byClass(app.view, 'sb-wa-link').length, 'Home\'s "Work ahead ›" control in stage 1a');
+    assert.deepEqual(byClass(app.view, 'sb-pc-main').map((a) => a.attrs.href).sort(), ['#/p/Alpha', '#/p/Service-Desk'], 'a tap on a v3 project\'s Home card opens the project\'s Status screen');
+    await app.go('#/p/Alpha/queue');
+    assert.deepEqual(replaced, ['#/waiting/Alpha'], 'in place of its history entry');
+    assert.equal(byClass(app.view, 'v2-filter').length, 1);
+    await app.go('#/p/Alpha/queue/q%3AAlpha-pick');
+    assert.match(replaced.at(-1), /^#\/waiting\/Alpha\/card\//);
+    assert.ok(byClass(app.view, 'v2-sheet').length, 'that card\'s sheet open over it');
+    assert.equal(byClass(byClass(app.view, 'v2-sheet')[0], 'v2-stitle')[0].textContent, "Alpha's question");
+    await app.go('#/p/Alpha/queue/q%3Anothing-has-this');
+    await app.advance(POLL_MS);
+    assert.equal(app.loc.hash, '#/waiting/Alpha', 'a key no card has: Waiting so filtered, no sheet');
+    assert.equal(byClass(app.view, 'v2-sheet').length, 0);
+  } finally {
+    delete location.replace;
+    app.restore();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Type, colour and the fonts, from the stylesheet and the files
+
+/** The pairs AC81 allows beside the tokens, where desk-v2.html's own CSS sets them (Plex Sans; then Plex Mono). */
+const PAIRS = { font: ['600 11', '400 11', '500 12', '400 12', '600 12', '600 13', '500 15', '600 15'], mono: ['500 11'] };
+
+test('AC81: every font on the new screens is a token or one of the pairs desk-v2.html sets (frame 1\'s 400 11 px among them); the only sizes 24, 18, 15, 13, 12 and 11 px with 16 px for text boxes, the only weights 400, 500 and 600', () => {
+  const decls = [...V2.matchAll(/(?:^|[{;\s])(font|font-size|font-weight)\s*:\s*([^;{}]+?)\s*(?=;|})/g)].map((m) => [m[1], m[2].trim()]);
+  assert.ok(decls.length > 40, `${decls.length} declarations`);
+  for (const [prop, v] of decls) {
+    if (prop === 'font-size') assert.fail(`font-size: ${v}: sizes come from the tokens and pairs`);
+    if (prop === 'font-weight') { assert.match(v, /^(400|500|600)$/, `font-weight: ${v}`); continue; }
+    if (/^var\(--t-(title|sheet|lead|row|body|small|label|mono|input)\)$/.test(v) || v === 'inherit') continue;
+    const m = /^(\d{3}) (\d+)px\/[\d.]+(?:px)? var\(--(font|mono)\)$/.exec(v);
+    assert.ok(m, `font: ${v}: a token or a weight, size and family`);
+    assert.ok(PAIRS[m[3]].includes(`${m[1]} ${m[2]}`), `font: ${v}: a pair desk-v2.html sets`);
+  }
+  const tok = Object.fromEntries([...CSS.slice(CSS.indexOf('html.sb .v2, html.sb.v2-page {')).matchAll(/(--t-[a-z]+): ([^;]+);/g)].slice(0, 9).map((m) => [m[1], m[2]]));
+  assert.deepEqual(tok, {
+    '--t-title': '600 24px/1.2 var(--font)', '--t-sheet': '600 18px/1.3 var(--font)', '--t-lead': '400 15px/1.45 var(--font)',
+    '--t-row': '500 13px/1.35 var(--font)', '--t-body': '400 13px/1.45 var(--font)', '--t-small': '400 12px/1.4 var(--font)',
+    '--t-label': '500 11px/1.35 var(--font)', '--t-mono': '400 11px/1.4 var(--mono)', '--t-input': '400 16px/1.4 var(--font)',
+  });
+});
+
+/** A theme's tokens from a block of CSS text. */
+const tokensIn = (text) => Object.fromEntries([...text.matchAll(/(--[a-z0-9-]+):\s*(#[0-9a-f]{6})/g)].map((m) => [m[1], m[2]]));
+const block = (text, open) => { const i = text.indexOf(open); assert.ok(i >= 0, open); return text.slice(i, text.indexOf('}', i)); };
+const COLOURS = ['--bg', '--bg2', '--card', '--chip', '--line', '--line2', '--ink', '--ink2', '--ink3', '--you', '--on-you', '--ok', '--bad', '--gold',
+  '--ph-disc', '--ph-des', '--ph-build', '--ph-launch'];
+
+test('AC81: the tokens hold desk-v2.html:18-53\'s values, in light and dark (the phone\'s setting, and data-theme)', () => {
+  const pick = (o) => Object.fromEntries(COLOURS.map((k) => [k, o[k]]));
+  const mLight = pick(tokensIn(block(MOCKUP, ':root {')));
+  const mDark = pick(tokensIn(block(MOCKUP, ':root[data-theme="dark"] {')));
+  assert.equal(mLight['--you'], '#c9380c');
+  assert.equal(mDark['--you'], '#ff6a3d');
+  assert.deepEqual(pick(tokensIn(block(CSS, 'html.sb .v2, html.sb.v2-page {'))), mLight);
+  assert.deepEqual(pick(tokensIn(block(CSS, 'html.sb:not([data-theme="light"]) .v2, html.sb.v2-page:not([data-theme="light"]) {'))), mDark, 'the phone\'s dark setting');
+  assert.deepEqual(pick(tokensIn(block(CSS, 'html.sb[data-theme="dark"] .v2, html.sb.v2-page[data-theme="dark"] {'))), mDark, 'data-theme="dark"');
+  assert.match(block(CSS, 'html.sb .v2, html.sb.v2-page {'), /--font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;/, 'the mockup\'s fallback stack');
+  assert.match(block(CSS, 'html.sb .v2, html.sb.v2-page {'), /--mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;/);
+});
+
+test('AC81 with AC48\'s rule: the nine colours that carry a meaning are at least 10 apart by CIEDE2000 in each theme (36 pairs a theme)', () => {
+  const NINE = ['--you', '--ok', '--bad', '--gold', '--ph-disc', '--ph-des', '--ph-build', '--ph-launch', '--ink2'];
+  const lows = [];
+  for (const [name, open] of [['light', 'html.sb .v2, html.sb.v2-page {'], ['dark', 'html.sb[data-theme="dark"] .v2, html.sb.v2-page[data-theme="dark"] {']]) {
+    const t = tokensIn(block(CSS, open));
+    let low = Infinity;
+    let pairs = 0;
+    for (let i = 0; i < NINE.length; i++) {
+      for (let j = i + 1; j < NINE.length; j++) {
+        const d = de2000(hexLab(t[NINE[i]]), hexLab(t[NINE[j]]));
+        pairs++;
+        low = Math.min(low, d);
+        assert.ok(d >= 10, `${name}: ${NINE[i]} ${t[NINE[i]]} and ${NINE[j]} ${t[NINE[j]]}: ${d.toFixed(1)}`);
+      }
+    }
+    assert.equal(pairs, 36);
+    lows.push(Number(low.toFixed(1)));
+  }
+  assert.deepEqual(lows, [13.3, 12.2], 'the lowest, as measured on 2026-10-20 (Facts relied on)');
+});
+
+test('AC81 + AC42: IBM Plex from the desk itself — each @font-face names only fonts/IBMPlex… on this origin, font-display swap, no local(); no url( names another origin; each file\'s SHA-256 the published package\'s (README); the licence shipped', () => {
+  const faces = [...CSS.matchAll(/@font-face \{([^}]*)\}/g)].map((m) => m[1]);
+  assert.equal(faces.length, 10, 'Sans 400, 500 and 600, Mono 400 and 500, each its Latin1 and Pi');
+  for (const f of faces) {
+    assert.match(f, /src: url\("fonts\/IBMPlex(Sans|Mono)-(Regular|Medium|SemiBold)-(Latin1|Pi)\.woff2"\) format\("woff2"\);/);
+    assert.match(f, /font-display: swap;/);
+    assert.doesNotMatch(f, /local\(/);
+    assert.match(f, /unicode-range: U\+/);
+  }
+  for (const m of CSS.matchAll(/url\(([^)]*)\)/g)) assert.match(m[1], /^"fonts\/IBMPlex[A-Za-z0-9-]+\.woff2"$/, `url(${m[1]}): this origin's fonts only`);
+  const readme = readFileSync(join(FIX, 'README.md'), 'utf8');
+  const dir = join(SRC, 'public', 'fonts');
+  const files = readdirSync(dir).sort();
+  assert.deepEqual(files, ['IBMPlexMono-Medium-Latin1.woff2', 'IBMPlexMono-Medium-Pi.woff2', 'IBMPlexMono-Regular-Latin1.woff2', 'IBMPlexMono-Regular-Pi.woff2',
+    'IBMPlexSans-Medium-Latin1.woff2', 'IBMPlexSans-Medium-Pi.woff2', 'IBMPlexSans-Regular-Latin1.woff2', 'IBMPlexSans-Regular-Pi.woff2',
+    'IBMPlexSans-SemiBold-Latin1.woff2', 'IBMPlexSans-SemiBold-Pi.woff2', 'LICENSE.txt']);
+  for (const f of files) {
+    const h = createHash('sha256').update(readFileSync(join(dir, f))).digest('hex');
+    assert.ok(readme.includes(`${h}  ${f}`), `${f}: ${h}, as recorded from the package`);
+  }
+  assert.match(readFileSync(join(dir, 'LICENSE.txt'), 'utf8'), /SIL OPEN FONT LICENSE Version 1\.1/);
+  assert.match(readFileSync(join(SRC, 'public', 'index.html'), 'utf8'), /default-src 'self'/, 'the page\'s Content-Security-Policy, unchanged');
+});
+
+/** The code points a unicode-range list covers. */
+function ranges(list) {
+  return list.split(/,\s*/).map((r) => {
+    const [a, b] = r.replace(/^U\+/, '').split('-');
+    return [parseInt(a, 16), parseInt(b || a, 16)];
+  });
+}
+
+test('AC81: every character of the board\'s, its sheets\', the bar\'s and the top row\'s own words lies in a served subset\'s unicode-range; ◆, ✕, ▸ and ⇅ appear only as SVG icons', async () => {
+  const sans = [...CSS.matchAll(/@font-face \{ font-family: "IBM Plex Sans"; font-style: normal; font-weight: 400;[^}]*unicode-range: ([^;]+);/g)].flatMap((m) => ranges(m[1]));
+  const ok = (cp) => sans.some(([a, b]) => cp >= a && cp <= b);
+  assert.ok(ok(0x2197) && ok(0x2713) && ok(0x00b7) && ok(0x2026), '↗, ✓, · and … served');
+  for (const c of ['◆', '✕', '▸', '⇅']) assert.ok(!ok(c.codePointAt(0)), `${c} in neither subset`);
+  const app = await opened('#/waiting');
+  const texts = [];
+  const take = () => {
+    for (const cls of ['v2-board', 'v2-bar', 'v2-row', 'v2-sheet']) for (const el of byClass(app.view, cls)) texts.push(el.textContent);
+  };
+  try {
+    take();
+    const hrefs = byClass(app.view, 'v2-t').map((t) => t.attrs.href).filter(Boolean);
+    for (const h of hrefs) {
+      await app.go(h);
+      for (const b of findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-expanded'] === 'false')) { b.click(); await app.flush(); }
+      take();
+    }
+    for (const r of ['#/p/Alpha', '#/p/Alpha/timeline', '#/p/Alpha/team']) { await app.go(r); take(); }
+  } finally {
+    app.restore();
+  }
+  const all = texts.join('\n');
+  for (const c of ['◆', '✕', '▸', '⇅']) assert.ok(!all.includes(c), `${c} never as text`);
+  // The records' own text may hold any character (it shows in the fallback font); the fixtures' do not.
+  const outside = [...new Set([...all].filter((c) => c !== '\n' && !ok(c.codePointAt(0))))];
+  assert.deepEqual(outside, [], `outside the served subsets: ${outside.map((c) => `U+${c.codePointAt(0).toString(16).toUpperCase()}`).join(' ')}`);
+});
+
+test('AC81: no rule on the new screens sets a width wider than 360 px outside a media query for a wider screen', () => {
+  const outsideMedia = V2.replace(/@media[^{]*\{(?:[^{}]*\{[^}]*\})*[^{}]*\}/g, '');
+  for (const m of outsideMedia.matchAll(/(?:^|[;{\s])((?:min-|max-)?width):\s*([^;}]+)/g)) {
+    const px = [...m[2].matchAll(/(\d+(?:\.\d+)?)px/g)].map((x) => Number(x[1]));
+    for (const v of px) assert.ok(v <= 360 || m[1] === 'max-width', `${m[1]}: ${m[2]}`);
+  }
+});

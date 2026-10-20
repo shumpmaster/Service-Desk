@@ -40,7 +40,7 @@ test('AC51\'s link rule on the rebuilt Timeline: every link is a path the tree h
   }
 });
 
-test('AC51 + AC48 (build review B2; 2026-10-16, no band on Home): the project screens\' bottom bar sits above every band, tile and control of the screens, and below a sheet and its scrim (the CSS; the browser\'s elementFromPoint check is in the pull request)', () => {
+test('AC51 + AC48 + AC81 (build review B2; 2026-10-16, no band on Home; from stage 1a the bar Home · Waiting · Plan at every screen\'s foot): the bar sits above every band, tile and control of the screens, and below a sheet and its scrim (the CSS; the browser\'s elementFromPoint check is in the pull request)', () => {
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const z = (sel) => {
     const m = new RegExp(`(?:^|\\n)${sel.replace(/\./g, '\\.')} \\{([^}]*)\\}`).exec(css);
@@ -49,14 +49,17 @@ test('AC51 + AC48 (build review B2; 2026-10-16, no band on Home): the project sc
     assert.ok(v, `${sel} has a z-index of its own`);
     return Number(v[1]);
   };
-  const bars = { '.sb-dock': z('.sb-dock') };
+  // AC81 (stage 1a): the project screens' own bar is gone; the one bar is Home · Waiting · Plan.
+  assert.doesNotMatch(css, /\.sb-dock\b/, 'no `.sb-dock` rule');
+  const bars = { '.v2-bar': z('.v2-bar') };
   // AC48 (2026-10-16): Home has no bottom band, so there is no `.sb-band` to stack.
   assert.doesNotMatch(css, /\.sb-band\b/, 'no `.sb-band` rule');
-  const overlays = { '.sb-scrim': z('.sb-scrim'), '.sb-sheet': z('.sb-sheet') };
+  const overlays = { '.sb-scrim': z('.sb-scrim'), '.sb-sheet': z('.sb-sheet'), '.v2-scrim': z('.v2-scrim'), '.v2-sheet': z('.v2-sheet') };
   // Every other rule with a z-index is something on the screens (a band, a drawing, a card's control), the bubble aside.
   const others = [...css.matchAll(/([^{}]+)\{([^}]*z-index:\s*(-?\d+)[^}]*)\}/g)]
     .map((m) => [m[1].trim(), Number(m[3])])
-    .filter(([sel]) => !['.sb-dock', '.sb-scrim', '.sb-sheet', '.sb-bubble', '.sb-sheet-top'].some((s) => sel.split(/\s*,\s*/).includes(s)) && !sel.startsWith('.sb-sheet'));
+    .filter(([sel]) => !['.v2-bar', '.sb-scrim', '.sb-sheet', '.v2-scrim', '.v2-sheet', '.sb-bubble', '.sb-sheet-top'].some((s) => sel.split(/\s*,\s*/).includes(s)) && !sel.startsWith('.sb-sheet') && !sel.startsWith('.v2-sheet'));
+  assert.ok(others.some(([sel]) => /v2-card\.lifted/.test(sel)), 'and the board\'s lifted card (AC80)');
   assert.ok(others.some(([sel]) => /sb-pband/.test(sel)), 'the Timeline\'s pinned band is among them');
   assert.ok(others.some(([sel]) => /sb-rail/.test(sel)), 'and the branch drawing');
   for (const [bar, zb] of Object.entries(bars)) {

@@ -180,29 +180,44 @@ test('AC60 (estimates): an estimate-only merge a plan line lists under MD3 is MD
 // ---------------------------------------------------------------------------
 // AC66
 
-test('AC66 (estimates): an estimate-only merge by the owner leaving the queue — its "Done today" row has no Timeline link and reads "not on the Timeline: a rough estimate"; with its changed paths not read, it links to its sprint under "Not tied to a milestone"', async () => {
+test('AC66 (estimates) + AC80: an estimate-only merge by the owner leaving the board — its Done row\'s sheet has no Timeline link and reads "not on the Timeline: a rough estimate"; with its changed paths not read, it links to its sprint under "Not tied to a milestone"', async () => {
   for (const unread of [false, true]) {
     const repo = sdRepo({ answer: answerOf(pullNodes()) });
     repo.pulls.push(pr(980, 'Rough estimates for MD3 and M3A', { head: 'cos/estimates-980' }));
     const project = { ...SD3, planning: true };
-    const page = await loadSandbox({ config: { ...CONFIG, projects: [project] }, repos: { 'Service-Desk': repo }, hash: '#/p/Service-Desk/queue', now: NOW });
-    const rowOf = (codeText) => byClass(keyed(page, 'done-today'), 'sb-done-r').find((x) => byClass(x, 'code').some((c) => c.textContent === codeText));
-    const tl = (x) => linksIn(x).find((l) => l.text === 'On the Timeline');
+    const page = await loadSandbox({ config: { ...CONFIG, projects: [project] }, repos: { 'Service-Desk': repo }, hash: '#/waiting/Service-Desk', now: NOW });
+  // From stage 1a (AC80): the board's Done lane in place of "Done today"; a row's small sheet carries
+  // AC66's link or words. Each read opens the row's sheet and closes it, so the next opening shows the latest.
+  const sheetOfRow = async (codeText) => {
+    const back = '#/waiting/Service-Desk';
+    await page.go(back);
+    // Each project's Done group shows its newest three rows, the rest behind "<n> more".
+    const more = keyed(page, 'more:Service-Desk');
+    if (more && more.attrs['aria-expanded'] === 'false') await page.tap(more);
+    const row = byClass(keyed(page, 'lane:done'), 'v2-drow').find((x) => byClass(x, 'v2-dc').some((c) => c.textContent === codeText));
+    assert.ok(row, `a Done row for ${codeText}`);
+    await page.go(byClass(row, 'v2-dt')[0].attrs.href);
+    const sheet = byClass(page.view, 'v2-sheet')[0];
+    const out = { text: sheet.textContent, tl: linksIn(sheet).find((l) => l.text === 'On the Timeline') };
+    await page.go(back);
+    return out;
+  };
     try {
       await page.advance(1000);
       await page.advance(POLL_MS);
-      assert.ok(keyed(page, 'qrow:pr:980'), 'while open: in the Queue as any pull request');
+      assert.ok(byClass(keyed(page, 'lane:wait'), 'v2-card').some((c) => c.textContent.includes('Rough estimates for MD3 and M3A')), 'while open: a card on the board as any pull request');
       repo.pulls = repo.pulls.filter((x) => x.number !== 980);
       const merged = est(980, { mergedAt: new Date(page.now).toISOString().replace(/\.\d+Z$/, 'Z'), files: unread ? null : undefined });
       repo.pullsAnswer = answerOf([merged, ...pullNodes()]);
       repo.commit({ 'intake/estimates.jsonl': '{"made up": true}\n' });
       await page.advance(POLL_MS);
       await page.advance(POLL_MS);
+      const r = await sheetOfRow('#980');
       if (!unread) {
-        assert.match(rowOf('PR #980').textContent, new RegExp(`no longer open, time not recorded · ${ESTIMATE_MERGE_WORDS}$`));
-        assert.equal(tl(rowOf('PR #980')), undefined, 'no Timeline link');
+        assert.ok(r.text.includes(ESTIMATE_MERGE_WORDS), r.text);
+        assert.equal(r.tl, undefined, 'no Timeline link');
       } else {
-        assert.match(tl(rowOf('PR #980')).href, /^#\/p\/Service-Desk\/timeline\/sprint\/PR(%20| )(%23|#)980$/, 'placed as any pull request: linked to its sprint');
+        assert.match(r.tl.href, /^#\/p\/Service-Desk\/timeline\/sprint\/PR(%20| )(%23|#)980$/, 'placed as any pull request: linked to its sprint');
       }
     } finally {
       page.restore();

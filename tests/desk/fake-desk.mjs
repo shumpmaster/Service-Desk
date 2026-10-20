@@ -3,7 +3,7 @@
 // function does (a null page for a matching ETag), and records every call with the fake time.
 
 import { urlsFor, pageUrl, keptPull, keptLogLines, JOB_LOG_CHARS } from '../../src/lib/github.js';
-import { jobsPart } from '../../src/lib/api.js';
+import { jobsPart, ownerChecksPart } from '../../src/lib/api.js';
 import { closedNeedsNext, CLOSED_MAX_PAGES } from '../../src/lib/prfiles.js';
 import { createHash } from 'node:crypto';
 
@@ -29,10 +29,11 @@ export function repo(files = {}, pulls = [], runs = []) {
 }
 
 export function pr(number, title, { draft = false, base = 'main', head = `feature-${number}`, login = 'shumpmaster',
-  headRepo = 'shumpmaster/Service-Desk' } = {}) {
+  headRepo = 'shumpmaster/Service-Desk', sha = null, createdAt = '2026-10-06T12:00:00Z', private: priv = undefined } = {}) {
   return { number, title, html_url: `https://github.com/shumpmaster/Service-Desk/pull/${number}`, draft,
-    base: { ref: base }, head: { ref: head, repo: headRepo == null ? null : { full_name: headRepo } }, user: { login },
-    created_at: '2026-10-06T12:00:00Z', state: 'open' };
+    base: { ref: base, ...(priv === undefined ? {} : { repo: { private: priv } }) },
+    head: { ref: head, repo: headRepo == null ? null : { full_name: headRepo }, ...(sha ? { sha } : {}) }, user: { login },
+    created_at: createdAt, state: 'open' };
 }
 
 /**
@@ -74,6 +75,34 @@ function jobsAnswer(r, project, part) {
   }
   for (const sha of v.extra) out.heads[sha] = null;
   return out;
+}
+
+/**
+ * AC80's `ownerChecks` part (J6, J22), as the function answers it (src/lib/api.js `ownerChecksPart`),
+ * from the repository's `statuses`: { sha: { state, description } | raw JSON text | null (no
+ * owner-verdict entry) }, with `statusFail` naming shas whose read fails (`false`); ETags honoured
+ * (a matching one answers null, a 304). `statusReads` counts each conditional request.
+ */
+function ownerChecksAnswer(r, project, part) {
+  const v = ownerChecksPart(part, project);
+  if (!v) return { ownerChecks: null };
+  const answers = {};
+  const etags = {};
+  for (const sha of v.extra) answers[sha] = false;
+  for (const hd of v.heads) {
+    r.statusReads = (r.statusReads || 0) + 1;
+    if ((r.statusFail || []).includes(hd.sha)) {
+      answers[hd.sha] = false;
+      continue;
+    }
+    const e = (r.statuses || {})[hd.sha];
+    const raw = typeof e === 'string' ? e : JSON.stringify({ state: e ? e.state : 'pending', sha: hd.sha,
+      statuses: e ? [{ context: 'owner-verdict', state: e.state, description: e.description }] : [] });
+    const tag = etagOf(raw);
+    etags[hd.sha] = tag;
+    answers[hd.sha] = hd.etag === tag ? null : raw;
+  }
+  return { ownerChecks: answers, ownerCheckEtags: etags };
 }
 
 /** AC79's log form, as the function makes it, from the repository's `jobs` field. */
@@ -142,7 +171,8 @@ export function fakeServer(repos, config, clock) {
         checks: r.checksForbidden ? [] : runLists.map((l) => (l.is304 ? null : l.raw)),
         checkUrls: r.checksForbidden ? [] : runLists.map((l) => l.url),
         checkNext: r.checksForbidden ? [] : runLists.map((l) => (l.is304 ? null : false)),
-        checksState: r.checksForbidden ? 'cant-read' : 'ok', tree, ...(body.jobs !== undefined ? { jobs: jobsAnswer(r, project, body.jobs) } : {}) } };
+        checksState: r.checksForbidden ? 'cant-read' : 'ok', tree, ...(body.jobs !== undefined ? { jobs: jobsAnswer(r, project, body.jobs) } : {}),
+        ...(body.ownerChecks !== undefined ? ownerChecksAnswer(r, project, body.ownerChecks) : {}) } };
     }
     // J12 (2026-10-16): the blob call's optional `pulls` field, answered raw from the repository's
     // `pullsAnswer` (a raw text, or a function of the cursor giving one, or null for a failed read).
@@ -151,9 +181,14 @@ export function fakeServer(repos, config, clock) {
       const a = r.pullsAnswer;
       pullsOut = typeof a === 'function' ? a(body.pulls.after == null ? null : body.pulls.after) : a == null ? null : a;
     }
-    const texts = new Map(Object.values(r.files).map((t) => [gitSha(t), t]));
+    // From 2026-10-19 (AC80, J22): `blobs` holds texts read by sha that are not on the default branch
+    // (a verdict file on a pull request's branch); a sha `blobFail` names fails the whole call, as a
+    // failed blob does at the function (src/lib/github.js). `blobCalls` records each call's shas.
+    const texts = new Map([...Object.values(r.files).map((t) => [gitSha(t), t]), ...Object.entries(r.blobs || {})]);
     const blobs = {};
     for (const s of body.blobs) blobs[s] = texts.has(s) ? texts.get(s) : null;
+    (r.blobCalls ||= []).push([...body.blobs]);
+    if (body.blobs.some((x) => (r.blobFail || []).includes(x))) return { ok: true, status: 200, json: { ...base, state: 'cant-read', reason: 'github', blobs: {}, history: {}, compare: {} } };
     const history = {};
     // From 2026-10-18: `historyFail(path)` true gives that path a null answer (a failed history read).
     for (const p of body.history) {

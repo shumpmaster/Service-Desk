@@ -3,7 +3,8 @@
 // decisions/questions/P-001-notify-which-view.md) a tap opens the sandbox view, the owner's page:
 // - at `?sandbox&open=<key>` it opens that project and shows the item, in the sandbox's own design,
 //   marked "Opened from a notification": a card's, a question's and a pull request's response sheet;
-//   a deploy's row in the Queue's Deploys, with its run link;
+//   a deploy's row in the Queue's Deploys, with its run link; from stage 1a (AC80) the board, Waiting,
+//   with that card's sheet open over it, whatever its kind, a deploy's with its run link;
 // - a key that no longer waits says "That no longer waits on you" and shows the project; a project
 //   that can't be read says so instead;
 // - the tap is followed once its project is read, and only once;
@@ -50,7 +51,10 @@ async function opened(key, extra = {}) {
   await app.advance(1000);
   return app;
 }
-const banner = (app) => byClass(app.view, 'sb-tap')[0] || null;
+/** The tap's line: on the screen it opened, or (AC80) in the sheet it opened. */
+const banner = (app) => sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'tap-banner')[0] || null;
+const sheet = (app) => byClass(app.view, 'v2-sheet')[0] || null;
+const findKeyedIn = (el, k) => sbFindAll(el, (e) => e.dataset && e.dataset.k === k)[0] || null;
 
 test('AC74: the tap\'s address is read as AC73\'s key, the cost tap as actions-usage; anything else opens Home', () => {
   assert.deepEqual(openTarget(SEARCH('Service-Desk|question|questions/N-open.md')),
@@ -67,48 +71,47 @@ test('AC74: the tap\'s address is read as AC73\'s key, the cost tap as actions-u
   assert.equal(sandboxAddress('/', '?sandbox&open=actions-usage', ''), '/?sandbox&open=actions-usage');
 });
 
-test('AC74 (2026-10-19): the sandbox at ?sandbox&open=<a question\'s key> opens its response sheet, marked "Opened from a notification"; the address keeps ?sandbox only', async () => {
+test('AC74 (2026-10-19) + AC80: the sandbox at ?sandbox&open=<a question\'s key> opens Waiting with its sheet, marked "Opened from a notification"; the address keeps ?sandbox only', async () => {
   const app = await opened('Service-Desk|question|questions/N-open.md');
   try {
-    assert.equal(app.loc.hash, '#/p/Service-Desk/queue/q%3AN-open');
+    assert.equal(app.loc.hash, `#/waiting/card/${encodeURIComponent('Service-Desk|question|questions/N-open.md')}`);
     assert.equal(banner(app).textContent, OPENED_WORDS);
-    const v = app.text();
-    assert.ok(v.includes('A made-up open question'));
-    assert.ok(byClass(app.view, 'sb-sheet-t').length, 'its response sheet');
+    assert.ok(sheet(app), 'its sheet');
+    assert.ok(sheet(app).textContent.includes('A made-up open question'));
+    assert.ok(findKeyedIn(sheet(app), 'tap-banner'), 'the line in the sheet');
+    assert.ok(byClass(app.view, 'v2-lanes').length, 'over the board');
     assert.deepEqual(app.addresses, ['/?sandbox'], 'the ?open= dropped, so a reload doesn\'t follow it again');
   } finally {
     app.restore();
   }
 });
 
-test('AC74 (2026-10-19): a card\'s and a pull request\'s keys open their response sheets; a deploy\'s opens the Queue at its row, with its run link', async () => {
+test('AC74 (2026-10-19) + AC80: a card\'s, a pull request\'s and a deploy\'s keys open Waiting with that card\'s sheet, a deploy\'s with its run link', async () => {
   let app = await opened('Service-Desk|card|queue/P-951-stop-1.md');
   try {
-    assert.match(app.loc.hash, /^#\/p\/Service-Desk\/queue\//);
+    assert.match(app.loc.hash, /^#\/waiting\/card\//);
     assert.equal(banner(app).textContent, OPENED_WORDS);
-    assert.ok(app.text().includes('A made-up decision for the sender\'s tests'));
-    assert.ok(byClass(app.view, 'sb-sheet-t').length);
+    assert.ok(sheet(app) && sheet(app).textContent.includes('A made-up decision for the sender\'s tests'));
   } finally {
     app.restore();
   }
   app = await opened('Service-Desk|pr|108');
   try {
-    assert.match(app.loc.hash, /^#\/p\/Service-Desk\/queue\//);
+    assert.match(app.loc.hash, /^#\/waiting\/card\//);
     assert.equal(banner(app).textContent, OPENED_WORDS);
-    const sheetTitle = byClass(app.view, 'sb-sheet-t')[0];
-    assert.ok(sheetTitle && sheetTitle.textContent.includes('A made-up pull request to merge'), 'the pull request\'s sheet');
-    assert.ok(sbFindAll(app.view, (e) => e.tag === 'a' && e.attrs.href === 'https://github.com/shumpmaster/Service-Desk/pull/108').length, 'its link to GitHub');
+    const t = byClass(sheet(app), 'v2-stitle')[0];
+    assert.ok(t && t.textContent.includes('A made-up pull request to merge'), 'the pull request\'s sheet');
+    assert.ok(sbFindAll(sheet(app), (e) => e.tag === 'a' && e.attrs.href === 'https://github.com/shumpmaster/Service-Desk/pull/108').length, 'its link to GitHub');
   } finally {
     app.restore();
   }
   app = await opened('Service-Desk|deploy|7001');
   try {
-    assert.equal(app.loc.hash, '#/p/Service-Desk/queue');
+    assert.match(app.loc.hash, /^#\/waiting\/card\//);
     assert.equal(banner(app).textContent, OPENED_WORDS);
-    const row = sbFindAll(app.view, (e) => e.attrs && e.attrs.id === 'row-deploy--github-workflows-desk-deploy-yml-40')[0];
-    assert.ok(row, 'the deploy\'s row');
-    assert.ok(row.textContent.includes('waiting for approval'));
-    assert.ok(sbFindAll(row, (e) => e.tag === 'a' && /\/actions\/runs\//.test(e.attrs.href)).length, 'its run link');
+    assert.ok(sheet(app), 'the deploy\'s sheet');
+    assert.ok(sheet(app).textContent.includes('waiting for approval'), sheet(app).textContent);
+    assert.ok(sbFindAll(sheet(app), (e) => e.tag === 'a' && /\/actions\/runs\//.test(e.attrs.href)).length, 'its run link');
   } finally {
     app.restore();
   }

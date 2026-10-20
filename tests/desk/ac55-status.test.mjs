@@ -381,12 +381,14 @@ test('AC55 + AC54 (2026-10-16): every bubble is held to the viewport\'s height l
   assert.match(b, /max-height: calc\(100vh - var\(--sb-clear, 0px\) - 16px\); max-height: calc\(100dvh - var\(--sb-clear, 0px\) - 16px\);/, 'the viewport\'s height less 8 px at each end and the bar');
   assert.match(b, /overflow-y: auto; overflow-x: hidden;/, 'up and down inside itself, never sideways');
   // Build review 1, N4: the room kept clear is the bar's own height, one value for both.
-  assert.match(rule('.sb-screen:has(> .sb-dock)'), /--sb-clear: var\(--sb-dock-h\);/, 'on the project screens, the room kept clear is the bottom bar\'s height');
-  assert.match(rule('.sb-dock'), /height: var\(--sb-dock-h\); overflow: hidden;/, 'and the bar is drawn at exactly that height');
-  assert.match(css, /html\.sb \{[^}]*--sb-dock-h: 65px;/, 'set once (65 px: 52 px tabs, 4 + 8 px padding, 1 px hairline)');
-  assert.match(rule('.sb-tab'), /min-height: 52px;/, 'the tabs fit the bar: 52 + 12 + 1 = 65');
-  assert.match(rule('.sb-dock'), /padding: var\(--s1\) var\(--s2\) var\(--s2\);/, 'AC62: 4, 8 and 8 px from the one scale');
-  assert.match(rule('.sb-dock'), /border-top: 1px solid/);
+  // From stage 1a (AC81): the bar Home · Waiting · Plan floats at every screen's foot, the project
+  // screens' included; the room kept clear is the bar's own room, one value for both.
+  assert.match(rule('.sb-screen'), /--sb-clear: var\(--sb-dock-h\);/, 'on every screen, the room kept clear is the bar\'s room');
+  assert.match(css, /html\.sb \{[^}]*--sb-dock-h: 88px;/, 'set once (88 px: the 60 px bar, 14 px above the foot, and 14 px clear above it)');
+  assert.match(rule('.v2-bar'), /bottom: calc\(14px \+ env\(safe-area-inset-bottom, 0px\)\);/, 'the bar 14 px above the foot');
+  assert.match(rule('.v2-bar'), /height: 60px;[^]*padding: 4px;/, 'and drawn 60 px tall');
+  assert.match(rule('.v2-tab'), /min-height: 52px;/, 'the tabs fit the bar: 52 + 4 + 4 = 60, AC81\'s 52 px tap areas');
+  assert.doesNotMatch(css, /\.sb-dock\b|\.sb-tab\b/, 'the project screens\' own bar is gone');
   assert.match(rule('.sb-bubble-top'), /position: sticky; top: -8px; background: var\(--surf\);/, 'its top row, with "Close", stays in view while it scrolls');
   assert.match(rule('.sb-bubble'), /padding: var\(--s2\) var\(--s3\) var\(--s3\);/, 'its top padding (8 px, AC62) is what the sticky row rises by');
   const held = /\n(\.sb-bubble\.held,[^{]*)\{([^}]*)\}/.exec(css);
@@ -428,14 +430,20 @@ function detailRepos() {
 // Words that only move about the accepted page (its links back and across, its headings naming the page).
 const NAV = /^(← All projects|← Service-Desk|← Personal-Org-Operating-Model|Time asked of you|Agents| · |Time asked of you — .*|Agents — .*|Service-Desk|Personal-Org-Operating-Model)$/;
 
-/** The sandbox's own navigation words, and nothing else: its marker, Home, Back and the bottom bar's four tabs. */
-const SB_NAV = /^(Sandbox: candidate design|Home|Back|Status|Timeline|Team|Queue)$/;
+/**
+ * The sandbox's own navigation words, and nothing else: its marker, Home and Back, and from stage 1a
+ * (AC81) the project screens' top row Status · Timeline · Team · Waiting (the bar at every screen's
+ * foot is left out whole, in facts()).
+ */
+const SB_NAV = /^(Sandbox: candidate design|Home|Back|Status|Timeline|Team|Waiting)$/;
 
 /** Each element's own text (its text-node children, joined) and each leaf's text, in the accepted view. */
 function facts(view) {
   const out = new Set();
   const walk = (n) => {
     for (const c of n.children || []) {
+      // The bar Home · Waiting · Plan at every screen's foot (AC81) is navigation, its badge's count too.
+      if (c.tag && ` ${c.className || ''} `.includes(' v2-bar ')) continue;
       if (c.tag) {
         const own = c.children.filter((x) => !x.tag).map((x) => x.textContent).join('').replace(/\s+/g, ' ').trim();
         if (own) out.add(own);
@@ -482,7 +490,7 @@ for (const [kind, acceptedHash, sandboxHash] of [
         for (const f of accepted) assert.ok(text.includes(f), `${kind} for ${name}: "${f}" is missing`);
         assert.doesNotMatch(text, /Can't show/);
         // And the other way (build review N1): every value and word of the sandbox's view is in the
-        // accepted view, the sandbox's navigation words aside (its marker, Home and Back, the bottom bar's tabs).
+        // accepted view, the sandbox's navigation words aside (its marker, Home and Back, the bar's tabs, AC81).
         const extra = facts(sb.view).filter((f) => !SB_NAV.test(f) && !acceptedText.includes(f));
         assert.deepEqual(extra, [], `${kind} for ${name}: the sandbox shows words the accepted view does not`);
       } finally {

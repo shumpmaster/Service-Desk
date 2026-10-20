@@ -314,6 +314,33 @@ textarea::placeholder { color: var(--ink3); }
 .bl.tech { --bc: var(--b-tech); } .bl.ctx { --bc: var(--b-ctx); } .bl.why { --bc: var(--b-why); }
 .plain .bl { --bc: var(--line2); }
 .plain .bl .bn { color: var(--ink2); }
+.brief { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 4px 10px; align-items: start; padding: 12px; border-radius: 12px; background: var(--bg2); }
+.brief .bt1 { font: 500 15px/1.35 var(--font); }
+.brief .bt2 { grid-column: 2 / 4; font: var(--t-small); color: var(--ink); }
+.brief .bt3 { grid-column: 2 / 4; font: var(--t-small); color: var(--ink2); }
+.brief .go { font: var(--t-label); color: var(--ink2); white-space: nowrap; padding-top: 3px; }
+.since { display: grid; }
+.since > li + li > a { border-top: 1px solid var(--line); }
+.ev { display: grid; grid-template-columns: 38px 16px minmax(0, 1fr) 10px; gap: 2px 8px; align-items: start; padding: 8px 0; min-height: 40px; }
+.ev .tm { font: var(--t-mono); color: var(--ink2); padding-top: 1px; }
+.ev .et { display: grid; gap: 1px; min-width: 0; }
+.ev .e1 { font: 400 13px/1.35 var(--font); overflow-wrap: break-word; }
+.ev .e2 { font: var(--t-mono); color: var(--ink2); overflow-wrap: anywhere; }
+.ev svg.k { margin-top: 2px; color: var(--ink2); }
+.seen { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border-radius: 14px; background: var(--chip); font: var(--t-label); color: var(--ink); }
+.tiles { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.tl2 { display: grid; gap: 6px; align-content: start; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); min-width: 0; }
+.tl2 .hd { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
+.tl2 .wt { display: inline-flex; gap: 4px; align-items: center; font: 500 12px/1.3 var(--font); white-space: nowrap; }
+.tl2 .wt.g { color: var(--ink2); font-weight: 400; }
+.tl2 .wt svg { width: 14px; height: 14px; }
+.tl2 .nm { font: 600 13px/1.3 var(--font); overflow-wrap: anywhere; }
+.tl2 .su { font: var(--t-small); color: var(--ink2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tl2 .su.i { font-style: italic; }
+.tl2 .ln { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 6px; align-items: start; font: var(--t-small); color: var(--ink); }
+.tl2 .ln svg { width: 14px; height: 14px; margin-top: 1px; }
+.tl2 .ln .g { color: var(--ink2); }
+.tl2 .ph { gap: 4px; }
 .cmp { display: grid; grid-template-columns: 1fr; gap: 8px; }
 </style>
 </head>
@@ -322,13 +349,13 @@ textarea::placeholder { color: var(--ink3); }
   <div class="intro">
     <span class="tagline">Mockup · the desk, version 2 · not built · 19 Oct</span>
     <h1>The desk, mockup v2</h1>
-    <p>Your board, your project pages, the Timeline you like, and a first look at the level above your projects, drawn as your rulings of 19 Oct add up. Linear's general look is the starting point, not a copy. Items from Service-Desk and Personal-Org-Operating-Model are real ones from their records, shown as examples from 19 Oct at 16:30 (Chicago time). Everything for <b>Members Letter</b> is made up, to show a project that uses every part of the model, and is marked "Example" wherever it appears. The README beside this file says which ruling each choice follows and what is left for you to judge.</p>
+    <p>A home page, your board, your project pages, the Timeline you like, and a first look at the level above your projects, drawn as your rulings of 19 Oct add up. Linear's general look is the starting point, not a copy. Items from Service-Desk and Personal-Org-Operating-Model are real ones from their records, shown as examples from 19 Oct at 16:30 (Chicago time). Everything for <b>Members Letter</b> is made up, to show a project that uses every part of the model, and is marked "Example" wherever it appears. The README beside this file says which ruling each choice follows and what is left for you to judge.</p>
   </div>
   <div class="frames" id="frames"></div>
   <section class="notes">
     <h2>Left for you to judge (not ruled)</h2>
     <ul>
-      <li>Three tabs (Waiting, Plan, Projects), with ideas in Plan and the portfolio at the foot of Projects, or a fourth Portfolio tab.</li>
+      <li>Home · Waiting · Plan, with the project tiles and the portfolio on Home, or a Projects tab kept as well.</li><li>Two-column project tiles on Home (as the trial view's Home), or full-width ones.</li>
       <li>Technical, Context and Why on the Timeline: labels with their own colours (frame 7a), or labels in grey (frame 7b).</li>
       <li>One "why not written yet" line per phase list, in place of the same words on every standard milestone.</li>
       <li>Whether a pull request waiting on a domain reviewer's verdict counts under "With the agents".</li>
@@ -350,7 +377,7 @@ textarea::placeholder { color: var(--ink3); }
     order: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4"/></svg>',
     Waiting: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h4l2 3h4l2-3h4"/><path d="M5 6h14l1 7v5H4v-5z"/></svg>',
     Plan: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h1M4 12h1M4 18h1"/></svg>',
-    Projects: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z"/></svg>',
+    Home: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5V20h-5.5v-5.5h-5V20H4z"/></svg>',
   };
   // the kinds of ask, told apart by icon and word, never by colour (S-001 AC38)
   const K = {
@@ -391,7 +418,7 @@ textarea::placeholder { color: var(--ink3); }
   };
 
   // ---------- frame chrome ----------
-  const TABS = ['Waiting', 'Plan', 'Projects'];
+  const TABS = ['Home', 'Waiting', 'Plan'];
   const bar = (active, badge = 8) => `<nav class="bar" aria-label="Main">${TABS.map((t, i) =>
     `<a class="tab" href="#" ${i === active ? 'aria-current="page"' : ''}>${I[t]}<span>${t}</span>${t === 'Waiting' && badge ? `<span class="badge" aria-label="${badge} need you">${badge}</span>` : ''}</a>`).join('')}</nav>`;
   const pill = (...btns) => `<div class="pill">${btns.map(([ic, l]) => `<button type="button" class="ib" aria-label="${l}">${I[ic]}</button>`).join('')}</div>`;
@@ -415,9 +442,9 @@ textarea::placeholder { color: var(--ink3); }
     { p: 'ml', lane: 'wait', kind: 'spend', word: 'Spend', title: '82% of the $20 monthly ceiling', meta: 'Oct · 2 h', step: 'Answer', why: 'Paused at 80%' },
     { p: 'ml', lane: 'wait', kind: 'pr', word: 'Pull request', title: 'Retry failed card payments', meta: '#14 · 4 h', step: 'Verdict', why: 'Security review: PASS' },
     { p: 'ml', lane: 'kick', kind: 'pr', word: 'Pull request', title: 'Welcome email template', meta: '#13 · 7 m', step: 'Merge', why: 'GitHub doesn’t show it merged' },
+    { p: 'sd', lane: 'done', title: 'Answered A: text boxes keep 16 px', meta: '16:20' },
     { p: 'sd', lane: 'done', title: 'Answered C: one board, grouped by project', meta: '16:11' },
     { p: 'sd', lane: 'done', title: 'The automatic job’s pull requests show as being recorded', meta: '#135 · 12:28' },
-    { p: 'sd', lane: 'done', title: 'M3A’s new line in the project document', meta: '#133 · 11:16' },
     { p: 'ml', lane: 'done', kind: 'pr', title: 'Unsubscribe link in every letter', meta: '#16 · moved 1 m ago', conf: true, step: 'Merge' },
   ];
   const gateBtns = () => `<div class="gatebtns">${['Proceed', 'Hold', 'Recycle', 'Kill'].map((w) => `<a class="step" href="#" aria-label="${w} (opens the filled-in answer)">${w}</a>`).join('')}</div>`;
@@ -462,7 +489,7 @@ textarea::placeholder { color: var(--ink3); }
       ${only ? `<div class="filter"><span class="fchip">${K.proj}${PROJ[only].name}<button type="button" class="x" aria-label="Show all projects">${I.close.replace('class="i"', 'class="k"')}</button></span><span class="small">1 of 3 projects</span></div>` : quietLines()}
       ${board({ only })}
       ${only ? '<p class="small">With the agents: 0 · Being recorded by the automatic job: 0</p>' : ''}
-    </div>${bar(0, only ? 8 : 8)}`;
+    </div>${bar(1)}`;
 
   // ---------- sheets ----------
   const sheetHead = (meta, title) => `<span class="grab" aria-hidden="true"></span><div class="shead"><div class="blk"><p class="mono">${meta}</p><h3 class="stitle">${esc(title)}</h3></div><button type="button" class="x44" aria-label="Close">${I.close}</button></div>`;
@@ -552,7 +579,7 @@ textarea::placeholder { color: var(--ink3); }
       ${projTop('Service-Desk', 'v3 · model 3.5.0 · T1', 'o')}
       <p class="lead">Design, second time through. Next: the chosen design running on the real back end.</p>
       ${strip([['ph-disc', 'Discovery', 'finished', 'reached', 'past'], ['ph-des', 'Design', 'run 2 · now', 'progress', 'now'], ['ph-build', 'Build', 'run 1 gone back over · run 2 ahead', 'gone', 'plan'], ['ph-launch', 'Launch', 'planned', 'planned', 'plan']])}
-      <p class="small">Design ran again from 8 Oct · why it went back: not recorded<br>Your last action: answered C, one board grouped by project · 16:11</p>
+      <p class="small">Design ran again from 8 Oct · why it went back: not recorded<br>Your last action: answered A, text boxes keep 16 px · 16:20</p>
       <ol class="rows">
         <li><a class="row" href="#">${ST('you')}<span class="rt"><span class="tt">2 wait on you</span><span class="small">Your verdict on #148 · the redesign question</span></span><span class="chev">›</span></a></li>
         <li><a class="row" href="#">${K.agents}<span class="rt"><span class="tt soft">At work now: no agent run recorded since 8 Oct</span><span class="small">Work goes through pull requests · with the agents: 0</span></span><span class="chev">›</span></a></li>
@@ -565,12 +592,12 @@ textarea::placeholder { color: var(--ink3); }
         <li><a class="row" href="#">${ST('progress')}<span class="rt"><span class="tt">Experiments</span><span class="small">6 registered · 4 results filed</span></span><span class="chev">›</span></a></li>
         <li><a class="row" href="#"><span></span><span class="rt"><span class="tt soft">Details</span><span class="small">Agents and usage · time asked of you · CI · record notes</span></span><span class="chev">›</span></a></li>
       </ol>
-    </div>${bar(2)}`;
+    </div>${bar(0)}`;
   const sdStdOpen = () => `<div class="scr" data-scroll="std">
       ${projTop('Service-Desk', 'v3 · model 3.5.0 · T1', 'o')}
       <h3 class="sh"><span>Milestones by phase · yours and the model's 24</span><span class="c">↑ start at the foot</span></h3>
       ${SD_STD('Design')}
-    </div>${bar(2)}`;
+    </div>${bar(0)}`;
   const mlStdOpen = () => `<div class="scr" data-scroll="std">
       ${projTop('Members Letter', 'v3 · model 3.4.0 · T2', 'o', ex)}
       <h3 class="sh"><span>Milestones by phase · all 24 standard lines written</span><span class="c">↑ start at the foot</span></h3>
@@ -594,7 +621,7 @@ textarea::placeholder { color: var(--ink3); }
         ['ph-disc', 'Discovery', 'finished', 'Yours: ML1 reached · Standard: <b>7 of 8</b> reached, 1 skipped'],
       ])}
       <p class="callout">${K.eye}<span>Three states, told apart: <b>skipped</b> (a line says why), <b>not recorded yet</b> (the agents can fill it), and <b>no record in the model</b> (no one can, until the model changes). See Service-Desk's Design for the other two.</span></p>
-    </div>${bar(2)}`;
+    </div>${bar(0)}`;
 
   // ---------- the Timeline ----------
   const bullets = (tech, ctx, why) => `<div class="bl tech"><span class="bn">Technical</span><span class="bt mono">${tech}</span></div>
@@ -646,7 +673,7 @@ textarea::placeholder { color: var(--ink3); }
           <div class="tseg"><button type="button" class="fold" aria-expanded="false">8 standard Discovery milestones · 4 reached ▸</button><button type="button" class="fold" aria-expanded="false">13 research sprints ▸</button></div></section>
       </div>
       <div class="goal"><h4>Where we started · docs/PROJECT.md, Intent</h4><q>Service Desk replaces Operations-Hub, which is a read-only page answering "does anything need me?" and linking out to GitHub.</q></div>
-    </div>${bar(2)}`;
+    </div>${bar(0)}`;
 
   // ---------- POOM: the older pipeline ----------
   const poom = () => `<div class="scr">
@@ -667,7 +694,7 @@ textarea::placeholder { color: var(--ink3); }
         <li>${ST('skipped')}<span><span class="nt">Questions and cards</span><br><span class="nw">No questions or queue folder: it asks you through pull requests.</span></span></li>
         <li>${ST('skipped')}<span><span class="nt">Agent runs</span><br><span class="nw">No dispatch log.</span></span></li>
       </ul>
-    </div>${bar(2)}`;
+    </div>${bar(0)}`;
 
   // ---------- Members Letter: everything at once (an example) ----------
   const ml = () => `<div class="scr">
@@ -695,28 +722,37 @@ textarea::placeholder { color: var(--ink3); }
         <li><a class="row" href="#">${ST('progress')}<span class="rt"><span class="tt">Research sub-project: pricing</span><span class="small">$3 of its $5 budget · 2 of 5 days left · counts toward the cap</span></span><span class="chev">›</span></a></li>
         <li><a class="row" href="#"><span></span><span class="rt"><span class="tt soft">T2 parts</span><span class="small">Backup: Sam (example) · holdouts passing · 1 break-glass, closed in 2 days · 1 delegation grant</span></span><span class="chev">›</span></a></li>
       </ol>
-    </div>${bar(2)}`;
+    </div>${bar(0)}`;
 
-  // ---------- Projects, with the portfolio at its foot ----------
-  const tile = (name, tag, summary, phase, phcls, icon, waits, soft) => `<a class="card" href="#" style="padding:10px;gap:6px;border-radius:10px">
-      <span class="row" style="padding:0;min-height:0;grid-template-columns:minmax(0,1fr);"><span class="tt">${name} ${tag || ''}</span></span>
-      <span class="small${soft ? '' : ' ink'}" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;${soft ? 'font-style:italic' : ''}">${summary}</span>
-      <span class="ph ${phcls}" style="gap:3px"><span class="bar3" aria-hidden="true"></span><span class="pn" style="font-size:11px">${ST(icon)}${phase}</span></span>
-      <span class="small ${waits ? 'ink' : ''}" style="display:flex;gap:4px;align-items:center">${waits ? `${ST('you')}${waits}` : 'Nothing waiting'}</span></a>`;
-  const projects = () => `<div class="scr">
-      <header class="top"><h2 class="title">Projects</h2>${pill(['more', 'More'])}</header>
-      <p class="sub"><span>3 projects · checked 1 min ago</span></p>
-      <h3 class="sh"><span>Active</span><span class="c">2 ▾</span></h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        ${tile('Service-Desk', '', 'The owner’s phone-first desk over every project the agents run: one card per project showing what waits on the owner, what the team is doing and where the work is heading, with each answer opened in GitHub ready to commit.', 'Design · run 2', 'ph-des', 'progress', '2 wait on you')}
-        ${tile('Members Letter', ex, 'A paid members’ newsletter with sign-ups (example).', 'Build · run 2', 'ph-build', 'progress', '5 wait on you')}
-      </div>
-      <h3 class="sh"><span>Closed or not run by the desk</span><span class="c">1 ▾</span></h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        ${tile('Personal-Org-Operating-Model', '', 'Its README’s first paragraph shows here; not copied into this mockup, as the repository is private.', 'Older pipeline · m1.4', '', 'progress', '', true)}
-      </div>
-      <h3 class="sh"><span>Done</span><span class="c">0 ▸</span></h3>
-      <h3 class="sh" style="padding-top:18px;border-top:1px solid var(--line)"><span>Across your projects · read only</span><span class="c">portfolio</span></h3>
+  // ---------- Home ----------
+  // "Since you last looked": Service-Desk lines are real (GitHub merge times and pull request #148's commits,
+  // Chicago time, 19 Oct); Members Letter lines are examples. The last-looked time is an example: the desk keeps it on the phone.
+  const EVENTS = [
+    ['16:26', 'agents', 'The Chief of Staff revised the design rulebook: your newest rulings in', 'Service-Desk · #148 · 4eae196'],
+    ['16:23', 'eye', 'The Reviewer\u2019s round-2 report on the Design reviewer\u2019s setup, recorded', 'Service-Desk · #148 · e814b48'],
+    ['16:20', 'done', 'Your answers recorded: the five conflicts; text boxes keep 16 px', 'Service-Desk · #151, #152'],
+    ['16:15', 'proj', `An idea moved to shaping: a reading-list app ${ex}`, 'portfolio · ideas'],
+    ['16:13', 'q', 'Two questions filed for you: the five conflicts, and text-box size', 'Service-Desk · #150'],
+    ['16:11', 'done', 'Your answer recorded: one board, grouped by project', 'Service-Desk · #149'],
+    ['16:02', 'agents', `The Security reviewer started on #12 ${ex}`, 'Members Letter'],
+    ['15:58', 'eye', `EXP-1's result filed: passed ${ex}`, 'Members Letter'],
+    ['15:55', 'pr', 'New, waits on you: Set up the Design reviewer', 'Service-Desk · #148'],
+    ['15:50', 'gate', `Build run 2 finished; the Launch gate case is filed ${ex}`, 'Members Letter · P-3'],
+    ['15:47', 'done', 'Your answers recorded: tabs, typeface, PRs with the agents, the Done button', 'Service-Desk · #146'],
+  ];
+  const evRow = ([t, ic, a, b]) => `<li><a class="ev" href="#"><span class="tm">${t}</span>${K[ic]}<span class="et"><span class="e1">${a}</span><span class="e2">${b}</span></span><span class="chev">›</span></a></li>`;
+  const homeTile = ({ name, tag = '', su, suI, phcls, phIcon, phase, waits, work, next }) => `<a class="tl2" href="#" aria-label="${name}: open its page">
+      <span class="hd"><span class="nm">${name} ${tag}</span><span class="wt${waits ? '' : ' g'}">${waits ? ST('you') : ''}${waits || 'Nothing waiting'}</span></span>
+      <span class="su${suI ? ' i' : ''}">${su}</span>
+      <span class="ph ${phcls}"${phcls ? '' : ' style="--phc:var(--ink2)"'}><span class="bar3" aria-hidden="true"></span><span class="pn" style="font-size:12px">${ST(phIcon)}${phase}</span></span>
+      <span class="ln">${K.agents}<span class="g">${work}</span></span>
+      <span class="ln">${ST(next[0])}<span><span class="g">Next:</span> ${next[1]}</span></span></a>`;
+  const TILES = (clear) => [
+    { name: 'Service-Desk', su: 'The owner\u2019s phone-first desk over every project the agents run: one card per project showing what waits on the owner.', phcls: 'ph-des', phIcon: 'progress', phase: 'Design · run 2', waits: clear ? '' : '2 wait on you', work: 'No agent run recorded since 8 Oct', next: ['progress', 'MD3 · rough finish 22–25 Oct'] },
+    { name: 'Members Letter', tag: ex, su: 'A paid members\u2019 newsletter with sign-ups (example).', phcls: 'ph-build', phIcon: 'progress', phase: 'Build · run 2', waits: clear ? '' : '6 need you', work: 'At work: the Builder on #15, the Security reviewer on #12', next: ['you', 'the Launch gate, after your ruling'] },
+    { name: 'Personal-Org-Operating-Model', su: 'Its README\u2019s first paragraph shows here; not copied, as the repository is private.', suI: true, phcls: '', phIcon: 'progress', phase: 'Older pipeline · m1.4 open', waits: '', work: 'No dispatch log: not used here', next: ['progress', 'sprint m1.4 · no estimate filed'] },
+  ];
+  const portfolio = () => `<h3 class="sh" id="portfolio" style="padding-top:18px;border-top:1px solid var(--line)"><span>Across your projects · read only</span><span class="c">portfolio</span></h3>
       <ol class="rows">
         <li><a class="row" href="#">${ST('norec')}<span class="rt"><span class="tt">The cap on work at once</span><span class="small">In Build or Launch: Members Letter ${ex} · research: 1 ${ex} · your cap: not set yet (OM §3)</span></span><span class="chev">›</span></a></li>
         <li><a class="row" href="#">${ST('reached')}<span class="rt"><span class="tt">Decisions across projects</span><span class="small">None in the portfolio's queue · a card there waits on Waiting, under "Portfolio"</span></span><span class="chev">›</span></a></li>
@@ -724,8 +760,25 @@ textarea::placeholder { color: var(--ink3); }
         <li><a class="row" href="#"><span></span><span class="rt"><span class="tt">Model versions · latest 3.5.0</span><span class="small">Service-Desk 3.5.0 · Personal-Org-Operating-Model runs v2.5.1, publishes 3.5.0 · Members Letter 3.4.0, one behind ${ex}</span></span><span class="chev">›</span></a></li>
         <li><a class="row" href="#"><span></span><span class="rt"><span class="tt soft">Rulings, standing intent, library facts, track records</span><span class="small">Rarely needed · intent not written yet</span></span><span class="chev">›</span></a></li>
       </ol>
-      <p class="small">The desk reads your portfolio repository and never changes it (your ruling, P-001-portfolio-read). Ideas are in Plan.</p>
-    </div>${bar(2)}`;
+      <p class="small">The desk reads your portfolio repository and never changes it (your ruling, P-001-portfolio-read). Ideas are in Plan.</p>`;
+  const home = ({ clear = false } = {}) => `<div class="scr"${clear ? '' : ' data-scroll="home"'}>
+      <header class="top"><h2 class="title">Home</h2>${pill(['more', 'More'])}</header>
+      <p class="sub"><span>checked 1 min ago</span><span>·</span><span>${clear ? 'a made-up moment: everything answered' : 'examples from 19 Oct, 16:30'}</span></p>
+      ${clear ? `<a class="brief" href="#">${ST('reached')}<span class="bt1">Nothing needs you</span><span class="go">Waiting ›</span>
+          <span class="bt3">Every project read 1 min ago · with the agents: 2 ${ex}</span></a>`
+      : `<a class="brief" href="#" aria-label="8 need you: open Waiting">${ST('you')}<span class="bt1">8 need you</span><span class="go">Waiting ›</span>
+          <span class="bt2">7 waiting, 1 kicked back · oldest 4 h · one question settles itself Wed 13:37 · one can't be undone</span>
+          <span class="bt3">Counts Service-Desk's 2 real cards with Members Letter's 6 examples, as Waiting does</span></a>`}
+      <h3 class="sh"><span>Since you last looked · 15:40 ${ex}</span><button type="button" class="seen">Mark as seen</button></h3>
+      <ol class="since">${EVENTS.slice(0, 4).map(evRow).join('')}</ol>
+      <a class="more" href="#">${EVENTS.length - 4} more since 15:40 ›</a>
+      <h3 class="sh"><span>Your projects · active</span><span class="c">2 ▾</span></h3>
+      <div class="tiles">${TILES(clear).slice(0, 2).map(homeTile).join('')}</div>
+      <h3 class="sh"><span>Closed or not run by the desk</span><span class="c">1 ▾</span></h3>
+      <div class="tiles">${TILES(clear).slice(2).map(homeTile).join('')}</div>
+      <h3 class="sh"><span>Done</span><span class="c">0 ▸</span></h3>
+      ${portfolio()}
+    </div>${bar(0, clear ? 0 : 8)}`;
 
   // ---------- Plan ----------
   const prow = (icon, t, m, v, w) => `<li><a class="row" href="#">${ST(icon)}<span class="rt"><span class="tt">${t}</span><span class="mono">${m}</span></span><span class="v${w ? ' w' : ''}">${v}</span></a></li>`;
@@ -757,13 +810,17 @@ textarea::placeholder { color: var(--ink3); }
         ${prow('progress', `A reading-list app ${ex}`, 'shaping · you agreed to explore it', '›', true)}
       </ol>
       <p class="small">The order is the project documents' until you change it here. Ideas move to a project once you agree to explore one.</p>
-    </div>${bar(1)}`;
+    </div>${bar(2)}`;
 
   // ---------- the current Timeline, for comparison ----------
   const current = () => `<img class="shot" src="desk-v2/7c-current-timeline-414.png" alt="The current trial view's Timeline, rendered from the tests' fixtures" width="414" height="896">`;
 
   // ---------- the frames ----------
   const FR = [
+    { id: 'H1', t: 'H1 · Home', c: 'Opens first. A short briefing (one tap to Waiting), what changed since you last looked (each line a tap to where it happened), one tile per project, then the parts across projects.', s: () => home() },
+    { id: 'H2', t: 'H2 · Home, dark', c: 'H1 in the phone\u2019s dark setting.', s: () => home(), dark: true },
+    { id: 'H3', t: 'H3 · Home, all clear', c: 'A made-up moment with everything answered: "Nothing needs you", and the rest of Home stays as it is.', s: () => home({ clear: true }) },
+    { id: 'H4', t: 'H4 · Home, at its foot', c: 'Scrolled past the tiles to "Across your projects · read only", moved here from the foot of Projects.', s: () => home() },
     { id: '1', t: '1 · Waiting, grouped by project', c: 'One board, three lanes at once, each project’s cards together under its name. A gate card has its own kind. Above the board: "With the agents" and the project with nothing waiting.', s: () => waiting() },
     { id: '2', t: '2 · Waiting, one project', c: 'After a tap on "Service-Desk": only its cards. The chip’s ✕ shows every project again.', s: () => waiting({ only: 'sd' }) },
     { id: '3', t: '3 · A question that can’t be undone', c: 'One answer button per option, the recommendation labelled and not chosen. "Can’t be undone" says it never settles itself. A box for your own words, at 16 px.', s: () => waiting() + sheetIrrev() },
@@ -777,7 +834,6 @@ textarea::placeholder { color: var(--ink3); }
     { id: '7c', t: '7c · The Timeline today, for comparison', c: 'The trial view as built, rendered from the tests’ fixtures (Service-Desk’s records at 3117150 and pull requests to #77, so it reads 16 Oct), with a sprint fold open.', img: current },
     { id: '8', t: '8 · Personal-Org-Operating-Model’s page', c: 'The older pipeline: sprints in place of phases, the ledger’s latest, CI. What it doesn’t use is said as "not used", not as missing.', s: poom },
     { id: '9', t: '9 · Members Letter’s page (example)', c: 'Everything at once: the gate waiting, a spend alert, two agents at work, a security review, experiments, a research sub-project, T2 parts.', s: ml },
-    { id: '10', t: '10 · Projects, with the portfolio', c: 'Your projects in their three groups, as two-column tiles, then what only a view across projects can show: the cap, cross-project decisions, the scorecard, model versions.', s: projects },
     { id: '11', t: '11 · Plan', c: 'Milestones ahead in order, per project, each with the Chief of Staff’s rough finish; work that isn’t a milestone yet; then ideas from the portfolio.', s: plan },
     { id: '12', t: '12 · Frame 1, dark', c: 'The board in the phone’s dark setting.', s: () => waiting(), dark: true },
   ];
@@ -801,6 +857,7 @@ textarea::placeholder { color: var(--ink3); }
       const n = s.querySelector('[data-now]');
       if (n) s.scrollTop = n.offsetTop - 64;
     });
+    if (params.get('frame') === 'H4') document.querySelectorAll('.scr[data-scroll="home"]').forEach((s) => { const n = s.querySelector('#portfolio'); if (n) s.scrollTop = n.offsetTop - 300; });
     // the open phase list starts near the top of the frame
     document.querySelectorAll('.scr[data-scroll="std"]').forEach((s) => {
       const n = s.querySelector('.sh');

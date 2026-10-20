@@ -128,7 +128,7 @@ export const findKeyed = (app, k) => {
 
 /**
  * Lay the page out as a browser would, for the bubble's placement: every element gets a box, the
- * project screens' bottom bar its 65 px at the foot of the viewport, and an open bubble the height
+ * bar at every screen's foot (AC81) its 60 px, 14 px above the foot of the viewport, and an open bubble the height
  * `bubbleH` (its content, before the CSS holds it) from `bubbleTop`. Returns a function that undoes it.
  */
 export function layout(El, { bubbleTop = 200, bubbleH = 1400 } = {}) {
@@ -136,7 +136,7 @@ export function layout(El, { bubbleTop = 200, bubbleH = 1400 } = {}) {
   El.prototype.getBoundingClientRect = function rect() {
     const vh = globalThis.window.innerHeight;
     const cls = ` ${this.className} `;
-    if (cls.includes(' sb-dock ')) return { top: vh - 65, bottom: vh, left: 0, right: globalThis.window.innerWidth, height: 65, width: globalThis.window.innerWidth };
+    if (cls.includes(' v2-bar ')) return { top: vh - 74, bottom: vh - 14, left: 16, right: globalThis.window.innerWidth - 16, height: 60, width: globalThis.window.innerWidth - 32 };
     if (cls.includes(' sb-bubble ')) return { top: bubbleTop, bottom: bubbleTop + bubbleH, left: 16, right: globalThis.window.innerWidth - 16, height: bubbleH, width: globalThis.window.innerWidth - 32 };
     return { top: 100, bottom: 160, left: 16, right: globalThis.window.innerWidth - 16, height: 60, width: globalThis.window.innerWidth - 32 };
   };

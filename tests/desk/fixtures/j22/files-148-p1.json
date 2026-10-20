@@ -1,0 +1,502 @@
+[
+{
+"sha": "ec2f3393ba8b463e51ce43496240380c4e5f8c8a",
+"filename": ".claude/agents/design-reviewer.md",
+"status": "added"
+},
+{
+"sha": "ebc35cbef3bca3493c0a214c44c394c95ab7eec0",
+"filename": "digest/project.md",
+"status": "modified"
+},
+{
+"sha": "205e6d7a1cd675bf5b9fc65b243aa794cd4b9fdd",
+"filename": "docs/DIGEST.md",
+"status": "modified"
+},
+{
+"sha": "8d6661071cc774527c057e4522a05ee1c35701a6",
+"filename": "docs/IMPROVEMENT_REGISTER.md",
+"status": "modified"
+},
+{
+"sha": "607e304473d4f2cf329dbaf1ec91595b28de4660",
+"filename": "docs/LEDGER.md",
+"status": "modified"
+},
+{
+"sha": "db324c999e261889e4d9d9c21f41c193f31325c9",
+"filename": "docs/design/audit-2026-10-19.md",
+"status": "added"
+},
+{
+"sha": "47f1762d3bde1061430a8ec280d8cd2ee5a6821e",
+"filename": "docs/design/inventory-2026-10-19.md",
+"status": "added"
+},
+{
+"sha": "f118f27901817b9391e6532ba5a88aa60967bb35",
+"filename": "docs/design/mockups/board.html",
+"status": "added"
+},
+{
+"sha": "94a59c02f7c99318c18aee34599f269e19f3b0c2",
+"filename": "docs/design/mockups/board/README.md",
+"status": "added"
+},
+{
+"sha": "45470136c55ebd546ff2def58bd2332e6eb08372",
+"filename": "docs/design/mockups/board/a-five-waiting-360.png",
+"status": "added"
+},
+{
+"sha": "9e351d491ad9ab5ea112860f199328ac163aa7b5",
+"filename": "docs/design/mockups/board/a-five-waiting-414-v2.png",
+"status": "added"
+},
+{
+"sha": "30aa59101c85ec948410eccbdc4b08dd1672ad6f",
+"filename": "docs/design/mockups/board/a-five-waiting-414-v3.png",
+"status": "added"
+},
+{
+"sha": "d7ec24b9eff7ecca39461299bfdcb05353f8f5e5",
+"filename": "docs/design/mockups/board/a-five-waiting-414.png",
+"status": "added"
+},
+{
+"sha": "c6bc7840c2b66903b50922118216938ee65ec158",
+"filename": "docs/design/mockups/board/b-mid-drag-414.png",
+"status": "added"
+},
+{
+"sha": "55f365864e8fa906762d313b079b9a04113644b6",
+"filename": "docs/design/mockups/board/board-360-v5.png",
+"status": "added"
+},
+{
+"sha": "3f64c227406b32317fd3d63631b1ca9ce8486888",
+"filename": "docs/design/mockups/board/board-414-v5.png",
+"status": "added"
+},
+{
+"sha": "65bc9afad765f9a0bed28118eda8bc6ee2a7232d",
+"filename": "docs/design/mockups/board/board-dark-414-v5.png",
+"status": "added"
+},
+{
+"sha": "a0ef956972f932cef0e4580cdcee0068bebf2b41",
+"filename": "docs/design/mockups/board/c-two-checking-414.png",
+"status": "added"
+},
+{
+"sha": "e5945d9f4677141d08d01917801f0f28e58283aa",
+"filename": "docs/design/mockups/board/c-two-marked-done-414-v3.png",
+"status": "added"
+},
+{
+"sha": "bbc4733c3b3e3066f86d6041b42a4282f2f869dd",
+"filename": "docs/design/mockups/board/d-kicked-back-414-v2.png",
+"status": "added"
+},
+{
+"sha": "3d4daf976c88f0260418100be29cbcc6e85bf70a",
+"filename": "docs/design/mockups/board/d-kicked-back-414-v3.png",
+"status": "added"
+},
+{
+"sha": "1904f428cbf618d4c7a4afcbef45bd94447ffee4",
+"filename": "docs/design/mockups/board/d-still-waiting-414.png",
+"status": "added"
+},
+{
+"sha": "d4ee23c73927a7c9cb292da823dfbe2ba26a7f16",
+"filename": "docs/design/mockups/board/e-nothing-waiting-414.png",
+"status": "added"
+},
+{
+"sha": "a3d29d940e452c5c66db4275be42cdde10ff3e53",
+"filename": "docs/design/mockups/board/f-dark-414.png",
+"status": "added"
+},
+{
+"sha": "03348c56255dc6192baa1e4d5ef40ee92afef0ed",
+"filename": "docs/design/mockups/board/g-130-after-verdict-414-v3.png",
+"status": "added"
+},
+{
+"sha": "cb5d16728ca3995dfa7cfe197833f1eb28c86bcb",
+"filename": "docs/design/mockups/board/option1-360-v4.png",
+"status": "added"
+},
+{
+"sha": "9ea98cd34fc336fc0db708acb647d80becd0d725",
+"filename": "docs/design/mockups/board/option1-414-v4.png",
+"status": "added"
+},
+{
+"sha": "753cc15d1481cede6cf492f666692ae7ef5191d0",
+"filename": "docs/design/mockups/board/option1-dark-414-v4.png",
+"status": "added"
+},
+{
+"sha": "f9884c2aff8384c7e6dac2f3ab585eb1d164fcbd",
+"filename": "docs/design/mockups/board/option1-sheet-414-v4.png",
+"status": "added"
+},
+{
+"sha": "1c5ec21810eadd62d795104bda33896da1e0b94d",
+"filename": "docs/design/mockups/board/option2-360-v4.png",
+"status": "added"
+},
+{
+"sha": "32ad340e66152756740cf5da7596f2a522af177b",
+"filename": "docs/design/mockups/board/option2-414-v4.png",
+"status": "added"
+},
+{
+"sha": "cf4e9bcd573cfc1ce1ef61b601f7c5d421f679bf",
+"filename": "docs/design/mockups/board/option2-drag-414-v4.png",
+"status": "added"
+},
+{
+"sha": "78ebe00b604e1e26bff006eea7d55c431426f98c",
+"filename": "docs/design/mockups/board/option2-mid-swipe-414-v4.png",
+"status": "added"
+},
+{
+"sha": "fa8777f1734e2da2b90e2f26149c6228fa1697fc",
+"filename": "docs/design/mockups/board/page-1024-v4.png",
+"status": "added"
+},
+{
+"sha": "ee9307d24aa6fcd178887b2063348319e0947816",
+"filename": "docs/design/mockups/board/sheet-414-v5.png",
+"status": "added"
+},
+{
+"sha": "61d0b86e8456973d058bc06d0c36e4a20bd14fa3",
+"filename": "docs/design/mockups/board/wide-1024-v2.png",
+"status": "added"
+},
+{
+"sha": "f66998fea3621a8a3e8f627bf057cbff8f934501",
+"filename": "docs/design/mockups/board/wide-1024-v3.png",
+"status": "added"
+},
+{
+"sha": "f7d2904900a53142fd5b1973122a8bf694415744",
+"filename": "docs/design/mockups/board/wide-1024.png",
+"status": "added"
+},
+{
+"sha": "16627d16e74f9796e5058e29fe3e6dfc0bab534f",
+"filename": "docs/design/mockups/board/wide-414-v3.png",
+"status": "added"
+},
+{
+"sha": "74578dd7daeb1e96db2e3cbf5c638be3a10fcff0",
+"filename": "docs/design/mockups/desk-v2.html",
+"status": "added"
+},
+{
+"sha": "d4fa63ad28434036777a52f70eeaa15b8b366d7d",
+"filename": "docs/design/mockups/desk-v2/1-waiting-360.png",
+"status": "added"
+},
+{
+"sha": "cbc81c1c4fd1f82c3f52ee2c20418665c0b9f56a",
+"filename": "docs/design/mockups/desk-v2/1-waiting-414.png",
+"status": "added"
+},
+{
+"sha": "59d69856bdb6fe43f62529e66e13373aa5a5d280",
+"filename": "docs/design/mockups/desk-v2/11-plan-414.png",
+"status": "added"
+},
+{
+"sha": "94d7ccc70733d9dde95d7d083e45819baf8da7d4",
+"filename": "docs/design/mockups/desk-v2/12-waiting-dark-414.png",
+"status": "added"
+},
+{
+"sha": "87ef8f1c3d60f2a48004131c45226134ede1a37c",
+"filename": "docs/design/mockups/desk-v2/2-waiting-one-project-414.png",
+"status": "added"
+},
+{
+"sha": "6b180561426d13db38614eb762e5acd0f1149cbd",
+"filename": "docs/design/mockups/desk-v2/3-question-sheet-irreversible-360.png",
+"status": "added"
+},
+{
+"sha": "aa5493df46e60dbef673e9b2c28506231539d6b6",
+"filename": "docs/design/mockups/desk-v2/3-question-sheet-irreversible-414.png",
+"status": "added"
+},
+{
+"sha": "f3943e15b6c423a9c37344880340a81d5af53871",
+"filename": "docs/design/mockups/desk-v2/3b-question-sheet-settles-414.png",
+"status": "added"
+},
+{
+"sha": "e3d0747d422df869fd3c027eb2cf428a03e74a01",
+"filename": "docs/design/mockups/desk-v2/4-gate-sheet-360.png",
+"status": "added"
+},
+{
+"sha": "90073317a8a7752716b9ea4b6ac77410212058d3",
+"filename": "docs/design/mockups/desk-v2/4-gate-sheet-414.png",
+"status": "added"
+},
+{
+"sha": "efdf0fc470c4a37965c5adf050e3f7c8eb7f40fa",
+"filename": "docs/design/mockups/desk-v2/5-project-service-desk-360.png",
+"status": "added"
+},
+{
+"sha": "83b9c0ac970b423f13c1a61786c90f992cba32cd",
+"filename": "docs/design/mockups/desk-v2/5-project-service-desk-414.png",
+"status": "added"
+},
+{
+"sha": "94728015049887eecd16d0db33b40dfe5d5735dd",
+"filename": "docs/design/mockups/desk-v2/6-standard-milestones-open-414.png",
+"status": "added"
+},
+{
+"sha": "46c7ba6e7f88f09a0d147160ddd7d11612fb9bcf",
+"filename": "docs/design/mockups/desk-v2/6b-standard-skipped-members-letter-414.png",
+"status": "added"
+},
+{
+"sha": "0534d552b73eeb17e8151ccfd4319ccd78666a9c",
+"filename": "docs/design/mockups/desk-v2/7a-timeline-colour-labels-360.png",
+"status": "added"
+},
+{
+"sha": "f4eb54d2c09ed672a5336e041cd23d05d48491ae",
+"filename": "docs/design/mockups/desk-v2/7a-timeline-colour-labels-414.png",
+"status": "added"
+},
+{
+"sha": "cc774caa971fa7e577e74fc7155f20004cc74c19",
+"filename": "docs/design/mockups/desk-v2/7a-timeline-colour-labels-full-414.png",
+"status": "added"
+},
+{
+"sha": "04647cbff611435a852aecd2f34246d580b9d845",
+"filename": "docs/design/mockups/desk-v2/7b-timeline-grey-labels-414.png",
+"status": "added"
+},
+{
+"sha": "7770515f344323576566a27d3c6ad1cdd90cb1bc",
+"filename": "docs/design/mockups/desk-v2/7b-timeline-grey-labels-full-414.png",
+"status": "added"
+},
+{
+"sha": "e4a3324bbf645daf9db8820facf002099df2ecc5",
+"filename": "docs/design/mockups/desk-v2/7c-current-timeline-414.png",
+"status": "added"
+},
+{
+"sha": "50b3b8f80f37a50fdcd0f0b825d2446b4f9585dd",
+"filename": "docs/design/mockups/desk-v2/8-project-poom-414.png",
+"status": "added"
+},
+{
+"sha": "cb85ab1827f020ab924cb3031719a3ab70727b62",
+"filename": "docs/design/mockups/desk-v2/9-project-members-letter-414.png",
+"status": "added"
+},
+{
+"sha": "5b3df8fb83209f10f3469f66fc5dc173be6a8b71",
+"filename": "docs/design/mockups/desk-v2/H1-home-360.png",
+"status": "added"
+},
+{
+"sha": "412dd4209448d890cd6f0663c3d381f447af39de",
+"filename": "docs/design/mockups/desk-v2/H1-home-414.png",
+"status": "added"
+},
+{
+"sha": "4badec1ab40662f0388502d2b4558ca7889adea8",
+"filename": "docs/design/mockups/desk-v2/H2-home-dark-360.png",
+"status": "added"
+},
+{
+"sha": "dc5c9b2ca960dd8381c4fb2aedf67b7cf9cf259d",
+"filename": "docs/design/mockups/desk-v2/H2-home-dark-414.png",
+"status": "added"
+},
+{
+"sha": "99e79a855039f5159972d866797de6654f4c96ba",
+"filename": "docs/design/mockups/desk-v2/H3-home-all-clear-360.png",
+"status": "added"
+},
+{
+"sha": "03d1b7cb8af4d913ca56393d611553097e45532c",
+"filename": "docs/design/mockups/desk-v2/H3-home-all-clear-414.png",
+"status": "added"
+},
+{
+"sha": "9fe64a7892ca38f93ff3d00c9671649a2d070688",
+"filename": "docs/design/mockups/desk-v2/H4-home-portfolio-foot-360.png",
+"status": "added"
+},
+{
+"sha": "7e1c5363dce6489f047052594973806d8389474b",
+"filename": "docs/design/mockups/desk-v2/H4-home-portfolio-foot-414.png",
+"status": "added"
+},
+{
+"sha": "b4aee8b3f2829d33c419999175d9189432834b60",
+"filename": "docs/design/mockups/desk-v2/H5-home-tiles-360.png",
+"status": "added"
+},
+{
+"sha": "67534d9f26ad170fdfa5d42c5f8963c3ff7bd6a1",
+"filename": "docs/design/mockups/desk-v2/H5-home-tiles-414.png",
+"status": "added"
+},
+{
+"sha": "d958f0aed36bd185d90e2cb15c4e745b0f395d1a",
+"filename": "docs/design/mockups/desk-v2/README.md",
+"status": "added"
+},
+{
+"sha": "fd47793a81fb3b02d4a65dc1b1979961de3c1249",
+"filename": "docs/design/mockups/linear-inspired.html",
+"status": "added"
+},
+{
+"sha": "ed70b89d72c23dcbe9fe0f6b5ff96f3182e0618a",
+"filename": "docs/design/mockups/linear-inspired/1-waiting-lanes.png",
+"status": "added"
+},
+{
+"sha": "cb01224c1296f5c2870bad3b8b015c588ff8680a",
+"filename": "docs/design/mockups/linear-inspired/2-waiting-grouped.png",
+"status": "added"
+},
+{
+"sha": "358f8d3b4b4eb21df30185519e89af6325636b86",
+"filename": "docs/design/mockups/linear-inspired/3-card-sheet.png",
+"status": "added"
+},
+{
+"sha": "9589f75440254ffb7f53476125a463cc004d586a",
+"filename": "docs/design/mockups/linear-inspired/4-snooze-proposal.png",
+"status": "added"
+},
+{
+"sha": "b1b09db62b1d244859f82b4e5c4cd2b5cdd82808",
+"filename": "docs/design/mockups/linear-inspired/5-plan.png",
+"status": "added"
+},
+{
+"sha": "10dba37fc3d9f611c3dcddb68231d936bce70404",
+"filename": "docs/design/mockups/linear-inspired/6-project-page.png",
+"status": "added"
+},
+{
+"sha": "b82df357f4932e255328211dad3e6abd5c70d896",
+"filename": "docs/design/mockups/linear-inspired/7-all-clear.png",
+"status": "added"
+},
+{
+"sha": "d970a18a32883a356afad9bdb6c9693ca35260f6",
+"filename": "docs/design/mockups/linear-inspired/8-grouped-dark.png",
+"status": "added"
+},
+{
+"sha": "12a1468d7f52113d10a263594dc0333d30d0a369",
+"filename": "docs/design/mockups/linear-inspired/README.md",
+"status": "added"
+},
+{
+"sha": "75a9499da89dd4bd97740534d0ed91c5b334c0d7",
+"filename": "docs/design/mockups/redesign-direction.html",
+"status": "added"
+},
+{
+"sha": "2db0f7b9ff8e942fb597b34359c2f11a91717c5f",
+"filename": "docs/design/mockups/redesign/1-waiting.png",
+"status": "added"
+},
+{
+"sha": "c2ff657556336378c4ec18ed3f44738c3a199fa5",
+"filename": "docs/design/mockups/redesign/2-card-sheet.png",
+"status": "added"
+},
+{
+"sha": "b89ad374fcd966a795c97ae3ef237782e5a75de3",
+"filename": "docs/design/mockups/redesign/3-plan.png",
+"status": "added"
+},
+{
+"sha": "62dd8b48c1b3da7354a3fa89d356208cb2ea0994",
+"filename": "docs/design/mockups/redesign/4-projects.png",
+"status": "added"
+},
+{
+"sha": "85881a6164c3e228a5d7270eca21b5ee782e5273",
+"filename": "docs/design/mockups/redesign/5-project-page.png",
+"status": "added"
+},
+{
+"sha": "b3cfe0b455cf6d717c9aa943a3a6c7921f9f5e01",
+"filename": "docs/design/mockups/redesign/6-details.png",
+"status": "added"
+},
+{
+"sha": "f6cf9d4c7c97cc22ebced818326f936ce4c6e97f",
+"filename": "docs/design/mockups/redesign/7-all-clear.png",
+"status": "added"
+},
+{
+"sha": "2e4f21ebf7d9336cabd6eb97061555e331a88cf7",
+"filename": "docs/design/mockups/redesign/8-waiting-dark.png",
+"status": "added"
+},
+{
+"sha": "e0ac4e49bf23c64e34b971fdd64ecd28c0c51266",
+"filename": "docs/design/mockups/redesign/README.md",
+"status": "added"
+},
+{
+"sha": "d1208d490d344f7d4301aabe633e76b4f0c2c9e3",
+"filename": "docs/design/references/owner-request-2026-10-19-board.md",
+"status": "added"
+},
+{
+"sha": "2e65054f4cb64d0fac6b918c33b0c307165075bb",
+"filename": "docs/design/references/owner-request-2026-10-19-design-steward.md",
+"status": "added"
+},
+{
+"sha": "50a315e1930c4e575b2d18ae14b56bc63ef630b2",
+"filename": "docs/design/references/owner-request-2026-10-19-scope.md",
+"status": "added"
+},
+{
+"sha": "2cc2490c14b911b54c34adfc9d979b8f46df78c9",
+"filename": "docs/design/references/owner-request-2026-10-20-home.md",
+"status": "added"
+},
+{
+"sha": "b86932097ec0807e282dfa233a6916a7f2aa9802",
+"filename": "docs/design/references/research-2026-10-19-modern-mobile-design.md",
+"status": "added"
+},
+{
+"sha": "b7417f8da5e62cedf46d7fa840e22201e28dfa1f",
+"filename": "governance/PACKS.toml",
+"status": "modified"
+},
+{
+"sha": "65e3b671177fa1e1cdc6aef370eefba6133da5a5",
+"filename": "governance/SURFACES.md",
+"status": "modified"
+}
+]

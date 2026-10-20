@@ -775,6 +775,9 @@ export function parsePulls(pages) {
         // From 2026-10-18: the head's sha (J20 reads a pull request's files again only when it changes)
         // and the author's association (AC74: an outside author's title never reaches the lock screen).
         headSha: (p.head && typeof p.head.sha === 'string') ? p.head.sha : null,
+        // From 2026-10-19 (AC80, J22): whether the base repository is private; the page asks GitHub's
+        // owner check only where it reads `false` (null: not given).
+        baseRepoPrivate: (p.base && p.base.repo && typeof p.base.repo.private === 'boolean') ? p.base.repo.private : null,
         association: typeof p.author_association === 'string' ? p.author_association : null,
         createdAt: p.created_at,
         // From 2026-10-16: an open pull request's `updated_at` (AC71's movement) and, of its body, only

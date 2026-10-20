@@ -135,45 +135,54 @@ test('AC79 on the scheduler: a failing head-time read is not asked in a poll who
   desk.stop();
 });
 
-test('AC79 in the sandbox: the Queue\'s Merges shows "Being recorded by the automatic job" after the counted ones, uncounted, no coral, its link only; Quiet kept; not on Home', async () => {
+test('AC79 + AC80 in the sandbox: the board\'s quiet line "Being recorded by the automatic job" holds the pull request, uncounted, no card and no coral, its link only; the counted one a card; quiet kept; not on Home', async () => {
   const pulls = [own(7, 'File a made-up question'), own(8, 'A made-up code change', 'd'.repeat(40))];
   const rs = repos({ pulls, prFiles: { 7: FILING, 8: [{ filename: 'src/x.js', status: 'modified' }] }, jobs: recordingJobs() });
-  const app = await loadSandbox({ config: CONFIG, repos: rs, hash: '#/p/Service-Desk/queue', now: T0 });
+  const app = await loadSandbox({ config: CONFIG, repos: rs, hash: '#/waiting/Service-Desk', now: T0 });
+  const lane = (k) => sbFindAll(app.view, (e) => e.dataset && e.dataset.k === `lane:${k}`)[0];
   try {
     for (let i = 0; i < 4; i++) await app.advance(60_000);
-    const merges = byClass(app.view, 'g-merges').find((e) => e.tag === 'section');
-    assert.ok(merges, 'the Merges group');
-    const rows = byClass(merges, 'sb-qrow');
-    assert.equal(rows.length, 2);
-    assert.ok(!rows[0].className.includes('sb-recrow'), 'the counted one first');
-    assert.ok(rows[1].className.includes('sb-recrow'), 'then the one being recorded');
-    assert.ok(rows[1].textContent.includes(BEING_RECORDED_WORDS));
-    assert.ok(rows[1].textContent.includes('File a made-up question'));
-    const links = sbFindAll(rows[1], (e) => e.tag === 'a');
+    const cards = byClass(lane('wait'), 'v2-card');
+    assert.deepEqual(cards.map((c) => byClass(c, 'v2-t')[0].textContent), ['A made-up code change'], 'the counted one a card; the one being recorded none');
+    assert.equal(byClass(lane('wait'), 'v2-lc')[0].textContent, '1', 'in no count');
+    const ql = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'ql:recording')[0];
+    assert.ok(ql, 'the quiet line');
+    assert.equal(ql.textContent, `${BEING_RECORDED_WORDS}: 1`);
+    await app.tap(ql);
+    const fold = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'fold:recording')[0];
+    assert.ok(fold, 'a tap opens its fold');
+    const row = sbFindAll(fold, (e) => e.tag === 'li')[0];
+    assert.ok(row.textContent.includes(BEING_RECORDED_WORDS));
+    assert.ok(row.textContent.includes('File a made-up question'));
+    const links = sbFindAll(row, (e) => e.tag === 'a');
     assert.equal(links.length, 1);
     assert.equal(links[0].attrs.href, 'https://github.com/shumpmaster/Service-Desk/pull/7', 'it opens only its GitHub link');
-    assert.equal(byClass(merges, 'sb-gcount')[0].textContent, '1', 'in no count');
-    assert.ok(app.text().includes('1 waiting on you'));
-    await app.go('#/p/Service-Desk/queue/pr%3A8');
-    assert.ok(byClass(app.view, 'sb-go').some((a) => /reviews%2F8%2Fowner\.md/.test(a.attrs.href || '')), 'the counted one offers the owner\'s verdict box');
-    await app.go('#/p/Service-Desk/queue');
-    // With the counted one merged, the project is quiet and the row stays.
+    assert.equal(byClass(app.view, 'v2-badge')[0].children[0].textContent, '1', 'the badge counts the card alone');
+    await app.go(cards[0].attrs['data-href'] || byClass(cards[0], 'v2-t')[0].attrs.href);
+    // The counted one's sheet offers its one step (AC80, in place of AC52's verdict box on every pull
+    // request): this made-up repository has no risk-paths file, so J22 can't judge it and the step
+    // opens the pull request on GitHub.
+    const sh = byClass(app.view, 'v2-sheet')[0];
+    assert.ok(sh.textContent.includes('Whether it needs your verdict: not known yet'));
+    assert.ok(sbFindAll(sh, (e) => e.tag === 'a' && e.textContent === 'Open on GitHub ↗').some((a) => a.attrs.href === 'https://github.com/shumpmaster/Service-Desk/pull/8'));
+    assert.ok(!sbFindAll(sh, (e) => e.tag === 'a').some((a) => /owner\.md/.test(a.attrs.href || '')), 'no verdict file offered where J22 can\'t judge');
+    await app.go('#/waiting/Service-Desk');
+    // With the counted one merged, the project is quiet and the line stays.
     rs['Service-Desk'].pulls = [pulls[0]];
     await app.advance(60_000);
     await app.advance(60_000);
-    assert.ok(app.text().includes('Nothing waits on you in Service-Desk'));
-    assert.ok(app.text().includes(BEING_RECORDED_WORDS));
-    assert.equal(byClass(app.view, 'sb-gmark you').length, 0, 'no coral "needs you" mark');
-    assert.ok(!byClass(app.view, 'sb-recrow')[0].className.includes('g-merges'), 'no coral edge');
-    // Home: not on the top line, not in the owner's tile.
-    // Its sheet's address opens no response sheet and no verdict box; a counted one's does.
+    assert.equal(byClass(lane('wait'), 'v2-card').length, 0);
+    assert.ok(lane('wait').textContent.includes('Nothing here'));
+    assert.ok(app.text().includes(`${BEING_RECORDED_WORDS}: 1`));
+    assert.equal(byClass(app.view, 'v2-badge').length, 0, 'no badge');
+    assert.equal(byClass(app.view, 'v2-k you').length, 0, 'no vermilion mark');
+    // The old Queue address for it opens Waiting so filtered, with no sheet: no card has its key.
     await app.go('#/p/Service-Desk/queue/pr%3A7');
-    assert.equal(sbFindAll(app.view, (e) => e.tag === 'textarea').length, 0, 'no verdict box');
-    assert.ok(!byClass(app.view, 'sb-go').some((a) => /reviews%2F7%2Fowner\.md/.test(a.attrs.href || '')));
-    await app.go('#/p/Service-Desk/queue');
-    // Not "no longer open" in Done today: it is still open.
-    assert.ok(!app.text().includes('File a made-up question PR #7 no longer open'));
-    assert.ok(!/File a made-up question.*no longer open/.test(byClass(app.view, 'sb-done-r').map((e) => e.textContent).join('|')));
+    assert.equal(app.loc.hash, '#/waiting/Service-Desk');
+    assert.equal(byClass(app.view, 'v2-sheet').length, 0, 'no sheet, so no verdict box');
+    assert.equal(sbFindAll(app.view, (e) => e.tag === 'textarea').length, 0);
+    // Not in Done: it is still open.
+    assert.ok(!lane('done').textContent.includes('File a made-up question'));
     await app.go('#/');
     assert.ok(!app.text().includes('File a made-up question'), 'not on Home');
     assert.ok(!/waiting on you/i.test(app.text()), 'Home reads nothing waiting');
@@ -186,29 +195,33 @@ test('AC79 in the sandbox: the Queue\'s Merges shows "Being recorded by the auto
   }
 });
 
-test('AC79 in the sandbox: an answer record\'s pull request being recorded reads "Your answer to <question>"; left, it counts with "The automatic job left this for you"', async () => {
+test('AC79 + AC80 in the sandbox: an answer record\'s pull request being recorded reads "Your answer to <question>"; left, it is a card again with "The automatic job left this for you"', async () => {
   const jobs = recordingJobs();
   const rs = repos({ pulls: [own(9, 'Record the answer to the next work')], prFiles: { 9: ANSWER }, jobs, files: { [QPATH]: QTEXT } });
-  const app = await loadSandbox({ config: CONFIG, repos: rs, hash: '#/p/Service-Desk/queue', now: T0 });
+  const app = await loadSandbox({ config: CONFIG, repos: rs, hash: '#/waiting/Service-Desk', now: T0 });
+  const lane = (k) => sbFindAll(app.view, (e) => e.dataset && e.dataset.k === `lane:${k}`)[0];
   try {
     for (let i = 0; i < 4; i++) await app.advance(60_000);
-    const rec = byClass(app.view, 'sb-recrow')[0];
+    await app.tap(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'ql:recording')[0]);
+    const rec = sbFindAll(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'fold:recording')[0], (e) => e.tag === 'li')[0];
     assert.ok(rec, 'being recorded');
     assert.ok(rec.textContent.includes(BEING_RECORDED_WORDS));
     assert.ok(rec.textContent.includes('Your answer to Which piece of later work comes next?'));
     assert.ok(!rec.textContent.includes('usually within minutes'));
-    assert.ok(byClass(app.view, 'sb-asking')[0].textContent.includes('Your answer is being recorded'));
-    assert.ok(app.text().includes('Nothing waits on you in Service-Desk'));
-    // The job leaves it (a check failed): counted again, with its words, and its verdict box opens.
+    assert.ok(app.text().includes('Your answer is being recorded: 1'), 'the question\'s own quiet line');
+    assert.equal(byClass(lane('wait'), 'v2-card').length, 0, 'nothing waits on you');
+    // The job leaves it (a check failed): a card again, with its words, and its sheet offers the verdict.
     jobs.checks[HEAD].checkRuns = [{ ...ok(1, '2026-10-18T12:04:00Z'), conclusion: 'failure' }];
     await app.advance(60_000);
     await app.advance(60_000);
-    const row = byClass(app.view, 'sb-qrow').find((e) => e.className.includes('g-merges') && !e.className.includes('sb-recrow'));
-    assert.ok(row, 'counted again under Merges');
-    assert.ok(row.textContent.includes(LEFT_WORDS));
-    assert.ok(row.textContent.includes('Your answer to Which piece of later work comes next?'));
-    assert.equal(byClass(app.view, 'sb-recrow').length, 0);
-    assert.ok(app.text().includes('1 waiting on you'));
+    const card = byClass(lane('wait'), 'v2-card')[0];
+    assert.ok(card, 'a card again in "Waiting on you"');
+    assert.ok(app.text().includes(`${BEING_RECORDED_WORDS}: 0`), 'no longer being recorded (frame 2\'s small line keeps its two counts)');
+    assert.equal(byClass(app.view, 'v2-badge')[0].children[0].textContent, '1');
+    await app.go(byClass(card, 'v2-t')[0].attrs.href);
+    const sheet = byClass(app.view, 'v2-sheet')[0];
+    assert.ok(sheet.textContent.includes(LEFT_WORDS), 'its sheet says why it is here');
+    assert.ok(sheet.textContent.includes('Your answer to Which piece of later work comes next?'), 'and names the answer it carries');
   } finally {
     app.restore();
   }
@@ -239,7 +252,7 @@ test('AC79 in the accepted views: the row among the activity, never flagged, its
   }
 });
 
-test('AC79 with AC74\'s tap: a notified pull request the desk still shows as being recorded opens its row, never "That no longer waits on you"', async () => {
+test('AC79 with AC74\'s tap (and AC80): a notified pull request the desk still shows as being recorded shows it being recorded by the automatic job, never "That no longer waits on you"', async () => {
   const { tapDecision, openTarget } = await import('../../src/lib/notifyview.js');
   const target = openTarget('?sandbox&open=Service-Desk|pr|7');
   const rec = { key: 'pr:7', kind: 'pr-recording', pr: { number: 7 } };
@@ -255,10 +268,16 @@ test('AC79 with AC74\'s tap: a notified pull request the desk still shows as bei
   const app = await loadSandbox({ config: CONFIG, repos: rs, hash: '', search: '?sandbox&open=Service-Desk%7Cpr%7C7', now: T0 });
   try {
     for (let i = 0; i < 4; i++) await app.advance(60_000);
-    assert.match(app.loc.hash, /^#\/p\/Service-Desk\/queue/);
+    assert.match(app.loc.hash, /^#\/waiting/);
     assert.ok(!app.text().includes('That no longer waits on you'));
     assert.equal(sbFindAll(app.view, (e) => e.tag === 'textarea').length, 0, 'no verdict box');
-    assert.ok(app.text().includes(BEING_RECORDED_WORDS));
+    // Counted at the first read, its sheet opened; judged being recorded since, the sheet says so, its link only.
+    const sheet = byClass(app.view, 'v2-sheet')[0];
+    assert.ok(sheet, 'its sheet, still open');
+    assert.ok(sheet.textContent.includes(BEING_RECORDED_WORDS) && sheet.textContent.includes('File a made-up question'));
+    assert.deepEqual(sbFindAll(sheet, (e) => e.tag === 'a' && /^https:/.test(e.attrs.href || '')).map((a) => a.attrs.href), ['https://github.com/shumpmaster/Service-Desk/pull/7']);
+    // And the board under it: the pull request in the "Being recorded by the automatic job" line, no card.
+    assert.ok(app.text().includes(`${BEING_RECORDED_WORDS}: 1`));
   } finally {
     app.restore();
   }

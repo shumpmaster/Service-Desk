@@ -16,7 +16,11 @@ import { railLayout } from './tv2-fixtures.mjs';
 
 const all = (node) => findAll(node, () => true);
 const keyed = (app, k) => findAll(app.view, (e) => e.dataset && e.dataset.k === k)[0] || null;
-const sheetEl = (app) => byClass(app.view, 'sb-sheet')[0] || null;
+const sheetEl = (app) => byClass(app.view, 'sb-sheet')[0] || byClass(app.view, 'v2-sheet')[0] || null;
+// From stage 1a (AC80, AC81): the board's card sheet over Waiting, and a Done row's small sheet.
+const Q_ID = 'Alpha|question|questions/Alpha-pick.md';
+const DONE_ID = 'Alpha|question|questions/P-001-design-lab-open.md#answer';
+const waitingCard = (id) => `#/waiting/Alpha/card/${encodeURIComponent(id)}`;
 
 /** Every kind of refresh (AC56): the minute's poll, the 15-second tick, a history read arriving, and a redraw with no new data. */
 async function everyRefresh(app, setup, changed = true) {
@@ -30,24 +34,32 @@ async function everyRefresh(app, setup, changed = true) {
   await app.flush();
 }
 
-test('AC56 back: Home → Status → Queue → a sheet → Timeline; "Back" twice gives Queue then Status, "Home" gives Home; no "Back" on a screen opened first', async () => {
+test('AC56 back (changed by AC81): Home → Status → Waiting (this project) → a card\'s sheet → Timeline; "Back" twice gives Waiting then Status, "Home" gives Home; no "Back" on a screen opened first', async () => {
   const app = await opened(twoProjects(), '#/');
   try {
     assert.equal(byClass(app.view, 'sb-prev').length, 0, 'Home has no Back');
     await app.go('#/p/Alpha');
-    await app.go('#/p/Alpha/queue');
-    await app.go('#/p/Alpha/queue/pr%3A80');
+    await app.go('#/p/Alpha/queue'); // the Queue's address: Waiting with only Alpha shown, no history step of its own
+    assert.equal(app.loc.hash, '#/waiting/Alpha');
+    await app.go(waitingCard('Alpha|pr|80'));
     await app.go('#/p/Alpha/timeline');
     const back = () => byClass(app.view, 'sb-prev')[0];
     assert.equal(back().attrs['aria-label'], 'Back');
     assert.equal(byClass(app.view, 'sb-back')[0].attrs['aria-label'], 'Home');
     back().click();
     await app.flush();
-    assert.equal(app.loc.hash, '#/p/Alpha/queue', 'Back goes one screen back: the sheet was not a screen');
-    assert.equal(sheetEl(app), null, 'and the queue shows without the sheet');
+    assert.equal(app.loc.hash, '#/waiting/Alpha', 'Back goes one screen back: the sheet was not a screen');
+    assert.equal(sheetEl(app), null, 'and Waiting shows without the sheet');
+    // Waiting has no project header: the bar's Home and the browser's back serve it; the history goes on.
+    await app.go('#/p/Alpha/team');
     back().click();
     await app.flush();
-    assert.equal(app.loc.hash, '#/p/Alpha');
+    assert.equal(app.loc.hash, '#/waiting/Alpha');
+    await app.go('#/p/Alpha/timeline');
+    back().click();
+    await app.flush();
+    assert.equal(app.loc.hash, '#/waiting/Alpha');
+    await app.go('#/p/Alpha');
     assert.match(app.text(), /Current status/);
     assert.equal(byClass(app.view, 'sb-back')[0].attrs.href, '#/');
     await app.go('#/');
@@ -66,10 +78,37 @@ test('AC56 back: Home → Status → Queue → a sheet → Timeline; "Back" twic
   }
 });
 
+test('AC56 close (changed by AC80): a Done row\'s sheet has "Close" at its top (44 px), and the control, a tap outside and Escape each close it, focus back on its row', async () => {
+  const app = await opened(longRuling(), '#/waiting/Alpha');
+  try {
+    await app.advance(POLL_MS);
+    for (const how of ['control', 'outside', 'escape']) {
+      const row = keyed(app, `drowlink:${DONE_ID}`);
+      assert.ok(row, 'the ruling\'s Done row');
+      row.click();
+      await app.go(waitingCard(DONE_ID));
+      const sh = sheetEl(app);
+      assert.ok(sh, `open (${how})`);
+      assert.match(sh.textContent, /P-001-design-lab-open/);
+      const close = byClass(byClass(sh, 'v2-shead')[0], 'v2-x44')[0];
+      assert.equal(close.attrs['aria-label'], 'Close');
+      assert.equal(document.activeElement, close);
+      if (how === 'control') await app.tap(close);
+      else if (how === 'outside') await app.tap(byClass(app.view, 'v2-scrim')[0]);
+      else await app.key('Escape');
+      assert.equal(sheetEl(app), null, `closed by ${how}`);
+      assert.equal(app.loc.hash, '#/waiting/Alpha');
+      assert.equal(document.activeElement, keyed(app, `drowlink:${DONE_ID}`), `focus back on its row (${how})`);
+    }
+  } finally {
+    app.restore();
+  }
+});
+
 // Each sheet: the screen it sits on, the control that opens it, and its route.
 const SHEETS = [
-  ['the response sheet', '#/p/Alpha/queue', 'row:q:Alpha-pick', '#/p/Alpha/queue/q%3AAlpha-pick'],
-  ['the pull request sheet', '#/p/Alpha/queue', 'row:pr:80', '#/p/Alpha/queue/pr%3A80'],
+  ['the card\'s sheet (a question)', '#/waiting/Alpha', `cardlink:${Q_ID}`, waitingCard(Q_ID)],
+  ['the card\'s sheet (a pull request)', '#/waiting/Alpha', 'cardlink:Alpha|pr|80', waitingCard('Alpha|pr|80')],
   ['the summary sheet', '#/p/Alpha/team/critic', 'log:0', '#/p/Alpha/team/critic/e/0'],
   ['the Working now sheet', '#/p/Alpha/team/builder', 'log:now', '#/p/Alpha/team/builder/now'],
   ['the info screen', '#/p/Alpha', 'info', '#/p/Alpha/info'],
@@ -87,13 +126,16 @@ test('AC56 close: every sheet has "Close" at its top (44 px), and the control, a
         await app.go(route);
         const sh = sheetEl(app);
         assert.ok(sh, `${what}: open`);
-        const top = byClass(sh, 'sb-sheet-top')[0];
-        assert.equal(sh.children[0], top, `${what}: the close control sits at the top`);
-        const close = byClass(top, 'sb-close')[0];
+        // The board's sheet (AC85's look): its grab handle, then its head with the 44 px close at its top right.
+        const board = / sheet \(/.test(what);
+        const top = board ? byClass(sh, 'v2-shead')[0] : byClass(sh, 'sb-sheet-top')[0];
+        assert.equal(sh.children[board ? 1 : 0], top, `${what}: the close control sits at the top`);
+        const close = byClass(top, board ? 'v2-x44' : 'sb-close')[0];
         assert.equal(close.attrs['aria-label'], 'Close');
+        if (board) assert.match(readFileSync(`${SRC}/public/sandbox.css`, 'utf8'), /\.v2-x44 \{ width: 44px; height: 44px;/, 'its target is 44 by 44');
         assert.equal(document.activeElement, close, `${what}: focus moves into the sheet`);
         if (how === 'control') await app.tap(close);
-        else if (how === 'outside') await app.tap(byClass(app.view, 'sb-scrim')[0]); // a real tap: the press takes focus off the sheet first
+        else if (how === 'outside') await app.tap(byClass(app.view, board ? 'v2-scrim' : 'sb-scrim')[0]); // a real tap: the press takes focus off the sheet first
         else await app.key('Escape');
         await app.flush();
         assert.equal(sheetEl(app), null, `${what}: closed by ${how}`);
@@ -172,13 +214,12 @@ async function longLine(hash, id) {
   const setup = longRuling();
   const app = await opened(setup, hash);
   await app.advance(POLL_MS);
-  if (id.startsWith('done:')) keyed(app, 'done-today').setAttribute('open', '');
   lineLines(app, id, 47);
   await app.resize(360);
   return { app, setup };
 }
 
-for (const [where, hash, id] of [['"Your last action"', '#/p/Alpha', 'last'], ['"Done today"', '#/p/Alpha/queue', 'done:P-001-design-lab-open']]) {
+for (const [where, hash, id] of [['"Your last action"', '#/p/Alpha', 'last']]) {
   test(`AC56 close (2026-10-16): ${where}'s whole-line bubble has "Close" at its top, and the control, a tap outside and Escape each close it, focus back on its control`, async () => {
     const { app } = await longLine(hash, id);
     try {
@@ -267,23 +308,29 @@ test('AC56 refresh, Status (step 2b, draft 4): with that bubble open and scrolle
   }
 });
 
-test('AC56 refresh, Queue (step 3b, 2026-10-16): "Done today" opened, with a ruling row\'s whole-line bubble open and scrolled part way, all stay through every kind of refresh', async () => {
-  const { app, setup } = await longLine('#/p/Alpha/queue', 'done:P-001-design-lab-open');
+test('AC56 refresh, Waiting (step 3b, changed by AC80): a Done group opened past its three rows, with a Done row\'s sheet open and scrolled part way, all stay through every kind of refresh', async () => {
+  const setup = longRuling();
+  for (const n of [1, 2, 3]) {
+    setup.repos.Alpha.commit({ [`decisions/questions/P-001-more-${n}.md`]: `Ruling: A, number ${n}\n` });
+    setup.repos.Alpha.history[`decisions/questions/P-001-more-${n}.md`] = [{ commit: { committer: { date: new Date(NOW - (40 + n) * 60e3).toISOString() } } }];
+  }
+  const app = await opened(setup, '#/waiting/Alpha');
   try {
-    const fold = keyed(app, 'done-today');
-    const ctl = keyed(app, 'line:done:P-001-design-lab-open');
-    await app.tap(ctl);
-    const bub = keyed(app, 'linebubble:done:P-001-design-lab-open');
-    assert.ok(bub);
-    bub.scrollTop = 300;
+    await app.advance(POLL_MS);
+    const more = keyed(app, 'more:Alpha');
+    assert.ok(more, 'more than three rows: "<n> more"');
+    assert.match(more.textContent, /^2 more/);
+    await app.tap(more);
+    assert.equal(keyed(app, 'more:Alpha').attrs['aria-expanded'], 'true');
+    keyed(app, `drowlink:${DONE_ID}`).click();
+    await app.go(waitingCard(DONE_ID));
+    const sh = sheetEl(app);
+    sh.scrollTop = 300;
     app.scrolls.length = 0;
     await everyRefresh(app, setup);
-    assert.equal(keyed(app, 'done-today'), fold);
-    assert.ok('open' in fold.attrs, '"Done today" stays open');
-    assert.equal(keyed(app, 'linebubble:done:P-001-design-lab-open'), bub, 'the same bubble, still open');
-    assert.equal(bub.scrollTop, 300, 'scrolled part way, where it was');
-    assert.equal(keyed(app, 'line:done:P-001-design-lab-open'), ctl);
-    assert.equal(ctl.attrs['aria-expanded'], 'true');
+    assert.equal(sheetEl(app), sh, 'the same sheet, still open');
+    assert.equal(sh.scrollTop, 300, 'scrolled part way, where it was');
+    assert.equal(keyed(app, 'more:Alpha').attrs['aria-expanded'], 'true', 'the group stays open');
     assert.deepEqual(app.scrolls, []);
   } finally {
     app.restore();
@@ -310,97 +357,85 @@ test('AC56 close (draft 5): a held "Your last action" bubble closed onto a new, 
   }
 });
 
-for (const how of ['Close', 'Escape', 'outside', 'second tap']) {
-  test(`AC56 refresh, Queue (step 3b, draft 5): "Done today" open with a ruling row's bubble open and scrolled part way, the clock run past midnight in ownerTimeZone and a poll that drops the row: the bubble stays, unchanged, with the notice; closed (${how}), the fold shows its new state and focus is on its header`, async () => {
+for (const how of ['Close', 'Escape', 'outside']) {
+  test(`AC56 refresh, Waiting (step 3b, changed by AC80): a Done row's sheet open and scrolled part way, the clock run past midnight in ownerTimeZone: the sheet stays as it was, with the notice; closed (${how}), the row shows "yesterday, <time>" and focus is back on it`, async () => {
     const setup = longRuling();
     // Asia/Tokyo: NOW (15:00Z) is midnight there; the rulings were filed at 23:50 and 23:30 the day before.
     setup.config = { ...setup.config, ownerTimeZone: 'Asia/Tokyo' };
-    const app = await loadSandbox({ ...setup, hash: '#/p/Alpha/queue', now: NOW - 3 * 60e3 });
+    const app = await loadSandbox({ ...setup, hash: '#/waiting/Alpha', now: NOW - 3 * 60e3 });
     try {
       await app.advance(1000);
       await app.advance(POLL_MS);
-      const fold = keyed(app, 'done-today');
-      fold.setAttribute('open', '');
-      lineLines(app, 'done:P-001-design-lab-open', 47);
-      await app.resize(360);
-      assert.match(keyed(app, 'done-today-h').textContent, /^Done today \(2\)$/, 'before midnight: two rulings today');
-      const ctl = keyed(app, 'line:done:P-001-design-lab-open');
-      await app.tap(ctl);
-      const bub = keyed(app, 'linebubble:done:P-001-design-lab-open');
-      assert.ok(bub);
-      bub.scrollTop = 300;
-      const words = byClass(bub, 'sb-bubble-t')[0].textContent;
+      const row = () => findAll(app.view, (e) => e.dataset && e.dataset.k === `done:${DONE_ID}`)[0];
+      assert.match(row().textContent, / · 23:50$/, 'before midnight: today, 23:50 (the row\'s ✓ is its mark)');
+      keyed(app, `drowlink:${DONE_ID}`).click();
+      await app.go(waitingCard(DONE_ID));
+      const sh = sheetEl(app);
+      sh.scrollTop = 300;
+      const words = sh.textContent;
       app.scrolls.length = 0;
       await app.advance(3 * POLL_MS); // past midnight in Tokyo, with the polls that follow
       await app.tick();
       app.module.refresh();
       await app.flush();
       assert.ok(Date.now() > NOW, 'the clock is past midnight');
-      assert.equal(keyed(app, 'linebubble:done:P-001-design-lab-open'), bub, 'the same bubble, still open');
-      assert.equal(bub.scrollTop, 300, 'at the same scroll position');
-      assert.equal(byClass(bub, 'sb-bubble-t')[0].textContent, words, 'unchanged');
-      assert.equal(byClass(bub, 'sb-bubble-note')[0].textContent, 'This has changed since you opened it. Close this to see the latest.');
-      assert.ok('open' in keyed(app, 'done-today').attrs, 'the fold stays open');
+      assert.equal(sheetEl(app), sh, 'the same sheet, still open');
+      assert.equal(sh.scrollTop, 300, 'at the same scroll position');
+      assert.ok(sh.textContent.startsWith(words.slice(0, 40)), 'unchanged');
+      assert.match(sh.textContent, /This has changed since you opened it\. Close this to see the latest\./);
+      assert.match(sh.textContent, /done 23:50/, 'the time as it was when it opened');
       assert.deepEqual(app.scrolls, []);
-      if (how === 'Close') await app.tap(byClass(bub, 'sb-close')[0]);
+      if (how === 'Close') await app.tap(byClass(sh, 'v2-x44')[0]);
       else if (how === 'Escape') await app.key('Escape');
-      else if (how === 'outside') await app.tap(app.view);
-      else await app.tap(keyed(app, 'line:done:P-001-design-lab-open'));
-      assert.equal(keyed(app, 'linebubble:done:P-001-design-lab-open'), null, `closed by the owner (${how})`);
-      assert.equal(keyed(app, 'done-today-h').textContent, 'Done today (0)', 'the fold shows its new state: the rulings were yesterday');
-      assert.equal(keyed(app, 'line:done:P-001-design-lab-open'), null, 'the row and its control are gone');
-      assert.equal(document.activeElement, keyed(app, 'done-today-h'), 'focus on "Done today"\'s header');
+      else await app.tap(byClass(app.view, 'v2-scrim')[0]);
+      assert.equal(sheetEl(app), null, `closed by the owner (${how})`);
+      assert.match(row().textContent, / · yesterday, 23:50$/, 'the row shows its new words: still in Done, within its 24 hours');
+      assert.equal(document.activeElement, keyed(app, `drowlink:${DONE_ID}`), 'focus back on the row');
+      // Opened again: the latest, and no notice.
+      keyed(app, `drowlink:${DONE_ID}`).click();
+      await app.go(waitingCard(DONE_ID));
+      assert.match(sheetEl(app).textContent, /done yesterday, 23:50/);
+      assert.doesNotMatch(sheetEl(app).textContent, /This has changed/);
     } finally {
       app.restore();
     }
   });
 }
 
-test('AC56 refresh, Queue (step 3b, draft 5): a "Done today" row\'s bubble open: a new row today holds the fold as it was, with no notice (that row did not change); a change to that row adds the notice; closed and opened again, the bubble and fold show the latest, with no notice', async () => {
+test('AC56 refresh, Waiting (step 3b, changed by AC80): a Done row\'s sheet open: a new Done row holds the sheet as it was, with no notice (its row did not change); a change to its row adds the notice; closed and opened again, the latest, with no notice', async () => {
   const setup = longRuling();
-  const app = await loadSandbox({ ...setup, hash: '#/p/Alpha/queue', now: NOW });
-  const ID = 'done:P-001-design-lab-open';
+  const app = await loadSandbox({ ...setup, hash: '#/waiting/Alpha', now: NOW });
   try {
     await app.advance(1000);
     await app.advance(POLL_MS);
-    keyed(app, 'done-today').setAttribute('open', '');
-    lineLines(app, ID, 47);
-    await app.resize(360);
-    assert.equal(keyed(app, 'done-today-h').textContent, 'Done today (2)');
-    await app.tap(keyed(app, `line:${ID}`));
-    const bub = keyed(app, `linebubble:${ID}`);
-    const words = byClass(bub, 'sb-bubble-t')[0].textContent;
-    // Another ruling filed today: the open row itself is unchanged.
+    keyed(app, `drowlink:${DONE_ID}`).click();
+    await app.go(waitingCard(DONE_ID));
+    const sh = sheetEl(app);
+    // Another ruling filed now: the open row itself is unchanged.
     setup.repos.Alpha.commit({ 'decisions/questions/P-001-later.md': 'Ruling: C, a later one\n' });
     setup.repos.Alpha.history['decisions/questions/P-001-later.md'] = [{ commit: { committer: { date: new Date(app.now).toISOString() } } }];
     await app.advance(POLL_MS);
     await app.advance(POLL_MS);
-    assert.equal(keyed(app, `linebubble:${ID}`), bub, 'the same bubble, still open');
-    assert.equal(keyed(app, 'done-today-h').textContent, 'Done today (2)', 'the fold held as it was: nothing moves under the open bubble');
-    assert.equal(byClass(bub, 'sb-bubble-note').length, 0, 'no notice: its own row has not changed');
+    assert.equal(sheetEl(app), sh, 'the same sheet, still open');
+    assert.doesNotMatch(sh.textContent, /This has changed/, 'no notice: its own row has not changed');
     // Now the open row's own record changes.
-    const CHANGED = `Ruling: ${'a reworded design-lab ruling, '.repeat(40)}end`;
+    const CHANGED = `Ruling: ${'a reworded design-lab ruling, '.repeat(4)}end`;
     setup.repos.Alpha.commit({ [DESIGN_LAB_PATH]: `${CHANGED}\n` });
     await app.advance(POLL_MS);
     await app.advance(POLL_MS);
-    assert.equal(keyed(app, `linebubble:${ID}`), bub, 'still the same bubble');
-    assert.equal(byClass(bub, 'sb-bubble-t')[0].textContent, words, 'unchanged');
-    assert.equal(byClass(bub, 'sb-bubble-note')[0].textContent, 'This has changed since you opened it. Close this to see the latest.');
+    assert.equal(sheetEl(app), sh, 'still the same sheet');
+    assert.match(sh.textContent, /This has changed since you opened it\. Close this to see the latest\./);
+    assert.doesNotMatch(sh.textContent, /a reworded design-lab ruling/, 'unchanged words');
     await app.key('Escape');
-    assert.equal(keyed(app, `linebubble:${ID}`), null, 'closed by the owner');
-    assert.equal(keyed(app, 'done-today-h').textContent, 'Done today (3)', 'the fold shows its new state');
-    lineLines(app, ID, 40);
-    await app.resize(414);
-    await app.resize(360);
-    await app.tap(keyed(app, `line:${ID}`));
-    const again = keyed(app, `linebubble:${ID}`);
-    assert.ok(again, 'opened again');
-    assert.equal(byClass(again, 'sb-bubble-t')[0].textContent, CHANGED.replace(/^Ruling: /, ''), 'the new words, not the held ones');
-    assert.equal(byClass(again, 'sb-bubble-note').length, 0, 'and no notice');
-    assert.equal(keyed(app, 'done-today-h').textContent, 'Done today (3)', 'the fold as it is now, not as it was held');
+    assert.equal(sheetEl(app), null, 'closed by the owner');
+    keyed(app, `drowlink:${DONE_ID}`).click();
+    await app.go(waitingCard(DONE_ID));
+    const again = sheetEl(app);
+    assert.match(again.textContent, /a reworded design-lab ruling/, 'the new words, not the held ones');
+    assert.doesNotMatch(again.textContent, /This has changed/, 'and no notice');
     await app.advance(POLL_MS);
-    assert.equal(keyed(app, `linebubble:${ID}`), again, 'a refresh with nothing changed keeps it');
-    assert.equal(byClass(again, 'sb-bubble-note').length, 0, 'with no notice');
+    assert.equal(sheetEl(app), again, 'a refresh with nothing changed keeps it');
+    assert.doesNotMatch(again.textContent, /This has changed/);
   } finally {
     app.restore();
   }
@@ -483,20 +518,23 @@ test('AC56 refresh, Status: the screen scrolled and focus on "More detail" stay 
   }
 });
 
-test('AC56 refresh, Queue: an open, scrolled sheet with a choice picked and text typed (cursor mid-text) and "Done today" open all stay; its item answered, the sheet says so and keeps the text', async () => {
-  const setup = twoProjects();
-  const app = await opened(setup, '#/p/Alpha/queue');
+test('AC56 refresh, Waiting (changed by AC80): an open, scrolled card sheet with its words typed (cursor mid-text) and a Done group opened all stay; its item answered, the sheet says so and keeps the text', async () => {
+  const setup = longRuling();
+  for (const n of [1, 2, 3]) {
+    setup.repos.Alpha.commit({ [`decisions/questions/P-001-more-${n}.md`]: `Ruling: A, number ${n}\n` });
+    setup.repos.Alpha.history[`decisions/questions/P-001-more-${n}.md`] = [{ commit: { committer: { date: new Date(NOW - (40 + n) * 60e3).toISOString() } } }];
+  }
+  const app = await opened(setup, '#/waiting/Alpha');
   try {
-    keyed(app, 'done-today').setAttribute('open', '');
-    keyed(app, 'row:q:Alpha-pick').click();
-    await app.go('#/p/Alpha/queue/q%3AAlpha-pick');
+    await app.advance(POLL_MS);
+    await app.tap(keyed(app, 'more:Alpha'));
+    keyed(app, `cardlink:${Q_ID}`).click();
+    await app.go(waitingCard(Q_ID));
     const sh = sheetEl(app);
     sh.scrollTop = 240;
-    byClass(sh, 'sb-chip')[1].click();
-    await app.flush();
-    const box = findAll(sh, (e) => e.tag === 'textarea' && /^box:/.test(e.dataset.k || ''))[0];
-    assert.ok(box, 'the prefilled box');
-    const typed = `${box.value}My own words, typed here.`;
+    const box = findAll(sh, (e) => e.tag === 'textarea')[0];
+    assert.ok(box, 'the words box');
+    const typed = 'My own words, typed here.';
     box.value = typed;
     box.dispatch('input', { target: box });
     box.focus();
@@ -505,18 +543,18 @@ test('AC56 refresh, Queue: an open, scrolled sheet with a choice picked and text
     await everyRefresh(app, setup);
     assert.equal(sheetEl(app), sh, 'the same sheet, still open');
     assert.equal(sh.scrollTop, 240, 'scrolled where it was');
-    assert.equal(byClass(sh, 'sb-chip')[1].attrs['aria-checked'], 'true', 'the choice stays picked');
     assert.equal(document.activeElement, box, 'focus stays in the box');
     assert.equal(box.value, typed);
     assert.equal(box.selectionStart, 5, 'the cursor stays mid-text');
-    assert.ok('open' in keyed(app, 'done-today').attrs, '"Done today" stays open');
+    assert.match(byClass(sh, 'v2-abtn').find((a) => a.textContent === 'Answer A ↗').attrs.href, /My%20own%20words%2C%20typed%20here\./, 'in each button');
+    assert.equal(keyed(app, 'more:Alpha').attrs['aria-expanded'], 'true', 'the Done group stays open');
     assert.deepEqual(app.scrolls, []);
     // A poll in which its item is answered: the sheet stays open, says so, and keeps the text.
     setup.repos.Alpha.commit({ 'decisions/questions/Alpha-pick.md': 'Ruling: B\n\nQuestion: questions/Alpha-pick.md\n' });
     await app.advance(POLL_MS);
     assert.equal(sheetEl(app), sh, 'still open');
-    assert.match(sh.textContent, /This has left your queue/);
-    assert.match(sh.textContent, /answer recorded: decisions\/questions\/Alpha-pick\.md is on main/);
+    assert.match(sh.textContent, /That no longer waits on you/);
+    assert.equal(findAll(sh, (e) => e.tag === 'textarea')[0], box);
     assert.equal(box.value, typed, 'what was typed stays');
     assert.equal(document.activeElement, box);
   } finally {

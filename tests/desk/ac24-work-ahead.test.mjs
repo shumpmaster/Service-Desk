@@ -539,7 +539,7 @@ test('AC24: "Not milestones yet" — each of J15\'s states and its words, the as
       'Asked one | a note | Asked 18 Oct · your Chief of Staff files the question',
     ]);
     assert.doesNotMatch(later.textContent, /Added one|Turned down/);
-    assert.equal(findKeyed(app, 'wa-q:W4').attrs.href, '#/p/Service-Desk/queue');
+    assert.equal(findKeyed(app, 'wa-q:W4').attrs.href, '#/waiting/Service-Desk', 'AC80: the link opens the board, that project shown');
     const ask = new URL(findKeyed(app, 'wa-ask:W2').attrs.href);
     assert.equal(ask.searchParams.get('filename'), 'intake/milestone-asks/W2-2026-10-18T1801Z.md');
     assert.equal(ask.searchParams.get('value'), 'Ask: add W2 as a milestone\nLater work: Upkeep fixes (W2)\nFrom: the owner, through the desk\'s Work ahead\n');
@@ -586,13 +586,13 @@ test('AC24: Personal-Org-Operating-Model — "Open sprint: m1.4 — v3 build: sp
   }
 });
 
-test('AC24: an open question whose `Milestone:` line names MD3 — "1 waiting on you in your Queue" on MD3\'s row and no other, linked to the Queue', async () => {
+test('AC24: an open question whose `Milestone:` line names MD3 — "1 waiting on you in your Queue" on MD3\'s row and no other, linked to the board (AC80)', async () => {
   const q = fixture('notify/ac77-real/questions/P-001-next-work.md').replace('Milestone: M3A', 'Milestone: MD3').replace('Which piece of later work comes next?', 'A made-up question for MD3');
   const app = await open({ extra: { 'questions/P-001-made-up-md3.md': q } });
   try {
     const you = rows(app).map((r) => (byClass(r, 'sb-wa-you')[0] || { textContent: null }).textContent);
     assert.deepEqual(you, [null, null, '1 waiting on you in your Queue', null, null, null]);
-    assert.equal(findKeyed(app, `wa-q:${key('MD3')}`).attrs.href, '#/p/Service-Desk/queue');
+    assert.equal(findKeyed(app, `wa-q:${key('MD3')}`).attrs.href, '#/waiting/Service-Desk', 'AC80: the link opens the board, that project shown');
   } finally {
     app.restore();
   }

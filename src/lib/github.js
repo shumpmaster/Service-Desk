@@ -37,6 +37,9 @@ export const J1_REQUEST_LIMIT = 30;
 // statuses and workflow runs, and the project's latest 30 asks-merge runs, first pages only, each a
 // conditional request; a sixth head is answered `null`.
 export const JOBS_MAX_HEADS = 5;
+// AC80, J22: the owner check (`commits/{sha}/status`) for at most 3 heads a project, in the poll call
+// after the core reads and before AC79's `jobs` part, so J1's 30 holds (11 + 3 + 16).
+export const OWNER_CHECK_MAX = 3;
 export const JOB_LISTS = ['checkRuns', 'statuses', 'workflowRuns'];
 // AC79 (J6): the blob call's `commitTime` (each 1 of the budget) and `jobLog` (each 3: the run's jobs, the
 // merge job's log, and the address the log is sent to), at most 5 of each; a sixth is answered `null`.
@@ -102,6 +105,8 @@ export function urlsFor(project) {
     // AC79 (J1, J16's own reads): a candidate head's lists, the asks-merge runs, a commit, a run's jobs, a job's log.
     checkRuns: (sha) => `${base}/commits/${sha}/check-runs?per_page=100`,
     statuses: (sha) => `${base}/commits/${sha}/statuses?per_page=100`,
+    // AC80, J22: GitHub's combined status at a head, whose `owner-verdict` entry is the owner check.
+    status: (sha) => `${base}/commits/${sha}/status?per_page=100`,
     workflowRuns: (sha) => `${base}/actions/runs?head_sha=${sha}&per_page=100`,
     asksRuns: `${base}${ASKS_MERGE_RUNS}`,
     commit: (sha) => `${base}/commits/${sha}`,
@@ -353,7 +358,14 @@ export async function pollProject(req, deps) {
     if (f instanceof Failure) return failWith(f);
     return failWith(new Failure('github'));
   }
-  // 5. AC79's `jobs` part, read last; optional, so nothing in it touches the state above.
+  // 5. AC80's `ownerChecks` part, after the core reads and before `jobs`; optional, so nothing in it
+  // touches the state above.
+  if (req.ownerChecks !== undefined) {
+    const oc = await readOwnerChecks(get, u, req.ownerChecks);
+    out.ownerChecks = oc ? oc.answers : null;
+    if (oc) out.ownerCheckEtags = oc.etags;
+  }
+  // 6. AC79's `jobs` part, read last; optional, so nothing in it touches the state above.
   if (req.jobs !== undefined) out.jobs = await readJobs(get, u, req.jobs, counter);
   out.githubRequests = counter.n;
   return out;
@@ -408,6 +420,39 @@ async function readJobs(get, u, jobs, counter) {
   for (const sha of jobs.extra) if (!Object.prototype.hasOwnProperty.call(out.heads, sha)) out.heads[sha] = null;
   await pool(tasks, MAX_PARALLEL);
   return out;
+}
+
+/**
+ * AC80's `ownerChecks` part (J1, J6, J22), already validated: { heads: [{ sha, etag }], extra: [sha] }
+ * or null (a non-v3 project: the part answered `null`). Each head is one conditional request with no
+ * redirect followed: answered `"<raw body>"` (200), `null` (304: the page keeps its last answer) or
+ * `false` (not read: a failed or refused read, a fourth head). Returns { answers, etags } or null.
+ */
+async function readOwnerChecks(get, u, part) {
+  if (part == null) return null;
+  const answers = {};
+  const etags = {};
+  for (const sha of part.extra) answers[sha] = false;
+  await pool(part.heads.map((hd) => async () => {
+    const res = await get(u.status(hd.sha), { etag: hd.etag, redirect: 'manual' });
+    if (res && res.status === 304) {
+      answers[hd.sha] = null;
+      etags[hd.sha] = res.headers.get('ETag') || hd.etag;
+      return;
+    }
+    if (!res || res.status !== 200) {
+      answers[hd.sha] = false;
+      return;
+    }
+    try {
+      answers[hd.sha] = await res.text();
+      const tag = res.headers.get('ETag');
+      if (tag) etags[hd.sha] = tag;
+    } catch {
+      answers[hd.sha] = false;
+    }
+  }), MAX_PARALLEL);
+  return { answers, etags };
 }
 
 /** Read at most `cap` characters of a response's text: { text } or { tooLarge: true }. */

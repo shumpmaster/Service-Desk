@@ -78,7 +78,8 @@ export class El0 extends Node0 {
   constructor(tag) {
     super(); this.tag = tag; this.attrs = {}; this.className = ''; this.innerHTML = ''; this.listeners = {}; this.value = ''; this.dataset = {};
     this.scrollTop = 0; this.selectionStart = 0; this.selectionEnd = 0;
-    this.classList = { add: (c) => { this.className = `${this.className} ${c}`.trim(); } };
+    this.classList = { add: (c) => { this.className = `${this.className} ${c}`.trim(); }, remove: (c) => { this.className = this.className.split(' ').filter((x) => x && x !== c).join(' '); },
+      contains: (c) => this.className.split(' ').includes(c), toggle: (c, on) => { const want = on === undefined ? !this.className.split(' ').includes(c) : Boolean(on); if (want) { if (!this.className.split(' ').includes(c)) this.className = `${this.className} ${c}`.trim(); } else this.className = this.className.split(' ').filter((x) => x && x !== c).join(' '); return want; } };
   }
   get tagName() { return this.tag.toUpperCase(); }
   setAttribute(k, v) { this.attrs[k] = String(v); if (k.startsWith('data-')) this.dataset[k.slice(5)] = String(v); if (k === 'class') this.className = String(v); }
@@ -170,6 +171,14 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '?sandb
     async tick() { for (const i of intervals) if (i.ms === 15_000) i.fn(); await flush(); },
     /** A key pressed on the document (Escape and the like). */
     async key(k) { for (const fn of docListeners.keydown || []) fn({ key: k, target: document.activeElement, preventDefault() {} }); await flush(); },
+    /** An event that reaches the document's own listeners (AC80's drag: pointermove, pointerup, touchmove). */
+    async docEvent(type, ev = {}) {
+      let cancelled = false;
+      const e = { type, target: els.view, preventDefault() { cancelled = true; }, stopPropagation() {}, ...ev };
+      for (const fn of docListeners[type] || []) fn(e);
+      await flush();
+      return { cancelled };
+    },
     /** A tap on the document's background, outside any sheet or bubble. */
     async tapOutside(target = els.view) { for (const t of ['pointerdown', 'click']) for (const fn of docListeners[t] || []) fn({ type: t, target, pointerType: 'touch', preventDefault() {} }); await flush(); },
     /**

@@ -388,37 +388,55 @@ test('AC77 (draft 6): closed before the raised time, merged, from a fork, or int
 // ---------------------------------------------------------------------------
 // The sandbox: AC77 shows in both views
 
-test('AC77 in the sandbox: the held question is out of the Queue\'s Decisions and its count, under "Asked in your session" with no answer box; "Answer it here instead" brings it back', async () => {
+test('AC77 + AC80 in the sandbox: the held question is no card and in no count, in the board\'s "Being asked in your session" line with no answer box; "Answer it here instead" brings it back as a card', async () => {
   const config = { ...CONFIG };
-  const app = await loadSandbox({ config, repos: repos({ [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }), hash: '#/p/Service-Desk/queue', now: RAISED_MS + 10 * MIN });
+  const app = await loadSandbox({ config, repos: repos({ [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }), hash: '#/waiting/Service-Desk', now: RAISED_MS + 10 * MIN });
+  const lane = () => sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'lane:wait')[0];
   try {
     await app.advance(1000);
     await app.advance(60_000);
-    const asking = byClass(app.view, 'sb-asking')[0];
-    assert.ok(asking, 'Asked in your session');
-    assert.ok(asking.textContent.includes(HELD_WORDS));
-    assert.ok(asking.textContent.includes('Which piece of later work comes next?'));
+    const ql = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'ql:asking')[0];
+    assert.ok(ql, 'Being asked in your session');
+    assert.equal(ql.textContent, 'Being asked in your session: 1');
+    await app.tap(ql);
+    const fold = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'fold:asking')[0];
+    assert.ok(fold.textContent.includes(HELD_WORDS));
+    assert.ok(fold.textContent.includes('Which piece of later work comes next?'));
     assert.ok(!sbFindAll(app.view, (e) => e.tag === 'textarea').length, 'no answer box');
-    assert.ok(app.text().includes('Nothing waits on you in Service-Desk'), 'not counted');
+    assert.ok(!sbFindAll(fold, (e) => e.tag === 'a' && /\/new\//.test(e.attrs.href || '')).length, 'no answer link');
+    assert.equal(byClass(lane(), 'v2-card').length, 0, 'not a card');
+    assert.equal(byClass(app.view, 'v2-badge').length, 0, 'not counted');
     const btn = sbFindAll(app.view, (e) => e.tag === 'button' && e.textContent === 'Answer it here instead')[0];
     btn.click();
     await app.flush();
-    assert.equal(byClass(app.view, 'sb-asking').length, 0);
-    assert.ok(app.text().includes('1 waiting on you'));
+    assert.equal(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'ql:asking').length, 0);
+    assert.ok(byClass(lane(), 'v2-card').some((c) => c.textContent.includes('Which piece of later work comes next?')), 'a card again');
+    assert.equal(byClass(app.view, 'v2-badge')[0].children[0].textContent, '1');
   } finally {
     app.restore();
   }
 });
 
-test('AC77 in the sandbox: the answer\'s pull request in Merges with its added words; the re-read on a stale answer link says "Already answered" and opens nothing', async () => {
+test('AC77 + AC80 in the sandbox: the answer\'s pull request with its added words, the question in "Your answer is being recorded"; the re-read on a stale answer button says "Already answered" and opens nothing', async () => {
   const files = { [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION, '.github/workflows/asks-merge.yml': 'name: asks-merge\n' };
-  let app = await loadSandbox({ config: CONFIG, repos: repos(files, [answerPr(90)], { repo: { prFiles: { 90: ADDS_ANSWER } } }), hash: '#/p/Service-Desk/queue', now: RAISED_MS + 10 * MIN });
+  let app = await loadSandbox({ config: CONFIG, repos: repos(files, [answerPr(90)], { repo: { prFiles: { 90: ADDS_ANSWER } } }), hash: '#/waiting/Service-Desk', now: RAISED_MS + 10 * MIN });
   try {
     await app.advance(1000);
     await app.advance(60_000);
-    assert.ok(app.text().includes('Your answer to Which piece of later work comes next?'));
+    for (const k of ['answerRecording', 'recording']) {
+      const ql = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === `ql:${k}`)[0];
+      if (ql && ql.attrs['aria-expanded'] === 'false') await app.tap(ql);
+    }
+    const cards = byClass(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'lane:wait')[0], 'v2-card');
+    assert.equal(cards.length, 1, 'the answer\'s pull request, a card');
+    for (const c of cards) {
+      await app.go(byClass(c, 'v2-t')[0].attrs.href);
+      assert.ok(byClass(app.view, 'v2-sheet')[0].textContent.includes('Your answer to Which piece of later work comes next?'), 'the pull request\'s sheet names the answer');
+      await app.go('#/waiting/Service-Desk');
+    }
     assert.ok(!app.text().includes('the automatic job merges it, usually within minutes'), 'the 17 October words are gone (AC79)');
-    assert.ok(byClass(app.view, 'sb-asking')[0].textContent.includes(RECORDING_WORDS));
+    const fold = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'fold:answerRecording')[0];
+    assert.ok(fold && fold.textContent.includes(RECORDING_WORDS));
   } finally {
     app.restore();
   }
@@ -428,16 +446,16 @@ test('AC77 in the sandbox: the answer\'s pull request in Merges with its added w
   try {
     await app.advance(1000);
     await app.advance(60_000);
-    const chip = sbFindAll(app.view, (e) => e.tag === 'button' && e.attrs.role === 'radio')[0];
-    await app.tap(chip);
-    const go = byClass(app.view, 'sb-go')[0];
-    assert.ok(go, 'the answer link');
+    const sheet = byClass(app.view, 'v2-sheet')[0];
+    assert.ok(sheet, 'the old Queue address opens its sheet over Waiting');
+    const go = byClass(sheet, 'v2-abtn').find((a) => a.tag === 'a' && /^Answer/.test(a.textContent));
+    assert.ok(go, 'an answer button');
     await app.advance(31_000);
     rs['Service-Desk'].commit({ 'decisions/questions/N-x.md': 'Ruling: A — made up\n' });
     const e = go.dispatch('click');
     await app.flush();
     assert.equal(opened.length, 0, 'nothing opens');
-    assert.ok(app.text().includes('Already answered: Ruling: A — made up'));
+    assert.ok(app.text().includes('Already answered: Ruling: A — made up'), 'said in the sheet, which stays open (AC56)');
     void e;
   } finally {
     app.restore();

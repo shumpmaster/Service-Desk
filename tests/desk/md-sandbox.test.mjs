@@ -45,49 +45,57 @@ test('AC48: Home — one card per project in AC8\'s order, each with its icon, n
     assert.match(app.text(), /12 waiting on you in all/, 'a count in all, never a combined list');
     assert.match(app.text(), /Median answer time/, "AC21's V5 line stays on Home");
     assert.doesNotMatch(app.text(), /New project/);
-    // 2026-10-16 (decisions/questions/P-001-design-lab-open.md, answer 1): no bar, no deferred
-    // words, and nothing fixed to the bottom of Home's screen, with no sheet or bubble open.
-    assert.equal(byClass(v, 'sb-sheet').length + byClass(v, 'sb-scrim').length + byClass(v, 'sb-bubble').length, 0, 'no sheet or bubble open');
+    // 2026-10-16 (decisions/questions/P-001-design-lab-open.md, answer 1): no band, no deferred
+    // words; from stage 1a (AC81) the one thing fixed to the bottom of Home's screen is the bar
+    // Home · Waiting · Plan, with no sheet or bubble open.
+    assert.equal(byClass(v, 'sb-sheet').length + byClass(v, 'sb-scrim').length + byClass(v, 'sb-bubble').length + byClass(v, 'v2-sheet').length, 0, 'no sheet or bubble open');
     assert.doesNotMatch(app.text(), /Tell your Chief of Staff/, 'no "Tell your Chief of Staff…" bar');
     assert.doesNotMatch(app.text(), /Deferred: waiting on your ruling/i, 'no deferred words');
     assert.equal(findAll(v, (e) => e.tag === 'button' && 'disabled' in e.attrs).length, 0, 'no disabled bar');
     for (const cls of ['sb-band', 'sb-composer', 'sb-deferred', 'sb-dock']) assert.equal(byClass(v, cls).length, 0, `no .${cls} on Home`);
-    // Every rule that fixes or sticks something to the screen, against every element on Home.
+    // Every rule that fixes or sticks something to the screen, against every element on Home: only the bar.
     const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     const pinned = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].filter((m) => /position:\s*(fixed|sticky)/.test(m[2]))
       .flatMap((m) => m[1].split(',').map((x) => x.trim().split(/[\s>+~]+/).pop()));
-    assert.ok(pinned.includes('.sb-dock') && pinned.includes('.sb-sheet'), `the rules found: ${pinned.join(' ')}`);
+    assert.ok(pinned.includes('.v2-bar') && pinned.includes('.sb-sheet') && pinned.includes('.v2-sheet'), `the rules found: ${pinned.join(' ')}`);
     const homeEls = findAll(v, () => true);
     for (const sel of pinned) {
       const classes = sel.split('.').filter(Boolean).map((c) => c.replace(/[:[].*$/, ''));
       const hit = homeEls.filter((e) => classes.every((c) => ` ${e.className} `.includes(` ${c} `)));
-      assert.equal(hit.length, 0, `nothing on Home matches ${sel}, which is fixed or sticky`);
+      assert.equal(hit.length, sel === '.v2-bar' ? 1 : 0, `on Home, ${sel} (fixed or sticky) matches ${sel === '.v2-bar' ? 'the bar only' : 'nothing'}`);
     }
   } finally {
     app.restore();
   }
 });
 
-test('AC48: each card, pill and bar tap goes to the screen it names; every project screen has the bottom bar in order and a way back', async () => {
+test('AC48 (changed by AC81, "Until stage 3"): each card, pill and row tap goes to the screen it names; Status, Timeline and Team carry the row Status · Timeline · Team · Waiting and a way back', async () => {
   const app = await opened();
   try {
     const card = byClass(app.view, 'sb-pc')[0];
     const [main] = byClass(card, 'sb-pc-main');
     const [pill] = byClass(card, 'sb-pill');
     assert.equal(main.attrs.href, '#/p/Alpha');
-    assert.equal(pill.attrs.href, '#/p/Alpha/queue');
-    for (const [hash, title] of [['#/p/Alpha', 'Current status'], ['#/p/Alpha/timeline', 'Timeline'], ['#/p/Alpha/team', 'Team'], ['#/p/Alpha/queue', 'Queue']]) {
+    assert.equal(pill.attrs.href, '#/waiting/Alpha', 'the pill opens Waiting with only Alpha shown');
+    for (const [hash, title, current] of [['#/p/Alpha', 'Current status', 'Status'], ['#/p/Alpha/timeline', 'Timeline', 'Timeline'], ['#/p/Alpha/team', 'Team', 'Team']]) {
       await app.go(hash);
       assert.ok(app.text().includes(SANDBOX_MARKER), `${hash}: the marker`);
       assert.ok(app.text().includes(title), `${hash}: ${title}`);
-      const tabs = byClass(app.view, 'sb-tab');
-      assert.deepEqual(tabs.map((t) => t.textContent.replace(/\d+$/, '')), ['Status', 'Timeline', 'Team', 'Queue']);
-      assert.deepEqual(tabs.map((t) => t.attrs.href), ['#/p/Alpha', '#/p/Alpha/timeline', '#/p/Alpha/team', '#/p/Alpha/queue']);
+      assert.equal(byClass(app.view, 'sb-tab').length, 0, `${hash}: no project bar at the foot`);
+      const row = byClass(app.view, 'v2-rl');
+      assert.deepEqual(row.map((t) => t.textContent), ['Status', 'Timeline', 'Team', 'Waiting']);
+      assert.deepEqual(row.map((t) => t.attrs.href), ['#/p/Alpha', '#/p/Alpha/timeline', '#/p/Alpha/team', '#/waiting/Alpha']);
+      assert.deepEqual(row.filter((t) => t.attrs['aria-current'] === 'page').map((t) => t.textContent), [current]);
+      assert.equal(byClass(app.view, 'v2-bar').length, 1, `${hash}: the one bar at the foot`);
       assert.equal(byClass(app.view, 'sb-back')[0].attrs.href, '#/', 'a way back to Home');
     }
+    // The Queue's address opens Waiting with only that project shown (AC81).
+    await app.go('#/p/Alpha/queue');
+    assert.equal(app.loc.hash, '#/waiting/Alpha');
+    assert.match(app.text(), /Waiting/);
     await app.go('#/p/Alpha');
     const hrefs = byClass(app.view, 'sb-btn').map((b) => b.attrs.href);
-    assert.deepEqual(hrefs, ['#/p/Alpha/queue', '#/p/Alpha/team'], 'two buttons open the queue and the team');
+    assert.deepEqual(hrefs, ['#/waiting/Alpha', '#/p/Alpha/team'], 'two buttons open Waiting (this project) and the team');
     // AC36, as AC55 changed it (2026-10-15): inside the sandbox the M1 and M2 detail is reached
     // through the views rebuilt in the new design, never through a link to the accepted views.
     const links = linksIn(app.view).map((l) => l.href);
@@ -146,83 +154,74 @@ test('AC48: a project whose read goes stale shows no "All clear" on Home', async
 // ---------------------------------------------------------------------------
 // AC52 and AC53
 
-test('AC52: every item sits in one group by the action it needs; order by raised time; no row says whether it can be acted on; Deploys shown, not counted', async () => {
-  const app = await opened(twoProjects(), '#/p/Alpha/queue');
+test('AC52 (changed by AC80): every item that needs the owner is one card in "Waiting on you", in AC52\'s order (raised first, no raised time last); no card says whether it can be acted on; a deploy is not counted where J7 does not mark deploysNeedOwner', async () => {
+  const app = await opened(twoProjects(), '#/waiting/Alpha');
   try {
-    const groups = byClass(app.view, 'sb-group');
-    const titles = groups.map((g) => byClass(g, 'sb-gh')[0].textContent);
-    // AC66 (2026-10-16): the groups' marks are neutral; a group holding what waits on the owner says "needs you".
-    assert.deepEqual(titles.map((t) => t.replace(/^[◇▲✎⇄▸]/, '').replace(/needs you/g, '').replace(/(\d+|none|not recorded)$/, '')),
-      ['Decisions', 'Gate rulings', 'Verdicts to write', 'Merges', 'Deploys']);
-    const rows = (i) => byClass(groups[i], 'sb-qt').map((r) => r.textContent);
-    assert.equal(rows(0).length, 3, 'a card, a question and a hold card');
-    assert.match(rows(0)[0], /Alpha's question/, 'raised first (400 min ago)');
-    assert.match(rows(0)[1], /Q-020/, 'then the card raised 200 min ago');
-    assert.match(rows(0)[2], /governance run is not green/, 'no raised time: last');
-    assert.match(rows(1)[0], /Build gate/);
-    assert.match(groups[2].textContent, /not recorded/);
-    assert.equal(rows(3).length, 2, 'the pull request and the merge card');
-    assert.match(groups[4].textContent, /Shown, not counted/);
-    assert.match(byClass(app.view, 'sb-hdr')[0].textContent, /6 waiting on you/, 'the deploy is not counted');
+    const lane = byClass(app.view, 'lane-wait')[0];
+    const titles = byClass(lane, 'v2-t').map((r) => r.textContent);
+    assert.equal(titles.length, 6, 'a pull request, a question, a gate card, a decision card, a hold card and a merge card');
+    assert.match(titles[0], /a change to merge/, 'the pull request, raised first (6 Oct)');
+    assert.match(titles[1], /Alpha's question/, 'then the question raised 400 min ago');
+    assert.match(titles[2], /Pass the Build gate|Build gate/, 'then the gate card raised 270 min ago');
+    assert.match(titles[3], /Q-020/, 'then the card raised 200 min ago');
+    assert.ok(/governance run is not green|merge conflict/.test(titles[4]) && /governance run is not green|merge conflict/.test(titles[5]), 'no raised time: last');
+    assert.equal(byClass(lane, 'v2-lc')[0].textContent, '6', 'the deploy is not counted');
+    assert.doesNotMatch(app.text(), /desk-deploy: waiting/, 'nor shown as a card');
     assert.doesNotMatch(app.text(), /do first|can be acted on|ready to act|after #/i);
   } finally {
     app.restore();
   }
 });
 
-test('AC52: the recommendation is labelled and never preselected; a verdict has none; picking a chip fills the box (two taps to GitHub)', async () => {
-  const app = await opened(twoProjects(), '#/p/Alpha/queue');
+test('AC52 + AC80: the recommendation is labelled and never preselected; one button per option, each its filled-in file; a pull request\'s sheet offers its step, never a verdict on every pull request', async () => {
+  const app = await opened(twoProjects(), '#/waiting/Alpha');
   try {
-    const href = byClass(app.view, 'sb-qrow').map((r) => findAll(r, (e) => e.tag === 'a')[0]).find((a) => a.textContent.includes('question')).attrs.href;
-    await app.go(href);
-    const chips = byClass(app.view, 'sb-chip');
-    assert.equal(chips.length, 2);
-    assert.ok(chips.every((c) => c.attrs['aria-checked'] === 'false'), 'nothing preselected');
-    // AC53 as note 15 extended it (2026-10-15): the recommendation is labelled "Recommended", the
-    // ruling file is prefilled from the start (no letter until one is picked), and a lettered
-    // question's ruling carries the question and its options as they were put.
+    const card = byClass(app.view, 'v2-card').find((c) => c.textContent.includes("Alpha's question"));
+    const open = findAll(card, (e) => e.tag === 'a' && e.textContent === 'Answer')[0];
+    await app.go(open.attrs.href);
+    const opts = byClass(app.view, 'v2-opt');
+    assert.equal(opts.length, 2);
+    assert.deepEqual(opts.map((o) => byClass(o, 'v2-ol')[0].textContent), ['A. Yes.', 'B. No.']);
+    assert.deepEqual(opts.map((o) => byClass(o, 'v2-rec').length), [0, 1], '"Recommended" on B only, never picked');
+    assert.equal(findAll(app.view, (e) => e.attrs['aria-checked'] === 'true').length, 0, 'nothing preselected');
     assert.match(app.text(), /Recommended B — no\./);
-    const box = () => findAll(app.view, (e) => e.tag === 'textarea' && /^box:/.test(e.dataset.k || ''))[0];
-    assert.match(box().value, /^Ruling: \n/, 'nothing picked for the owner');
-    chips[0].click();
-    await app.flush();
-    const ta = box();
-    assert.equal(ta.value, "Ruling: A\n\nQuestion: questions/Alpha-pick.md\n\nQuestion, as put: Alpha's question\nOptions, as put:\n  A. Yes.\n  B. No.\n");
-    const go = byClass(app.view, 'sb-go')[0];
-    assert.equal(go.attrs.href, `https://github.com/shumpmaster/Alpha/new/main?filename=decisions%2Fquestions%2FAlpha-pick.md&value=${encodeURIComponent(ta.value)}`);
-    // The PR's sheet: no chips, its own verdict box at the head branch, "not recorded" whether it exists.
-    await app.go('#/p/Alpha/queue/pr%3A80');
-    assert.equal(byClass(app.view, 'sb-chip').length, 0, 'a verdict has no recommendation and no chips');
-    assert.doesNotMatch(app.text(), /Recommendation/);
-    assert.match(app.text(), /Whether reviews\/80\/owner\.md already exists on its branch: not recorded/);
-    const [pull, verdict] = byClass(app.view, 'sb-go').map((a) => a.attrs.href);
-    assert.equal(pull, 'https://github.com/shumpmaster/Service-Desk/pull/80');
-    assert.ok(verdict.startsWith('https://github.com/shumpmaster/Alpha/new/build/builder/md-sandbox?filename=reviews%2F80%2Fowner.md&value=Verdict%3A%20PASS'), verdict);
-    assert.match(app.text(), /The Reviewer's statement · Commit it unchanged/);
-    assert.match(app.text(), /not recorded: no record the desk reads holds the Reviewer's statement/);
+    const [a, b] = opts.map((o) => byClass(o, 'v2-abtn')[0]);
+    assert.equal(a.textContent, 'Answer A ↗');
+    const text = "Ruling: A\n\nQuestion: questions/Alpha-pick.md\n\nQuestion, as put: Alpha's question\nOptions, as put:\n  A. Yes.\n  B. No.\n";
+    assert.equal(a.attrs.href, `https://github.com/shumpmaster/Alpha/new/main?filename=decisions%2Fquestions%2FAlpha-pick.md&value=${encodeURIComponent(text)}`);
+    assert.equal(b.attrs.href, `https://github.com/shumpmaster/Alpha/new/main?filename=decisions%2Fquestions%2FAlpha-pick.md&value=${encodeURIComponent(text.replace('Ruling: A', 'Ruling: B'))}`);
+    // The pull request's sheet: no answer buttons and no verdict box; its one step (here J22's "not known": Open ↗).
+    await app.go('#/waiting/Alpha/card/Alpha%7Cpr%7C80');
+    assert.equal(byClass(app.view, 'v2-opt').length, 0, 'a pull request has no options');
+    assert.equal(findAll(app.view, (e) => e.tag === 'textarea').length, 0, 'no verdict box');
+    assert.match(app.text(), /Whether it needs your verdict: not known yet/);
+    const steps = byClass(byClass(app.view, 'v2-sheet')[0], 'v2-abtn').filter((x) => x.tag === 'a').map((x) => [x.textContent, x.attrs.href]);
+    assert.deepEqual(steps, [['Open on GitHub ↗', 'https://github.com/shumpmaster/Service-Desk/pull/80']]);
   } finally {
     app.restore();
   }
 });
 
-test('AC52: hold and merge cards offer no chips, no text box and no link to commit', async () => {
+test('AC52 + AC80: a hold card\'s and a merge card\'s sheets offer no options, no text box and no link to commit; their one step opens GitHub', async () => {
   const app = await opened(twoProjects(), '#/p/Alpha/queue/hold%3Aqueue%2Fci-hold-4a2448939173.md');
   try {
-    assert.equal(byClass(app.view, 'sb-chip').length, 0);
-    assert.equal(findAll(app.view, (e) => e.tag === 'textarea').length, 0);
-    assert.ok(!linksIn(app.view).some((l) => /\/new\//.test(l.href || '')));
-    assert.match(app.text(), /No answer needed: fix or re-run the governance run/);
+    assert.equal(app.loc.hash, '#/waiting/Alpha/card/hold%3Aqueue%2Fci-hold-4a2448939173.md', 'the Queue\'s address opens the card\'s sheet over Waiting');
+    const sheet = () => byClass(app.view, 'v2-sheet')[0];
+    assert.equal(byClass(sheet(), 'v2-opt').length, 0);
+    assert.equal(findAll(sheet(), (e) => e.tag === 'textarea').length, 0);
+    assert.ok(!linksIn(sheet()).some((l) => /\/new\//.test(l.href || '')));
+    assert.match(sheet().textContent, /No answer needed: fix or re-run the governance run/);
     await app.go('#/p/Alpha/queue/merge%3Aqueue%2FP-002-merge-conflict.md');
-    assert.equal(byClass(app.view, 'sb-chip').length, 0);
-    assert.equal(findAll(app.view, (e) => e.tag === 'textarea').length, 0);
-    assert.ok(!linksIn(app.view).some((l) => /\/new\//.test(l.href || '')));
-    assert.match(app.text(), /No answer needed: merge item\/P-002 by hand/);
+    assert.equal(byClass(sheet(), 'v2-opt').length, 0);
+    assert.equal(findAll(sheet(), (e) => e.tag === 'textarea').length, 0);
+    assert.ok(!linksIn(sheet()).some((l) => /\/new\//.test(l.href || '')));
+    assert.match(sheet().textContent, /No answer needed: merge item\/P-002 by hand/);
   } finally {
     app.restore();
   }
 });
 
-test('AC52: a gate ruling\'s sheet quotes its case, links the case only when the tree holds it, and the user representative is "not needed"', async () => {
+test('AC52 + AC80: a gate ruling\'s sheet quotes its case, links the case only when the tree holds it, the user representative "not needed", its four choices as buttons', async () => {
   const app = await opened(twoProjects(), '#/p/Alpha/queue/card%3Aqueue%2FP-002-criteria-1.md');
   try {
     assert.match(app.text(), /Pass the Build gate: the plan for the queue screen passed review/);
@@ -230,7 +229,8 @@ test('AC52: a gate ruling\'s sheet quotes its case, links the case only when the
     assert.ok(links.some((l) => l.href === 'https://github.com/shumpmaster/Alpha/blob/main/docs/gates/P-002/build-gate-1-case.md'));
     assert.match(app.text(), /The Critic's view: no file recorded/);
     assert.match(app.text(), /User representative: not needed/);
-    assert.deepEqual(byClass(app.view, 'sb-chip').map((c) => c.textContent), ['proceed', 'hold', 'recycle', 'kill']);
+    const sheet = byClass(app.view, 'v2-sheet')[0];
+    assert.deepEqual(byClass(sheet, 'v2-abtn').filter((x) => x.tag === 'a').map((c) => c.textContent), ['Proceed ↗', 'Hold ↗', 'Recycle ↗', 'Kill ↗']);
     assert.match(app.text(), /Recommended The case recommends proceed\./);
   } finally {
     app.restore();
@@ -263,14 +263,17 @@ test('AC52: each tracker step and each "Done today" time against its record', ()
   assert.equal(done[1].words, 'at 09:01', 'the decision entry\'s time, in ownerTimeZone');
 });
 
-test('AC52: a pull request that leaves the queue while the page is open shows in "Done today" as "no longer open, time not recorded"', async () => {
+test('AC52 + AC80: a pull request that stops needing the owner while the page is open moves to Done by itself, from the time it was seen', async () => {
   const setup = twoProjects();
-  const app = await opened(setup, '#/p/Alpha/queue');
+  const app = await opened(setup, '#/waiting/Alpha');
   try {
     setup.repos.Alpha.pulls = [];
     await app.advance(POLL_MS);
-    await app.go('#/p/Alpha/queue');
-    assert.match(app.text(), /Alpha: a change to merge PR #80 no longer open, time not recorded/);
+    await app.go('#/waiting/Alpha');
+    const done = byClass(app.view, 'lane-done')[0];
+    assert.match(done.textContent, /Alpha: a change to merge/);
+    assert.match(done.textContent, /#80 · 10:01$/, 'seen at 10:01 Chicago time, after its code');
+    assert.doesNotMatch(byClass(app.view, 'lane-wait')[0].textContent, /a change to merge/);
   } finally {
     app.restore();
   }
@@ -329,26 +332,25 @@ test('AC53: the rule line\'s words — a right verdict, Verdict: mid-line, a hol
   assert.equal(ruleLine('question', 'Decision: B\n').ok, false);
 });
 
-test('AC53: the rule line follows the typing, and the button stays available', async () => {
+test('AC53 + AC80: the sheet\'s words box puts the owner\'s words where AC53 places them (a gate\'s Hold its Reason:), in every button, and survives a refresh; no rule line', async () => {
   const app = await opened(twoProjects(), '#/p/Alpha/queue/card%3Aqueue%2FP-002-criteria-1.md');
   try {
-    byClass(app.view, 'sb-chip').find((c) => c.textContent === 'hold').click();
+    const sheet = () => byClass(app.view, 'v2-sheet')[0];
+    const hold = () => byClass(sheet(), 'v2-abtn').find((c) => c.textContent === 'Hold ↗');
+    assert.equal(hold().attrs.href, `https://github.com/shumpmaster/Alpha/new/main?filename=decisions%2FP-002%2Fcriteria-1.md&value=${encodeURIComponent('Decision: hold\n\nReason: \n')}`);
+    const ta = findAll(sheet(), (e) => e.tag === 'textarea')[0];
+    assert.match(ta.className, /v2-input/);
+    ta.value = 'waiting for the screens';
+    for (const fn of ta.listeners.input) fn({ target: ta });
     await app.flush();
-    const ta = findAll(app.view, (e) => e.tag === 'textarea' && /^box:/.test(e.dataset.k || ''))[0]; // the answer file's box (AC53, note 15)
-    assert.equal(ta.value, 'Decision: hold\n\nReason: \n');
-    assert.match(byClass(app.view, 'sb-rule')[0].textContent, /needs a "Reason:" line with text/);
-    assert.equal(byClass(app.view, 'sb-go').length, 1, 'the button stays');
-    ta.value = 'Decision: hold\n\nReason: waiting for the screens\n';
-    for (const fn of ta.listeners.input) fn();
-    assert.match(byClass(app.view, 'sb-rule')[0].textContent, /In form/);
-    assert.match(byClass(app.view, 'sb-go')[0].attrs.href, /Reason%3A%20waiting%20for%20the%20screens/);
-    // The confirmation: "opened in GitHub" on the row, and the tracker, until the record arrives.
-    byClass(app.view, 'sb-go')[0].click();
-    await app.advance(10);
-    assert.match(app.text(), /Opened in GitHub/);
-    assert.match(app.text(), /See it on the timeline/);
-    await app.go('#/p/Alpha/queue');
-    assert.match(app.text(), /opened in GitHub/);
+    assert.equal(hold().attrs.href, `https://github.com/shumpmaster/Alpha/new/main?filename=decisions%2FP-002%2Fcriteria-1.md&value=${encodeURIComponent('Decision: hold\n\nReason: waiting for the screens\n')}`);
+    const proceed = byClass(sheet(), 'v2-abtn').find((c) => c.textContent === 'Proceed ↗');
+    assert.equal(proceed.attrs.href, `https://github.com/shumpmaster/Alpha/new/main?filename=decisions%2FP-002%2Fcriteria-1.md&value=${encodeURIComponent('Decision: proceed\n\n  waiting for the screens\n')}`,
+      'on Proceed the words follow a blank line, indented as AC53 does on a gate card');
+    assert.equal(byClass(app.view, 'sb-rule').length, 0, 'the rule line is not on the board');
+    app.module.refresh();
+    await app.flush();
+    assert.equal(findAll(sheet(), (e) => e.tag === 'textarea')[0].value, 'waiting for the screens', 'a refresh keeps the typed text');
   } finally {
     app.restore();
   }
@@ -582,7 +584,8 @@ test('AC42: nothing is fixed wider than a 360 px screen, and every drawn text si
       for (const s of ['', '/timeline', '/team', '/queue']) {
         await app.go(`#/p/${encodeURIComponent(p)}${s}`);
         for (const top of app.view.children) {
-          assert.ok(/\bsb-(screen|scrim|sheet)\b/.test(top.className), `${p}${s}: ${top.className} is not a wrapping container`);
+          // From stage 1a (AC81) the bar, and the board's sheet, sit beside the screen.
+          assert.ok(/\bsb-(screen|scrim|sheet)\b|\bv2-(bar|scrim|sheet)\b/.test(top.className), `${p}${s}: ${top.className} is not a wrapping container`);
         }
       }
     }
@@ -605,7 +608,10 @@ test('AC42: no packages, the security headers and CSP unchanged, nothing from an
   assert.equal(html.replace(AC75_LINKS, ''), at('index.html'));
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
   const page = readFileSync(`${SRC}/public/sandbox.js`, 'utf8');
-  assert.doesNotMatch(css, /@import|url\(|@font-face/, 'no web font, image or stylesheet from anywhere');
+  // From stage 1a (AC81): IBM Plex, served by the desk itself; no font, image or stylesheet from another origin.
+  assert.doesNotMatch(css, /@import/, 'no stylesheet from anywhere');
+  for (const m of css.matchAll(/url\(([^)]*)\)/g)) assert.match(m[1], /^"fonts\/IBMPlex(Sans|Mono)-[A-Za-z]+-(Latin1|Pi)\.woff2"$/, `url(${m[1]}): the desk's own font files only`);
+  for (const m of css.matchAll(/@font-face \{([^}]*)\}/g)) assert.match(m[1], /font-family: "IBM Plex (Sans|Mono)"/);
   assert.doesNotMatch(page, /https?:\/\/(?!github\.com|www\.w3\.org\/2000\/svg)/, 'no other origin is loaded');
   // Every animation sits inside a no-preference reduced-motion block.
   const blocks = [...css.matchAll(/@media \(prefers-reduced-motion: no-preference\) \{([\s\S]*?\n)\}/g)].map((m) => m[1]).join('\n');

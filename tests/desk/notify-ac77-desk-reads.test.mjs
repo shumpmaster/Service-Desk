@@ -80,8 +80,10 @@ async function openSb(r, { now = RAISED_MS + 10 * MIN, hash = '#/', navigator, s
   await sb.advance(1000);
   return { ...sb, calls: () => sb.server.calls, state: () => sb.els['screen-state'], advance: (ms) => sb.advance(ms), flush: () => sb.flush(), restore: () => sb.restore() };
 }
-const SB_WAITING = '#/p/Service-Desk/queue/q%3AP-001-next-work'; // the sandbox's response sheet for the question
-const SB_HELD = '#/p/Service-Desk/queue'; // the Queue, where "Asked in your session" shows a held question
+// From stage 1a (AC80): the board, Waiting, with the question's card sheet open over it; and the board
+// with its "Being asked in your session" fold open, where a held question shows.
+const SB_WAITING = `#/waiting/card/${encodeURIComponent('Service-Desk|question|questions/P-001-next-work.md')}`;
+const SB_HELD = '#/waiting';
 
 /** A page whose service worker can hand it a tap's address (sw.js's handover), and the replies it gave. */
 function swNavigator() {

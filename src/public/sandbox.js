@@ -935,7 +935,7 @@ function tileNode(b, bd, group, nextRows) {
   if (project.model === 'v3') {
     tl = tileTimeline(b.ctx, gate);
     now = nowLine(b.ctx, TZ);
-    next = nextLine(project, { gate, row: nextRows.get(name) || null, docRead: Boolean(b.j && b.j.ready && b.j.projectDoc) });
+    next = nextLine(project, { gate, row: nextRows ? nextRows.get(name) || null : null, docRead: Boolean(b.j && b.j.ready && b.j.projectDoc), unknown: !nextRows });
   } else {
     tl = sprintStrip(b.snap);
     now = { lead: `Now: ${tl.open ? `sprint ${tl.open}` : 'no open sprint'}`, rest: HOME_WORDS.olderPipeline };
@@ -970,11 +970,13 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
     return { b, box, group };
   });
   // Each v3 project's first milestone not reached in the owner's order, with AC24's rough finish.
-  const nextRows = new Map();
+  // `null`: Work ahead's view couldn't be built, so no tile can say what comes next (the Reviewer's N-4,
+  // stage 2 round 2): each v3 tile reads "Next: not available", and Plan says why.
+  let nextRows = new Map();
   try {
     for (const r of workView(nowMs).rows) if (!nextRows.has(r.project.name)) nextRows.set(r.project.name, r);
   } catch {
-    // "no estimate yet" on each tile: Plan says why
+    nextRows = null;
   }
   const groups = HOME_GROUPS.map((g) => {
     const members = placed.filter((x) => x.group === g.key);

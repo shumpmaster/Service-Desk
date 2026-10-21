@@ -336,6 +336,38 @@ test('AC82 with AC24: a milestone with an estimate after one in the order with n
   assert.equal(nextLine(SD, { gate: null, row: none.rows[0] }).words, `${none.rows[0].code} · no estimate yet`);
 });
 
+test('AC82 with AC24: the reason in another project — the tile names that project ("rough finish: not available: Twin\'s MD1 has no estimate yet"), as Plan\'s row beside it does; Plan\'s own words unchanged (the Design reviewer\'s B-new, stage 2 round 2; made-up project and estimates, NOT real records)', () => {
+  const TWIN = { ...SD, name: 'Twin', repo: 'shumpmaster/Twin', planning: false };
+  const t = '2026-10-18T17:00:00Z';
+  const nowMs = Date.parse('2026-10-18T18:00:00Z');
+  const sdLines = ['MD1', 'MD2', 'MD3', 'M3A', 'M3B', 'M3C'].map((m) => estLine(m, 1, 2, t, '', 'Service-Desk'));
+  const first = (v, name) => v.rows.find((r) => r.project.name === name);
+  // Twin first in the order, its MD1 with no estimate; every one of Service-Desk's estimated.
+  const none = viewOf({ extra: { 'intake/estimates.jsonl': [...sdLines, ...['MD2', 'MD3'].map((m) => estLine(m, 1, 2, t, '', 'Twin'))].join('\n') + '\n' }, nowMs, projects: [TWIN, SD, POOM] });
+  assert.equal(first(none, 'Service-Desk').estimate.kind, 'ok', 'Service-Desk\'s MD1 has its estimate');
+  assert.equal(nextLine(SD, { gate: null, row: first(none, 'Service-Desk') }).words, 'MD1 · rough finish: not available: Twin\'s MD1 has no estimate yet');
+  assert.equal(nextLine(TWIN, { gate: null, row: first(none, 'Twin') }).words, 'MD1 · no estimate yet', 'Twin\'s own tile');
+  assert.equal(first(none, 'Service-Desk').finish.words, 'not available: MD1 has no estimate yet', 'Plan\'s words, the project named beside the row, unchanged');
+  // Twin's MD1 past its estimate.
+  const past = viewOf({ extra: { 'intake/estimates.jsonl': [...sdLines, estLine('MD1', 1, 2, '2026-09-01T17:00:00Z', '', 'Twin')].join('\n') + '\n' }, nowMs, projects: [TWIN, SD, POOM] });
+  assert.equal(first(past, 'Twin').estimate.kind, 'past');
+  assert.equal(nextLine(SD, { gate: null, row: first(past, 'Service-Desk') }).words, 'MD1 · rough finish: not available: Twin\'s MD1 is past its estimate');
+  // Service-Desk first: its own finishes, Twin's tile its own words.
+  const sdFirst = viewOf({ extra: { 'intake/estimates.jsonl': sdLines.join('\n') + '\n' }, nowMs, projects: [SD, TWIN, POOM] });
+  assert.match(nextLine(SD, { gate: null, row: first(sdFirst, 'Service-Desk') }).words, /^MD1 · rough finish \d/);
+  assert.equal(nextLine(TWIN, { gate: null, row: first(sdFirst, 'Twin') }).words, 'MD1 · no estimate yet');
+});
+
+test('AC82: Work ahead\'s view failing to build — each v3 tile\'s "Next: not available", not "no milestone left to reach" (the Reviewer\'s N-4, stage 2 round 2)', () => {
+  assert.deepEqual(nextLine(SD, { gate: null, row: null, docRead: true, unknown: true }), { icon: 'half', words: 'not available' });
+  assert.equal(nextLine(SD, { gate: null, row: null, docRead: true }).words, 'no milestone left to reach', 'built, with none left');
+  assert.equal(nextLine(SD, { gate: 'Build', row: null, unknown: true }).words, 'the Build gate, after your ruling', 'a gate card waiting still says so');
+  // The page passes it: its view caught, nextRows null, `unknown` set (the fake DOM can't make workAheadView throw).
+  const page = readFileSync(`${SRC}/public/sandbox.js`, 'utf8');
+  assert.match(page, /\} catch \{\n\s+nextRows = null;\n\s+\}/);
+  assert.match(page, /row: nextRows \? nextRows\.get\(name\) \|\| null : null, docRead: [^\n]*, unknown: !nextRows \}\)/);
+});
+
 test('AC82: the groups in frame H5\'s words and order, the first two open and Done closed; a tap folds and opens one and the tiles a row: one below 720 px, two from 720 px, Home\'s column at most 960 px', async () => {
   const app = await open(textSetup());
   try {
@@ -534,6 +566,23 @@ test('AC82, the Reviewer\'s N2: "checked <age> ago" is the stalest project\'s la
     assert.match(text, /^checked \d+ min ago$/, `${text}: Beta's last read, minutes old`);
     assert.ok(Number(/(\d+) min/.exec(text)[1]) >= Math.floor(age / 60e3) - 1, `${text} after ${age / 1000} s`);
     assert.notEqual(text, `checked ${durationText(POLL_MS)} ago`);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC82, the Reviewer\'s N-3 (stage 2, round 2): a "Can\'t read" tile whose records the page still holds, from an earlier read, keeps its own "Now", "At work" and "Next" lines', async () => {
+  const setup = textSetup();
+  const app = await open(setup);
+  const lines = (name) => byClass(keyed(app, `card:${name}`), 'v2-ln').map((l) => l.textContent);
+  try {
+    const before = lines('Alpha').slice(0, 3);
+    assert.equal(before[1], 'At work: Builder on P-003');
+    setup.repos.Alpha.fail = { state: 'cant-read', reason: 'not-found' };
+    await app.advance(3 * POLL_MS);
+    assert.match(lines('Alpha')[lines('Alpha').length - 1], /^Can't read since /, 'can\'t be read now (its "wait on you" count, from the held read, heads the tile)');
+    assert.deepEqual(lines('Alpha').slice(0, 3), before, 'its own lines, from the read it holds');
+    assert.match(lines('Alpha')[lines('Alpha').length - 1], /^Can't read since \d\d:\d\d: /);
   } finally {
     app.restore();
   }

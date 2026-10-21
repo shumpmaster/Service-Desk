@@ -555,9 +555,11 @@ export function atWorkLine(project, model, ball, j, tz) {
  * rough finish (AC24's), "no estimate yet" without one; the ◆ and "<the gate>, after your ruling"
  * while a gate card waits; a v2.5 project's open sprint. Returns { icon, lead: 'Next:', words }.
  */
-export function nextLine(project, { gate, row, sprint, docRead }) {
+export function nextLine(project, { gate, row, sprint, docRead, unknown = false }) {
   if (gate) return { icon: 'you', words: `the ${gate} gate, after your ruling` };
   if (project.model !== 'v3') return { icon: 'half', words: sprint ? `sprint ${sprint} · no estimate filed` : 'no open sprint · no estimate filed' };
+  // Work ahead's view not built (`unknown`): which milestone comes next isn't known, not "none left".
+  if (!row && unknown) return { icon: 'half', words: WA.notAvailable };
   if (!row) return { icon: 'half', words: docRead ? 'no milestone left to reach' : NOT_RECORDED };
   const f = row.finish;
   if (f && !f.na && f.words) return { icon: 'half', words: `${row.code} · rough finish ${f.words}` };
@@ -566,6 +568,12 @@ export function nextLine(project, { gate, row, sprint, docRead }) {
   // order with none), its own words, as Plan shows them; with the estimates read failed, AC24 gives no
   // finish at all: "not available", with no cause to name.
   if (row.estimate && row.estimate.kind === 'missing') return { icon: 'half', words: `${row.code} · no estimate yet` };
+  // The reason names another project's milestone (always so when its code isn't this tile's own: the
+  // tile's Next is its project's first not reached): that project named, as Plan's row beside it does
+  // (the Design reviewer's B-new, stage 2 round 2). Its own: AC24's words as Plan shows them.
+  if (f && f.na && f.stop && f.stop.project && f.stop.project !== project.name) {
+    return { icon: 'half', words: `${row.code} · rough finish: ${WA.notAvailable}: ${f.stop.project}'s ${f.stop.code} ${f.stop.why}` };
+  }
   if (f && f.na && f.words) return { icon: 'half', words: `${row.code} · rough finish: ${f.words}` };
   return { icon: 'half', words: `${row.code} · rough finish: ${WA.notAvailable}` };
 }

@@ -20,7 +20,10 @@ const rules = () => [...CSS.matchAll(/([^{}]+)\{([^}]*)\}/g)].map((m) => ({ sel:
 
 /** The owner's own things AC69 lets take coral (and AC48's own coral uses: the owner tile, the rows that need the owner, the owner's lanes and bars). */
 const OWNER_CORAL = ['.sb-top.you', '.sb-ic.i-you', '.sb-hg-you', '.sb-ball li.who-you', '.sb-pill.you', '.sb-badge', '.sb-btn.you', '.sb-gmark.you', '.sb-needs',
-  '.sb-qrow.g-decisions, .sb-qrow.g-gates, .sb-qrow.g-merges', '.sb-you', '.sb-you-st.you', '.sb-last', '.sb-last-l', '.sb-ask.open', '.sb-axis .bar.card', '.sb-q'];
+  '.sb-qrow.g-decisions, .sb-qrow.g-gates, .sb-qrow.g-merges', '.sb-you', '.sb-you-st.you', '.sb-last', '.sb-last-l', '.sb-ask.open', '.sb-axis .bar.card', '.sb-q',
+  // AC69, changed by AC80 (the board) and AC81 (the bar): vermilion marks only what waits on the owner,
+  // the kind icon of a card in "Waiting on you" or "Kicked back" and the Waiting tab's badge.
+  '.v2-badge', '.v2-kd .v2-k'];
 
 test('AC69: coral (--you) is used only for the owner\'s own things — the rules that take it are the owner\'s, none of them a why line, a "Not tied to a milestone" line or a gap', () => {
   const coral = rules().filter((r) => /var\(--you\d?\)/.test(r.body) && !r.sel.startsWith('html')).map((r) => r.sel);
@@ -32,11 +35,15 @@ test('AC69: coral (--you) is used only for the owner\'s own things — the rules
   for (const s of ['.sb-wl.gap', '.sb-unb-l.gap', '.sb-feeds.gap', '.sb-began.gap', '.sb-meta.gap']) assert.ok(gap.sel.split(/\s*,\s*/).includes(s), s);
   assert.match(rules().find((r) => r.sel === '.sb-ic.i-flag').body, /background: var\(--muted\)/, 'the "Not tied to a milestone" diamond, filled slate');
   assert.match(rules().find((r) => r.sel === '.sb-stall').body, /color: var\(--muted\)/, 'AC71\'s line, slate');
+  // AC80: nothing in Done or in the quiet lines is coral; a Done card's kind icon is grey; the sheets' gaps grey.
+  assert.match(rules().find((r) => r.sel === '.v2-kd.done .v2-k').body, /color: var\(--ink2\)/);
+  assert.match(rules().find((r) => r.sel === '.v2-sheet .gap').body, /color: var\(--ink2\)/);
+  for (const sel of coral) assert.doesNotMatch(sel, /done|drow|v2-ql|v2-quiet|v2-flist|v2-qfold|gap|v2-wl|v2-unb|v2-src|v2-facts/, sel);
 });
 
-test('AC69: on Home, Status, Timeline, Team and Queue, each agents\' gap shows its words in slate, never inside the owner\'s coral, with "for the agents to add" and "for the agents to file"', async () => {
+test('AC69 + AC80: on Home, Status, Timeline, Team and Waiting (the cards\' sheets), each agents\' gap shows its words in slate, never inside the owner\'s coral, with "for the agents to add" and "for the agents to file"', async () => {
   const GAP = /^(Why not recorded yet · for the agents to add|why: not recorded|\d+ sprints? · (\d+ )?for the agents to file|Unblocks: milestone not recorded|Context: not recorded|not recorded|feeds: not tied to a milestone| · sprint: not recorded|Run \d began · why it went back: not recorded)$/;
-  const coralClass = /\b(sb-you|sb-needs|sb-pill|sb-badge|sb-btn|sb-last|sb-ask|sb-q|sb-hg-you|who-you|i-you)\b/;
+  const coralClass = /\b(sb-you|sb-needs|sb-pill|sb-badge|sb-btn|sb-last|sb-ask|sb-q|sb-hg-you|who-you|i-you|v2-badge|v2-kd)\b/;
   const seen = new Set();
   const check = (root, where) => {
     const walk = (e, chain) => {
@@ -56,7 +63,8 @@ test('AC69: on Home, Status, Timeline, Team and Queue, each agents\' gap shows i
   };
   const app = await openSD('#/');
   try {
-    for (const s of ['#/', '#/p/Service-Desk', '#/p/Service-Desk/timeline', '#/p/Service-Desk/team', '#/p/Service-Desk/queue']) {
+    // From stage 1a (AC80): the Queue screen goes; Waiting, with only that project shown, in its place.
+    for (const s of ['#/', '#/p/Service-Desk', '#/p/Service-Desk/timeline', '#/p/Service-Desk/team', '#/waiting/Service-Desk']) {
       await app.go(s);
       await openFolds(app);
       check(app.view, s);
@@ -66,13 +74,21 @@ test('AC69: on Home, Status, Timeline, Team and Queue, each agents\' gap shows i
   }
   for (const w of ['Why not recorded yet · for the agents to add', '<n> sprints · for the agents to file', 'why: not recorded', 'feeds: not tied to a milestone', 'not recorded',
     'Run <k> began · why it went back: not recorded']) assert.ok(seen.has(w), `seen: ${w}`);
-  // The Queue's gaps, on AC52's fixture (Service-Desk has nothing waiting at 3117150).
-  const a = await (await import('./sandbox-fixtures.mjs')).opened(twoProjects(), '#/p/Alpha/queue');
+  // The cards' gaps, in each card's sheet over Waiting (AC80), on AC52's fixture (Service-Desk has nothing waiting at 3117150).
+  const a = await (await import('./sandbox-fixtures.mjs')).opened(twoProjects(), '#/waiting/Alpha');
   try {
-    await openFolds(a, 'ctx');
-    check(a.view, 'Alpha queue');
-    assert.ok(byClass(a.view, 'sb-unb-l').some((x) => x.textContent === 'Unblocks: milestone not recorded'));
-    assert.ok(findAll(a.view, (e) => e.textContent === 'Context: not recorded' && /\bgap\b/.test(e.className || '')).length);
+    const hrefs = byClass(findAll(a.view, (e) => e.dataset && e.dataset.k === 'lane:wait')[0], 'v2-card').map((c) => byClass(c, 'v2-t')[0].attrs.href);
+    assert.ok(hrefs.length >= 4, `${hrefs.length} cards`);
+    let unb = 0;
+    let ctx = 0;
+    for (const h of hrefs) {
+      await a.go(h);
+      await openFolds(a, 'v2-fold');
+      check(a.view, `Alpha: the sheet at ${h}`);
+      unb += byClass(a.view, 'v2-unb-l').filter((x) => x.textContent === 'Unblocks: milestone not recorded').length;
+      ctx += findAll(a.view, (e) => e.textContent === 'Context: not recorded' && /\bgap\b/.test(e.className || '')).length;
+    }
+    assert.ok(unb > 0 && ctx > 0, `${unb} and ${ctx}`);
   } finally {
     a.restore();
   }
@@ -262,7 +278,7 @@ test('AC72: what the row says — matches a passed PR\'s merge (with its sources
   assert.equal(deployCheck(SD3, reading, push).kind, 'cant', 'the verdict\'s blob not yet arrived');
 });
 
-test('AC72: on the page — each waiting deploy\'s row with its words, source and links; a push run and a hand-started one; no row offers an approval of its own', async () => {
+test('AC72 + AC80: on the page — each waiting deploy an "Approve ↗" card, its sheet holding AC72\'s row words, source and links; a push run and a hand-started one; the approval itself stays on GitHub', async () => {
   const r = sdRepo({ extra: { 'reviews/77/reviewer.md': 'Verdict: PASS\n\nMade up for the test (NOT a real record).\n' } });
   const head = r.head();
   // J12's built answer with PR #77's merge commit made the fake repository's head (NOT as GitHub sent it).
@@ -272,35 +288,45 @@ test('AC72: on the page — each waiting deploy\'s row with its words, source an
       headSha: head, title: `deploy ${'e'.repeat(40)} — production` },
     { name: 'desk-deploy', path: '.github/workflows/desk-deploy.yml', status: 'waiting', conclusion: null, event: 'workflow_dispatch', run_number: 8,
       headSha: head, title: 'deploy main — no sha' });
-  const app = await loadSandbox({ config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': r }, hash: '#/p/Service-Desk/queue', now: NOW });
+  // AC80: a deploy to approve is a card in a `deploysNeedOwner` project (J7).
+  const app = await loadSandbox({ config: { ...CONFIG, projects: [{ ...SD3, deploysNeedOwner: true }] }, repos: { 'Service-Desk': r }, hash: '#/waiting/Service-Desk', now: NOW });
   try {
     await app.advance(1000);
     await app.advance(61_000);
     await app.advance(61_000);
-    const rows = byClass(findAll(app.view, (e) => e.dataset && e.dataset.k === 'group:deploys')[0], 'sb-qrow');
-    assert.equal(rows.length, 3);
-    const safe = rows.map((x) => byClass(x, 'sb-safe')[0]);
-    assert.equal(byClass(safe[0], 'sb-safe-l')[0].textContent, "Matches PR #77's merge · Reviewer PASS");
-    assert.deepEqual(linksIn(safe[0]).map((l) => [l.text, l.href]), [['reviews/77/reviewer.md', 'https://github.com/shumpmaster/Service-Desk/blob/main/reviews/77/reviewer.md'],
-      [`the merge commit on main`, `https://github.com/shumpmaster/Service-Desk/commit/${head}`]]);
-    assert.equal(byClass(safe[1], 'sb-safe-l')[0].textContent, "Doesn't match a reviewed pull request: don't approve");
-    assert.equal(byClass(safe[1], 'i-cross').length, 1, 'a ✕ mark, with its words (AC42)');
-    assert.match(safe[1].textContent, /no merge of a passed pull request has this commit/);
-    assert.equal(byClass(safe[2], 'sb-safe-l')[0].textContent, "Can't check this deploy yet");
-    const fold = findAll(safe[2], (e) => e.tag === 'button')[0];
-    await app.tap(fold);
-    assert.match(byClass(rows[2], 'sb-safe')[0].textContent, /the deploy's commit isn't readable from its title/, 'the reason one tap away');
-    for (const row of byClass(findAll(app.view, (e) => e.dataset && e.dataset.k === 'group:deploys')[0], 'sb-qrow')) {
-      assert.doesNotMatch(row.textContent, /\bApprove\b/);
-      assert.ok(findAll(row, (e) => e.tag === 'button').every((b) => b.attrs['aria-expanded'] != null), 'its only buttons are folds');
-      assert.ok(linksIn(row).some((l) => /\/actions\/runs\/\d+$/.test(l.href)), 'the run on GitHub, where the owner approves');
+    const cards = byClass(findAll(app.view, (e) => e.dataset && e.dataset.k === 'lane:wait')[0], 'v2-card').filter((c) => byClass(c, 'v2-kd')[0].textContent === 'Deploy');
+    assert.equal(cards.length, 3);
+    for (const c of cards) {
+      const step = byClass(c, 'v2-step')[0];
+      assert.equal(step.textContent, 'Approve ↗');
+      assert.match(step.attrs.href, /\/actions\/runs\/\d+$/, 'the run on GitHub, where the owner approves');
     }
+    // Each card's sheet: AC72's row words, word for word.
+    const safe = [];
+    for (const c of cards) {
+      await app.go(byClass(c, 'v2-t')[0].attrs.href);
+      safe.push(byClass(byClass(app.view, 'v2-sheet')[0], 'v2-safe')[0]);
+      await app.go('#/waiting/Service-Desk');
+    }
+    const by = (words) => safe.find((x) => byClass(x, 'v2-safe-l')[0].textContent === words);
+    const ok = by("Matches PR #77's merge · Reviewer PASS");
+    assert.ok(ok);
+    assert.deepEqual(linksIn(byClass(ok, 'v2-small')[0]).map((l) => [l.text, l.href]), [['reviews/77/reviewer.md', 'https://github.com/shumpmaster/Service-Desk/blob/main/reviews/77/reviewer.md'],
+      [`the merge commit on main`, `https://github.com/shumpmaster/Service-Desk/commit/${head}`]]);
+    const bad = by("Doesn't match a reviewed pull request: don't approve");
+    assert.ok(bad);
+    assert.equal(findAll(byClass(bad, 'v2-safe-l')[0], (e) => /\bvi-x\b/.test(e.attrs.class || '')).length, 1, 'a ✕ mark, with its words (AC42)');
+    assert.match(bad.textContent, /no merge of a passed pull request has this commit/);
+    const cant = by("Can't check this deploy yet");
+    assert.ok(cant);
+    assert.match(cant.textContent, /the deploy's commit isn't readable from its title/, 'the reason in the sheet');
+    for (const x of safe) assert.ok(linksIn(x).some((l) => /\/actions\/runs\/\d+$/.test(l.href)), 'the run on GitHub, linked');
   } finally {
     app.restore();
   }
 });
 
-test('AC72 (the desk follow-ups, 2026-10-17): a push run titled `deploy <sha>` alone, as from Setup CS14 — its `name` and `display_title` both, as GitHub gives them — reads "deploy <sha>: waiting for approval" with "Matches PR #77\'s merge · Reviewer PASS" under it; a hand-started run keeps `deploy <sha> — <note>`', async () => {
+test('AC72 (the desk follow-ups, 2026-10-17) + AC80: a push run titled `deploy <sha>` alone, as from Setup CS14 — its `name` and `display_title` both, as GitHub gives them — reads "deploy <sha>: waiting for approval" with "Matches PR #77\'s merge · Reviewer PASS" under it, in its card\'s sheet; a hand-started run keeps `deploy <sha> — <note>`', async () => {
   const r = sdRepo({ extra: { 'reviews/77/reviewer.md': 'Verdict: PASS\n\nMade up for the test (NOT a real record).\n' } });
   const head = r.head();
   // J12's built answer with PR #77's merge commit made the fake repository's head (NOT as GitHub sent it).
@@ -310,27 +336,32 @@ test('AC72 (the desk follow-ups, 2026-10-17): a push run titled `deploy <sha>` a
   r.runs.push({ name: `deploy ${head}`, title: `deploy ${head}`, path: '.github/workflows/desk-deploy.yml', status: 'waiting', conclusion: null, event: 'push', run_number: 12 },
     { name: `deploy ${head} — preview redeploy`, title: `deploy ${head} — preview redeploy`, path: '.github/workflows/desk-deploy.yml', status: 'waiting', conclusion: null,
       event: 'workflow_dispatch', run_number: 13, headSha: head });
-  const app = await loadSandbox({ config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': r }, hash: '#/p/Service-Desk/queue', now: NOW });
+  // AC80: a deploy to approve is a card in a `deploysNeedOwner` project (J7).
+  const app = await loadSandbox({ config: { ...CONFIG, projects: [{ ...SD3, deploysNeedOwner: true }] }, repos: { 'Service-Desk': r }, hash: '#/waiting/Service-Desk', now: NOW });
   try {
     await app.advance(1000);
     await app.advance(61_000);
     await app.advance(61_000);
-    const group = findAll(app.view, (e) => e.dataset && e.dataset.k === 'group:deploys')[0];
-    const rows = byClass(group, 'sb-qrow');
-    assert.equal(rows.length, 2);
-    const push = rows.find((x) => x.textContent.includes('run 12'));
-    const hand = rows.find((x) => x.textContent.includes('run 13'));
-    assert.ok(push.textContent.includes(`deploy ${head}: waiting for approval`), push.textContent);
-    assert.ok(!/ — /.test(push.textContent.split(': waiting for approval')[0]), 'the push run\'s title is `deploy <sha>` alone');
-    assert.ok(linksIn(push).some((l) => /\/actions\/runs\/\d+$/.test(l.href)), 'linked to the run');
-    const safe = byClass(push, 'sb-safe')[0];
-    assert.equal(byClass(safe, 'sb-safe-l')[0].textContent, "Matches PR #77's merge · Reviewer PASS");
-    assert.deepEqual(linksIn(safe).map((l) => [l.text, l.href]), [['reviews/77/reviewer.md', 'https://github.com/shumpmaster/Service-Desk/blob/main/reviews/77/reviewer.md'],
+    const cards = byClass(findAll(app.view, (e) => e.dataset && e.dataset.k === 'lane:wait')[0], 'v2-card').filter((c) => byClass(c, 'v2-kd')[0].textContent === 'Deploy');
+    assert.equal(cards.length, 2);
+    const sheets = [];
+    for (const c of cards) {
+      await app.go(byClass(c, 'v2-t')[0].attrs.href);
+      sheets.push(byClass(byClass(app.view, 'v2-sheet')[0], 'v2-safe')[0]);
+      await app.go('#/waiting/Service-Desk');
+    }
+    const push = sheets.find((x) => x.textContent.includes('run 12'));
+    const hand = sheets.find((x) => x.textContent.includes('run 13'));
+    const line = (x) => byClass(x, 'v2-deploy-l')[0].textContent;
+    assert.ok(line(push).startsWith(`deploy ${head}: waiting for approval`), line(push));
+    assert.ok(!/ — /.test(line(push).split(': waiting for approval')[0]), 'the push run\'s title is `deploy <sha>` alone');
+    assert.ok(linksIn(byClass(push, 'v2-deploy-l')[0]).some((l) => /\/actions\/runs\/\d+$/.test(l.href)), 'linked to the run');
+    assert.equal(byClass(push, 'v2-safe-l')[0].textContent, "Matches PR #77's merge · Reviewer PASS");
+    assert.deepEqual(linksIn(byClass(push, 'v2-small')[0]).map((l) => [l.text, l.href]), [['reviews/77/reviewer.md', 'https://github.com/shumpmaster/Service-Desk/blob/main/reviews/77/reviewer.md'],
       ['the merge commit on main', `https://github.com/shumpmaster/Service-Desk/commit/${head}`]]);
     // The hand-started run keeps its note; its commit is read from that title (AC72's parse).
-    assert.ok(hand.textContent.includes(`deploy ${head} — preview redeploy: waiting for approval`), hand.textContent);
-    assert.equal(byClass(byClass(hand, 'sb-safe')[0], 'sb-safe-l')[0].textContent, "Matches PR #77's merge · Reviewer PASS");
-    for (const row of rows) assert.doesNotMatch(row.textContent, /\bApprove\b/, 'no row offers an approval of its own');
+    assert.ok(line(hand).startsWith(`deploy ${head} — preview redeploy: waiting for approval`), line(hand));
+    assert.equal(byClass(hand, 'v2-safe-l')[0].textContent, "Matches PR #77's merge · Reviewer PASS");
   } finally {
     app.restore();
   }

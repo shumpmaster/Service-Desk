@@ -193,41 +193,58 @@ test('AC60 (asks-merge): a merge J12 has not read (no yes or no) is shown as a l
 // ---------------------------------------------------------------------------
 // AC66: "Done today" as a job's merge leaves the queue
 
-test('AC66 (asks-merge): a job\'s merge leaving the queue — "no longer open" with "sprint: not recorded" before J12 reads it, then "not on the Timeline: merged by the automatic job"; the answer it carried keeps its own row and link; one not the job\'s links to its sprint; a plan-listed job\'s merge links under MD3', async () => {
+test('AC66 (asks-merge) + AC80: a job\'s merge leaving the board — its Done row\'s sheet reads "sprint: not recorded" before J12 reads it, then "not on the Timeline: merged by the automatic job"; the answer it carried keeps its own row and link; one not the job\'s links to its sprint; a plan-listed job\'s merge links under MD3', async () => {
   const before = answerOf(pullNodes());
   const repo = sdRepo({ answer: before, extra: { 'docs/PROJECT.md': listing([959]) } });
   repo.pulls.push(pr(84, 'Chief of Staff session line', { head: 'cos/session-012RJ-start-2' }), pr(951, 'A made-up merge quoting the trailer mid-text', { head: 'cos/made-up-951' }),
     pr(959, 'A made-up job merge a plan line lists', { head: 'cos/made-up-959' }));
-  const page = await loadSandbox({ config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': repo }, hash: '#/p/Service-Desk/queue', now: NOW });
-  const rowOf = (codeText) => byClass(keyed(page, 'done-today'), 'sb-done-r').find((x) => byClass(x, 'code').some((c) => c.textContent === codeText));
-  const tl = (x) => linksIn(x).find((l) => l.text === 'On the Timeline');
+  const page = await loadSandbox({ config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': repo }, hash: '#/waiting/Service-Desk', now: NOW });
+  // From stage 1a (AC80): the board's Done lane in place of "Done today"; a row's small sheet carries
+  // AC66's link or words. Each read opens the row's sheet and closes it, so the next opening shows the latest.
+  const sheetOfRow = async (codeText) => {
+    const back = '#/waiting/Service-Desk';
+    await page.go(back);
+    // Each project's Done group shows its newest three rows, the rest behind "<n> more".
+    const more = keyed(page, 'more:Service-Desk');
+    if (more && more.attrs['aria-expanded'] === 'false') await page.tap(more);
+    const row = byClass(keyed(page, 'lane:done'), 'v2-drow').find((x) => byClass(x, 'v2-dc').some((c) => c.textContent === codeText));
+    assert.ok(row, `a Done row for ${codeText}`);
+    await page.go(byClass(row, 'v2-dt')[0].attrs.href);
+    const sheet = byClass(page.view, 'v2-sheet')[0];
+    const out = { text: sheet.textContent, tl: linksIn(sheet).find((l) => l.text === 'On the Timeline') };
+    await page.go(back);
+    return out;
+  };
   try {
     await page.advance(1000);
     await page.advance(POLL_MS);
-    assert.ok(keyed(page, 'qrow:pr:84'), 'while open: in the Queue as any pull request');
+    assert.ok(byClass(keyed(page, 'lane:wait'), 'v2-card').some((c) => c.textContent.includes('Chief of Staff session line')), 'while open: a card on the board as any pull request');
     // Merged: gone from J1's open list, and the answer it carried on the default branch; J12 has not read it yet.
     repo.pulls = repo.pulls.filter((x) => ![84, 951, 959].includes(x.number));
     repo.commit({ 'decisions/questions/P-001-asks-merge-on-desk.md': readFileSync(join(FIX, 's033', 'decisions', 'questions', 'P-001-asks-merge-on-desk.md'), 'utf8') });
     repo.history['decisions/questions/P-001-asks-merge-on-desk.md'] = [{ commit: { committer: { date: new Date(page.now).toISOString() } } }];
     await page.advance(POLL_MS);
     await page.advance(POLL_MS);
-    assert.match(rowOf('PR #84').textContent, /no longer open, time not recorded · sprint: not recorded$/, 'before J12 has read it');
-    assert.equal(tl(rowOf('PR #84')), undefined);
+    let r = await sheetOfRow('#84');
+    assert.match(r.text, /#84 · sprint: not recorded/, 'before J12 has read it');
+    assert.equal(r.tl, undefined);
     // A plan-listed one's sprint is on the Timeline already, shown as a listed pull request J12 lacks: its row links there.
-    assert.match(tl(rowOf('PR #959')).href, /^#\/p\/Service-Desk\/timeline\/sprint\//);
-    assert.equal(tl(rowOf('P-001-asks-merge-on-desk')).href, '#/p/Service-Desk/timeline/ms/MD2', 'the answer it carried: its own row and link');
+    assert.match((await sheetOfRow('#959')).tl.href, /^#\/p\/Service-Desk\/timeline\/sprint\//);
+    assert.equal((await sheetOfRow('P-001-asks-merge-on-desk')).tl.href, '#/p/Service-Desk/timeline/ms/MD2', 'the answer it carried: its own row and link');
     // J12 reads the merges on the next head change.
     repo.pullsAnswer = both();
     repo.commit({ 'a-later-commit.txt': 'x' });
     await page.advance(POLL_MS);
     await page.advance(POLL_MS);
-    assert.match(rowOf('PR #84').textContent, /no longer open, time not recorded · not on the Timeline: merged by the automatic job$/);
-    assert.equal(tl(rowOf('PR #84')), undefined, 'no Timeline link');
-    assert.match(tl(rowOf('PR #951')).href, /^#\/p\/Service-Desk\/timeline\/sprint\/PR(%20| )(%23|#)951$/, 'not the job\'s: links to its sprint as before');
-    assert.match(tl(rowOf('PR #959')).href, /^#\/p\/Service-Desk\/timeline\/sprint\//, 'a plan-listed job\'s merge: the plan wins');
-    assert.equal(tl(rowOf('P-001-asks-merge-on-desk')).href, '#/p/Service-Desk/timeline/ms/MD2', 'still its own row and link');
+    r = await sheetOfRow('#84');
+    assert.match(r.text, /#84 · not on the Timeline: merged by the automatic job/);
+    assert.equal(r.tl, undefined, 'no Timeline link');
+    assert.match((await sheetOfRow('#951')).tl.href, /^#\/p\/Service-Desk\/timeline\/sprint\/PR(%20| )(%23|#)951$/, 'not the job\'s: links to its sprint as before');
+    const listed = (await sheetOfRow('#959')).tl.href;
+    assert.match(listed, /^#\/p\/Service-Desk\/timeline\/sprint\//, 'a plan-listed job\'s merge: the plan wins');
+    assert.equal((await sheetOfRow('P-001-asks-merge-on-desk')).tl.href, '#/p/Service-Desk/timeline/ms/MD2', 'still its own row and link');
     // The plan-listed one's link opens its sprint under MD3.
-    await page.go(tl(rowOf('PR #959')).href);
+    await page.go(listed);
     assert.equal(keyed(page, 'fold:sprints:Design-i2:MD3').attrs['aria-expanded'], 'true');
   } finally {
     page.restore();

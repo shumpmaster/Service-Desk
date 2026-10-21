@@ -1,0 +1,502 @@
+[
+{
+"sha": "4817fa628467c4c065833c3ea9420150ff12f1d8",
+"filename": "docs/design/mockups/work-ahead-home/README.md",
+"status": "added"
+},
+{
+"sha": "4d4f5326160dc9b4a89a9fdbecec579f7fc06d86",
+"filename": "docs/design/mockups/work-ahead-home/home-today-414.png",
+"status": "added"
+},
+{
+"sha": "6872aba392028dc985a02d2bd28a6c3a70f05c16",
+"filename": "docs/design/mockups/work-ahead-home/home-with-work-ahead-414.png",
+"status": "added"
+},
+{
+"sha": "a97f06a700a3f2f3f54be44efbcf00c490cb946d",
+"filename": "docs/design/mockups/work-ahead.html",
+"status": "added"
+},
+{
+"sha": "482e984a467a59116741113b96ef2e7c8e2c6ede",
+"filename": "docs/design/references/owner-workflow-2026-10-19.md",
+"status": "added"
+},
+{
+"sha": "50f615f9a2672bfc6d0f72ff245849fd8d43e574",
+"filename": "reviews/128/owner.md",
+"status": "added"
+},
+{
+"sha": "87c309e7b7c77a296b394571d53ea44de76a02ff",
+"filename": "reviews/128/reviewer.md",
+"status": "added"
+},
+{
+"sha": "acb112b4fd23deed6b75bb4249cce2ab249b1568",
+"filename": "reviews/S-001-m3a/_build-review-round1-verbatim.md",
+"status": "added"
+},
+{
+"sha": "b5f67e27179e876acb9423c885cf5ae9976dd3e9",
+"filename": "reviews/S-001-m3a/_build-review-round2-verbatim.md",
+"status": "added"
+},
+{
+"sha": "4365a87808bffc200c993eda8424dc57d44cc02e",
+"filename": "reviews/S-001-m3a/_critic-round1-verbatim.md",
+"status": "added"
+},
+{
+"sha": "730bbf26142d81a3a97b6bd8228522994de90851",
+"filename": "reviews/S-001-m3a/_critic-round2-verbatim.md",
+"status": "added"
+},
+{
+"sha": "9466b4bd7f661b0548624c656b2d1b2dc41bd6c7",
+"filename": "reviews/S-001-m3a/_critic-round3-verbatim.md",
+"status": "added"
+},
+{
+"sha": "77535d4ff813488be3ad1138458c72f3a5d3fffd",
+"filename": "reviews/S-001-m3a/_plan-review-round1-verbatim.md",
+"status": "added"
+},
+{
+"sha": "efdffd9688aa1071700d8100077bf1a175997a24",
+"filename": "reviews/S-001-m3a/_plan-review-round2-verbatim.md",
+"status": "added"
+},
+{
+"sha": "af538c12b056c9aa0ce5ba4c493b63c7ea5c6749",
+"filename": "reviews/S-001-m3a/_plan-review-round3-verbatim.md",
+"status": "added"
+},
+{
+"sha": "f2e388a2aee75bf7efb3fab813b1ae7efffcdbf7",
+"filename": "specs/S-001.md",
+"status": "modified"
+},
+{
+"sha": "ec907ec234d9aebf552ca929a21f4192df49e94b",
+"filename": "src/lib/configcheck.js",
+"status": "modified"
+},
+{
+"sha": "53c5f57bf994726c93d9e9ab63a02d330bcd3305",
+"filename": "src/lib/feed.js",
+"status": "modified"
+},
+{
+"sha": "1cea9ad34322d07a3afdf71caf5dd6207a7ba2cb",
+"filename": "src/lib/github.js",
+"status": "modified"
+},
+{
+"sha": "5c683ef34a514da1f4cedadbca27cbbf0253fdae",
+"filename": "src/lib/model.js",
+"status": "modified"
+},
+{
+"sha": "0061af66ea87000caabefc69590679073baf7083",
+"filename": "src/lib/pulls.js",
+"status": "modified"
+},
+{
+"sha": "1f2566f5a0b323278ac7bab0d684a105d9696a83",
+"filename": "src/lib/workahead.js",
+"status": "added"
+},
+{
+"sha": "5642374b393bc0bd8c11bd3f4a69de85b879be39",
+"filename": "src/lib/workview.js",
+"status": "added"
+},
+{
+"sha": "53c5f57bf994726c93d9e9ab63a02d330bcd3305",
+"filename": "src/public/lib/feed.js",
+"status": "modified"
+},
+{
+"sha": "5c683ef34a514da1f4cedadbca27cbbf0253fdae",
+"filename": "src/public/lib/model.js",
+"status": "modified"
+},
+{
+"sha": "0061af66ea87000caabefc69590679073baf7083",
+"filename": "src/public/lib/pulls.js",
+"status": "modified"
+},
+{
+"sha": "1f2566f5a0b323278ac7bab0d684a105d9696a83",
+"filename": "src/public/lib/workahead.js",
+"status": "added"
+},
+{
+"sha": "5642374b393bc0bd8c11bd3f4a69de85b879be39",
+"filename": "src/public/lib/workview.js",
+"status": "added"
+},
+{
+"sha": "11013617ce63aa10db5a9325725707532cf3f513",
+"filename": "src/public/sandbox.css",
+"status": "modified"
+},
+{
+"sha": "64b48215c701cf6b67f2f197d5ab00fe9ff70572",
+"filename": "src/public/sandbox.js",
+"status": "modified"
+},
+{
+"sha": "e84e8bf874222b148e364a86da0129175cc8646a",
+"filename": "src/tools/build.mjs",
+"status": "modified"
+},
+{
+"sha": "8ceae374bfef6bb59e4773504b28816d415fa654",
+"filename": "tests/desk/ac24-work-ahead.test.mjs",
+"status": "added"
+},
+{
+"sha": "dbec9646041e1a13523ea4d89e34673ba7ff2903",
+"filename": "tests/desk/fixtures/README.md",
+"status": "modified"
+},
+{
+"sha": "d0512c61675fb3c6872afacc005b0f2a0e5a0985",
+"filename": "tests/desk/fixtures/github/j12-pulls-built.json",
+"status": "modified"
+},
+{
+"sha": "76793124a726658f8503cdd01cd797119b605579",
+"filename": "tests/desk/fixtures/j11-77bfeae/.github/workflows/orchestrator.yml",
+"status": "added"
+},
+{
+"sha": "2c3507828a1c60261dca8319df45ed74d4208523",
+"filename": "tests/desk/fixtures/j11-77bfeae/README.md",
+"status": "added"
+},
+{
+"sha": "04b7990143be053f168b5a1c02a32e0949a3e86f",
+"filename": "tests/desk/fixtures/j11-77bfeae/dispatch-log/2026-10.jsonl",
+"status": "added"
+},
+{
+"sha": "d623013596c6f6d4edb47353616531a7d8fce89f",
+"filename": "tests/desk/fixtures/j11-77bfeae/docs/PROJECT.md",
+"status": "added"
+},
+{
+"sha": "867b79e8824be0da4c945c3783c23cb451449d65",
+"filename": "tests/desk/fixtures/j11-77bfeae/governance/SURFACES.md",
+"status": "added"
+},
+{
+"sha": "3a69a259c006a1849e4aea7d022444e383b52056",
+"filename": "tests/desk/fixtures/j11-77bfeae/intake/requests/P-001.toml",
+"status": "added"
+},
+{
+"sha": "9886521dff15ba7e58302ce91a9286213bd94990",
+"filename": "tests/desk/fixtures/j11-77bfeae/intake/requests/Q-001.toml",
+"status": "added"
+},
+{
+"sha": "dd2cb95ed9db678320d90a4683faef3faf244faa",
+"filename": "tests/desk/fixtures/j11-77bfeae/intake/requests/Q-002.toml",
+"status": "added"
+},
+{
+"sha": "f0151e81671ba15cef768e5a5e14d9ecb2498c3d",
+"filename": "tests/desk/fixtures/j11-77bfeae/intake/requests/Q-003.toml",
+"status": "added"
+},
+{
+"sha": "6f1b907d73243d1cba06586e710f3e3f5b071cff",
+"filename": "tests/desk/fixtures/j11-77bfeae/intake/requests/Q-004.toml",
+"status": "added"
+},
+{
+"sha": "b7cad06b3d0afb0a64ebcfe2d4cdae9f234f19f7",
+"filename": "tests/desk/fixtures/j11-77bfeae/intake/requests/Q-005.toml",
+"status": "added"
+},
+{
+"sha": "f7b057b61ce4ba10bf1b190835b3f70ecece0e52",
+"filename": "tests/desk/fixtures/j11-77bfeae/intake/requests/Q-006.toml",
+"status": "added"
+},
+{
+"sha": "61b275b8fc871f4d0db84d19c9bb3b2c998dbded",
+"filename": "tests/desk/fixtures/j11-77bfeae/intake/requests/Q-007.toml",
+"status": "added"
+},
+{
+"sha": "ae10f6fdc6cfba4f44988b23d01b5473c45c147f",
+"filename": "tests/desk/fixtures/j11-77bfeae/intake/requests/Q-008.toml",
+"status": "added"
+},
+{
+"sha": "1d875e47c88074ae54974792894a60fe143b4595",
+"filename": "tests/desk/fixtures/j11-77bfeae/intake/requests/Q-009.toml",
+"status": "added"
+},
+{
+"sha": "bec0859348ab8c0f1fea4d4683d601f908bfbaaa",
+"filename": "tests/desk/fixtures/j11-77bfeae/intake/requests/Q-010.toml",
+"status": "added"
+},
+{
+"sha": "569cb1ba446b293f8a672db41a07fd72e5147fc6",
+"filename": "tests/desk/fixtures/j11-77bfeae/intake/requests/Q-011.toml",
+"status": "added"
+},
+{
+"sha": "f9245e61a98835d2dd58e7110d4dfe14eb63d454",
+"filename": "tests/desk/fixtures/j11-77bfeae/intake/requests/Q-012.toml",
+"status": "added"
+},
+{
+"sha": "4868528809f4cd5edae2c5657423fa75571a274f",
+"filename": "tests/desk/fixtures/j11-77bfeae/intake/requests/Q-013.toml",
+"status": "added"
+},
+{
+"sha": "d12512cca11bfa2f13b8b5d61818bb046150506d",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/10/owner.md",
+"status": "added"
+},
+{
+"sha": "62da218827978e916aa0561582d6aa184f87e5aa",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/10/reviewer.md",
+"status": "added"
+},
+{
+"sha": "ecfadabdc64fcc24138be8991241d1abfd798289",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/11/owner.md",
+"status": "added"
+},
+{
+"sha": "36034b530eaedb42e0230fe66fb6034e4809aaa8",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/11/reviewer.md",
+"status": "added"
+},
+{
+"sha": "ff339a077b8e3d01f9d6796425068d6edefd6820",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/14/owner.md",
+"status": "added"
+},
+{
+"sha": "df278edbcdb7ce6673edb238b0c7efca26fa974c",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/14/reviewer.md",
+"status": "added"
+},
+{
+"sha": "0cab27dbe9a0f54404e3dc512832416fa2d4cedc",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/18/owner.md",
+"status": "added"
+},
+{
+"sha": "e55411ca15e0e9e08fe25d57a7c85ef929905d4d",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/18/reviewer.md",
+"status": "added"
+},
+{
+"sha": "b0d95f84c2c35125a6d0d31981e8edef2f91e7b1",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/27/owner.md",
+"status": "added"
+},
+{
+"sha": "c2c0108ef13f334de8b1bf0a4720d2ce7b3b24d0",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/27/reviewer.md",
+"status": "added"
+},
+{
+"sha": "d186c944be88879d99a48d20e8908d21401e1479",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/32/owner.md",
+"status": "added"
+},
+{
+"sha": "b26b8593c70b29c8c9a3c86716711e3a9b7d5783",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/32/reviewer.md",
+"status": "added"
+},
+{
+"sha": "420af20fae8f1cfdb1f12c7188df80fa7dfbb98b",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/37/owner.md",
+"status": "added"
+},
+{
+"sha": "fd81bc23b2f34d6ff361d2470f915d480bcb9c6d",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/37/reviewer.md",
+"status": "added"
+},
+{
+"sha": "9efeff4e9b6a9f28b41052c70763f001b2c86772",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/40/owner.md",
+"status": "added"
+},
+{
+"sha": "be9b5106b3e0e1ac647c639051cf2bdbea6e6d51",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/40/reviewer.md",
+"status": "added"
+},
+{
+"sha": "d9be8e40e728ef1328b5e8018fcfa864ac1b3434",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/41/reviewer.md",
+"status": "added"
+},
+{
+"sha": "f61220340832c9ba8fdfbfe68fe545fc038e02af",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/44/owner.md",
+"status": "added"
+},
+{
+"sha": "6a50b6e0edfec48d5059d8ffeaaf79e59cdbc7f7",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/44/reviewer.md",
+"status": "added"
+},
+{
+"sha": "f13ae2c7e5cf1658c6e82cd7da88c5d673bfa5a4",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/48/owner.md",
+"status": "added"
+},
+{
+"sha": "36df46ca6aae7722fd89014b9bee83aa2c9073e1",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/48/reviewer.md",
+"status": "added"
+},
+{
+"sha": "7713a3bfd8e49981d16f1b97688b827cc0f6b3d0",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/49/reviewer.md",
+"status": "added"
+},
+{
+"sha": "b34bf434e144f76d39dd757cb9bf5f6dbfbea55f",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/5/owner.md",
+"status": "added"
+},
+{
+"sha": "c858e991fc6f073bf9eb7b811a2b43a045a4736e",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/5/reviewer.md",
+"status": "added"
+},
+{
+"sha": "fd0cbf7d9a27e04302d7e407c5b743155099d78f",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/52/owner.md",
+"status": "added"
+},
+{
+"sha": "abb3e71773bdfd11c496cb63e110905b0c83a926",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/52/reviewer.md",
+"status": "added"
+},
+{
+"sha": "6178f34ff66622c3bbd0f48ba77fa9b1bd46ca59",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/54/reviewer.md",
+"status": "added"
+},
+{
+"sha": "9b3d07a68ac5059d9e1c818bc7353cf7290fa6c4",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/56/owner.md",
+"status": "added"
+},
+{
+"sha": "036788caac4b65e08349e668f2594f3f26b54a03",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/56/reviewer.md",
+"status": "added"
+},
+{
+"sha": "b62f681f9f83d0275308e626f2ae287178d470e7",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/6/owner.md",
+"status": "added"
+},
+{
+"sha": "52242fba362f8959759a083abae7988c4dedb0b5",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/6/reviewer.md",
+"status": "added"
+},
+{
+"sha": "f8560a2add4c89c61b696e2b978e5040a99b6b1d",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/63/owner.md",
+"status": "added"
+},
+{
+"sha": "408153f7414a51537199d9e9d4044eeaf0685e9b",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/63/reviewer.md",
+"status": "added"
+},
+{
+"sha": "be5109bc700e2c70907d436172d8c96ac4d72647",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/70/reviewer.md",
+"status": "added"
+},
+{
+"sha": "cb239a20295a61f892ff1b8091ac23cdffd33086",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/72/reviewer.md",
+"status": "added"
+},
+{
+"sha": "d8acd4619a57a8103caca9f3397203690b108d3e",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/74/reviewer.md",
+"status": "added"
+},
+{
+"sha": "19203d66037b0ec12a6b86cb73df0ceacb327f87",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/75/reviewer.md",
+"status": "added"
+},
+{
+"sha": "4c689bad4a4337800a4192f2a3db40bf2b3d4022",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/77/reviewer.md",
+"status": "added"
+},
+{
+"sha": "d0189e12c53ac46ddbcf1c115f33eda3a9b54c48",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/78/owner.md",
+"status": "added"
+},
+{
+"sha": "b22fcf45323d3e35ee98d57d46c9dc0672ef8c96",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/78/reviewer.md",
+"status": "added"
+},
+{
+"sha": "d0189e12c53ac46ddbcf1c115f33eda3a9b54c48",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/79/owner.md",
+"status": "added"
+},
+{
+"sha": "28e7688ee9d9bcd70ea302d11a0f8932d7f2db81",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/79/reviewer.md",
+"status": "added"
+},
+{
+"sha": "d0189e12c53ac46ddbcf1c115f33eda3a9b54c48",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/80/owner.md",
+"status": "added"
+},
+{
+"sha": "0183e3d6ee93542b1aeee93725a1fad78b123e06",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/80/reviewer.md",
+"status": "added"
+},
+{
+"sha": "d0189e12c53ac46ddbcf1c115f33eda3a9b54c48",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/81/owner.md",
+"status": "added"
+},
+{
+"sha": "12c0f25a41e91410626812f1f192c1433edac4c3",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/81/reviewer.md",
+"status": "added"
+},
+{
+"sha": "d0189e12c53ac46ddbcf1c115f33eda3a9b54c48",
+"filename": "tests/desk/fixtures/j11-77bfeae/reviews/89/owner.md",
+"status": "added"
+}
+]

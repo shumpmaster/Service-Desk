@@ -1,0 +1,17 @@
+{
+ "state": "success",
+ "sha": "d1d964bac673f079df3b4c2fd35b853cd8813809",
+ "total_count": 2,
+ "statuses": [
+  {
+   "context": "owner-verdict",
+   "state": "success",
+   "description": "Owner approved"
+  },
+  {
+   "context": "owner-questions",
+   "state": "success",
+   "description": "No open questions"
+  }
+ ]
+}

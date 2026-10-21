@@ -133,53 +133,56 @@ async function openSheet(files, hash) {
   await app.advance(1000);
   return app;
 }
-const finalBox = (app) => findAll(app.view, (e) => e.tag === 'textarea' && /^box:/.test(e.dataset.k || ''))[0];
-const words = (app, n) => findAll(app.view, (e) => e.tag === 'textarea' && new RegExp(`^words:.*:${n}$`).test(e.dataset.k || ''))[0];
+// From stage 1a (AC80): the card's sheet over Waiting. Each answer button opens a fully filled-in
+// file; the owner's words go into each file from the sheet's box (AC85's box, one per question for a
+// numbered one); no rule line.
+const sheet = (app) => byClass(app.view, 'v2-sheet')[0];
+const words = (app, n) => findAll(sheet(app), (e) => e.tag === 'textarea' && new RegExp(`^words:.*#${n}$`).test(e.dataset.k || ''))[0];
 const type = (ta, text) => { ta.value = text; ta.dispatch('input', { target: ta }); };
+/** The file a sheet's button opens: its `value`, decoded. */
+const fileOf = (app, label) => {
+  const a = byClass(sheet(app), 'v2-abtn').find((x) => x.textContent === label);
+  assert.ok(a, `a button "${label}"`);
+  return decodeURIComponent(/&value=([^&]*)$/.exec(a.attrs.href)[1]);
+};
 
-test('AC53 (note 15), on the page: a card\'s question from its "## 1. The decision" section, its option words as choices, the recommendation labelled and not picked, and a text box', async () => {
+test('AC53 (note 15) + AC80, on the page: a card\'s question from its "## 1. The decision" section, one button per option word, the recommendation labelled and not picked, and a text box whose words go into each file', async () => {
   const app = await openSheet({ 'queue/P-001-stop-6.md': fixture('service-desk/queue/P-001-stop-6.md') }, '#/p/Alpha/queue/card%3Aqueue%2FP-001-stop-6.md');
   try {
-    const qsec = byClass(app.view, 'sb-q');
-    assert.equal(qsec.length, 1, 'one question for a card');
-    assert.equal(byClass(qsec[0], 'sb-q-t')[0].textContent, 'The work reached the stop rule. What happens next?');
-    const chips = byClass(qsec[0], 'sb-chip');
-    assert.deepEqual(chips.map((c) => c.textContent), ['re-specify', 'criteria-wrong', 'confirm', 're-scope', 'drop']);
-    assert.ok(chips.every((c) => c.attrs['aria-checked'] === 'false'), 'nothing picked');
-    assert.match(byClass(qsec[0], 'sb-rec')[0].textContent, /^Recommended The Chief of Staff's part/);
+    assert.equal(byClass(sheet(app), 'v2-lead')[0].textContent, 'The work reached the stop rule. What happens next?');
+    const btns = byClass(sheet(app), 'v2-abtn').filter((x) => x.tag === 'a');
+    assert.deepEqual(btns.map((c) => c.textContent), ['Answer: re-specify ↗', 'Answer: criteria-wrong ↗', 'Answer: confirm ↗', 'Answer: re-scope ↗', 'Answer: drop ↗']);
+    assert.equal(findAll(sheet(app), (e) => e.attrs['aria-checked'] === 'true').length, 0, 'nothing picked');
+    assert.match(sheet(app).textContent, /Recommended The Chief of Staff's part/);
     assert.ok(words(app, 1), 'its own text box');
-    chips[3].click();
-    await app.flush();
+    assert.equal(fileOf(app, 'Answer: re-scope ↗'), 'Decision: re-scope\n\n', 'with the box empty, exactly AC80\'s file');
     type(words(app, 1), 'Go the lighter way.');
     await app.flush();
-    assert.equal(finalBox(app).value, 'Decision: re-scope\n\nGo the lighter way.\n');
-    assert.match(byClass(app.view, 'sb-rule')[0].textContent, /In form: line 1 is "Decision: re-scope"/);
+    assert.equal(fileOf(app, 'Answer: re-scope ↗'), 'Decision: re-scope\n\nGo the lighter way.\n');
+    assert.equal(byClass(app.view, 'sb-rule').length, 0, 'no rule line on the board');
   } finally {
     app.restore();
   }
 });
 
-test('AC53 (note 15), on the page: the numbered question file shows eleven question-and-answer pairs, none picked, and prefills the ruling as the owner types', async () => {
+test('AC53 (note 15) + AC80, on the page: the numbered question file shows eleven question-and-answer pairs, each its box, none picked, and one "Answer ↗" whose ruling follows the boxes', async () => {
   const app = await openSheet({ 'questions/P-001-design-lab-open.md': LAB }, '#/p/Alpha/queue/q%3AP-001-design-lab-open');
   try {
-    const qsec = byClass(app.view, 'sb-q');
-    assert.equal(qsec.length, 11);
-    qsec.forEach((q, i) => {
-      assert.equal(findAll(q, (e) => e.tag === 'h3')[0].textContent, `Question ${i + 1}`);
-      assert.equal(byClass(q, 'sb-chip').length, 0);
-      assert.match(byClass(q, 'sb-rec')[0].textContent, /^Recommended /);
+    const opts = byClass(sheet(app), 'v2-opt');
+    assert.equal(opts.length, 11);
+    opts.forEach((q, i) => {
+      assert.match(byClass(q, 'v2-ol')[0].textContent, new RegExp(`^${i + 1}\\. `));
+      assert.match(byClass(q, 'v2-od')[0].textContent, /^Recommended /);
+      assert.ok(words(app, i + 1), `question ${i + 1}: its own box`);
     });
-    assert.match(byClass(qsec[10], 'sb-rec')[0].textContent, /^Recommended yes, Active/);
-    assert.match(finalBox(app).value, /^Ruling: \n\nQuestion: questions\/P-001-design-lab-open\.md\n\nQuestions, as put:\n {2}1\. /, 'nothing prefilled from the recommendations');
+    assert.match(byClass(opts[10], 'v2-od')[0].textContent, /^Recommended yes, Active/);
+    assert.match(fileOf(app, 'Answer ↗'), /^Ruling: \n\nQuestion: questions\/P-001-design-lab-open\.md\n\nQuestions, as put:\n {2}1\. /, 'nothing prefilled from the recommendations');
     type(words(app, 1), 'leave deferred');
     type(words(app, 4), 'a;\nb');
     await app.flush();
-    assert.equal(finalBox(app).value.split('\n')[0], 'Ruling: 1 leave deferred; 4 a, b');
-    const rule = byClass(app.view, 'sb-rule')[0].textContent;
-    assert.match(rule, /No answer yet for 2, 3, 5, 6, 7, 8, 9, 10 and 11\./);
-    assert.match(rule, /Answer 4 joined into one line/);
-    assert.equal(byClass(app.view, 'sb-go').length, 1, 'the button stays available');
-    assert.match(byClass(app.view, 'sb-go')[0].attrs.href, /^https:\/\/github\.com\/shumpmaster\/Alpha\/new\/main\?filename=decisions%2Fquestions%2FP-001-design-lab-open\.md&value=Ruling%3A%201%20leave%20deferred%3B%204%20a%2C%20b%0A/);
+    assert.equal(fileOf(app, 'Answer ↗').split('\n')[0], 'Ruling: 1 leave deferred; 4 a, b');
+    assert.equal(byClass(sheet(app), 'v2-abtn').filter((x) => x.textContent === 'Answer ↗').length, 1, 'one button');
+    assert.match(byClass(sheet(app), 'v2-abtn').find((x) => x.textContent === 'Answer ↗').attrs.href, /^https:\/\/github\.com\/shumpmaster\/Alpha\/new\/main\?filename=decisions%2Fquestions%2FP-001-design-lab-open\.md&value=Ruling%3A%201%20leave%20deferred%3B%204%20a%2C%20b%0A/);
   } finally {
     app.restore();
   }
@@ -200,82 +203,69 @@ RECOMMENDATION: A. The full suite passed on the reviewer's prototype.
 RISK CLASS: R0
 `;
 
-test('AC53 (owner\'s note, 16 Oct): each lettered choice holds its letter as its own element, set apart from its text, and its name has a space between them', async () => {
+test('AC53 (owner\'s note, 16 Oct) + AC80: each lettered choice holds its letter as its own element, set apart from its words by a real space, each in its own box with room', async () => {
   const app = await openSheet({ 'questions/P-001-long-choices.md': LONG }, '#/p/Alpha/queue/q%3AP-001-long-choices');
   try {
-    const group = byClass(app.view, 'sb-chips')[0];
-    assert.ok(byClass(app.view, 'sb-choices')[0] === group, 'the lettered choices take the stacked, full-width layout');
-    const chips = byClass(group, 'sb-chip');
-    assert.equal(chips.length, 3);
-    const opts = questionQuestions(LONG, 'approve S-031, so the false red check on working branches is fixed').questions[0].choices;
-    chips.forEach((c, i) => {
-      const parts = c.children.filter((e) => e.tag);
-      assert.deepEqual(parts.map((e) => e.attrs.class), ['sb-choice-l', 'sb-vh', 'sb-choice-t'], 'letter, a hidden space, then the text: three elements');
-      assert.equal(parts[0].textContent, opts[i].value, 'the letter alone in its element');
-      assert.equal(parts[1].textContent, ' ', 'a real space, kept out of sight');
-      assert.equal(parts[2].textContent, opts[i].text, 'the words exactly as in the file');
-      assert.equal(c.textContent, `${opts[i].value} ${opts[i].text}`, 'its accessible name: the letter, a space, the text');
-      assert.doesNotMatch(c.textContent, /^[A-Z]\S/, 'never "CDrop it"');
+    const opts = byClass(sheet(app), 'v2-opt');
+    assert.equal(opts.length, 3);
+    const choices = questionQuestions(LONG, 'approve S-031, so the false red check on working branches is fixed').questions[0].choices;
+    opts.forEach((o, i) => {
+      const name = byClass(o, 'v2-ol')[0];
+      const parts = name.children;
+      assert.equal(parts[0].attrs.class === undefined ? parts[0].className : parts[0].attrs.class, 'v2-letter', 'the letter its own element');
+      assert.equal(parts[0].textContent, `${choices[i].value}.`);
+      assert.equal(parts[1].textContent, ' ', 'a real space between');
+      assert.equal(parts[2].textContent, choices[i].text, 'the words exactly as in the file');
+      assert.doesNotMatch(name.textContent, /^[A-Z]\.\S/, 'never "C.Drop it"');
+      assert.equal(name.textContent, `${choices[i].value}. ${choices[i].text}`, 'its accessible name: the letter, a space, the text');
     });
-    assert.deepEqual(chips.map((c) => c.textContent.slice(0, 2)), ['A ', 'B ', 'C '], 'same letters, same order');
-    assert.match(byClass(app.view, 'sb-rec')[0].textContent, /^Recommended A\. The full suite/, 'the "Recommended" label stays');
+    assert.deepEqual(opts.map((o) => byClass(o, 'v2-abtn')[0].textContent), ['Answer A ↗', 'Answer B ↗', 'Answer C ↗']);
+    assert.deepEqual(opts.map((o) => byClass(o, 'v2-rec').length), [1, 0, 0], 'the "Recommended" label stays, on A only');
     assert.ok(words(app, 1), 'the own-words box stays');
-    chips[2].click();
-    await app.flush();
-    assert.equal(byClass(app.view, 'sb-chip')[2].attrs['aria-checked'], 'true');
-    assert.match(finalBox(app).value, /^Ruling: C\n/);
+    assert.match(fileOf(app, 'Answer C ↗'), /^Ruling: C\n/);
   } finally {
     app.restore();
   }
-  // The look, pinned in the stylesheet: the letter's own column with a gap, the text's column for
-  // its wrapped lines, full-width boxes, more padding inside and more space between, 44 px kept.
+  // The look, pinned in the stylesheet (P-001-answer-choice-spacing: each choice gets more room): each
+  // option its own box with padding and space between, its button at least 36 px tall.
   const css = readFileSync(new URL('../../src/public/sandbox.css', import.meta.url), 'utf8');
   const rule = (sel) => {
     const m = css.match(new RegExp(`(?:^|\\n)${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} \\{([^}]*)\\}`));
     assert.ok(m, `a rule for ${sel}`);
     return m[1];
   };
-  // AC62 (2026-10-16): the spacing comes from the one scale, --s3 (12 px) and --s4 (20 px).
-  assert.match(rule('.sb-chips.sb-choices'), /flex-direction: column/);
-  assert.match(rule('.sb-chips.sb-choices'), /gap: var\(--s3\)/);
-  const chip = rule('.sb-choices .sb-chip');
-  assert.match(chip, /display: grid/);
-  assert.match(chip, /grid-template-columns: auto minmax\(0, 1fr\) auto/);
-  assert.match(chip, /width: 100%/);
-  assert.match(chip, /padding: var\(--s3\) var\(--s4\)/);
-  assert.match(rule('.sb-choice-l'), /grid-column: 1/);
-  assert.match(rule('.sb-choice-l'), /margin-right: var\(--s3\)/);
-  assert.match(rule('.sb-choice-t'), /grid-column: 2/);
-  assert.match(rule('.sb-chip'), /min-height: 44px/);
+  assert.match(rule('.v2-opts'), /gap: 8px/);
+  assert.match(rule('.v2-opt'), /padding: 10px 12px/);
+  assert.match(rule('.v2-opt'), /border-radius: 12px/);
+  assert.match(rule('.v2-abtn'), /min-height: 36px/);
 });
 
-test('AC53 (owner\'s note, 16 Oct): a card\'s option words keep their chips, with no letter column', async () => {
+test('AC53 (owner\'s note, 16 Oct) + AC80: a card\'s option words keep their own buttons, with no letter', async () => {
   const app = await openSheet({ 'queue/P-001-stop-6.md': fixture('service-desk/queue/P-001-stop-6.md') }, '#/p/Alpha/queue/card%3Aqueue%2FP-001-stop-6.md');
   try {
-    assert.equal(byClass(app.view, 'sb-choices').length, 0);
-    assert.equal(byClass(app.view, 'sb-choice-l').length, 0);
-    assert.deepEqual(byClass(app.view, 'sb-chip').map((c) => c.textContent), ['re-specify', 'criteria-wrong', 'confirm', 're-scope', 'drop']);
+    assert.equal(byClass(sheet(app), 'v2-letter').length, 0);
+    assert.deepEqual(byClass(sheet(app), 'v2-ol').map((c) => c.textContent), ['re-specify', 'criteria-wrong', 'confirm', 're-scope', 'drop']);
   } finally {
     app.restore();
   }
 });
 
-test('AC53 (note 15), on the page: a file that can\'t be split shows the file whole, its link, one text box and the line saying so', async () => {
+test('AC53 (note 15) + AC80, on the page: a file that can\'t be split shows the file whole, its link, one text box, one button and the line saying so', async () => {
   const app = await openSheet({ 'questions/P-009-mixed.md': '# Ruling needed: a mixed file\n\nWHY: x\nOPTIONS:\n  A. one\n  2. two\nRECOMMENDATION: A\n' }, '#/p/Alpha/queue/q%3AP-009-mixed');
   try {
-    assert.match(app.text(), new RegExp(CANT_SPLIT));
-    assert.equal(byClass(app.view, 'sb-q').length, 1);
+    assert.match(sheet(app).textContent, new RegExp(CANT_SPLIT));
+    assert.equal(findAll(sheet(app), (e) => e.tag === 'textarea').length, 1);
     assert.ok(words(app, 1));
-    assert.ok(byClass(app.view, 'sb-record')[0].innerHTML.includes('a mixed file'), 'the file shown whole');
+    assert.ok(byClass(sheet(app), 'sb-record')[0].innerHTML.includes('a mixed file'), 'the file shown whole');
     type(words(app, 1), 'A, but smaller.');
     await app.flush();
-    assert.equal(finalBox(app).value, 'Ruling: \n\nQuestion: questions/P-009-mixed.md\n\nA, but smaller.\n');
+    assert.equal(fileOf(app, 'Answer ↗'), 'Ruling: \n\nQuestion: questions/P-009-mixed.md\n\nA, but smaller.\n');
   } finally {
     app.restore();
   }
 });
 
-test('AC53 (note 15) + AC56: each answer box keeps what the owner typed or picked through a refresh; editing the file by hand keeps the edit, with a way to rebuild it', async () => {
+test('AC53 (note 15) + AC56 + AC80: each answer box keeps what the owner typed through a refresh, and the button\'s file follows every box', async () => {
   const app = await openSheet({ 'questions/P-001-design-lab-open.md': LAB }, '#/p/Alpha/queue/q%3AP-001-design-lab-open');
   try {
     type(words(app, 2), 'yes');
@@ -287,15 +277,9 @@ test('AC53 (note 15) + AC56: each answer box keeps what the owner typed or picke
     await app.flush();
     assert.equal(words(app, 2), w2, 'the same box');
     assert.equal(w2.value, 'yes');
-    type(finalBox(app), 'Ruling: 2 yes, and a note by hand\n');
-    await app.flush();
     type(words(app, 3), 'agree');
     await app.flush();
-    assert.equal(finalBox(app).value, 'Ruling: 2 yes, and a note by hand\n', 'an edit by hand is never overwritten');
-    const rebuild = byClass(app.view, 'sb-btn').find((b) => b.textContent === 'Rebuild from my answers');
-    rebuild.click();
-    await app.flush();
-    assert.equal(finalBox(app).value.split('\n')[0], 'Ruling: 2 yes; 3 agree');
+    assert.equal(fileOf(app, 'Answer ↗').split('\n')[0], 'Ruling: 2 yes; 3 agree');
   } finally {
     app.restore();
   }

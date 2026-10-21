@@ -1,0 +1,17 @@
+{
+ "state": "failure",
+ "sha": "f8f54efc82464cb95fd670ac65b27e08b6435d61",
+ "total_count": 2,
+ "statuses": [
+  {
+   "context": "owner-verdict",
+   "state": "error",
+   "description": "CI code changed \u00b7 check the PR"
+  },
+  {
+   "context": "owner-questions",
+   "state": "success",
+   "description": "No open questions"
+  }
+ ]
+}

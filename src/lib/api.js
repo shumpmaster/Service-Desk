@@ -5,7 +5,7 @@
 
 import { checkAccess } from './access.js';
 import { pollProject, readBlobs, BLOB_BATCH, SHA_RE, HISTORY_PATH_RE, PULLS_COST, PULLS_CURSOR_RE, USAGE_COST, CLOSED_COST, MAX_FILES_PRS, PR_COST, MAX_PRS,
-  JOBS_MAX_HEADS, JOB_LISTS, COMMIT_TIME_COST, JOB_LOG_COST, MAX_COMMIT_TIMES, MAX_JOB_LOGS } from './github.js';
+  JOBS_MAX_HEADS, JOB_LISTS, OWNER_CHECK_MAX, COMMIT_TIME_COST, JOB_LOG_COST, MAX_COMMIT_TIMES, MAX_JOB_LOGS } from './github.js';
 import CONFIG from './config.js';
 import { usageEntry } from './usage.js';
 
@@ -48,6 +48,8 @@ function validatePoll(body, config) {
   const req = { project, head: body.head || null, etags };
   // AC79 (J6): the optional `jobs` part, never refused: a malformed one is answered `null`.
   if (body.jobs !== undefined) req.jobs = jobsPart(body.jobs, project);
+  // AC80, J22 (J6): the optional `ownerChecks` part, never refused: malformed, it reads nothing.
+  if (body.ownerChecks !== undefined) req.ownerChecks = ownerChecksPart(body.ownerChecks, project);
   return { req };
 }
 
@@ -82,6 +84,29 @@ export function jobsPart(jobs, project) {
     }
   }
   return { runs, heads, extra };
+}
+
+/**
+ * AC80's `ownerChecks` part (J6, J22): `[{ "sha", "etag" }]`, at most 3 heads of 40 hex characters,
+ * for a v3 project. Returns null for a non-v3 project (the whole part answered `null`), else { heads
+ * (the first 3, each { sha, etag }), extra (every other well-formed sha, answered `false`) }; a
+ * malformed part reads nothing (its well-formed shas answered `false`), never refused.
+ */
+export function ownerChecksPart(part, project) {
+  if (project.model !== 'v3') return null;
+  const heads = [];
+  const extra = [];
+  if (!Array.isArray(part)) return { heads, extra };
+  const ok = part.every((x) => plain(x) && Object.keys(x).every((k) => k === 'sha' || k === 'etag') && typeof x.sha === 'string'
+    && SHA_RE.test(x.sha) && ETAG_OK(x.etag));
+  const seen = new Set();
+  for (const x of part) {
+    if (!plain(x) || typeof x.sha !== 'string' || !SHA_RE.test(x.sha) || seen.has(x.sha)) continue;
+    seen.add(x.sha);
+    if (ok && heads.length < OWNER_CHECK_MAX) heads.push({ sha: x.sha, etag: x.etag == null ? null : x.etag });
+    else extra.push(x.sha);
+  }
+  return { heads, extra };
 }
 
 const ISO_RE = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{1,9})?Z$/;

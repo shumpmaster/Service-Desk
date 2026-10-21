@@ -1,0 +1,14 @@
+# NOT a real record: made up for AC80's test (tests/desk/fixtures/README.md, "board-v5"), in the
+# form of Service-Desk's governance/risk-paths.toml (J22).
+unmatched = "R1"
+
+[classes]
+R3 = ["notify/**", ".claude/**"]
+R1 = ["src/**"]
+R0 = ["docs/**", "decisions/**", "questions/**", "reviews/**"]
+
+[reviews]
+R0 = []
+R1 = ["reviewer"]
+R2 = ["reviewer"]
+R3 = ["owner"]

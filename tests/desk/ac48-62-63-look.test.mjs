@@ -139,10 +139,15 @@ test('AC48: the 14 colours that carry a meaning are distinct — every pair\'s C
 // ---------------------------------------------------------------------------
 // AC62
 
-/** Every declaration in sandbox.css outside the comments, with the rest of its source line (where an AC62 comment sits). */
+// From stage 1a (AC80, AC81): mockup v2's rules, in their own block at the stylesheet's end, take
+// AC81's type tokens and the sizes AC80 names, which replace AC62's for the board, its sheets and the
+// bar (AC62, changed); AC81's test checks them. AC62's scale holds for every rule before the block.
+const V2_LINE = RAW.slice(0, RAW.lastIndexOf('/*', RAW.indexOf('Desk mockup v2 (spec S-001, AC80 and AC81'))).split('\n').length - 1;
+
+/** Every declaration in sandbox.css outside the comments and before mockup v2's block, with the rest of its source line (where an AC62 comment sits). */
 function declarations() {
   const out = [];
-  const lines = RAW.split('\n');
+  const lines = RAW.split('\n').slice(0, V2_LINE);
   let inComment = false;
   lines.forEach((line, i) => {
     let code = '';
@@ -164,6 +169,16 @@ function declarations() {
 
 const SPACING = /^(margin|padding)(-(top|right|bottom|left|inline|block|inline-start|inline-end|block-start|block-end))?$|^(gap|row-gap|column-gap)$/;
 const ON_SCALE = /^(0|auto|var\(--s[1-5]\))$/;
+
+test('AC62 + AC81: mockup v2\'s block is the stylesheet\'s last part, so every rule before it keeps AC62\'s scale', () => {
+  assert.ok(V2_LINE > 600, `the block starts at line ${V2_LINE + 1}`);
+  const after = RAW.split('\n').slice(V2_LINE).join('\n').replace(/\/\*[\s\S]*?\*\//g, '');
+  const sels = [...after.matchAll(/(^|\n)([^{}\n@][^{}]*)\{/g)].map((m) => m[2].trim()).filter((x) => !/^(from|to|\d+%)$/.test(x));
+  assert.ok(sels.length > 50, `${sels.length} rules`);
+  for (const sel of sels) {
+    for (const one of sel.split(/\s*,\s*(?![^(]*\))/)) assert.match(one, /^(\.v2-|\.v2( |$)|:where\(\.v2\) |html\.sb \.v2|html\.sb\.v2-page|html\.sb body|html\.sb\[data-theme="dark"\] \.v2|html\.sb\[data-theme="dark"\]\.v2-page|:root|html\.sb:not)/, `${one}: a mockup v2 rule only`);
+  }
+});
 
 test('AC62: the five spacing tokens, 4, 8, 12, 20 and 32 px', () => {
   const root = RAW.slice(RAW.indexOf('html.sb {'));
@@ -216,6 +231,21 @@ test('AC62: every word kept — each sandbox screen\'s text, outside the parts A
   const routes = Object.keys(snap);
   assert.equal(routes.length, 55);
   const now = await screenTexts(routes, NEW_REBUILT);
+  // From stage 1a (AC80, AC81): the Queue screen goes, the board taking its contents (AC80's test
+  // reads the board): its routes open Waiting, so they are not compared. The project screens' bottom
+  // bar goes too (AC81, "Until stage 3"): its four words leave the snapshot's end; the bar and top row
+  // that replace it are left out (NEW_REBUILT). Every other word is compared, as before.
+  const queueRoutes = routes.filter((r) => /\/queue(\/|$)/.test(r));
+  assert.equal(queueRoutes.length, 9, queueRoutes.join(' '));
+  const BAR = ['Status', 'Timeline', 'Team', 'Queue'];
+  // The bar drawn after the screen and before any sheet over it: its one run of four words, and the
+  // Queue tab's badge count after them where it had one.
+  const lessBar = (runs) => {
+    const at = runs.findIndex((_, i) => BAR.every((w, k) => runs[i + k] === w));
+    if (at < 0) return runs;
+    const n = /^\d+$/.test(runs[at + 4] || '') ? 5 : 4;
+    return [...runs.slice(0, at), ...runs.slice(at + n)];
+  };
   // From 2026-10-17 (model 3.5.0's records): on a v3 project's Chief of Staff page, AC49 as changed in
   // place rebuilds its status line, its "Responsible for" groups and its running log from the session
   // lines (J13), which NEW_REBUILT leaves out; the snapshot's runs for those parts are left out the same
@@ -227,7 +257,10 @@ test('AC62: every word kept — each sandbox screen\'s text, outside the parts A
     return [...runs.slice(0, runs.indexOf('Chief of Staff') + 1), ...runs.slice(a, a + 1), ...runs.slice(b, b + 1), ...runs.slice(c)];
   };
   const rebuiltCos = ['#/p/Service-Desk/team/chief-of-staff', '#/p/Alpha/team/chief-of-staff'];
-  for (const r of routes) assert.deepEqual(now[r], rebuiltCos.includes(r) ? cosParts(snap[r]) : snap[r], r);
+  for (const r of routes) {
+    if (queueRoutes.includes(r)) continue;
+    assert.deepEqual(now[r], lessBar(rebuiltCos.includes(r) ? cosParts(snap[r]) : snap[r]), r);
+  }
   assert.deepEqual(cosParts(snap[rebuiltCos[0]]), ['Sandbox: candidate design', 'Back', 'Home', 'Service-Desk', 'Chief of Staff', 'Responsible for', 'Running log', 'Status', 'Timeline', 'Team', 'Queue']);
   assert.ok(snap['#/p/Delta/team/chief-of-staff'].includes("Its sessions aren't recorded"), 'the v2.5 project\'s page is compared whole, unchanged');
 });
@@ -235,23 +268,27 @@ test('AC62: every word kept — each sandbox screen\'s text, outside the parts A
 // ---------------------------------------------------------------------------
 // AC63
 
-test('AC63: every text box\'s text is at least 16 px, from a rule no later rule overrides; the viewport line leaves zoom alone; no touch-action, user-scalable or gesture handler', () => {
+test('AC63 + AC80: every text box\'s text is at least 16 px, from a rule no later rule overrides; the viewport line leaves zoom alone; no touch-action, user-scalable or gesture handler; the drag cancels only a lifted card\'s one-finger move', () => {
   const css = RAW.replace(/\/\*[\s\S]*?\*\//g, '');
-  // The two text boxes the sandbox draws: the response sheet's answer box and the per-question words box.
-  assert.match(JS, /h\('textarea', \{ rows: '6'/);
-  assert.match(JS, /h\('textarea', \{ rows: '3'.*class: 'sb-words'/);
+  // From stage 1a (AC80, AC81): the Queue's response sheet goes with its answer box and words boxes;
+  // the one text box the sandbox draws is the card sheet's own-words box (one per question), in
+  // AC81's `--t-input`, 400 16px/1.4.
+  assert.doesNotMatch(JS, /h\('textarea', \{ rows: '6'/, 'the Queue\'s answer box is gone');
+  assert.match(JS, /h\('textarea', \{ rows: '3', key: `words:\$\{k\}`, class: 'v2-input'/);
+  assert.equal((JS.match(/h\('textarea'/g) || []).length, 1, 'one text box');
   assert.doesNotMatch(JS, /h\('input'/, 'no input the owner types into');
-  for (const sel of ['.sb-box textarea', '.sb-words']) {
+  assert.match(css, /--t-input: 400 16px\/1\.4 var\(--font\);/);
+  assert.equal((css.match(/--t-input:/g) || []).length, 1, 'set once, in both themes');
+  for (const sel of ['.v2-input']) {
     const rules = [...css.matchAll(/(^|\n)([^{}\n]+)\{([^}]*)\}/g)].map((m) => ({ sel: m[2].trim(), body: m[3], at: m.index }));
     const own = rules.filter((r) => r.sel.split(/\s*,\s*/).includes(sel));
     assert.equal(own.length, 1, sel);
-    const px = /font: 400 (\d+)px\/1\.4/.exec(own[0].body);
-    assert.ok(px && Number(px[1]) >= 16, `${sel}: ${px && px[1]} px`);
+    assert.match(own[0].body, /font: var\(--t-input\);/, `${sel}: 16 px`);
     // No later rule that could reach a textarea sets its font or size.
     for (const r of rules.filter((x) => x.at > own[0].at)) {
-      const reaches = r.sel.split(/\s*,\s*/).some((x) => /(textarea|\.sb-words|\binput|\*)[^ >+~]*$/.test(x));
+      const reaches = r.sel.split(/\s*,\s*/).some((x) => /(textarea|\.v2-input|\binput|\*)[^ >+~]*$/.test(x));
       const f = /font(?:-size)?:\s*([^;]+)/.exec(r.body);
-      if (reaches && f) assert.ok(Number((/(\d+)px/.exec(f[1]) || [0, 0])[1]) >= 16, `${r.sel} overrides ${sel} with ${f[1]}`);
+      if (reaches && f) assert.ok(f[1] === 'var(--t-input)' || Number((/(\d+)px/.exec(f[1]) || [0, 0])[1]) >= 16, `${r.sel} overrides ${sel} with ${f[1]}`);
     }
   }
   const html = readFileSync(`${SRC}/public/index.html`, 'utf8');
@@ -261,8 +298,15 @@ test('AC63: every text box\'s text is at least 16 px, from a rule no later rule 
     assert.doesNotMatch(text, /touch-action\s*:\s*(none|pan-x|pan-y|manipulation)/, name);
     assert.doesNotMatch(text, /user-scalable/, name);
     assert.doesNotMatch(text, /gesturestart|gesturechange|gestureend/, name);
-    assert.doesNotMatch(text, /touches\.length\s*[>=]=?\s*2|touchmove/, `${name}: no script cancels a two-finger touch`);
+    assert.doesNotMatch(text, /touches\.length\s*[>=]=?\s*2/, `${name}: no script cancels a two-finger touch`);
   }
+  // AC80's drag: once a card is lifted, its one finger moves it, not the page; the one touchmove
+  // handler cancels only a one-finger move while a card is lifted, never a touch of two fingers.
+  const tm = JS.match(/addEventListener\('touchmove'[\s\S]*?\}, \{ passive: false \}\);/g) || [];
+  assert.equal(tm.length, 1, 'one touchmove handler');
+  assert.match(tm[0], /if \(drag\.lifted && e && e\.touches && e\.touches\.length === 1 && e\.cancelable && e\.preventDefault\) e\.preventDefault\(\);/);
+  assert.equal((JS.match(/touchmove/g) || []).length, 1);
+  assert.doesNotMatch(RAW, /touch-action/, 'no rule sets touch-action');
 });
 
 test('AC48 + AC57 (draft 6, N4): runs 3 and 4 take their own neutral-tinted shades, each at least 10 from the 14 and from each other in its theme, at least 3:1 against the page and the cards; run 5 on reuse them in turn', async () => {

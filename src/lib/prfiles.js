@@ -16,6 +16,25 @@ const JOB_ANSWER_RE = /^decisions\/questions\/([^/]+)\.md$/;
 const JOB_SESSION_RE = /^sessions\/chief-of-staff\/([A-Za-z0-9_-]{1,100})\.jsonl$/;
 const nameOk = (n) => Boolean(n) && !n.includes('/') && !n.startsWith('_');
 
+// A verdict file under reviews/<n>/ (reviews/README.md): names starting `_`, and README.md, are not verdicts.
+const REVIEW_FILE_RE = /^reviews\/[0-9]+\/(?!_)(?!README\.md$)[^/]+\.md$/;
+
+/**
+ * J20's verdict files for J22 (2026-10-19; rule 0 from 2026-10-20): Map(path → { present, sha }) for
+ * each `reviews/<n>/<id>.md` the list names: present (added, modified, or renamed to it) with its
+ * blob sha, or not present (removed, or renamed away from it).
+ */
+export function verdictFiles(files) {
+  const out = new Map();
+  for (const f of files || []) {
+    if (REVIEW_FILE_RE.test(f.filename)) out.set(f.filename, { present: f.status !== 'removed', sha: f.status === 'removed' ? null : f.sha || null });
+    if (f.status === 'renamed' && typeof f.previous === 'string' && REVIEW_FILE_RE.test(f.previous) && !out.has(f.previous)) {
+      out.set(f.previous, { present: false, sha: null });
+    }
+  }
+  return out;
+}
+
 /** The URL of one page of a pull request's files (J20). */
 export function filesUrl(apiBase, repo, number, page) {
   return `${apiBase}/repos/${repo}/pulls/${number}/files?per_page=${FILES_PER_PAGE}${page > 1 ? `&page=${page}` : ''}`;
@@ -38,8 +57,11 @@ export function parseFilePages(pages) {
     if (!Array.isArray(v)) return { ok: false, files: [], capped: false };
     for (const f of v) {
       if (!f || typeof f.filename !== 'string') return { ok: false, files: [], capped: false };
+      // From 2026-10-19 (AC80, J22): the blob `sha` of a verdict file `reviews/<n>/<id>.md`, for J22's
+      // reads of the verdicts; J20 keeps it for those files only.
+      const sha = REVIEW_FILE_RE.test(f.filename) && typeof f.sha === 'string' && /^[0-9a-f]{40}$/.test(f.sha) ? f.sha : null;
       files.push({ filename: f.filename, status: typeof f.status === 'string' ? f.status : null,
-        previous: typeof f.previous_filename === 'string' ? f.previous_filename : null });
+        previous: typeof f.previous_filename === 'string' ? f.previous_filename : null, ...(sha ? { sha } : {}) });
     }
   }
   return { ok: true, files, capped: files.length >= FILE_CAP };

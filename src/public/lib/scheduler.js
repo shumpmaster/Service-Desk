@@ -5,11 +5,12 @@
 
 import { neededReads, parseRecord, recordKind, buildModel, canRecord, recordingAnswers } from './model.js';
 import { parseTree, parseHistory, parseCardPath, compareStatus, parsePulls, questionName, classifyPull } from './records.js';
-import { parseFilePages, splitChanges, recordedAnswers, closedCanEnd } from './prfiles.js';
+import { parseFilePages, splitChanges, recordedAnswers, closedCanEnd, verdictFiles } from './prfiles.js';
 import { judgePulls, mergePulls, pullsBackoffMs, PULLS_KEY, OLD_PULLS_KEYS, PULLS_MAX_PAGES, PULLS_RATE_MS } from './pulls.js';
 import { dayKey } from './timefmt.js';
 import { usageEntry } from './usage.js';
 import { newJobsState, partDue, runPhase, pollPart, applyPollAnswer } from './jobwatch.js';
+import { RISK_PATHS_PATH, OWNER, listAt, ownerCheckHeads, ownerCheckFrom, judgeFiles, verdictPath, ownBranch, verdictOf } from './j22.js';
 
 // J12 (2026-10-16): the pull-request read counts 5 of a blob call's budget of 25.
 export const PULLS_COST = 5;
@@ -45,6 +46,12 @@ export const USAGE_COST = 5;
 export const CLOSED_COST = 3;
 export const PR_COST = 1;
 export const PRS_PER_CALL = 10;
+// AC80 (2026-10-19; draft 4): a pull request head's solo blob calls, the waited J20 read and the
+// verdict call's retries together, are at most this many, whoever waits on it (A3). From the points
+// settled after stage 1a's build review, round 1 (finding 3), the count holds across openings, kept on
+// the device under WAITS_KEY by project, pull request number and head sha.
+export const WAITS_KEY = 'desk-board-waits-v1';
+export const HEAD_POLLS = 5;
 const COMPARE_CACHE_KEY = 'desk-compare-v1';
 
 export const REASON_WORDS = {
@@ -123,13 +130,21 @@ function newProjectState(project) {
     // AC79 (2026-10-19): the asks-merge job's candidates, their conditional reads and the page's verdicts,
     // in memory for this opening only (src/lib/jobwatch.js).
     jobs: newJobsState(), jobsCalls: 0,
+    // AC80, J22 (2026-10-19; rule 0 from 2026-10-20), in memory for this opening only: GitHub's owner
+    // check by head sha ({ read, state, description, etag }), the heads whose read answered `false`
+    // (sha → when; asked again FILES_RETRY_MS later), each verdict blob's word by sha ({ state: 'read', verdict } |
+    // { state: 'failed', at }), each pull request head's solo calls (HEAD_POLLS), and the pull
+    // requests the page's marks wait on J20 for (`desk.setWaited`).
+    j22: { checks: new Map(), refused: new Map(), verdicts: new Map(), headPolls: new Map(), waited: new Set(), verdictCalls: 0, waitedCalls: 0,
+      lastSolo: 0 },
   };
 }
 
 /**
  * Create the desk's reader.
  * opts: { config, call(path, body) → Promise<{ ok, status, json?, reason?, words? }>, clock:
- *   { now(), setTimeout(fn, ms), clearTimeout(id) }, store (createStore), isVisible(),
+ *   { now(), setTimeout(fn, ms), clearTimeout(id) }, store (createStore), pullsStore and waitsStore
+ *   (createStore each, J12's list and AC80's waited-read counts, kept apart from the cache), isVisible(),
  *   onChange(), j11 (true in the MD sandbox only: also read J11's optional records) }
  */
 export function createDesk(opts) {
@@ -137,6 +152,31 @@ export function createDesk(opts) {
   const onChange = opts.onChange || (() => {});
   const isVisible = opts.isVisible || (() => true);
   const states = new Map(config.projects.map((p) => [p.name, newProjectState(p)]));
+  // AC80: each head's 5, kept on the device (opts.waitsStore, a store of its own as J12's is), read once
+  // at the opening: { project: { "<number>@<head sha>": polls used } }. When that store can't be read or
+  // written, the counts live in memory for this opening and no waited read is made at all.
+  const waitsStore = opts.waitsStore || null;
+  let waits = {};
+  let waitsKept = false;
+  if (waitsStore) {
+    const v = waitsStore.getJSON(WAITS_KEY, {});
+    waitsKept = Boolean(waitsStore.usable);
+    if (waitsKept && v && typeof v === 'object' && !Array.isArray(v)) {
+      for (const [proj, heads] of Object.entries(v)) {
+        if (!heads || typeof heads !== 'object') continue;
+        const ok = {};
+        for (const [k, n] of Object.entries(heads)) if (/^\d+@[0-9a-f]{40}$/.test(k) && Number.isInteger(n) && n >= 0) ok[k] = Math.min(n, 1000);
+        waits[proj] = ok;
+      }
+    }
+  }
+  const saveWaits = () => {
+    if (!waitsStore || !waitsKept) return;
+    if (!waitsStore.setJSON(WAITS_KEY, waits)) waitsKept = false;
+  };
+  // A store that reads but refuses writes (a full quota, some private modes) can't keep the counts
+  // either: a write at the opening finds out before any waited read is decided (round 2, N3).
+  saveWaits();
   if (store && store.remove) for (const k of OLD_BLOB_CACHE_KEYS) store.remove(k);
   const blobCache = new Map(Object.entries((store && store.getJSON(BLOB_CACHE_KEY, {})) || {}));
   const historyCache = new Map(Object.entries((store && store.getJSON(HISTORY_CACHE_KEY, {})) || {}));
@@ -662,7 +702,7 @@ export function createDesk(opts) {
       const raw = r0 && r0.files ? r0.files[n] : null;
       const parsed = Array.isArray(raw) ? parseFilePages(raw) : { ok: false };
       if (parsed.ok) {
-        st.files.set(n, { headSha: heads.get(n) || null, changes: splitChanges(parsed.files), capped: parsed.capped });
+        st.files.set(n, { headSha: heads.get(n) || null, changes: splitChanges(parsed.files), capped: parsed.capped, verdicts: verdictFiles(parsed.files) });
         st.filesTried.delete(n);
         extras = true;
       } else st.filesTried.set(n, { headSha: heads.get(n) || null, at: clock.now(), poll: st.polls });
@@ -722,6 +762,177 @@ export function createDesk(opts) {
     }
     persist();
     return { res, progress, pulled: Boolean(batch.pulls), extras };
+  }
+
+  /**
+   * J22: whether the page reads this project's owner check: a v3 project whose repository J1's open
+   * list gives as public (`base.repo.private` false on its pull requests).
+   */
+  function checksRead(st) {
+    if (st.project.model !== 'v3') return false;
+    const pulls = pullsOf(st);
+    return pulls.length > 0 && pulls.every((p) => p.baseRepoPrivate === false);
+  }
+
+  /** What J22 judges a project's pull requests from, as last read (src/lib/j22.js's ctx). */
+  function j22Ctx(st) {
+    const tree = st.tree || new Map();
+    const records = recordsFor(st);
+    let rp;
+    if (!tree.has(RISK_PATHS_PATH)) rp = { ok: false, why: 'missing' };
+    else if (!records.has(RISK_PATHS_PATH)) rp = { ok: false, why: 'unread' };
+    else rp = records.get(RISK_PATHS_PATH) || { ok: false, why: 'unread' };
+    const reads = checksRead(st);
+    return {
+      project: st.project, rp, files: st.files, checksRead: reads,
+      verdictBlob: (sha) => st.j22.verdicts.get(sha) || null,
+      treeVerdict: (path) => {
+        const r = records.get(path);
+        return { inTree: tree.has(path), read: r != null && typeof r === 'object' && 'verdict' in r, verdict: r ? r.verdict : null };
+      },
+      ownerCheck: (sha) => (reads ? st.j22.checks.get(sha) || null : null),
+    };
+  }
+
+  /** J22: the owner-check part of this poll call: [{ sha, etag }] for the heads `ownerCheckHeads` chooses, or null. */
+  function ownerChecksDue(st) {
+    if (!opts.j11 || !checksRead(st)) return null;
+    // A head not read (`false`: a 403, a 5xx or a network failure alike) keeps its place among the 3 and
+    // is asked again at the first poll FILES_RETRY_MS later, inside this poll call (J22, settled after
+    // stage 1a's build review, round 1, finding 4).
+    const now = clock.now();
+    const heads = ownerCheckHeads(pullsOf(st), j22Ctx(st)).filter((pr) => {
+      const at = st.j22.refused.get(pr.headSha);
+      return at == null || now - at >= FILES_RETRY_MS;
+    });
+    if (!heads.length) return null;
+    return heads.map((pr) => {
+      const c = st.j22.checks.get(pr.headSha);
+      return { sha: pr.headSha, etag: c && c.etag ? c.etag : null };
+    });
+  }
+
+  /** J22: the poll's owner-check answers: a 200's body read for its `owner-verdict` entry, a 304 keeping the last, `false` not read. */
+  function applyOwnerChecks(st, sent, answers, etags) {
+    const heads = new Set(pullsOf(st).map((p) => p.headSha));
+    for (const sha of [...st.j22.checks.keys()]) if (!heads.has(sha)) st.j22.checks.delete(sha);
+    for (const sha of [...st.j22.refused.keys()]) if (!heads.has(sha)) st.j22.refused.delete(sha);
+    if (!answers || typeof answers !== 'object') return;
+    for (const { sha } of sent) {
+      const a = answers[sha];
+      if (a === null) { st.j22.refused.delete(sha); continue; } // 304: the last answer stands (none: still not read)
+      if (typeof a !== 'string') {
+        // Not read (a failed or refused read): "not read", never "not required"; asked again 5 minutes on.
+        st.j22.checks.delete(sha);
+        st.j22.refused.set(sha, clock.now());
+        continue;
+      }
+      st.j22.refused.delete(sha); // a 200 ends the wait, as a 304 does
+      const e = ownerCheckFrom(a);
+      const etag = etags && typeof etags[sha] === 'string' ? etags[sha] : null;
+      if (e === undefined) st.j22.checks.delete(sha); // malformed: not read
+      else if (e === null) st.j22.checks.set(sha, { read: true, state: null, description: null, etag });
+      else st.j22.checks.set(sha, { read: true, state: e.state, description: e.description, etag });
+    }
+  }
+
+  const headKey = (pr) => `${pr.number}@${pr.headSha}`;
+  const headPolls = (st, pr) => {
+    const kept = (waits[st.project.name] || {})[headKey(pr)] || 0;
+    return Math.max(kept, st.j22.headPolls.get(headKey(pr)) || 0);
+  };
+  const usePoll = (st, pr) => {
+    const n = headPolls(st, pr) + 1;
+    st.j22.headPolls.set(headKey(pr), n);
+    if (waitsKept) {
+      waits[st.project.name] = { ...(waits[st.project.name] || {}), [headKey(pr)]: n };
+      saveWaits();
+    }
+  };
+  /** After a successful read of the open list: drop the kept counts of heads it no longer shows open. */
+  const pruneWaits = (st) => {
+    const mine = waits[st.project.name];
+    if (!mine) return;
+    const open = new Set(pullsOf(st).filter((p) => p.headSha).map(headKey));
+    const next = Object.fromEntries(Object.entries(mine).filter(([k]) => open.has(k)));
+    if (Object.keys(next).length === Object.keys(mine).length) return;
+    waits[st.project.name] = next;
+    saveWaits();
+  };
+  /** AC52's order: `created_at`, oldest first; two alike by the lower number. */
+  const byRaised = (a, b) => {
+    const t = (p) => (Number.isFinite(Date.parse(p.createdAt)) ? Date.parse(p.createdAt) : Infinity);
+    return t(a) - t(b) || a.number - b.number;
+  };
+
+  /**
+   * J22's verdict calls (rule 0's "One verdict call per head"; rule 1), made after a blob phase that
+   * returned `ok`, outside the optional loop and outside MAX_BLOB_CALLS_PER_CYCLE: for each open pull
+   * request head in AC52's order, its verdict blobs on the branch (the owner's and every required
+   * reviewer's) not read yet in this opening, or failed and due again after FILES_RETRY_MS within the
+   * head's HEAD_POLLS, in one call of their own and nothing else. A failed call is noted for its
+   * retry and the next head's call is still made; only a rate limit or a 401 stops the rest.
+   */
+  async function verdictPhase(st) {
+    const ctx = j22Ctx(st);
+    const now = clock.now();
+    for (const pr of pullsOf(st).filter((p) => ownBranch(p, st.project)).sort(byRaised)) {
+      const list = listAt(pr, st.project, st.files);
+      if (list.state !== 'read') continue;
+      const a = judgeFiles(pr, ctx);
+      const ids = [OWNER, ...(a.state === 'known' ? [...a.required.keys()].filter((x) => x !== OWNER) : [])];
+      const shas = [];
+      let retry = false;
+      for (const id of ids) {
+        const e = list.f.verdicts ? list.f.verdicts.get(verdictPath(pr.number, id)) : null;
+        if (!e || !e.present || !e.sha || shas.includes(e.sha)) continue;
+        const v = st.j22.verdicts.get(e.sha);
+        if (!v) shas.push(e.sha);
+        else if (v.state === 'failed' && now - v.at >= FILES_RETRY_MS && headPolls(st, pr) < HEAD_POLLS) {
+          shas.push(e.sha);
+          retry = true;
+        }
+      }
+      if (!shas.length) continue;
+      if (retry) usePoll(st, pr);
+      st.blobCalls++;
+      st.j22.verdictCalls++;
+      st.j22.lastSolo++;
+      const res = await call('/api/blobs', { project: st.project.name, blobs: shas, history: [] });
+      const ok = res.ok && res.json && res.json.state === 'ok';
+      for (const sha of shas) {
+        const text = ok && res.json.blobs ? res.json.blobs[sha] : null;
+        st.j22.verdicts.set(sha, typeof text === 'string' ? { state: 'read', verdict: verdictOf(text) } : { state: 'failed', at: now });
+      }
+      if (!ok && res.ok && res.json && (res.json.reason === 'rate-limit' || res.json.reason === 'token')) {
+        if (res.json.reason === 'rate-limit' && res.json.retryAfter) st.retryUntil = Math.max(st.retryUntil, clock.now() + res.json.retryAfter * 1000);
+        break;
+      }
+    }
+  }
+
+  /**
+   * AC80's waited J20 read (draft 4): while a mark waits on J20's read of a pull request head that
+   * failed, that read is asked at each poll, alone in a blob call of its own, until it answers, at
+   * most HEAD_POLLS for that head in this opening, whoever waits on it (`desk.setWaited`).
+   */
+  async function waitedPhase(st) {
+    // No device storage for the counts: no waited read at all, the mark waiting on J20's own retry.
+    if (!waitsKept) return;
+    for (const pr of pullsOf(st).filter((p) => st.j22.waited.has(p.number)).sort(byRaised)) {
+      if (!pr.headSha || !ownBranch(pr, st.project)) continue;
+      const f = st.files.get(pr.number);
+      if (f && f.headSha === pr.headSha) continue; // read at this head
+      const tried = st.filesTried.get(pr.number);
+      if (!tried || tried.headSha !== pr.headSha || tried.poll === st.polls) continue; // not a failed read, or tried this poll
+      if (headPolls(st, pr) >= HEAD_POLLS) continue;
+      usePoll(st, pr);
+      if (!waitsKept) return; // its count could not be written: no waited read (AC80)
+      st.j22.waitedCalls++;
+      st.j22.lastSolo++;
+      const { res } = await blobCall(st, { byPath: new Map() }, { blobs: [], history: [], compare: [], files: [pr.number] });
+      if (res.ok && res.json && res.json.state !== 'ok' && res.json.reason === 'rate-limit') break;
+    }
   }
 
   /** AC79: whether this poll carries the `jobs` part (src/lib/jobwatch.js `partDue`). */
@@ -813,6 +1024,9 @@ export function createDesk(opts) {
       const jobsSent = jobsDue(st);
       const pollBody = { project: st.project.name, head: st.head, etags: st.head ? etags : {} };
       if (jobsSent) pollBody.jobs = pollPart(st.jobs);
+      // J22 (AC80): the owner check for at most 3 heads, read after the core reads and before `jobs` (J1, J6).
+      const owner = ownerChecksDue(st);
+      if (owner) pollBody.ownerChecks = owner;
       res = await call('/api/poll', pollBody);
       if (!res.ok) {
         outcome = res;
@@ -821,10 +1035,17 @@ export function createDesk(opts) {
       } else {
         if (jobsSent) applyPollAnswer(st.jobs, new Set(pollBody.jobs.heads.map((x) => x.sha)), res.json.jobs);
         outcome = applyPoll(st, res.json);
+        if (outcome.ok) pruneWaits(st);
+        if (pollBody.ownerChecks) applyOwnerChecks(st, pollBody.ownerChecks, res.json.ownerChecks, res.json.ownerCheckEtags);
         if (st.tree) {
+          st.j22.lastSolo = 0;
           const blobs = await blobPhase(st);
           // A blob failure outranks the poll's own outcome; "still checking" only replaces a success.
           if (!blobs.ok && (outcome.ok || !blobs.pending)) outcome = blobs;
+          // J22 (AC80): each head's verdict call, only after a blob phase that returned `ok`; then the
+          // reads the page's marks wait on. Both optional, outside the cycle's MAX_BLOB_CALLS_PER_CYCLE.
+          if (opts.j11 && blobs.ok) await verdictPhase(st);
+          if (opts.j11) await waitedPhase(st);
           // AC79: optional, after the project's own reads; it never touches the outcome.
           await jobsPhase(st);
         }
@@ -1034,6 +1255,17 @@ export function createDesk(opts) {
     }
   };
   desk.cacheSize = () => blobCache.size;
+  /** J22 (the MD sandbox): what the board judges a project's pull requests from, as last read. */
+  desk.j22 = (name) => {
+    const st = states.get(name);
+    return { ...j22Ctx(st), headPolls: (pr) => headPolls(st, pr), soloCalls: { verdict: st.j22.verdictCalls, waited: st.j22.waitedCalls, lastCycle: st.j22.lastSolo },
+      filesTried: (n) => st.filesTried.get(n) || null };
+  };
+  /** AC80: the pull requests the page's marks wait on J20's read for (asked at each poll while it fails, HEAD_POLLS a head). */
+  desk.setWaited = (name, numbers) => {
+    const st = states.get(name);
+    if (st) st.j22.waited = new Set(numbers || []);
+  };
   /** J11 (the MD sandbox): the project's tree, its parsed records and its run pages, as last read. */
   desk.snapshot = (name) => {
     const st = states.get(name);

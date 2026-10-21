@@ -60,15 +60,23 @@ test('AC52 (2026-10-18): the queue: counted in the Deploys group, the pill and t
   assert.equal(q2.groups.find((g) => g.key === 'deploys').items.length, 1, 'shown');
 });
 
-test('AC52 (2026-10-18): in the sandbox, the Deploys group counted with "needs you", and Home\'s top line counts it', async () => {
-  const app = await loadSandbox({ config: CONFIG, repos: repos(), hash: '#/p/Service-Desk/queue' });
+test('AC52 (2026-10-18) + AC80: in the sandbox, a waiting deploy is a "Deploy" card in "Waiting on you", counted, its one step "Approve ↗"; its sheet says it waits for the owner\'s approval on GitHub; Home\'s top line counts it', async () => {
+  const app = await loadSandbox({ config: CONFIG, repos: repos(), hash: '#/waiting/Service-Desk' });
   try {
     await app.advance(1000);
     await app.advance(60_000);
-    const g = byClass(app.view, 'g-deploys').find((e) => e.tag === 'section');
-    assert.ok(g.textContent.includes('needs you'));
-    assert.ok(g.textContent.includes('Each waits for your approval on GitHub'));
-    assert.ok(!g.textContent.includes('Shown, not counted'));
+    const lane = byClass(app.view, 'lane-wait')[0];
+    const card = byClass(lane, 'v2-card').find((c) => c.textContent.includes('Deploy'));
+    assert.ok(card, 'a Deploy card');
+    assert.equal(byClass(lane, 'v2-lc')[0].textContent, '1', 'counted');
+    const step = byClass(card, 'v2-step')[0];
+    assert.equal(step.textContent, 'Approve ↗');
+    assert.match(step.attrs.href, /^https:\/\/github\.com\/shumpmaster\/Service-Desk\/actions\/runs\/\d+$/, 'the waiting run\'s page (its html_url)');
+    assert.ok(!app.text().includes('Shown, not counted'));
+    await app.go(byClass(card, 'v2-t')[0].attrs.href);
+    const sheet = byClass(app.view, 'v2-sheet')[0];
+    assert.ok(sheet.textContent.includes('waiting for approval'), sheet.textContent);
+    assert.ok(sheet.textContent.includes('Approve on GitHub'));
     await app.go('#/');
     assert.match(app.text(), /1 waiting on you in all/);
   } finally {

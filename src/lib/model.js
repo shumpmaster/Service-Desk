@@ -16,6 +16,7 @@ import { j11Kind, parseJ11, PROJECT_DOC_PATH, SURFACES_PATH, ORCH_WORKFLOW_PATH,
   GATE_PHASE, README_PATH, REVIEW_VERDICT_RE } from './j11.js';
 import { PLAN_PATH_RE, ESTIMATES_PATH, LATER_WORK_PATH, LATER_Q_RE, planFiles, planPath, parsePlan, parseEstimates, parseLaterWork } from './workahead.js';
 import { cardRows, questionRows, cardSummary, v5Waits, sessionRows, timelines, V25_NO_CARDS, V25_ANSWERED } from './asked.js';
+import { parseRiskPaths, RISK_PATHS_PATH } from './j22.js';
 import { askedInSession, questionHold } from './asking.js';
 import { recordedAnswers } from './prfiles.js';
 
@@ -71,6 +72,7 @@ export function recordKind(path, model) {
     if (isSprintPath(path)) return 'sprint';
   }
   if (path === README_PATH) return 'readme-root'; // AC54: the summary, for every project (read only with ctx.j11)
+  if (path === RISK_PATHS_PATH) return 'risk-paths'; // J22 (AC80): every project's, v3 or v2.5 (read only with ctx.j11)
   return null;
 }
 
@@ -105,6 +107,7 @@ export function parseRecord(kind, text, path) {
     case 'work-plan': return { name: PLAN_PATH_RE.exec(path || '') ? PLAN_PATH_RE.exec(path)[1] : null, ...parsePlan(text) };
     case 'estimates': return { lines: parseEstimates(text) };
     case 'later-work': return parseLaterWork(text);
+    case 'risk-paths': return parseRiskPaths(text);
     case 'project-doc': case 'surfaces': case 'orch-workflow': case 'spec': case 'request': case 'gate-case': case 'readme-root': case 'review-verdict':
       return parseJ11(kind, text, path);
     default: return null;
@@ -342,6 +345,9 @@ export function neededReads(project, tree, records, now, ctx = {}) {
   // AC54 (the MD sandbox only): README.md's first paragraph, for every project, a v2.5 one too.
   // Optional like J11's other reads: it never holds a read back or makes it fail.
   if (ctx.j11) addTo(optBlobs, README_PATH);
+  // J22 (2026-10-19, AC80): governance/risk-paths.toml, for every connected project, v3 or v2.5, an
+  // optional blob read once per device and again only when its sha changes (A3).
+  if (ctx.j11) addTo(optBlobs, RISK_PATHS_PATH);
   for (const q of openQuestions(tree, project.model)) {
     add(q.path);
     if (!hist.includes(q.path)) hist.push(q.path);

@@ -9,9 +9,9 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { cleanScratch, harness, makeWorld, checkoutOf, pull } from './notify-helpers.mjs';
+import { cleanScratch, harness, makeWorld, checkoutOf, pull, clearView } from './notify-helpers.mjs';
 import { scenario, verdict, senderSide, headOf, STATE_KEY } from './rule0-fixture.mjs';
-import { openRule0, sealRule0, verifyState, stateFiles, emptyState, formProblem, stateProblem, verdictHash, headHash, rule0Problem, LIMITS } from '../../src/notify/state.mjs';
+import { openPart, openRule0, sealRule0, verifyState, stateFiles, emptyState, formProblem, stateProblem, verdictHash, headHash, rule0Problem, LIMITS } from '../../src/notify/state.mjs';
 
 after(cleanScratch);
 
@@ -33,7 +33,23 @@ test('J18 rule 0 (made-up, NOT real): its part is kept across runs, sealed: no s
   const text = readFileSync(join(r1.outDir, 'state.json'), 'utf8');
   const s1 = h.state(r1);
   assert.equal(typeof s1.rule0, 'string', 'sealed');
-  for (const clear of [v.sha, headOf(800), '800', 'reviews/', 'after agents', 'PASS', 'pending', 'W/"']) assert.ok(!text.includes(clear), `${clear} not in clear`);
+  // Every needle is looked for in the clear fields. The sealed parts (base64url of random bytes) and
+  // the keyed hashes (random hex) are left out of that, as '800' turns up in them by chance (about one
+  // run in 100); each sealed part is checked as what it is instead, and a needle no chance can match
+  // there (a character outside base64url, or 16 characters or more) is looked for in the whole file too.
+  const view = clearView(JSON.parse(text));
+  const clears = [v.sha, headOf(800), '800', 'reviews/', 'after agents', 'PASS', 'pending', 'W/"'];
+  for (const clear of clears) assert.ok(!view.text.includes(clear), `${clear} not in clear`);
+  assert.deepEqual(view.sealed.map(([label]) => label), ['jwt', 'rule0']);
+  for (const [label, part] of view.sealed) {
+    assert.match(part, /^[\w-]+$/, label);
+    assert.equal(openPart('w'.repeat(64), label, part), null, `${label}: a wrong key opens nothing`);
+    const clear = openPart(h.stateKey, label, part);
+    assert.notEqual(clear, null, label);
+    assert.ok(!Buffer.from(part, 'base64url').includes(JSON.stringify(clear)), `${label}: not merely encoded`);
+  }
+  assert.ok(view.hashes.length > 0 && view.hashes.every((x) => /^[0-9a-f]{32}$/.test(x)), view.hashes.join());
+  for (const clear of clears.filter((c) => /[^\w-]/.test(c) || c.length >= 16)) assert.ok(!text.includes(clear), `${clear} not in the file`);
   const p1 = openRule0(h.stateKey, s1.rule0);
   assert.equal(p1.v[verdictHash(h.stateKey, v.sha)], 'PASS');
   const e = p1.h[headHash(h.stateKey, SD, 800, headOf(800))];

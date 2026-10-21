@@ -1051,7 +1051,9 @@ export function createDesk(opts) {
       const budget = fixed - firsts.length * COMMITS_COST;
       // The MD sandbox (opts.j11) asks for its optional blobs before the rulings' history reads, so
       // its screens fill in the first cycle; without it the order is M2's.
-      const [batch] = opts.j11 && need.optional.shas.length ? batches(need.optional.shas, [], budget)
+      // With nothing of the 25 left (J12, J20 and J24's reads take it all), no optional blob rides this
+      // call: `batches` always places one, which would take the call past its 25.
+      const [batch] = budget <= 0 ? [] : opts.j11 && need.optional.shas.length ? batches(need.optional.shas, [], budget)
         : batches(need.optional.shas, need.optional.history, budget);
       const b = batch || { blobs: [], history: [], compare: [] };
       if (pl) b.pulls = pl;

@@ -15,6 +15,7 @@ import { dayWords, headlineWords, branchShape, runBegan, PHASE_CLASS } from './f
 import { GATE_PHASE } from './j11.js';
 import { ownerActions, memberLabel, NOT_RECORDED, pullLink, treeLink } from './sandbox.js';
 import { waitKey } from './waiting.js';
+import { WA } from './workahead.js';
 
 export { parseCommitPages } from './prfiles.js';
 
@@ -560,7 +561,13 @@ export function nextLine(project, { gate, row, sprint, docRead }) {
   if (!row) return { icon: 'half', words: docRead ? 'no milestone left to reach' : NOT_RECORDED };
   const f = row.finish;
   if (f && !f.na && f.words) return { icon: 'half', words: `${row.code} · rough finish ${f.words}` };
-  return { icon: 'half', words: `${row.code} · no estimate yet` };
+  // "no estimate yet" only where none is filed for it (the Reviewer's B1, stage 2 round 1). Where AC24
+  // marks the finish not available for another cause (past its estimate, or an earlier milestone in the
+  // order with none), its own words, as Plan shows them; with the estimates read failed, AC24 gives no
+  // finish at all: "not available", with no cause to name.
+  if (row.estimate && row.estimate.kind === 'missing') return { icon: 'half', words: `${row.code} · no estimate yet` };
+  if (f && f.na && f.words) return { icon: 'half', words: `${row.code} · rough finish: ${f.words}` };
+  return { icon: 'half', words: `${row.code} · rough finish: ${WA.notAvailable}` };
 }
 
 /** "◆ <n> wait on you" (one: "◆ 1 waits on you"), counted as the board counts the project's cards; else "Nothing waiting", "Can't read" or "Checking…". */

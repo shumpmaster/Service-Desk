@@ -10,15 +10,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CONFIG, SRC, fixture } from './helpers.mjs';
-import { repo, pr } from './fake-desk.mjs';
+import { repo, pr, gitSha } from './fake-desk.mjs';
 import { loadSandbox, byClass, findAll } from './sandbox-helpers.mjs';
 import { NOW, v3, v25, fullRepo, twoProjects } from './sandbox-fixtures.mjs';
 import { textSetup } from './screen-text.mjs';
-import { waSetup, WORKED, memStore } from './wa-fixtures.mjs';
+import { waSetup, WORKED, memStore, estLine, viewOf, SD, POOM } from './wa-fixtures.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { MARKS_KEY } from '../../src/lib/board.js';
 import { MARKERS_OFF } from '../../src/lib/seen.js';
-import { briefingView, settleWords, briefAge, HOME_WORDS } from '../../src/lib/home.js';
+import { briefingView, settleWords, briefAge, HOME_WORDS, nextLine } from '../../src/lib/home.js';
 
 const TZ = CONFIG.ownerTimeZone;
 const keyed = (app, k) => findAll(app.view, (e) => e.dataset && e.dataset.k === k)[0] || null;
@@ -241,7 +241,10 @@ test('AC82: each tile, top to bottom (frame H5) — Service-Desk (a second run, 
     const lines = (name) => byClass(keyed(app, `card:${name}`), 'v2-ln').map((l) => l.textContent);
     const top = (name) => keyed(app, `card:${name}`).children[0];
     assert.deepEqual(top('Service-Desk').children.map((c) => c.textContent), ['Service-Desk', 'Nothing waiting']);
-    assert.deepEqual(lines('Service-Desk'), ['Now: Design, run 2 · why it went back: not recorded', 'No agent run recorded since 8 Oct', 'Next: M1 · no estimate yet']);
+    // This setup names no planning project, so AC24 has no estimates to read and Plan reads "Estimate: not
+    // available" for M1: the tile says the same (the Reviewer's B1, stage 2 round 1, in place of "no estimate
+    // yet", which claimed none was filed). "no estimate yet" is checked where none is filed, below.
+    assert.deepEqual(lines('Service-Desk'), ['Now: Design, run 2 · why it went back: not recorded', 'No agent run recorded since 8 Oct', 'Next: M1 · rough finish: not available']);
     // Alpha (AC52's one-of-each, NOT real): a Build-gate card waiting, a builder dispatched.
     assert.match(top('Alpha').textContent, /^Alpha\d+ wait on you$/);
     assert.equal(lines('Alpha')[1], 'At work: Builder on P-003');
@@ -273,6 +276,62 @@ test('AC82: a tile\'s "Next:" is the first milestone not reached in the owner\'s
   } finally {
     app.restore();
   }
+});
+
+// The Reviewer's B1 (stage 2, round 1): "no estimate yet" only where none is filed; where AC24 marks the
+// finish not available for another cause, its own words as Plan shows them ("rough finish: not available:
+// <AC24's reason>"), and with the estimates read failed, AC24's "not available" alone (the Definer to confirm).
+const nextOf = (app) => byClass(keyed(app, 'card:Service-Desk'), 'v2-ln').map((l) => l.textContent).find((t) => /^Next:/.test(t));
+const PAST3 = (t) => [estLine('MD1', 2, 3, t), estLine('MD2', 1, 2, t), estLine('MD3', 3, 5, t)].join('\n') + '\n';
+
+test('AC82 with AC24: a milestone past its estimate — the tile reads "rough finish: not available: MD1 is past its estimate", as Plan does, not "no estimate yet" (the Reviewer\'s probe p4-past)', async () => {
+  const t = '2026-10-18T17:00:00Z';
+  for (const [label, now, want] of [['the same day', '2026-10-18T18:00:00Z', /^Next: MD1 · rough finish (?!:)/],
+    ['30 days later', '2026-11-17T18:00:00Z', /^Next: MD1 · rough finish: not available: MD1 is past its estimate$/]]) {
+    const app = await open(waSetup({ extra: { 'intake/estimates.jsonl': PAST3(t) } }), { now: Date.parse(now) });
+    try {
+      const next = nextOf(app);
+      assert.match(next, want, label);
+      assert.doesNotMatch(next, /no estimate yet/, `${label}: an estimate is filed`);
+      await app.go('#/work');
+      if (label === '30 days later') assert.match(app.text(), /Rough finish: not available: MD1 is past its estimate/, 'Plan\'s own words');
+    } finally {
+      app.restore();
+    }
+  }
+});
+
+test('AC82 with AC24: the estimates read failing — the tile reads "rough finish: not available", as Plan gives no finish, not "no estimate yet"', async () => {
+  const text = WORKED();
+  const app = await loadSandbox({ ...waSetup({ extra: { 'intake/estimates.jsonl': text } }), hash: '#/', now: Date.parse('2026-10-18T18:00:00Z'), store: memStore() });
+  const orig = app.server.call;
+  app.server.call = async (p, b) => {
+    const r = await orig(p, b);
+    if (p === '/api/blobs' && r.json && r.json.blobs && gitSha(text) in r.json.blobs) r.json.blobs[gitSha(text)] = null;
+    return r;
+  };
+  try {
+    await app.advance(1000);
+    await app.advance(61_000);
+    assert.equal(nextOf(app), 'Next: MD1 · rough finish: not available');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC82 with AC24: a milestone with an estimate after one in the order with none — "rough finish: not available: <that one> has no estimate yet"; "no estimate yet" for the one with none (workAheadView\'s rows, as the page passes them)', () => {
+  // Only MD2 to M3C estimated: MD1, first in the order, has none. On Home the earlier milestone is another
+  // project's; the row's words are the same.
+  const lines = WORKED().split('\n').filter((l) => l && !l.includes('"MD1"')).join('\n') + '\n';
+  const v = viewOf({ extra: { 'intake/estimates.jsonl': lines }, nowMs: Date.parse('2026-10-18T18:00:00Z'), projects: [SD, POOM] });
+  const row = (code) => v.rows.find((r) => r.code === code);
+  assert.equal(row('MD1').estimate.kind, 'missing');
+  assert.equal(nextLine(SD, { gate: null, row: row('MD1') }).words, 'MD1 · no estimate yet');
+  assert.notEqual(row('MD3').estimate.kind, 'missing', 'MD3 has its estimate');
+  assert.equal(nextLine(SD, { gate: null, row: row('MD3') }).words, 'MD3 · rough finish: not available: MD1 has no estimate yet');
+  // No estimates file at all (J14's "none"): none is filed for any, so "no estimate yet".
+  const none = viewOf({ nowMs: Date.parse('2026-10-18T18:00:00Z'), projects: [SD, POOM] });
+  assert.equal(nextLine(SD, { gate: null, row: none.rows[0] }).words, `${none.rows[0].code} · no estimate yet`);
 });
 
 test('AC82: the groups in frame H5\'s words and order, the first two open and Done closed; a tap folds and opens one and the tiles a row: one below 720 px, two from 720 px, Home\'s column at most 960 px', async () => {

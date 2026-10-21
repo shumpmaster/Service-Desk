@@ -487,3 +487,19 @@ notify-ac77-desk, notify-j16-jobs and j6-j8-function) add no fixture file. What 
   gives for that file (`package/fonts/split/woff2/IBMPlexSans-<weight>.css` and
   `IBMPlexMono-<weight>.css`, its "Subset: Latin1" and "Subset: Pi" rules), checked on 2026-10-20 by
   comparing each served rule's range with that file's.
+
+## The desk as mockup v2, stage 2: Home (2026-10-21, S-001 AC82 and J24)
+
+- `j24/commits-148-p1.json` and `j24/commits-177-p1.json` (J24's commits read; read by `j24-since.test.mjs`):
+  **real**, Service-Desk (a public repository), recorded on 2026-10-21 with `gh api` (no token needed):
+  `gh api "repos/shumpmaster/Service-Desk/pulls/<n>/commits?per_page=100" --jq '[.[] | {sha, parents: [.parents[] |
+  {sha}], commit: {message: .commit.message, author: {name: .commit.author.name, email: .commit.author.email},
+  committer: {date: .commit.committer.date}}, author: (if .author then {login: .author.login} else null end)}]'`,
+  for #148 (33 commits, 10 of them merges: the Chief of Staff's, the Orchestrator's and the owner's) and #177 (7
+  commits, 2 merges: the Builder's, the Orchestrator's and the owner's), each one page, cut to the fields J24
+  takes, order unchanged.
+- Everything else J24's and AC82's tests give is **NOT real** and written inline: the questions, answers, cards,
+  dispatch-log lines, pull requests, merges, milestones, made-up commits (the force-push, the bot, a commit dated
+  ahead, the 250-commit pull requests), every failure, "last looked" on the device and the marks. The capture rig
+  for the pull request's screenshots (outside the repository) serves the page these fixtures through
+  `fake-desk.mjs`, with #148's recorded commits moved in time so they fall after its made-up "last looked".

@@ -8,8 +8,9 @@
 
 import { makeGitHub, BudgetStop } from './gh.mjs';
 import { firstStep } from './secrets.mjs';
-import { lookupState, emptyState, keyHash, topicOf, sealPart, openPart, writeState, FORM } from './state.mjs';
+import { lookupState, emptyState, keyHash, topicOf, sealPart, openPart, writeState, openRule0, sealRule0, emptyRule0, FORM } from './state.mjs';
 import { collect, waitForDeploy } from './collect.mjs';
+import { OWNER_CHECK_FLOOR } from './rule0.mjs';
 import { mintJwt, pushOnce, payload, cut, throwawayVapidKey, JWT_REFRESH_MS, BODY_CUT_413, MAX_PAYLOAD } from './webpush.mjs';
 import { syncIssue } from './issue.mjs';
 import { usageStep, usageReason, usageConfig } from './costs.mjs';
@@ -113,9 +114,18 @@ export async function runSender(o) {
       checkout = null;
     }
     if (!checkout) c = { read: false, why: 'checkout' };
-    else c = await collect({ project, config, checkout, gh, nowMs: o.now(), stateKey: S.stateKey, cand: prev.cand, recorded: prev.recorded || {} });
+    else {
+      c = await collect({ project, config, checkout, gh, nowMs: o.now(), stateKey: S.stateKey, cand: prev.cand, recorded: prev.recorded || {},
+        rule0: openRule0(S.stateKey, prev.rule0) || emptyRule0() });
+    }
     if (c.read) {
-      say(`read: ${c.counts.waiting} waiting; left out: ${c.counts.held} held in a session, ${c.counts.recording} being recorded, ${c.counts.jobCandidates} the automatic job may still merge`);
+      say(`read: ${c.counts.waiting} waiting; left out: ${c.counts.held} held in a session, ${c.counts.recording} being recorded, ${c.counts.jobCandidates} the automatic job may still merge, ${c.withAgents} with the agents`);
+      // J16's rule 0: counts only (no number, sha or title).
+      const r0 = c.rule0;
+      if (r0.applies) {
+        say(r0.skipped ? `rule 0: the owner check not read for ${r0.heads.length} head(s): under ${OWNER_CHECK_FLOOR} requests left before it`
+          : `rule 0: the owner check read for ${r0.checked.length} head(s); ${r0.blobReads} verdict blob(s) read`);
+      } else say(`rule 0: ${r0.blobReads} verdict blob(s) read; the owner check is not read for this project`);
     } else {
       say(`not read (${c.why}); the last set is kept`);
       if (bootstrap) {
@@ -134,7 +144,9 @@ export async function runSender(o) {
     const subHash = keyHash(S.stateKey, `subscription|${sub.endpoint}|${sub.p256dh.toString('base64url')}|${sub.auth.toString('base64url')}`);
     const next = { form: FORM, at: nowIso, sub: subHash, gone: prev.gone, refused: prev.refused, jwt: prev.jwt,
       project: c.read ? { read: true, unreadSince: null } : { read: false, unreadSince: prev.project.unreadSince || nowIso },
-      keys: {}, cand: c.read ? c.cand : prev.cand, recorded: c.read ? c.recorded : (prev.recorded || {}), usage: prev.usage };
+      keys: {}, cand: c.read ? c.cand : prev.cand, recorded: c.read ? c.recorded : (prev.recorded || {}), usage: prev.usage,
+      // J18's rule-0 part (stage 1b): this run's, or, for a project not read, the last state's as it was.
+      rule0: c.read ? sealRule0(S.stateKey, c.rule0.part) : (typeof prev.rule0 === 'string' ? prev.rule0 : null) };
 
     // Pushes.
     let jwtRec = prev.jwt ? openPart(S.stateKey, 'jwt', prev.jwt) : null;

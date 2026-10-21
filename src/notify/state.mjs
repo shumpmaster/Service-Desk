@@ -11,7 +11,10 @@
 // failure, AC76's give-up clock), cand (J16's job candidates: { hash of key and head: { seen,
 // retried } }), recorded (AC77's questions whose answer's pull request was seen: { hash: when } for an
 // end found, or { hash: { seen, pr } } with that pull request's number sealed as the JWT is, draft 9;
-// a number is never in clear), usage (sealed: AC78's month, step, pending step and read times) }.
+// a number is never in clear), usage (sealed: AC78's month, step, pending step and read times),
+// rule0 (from stage 1b of "The desk as mockup v2", J16's rule 0; sealed as the JWT is, or null:
+// { v: { hash of a verdict blob's sha: 'PASS' | 'FAIL' | 'neither' }, h: { hash of a pull request's
+// key and head: { etag, state, after } } }, its entries counted toward the 5,000 with the others) }.
 
 import { createHmac, createCipheriv, createDecipheriv, hkdfSync, randomBytes, timingSafeEqual } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -90,28 +93,71 @@ export function readRecorded(stateKey, v) {
   return { seen: v.seen, number: p && Number.isInteger(p.n) ? p.n : null };
 }
 
+// ---------------------------------------------------------------------------
+// Rule 0's part (J18, stage 1b): each verdict the sender read, by the keyed hash of its blob sha,
+// with its word as `verdictOf` reads it; and, for each head `ownerCheckHeads` chose, the keyed hash
+// of the pull request's key and head with the owner check's ETag and its last answer (its state, and
+// whether its description starts "Owner: after agents"). No sha, number, path or description in it.
+
+const R0_PART = 'rule0';
+export const R0_WORDS = Object.freeze(['PASS', 'FAIL', 'neither']);
+export const R0_STATES = Object.freeze(['error', 'failure', 'pending', 'success']);
+/** An ETag as GitHub sends it (strong or weak), in a form safe to send back as a header. */
+export const ETAG_RE = /^(W\/)?"[\x21\x23-\x7e]{1,200}"$/;
+
+export const emptyRule0 = () => ({ v: {}, h: {} });
+/** The keyed hash a verdict blob is kept by. */
+export const verdictHash = (stateKey, sha) => keyHash(stateKey, `verdict-blob|${sha}`);
+/** The keyed hash a head's owner check is kept by: the pull request's AC73 key and its head. */
+export const headHash = (stateKey, project, number, sha) => keyHash(stateKey, `${project}|pr|${number}|${sha}|owner-check`);
+
+/** Whether an opened rule-0 part is in form. */
+export function rule0Problem(p) {
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return 'not an object';
+  if (Object.keys(p).length !== 2 || !p.v || typeof p.v !== 'object' || Array.isArray(p.v) || !p.h || typeof p.h !== 'object' || Array.isArray(p.h)) return 'its parts';
+  for (const [k, w] of Object.entries(p.v)) if (!HASH_RE.test(k) || !R0_WORDS.includes(w)) return 'a verdict';
+  for (const [k, e] of Object.entries(p.h)) {
+    if (!HASH_RE.test(k) || !e || typeof e !== 'object' || Array.isArray(e) || Object.keys(e).length !== 3) return 'a head';
+    if (!(e.etag === null || (typeof e.etag === 'string' && ETAG_RE.test(e.etag)))) return 'a head';
+    if (!(e.state === null || R0_STATES.includes(e.state)) || typeof e.after !== 'boolean') return 'a head';
+  }
+  return null;
+}
+export const rule0Count = (p) => Object.keys(p.v).length + Object.keys(p.h).length;
+export const sealRule0 = (stateKey, p) => sealPart(stateKey, R0_PART, p);
+/** A state's rule-0 part opened: an empty part for none (null or absent), null when it can't be opened or is not in form. */
+export function openRule0(stateKey, sealed) {
+  if (sealed === null || sealed === undefined) return emptyRule0();
+  const p = openPart(stateKey, R0_PART, sealed);
+  return p && !rule0Problem(p) ? p : null;
+}
+
 /** A state with nothing in it yet. */
 export function emptyState(nowIso) {
   return { form: FORM, at: nowIso, sub: null, gone: null, refused: null, jwt: null,
-    project: { read: true, unreadSince: null }, keys: {}, cand: {}, recorded: {}, usage: null };
+    project: { read: true, unreadSince: null }, keys: {}, cand: {}, recorded: {}, usage: null, rule0: null };
 }
 
 const isIso = (v) => typeof v === 'string' && ISO_RE.test(v);
 const isoOrNull = (v) => v === null || isIso(v);
 
-/** Whether a parsed state is in this form; the reason when not. */
-export function formProblem(s) {
+/**
+ * Whether a parsed state is in this form; the reason when not. extra: entries counted toward the
+ * 5,000 that only the state key can count (rule 0's sealed part; verifyState opens it).
+ */
+export function formProblem(s, extra = 0) {
   if (!s || typeof s !== 'object' || Array.isArray(s)) return 'not an object';
   if (s.form !== FORM) return 'another form';
   if (!isIso(s.at)) return 'its time';
   if (!(s.sub === null || HASH_RE.test(s.sub)) || !(s.gone === null || HASH_RE.test(s.gone))) return 'its subscription hash';
   if (s.refused !== null && (typeof s.refused !== 'object' || !Number.isInteger(s.refused.status) || !isIso(s.refused.since))) return 'its refusal';
   if (!(s.jwt === null || typeof s.jwt === 'string') || !(s.usage === null || typeof s.usage === 'string')) return 'its sealed parts';
+  if (!(s.rule0 === undefined || s.rule0 === null || typeof s.rule0 === 'string')) return 'its sealed parts';
   if (!s.project || typeof s.project.read !== 'boolean' || !isoOrNull(s.project.unreadSince)) return 'its project part';
   if (!s.keys || typeof s.keys !== 'object' || Array.isArray(s.keys) || !s.cand || typeof s.cand !== 'object' || Array.isArray(s.cand)) return 'its keys';
   const keys = Object.keys(s.keys);
   const cands = Object.keys(s.cand);
-  if (keys.length + cands.length > LIMITS.keys) return 'too many keys';
+  if (keys.length + cands.length + extra > LIMITS.keys) return 'too many keys';
   for (const k of keys) {
     const e = s.keys[k];
     if (!HASH_RE.test(k) || !e || typeof e !== 'object') return 'a key';
@@ -127,7 +173,7 @@ export function formProblem(s) {
   if (s.recorded !== undefined) {
     if (!s.recorded || typeof s.recorded !== 'object' || Array.isArray(s.recorded)) return 'its recorded questions';
     const rs = Object.keys(s.recorded);
-    if (keys.length + cands.length + rs.length > LIMITS.keys) return 'too many keys';
+    if (keys.length + cands.length + rs.length + extra > LIMITS.keys) return 'too many keys';
     for (const k of rs) {
       const v = s.recorded[k];
       const ok = isIso(v) || (v && typeof v === 'object' && !Array.isArray(v) && isIso(v.seen) && typeof v.pr === 'string' && Object.keys(v).length === 2);
@@ -149,7 +195,18 @@ export function verifyState(stateKey, jsonBytes, sigBytes) {
   } catch {
     return { ok: false, why: 'form' };
   }
-  return formProblem(s) ? { ok: false, why: 'form' } : { ok: true, state: s };
+  return stateProblem(stateKey, s) ? { ok: false, why: 'form' } : { ok: true, state: s };
+}
+
+/**
+ * Whether a parsed state is in form, with the state key (the reason when not): formProblem, with
+ * rule 0's sealed part opened, checked and its entries counted toward the 5,000 (J18, stage 1b).
+ */
+export function stateProblem(stateKey, s) {
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return 'not an object';
+  const r0 = typeof s.rule0 === 'string' ? openRule0(stateKey, s.rule0) : emptyRule0();
+  if (!r0) return 'its rule-0 part';
+  return formProblem(s, rule0Count(r0));
 }
 
 /** The two files' bytes for a state. */

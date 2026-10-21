@@ -411,6 +411,55 @@ export function pull(n, o = {}) {
     created_at: o.created ?? '2026-10-18T11:00:00Z', updated_at: o.updated ?? '2026-10-18T11:00:00Z', body: o.body ?? '' };
 }
 
+// ---------------------------------------------------------------------------
+// J18's state as a leak scan reads it
+
+/** A J18 state's sealed fields, by the label each is sealed under (and each recorded entry's `pr`, 'recorded-pr'). */
+export const SEALED_FIELDS = Object.freeze({ jwt: 'jwt', usage: 'usage', rule0: 'rule0' });
+const SEALED_RE = /^[\w-]+$/;
+const KEYED_RE = /^[0-9a-f]{32}$/;
+
+/**
+ * A J18 state as a leak scan reads it: { text, sealed, hashes }. text is the JSON of its clear fields,
+ * with each sealed part put back as `<sealed label>`, the subscription's and the gone one's keyed
+ * hashes as `<hash>`, and each map keyed by hashes (keys, cand, recorded) as the list of its entries;
+ * sealed lists the sealed parts as [label, value]; hashes the keyed hashes. A sealed part is base64url
+ * of AES-GCM output under a random IV, and a keyed hash is HMAC hex, so a short needle made only of
+ * their characters ('N-a', '800') turns up in them by chance (for 'N-a' in J18's own state, about one
+ * run in 385): that is no leak. The caller scans text for every needle and checks the sealed parts
+ * (no wrong key opens one, its clear value is not in it) and the hashes on their own. Only a value in
+ * its form is taken out (a sealed part in base64url, a hash as 32 hex characters), so anything else in
+ * those places stays in text and is scanned.
+ */
+export function clearView(state) {
+  const c = structuredClone(state);
+  const sealed = [];
+  const hashes = [];
+  const seal = (label, v) => {
+    if (typeof v !== 'string' || !SEALED_RE.test(v)) return v;
+    sealed.push([label, v]);
+    return `<sealed ${label}>`;
+  };
+  const isHash = (v) => typeof v === 'string' && KEYED_RE.test(v);
+  for (const [field, label] of Object.entries(SEALED_FIELDS)) c[field] = seal(label, c[field]);
+  for (const field of ['sub', 'gone']) {
+    if (isHash(c[field])) {
+      hashes.push(c[field]);
+      c[field] = '<hash>';
+    }
+  }
+  for (const map of ['keys', 'cand', 'recorded']) {
+    if (!c[map] || typeof c[map] !== 'object' || Array.isArray(c[map])) continue;
+    const entries = Object.entries(c[map]);
+    if (!entries.every(([k]) => isHash(k))) continue; // a key not in form: the map stays as it is, and is scanned
+    c[map] = entries.map(([k, e]) => {
+      hashes.push(k);
+      return map === 'recorded' && e && typeof e === 'object' && 'pr' in e ? { ...e, pr: seal('recorded-pr', e.pr) } : e;
+    });
+  }
+  return { text: JSON.stringify(c), sealed, hashes };
+}
+
 /** A fake clock: now() and a sleep that only moves it. */
 export function clock(start = T0) {
   const c = { t: start, sleeps: [] };

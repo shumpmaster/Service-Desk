@@ -7,7 +7,7 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readUsage, computeUsage, usageUrls, usagePeriod, costStep, dollars } from '../../src/lib/usage.js';
 import { openPart } from '../../src/notify/state.mjs';
-import { harness, checkoutOf, clock, MIN, HOUR, cleanScratch, makeWorld } from './notify-helpers.mjs';
+import { harness, checkoutOf, clock, MIN, HOUR, cleanScratch, makeWorld, clearView } from './notify-helpers.mjs';
 
 after(cleanScratch);
 
@@ -237,11 +237,14 @@ test('AC78: no token, figure or step in any log line, issue body or the state\'s
   await h.run({ after: HOUR });
   const logs = h.runs.flatMap((r) => r.logs).join('\n');
   const issues = h.world.issues.map((i) => i.body).join('\n');
-  // The state's clear part: everything but its sealed parts and keyed hashes.
-  const clear = JSON.stringify({ ...h.state(), jwt: null, usage: null, sub: null, keys: Object.values(h.state().keys) });
-  for (const text of [logs, issues, clear]) {
+  // The state's clear part: everything but its sealed parts (rule 0's too, stage 1b) and keyed hashes,
+  // where '4000' or 'step' turns up by chance; each sealed part opened by no wrong key.
+  const view = clearView(h.state());
+  for (const text of [logs, issues, view.text]) {
     for (const leak of [TOKEN, '151.37', '251.37', '$', '4000', '4,000', 'step', 'estimate']) assert.ok(!text.includes(leak), `${leak} in ${text.slice(0, 80)}`);
   }
+  assert.ok(view.sealed.some(([label]) => label === 'usage'), 'the usage part sealed');
+  for (const [label, part] of view.sealed) assert.equal(openPart('a wrong key, of 32 characters or more', label, part), null, label);
   assert.deepEqual(openPart(h.stateKey, 'usage', h.state().usage).step, 5);
   // An unreadable state: nothing sent, the cost push included.
   h.usageStatus = 200;

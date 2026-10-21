@@ -7,9 +7,9 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
-import { stateFiles, emptyState, keyHash, openPart, sealPart, verifyState, formProblem, LIMITS } from '../../src/notify/state.mjs';
+import { stateFiles, emptyState, keyHash, openPart, sealPart, verifyState, formProblem, openRule0, emptyRule0, LIMITS } from '../../src/notify/state.mjs';
 import { readZip } from '../../src/notify/zip.mjs';
-import { REPO, MIN, checkoutOf, harness, makeZip, makeSubscription, cleanScratch, pull } from './notify-helpers.mjs';
+import { REPO, MIN, checkoutOf, harness, makeZip, makeSubscription, cleanScratch, pull, clearView } from './notify-helpers.mjs';
 
 after(cleanScratch);
 
@@ -167,9 +167,30 @@ test('J18: the sealed parts, the subscription\'s hash, and no key matched to its
   assert.equal(openPart('a wrong key, of 32 characters or more', 'usage', sealed), null);
   assert.deepEqual(openPart(h.stateKey, 'usage', sealed), { ym: '2026-10', step: 2 });
   assert.equal(openPart(h.stateKey, 'jwt', sealed), null, 'a part opens only under its own label');
-  // No title, path, number or endpoint in clear.
+  // No title, path, number or endpoint in clear: every needle is looked for in the clear fields. The
+  // sealed parts are base64url of random bytes and the keyed hashes random hex, so a short needle of
+  // those characters ('N-a') turns up in them by chance (about one run in 385); each is checked as
+  // what it is instead (clearView, and the leak scan's own test below).
+  const view = clearView(s);
+  const leaks = ['N-a', 'questions/', 'Made-up', JSON.parse(h.sub.value).endpoint, 'Service-Desk'];
+  for (const leak of leaks) assert.ok(!view.text.includes(leak), leak);
+  // Each sealed part (the JWT, and rule 0's, stage 1b): base64url only, opened by no wrong key, opened
+  // by the state key, and its clear value not in its bytes (not merely encoded).
+  assert.deepEqual(view.sealed.map(([label]) => label), ['jwt', 'rule0']);
+  for (const [label, part] of view.sealed) {
+    assert.match(part, /^[\w-]+$/, label);
+    assert.equal(openPart('a wrong key, of 32 characters or more', label, part), null, label);
+    const clear = openPart(h.stateKey, label, part);
+    assert.notEqual(clear, null, label);
+    assert.ok(!Buffer.from(part, 'base64url').includes(JSON.stringify(clear)), `${label}: not merely encoded`);
+  }
+  assert.equal(openRule0('a wrong key, of 32 characters or more', s.rule0), null, 'rule 0\'s part: unreadable without the key');
+  assert.deepEqual(openRule0(h.stateKey, s.rule0), emptyRule0(), 'readable with it');
+  // The keyed hashes are hex only. So a needle no chance can match there or in a sealed part (one with
+  // a character outside base64url, or 16 characters or more) is looked for in the whole state too.
+  assert.ok(view.hashes.length === 3 && view.hashes.every((x) => /^[0-9a-f]{32}$/.test(x)), view.hashes.join());
   const text = JSON.stringify(s);
-  for (const leak of ['N-a', 'questions/', 'Made-up', JSON.parse(h.sub.value).endpoint, 'Service-Desk']) assert.ok(!text.includes(leak), leak);
+  for (const leak of leaks.filter((l) => /[^\w-]/.test(l) || l.length >= 16)) assert.ok(!text.includes(leak), leak);
   // Every key is a keyed hash; with a wrong key none of the items' keys is found.
   const keys = ['Service-Desk|question|questions/N-a.md', 'Service-Desk|question|questions/N-b.md'];
   assert.deepEqual(Object.keys(s.keys).sort(), keys.map((k) => keyHash(h.stateKey, k)).sort());
@@ -182,6 +203,48 @@ test('J18: the sealed parts, the subscription\'s hash, and no key matched to its
   await h.run();
   assert.notEqual(h.state().sub, before);
   assert.match(h.state().sub, /^[0-9a-f]{32}$/);
+});
+
+test('J18: the leak scan reads the clear fields: a needle in a sealed part or a keyed hash by chance is no leak; one in a clear field is found', () => {
+  const key = 'k'.repeat(64);
+  const s = emptyState('2026-10-18T12:00:00.000Z');
+  // A sealed part holding 'N-a' by chance (about 1 seal in 700 of this size), and a keyed hash
+  // holding '800' (about 1 in 140): both reachable, well within the bounds.
+  let jwt = null;
+  for (let i = 0; i < 100000 && !jwt; i++) {
+    const x = sealPart(key, 'jwt', { jwt: 'made-up' });
+    if (x.includes('N-a')) jwt = x;
+  }
+  let sub = null;
+  for (let i = 0; i < 100000 && !sub; i++) {
+    const x = keyHash(key, `made-up subscription ${i}`);
+    if (x.includes('800')) sub = x;
+  }
+  assert.ok(jwt && sub, 'reachable');
+  const pr = sealPart(key, 'recorded-pr', { n: 5 });
+  Object.assign(s, { jwt, sub, recorded: { [keyHash(key, 'made-up question')]: { seen: s.at, pr } } });
+  s.keys[keyHash(key, 'made-up item')] = { sent: s.at };
+  // The whole state's text would read as a leak of both; its clear fields hold neither.
+  const text = JSON.stringify(s);
+  assert.ok(text.includes('N-a') && text.includes('800'), 'the old scan\'s false positive');
+  const view = clearView(s);
+  assert.ok(!view.text.includes('N-a') && !view.text.includes('800'), view.text);
+  assert.deepEqual(view.sealed, [['jwt', jwt], ['recorded-pr', pr]]);
+  assert.deepEqual(view.hashes, [sub, ...Object.keys(s.keys), ...Object.keys(s.recorded)]);
+  assert.equal(openPart('a wrong key, of 32 characters or more', 'jwt', jwt), null, 'and it stays sealed');
+  // Only a sealed part or a hash in its form is taken out: a needle anywhere else is still found.
+  const leaky = {
+    'the time': { ...s, at: 'N-a' },
+    'a refusal': { ...s, refused: { status: 410, reason: 'questions/N-a.md', since: s.at } },
+    'a key\'s entry': { ...s, keys: { [sub]: { unsent: s.at, fail: 'N-a' } } },
+    'a key not hashed': { ...s, keys: { 'N-a': { sent: s.at } } },
+    'a recorded entry': { ...s, recorded: { [sub]: { seen: 'N-a', pr } } },
+    'the subscription in clear': { ...s, sub: 'N-a' },
+    'a JWT in clear': { ...s, jwt: 'questions/N-a.md' },
+    'a usage part in clear': { ...s, usage: { ym: '2026-10', note: 'N-a' } },
+    'a pull request in clear': { ...s, recorded: { [sub]: { seen: s.at, pr: { n: 'N-a' } } } },
+  };
+  for (const [name, st] of Object.entries(leaky)) assert.ok(clearView(st).text.includes('N-a'), name);
 });
 
 test('J18: the state\'s two files: the HMAC checked before the JSON is read; the zip reader\'s limits', () => {

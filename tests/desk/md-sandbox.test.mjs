@@ -566,7 +566,7 @@ test('AC42: nothing is fixed wider than a 360 px screen, and every drawn text si
   assert.match(css, /\.sb-screen, \.sb-screen \* \{ overflow-wrap: anywhere; word-break: break-word; min-width: 0; \}/);
   // From stage 2 (AC82, C): Home's column widens to at most 960 px from 720 px wide, for two tiles a row;
   // that one rule, inside its media query, is the only width over 560 px.
-  const wide = /@media \(min-width: 720px\) \{\s*html\.sb\.v2-page\.v2-home body \{ max-width: 960px; \}/;
+  const wide = /@media \(min-width: 720px\) \{\s*html\.sb\.v2-page\.v2-home-page body \{ max-width: 960px; \}/;
   assert.match(css, wide, 'Home\'s wider column, from 720 px only');
   for (const m of css.replace(wide, '').matchAll(/(?:^|[;{\s])(?:min-|max-)?width:\s*(\d+)px/g)) {
     assert.ok(Number(m[1]) <= 560, `width ${m[1]}px`);

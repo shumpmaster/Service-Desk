@@ -18,7 +18,9 @@ import { waSetup, WORKED, memStore, estLine, viewOf, SD, POOM } from './wa-fixtu
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { MARKS_KEY } from '../../src/lib/board.js';
 import { MARKERS_OFF } from '../../src/lib/seen.js';
-import { briefingView, settleWords, briefAge, HOME_WORDS, nextLine } from '../../src/lib/home.js';
+import { briefingView, settleWords, briefAge, HOME_WORDS, nextLine, nowLine, atWorkLine, tileWaits } from '../../src/lib/home.js';
+import { models } from './tv2-fixtures.mjs';
+import { durationText } from '../../src/lib/timefmt.js';
 
 const TZ = CONFIG.ownerTimeZone;
 const keyed = (app, k) => findAll(app.view, (e) => e.dataset && e.dataset.k === k)[0] || null;
@@ -350,8 +352,55 @@ test('AC82: the groups in frame H5\'s words and order, the first two open and Do
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
   assert.match(css, /\n\.v2-tiles \{ display: grid; grid-template-columns: minmax\(0, 1fr\);/);
   const wide = /@media \(min-width: 720px\) \{([\s\S]*?)\n\}/.exec(css)[1];
-  assert.match(wide, /html\.sb\.v2-page\.v2-home body \{ max-width: 960px; \}/);
+  assert.match(wide, /html\.sb\.v2-page\.v2-home-page body \{ max-width: 960px; \}/);
   assert.match(wide, /\.v2-tiles \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \}/);
+});
+
+// The Design reviewer's B1 (stage 2, round 1): at 720 px and wider `body` took its content's width, since the
+// root carried Home's section class and became a grid. The root's classes on Home, and no rule that can
+// reach the root (a selector with no combinator whose classes it all has) lays it out as a grid or a flex box,
+// so `body`, a block with `margin: 0 auto`, fills the screen up to its 960 px.
+const ruleList = (css) => [...css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/@media[^{]*\{/g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1].trim(), body: m[2] }));
+function reachesRoot(one, rootClasses) {
+  const s = one.replace(/:where\([^)]*\)|:not\((?:[^()]|\([^()]*\))*\)|\[[^\]]*\]/g, '');
+  if (/[\s>+~]/.test(s)) return false; // a combinator: the root has no ancestor or sibling
+  const m = /^(html|:root)?((?:\.[\w-]+)*)(:root)?$/.exec(s);
+  if (!m) return false;
+  return m[2].split('.').filter(Boolean).every((c) => rootClasses.includes(c));
+}
+test('AC82: on Home the root is not laid out as a grid, so Home\'s column fills a wide screen up to 960 px (the Design reviewer\'s B1): the root\'s class is `v2-home-page`, Home\'s section\'s `v2-home`', async () => {
+  const app = await open(textSetup());
+  let rootClasses;
+  try {
+    rootClasses = document.documentElement.className.split(' ').filter(Boolean);
+    assert.ok(rootClasses.includes('v2-home-page') && rootClasses.includes('v2-page'), rootClasses.join(' '));
+    assert.ok(!rootClasses.includes('v2-home'), 'the section\'s class is not on the root');
+    assert.ok(byClass(app.view, 'v2-home')[0].className.split(' ').includes('v2-home'), 'Home\'s section keeps its own');
+    await app.go('#/waiting');
+    assert.ok(!document.documentElement.className.split(' ').includes('v2-home-page'), 'off Home, off the root');
+  } finally {
+    app.restore();
+  }
+  const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
+  const layout = [];
+  for (const r of ruleList(css)) {
+    if (!/(^|;)\s*display:\s*(grid|inline-grid|flex|inline-flex)/.test(r.body)) continue;
+    for (const one of r.sel.split(/\s*,\s*(?![^(]*\))/)) if (reachesRoot(one, [...rootClasses, 'sb'])) layout.push(one);
+  }
+  assert.deepEqual(layout, [], 'no grid or flex rule reaches the root on Home');
+  assert.ok(reachesRoot('.v2-home', ['sb', 'v2-page', 'v2-home']), 'the check sees the round-1 form: `.v2-home` on the root');
+  assert.ok(!reachesRoot('.v2-home .sb-h3', ['v2-home']) && !reachesRoot('.v2-tiles', rootClasses));
+});
+
+test('AC82, the Design reviewer\'s N1 (stage 2, round 1): the fold\'s headings ("Notifications", "GitHub Actions this month") in the row role, 600 13 px, by a rule that out-ranks the base view\'s `html.sb .sb-h3`', () => {
+  const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
+  const rules = ruleList(css);
+  const base = rules.find((r) => r.sel === 'html.sb .sb-h3');
+  assert.match(base.body, /font: var\(--t-item\)/, 'the base view\'s rule, 0,2,1');
+  const home = rules.find((r) => r.sel === 'html.sb .v2-home .sb-h3');
+  assert.ok(home, 'Home\'s rule, 0,3,1: one class more than the base view\'s');
+  assert.match(home.body, /font: var\(--t-row\)/);
+  assert.ok(css.indexOf('html.sb .v2-home .sb-h3') > css.indexOf('html.sb .sb-h3 {'), 'and after it');
 });
 
 test('AC82: a tile\'s tap opens the project\'s Status screen in stage 2 (AC81, "Until stage 3"; stage 3 rewrites this case for the page)', async () => {
@@ -383,6 +432,108 @@ test('AC82 (part A, items 4 and 6): Home from H5\'s extremes and from a project 
     assert.ok(brief(app).textContent.includes("Can't read Delta since"), brief(app).textContent);
     assert.equal(byClass(keyed(app, 'card:Delta'), 'v2-wt')[0].textContent, "Can't read");
     assert.doesNotMatch(app.text(), /Nothing needs you/);
+  } finally {
+    app.restore();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Round 1's further findings (stage 2): the Design reviewer's N2 and N3, the Reviewer's N2
+
+test('AC82, the Design reviewer\'s N2: a tile whose records the page doesn\'t hold — still "Checking…" at first paint, or "Can\'t read" with none ever read — says "not available" in its "Now", "At work" and "Next" lines, not "not recorded"', async () => {
+  const setup = textSetup();
+  setup.config.projects.push(v3('Zeta'));
+  setup.repos.Zeta = repo({ 'README.md': '# Zeta\n\nA made-up project.\n' });
+  setup.repos.Zeta.fail = { state: 'cant-read', reason: 'not-found' };
+  const app = await loadSandbox({ ...setup, hash: '#/', now: NOW, store: memStore() });
+  const lines = (name) => byClass(keyed(app, `card:${name}`), 'v2-ln').map((l) => l.textContent);
+  try {
+    // First paint: nothing read yet.
+    assert.equal(keyed(app, 'card:Alpha').children[0].children[1].textContent, 'Checking…');
+    assert.deepEqual(lines('Alpha'), ['Now: not available', 'At work: not available', 'Next: not available'], 'checking: not available');
+    assert.deepEqual(lines('Delta'), ['Now: not available', 'No dispatch log: not used here', 'Next: not available'], 'a v2.5 project: its model\'s line stays');
+    await app.advance(1000);
+    await app.advance(61_000);
+    assert.equal(keyed(app, 'card:Zeta').children[0].children[1].textContent, "Can't read");
+    const z = lines('Zeta');
+    assert.deepEqual(z.slice(0, 3), ['Now: not available', 'At work: not available', 'Next: not available'], 'can\'t read, none ever read: not available');
+    assert.match(z[3], /^Can't read since \d\d:\d\d: /, 'and the tile\'s red line says why');
+    assert.ok(!lines('Alpha').some((l) => /not available$/.test(l) && /^(Now|At work):/.test(l)), 'read: its own lines');
+    assert.doesNotMatch(keyed(app, 'card:Zeta').textContent, /not recorded/);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC82, the Design reviewer\'s N3: a "Since you last looked" line cut at three lines fades at its end (rulebook item 16); one that fits has no fade', async () => {
+  const app = await open(twoProjects(), { store: looked(NOW - 10 * 3600e3) });
+  try {
+    const e1s = () => byClass(keyed(app, 'since'), 'v2-e1');
+    assert.ok(e1s().length >= 2);
+    const [a, b] = e1s();
+    // The fake DOM can't lay out text: the first line's words run to 8 lines in its 3-line box, the second fits.
+    a.clientHeight = 57; a.scrollHeight = 152;
+    b.clientHeight = 19; b.scrollHeight = 19;
+    await app.resize(360);
+    await app.flush();
+    const [a2, b2] = e1s();
+    assert.ok(a2.className.split(' ').includes('over'), 'cut: faded');
+    assert.ok(!b2.className.split(' ').includes('over'), 'fits: no fade');
+  } finally {
+    app.restore();
+  }
+  const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
+  assert.match(css, /\n\.v2-e1 \{ position: relative; font: var\(--t-body\); overflow-wrap: anywhere; max-height: calc\(3 \* 1\.45em\); overflow: hidden; overflow: clip; \}/, 'three lines, never an ellipsis');
+  assert.match(css, /\n\.v2-e1\.over::after \{ content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1\.45em; pointer-events: none;\s+background: linear-gradient\(to right, transparent, var\(--bg\) 85%\); \}/,
+    'the third line fades at its end into the ground');
+});
+
+// The Reviewer's N2 (stage 2, round 1): AC82's rules no test held.
+function nowCtx(change) {
+  const extra = { 'decisions/P-001/dor-2.md': 'Decision: recycle\nReason: the design must start again from the owner\'s phone, not the laptop.\n' };
+  const ctx = models({ extra }).ctx;
+  const run = { ...ctx.now, ...change.run };
+  const byItem = new Map(ctx.tl.byItem);
+  if (change.lines) byItem.set('P-001', [...(ctx.tl.byItem.get('P-001') || []), ...change.lines]);
+  const k = new Map(ctx.cols.k);
+  k.set(run, ctx.cols.k.get(ctx.now));
+  const runs = ctx.cols.runs.map((r) => (r === ctx.now ? run : r));
+  return { ...ctx, now: run, tl: { ...ctx.tl, byItem }, cols: { ...ctx.cols, runs, k } };
+}
+test('AC82, the Reviewer\'s N2: "Now:" — the run\'s reason quoted from its record (AC70); "went back on <date>, why not recorded" with a dated line and no reason (made-up log lines, NOT real records)', () => {
+  const TZ = CONFIG.ownerTimeZone;
+  const quoted = nowLine(nowCtx({ run: { item: 'P-001', first: 100000 }, lines: [[99999, { item: 'P-001', trigger: 'decision', gate: 'dor', card: 2, word: 'recycle', record: 'decisions/P-001/dor-2.md', time: '2026-10-08T15:30:00Z' }]] }), TZ);
+  assert.equal(quoted.lead, 'Now: Design, run 2');
+  assert.equal(quoted.rest, '“the design must start again from the owner\'s phone, not the laptop.”', 'quoted, as written');
+  const dated = nowLine(nowCtx({ run: { routed: [[99999, { item: 'P-001', time: '2026-10-08T15:30:00Z' }]] } }), TZ);
+  assert.deepEqual([dated.lead, dated.rest], ['Now: Design, run 2', 'went back on 8 Oct, why not recorded']);
+  const bare = nowLine(nowCtx({ run: {} }), TZ);
+  assert.equal(bare.rest, 'why it went back: not recorded', 'no dated line: AC70\'s own words');
+});
+
+test('AC82, the Reviewer\'s N2: "At work:" each working member, joined by ", "; "◆ 1 waits on you" in the singular, "<n> wait on you" otherwise', () => {
+  const p = v3('Alpha');
+  const model = { items: [{ id: 'P-003', state: 'dispatched', running: { role: 'builder' } }, { id: 'P-004', state: 'dispatched', running: { role: 'reviewer' } }, { id: 'P-005', state: 'ready' }] };
+  assert.equal(atWorkLine(p, model, [], null, CONFIG.ownerTimeZone), 'At work: Builder on P-003, Reviewer on P-004');
+  assert.equal(atWorkLine(p, model, [{ who: 'cos' }], null, CONFIG.ownerTimeZone), 'At work: Builder on P-003, Reviewer on P-004, Chief of Staff working');
+  assert.deepEqual([tileWaits(1, 'ok').words, tileWaits(2, 'ok').words, tileWaits(0, 'ok').words], ['1 waits on you', '2 wait on you', 'Nothing waiting']);
+  assert.equal(tileWaits(1, 'ok').you, true);
+});
+
+test('AC82, the Reviewer\'s N2: "checked <age> ago" is the stalest project\'s last successful read, not the freshest', async () => {
+  const setup = twoProjects();
+  const app = await open(setup);
+  try {
+    assert.match(keyed(app, 'home-checked').textContent, /^checked \d+ s ago$/);
+    // Beta can't be read from here on; Alpha keeps reading each minute.
+    setup.repos.Beta.fail = { state: 'cant-read', reason: 'not-found' };
+    const t0 = app.now;
+    await app.advance(5 * POLL_MS);
+    const text = keyed(app, 'home-checked').textContent;
+    const age = app.now - t0;
+    assert.match(text, /^checked \d+ min ago$/, `${text}: Beta's last read, minutes old`);
+    assert.ok(Number(/(\d+) min/.exec(text)[1]) >= Math.floor(age / 60e3) - 1, `${text} after ${age / 1000} s`);
+    assert.notEqual(text, `checked ${durationText(POLL_MS)} ago`);
   } finally {
     app.restore();
   }

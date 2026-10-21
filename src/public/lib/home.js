@@ -570,6 +570,18 @@ export function nextLine(project, { gate, row, sprint, docRead }) {
   return { icon: 'half', words: `${row.code} · rough finish: ${WA.notAvailable}` };
 }
 
+/**
+ * A tile whose project's records the page doesn't hold (its first read still "Checking…", or none ever
+ * read and now "Can't read"): its "Now", "At work" and "Next" lines say "not available", the desk's word
+ * for records it couldn't read (Status's "not available yet"), not "not recorded", which says the records
+ * were read and hold nothing (the Design reviewer's N2, stage 2 round 1). A v2.5 project's "No dispatch
+ * log: not used here" is the model's, read or not, so it stays.
+ */
+export function unreadLines(project) {
+  return { now: { lead: `Now: ${WA.notAvailable}`, rest: null }, work: project.model === 'v3' ? `At work: ${WA.notAvailable}` : HOME_WORDS.noDispatchLog,
+    next: { icon: 'unrec', words: WA.notAvailable } };
+}
+
 /** "◆ <n> wait on you" (one: "◆ 1 waits on you"), counted as the board counts the project's cards; else "Nothing waiting", "Can't read" or "Checking…". */
 export function tileWaits(n, read) {
   if (n > 0) return { you: true, words: `${n} ${n === 1 ? 'waits' : 'wait'} on you` };

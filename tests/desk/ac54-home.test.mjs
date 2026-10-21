@@ -452,8 +452,8 @@ test('AC54 (c), changed by AC82 (P-001-home-tiles.md, A): one tile a row below 7
   assert.deepEqual(grids, ['minmax(0, 1fr)', 'repeat(2, minmax(0, 1fr))'], 'one column, then two');
   const wide = /@media \(min-width: 720px\) \{([\s\S]*?)\n\}/.exec(css)[1];
   assert.match(wide, /\.v2-tiles \{ grid-template-columns: repeat\(2/, 'the two only from 720 px');
-  assert.match(wide, /html\.sb\.v2-page\.v2-home body \{ max-width: 960px; \}/, 'Home\'s column widens to at most 960 px');
-  assert.doesNotMatch(css.replace(wide, ''), /\.v2-home body \{[^}]*max-width/, 'every other screen keeps its width');
+  assert.match(wide, /html\.sb\.v2-page\.v2-home-page body \{ max-width: 960px; \}/, 'Home\'s column widens to at most 960 px');
+  assert.doesNotMatch(css.replace(wide, ''), /\.v2-home-page body \{[^}]*max-width/, 'every other screen keeps its width');
   const setup = extremes();
   setup.repos.Alpha.commit({ 'README.md': tv('README-600.md') });
   const app = await openHome(setup.config, setup.repos);
@@ -536,6 +536,9 @@ test('AC54 (d), as AC82 orders them (frame H5): "Your projects · active", "Clos
     assert.match(heads[0].textContent, /6 waiting on you/);
     assert.match(heads[0].textContent, /1 can't be read/);
     assert.deepEqual(names(groups[1]), ['Dropped', 'Delta']);
+    // Each group's count, as the base held it for every group (the Reviewer's note, stage 2 round 1): the
+    // base's second group (Done, "1 project") is third here and checked below; the second here is Closed's.
+    assert.equal(byClass(heads[1], 'v2-hgn')[0].textContent, '2 projects', 'the second group\'s count');
     assert.equal(byClass(heads[1], 'v2-hgy')[0].textContent, '1 waiting on you', 'the group holding a waiting item says so');
     assert.equal(groups[2].children.length, 1, 'a closed group shows only its header');
     assert.match(heads[2].textContent, /\(closed\)/, 'its state in words for assistive technology, as well as its mark');

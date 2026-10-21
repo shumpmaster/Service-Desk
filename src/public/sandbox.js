@@ -27,7 +27,7 @@ import {
 } from './lib/sandbox.js';
 import { teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
 import { summaryView, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
-import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits } from './lib/home.js';
+import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits, unreadLines } from './lib/home.js';
 import { GATE_PHASE } from './lib/j11.js';
 import { composeAnswer, questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, WORDS, MARKS_KEY,
@@ -822,12 +822,15 @@ function briefingNode(desk, built, bd) {
 /** One line of "Since you last looked" (AC82, frame H1): its time in Plex Mono, its icon, the record's own words, then "<project> · <its codes>"; a tap opens where it happened. */
 function eventNode(e, nowMs, where) {
   const t = lineTime(e, nowMs, TZ);
+  const k = `${where}:${e.id}`;
   const inner = [
     h('span', { class: 'v2-tm' }, t.day ? h('span', { class: 'v2-tmd' }, t.day) : null, t.time ? h('span', {}, t.time) : null),
     e.icon === 'you' ? stc('you', 'v2-k') : vi(e.icon, `v2-k${e.icon === 'bad' ? ' bad' : ''}`),
-    h('span', { class: 'v2-et' }, h('span', { class: 'v2-e1' }, e.words), h('span', { class: 'v2-e2' }, [e.project, ...e.codes].join(' · '))),
+    // Past three lines, the third fades at its end (rulebook item 16; the Design reviewer's N3, stage 2
+    // round 1), measured as the summary's is (measureClips).
+    h('span', { class: 'v2-et' }, h('span', { class: `v2-e1${sinceOver.get(k) === true ? ' over' : ''}`, 'data-since': k }, e.words),
+      h('span', { class: 'v2-e2' }, [e.project, ...e.codes].join(' · '))),
     vi('chev', 'v2-k v2-chev')];
-  const k = `${where}:${e.id}`;
   const link = e.target && e.target.href
     ? h('a', { class: 'v2-ev', key: k, href: e.target.href, rel: 'noopener noreferrer', target: '_blank' }, inner)
     : h('a', { class: 'v2-ev', key: k, href: (e.target && e.target.hash) || '#/', onclick: () => { nav.opener = k; } }, inner);
@@ -938,7 +941,9 @@ function tileNode(b, bd, group, nextRows) {
     now = { lead: `Now: ${tl.open ? `sprint ${tl.open}` : 'no open sprint'}`, rest: HOME_WORDS.olderPipeline };
     next = nextLine(project, { gate: null, sprint: tl.open });
   }
-  const work = atWorkLine(project, b.model, b.ball, b.j, TZ);
+  let work = atWorkLine(project, b.model, b.ball, b.j, TZ);
+  // No records held yet, or none ever read: "not available" (home.js, unreadLines).
+  if (read !== 'ok' && !(b.snap && b.snap.tree)) ({ now, work, next } = unreadLines(project));
   return h('article', { class: 'v2-tile', key: `card:${name}` },
     h('div', { class: 'v2-thd' }, h('h3', { class: 'v2-tnm' }, h('a', { class: 'v2-ta', href: go('p', name), key: `tile-a:${name}` }, name)),
       h('span', { class: `v2-wt${waits.you ? ' you' : ''}` }, waits.you ? stc('you', 'v2-k') : null, waits.words)),
@@ -3042,6 +3047,8 @@ function placeBubble() {
 const summaryOver = new Map();
 /** The same for a ruling's line (AC55, AC52): its box holds at most three lines (CSS) and hides the rest. */
 const lineOver = new Map();
+/** The same for a "Since you last looked" line (AC82): at most three lines (CSS), the third faded when cut. */
+const sinceOver = new Map();
 const lineText = new Map(); // id → the words drawn (lineBox)
 const lineAt = new Map(); // id → { text, width } when last judged over
 /**
@@ -3062,7 +3069,8 @@ function measureClips() {
     if (!el.getAttribute) return;
     const sum = el.getAttribute('data-sum');
     const line = el.getAttribute('data-line');
-    if (sum == null && line == null) return;
+    const ev = el.getAttribute('data-since');
+    if (sum == null && line == null && ev == null) return;
     const [sh, ch] = [el.scrollHeight, el.clientHeight];
     if (typeof sh !== 'number' || typeof ch !== 'number' || !ch) return;
     let over = sh > ch + 1;
@@ -3070,12 +3078,12 @@ function measureClips() {
       if (over && lineOver.get(line) !== true) lineAt.set(line, { text: lineText.get(line), width: window.innerWidth });
       else if (lineOver.get(line) === true && lineStaysOver(line)) over = true;
     }
-    const [map, name, k] = sum != null ? [summaryOver, sum, `sum:${sum}`] : [lineOver, line, `line:${line}`];
+    const [map, name, k] = sum != null ? [summaryOver, sum, `sum:${sum}`] : line != null ? [lineOver, line, `line:${line}`] : [sinceOver, ev, null];
     if (map.get(name) !== over) {
       map.set(name, over);
       changed = true;
       // A text that now fits has no control, so its bubble closes.
-      if (!over && bubble.open === k) bubble.close();
+      if (!over && k && bubble.open === k) bubble.close();
     }
   });
   // A guard: a few redraws in a row from measuring alone, then the answers stand until the next one.
@@ -3300,8 +3308,10 @@ export function startSandbox(opts = {}) {
     try {
       // The Waiting screen is drawn on mockup v2's ground (sandbox.css, html.v2-page).
       document.documentElement.classList.toggle('v2-page', r.kind === 'waiting' || r.kind === 'home');
-      // AC82: Home's column widens to two tiles a row from 720 px (sandbox.css).
-      document.documentElement.classList.toggle('v2-home', r.kind === 'home');
+      // AC82: Home's column widens to two tiles a row from 720 px (sandbox.css). The root's class is its
+      // own: Home's section is `.v2-home`, a grid, which the root must not become (the Design reviewer's
+      // B1, stage 2 round 1).
+      document.documentElement.classList.toggle('v2-home-page', r.kind === 'home');
     } catch {
       // the screen still draws, on the page's ground
     }

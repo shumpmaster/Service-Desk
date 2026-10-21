@@ -980,7 +980,8 @@ html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /*
 .v2-ev > .v2-k { margin-top: 2px; color: var(--ink2); }
 .v2-ev > .v2-k.bad { color: var(--bad); }
 .v2-et { display: grid; gap: 1px; min-width: 0; }
-.v2-e1 { font: var(--t-body); overflow-wrap: anywhere; }
+/* At most three lines, as the board's titles (AC80): never an ellipsis; the whole record is one tap away where the line opens. */
+.v2-e1 { font: var(--t-body); overflow-wrap: anywhere; max-height: calc(3 * 1.45em); overflow: hidden; overflow: clip; }
 .v2-e2 { font: var(--t-mono); color: var(--ink2); overflow-wrap: anywhere; }
 .v2-ev > .v2-chev { width: 10px; height: 10px; margin-top: 4px; color: var(--ink2); }
 .v2-hgroups { display: grid; gap: 8px; }

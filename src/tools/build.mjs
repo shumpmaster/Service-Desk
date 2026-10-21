@@ -23,8 +23,8 @@ const WRITE = process.argv.includes('--write');
 // The modules the page loads; each is copied to public/lib/ unchanged.
 export const PAGE_LIB = ['asked.js', 'asking.js', 'board.js', 'config.js', 'cos.js', 'exp001.js', 'feed.js', 'home.js', 'j11.js', 'j22.js', 'jobcand.js', 'jobwatch.js',
   'ledgergrant.js', 'links.js', 'markdown.js', 'model.js', 'notifyview.js', 'page.js', 'prfiles.js', 'pulls.js', 'records.js',
-  'sandbox.js', 'scheduler.js', 'seen.js', 'store.js', 'timefmt.js', 'timeline.js', 'universe.js', 'usage.js', 'waiting.js',
-  'workahead.js', 'workview.js'];
+  'projectpage.js', 'sandbox.js', 'scheduler.js', 'seen.js', 'store.js', 'timefmt.js', 'timeline.js', 'universe.js', 'usage.js', 'waiting.js',
+  'versions.js', 'workahead.js', 'workview.js'];
 const DEPENDENCY_BLOCKS = ['dependencies', 'optionalDependencies', 'peerDependencies', 'bundleDependencies',
   'bundledDependencies'];
 const LIFECYCLE = ['preinstall', 'install', 'postinstall', 'preprepare', 'prepare', 'postprepare', 'prepack',

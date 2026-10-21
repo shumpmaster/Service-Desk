@@ -10,7 +10,7 @@ import { judgePulls, mergePulls, pullsBackoffMs, PULLS_KEY, OLD_PULLS_KEYS, PULL
 import { dayKey } from './timefmt.js';
 import { usageEntry } from './usage.js';
 import { newJobsState, partDue, runPhase, pollPart, applyPollAnswer } from './jobwatch.js';
-import { RISK_PATHS_PATH, OWNER, listAt, ownerCheckHeads, ownerCheckFrom, judgeFiles, verdictPath, ownBranch, verdictOf } from './j22.js';
+import { RISK_PATHS_PATH, OWNER, listAt, ownerCheckHeads, ownerChecksApply, ownerCheckFrom, judgeFiles, verdictPath, ownBranch, verdictOf } from './j22.js';
 
 // J12 (2026-10-16): the pull-request read counts 5 of a blob call's budget of 25.
 export const PULLS_COST = 5;
@@ -769,9 +769,7 @@ export function createDesk(opts) {
    * list gives as public (`base.repo.private` false on its pull requests).
    */
   function checksRead(st) {
-    if (st.project.model !== 'v3') return false;
-    const pulls = pullsOf(st);
-    return pulls.length > 0 && pulls.every((p) => p.baseRepoPrivate === false);
+    return ownerChecksApply(st.project, pullsOf(st)); // the same rule as the sender's (src/lib/j22.js)
   }
 
   /** What J22 judges a project's pull requests from, as last read (src/lib/j22.js's ctx). */

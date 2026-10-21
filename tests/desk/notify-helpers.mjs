@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync, readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
-import { createECDH, createHmac, createDecipheriv, generateKeyPairSync, randomBytes } from 'node:crypto';
+import { createECDH, createHash, createHmac, createDecipheriv, generateKeyPairSync, randomBytes } from 'node:crypto';
 import { deflateRawSync } from 'node:zlib';
 import { runSender } from '../../src/notify/sender.mjs';
 import { openCheckout } from '../../src/notify/checkout.mjs';
@@ -214,13 +214,19 @@ const json = (status, body, headers = {}) => ({ status, body: typeof body === 's
  * world: { pulls: [pr], files: { n: [file] }, prs: { n: pr } (GET pulls/<n>), closed: [pr], waiting: [run], runs: { id: run }, checks: { sha: {...} },
  *   asksRuns: [run], jobs: { runId: [job] }, logs: { jobId: text }, commits: { sha: date },
  *   issues: [issue], usage: { summary, usage, repos }, fail: { pathPrefix: status }, remaining,
- *   push: (req) → { status, body } }.
+ *   push: (req) → { status, body },
+ *   from stage 1b (J16's rule 0): gitBlobs: { sha: text | Buffer } (GET git/blobs/<sha>, base64, as
+ *   GitHub answers it; `blobAnswer(sha)` → { status, body } overrides one), statuses: { sha: { state,
+ *   description } | raw JSON text } (GET commits/<sha>/status, with an ETag; a matching If-None-Match
+ *   answers 304), remainingAt(path) → a header value, or null for none (overrides `remaining`) }.
+ *   It counts `blobReads`, `statusReads` and `status304`.
  */
 export function makeWorld(init = {}) {
   const w = {
     pulls: [], files: {}, waiting: [], runs: {}, checks: {}, asksRuns: [], jobs: {}, logs: {}, commits: {}, issues: [],
     usage: null, fail: {}, remaining: '4000', pushes: [], ghCalls: [], usageCalls: [], nextIssue: 1,
-    artifacts: [], stateRuns: [], blobs: {}, push: () => ({ status: 201 }), ...init,
+    artifacts: [], stateRuns: [], blobs: {}, push: () => ({ status: 201 }), gitBlobs: {}, statuses: {}, blobReads: 0, statusReads: 0, status304: 0,
+    remainingAt: null, ...init,
   };
   const listRoute = (items) => json(200, items);
   w.fetch = async (url, init2 = {}) => {
@@ -249,6 +255,11 @@ export function makeWorld(init = {}) {
     w.ghCalls.push({ method, path, headers, body: init2.body });
     const ans = route(method, u, init2);
     const h = new Headers(ans.headers || {});
+    if (typeof w.remainingAt === 'function') {
+      const v = w.remainingAt(path);
+      if (v == null) h.delete('x-ratelimit-remaining');
+      else h.set('x-ratelimit-remaining', String(v));
+    }
     return new Response(ans.status === 302 || ans.status === 304 ? null : ans.body, { status: ans.status, headers: h });
   };
 
@@ -308,6 +319,31 @@ export function makeWorld(init = {}) {
     if (m) return paged((w.checks[m[1]] && w.checks[m[1]].checkRuns) || [], 'check_runs');
     m = /^\/repos\/[^/]+\/[^/]+\/commits\/([0-9a-f]{40})\/statuses$/.exec(p);
     if (m) return paged((w.checks[m[1]] && w.checks[m[1]].statuses) || [], null);
+    // J16's rule 0 (stage 1b): a verdict blob by its sha, and the owner check's combined status.
+    m = /^\/repos\/[^/]+\/[^/]+\/git\/blobs\/([0-9a-f]{40})$/.exec(p);
+    if (m && method === 'GET') {
+      w.blobReads++;
+      const o = w.blobAnswer ? w.blobAnswer(m[1]) : null;
+      if (o) return { status: o.status, body: typeof o.body === 'string' ? o.body : JSON.stringify(o.body), headers: { 'content-type': 'application/json', ...rem, ...(o.headers || {}) } };
+      const b = w.gitBlobs[m[1]];
+      if (b == null) return json(404, { message: 'Not Found' }, rem);
+      const buf = Buffer.isBuffer(b) ? b : Buffer.from(b, 'utf8');
+      const content = (buf.toString('base64').match(/.{1,60}/g) || []).join('\n') + '\n';
+      return json(200, { sha: m[1], node_id: 'made-up', size: buf.length, url: `${API}${p}`, content, encoding: 'base64' }, rem);
+    }
+    m = /^\/repos\/[^/]+\/[^/]+\/commits\/([0-9a-f]{40})\/status$/.exec(p);
+    if (m && method === 'GET') {
+      w.statusReads++;
+      const e = w.statuses[m[1]];
+      const raw = typeof e === 'string' ? e : JSON.stringify({ state: e ? e.state : 'pending', sha: m[1], total_count: e ? 1 : 0,
+        statuses: e ? [{ context: 'owner-verdict', state: e.state, description: e.description }] : [] });
+      const tag = `W/"${createHash('sha1').update(raw).digest('hex')}"`;
+      if (new Headers(init2.headers || {}).get('if-none-match') === tag) {
+        w.status304++;
+        return { status: 304, headers: { etag: tag, ...rem } };
+      }
+      return json(200, raw, { etag: tag, ...rem });
+    }
     m = /^\/repos\/[^/]+\/[^/]+\/commits\/([0-9a-f]{40})$/.exec(p);
     if (m) return w.commits[m[1]] ? json(200, { sha: m[1], commit: { committer: { date: w.commits[m[1]] } } }, rem) : json(404, {}, rem);
     if (p === `${base}/actions/workflows/asks-merge.yml/runs`) return json(200, { workflow_runs: w.asksRuns }, rem);
@@ -369,7 +405,7 @@ export function ownWorkflowRun(id, o = {}) {
 /** A made-up open pull request in REST's form. */
 export function pull(n, o = {}) {
   return { number: n, title: o.title ?? `A made-up pull request #${n}`, html_url: `https://github.com/${REPO}/pull/${n}`, draft: o.draft ?? false,
-    base: { ref: o.base ?? 'main' }, head: { ref: o.head ?? `cos/made-up-${n}`, sha: o.sha ?? `${String(n).padStart(4, '0')}${'e'.repeat(36)}`,
+    base: { ref: o.base ?? 'main', ...(o.private === undefined ? {} : { repo: { private: o.private } }) }, head: { ref: o.head ?? `cos/made-up-${n}`, sha: o.sha ?? `${String(n).padStart(4, '0')}${'e'.repeat(36)}`,
       repo: o.headRepo === null ? null : { full_name: o.headRepo ?? REPO } },
     user: { login: o.login ?? 'shumpmaster' }, author_association: o.association ?? 'OWNER',
     created_at: o.created ?? '2026-10-18T11:00:00Z', updated_at: o.updated ?? '2026-10-18T11:00:00Z', body: o.body ?? '' };

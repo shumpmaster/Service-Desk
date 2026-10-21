@@ -443,6 +443,18 @@ notify-ac77-desk, notify-j16-jobs and j6-j8-function) add no fixture file. What 
     (`python3 -I -c 'import sys; sys.path.insert(0, "governance/checks"); import review_check as r;
     print(r.parse_verdict(open(0).read()))'`): the four PASS texts read `PASS`, the FAIL text
     `FAIL`, `Verdict: pass` and a text with no `Verdict:` line `None`.
+- `j22/blobs/<sha>` (stage 1b, J16's rule 0 in the sender; read by `notify-j16-rule0.test.mjs`):
+  **real**, Service-Desk (a public repository): the verdict files `reviews/<n>/<id>.md` that the
+  `files-<n>-p<k>.json` lists above name (#126's and #130's `owner.md`, the same blob as #135's and
+  #148's, and the `reviewer.md` of #128, #130, #135 and #148), each `git cat-file blob <sha>` in a
+  clone of Service-Desk, unchanged, named by its blob sha (`git hash-object <file>` gives that name
+  back). The sender reads them by sha as GitHub's `git/blobs/<sha>` would answer them (base64, made
+  by the fake GitHub from these bytes), so the real-on-real case holds the sender's rule 0 against
+  the page's on the real lists, real verdicts and real statuses of those five pull requests.
+- Stage 1b's other cases (`notify-j16-rule0.test.mjs`, `notify-j18-rule0.test.mjs`,
+  `notify-ac73-rule0.test.mjs`, through `rule0-fixture.mjs`): **NOT real records**, written inline:
+  every pull request, file list, verdict text, owner-check status, ETag, failure and rate-limit
+  count; each verdict file's sha is its made-up text's real blob sha.
 - `board-v5/` (AC80): **NOT real records.** Version 5's eight example cards, made up from
   `docs/design/mockups/board.html`'s `ITEMS` (#135, #130, #126, #127, #128 and the questions
   "qa", "qd" and "q"), as the made-up project "Example": its `governance/risk-paths.toml`, in

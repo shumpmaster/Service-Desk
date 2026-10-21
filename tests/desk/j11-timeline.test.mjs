@@ -13,6 +13,7 @@ import { parseSurfaces, parseOrchWorkflow, nextCronRun, parseRequest, isGroundwo
 import { j11Records, timelineOf, phaseView, nowRun, standardWord, whereLine, teamView, ballLines } from '../../src/lib/sandbox.js';
 import { neededReads, parseRecord } from '../../src/lib/model.js';
 import { j11Snapshot, j11Files, traceNotes, treePaths, SD3, loadSandbox, linksIn } from './sandbox-helpers.mjs';
+import { findAll } from './sandbox-helpers.mjs';
 import { repo } from './fake-desk.mjs';
 import { readFileSync } from 'node:fs';
 import { SRC } from './helpers.mjs';
@@ -273,14 +274,17 @@ test('AC50 (review B2): "Graduated" is never a label or a milestone name on any 
   const app = await loadSandbox({ config: CONFIG1, repos: { 'Service-Desk': repo(files) }, now: Date.parse('2026-10-14T15:00:00Z') });
   try {
     await app.advance(1000);
-    let launch5 = false;
     const seen = await crawl(app, (h) => {
       assert.doesNotMatch(drawn(app.view), /Graduated/, `${h} draws "Graduated"`);
-      if (/Done\s*Launch-5/.test(app.view.textContent)) launch5 = true;
     });
     assert.ok(seen.size > 30, `${seen.size} routes`);
     assert.ok(seen.has('#/p/Service-Desk/timeline'));
-    assert.ok(launch5, 'Launch-5 is drawn as "Done"');
+    // From stage 3 the Status screen's open Launch box gives way to the page's Launch line, folded (AC83,
+    // AC57 changed by AC83); opened, its standard milestones read id first, then name (frame 6).
+    await app.go('#/p/Service-Desk');
+    await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-label'] === 'Launch')[0]);
+    assert.doesNotMatch(drawn(app.view), /Graduated/, 'the opened Launch line draws no "Graduated"');
+    assert.match(app.view.textContent, /Launch-5\s*Done/, 'Launch-5 is drawn as "Done"');
   } finally {
     app.restore();
   }
@@ -298,7 +302,8 @@ test('AC50: a record\'s own text holding "Graduated" is drawn exactly as written
     assert.ok(app.view.textContent.includes('The model writes Graduated.'), 'the sheet quotes WHY unchanged');
     assert.ok(drawn(app.view).includes('Keep Graduated.'), 'and its options unchanged');
     await app.go('#/p/Service-Desk');
-    assert.match(app.view.textContent, /Done\s*Launch-5/, 'the Status screen\'s Launch box names Launch-5 "Done"');
+    await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-label'] === 'Launch')[0]);
+    assert.match(app.view.textContent, /Launch-5\s*Done/, 'the page\'s Launch line, opened, names Launch-5 "Done" (AC83, in the Status screen\'s place)');
     await app.go('#/p/Service-Desk/timeline');
     assert.doesNotMatch(app.view.textContent, /Graduated/, 'no label on the timeline reads "Graduated"');
   } finally {

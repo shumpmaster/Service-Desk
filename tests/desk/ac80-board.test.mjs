@@ -192,9 +192,15 @@ test('AC80: "Done ✓" in a sheet marks the card at once: it heads Done as "Conf
     // From stage 2 (AC82): Home's briefing and the tile's "wait on you", in place of today's Home's line and pill.
     assert.match(byClass(app.view, 'v2-brief')[0].textContent, /^7 need you/, 'Home\'s briefing less the mark');
     assert.deepEqual(byClass(app.view, 'v2-wt').map((x) => x.textContent), ['7 wait on you'], 'the tile\'s count, less the mark');
+    // From stage 3 (AC83, AC81 "From stage 3") the page, in the Status screen's place: its row "◆ <n> wait on
+    // you" with the waiting items' short names, counted as the board counts them (rewritten from the Status
+    // screen's queue line, "3 decisions · 4 to merge ›").
     await app.go('#/p/Example');
-    assert.deepEqual(byClass(app.view, 'sb-btn').map((x) => x.textContent), ['3 decisions · 4 to merge ›', 'Team: Waiting on you, the oldest for 3 h 11 min ›'],
-      'the Status screen\'s queue and team lines: the oldest now #127');
+    const waits = findAll(app.view, (e) => e.dataset && e.dataset.k === 'page-waits')[0];
+    assert.equal(byClass(waits, 'v2-prtt')[0].textContent, '7 wait on you', 'the page\'s count, less the mark');
+    assert.equal(byClass(waits, 'v2-small')[0].textContent.split(' · ').length, 7, 'seven short names');
+    assert.ok(!waits.textContent.includes('Merge: the first rough estimates'), 'the marked card\'s name gone with it');
+    assert.equal(waits.attrs.href, '#/waiting/Example', 'opening Waiting with only this project shown');
     await app.go('#/p/Example/team');
     assert.ok(app.text().includes('You · waiting on you: 7 in your queue'), 'the owner\'s tile on the Team screen (AC49)');
     await app.go('#/waiting');

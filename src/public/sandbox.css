@@ -17,7 +17,6 @@ html.sb {
   --fail: #b8141d; --fails: #f9dfdf; --merge: #5b3cc4; --merges: #e8e2f8; --block: #9e5800; --blocks: #f6ead3;
   --gold: #8a6a10; --golds: #f4ecd2; --idle: #b7bdc5; --focus: #1d5bd6; --on: #ffffff; --scrim: rgb(11 13 16 / .5);
   --ph-disc: #0f766e; --ph-des: #9d2f7e; --ph-build: #5c6a10; --ph-launch: #7a5a48;
-  --b-tech: var(--muted); --b-ctx: #ad606a; --b-why: #756592;
   --run1: var(--muted); --run2: var(--gold); --run3: #7b828a; --run4: #7f8669; /* AC57 (draft 6): runs 3 and 4 neutral-tinted, none of AC48's 14; run 5 on as runs 3 and 4 in turn */
   --shade0: #1d5bd6; --shade1: #5b8be6; --shade2: #0f3f9e; --shade3: #8fb0ee;
   --you0: #d23c0f; --you1: #f07a50; --you2: #9c2a08; --you3: #f4a283;
@@ -43,7 +42,6 @@ html.sb {
     --fail: #ff6b6b; --fails: #3b1516; --merge: #a78bfa; --merges: #261d3d; --block: #e3a33b; --blocks: #33260c;
     --gold: #c9b04f; --golds: #2c2410; --idle: #4a5059; --focus: #6ea0ff; --on: #0b0d10; --scrim: rgb(0 0 0 / .62);
     --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
-    --b-ctx: #bc7e8d; --b-why: #c7adcb;
     --run3: #8d8d77; --run4: #c3d0c3;
     --shade0: #6ea0ff; --shade1: #9cbcff; --shade2: #3f74d8; --shade3: #c2d5ff;
     --you0: #ff6a3d; --you1: #ff9a76; --you2: #d9481c; --you3: #ffc2ad;
@@ -56,7 +54,6 @@ html.sb[data-theme="dark"] {
   --fail: #ff6b6b; --fails: #3b1516; --merge: #a78bfa; --merges: #261d3d; --block: #e3a33b; --blocks: #33260c;
   --gold: #c9b04f; --golds: #2c2410; --idle: #4a5059; --focus: #6ea0ff; --on: #0b0d10; --scrim: rgb(0 0 0 / .62);
   --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
-  --b-ctx: #bc7e8d; --b-why: #c7adcb;
   --run3: #8d8d77; --run4: #c3d0c3;
   --shade0: #6ea0ff; --shade1: #9cbcff; --shade2: #3f74d8; --shade3: #c2d5ff;
   --you0: #ff6a3d; --you1: #ff9a76; --you2: #d9481c; --you3: #ffc2ad;
@@ -515,11 +512,8 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 .sb-mkw { font: var(--t-meta); }
 .sb-mkw.sb-why { z-index: auto; }
 .sb-etitle { font: var(--t-item); }
-.sb-bul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
-.sb-bul li { display: grid; gap: var(--s1); padding-left: var(--s2); border-left: 3px solid var(--bc); }
-.b-tech { --bc: var(--b-tech); } .b-ctx { --bc: var(--b-ctx); } .b-why { --bc: var(--b-why); }
-.sb-k { justify-self: start; font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--bc); border: 1px solid var(--bc); border-radius: 3px;
-  padding: 1px 6px; /* AC62: a label chip's inner padding, as drawn */ }
+/* From stage 3 (AC84; AC60 and AC48, changed): the Timeline's Technical, Context and Why are small grey words
+   (.v2-bl, below); their own colours (--b-tech, --b-ctx, --b-why) and boxed, upper-case labels are gone. */
 .sb-v { display: grid; gap: var(--s1); }
 .sb-v.code { display: block; }
 .sb-fact { display: block; font: var(--t-body); }
@@ -840,10 +834,6 @@ html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /*
 .v2-badge { position: absolute; top: 4px; left: calc(50% + 6px); min-width: 18px; height: 18px; border-radius: 9px; background: var(--you); color: var(--on-you);
   font: 600 11px/18px var(--font); text-align: center; padding: 0 5px; }
 
-/* The project screens' top row until stage 3 (AC81): Status · Timeline · Team · Waiting, as frame 5's switch draws it. */
-.v2-row { display: inline-grid; grid-auto-flow: column; gap: 2px; padding: 2px; border-radius: 10px; background: var(--chip); justify-self: start; max-width: 100%; }
-.v2-rl { min-height: 32px; padding: 0 10px; display: grid; place-items: center; border-radius: 8px; font: 500 12px/1.35 var(--font); color: var(--ink2); }
-.v2-rl[aria-current="page"] { background: var(--bg); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
 
 /* The board (AC80; frame 1, desk-v2.html:148-183): title, "checked <age> ago", the quiet lines,
    three lanes at every width, 1.18 : 1 : 1, 6 px apart. */
@@ -1084,6 +1074,218 @@ html.sb .v2-home .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-home .sb-value { font: var(--t-mono); color: var(--ink); background: var(--bg2); border-radius: 8px; padding: 8px; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
 .v2-home .sb-steps { font: var(--t-small); color: var(--ink2); padding-left: 1.2em; margin: 0; }
 .v2-home .sb-steps a, .v2-home .sb-notify a { text-decoration: underline; text-underline-offset: 2px; }
+/* ===========================================================================================
+   A project's page and its Timeline (AC83, AC84; frames 5, 6, 6b, 7b and 8; desk-v2.html:261-301),
+   from stage 3, on stage 1a's tokens: the page at `p/<name>` in the Status screen's place, the
+   Timeline cleaned up as frame 7b draws it, and the short phase line atop the Timeline and the Team
+   screen (AC68, changed). Sizes and weights are the tokens' or the pairs desk-v2.html sets (AC81).
+   =========================================================================================== */
+.v2 .ph-disc { --phc: var(--ph-disc); }
+.v2 .ph-des { --phc: var(--ph-des); }
+.v2 .ph-build { --phc: var(--ph-build); }
+.v2 .ph-launch { --phc: var(--ph-launch); }
+.v2 .ph-done, .v2 .ph-none { --phc: var(--ink2); }
+.v2-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--phc, var(--ink2)); flex: none; }
+.v2-s .gold { fill: none; stroke: var(--gold); stroke-width: 2.2; }
+.v2-s .agents { fill: var(--ink2); }
+.v2-round { width: 44px; height: 44px; border-radius: 22px; display: grid; place-items: center; color: var(--ink); background: var(--bg); box-shadow: var(--shadow); flex: none; }
+.v2-round.flat { box-shadow: none; background: var(--chip); }
+.v2-inl { font-weight: 500; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.v2-src { color: var(--ink2); }
+.v2 .gap { color: var(--ink2); }
+
+/* The page (frame 5): the back control; the name and the top line in Plex Mono; Overview | Timeline. */
+.v2-proj { display: grid; gap: 12px; padding-top: 4px; }
+.v2-ptop { display: flex; align-items: center; min-height: 44px; }
+.v2-phead { display: grid; gap: 4px; }
+.v2-phead .v2-mono { overflow-wrap: anywhere; }
+.v2-seg { display: inline-grid; grid-auto-flow: column; gap: 2px; padding: 2px; border-radius: 10px; background: var(--chip); justify-self: start; }
+.v2-sega { min-height: 32px; min-width: 88px; padding: 0 12px; display: grid; place-items: center; border-radius: 8px; font: 500 12px/1.35 var(--font); color: var(--ink2); }
+.v2-sega[aria-current="page"] { background: var(--bg); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+.v2-lead { font: var(--t-lead); overflow-wrap: break-word; }
+
+/* The phase strip (frame 5): a thin bar in each phase's colour, solid where finished or now, dashed
+   where still to come, over its icon and name, its state in words under it; frame 8's sprints in grey. */
+.v2-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.v2-ph { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.v2-bar3 { height: 3px; border-radius: 2px; background: var(--phc); }
+.v2-ph.b-dashed .v2-bar3 { background: repeating-linear-gradient(90deg, var(--phc) 0 6px, transparent 6px 10px); opacity: .7; }
+.v2-pn { display: flex; align-items: center; gap: 5px; font: 500 12px/1.35 var(--font); color: var(--ink); min-width: 0; }
+.v2-ph.now .v2-pn { font: 600 12px/1.3 var(--font); }
+.v2-pnm { min-width: 0; overflow-wrap: anywhere; }
+.v2-pnm.mono { font: var(--t-mono); color: var(--ink); }
+.v2-ps { font: 400 11px/1.35 var(--font); color: var(--ink2); overflow-wrap: break-word; }
+.v2-strip.sprints .v2-ph { --phc: var(--ink2); }
+
+/* Under the strip, in small text: why a phase ran again, and "Your last action" (AC55, moved here). */
+.v2-under { display: grid; gap: 2px; }
+.v2-under .v2-small { overflow-wrap: break-word; }
+.v2-proj .sb-last { border: 0; background: none; padding: 0; margin: 0; border-radius: 0; }
+.v2-proj .sb-last-t, .v2-proj .sb-line-w, .v2-proj .sb-last-when, .v2-proj .sb-sep { font: var(--t-small); color: var(--ink2); }
+.v2-proj .sb-last-l { font: var(--t-small); color: var(--ink2); text-transform: none; letter-spacing: 0; }
+.v2-proj .sb-last .code { font: var(--t-mono); color: var(--ink2); }
+.v2-proj .sb-lineclip, .v2-proj button.sb-line { font: var(--t-small); color: var(--ink2); }
+.v2-proj .sb-lineclip { max-height: calc(3 * 1.4em); }
+.v2-proj .sb-lineclip.over { height: calc(3 * 1.4em); }
+.v2-proj .sb-lineclip.over::after { height: 1.4em; background: linear-gradient(to right, transparent, var(--bg) 85%); }
+.v2-proj .sb-why { font: var(--t-small); color: var(--ink2); }
+.v2-proj .sb-why > summary { min-height: 28px; }
+.v2-proj .sb-why .small, .v2-proj .sb-why p { font: var(--t-small); color: var(--ink2); }
+.v2-proj .sb-bubble { background: var(--bg); color: var(--ink); border: 1px solid var(--line2); border-radius: 12px; box-shadow: var(--shadow); }
+.v2-proj .sb-bubble-top { background: var(--bg); }
+.v2-proj .sb-bubble .sb-eyebrow { font: var(--t-label); color: var(--ink2); text-transform: none; letter-spacing: 0; }
+.v2-proj .sb-bubble-t, .v2-proj .sb-bubble-note { font: var(--t-body); }
+
+/* The rows (frames 5 and 8): an icon, the title, a grey line, a chevron. */
+.v2-rows { display: grid; }
+.v2-rows > li + li > .v2-prow { border-top: 1px solid var(--line); }
+.v2-prow { display: grid; grid-template-columns: 16px minmax(0, 1fr) 10px; gap: 2px 10px; align-items: start; padding: 9px 0; min-height: 44px; width: 100%; color: var(--ink); cursor: pointer; list-style: none; }
+.v2-prow::-webkit-details-marker { display: none; }
+.v2-prow > .v2-k, .v2-prow > .v2-s { margin-top: 1px; color: var(--ink); }
+.v2-prow.bad, .v2-prow.bad > .v2-k { color: var(--bad); }
+.v2-prt { display: grid; gap: 2px; min-width: 0; }
+.v2-prtt { font: var(--t-row); overflow-wrap: break-word; }
+.v2-prtt.soft, .v2-prow.soft .v2-prtt { color: var(--ink2); font-weight: 400; }
+.v2-prt .v2-small, .v2-prt .v2-mono { overflow-wrap: anywhere; }
+.v2-prow > .v2-chev { width: 10px; height: 10px; margin-top: 4px; color: var(--ink2); }
+
+/* Milestones by phase (frames 5, 6 and 6b): one line per phase, bottom up; opened, a thin line with an arrow pointing up. */
+.v2-std { display: grid; }
+.v2-std > li + li { border-top: 1px solid var(--line); }
+.v2-std .v2-stdr { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 14px; gap: 2px 10px; align-items: center; min-height: 44px; width: 100%; padding: 8px 0; color: var(--ink); }
+.v2-stdr > .v2-dot { grid-column: 1; grid-row: 1; }
+.v2-sn { grid-column: 2; grid-row: 1; font: var(--t-row); }
+.v2-sv { grid-column: 3; grid-row: 1; font: var(--t-small); color: var(--ink2); text-align: right; }
+.v2-std .v2-stdr > .v2-k { grid-column: 4; grid-row: 1; width: 10px; height: 10px; color: var(--ink2); justify-self: end; }
+.v2-sd { grid-column: 2 / 4; grid-row: 2; font: var(--t-small); color: var(--ink2); overflow-wrap: break-word; }
+.v2-sd b { font-weight: 500; color: var(--ink); }
+.v2-stdl { display: grid; padding: 0 0 10px 20px; position: relative; }
+.v2-stdl::before { content: ""; position: absolute; left: 4px; top: 10px; bottom: 14px; width: 1px; background: var(--line2); }
+.v2-arrow { position: absolute; left: -1px; top: -2px; display: grid; color: var(--ink2); }
+.v2-arrow > .v2-k { width: 11px; height: 11px; }
+.v2-runh { font: var(--t-label); color: var(--ink2); padding: 8px 0 2px; }
+.v2-subh { font: 400 11px/1.35 var(--font); color: var(--ink2); padding: 6px 0 0; }
+.v2-sml { display: grid; }
+.v2-sm { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: start; padding: 6px 0; }
+.v2-smt { display: grid; gap: 1px; min-width: 0; }
+.v2-smn { font: var(--t-body); color: var(--ink); overflow-wrap: break-word; }
+.v2-id { font: var(--t-mono); color: var(--ink2); }
+.v2-sms { font: var(--t-small); color: var(--ink2); overflow-wrap: break-word; }
+.v2-sm.soft .v2-smn { color: var(--ink2); }
+.v2-sm.old .v2-smn { font: var(--t-small); color: var(--ink2); }
+.v2-callout { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; margin-top: 6px; padding: 10px 12px; border-radius: 10px; background: var(--bg2); font: var(--t-small); color: var(--ink2); }
+.v2-callout > .v2-k { margin-top: 1px; }
+
+/* The rest, "Details" and its views (AC55, AC36), and a v2.5 project's "Not used by this project" (frame 8). */
+.v2-pdetail > summary { cursor: pointer; }
+.v2-pdetail[open] > summary > .v2-chev { rotate: 90deg; }
+.v2-pdbody { display: grid; gap: 6px; padding: 0 0 8px 26px; }
+.v2-links { display: grid; gap: 0; }
+.v2-pdetail > section.sb-notify-line, .v2-pdetail > .sb-actions-usage { display: grid; gap: 6px; padding: 8px 0 8px 26px; border-top: 1px solid var(--line); }
+html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform: none; letter-spacing: 0; margin: 0; }
+.v2-proj .sb-notify { display: grid; gap: 6px; }
+.v2-proj .sb-notify .small, .v2-proj .sb-actions-usage .small, .v2-proj .sb-actions-usage, .v2-proj .sb-notify p { font: var(--t-small); color: var(--ink2); }
+.v2-proj .sb-notify .sb-warn { color: var(--bad); }
+.v2-proj .sb-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 12px; border: 0; border-radius: 18px; background: var(--chip);
+  font: 500 12px/1.35 var(--font); color: var(--ink); justify-self: start; text-align: center; }
+.v2-proj .sb-btn.ghost { box-shadow: inset 0 0 0 1px var(--line2); background: var(--bg); }
+.v2-proj .sb-value { font: var(--t-mono); color: var(--ink); background: var(--bg2); border-radius: 8px; padding: 8px; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.v2-proj .sb-steps { font: var(--t-small); color: var(--ink2); padding-left: 1.2em; margin: 0; }
+.v2-proj .sb-steps a, .v2-proj .sb-notify a { text-decoration: underline; text-underline-offset: 2px; }
+.v2-notused { display: grid; }
+.v2-notused > li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+.v2-nt { font: var(--t-body); color: var(--ink2); }
+.v2-nw { font: var(--t-small); color: var(--ink2); }
+.v2-sheet .v2-qlist { display: grid; gap: 8px; }
+.v2-sheet .v2-quote { font: var(--t-body); color: var(--ink); border-left: 2px solid var(--line2); padding: 2px 0 2px 10px; overflow-wrap: break-word; }
+.v2-sheet .v2-six { display: grid; gap: 4px; padding-left: 1.2em; list-style: decimal; font: var(--t-body); }
+.v2-mono.ink { color: var(--ink); }
+
+/* The short phase line (AC84; AC68, changed): the now phase's small square, then the first part of
+   the page's sentence, in --t-small; pinned with the Timeline's header, and under the Team screen's title. */
+.v2-phl { display: flex; align-items: center; gap: 8px; min-height: 28px; font: var(--t-small); color: var(--ink); }
+.v2-phlw { min-width: 0; overflow-wrap: break-word; }
+.v2-phlpin { position: sticky; top: 0; z-index: 3; background: var(--page, var(--bg)); margin: 0 -16px; padding: 4px 16px; border-bottom: 1px solid var(--line); }
+
+/* The Timeline (AC84; frame 7b and its full-length capture): one feed, newest at the top, under a compact
+   pinned header; pinned bands with a hairline and no box; a thin rail in the phase's colour, solid through
+   what has happened and dashed through what is planned; the Now line the only heavy rule. */
+.v2-timeline { display: grid; gap: 12px; padding-top: 4px; }
+.v2-tlhead { position: sticky; top: 0; z-index: 3; background: var(--bg); margin: 0 -16px; padding: 8px 16px 4px; border-bottom: 1px solid var(--line); display: grid; gap: 2px; }
+.v2-thead { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.v2-tn { font: 600 15px/1.3 var(--font); overflow-wrap: anywhere; min-width: 0; }
+.v2-thead .v2-sega { min-width: 0; }
+.v2-tlnone { padding: 8px 0; }
+.v2-goal { display: grid; gap: 4px; padding: 10px 12px; border-radius: 10px; background: var(--bg2); }
+.v2-goal .v2-label { font: var(--t-label); color: var(--ink2); }
+.v2-gq { font: var(--t-body); overflow-wrap: break-word; }
+.v2-feed { position: relative; display: grid; }
+.v2-tblk { position: relative; display: grid; padding-bottom: 6px; }
+.v2-tph { position: sticky; top: 96px; z-index: 1; background: var(--bg); display: flex; align-items: center; gap: 8px; min-height: 36px; border-bottom: 1px solid var(--line); margin: 0 -16px; padding: 0 16px; }
+/* The bands pin just under the Timeline's pinned header and phase line (AC84): the page measures the header and names its height, to the next 8 px, by a class (no inline style, AC41). */
+.v2-timeline.tlh-64 .v2-tph { top: 64px; }
+.v2-timeline.tlh-72 .v2-tph { top: 72px; }
+.v2-timeline.tlh-80 .v2-tph { top: 80px; }
+.v2-timeline.tlh-88 .v2-tph { top: 88px; }
+.v2-timeline.tlh-96 .v2-tph { top: 96px; }
+.v2-timeline.tlh-104 .v2-tph { top: 104px; }
+.v2-timeline.tlh-112 .v2-tph { top: 112px; }
+.v2-timeline.tlh-120 .v2-tph { top: 120px; }
+.v2-timeline.tlh-128 .v2-tph { top: 128px; }
+.v2-timeline.tlh-136 .v2-tph { top: 136px; }
+.v2-timeline.tlh-144 .v2-tph { top: 144px; }
+.v2-timeline.tlh-152 .v2-tph { top: 152px; }
+.v2-timeline.tlh-160 .v2-tph { top: 160px; }
+.v2-timeline.tlh-168 .v2-tph { top: 168px; }
+.v2-timeline.tlh-176 .v2-tph { top: 176px; }
+.v2-timeline.tlh-184 .v2-tph { top: 184px; }
+.v2-timeline.tlh-192 .v2-tph { top: 192px; }
+.v2-timeline.tlh-200 .v2-tph { top: 200px; }
+.v2-timeline.tlh-208 .v2-tph { top: 208px; }
+.v2-tpn { font: 600 12px/1.3 var(--font); color: var(--ink); }
+.v2-tpd { margin-left: auto; font: var(--t-mono); color: var(--ink2); text-align: right; }
+.v2-tseg { position: relative; padding-left: 26px; }
+.v2-tseg::before { content: ""; position: absolute; left: 7px; top: 0; bottom: 0; width: 1.5px; background: var(--phc); opacity: .55; }
+.v2-tseg.plan::before { background: repeating-linear-gradient(var(--phc) 0 4px, transparent 4px 8px); opacity: .7; }
+.v2-timeline .sb-began { display: block; margin: 0; padding: 8px 0 2px; font: var(--t-small); color: var(--ink2); background: none; border: 0; }
+.v2-timeline .sb-began.gap > span { display: inline; }
+.v2-stats .sb-mkw, .v2-stats .sb-mkw > summary { font: 400 11px/1.35 var(--font); color: var(--ink2); }
+.v2-timeline .sb-began :is(p, span, .sb-quote, .sb-src, .sb-muted, .sb-began-h, .sb-began-p, .sb-began-k) { font: var(--t-small); color: var(--ink2); margin: 0; text-transform: none; letter-spacing: 0; }
+.v2-timeline .sb-began .sb-quote { color: var(--ink); }
+.v2-timeline .sb-began .code { font: var(--t-mono); color: var(--ink2); }
+.v2-ms { position: relative; display: grid; gap: 3px; padding: 10px 0 8px; }
+.v2-msi { position: absolute; left: -26px; top: 10px; display: grid; background: var(--bg); border-radius: 8px; }
+.v2-mstt { font: var(--t-row); overflow-wrap: break-word; }
+.v2-msm { font: var(--t-mono); color: var(--ink2); overflow-wrap: anywhere; }
+.v2-msd { font: var(--t-small); color: var(--ink2); overflow-wrap: break-word; }
+.v2-msd b { font-weight: 500; color: var(--ink); }
+.v2-fold { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; font: var(--t-label); color: var(--ink2); justify-self: start; }
+.v2-fold > .v2-k { width: 10px; height: 10px; }
+.v2-gather, .v2-fkeys { display: grid; }
+.v2-glist, .v2-keyl { display: grid; gap: 2px; padding: 0 0 6px; font: var(--t-small); color: var(--ink2); }
+.v2-keyl > li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: center; }
+.v2-nowl { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 4px 0; min-height: 28px; font: 500 11px/1.4 var(--mono); color: var(--ink); }
+.v2-nowl::before { content: ""; width: 16px; height: 2px; background: var(--ink); }
+.v2-nowl::after { content: ""; flex: 1 1 24px; border-top: 1px solid var(--ink); }
+.v2-nowt { text-transform: uppercase; letter-spacing: .04em; }
+.v2-nows { font: var(--t-small); color: var(--ink2); }
+.v2-sps { display: grid; margin-top: 4px; border-top: 1px solid var(--line); }
+.v2-sp { display: grid; gap: 6px; padding: 10px 0 12px; border-bottom: 1px solid var(--line); min-width: 0; }
+.v2-sph { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.v2-stats { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0 8px; font: 400 11px/1.35 var(--font); color: var(--ink2); }
+.v2-stats .sb-why > summary { min-height: 24px; }
+.v2-timeline .sb-why, .v2-timeline .sb-why > summary, .v2-timeline .sb-why p { font: var(--t-small); color: var(--ink2); }
+.v2-spt { font: var(--t-row); overflow-wrap: break-word; }
+.v2-bl { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 8px; align-items: start; padding-left: 8px; border-left: 2px solid var(--line2); }
+.v2-bn { font: var(--t-label); color: var(--ink2); padding-top: 1px; }
+.v2-bt { font: var(--t-small); color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
+.v2-bt.mono { font: var(--t-mono); color: var(--ink2); }
+.v2-bt > .sb-para { display: block; } /* each of Why's paragraphs kept as its own (AC60) */
+.v2-bt.nr { color: var(--ink2); }
+.v2-bt.cut { display: block; max-height: calc(3 * 1.4em); overflow: hidden; overflow: clip; }
+.v2-bl > .v2-inmore { grid-column: 2; }
+.v2-inmore { min-height: 24px; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.v2-feednote { padding: 4px 0; }
 @media (min-width: 720px) {
   html.sb.v2-page.v2-home-page body { max-width: 960px; }
   .v2-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -14,6 +14,7 @@ import { NOW, iso, md, twoProjects, opened, v25, fullRepo } from './sandbox-fixt
 import { openSD, keyed, models, AC61_DOC, SD3, CONFIG, j11Files, sdRepo, railLayout } from './tv2-fixtures.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { markerView, runsContext } from '../../src/lib/feed.js';
+import { phaseLine, pageSentence, firstPart } from '../../src/lib/projectpage.js';
 
 // The live file was tidied away by the model 3.5.0 sync (S-033); this fixture is its last version (dc97190).
 const REAL_QUESTION = readFileSync(`${FIX}/trial-view/P-001-design-lab-open.md`, 'utf8');
@@ -251,62 +252,89 @@ test('AC67: the owner\'s tile — "You · waiting on you: <n> in your queue", it
 // ---------------------------------------------------------------------------
 // AC68
 
-test('AC68 (changed by AC81: the Queue screen gone, so three screens): the same marker on Status, Timeline and Team — "Design · run 2", "now · next to reach: MD2", "Timeline ›", in the Design colour; a real link named "Open the Timeline at Now"', async () => {
+// From stage 3 (S-001 AC68, "Changed by AC83 and AC84", specs/S-001.md:5613-5627; AC84's phase line,
+// :6886-6907; P-001-timeline-marker.md, A): "the phase marker is the project page's sentence and strip
+// (AC83), and one short line saying the phase at the top of the Timeline and of the Team screen, the same
+// line on both, in the page's form ... So on the Team screen that line replaces this criterion's boxed
+// marker ... No separate marker sits under the page's name (frame 5)". The marker cases below are each
+// rewritten one for one for that line.
+const PHASE_LINE = 'Design, second time through · Next: The desk\'s look and screens chosen';
+
+test('AC68, changed by AC84 (rewrites "the same marker on three screens"): the same short phase line on the Timeline and the Team screen, character for character — the now phase\'s square in Design\'s colour, then the first part of the page\'s sentence; a real link named so, pinned under the title; none on the page, and no boxed marker anywhere', async () => {
   const app = await openSD('#/p/Service-Desk');
   try {
-    for (const s of ['', '/timeline', '/team']) {
+    assert.equal(byClass(app.view, 'v2-phl').length + byClass(app.view, 'sb-pmark').length, 0, 'the page: its sentence and strip, no separate marker (frame 5)');
+    const sentence = byClass(app.view, 'v2-lead')[0].textContent;
+    for (const s of ['/timeline', '/team']) {
       await app.go(`#/p/Service-Desk${s}`);
-      const ms = byClass(app.view, 'sb-pmark');
-      assert.equal(ms.length, 1, s);
-      const [m] = ms;
-      assert.deepEqual([m.tag, m.attrs.href, m.attrs['aria-label']], ['a', '#/p/Service-Desk/timeline', 'Open the Timeline at Now'], s);
-      assert.deepEqual(m.children.map((c) => c.textContent.trim()).filter(Boolean), ['Design · run 2', 'now · next to reach: MD2', 'Timeline ›'], s);
-      assert.match(m.className, /\bph-des\b/, `${s}: in Design's colour`);
-      // Under the project's name and the screen's title.
-      const screen = byClass(app.view, 'sb-screen')[0];
-      const i = screen.children.indexOf(m);
-      assert.ok(i > 0 && screen.children.slice(0, i).some((c) => /\bsb-hdr\b/.test(c.className)), `${s}: under the header`);
+      assert.equal(byClass(app.view, 'sb-pmark').length, 0, `${s}: no boxed marker (AC68's, replaced)`);
+      const ls = byClass(app.view, 'v2-phl');
+      assert.equal(ls.length, 1, s);
+      const [l] = ls;
+      assert.deepEqual([l.tag, l.attrs.href], ['a', '#/p/Service-Desk/timeline'], s);
+      assert.equal(l.attrs['aria-label'], `${PHASE_LINE}. Open the Timeline at Now`, `${s}: a real link, named by its words and where it goes`);
+      assert.equal(byClass(l, 'v2-phlw')[0].textContent, PHASE_LINE, `${s}: its words`);
+      assert.equal(PHASE_LINE, sentence.replace('. Next: ', ' · Next: ').replace(/\.$/, ''), `${s}: the first part of the page's sentence for the same records`);
+      assert.ok(byClass(l, 'v2-dot')[0].className.split(' ').includes('ph-des'), `${s}: the now phase's square, in Design's colour`);
     }
+    // Pinned: with the Timeline's compact header, and under the Team screen's title.
+    await app.go('#/p/Service-Desk/team');
+    const screen = byClass(app.view, 'sb-screen')[0];
+    const pin = byClass(screen, 'v2-phlpin')[0];
+    const i = screen.children.indexOf(pin);
+    assert.ok(i > 0 && screen.children.slice(0, i).some((c) => /\bsb-hdr\b/.test(c.className)), 'Team: under its title');
+    await app.go('#/p/Service-Desk/timeline');
+    assert.ok(byClass(byClass(app.view, 'v2-tlhead')[0], 'v2-phl').length, 'Timeline: inside its pinned header');
   } finally {
     app.restore();
   }
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
-  assert.match(css, /\.ph-des \{ --ph: var\(--ph-des\); \}/);
-  assert.match(css, /\.sb-pmark-run \{[^}]*color: var\(--ph, var\(--ink\)\)/);
+  assert.match(css, /\.v2-phlpin \{ position: sticky; top: 0;/);
+  assert.match(css, /\.v2-tlhead \{ position: sticky; top: 0;/);
+  assert.match(css, /\.v2-phl \{[^}]*font: var\(--t-small\);/, 'in --t-small (AC84)');
+  assert.match(css, /\.v2 \.ph-des \{ --phc: var\(--ph-des\); \}/);
 });
 
-test('AC68: the marker\'s other forms — no next to reach, Done, which phase is now not recorded, and "Phases not tracked" for v2.5 with no colour and no link', async () => {
+test('AC68, changed by AC84 (rewrites "the marker\'s other forms"): the phase line\'s other forms — no next milestone, Done, no now run, and a v2.5 project\'s first sentence — each the first part of the page\'s sentence; drawn the same on a v2.5 project\'s Timeline and Team screen, with no square in a colour', async () => {
   const m = models();
   const base = m.ctx;
-  assert.deepEqual(markerView({ ...base, next: null }).next, 'now · next to reach: none, every milestone has work filed');
-  assert.deepEqual(markerView({ ...base, pv: { ...base.pv, done: true } }), { link: true, words: 'Done', cls: 'ph-done' });
-  assert.deepEqual(markerView({ ...base, now: null }), { link: true, words: 'Which phase is now is not recorded', cls: null });
-  assert.deepEqual(markerView({ ...base, project: { ...SD3, model: 'v2.5' } }), { link: false, words: 'Phases not tracked', cls: null });
+  const words = (ctx) => phaseLine(ctx, { snap: m.snap }).words;
+  assert.equal(words({ ...base, next: null }), 'Design, second time through · Next: not recorded');
+  assert.equal(words({ ...base, pv: { ...base.pv, done: true } }), 'Done');
+  assert.equal(phaseLine({ ...base, pv: { ...base.pv, done: true } }).cls, 'ph-done');
+  assert.equal(words({ ...base, now: null, next: null }), 'Which phase is now is not recorded · Next: not recorded', 'AC50: no now run, so no next to reach');
+  for (const ctx of [{ ...base, next: null }, { ...base, pv: { ...base.pv, done: true } }, { ...base, now: null, next: null }, base]) {
+    assert.equal(words(ctx), firstPart(pageSentence(ctx, { snap: m.snap }), 'v3'), 'the first part of the page\'s sentence');
+  }
   const app = await openSD('#/', { more: { Delta: { project: v25('Delta'), repo: fullRepo('Delta') } } });
   try {
-    for (const s of ['', '/timeline', '/team']) {
+    await app.go('#/p/Delta');
+    const sentence = byClass(app.view, 'v2-lead')[0].textContent;
+    for (const s of ['/timeline', '/team']) {
       await app.go(`#/p/Delta${s}`);
-      const [mk] = byClass(app.view, 'sb-pmark');
-      assert.deepEqual([mk.tag, mk.textContent, mk.className], ['p', 'Phases not tracked', 'sb-pmark none'], s);
+      const [l] = byClass(app.view, 'v2-phl');
+      assert.equal(byClass(l, 'v2-phlw')[0].textContent, sentence.split(/(?<=\.) /)[0], `${s}: the v2.5 sentence's first sentence`);
+      assert.match(byClass(l, 'v2-phlw')[0].textContent, /^(Sprint \S+ is open\.|No open sprint\.)$/, s);
+      assert.ok(byClass(l, 'v2-dot')[0].className.split(' ').includes('ph-none'), `${s}: no phase colour`);
     }
   } finally {
     app.restore();
   }
 });
 
-test('AC68: a tap, Enter and Space on the marker open the Timeline with the Now line in view, one screen step; on the Timeline it scrolls back to Now', async () => {
+test('AC68, changed by AC84 (rewrites "a tap, Enter and Space on the marker"): a tap, Enter and Space on the Team screen\'s phase line open the Timeline with the Now line in view, one screen step; on the Timeline it scrolls back to Now', async () => {
   for (const how of ['tap', 'Enter', ' ']) {
     const app = await openSD('#/p/Service-Desk/team');
-    const undo = railLayout({});
+    const undo = railLayout({}); // a measured layout, so the page can scroll to an element
     try {
-      const mk = () => byClass(app.view, 'sb-pmark')[0];
+      const pl = () => byClass(app.view, 'v2-phl')[0];
       app.scrolls.length = 0;
       if (how === 'tap') {
         // A real link: the browser follows its href on a tap.
-        await app.tap(mk());
-        await app.go(mk().attrs.href);
+        await app.tap(pl());
+        await app.go(pl().attrs.href);
       } else {
-        mk().dispatch('keydown', { key: how, preventDefault() {} });
+        pl().dispatch('keydown', { key: how, preventDefault() {} });
         await app.flush();
       }
       assert.equal(app.loc.hash, '#/p/Service-Desk/timeline', how);
@@ -320,8 +348,7 @@ test('AC68: a tap, Enter and Space on the marker open the Timeline with the Now 
       await app.go('#/p/Service-Desk/timeline');
       app.scrolls.length = 0;
       window.scrollY = 5000;
-      const onTl = byClass(app.view, 'sb-pmark')[0];
-      onTl.dispatch('keydown', { key: how === 'tap' ? 'Enter' : how, preventDefault() {} });
+      byClass(app.view, 'v2-phl')[0].dispatch('keydown', { key: how === 'tap' ? 'Enter' : how, preventDefault() {} });
       await app.flush();
       assert.equal(app.scrolls.length, 1, `${how}: scrolled back to Now on the Timeline`);
       assert.equal(app.loc.hash, '#/p/Service-Desk/timeline');
@@ -390,7 +417,9 @@ test('AC68: a v3 project\'s Pipeline route opens the Timeline at Now in its plac
   const start = await openSD('#/p/Service-Desk/pipeline');
   try {
     assert.ok(keyed(start, 'feed'), 'opened on the route: the Timeline in its place');
-    assert.equal(keyed(start, 'nav-back'), null, 'no history step');
+    // From stage 3 (AC84, frame 7b's top; AC56): the Timeline's back control is always there; opened first,
+    // with no earlier screen, it is a link up to the page, never a step back through a history entry.
+    assert.deepEqual([keyed(start, 'nav-back').tag, keyed(start, 'nav-back').attrs.href], ['a', '#/p/Service-Desk'], 'no history step: the back control goes up to the page');
   } finally {
     start.restore();
   }

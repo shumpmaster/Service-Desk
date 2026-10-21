@@ -33,15 +33,18 @@ const bar = (app) => byClass(app.view, 'v2-bar');
 const tabs = (app) => byClass(bar(app)[0], 'v2-tab');
 const current = (app) => tabs(app).filter((t) => t.attrs['aria-current'] === 'page').map((t) => byClass(t, 'v2-tabw')[0].textContent);
 
-test('AC81: the trial view opens on Home; every screen carries the one bar Home · Waiting · Plan at its foot, its current tab named so; no Projects or Portfolio tab', async () => {
+// From stage 3 (S-001 AC81, "From stage 3", specs/S-001.md:6456-6466, and its test's "from stage 3 (that test
+// rewritten in stage 3's pull request): no top row, `p/<name>` opening the page's Overview, and
+// `p/<name>/queue` still opening Waiting so filtered", :6556-6558): the cases below are stage 1a's, rewritten so.
+test('AC81: the trial view opens on Home; every screen carries the one bar Home · Waiting · Plan at its foot, its current tab named so (a project\'s page and its screens as Home\'s); no Projects or Portfolio tab; from stage 3 no top row on any screen', async () => {
   const app = await opened('');
   try {
     assert.ok(byClass(app.view, 'v2-home').length && byClass(app.view, 'v2-tile').length, 'Home, with its tiles (AC82)');
     for (const [hash, want, row] of [
       ['#/', 'Home', false],
-      ['#/p/Service-Desk', 'Home', true], ['#/p/Service-Desk/timeline', 'Home', true], ['#/p/Service-Desk/team', 'Home', true],
+      ['#/p/Service-Desk', 'Home', false], ['#/p/Service-Desk/timeline', 'Home', false], ['#/p/Service-Desk/team', 'Home', false],
       ['#/p/Service-Desk/team/chief-of-staff', 'Home', false], ['#/p/Service-Desk/asked', 'Home', false], ['#/p/Service-Desk/agents', 'Home', false],
-      ['#/p/Alpha/notes', 'Home', false], ['#/p/Delta/pipeline', 'Home', false], ['#/p/Delta', 'Home', true],
+      ['#/p/Alpha/notes', 'Home', false], ['#/p/Delta/pipeline', 'Home', false], ['#/p/Delta', 'Home', false],
       ['#/waiting', 'Waiting', false], ['#/waiting/Alpha', 'Waiting', false], ['#/work', 'Plan', false],
     ]) {
       await app.go(hash);
@@ -51,7 +54,7 @@ test('AC81: the trial view opens on Home; every screen carries the one bar Home 
       assert.deepEqual(t.map((x) => x.attrs.href), ['#/', '#/waiting', '#/work']);
       assert.deepEqual(current(app), [want], `${hash}: ${want} current`);
       assert.equal(byClass(app.view, 'sb-dock').length + byClass(app.view, 'sb-tab').length, 0, `${hash}: no Status · Timeline · Team · Queue bar`);
-      assert.equal(byClass(app.view, 'v2-row').length, row ? 1 : 0, `${hash}: ${row ? 'the' : 'no'} top row`);
+      assert.equal(byClass(app.view, 'v2-row').length + byClass(app.view, 'v2-rl').length, row ? 1 : 0, `${hash}: ${row ? 'the' : 'no'} top row`);
       assert.doesNotMatch(bar(app)[0].textContent, /Projects|Portfolio/);
       assert.equal(app.view.children[app.view.children.length - 1], bar(app)[0], `${hash}: the bar last, at the foot`);
     }
@@ -83,14 +86,22 @@ test('AC81: Waiting\'s badge is the board\'s own "Waiting on you" plus "Kicked b
   }
 });
 
-test('AC81 (until stage 3): `p/<name>/queue` opens `waiting/<name>` without adding a history step; a wait row\'s `p/<name>/queue/<key>` opens it with that card\'s sheet, a key no card has with none; from stage 2 Home\'s tiles open the Status screen and Home has no "Work ahead ›"', async () => {
+test('AC81 (from stage 3): `p/<name>` opens the page\'s Overview, a tile\'s tap opening it; `p/<name>/queue` still opens `waiting/<name>` without adding a history step; a saved `p/<name>/queue/<key>` opens it with that card\'s sheet, a key no card has with none; Home has no "Work ahead ›"', async () => {
   const app = await opened('#/');
   const replaced = [];
   location.replace = (h) => { replaced.push(h); location.hash = h; };
   try {
     // Stage 2 (AC82; this case as AC81's test says, "none on stage 2's Home"): the control goes with today's Home.
     assert.equal(byClass(app.view, 'sb-wa-link').length + findAll(app.view, (e) => e.dataset && e.dataset.k === 'work-ahead').length, 0, 'no "Work ahead ›" on Home');
-    assert.deepEqual(byClass(app.view, 'v2-ta').map((a) => a.attrs.href).sort(), ['#/p/Alpha', '#/p/Delta', '#/p/Service-Desk'], 'a tap on a tile opens the project\'s Status screen, as built, until stage 3');
+    assert.deepEqual(byClass(app.view, 'v2-ta').map((a) => a.attrs.href).sort(), ['#/p/Alpha', '#/p/Delta', '#/p/Service-Desk'], 'a tap on a tile opens the project\'s page (from stage 3)');
+    for (const n of ['Alpha', 'Delta', 'Service-Desk']) {
+      await app.go(`#/p/${n}`);
+      assert.equal(byClass(app.view, 'v2-proj').length, 1, `${n}: the page, at the Status screen's address`);
+      assert.equal(byClass(app.view, 'v2-title')[0].textContent, n);
+      if (n !== 'Delta') assert.equal(keyed(app, 'seg:overview').attrs['aria-current'], 'page', `${n}: its Overview`);
+      assert.equal(byClass(app.view, 'sb-pbox').length + byClass(app.view, 'v2-row').length, 0, `${n}: no Status screen, no top row`);
+    }
+    await app.go('#/');
     await app.go('#/p/Alpha/queue');
     assert.deepEqual(replaced, ['#/waiting/Alpha'], 'in place of its history entry');
     assert.equal(byClass(app.view, 'v2-filter').length, 1);

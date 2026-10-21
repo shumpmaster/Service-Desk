@@ -67,37 +67,42 @@ test('AC48, as AC82 rebuilds Home (stage 2, frame H5): one tile per project in A
   }
 });
 
-test('AC48 (changed by AC81, "Until stage 3", and AC82): each tile, the briefing and each row tap goes to the screen it names; Status, Timeline and Team carry the row Status · Timeline · Team · Waiting and a way back', async () => {
+// Rewritten in stage 3 (S-001 AC81, "From stage 3", specs/S-001.md:6456-6466; AC83's two rows, :6769-6779;
+// AC84's header, :6880-6882): the project screens' top row goes, the Status screen gives way to the page, the
+// page's waits row opens Waiting (this project) and its "At work now" row the Team screen.
+test('AC48 (changed by AC81, AC82, AC83 and AC84): each tile, the briefing and each row tap goes to the screen it names; the page, the Timeline and the Team screen carry no top row, the one bar, and a way back', async () => {
   const app = await opened();
   try {
     const card = byClass(app.view, 'v2-tile')[0];
     const [main] = byClass(card, 'v2-ta');
-    assert.equal(main.attrs.href, '#/p/Alpha', 'the tile opens the project\'s Status screen until stage 3');
+    assert.equal(main.attrs.href, '#/p/Alpha', 'the tile opens the project\'s page');
     assert.equal(byClass(app.view, 'v2-brief')[0].attrs.href, '#/waiting', 'the briefing opens Waiting, one tap');
-    for (const [hash, title, current] of [['#/p/Alpha', 'Current status', 'Status'], ['#/p/Alpha/timeline', 'Timeline', 'Timeline'], ['#/p/Alpha/team', 'Team', 'Team']]) {
+    for (const [hash, title] of [['#/p/Alpha', 'Alpha'], ['#/p/Alpha/timeline', 'Alpha'], ['#/p/Alpha/team', 'Team']]) {
       await app.go(hash);
       assert.ok(app.text().includes(SANDBOX_MARKER), `${hash}: the marker`);
       assert.ok(app.text().includes(title), `${hash}: ${title}`);
       assert.equal(byClass(app.view, 'sb-tab').length, 0, `${hash}: no project bar at the foot`);
-      const row = byClass(app.view, 'v2-rl');
-      assert.deepEqual(row.map((t) => t.textContent), ['Status', 'Timeline', 'Team', 'Waiting']);
-      assert.deepEqual(row.map((t) => t.attrs.href), ['#/p/Alpha', '#/p/Alpha/timeline', '#/p/Alpha/team', '#/waiting/Alpha']);
-      assert.deepEqual(row.filter((t) => t.attrs['aria-current'] === 'page').map((t) => t.textContent), [current]);
+      assert.equal(byClass(app.view, 'v2-rl').length + byClass(app.view, 'v2-row').length, 0, `${hash}: no top row (from stage 3)`);
       assert.equal(byClass(app.view, 'v2-bar').length, 1, `${hash}: the one bar at the foot`);
-      assert.equal(byClass(app.view, 'sb-back')[0].attrs.href, '#/', 'a way back to Home');
+      const back = hash === '#/p/Alpha/team' ? byClass(app.view, 'sb-back')[0] : findAll(app.view, (e) => e.dataset && e.dataset.k === 'nav-back')[0];
+      assert.ok(back, `${hash}: a way back`);
     }
+    // The page's Overview | Timeline switch (AC83, AC84).
+    await app.go('#/p/Alpha');
+    const seg = findAll(app.view, (e) => e.dataset && /^seg:/.test(e.dataset.k || ''));
+    assert.deepEqual(seg.map((t) => [t.textContent, t.attrs.href, t.attrs['aria-current'] || null]), [['Overview', '#/p/Alpha', 'page'], ['Timeline', '#/p/Alpha/timeline', null]]);
     // The Queue's address opens Waiting with only that project shown (AC81).
     await app.go('#/p/Alpha/queue');
     assert.equal(app.loc.hash, '#/waiting/Alpha');
     assert.match(app.text(), /Waiting/);
     await app.go('#/p/Alpha');
-    const hrefs = byClass(app.view, 'sb-btn').map((b) => b.attrs.href);
-    assert.deepEqual(hrefs, ['#/waiting/Alpha', '#/p/Alpha/team'], 'two buttons open Waiting (this project) and the team');
+    const rows = byClass(findAll(app.view, (e) => e.dataset && e.dataset.k === 'page-rows')[0], 'v2-prow').map((b) => b.attrs.href);
+    assert.deepEqual(rows, ['#/waiting/Alpha', '#/p/Alpha/team'], 'the two rows open Waiting (this project) and the Team screen (P-001-team-screen.md, A)');
     // AC36, as AC55 changed it (2026-10-15): inside the sandbox the M1 and M2 detail is reached
     // through the views rebuilt in the new design, never through a link to the accepted views.
     const links = linksIn(app.view).map((l) => l.href);
     for (const h of ['#/p/Alpha/asked', '#/p/Alpha/agents']) assert.ok(links.includes(h), h);
-    // AC68 (2026-10-16): a v3 project's Pipeline view folds into the Timeline; "More detail" no longer offers it.
+    // AC68 (2026-10-16): a v3 project's Pipeline view folds into the Timeline; "Details" no longer offers it.
     assert.ok(!links.includes('#/p/Alpha/pipeline'), 'no Pipeline link for a v3 project');
     assert.ok(!links.some((h) => h && h.startsWith('./#')), 'no link to an accepted view');
   } finally {

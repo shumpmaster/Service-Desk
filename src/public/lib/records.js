@@ -728,7 +728,9 @@ export function parseLedger(text) {
       break;
     }
   }
-  if (idx < 0) return { id: null, title: null, next: null, date: null };
+  // count (AC83, a v2.5 project's "Records" row, from 2026-10-20): how many `## L-<n> — ` entries the ledger holds.
+  const count = all.filter((l) => /^## L-[0-9]+ — /.test(l)).length;
+  if (idx < 0) return { id: null, title: null, next: null, date: null, count };
   let next = null;
   let date = null;
   for (let i = idx + 1; i < all.length && !/^## /.test(all[i]); i++) {
@@ -737,7 +739,7 @@ export function parseLedger(text) {
     const d = /^date:\s*(.*)$/.exec(all[i]);
     if (d && date === null) date = d[1].trim();
   }
-  return { id: m[1], title: m[2].trim(), next, date };
+  return { id: m[1], title: m[2].trim(), next, date, count };
 }
 
 // ---------------------------------------------------------------------------

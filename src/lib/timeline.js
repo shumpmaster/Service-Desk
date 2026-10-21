@@ -41,7 +41,7 @@ export const STANDARD_MILESTONES = [
   ['Launch-5', 'Launch', 'Graduated'],
 ];
 export const STANDARD_IDS = STANDARD_MILESTONES.map((m) => m[0]);
-const NOT_RECORDED_IDS = new Set(['Discovery-1', 'Discovery-4', 'Discovery-6', 'Design-3', 'Design-5', 'Build-4', 'Build-5',
+export const NOT_RECORDED_IDS = new Set(['Discovery-1', 'Discovery-4', 'Discovery-6', 'Design-3', 'Design-5', 'Build-4', 'Build-5',
   'Launch-1', 'Launch-2', 'Launch-5']);
 const REDO = {
   'Discovery-5': [['critic', 2]], 'Discovery-7': [['critic', 2]], 'Discovery-8': [['critic', 2]],

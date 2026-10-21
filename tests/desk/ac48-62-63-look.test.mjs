@@ -64,7 +64,9 @@ export function de2000([L1, a1, b1], [L2, a2, b2]) {
   return Math.sqrt((dLp / Sl) ** 2 + (dCp / Sc) ** 2 + (dHp / Sh) ** 2 + Rt * (dCp / Sc) * (dHp / Sh));
 }
 
-const MEANING = ['--you', '--agent', '--pass', '--fail', '--merge', '--block', '--gold', '--ph-disc', '--ph-des', '--ph-build', '--ph-launch', '--b-ctx', '--b-why', '--muted'];
+// From stage 3 (S-001 AC84, specs/S-001.md:6932-6934: "gone: ... AC48's Technical slate, Context dusty rose and Why
+// muted violet on the Timeline, and their place in AC48's colour-distance rule (AC48, changed)"): the 14 are 12.
+const MEANING = ['--you', '--agent', '--pass', '--fail', '--merge', '--block', '--gold', '--ph-disc', '--ph-des', '--ph-build', '--ph-launch', '--muted'];
 
 /** The tokens of a theme's block: the light one (`html.sb {`), and the dark one (`html.sb[data-theme="dark"] {`), with the light's for any it leaves out. */
 function theme(which) {
@@ -100,16 +102,17 @@ test('AC48: the formula agrees with Sharma, Wu and Dalal\'s published test pairs
   for (const [a, b, want] of pairs) assert.ok(Math.abs(de2000(a, b) - want) < 5e-4, `${a} / ${b}: ${de2000(a, b)} vs ${want}`);
 });
 
-test('AC48: the 14 colours that carry a meaning are distinct — every pair\'s CIEDE2000 difference at least 10, in the light theme and the dark theme alike (91 pairs each)', () => {
+test('AC48 (changed by AC84): the 12 colours that carry a meaning are distinct — every pair\'s CIEDE2000 difference at least 10, in the light theme and the dark theme alike (66 pairs each); the Timeline\'s three label colours are gone', () => {
   const want = {
-    light: { '--ph-disc': '#0f766e', '--ph-des': '#9d2f7e', '--ph-build': '#5c6a10', '--ph-launch': '#7a5a48', '--muted': '#4b525b', '--b-ctx': '#ad606a', '--b-why': '#756592' },
-    dark: { '--ph-disc': '#65bdb3', '--ph-des': '#f07cca', '--ph-build': '#a4b562', '--ph-launch': '#c6a28f', '--muted': '#a3a9b2', '--b-ctx': '#bc7e8d', '--b-why': '#c7adcb', '--gold': '#c9b04f' },
+    light: { '--ph-disc': '#0f766e', '--ph-des': '#9d2f7e', '--ph-build': '#5c6a10', '--ph-launch': '#7a5a48', '--muted': '#4b525b' },
+    dark: { '--ph-disc': '#65bdb3', '--ph-des': '#f07cca', '--ph-build': '#a4b562', '--ph-launch': '#c6a28f', '--muted': '#a3a9b2', '--gold': '#c9b04f' },
   };
+  assert.doesNotMatch(RAW.replace(/\/\*[\s\S]*?\*\//g, ''), /--b-(tech|ctx|why)\b/, 'no Technical, Context or Why colour left in the stylesheet');
   const closest = {};
   for (const which of ['light', 'dark']) {
     const t = theme(which);
     for (const [k, v] of Object.entries(want[which])) assert.equal(t[k], v, `${which} ${k}`);
-    assert.equal(Object.keys(t).length, 14);
+    assert.equal(Object.keys(t).length, 12);
     let n = 0;
     let min = [Infinity];
     for (let i = 0; i < MEANING.length; i++) {
@@ -120,7 +123,7 @@ test('AC48: the 14 colours that carry a meaning are distinct — every pair\'s C
         if (d < min[0]) min = [d, MEANING[i], MEANING[j]];
       }
     }
-    assert.equal(n, 91);
+    assert.equal(n, 66);
     closest[which] = min;
   }
   // As the spec measured them on 2026-10-16: coral and red in the light theme (about 11.4), amber and the new gold in the dark (about 11.0).
@@ -216,14 +219,16 @@ test('AC62: every font and font-size uses one of the seven roles\' tokens, but t
   assert.equal(new Set(vals).size, 7, vals.join(' | '));
   assert.deepEqual(vals, ['800 1.45rem/1.2 var(--font)', '800 .74rem/1.3 var(--font)', '700 1rem/1.3 var(--font)', '400 .94rem/1.5 var(--font)',
     '600 .78rem/1.35 var(--font)', '400 .9rem/1.45 var(--font)', '500 .74rem/1.3 var(--mono)'], 'the mockup\'s --t-* values');
-  // The section label: small, upper case and spaced.
-  for (const sel of ['.sb-pband-n', '.sb-k']) {
+  // The section label: small, upper case and spaced. From stage 3 the Timeline's band name and its Technical,
+  // Context and Why labels (`.sb-pband-n`, `.sb-k`, which this case read) are AC84's: "never boxed or in
+  // capitals" (:6929), the band's name 600 12 px and each label --t-label in --ink2 (rewritten so).
+  for (const [sel, font] of [['.v2-tpn', '600 12px/1.3 var(--font)'], ['.v2-bn', 'var(--t-label)']]) {
     const m = new RegExp(`\\n${sel.replace('.', '\\.')} \\{([^}]*)\\}`).exec(RAW);
     assert.ok(m, sel);
-    assert.match(m[1], /font: var\(--t-section\)/);
-    assert.match(m[1], /text-transform: uppercase/);
-    assert.match(m[1], /letter-spacing: var\(--track\)/);
+    assert.ok(m[1].includes(`font: ${font}`), `${sel}: ${font}`);
+    assert.doesNotMatch(m[1], /text-transform|letter-spacing|border:/, `${sel}: not upper case, spaced or boxed`);
   }
+  assert.doesNotMatch(RAW, /\n\.sb-k \{/, 'the boxed label chip is gone');
 });
 
 test('AC62: every word kept — each sandbox screen\'s text, outside the parts AC57 to AC60 and AC65 to AC68 rebuild, is the snapshot taken at 2c1acb6, word for word', async () => {
@@ -260,8 +265,15 @@ test('AC62: every word kept — each sandbox screen\'s text, outside the parts A
   // From stage 2 (AC82): Home is built to mockup v2 (frames H1 to H5), so "every word kept" no longer
   // binds it and stage 2 takes it off the snapshot (AC62, changed by AC81: "each stage's pull request
   // takes its screens off it"); AC82's test reads its words. Every project screen is compared, as before.
-  const builtV2 = ['#/'];
-  assert.deepEqual(routes.filter((r) => !/^#\/p\//.test(r)), builtV2, 'the one route that is not a project screen is Home');
+  // From stage 3 (AC83, AC84): each project's page (at the Status screen's address, with its "About the
+  // phases" sheet) and its Timeline are built to mockup v2 (frames
+  // 5 to 8 and 7b), so stage 3 takes them off the snapshot the same way; AC83's and AC84's tests read their
+  // words (AC84's: every word AC59 to AC61 show, inside its folds). The Team screen, a member's pages and the
+  // detail views are compared as before, less the phase line that replaces AC68's marker (NEW_REBUILT).
+  const stage3 = routes.filter((r) => /^#\/p\/[^/]+(\/info|\/timeline)?$/.test(r));
+  assert.equal(stage3.length, 9, stage3.join(' '));
+  const builtV2 = ['#/', ...stage3];
+  assert.deepEqual(routes.filter((r) => !/^#\/p\//.test(r)), ['#/'], 'the one route that is not a project screen is Home');
   for (const r of routes) {
     if (queueRoutes.includes(r) || builtV2.includes(r)) continue;
     assert.deepEqual(now[r], lessBar(rebuiltCos.includes(r) ? cosParts(snap[r]) : snap[r]), r);

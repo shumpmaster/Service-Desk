@@ -435,13 +435,18 @@ test('AC82, the Design reviewer\'s N1 (stage 2, round 1): the fold\'s headings (
   assert.ok(css.indexOf('html.sb .v2-home .sb-h3') > css.indexOf('html.sb .sb-h3 {'), 'and after it');
 });
 
-test('AC82: a tile\'s tap opens the project\'s Status screen in stage 2 (AC81, "Until stage 3"; stage 3 rewrites this case for the page)', async () => {
+// Rewritten in stage 3, as this case said it would be (S-001 AC82; AC81, "From stage 3", specs/S-001.md:6456-6458;
+// the brief's stage 3: "a tile's tap opens the page (its tests rewritten so)").
+test('AC82, from stage 3: a tile\'s tap opens the project\'s page, its Overview, with no top row (AC81, AC83)', async () => {
   const app = await open(textSetup());
   try {
     for (const n of ['Service-Desk', 'Alpha', 'Delta']) assert.equal(byClass(keyed(app, `card:${n}`), 'v2-ta')[0].attrs.href, `#/p/${n}`);
     await app.go(byClass(keyed(app, 'card:Service-Desk'), 'v2-ta')[0].attrs.href);
-    assert.match(app.text(), /Current status/);
-    assert.equal(byClass(app.view, 'v2-row').length, 1, 'stage 1a\'s form, its top row');
+    assert.equal(byClass(app.view, 'v2-proj').length, 1, 'the page');
+    assert.equal(byClass(app.view, 'v2-title')[0].textContent, 'Service-Desk', 'the project\'s name as the screen\'s title');
+    assert.equal(keyed(app, 'seg:overview').attrs['aria-current'], 'page', 'on its Overview');
+    assert.doesNotMatch(app.text(), /Current status/, 'not the Status screen');
+    assert.equal(byClass(app.view, 'v2-row').length, 0, 'no top row (stage 1a\'s form gone)');
   } finally {
     app.restore();
   }

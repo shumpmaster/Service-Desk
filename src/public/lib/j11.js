@@ -171,6 +171,22 @@ export function part1Sections(text) {
   return out;
 }
 
+/** Section 6's value-target lines, word for word (AC83's "Value targets" sheet): the first line of each `V<n>:` id. */
+export function valueTargetLines(text) {
+  const sec = part1Sections(text)[6];
+  if (!sec) return [];
+  const out = [];
+  const seen = new Set();
+  for (const line of sec.body) {
+    const m = TARGET_RE.exec(line);
+    if (m && !seen.has(m[1])) {
+      seen.add(m[1]);
+      out.push({ id: m[1], text: line.trim() });
+    }
+  }
+  return out;
+}
+
 export function valueTargets(text) {
   const sec = part1Sections(text)[6];
   if (!sec) return [];
@@ -388,7 +404,7 @@ export function parseProjectDoc(text) {
   const filled = (n) => Boolean(secs[n]) && secs[n].body.some((l) => l.trim() && !isInstructionLine(l));
   const s9 = secs[9] ? secs[9].body.map((l) => l.trim()).filter((l) => l && !isInstructionLine(l)) : null;
   return {
-    milestones, problems, valueTargets: valueTargets(text),
+    milestones, problems, valueTargets: valueTargets(text), valueLines: valueTargetLines(text),
     scopeLimitsOwnersFilled: filled(1) && filled(4) && filled(5),
     section9: s9, ownerIsUser: Boolean(s9 && s9.includes(OWNER_IS_USER)),
     standard: std.standard, purpose: purposeItems(text),

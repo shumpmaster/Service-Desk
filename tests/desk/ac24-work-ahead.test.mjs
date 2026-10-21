@@ -86,21 +86,25 @@ test('AC24: the oracle — `v3_checks.py trace` at 77bfeae puts each project mil
 // ---------------------------------------------------------------------------
 // The way in, and the accepted views unchanged
 
-test('AC24: the sandbox Home\'s "Work ahead" control, just under the top line, opens the screen: "All projects" over "Work ahead", "6 milestones to go · 3 reached", with Back and Home', async () => {
+// From stage 2 (AC82, AC81 "Until stage 3", AC86): Home's "Work ahead ›" control goes, as frames H1 to
+// H5 draw none, and the bar's Plan tab is the way to Work ahead. This case, AC24's for the control, is
+// rewritten for the Plan tab (AC82: "AC24's case for the control rewritten in stage 2's pull request for
+// the Plan tab"; draft 4, the Critic's note 2, round 3): the same screen, opened the same way, one tap.
+test('AC24 (from stage 2, AC82): Home has no "Work ahead" control; the bar\'s Plan tab opens the screen: "All projects" over "Work ahead", "6 milestones to go · 3 reached", with Back and Home', async () => {
   const app = await open({ hash: '#/' });
   try {
-    const link = findKeyed(app, 'work-ahead');
-    assert.ok(link, 'the control');
-    assert.equal(link.attrs.href, '#/work');
-    assert.equal(link.textContent, 'Work ahead ›');
-    const home = byClass(app.view, 'sb-home')[0];
-    const kids = home.children.map((c) => c.className);
-    assert.equal(kids.indexOf('sb-wa-link'), kids.findIndex((c) => /\bsb-top\b/.test(c)) + 1, 'just under the top line');
-    await app.tap(link);
+    assert.equal(findKeyed(app, 'work-ahead'), null, 'no control on Home');
+    assert.doesNotMatch(byClass(app.view, 'v2-home')[0].textContent, /Work ahead/, 'nor its words');
+    const tab = findKeyed(app, 'tab:plan');
+    assert.ok(tab, 'the bar\'s Plan tab');
+    assert.equal(tab.attrs.href, '#/work');
+    assert.equal(byClass(tab, 'v2-tabw')[0].textContent, 'Plan');
+    await app.tap(tab);
     await app.go('#/work');
     const hdr = byClass(app.view, 'sb-hdr')[0];
     assert.deepEqual(textRuns(hdr, () => false), ['Back', 'Home', 'All projects', 'Work ahead', '6 milestones to go · 3 reached']);
     assert.ok(findKeyed(app, 'nav-home') && findKeyed(app, 'nav-back'));
+    assert.equal(findKeyed(app, 'tab:plan').attrs['aria-current'], 'page', 'Plan current');
   } finally {
     app.restore();
   }
@@ -792,12 +796,17 @@ test('AC24 (build review round 1, E and F): J15\'s ask and "Record plan" show AC
   }
 });
 
-test('AC24 (build review round 1, H): the Home control draws "Work ahead ›", its space one text with the words', async () => {
+// From stage 2 (AC82): the control this case drew is gone with today's Home; its counterpart is the Plan
+// tab's word, one text, with its icon drawn as SVG beside it (AC81).
+test('AC24 (build review round 1, H; from stage 2, AC82): the way in is the Plan tab, its word one text beside its icon', async () => {
   const app = await open({ hash: '#/' });
   try {
-    const link = findKeyed(app, 'work-ahead');
-    assert.equal(link.children.length, 1);
-    assert.equal(link.children[0].textContent, 'Work ahead ›');
+    const tab = findKeyed(app, 'tab:plan');
+    const words = byClass(tab, 'v2-tabw');
+    assert.equal(words.length, 1);
+    assert.equal(words[0].children.length, 1);
+    assert.equal(words[0].textContent, 'Plan');
+    assert.equal(tab.children[0].tag, 'svg', 'its icon an SVG');
   } finally {
     app.restore();
   }

@@ -1,5 +1,6 @@
 // AC54 (spec S-001, trial-view notes 1 to 4): Home's brief summary from each project's README, the
-// "Latest" line in a bubble, the two-column grid on the phone, and the three collapsible groups.
+// "Latest" line in a bubble, the two-column grid on the phone, and the three collapsible groups. From
+// stage 2 (AC82) the cases are on Home's tiles: full width, no "Latest" bubble, frame H5's groups.
 // ac-test: S-001/AC54
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -24,8 +25,6 @@ async function openHome(config, repos, store = null) {
 }
 const groupBtn = (app, k) => findAll(app.view, (e) => e.dataset && e.dataset.k === `hgroup-btn:${k}`)[0];
 const card = (app, name) => findAll(app.view, (e) => e.dataset && e.dataset.k === `card:${name}`)[0] || null;
-const latest = (app, name) => findAll(app.view, (e) => e.dataset && e.dataset.k === `latest:${name}`)[0];
-const bubbleOf = (app, name) => findAll(app.view, (e) => e.dataset && e.dataset.k === `bubble:${name}`)[0] || null;
 
 // ---------------------------------------------------------------------------
 // (a) The brief summary
@@ -60,7 +59,7 @@ test('AC54 (a): "no summary in this project\'s README" with no README, no title 
   assert.equal(summaryView(P, { read: { read: 'cant-read', words: 'GitHub error' } }, { tree: null }).text, SUMMARY_NOT_AVAILABLE);
 });
 
-test('AC54 (a): the cards show the README summary for a v3 and a v2.5 project; a failed README read never makes a project "Can\'t read"', async () => {
+test('AC54 (a), kept by AC82: the tiles show the README summary for a v3 and a v2.5 project; a failed README read never makes a project "Can\'t read"', async () => {
   const config = { ...CONFIG, projects: [v3('Alpha'), v25('Delta')] };
   const repos = {
     Alpha: repo({ 'governance/ROUTING.toml': ROUTING, 'README.md': tv('README-4433c4f.md') }),
@@ -68,10 +67,11 @@ test('AC54 (a): the cards show the README summary for a v3 and a v2.5 project; a
   };
   const app = await openHome(config, repos);
   try {
-    groupBtn(app, 'closed').click();
-    await app.flush();
+    // From stage 2 (AC82, frame H5) "Closed or not run by the desk" starts open: the v2.5 tile shows at once.
+    assert.equal(groupBtn(app, 'closed').attrs['aria-expanded'], 'true');
     assert.equal(byClass(card(app, 'Alpha'), 'sb-sum')[0].textContent, SD_SUMMARY);
     assert.equal(byClass(card(app, 'Delta'), 'sb-sum')[0].textContent, 'The operating model itself.', 'read for a v2.5 project too');
+    assert.ok(card(app, 'Alpha').className.split(' ').includes('v2-tile'), 'on a tile (AC82)');
     assert.doesNotMatch(app.text(), /Can't read/);
   } finally {
     app.restore();
@@ -143,7 +143,7 @@ function longAndShort() {
   return { config, repos };
 }
 
-test('AC54 (a) (2026-10-15): at 360 px the 600-character summary shows three lines with the fade and is a button named "Show the whole summary of <name>"; a one-line summary shows whole with no fade and no control; both boxes take three lines\' height', async () => {
+test('AC54 (a) (2026-10-15), as AC82 keeps it: at 360 px the 600-character summary shows three lines with the fade and is a button named "Show the whole summary of <name>"; a one-line summary shows whole with no fade and no control; one tile a row, and two a row share one height', async () => {
   const { config, repos } = longAndShort();
   const app = await openHome(config, repos);
   try {
@@ -162,28 +162,31 @@ test('AC54 (a) (2026-10-15): at 360 px the 600-character summary shows three lin
     assert.equal(a.textContent, long, 'its text is the whole summary; the box shows the first three lines');
     assert.ok(a.className.split(' ').includes('sb-sum'));
     assert.ok(sumClip(app, 'Alpha').className.split(' ').includes('over'), 'the fade at the cut');
-    // Three lines or fewer: whole, no fade, no control; the same three-line box.
+    // Three lines or fewer: whole, no fade, no control.
     assert.equal(sumCtl(app, 'Beta'), null, 'a one-line summary has no control');
     assert.equal(byClass(card(app, 'Beta'), 'sb-sum')[0].tag, 'p');
     assert.equal(byClass(card(app, 'Beta'), 'sb-sum')[0].textContent, 'A one-line summary.');
     assert.ok(!sumClip(app, 'Beta').className.split(' ').includes('over'), 'and no fade');
-    assert.equal(byClass(card(app, 'Beta'), 'sb-sumclip').length, 1, 'in the same three-line box (its height is the CSS\'s, checked above and in the browser)');
-    // The two cards sit in one grid row: the grid stretches its cards to the row's height.
-    assert.equal(card(app, 'Alpha').parent, card(app, 'Beta').parent);
-    assert.ok(card(app, 'Alpha').className.includes('col-l') && card(app, 'Beta').className.includes('col-r'));
+    // The tiles (AC82; P-001-home-tiles.md, A): full width below 720 px, one a row; two a row from 720 px,
+    // where "every tile the same height" holds within a row: the grid stretches its tiles, and the
+    // summary box takes exactly three lines' height there.
+    assert.equal(card(app, 'Alpha').parent, card(app, 'Beta').parent, 'one group\'s tiles');
     const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
-    for (const m of css.matchAll(/(?:^|\n)([^{}\n]*\.sb-grid[^{}\n]*)\{([^}]*)\}/g)) {
-      assert.doesNotMatch(m[2], /align-items|place-items|grid-auto-rows/, `the grid stretches the cards in a row to one height (${m[1].trim()})`);
+    assert.match(css, /\n\.v2-tiles \{ display: grid; grid-template-columns: minmax\(0, 1fr\); gap: 8px; \}/, 'one column');
+    const wide = /@media \(min-width: 720px\) \{([\s\S]*?)\n\}/.exec(css);
+    assert.ok(wide, 'the wider screen\'s rules');
+    assert.match(wide[1], /\.v2-tiles \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \}/, 'two a row from 720 px');
+    assert.match(wide[1], /\.v2-tile \.sb-sumclip \{ height: calc\(3 \* 1\.4em\); \}/, 'the summary box three lines high there, short or long');
+    for (const m of css.matchAll(/(?:^|\n)([^{}\n]*\.v2-tiles[^{}\n]*)\{([^}]*)\}/g)) {
+      assert.doesNotMatch(m[2], /align-items|place-items|grid-auto-rows/, `the grid stretches the tiles in a row to one height (${m[1].trim()})`);
     }
-    assert.doesNotMatch(/\n\.sb-pc \{([^}]*)\}/.exec(css)[1], /align-self|height:/, 'a card takes its row\'s height');
-    // The fade ends in the card's own background, in both themes.
-    assert.match(css, /\.sb-sumclip\.over::after \{[^}]*background: linear-gradient\(to right, transparent, var\(--surf\) 85%\);/);
-    assert.match(/\n\.sb-pc \{([^}]*)\}/.exec(css)[1], /background: var\(--surf\);/, 'the card\'s background is --surf');
-    for (const theme of [/html\.sb \{([^}]*)\}/, /html\.sb:not\(\[data-theme="light"\]\) \{([^}]*)\}/, /html\.sb\[data-theme="dark"\] \{([^}]*)\}/]) {
-      assert.match(theme.exec(css)[1], /--surf: #[0-9a-f]{6};/, `--surf in ${theme}`);
-    }
-    // The button is a separate tap target: not inside the card's link, which still opens the Project screen.
-    const main = byClass(card(app, 'Alpha'), 'sb-pc-main')[0];
+    assert.doesNotMatch(/\n\.v2-tile \{([^}]*)\}/.exec(css)[1], /align-self|height:/, 'a tile takes its row\'s height');
+    // Three lines at most, the rest hidden, faded into the tile's own ground in both themes (--card is each theme's).
+    assert.match(css, /\n\.v2-tile \.sb-sumclip \{ font: var\(--t-small\); height: auto; max-height: calc\(3 \* 1\.4em\); \}/);
+    assert.match(css, /\n\.v2-tile \.sb-sumclip\.over::after \{ height: 1\.4em; background: linear-gradient\(to right, transparent, var\(--card\) 85%\); \}/);
+    assert.match(/\n\.v2-tile \{([^}]*)\}/.exec(css)[1], /background: var\(--card\);/, 'the tile\'s ground is --card');
+    // The button is a separate tap target: not inside the tile's link, which still opens the project.
+    const main = byClass(card(app, 'Alpha'), 'v2-ta')[0];
     assert.equal(main.attrs.href, '#/p/Alpha');
     assert.ok(!findAll(main, (e) => e === a).length, 'the control is not inside the link');
   } finally {
@@ -237,35 +240,25 @@ test('AC54 (a) (2026-10-15): a tap, Enter and Space open the whole summary in a 
   }
 });
 
-test('AC54 (a) (2026-10-15): one bubble at a time: opening the summary closes "Latest", and opening "Latest" by a tap or by hover closes the summary', async () => {
+test('AC54 (a) (2026-10-15), with AC82: one bubble at a time: opening one tile\'s summary closes another\'s; and no tile has a "Latest" control', async () => {
   const { config, repos } = longAndShort();
+  repos.Beta.commit({ 'README.md': tv('README-600.md') });
   const app = await openHome(config, repos);
   try {
     clipLines(app, 'Alpha', 31);
+    clipLines(app, 'Beta', 31);
     await app.resize(360);
-    const open = () => [bubbleOf(app, 'Alpha') && 'latest:Alpha', bubbleOf(app, 'Beta') && 'latest:Beta', sumBubble(app, 'Alpha') && 'sum:Alpha'].filter(Boolean);
-    await app.tap(latest(app, 'Alpha'));
-    assert.deepEqual(open(), ['latest:Alpha']);
+    const open = () => ['Alpha', 'Beta'].filter((n) => sumBubble(app, n));
     await app.tap(sumCtl(app, 'Alpha'));
-    assert.deepEqual(open(), ['sum:Alpha'], 'opening the summary closes the "Latest" bubble');
-    await app.tap(latest(app, 'Beta'));
-    assert.deepEqual(open(), ['latest:Beta'], 'a tap on "Latest" closes the summary');
-    await app.tap(sumCtl(app, 'Alpha'));
-    assert.deepEqual(open(), ['sum:Alpha']);
-    latest(app, 'Alpha').dispatch('pointerenter', { pointerType: 'mouse' });
-    await app.flush();
-    assert.deepEqual(open(), ['latest:Alpha'], 'hovering "Latest" closes the summary');
-    latest(app, 'Alpha').dispatch('pointerleave', { pointerType: 'mouse' });
-    await app.advance(300);
-    assert.deepEqual(open(), []);
-    // Keyboard: "Latest" opens on focus; Enter on the summary then opens the summary in its place.
-    latest(app, 'Alpha').focus();
-    await app.flush();
-    assert.deepEqual(open(), ['latest:Alpha']);
+    assert.deepEqual(open(), ['Alpha']);
+    await app.tap(sumCtl(app, 'Beta'));
+    assert.deepEqual(open(), ['Beta'], 'opening Beta\'s summary closes Alpha\'s');
     sumCtl(app, 'Alpha').focus();
     sumCtl(app, 'Alpha').dispatch('keydown', { key: 'Enter' });
     await app.advance(10);
-    assert.deepEqual(open(), ['sum:Alpha']);
+    assert.deepEqual(open(), ['Alpha'], 'Enter on Alpha\'s opens it in Beta\'s place');
+    assert.equal(findAll(app.view, (e) => e.dataset && /^latest:/.test(e.dataset.k || '')).length, 0, 'no "Latest" control (P-001-latest-bubble.md, A)');
+    assert.equal(byClass(app.view, 'sb-latest').length, 0);
   } finally {
     app.restore();
   }
@@ -336,184 +329,116 @@ function twoKinds() {
   return { config, repos };
 }
 
-test('AC54 (b): the bubble\'s text is AC37\'s line (v3) and AC10\'s headline (v2.5) exactly; the line is not printed on the card', async () => {
+test('AC54 (b), changed by AC82: no "Latest" bubble on any tile ("Ruling: A — project tiles drop the "Latest" bubble"); AC37\'s line (v3) and AC10\'s headline (v2.5) are not printed on the tile; "Since you last looked" carries what is new', async () => {
   const { config, repos } = twoKinds();
   const app = await openHome(config, repos);
   try {
-    groupBtn(app, 'closed').click();
-    await app.flush();
     await app.go('#/p/Alpha');
     const where = byClass(app.view, 'sb-lead')[0].textContent;
     await app.go('#/');
-    assert.ok(!card(app, 'Alpha').textContent.includes(where), 'not printed on the card');
-    latest(app, 'Alpha').dispatch('pointerdown', { pointerType: 'touch' });
-    latest(app, 'Alpha').click();
-    await app.flush();
-    assert.equal(byClass(bubbleOf(app, 'Alpha'), 'sb-bubble-t')[0].textContent, where);
-    await app.tapOutside();
+    for (const n of ['Alpha', 'Delta']) {
+      assert.ok(card(app, n), `${n}'s tile`);
+      assert.equal(findAll(card(app, n), (e) => e.attrs && e.attrs['aria-label'] === 'Latest').length, 0, `${n}: no "Latest" control`);
+      assert.equal(byClass(card(app, n), 'sb-bubble').length, 0, `${n}: no bubble`);
+    }
+    assert.ok(!card(app, 'Alpha').textContent.includes(where), 'AC37\'s line not printed on the tile');
     const headline = app.desk.model('Delta').headline.text;
     assert.ok(headline && headline.length > 5);
-    assert.ok(!card(app, 'Delta').textContent.includes(headline));
-    latest(app, 'Delta').dispatch('pointerdown', { pointerType: 'touch' });
-    latest(app, 'Delta').click();
-    await app.flush();
-    assert.equal(byClass(bubbleOf(app, 'Delta'), 'sb-bubble-t')[0].textContent, headline);
-    assert.equal(bubbleOf(app, 'Alpha'), null, 'one bubble at a time');
+    assert.ok(!card(app, 'Delta').textContent.includes(headline), 'nor the ledger\'s headline');
+    assert.match(findAll(app.view, (e) => e.dataset && e.dataset.k === 'since-h')[0].textContent, /^Since you last looked/, 'what is new is in "Since you last looked"');
   } finally {
     app.restore();
   }
 });
 
-test('AC54 (b): it opens on hover, on a tap and on keyboard focus, and closes on Escape, a second tap and a tap outside; a tap on it never opens the Project screen', async () => {
-  const { config, repos } = twoKinds();
+test('AC54 (b), changed by AC82: a tap on the tile opens the project\'s Status screen (stage 2, AC81 "Until stage 3"); a tap on its summary\'s control never does', async () => {
+  const { config, repos } = longAndShort();
   const app = await openHome(config, repos);
   try {
-    const ctl = latest(app, 'Alpha');
-    assert.equal(ctl.attrs['aria-label'], 'Latest');
-    // Hover, with a pointer: open, then closed once the pointer leaves the control and the bubble.
-    ctl.dispatch('pointerenter', { pointerType: 'mouse' });
-    await app.flush();
-    assert.ok(bubbleOf(app, 'Alpha'), 'hover opens it');
-    bubbleOf(app, 'Alpha').dispatch('pointerenter', { pointerType: 'mouse' });
-    ctl.dispatch('pointerleave', { pointerType: 'mouse' });
-    await app.advance(300);
-    assert.ok(bubbleOf(app, 'Alpha'), 'still open while the pointer is over the bubble');
-    bubbleOf(app, 'Alpha').dispatch('pointerleave', { pointerType: 'mouse' });
-    await app.advance(300);
-    assert.equal(bubbleOf(app, 'Alpha'), null, 'closed once the pointer left both');
-    // A tap, a second tap, a tap outside.
-    await app.advance(2000);
-    const tap = async () => { ctl.dispatch('pointerdown', { pointerType: 'touch' }); ctl.click(); await app.flush(); };
-    await tap();
-    assert.ok(bubbleOf(app, 'Alpha'), 'a tap opens it');
-    assert.equal(app.loc.hash, '#/', 'and opens no Project screen');
-    await tap();
-    assert.equal(bubbleOf(app, 'Alpha'), null, 'a second tap closes it');
-    await tap();
-    await app.tapOutside();
-    assert.equal(bubbleOf(app, 'Alpha'), null, 'a tap outside closes it');
-    // Its Close control, at its top.
-    await tap();
-    const close = byClass(bubbleOf(app, 'Alpha'), 'sb-close')[0];
-    assert.equal(close.attrs['aria-label'], 'Close');
-    assert.equal(bubbleOf(app, 'Alpha').children[0], byClass(bubbleOf(app, 'Alpha'), 'sb-bubble-top')[0]);
-    close.click();
-    await app.flush();
-    assert.equal(bubbleOf(app, 'Alpha'), null);
-    assert.equal(document.activeElement, latest(app, 'Alpha'), 'focus back on the control, and it stays closed');
-    // The keyboard: focus opens it, Escape closes it and it stays closed while focus stays; Enter opens it again.
-    await app.advance(2000);
-    latest(app, 'Alpha').blur();
-    latest(app, 'Alpha').focus();
-    await app.flush();
-    assert.ok(bubbleOf(app, 'Alpha'), 'keyboard focus opens it');
+    clipLines(app, 'Alpha', 31);
+    await app.resize(360);
+    const link = byClass(card(app, 'Alpha'), 'v2-ta')[0];
+    assert.equal(link.tag, 'a');
+    assert.equal(link.attrs.href, '#/p/Alpha', 'the tile\'s link: the project\'s Status screen in stage 2');
+    assert.equal(link.textContent, 'Alpha', 'named by the project');
+    const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
+    assert.match(css, /\n\.v2-ta::after \{ content: ""; position: absolute; inset: 0; border-radius: 10px; \}/, 'stretched over the whole tile');
+    assert.match(/\n\.v2-tile \{([^}]*)\}/.exec(css)[1], /position: relative;/);
+    await app.tap(sumCtl(app, 'Alpha'));
+    assert.ok(sumBubble(app, 'Alpha'));
+    assert.equal(app.loc.hash, '#/', 'the summary\'s tap opens no screen');
     await app.key('Escape');
-    assert.equal(bubbleOf(app, 'Alpha'), null, 'Escape closes it');
-    assert.equal(document.activeElement, latest(app, 'Alpha'), 'focus returns to the control');
-    latest(app, 'Alpha').dispatch('focus');
-    await app.flush();
-    assert.equal(bubbleOf(app, 'Alpha'), null, 'closed with Escape, it stays closed while focus stays on its control');
-    latest(app, 'Alpha').dispatch('keydown', { key: 'Enter' });
-    await app.flush();
-    assert.ok(bubbleOf(app, 'Alpha'), 'Enter opens it again');
-    await app.key('Escape');
-    latest(app, 'Alpha').blur();
-    await app.advance(10);
-    latest(app, 'Alpha').focus();
-    await app.flush();
-    assert.ok(bubbleOf(app, 'Alpha'), 'focus leaving and coming back opens it again');
-    // A tap elsewhere on the card still opens the Project screen: the card's main link.
-    assert.equal(byClass(card(app, 'Alpha'), 'sb-pc-main')[0].attrs.href, '#/p/Alpha');
-    assert.ok(!findAll(byClass(card(app, 'Alpha'), 'sb-pc-main')[0], (e) => e === latest(app, 'Alpha')).length, 'the control is not inside the link');
+    await app.tap(link);
+    await app.go(link.attrs.href);
+    assert.equal(byClass(app.view, 'sb-lead').length, 1, 'the Status screen');
   } finally {
     app.restore();
   }
 });
 
-test('AC54 (b) + AC56 (build review B1): one tap on another card\'s "Latest" opens its bubble, after another control had focus or another bubble was open, in a browser\'s real focus order', async () => {
+test('AC54 (a) + AC56 (build review B1), on AC82\'s tiles: one tap on another tile\'s summary opens its bubble, after another control had focus or another bubble was open, in a browser\'s real focus order', async () => {
   const setup = extremes();
+  for (const n of ['Alpha', 'Beta', 'Gamma']) setup.repos[n].commit({ 'README.md': tv('README-600.md') });
   const app = await openHome(setup.config, setup.repos);
   try {
-    const names = setup.config.projects.map((p) => p.name).filter((n) => latest(app, n)); // the cards shown (closed groups hide theirs)
-    const open = () => names.filter((n) => bubbleOf(app, n));
-    assert.ok(names.length >= 3 && names.includes('Alpha') && names.includes('Beta') && names.includes('Gamma'), `cards shown: ${names}`);
+    for (const n of ['Alpha', 'Beta', 'Gamma']) clipLines(app, n, 31);
+    await app.resize(360);
+    const names = ['Alpha', 'Beta', 'Gamma'];
+    const open = () => names.filter((n) => sumBubble(app, n));
     const trace = [];
-    for (const n of names) for (const t of ['pointerdown', 'blur', 'focusout', 'focus', 'focusin', 'click']) latest(app, n).addEventListener(t, () => trace.push(`${t}:${n}`));
-    // The review's touch steps: tap Alpha (opens), tap it again (closes), then tap Beta once.
-    await app.tap(latest(app, 'Alpha'));
+    for (const n of names) for (const t of ['pointerdown', 'blur', 'focusout', 'focus', 'focusin', 'click']) sumCtl(app, n).addEventListener(t, () => trace.push(`${t}:${n}`));
+    await app.tap(sumCtl(app, 'Alpha'));
     assert.deepEqual(open(), ['Alpha'], 'a tap opens Alpha\'s');
-    await app.tap(latest(app, 'Alpha'));
+    await app.tap(sumCtl(app, 'Alpha'));
     assert.deepEqual(open(), [], 'a second tap closes it');
     trace.length = 0;
-    await app.tap(latest(app, 'Beta'));
+    await app.tap(sumCtl(app, 'Beta'));
     assert.deepEqual(trace, ['pointerdown:Beta', 'blur:Alpha', 'focusout:Alpha', 'focus:Beta', 'focusin:Beta', 'click:Beta'], 'the browser\'s order: the old control loses focus between the press and the click');
     assert.deepEqual(open(), ['Beta'], 'one tap opens Beta\'s, with Alpha\'s control having had focus');
-    // Straight from an open bubble to each other card's control: one tap each.
-    for (const n of names.filter((x) => x !== 'Beta')) {
-      await app.tap(latest(app, n));
+    for (const n of ['Alpha', 'Gamma']) {
+      await app.tap(sumCtl(app, n));
       assert.deepEqual(open(), [n], `one tap opens ${n}'s, straight from the open one`);
-      assert.equal(document.activeElement, latest(app, n));
+      assert.equal(document.activeElement, sumCtl(app, n));
     }
-    // From the keyboard's bubble: focus on Alpha's control opens it; a tap on Beta's opens Beta's.
-    await app.tap(latest(app, names[names.length - 1])); // closes the open one
-    assert.deepEqual(open(), []);
-    latest(app, 'Alpha').focus();
-    await app.flush();
-    assert.deepEqual(open(), ['Alpha'], 'keyboard focus opens Alpha\'s');
-    await app.tap(latest(app, 'Beta'));
-    await app.advance(10);
-    assert.deepEqual(open(), ['Beta'], 'one tap on Beta\'s, after the keyboard\'s bubble');
-    // A tap outside, on the page, then a tap on Gamma's: one tap opens it.
     await app.tap(app.view);
     assert.deepEqual(open(), [], 'a tap outside closes it');
-    assert.equal(document.activeElement, latest(app, 'Beta'), 'with focus back on its control (AC56)');
-    await app.tap(latest(app, 'Gamma'));
-    assert.deepEqual(open(), ['Gamma'], 'and one tap on Gamma\'s then opens it');
-    // A tap outside that lands on another card's control: the old bubble closes, the tapped one opens and keeps the focus.
-    await app.tap(latest(app, 'Alpha'));
-    assert.deepEqual(open(), ['Alpha']);
-    assert.equal(document.activeElement, latest(app, 'Alpha'));
-    // Later keyboard focus on Gamma's control still opens it: the tap outside left nothing behind.
-    latest(app, 'Gamma').focus();
-    await app.flush();
-    assert.deepEqual(open(), ['Gamma'], 'keyboard focus on a control whose bubble a tap closed opens it');
+    assert.equal(document.activeElement, sumCtl(app, 'Gamma'), 'with focus back on its control (AC56)');
+    await app.tap(sumCtl(app, 'Beta'));
+    assert.deepEqual(open(), ['Beta'], 'and one tap on Beta\'s then opens it');
   } finally {
     app.restore();
   }
 });
 
-test('AC54 (b) (build review B1): with a mouse, hover then click keeps the bubble open, with or without another control having had focus', async () => {
-  const setup = extremes();
-  const app = await openHome(setup.config, setup.repos);
+test('AC54 (a) (build review B1), on AC82\'s tiles: with a mouse, a click opens the summary and keeps it when the pointer leaves; a second click closes it; with another control having had focus too', async () => {
+  const { config, repos } = longAndShort();
+  repos.Beta.commit({ 'README.md': tv('README-600.md') });
+  const app = await openHome(config, repos);
   try {
-    const names = setup.config.projects.map((p) => p.name).filter((n) => latest(app, n)); // the cards shown (closed groups hide theirs)
-    const open = () => names.filter((n) => bubbleOf(app, n));
-    // No control had focus yet.
-    await app.tap(latest(app, 'Alpha'), { pointerType: 'mouse' });
-    assert.deepEqual(open(), ['Alpha'], 'hover opens it and the click keeps it');
-    latest(app, 'Alpha').dispatch('pointerleave', { pointerType: 'mouse' });
+    clipLines(app, 'Alpha', 31);
+    clipLines(app, 'Beta', 31);
+    await app.resize(360);
+    const open = () => ['Alpha', 'Beta'].filter((n) => sumBubble(app, n));
+    await app.tap(sumCtl(app, 'Alpha'), { pointerType: 'mouse' });
+    assert.deepEqual(open(), ['Alpha'], 'a click opens it');
+    sumCtl(app, 'Alpha').dispatch('pointerleave', { pointerType: 'mouse' });
     await app.advance(300);
-    assert.deepEqual(open(), ['Alpha'], 'clicked, it stays when the pointer leaves');
-    // Alpha's control has focus; hover Beta's (it opens), then click it: it stays open.
-    latest(app, 'Beta').dispatch('pointerenter', { pointerType: 'mouse' });
-    await app.flush();
-    assert.deepEqual(open(), ['Beta'], 'hover opens Beta\'s');
-    await app.tap(latest(app, 'Beta'), { pointerType: 'mouse', hover: false });
-    assert.deepEqual(open(), ['Beta'], 'the click after the hover keeps it open');
-    await app.tap(latest(app, 'Beta'), { pointerType: 'mouse', hover: false });
+    assert.deepEqual(open(), ['Alpha'], 'it stays when the pointer leaves');
+    await app.tap(sumCtl(app, 'Beta'), { pointerType: 'mouse' });
+    assert.deepEqual(open(), ['Beta'], 'a click on Beta\'s, Alpha\'s control having had focus');
+    await app.tap(sumCtl(app, 'Beta'), { pointerType: 'mouse', hover: false });
     assert.deepEqual(open(), [], 'a second click closes it');
   } finally {
     app.restore();
   }
 });
 
-test('AC54 (b): at 360 px the bubble spans the grid inside the gutters, above or below the control, wrapping, never clipped (the CSS; the browser check is in the pull request)', () => {
+test('AC54 (a), on AC82\'s tiles: at 360 px the summary\'s bubble spans its tile inside the gutters, above or below the control, wrapping, never clipped (the CSS; the browser check is in the pull request)', () => {
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
-  assert.match(css, /\.sb-bubble\.col-l \{ left: 0; right: calc\(-100% - 8px\); \}/, 'a left-column card\'s bubble spans both columns');
-  assert.match(css, /\.sb-bubble\.col-r \{ right: 0; left: calc\(-100% - 8px\); \}/);
-  assert.match(css, /\.sb-grid \{ display: grid; grid-template-columns: 1fr 1fr; gap: var\(--s2\); \}/, 'the grid\'s gap is the bubble\'s 8 px (AC62: --s2)');
-  assert.match(css, /--s2: 8px;/);
-  assert.match(css, /\.sb-bubble\.up \{ top: auto; bottom: calc\(100% \+ 4px\); \}/, 'placed above to fit');
+  assert.match(css, /\n\.v2-tile \.sb-sumbox > \.sb-bubble \{ left: -10px; right: -10px; \}/, 'the tile\'s width, its 10 px padding included (the page keeps its 16 px gutter)');
+  assert.match(css, /\.sb-sumbox > \.sb-bubble\.up \{ top: auto; bottom: calc\(100% \+ 4px\); \}/, 'placed above to fit');
+  assert.match(css, /\n\.v2-home \.sb-bubble \{ background: var\(--bg\); color: var\(--ink\); border: 1px solid var\(--line2\); border-radius: 12px; box-shadow: var\(--shadow\); \}/, 'on mockup v2\'s tokens');
+  assert.match(css, /\n\.v2-home \.sb-bubble-t \{ font: var\(--t-body\); \}/, 'its text wraps in the body role');
   const block = /@media \(prefers-reduced-motion: no-preference\) \{\s*\.sb-bubble \{ animation/.test(css);
   assert.ok(block, 'its motion only without reduced motion');
 });
@@ -521,22 +446,24 @@ test('AC54 (b): at 360 px the bubble spans the grid inside the gutters, above or
 // ---------------------------------------------------------------------------
 // (c) Two columns on the phone
 
-test('AC54 (c): two columns at every width up to 600 px (360 and 414 included); H5\'s extremes with the 600-character README render without error', async () => {
+test('AC54 (c), changed by AC82 (P-001-home-tiles.md, A): one tile a row below 720 px (360 and 414 included), two from 720 px, Home\'s column at most 960 px there; H5\'s extremes with the 600-character README render without error', async () => {
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
-  const grids = [...css.matchAll(/\.sb-grid \{[^}]*grid-template-columns:\s*([^;]+);/g)].map((m) => m[1]);
-  assert.deepEqual(grids, ['1fr 1fr'], 'one rule, two columns, at every width (the page is at most 560 px wide)');
-  assert.doesNotMatch(css, /@media \([^)]*width[^)]*\) \{\s*\.sb-grid/, 'no width query changes it');
+  const grids = [...css.matchAll(/\.v2-tiles \{[^}]*grid-template-columns:\s*([^;]+);/g)].map((m) => m[1]);
+  assert.deepEqual(grids, ['minmax(0, 1fr)', 'repeat(2, minmax(0, 1fr))'], 'one column, then two');
+  const wide = /@media \(min-width: 720px\) \{([\s\S]*?)\n\}/.exec(css)[1];
+  assert.match(wide, /\.v2-tiles \{ grid-template-columns: repeat\(2/, 'the two only from 720 px');
+  assert.match(wide, /html\.sb\.v2-page\.v2-home-page body \{ max-width: 960px; \}/, 'Home\'s column widens to at most 960 px');
+  assert.doesNotMatch(css.replace(wide, ''), /\.v2-home-page body \{[^}]*max-width/, 'every other screen keeps its width');
   const setup = extremes();
   setup.repos.Alpha.commit({ 'README.md': tv('README-600.md') });
   const app = await openHome(setup.config, setup.repos);
   try {
-    for (const k of ['done', 'closed']) { groupBtn(app, k).click(); await app.flush(); }
-    assert.equal(byClass(app.view, 'sb-pc').length, 5);
+    groupBtn(app, 'done').click();
+    await app.flush();
+    assert.equal(byClass(app.view, 'v2-tile').length, 5, 'one tile per project');
     assert.doesNotMatch(app.text(), /Can't show/);
     assert.equal(byClass(card(app, 'Alpha'), 'sb-sum')[0].textContent.length, 600);
-    for (const g of byClass(app.view, 'sb-grid')) {
-      byClass(g, 'sb-pc').forEach((c, i) => assert.ok(c.className.includes(i % 2 ? 'col-r' : 'col-l'), 'each card knows its column'));
-    }
+    assert.equal(byClass(app.view, 'sb-pc').length + byClass(app.view, 'sb-grid').length, 0, 'no two-column card grid');
   } finally {
     app.restore();
   }
@@ -594,31 +521,41 @@ function groupsSetup() {
   return { config, repos };
 }
 
-test('AC54 (d): the groups in order, AC8\'s order within each, the starting states, and closed headers that still say what waits and what can\'t be read', async () => {
+test('AC54 (d), as AC82 orders them (frame H5): "Your projects · active", "Closed or not run by the desk", then "Done"; AC8\'s order within each; the first two open and Done closed; and closed headers that still say what waits and what can\'t be read', async () => {
   const { config, repos } = groupsSetup();
   const app = await openHome(config, repos);
   try {
     await app.advance(4 * POLL_MS); // the J11 reads arrive; Broken goes stale
-    const heads = byClass(app.view, 'sb-hg-btn');
-    assert.deepEqual(heads.map((b) => byClass(b, 'sb-hg-t')[0].textContent), ['Active', 'Done', 'Closed or not applicable']);
-    assert.deepEqual(heads.map((b) => b.attrs['aria-expanded']), ['true', 'false', 'false'], 'Active open; Done and Closed closed');
-    const active = byClass(app.view, 'sb-hgroup')[0];
-    assert.deepEqual(byClass(active, 'sb-nm').map((n) => n.textContent), ['Zeta', 'Broken', 'Alpha', 'Rescoped'], 'AC8: flagged, then can\'t-read, then by name');
-    assert.match(heads[0].textContent, /4 projects/);
+    const heads = byClass(app.view, 'v2-hg');
+    assert.deepEqual(heads.map((b) => byClass(b, 'v2-hgt')[0].textContent), ['Your projects · active', 'Closed or not run by the desk', 'Done']);
+    assert.deepEqual(heads.map((b) => b.attrs['aria-expanded']), ['true', 'true', 'false'], 'the first two open, Done closed');
+    const groups = byClass(app.view, 'v2-hgroup');
+    const names = (g) => byClass(g, 'v2-tnm').map((n) => n.textContent);
+    assert.deepEqual(names(groups[0]), ['Zeta', 'Broken', 'Alpha', 'Rescoped'], 'AC8: flagged, then can\'t-read, then by name');
+    assert.equal(byClass(heads[0], 'v2-hgn')[0].textContent, '4 projects', 'its count (drawn "4"; "projects" for assistive technology)');
     assert.match(heads[0].textContent, /6 waiting on you/);
     assert.match(heads[0].textContent, /1 can't be read/);
-    assert.match(heads[1].textContent, /1 project\b/);
-    assert.equal(byClass(app.view, 'sb-hgroup')[1].children.length, 1, 'a closed group shows only its header');
-    assert.match(byClass(heads[2], 'sb-hg-n')[0].textContent, /^2 projects$/);
-    assert.equal(byClass(heads[2], 'sb-hg-you')[0].textContent, '1 waiting on you', 'a closed group holding a waiting item says so');
+    assert.deepEqual(names(groups[1]), ['Dropped', 'Delta']);
+    // Each group's count, as the base held it for every group (the Reviewer's note, stage 2 round 1): the
+    // base's second group (Done, "1 project") is third here and checked below; the second here is Closed's.
+    assert.equal(byClass(heads[1], 'v2-hgn')[0].textContent, '2 projects', 'the second group\'s count');
+    assert.equal(byClass(heads[1], 'v2-hgy')[0].textContent, '1 waiting on you', 'the group holding a waiting item says so');
+    assert.equal(groups[2].children.length, 1, 'a closed group shows only its header');
     assert.match(heads[2].textContent, /\(closed\)/, 'its state in words for assistive technology, as well as its mark');
-    assert.match(app.text(), /7 waiting on you in all/, 'Home\'s top line counts every group');
+    assert.match(byClass(heads[2], 'v2-hgn')[0].textContent, /^1 project$/);
+    // Closed, the Closed group's header still says what waits.
+    heads[1].click();
+    await app.flush();
+    const closed = byClass(app.view, 'v2-hg')[1];
+    assert.equal(closed.attrs['aria-expanded'], 'false');
+    assert.equal(byClass(closed, 'v2-hgy')[0].textContent, '1 waiting on you', 'closed, it still says what waits');
+    assert.match(byClass(app.view, 'v2-brief')[0].textContent, /^7 need you/, 'Home\'s briefing counts every group');
     // Opening and closing reorders nothing.
     heads[2].click();
     await app.flush();
-    const closed = byClass(app.view, 'sb-hgroup')[2];
-    assert.deepEqual(byClass(closed, 'sb-nm').map((n) => n.textContent), ['Dropped', 'Delta']);
-    assert.deepEqual(byClass(byClass(app.view, 'sb-hgroup')[0], 'sb-nm').map((n) => n.textContent), ['Zeta', 'Broken', 'Alpha', 'Rescoped']);
+    const g2 = byClass(app.view, 'v2-hgroup');
+    assert.deepEqual(names(g2[2]), ['Done-one']);
+    assert.deepEqual(names(g2[0]), ['Zeta', 'Broken', 'Alpha', 'Rescoped']);
   } finally {
     app.restore();
   }
@@ -631,15 +568,20 @@ test('AC54 (d): a closed group holding a project that can\'t be read says so on 
   const app = await openHome(config, repos);
   try {
     await app.advance(4 * POLL_MS);
+    // From stage 2 (AC82, frame H5) the group starts open; closed by a tap, its header still says so.
+    assert.equal(groupBtn(app, 'closed').attrs['aria-expanded'], 'true');
+    assert.match(byClass(groupBtn(app, 'closed'), 'v2-hgb')[0].textContent, /^1 can't be read$/);
+    groupBtn(app, 'closed').click();
+    await app.flush();
     const h = groupBtn(app, 'closed');
     assert.equal(h.attrs['aria-expanded'], 'false');
-    assert.match(byClass(h, 'sb-hg-bad')[0].textContent, /^1 can't be read$/);
+    assert.match(byClass(h, 'v2-hgb')[0].textContent, /^1 can't be read$/);
   } finally {
     app.restore();
   }
 });
 
-test('AC54 (d): each group\'s state survives a reload through desk-home-groups-v1; failing storage gives the starting states with no error', async () => {
+test('AC54 (d): each group\'s state survives a reload through desk-home-groups-v1; failing storage gives the starting states (AC82: the first two open, Done closed) with no error', async () => {
   const mem = new Map();
   const backing = { getItem: (k) => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k) };
   const { config, repos } = twoKinds();
@@ -651,17 +593,17 @@ test('AC54 (d): each group\'s state survives a reload through desk-home-groups-v
   } finally {
     app.restore();
   }
-  assert.deepEqual(JSON.parse(mem.get(HOME_GROUPS_KEY)), { active: false, done: false, closed: true });
+  assert.deepEqual(JSON.parse(mem.get(HOME_GROUPS_KEY)), { active: false, closed: false, done: false });
   app = await openHome(config, repos, backing);
   try {
-    assert.deepEqual(['active', 'done', 'closed'].map((k) => groupBtn(app, k).attrs['aria-expanded']), ['false', 'false', 'true'], 'kept through the reload');
+    assert.deepEqual(['active', 'closed', 'done'].map((k) => groupBtn(app, k).attrs['aria-expanded']), ['false', 'false', 'false'], 'kept through the reload');
   } finally {
     app.restore();
   }
   const broken = { getItem() { throw new Error('denied'); }, setItem() { throw new Error('denied'); }, removeItem() { throw new Error('denied'); } };
   app = await openHome(config, repos, broken);
   try {
-    assert.deepEqual(['active', 'done', 'closed'].map((k) => groupBtn(app, k).attrs['aria-expanded']), ['true', 'false', 'false']);
+    assert.deepEqual(['active', 'closed', 'done'].map((k) => groupBtn(app, k).attrs['aria-expanded']), ['true', 'true', 'false']);
     groupBtn(app, 'done').click();
     await app.flush();
     assert.equal(groupBtn(app, 'done').attrs['aria-expanded'], 'true', 'it still opens and closes, for this window');
@@ -670,3 +612,4 @@ test('AC54 (d): each group\'s state survives a reload through desk-home-groups-v
     app.restore();
   }
 });
+

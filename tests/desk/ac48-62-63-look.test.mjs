@@ -257,8 +257,13 @@ test('AC62: every word kept — each sandbox screen\'s text, outside the parts A
     return [...runs.slice(0, runs.indexOf('Chief of Staff') + 1), ...runs.slice(a, a + 1), ...runs.slice(b, b + 1), ...runs.slice(c)];
   };
   const rebuiltCos = ['#/p/Service-Desk/team/chief-of-staff', '#/p/Alpha/team/chief-of-staff'];
+  // From stage 2 (AC82): Home is built to mockup v2 (frames H1 to H5), so "every word kept" no longer
+  // binds it and stage 2 takes it off the snapshot (AC62, changed by AC81: "each stage's pull request
+  // takes its screens off it"); AC82's test reads its words. Every project screen is compared, as before.
+  const builtV2 = ['#/'];
+  assert.deepEqual(routes.filter((r) => !/^#\/p\//.test(r)), builtV2, 'the one route that is not a project screen is Home');
   for (const r of routes) {
-    if (queueRoutes.includes(r)) continue;
+    if (queueRoutes.includes(r) || builtV2.includes(r)) continue;
     assert.deepEqual(now[r], lessBar(rebuiltCos.includes(r) ? cosParts(snap[r]) : snap[r]), r);
   }
   assert.deepEqual(cosParts(snap[rebuiltCos[0]]), ['Sandbox: candidate design', 'Back', 'Home', 'Service-Desk', 'Chief of Staff', 'Responsible for', 'Running log', 'Status', 'Timeline', 'Team', 'Queue']);

@@ -340,12 +340,16 @@ export function roughFinish(rows, todayKey) {
   let lo = 0;
   let hi = 0;
   let stop = null;
-  const out = rows.map((r) => {
-    if (stop) return { words: stop, na: true };
+  let at = null;
+  const out = rows.map((r, i) => {
+    if (stop) return { words: stop, na: true, stop: at };
     const s = r.standing;
     if (!s || s.kind === 'past') {
-      stop = `not available: ${r.code} ${s && s.kind === 'past' ? 'is past its estimate' : 'has no estimate yet'}`;
-      return { words: stop, na: true };
+      // `stop`: the row the reason names, so a screen without each row's project beside it (Home's tile)
+      // can name that row's project (the Design reviewer's B-new, stage 2 round 2); the words are Plan's.
+      at = { index: i, code: r.code, why: s && s.kind === 'past' ? 'is past its estimate' : 'has no estimate yet' };
+      stop = `not available: ${r.code} ${at.why}`;
+      return { words: stop, na: true, stop: at };
     }
     lo += s.lo;
     hi += s.hi;

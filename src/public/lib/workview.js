@@ -211,7 +211,10 @@ export function workAheadView({ config, entries, snaps, nowMs, tz, draft }) {
   let card = WA.notAvailable;
   if (est.kind !== 'na') {
     const rf = roughFinish(rows.map((r) => ({ code: r.code, standing: r.past ? { kind: 'past' } : r.standing })), today);
-    rows.forEach((r, i) => { r.finish = rf.rows[i]; });
+    rows.forEach((r, i) => {
+      r.finish = rf.rows[i];
+      if (r.finish.stop) r.finish.stop = { ...r.finish.stop, project: rows[r.finish.stop.index].project.name };
+    });
     card = rows.length ? rf.card : WA.notAvailable;
   }
 

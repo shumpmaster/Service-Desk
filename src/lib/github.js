@@ -20,6 +20,12 @@ export const HISTORY_PATH_RE = /^((decisions\/)?questions\/[^/]+\.md|queue\/ci-h
 // J20 (2026-10-18): open pull requests' files, one page counting 1 of the blob call's budget.
 export const FILES_PAGES = 3;
 export const MAX_FILES_PRS = 25;
+// J24 (2026-10-20, AC82): an open pull request's commits, `pulls/{n}/commits?per_page=100`, at most 3
+// pages (GitHub lists at most 250 commits for a pull request), each page 1 of the blob call's budget of
+// 25: a read counts its 3, so it never runs short of budget part way (C).
+export const COMMITS_PAGES = 3;
+export const COMMITS_COST = COMMITS_PAGES;
+export const MAX_COMMITS_PRS = 8;
 // AC77 (draft 6; draft 7, finding 5): the closed pull requests, newest updated first, 1 to 3 pages,
 // counting 3 (its worst case); and (finding 2b) single pull requests read by number, each counting 1.
 export const CLOSED_COST = CLOSED_MAX_PAGES;
@@ -100,6 +106,7 @@ export function urlsFor(project) {
     compare: (b, h) => `${base}/compare/${b}...${h}?per_page=1`,
     history: (path) => `${base}/commits?path=${encodeURIComponent(path)}&sha=${encodeURIComponent(project.defaultBranch)}&per_page=100`,
     files: (n) => `${base}/pulls/${n}/files?per_page=100`,
+    commits: (n) => `${base}/pulls/${n}/commits?per_page=100`,
     closed: `${base}/pulls?state=closed&sort=updated&direction=desc&per_page=100`,
     pull: (n) => `${base}/pulls/${n}`,
     // AC79 (J1, J16's own reads): a candidate head's lists, the asks-merge runs, a commit, a run's jobs, a job's log.
@@ -736,6 +743,24 @@ export async function readBlobs(req, deps) {
         if (linkPage(res.headers.get('Link'), 'next') == null) break;
       }
       out.files[n] = pages;
+    });
+  }
+  // J24: each pull request's commits, raw pages (the page takes the fields it reads), the next page only
+  // while GitHub says there is one, at most 3. A failed read is a null answer (that pull request's
+  // commits are left out); only a rate limit or a 401 stops the call, as for J20's files.
+  for (const n of req.commits || []) {
+    out.commits = out.commits || {};
+    out.commits[n] = null;
+    tasks.push(async () => {
+      if (failure) return;
+      const pages = [];
+      for (let page = 1; page <= COMMITS_PAGES; page++) {
+        const res = await get(pageUrl(u.commits(n), page));
+        if (!res || !res.ok) return optionalFail(res);
+        pages.push(await res.text());
+        if (linkPage(res.headers.get('Link'), 'next') == null) break;
+      }
+      out.commits[n] = pages;
     });
   }
   // AC77's closed read (draft 7): 1 to 3 pages, the next only while a full page's last pull request

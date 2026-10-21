@@ -393,8 +393,11 @@ test('AC14 (AC79): every head a job candidate in 5 projects, 288 head changes, 1
 // of them its verdict blob failing all day; every head change is a verdict commit (a new head, a new
 // verdict file). The cache is empty at every opening (the worst case), while the waited reads' 5 a head
 // are kept on the device across openings (desk-board-waits-v1). Then the same day with local storage
-// throwing: no waited read at all. J24's portfolio reads are stage 2's and not built yet.
-async function combinedDay({ worst, storageThrows = false } = {}) {
+// throwing: no waited read at all. From stage 2 (AC82, J24; `j24`: 'ok' or 'fail'), the same day with every
+// open pull request updated since "last looked" and 250 commits on each (three pages, the most GitHub
+// lists; NOT real records), read riding J20's calls, or failing all day. The portfolio's reads (J23) are
+// stage 6b's and not built yet.
+async function combinedDay({ worst, storageThrows = false, j24 = null } = {}) {
   const { readFileSync } = await import('node:fs');
   const { join } = await import('node:path');
   const { NOTIFY_FIX } = await import('./notify-helpers.mjs');
@@ -427,6 +430,8 @@ async function combinedDay({ worst, storageThrows = false } = {}) {
     r.pullsAnswer = null; // J12 failing all day
     r.jobs = { asksRuns: [], checks: {}, runJobs: {}, logs: {}, commits: {}, fail: { logs: [], commitTime: [] } };
     r.filesFail = [...WAITED];
+    if (j24) r.prCommits = Object.fromEntries([31, 32, 33, 34, 35].map((n) => [n, COMMITS250]));
+    if (j24 === 'fail') r.commitsFail = [31, 32, 33, 34, 35];
     r.blobs = {};
     r.blobFail = [];
   }
@@ -434,7 +439,8 @@ async function combinedDay({ worst, storageThrows = false } = {}) {
     const r = repos[p.name];
     const G = gens[p.name];
     r.pulls = NUMS.map((n) => ({ number: n, title: `Made-up #${n}`, html_url: `https://github.com/${p.repo}/pull/${n}`, draft: false, base: { ref: 'main', repo: { private: false } },
-      head: { ref: `cos/x-${n}`, sha: headOf(p.name, n, G[n]), repo: { full_name: p.repo } }, user: { login: 'shumpmaster' }, created_at: iso(DAY - n * 60e3), state: 'open' }));
+      head: { ref: `cos/x-${n}`, sha: headOf(p.name, n, G[n]), repo: { full_name: p.repo } }, user: { login: 'shumpmaster' }, created_at: iso(DAY - n * 60e3), state: 'open',
+      updated_at: iso(DAY + G[n] * 60e3) }));
     r.prFiles = Object.fromEntries(NUMS.map((n) => [n, [{ filename: `questions/N${n}.md`, status: 'added' }, { filename: `reviews/${n}/reviewer.md`, status: 'added', sha: verdictOf(p.name, n, G[n]) }]]));
     for (const n of NUMS) {
       const v = verdictOf(p.name, n, G[n]);
@@ -469,6 +475,10 @@ async function combinedDay({ worst, storageThrows = false } = {}) {
   let opening = 0;
   const soloLog = new Map(); // `${opening}|${project}|${number}@${head}` → solo calls in the call log
   const span = new Map(); // the same key → { first, last }: when the reader saw that head open in that opening
+  // J24 (stage 2): each blob call carrying commits, by opening and project, and when in the opening; and any
+  // call that holds a verdict blob and a commits read together (there must be none).
+  const j24Calls = [];
+  let openAt = 0;
   const call = async (path, body) => {
     const res = await server.call(path, body);
     if (path === '/api/poll') {
@@ -484,6 +494,11 @@ async function combinedDay({ worst, storageThrows = false } = {}) {
       }
       const k = `${body.project}|${lastPoll.get(body.project)}`;
       cycles.set(k, (cycles.get(k) || 0) + 1);
+      if (Array.isArray(body.commits) && body.commits.length) {
+        const alone = !(body.files || []).length && !(body.blobs || []).length && !(body.history || []).length && !body.pulls && !body.usage && !body.closed && !(body.prs || []).length;
+        j24Calls.push({ opening, project: body.project, alone, inFiles: body.commits.every((n) => (body.files || []).includes(n)), sinceOpen: clock.now() - openAt,
+          verdict: (body.blobs || []).some((x) => shaToHead.has(x)) });
+      }
       const vs = (body.blobs || []).filter((s) => shaToHead.has(s));
       if (vs.length && !body.files) {
         const heads = new Set(vs.map((s) => shaToHead.get(s)));
@@ -511,7 +526,9 @@ async function combinedDay({ worst, storageThrows = false } = {}) {
     opening = o;
     const open = DAY + o * 2.4 * HOUR;
     await clock.runUntil(open);
-    const desk = createDesk({ config, call, clock, store: createStore(null), waitsStore: createStore(device), isVisible: () => true, j11: true });
+    openAt = clock.now();
+    const desk = createDesk({ config, call, clock, store: createStore(null), waitsStore: createStore(device), isVisible: () => true, j11: true,
+      ...(j24 ? { lastLooked: () => DAY - 86400e3 } : {}) });
     desk.start();
     for (let m = 1; m * 60_000 <= windowMs; m++) {
       await clock.runUntil(open + m * 60_000 - 30_000);
@@ -550,11 +567,17 @@ async function combinedDay({ worst, storageThrows = false } = {}) {
     }
     desk.stop();
   }
-  return { calls: server.calls.length, changes, prChanges, waited, perHead, verdictCalls, cycles, maxOwnerHeads, HEAD_POLLS, waitsBacking, soloLog, waitedByOpening, span };
+  return { calls: server.calls.length, changes, prChanges, waited, perHead, verdictCalls, cycles, maxOwnerHeads, HEAD_POLLS, waitsBacking, soloLog, waitedByOpening, span, j24Calls };
 }
 
 
 const { FILES_RETRY_MS: RETRY } = await import('../../src/lib/scheduler.js');
+// 250 made-up commits (NOT real records), one list shared by every pull request: three pages each.
+const COMMITS250 = Array.from({ length: 250 }, (_, i) => ({ sha: i.toString(16).padStart(40, 'd'), parents: [{ sha: 'e'.repeat(40) }],
+  commit: { message: `A made-up commit ${i}`, author: { name: 'Builder', email: 'builder@agents.invalid' }, committer: { date: new Date(DAY - (300 - i) * 60e3).toISOString() } }, author: null }));
+// The mockup-v2 worst case without J24, run once and shared by the cases that compare with it.
+let verdictsDay = null;
+const verdictsBase = () => (verdictsDay ||= combinedDay({ worst: 'verdicts' }));
 
 test('AC14 (AC80), the board\'s worst case at full in AC79\'s day: a mark on every head of all 5 open pull requests a project, each J20 read failing all day — under 10,000 calls; at most 5 waited-read calls a head over the whole day, by the reader\'s own count and by the call log\'s', async (t) => {
   const d = await combinedDay({ worst: 'waited' });
@@ -593,7 +616,7 @@ test('AC14 (AC80), the board\'s worst case at full in AC79\'s day: a mark on eve
 });
 
 test('AC14 (desk mockup v2), its worst case at full in AC79\'s day: all 5 open pull requests a project with verdict files on their branches, read, one a project with its verdict blob failing all day — under 10,000 calls; one verdict call a head an opening, a failing one\'s retries inside its 5 and failing only its own head\'s call; at most 16 blob calls a cycle; at most 3 owner-check heads a poll', async (t) => {
-  const d = await combinedDay({ worst: 'verdicts' });
+  const d = await verdictsBase();
   const v = [...d.verdictCalls.values()];
   t.diagnostic(`AC14 (mockup v2 worst case): ${d.calls} calls, ${v.reduce((a, x) => a + x.n, 0)} verdict calls over ${d.verdictCalls.size} heads an opening, ${d.waited} waited-read calls, the most blob calls in a cycle ${Math.max(...d.cycles.values())}, ${d.prChanges} head changes`);
   assert.equal(d.changes, 100);
@@ -614,4 +637,35 @@ test('AC14 (AC80), the board\'s worst case with local storage throwing: no waite
   t.diagnostic(`AC14 (AC80 worst case, storage throwing): ${d.calls} calls, ${d.waited} waited-read calls`);
   assert.equal(d.waited, 0);
   assert.ok(d.calls < 10_000, `${d.calls} calls`);
+});
+
+// From stage 2 (AC82, J24; A3's 9,817): the same worst case with J24's commits read — every open pull request
+// updated since "last looked", three pages of commits each, at every opening and every head change.
+function j24Bounds(d, base, label) {
+  const byOpening = new Map();
+  for (const c of d.j24Calls) if (c.alone) byOpening.set(`${c.opening}|${c.project}`, (byOpening.get(`${c.opening}|${c.project}`) || 0) + 1);
+  assert.ok(d.calls < 10_000, `${label}: ${d.calls} calls`);
+  assert.ok(d.calls - base.calls <= 10 * 5, `${label}: ${d.calls - base.calls} calls more than without J24: at most one a project an opening (A3: 10 × 5 = 50)`);
+  assert.ok(Math.max(0, ...byOpening.values()) <= 1, `${label}: at most one call of commits alone a project an opening`);
+  assert.ok(d.j24Calls.filter((c) => c.alone).every((c) => c.sinceOpen < 2 * POLL_MS), `${label}: that one in the opening's first cycle, the overflow of a call's 25, never a retry`);
+  assert.equal(d.j24Calls.filter((c) => c.verdict).length, 0, `${label}: never in a verdict call`);
+  assert.ok(Math.max(...d.cycles.values()) <= 16, `${label}: A3: 6 + 2 × 5`);
+}
+
+test('AC14 (desk mockup v2, J24): the worst case with J24\'s commits read at every opening and head change — under 10,000 calls (A3\'s 9,817); its pages riding the head\'s J20 call at a head change, with no call of their own, and at most one call more a project an opening', async (t) => {
+  const base = await verdictsBase();
+  const d = await combinedDay({ worst: 'verdicts', j24: 'ok' });
+  const ride = d.j24Calls.filter((c) => !c.alone);
+  t.diagnostic(`AC14 (J24): ${d.calls} calls (${base.calls} without J24), ${d.j24Calls.length} calls carrying commits, ${d.j24Calls.filter((c) => c.alone).length} of them alone`);
+  j24Bounds(d, base, 'J24 read');
+  assert.ok(ride.length > 280, `${ride.length} calls carry commits with J20's`);
+  assert.ok(ride.filter((c) => c.sinceOpen >= 2 * POLL_MS).every((c) => c.inFiles), 'at a head change, in the call reading J20\'s files of the same head');
+});
+
+test('AC14 (desk mockup v2, J24): J24\'s commits read failing at every opening — its retries add no call', async (t) => {
+  const base = await verdictsBase();
+  const d = await combinedDay({ worst: 'verdicts', j24: 'fail' });
+  t.diagnostic(`AC14 (J24 failing): ${d.calls} calls (${base.calls} without J24), ${d.j24Calls.length} calls carrying commits`);
+  j24Bounds(d, base, 'J24 failing');
+  assert.ok(d.j24Calls.some((c) => c.sinceOpen > RETRY), 'retries made, inside calls the day makes anyway');
 });

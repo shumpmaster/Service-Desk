@@ -345,6 +345,48 @@ test('J24\'s awkward cases, in the reader: a fork\'s pull request, updated after
   }
 });
 
+const J12_NONE = JSON.stringify({ data: { repository: { pullRequests: { pageInfo: { hasNextPage: false, endCursor: null }, nodes: [] } } } });
+
+test('J24 (A3): at an opening, 6 open pull requests of 3 pages each: the reads past a call\'s 25 go in the cycle\'s next call, J20\'s read of their heads having been asked in this cycle; every one read at once, the only call holding commits alone that overflow (the Reviewer\'s N-1, probe p6-overflow, stage 2 round 2)', async () => {
+  const nums = [21, 22, 23, 24, 25, 26];
+  const setup = readerSetup({ prs: nums, commits: 3 });
+  setup.repos.Alpha.pullsAnswer = J12_NONE;
+  const on = await reader(setup);
+  try {
+    const withCommits = blobCalls(on.calls).filter((c) => c.b.commits);
+    assert.deepEqual(withCommits.flatMap((c) => c.b.commits).sort(), nums, 'all six read in the opening\'s first cycle');
+    assert.ok(nums.every((n) => on.desk.commits('Alpha').get(n).state === 'read'));
+    assert.equal(withCommits.length, 2, 'J20\'s call, then its overflow');
+    assert.ok(withCommits[0].b.files.length === nums.length && !withCommits[1].b.files, 'the overflow\'s heads were in the first call\'s J20 read');
+    assert.equal(on.desk.j24('Alpha').alone, 1, 'one call of commits alone: the overflow, in the opening\'s first cycle');
+    for (const c of withCommits) assert.ok(c.b.commits.length * COMMITS_COST + (c.b.files || []).length + (c.b.blobs || []).length + (c.b.pulls ? 5 : 0) <= 25);
+  } finally {
+    on.desk.stop();
+  }
+});
+
+test('J24 (A3): `updated_at` moving past "last looked" while J20\'s read of the head waits out its 5 minutes after a failure: J20\'s read is not due, so the commits read has nothing to ride and makes no call (the Reviewer\'s N-2, probe p7-filesfail, stage 2 round 2)', async () => {
+  const setup = readerSetup({ prs: [91], commits: 1 });
+  const r = setup.repos.Alpha;
+  r.pulls = r.pulls.map((p) => ({ ...p, updated_at: iso(T0 - 2 * 3600e3) }));
+  r.filesFail = [91];
+  r.pullsAnswer = J12_NONE;
+  const on = await reader(setup, { lastLooked: T0 - 3600e3 });
+  try {
+    await on.clock.runUntil(T0 + POLL_MS / 4);
+    assert.ok(blobCalls(on.calls).some((c) => (c.b.files || []).includes(91)), 'J20\'s read of #91 made, and failed');
+    const n0 = blobCalls(on.calls).length;
+    // A comment on #91 (made up), inside J20's 5 minutes.
+    r.pulls = r.pulls.map((p) => ({ ...p, updated_at: iso(T0 + POLL_MS / 2) }));
+    await on.clock.runUntil(T0 + 4 * POLL_MS);
+    assert.equal(blobCalls(on.calls).length, n0, 'no blob call');
+    assert.equal(on.desk.j24('Alpha').alone, 0);
+    assert.equal(on.desk.commits('Alpha').get(91), undefined);
+  } finally {
+    on.desk.stop();
+  }
+});
+
 // ---------------------------------------------------------------------------
 // On the page: the list, "Mark as seen"
 

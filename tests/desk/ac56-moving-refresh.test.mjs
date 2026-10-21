@@ -22,6 +22,17 @@ const Q_ID = 'Alpha|question|questions/Alpha-pick.md';
 const DONE_ID = 'Alpha|question|questions/P-001-design-lab-open.md#answer';
 const waitingCard = (id) => `#/waiting/Alpha/card/${encodeURIComponent(id)}`;
 
+/** A device whose AC40 "last looked" is 10 hours before NOW, so "Since you last looked" lists the fixtures' lines (AC82, J24). */
+const looked = () => {
+  const mem = new Map([['desk-seen-v1', JSON.stringify({ lastLooked: NOW - 10 * 3600e3 })]]);
+  return { getItem: (k) => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k) };
+};
+async function openedLooked(setup, hash = '#/') {
+  const app = await loadSandbox({ ...setup, hash, now: NOW, store: looked() });
+  await app.advance(1000);
+  return app;
+}
+
 /** Every kind of refresh (AC56): the minute's poll, the 15-second tick, a history read arriving, and a redraw with no new data. */
 async function everyRefresh(app, setup, changed = true) {
   await app.tick();
@@ -63,7 +74,7 @@ test('AC56 back (changed by AC81): Home → Status → Waiting (this project) �
     assert.match(app.text(), /Current status/);
     assert.equal(byClass(app.view, 'sb-back')[0].attrs.href, '#/');
     await app.go('#/');
-    assert.match(app.text(), /Your desk/);
+    assert.equal(byClass(app.view, 'v2-title')[0].textContent, 'Home', 'Home (AC82, from stage 2)');
   } finally {
     app.restore();
   }
@@ -148,24 +159,30 @@ test('AC56 close: every sheet has "Close" at its top (44 px), and the control, a
   }
 });
 
-test('AC56 close: the "Latest" bubble has "Close" at its top, and the control, a tap outside and Escape each close it, focus back on its control without reopening it', async () => {
-  const app = await opened(twoProjects(), '#/');
+test('AC56 close (changed by AC82): the "Since you last looked" sheet ("<n> more since <time> ›") has "Close" at its top (44 px), and the control, a tap outside and Escape each close it, focus back on its opener', async () => {
+  const app = await openedLooked(twoProjects(), '#/');
   try {
     for (const how of ['control', 'outside', 'escape']) {
       await app.advance(2000);
-      const ctl = keyed(app, 'latest:Alpha');
-      await app.tap(ctl); // a real tap: the press, the focus it gives, the click
-      const bub = keyed(app, 'bubble:Alpha');
-      assert.ok(bub);
-      const close = byClass(bub.children[0], 'sb-close')[0];
+      const more = keyed(app, 'since-more');
+      assert.ok(more, 'the "<n> more" line');
+      assert.match(more.textContent, /^\d+ more since /);
+      await app.tap(more);
+      await app.go(more.attrs.href);
+      const sheet = keyed(app, 'since-sheet');
+      assert.ok(sheet, `the sheet (${how})`);
+      assert.equal(sheet.attrs.role, 'dialog');
+      const close = keyed(app, 'sheet-close');
       assert.equal(close.attrs['aria-label'], 'Close');
-      if (how === 'control') close.click();
-      else if (how === 'outside') await app.tap(app.view); // the page's background: the press takes focus off the control, as in a browser
+      assert.ok(byClass(sheet, 'v2-shead')[0].children.includes(close), 'at its top');
+      assert.match(readFileSync(`${SRC}/public/sandbox.css`, 'utf8'), /\.v2-x44 \{ width: 44px; height: 44px;/, 'its target is 44 by 44');
+      if (how === 'control') await app.tap(close);
+      else if (how === 'outside') await app.tap(keyed(app, 'v2-scrim'));
       else await app.key('Escape');
       await app.flush();
-      assert.equal(keyed(app, 'bubble:Alpha'), null, `closed by ${how}`);
-      assert.equal(document.activeElement, keyed(app, 'latest:Alpha'), `focus back on the control (${how})`);
-      assert.equal(keyed(app, 'bubble:Alpha'), null, `and it does not reopen (${how})`);
+      assert.equal(keyed(app, 'since-sheet'), null, `closed by ${how}`);
+      assert.equal(app.loc.hash, '#/', `Home (${how})`);
+      assert.equal(document.activeElement, keyed(app, 'since-more'), `focus back on its opener (${how})`);
     }
   } finally {
     app.restore();
@@ -441,34 +458,32 @@ test('AC56 refresh, Waiting (step 3b, changed by AC80): a Done row\'s sheet open
   }
 });
 
-test('AC56 refresh, Home: the Done group opened, the Active group closed, and a "Latest" bubble open all stay through every kind of refresh', async () => {
-  const setup = { config: { ...CONFIG, projects: [v3('Alpha'), v3('Done-one')] },
-    repos: { Alpha: fullRepo('Alpha'), 'Done-one': repo({ ...j11Files(), 'decisions/questions/P-001-graduation.md': 'Ruling: graduate\n' }) } };
-  const app = await opened(setup, '#/');
+test('AC56 refresh, Home (changed by AC82): the Done group opened, the active group closed, and the "Since you last looked" sheet open all stay through every kind of refresh', async () => {
+  // Two one-of-each projects, so the list runs past its four lines and "<n> more" opens the sheet.
+  const setup = { config: { ...CONFIG, projects: [v3('Alpha'), v3('Beta'), v3('Done-one')] },
+    repos: { Alpha: fullRepo('Alpha'), Beta: fullRepo('Beta'), 'Done-one': repo({ ...j11Files(), 'decisions/questions/P-001-graduation.md': 'Ruling: graduate\n' }) } };
+  const app = await openedLooked(setup, '#/');
   try {
     await app.advance(POLL_MS);
     keyed(app, 'hgroup-btn:done').click();
     keyed(app, 'hgroup-btn:active').click();
     await app.flush();
-    const ctl = keyed(app, 'latest:Done-one');
-    ctl.dispatch('pointerdown', { pointerType: 'touch' });
-    ctl.click();
-    await app.flush();
-    const bub = keyed(app, 'bubble:Done-one');
-    assert.ok(bub, 'the bubble is open');
+    await app.go('#/since');
+    const sheet = keyed(app, 'since-sheet');
+    assert.ok(sheet, 'the sheet is open');
     app.scrolls.length = 0;
     await everyRefresh(app, setup);
     assert.equal(keyed(app, 'hgroup-btn:done').attrs['aria-expanded'], 'true', 'Done stays open');
-    assert.equal(keyed(app, 'hgroup-btn:active').attrs['aria-expanded'], 'false', 'Active stays closed');
-    assert.equal(keyed(app, 'bubble:Done-one'), bub, 'the same bubble, still open');
-    assert.match(app.text(), /waiting on you in all/, 'with the changed data shown');
+    assert.equal(keyed(app, 'hgroup-btn:active').attrs['aria-expanded'], 'false', 'the active group stays closed');
+    assert.equal(keyed(app, 'since-sheet'), sheet, 'the same sheet, still open');
+    assert.match(byClass(app.view, 'v2-brief')[0].textContent, /need you/, 'with the changed data shown');
     assert.deepEqual(app.scrolls, []);
   } finally {
     app.restore();
   }
 });
 
-test('AC56 refresh, Home (step 1b): the same groups, with a card\'s whole-summary bubble open in place of "Latest", all stay through every kind of refresh', async () => {
+test('AC56 refresh, Home (step 1b): the same groups, with a tile\'s whole-summary bubble open, all stay through every kind of refresh', async () => {
   const setup = { config: { ...CONFIG, projects: [v3('Alpha'), v3('Done-one')] },
     repos: { Alpha: fullRepo('Alpha'), 'Done-one': repo({ ...j11Files(), 'decisions/questions/P-001-graduation.md': 'Ruling: graduate\n', 'README.md': LONG_README }) } };
   const app = await opened(setup, '#/');
@@ -484,16 +499,16 @@ test('AC56 refresh, Home (step 1b): the same groups, with a card\'s whole-summar
     await app.tap(ctl);
     const bub = keyed(app, 'sumbubble:Done-one');
     assert.ok(bub, 'the summary bubble is open');
-    assert.equal(keyed(app, 'bubble:Done-one'), null, 'in place of the "Latest" bubble: one bubble at a time');
+    assert.equal(findAll(app.view, (e) => e.dataset && /^bubble:/.test(e.dataset.k || '')).length, 0, 'the only bubble: no "Latest" (AC82)');
     app.scrolls.length = 0;
     await everyRefresh(app, setup);
     assert.equal(keyed(app, 'hgroup-btn:done').attrs['aria-expanded'], 'true', 'Done stays open');
-    assert.equal(keyed(app, 'hgroup-btn:active').attrs['aria-expanded'], 'false', 'Active stays closed');
+    assert.equal(keyed(app, 'hgroup-btn:active').attrs['aria-expanded'], 'false', 'the active group stays closed');
     assert.equal(keyed(app, 'sumbubble:Done-one'), bub, 'the same bubble, still open');
     assert.equal(keyed(app, 'sum:Done-one'), ctl, 'on the same control');
     assert.equal(ctl.attrs['aria-expanded'], 'true');
     assert.equal(document.activeElement, ctl, 'which keeps the focus');
-    assert.match(app.text(), /waiting on you in all/, 'with the changed data shown');
+    assert.match(byClass(app.view, 'v2-brief')[0].textContent, /need you/, 'with the changed data shown');
     assert.deepEqual(app.scrolls, []);
   } finally {
     app.restore();

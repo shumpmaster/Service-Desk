@@ -20,13 +20,15 @@ import { renderMarkdown } from './lib/markdown.js';
 import { hhmm, durationText, whenText } from './lib/timefmt.js';
 import { v5Footer, usageLines, notReadText } from './lib/asked.js';
 import { routeParts, guardRender, boot, SIGNED_OUT_STATE } from './lib/page.js';
-import { createSeen } from './lib/seen.js';
+import { createSeen, MARKERS_OFF } from './lib/seen.js';
 import {
   SANDBOX_MARKER, NOT_RECORDED, NOT_AVAILABLE, V25_NOT_RECORDED, OWNER_NEXT_LINES,
   j11Records, timelineOf, phaseView, whereLine, queueView, pillView, ballLines, sheetView, treeLink, youWaitText, optionsBlock, waitWords,
 } from './lib/sandbox.js';
 import { teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
-import { summaryView, latestText, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
+import { summaryView, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
+import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits, unreadLines } from './lib/home.js';
+import { GATE_PHASE } from './lib/j11.js';
 import { composeAnswer, questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, WORDS, MARKS_KEY,
   boardAge, doneTime, HOLD_MS, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX } from './lib/board.js';
@@ -297,6 +299,7 @@ function circle(kind) {
 }
 const ext = (href, text, cls) => (href ? h('a', { href, rel: 'noopener noreferrer', target: '_blank', class: cls }, text) : null);
 const code = (c) => (c ? h('span', { class: 'code' }, c) : null);
+const cap = (w) => (w ? w[0].toUpperCase() + w.slice(1) : w);
 const enc = (...parts) => parts.map(encodeURIComponent).join('/');
 const go = (...parts) => `#/${enc(...parts)}`;
 
@@ -535,86 +538,14 @@ function readLine(box) {
 }
 
 // ---------------------------------------------------------------------------
-// Home (AC35, AC48, AC50's checklist, AC49's ball line, AC52's pill)
-
-/**
- * The Home tile's phases (AC65, AC58): the where-it-is line after a chip in the now phase's colour;
- * then each phase in its own small box, from the top Done to Discovery, with its stripe and the
- * tile's words; and beside them, inside the boxes on the left, the compact branch drawing in plain
- * circles with icons. Not a control of its own: a tap on it is the card's (AC48, AC54).
- */
-function tileNode(p) {
-  const tv = tilePhases(p.ctx);
-  const name = p.project.name;
-  const rk = `tile:${name}`;
-  return h('div', { class: `sb-tph${tv.done ? ' done' : ''}${tv.shape ? ` cols-${tv.shape.cols}` : ''}`, key: `tph:${name}`, 'data-rail': tv.shape ? rk : null },
-    h('p', { class: `sb-where${tv.cls ? ` ${tv.cls}` : ''}` }, tv.cls ? h('span', { class: 'sb-phchip', 'aria-hidden': 'true' }) : null, tv.line),
-    h('ol', { class: 'sb-trows' }, tv.rows.map((r) => h('li', { class: `sb-trow ${r.cls}${r.now ? ' now' : ''}${r.done ? ' end' : ''}` },
-      h('span', { class: 'sb-tp', 'data-pname': r.phase }, r.phase), r.word ? h('span', { class: `sb-ts${r.now ? ' now' : ''}` }, r.word) : null))),
-    tv.shape ? railSvg(rk, tv.shape, 'tile') : null,
-    tv.done ? h('span', { class: 'sb-stamp', 'aria-hidden': 'true' }, 'DONE') : null);
-}
+// Home's pieces kept from AC54 and AC49: the summary box and its bubble (AC54 (a), on the tile from
+// stage 2), a ruling's whole line (AC55, AC52), who has the ball (AC49, on the Team screen)
 
 /** Who has the ball (AC49), each line with its mark: the coral diamond for what waits on the owner, the half-filled circle for work under way (AC67: no light, no glow). */
 function ballNode(ball, compact) {
   return h('ul', { class: 'sb-ball' }, (compact ? ball.slice(0, 2) : ball).map((b) => h('li', { class: `who-${b.who}` },
     b.who === 'you' ? ic('you') : b.lit ? ic('half') : null,
     b.who === 'you' ? h('span', { live: () => youWaitText(b.oldest, Date.now()) }) : b.text)));
-}
-
-/** The "Latest" control and, when open, its bubble (AC54 (b)): one open at a time, never clipped. */
-function latestControl(p, col) {
-  const name = p.project.name;
-  const k = `latest:${name}`; // the control's key, and the open bubble's name in `bubble`
-  const isOpen = bubble.open === k;
-  const id = `latest-${enc(name).replace(/[^A-Za-z0-9_-]/g, '_')}`;
-  const ctl = h('button', {
-    type: 'button', class: `sb-latest${isOpen ? ' on' : ''}`, key: k, 'aria-label': 'Latest', 'aria-expanded': isOpen ? 'true' : 'false',
-    'aria-controls': isOpen ? id : null,
-    onpointerdown: (e) => { bubble.pointer = e && e.pointerType ? e.pointerType : 'touch'; bubble.pointerFocus = k; },
-    onpointerenter: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(k, true, 'ctl'); },
-    onpointerleave: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(k, false, 'ctl'); },
-    onclick: (e) => bubbleTap(k, e),
-    onkeydown: (e) => {
-      if (!e || (e.key !== 'Enter' && e.key !== ' ')) return;
-      if (e.preventDefault) e.preventDefault();
-      bubbleOpen(k, 'key');
-    },
-    onfocus: () => {
-      // On focus from the keyboard (a pointer's own focus is its tap); not after Escape (AC54).
-      if (bubble.pointerFocus === k) {
-        bubble.pointerFocus = null;
-        return;
-      }
-      if (bubble.escaped === k) return;
-      bubbleOpen(k, 'key');
-    },
-    onblur: () => {
-      // Only this control's own pressed pointer is forgotten here: when a tap moves focus from this
-      // control to another, the other's pointerdown has already marked the focus that follows as its tap's.
-      if (bubble.pointerFocus === k) bubble.pointerFocus = null;
-      if (bubble.escaped === k) bubble.escaped = null; // focus left: it may open on focus again
-      setTimeout(() => {
-        const a = document.activeElement;
-        const inside = a && a.closest && a.closest('[data-bubble]');
-        if (bubble.open === k && bubble.via === 'key' && !inside) {
-          bubble.close();
-          render();
-        }
-      }, 0);
-    },
-  }, icon('latest'), h('span', { class: 'sb-latest-w' }, 'Latest'));
-  const out = [ctl];
-  if (isOpen) {
-    out.push(h('div', {
-      class: `sb-bubble ${col} ${placeClass()}`, id, role: 'dialog', 'aria-label': `Latest: ${name}`, key: bubbleKey(k), 'data-bubble': k,
-      onpointerenter: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(k, true, 'bubble'); },
-      onpointerleave: (e) => { if (e && e.pointerType === 'mouse') bubbleHover(k, false, 'bubble'); },
-    }, h('div', { class: 'sb-bubble-top' }, h('p', { class: 'sb-eyebrow' }, 'Latest'),
-      closeControl(() => { bubble.close(); bubble.escaped = k; render(); focusKey(k); }, `bubble-close:${name}`)),
-    h('p', { class: 'sb-bubble-t' }, latestText(p.project, p.model, p.where))));
-  }
-  return out;
 }
 
 /**
@@ -707,29 +638,6 @@ function lineBox(id, { words, recCode, title, lead = null, wcls = 'sb-line-w', m
   over ? h('span', { class: 'sb-line-m' }, mark ? h('span', { class: 'sb-line-mark' }, mark.trim()) : null, after(Boolean(mark))) : null];
 }
 
-function homeCard(p, seen, col, group) {
-  const { project, box, ball, q } = p;
-  const name = project.name;
-  const newCount = q.rows.filter((r) => seen.isNew(r.raisedAt)).length;
-  const sum = summaryView(project, box, p.snap);
-  // The card's link holds its name; the whole card opens the Project screen through it (its ::after),
-  // except the controls that sit above it: "Latest", the summary's button, "Why" and the pill.
-  return h('article', { class: `sb-pc ${col}`, key: `card:${name}` },
-    h('div', { class: 'sb-pc-top' }, h('span', { class: 'sb-app' }, icon('project')),
-      newCount ? h('span', { class: 'sb-new' }, `${newCount} new`) : null,
-      latestControl(p, col)),
-    h('a', { class: 'sb-pc-main', href: go('p', name) }, h('h2', { class: 'sb-nm' }, name)),
-    summaryBox(name, sum, col),
-    h('div', { class: 'sb-pc-rest' },
-      tileNode(p),
-      ballNode(ball, true),
-      stallNode(p, group),
-      readLine(box)),
-    sum.ok ? null : h('details', { class: 'sb-why', key: `sum-why:${name}` }, h('summary', {}, 'Why'), h('p', { class: 'small' }, sum.why)),
-    newCount ? h('p', { class: 'sb-vh' }, `${newCount} new since you last looked`) : null,
-    pillNode(box, q, name));
-}
-
 /**
  * The stalled line (AC71), under who has the ball, in slate: after 72 hours with no movement and
  * nothing waiting on the owner. It depends on the time, so the 15-second tick works it out again.
@@ -744,14 +652,6 @@ function stallNode(p, group) {
     }
   };
   return h('p', { class: 'sb-stall', key: `stall:${p.project.name}`, live: line });
-}
-
-/** The pill (AC48): its words and its look both depend on the time ("All clear" goes stale), so both are live. */
-function pillNode(box, q, name) {
-  const el = h('a', { class: `sb-pill ${pillView(box, q, Date.now()).kind}`, href: go('waiting', name), key: `pill:${name}`,
-    live: () => pillView(box, q, Date.now()).text });
-  el._liveClass = () => `sb-pill ${pillView(box, q, Date.now()).kind}`;
-  return el;
 }
 
 // ---------------------------------------------------------------------------
@@ -853,16 +753,212 @@ function usageNode() {
   return h('section', { class: 'sb-actions-usage', key: 'actions-usage', id: 'actions-usage' }, kids);
 }
 
-function renderHome(desk, built, seen, now, bd = null) {
+// ---------------------------------------------------------------------------
+// Home (AC82; desk mockup v2, frames H1 to H5; J24), from stage 2: the briefing, "Since you last
+// looked", the tiles in their three groups, and "More detail" folded last at the foot. Every rule
+// is lib/home.js's; this draws it, on mockup v2's tokens (sandbox.css, `.v2`).
+
+/** A status circle as mockup v2 draws it (desk-v2.html's ST): an icon in a plain circle; the ◆ in vermilion. Hidden from assistive technology: its words are beside it. */
+const ST_PATHS = {
+  check: { ring: 'solid', d: ['M5 8.2l2 2 4-4.2'] },
+  pastcheck: { ring: 'solid', d: ['M5 8.2l2 2 4-4.2'], soft: true },
+  half: { ring: 'solid', fill: ['M8 1.75a6.25 6.25 0 0 1 0 12.5z'] },
+  planned: { ring: 'dash', soft: true },
+  unrec: { ring: 'dash', d: ['M6.5 6.5a1.6 1.6 0 1 1 2.2 1.5c-.4.2-.7.5-.7.9v.3'], dot: [8, 11.2, 0.6], soft: true },
+  you: { you: true },
+};
+function stc(kind, cls = 'v2-s') {
+  const def = ST_PATHS[kind] || ST_PATHS.unrec;
+  const s = document.createElementNS(SVGNS, 'svg');
+  s.setAttribute('viewBox', '0 0 16 16');
+  s.setAttribute('class', `${cls} st-${kind}${def.soft ? ' soft' : ''}`);
+  s.setAttribute('aria-hidden', 'true');
+  s.setAttribute('focusable', 'false');
+  const el = (tag, attrs) => {
+    const n = document.createElementNS(SVGNS, tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+    s.append(n);
+  };
+  if (def.you) el('path', { d: 'M8 1.8l6.2 6.2L8 14.2 1.8 8z', class: 'you' });
+  if (def.ring) el('circle', { cx: 8, cy: 8, r: 6.25, class: def.ring === 'dash' ? 'ring dash' : 'ring' });
+  for (const d of def.d || []) el('path', { d, class: 'mk' });
+  for (const d of def.fill || []) el('path', { d, class: 'fill' });
+  if (def.dot) el('circle', { cx: def.dot[0], cy: def.dot[1], r: def.dot[2], class: 'fill' });
+  return s;
+}
+
+/** Home's state for this window: the question titles this opening saw (J24's answers), the lines on the screen (AC40's no-reorder rule), "<n> newer". */
+const homeState = { titles: new Map(), accepted: null, since: null };
+
+/** The stalest project's last successful read in this opening, or null before every project has one (AC82: "checked <age> ago"). */
+function stalestRead() {
+  const states = DESK && DESK.states ? [...DESK.states.values()] : [];
+  const times = states.map((s) => s.lastSuccessAt);
+  if (!times.length || times.some((x) => x == null)) return null;
+  return Math.min(...times);
+}
+function homeChecked() {
+  const t = stalestRead();
+  return t == null ? HOME_WORDS.checking : `checked ${durationText(Math.max(0, Date.now() - t))} ago`;
+}
+
+/** The briefing (AC82, frames H1 and H3): one block, a tap anywhere on it opening Waiting. */
+function briefingNode(desk, built, bd) {
+  const reads = built.map((b) => ({ name: b.project.name, read: b.box.read, drawError: b.box.drawError || null }));
+  const flagged = sandboxBoxes(built).reduce((n, b) => n + (b.flaggedCount || 0), 0);
+  const v3 = (name) => { const p = CONFIG.projects.find((x) => x.name === name); return Boolean(p && p.model === 'v3'); };
+  const view = (nowMs) => briefingView({ bd, reads, flagged, signedOut: desk.signedOut, v3, lastReadMs: stalestRead(), nowMs, tz: TZ });
+  const v = view(Date.now());
+  const mark = v.kind === 'you' ? stc('you') : v.kind === 'quiet' ? stc('check') : v.kind === 'cant' ? vi('bad', 'v2-k bad') : vi('clock');
+  return h('a', { class: `v2-brief k-${v.kind}`, href: '#/waiting', key: 'brief', 'aria-label': `${v.head}: open Waiting` },
+    h('span', { class: 'v2-bi' }, mark),
+    h('span', { class: 'v2-bt1' }, v.head),
+    h('span', { class: 'v2-go' }, HOME_WORDS.waitingGo),
+    v.parts ? h('span', { class: 'v2-bt2', key: 'brief-parts', live: () => view(Date.now()).parts || '' }) : null,
+    v.sub ? h('span', { class: 'v2-bt3', key: 'brief-sub', live: () => view(Date.now()).sub || '' }) : null,
+    v.cant.map((w, i) => h('span', { class: 'v2-bt3 bad', key: `brief-cant:${i}` }, w)));
+}
+
+/** One line of "Since you last looked" (AC82, frame H1): its time in Plex Mono, its icon, the record's own words, then "<project> · <its codes>"; a tap opens where it happened. */
+function eventNode(e, nowMs, where) {
+  const t = lineTime(e, nowMs, TZ);
+  const k = `${where}:${e.id}`;
+  const inner = [
+    h('span', { class: 'v2-tm' }, t.day ? h('span', { class: 'v2-tmd' }, t.day) : null, t.time ? h('span', {}, t.time) : null),
+    e.icon === 'you' ? stc('you', 'v2-k') : vi(e.icon, `v2-k${e.icon === 'bad' ? ' bad' : ''}`),
+    // Past three lines, the third fades at its end (rulebook item 16; the Design reviewer's N3, stage 2
+    // round 1), measured as the summary's is (measureClips).
+    h('span', { class: 'v2-et' }, h('span', { class: `v2-e1${sinceOver.get(k) === true ? ' over' : ''}`, 'data-since': k }, e.words),
+      h('span', { class: 'v2-e2' }, [e.project, ...e.codes].join(' · '))),
+    vi('chev', 'v2-k v2-chev')];
+  const link = e.target && e.target.href
+    ? h('a', { class: 'v2-ev', key: k, href: e.target.href, rel: 'noopener noreferrer', target: '_blank' }, inner)
+    : h('a', { class: 'v2-ev', key: k, href: (e.target && e.target.hash) || '#/', onclick: () => { nav.opener = k; } }, inner);
+  return h('li', { key: `li:${k}` }, link);
+}
+
+/**
+ * "Since you last looked" (AC82, J24), with "Mark as seen". Opening Home never moves a line under
+ * the owner's thumb (AC40): new lines join only while the page is scrolled to its top; otherwise they
+ * wait behind "<n> newer ›" at the list's top (C).
+ */
+function sinceModel(built, seen, nowMs) {
+  for (const b of built) for (const q of (b.model && b.model.questions) || []) homeState.titles.set(`${b.project.name}|${q.name}`, q.title);
+  const events = [];
+  for (const b of built) {
+    if (b.error || !b.model) continue;
+    try {
+      events.push(...projectEvents({ project: b.project, model: b.model, snap: b.snap, j: b.j, commits: DESK && DESK.commits ? DESK.commits(b.project.name) : null,
+        ownerLogin: CONFIG.ownerLogin, titles: homeState.titles, nowMs, tz: TZ }));
+    } catch {
+      // a project whose records the lines can't be read from adds none; its tile says why
+    }
+  }
+  const since = seen.off ? null : seen.reference;
+  if (homeState.since !== since) {
+    homeState.since = since;
+    homeState.accepted = null;
+  }
+  const atTop = !(typeof window !== 'undefined' && (window.scrollY || 0) > 0);
+  const ids = new Set(events.map((e) => e.id));
+  if (!homeState.accepted || atTop) homeState.accepted = ids;
+  const shown = events.filter((e) => homeState.accepted.has(e.id));
+  const held = sinceView({ events, since, off: seen.off, nowMs, tz: TZ });
+  const view = sinceView({ events: shown, since, off: seen.off, nowMs, tz: TZ });
+  const count = (v) => v.lines.length + v.rest.length;
+  view.newer = Math.max(0, count(held) - count(view));
+  return view;
+}
+
+function sinceNode(sv, seen, nowMs) {
+  const head = h('div', { class: 'v2-sh', key: 'since-h' }, h('h2', { class: 'v2-shw' }, sv.heading),
+    sv.off ? null : h('button', { type: 'button', class: 'v2-seen', key: 'mark-seen', onclick: () => {
+      seen.markSeen();
+      homeState.accepted = null;
+      render();
+    } }, HOME_WORDS.markSeen));
+  if (sv.off) return [head, h('p', { class: 'v2-small', key: 'since-off' }, MARKERS_OFF)];
+  const out = [head];
+  if (sv.newer > 0) {
+    out.push(h('button', { type: 'button', class: 'v2-more', key: 'since-newer', onclick: () => {
+      homeState.accepted = null;
+      if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') window.scrollTo(0, 0);
+      render();
+    } }, `${sv.newer} newer`, vi('chev')));
+  }
+  if (sv.none) out.push(h('p', { class: 'v2-small', key: 'since-none' }, sv.none));
+  else out.push(h('ol', { class: 'v2-since', key: 'since' }, sv.lines.map((e) => eventNode(e, nowMs, 'ev'))));
+  if (sv.more) out.push(h('a', { class: 'v2-more', href: '#/since', key: 'since-more', onclick: () => { nav.opener = 'since-more'; } }, sv.more.replace(/ ›$/, ''), vi('chev')));
+  return out;
+}
+
+/** The rest of the list, in a sheet over Home (AC82: "<n> more since <time> ›"; AC56's rules: its 44 px close, a tap outside, Escape). */
+function sinceSheet(sv, nowMs) {
+  const title = sv.heading;
+  return sheetShell('#/', title, [sheetHead(null, title, '#/'),
+    h('ol', { class: 'v2-since', key: 'since-all' }, sv.rest.map((e) => eventNode(e, nowMs, 'evs')))], 'since-sheet');
+}
+
+/** A tile's timeline (AC82, frame H5): drawn left to right, hidden from assistive technology, one sentence in words carrying it. */
+function timelineNode(tl, name) {
+  const n = tl.rows[0] ? tl.rows[0].cells.length : 5;
+  const row = (r) => h('span', { class: 'v2-rwl' }, h('span', { class: 'v2-rk' }, r.label),
+    h('span', { class: `v2-rw n${n}` }, r.cells.map((c, i) => {
+      const drop = i === r.down;
+      const rise = i === r.up;
+      if (!c) return h('span', { class: `v2-c${drop ? ' dn' : ''}${rise ? ' up' : ''}` }, drop || rise ? h('i', {}) : null);
+      return h('span', { class: `v2-c ${c.cls || 'ph-none'} s-${c.state}${c.l ? ' l' : ''}${c.r ? ' r' : ''}${drop ? ' dn' : ''}${rise ? ' up' : ''}` },
+        drop || rise ? h('i', {}) : null, stc(c.icon, 'v2-s'));
+    })));
+  return [h('div', { class: `v2-ptl${tl.sprints ? ' sprints' : ''}`, key: `ptl:${name}`, 'aria-hidden': 'true' },
+    tl.rows.map(row),
+    h('span', { class: 'v2-lbl' }, h('span', {}), h('span', { class: `v2-lb n${n}` }, tl.labels.map((l) => (l.now ? h('b', {}, l.phase) : h('span', {}, l.phase)))))),
+  h('p', { class: 'sb-vh', key: `ptl-words:${name}` }, tl.words)];
+}
+
+/** One tile (AC82, frame H5): its name and what waits, the README summary, the phases as a timeline, "Now:", who is at work, what comes next. A tap opens the project's Status screen until stage 3. */
+function tileNode(b, bd, group, nextRows) {
+  const { project, box } = b;
+  const name = project.name;
+  const counts = bd && bd.counts ? bd.counts.get(name) : null;
+  const n = counts ? counts.waiting + counts.kicked : 0;
+  const read = box.drawError ? 'cant-read' : box.read ? box.read.read : 'checking';
+  const waits = tileWaits(n, read);
+  const sum = summaryView(project, box, b.snap);
+  // The gate card waiting on the owner (AC82: the ◆ in its phase, and "Next: <the gate>, after your ruling").
+  const lanes = bd ? bd.lanes.filter((l) => l.key !== 'done').flatMap((l) => l.groups.filter((g) => g.project === name).flatMap((g) => g.rows)) : [];
+  const gateCard = lanes.find((c) => c.kind === 'gate' && c.flag && c.flag.card);
+  const gate = gateCard ? cap(GATE_PHASE[gateCard.flag.card.gate] || '') : null;
+  let tl;
+  let now;
+  let next;
+  if (project.model === 'v3') {
+    tl = tileTimeline(b.ctx, gate);
+    now = nowLine(b.ctx, TZ);
+    next = nextLine(project, { gate, row: nextRows ? nextRows.get(name) || null : null, docRead: Boolean(b.j && b.j.ready && b.j.projectDoc), unknown: !nextRows });
+  } else {
+    tl = sprintStrip(b.snap);
+    now = { lead: `Now: ${tl.open ? `sprint ${tl.open}` : 'no open sprint'}`, rest: HOME_WORDS.olderPipeline };
+    next = nextLine(project, { gate: null, sprint: tl.open });
+  }
+  let work = atWorkLine(project, b.model, b.ball, b.j, TZ);
+  // No records held yet, or none ever read: "not available" (home.js, unreadLines).
+  if (read !== 'ok' && !(b.snap && b.snap.tree)) ({ now, work, next } = unreadLines(project));
+  return h('article', { class: 'v2-tile', key: `card:${name}` },
+    h('div', { class: 'v2-thd' }, h('h3', { class: 'v2-tnm' }, h('a', { class: 'v2-ta', href: go('p', name), key: `tile-a:${name}` }, name)),
+      h('span', { class: `v2-wt${waits.you ? ' you' : ''}` }, waits.you ? stc('you', 'v2-k') : null, waits.words)),
+    summaryBox(name, sum, ''),
+    sum.ok ? null : h('details', { class: 'v2-why', key: `sum-why:${name}` }, h('summary', {}, 'Why'), h('p', {}, sum.why)),
+    tl.tracked ? timelineNode(tl, name) : h('p', { class: 'v2-small v2-tnone' }, tl.words),
+    now ? h('p', { class: 'v2-ln now' }, h('span', {}), h('span', {}, h('b', {}, now.lead), now.rest ? h('span', { class: 'v2-g' }, ` · ${now.rest}`) : null)) : null,
+    h('p', { class: 'v2-ln' }, vi('agents'), h('span', { class: 'v2-g' }, work)),
+    h('p', { class: 'v2-ln' }, stc(next.icon, 'v2-k'), h('span', {}, h('span', { class: 'v2-g' }, 'Next:'), ` ${next.words}`)),
+    stallNode(b, group),
+    read === 'cant-read' && box.read && box.read.since != null ? h('p', { class: 'v2-ln bad' }, vi('bad'), h('span', {}, `Can't read since ${hhmm(new Date(box.read.since), TZ)}: ${box.read.words}`)) : null);
+}
+
+function renderHome(desk, built, seen, nowMs, bd = null) {
   const order = orderBoxes(built.map((b) => b.box));
-  // AC48, AC54 (changed by AC80): the count less the cards marked done on this device and the pull
-  // requests with the agents; "Quiet" still needs GitHub's word, so a marked card not yet confirmed
-  // reads "Nothing waiting on you · confirming with GitHub" in its place.
-  const total = built.reduce((n, b) => n + (b.q ? b.q.waiting : b.box.flaggedCount || 0), 0);
-  const s0 = screenState(sandboxBoxes(built), desk.signedOut);
-  const counted = screenState(built.map((b) => ({ ...b.box, flaggedCount: b.q ? b.q.waiting : b.box.flaggedCount || 0 })), desk.signedOut);
-  const s = !s0.quiet && bd && bd.pendingAny && counted.quiet ? { text: WORDS.quietConfirming, quiet: false } : s0;
-  const lastRead = Math.max(...built.map((b) => (b.box.read && b.box.read.since) || 0));
   const placed = order.map((box) => {
     const b = built.find((x) => x.box === box);
     let group = 'active';
@@ -873,46 +969,60 @@ function renderHome(desk, built, seen, now, bd = null) {
     }
     return { b, box, group };
   });
+  // Each v3 project's first milestone not reached in the owner's order, with AC24's rough finish.
+  // `null`: Work ahead's view couldn't be built, so no tile can say what comes next (the Reviewer's N-4,
+  // stage 2 round 2): each v3 tile reads "Next: not available", and Plan says why.
+  let nextRows = new Map();
+  try {
+    for (const r of workView(nowMs).rows) if (!nextRows.has(r.project.name)) nextRows.set(r.project.name, r);
+  } catch {
+    nextRows = null;
+  }
   const groups = HOME_GROUPS.map((g) => {
     const members = placed.filter((x) => x.group === g.key);
-    const words = groupHeaderWords(members.map((x) => ({ waiting: x.b.q ? x.b.q.waiting : x.box.flaggedCount || 0,
-      cantRead: Boolean(x.box.drawError || (x.box.read && x.box.read.read === 'cant-read')) })));
+    const counted = (x) => { const c = bd && bd.counts ? bd.counts.get(x.b.project.name) : null; return c ? c.waiting + c.kicked : 0; };
+    const words = groupHeaderWords(members.map((x) => ({ waiting: counted(x), cantRead: Boolean(x.box.drawError || (x.box.read && x.box.read.read === 'cant-read')) })));
     const isOpen = homeGroups.isOpen(g.key);
     const id = `grp-${g.key}`;
-    return h('section', { class: `sb-hgroup${isOpen ? ' open' : ''}`, key: `hgroup:${g.key}` },
-      h('h2', { class: 'sb-hg-h' }, h('button', { type: 'button', class: 'sb-hg-btn', key: `hgroup-btn:${g.key}`, 'aria-expanded': isOpen ? 'true' : 'false', 'aria-controls': id,
+    return h('section', { class: 'v2-hgroup', key: `hgroup:${g.key}` },
+      h('h2', { class: 'v2-hgh' }, h('button', { type: 'button', class: 'v2-hg', key: `hgroup-btn:${g.key}`, 'aria-expanded': isOpen ? 'true' : 'false', 'aria-controls': isOpen ? id : null,
         onclick: () => { homeGroups.toggle(g.key); render(); } },
-      h('span', { class: 'sb-hg-mark', 'aria-hidden': 'true' }, isOpen ? '▾' : '▸'),
-      h('span', { class: 'sb-hg-t' }, g.title),
-      h('span', { class: 'sb-hg-n' }, words.count),
-      words.waiting ? h('span', { class: 'sb-hg-you' }, words.waiting) : null,
-      words.cant ? h('span', { class: 'sb-hg-bad' }, words.cant) : null,
+      h('span', { class: 'v2-hgt' }, g.title),
+      words.waiting ? h('span', { class: 'v2-hgy' }, stc('you', 'v2-k'), words.waiting) : null,
+      words.cant ? h('span', { class: 'v2-hgb' }, words.cant) : null,
+      h('span', { class: 'v2-hgn' }, String(members.length), h('span', { class: 'sb-vh' }, ` ${members.length === 1 ? 'project' : 'projects'}`)),
+      vi(isOpen ? 'chevdown' : 'chev'),
       h('span', { class: 'sb-vh' }, isOpen ? ' (open)' : ' (closed)'))),
-      isOpen ? h('div', { class: 'sb-grid', id }, members.map(({ b, box }, i) => {
-        const col = i % 2 ? 'col-r' : 'col-l';
+      isOpen ? h('div', { class: 'v2-tiles', id, key: `tiles:${g.key}` }, members.map(({ b, box }) => {
         try {
           if (b.error) throw b.error;
-          return homeCard(b, seen, col, g.key);
+          return tileNode(b, bd, g.key, nextRows);
         } catch (err) {
-          return h('article', { class: `sb-pc bad ${col}`, key: `card:${box.name}` }, h('h2', { class: 'sb-nm' }, box.name),
-            h('p', { class: 'sb-stale' }, box.drawError || `Can't show this project: ${errorText(err)}`));
+          return h('article', { class: 'v2-tile bad', key: `card:${box.name}` }, h('div', { class: 'v2-thd' }, h('h3', { class: 'v2-tnm' }, box.name)),
+            h('p', { class: 'v2-ln bad' }, box.drawError || `Can't show this project: ${errorText(err)}`));
         }
       })) : null);
   });
-  return h('section', { class: 'sb-screen sb-home' },
+  const sv = sinceModel(built, seen, nowMs);
+  const body = [
     marker(),
-    h('header', { class: 'sb-hdr home' }, h('div', { class: 'sb-hdr-t' }, h('h1', {}, 'Your desk'))),
-    h('p', { class: `sb-top ${s.quiet ? 'quiet' : total ? 'you' : ''}`, role: 'status', key: 'home-top' },
-      desk.signedOut ? SIGNED_OUT_STATE.text : total ? `${total} waiting on you in all` : s.text,
-      lastRead ? h('span', { class: 'sb-muted' }, ` · last read ${hhmm(new Date(lastRead), TZ)}`) : null),
-    // AC24's way in (from 2026-10-18): one control, "Work ahead", just under Home's top line.
-    h('p', { class: 'sb-wa-link', key: 'wa-link' }, h('a', { href: '#/work', key: 'work-ahead' }, `${WA.control} ›`)),
-    seen.words ? h('p', { class: 'sb-muted small' }, seen.words) : null,
+    h('header', { class: 'v2-top' }, h('h1', { class: 'v2-title' }, HOME_WORDS.title)),
+    h('p', { class: 'v2-sub', key: 'home-checked', live: homeChecked }),
+    // AC75: "Notifications" on Home's top line until notifications are on for this device; its control is also in the fold at the foot.
     onTopLine(notifyState(notifyEnv())) ? notifyNode(true) : null,
-    h('div', { class: 'sb-hgroups' }, groups),
-    // No bottom band (AC48, 2026-10-16: the owner dropped the "Tell your Chief of Staff…" bar, the
-    // band's only content): with no sheet or bubble open, nothing is fixed to the bottom of Home.
-    h('p', { class: 'sb-v5' }, v5Line(built)));
+    briefingNode(desk, built, bd),
+    sinceNode(sv, seen, nowMs),
+    h('div', { class: 'v2-hgroups', key: 'hgroups' }, groups),
+    // The foot (AC82; P-001-settings-place.md, A): "More detail", closed, below everything else on Home
+    // until stage 6a's portfolio block joins above it.
+    h('details', { class: 'v2-mdetail', key: 'home-more-detail' }, h('summary', { class: 'v2-mds', key: 'home-more' }, h('span', {}, HOME_WORDS.moreDetail), vi('chev')),
+      h('section', { class: 'sb-notify-line', key: 'notify-line' }, h('h3', { class: 'sb-h3' }, 'Notifications'), notifyNode(false)),
+      usageNode(),
+      h('p', { class: 'v2-small sb-v5' }, v5Line(built))),
+  ];
+  const out = [h('section', { class: 'sb-screen v2 v2-home', key: 'home' }, body)];
+  if (nav.route.sheet === 'since' && !sv.off && sv.rest.length) out.push(sinceSheet(sv, nowMs));
+  return out;
 }
 
 function v5Line(built) {
@@ -1290,6 +1400,7 @@ const V2_ICONS = {
   agents: { vb: 16, c: [[6, 5.5, 2.3]], d: ['M2 13.5a4 4 0 0 1 8 0M10.5 3.5a2.3 2.3 0 0 1 0 4.4M12 9.6a4 4 0 0 1 2 3.9'] },
   eye: { vb: 16, c: [[8, 8, 2]], d: ['M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z'] },
   proj: { vb: 16, d: ['M2 4.5h4.5l1.3 1.3H14V13H2z'] },
+  flag: { vb: 16, d: ['M4 14V2.5', 'M4 3h8l-1.8 3L12 9H4'] },
   you: { vb: 16, fill: ['M8 1.8l6.2 6.2L8 14.2 1.8 8z'] },
   chev: { vb: 16, d: ['M6 4l4 4-4 4'] },
   chevdown: { vb: 16, d: ['M4 6l4 4 4-4'] },
@@ -2594,6 +2705,8 @@ export function parseRoute(hash) {
   const [r0, name, kind, ...rest] = routeParts(hash);
   // AC24 (from 2026-10-18): Work ahead, across projects, a screen of its own: from stage 1a the Plan tab (AC81).
   if (r0 === 'work') return { key: 'work', screen: '#/work', kind: 'work', name: null, sheet: null };
+  // AC82: the rest of "Since you last looked", in a sheet over Home (a sheet is not a screen: no history step).
+  if (r0 === 'since') return { key: 'home', screen: '#/', kind: 'home', name: null, sheet: 'since' };
   // AC80, AC81: Waiting, `waiting` or, with only one project shown, `waiting/<name>`; a card's sheet
   // over it at `…/card/<id>` (a sheet is not a screen: it adds nothing to the history).
   if (r0 === 'waiting') {
@@ -2936,6 +3049,8 @@ function placeBubble() {
 const summaryOver = new Map();
 /** The same for a ruling's line (AC55, AC52): its box holds at most three lines (CSS) and hides the rest. */
 const lineOver = new Map();
+/** The same for a "Since you last looked" line (AC82): at most three lines (CSS), the third faded when cut. */
+const sinceOver = new Map();
 const lineText = new Map(); // id → the words drawn (lineBox)
 const lineAt = new Map(); // id → { text, width } when last judged over
 /**
@@ -2956,7 +3071,8 @@ function measureClips() {
     if (!el.getAttribute) return;
     const sum = el.getAttribute('data-sum');
     const line = el.getAttribute('data-line');
-    if (sum == null && line == null) return;
+    const ev = el.getAttribute('data-since');
+    if (sum == null && line == null && ev == null) return;
     const [sh, ch] = [el.scrollHeight, el.clientHeight];
     if (typeof sh !== 'number' || typeof ch !== 'number' || !ch) return;
     let over = sh > ch + 1;
@@ -2964,12 +3080,12 @@ function measureClips() {
       if (over && lineOver.get(line) !== true) lineAt.set(line, { text: lineText.get(line), width: window.innerWidth });
       else if (lineOver.get(line) === true && lineStaysOver(line)) over = true;
     }
-    const [map, name, k] = sum != null ? [summaryOver, sum, `sum:${sum}`] : [lineOver, line, `line:${line}`];
+    const [map, name, k] = sum != null ? [summaryOver, sum, `sum:${sum}`] : line != null ? [lineOver, line, `line:${line}`] : [sinceOver, ev, null];
     if (map.get(name) !== over) {
       map.set(name, over);
       changed = true;
       // A text that now fits has no control, so its bubble closes.
-      if (!over && bubble.open === k) bubble.close();
+      if (!over && k && bubble.open === k) bubble.close();
     }
   });
   // A guard: a few redraws in a row from measuring alone, then the answers stand until the next one.
@@ -3078,7 +3194,9 @@ export function startSandbox(opts = {}) {
   const pullsStore = createStore();
   // AC80: the waited reads' 5 a head, kept across openings under desk-board-waits-v1.
   const waitsStore = createStore();
-  const desk = createDesk({ config: CONFIG, call, clock, store, pullsStore, waitsStore, isVisible, onChange: () => render(), j11: true });
+  // J24: the commits read is due only for a pull request updated since AC40's "last looked" (or whose head changed while open).
+  const desk = createDesk({ config: CONFIG, call, clock, store, pullsStore, waitsStore, isVisible, onChange: () => render(), j11: true,
+    lastLooked: () => (seen.off ? null : seen.reference) });
   DESK = desk;
   ns.store = store;
   ns.looked = false;
@@ -3191,7 +3309,11 @@ export function startSandbox(opts = {}) {
     // project's screens count as Home's.
     try {
       // The Waiting screen is drawn on mockup v2's ground (sandbox.css, html.v2-page).
-      document.documentElement.classList.toggle('v2-page', r.kind === 'waiting');
+      document.documentElement.classList.toggle('v2-page', r.kind === 'waiting' || r.kind === 'home');
+      // AC82: Home's column widens to two tiles a row from 720 px (sandbox.css). The root's class is its
+      // own: Home's section is `.v2-home`, a grid, which the root must not become (the Design reviewer's
+      // B1, stage 2 round 1).
+      document.documentElement.classList.toggle('v2-home-page', r.kind === 'home');
     } catch {
       // the screen still draws, on the page's ground
     }

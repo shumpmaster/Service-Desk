@@ -353,10 +353,12 @@ export function latestText(project, model, where) {
   return where.sentence;
 }
 
+// From stage 2 (AC82, AC54's note; frame H5, desk-v2.html:816-820): in the words and the order frame H5
+// draws, the first two open at first and Done closed. Which project sits in which group is unchanged.
 export const HOME_GROUPS = [
-  { key: 'active', title: 'Active', open: true },
+  { key: 'active', title: 'Your projects · active', open: true },
+  { key: 'closed', title: 'Closed or not run by the desk', open: true },
   { key: 'done', title: 'Done', open: false },
-  { key: 'closed', title: 'Closed or not applicable', open: false },
 ];
 export const HOME_GROUPS_KEY = 'desk-home-groups-v1';
 
@@ -1102,6 +1104,8 @@ function shapedRows(model, j) {
 
 const MEMBER_LABEL = { 'chief-of-staff': 'Chief of Staff', orchestrator: 'Orchestrator' };
 const label = (id) => (Object.prototype.hasOwnProperty.call(MEMBER_LABEL, id) ? MEMBER_LABEL[id] : id.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase()));
+/** A roster member in AC49's words ("Builder", "Chief of Staff"), as Home's lines name them (AC82, J24). */
+export const memberLabel = label;
 
 // ---------------------------------------------------------------------------
 // J13: the Chief of Staff's session lines on the Team screen (AC49, AC67; from 2026-10-17)

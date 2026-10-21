@@ -152,3 +152,37 @@ export function closedCanEnd(p, project, sinceMs) {
   const headRepo = p.head && p.head.repo && p.head.repo.full_name;
   return typeof headRepo === 'string' && headRepo.toLowerCase() === String(project.repo).toLowerCase();
 }
+
+/**
+ * J24 (2026-10-20, AC82): a pull request's commits read, its raw pages (`pulls/{n}/commits`), cut to
+ * what the page takes: { ok, commits: [{ sha, parents (their count), line (the message's first line),
+ * date (the committer's), name, email (the author's), login (the GitHub account's, or null) }],
+ * capped }. `capped`: the third page holds 50, the most GitHub lists (250), so the newest may not be
+ * read ("more commits than the desk reads"). A page that is not a list is a failed read.
+ */
+export function parseCommitPages(pages) {
+  if (!Array.isArray(pages) || !pages.length) return { ok: false };
+  const commits = [];
+  let last = 0;
+  for (const raw of pages) {
+    let list;
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      return { ok: false };
+    }
+    if (!Array.isArray(list)) return { ok: false };
+    last = list.length;
+    for (const c of list) {
+      if (!c || typeof c.sha !== 'string') continue;
+      const cm = c.commit && typeof c.commit === 'object' ? c.commit : {};
+      const msg = typeof cm.message === 'string' ? cm.message : '';
+      commits.push({ sha: c.sha, parents: Array.isArray(c.parents) ? c.parents.length : 0, line: msg.split(/\r?\n/)[0],
+        date: cm.committer && typeof cm.committer.date === 'string' ? cm.committer.date : null,
+        name: cm.author && typeof cm.author.name === 'string' ? cm.author.name : null,
+        email: cm.author && typeof cm.author.email === 'string' ? cm.author.email : null,
+        login: c.author && typeof c.author.login === 'string' ? c.author.login : null });
+    }
+  }
+  return { ok: true, commits, capped: pages.length >= 3 && last >= 50 };
+}

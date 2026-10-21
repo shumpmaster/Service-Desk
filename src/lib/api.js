@@ -5,6 +5,7 @@
 
 import { checkAccess } from './access.js';
 import { pollProject, readBlobs, BLOB_BATCH, SHA_RE, HISTORY_PATH_RE, PULLS_COST, PULLS_CURSOR_RE, USAGE_COST, CLOSED_COST, MAX_FILES_PRS, PR_COST, MAX_PRS,
+  COMMITS_COST, MAX_COMMITS_PRS,
   JOBS_MAX_HEADS, JOB_LISTS, OWNER_CHECK_MAX, COMMIT_TIME_COST, JOB_LOG_COST, MAX_COMMIT_TIMES, MAX_JOB_LOGS } from './github.js';
 import CONFIG from './config.js';
 import { usageEntry } from './usage.js';
@@ -141,6 +142,14 @@ function validateBlobs(body, config) {
     files = [...new Set(body.files)];
     if (files.length > MAX_FILES_PRS) return { error: 'too many files' };
   }
+  // J24 (2026-10-20, AC82): the optional `commits` field, open pull requests' numbers, each read's 1 to 3
+  // pages counting 3 (its worst case).
+  let commits = null;
+  if (body.commits != null) {
+    if (!Array.isArray(body.commits) || body.commits.some((n) => !Number.isInteger(n) || n < 1 || n > 1e9)) return { error: 'bad commits' };
+    commits = [...new Set(body.commits)];
+    if (commits.length > MAX_COMMITS_PRS) return { error: 'too many commits' };
+  }
   // AC77 (draft 6; draft 7, Critic round 5, finding 5): the optional `closed` field, { since: <ISO
   // instant> }, the earliest held question's raised time: the closed pull requests, 1 to 3 pages,
   // counting 3 (its worst case).
@@ -185,11 +194,11 @@ function validateBlobs(body, config) {
   if (body.usage != null && body.usage !== true) return { error: 'bad usage' };
   const usage = body.usage === true;
   const budget = new Set(blobs).size + 2 * new Set(history).size + pairs.length + (pulls ? PULLS_COST : 0)
-    + (files ? files.length : 0) + (closed ? CLOSED_COST : 0) + (prs ? prs.length * PR_COST : 0) + (usage ? USAGE_COST : 0)
+    + (files ? files.length : 0) + (commits ? commits.length * COMMITS_COST : 0) + (closed ? CLOSED_COST : 0) + (prs ? prs.length * PR_COST : 0) + (usage ? USAGE_COST : 0)
     + (commitTime ? commitTime.length * COMMIT_TIME_COST : 0) + (jobLog ? jobLog.length * JOB_LOG_COST : 0);
   if (budget > BLOB_BATCH) return { error: `budget ${budget} is over ${BLOB_BATCH}` };
   return { req: { project, blobs: [...new Set(blobs)], history: [...new Set(history)], compare: pairs, ...(pulls ? { pulls } : {}),
-    ...(files ? { files } : {}), ...(closed ? { closed } : {}), ...(prs ? { prs } : {}), ...(usage ? { usage: { config: usageEntry(config) ? usageEntry(config).cfg : null } } : {}),
+    ...(files ? { files } : {}), ...(commits ? { commits } : {}), ...(closed ? { closed } : {}), ...(prs ? { prs } : {}), ...(usage ? { usage: { config: usageEntry(config) ? usageEntry(config).cfg : null } } : {}),
     ...(commitTime ? { commitTime, commitTimeNull } : {}), ...(jobLog ? { jobLog, jobLogNull } : {}),
     spare: BLOB_BATCH - budget } };
 }

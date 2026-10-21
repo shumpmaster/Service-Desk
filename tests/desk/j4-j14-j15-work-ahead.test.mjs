@@ -236,7 +236,7 @@ test('J14: a failed read shows "Estimate: not available" on every row and no rou
   });
 });
 
-/** Open the sandbox twice, the second time with `path`'s blob failing every read: Home's top line is the same, never "Can't read". */
+/** Open the sandbox twice, the second time with `path`'s blob failing every read: Home's top line (from stage 2 its briefing, AC82) is the same, never "Can't read". */
 async function failedOptionalRead(path, text, onWork) {
   const tops = [];
   for (const fail of [false, true]) {
@@ -253,7 +253,8 @@ async function failedOptionalRead(path, text, onWork) {
     try {
       await app.advance(1000);
       await app.advance(61_000);
-      const top = findAll(app.view, (e) => / sb-top /.test(` ${e.className} `))[0];
+      // From stage 2 (AC82): Home's top line is its briefing, counted as the board counts.
+      const top = findAll(app.view, (e) => / v2-brief /.test(` ${e.className} `))[0];
       tops.push(top.textContent);
       assert.doesNotMatch(app.text(), /Can't read/);
       if (fail) {

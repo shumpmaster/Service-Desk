@@ -189,8 +189,9 @@ test('AC80: "Done ✓" in a sheet marks the card at once: it heads Done as "Conf
     assert.equal(kept.marks[PR(126)].step, 'merge');
     assert.ok(app.text().includes(WORDS.device), 'the device line under Done');
     await app.go('#/');
-    assert.match(app.text(), /7 waiting on you/, 'Home\'s line less the mark');
-    assert.deepEqual(byClass(app.view, 'sb-pill').map((x) => x.textContent), ['3 decisions · 4 to merge'], 'the tile\'s pill (AC48), less the mark');
+    // From stage 2 (AC82): Home's briefing and the tile's "wait on you", in place of today's Home's line and pill.
+    assert.match(byClass(app.view, 'v2-brief')[0].textContent, /^7 need you/, 'Home\'s briefing less the mark');
+    assert.deepEqual(byClass(app.view, 'v2-wt').map((x) => x.textContent), ['7 wait on you'], 'the tile\'s count, less the mark');
     await app.go('#/p/Example');
     assert.deepEqual(byClass(app.view, 'sb-btn').map((x) => x.textContent), ['3 decisions · 4 to merge ›', 'Team: Waiting on you, the oldest for 3 h 11 min ›'],
       'the Status screen\'s queue and team lines: the oldest now #127');
@@ -747,8 +748,9 @@ function with140({ reviewer = null, owner = null, check = null } = {}) {
 const counts = async (app) => {
   const out = { badge: badge(app), lane: byClass(lane(app, 'wait'), 'v2-lc')[0].textContent, agents: keyed(app, 'ql:agents') ? keyed(app, 'ql:agents').textContent : null };
   await app.go('#/');
-  out.home = (/(\d+) waiting on you/.exec(app.text()) || [])[1] || null;
-  out.pill = byClass(app.view, 'sb-pill').map((x) => x.textContent).join(' | ');
+  // From stage 2 (AC82): Home's briefing ("<n> need you") and each tile's "wait on you".
+  out.home = (/^(\d+) needs? you/.exec(byClass(app.view, 'v2-brief')[0].textContent) || [])[1] || null;
+  out.pill = byClass(app.view, 'v2-wt').map((x) => x.textContent).join(' | ');
   await app.go('#/waiting');
   return out;
 };

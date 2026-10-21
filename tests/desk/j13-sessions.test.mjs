@@ -141,14 +141,16 @@ test('J13: each line the desk mirrors is named in the notes and skipped, the res
   assert.match(why(33), /started after it ended/);
 });
 
-test('J13 (build review round 1): a file with such lines leaves the project read, "All clear", and the rest of the file used', async () => {
+test('J13 (build review round 1): a file with such lines leaves the project read, quiet ("Nothing needs you", AC82), and the rest of the file used', async () => {
   const files = { 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml'), 'governance/SURFACES.md': SURFACES,
     [P('s-ended')]: `${GOOD['s-ended']}{"event": "constructor"}\n{"event": "__proto__", "session": "s-ended"}\n` };
   const app = await loadSandbox({ config: { ...CONFIG, projects: [v3('Alpha')] }, repos: { Alpha: repo(files) }, hash: '#/', now: at('12:00').getTime() });
   try {
     await app.advance(1000);
     await app.advance(61_000);
-    assert.match(app.text(), /All clear/);
+    // From stage 2 (AC82): Quiet on Home is the briefing's "Nothing needs you", the tile's "Nothing waiting" (today's Home's "All clear" pill gone).
+    assert.match(byClass(app.view, 'v2-brief')[0].textContent, /^Nothing needs you/);
+    assert.equal(byClass(app.view, 'v2-wt')[0].textContent, 'Nothing waiting');
     assert.doesNotMatch(app.text(), /Can't read/);
     await app.go('#/p/Alpha/team');
     assert.match(findAll(app.view, (e) => e.dataset && e.dataset.member === 'chief-of-staff')[0].textContent, /Idle/, 'the rest of the file used');
@@ -200,7 +202,7 @@ test('J13: every `null` figure reads "not recorded", never "not available" (AC23
   assert.equal(utcTime('2026-10-17T24:00:00Z'), null);
 });
 
-test('J13: each session file is an optional J11 read — never "Can\'t read" for it; a failed session blob leaves "read successfully" and "All clear" unchanged, the Chief of Staff\'s tile "not available"', async () => {
+test('J13: each session file is an optional J11 read — never "Can\'t read" for it; a failed session blob leaves "read successfully" and quiet ("Nothing needs you", AC82) unchanged, the Chief of Staff\'s tile "not available"', async () => {
   const snap = snapOf(['s-ended']);
   const now = at('12:00');
   const plain = neededReads(SD3, snap.tree, new Map(), now, { j11: true });
@@ -220,7 +222,9 @@ test('J13: each session file is an optional J11 read — never "Can\'t read" for
   try {
     await app.advance(1000);
     await app.advance(61_000);
-    assert.match(app.text(), /All clear/);
+    // From stage 2 (AC82): Quiet on Home is the briefing's "Nothing needs you", the tile's "Nothing waiting" (today's Home's "All clear" pill gone).
+    assert.match(byClass(app.view, 'v2-brief')[0].textContent, /^Nothing needs you/);
+    assert.equal(byClass(app.view, 'v2-wt')[0].textContent, 'Nothing waiting');
     assert.doesNotMatch(app.text(), /Can't read/);
     await app.go('#/p/Alpha/team');
     const tile = findAll(app.view, (e) => e.dataset && e.dataset.member === 'chief-of-staff')[0];

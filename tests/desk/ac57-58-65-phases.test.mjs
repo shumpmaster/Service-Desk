@@ -356,67 +356,74 @@ test('AC65 (note 28): the tile\'s where-it-is line — "Design, second time thro
   assert.equal(tilePhases({ ...models().ctx, project: v, pv: phaseView(v, null, new Map(), null) }).line, 'Phases not tracked');
 });
 
-test('AC65 and AC58: the boxes from the top Done, Launch, Build, Design, Discovery, with the tile\'s words; each box\'s stripe token, the now box\'s gold edge; the dots\' icons; no milestone on the card', async () => {
-  const { ctx } = models();
-  const tv = tilePhases(ctx);
-  assert.deepEqual(tv.rows.map((r) => [r.phase, r.word]), [['Done', ''], ['Launch', 'not started'], ['Build', 'run 2 to come'], ['Design', 'now · run 2'], ['Discovery', 'finished']]);
-  const icon = (ph, k) => tv.shape.dots.find((d) => d.phase === ph && d.k === k).icon;
-  assert.deepEqual([icon('Discovery', 1), icon('Design', 1), icon('Build', 1), icon('Design', 2), icon('Build', 2), icon('Launch', 2), icon('Done', 2)],
-    ['check', 'pastcheck', 'pastcheck', 'next', 'planned', 'planned', 'planned']);
-  assert.equal(tilePhases(madeUp([['Discovery', 1], ['Design', 1, [['M1', false]]]])).rows.find((r) => r.phase === 'Design').word, 'now', '"now" alone with one run');
+test('AC65 and AC58, changed by AC82 (frame H5; P-001-tile-direction.md, A): the tile\'s phases as a timeline, left to right — one row per run, a cell per phase, each icon, its line\'s style and colour, the drop to run 2, the names once with the now phase bold, and one sentence carrying it; no "<n> of 4 phases finished"', async () => {
   const app = await openSD('#/');
   try {
-    const card = byClass(app.view, 'sb-pc')[0];
-    const tile = byClass(card, 'sb-tph')[0];
-    const rows = byClass(tile, 'sb-trow');
-    assert.deepEqual(rows.map((r) => r.textContent), ['Done', 'Launchnot started', 'Buildrun 2 to come', 'Designnow · run 2', 'Discoveryfinished']);
-    assert.deepEqual(rows.map((r) => r.className.split(' ')[1]), ['ph-done', 'ph-launch', 'ph-build', 'ph-des', 'ph-disc']);
-    assert.ok(rows[3].className.split(' ').includes('now'));
-    assert.match(rule('.sb-trow'), /box-shadow: inset 2px 0 0 var\(--ph, transparent\);/);
-    assert.match(rule('.sb-trow.now'), /border-color: var\(--gold\);/);
-    assert.match(rule('.sb-trow.end'), /border-style: dashed; box-shadow: none;/);
-    assert.equal(byClass(tile, 'sb-where')[0].textContent, 'Design, second time through');
+    const card = keyed(app, 'card:Service-Desk');
+    const ptl = byClass(card, 'v2-ptl')[0];
+    assert.equal(ptl.attrs['aria-hidden'], 'true', 'the drawing is hidden from assistive technology');
+    assert.equal(findAll(ptl, (e) => e.tag === 'a' || e.tag === 'button').length, 0, 'no control: a tap on it is the tile\'s');
+    const rows = byClass(ptl, 'v2-rwl');
+    assert.deepEqual(rows.map((r) => byClass(r, 'v2-rk')[0].textContent), ['run 1', 'run 2']);
+    const cells = (r) => byClass(r, 'v2-c').map((c) => {
+      const svg = c.children.find((x) => x.tag === 'svg');
+      return svg ? `${c.className.split(' ')[1]}:${/st-([a-z]+)/.exec(svg.getAttribute('class'))[1]}` : '-';
+    });
+    // Left to right in time: Discovery, Design, Build, Launch, Done.
+    assert.deepEqual(cells(rows[0]), ['ph-disc:check', 'ph-des:pastcheck', 'ph-build:pastcheck', '-', '-'], 'run 1: Discovery finished, Design and Build gone back over (a lighter check)');
+    assert.deepEqual(cells(rows[1]), ['-', 'ph-des:half', 'ph-build:planned', 'ph-launch:planned', 'ph-done:planned'], 'run 2: Design now (half-filled), the rest a dashed ring');
+    const state = (r, i) => byClass(r, 'v2-c')[i].className.split(' ');
+    assert.ok(state(rows[0], 0).includes('s-done') && state(rows[0], 1).includes('s-gone') && state(rows[1], 2).includes('s-ahead'));
+    assert.ok(state(rows[0], 1).includes('dn') && state(rows[1], 1).includes('up'), 'a short dashed drop from run 1\'s Design to run 2\'s, the phase it went back to');
+    assert.ok(state(rows[1], 1).includes('r') && state(rows[1], 2).includes('l'), 'joined to its neighbours');
+    const lb = byClass(ptl, 'v2-lb')[0];
+    assert.deepEqual(lb.children.map((x) => x.textContent), ['Discovery', 'Design', 'Build', 'Launch', 'Done'], 'each phase\'s name once, under the rows');
+    assert.deepEqual(lb.children.map((x) => x.tag), ['span', 'b', 'span', 'span', 'span'], 'the now phase\'s in bold');
+    assert.equal(keyed(app, 'ptl-words:Service-Desk').textContent,
+      'Phases: Discovery finished; Design and Build run 1 gone back over; now Design run 2; Build, Launch and Done ahead', 'the sentence, as drawn');
+    assert.ok(keyed(app, 'ptl-words:Service-Desk').className.split(' ').includes('sb-vh'));
+    // The lines: in the phase's colour, solid where finished, dashed where still to come, lighter where gone back over.
+    assert.match(rule('.v2-c.l::before, .v2-c.r::after'), /background: var\(--phc\);/);
+    assert.match(rule('.v2-c.s-ahead.l::before, .v2-c.s-ahead.r::after'), /repeating-linear-gradient\(90deg, var\(--phc\) 0 3px, transparent 3px 6px\)/);
+    assert.match(rule('.v2-c.s-gone.l::before, .v2-c.s-gone.r::after'), /opacity: \.4;/);
+    assert.match(rule('.v2-c.ph-des'), /--phc: var\(--ph-des\);/);
+    assert.match(rule('.v2-c.dn > i, .v2-c.up > i'), /border-left: 1\.5px dashed var\(--ink2\);/);
     assert.doesNotMatch(card.textContent, /of 4 phases finished/, '"<n> of 4 phases finished" goes');
-    assert.doesNotMatch(card.textContent, /\bM(D|3)?\d[A-Z]?\b|Design-\d/, 'no milestone on the card');
-    // The drawing: AC57's shapes, drawn smaller, each dot level with its box's name.
-    const ys = { Done: 20, Launch: 45, Build: 70, Design: 95, Discovery: 120 };
-    const undo = railLayout(ys);
-    try {
-      app.module.fitRail(tile);
-      const kids = svgKids(byClass(tile, 'sb-rail')[0]);
-      const dots = kids.filter((e) => e.attrs['data-kind'] === 'dot');
-      for (const d of dots) assert.ok(Math.abs(Number(d.attrs.cy) - ys[d.attrs['data-phase']]) <= 1);
-      for (const l of kids.filter((e) => e.attrs['data-kind'] === 'line')) assert.equal(l.attrs.x1, l.attrs.x2);
-      assert.equal(kids.filter((e) => e.attrs['data-kind'] === 'curve').length, 1);
-      for (const a of kids.filter((e) => e.attrs['data-kind'] === 'arrow')) assert.equal(a.attrs['data-dir'], 'up');
-      assert.deepEqual(dots.map((d) => d.attrs['data-mark']), ['check', 'pastcheck', 'pastcheck', 'next', 'planned', 'planned', 'planned']);
-    } finally {
-      undo();
-    }
-    // The card's taps are unchanged: the drawing is no control; a tap on it is the card's.
-    assert.equal(findAll(tile, (e) => e.tag === 'a' || e.tag === 'button').length, 0);
-    assert.match(rule('.sb-pc-rest'), /pointer-events: none;/);
+    assert.equal(byClass(card, 'sb-tph').length + byClass(card, 'sb-rail').length, 0, 'no bottom-up boxes or branch drawing on the tile (AC65, changed)');
   } finally {
     app.restore();
   }
 });
 
-test('AC58 + AC65: "Phases not tracked" with empty rows for the v2.5 fixture; two columns and H5\'s extremes at 360 px', async () => {
+test('AC58 + AC65, changed by AC82: a v2.5 tile draws its sprint files in place of phases, at most the last four, closed ones checked, the open one half-filled; one tile a row and H5\'s extremes at 360 px', async () => {
   const setup = extremes();
+  setup.repos.Delta.commit({ 'docs/sprints/m1.1-foundation.md': '# m1.1\n\nstatus: closed\n', 'docs/sprints/m1.2-x.md': '# m1.2\n\nstatus: closed\n',
+    'docs/sprints/m1.3-y.md': '# m1.3\n\nstatus: closed\n', 'docs/sprints/m1.0-old.md': '# m1.0\n\nstatus: closed\n' });
   const app = await opened(setup, '#/');
   try {
-    for (const k of ['done', 'closed']) { keyed(app, `hgroup-btn:${k}`).click(); await app.flush(); }
-    const delta = byClass(app.view, 'sb-pc').find((c) => c.textContent.includes('Delta'));
-    const tile = byClass(delta, 'sb-tph')[0];
-    assert.equal(byClass(tile, 'sb-where')[0].textContent, 'Phases not tracked');
-    assert.deepEqual(byClass(tile, 'sb-trow').map((r) => r.textContent), ['Done', 'Launch', 'Build', 'Design', 'Discovery'], 'empty rows');
-    assert.equal(byClass(tile, 'sb-rail').length, 0, 'no drawing without phase records');
-    assert.equal(byClass(app.view, 'sb-pc').length, 5);
+    await app.advance(61_000);
+    keyed(app, 'hgroup-btn:done').click();
+    await app.flush();
+    const delta = keyed(app, 'card:Delta');
+    const ptl = byClass(delta, 'v2-ptl')[0];
+    assert.ok(ptl.className.split(' ').includes('sprints'));
+    assert.deepEqual(byClass(ptl, 'v2-rk').map((x) => x.textContent), ['sprints'], 'labelled "sprints"');
+    assert.deepEqual(byClass(ptl, 'v2-lb')[0].children.map((x) => x.textContent), ['m1.1', 'm1.2', 'm1.3', 'm1.4'], 'the last four, by id');
+    assert.deepEqual(byClass(ptl, 'v2-c').map((c) => /st-([a-z]+)/.exec(c.children.find((x) => x.tag === 'svg').getAttribute('class'))[1]), ['check', 'check', 'check', 'half']);
+    assert.equal(byClass(ptl, 'v2-lb')[0].children[3].tag, 'b', 'the open one in bold');
+    assert.match(rule('.v2-ptl.sprints .v2-lb'), /font: var\(--t-mono\);/, 'each id in Plex Mono');
+    assert.equal(keyed(app, 'ptl-words:Delta').textContent, 'Sprints: m1.1, m1.2 and m1.3 closed; m1.4 open');
+    assert.match(delta.textContent, /Now: sprint m1\.4 · older pipeline: sprints, not phases/);
+    assert.match(delta.textContent, /No dispatch log: not used here/);
+    assert.match(delta.textContent, /Next: sprint m1\.4 · no estimate filed/);
+    assert.equal(byClass(app.view, 'v2-tile').length, 5);
     assert.doesNotMatch(app.text(), /Can't show/);
-    assert.match(rule('.sb-grid'), /grid-template-columns: 1fr 1fr;/);
-    for (const m of css().matchAll(/(?:^|[;{\s])width:\s*(\d+)px/g)) assert.ok(Number(m[1]) <= 360, `fixed width ${m[1]}px`);
+    assert.match(rule('.v2-tiles'), /grid-template-columns: minmax\(0, 1fr\);/, 'one tile a row at 360 px');
+    const v2 = css().slice(css().indexOf('@font-face')).replace(/@media[^{]*\{(?:[^{}]*\{[^}]*\})*[^{}]*\}/g, '');
+    for (const m of v2.matchAll(/(?:^|[;{\s])width:\s*(\d+)px/g)) assert.ok(Number(m[1]) <= 360, `fixed width ${m[1]}px`);
   } finally {
     app.restore();
   }
   void v3; void v25; void fullRepo; void repo; void fixture; void El0; void opened;
 });
+

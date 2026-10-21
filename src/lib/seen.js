@@ -55,6 +55,21 @@ export function createSeen({ store, now }) {
         }
       }
     },
+    /**
+     * "Mark as seen" (AC40 as AC82 changes it, frame H1): "last looked" is now, at once, on this
+     * device, for this window too; the 10-second rule still moves it otherwise.
+     */
+    markSeen() {
+      const t = now();
+      stored = t;
+      reference = t;
+      windowStart = t;
+      try {
+        if (store) store.setJSON(SEEN_KEY, { lastLooked: t });
+      } catch {
+        // the store already falls back to memory; markers then go off on the next opening
+      }
+    },
     /** True when `time` (ms or ISO text) is after "last looked"; never with no record. */
     isNew(time) {
       if (seen.off) return false;

@@ -36,7 +36,7 @@ const current = (app) => tabs(app).filter((t) => t.attrs['aria-current'] === 'pa
 test('AC81: the trial view opens on Home; every screen carries the one bar Home · Waiting · Plan at its foot, its current tab named so; no Projects or Portfolio tab', async () => {
   const app = await opened('');
   try {
-    assert.ok(byClass(app.view, 'sb-pc').length, 'Home');
+    assert.ok(byClass(app.view, 'v2-home').length && byClass(app.view, 'v2-tile').length, 'Home, with its tiles (AC82)');
     for (const [hash, want, row] of [
       ['#/', 'Home', false],
       ['#/p/Service-Desk', 'Home', true], ['#/p/Service-Desk/timeline', 'Home', true], ['#/p/Service-Desk/team', 'Home', true],
@@ -83,13 +83,14 @@ test('AC81: Waiting\'s badge is the board\'s own "Waiting on you" plus "Kicked b
   }
 });
 
-test('AC81 (until stage 3): `p/<name>/queue` opens `waiting/<name>` without adding a history step; a wait row\'s `p/<name>/queue/<key>` opens it with that card\'s sheet, a key no card has with none; Home keeps its cards and its "Work ahead ›"', async () => {
+test('AC81 (until stage 3): `p/<name>/queue` opens `waiting/<name>` without adding a history step; a wait row\'s `p/<name>/queue/<key>` opens it with that card\'s sheet, a key no card has with none; from stage 2 Home\'s tiles open the Status screen and Home has no "Work ahead ›"', async () => {
   const app = await opened('#/');
   const replaced = [];
   location.replace = (h) => { replaced.push(h); location.hash = h; };
   try {
-    assert.ok(byClass(app.view, 'sb-wa-link').length, 'Home\'s "Work ahead ›" control in stage 1a');
-    assert.deepEqual(byClass(app.view, 'sb-pc-main').map((a) => a.attrs.href).sort(), ['#/p/Alpha', '#/p/Service-Desk'], 'a tap on a v3 project\'s Home card opens the project\'s Status screen');
+    // Stage 2 (AC82; this case as AC81's test says, "none on stage 2's Home"): the control goes with today's Home.
+    assert.equal(byClass(app.view, 'sb-wa-link').length + findAll(app.view, (e) => e.dataset && e.dataset.k === 'work-ahead').length, 0, 'no "Work ahead ›" on Home');
+    assert.deepEqual(byClass(app.view, 'v2-ta').map((a) => a.attrs.href).sort(), ['#/p/Alpha', '#/p/Delta', '#/p/Service-Desk'], 'a tap on a tile opens the project\'s Status screen, as built, until stage 3');
     await app.go('#/p/Alpha/queue');
     assert.deepEqual(replaced, ['#/waiting/Alpha'], 'in place of its history entry');
     assert.equal(byClass(app.view, 'v2-filter').length, 1);

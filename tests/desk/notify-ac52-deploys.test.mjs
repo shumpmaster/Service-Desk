@@ -78,7 +78,8 @@ test('AC52 (2026-10-18) + AC80: in the sandbox, a waiting deploy is a "Deploy" c
     assert.ok(sheet.textContent.includes('waiting for approval'), sheet.textContent);
     assert.ok(sheet.textContent.includes('Approve on GitHub'));
     await app.go('#/');
-    assert.match(app.text(), /1 waiting on you in all/);
+    // From stage 2 (AC82): Home's briefing, counted as the board counts.
+    assert.match(byClass(app.view, 'v2-brief')[0].textContent, /^1 needs you/);
   } finally {
     app.restore();
   }

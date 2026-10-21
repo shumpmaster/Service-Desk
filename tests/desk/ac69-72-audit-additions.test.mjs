@@ -23,7 +23,10 @@ const OWNER_CORAL = ['.sb-top.you', '.sb-ic.i-you', '.sb-hg-you', '.sb-ball li.w
   '.sb-qrow.g-decisions, .sb-qrow.g-gates, .sb-qrow.g-merges', '.sb-you', '.sb-you-st.you', '.sb-last', '.sb-last-l', '.sb-ask.open', '.sb-axis .bar.card', '.sb-q',
   // AC69, changed by AC80 (the board) and AC81 (the bar): vermilion marks only what waits on the owner,
   // the kind icon of a card in "Waiting on you" or "Kicked back" and the Waiting tab's badge.
-  '.v2-badge', '.v2-kd .v2-k'];
+  '.v2-badge', '.v2-kd .v2-k',
+  // AC69 with AC82 (stage 2): Home's ◆, the diamond beside what waits on the owner (the briefing, a group's
+  // header, a tile's "wait on you" and a gate's "Next:", the timeline's gate cell), drawn as an SVG.
+  '.v2-s .you', '.v2-k.st-you .you'];
 
 test('AC69: coral (--you) is used only for the owner\'s own things — the rules that take it are the owner\'s, none of them a why line, a "Not tied to a milestone" line or a gap', () => {
   const coral = rules().filter((r) => /var\(--you\d?\)/.test(r.body) && !r.sel.startsWith('html')).map((r) => r.sel);
@@ -201,7 +204,7 @@ test('AC71: the line — none at 71 hours, "No movement for 3 days · last: PR #
   assert.match(at(now, { snap: { ...snap, headAt: tie }, j: { ...j, logRows: [...j.logRows, row] } }).words, /last: P-001: builder started/);
 });
 
-test('AC71: no line when something waits, for a project not Active (Done or Closed), for one that can\'t be read, while its reads are not all in; in slate on the card under who has the ball; the card\'s order unchanged', async () => {
+test('AC71: no line when something waits, for a project not Active (Done or Closed), for one that can\'t be read, while its reads are not all in; in slate on the tile under who is at work (AC82); the tiles\' order unchanged', async () => {
   const { snap, j } = models();
   const now = MERGED77 + 80 * H;
   const box = { read: { read: 'ok', since: now - 1000 } };
@@ -225,9 +228,11 @@ test('AC71: no line when something waits, for a project not Active (Done or Clos
       assert.equal(card.textContent, h === 71 ? '' : 'No movement for 3 days · last: PR #77 merged, 16 Oct', `${h} h`);
       const alpha = findAll(app.view, (e) => e.dataset && e.dataset.k === 'stall:Alpha')[0];
       assert.equal(alpha.textContent, '', 'Alpha has things waiting: no line');
+      // From stage 2 (AC82, frame H5): on the tile, under who is at work and what comes next, in grey.
       const parent = card.parent;
-      const ball = parent.children.findIndex((c) => /\bsb-ball\b/.test(c.className || ''));
-      assert.ok(ball >= 0 && parent.children.indexOf(card) === ball + 1, 'under who has the ball');
+      const next = parent.children.findIndex((c) => /\bv2-ln\b/.test(c.className || '') && /^Next:/.test(c.textContent));
+      assert.ok(next >= 0 && parent.children.indexOf(card) === next + 1, 'under the tile\'s "Next:" line, after who is at work');
+      assert.ok(parent.className.split(' ').includes('v2-tile'));
       order.push(findAll(app.view, (e) => e.dataset && /^card:/.test(e.dataset.k || '')).map((e) => e.dataset.k).join(','));
     } finally {
       app.restore();

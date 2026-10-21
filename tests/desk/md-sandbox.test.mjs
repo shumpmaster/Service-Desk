@@ -25,25 +25,23 @@ import { pullsAnswer } from './j12-fixture.mjs';
 // ---------------------------------------------------------------------------
 // AC48
 
-test('AC48: Home — one card per project in AC8\'s order, each with its icon, name, where it is, phases, who has the ball and one pill; the marker; no New project', async () => {
+test('AC48, as AC82 rebuilds Home (stage 2, frame H5): one tile per project in AC8\'s order, each with its name and what waits, its summary, its phases as a timeline, "Now:", who is at work and what comes next; the marker; no New project', async () => {
   const app = await opened();
   try {
     const v = app.view;
-    const cards = byClass(v, 'sb-pc');
+    const cards = byClass(v, 'v2-tile');
     assert.equal(cards.length, 2);
+    assert.deepEqual(cards.map((c) => byClass(c, 'v2-tnm')[0].textContent), ['Alpha', 'Beta'], 'AC8\'s order');
     for (const c of cards) {
-      assert.equal(byClass(c, 'sb-app').length, 1, 'a quiet line icon');
-      // AC54 (2026-10-14): the card shows the README summary in AC37's place; AC37's line opens from "Latest".
-      assert.equal(byClass(c, 'sb-sum').length, 1);
-      assert.equal(byClass(c, 'sb-latest').length, 1);
-      // AC58 and AC65 (2026-10-16): the phases sit in their own small boxes with the compact branch drawing.
-      assert.equal(byClass(c, 'sb-tph').length, 1);
-      assert.equal(byClass(c, 'sb-ball').length, 1);
-      assert.equal(byClass(c, 'sb-pill').length, 1);
+      assert.equal(byClass(c, 'v2-wt').length, 1, 'what waits, at the name\'s right');
+      assert.equal(byClass(c, 'sb-sum').length, 1, 'the README summary (AC54 (a))');
+      assert.equal(byClass(c, 'sb-latest').length + byClass(c, 'sb-pill').length, 0, 'no "Latest" and no pill (AC82)');
+      assert.equal(byClass(c, 'v2-ptl').length, 1, 'the phases as a timeline');
+      assert.deepEqual(byClass(c, 'v2-ln').map((l) => /^(Now:|At work:|No agent run|Next:)/.exec(l.textContent)[1]), ['Now:', 'At work:', 'Next:']);
     }
     assert.ok(app.text().includes(SANDBOX_MARKER));
-    assert.match(app.text(), /12 waiting on you in all/, 'a count in all, never a combined list');
-    assert.match(app.text(), /Median answer time/, "AC21's V5 line stays on Home");
+    assert.match(byClass(v, 'v2-brief')[0].textContent, /^12 need you/, 'a count in all, never a combined list');
+    assert.match(app.text(), /Median answer time/, "AC21's V5 line stays on Home, in the fold at its foot");
     assert.doesNotMatch(app.text(), /New project/);
     // 2026-10-16 (decisions/questions/P-001-design-lab-open.md, answer 1): no band, no deferred
     // words; from stage 1a (AC81) the one thing fixed to the bottom of Home's screen is the bar
@@ -69,14 +67,13 @@ test('AC48: Home — one card per project in AC8\'s order, each with its icon, n
   }
 });
 
-test('AC48 (changed by AC81, "Until stage 3"): each card, pill and row tap goes to the screen it names; Status, Timeline and Team carry the row Status · Timeline · Team · Waiting and a way back', async () => {
+test('AC48 (changed by AC81, "Until stage 3", and AC82): each tile, the briefing and each row tap goes to the screen it names; Status, Timeline and Team carry the row Status · Timeline · Team · Waiting and a way back', async () => {
   const app = await opened();
   try {
-    const card = byClass(app.view, 'sb-pc')[0];
-    const [main] = byClass(card, 'sb-pc-main');
-    const [pill] = byClass(card, 'sb-pill');
-    assert.equal(main.attrs.href, '#/p/Alpha');
-    assert.equal(pill.attrs.href, '#/waiting/Alpha', 'the pill opens Waiting with only Alpha shown');
+    const card = byClass(app.view, 'v2-tile')[0];
+    const [main] = byClass(card, 'v2-ta');
+    assert.equal(main.attrs.href, '#/p/Alpha', 'the tile opens the project\'s Status screen until stage 3');
+    assert.equal(byClass(app.view, 'v2-brief')[0].attrs.href, '#/waiting', 'the briefing opens Waiting, one tap');
     for (const [hash, title, current] of [['#/p/Alpha', 'Current status', 'Status'], ['#/p/Alpha/timeline', 'Timeline', 'Timeline'], ['#/p/Alpha/team', 'Team', 'Team']]) {
       await app.go(hash);
       assert.ok(app.text().includes(SANDBOX_MARKER), `${hash}: the marker`);
@@ -113,7 +110,7 @@ test('AC48 + ruling 6: no item of one project appears on another project\'s card
   try {
     for (const [mine, other] of [['Alpha', 'Beta'], ['Beta', 'Alpha']]) {
       await app.go('#/');
-      const card = byClass(app.view, 'sb-pc').find((c) => c.textContent.includes(mine));
+      const card = byClass(app.view, 'v2-tile').find((c) => c.textContent.includes(mine));
       assert.ok(!card.textContent.includes(other));
       for (const s of ['queue', 'team']) {
         await app.go(`#/p/${mine}/${s}`);
@@ -136,16 +133,18 @@ test('AC48: "All clear" only when nothing waits and the project was read within 
   assert.equal(pillView({ read: { read: 'ok', since: NOW } }, q, NOW).text, '1 to merge');
 });
 
-test('AC48: a project whose read goes stale shows no "All clear" on Home', async () => {
+test('AC48 with AC82: a project whose read goes stale shows no quiet on Home ("Nothing needs you", "Nothing waiting"), but "Can\'t read"', async () => {
   const setup = { config: { ...CONFIG, projects: [v3('Quiet')] }, repos: { Quiet: repo({ 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml') }) } };
   const app = await opened(setup);
   try {
-    assert.ok(app.text().includes('All clear'));
+    assert.match(byClass(app.view, 'v2-brief')[0].textContent, /^Nothing needs you/);
+    assert.equal(byClass(app.view, 'v2-wt')[0].textContent, 'Nothing waiting');
     setup.repos.Quiet.fail = { kind: 'network' };
     await app.advance(4 * 60e3);
     await app.go('#/');
-    assert.ok(!app.text().includes('All clear'));
-    assert.match(app.text(), /Can't read/);
+    assert.doesNotMatch(app.text(), /Nothing needs you|Nothing waiting|All clear/);
+    assert.match(byClass(app.view, 'v2-brief')[0].textContent, /^Can't read Quiet since \d\d:\d\d/, 'AC5\'s words, in the briefing');
+    assert.equal(byClass(app.view, 'v2-wt')[0].textContent, "Can't read");
   } finally {
     app.restore();
   }
@@ -536,12 +535,11 @@ test('AC42: H5\'s extremes — 5 projects, 12+ waits, long titles — every scre
   const setup = extremes();
   const app = await opened(setup);
   try {
-    assert.match(app.text(), /waiting on you in all/);
-    const total = Number(/(\d+) waiting on you in all/.exec(app.text())[1]);
+    // From stage 2 (AC82): Home's briefing counts them all, as the board does.
+    const total = Number(/^(\d+) need you/.exec(byClass(app.view, 'v2-brief')[0].textContent)[1]);
     assert.ok(total >= 12, `${total} waits`);
-    // AC54: the v2.5 project sits in "Closed or not applicable", which starts closed; open every group.
-    for (const b of byClass(app.view, 'sb-hg-btn')) if (b.attrs['aria-expanded'] === 'false') { b.click(); await app.flush(); }
-    assert.equal(byClass(app.view, 'sb-pc').length, 5);
+    for (const b of byClass(app.view, 'v2-hg')) if (b.attrs['aria-expanded'] === 'false') { b.click(); await app.flush(); }
+    assert.equal(byClass(app.view, 'v2-tile').length, 5);
     for (const p of setup.config.projects) {
       for (const s of ['', '/timeline', '/team', '/queue', '/team/owner', '/team/orchestrator', '/team/builder/now', '/team/critic/e/0']) {
         await app.go(`#/p/${encodeURIComponent(p.name)}${s}`);
@@ -566,7 +564,11 @@ test('AC42: H5\'s extremes — 5 projects, 12+ waits, long titles — every scre
 test('AC42: nothing is fixed wider than a 360 px screen, and every drawn text sits where it may wrap', async () => {
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
   assert.match(css, /\.sb-screen, \.sb-screen \* \{ overflow-wrap: anywhere; word-break: break-word; min-width: 0; \}/);
-  for (const m of css.matchAll(/(?:^|[;{\s])(?:min-|max-)?width:\s*(\d+)px/g)) {
+  // From stage 2 (AC82, C): Home's column widens to at most 960 px from 720 px wide, for two tiles a row;
+  // that one rule, inside its media query, is the only width over 560 px.
+  const wide = /@media \(min-width: 720px\) \{\s*html\.sb\.v2-page\.v2-home body \{ max-width: 960px; \}/;
+  assert.match(css, wide, 'Home\'s wider column, from 720 px only');
+  for (const m of css.replace(wide, '').matchAll(/(?:^|[;{\s])(?:min-|max-)?width:\s*(\d+)px/g)) {
     assert.ok(Number(m[1]) <= 560, `width ${m[1]}px`);
     if (!/max-width/.test(m[0])) assert.ok(Number(m[1]) <= 360, `fixed width ${m[1]}px`);
   }

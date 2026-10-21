@@ -5,7 +5,7 @@
 
 import { neededReads, parseRecord, recordKind, buildModel, canRecord, recordingAnswers } from './model.js';
 import { parseTree, parseHistory, parseCardPath, compareStatus, parsePulls, questionName, classifyPull } from './records.js';
-import { parseFilePages, splitChanges, recordedAnswers, closedCanEnd, verdictFiles } from './prfiles.js';
+import { parseFilePages, splitChanges, recordedAnswers, closedCanEnd, verdictFiles, parseCommitPages } from './prfiles.js';
 import { judgePulls, mergePulls, pullsBackoffMs, PULLS_KEY, OLD_PULLS_KEYS, PULLS_MAX_PAGES, PULLS_RATE_MS } from './pulls.js';
 import { dayKey } from './timefmt.js';
 import { usageEntry } from './usage.js';
@@ -46,6 +46,9 @@ export const USAGE_COST = 5;
 export const CLOSED_COST = 3;
 export const PR_COST = 1;
 export const PRS_PER_CALL = 10;
+// J24 (2026-10-20, AC82): a pull request's commits read counts its worst case, 3 pages, of a blob call's 25.
+export const COMMITS_COST = 3;
+export const COMMITS_PER_CALL = 8;
 // AC80 (2026-10-19; draft 4): a pull request head's solo blob calls, the waited J20 read and the
 // verdict call's retries together, are at most this many, whoever waits on it (A3). From the points
 // settled after stage 1a's build review, round 1 (finding 3), the count holds across openings, kept on
@@ -137,6 +140,11 @@ function newProjectState(project) {
     // requests the page's marks wait on J20 for (`desk.setWaited`).
     j22: { checks: new Map(), refused: new Map(), verdicts: new Map(), headPolls: new Map(), waited: new Set(), verdictCalls: 0, waitedCalls: 0,
       lastSolo: 0 },
+    // J24 (2026-10-20, AC82; the MD sandbox only), in memory for this opening: each open pull request's
+    // commits by head sha ({ headSha, state: 'read' | 'failed', commits, capped }); a failed read's head
+    // and time (asked again at most once in FILES_RETRY_MS, only in a call made anyway); each pull
+    // request's first head this opening (a head change while open is due); and the counts.
+    j24: { commits: new Map(), tried: new Map(), firstHead: new Map(), reads: 0, calls: 0, alone: 0 },
   };
 }
 
@@ -145,7 +153,8 @@ function newProjectState(project) {
  * opts: { config, call(path, body) → Promise<{ ok, status, json?, reason?, words? }>, clock:
  *   { now(), setTimeout(fn, ms), clearTimeout(id) }, store (createStore), pullsStore and waitsStore
  *   (createStore each, J12's list and AC80's waited-read counts, kept apart from the cache), isVisible(),
- *   onChange(), j11 (true in the MD sandbox only: also read J11's optional records) }
+ *   onChange(), j11 (true in the MD sandbox only: also read J11's optional records), lastLooked() (the MD
+ *   sandbox only, J24: AC40's "last looked" in ms, or null with no record, when no commits are read) }
  */
 export function createDesk(opts) {
   const { config, call, clock, store } = opts;
@@ -376,6 +385,37 @@ export function createDesk(opts) {
     const cfg = ue ? ue.cfg : null;
     const usage = Boolean(cfg && cfg.reported !== false && !u.asking && (u.at == null || u.forced || now - u.at >= USAGE_EVERY_MS));
     return { files: files.slice(0, FILES_PER_CALL), closed, prs, usage, any: files.length > 0 || Boolean(closed) || prs.length > 0 || usage };
+  }
+
+  /**
+   * J24's commits read (the MD sandbox only): for each open, non-draft pull request into the default
+   * branch from the project's own repository (J20's), one not read at its head in this opening, whose
+   * `updated_at` in J1's list is later than "last looked" or whose head changed while the page was open.
+   * { first: [n] } ride the cycle's optional loop with J20's read of the same head (the overflow of a
+   * call's 25 in its next call); { retry: [n] }, a failed read asked again at most once in
+   * FILES_RETRY_MS, only in a call of the optional loop made anyway, never a call of its own.
+   */
+  function commitsDue(st) {
+    const out = { first: [], retry: [] };
+    const since = opts.lastLooked ? opts.lastLooked() : null;
+    if (!opts.j11 || since == null || !Number.isFinite(since)) return out;
+    const now = clock.now();
+    for (const pr of pullsOf(st)) {
+      if (!canRecord(pr, st.project) || !pr.headSha) continue;
+      if (!st.j24.firstHead.has(pr.number)) st.j24.firstHead.set(pr.number, pr.headSha);
+      const have = st.j24.commits.get(pr.number);
+      if (have && have.headSha === pr.headSha && have.state === 'read') continue;
+      const changed = st.j24.firstHead.get(pr.number) !== pr.headSha;
+      const updated = Date.parse(pr.updatedAt) > since;
+      if (!changed && !updated) continue;
+      const tried = st.j24.tried.get(pr.number);
+      if (tried && tried.headSha === pr.headSha) {
+        if (now - tried.at >= FILES_RETRY_MS) out.retry.push(pr.number);
+        continue;
+      }
+      out.first.push(pr.number);
+    }
+    return out;
   }
 
   /**
@@ -680,6 +720,12 @@ export function createDesk(opts) {
     if (batch.compare.length) body.compare = batch.compare;
     if (batch.pulls) body.pulls = { after: batch.pulls.after };
     if (batch.files && batch.files.length) body.files = batch.files;
+    if (batch.commits && batch.commits.length) {
+      body.commits = batch.commits;
+      st.j24.calls++;
+      if (!body.files && !body.blobs.length && !body.history.length && !batch.pulls && !batch.closed && !(batch.prs && batch.prs.length) && !batch.usage
+        && !(batch.compare && batch.compare.length)) st.j24.alone++;
+    }
     const closedGen = st.closedGen;
     if (batch.closed) {
       body.closed = batch.closed;
@@ -706,6 +752,19 @@ export function createDesk(opts) {
         st.filesTried.delete(n);
         extras = true;
       } else st.filesTried.set(n, { headSha: heads.get(n) || null, at: clock.now(), poll: st.polls });
+    }
+    // J24: each commits read kept by the head sha it was asked at; a failed one asked again later.
+    for (const n of batch.commits || []) {
+      st.j24.reads++;
+      const parsed = parseCommitPages(r0 && r0.commits ? r0.commits[n] : null);
+      if (parsed.ok) {
+        st.j24.commits.set(n, { headSha: heads.get(n) || null, state: 'read', commits: parsed.commits, capped: parsed.capped });
+        st.j24.tried.delete(n);
+        extras = true;
+      } else {
+        st.j24.commits.set(n, { headSha: heads.get(n) || null, state: 'failed', commits: [], capped: false });
+        st.j24.tried.set(n, { headSha: heads.get(n) || null, at: clock.now() });
+      }
     }
     if (batch.closed) {
       applyClosed(st, r0 && Object.prototype.hasOwnProperty.call(r0, 'closed') ? r0.closed : null, Date.parse(batch.closed.since), closedGen);
@@ -982,9 +1041,14 @@ export function createDesk(opts) {
       const need = missing(st);
       const pl = pullsDue(st);
       const ex = extrasDue(st);
-      if (!need.optional.shas.length && !need.optional.history.length && !pl && !ex.any) break;
-      const budget = BLOB_BATCH - (pl ? PULLS_COST : 0) - ex.files.length - (ex.closed ? CLOSED_COST : 0) - ex.prs.length * PR_COST
+      const cd = commitsDue(st);
+      // J24: a first commits read rides with J20's read of the same head (a call's overflow going into the
+      // next); a retry never makes a call of its own.
+      if (!need.optional.shas.length && !need.optional.history.length && !pl && !ex.any && !cd.first.length) break;
+      const fixed = BLOB_BATCH - (pl ? PULLS_COST : 0) - ex.files.length - (ex.closed ? CLOSED_COST : 0) - ex.prs.length * PR_COST
         - (ex.usage ? USAGE_COST : 0);
+      const firsts = cd.first.slice(0, Math.min(COMMITS_PER_CALL, Math.max(0, Math.floor(fixed / COMMITS_COST))));
+      const budget = fixed - firsts.length * COMMITS_COST;
       // The MD sandbox (opts.j11) asks for its optional blobs before the rulings' history reads, so
       // its screens fill in the first cycle; without it the order is M2's.
       const [batch] = opts.j11 && need.optional.shas.length ? batches(need.optional.shas, [], budget)
@@ -995,6 +1059,11 @@ export function createDesk(opts) {
       if (ex.closed) b.closed = ex.closed;
       if (ex.prs.length) b.prs = ex.prs;
       if (ex.usage) b.usage = true;
+      // The retries take what room is left in this call, which is made anyway.
+      const used = b.blobs.length + 2 * b.history.length;
+      const room = Math.max(0, budget - used);
+      const retries = cd.retry.slice(0, Math.max(0, Math.min(COMMITS_PER_CALL - firsts.length, Math.floor(room / COMMITS_COST))));
+      if (firsts.length || retries.length) b.commits = [...firsts, ...retries];
       const { res, progress, pulled, extras } = await blobCall(st, need, b);
       // An optional read that fails is tried again on a later cycle (a J12 read after its backoff);
       // it never fails the project, except a rate limit, which every read must respect.
@@ -1258,6 +1327,15 @@ export function createDesk(opts) {
     const st = states.get(name);
     return { ...j22Ctx(st), headPolls: (pr) => headPolls(st, pr), soloCalls: { verdict: st.j22.verdictCalls, waited: st.j22.waitedCalls, lastCycle: st.j22.lastSolo },
       filesTried: (n) => st.filesTried.get(n) || null };
+  };
+  /** J24 (the MD sandbox): each open pull request's commits as read in this opening, and the read's counts (tests). */
+  desk.commits = (name) => {
+    const st = states.get(name);
+    return st ? st.j24.commits : new Map();
+  };
+  desk.j24 = (name) => {
+    const st = states.get(name);
+    return st ? { reads: st.j24.reads, calls: st.j24.calls, alone: st.j24.alone, tried: new Map(st.j24.tried) } : null;
   };
   /** AC80: the pull requests the page's marks wait on J20's read for (asked at each poll while it fails, HEAD_POLLS a head). */
   desk.setWaited = (name, numbers) => {

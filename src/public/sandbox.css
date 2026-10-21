@@ -953,3 +953,135 @@ html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /*
 /* AC81: the sandbox's marker on a screen built to mockup v2 is --t-label, as the mockup's own tags. */
 .v2 .sb-marker { font: var(--t-label); color: var(--ink2); border-color: var(--line2); }
 .v2-sheet .gap { color: var(--ink2); }
+
+/* Home (AC82; frames H1 to H5; desk-v2.html:317-362), from stage 2: the title and "checked <age> ago",
+   the briefing, "Since you last looked", the tiles in their three groups, and "More detail" folded last.
+   One tile a row below 720 px; two from 720 px, Home's column widening to at most 960 px (C). */
+.v2-home { display: grid; gap: 12px; padding-top: 4px; }
+.v2-home .v2-sub { margin-top: -6px; }
+.v2-brief { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 4px 10px; align-items: start; padding: 12px; border-radius: 12px; background: var(--bg2); color: var(--ink); }
+.v2-bi { display: grid; padding-top: 2px; }
+.v2-bt1 { font: 500 15px/1.35 var(--font); overflow-wrap: anywhere; }
+.v2-bt2 { grid-column: 2 / 4; font: var(--t-small); color: var(--ink); }
+.v2-bt3 { grid-column: 2 / 4; font: var(--t-small); color: var(--ink2); }
+.v2-bt3.bad, .v2-brief .v2-k.bad { color: var(--bad); }
+.v2-go { font: var(--t-label); color: var(--ink2); padding-top: 3px; }
+.v2-brief:focus-visible { outline-offset: 2px; }
+.v2-sh { display: flex; align-items: center; justify-content: space-between; gap: 8px; font: var(--t-label); color: var(--ink2); padding-top: 10px; min-height: 28px; }
+.v2-shw { font: var(--t-label); color: var(--ink2); overflow-wrap: anywhere; }
+.v2-seen { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border-radius: 14px; background: var(--chip); font: var(--t-label); color: var(--ink); flex: none; }
+/* The lines share their columns (time, icon, words, chevron) where the browser has subgrid; else each keeps 38 px for its time. */
+.v2-since { display: grid; grid-template-columns: minmax(38px, max-content) 14px minmax(0, 1fr) 10px; column-gap: 8px; }
+.v2-since > li { grid-column: 1 / -1; display: grid; column-gap: 8px; grid-template-columns: minmax(38px, max-content) 14px minmax(0, 1fr) 10px; grid-template-columns: subgrid; }
+.v2-since > li + li > .v2-ev { border-top: 1px solid var(--line); }
+.v2-ev { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(38px, max-content) 14px minmax(0, 1fr) 10px; grid-template-columns: subgrid; gap: 2px 8px; align-items: start; padding: 8px 0; min-height: 40px; color: var(--ink); }
+.v2-tm { display: grid; font: var(--t-mono); color: var(--ink2); padding-top: 1px; }
+.v2-tmd { font: var(--t-mono); }
+.v2-ev > .v2-k { margin-top: 2px; color: var(--ink2); }
+.v2-ev > .v2-k.bad { color: var(--bad); }
+.v2-et { display: grid; gap: 1px; min-width: 0; }
+.v2-e1 { font: var(--t-body); overflow-wrap: anywhere; }
+.v2-e2 { font: var(--t-mono); color: var(--ink2); overflow-wrap: anywhere; }
+.v2-ev > .v2-chev { width: 10px; height: 10px; margin-top: 4px; color: var(--ink2); }
+.v2-hgroups { display: grid; gap: 8px; }
+.v2-hgroup { display: grid; gap: 8px; }
+.v2-hgh { font: var(--t-label); }
+.v2-hg { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; width: 100%; min-height: 28px; padding-top: 10px; font: var(--t-label); color: var(--ink2); }
+.v2-hgt { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.v2-hgy { display: inline-flex; align-items: center; gap: 4px; color: var(--ink); }
+.v2-hgb { color: var(--bad); }
+.v2-hgn { font: var(--t-mono); color: var(--ink2); }
+.v2-hg > .v2-k { width: 10px; height: 10px; color: var(--ink2); }
+.v2-tiles { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.v2-tile { position: relative; display: grid; gap: 6px; align-content: start; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); min-width: 0; }
+.v2-tile.bad { border-color: var(--bad); }
+.v2-thd { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
+.v2-tnm { font: 600 13px/1.3 var(--font); overflow-wrap: anywhere; }
+/* The whole tile opens the project (its name's link, stretched over it); the summary's control and "Why" sit above that link. */
+.v2-ta::after { content: ""; position: absolute; inset: 0; border-radius: 10px; }
+.v2-ta:focus-visible { outline: none; }
+.v2-ta:focus-visible::after { outline: 2px solid var(--ink); outline-offset: 2px; }
+.v2-wt { display: inline-flex; gap: 4px; align-items: center; font: 400 12px/1.3 var(--font); color: var(--ink2); }
+.v2-wt.you { font: 500 12px/1.3 var(--font); color: var(--ink); }
+/* The summary (AC54 (a), kept by AC82): its first three lines, faded at the cut into the tile's ground, the whole one tap away. */
+.v2-tile .sb-sumclip { font: var(--t-small); height: auto; max-height: calc(3 * 1.4em); }
+.v2-tile .sb-sumclip.over { height: calc(3 * 1.4em); }
+.v2-tile .sb-sumclip.over::after { height: 1.4em; background: linear-gradient(to right, transparent, var(--card) 85%); }
+.v2-tile .sb-sum { font: var(--t-small); color: var(--ink2); }
+.v2-tile .sb-sum.none { color: var(--ink2); }
+.v2-tile button.sb-sum { font: var(--t-small); color: var(--ink2); }
+.v2-tile .sb-sumbox > .sb-bubble { left: -10px; right: -10px; }
+.v2-home .sb-bubble { background: var(--bg); color: var(--ink); border: 1px solid var(--line2); border-radius: 12px; box-shadow: var(--shadow); }
+.v2-home .sb-bubble-top { background: var(--bg); }
+.v2-home .sb-bubble .sb-eyebrow { font: var(--t-label); color: var(--ink2); }
+.v2-home .sb-bubble-t { font: var(--t-body); }
+.v2-why { position: relative; z-index: 1; font: var(--t-small); color: var(--ink2); }
+.v2-why > summary { min-height: 28px; display: flex; align-items: center; cursor: pointer; }
+.v2-ln { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 6px; align-items: start; font: var(--t-small); color: var(--ink); }
+.v2-ln > .v2-k { margin-top: 1px; color: var(--ink); }
+.v2-ln.bad, .v2-ln.bad > .v2-k { color: var(--bad); }
+.v2-ln b { font-weight: 600; }
+.v2-g { color: var(--ink2); }
+.v2-tnone { padding: 2px 0; }
+.v2-tile .sb-stall { font: var(--t-small); color: var(--ink2); }
+/* The tile's phases as a timeline (frame H5): one row per run, a cell per phase, the line between cells in
+   the phase's colour, solid where finished and dashed where still to come, lighter where gone back over;
+   a later run's short dashed drop from the run above. Drawn only: its sentence carries it in words. */
+.v2-s { width: 16px; height: 16px; flex: none; color: var(--ink); }
+.v2-s .ring { fill: none; stroke: currentColor; stroke-width: 1.4; }
+.v2-s .ring.dash { stroke-dasharray: 2.2 2; }
+.v2-s .mk { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.v2-s .fill { fill: currentColor; stroke: none; }
+.v2-s .you { fill: var(--you); }
+.v2-s.soft { color: var(--ink2); }
+.v2-s.st-pastcheck { opacity: .5; }
+.v2-k.st-you .you { fill: var(--you); }
+.v2-ptl { display: grid; gap: 0; margin-top: 2px; }
+.v2-rwl, .v2-lbl { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; }
+.v2-rk { font: 400 11px/1.35 var(--font); color: var(--ink2); }
+.v2-rw, .v2-lb { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.v2-rw { height: 22px; }
+.v2-rw.n4, .v2-lb.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.v2-rw.n3, .v2-lb.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.v2-rw.n2, .v2-lb.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.v2-rw.n1, .v2-lb.n1 { grid-template-columns: minmax(0, 1fr); }
+.v2-c { position: relative; display: grid; place-items: center; --phc: var(--ink2); }
+.v2-c.ph-disc { --phc: var(--ph-disc); }
+.v2-c.ph-des { --phc: var(--ph-des); }
+.v2-c.ph-build { --phc: var(--ph-build); }
+.v2-c.ph-launch { --phc: var(--ph-launch); }
+.v2-c > .v2-s { position: relative; z-index: 1; width: 14px; height: 14px; background: var(--card); border-radius: 7px; }
+.v2-c.l::before, .v2-c.r::after { content: ""; position: absolute; top: 50%; height: 2px; margin-top: -1px; background: var(--phc); }
+.v2-c.l::before { left: 0; right: 50%; }
+.v2-c.r::after { left: 50%; right: 0; }
+.v2-c.s-ahead.l::before, .v2-c.s-ahead.r::after { background: repeating-linear-gradient(90deg, var(--phc) 0 3px, transparent 3px 6px); }
+.v2-c.s-gone.l::before, .v2-c.s-gone.r::after { opacity: .4; }
+.v2-c.dn > i, .v2-c.up > i { position: absolute; left: 50%; width: 0; border-left: 1.5px dashed var(--ink2); margin-left: -.75px; }
+.v2-c.dn > i { top: 50%; bottom: 0; }
+.v2-c.up > i { top: 0; bottom: 50%; }
+.v2-lb { font: 400 11px/1.3 var(--font); color: var(--ink2); text-align: center; padding-top: 2px; }
+.v2-lb > * { overflow-wrap: anywhere; }
+.v2-lb b { color: var(--ink); font-weight: 600; }
+.v2-ptl.sprints .v2-lb { font: var(--t-mono); }
+.v2-ptl.sprints .v2-lb b { font-weight: 500; }
+/* "More detail", folded last at Home's foot (P-001-settings-place.md, A): the notifications switch and the usage bar. */
+.v2-mdetail { border-top: 1px solid var(--line); padding-top: 4px; }
+.v2-mds { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; font: var(--t-label); color: var(--ink2); cursor: pointer; list-style: none; }
+.v2-mds::-webkit-details-marker { display: none; }
+.v2-mdetail[open] > .v2-mds > .v2-k { rotate: 90deg; }
+.v2-mdetail > section { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid var(--line); }
+.v2-home .sb-h3 { font: var(--t-row); color: var(--ink); text-transform: none; letter-spacing: 0; margin: 0; }
+.v2-home .sb-notify { display: grid; gap: 6px; }
+.v2-home .sb-notify .small, .v2-home .sb-actions-usage .small, .v2-home .sb-v5 { font: var(--t-small); color: var(--ink2); }
+.v2-home .sb-notify .sb-warn { color: var(--bad); }
+.v2-home .sb-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 12px; border: 0; border-radius: 18px; background: var(--chip);
+  font: 500 12px/1.35 var(--font); color: var(--ink); justify-self: start; text-align: center; }
+.v2-home .sb-btn.ghost { box-shadow: inset 0 0 0 1px var(--line2); background: var(--bg); }
+.v2-home .sb-value { font: var(--t-mono); color: var(--ink); background: var(--bg2); border-radius: 8px; padding: 8px; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.v2-home .sb-steps { font: var(--t-small); color: var(--ink2); padding-left: 1.2em; margin: 0; }
+.v2-home .sb-steps a, .v2-home .sb-notify a { text-decoration: underline; text-underline-offset: 2px; }
+@media (min-width: 720px) {
+  html.sb.v2-page.v2-home body { max-width: 960px; }
+  .v2-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .v2-tile .sb-sumclip { height: calc(3 * 1.4em); }
+}

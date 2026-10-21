@@ -218,6 +218,25 @@ export function fakeServer(repos, config, clock) {
         extra.files[n] = pages;
       }
     }
+    // From 2026-10-20 (J24, AC82): `commits`, each pull request's commits from the repository's
+    // `prCommits[n]` (a list in REST's form), 100 to a page, at most 3 pages; `commitsFail` names
+    // numbers that fail (a null answer), `commitsCalls` records each call's numbers.
+    if (Array.isArray(body.commits)) {
+      extra.commits = {};
+      (r.commitsCalls ||= []).push([...body.commits]);
+      for (const n of body.commits) {
+        const fails = typeof r.commitsFail === 'function' ? r.commitsFail(n) : (r.commitsFail || []).includes(n);
+        if (fails || !(r.prCommits && r.prCommits[n])) {
+          extra.commits[n] = null;
+          continue;
+        }
+        const all = r.prCommits[n].slice(0, 250); // GitHub lists at most 250 commits for a pull request
+        const pages = [];
+        for (let i = 0; i < Math.max(1, Math.ceil(all.length / 100)) && i < 3; i++) pages.push(JSON.stringify(all.slice(i * 100, (i + 1) * 100)));
+        r.commitPagesRead = (r.commitPagesRead || 0) + pages.length;
+        extra.commits[n] = pages;
+      }
+    }
     // AC77's closed read (draft 7) as the function makes it: `closedPulls` newest updated first, 100
     // to a page, the next page only while a full page's last was updated after `since`, up to 3 (a
     // fourth needed: null); each page read counted in `closedPagesRead`. `closedFail`: null (true, or a

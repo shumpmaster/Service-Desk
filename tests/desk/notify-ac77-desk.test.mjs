@@ -490,3 +490,40 @@ test('AC77 (draft 9): the re-read with a pull request\'s files failing at its ne
     app.restore();
   }
 });
+
+test('AC77 + AC80 (stage 1a\'s build review, round 3, finding 1): filtered to the project, the "Being asked in your session" and "Your answer is being recorded" lines stay when its reads then fail; only the two counts take "can\'t read"; the held question\'s fold keeps "Answer it here instead"', async () => {
+  const cases = [
+    ['ql:asking', 'Being asked in your session: 1', { [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, [], {}],
+    ['ql:answerRecording', 'Your answer is being recorded: 1', { [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION, '.github/workflows/asks-merge.yml': 'name: asks-merge\n' },
+      [answerPr(90)], { repo: { prFiles: { 90: ADDS_ANSWER } } }],
+  ];
+  for (const [key, words, files, pulls, extra] of cases) {
+    const rs = repos(files, pulls, extra);
+    const app = await loadSandbox({ config: CONFIG, repos: rs, hash: '#/waiting/Service-Desk', now: RAISED_MS + 10 * MIN });
+    const line = () => sbFindAll(app.view, (e) => e.dataset && e.dataset.k === key)[0] || null;
+    const small = () => byClass(app.view, 'v2-qsmall')[0].textContent;
+    try {
+      await app.advance(1000);
+      await app.advance(60_000);
+      assert.equal(line().textContent, words, `${key}: read`);
+      assert.equal(small(), 'With the agents: 0 · Being recorded by the automatic job: 0');
+      rs['Service-Desk'].fail = { kind: 'network' };
+      await app.advance(60_000);
+      await app.advance(60_000);
+      assert.equal(small(), "With the agents: can't read · Being recorded by the automatic job: can't read", `${key}: the counts unknown`);
+      assert.ok(line(), `${key}: the line stays while the project can't be read`);
+      assert.equal(line().textContent, words);
+      if (key === 'ql:asking') {
+        await app.tap(line());
+        const fold = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'fold:asking')[0];
+        assert.ok(fold && fold.textContent.includes(HELD_WORDS));
+        assert.ok(sbFindAll(fold, (e) => e.tag === 'button' && e.textContent === 'Answer it here instead').length, '"Answer it here instead" stays');
+      } else {
+        await app.tap(line());
+        assert.ok(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'fold:answerRecording')[0].textContent.includes(RECORDING_WORDS));
+      }
+    } finally {
+      app.restore();
+    }
+  }
+});

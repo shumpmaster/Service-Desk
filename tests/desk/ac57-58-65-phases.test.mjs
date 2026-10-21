@@ -419,8 +419,8 @@ test('AC58 + AC65, changed by AC82: a v2.5 tile draws its sprint files in place 
     assert.equal(byClass(app.view, 'v2-tile').length, 5);
     assert.doesNotMatch(app.text(), /Can't show/);
     assert.match(rule('.v2-tiles'), /grid-template-columns: minmax\(0, 1fr\);/, 'one tile a row at 360 px');
-    const v2 = css().slice(css().indexOf('@font-face')).replace(/@media[^{]*\{(?:[^{}]*\{[^}]*\})*[^{}]*\}/g, '');
-    for (const m of v2.matchAll(/(?:^|[;{\s])width:\s*(\d+)px/g)) assert.ok(Number(m[1]) <= 360, `fixed width ${m[1]}px`);
+    // The whole sheet, as at the base (restored after the Reviewer's note on stage 2 round 1's narrowing).
+    for (const m of css().matchAll(/(?:^|[;{\s])width:\s*(\d+)px/g)) assert.ok(Number(m[1]) <= 360, `fixed width ${m[1]}px`);
   } finally {
     app.restore();
   }

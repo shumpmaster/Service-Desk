@@ -19,6 +19,8 @@ import { scenario, verdict, pageSide, senderSide, headOf, prKey, blobSha, RISK, 
 import { ruleZero, verdictOf, ownerChecksApply, AGENTS_WORDS, OWNER_CHECK_HEADS } from '../../src/lib/j22.js';
 import { OWNER_CHECK_FLOOR, VERDICT_MAX_BYTES } from '../../src/notify/rule0.mjs';
 import { verdictHash, headHash, openRule0 } from '../../src/notify/state.mjs';
+import { makeGitHub } from '../../src/notify/gh.mjs';
+import { createHash } from 'node:crypto';
 import { openCheckout } from '../../src/notify/checkout.mjs';
 
 after(cleanScratch);
@@ -30,6 +32,8 @@ const AFTER = { state: 'pending', description: 'Owner: after agents · 2 other f
 const TRIP = { state: 'error', description: 'CI code changed · check the PR' };
 const src = (n, path = `src/lib/m${n}.js`) => ({ filename: path, status: 'modified' });
 const PASS = 'Verdict: PASS\n';
+/** git's blob sha of some bytes (`git hash-object`), worked out here, not from src/. */
+const blobShaOf = (buf) => createHash('sha1').update(`blob ${buf.length}\0`).update(buf).digest('hex');
 
 // ---------------------------------------------------------------------------
 // Real-on-real
@@ -121,6 +125,32 @@ test('J16 rule 0 (made-up, NOT real): a verdict blob whose read fails, is refuse
   }
 });
 
+test('J16 rule 0 (made-up, NOT real; Reviewer round 1, B1): a verdict blob whose sha is the real blob sha of its bytes, so every form check passes, and that is not UTF-8 text, or is over 1 MB, counts as given: the pull request is in the set, nothing is kept, and it is asked again next run', async () => {
+  const FAIL = Buffer.from('Verdict: FAIL\n', 'utf8');
+  const cases = {
+    // Reaches the UTF-8 decode (rule0.mjs, `fatal: true`): read as text with replacement characters, it would read FAIL.
+    'not UTF-8 text': Buffer.concat([FAIL, Buffer.from([0xff, 0xfe])]),
+    // Reaches the 1 MB checks (the answer, about 1.4 MB as base64, is under the read cap): read whole, it would read FAIL.
+    'over 1 MB': Buffer.concat([FAIL, Buffer.alloc(1024 * 1024, 'a')]),
+  };
+  for (const [name, bytes] of Object.entries(cases)) {
+    const sha = blobShaOf(bytes);
+    const sc = scenario({});
+    sc.pulls.push({ n: 615, files: [src(615), { filename: 'reviews/615/reviewer.md', status: 'added', sha }] });
+    const world = (w) => { w.gitBlobs[sha] = bytes; };
+    const s = await senderSide(sc, { world });
+    assert.equal(s.c.read, true, name);
+    assert.equal(s.w.blobReads, 1, `${name}: read once`);
+    assert.deepEqual(s.keys, [prKey(SD, 615)], `${name}: counted as given, so in the set`);
+    assert.deepEqual(s.agents, [], name);
+    assert.deepEqual(s.c.rule0.part.v, {}, `${name}: not kept`);
+    const s2 = await senderSide(sc, { world, last: s.c.rule0.part });
+    assert.equal(s2.w.blobReads, 1, `${name}: asked again next run`);
+    assert.deepEqual(s2.keys, [prKey(SD, 615)]);
+  }
+  assert.ok(cases['over 1 MB'].length > VERDICT_MAX_BYTES);
+});
+
 test('J16 + J18 (made-up, NOT real): a kept blob sha is not read again on the next run, at the same head, nor at a new head holding the same file', async () => {
   const sc = scenario({});
   sc.pulls.push({ n: 620, files: [src(620), verdict(sc, 620, 'reviewer', 'Verdict: FAIL\n')] });
@@ -164,6 +194,57 @@ test('J16 rule 0 (made-up, NOT real): a required reviewer\'s verdict only on the
   const page = await pageSide(sc);
   assert.deepEqual(page.keys, s.keys);
   assert.deepEqual(page.agents, s.agents);
+});
+
+test('J16 rule 0 (made-up, NOT real; Reviewer round 1, N2): a required reviewer\'s verdict only on the default branch\'s checkout that is over 1 MB, or not UTF-8 text, counts as given: the pull request is in the set', async () => {
+  const FAIL = Buffer.from('Verdict: FAIL\n', 'utf8');
+  for (const [name, bytes] of [['over 1 MB', Buffer.concat([FAIL, Buffer.alloc(1024 * 1024, 'a')])], ['not UTF-8 text', Buffer.concat([FAIL, Buffer.from([0xff, 0xfe])])]]) {
+    const sc = scenario({ tree: { 'governance/risk-paths.toml': RISK, 'reviews/645/reviewer.md': bytes } });
+    sc.pulls.push({ n: 645, files: [src(645)] });
+    const s = await senderSide(sc);
+    assert.equal(s.c.read, true, name);
+    assert.deepEqual(s.keys, [prKey(SD, 645)], `${name}: counted as given`);
+    assert.equal(s.w.blobReads, 0, `${name}: the checkout, no request`);
+  }
+  // The same FAIL, small and text: read from the checkout, with the agents.
+  const ok = scenario({ tree: { 'governance/risk-paths.toml': RISK, 'reviews/645/reviewer.md': FAIL } });
+  ok.pulls.push({ n: 645, files: [src(645)] });
+  assert.deepEqual((await senderSide(ok)).agents, [645]);
+});
+
+test('J16 (Reviewer round 1, N2): the client\'s last answer\'s remaining count is reset by a network failure and by an uncredentialed download\'s answer, so the owner-check reads that would follow are skipped', async () => {
+  const H = (rem) => ({ 'content-type': 'application/json', ...(rem == null ? {} : { 'x-ratelimit-remaining': String(rem) }) });
+  const answers = [];
+  const fetch = async (url) => {
+    const a = answers.shift();
+    if (a === 'throw') throw new TypeError('made-up network failure');
+    return typeof a === 'function' ? a(url) : a;
+  };
+  const gh = makeGitHub({ token: 't', fetch });
+  answers.push(new Response('{}', { status: 200, headers: H(4000) }));
+  await gh.get('/repos/x/y/pulls');
+  assert.equal(gh.state.lastRemaining, 4000);
+  answers.push('throw');
+  const r = await gh.get('/repos/x/y/pulls');
+  assert.equal(r.status, 0);
+  assert.equal(gh.state.lastRemaining, null, 'no answer: reset');
+  answers.push(new Response('{}', { status: 200, headers: H(3999) }));
+  await gh.get('/repos/x/y/pulls');
+  assert.equal(gh.state.lastRemaining, 3999);
+  // A download: GitHub's 302 carries the header; the uncredentialed answer at its address carries none.
+  answers.push(new Response(null, { status: 302, headers: { location: 'https://blobs.example.invalid/x', 'x-ratelimit-remaining': '3998' } }));
+  answers.push(new Response('log text', { status: 200, headers: H(null) }));
+  const d = await gh.download('/repos/x/y/actions/jobs/1/logs', 1024);
+  assert.equal(d.status, 200);
+  assert.equal(gh.state.lastRemaining, null, 'the uncredentialed answer: reset');
+  // And a download whose address fails to answer.
+  answers.push(new Response('{}', { status: 200, headers: H(3997) }));
+  await gh.get('/repos/x/y/pulls');
+  answers.push(new Response(null, { status: 302, headers: { location: 'https://blobs.example.invalid/x', 'x-ratelimit-remaining': '3996' } }));
+  answers.push('throw');
+  assert.equal((await gh.download('/repos/x/y/actions/jobs/1/logs', 1024)).status, 0);
+  assert.equal(gh.state.lastRemaining, null);
+  assert.ok(OWNER_CHECK_FLOOR > 0);
 });
 
 // ---------------------------------------------------------------------------

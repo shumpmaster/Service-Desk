@@ -97,9 +97,15 @@ test('J18 rule 0 (made-up, NOT real): its entries count toward the 5,000 with th
   const f = stateFiles(key, small);
   assert.equal(verifyState(key, f.json, f.sig.toString()).ok, true);
   // A part not in form, or sealed under another key, though the state's signature is good: not used.
-  for (const bad of [{ v: { [hex(1)]: 'maybe' }, h: {} }, { v: {}, h: { [hex(1)]: { etag: '"a"\r\nX: y', state: 'pending', after: true } } },
-    { v: {}, h: { [hex(1)]: { etag: null, state: 'weird', after: false } } }, { v: {}, h: {}, extra: 1 }]) {
-    assert.ok(rule0Problem(bad));
+  // Each key in form (Reviewer round 1, N1), so each case reaches the check it is about: the word, the
+  // ETag, the state, `after`, the entry's fields, and the part's own two fields.
+  const good = { etag: 'W/"abc"', state: 'pending', after: true };
+  assert.equal(rule0Problem({ v: { [hex(1, 'd')]: 'PASS' }, h: { [hex(1, 'e')]: good } }), null, 'the same keys, in form: no problem');
+  for (const [bad, why] of [[{ v: { [hex(1, 'd')]: 'maybe' }, h: {} }, 'a verdict'], [{ v: {}, h: { [hex(1, 'e')]: { ...good, etag: '"a"\r\nX: y' } } }, 'a head'],
+    [{ v: {}, h: { [hex(1, 'e')]: { ...good, state: 'weird' } } }, 'a head'], [{ v: {}, h: { [hex(1, 'e')]: { ...good, after: 'yes' } } }, 'a head'],
+    [{ v: {}, h: { [hex(1, 'e')]: { ...good, description: 'Owner: after agents' } } }, 'a head'], [{ v: {}, h: {}, extra: 1 }, 'its parts'],
+    [{ v: { [hex(1)]: 'PASS' }, h: {} }, 'a verdict']]) {
+    assert.equal(rule0Problem(bad), why, JSON.stringify(bad));
     const t = emptyState('2026-10-18T12:00:00.000Z');
     t.rule0 = sealRule0(key, bad);
     const g = stateFiles(key, t);

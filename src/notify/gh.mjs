@@ -1,6 +1,9 @@
 // The sender's REST reads and writes with the workflow's own token (spec S-001, J16, J18, AC76),
 // with J16's budget guard: the first answer that carries `X-RateLimit-Remaining` decides; below
-// 300, the run makes no further request, sends nothing and uploads no state.
+// 300, the run makes no further request, sends nothing and uploads no state. From stage 1b of "The
+// desk as mockup v2" (J16's rule 0) it also keeps the last answer's `X-RateLimit-Remaining`
+// (`state.lastRemaining`, null when that answer carried none, or there was no answer), for the owner
+// check's skip near the floor, and makes conditional reads (`ifNoneMatch`).
 
 export const BUDGET_FLOOR = 300;
 export const DEFAULT_API = 'https://api.github.com';
@@ -21,6 +24,12 @@ export class ReadFailed extends Error {
     this.what = what;
     this.status = status;
   }
+}
+
+/** An answer's `X-RateLimit-Remaining` as a number, or null when it carries none in form. */
+export function remainingOf(res) {
+  const rem = res && res.headers ? res.headers.get('x-ratelimit-remaining') : null;
+  return rem != null && /^[0-9]+$/.test(rem.trim()) ? Number(rem.trim()) : null;
 }
 
 /** Read a body, at most `cap` bytes; null when it is longer. */
@@ -47,37 +56,41 @@ export function makeGitHub(opts) {
   const fetchImpl = opts.fetch;
   const apiBase = (opts.apiBase || DEFAULT_API).replace(/\/+$/, '');
   const floor = opts.budgetFloor ?? BUDGET_FLOOR;
-  const state = { checked: false, stopped: false, requests: 0 };
+  const state = { checked: false, stopped: false, requests: 0, lastRemaining: null };
   const headers = (extra = {}) => ({ Authorization: `Bearer ${opts.token}`, Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'service-desk-notify', ...extra });
   const url = (path) => (/^https:\/\//.test(path) ? path : `${apiBase}${path.startsWith('/') ? '' : '/'}${path}`);
 
-  async function send(method, path, { body, accept, redirect } = {}) {
+  async function send(method, path, { body, accept, redirect, ifNoneMatch } = {}) {
     if (state.stopped) throw new BudgetStop();
     state.requests++;
     let res;
     try {
       res = await fetchImpl(url(path), { method, headers: headers({ ...(accept ? { Accept: accept } : {}),
+        ...(ifNoneMatch ? { 'If-None-Match': ifNoneMatch } : {}),
         ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) }),
       body: body !== undefined ? JSON.stringify(body) : undefined, redirect: redirect || 'follow' });
     } catch {
+      state.lastRemaining = null; // no answer: nothing to read the budget from
       return { status: 0, headers: new Headers(), res: null };
     }
-    if (!state.checked) {
-      const rem = res.headers.get('x-ratelimit-remaining');
-      if (rem != null && /^[0-9]+$/.test(rem.trim())) {
-        state.checked = true;
-        if (Number(rem) < floor) {
-          state.stopped = true;
-          throw new BudgetStop();
-        }
+    state.lastRemaining = remainingOf(res);
+    if (!state.checked && state.lastRemaining != null) {
+      state.checked = true;
+      if (state.lastRemaining < floor) {
+        state.stopped = true;
+        throw new BudgetStop();
       }
     }
     return { status: res.status, headers: res.headers, res };
   }
 
-  async function get(path, { cap = 8 * 1024 * 1024, accept } = {}) {
-    const r = await send('GET', path, { accept });
+  /**
+   * A GET: { status, headers, json, text, link }. opts: cap (bytes read at most; a longer answer is
+   * status -1), accept, ifNoneMatch (an ETag sent back as `If-None-Match`; a 304 has no body).
+   */
+  async function get(path, { cap = 8 * 1024 * 1024, accept, ifNoneMatch } = {}) {
+    const r = await send('GET', path, { accept, ifNoneMatch });
     const out = { status: r.status, headers: r.headers, json: null, text: null, link: null };
     if (!r.res) return out;
     out.link = r.headers.get('link');
@@ -129,8 +142,12 @@ export function makeGitHub(opts) {
       try {
         res = await fetchImpl(loc, { method: 'GET', headers: { 'User-Agent': 'service-desk-notify' }, redirect: 'follow' });
       } catch {
+        state.lastRemaining = null;
         return { status: 0, buf: null };
       }
+      // The uncredentialed answer is the run's last: it carries no budget header, so J16's owner-check
+      // reads that would follow it are skipped (the safe reading).
+      state.lastRemaining = remainingOf(res);
     }
     if (res.status !== 200) return { status: res.status, buf: null };
     const buf = await readCapped(res, cap).catch(() => null);

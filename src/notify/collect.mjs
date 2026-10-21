@@ -7,12 +7,14 @@ import { neededReads, buildModel, recordKind, parseRecord } from '../lib/model.j
 import { SESSION_PATH_RE, parseSessionFile } from '../lib/cos.js';
 import { waitingSet, outsideAuthor } from '../lib/waiting.js';
 import { questionHold } from '../lib/asking.js';
-import { parseFilePages, splitChanges, recordedAnswers, jobKindsByPath, FILES_MAX_PAGES, CLOSED_MAX_PAGES, closedNeedsNext, closedCanEnd } from '../lib/prfiles.js';
+import { parseFilePages, splitChanges, verdictFiles, recordedAnswers, jobKindsByPath, FILES_MAX_PAGES, CLOSED_MAX_PAGES, closedNeedsNext, closedCanEnd } from '../lib/prfiles.js';
 import { ReadFailed } from './gh.mjs';
 import { findGrant, ASKS_MERGE_WORKFLOW } from './grant.mjs';
 // J16's pure judgment, shared with the page's AC79 (src/lib/ from 2026-10-19; R3, Setup CS23).
 import { judgeCandidate, ASKS_MERGE_RUNS } from '../lib/jobcand.js';
 import { keyHash, recordedEntry, readRecorded } from './state.mjs';
+// J16's rule 0 (stage 1b): the reads for J22's shared judgment and their memory (J18).
+import { senderRuleZero } from './rule0.mjs';
 
 export const DEPLOY_POLL_MS = 15e3;
 export const DEPLOY_WAIT_MS = 120e3;
@@ -70,7 +72,8 @@ export async function waitForDeploy({ gh, repo, runId, sleep, now }) {
 /**
  * Build the project's set. input: { project, config, checkout, gh, nowMs, stateKey, cand (J18's
  * job-candidate part of the last state), recorded (its questions whose answer's pull request was
- * seen) }. Returns { read: true, set, cand, recorded, counts } or { read: false, why }.
+ * seen), rule0 (its rule-0 part, opened) }. Returns { read: true, set, cand, recorded, rule0, counts }
+ * or { read: false, why }. rule0: senderRuleZero's answer, its `part` J18's next rule-0 part.
  */
 export async function collect(input) {
   const { project, config, checkout, gh, nowMs, stateKey } = input;
@@ -113,7 +116,8 @@ export async function collect(input) {
       if (!r.ok) throw new ReadFailed('pull request files', r.status);
       const parsed = parseFilePages(r.pages);
       if (!parsed.ok) throw new ReadFailed('pull request files', 200);
-      files.set(pr.number, { changes: splitChanges(parsed.files), capped: parsed.capped || r.more });
+      // J22's form (src/lib/j22.js `listAt`): the list at the head it was read at, with the verdict files' blob shas.
+      files.set(pr.number, { headSha: pr.headSha, changes: splitChanges(parsed.files), capped: parsed.capped || r.more, verdicts: verdictFiles(parsed.files) });
     }
 
     // AC77: questions being recorded or held. Each recording question → the open pull request recording it.
@@ -315,10 +319,17 @@ export async function collect(input) {
       }
     }
 
+    // J16's rule 0 (stage 1b): its verdict reads, then the owner-check reads, the run's last GitHub
+    // reads, before the set is worked out; a pull request with the agents is left out of the set (AC73).
+    const rule0 = await senderRuleZero({ project, repo, checkout, gh, pulls: model.pulls, files, stateKey,
+      flagged: model.flagged.filter((f) => f.kind === 'pr').map((f) => f.pr), last: input.rule0 });
+
     const outside = new Set();
     for (const [n, e] of extra) if (outsideAuthor(e.association)) outside.add(n);
-    const set = waitingSet({ project, model, deploys, jobCandidates: jobs, held, outside });
-    return { read: true, set, cand, recorded, model, counts: { waiting: set.length, held: heldCount, recording: recordingCount, jobCandidates: jobs.size } };
+    const all = waitingSet({ project, model, deploys, jobCandidates: jobs, held, outside });
+    const set = all.filter((x) => !(x.kind === 'pr' && rule0.agents.has(Number(x.id))));
+    return { read: true, set, cand, recorded, rule0, model, withAgents: all.length - set.length,
+      counts: { waiting: set.length, held: heldCount, recording: recordingCount, jobCandidates: jobs.size } };
   } catch (e) {
     if (e instanceof ReadFailed) return { read: false, why: e.what };
     throw e;

@@ -396,6 +396,18 @@ export function ownerCheckAt(pr, ctx) {
   return { read: true, posted: true, state: c.state, description: typeof c.description === 'string' ? c.description : '' };
 }
 
+/**
+ * Whether a project's owner check is read at all (J22, "The owner check's read"; J16's (i)): a v3
+ * project whose repository J1's open list gives as public, `base.repo.private` false on every pull
+ * request it lists. The page's poll call and the sender ask it only then, so a private or v2.5
+ * project (Workflow 4's) is judged by (ii) alone on both sides. pulls: parsePulls' list.
+ */
+export function ownerChecksApply(project, pulls) {
+  if (!project || project.model !== 'v3') return false;
+  const list = pulls || [];
+  return list.length > 0 && list.every((p) => p && p.baseRepoPrivate === false);
+}
+
 /** GitHub's combined status (`commits/{sha}/status`, raw JSON) → its `owner-verdict` entry: { state, description } | null (none posted) | undefined (malformed). */
 export function ownerCheckFrom(raw) {
   let v;

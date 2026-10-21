@@ -297,6 +297,54 @@ test('J24: a failed read is asked again only inside a call of the optional loop 
   }
 });
 
+test('J24 (A3): `updated_at` moving past "last looked" mid-opening with no head change (a comment, a label) makes no call of its own: no J20 read to ride, so the read waits for a call made anyway (the Reviewer\'s B2 and probe p1-alone, stage 2 round 1)', async () => {
+  const setup = readerSetup({ prs: [71], commits: 1 });
+  const r = setup.repos.Alpha;
+  r.pulls = r.pulls.map((p) => ({ ...p, updated_at: iso(T0 - 2 * 3600e3) }));
+  // J12 answered (no merged pull requests), so no read of its own falls due again.
+  r.pullsAnswer = JSON.stringify({ data: { repository: { pullRequests: { pageInfo: { hasNextPage: false, endCursor: null }, nodes: [] } } } });
+  const on = await reader(setup, { lastLooked: T0 - 3600e3 });
+  try {
+    await on.clock.runUntil(T0 + 3 * POLL_MS);
+    assert.equal(blobCalls(on.calls).filter((c) => c.b.commits).length, 0, 'updated before "last looked": not read at the opening');
+    const n0 = blobCalls(on.calls).length;
+    // A comment on #71 (made up): its `updated_at` moves past "last looked"; its head does not.
+    r.pulls = r.pulls.map((p) => ({ ...p, updated_at: iso(T0 + 2 * POLL_MS) }));
+    await on.clock.runUntil(T0 + 8 * POLL_MS);
+    assert.equal(blobCalls(on.calls).length, n0, 'no blob call for it: nothing else to read');
+    assert.equal(on.desk.commits('Alpha').get(71), undefined, 'not read yet');
+    // Something else due (a new README, an optional read): the commits read rides that call.
+    r.commit({ 'README.md': '# Alpha\n\nA new made-up summary.\n' });
+    await on.clock.runUntil(T0 + 10 * POLL_MS);
+    const rides = blobCalls(on.calls).slice(n0).filter((c) => c.b.commits);
+    assert.equal(rides.length, 1, 'read in the call made anyway');
+    assert.deepEqual(rides[0].b.commits, [71]);
+    assert.ok((rides[0].b.blobs || []).length > 0, 'with that call\'s own read');
+    assert.equal(on.desk.commits('Alpha').get(71).state, 'read');
+    assert.equal(on.desk.j24('Alpha').alone, 0, 'never a call holding commits alone');
+  } finally {
+    on.desk.stop();
+  }
+});
+
+test('J24\'s awkward cases, in the reader: a fork\'s pull request, updated after "last looked", has no commits asked for it, while the project\'s own one beside it is read (the Reviewer\'s B3, stage 2 round 1)', async () => {
+  const setup = readerSetup({ prs: [81, 82], commits: 1 });
+  const r = setup.repos.Alpha;
+  // #82 from a fork (made up): its head in another repository. Its commits are there to read, so only the
+  // rule keeps them out.
+  r.pulls = r.pulls.map((p) => (p.number === 82 ? { ...p, head: { ...p.head, repo: { full_name: 'someone-else/Alpha' } }, updated_at: iso(T0 - 30e3) } : p));
+  const on = await reader(setup, { lastLooked: T0 - 3600e3 });
+  try {
+    await on.clock.runUntil(T0 + 3 * POLL_MS);
+    const asked = blobCalls(on.calls).flatMap((c) => c.b.commits || []);
+    assert.ok(asked.includes(81), 'the own-repository pull request\'s commits read');
+    assert.ok(!asked.includes(82), 'no commits asked for the fork\'s');
+    assert.equal(on.desk.commits('Alpha').get(82), undefined);
+  } finally {
+    on.desk.stop();
+  }
+});
+
 // ---------------------------------------------------------------------------
 // On the page: the list, "Mark as seen"
 

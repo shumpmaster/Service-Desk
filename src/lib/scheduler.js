@@ -144,7 +144,7 @@ function newProjectState(project) {
     // commits by head sha ({ headSha, state: 'read' | 'failed', commits, capped }); a failed read's head
     // and time (asked again at most once in FILES_RETRY_MS, only in a call made anyway); each pull
     // request's first head this opening (a head change while open is due); and the counts.
-    j24: { commits: new Map(), tried: new Map(), firstHead: new Map(), reads: 0, calls: 0, alone: 0 },
+    j24: { commits: new Map(), tried: new Map(), firstHead: new Map(), rode: new Map(), reads: 0, calls: 0, alone: 0 },
   };
 }
 
@@ -391,12 +391,14 @@ export function createDesk(opts) {
    * J24's commits read (the MD sandbox only): for each open, non-draft pull request into the default
    * branch from the project's own repository (J20's), one not read at its head in this opening, whose
    * `updated_at` in J1's list is later than "last looked" or whose head changed while the page was open.
-   * { first: [n] } ride the cycle's optional loop with J20's read of the same head (the overflow of a
-   * call's 25 in its next call); { retry: [n] }, a failed read asked again at most once in
-   * FILES_RETRY_MS, only in a call of the optional loop made anyway, never a call of its own.
+   * { first: [n] } ride the cycle's optional loop with J20's read of the same head, due now or asked in
+   * this cycle (the overflow of a call's 25 in its next call); { wait: [n] }, a first read with no J20
+   * read of its head to ride (its `updated_at` moved, its head did not: a comment or a label), and
+   * { retry: [n] }, a failed read asked again at most once in FILES_RETRY_MS, go only in a call of the
+   * optional loop made anyway, never a call of their own (the Reviewer's B2, stage 2 round 1).
    */
   function commitsDue(st) {
-    const out = { first: [], retry: [] };
+    const out = { first: [], wait: [], retry: [] };
     const since = opts.lastLooked ? opts.lastLooked() : null;
     if (!opts.j11 || since == null || !Number.isFinite(since)) return out;
     const now = clock.now();
@@ -413,7 +415,14 @@ export function createDesk(opts) {
         if (now - tried.at >= FILES_RETRY_MS) out.retry.push(pr.number);
         continue;
       }
-      out.first.push(pr.number);
+      // J20's read of this head: due now (not kept at this head, and no failed read in its last 5
+      // minutes), or asked in this cycle's calls.
+      const f = st.files.get(pr.number);
+      const ft = st.filesTried.get(pr.number);
+      const filesDue = !(f && f.headSha === pr.headSha) && !(ft && ft.headSha === pr.headSha && now - ft.at < FILES_RETRY_MS);
+      const rode = st.j24.rode.get(pr.number);
+      const asked = Boolean(rode && rode.headSha === pr.headSha && rode.poll === st.polls);
+      (filesDue || asked ? out.first : out.wait).push(pr.number);
     }
     return out;
   }
@@ -745,6 +754,7 @@ export function createDesk(opts) {
     // J20: each answer kept by the head sha it was asked at; a failed one tried again later.
     for (const n of batch.files || []) {
       st.filesReads++;
+      st.j24.rode.set(n, { headSha: heads.get(n) || null, poll: st.polls });
       const raw = r0 && r0.files ? r0.files[n] : null;
       const parsed = Array.isArray(raw) ? parseFilePages(raw) : { ok: false };
       if (parsed.ok) {
@@ -1043,7 +1053,7 @@ export function createDesk(opts) {
       const ex = extrasDue(st);
       const cd = commitsDue(st);
       // J24: a first commits read rides with J20's read of the same head (a call's overflow going into the
-      // next); a retry never makes a call of its own.
+      // next); one with no such read to ride, and a retry, never make a call of their own.
       if (!need.optional.shas.length && !need.optional.history.length && !pl && !ex.any && !cd.first.length) break;
       const fixed = BLOB_BATCH - (pl ? PULLS_COST : 0) - ex.files.length - (ex.closed ? CLOSED_COST : 0) - ex.prs.length * PR_COST
         - (ex.usage ? USAGE_COST : 0);
@@ -1064,7 +1074,7 @@ export function createDesk(opts) {
       // The retries take what room is left in this call, which is made anyway.
       const used = b.blobs.length + 2 * b.history.length;
       const room = Math.max(0, budget - used);
-      const retries = cd.retry.slice(0, Math.max(0, Math.min(COMMITS_PER_CALL - firsts.length, Math.floor(room / COMMITS_COST))));
+      const retries = [...cd.wait, ...cd.retry].slice(0, Math.max(0, Math.min(COMMITS_PER_CALL - firsts.length, Math.floor(room / COMMITS_COST))));
       if (firsts.length || retries.length) b.commits = [...firsts, ...retries];
       const { res, progress, pulled, extras } = await blobCall(st, need, b);
       // An optional read that fails is tried again on a later cycle (a J12 read after its backoff);

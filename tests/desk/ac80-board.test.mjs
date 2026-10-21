@@ -921,3 +921,19 @@ test('AC80 with Part A item 5 (stage 1a\'s build review, round 2, N1 and F3-r2):
     app.restore();
   }
 });
+
+test('AC80 with AC5 (stage 1a\'s build review, round 3, finding 2): filtered to a project read earlier in this opening and now re-checking, the small line says "checking…", never "not read yet"', async () => {
+  const { app } = await openExample({ hash: '#/waiting/Example' });
+  try {
+    assert.equal(byClass(app.view, 'v2-qsmall')[0].textContent, 'With the agents: 0 · Being recorded by the automatic job: 0');
+    await app.visibility('hidden');
+    await app.advance(10 * 60e3);
+    await app.visibility('visible');
+    const t = byClass(app.view, 'v2-qsmall')[0].textContent;
+    assert.equal(t, 'With the agents: checking… · Being recorded by the automatic job: checking…');
+    await app.advance(POLL_MS);
+    assert.equal(byClass(app.view, 'v2-qsmall')[0].textContent, 'With the agents: 0 · Being recorded by the automatic job: 0', 'read again: its counts');
+  } finally {
+    app.restore();
+  }
+});

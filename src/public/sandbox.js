@@ -1718,15 +1718,17 @@ function quietLines(bd, built, only) {
     };
     if (bd.unread) {
       // The project not read yet, or not readable: no count for an unknown (Part A item 5; stage 1a's
-      // build review, round 2, N1 and F3-r2), the words only, with no fold to open.
-      const w = bd.unread === 'cant' ? BOARD_UNREAD.cant.toLowerCase() : BOARD_UNREAD.pending.toLowerCase();
+      // build review, round 2, N1 and F3-r2), the words only, with no fold to open. Only the two counts
+      // take them: the held question's and the recorded answer's lines still follow (round 3, finding 1).
+      // A project read earlier in this opening and now re-checking says AC5's "checking…" (round 3, finding 2).
+      const w = bd.unread === 'cant' ? BOARD_UNREAD.cant.toLowerCase() : DESK && DESK.states && DESK.states.get(only) && DESK.states.get(only).lastSuccessAt != null ? 'checking…' : BOARD_UNREAD.pending.toLowerCase();
       lines.push(h('p', { class: 'v2-small v2-qsmall unknown', key: 'qsmall' }, `${WORDS.agents}: ${w} · ${WORDS.recording}: ${w}`));
-      return h('div', { class: 'v2-quiet under', key: 'quiet' }, lines);
+    } else {
+      lines.push(h('p', { class: 'v2-small v2-qsmall', key: 'qsmall' },
+        small('agents', WORDS.agents, q.agents.length), ' · ', small('recording', WORDS.recording, q.recording.length)));
+      if (boardState.folds.has('agents')) lines.push(h('div', { class: 'v2-qfold', key: 'fold:agents', role: 'region', 'aria-label': WORDS.agents }, agentsFold()));
+      if (boardState.folds.has('recording')) lines.push(h('div', { class: 'v2-qfold', key: 'fold:recording', role: 'region', 'aria-label': WORDS.recording }, recFold()));
     }
-    lines.push(h('p', { class: 'v2-small v2-qsmall', key: 'qsmall' },
-      small('agents', WORDS.agents, q.agents.length), ' · ', small('recording', WORDS.recording, q.recording.length)));
-    if (boardState.folds.has('agents')) lines.push(h('div', { class: 'v2-qfold', key: 'fold:agents', role: 'region', 'aria-label': WORDS.agents }, agentsFold()));
-    if (boardState.folds.has('recording')) lines.push(h('div', { class: 'v2-qfold', key: 'fold:recording', role: 'region', 'aria-label': WORDS.recording }, recFold()));
   } else {
     if (q.agents.length) lines.push(quietLine('agents', 'agents', WORDS.agents, q.agents.length, agentsFold));
     if (bd.nothingWaiting.length) lines.push(h('p', { class: 'v2-ql still', key: 'ql:nothing' }, vi('eye'), h('span', {}, `${WORDS.nothing}: ${bd.nothingWaiting.join(', ')}`)));

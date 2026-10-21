@@ -14,6 +14,7 @@ import { models, openSD, keyed, svgKids, railLayout, ac61Answer, byClass, findAl
 import { runsContext, statusPhases, tilePhases, branchShape, STATUS_KEY } from '../../src/lib/feed.js';
 import { phaseView, standardWord } from '../../src/lib/sandbox.js';
 import { tileTimeline } from '../../src/lib/home.js';
+import { phaseStrip } from '../../src/lib/projectpage.js';
 
 const css = () => readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
 const rule = (sel) => {
@@ -270,6 +271,12 @@ test('AC57, changed by AC83 (rewrites "the drawing\'s shapes"): the branch drawi
   assert.deepEqual(cells(2), ['-', 'Design:now', 'Build:ahead', 'Launch:ahead', 'Done:ahead'], 'run 2, as its second column, still-to-come dots dashed');
   assert.equal(tl.rows[1].up, 1, 'run 2 starts under Design');
   assert.equal(tl.rows[0].down, 1, 'joined by one drop from run 1, where the curve ran from Build i1\'s dot to Design i2\'s');
+  assert.deepEqual(tl.rows.map((r) => r.label), ['run 1', 'run 2'], 'one row per run, as the drawing had one column per run');
+  assert.deepEqual(tl.labels.filter((l) => l.now).map((l) => l.phase), ['Design'], 'the now phase named once, bold');
+  assert.deepEqual(tl.rows[1].cells.filter(Boolean).map((c) => c.icon), ['half', 'planned', 'planned', 'planned'], 'its icons: half-filled now, dashed rings to come');
+  assert.match(tl.words, /run 2/, 'one sentence carrying it, in words');
+  // The boxes' stripes, as the page's strip: each phase in its colour, solid where finished or now, dashed to come.
+  assert.deepEqual(phaseStrip(ctx, null).cells.map((c) => [c.cls, c.bar]), [['ph-disc', 'solid'], ['ph-des', 'solid'], ['ph-build', 'dashed'], ['ph-launch', 'dashed']]);
   const app = await openSD('#/p/Service-Desk');
   try {
     assert.equal(byClass(app.view, 'sb-rail').length + byClass(app.view, 'sb-pboxes').length, 0, 'no branch drawing on the page');

@@ -98,6 +98,7 @@ test('AC48 (changed by AC81, AC82, AC83 and AC84): each tile, the briefing and e
     await app.go('#/p/Alpha');
     const rows = byClass(findAll(app.view, (e) => e.dataset && e.dataset.k === 'page-rows')[0], 'v2-prow').map((b) => b.attrs.href);
     assert.deepEqual(rows, ['#/waiting/Alpha', '#/p/Alpha/team'], 'the two rows open Waiting (this project) and the Team screen (P-001-team-screen.md, A)');
+    assert.match(findAll(app.view, (e) => e.dataset && e.dataset.k === 'page-waits')[0].textContent, /^\d+ wait(s)? on you/, 'the first says what waits on the owner, as the Status screen\'s queue button did');
     // AC36, as AC55 changed it (2026-10-15): inside the sandbox the M1 and M2 detail is reached
     // through the views rebuilt in the new design, never through a link to the accepted views.
     const links = linksIn(app.view).map((l) => l.href);

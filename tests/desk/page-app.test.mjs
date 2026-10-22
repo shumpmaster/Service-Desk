@@ -1,12 +1,14 @@
-// The page itself (src/public/app.js), loaded under a minimal fake DOM with fake timers and a fake
-// desk function, so the start-up and render paths the browser runs are the ones tested
-// (PR #40 review, N4 and N6).
+// The page itself (src/public/app.js and, from stage 8, the desk it starts, src/public/sandbox.js), loaded through its
+// entry under the desk's fake DOM with fake timers and the fake desk function, so the start-up and render paths the
+// browser runs are the ones tested (PR #40 review, N4 and N6). From stage 8 (AC44, step 4, specs/S-001.md:2918-2921) the
+// accepted views are gone and `/` is the desk: each case below is the accepted page's, kept for the desk.
 // ac-test: S-001/AC4 ac-test: S-001/AC5
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fixture, CONFIG } from './helpers.mjs';
-import { repo, BAD_PR } from './fake-desk.mjs';
-import { loadApp } from './page-harness.mjs';
+import { repo, BAD_PR, PORTFOLIO_REPO } from './fake-desk.mjs';
+import { pfFiles, withPortfolio } from './pf-fixtures.mjs';
+import { loadSandbox, byClass } from './sandbox-helpers.mjs';
 
 function cleanRepos({ badRecord = false } = {}) {
   const sd = (p) => fixture(`service-desk/${p}`);
@@ -21,21 +23,28 @@ function cleanRepos({ badRecord = false } = {}) {
       'docs/LEDGER.md': fixture('poom/docs/LEDGER.md'),
       'docs/sprints/m1.4-v3-build.md': fixture('poom/docs/sprints/m1.4-v3-build.md'),
     }, [], [{ name: 'tests', status: 'completed', conclusion: 'success' }]),
+    // The committed config names the portfolio (J7, stage 6b), so the desk reads it too: a made-up portfolio with
+    // nothing on its queue (NOT real records), so the state line can reach "Quiet".
+    [PORTFOLIO_REPO]: repo(pfFiles()),
   };
 }
 
-const polls = (app) => app.fetchCalls.filter((c) => c.path === '/api/poll').length;
+// The projects' polls (the portfolio's own read, J23, is counted apart).
+const polls = (app) => app.server.calls.filter((c) => c.path === '/api/poll' && c.target !== 'portfolio').length;
+// The entry reads the committed config, which names the portfolio (J7); the fake function is given the same.
+const open = (o) => loadSandbox({ config: withPortfolio(CONFIG), now: Date.now(), search: '', entry: true, ...o });
 
-test('Page (review N6): opened at #/p/%E0, the desk shows the Universe, starts polling and reaches Quiet', async () => {
-  const app = await loadApp({ hash: '#/p/%E0', repos: cleanRepos() });
+test('Page (review N6): opened at #/p/%E0, the desk shows Home with every project, starts polling and reaches Quiet', async () => {
+  const app = await open({ hash: '#/p/%E0', repos: cleanRepos() });
   try {
-    assert.equal(app.state().textContent, 'Checking…');
-    const view = app.els.view.textContent;
-    for (const p of CONFIG.projects) assert.ok(view.includes(p.name), `the Universe lists ${p.name}`);
-    assert.equal(app.timers.size, CONFIG.projects.length, 'desk.start() scheduled one poll per project');
+    assert.equal(app.els['screen-state'].textContent, 'Checking…');
+    const view = app.view.textContent;
+    for (const p of CONFIG.projects) assert.ok(view.includes(p.name), `Home lists ${p.name}`);
+    // The accepted page's "one poll scheduled per project" (its timers): the desk has made no call before its first cycle.
+    assert.equal(polls(app), 0, 'no poll before the first cycle');
     await app.advance(1000);
-    assert.equal(polls(app), CONFIG.projects.length);
-    assert.equal(app.state().textContent, 'Quiet');
+    assert.equal(polls(app), CONFIG.projects.length, 'desk.start() polled each project');
+    assert.equal(app.els['screen-state'].textContent, 'Quiet');
     await app.advance(60_000);
     assert.equal(polls(app), 2 * CONFIG.projects.length, 'and keeps polling');
   } finally {
@@ -43,57 +52,60 @@ test('Page (review N6): opened at #/p/%E0, the desk shows the Universe, starts p
   }
 });
 
-test('Page (review N4) + AC30: a record makes one project\'s box throw; that box says so, the other is drawn, never "Quiet", polling goes on', async () => {
+test('Page (review N4) + AC30: a record makes one project\'s box throw; that tile says so, the other is drawn, never "Quiet", polling goes on', async () => {
   // ac-test: S-001/AC30
-  const app = await loadApp({ repos: cleanRepos({ badRecord: true }) });
+  const app = await open({ hash: '#/', repos: cleanRepos({ badRecord: true }) });
   try {
     await app.advance(1000);
-    const s = app.state();
-    assert.equal(s.textContent, "Not quiet: can't show 1 project");
-    assert.equal(s.className, 'cant-read');
-    const view = app.els.view.textContent;
-    assert.match(view, /Service-Desk\s*Can't show this project: /);
-    assert.ok(view.includes('Personal-Org-Operating-Model'), 'the other box is drawn');
-    assert.ok(view.includes('quiet'), 'and says quiet');
-    assert.match(app.els.foot.textContent, /Updated /, 'the footer is drawn');
+    assert.equal(app.els['screen-state'].textContent, "Not quiet: can't show 1 project");
+    const view = app.view.textContent;
+    assert.match(view, /Can't show this project: /);
+    assert.ok(view.includes('Personal-Org-Operating-Model'), 'the other tile is drawn');
+    const tiles = byClass(app.view, 'v2-tile');
+    assert.match(tiles.find((t) => t.attrs['data-k'] === 'card:Service-Desk').textContent, /^Service-DeskCan't show this project: /, 'the throwing project\'s own tile says so');
+    assert.match(tiles.find((t) => t.attrs['data-k'] === 'card:Personal-Org-Operating-Model').textContent, /Nothing waiting/, 'and the other says nothing waits');
+    assert.equal(document.title, "Service Desk — Not quiet: can't show 1 project", 'the tab too');
+    // The accepted page's footer is gone with it (stage 8); Home's foot, its "More detail", is drawn.
+    assert.equal(byClass(app.view, 'v2-mdetail').length, 1, 'Home is drawn to its foot');
     const first = polls(app);
     await app.advance(2 * 60_000);
     assert.equal(polls(app), first + 2 * CONFIG.projects.length, 'polled every 60 s after the throw');
-    assert.notEqual(app.state().textContent, 'Quiet');
+    assert.notEqual(app.els['screen-state'].textContent, 'Quiet');
   } finally {
     app.restore();
   }
 });
 
 test('Page (review N6): when even the first render\'s error state can\'t be drawn, the desk still starts', async () => {
-  const app = await loadApp({ hash: '#/p/%E0', repos: cleanRepos(), breakView: true });
+  const app = await open({ hash: '#/p/%E0', repos: cleanRepos(), breakView: true });
   try {
-    assert.match(app.state().textContent, /^Can't show the desk: view is broken/);
-    assert.equal(app.timers.size, CONFIG.projects.length, 'desk.start() ran');
+    assert.match(app.els['screen-state'].textContent, /^Can't show the desk: view is broken/);
+    assert.equal(polls(app), 0, 'its first cycle still to come');
     await app.advance(1000);
-    assert.equal(polls(app), CONFIG.projects.length);
-    assert.notEqual(app.state().textContent, 'Quiet');
+    assert.equal(polls(app), CONFIG.projects.length, 'desk.start() ran');
+    assert.notEqual(app.els['screen-state'].textContent, 'Quiet');
   } finally {
     app.restore();
   }
 });
 
-test('Page AC32: signed out while a box throws, and then while the whole view throws — the line still says "Signed out"', async () => {
+test('Page AC32: signed out while a box throws, and then while the whole view throws — the line still says "Signed out", and the tab too', async () => {
   // ac-test: S-001/AC32
   const repos = cleanRepos({ badRecord: true });
-  const app = await loadApp({ repos });
+  const app = await open({ hash: '#/', repos });
   try {
     await app.advance(1000);
-    assert.match(app.els.view.textContent, /Can't show this project/);
+    assert.match(app.view.textContent, /Can't show this project/);
     // The Access session goes: every call now answers 403.
     for (const r of Object.values(repos)) r.fail = { kind: 'signed-out' };
     await app.advance(60_000);
-    assert.equal(app.state().textContent, 'Signed out — reload to sign in');
-    assert.equal(app.state().className, 'signed-out');
+    assert.equal(app.els['screen-state'].textContent, 'Signed out — reload to sign in');
+    // From stage 8 the accepted header's coloured class is gone with it; the desk's tab title carries the line.
+    assert.equal(document.title, 'Service Desk — Signed out — reload to sign in');
     // Now drawing the view throws too: the render-error message never replaces the line.
-    app.els.view.replaceChildren = () => { throw new Error('view is broken'); };
+    for (const m of ['append', 'appendChild', 'insertBefore', 'removeChild', 'replaceChildren']) app.view[m] = () => { throw new Error('view is broken'); };
     await app.advance(60_000);
-    assert.equal(app.state().textContent, 'Signed out — reload to sign in');
+    assert.equal(app.els['screen-state'].textContent, 'Signed out — reload to sign in');
   } finally {
     app.restore();
   }

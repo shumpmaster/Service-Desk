@@ -125,9 +125,15 @@ export const linksIn = (node) => findAll(node, (e) => e.tag === 'a').map((a) => 
 // desk function, so the screens drawn and the taps followed are the page's own.
 
 let loads = 0;
-export async function loadSandbox({ config, repos, hash = '#/', search = '?sandbox', now: start = Date.parse('2026-10-14T15:00:00Z'), store = null, win = {}, globals = {} }) {
+/**
+ * The desk page under the fake DOM. From stage 8 (AC44, step 4) it is the desk at `/`, so `search` is '' unless a test
+ * gives an address of its own. `entry: true` loads the page's own entry, src/public/app.js, as index.html does, which
+ * imports the desk itself with J7's committed config (src/config/projects.json): the fake desk function then answers
+ * through `fetch`, and `desk` is null.
+ */
+export async function loadSandbox({ config, repos, hash = '#/', search = '', now: start = Date.parse('2026-10-14T15:00:00Z'), store = null, win = {}, globals = {}, entry = false, breakView = false }) {
   const { fakeServer } = await import('./fake-desk.mjs');
-  const names = ['document', 'window', 'location', 'Node', 'setTimeout', 'clearTimeout', 'setInterval', 'navigator', 'localStorage', 'Notification', 'history'];
+  const names = ['document', 'window', 'location', 'Node', 'setTimeout', 'clearTimeout', 'setInterval', 'navigator', 'localStorage', 'Notification', 'history', 'fetch'];
   const saved = Object.fromEntries(names.map((k) => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
   let now = start;
   const realNow = Date.now;
@@ -137,6 +143,8 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '?sandb
   const docListeners = {};
   const els = { view: new El0('main'), 'screen-state': new El0('p'), foot: new El0('footer') };
   const head = new El0('head');
+  // `breakView`: every change to the view throws, so no drawing, the render-error screen's included, can reach it (PR #40 review, N6).
+  if (breakView) for (const m of ['append', 'appendChild', 'insertBefore', 'removeChild', 'replaceChildren']) els.view[m] = () => { throw new Error('view is broken'); };
   const set = (k, v) => Object.defineProperty(globalThis, k, { value: v, configurable: true, writable: true });
   set('Node', Node0);
   set('document', {
@@ -163,8 +171,20 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '?sandb
   Date.now = () => now;
   const server = fakeServer(repos, config, { now: () => now });
   const flush = async () => { for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r)); };
-  const mod = await import(`../../src/public/sandbox.js?load=${++loads}`);
-  const desk = mod.startSandbox({ config, call: (p, b) => server.call(p, b) });
+  let mod = null;
+  let desk = null;
+  if (entry) {
+    set('fetch', async (path, init) => {
+      const r = await server.call(path, JSON.parse(init.body));
+      if (!r.ok) return { status: r.status || 500, ok: false, type: 'basic', text: async () => 'error' };
+      return { status: 200, ok: true, type: 'basic', text: async () => JSON.stringify(r.json) };
+    });
+    await import(`../../src/public/app.js?load=${++loads}`);
+    await flush();
+  } else {
+    mod = await import(`../../src/public/sandbox.js?load=${++loads}`);
+    desk = mod.startSandbox({ config, call: (p, b) => server.call(p, b) });
+  }
   const app = {
     els, desk, server, flush, view: els.view, head, scrolls, loc, module: mod, addresses,
     /** The sandbox's 15-second tick (setInterval), run once. */
@@ -236,7 +256,7 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '?sandb
     text: () => els.view.textContent,
     restore() {
       Date.now = realNow;
-      desk.stop();
+      if (desk) desk.stop();
       for (const k of names) {
         if (saved[k]) Object.defineProperty(globalThis, k, saved[k]);
         else delete globalThis[k];

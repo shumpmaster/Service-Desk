@@ -50,8 +50,8 @@ export const GONE_WORDS = 'That no longer waits on you';
 export const CANT_READ_WORDS = `${OPENED_WORDS}: the desk can't read this project just now`;
 
 /**
- * AC74's tap rules, shared by both views (from 2026-10-19 the tap opens the sandbox, which draws
- * them in its own design). input: { target (openTarget's), projects (J7's), box(name) → { read,
+ * AC74's tap rules, drawn by the desk in its own design (the trial view's from 2026-10-19; the desk's
+ * from stage 8). input: { target (openTarget's), projects (J7's), box(name) → { read,
  * model } | null, settled(name) → whether AC77's closed read for the arrival has answered or
  * failed }. Returns one of:
  * - { kind: 'wait' }: still reading the project, or waiting for that closed read: decide later;
@@ -88,12 +88,13 @@ export function tapDecision({ target, projects, box, settled }) {
 }
 
 /**
- * The same address in the sandbox view (2026-10-19, the owner's ruling "A. Go live now, switch later
- * (Recommended)"): `sandbox` first, every other parameter and the hash kept.
+ * The same address at `/`, the desk (from stage 8; the notification view amendment: "a `?sandbox` address, from an
+ * old icon or an old notification, opens `/` with its other parameters kept"): `sandbox` dropped, every other
+ * parameter, in its order, and the hash kept.
  */
-export function sandboxAddress(pathname, search, hash = '') {
+export function deskAddress(pathname, search, hash = '') {
   const rest = String(search || '').replace(/^\?/, '').split('&').filter((x) => x && x !== 'sandbox' && !x.startsWith('sandbox='));
-  return `${pathname || '/'}?sandbox${rest.length ? `&${rest.join('&')}` : ''}${hash || ''}`;
+  return `${pathname || '/'}${rest.length ? `?${rest.join('&')}` : ''}${hash || ''}`;
 }
 
 // ---------------------------------------------------------------------------

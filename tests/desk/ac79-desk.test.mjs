@@ -24,7 +24,6 @@ import { LEFT_WORDS } from '../../src/lib/jobwatch.js';
 import { fakeClock, fixture, CONFIG } from './helpers.mjs';
 import { repo, fakeServer } from './fake-desk.mjs';
 import { loadSandbox, byClass, findAll as sbFindAll } from './sandbox-helpers.mjs';
-import { loadApp, findAll } from './page-harness.mjs';
 import { NOTIFY_FIX } from './notify-helpers.mjs';
 
 const T0 = Date.parse('2026-10-18T12:00:00Z');
@@ -227,26 +226,33 @@ test('AC79 + AC80 in the sandbox: an answer record\'s pull request being recorde
   }
 });
 
-test('AC79 in the accepted views: the row among the activity, never flagged, its link only; once left, flagged with its words', async () => {
+// From stage 8 (AC44, step 4, specs/S-001.md:2918-2921; Terms, "The accepted views count such a pull request until
+// stage 8", :13714): the accepted views are gone, and this case is the desk's: the same filing pull request on the
+// board, being recorded in its quiet fold, never a card, its link only; once the automatic job leaves it, a card
+// waiting on the owner with the job's words, out of the fold.
+test('AC79 on the desk (the accepted views\' case until stage 8): a filing pull request being recorded is in the quiet fold, never a card, its link only; once left, a card with its words', async () => {
   const jobs = recordingJobs();
   const rs = repos({ pulls: [own(7, 'File a made-up question')], prFiles: { 7: FILING }, jobs });
-  const app = await loadApp({ repos: rs, now: T0, hash: '#/p/Service-Desk' });
+  const app = await loadSandbox({ config: CONFIG, repos: rs, now: T0, hash: '#/waiting/Service-Desk' });
+  const lane = (k) => sbFindAll(app.view, (e) => e.dataset && e.dataset.k === `lane:${k}`)[0];
   try {
     for (let i = 0; i < 4; i++) await app.advance(60_000);
-    const view = app.els.view.textContent;
-    assert.ok(view.includes('Nothing waiting on you here.'));
-    const rows = findAll(app.els.view, (e) => e.tag === 'li' && e.className === 'recording');
-    assert.equal(rows.length, 1, 'among the activity');
-    assert.ok(rows[0].textContent.includes(`PR #7: File a made-up question · ${BEING_RECORDED_WORDS}`));
-    assert.equal(findAll(rows[0], (e) => e.tag === 'a')[0].attrs.href, 'https://github.com/shumpmaster/Service-Desk/pull/7');
-    assert.equal(findAll(app.els.view, (e) => e.className === 'flagged-list').length, 0);
+    assert.equal(byClass(lane('wait'), 'v2-card').length, 0, 'never flagged: no card');
+    assert.ok(lane('wait').textContent.includes('Nothing here'));
+    const ql = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'ql:recording')[0];
+    assert.equal(ql.textContent, `${BEING_RECORDED_WORDS}: 1`, 'with the agents\' quiet lines');
+    await app.tap(ql);
+    const row = sbFindAll(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'fold:recording')[0], (e) => e.tag === 'li')[0];
+    assert.ok(row.textContent.includes('File a made-up question') && row.textContent.includes(BEING_RECORDED_WORDS));
+    assert.deepEqual(sbFindAll(row, (e) => e.tag === 'a').map((a) => a.attrs.href), ['https://github.com/shumpmaster/Service-Desk/pull/7'], 'its link only');
     jobs.checks[HEAD].checkRuns = [{ ...ok(1, '2026-10-18T12:04:00Z'), conclusion: 'failure' }];
     await app.advance(60_000);
     await app.advance(60_000);
-    const flagged = findAll(app.els.view, (e) => e.tag === 'ul' && /flagged-list/.test(e.className || ''));
-    assert.equal(flagged.length, 1);
-    assert.ok(flagged[0].textContent.includes(LEFT_WORDS));
-    assert.equal(findAll(app.els.view, (e) => e.tag === 'li' && e.className === 'recording').length, 0);
+    const cards = byClass(lane('wait'), 'v2-card');
+    assert.deepEqual(cards.map((c) => byClass(c, 'v2-t')[0].textContent), ['File a made-up question'], 'left: a card waiting on the owner');
+    assert.ok(app.text().includes(`${BEING_RECORDED_WORDS}: 0`), 'no longer being recorded (frame 2\'s small line keeps its count)');
+    await app.go(byClass(cards[0], 'v2-t')[0].attrs.href);
+    assert.ok(byClass(app.view, 'v2-sheet')[0].textContent.includes(LEFT_WORDS), 'with the job\'s words');
   } finally {
     app.restore();
   }

@@ -21,10 +21,9 @@ import {
 } from '../../src/lib/asked.js';
 import { hoursMinutes, median } from '../../src/lib/timefmt.js';
 import { NOT_AVAILABLE, NOT_RECORDED, parseOutcomes } from '../../src/lib/records.js';
-import PUBLIC_CONFIG from '../../src/public/lib/config.js';
 import { fixture, recorded, CONFIG, SD, ENV, NOW, makeKey, signJwt, goodClaims, certsRoute, request, fakeFetch, fakeClock } from './helpers.mjs';
 import { repo, fakeServer, gitSha } from './fake-desk.mjs';
-import { loadApp, find } from './page-harness.mjs';
+import { loadSandbox, byClass, findAll as sbFindAll } from './sandbox-helpers.mjs';
 
 const DAY = 86400e3;
 const H = 3600e3;
@@ -70,22 +69,27 @@ test('B1: the model says whether its log months are loaded', () => {
   assert.equal(buildModel({ ...base, tree: null, records: new Map() }).logLoaded, false, 'no tree yet');
 });
 
-test('Page B1: with Service-Desk unreadable and a log full of cards, the footer and "Time asked" never say none', async () => {
+// From stage 8 (AC44, step 4, specs/S-001.md:2918-2921) the accepted page and its footer are gone; the desk carries
+// these cases: V5's line is Home's "More detail" (AC21), and "Time asked of you" is the project's own screen (AC20).
+const v5Of = (app) => byClass(byClass(app.view, 'v2-mdetail')[0], 'sb-v5')[0].textContent;
+
+test('Page B1 (the desk from stage 8): with Service-Desk unreadable and a log full of cards, V5\'s line and "Time asked" never say none', async () => {
   const repos = { 'Service-Desk': repo(sdFiles(), [], []), 'Personal-Org-Operating-Model': poomRepo() };
   repos['Service-Desk'].fail = { state: 'cant-read', reason: 'token' };
-  let app = await loadApp({ repos, now: AT });
+  let app = await loadSandbox({ config: CONFIG, repos, hash: '#/', now: AT });
   try {
     await app.advance(1000);
-    const foot = app.els.foot.textContent;
-    assert.match(foot, /^Median answer time, weekday cards, last 14 days: not available until Service-Desk has been read\./);
+    const foot = v5Of(app);
+    // The desk's line ends where the accepted footer's sentence did (it carried more after it); its words are the same.
+    assert.match(foot, /^Median answer time, weekday cards, last 14 days: not available until Service-Desk has been read(\.|$)/);
     assert.doesNotMatch(foot, /no weekday cards/);
   } finally {
     app.restore();
   }
-  app = await loadApp({ hash: '#/p/Service-Desk/asked', repos, now: AT });
+  app = await loadSandbox({ config: CONFIG, hash: '#/p/Service-Desk/asked', repos, now: AT });
   try {
     await app.advance(1000);
-    const text = app.els.view.textContent;
+    const text = app.view.textContent;
     assert.match(text, /Last 14 days: not available until Service-Desk has been read/);
     assert.match(text, /Cards: not available until Service-Desk has been read\./);
     assert.match(text, /Owner questions: not available until Service-Desk has been read\./);
@@ -95,17 +99,17 @@ test('Page B1: with Service-Desk unreadable and a log full of cards, the footer 
   }
 });
 
-test('Page N3 (AC21): the footer shows the real median over Service-Desk\'s cards', async () => {
+test('Page N3 (AC21; the desk from stage 8): V5\'s line shows the real median over Service-Desk\'s cards', async () => {
   const files = sdFiles();
   const repos = { 'Service-Desk': repo(files, [], []), 'Personal-Org-Operating-Model': poomRepo() };
   const entries = parseRecord('log', files[LOG], LOG).entries;
   const waits = v5Waits(cardRows(entries, treeOf(Object.keys(files)), AT), AT, CONFIG);
   assert.ok(waits.length >= 2, `the fixture log has cards in the window (${waits.length})`);
-  const app = await loadApp({ repos, now: AT });
+  const app = await loadSandbox({ config: CONFIG, repos, hash: '#/', now: AT });
   try {
     await app.advance(1000);
-    assert.match(app.els.foot.textContent, new RegExp(
-      `^Median answer time, weekday cards, last 14 days: ${hoursMinutes(median(waits))} \\(goal under 4h; ${waits.length} cards\\)\\.`));
+    assert.match(v5Of(app), new RegExp(
+      `^Median answer time, weekday cards, last 14 days: ${hoursMinutes(median(waits))} \\(goal under 4h; ${waits.length} cards\\)(\\.|$)`));
   } finally {
     app.restore();
   }
@@ -256,23 +260,36 @@ test('N3 (J6): a poll with 8, 9 or 10 ETags is accepted (3a and 3b paging); 11 i
   }
 });
 
-test('Page N3 (AC18): with webCommitsToDefault false the card view shows the new-branch message before the link', async () => {
-  const sd = PUBLIC_CONFIG.projects.find((p) => p.name === 'Service-Desk');
-  sd.webCommitsToDefault = false;
+// The desk's decision sheet over Waiting (AC80) from stage 8; the accepted card view is gone (AC44, step 4).
+const CARD = `#/waiting/card/${encodeURIComponent('Service-Desk|card|queue/P-001-stop-6.md')}`;
+const sheetOf = (app) => byClass(app.view, 'v2-sheet')[0];
+const answerLinksIn = (el) => sbFindAll(el, (e) => e.tag === 'a' && /\/new\//.test(e.attrs.href || ''));
+const indexIn = (root, el) => sbFindAll(root, () => true).indexOf(el);
+
+test('Page N3 (AC18; the desk from stage 8): with webCommitsToDefault false the decision sheet shows the new-branch message before the links, which are unchanged', async () => {
+  const closed = { ...CONFIG, projects: CONFIG.projects.map((p) => (p.name === 'Service-Desk' ? { ...p, webCommitsToDefault: false } : p)) };
   const repos = { 'Service-Desk': repo(sdFiles(), [], []), 'Personal-Org-Operating-Model': poomRepo() };
   repos['Service-Desk'].commit({ 'decisions/P-001/stop-6.md': null });
-  const app = await loadApp({ hash: '#/p/Service-Desk/card/queue%2FP-001-stop-6.md', repos, now: AT });
+  const open = await loadSandbox({ config: CONFIG, repos, hash: CARD, now: AT });
+  let hrefs;
+  try {
+    await open.advance(1000);
+    hrefs = answerLinksIn(sheetOf(open)).map((a) => a.attrs.href);
+    assert.equal(byClass(sheetOf(open), 'v2-webwarn').length, 0, 'no message where web commits are taken');
+  } finally {
+    open.restore();
+  }
+  const app = await loadSandbox({ config: closed, repos, hash: CARD, now: AT });
   try {
     await app.advance(1000);
-    const radio = find(app.els.view, (e) => e.tag === 'input' && e.attrs.value === 'drop');
-    radio.listeners.change[0]();
-    const warn = find(app.els.view, (e) => e.className === 'warn');
+    const sheet = sheetOf(app);
+    const warn = byClass(sheet, 'v2-webwarn')[0];
     assert.equal(warn && warn.textContent, "This repository doesn't take commits to main from the web. On GitHub, choose 'Create a new branch' and then open the pull request GitHub offers; the card stays flagged until that pull request is merged.");
-    const result = find(app.els.view, (e) => e.className === 'answer-result');
-    assert.equal(result.children[0].className, 'warn', 'the message comes first, before the link');
-    assert.ok(find(app.els.view, (e) => e.className === 'go'), 'the link is still offered, unchanged');
+    const links = answerLinksIn(sheet);
+    assert.equal(links.length, 5);
+    assert.ok(links.every((a) => indexIn(sheet, warn) < indexIn(sheet, a)), 'the message comes first, before the links');
+    assert.deepEqual(links.map((a) => a.attrs.href), hrefs, 'the links are J3\'s, unchanged');
   } finally {
-    sd.webCommitsToDefault = true;
     app.restore();
   }
 });
@@ -316,29 +333,26 @@ test('N4 (J1): a compare body of megabytes is read only until its status, and th
 // ---------------------------------------------------------------------------
 // N5
 
-test('Page N5 (AC16): while the note is being typed, the note box is kept, and the answer box still follows the records', async () => {
+test('Page N5 (AC16, AC56; the desk from stage 8): while the note is being typed, the same note box is kept through a poll, and the answers still follow the records', async () => {
   const repos = { 'Service-Desk': repo(sdFiles(), [], []), 'Personal-Org-Operating-Model': poomRepo() };
   repos['Service-Desk'].commit({ 'decisions/P-001/stop-6.md': null });
-  const app = await loadApp({ hash: '#/p/Service-Desk/card/queue%2FP-001-stop-6.md', repos, now: AT });
+  const app = await loadSandbox({ config: CONFIG, repos, hash: CARD, now: AT });
   try {
     await app.advance(1000);
-    find(app.els.view, (e) => e.tag === 'input' && e.attrs.value === 'drop').listeners.change[0]();
-    const note = find(app.els.view, (e) => e.tag === 'textarea');
+    const note = sbFindAll(sheetOf(app), (e) => e.tag === 'textarea')[0];
     note.value = 'half-typed';
-    note.listeners.input[0]();
-    note.dataset = { keep: note.attrs['data-keep'] };
-    app.doc.activeElement = note;
-    assert.ok(find(app.els.view, (e) => e.className === 'go'));
-    // The answer lands on main while the owner is still typing.
+    note.dispatch('input');
+    await app.flush();
+    assert.equal(answerLinksIn(sheetOf(app)).length, 5);
+    await app.advance(60_000);
+    assert.equal(sbFindAll(sheetOf(app), (e) => e.tag === 'textarea')[0], note, 'the same note box, text and caret untouched');
+    assert.equal(note.value, 'half-typed');
+    assert.ok(answerLinksIn(sheetOf(app)).every((a) => a.attrs.href.includes('half-typed')), 'the note is in every answer');
+    // The answer lands on main while the owner is still typing: the sheet follows the records.
     repos['Service-Desk'].commit({ 'decisions/P-001/stop-6.md': 'Decision: re-scope\n' });
     await app.advance(60_000);
-    assert.equal(find(app.els.view, (e) => e.tag === 'textarea'), note, 'the same note box, text and caret untouched');
-    assert.equal(note.value, 'half-typed');
-    assert.equal(find(app.els.view, (e) => e.className === 'go'), null, 'no link once answered');
-    assert.match(app.els.view.textContent, /already answered: re-scope/);
-    // Typing on still updates the (now answered) box, never a link.
-    note.listeners.input[0]();
-    assert.equal(find(app.els.view, (e) => e.className === 'go'), null);
+    assert.equal(answerLinksIn(sheetOf(app)).length, 0, 'no link once answered');
+    assert.match(sheetOf(app).textContent, /That no longer waits on you: it is in Done\./);
   } finally {
     app.restore();
   }

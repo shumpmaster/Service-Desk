@@ -14,7 +14,7 @@ import { cardRows, cardSummary, v5Waits, v5Line, sessionRows, timelines, usageVi
 import { countedMs, hoursMinutes, median } from '../../src/lib/timefmt.js';
 import { fixture, CONFIG, SD, POOM } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
-import { loadApp } from './page-harness.mjs';
+import { loadSandbox, byClass } from './sandbox-helpers.mjs';
 
 const H = 3600e3;
 const LOG = 'dispatch-log/2026-10.jsonl';
@@ -117,15 +117,17 @@ test('AC21: the footer line — median counted wait over every v3 project\'s car
   assert.equal(v5Waits(rows, NOW.getTime(), CONFIG).length, 2, 'with no card files on main, only answered cards count');
 });
 
-test('Page AC21: the Universe footer carries the V5 line', async () => {
+// From stage 8 (AC44, step 4, specs/S-001.md:2918-2921): the accepted Universe and its footer are gone; the desk's Home
+// carries the V5 line in its "More detail" fold, at its foot (stage 2; P-001-settings-place.md, A).
+test('Page AC21 (the desk from stage 8): Home carries the V5 line', async () => {
   const repos = {
     'Service-Desk': repo({ 'dispatch-log/2026-10.jsonl': fixture('service-desk/dispatch-log/2026-10.jsonl') }, [], []),
     'Personal-Org-Operating-Model': repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md') }, [], []),
   };
-  const app = await loadApp({ repos });
+  const app = await loadSandbox({ config: CONFIG, repos, hash: '#/' });
   try {
     await app.advance(1000);
-    assert.match(app.els.foot.textContent, /^Median answer time, weekday cards, last 14 days: /);
+    assert.match(byClass(byClass(app.view, 'v2-mdetail')[0], 'sb-v5')[0].textContent, /^Median answer time, weekday cards, last 14 days: /);
   } finally {
     app.restore();
   }
@@ -209,6 +211,8 @@ test('AC23 + J10: the real outcomes.jsonl (no usage yet) shows "not recorded"; n
   assert.ok(odd.notes.some((n) => n.startsWith('status/outcomes.jsonl line 3 field usage')));
 });
 
+// From stage 8 (AC44, step 4, specs/S-001.md:2918-2921): the accepted page is gone; this case is the desk's view at the
+// same route, AC55's rebuilt view with the same facts (AC36: every M1 and M2 view stays reachable).
 test('Page AC22/AC23: the Agents view lists sessions with run time, result, verdict and usage words', async () => {
   const repos = {
     'Service-Desk': repo({
@@ -218,10 +222,10 @@ test('Page AC22/AC23: the Agents view lists sessions with run time, result, verd
     'Personal-Org-Operating-Model': repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md') }, [], []),
   };
   const realNow = Date.now;
-  const app = await loadApp({ hash: '#/p/Service-Desk/agents', repos, now: Date.parse('2026-10-07T12:00:00Z') });
+  const app = await loadSandbox({ config: CONFIG, hash: '#/p/Service-Desk/agents', repos, now: Date.parse('2026-10-07T12:00:00Z') });
   try {
     await app.advance(1000);
-    const text = app.els.view.textContent;
+    const text = app.view.textContent;
     assert.match(text, /P-001 critic/);
     assert.match(text, /ran 2 h 8 min/);
     assert.match(text, /ok, verdict FAIL/);
@@ -357,6 +361,8 @@ function allElements(node, out = []) {
   return out;
 }
 
+// From stage 8 (AC44, step 4, specs/S-001.md:2918-2921): the accepted page is gone; this case is the desk's view at the
+// same route, AC55's rebuilt view with the same facts (AC36: every M1 and M2 view stays reachable).
 test('Page AC23: the figures sit behind each session\'s drill-down, not on its timeline row', async () => {
   const repos = {
     'Service-Desk': repo({
@@ -366,10 +372,10 @@ test('Page AC23: the figures sit behind each session\'s drill-down, not on its t
     'Personal-Org-Operating-Model': repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md') }, [], []),
   };
   const realNow = Date.now;
-  const app = await loadApp({ hash: '#/p/Service-Desk/agents', repos, now: Date.parse('2026-10-07T12:00:00Z') });
+  const app = await loadSandbox({ config: CONFIG, hash: '#/p/Service-Desk/agents', repos, now: Date.parse('2026-10-07T12:00:00Z') });
   try {
     await app.advance(1000);
-    const els = allElements(app.els.view);
+    const els = allElements(app.view);
     const details = els.filter((e) => e.tag === 'details');
     const critic = details.find((d) => d.children[0].tag === 'summary' && d.children[0].textContent.includes('P-001 critic')
       && d.textContent.includes('Tokens:'));
@@ -380,7 +386,7 @@ test('Page AC23: the figures sit behind each session\'s drill-down, not on its t
     const body = critic.children.slice(1).map((c) => c.textContent).join('\n');
     for (const l of ['Run time (agent tool): 18 s', 'Peak, share of the compaction threshold: 4.7% of 784,000 tokens',
       'Would have stopped: no', 'Compactions: 0', 'Cost: estimate $0.09']) assert.ok(body.includes(l), l);
-    const timeline = els.filter((e) => e.tag === 'ol' && e.className === 'timeline').map((e) => e.textContent).join('\n');
+    const timeline = els.filter((e) => e.tag === 'ol' && / sb-tlx-ev /.test(` ${e.className} `)).map((e) => e.textContent).join('\n');
     assert.ok(timeline.length > 0);
     assert.ok(!/Tokens|Context peak|estimate \$|not recorded|not available/.test(timeline), 'no figures on the timeline rows');
   } finally {
@@ -389,6 +395,8 @@ test('Page AC23: the figures sit behind each session\'s drill-down, not on its t
   }
 });
 
+// From stage 8 (AC44, step 4, specs/S-001.md:2918-2921): the accepted page is gone; this case is the desk's view at the
+// same route, AC55's rebuilt view with the same facts (AC36: every M1 and M2 view stays reachable).
 test('Page AC20: "Time asked of you" for a v3 and a v2.5 project', async () => {
   const repos = {
     'Service-Desk': repo({ 'dispatch-log/2026-10.jsonl': fixture('service-desk/dispatch-log/2026-10.jsonl'),
@@ -396,19 +404,19 @@ test('Page AC20: "Time asked of you" for a v3 and a v2.5 project', async () => {
     'Personal-Org-Operating-Model': repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md'),
       'questions/Q-030-x.md': fixture('service-desk/questions/Q-005-sources.md') }, [], []),
   };
-  let app = await loadApp({ hash: '#/p/Service-Desk/asked', repos, now: Date.parse('2026-10-07T12:00:00Z') });
+  let app = await loadSandbox({ config: CONFIG, hash: '#/p/Service-Desk/asked', repos, now: Date.parse('2026-10-07T12:00:00Z') });
   try {
     await app.advance(1000);
-    const text = app.els.view.textContent;
+    const text = app.view.textContent;
     assert.match(text, /Last 14 days: \d+ cards?, median wait /);
     assert.match(text, /P-001 stop-6raised Oct 6 13:51 · answered Oct 6 16:31 · wait 2 h 39 min · not a proxy · re-scope/);
   } finally {
     app.restore();
   }
-  app = await loadApp({ hash: '#/p/Personal-Org-Operating-Model/asked', repos, now: Date.parse('2026-10-07T12:00:00Z') });
+  app = await loadSandbox({ config: CONFIG, hash: '#/p/Personal-Org-Operating-Model/asked', repos, now: Date.parse('2026-10-07T12:00:00Z') });
   try {
     await app.advance(1000);
-    const text = app.els.view.textContent;
+    const text = app.view.textContent;
     assert.match(text, /no cards in operating model v2\.5\.1/);
     assert.match(text, /Q-030-x/);
     assert.match(text, /answered questions: not recorded \(operating model v2\.5\.1 records rulings in the ledger\)/);

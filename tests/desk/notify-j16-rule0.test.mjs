@@ -370,7 +370,8 @@ test('J16 + J18 rule 0 (made-up, NOT real): rule 0 ending makes the pull request
   w.gitBlobs[v.sha] = PASS;
   const r3 = await h.run();
   assert.equal(r3.payloads.length, 1, 'newly waiting: one notification');
-  assert.equal(r3.payloads[0].notification.navigate, `https://desk.example.invalid/?sandbox&open=${encodeURIComponent(prKey(SD, 700))}`);
+  // From stage 8 (the notification view amendment, specs/S-001.md:1139-1142: "the sender's tap addresses to `/?open=<key>` and `/`").
+  assert.equal(r3.payloads[0].notification.navigate, `https://desk.example.invalid/?open=${encodeURIComponent(prKey(SD, 700))}`);
   const r4 = await h.run();
   assert.equal(r4.pushes.length, 0, 'once');
   assert.equal(w.blobReads, 1, 'its verdict read once, then kept');

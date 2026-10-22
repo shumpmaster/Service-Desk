@@ -3,9 +3,10 @@
 // ac-test: S-001/AC55
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CONFIG, fixture } from './helpers.mjs';
+import { CONFIG, fixture, FIX } from './helpers.mjs';
+import { join } from 'node:path';
+import { detailRepos, facts, WHEN, CASES } from './accepted-views.mjs';
 import { repo, pr } from './fake-desk.mjs';
-import { loadApp, findAll as findAllApp } from './page-harness.mjs';
 import { readFileSync } from 'node:fs';
 import { SRC } from './helpers.mjs';
 import { loadSandbox, byClass, findAll, linksIn, El0 } from './sandbox-helpers.mjs';
@@ -401,9 +402,23 @@ test('AC55 + AC54 (2026-10-16): every bubble is held to the viewport\'s height l
   assert.match(rule('.sb-bubble'), /padding: var\(--s2\) var\(--s3\) var\(--s3\);/, 'its top padding (8 px, AC62) is what the sticky row rises by');
   const held = /\n(\.sb-bubble\.held,[^{]*)\{([^}]*)\}/.exec(css);
   assert.ok(held, 'the held rule');
-  for (const sel of ['.sb-sumbox > .sb-bubble.held', '.sb-linebox > .sb-bubble.held', '.sb-bubble.held.col-l', '.sb-bubble.held.col-r', '.sb-sumbox > .sb-bubble.held.col-l', '.sb-sumbox > .sb-bubble.held.col-r']) {
+  // Stage 8 (AC44, step 4): old Home's two-column bubbles (`.col-l`, `.col-r`) went at stage 7, and their rules, which
+  // nothing drew once the desk became `/`, at stage 8; the held rule outweighs every placed rule that is left (AC55's
+  // bubble "held to the viewport's height, less a margin", specs/S-001.md:4282-4283).
+  for (const sel of ['.sb-sumbox > .sb-bubble.held', '.sb-linebox > .sb-bubble.held']) {
     assert.ok(held[1].split(',').map((x) => x.trim()).includes(sel), `it outweighs the placed rules: ${sel}`);
   }
+  // The rules before mockup v2's block, as this case read them (the block's own are AC81's).
+  const raw = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
+  const early = raw.slice(0, raw.indexOf('Desk mockup v2 (spec S-001')).replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.ok(early.length > 1000 && early.length < css.length, 'the part before mockup v2\'s block');
+  const placed = [...early.matchAll(/(?:^|\n)([^{}\n@]*\.sb-bubble[^{}]*)\{([^}]*)\}/g)].filter((m) => /\b(left|right|top):/.test(m[2]) && !/\.held/.test(m[1]))
+    .flatMap((m) => m[1].split(',').map((x) => x.trim()));
+  for (const sel of placed) {
+    const want = sel.includes('>') ? `${sel.split('>')[0].trim()} > .sb-bubble.held` : '.sb-bubble.held';
+    assert.ok(held[1].split(',').map((x) => x.trim()).includes(want), `${sel}: outweighed by ${want}`);
+  }
+  assert.doesNotMatch(css, /\.col-[lr]\b/, 'no two-column bubble rule is left to outweigh');
   assert.match(held[2], /position: fixed; top: 8px; bottom: auto; left: max\(16px, calc\(50% - 264px\)\); right: max\(16px, calc\(50% - 264px\)\);/, 'held in the viewport, inside the gutters');
   // The line box: at most three lines, the rest hidden, a fade into the row's background, no ellipsis.
   // AC62 (2026-10-16): a ruling's words take the quoted record's role (.9rem at 1.45): three lines are 4.35em.
@@ -419,77 +434,29 @@ test('AC55 + AC54 (2026-10-16): every bubble is held to the viewport\'s height l
 // ---------------------------------------------------------------------------
 // "More detail": the same facts as the accepted views
 
-/** The fixtures AC9–AC12 and AC20–AC23's tests use, together: a card, a question, a ruling, the log, the usage record, a PR; and a v2.5 project. */
-function detailRepos() {
-  const sd = repo({
-    'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml'),
-    'dispatch-log/2026-10.jsonl': fixture('service-desk/dispatch-log/2026-10.jsonl'),
-    'status/outcomes.jsonl': fixture('service-desk/status/outcomes-usage-frozen.jsonl'),
-    'status/P-001.toml': fixture('service-desk/status/P-001@d4d0110.toml'),
-    'queue/P-001-dor-fail-2.md': fixture('service-desk/queue/P-001-dor-fail-2.md'),
-    'queue/P-001-stop-6.md': fixture('service-desk/queue/P-001-stop-6.md'), 'decisions/P-001/stop-6.md': 'Decision: re-scope\n',
-    'questions/Q-005-sources.md': fixture('service-desk/questions/Q-005-sources.md'),
-  }, [pr(61, 'Desk: a change to merge')], [{ name: 'governance', status: 'completed', conclusion: 'success' }]);
-  const poom = repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md'), 'docs/sprints/m1.4-v3-build.md': fixture('poom/docs/sprints/m1.4-v3-build.md'),
-    'questions/Q-030-x.md': fixture('service-desk/questions/Q-005-sources.md') });
-  return { 'Service-Desk': sd, 'Personal-Org-Operating-Model': poom };
-}
-
-// Words that only move about the accepted page (its links back and across, its headings naming the page).
-const NAV = /^(← All projects|← Service-Desk|← Personal-Org-Operating-Model|Time asked of you|Agents| · |Time asked of you — .*|Agents — .*|Service-Desk|Personal-Org-Operating-Model)$/;
+// From stage 8 (AC44, step 4, specs/S-001.md:2918-2921 and the brief's item 8, :14465-14469: "the chosen design becomes the
+// desk's default view and the sandbox and any unchosen candidate are removed"): the accepted views are gone, so the
+// facts they drew for these fixtures are the record taken at bd4097d, the last commit that drew them
+// (tests/desk/accepted-views.mjs, tests/desk/tools/accepted-views-snapshot.mjs), and each of the desk's views is
+// compared with it both ways, as before.
+const ACCEPTED = JSON.parse(readFileSync(join(FIX, 'accepted-views-bd4097d.json'), 'utf8'));
 
 /**
- * The sandbox's own navigation words, and nothing else: its marker, Home and Back, and from stage 1a
- * (AC81) the project screens' top row Status · Timeline · Team · Waiting (the bar at every screen's
- * foot is left out whole, in facts()).
+ * The desk's own navigation words, and nothing else: Home and Back, and the project screens' row Status ·
+ * Timeline · Team · Waiting from stage 1a (AC81) (the bar at every screen's foot is left out whole, in facts()).
  */
-const SB_NAV = /^(Sandbox: candidate design|Home|Back|Status|Timeline|Team|Waiting)$/;
+const SB_NAV = /^(Home|Back|Status|Timeline|Team|Waiting)$/;
 
-/** Each element's own text (its text-node children, joined) and each leaf's text, in the accepted view. */
-function facts(view) {
-  const out = new Set();
-  const walk = (n) => {
-    for (const c of n.children || []) {
-      // The bar Home · Waiting · Plan at every screen's foot (AC81) is navigation, its badge's count too.
-      if (c.tag && ` ${c.className || ''} `.includes(' v2-bar ')) continue;
-      if (c.tag) {
-        const own = c.children.filter((x) => !x.tag).map((x) => x.textContent).join('').replace(/\s+/g, ' ').trim();
-        if (own) out.add(own);
-        walk(c);
-      }
-    }
-  };
-  walk(view);
-  return [...out].filter((t) => !NAV.test(t) && /[A-Za-z0-9]/.test(t));
-}
-
-const WHEN = Date.parse('2026-10-07T12:00:00Z');
-
-for (const [kind, acceptedHash, sandboxHash] of [
-  ['Pipeline', '', 'pipeline'], ['Time asked', 'asked', 'asked'], ['Agents', 'agents', 'agents'],
-]) {
-  for (const name of ['Service-Desk', 'Personal-Org-Operating-Model']) {
-    if (kind === 'Agents' && name !== 'Service-Desk') continue;
-    // AC68 (2026-10-16): a v3 project's Pipeline view folds into the Timeline, the Queue and the Team
-    // screen; its route opens the Timeline (AC68's test). The facts of AC9's no sandbox screen shows
-    // are listed in the sandbox pull request (AC36). The v2.5 reduced view stays, with the same facts.
-    if (kind === 'Pipeline' && name === 'Service-Desk') continue;
-    test(`AC55: the rebuilt ${kind} view for ${name} shows the same values and words as the accepted view`, async () => {
-      const route = `#/p/${name}${acceptedHash ? `/${acceptedHash}` : ''}`;
-      const acc = await loadApp({ hash: route, repos: detailRepos(), now: WHEN });
-      let accepted;
-      let acceptedText;
-      try {
-        await acc.advance(1000);
-        await acc.advance(POLL_MS);
-        accepted = facts(acc.els.view);
-        acceptedText = acc.els.view.textContent.replace(/\s+/g, ' ');
-      } finally {
-        acc.restore();
-      }
+for (const [kind, , deskHash, names] of CASES) {
+  for (const name of names) {
+    // AC68 (2026-10-16): a v3 project's Pipeline view folds into the Timeline; the v2.5 reduced view stays, with the same facts.
+    test(`AC55: the rebuilt ${kind} view for ${name} shows the same values and words as the accepted view (as recorded at bd4097d)`, async () => {
+      const rec = ACCEPTED.views[`${kind}|${name}`];
+      assert.ok(rec, `${kind}|${name} recorded`);
+      const accepted = rec.facts;
+      const acceptedText = rec.text;
       assert.ok(accepted.length >= 3, `${accepted.length} facts`);
-      if (process.env.SHOW_FACTS) console.log(kind, name, accepted.length, accepted.slice(0, 40));
-      const sb = await loadSandbox({ config: CONFIG, repos: detailRepos(), hash: `#/p/${name}/${sandboxHash}`, now: WHEN });
+      const sb = await loadSandbox({ config: CONFIG, repos: detailRepos(), hash: `#/p/${name}/${deskHash}`, search: '', now: WHEN });
       try {
         await sb.advance(1000);
         await sb.advance(POLL_MS);
@@ -497,10 +464,10 @@ for (const [kind, acceptedHash, sandboxHash] of [
         const text = sb.view.textContent.replace(/\s+/g, ' ');
         for (const f of accepted) assert.ok(text.includes(f), `${kind} for ${name}: "${f}" is missing`);
         assert.doesNotMatch(text, /Can't show/);
-        // And the other way (build review N1): every value and word of the sandbox's view is in the
-        // accepted view, the sandbox's navigation words aside (its marker, Home and Back, the bar's tabs, AC81).
+        // And the other way (build review N1): every value and word of the desk's view is in the accepted
+        // view, the desk's navigation words aside (Home and Back, the bar's tabs, AC81).
         const extra = facts(sb.view).filter((f) => !SB_NAV.test(f) && !acceptedText.includes(f));
-        assert.deepEqual(extra, [], `${kind} for ${name}: the sandbox shows words the accepted view does not`);
+        assert.deepEqual(extra, [], `${kind} for ${name}: the desk shows words the accepted view did not`);
       } finally {
         sb.restore();
       }
@@ -538,6 +505,6 @@ test('AC55: no element of the sandbox links to an accepted M1 or M2 view, on any
     app.restore();
   }
   void findAll;
-  void findAllApp;
+
   void fullRepo;
 });

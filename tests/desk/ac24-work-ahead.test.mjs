@@ -21,7 +21,6 @@ import assert from 'node:assert/strict';
 import { loadSandbox, findAll, byClass } from './sandbox-helpers.mjs';
 import { findKeyed } from './sandbox-fixtures.mjs';
 import { textRuns } from './screen-text.mjs';
-import { loadApp } from './page-harness.mjs';
 import { fixture } from './helpers.mjs';
 import { repo, gitSha } from './fake-desk.mjs';
 import { SD, POOM, waSetup, WORKED, LATER, estLine, planText, memStore, j77Files, j77Notes, poomFiles } from './wa-fixtures.mjs';
@@ -152,13 +151,17 @@ test('AC24 (from stage 2, AC82; from stage 5, AC86): Home has no "Work ahead" co
   }
 });
 
-test('AC24 (AC43): the accepted views, without ?sandbox, have no Work ahead control or screen', async () => {
-  const repos = waSetup({ extra: { 'intake/estimates.jsonl': WORKED() } }).repos;
+// AC43 kept Work ahead out of the accepted views until stage 8; from stage 8 (AC44, step 4, specs/S-001.md:2918-2921) they
+// are gone and `/` is the desk, so the counterpart is: the page's own entry, at `/` with no flag, reaches Plan.
+test('AC24 (from stage 8): `/`, through the page\'s own entry with no flag, is the desk: its bar\'s Plan and the Work ahead screen; the accepted views are gone', async () => {
+  const setup = waSetup({ extra: { 'intake/estimates.jsonl': WORKED() } });
   for (const hash of ['', '#/work']) {
-    const app = await loadApp({ hash, repos, now: NOW });
+    const app = await loadSandbox({ ...setup, hash, now: NOW, store: memStore(), search: '', entry: true });
     try {
       await app.advance(62_000);
-      assert.doesNotMatch(app.els.view.textContent, /Work ahead|Rough finish|milestones to go/);
+      assert.ok(findKeyed(app, 'tab:plan'), `${hash || '/'}: the bar's Plan`);
+      if (hash === '#/work') assert.match(app.view.textContent, /Rough finish/, 'the Work ahead screen');
+      assert.equal(findAll(app.view, (e) => e.attrs && e.attrs.id === 'more-detail').length, 0, 'none of the accepted views');
     } finally {
       app.restore();
     }

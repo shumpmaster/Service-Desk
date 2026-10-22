@@ -527,6 +527,11 @@ html.sb.v2-page {
 html.sb.v2-page .sb-sheet-t { font: var(--t-sheet); }
 html.sb.v2-page .sb-sheet { box-shadow: var(--shadow); }
 html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /* AC81: every screen keeps room for the bar at its foot, with the safe areas */ }
+/* Stage 8 (the Design reviewer's round 1, part B item 26; frames H1, 1, 5 and 11): every screen starts 14 px down, as
+   mockup v2's screen does (`.scr`, desk-v2.html:97), Team's and each detail screen's too; the Timeline's pinned head sits
+   flush at the top with its own 8 px inside, as frame 7b's `.thead` does (desk-v2.html:278). */
+html.sb.v2-page main#view > .sb-screen { padding-top: 14px; }
+html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
 .v2 { font: var(--t-body); color: var(--ink); }
 .v2 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 /* The resets carry no weight (:where), so every v2 class below outranks them (stage 1a's build review,

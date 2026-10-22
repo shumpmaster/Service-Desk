@@ -2154,7 +2154,8 @@ function linkNotes(card, btns) {
   const warn = plans.find((x) => x.warning);
   const copies = btns.filter((b) => b.plan && b.plan.copy);
   const out = [];
-  if (warn) out.push(h('p', { class: 'v2-mark v2-webwarn', key: 'web-warn', role: 'note' }, vi('bad'), h('span', {}, warn.warning)));
+  // Its mark the sheet's neutral note mark (the eye, as on the blast-radius line), never ✕ (the Design reviewer, stage 8 round 1).
+  if (warn) out.push(h('p', { class: 'v2-mark v2-webwarn', key: 'web-warn', role: 'note' }, vi('eye'), h('span', {}, warn.warning)));
   if (copies.length) {
     out.push(h('div', { class: 'v2-blk v2-copyto', key: 'copy-route' }, h('p', { class: 'v2-small' }, copies[0].plan.words),
       copies.map((b) => [h('pre', { class: 'v2-pre', key: `copytext:${b.value || ''}` }, b.plan.copy),

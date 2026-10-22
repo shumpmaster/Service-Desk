@@ -374,6 +374,15 @@ const BEFORE_RULES = (() => {
   return [...a, ...b];
 })();
 const LOOK = ['font-size', 'font-weight', 'font-family', 'line-height', 'color', 'fill', 'stroke', 'visibility'];
+/**
+ * The one change stage 8 makes to an element's look on purpose, named here and nothing else excepted: the Design
+ * reviewer's round 1 (non-blocking, part B item 26; frames H1, 1, 5 and 11), "Top spacing is tighter than the frames ...
+ * Mockup v2's .scr has 14 px top padding (desk-v2.html:97)": every screen's top padding becomes 14 px, and the
+ * Timeline's pinned head moves up those 14 px to sit flush at the top, as frame 7b's `.thead` (desk-v2.html:278).
+ */
+const excepted = new Set();
+const STAGE8_TOP = (n, d) => (n.cls.has('sb-screen') && n.parent && n.parent.attrs.id === 'view' && /^padding-top: (4px|\(none\)) → 14px$/.test(d))
+  || (n.cls.has('v2-tlhead') && n.parent && n.parent.cls.has('v2-timeline') && d === 'margin-top: (none) → -14px');
 function sameLook(app, where, fails, seen) {
   for (const way of WAYS) {
     const root = document.documentElement;
@@ -402,6 +411,7 @@ function sameLook(app, where, fails, seen) {
       }
       if (b.text.trim()) for (const k of LOOK) if (plain(a.style.get(k) || '') !== plain(b.style.get(k) || '')) diffs.push(`computed ${k}: ${plain(a.style.get(k) || '(none)')} → ${plain(b.style.get(k) || '(none)')}`);
       for (const d of diffs) {
+        if (STAGE8_TOP(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -442,6 +452,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
+  // The named exception was met, and only in its own forms: Home, Waiting, Plan, a project, Team and the Timeline.
+  for (const want of ['section.sb-screen.v2.v2-home padding-top: 4px → 14px', 'section.sb-screen padding-top: (none) → 14px', 'div.v2-tlhead margin-top: (none) → -14px']) {
+    assert.ok(excepted.has(want), `${want}: ${JSON.stringify([...excepted])}`);
+  }
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

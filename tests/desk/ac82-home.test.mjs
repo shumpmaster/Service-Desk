@@ -271,10 +271,11 @@ test('AC82: a tile\'s "Next:" is the first milestone not reached in the owner\'s
   try {
     const next = byClass(keyed(app, 'card:Service-Desk'), 'v2-ln').map((l) => l.textContent).find((t) => /^Next:/.test(t));
     assert.match(next, /^Next: MD1 · rough finish /);
-    await app.go('#/work');
-    const words = app.text();
+    // From stage 5 (AC86, specs/S-001.md:7041-7046): Plan's rough finish in AC24's words is in the milestone's sheet.
+    await app.go('#/work/ms/Service-Desk/MD1');
+    const words = byClass(byClass(app.view, 'v2-sheet')[0], 'v2-plfin')[0].textContent;
     const finish = /^Next: MD1 · rough finish (.+)$/.exec(next)[1];
-    assert.ok(words.includes(finish), `Plan's rough finish for MD1, ${finish}`);
+    assert.equal(words, finish, `Plan's rough finish for MD1, ${finish}`);
   } finally {
     app.restore();
   }

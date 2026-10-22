@@ -3762,6 +3762,9 @@ export function startSandbox(opts = {}) {
   const stateEl = document.getElementById('screen-state');
   try {
     document.documentElement.classList.add('sb');
+    // From stage 7 (AC88): every trial-view screen is drawn on mockup v2's ground and tokens, the
+    // render-error screen among them (sandbox.css, html.v2-page).
+    document.documentElement.classList.add('v2-page');
     const link = document.createElement('link');
     link.setAttribute('rel', 'stylesheet');
     link.setAttribute('href', 'sandbox.css');
@@ -3898,11 +3901,10 @@ export function startSandbox(opts = {}) {
     // AC81: the bar Home · Waiting · Plan, the only bar at the foot of every trial-view screen; a
     // project's screens count as Home's.
     try {
-      // The Waiting screen is drawn on mockup v2's ground (sandbox.css, html.v2-page).
-      // From stage 3 the project's page and its Timeline too (AC83, AC84).
-      // From stage 5 Plan too (AC86).
-      const v2 = r.kind === 'waiting' || r.kind === 'home' || r.kind === 'work' || (r.name && (r.kind === 'status' || r.kind === 'timeline' || (r.kind === 'pipeline' && CONFIG.projects.some((x) => x.name === r.name && x.model === 'v3'))));
-      document.documentElement.classList.toggle('v2-page', Boolean(v2));
+      // The Waiting screen is drawn on mockup v2's ground (sandbox.css, html.v2-page); from stage 3 the
+      // project's page and its Timeline too (AC83, AC84); from stage 5 Plan (AC86); and from stage 7
+      // every trial-view screen, the ones no frame redraws among them, in both themes (AC88).
+      document.documentElement.classList.add('v2-page');
       // AC82: Home's column widens to two tiles a row from 720 px (sandbox.css). The root's class is its
       // own: Home's section is `.v2-home`, a grid, which the root must not become (the Design reviewer's
       // B1, stage 2 round 1).

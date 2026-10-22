@@ -192,9 +192,15 @@ test('AC80: "Done ✓" in a sheet marks the card at once: it heads Done as "Conf
     // From stage 2 (AC82): Home's briefing and the tile's "wait on you", in place of today's Home's line and pill.
     assert.match(byClass(app.view, 'v2-brief')[0].textContent, /^7 need you/, 'Home\'s briefing less the mark');
     assert.deepEqual(byClass(app.view, 'v2-wt').map((x) => x.textContent), ['7 wait on you'], 'the tile\'s count, less the mark');
+    // From stage 3 (AC83, specs/S-001.md:6773-6775; AC81 "From stage 3", :6456-6458; AC80's counts, :6161-6164) the page, in the Status screen's place: its row "◆ <n> wait on
+    // you" with the waiting items' short names, counted as the board counts them (rewritten from the Status
+    // screen's queue line, "3 decisions · 4 to merge ›").
     await app.go('#/p/Example');
-    assert.deepEqual(byClass(app.view, 'sb-btn').map((x) => x.textContent), ['3 decisions · 4 to merge ›', 'Team: Waiting on you, the oldest for 3 h 11 min ›'],
-      'the Status screen\'s queue and team lines: the oldest now #127');
+    const waits = findAll(app.view, (e) => e.dataset && e.dataset.k === 'page-waits')[0];
+    assert.equal(byClass(waits, 'v2-prtt')[0].textContent, '7 wait on you', 'the page\'s count, less the mark');
+    assert.equal(byClass(waits, 'v2-small')[0].textContent.split(' · ').length, 7, 'seven short names');
+    assert.ok(!waits.textContent.includes('Merge: the first rough estimates'), 'the marked card\'s name gone with it');
+    assert.equal(waits.attrs.href, '#/waiting/Example', 'opening Waiting with only this project shown');
     await app.go('#/p/Example/team');
     assert.ok(app.text().includes('You · waiting on you: 7 in your queue'), 'the owner\'s tile on the Team screen (AC49)');
     await app.go('#/waiting');
@@ -266,6 +272,24 @@ test('AC80: a mark is judged only at a successful poll — at 4 minutes 59 secon
     assert.equal(byClass(rows[0], 'v2-m')[0].textContent, '#126 · 16:08', 'its code, then the time GitHub confirmed it, in the owner\'s time zone');
     assert.equal(findAll(rows[0], (e) => e.tag === 'button' && e.textContent === 'Undo').length, 0, 'once confirmed, only "✓ <time>"');
     assert.equal(badge(app), '7');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC80 + AC83: a kicked-back card counts again on the project\'s page — "◆ <n> wait on you" with its short name, as the badge and the tile count it (specs/S-001.md:6161-6164, :6773-6774; the Reviewer\'s N2, stage 3 round 1)', async () => {
+  const { app } = await openExample({ store: storage() });
+  try {
+    await markDoneInSheet(app, PR(126));
+    for (let i = 1; i <= 6; i++) await app.advance(POLL_MS);
+    assert.deepEqual(titles(app, 'kick'), ['Merge: the first rough estimates'], 'kicked back');
+    assert.equal(badge(app), '8');
+    await app.go('#/');
+    assert.deepEqual(byClass(app.view, 'v2-wt').map((x) => x.textContent), ['8 wait on you'], 'the tile counts it');
+    await app.go('#/p/Example');
+    const waits = keyed(app, 'page-waits');
+    assert.equal(byClass(waits, 'v2-prtt')[0].textContent, '8 wait on you', 'the page counts it, as the badge and the tile do');
+    assert.ok(byClass(waits, 'v2-small')[0].textContent.split(' · ').includes('Merge: the first rough estimates'), 'its short name with the others');
   } finally {
     app.restore();
   }

@@ -503,3 +503,21 @@ notify-ac77-desk, notify-j16-jobs and j6-j8-function) add no fixture file. What 
   ahead, the 250-commit pull requests), every failure, "last looked" on the device and the marks. The capture rig
   for the pull request's screenshots (outside the repository) serves the page these fixtures through
   `fake-desk.mjs`, with #148's recorded commits moved in time so they fall after its made-up "last looked".
+
+## The desk as mockup v2, stage 3: the project page and its Timeline (2026-10-21, S-001 AC83, AC84 and J23)
+
+- `j11-77bfeae/AGENTS.md` and `j11-77bfeae/governance/OPERATING_MODEL_VERSION` (J23's version reads; read by
+  `j23-versions.test.mjs` and `ac83-page.test.mjs`): **real**, Service-Desk's files at 77bfeae, copied unchanged
+  with `git show 77bfeae:AGENTS.md` and `git show 77bfeae:governance/OPERATING_MODEL_VERSION`, beside the
+  77bfeae records already there (the fixture's tree.txt lists both). AGENTS.md:3 is the `tier:` line the spec
+  quotes; the version file reads `3.5.0`. Service-Desk's tree has no root `VERSION` at 77bfeae.
+- Personal-Org-Operating-Model's `VERSION` (`3.5.0`) and `AGENTS.md` (`tier: T1   # placeholder comment`) in
+  those tests are **NOT real records**: placeholders written inline in poom/'s form, since that repository is
+  private and none of its files is copied here.
+- Everything else AC83's, AC84's and J23's tests give is **NOT real** and written inline, each saying so: all 24
+  standard lines in section 3 (Design-2 and Build-4 skipped), a run 2 with a recorded reason (a made-up `dor`
+  recycle line and its answer), a project in its first run, one that is Done, two waiting questions, a charter
+  with no `tier:` line, `tier:` lines with no value or not in column 0, version files in other forms, a made-up
+  `VERSION` on Service-Desk, a questions folder and a dispatch log on the v2.5 project, Work ahead's estimates
+  (wa-fixtures.mjs's worked example), and, for 77bfeae's `experiments/` paths and J11's research memos, files
+  with placeholder text whose paths are the real tree's (the page names them from the tree only).

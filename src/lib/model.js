@@ -19,6 +19,7 @@ import { cardRows, questionRows, cardSummary, v5Waits, sessionRows, timelines, V
 import { parseRiskPaths, RISK_PATHS_PATH } from './j22.js';
 import { askedInSession, questionHold } from './asking.js';
 import { recordedAnswers } from './prfiles.js';
+import { versionKind, parseVersionRecord, MODEL_VERSION_PATH, AGENTS_PATH, ROOT_VERSION_PATH } from './versions.js';
 
 export const NOT_RECORDED = 'not recorded';
 export const CI_CANT_READ = "can't read CI (the read token needs Actions: read)";
@@ -73,6 +74,10 @@ export function recordKind(path, model) {
   }
   if (path === README_PATH) return 'readme-root'; // AC54: the summary, for every project (read only with ctx.j11)
   if (path === RISK_PATHS_PATH) return 'risk-paths'; // J22 (AC80): every project's, v3 or v2.5 (read only with ctx.j11)
+  // J23 (stage 3, AC83's top line): every project's model version and tier, and the root VERSION of the
+  // project J7 marks `publishesModel` (read only with ctx.j11; VERSION only for that project, neededReads).
+  const vk = versionKind(path);
+  if (vk) return vk;
   return null;
 }
 
@@ -108,6 +113,7 @@ export function parseRecord(kind, text, path) {
     case 'estimates': return { lines: parseEstimates(text) };
     case 'later-work': return parseLaterWork(text);
     case 'risk-paths': return parseRiskPaths(text);
+    case 'model-version': case 'agents-tier': case 'root-version': return parseVersionRecord(kind, text);
     case 'project-doc': case 'surfaces': case 'orch-workflow': case 'spec': case 'request': case 'gate-case': case 'readme-root': case 'review-verdict':
       return parseJ11(kind, text, path);
     default: return null;
@@ -348,6 +354,15 @@ export function neededReads(project, tree, records, now, ctx = {}) {
   // J22 (2026-10-19, AC80): governance/risk-paths.toml, for every connected project, v3 or v2.5, an
   // optional blob read once per device and again only when its sha changes (A3).
   if (ctx.j11) addTo(optBlobs, RISK_PATHS_PATH);
+  // J23 (stage 3; AC83's top line, reused by stage 6a's block): three small optional blobs per connected
+  // project, registered for every project outside J11's v3-only block, each read once per device and
+  // again only when its sha changes (A3): the model version, AGENTS.md's tier, and the root VERSION only
+  // in the project whose J7 entry holds `"publishesModel": true`.
+  if (ctx.j11) {
+    addTo(optBlobs, MODEL_VERSION_PATH);
+    addTo(optBlobs, AGENTS_PATH);
+    if (project.publishesModel === true) addTo(optBlobs, ROOT_VERSION_PATH);
+  }
   for (const q of openQuestions(tree, project.model)) {
     add(q.path);
     if (!hist.includes(q.path)) hist.push(q.path);

@@ -589,6 +589,11 @@ export function feedView(ctx, model, nowMs, tz) {
         ? date(Math.min(...ts)) : `${date(Math.min(...ts))} to ${date(Math.max(...ts))}`) : 'dates not recorded',
     };
     band.words = band.dates ? `${band.dates} · ${band.state}` : band.state;
+    // AC84 (frame 7b): the band's dates or state as the cleaned-up Timeline draws them at its right,
+    // "8 Oct – now", "7–8 Oct · gone back over", "30 Sep – 5 Oct · finished", "planned". `words` above
+    // keeps the run's whole span, which the model's tests and the page's other screens read.
+    band.span = st !== 'still to come' && ts.length ? [Math.min(...ts), Math.max(...ts)] : null;
+    band.label = bandLabel(band.span, band.state, tz);
     // Bottom up: the gathered lines, the rows no date places, the dated ones, then those with no work filed yet.
     const up = [...gathers, ...noDate, ...dated, ...noWork];
     blocks.set(r, { key: rk, run: r, state: st, band, began: runBegan(ctx, r, tz), up, planned: noWork, hasTime: ts.length > 0 });
@@ -641,6 +646,25 @@ export function feedView(ctx, model, nowMs, tz) {
   const msIndex = new Map();
   for (const b of order) for (const row of [...(b.plannedRows || []), ...b.rows]) if (row.kind === 'ms' && !msIndex.has(row.code)) msIndex.set(row.code, { run: b.key, row: row.key });
   return { ok: true, top, bottom, blocks: order, notes, index, msIndex, iconsKey: FEED_ICONS_KEY, bulletsKey: ['Technical', 'Context', 'Why'] };
+}
+
+/**
+ * A run's dates in frame 7b's form (AC84; C): the now run "<first> – now"; any other run its span,
+ * "8 Oct" for one day, "7–8 Oct" within a month, "30 Sep – 5 Oct" across months, then " · <state>";
+ * a planned run "planned"; a run with no times "dates not recorded · <state>".
+ */
+export function bandLabel(span, state, tz) {
+  if (state === 'planned') return 'planned';
+  if (!span) return `dates not recorded · ${state}`;
+  const a = dayKey(new Date(span[0]), tz).split('-');
+  const b = dayKey(new Date(span[1]), tz).split('-');
+  const da = `${Number(a[2])} ${MONTHS[Number(a[1]) - 1]}`;
+  if (state === 'now') return `${da} – now`;
+  let range;
+  if (a.join('-') === b.join('-')) range = da;
+  else if (a[0] === b[0] && a[1] === b[1]) range = `${Number(a[2])}–${Number(b[2])} ${MONTHS[Number(a[1]) - 1]}`;
+  else range = `${da} – ${Number(b[2])} ${MONTHS[Number(b[1]) - 1]}`;
+  return `${range} · ${state}`;
 }
 
 /**

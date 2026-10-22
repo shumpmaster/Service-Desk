@@ -97,6 +97,8 @@ export function NEW_REBUILT(route) {
     // From stage 1a (AC81, "Until stage 3"): the bar Home · Waiting · Plan at every screen's foot, and
     // the project screens' top row Status · Timeline · Team · Waiting, in place of their bottom bar.
     if (has(el, 'v2-bar') || has(el, 'v2-row')) return true;
+    // From stage 3 (AC84; AC68, changed): the short phase line pinned under the Team screen's title, in place of AC68's marker.
+    if (has(el, 'v2-phlpin')) return true;
     if (kind === 'status' && (has(el, 'sb-pboxes') || has(el, 'sb-pbox') || has(el, 'sb-skey') || (el.attrs && el.attrs['data-k'] === 'phases-h'))) return true;
     if (el.attrs && (el.attrs['data-k'] === 'more:pipeline' || el.attrs['data-k'] === 'more:notes')) return true;
     // From 2026-10-18 (notifications): the parts AC75, AC77 and AC78 add, new words rather than changed

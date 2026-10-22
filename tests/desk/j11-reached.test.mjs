@@ -181,13 +181,26 @@ test('AC57 (reached): M3A in Build i2, a run still to come, marked ` · reached:
   assert.deepEqual([msOf(b2, 'M3B').mark, msOf(b2, 'M3B').words], ['empty', 'No work filed yet'], 'its neighbour is still to come');
 });
 
-test('AC57 (reached): the page draws the words and marks on the Status screen', async () => {
+// Rewritten in stage 3 (S-001 AC57, changed by AC83, specs/S-001.md:4478-4486: the Status screen's phase
+// boxes give way to the page's milestones by phase, whose rows take AC57's rules and AC59's words, AC83's
+// "each milestone's row"): this case checked the reached words and marks on the Status screen.
+test('AC57 (reached), changed by AC83: the page draws the words and marks in its milestones by phase — "run 1: M1 reached" on Build\'s line; opened, M1\'s lighter check "reached 7 Oct · gone back over", MD2\'s check "reached 16 Oct", MD3 the gold ring "next to reach"', async () => {
   const app = await openSD('#/p/Service-Desk', { repoOpts: { extra: { 'docs/PROJECT.md': REACHED } } });
   try {
-    const text = app.text();
-    assert.ok(text.includes('Reached 7 Oct · work filed: PR #40, #41'), 'M1');
-    assert.ok(text.includes('Reached 16 Oct'), 'MD2');
-    assert.ok(text.includes('No work filed yet · next to reach'), 'MD3');
+    const line = (ph) => findAll(keyed(app, 'ms-lines'), (e) => e.attrs && e.attrs['data-phase'] === ph)[0];
+    assert.match(line('Build').textContent, /run 1: M1 reached/, 'M1, reached in an earlier run, named on its phase\'s line');
+    assert.match(line('Design').textContent, /Yours: MD1 in progress, MD2 reached, MD3 · /, 'MD2 reached in the now run');
+    for (const ph of ['Build', 'Design']) {
+      await app.tap(findAll(line(ph), (e) => e.tag === 'button')[0]);
+    }
+    const row = (code) => findAll(app.view, (e) => e.attrs && e.attrs['data-ms'] === code && ` ${e.className} `.includes(' v2-sm '))[0];
+    const mark = (code) => findAll(row(code), (e) => e.tag === 'svg')[0].attrs.class;
+    assert.equal(byClass(row('M1'), 'v2-sms')[0].textContent, 'reached 7 Oct · gone back over', 'M1');
+    assert.match(mark('M1'), /st-pastcheck/);
+    assert.equal(byClass(row('MD2'), 'v2-sms')[0].textContent, 'reached 16 Oct', 'MD2');
+    assert.match(mark('MD2'), /st-check/);
+    assert.match(byClass(row('MD3'), 'v2-sms')[0].textContent, /^next to reach/, 'MD3');
+    assert.match(mark('MD3'), /st-next/);
   } finally {
     app.restore();
   }

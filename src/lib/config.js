@@ -46,5 +46,9 @@ export default {
       "contentPrefill": true,
       "contentParam": "value"
     }
-  ]
+  ],
+  "portfolio": {
+    "repo": "shumpmaster/portfolio",
+    "defaultBranch": "main"
+  }
 };

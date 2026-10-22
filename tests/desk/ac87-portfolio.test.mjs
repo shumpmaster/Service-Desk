@@ -5,7 +5,7 @@
 // versions from each fixture's version file (J23's version reads, stage 3), one behind, one missing, and no
 // latest; each row opening its sheet; and nothing reading or changing the portfolio. The made-up portfolio
 // cases of AC87's test (ideas, the queue, Quiet, the phone note, a failed portfolio read) are 6b's, after the
-// owner's Setup P1 (:7144-7148).
+// owner's Setup P1 (:7144-7148), and are in ac87-portfolio-6b.test.mjs; these cases run with no `portfolio` in J7.
 //
 // Service-Desk's records and its version file are the real ones at 77bfeae (tests/desk/fixtures/j11-77bfeae/).
 // Everything else is made up and NOT a real record (tests/desk/fixtures/README.md): "Example" and the other
@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 import { loadSandbox, findAll, byClass } from './sandbox-helpers.mjs';
 import { findKeyed } from './sandbox-fixtures.mjs';
 import { textRuns } from './screen-text.mjs';
-import { CONFIG } from './helpers.mjs';
+import { CONFIG, J7_FILE } from './helpers.mjs';
 import { repo, gitSha } from './fake-desk.mjs';
 import { SD, POOM, waSetup, j77Files, poomFiles, snapOf } from './wa-fixtures.mjs';
 import { j11Records, timelineOf, phaseView } from '../../src/lib/sandbox.js';
@@ -92,7 +92,10 @@ test('AC87 (AC82\'s foot, specs/S-001.md:6696-6700): Home\'s foot is the portfol
 });
 
 test('AC87 (6a): with no portfolio in J7, every part that needs the portfolio says plainly it isn\'t connected yet — "Decisions across projects", the rarer records, the line under the rows, and Plan\'s "Ideas · from the portfolio"; no count, no "None in the portfolio\'s queue"', async () => {
-  assert.equal('portfolio' in CONFIG, false, 'src/config/projects.json names no portfolio (6a\'s state, J7)');
+  // Rewritten in stage 6b (J7's `portfolio`, specs/S-001.md:9515-9520): src/config/projects.json names the portfolio
+  // now; these cases' J7 (helpers' CONFIG) leaves it out, which J7 says builds and shows 6a's words (:9518-9519).
+  assert.equal('portfolio' in CONFIG, false, 'no portfolio in this J7 (6a\'s state, J7)');
+  assert.deepEqual(J7_FILE.portfolio, { repo: 'shumpmaster/portfolio', defaultBranch: 'main' }, 'the committed J7 names it (6b; ac87-portfolio-6b.test.mjs)');
   const app = await open();
   try {
     assert.equal(rowLine(app, 'decisions').textContent, 'Not read yet: your portfolio isn\'t connected to the desk');

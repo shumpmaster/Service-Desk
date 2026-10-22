@@ -548,3 +548,24 @@ notify-ac77-desk, notify-j16-jobs and j6-j8-function) add no fixture file. What 
   - Personal-Org-Operating-Model is in poom/'s placeholder form, with a placeholder root `VERSION` (`3.5.0`,
     `3.5`, or none), since that repository is private and none of its files is copied here.
 - No portfolio file is used or copied: the portfolio is not read before stage 6b.
+
+## The desk as mockup v2, stage 6b: the portfolio's read (2026-10-22, S-001 AC87, J23, J24)
+
+- **No portfolio file is used, copied or read.** The portfolio repository (`shumpmaster/portfolio`) is private; the
+  Builder did not fetch it. Every portfolio file the tests read is **made up, NOT a real record**, written inline in
+  `tests/desk/pf-fixtures.mjs` in poom/'s placeholder form: the forms J23 names, with made-up words, each file saying
+  "made up for the desk's tests, NOT a real record":
+  - `ideas/IDEAS.md`: the template's own example heading (`## YYYY-MM-DD <the idea's name>`), then made-up ideas in
+    each state (captured, shaping, approved, re-aimed, stopped), one with two `state:` lines, one with no `state:`
+    line and one with another value;
+  - `queue/_DECISION_CARD.md` and `queue/_CRITIQUE_DIGEST.md` (templates, never cards), and, where a case adds one, a
+    made-up decision card `queue/PF-001-explore-<n>.md` in J2's card form (its seven sections, made-up options
+    `explore` and `park`), or a file that is not a card at all;
+  - `rulings/` (a README and two made-up rulings), `intent/` (a README and a `_TEMPLATE.md`), `library/facts/` (a
+    README), and, where a case adds them, a made-up intent file or fact;
+  - `README.md`.
+- The portfolio's branch answer in the J23 function test is made up in GitHub's form (as `github/branch-main.json`
+  records it for Service-Desk), with made-up shas.
+- `tests/desk/helpers.mjs`'s `CONFIG` is J7 less its `portfolio` (6a's state, which J7 says builds), so every case
+  written before stage 6b runs as it ran; the portfolio's cases add it (`withPortfolio`), and J7's read the file whole
+  (`J7_FILE`).

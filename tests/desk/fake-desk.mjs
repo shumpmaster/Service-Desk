@@ -2,8 +2,8 @@
 // poll and blob calls from in-memory repositories, honours the page's ETags the way the real
 // function does (a null page for a matching ETag), and records every call with the fake time.
 
-import { urlsFor, pageUrl, keptPull, keptLogLines, JOB_LOG_CHARS } from '../../src/lib/github.js';
-import { jobsPart, ownerChecksPart } from '../../src/lib/api.js';
+import { urlsFor, pageUrl, keptPull, keptLogLines, JOB_LOG_CHARS, portfolioUrls } from '../../src/lib/github.js';
+import { jobsPart, ownerChecksPart, validatePortfolio } from '../../src/lib/api.js';
 import { closedNeedsNext, CLOSED_MAX_PAGES } from '../../src/lib/prfiles.js';
 import { createHash } from 'node:crypto';
 
@@ -129,6 +129,8 @@ export function fakeServer(repos, config, clock) {
   const calls = [];
   const byName = (n) => config.projects.find((p) => p.name === n);
   async function call(path, body) {
+    // From stage 6b (J23): a body naming a `target` is the portfolio's, checked by the function's own allow-list.
+    if (body && Object.prototype.hasOwnProperty.call(body, 'target')) return portfolioCall(path, body);
     calls.push({ path, project: body.project, at: clock.now(), body });
     const r = repos[body.project];
     const project = byName(body.project);
@@ -296,8 +298,50 @@ export function fakeServer(repos, config, clock) {
     }
     return { ok: true, status: 200, json: { ...base, state: 'ok', blobs, history, compare, ...extra, ...(body.pulls ? { pulls: pullsOut === undefined ? null : pullsOut } : {}) } };
   }
+  /**
+   * The portfolio's reads (J23, stage 6b), as the function answers them: its request checked by the
+   * function's own `validatePortfolio` (a refusal is a 400, which the page's call reads as `cloudflare`);
+   * the poll's branch (304 for a matching head and ETag) and, on a new head, the tree; the blob call's
+   * blobs by sha. The repository is `repos[PORTFOLIO_REPO]` (made up per test, NOT real records); with none
+   * the branch answers 404, as GitHub does for a repository the token can't see (`no-access`). Its `fail`
+   * as a project's, `hold` (a promise it waits on), `sizes` (path → size) and `truncated` for the tree, `blobFail` for a blob.
+   */
+  async function portfolioCall(path, body) {
+    calls.push({ path, project: null, target: body.target, at: clock.now(), body });
+    const kind = path === '/api/poll' ? 'poll' : 'blobs';
+    const v = validatePortfolio(body, config, kind);
+    if (v.error) return { ok: false, status: 400, reason: 'cloudflare', words: `Cloudflare or desk-function error (HTTP 400: ${v.error})` };
+    const r = repos[PORTFOLIO_REPO];
+    // `hold`: a promise the call waits on before it answers (a read still in flight; review round 2, N7).
+    if (r && r.hold) await r.hold;
+    const base = { target: 'portfolio', readAt: new Date(clock.now()).toISOString(), reason: null, retryAfter: null, cost: { github: 1, bytes: 100 } };
+    const f = r ? r.fail : null;
+    if (f && f.kind === 'network') return { ok: false, status: 0, reason: 'network' };
+    if (f && f.kind === 'signed-out') return { ok: false, status: 403, reason: 'signed-out' };
+    if (f && f.kind === 'cloudflare') return { ok: false, status: 503, reason: 'cloudflare', cfError: 1102, words: 'Cloudflare or desk-function error (HTTP 503, Error 1102)' };
+    if (!r) return { ok: true, status: 200, json: { ...base, state: 'cant-read', reason: 'no-access', head: null, etags: {}, tree: null } };
+    if (f && f.state === 'cant-read') return { ok: true, status: 200, json: { ...base, state: 'cant-read', reason: f.reason, retryAfter: f.retryAfter || null, head: null, etags: {}, tree: null, blobs: {} } };
+    if (kind === 'poll') {
+      r.polls = (r.polls || 0) + 1;
+      const head = r.head();
+      const branch = portfolioUrls(v.req.portfolio).branch;
+      const tag = etagOf(head);
+      if (v.req.head === head && v.req.etags[branch] === tag) return { ok: true, status: 200, json: { ...base, state: 'unchanged', head: null, etags: { [branch]: tag }, tree: null } };
+      const tree = v.req.head === head ? null : JSON.stringify({ sha: head, truncated: Boolean(r.truncated),
+        tree: Object.entries(r.files).map(([p, t]) => ({ path: p, type: 'blob', sha: gitSha(t), size: (r.sizes && r.sizes[p]) || t.length })) });
+      return { ok: true, status: 200, json: { ...base, state: 'ok', head: { sha: head, treeSha: head, committedAt: r.committedAt || null }, etags: { [branch]: tag }, tree } };
+    }
+    r.blobCalls = r.blobCalls || [];
+    r.blobCalls.push([...v.req.blobs]);
+    if (v.req.blobs.some((x) => (r.blobFail || []).includes(x))) return { ok: true, status: 200, json: { ...base, state: 'cant-read', reason: 'github', blobs: {} } };
+    const texts = new Map(Object.values(r.files).map((t) => [gitSha(t), t]));
+    return { ok: true, status: 200, json: { ...base, state: 'ok', blobs: Object.fromEntries(v.req.blobs.map((x) => [x, texts.has(x) ? texts.get(x) : null])) } };
+  }
   return { call, calls };
 }
+
+/** The key of the portfolio's made-up repository among a fake server's repos (J23): never a project's name (J7's names are plain). */
+export const PORTFOLIO_REPO = ':portfolio';
 
 // The PR #40 review's example (N4): a dispatch-log line whose `item` is an object with
 // non-callable toString and valueOf. From M2 the page type-checks log lines (AC31), so this line is

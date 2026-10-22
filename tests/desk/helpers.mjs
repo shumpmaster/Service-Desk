@@ -18,7 +18,17 @@ export function recorded(name) {
   return JSON.parse(fixture(`github/${name}.json`));
 }
 
-export const CONFIG = JSON.parse(readFileSync(join(SRC, 'config', 'projects.json'), 'utf8'));
+/** J7 as committed (src/config/projects.json), the portfolio's entry among it from stage 6b. */
+export const J7_FILE = JSON.parse(readFileSync(join(SRC, 'config', 'projects.json'), 'utf8'));
+/** J7's `portfolio` (stage 6b; J23): `{ repo, defaultBranch }`. */
+export const PORTFOLIO = J7_FILE.portfolio;
+/**
+ * J7 without its `portfolio` (stage 6b): the config every case before 6b was written against, the
+ * portfolio absent (6a's state, which J7 says builds: specs/S-001.md:9518-9519), so each runs as it ran,
+ * reading no portfolio. The portfolio's own cases add it (`{ ...CONFIG, portfolio: PORTFOLIO }`), and
+ * J7's and the build's cases read J7_FILE.
+ */
+export const CONFIG = (({ portfolio: _pf, ...rest }) => rest)(J7_FILE);
 export const SD = CONFIG.projects.find((p) => p.name === 'Service-Desk');
 export const POOM = CONFIG.projects.find((p) => p.name === 'Personal-Org-Operating-Model');
 

@@ -815,7 +815,8 @@ function tileNode(b, bd, group, nextRows) {
   const name = project.name;
   const counts = bd && bd.counts ? bd.counts.get(name) : null;
   const n = counts ? counts.waiting + counts.kicked : 0;
-  const read = box.drawError ? 'cant-read' : box.read ? box.read.read : 'checking';
+  const rs = readStateOf(box);
+  const read = rs.state;
   const waits = tileWaits(n, read);
   const sum = summaryView(project, box, b.snap);
   // The gate card waiting on the owner (AC82: the ◆ in its phase, and "Next: <the gate>, after your ruling").
@@ -846,7 +847,17 @@ function tileNode(b, bd, group, nextRows) {
     h('p', { class: 'v2-ln' }, vi('agents'), h('span', { class: 'v2-g' }, work)),
     h('p', { class: 'v2-ln' }, stc(next.icon, 'v2-k'), h('span', {}, h('span', { class: 'v2-g' }, 'Next:'), ` ${next.words}`)),
     stallNode(b, group),
-    read === 'cant-read' && box.read && box.read.since != null ? h('p', { class: 'v2-ln bad' }, vi('bad'), h('span', {}, `Can't read since ${hhmm(new Date(box.read.since), TZ)}: ${box.read.words}`)) : null);
+    read === 'cant-read' && rs.since != null ? h('p', { class: 'v2-ln bad' }, vi('bad'), h('span', {}, `Can't read since ${hhmm(new Date(rs.since), TZ)}: ${box.read.words}`)) : null);
+}
+
+/**
+ * A project's read state as Home draws it (AC82's tile; AC5): 'cant-read' for a project that can't be
+ * drawn or whose read is refused or failing, 'checking' while its first read is pending, else its
+ * read's own; with the time it began failing. The tile and the portfolio's cap (AC87) both take it from
+ * here, so the two never differ.
+ */
+function readStateOf(box) {
+  return { state: box.drawError ? 'cant-read' : box.read ? box.read.read : 'checking', since: box.read && box.read.since != null ? box.read.since : null };
 }
 
 function renderHome(desk, built, seen, nowMs, bd = null) {
@@ -929,7 +940,12 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
 /** The block's view from the projects as drawn, or why it can't be shown: { view, error }. */
 function portfolioOf(built) {
   try {
-    return { view: portfolioView(built.map((b) => ({ project: b.project, pv: b.error ? null : b.pv, snap: b.error ? null : b.snap, error: Boolean(b.error) }))), error: null };
+    return { view: portfolioView(built.map((b) => {
+      // The tile's read state (readStateOf), its time in ownerTimeZone as the tile's "Can't read since HH:MM".
+      const rs = readStateOf(b.box);
+      const read = { state: rs.state, since: rs.state === 'cant-read' && rs.since != null ? hhmm(new Date(rs.since), TZ) : null };
+      return { project: b.project, pv: b.error ? null : b.pv, snap: b.error ? null : b.snap, error: Boolean(b.error), read };
+    })), error: null };
   } catch (err) {
     return { view: null, error: err };
   }
@@ -975,7 +991,8 @@ function portfolioSheet(pf, key, built) {
       mark('nomodel', `${cap(PF_WORDS.capNoRecord)}. ${PF_WORDS.capModelOpen}`),
       h('p', { class: 'v2-small' }, PF_WORDS.capResearch)];
   } else if (key === 'scorecard') {
-    parts = [mark('nomodel', PF_WORDS.targets), mark('unrec', cap(PF_WORDS.time)), h('p', { class: 'v2-small' }, PF_WORDS.marks)];
+    // Each mark beside its own words, and no key (mockup v2's rule, part B item 35; specs/S-001.md:6820-6821).
+    parts = [mark('nomodel', PF_WORDS.targets), mark('unrec', cap(PF_WORDS.time))];
   } else if (key === 'versions') {
     parts = [h('ol', { class: 'v2-rows v2-pfsl', key: 'pfs-versions' }, v.versions.rows.map((r) => {
       const b = built.find((x) => x.project.name === r.name);
@@ -987,7 +1004,7 @@ function portfolioSheet(pf, key, built) {
       }
       return item(r.name, r.words, top ? h('span', { class: 'v2-mono' }, top) : null);
     })),
-    h('p', { class: 'v2-small' }, v.versions.publisher ? PF_WORDS.versionsFrom : PF_WORDS.noPublisher)];
+    h('p', { class: 'v2-small v2-pffrom' }, v.versions.publisher ? PF_WORDS.versionsFrom.map((w, i) => (i % 2 ? code(w) : w)) : PF_WORDS.noPublisher)];
   } else {
     // "Decisions across projects" and the rarer records: the portfolio isn't read before 6b (J23).
     parts = [h('p', { class: 'v2-body' }, pfLine(row)), h('p', { class: 'v2-small' }, PF_WORDS.waitsOnP1), h('p', { class: 'v2-small' }, v.foot)];

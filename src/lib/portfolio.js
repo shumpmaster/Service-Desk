@@ -39,10 +39,10 @@ export const PF_WORDS = Object.freeze({
   capResearch: 'Research sub-projects are not counted: no record marks one.',
   capV25: 'older pipeline: sprints, not phases',
   capDone: 'Done',
-  versionsFrom: 'Each project\'s version is its governance/OPERATING_MODEL_VERSION; the latest is the root VERSION of the project that publishes the model.',
+  // Its file paths are drawn in Plex Mono (the page's code form): [words, path, words, path, words].
+  versionsFrom: Object.freeze(['Each project\'s version is its ', 'governance/OPERATING_MODEL_VERSION', '; the latest is the root ', 'VERSION', ' of the project that publishes the model.']),
   noPublisher: 'No connected project is marked as publishing the model, so the latest is not recorded.',
   waitsOnP1: 'It waits on Setup P1: you add the portfolio repository to the desk\'s read access, read only.',
-  marks: 'The marks: a slashed circle, no record for this in the model yet; a dashed circle with "?", not recorded yet.',
 });
 
 /** J23's state words: they follow a colon ("latest: not recorded"), where a version follows a space ("latest 3.5.0"). */
@@ -53,18 +53,31 @@ const after = (w) => (isState(w) ? `: ${w}` : ` ${w}`);
 // The cap on work at once (AC87; AC50's now phase)
 
 /**
- * Where a project stands for the cap (AC87): each connected v3 project whose now phase (AC50) is Build
- * or Launch is counted. A Done project, or one in Discovery or Design, is not; a v2.5 project has no
- * phases; a v3 project whose phase the desk can't give yet is named with why, never left out silently
- * (C: "none" would otherwise claim what no record says). Returns { name, v3, phase, counted, why }.
+ * Why a v3 project's phase isn't known, in the words of its read state, the one Home's tile takes
+ * (public/sandbox.js, readStateOf; AC5): a read refused or failed, "can't be read since HH:MM" (or
+ * "can't be read" with no time); the first read still pending, "not read yet"; read, but no now run,
+ * "not recorded". `read`: { state: 'ok' | 'checking' | 'cant-read', since: 'HH:MM' | null }, or absent.
  */
-export function capEntry({ project, pv, error }) {
+function unknownWhy(pv, error, read) {
+  if (error || (read && read.state === 'cant-read')) return read && read.since ? `can't be read since ${read.since}` : "can't be read";
+  if (read ? read.state === 'checking' : pv && pv.why === 'Phases: reading…') return 'not read yet';
+  return NOT_RECORDED;
+}
+
+/**
+ * Where a project stands for the cap (AC87): each connected v3 project whose now phase (AC50) is Build
+ * or Launch is counted, from its records as last read, as its tile draws them. A Done project, or one in
+ * Discovery or Design, is not; a v2.5 project has no phases; a v3 project whose phase the desk can't give
+ * is named with why (unknownWhy), never left out silently (C: "none" would otherwise claim what no record
+ * says). Returns { name, v3, phase, counted, why }.
+ */
+export function capEntry({ project, pv, error, read }) {
   const name = project.name;
   if (project.model !== 'v3') return { name, v3: false, phase: null, counted: false, why: PF_WORDS.capV25 };
-  if (error) return { name, v3: true, phase: null, counted: false, why: "can't be read" };
-  if (!pv || !pv.tracked) return { name, v3: true, phase: null, counted: false, why: pv && pv.why === 'Phases: reading…' ? 'not read yet' : NOT_RECORDED };
+  if (error || !pv || !pv.tracked) return { name, v3: true, phase: null, counted: false, why: unknownWhy(pv, error, read) };
   if (pv.done) return { name, v3: true, phase: 'Done', counted: false, why: null };
   const now = pv.nowRun;
+  // Records read, no now run in them: "not recorded", as the tile's "Now: not recorded".
   if (!now) return { name, v3: true, phase: null, counted: false, why: NOT_RECORDED };
   return { name, v3: true, phase: now.phase, counted: now.phase === 'Build' || now.phase === 'Launch', why: null };
 }
@@ -151,7 +164,8 @@ export function versionsView(entries) {
 // The block (frame H4), 6a
 
 /**
- * The block, 6a: entries [{ project, pv, snap, error }], one for each connected project in J7's order.
+ * The block, 6a: entries [{ project, pv, snap, error, read }], one for each connected project in J7's order
+ * (`read`: its tile's read state, capEntry).
  * Returns { head, mono, rows: [{ key, title, soft, parts: [{ text, mark }] }], foot, cap, versions }.
  * Every portfolio part reads 6a's words: nothing reads the portfolio before 6b (J23).
  */

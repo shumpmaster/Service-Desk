@@ -18,7 +18,7 @@ import { loadSandbox, findAll, byClass } from './sandbox-helpers.mjs';
 import { findKeyed } from './sandbox-fixtures.mjs';
 import { textRuns } from './screen-text.mjs';
 import { CONFIG } from './helpers.mjs';
-import { repo } from './fake-desk.mjs';
+import { repo, gitSha } from './fake-desk.mjs';
 import { SD, POOM, waSetup, j77Files, poomFiles, snapOf } from './wa-fixtures.mjs';
 import { j11Records, timelineOf, phaseView } from '../../src/lib/sandbox.js';
 import { portfolioView, versionsView, capView, behindWords, rowText, PF_WORDS, PF_ROWS } from '../../src/lib/portfolio.js';
@@ -157,14 +157,48 @@ test('AC87 + AC50 (made up, NOT real): Build and Launch counted, in J7\'s order;
   assert.equal(rowText({ parts: w.parts }), 'In Build or Launch: none · Unread\'s phase: not read yet · Broken\'s phase: can\'t be read · your cap: no record for this in the model yet');
   const norun = { project: made('No run'), snap: null, pv: { tracked: true, nowRun: null, done: false }, error: false };
   assert.match(rowText({ parts: capView([norun]).parts }), /^In Build or Launch: none · No run's phase: not recorded · /);
+  // The tile's read state decides the words (Design B2, round 1): refused or failing, "can't be read since HH:MM"; pending, "not read yet".
+  const cant = { ...unread, read: { state: 'cant-read', since: '13:00' } };
+  const cantNoTime = { ...unread, read: { state: 'cant-read', since: null } };
+  const pending = { ...unread, read: { state: 'checking', since: null } };
+  assert.equal(rowText({ parts: capView([cant, cantNoTime, pending]).parts }),
+    'In Build or Launch: none · Unread\'s phase: can\'t be read since 13:00 · Unread\'s phase: can\'t be read · Unread\'s phase: not read yet · your cap: no record for this in the model yet');
+  const stale = { ...entries[1], read: { state: 'cant-read', since: '13:00' } };
+  assert.deepEqual([capView([stale]).entries[0].phase, capView([stale]).entries[0].counted], ['Build', true], 'records as last read still give the phase, as the tile draws them');
 });
 
-test('AC87 (on the page): a project not read yet is named in the cap\'s line with "not read yet", and the line never says "none" alone over it', async () => {
-  const down = repo(files({ ids: ['MD3'] }));
-  down.fail = { kind: 'network' };
-  const app = await open({ more: { Example: down } });
+// Rewritten in round 1 (Design B2): a project whose read fails or is refused is not "not read yet"; it says what its tile says.
+const tileOf = (app, name) => findKeyed(app, `card:${name}`);
+test('AC87 (on the page): a v3 project the desk can\'t read — its read refused, or failing — is named in the cap\'s line and its sheet as "can\'t be read since HH:MM", the time its tile gives ("Can\'t read since HH:MM"); never "not read yet", and never "none" alone over it', async () => {
+  for (const fail of [{ state: 'cant-read', reason: 'not-found' }, { kind: 'network' }]) {
+    const down = repo(files({ ids: ['MD3'] }));
+    down.fail = fail;
+    const app = await open({ more: { Example: down } });
+    try {
+      const tile = tileOf(app, 'Example').textContent;
+      const t = /Can't read since (\d\d:\d\d)/.exec(tile);
+      assert.ok(t, `${JSON.stringify(fail)}: the tile says it can't be read`);
+      assert.equal(rowLine(app, 'cap').textContent, `In Build or Launch: none · Example's phase: can't be read since ${t[1]} · your cap: no record for this in the model yet`, JSON.stringify(fail));
+      assert.doesNotMatch(block(app).textContent, /not read yet: (?!your portfolio)/);
+      await app.go('#/pf/cap');
+      assert.ok(textRuns(byClass(app.view, 'v2-sheet')[0], () => false).includes(`Phase: can't be read since ${t[1]} · not counted`), 'its sheet, the same');
+    } finally {
+      app.restore();
+    }
+  }
+});
+
+test('AC87 (on the page): while a project\'s first read is still pending its tile is still checking, and the cap names it "not read yet"; once read, its phase', async () => {
+  const setup = waSetup({ projects: [SD, EX, PUB], poom: poom() });
+  setup.repos.Example = repo(files({ ids: ['MD3'] }));
+  const app = await loadSandbox({ ...setup, hash: '#/', now: NOW });
   try {
-    assert.equal(rowLine(app, 'cap').textContent, 'In Build or Launch: none · Example\'s phase: not read yet · your cap: no record for this in the model yet');
+    assert.equal(findKeyed(app, 'home-checked').textContent, 'Checking…', 'before any read has come back');
+    assert.doesNotMatch(tileOf(app, 'Example').textContent, /Can't read/);
+    assert.equal(rowLine(app, 'cap').textContent, 'In Build or Launch: none · Service-Desk\'s phase: not read yet · Example\'s phase: not read yet · your cap: no record for this in the model yet');
+    await app.advance(1000);
+    await app.advance(61_000);
+    assert.equal(rowLine(app, 'cap').textContent, 'In Build or Launch: Example · your cap: no record for this in the model yet');
   } finally {
     app.restore();
   }
@@ -274,17 +308,34 @@ test('AC87: the sheets\' detail — the cap: each connected project with its now
       'Research sub-projects are not counted: no record marks one.']);
     assert.deepEqual(await sheetText('versions'), ['Across your projects · read only', 'Model versions · latest 3.5.0', 'Service-Desk 3.5.0', 'v3 · model 3.5.0 · T1', 'Example 3.4.0, 1 behind',
       'v3 · model 3.4.0 · T1', 'Personal-Org-Operating-Model runs the v2.5 pipeline, publishes 3.5.0', 'v2.5 pipeline · model not recorded · tier not recorded · publishes model 3.5.0',
-      PF_WORDS.versionsFrom]);
+      ...PF_WORDS.versionsFrom.map((w) => w.trim())]);
+    // Design N4, round 1: its file paths in Plex Mono (the page's code form).
+    const from = byClass(byClass(app.view, 'v2-sheet')[0], 'v2-pffrom')[0];
+    assert.deepEqual(byClass(from, 'code').map((c) => c.textContent), ['governance/OPERATING_MODEL_VERSION', 'VERSION']);
+    assert.equal(from.textContent, PF_WORDS.versionsFrom.join(''));
     for (const k of ['decisions', 'rare']) {
       const t = await sheetText(k);
       assert.ok(t.includes(PF_WORDS.waitsOnP1) && t.includes(PF_WORDS.foot), k);
       assert.ok(t.includes(rowText(portfolioView([]).rows.find((r) => r.key === k))), `${k}: 6a's words`);
     }
     const sc = await sheetText('scorecard');
-    assert.deepEqual(sc.slice(2), ['Targets: no record for this in the model yet', 'Your time across projects: not recorded yet', PF_WORDS.marks]);
+    assert.deepEqual(sc.slice(2), ['Targets: no record for this in the model yet', 'Your time across projects: not recorded yet'], 'each mark beside its own words, and no key (Design B1, round 1)');
     assert.deepEqual(marksIn(byClass(app.view, 'v2-sheet')[0]).filter(Boolean), ['st-nomodel', 'st-unrec'], 'each part\'s mark (the close\'s icon aside)');
   } finally {
     app.restore();
+  }
+  // No key on any sheet or in the block (mockup v2's rule, part B item 35; specs/S-001.md:6820-6821): every mark carries its own words.
+  const keyless = await open();
+  try {
+    const KEY = /The marks|a slashed circle|a dashed circle|\bkey\b|legend/i;
+    assert.doesNotMatch(block(keyless).textContent, KEY);
+    for (const k of PF_ROWS) {
+      await keyless.go(`#/pf/${k}`);
+      assert.doesNotMatch(byClass(keyless.view, 'v2-sheet')[0].textContent, KEY, `${k}: no key`);
+    }
+    assert.equal('marks' in PF_WORDS, false);
+  } finally {
+    keyless.restore();
   }
   const none = await open({ projects: [SD, EX, POOM] });
   try {
@@ -298,14 +349,26 @@ test('AC87: the sheets\' detail — the cap: each connected project with its now
 // ---------------------------------------------------------------------------
 // Read only, and no new reads
 
-test('AC87 (read only; A3): stage 6a reads nothing new — every call the page makes is for a connected project, none names the portfolio, and the block holds no link to GitHub and no control that writes', async () => {
-  const app = await open();
+test('AC87 (read only; A3): stage 6a reads nothing new — every call the page makes is a poll or a blob call for a connected project, none names the portfolio; the root VERSION is read only from the `publishesModel` project and once, and each version file once; the block holds no link to GitHub and no control that writes', async () => {
+  // Strengthened in round 1 (the Reviewer's note 5): every project's tree holds a root VERSION (the others' made up, NOT real, each a different text).
+  const exFiles = files({ ids: ['MD3'], more: { VERSION: '9.9.8\n' } });
+  const sdFiles = { ...j77Files(), VERSION: '9.9.9\n' };
+  const app = await open({ more: { Example: repo(exFiles), 'Service-Desk': repo(sdFiles) } });
   try {
     for (const k of PF_ROWS) await app.go(`#/pf/${k}`);
     await app.go('#/');
+    await app.advance(61_000);
     const projects = new Set(app.server.calls.map((c) => c.project));
     assert.deepEqual([...projects].sort(), ['Example', 'Personal-Org-Operating-Model', 'Service-Desk']);
+    assert.deepEqual([...new Set(app.server.calls.map((c) => c.path))].sort(), ['/api/blobs', '/api/poll'], 'no new kind of call');
     assert.ok(app.server.calls.every((c) => !/portfolio/i.test(JSON.stringify(c.body))), 'no portfolio read (6b, J23)');
+    const asked = (name) => app.server.calls.filter((c) => c.path === '/api/blobs' && c.project === name).flatMap((c) => c.body.blobs || []);
+    const times = (name, text) => asked(name).filter((b) => b === gitSha(text)).length;
+    assert.equal(times('Service-Desk', '9.9.9\n'), 0, 'not the root VERSION of a project J7 does not mark `publishesModel`');
+    assert.equal(times('Example', '9.9.8\n'), 0);
+    assert.equal(times('Personal-Org-Operating-Model', '3.5.0\n'), 1, 'the publisher\'s, once (read once per device, J23)');
+    assert.equal(times('Example', '3.4.0\n'), 1, 'each version file once');
+    assert.equal(times('Service-Desk', j77Files()[VERSION_PATH]), 1);
     const links = findAll(block(app), (e) => e.tag === 'a').map((a) => a.attrs.href);
     assert.deepEqual(links, PF_ROWS.map((k) => `#/pf/${k}`), 'only the rows\' own sheets');
     assert.equal(findAll(block(app), (e) => ['button', 'input', 'textarea', 'form'].includes(e.tag)).length, 0);

@@ -378,6 +378,106 @@ export async function pollProject(req, deps) {
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// The portfolio (stage 6b; J23, J7's `portfolio`, AC87): a read target of its own, `"portfolio"`, never a
+// project. Read only, with the same read token: its poll makes J1's request 1 (the branch) and, on a new
+// head, request 4 (the tree), and nothing else (no pull request list, no workflow runs, no owner checks);
+// its blob call reads blobs by sha (`git/blobs/<sha>`) and nothing else. The repository and branch come
+// from J7 only; the page sends only a head sha, the branch's ETag and blob shas.
+
+export const PORTFOLIO_TARGET = 'portfolio';
+
+/** The only URLs the function ever reads for the portfolio: J1's request forms 1, 4 and the blob form. */
+export function portfolioUrls(pf) {
+  const u = urlsFor({ repo: pf.repo, defaultBranch: pf.defaultBranch });
+  return { branch: u.branch, tree: u.tree, blob: u.blob };
+}
+
+/**
+ * The portfolio's poll call (J23). req: { portfolio: J7's entry, head: sha | null, etags: { <branch URL>:
+ * etag } } (already validated). A 403 or a 404 on the branch that is not a rate limit is `no-access` (the
+ * read token does not include the portfolio yet, Setup P1, or the repository moved); any other failure is
+ * J1's reason. Returns { target, readAt, state, reason, retryAfter, head, etags, tree, githubRequests }.
+ */
+export async function pollPortfolio(req, deps) {
+  const nowMs = deps.now();
+  const counter = { n: 0 };
+  const get = makeGetter(deps.token, deps.fetch, counter);
+  const u = portfolioUrls(req.portfolio);
+  const out = { target: PORTFOLIO_TARGET, readAt: new Date(nowMs).toISOString(), state: 'ok', reason: null, retryAfter: null, head: null, etags: {}, tree: null };
+  const failWith = (f) => {
+    Object.assign(out, { state: 'cant-read', reason: f.reason, retryAfter: f.retryAfter, head: null, tree: null, githubRequests: counter.n });
+    return out;
+  };
+  try {
+    const branchEtag = req.head ? (req.etags || {})[u.branch] || null : null;
+    const bres = await get(u.branch, { etag: branchEtag });
+    if (bres && bres.status === 304) {
+      out.etags[u.branch] = bres.headers.get('ETag') || branchEtag;
+      out.state = 'unchanged';
+      out.githubRequests = counter.n;
+      return out;
+    }
+    if (bres && !bres.ok && (bres.status === 403 || bres.status === 404)) {
+      const f = failureOf(bres, nowMs);
+      if (f.reason !== 'rate-limit') throw new Failure('no-access', null, null, bres.status);
+    }
+    if (!bres || !bres.ok) throw failFrom(bres, nowMs);
+    const tag = bres.headers.get('ETag');
+    if (tag) out.etags[u.branch] = tag;
+    let body;
+    try {
+      body = await bres.json();
+    } catch {
+      throw new Failure('github');
+    }
+    const c = body && body.commit;
+    const headSha = c && c.sha;
+    const treeSha = c && c.commit && c.commit.tree && c.commit.tree.sha;
+    if (!SHA_RE.test(headSha || '') || !SHA_RE.test(treeSha || '')) throw new Failure('github');
+    out.head = { sha: headSha, treeSha, committedAt: (c.commit.committer && c.commit.committer.date) || null };
+    if (headSha !== req.head) {
+      const tres = await get(u.tree(treeSha));
+      if (!tres || !tres.ok) throw failFrom(tres, nowMs);
+      out.tree = await tres.text();
+    }
+  } catch (f) {
+    return failWith(f instanceof Failure ? f : new Failure('github'));
+  }
+  out.githubRequests = counter.n;
+  return out;
+}
+
+/**
+ * The portfolio's blob call (J23): req: { portfolio, blobs: [sha] } (already validated, at most
+ * BLOB_BATCH). Each blob read by sha with the raw media type, at most six at once; a failure stops new
+ * requests, as J1's blob call does. Returns { target, readAt, state, reason, retryAfter, blobs: { sha:
+ * text | null }, githubRequests }.
+ */
+export async function readPortfolioBlobs(req, deps) {
+  const nowMs = deps.now();
+  const counter = { n: 0 };
+  const get = makeGetter(deps.token, deps.fetch, counter);
+  const u = portfolioUrls(req.portfolio);
+  const out = { target: PORTFOLIO_TARGET, readAt: new Date(nowMs).toISOString(), state: 'ok', reason: null, retryAfter: null, blobs: {} };
+  let failure = null;
+  const tasks = req.blobs.map((sha) => async () => {
+    out.blobs[sha] = null;
+    if (failure) return;
+    const res = await get(u.blob(sha), { accept: RAW_ACCEPT });
+    if (!res || !res.ok) {
+      const f = failFrom(res, nowMs);
+      if (!failure || f.reason === 'rate-limit') failure = f;
+      return;
+    }
+    out.blobs[sha] = await blobText(res);
+  });
+  await pool(tasks, MAX_PARALLEL);
+  if (failure) Object.assign(out, { state: 'cant-read', reason: failure.reason, retryAfter: failure.retryAfter });
+  out.githubRequests = counter.n;
+  return out;
+}
+
 /**
  * AC79's `jobs` part of the poll call (J1, J6), already validated: { runs: { etag } | null, heads:
  * [{ sha, etags }], extra: [sha] } or null (malformed). Each list is one conditional request, first

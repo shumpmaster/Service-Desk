@@ -11,6 +11,7 @@ import { dayKey } from './timefmt.js';
 import { usageEntry } from './usage.js';
 import { newJobsState, partDue, runPhase, pollPart, applyPollAnswer } from './jobwatch.js';
 import { RISK_PATHS_PATH, OWNER, listAt, ownerCheckHeads, ownerChecksApply, ownerCheckFrom, judgeFiles, verdictPath, ownBranch, verdictOf } from './j22.js';
+import { portfolioKind, parsePortfolioRecord, PORTFOLIO_BLOB_MAX } from './portfolio.js';
 
 // J12 (2026-10-16): the pull-request read counts 5 of a blob call's budget of 25.
 export const PULLS_COST = 5;
@@ -57,6 +58,13 @@ export const COMMITS_PER_CALL = 8;
 export const WAITS_KEY = 'desk-board-waits-v1';
 export const HEAD_POLLS = 5;
 const COMPARE_CACHE_KEY = 'desk-compare-v1';
+// J23 (stage 6b): the portfolio's read, every 5 minutes while the page is open (C: the portfolio changes
+// rarely, and V1's 5 minutes is the bound for anything waiting on the owner), in the scheduler's own
+// queue after the projects' polls, never delaying them; at most one blob call a read. Its parsed blobs are
+// kept on the device under their own key, by kind and sha (read once per device, again only when a sha
+// changes), apart from the projects' cache.
+export const PORTFOLIO_POLL_MS = 300_000;
+export const PORTFOLIO_CACHE_KEY = 'desk-portfolio-blobs-v1';
 
 export const REASON_WORDS = {
   token: 'the read token was rejected or has expired',
@@ -233,6 +241,153 @@ export function createDesk(opts) {
     // J21 (AC78): the usage read, per opening, in the page's memory only.
     usage: { current: null, lastGood: null, at: null, forced: false, asking: false, reads: 0 },
   };
+
+  // ---------------------------------------------------------------------------
+  // J23 (stage 6b): the portfolio's read, the MD sandbox's only (opts.j11), and only when J7 names a
+  // `portfolio`. It is a read target of its own, never a project: its state, its calls and its failures
+  // are its own, and none of them ever touches a project's "read successfully", its counts or its reads.
+  const pfConf = opts.j11 && config.portfolio && typeof config.portfolio.repo === 'string' && typeof config.portfolio.defaultBranch === 'string'
+    ? { repo: config.portfolio.repo, defaultBranch: config.portfolio.defaultBranch } : null;
+  const pf = pfConf ? {
+    head: null, headAt: null, etags: {}, tree: null, truncated: false, pending: false, timer: null, turn: false, lastPollStart: -Infinity,
+    retryUntil: 0, lastSuccessAt: null, failure: null, readAt: null, polls: 0, blobCalls: 0, checking: false,
+  } : null;
+  const pfCache = new Map();
+  if (pf && store) {
+    try {
+      const v = store.getJSON(PORTFOLIO_CACHE_KEY, {});
+      if (v && typeof v === 'object' && !Array.isArray(v)) for (const [k, rec] of Object.entries(v)) if (/^pf-(ideas|card):[0-9a-f]{40}$/.test(k)) pfCache.set(k, rec);
+    } catch {
+      // a cache that can't be read costs only its blobs, read again
+    }
+  }
+  const pfRecords = () => {
+    const out = new Map();
+    if (!pf || !pf.tree) return out;
+    for (const [path, e] of pf.tree) {
+      const kind = portfolioKind(path);
+      if (kind && pfCache.has(`${kind}:${e.sha}`)) out.set(path, pfCache.get(`${kind}:${e.sha}`));
+    }
+    return out;
+  };
+  /** The blobs the portfolio's tree needs now (J23): the idea log and each queue file, not kept yet, within GitHub's contents limit. */
+  const pfMissing = () => {
+    const out = [];
+    if (!pf || !pf.tree || pf.truncated) return out;
+    for (const [path, e] of pf.tree) {
+      const kind = portfolioKind(path);
+      if (!kind || !/^[0-9a-f]{40}$/.test(e.sha || '') || pfCache.has(`${kind}:${e.sha}`)) continue;
+      if (Number.isFinite(e.size) && e.size > PORTFOLIO_BLOB_MAX) continue;
+      out.push({ path, sha: e.sha, kind });
+    }
+    return out;
+  };
+  const pfPersist = () => {
+    if (!store) return;
+    const live = new Set();
+    if (pf.tree) for (const [path, e] of pf.tree) { const k = portfolioKind(path); if (k) live.add(`${k}:${e.sha}`); }
+    for (const k of [...pfCache.keys()]) if (!live.has(k)) pfCache.delete(k);
+    try {
+      store.setJSON(PORTFOLIO_CACHE_KEY, Object.fromEntries(pfCache));
+    } catch {
+      // kept in memory for this opening
+    }
+  };
+  // A project's poll under way, or due now (its timer set for this moment or before): the portfolio's read goes after it.
+  const anyProjectPending = () => [...states.values()].some((s) => s.pending || (s.timer != null && s.dueAt != null && s.dueAt <= clock.now()));
+  function pfSchedule() {
+    if (!pf) return;
+    if (pf.timer != null) clock.clearTimeout(pf.timer);
+    pf.timer = null;
+    if (!desk.running || !isVisible() || pf.pending) return;
+    const at = Math.max(pf.lastPollStart + PORTFOLIO_POLL_MS, pf.retryUntil, clock.now());
+    pf.timer = clock.setTimeout(() => {
+      pf.timer = null;
+      if (!desk.running || !isVisible() || pf.pending) return;
+      // Its own queue, after the projects' polls: while a project's poll is under way it waits its turn,
+      // taken as the last of them ends; a project's poll never waits for it.
+      if (anyProjectPending()) pf.turn = true;
+      else pfCycle();
+    }, at - clock.now());
+  }
+  /** Called as each project's cycle ends: the portfolio's read, if it was waiting its turn, once no project's is under way. */
+  function pfTurn() {
+    if (!pf || !pf.turn || anyProjectPending() || pf.pending || !desk.running || !isVisible()) return;
+    pf.turn = false;
+    pfCycle();
+  }
+  async function pfCycle() {
+    pf.pending = true;
+    pf.lastPollStart = clock.now();
+    pf.polls++;
+    let outcome;
+    try {
+      const res = await call('/api/poll', { target: 'portfolio', head: pf.head, etags: pf.head ? { ...pf.etags } : {} });
+      if (!res.ok) outcome = { ok: false, reason: res.reason || 'network' };
+      else if (res.json.state === 'cant-read') outcome = { ok: false, reason: res.json.reason || 'github', retryAfter: res.json.retryAfter };
+      else {
+        const r = res.json;
+        pf.etags = r.etags && typeof r.etags === 'object' ? r.etags : {};
+        outcome = { ok: true };
+        if (r.head && r.head.sha !== pf.head) {
+          const tree = r.tree == null ? null : parseTree(r.tree);
+          if (!tree || !tree.ok) {
+            pf.etags = {};
+            outcome = { ok: false, reason: 'github' };
+          } else {
+            pf.tree = tree.blobs;
+            pf.truncated = tree.truncated;
+            pf.head = r.head.sha;
+            pf.headAt = r.head.committedAt || null;
+          }
+        }
+        if (outcome.ok && pf.truncated) outcome = { ok: false, reason: 'too-many', keep: true };
+        if (outcome.ok) {
+          // At most one blob call a read (A3): what passes its 25 waits for the next read.
+          const need = pfMissing();
+          if (need.length) {
+            const batch = need.slice(0, BLOB_BATCH);
+            pf.blobCalls++;
+            const b = await call('/api/blobs', { target: 'portfolio', blobs: [...new Set(batch.map((x) => x.sha))] });
+            if (!b.ok) outcome = { ok: false, reason: b.reason || 'network' };
+            else if (b.json.state !== 'ok') outcome = { ok: false, reason: b.json.reason || 'github', retryAfter: b.json.retryAfter };
+            else {
+              for (const x of batch) {
+                const text = b.json.blobs ? b.json.blobs[x.sha] : null;
+                if (typeof text === 'string') pfCache.set(`${x.kind}:${x.sha}`, parsePortfolioRecord(x.kind, text));
+              }
+              pfPersist();
+              if (pfMissing().length) outcome = { ok: false, pending: true };
+            }
+          }
+        }
+      }
+    } catch {
+      outcome = { ok: false, reason: 'page' };
+    }
+    pf.readAt = clock.now();
+    if (outcome.ok) {
+      pf.lastSuccessAt = clock.now();
+      pf.failure = null;
+      pf.checking = false;
+    } else if (outcome.pending) {
+      pf.checking = true;
+    } else {
+      pf.checking = false;
+      if (outcome.reason === 'rate-limit' && outcome.retryAfter) pf.retryUntil = clock.now() + outcome.retryAfter * 1000;
+      // A 403 or 404 on its branch (the read token doesn't include it yet: Setup P1) is asked again only at
+      // the next 5-minute read; any other failure is AC5's "Can't read your portfolio since HH:MM".
+      pf.failure = { kind: outcome.reason === 'no-access' ? 'access' : 'other', reason: outcome.reason, since: pf.failure ? pf.failure.since : clock.now() };
+    }
+    pf.pending = false;
+    try {
+      onChange();
+    } catch {
+      // as in cycle: a failed render never changes what is read
+    } finally {
+      pfSchedule();
+    }
+  }
 
   /** Keep AC77's per-device record, pruned to the questions still open. */
   function persistAsking() {
@@ -1176,6 +1331,8 @@ export function createDesk(opts) {
       // The page shows its own error state (page.js); here the only job is to keep polling.
     } finally {
       schedule(st);
+      // J23: the portfolio's read, waiting its turn behind the projects' polls, goes once none is under way.
+      pfTurn();
     }
   }
 
@@ -1184,6 +1341,7 @@ export function createDesk(opts) {
     st.timer = null;
     if (!desk.running || !isVisible() || st.pending) return;
     const at = Math.max(st.lastPollStart + POLL_MS, st.retryUntil, clock.now());
+    st.dueAt = at;
     st.timer = clock.setTimeout(() => {
       st.timer = null;
       if (desk.running && isVisible() && !st.pending) cycle(st);
@@ -1194,6 +1352,8 @@ export function createDesk(opts) {
     desk.running = true;
     desk.visibleSince = clock.now();
     for (const st of states.values()) schedule(st);
+    // J23: the opening's first portfolio read is made at once, after the projects' first polls.
+    pfSchedule();
   };
   desk.stop = () => {
     desk.running = false;
@@ -1201,6 +1361,8 @@ export function createDesk(opts) {
       if (st.timer != null) clock.clearTimeout(st.timer);
       st.timer = null;
     }
+    if (pf && pf.timer != null) clock.clearTimeout(pf.timer);
+    if (pf) Object.assign(pf, { timer: null, turn: false });
   };
   desk.visibilityChanged = () => {
     if (isVisible()) {
@@ -1212,11 +1374,15 @@ export function createDesk(opts) {
         closedAgain(st, { keepAsking: true });
         schedule(st);
       }
+      // J23: on its own 5 minutes: at once if its last read started 5 minutes ago or more, else at that mark.
+      pfSchedule();
     } else {
       for (const st of states.values()) {
         if (st.timer != null) clock.clearTimeout(st.timer);
         st.timer = null;
       }
+      if (pf && pf.timer != null) clock.clearTimeout(pf.timer);
+      if (pf) Object.assign(pf, { timer: null, turn: false });
     }
     try {
       onChange();
@@ -1335,6 +1501,13 @@ export function createDesk(opts) {
     }
   };
   desk.cacheSize = () => blobCache.size;
+  /**
+   * J23 (stage 6b): the portfolio as last read, or null with no `portfolio` in J7 (6a's state) or outside
+   * the MD sandbox: { repo, defaultBranch, head, headAt, tree, truncated, records (path → parsed), lastSuccessAt,
+   * failure: { kind: 'access' | 'other', reason, since } | null, readAt, checking, polls, blobCalls }.
+   */
+  desk.portfolio = () => (pf ? { ...pfConf, head: pf.head, headAt: pf.headAt, tree: pf.tree, truncated: pf.truncated, records: pfRecords(),
+    lastSuccessAt: pf.lastSuccessAt, failure: pf.failure, readAt: pf.readAt, checking: pf.checking, polls: pf.polls, blobCalls: pf.blobCalls } : null);
   /** J22 (the MD sandbox): what the board judges a project's pull requests from, as last read. */
   desk.j22 = (name) => {
     const st = states.get(name);

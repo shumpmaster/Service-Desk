@@ -42,7 +42,7 @@ import { runsContext, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, 
 import { WA, DRAFT_KEY, todayOf } from './lib/workahead.js';
 import { PAGE_WORDS, STANDARD_TOTAL, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, restRows, v25Rows, finishWords } from './lib/projectpage.js';
 import { topLine } from './lib/versions.js';
-import { portfolioView, PF_ROWS, PF_WORDS } from './lib/portfolio.js';
+import { portfolioView, PF_ROWS, PF_WORDS, portfolioRead, portfolioCards, ideasView, rareLine, noteIdeas, ideaEvents, SEEN_IDEAS_KEY, PF_BOARD, PF_LABEL } from './lib/portfolio.js';
 import { workAheadView, readDraft } from './lib/workview.js';
 
 import {
@@ -690,7 +690,8 @@ function briefingNode(desk, built, bd) {
   const reads = built.map((b) => ({ name: b.project.name, read: b.box.read, drawError: b.box.drawError || null }));
   const flagged = sandboxBoxes(built).reduce((n, b) => n + (b.flaggedCount || 0), 0);
   const v3 = (name) => { const p = CONFIG.projects.find((x) => x.name === name); return Boolean(p && p.model === 'v3'); };
-  const view = (nowMs) => briefingView({ bd, reads, flagged, signedOut: desk.signedOut, v3, lastReadMs: stalestRead(), nowMs, tz: TZ });
+  const view = (nowMs) => briefingView({ bd, reads, flagged, signedOut: desk.signedOut, v3, lastReadMs: stalestRead(), nowMs, tz: TZ,
+    portfolio: lastPf ? portfolioRead(desk.portfolio(), nowMs, TZ) : null });
   const v = view(Date.now());
   const mark = v.kind === 'you' ? stc('you') : v.kind === 'quiet' ? stc('check') : v.kind === 'cant' ? vi('bad', 'v2-k bad') : vi('clock');
   return h('a', { class: `v2-brief k-${v.kind}`, href: '#/waiting', key: 'brief', 'aria-label': `${v.head}: open Waiting` },
@@ -738,6 +739,12 @@ function sinceModel(built, seen, nowMs) {
     }
   }
   const since = seen.off ? null : seen.reference;
+  // From stage 6b (J24): an idea's change of state, from the states kept at "last looked" under desk-seen-ideas-v1.
+  try {
+    events.push(...ideaLines(seen, since));
+  } catch {
+    // the idea lines can't be read: the projects' lines stand
+  }
   if (homeState.since !== since) {
     homeState.since = since;
     homeState.accepted = null;
@@ -751,6 +758,21 @@ function sinceModel(built, seen, nowMs) {
   const count = (v) => v.lines.length + v.rest.length;
   view.newer = Math.max(0, count(held) - count(view));
   return view;
+}
+
+/**
+ * J24's idea lines (from stage 6b): the states kept on this device at each "last looked" (desk-seen-ideas-v1,
+ * through the wrapped store, as J5's are), brought up to date from the portfolio as last read, and each
+ * change of state against the states kept at the "last looked" this window marks against.
+ */
+function ideaLines(seen, since) {
+  if (!lastPf || since == null || !ns.store) return [];
+  const store = ns.store;
+  const kept = store.getJSON(SEEN_IDEAS_KEY, null);
+  const snap = DESK && DESK.portfolio ? DESK.portfolio() : null;
+  const r = noteIdeas(kept, { reference: since, latest: seen.latest, pf: lastPf, readAt: snap && snap.readAt != null ? snap.readAt : Date.now() });
+  if (r.changed) store.setJSON(SEEN_IDEAS_KEY, r.kept);
+  return ideaEvents(r.kept, since);
 }
 
 function sinceNode(sv, seen, nowMs) {
@@ -945,7 +967,7 @@ function portfolioOf(built) {
       const rs = readStateOf(b.box);
       const read = { state: rs.state, since: rs.state === 'cant-read' && rs.since != null ? hhmm(new Date(rs.since), TZ) : null };
       return { project: b.project, pv: b.error ? null : b.pv, snap: b.error ? null : b.snap, error: Boolean(b.error), read };
-    })), error: null };
+    }), lastPf), error: null };
   } catch (err) {
     return { view: null, error: err };
   }
@@ -1005,11 +1027,42 @@ function portfolioSheet(pf, key, built) {
       return item(r.name, r.words, top ? h('span', { class: 'v2-mono' }, top) : null);
     })),
     h('p', { class: 'v2-small v2-pffrom' }, v.versions.publisher ? PF_WORDS.versionsFrom.map((w, i) => (i % 2 ? code(w) : w)) : PF_WORDS.noPublisher)];
-  } else {
-    // "Decisions across projects" and the rarer records: the portfolio isn't read before 6b (J23).
+  } else if (!v.pf) {
+    // "Decisions across projects" and the rarer records with no `portfolio` in J7: 6a's words (J23).
     parts = [h('p', { class: 'v2-body' }, pfLine(row)), h('p', { class: 'v2-small' }, PF_WORDS.waitsOnP1), h('p', { class: 'v2-small' }, v.foot)];
+  } else {
+    parts = portfolioReadParts(v.pf, key, row, v.foot);
   }
   return sheetShell(back, row.title, [sheetHead(v.head, row.title, back), h('div', { class: 'v2-blk v2-pfs', key: `pfs-body:${key}` }, parts)], 'pf-sheet');
+}
+
+/**
+ * The sheets of the portfolio's own rows, from stage 6b (AC87; J23): "Decisions across projects", each card
+ * in the queue with its file and its place on Waiting, and the phone note; the rarer records, the files
+ * under rulings/ and library/facts/ by name and count, whether intent/ holds one beyond its template, and
+ * track records' "no record in the model"; each saying first why the read isn't current, when it isn't.
+ */
+function portfolioReadParts(pf, key, row, foot) {
+  const problem = pf.problem && pf.state !== 'pending' ? h('p', { class: 'v2-mark', key: 'pfs-problem' }, vi('bad', 'v2-k bad'), h('span', {}, pf.problem)) : null;
+  const access = pf.state === 'access' ? h('p', { class: 'v2-small', key: 'pfs-p1' }, PF_WORDS.setupP1Line) : null;
+  const from = h('p', { class: 'v2-small', key: 'pfs-from' }, PF_WORDS.readFrom(pf.repo), pf.lastSuccessAt != null ? ` Last read ${hhmm(new Date(pf.lastSuccessAt), TZ)}.` : '');
+  if (key === 'decisions') {
+    const cards = portfolioCards(pf);
+    // The row's line, less the problem already said above it.
+    const rest = { ...row, parts: row.parts.filter((x) => !problem || x.text !== pf.problem) };
+    return [problem, access, rest.parts.length ? h('p', { class: 'v2-body', key: 'pfs-line' }, pfLine(rest)) : null,
+      cards.length ? h('ol', { class: 'v2-rows v2-pfsl', key: 'pfs-cards' }, cards.map((c) => h('li', { class: 'v2-pfsi', key: `pfs:${c.id}` },
+        h('a', { class: 'v2-prtt', href: go('waiting', 'card', c.id), key: `pfs-card:${c.id}` }, c.title), h('span', { class: 'v2-small v2-mono' }, c.path)))) : null,
+      cards.length ? h('p', { class: 'v2-small', key: 'pfs-each' }, PF_WORDS.eachWaits) : null,
+      h('p', { class: 'v2-mark', key: 'pfs-phone' }, vi('clock'), h('span', {}, PF_WORDS.phoneNote)), from, h('p', { class: 'v2-small', key: 'pfs-foot' }, foot)];
+  }
+  const r = pf.rare;
+  return [problem, access,
+    r ? h('ul', { class: 'v2-rows v2-pfsl', key: 'pfs-rare' },
+      h('li', { class: 'v2-pfsi', key: 'pfs:rulings' }, h('span', { class: 'v2-body' }, rareLine(PF_WORDS.rulings, r.rulings))),
+      h('li', { class: 'v2-pfsi', key: 'pfs:facts' }, h('span', { class: 'v2-body' }, rareLine(PF_WORDS.facts, r.facts))),
+      h('li', { class: 'v2-pfsi', key: 'pfs:intent' }, h('span', { class: 'v2-body' }, rareLine(PF_WORDS.intent, r.intent)))) : h('p', { class: 'v2-body', key: 'pfs-rare-none' }, pf.problem || NOT_AVAILABLE),
+    h('p', { class: 'v2-mark', key: 'pfs-track' }, stc('nomodel'), h('span', {}, PF_WORDS.trackRecords)), from, h('p', { class: 'v2-small', key: 'pfs-foot' }, foot)];
 }
 
 function v5Line(built) {
@@ -1681,6 +1734,16 @@ function boardOf(built, nowMs, only) {
       answerRecording: (b.model.asking || []).filter((a) => a.state !== 'held'),
       recordRows: recordDone(b.project, b.model, b.snap, b.j, nowMs), seenRows: boardState.seen.get(name) });
   }
+  // AC87 (stage 6b): the portfolio's cards, in a group of their own named "Portfolio", after the projects'.
+  // Their marks are judged at each portfolio read that succeeded: confirmed once the card file has left
+  // the queue, kicked back after KICK_BACK_MINUTES otherwise.
+  if (lastPf) {
+    try {
+      projects.push(portfolioBoard(nowMs));
+    } catch {
+      // the portfolio's group can't be drawn: the projects' board stands
+    }
+  }
   const view = boardView({ projects, marks: boardState.marks, only, nowMs, tz: TZ });
   // Part A item 5 (stage 1a's build review, round 1, F3): before any project is read, or when none can
   // be, an unknown is said in words, never as a 0 or "Nothing here".
@@ -1699,6 +1762,46 @@ function boardOf(built, nowMs, only) {
     b.ball = ballLines(b.project, b.model, b.snap, b.j, b.q, new Date(nowMs), TZ);
   }
   return view;
+}
+
+/** The board's entry for the portfolio (AC87): its cards from its queue, its marks judged at each of its reads that succeeded. */
+function portfolioBoard(nowMs) {
+  const cards = portfolioCards(lastPf);
+  const current = new Map(cards.map((c) => [c.id, c]));
+  const snap = DESK && DESK.portfolio ? DESK.portfolio() : null;
+  const success = snap ? snap.lastSuccessAt : null;
+  if (!boardState.seen.has(PF_BOARD)) boardState.seen.set(PF_BOARD, []);
+  const project = { name: PF_BOARD, label: PF_LABEL, portfolio: true, repo: lastPf.repo, defaultBranch: lastPf.defaultBranch, model: null };
+  if (success != null && snap.readAt === success && boardState.judged.get(PF_BOARD) !== success) {
+    boardState.judged.set(PF_BOARD, success);
+    const ctx = { project, tree: snap.tree || new Map(), pulls: [], files: null, current, agentIds: new Set(), heldIds: new Set(), recordingNames: new Set() };
+    const next = judgeMarks(boardState.marks, project, ctx, nowMs);
+    if (JSON.stringify(next) !== JSON.stringify(boardState.marks)) boardState.set(next);
+    // A card seen to leave the queue while the page was open moves to Done by itself.
+    const prev = boardState.prev.get(PF_BOARD);
+    if (prev) {
+      for (const [id, c] of prev) {
+        if (current.has(id) || boardState.marks.marks[id]) continue;
+        boardState.seen.get(PF_BOARD).push({ id, step: 'open', title: c.title, at: nowMs, kind: 'portfolio', code: c.file });
+      }
+    }
+    boardState.prev.set(PF_BOARD, current);
+  }
+  return { project, cards, agents: [], read: { ok: lastPf.fresh, cantRead: false, since: null, words: null },
+    recording: [], asking: [], answerRecording: [], recordRows: [], seenRows: boardState.seen.get(PF_BOARD) };
+}
+
+/** Sandbox's screen state (its title): Quiet also needs the portfolio read within its 6 minutes and no card in its queue (Terms, from 6b). */
+function withPortfolio(s, bd) {
+  if (!lastPf || !s || s.text === SIGNED_OUT_STATE.text) return s;
+  const c = bd && bd.counts ? bd.counts.get(PF_BOARD) : null;
+  const n = c ? c.waiting + c.kicked : 0;
+  if (n) {
+    const m = /^(\d+) waiting on you(.*)$/.exec(s.text);
+    return { text: m ? `${Number(m[1]) + n} waiting on you${m[2]}` : `${n} waiting on you · ${s.text}`, quiet: false };
+  }
+  if (s.quiet && !lastPf.fresh) return { text: lastPf.quietWords || HOME_WORDS.checking, quiet: false };
+  return s;
 }
 
 /** "checked <age> ago" (AC80; AC82's rule): from the stalest project's last successful read. */
@@ -1785,7 +1888,7 @@ const laneOf = (key) => LANES.find((l) => l.key === key);
 
 /** A card's kind line: its icon (vermilion while it waits on the owner, grey in Done) and its word, never ranked (AC38). */
 function kindLine(card, lane) {
-  const icon = lane === 'kick' ? 'kick' : card.kind;
+  const icon = lane === 'kick' ? 'kick' : card.kind === 'portfolio' ? 'card' : card.kind;
   return h('span', { class: `v2-kd${lane === 'done' ? ' done' : ''}` }, vi(icon), h('span', {}, lane === 'kick' ? 'Kicked back' : card.kindWord));
 }
 
@@ -1909,8 +2012,11 @@ function laneNode(bd, built, laneKey, only) {
   const pOf = (name) => built.find((b) => b.project.name === name);
   const groups = l.groups.map((g) => {
     const p = pOf(g.project);
-    const head = only ? null : h('button', { type: 'button', class: 'v2-grp', key: `grp:${laneKey}:${g.project}`, 'aria-label': `Show only ${g.project}`,
-      onclick: () => nav.to(go('waiting', g.project)) }, vi('proj'), h('span', { class: 'v2-gn' }, g.project), h('span', { class: 'v2-gc' }, String(laneKey === 'done' ? g.all.length : g.rows.length)));
+    const n = String(laneKey === 'done' ? g.all.length : g.rows.length);
+    // AC87: the portfolio's group, "Portfolio", is not a project, so its name shows no single project (a heading, not a control).
+    const head = only ? null : g.portfolio ? h('p', { class: 'v2-grp pf', key: `grp:${laneKey}:${g.project}` }, vi('proj'), h('span', { class: 'v2-gn' }, g.label), h('span', { class: 'v2-gc' }, n))
+      : h('button', { type: 'button', class: 'v2-grp', key: `grp:${laneKey}:${g.project}`, 'aria-label': `Show only ${g.project}`,
+        onclick: () => nav.to(go('waiting', g.project)) }, vi('proj'), h('span', { class: 'v2-gn' }, g.project), h('span', { class: 'v2-gc' }, n));
     if (laneKey === 'done') {
       const open = boardState.more.has(g.project);
       const rows = open ? g.all : g.rows;
@@ -1980,6 +2086,8 @@ function quietLines(bd, built, only) {
     if (q.agents.length) lines.push(quietLine('agents', 'agents', WORDS.agents, q.agents.length, agentsFold));
     if (bd.nothingWaiting.length) lines.push(h('p', { class: 'v2-ql still', key: 'ql:nothing' }, vi('eye'), h('span', {}, `${WORDS.nothing}: ${bd.nothingWaiting.join(', ')}`)));
     for (const c of bd.cantRead) lines.push(h('p', { class: 'v2-ql still bad', key: `ql:cant:${c.project}` }, vi('bad'), h('span', {}, `Can't read ${c.project} since ${hhmm(new Date(c.since), TZ)}`)));
+    // AC87 (stage 6b; J23's failures): the portfolio's read that isn't current, in its own words, never a project's.
+    if (lastPf && lastPf.problem && lastPf.state !== 'pending') lines.push(h('p', { class: 'v2-ql still bad', key: 'ql:cant:portfolio' }, vi('bad'), h('span', {}, lastPf.problem)));
     if (q.recording.length) lines.push(quietLine('recording', 'eye', WORDS.recording, q.recording.length, recFold));
   }
   if (q.asking.length) lines.push(quietLine('asking', 'clock', WORDS.asking, q.asking.length, askFold));
@@ -2325,6 +2433,7 @@ function cardSheet(bd, built, only, sheetId) {
       h('p', { class: 'v2-acts', key: 'acts' }, h('button', { type: 'button', class: 'v2-abtn ghost', key: 'sheet-close2', onclick: () => nav.to(back) }, 'Close'))], `sheet:${sheetId}`);
   }
   sheetCards.set(String(sheetId), { id: card.id, title: card.title });
+  if (card.portfolio) return portfolioCardSheet(card, mark, back, fromTap, sheetId);
   const p = built.find((b) => b.project.name === card.project);
   const project = p.project;
   const row = (p.q0 || p.q).rows.find((x) => x.flag && x.flag.key === card.key) || (p.q0 || p.q).deploys.find((x) => x.flag && x.flag.key === card.key)
@@ -2417,6 +2526,45 @@ function cardSheet(bd, built, only, sheetId) {
   if (!pending) {
     acts.push(h('button', { type: 'button', class: 'v2-abtn done', key: 'sheet-done', onclick: () => { markCard(card); nav.to(back); } }, 'Done ✓'));
   } else acts.push(h('button', { type: 'button', class: 'v2-abtn', key: 'sheet-undo', onclick: () => { boardState.set(undoMark(boardState.marks, card.id)); render(); } }, 'Undo'));
+  acts.push(h('button', { type: 'button', class: 'v2-abtn ghost', key: 'sheet-close2', onclick: () => nav.to(back) }, 'Close'));
+  parts.push(h('p', { class: 'v2-acts', key: 'acts' }, acts));
+  return sheetShell(back, card.title, parts, `sheet:${sheetId}`);
+}
+
+/**
+ * A portfolio card's sheet (AC87): the card's sections as AC52 shows a card's (what it is, the question, why
+ * it is here, each option with what follows, the recommendation, the whole record), its step "Open on
+ * GitHub ↗" opening the card file, no answer link (C: no portfolio answer form is read, J23), the phone
+ * note, "Done ✓" (confirmed once the file has left the queue) or "Undo", and "Close".
+ */
+function portfolioCardSheet(card, mark, back, fromTap, sheetId) {
+  const pending = mark && mark.confirmedAt == null && !mark.kicked;
+  const kicked = mark && mark.confirmedAt == null && mark.kicked ? mark.kicked : null;
+  const pfProject = { name: PF_LABEL, repo: lastPf ? lastPf.repo : '', defaultBranch: lastPf ? lastPf.defaultBranch : 'main' };
+  const snap = DESK && DESK.portfolio ? DESK.portfolio() : null;
+  const tree = (snap && snap.tree) || new Map();
+  const row = { key: card.key, text: card.title, code: null, wait: null, raisedAt: null,
+    flag: { kind: 'card', key: card.key, card: { path: card.path, answerPath: null, gate: null, n: null, item: null, parsed: card.rec } } };
+  const v = sheetView(pfProject, null, { tree }, null, row);
+  const headMeta = headText(['portfolio', 'decision', card.file, 'wait not recorded']);
+  const parts = [sheetHead(headMeta, card.title, back), fromTap,
+    h('p', { class: 'v2-small' }, kicked ? 'Kicked back' : pending ? WORDS.confirming : card.kindWord),
+    kicked ? h('p', { class: 'v2-mark' }, vi('kick'), h('span', {}, kicked.reason)) : null,
+    card.note ? h('p', { class: 'v2-mark', key: 'pf-note' }, vi('bad'), h('span', {}, card.note)) : null,
+    blk('What it is', h('p', { class: 'v2-body' }, card.rec && card.rec.title ? card.rec.title : card.title, ' ', h('span', { class: 'v2-mono' }, card.path)))];
+  if (card.rec) {
+    parts.push(blk('The question', h('p', { class: 'v2-lead', key: 'pf-q' }, v.question)));
+    parts.push(blk('Why it is here', h('p', { class: 'v2-body' }, v.why || NOT_RECORDED)));
+    parts.push(blk('The options', v.options && v.options.length ? h('ul', { class: 'v2-flist', key: 'pf-opts' }, v.options.map((o) => h('li', { key: `pfo:${o.value}` },
+      h('span', { class: 'v2-mono' }, o.value), ' ', codeWords(o.then)))) : h('p', { class: 'v2-body' }, NOT_RECORDED)));
+    parts.push(h('p', { class: 'v2-body', key: 'rec-line' }, v.recommendation ? [h('span', { class: 'v2-rec' }, 'Recommended'), ' ', v.recommendation] : 'No recommendation given'));
+  }
+  parts.push(blk('What you do', h('p', { class: 'v2-body' }, PF_WORDS.noAnswerLink), h('p', { class: 'v2-mark', key: 'pf-phone' }, vi('clock'), h('span', {}, PF_WORDS.phoneNote))));
+  parts.push(h('p', { class: 'v2-steps', key: 'step-btns' }, ext(card.step.href, `${card.step.sheetLabel} ↗`, 'v2-abtn')));
+  if (v.fullText) parts.push(h('details', { class: 'v2-fd', key: 'full-text' }, h('summary', {}, 'The whole record'), h('article', { class: 'sb-record', html: renderMarkdown(v.fullText) })));
+  const acts = [];
+  if (!pending) acts.push(h('button', { type: 'button', class: 'v2-abtn done', key: 'sheet-done', onclick: () => { markCard(card); nav.to(back); } }, 'Done ✓'));
+  else acts.push(h('button', { type: 'button', class: 'v2-abtn', key: 'sheet-undo', onclick: () => { boardState.set(undoMark(boardState.marks, card.id)); render(); } }, 'Undo'));
   acts.push(h('button', { type: 'button', class: 'v2-abtn ghost', key: 'sheet-close2', onclick: () => nav.to(back) }, 'Close'));
   parts.push(h('p', { class: 'v2-acts', key: 'acts' }, acts));
   return sheetShell(back, card.title, parts, `sheet:${sheetId}`);
@@ -2924,6 +3072,7 @@ function summaryNode(p, id, sm) {
 // and a rough finish; the owner's draft order kept on the device; "Record plan" as a J3-form link.
 
 let lastBuilt = null; // the projects as the current drawing built them
+let lastPf = null; // J23 (stage 6b): the portfolio as this drawing read it (portfolioRead), or null with no `portfolio` in J7
 let waDay = null; // the owner's today when Work ahead was last drawn
 let waMemo = null; // Work ahead's view, worked out once per drawing
 let lastBoard = null; // the board as the current drawing built it (AC86: each project's waiting gate card)
@@ -3120,6 +3269,24 @@ function planHead(words, n, { proj = false } = {}) {
     n == null ? null : h('span', { class: 'v2-mono' }, String(n)));
 }
 
+/** Each idea state's mark (frame 11 draws captured with the dashed ring and shaping half filled; C for the rest): its words always beside it. */
+const IDEA_MARK = { captured: 'planned', shaping: 'half', approved: 'check', 're-aimed': 'half', stopped: 'cross' };
+
+/**
+ * Plan's "Ideas · from the portfolio" (AC87, AC86; frame 11): with its count, each idea in the log, newest
+ * first, its name, its state in words and its date in Plex Mono; "No ideas in the log yet"; or why it
+ * can't be shown. With no `portfolio` in J7, 6a's words.
+ */
+function ideasNode() {
+  const iv = ideasView(lastPf);
+  return h('section', { class: 'v2-plgrp', key: 'wa-ideas' }, planHead(WA.ideas, iv.count),
+    iv.words ? h('p', { class: 'v2-small v2-plideas', key: 'wa-ideas-words' }, iv.words) : null,
+    iv.rows.length ? h('ol', { class: 'v2-rows', key: 'wa-ideas-list', 'aria-label': WA.ideas }, iv.rows.map((i) => h('li', { class: 'v2-plli idea', key: `wa-idea:${i.key}` },
+      h('div', { class: 'v2-plrow v2-plidea' }, h('span', { class: 'v2-plord' }), stc(i.recorded ? IDEA_MARK[i.state] : 'unrec'),
+        h('span', { class: 'v2-prt' }, h('span', { class: 'v2-prtt v2-plname' }, i.name),
+          h('span', { class: 'v2-small v2-plm' }, h('span', {}, i.state), ' · ', h('span', { class: 'v2-mono' }, i.date))))))) : null);
+}
+
 /** "Not milestones yet" (AC24, J15; frame 11): its head with the count, AC24's line, then each row, "<name>" over "<W-id> · <project>", its note and its state in AC24's words. */
 function laterNode(v) {
   const n = v.later.kind === 'ok' ? v.later.rows.length : null;
@@ -3239,8 +3406,8 @@ function renderWorkAhead(built, nowMs) {
       h('p', { class: 'v2-body' }, href ? ext(href, o.words, 'v2-inl') : o.words), h('p', { class: 'v2-small' }, WA.olderPipeline)));
   }
   body.push(laterNode(v));
-  // AC86, AC87 (6a): ideas once the desk reads the portfolio; until then it says so.
-  body.push(h('section', { class: 'v2-plgrp', key: 'wa-ideas' }, planHead(WA.ideas, null), h('p', { class: 'v2-small v2-plideas' }, v.tab.ideas)));
+  // AC86, AC87: ideas from the portfolio's idea log, from stage 6b; with no `portfolio` in J7, 6a's words.
+  body.push(ideasNode());
   if (v.notes.length && v.planner) {
     body.push(h('p', { class: 'v2-small' }, h('a', { class: 'v2-lnk', href: go('p', v.planner, 'notes'), key: 'wa-notes' }, `Record notes (${v.notes.length})`)));
   }
@@ -3743,6 +3910,8 @@ function sheetFound(sheetId, only) {
 /** Whether the project a sheet's address is for has been read (or can't be), so a missing card truly waits no longer. */
 function settledFor(built, sheetId, only) {
   const name = only || String(sheetId).split('|')[0];
+  // AC87 (stage 6b): a portfolio card's address waits for the portfolio's first read, not the projects'.
+  if (name === PF_BOARD) return Boolean(lastPf && lastPf.state !== 'pending');
   const b = built.find((x) => x.project.name === name);
   const list = b ? [b] : built;
   return list.every((x) => x.box && x.box.read && (x.box.read.read === 'ok' || x.box.read.read === 'cant-read'));
@@ -3831,6 +4000,12 @@ export function startSandbox(opts = {}) {
         return { project, box, error: err };
       }
     });
+    // J23 (stage 6b): the portfolio as last read, in words; null with no `portfolio` in J7 (6a's state).
+    try {
+      lastPf = portfolioRead(desk.portfolio ? desk.portfolio() : null, now.getTime(), TZ);
+    } catch {
+      lastPf = null;
+    }
     // AC80: the board, its marks judged at each successful poll; every count less the marked cards.
     const bd = boardOf(built, now.getTime(), nav.route.kind === 'waiting' ? nav.route.only : null);
     lastBoard = bd;
@@ -3844,7 +4019,7 @@ export function startSandbox(opts = {}) {
       }
     }
     // In the trial view a pull request with the agents is not flagged (Terms, from stage 1a): Quiet leaves it out.
-    const s = screenState(sandboxBoxes(built), desk.signedOut);
+    const s = withPortfolio(screenState(sandboxBoxes(built), desk.signedOut), bd);
     if (stateEl) stateEl.textContent = desk.signedOut ? SIGNED_OUT_STATE.text : s.text;
     document.title = `Sandbox — ${desk.signedOut ? SIGNED_OUT_STATE.text : s.text}`;
     const r = nav.route;

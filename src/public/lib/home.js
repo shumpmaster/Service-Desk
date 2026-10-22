@@ -10,7 +10,7 @@
 
 import { hhmm, dayKey, durationText, zonedToUtc } from './timefmt.js';
 import { weekdayTime } from './board.js';
-import { entryShape } from './records.js';
+import { entryShape, defaultLetter } from './records.js';
 import { dayWords, headlineWords, branchShape, runBegan, PHASE_CLASS } from './feed.js';
 import { GATE_PHASE } from './j11.js';
 import { ownerActions, memberLabel, NOT_RECORDED, pullLink, treeLink } from './sandbox.js';
@@ -107,7 +107,8 @@ export function settleWords(at, nowMs, tz) {
 export function settleAt(q, raisedAt) {
   if (!q || raisedAt == null) return null;
   const rev = String(q.reversibility || '').toLowerCase();
-  if (!rev.startsWith('reversible') || !q.default || !q.timeout) return null;
+  // The card's and the sheet's rule (records.js's defaultLetter): a DEFAULT naming no letter settles nothing.
+  if (!rev.startsWith('reversible') || !defaultLetter(q) || !q.timeout) return null;
   const h = /^[0-9]+(\.[0-9]+)?/.exec(String(q.timeout).trim());
   return h ? raisedAt + Number(h[0]) * 3600e3 : null;
 }

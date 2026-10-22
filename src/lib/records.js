@@ -318,17 +318,30 @@ export function parseQuestion(text, name) {
 }
 
 /**
- * The DEFAULT label (AC12). It only reports what the file says; nothing adopts a default.
+ * The option letter a question's DEFAULT names: a capital letter starting the field ("C", "C — …"),
+ * or null ("none — this is your pick and never defaults (AC43)", missing). One rule for the accepted
+ * view's label, the trial view's sheet and its card (AC12, AC85; stage 4's build review, round 1, B1:
+ * a capital anywhere in the field, such as AC43's "A", is no default).
+ */
+export function defaultLetter(q) {
+  const m = q && q.default ? /^([A-Z])\b/.exec(String(q.default).trim()) : null;
+  return m ? m[1] : null;
+}
+
+/**
+ * The DEFAULT label (AC12). It only reports what the file says; nothing adopts a default. A DEFAULT
+ * naming no letter is quoted as the file writes it, never read as "defaults to" anything.
  * raisedAt: Date | null (the oldest commit of the question file).
  */
 export function defaultLabel(q, raisedAt, fmt) {
   const rev = (q.reversibility || '').toLowerCase();
   if (rev.startsWith('irreversible')) return 'per the question file: never defaults';
   if (!q.default) return 'not given';
-  const letter = (/[A-Z]/.exec(q.default) || [q.default])[0];
+  const letter = defaultLetter(q);
   if (!rev.startsWith('reversible')) {
     return `per the question file: DEFAULT ${q.default} (reversibility not given)`;
   }
+  if (!letter) return `per the question file: DEFAULT ${q.default}`;
   const hours = q.timeout && /^[0-9]+(\.[0-9]+)?/.exec(q.timeout.trim());
   if (!hours) return `per the question file: defaults to ${letter} (TIMEOUT not given)`;
   if (!raisedAt) {

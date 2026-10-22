@@ -189,7 +189,9 @@ test('AC52 + AC80: the recommendation is labelled and never preselected; one but
     assert.deepEqual(opts.map((o) => byClass(o, 'v2-ol')[0].textContent), ['A. Yes.', 'B. No.']);
     assert.deepEqual(opts.map((o) => byClass(o, 'v2-rec').length), [0, 1], '"Recommended" on B only, never picked');
     assert.equal(findAll(app.view, (e) => e.attrs['aria-checked'] === 'true').length, 0, 'nothing preselected');
-    assert.match(app.text(), /Recommended B — no\./);
+    // AC80's why line for a question, from stage 4 as AC80 words it (specs/S-001.md:6141-6142,
+    // "Recommended: <the `RECOMMENDATION:` line's words>"), under the boxes (AC85, specs/S-001.md:6981-6984).
+    assert.match(app.text(), /Recommended: B — no\./);
     const [a, b] = opts.map((o) => byClass(o, 'v2-abtn')[0]);
     assert.equal(a.textContent, 'Answer A ↗');
     const text = "Ruling: A\n\nQuestion: questions/Alpha-pick.md\n\nQuestion, as put: Alpha's question\nOptions, as put:\n  A. Yes.\n  B. No.\n";
@@ -232,11 +234,18 @@ test('AC52 + AC80: a gate ruling\'s sheet quotes its case, links the case only w
     assert.match(app.text(), /Pass the Build gate: the plan for the queue screen passed review/);
     const links = linksIn(app.view);
     assert.ok(links.some((l) => l.href === 'https://github.com/shumpmaster/Alpha/blob/main/docs/gates/P-002/build-gate-1-case.md'));
-    assert.match(app.text(), /The Critic's view: no file recorded/);
-    assert.match(app.text(), /User representative: not needed/);
     const sheet = byClass(app.view, 'v2-sheet')[0];
+    // From stage 4, AC85's gate sheet (specs/S-001.md:6999-7013): "Their views" in place of AC52's
+    // links and line. The Critic's view is linked only when the tree holds it (here it doesn't), and the
+    // Critic's word reads "not recorded" where no record gives it; nothing for the user representative,
+    // the owner being the user (docs/PROJECT.md section 9, AC52's line).
+    assert.ok(!linksIn(sheet).some((l) => /_build-gate-1-critic\.md$/.test(l.href || '')), 'no link to a Critic file the tree lacks');
+    assert.deepEqual(byClass(sheet, 'v2-vw').map((x) => x.textContent), ['Critic']);
+    assert.equal(byClass(sheet, 'v2-vt')[0].textContent, 'not recorded');
+    assert.doesNotMatch(sheet.textContent, /User representative/);
     assert.deepEqual(byClass(sheet, 'v2-abtn').filter((x) => x.tag === 'a').map((c) => c.textContent), ['Proceed ↗', 'Hold ↗', 'Recycle ↗', 'Kill ↗']);
-    assert.match(app.text(), /Recommended The case recommends proceed\./);
+    // "Recommended" on the case's recommendation (AC85): the case's "**The proposer's recommendation:** proceed".
+    assert.deepEqual(byClass(sheet, 'v2-opt').map((o) => byClass(o, 'v2-rec').length), [1, 0, 0, 0]);
   } finally {
     app.restore();
   }

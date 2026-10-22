@@ -1,0 +1,7 @@
+kind = "project"
+stage = 6
+state = "waiting-owner"
+role = "user-rep"
+gate = "launch"
+card = 1
+gate_n = 1

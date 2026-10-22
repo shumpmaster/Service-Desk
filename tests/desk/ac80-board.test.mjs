@@ -92,7 +92,10 @@ async function markDoneInSheet(app, id) {
   await openSheet(app, id);
   const b = keyed(app, 'sheet-done');
   assert.ok(b, `"Done ✓" in ${id}'s sheet`);
-  assert.equal(b.textContent, 'Done ✓');
+  // From stage 4 a question's and a gate's sheet say it in frame 3's words, "✓ Move to Done · then
+  // answer on GitHub" (specs/S-001.md:6995, AC85: AC80's "Done ✓"); every other sheet keeps "Done ✓".
+  const kind = id.split('|')[1];
+  assert.equal(b.textContent, kind === 'question' || kind === 'gate' ? 'Move to Donethen answer on GitHub' : 'Done ✓');
   await app.tap(b);
 }
 
@@ -156,9 +159,12 @@ test('AC80: a lettered question\'s sheet — one button per letter, "Answer <let
       '  A. One button, you type the letter — "Answer" opens the answer file with everything filled in except the letter after "Ruling:".',
       '  B. One button, recommended letter filled in — "Answer" opens it with the recommended letter already there; you change it if you disagree.',
       '  C. One button per option — "Answer A", "Answer B" and so on, each opening a fully filled-in file; one tap and commit.', ''].join('\n'));
-    // Its wait, what it is, why it's here and what was checked.
+    // Its wait, what it is, why it's here and what was checked. From stage 4 in AC85's layout
+    // (specs/S-001.md:6962-6969, 6995-6998): the wait in the head, what it is its title, why it's here
+    // its opening (the WHY), and what was checked at the sheet's foot.
     assert.match(byClass(sh, 'v2-shead')[0].textContent, /waiting 2 h 54 m/);
-    for (const h of ['What it is', 'Why it is here', 'What was checked']) assert.ok(byClass(sh, 'v2-bh').some((x) => x.textContent === h), h);
+    assert.equal(byClass(sh, 'v2-clip')[0].textContent, 'NOT a real record: made up from board.html\'s ITEMS (version 5\'s example "qa") for AC80\'s test.');
+    assert.match(keyed(app, 'foot-checked').textContent, /^What was checked: CI on main's head: /);
     // Closes on "Close", Escape and a tap outside; the close is a 44 × 44 px control.
     assert.ok(byClass(sh, 'v2-x44').length, 'the 44 px close');
     await app.key('Escape');

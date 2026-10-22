@@ -666,11 +666,28 @@ export function nextCronRun(expr, now) {
 // ---------------------------------------------------------------------------
 // docs/gates/<item>/<phase>-gate-<n>-case.md: the case's plain-English opening paragraph (AC52)
 
-/** { opening: the first paragraph under "## 1. The ask" that isn't an instruction line, or null }. */
+// From stage 4 (AC85, "Recommended" on the case's recommendation), also its section 1's
+// `**The proposer's recommendation:** <proceed, hold, recycle into <Phase>, or kill> — <why>` line
+// (docs/gates/_GATE.md:6): the words after the label up to the dash.
+const PROPOSER_RE = /^\*\*The proposer's recommendation:\*\* (proceed|hold|recycle(?: into (?:Discovery|Design|Build|Launch))?|kill)\b/;
+
+/**
+ * { opening: the first paragraph under "## 1. The ask" that isn't an instruction line, or null;
+ * recommendation: the proposer's recommendation in section 1 ("proceed", "recycle into Design" and
+ * so on), or null }.
+ */
 export function parseGateCase(text) {
   const lines = split(text).map((l) => l.replace(/\r+$/, ''));
   const i = lines.findIndex((l) => /^## +1\. /.test(l));
-  if (i < 0) return { opening: null };
+  if (i < 0) return { opening: null, recommendation: null };
+  let recommendation = null;
+  for (let j = i + 1; j < lines.length && !/^## /.test(lines[j]); j++) {
+    const m = PROPOSER_RE.exec(lines[j].trim());
+    if (m) {
+      recommendation = m[1];
+      break;
+    }
+  }
   const para = [];
   for (let j = i + 1; j < lines.length; j++) {
     const l = lines[j];
@@ -682,5 +699,5 @@ export function parseGateCase(text) {
     if (isInstructionLine(l) && !para.length) continue;
     para.push(l.trim());
   }
-  return { opening: para.length ? para.join(' ') : null };
+  return { opening: para.length ? para.join(' ') : null, recommendation };
 }

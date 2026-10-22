@@ -24,10 +24,11 @@ const MAX_BLOB_CALLS_PER_CYCLE = 6;
 // line 1 and its line-2 `Proxy:`, AC52 and AC55; v5: docs/PROJECT.md's why lines, standard lines and Purpose items,
 // an answer's `Reason:` and the review verdict files, AC57 to AC61 and AC70; v6, model 3.5.0's records,
 // 2026-10-17: a milestone's ` · reached:` part, an answer record's `Milestone:` line and the Chief of
-// Staff's session files, J2, J6, J11 and J13), and list the old keys here so their entries are
-// dropped, not left to fill storage.
-export const BLOB_CACHE_KEY = 'desk-blobs-v6';
-export const OLD_BLOB_CACHE_KEYS = ['desk-blobs-v1', 'desk-blobs-v2', 'desk-blobs-v3', 'desk-blobs-v4', 'desk-blobs-v5'];
+// Staff's session files, J2, J6, J11 and J13; v7, stage 4 of mockup v2, 2026-10-22: a gate case's
+// proposer's recommendation, AC85), and list the old keys here so their entries are dropped, not
+// left to fill storage.
+export const BLOB_CACHE_KEY = 'desk-blobs-v7';
+export const OLD_BLOB_CACHE_KEYS = ['desk-blobs-v1', 'desk-blobs-v2', 'desk-blobs-v3', 'desk-blobs-v4', 'desk-blobs-v5', 'desk-blobs-v6'];
 const HISTORY_CACHE_KEY = 'desk-history-v1';
 // AC77 (2026-10-18; draft 7): what this device keeps of questions asked in a session, per project:
 // `recorded`, each question whose answer's pull request it saw recording, with that pull request's

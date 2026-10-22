@@ -30,6 +30,7 @@ import { summaryView, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWord
 import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits, unreadLines } from './lib/home.js';
 import { GATE_PHASE } from './lib/j11.js';
 import { composeAnswer, questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
+import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, standardLine, headText, buttonFiles } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, WORDS, MARKS_KEY,
   boardAge, doneTime, HOLD_MS, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
@@ -1737,6 +1738,9 @@ function answerLink(p, card, btn, cls, kids) {
 function stepButton(p, card, lane) {
   const s = card.step;
   if (!s) return null;
+  // A gate card's step is its four buttons (P-001-gate-buttons.md, A), on its Done card too while it is
+  // confirming (P-001-board-done-button.md, A); it has no one label of its own.
+  if (s.gate) return h('span', { class: 'v2-gatebtns', key: `gatebtns:${card.id}:${lane}` }, card.buttons.map((b) => answerLink(p, card, b, 'v2-step', [b.label])));
   if (s.opensSheet) return h('a', { class: 'v2-step', href: cardRoute(boardState.view && boardState.view.only, card.id), key: `step:${card.id}`, onclick: () => { nav.opener = `card:${card.id}`; } }, s.label);
   if (!s.href) return h('span', { class: 'v2-step off' }, `${s.label.replace(/ ↗$/, '')}: no link`);
   return ext(s.href, s.label, 'v2-step');
@@ -1918,14 +1922,229 @@ function sheetHead(meta, title, back) {
 const blk = (head, ...kids) => h('div', { class: 'v2-blk' }, h('h3', { class: 'v2-bh' }, head), kids);
 
 /** The owner's own words for a sheet (AC80, AC85): a 16 px box, kept per card for this window through every refresh (AC56). */
-function wordsBox(id, label, n = 1) {
+function wordsBox(id, label, n = 1, placeholder = SHEET_WORDS.optional) {
   const k = `${id}#${n}`;
-  const ta = h('textarea', { rows: '3', key: `words:${k}`, class: 'v2-input', 'aria-label': label, placeholder: 'Optional',
+  const ta = h('textarea', { rows: '3', key: `words:${k}`, class: 'v2-input', 'aria-label': label, placeholder,
     oninput: (e, self) => { boardState.drafts.set(k, self.value); render(); } });
   ta.value = boardState.drafts.get(k) || '';
   return h('label', { class: 'v2-field', key: `field:${k}` }, h('span', { class: 'v2-label' }, label), ta);
 }
 const draftOf = (id, n = 1) => boardState.drafts.get(`${id}#${n}`) || '';
+
+// ---------------------------------------------------------------------------
+// The question's and the gate's sheets (AC85; frames 3, 3b and 4; stage 4): what is asked in plain
+// words, whether it can be undone or settles itself, each choice in its own box with what follows and
+// its own button opening AC80's filled-in file, the recommendation labelled and never picked, a 16 px
+// box for the owner's own words, "Move to Done", and the whole record one tap away. The words are
+// lib/sheets.js's; every file a button opens is still board.js's answerButtons'.
+
+/** Each sheet head's kind word (AC85: "<project> · <kind> · …", frames 3, 3b and 4 in lower case). */
+const HEAD_KIND = { question: 'question', gate: 'gate', card: 'decision', missing: 'decision', pr: 'pull request', deploy: 'deploy', hold: 'hold', merge: 'merge card' };
+
+/** AC66: the milestone it unblocks, its why, and the facts behind the ask one tap away. */
+function unblocksNode(p, card, row) {
+  const project = p.project;
+  const u = unblocksOf(p.ctx, row);
+  const ck = `ctx:${card.key}`;
+  const open = isOpenFold(project.name, ck, false);
+  return h('div', { class: 'v2-blk', key: `unb:${card.key}` },
+    u.none ? h('p', { class: 'v2-body v2-unb-l' }, `Unblocks no milestone: ${u.none}`)
+      : u.missing ? h('p', { class: 'v2-body v2-unb-l gap' }, 'Unblocks: milestone not recorded')
+        : u.milestones.map((m) => [h('p', { class: 'v2-body v2-unb-l' }, h('span', { class: 'v2-label' }, 'Unblocks'), ' ', m.name ? h('b', {}, m.name) : null, ' ', h('span', { class: 'v2-mono' }, m.code),
+          u.byPr ? h('span', { class: 'v2-small' }, ' · named by its pull request, not yet in the plan') : null),
+        m.why ? h('p', { class: 'v2-quote v2-wl' }, h('span', { class: 'v2-label' }, 'Why'), ' ', h('span', {}, m.why.text), h('span', { class: 'v2-src' }, m.why.source))
+          : h('p', { class: 'v2-small v2-wl gap' }, 'Why not recorded yet · for the agents to add')]),
+    foldButton(project.name, ck, false, { class: 'v2-fold' }, 'Context · the facts behind this ask'),
+    open ? (u.context ? h('ul', { class: 'v2-facts', key: `facts:${card.key}` }, u.context.map((c) => h('li', {}, c.fact, c.exception ? null : h('span', { class: 'v2-src' }, c.source || 'source not recorded'))))
+      : h('p', { class: 'v2-small gap', key: `facts:${card.key}` }, 'Context: not recorded')) : null);
+}
+
+/**
+ * Text held to three lines (AC85: the question's opening and the gate's case, "three lines at most,
+ * faded at the cut", P-001-tile-summary-clip.md's rule): the browser measures whether it runs past
+ * them (`measureClips`, as the tile's summary); only then is it faded, with "Read it all" under it
+ * opening the whole in place (`toggle`; the gate's case is a link to the whole case instead). Three
+ * lines or fewer: shown whole, no fade, no control. Opened, it stays open through every refresh (AC56).
+ */
+const clipOver = new Map();
+const clipOpen = new Set();
+function clipNode(id, text, cls, toggle = true) {
+  const over = clipOver.get(id) === true;
+  const open = over && clipOpen.has(id);
+  const box = h('div', { class: `v2-clip ${cls}${over && !open ? ' over' : ''}${open ? ' open' : ''}`, key: `clip:${id}`, 'data-clip': id }, text);
+  if (!over || !toggle) return box;
+  return [box, h('button', { type: 'button', class: 'v2-fold', key: `clipbtn:${id}`, 'aria-expanded': open ? 'true' : 'false',
+    onclick: () => {
+      if (clipOpen.has(id)) clipOpen.delete(id);
+      else clipOpen.add(id);
+      render();
+    } }, open ? SHEET_WORDS.readLess : SHEET_WORDS.readAll, vi(open ? 'chevdown' : 'chev'))];
+}
+
+/** A sheet's state under its head: kicked back with its reason, or confirming, with a two-step pull request's step; the step 2 note. */
+function sheetState(sx) {
+  const { card, lane, pending, kicked, k2 } = sx;
+  return [lane === 'kick' || pending ? h('p', { class: 'v2-small', key: 'sheet-state' }, `${lane === 'kick' ? 'Kicked back' : WORDS.confirming}${k2}`) : null,
+    kicked ? h('p', { class: 'v2-mark', key: 'kicked' }, vi('kick'), h('span', {}, kicked.reason)) : null,
+    card.note ? h('p', { class: 'v2-mark', key: 'note' }, vi('done'), h('span', {}, card.note)) : null];
+}
+
+/**
+ * "✓ Move to Done · then answer on GitHub" (AC85, AC80's "Done ✓" with frame 3's words), from Waiting
+ * on you or Kicked back; "Undo" while it is confirming. Then "▸ <the whole record> · and the file each
+ * answer writes": the file rendered whole (AC12) and each button's path, branch and text, exactly as
+ * its link carries it, so the owner can see what a tap commits. The fold is kept through every refresh.
+ */
+function sheetList(sx, wholeWords, fullText, files) {
+  const { p, card, back, pending } = sx;
+  const name = p.project.name;
+  const fk = `whole:${card.id}`;
+  const open = isOpenFold(name, fk, false);
+  const toggle = () => {
+    setFold(name, fk, !isOpenFold(name, fk, false));
+    render();
+  };
+  const done = pending
+    ? h('button', { type: 'button', class: 'v2-sitem', key: 'sheet-undo', onclick: () => { boardState.set(undoMark(boardState.marks, card.id)); render(); } }, vi('kick'), h('span', {}, 'Undo'))
+    : h('button', { type: 'button', class: 'v2-sitem', key: 'sheet-done', onclick: () => { markCard(card); nav.to(back); } },
+      vi('done'), h('span', {}, SHEET_WORDS.moveToDone), h('span', { class: 'v2-sv' }, SHEET_WORDS.moveToDoneThen));
+  const fold = h('button', { type: 'button', class: 'v2-sitem', key: `fold:${fk}`, 'aria-expanded': open ? 'true' : 'false', onclick: toggle },
+    vi(open ? 'chevdown' : 'chev'), h('span', {}, wholeWords), h('span', { class: 'v2-sv' }, SHEET_WORDS.wholeThen));
+  return h('div', { class: 'v2-slist', key: 'slist' }, done, fold,
+    open ? h('div', { class: 'v2-whole', key: `wholebody:${card.id}` },
+      fullText ? h('article', { class: 'sb-record', key: 'whole-record', html: renderMarkdown(fullText) }) : h('p', { class: 'v2-small gap' }, `The file: ${NOT_AVAILABLE}`),
+      h('ul', { class: 'v2-files', key: 'whole-files' }, files.map((f) => h('li', { key: `file:${f.label}` },
+        h('p', { class: 'v2-small' }, h('b', {}, f.label), f.path ? [` ${SHEET_WORDS.writes} `, h('span', { class: 'v2-mono' }, f.path), ` ${SHEET_WORDS.atBranch} `, h('span', { class: 'v2-mono' }, f.branch)] : ` ${SHEET_WORDS.copies}`),
+        h('pre', { class: 'v2-pre' }, f.text))))) : null);
+}
+
+/**
+ * One step down at the sheet's foot, below what frames 3, 3b and 4 draw (C: no frame draws them):
+ * AC66's "Unblocks" with its why and Context fold, why it is here (a card's), what was checked (AC52,
+ * AC29) and the record's links.
+ */
+function sheetFoot(sx, why, unblocks = null) {
+  const { v } = sx;
+  return h('div', { class: 'v2-blk v2-foot', key: 'sheet-foot' }, unblocks,
+    why ? h('p', { class: 'v2-small', key: 'foot-why' }, h('span', { class: 'v2-fk' }, 'Why it is here: '), why) : null,
+    h('p', { class: 'v2-small', key: 'foot-checked' }, h('span', { class: 'v2-fk' }, 'What was checked: '), v.checked),
+    v.links && v.links.length ? h('p', { class: 'v2-small', key: 'links' }, v.links.map((l, i) => [i ? ' · ' : '', ext(l.href, l.text, 'v2-lnk') || `${l.text}: no file recorded`])) : null);
+}
+
+/** A question's sheet (AC85; frames 3 and 3b). */
+function questionSheetParts(sx) {
+  const { p, card, row, back, fromTap, headMeta } = sx;
+  const project = p.project;
+  const q = card.flag.question;
+  const p0 = q.parsed;
+  const parts = [sheetHead(headMeta, card.title, back), fromTap, sheetState(sx)];
+  // Its opening: the first paragraph of its WHY, in --t-lead, three lines at most, the whole one tap away.
+  parts.push(p0 ? clipNode(`why:${card.id}`, whyOpening(p0), 'v2-lead') : h('p', { class: 'v2-small gap', key: 'why-reading' }, `The question file: ${NOT_AVAILABLE}`));
+  // Whether it can be undone, or settles itself, by icon and words (AC38), and its blast radius and risk.
+  if (p0) {
+    const u = undoLine(p0, card.raisedAt, TZ);
+    parts.push(h('div', { class: 'v2-marks', key: 'marks' },
+      h('p', { class: `v2-mark ${u.kind}`, key: 'undo' }, u.icon ? vi(u.icon) : h('span', { 'aria-hidden': 'true' }), h('span', {}, u.bold ? h('b', {}, u.bold) : null, u.text)),
+      h('p', { class: 'v2-mark', key: 'blast' }, vi('eye'), h('span', {}, blastLine(p0)))));
+  }
+  let files = [];
+  if (!card.v25) {
+    const qs = p0 ? questionQuestions(p0.text, p0.title) : null;
+    if (qs && qs.form === 'numbered') {
+      // One box per question (P-001-sheet-boxes.md, A): each number, its recommendation and its own box; one "Answer ↗".
+      const words = Object.fromEntries(qs.questions.map((x) => [x.n, draftOf(card.id, x.n)]));
+      parts.push(h('div', { class: 'v2-opts', key: 'numbered' }, qs.questions.map((x) => h('div', { class: 'v2-opt num', key: `q:${x.n}` },
+        h('div', { class: 'v2-ot' }, h('span', { class: 'v2-ol' }, `${x.n}. ${x.text}`), x.recommendation ? h('span', { class: 'v2-od' }, [h('span', { class: 'v2-rec' }, SHEET_WORDS.recommended), ' ', x.recommendation]) : null),
+        wordsBox(card.id, `Your answer to ${x.n}`, x.n)))));
+      const btn = answerButtons(project, card.flag, CONFIG.linkCap, words)[0];
+      files = [btn];
+      parts.push(h('p', { class: 'v2-steps', key: 'numbered-btn' }, answerLink(p, card, btn, 'v2-abtn', [btn.label])));
+    } else {
+      const btns = answerButtons(project, card.flag, CONFIG.linkCap, draftOf(card.id));
+      files = btns;
+      if (qs && qs.form === 'fallback') {
+        // AC53's one-box fallback: the line saying so, the file shown whole, its link (at the foot) and one box.
+        parts.push(h('p', { class: 'v2-small', key: 'cant-split' }, `${CANT_SPLIT} (${qs.why}).`));
+        parts.push(h('article', { class: 'sb-record', key: 'fallback-text', html: renderMarkdown(p0.text) }));
+      }
+      // One box per option: "<letter>. <its words>", the description under it, "Recommended" on one only, its own button.
+      parts.push(h('div', { class: 'v2-opts', key: 'opts', role: 'list' }, btns.map((b) => {
+        const c = splitChoice(b.words);
+        return h('div', { class: 'v2-opt', role: 'listitem', key: `opt:${b.value || 'one'}` },
+          // P-001-answer-choice-spacing: the letter its own element, set apart from its words by a real space.
+          h('div', { class: 'v2-ot' }, b.value ? [h('span', { class: 'v2-ol' }, h('b', { class: 'v2-letter' }, `${b.value}.`), ' ', h('span', { class: 'v2-ow' }, c.words)),
+            c.desc ? h('span', { class: 'v2-od' }, c.desc) : null]
+            : h('span', { class: 'v2-ol' }, 'Your ruling, in your own words'),
+          b.recommended ? h('span', { class: 'v2-rec' }, SHEET_WORDS.recommended) : null),
+          answerLink(p, card, b, 'v2-abtn', [b.label]));
+      })));
+      parts.push(recLine(p0));
+      parts.push(wordsBox(card.id, SHEET_WORDS.words));
+    }
+  } else {
+    // A v2.5 question: AC19's copy route, as today (AC53).
+    const letters = p0 ? p0.options.map((o) => o.letter) : [];
+    parts.push(h('p', { class: 'v2-small', key: 'v25-note' }, V25_RULING_NOTE));
+    parts.push(h('div', { class: 'v2-opts', key: 'opts' }, (letters.length ? letters : ['']).map((l) => {
+      const text = composeAnswer({ kind: 'question', name: card.name, qs: { form: 'lettered', title: card.title, block: optionsBlock(p0 ? p0.text : '').lines, questions: [] } },
+        { 1: { choice: l, words: draftOf(card.id) } }).text;
+      files.push({ label: l ? `Copy answer ${l}` : 'Copy the answer', text });
+      const c = splitChoice(l ? (p0.options.find((o) => o.letter === l) || {}).text || '' : '');
+      return h('div', { class: 'v2-opt', key: `opt:${l}` }, h('div', { class: 'v2-ot' },
+        l ? [h('span', { class: 'v2-ol' }, h('b', { class: 'v2-letter' }, `${l}.`), ' ', h('span', { class: 'v2-ow' }, c.words)), c.desc ? h('span', { class: 'v2-od' }, c.desc) : null]
+          : h('span', { class: 'v2-ol' }, 'Your ruling')),
+        copyButton(text, `v25:${card.id}:${l}`, l ? `Copy answer ${l}` : 'Copy the answer', 'v2-abtn'));
+    })));
+    parts.push(recLine(p0));
+    parts.push(wordsBox(card.id, SHEET_WORDS.words));
+  }
+  if (files.length && files[0].form === 'numbered') parts.push(recLine(p0));
+  parts.push(sheetList(sx, SHEET_WORDS.wholeQuestion, p0 ? p0.text : null, buttonFiles(files, project.defaultBranch)));
+  parts.push(sheetFoot(sx, null, project.model === 'v3' ? unblocksNode(p, card, row) : null));
+  return parts;
+}
+
+/** AC80's why line for a question, under its boxes: "Recommended: <the RECOMMENDATION: line's words>", or "No recommendation given". */
+function recLine(p0) {
+  const rec = p0 && p0.recommendation;
+  return h('p', { class: 'v2-small', key: 'rec-line' }, rec ? `Recommended: ${rec}` : 'No recommendation given');
+}
+
+/** A gate's sheet (AC85; frame 4; P-001-gate-card.md, A). */
+function gateSheetParts(sx) {
+  const { p, card, row, v, back, fromTap, headMeta } = sx;
+  const project = p.project;
+  const c = card.flag.card;
+  const doc = p.j && p.j.projectDoc ? p.j.projectDoc : null;
+  const parts = [sheetHead(headMeta, gateTitle(c), back), fromTap, sheetState(sx)];
+  // "The case opens": its plain-English opening, quoted, three lines at most, faded; the whole case one tap away.
+  const g = v.gate || {};
+  parts.push(blk(SHEET_WORDS.caseOpens, clipNode(`case:${card.id}`, g.opening || NOT_RECORDED, 'v2-quote', false),
+    g.caseLink ? ext(g.caseLink, SHEET_WORDS.wholeCase, 'v2-lnk') : h('p', { class: 'v2-small gap' }, SHEET_WORDS.noCase)));
+  // "Their views": the Critic's verdict word and its line, and the user representative's where one runs.
+  const rows = viewRows(c.parsed ? c.parsed.text : '', doc ? doc.ownerIsUser === true : null);
+  parts.push(blk(SHEET_WORDS.views, h('div', { class: 'v2-verd', key: 'views' }, rows.map((r) => [h('span', { class: 'v2-vw' }, r.who), h('span', { class: `v2-vt${r.gap ? ' gap' : ''}` }, r.text)])),
+    g.criticLink ? ext(g.criticLink, SHEET_WORDS.criticView, 'v2-lnk') : null));
+  // The phase's standard milestones as the project's lines give them (AC61).
+  parts.push(h('p', { class: 'v2-small', key: 'std-line' }, standardLine(c.gate, doc)));
+  // The four choices (and any older words the card lists), each in its box with what follows, "Recommended"
+  // on the case's recommendation, a lock and "Can't be undone" on Kill, and its own button.
+  const btns = answerButtons(project, card.flag, CONFIG.linkCap, draftOf(card.id), { caseRec: card.caseRec });
+  parts.push(h('div', { class: 'v2-opts', key: 'opts', role: 'list' }, btns.map((b) => {
+    const then = (v.options || []).find((o) => o.value === b.value);
+    const kill = b.value === 'kill';
+    return h('div', { class: 'v2-opt', role: 'listitem', key: `opt:${b.value}` },
+      h('div', { class: 'v2-ot' }, h('span', { class: 'v2-ol' }, b.label), h('span', { class: 'v2-od' }, then ? then.then : NOT_RECORDED),
+        b.recommended ? h('span', { class: 'v2-rec' }, SHEET_WORDS.recommended) : null,
+        kill ? h('span', { class: 'v2-mk v2-undo1', key: 'kill-lock' }, vi('lock'), h('span', {}, SHEET_WORDS.cantUndo)) : null),
+      answerLink(p, card, b, `v2-abtn${kill ? ' danger' : ''}`, [`${b.label} ↗`]));
+  })));
+  // "Your reason": the `Reason: ` line for Hold and Recycle (decisions/README.md:13), after a blank line for Proceed and Kill.
+  parts.push(wordsBox(card.id, SHEET_WORDS.reason, 1, SHEET_WORDS.reasonPlaceholder));
+  parts.push(sheetList(sx, SHEET_WORDS.wholeCard, c.parsed ? c.parsed.text : null, buttonFiles(btns, project.defaultBranch)));
+  parts.push(sheetFoot(sx, v.why, project.model === 'v3' ? unblocksNode(p, card, row) : null));
+  return parts;
+}
 
 function cardSheet(bd, built, only, sheetId) {
   const back = boardRoute(only);
@@ -1994,8 +2213,16 @@ function cardSheet(bd, built, only, sheetId) {
   const kicked = mark && mark.confirmedAt == null && mark.kicked ? mark.kicked : null;
   const lane = pending ? 'done' : kicked ? 'kick' : 'wait';
   const k2 = card.step && card.step.twoStep ? ` · step ${card.step.twoStep} of 2` : '';
-  const headMeta = () => [project.name, card.kindWord.toLowerCase(), card.kind === 'question' ? card.name : card.number != null ? `#${card.number}` : null,
-    card.raisedAt != null ? `waiting ${boardAge(Date.now() - card.raisedAt)}` : 'wait not recorded'].filter(Boolean).join(' · ');
+  // AC85 (every sheet): "<project> · <kind> · <its name or id> · <milestone> · waiting <age>", each part
+  // only when its record gives it; the wait from its raised time, or "wait not recorded" (AC52).
+  const u0 = project.model === 'v3' && ['question', 'card', 'gate', 'pr'].includes(card.kind) ? unblocksOf(p.ctx, row) : null;
+  const msPart = u0 && u0.milestones && u0.milestones.length ? u0.milestones.map((m) => m.code).join(', ') : null;
+  const headMeta = () => headText([project.name, HEAD_KIND[card.kind] || card.kindWord.toLowerCase(), card.kind === 'question' ? card.name : card.meta[0] || null, msPart,
+    card.raisedAt != null ? `waiting ${boardAge(Date.now() - card.raisedAt)}` : 'wait not recorded']);
+  if (card.kind === 'question' || card.kind === 'gate') {
+    const sx = { p, card, row, v, back, lane, pending, kicked, fromTap, headMeta, k2 };
+    return sheetShell(back, card.kind === 'gate' ? gateTitle(card.flag.card) : card.title, card.kind === 'gate' ? gateSheetParts(sx) : questionSheetParts(sx), `sheet:${sheetId}`);
+  }
   const parts = [sheetHead(headMeta, card.title, back), fromTap,
     h('p', { class: 'v2-small' }, `${lane === 'kick' ? 'Kicked back' : pending ? WORDS.confirming : card.kindWord}${k2}`),
     kicked ? h('p', { class: 'v2-mark' }, vi('kick'), h('span', {}, kicked.reason)) : null,
@@ -2003,7 +2230,7 @@ function cardSheet(bd, built, only, sheetId) {
   // What it is, why it's here, what was checked (AC52), each from its record.
   parts.push(blk('What it is', h('p', { class: 'v2-body' }, v.what || card.title, ' ', v.code ? h('span', { class: 'v2-mono' }, v.code) : null)));
   // A card's question, from its "## 1." section (AC53).
-  if ((card.kind === 'card' || card.kind === 'gate') && v.question) parts.push(blk('The question', h('p', { class: 'v2-lead', key: 'card-q' }, v.question)));
+  if (card.kind === 'card' && v.question) parts.push(blk('The question', h('p', { class: 'v2-lead', key: 'card-q' }, v.question)));
   if (card.kind === 'deploy') {
     const dr = deployRows(project, p.snap).find((x) => x.run && card.deploy && x.run.runNumber === card.deploy.runNumber && x.run.path === card.deploy.path);
     parts.push(blk('Why it is here', h('p', { class: 'v2-body' }, card.flag.words || NOT_RECORDED)));
@@ -2030,81 +2257,29 @@ function cardSheet(bd, built, only, sheetId) {
     // so its card has no check line, and its sheet says so, never letting a missing line pass for passing.
     card.kind === 'pr' ? h('p', { class: 'v2-small', key: 'own-checks' }, PR_CHECKS_WORDS) : null));
   // AC66: the milestone it unblocks, its why, and the facts behind the ask one tap away.
-  if (project.model === 'v3' && ['question', 'card', 'gate', 'pr'].includes(card.kind)) {
-    const u = unblocksOf(p.ctx, row);
-    const ck = `ctx:${card.key}`;
-    const open = isOpenFold(project.name, ck, false);
-    parts.push(h('div', { class: 'v2-blk', key: `unb:${card.key}` },
-      u.none ? h('p', { class: 'v2-body v2-unb-l' }, `Unblocks no milestone: ${u.none}`)
-        : u.missing ? h('p', { class: 'v2-body v2-unb-l gap' }, 'Unblocks: milestone not recorded')
-          : u.milestones.map((m) => [h('p', { class: 'v2-body v2-unb-l' }, h('span', { class: 'v2-label' }, 'Unblocks'), ' ', m.name ? h('b', {}, m.name) : null, ' ', h('span', { class: 'v2-mono' }, m.code),
-            u.byPr ? h('span', { class: 'v2-small' }, ' · named by its pull request, not yet in the plan') : null),
-          m.why ? h('p', { class: 'v2-quote v2-wl' }, h('span', { class: 'v2-label' }, 'Why'), ' ', h('span', {}, m.why.text), h('span', { class: 'v2-src' }, m.why.source))
-            : h('p', { class: 'v2-small v2-wl gap' }, 'Why not recorded yet · for the agents to add')]),
-      foldButton(project.name, ck, false, { class: 'v2-fold' }, 'Context · the facts behind this ask'),
-      open ? (u.context ? h('ul', { class: 'v2-facts', key: `facts:${card.key}` }, u.context.map((c) => h('li', {}, c.fact, c.exception ? null : h('span', { class: 'v2-src' }, c.source || 'source not recorded'))))
-        : h('p', { class: 'v2-small gap', key: `facts:${card.key}` }, 'Context: not recorded')) : null));
-  }
-  if (v.gate) {
-    parts.push(blk('The case opens', h('p', { class: 'v2-quote' }, v.gate.opening),
-      h('p', { class: 'v2-small' }, ext(v.gate.caseLink, 'Read the whole case ↗', 'v2-lnk') || 'The case: no file recorded', ' · ',
-        ext(v.gate.criticLink, "The Critic's view ↗", 'v2-lnk') || "The Critic's view: no file recorded"),
-      h('p', { class: 'v2-small' }, `User representative: ${v.gate.userRep}`)));
-  }
+  if (project.model === 'v3' && ['card', 'pr'].includes(card.kind)) parts.push(unblocksNode(p, card, row));
   if (v.noAnswer) parts.push(blk('What you do', h('p', { class: 'v2-body' }, v.noAnswer)));
   // The why line (AC80), and GitHub's owner check whenever J22 has read it.
   if (card.kind === 'pr') {
     if (card.why) parts.push(h('p', { class: 'v2-body', key: 'why-line' }, card.why));
     if (card.check != null) parts.push(h('p', { class: 'v2-small', key: 'owner-check' }, `GitHub's owner check: ${card.check}`));
   }
-  if (card.kind === 'question' || card.kind === 'card' || card.kind === 'gate') {
+  if (card.kind === 'card') {
     const rec = v.recommendation;
     parts.push(h('p', { class: 'v2-body', key: 'rec-line' }, rec ? [h('span', { class: 'v2-rec' }, 'Recommended'), ' ', rec] : 'No recommendation given'));
   }
   // The buttons, in full: one per option, each opening a fully filled-in file (the box's words in it).
-  if (card.kind === 'question' && !card.v25) {
-    const p0 = card.flag.question.parsed;
-    const qs = p0 ? questionQuestions(p0.text, p0.title) : null;
-    if (qs && qs.form === 'numbered') {
-      const words = Object.fromEntries(qs.questions.map((x) => [x.n, draftOf(card.id, x.n)]));
-      parts.push(h('div', { class: 'v2-opts', key: 'numbered' }, qs.questions.map((x) => h('div', { class: 'v2-opt', key: `q:${x.n}` },
-        h('div', { class: 'v2-ot' }, h('span', { class: 'v2-ol' }, `${x.n}. ${x.text}`), x.recommendation ? h('span', { class: 'v2-od' }, [h('span', { class: 'v2-rec' }, 'Recommended'), ' ', x.recommendation]) : null),
-        wordsBox(card.id, `Your answer to ${x.n}`, x.n)))));
-      const btn = answerButtons(project, card.flag, CONFIG.linkCap, words)[0];
-      parts.push(h('p', { class: 'v2-steps' }, answerLink(p, card, btn, 'v2-abtn', [btn.label])));
-    } else {
-      const btns = answerButtons(project, card.flag, CONFIG.linkCap, draftOf(card.id));
-      if (qs && qs.form === 'fallback') parts.push(h('p', { class: 'v2-small' }, `${CANT_SPLIT} (${qs.why}).`));
-      parts.push(h('div', { class: 'v2-opts', key: 'opts', role: 'list' }, btns.map((b) => h('div', { class: 'v2-opt', role: 'listitem', key: `opt:${b.value || 'one'}` },
-        // P-001-answer-choice-spacing: the letter its own element, set apart from its words by a real space.
-        h('div', { class: 'v2-ot' }, b.value ? h('span', { class: 'v2-ol' }, h('b', { class: 'v2-letter' }, `${b.value}.`), ' ', h('span', { class: 'v2-ow' }, b.words || ''))
-          : h('span', { class: 'v2-ol' }, 'Your ruling, in your own words'),
-          b.recommended ? h('span', { class: 'v2-rec' }, 'Recommended') : null),
-        answerLink(p, card, b, 'v2-abtn', [b.label])))));
-      parts.push(wordsBox(card.id, 'Your own words, if you want them in the answer'));
-    }
-  } else if (card.kind === 'question' && card.v25) {
-    const p0 = card.flag.question.parsed;
-    const letters = p0 ? p0.options.map((o) => o.letter) : [];
-    parts.push(h('p', { class: 'v2-small' }, V25_RULING_NOTE));
-    parts.push(h('div', { class: 'v2-opts', key: 'opts' }, (letters.length ? letters : ['']).map((l) => {
-      const text = composeAnswer({ kind: 'question', name: card.name, qs: { form: 'lettered', title: card.title, block: optionsBlock(p0 ? p0.text : '').lines, questions: [] } },
-        { 1: { choice: l, words: draftOf(card.id) } }).text;
-      return h('div', { class: 'v2-opt', key: `opt:${l}` }, h('div', { class: 'v2-ot' }, h('span', { class: 'v2-ol' }, l ? `${l}. ${(p0.options.find((o) => o.letter === l) || {}).text || ''}` : 'Your ruling')),
-        copyButton(text, `v25:${card.id}:${l}`, l ? `Copy answer ${l}` : 'Copy the answer', 'v2-abtn'));
-    })));
-    parts.push(wordsBox(card.id, 'Your own words, if you want them in the answer'));
-  } else if (card.kind === 'card' || card.kind === 'gate') {
-    const gate = card.kind === 'gate';
+  if (card.kind === 'card') {
+    // A decision card's sheet keeps stage 1a's form (AC80); AC85 lays out the question's and the gate's.
     const btns = answerButtons(project, card.flag, CONFIG.linkCap, draftOf(card.id));
     parts.push(h('div', { class: 'v2-opts', key: 'opts', role: 'list' }, btns.map((b) => {
       const then = (v.options || []).find((o) => o.value === b.value);
       return h('div', { class: 'v2-opt', role: 'listitem', key: `opt:${b.value}` },
-        h('div', { class: 'v2-ot' }, h('span', { class: 'v2-ol' }, gate ? b.label : b.value), h('span', { class: 'v2-od' }, then ? then.then : NOT_RECORDED),
+        h('div', { class: 'v2-ot' }, h('span', { class: 'v2-ol' }, b.value), h('span', { class: 'v2-od' }, then ? then.then : NOT_RECORDED),
           b.recommended ? h('span', { class: 'v2-rec' }, 'Recommended') : null),
-        answerLink(p, card, b, 'v2-abtn', [gate ? `${b.label} ↗` : b.label]));
+        answerLink(p, card, b, 'v2-abtn', [b.label]));
     })));
-    parts.push(wordsBox(card.id, gate ? 'Your reason (it goes on the Reason: line for Hold and Recycle)' : 'Your own words, if you want them in the answer'));
+    parts.push(wordsBox(card.id, SHEET_WORDS.words));
   } else {
     const s = card.step;
     const btns = [];
@@ -3223,6 +3398,20 @@ function measureClips() {
       const n = hiddenParts(el);
       if (n != null && moreHidden.get(bt) !== n) {
         moreHidden.set(bt, n);
+        changed = true;
+      }
+      return;
+    }
+    // AC85: a sheet's three-line text (the question's opening, the gate's case). Opened whole, it holds
+    // no clip to measure, so its answer stands until it is closed again.
+    const clip = el.getAttribute('data-clip');
+    if (clip != null) {
+      if (clipOpen.has(clip)) return;
+      const [csh, cch] = [el.scrollHeight, el.clientHeight];
+      if (typeof csh !== 'number' || typeof cch !== 'number' || !cch) return;
+      const cover = csh > cch + 1;
+      if (clipOver.get(clip) !== cover) {
+        clipOver.set(clip, cover);
         changed = true;
       }
       return;

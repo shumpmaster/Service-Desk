@@ -15,4 +15,4 @@ DEFAULT: none — this waits for you   TIMEOUT: 0
 ## Context
 - The plan's pick step (source: specs/S-001.md, AC44 step 3, "Changed by desk mockup v2")
 - The direction you picked on 20 Oct (source: decisions/questions/P-001-redesign-direction-v2.md)
-- The stages merged and deployed: pull requests #176, #177, #180, #181, #182, #183, #186 and #187
+- The stages merged and deployed (source: pull requests #176, #177, #180, #181, #182, #183, #186 and #187)

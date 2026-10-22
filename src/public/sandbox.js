@@ -2551,13 +2551,13 @@ function portfolioCardSheet(card, mark, back, fromTap, sheetId) {
     h('p', { class: 'v2-small' }, kicked ? 'Kicked back' : pending ? WORDS.confirming : card.kindWord),
     kicked ? h('p', { class: 'v2-mark' }, vi('kick'), h('span', {}, kicked.reason)) : null,
     card.note ? h('p', { class: 'v2-mark', key: 'pf-note' }, vi('bad'), h('span', {}, card.note)) : null,
-    blk('What it is', h('p', { class: 'v2-body' }, card.rec && card.rec.title ? card.rec.title : card.title, ' ', h('span', { class: 'v2-mono' }, card.path)))];
+    blk('What it is', h('p', { class: 'v2-body' }, PF_WORDS.whatItIs, ' ', h('span', { class: 'v2-mono' }, card.path)))];
   if (card.rec) {
     parts.push(blk('The question', h('p', { class: 'v2-lead', key: 'pf-q' }, v.question)));
     parts.push(blk('Why it is here', h('p', { class: 'v2-body' }, v.why || NOT_RECORDED)));
     parts.push(blk('The options', v.options && v.options.length ? h('ul', { class: 'v2-flist', key: 'pf-opts' }, v.options.map((o) => h('li', { key: `pfo:${o.value}` },
       h('span', { class: 'v2-mono' }, o.value), ' ', codeWords(o.then)))) : h('p', { class: 'v2-body' }, NOT_RECORDED)));
-    parts.push(h('p', { class: 'v2-body', key: 'rec-line' }, v.recommendation ? [h('span', { class: 'v2-rec' }, 'Recommended'), ' ', v.recommendation] : 'No recommendation given'));
+    parts.push(h('p', { class: 'v2-body', key: 'rec-line' }, v.recommendation ? [h('span', { class: 'v2-rec' }, 'Recommended'), ' ', codeWords(v.recommendation)] : 'No recommendation given'));
   }
   parts.push(blk('What you do', h('p', { class: 'v2-body' }, PF_WORDS.noAnswerLink), h('p', { class: 'v2-mark', key: 'pf-phone' }, vi('clock'), h('span', {}, PF_WORDS.phoneNote))));
   parts.push(h('p', { class: 'v2-steps', key: 'step-btns' }, ext(card.step.href, `${card.step.sheetLabel} ↗`, 'v2-abtn')));

@@ -66,6 +66,7 @@ export const PF_WORDS = Object.freeze({
   dateNotRecorded: 'date not recorded',
   phoneNote: "Your phone isn't told about portfolio cards yet",
   noAnswerLink: 'The desk offers no answer link for a portfolio card: you answer it in the portfolio, on GitHub.',
+  whatItIs: "A decision card in your portfolio's queue:",
   eachWaits: 'Each card waits on Waiting, under "Portfolio", while its file is in the queue.',
   rulings: 'Rulings',
   facts: 'Library facts',

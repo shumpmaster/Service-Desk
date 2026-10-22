@@ -1062,6 +1062,8 @@ html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /*
 .v2-pfsl > li + li { border-top: 1px solid var(--line); }
 .v2-pfsi { display: grid; gap: 2px; padding: 8px 0; min-width: 0; }
 .v2-pfsi > * { overflow-wrap: anywhere; }
+/* A portfolio card's link in its row's sheet (AC87, stage 6b): a target 24 px tall at least (WCAG 2.5.8). */
+.v2-pfsi > a.v2-prtt { display: flex; align-items: center; min-height: 24px; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
 .v2-pffrom .code { font: var(--t-mono); color: var(--ink2); }
 /* "More detail", folded last at Home's foot (P-001-settings-place.md, A): the notifications switch and the usage bar. */
 .v2-mdetail { border-top: 1px solid var(--line); padding-top: 4px; }

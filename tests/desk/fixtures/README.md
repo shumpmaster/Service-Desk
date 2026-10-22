@@ -528,3 +528,6 @@ notify-ac77-desk, notify-j16-jobs and j6-j8-function) add no fixture file. What 
   (irreversible, no default, options that can't be split). Its own README lists each. AC85's test also
   renders two real question files already here: `notify/ac77-real/questions/P-001-next-work.md` and
   `trial-view/P-001-design-lab-open.md`.
+- `trial-view/P-001-design-pick.md` (2026-10-22, AC12 and AC85; stage 4's build review, round 1, B1): the real
+  Service-Desk question file at f8dfd1b, copied unchanged with `git show`, whose `DEFAULT: none — this is your
+  pick and never defaults (AC43)` names no option letter.

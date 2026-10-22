@@ -20,6 +20,12 @@ import { parseGateCase } from '../../src/lib/j11.js';
 import { CANT_SPLIT } from '../../src/lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, gateViews, gateWords, viewRows, gateTitle, standardLine, caseWord, settleWhen, reversibilityRest, defaultLetter } from '../../src/lib/sheets.js';
 import { lettersRepo, lettersConfig, NOW, Q, GATE, NEXT_WORK, DESIGN_LAB, RAISED } from './ac85-fixtures.mjs';
+import { defaultLabel } from '../../src/lib/records.js';
+import { settleAt } from '../../src/lib/home.js';
+import { OLD_BLOB_CACHE_KEYS, BLOB_CACHE_KEY, createDesk } from '../../src/lib/scheduler.js';
+import { createStore } from '../../src/lib/store.js';
+import { fakeServer } from './fake-desk.mjs';
+import { fakeClock } from './helpers.mjs';
 
 const TZ = 'America/Chicago';
 const ac85 = (p) => readFileSync(join(FIX, 'ac85', p), 'utf8');
@@ -198,7 +204,8 @@ test('AC85 whether it can be undone, or settles itself: the lock and "Can\'t be 
       [SEND, 'lock', "Can't be undone.", " An email can't be unsent. Never settles itself: it waits for you (per the question file).", "Blast radius: every member's inbox · risk R2"],
       [NEXT, 'clock', 'Settles itself as A', ' on Wed 21 Oct, 13:07 if left (per the question file: 48 hours). Reversible.', 'Blast radius: the order of the coming work only; nothing built changes · risk R0'],
       [NODEF, null, null, 'Reversibility: reversible · Default: not given', "Blast radius: the digest's day only · risk R0"],
-      [LAB, null, null, 'Reversibility: reversible · Default: per the question file: defaults to none — these are yours and never default (TIMEOUT not given)',
+      // Its DEFAULT names no letter, so it is quoted as the file writes it (stage 4's build review, round 1, B1).
+      [LAB, null, null, 'Reversibility: reversible · Default: per the question file: DEFAULT none — these are yours and never default',
         'Blast radius: the desk\'s screens and, for 5, 6 and 10, a later operating-model change you approve separately · risk R0'],
     ];
     for (const [id, icon, bold, rest, eye] of forms) {
@@ -246,6 +253,9 @@ test('AC85 the undo and settle forms, pure: the rest of the REVERSIBILITY line, 
   assert.equal(defaultLetter({ default: 'none — these are yours' }), null);
   // The card agrees with the sheet (board.js's questionMark).
   assert.equal(questionMark(q({ reversibility: 'reversible', default: 'none — never', timeout: 'none' }), raised, TZ), null);
+  // A DEFAULT naming no letter with a TIMEOUT in hours (round 1, N1): no clock, never "Settles as null".
+  assert.equal(questionMark(q({ reversibility: 'reversible', default: 'none', timeout: '48' }), raised, TZ), null);
+  assert.equal(questionMark(q({ reversibility: 'reversible', default: 'none — this is your pick and never defaults (AC43)', timeout: '48' }), raised, TZ), null);
   assert.equal(questionMark(q({ reversibility: 'reversible', default: 'C', timeout: 'none' }), raised, TZ), null);
   assert.deepEqual(questionMark(q({ reversibility: 'reversible', default: 'C', timeout: '48' }), raised, TZ), { icon: 'clock', words: 'Settles as C · Wed 13:37' });
   assert.deepEqual(questionMark(q({ reversibility: 'reversible', default: 'C', timeout: '48' }), null, TZ), { icon: 'clock', words: 'Settles as C' });
@@ -613,6 +623,88 @@ test('AC85 a v2.5 project\'s question (AC19\'s copy route, as today, AC53): AC85
     const items = findAll(keyed(app, 'whole-files'), (e) => e.tag === 'li');
     assert.deepEqual(items.map((li) => byClass(li, 'v2-small')[0].textContent), ['Copy answer A copies this text, for your session', 'Copy answer B copies this text, for your session']);
     assert.match(findAll(items[0], (e) => e.tag === 'pre')[0].textContent, /^Ruling: A\n/);
+  } finally {
+    app.restore();
+  }
+});
+
+
+// ---------------------------------------------------------------------------
+// Stage 4's build review, round 1: B1 (a default the file doesn't give), N1 to N3
+
+/** Service-Desk's real questions/P-001-design-pick.md at f8dfd1b: reversible, `DEFAULT: none — this is your pick and never defaults (AC43)`, `TIMEOUT: none`. */
+const DESIGN_PICK = fixture('trial-view/P-001-design-pick.md');
+const PICK_WORDS = 'per the question file: DEFAULT none — this is your pick and never defaults (AC43)';
+
+test('AC85 + AC12 (round 1, B1): a DEFAULT naming no letter is no default — the sheet quotes it as written, the card shows no clock, Home counts nothing settling; no letter from elsewhere in the field ("AC43"), no raw time', async () => {
+  const p = parseQuestion(DESIGN_PICK, 'P-001-design-pick');
+  assert.equal(p.default, 'none — this is your pick and never defaults (AC43)', 'the real file\'s field');
+  assert.equal(defaultLetter(p), null);
+  const app = await openLetters({ repos: { Letters: lettersRepo({ extra: { 'questions/P-001-design-pick.md': DESIGN_PICK } }) } });
+  try {
+    const card = findAll(app.view, (e) => e.attrs && e.attrs['data-card'] === Q('P-001-design-pick'))[0];
+    assert.ok(card, 'its card');
+    assert.equal(byClass(card, 'v2-mk').length, 0, 'the card: no lock or clock line');
+    const sh = await openSheet(app, Q('P-001-design-pick'));
+    const undo = byClass(byClass(sh, 'v2-marks')[0], 'v2-mark')[0];
+    assert.equal(undo.textContent, `Reversibility: reversible · Default: ${PICK_WORDS}`, 'the sheet: what the file says, word for word');
+    assert.doesNotMatch(sh.textContent, /defaults to|Settles/);
+  } finally {
+    app.restore();
+  }
+  // DEFAULT none with a TIMEOUT in hours: still no default, and no time of any kind.
+  const none48 = { reversibility: 'reversible', default: 'none', timeout: '48', riskClass: null, blastRadius: null };
+  const raised = Date.parse('2026-10-19T18:37:00Z');
+  assert.deepEqual(undoLine(none48, raised, TZ), { kind: 'other', icon: null, bold: null, text: 'Reversibility: reversible · Default: per the question file: DEFAULT none' });
+  assert.equal(questionMark(none48, raised, TZ), null);
+  assert.equal(settleAt(none48, raised), null, "Home's briefing: nothing settles itself");
+  assert.equal(settleAt({ ...none48, default: 'C' }, raised), raised + 48 * 3600e3, 'a letter still settles');
+  assert.equal(settleAt(p, raised), null);
+  // A letter starting the field is still read ("C — …").
+  assert.equal(defaultLetter({ default: 'C — the board only' }), 'C');
+  assert.equal(defaultLabel({ reversibility: 'reversible', default: 'C — the board only', timeout: '24' }, new Date(raised), (d) => d.toISOString()), 'per the question file: defaults to C at 2026-10-20T18:37:00.000Z');
+});
+
+test('AC85 (round 1, N2): the blob cache key is v7, and v6 is among the old keys, so a parse stored under it is dropped from storage', async () => {
+  assert.equal(BLOB_CACHE_KEY, 'desk-blobs-v7');
+  assert.ok(OLD_BLOB_CACHE_KEYS.includes('desk-blobs-v6'));
+  const backing = new Map([['desk-blobs-v6', JSON.stringify({ 'gate-case:0000': { opening: 'an old parse, with no recommendation' } })]]);
+  const storage = { getItem: (k) => (backing.has(k) ? backing.get(k) : null), setItem: (k, v) => backing.set(k, v), removeItem: (k) => backing.delete(k) };
+  const clock = fakeClock(NOW);
+  const config = lettersConfig();
+  const server = fakeServer({ Letters: lettersRepo() }, config, clock);
+  const desk = createDesk({ config, call: (pth, b) => server.call(pth, b), clock, store: createStore(storage), pullsStore: createStore(null), isVisible: () => true, j11: true });
+  assert.equal(backing.has('desk-blobs-v6'), false, 'the v6 key is dropped, not left to fill storage');
+  desk.start();
+  await clock.runUntil(clock.now() + 2 * POLL_MS);
+  desk.stop();
+  const rec = desk.snapshot('Letters').records.get('docs/gates/P-003/launch-gate-1-case.md');
+  assert.equal(rec.recommendation, 'proceed', 'the case read and parsed afresh, its recommendation with it');
+});
+
+test('AC85 (round 1, N3): a v2.5 question\'s text to copy carries the owner\'s words, after a blank line, in each copy button\'s text and in the fold', async () => {
+  const OLDER = { name: 'Older', repo: 'shumpmaster/Older', defaultBranch: 'main', model: 'v2.5', planning: false, webCommitsToDefault: true, contentPrefill: true, contentParam: 'value' };
+  const q = '# Ruling needed: A made-up v2.5 question\n\nWHY: NOT a real record: made up for AC85\'s test.\nOPTIONS:\n  A. Keep it — As it is.\n  B. Drop it — Gone.\nRECOMMENDATION: A — keep.\nRISK CLASS: R0   REVERSIBILITY: reversible   BLAST RADIUS: none\nDEFAULT: A   TIMEOUT: 24\n';
+  const r = (await import('./fake-desk.mjs')).repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md'), 'questions/N-old.md': q });
+  const copied = [];
+  const app = await loadSandbox({ config: { ...lettersConfig(), projects: [OLDER] }, repos: { Older: r }, hash: '#/waiting', now: NOW,
+    globals: { navigator: { clipboard: { writeText: async (t) => { copied.push(t); } } } } });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    const id = 'Older|question|questions/N-old.md';
+    await openSheet(app, id);
+    const base = (l) => ['Ruling: ' + l, '', 'Question: questions/N-old.md', '', 'Question, as put: A made-up v2.5 question', 'Options, as put:', '  A. Keep it — As it is.', '  B. Drop it — Gone.', ''].join('\n');
+    await type(app, 'Keep it for now.\nAsk me again in May.');
+    await app.tap(keyed(app, `fold:whole:${id}`));
+    const pres = findAll(keyed(app, 'whole-files'), (e) => e.tag === 'pre').map((x) => x.textContent);
+    const want = ['A', 'B'].map((l) => `${base(l)}\nKeep it for now.\nAsk me again in May.\n`);
+    assert.deepEqual(pres, want, 'the fold: each text with the words, character for character');
+    for (const [i, l] of ['A', 'B'].entries()) {
+      const b = byClass(sheet(app), 'v2-abtn').find((x) => x.textContent === `Copy answer ${l}`);
+      await app.tap(b);
+      assert.equal(copied[i], want[i], `Copy answer ${l}: what it copies`);
+    }
   } finally {
     app.restore();
   }

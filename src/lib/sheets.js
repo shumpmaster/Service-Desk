@@ -13,7 +13,7 @@
 import { GATE_PHASE } from './j11.js';
 import { STANDARD_MILESTONES } from './timeline.js';
 import { NOT_RECORDED, NOT_AVAILABLE } from './sandbox.js';
-import { defaultLabel } from './records.js';
+import { defaultLabel, defaultLetter } from './records.js';
 import { hhmm } from './timefmt.js';
 
 /** The sheets' fixed words (AC85; frames 3, 3b and 4; the gate's reason box as the spec corrects it). */
@@ -102,14 +102,11 @@ export function undoLine(q, raisedAt, tz) {
   }
   // AC12's words for what the file lacks: its reversibility, and its DEFAULT label.
   return { kind: 'other', icon: null, bold: null,
-    text: `Reversibility: ${rev || 'not given'} · Default: ${defaultLabel(q || {}, raisedAt != null ? new Date(raisedAt) : null)}` };
+    text: `Reversibility: ${rev || 'not given'} · Default: ${defaultLabel(q || {}, raisedAt != null ? new Date(raisedAt) : null, (d) => settleWhen(d.getTime(), tz))}` };
 }
 
-/** The option letter a question's DEFAULT names ("C", "C — …"), or null ("none", missing). */
-export function defaultLetter(q) {
-  const m = q && q.default ? /^([A-Z])\b/.exec(String(q.default).trim()) : null;
-  return m ? m[1] : null;
-}
+/** The option letter a question's DEFAULT names (records.js's one rule, shared with the accepted view's label). */
+export { defaultLetter };
 
 /** AC85's eye line, AC12's fields: "Blast radius: <BLAST RADIUS> · risk <RISK CLASS>", each "not given" when the file lacks it. */
 export const blastLine = (q) => `Blast radius: ${(q && q.blastRadius) || 'not given'} · risk ${(q && q.riskClass) || 'not given'}`;

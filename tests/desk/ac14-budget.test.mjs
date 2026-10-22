@@ -12,8 +12,9 @@ import assert from 'node:assert/strict';
 import { createDesk, POLL_MS } from '../../src/lib/scheduler.js';
 import { pullsBackoffMs } from '../../src/lib/pulls.js';
 import { createStore } from '../../src/lib/store.js';
-import { fakeClock, fixture, CONFIG } from './helpers.mjs';
-import { repo, fakeServer } from './fake-desk.mjs';
+import { fakeClock, fixture, CONFIG, PORTFOLIO } from './helpers.mjs';
+import { repo, fakeServer, PORTFOLIO_REPO } from './fake-desk.mjs';
+import { pfFiles, cardText } from './pf-fixtures.mjs';
 import { madeUp } from './j12-fixture.mjs';
 
 const DAY = Date.parse('2026-11-03T00:00:00Z');
@@ -395,18 +396,22 @@ test('AC14 (AC79): every head a job candidate in 5 projects, 288 head changes, 1
 // are kept on the device across openings (desk-board-waits-v1). Then the same day with local storage
 // throwing: no waited read at all. From stage 2 (AC82, J24; `j24`: 'ok' or 'fail'), the same day with every
 // open pull request updated since "last looked" and 250 commits on each (three pages, the most GitHub
-// lists; NOT real records), read riding J20's calls, or failing all day. The portfolio's reads (J23) are
-// stage 6b's and not built yet.
-async function combinedDay({ worst, storageThrows = false, j24 = null } = {}) {
+// lists; NOT real records), read riding J20's calls, or failing all day. From stage 6b (J23; `portfolio: true`), the
+// same day with the portfolio read too (a made-up portfolio, NOT real records: its idea log and a card in its queue),
+// its every 5 minutes, each opening's first read at once and its cold blob call (the cache empty at every opening),
+// and one in five of A4's 100 changes a day made in the portfolio instead of a project's ledger.
+async function combinedDay({ worst, storageThrows = false, j24 = null, portfolio = false } = {}) {
   const { readFileSync } = await import('node:fs');
   const { join } = await import('node:path');
   const { NOTIFY_FIX } = await import('./notify-helpers.mjs');
   const { HEAD_POLLS } = await import('../../src/lib/scheduler.js');
   const sdFile = (p) => readFileSync(join(NOTIFY_FIX, 'sd-ef8daf4', p), 'utf8');
   const RISK = 'unmatched = "R1"\n[classes]\nR1 = ["src/**", "questions/**"]\nR0 = ["reviews/**"]\n[reviews]\nR0 = []\nR1 = ["reviewer"]\nR2 = ["reviewer"]\nR3 = ["reviewer", "owner"]\n';
-  const config = fiveProjects({ allV3: true });
+  const config = portfolio ? { ...fiveProjects({ allV3: true }), portfolio: PORTFOLIO } : fiveProjects({ allV3: true });
   const clock = fakeClock(DAY);
   const repos = Object.fromEntries(config.projects.map((p) => [p.name, repoFor(p)]));
+  if (portfolio) repos[PORTFOLIO_REPO] = repo(pfFiles({ queue: { 'PF-001-explore-1.md': cardText(1) } }));
+  let pfChanges = 0;
   const LEDGER = sdFile('docs/LEDGER.md');
   const NUMS = [31, 32, 33, 34, 35];
   // Each worst case AC14 names, at full (stage 1a's build review, round 2, N2): 'waited', a mark on every
@@ -535,9 +540,15 @@ async function combinedDay({ worst, storageThrows = false, j24 = null } = {}) {
       for (const p of config.projects) desk.setWaited(p.name, NUMS);
       if (m % 5 === 0) addRuns(open + m * 60_000 - 30_000);
       if (m % 9 === 5 && changes < (o + 1) * 10) {
-        const p = config.projects[changes % 5];
-        const r = repos[p.name];
-        r.commit({ 'docs/LEDGER.md': `${r.files['docs/LEDGER.md']}\n## L-${2000 + changes} — a made-up reading ${changes}\ndate: 2026-11-03\ntype: reading\n` });
+        if (portfolio && changes % 5 === 4) {
+          const r = repos[PORTFOLIO_REPO];
+          r.commit({ 'ideas/IDEAS.md': `${r.files['ideas/IDEAS.md']}\n## 2026-11-03 A made-up idea ${changes}\nstate: captured\n` });
+          pfChanges++;
+        } else {
+          const p = config.projects[changes % 5];
+          const r = repos[p.name];
+          r.commit({ 'docs/LEDGER.md': `${r.files['docs/LEDGER.md']}\n## L-${2000 + changes} — a made-up reading ${changes}\ndate: 2026-11-03\ntype: reading\n` });
+        }
         changes++;
       }
       if (m % 3 === 0 && prChanges < 288 && prChanges < (o + 1) * 29) {
@@ -567,7 +578,9 @@ async function combinedDay({ worst, storageThrows = false, j24 = null } = {}) {
     }
     desk.stop();
   }
-  return { calls: server.calls.length, changes, prChanges, waited, perHead, verdictCalls, cycles, maxOwnerHeads, HEAD_POLLS, waitsBacking, soloLog, waitedByOpening, span, j24Calls };
+  const pfCalls = server.calls.filter((c) => c.target === 'portfolio');
+  return { calls: server.calls.length, changes, prChanges, waited, perHead, verdictCalls, cycles, maxOwnerHeads, HEAD_POLLS, waitsBacking, soloLog, waitedByOpening, span, j24Calls,
+    pfChanges, pfPolls: pfCalls.filter((c) => c.path === '/api/poll'), pfBlobs: pfCalls.filter((c) => c.path === '/api/blobs'), openings, windowMs };
 }
 
 
@@ -668,4 +681,22 @@ test('AC14 (desk mockup v2, J24): J24\'s commits read failing at every opening �
   t.diagnostic(`AC14 (J24 failing): ${d.calls} calls (${base.calls} without J24), ${d.j24Calls.length} calls carrying commits`);
   j24Bounds(d, base, 'J24 failing');
   assert.ok(d.j24Calls.some((c) => c.sinceOpen > RETRY), 'retries made, inside calls the day makes anyway');
+});
+
+// From stage 6b (J23; A3's 9,817, specs/S-001.md:13086-13094): the worst case of mockup v2's day with J24's commits read
+// and the portfolio's read — one poll call every 5 minutes while open (12 an hour, 192 in A1's 16 hours), each opening's
+// first read made at once (10) and its cold blob call (10), and a blob call on each portfolio head change, among A4's 100.
+test('AC14 (desk mockup v2, J23): the worst case with the portfolio read too — under 10,000 calls (A3\'s 9,817); the portfolio\'s polls at most 12 an hour of open window plus each opening\'s first read, its blob calls at most one an opening plus one a head change, and the projects\' cycles still at most 16 blob calls', async (t) => {
+  const d = await combinedDay({ worst: 'verdicts', j24: 'ok', portfolio: true });
+  const openHours = (d.openings * d.windowMs) / 3600e3;
+  t.diagnostic(`AC14 (J23): ${d.calls} calls, the portfolio's ${d.pfPolls.length} polls and ${d.pfBlobs.length} blob calls over ${openHours.toFixed(1)} open hours and ${d.pfChanges} of its head changes`);
+  assert.ok(d.calls < 10_000, `${d.calls} calls`);
+  assert.equal(d.changes, 100, 'A4\'s 100 changes, the portfolio\'s among them');
+  assert.ok(d.pfChanges >= 15, `${d.pfChanges} portfolio head changes`);
+  assert.ok(d.pfPolls.length <= Math.ceil(openHours * 12) + d.openings, `${d.pfPolls.length} polls: 12 an hour open, plus at most one more an opening`);
+  assert.ok(d.pfPolls.length >= Math.floor(openHours * 12), 'read every 5 minutes while open');
+  assert.ok(d.pfBlobs.length <= d.openings + d.pfChanges, `${d.pfBlobs.length} blob calls: the cold one an opening, then one a head change`);
+  assert.ok(d.pfPolls.length + d.pfBlobs.length <= 212 + d.pfChanges, `the portfolio's ${d.pfPolls.length + d.pfBlobs.length} calls: A3's 212, and its head changes' among A4's`);
+  for (const c of [...d.pfPolls, ...d.pfBlobs]) assert.ok(!('project' in c.body), 'never a project\'s call');
+  assert.ok(Math.max(...d.cycles.values()) <= 16, 'A3: 6 + 2 × 5');
 });

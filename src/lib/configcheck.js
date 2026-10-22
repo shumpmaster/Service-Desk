@@ -8,6 +8,32 @@ const MODELS = new Set(['v3', 'v2.5']);
 const DAYS = new Set(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
 const HHMM = /^([01][0-9]|2[0-4]):[0-5][0-9]$/;
 
+export const REPO_RE = /^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/;
+const BRANCH_OK = (b) => typeof b === 'string' && b !== '' && !/[\s?#&%]|\.\./.test(b);
+export const PORTFOLIO_KEYS = Object.freeze(['repo', 'defaultBranch']);
+
+/**
+ * J7's `portfolio` rules (stage 6b, J23): `{ "repo": "<owner>/<name>", "defaultBranch": "<branch>" }` and
+ * nothing else; a `repo` not in owner/name form, a missing or empty `defaultBranch`, any other key, or a
+ * `repo` equal to a connected project's fails the build (C: the portfolio is never a project).
+ */
+export function portfolioProblems(c) {
+  if (!c || typeof c !== 'object' || c.portfolio === undefined) return [];
+  const pf = c.portfolio;
+  if (!pf || typeof pf !== 'object' || Array.isArray(pf)) return ['portfolio must be { repo, defaultBranch }'];
+  const out = [];
+  for (const k of Object.keys(pf)) {
+    if (!PORTFOLIO_KEYS.includes(k)) out.push(`portfolio.${k} is not one of the portfolio's keys (repo, defaultBranch): the portfolio is never a project`);
+  }
+  if (typeof pf.repo !== 'string' || !REPO_RE.test(pf.repo)) out.push('portfolio.repo must be owner/name');
+  if (!BRANCH_OK(pf.defaultBranch)) out.push('portfolio.defaultBranch must be a branch name');
+  const projects = Array.isArray(c.projects) ? c.projects : [];
+  if (typeof pf.repo === 'string' && projects.some((p) => p && typeof p.repo === 'string' && p.repo.toLowerCase() === pf.repo.toLowerCase())) {
+    out.push(`portfolio.repo ${pf.repo} is a connected project's repository: the portfolio is never a project`);
+  }
+  return out;
+}
+
 export function validateConfig(c) {
   const errors = [];
   if (!c || typeof c !== 'object' || Array.isArray(c)) return ['projects.json is not a JSON object'];
@@ -56,6 +82,10 @@ export function validateConfig(c) {
     if (a.reported !== undefined && typeof a.reported !== 'boolean') out.push(`${at}.reported must be true or false`);
     return out;
   };
+  // From 2026-10-20 (desk mockup v2, stage 6b; J7, J23, AC87): the top-level `portfolio`, read only. It is
+  // not a connected project: no `model`, no sender, no answer links, not counted toward AC26's five.
+  // Absent, it builds (6a's state).
+  errors.push(...portfolioProblems(c));
   if (!Array.isArray(c.projects) || c.projects.length === 0) {
     errors.push('projects must be a non-empty list');
     return errors;

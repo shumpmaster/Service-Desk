@@ -1,15 +1,18 @@
-// The portfolio's block at Home's foot (spec S-001, AC87; desk mockup v2, frame H4), stage 6a: from
-// what the desk reads today. "Across your projects · read only": the projects in Build or Launch
-// against the cap, the decisions in the portfolio's queue, the scorecard, each project's model
-// version against the latest (J23's version reads, built in stage 3, src/lib/versions.js), and the
-// portfolio's rarer records. Each part the desk can read today shows its record; each part that needs
-// the portfolio says plainly that the portfolio isn't connected yet (6b, J23's portfolio read, waits
-// on the owner's Setup P1). Pure: from each project's entry as the page holds it (J7's entry, AC50's
-// phase view, its records as last read), words out; no network, no DOM, no storage. Nothing here can
-// change the portfolio, and nothing here reads it.
+// The portfolio's block at Home's foot (spec S-001, AC87; desk mockup v2, frame H4): "Across your projects ·
+// read only": the projects in Build or Launch against the cap, the decisions in the portfolio's queue, the
+// scorecard, each project's model version against the latest (J23's version reads, built in stage 3,
+// src/lib/versions.js), and the portfolio's rarer records. Stage 6a built it from what the desk reads
+// without the portfolio; from stage 6b (J23's portfolio read, once the owner has done Setup P1 and J7 names
+// `portfolio`) the portfolio's parts show what it holds: the decisions in its queue (each a card on the
+// board, under "Portfolio"), its idea log (Plan's "Ideas · from the portfolio") and its rarer records by
+// name. With no `portfolio` in J7, every portfolio part still reads 6a's words. Pure: from each project's
+// entry as the page holds it and the portfolio as last read (the reader's `desk.portfolio()`), words out;
+// no network, no DOM, no storage. Nothing here can change the portfolio.
 
 import { readOf, versionWords, MODEL_VERSION_PATH, ROOT_VERSION_PATH, NOT_RECORDED, NOT_AVAILABLE } from './versions.js';
 import { WA } from './workahead.js';
+import { parseCard, firstMilestoneLine, milestoneValue } from './records.js';
+import { hhmm } from './timefmt.js';
 
 /** The block's rows, in frame H4's order; each opens a sheet over Home at `#/pf/<key>`. */
 export const PF_ROWS = Object.freeze(['cap', 'decisions', 'scorecard', 'versions', 'rare']);
@@ -43,6 +46,35 @@ export const PF_WORDS = Object.freeze({
   versionsFrom: Object.freeze(['Each project\'s version is its ', 'governance/OPERATING_MODEL_VERSION', '; the latest is the root ', 'VERSION', ' of the project that publishes the model.']),
   noPublisher: 'No connected project is marked as publishing the model, so the latest is not recorded.',
   waitsOnP1: 'It waits on Setup P1: you add the portfolio repository to the desk\'s read access, read only.',
+  // From stage 6b (J23's portfolio read; specs/S-001.md:7100-7140, :11425-11455).
+  noneQueued: "None in the portfolio's queue",
+  queued: (n) => `${n} in the portfolio's queue`,
+  queuedWhere: 'waiting on Waiting, under "Portfolio"',
+  rareRead: 'Rarely needed',
+  footRead: 'The desk reads your portfolio repository and never changes it (your ruling, P-001-portfolio-read). Ideas are in Plan.',
+  cantAccess: "Can't read your portfolio: the desk's read access doesn't include it",
+  setupP1: 'Setup P1',
+  setupP1Line: "Setup P1: add the portfolio repository to the desk's read token, with read permissions only.",
+  cantSince: (t) => `Can't read your portfolio since ${t}`,
+  cantNoTime: "Can't read your portfolio",
+  checking: 'Checking…',
+  treeTooLarge: "not read: the portfolio's tree was too large",
+  tooLarge: 'too large to read',
+  notReadYet: 'not read yet',
+  noIdeas: 'No ideas in the log yet',
+  stateNotRecorded: 'state not recorded',
+  dateNotRecorded: 'date not recorded',
+  phoneNote: "Your phone isn't told about portfolio cards yet",
+  noAnswerLink: 'The desk offers no answer link for a portfolio card: you answer it in the portfolio, on GitHub.',
+  whatItIs: "A decision card in your portfolio's queue:",
+  eachWaits: 'Each card waits on Waiting, under "Portfolio", while its file is in the queue.',
+  rulings: 'Rulings',
+  facts: 'Library facts',
+  intent: 'Standing intent',
+  noneYet: 'none yet',
+  trackRecords: 'Track records: no record for this in the model yet',
+  ideaMoved: (state, name) => `An idea moved to ${state}: ${name}`,
+  readFrom: (repo) => `Read from ${repo}, read only.`,
 });
 
 /** J23's state words: they follow a colon ("latest: not recorded"), where a version follows a space ("latest 3.5.0"). */
@@ -160,27 +192,383 @@ export function versionsView(entries) {
   return { title: `${PF_WORDS.versions} · latest${after(latest.words)}`, latest: latest.words, publisher: pub ? pub.project.name : null, rows, line: rows.map((r) => r.words).join(' · ') };
 }
 
+
 // ---------------------------------------------------------------------------
-// The block (frame H4), 6a
+// The portfolio's read (stage 6b; J23, "The portfolio's part"): what the page takes from it
+
+/** Its paths (J23): the idea log; the queue's files (each directly under `queue/` whose name does not start with `_`); the rarer records' folders, by name from the tree only. */
+export const IDEAS_PATH = 'ideas/IDEAS.md';
+export const QUEUE_FILE_RE = /^queue\/([^/_][^/]*)$/;
+export const RARE_DIRS = Object.freeze({ rulings: 'rulings/', facts: 'library/facts/', intent: 'intent/' });
+/** The idea log's states, in the model's portfolio template's order (J23; inventory §5). */
+export const IDEA_STATES = Object.freeze(['captured', 'shaping', 'approved', 're-aimed', 'stopped']);
+/** GitHub's contents limit (1 MB): a blob the tree gives as larger is not asked for, its row "too large to read" (J23's awkward cases). */
+export const PORTFOLIO_BLOB_MAX = 1_000_000;
+/** Quiet's portfolio rule (Terms; AC87): read successfully within the last 6 minutes (its read every 5, and one minute's grace). */
+export const PORTFOLIO_QUIET_MS = 6 * 60_000;
+/** The board's group for the portfolio's cards (AC87: "a group of its own named "Portfolio""): its key can never be a project's name (J7's names are plain). */
+export const PF_BOARD = ':portfolio';
+export const PF_LABEL = 'Portfolio';
+
+/** The record kind of a portfolio path the page reads (J23), or null: the idea log, or a card in the queue. */
+export function portfolioKind(path) {
+  if (path === IDEAS_PATH) return 'pf-ideas';
+  if (QUEUE_FILE_RE.test(path)) return 'pf-card';
+  return null;
+}
+
+const DATE_RE = /\b(\d{4}-\d{2}-\d{2})\b/;
+// The template's own example heading (its placeholders), never an idea: `<…>`, or `YYYY-MM-DD` (C).
+const TEMPLATE_HEADING = /<[^>]*>|YYYY-MM-DD/i;
 
 /**
- * The block, 6a: entries [{ project, pv, snap, error, read }], one for each connected project in J7's order
- * (`read`: its tile's read state, capEntry).
- * Returns { head, mono, rows: [{ key, title, soft, parts: [{ text, mark }] }], foot, cap, versions }.
- * Every portfolio part reads 6a's words: nothing reads the portfolio before 6b (J23).
+ * The idea log (J23): each level-2 heading is an idea, holding its date and name; its state is the first
+ * line under it, before the next heading, that starts `state:`, its value one of IDEA_STATES (backquotes
+ * and case aside); any other value, or no such line, "state not recorded". A heading repeated is two ideas
+ * (both shown); the template's own heading is none. Returns { ideas: [{ key, heading, date, name, state,
+ * at }] } in the file's order (`at`: its place, for "newest first" among ideas of one date).
  */
-export function portfolioView(entries) {
+export function parseIdeas(text) {
+  const lines = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n');
+  const ideas = [];
+  const seen = new Map();
+  let cur = null;
+  for (const line of lines) {
+    const h2 = /^## +(.+?)\s*#*\s*$/.exec(line);
+    if (h2) {
+      const heading = h2[1].trim();
+      if (TEMPLATE_HEADING.test(heading)) {
+        cur = null;
+        continue;
+      }
+      const n = (seen.get(heading) || 0) + 1;
+      seen.set(heading, n);
+      const d = DATE_RE.exec(heading);
+      const name = (d ? heading.replace(d[0], '') : heading).replace(/^[\s·:|—–-]+|[\s·:|—–-]+$/g, '').trim() || heading;
+      cur = { key: `${heading}#${n}`, heading, date: d ? d[1] : null, name, state: null, at: ideas.length };
+      ideas.push(cur);
+      continue;
+    }
+    if (/^#{1,2} /.test(line)) {
+      cur = null;
+      continue;
+    }
+    if (cur && cur.state === null && /^state:/.test(line)) {
+      const v = line.slice('state:'.length).trim().replace(/^`+|`+$/g, '').trim().toLowerCase();
+      cur.state = IDEA_STATES.includes(v) ? v : false;
+    }
+  }
+  for (const i of ideas) if (!i.state) i.state = null;
+  return { ideas };
+}
+
+/**
+ * J2's note for a card with no `answer:` line. A portfolio card has none: the model's portfolio template
+ * writes no answer form, and J23 reads none ("No answer path is read or built", C), so it is no parse problem.
+ */
+export const NO_ANSWER_NOTE = 'no answer path on the "answer:" line';
+
+/**
+ * A portfolio record parsed by its kind (J23): the idea log, or a card read as J2 reads a card's sections
+ * (`## 1. The decision`, `## 4. Options` and the rest) and its `Milestone:` line when it has one (its first
+ * column-0 one: a portfolio card has no `answer:` line for it to follow). `problems`: what can't be read as
+ * a card (no decision, no options), never the missing answer path.
+ */
+export function parsePortfolioRecord(kind, text) {
+  if (kind === 'pf-ideas') return parseIdeas(text);
+  if (kind === 'pf-card') {
+    const c = parseCard(text);
+    const line = firstMilestoneLine(text);
+    return { text: String(text == null ? '' : text), ...c, problems: c.notes.filter((n) => n !== NO_ANSWER_NOTE), milestoneLine: line, milestone: milestoneValue(line) };
+  }
+  return null;
+}
+
+/** A portfolio card's milestone for its sheet's head: its ids, or null (none recorded, or `none (<why>)`). */
+export const cardMilestone = (rec) => (rec && rec.milestone && Array.isArray(rec.milestone.ids) && rec.milestone.ids.length ? rec.milestone.ids.join(', ') : null);
+
+/** A file's page on GitHub (the card's "Open ↗"), at the portfolio's default branch. */
+export function portfolioLink(pf, path) {
+  return `https://github.com/${pf.repo}/blob/${encodeURIComponent(pf.defaultBranch)}/${path.split('/').map(encodeURIComponent).join('/')}`;
+}
+
+/**
+ * The portfolio as last read, in the words the page draws (J23, AC87). snap: the reader's
+ * `desk.portfolio()` ({ repo, defaultBranch, tree: Map | null, truncated, records: Map(path → parsed),
+ * lastSuccessAt, failure: { kind: 'access' | 'other', since } | null, readAt }), or null with no `portfolio`
+ * in J7 (6a). Returns null for 6a, else { state: 'pending' | 'ok' | 'access' | 'failing' | 'truncated',
+ * problem (the words for a read that isn't current, or null), ideas, cards, rare, fresh, quietWords }.
+ */
+export function portfolioRead(snap, nowMs, tz) {
+  if (!snap) return null;
+  const tree = snap.tree || null;
+  const f = snap.failure || null;
+  const time = (ms) => (Number.isFinite(ms) ? hhmm(new Date(ms), tz) : null);
+  let state = 'ok';
+  if (f && f.kind === 'access') state = 'access';
+  else if (snap.truncated && (!f || f.reason === 'too-many')) state = 'truncated';
+  else if (f) state = 'failing';
+  else if (!tree) state = 'pending';
+  const sinceWords = f && time(f.since) ? PF_WORDS.cantSince(time(f.since)) : PF_WORDS.cantNoTime;
+  const problem = state === 'access' ? `${PF_WORDS.cantAccess} (${PF_WORDS.setupP1})` : state === 'failing' ? sinceWords
+    : state === 'truncated' ? PF_WORDS.treeTooLarge : state === 'pending' ? PF_WORDS.checking : null;
+  const records = snap.records || new Map();
+  const blobState = (path) => {
+    const e = tree ? tree.get(path) : null;
+    if (!e) return { state: 'absent' };
+    if (Number.isFinite(e.size) && e.size > PORTFOLIO_BLOB_MAX) return { state: 'too-large' };
+    if (!records.has(path)) return { state: 'pending' };
+    return { state: 'read', rec: records.get(path) };
+  };
+  // The idea log.
+  let ideas;
+  if (!tree || snap.truncated) ideas = { state: 'unread', list: [], words: snap.truncated ? PF_WORDS.treeTooLarge : problem };
+  else {
+    const b = blobState(IDEAS_PATH);
+    if (b.state === 'absent') ideas = { state: 'none', list: [], words: PF_WORDS.noIdeas };
+    else if (b.state === 'too-large') ideas = { state: 'too-large', list: [], words: `${IDEAS_PATH}: ${PF_WORDS.tooLarge}` };
+    else if (b.state === 'pending') ideas = { state: 'pending', list: [], words: `${IDEAS_PATH}: ${PF_WORDS.notReadYet}` };
+    else {
+      const list = ideasNewestFirst((b.rec && b.rec.ideas) || []);
+      ideas = { state: list.length ? 'ok' : 'none', list, words: list.length ? null : PF_WORDS.noIdeas };
+    }
+  }
+  // The queue: each file not starting with `_`, a card waiting on the owner while it is there.
+  const cards = [];
+  if (tree && !snap.truncated) {
+    for (const [path, e] of tree) {
+      const m = QUEUE_FILE_RE.exec(path);
+      if (!m) continue;
+      const b = blobState(path);
+      const rec = b.state === 'read' ? b.rec : null;
+      const notes = rec && Array.isArray(rec.problems) ? rec.problems : [];
+      cards.push({ path, file: m[1], sha: e.sha, rec, state: b.state, cantParse: rec && notes.length ? notes.join('; ') : null,
+        link: portfolioLink(snap, path) });
+    }
+    cards.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  }
+  const fresh = snap.lastSuccessAt != null && nowMs - snap.lastSuccessAt <= PORTFOLIO_QUIET_MS && !snap.truncated;
+  // Quiet's words when the portfolio isn't read within its 6 minutes (AC87, AC82): for an actual failure,
+  // the access words with Setup P1 named, or "Can't read your portfolio since HH:MM" (the failure's start).
+  // With no failure (a read due or under way: back from the background, or a first read still filling in
+  // its blobs) there are none, and Home says "Checking…" as it does for a project (`checking`): never quiet,
+  // never "Can't read".
+  let quietWords = null;
+  if (!fresh && f) quietWords = state === 'access' ? problem : time(f.since) ? PF_WORDS.cantSince(time(f.since)) : PF_WORDS.cantNoTime;
+  return { state, problem, ideas, cards, rare: tree && !snap.truncated ? rareView(tree) : null, fresh,
+    pending: state === 'pending', checking: !fresh && !quietWords, quietWords, repo: snap.repo, defaultBranch: snap.defaultBranch, lastSuccessAt: snap.lastSuccessAt };
+}
+
+/** Ideas newest first (AC87): by their date, latest first; one with no date last; ideas of one date, the later in the file first (C). */
+export function ideasNewestFirst(list) {
+  return [...list].sort((a, b) => {
+    if (a.date && b.date && a.date !== b.date) return a.date < b.date ? 1 : -1;
+    if (Boolean(a.date) !== Boolean(b.date)) return a.date ? -1 : 1;
+    return b.at - a.at;
+  });
+}
+
+/** An idea's state in words (AC87): the state, or "state not recorded". */
+export const ideaStateWords = (i) => i.state || PF_WORDS.stateNotRecorded;
+
+/**
+ * The rarer records (J23: names and counts only, no blob): the files under `rulings/` and `library/facts/`
+ * by name and count, "none yet" where a folder holds only its README (or nothing); and whether `intent/`
+ * holds a file beyond its template's (C: a name starting `_`, the portfolio template's form for its
+ * templates, as the queue's `_DECISION_CARD.md`, or its README).
+ */
+export function rareView(tree) {
+  const under = (dir) => [...tree.keys()].filter((p) => p.startsWith(dir) && p.length > dir.length).map((p) => p.slice(dir.length)).sort();
+  const notReadme = (n) => n !== 'README.md';
+  const rulings = under(RARE_DIRS.rulings).filter(notReadme);
+  const facts = under(RARE_DIRS.facts).filter(notReadme);
+  const intent = under(RARE_DIRS.intent).filter((n) => notReadme(n) && !n.split('/').pop().startsWith('_'));
+  return { rulings, facts, intent };
+}
+
+/** A rarer record's line in its sheet: "<what>: <n> · <names>", or "<what>: none yet". */
+export function rareLine(what, names) {
+  return names.length ? `${what}: ${names.length} · ${names.join(', ')}` : `${what}: ${PF_WORDS.noneYet}`;
+}
+
+// ---------------------------------------------------------------------------
+// The board's "Portfolio" group (AC87, AC80)
+
+/**
+ * The portfolio's cards for the board (AC87): one for each file in the queue, in a group of its own named
+ * "Portfolio", its kind "Decision", its title the card's decision (J2's `## 1. The decision`), its meta its
+ * file's name, its one step "Open ↗" opening the card file on GitHub, no answer link (C: no portfolio
+ * answer form is read, J23), and AC30's "can't parse" for a card that can't be read whole (it still waits).
+ * read: portfolioRead's answer. Returns [card].
+ */
+export function portfolioCards(read) {
+  if (!read) return [];
+  return read.cards.map((c) => {
+    const title = c.rec && c.rec.title ? c.rec.title : c.state === 'too-large' ? `${c.file}: ${PF_WORDS.tooLarge}` : c.state === 'pending' ? `${c.file}: ${PF_WORDS.notReadYet}` : c.file;
+    const step = { id: 'open', label: 'Open ↗', sheetLabel: 'Open on GitHub', href: c.link };
+    return { id: `${PF_BOARD}|portfolio|${c.path}`, key: `portfolio:${c.path}`, project: PF_BOARD, kind: 'portfolio', kindWord: 'Decision', portfolio: true,
+      title, raisedAt: null, flag: null, mark: null, why: null, note: c.cantParse ? `can't parse: ${c.cantParse}` : null, meta: [c.file], buttons: [step], step,
+      path: c.path, file: c.file, rec: c.rec, state: c.state, link: c.link };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// The block (frame H4)
+
+/**
+ * The block: entries [{ project, pv, snap, error, read }], one for each connected project in J7's order
+ * (`read`: its tile's read state, capEntry), and the portfolio as last read (portfolioRead's answer), or
+ * null with no `portfolio` in J7: then every portfolio part reads 6a's words.
+ * Returns { head, mono, rows: [{ key, title, soft, parts: [{ text, mark }] }], foot, cap, versions, pf }.
+ */
+export function portfolioView(entries, pf = null) {
   const cap = capView(entries);
   const versions = versionsView(entries);
+  let decisions = [{ text: PF_WORDS.notRead, mark: null }];
+  let rare = [{ text: PF_WORDS.rareNotRead, mark: null }];
+  let foot = PF_WORDS.foot;
+  if (pf) {
+    // 6b: what the portfolio holds; a read that isn't current says why first, then the records as last read.
+    const lead = pf.problem ? [{ text: pf.problem, mark: null }] : [];
+    const read = pf.state !== 'pending' && pf.state !== 'truncated' && (pf.state === 'ok' || pf.lastSuccessAt != null);
+    const n = pf.cards.length;
+    decisions = [...lead, ...(!read ? [] : n ? [{ text: PF_WORDS.queued(n), mark: null }, { text: PF_WORDS.queuedWhere, mark: null }]
+      : [{ text: PF_WORDS.noneQueued, mark: pf.problem ? null : 'check' }])];
+    rare = [{ text: PF_WORDS.rareRead, mark: null }, ...lead];
+    foot = PF_WORDS.footRead;
+  }
   const rows = [
     { key: 'cap', title: PF_WORDS.cap, soft: false, parts: cap.parts },
-    { key: 'decisions', title: PF_WORDS.decisions, soft: false, parts: [{ text: PF_WORDS.notRead, mark: null }] },
+    { key: 'decisions', title: PF_WORDS.decisions, soft: false, parts: decisions },
     { key: 'scorecard', title: PF_WORDS.scorecard, soft: false, parts: [{ text: PF_WORDS.targets, mark: 'nomodel' }, { text: PF_WORDS.time, mark: 'unrec' }] },
     { key: 'versions', title: versions.title, soft: false, parts: [{ text: versions.line || NOT_RECORDED, mark: null }] },
-    { key: 'rare', title: PF_WORDS.rare, soft: true, parts: [{ text: PF_WORDS.rareNotRead, mark: null }] },
+    { key: 'rare', title: PF_WORDS.rare, soft: true, parts: rare },
   ];
-  return { head: PF_WORDS.head, mono: PF_WORDS.mono, rows, foot: PF_WORDS.foot, cap, versions };
+  return { head: PF_WORDS.head, mono: PF_WORDS.mono, rows, foot, cap, versions, pf };
 }
 
 /** A row's line as text: its parts joined by " · " (the screen draws each mark before its part). */
 export const rowText = (row) => row.parts.map((p) => p.text).join(' · ');
+
+// ---------------------------------------------------------------------------
+// Plan's "Ideas · from the portfolio" (AC87, AC86; frame 11)
+
+/**
+ * The section: 6a's words with no `portfolio` in J7; else each idea in the log, newest first, its state
+ * in words and its date (drawn in Plex Mono), "No ideas in the log yet" with none, or why it can't be shown.
+ * Returns { count (null when not read), rows: [{ key, name, state, date }], words }.
+ */
+export function ideasView(pf) {
+  if (!pf) return { count: null, rows: [], words: PF_WORDS.notRead };
+  const list = pf.ideas.list.map((i) => ({ key: i.key, name: i.name, state: ideaStateWords(i), date: i.date || PF_WORDS.dateNotRecorded, recorded: Boolean(i.state) }));
+  const words = pf.problem && pf.state !== 'pending' ? [...new Set([pf.problem, list.length ? null : pf.ideas.words].filter(Boolean))].join(' · ') : pf.ideas.words;
+  return { count: pf.ideas.state === 'ok' || pf.ideas.state === 'none' ? list.length : null, rows: list, words: words || null };
+}
+
+// ---------------------------------------------------------------------------
+// "Since you last looked": an idea's change of state (J24, from 6b)
+
+export const SEEN_IDEAS_KEY = 'desk-seen-ideas-v1';
+
+/** The ideas' states as this device keeps them: { key: state } (a state not recorded is kept as null). */
+export const ideaStates = (pf) => Object.fromEntries(pf.ideas.list.map((i) => [i.key, i.state || null]));
+
+/**
+ * What the device keeps under `desk-seen-ideas-v1` (J24, C): for each "last looked" in use (AC40's, the one
+ * this window marks against and the newest kept), the ideas' states the device had then, and each change
+ * of state found since with when the desk first read it. Malformed parts dropped.
+ */
+export function readSeenIdeas(raw) {
+  const out = { v: 1, looked: [] };
+  if (!raw || typeof raw !== 'object' || !Array.isArray(raw.looked)) return out;
+  for (const e of raw.looked.slice(0, 2)) {
+    if (!e || !Number.isFinite(e.at) || !e.states || typeof e.states !== 'object') continue;
+    const states = {};
+    for (const [k, v] of Object.entries(e.states)) if (v === null || IDEA_STATES.includes(v)) states[k] = v;
+    const moved = {};
+    for (const [k, v] of Object.entries(e.moved && typeof e.moved === 'object' ? e.moved : {})) {
+      if (v && IDEA_STATES.includes(v.state) && Number.isFinite(v.at) && typeof v.name === 'string') moved[k] = { state: v.state, at: v.at, name: v.name };
+    }
+    out.looked.push({ at: e.at, states, moved });
+  }
+  return out;
+}
+
+/**
+ * Bring the kept states up to date (J24): `reference`, the "last looked" this window marks against;
+ * `latest`, the newest one kept on the device; `pf`, the portfolio as read (its ideas read in full), and
+ * `readAt` the read's time. The states at `latest` are kept the first time the desk has both; each idea
+ * whose state differs from the one kept at `reference` (and is one of the five) is a change, kept with the
+ * time the desk first read it. Returns { kept, changed }.
+ */
+export function noteIdeas(kept, { reference, latest, pf, readAt }) {
+  const k = readSeenIdeas(kept);
+  if (!pf || pf.ideas.state !== 'ok' && pf.ideas.state !== 'none') return { kept: k, changed: false };
+  let changed = false;
+  const now = ideaStates(pf);
+  const want = [reference, latest].filter((x) => Number.isFinite(x));
+  for (const at of want) {
+    if (!k.looked.some((e) => e.at === at)) {
+      k.looked.push({ at, states: { ...now }, moved: {} });
+      changed = true;
+    }
+  }
+  const before = k.looked.length;
+  k.looked = k.looked.filter((e) => want.includes(e.at));
+  if (k.looked.length !== before) changed = true;
+  const base = k.looked.find((e) => e.at === reference);
+  if (base) {
+    for (const i of pf.ideas.list) {
+      if (!(i.key in base.states) || !i.state || base.states[i.key] === i.state) {
+        if (base.moved[i.key] && base.moved[i.key].state !== i.state) {
+          delete base.moved[i.key];
+          changed = true;
+        }
+        continue;
+      }
+      if (!base.moved[i.key] || base.moved[i.key].state !== i.state) {
+        base.moved[i.key] = { state: i.state, at: readAt, name: i.name };
+        changed = true;
+      }
+    }
+  }
+  return { kept: k, changed };
+}
+
+/** The idea lines of "Since you last looked" (J24): "An idea moved to <state>: <its name>", a folder's icon, "portfolio · ideas", one tap from Plan. */
+export function ideaEvents(kept, reference) {
+  const base = readSeenIdeas(kept).looked.find((e) => e.at === reference);
+  if (!base) return [];
+  return Object.entries(base.moved).map(([key, m], seq) => ({ id: `portfolio|idea|${key}|${m.state}`, project: 'portfolio', seq, dateOnly: false, at: m.at, icon: 'proj',
+    words: PF_WORDS.ideaMoved(m.state, m.name), codes: ['ideas'], target: { hash: '#/work' } }));
+}
+
+// ---------------------------------------------------------------------------
+// The trial view's state line and tab title (Terms' Quiet, from 6b; review round 2, B3)
+
+/**
+ * The screen's headline with the portfolio in it, in the words the state line already uses for projects
+ * (universe.js `screenState`): the portfolio's waiting cards (`waiting`: each card in its queue, marked Done
+ * on this device or not, as screenState counts a project's flagged items) are added to "<n> waiting on you"; a portfolio read that isn't current adds its own
+ * words to the tail ("Checking…" while one is due with none failed; its failure words otherwise). "Quiet"
+ * only when every project is quiet, no portfolio card waits and the portfolio was read within its 6 minutes.
+ * boxes: [{ flaggedCount, read, drawError }]; pf: portfolioRead's answer, or null with no `portfolio` in J7.
+ * Returns { text, quiet }.
+ */
+export function portfolioScreenState(boxes, signedOut, pf, waiting = 0) {
+  if (signedOut) return { text: 'Signed out — reload to sign in', quiet: false };
+  const flagged = boxes.reduce((n, b) => n + (b.flaggedCount || 0), 0) + (pf ? waiting : 0);
+  const cantRead = boxes.filter((b) => b.read && b.read.read === 'cant-read').length;
+  const checking = boxes.filter((b) => b.read && b.read.read === 'checking').length;
+  const cantShow = boxes.filter((b) => b.drawError).length;
+  const tail = [];
+  if (cantRead) tail.push(`can't read ${cantRead} project${cantRead === 1 ? '' : 's'}`);
+  if (cantShow) tail.push(`can't show ${cantShow} project${cantShow === 1 ? '' : 's'}`);
+  const pfCant = Boolean(pf && !pf.fresh && pf.quietWords);
+  if (pfCant) tail.push(pf.quietWords);
+  if (checking || (pf && !pf.fresh && !pf.quietWords)) tail.push(PF_WORDS.checking);
+  if (flagged) return { text: [`${flagged} waiting on you`, ...tail].join(' · '), quiet: false };
+  if (cantRead || cantShow || pfCant) return { text: `Not quiet: ${tail.join(' · ')}`, quiet: false };
+  if (tail.length) return { text: PF_WORDS.checking, quiet: false };
+  return { text: 'Quiet', quiet: true };
+}

@@ -128,6 +128,10 @@ export function briefingView(input) {
       ? `Can't read ${r.name} since ${hhmm(new Date(r.read.since), tz)}`
       : `Can't show ${r.name}`));
   if (input.signedOut) return { kind: 'signed-out', head: 'Signed out — reload to sign in', parts: null, sub: null, cant: [] };
+  // From stage 6b (Terms' Quiet; AC87): the portfolio read within its 6 minutes, or its own words, one line
+  // as a project's (`portfolio`: portfolioRead's answer, or null with no portfolio in J7).
+  const pf = input.portfolio || null;
+  if (pf && pf.quietWords) cant.push(pf.quietWords);
   const n = bd ? bd.badge : 0;
   if (n > 0) {
     const lane = (k) => (bd.lanes.find((l) => l.key === k) || { groups: [] }).groups.flatMap((g) => g.rows);
@@ -155,7 +159,7 @@ export function briefingView(input) {
     else if (irr > 1) parts.push(`${irr} can't be undone`);
     return { kind: 'you', head: `${n} need${n === 1 ? 's' : ''} you`, n, parts: parts.join(' · ') || null, sub: null, cant };
   }
-  const unread = reads.some((r) => !r.drawError && (!r.read || r.read.read === 'checking'));
+  const unread = reads.some((r) => !r.drawError && (!r.read || r.read.read === 'checking')) || Boolean(pf && !pf.fresh && !pf.quietWords);
   if (cant.length) return { kind: 'cant', head: cant[0], parts: null, sub: null, cant: cant.slice(1) };
   if (unread) return { kind: 'checking', head: HOME_WORDS.checking, parts: null, sub: null, cant: [] };
   // Nothing on the board, but Quiet still needs GitHub's word: a mark not yet confirmed (AC80).

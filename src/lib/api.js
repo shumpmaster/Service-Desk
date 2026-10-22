@@ -6,7 +6,9 @@
 import { checkAccess } from './access.js';
 import { pollProject, readBlobs, BLOB_BATCH, SHA_RE, HISTORY_PATH_RE, PULLS_COST, PULLS_CURSOR_RE, USAGE_COST, CLOSED_COST, MAX_FILES_PRS, PR_COST, MAX_PRS,
   COMMITS_COST, MAX_COMMITS_PRS,
-  JOBS_MAX_HEADS, JOB_LISTS, OWNER_CHECK_MAX, COMMIT_TIME_COST, JOB_LOG_COST, MAX_COMMIT_TIMES, MAX_JOB_LOGS } from './github.js';
+  JOBS_MAX_HEADS, JOB_LISTS, OWNER_CHECK_MAX, COMMIT_TIME_COST, JOB_LOG_COST, MAX_COMMIT_TIMES, MAX_JOB_LOGS,
+  PORTFOLIO_TARGET, portfolioUrls, pollPortfolio, readPortfolioBlobs } from './github.js';
+import { portfolioProblems } from './configcheck.js';
 import CONFIG from './config.js';
 import { usageEntry } from './usage.js';
 
@@ -108,6 +110,41 @@ export function ownerChecksPart(part, project) {
     else extra.push(x.sha);
   }
   return { heads, extra };
+}
+
+/**
+ * The portfolio's read target (stage 6b; J23, J7's `portfolio`): `{ "target": "portfolio", "head", "etags" }`
+ * for the poll call and `{ "target": "portfolio", "blobs": [sha] }` for the blob call, and no other key: no
+ * `project`, no history, compare, pull requests, files, commits, closed, usage, jobs or owner checks. The
+ * repository and its branch are J7's only, never the page's; with no `portfolio` in J7 it is refused.
+ */
+export const PORTFOLIO_POLL_KEYS = Object.freeze(['target', 'head', 'etags']);
+export const PORTFOLIO_BLOB_KEYS = Object.freeze(['target', 'blobs']);
+
+export function validatePortfolio(body, config, kind) {
+  if (body.target !== PORTFOLIO_TARGET) return { error: 'unknown target' };
+  const pf = config.portfolio;
+  if (!pf || typeof pf !== 'object' || portfolioProblems(config).length) return { error: 'no portfolio in J7' };
+  const allowed = kind === 'poll' ? PORTFOLIO_POLL_KEYS : PORTFOLIO_BLOB_KEYS;
+  const extra = Object.keys(body).filter((k) => !allowed.includes(k));
+  if (extra.length) return { error: `a portfolio ${kind === 'poll' ? 'poll' : 'blob call'} takes only ${allowed.join(', ')}` };
+  const portfolio = { repo: pf.repo, defaultBranch: pf.defaultBranch };
+  if (kind === 'poll') {
+    if (body.head !== null && body.head !== undefined && !SHA_RE.test(body.head)) return { error: 'bad head' };
+    const etags = body.etags == null ? {} : body.etags;
+    if (!plain(etags)) return { error: 'bad etags' };
+    const branch = portfolioUrls(portfolio).branch;
+    const entries = Object.entries(etags);
+    // Only the branch's ETag: the portfolio's poll reads nothing else that takes one.
+    if (entries.some(([k, v]) => k !== branch || typeof v !== 'string' || v.length > 200)) return { error: 'bad etags' };
+    return { req: { portfolio, head: body.head || null, etags } };
+  }
+  const blobs = body.blobs == null ? [] : body.blobs;
+  if (!Array.isArray(blobs)) return { error: 'bad lists' };
+  if (blobs.some((s) => typeof s !== 'string' || !SHA_RE.test(s))) return { error: 'bad sha' };
+  const uniq = [...new Set(blobs)];
+  if (uniq.length > BLOB_BATCH) return { error: `budget ${uniq.length} is over ${BLOB_BATCH}` };
+  return { req: { portfolio, blobs: uniq } };
 }
 
 const ISO_RE = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{1,9})?Z$/;
@@ -233,6 +270,21 @@ export async function handle(context, kind, deps = {}) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return bad('body is not an object');
 
   const token = env.GITHUB_READ_TOKEN;
+  // Stage 6b (J23): a body naming a `target` is the portfolio's, checked by its own allow-list; it never
+  // reaches a project's reads, and a project's body never reaches the portfolio's.
+  if (Object.prototype.hasOwnProperty.call(body, 'target')) {
+    const pv = validatePortfolio(body, config, kind);
+    if (pv.error) return bad(pv.error);
+    if (typeof token !== 'string' || token === '') {
+      return reply(200, { target: PORTFOLIO_TARGET, readAt: new Date(now()).toISOString(), state: 'cant-read', reason: 'token', retryAfter: null, cost: { github: 0, bytes: 0 } });
+    }
+    const pdeps = { token, fetch: fetchImpl, now };
+    const pout = kind === 'poll' ? await pollPortfolio(pv.req, pdeps) : await readPortfolioBlobs(pv.req, pdeps);
+    const pgithub = pout.githubRequests;
+    delete pout.githubRequests;
+    pout.cost = { github: pgithub, bytes: new TextEncoder().encode(JSON.stringify(pout)).length };
+    return reply(200, pout);
+  }
   const v = kind === 'poll' ? validatePoll(body, config) : validateBlobs(body, config);
   if (v.error) return bad(v.error);
   if (typeof token !== 'string' || token === '') {

@@ -28,6 +28,10 @@ export function createSeen({ store, now }) {
     get reference() {
       return reference;
     },
+    /** The newest "last looked" kept on this device (J24's idea states are kept against it, from stage 6b), or null. */
+    get latest() {
+      return stored;
+    },
     get off() {
       return reference == null || !store || !store.usable;
     },

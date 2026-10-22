@@ -340,6 +340,8 @@ const REASONS = {
   merge_card: 'The merge card is still open',
   missing: "The card file still isn't there",
   openPr: 'The pull request is still open as it was',
+  // AC87 (stage 6b): a portfolio card is confirmed when its file has left the portfolio's queue (C: the reason's words).
+  portfolio: "The card file is still in the portfolio's queue",
 };
 export const verdictReason = (n) => `GitHub doesn't show reviews/${n}/owner.md on the branch yet`;
 export { REASONS };
@@ -374,6 +376,8 @@ export function confirmMark(id, m, ctx) {
     return { confirmed: gone, current: true, reason: REASONS.openPr };
   }
   if (gone) return { confirmed: true, current: true, reason: null };
+  // AC87: confirmed once the card file has left the portfolio's queue (the portfolio's tree, at each read).
+  if (kind === 'portfolio') return ctx.tree.has(ref) ? { confirmed: false, current: true, reason: REASONS.portfolio } : { confirmed: true, current: true, reason: null };
   if (kind === 'question') {
     const name = (/^questions\/([^/]+)\.md$/.exec(ref) || [])[1];
     const v3 = ctx.project.model === 'v3';
@@ -549,10 +553,16 @@ export function boardView(input) {
     doneRows.sort((a, b) => (b.pending === a.pending ? b.at - a.at : b.pending ? 1 : -1));
     counts.set(name, { waiting: waitRows.length, kicked: kickRows.length, pending: doneRows.filter((r) => r.pending).length });
     counted.set(name, new Set([...waitRows, ...kickRows].map((c) => c.key)));
-    if (!only || only === name) {
-      if (waitRows.length) lanes.wait.push({ project: name, rows: waitRows });
-      if (kickRows.length) lanes.kick.push({ project: name, rows: kickRows });
-      if (doneRows.length) lanes.done.push({ project: name, rows: doneRows.slice(0, DONE_GROUP_ROWS), more: doneRows.length - DONE_GROUP_ROWS, all: doneRows });
+    // AC87 (stage 6b): the portfolio's group, "Portfolio", after the projects', on the whole board only; it
+    // is never a project, so it is in no project's quiet lines ("Nothing waiting", "Can't read <project>").
+    const portfolio = p.project.portfolio === true;
+    const label = p.project.label || name;
+    if (portfolio ? !only : !only || only === name) {
+      if (waitRows.length) lanes.wait.push({ project: name, label, portfolio, rows: waitRows });
+      if (kickRows.length) lanes.kick.push({ project: name, label, portfolio, rows: kickRows });
+      if (doneRows.length) lanes.done.push({ project: name, label, portfolio, rows: doneRows.slice(0, DONE_GROUP_ROWS), more: doneRows.length - DONE_GROUP_ROWS, all: doneRows });
+    }
+    if (!portfolio && (!only || only === name)) {
       quiet.agents.push(...p.agents);
       quiet.recording.push(...(p.recording || []));
       quiet.asking.push(...(p.asking || []));
@@ -566,7 +576,7 @@ export function boardView(input) {
   for (const c of counts.values()) badge += c.waiting + c.kicked;
   return {
     lanes: LANES.map((l) => ({ ...l, count: lane(l.key), groups: lanes[l.key] })),
-    counts, counted, badge, quiet, only, of: input.projects.length, nothingWaiting, cantRead, pendingAny,
+    counts, counted, badge, quiet, only, of: input.projects.filter((p) => p.project.portfolio !== true).length, nothingWaiting, cantRead, pendingAny,
   };
 }
 

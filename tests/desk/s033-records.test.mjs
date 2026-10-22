@@ -333,7 +333,10 @@ test('AC53 (S-033) + AC80, on the page: a question in S-033\'s form gives each a
 // J6: the parsed cache's key moves on
 
 test('J6 (S-033): the key is not desk-blobs-v5, which is among the old keys; a parse stored under it is dropped and its blob read and parsed again', async () => {
-  assert.equal(BLOB_CACHE_KEY, 'desk-blobs-v6');
+  // v7 from stage 4 (a gate case's parse gains its proposer's recommendation for AC85's "Recommended",
+  // specs/S-001.md:7008; the cache key names the parse's shape, src/lib/scheduler.js:22-28); v5
+  // stays among the old keys, as this case checks.
+  assert.equal(BLOB_CACHE_KEY, 'desk-blobs-v7');
   assert.notEqual(BLOB_CACHE_KEY, 'desk-blobs-v5');
   assert.ok(OLD_BLOB_CACHE_KEYS.includes('desk-blobs-v5'));
   const doc = readFileSync(join(FIX, 'j11-reached', 'docs', 'PROJECT.md'), 'utf8');

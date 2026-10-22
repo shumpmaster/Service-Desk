@@ -215,9 +215,15 @@ test('AC53 (owner\'s note, 16 Oct) + AC80: each lettered choice holds its letter
       assert.equal(parts[0].attrs.class === undefined ? parts[0].className : parts[0].attrs.class, 'v2-letter', 'the letter its own element');
       assert.equal(parts[0].textContent, `${choices[i].value}.`);
       assert.equal(parts[1].textContent, ' ', 'a real space between');
-      assert.equal(parts[2].textContent, choices[i].text, 'the words exactly as in the file');
+      // From stage 4 (specs/S-001.md:6981-6982, AC85: "<letter>. <its words>" split as AC52 spells
+      // options out, the description under it): the words up to the first " — ", the rest under them,
+      // together exactly as in the file.
+      const [w, ...d] = choices[i].text.split(' — ');
+      assert.equal(parts[2].textContent, w, 'its words, as in the file');
+      assert.equal(byClass(o, 'v2-od')[0].textContent, d.join(' — '), 'the description under them, as in the file');
+      assert.equal(`${parts[2].textContent} — ${byClass(o, 'v2-od')[0].textContent}`, choices[i].text, 'together, the words exactly as in the file');
       assert.doesNotMatch(name.textContent, /^[A-Z]\.\S/, 'never "C.Drop it"');
-      assert.equal(name.textContent, `${choices[i].value}. ${choices[i].text}`, 'its accessible name: the letter, a space, the text');
+      assert.equal(name.textContent, `${choices[i].value}. ${w}`, 'its accessible name: the letter, a space, its words');
     });
     assert.deepEqual(opts.map((o) => byClass(o, 'v2-abtn')[0].textContent), ['Answer A ↗', 'Answer B ↗', 'Answer C ↗']);
     assert.deepEqual(opts.map((o) => byClass(o, 'v2-rec').length), [1, 0, 0], 'the "Recommended" label stays, on A only');

@@ -91,3 +91,34 @@ test('AC12: the question view\'s fields from Q-005-sources, the recommendation m
   const app = readFileSync(join(SRC, 'public', 'app.js'), 'utf8');
   assert.ok(app.includes("'not given'"), 'the view prints "not given" for a missing field');
 });
+
+
+test('AC12 (S-001 stage 4\'s build review, round 1, B1 and N5): the accepted view\'s DEFAULT label reads a default only from a letter starting the field; a DEFAULT naming none is quoted as the file writes it, with no letter and no time', async () => {
+  // Service-Desk's real questions/P-001-design-pick.md at f8dfd1b: `DEFAULT: none — this is your pick and never defaults (AC43)   TIMEOUT: none`.
+  const text = fixture('trial-view/P-001-design-pick.md');
+  const p = parseRecord('question', text, 'questions/P-001-design-pick.md');
+  const raised = new Date('2026-10-14T16:00:00Z');
+  const fmt = (d) => d.toISOString();
+  assert.equal(defaultLabel(p, raised, fmt), 'per the question file: DEFAULT none — this is your pick and never defaults (AC43)', 'never "defaults to A" from AC43');
+  assert.equal(defaultLabel({ ...p, timeout: '48' }, raised, fmt), 'per the question file: DEFAULT none — this is your pick and never defaults (AC43)', 'with a TIMEOUT in hours, no time');
+  assert.equal(defaultLabel({ reversibility: 'reversible', default: 'none', timeout: '48' }, raised), 'per the question file: DEFAULT none', 'no raw time');
+  // A letter starting the field reads as before.
+  assert.equal(defaultLabel({ reversibility: 'reversible', default: 'A', timeout: '24' }, raised, fmt), 'per the question file: defaults to A at 2026-10-15T16:00:00.000Z');
+  // On the accepted view's page itself.
+  const { loadApp, findAll: fa } = await import('./page-harness.mjs');
+  const { repo } = await import('./fake-desk.mjs');
+  const sd = repo({ 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml'), 'questions/P-001-design-pick.md': text }, [], [{ name: 'governance', status: 'completed', conclusion: 'success' }]);
+  sd.history = { 'questions/P-001-design-pick.md': [{ commit: { committer: { date: '2026-10-14T16:00:00Z' } } }] };
+  const repos = { 'Service-Desk': sd, 'Personal-Org-Operating-Model': repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md') }, [], [{ name: 'tests', status: 'completed', conclusion: 'success' }]) };
+  const app = await loadApp({ repos, now: Date.parse('2026-10-14T17:00:00Z'), hash: '#/p/Service-Desk/q/P-001-design-pick' });
+  try {
+    await app.advance(1000);
+    const dts = fa(app.els.view, (e) => e.tag === 'dt');
+    const i = dts.findIndex((e) => e.textContent === 'DEFAULT');
+    assert.ok(i >= 0, 'the DEFAULT field');
+    const dd = fa(app.els.view, (e) => e.tag === 'dd')[i];
+    assert.equal(dd.textContent, 'per the question file: DEFAULT none — this is your pick and never defaults (AC43)');
+  } finally {
+    app.restore();
+  }
+});

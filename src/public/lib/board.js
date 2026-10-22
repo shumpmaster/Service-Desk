@@ -12,9 +12,10 @@ import { flaggedWait, waitKey } from './waiting.js';
 import { GATE_PHASE, GATE_WORDS } from './j11.js';
 import { ruleZero, prStep, judgeFiles, listAt, verdictPath, OWNER, STEP2_NOTE, WHY, ownerCheckAt } from './j22.js';
 import { durationText, hhmm, dayKey } from './timefmt.js';
-import { composeAnswer, questionQuestions, boxPlan, VERDICT_START, GATE_STANDARD_WORDS, ownerActions, NOT_RECORDED, treeLink } from './sandbox.js';
+import { composeAnswer, questionQuestions, boxPlan, VERDICT_START, GATE_STANDARD_WORDS, ownerActions, treeLink } from './sandbox.js';
 import { milestoneValue, firstMilestoneLine } from './records.js';
 import { canRecord } from './model.js';
+import { gateWords, caseWord, defaultLetter } from './sheets.js';
 
 export const KICK_BACK_MINUTES = 5; // P-001-board-bounce.md: "after about 5 minutes" (C, a setting to tune)
 export const DONE_KEEP_HOURS = 24; // P-001-board-done-keep.md, B
@@ -72,15 +73,21 @@ const cap = (s) => String(s).replace(/^./, (c) => c.toUpperCase());
 // ---------------------------------------------------------------------------
 // One project's cards
 
-/** A question's lock or clock line on its card (AC85): "Can't be undone" or "Settles as <letter> · <when>". */
+/**
+ * A question's lock or clock line on its card (AC85): "Can't be undone" or "Settles as <letter> ·
+ * <when>". From stage 4 the clock shows only where the sheet says it settles itself (sheets.js's
+ * undoLine): reversible, a DEFAULT naming a letter, and a TIMEOUT in hours; a file whose DEFAULT or
+ * TIMEOUT is "none" or missing settles nothing, so its card says nothing of it (AC12: the desk must
+ * not imply a default). With no raised time, "Settles as <letter>".
+ */
 export function questionMark(q, raisedAt, tz) {
   if (!q) return null;
   const rev = String(q.reversibility || '').toLowerCase();
   if (rev.startsWith('irreversible')) return { icon: 'lock', words: "Can't be undone" };
-  if (!rev.startsWith('reversible') || !q.default) return null;
-  const letter = (/[A-Z]/.exec(q.default) || [q.default])[0];
+  const letter = defaultLetter(q);
   const hours = q.timeout && /^[0-9]+(\.[0-9]+)?/.exec(String(q.timeout).trim());
-  if (!hours || raisedAt == null) return { icon: 'clock', words: `Settles as ${letter}` };
+  if (!rev.startsWith('reversible') || !letter || !hours) return null;
+  if (raisedAt == null) return { icon: 'clock', words: `Settles as ${letter}` };
   return { icon: 'clock', words: `Settles as ${letter} · ${weekdayTime(raisedAt + Number(hours[0]) * 3600e3, tz)}` };
 }
 
@@ -104,14 +111,18 @@ export function answerText(f, choice, words = '') {
   return { form: ctx.qs.form, path: `decisions/questions/${q.name}.md`, text: composeAnswer(ctx, answers).text };
 }
 
-/** The buttons a question's or a card's sheet (and a gate card) offers: one per option (AC80). */
-export function answerButtons(project, f, linkCap, words = '') {
+/**
+ * The buttons a question's or a card's sheet (and a gate card) offers: one per option (AC80). For a
+ * gate card, `opts.caseRec` (its case as J11 read it) names the recommended word: the case's own
+ * recommendation from stage 4 (AC85), else the card's (AC52).
+ */
+export function answerButtons(project, f, linkCap, words = '', opts = {}) {
   const plan = (text, path, form) => boxPlan(project, linkCap, { form: form === 'card' ? 'card' : 'question', path }, text);
   if (f.kind === 'card') {
     const c = f.card;
     const gate = GATE_WORDS.includes(c.gate);
     const listed = c.parsed ? c.parsed.options.map((o) => o.word) : [];
-    const recWord = recommendedWord(c);
+    const recWord = (gate ? caseWord(opts.caseRec) : null) || recommendedWord(c);
     const wordsList = gate ? [...GATE_STANDARD_WORDS, ...listed.filter((w) => !GATE_STANDARD_WORDS.includes(w))] : listed;
     return wordsList.map((w) => {
       const a = answerText(f, w, words);
@@ -139,7 +150,11 @@ export function answerButtons(project, f, linkCap, words = '') {
   return [{ value: null, label: 'Answer ↗', text: a.text, path: a.path, plan: pl, href: pl.url, recommended: false, form: qs ? qs.form : 'fallback' }];
 }
 
-/** The word a card's `## 5.` recommendation names, when it names one of its words. */
+/**
+ * The word a card's `## 5.` recommendation names, when it names one of its words. On a gate card the
+ * section's quoted views, "The Critic: …" and the user representative's line (model S-024, S-025), are
+ * theirs, not the recommendation (AC85: "Recommended" on the case's recommendation), so they are passed over.
+ */
 function recommendedWord(c) {
   const text = c.parsed && c.parsed.text ? String(c.parsed.text) : '';
   const m = /^## 5\.[^\n]*\n([\s\S]*?)(?=^## |$(?![\s\S]))/m.exec(text);
@@ -147,7 +162,9 @@ function recommendedWord(c) {
   const words = c.parsed.options.map((o) => o.word);
   const gate = GATE_WORDS.includes(c.gate) ? GATE_STANDARD_WORDS : [];
   const all = [...new Set([...words, ...gate])];
-  const hit = all.find((w) => new RegExp(`\`${w}\``).test(m[1])) || all.find((w) => new RegExp(`\\b${w}\\b`, 'i').test(m[1].split('\n')[0] || ''));
+  const body = gate.length ? m[1].split('\n').filter((l) => !/^\s*The (Critic|user representative)\b/.test(l)).join('\n') : m[1];
+  const first = body.split('\n').find((l) => l.trim()) || '';
+  const hit = all.find((w) => new RegExp(`\`${w}\``).test(body)) || all.find((w) => new RegExp(`\\b${w}\\b`, 'i').test(first));
   return hit || null;
 }
 
@@ -231,11 +248,12 @@ export function projectCards(input) {
         const casePath = `docs/gates/${c.item}/${phase}-gate-${c.n}-case.md`;
         const criticPath = `reviews/${c.item}/_${phase}-gate-${c.n}-critic.md`;
         const doc = input.projectDoc || null;
-        const buttons = answerButtons(project, f, linkCap);
+        const caseRec = snap && snap.records ? snap.records.get(casePath) || null : null;
+        const buttons = answerButtons(project, f, linkCap, '', { caseRec });
+        // AC85 ("On the board"): "Critic: <its word>" and "User rep: <its word>", each from its record.
+        const gw = gateWords(c.parsed ? c.parsed.text : '', { criticInTree: tree.has(criticPath), ownerIsUser: doc ? doc.ownerIsUser === true : null });
         cards.push({ ...base, kind: 'gate', kindWord: `Gate · ${cap(phase)}`, title, meta: [c.item],
-          critic: tree.has(criticPath) ? 'its view is on GitHub' : NOT_RECORDED,
-          userRep: doc ? (doc.ownerIsUser ? 'not needed' : NOT_RECORDED) : NOT_RECORDED,
-          casePath, criticPath, step: { id: 'answer', gate: true }, buttons });
+          critic: gw.critic, userRep: gw.user, casePath, criticPath, caseRec, step: { id: 'answer', gate: true }, buttons });
         continue;
       }
       const step = { id: 'answer', label: 'Answer', opensSheet: true };

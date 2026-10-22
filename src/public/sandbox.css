@@ -1044,6 +1044,16 @@ html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /*
 .v2-ptl.sprints .v2-lb { font: var(--t-mono); }
 .v2-ptl.sprints .v2-lb b { font-weight: 500; }
 /* "More detail", folded last at Home's foot (P-001-settings-place.md, A): the notifications switch and the usage bar. */
+/* The portfolio's block at Home's foot (AC87, stage 6a; frame H4, desk-v2.html:796-804): its head with a
+   rule above, "portfolio" in Plex Mono at its right; the page's rows (an empty mark column, the title,
+   a grey line, a chevron); each state's mark drawn before the words it marks; then one line under the rows. */
+.v2-pf { display: grid; gap: 12px; }
+.v2-pfh { padding-top: 18px; border-top: 1px solid var(--line); }
+.v2-pfmk { display: inline-block; width: 12px; height: 12px; vertical-align: -2px; margin-right: 4px; }
+.v2-pfs { display: grid; gap: 10px; }
+.v2-pfsl > li + li { border-top: 1px solid var(--line); }
+.v2-pfsi { display: grid; gap: 2px; padding: 8px 0; min-width: 0; }
+.v2-pfsi > * { overflow-wrap: anywhere; }
 .v2-mdetail { border-top: 1px solid var(--line); padding-top: 4px; }
 .v2-mds { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; font: var(--t-label); color: var(--ink2); cursor: pointer; list-style: none; }
 .v2-mds::-webkit-details-marker { display: none; }

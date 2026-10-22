@@ -531,3 +531,15 @@ notify-ac77-desk, notify-j16-jobs and j6-j8-function) add no fixture file. What 
 - `trial-view/P-001-design-pick.md` (2026-10-22, AC12 and AC85; stage 4's build review, round 1, B1): the real
   Service-Desk question file at f8dfd1b, copied unchanged with `git show`, whose `DEFAULT: none — this is your
   pick and never defaults (AC43)` names no option letter.
+
+## The desk as mockup v2, stage 6a: the portfolio's block from today's reads (2026-10-22, S-001 AC87)
+
+- AC87's test (`ac87-portfolio.test.mjs`) adds no fixture file. Service-Desk's records and its
+  `governance/OPERATING_MODEL_VERSION` (`3.5.0`) are the **real** ones at 77bfeae (`j11-77bfeae/`).
+- Everything else it gives is **NOT real** and written inline, each saying so: "Example" and the other extra
+  projects ("In Build", "In Launch", "Finished", "Odd", "Lower", "Unread", "Broken", "No run") are Service-Desk's
+  77bfeae records under another name, with a made-up `· sprints: PR #900` added to milestone lines (so AC50's
+  now phase moves to Build or Launch), a made-up graduation ruling, or a made-up version file (`3.4.0`, `v3.4`,
+  none); Personal-Org-Operating-Model is in poom/'s placeholder form, with a placeholder root `VERSION`
+  (`3.5.0`, `3.5`, or none), since that repository is private and none of its files is copied here. No
+  portfolio file is used or copied: the portfolio is not read before stage 6b.

@@ -59,9 +59,10 @@ export function versionWords(rec) {
 
 /**
  * One of J23's reads for a project, from its tree and records: 'absent' (the tree does not hold it:
- * "not recorded"), 'pending' (held, not read yet: "not available"), or the parsed record.
+ * "not recorded"), 'pending' (held, not read yet: "not available"), or the parsed record. Exported
+ * for stage 6a's block (AC87), which compares versions and so needs the record, not only its words.
  */
-function readOf(snap, path) {
+export function readOf(snap, path) {
   const tree = snap && snap.tree;
   if (!tree) return { state: 'pending' };
   if (!tree.has(path)) return { state: 'absent' };

@@ -104,7 +104,7 @@ test('AC82: "Nothing needs you" only under Quiet\'s rule, with "Every project re
 // ---------------------------------------------------------------------------
 // On the page
 
-test('AC82: Home, top to bottom (frame H1): the marker, the title, "checked <age> ago", the briefing (one tap from Waiting), "Since you last looked", the three groups, and "More detail" last, closed; no "Work ahead ›", no "⋯ More" pill, no "Latest"', async () => {
+test('AC82: Home, top to bottom (frame H1): the marker, the title, "checked <age> ago", the briefing (one tap from Waiting), "Since you last looked", the three groups, from stage 6a the portfolio\'s block (AC87), and "More detail" last, closed; no "Work ahead ›", no "⋯ More" pill, no "Latest"', async () => {
   const app = await loadSandbox({ ...textSetup(), hash: '#/', now: NOW, store: looked(NOW - 6 * 3600e3) });
   try {
     assert.equal(keyed(app, 'home-checked').textContent, 'Checking…', 'before every project has been read once in this opening');
@@ -113,7 +113,9 @@ test('AC82: Home, top to bottom (frame H1): the marker, the title, "checked <age
     const home = byClass(app.view, 'v2-home')[0];
     assert.ok(home.className.split(' ').includes('v2'), 'on mockup v2\'s tokens');
     const order = home.children.map((c) => (c.dataset.k || c.className.split(' ')[0]));
-    assert.deepEqual(order.filter((k) => k !== 'notify:top' && k !== 'since-more'), ['sb-marker', 'v2-top', 'home-checked', 'brief', 'since-h', 'since', 'hgroups', 'home-more-detail'], '("<n> more" under the list when it runs past four)');
+    // Stage 6a (specs/S-001.md:6696-6700, "Home's foot: the portfolio's block, read only (AC87, from stage 6a); then,
+    // closed, … "More detail" fold"): the block joins between the groups and the fold (AC87's own test checks it).
+    assert.deepEqual(order.filter((k) => k !== 'notify:top' && k !== 'since-more'), ['sb-marker', 'v2-top', 'home-checked', 'brief', 'since-h', 'since', 'hgroups', 'portfolio', 'home-more-detail'], '("<n> more" under the list when it runs past four)');
     assert.equal(byClass(home, 'v2-title')[0].textContent, 'Home');
     assert.match(keyed(app, 'home-checked').textContent, /^checked \d+ (s|min) ago$/, 'from the stalest project\'s last successful read');
     const b = brief(app);
@@ -123,7 +125,7 @@ test('AC82: Home, top to bottom (frame H1): the marker, the title, "checked <age
     const fold = keyed(app, 'home-more-detail');
     assert.equal(fold.tag, 'details');
     assert.ok(!('open' in fold.attrs), 'closed until opened');
-    assert.equal(home.children[home.children.length - 1], fold, 'below everything else on Home (stage 6a\'s block not yet built)');
+    assert.equal(home.children[home.children.length - 1], fold, 'below everything else on Home, stage 6a\'s block included (specs/S-001.md:6696-6700)');
     assert.match(fold.textContent, /^More detail/);
     assert.ok(byClass(fold, 'sb-notify-line').length && byClass(fold, 'sb-actions-usage').length, 'the notifications switch and the usage bar (AC75, AC78)');
     assert.equal(keyed(app, 'work-ahead'), null, 'no "Work ahead ›" control (AC24\'s way in is the Plan tab)');

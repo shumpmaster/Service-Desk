@@ -64,7 +64,7 @@ export function de2000([L1, a1, b1], [L2, a2, b2]) {
   return Math.sqrt((dLp / Sl) ** 2 + (dCp / Sc) ** 2 + (dHp / Sh) ** 2 + Rt * (dCp / Sc) * (dHp / Sh));
 }
 
-// From stage 3 (S-001 AC84, specs/S-001.md:6932-6934: "gone: ... AC48's Technical slate, Context dusty rose and Why
+// From stage 3 (S-001 AC84, specs/S-001.md:6923-6926: "gone: ... AC48's Technical slate, Context dusty rose and Why
 // muted violet on the Timeline, and their place in AC48's colour-distance rule (AC48, changed)"): the 14 are 12.
 const MEANING = ['--you', '--agent', '--pass', '--fail', '--merge', '--block', '--gold', '--ph-disc', '--ph-des', '--ph-build', '--ph-launch', '--muted'];
 
@@ -221,7 +221,7 @@ test('AC62: every font and font-size uses one of the seven roles\' tokens, but t
     '600 .78rem/1.35 var(--font)', '400 .9rem/1.45 var(--font)', '500 .74rem/1.3 var(--mono)'], 'the mockup\'s --t-* values');
   // The section label: small, upper case and spaced. From stage 3 the Timeline's band name and its Technical,
   // Context and Why labels (`.sb-pband-n`, `.sb-k`, which this case read) are AC84's: "never boxed or in
-  // capitals" (:6929), the band's name 600 12 px and each label --t-label in --ink2 (rewritten so).
+  // capitals" (:6919-6920), the band's name 600 12 px and each label --t-label in --ink2 (rewritten so).
   for (const [sel, font] of [['.v2-tpn', '600 12px/1.3 var(--font)'], ['.v2-bn', 'var(--t-label)']]) {
     const m = new RegExp(`\\n${sel.replace('.', '\\.')} \\{([^}]*)\\}`).exec(RAW);
     assert.ok(m, sel);

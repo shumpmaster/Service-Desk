@@ -84,7 +84,7 @@ test('AC59: each band\'s words, its colour token, its dates and state, and that 
   ]);
   // Without J12, Build i1 has no step, so no time: "dates not recorded".
   assert.equal(block(models({ answer: null }).feed, 'Build-i1').band.words, 'dates not recorded · gone back over');
-  // Rewritten for AC84 ("the bands", :6911-6914): each run's name in 600 12 px with a small square in its
+  // Rewritten for AC84 ("the bands", :6903-6906): each run's name in 600 12 px with a small square in its
   // phase's colour, its dates or state in Plex Mono at the right, pinned under the header while its run is
   // on screen, a hairline under it and no box around it.
   assert.match(rule('.v2-tph'), /position: sticky; top: 96px;/, 'pinned, under the pinned header');
@@ -312,7 +312,7 @@ test('AC60, changed by AC84: each list starts folded ("<n> sprints ▸", frame 7
   try {
     const f = () => keyed(app, 'fold:sprints:Build-i1:M1');
     assert.equal(f().attrs['aria-expanded'], 'false');
-    // AC84 (:6923): "then "<n> sprints ▸", folded" (rewritten from AC60's "2 sprints feed this"); the mark an icon (AC81).
+    // AC84 (:6914-6915): "then "<n> sprints ▸", folded" (rewritten from AC60's "2 sprints feed this"); the mark an icon (AC81).
     assert.equal(f().textContent, '2 sprints');
     assert.equal(byClass(f(), 'vi-chev').length, 1, 'folded: its mark');
     assert.equal(keyed(app, 'tasks:Build-i1:M1'), null);
@@ -401,7 +401,7 @@ test('AC60, changed by AC84: each bullet\'s label and order, each a small grey w
   assert.equal(pr44.context, null);
   assert.equal(pr44.why, null);
   assert.equal(q13.context, null);
-  // Rewritten for AC84 (:6927-6931): the bullets' own colours (AC60's tokens) give way to the grey labels.
+  // Rewritten for AC84 (:6917-6926): the bullets' own colours (AC60's tokens) give way to the grey labels.
   assert.match(rule('.v2-bl'), /border-left: 2px solid var\(--line2\);/, 'a grey left edge in --line2');
   assert.match(rule('.v2-bn'), /font: var\(--t-label\); color: var\(--ink2\);/, 'each label a small grey word in --ink2');
   assert.doesNotMatch(rule('.v2-bn'), /text-transform|border:|background/, 'never boxed or in capitals');
@@ -441,7 +441,7 @@ test('AC60 (note 24): the tasks link — a pull request\'s commits, a pipeline i
     // A record's own words may say "step" (#25's title does); the desk draws no step of its own.
     assert.doesNotMatch(text, /(?:researcher|source-checker|builder|reviewer|check-author) (?:started|finished)/, 'no step of a sprint drawn');
     assert.equal(findAll(keyed(app, 'feed'), (e) => /\bsb-(?:step|tl-step|dot)\b/.test(e.className || '')).length, 0, 'no step dots');
-    // AC84 (:6931): "then "Tasks in this sprint ↗"" (rewritten from "→").
+    // AC84 (:6922): "then "Tasks in this sprint ↗"" (rewritten from "→").
     assert.ok(linksIn(keyed(app, 'feed')).some((l) => l.text === 'Tasks in this sprint ↗' && /\/pull\/44\/commits$/.test(l.href)));
   } finally {
     app.restore();
@@ -544,7 +544,7 @@ test('AC61 (the desk follow-ups, 2026-10-17): three display leniencies — closi
 test('AC61: on the page, the why text word for word on Status and the Timeline; each Context fact with its source, "source not recorded", and the Why; "not recorded" for each with J11\'s fixture as it is', async () => {
   const app = await openSD('#/p/Service-Desk/timeline', { repoOpts: { ac61: true, answer: ac61Answer() } });
   try {
-    // AC84 (:6921-6922): "Why <…>" with the label in weight 500 and the text in body; its source after it.
+    // AC84 (:6913-6914): "Why <…>" with the label in weight 500 and the text in body; its source after it.
     assert.match(keyed(app, 'mile:Build-i1:M2B').textContent, /Why "It's important for me to see timelines and context windows to be able to drive things\." · docs\/PROJECT\.md/);
     await app.tap(keyed(app, 'fold:sprints:Design-i2:untied'));
     const task = (n) => findAll(app.view, (e) => e.attrs && e.attrs['data-sprint'] === `PR #${n}`)[0];

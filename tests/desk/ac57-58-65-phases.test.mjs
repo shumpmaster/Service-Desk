@@ -286,7 +286,7 @@ test('AC57, changed by AC83 (rewrites "the drawing\'s shapes"): the branch drawi
   }
 });
 
-// Rewritten in stage 3 (S-001 AC57, changed by AC83; AC83's opened line, specs/S-001.md:6798-6801: "a thin line with
+// Rewritten in stage 3 (S-001 AC57, changed by AC83; AC83's opened line, specs/S-001.md:6793-6796: "a thin line with
 // an arrow pointing up (notes 12 and 19)"): the Status screen's drawing and its tie line give way to the page's
 // opened phase, and the drawing to the Home tile's timeline (AC82, frame H5).
 test('AC57, changed by AC83: the opened phase\'s line — 1 px in --line2, with an arrowhead pointing up at its top, drawn as an icon; the tile\'s lines 2 px in the phase\'s colour, dashed ahead and lighter gone back over (AC82)', async () => {

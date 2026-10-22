@@ -68,7 +68,7 @@ test('AC55 + AC52: a Critic\'s verdict in decisions/questions/, newer than every
 });
 
 // Rewritten in stage 3 (S-001 AC55, "Changed by AC83", specs/S-001.md:4235-4237: "in the trial view "Your last
-// action" sits under the project page's phase strip (frame 5)"; AC83, :6765-6768): the line sat just above
+// action" sits under the project page's phase strip (frame 5)"; AC83, :6768-6771): the line sat just above
 // the Status screen's waiting bar.
 test('AC55, changed by AC83: the line sits under the page\'s phase strip, in small text, with its link and its code, and the row saying whether anything waits follows it; the reason the merges are missing is one tap away', async () => {
   const setup = twoProjects();

@@ -22,7 +22,7 @@ test('AC51\'s link rule on the rebuilt Timeline: every link is a path the tree h
     // Every fold open, so every sprint's links are drawn.
     for (let i = 0; i < 6; i++) {
       const folds = [];
-      // From stage 3 (AC84) the Timeline's folds are `v2-fold` (rewritten so, from `sb-fold`).
+      // From stage 3 (AC84, specs/S-001.md:6914-6915, "<n> sprints ▸", folded) the Timeline's folds are `v2-fold` (rewritten so, from `sb-fold`).
       const walk = (n) => { for (const c of n.children || []) { if (c.tag === 'button' && c.attrs['aria-expanded'] === 'false' && /\b(?:sb|v2)-fold\b/.test(c.className)) folds.push(c); walk(c); } };
       walk(app.view);
       if (!folds.length) break;
@@ -61,7 +61,7 @@ test('AC51 + AC48 + AC81 (build review B2; 2026-10-16, no band on Home; from sta
     .map((m) => [m[1].trim(), Number(m[3])])
     .filter(([sel]) => !['.v2-bar', '.sb-scrim', '.sb-sheet', '.v2-scrim', '.v2-sheet', '.sb-bubble', '.sb-sheet-top'].some((s) => sel.split(/\s*,\s*/).includes(s)) && !sel.startsWith('.sb-sheet') && !sel.startsWith('.v2-sheet'));
   assert.ok(others.some(([sel]) => /v2-card\.lifted/.test(sel)), 'and the board\'s lifted card (AC80)');
-  // From stage 3 (AC84) the Timeline's pinned band is `.v2-tph`, under its pinned header `.v2-tlhead`; the
+  // From stage 3 (AC84, specs/S-001.md:6879-6880, :6903-6906; AC57, changed by AC83, :4478-4482) the Timeline's pinned band is `.v2-tph`, under its pinned header `.v2-tlhead`; the
   // Status screen's branch drawing is gone with it (AC57, changed by AC83): the page's phase line pins too.
   assert.ok(others.some(([sel]) => /^\.v2-tph\b/.test(sel)), 'the Timeline\'s pinned band is among them');
   assert.ok(others.some(([sel]) => /^\.v2-tlhead\b/.test(sel)), 'and its pinned header');

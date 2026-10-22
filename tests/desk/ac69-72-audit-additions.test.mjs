@@ -45,7 +45,7 @@ test('AC69: coral (--you) is used only for the owner\'s own things — the rules
 });
 
 test('AC69 + AC80: on Home, Status, Timeline, Team and Waiting (the cards\' sheets), each agents\' gap shows its words in slate, never inside the owner\'s coral, with "for the agents to add" and "for the agents to file"', async () => {
-  // From stage 3 (AC83, AC84): the page in the Status screen's place says "<phase> ran again from <date> · why it
+  // From stage 3 (AC83, specs/S-001.md:6768-6771 and :6819; AC84, :6915-6916): the page in the Status screen's place says "<phase> ran again from <date> · why it
   // went back: not recorded" (AC70's words, in AC83's line) and, once per phase list, that no standard
   // milestone's why is written yet (P-001-why-line.md, A), never "why: not recorded" on a row.
   const GAP = /^(Why not recorded yet · for the agents to add|why: not recorded|Why each is taken on or skipped: not written yet\. .+'s Chief of Staff writes its lines\.|[A-Z][a-z]+ ran again from \d+ [A-Z][a-z]{2} · why it went back: not recorded|\d+ sprints? · (\d+ )?for the agents to file|Unblocks: milestone not recorded|Context: not recorded|not recorded|feeds: not tied to a milestone| · sprint: not recorded|Run \d began · why it went back: not recorded)$/;
@@ -109,7 +109,7 @@ test('AC69 + AC80: on Home, Status, Timeline, Team and Waiting (the cards\' shee
 // ---------------------------------------------------------------------------
 // AC70
 
-// Rewritten in stage 3 (S-001 AC83, specs/S-001.md:6765-6768: "Under the strip, in small text: "<phase> ran
+// Rewritten in stage 3 (S-001 AC83, specs/S-001.md:6768-6771: "Under the strip, in small text: "<phase> ran
 // again from <date> · why it went back: <the reason quoted from its record, with its source | not recorded>"
 // for each phase that ran again (AC70, unchanged in its sources)"): the Status screen's line beside the
 // curve gives way to the page's line under the strip; the Timeline's stays under its band.

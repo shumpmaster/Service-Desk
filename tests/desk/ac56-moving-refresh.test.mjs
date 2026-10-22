@@ -47,7 +47,7 @@ async function everyRefresh(app, setup, changed = true) {
   await app.flush();
 }
 
-// Rewritten in stage 3 (S-001 AC81, "From stage 3", specs/S-001.md:6456-6466; AC84's header, :6880-6882): the
+// Rewritten in stage 3 (S-001 AC81, "From stage 3", specs/S-001.md:6456-6464; AC84's header, :6879-6880): the
 // Status screen gives way to the page, and the Timeline's header holds the back control only (frame 7b),
 // the bar's Home tab serving Home (AC81); the Team screen keeps its header until stage 7 (AC88).
 test('AC56 back (changed by AC81 and AC84): Home → the page → Waiting (this project) → a card\'s sheet → Timeline; "Back" gives Waiting, then from Team and the Timeline Waiting again; the bar\'s "Home" gives Home; no "Back" on a screen opened first', async () => {

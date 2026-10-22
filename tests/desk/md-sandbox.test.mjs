@@ -67,8 +67,8 @@ test('AC48, as AC82 rebuilds Home (stage 2, frame H5): one tile per project in A
   }
 });
 
-// Rewritten in stage 3 (S-001 AC81, "From stage 3", specs/S-001.md:6456-6466; AC83's two rows, :6769-6779;
-// AC84's header, :6880-6882): the project screens' top row goes, the Status screen gives way to the page, the
+// Rewritten in stage 3 (S-001 AC81, "From stage 3", specs/S-001.md:6456-6464; AC83's two rows, :6772-6779;
+// AC84's header, :6879-6880): the project screens' top row goes, the Status screen gives way to the page, the
 // page's waits row opens Waiting (this project) and its "At work now" row the Team screen.
 test('AC48 (changed by AC81, AC82, AC83 and AC84): each tile, the briefing and each row tap goes to the screen it names; the page, the Timeline and the Team screen carry no top row, the one bar, and a way back', async () => {
   const app = await opened();

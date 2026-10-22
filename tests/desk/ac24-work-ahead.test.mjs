@@ -168,7 +168,7 @@ test('AC24: the states, as Status gives them — MD1 and MD2 work filed (half-fi
     assert.doesNotMatch(app.text(), /work done|accept\?|in progress/i);
     // The same states as the project's page gives the same milestones: from stage 3 the Status screen gives way
     // to the page (AC81, AC83), whose opened phase lines mark each milestone by AC57's rules with AC59's icons
-    // (AC83, "each milestone's row"; rewritten from the Status screen's marks, half-filled, gold and empty rings).
+    // (AC83, "each milestone's row", specs/S-001.md:6801-6804; AC81, :6456-6457; rewritten from the Status screen's marks, half-filled, gold and empty rings).
     await app.go('#/p/Service-Desk');
     for (const ph of ['Launch', 'Build', 'Design']) await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-label'] === ph)[0]);
     const mark = (id) => findAll(findAll(app.view, (e) => e.attrs && e.attrs['data-ms'] === id && / v2-sm /.test(` ${e.className} `))[0], (e) => e.tag === 'svg')[0].attrs.class.split(' ')[1];

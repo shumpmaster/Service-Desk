@@ -398,12 +398,13 @@ export function cascade(tree, rules, env) {
     for (const p of INHERITED) if (parent && parent.style.has(p)) n.style.set(p, parent.style.get(p));
     const font = n.declared.get('font');
     if (font && font !== 'inherit') {
-      const m = /^(?:(italic|normal)\s+)?(?:(\d{3}|bold|normal)\s+)?([\d.]+)(px|rem|em)(?:\/[\d.]+(?:px)?)?\s+(.+)$/.exec(font.replace(/⟦[^|]*\|([^⟧]*)⟧/g, '$1'));
+      const m = /^(?:(italic|normal)\s+)?(?:(\d{3}|bold|normal)\s+)?([\d.]+)(px|rem|em)(?:\/([\d.]+)(px)?)?\s+(.+)$/.exec(font.replace(/⟦[^|]*\|([^⟧]*)⟧/g, '$1'));
       if (m) {
         const px = m[4] === 'px' ? Number(m[3]) : m[4] === 'rem' ? Number(m[3]) * 16 : Number(m[3]) * parseFloat(n.style.get('font-size') || '16');
         n.style.set('font-size', `${px}px`);
+        n.style.set('line-height', m[5] ? `${m[6] ? Number(m[5]) : Number(m[5]) * px}px` : `${1.2 * px}px`);
         n.style.set('font-weight', m[2] === 'bold' ? '700' : m[2] && m[2] !== 'normal' ? m[2] : '400');
-        n.style.set('font-family', m[5]);
+        n.style.set('font-family', m[7]);
       } else n.style.set('font', font);
     }
     for (const p of ['font-size', 'font-weight', 'font-family', 'color', 'fill', 'stroke', 'visibility']) {

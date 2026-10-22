@@ -343,6 +343,7 @@ p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 .sb-gmark.you { color: var(--you); }
 .sb-needs { font: var(--t-meta); text-transform: none; letter-spacing: 0; color: var(--you); }
 .sb-qlist { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.sb-qlist > li > a { display: inline-flex; align-items: center; min-height: 24px; max-width: 100%; } /* AC88: a link alone on its row, a target at least 24 px tall (WCAG 2.5.8) */
 .sb-qrow { border-left: 4px solid var(--muted); border-radius: var(--rs); background: var(--page); color: var(--ink); }
 .sb-qrow.g-decisions, .sb-qrow.g-gates, .sb-qrow.g-merges { border-left-color: var(--ink); } /* AC88: what waits on the owner, the heavier edge, never vermilion (AC81) */
 .sb-qrow.g-deploys { padding: var(--s2) var(--s3); }
@@ -380,7 +381,7 @@ p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 .sb-left { border: 1px solid var(--block); border-left: 4px solid var(--block); border-radius: var(--r); padding: var(--s2) var(--s3); background: var(--blocks); margin: var(--s2) 0; }
 .sb-left p { margin: 0 0 var(--s1); }
 /* AC74 (2026-10-19): the tap's line, "Opened from a notification" or "That no longer waits on you". */
-.sb-tap { margin: var(--s2) 0; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: var(--r); background: var(--surf); font: var(--t-item); }
+.sb-tap { margin: var(--s2) 0; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: var(--r); background: var(--surf); color: var(--ink); font: var(--t-item); } /* AC88: its words in ink, never the accepted view's `.gone` amber (style.css) */
 .sb-infobtn { display: inline-flex; gap: var(--s2); align-items: center; min-height: 44px; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf); font: var(--t-item); text-decoration: none; }
 .sb-infobtn .ic { width: 18px; height: 18px; }
 .sb-more > summary .sb-h2.flat { margin: 0; }
@@ -423,6 +424,7 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 .sb-tracker li.done { color: var(--ink); }
 .sb-record { background: var(--page); border-radius: var(--r); padding: var(--s3); font: var(--t-quote); }
 .sb-record pre, .sb-quote { white-space: pre-wrap; font: var(--t-code); background: var(--page); padding: var(--s2); border-radius: var(--rs); overflow-wrap: anywhere; }
+.sb-sheet .sb-quote { background: var(--surf2); } /* AC88: on a sheet (its ground --page), a quoted record keeps a panel of its own */
 
 /* AC59 and AC60: the Timeline, read from the bottom up. Each run is a block with its band, pinned while
    its stretch scrolls by; the line runs down the left in the band's phase colour, as thin and light as
@@ -911,7 +913,7 @@ html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /*
 .v2-sheet .sb-record ul { list-style: disc; padding-left: 1.2em; }
 .v2-code { font-family: var(--mono); }
 /* The whole record in the fold (and a file that can't be split, shown whole): on mockup v2's surface tokens. */
-.v2-whole .sb-record, .v2-sheet > .sb-record { background: var(--bg2); border-radius: 10px; padding: 10px 12px; }
+.v2-whole .sb-record, .v2-sheet > .sb-record, .v2-fd > .sb-record { background: var(--bg2); border-radius: 10px; padding: 10px 12px; }
 /* Its code in Plex Mono, in the body role (AC81, settled after round 1: record text takes --t-body). */
 .v2-whole .sb-record :is(code, pre), .v2-sheet > .sb-record :is(code, pre), .v2-fd > .sb-record :is(code, pre) { font: var(--t-body); font-family: var(--mono); background: none; padding: 0; }
 .v2-fk { font-weight: 500; }

@@ -20,7 +20,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SRC } from './helpers.mjs';
-import { loadSandbox } from './sandbox-helpers.mjs';
+import { loadSandbox, findAll } from './sandbox-helpers.mjs';
 import { NOW, extremes } from './sandbox-fixtures.mjs';
 import { textSetup } from './screen-text.mjs';
 import { SD3, sdRepo } from './tv2-fixtures.mjs';
@@ -29,6 +29,7 @@ import { CONFIG } from './helpers.mjs';
 import { parseCss, treeOf, cascade, nodes, COLOUR_PROPS } from './css-cascade.mjs';
 import { hexLab, de2000 } from './ciede2000.mjs';
 import { PF_ROWS } from '../../src/public/lib/portfolio.js';
+import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -95,6 +96,46 @@ function groundOf(n) {
   return null;
 }
 
+const inSheet = (n) => { for (let a = n.parent; a; a = a.parent) if (a.cls.has('v2-sheet') || a.cls.has('sb-sheet')) return true; return false; };
+const inV2Sheet = (n) => { for (let a = n.parent; a; a = a.parent) if (a.cls.has('v2-sheet')) return true; return false; };
+const textOf = (n) => `${n.text}${n.kids.map(textOf).join('')}`.trim();
+const pxOf = (v) => { const m = /^([\d.]+)px$/.exec(plain(v || '').trim()); return m ? Number(m[1]) : 0; };
+/** A target alone on its row: its parent holds no words of its own and no other element. */
+const alone = (n) => n.parent && !n.parent.text.trim() && n.parent.kids.length === 1 && !['main', 'body', 'html'].includes(n.parent.tag);
+/** A shorthand's top and bottom (margin: 8px 0 → [8, 8]), in px. */
+const edges = (v) => { const p = plain(v || '').trim().split(/\s+/).map((x) => (/^[\d.]+px$/.test(x) ? parseFloat(x) : 0)); return p.length ? [p[0], p.length > 2 ? p[2] : p[0]] : [0, 0]; };
+const side = (n, prop, k) => { const one = n.declared.get(`${prop}-${k ? 'bottom' : 'top'}`); return one != null ? pxOf(one) : edges(n.declared.get(prop))[k]; };
+const rowGap = (n) => { const g = n.declared.get('row-gap') || n.declared.get('gap'); return /^(grid|flex)$/.test(plain(n.declared.get('display') || '')) ? edges(g)[0] : 0; };
+const isTarget = (n) => ['a', 'button', 'summary', 'textarea'].includes(n.tag) && n.attrs.tabindex !== '-1';
+const holdsTarget = (n) => isTarget(n) || n.kids.some(holdsTarget);
+/** Laid out side by side: a flex row, or a grid with columns. */
+const sideways = (n) => { const d = plain(n.declared.get('display') || ''); return /flex/.test(d) ? !/column/.test(plain(n.declared.get('flex-direction') || '')) : /grid/.test(d) && /\S\s+\S/.test(plain(n.declared.get('grid-template-columns') || '').trim()); };
+/** The nearest target above or below an undersized one, when it lies within 12 px of its centre (the declared margins, padding and gaps between). */
+function crowded(n) {
+  const need = 12 - parseFloat(n.style.get('line-height') || '16') / 2;
+  for (const k of [0, 1]) {
+    let cur = n;
+    let space = 0;
+    for (let level = 0; cur.parent && level < 5; level++) {
+      const p = cur.parent;
+      if (sideways(p)) break;
+      const sibs = p.kids;
+      const i = sibs.indexOf(cur);
+      const nb = k ? sibs[i + 1] : sibs[i - 1];
+      space += side(cur, 'margin', k);
+      if (nb) {
+        space += rowGap(p) + side(nb, 'margin', 1 - k);
+        if (holdsTarget(nb) && space < need) return `${space} px from the target ${k ? 'below' : 'above'} (${label(nb)}), under the ${need.toFixed(1)} px WCAG's spacing exception needs`;
+        break;
+      }
+      space += side(p, 'padding', k);
+      cur = p;
+    }
+  }
+  return null;
+}
+const stretched = (n) => [n, ...n.kids].some((k) => k.pseudo && k.pseudo.after && /^0(px)?$/.test(plain(k.pseudo.after.declared.get('inset') || '').trim()));
+
 /** The markup the page gives a bubble (sandbox.js, summaryBox and lineBox), opened in place inside each box that holds one. */
 function openBubbles(tree) {
   const mk = (tag, cls, parent) => { const n = { tag, cls: new Set(cls), attrs: {}, parent, kids: [], text: '', el: null }; parent.kids.push(n); return n; };
@@ -152,6 +193,24 @@ function checkScreen(app, where, fails, seen) {
         if (!end || !ground || end.value.toLowerCase() !== ground) fail(n, `the fade ends in ${end ? `${end.name} ${end.value}` : 'nothing'}, the ground behind it is ${ground}`);
       }
       if (n.tag === 'textarea' && parseFloat(n.style.get('font-size')) < 16) fail(n, `a text box at ${n.style.get('font-size')}`);
+      // Quoted record text on a sheet keeps a panel of its own, its ground not the sheet's (stage 7's design review, F2);
+      // and the whole record looks one way on every card's sheet: on --bg2, as the question's and the gate's folds have it.
+      if ((n.cls.has('sb-record') || n.cls.has('sb-quote')) && inSheet(n)) {
+        const own = groundOf(n);
+        const under = groundOf(n.parent);
+        if (!own || own === under) fail(n, `quoted record text on ${own}, the sheet's own ground (${under}): no panel of its own`);
+        const first = marks(n.declared.get('background') || n.declared.get('background-color') || '')[0];
+        if (n.cls.has('sb-record') && inV2Sheet(n) && (!first || first.name !== '--bg2')) fail(n, `the whole record on ${first ? first.name : 'no ground'}, not --bg2`);
+      }
+      // A link or button alone on its row is a target at least 24 px tall, or, smaller, has no other target within 12 px of
+      // its centre above or below it (WCAG 2.5.8 and its spacing exception; stage 7's design review, F3: a group's first link
+      // flush under its summary). A link inside a sentence is WCAG's inline exception; one stretched over its card
+      // (::after, inset 0) takes the card's size.
+      if (!inSvg && (n.tag === 'a' || n.tag === 'button') && alone(n) && !stretched(n) && n.attrs.tabindex !== '-1') {
+        const px = Math.max(pxOf(n.declared.get('min-height')), pxOf(n.declared.get('height')));
+        const near = px < 24 ? crowded(n) : null;
+        if (near) fail(n, `"${textOf(n).slice(0, 30)}", ${px ? `${px} px` : 'its text\'s height'} tall, ${near}`);
+      }
       if (!n.text.trim()) continue;
       let hidden = false;
       for (let a = n; a; a = a.parent) if (a.cls.has('sb-vh')) hidden = true;
@@ -243,6 +302,21 @@ test('AC88: every trial-view screen and sheet, from each fixture, in dark (force
     await everyScreen(app, t.config.projects, 'text', fails, seen, counts);
   } finally {
     app.restore();
+  }
+  // The tap's line (AC74), in both of its states, on the screen each opens: "That no longer waits on you" over the
+  // project's page, and "Opened from a notification" in a card's sheet (stage 7's design review, F1).
+  for (const [key, words, cls] of [['Alpha|question|questions/Alpha-gone.md', GONE_WORDS, 'sb-tap'], ['Alpha|question|questions/Alpha-pick.md', OPENED_WORDS, 'v2-tap']]) {
+    app = await loadSandbox({ ...textSetup(), hash: '', search: `?sandbox&open=${encodeURIComponent(key)}`, now: NOW });
+    try {
+      await app.advance(1000);
+      await app.advance(61_000);
+      const line = findAll(app.view, (e) => e.dataset && e.dataset.k === 'tap-banner')[0];
+      assert.ok(line && line.textContent === words && ` ${line.className} `.includes(` ${cls} `), `the tap's line: ${line ? `${line.className} "${line.textContent}"` : 'none'}`);
+      checkScreen(app, `tap ${words} ${app.loc.hash}`, fails, seen);
+      counts.screens++;
+    } finally {
+      app.restore();
+    }
   }
   // md-extremes: five projects, long titles and long records.
   const x = extremes();

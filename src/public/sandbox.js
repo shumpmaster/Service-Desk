@@ -42,7 +42,7 @@ import { runsContext, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, 
 import { WA, DRAFT_KEY, todayOf } from './lib/workahead.js';
 import { PAGE_WORDS, STANDARD_TOTAL, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, restRows, v25Rows, finishWords } from './lib/projectpage.js';
 import { topLine } from './lib/versions.js';
-import { portfolioView, PF_ROWS, PF_WORDS, cardMilestone, portfolioRead, portfolioCards, ideasView, rareLine, noteIdeas, ideaEvents, SEEN_IDEAS_KEY, PF_BOARD, PF_LABEL } from './lib/portfolio.js';
+import { portfolioView, PF_ROWS, PF_WORDS, cardMilestone, portfolioScreenState, portfolioRead, portfolioCards, ideasView, rareLine, noteIdeas, ideaEvents, SEEN_IDEAS_KEY, PF_BOARD, PF_LABEL } from './lib/portfolio.js';
 import { workAheadView, readDraft } from './lib/workview.js';
 
 import {
@@ -1791,17 +1791,16 @@ function portfolioBoard(nowMs) {
     recording: [], asking: [], answerRecording: [], recordRows: [], seenRows: boardState.seen.get(PF_BOARD) };
 }
 
-/** Sandbox's screen state (its title): Quiet also needs the portfolio read within its 6 minutes and no card in its queue (Terms, from 6b). */
-function withPortfolio(s, bd) {
+/**
+ * Sandbox's screen state (the state line and the tab title): Quiet also needs no card in the portfolio's queue
+ * and the portfolio read within its 6 minutes (Terms, from 6b); with no `portfolio` in J7, the projects' own
+ * (universe.js `screenState`). Review round 2, B3: a portfolio card is counted as a project's is, never set
+ * beside "Quiet".
+ */
+function withPortfolio(s, bd, boxes, signedOut) {
   if (!lastPf || !s || s.text === SIGNED_OUT_STATE.text) return s;
   const c = bd && bd.counts ? bd.counts.get(PF_BOARD) : null;
-  const n = c ? c.waiting + c.kicked : 0;
-  if (n) {
-    const m = /^(\d+) waiting on you(.*)$/.exec(s.text);
-    return { text: m ? `${Number(m[1]) + n} waiting on you${m[2]}` : `${n} waiting on you · ${s.text}`, quiet: false };
-  }
-  if (s.quiet && !lastPf.fresh) return { text: lastPf.quietWords || HOME_WORDS.checking, quiet: false };
-  return s;
+  return portfolioScreenState(boxes, signedOut, lastPf, c ? c.waiting + c.kicked : 0);
 }
 
 /** "checked <age> ago" (AC80; AC82's rule): from the stalest project's last successful read. */
@@ -4020,7 +4019,8 @@ export function startSandbox(opts = {}) {
       }
     }
     // In the trial view a pull request with the agents is not flagged (Terms, from stage 1a): Quiet leaves it out.
-    const s = withPortfolio(screenState(sandboxBoxes(built), desk.signedOut), bd);
+    const boxes = sandboxBoxes(built);
+    const s = withPortfolio(screenState(boxes, desk.signedOut), bd, boxes, desk.signedOut);
     if (stateEl) stateEl.textContent = desk.signedOut ? SIGNED_OUT_STATE.text : s.text;
     document.title = `Sandbox — ${desk.signedOut ? SIGNED_OUT_STATE.text : s.text}`;
     const r = nav.route;

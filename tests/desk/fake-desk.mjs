@@ -304,7 +304,7 @@ export function fakeServer(repos, config, clock) {
    * the poll's branch (304 for a matching head and ETag) and, on a new head, the tree; the blob call's
    * blobs by sha. The repository is `repos[PORTFOLIO_REPO]` (made up per test, NOT real records); with none
    * the branch answers 404, as GitHub does for a repository the token can't see (`no-access`). Its `fail`
-   * as a project's, `sizes` (path → size) and `truncated` for the tree, `blobFail` for a blob.
+   * as a project's, `hold` (a promise it waits on), `sizes` (path → size) and `truncated` for the tree, `blobFail` for a blob.
    */
   async function portfolioCall(path, body) {
     calls.push({ path, project: null, target: body.target, at: clock.now(), body });
@@ -312,6 +312,8 @@ export function fakeServer(repos, config, clock) {
     const v = validatePortfolio(body, config, kind);
     if (v.error) return { ok: false, status: 400, reason: 'cloudflare', words: `Cloudflare or desk-function error (HTTP 400: ${v.error})` };
     const r = repos[PORTFOLIO_REPO];
+    // `hold`: a promise the call waits on before it answers (a read still in flight; review round 2, N7).
+    if (r && r.hold) await r.hold;
     const base = { target: 'portfolio', readAt: new Date(clock.now()).toISOString(), reason: null, retryAfter: null, cost: { github: 1, bytes: 100 } };
     const f = r ? r.fail : null;
     if (f && f.kind === 'network') return { ok: false, status: 0, reason: 'network' };

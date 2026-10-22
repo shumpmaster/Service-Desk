@@ -478,3 +478,74 @@ test('AC87 + J23 (review round 1, N2): on the page, a blob over GitHub\'s 1 MB c
     app.restore();
   }
 });
+
+// ---------------------------------------------------------------------------
+// Review round 2 (the Reviewer's B3 and N7)
+
+test('AC87 + Terms\' Quiet (review round 2, B3): the state line and the tab title count each portfolio card as a project\'s waiting item is counted — "1 waiting on you", "30 waiting on you" while both projects are quiet — and never say "Quiet" while one waits; "Quiet" once none does and the portfolio is read', async () => {
+  for (const n of [1, 30]) {
+    const queue = Object.fromEntries(Array.from({ length: n }, (_, i) => [`PF-${100 + i}-made-up.md`, cardText(100 + i, `A made-up decision ${i}`)]));
+    const app = await open({ pf: pfFiles({ queue }) });
+    try {
+      if (n === 30) await app.advance(5 * 60_000); // its second read fills in the blobs past one call's 25
+      assert.ok([...app.desk.states.values()].every((x) => x.lastSuccessAt != null && !x.failure), 'both projects read');
+      assert.equal(app.module && findKeyed(app, 'card:Service-Desk').textContent.includes('Nothing waiting'), true, 'both projects quiet');
+      assert.equal(bt1(app), `${n} need${n === 1 ? 's' : ''} you`);
+      assert.equal(app.els['screen-state'].textContent, `${n} waiting on you`, `${n}: the state line`);
+      assert.equal(document.title, `Sandbox — ${n} waiting on you`, `${n}: the tab title`);
+      assert.doesNotMatch(`${app.els['screen-state'].textContent} ${document.title}`, /Quiet/);
+    } finally {
+      app.restore();
+    }
+  }
+  const quiet = await open();
+  try {
+    assert.equal(quiet.els['screen-state'].textContent, 'Quiet', 'an empty queue, read: quiet');
+    assert.equal(document.title, 'Sandbox — Quiet');
+  } finally {
+    quiet.restore();
+  }
+});
+
+test('AC87 + Terms\' Quiet (review round 2, B3): a project waiting too adds to the same count; a portfolio read that has failed adds its words to the line, and a project\'s failure and the portfolio\'s card both say so — never "Quiet"', async () => {
+  const { portfolioScreenState } = await import('../../src/lib/portfolio.js');
+  const ok = { read: 'ok' };
+  const fresh = { fresh: true, quietWords: null };
+  assert.deepEqual(portfolioScreenState([{ flaggedCount: 0, read: ok }, { flaggedCount: 0, read: ok }], false, fresh, 1), { text: '1 waiting on you', quiet: false });
+  assert.deepEqual(portfolioScreenState([{ flaggedCount: 2, read: ok }], false, fresh, 3), { text: '5 waiting on you', quiet: false });
+  assert.deepEqual(portfolioScreenState([{ flaggedCount: 0, read: { read: 'cant-read' } }], false, fresh, 1), { text: '1 waiting on you · can\'t read 1 project', quiet: false });
+  const failed = { fresh: false, quietWords: "Can't read your portfolio since 13:10" };
+  assert.deepEqual(portfolioScreenState([{ flaggedCount: 0, read: ok }], false, failed, 0), { text: "Not quiet: Can't read your portfolio since 13:10", quiet: false });
+  assert.deepEqual(portfolioScreenState([{ flaggedCount: 0, read: ok }], false, failed, 2), { text: "2 waiting on you · Can't read your portfolio since 13:10", quiet: false });
+  assert.deepEqual(portfolioScreenState([{ flaggedCount: 0, read: ok }], false, { fresh: false, quietWords: null }, 0), { text: 'Checking…', quiet: false }, 'a read due, none failed');
+  assert.deepEqual(portfolioScreenState([{ flaggedCount: 0, read: ok }], false, fresh, 0), { text: 'Quiet', quiet: true });
+  assert.deepEqual(portfolioScreenState([{ flaggedCount: 0, read: ok }], true, fresh, 1).text, 'Signed out — reload to sign in');
+});
+
+test('AC87 + AC82 (review round 2, N7): back from the background, the projects\' reads answered and the portfolio\'s still in flight — Home says "Checking…", never "Nothing needs you" over an unread portfolio; the state line too; then quiet once it answers', async () => {
+  const app = await open();
+  try {
+    assert.equal(bt1(app), 'Nothing needs you');
+    let release;
+    app.pf.hold = new Promise((r) => { release = r; });
+    await app.visibility('hidden');
+    await app.advance(30 * 60_000);
+    await app.visibility('visible');
+    await app.advance(1000);
+    await app.advance(1000);
+    const projects = [...app.desk.states.values()];
+    assert.ok(projects.every((x) => x.lastSuccessAt != null && app.now - x.lastSuccessAt < 5000), 'every project read again');
+    assert.ok(app.server.calls.some((c) => c.target === 'portfolio' && c.at > NOW + 30 * 60_000), 'the portfolio\'s read made, still in flight');
+    assert.equal(app.desk.portfolio().lastSuccessAt < NOW + 30 * 60_000, true);
+    assert.equal(bt1(app), 'Checking…');
+    assert.equal(app.els['screen-state'].textContent, 'Checking…');
+    assert.doesNotMatch(briefAll(app), /Nothing needs you|Quiet|Can't read/);
+    app.pf.hold = null;
+    release();
+    await app.advance(1000);
+    assert.equal(bt1(app), 'Nothing needs you', 'once it answers');
+    assert.equal(app.els['screen-state'].textContent, 'Quiet');
+  } finally {
+    app.restore();
+  }
+});

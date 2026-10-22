@@ -542,3 +542,33 @@ export function ideaEvents(kept, reference) {
   return Object.entries(base.moved).map(([key, m], seq) => ({ id: `portfolio|idea|${key}|${m.state}`, project: 'portfolio', seq, dateOnly: false, at: m.at, icon: 'proj',
     words: PF_WORDS.ideaMoved(m.state, m.name), codes: ['ideas'], target: { hash: '#/work' } }));
 }
+
+// ---------------------------------------------------------------------------
+// The trial view's state line and tab title (Terms' Quiet, from 6b; review round 2, B3)
+
+/**
+ * The screen's headline with the portfolio in it, in the words the state line already uses for projects
+ * (universe.js `screenState`): the portfolio's waiting cards (`waiting`, the board's count of its "Waiting on
+ * you" and "Kicked back") are added to "<n> waiting on you"; a portfolio read that isn't current adds its own
+ * words to the tail ("Checking…" while one is due with none failed; its failure words otherwise). "Quiet"
+ * only when every project is quiet, no portfolio card waits and the portfolio was read within its 6 minutes.
+ * boxes: [{ flaggedCount, read, drawError }]; pf: portfolioRead's answer, or null with no `portfolio` in J7.
+ * Returns { text, quiet }.
+ */
+export function portfolioScreenState(boxes, signedOut, pf, waiting = 0) {
+  if (signedOut) return { text: 'Signed out — reload to sign in', quiet: false };
+  const flagged = boxes.reduce((n, b) => n + (b.flaggedCount || 0), 0) + (pf ? waiting : 0);
+  const cantRead = boxes.filter((b) => b.read && b.read.read === 'cant-read').length;
+  const checking = boxes.filter((b) => b.read && b.read.read === 'checking').length;
+  const cantShow = boxes.filter((b) => b.drawError).length;
+  const tail = [];
+  if (cantRead) tail.push(`can't read ${cantRead} project${cantRead === 1 ? '' : 's'}`);
+  if (cantShow) tail.push(`can't show ${cantShow} project${cantShow === 1 ? '' : 's'}`);
+  const pfCant = Boolean(pf && !pf.fresh && pf.quietWords);
+  if (pfCant) tail.push(pf.quietWords);
+  if (checking || (pf && !pf.fresh && !pf.quietWords)) tail.push(PF_WORDS.checking);
+  if (flagged) return { text: [`${flagged} waiting on you`, ...tail].join(' · '), quiet: false };
+  if (cantRead || cantShow || pfCant) return { text: `Not quiet: ${tail.join(' · ')}`, quiet: false };
+  if (tail.length) return { text: PF_WORDS.checking, quiet: false };
+  return { text: 'Quiet', quiet: true };
+}

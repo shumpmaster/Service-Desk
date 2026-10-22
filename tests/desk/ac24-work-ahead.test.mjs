@@ -5,6 +5,17 @@
 // question and answer added here is made up (NOT a real record), and Personal-Org-Operating-Model is
 // read in poom/'s placeholder form only. The page itself is drawn under the fake DOM, fake timers and
 // the fake desk function, so the screens and taps are the page's own.
+//
+// ac-test: S-001/AC86 — AC24's cases, run on the Plan tab (each kept, none dropped; tests/desk/ac86-plan.test.mjs has the rest).
+// From stage 5 (AC86, specs/S-001.md:7041-7068) Work ahead is the Plan tab, drawn as frame 11, and
+// "every rule of AC24 holds ... and only its place and look change" (:7041-7046). Each case below is
+// AC24's own, kept (:7065-7066, "runs AC24's test cases on the Plan tab (each kept, none dropped)");
+// only its selectors and form follow the tab's look: a row shows its icon, its name, "<id> · <phase> ·
+// about <low>–<high> days" and its value at the right (:7047-7055), and AC24's whole row (its state in
+// words, "Done when", the estimate and the rough finish in AC24's words) is in the milestone's sheet,
+// one tap from the row; "⇅", "Change the order", opens AC24's ordering (move up, move down, the card and
+// "Record plan", :7047-7048). So the cases read a milestone's words from its sheet, and open the
+// ordering before they move a row or read the card or the bar.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadSandbox, findAll, byClass } from './sandbox-helpers.mjs';
@@ -35,19 +46,43 @@ async function open({ now = NOW, extra = {}, store = memStore(), hash = '#/work'
   return app;
 }
 const cls = (e, c) => ` ${e.className || ''} `.includes(` ${c} `);
-const rows = (app) => byClass(app.view, 'sb-wa-row');
-const codesOf = (app) => rows(app).map((r) => byClass(r, 'code')[0].textContent);
-const rowOf = (app, id) => rows(app).find((r) => byClass(r, 'code')[0].textContent === id);
-const inRow = (app, id, c) => {
-  const e = byClass(rowOf(app, id), c)[0];
-  return e ? e.textContent : null;
+/** Plan's milestone rows, in the order shown (AC86: the groups, or the ordering's one list). */
+const rows = (app) => findAll(app.view, (e) => cls(e, 'v2-plli') && e.attrs && e.attrs['data-row'] != null);
+/** A row's code: the first part of its "<id> · <phase> · …" line (AC86, specs/S-001.md:7050-7051). */
+const codeOf = (r) => byClass(r, 'v2-plm')[0].textContent.split(' · ')[0];
+const codesOf = (app) => rows(app).map(codeOf);
+const rowOf = (app, id) => rows(app).find((r) => codeOf(r) === id);
+/** One part of a milestone's sheet over Plan (AC86): AC24's row in AC24's words, one tap from the row; the sheet closed after. */
+async function inSheet(app, id, c, project = 'Service-Desk') {
+  await app.go(`#/work/ms/${encodeURIComponent(project)}/${encodeURIComponent(id)}`);
+  const sh = byClass(app.view, 'v2-sheet')[0];
+  const e = sh ? byClass(sh, c)[0] : null;
+  const t = e ? e.textContent : null;
+  await app.go('#/work');
+  return t;
+}
+const finishOf = (app, id) => inSheet(app, id, 'v2-plfin');
+const finishes = async (app) => {
+  const out = [];
+  for (const id of SIX) out.push(await finishOf(app, id));
+  return out;
 };
-const finishOf = (app, id) => {
-  const t = inRow(app, id, 'sb-wa-fin');
-  return t ? t.replace(/^Rough finish: /, '') : null;
+const estOf = (app, id) => inSheet(app, id, 'v2-plest');
+/** Open AC24's ordering with "⇅" (AC86, specs/S-001.md:7047-7048), if it is not open. */
+async function ordering(app) {
+  const b = findKeyed(app, 'plan-order');
+  if (b.attrs['aria-pressed'] !== 'true') await app.tap(b);
+}
+/** AC24's card, "Rough finish, in this order", in the ordering. */
+const card = async (app) => {
+  await ordering(app);
+  return byClass(app.view, 'v2-plbig')[0].textContent;
 };
-const card = (app) => byClass(app.view, 'sb-wa-big')[0].textContent;
-const btn = (app, k) => findKeyed(app, k);
+/** A control by its key; a move control is in the ordering, opened first. */
+const btn = async (app, k) => {
+  if (/^wa-(up|down):/.test(k)) await ordering(app);
+  return findKeyed(app, k);
+};
 const key = (id) => `Service-Desk|${id}`;
 const press = async (app, el, k) => {
   el.dispatch('keydown', { key: k });
@@ -90,7 +125,11 @@ test('AC24: the oracle — `v3_checks.py trace` at 77bfeae puts each project mil
 // H5 draw none, and the bar's Plan tab is the way to Work ahead. This case, AC24's for the control, is
 // rewritten for the Plan tab (AC82: "AC24's case for the control rewritten in stage 2's pull request for
 // the Plan tab"; draft 4, the Critic's note 2, round 3): the same screen, opened the same way, one tap.
-test('AC24 (from stage 2, AC82): Home has no "Work ahead" control; the bar\'s Plan tab opens the screen: "All projects" over "Work ahead", "6 milestones to go · 3 reached", with Back and Home', async () => {
+// From stage 5 (AC86, specs/S-001.md:7047-7055, "As frame 11 draws it"): the screen's head is the tab's,
+// the title "Plan" with "⇅" and its line, in place of AC24's "All projects" over "Work ahead" with Back and
+// Home (:8298-8302); the counts AC24's head gave are the group's head, "Service-Desk · milestones ahead" with
+// its 6, and "Reached · 3"; Plan is a tab, so the bar's Home is its way home, as on Waiting.
+test('AC24 (from stage 2, AC82; from stage 5, AC86): Home has no "Work ahead" control; the bar\'s Plan tab opens the screen: "Plan" and its line, "Service-Desk · milestones ahead" with its 6, "Reached · 3", the bar\'s Home', async () => {
   const app = await open({ hash: '#/' });
   try {
     assert.equal(findKeyed(app, 'work-ahead'), null, 'no control on Home');
@@ -101,9 +140,12 @@ test('AC24 (from stage 2, AC82): Home has no "Work ahead" control; the bar\'s Pl
     assert.equal(byClass(tab, 'v2-tabw')[0].textContent, 'Plan');
     await app.tap(tab);
     await app.go('#/work');
-    const hdr = byClass(app.view, 'sb-hdr')[0];
-    assert.deepEqual(textRuns(hdr, () => false), ['Back', 'Home', 'All projects', 'Work ahead', '6 milestones to go · 3 reached']);
-    assert.ok(findKeyed(app, 'nav-home') && findKeyed(app, 'nav-back'));
+    const top = byClass(app.view, 'v2-pltop')[0];
+    assert.deepEqual(textRuns(top, () => false), ['Plan']);
+    assert.equal(findKeyed(app, 'plan-sub').textContent, 'Rough finish from today, 18 Oct · an expectation, never a deadline');
+    assert.deepEqual(textRuns(byClass(findKeyed(app, 'wa-grp:Service-Desk'), 'v2-plh')[0], () => false), ['Service-Desk · milestones ahead', '6']);
+    assert.equal(findKeyed(app, 'fold:reached').textContent, 'Reached · 3');
+    assert.ok(findKeyed(app, 'tab:home'), 'the bar\'s Home');
     assert.equal(findKeyed(app, 'tab:plan').attrs['aria-current'], 'page', 'Plan current');
   } finally {
     app.restore();
@@ -132,10 +174,13 @@ test('AC24: with no plan, MD1 to M3C in section 3\'s order under "No plan record
     assert.deepEqual(codesOf(app), SIX);
     assert.match(app.text(), /No plan recorded yet/);
     // Draft 6 (the ruling on build review round 1, D): with no move made, "No changes yet"; "No plan recorded yet" heads the order.
-    assert.equal(byClass(app.view, 'sb-wa-state')[0].textContent, 'No changes yet');
+    // From stage 5 the state line is the ordering's (AC86, :7047-7048), and Plan shows it once it says more.
+    assert.equal(byClass(app.view, 'v2-plstate').length, 0, 'Plan itself: no "No changes yet"');
     assert.equal(findKeyed(app, 'wa-order').textContent, 'No plan recorded yet');
     const fold = findKeyed(app, 'fold:reached');
-    assert.equal(fold.textContent, 'Reached · 3▸');
+    // On mockup v2's screens the fold's mark is an SVG icon, never ▸ as text (AC81).
+    assert.equal(fold.textContent, 'Reached · 3');
+    assert.equal(findAll(fold, (e) => e.tag === 'svg').length, 1);
     assert.equal(fold.attrs['aria-expanded'], 'false');
     assert.doesNotMatch(app.text(), /Every project's status visible on the phone/);
     await app.tap(fold);
@@ -144,14 +189,25 @@ test('AC24: with no plan, MD1 to M3C in section 3\'s order under "No plan record
     await app.tap(findKeyed(app, 'fold:reached'));
     assert.equal(byClass(app.view, 'reached').length, 0, 'folds on a second tap');
     // Each row: its place ("1st of 6" for the reader), name, code, phase in words with its colour, "done when".
-    const r1 = rows(app)[0];
-    assert.deepEqual(textRuns(byClass(r1, 'sb-wa-ord')[0], () => false), ['1', '1st of 6']);
-    assert.equal(byClass(r1, 'sb-wa-name')[0].textContent, 'What a good desk looks like is known');
-    assert.equal(byClass(r1, 'sb-wa-ph')[0].textContent, 'Design');
-    assert.ok(cls(r1, 'ph-des') && cls(byClass(r1, 'sb-wa-ph')[0], 'ph-des'));
-    assert.ok(cls(rowOf(app, 'M3C'), 'ph-launch'));
-    assert.equal(inRow(app, 'MD1', 'sb-wa-done'), 'Done when source-checked design research sets out what a good desk looks like and why');
-    assert.equal(byClass(r1, 'sb-wa-proj').length, 0, 'one v3 project: its name not repeated on rows');
+    // From stage 5 (AC86, :7050-7052): the row's "<id> · <phase>" in Plex Mono, as frame 11 draws it; its
+    // phase's colour and "Done when" in its sheet (AC24, :8329-8330); its place shown in the ordering.
+    let r1 = rows(app)[0];
+    assert.deepEqual(textRuns(byClass(r1, 'v2-plord')[0], () => false), ['1st of 6']);
+    assert.equal(byClass(r1, 'v2-plname')[0].textContent, 'What a good desk looks like is known');
+    assert.equal(byClass(r1, 'v2-plm')[0].textContent, 'MD1 · Design');
+    for (const [id, c] of [['MD1', 'ph-des'], ['M3C', 'ph-launch']]) {
+      await app.go(`#/work/ms/Service-Desk/${id}`);
+      const ph = byClass(byClass(app.view, 'v2-sheet')[0], 'v2-plph')[0];
+      assert.equal(ph.textContent, id === 'MD1' ? 'Design' : 'Launch');
+      assert.ok(cls(ph, c), `${id}: ${c}`);
+      await app.go('#/work');
+    }
+    assert.equal(await inSheet(app, 'MD1', 'v2-pldone'), 'source-checked design research sets out what a good desk looks like and why');
+    assert.doesNotMatch(byClass(r1, 'v2-plm')[0].textContent, /Service-Desk/, 'one v3 project: its name not repeated on rows');
+    await ordering(app);
+    r1 = rows(app)[0];
+    assert.deepEqual(textRuns(byClass(r1, 'v2-plord')[0], () => false), ['1', '1st of 6']);
+    assert.equal(byClass(app.view, 'v2-plstate')[0].textContent, 'No changes yet');
   } finally {
     app.restore();
   }
@@ -159,13 +215,30 @@ test('AC24: with no plan, MD1 to M3C in section 3\'s order under "No plan record
 
 test('AC24: the states, as Status gives them — MD1 and MD2 work filed (half-filled), MD3 next to reach (gold ring), M3A to M3C no work filed (empty ring); a made-up sprint on M3A: "Work filed" with the empty ring, under way', async () => {
   const app = await open({ extra: { 'intake/estimates.jsonl': WORKED() } });
-  const state = (id) => [inRow(app, id, 'sb-wa-st'), byClass(byClass(rowOf(app, id), 'sb-wa-st')[0], 'sb-mk')[0].className];
+  // From stage 5 (AC86, :7050-7052): the state's words beside its icon in the milestone's sheet, and the
+  // same icon on the row, AC57's states as the page draws them (AC59's circles: half-filled, the gold
+  // ring, and the dashed ring for no work filed, in place of AC24's empty ring).
+  const icon = (el) => findAll(el, (e) => e.tag === 'svg')[0].attrs.class.split(' ')[1];
+  const stateIn = async (a, id) => {
+    await a.go(`#/work/ms/Service-Desk/${id}`);
+    const st = byClass(byClass(a.view, 'v2-sheet')[0], 'v2-plst')[0];
+    const out = [st.textContent, icon(st)];
+    await a.go('#/work');
+    assert.equal(icon(byClass(rowOf(a, id), 'v2-plrow')[0]), out[1], `${id}: the row's icon is its sheet's`);
+    return out;
+  };
+  const state = (id) => stateIn(app, id);
   try {
-    assert.deepEqual(state('MD1'), ['Work filed: Q-013', 'sb-mk m-half']);
-    assert.deepEqual(state('MD2'), ['Work filed: PR #72, #74, #75, #77', 'sb-mk m-half']);
-    assert.deepEqual(state('MD3'), ['No work filed yet · next to reach', 'sb-mk m-gold']);
-    for (const id of ['M3A', 'M3B', 'M3C']) assert.deepEqual(state(id), ['No work filed yet', 'sb-mk m-empty']);
+    assert.deepEqual(await state('MD1'), ['Work filed: Q-013', 'st-half']);
+    assert.deepEqual(await state('MD2'), ['Work filed: PR #72, #74, #75, #77', 'st-half']);
+    assert.deepEqual(await state('MD3'), ['No work filed yet · next to reach', 'st-next']);
+    for (const id of ['M3A', 'M3B', 'M3C']) assert.deepEqual(await state(id), ['No work filed yet', 'st-planned']);
     assert.doesNotMatch(app.text(), /work done|accept\?|in progress/i);
+    for (const id of SIX) {
+      await app.go(`#/work/ms/Service-Desk/${id}`);
+      assert.doesNotMatch(app.text(), /work done|accept\?|in progress/i, `${id}'s sheet`);
+    }
+    await app.go('#/work');
     // The same states as the project's page gives the same milestones: from stage 3 the Status screen gives way
     // to the page (AC81, AC83), whose opened phase lines mark each milestone by AC57's rules with AC59's icons
     // (AC83, "each milestone's row", specs/S-001.md:6801-6804; AC81, :6456-6457; rewritten from the Status screen's marks, half-filled, gold and empty rings).
@@ -180,12 +253,10 @@ test('AC24: the states, as Status gives them — MD1 and MD2 work filed (half-fi
   // under way for the rough finish (on 20 Oct its 4–7 counts from 18 Oct: 2–5 left).
   const app2 = await open({ now: at('2026-10-20T18:00:00Z'), extra: { 'docs/PROJECT.md': withSprint('M3A', 'PR #901'), 'intake/estimates.jsonl': WORKED() } });
   try {
-    const st = byClass(rowOf(app2, 'M3A'), 'sb-wa-st')[0];
-    assert.equal(st.textContent, 'Work filed: PR #901');
-    assert.equal(byClass(st, 'sb-mk')[0].className, 'sb-mk m-empty');
+    assert.deepEqual(await stateIn(app2, 'M3A'), ['Work filed: PR #901', 'st-planned']);
     // MD3 3–5 not under way from 20 Oct: 23 Oct – 25 Oct; M3A then 2–5 more: 25 Oct – 30 Oct.
-    assert.equal(finishOf(app2, 'MD3'), '23 Oct – 25 Oct');
-    assert.equal(finishOf(app2, 'M3A'), '25 Oct – 30 Oct');
+    assert.equal(await finishOf(app2, 'MD3'), '23 Oct – 25 Oct');
+    assert.equal(await finishOf(app2, 'M3A'), '25 Oct – 30 Oct');
   } finally {
     app2.restore();
   }
@@ -197,10 +268,10 @@ test('AC24: the states, as Status gives them — MD1 and MD2 work filed (half-fi
 test('AC24: the worked example — every date and the card, across 1 Nov 2026\'s daylight-saving change; 20 Oct with no new estimate, the rest two days later', async () => {
   const app = await open({ extra: { 'intake/estimates.jsonl': WORKED() } });
   try {
-    assert.deepEqual(SIX.map((id) => finishOf(app, id)), ['once you accept it', 'once you accept it', '21 Oct – 23 Oct', '25 Oct – 30 Oct', '27 Oct – 3 Nov', '29 Oct – 6 Nov']);
-    assert.equal(card(app), '29 Oct – 6 Nov');
-    assert.equal(inRow(app, 'MD1', 'sb-wa-est'), 'Estimate no work left · waiting on your acceptance · your Chief of Staff, 18 Oct');
-    assert.equal(inRow(app, 'MD3', 'sb-wa-est'), 'Estimate about 3–5 days of work · your Chief of Staff, 18 Oct');
+    assert.deepEqual(await finishes(app), ['once you accept it', 'once you accept it', '21 Oct – 23 Oct', '25 Oct – 30 Oct', '27 Oct – 3 Nov', '29 Oct – 6 Nov']);
+    assert.equal(await card(app), '29 Oct – 6 Nov');
+    assert.equal(await estOf(app, 'MD1'), 'no work left · waiting on your acceptance · your Chief of Staff, 18 Oct');
+    assert.equal(await estOf(app, 'MD3'), 'about 3–5 days of work · your Chief of Staff, 18 Oct');
     assert.match(app.text(), /From the estimates below, added up in your order from today\. An expectation, never a deadline\./);
     assert.doesNotMatch(app.text(), /launch target|11 Nov|V4/, 'the mockup\'s launch-target line is not built');
   } finally {
@@ -208,8 +279,8 @@ test('AC24: the worked example — every date and the card, across 1 Nov 2026\'s
   }
   const app2 = await open({ now: at('2026-10-20T18:00:00Z'), extra: { 'intake/estimates.jsonl': WORKED() } });
   try {
-    assert.deepEqual(SIX.map((id) => finishOf(app2, id)), ['once you accept it', 'once you accept it', '23 Oct – 25 Oct', '27 Oct – 1 Nov', '29 Oct – 5 Nov', '31 Oct – 8 Nov']);
-    assert.equal(card(app2), '31 Oct – 8 Nov');
+    assert.deepEqual(await finishes(app2), ['once you accept it', 'once you accept it', '23 Oct – 25 Oct', '27 Oct – 1 Nov', '29 Oct – 5 Nov', '31 Oct – 8 Nov']);
+    assert.equal(await card(app2), '31 Oct – 8 Nov');
   } finally {
     app2.restore();
   }
@@ -220,7 +291,7 @@ test('AC24: under way — MD3 estimated 3–5 on 18 Oct reads 21 Oct – 23 Oct 
   const day = async (d) => {
     const app = await open({ now: at(`2026-10-${d}T18:00:00Z`), extra });
     try {
-      return { f: SIX.map((id) => finishOf(app, id)), card: card(app), md3: inRow(app, 'MD3', 'sb-wa-est') };
+      return { f: await finishes(app), card: await card(app), md3: await estOf(app, 'MD3') };
     } finally {
       app.restore();
     }
@@ -232,7 +303,7 @@ test('AC24: under way — MD3 estimated 3–5 on 18 Oct reads 21 Oct – 23 Oct 
   const d24 = await day(24);
   assert.deepEqual(d24.f, ['once you accept it', 'once you accept it', ...Array(4).fill('not available: MD3 is past its estimate')]);
   assert.equal(d24.card, 'not available: MD3 is past its estimate');
-  assert.equal(d24.md3, 'Estimate past its estimate of 3–5 days, made 18 Oct; waiting on a new one');
+  assert.equal(d24.md3, 'past its estimate of 3–5 days, made 18 Oct; waiting on a new one');
 });
 
 test('AC24: a 0-to-0 estimate 30 days old still reads "once you accept it", never stale; a stale one (8 days) shows "may be out of date" and still counts; equal low and high', async () => {
@@ -240,11 +311,11 @@ test('AC24: a 0-to-0 estimate 30 days old still reads "once you accept it", neve
     estLine('M3B', 3, 3), estLine('M3C', 2, 3)].join('\n');
   const app = await open({ extra: { 'intake/estimates.jsonl': est } });
   try {
-    assert.equal(finishOf(app, 'MD1'), 'once you accept it');
-    assert.doesNotMatch(inRow(app, 'MD1', 'sb-wa-est'), /may be out of date/);
-    assert.equal(inRow(app, 'MD3', 'sb-wa-est'), 'Estimate about 3–5 days of work · your Chief of Staff, 10 Oct · may be out of date');
-    assert.equal(finishOf(app, 'MD3'), '21 Oct – 23 Oct', 'still counted, from today since it is not under way');
-    assert.equal(inRow(app, 'M3B', 'sb-wa-est'), 'Estimate about 3 days of work · your Chief of Staff, 18 Oct');
+    assert.equal(await finishOf(app, 'MD1'), 'once you accept it');
+    assert.doesNotMatch(await estOf(app, 'MD1'), /may be out of date/);
+    assert.equal(await estOf(app, 'MD3'), 'about 3–5 days of work · your Chief of Staff, 10 Oct · may be out of date');
+    assert.equal(await finishOf(app, 'MD3'), '21 Oct – 23 Oct', 'still counted, from today since it is not under way');
+    assert.equal(await estOf(app, 'M3B'), 'about 3 days of work · your Chief of Staff, 18 Oct');
   } finally {
     app.restore();
   }
@@ -253,14 +324,14 @@ test('AC24: a 0-to-0 estimate 30 days old still reads "once you accept it", neve
 test('AC24: the time-zone boundary — estimates timed 03:00Z on 18 Oct (17 Oct in Chicago): at 03:30Z today is 17 Oct; at 05:30Z it is 18 Oct and every finish a day later, turned on the 15-second tick', async () => {
   const app = await open({ now: at('2026-10-18T03:28:58Z'), extra: { 'intake/estimates.jsonl': WORKED('2026-10-18T03:00:00Z') } });
   try {
-    assert.equal(inRow(app, 'MD3', 'sb-wa-est'), 'Estimate about 3–5 days of work · your Chief of Staff, 17 Oct');
-    assert.deepEqual(SIX.map((id) => finishOf(app, id)), ['once you accept it', 'once you accept it', '20 Oct – 22 Oct', '24 Oct – 29 Oct', '26 Oct – 2 Nov', '28 Oct – 5 Nov']);
+    assert.equal(await estOf(app, 'MD3'), 'about 3–5 days of work · your Chief of Staff, 17 Oct');
+    assert.deepEqual(await finishes(app), ['once you accept it', 'once you accept it', '20 Oct – 22 Oct', '24 Oct – 29 Oct', '26 Oct – 2 Nov', '28 Oct – 5 Nov']);
     await app.visibility('hidden');
     await app.advance(2 * 3600e3); // 05:30Z: Chicago's midnight has passed
     await app.visibility('visible');
     await app.tick();
-    assert.deepEqual(SIX.map((id) => finishOf(app, id)), ['once you accept it', 'once you accept it', '21 Oct – 23 Oct', '25 Oct – 30 Oct', '27 Oct – 3 Nov', '29 Oct – 6 Nov']);
-    assert.equal(card(app), '29 Oct – 6 Nov');
+    assert.deepEqual(await finishes(app), ['once you accept it', 'once you accept it', '21 Oct – 23 Oct', '25 Oct – 30 Oct', '27 Oct – 3 Nov', '29 Oct – 6 Nov']);
+    assert.equal(await card(app), '29 Oct – 6 Nov');
   } finally {
     app.restore();
   }
@@ -275,10 +346,10 @@ test('AC24: an under-way estimate dated after today (5 minutes after the page\'s
   const app = await open({ now: at('2026-10-18T04:55:58Z'), extra: { 'docs/PROJECT.md': withSprint('MD3', 'PR #902'), 'intake/estimates.jsonl': est } });
   try {
     assert.equal(app.now, clock);
-    assert.equal(inRow(app, 'MD3', 'sb-wa-est'), 'Estimate about 3–5 days of work · your Chief of Staff, 18 Oct');
-    assert.equal(finishOf(app, 'MD3'), '20 Oct – 22 Oct', 'from today, 17 Oct: 3–5 days, 0 counted since its date');
-    assert.equal(inRow(app, 'M3A', 'sb-wa-est'), 'Estimate: not made yet');
-    assert.equal(finishOf(app, 'M3A'), 'not available: M3A has no estimate yet');
+    assert.equal(await estOf(app, 'MD3'), 'about 3–5 days of work · your Chief of Staff, 18 Oct');
+    assert.equal(await finishOf(app, 'MD3'), '20 Oct – 22 Oct', 'from today, 17 Oct: 3–5 days, 0 counted since its date');
+    assert.equal(await estOf(app, 'M3A'), 'Estimate: not made yet');
+    assert.equal(await finishOf(app, 'M3A'), 'not available: M3A has no estimate yet');
     await app.go('#/p/Service-Desk/notes');
     assert.match(app.text(), /estimates line 4: its time is more than 10 minutes after the page's clock/);
   } finally {
@@ -290,9 +361,9 @@ test('AC24: no estimate for the third row — rows 1 and 2 keep theirs, rows 3 t
   const est = WORKED().split('\n').filter((l) => !l.includes('"MD3"')).join('\n');
   const app = await open({ extra: { 'intake/estimates.jsonl': est } });
   try {
-    assert.equal(inRow(app, 'MD3', 'sb-wa-est'), 'Estimate: not made yet');
-    assert.deepEqual(SIX.map((id) => finishOf(app, id)), ['once you accept it', 'once you accept it', ...Array(4).fill('not available: MD3 has no estimate yet')]);
-    assert.equal(card(app), 'not available: MD3 has no estimate yet');
+    assert.equal(await estOf(app, 'MD3'), 'Estimate: not made yet');
+    assert.deepEqual(await finishes(app), ['once you accept it', 'once you accept it', ...Array(4).fill('not available: MD3 has no estimate yet')]);
+    assert.equal(await card(app), 'not available: MD3 has no estimate yet');
   } finally {
     app.restore();
   }
@@ -302,9 +373,9 @@ test('AC24: a range across the year\'s end shows the year', async () => {
   const t = '2026-12-29T17:00:00Z';
   const app = await open({ now: at('2026-12-29T18:00:00Z'), extra: { 'intake/estimates.jsonl': WORKED(t) } });
   try {
-    assert.equal(finishOf(app, 'MD3'), '1 Jan 2027 – 3 Jan 2027');
-    assert.equal(finishOf(app, 'M3A'), '5 Jan 2027 – 10 Jan 2027');
-    assert.equal(inRow(app, 'MD3', 'sb-wa-est'), 'Estimate about 3–5 days of work · your Chief of Staff, 29 Dec');
+    assert.equal(await finishOf(app, 'MD3'), '1 Jan 2027 – 3 Jan 2027');
+    assert.equal(await finishOf(app, 'M3A'), '5 Jan 2027 – 10 Jan 2027');
+    assert.equal(await estOf(app, 'MD3'), 'about 3–5 days of work · your Chief of Staff, 29 Dec');
   } finally {
     app.restore();
   }
@@ -322,9 +393,12 @@ test('AC24: J14\'s read failing — "Estimate: not available" on every row and n
   try {
     await app.advance(1000);
     await app.advance(61_000);
-    assert.ok(SIX.every((id) => inRow(app, id, 'sb-wa-est') === 'Estimate: not available'));
-    assert.ok(SIX.every((id) => finishOf(app, id) === null), 'no rough finish');
-    assert.equal(card(app), 'not available');
+    for (const id of SIX) assert.equal(await estOf(app, id), 'Estimate: not available', id);
+    assert.deepEqual(await finishes(app), Array(6).fill(null), 'no rough finish');
+    // From stage 5 (AC86, :7050-7052; AC24's words where it gives no estimate): each row says so, with no value at its right.
+    assert.deepEqual(rows(app).map((r) => byClass(r, 'v2-plgap').map((g) => g.textContent)), Array(6).fill(['Estimate: not available']));
+    assert.ok(rows(app).every((r) => byClass(r, 'v2-plv')[0].textContent === ''));
+    assert.equal(await card(app), 'not available');
     assert.doesNotMatch(app.text(), /Can't read/);
   } finally {
     app.restore();
@@ -337,7 +411,9 @@ test('AC24: an estimate\'s note longer than two lines is clipped to two, with th
   const app = await open({ extra: { 'intake/estimates.jsonl': est } });
   try {
     const id = `wa-note:${key('MD3')}`;
-    assert.equal(byClass(rowOf(app, 'MD3'), 'sb-wa-note')[0].textContent, long);
+    // From stage 5 (AC86): the note is in MD3's sheet, with AC24's estimate (:7041-7046).
+    await app.go('#/work/ms/Service-Desk/MD3');
+    assert.equal(byClass(byClass(app.view, 'v2-sheet')[0], 'v2-plnote')[0].textContent, long);
     const clip = findKeyed(app, `lineclip:${id}`);
     assert.ok(cls(clip, 'two'), 'a two-line box');
     // The browser's measure (the fake DOM lays out no text): two lines shown of five.
@@ -359,14 +435,18 @@ test('AC24: an estimate\'s note longer than two lines is clipped to two, with th
 
 // ---------------------------------------------------------------------------
 // Moving rows, the draft and recording the plan
+//
+// "Current plan · recorded <date>, <time>" with AC24's "·" (specs/S-001.md:8444; the Design reviewer's finding 2,
+// stage 5 round 1): the state line's words before had lost it.
 
 test('AC24: moving rows by tap, Enter and Space — the ends disabled, focus kept on the control, the gold edge and "moved", every finish recomputed, "Changed · not recorded"', async () => {
   const store = memStore();
   const app = await open({ extra: { 'intake/estimates.jsonl': WORKED() }, store });
   try {
-    assert.equal(byClass(app.view, 'sb-wa-bar')[0].children[0].textContent, 'No changes yet');
-    const up1 = btn(app, `wa-up:${key('MD1')}`);
-    const down6 = btn(app, `wa-down:${key('M3C')}`);
+    await ordering(app); // AC86 (:7047-7048): "⇅" opens AC24's ordering
+    assert.equal(byClass(app.view, 'v2-plbar')[0].children[0].textContent, 'No changes yet');
+    const up1 = await btn(app, `wa-up:${key('MD1')}`);
+    const down6 = await btn(app, `wa-down:${key('M3C')}`);
     assert.equal(up1.attrs['aria-disabled'], 'true');
     assert.equal(down6.attrs['aria-disabled'], 'true');
     assert.equal(up1.attrs['aria-label'], 'Move MD1 up');
@@ -374,27 +454,27 @@ test('AC24: moving rows by tap, Enter and Space — the ends disabled, focus kep
     await app.tap(up1);
     assert.deepEqual(codesOf(app), SIX, 'a disabled end does nothing');
     // A tap: M3A up, above MD3.
-    await app.tap(btn(app, `wa-up:${key('M3A')}`));
+    await app.tap(await btn(app, `wa-up:${key('M3A')}`));
     assert.deepEqual(codesOf(app), ['MD1', 'MD2', 'M3A', 'MD3', 'M3B', 'M3C']);
     assert.equal(document.activeElement && document.activeElement.dataset.k, `wa-up:${key('M3A')}`, 'focus stays on the control used');
     assert.ok(cls(rowOf(app, 'M3A'), 'moved'));
-    assert.deepEqual(textRuns(byClass(rowOf(app, 'M3A'), 'sb-wa-ord')[0], () => false), ['3', '3rd of 6, moved']);
-    assert.deepEqual(SIX.map((id) => finishOf(app, id)), ['once you accept it', 'once you accept it', '25 Oct – 30 Oct', '22 Oct – 25 Oct', '27 Oct – 3 Nov', '29 Oct – 6 Nov']);
-    assert.equal(byClass(app.view, 'sb-wa-bar')[0].children[0].textContent, 'Changed · not recorded');
-    assert.equal(byClass(app.view, 'sb-wa-state')[0].textContent, 'Draft not recorded · your changes are on this phone only');
+    assert.deepEqual(textRuns(byClass(rowOf(app, 'M3A'), 'v2-plord')[0], () => false), ['3', '3rd of 6, moved']);
+    assert.deepEqual(await finishes(app), ['once you accept it', 'once you accept it', '25 Oct – 30 Oct', '22 Oct – 25 Oct', '27 Oct – 3 Nov', '29 Oct – 6 Nov']);
+    assert.equal(byClass(app.view, 'v2-plbar')[0].children[0].textContent, 'Changed · not recorded');
+    assert.equal(byClass(app.view, 'v2-plstate')[0].textContent, 'Draft not recorded · your changes are on this phone only');
     // Enter: M3C down is disabled; M3B up, above MD3.
-    await press(app, btn(app, `wa-up:${key('M3B')}`), 'Enter');
+    await press(app, await btn(app, `wa-up:${key('M3B')}`), 'Enter');
     assert.deepEqual(codesOf(app), ['MD1', 'MD2', 'M3A', 'M3B', 'MD3', 'M3C']);
     assert.ok(!cls(rowOf(app, 'M3A'), 'moved'), 'the earlier edge gone at the next move');
     assert.ok(cls(rowOf(app, 'M3B'), 'moved'));
     // Space: MD1 down.
-    await press(app, btn(app, `wa-down:${key('MD1')}`), ' ');
+    await press(app, await btn(app, `wa-down:${key('MD1')}`), ' ');
     assert.deepEqual(codesOf(app), ['MD2', 'MD1', 'M3A', 'M3B', 'MD3', 'M3C']);
     assert.equal(document.activeElement.dataset.k, `wa-down:${key('MD1')}`);
-    assert.equal(card(app), '29 Oct – 6 Nov', 'the same total, added up in the new order');
+    assert.equal(await card(app), '29 Oct – 6 Nov', 'the same total, added up in the new order');
     // To the top: the up control is disabled there, and keeps the focus.
-    await app.tap(btn(app, `wa-up:${key('MD1')}`));
-    assert.equal(btn(app, `wa-up:${key('MD1')}`).attrs['aria-disabled'], 'true');
+    await app.tap(await btn(app, `wa-up:${key('MD1')}`));
+    assert.equal((await btn(app, `wa-up:${key('MD1')}`)).attrs['aria-disabled'], 'true');
     assert.equal(document.activeElement.dataset.k, `wa-up:${key('MD1')}`);
     assert.deepEqual(JSON.parse(store.m.get(DRAFT_KEY)), { base: null, order: ['MD1', 'MD2', 'M3A', 'M3B', 'MD3', 'M3C'].map(key) });
   } finally {
@@ -406,7 +486,7 @@ test('AC24: the draft is kept on the device through a refresh, and set aside whe
   const store = memStore();
   const app = await open({ store });
   try {
-    await app.tap(btn(app, `wa-up:${key('M3B')}`));
+    await app.tap(await btn(app, `wa-up:${key('M3B')}`));
   } finally {
     app.restore();
   }
@@ -422,7 +502,7 @@ test('AC24: the draft is kept on the device through a refresh, and set aside whe
     assert.deepEqual(codesOf(again), ['M3C', 'MD1', 'MD2', 'MD3', 'M3A', 'M3B']);
     assert.match(again.text(), /A newer plan was recorded; your draft was set aside/);
     assert.equal(store.m.has(DRAFT_KEY), false);
-    assert.match(byClass(again.view, 'sb-wa-state')[0].textContent, /^Current plan recorded 18 Oct, 13:05$/);
+    assert.match(byClass(again.view, 'v2-plstate')[0].textContent, /^Current plan · recorded 18 Oct, 13:05$/);
   } finally {
     again.restore();
   }
@@ -436,9 +516,9 @@ test('AC24: with local storage throwing, "draft not kept on this device", the ro
   const app = await open({ store, extra: { 'intake/estimates.jsonl': WORKED() } });
   try {
     assert.match(app.text(), /draft not kept on this device/);
-    await app.tap(btn(app, `wa-down:${key('MD3')}`));
+    await app.tap(await btn(app, `wa-down:${key('MD3')}`));
     assert.deepEqual(codesOf(app), ['MD1', 'MD2', 'M3A', 'MD3', 'M3B', 'M3C']);
-    assert.equal(card(app), '29 Oct – 6 Nov');
+    assert.equal(await card(app), '29 Oct – 6 Nov');
     assert.match(app.text(), /Changed · not recorded/);
     await app.go('#/');
     assert.doesNotMatch(app.text(), /Can't show/);
@@ -450,7 +530,7 @@ test('AC24: with local storage throwing, "draft not kept on this device", the ro
 test('AC24: "Record plan" — the link\'s path and its body exactly in J4\'s form, every row in the order shown, no date and no estimate; then the state once the file is in the tree', async () => {
   const app = await open({ extra: { 'intake/estimates.jsonl': WORKED() } });
   try {
-    await app.tap(btn(app, `wa-up:${key('M3A')}`));
+    await app.tap(await btn(app, `wa-up:${key('M3A')}`));
     const a = findKeyed(app, 'wa-record');
     assert.equal(a.tag, 'a');
     assert.equal(a.textContent, 'Record plan');
@@ -467,11 +547,11 @@ test('AC24: "Record plan" — the link\'s path and its body exactly in J4\'s for
     waSetupRepo(app).commit({ [`docs/planning/${name}.md`]: body });
     await app.advance(61_000);
     assert.deepEqual(codesOf(app), order);
-    assert.equal(byClass(app.view, 'sb-wa-state')[0].textContent, 'Current plan recorded 18 Oct, 13:01');
+    assert.equal(byClass(app.view, 'v2-plstate')[0].textContent, 'Current plan · recorded 18 Oct, 13:01');
     assert.match(app.text(), /No changes yet/);
     assert.doesNotMatch(app.text(), /No plan recorded yet/);
     // The next one supersedes it, with the next free name.
-    await app.tap(btn(app, `wa-down:${key('MD1')}`));
+    await app.tap(await btn(app, `wa-down:${key('MD1')}`));
     const u2 = new URL(findKeyed(app, 'wa-record').attrs.href);
     assert.match(u2.searchParams.get('filename'), /^docs\/planning\/2026-10-18T1802Z-01\.md$/);
     assert.match(u2.searchParams.get('value'), new RegExp(`^Plan: 2026-10-18T1802Z-01\\nSupersedes: ${name}\\n`));
@@ -485,9 +565,9 @@ test('AC24: a current plan\'s order; a milestone the plan does not list after th
   const app = await open({ extra: { [`docs/planning/${name}.md`]: planText(name, ['M3C', 'M1', 'MD3', 'M3A']) } });
   try {
     assert.deepEqual(codesOf(app), ['M3C', 'MD3', 'M3A', 'MD1', 'MD2', 'M3B']);
-    assert.deepEqual(rows(app).filter((r) => byClass(r, 'sb-wa-tag').some((t) => t.textContent === 'not in your recorded plan')).map((r) => byClass(r, 'code')[0].textContent),
+    assert.deepEqual(rows(app).filter((r) => byClass(r, 'v2-pltag').some((t) => t.textContent === 'not in your recorded plan')).map(codeOf),
       ['MD1', 'MD2', 'M3B']);
-    assert.equal(byClass(app.view, 'sb-wa-state')[0].textContent, 'Current plan recorded 18 Oct, 06:30');
+    assert.equal(byClass(app.view, 'v2-plstate')[0].textContent, 'Current plan · recorded 18 Oct, 06:30');
   } finally {
     app.restore();
   }
@@ -505,10 +585,10 @@ test('AC24: a made-up ` · dropped` line — "Dropped · 1" after the reached fo
   const app = await open({ extra: { 'docs/PROJECT.md': doc } });
   try {
     assert.deepEqual(codesOf(app), SIX);
-    const groups = byClass(app.view, 'sb-wa-group').map((g) => g.dataset.k);
+    const groups = byClass(app.view, 'v2-plgrp').map((g) => g.dataset.k);
     assert.ok(groups.indexOf('wa-g:dropped') === groups.indexOf('wa-g:reached') + 1, groups.join(' '));
     const f = findKeyed(app, 'fold:dropped');
-    assert.equal(f.textContent, 'Dropped · 1▸');
+    assert.equal(f.textContent, 'Dropped · 1'); // its mark an SVG icon on mockup v2's screens (AC81)
     assert.doesNotMatch(app.text(), /An idea let go/);
     await app.tap(f);
     assert.match(app.text(), /An idea let go/);
@@ -535,22 +615,24 @@ test('AC24: "Not milestones yet" — each of J15\'s states and its words, the as
   };
   const app = await open({ extra });
   try {
-    const later = byClass(app.view, 'sb-wa-later')[0];
+    // From stage 5 (AC86, :7055-7057): each row "<name>" over "<W-id> · <project>", then AC24's note and words; the head's count.
+    const later = byClass(app.view, 'v2-pllater')[0];
     const items = later.children.map((li) => textRuns(li, () => false).join(' | '));
     assert.deepEqual(items, [
-      'Ask or jot box | one box on the desk to ask, instruct or note an idea | Tap to ask for it as a milestone',
-      "Upkeep fixes | read-access warning, M3B's criteria, more than five projects | Tap to ask for it as a milestone",
-      'Answered one | a note | Answered 6 Oct: | Ruling: A — add it as a milestone, after M3B', // the fake's history: 2026-10-06
-      'Filed one | a note | Question filed · in your Queue',
-      'Asked one | a note | Asked 18 Oct · your Chief of Staff files the question',
+      'Ask or jot box | W1 · Service-Desk | one box on the desk to ask, instruct or note an idea | Tap to ask for it as a milestone',
+      "Upkeep fixes | W2 · Service-Desk | read-access warning, M3B's criteria, more than five projects | Tap to ask for it as a milestone",
+      'Answered one | W3 · Service-Desk | a note | Answered 6 Oct: | Ruling: A — add it as a milestone, after M3B', // the fake's history: 2026-10-06
+      'Filed one | W4 · Service-Desk | a note | Question filed · in your Queue',
+      'Asked one | W5 · Service-Desk | a note | Asked 18 Oct · your Chief of Staff files the question',
     ]);
+    assert.deepEqual(textRuns(byClass(findKeyed(app, 'wa-later'), 'v2-plh')[0], () => false), ['Not milestones yet', '5']);
     assert.doesNotMatch(later.textContent, /Added one|Turned down/);
     assert.equal(findKeyed(app, 'wa-q:W4').attrs.href, '#/waiting/Service-Desk', 'AC80: the link opens the board, that project shown');
     const ask = new URL(findKeyed(app, 'wa-ask:W2').attrs.href);
     assert.equal(ask.searchParams.get('filename'), 'intake/milestone-asks/W2-2026-10-18T1801Z.md');
     assert.equal(ask.searchParams.get('value'), 'Ask: add W2 as a milestone\nLater work: Upkeep fixes (W2)\nFrom: the owner, through the desk\'s Work ahead\n');
     const f = findKeyed(app, 'fold:wa-notadded');
-    assert.equal(f.textContent, 'Not added · 1▸');
+    assert.equal(f.textContent, 'Not added · 1'); // its mark an SVG icon (AC81)
     await app.tap(f);
     assert.match(app.text(), /Turned down/);
     assert.ok(app.text().includes(WA.notYetLine));
@@ -573,6 +655,7 @@ test('AC24: Personal-Org-Operating-Model — "Open sprint: m1.4 — v3 build: sp
       'It runs on the older pipeline, so it has no milestones to order here']);
     const a = findAll(findKeyed(app, 'wa-old:Personal-Org-Operating-Model'), (e) => e.tag === 'a')[0];
     assert.equal(a.attrs.href, 'https://github.com/shumpmaster/Personal-Org-Operating-Model/blob/main/docs/sprints/m1.4-v3-build.md');
+    await ordering(app); // "Record plan" is in AC24's ordering (AC86, :7047-7048)
     assert.doesNotMatch(new URL(findKeyed(app, 'wa-record').attrs.href).searchParams.get('value'), /Personal-Org-Operating-Model/);
   } finally {
     app.restore();
@@ -596,7 +679,7 @@ test('AC24: an open question whose `Milestone:` line names MD3 — "1 waiting on
   const q = fixture('notify/ac77-real/questions/P-001-next-work.md').replace('Milestone: M3A', 'Milestone: MD3').replace('Which piece of later work comes next?', 'A made-up question for MD3');
   const app = await open({ extra: { 'questions/P-001-made-up-md3.md': q } });
   try {
-    const you = rows(app).map((r) => (byClass(r, 'sb-wa-you')[0] || { textContent: null }).textContent);
+    const you = rows(app).map((r) => (byClass(r, 'v2-plyou')[0] || { textContent: null }).textContent);
     assert.deepEqual(you, [null, null, '1 waiting on you in your Queue', null, null, null]);
     assert.equal(findKeyed(app, `wa-q:${key('MD3')}`).attrs.href, '#/waiting/Service-Desk', 'AC80: the link opens the board, that project shown');
   } finally {
@@ -608,19 +691,16 @@ test('AC24: an open question whose `Milestone:` line names MD3 — "1 waiting on
 // Never a deadline; still and plain; no planning entry
 
 const BANNED = /\b(deadline|due|late|overdue|target)\b/i;
-/** The desk's own words on the screen: its text, less every record text it shows (names, "done when" lines, notes, sprint titles, later work). */
+/**
+ * The desk's own words on the screen: its text, less every record text it shows (names, "done when" lines,
+ * notes, sprint titles, later work). From stage 5 (AC86): on Plan, in AC24's ordering and in each
+ * milestone's sheet, where "Done when" and the estimate's note now are (:7041-7046).
+ */
 function ownWords(app) {
   const record = [];
-  for (const r of rows(app)) {
-    record.push(byClass(r, 'sb-wa-name')[0].textContent);
-    const d = byClass(r, 'sb-wa-done')[0];
-    if (d) record.push(d.textContent.replace(/^Done when /, ''));
-    const n = byClass(r, 'sb-wa-note')[0];
-    if (n) record.push(n.textContent);
-  }
-  for (const t of byClass(app.view, 'sb-wa-t')) record.push(t.textContent);
+  for (const c of ['v2-plname', 'v2-pldone', 'v2-plnote', 'v2-plnote2', 'v2-plt', 'v2-stitle']) for (const e of byClass(app.view, c)) record.push(e.textContent);
   let text = textRuns(app.view, () => false).join('\n');
-  for (const r of record.sort((a, b) => b.length - a.length)) text = text.split(r).join('');
+  for (const r of record.filter(Boolean).sort((a, b) => b.length - a.length)) text = text.split(r).join('');
   text = text.replace(/Open sprint: .*/g, 'Open sprint:');
   return text;
 }
@@ -628,12 +708,21 @@ function ownWords(app) {
 test('AC24: never a deadline — none of the desk\'s own fixed words says "deadline" (but in "never a deadline"), "due", "late", "overdue" or "target"; record text shows as written', async () => {
   const app = await open({ extra: { 'intake/estimates.jsonl': WORKED(), 'intake/later-work.md': LATER } });
   try {
-    const own = ownWords(app).replace('never a deadline', '');
-    assert.doesNotMatch(own, BANNED);
+    // "never a deadline" is allowed wherever it stands (AC24, specs/S-001.md:8432-8434): from stage 5 Plan's
+    // line, AC24's card and each sheet say it (AC86), so every one is set aside, not only the first.
+    const views = [ownWords(app)];
+    await ordering(app);
+    views.push(ownWords(app));
+    for (const id of SIX) {
+      await app.go(`#/work/ms/Service-Desk/${id}`);
+      views.push(ownWords(app));
+    }
+    await app.go('#/work');
+    for (const own of views) assert.doesNotMatch(own.replaceAll('never a deadline', ''), BANNED);
     assert.match(app.text(), /The desk's value targets shown/, 'M3B\'s name as written');
-    assert.match(app.text(), /Done when the desk shows each value target \(V1 to V5\) from the project document against its measure/);
+    assert.equal(await inSheet(app, 'M3B', 'v2-pldone'), 'the desk shows each value target (V1 to V5) from the project document against its measure');
     // Every fixed word the screen can show, whatever the records.
-    const fixed = Object.values(WA).map((v) => (typeof v === 'function' ? v(2, 3) : v)).join('\n').replace('never a deadline', '');
+    const fixed = Object.values(WA).map((v) => (typeof v === 'function' ? v(2, 3) : v)).join('\n').replaceAll('never a deadline', '');
     assert.doesNotMatch(fixed, BANNED);
   } finally {
     app.restore();
@@ -645,7 +734,9 @@ test('AC24: still and plain — two renders a day apart with no new data, every 
   for (const d of ['2026-10-18T18:00:00Z', '2026-10-19T18:00:00Z']) {
     const app = await open({ now: at(d), extra: { 'intake/estimates.jsonl': WORKED(), 'intake/later-work.md': LATER } });
     try {
-      texts.push(textRuns(app.view, () => false).map((t) => t.replace(/\b\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/g, '<date>')
+      // From stage 5 a row's finish within one month reads "21–23 Oct" (AC86, :7052-7053): a date too.
+      texts.push(textRuns(app.view, () => false).map((t) => t.replace(/\b\d{1,2}–\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/g, '<date>')
+        .replace(/\b\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/g, '<date>')
         .replace(/T\d{4}Z/g, 'T<time>Z')));
       assert.doesNotMatch(app.text(), /may be out of date|past its estimate/);
     } finally {
@@ -659,12 +750,13 @@ test('AC24: a J7 with no `planning: true` entry — section 3\'s order, "Record 
   const app = await open({ sd: { ...SD, planning: false }, extra: { 'intake/estimates.jsonl': WORKED() } });
   try {
     assert.deepEqual(codesOf(app), SIX);
+    await ordering(app); // "Record plan" is in AC24's ordering (AC86, :7047-7048)
     const rec = findKeyed(app, 'wa-record');
     assert.equal(rec.tag, 'button');
     assert.ok('disabled' in rec.attrs);
     assert.match(app.text(), /Can't record plans: no project is set for planning/);
-    assert.ok(SIX.every((id) => inRow(app, id, 'sb-wa-est') === 'Estimate: not available'));
-    assert.equal(card(app), 'not available');
+    for (const id of SIX) assert.equal(await estOf(app, id), 'Estimate: not available', id);
+    assert.equal(await card(app), 'not available');
   } finally {
     app.restore();
   }
@@ -695,6 +787,7 @@ test('AC24 (build review round 1, B): while the milestones or the current plan a
   for (const [why, text] of [['the plan', plan], ['the milestone list', DOC]]) {
     const app = await openFailing(text, { extra: { [`docs/planning/${name}.md`]: plan } });
     try {
+      await ordering(app); // "Record plan" is in AC24's ordering (AC86, :7047-7048)
       const rec = findKeyed(app, 'wa-record');
       assert.equal(rec.tag, 'button', why);
       assert.ok('disabled' in rec.attrs, why);
@@ -710,17 +803,17 @@ test('AC24 (build review round 1, C): the owner records their own draft — once
   const store = memStore();
   const app = await open({ store });
   try {
-    await app.tap(btn(app, `wa-up:${key('M3A')}`));
+    await app.tap(await btn(app, `wa-up:${key('M3A')}`));
     const u = new URL(findKeyed(app, 'wa-record').attrs.href);
     waSetupRepo(app).commit({ [u.searchParams.get('filename')]: u.searchParams.get('value') });
     await app.advance(61_000);
     assert.deepEqual(codesOf(app), ['MD1', 'MD2', 'M3A', 'MD3', 'M3B', 'M3C']);
     assert.doesNotMatch(app.text(), /A newer plan was recorded; your draft was set aside/);
-    assert.match(byClass(app.view, 'sb-wa-state')[0].textContent, /^Current plan recorded 18 Oct, 13:01$/);
+    assert.match(byClass(app.view, 'v2-plstate')[0].textContent, /^Current plan · recorded 18 Oct, 13:01$/);
     assert.equal(store.m.has(DRAFT_KEY), false, 'the draft cleared');
     assert.match(app.text(), /No changes yet/);
     // A draft in another order when a plan lands: the notice.
-    await app.tap(btn(app, `wa-down:${key('MD1')}`));
+    await app.tap(await btn(app, `wa-down:${key('MD1')}`));
     const other = '2026-10-18T1803Z-01';
     waSetupRepo(app).commit({ [`docs/planning/${other}.md`]: planText(other, ['M3C', 'MD1', 'MD2', 'MD3', 'M3A', 'M3B'], '2026-10-18T1801Z-01') });
     await app.advance(61_000);
@@ -733,27 +826,30 @@ test('AC24 (build review round 1, C): the owner records their own draft — once
 test('AC24 (build review round 1, D; draft 6): with no move made — no plan recorded, a plan that can\'t be read, or one not read yet — the state line reads "No changes yet"; "your changes are on this phone only" only once a row has moved', async () => {
   const noPlan = await open();
   try {
-    assert.equal(byClass(noPlan.view, 'sb-wa-state')[0].textContent, 'No changes yet');
+    await ordering(noPlan); // AC24's state line, in its ordering (AC86, :7047-7048)
+    assert.equal(byClass(noPlan.view, 'v2-plstate')[0].textContent, 'No changes yet');
     assert.equal(findKeyed(noPlan, 'wa-order').textContent, 'No plan recorded yet', 'still heading the order');
-    await noPlan.tap(btn(noPlan, `wa-down:${key('MD1')}`));
-    assert.equal(byClass(noPlan.view, 'sb-wa-state')[0].textContent, 'Draft not recorded · your changes are on this phone only');
+    await noPlan.tap(await btn(noPlan, `wa-down:${key('MD1')}`));
+    assert.equal(byClass(noPlan.view, 'v2-plstate')[0].textContent, 'Draft not recorded · your changes are on this phone only');
   } finally {
     noPlan.restore();
   }
   const name = '2026-10-18T1130Z-01';
   const cant = await open({ extra: { [`docs/planning/${name}.md`]: '| Order | Project | Item | Not before (UTC) |\n|---|---|---|---|\n' } });
   try {
-    assert.equal(byClass(cant.view, 'sb-wa-state')[0].textContent, 'No changes yet');
+    await ordering(cant);
+    assert.equal(byClass(cant.view, 'v2-plstate')[0].textContent, 'No changes yet');
     assert.doesNotMatch(cant.text(), /your changes are on this phone only/);
-    await cant.tap(btn(cant, `wa-up:${key('M3A')}`));
-    assert.equal(byClass(cant.view, 'sb-wa-state')[0].textContent, 'Draft not recorded · your changes are on this phone only');
+    await cant.tap(await btn(cant, `wa-up:${key('M3A')}`));
+    assert.equal(byClass(cant.view, 'v2-plstate')[0].textContent, 'Draft not recorded · your changes are on this phone only');
   } finally {
     cant.restore();
   }
   const plan = planText(name, ['M3A', 'MD3']);
   const unread = await openFailing(plan, { extra: { [`docs/planning/${name}.md`]: plan } });
   try {
-    assert.equal(byClass(unread.view, 'sb-wa-state')[0].textContent, 'No changes yet');
+    await ordering(unread);
+    assert.equal(byClass(unread.view, 'v2-plstate')[0].textContent, 'No changes yet');
   } finally {
     unread.restore();
   }
@@ -764,13 +860,14 @@ test('AC24 (build review round 1, E and F): J15\'s ask and "Record plan" show AC
   // Too long for a link (a cap below the ask's and the plan's length).
   const long = await open({ extra: { 'intake/later-work.md': LATER }, linkCap: 150 });
   try {
+    await ordering(long); // "Record plan" and its fallback are in AC24's ordering (AC86, :7047-7048)
     for (const [k, what] of [['wa-ask:W1', 'the ask'], ['wa-record', 'the plan']]) {
       const f = fallback(long, k);
       assert.ok(f, k);
-      assert.equal(byClass(f, 'sb-muted')[0].textContent, `Too long for a link: GitHub opens with the file name only; copy ${what} below, then paste it there`);
+      assert.equal(byClass(f, 'v2-small')[0].textContent, `Too long for a link: GitHub opens with the file name only; copy ${what} below, then paste it there`);
       assert.equal(findKeyed(long, `copy:${k}`).tag, 'button');
     }
-    assert.equal(byClass(fallback(long, 'wa-ask:W1'), 'sb-value')[0].textContent, 'Ask: add W1 as a milestone\nLater work: Ask or jot box (W1)\nFrom: the owner, through the desk\'s Work ahead\n');
+    assert.equal(byClass(fallback(long, 'wa-ask:W1'), 'v2-pre')[0].textContent, 'Ask: add W1 as a milestone\nLater work: Ask or jot box (W1)\nFrom: the owner, through the desk\'s Work ahead\n');
     const ask = new URL(findKeyed(long, 'wa-ask:W1').attrs.href);
     assert.equal(ask.searchParams.get('value'), null, 'the page opens with the file name only');
     assert.equal(ask.searchParams.get('filename'), 'intake/milestone-asks/W1-2026-10-18T1801Z.md');
@@ -780,8 +877,9 @@ test('AC24 (build review round 1, E and F): J15\'s ask and "Record plan" show AC
   // The repository takes no prefilled content: AC17's other cause, in its own words.
   const noPrefill = await open({ extra: { 'intake/later-work.md': LATER }, sd: { ...SD, contentPrefill: false } });
   try {
+    await ordering(noPrefill);
     for (const [k, what] of [['wa-ask:W2', 'the ask'], ['wa-record', 'the plan']]) {
-      assert.equal(byClass(fallback(noPrefill, k), 'sb-muted')[0].textContent,
+      assert.equal(byClass(fallback(noPrefill, k), 'v2-small')[0].textContent,
         `This repository doesn't take prefilled content: GitHub opens with the file name only; copy ${what} below, then paste it there`);
     }
     assert.doesNotMatch(noPrefill.text(), /Too long for a link/);
@@ -791,6 +889,7 @@ test('AC24 (build review round 1, E and F): J15\'s ask and "Record plan" show AC
   // Within the cap, with prefilled content: no fallback.
   const plain = await open({ extra: { 'intake/later-work.md': LATER } });
   try {
+    await ordering(plain);
     assert.equal(fallback(plain, 'wa-ask:W1'), null);
     assert.equal(fallback(plain, 'wa-record'), null);
   } finally {

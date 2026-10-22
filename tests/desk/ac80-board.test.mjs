@@ -620,7 +620,8 @@ test('AC80 with AC24: Work ahead\'s "<n> waiting on you in your Queue" counts as
   const q = fixture('notify/ac77-real/questions/P-001-next-work.md').replace('Milestone: M3A', 'Milestone: MD3').replace('Which piece of later work comes next?', 'A made-up question for MD3');
   const setup = waSetup({ extra: { 'questions/P-001-made-up-md3.md': q } });
   const app = await loadSandbox({ ...setup, hash: '#/work', now: Date.parse('2026-10-18T18:00:00Z'), store: memStore() });
-  const you = () => byClass(app.view, 'sb-wa-you').map((x) => x.textContent);
+  // From stage 5 the line is on Plan's row (AC86, specs/S-001.md:7041-7046; AC24's words kept).
+  const you = () => byClass(app.view, 'v2-plyou').map((x) => x.textContent);
   try {
     await app.advance(1000);
     await app.advance(POLL_MS);

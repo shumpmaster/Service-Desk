@@ -271,10 +271,11 @@ test('AC82: a tile\'s "Next:" is the first milestone not reached in the owner\'s
   try {
     const next = byClass(keyed(app, 'card:Service-Desk'), 'v2-ln').map((l) => l.textContent).find((t) => /^Next:/.test(t));
     assert.match(next, /^Next: MD1 · rough finish /);
-    await app.go('#/work');
-    const words = app.text();
+    // From stage 5 (AC86, specs/S-001.md:7041-7046): Plan's rough finish in AC24's words is in the milestone's sheet.
+    await app.go('#/work/ms/Service-Desk/MD1');
+    const words = byClass(byClass(app.view, 'v2-sheet')[0], 'v2-plfin')[0].textContent;
     const finish = /^Next: MD1 · rough finish (.+)$/.exec(next)[1];
-    assert.ok(words.includes(finish), `Plan's rough finish for MD1, ${finish}`);
+    assert.equal(words, finish, `Plan's rough finish for MD1, ${finish}`);
   } finally {
     app.restore();
   }
@@ -347,7 +348,10 @@ test('AC82 with AC24: the reason in another project — the tile names that proj
   assert.equal(first(none, 'Service-Desk').estimate.kind, 'ok', 'Service-Desk\'s MD1 has its estimate');
   assert.equal(nextLine(SD, { gate: null, row: first(none, 'Service-Desk') }).words, 'MD1 · rough finish: not available: Twin\'s MD1 has no estimate yet');
   assert.equal(nextLine(TWIN, { gate: null, row: first(none, 'Twin') }).words, 'MD1 · no estimate yet', 'Twin\'s own tile');
-  assert.equal(first(none, 'Service-Desk').finish.words, 'not available: MD1 has no estimate yet', 'Plan\'s words, the project named beside the row, unchanged');
+  // From stage 5 Plan groups the rows by project (AC86), so its row names the other project too, as the tile
+  // does (the Design reviewer's finding 1, stage 5 round 1); Twin's own rows keep AC24's words.
+  assert.equal(first(none, 'Service-Desk').finish.words, 'not available: Twin\'s MD1 has no estimate yet', 'Plan\'s row names the other project, as the tile does');
+  assert.equal(none.rows.find((r) => r.project.name === 'Twin' && r.code === 'MD2').finish.words, 'not available: MD1 has no estimate yet', 'within Twin: AC24\'s words');
   // Twin's MD1 past its estimate.
   const past = viewOf({ extra: { 'intake/estimates.jsonl': [...sdLines, estLine('MD1', 1, 2, '2026-09-01T17:00:00Z', '', 'Twin')].join('\n') + '\n' }, nowMs, projects: [TWIN, SD, POOM] });
   assert.equal(first(past, 'Twin').estimate.kind, 'past');

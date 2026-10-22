@@ -80,6 +80,20 @@ export const WA = Object.freeze({
   sprintUnclear: 'sprint unclear',
   moveUp: (code) => `Move ${code} up`,
   moveDown: (code) => `Move ${code} down`,
+  // From stage 5 (AC86, frame 11): Work ahead as the Plan tab, its own words as the frame draws them.
+  planTitle: 'Plan',
+  changeOrder: 'Change the order',
+  planSub: (today) => `Rough finish from today, ${today} · an expectation, never a deadline`,
+  ahead: (project) => `${project} · milestones ahead`,
+  yourAcceptance: 'your acceptance',
+  afterRuling: 'after your ruling',
+  waitsOnYou: 'waits on you',
+  ideas: 'Ideas · from the portfolio',
+  ideasNotRead: "Not read yet: your portfolio isn't connected to the desk",
+  onTimeline: 'On the Timeline',
+  // A milestone's sheet (AC86): AC24's card note, less its "From the estimates below", which a sheet has no list below for.
+  sheetFinishNote: 'Added up in your order from today. An expectation, never a deadline.',
+  doneWhen: 'Done when',
 });
 
 // ---------------------------------------------------------------------------
@@ -106,6 +120,18 @@ export function dateWords(k, todayKey) {
 /** A range "<from> – <to>", one date when both are the same day. */
 export function rangeWords(from, to, todayKey) {
   return from === to ? dateWords(from, todayKey) : `${dateWords(from, todayKey)} – ${dateWords(to, todayKey)}`;
+}
+/**
+ * A rough finish as Plan's rows show it at their right (AC86, frame 11: "22–25 Oct"): within one month
+ * "<d>–<d> <Mon>", across months AC24's "<from> – <to>", one date when both are the same day; with the
+ * year when it is not today's (AC24, step 5). Every date is AC24's, only written shorter.
+ */
+export function shortRange(from, to, todayKey) {
+  if (from === to) return dateWords(from, todayKey);
+  const [y1, m1, d1] = keyParts(from);
+  const [y2, m2] = keyParts(to);
+  if (y1 === y2 && m1 === m2) return `${d1}–${dateWords(to, todayKey)}`;
+  return rangeWords(from, to, todayKey);
 }
 /** Today: the calendar date now in ownerTimeZone (AC24, step 1). */
 export const todayOf = (nowMs, tz) => dayKey(new Date(nowMs), tz);
@@ -328,6 +354,8 @@ export function estimateWords(low, high) {
   return low === high ? `about ${low} ${low === 1 ? 'day' : 'days'} of work` : `about ${low}–${high} days of work`;
 }
 const rangeDays = (low, high) => (low === high ? `${low} ${low === 1 ? 'day' : 'days'}` : `${low}–${high} days`);
+/** An estimate on Plan's row (AC86: "about <low>–<high> days"), its days of work as J14 gives them. */
+export const aboutDays = (low, high) => `about ${rangeDays(low, high)}`;
 export const pastWords = (est, dateText) => `past its estimate of ${rangeDays(est.low, est.high)}, made ${dateText}; waiting on a new one`;
 
 /**

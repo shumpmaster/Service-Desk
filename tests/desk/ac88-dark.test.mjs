@@ -242,11 +242,11 @@ const hrefsIn = (app, re) => {
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** Every trial-view screen and sheet the fixtures reach: Home and its sheets, Waiting and each card's sheet, Plan and its sheets, and each project's screens. */
-async function everyScreen(app, projects, where, fails, seen, counts) {
+async function everyScreen(app, projects, where, fails, seen, counts, check = checkScreen) {
   const visit = async (hash) => {
     await app.go('#/');
     await app.go(hash);
-    checkScreen(app, `${where} ${hash}`, fails, seen);
+    check(app, `${where} ${hash}`, fails, seen);
     counts.screens++;
   };
   await visit('#/');
@@ -361,6 +361,103 @@ test('AC88: every trial-view screen and sheet, from each fixture, in dark (force
   assert.deepEqual(fails, []);
 });
 
+// Stage 8 (AC44, step 4; the Reviewer's B1, stage 8 round 1): the rules stage 8 removed from sandbox.css were the ones
+// nothing draws once the desk is `/`, so taking them out changes nothing the owner sees. Every desk screen and sheet from
+// each fixture is cascaded twice, in dark (forced and the phone's own) and light: once with the stylesheets as they stood
+// at bd4097d, before stage 8 (tests/desk/fixtures/stage8/sandbox-bd4097d.css, a copy; style.css is unchanged), and once
+// with today's. Every property every element is given, its ::before and ::after, and each text's computed font and colour
+// must come out the same. Stage 8's own changes (the marker gone, the hold and merge sheets' whole-record fold, AC17's and
+// AC18's notes) are new or missing elements, not a different look for the same one, so none is excepted.
+const BEFORE_RULES = (() => {
+  const a = parseCss(STYLE_CSS, 'style.css');
+  const b = parseCss(readFileSync(join(SRC, '..', 'tests', 'desk', 'fixtures', 'stage8', 'sandbox-bd4097d.css'), 'utf8'), 'sandbox.css@bd4097d').map((r) => ({ ...r, order: r.order + a.length }));
+  return [...a, ...b];
+})();
+const LOOK = ['font-size', 'font-weight', 'font-family', 'line-height', 'color', 'fill', 'stroke', 'visibility'];
+/**
+ * The one change stage 8 makes to an element's look on purpose, named here and nothing else excepted: the Design
+ * reviewer's round 1 (non-blocking, part B item 26; frames H1, 1, 5 and 11), "Top spacing is tighter than the frames ...
+ * Mockup v2's .scr has 14 px top padding (desk-v2.html:97)": every screen's top padding becomes 14 px, and the
+ * Timeline's pinned head moves up those 14 px to sit flush at the top, as frame 7b's `.thead` (desk-v2.html:278).
+ */
+const excepted = new Set();
+const STAGE8_TOP = (n, d) => (n.cls.has('sb-screen') && n.parent && n.parent.attrs.id === 'view' && /^padding-top: (4px|\(none\)) → 14px$/.test(d))
+  || (n.cls.has('v2-tlhead') && n.parent && n.parent.cls.has('v2-timeline') && d === 'margin-top: (none) → -14px');
+function sameLook(app, where, fails, seen) {
+  for (const way of WAYS) {
+    const root = document.documentElement;
+    const attrs = { ...(root.attrs || {}) };
+    if (way.attr) attrs['data-theme'] = way.attr; else delete attrs['data-theme'];
+    const draw = (rules) => {
+      const tree = treeOf(app.view, { className: root.className, attrs });
+      for (const n of nodes(tree)) if (['sb-sumclip', 'sb-lineclip', 'v2-e1'].some((c) => n.cls.has(c))) n.cls.add('over');
+      openBubbles(tree);
+      return nodes(cascade(tree, rules, way.env));
+    };
+    const before = draw(BEFORE_RULES);
+    const now = draw(RULES);
+    assert.equal(before.length, now.length);
+    const flat = (m) => Object.fromEntries([...m].map(([k, v]) => [k, plain(v)]));
+    for (let i = 0; i < now.length; i++) {
+      const [a, b] = [before[i], now[i]];
+      const diffs = [];
+      const da = flat(a.declared);
+      const db = flat(b.declared);
+      for (const k of new Set([...Object.keys(da), ...Object.keys(db)])) if (da[k] !== db[k]) diffs.push(`${k}: ${da[k] ?? '(none)'} → ${db[k] ?? '(none)'}`);
+      for (const pe of ['before', 'after']) {
+        const pa = a.pseudo[pe] ? flat(a.pseudo[pe].declared) : {};
+        const pb = b.pseudo[pe] ? flat(b.pseudo[pe].declared) : {};
+        for (const k of new Set([...Object.keys(pa), ...Object.keys(pb)])) if (pa[k] !== pb[k]) diffs.push(`::${pe} ${k}: ${pa[k] ?? '(none)'} → ${pb[k] ?? '(none)'}`);
+      }
+      if (b.text.trim()) for (const k of LOOK) if (plain(a.style.get(k) || '') !== plain(b.style.get(k) || '')) diffs.push(`computed ${k}: ${plain(a.style.get(k) || '(none)')} → ${plain(b.style.get(k) || '(none)')}`);
+      for (const d of diffs) {
+        if (STAGE8_TOP(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
+        const k = `${way.theme} ${label(b)} ${d}`;
+        if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
+      }
+    }
+  }
+}
+
+test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 removed change no element\'s look — every desk screen and sheet from each fixture, in dark (forced, and the phone\'s own) and light, cascaded with bd4097d\'s stylesheets and with today\'s, gives every element, its ::before and ::after the same declarations, and every text the same font and colour', async () => {
+  const fails = [];
+  const seen = new Set();
+  const counts = { screens: 0 };
+  const t = textSetup();
+  let app = await opened(t);
+  try {
+    await everyScreen(app, t.config.projects, 'text', fails, seen, counts, sameLook);
+  } finally {
+    app.restore();
+  }
+  const x = extremes();
+  app = await opened(x);
+  try {
+    await everyScreen(app, x.config.projects, 'md-extremes', fails, seen, counts, sameLook);
+  } finally {
+    app.restore();
+  }
+  app = await opened({ config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': sdRepo() } });
+  try {
+    await everyScreen(app, [SD3], 'service-desk + J12', fails, seen, counts, sameLook);
+  } finally {
+    app.restore();
+  }
+  const w = waSetup({ extra: { 'intake/estimates.jsonl': WORKED() } });
+  app = await opened(w, '#/work', { now: Date.parse('2026-10-18T18:00:00Z'), store: memStore() });
+  try {
+    await everyScreen(app, [], 'plan', fails, seen, counts, sameLook);
+  } finally {
+    app.restore();
+  }
+  assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
+  assert.deepEqual(fails, []);
+  // The named exception was met, and only in its own forms: Home, Waiting, Plan, a project, Team and the Timeline.
+  for (const want of ['section.sb-screen.v2.v2-home padding-top: 4px → 14px', 'section.sb-screen padding-top: (none) → 14px', 'div.v2-tlhead margin-top: (none) → -14px']) {
+    assert.ok(excepted.has(want), `${want}: ${JSON.stringify([...excepted])}`);
+  }
+});
+
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes
 // take three greys from the new look and each lane also gets its own line style (solid, dashed, dotted), so every lane
 // looks different at a glance in light and dark"; the Reviewer's B1, stage 7 round 1).
@@ -416,6 +513,12 @@ test('AC49 + AC88 (P-001-desk-v2-lanes, A): on every member page\'s running log,
                 stubs.onDash.add(own.dash);
                 if (s.grey !== own.grey) fails.push(`${where} · ${shade}: the stub in ${s.grey}, its lane in ${own.grey}`);
                 if (s.dash === 'none') fails.push(`${where} · ${shade}: the stub is not dashed`);
+                // "A short dashed stub" (AC49, specs/S-001.md:3295; stage 8's brief): each dash at most 3 px on.
+                else {
+                  const pattern = String(s.dash).split(/[\s,]+/).map(Number);
+                  const on = pattern.length % 2 ? [...pattern, ...pattern].filter((_, i) => i % 2 === 0) : pattern.filter((_, i) => i % 2 === 0);
+                  if (!on.length || on.some((x) => !(x > 0 && x <= 3))) fails.push(`${where} · ${shade}: the stub's dash, ${s.dash}, is not short (each dash at most 3 px on)`);
+                }
                 for (const d of drawn) {
                   if (d.kind !== 'dot' && d.s.width === s.width) fails.push(`${where} · ${shade}: the stub's weight, ${s.width}, is the ${d.shade} ${d.kind}'s`);
                   if (d.s.dash === s.dash) fails.push(`${where} · ${shade}: the stub's dash, ${s.dash}, is the ${d.shade} ${d.kind}'s`);

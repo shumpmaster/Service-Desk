@@ -569,3 +569,15 @@ notify-ac77-desk, notify-j16-jobs and j6-j8-function) add no fixture file. What 
 - `tests/desk/helpers.mjs`'s `CONFIG` is J7 less its `portfolio` (6a's state, which J7 says builds), so every case
   written before stage 6b runs as it ran; the portfolio's cases add it (`withPortfolio`), and J7's read the file whole
   (`J7_FILE`).
+
+## The desk, stage 8: the accepted views' facts (2026-10-22, S-001 AC44 step 4, AC55)
+
+- `accepted-views-bd4097d.json` is **generated, not hand-written**: `tests/desk/tools/accepted-views-snapshot.mjs`
+  ran the accepted page itself (src/public/app.js at bd4097d, the last commit that drew the accepted M1 and M2
+  views) over `tests/desk/accepted-views.mjs`'s `detailRepos()` (the real fixtures named there, with the clock at
+  its `WHEN`) and recorded each view's facts: Pipeline (Personal-Org-Operating-Model, 20 facts), Time asked
+  (Service-Desk 29, Personal-Org-Operating-Model 5) and Agents (Service-Desk 171). Stage 8 removes those views, so
+  AC55's comparison now reads this record instead of drawing them; nothing in it is made up.
+- `stage8/sandbox-bd4097d.css` is a byte-for-byte copy of `src/public/sandbox.css` at bd4097d, before stage 8 took out the
+  rules nothing draws once the desk is `/`. AC88's test cascades every desk screen with it and with today's stylesheet,
+  and requires every element to look the same (the Reviewer's B1, stage 8 round 1). Nothing in it is made up.

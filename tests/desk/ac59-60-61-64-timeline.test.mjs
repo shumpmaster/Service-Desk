@@ -252,7 +252,8 @@ test('AC59, changed by AC84: a v2.5 project shows "Phases not tracked" and nothi
     const screen = byClass(app.view, 'sb-screen')[0];
     assert.match(screen.textContent, /Phases not tracked/);
     assert.equal(byClass(screen, 'v2-feed').length + byClass(screen, 'v2-tblk').length, 0, 'no feed (rewritten from `sb-feed`, AC84)');
-    assert.deepEqual(screen.children.map((c) => c.className.split(' ')[0]), ['sb-marker', 'v2-tlhead', 'v2-small'], 'the marker, the header with its phase line, and the words');
+    // From stage 8 (AC43's marker carried "until stage 8", specs/S-001.md:13702): no marker before the header.
+    assert.deepEqual(screen.children.map((c) => c.className.split(' ')[0]), ['v2-tlhead', 'v2-small'], 'the header with its phase line, and the words');
   } finally {
     app.restore();
   }

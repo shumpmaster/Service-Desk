@@ -18,7 +18,6 @@ import { usageView, USAGE_WORDS } from '../../src/lib/notifyview.js';
 import { whenText } from '../../src/lib/timefmt.js';
 import { makeKey, signJwt, goodClaims, certsRoute, request, fakeFetch, ENV, NOW, fakeClock, fixture, CONFIG, withUsage } from './helpers.mjs';
 import { repo, fakeServer } from './fake-desk.mjs';
-import { loadApp, findAll } from './page-harness.mjs';
 import { loadSandbox, byClass, findAll as sbFindAll } from './sandbox-helpers.mjs';
 
 const CFG = { account: 'shumpmaster', includedMinutes: 3000 };
@@ -219,22 +218,24 @@ test('AC78, J21: the page reads once at an opening, at most once an hour while i
   d2.stop();
 });
 
-test('AC78: on the page, More detail shows the line with its bar and aria values; the line is not counted and "Quiet" is unchanged', async () => {
+// From stage 8 (AC44, step 4, specs/S-001.md:2918-2921): the accepted page is gone; the desk's Home holds the line in
+// its "More detail" fold (P-001-settings-place.md, A), with the same bar and words.
+test('AC78: on the desk\'s Home, More detail shows the line with its bar and aria values; the line is not counted and "Quiet" is unchanged', async () => {
   const repos = world();
   repos['Service-Desk'].usageAnswer = () => ({ state: 'ok', asOf: '2026-10-02T17:00:00.000Z', period: { y: 2026, m: 10, day: 2, ym: '2026-10' },
     summary: { ok: true, items: [{ product: 'Actions', sku: 'actions_linux', unitType: 'minutes', netAmount: 6.6 }] },
     usage: { ok: true, items: [{ product: 'Actions', sku: 'Actions Linux', unitType: 'minutes', quantity: 4100, repositoryName: 'shumpmaster/Personal-Org-Operating-Model' }] }, publicRepos: ['Service-Desk'] });
-  const app = await loadApp({ repos, now: OCT2 });
+  const app = await loadSandbox({ config: CONFIG, repos, now: OCT2, hash: '#/' });
   try {
     await app.advance(1000);
-    const line = findAll(app.els.view, (e) => e.attrs && e.attrs.id === 'actions-usage')[0];
+    const line = sbFindAll(byClass(app.view, 'v2-mdetail')[0], (e) => e.attrs && e.attrs.id === 'actions-usage')[0];
     assert.ok(line.textContent.includes('October: 4,100 minutes: past your 3,000 included minutes (136%)'));
-    const bar = findAll(line, (e) => e.attrs && e.attrs.role === 'progressbar')[0];
+    const bar = sbFindAll(line, (e) => e.attrs && e.attrs.role === 'progressbar')[0];
     assert.equal(bar.tag, 'progress');
     assert.deepEqual([bar.attrs['aria-valuemin'], bar.attrs['aria-valuemax'], bar.attrs['aria-valuenow'], bar.attrs.value], ['0', '100', '100', '100']);
     assert.ok(line.textContent.includes('Estimated cost so far this month: $6.60'));
     assert.ok(line.textContent.includes('as of 12:00'));
-    assert.equal(app.state().textContent, 'Quiet', 'not counted');
+    assert.equal(app.els['screen-state'].textContent, 'Quiet', 'not counted');
   } finally {
     app.restore();
   }
@@ -244,7 +245,9 @@ test('AC78: on the page, More detail shows the line with its bar and aria values
 // usage again, through the page's own wiring, whether it reaches an open desk (sw.js's handover) or
 // loads the page (the opening's read). From 2026-10-19 the tap opens the sandbox, so both are the
 // sandbox's: its More detail opens at the line.
-test('AC78, J21 (draft 9; 2026-10-19): a cost tap reaching an open sandbox reads the usage again; one that loads it reads it at the opening and opens its More detail', async () => {
+// From stage 8 (the notification view amendment, specs/S-001.md:1139-1142): the cost tap is `/?open=actions-usage`; an
+// older `?sandbox` address still reaches the desk, put right in place (app.js).
+test('AC78, J21 (draft 9; the desk from stage 8): a cost tap reaching an open desk reads the usage again; one that loads it reads it at the opening and opens its More detail; an old ?sandbox address the same', async () => {
   const usageAnswer = (now) => ({ state: 'ok', asOf: new Date(now).toISOString(), period: { y: 2026, m: 10, day: 2, ym: '2026-10' },
     summary: { ok: true, items: [sItem({ netAmount: 0 })] }, usage: { ok: true, items: [uItem({ quantity: 100 })] }, publicRepos: [] });
   const quiet = () => ({ 'Service-Desk': repo({ 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml') }, [], [{ name: 'governance', status: 'completed', conclusion: 'success' }]),
@@ -260,7 +263,7 @@ test('AC78, J21 (draft 9; 2026-10-19): a cost tap reaching an open sandbox reads
     assert.equal(reads(), 1, 'at the opening');
     await app.advance(10 * 60_000);
     assert.equal(reads(), 1);
-    for (const fn of nav.listeners) fn({ data: { kind: 'desk-open', navigate: 'https://desk.example.invalid/?sandbox&open=actions-usage' }, ports: [{ postMessage: (m) => nav.replies.push(m) }] });
+    for (const fn of nav.listeners) fn({ data: { kind: 'desk-open', navigate: 'https://desk.example.invalid/?open=actions-usage' }, ports: [{ postMessage: (m) => nav.replies.push(m) }] });
     await app.advance(1000);
     assert.deepEqual(nav.replies, [{ ok: true }]);
     assert.equal(reads(), 2, 'read again on the tap, not an hour on');
@@ -273,7 +276,7 @@ test('AC78, J21 (draft 9; 2026-10-19): a cost tap reaching an open sandbox reads
   }
   r = quiet();
   r['Service-Desk'].usageAnswer = usageAnswer;
-  app = await loadSandbox({ config: CONFIG, repos: r, now: OCT2, hash: '', search: '?sandbox&open=actions-usage' });
+  app = await loadSandbox({ config: CONFIG, repos: r, now: OCT2, hash: '', search: '?open=actions-usage' });
   try {
     await app.advance(1000);
     assert.equal(app.server.calls.filter((c) => c.path === '/api/blobs' && c.body.usage).length, 1, 'read at the opening the tap made');
@@ -282,11 +285,17 @@ test('AC78, J21 (draft 9; 2026-10-19): a cost tap reaching an open sandbox reads
   } finally {
     app.restore();
   }
-  // An older address reaching the accepted view goes on to the sandbox.
-  app = await loadApp({ repos: quiet(), now: OCT2, hash: '', search: '?open=actions-usage' });
+  // An older address (`?sandbox&open=actions-usage`, from before stage 8) loads the desk through its entry, put right
+  // in place, and the line opens the same way (app.js uses J7's committed config, whose usage entry is Service-Desk's).
+  r = quiet();
+  r['Service-Desk'].usageAnswer = usageAnswer;
+  app = await loadSandbox({ config: CONFIG, repos: r, now: OCT2, hash: '', search: '?sandbox&open=actions-usage', entry: true });
   try {
     await app.advance(1000);
-    assert.deepEqual(app.replaced, ['/?sandbox&open=actions-usage']);
+    assert.equal(app.addresses[0], '/?open=actions-usage', 'sandbox dropped, the rest kept');
+    assert.equal(app.server.calls.filter((c) => c.path === '/api/blobs' && c.body.usage).length, 1);
+    const more = byClass(app.view, 'sb-more')[0];
+    assert.ok(more && 'open' in more.attrs);
   } finally {
     app.restore();
   }

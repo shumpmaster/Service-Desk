@@ -21,7 +21,6 @@ import { runTimeText, costText } from './asked.js';
 export const NOT_RECORDED = 'not recorded';
 export const NOT_AVAILABLE = 'not available';
 export const V25_NOT_RECORDED = "not recorded in this repository's records (operating model v2.5.1)";
-export const SANDBOX_MARKER = 'Sandbox: candidate design';
 export const JUST_FINISHED_MS = 30 * 60e3; // AC49: "Just finished" for 30 minutes (C, to tune in the lab)
 export const OWNER_NEXT_LINES = 3; // AC49: the owner's tile shows the next 3 queue lines (C)
 
@@ -967,11 +966,17 @@ export function sheetView(project, model, snap, j, row) {
     const runs = snap && snap.checkPages ? parseWorkflowRuns(snap.checkPages).runs.filter((r) => r.path === '.github/workflows/governance.yml') : [];
     const latest = runs.reduce((a, b) => (!a || b.runNumber > a.runNumber ? b : a), null);
     return { ...base, what: "The default branch's governance run is not green", why: f.words, options: [], recommendation: null,
+      // From stage 8 the accepted hold view (AC46) is gone: its fields and "What to do" stay one tap away in the sheet's
+      // "The whole record" fold, so every M1 and M2 view stays reachable (AC36; AC44, step 4).
+      fullText: f.hold.parsed && f.hold.parsed.text ? f.hold.parsed.text : null,
       noAnswer: HOLD_NO_ANSWER, links: [{ text: 'The hold card on GitHub', href: treeLink(project, tree, f.hold.path) },
         { text: 'The governance run that is not green', href: latest && latest.url ? latest.url : f.hold.actionsLink }] };
   }
   if (f.kind === 'merge') {
+    // From stage 8 the accepted merge view (AC47) is gone: its fields and sections stay one tap away in the sheet's
+    // "The whole record" fold (AC36; AC44, step 4).
     return { ...base, what: row.text, why: f.words, options: [], recommendation: null, noAnswer: mergeNoAnswer(f.merge.item),
+      fullText: f.merge.parsed && f.merge.parsed.text ? f.merge.parsed.text : null,
       links: [{ text: 'The merge card on GitHub', href: treeLink(project, tree, f.merge.path) }, { text: `item/${f.merge.item} on GitHub`, href: f.merge.branchLink }] };
   }
   return { ...base, what: row.text, why: f.words || NOT_RECORDED, options: [], recommendation: null, links: [{ text: 'Its status file', href: f.link }] };

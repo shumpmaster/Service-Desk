@@ -173,8 +173,16 @@ function declarations() {
 const SPACING = /^(margin|padding)(-(top|right|bottom|left|inline|block|inline-start|inline-end|block-start|block-end))?$|^(gap|row-gap|column-gap)$/;
 const ON_SCALE = /^(0|auto|var\(--s[1-5]\))$/;
 
+// Rewritten at stage 8 (AC44, step 4): the rules nothing draws once the desk is `/` went, so the part before mockup v2's
+// block is shorter than the 600 lines this case held it to (the count only proved the block was found far down). Its
+// criterion, AC62 as AC81 changed it (specs/S-001.md:5267-5276): the block is found, it is the stylesheet's last part,
+// and no rule before it is a mockup v2 rule (those before it only ever exclude `.v2`).
 test('AC62 + AC81: mockup v2\'s block is the stylesheet\'s last part, so every rule before it keeps AC62\'s scale', () => {
-  assert.ok(V2_LINE > 600, `the block starts at line ${V2_LINE + 1}`);
+  assert.ok(RAW.includes('Desk mockup v2 (spec S-001, AC80 and AC81') && V2_LINE > 0, `the block starts at line ${V2_LINE + 1}`);
+  const before = RAW.split('\n').slice(0, V2_LINE).join('\n').replace(/\/\*[\s\S]*?\*\//g, '');
+  const early = [...before.matchAll(/(^|\n)([^{}\n@][^{}]*)\{/g)].map((m) => m[2].trim());
+  assert.ok(early.length > 50, `${early.length} rules before it`);
+  for (const sel of early) if (/\.v2/.test(sel)) assert.match(sel, /:where\(:not\(\.v2 \*\)\)/, `${sel}: before the block, a rule only for what is not mockup v2`);
   const after = RAW.split('\n').slice(V2_LINE).join('\n').replace(/\/\*[\s\S]*?\*\//g, '');
   const sels = [...after.matchAll(/(^|\n)([^{}\n@][^{}]*)\{/g)].map((m) => m[2].trim()).filter((x) => !/^(from|to|\d+%)$/.test(x));
   assert.ok(sels.length > 50, `${sels.length} rules`);
@@ -190,7 +198,10 @@ test('AC62: the five spacing tokens, 4, 8, 12, 20 and 32 px', () => {
 
 test('AC62: every margin, padding, gap, row-gap and column-gap is 0, one of the five tokens, or a value with its "AC62:" comment beside it', () => {
   const decls = declarations().filter((d) => SPACING.test(d.prop) && !/^\s*--/.test(d.prop));
-  assert.ok(decls.length > 200, `${decls.length} spacing declarations`);
+  // From stage 8 (AC44, step 4) the dead rules went and fewer than 200 remain; the count only proved the parse read the
+  // stylesheet, so it is held to that (AC62's scale, specs/S-001.md:5281-5285): the screen's own gap is among them.
+  assert.ok(decls.length > 100, `${decls.length} spacing declarations`);
+  assert.ok(decls.some((d) => d.prop === 'gap' && d.value === 'var(--s3)' && /^\.sb-screen \{/.test(RAW.split('\n')[d.lineno - 1])), 'the parse reads .sb-screen\'s gap');
   const excepted = [];
   for (const d of decls) {
     const parts = d.value.split(/\s+(?![^(]*\))/);
@@ -204,7 +215,10 @@ test('AC62: every margin, padding, gap, row-gap and column-gap is 0, one of the 
 test('AC62: every font and font-size uses one of the seven roles\' tokens, but the text boxes (AC63) and marks drawn as text (with their comment)', () => {
   const roles = ['--t-screen', '--t-section', '--t-item', '--t-body', '--t-meta', '--t-quote', '--t-code'];
   const fonts = declarations().filter((d) => d.prop === 'font' || d.prop === 'font-size');
-  assert.ok(fonts.length > 100);
+  // From stage 8 (AC44, step 4) the dead rules went, and with them fonts; the count only proved the parse read the
+  // stylesheet, so it is held to that (AC62's type scale, specs/S-001.md:5296-5297): .sb-meta's role is among them.
+  assert.ok(fonts.length > 60, `${fonts.length} fonts`);
+  assert.ok(fonts.some((d) => d.value === 'var(--t-meta)' && /^\.sb-meta \{/.test(RAW.split('\n')[d.lineno - 1])), 'the parse reads .sb-meta\'s font');
   for (const d of fonts) {
     if (/^var\(--t-(screen|section|item|body|meta|quote|code)\)$/.test(d.value)) continue;
     if (/^400 16px\/1\.4 var\(--(mono|font)\)$/.test(d.value)) {
@@ -274,9 +288,13 @@ test('AC62: every word kept — each sandbox screen\'s text, outside the parts A
   assert.equal(stage3.length, 9, stage3.join(' '));
   const builtV2 = ['#/', ...stage3];
   assert.deepEqual(routes.filter((r) => !/^#\/p\//.test(r)), ['#/'], 'the one route that is not a project screen is Home');
+  // From stage 8 (AC43's marker carried "until stage 8", specs/S-001.md:13702; AC44, step 4, :2918-2921): the trial view is
+  // the desk and its marker, "Sandbox: candidate design", leaves every screen: it leaves the snapshot's runs too, and
+  // every other word is compared, as before.
+  const lessMarker = (runs) => runs.filter((w) => w !== 'Sandbox: candidate design');
   for (const r of routes) {
     if (queueRoutes.includes(r) || builtV2.includes(r)) continue;
-    assert.deepEqual(now[r], lessBar(rebuiltCos.includes(r) ? cosParts(snap[r]) : snap[r]), r);
+    assert.deepEqual(now[r], lessMarker(lessBar(rebuiltCos.includes(r) ? cosParts(snap[r]) : snap[r])), r);
   }
   assert.deepEqual(cosParts(snap[rebuiltCos[0]]), ['Sandbox: candidate design', 'Back', 'Home', 'Service-Desk', 'Chief of Staff', 'Responsible for', 'Running log', 'Status', 'Timeline', 'Team', 'Queue']);
   assert.ok(snap['#/p/Delta/team/chief-of-staff'].includes("Its sessions aren't recorded"), 'the v2.5 project\'s page is compared whole, unchanged');
@@ -353,7 +371,12 @@ test('AC48 + AC57 (draft 6, N4): runs 3 and 4 take their own neutral-tinted shad
     assert.ok(de2000(hexLab(all['--run3']), hexLab(all['--run4'])) >= 10, `${which}: run 3 and run 4 apart`);
   }
   assert.doesNotMatch(RAW, /--run3: var\(--agent\)/, 'no longer the agent blue');
-  for (const sel of ['.sb-rail .run4', '.sb-rtag.run4', '.sb-began.run3', '.sb-began.run4']) assert.ok(RAW.includes(sel), sel);
+  // Where the shades are drawn. Stage 8 (AC44, step 4) removed the old Status screen's branch drawing (`.sb-rail`) and its
+  // run tags (`.sb-rtag`), which nothing drew once the desk became `/`; the shade stays where it is drawn, AC70's "Run <k>
+  // began" line "in its run's own shade" (specs/S-001.md:5735-5736), from run 2 to run 4 and run 5 on by runShade.
+  for (const sel of ['.sb-began.run2 { --rk: var(--run2); }', '.sb-began.run3 { --rk: var(--run3); }', '.sb-began.run4 { --rk: var(--run4); }',
+    '.sb-began-h, .sb-began-k { color: var(--rk, var(--run2)); }']) assert.ok(RAW.includes(sel), sel);
+  assert.doesNotMatch(RAW, /\.sb-rail|\.sb-rtag/, 'the old branch drawing and run tags are gone');
   const { runShade } = await import('../../src/public/sandbox.js');
   assert.deepEqual([1, 2, 3, 4, 5, 6, 7].map(runShade), ['run1', 'run2', 'run3', 'run4', 'run3', 'run4', 'run3']);
 });

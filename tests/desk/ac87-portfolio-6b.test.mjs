@@ -494,7 +494,8 @@ test('AC87 + Terms\' Quiet (review round 2, B3): the state line and the tab titl
       assert.equal(app.module && findKeyed(app, 'card:Service-Desk').textContent.includes('Nothing waiting'), true, 'both projects quiet');
       assert.equal(bt1(app), `${n} need${n === 1 ? 's' : ''} you`);
       assert.equal(app.els['screen-state'].textContent, `${n} waiting on you`, `${n}: the state line`);
-      assert.equal(document.title, `Sandbox — ${n} waiting on you`, `${n}: the tab title`);
+      // From stage 8 (AC44, step 4, specs/S-001.md:2918-2921): the tab is the desk's, "Service Desk — <the state line>" ("Sandbox — " until then).
+      assert.equal(document.title, `Service Desk — ${n} waiting on you`, `${n}: the tab title`);
       assert.doesNotMatch(`${app.els['screen-state'].textContent} ${document.title}`, /Quiet/);
     } finally {
       app.restore();
@@ -503,7 +504,7 @@ test('AC87 + Terms\' Quiet (review round 2, B3): the state line and the tab titl
   const quiet = await open();
   try {
     assert.equal(quiet.els['screen-state'].textContent, 'Quiet', 'an empty queue, read: quiet');
-    assert.equal(document.title, 'Sandbox — Quiet');
+    assert.equal(document.title, 'Service Desk — Quiet');
   } finally {
     quiet.restore();
   }
@@ -559,27 +560,27 @@ test('AC87 + Terms\' Quiet (Design review round 1, F1): a portfolio card marked 
   const state = (app) => [app.els['screen-state'].textContent, document.title];
   const kick = await open({ pf: ONE(), hash: `#/waiting/card/${encodeURIComponent(CARD_ID)}`, store: memStore() });
   try {
-    assert.deepEqual(state(kick), ['1 waiting on you', 'Sandbox — 1 waiting on you']);
+    assert.deepEqual(state(kick), ['1 waiting on you', 'Service Desk — 1 waiting on you']);
     await kick.tap(findKeyed(kick, 'sheet-done'));
     await kick.go('#/');
     assert.equal(bt1(kick), 'Nothing waiting on you · confirming with GitHub', 'Home\'s briefing, as before');
-    assert.deepEqual(state(kick), ['1 waiting on you', 'Sandbox — 1 waiting on you'], 'marked, not yet confirmed: never "Quiet"');
+    assert.deepEqual(state(kick), ['1 waiting on you', 'Service Desk — 1 waiting on you'], 'marked, not yet confirmed: never "Quiet"');
     await kick.advance(10 * 60_000);
     await kick.go('#/waiting');
     assert.match(lane(kick, 'kick').textContent, /The card file is still in the portfolio's queue/);
-    assert.deepEqual(state(kick), ['1 waiting on you', 'Sandbox — 1 waiting on you'], 'kicked back');
+    assert.deepEqual(state(kick), ['1 waiting on you', 'Service Desk — 1 waiting on you'], 'kicked back');
   } finally {
     kick.restore();
   }
   const done = await open({ pf: ONE(), hash: `#/waiting/card/${encodeURIComponent(CARD_ID)}`, store: memStore() });
   try {
     await done.tap(findKeyed(done, 'sheet-done'));
-    assert.deepEqual(state(done), ['1 waiting on you', 'Sandbox — 1 waiting on you']);
+    assert.deepEqual(state(done), ['1 waiting on you', 'Service Desk — 1 waiting on you']);
     done.pf.commit({ [CARD]: null });
     await done.advance(5 * 60_000);
     await done.go('#/waiting');
     assert.equal(byClass(lane(done, 'done'), 'v2-drow').length, 1, 'confirmed');
-    assert.deepEqual(state(done), ['Quiet', 'Sandbox — Quiet'], 'its file gone from the queue: quiet');
+    assert.deepEqual(state(done), ['Quiet', 'Service Desk — Quiet'], 'its file gone from the queue: quiet');
   } finally {
     done.restore();
   }

@@ -537,7 +537,10 @@ test('AC83 (specs/S-001.md:6830-6831; the Design reviewer\'s B1, stage 3 round 1
   const at = (re) => { const m = re.exec(all); assert.ok(m, String(re)); return m.index; };
   assert.match(rule('.v2-pdetail'), /^ display: block; min-height: 0; color: var\(--ink\); $/);
   // .sb-more and .v2-pdetail weigh the same (one class): the later rule wins, and nothing after sets the details' display again.
-  assert.ok(at(/\n\.v2-pdetail \{/) > at(/\n\.sb-fold, \.sb-more, \.sb-pname \{[^}]*display: inline-flex/), '.v2-pdetail\'s rule after .sb-more\'s');
+  // From stage 8 (AC44, step 4) `.sb-fold` and `.sb-pname`, which nothing drew once the desk became `/`, left that rule's
+  // selector list; `.sb-more`'s inline-flex rule stands, and the criterion is the same (:6830-6831).
+  assert.ok(at(/\n\.v2-pdetail \{/) > at(/\n\.sb-more \{[^}]*display: inline-flex/), '.v2-pdetail\'s rule after .sb-more\'s');
+  assert.doesNotMatch(all, /\.sb-fold\b|\.sb-pname\b/, 'the dead selectors went');
   const after = all.slice(all.indexOf('}', at(/\n\.v2-pdetail \{/)) + 1);
   for (const m of after.matchAll(/(?:^|\n)([^{}\n]+)\{([^}]*)\}/g)) {
     if (/display:/.test(m[2]) && /(?:^|[\s,])(?:details)?\.(?:v2-pdetail|sb-more)(?:\s*(?:,|$|\{))/.test(m[1].trim())) assert.fail(`${m[1].trim()} sets display again`);

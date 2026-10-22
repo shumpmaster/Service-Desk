@@ -35,7 +35,8 @@ test('J18: the bootstrap summary, then new keys against the last state, a key le
   const r1 = await h.run();
   assert.equal(r1.pushes.length, 1);
   assert.equal(r1.payloads[0].notification.body, 'Notifications are on: 2 things wait on you now');
-  assert.equal(r1.payloads[0].notification.navigate, 'https://desk.example.invalid/?sandbox');
+  // From stage 8 (the notification view amendment, specs/S-001.md:1139-1142: "the sender's tap addresses to `/?open=<key>` and `/`").
+  assert.equal(r1.payloads[0].notification.navigate, 'https://desk.example.invalid/');
   const s1 = h.state(r1);
   assert.equal(Object.keys(s1.keys).length, 2);
   assert.ok(Object.values(s1.keys).every((e) => e.sent));

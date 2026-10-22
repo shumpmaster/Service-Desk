@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { renderMarkdown, escapeHtml } from '../../src/lib/markdown.js';
 import { buildModel, parseRecord } from '../../src/lib/model.js';
 import { defaultLabel } from '../../src/lib/records.js';
+import { blastLine, undoLine } from '../../src/lib/sheets.js';
 import { fixture, CONFIG, SD, SRC } from './helpers.mjs';
 
 const sd = (p) => fixture(`service-desk/${p}`);
@@ -88,12 +89,15 @@ test('AC12: the question view\'s fields from Q-005-sources, the recommendation m
   assert.equal(thin.riskClass, null);
   assert.equal(thin.blastRadius, null);
   assert.equal(defaultLabel(thin, null), 'not given');
-  const app = readFileSync(join(SRC, 'public', 'app.js'), 'utf8');
-  assert.ok(app.includes("'not given'"), 'the view prints "not given" for a missing field');
+  // From stage 8 (AC44, step 4, specs/S-001.md:2918-2921): the accepted question view is gone; the desk's question
+  // sheet (AC85) prints "not given" for each missing field, from its record (AC12's words).
+  assert.equal(blastLine(thin), 'Blast radius: not given · risk not given', 'the eye line');
+  assert.equal(undoLine(thin, null, 'America/Chicago').text, 'Reversibility: not given · Default: not given', 'the undo line');
+  assert.ok(readFileSync(join(SRC, 'public', 'sandbox.js'), 'utf8').includes('blastLine(') && readFileSync(join(SRC, 'public', 'sandbox.js'), 'utf8').includes('undoLine('), 'the desk draws both lines');
 });
 
 
-test('AC12 (S-001 stage 4\'s build review, round 1, B1 and N5): the accepted view\'s DEFAULT label reads a default only from a letter starting the field; a DEFAULT naming none is quoted as the file writes it, with no letter and no time', async () => {
+test('AC12 (S-001 stage 4\'s build review, round 1, B1 and N5): the desk\'s DEFAULT label (the accepted view\'s until stage 8) reads a default only from a letter starting the field; a DEFAULT naming none is quoted as the file writes it, with no letter and no time', async () => {
   // Service-Desk's real questions/P-001-design-pick.md at f8dfd1b: `DEFAULT: none — this is your pick and never defaults (AC43)   TIMEOUT: none`.
   const text = fixture('trial-view/P-001-design-pick.md');
   const p = parseRecord('question', text, 'questions/P-001-design-pick.md');
@@ -104,20 +108,20 @@ test('AC12 (S-001 stage 4\'s build review, round 1, B1 and N5): the accepted vie
   assert.equal(defaultLabel({ reversibility: 'reversible', default: 'none', timeout: '48' }, raised), 'per the question file: DEFAULT none', 'no raw time');
   // A letter starting the field reads as before.
   assert.equal(defaultLabel({ reversibility: 'reversible', default: 'A', timeout: '24' }, raised, fmt), 'per the question file: defaults to A at 2026-10-15T16:00:00.000Z');
-  // On the accepted view's page itself.
-  const { loadApp, findAll: fa } = await import('./page-harness.mjs');
+  // On the desk's question sheet itself (from stage 8, AC44, step 4, specs/S-001.md:2918-2921: the accepted question view
+  // is gone; AC85's sheet gives the same label, from the same rule, records.js's defaultLabel).
+  const { loadSandbox, byClass } = await import('./sandbox-helpers.mjs');
   const { repo } = await import('./fake-desk.mjs');
   const sd = repo({ 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml'), 'questions/P-001-design-pick.md': text }, [], [{ name: 'governance', status: 'completed', conclusion: 'success' }]);
   sd.history = { 'questions/P-001-design-pick.md': [{ commit: { committer: { date: '2026-10-14T16:00:00Z' } } }] };
   const repos = { 'Service-Desk': sd, 'Personal-Org-Operating-Model': repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md') }, [], [{ name: 'tests', status: 'completed', conclusion: 'success' }]) };
-  const app = await loadApp({ repos, now: Date.parse('2026-10-14T17:00:00Z'), hash: '#/p/Service-Desk/q/P-001-design-pick' });
+  const app = await loadSandbox({ config: CONFIG, repos, now: Date.parse('2026-10-14T17:00:00Z'), hash: `#/waiting/card/${encodeURIComponent('Service-Desk|question|questions/P-001-design-pick.md')}` });
   try {
     await app.advance(1000);
-    const dts = fa(app.els.view, (e) => e.tag === 'dt');
-    const i = dts.findIndex((e) => e.textContent === 'DEFAULT');
-    assert.ok(i >= 0, 'the DEFAULT field');
-    const dd = fa(app.els.view, (e) => e.tag === 'dd')[i];
-    assert.equal(dd.textContent, 'per the question file: DEFAULT none — this is your pick and never defaults (AC43)');
+    const sheet = byClass(app.view, 'v2-sheet')[0];
+    assert.ok(sheet, 'the question\'s sheet');
+    assert.ok(sheet.textContent.includes('Default: per the question file: DEFAULT none — this is your pick and never defaults (AC43)'), sheet.textContent);
+    assert.doesNotMatch(sheet.textContent, /Settles itself|defaults to A/, 'never "defaults to A" from AC43');
   } finally {
     app.restore();
   }

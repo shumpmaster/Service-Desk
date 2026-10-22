@@ -9,7 +9,12 @@ import { makeBox, boxRank } from '../../src/lib/universe.js';
 import { answerPlan } from '../../src/lib/links.js';
 import { fakeClock, fixture, CONFIG, SD } from './helpers.mjs';
 import { repo, fakeServer } from './fake-desk.mjs';
-import { loadApp, find } from './page-harness.mjs';
+import { loadSandbox, byClass, findAll } from './sandbox-helpers.mjs';
+
+const find = (n, pred) => findAll(n, pred)[0] || null;
+const sheetOf = (app) => byClass(app.view, 'v2-sheet')[0] || { textContent: '', children: [] };
+/** A sheet's words: its text, with "The whole record" fold's record as renderMarkdown wrote it (tags taken out, apostrophes put back). */
+const sheetText = (app) => `${sheetOf(app).textContent} ${findAll(sheetOf(app), (e) => e._html).map((e) => e._html.replace(/<[^>]*>/g, ' ').replace(/&#39;/g, "'").replace(/&amp;/g, '&')).join(' ')}`;
 
 const START = Date.parse('2026-10-08T15:00:00Z');
 const GOV = '.github/workflows/governance.yml';
@@ -178,36 +183,39 @@ test('AC46/AC47: neither counts in time asked or V5, and neither is offered an a
   assert.equal(answerPlan(SD, CONFIG.linkCap, { kind: 'merge', item: 'Q-007' }, null, '').offer, 'none');
 });
 
-test('Page AC46/AC47: the hold and merge views show their fields and sections, say no answer is needed, and offer no answer link', async () => {
+// From stage 8 (AC44, step 4, specs/S-001.md:2918-2921): the accepted hold and merge views are gone; the desk's sheets
+// for a hold card and a merge card (AC80's, over Waiting) carry the same fields, words and links, and no answer link.
+test('Page AC46/AC47 (from stage 8, the desk\'s sheets): the hold and merge sheets show their fields and sections, say no answer is needed, and offer no answer link', async () => {
   const repos = {
     'Service-Desk': repo({ [HOLD_A]: om(HOLD_A), [CONFLICT]: om(CONFLICT) }, [], [gov('completed', 'failure')]),
     'Personal-Org-Operating-Model': repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md') }, [], []),
   };
   repos['Service-Desk'].compare = () => 'diverged';
-  let app = await loadApp({ hash: `#/p/Service-Desk/hold/${encodeURIComponent(HOLD_A)}`, repos });
+  let app = await loadSandbox({ config: CONFIG, repos, hash: `#/waiting/card/${encodeURIComponent(`Service-Desk|hold|${HOLD_A}`)}`, now: Date.now() });
   try {
     await app.advance(1000);
-    const text = app.els.view.textContent;
+    const text = sheetText(app);
     assert.match(text, /the default branch's governance run is not green/);
     assert.match(text, /e2ab9c55e561faa25c8186d560fa8bb076c54d32/);
     assert.match(text, /75 minutes/);
     assert.match(text, /No answer needed: fix or re-run the governance run; this clears once it passes\./);
     assert.match(text, /What to do/);
-    assert.ok(find(app.els.view, (e) => e.tag === 'a' && e.attrs.href === 'https://github.com/shumpmaster/Service-Desk/actions/workflows/governance.yml'));
-    assert.equal(find(app.els.view, (e) => e.className === 'go' || (e.attrs && /\/new\//.test(e.attrs.href || ''))), null);
+    // The governance run on GitHub: the run itself where the desk reads it (sheetView), else the workflow's runs.
+    assert.ok(find(sheetOf(app), (e) => e.tag === 'a' && /^https:\/\/github\.com\/shumpmaster\/Service-Desk\/actions\/(workflows\/governance\.yml|runs\/)/.test(e.attrs.href || '')));
+    assert.equal(find(sheetOf(app), (e) => e.className === 'go' || (e.attrs && /\/new\//.test(e.attrs.href || ''))), null);
   } finally {
     app.restore();
   }
-  app = await loadApp({ hash: `#/p/Service-Desk/merge/${encodeURIComponent(CONFLICT)}`, repos });
+  app = await loadSandbox({ config: CONFIG, repos, hash: `#/waiting/card/${encodeURIComponent(`Service-Desk|merge|${CONFLICT}`)}`, now: Date.now() });
   try {
     await app.advance(1000);
-    const text = app.els.view.textContent;
-    assert.match(text, /P-002: merge conflict/);
+    const text = sheetText(app);
+    assert.match(text, /Merge P-002: a merge conflict/, 'the desk\'s title for it (AC80)');
     assert.match(text, new RegExp(TIP_P002));
     assert.match(text, /No answer needed: merge item\/P-002 by hand, or change the item and let the merge gate try again\./);
     for (const h of ['The decision', 'Why', 'What to do']) assert.ok(text.includes(h), h);
-    assert.ok(find(app.els.view, (e) => e.tag === 'a' && e.attrs.href === 'https://github.com/shumpmaster/Service-Desk/tree/item/P-002'));
-    assert.equal(find(app.els.view, (e) => e.className === 'go' || (e.attrs && /\/new\//.test(e.attrs.href || ''))), null);
+    assert.ok(find(sheetOf(app), (e) => e.tag === 'a' && e.attrs.href === 'https://github.com/shumpmaster/Service-Desk/tree/item/P-002'));
+    assert.equal(find(sheetOf(app), (e) => e.className === 'go' || (e.attrs && /\/new\//.test(e.attrs.href || ''))), null);
   } finally {
     app.restore();
   }

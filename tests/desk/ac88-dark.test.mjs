@@ -344,3 +344,64 @@ test('AC88: every trial-view screen and sheet, from each fixture, in dark (force
   assert.ok(counts.screens > 150, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
 });
+
+// The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes
+// take three greys from the new look and each lane also gets its own line style (solid, dashed, dotted), so every lane
+// looks different at a glance in light and dark"; the Reviewer's B1, stage 7 round 1).
+test('AC49 + AC88 (P-001-desk-v2-lanes, A): on every member page\'s running log, in dark and light, each lane\'s line, curve and dots take one of AC81\'s greys and its own line style; any two lanes differ in their line or in a grey at least 10 apart; the stub stays a piece under way', async () => {
+  const fails = [];
+  let pages = 0;
+  let fourLanes = 0;
+  const sig = (n) => ({ grey: hexOf(n.declared.get('stroke') || n.style.get('stroke') || ''), dash: plain(n.declared.get('stroke-dasharray') || 'none').trim(),
+    fill: hexOf(n.declared.get('fill') || n.style.get('fill') || '') });
+  const apart = (a, b) => a.dash !== b.dash || de2000(hexLab(a.grey), hexLab(b.grey)) >= 10;
+  for (const setup of [textSetup(), { config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': sdRepo() } }]) {
+    const app = await opened(setup);
+    try {
+      for (const p of setup.config.projects) {
+        await app.go(`#/p/${encodeURIComponent(p.name)}/team`);
+        for (const m of hrefsIn(app, new RegExp(`^#/p/${esc(encodeURIComponent(p.name))}/team/[^/]+$`))) {
+          await app.go(m);
+          for (const way of WAYS.filter((w) => w.attr || w.theme === 'light')) {
+            const attrs = { ...(document.documentElement.attrs || {}) };
+            if (way.attr) attrs['data-theme'] = way.attr; else delete attrs['data-theme'];
+            const tree = cascade(treeOf(app.view, { className: document.documentElement.className, attrs }), RULES, way.env);
+            for (const svg of nodes(tree).filter((n) => n.tag === 'svg' && n.cls.has('sb-lanes'))) {
+              pages++;
+              const where = `${m} · ${way.name} · ${[...svg.cls].join('.')}`;
+              const lines = new Map();
+              const dots = new Map();
+              for (const n of nodes(svg)) {
+                const shade = [...n.cls].find((c) => /^shade-\d$/.test(c));
+                if (!shade) continue;
+                const s = sig(n);
+                for (const w of offTokens(n.declared.get('stroke') || '', way.theme, 'stroke')) fails.push(`${where} · ${shade}: ${w}`);
+                if (n.cls.has('stub')) { if (s.dash !== '2 3') fails.push(`${where} · ${shade}: the stub's line is ${s.dash}, not a piece under way (2 3)`); continue; }
+                const into = n.attrs['data-kind'] === 'dot' ? dots : lines;
+                const was = into.get(shade);
+                // One look per lane: its line and its curves out and back alike, and all its dots alike.
+                if (was && (was.grey !== s.grey || was.dash !== s.dash || (into === dots && was.fill !== s.fill))) fails.push(`${where} · ${shade} ${n.attrs['data-kind']}: drawn ${JSON.stringify(s)}, its lane ${JSON.stringify(was)}`);
+                if (!was) into.set(shade, s);
+              }
+              if (lines.size >= 4) fourLanes++;
+              const shades = [...lines.keys()].sort();
+              for (let i = 0; i < shades.length; i++) {
+                for (let j = i + 1; j < shades.length; j++) {
+                  const [a, b] = [lines.get(shades[i]), lines.get(shades[j])];
+                  if (!apart(a, b)) fails.push(`${where}: ${shades[i]} and ${shades[j]} look alike: ${a.grey} ${a.dash} and ${b.grey} ${b.dash}`);
+                  const [da, db] = [dots.get(shades[i]), dots.get(shades[j])];
+                  if (da && db && da.fill === db.fill && !apart(da, db)) fails.push(`${where}: ${shades[i]}'s and ${shades[j]}'s dots look alike`);
+                }
+              }
+            }
+          }
+        }
+      }
+    } finally {
+      app.restore();
+    }
+  }
+  assert.ok(pages > 20, `${pages} running logs drawn`);
+  assert.ok(fourLanes >= 4, `${fourLanes} with all four lanes, the owner's among them`);
+  assert.deepEqual(fails, []);
+});

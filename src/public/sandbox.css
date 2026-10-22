@@ -526,6 +526,22 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 .sb-lanes.fam-you .dot.shade-0 { fill: var(--you0); } .sb-lanes.fam-you .dot.shade-1 { fill: var(--you1); }
 .sb-lanes.fam-you .dot.shade-2 { fill: var(--you2); } .sb-lanes.fam-you .dot.shade-3 { fill: var(--you3); }
 .sb-lanes .ring { fill: none; stroke: var(--agent); stroke-width: 2; }
+/* From stage 7 (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes take three
+   greys from the new look and each lane also gets its own line style (solid, dashed, dotted), so every lane looks
+   different at a glance in light and dark"): the four lanes, in turn, --ink solid, --ink2 dashed, --ink3 dotted and
+   --ink dashed (--shade0 to --shade3 and --you0 to --you3, below), so any two of them differ in their line, or in a
+   grey far apart from the other. A lane's curve out and back takes its line; its dots take its form: filled on a
+   solid lane, a ring on a dashed one, a dotted ring on a dotted one. The short dashed stub keeps its own meaning,
+   a piece still under way (AC49). */
+.sb-lanes .lane.shade-1, .sb-lanes .lane.shade-3 { stroke-dasharray: 6 4; }
+.sb-lanes .lane.shade-2 { stroke-dasharray: 0.01 4; stroke-linecap: round; }
+.sb-lanes .lane.stub { stroke-dasharray: 2 3; stroke-linecap: butt; }
+.sb-lanes .dot.shade-1, .sb-lanes .dot.shade-2, .sb-lanes .dot.shade-3,
+.sb-lanes.fam-you .dot.shade-1, .sb-lanes.fam-you .dot.shade-2, .sb-lanes.fam-you .dot.shade-3 { fill: var(--surf); stroke-width: 1.8; }
+.sb-lanes .dot.shade-1 { stroke: var(--shade1); } .sb-lanes .dot.shade-3 { stroke: var(--shade3); }
+.sb-lanes .dot.shade-2 { stroke: var(--shade2); stroke-dasharray: 0.01 2.6; stroke-linecap: round; }
+.sb-lanes.fam-you .dot.shade-1 { stroke: var(--you1); } .sb-lanes.fam-you .dot.shade-3 { stroke: var(--you3); }
+.sb-lanes.fam-you .dot.shade-2 { stroke: var(--you2); }
 .sb-brow-lane.shade-0, .sb-brow-lane.shade-1, .sb-brow-lane.shade-2, .sb-brow-lane.shade-3 { color: var(--ink); }
 .sb-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); margin: var(--s2) 0; }
 .sb-kpi { display: grid; gap: var(--s1); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2) var(--s3); background: var(--surf2); }
@@ -720,8 +736,10 @@ html.sb.v2-page, html.sb.v2-page body { background: var(--bg); color: var(--ink)
    screen mixes the old look with the new. The grounds and inks take mockup v2's; pass and fail take --ok and
    --bad; the agents' blue and the merge purple, which mockup v2 does not use (it marks agents and merges by icon
    and word), the agents' grey --ink2; the blocker amber, which marked a read that failed, --bad, as Home's and
-   Waiting's "Can't read" lines have it; the runs' and the running log's lane shades mockup v2's greys (vermilion
-   only for what needs the owner, AC81; a lane is told by its place and its words, AC49); and the seven type roles
+   Waiting's "Can't read" lines have it; the runs' shades mockup v2's greys; the running log's four lanes, in turn,
+   --ink, --ink2, --ink3 and --ink, each with its own line, solid, dashed, dotted and dashed (the owner's ruling,
+   P-001-desk-v2-lanes.md, A; the lines are AC49's rules above), vermilion being only for what needs the owner
+   (AC81); and the seven type roles
    the nearest of mockup v2's (AC81: "Text no frame draws ... takes the nearest role"): a screen's title
    --t-title, a section head --t-label, an item's title --t-row, sentences --t-body, secondary lines --t-small,
    quoted record text --t-body (AC81: "body with a left rule"), and codes --t-mono. */
@@ -731,8 +749,8 @@ html.sb.v2-page {
   --pass: var(--ok); --passs: var(--chip); --passl: var(--line2); --fail: var(--bad); --fails: var(--chip); --block: var(--bad); --blocks: var(--bg2);
   --golds: var(--bg2); --on: var(--bg);
   --run1: var(--ink2); --run2: var(--ink2); --run3: var(--ink2); --run4: var(--ink2);
-  --shade0: var(--ink); --shade1: var(--ink2); --shade2: var(--ink3); --shade3: var(--ink2);
-  --you0: var(--ink); --you1: var(--ink2); --you2: var(--ink3); --you3: var(--ink2);
+  --shade0: var(--ink); --shade1: var(--ink2); --shade2: var(--ink3); --shade3: var(--ink);
+  --you0: var(--ink); --you1: var(--ink2); --you2: var(--ink3); --you3: var(--ink);
   --t-screen: var(--t-title); --t-section: var(--t-label); --t-item: var(--t-row); --t-meta: var(--t-small); --t-quote: var(--t-body); --t-code: var(--t-mono);
   --track: 0;
 }

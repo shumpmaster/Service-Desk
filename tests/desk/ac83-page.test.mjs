@@ -457,3 +457,123 @@ test('AC83 + AC81: the page\'s type is the tokens\' or desk-v2.html\'s pairs; th
   }
   assert.equal(PAGE_WORDS.milestonesHead(24), "Milestones by phase · yours and the model's 24");
 });
+
+// ---------------------------------------------------------------------------
+// Stage 3, review round 1
+
+test('AC83 (specs/S-001.md:6755-6771, :6845-6855; the Reviewer\'s N3, stage 3 round 1): a project in its first run and one that is Done, on the page as rendered — the sentence, the strip\'s words, the lines under it, and the Timeline\'s phase line, each as the page\'s own functions give them for the same records', async () => {
+  // Made up, NOT real records: 77bfeae's with no Build milestone worked (no sprints, none reached), so Design is in its first run;
+  // and 77bfeae's with a graduation ruling, so the project is Done (AC50).
+  const FIRST = { 'docs/PROJECT.md': PROJECT_DOC.split('\n').map((l) => (/ · phase: Build/.test(l) ? l.replace(/ · sprints: [^·]*/, '').replace(/ · reached: [0-9-]+/, '') : l)).join('\n') };
+  const DONE = { 'decisions/questions/P-001-graduation.md': 'Ruling: proceed\n(made up for the test, NOT a real record)\n' };
+  const cases = [
+    ['first run', FIRST, 'Design, first time through. Next: The chosen design running on the real back end.', ['finished', 'run 1 · now', 'planned', 'planned']],
+    ['Done', DONE, 'Done.', ['finished', 'finished', 'finished', 'finished']],
+  ];
+  for (const [label, extra, sentence, strip] of cases) {
+    const { ctx, snap } = ctxOf({ ...EXPERIMENTS, ...extra });
+    assert.equal(pageSentence(ctx, { snap }), sentence, `${label}: the sentence, from the records`);
+    const app = await openPage('#/p/Service-Desk', { extra });
+    try {
+      assert.equal(keyed(app, 'sentence').textContent, sentence, `${label}: the sentence, on the page`);
+      const cells = findAll(keyed(app, 'strip'), (e) => e.tag === 'li');
+      assert.deepEqual(cells.map((c) => byClass(c, 'v2-ps')[0].textContent), strip, `${label}: the strip's words`);
+      assert.deepEqual(cells.map((c) => byClass(c, 'v2-ps')[0].textContent), phaseStrip(ctx, snap).cells.map((c) => c.words));
+      assert.deepEqual(cells.map((c) => byClass(c, 'v2-pnm')[0].textContent), ['Discovery', 'Design', 'Build', 'Launch'], 'Done is not a column (:6766)');
+      const under = byClass(keyed(app, 'under'), 'v2-small').map((x) => x.textContent).filter((t) => /ran again/.test(t));
+      assert.equal(under.length, ranAgainLines(ctx, TZ, () => null).length, `${label}: one line for each phase that ran again`);
+      if (label === 'first run') assert.deepEqual(under, [], 'a first run: no "ran again" line, there being none to say (:6768-6770)');
+      if (label === 'Done') assert.deepEqual(under, ['Design ran again from 8 Oct · why it went back: not recorded'], 'Done: the history stays');
+      if (label === 'Done') assert.equal(cells.filter((c) => / now\b/.test(c.className)).length, 0, 'Done: no cell is now');
+      await app.go('#/p/Service-Desk/timeline');
+      const phl = byClass(app.view, 'v2-phl')[0];
+      assert.ok(phl, `${label}: the Timeline's phase line`);
+      assert.equal(byClass(phl, 'v2-phlw')[0].textContent, firstPart(sentence, 'v3'), `${label}: the first part of the sentence (AC84)`);
+    } finally {
+      app.restore();
+    }
+  }
+});
+
+test('AC83 (specs/S-001.md:6773-6777; the Design reviewer\'s B2, stage 3 round 1): a project the desk can\'t read and has never read shows its unknowns in words, as Home\'s tile does — "At work now: not available", "with the agents: not available", "Experiments · not available", a v2.5 project\'s CI, ledger and records "not available" — never a zero or "no agent run recorded"', async () => {
+  const down = (name) => {
+    const r = name === 'Service-Desk' ? repo({ ...j77Files(), ...EXPERIMENTS }) : repo({ ...poomFiles(), ...POOM_PLACEHOLDER });
+    r.fail = { kind: 'network' };
+    return r;
+  };
+  const repos = { 'Service-Desk': down('Service-Desk'), 'Personal-Org-Operating-Model': down('Personal-Org-Operating-Model') };
+  const app = await loadSandbox({ config: { ...CONFIG, ownerTimeZone: TZ, projects: [SD, PUB] }, repos, hash: '#/p/Service-Desk', now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(61_000);
+    assert.match(byClass(keyed(app, 'page-waits'), 'v2-prtt')[0].textContent, /^Can't read/, 'AC5\'s words in the waits row');
+    const work = keyed(app, 'page-work');
+    assert.equal(byClass(work, 'v2-prtt')[0].textContent, 'At work now: not available');
+    assert.equal(byClass(work, 'v2-small')[0].textContent, 'with the agents: not available');
+    const e = keyed(app, 'rest:experiments');
+    assert.equal(byClass(e, 'v2-small')[0].textContent, 'not available', 'never "0 registered"');
+    await app.go(e.attrs.href);
+    const sheet = byClass(app.view, 'v2-sheet')[0];
+    assert.doesNotMatch(sheet.textContent, /No experiment is registered|0 registered/, 'the sheet says nothing it can\'t know');
+    await app.key('Escape');
+    assert.match(keyed(app, 'more-detail-fold').textContent, /CI on main: not read yet/, 'AC29\'s words for a state not read');
+    await app.go('#/');
+    assert.ok(app.text().includes('At work: not available'), 'Home\'s tile, in the same words');
+    await app.go('#/p/Personal-Org-Operating-Model');
+    const rows = findAll(keyed(app, 'page-rows'), (x) => / v2-prow /.test(` ${x.className} `));
+    assert.deepEqual(rows.slice(1).map((r) => [byClass(r, 'v2-prtt')[0].textContent, (byClass(r, 'v2-mono')[0] || { textContent: null }).textContent]),
+      [['CI on main: not read yet', null], ['Latest in the ledger', 'not available'], ['Records', 'not available']]);
+    assert.deepEqual(findAll(keyed(app, 'notused'), (x) => x.tag === 'li').map((li) => byClass(li, 'v2-nt')[0].textContent), ['Phases, gates and standard milestones', 'The Timeline'],
+      'no "No questions or queue folder" or "No dispatch log" for a tree not read');
+    const text = byClass(app.view, 'v2-proj')[0].textContent;
+    assert.doesNotMatch(text, /\b0 specs|ledger entries|not recorded · 0/, 'no count from an empty tree');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC83 (specs/S-001.md:6830-6831; the Design reviewer\'s B1, stage 3 round 1): "Details" is a block like the rows above it, never .sb-more\'s inline-flex, so opened its summary keeps the full width and its views sit under it', () => {
+  const all = css();
+  const at = (re) => { const m = re.exec(all); assert.ok(m, String(re)); return m.index; };
+  assert.match(rule('.v2-pdetail'), /^ display: block; min-height: 0; color: var\(--ink\); $/);
+  // .sb-more and .v2-pdetail weigh the same (one class): the later rule wins, and nothing after sets the details' display again.
+  assert.ok(at(/\n\.v2-pdetail \{/) > at(/\n\.sb-fold, \.sb-more, \.sb-pname \{[^}]*display: inline-flex/), '.v2-pdetail\'s rule after .sb-more\'s');
+  const after = all.slice(all.indexOf('}', at(/\n\.v2-pdetail \{/)) + 1);
+  for (const m of after.matchAll(/(?:^|\n)([^{}\n]+)\{([^}]*)\}/g)) {
+    if (/display:/.test(m[2]) && /(?:^|[\s,])(?:details)?\.(?:v2-pdetail|sb-more)(?:\s*(?:,|$|\{))/.test(m[1].trim())) assert.fail(`${m[1].trim()} sets display again`);
+  }
+});
+
+test('AC83 (specs/S-001.md:5969-5970, the rulebook\'s part A item 11, WCAG 2.5.8; the Design reviewer\'s B3, stage 3 round 1): the Experiments sheet\'s links, each alone on its row, are 32 px tall targets with no gap between them', async () => {
+  const app = await openPage('#/p/Service-Desk/experiments');
+  try {
+    const sheet = byClass(app.view, 'v2-sheet')[0];
+    const items = findAll(sheet, (e) => e.tag === 'li');
+    assert.equal(items.length, 5);
+    for (const li of items) {
+      const a = findAll(li, (e) => e.tag === 'a');
+      assert.equal(a.length, 1, 'one link');
+      assert.equal(a[0].textContent, li.textContent, 'alone on its row, not inside a sentence');
+      assert.match(a[0].className, /\bv2-exl\b/);
+    }
+    assert.match(byClass(sheet, 'v2-qlist')[0].className, /\bv2-explist\b/);
+  } finally {
+    app.restore();
+  }
+  const r = rule('.v2-exl');
+  assert.match(r, /display: flex;/);
+  const h = Number(/min-height: (\d+)px;/.exec(r)[1]);
+  assert.ok(h >= 24, `${h} px, at least 24`);
+  assert.match(rule('.v2-sheet .v2-explist'), /gap: 0;/);
+});
+
+test('J9 + AC83 (specs/S-001.md:6834-6835; the Reviewer\'s N2, stage 3 round 1): "Records: <n> ledger entries" counts only the ledger\'s `## L-<n> — ` entries, never another `## ` heading (a made-up one added)', async () => {
+  const ledger = poomFiles()['docs/LEDGER.md'];
+  const app = await openPage('#/p/Personal-Org-Operating-Model', { poom: { 'docs/LEDGER.md': `${ledger.replace(/\n*$/, '\n')}\n## How to read this ledger (made up, NOT a real record)\n\nA note.\n` } });
+  try {
+    const rows = findAll(keyed(app, 'page-rows'), (e) => / v2-prow /.test(` ${e.className} `));
+    assert.equal(byClass(rows[3], 'v2-mono')[0].textContent, '2 ledger entries · 0 specs', 'still the two entries');
+  } finally {
+    app.restore();
+  }
+});

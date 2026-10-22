@@ -13,6 +13,7 @@ import { CONFIG, FIX, SRC } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
 import { loadSandbox, byClass, findAll } from './sandbox-helpers.mjs';
 import { NOW, v3 } from './sandbox-fixtures.mjs';
+import { openSD, openFolds } from './tv2-fixtures.mjs';
 import { textSetup } from './screen-text.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { hexLab, de2000 } from './ciede2000.mjs';
@@ -33,9 +34,9 @@ const bar = (app) => byClass(app.view, 'v2-bar');
 const tabs = (app) => byClass(bar(app)[0], 'v2-tab');
 const current = (app) => tabs(app).filter((t) => t.attrs['aria-current'] === 'page').map((t) => byClass(t, 'v2-tabw')[0].textContent);
 
-// From stage 3 (S-001 AC81, "From stage 3", specs/S-001.md:6456-6466, and its test's "from stage 3 (that test
+// From stage 3 (S-001 AC81, "From stage 3", specs/S-001.md:6456-6464, and its test's "from stage 3 (that test
 // rewritten in stage 3's pull request): no top row, `p/<name>` opening the page's Overview, and
-// `p/<name>/queue` still opening Waiting so filtered", :6556-6558): the cases below are stage 1a's, rewritten so.
+// `p/<name>/queue` still opening Waiting so filtered", :6559-6561): the cases below are stage 1a's, rewritten so.
 test('AC81: the trial view opens on Home; every screen carries the one bar Home · Waiting · Plan at its foot, its current tab named so (a project\'s page and its screens as Home\'s); no Projects or Portfolio tab; from stage 3 no top row on any screen', async () => {
   const app = await opened('');
   try {
@@ -216,7 +217,7 @@ function ranges(list) {
   });
 }
 
-test('AC81: every character of the board\'s, its sheets\', the bar\'s and the top row\'s own words lies in a served subset\'s unicode-range; ◆, ✕, ▸ and ⇅ appear only as SVG icons', async () => {
+test('AC81: every character of the board\'s, its sheets\', the bar\'s, the project\'s page\'s, its Timeline\'s and the Team screen\'s phase line\'s own words lies in a served subset\'s unicode-range; ◆, ✕, ▸ and ⇅ appear only as SVG icons', async () => {
   const sans = [...CSS.matchAll(/@font-face \{ font-family: "IBM Plex Sans"; font-style: normal; font-weight: 400;[^}]*unicode-range: ([^;]+);/g)].flatMap((m) => ranges(m[1]));
   const ok = (cp) => sans.some(([a, b]) => cp >= a && cp <= b);
   assert.ok(ok(0x2197) && ok(0x2713) && ok(0x00b7) && ok(0x2026), '↗, ✓, · and … served');
@@ -238,7 +239,30 @@ test('AC81: every character of the board\'s, its sheets\', the bar\'s and the to
   } finally {
     app.restore();
   }
+  // From stage 3 (specs/S-001.md:6563-6565, "every character of the page's own fixed words … ◆, ✕, ▸ and ⇅
+  // appear only as SVG icons"; the Reviewer's B1, stage 3 round 1): the project's page, its Timeline with
+  // every fold open, and the Team screen's phase line, on J11's and J12's records, which hold a failed
+  // check (#40, "✕ checks" in AC60's words).
+  const sd = await openSD('#/p/Service-Desk');
+  let crosses = 0;
+  try {
+    const takeSD = () => {
+      for (const cls of ['v2-proj', 'v2-timeline', 'v2-phlpin', 'v2-sheet']) for (const el of byClass(sd.view, cls)) texts.push(el.textContent);
+    };
+    takeSD();
+    await sd.go('#/p/Service-Desk/timeline');
+    await openFolds(sd, 'v2-fold');
+    takeSD();
+    crosses = byClass(sd.view, 'v2-stats').flatMap((st) => findAll(st, (e) => e.tag === 'svg' && /\bvi-bad\b/.test(e.attrs.class || ''))).length;
+    await sd.go('#/p/Service-Desk/team');
+    assert.equal(byClass(sd.view, 'v2-phlpin').length, 1, 'the Team screen\'s phase line');
+    takeSD();
+  } finally {
+    sd.restore();
+  }
+  assert.ok(crosses >= 1, `the failed check's ✕ drawn as an icon (${crosses})`);
   const all = texts.join('\n');
+  assert.match(all, /checks/, 'its word kept beside it (AC84)');
   for (const c of ['◆', '✕', '▸', '⇅']) assert.ok(!all.includes(c), `${c} never as text`);
   // The records' own text may hold any character (it shows in the fallback font); the fixtures' do not.
   const outside = [...new Set([...all].filter((c) => c !== '\n' && !ok(c.codePointAt(0))))];

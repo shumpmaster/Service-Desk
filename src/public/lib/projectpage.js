@@ -341,7 +341,9 @@ export function restRows(j, tree) {
   const lines = doc && doc.valueLines ? doc.valueLines : [];
   const values = lines.length ? { title: `${PAGE_WORDS.values} ${targetIds(lines)}`, small: PAGE_WORDS.valuesSmall(lines.length), lines } : null;
   const files = [...((tree && tree.keys && tree.keys()) || [])].filter((p) => /^experiments\/EXP-[^/]+\.md$/.test(p)).sort();
-  const experiments = { title: PAGE_WORDS.experiments, small: PAGE_WORDS.experimentsSmall(files.length), names: files.map((p) => p.slice('experiments/'.length).replace(/\.md$/, '')) };
+  // A tree not read yet: "not available", never "0 registered" (the Design reviewer's B2).
+  const read = Boolean(tree && tree.keys);
+  const experiments = { title: PAGE_WORDS.experiments, small: read ? PAGE_WORDS.experimentsSmall(files.length) : NOT_AVAILABLE, names: files.map((p) => p.slice('experiments/'.length).replace(/\.md$/, '')), read };
   return { values, experiments };
 }
 
@@ -353,10 +355,13 @@ export function restRows(j, tree) {
  * dispatch log.
  */
 export function v25Rows(project, model, snap, nowMs, tz) {
-  const tree = (snap && snap.tree) || new Map();
+  // A tree not read yet: every row "not available", never a zero or "not recorded" (the Design reviewer's B2).
+  const read = Boolean(snap && snap.tree);
+  const tree = read ? snap.tree : new Map();
   const ledger = snap && snap.records ? snap.records.get('docs/LEDGER.md') : undefined;
   let latest;
-  if (!tree.has('docs/LEDGER.md')) latest = NOT_RECORDED;
+  if (!read) latest = NOT_AVAILABLE;
+  else if (!tree.has('docs/LEDGER.md')) latest = NOT_RECORDED;
   else if (!ledger) latest = NOT_AVAILABLE;
   else latest = ledger.id ? [ledger.id, ledger.date ? reachedDateWords(ledger.date, nowMs, tz) : 'date not recorded', ledger.title].join(' · ') : NOT_RECORDED;
   const specs = [...tree.keys()].filter((p) => SPEC_PATH_RE.test(p) && !p.startsWith('specs/_')).length;
@@ -366,12 +371,12 @@ export function v25Rows(project, model, snap, nowMs, tz) {
     { title: 'Phases, gates and standard milestones', words: "They come with the v3 pipeline. This project runs the older pipeline's sprints and ledger." },
     { title: 'The Timeline', words: 'Also v3. Its sprints are the strip above.' },
   ];
-  if (!has('questions/') && !has('queue/')) notUsed.push({ title: 'Questions and cards', words: 'No questions or queue folder: it asks you through pull requests.' });
-  if (!has('dispatch-log/')) notUsed.push({ title: 'Agent runs', words: 'No dispatch log.' });
+  if (read && !has('questions/') && !has('queue/')) notUsed.push({ title: 'Questions and cards', words: 'No questions or queue folder: it asks you through pull requests.' });
+  if (read && !has('dispatch-log/')) notUsed.push({ title: 'Agent runs', words: 'No dispatch log.' });
   return {
-    ci: `CI on ${project.defaultBranch}: ${model && model.ci ? model.ci : NOT_RECORDED}`,
+    ci: `CI on ${project.defaultBranch}: ${model && model.ci ? model.ci : read ? NOT_RECORDED : NOT_AVAILABLE}`,
     latest,
-    records: `${entries} · ${specs} spec${specs === 1 ? '' : 's'}`,
+    records: read ? `${entries} · ${specs} spec${specs === 1 ? '' : 's'}` : NOT_AVAILABLE,
     notUsed,
   };
 }

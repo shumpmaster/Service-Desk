@@ -1026,9 +1026,12 @@ function pageTwoRows(p, bd) {
   else waits = pageRow('page-waits', to, stc('check'), PAGE_WORDS.nothingWaiting, null, { live: checkedWords });
   const rows = [waits];
   if (p.project.model === 'v3') {
-    const at = atWorkLine(p.project, p.model, p.ball, p.j, TZ);
+    // No records held yet, or none ever read: "not available", as Home's tile says (home.js, unreadLines), never a zero.
+    const unread = w.read !== 'ok' && !(p.snap && p.snap.tree);
+    const at = unread ? `At work: ${NOT_AVAILABLE}` : atWorkLine(p.project, p.model, p.ball, p.j, TZ);
     const who = /^At work: /.test(at) ? at.slice('At work: '.length) : `${at[0].toLowerCase()}${at.slice(1)}`;
-    rows.push(pageRow('page-work', go('p', name, 'team'), vi('agents'), `At work now: ${who}`, `${WORDS.agents.toLowerCase()}: ${(p.agents || []).length}`));
+    const n = !unread && p.model && Array.isArray(p.agents) ? p.agents.length : NOT_AVAILABLE;
+    rows.push(pageRow('page-work', go('p', name, 'team'), vi('agents'), `At work now: ${who}`, `${WORDS.agents.toLowerCase()}: ${n}`));
   }
   return rows;
 }
@@ -1181,9 +1184,9 @@ function renderPage(p, bd) {
     } else {
       out.push(sheetShell(back, PAGE_WORDS.experiments, [sheetHead(null, PAGE_WORDS.experiments, back),
         h('p', { class: 'v2-small' }, `${rr.experiments.small} · experiments/`),
-        rr.experiments.names.length ? h('ul', { class: 'v2-qlist' }, rr.experiments.names.map((n) => h('li', { class: 'v2-mono ink', key: `exp:${n}` },
-          ext(treeLink(project, p.snap.tree, `experiments/${n}.md`), n, 'v2-inl') || n)))
-          : h('p', { class: 'v2-small' }, 'No experiment is registered in experiments/.')], 'page-sheet'));
+        rr.experiments.names.length ? h('ul', { class: 'v2-qlist v2-explist' }, rr.experiments.names.map((n) => h('li', { class: 'v2-mono ink', key: `exp:${n}` },
+          ext(treeLink(project, p.snap.tree, `experiments/${n}.md`), n, 'v2-inl v2-exl') || n)))
+          : rr.experiments.read ? h('p', { class: 'v2-small' }, 'No experiment is registered in experiments/.') : null], 'page-sheet'));
     }
   }
   return out;
@@ -2138,23 +2141,49 @@ function cardSheet(bd, built, only, sheetId) {
 /** Mockup v2's circle for each of AC59's icons (desk-v2.html's ST; the Timeline's, as the page's). */
 const FEED_STC = { check: 'check', pastcheck: 'pastcheck', half: 'half', next: 'next', planned: 'planned', cross: 'cross', skip: 'skip', unrec: 'unrec', flag: 'flag' };
 
-/** A sprint's mark (AC60): a mark and a word, never colour alone; its reason one tap away when it has one. */
+/**
+ * A sprint's mark (AC60): a mark and a word, never colour alone; its reason one tap away when it has
+ * one. ✕, which no Plex file the desk serves holds, is drawn as an icon, its word beside it (AC81;
+ * AC84 "every word stays"); ✓ and – are Plex's own, as frame 7b writes them.
+ */
+const MARK_ICON = { '✕': 'bad' };
 function markNode(m) {
-  const words = `${m.mark ? `${m.mark} ` : ''}${m.word}`;
+  const icon = MARK_ICON[m.mark];
+  const words = [icon ? vi(icon, 'v2-k v2-mk') : m.mark ? `${m.mark} ` : null, m.word];
   if (!m.why) return h('span', { class: 'sb-mkw' }, words);
   return h('details', { class: 'sb-mkw sb-why' }, h('summary', {}, words), h('p', { class: 'v2-small' }, m.why));
 }
 
-/** Context or Why longer than three lines (AC84): cut at three, "<n> more ▸" opening the rest (AC60's text, unchanged). */
+/**
+ * Context or Why longer than three lines (AC84): cut at three, "<n> more ▸" opening the rest (AC60's
+ * text, unchanged). The control shows only when something is hidden: in the browser the page
+ * measures the cut text (measureClips) and counts the parts not wholly shown; before it has measured,
+ * and where nothing can be measured, it judges by length.
+ */
 const LONG_CHARS = 160; // about three lines of 12 px text in the 360 px label row's text column (C)
+/** Each cut text's parts not wholly shown, by its key, as last measured (0: nothing hidden). */
+const moreHidden = new Map();
 function longText(name, key, items, render) {
   const total = items.reduce((n, x) => n + String(x.text).length, 0);
-  if (items.length <= 1 && total <= LONG_CHARS) return h('span', { class: 'v2-bt' }, items.map(render));
   const fk = `more:${key}`;
   const open = isOpenFold(name, fk, false);
-  const more = items.length > 1 ? `${items.length - 1} more` : 'more';
-  return [h('span', { class: `v2-bt${open ? '' : ' cut'}`, key: `bt:${key}` }, items.map(render)),
-    foldButton(name, fk, false, { class: 'v2-fold v2-inmore', 'data-more': key }, open ? 'less' : more)];
+  const guess = items.length > 1 || total > LONG_CHARS ? Math.max(1, items.length - 1) : 0;
+  const hidden = moreHidden.has(key) ? moreHidden.get(key) : guess;
+  const text = h('span', { class: `v2-bt${open ? '' : ' cut'}`, key: `bt:${key}`, 'data-bt': open ? null : key }, items.map(render));
+  if (!open && !hidden) return text;
+  const more = items.length > 1 ? `${hidden} more` : 'more';
+  return [text, foldButton(name, fk, false, { class: 'v2-fold v2-inmore', 'data-more': key }, open ? 'less' : more)];
+}
+
+/** How many of a cut text's parts are not wholly shown; null where the browser can't say. */
+function hiddenParts(el) {
+  const [sh, ch] = [el.scrollHeight, el.clientHeight];
+  if (typeof sh !== 'number' || typeof ch !== 'number' || !ch) return null;
+  if (!(sh > ch + 1)) return 0;
+  const box = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+  const kids = [...(el.children || [])];
+  if (!box || !(box.height > 0) || !kids.length) return 1;
+  return Math.max(1, kids.filter((k) => k.getBoundingClientRect && k.getBoundingClientRect().bottom > box.bottom + 1).length);
 }
 
 /** One sprint, top to bottom (AC60, frame 7b): date and code, its marks at the right; its title as recorded; Technical, Context and Why as three grey-labelled rows; and the link to its tasks. */
@@ -2312,11 +2341,16 @@ function fitTimelineHead() {
     const head = view ? findClass(view, 'v2-tlhead') : null;
     const scr = view ? findClass(view, 'v2-timeline') : null;
     if (!head || !scr || !head.getBoundingClientRect || !scr.classList) return;
+    // Measured at its own height: the class also sets the header's height to the step (sandbox.css),
+    // so the bands sit flush under it, with no gap for the feed to show through (the Design reviewer's 3).
+    const had = String((scr.getAttribute && scr.getAttribute('class')) || '').split(/\s+/).filter((c) => /^tlh-\d+$/.test(c));
+    for (const c of had) scr.classList.remove(c);
     const hh = head.getBoundingClientRect().height;
-    if (!(hh > 0)) return;
+    if (!(hh > 0)) {
+      for (const c of had) scr.classList.add(c);
+      return;
+    }
     const n = Math.min(TLH_STEPS.max, Math.max(TLH_STEPS.min, Math.ceil(hh / TLH_STEPS.step) * TLH_STEPS.step));
-    const had = String((scr.getAttribute && scr.getAttribute('class')) || '').split(/\s+/);
-    for (const c of had) if (/^tlh-\d+$/.test(c) && c !== `tlh-${n}`) scr.classList.remove(c);
     scr.classList.add(`tlh-${n}`);
   } catch {
     // the bands keep their default place under the header
@@ -3181,6 +3215,15 @@ function measureClips() {
   let changed = false;
   eachElement(view, (el) => {
     if (!el.getAttribute) return;
+    const bt = el.getAttribute('data-bt');
+    if (bt != null) {
+      const n = hiddenParts(el);
+      if (n != null && moreHidden.get(bt) !== n) {
+        moreHidden.set(bt, n);
+        changed = true;
+      }
+      return;
+    }
     const sum = el.getAttribute('data-sum');
     const line = el.getAttribute('data-line');
     const ev = el.getAttribute('data-since');

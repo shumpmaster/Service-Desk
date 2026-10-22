@@ -46,6 +46,7 @@ test('AC84 ("what stays"): every word AC59 to AC61 show is still on the Timeline
       const feed = feedView(m.ctx, { pulls: [] }, app.now, 'America/Chicago');
       const text = flat(app.view.textContent);
       const want = [];
+      let crosses = 0;
       for (const g of [feed.top, feed.bottom]) want.push(g.label, g.text, g.source.words, g.finish);
       for (const b of feed.blocks) {
         want.push(b.band.name, b.band.label);
@@ -60,7 +61,11 @@ test('AC84 ("what stays"): every word AC59 to AC61 show is still on the Timeline
           for (const s of [...(x.sprints || []), ...(x.named || [])]) {
             want.push(s.code, s.title, s.missing, s.none, s.tasks && s.tasks.line, s.tasks && s.tasks.none);
             if (s.date) want.push(`${s.date} · ${s.code}`);
-            for (const mk of s.marks || []) want.push(`${mk.mark ? `${mk.mark} ` : ''}${mk.word}`, mk.why);
+            // ✕ is no Plex character: drawn as an icon, its word kept beside it (AC81, specs/S-001.md:6563-6565; AC84 "every word stays").
+            for (const mk of s.marks || []) {
+              want.push(mk.mark === '✕' ? mk.word : `${mk.mark ? `${mk.mark} ` : ''}${mk.word}`, mk.why);
+              if (mk.mark === '✕') crosses += 1;
+            }
             for (const t of s.technical || []) want.push(t.text);
             for (const c of s.context || []) want.push(c.fact, c.exception ? null : (c.source || 'source not recorded'));
             for (const w of s.why || []) want.push(w);
@@ -71,6 +76,10 @@ test('AC84 ("what stays"): every word AC59 to AC61 show is still on the Timeline
       for (const [, w] of feed.iconsKey) want.push(w);
       const missing = want.filter((w) => w != null && w !== '' && !text.includes(flat(w)));
       assert.deepEqual(missing, [], `${repoOpts.ac61 ? 'AC61\'s fixture' : 'J11\'s fixture'}: every word drawn`);
+      const icons = byClass(app.view, 'v2-stats').flatMap((st) => findAll(st, (e) => e.tag === 'svg' && /\bvi-bad\b/.test(e.attrs.class || '')));
+      assert.equal(icons.length, crosses, 'each ✕ mark an icon beside its word');
+      if (!repoOpts.ac61) assert.ok(crosses >= 1, `J11's fixture holds a failed check (#40): ${crosses}`);
+      assert.ok(!text.includes('✕'), '✕ never as text');
       assert.ok(want.filter(Boolean).length > 200, `${want.filter(Boolean).length} words and lines checked`);
     } finally {
       app.restore();
@@ -358,4 +367,100 @@ test('AC84 + AC81: the Timeline\'s type is the tokens\' or desk-v2.html\'s pairs
   } finally {
     app.restore();
   }
+});
+
+// ---------------------------------------------------------------------------
+// Stage 3, review round 1 (the Design reviewer's 1 to 4)
+
+test('AC84 (specs/S-001.md:6917-6922; the Design reviewer\'s 4, stage 3 round 1): "<n> more ▸" only when something is hidden — the page measures each cut Context and Why, and a text that fits whole has no control; one cut counts the parts not wholly shown', async () => {
+  const app = await openSD('#/p/Service-Desk/timeline', { repoOpts: { ac61: true, answer: ac61Answer() } });
+  try {
+    await app.tap(keyed(app, 'fold:sprints:Design-i2:untied'));
+    const cut = () => findAll(app.view, (e) => e.attrs && e.attrs['data-bt'] != null);
+    const sp = () => findAll(app.view, (e) => e.attrs && e.attrs['data-sprint'] === 'PR #906')[0];
+    assert.ok(cut().length >= 2, 'each Context and Why, cut at three lines, measured');
+    assert.ok(byClass(app.view, 'v2-inmore').length >= 1, 'before it has measured: judged by length');
+    // The fake DOM can't lay out text: every cut text fits whole (34 px in a 34 px box) but PR #906's Context,
+    // whose two facts end at 30 and 80 px in a 50 px box: one of them not wholly shown.
+    for (const el of cut()) {
+      el.clientHeight = 34;
+      el.scrollHeight = 34;
+    }
+    const ctx = byClass(byClass(sp(), 'v2-bl')[1], 'v2-bt')[0];
+    ctx.clientHeight = 50;
+    ctx.scrollHeight = 120;
+    ctx.getBoundingClientRect = () => ({ top: 0, bottom: 50, height: 50, left: 0, right: 260, width: 260 });
+    const facts = ctx.children.filter((c) => c.tag);
+    assert.equal(facts.length, 2, 'AC61\'s two facts');
+    facts.forEach((f, i) => { f.getBoundingClientRect = () => ({ top: 0, bottom: [30, 80][i], height: 17, left: 0, right: 260, width: 260 }); });
+    await app.resize(360);
+    await app.flush();
+    const mores = byClass(app.view, 'v2-inmore');
+    assert.deepEqual(mores.map((m) => m.attrs['data-more']), [`${ctx.attrs['data-bt']}`], 'only the one cut text has a control');
+    assert.equal(mores[0].textContent, '1 more', 'the fact not wholly shown');
+    // The second fact moved up into the box (a wider screen): both shown whole, the control goes.
+    facts[1].getBoundingClientRect = () => ({ top: 0, bottom: 48, height: 17, left: 0, right: 260, width: 260 });
+    ctx.scrollHeight = 50;
+    await app.resize(414);
+    await app.flush();
+    assert.equal(byClass(app.view, 'v2-inmore').length, 0, 'nothing hidden: no control');
+    const why = byClass(byClass(sp(), 'v2-bl')[2], 'v2-inmore');
+    assert.equal(why.length, 0, 'Why fits whole: no "1 more"');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC84 (specs/S-001.md:6879-6880, :6903-6906; the Design reviewer\'s 3, stage 3 round 1): the pinned header is exactly as tall as the bands\' offset — the class that places the bands also sets the header\'s height, and the page measures the header at its own height, so it can shrink again', async () => {
+  for (let n = 64; n <= 208; n += 8) assert.match(CSS, new RegExp(`\\.v2-timeline\\.tlh-${n} \\.v2-tlhead \\{ min-height: ${n}px; \\}`), `a ${n} px header`);
+  assert.match(rule('.v2-tlhead'), /align-content: start;/);
+  assert.match(RAW, /html\.sb \*, html\.sb \*::before, html\.sb \*::after \{ box-sizing: border-box; \}/, 'its border inside its height');
+  // The header's own height: 101 px, then 70; with a tlh class it is that class's height (its min-height).
+  let natural = 101;
+  const saved = Object.getOwnPropertyDescriptor(El0.prototype, 'getBoundingClientRect');
+  El0.prototype.getBoundingClientRect = function rect() {
+    if (` ${this.className} `.includes(' v2-tlhead ')) {
+      const scr = byClass(this.ownerDocument ? this.ownerDocument : this, 'v2-timeline')[0];
+      const cls = (scr && scr.className) || '';
+      const m = /\btlh-(\d+)\b/.exec(cls);
+      const h = Math.max(natural, m ? Number(m[1]) : 0);
+      return { top: 0, bottom: h, height: h, left: 0, right: 360, width: 360 };
+    }
+    return { top: 0, bottom: 0, height: 0, left: 0, right: 0, width: 0 };
+  };
+  try {
+    const app = await openSD('#/p/Service-Desk/timeline');
+    try {
+      const scr = () => byClass(app.view, 'v2-timeline')[0];
+      // Point the stub at the screen: the header's height follows the class on the Timeline.
+      const head = byClass(app.view, 'v2-tlhead')[0];
+      head.ownerDocument = app.view;
+      await app.resize(360);
+      assert.match(scr().className, /\btlh-104\b/, '101 px: the bands at 104 px, the header 104 px');
+      await app.resize(360);
+      assert.match(scr().className, /\btlh-104\b/, 'measured again: still 104, never creeping up');
+      natural = 70;
+      await app.resize(414);
+      assert.match(scr().className, /\btlh-72\b/, 'a shorter header (a wider screen): 72 px, measured at its own height');
+      assert.equal((scr().className.match(/\btlh-\d+\b/g) || []).length, 1, 'one class at a time');
+    } finally {
+      app.restore();
+    }
+  } finally {
+    if (saved) Object.defineProperty(El0.prototype, 'getBoundingClientRect', saved);
+    else delete El0.prototype.getBoundingClientRect;
+  }
+});
+
+test('AC84 (specs/S-001.md:6917-6922; the Design reviewer\'s 1 and 2, stage 3 round 1): a sprint\'s title sits under its date row with no h4 margins; its marks one even line in one size, a mark with a reason as its neighbours', () => {
+  assert.match(rule('.v2-spt'), /margin: 0;/, 'no browser margins above or below the title');
+  assert.match(rule('.v2-stats'), /display: flex;/);
+  assert.match(CSS, /\n\.v2-stats \{ align-items: center; \}/, 'one even line: each mark centred in it');
+  const m = rule('.v2-timeline .v2-stats .sb-mkw, .v2-timeline .v2-stats .sb-mkw > summary');
+  assert.match(m, /font: 400 11px\/1\.35 var\(--font\); color: var\(--ink2\);/, 'one size for every mark, a <details> one too');
+  // It outweighs the Timeline's rule for a reason's summary (12 px), which comes before it.
+  const small = CSS.indexOf('\n.v2-timeline .sb-why, .v2-timeline .sb-why > summary');
+  assert.ok(small > 0 && CSS.indexOf('\n.v2-timeline .v2-stats .sb-mkw, ') > small, 'after it, and heavier (three classes)');
+  assert.match(rule('.v2-timeline .v2-stats span.sb-mkw, .v2-timeline .v2-stats .sb-mkw > summary'), /display: inline-flex; align-items: center; gap: 2px;/);
+  assert.match(rule('.v2-stats .v2-mk'), /width: 10px; height: 10px;/, 'the ✕ icon at the marks\' size');
 });

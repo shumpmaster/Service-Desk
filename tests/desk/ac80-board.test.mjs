@@ -94,8 +94,10 @@ async function markDoneInSheet(app, id) {
   assert.ok(b, `"Done ✓" in ${id}'s sheet`);
   // From stage 4 a question's and a gate's sheet say it in frame 3's words, "✓ Move to Done · then
   // answer on GitHub" (specs/S-001.md:6995, AC85: AC80's "Done ✓"); every other sheet keeps "Done ✓".
+  // Its two parts read apart, " · " between them (governance/domains/design/README.md, part A, item 19;
+  // stage 4's design review, round 1, N3).
   const kind = id.split('|')[1];
-  assert.equal(b.textContent, kind === 'question' || kind === 'gate' ? 'Move to Donethen answer on GitHub' : 'Done ✓');
+  assert.equal(b.textContent, kind === 'question' || kind === 'gate' ? 'Move to Done · then answer on GitHub' : 'Done ✓');
   await app.tap(b);
 }
 

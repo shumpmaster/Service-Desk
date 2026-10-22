@@ -31,7 +31,13 @@ function inline(text) {
   return out.join('');
 }
 
-export function renderMarkdown(src) {
+/**
+ * opts.numbers (the trial view's sheets, from stage 4): each ordered item carries the number the file
+ * writes (`<li value="2">`), so a list that starts at 2, or repeats or skips a number, shows the file's
+ * own numbers, never the browser's count (AC12: the file rendered whole; AC53's one-box fallback).
+ * Without it the output is as it always was (the accepted views, AC43).
+ */
+export function renderMarkdown(src, opts = {}) {
   const lines = String(src).replace(/\r\n?/g, '\n').split('\n');
   const html = [];
   let para = [];
@@ -41,7 +47,7 @@ export function renderMarkdown(src) {
     para = [];
   };
   const flushList = () => {
-    if (list) html.push(`<${list.tag}>${list.items.map((i) => `<li>${inline(i)}</li>`).join('')}</${list.tag}>`);
+    if (list) html.push(`<${list.tag}>${list.items.map((i, k) => `<li${opts.numbers && list.nums[k] != null ? ` value="${list.nums[k]}"` : ''}>${inline(i)}</li>`).join('')}</${list.tag}>`);
     list = null;
   };
   for (let i = 0; i < lines.length; i++) {
@@ -63,15 +69,16 @@ export function renderMarkdown(src) {
       continue;
     }
     const ul = /^\s{0,3}[-*] (.*)$/.exec(l);
-    const ol = /^\s{0,3}[0-9]+\. (.*)$/.exec(l);
+    const ol = /^\s{0,3}([0-9]+)\. (.*)$/.exec(l);
     if (ul || ol) {
       flushPara();
       const tag = ul ? 'ul' : 'ol';
       if (!list || list.tag !== tag) {
         flushList();
-        list = { tag, items: [] };
+        list = { tag, items: [], nums: [] };
       }
-      list.items.push((ul || ol)[1]);
+      list.items.push(ul ? ul[1] : ol[2]);
+      list.nums.push(ol ? Number(ol[1]) : null);
       continue;
     }
     if (l.trim() === '') {

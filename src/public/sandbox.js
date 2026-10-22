@@ -1741,7 +1741,8 @@ function stepButton(p, card, lane) {
   // A gate card's step is its four buttons (P-001-gate-buttons.md, A), on its Done card too while it is
   // confirming (P-001-board-done-button.md, A); it has no one label of its own.
   if (s.gate) return h('span', { class: 'v2-gatebtns', key: `gatebtns:${card.id}:${lane}` }, card.buttons.map((b) => answerLink(p, card, b, 'v2-step', [b.label])));
-  if (s.opensSheet) return h('a', { class: 'v2-step', href: cardRoute(boardState.view && boardState.view.only, card.id), key: `step:${card.id}`, onclick: () => { nav.opener = `card:${card.id}`; } }, s.label);
+  // Its key is the opener, so closing the sheet gives the focus back to this step (AC85: "focus going back to the card").
+  if (s.opensSheet) return h('a', { class: 'v2-step', href: cardRoute(boardState.view && boardState.view.only, card.id), key: `step:${card.id}`, onclick: () => { nav.opener = `step:${card.id}`; } }, s.label);
   if (!s.href) return h('span', { class: 'v2-step off' }, `${s.label.replace(/ ↗$/, '')}: no link`);
   return ext(s.href, s.label, 'v2-step');
 }
@@ -1981,6 +1982,21 @@ function clipNode(id, text, cls, toggle = true) {
     } }, open ? SHEET_WORDS.readLess : SHEET_WORDS.readAll, vi(open ? 'chevdown' : 'chev'))];
 }
 
+/**
+ * A card's words with their `code` drawn as code (the card's own Markdown, as its whole record renders it):
+ * each pair of backticks becomes a code element holding the words between, as text; a lone backtick stays.
+ */
+function codeWords(text) {
+  const parts = String(text).split('`');
+  if (parts.length < 3) return text;
+  const out = [];
+  parts.forEach((t, i) => {
+    if (i % 2 === 1 && i < parts.length - 1) out.push(h('code', { class: 'v2-code' }, t));
+    else out.push(i % 2 === 1 ? `\`${t}` : t);
+  });
+  return out;
+}
+
 /** A sheet's state under its head: kicked back with its reason, or confirming, with a two-step pull request's step; the step 2 note. */
 function sheetState(sx) {
   const { card, lane, pending, kicked, k2 } = sx;
@@ -2007,12 +2023,12 @@ function sheetList(sx, wholeWords, fullText, files) {
   const done = pending
     ? h('button', { type: 'button', class: 'v2-sitem', key: 'sheet-undo', onclick: () => { boardState.set(undoMark(boardState.marks, card.id)); render(); } }, vi('kick'), h('span', {}, 'Undo'))
     : h('button', { type: 'button', class: 'v2-sitem', key: 'sheet-done', onclick: () => { markCard(card); nav.to(back); } },
-      vi('done'), h('span', {}, SHEET_WORDS.moveToDone), h('span', { class: 'v2-sv' }, SHEET_WORDS.moveToDoneThen));
+      vi('done'), h('span', {}, SHEET_WORDS.moveToDone), h('span', { class: 'v2-sv' }, h('span', { class: 'sb-vh' }, ' · '), SHEET_WORDS.moveToDoneThen));
   const fold = h('button', { type: 'button', class: 'v2-sitem', key: `fold:${fk}`, 'aria-expanded': open ? 'true' : 'false', onclick: toggle },
-    vi(open ? 'chevdown' : 'chev'), h('span', {}, wholeWords), h('span', { class: 'v2-sv' }, SHEET_WORDS.wholeThen));
+    vi(open ? 'chevdown' : 'chev'), h('span', {}, wholeWords), h('span', { class: 'v2-sv' }, h('span', { class: 'sb-vh' }, ' · '), SHEET_WORDS.wholeThen));
   return h('div', { class: 'v2-slist', key: 'slist' }, done, fold,
     open ? h('div', { class: 'v2-whole', key: `wholebody:${card.id}` },
-      fullText ? h('article', { class: 'sb-record', key: 'whole-record', html: renderMarkdown(fullText) }) : h('p', { class: 'v2-small gap' }, `The file: ${NOT_AVAILABLE}`),
+      fullText ? h('article', { class: 'sb-record', key: 'whole-record', html: renderMarkdown(fullText, { numbers: true }) }) : h('p', { class: 'v2-small gap' }, `The file: ${NOT_AVAILABLE}`),
       h('ul', { class: 'v2-files', key: 'whole-files' }, files.map((f) => h('li', { key: `file:${f.label}` },
         h('p', { class: 'v2-small' }, h('b', {}, f.label), f.path ? [` ${SHEET_WORDS.writes} `, h('span', { class: 'v2-mono' }, f.path), ` ${SHEET_WORDS.atBranch} `, h('span', { class: 'v2-mono' }, f.branch)] : ` ${SHEET_WORDS.copies}`),
         h('pre', { class: 'v2-pre' }, f.text))))) : null);
@@ -2065,7 +2081,7 @@ function questionSheetParts(sx) {
       if (qs && qs.form === 'fallback') {
         // AC53's one-box fallback: the line saying so, the file shown whole, its link (at the foot) and one box.
         parts.push(h('p', { class: 'v2-small', key: 'cant-split' }, `${CANT_SPLIT} (${qs.why}).`));
-        parts.push(h('article', { class: 'sb-record', key: 'fallback-text', html: renderMarkdown(p0.text) }));
+        parts.push(h('article', { class: 'sb-record', key: 'fallback-text', html: renderMarkdown(p0.text, { numbers: true }) }));
       }
       // One box per option: "<letter>. <its words>", the description under it, "Recommended" on one only, its own button.
       parts.push(h('div', { class: 'v2-opts', key: 'opts', role: 'list' }, btns.map((b) => {
@@ -2134,7 +2150,7 @@ function gateSheetParts(sx) {
     const then = (v.options || []).find((o) => o.value === b.value);
     const kill = b.value === 'kill';
     return h('div', { class: 'v2-opt', role: 'listitem', key: `opt:${b.value}` },
-      h('div', { class: 'v2-ot' }, h('span', { class: 'v2-ol' }, b.label), h('span', { class: 'v2-od' }, then ? then.then : NOT_RECORDED),
+      h('div', { class: 'v2-ot' }, h('span', { class: 'v2-ol' }, b.label), h('span', { class: 'v2-od' }, then ? codeWords(then.then) : NOT_RECORDED),
         b.recommended ? h('span', { class: 'v2-rec' }, SHEET_WORDS.recommended) : null,
         kill ? h('span', { class: 'v2-mk v2-undo1', key: 'kill-lock' }, vi('lock'), h('span', {}, SHEET_WORDS.cantUndo)) : null),
       answerLink(p, card, b, `v2-abtn${kill ? ' danger' : ''}`, [`${b.label} ↗`]));
@@ -2275,7 +2291,7 @@ function cardSheet(bd, built, only, sheetId) {
     parts.push(h('div', { class: 'v2-opts', key: 'opts', role: 'list' }, btns.map((b) => {
       const then = (v.options || []).find((o) => o.value === b.value);
       return h('div', { class: 'v2-opt', role: 'listitem', key: `opt:${b.value}` },
-        h('div', { class: 'v2-ot' }, h('span', { class: 'v2-ol' }, b.value), h('span', { class: 'v2-od' }, then ? then.then : NOT_RECORDED),
+        h('div', { class: 'v2-ot' }, h('span', { class: 'v2-ol' }, b.value), h('span', { class: 'v2-od' }, then ? codeWords(then.then) : NOT_RECORDED),
           b.recommended ? h('span', { class: 'v2-rec' }, 'Recommended') : null),
         answerLink(p, card, b, 'v2-abtn', [b.label]));
     })));

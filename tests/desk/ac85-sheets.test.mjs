@@ -382,8 +382,10 @@ test('AC85 "✓ Move to Done · then answer on GitHub" marks the card as AC80\'s
       await openSheet(app, id);
       const b = keyed(app, 'sheet-done');
       assert.equal(b.tag, 'button');
-      assert.equal(b.textContent, 'Move to Donethen answer on GitHub');
-      assert.equal(byClass(b, 'v2-sv')[0].textContent, 'then answer on GitHub');
+      // Its accessible name reads its two parts apart (the rulebook's part A, item 19; design review round 1, N3).
+      assert.equal(b.textContent, 'Move to Done · then answer on GitHub');
+      assert.equal(byClass(b, 'sb-vh')[0].textContent, ' · ', 'the separator, for a screen reader only');
+      assert.equal(byClass(b, 'v2-sv')[0].textContent, ' · then answer on GitHub');
       assert.ok(findAll(b, (e) => e.tag === 'svg' && /vi-done/.test(e.attrs.class)).length, 'the ✓, as an icon');
       await app.tap(b);
       assert.equal(app.loc.hash, '#/waiting', 'the sheet closes on the mark');
@@ -416,7 +418,7 @@ test('AC85 "▸ The whole question · and the file each answer writes": a fold h
   try {
     await openSheet(app, SEND);
     const fold = keyed(app, `fold:whole:${SEND}`);
-    assert.equal(fold.textContent, 'The whole questionand the file each answer writes');
+    assert.equal(fold.textContent, 'The whole question · and the file each answer writes');
     assert.equal(fold.attrs['aria-expanded'], 'false');
     assert.equal(keyed(app, `wholebody:${SEND}`), null, 'folded');
     await app.tap(fold);
@@ -475,11 +477,16 @@ test('AC85 a gate\'s sheet: "<Phase> gate: <the card\'s question>"; "The case op
     // The four choices.
     const opts = byClass(sheet(app), 'v2-opt');
     assert.deepEqual(opts.map((o) => byClass(o, 'v2-ol')[0].textContent), ['Proceed', 'Hold', 'Recycle', 'Kill']);
+    // What follows, in the card's own words, its `code` drawn as code (design review round 1, N4c; the rulebook's item 19).
     assert.deepEqual(opts.map((o) => byClass(o, 'v2-od')[0].textContent), [
-      'the Launch gate is passed: the product goes live and graduates (done), as `approve` does.',
-      'not yet: nothing moves; the Chief of Staff updates the case under the next number, the Critic reads it again, and a fresh card follows (needs a `Reason:` line).',
-      'back into an earlier phase as its next iteration (`Into: <Phase>` and a `Reason:` line); rounds reset.',
-      'the project is closed (kill). A `Proxy:` line is refused on this word.'], 'what follows, in the card\'s own words');
+      'the Launch gate is passed: the product goes live and graduates (done), as approve does.',
+      'not yet: nothing moves; the Chief of Staff updates the case under the next number, the Critic reads it again, and a fresh card follows (needs a Reason: line).',
+      'back into an earlier phase as its next iteration (Into: <Phase> and a Reason: line); rounds reset.',
+      'the project is closed (kill). A Proxy: line is refused on this word.'], 'what follows, in the card\'s own words');
+    assert.deepEqual(opts.map((o) => findAll(byClass(o, 'v2-od')[0], (e) => e.tag === 'code').map((c) => c.textContent)),
+      [['approve'], ['Reason:'], ['Into: <Phase>', 'Reason:'], ['Proxy:']], 'each `…` a code element, its words as text');
+    assert.ok(!opts.some((o) => byClass(o, 'v2-od')[0].textContent.includes('`')), 'no raw backtick');
+    assert.match(rule('.v2-code'), /font-family: var\(--mono\)/);
     assert.deepEqual(opts.map((o) => byClass(o, 'v2-rec').length), [1, 0, 0, 0], '"Recommended" on the case\'s recommendation (proceed), never the Critic\'s (recycle)');
     assert.deepEqual(opts.map((o) => (keyed(app, 'kill-lock') && o.contains(keyed(app, 'kill-lock')) ? keyed(app, 'kill-lock').textContent : null)), [null, null, null, "Can't be undone"]);
     assert.ok(findAll(keyed(app, 'kill-lock'), (e) => e.tag === 'svg' && /vi-lock/.test(e.attrs.class)).length, 'with the lock');
@@ -708,4 +715,67 @@ test('AC85 (round 1, N3): a v2.5 question\'s text to copy carries the owner\'s w
   } finally {
     app.restore();
   }
+});
+
+// ---------------------------------------------------------------------------
+// Stage 4's design review, round 1: B1 (the record's list numbers), N4a (focus back from the step); the
+// Reviewer's round 2, R2-N1 (defaultLetter's anchor)
+
+test('AC85 + AC12 (design review round 1, B1): the whole record keeps its lists — each number as the file writes it, a list starting at 2 included, and its bullets — in the fold and in the one-box fallback', async () => {
+  const { renderMarkdown } = await import('../../src/lib/markdown.js');
+  // Pure: the file's own numbers with `numbers`; without it, the accepted views' output as it always was (AC43).
+  assert.equal(renderMarkdown('  A. x\n  2. y\n  3. z', { numbers: true }), '<p>A. x</p>\n<ol><li value="2">y</li><li value="3">z</li></ol>');
+  assert.equal(renderMarkdown('1. a\n1. b\n4. c', { numbers: true }), '<ol><li value="1">a</li><li value="1">b</li><li value="4">c</li></ol>', 'repeated or skipped, as written');
+  assert.equal(renderMarkdown('- a\n- b', { numbers: true }), '<ul><li>a</li><li>b</li></ul>');
+  assert.equal(renderMarkdown('  A. x\n  2. y'), '<p>A. x</p>\n<ol><li>y</li></ol>', 'the accepted views unchanged');
+  const app = await openLetters();
+  try {
+    // The numbered question's fold: "1." to "11.", each the file's.
+    await openSheet(app, LAB);
+    await app.tap(keyed(app, `fold:whole:${LAB}`));
+    const lab = keyed(app, 'whole-record').innerHTML;
+    for (let n = 1; n <= 11; n++) assert.ok(lab.includes(`<li value="${n}">`), `number ${n}`);
+    // The file that can't be split, shown whole on the sheet itself: its "2." stays, which is why it can't be split.
+    await openSheet(app, MIXED);
+    assert.match(keyed(app, 'fallback-text').innerHTML, /A\. The first choice\.<\/p>\n<ol><li value="2">A numbered line among lettered ones\.<\/li><\/ol>/);
+    // A question's Context bullets.
+    await openSheet(app, SEND);
+    await app.tap(keyed(app, `fold:whole:${SEND}`));
+    assert.match(keyed(app, 'whole-record').innerHTML, /<ul><li>NOT a real record: made up for AC85/);
+  } finally {
+    app.restore();
+  }
+  // The look: inside a sheet the record's lists keep their marks, over the v2 resets.
+  assert.match(rule('.v2-sheet .sb-record ol'), /list-style: decimal; padding-left: 1\.6em;/);
+  assert.match(rule('.v2-sheet .sb-record ul'), /list-style: disc; padding-left: 1\.2em;/);
+  assert.match(CSS, /:where\(\.v2\) :where\(ol, ul\) \{ list-style: none; padding: 0; \}/, 'the reset they outrank, zero-specificity');
+});
+
+test('AC85 (design review round 1, N4a): a sheet opened from the card\'s "Answer" step gives the focus back to that step when it closes, by the close, a tap outside or Escape', async () => {
+  const app = await openLetters();
+  try {
+    for (const how of ['control', 'outside', 'escape']) {
+      await app.go('#/waiting');
+      const step = keyed(app, `step:${NEXT}`);
+      assert.equal(step.textContent, 'Answer');
+      await app.tap(step);
+      await app.go(step.attrs.href);
+      assert.ok(sheet(app));
+      if (how === 'control') await app.tap(byClass(sheet(app), 'v2-x44')[0]);
+      else if (how === 'outside') await app.tap(byClass(app.view, 'v2-scrim')[0]);
+      else await app.key('Escape');
+      await app.flush();
+      assert.equal(sheet(app), null);
+      assert.equal(document.activeElement, keyed(app, `step:${NEXT}`), `focus back on the card's step (${how})`);
+    }
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC12 + AC85 (Reviewer round 2, R2-N1): a default\'s letter must start the field — a capital later in it is no default', () => {
+  assert.equal(defaultLetter({ default: 'see option B' }), null);
+  assert.equal(defaultLetter({ default: 'none, unlike B' }), null);
+  assert.equal(defaultLetter({ default: '  B' }), 'B', 'leading spaces trimmed');
+  assert.equal(defaultLabel({ reversibility: 'reversible', default: 'see option B', timeout: '24' }, null), 'per the question file: DEFAULT see option B');
 });

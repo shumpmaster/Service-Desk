@@ -1,4 +1,9 @@
-/* The MD sandbox's shared look (spec S-001, AC48 "The shared look"; AC42; AC62). One palette, each
+/* From stage 7 (S-001 AC88) every trial-view screen is drawn on mockup v2's tokens (the block at this file's
+   end): the rules below keep the layout of the screens no frame redraws, and every token they name resolves,
+   on mockup v2's ground, to one of AC81's (see "From stage 7" there). What follows describes the shared look
+   as it was drawn before; its token values are kept for AC48's and AC62's rules.
+
+   The MD sandbox's shared look (spec S-001, AC48 "The shared look"; AC42; AC62). One palette, each
    colour with one meaning on every screen: coral the owner, blue an agent, green and red pass and
    fail, purple a change to merge, amber a blocker, gold phase progress; from trial-view notes 2, one
    colour per phase (on the phase boxes' stripes and the Timeline's bands, line and chips only) and
@@ -68,9 +73,11 @@ html.sb header#top, html.sb footer#foot { display: none; }
 html.sb main#view { display: block; }
 html.sb *, html.sb *::before, html.sb *::after { box-sizing: border-box; }
 /* Mockup v2's screens (`.v2`) set their own links and paragraphs (AC81): these two resets stop at them, with no weight added. */
-html.sb a:where(:not(.v2 *)) { color: inherit; }
+html.sb a:where(:not(.v2 *)) { color: inherit; text-underline-offset: 2px; } /* AC88: a link in its words' ink, underlined as mockup v2 underlines one */
 html.sb :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 html.sb p:where(:not(.v2 *)) { margin: 0; }
+/* AC88: bold inside any text is 600, mockup v2's (AC81: "600 for bold inside any of these"); no rule gives it weight. */
+html.sb :where(b, strong):where(:not(.v2 *)) { font-weight: 600; }
 .sb-screen, .sb-screen * { overflow-wrap: anywhere; word-break: break-word; min-width: 0; }
 .small { font: var(--t-meta); }
 .sb-muted { color: var(--muted); }
@@ -92,16 +99,13 @@ html.sb p:where(:not(.v2 *)) { margin: 0; }
 /* Headers */
 .sb-hdr { display: flex; gap: var(--s3); align-items: flex-start; padding: var(--s3) 0 0; }
 .sb-hdr h1 { margin: 0; font: var(--t-screen); }
-.sb-eyebrow { margin: 0; font: var(--t-section); text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
+.sb-eyebrow { margin: 0; font: var(--t-section); letter-spacing: var(--track); color: var(--muted); }
 .sb-sub { margin: var(--s1) 0 0; color: var(--muted); font: var(--t-meta); }
 .sb-navs { display: flex; gap: var(--s2); flex: none; }
 .sb-back, .sb-prev, .sb-close { display: grid; place-items: center; min-width: 44px; min-height: 44px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surf); color: var(--ink); position: relative; cursor: pointer; padding: 0; }
 .ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
-.sb-top { margin: 0; font: var(--t-item); }
-.sb-top.you { color: var(--you); }
-.sb-top.quiet { color: var(--pass); }
 .sb-lead { margin: 0; font: var(--t-body); }
-.sb-h2 { margin: var(--s4) 0 0; font: var(--t-section); text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
+.sb-h2 { margin: var(--s4) 0 0; font: var(--t-section); letter-spacing: var(--track); color: var(--muted); }
 .sb-stale { color: var(--block); font: var(--t-meta); margin: 0; }
 .sb-stale::before { content: "! "; }
 .sb-card { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3); margin: 0; }
@@ -144,35 +148,9 @@ html.sb p:where(:not(.v2 *)) { margin: 0; }
 .sb-pmark.none { color: var(--muted); }
 .sb-pmark.none .sb-pmark-run { color: var(--muted); }
 
-/* Home (AC48, AC54): three collapsible groups, each a two-column grid of condensed cards. */
-.sb-hgroups { display: grid; gap: var(--s3); }
-.sb-hg-h { margin: 0; }
-.sb-hg-btn { width: 100%; min-height: 44px; display: flex; flex-wrap: wrap; gap: var(--s1) var(--s3); align-items: center; padding: var(--s2) var(--s3); border: 1px solid var(--line);
-  border-radius: var(--r); background: var(--surf2); color: var(--ink); font: var(--t-section); text-transform: uppercase; letter-spacing: var(--track); text-align: left; cursor: pointer; }
-.sb-hg-mark { width: 14px; flex: none; }
-.sb-hg-t { flex: 1 1 auto; }
-.sb-hg-n { color: var(--muted); }
-.sb-hg-you, .sb-hg-bad { flex-basis: 100%; padding-left: var(--s4); text-transform: none; letter-spacing: 0; font: var(--t-meta); }
-.sb-hg-you { color: var(--you); }
-.sb-hg-you::before { content: "◆ "; }
-.sb-hg-bad { color: var(--block); }
-.sb-hg-bad::before { content: "! "; }
-.sb-hgroup .sb-grid { margin-top: var(--s2); }
-.sb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
-.sb-pc { position: relative; background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2); display: flex; flex-direction: column; gap: var(--s2); }
-.sb-pc.bad { border-color: var(--block); }
-.sb-pc-main { text-decoration: none; display: flex; flex-direction: column; gap: var(--s1); }
-/* The whole card opens the Project screen; the Latest control and the pill sit above that link. */
-.sb-pc-main::after { content: ""; position: absolute; inset: 0; border-radius: var(--r); }
-.sb-pc-main:focus-visible { outline: none; }
-.sb-pc-main:focus-visible::after { outline: 2px solid var(--focus); outline-offset: 2px; }
-.sb-pc-top { display: flex; justify-content: space-between; align-items: center; gap: var(--s2); }
-.sb-app { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border: 1px solid var(--line); border-radius: var(--r); color: var(--muted); background: var(--surf2); }
-.sb-app .ic { width: 20px; height: 20px; }
-.sb-new { font: var(--t-meta); color: var(--muted); border: 1px solid var(--line); border-radius: var(--rs);
-  padding: 1px 6px; /* AC62: a label chip's inner padding, as drawn */ }
-.sb-new::before { content: "● "; }
-.sb-nm { margin: 0; font: var(--t-item); }
+/* Home's summary box and its bubble (AC54 (a); on AC82's tiles from stage 2, `.v2-tile`, below). Today's Home's own
+   rules, its groups, its two-column grid of cards and their "Latest" control, went at stage 7 (AC88), all but
+   `.sb-latest`'s first rule, which a member's page (AC49) still draws its "latest" lines with. */
 /* The summary (AC54 (a), 2026-10-15): its box always takes exactly three lines' height and hides
    the lines after the third; the card holds the whole text. Nothing scrolls in it and nothing adds
    an ellipsis: when the text runs past three lines, the third line fades at its end into the card's
@@ -194,21 +172,18 @@ button.sb-sum:focus-visible { outline: none; }
 .sb-sumbox > .sb-bubble.col-l { left: -8px; right: calc(-100% - 32px); }
 .sb-sumbox > .sb-bubble.col-r { right: -8px; left: calc(-100% - 32px); }
 .sb-sumbox > .sb-bubble.up { top: auto; bottom: calc(100% + 4px); }
-.sb-pc-rest { display: flex; flex-direction: column; gap: var(--s2); pointer-events: none; } /* a tap on it is the card's link's */
 .sb-why { position: relative; z-index: 2; font: var(--t-meta); color: var(--muted); }
 .sb-why > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
 .sb-why p { margin: var(--s1) 0 0; }
 .sb-latest { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: var(--s1); min-width: 44px; min-height: 44px; padding: 0 var(--s2);
   margin: -4px -4px -4px 0; /* AC62: an offset that keeps the 44 px target on the card's top row */
   border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf); color: var(--muted); font: var(--t-meta); cursor: pointer; }
-.sb-latest .ic { width: 16px; height: 16px; }
-.sb-latest.on { color: var(--ink); border-color: var(--ink); }
 /* The bubble spans the group's grid (both columns), below the card's top row or above the card, so it is never clipped.
    Every bubble (AC54, AC55, 2026-10-16) is held to the viewport's height less a margin at each end, and
    clear of the bar at every screen's foot (--sb-clear, set on the screens below; AC81): taller content
    scrolls up and down inside it, never sideways, and its top row, with "Close", stays in view (sticky). */
 .sb-bubble { position: absolute; z-index: 8; top: 48px; background: var(--surf); color: var(--ink); border: 1px solid var(--ink); border-radius: var(--r);
-  padding: var(--s2) var(--s3) var(--s3); box-shadow: 0 6px 18px rgb(0 0 0 / .18);
+  padding: var(--s2) var(--s3) var(--s3); box-shadow: var(--shadow);
   max-height: calc(100vh - var(--sb-clear, 0px) - 16px); max-height: calc(100dvh - var(--sb-clear, 0px) - 16px);
   overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
 .sb-bubble.col-l { left: 0; right: calc(-100% - 8px); }
@@ -226,9 +201,6 @@ button.sb-sum:focus-visible { outline: none; }
   .sb-bubble { animation: sb-pop .12s ease-out; }
   @keyframes sb-pop { from { opacity: .4; transform: translateY(-4px); } }
 }
-.sb-stamp { position: absolute; left: 50%; top: 55%; transform: translate(-50%, -50%) rotate(-9deg); border: 2.5px solid var(--gold); color: var(--gold);
-  border-radius: var(--rs); font: var(--t-section); letter-spacing: .14em; background: var(--page);
-  padding: 1px 6px; /* AC62: a label chip's inner padding */ }
 .circ { width: 16px; height: 16px; flex: none; }
 .circ circle { fill: none; stroke: var(--idle); stroke-width: 1.6; }
 .circ.tick circle { fill: var(--pass); stroke: var(--pass); }
@@ -238,7 +210,8 @@ button.sb-sum:focus-visible { outline: none; }
 .circ.hatch path { stroke: var(--muted); stroke-width: 1.2; }
 .sb-ball { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s1); font: var(--t-meta); }
 .sb-ball li { display: flex; gap: var(--s2); align-items: center; }
-.sb-ball li.who-you { color: var(--you); }
+.sb-ball li.who-you { color: var(--ink); } /* AC88: the words in ink; vermilion only on the ◆ beside them (AC81) */
+/* Today's Home's pill went with it at stage 2; its rules stay for AC42's test, which reads their signs. */
 .sb-pill { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; min-height: 44px; padding: var(--s2); border-radius: var(--rs); text-decoration: none;
   font: var(--t-meta); text-align: center; border: 1px solid var(--line); background: var(--surf2); color: var(--ink); }
 .sb-pill.you { background: var(--you); border-color: var(--you); color: var(--on); }
@@ -253,20 +226,7 @@ button.sb-sum:focus-visible { outline: none; }
 .sb-stall { margin: 0; font: var(--t-meta); color: var(--muted); }
 .sb-stall:empty { display: none; }
 
-/* The Home tile's phases (AC65, AC58): five small boxes, bottom up, each with its stripe; the compact
-   branch drawing inside the boxes on the left; the where-it-is line above them. */
-.sb-tph { position: relative; display: grid; gap: var(--s1); --rail: 26px; }
-.sb-tph.cols-2 { --rail: 40px; } .sb-tph.cols-3 { --rail: 52px; } .sb-tph.cols-4 { --rail: 64px; }
-.sb-where { display: flex; gap: var(--s2); align-items: center; font: var(--t-meta); color: var(--ph, var(--muted)); }
-.sb-trows { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s1); }
-.sb-trow { display: grid; padding: var(--s1) var(--s2) var(--s1) var(--rail); /* AC62: the room kept for the branch drawing */ border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf);
-  box-shadow: inset 2px 0 0 var(--ph, transparent); }
-.sb-trow.now { border-color: var(--gold); background: var(--golds); }
-.sb-trow.end { border-style: dashed; box-shadow: none; }
-.sb-tp { font: var(--t-meta); color: var(--ink); }
-.sb-ts { font: var(--t-meta); color: var(--muted); }
-.sb-ts.now { color: var(--gold); }
-.sb-tph > .sb-rail { position: absolute; left: 0; overflow: visible; pointer-events: none; z-index: 1; }
+/* The Home tile's old phases (AC65, AC58) gave way to AC82's timeline at stage 2, and their rules went at stage 7 (AC88). */
 
 /* The branch drawing (AC57, AC58, AC65): one column of dots per run, thin light lines joining each dot
    to the next one up, with a small arrowhead half way pointing up, dashed into a still-to-come dot,
@@ -367,7 +327,7 @@ button.sb-sum:focus-visible { outline: none; }
 /* "Run <k> began" in its run's own shade (AC70, draft 6); a "not recorded" reason stays slate (AC69). */
 .sb-began.run2 { --rk: var(--run2); } .sb-began.run3 { --rk: var(--run3); } .sb-began.run4 { --rk: var(--run4); }
 .sb-began-h, .sb-began-k { color: var(--rk, var(--run2)); }
-.sb-began-h { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; }
+.sb-began-h { font: var(--t-section); letter-spacing: var(--track); }
 .sb-began-p { font: var(--t-body); }
 p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 
@@ -383,8 +343,9 @@ p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 .sb-gmark.you { color: var(--you); }
 .sb-needs { font: var(--t-meta); text-transform: none; letter-spacing: 0; color: var(--you); }
 .sb-qlist { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.sb-qlist > li > a { display: inline-flex; align-items: center; min-height: 24px; max-width: 100%; } /* AC88: a link alone on its row, a target at least 24 px tall (WCAG 2.5.8) */
 .sb-qrow { border-left: 4px solid var(--muted); border-radius: var(--rs); background: var(--page); color: var(--ink); }
-.sb-qrow.g-decisions, .sb-qrow.g-gates, .sb-qrow.g-merges { border-left-color: var(--you); }
+.sb-qrow.g-decisions, .sb-qrow.g-gates, .sb-qrow.g-merges { border-left-color: var(--ink); } /* AC88: what waits on the owner, the heavier edge, never vermilion (AC81) */
 .sb-qrow.g-deploys { padding: var(--s2) var(--s3); }
 .sb-qrow a.sb-qa, .sb-qrow > a { display: grid; gap: var(--s1); padding: var(--s2) var(--s3); min-height: 44px; text-decoration: none; }
 .sb-qt { font: var(--t-item); }
@@ -403,33 +364,33 @@ p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 .sb-donetoday > summary .sb-ic { margin-right: var(--s1); }
 .sb-safe { display: grid; gap: var(--s1); margin-top: var(--s2); }
 .sb-safe-l { display: flex; gap: var(--s2); align-items: center; font: var(--t-item); }
-.sb-tlink { font: var(--t-meta); text-decoration: underline; color: var(--ink); }
+.sb-tlink { font: var(--t-meta); text-decoration: underline; color: var(--ink); display: inline-flex; align-items: center; min-height: 24px; } /* AC88: a target at least 24 px tall (WCAG 2.5.8) */
 
 /* The response sheet, and the Team's sheets */
 .sb-scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 5; }
-.sb-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; max-height: 88vh; overflow-y: auto; overflow-x: hidden; background: var(--surf);
+.sb-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; max-height: 88vh; overflow-y: auto; overflow-x: hidden; background: var(--page);
   border-top: 1px solid var(--line); border-radius: var(--r) var(--r) 0 0; max-width: 560px; margin: 0 auto;
   padding: var(--s2) 16px var(--s5); /* AC62: the page's 16 px side gutter */ }
 @media (prefers-reduced-motion: no-preference) {
   .sb-sheet { animation: sb-up .18s ease-out; }
   @keyframes sb-up { from { transform: translateY(16px); opacity: .6; } }
 }
-.sb-sheet-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); position: sticky; top: -8px; background: var(--surf); padding: var(--s1) 0; z-index: 1; }
+.sb-sheet-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); position: sticky; top: -8px; background: var(--page); padding: var(--s1) 0; z-index: 1; }
 .sb-sheet-top .sb-grab { margin: 0 0 0 calc(50% - 20px); /* AC62: an offset that centres the grab handle */ }
 .sb-grab { display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: var(--s1) auto var(--s3); }
 .sb-left { border: 1px solid var(--block); border-left: 4px solid var(--block); border-radius: var(--r); padding: var(--s2) var(--s3); background: var(--blocks); margin: var(--s2) 0; }
 .sb-left p { margin: 0 0 var(--s1); }
 /* AC74 (2026-10-19): the tap's line, "Opened from a notification" or "That no longer waits on you". */
-.sb-tap { margin: var(--s2) 0; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: var(--r); background: var(--surf); font: var(--t-item); }
+.sb-tap { margin: var(--s2) 0; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: var(--r); background: var(--surf); color: var(--ink); font: var(--t-item); } /* AC88: its words in ink, never the accepted view's `.gone` amber (style.css) */
 .sb-infobtn { display: inline-flex; gap: var(--s2); align-items: center; min-height: 44px; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf); font: var(--t-item); text-decoration: none; }
 .sb-infobtn .ic { width: 18px; height: 18px; }
 .sb-more > summary .sb-h2.flat { margin: 0; }
 .sb-six { margin: var(--s2) 0; padding-left: var(--s4); }
 .sb-sheet-t { margin: var(--s1) 0; font: var(--t-screen); }
 .sb-sec { margin: var(--s3) 0; }
-.sb-sec h3 { margin: 0 0 var(--s1); font: var(--t-section); text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
+.sb-sec h3 { margin: 0 0 var(--s1); font: var(--t-section); letter-spacing: var(--track); color: var(--muted); }
 .sb-sec p { margin: 0 0 var(--s1); }
-.sb-sec blockquote { margin: var(--s1) 0; padding: var(--s2) var(--s3); border-left: 3px solid var(--gold); background: var(--page); font: var(--t-quote); }
+.sb-sec blockquote { margin: var(--s1) 0; padding: var(--s2) var(--s3); border-left: 3px solid var(--tie); background: var(--page); font: var(--t-quote); }
 .sb-chips { display: flex; flex-wrap: wrap; gap: var(--s2); margin: var(--s2) 0; }
 .sb-chip { min-height: 44px; padding: var(--s2) var(--s3); border: 1.5px solid var(--line); border-radius: var(--rs); background: var(--surf); color: var(--ink); cursor: pointer;
   font: var(--t-item); text-align: left; text-decoration: none; display: inline-flex; align-items: center; }
@@ -445,7 +406,7 @@ p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 .sb-choice-t { grid-column: 2; grid-row: 1; min-width: 0; overflow-wrap: anywhere; }
 .sb-choices .sb-chip.on::before { content: "●"; grid-column: 3; grid-row: 1; margin-left: var(--s3); }
 .sb-rec { font: var(--t-body); }
-.sb-tag { display: inline-block; font: var(--t-section); text-transform: uppercase; letter-spacing: var(--track); border: 1px solid currentColor; border-radius: var(--rs); color: var(--muted);
+.sb-tag { display: inline-block; font: var(--t-section); letter-spacing: var(--track); border: 1px solid currentColor; border-radius: var(--rs); color: var(--muted);
   padding: 1px 6px; /* AC62: a tag's inner padding, as drawn */ }
 /* AC63: every text box's text is at least 16 px, so the iPhone never zooms in on a tap; pinch-to-zoom is left alone. */
 .sb-box textarea { display: block; width: 100%; min-height: 8em; font: 400 16px/1.4 var(--mono); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2) var(--s3);
@@ -463,6 +424,7 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 .sb-tracker li.done { color: var(--ink); }
 .sb-record { background: var(--page); border-radius: var(--r); padding: var(--s3); font: var(--t-quote); }
 .sb-record pre, .sb-quote { white-space: pre-wrap; font: var(--t-code); background: var(--page); padding: var(--s2); border-radius: var(--rs); overflow-wrap: anywhere; }
+.sb-sheet .sb-quote { background: var(--surf2); } /* AC88: on a sheet (its ground --page), a quoted record keeps a panel of its own */
 
 /* AC59 and AC60: the Timeline, read from the bottom up. Each run is a block with its band, pinned while
    its stretch scrolls by; the line runs down the left in the band's phase colour, as thin and light as
@@ -522,10 +484,10 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 .sb-feednote { margin: var(--s2) 0 0; }
 
 /* Team (AC49, as AC67 changed its cards): each member's state in a plain circle with its word, no light and no glow. */
-.sb-you { display: block; background: var(--surf); border: 1px solid var(--line); border-left: 4px solid var(--you); border-radius: var(--r); padding: var(--s3); margin: var(--s3) 0; }
+.sb-you { display: block; background: var(--surf); border: 1px solid var(--line); border-left: 4px solid var(--tie); border-radius: var(--r); padding: var(--s3); margin: var(--s3) 0; }
 .sb-you-a { display: block; text-decoration: none; min-height: 44px; }
 .sb-you-st { margin: var(--s1) 0; font: var(--t-item); display: flex; align-items: center; gap: var(--s2); }
-.sb-you-st.you { color: var(--you); }
+.sb-you-st.you { color: var(--ink); } /* AC88: the words in ink, the ◆ before them vermilion (AC81) */
 .sb-next { list-style: none; margin: var(--s2) 0 0; padding: 0; display: grid; gap: var(--s2); }
 .sb-next li { display: grid; grid-template-columns: 52px 1fr; gap: var(--s2); align-items: start; font: var(--t-body); border-top: 1px solid var(--line); padding-top: var(--s2); }
 .sb-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
@@ -544,9 +506,9 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 .sb-brows { list-style: none; margin: 0; padding: 0; flex: 1 1 auto; }
 .sb-brow { min-height: 44px; display: flex; align-items: center; }
 .sb-brow a { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s2); padding: var(--s1) 0; text-decoration: none; font: var(--t-meta); flex: 1; min-height: 44px; align-content: center; }
-.sb-brow.now .sb-brow-t { font-weight: 750; }
+.sb-brow.now .sb-brow-t { font-weight: 600; } /* AC88: mockup v2's weights are 400, 500 and 600 (AC81) */
 .sb-brow-lane { font: var(--t-code); color: var(--muted); }
-.sb-nowtag { font: var(--t-section); letter-spacing: var(--track); color: var(--gold); border: 1px solid var(--gold); border-radius: var(--rs);
+.sb-nowtag { font: var(--t-section); letter-spacing: var(--track); color: var(--ink); border: 1px solid var(--tie); border-radius: var(--rs);
   padding: 1px 6px; /* AC62: a tag's inner padding */ }
 /* The running log's drawing (AC49): one SVG behind the rows; straight vertical lines, a curve out and back, shades per lane. */
 .sb-lanes { flex: none; display: block; overflow: visible; }
@@ -564,9 +526,27 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 .sb-lanes.fam-you .dot.shade-0 { fill: var(--you0); } .sb-lanes.fam-you .dot.shade-1 { fill: var(--you1); }
 .sb-lanes.fam-you .dot.shade-2 { fill: var(--you2); } .sb-lanes.fam-you .dot.shade-3 { fill: var(--you3); }
 .sb-lanes .ring { fill: none; stroke: var(--agent); stroke-width: 2; }
+/* From stage 7 (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes take three
+   greys from the new look and each lane also gets its own line style (solid, dashed, dotted), so every lane looks
+   different at a glance in light and dark"): the four lanes, in turn, --ink solid, --ink2 dashed, --ink3 dotted and
+   --ink dashed (--shade0 to --shade3 and --you0 to --you3, below), so any two of them differ in their line, or in a
+   grey far apart from the other. A lane's curve out and back takes its line; its dots take its form: filled on a
+   solid lane, a ring on a dashed one, a dotted ring on a dotted one. The short dashed stub, a piece still under way
+   (AC49), stays in its lane's grey and is drawn as no lane, curve or dot is: twice a lane's weight (4 px), in short
+   square dashes (1.5 on, 2.5 off), so it reads at a glance on a solid, dashed or dotted lane (stage 7's design
+   review, round 2, R2-1). */
+.sb-lanes .lane.shade-1, .sb-lanes .lane.shade-3 { stroke-dasharray: 6 4; }
+.sb-lanes .lane.shade-2 { stroke-dasharray: 0.01 4; stroke-linecap: round; }
+.sb-lanes .lane.stub { stroke-width: 4; stroke-dasharray: 1.5 2.5; stroke-linecap: butt; }
+.sb-lanes .dot.shade-1, .sb-lanes .dot.shade-2, .sb-lanes .dot.shade-3,
+.sb-lanes.fam-you .dot.shade-1, .sb-lanes.fam-you .dot.shade-2, .sb-lanes.fam-you .dot.shade-3 { fill: var(--surf); stroke-width: 1.8; }
+.sb-lanes .dot.shade-1 { stroke: var(--shade1); } .sb-lanes .dot.shade-3 { stroke: var(--shade3); }
+.sb-lanes .dot.shade-2 { stroke: var(--shade2); stroke-dasharray: 0.01 2.6; stroke-linecap: round; }
+.sb-lanes.fam-you .dot.shade-1 { stroke: var(--you1); } .sb-lanes.fam-you .dot.shade-3 { stroke: var(--you3); }
+.sb-lanes.fam-you .dot.shade-2 { stroke: var(--you2); }
 .sb-brow-lane.shade-0, .sb-brow-lane.shade-1, .sb-brow-lane.shade-2, .sb-brow-lane.shade-3 { color: var(--ink); }
 .sb-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); margin: var(--s2) 0; }
-.sb-kpi { display: grid; gap: var(--s1); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2) var(--s3); background: var(--page); }
+.sb-kpi { display: grid; gap: var(--s1); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2) var(--s3); background: var(--surf2); }
 .sb-kpi strong { font: var(--t-item); }
 .sb-kv { list-style: none; margin: var(--s2) 0; padding: 0; display: grid; gap: var(--s1); font: var(--t-body); }
 
@@ -578,8 +558,6 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 .sb-info .ic { width: 18px; height: 18px; }
 
 /* Home's condensed cards (AC54 (c)): two columns at 360 px. */
-.sb-pc .sb-ball li { align-items: flex-start; }
-.sb-pc .sb-muted { font: var(--t-meta); }
 
 /* Status: "Your last action" just above the waiting bar (AC55). */
 .sb-last { border-left: 3px solid var(--you); background: var(--surf); border-radius: var(--rs); padding: var(--s2) var(--s3); margin: 0; }
@@ -616,7 +594,7 @@ button.sb-line:focus-visible { outline: none; }
 .sb-item-l { display: flex; gap: var(--s2); align-items: center; font: var(--t-body); }
 .sb-wait-b { display: grid; gap: var(--s1); padding: var(--s2) var(--s3); }
 .sb-ask { display: grid; gap: var(--s1); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2) var(--s3); }
-.sb-ask.open { border-left: 4px solid var(--you); }
+.sb-ask.open { border-left: 4px solid var(--ink); } /* AC88: an open card the heavier edge, its state in words; never vermilion (AC81) */
 .sb-sess { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s1) var(--s3); }
 .sb-sess > details > summary { cursor: pointer; min-height: 44px; display: grid; gap: var(--s1); align-content: center; }
 .sb-sess-h { display: flex; gap: var(--s2); align-items: center; }
@@ -626,7 +604,7 @@ button.sb-line:focus-visible { outline: none; }
 .sb-axis { display: block; width: 100%; height: 8px; }
 .sb-axis .track { fill: var(--line); }
 .sb-axis .bar { fill: var(--agent); }
-.sb-axis .bar.card { fill: var(--you); }
+.sb-axis .bar.card { fill: var(--ink); } /* AC88: a card's span in ink, a session's in the agents' grey; each says which in words */
 .sb-axis .bar.open { opacity: .6; }
 
 /* "Done today" (AC52, note 10): what was ruled, in words, then its code. */
@@ -667,8 +645,9 @@ html.sb .sb-lineclip.two.over { height: 2.7em; }
 /* ===========================================================================================
    Desk mockup v2 (spec S-001, AC80 and AC81; docs/design/mockups/desk-v2.html), from stage 1a:
    the bar Home · Waiting · Plan, the project screens' top row, the board and its sheets. Every
-   rule below is scoped to `.v2` (or html.v2-page, the Waiting screen), so the screens no frame
-   redraws keep their look beside the new until stage 3 or 7 (Risks, "A mixed look").
+   rule below is scoped to `.v2` (or html.v2-page, the ground every trial-view screen is drawn on from
+   stage 7). From stage 7 (AC88) the screens no frame redraws are on these tokens too, through the
+   names their rules above use ("From stage 7", below): no screen mixes the old look with the new.
 
    AC81: IBM Plex, served by the desk itself (AC42: no font from another origin), IBM's own files,
    unchanged, from @ibm/plex-sans 1.1.0 and @ibm/plex-mono 2.5.0: the Latin1 and Pi subsets of
@@ -751,6 +730,36 @@ html.sb[data-theme="dark"] .v2, html.sb.v2-page[data-theme="dark"] {
   color-scheme: dark;
 }
 html.sb.v2-page, html.sb.v2-page body { background: var(--bg); color: var(--ink); }
+/* From stage 7 (AC88): every trial-view screen is on mockup v2's ground (sandbox.js sets html.v2-page on each),
+   and the screens no frame redraws (the Team screen and its members' pages, the Chief of Staff's page,
+   "Details"' views, the bubbles and the sheets) keep their layout and their words: only their fonts and colours
+   move onto AC81's tokens. Their rules, above this block, name the shared look's tokens; on mockup v2's ground
+   each of those names resolves to one of AC81's, in light and in dark (the value it names is the theme's), so no
+   screen mixes the old look with the new. The grounds and inks take mockup v2's; pass and fail take --ok and
+   --bad; the agents' blue and the merge purple, which mockup v2 does not use (it marks agents and merges by icon
+   and word), the agents' grey --ink2; the blocker amber, which marked a read that failed, --bad, as Home's and
+   Waiting's "Can't read" lines have it; the runs' shades mockup v2's greys; the running log's four lanes, in turn,
+   --ink, --ink2, --ink3 and --ink, each with its own line, solid, dashed, dotted and dashed (the owner's ruling,
+   P-001-desk-v2-lanes.md, A; the lines are AC49's rules above), vermilion being only for what needs the owner
+   (AC81); and the seven type roles
+   the nearest of mockup v2's (AC81: "Text no frame draws ... takes the nearest role"): a screen's title
+   --t-title, a section head --t-label, an item's title --t-row, sentences --t-body, secondary lines --t-small,
+   quoted record text --t-body (AC81: "body with a left rule"), and codes --t-mono. */
+html.sb.v2-page {
+  --page: var(--bg); --surf: var(--card); --surf2: var(--bg2); --muted: var(--ink2); --soft: var(--ink3); --tie: var(--line2); --idle: var(--line2);
+  --yous: var(--chip); --agent: var(--ink2); --agents: var(--chip); --merge: var(--ink2); --merges: var(--chip);
+  --pass: var(--ok); --passs: var(--chip); --passl: var(--line2); --fail: var(--bad); --fails: var(--chip); --block: var(--bad); --blocks: var(--bg2);
+  --golds: var(--bg2); --on: var(--bg);
+  --run1: var(--ink2); --run2: var(--ink2); --run3: var(--ink2); --run4: var(--ink2);
+  --shade0: var(--ink); --shade1: var(--ink2); --shade2: var(--ink3); --shade3: var(--ink);
+  --you0: var(--ink); --you1: var(--ink2); --you2: var(--ink3); --you3: var(--ink);
+  --t-screen: var(--t-title); --t-section: var(--t-label); --t-item: var(--t-row); --t-meta: var(--t-small); --t-quote: var(--t-body); --t-code: var(--t-mono);
+  --track: 0;
+}
+/* The sheets no frame redraws (AC88: the Team's "Working now" and "Summary"): a sheet's title takes --t-sheet, as
+   mockup v2's sheets have theirs (AC81, "--t-sheet ... a sheet's title"), and the sheet mockup v2's shadow. */
+html.sb.v2-page .sb-sheet-t { font: var(--t-sheet); }
+html.sb.v2-page .sb-sheet { box-shadow: var(--shadow); }
 html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /* AC81: every screen keeps room for the bar at its foot, with the safe areas */ }
 .v2 { font: var(--t-body); color: var(--ink); }
 .v2 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -924,9 +933,9 @@ html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /*
 .v2-sheet .sb-record ul { list-style: disc; padding-left: 1.2em; }
 .v2-code { font-family: var(--mono); }
 /* The whole record in the fold (and a file that can't be split, shown whole): on mockup v2's surface tokens. */
-.v2-whole .sb-record, .v2-sheet > .sb-record { background: var(--bg2); border-radius: 10px; padding: 10px 12px; }
+.v2-whole .sb-record, .v2-sheet > .sb-record, .v2-fd > .sb-record { background: var(--bg2); border-radius: 10px; padding: 10px 12px; }
 /* Its code in Plex Mono, in the body role (AC81, settled after round 1: record text takes --t-body). */
-.v2-whole .sb-record :is(code, pre), .v2-sheet > .sb-record :is(code, pre) { font: var(--t-body); font-family: var(--mono); background: none; padding: 0; }
+.v2-whole .sb-record :is(code, pre), .v2-sheet > .sb-record :is(code, pre), .v2-fd > .sb-record :is(code, pre) { font: var(--t-body); font-family: var(--mono); background: none; padding: 0; }
 .v2-fk { font-weight: 500; }
 
 /* Home (AC82; frames H1 to H5; desk-v2.html:317-362), from stage 2: the title and "checked <age> ago",

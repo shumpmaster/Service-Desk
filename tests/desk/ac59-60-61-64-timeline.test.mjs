@@ -16,6 +16,11 @@ import { parseProjectDoc, purposeItems, milestoneLines, standardLines } from '..
 import { feedView, runsContext } from '../../src/lib/feed.js';
 
 const NOW16 = Date.parse('2026-10-16T18:00:00Z');
+// From stage 3 (S-001 AC84, specs/S-001.md:6857-6946; AC59 and AC60, "Changed by AC84", :4740 and :4927):
+// the Timeline's content and order stand and its look is frame 7b's. Each page case below that read the
+// old look (its classes, its bullet colours, its fold words) is rewritten one for one for AC84's, saying so;
+// every case on the Timeline's model (lib/feed.js) stands as it was.
+const FOLD = /\b(?:sb|v2)-fold\b/;
 const css = () => readFileSync(`${SRC}/public/sandbox.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 const rule = (sel) => {
   const m = new RegExp(`(?:^|\\n)${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} \\{([^}]*)\\}`).exec(css());
@@ -79,21 +84,32 @@ test('AC59: each band\'s words, its colour token, its dates and state, and that 
   ]);
   // Without J12, Build i1 has no step, so no time: "dates not recorded".
   assert.equal(block(models({ answer: null }).feed, 'Build-i1').band.words, 'dates not recorded · gone back over');
-  assert.match(rule('.sb-pband'), /position: sticky; top: 0;/);
-  assert.match(rule('.sb-pband'), /border-bottom: 2px solid var\(--ph\); color: var\(--ph\);/, 'the name in its phase\'s colour, with a line under it in that colour');
-  assert.match(rule('.sb-blk'), /position: relative;/, 'each band is pinned within its own run\'s stretch, so the next one takes its place');
+  // Rewritten for AC84 ("the bands", :6903-6906): each run's name in 600 12 px with a small square in its
+  // phase's colour, its dates or state in Plex Mono at the right, pinned under the header while its run is
+  // on screen, a hairline under it and no box around it.
+  assert.match(rule('.v2-tph'), /position: sticky; top: 96px;/, 'pinned, under the pinned header');
+  assert.match(rule('.v2-tph'), /border-bottom: 1px solid var\(--line\);/, 'a hairline under it');
+  assert.doesNotMatch(rule('.v2-tph'), /border: |border-radius|box-shadow/, 'no box around it');
+  assert.match(rule('.v2-tpn'), /font: 600 12px\/1\.3 var\(--font\);/);
+  assert.match(rule('.v2-tpd'), /font: var\(--t-mono\);/);
+  assert.match(css(), /\.v2 \.ph-des \{ --phc: var\(--ph-des\); \}/, 'its square in its phase\'s colour');
+  assert.deepEqual(feed.blocks.map((b) => b.band.label), ['planned', 'planned', '8 Oct – now', '7–8 Oct · gone back over', '5–8 Oct · gone back over', '30 Sep – 5 Oct · finished'],
+    'the same dates and states, in frame 7b\'s form');
+  assert.match(rule('.v2-tblk'), /position: relative;/, 'each band is pinned within its own run\'s stretch, so the next one takes its place');
 });
 
 test('AC59 (note 26): the line — in its band\'s phase colour, unbroken through each band, dashed only for planned stretches, as thin and light as version 6 draws it', async () => {
-  assert.match(rule('.sb-seg::before'), /width: 2px; border-radius: 1px; background: var\(--ph\); opacity: \.45;/);
-  assert.match(rule('.sb-seg.plan::before'), /opacity: \.3; background: repeating-linear-gradient\(var\(--ph\) 0 6px, transparent 6px 11px\);/);
-  assert.match(rule('.sb-seg::before'), /top: 0; bottom: 0;/, 'from the stretch\'s top to its bottom');
+  // Rewritten for AC84 ("the rail", :6915-6916; frame 7b's .tseg): a thin line in the phase's colour down the
+  // band's left edge, solid through what has happened and dashed through what is planned.
+  assert.match(rule('.v2-tseg::before'), /width: 1\.5px; background: var\(--phc\); opacity: \.55;/);
+  assert.match(rule('.v2-tseg.plan::before'), /background: repeating-linear-gradient\(var\(--phc\) 0 4px, transparent 4px 8px\); opacity: \.7;/);
+  assert.match(rule('.v2-tseg::before'), /top: 0; bottom: 0;/, 'from the stretch\'s top to its bottom');
   const app = await openSD('#/p/Service-Desk/timeline');
   try {
-    const segs = byClass(app.view, 'sb-seg');
+    const segs = byClass(app.view, 'v2-tseg');
     const planned = segs.filter((x) => x.className.split(' ').includes('plan')).map((x) => x.attrs['data-k']);
     assert.deepEqual(planned, ['seg:Launch-i1', 'seg:Build-i2', 'seg:Design-i2:plan'], 'dashed: the runs still to come, and the now run above Now');
-    for (const b of byClass(app.view, 'sb-blk')) assert.ok(/\bph-(disc|des|build|launch)\b/.test(b.className), 'each stretch in its band\'s colour');
+    for (const b of byClass(app.view, 'v2-tblk')) assert.ok(/\bph-(disc|des|build|launch)\b/.test(b.className), 'each stretch in its band\'s colour');
   } finally {
     app.restore();
   }
@@ -156,7 +172,7 @@ test('AC59: the gathered "not recorded" line and its count, opening on a tap; Bu
     const f = keyed(app, 'fold:Design-i2:gather:nr');
     assert.equal(f.attrs['aria-expanded'], 'false');
     await app.tap(f);
-    const list = byClass(keyed(app, 'gather:Design-i2:gather:nr'), 'sb-glist')[0];
+    const list = byClass(keyed(app, 'gather:Design-i2:gather:nr'), 'v2-glist')[0]; // AC84's look (from `sb-glist`)
     assert.equal(list.children.length, 6, 'listed in place on a tap');
     assert.match(list.textContent, /Done defined in real scenarios Design-1 not recorded/);
   } finally {
@@ -209,8 +225,9 @@ test('AC59 (note 18): the Now line\'s place, the Timeline opening with it in vie
 test('AC59 + AC51 (ruling 2): no clock time or duration on the Timeline, and every link a path the fixture\'s tree holds or a pull request', async () => {
   const app = await openSD('#/p/Service-Desk/timeline');
   try {
+    // Every fold opened: from stage 3 (AC84) they are `v2-fold` (rewritten so, from `sb-fold`).
     for (let i = 0; i < 6; i++) {
-      const folds = findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-expanded'] === 'false' && /sb-fold/.test(e.className));
+      const folds = findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-expanded'] === 'false' && FOLD.test(e.className));
       if (!folds.length) break;
       for (const f of folds) { f.click(); await app.flush(); }
     }
@@ -228,13 +245,14 @@ test('AC59 + AC51 (ruling 2): no clock time or duration on the Timeline, and eve
   }
 });
 
-test('AC59: a v2.5 project shows "Phases not tracked" and nothing else but its title and bottom bar', async () => {
+test('AC59, changed by AC84: a v2.5 project shows "Phases not tracked" and nothing else but its header, its phase line (AC84) and the bottom bar', async () => {
   const app = await openSD('#/', { more: { Delta: { project: { ...SD3, name: 'Delta', repo: 'shumpmaster/Delta', model: 'v2.5' }, repo: sdRepo() } } });
   try {
     await app.go('#/p/Delta/timeline');
     const screen = byClass(app.view, 'sb-screen')[0];
     assert.match(screen.textContent, /Phases not tracked/);
-    assert.equal(byClass(screen, 'sb-feed').length, 0);
+    assert.equal(byClass(screen, 'v2-feed').length + byClass(screen, 'v2-tblk').length, 0, 'no feed (rewritten from `sb-feed`, AC84)');
+    assert.deepEqual(screen.children.map((c) => c.className.split(' ')[0]), ['sb-marker', 'v2-tlhead', 'v2-small'], 'the marker, the header with its phase line, and the words');
   } finally {
     app.restore();
   }
@@ -289,23 +307,26 @@ test('AC60: untied merged pull requests placed by their merge time (18 in Design
   assert.ok(!f2.blocks.some((b) => rowsOf(b).some((x) => (x.sprints || []).some((s) => s.id === 'PR #991'))), 'an open one is in the Queue, not here');
 });
 
-test('AC60: each list starts folded, and opens and folds by a tap, Enter and Space, with its state', async () => {
+test('AC60, changed by AC84: each list starts folded ("<n> sprints ▸", frame 7b), and opens and folds by a tap, Enter and Space, with its state and its mark', async () => {
   const app = await openSD('#/p/Service-Desk/timeline');
   try {
     const f = () => keyed(app, 'fold:sprints:Build-i1:M1');
     assert.equal(f().attrs['aria-expanded'], 'false');
-    assert.equal(f().textContent.replace(/[▾▸]/, ''), '2 sprints feed this');
+    // AC84 (:6914-6915): "then "<n> sprints ▸", folded" (rewritten from AC60's "2 sprints feed this"); the mark an icon (AC81).
+    assert.equal(f().textContent, '2 sprints');
+    assert.equal(byClass(f(), 'vi-chev').length, 1, 'folded: its mark');
     assert.equal(keyed(app, 'tasks:Build-i1:M1'), null);
     await app.tap(f());
     assert.equal(f().attrs['aria-expanded'], 'true');
-    assert.equal(byClass(keyed(app, 'tasks:Build-i1:M1'), 'sb-task').length, 2);
+    assert.equal(byClass(f(), 'vi-chevdown').length, 1, 'open: its mark');
+    assert.equal(byClass(keyed(app, 'tasks:Build-i1:M1'), 'v2-sp').length, 2);
     f().dispatch('keydown', { key: 'Enter' });
     await app.flush();
     assert.equal(f().attrs['aria-expanded'], 'false');
     f().dispatch('keydown', { key: ' ' });
     await app.flush();
     assert.equal(f().attrs['aria-expanded'], 'true');
-    assert.equal(keyed(app, 'fold:sprints:Design-i2:MD1').textContent.replace(/[▾▸]/, ''), '1 sprint feeds this');
+    assert.equal(keyed(app, 'fold:sprints:Design-i2:MD1').textContent, '1 sprint');
     assert.match(keyed(app, 'mile:Design-i2:MD2').textContent, /No sprints planned yet/);
   } finally {
     app.restore();
@@ -370,7 +391,7 @@ test('AC60 + AC61 (B1): a pull request placed by its Milestone: line alone — M
   assert.ok(!untied.sprints.some((s) => ['PR #901', 'PR #902', 'PR #903'].includes(s.id)), 'one named by its pull request is not counted as untied');
 });
 
-test('AC60: each bullet\'s label, colour token and order; the Technical words for a pull request and a research run; "not recorded" for Context and Why with no section', async () => {
+test('AC60, changed by AC84: each bullet\'s label and order, each a small grey word with a grey left edge, never a colour of its own (P-001-timeline-labels.md, A); the Technical words for a pull request and a research run; "not recorded" for Context and Why with no section', async () => {
   const { feed } = models({ now: NOW16 });
   const pr44 = row(feed, 'Build-i1', 'M2B').sprints[0];
   assert.equal(pr44.technical[0].text, 'Build i1 · M2B · build/builder/m2-answering · also feeds M2');
@@ -380,18 +401,19 @@ test('AC60: each bullet\'s label, colour token and order; the Technical words fo
   assert.equal(pr44.context, null);
   assert.equal(pr44.why, null);
   assert.equal(q13.context, null);
-  for (const [cls, tok] of [['b-tech', '--b-tech'], ['b-ctx', '--b-ctx'], ['b-why', '--b-why']]) assert.match(css(), new RegExp(`\\.${cls} \\{ --bc: var\\(${tok}\\); \\}`));
-  assert.match(rule('.sb-bul li'), /border-left: 3px solid var\(--bc\);/, 'down the bullet\'s left edge');
-  assert.match(rule('.sb-k'), /color: var\(--bc\);/, 'and on its label');
+  // Rewritten for AC84 (:6917-6926): the bullets' own colours (AC60's tokens) give way to the grey labels.
+  assert.match(rule('.v2-bl'), /border-left: 2px solid var\(--line2\);/, 'a grey left edge in --line2');
+  assert.match(rule('.v2-bn'), /font: var\(--t-label\); color: var\(--ink2\);/, 'each label a small grey word in --ink2');
+  assert.doesNotMatch(rule('.v2-bn'), /text-transform|border:|background/, 'never boxed or in capitals');
   const app = await openSD('#/p/Service-Desk/timeline');
   try {
     await app.tap(keyed(app, 'fold:sprints:Build-i1:M2B'));
-    const task = byClass(keyed(app, 'tasks:Build-i1:M2B'), 'sb-task')[0];
-    const lis = findAll(task, (e) => e.tag === 'li');
-    assert.deepEqual(lis.map((l) => [l.className, byClass(l, 'sb-k')[0].textContent]), [['b-tech', 'Technical'], ['b-ctx', 'Context'], ['b-why', 'Why']]);
-    assert.equal(byClass(lis[1], 'sb-v')[0].textContent, 'not recorded');
-    assert.equal(byClass(lis[2], 'sb-v')[0].textContent, 'not recorded');
-    assert.match(byClass(lis[1], 'sb-v')[0].children[0].className, /gap/, 'slate (AC69)');
+    const task = byClass(keyed(app, 'tasks:Build-i1:M2B'), 'v2-sp')[0];
+    const rows = byClass(task, 'v2-bl');
+    assert.deepEqual(rows.map((l) => [l.className, byClass(l, 'v2-bn')[0].textContent]), [['v2-bl tech', 'Technical'], ['v2-bl ctx', 'Context'], ['v2-bl why', 'Why']]);
+    assert.equal(byClass(rows[1], 'v2-bt')[0].textContent, 'not recorded');
+    assert.equal(byClass(rows[2], 'v2-bt')[0].textContent, 'not recorded');
+    assert.match(byClass(rows[1], 'v2-bt')[0].className, /\bgap\b/, 'in the agents\' grey (AC69)');
   } finally {
     app.restore();
   }
@@ -409,8 +431,9 @@ test('AC60 (note 24): the tasks link — a pull request\'s commits, a pipeline i
   assert.deepEqual(row(f2, 'Design-i2', 'MD1').sprints[0].tasks, { none: 'Tasks: not recorded' });
   const app = await openSD('#/p/Service-Desk/timeline');
   try {
+    // Every fold opened: from stage 3 (AC84) they are `v2-fold` (rewritten so, from `sb-fold`).
     for (let i = 0; i < 6; i++) {
-      const folds = findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-expanded'] === 'false' && /sb-fold/.test(e.className));
+      const folds = findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-expanded'] === 'false' && FOLD.test(e.className));
       if (!folds.length) break;
       for (const f of folds) { f.click(); await app.flush(); }
     }
@@ -418,7 +441,8 @@ test('AC60 (note 24): the tasks link — a pull request\'s commits, a pipeline i
     // A record's own words may say "step" (#25's title does); the desk draws no step of its own.
     assert.doesNotMatch(text, /(?:researcher|source-checker|builder|reviewer|check-author) (?:started|finished)/, 'no step of a sprint drawn');
     assert.equal(findAll(keyed(app, 'feed'), (e) => /\bsb-(?:step|tl-step|dot)\b/.test(e.className || '')).length, 0, 'no step dots');
-    assert.ok(linksIn(keyed(app, 'feed')).some((l) => l.text === 'Tasks in this sprint →' && /\/pull\/44\/commits$/.test(l.href)));
+    // AC84 (:6922): "then "Tasks in this sprint ↗"" (rewritten from "→").
+    assert.ok(linksIn(keyed(app, 'feed')).some((l) => l.text === 'Tasks in this sprint ↗' && /\/pull\/44\/commits$/.test(l.href)));
   } finally {
     app.restore();
   }
@@ -520,16 +544,21 @@ test('AC61 (the desk follow-ups, 2026-10-17): three display leniencies — closi
 test('AC61: on the page, the why text word for word on Status and the Timeline; each Context fact with its source, "source not recorded", and the Why; "not recorded" for each with J11\'s fixture as it is', async () => {
   const app = await openSD('#/p/Service-Desk/timeline', { repoOpts: { ac61: true, answer: ac61Answer() } });
   try {
-    assert.match(keyed(app, 'mile:Build-i1:M2B').textContent, /Why "It's important for me to see timelines and context windows to be able to drive things\."docs\/PROJECT\.md/);
+    // AC84 (:6913-6914): "Why <…>" with the label in weight 500 and the text in body; its source after it.
+    assert.match(keyed(app, 'mile:Build-i1:M2B').textContent, /Why "It's important for me to see timelines and context windows to be able to drive things\." · docs\/PROJECT\.md/);
     await app.tap(keyed(app, 'fold:sprints:Design-i2:untied'));
     const task = (n) => findAll(app.view, (e) => e.attrs && e.attrs['data-sprint'] === `PR #${n}`)[0];
-    assert.match(task(906).textContent, /A fact whose source is not namedsource not recorded/);
-    assert.match(task(906).textContent, /A fact with onedocs\/PROJECT\.md/);
+    // AC84 (frame 7b: "… reached · docs/LEDGER.md, L-0016"): each fact, then " · " and its source, in grey.
+    assert.match(task(906).textContent, /A fact whose source is not named · source not recorded/);
+    assert.match(task(906).textContent, /A fact with one · docs\/PROJECT\.md/);
     assert.match(task(905).textContent, /ContextNone beyond the ruling quoted in WhyWhy"One thing to change here\./);
     await app.tap(keyed(app, 'fold:named:Design-i2:MD3'));
     assert.match(task(901).textContent, /So a glance shows where the work is\.And a second paragraph, kept as its own\./);
+    // From stage 3 the Status screen gives way to the page (AC81, AC83): a project milestone's why shows on the
+    // Timeline (above), and a standard milestone's on the page, from its section 3 line, "· why: <its why>".
     await app.go('#/p/Service-Desk');
-    assert.match(app.text(), /why: the desk's look rests on published design guidance, not on taste/);
+    await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-label'] === 'Build')[0]);
+    assert.match(app.text(), /Build-4 The experiments are answeredskipped · why: the desk runs no experiments; each change is checked by its own tests/);
   } finally {
     app.restore();
   }
@@ -553,15 +582,19 @@ test('AC64: no milestone row or band name starts with a code; Technical is never
   }
   const app = await openSD('#/p/Service-Desk/timeline', { repoOpts: { ac61: true, answer: ac61Answer() } });
   try {
+    // Every fold opened: from stage 3 (AC84) they are `v2-fold` (rewritten so, from `sb-fold`).
     for (let i = 0; i < 6; i++) {
-      const folds = findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-expanded'] === 'false' && /sb-fold/.test(e.className));
+      const folds = findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-expanded'] === 'false' && FOLD.test(e.className));
       if (!folds.length) break;
       for (const f of folds) { f.click(); await app.flush(); }
     }
-    for (const t of byClass(app.view, 'sb-task')) {
-      const lis = findAll(t, (e) => e.tag === 'li');
-      if (lis.length) assert.equal(lis[0].className, 'b-tech');
-      assert.ok(!byClass(t, 'sb-etitle').length || t.children.indexOf(byClass(t, 'sb-etitle')[0]) < t.children.indexOf(byClass(t, 'sb-bul')[0]), 'the title before the bullets');
+    // Rewritten for AC84's look (v2-sp, v2-spt and v2-bl in place of sb-task, sb-etitle and sb-bul).
+    const sprints = byClass(app.view, 'v2-sp');
+    assert.ok(sprints.length > 10, `${sprints.length} sprints drawn`);
+    for (const t of sprints) {
+      const ls = byClass(t, 'v2-bl');
+      if (ls.length) assert.equal(ls[0].className, 'v2-bl tech');
+      assert.ok(!byClass(t, 'v2-spt').length || t.children.indexOf(byClass(t, 'v2-spt')[0]) < t.children.indexOf(ls[0]), 'the title before the bullets');
     }
     // The desk's own words on these screens: every text node outside the records' words.
     const own = readFileSync(`${SRC}/lib/feed.js`, 'utf8') + readFileSync(`${SRC}/public/sandbox.js`, 'utf8');

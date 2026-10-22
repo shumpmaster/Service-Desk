@@ -67,7 +67,10 @@ test('AC55 + AC52: a Critic\'s verdict in decisions/questions/, newer than every
   assert.ok(!done.some((d) => /critic|Verdict/.test(`${d.text} ${d.code}`)), JSON.stringify(done));
 });
 
-test('AC55: the line sits just above the waiting bar, with its link and its code; the reason the merges are missing is one tap away', async () => {
+// Rewritten in stage 3 (S-001 AC55, "Changed by AC83", specs/S-001.md:4235-4237: "in the trial view "Your last
+// action" sits under the project page's phase strip (frame 5)"; AC83, :6768-6771): the line sat just above
+// the Status screen's waiting bar.
+test('AC55, changed by AC83: the line sits under the page\'s phase strip, in small text, with its link and its code, and the row saying whether anything waits follows it; the reason the merges are missing is one tap away', async () => {
   const setup = twoProjects();
   setup.repos.Alpha.commit({ 'decisions/questions/Alpha-older.md': 'Ruling: A\nProxy: done at the owner\'s request\n' });
   setup.repos.Alpha.history['decisions/questions/Alpha-older.md'] = [{ commit: { committer: { date: iso(NOW - 30 * 60e3) } } }];
@@ -77,15 +80,20 @@ test('AC55: the line sits just above the waiting bar, with its link and its code
     await app.advance(POLL_MS);
     const screen = byClass(app.view, 'sb-screen')[0];
     const kids = screen.children;
-    const at = kids.findIndex((c) => c.className === 'sb-last');
-    assert.ok(at > 0, 'the line is there');
-    assert.ok(kids[at + 1].className.includes('sb-actions'), 'just above the bar');
-    const bar = byClass(kids[at + 1], 'sb-btn')[0];
-    assert.match(bar.textContent, /decision|to merge|gate ruling|Nothing waits on you/, 'the bar says whether anything waits');
-    const line = kids[at];
+    const at = kids.findIndex((c) => c.dataset && c.dataset.k === 'under');
+    assert.ok(at > 0, 'the lines under the strip are there');
+    assert.equal(kids[at - 1].dataset.k, 'strip', 'under the phase strip');
+    const line = byClass(kids[at], 'sb-last')[0];
+    assert.ok(line, 'the line is there');
+    assert.equal(kids[at + 1].dataset.k, 'page-rows', 'then the two rows');
+    const waits = byClass(kids[at + 1], 'v2-prow')[0];
+    assert.match(waits.textContent, /\d+ waits? on you|Nothing waiting on you/, 'the first says whether anything waits');
     assert.match(line.textContent, /^Your last action: A \(proxy\) · \d\d:\d\d Alpha-older/);
     assert.equal(linksIn(line).find((l) => l.text === 'Alpha-older').href, 'https://github.com/shumpmaster/Alpha/blob/main/decisions/questions/Alpha-older.md');
     assert.match(line.textContent, /your merges aren't recorded in what the desk reads/);
+    // In small text (frame 5): the line takes --t-small on the page, not the old screen's quoted-record role.
+    const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
+    assert.match(css, /\.v2-proj \.sb-last-t, \.v2-proj \.sb-line-w, \.v2-proj \.sb-last-when, \.v2-proj \.sb-sep \{ font: var\(--t-small\); color: var\(--ink2\); \}/);
   } finally {
     app.restore();
   }

@@ -15,6 +15,8 @@ import { pullsAnswer } from './j12-fixture.mjs';
 import { railLayout } from './tv2-fixtures.mjs';
 
 const all = (node) => findAll(node, () => true);
+/** From stage 3 the Status screen gives way to the project's page at the same address (AC81, AC83): its Overview. */
+const onPage = (app) => byClass(app.view, 'v2-proj').length === 1 && keyed(app, 'seg:overview') && keyed(app, 'seg:overview').attrs['aria-current'] === 'page';
 const keyed = (app, k) => findAll(app.view, (e) => e.dataset && e.dataset.k === k)[0] || null;
 const sheetEl = (app) => byClass(app.view, 'sb-sheet')[0] || byClass(app.view, 'v2-sheet')[0] || null;
 // From stage 1a (AC80, AC81): the board's card sheet over Waiting, and a Done row's small sheet.
@@ -45,25 +47,30 @@ async function everyRefresh(app, setup, changed = true) {
   await app.flush();
 }
 
-test('AC56 back (changed by AC81): Home → Status → Waiting (this project) → a card\'s sheet → Timeline; "Back" twice gives Waiting then Status, "Home" gives Home; no "Back" on a screen opened first', async () => {
+// Rewritten in stage 3 (S-001 AC81, "From stage 3", specs/S-001.md:6456-6464; AC84's header, :6879-6880): the
+// Status screen gives way to the page, and the Timeline's header holds the back control only (frame 7b),
+// the bar's Home tab serving Home (AC81); the Team screen keeps its header until stage 7 (AC88).
+test('AC56 back (changed by AC81 and AC84): Home → the page → Waiting (this project) → a card\'s sheet → Timeline; "Back" gives Waiting, then from Team and the Timeline Waiting again; the bar\'s "Home" gives Home; no "Back" on a screen opened first', async () => {
   const app = await opened(twoProjects(), '#/');
   try {
-    assert.equal(byClass(app.view, 'sb-prev').length, 0, 'Home has no Back');
+    assert.equal(byClass(app.view, 'sb-prev').length + byClass(app.view, 'v2-round').length, 0, 'Home has no Back');
     await app.go('#/p/Alpha');
+    assert.ok(onPage(app), 'the project\'s page');
     await app.go('#/p/Alpha/queue'); // the Queue's address: Waiting with only Alpha shown, no history step of its own
     assert.equal(app.loc.hash, '#/waiting/Alpha');
     await app.go(waitingCard('Alpha|pr|80'));
     await app.go('#/p/Alpha/timeline');
-    const back = () => byClass(app.view, 'sb-prev')[0];
-    assert.equal(back().attrs['aria-label'], 'Back');
-    assert.equal(byClass(app.view, 'sb-back')[0].attrs['aria-label'], 'Home');
+    const back = () => keyed(app, 'nav-back');
+    assert.deepEqual([back().tag, back().attrs['aria-label']], ['button', 'Back'], 'the Timeline\'s back control, a step back');
+    assert.equal(byClass(app.view, 'sb-back').length, 0, 'no Home control in the Timeline\'s compact header (frame 7b)');
+    assert.equal(byClass(byClass(app.view, 'v2-bar')[0], 'v2-tab')[0].attrs.href, '#/', 'the bar\'s Home tab');
     back().click();
     await app.flush();
     assert.equal(app.loc.hash, '#/waiting/Alpha', 'Back goes one screen back: the sheet was not a screen');
     assert.equal(sheetEl(app), null, 'and Waiting shows without the sheet');
     // Waiting has no project header: the bar's Home and the browser's back serve it; the history goes on.
     await app.go('#/p/Alpha/team');
-    back().click();
+    byClass(app.view, 'sb-prev')[0].click();
     await app.flush();
     assert.equal(app.loc.hash, '#/waiting/Alpha');
     await app.go('#/p/Alpha/timeline');
@@ -71,8 +78,9 @@ test('AC56 back (changed by AC81): Home → Status → Waiting (this project) �
     await app.flush();
     assert.equal(app.loc.hash, '#/waiting/Alpha');
     await app.go('#/p/Alpha');
-    assert.match(app.text(), /Current status/);
-    assert.equal(byClass(app.view, 'sb-back')[0].attrs.href, '#/');
+    assert.ok(onPage(app));
+    assert.deepEqual([keyed(app, 'nav-back').tag, keyed(app, 'nav-back').attrs['aria-label']], ['button', 'Back'], 'the page\'s back control');
+    await app.tap(byClass(byClass(app.view, 'v2-bar')[0], 'v2-tab')[0]);
     await app.go('#/');
     assert.equal(byClass(app.view, 'v2-title')[0].textContent, 'Home', 'Home (AC82, from stage 2)');
   } finally {
@@ -86,6 +94,17 @@ test('AC56 back (changed by AC81): Home → Status → Waiting (this project) �
     assert.equal(byClass(first.view, 'sb-prev').length, 1);
   } finally {
     first.restore();
+  }
+  // The page and the Timeline opened first: their back control goes up (the page to Home, the Timeline to
+  // the page), a link, never a step back through a history entry.
+  for (const [hash, up] of [['#/p/Alpha', '#/'], ['#/p/Alpha/timeline', '#/p/Alpha']]) {
+    const one = await opened(twoProjects(), hash);
+    try {
+      const b = findAll(one.view, (e) => e.dataset && e.dataset.k === 'nav-back')[0];
+      assert.deepEqual([b.tag, b.attrs.href, b.attrs['aria-label']], ['a', up, 'Back'], hash);
+    } finally {
+      one.restore();
+    }
   }
 });
 
@@ -122,7 +141,10 @@ const SHEETS = [
   ['the card\'s sheet (a pull request)', '#/waiting/Alpha', 'cardlink:Alpha|pr|80', waitingCard('Alpha|pr|80')],
   ['the summary sheet', '#/p/Alpha/team/critic', 'log:0', '#/p/Alpha/team/critic/e/0'],
   ['the Working now sheet', '#/p/Alpha/team/builder', 'log:now', '#/p/Alpha/team/builder/now'],
-  ['the info screen', '#/p/Alpha', 'info', '#/p/Alpha/info'],
+  // From stage 3 the page's sheets (AC83): "About the phases", in mockup v2's sheet (rewritten from the Status
+  // screen's info sheet), and "Experiments" from the rest's rows.
+  ['the page\'s "About the phases" sheet (v2)', '#/p/Alpha', 'info', '#/p/Alpha/info'],
+  ['the page\'s "Experiments" sheet (v2)', '#/p/Alpha', 'rest:experiments', '#/p/Alpha/experiments'],
 ];
 
 test('AC56 close: every sheet has "Close" at its top (44 px), and the control, a tap outside and Escape each close it, with focus back on its opener', async () => {
@@ -138,7 +160,7 @@ test('AC56 close: every sheet has "Close" at its top (44 px), and the control, a
         const sh = sheetEl(app);
         assert.ok(sh, `${what}: open`);
         // The board's sheet (AC85's look): its grab handle, then its head with the 44 px close at its top right.
-        const board = / sheet \(/.test(what);
+        const board = / sheet \(/.test(what) || /\(v2\)$/.test(what);
         const top = board ? byClass(sh, 'v2-shead')[0] : byClass(sh, 'sb-sheet-top')[0];
         assert.equal(sh.children[board ? 1 : 0], top, `${what}: the close control sits at the top`);
         const close = byClass(top, board ? 'v2-x44' : 'sb-close')[0];
@@ -274,7 +296,7 @@ test('AC56 refresh, Status (step 2b, 2026-10-16): "Your last action"\'s whole-li
     bub.scrollTop = 300; // part way down the owner's 1,800 characters
     app.scrolls.length = 0;
     await everyRefresh(app, setup);
-    assert.match(app.text(), /Current status/, 'the same screen');
+    assert.ok(onPage(app), 'the same screen (the page, in the Status screen\'s place from stage 3)');
     assert.equal(keyed(app, 'linebubble:last'), bub, 'the same bubble, still open');
     assert.equal(bub.scrollTop, 300, 'scrolled where it was');
     assert.equal(keyed(app, 'line:last'), ctl, 'on the same control');
@@ -524,7 +546,7 @@ test('AC56 refresh, Status: the screen scrolled and focus on "More detail" stay 
     more.focus();
     app.scrolls.length = 0;
     await everyRefresh(app, setup);
-    assert.match(app.text(), /Current status/, 'the same screen');
+    assert.ok(onPage(app), 'the same screen (the page, in the Status screen\'s place from stage 3)');
     assert.equal(document.activeElement, more, 'focus stays on the same control');
     assert.ok(app.view.contains(more));
     assert.deepEqual(app.scrolls, [], 'no refresh moves the scroll');
@@ -614,40 +636,40 @@ test('AC56 refresh, Timeline (step 4, 2026-10-16: AC59, AC60): scrolled away fro
   }
 });
 
-test('AC56 refresh, Status (step 4b, 2026-10-16: AC57): one phase box folded and another opened from folded, and an earlier run\'s gathered standard milestones opened: each stays as it was, and the drawing\'s dots stay level with their phase names', async () => {
+// Rewritten in stage 3 (S-001 AC57, "Changed by AC83", specs/S-001.md:4478-4486; AC83's milestones by phase,
+// "folding or opening one line never moves another, and a refresh keeps each as the owner left it (AC56)"):
+// the Status screen's boxes and drawing give way to the page's phase lines, and the drawing to Home's tile.
+test('AC56 refresh, the page (AC83, in the Status screen\'s place): one phase line opened and folded again and two opened, with an opened earlier run\'s rows: each stays as it was, the same elements, through every kind of refresh', async () => {
   const setup = withSD();
   const app = await opened(setup, '#/p/Service-Desk');
-  const ys = { Done: 40, Launch: 140, Build: 300, Design: 560, Discovery: 820 };
   try {
     await app.advance(POLL_MS);
-    const name = (ph) => findAll(keyed(app, `pbox:${ph}`), (e) => e.tag === 'button' && e.attrs['data-pname'] === ph)[0];
-    await app.tap(name('Launch')); // fold an open box
-    await app.tap(name('Discovery')); // open the one that starts folded
-    await app.tap(keyed(app, 'fold:gather:Design-i1'));
-    assert.equal(name('Launch').attrs['aria-expanded'], 'false');
-    assert.equal(name('Discovery').attrs['aria-expanded'], 'true');
-    assert.ok(keyed(app, 'gathered:Design-i1'));
+    const line = (ph) => findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-label'] === ph && / v2-stdr /.test(` ${e.className} `))[0];
+    await app.tap(line('Launch')); // open, then fold again
+    await app.tap(line('Launch'));
+    await app.tap(line('Discovery'));
+    await app.tap(line('Design'));
+    assert.equal(line('Launch').attrs['aria-expanded'], 'false');
+    assert.equal(line('Discovery').attrs['aria-expanded'], 'true');
+    const design = keyed(app, 'stdl:Design');
+    assert.ok(design && keyed(app, 'old:Design-i1'), 'Design opened, its earlier run listed');
     await everyRefresh(app, setup);
-    assert.equal(name('Launch').attrs['aria-expanded'], 'false', 'Launch stays folded');
-    assert.equal(name('Discovery').attrs['aria-expanded'], 'true', 'Discovery stays open');
-    assert.ok(keyed(app, 'gathered:Design-i1'), 'the gathered milestones stay open');
-    const undo = railLayout(ys);
-    try {
-      app.module.refresh();
-      await app.flush();
-      const dots = findAll(byClass(keyed(app, 'pboxes'), 'sb-rail')[0], (e) => e.attrs['data-kind'] === 'dot');
-      for (const d of dots) assert.ok(Math.abs(Number(d.attrs.cy) - ys[d.attrs['data-phase']]) <= 1, `${d.attrs['data-phase']}: level with its name after the refresh`);
-    } finally {
-      undo();
-    }
+    assert.equal(line('Launch').attrs['aria-expanded'], 'false', 'Launch stays folded');
+    assert.equal(line('Discovery').attrs['aria-expanded'], 'true', 'Discovery stays open');
+    assert.equal(keyed(app, 'stdl:Design'), design, 'Design stays open, the same element');
+    assert.ok(keyed(app, 'old:Design-i1'), 'its earlier run still listed');
   } finally {
     app.restore();
   }
 });
 
 test('AC56: the 15-second tick changes only the time-dependent text; every other element is the same element before and after', async () => {
-  for (const hash of ['#/', '#/p/Alpha', '#/p/Alpha/queue', '#/p/Alpha/queue/q%3AAlpha-pick', '#/p/Alpha/team', '#/p/Alpha/team/builder/now', '#/p/Alpha/timeline']) {
-    const app = await opened(twoProjects(), hash);
+  // From stage 3 (AC83) a project's page with something waiting shows its waits by name, with no time on them;
+  // its time-dependent text is "checked <age> ago" on the row saying nothing waits (frame 8), so the page is
+  // also drawn for a project with nothing waiting, `Quiet` (made up, NOT a real record), where it must change.
+  const quiet = () => ({ config: { ...CONFIG, projects: [v3('Alpha'), v3('Quiet')] }, repos: { Alpha: fullRepo('Alpha'), Quiet: repo({ 'README.md': '# Quiet\n' }) } });
+  for (const hash of ['#/', '#/p/Alpha', '#/p/Quiet', '#/p/Alpha/queue', '#/p/Alpha/queue/q%3AAlpha-pick', '#/p/Alpha/team', '#/p/Alpha/team/builder/now', '#/p/Alpha/timeline']) {
+    const app = await opened(hash === '#/p/Quiet' ? quiet() : twoProjects(), hash);
     try {
       app.desk.stop(); // no poll: only the clock moves on
       await app.advance(7 * 60e3);
@@ -662,7 +684,7 @@ test('AC56: the 15-second tick changes only the time-dependent text; every other
         const self = e._live || findAll(e, (x) => x._live).length;
         assert.ok(self, `${hash}: only time-dependent text changes (${e.tag}.${e.className})`);
       }
-      if (hash !== '#/p/Alpha/timeline') assert.ok(changed.some((e) => e._live), `${hash}: the time-dependent text did change`);
+      if (hash !== '#/p/Alpha/timeline' && hash !== '#/p/Alpha') assert.ok(changed.some((e) => e._live), `${hash}: the time-dependent text did change`);
     } finally {
       app.restore();
     }

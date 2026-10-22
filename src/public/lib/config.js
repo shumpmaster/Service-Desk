@@ -41,6 +41,7 @@ export default {
       "defaultBranch": "main",
       "model": "v2.5",
       "planning": false,
+      "publishesModel": true,
       "webCommitsToDefault": true,
       "contentPrefill": true,
       "contentParam": "value"

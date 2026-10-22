@@ -86,6 +86,9 @@ export function validateConfig(c) {
     if (p.planning === true && p.model !== 'v3') errors.push(`${at}.planning is true on a v2.5 project: plans, estimates and the later-work list live in a v3 project`);
     // From 2026-10-18 (Terms, AC52): absent means false; a value that is not true or false fails.
     if (p.deploysNeedOwner !== undefined && typeof p.deploysNeedOwner !== 'boolean') errors.push(`${at}.deploysNeedOwner must be true or false`);
+    // From 2026-10-20 (desk mockup v2, stage 3; J7, J23): the project whose root VERSION is the latest model
+    // version. Absent means false; a value that is not true or false fails; allowed on a v3 entry too.
+    if (p.publishesModel !== undefined && typeof p.publishesModel !== 'boolean') errors.push(`${at}.publishesModel must be true or false`);
     if (p.actionsUsage !== undefined) errors.push(...usageProblems(p.actionsUsage, `${at}.actionsUsage`));
     if (typeof p.contentParam !== 'string' || !/^[A-Za-z0-9_]+$/.test(p.contentParam)) {
       errors.push(`${at}.contentParam must be a parameter name`);
@@ -93,6 +96,8 @@ export function validateConfig(c) {
   });
   // J7 (Work ahead, 2026-10-18): plans, estimates and the later-work list have one home.
   if (c.projects.filter((p) => p && p.planning === true).length > 1) errors.push('only one project may hold "planning": true (plans, estimates and the later-work list have one home)');
+  // J7 (stage 3, J23): one project publishes the model, as `planning`'s rule.
+  if (c.projects.filter((p) => p && p.publishesModel === true).length > 1) errors.push('only one project may hold "publishesModel": true (the model is published from one repository)');
   if (c.projects.filter((p) => p && p.actionsUsage !== undefined).length > 1) errors.push('only one project\'s entry may hold actionsUsage (its sender alone reads the usage)');
   return errors;
 }

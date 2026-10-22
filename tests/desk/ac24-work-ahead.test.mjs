@@ -166,11 +166,13 @@ test('AC24: the states, as Status gives them — MD1 and MD2 work filed (half-fi
     assert.deepEqual(state('MD3'), ['No work filed yet · next to reach', 'sb-mk m-gold']);
     for (const id of ['M3A', 'M3B', 'M3C']) assert.deepEqual(state(id), ['No work filed yet', 'sb-mk m-empty']);
     assert.doesNotMatch(app.text(), /work done|accept\?|in progress/i);
-    // The same marks as the Status screen gives the same milestones.
+    // The same states as the project's page gives the same milestones: from stage 3 the Status screen gives way
+    // to the page (AC81, AC83), whose opened phase lines mark each milestone by AC57's rules with AC59's icons
+    // (AC83, "each milestone's row", specs/S-001.md:6801-6804; AC81, :6456-6457; rewritten from the Status screen's marks, half-filled, gold and empty rings).
     await app.go('#/p/Service-Desk');
-    const ms = byClass(app.view, 'sb-ms');
-    const mark = (id) => byClass(ms.find((m) => byClass(m, 'code')[0].textContent === id), 'sb-mk')[0].className;
-    assert.deepEqual(SIX.map(mark), ['sb-mk m-half', 'sb-mk m-half', 'sb-mk m-gold', 'sb-mk m-empty', 'sb-mk m-empty', 'sb-mk m-empty']);
+    for (const ph of ['Launch', 'Build', 'Design']) await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-label'] === ph)[0]);
+    const mark = (id) => findAll(findAll(app.view, (e) => e.attrs && e.attrs['data-ms'] === id && / v2-sm /.test(` ${e.className} `))[0], (e) => e.tag === 'svg')[0].attrs.class.split(' ')[1];
+    assert.deepEqual(SIX.map(mark), ['st-half', 'st-half', 'st-next', 'st-planned', 'st-planned', 'st-planned']);
   } finally {
     app.restore();
   }

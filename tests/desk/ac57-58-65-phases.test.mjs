@@ -13,6 +13,8 @@ import { v3, v25, fullRepo, extremes, opened } from './sandbox-fixtures.mjs';
 import { models, openSD, keyed, svgKids, railLayout, ac61Answer, byClass, findAll, SD3 } from './tv2-fixtures.mjs';
 import { runsContext, statusPhases, tilePhases, branchShape, STATUS_KEY } from '../../src/lib/feed.js';
 import { phaseView, standardWord } from '../../src/lib/sandbox.js';
+import { tileTimeline } from '../../src/lib/home.js';
+import { phaseStrip } from '../../src/lib/projectpage.js';
 
 const css = () => readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
 const rule = (sel) => {
@@ -194,117 +196,114 @@ test('AC57 + AC61: "why: not recorded" on every milestone with J11\'s fixture; e
 
 // ---------------------------------------------------------------------------
 // AC57: the page
+//
+// From stage 3 (S-001 AC57, "Changed by AC83", specs/S-001.md:4478-4488): "in the trial view the Status
+// screen's phase boxes and branch drawing give way to the project page's phase strip and its milestones
+// by phase, one folded line per phase, read from the bottom up (frames 5, 6 and 6b), and the branch
+// drawing moves to the Home tile's timeline (AC82, frame H5). This criterion's rules for each run's and
+// each milestone's state ... still decide what both show. Two parts go: the key above the phase boxes ...
+// and "why: not recorded" on every milestone". The three cases below checked the boxes, their folding
+// and their drawing on the Status screen; each is rewritten one for one for what takes its place.
 
-const DESIGN_ROW = { Done: 40, Launch: 140, Build: 300, Design: 560, Discovery: 820 };
+const lineOf = (app, ph) => findAll(keyed(app, 'ms-lines'), (e) => e.attrs && e.attrs['data-phase'] === ph)[0];
+const foldOf = (app, ph) => findAll(lineOf(app, ph), (e) => e.tag === 'button')[0];
 
-test('AC57: on the page — the boxes from the top, their stripes and names in words, the now box\'s gold border, the key, and each run\'s line', async () => {
+test('AC57, changed by AC83 (rewrites "the boxes from the top"): on the page, one line per phase from the top, Launch, Build, Design, Discovery, each with its phase\'s square in its colour token and its name in words, its state word from AC57\'s run states, the now phase\'s "run 2 · now"; Done is no line (the strip ends at Launch, AC83); no key (AC83, "no key")', async () => {
   const app = await openSD('#/p/Service-Desk');
   try {
-    const boxes = byClass(app.view, 'sb-pbox');
-    assert.deepEqual(boxes.map((b) => b.attrs['data-phase']), ['Done', 'Launch', 'Build', 'Design', 'Discovery']);
-    for (const [b, cls] of boxes.map((x, i) => [x, ['ph-done', 'ph-launch', 'ph-build', 'ph-des', 'ph-disc'][i]])) assert.ok(b.className.split(' ').includes(cls), `${b.attrs['data-phase']}: ${cls}`);
-    assert.ok(boxes[3].className.split(' ').includes('now'));
-    assert.ok(boxes[0].className.split(' ').includes('end'), 'Done\'s box: dashed, no stripe');
-    // The stripe is the phase's colour token (AC48's phase colours), and Done has none.
-    assert.match(rule('.sb-pbox'), /box-shadow: inset 3px 0 0 var\(--ph\);/);
-    assert.match(rule('.sb-pbox.end'), /border-style: dashed; box-shadow: none;/);
-    for (const [cls, tok] of [['ph-disc', '--ph-disc'], ['ph-des', '--ph-des'], ['ph-build', '--ph-build'], ['ph-launch', '--ph-launch']]) assert.match(css(), new RegExp(`\\.${cls} \\{ --ph: var\\(${tok}\\); \\}`));
-    assert.match(rule('.sb-pbox.now'), /border-color: var\(--gold\);/);
-    assert.match(app.text(), /Runsfinishedfinished, then gone back overnow: holds the next milestone to reachstill to come/);
-    assert.match(app.text(), /Run 2 · Design i2 · now/);
-    assert.match(app.text(), /Done\s*After the Launch gate/);
-    assert.doesNotMatch(app.text(), /of 4 phases finished/);
+    const lines = findAll(keyed(app, 'ms-lines'), (e) => e.attrs && e.attrs['data-phase']);
+    assert.deepEqual(lines.map((l) => l.attrs['data-phase']), ['Launch', 'Build', 'Design', 'Discovery'], 'read from the bottom up: Discovery at the foot, no Done line');
+    for (const [ph, cls] of [['Launch', 'ph-launch'], ['Build', 'ph-build'], ['Design', 'ph-des'], ['Discovery', 'ph-disc']]) {
+      assert.ok(foldOf(app, ph).className.split(' ').includes(cls), `${ph}: ${cls}`);
+      assert.equal(byClass(foldOf(app, ph), 'v2-sn')[0].textContent, ph, `${ph}: its name in words, beside its square`);
+      assert.equal(byClass(foldOf(app, ph), 'v2-dot').length, 1);
+    }
+    // The square is the phase's colour token (AC81's four phase colours), each with its phase's name.
+    for (const [cls, tok] of [['ph-disc', '--ph-disc'], ['ph-des', '--ph-des'], ['ph-build', '--ph-build'], ['ph-launch', '--ph-launch']]) assert.match(css(), new RegExp(`\\.v2 \\.${cls} \\{ --phc: var\\(${tok}\\); \\}`));
+    assert.match(rule('.v2-dot'), /background: var\(--phc, var\(--ink2\)\);/);
+    assert.deepEqual(['Launch', 'Build', 'Design', 'Discovery'].map((ph) => byClass(foldOf(app, ph), 'v2-sv')[0].textContent), ['planned', 'run 2 ahead', 'run 2 · now', 'finished'],
+      'each line\'s state word, as AC57\'s run states give it (Design i2 now; Build i2 still to come after Build i1; Launch i1 only still to come; Discovery i1 finished)');
+    assert.equal(byClass(app.view, 'sb-pbox').length + byClass(app.view, 'sb-skey').length, 0, 'no boxes and no key');
+    assert.doesNotMatch(app.text(), /Runsfinishedfinished, then gone back over|now: holds the next milestone to reach/, 'AC57\'s key is not built (AC83)');
+    assert.doesNotMatch(app.text(), /After the Launch gate|of 4 phases finished/);
   } finally {
     app.restore();
   }
 });
 
-test('AC57 (note 25): folding — Discovery starts folded and the rest open; a tap, Enter and Space each fold and open a box, with its accessible state and its mark; no other box moves', async () => {
+test('AC57 (note 25), changed by AC83 (rewrites "folding"): every phase line starts folded; a tap, Enter and Space each open and fold one, the phase\'s name its accessible name and its state its accessible state, with its mark; opening or folding one never moves another', async () => {
   const app = await openSD('#/p/Service-Desk');
   try {
-    const btn = (ph) => findAll(keyed(app, `pbox:${ph}`), (e) => e.tag === 'button' && e.attrs['data-pname'] === ph)[0];
-    const runs = (ph) => byClass(keyed(app, `pbox:${ph}`), 'sb-prun').length;
-    assert.equal(btn('Discovery').attrs['aria-expanded'], 'false');
-    assert.equal(runs('Discovery'), 0, 'folded to its one header line');
-    for (const ph of ['Launch', 'Build', 'Design']) assert.equal(btn(ph).attrs['aria-expanded'], 'true', ph);
-    assert.equal(byClass(keyed(app, 'pbox:Done'), 'sb-fold').length + findAll(keyed(app, 'pbox:Done'), (e) => e.tag === 'button').length, 0, 'Done has nothing to fold');
-    const order = () => byClass(app.view, 'sb-pbox').map((b) => b.attrs['data-phase']).join(',');
+    for (const ph of ['Launch', 'Build', 'Design', 'Discovery']) {
+      assert.equal(foldOf(app, ph).attrs['aria-expanded'], 'false', `${ph} starts folded`);
+      assert.equal(foldOf(app, ph).attrs['aria-label'], ph, `${ph}: its accessible name is the phase's name`);
+    }
+    assert.equal(byClass(app.view, 'v2-stdl').length, 0, 'folded to one line each');
+    const order = () => findAll(keyed(app, 'ms-lines'), (e) => e.attrs && e.attrs['data-phase']).map((l) => l.attrs['data-phase']).join(',');
     const before = order();
-    const b = btn('Design');
-    assert.equal(b.textContent.replace(/[▾▸]/g, ''), 'Design', 'its accessible name is the phase\'s name');
-    assert.match(b.textContent, /▾/, 'open: its mark');
-    await app.tap(b);
-    assert.equal(btn('Design').attrs['aria-expanded'], 'false');
-    assert.match(btn('Design').textContent, /▸/, 'folded: its mark');
-    assert.equal(runs('Design'), 0);
-    btn('Design').dispatch('keydown', { key: 'Enter' });
+    assert.equal(byClass(foldOf(app, 'Design'), 'vi-chev').length, 1, 'folded: its mark');
+    await app.tap(foldOf(app, 'Design'));
+    assert.equal(foldOf(app, 'Design').attrs['aria-expanded'], 'true');
+    assert.equal(byClass(foldOf(app, 'Design'), 'vi-chevdown').length, 1, 'open: its mark');
+    assert.equal(byClass(lineOf(app, 'Design'), 'v2-stdl').length, 1, 'it opens below itself');
+    foldOf(app, 'Design').dispatch('keydown', { key: 'Enter' });
     await app.flush();
-    assert.equal(btn('Design').attrs['aria-expanded'], 'true');
-    btn('Design').dispatch('keydown', { key: ' ' });
+    assert.equal(foldOf(app, 'Design').attrs['aria-expanded'], 'false');
+    assert.equal(byClass(lineOf(app, 'Design'), 'v2-stdl').length, 0);
+    foldOf(app, 'Design').dispatch('keydown', { key: ' ' });
     await app.flush();
-    assert.equal(btn('Design').attrs['aria-expanded'], 'false');
-    btn('Discovery').dispatch('keydown', { key: ' ' });
+    assert.equal(foldOf(app, 'Design').attrs['aria-expanded'], 'true');
+    foldOf(app, 'Discovery').dispatch('keydown', { key: ' ' });
     await app.flush();
-    assert.equal(btn('Discovery').attrs['aria-expanded'], 'true');
-    assert.equal(runs('Discovery'), 1);
-    assert.equal(order(), before, 'no other box moves in order');
+    assert.equal(foldOf(app, 'Discovery').attrs['aria-expanded'], 'true');
+    assert.equal(foldOf(app, 'Design').attrs['aria-expanded'], 'true', 'opening one leaves the other as it was');
+    assert.equal(order(), before, 'no other line moves in order');
   } finally {
     app.restore();
   }
 });
 
-test('AC57: the drawing\'s shapes — every straight piece vertical, one curve from Build i1\'s dot to Design i2\'s, dashed pieces only into still-to-come dots, every arrowhead pointing up; each dot\'s centre level with its phase name\'s row, and again after a box folds', async () => {
+test('AC57, changed by AC83 (rewrites "the drawing\'s shapes"): the branch drawing has moved to the Home tile\'s timeline (AC82, frame H5) — run 1 Discovery, Design and Build; run 2 from Design to Done, dropping under Design from run 1 (the one curve from Build i1 to Design i2), still to come dashed, gone back over lighter; and the page draws none', async () => {
+  const { ctx } = models();
+  const tl = tileTimeline(ctx);
+  const cells = (k) => tl.rows[k - 1].cells.map((c) => (c ? `${c.phase}:${c.state}` : '-'));
+  assert.deepEqual(cells(1), ['Discovery:done', 'Design:gone', 'Build:gone', '-', '-'], 'run 1, as the drawing\'s first column');
+  assert.deepEqual(cells(2), ['-', 'Design:now', 'Build:ahead', 'Launch:ahead', 'Done:ahead'], 'run 2, as its second column, still-to-come dots dashed');
+  assert.equal(tl.rows[1].up, 1, 'run 2 starts under Design');
+  assert.equal(tl.rows[0].down, 1, 'joined by one drop from run 1, where the curve ran from Build i1\'s dot to Design i2\'s');
+  assert.deepEqual(tl.rows.map((r) => r.label), ['run 1', 'run 2'], 'one row per run, as the drawing had one column per run');
+  assert.deepEqual(tl.labels.filter((l) => l.now).map((l) => l.phase), ['Design'], 'the now phase named once, bold');
+  assert.deepEqual(tl.rows[1].cells.filter(Boolean).map((c) => c.icon), ['half', 'planned', 'planned', 'planned'], 'its icons: half-filled now, dashed rings to come');
+  assert.match(tl.words, /run 2/, 'one sentence carrying it, in words');
+  // The boxes' stripes, as the page's strip: each phase in its colour, solid where finished or now, dashed to come.
+  assert.deepEqual(phaseStrip(ctx, null).cells.map((c) => [c.cls, c.bar]), [['ph-disc', 'solid'], ['ph-des', 'solid'], ['ph-build', 'dashed'], ['ph-launch', 'dashed']]);
   const app = await openSD('#/p/Service-Desk');
-  const undo = railLayout(DESIGN_ROW);
   try {
-    const box = keyed(app, 'pboxes');
-    app.module.fitRail(box);
-    const svg = byClass(box, 'sb-rail')[0];
-    const kids = svgKids(svg);
-    const lines = kids.filter((e) => e.attrs['data-kind'] === 'line');
-    const curves = kids.filter((e) => e.attrs['data-kind'] === 'curve');
-    const arrows = kids.filter((e) => e.attrs['data-kind'] === 'arrow');
-    const dots = kids.filter((e) => e.attrs['data-kind'] === 'dot');
-    for (const l of lines) assert.equal(l.attrs.x1, l.attrs.x2, 'vertical');
-    assert.equal(curves.length, 1, 'one curve');
-    assert.deepEqual([curves[0].attrs['data-from'], curves[0].attrs['data-to']], ['1', '2']);
-    const dot = (ph, k) => dots.find((d) => d.attrs['data-phase'] === ph && d.attrs['data-col'] === String(k));
-    assert.ok(curves[0].attrs.d.startsWith(`M${dot('Build', 1).attrs.cx} ${dot('Build', 1).attrs.cy}C`), 'it starts at Build i1\'s dot');
-    assert.ok(curves[0].attrs.d.endsWith(` ${dot('Design', 2).attrs.cx} ${dot('Design', 2).attrs.cy}`), 'and ends at Design i2\'s');
-    for (const l of lines) {
-      const into = dots.find((d) => d.attrs.cx === l.attrs.x1 && d.attrs.cy === l.attrs.y2);
-      assert.equal(l.attrs['data-dashed'] === '1', into.attrs['data-mark'] === 'todo', 'dashed only into a still-to-come dot');
-      assert.ok(Number(l.attrs.y2) < Number(l.attrs.y1), 'each line runs up to the next dot');
-    }
-    assert.equal(arrows.length, lines.length, 'an arrowhead half way along each line');
-    for (const a of arrows) assert.equal(a.attrs['data-dir'], 'up');
-    for (const d of dots) assert.ok(Math.abs(Number(d.attrs.cy) - DESIGN_ROW[d.attrs['data-phase']]) <= 1, `${d.attrs['data-phase']}: level with its name`);
-    assert.equal(dots.length, 7);
-    // Fold Build: the names move, and the drawing follows them.
-    const moved = { ...DESIGN_ROW, Design: 380, Discovery: 640 };
-    undo();
-    const undo2 = railLayout(moved);
-    try {
-      await app.tap(findAll(keyed(app, 'pbox:Build'), (e) => e.tag === 'button' && e.attrs['data-pname'] === 'Build')[0]);
-      app.module.fitRail(keyed(app, 'pboxes'));
-      for (const d of svgKids(byClass(keyed(app, 'pboxes'), 'sb-rail')[0]).filter((e) => e.attrs['data-kind'] === 'dot')) {
-        assert.ok(Math.abs(Number(d.attrs.cy) - moved[d.attrs['data-phase']]) <= 1, `after a fold, ${d.attrs['data-phase']}: level with its name`);
-      }
-    } finally {
-      undo2();
-    }
+    assert.equal(byClass(app.view, 'sb-rail').length + byClass(app.view, 'sb-pboxes').length, 0, 'no branch drawing on the page');
+    assert.equal(app.module.fitRail, undefined, 'and no code left to fit one');
   } finally {
-    undo();
     app.restore();
   }
 });
 
-test('AC57: the lines\' width and opacity (1.25 px at 70%), and the tie line (1 px in the --tie grey, an arrowhead at its top), as version 6 draws them', () => {
-  assert.match(rule('.sb-rail .ln, .sb-rail .arr'), /stroke-width: 1\.25px; stroke-opacity: \.7;/);
-  assert.match(rule('.sb-mslist::before'), /width: 1px; background: var\(--tie\);/);
-  assert.match(rule('.sb-mslist::after'), /border-left: 1px solid var\(--tie\); border-top: 1px solid var\(--tie\); transform: rotate\(45deg\);/, 'its arrowhead points up');
-  for (const theme of [/html\.sb \{([^}]*)\}/, /html\.sb:not\(\[data-theme="light"\]\) \{([^}]*)\}/, /html\.sb\[data-theme="dark"\] \{([^}]*)\}/]) {
-    assert.match(theme.exec(css())[1], /--tie: #[0-9a-f]{6};/);
+// Rewritten in stage 3 (S-001 AC57, changed by AC83; AC83's opened line, specs/S-001.md:6793-6796: "a thin line with
+// an arrow pointing up (notes 12 and 19)"): the Status screen's drawing and its tie line give way to the page's
+// opened phase, and the drawing to the Home tile's timeline (AC82, frame H5).
+test('AC57, changed by AC83: the opened phase\'s line — 1 px in --line2, with an arrowhead pointing up at its top, drawn as an icon; the tile\'s lines 2 px in the phase\'s colour, dashed ahead and lighter gone back over (AC82)', async () => {
+  assert.match(rule('.v2-stdl::before'), /width: 1px; background: var\(--line2\);/);
+  assert.match(rule('.v2-arrow'), /position: absolute; left: -1px; top: -2px;/, 'the arrowhead at the line\'s top');
+  assert.match(rule('.v2-c.l::before, .v2-c.r::after'), /height: 2px; margin-top: -1px; background: var\(--phc\);/);
+  assert.match(rule('.v2-c.s-ahead.l::before, .v2-c.s-ahead.r::after'), /repeating-linear-gradient/);
+  assert.match(rule('.v2-c.s-gone.l::before, .v2-c.s-gone.r::after'), /opacity: \.4;/);
+  const app = await openSD('#/p/Service-Desk');
+  try {
+    await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-label'] === 'Design')[0]);
+    const arrow = byClass(keyed(app, 'stdl:Design'), 'v2-arrow')[0];
+    assert.equal(arrow.attrs['aria-hidden'], 'true');
+    assert.equal(byClass(arrow, 'vi-up').length, 1, 'an icon pointing up, never ▲ as text (AC81)');
+    assert.equal(keyed(app, 'stdl:Design').children[0], arrow, 'at the list\'s top');
+  } finally {
+    app.restore();
   }
 });
 

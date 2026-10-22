@@ -333,8 +333,9 @@ test('AC54 (b), changed by AC82: no "Latest" bubble on any tile ("Ruling: A — 
   const { config, repos } = twoKinds();
   const app = await openHome(config, repos);
   try {
+    // From stage 3 AC37's "where it's heading" is the project page's one sentence (AC83, in the frame's form).
     await app.go('#/p/Alpha');
-    const where = byClass(app.view, 'sb-lead')[0].textContent;
+    const where = byClass(app.view, 'v2-lead')[0].textContent;
     await app.go('#/');
     for (const n of ['Alpha', 'Delta']) {
       assert.ok(card(app, n), `${n}'s tile`);
@@ -351,7 +352,9 @@ test('AC54 (b), changed by AC82: no "Latest" bubble on any tile ("Ruling: A — 
   }
 });
 
-test('AC54 (b), changed by AC82: a tap on the tile opens the project\'s Status screen (stage 2, AC81 "Until stage 3"); a tap on its summary\'s control never does', async () => {
+// Rewritten in stage 3 (S-001 AC81, "From stage 3", specs/S-001.md:6456-6458, and the brief's "a tile's tap opens
+// the page (its tests rewritten so)"): the tile's tap opened the Status screen until stage 3.
+test('AC54 (b), changed by AC82 and AC83: a tap on the tile opens the project\'s page (from stage 3, AC81); a tap on its summary\'s control never does', async () => {
   const { config, repos } = longAndShort();
   const app = await openHome(config, repos);
   try {
@@ -359,7 +362,7 @@ test('AC54 (b), changed by AC82: a tap on the tile opens the project\'s Status s
     await app.resize(360);
     const link = byClass(card(app, 'Alpha'), 'v2-ta')[0];
     assert.equal(link.tag, 'a');
-    assert.equal(link.attrs.href, '#/p/Alpha', 'the tile\'s link: the project\'s Status screen in stage 2');
+    assert.equal(link.attrs.href, '#/p/Alpha', 'the tile\'s link: the project\'s page, at the Status screen\'s address');
     assert.equal(link.textContent, 'Alpha', 'named by the project');
     const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
     assert.match(css, /\n\.v2-ta::after \{ content: ""; position: absolute; inset: 0; border-radius: 10px; \}/, 'stretched over the whole tile');
@@ -370,7 +373,8 @@ test('AC54 (b), changed by AC82: a tap on the tile opens the project\'s Status s
     await app.key('Escape');
     await app.tap(link);
     await app.go(link.attrs.href);
-    assert.equal(byClass(app.view, 'sb-lead').length, 1, 'the Status screen');
+    assert.equal(byClass(app.view, 'v2-proj').length, 1, 'the project\'s page');
+    assert.equal(findAll(app.view, (e) => e.dataset && e.dataset.k === 'seg:overview')[0].attrs['aria-current'], 'page', 'on its Overview');
   } finally {
     app.restore();
   }

@@ -392,6 +392,8 @@ test('AC75 (draft 8; from stage 8): the desk\'s Home "More detail" fold: at the 
     const more = byClass(app.view, 'sb-more')[0];
     assert.ok(more && 'open' in more.attrs, 'opened by the tap');
     assert.ok(sbFindAll(more, (e) => e.attrs && e.attrs.id === 'actions-usage').length, 'at the Actions line');
+    // The accepted view sent this tap on to `/?sandbox&open=actions-usage`; the desk takes it where it lands, at `/`.
+    assert.ok(app.addresses.every((a) => !/sandbox/.test(a)), `never sent to a ?sandbox address: ${JSON.stringify(app.addresses)}`);
   } finally {
     app.restore();
   }
@@ -415,5 +417,6 @@ test('AC74, AC75 (from stage 8): every desk window is the desk: the first open o
     await tap(w);
     assert.deepEqual(did, [['focus'], ['message', TAP]], url);
     assert.equal(w.opened.length, 0);
+    assert.ok(!did.some(([k]) => k.startsWith('other')), `${url}: the second window untouched`);
   }
 });

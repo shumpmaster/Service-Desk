@@ -40,6 +40,8 @@ test('Page (review N6): opened at #/p/%E0, the desk shows Home with every projec
     assert.equal(app.els['screen-state'].textContent, 'Checking…');
     const view = app.view.textContent;
     for (const p of CONFIG.projects) assert.ok(view.includes(p.name), `Home lists ${p.name}`);
+    // The accepted page's "one poll scheduled per project" (its timers): the desk has made no call before its first cycle.
+    assert.equal(polls(app), 0, 'no poll before the first cycle');
     await app.advance(1000);
     assert.equal(polls(app), CONFIG.projects.length, 'desk.start() polled each project');
     assert.equal(app.els['screen-state'].textContent, 'Quiet');
@@ -59,6 +61,10 @@ test('Page (review N4) + AC30: a record makes one project\'s box throw; that til
     const view = app.view.textContent;
     assert.match(view, /Can't show this project: /);
     assert.ok(view.includes('Personal-Org-Operating-Model'), 'the other tile is drawn');
+    const tiles = byClass(app.view, 'v2-tile');
+    assert.match(tiles.find((t) => t.attrs['data-k'] === 'card:Service-Desk').textContent, /^Service-DeskCan't show this project: /, 'the throwing project\'s own tile says so');
+    assert.match(tiles.find((t) => t.attrs['data-k'] === 'card:Personal-Org-Operating-Model').textContent, /Nothing waiting/, 'and the other says nothing waits');
+    assert.equal(document.title, "Service Desk — Not quiet: can't show 1 project", 'the tab too');
     // The accepted page's footer is gone with it (stage 8); Home's foot, its "More detail", is drawn.
     assert.equal(byClass(app.view, 'v2-mdetail').length, 1, 'Home is drawn to its foot');
     const first = polls(app);
@@ -74,6 +80,7 @@ test('Page (review N6): when even the first render\'s error state can\'t be draw
   const app = await open({ hash: '#/p/%E0', repos: cleanRepos(), breakView: true });
   try {
     assert.match(app.els['screen-state'].textContent, /^Can't show the desk: view is broken/);
+    assert.equal(polls(app), 0, 'its first cycle still to come');
     await app.advance(1000);
     assert.equal(polls(app), CONFIG.projects.length, 'desk.start() ran');
     assert.notEqual(app.els['screen-state'].textContent, 'Quiet');

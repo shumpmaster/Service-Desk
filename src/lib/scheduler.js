@@ -64,7 +64,10 @@ const COMPARE_CACHE_KEY = 'desk-compare-v1';
 // kept on the device under their own key, by kind and sha (read once per device, again only when a sha
 // changes), apart from the projects' cache.
 export const PORTFOLIO_POLL_MS = 300_000;
-export const PORTFOLIO_CACHE_KEY = 'desk-portfolio-blobs-v1';
+// v2 (review round 1, B2 and N3): a card's parse keeps its problems apart from the answer path it never has,
+// and its `Milestone:` line; v1's entries are dropped and read again.
+export const PORTFOLIO_CACHE_KEY = 'desk-portfolio-blobs-v2';
+export const OLD_PORTFOLIO_CACHE_KEYS = ['desk-portfolio-blobs-v1'];
 
 export const REASON_WORDS = {
   token: 'the read token was rejected or has expired',
@@ -253,6 +256,7 @@ export function createDesk(opts) {
     retryUntil: 0, lastSuccessAt: null, failure: null, readAt: null, polls: 0, blobCalls: 0, checking: false,
   } : null;
   const pfCache = new Map();
+  if (pf && store && store.remove) for (const k of OLD_PORTFOLIO_CACHE_KEYS) store.remove(k);
   if (pf && store) {
     try {
       const v = store.getJSON(PORTFOLIO_CACHE_KEY, {});

@@ -15,11 +15,10 @@ import { _resetKeyCache } from '../../src/lib/access.js';
 import { portfolioUrls } from '../../src/lib/github.js';
 import { createDesk, PORTFOLIO_POLL_MS, POLL_MS, PORTFOLIO_CACHE_KEY } from '../../src/lib/scheduler.js';
 import { createStore } from '../../src/lib/store.js';
-import { parseIdeas, portfolioRead, portfolioCards, rareView, ideasView, PF_WORDS, PORTFOLIO_BLOB_MAX, PF_BOARD, IDEA_STATES } from '../../src/lib/portfolio.js';
+import { parseIdeas, portfolioRead, portfolioCards, rareView, ideasView, PF_WORDS, PORTFOLIO_BLOB_MAX, PF_BOARD, IDEA_STATES, parsePortfolioRecord, cardMilestone } from '../../src/lib/portfolio.js';
 import { makeKey, signJwt, goodClaims, certsRoute, request, fakeFetch, ENV, NOW, CONFIG, J7_FILE, PORTFOLIO, fakeClock, recorded, SD, POOM } from './helpers.mjs';
 import { fakeServer, repo, gitSha, PORTFOLIO_REPO } from './fake-desk.mjs';
 import { pfFiles, cardText, IDEAS, MADE_UP, withPortfolio } from './pf-fixtures.mjs';
-import { parseCard } from '../../src/lib/records.js';
 
 const TZ = 'America/Chicago';
 
@@ -248,7 +247,7 @@ function snapOf(files, { truncated = false, sizes = {}, unread = [], failure = n
   for (const [p, t] of Object.entries(files)) {
     if (unread.includes(p)) continue;
     if (p === 'ideas/IDEAS.md') records.set(p, parseIdeas(t));
-    else if (/^queue\/[^/_][^/]*$/.test(p)) records.set(p, { text: t, ...parseCard(t) });
+    else if (/^queue\/[^/_][^/]*$/.test(p)) records.set(p, parsePortfolioRecord('pf-card', t));
   }
   return { ...PORTFOLIO, head: HEAD, tree, truncated, records, lastSuccessAt, failure, readAt: lastSuccessAt };
 }
@@ -442,4 +441,50 @@ test('J23 (outside the MD sandbox): the accepted view\'s reader reads no portfol
   assert.equal(d.portfolio(), null);
   assert.equal(recorded('branch-main').status, 200, 'the recorded branch form the made-up one follows');
   d.stop();
+});
+
+// ---------------------------------------------------------------------------
+// Review round 1 (the Reviewer's B1, B2, N2 and N3)
+
+test('J23 (review round 1, B2 and N3, made up): a card in the portfolio template\'s form, with no `answer:` line, is read as J2 reads a card\'s sections and is no parse problem; its `Milestone:` line read when it has one; only a card that can\'t be read as one — no decision, no options — is "can\'t parse"', () => {
+  const rec = parsePortfolioRecord('pf-card', cardText(1));
+  assert.equal(/^answer:/m.test(cardText(1)), false, 'the fixture has no answer: line, as the template');
+  assert.equal(rec.title, 'Whether to explore the made-up reading-list app as a project');
+  assert.deepEqual(rec.options.map((o) => o.word), ['explore', 'park']);
+  assert.deepEqual(rec.problems, []);
+  assert.equal(cardMilestone(rec), 'PM1');
+  const read = portfolioRead(snapOf(pfFiles({ queue: { 'PF-001-explore-1.md': cardText(1) } })), NOW, TZ);
+  assert.equal(portfolioCards(read)[0].note, null, 'not "can\'t parse"');
+  assert.equal(cardMilestone(parsePortfolioRecord('pf-card', cardText(1, 'X', { milestone: 'none (made up)' }))), null, '`none (<why>)`: no milestone in the head');
+  assert.equal(cardMilestone(parsePortfolioRecord('pf-card', cardText(1, 'X', { milestone: null }))), null, 'no line');
+  const noOpts = cardText(3).replace(/## 4\. Options[\s\S]*?(?=## 5\.)/, '## 4. Options\nNone listed (made up).\n\n');
+  assert.match(portfolioCards(portfolioRead(snapOf(pfFiles({ queue: { 'PF-003-x.md': noOpts } })), NOW, TZ))[0].note, /^can't parse: no options under "## 4\. Options"$/);
+  // An `answer:` line, should one appear, changes nothing: it is not read (J23).
+  assert.deepEqual(parsePortfolioRecord('pf-card', cardText(1).replace('## 1.', 'answer: write `x.md`\n\n## 1.')).problems, []);
+});
+
+test('J23 (review round 1, B1): Quiet\'s words are for an actual failure only — a read past its 6 minutes with none failed (back from the background, or a first read still filling in) has no "Can\'t read" words and is "checking"; a failure keeps "Can\'t read your portfolio since HH:MM", from the failure\'s start', () => {
+  const files = pfFiles();
+  const stale = portfolioRead(snapOf(files, { lastSuccessAt: NOW - 30 * 60_000 }), NOW, TZ);
+  assert.deepEqual([stale.fresh, stale.quietWords, stale.checking, stale.problem], [false, null, true, null]);
+  const filling = portfolioRead({ ...snapOf(files, { lastSuccessAt: null }), checking: true }, NOW, TZ);
+  assert.deepEqual([filling.fresh, filling.quietWords, filling.checking], [false, null, true]);
+  const failed = portfolioRead(snapOf(files, { lastSuccessAt: NOW - 30 * 60_000, failure: { kind: 'other', reason: 'github', since: NOW - 7 * 60_000 } }), NOW, TZ);
+  assert.equal(failed.quietWords, "Can't read your portfolio since 16:53");
+  assert.equal(failed.checking, false);
+  const fresh = portfolioRead(snapOf(files, { lastSuccessAt: NOW - 5 * 60_000, failure: { kind: 'other', reason: 'github', since: NOW - 60_000 } }), NOW, TZ);
+  assert.deepEqual([fresh.fresh, fresh.quietWords], [true, null], 'a failure inside its 6 minutes: still read within them');
+});
+
+test('J23 (the function, review round 1, N2): a malformed `portfolio` in J7 is no portfolio — refused (400) with no GitHub call, whatever is wrong with it', async () => {
+  for (const pf of [{ repo: 'shumpmaster' , defaultBranch: 'main' }, { repo: 'shumpmaster/portfolio' }, { repo: 'shumpmaster/portfolio', defaultBranch: 'main', extra: 1 },
+    { repo: 'shumpmaster/Service-Desk', defaultBranch: 'main' }, 'shumpmaster/portfolio', { repo: 'shumpmaster/portfolio', defaultBranch: 'a b' }]) {
+    for (const kind of ['poll', 'blobs']) {
+      const f = fakeFetch(pfRoutes());
+      const r = await fn(kind, kind === 'poll' ? { target: 'portfolio', head: null, etags: {} } : { target: 'portfolio', blobs: [BLOB] }, f, { ...CONFIG, portfolio: pf });
+      assert.equal(r.status, 400, `${kind} ${JSON.stringify(pf)}`);
+      assert.match(r.json, /no portfolio in J7/);
+      assert.deepEqual(github(f), []);
+    }
+  }
 });

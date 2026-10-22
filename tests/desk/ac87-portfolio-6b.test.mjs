@@ -108,7 +108,9 @@ test('AC87 (6b): the portfolio card\'s sheet shows the card\'s sections as AC52 
     assert.ok(s, 'its sheet');
     const t = textRuns(s, () => false);
     assert.equal(byClass(s, 'v2-stitle')[0].textContent, 'Whether to explore the made-up reading-list app as a project');
-    assert.ok(t.includes('portfolio · decision · PF-001-explore-1.md · wait not recorded'), 'its head: no raised time is read for it (J23 reads no history)');
+    // Review round 1, N3: its milestone from the card's own `Milestone:` line (J23: "its `Milestone:` line when it has one").
+    assert.ok(t.includes('portfolio · decision · PF-001-explore-1.md · PM1 · wait not recorded'), 'its head: its milestone; no raised time is read for it (J23 reads no history)');
+    assert.doesNotMatch(s.textContent, /can't parse/, 'a card in the template\'s form, with no answer: line, is no parse problem (review round 1, B2)');
     for (const w of ['The question', 'Why it is here', 'A made-up idea reached shaping in the made-up idea log.', 'The options', 'explore', 'park',
       'Recommended', PF_WORDS.phoneNote, PF_WORDS.noAnswerLink]) assert.ok(t.some((x) => x.includes(w)), w);
     assert.match(s.textContent, /open it as a project \(made up\)/, 'what follows each option');
@@ -384,6 +386,94 @@ test('AC87 (6b): notifications do not cover a portfolio card — no sender reads
   const app = await open({ pf: ONE(), hash: `#/waiting/card/${encodeURIComponent(CARD_ID)}` });
   try {
     assert.ok(textRuns(sheet(app), () => false).includes(PF_WORDS.phoneNote));
+  } finally {
+    app.restore();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Review round 1 (the Reviewer's B1, B2, N2 and N3)
+
+const bt1 = (app) => byClass(brief(app), 'v2-bt1')[0].textContent;
+const briefAll = (app) => `${brief(app).textContent} | state: ${app.els['screen-state'].textContent}`;
+
+test('AC87 + AC82 (review round 1, B1): back from the background after more than 6 minutes, with no read failed, Home says "Checking…" until the reads answer, as it does with no portfolio — never "Can\'t read your portfolio"; then "Nothing needs you"', async () => {
+  const run = async (noPortfolio) => {
+    const app = await open({ noPortfolio });
+    try {
+      assert.equal(bt1(app), 'Nothing needs you');
+      await app.visibility('hidden');
+      await app.advance(30 * 60_000);
+      await app.visibility('visible');
+      const back = briefAll(app);
+      await app.advance(1000);
+      await app.advance(1000);
+      return { back, after: bt1(app) };
+    } finally {
+      app.restore();
+    }
+  };
+  const pf = await run(false);
+  const none = await run(true);
+  assert.doesNotMatch(pf.back, /Can't read/, pf.back);
+  assert.match(pf.back, /^Checking…/, 'not quiet while its read is due');
+  assert.equal(pf.back, none.back, 'the same words as with no portfolio in J7');
+  assert.equal(pf.after, 'Nothing needs you', 'once the portfolio\'s read answers');
+});
+
+test('AC87 (review round 1, B1): a first read still filling in its blobs (more than one blob call\'s 25) has failed nowhere — no "Can\'t read your portfolio" anywhere while it fills in, every card waiting; read whole at its next read', async () => {
+  const queue = Object.fromEntries(Array.from({ length: 30 }, (_, i) => [`PF-${100 + i}-made-up.md`, cardText(100 + i, `A made-up decision ${i}`)]));
+  const app = await open({ pf: pfFiles({ queue }) });
+  try {
+    assert.ok(app.desk.portfolio().checking, 'still filling in');
+    assert.equal(app.desk.portfolio().failure, null);
+    assert.doesNotMatch(briefAll(app), /Can't read/);
+    assert.doesNotMatch(block(app).textContent, /Can't read/);
+    assert.equal(bt1(app), '30 need you', 'every card waits, read or not');
+    await app.go('#/waiting');
+    assert.equal(findKeyed(app, 'ql:cant:portfolio'), null);
+    await app.advance(5 * 60_000);
+    assert.equal(app.desk.portfolio().checking, false);
+    assert.ok(app.desk.portfolio().lastSuccessAt != null);
+    assert.ok(!/not read yet/.test(lane(app, 'wait').textContent), 'every card read');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC87 + J23 (review round 1, N2): on the page, a blob over GitHub\'s 1 MB contents limit is never asked for and its card reads "too large to read", a blob just under it is read; a truncated tree is not a good read — the rows say so and Home is not quiet', async () => {
+  const files = pfFiles({ queue: { 'PF-001-explore-1.md': cardText(1), 'PF-002-big.md': cardText(2, 'A made-up big card') } });
+  const r0 = { 'queue/PF-002-big.md': 2_000_000, 'queue/PF-001-explore-1.md': 999_999 };
+  const setup = waSetup({});
+  setup.config = withPortfolio(setup.config);
+  const r = addPortfolio(setup.repos, files);
+  r.sizes = r0;
+  let app = await loadSandbox({ ...setup, hash: '#/waiting', now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(61_000);
+    const asked = (r.blobCalls || []).flat();
+    const { gitSha } = await import('./fake-desk.mjs');
+    assert.ok(!asked.includes(gitSha(files['queue/PF-002-big.md'])), 'over the limit: never asked for');
+    assert.ok(asked.includes(gitSha(files['queue/PF-001-explore-1.md'])), 'just under it: read');
+    assert.match(lane(app, 'wait').textContent, /PF-002-big\.md: too large to read/);
+    assert.match(lane(app, 'wait').textContent, /Whether to explore the made-up reading-list app/);
+  } finally {
+    app.restore();
+  }
+  const cut = waSetup({});
+  cut.config = withPortfolio(cut.config);
+  addPortfolio(cut.repos, ONE()).truncated = true;
+  app = await loadSandbox({ ...cut, hash: '#/', now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(61_000);
+    assert.equal(app.desk.portfolio().lastSuccessAt, null, 'not read successfully');
+    assert.equal(app.desk.portfolio().failure.reason, 'too-many');
+    assert.equal(rowLine(app, 'decisions').textContent, "not read: the portfolio's tree was too large");
+    assert.equal(bt1(app), "Can't read your portfolio since 13:00", 'never quiet over a tree it couldn\'t read');
+    await app.advance(10 * 60_000);
+    assert.equal(app.desk.portfolio().lastSuccessAt, null, 'still not, at its later reads');
   } finally {
     app.restore();
   }

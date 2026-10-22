@@ -42,7 +42,7 @@ import { runsContext, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, 
 import { WA, DRAFT_KEY, todayOf } from './lib/workahead.js';
 import { PAGE_WORDS, STANDARD_TOTAL, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, restRows, v25Rows, finishWords } from './lib/projectpage.js';
 import { topLine } from './lib/versions.js';
-import { portfolioView, PF_ROWS, PF_WORDS, portfolioRead, portfolioCards, ideasView, rareLine, noteIdeas, ideaEvents, SEEN_IDEAS_KEY, PF_BOARD, PF_LABEL } from './lib/portfolio.js';
+import { portfolioView, PF_ROWS, PF_WORDS, cardMilestone, portfolioRead, portfolioCards, ideasView, rareLine, noteIdeas, ideaEvents, SEEN_IDEAS_KEY, PF_BOARD, PF_LABEL } from './lib/portfolio.js';
 import { workAheadView, readDraft } from './lib/workview.js';
 
 import {
@@ -2546,7 +2546,8 @@ function portfolioCardSheet(card, mark, back, fromTap, sheetId) {
   const row = { key: card.key, text: card.title, code: null, wait: null, raisedAt: null,
     flag: { kind: 'card', key: card.key, card: { path: card.path, answerPath: null, gate: null, n: null, item: null, parsed: card.rec } } };
   const v = sheetView(pfProject, null, { tree }, null, row);
-  const headMeta = headText(['portfolio', 'decision', card.file, 'wait not recorded']);
+  // AC85's head: "<project> · <kind> · <its name> · <milestone> · …", its milestone from the card's own `Milestone:` line when it has one (J23).
+  const headMeta = headText(['portfolio', 'decision', card.file, cardMilestone(card.rec), 'wait not recorded']);
   const parts = [sheetHead(headMeta, card.title, back), fromTap,
     h('p', { class: 'v2-small' }, kicked ? 'Kicked back' : pending ? WORDS.confirming : card.kindWord),
     kicked ? h('p', { class: 'v2-mark' }, vi('kick'), h('span', {}, kicked.reason)) : null,

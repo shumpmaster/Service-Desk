@@ -37,12 +37,14 @@ Notes only.
 state: maybe
 `;
 
-/** A decision card in J2's form (its seven sections), made up. */
-export const cardText = (n = 1, title = 'Whether to explore the made-up reading-list app as a project') => `# Decision card — PF-001 explore-${n} (${MADE_UP})
-
-item: PF-001   kind: portfolio   gate: explore   card: ${n}
-answer: write \`decisions/PF-001/explore-${n}.md\`, first line \`Decision: <word>\` (one of the words below).
-
+/**
+ * A decision card in the portfolio template's form, made up (review round 1, B2): its sections as J2 reads a
+ * card's (`## 1. The decision` to `## 7. Who has checked it`, the options under `## 4. Options`) and a
+ * `Milestone:` line, and no `answer:` line, which the model's portfolio template doesn't write (J23 reads no
+ * portfolio answer form). `milestone`: the line's value, or null for none.
+ */
+export const cardText = (n = 1, title = 'Whether to explore the made-up reading-list app as a project', { milestone = 'PM1' } = {}) => `# Decision card — PF-001 explore-${n} (${MADE_UP})
+${milestone == null ? '' : `\nMilestone: ${milestone}\n`}
 ## 1. The decision
 ${title}
 

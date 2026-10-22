@@ -11,7 +11,7 @@
 
 import { readOf, versionWords, MODEL_VERSION_PATH, ROOT_VERSION_PATH, NOT_RECORDED, NOT_AVAILABLE } from './versions.js';
 import { WA } from './workahead.js';
-import { parseCard } from './records.js';
+import { parseCard, firstMilestoneLine, milestoneValue } from './records.js';
 import { hhmm } from './timefmt.js';
 
 /** The block's rows, in frame H4's order; each opens a sheet over Home at `#/pf/<key>`. */
@@ -262,12 +262,30 @@ export function parseIdeas(text) {
   return { ideas };
 }
 
-/** A portfolio record parsed by its kind (J23): the idea log, or a card read as J2 reads one (its sections; its `Milestone:` line). */
+/**
+ * J2's note for a card with no `answer:` line. A portfolio card has none: the model's portfolio template
+ * writes no answer form, and J23 reads none ("No answer path is read or built", C), so it is no parse problem.
+ */
+export const NO_ANSWER_NOTE = 'no answer path on the "answer:" line';
+
+/**
+ * A portfolio record parsed by its kind (J23): the idea log, or a card read as J2 reads a card's sections
+ * (`## 1. The decision`, `## 4. Options` and the rest) and its `Milestone:` line when it has one (its first
+ * column-0 one: a portfolio card has no `answer:` line for it to follow). `problems`: what can't be read as
+ * a card (no decision, no options), never the missing answer path.
+ */
 export function parsePortfolioRecord(kind, text) {
   if (kind === 'pf-ideas') return parseIdeas(text);
-  if (kind === 'pf-card') return { text: String(text == null ? '' : text), ...parseCard(text) };
+  if (kind === 'pf-card') {
+    const c = parseCard(text);
+    const line = firstMilestoneLine(text);
+    return { text: String(text == null ? '' : text), ...c, problems: c.notes.filter((n) => n !== NO_ANSWER_NOTE), milestoneLine: line, milestone: milestoneValue(line) };
+  }
   return null;
 }
+
+/** A portfolio card's milestone for its sheet's head: its ids, or null (none recorded, or `none (<why>)`). */
+export const cardMilestone = (rec) => (rec && rec.milestone && Array.isArray(rec.milestone.ids) && rec.milestone.ids.length ? rec.milestone.ids.join(', ') : null);
 
 /** A file's page on GitHub (the card's "Open ↗"), at the portfolio's default branch. */
 export function portfolioLink(pf, path) {
@@ -323,26 +341,22 @@ export function portfolioRead(snap, nowMs, tz) {
       if (!m) continue;
       const b = blobState(path);
       const rec = b.state === 'read' ? b.rec : null;
-      const notes = rec && Array.isArray(rec.notes) ? rec.notes : [];
+      const notes = rec && Array.isArray(rec.problems) ? rec.problems : [];
       cards.push({ path, file: m[1], sha: e.sha, rec, state: b.state, cantParse: rec && notes.length ? notes.join('; ') : null,
         link: portfolioLink(snap, path) });
     }
     cards.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
   }
   const fresh = snap.lastSuccessAt != null && nowMs - snap.lastSuccessAt <= PORTFOLIO_QUIET_MS && !snap.truncated;
-  // Quiet's words when the portfolio isn't read within its 6 minutes (AC87, AC82): the access words with
-  // Setup P1 named, or "Can't read your portfolio since HH:MM" (the failure's start, else its last read).
+  // Quiet's words when the portfolio isn't read within its 6 minutes (AC87, AC82): for an actual failure,
+  // the access words with Setup P1 named, or "Can't read your portfolio since HH:MM" (the failure's start).
+  // With no failure (a read due or under way: back from the background, or a first read still filling in
+  // its blobs) there are none, and Home says "Checking…" as it does for a project (`checking`): never quiet,
+  // never "Can't read".
   let quietWords = null;
-  if (!fresh) {
-    if (state === 'access') quietWords = problem;
-    else if (state === 'pending') quietWords = null;
-    else {
-      const since = f ? f.since : snap.lastSuccessAt;
-      quietWords = time(since) ? PF_WORDS.cantSince(time(since)) : PF_WORDS.cantNoTime;
-    }
-  }
+  if (!fresh && f) quietWords = state === 'access' ? problem : time(f.since) ? PF_WORDS.cantSince(time(f.since)) : PF_WORDS.cantNoTime;
   return { state, problem, ideas, cards, rare: tree && !snap.truncated ? rareView(tree) : null, fresh,
-    pending: state === 'pending', quietWords, repo: snap.repo, defaultBranch: snap.defaultBranch, lastSuccessAt: snap.lastSuccessAt };
+    pending: state === 'pending', checking: !fresh && !quietWords, quietWords, repo: snap.repo, defaultBranch: snap.defaultBranch, lastSuccessAt: snap.lastSuccessAt };
 }
 
 /** Ideas newest first (AC87): by their date, latest first; one with no date last; ideas of one date, the later in the file first (C). */

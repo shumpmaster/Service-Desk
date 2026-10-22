@@ -531,11 +531,13 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
    different at a glance in light and dark"): the four lanes, in turn, --ink solid, --ink2 dashed, --ink3 dotted and
    --ink dashed (--shade0 to --shade3 and --you0 to --you3, below), so any two of them differ in their line, or in a
    grey far apart from the other. A lane's curve out and back takes its line; its dots take its form: filled on a
-   solid lane, a ring on a dashed one, a dotted ring on a dotted one. The short dashed stub keeps its own meaning,
-   a piece still under way (AC49). */
+   solid lane, a ring on a dashed one, a dotted ring on a dotted one. The short dashed stub, a piece still under way
+   (AC49), stays in its lane's grey and is drawn as no lane, curve or dot is: twice a lane's weight (4 px), in short
+   square dashes (1.5 on, 2.5 off), so it reads at a glance on a solid, dashed or dotted lane (stage 7's design
+   review, round 2, R2-1). */
 .sb-lanes .lane.shade-1, .sb-lanes .lane.shade-3 { stroke-dasharray: 6 4; }
 .sb-lanes .lane.shade-2 { stroke-dasharray: 0.01 4; stroke-linecap: round; }
-.sb-lanes .lane.stub { stroke-dasharray: 2 3; stroke-linecap: butt; }
+.sb-lanes .lane.stub { stroke-width: 4; stroke-dasharray: 1.5 2.5; stroke-linecap: butt; }
 .sb-lanes .dot.shade-1, .sb-lanes .dot.shade-2, .sb-lanes .dot.shade-3,
 .sb-lanes.fam-you .dot.shade-1, .sb-lanes.fam-you .dot.shade-2, .sb-lanes.fam-you .dot.shade-3 { fill: var(--surf); stroke-width: 1.8; }
 .sb-lanes .dot.shade-1 { stroke: var(--shade1); } .sb-lanes .dot.shade-3 { stroke: var(--shade3); }

@@ -348,21 +348,24 @@ test('AC88: every trial-view screen and sheet, from each fixture, in dark (force
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes
 // take three greys from the new look and each lane also gets its own line style (solid, dashed, dotted), so every lane
 // looks different at a glance in light and dark"; the Reviewer's B1, stage 7 round 1).
-test('AC49 + AC88 (P-001-desk-v2-lanes, A): on every member page\'s running log, in dark and light, each lane\'s line, curve and dots take one of AC81\'s greys and its own line style; any two lanes differ in their line or in a grey at least 10 apart; the stub stays a piece under way', async () => {
+test('AC49 + AC88 (P-001-desk-v2-lanes, A): on every member page\'s running log, in dark (forced and the phone\'s own) and light, at 360 and 414 px, each lane\'s line, curve and dots take one of AC81\'s greys and its own line style; any two lanes differ in their line or in a grey at least 10 apart; each stub, in its lane\'s grey, is drawn as no line, curve or dot on its log is', async () => {
   const fails = [];
   let pages = 0;
   let fourLanes = 0;
+  const stubs = { pages: 0, seen: 0, onDash: new Set() };
   const sig = (n) => ({ grey: hexOf(n.declared.get('stroke') || n.style.get('stroke') || ''), dash: plain(n.declared.get('stroke-dasharray') || 'none').trim(),
-    fill: hexOf(n.declared.get('fill') || n.style.get('fill') || '') });
+    fill: hexOf(n.declared.get('fill') || n.style.get('fill') || ''), width: plain(n.declared.get('stroke-width') || '1').trim() });
+  // AC88's three ways of showing a screen, each at both widths.
+  const ways = WAYS.flatMap((w) => [360, 414].map((width) => ({ ...w, name: `${w.name}, ${width} px`, env: { ...w.env, width } })));
   const apart = (a, b) => a.dash !== b.dash || de2000(hexLab(a.grey), hexLab(b.grey)) >= 10;
-  for (const setup of [textSetup(), { config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': sdRepo() } }]) {
+  for (const setup of [textSetup(), extremes(), { config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': sdRepo() } }]) {
     const app = await opened(setup);
     try {
       for (const p of setup.config.projects) {
         await app.go(`#/p/${encodeURIComponent(p.name)}/team`);
         for (const m of hrefsIn(app, new RegExp(`^#/p/${esc(encodeURIComponent(p.name))}/team/[^/]+$`))) {
           await app.go(m);
-          for (const way of WAYS.filter((w) => w.attr || w.theme === 'light')) {
+          for (const way of ways) {
             const attrs = { ...(document.documentElement.attrs || {}) };
             if (way.attr) attrs['data-theme'] = way.attr; else delete attrs['data-theme'];
             const tree = cascade(treeOf(app.view, { className: document.documentElement.className, attrs }), RULES, way.env);
@@ -371,12 +374,15 @@ test('AC49 + AC88 (P-001-desk-v2-lanes, A): on every member page\'s running log,
               const where = `${m} · ${way.name} · ${[...svg.cls].join('.')}`;
               const lines = new Map();
               const dots = new Map();
+              const stubList = [];
+              const drawn = [];
               for (const n of nodes(svg)) {
                 const shade = [...n.cls].find((c) => /^shade-\d$/.test(c));
                 if (!shade) continue;
                 const s = sig(n);
                 for (const w of offTokens(n.declared.get('stroke') || '', way.theme, 'stroke')) fails.push(`${where} · ${shade}: ${w}`);
-                if (n.cls.has('stub')) { if (s.dash !== '2 3') fails.push(`${where} · ${shade}: the stub's line is ${s.dash}, not a piece under way (2 3)`); continue; }
+                if (n.cls.has('stub')) { stubList.push({ shade, s }); continue; }
+                drawn.push({ kind: n.attrs['data-kind'], shade, s });
                 const into = n.attrs['data-kind'] === 'dot' ? dots : lines;
                 const was = into.get(shade);
                 // One look per lane: its line and its curves out and back alike, and all its dots alike.
@@ -384,6 +390,21 @@ test('AC49 + AC88 (P-001-desk-v2-lanes, A): on every member page\'s running log,
                 if (!was) into.set(shade, s);
               }
               if (lines.size >= 4) fourLanes++;
+              // AC49's stub, a piece still under way (stage 7's design review, round 2, R2-1): a short dashed stub in its
+              // lane's grey, at a weight and in a dash no line, curve or dot on the log has, whatever its lane's style.
+              if (stubList.length) stubs.pages++;
+              for (const { shade, s } of stubList) {
+                stubs.seen++;
+                const own = lines.get(shade);
+                if (!own) { fails.push(`${where} · ${shade}: a stub with no lane`); continue; }
+                stubs.onDash.add(own.dash);
+                if (s.grey !== own.grey) fails.push(`${where} · ${shade}: the stub in ${s.grey}, its lane in ${own.grey}`);
+                if (s.dash === 'none') fails.push(`${where} · ${shade}: the stub is not dashed`);
+                for (const d of drawn) {
+                  if (d.kind !== 'dot' && d.s.width === s.width) fails.push(`${where} · ${shade}: the stub's weight, ${s.width}, is the ${d.shade} ${d.kind}'s`);
+                  if (d.s.dash === s.dash) fails.push(`${where} · ${shade}: the stub's dash, ${s.dash}, is the ${d.shade} ${d.kind}'s`);
+                }
+              }
               const shades = [...lines.keys()].sort();
               for (let i = 0; i < shades.length; i++) {
                 for (let j = i + 1; j < shades.length; j++) {
@@ -403,5 +424,7 @@ test('AC49 + AC88 (P-001-desk-v2-lanes, A): on every member page\'s running log,
   }
   assert.ok(pages > 20, `${pages} running logs drawn`);
   assert.ok(fourLanes >= 4, `${fourLanes} with all four lanes, the owner's among them`);
+  assert.ok(stubs.seen > 20 && stubs.pages > 5, `${stubs.seen} stubs on ${stubs.pages} logs`);
+  assert.deepEqual([...stubs.onDash].sort(), ['0.01 4', '6 4', 'none'], 'stubs on a solid, a dashed and a dotted lane'); 
   assert.deepEqual(fails, []);
 });

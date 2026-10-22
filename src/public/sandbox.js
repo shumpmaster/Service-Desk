@@ -42,6 +42,7 @@ import { runsContext, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, 
 import { WA, DRAFT_KEY, todayOf } from './lib/workahead.js';
 import { PAGE_WORDS, STANDARD_TOTAL, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, restRows, v25Rows, finishWords } from './lib/projectpage.js';
 import { topLine } from './lib/versions.js';
+import { portfolioView, PF_ROWS, PF_WORDS } from './lib/portfolio.js';
 import { workAheadView, readDraft } from './lib/workview.js';
 
 import {
@@ -814,7 +815,8 @@ function tileNode(b, bd, group, nextRows) {
   const name = project.name;
   const counts = bd && bd.counts ? bd.counts.get(name) : null;
   const n = counts ? counts.waiting + counts.kicked : 0;
-  const read = box.drawError ? 'cant-read' : box.read ? box.read.read : 'checking';
+  const rs = readStateOf(box);
+  const read = rs.state;
   const waits = tileWaits(n, read);
   const sum = summaryView(project, box, b.snap);
   // The gate card waiting on the owner (AC82: the ◆ in its phase, and "Next: <the gate>, after your ruling").
@@ -845,7 +847,17 @@ function tileNode(b, bd, group, nextRows) {
     h('p', { class: 'v2-ln' }, vi('agents'), h('span', { class: 'v2-g' }, work)),
     h('p', { class: 'v2-ln' }, stc(next.icon, 'v2-k'), h('span', {}, h('span', { class: 'v2-g' }, 'Next:'), ` ${next.words}`)),
     stallNode(b, group),
-    read === 'cant-read' && box.read && box.read.since != null ? h('p', { class: 'v2-ln bad' }, vi('bad'), h('span', {}, `Can't read since ${hhmm(new Date(box.read.since), TZ)}: ${box.read.words}`)) : null);
+    read === 'cant-read' && rs.since != null ? h('p', { class: 'v2-ln bad' }, vi('bad'), h('span', {}, `Can't read since ${hhmm(new Date(rs.since), TZ)}: ${box.read.words}`)) : null);
+}
+
+/**
+ * A project's read state as Home draws it (AC82's tile; AC5): 'cant-read' for a project that can't be
+ * drawn or whose read is refused or failing, 'checking' while its first read is pending, else its
+ * read's own; with the time it began failing. The tile and the portfolio's cap (AC87) both take it from
+ * here, so the two never differ.
+ */
+function readStateOf(box) {
+  return { state: box.drawError ? 'cant-read' : box.read ? box.read.read : 'checking', since: box.read && box.read.since != null ? box.read.since : null };
 }
 
 function renderHome(desk, built, seen, nowMs, bd = null) {
@@ -895,6 +907,7 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
       })) : null);
   });
   const sv = sinceModel(built, seen, nowMs);
+  const pf = portfolioOf(built);
   const body = [
     marker(),
     h('header', { class: 'v2-top' }, h('h1', { class: 'v2-title' }, HOME_WORDS.title)),
@@ -904,8 +917,9 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
     briefingNode(desk, built, bd),
     sinceNode(sv, seen, nowMs),
     h('div', { class: 'v2-hgroups', key: 'hgroups' }, groups),
-    // The foot (AC82; P-001-settings-place.md, A): "More detail", closed, below everything else on Home
-    // until stage 6a's portfolio block joins above it.
+    // Home's foot (AC82, specs/S-001.md:6696-6700): the portfolio's block, read only (AC87, from stage
+    // 6a); then "More detail", closed, below everything else on Home (P-001-settings-place.md, A).
+    portfolioNode(pf),
     h('details', { class: 'v2-mdetail', key: 'home-more-detail' }, h('summary', { class: 'v2-mds', key: 'home-more' }, h('span', {}, HOME_WORDS.moreDetail), vi('chev')),
       h('section', { class: 'sb-notify-line', key: 'notify-line' }, h('h3', { class: 'sb-h3' }, 'Notifications'), notifyNode(false)),
       usageNode(),
@@ -913,7 +927,89 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
   ];
   const out = [h('section', { class: 'sb-screen v2 v2-home', key: 'home' }, body)];
   if (nav.route.sheet === 'since' && !sv.off && sv.rest.length) out.push(sinceSheet(sv, nowMs));
+  if (pf.view && nav.route.sheet && nav.route.sheet.startsWith('pf:')) out.push(portfolioSheet(pf, nav.route.sheet.slice(3), built));
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// The portfolio's block at Home's foot (AC87; frame H4), stage 6a: from what the desk reads today
+// (each project's phase, AC50, and J23's version reads, stage 3); every part that needs the portfolio
+// says it isn't connected yet. Read only: nothing here writes, and nothing reads the portfolio (6b).
+// Every word is lib/portfolio.js's.
+
+/** The block's view from the projects as drawn, or why it can't be shown: { view, error }. */
+function portfolioOf(built) {
+  try {
+    return { view: portfolioView(built.map((b) => {
+      // The tile's read state (readStateOf), its time in ownerTimeZone as the tile's "Can't read since HH:MM".
+      const rs = readStateOf(b.box);
+      const read = { state: rs.state, since: rs.state === 'cant-read' && rs.since != null ? hhmm(new Date(rs.since), TZ) : null };
+      return { project: b.project, pv: b.error ? null : b.pv, snap: b.error ? null : b.snap, error: Boolean(b.error), read };
+    })), error: null };
+  } catch (err) {
+    return { view: null, error: err };
+  }
+}
+
+/** A row's line (AC87): its parts joined by " · ", each state's mark drawn just before the words it marks (the slashed circle, the dashed "?"). */
+function pfLine(row) {
+  return row.parts.map((p, i) => {
+    if (!p.mark) return [i ? ' · ' : null, p.text];
+    // The mark is kept on the line of the first word it marks (it never ends a line alone).
+    const sp = p.text.indexOf(' ');
+    const first = sp < 0 ? p.text : p.text.slice(0, sp);
+    return [i ? ' · ' : null, h('span', { class: 'v2-pfnb' }, stc(p.mark, 'v2-s v2-pfmk'), first), sp < 0 ? null : p.text.slice(sp)];
+  });
+}
+
+/** The block (frame H4): its head with "portfolio" in Plex Mono at its right, one row each opening its sheet, then the one line under the rows. */
+function portfolioNode(pf) {
+  if (!pf.view) {
+    return h('section', { class: 'v2-pf', key: 'portfolio' }, h('h2', { class: 'v2-sh v2-pfh' }, h('span', { class: 'v2-shw' }, PF_WORDS.head), h('span', { class: 'v2-mono' }, PF_WORDS.mono)),
+      h('p', { class: 'v2-small bad' }, `Can't show this: ${errorText(pf.error)}`));
+  }
+  const v = pf.view;
+  return h('section', { class: 'v2-pf', key: 'portfolio', 'aria-labelledby': 'pf-head' },
+    h('h2', { class: 'v2-sh v2-pfh' }, h('span', { class: 'v2-shw', id: 'pf-head' }, v.head), h('span', { class: 'v2-mono' }, v.mono)),
+    h('ol', { class: 'v2-rows v2-pfrows', key: 'pf-rows' }, v.rows.map((r) => pageRow(`pf:${r.key}`, go('pf', r.key), null, r.title, pfLine(r),
+      { cls: r.soft ? 'soft' : '', onclick: () => { nav.opener = `pf:${r.key}`; } }))),
+    h('p', { class: 'v2-small v2-pffoot', key: 'pf-foot' }, v.foot));
+}
+
+/** A row's sheet over Home (AC87: "each opening a sheet with its detail"; AC56's close, tap outside and Escape). */
+function portfolioSheet(pf, key, built) {
+  const v = pf.view;
+  const row = v.rows.find((r) => r.key === key);
+  if (!row) return null;
+  const back = '#/';
+  const item = (k, title, ...lines) => h('li', { class: 'v2-pfsi', key: `pfs:${k}` }, h('span', { class: 'v2-prtt' }, title), lines);
+  const mark = (kind, words) => h('p', { class: 'v2-mark' }, stc(kind), h('span', {}, words));
+  let parts;
+  if (key === 'cap') {
+    parts = [h('ol', { class: 'v2-rows v2-pfsl', key: 'pfs-cap' }, v.cap.entries.map((e) => item(e.name, e.name,
+        h('span', { class: 'v2-small' }, [e.phase ? (e.phase === 'Done' ? PF_WORDS.capDone : `Now: ${e.phase}`) : e.v3 ? `Phase: ${e.why}` : cap(e.why), e.counted ? PF_WORDS.capCounted : PF_WORDS.capNotCounted].join(' · '))))),
+      mark('nomodel', `${cap(PF_WORDS.capNoRecord)}. ${PF_WORDS.capModelOpen}`),
+      h('p', { class: 'v2-small' }, PF_WORDS.capResearch)];
+  } else if (key === 'scorecard') {
+    // Each mark beside its own words, and no key (mockup v2's rule, part B item 35; specs/S-001.md:6820-6821).
+    parts = [mark('nomodel', PF_WORDS.targets), mark('unrec', cap(PF_WORDS.time))];
+  } else if (key === 'versions') {
+    parts = [h('ol', { class: 'v2-rows v2-pfsl', key: 'pfs-versions' }, v.versions.rows.map((r) => {
+      const b = built.find((x) => x.project.name === r.name);
+      let top = null;
+      try {
+        top = b && !b.error ? topLine(b.project, b.snap) : null;
+      } catch {
+        top = null;
+      }
+      return item(r.name, r.words, top ? h('span', { class: 'v2-mono' }, top) : null);
+    })),
+    h('p', { class: 'v2-small v2-pffrom' }, v.versions.publisher ? PF_WORDS.versionsFrom.map((w, i) => (i % 2 ? code(w) : w)) : PF_WORDS.noPublisher)];
+  } else {
+    // "Decisions across projects" and the rarer records: the portfolio isn't read before 6b (J23).
+    parts = [h('p', { class: 'v2-body' }, pfLine(row)), h('p', { class: 'v2-small' }, PF_WORDS.waitsOnP1), h('p', { class: 'v2-small' }, v.foot)];
+  }
+  return sheetShell(back, row.title, [sheetHead(v.head, row.title, back), h('div', { class: 'v2-blk v2-pfs', key: `pfs-body:${key}` }, parts)], 'pf-sheet');
 }
 
 function v5Line(built) {
@@ -3172,6 +3268,8 @@ export function parseRoute(hash) {
   if (r0 === 'work') return { key: 'work', screen: '#/work', kind: 'work', name: null, sheet: name === 'ms' && kind && rest[0] ? `ms:${kind}|${rest[0]}` : null };
   // AC82: the rest of "Since you last looked", in a sheet over Home (a sheet is not a screen: no history step).
   if (r0 === 'since') return { key: 'home', screen: '#/', kind: 'home', name: null, sheet: 'since' };
+  // AC87 (stage 6a): a row of the portfolio's block opens its sheet over Home at `pf/<row>` (a sheet is not a screen: no history step).
+  if (r0 === 'pf') return { key: 'home', screen: '#/', kind: 'home', name: null, sheet: PF_ROWS.includes(name) ? `pf:${name}` : null };
   // AC80, AC81: Waiting, `waiting` or, with only one project shown, `waiting/<name>`; a card's sheet
   // over it at `…/card/<id>` (a sheet is not a screen: it adds nothing to the history).
   if (r0 === 'waiting') {

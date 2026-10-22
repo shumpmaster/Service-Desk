@@ -521,3 +521,10 @@ notify-ac77-desk, notify-j16-jobs and j6-j8-function) add no fixture file. What 
   `VERSION` on Service-Desk, a questions folder and a dispatch log on the v2.5 project, Work ahead's estimates
   (wa-fixtures.mjs's worked example), and, for 77bfeae's `experiments/` paths and J11's research memos, files
   with placeholder text whose paths are the real tree's (the page names them from the tree only).
+- `ac85/` (2026-10-22, AC85; stage 4 of mockup v2): **NOT real records**, the made-up project "Letters" for
+  the question's and the gate's sheets, in the real records' forms: a Launch-gate card as the Orchestrator
+  writes one (its section 5 quoting the Critic's and the user representative's lines), its case with the
+  proposer's recommendation, docs/PROJECT.md's standard lines and a profile, and three questions
+  (irreversible, no default, options that can't be split). Its own README lists each. AC85's test also
+  renders two real question files already here: `notify/ac77-real/questions/P-001-next-work.md` and
+  `trial-view/P-001-design-lab-open.md`.

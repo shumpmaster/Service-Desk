@@ -548,8 +548,8 @@ export function ideaEvents(kept, reference) {
 
 /**
  * The screen's headline with the portfolio in it, in the words the state line already uses for projects
- * (universe.js `screenState`): the portfolio's waiting cards (`waiting`, the board's count of its "Waiting on
- * you" and "Kicked back") are added to "<n> waiting on you"; a portfolio read that isn't current adds its own
+ * (universe.js `screenState`): the portfolio's waiting cards (`waiting`: each card in its queue, marked Done
+ * on this device or not, as screenState counts a project's flagged items) are added to "<n> waiting on you"; a portfolio read that isn't current adds its own
  * words to the tail ("Checking…" while one is due with none failed; its failure words otherwise). "Quiet"
  * only when every project is quiet, no portfolio card waits and the portfolio was read within its 6 minutes.
  * boxes: [{ flaggedCount, read, drawError }]; pf: portfolioRead's answer, or null with no `portfolio` in J7.

@@ -174,8 +174,10 @@ test('AC87 (6b): "Decisions across projects"\' sheet lists each card with its fi
     assert.ok(hrefs(sheet(app)).includes(`#/waiting/card/${encodeURIComponent(CARD_ID)}`), 'the card one tap away on Waiting');
     await app.go('#/pf/rare');
     const r = textRuns(sheet(app), () => false);
-    assert.ok(r.includes('Rulings: 2 · R-001-made-up.md, R-002-made-up.md'));
-    assert.ok(r.includes('Library facts: 1 · F-001-made-up.md'));
+    // Each line whole (its names drawn in Plex Mono from Design review round 1, F2, so read as each item's text).
+    const items = (app) => byClass(sheet(app), 'v2-pfsi').map((li) => li.textContent);
+    assert.ok(items(app).includes('Rulings: 2 · R-001-made-up.md, R-002-made-up.md'));
+    assert.ok(items(app).includes('Library facts: 1 · F-001-made-up.md'));
     assert.ok(r.includes('Standing intent: none yet'), 'its README and its template only');
     assert.ok(r.includes('Track records: no record for this in the model yet'));
     assert.deepEqual(findAll(sheet(app), (e) => e.tag === 'svg').map((s) => s.attrs.class.split(' ').find((c) => c.startsWith('st-'))).filter(Boolean), ['st-nomodel']);
@@ -187,7 +189,7 @@ test('AC87 (6b): "Decisions across projects"\' sheet lists each card with its fi
     await none.go('#/pf/rare');
     const r = textRuns(sheet(none), () => false);
     assert.ok(r.includes('Library facts: none yet'));
-    assert.ok(r.includes('Standing intent: 1 · 2026-standing.md'));
+    assert.ok(byClass(sheet(none), 'v2-pfsi').map((li) => li.textContent).includes('Standing intent: 1 · 2026-standing.md'));
   } finally {
     none.restore();
   }
@@ -545,6 +547,68 @@ test('AC87 + AC82 (review round 2, N7): back from the background, the projects\'
     await app.advance(1000);
     assert.equal(bt1(app), 'Nothing needs you', 'once it answers');
     assert.equal(app.els['screen-state'].textContent, 'Quiet');
+  } finally {
+    app.restore();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Design review round 1 (F1 and F2)
+
+test('AC87 + Terms\' Quiet (Design review round 1, F1): a portfolio card marked Done here still counts on the state line and the tab title until its file leaves the queue, as a project\'s marked card does (screenState counts what needs the owner, marks aside) — after the mark, after a kick-back, and "Quiet" only once it is confirmed', async () => {
+  const state = (app) => [app.els['screen-state'].textContent, document.title];
+  const kick = await open({ pf: ONE(), hash: `#/waiting/card/${encodeURIComponent(CARD_ID)}`, store: memStore() });
+  try {
+    assert.deepEqual(state(kick), ['1 waiting on you', 'Sandbox — 1 waiting on you']);
+    await kick.tap(findKeyed(kick, 'sheet-done'));
+    await kick.go('#/');
+    assert.equal(bt1(kick), 'Nothing waiting on you · confirming with GitHub', 'Home\'s briefing, as before');
+    assert.deepEqual(state(kick), ['1 waiting on you', 'Sandbox — 1 waiting on you'], 'marked, not yet confirmed: never "Quiet"');
+    await kick.advance(10 * 60_000);
+    await kick.go('#/waiting');
+    assert.match(lane(kick, 'kick').textContent, /The card file is still in the portfolio's queue/);
+    assert.deepEqual(state(kick), ['1 waiting on you', 'Sandbox — 1 waiting on you'], 'kicked back');
+  } finally {
+    kick.restore();
+  }
+  const done = await open({ pf: ONE(), hash: `#/waiting/card/${encodeURIComponent(CARD_ID)}`, store: memStore() });
+  try {
+    await done.tap(findKeyed(done, 'sheet-done'));
+    assert.deepEqual(state(done), ['1 waiting on you', 'Sandbox — 1 waiting on you']);
+    done.pf.commit({ [CARD]: null });
+    await done.advance(5 * 60_000);
+    await done.go('#/waiting');
+    assert.equal(byClass(lane(done, 'done'), 'v2-drow').length, 1, 'confirmed');
+    assert.deepEqual(state(done), ['Quiet', 'Sandbox — Quiet'], 'its file gone from the queue: quiet');
+  } finally {
+    done.restore();
+  }
+});
+
+test('AC87 (Design review round 1, F2; the rulebook\'s part A, items 19 and 23): file and repository names in the portfolio\'s sheets — the queue\'s paths in "Decisions across projects", the rarer records\' file names, the repository\'s name — resolve to Plex Mono at the code size (11 px), in light and dark', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const { SRC } = await import('./helpers.mjs');
+  const { parseCss, treeOf, cascade, nodes } = await import('./css-cascade.mjs');
+  const a = parseCss(readFileSync(join(SRC, 'public', 'style.css'), 'utf8'), 'style.css');
+  const b = parseCss(readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8'), 'sandbox.css').map((r) => ({ ...r, order: r.order + a.length }));
+  const RULES = [...a, ...b];
+  const app = await open({ pf: pfFiles({ queue: { 'PF-001-explore-1.md': cardText(1) } }) });
+  try {
+    for (const [hash, names] of [['#/pf/decisions', ['queue/PF-001-explore-1.md', 'shumpmaster/portfolio']], ['#/pf/rare', ['R-001-made-up.md', 'R-002-made-up.md', 'shumpmaster/portfolio']]]) {
+      await app.go(hash);
+      for (const theme of ['light', 'dark']) {
+        const root = document.documentElement;
+        const tree = treeOf(app.view, { className: root.className, attrs: { ...(root.attrs || {}), ...(theme === 'dark' ? { 'data-theme': 'dark' } : {}) } });
+        cascade(tree, RULES, { scheme: 'light', width: 360, reducedMotion: false });
+        for (const name of names) {
+          const n = nodes(tree).find((x) => x.text.trim() === name);
+          assert.ok(n, `${hash}: ${name} drawn on its own`);
+          assert.match(n.style.get('font-family') || '', /^"IBM Plex Mono"/, `${hash} ${theme}: ${name} in ${n.style.get('font-family')}`);
+          assert.equal(n.style.get('font-size'), '11px', `${hash} ${theme}: ${name}`);
+        }
+      }
+    }
   } finally {
     app.restore();
   }

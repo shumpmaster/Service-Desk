@@ -1045,23 +1045,26 @@ function portfolioSheet(pf, key, built) {
 function portfolioReadParts(pf, key, row, foot) {
   const problem = pf.problem && pf.state !== 'pending' ? h('p', { class: 'v2-mark', key: 'pfs-problem' }, vi('bad', 'v2-k bad'), h('span', {}, pf.problem)) : null;
   const access = pf.state === 'access' ? h('p', { class: 'v2-small', key: 'pfs-p1' }, PF_WORDS.setupP1Line) : null;
-  const from = h('p', { class: 'v2-small', key: 'pfs-from' }, PF_WORDS.readFrom(pf.repo), pf.lastSuccessAt != null ? ` Last read ${hhmm(new Date(pf.lastSuccessAt), TZ)}.` : '');
+  // File and repository names in Plex Mono at the code size (the rulebook's part A, items 19 and 23; Design review round 1, F2).
+  const from = h('p', { class: 'v2-small', key: 'pfs-from' }, 'Read from ', h('span', { class: 'v2-mono' }, pf.repo), ', read only.',
+    pf.lastSuccessAt != null ? ` Last read ${hhmm(new Date(pf.lastSuccessAt), TZ)}.` : '');
+  // "<what>: <n> · <names>" (rareLine's words), each name in Plex Mono.
+  const rareNode = (k, what, names) => h('li', { class: 'v2-pfsi', key: `pfs:${k}` }, h('span', { class: 'v2-body' },
+    names.length ? [`${what}: ${names.length} · `, names.map((x, i) => [i ? ', ' : null, h('span', { class: 'v2-mono' }, x)])] : rareLine(what, names)));
   if (key === 'decisions') {
     const cards = portfolioCards(pf);
     // The row's line, less the problem already said above it.
     const rest = { ...row, parts: row.parts.filter((x) => !problem || x.text !== pf.problem) };
     return [problem, access, rest.parts.length ? h('p', { class: 'v2-body', key: 'pfs-line' }, pfLine(rest)) : null,
       cards.length ? h('ol', { class: 'v2-rows v2-pfsl', key: 'pfs-cards' }, cards.map((c) => h('li', { class: 'v2-pfsi', key: `pfs:${c.id}` },
-        h('a', { class: 'v2-prtt', href: go('waiting', 'card', c.id), key: `pfs-card:${c.id}` }, c.title), h('span', { class: 'v2-small v2-mono' }, c.path)))) : null,
+        h('a', { class: 'v2-prtt', href: go('waiting', 'card', c.id), key: `pfs-card:${c.id}` }, c.title), h('span', { class: 'v2-mono' }, c.path)))) : null,
       cards.length ? h('p', { class: 'v2-small', key: 'pfs-each' }, PF_WORDS.eachWaits) : null,
       h('p', { class: 'v2-mark', key: 'pfs-phone' }, vi('clock'), h('span', {}, PF_WORDS.phoneNote)), from, h('p', { class: 'v2-small', key: 'pfs-foot' }, foot)];
   }
   const r = pf.rare;
   return [problem, access,
     r ? h('ul', { class: 'v2-rows v2-pfsl', key: 'pfs-rare' },
-      h('li', { class: 'v2-pfsi', key: 'pfs:rulings' }, h('span', { class: 'v2-body' }, rareLine(PF_WORDS.rulings, r.rulings))),
-      h('li', { class: 'v2-pfsi', key: 'pfs:facts' }, h('span', { class: 'v2-body' }, rareLine(PF_WORDS.facts, r.facts))),
-      h('li', { class: 'v2-pfsi', key: 'pfs:intent' }, h('span', { class: 'v2-body' }, rareLine(PF_WORDS.intent, r.intent)))) : h('p', { class: 'v2-body', key: 'pfs-rare-none' }, pf.problem || NOT_AVAILABLE),
+      rareNode('rulings', PF_WORDS.rulings, r.rulings), rareNode('facts', PF_WORDS.facts, r.facts), rareNode('intent', PF_WORDS.intent, r.intent)) : h('p', { class: 'v2-body', key: 'pfs-rare-none' }, pf.problem || NOT_AVAILABLE),
     h('p', { class: 'v2-mark', key: 'pfs-track' }, stc('nomodel'), h('span', {}, PF_WORDS.trackRecords)), from, h('p', { class: 'v2-small', key: 'pfs-foot' }, foot)];
 }
 
@@ -1797,10 +1800,12 @@ function portfolioBoard(nowMs) {
  * (universe.js `screenState`). Review round 2, B3: a portfolio card is counted as a project's is, never set
  * beside "Quiet".
  */
-function withPortfolio(s, bd, boxes, signedOut) {
+function withPortfolio(s, boxes, signedOut) {
   if (!lastPf || !s || s.text === SIGNED_OUT_STATE.text) return s;
-  const c = bd && bd.counts ? bd.counts.get(PF_BOARD) : null;
-  return portfolioScreenState(boxes, signedOut, lastPf, c ? c.waiting + c.kicked : 0);
+  // Each card in the portfolio's queue, marked Done here or not, as screenState counts a project's flagged
+  // items (marks are this device's only, AC80): it counts until its file has left the queue (Design review
+  // round 1, F1); the board's own counts leave marked cards out, so they are not used here.
+  return portfolioScreenState(boxes, signedOut, lastPf, lastPf.cards.length);
 }
 
 /** "checked <age> ago" (AC80; AC82's rule): from the stalest project's last successful read. */
@@ -4020,7 +4025,7 @@ export function startSandbox(opts = {}) {
     }
     // In the trial view a pull request with the agents is not flagged (Terms, from stage 1a): Quiet leaves it out.
     const boxes = sandboxBoxes(built);
-    const s = withPortfolio(screenState(boxes, desk.signedOut), bd, boxes, desk.signedOut);
+    const s = withPortfolio(screenState(boxes, desk.signedOut), boxes, desk.signedOut);
     if (stateEl) stateEl.textContent = desk.signedOut ? SIGNED_OUT_STATE.text : s.text;
     document.title = `Sandbox — ${desk.signedOut ? SIGNED_OUT_STATE.text : s.text}`;
     const r = nav.route;

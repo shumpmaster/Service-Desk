@@ -232,7 +232,10 @@ test('J14: a failed read shows "Estimate: not available" on every row and no rou
   assert.ok(v.rows.every((r) => r.estimate.words === 'Estimate: not available' && !r.finish));
   assert.equal(v.card, 'not available');
   await failedOptionalRead(ESTIMATES_PATH, WORKED(), (app) => {
-    assert.ok(findAll(app.view, (e) => /\bsb-wa-est\b/.test(e.className || '')).every((e) => e.textContent === 'Estimate: not available'));
+    // From stage 5 (AC86, specs/S-001.md:7041-7046): each of Plan's six rows says it, in AC24's words.
+    const gaps = findAll(app.view, (e) => /\bv2-plgap\b/.test(e.className || ''));
+    assert.equal(gaps.length, 6);
+    assert.ok(gaps.every((e) => e.textContent === 'Estimate: not available'));
   });
 });
 

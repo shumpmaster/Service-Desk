@@ -578,3 +578,6 @@ notify-ac77-desk, notify-j16-jobs and j6-j8-function) add no fixture file. What 
   its `WHEN`) and recorded each view's facts: Pipeline (Personal-Org-Operating-Model, 20 facts), Time asked
   (Service-Desk 29, Personal-Org-Operating-Model 5) and Agents (Service-Desk 171). Stage 8 removes those views, so
   AC55's comparison now reads this record instead of drawing them; nothing in it is made up.
+- `stage8/sandbox-bd4097d.css` is a byte-for-byte copy of `src/public/sandbox.css` at bd4097d, before stage 8 took out the
+  rules nothing draws once the desk is `/`. AC88's test cascades every desk screen with it and with today's stylesheet,
+  and requires every element to look the same (the Reviewer's B1, stage 8 round 1). Nothing in it is made up.

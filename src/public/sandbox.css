@@ -88,7 +88,7 @@ html.sb :where(b, strong):where(:not(.v2 *)) { font-weight: 600; }
 .sb-quote { font: var(--t-quote); } /* quoted record text (AC62); .sb-quote never takes the owner's coral (AC69) */
 .sb-src { display: block; font: var(--t-meta); color: var(--muted); }
 /* AC69: a gap the agents fill reads in slate, saying who fills it; coral (--you) is only for what waits on the owner. */
-.gap, .sb-meta.gap, .sb-began.gap, .sb-feeds.gap { color: var(--muted); }
+.gap, .sb-meta.gap, .sb-began.gap, .sb-feeds.gap, .sb-unb-t.gap { color: var(--muted); }
 
 
 /* Headers */
@@ -236,6 +236,7 @@ p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 .sb-qrow.g-decisions { border-left-color: var(--ink); } /* AC88: what waits on the owner, the heavier edge, never vermilion (AC81) */
 .sb-qrow > a { display: grid; gap: var(--s1); padding: var(--s2) var(--s3); min-height: 44px; text-decoration: none; }
 .sb-qt { font: var(--t-item); }
+.sb-unb-t { font: var(--t-meta); } /* the owner's Team tile: a Next / Then / Later line's "· unblocks …", at the line's own size */
 .sb-tlink { font: var(--t-meta); text-decoration: underline; color: var(--ink); display: inline-flex; align-items: center; min-height: 24px; } /* AC88: a target at least 24 px tall (WCAG 2.5.8) */
 
 /* The response sheet, and the Team's sheets */

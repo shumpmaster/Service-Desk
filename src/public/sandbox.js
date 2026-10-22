@@ -798,6 +798,16 @@ function timelineNode(tl, name) {
   h('p', { class: 'sb-vh', key: `ptl-words:${name}` }, tl.words)];
 }
 
+/**
+ * The gate card waiting on the owner in a project, as the board has it (AC80: in "Waiting on you" or
+ * "Kicked back", less a card marked done here), or null. Home's tile (AC82) and Plan's gate row (AC86)
+ * both take it from here, so the two never differ.
+ */
+function gateCardOf(bd, name) {
+  const lanes = bd ? bd.lanes.filter((l) => l.key !== 'done').flatMap((l) => l.groups.filter((g) => g.project === name).flatMap((g) => g.rows)) : [];
+  return lanes.find((c) => c.kind === 'gate' && c.flag && c.flag.card) || null;
+}
+
 /** One tile (AC82, frame H5): its name and what waits, the README summary, the phases as a timeline, "Now:", who is at work, what comes next. A tap opens the project's Status screen until stage 3. */
 function tileNode(b, bd, group, nextRows) {
   const { project, box } = b;
@@ -808,8 +818,7 @@ function tileNode(b, bd, group, nextRows) {
   const waits = tileWaits(n, read);
   const sum = summaryView(project, box, b.snap);
   // The gate card waiting on the owner (AC82: the ◆ in its phase, and "Next: <the gate>, after your ruling").
-  const lanes = bd ? bd.lanes.filter((l) => l.key !== 'done').flatMap((l) => l.groups.filter((g) => g.project === name).flatMap((g) => g.rows)) : [];
-  const gateCard = lanes.find((c) => c.kind === 'gate' && c.flag && c.flag.card);
+  const gateCard = gateCardOf(bd, name);
   const gate = gateCard ? cap(GATE_PHASE[gateCard.flag.card.gate] || '') : null;
   let tl;
   let now;
@@ -2821,6 +2830,7 @@ function summaryNode(p, id, sm) {
 let lastBuilt = null; // the projects as the current drawing built them
 let waDay = null; // the owner's today when Work ahead was last drawn
 let waMemo = null; // Work ahead's view, worked out once per drawing
+let lastBoard = null; // the board as the current drawing built it (AC86: each project's waiting gate card)
 
 /**
  * The owner's draft order, kept on the device under `desk-plan-draft-v1` (AC24), every read and write
@@ -2862,7 +2872,12 @@ function workView(nowMs) {
   const entries = built.map((b) => ({ project: b.project, j: b.j || null, ctx: b.ctx || null, rows: b.q ? b.q.rows : [], model: b.model || null,
     error: b.error || null }));
   const snaps = new Map(built.filter((b) => b.snap).map((b) => [b.project.name, b.snap]));
-  waMemo = workAheadView({ config: CONFIG, entries, snaps, nowMs, tz: TZ, draft: planDraft.read() });
+  const gates = new Map();
+  for (const b of built) {
+    const c = gateCardOf(lastBoard, b.project.name);
+    if (c) gates.set(b.project.name, c);
+  }
+  waMemo = workAheadView({ config: CONFIG, entries, snaps, nowMs, tz: TZ, draft: planDraft.read(), gates });
   return waMemo;
 }
 
@@ -2925,6 +2940,8 @@ function planRow(v, r, ordering) {
   const est = r.estimate;
   const under = [];
   if (est.kind === 'missing' || est.kind === 'na' || est.kind === 'past') under.push(h('p', { class: 'v2-small v2-plgap', key: `gap:est:${r.key}` }, est.words));
+  // J14 (specs/S-001.md:10361-10364): under the estimate the row shows, a newer line that can't be read is said.
+  if (est.newer) under.push(h('p', { class: 'v2-small v2-plgap v2-plnewer', key: `gap:newer:${r.key}` }, WA.newerUnreadable));
   if (r.finish && r.finish.na) under.push(h('p', { class: 'v2-small v2-plgap', key: `gap:fin:${r.key}` }, `${WA.finish}: ${r.finish.words}`));
   if (r.notInPlan) under.push(h('p', { class: 'v2-small v2-pltag', key: `gap:tag:${r.key}` }, WA.notInPlan));
   if (r.waiting) under.push(planYou(r, 'row'));
@@ -2939,6 +2956,20 @@ function planRow(v, r, ordering) {
   return h('li', { class: `v2-plli${ordering ? ' ord' : ''}${moved ? ' moved' : ''}`, key: `wa-row:${r.key}`, 'data-row': r.code },
     main, under.length ? h('div', { class: 'v2-plunder' }, under) : null,
     ordering ? h('div', { class: 'v2-plmove' }, moveButton(r, -1), moveButton(r, 1)) : null);
+}
+
+/**
+ * A gate card waiting on the owner, as a row of its own at the top of its project's group (AC86, frame 11:
+ * "Launch gate · waits on you", desk-v2.html:840): the vermilion ◆, the card's title as the board shows it,
+ * "<Phase> gate · waits on you" and "after your ruling". A tap opens the card's own sheet on Waiting
+ * (AC80, AC85), where its four choices are; it is in no order, no plan and no rough finish.
+ */
+function planGateRow(g) {
+  return h('li', { class: 'v2-plli gate', key: `wa-row:${g.key}`, 'data-gate': g.id },
+    h('a', { class: 'v2-plrow', key: `wa-gate:${g.id}`, href: cardRoute(null, g.id), onclick: () => { nav.opener = `wa-gate:${g.id}`; } },
+      h('span', { class: 'v2-plord' }), stc(g.icon),
+      h('span', { class: 'v2-prt' }, h('span', { class: 'v2-prtt v2-plname' }, g.name), h('span', { class: 'v2-mono v2-plm' }, g.mono)),
+      h('span', { class: `v2-plv ${g.right.kind}` }, g.right.words)));
 }
 
 /** A milestone's sheet over Plan (AC86): AC24's whole row, its state beside its icon, "Done when", the estimate and its note, the rough finish, what waits, and the milestone on the Timeline. */
@@ -3090,12 +3121,13 @@ function renderWorkAhead(built, nowMs) {
       h('p', { class: 'v2-small' }, WA.cardNote)));
     body.push(v.rows.length ? h('ol', { class: 'v2-rows v2-plflat', key: 'wa-plan', 'aria-label': 'Milestones in your order' }, v.rows.map((r) => planRow(v, r, true)))
       : h('p', { class: 'v2-small', key: 'wa-none' }, 'No milestones to go'));
-  } else if (v.rows.length) {
+  } else {
     for (const g of v.groups) {
       body.push(h('section', { class: 'v2-plgrp', key: `wa-grp:${g.key}` }, planHead(g.words, g.rows.length, { proj: true }),
-        h('ol', { class: 'v2-rows', 'aria-label': g.words }, g.rows.map((r) => planRow(v, r, false)))));
+        h('ol', { class: 'v2-rows', 'aria-label': g.words }, g.gate ? planGateRow(g.gate) : null, g.rows.map((r) => planRow(v, r, false)))));
     }
-  } else body.push(h('p', { class: 'v2-small', key: 'wa-none' }, 'No milestones to go'));
+    if (!v.rows.length) body.push(h('p', { class: 'v2-small', key: 'wa-none' }, 'No milestones to go'));
+  }
   if (ordering || v.changed) {
     body.push(h('div', { class: 'v2-plbar', key: 'wa-bar' }, h('p', { class: 'v2-small v2-plsay', role: 'status' }, v.changed ? WA.changed : WA.noChanges), recordNode(v)));
     // AC17's fallback for the plan, under the bar rather than in it, so the sticky bar stays one line high.
@@ -3700,6 +3732,7 @@ export function startSandbox(opts = {}) {
     });
     // AC80: the board, its marks judged at each successful poll; every count less the marked cards.
     const bd = boardOf(built, now.getTime(), nav.route.kind === 'waiting' ? nav.route.only : null);
+    lastBoard = bd;
     // AC74: a notification's tap, once its project is read: going there draws that screen (nav.to renders).
     const tap = followOpening(desk, built);
     if (tap) {

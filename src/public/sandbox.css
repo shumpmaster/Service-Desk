@@ -1329,6 +1329,8 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-plrow > .v2-chev { width: 10px; height: 10px; margin-top: 4px; color: var(--ink2); }
 .v2-plord { display: contents; }
 .v2-plname { overflow-wrap: break-word; }
+/* A gate card's row (AC86, frame 11): its title held to three lines, as the board's (AC80); the whole card one tap away. */
+.v2-plli.gate .v2-plname { max-height: calc(3 * 1.35em); overflow: hidden; overflow: clip; }
 .v2-plm { overflow-wrap: anywhere; }
 .v2-plv { font: var(--t-mono); color: var(--ink2); text-align: right; padding-top: 1px; }
 .v2-plv.accept, .v2-plv.ruling { font: var(--t-small); }

@@ -5,7 +5,7 @@
 // no DOM, no storage. The sandbox (src/public/sandbox.js) draws it.
 
 import { milestoneRule, STATUS_MARK, FEED_ICON, sprintList, ownParts, PHASE_CLASS } from './feed.js';
-import { GATE_WORDS } from './j11.js';
+import { GATE_PHASE } from './j11.js';
 import { reachedDateWords } from './sandbox.js';
 import { cappedNewFileLink } from './links.js';
 import {
@@ -53,27 +53,37 @@ function stateOf(ctx, m) {
   return { words: x.status, mark, icon, underway, rule: x.rule };
 }
 
-/**
- * How many questions and cards in a project's Queue name a milestone on their own `Milestone:` line
- * (AC24, AC66): { n, gates }, `gates` those that are gate cards (AC86: the vermilion ◆ and "after your
- * ruling" where a gate card waits on the owner).
- */
+/** How many questions and cards in a project's Queue name a milestone on their own `Milestone:` line (AC24, AC66). */
 function waitingOn(rows, id) {
   let n = 0;
-  let gates = 0;
   for (const row of rows || []) {
     const f = row && row.flag;
     if (!f) continue;
     let parts = null;
     if (f.kind === 'question' && f.question && f.question.parsed) parts = ownParts(f.question.parsed.text || '', 'question');
     else if (f.kind === 'card' && f.card && f.card.parsed) parts = ownParts(f.card.parsed.text || '', 'card');
-    if (parts && parts.milestone && parts.milestone.ids && parts.milestone.ids.includes(id)) {
-      n++;
-      if (f.kind === 'card' && GATE_WORDS.includes(f.card.gate)) gates++;
-    }
+    if (parts && parts.milestone && parts.milestone.ids && parts.milestone.ids.includes(id)) n++;
   }
-  return { n, gates };
+  return n;
 }
+
+/**
+ * A gate card waiting on the owner, as a row of its own in its project's group (AC86, frame 11:
+ * "Launch gate · waits on you", desk-v2.html:840; the build review's B1, round 1): the vermilion ◆, the
+ * card's title as the board shows it, "<Phase> gate · waits on you" and "after your ruling" at its right.
+ * `card` is the board's card (AC80, kind `gate`). It is never one of the milestones, so it is in no
+ * order, no plan and no rough finish, and no milestone row loses its state or finish to it.
+ */
+export function gateRow(card) {
+  const g = card && card.flag && card.flag.card ? card.flag.card.gate : null;
+  const phase = GATE_PHASE[g] || g || '';
+  const Phase = phase ? phase[0].toUpperCase() + phase.slice(1) : '';
+  return { key: `gate:${card.id}`, id: card.id, name: card.title, icon: 'you', mono: `${Phase} gate · ${WA.waitsOnYou}`,
+    right: { kind: 'ruling', words: WA.afterRuling } };
+}
+
+/** "not available: <project>'s <code> has no estimate yet" (or "… is past its estimate"): a milestone of another project, as Home's tile names it (AC82). */
+const otherWords = (stop) => `${WA.notAvailable}: ${stop.project}'s ${stop.code} ${stop.why}`;
 
 /**
  * AC17's fallback words for a link that copies (J3, J15): they name the cause, a link too long, or a
@@ -98,9 +108,10 @@ function askOf(planner, item, nowMs, linkCap) {
  * - config: J7 (its projects, linkCap);
  * - entries: [{ project, j, ctx, rows (the Queue's rows), model (J9's, for a v2.5 project), error }] in J7's order;
  * - snaps: name → the reader's snapshot (tree, records, history), for the planning project's reads;
- * - nowMs, tz (ownerTimeZone); draft (readDraft's, or null).
+ * - nowMs, tz (ownerTimeZone); draft (readDraft's, or null);
+ * - gates: name → the board's gate card waiting on the owner in that project (AC80), or none (AC86's gate row).
  */
-export function workAheadView({ config, entries, snaps, nowMs, tz, draft }) {
+export function workAheadView({ config, entries, snaps, nowMs, tz, draft, gates = null }) {
   const today = todayOf(nowMs, tz);
   const v3 = entries.filter((e) => e.project.model === 'v3');
   const many = v3.length > 1;
@@ -200,9 +211,8 @@ export function workAheadView({ config, entries, snaps, nowMs, tz, draft }) {
   const rows = order.map((k, i) => {
     const x = byKey.get(k);
     const st = stateOf(x.entry.ctx, x.m);
-    const w = waitingOn(x.entry.rows, x.code);
     const r = { ...x, index: i, place: String(i + 1), placeWords: placeWords(i, order.length), state: st, notInPlan: marked.has(k),
-      phase: x.m.phase, phaseClass: PHASE_CLASS[x.m.phase] || null, done: x.m.done, waiting: w.n, gate: w.gates > 0,
+      phase: x.m.phase, phaseClass: PHASE_CLASS[x.m.phase] || null, done: x.m.done, waiting: waitingOn(x.entry.rows, x.code),
       first: i === 0, last: i === order.length - 1 };
     r.estimate = { kind: est.kind === 'ok' ? 'missing' : est.kind === 'none' ? 'missing' : 'na', words: est.kind === 'na' ? WA.estimateNA : WA.noEstimate, note: null, newer: false };
     r.standing = null;
@@ -230,37 +240,51 @@ export function workAheadView({ config, entries, snaps, nowMs, tz, draft }) {
     const rf = roughFinish(rows.map((r) => ({ code: r.code, standing: r.past ? { kind: 'past' } : r.standing })), today);
     rows.forEach((r, i) => {
       r.finish = rf.rows[i];
-      if (r.finish.stop) r.finish.stop = { ...r.finish.stop, project: rows[r.finish.stop.index].project.name };
+      if (r.finish.stop) {
+        r.finish.stop = { ...r.finish.stop, project: rows[r.finish.stop.index].project.name };
+        // The milestone it names is another project's: its project said too, as Home's tile says it (AC82;
+        // the Design reviewer's finding 1, stage 5 round 1). Within one project, AC24's words as they are.
+        if (r.finish.stop.project !== r.project.name) r.finish.words = otherWords(r.finish.stop);
+      }
     });
     card = rows.length ? rf.card : WA.notAvailable;
+    // The card adds up every project's milestones: with more than one, the milestone it names says whose it is.
+    const last = rows.length ? rows[rows.length - 1].finish : null;
+    if (many && last && last.stop) card = otherWords(last.stop);
   }
   // Each row's value at its right (AC86, frame 11): its rough finish, shorter ("22–25 Oct"); "your
-  // acceptance" for AC24's "once you accept it"; "after your ruling" where a gate card waits on the owner.
-  // None where the finish is not available: the row then says why, in AC24's words.
+  // acceptance" for AC24's "once you accept it". None where the finish is not available: the row then
+  // says why, in AC24's words. Its icon is always its own state's: a gate card is a row of its own (below).
   for (const r of rows) {
-    if (r.gate) r.right = { kind: 'ruling', words: WA.afterRuling };
-    else if (r.finish && r.finish.accept) r.right = { kind: 'accept', words: WA.yourAcceptance };
+    if (r.finish && r.finish.accept) r.right = { kind: 'accept', words: WA.yourAcceptance };
     else if (r.finish && r.finish.from) r.right = { kind: 'finish', words: shortRange(r.finish.from, r.finish.to, today) };
     else r.right = null;
-    r.icon = r.gate ? 'you' : r.state.icon;
+    r.icon = r.state.icon;
   }
   // One group for each connected v3 project, in the order of its first milestone in the order shown
-  // (AC86: one owner order across projects, shown grouped, as drawn).
+  // (AC86: one owner order across projects, shown grouped, as drawn); a project whose gate card waits on
+  // the owner has its gate's row at the top of its group, as frame 11 draws it, as the next thing that
+  // waits on the owner, and a group even with no milestone ahead.
   const groups = [];
-  for (const r of rows) {
-    let g = groups.find((x) => x.project === r.project);
+  const groupOf = (project) => {
+    let g = groups.find((x) => x.project === project);
     if (!g) {
-      g = { project: r.project, key: r.project.name, words: WA.ahead(r.project.name), rows: [] };
+      g = { project, key: project.name, words: WA.ahead(project.name), rows: [], gate: null };
       groups.push(g);
     }
-    g.rows.push(r);
+    return g;
+  };
+  for (const r of rows) groupOf(r.project).rows.push(r);
+  for (const e of v3) {
+    const card = gates && gates.get ? gates.get(e.project.name) : null;
+    if (card) groupOf(e.project).gate = gateRow(card);
   }
 
   // The state line and the bar (AC24, "Recording the plan").
   let stateLine;
   if (!changed && (plan.kind === 'current' || plan.kind === 'empty')) {
     const t = planTime(plan.name);
-    stateLine = { kind: 'current', lead: WA.current, rest: `recorded ${dateWords(dayKey(new Date(t), tz), today)}, ${hhmm(new Date(t), tz)}` };
+    stateLine = { kind: 'current', lead: WA.current, rest: `· recorded ${dateWords(dayKey(new Date(t), tz), today)}, ${hhmm(new Date(t), tz)}` }; // AC24: "Current plan · recorded <date>, <time>"
   } else if (changed) stateLine = { kind: 'draft', lead: 'Draft', rest: `not recorded · ${WA.draftChanged}` };
   // No move made, with no plan recorded, a plan that can't be read or one not read yet: nothing has
   // changed (the Orchestrator's ruling on build review round 1, D; the Definer's draft 6). "No plan

@@ -87,6 +87,7 @@ export const WA = Object.freeze({
   ahead: (project) => `${project} · milestones ahead`,
   yourAcceptance: 'your acceptance',
   afterRuling: 'after your ruling',
+  waitsOnYou: 'waits on you',
   ideas: 'Ideas · from the portfolio',
   ideasNotRead: "Not read yet: your portfolio isn't connected to the desk",
   onTimeline: 'On the Timeline',

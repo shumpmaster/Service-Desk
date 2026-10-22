@@ -30,6 +30,7 @@ import { parseCss, treeOf, cascade, nodes, COLOUR_PROPS } from './css-cascade.mj
 import { hexLab, de2000 } from './ciede2000.mjs';
 import { PF_ROWS } from '../../src/public/lib/portfolio.js';
 import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
+import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -340,6 +341,21 @@ test('AC88: every trial-view screen and sheet, from each fixture, in dark (force
     await everyScreen(app, [], 'plan', fails, seen, counts);
   } finally {
     app.restore();
+  }
+  // From stage 6b (AC87, J23; "6b, whenever it lands, brings its own parts in both themes", the stage table): the
+  // portfolio's parts from a made-up portfolio (NOT real records, tests/desk/pf-fixtures.mjs): the block's 6b rows and
+  // their sheets, a card on the board under "Portfolio" and its sheet, Plan's ideas in each state; then a refused read's words.
+  for (const [fail, where] of [[null, 'portfolio'], [{ state: 'cant-read', reason: 'no-access' }, 'portfolio refused']]) {
+    const p = waSetup({});
+    p.config = withPortfolio(p.config);
+    const r = addPortfolio(p.repos, pfFiles({ queue: { 'PF-001-explore-1.md': cardText(1), 'PF-002-odd.md': 'Not a card (made up, NOT a real record)\n' } }));
+    if (fail) r.fail = fail;
+    app = await opened(p, '#/', { now: Date.parse('2026-10-22T18:00:00Z'), store: memStore() });
+    try {
+      await everyScreen(app, [], where, fails, seen, counts);
+    } finally {
+      app.restore();
+    }
   }
   assert.ok(counts.screens > 150, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);

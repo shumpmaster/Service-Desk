@@ -11,10 +11,12 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { validateConfig, MAX_PROJECTS } from '../../src/lib/configcheck.js';
 import GENERATED from '../../src/lib/config.js';
-import { CONFIG, SRC, withUsage } from './helpers.mjs';
+import { CONFIG, J7_FILE, SRC, withUsage } from './helpers.mjs';
 
 test('J7: the committed config holds the launch values and passes the build\'s check', () => {
   assert.deepEqual(validateConfig(CONFIG), []);
+  // From stage 6b, helpers' CONFIG is J7 less its `portfolio` (6a's state); the committed file, with it, passes too.
+  assert.deepEqual(validateConfig(J7_FILE), []);
   assert.equal(CONFIG.ownerLogin, 'shumpmaster');
   assert.equal(CONFIG.ownerTimeZone, 'America/Chicago');
   assert.deepEqual(CONFIG.v5Clock, { days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], from: '07:00', to: '22:00' });
@@ -27,7 +29,9 @@ test('J7: the committed config holds the launch values and passes the build\'s c
     assert.equal(p.contentPrefill, true);
     assert.equal(p.contentParam, 'value');
   }
-  assert.deepEqual(GENERATED, CONFIG, 'lib/config.js is generated from projects.json');
+  // Rewritten in stage 6b (J7's `portfolio`, specs/S-001.md:9515-9520): the generated config is the committed
+  // file whole, its `portfolio` among it; helpers' CONFIG leaves the portfolio out for the cases before 6b.
+  assert.deepEqual(GENERATED, J7_FILE, 'lib/config.js is generated from projects.json');
 });
 
 test('J7: a 6th entry fails with a message saying 5 is the limit; a model other than v3 or v2.5 fails', () => {

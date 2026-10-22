@@ -1049,7 +1049,9 @@ html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /*
    a grey line, a chevron); each state's mark drawn before the words it marks; then one line under the rows. */
 .v2-pf { display: grid; gap: 12px; }
 .v2-pfh { padding-top: 18px; border-top: 1px solid var(--line); }
-.v2-pfmk { display: inline-block; width: 12px; height: 12px; vertical-align: -2px; margin-right: 4px; }
+.v2-pfmk { display: block; width: 12px; height: 12px; flex: none; }
+/* A mark and the first word it marks, one box, so the mark never ends a line alone (no nowrap: AC42). */
+.v2-pfnb { display: inline-flex; align-items: center; gap: 4px; vertical-align: bottom; }
 .v2-pfs { display: grid; gap: 10px; }
 .v2-pfsl > li + li { border-top: 1px solid var(--line); }
 .v2-pfsi { display: grid; gap: 2px; padding: 8px 0; min-width: 0; }

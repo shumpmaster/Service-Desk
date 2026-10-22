@@ -937,7 +937,13 @@ function portfolioOf(built) {
 
 /** A row's line (AC87): its parts joined by " · ", each state's mark drawn just before the words it marks (the slashed circle, the dashed "?"). */
 function pfLine(row) {
-  return row.parts.map((p, i) => [i ? ' · ' : null, p.mark ? stc(p.mark, 'v2-s v2-pfmk') : null, p.text]);
+  return row.parts.map((p, i) => {
+    if (!p.mark) return [i ? ' · ' : null, p.text];
+    // The mark is kept on the line of the first word it marks (it never ends a line alone).
+    const sp = p.text.indexOf(' ');
+    const first = sp < 0 ? p.text : p.text.slice(0, sp);
+    return [i ? ' · ' : null, h('span', { class: 'v2-pfnb' }, stc(p.mark, 'v2-s v2-pfmk'), first), sp < 0 ? null : p.text.slice(sp)];
+  });
 }
 
 /** The block (frame H4): its head with "portfolio" in Plex Mono at its right, one row each opening its sheet, then the one line under the rows. */

@@ -111,11 +111,10 @@ test('AC87: "Scorecard" reads "Targets: no record for this in the model yet · y
   try {
     const line = rowLine(app, 'scorecard');
     assert.equal(line.textContent, 'Targets: no record for this in the model yet · your time across projects: not recorded yet');
-    const kids = line.children;
-    assert.equal(kids[0].tag, 'svg');
-    assert.match(kids[0].attrs.class, /\bst-nomodel\b/, 'no record in the model: the slashed circle');
-    const q = kids.findIndex((k, i) => i > 0 && k.tag === 'svg');
-    assert.match(kids[q].attrs.class, /\bst-unrec\b/, 'not recorded yet: the dashed circle with "?"');
+    // Each mark is drawn just before the words it marks, kept on one line with their first word.
+    const held = byClass(line, 'v2-pfnb').map((n) => [n.children[0].tag, n.children[0].attrs.class.split(' ').find((c) => c.startsWith('st-')), n.textContent]);
+    assert.deepEqual(held, [['svg', 'st-nomodel', 'Targets:'], ['svg', 'st-unrec', 'your']], 'the slashed circle (no record in the model), then the dashed circle with "?" (not recorded yet)');
+    assert.equal(line.children[0], byClass(line, 'v2-pfnb')[0], 'the first part\'s mark opens the line');
     for (const s of findAll(line, (e) => e.tag === 'svg')) assert.equal(s.attrs['aria-hidden'], 'true');
   } finally {
     app.restore();

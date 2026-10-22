@@ -1,12 +1,11 @@
-// The MD sandbox view (spec S-001, AC43 B; AC35–AC42, AC48–AC53; J11), entered by `?sandbox`.
-// It renders the design lab's agreed screens against the desk's live data: Home, then inside each
-// project Status, Timeline, Team and Queue, with the response sheet over the queue. Without
-// `?sandbox` the page is the accepted M2 view (app.js); nothing here runs.
+// The desk (spec S-001): mockup v2 as built, the owner's pick (decisions/questions/P-001-desk-v2-pick.md, A),
+// at `/` from stage 8 (AC44, step 4), where it was the trial view at `?sandbox` until then (AC43 B; stages
+// 1a to 7). Home, Waiting and Plan, each project's page, Timeline and Team, and their sheets, against the
+// desk's live data; app.js starts it.
 //
-// - Every screen carries the marker "Sandbox: candidate design".
 // - It reuses the page's one poll scheduler and its data (AC14, AC42): J11's records are optional
 //   blob reads through the same calls.
-// - It answers cards and questions through the same J3 links as the real view, and nothing else.
+// - It answers cards and questions through J3's links, and nothing else.
 //   The desk writes nothing: every answer is a GitHub new-file page the owner commits.
 // - Record text is drawn as text nodes; card and question text only through the escaping markdown
 //   renderer. Nothing loads from another origin (the CSP is unchanged).
@@ -22,7 +21,7 @@ import { v5Footer, usageLines, notReadText } from './lib/asked.js';
 import { routeParts, guardRender, boot, SIGNED_OUT_STATE } from './lib/page.js';
 import { createSeen, MARKERS_OFF } from './lib/seen.js';
 import {
-  SANDBOX_MARKER, NOT_RECORDED, NOT_AVAILABLE, V25_NOT_RECORDED, OWNER_NEXT_LINES,
+  NOT_RECORDED, NOT_AVAILABLE, V25_NOT_RECORDED, OWNER_NEXT_LINES,
   j11Records, timelineOf, phaseView, whereLine, queueView, pillView, ballLines, sheetView, treeLink, youWaitText, optionsBlock, waitWords,
 } from './lib/sandbox.js';
 import { teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
@@ -48,7 +47,7 @@ import { workAheadView, readDraft } from './lib/workview.js';
 import {
   NOTIFY_WORDS, NOTIFY_STORE_KEY, COPY_DONE_WORDS, SHOW_AGAIN_WORDS, SEND_TEST_WORDS, copySteps, testSteps, notifyState, onTopLine,
   isStandalone, permissionOf, currentSubscription, subscriptionValue, turnOn, USAGE_TITLE, usageView, RECHECK_WORDS, recheckOutcome,
-  openTarget, tapDecision, sandboxAddress, OPENED_WORDS, GONE_WORDS, CANT_READ_WORDS,
+  openTarget, tapDecision, deskAddress, OPENED_WORDS, GONE_WORDS, CANT_READ_WORDS,
 } from './lib/notifyview.js';
 
 let CONFIG = DEFAULT_CONFIG; // J7; the tests pass their own (AC42's five projects)
@@ -376,9 +375,6 @@ function buildProject(desk, project, box, now) {
 // ---------------------------------------------------------------------------
 // Shared chrome
 
-function marker() {
-  return h('p', { class: 'sb-marker', role: 'note' }, h('span', { class: 'sb-dot', 'aria-hidden': 'true' }), SANDBOX_MARKER);
-}
 
 /**
  * Every screen but Home: the control to Home ("Home") and, beside it, the one that goes back one
@@ -931,7 +927,6 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
   const sv = sinceModel(built, seen, nowMs);
   const pf = portfolioOf(built);
   const body = [
-    marker(),
     h('header', { class: 'v2-top' }, h('h1', { class: 'v2-title' }, HOME_WORDS.title)),
     h('p', { class: 'v2-sub', key: 'home-checked', live: homeChecked }),
     // AC75: "Notifications" on Home's top line until notifications are on for this device; its control is also in the fold at the foot.
@@ -1316,7 +1311,6 @@ function renderPage(p, bd) {
     }
   }
   const body = [
-    marker(),
     h('header', { class: 'v2-ptop', key: 'page-top' }, backControl('#/')),
     h('div', { class: 'v2-phead', key: 'page-head' }, h('h1', { class: 'v2-title' }, name), h('p', { class: 'v2-mono', key: 'top-line' }, topLine(project, p.snap))),
     project.model === 'v3' ? pageSwitch(name, 'overview') : null,
@@ -1401,7 +1395,7 @@ const whenOr = (d) => (d ? whenText(new Date(d), new Date(Date.now()), TZ) : 'no
 
 function detailScreen(p, title, kids) {
   const name = p.project.name;
-  return h('section', { class: 'sb-screen sb-detail' }, marker(), projectHeader(name, title), kids);
+  return h('section', { class: 'sb-screen sb-detail' }, projectHeader(name, title), kids);
 }
 
 /** AC11 and AC12's waits, each opening its response sheet in the queue (never the accepted views). */
@@ -2102,7 +2096,7 @@ function quietLines(bd, built, only) {
 /** The Waiting tab (AC80, frames 1 and 2): the title, "checked <age> ago", the quiet lines, the lanes; a card's sheet over it. */
 function renderWaiting(bd, built, only, sheetId) {
   const name = only && built.some((b) => b.project.name === only) ? only : null;
-  const body = [marker(),
+  const body = [
     h('header', { class: 'v2-top' }, h('h1', { class: 'v2-title' }, 'Waiting')),
     h('p', { class: 'v2-sub', live: checkedWords })];
   if (name) {
@@ -2148,6 +2142,26 @@ function wordsBox(id, label, n = 1, placeholder = SHEET_WORDS.optional) {
   return h('label', { class: 'v2-field', key: `field:${k}` }, h('span', { class: 'v2-label' }, label), ta);
 }
 const draftOf = (id, n = 1) => boardState.drafts.get(`${id}#${n}`) || '';
+
+/**
+ * AC17 and AC18 on a sheet, before its buttons (AC53: "every link follows AC53's 'When it would not fit' ... and
+ * AC18's message where `webCommitsToDefault` is `false`, as today", specs/S-001.md:6077-6080; the accepted card view
+ * drew them until stage 8, AC44 step 4): J7's web-commit message, word for word; and where a button's link copies,
+ * the words naming why with that answer's text and its "Copy". The words are lib/links.js's and lib/sandbox.js's.
+ */
+function linkNotes(card, btns) {
+  const plans = btns.map((b) => b.plan).filter(Boolean);
+  const warn = plans.find((x) => x.warning);
+  const copies = btns.filter((b) => b.plan && b.plan.copy);
+  const out = [];
+  if (warn) out.push(h('p', { class: 'v2-mark v2-webwarn', key: 'web-warn', role: 'note' }, vi('bad'), h('span', {}, warn.warning)));
+  if (copies.length) {
+    out.push(h('div', { class: 'v2-blk v2-copyto', key: 'copy-route' }, h('p', { class: 'v2-small' }, copies[0].plan.words),
+      copies.map((b) => [h('pre', { class: 'v2-pre', key: `copytext:${b.value || ''}` }, b.plan.copy),
+        h('p', { class: 'v2-steps', key: `copybtn:${b.value || ''}` }, copyButton(b.plan.copy, `ans:${card.id}:${b.value || ''}`, copies.length > 1 ? `Copy ${b.value}` : 'Copy', 'v2-abtn'))])));
+  }
+  return out;
+}
 
 // ---------------------------------------------------------------------------
 // The question's and the gate's sheets (AC85; frames 3, 3b and 4; stage 4): what is asked in plain
@@ -2291,6 +2305,7 @@ function questionSheetParts(sx) {
         wordsBox(card.id, `Your answer to ${x.n}`, x.n)))));
       const btn = answerButtons(project, card.flag, CONFIG.linkCap, words)[0];
       files = [btn];
+      parts.push(linkNotes(card, [btn]));
       parts.push(h('p', { class: 'v2-steps', key: 'numbered-btn' }, answerLink(p, card, btn, 'v2-abtn', [btn.label])));
     } else {
       const btns = answerButtons(project, card.flag, CONFIG.linkCap, draftOf(card.id));
@@ -2300,6 +2315,7 @@ function questionSheetParts(sx) {
         parts.push(h('p', { class: 'v2-small', key: 'cant-split' }, `${CANT_SPLIT} (${qs.why}).`));
         parts.push(h('article', { class: 'sb-record', key: 'fallback-text', html: renderMarkdown(p0.text, { numbers: true }) }));
       }
+      parts.push(linkNotes(card, btns));
       // One box per option: "<letter>. <its words>", the description under it, "Recommended" on one only, its own button.
       parts.push(h('div', { class: 'v2-opts', key: 'opts', role: 'list' }, btns.map((b) => {
         const c = splitChoice(b.words);
@@ -2363,6 +2379,7 @@ function gateSheetParts(sx) {
   // The four choices (and any older words the card lists), each in its box with what follows, "Recommended"
   // on the case's recommendation, a lock and "Can't be undone" on Kill, and its own button.
   const btns = answerButtons(project, card.flag, CONFIG.linkCap, draftOf(card.id), { caseRec: card.caseRec });
+  parts.push(linkNotes(card, btns));
   parts.push(h('div', { class: 'v2-opts', key: 'opts', role: 'list' }, btns.map((b) => {
     const then = (v.options || []).find((o) => o.value === b.value);
     const kill = b.value === 'kill';
@@ -2506,6 +2523,7 @@ function cardSheet(bd, built, only, sheetId) {
   if (card.kind === 'card') {
     // A decision card's sheet keeps stage 1a's form (AC80); AC85 lays out the question's and the gate's.
     const btns = answerButtons(project, card.flag, CONFIG.linkCap, draftOf(card.id));
+    parts.push(linkNotes(card, btns));
     parts.push(h('div', { class: 'v2-opts', key: 'opts', role: 'list' }, btns.map((b) => {
       const then = (v.options || []).find((o) => o.value === b.value);
       return h('div', { class: 'v2-opt', role: 'listitem', key: `opt:${b.value}` },
@@ -2765,7 +2783,7 @@ function timelineHead(p) {
 
 function renderTimeline(p) {
   const fv = p.feed();
-  const body = [marker(), timelineHead(p)];
+  const body = [timelineHead(p)];
   if (!fv.ok) {
     body.push(h('p', { class: 'v2-small v2-tlnone', key: 'tl-none' }, fv.words));
     return h('section', { class: 'sb-screen v2 v2-timeline', key: 'timeline' }, body);
@@ -2880,7 +2898,7 @@ function renderTeam(p, member, sub, idx) {
   // From stage 3 (AC84; AC68, changed; P-001-timeline-marker.md, A): the Team screen opens with the
   // Timeline's short phase line, the same component with the same words, under its title, pinned, in
   // place of AC68's boxed marker; the rest keeps its layout until stage 7 (AC88).
-  const body = [marker(), projectHeader(name, 'Team'), h('div', { class: 'v2 v2-phlpin', key: 'phase-line-pin' }, phaseLineNode(p, 'team'))];
+  const body = [projectHeader(name, 'Team'), h('div', { class: 'v2 v2-phlpin', key: 'phase-line-pin' }, phaseLineNode(p, 'team'))];
   body.push(h('h2', { class: 'sb-h2' }, 'Who has the ball'), ballNode(p.ball, false));
   if (tv.note) body.push(h('p', { class: 'sb-muted small' }, tv.note));
   const you = tv.owner;
@@ -2926,8 +2944,8 @@ function renderTeam(p, member, sub, idx) {
 function renderMember(p, tv, id, sub, idx, now) {
   const name = p.project.name;
   const page = memberPage(p.project, p.model, p.snap, p.j, p.q, tv, id, now, TZ);
-  if (!page) return h('section', { class: 'sb-screen' }, marker(), projectHeader(name, 'Team'), h('p', {}, 'No such member.'));
-  const body = [marker(), projectHeader(name, page.label, page.status)];
+  if (!page) return h('section', { class: 'sb-screen' }, projectHeader(name, 'Team'), h('p', {}, 'No such member.'));
+  const body = [projectHeader(name, page.label, page.status)];
   body.push(h('h2', { class: 'sb-h2' }, 'Responsible for'));
   body.push(h('div', { class: 'sb-resp' }, page.groups.map((g) => h('details', { class: 'sb-card', key: `resp:${g.title}` },
     h('summary', {}, h('strong', {}, g.title), h('span', { class: 'sb-gcount' }, g.count == null ? NOT_RECORDED : String(g.count)),
@@ -3373,7 +3391,7 @@ function renderWorkAhead(built, nowMs) {
   if (v.ready && !v.changed && planDraft.read()) planDraft.write(null); // moved back to the order it started from
   waDay = v.today;
   const ordering = isOpenFold(WA_FOLDS, 'order', false);
-  const body = [marker(),
+  const body = [
     h('header', { class: 'v2-pltop', key: 'plan-top' }, h('h1', { class: 'v2-title' }, v.tab.title), orderToggle(ordering)),
     h('p', { class: 'v2-sub', key: 'plan-sub' }, v.tab.sub)];
   // AC24's state line: in the ordering, always; on Plan itself once it says more than "No changes yet".
@@ -3969,7 +3987,7 @@ export function startSandbox(opts = {}) {
   Object.assign(opening, { target: openTarget(location.search), done: false, banner: null });
   if (!opening.target) opening.done = true;
   try {
-    if (opening.target && typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', sandboxAddress(location.pathname, '', location.hash));
+    if (opening.target && typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', deskAddress(location.pathname, '', location.hash));
   } catch {
     // the address keeps its ?open=; a reload follows it again
   }
@@ -3990,7 +4008,7 @@ export function startSandbox(opts = {}) {
   };
   render = guardRender(draw, (state) => {
     if (stateEl) stateEl.textContent = state.text;
-    show(h('section', { class: 'sb-screen' }, marker(), h('p', { class: 'sb-stale' }, state.text), h('p', {}, h('a', { href: '#/' }, 'Home'))));
+    show(h('section', { class: 'sb-screen' }, h('p', { class: 'sb-stale' }, state.text), h('p', {}, h('a', { href: '#/' }, 'Home'))));
   }, () => desk.signedOut);
   function draw() {
     const now = new Date(Date.now());
@@ -4027,7 +4045,7 @@ export function startSandbox(opts = {}) {
     const boxes = sandboxBoxes(built);
     const s = withPortfolio(screenState(boxes, desk.signedOut), boxes, desk.signedOut);
     if (stateEl) stateEl.textContent = desk.signedOut ? SIGNED_OUT_STATE.text : s.text;
-    document.title = `Sandbox — ${desk.signedOut ? SIGNED_OUT_STATE.text : s.text}`;
+    document.title = `Service Desk — ${desk.signedOut ? SIGNED_OUT_STATE.text : s.text}`; // the desk's name, then its state line (from stage 8; "Sandbox — " before)
     const r = nav.route;
     let node;
     if (r.kind === 'waiting') {
@@ -4041,14 +4059,14 @@ export function startSandbox(opts = {}) {
       try {
         node = renderWaiting(bd, built, r.only, r.sheet);
       } catch (err) {
-        node = h('section', { class: 'sb-screen' }, marker(), h('p', { class: 'sb-stale' }, `Can't show Waiting: ${errorText(err)}`));
+        node = h('section', { class: 'sb-screen' }, h('p', { class: 'sb-stale' }, `Can't show Waiting: ${errorText(err)}`));
       }
     } else if (r.name) {
       const name = r.name;
       const b = built.find((x) => x.project.name === name);
-      if (!b) node = h('section', { class: 'sb-screen' }, marker(), h('p', {}, 'No such project. ', h('a', { href: '#/' }, 'Home')));
+      if (!b) node = h('section', { class: 'sb-screen' }, h('p', {}, 'No such project. ', h('a', { href: '#/' }, 'Home')));
       else if (b.error) {
-        node = h('section', { class: 'sb-screen v2 v2-proj' }, marker(), h('header', { class: 'v2-ptop' }, backControl('#/')),
+        node = h('section', { class: 'sb-screen v2 v2-proj' }, h('header', { class: 'v2-ptop' }, backControl('#/')),
           h('h1', { class: 'v2-title' }, name), h('p', { class: 'v2-small bad' }, b.box.drawError || `Can't show this project: ${errorText(b.error)}`));
       } else {
         try {
@@ -4067,7 +4085,7 @@ export function startSandbox(opts = {}) {
           else if (r.kind === 'agents') node = renderAgents(b);
           else node = renderPage(b, bd);
         } catch (err) {
-          node = h('section', { class: 'sb-screen v2 v2-proj' }, marker(), h('header', { class: 'v2-ptop' }, backControl('#/')),
+          node = h('section', { class: 'sb-screen v2 v2-proj' }, h('header', { class: 'v2-ptop' }, backControl('#/')),
             h('h1', { class: 'v2-title' }, name), h('p', { class: 'v2-small bad' }, `Can't show this project: ${errorText(err)}`));
         }
       }
@@ -4075,7 +4093,7 @@ export function startSandbox(opts = {}) {
       try {
         node = renderWorkAhead(built, now.getTime());
       } catch (err) {
-        node = h('section', { class: 'sb-screen v2 v2-plan' }, marker(), h('header', { class: 'v2-pltop' }, h('h1', { class: 'v2-title' }, WA.planTitle)),
+        node = h('section', { class: 'sb-screen v2 v2-plan' }, h('header', { class: 'v2-pltop' }, h('h1', { class: 'v2-title' }, WA.planTitle)),
           h('p', { class: 'v2-small bad' }, `Can't show Plan: ${errorText(err)}`));
       }
     } else node = renderHome(desk, built, seen, now.getTime(), bd);

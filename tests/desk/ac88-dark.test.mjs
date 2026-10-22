@@ -416,6 +416,12 @@ test('AC49 + AC88 (P-001-desk-v2-lanes, A): on every member page\'s running log,
                 stubs.onDash.add(own.dash);
                 if (s.grey !== own.grey) fails.push(`${where} · ${shade}: the stub in ${s.grey}, its lane in ${own.grey}`);
                 if (s.dash === 'none') fails.push(`${where} · ${shade}: the stub is not dashed`);
+                // "A short dashed stub" (AC49, specs/S-001.md:3295; stage 8's brief): each dash at most 3 px on.
+                else {
+                  const pattern = String(s.dash).split(/[\s,]+/).map(Number);
+                  const on = pattern.length % 2 ? [...pattern, ...pattern].filter((_, i) => i % 2 === 0) : pattern.filter((_, i) => i % 2 === 0);
+                  if (!on.length || on.some((x) => !(x > 0 && x <= 3))) fails.push(`${where} · ${shade}: the stub's dash, ${s.dash}, is not short (each dash at most 3 px on)`);
+                }
                 for (const d of drawn) {
                   if (d.kind !== 'dot' && d.s.width === s.width) fails.push(`${where} · ${shade}: the stub's weight, ${s.width}, is the ${d.shade} ${d.kind}'s`);
                   if (d.s.dash === s.dash) fails.push(`${where} · ${shade}: the stub's dash, ${s.dash}, is the ${d.shade} ${d.kind}'s`);

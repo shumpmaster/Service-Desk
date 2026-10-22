@@ -6,8 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fixture, CONFIG } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
-import { loadApp } from './page-harness.mjs';
-import { loadSandbox, byClass } from './sandbox-helpers.mjs';
+import { loadSandbox, byClass, findAll } from './sandbox-helpers.mjs';
 import { buildModel } from '../../src/lib/model.js';
 import { queueView, pillView } from '../../src/lib/sandbox.js';
 
@@ -20,27 +19,28 @@ function repos(waitingIn = 'Service-Desk') {
   };
 }
 
-test('AC52 (2026-10-18): in the accepted view a waiting deploy in Service-Desk (deploysNeedOwner) is counted and stops Quiet, with its run link', async () => {
-  const app = await loadApp({ repos: repos() });
+// From stage 8 (AC44, step 4, specs/S-001.md:2918-2921): the accepted view is gone; these two cases are the desk's at
+// `/`: its state line counts a waiting deploy in Service-Desk (deploysNeedOwner) and Waiting shows it with its run.
+test('AC52 (2026-10-18; the desk from stage 8): a waiting deploy in Service-Desk (deploysNeedOwner) is counted and stops Quiet, with its run', async () => {
+  const app = await loadSandbox({ config: CONFIG, repos: repos(), hash: '#/waiting' });
   try {
     await app.advance(1000);
-    assert.equal(app.state().textContent, '1 waiting on you');
-    assert.match(app.els.view.textContent, /desk-deploy: waiting for your approval/);
+    assert.equal(app.els['screen-state'].textContent, '1 waiting on you');
+    assert.match(app.view.textContent, /desk-deploy/);
+    assert.ok(findAll(app.view, (e) => e.tag === 'a' && /\/actions\/runs\/\d+$/.test(e.attrs.href || '')).length, 'its run link');
   } finally {
     app.restore();
   }
 });
-
-test('AC52 (2026-10-18): a waiting run in a project not marked deploysNeedOwner is not counted: Quiet', async () => {
-  const app = await loadApp({ repos: repos('Personal-Org-Operating-Model') });
+test('AC52 (2026-10-18; the desk from stage 8): a waiting run in a project not marked deploysNeedOwner is not counted: Quiet', async () => {
+  const app = await loadSandbox({ config: CONFIG, repos: repos('Personal-Org-Operating-Model'), hash: '#/' });
   try {
     await app.advance(1000);
-    assert.equal(app.state().textContent, 'Quiet');
+    assert.equal(app.els['screen-state'].textContent, 'Quiet');
   } finally {
     app.restore();
   }
 });
-
 test('AC52 (2026-10-18): the queue: counted in the Deploys group, the pill and the waiting count where marked; shown, not counted, where not', () => {
   const runs = JSON.stringify({ workflow_runs: [{ ...WAITING, html_url: 'https://github.com/x/actions/runs/7001', head_sha: 'a'.repeat(40) }] });
   const model = (project) => buildModel({ project, config: CONFIG, tree: new Map(), records: new Map(), history: new Map(), pullPages: [], checkPages: [runs, '{"workflow_runs":[]}'],

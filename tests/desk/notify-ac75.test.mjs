@@ -14,7 +14,6 @@ import { join } from 'node:path';
 import vm from 'node:vm';
 import { SRC, CONFIG, fixture } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
-import { loadApp, findAll } from './page-harness.mjs';
 import { loadSandbox, byClass, findAll as sbFindAll } from './sandbox-helpers.mjs';
 import { makeVapid, makeSubscription } from './notify-helpers.mjs';
 import {
@@ -77,8 +76,10 @@ test('AC75: the manifest\'s fields, its three icons at 180, 192 and 512 px, and 
   const m = JSON.parse(readFileSync(join(PUBLIC, 'manifest.webmanifest'), 'utf8'));
   assert.equal(m.name, 'Service Desk');
   assert.equal(m.short_name, 'Desk');
-  // From 2026-10-19: the icon opens the owner's page, the sandbox, until MD3; `id` "/" keeps the app the same one.
-  assert.equal(m.start_url, '/?sandbox');
+  // From 2026-10-19 the icon opened the trial view (`/?sandbox`) until MD3; from stage 8 the desk itself, `/` again (the
+  // notification view amendment, specs/S-001.md:1139-1142: "`start_url` returns to `/` (`id` stays `/`, so the app is
+  // the same one)"). `id` "/" keeps the app the same one.
+  assert.equal(m.start_url, '/');
   assert.equal(m.id, '/');
   assert.equal(m.scope, '/');
   assert.equal(m.display, 'standalone');
@@ -125,19 +126,21 @@ test('AC75: each state\'s words, from display-mode, the public key and the permi
   assert.ok(copySteps(CONFIG).some((x) => x.includes('DESK_PUSH_SUBSCRIPTION')));
 });
 
-test('AC75, J7: on the accepted page with J7 as committed (the owner\'s key, Setup N1, CS18), the desk offers "Turn on notifications" from the Home Screen, never asking on load; in Safari, how to add it', async () => {
+// From stage 8 (AC44, step 4, specs/S-001.md:2918-2921: the chosen design "becomes the desk's default view"): the
+// accepted page is gone, and this case is the desk's at `/`: Home's top line and its "More detail" fold.
+test('AC75, J7: on the desk at / with J7 as committed (the owner\'s key, Setup N1, CS18), Home offers "Turn on notifications" from the Home Screen, never asking on load; in Safari, how to add it', async () => {
   assert.ok(decodeVapidKey(CONFIG.push.vapidPublicKey), 'J7\'s push holds the owner\'s public key (Setup N1, CS18)');
   for (const [standalone, words] of [[true, NOTIFY_WORDS.ask], [false, NOTIFY_WORDS['not-standalone']]]) {
     const b = browser({ standalone });
-    const app = await loadApp({ repos: repos(), win: b.win, globals: { Notification: b.Notification, navigator: b.navigator } });
+    const app = await loadSandbox({ config: CONFIG, repos: repos(), hash: '', search: '', win: b.win, globals: { Notification: b.Notification, navigator: b.navigator } });
     try {
       await app.advance(1000);
-      const more = findAll(app.els.view, (e) => e.attrs && e.attrs.id === 'more-detail')[0];
+      const more = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'home-more-detail')[0];
       assert.ok(more, 'More detail on Home');
       assert.ok(more.textContent.includes('Notifications'));
       assert.ok(more.textContent.includes(words), words);
       assert.ok(!more.textContent.includes(NOTIFY_WORDS['no-key']), 'the key is set up: never "aren\'t set up yet"');
-      const top = findAll(app.els.view, (e) => e.className === 'notify-top')[0];
+      const top = byClass(app.view, 'sb-notify').find((n) => n.attrs['data-k'] === 'notify:top');
       assert.ok(top && top.textContent.includes(words), 'and on Home\'s top line');
       assert.equal(b.calls.requestPermission, 0, 'never asked on load');
     } finally {
@@ -357,67 +360,60 @@ test('AC75: pushsubscriptionchange shows "Desk notifications need turning on aga
 // Draft 8 (the owner's ruling "A. Keep the fold (Recommended)", decisions/questions/P-001-notify-more-detail.md):
 // on the accepted page, a "More detail" fold at the bottom of Home, closed until tapped, holding the
 // Notifications line and the Actions line and nothing else; a `?open=actions-usage` tap opens it at that line.
-test('AC75 (draft 8): the accepted Home\'s "More detail" fold: at the bottom, closed at load, the two lines only; opened by ?open=actions-usage', async () => {
-  let app = await loadApp({ repos: repos() });
+// From stage 8 (AC44, step 4, specs/S-001.md:2918-2921; P-001-settings-place.md, A, as stage 2 built it): the accepted
+// Home's fold is gone with it, and the desk's Home keeps "More detail" folded last at its foot; a tap's
+// `?open=actions-usage` at `/` opens the project's More detail at the line (AC78; the notification view amendment,
+// specs/S-001.md:1139-1142: the tap addresses at `/`).
+test('AC75 (draft 8; from stage 8): the desk\'s Home "More detail" fold: at the bottom, closed at load, its notifications and usage lines and the V5 line only; ?open=actions-usage at / opening More detail at the line', async () => {
+  let app = await loadSandbox({ config: CONFIG, repos: repos(), hash: '', search: '' });
   try {
     await app.advance(1000);
-    const folds = findAll(app.els.view, (e) => e.attrs && e.attrs.id === 'more-detail');
+    const folds = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'home-more-detail');
     assert.equal(folds.length, 1);
     const more = folds[0];
     assert.equal(more.tag, 'details');
     assert.equal(more.attrs.open == null, true, 'closed at load');
-    const home = app.els.view.children[app.els.view.children.length - 1];
-    assert.ok(home === more || findAll(home, (e) => e === more).length === 1, 'at the bottom of Home');
+    const home = byClass(app.view, 'v2-home')[0];
+    const kids0 = home.children.filter((c) => c.tag);
+    assert.equal(kids0[kids0.length - 1], more, 'at the bottom of Home');
     const kids = more.children.filter((c) => c.tag);
-    assert.deepEqual(kids.map((c) => c.tag), ['summary', 'section', 'section'], 'its summary and two lines, nothing else');
+    assert.deepEqual(kids.map((c) => c.tag), ['summary', 'section', 'section', 'p'], 'its summary, the two lines and the V5 line, nothing else');
     assert.equal(kids[0].textContent, 'More detail');
-    assert.equal(kids[1].className, 'notify-line');
+    assert.match(kids[1].className, /\bsb-notify-line\b/);
     assert.ok(kids[1].textContent.startsWith('Notifications'));
     assert.equal(kids[2].attrs.id, 'actions-usage');
     assert.ok(kids[2].textContent.startsWith('GitHub Actions this month'));
   } finally {
     app.restore();
   }
-  // From 2026-10-19 the tap opens the sandbox: the accepted view sends `?open=actions-usage` on to
-  // `?sandbox&open=actions-usage`, where More detail opens at the line.
-  app = await loadApp({ repos: repos(), search: '?open=actions-usage' });
+  app = await loadSandbox({ config: CONFIG, repos: repos(), hash: '', search: '?open=actions-usage' });
   try {
     await app.advance(1000);
-    assert.deepEqual(app.replaced, ['/?sandbox&open=actions-usage'], 'sent on to the sandbox');
-  } finally {
-    app.restore();
-  }
-  const sb = await loadSandbox({ config: CONFIG, repos: repos(), hash: '', search: '?sandbox&open=actions-usage' });
-  try {
-    await sb.advance(1000);
-    const more = byClass(sb.view, 'sb-more')[0];
+    const more = byClass(app.view, 'sb-more')[0];
     assert.ok(more && 'open' in more.attrs, 'opened by the tap');
     assert.ok(sbFindAll(more, (e) => e.attrs && e.attrs.id === 'actions-usage').length, 'at the Actions line');
   } finally {
-    sb.restore();
+    app.restore();
   }
 });
 
-// From 2026-10-19: the tap is handed only to a window already showing the sandbox; an open accepted-view
-// window is navigated to the address instead (it stays as it is at plain "/" otherwise).
-test('AC74, AC75 (2026-10-19): an accepted-view window is navigated, never handed the tap; with a sandbox window open too, the sandbox one is handed it', async () => {
-  const TAP = 'https://desk.example.invalid/?sandbox&open=Service-Desk%7Cpr%7C108';
+// From 2026-10-19 until stage 8 the tap was handed only to a window showing the trial view, an accepted-view window
+// being navigated instead. From stage 8 (AC44, step 4; the notification view amendment, specs/S-001.md:1139-1142)
+// every desk window is the desk, one still at an old `?sandbox` address among them: the first open one is
+// focused and handed the tap, which is `/?open=<key>`.
+test('AC74, AC75 (from stage 8): every desk window is the desk: the first open one, at / or at an old ?sandbox address, is focused and handed the tap', async () => {
+  const TAP = 'https://desk.example.invalid/?open=Service-Desk%7Cpr%7C108';
   const tap = (w) => w.fire('notificationclick', { notification: { data: { navigate: TAP }, close() {} } });
-  // The accepted view alone: focused and navigated, no message.
-  let w = loadWorker('https://desk.example.invalid', { MessageChannel, setTimeout, clearTimeout });
-  let did = [];
-  const accepted = { url: 'https://desk.example.invalid/#/p/Service-Desk', postMessage: () => did.push(['message']),
-    navigate: async (u) => { did.push(['navigate', u]); return accepted; }, focus: async () => { did.push(['focus']); } };
-  w.clientsList.push(accepted);
-  await tap(w);
-  assert.deepEqual(did, [['focus'], ['navigate', TAP], ['focus']]);
-  assert.equal(w.opened.length, 0);
-  // Both open: the sandbox window takes it; the accepted one is left alone.
-  w = loadWorker('https://desk.example.invalid', { MessageChannel, setTimeout, clearTimeout });
-  did = [];
-  const sandbox = { url: 'https://desk.example.invalid/?sandbox#/', postMessage: (data, ports) => { did.push(['sandbox message', data.navigate]); ports[0].postMessage({ ok: true }); },
-    navigate: async () => { did.push(['sandbox navigate']); return sandbox; }, focus: async () => { did.push(['sandbox focus']); } };
-  w.clientsList.push(accepted, sandbox);
-  await tap(w);
-  assert.deepEqual(did, [['sandbox focus'], ['sandbox message', TAP]]);
+  for (const url of ['https://desk.example.invalid/#/p/Service-Desk', 'https://desk.example.invalid/?sandbox#/']) {
+    const w = loadWorker('https://desk.example.invalid', { MessageChannel, setTimeout, clearTimeout });
+    const did = [];
+    const desk = { url, postMessage: (data, ports) => { did.push(['message', data.navigate]); ports[0].postMessage({ ok: true }); },
+      navigate: async () => { did.push(['navigate']); return desk; }, focus: async () => { did.push(['focus']); } };
+    const other = { url: 'https://desk.example.invalid/#/waiting', postMessage: () => did.push(['other message']),
+      navigate: async () => { did.push(['other navigate']); return other; }, focus: async () => { did.push(['other focus']); } };
+    w.clientsList.push(desk, other);
+    await tap(w);
+    assert.deepEqual(did, [['focus'], ['message', TAP]], url);
+    assert.equal(w.opened.length, 0);
+  }
 });

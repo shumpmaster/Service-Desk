@@ -35,7 +35,11 @@ test('AC69: coral (--you) is used only for the owner\'s own things — the rules
   // The gaps' own rule: slate.
   const gap = rules().find((r) => r.sel.split(/\s*,\s*/).includes('.gap'));
   assert.match(gap.body, /color: var\(--muted\)/);
-  for (const s of ['.sb-wl.gap', '.sb-unb-l.gap', '.sb-feeds.gap', '.sb-began.gap', '.sb-meta.gap']) assert.ok(gap.sel.split(/\s*,\s*/).includes(s), s);
+  // Stage 8 (AC44, step 4): `.sb-wl` and `.sb-unb-l`, the old Status and Queue's why and "Unblocks" lines, went with the
+  // views that drew them once the desk became `/`; the desk draws its why lines `v2-wl gap` and `v2-unb-l gap`, which
+  // the plain `.gap` itself makes slate, and `.v2-sheet .gap` --ink2 (AC69, specs/S-001.md:5677-5684).
+  for (const s of ['.gap', '.sb-feeds.gap', '.sb-began.gap', '.sb-meta.gap']) assert.ok(gap.sel.split(/\s*,\s*/).includes(s), s);
+  assert.ok(!rules().some((r) => /\.(v2-wl|v2-unb-l)\.gap\b/.test(r.sel) && /var\(--you\d?\)/.test(r.body)), 'the desk\'s why lines never take coral');
   assert.match(rules().find((r) => r.sel === '.sb-ic.i-flag').body, /background: var\(--muted\)/, 'the "Not tied to a milestone" diamond, filled slate');
   assert.match(rules().find((r) => r.sel === '.sb-stall').body, /color: var\(--muted\)/, 'AC71\'s line, slate');
   // AC80: nothing in Done or in the quiet lines is coral; a Done card's kind icon is grey; the sheets' gaps grey.

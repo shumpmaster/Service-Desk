@@ -336,10 +336,13 @@ test('AC81 (stage 1a\'s build review, round 1, F1): no rule that reaches mockup 
   assert.match(rule('.v2-abtn.ghost'), /box-shadow: inset 0 0 0 1px var\(--line2\); background: var\(--bg\)/, '"Close" a pill, outlined');
 });
 
-test('AC81 (settled after round 1, F2): text no frame draws takes the nearest role — the record fold\'s headings --t-row, the rest --t-body; the sandbox\'s marker on mockup v2\'s screens --t-label', () => {
+// Rewritten at stage 8: the trial view carried its "Sandbox: candidate design" marker (AC43) "until stage 8"
+// (specs/S-001.md:13701-13702), so the marker's rule (`.v2 .sb-marker`, --t-label) went with it; its counterpart is
+// that no marker rule is left. The record fold's roles stand.
+test('AC81 (settled after round 1, F2): text no frame draws takes the nearest role — the record fold\'s headings --t-row, the rest --t-body; from stage 8 no marker rule is left', () => {
   assert.match(CSS, /\n\.v2-sheet \.sb-record :is\(h1, h2, h3, h4, h5, h6\) \{ font: var\(--t-row\);/);
   assert.match(CSS, /\n\.v2-sheet \.sb-record \{ font: var\(--t-body\);/);
-  assert.match(CSS, /\n\.v2 \.sb-marker \{ font: var\(--t-label\);/);
+  assert.doesNotMatch(CSS, /\.sb-marker\b/, 'the marker went at stage 8');
   // Nothing else in the sheet's record sets a size of its own after these.
   const after = CSS.slice(CSS.indexOf('.v2-sheet .sb-record :is('));
   assert.doesNotMatch(after, /\.sb-record[^{]*\{[^}]*font(-size)?: (?!var\(--t-(row|body)\))/);

@@ -15,7 +15,7 @@ import { createStore } from '../../src/lib/store.js';
 import { createSeen, MARKERS_OFF, SEEN_KEY } from '../../src/lib/seen.js';
 import {
   pillView, queueView, groupOf, ballLines, ruleLine, boxPlan, cardBoxText, questionBoxText, VERDICT_START, newFileAtBranch,
-  sheetView, trackerSteps, doneToday, workingNow, memberPage, teamView, SANDBOX_MARKER,
+  sheetView, trackerSteps, doneToday, workingNow, memberPage, teamView,
 } from '../../src/lib/sandbox.js';
 import { buildModel } from '../../src/lib/model.js';
 
@@ -24,6 +24,10 @@ import { pullsAnswer } from './j12-fixture.mjs';
 
 // ---------------------------------------------------------------------------
 // AC48
+
+// From stage 8 (AC43's marker, specs/S-001.md:2894-2896, carried "until stage 8", :13702; AC44, step 4, :2918-2921):
+// the trial view is the desk, and no screen carries the marker "Sandbox: candidate design" any more.
+const MARKER = 'Sandbox: candidate design';
 
 test('AC48, as AC82 rebuilds Home (stage 2, frame H5): one tile per project in AC8\'s order, each with its name and what waits, its summary, its phases as a timeline, "Now:", who is at work and what comes next; the marker; no New project', async () => {
   const app = await opened();
@@ -39,7 +43,7 @@ test('AC48, as AC82 rebuilds Home (stage 2, frame H5): one tile per project in A
       assert.equal(byClass(c, 'v2-ptl').length, 1, 'the phases as a timeline');
       assert.deepEqual(byClass(c, 'v2-ln').map((l) => /^(Now:|At work:|No agent run|Next:)/.exec(l.textContent)[1]), ['Now:', 'At work:', 'Next:']);
     }
-    assert.ok(app.text().includes(SANDBOX_MARKER));
+    assert.ok(!app.text().includes(MARKER), 'no marker (from stage 8)');
     assert.match(byClass(v, 'v2-brief')[0].textContent, /^12 need you/, 'a count in all, never a combined list');
     assert.match(app.text(), /Median answer time/, "AC21's V5 line stays on Home, in the fold at its foot");
     assert.doesNotMatch(app.text(), /New project/);
@@ -79,7 +83,7 @@ test('AC48 (changed by AC81, AC82, AC83 and AC84): each tile, the briefing and e
     assert.equal(byClass(app.view, 'v2-brief')[0].attrs.href, '#/waiting', 'the briefing opens Waiting, one tap');
     for (const [hash, title] of [['#/p/Alpha', 'Alpha'], ['#/p/Alpha/timeline', 'Alpha'], ['#/p/Alpha/team', 'Team']]) {
       await app.go(hash);
-      assert.ok(app.text().includes(SANDBOX_MARKER), `${hash}: the marker`);
+      assert.ok(!app.text().includes(MARKER), `${hash}: no marker (from stage 8)`);
       assert.ok(app.text().includes(title), `${hash}: ${title}`);
       assert.equal(byClass(app.view, 'sb-tab').length, 0, `${hash}: no project bar at the foot`);
       assert.equal(byClass(app.view, 'v2-rl').length + byClass(app.view, 'v2-row').length, 0, `${hash}: no top row (from stage 3)`);
@@ -559,7 +563,7 @@ test('AC42: H5\'s extremes — 5 projects, 12+ waits, long titles — every scre
       for (const s of ['', '/timeline', '/team', '/queue', '/team/owner', '/team/orchestrator', '/team/builder/now', '/team/critic/e/0']) {
         await app.go(`#/p/${encodeURIComponent(p.name)}${s}`);
         assert.doesNotMatch(app.text(), /Can't show/, `${p.name}${s}`);
-        assert.ok(app.text().includes(SANDBOX_MARKER), `${p.name}${s}: the marker`);
+        assert.ok(!app.text().includes(MARKER) && !byClass(app.view, 'sb-marker').length, `${p.name}${s}: no marker (from stage 8)`);
       }
       await app.go(`#/p/${encodeURIComponent(p.name)}/queue`);
       for (const a of byClass(app.view, 'sb-qrow').map((r) => findAll(r, (e) => e.tag === 'a')[0]).filter((a) => a && a.attrs.href.startsWith('#'))) {
@@ -635,8 +639,12 @@ test('AC42: no packages, the security headers and CSP unchanged, nothing from an
   const all = [...css.matchAll(/animation:/g)].length;
   assert.equal([...blocks.matchAll(/animation:/g)].length, all);
   assert.ok(all > 0);
-  // Colour never alone: each queue group has a shape and a title; each pill and rule a sign.
-  for (const sign of ['.sb-pill.you::before', '.sb-pill.ok::before', '.sb-pill.bad::before', '.sb-rule.ok::before', '.sb-rule.warn::before']) assert.ok(css.includes(sign), sign);
+  // Colour never alone (AC42, specs/S-001.md:2855-2856). Rewritten at stage 8 (AC44, step 4): old Home's pills and the old
+  // Status screen's rules (`.sb-pill`, `.sb-rule`), whose signs this case read, went with the views that drew them once the
+  // desk became `/`, and with them the coral button's ◆ (`.sb-btn.you`), which nothing drew. What is left that marks a
+  // state by colour carries its sign: "Can't read" in the blocking colour leads with "! ".
+  assert.doesNotMatch(css, /\.sb-pill\b|\.sb-rule\b|\.sb-btn\.you\b/, 'the old pills, rules and coral button are gone');
+  assert.ok(css.includes('.sb-stale { color: var(--block);') && css.includes('.sb-stale::before { content: "! "; }'), 'the blocking colour with its sign');
 });
 
 // ---------------------------------------------------------------------------

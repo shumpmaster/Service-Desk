@@ -85,16 +85,11 @@ html.sb :where(b, strong):where(:not(.v2 *)) { font-weight: 600; }
 .sb-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .sb-screen { display: grid; gap: var(--s3); padding-bottom: var(--s4); --sb-clear: var(--sb-dock-h); }
 .sb-meta { font: var(--t-meta); color: var(--muted); }
-.sb-q, .sb-quote { font: var(--t-quote); } /* quoted record text (AC62); .sb-quote never takes the owner's coral (AC69) */
+.sb-quote { font: var(--t-quote); } /* quoted record text (AC62); .sb-quote never takes the owner's coral (AC69) */
 .sb-src { display: block; font: var(--t-meta); color: var(--muted); }
-.sb-lbl { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--muted); }
 /* AC69: a gap the agents fill reads in slate, saying who fills it; coral (--you) is only for what waits on the owner. */
-.gap, .sb-meta.gap, .sb-wl.gap, .sb-began.gap, .sb-feeds.gap, .sb-unb-l.gap, .sb-unb-t.gap { color: var(--muted); }
+.gap, .sb-meta.gap, .sb-began.gap, .sb-feeds.gap { color: var(--muted); }
 
-/* The marker on every screen (AC43: "Sandbox: candidate design"). */
-.sb-marker { margin: var(--s2) 0 0; padding: var(--s1) var(--s3); justify-self: start; display: inline-flex; gap: var(--s2); align-items: center; border: 1px dashed var(--muted);
-  border-radius: var(--rs); font: var(--t-meta); color: var(--muted); }
-.sb-dot { width: 8px; height: 8px; border: 1.5px solid var(--muted); border-radius: 2px; transform: rotate(45deg); }
 
 /* Headers */
 .sb-hdr { display: flex; gap: var(--s3); align-items: flex-start; padding: var(--s3) 0 0; }
@@ -109,7 +104,7 @@ html.sb :where(b, strong):where(:not(.v2 *)) { font-weight: 600; }
 .sb-stale { color: var(--block); font: var(--t-meta); margin: 0; }
 .sb-stale::before { content: "! "; }
 .sb-card { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3); margin: 0; }
-.sb-card > summary, .sb-std > summary, details.sb-sec > summary { cursor: pointer; min-height: 44px; display: flex; gap: var(--s2); align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.sb-card > summary, details.sb-sec > summary { cursor: pointer; min-height: 44px; display: flex; gap: var(--s2); align-items: center; justify-content: space-between; flex-wrap: wrap; }
 
 /* The plain-circle icons (AC59, AC65, AC67): a neutral circle with an icon inside, never a colour of its own,
    each with its words beside it. The gold ring is "next to reach"; the half-filled circle is work under way;
@@ -133,20 +128,12 @@ html.sb :where(b, strong):where(:not(.v2 *)) { font-weight: 600; }
 .sb-ic.i-you { background: var(--you); }
 
 /* Folds (AC57, AC59, AC60, AC66): a real button, its state as its accessible state and a mark beside its words. */
-.sb-fold, .sb-more, .sb-pname { appearance: none; background: none; border: 0; padding: 0; margin: 0; color: inherit; cursor: pointer; text-align: left; display: inline-flex; gap: var(--s1); align-items: center; min-height: 44px; }
-.sb-fold, .sb-more { font: var(--t-meta); color: var(--muted); }
+.sb-more { appearance: none; background: none; border: 0; padding: 0; margin: 0; color: inherit; cursor: pointer; text-align: left; display: inline-flex; gap: var(--s1); align-items: center; min-height: 44px; }
+.sb-more { font: var(--t-meta); color: var(--muted); }
 .sb-fmark { font: var(--t-meta); color: var(--muted); }
 
 /* The phase marker (AC68): under the project's name, the now phase in its colour, a tap to the Timeline at Now. */
 .ph-disc { --ph: var(--ph-disc); } .ph-des { --ph: var(--ph-des); } .ph-build { --ph: var(--ph-build); } .ph-launch { --ph: var(--ph-launch); } .ph-done { --ph: var(--idle); }
-.sb-phchip { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--ph, var(--idle)); flex: none; }
-.sb-pmark { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; min-height: 44px; padding: var(--s2) var(--s3); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r);
-  box-shadow: inset 3px 0 0 var(--ph, var(--line)); text-decoration: none; color: var(--ink); }
-.sb-pmark-run { font: var(--t-item); color: var(--ph, var(--ink)); }
-.sb-pmark-sub { font: var(--t-meta); color: var(--muted); }
-.sb-pmark-go { margin-left: auto; font: var(--t-meta); color: var(--muted); }
-.sb-pmark.none { color: var(--muted); }
-.sb-pmark.none .sb-pmark-run { color: var(--muted); }
 
 /* Home's summary box and its bubble (AC54 (a); on AC82's tiles from stage 2, `.v2-tile`, below). Today's Home's own
    rules, its groups, its two-column grid of cards and their "Latest" control, went at stage 7 (AC88), all but
@@ -169,8 +156,6 @@ button.sb-sum { display: block; width: 100%; height: 100%; padding: 0; border: 0
   text-align: left; color: var(--ink); cursor: pointer; pointer-events: auto; }
 button.sb-sum:focus-visible { outline: none; }
 .sb-sumbox > .sb-bubble { pointer-events: auto; top: calc(100% + 4px); }
-.sb-sumbox > .sb-bubble.col-l { left: -8px; right: calc(-100% - 32px); }
-.sb-sumbox > .sb-bubble.col-r { right: -8px; left: calc(-100% - 32px); }
 .sb-sumbox > .sb-bubble.up { top: auto; bottom: calc(100% + 4px); }
 .sb-why { position: relative; z-index: 2; font: var(--t-meta); color: var(--muted); }
 .sb-why > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
@@ -186,15 +171,12 @@ button.sb-sum:focus-visible { outline: none; }
   padding: var(--s2) var(--s3) var(--s3); box-shadow: var(--shadow);
   max-height: calc(100vh - var(--sb-clear, 0px) - 16px); max-height: calc(100dvh - var(--sb-clear, 0px) - 16px);
   overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
-.sb-bubble.col-l { left: 0; right: calc(-100% - 8px); }
-.sb-bubble.col-r { right: 0; left: calc(-100% - 8px); }
 .sb-bubble.up { top: auto; bottom: calc(100% + 4px); }
 .sb-bubble-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); position: sticky; top: -8px; background: var(--surf); }
 .sb-bubble-t { margin: var(--s1) 0 0; font: var(--t-quote); }
 /* Held: taller than the room, or where the page cannot scroll it into the room, the bubble is held
    in the viewport itself, inside the page's gutters, a margin from the top and clear of the bottom bar. */
-.sb-bubble.held, .sb-sumbox > .sb-bubble.held, .sb-linebox > .sb-bubble.held, .sb-bubble.held.col-l, .sb-bubble.held.col-r,
-.sb-sumbox > .sb-bubble.held.col-l, .sb-sumbox > .sb-bubble.held.col-r {
+.sb-bubble.held, .sb-sumbox > .sb-bubble.held, .sb-linebox > .sb-bubble.held {
   position: fixed; top: 8px; bottom: auto; left: max(16px, calc(50% - 264px)); right: max(16px, calc(50% - 264px)); }
 /* A sheet or a bubble the owner opened may come in, gently, without reduced motion; nothing else moves (AC57's "Still and plain"). */
 @media (prefers-reduced-motion: no-preference) {
@@ -211,15 +193,6 @@ button.sb-sum:focus-visible { outline: none; }
 .sb-ball { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s1); font: var(--t-meta); }
 .sb-ball li { display: flex; gap: var(--s2); align-items: center; }
 .sb-ball li.who-you { color: var(--ink); } /* AC88: the words in ink; vermilion only on the ◆ beside them (AC81) */
-/* Today's Home's pill went with it at stage 2; its rules stay for AC42's test, which reads their signs. */
-.sb-pill { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; min-height: 44px; padding: var(--s2); border-radius: var(--rs); text-decoration: none;
-  font: var(--t-meta); text-align: center; border: 1px solid var(--line); background: var(--surf2); color: var(--ink); }
-.sb-pill.you { background: var(--you); border-color: var(--you); color: var(--on); }
-.sb-pill.you::before { content: "◆"; margin-right: 6px; /* AC62: the gap between a mark and its word */ }
-.sb-pill.ok { background: var(--passs); border-color: var(--pass); color: var(--ink); }
-.sb-pill.ok::before { content: "✓"; margin-right: 6px; /* AC62: the gap between a mark and its word */ color: var(--pass); }
-.sb-pill.bad { background: var(--blocks); border-color: var(--block); color: var(--ink); }
-.sb-pill.bad::before { content: "!"; margin-right: 6px; /* AC62: the gap between a mark and its word */ color: var(--block); }
 .sb-v5 { color: var(--muted); font: var(--t-meta); margin: var(--s3) 0; }
 /* Home has no bottom band (AC48, 2026-10-16): the owner dropped the "Tell your Chief of Staff…" bar it held. */
 /* AC71: the stalled line, in slate (a heads-up, not a decision for the owner). */
@@ -228,100 +201,22 @@ button.sb-sum:focus-visible { outline: none; }
 
 /* The Home tile's old phases (AC65, AC58) gave way to AC82's timeline at stage 2, and their rules went at stage 7 (AC88). */
 
-/* The branch drawing (AC57, AC58, AC65): one column of dots per run, thin light lines joining each dot
-   to the next one up, with a small arrowhead half way pointing up, dashed into a still-to-come dot,
-   and one curve out to the right where each later run starts. As version 6 draws them: 1.25 px at 70%
-   opacity. Run 1 neutral, run 2 gold, runs 3 and 4 their own neutral-tinted shades, later runs those two
-   in turn. Nothing loops or pulses. */
-.sb-rail .ln, .sb-rail .arr { fill: none; stroke-width: 1.25px; stroke-opacity: .7; stroke-linecap: round; stroke-linejoin: round; }
-.sb-rail .ln.dash { stroke-dasharray: 2 4; }
-.sb-rail .run1 { stroke: var(--run1); } .sb-rail .run2 { stroke: var(--run2); } .sb-rail .run3 { stroke: var(--run3); } .sb-rail .run4 { stroke: var(--run4); }
-.sb-rail .dot { stroke-width: 2; }
-.sb-rail .dot.m-filled { fill: var(--pass); stroke: var(--pass); }
-.sb-rail .dot.m-light { fill: var(--passl); stroke: var(--pass); stroke-width: 1.5; }
-.sb-rail .dot.m-gold { fill: var(--surf); stroke: var(--gold); stroke-width: 2.5; }
-.sb-rail .dot.m-half { fill: var(--surf); stroke: var(--ink); stroke-width: 1.5; }
-.sb-rail .dot.m-todo { fill: var(--surf); stroke: var(--idle); }
-.sb-rail .dot.m-dashed { fill: var(--surf); stroke: var(--idle); stroke-dasharray: 2 2; }
-.sb-rail .dot-in.half { fill: var(--ink); stroke: none; }
-.sb-rail.rail-tile .dot { fill: var(--surf); stroke: var(--muted); stroke-width: 1.2; }
-.sb-rail.rail-tile .dot.m-check { stroke: var(--muted); }
-.sb-rail.rail-tile .dot.m-pastcheck { stroke: var(--soft); }
-.sb-rail.rail-tile .dot.m-next { stroke: var(--gold); stroke-width: 2.5; }
-.sb-rail.rail-tile .dot.m-half { stroke: var(--ink); }
-.sb-rail.rail-tile .dot.m-planned, .sb-rail.rail-tile .dot.m-unrec { stroke-dasharray: 2 2; }
-.sb-rail .dot-in.check, .sb-rail .dot-in.pastcheck { fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
-.sb-rail .dot-in.pastcheck { stroke: var(--soft); }
+/* The old Status screen's branch drawing, its phase boxes and its pill and rule signs (AC57, AC58, AC65, AC42), the old
+   Timeline's runs and milestones (AC59, AC60), the AC43 marker and the accepted-era Queue, answer and "Done today"
+   rules went at stage 8 (AC44, step 4), when the desk became `/`: nothing draws them. */
 
 /* From stage 1a the project screens' own bottom bar is gone (AC81, "Until stage 3"): the bar Home ·
    Waiting · Plan (.v2-bar, below) is the only bar at every screen's foot, and Status, Timeline and Team
    carry the row Status · Timeline · Team · Waiting at their top (.v2-row). */
 
-/* Status */
-.sb-actions { display: grid; gap: var(--s2); margin: 0; }
+/* Buttons */
 .sb-btn { display: flex; gap: var(--s2); align-items: center; justify-content: center; min-height: 44px; padding: var(--s2) var(--s3); border-radius: var(--rs); text-decoration: none;
   font: var(--t-item); background: var(--surf); border: 1px solid var(--line); color: var(--ink); cursor: pointer; }
-.sb-btn.you { background: var(--you); border-color: var(--you); color: var(--on); }
-.sb-btn.you::before { content: "◆"; }
-.sb-info ol { margin: var(--s2) 0; padding-left: var(--s4); }
-.sb-links { margin: var(--s2) 0 0; padding-left: var(--s4); display: grid; gap: var(--s2); }
-.sb-links a { font: var(--t-item); text-decoration: underline; }
 .sb-dl dt { font: var(--t-item); margin-top: var(--s2); } .sb-dl dd { margin: 0; }
-.sb-mlist { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s1); }
-.sb-mlist li { display: grid; grid-template-columns: 16px 1fr auto; gap: var(--s2); align-items: start; font: var(--t-body); padding: var(--s1) 0; border-top: 1px solid var(--line); }
-.sb-mlist li:first-child { border-top: 0; }
 
-/* AC57: the Status screen's phases, read from the bottom up. Each phase in its own box with its colour
-   stripe, folding on a tap of its name; the dots inside the boxes on the left (option B); the now phase
-   marked where it sits, with a gold border. Done's box is dashed with no stripe. */
-.sb-skey { display: grid; gap: var(--s1); }
-.sb-keyh { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--muted); }
+/* A key's line and its entries (AC57's marks, beside their words). */
 .sb-keyl { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s3); font: var(--t-meta); color: var(--muted); }
 .sb-keye { display: inline-flex; align-items: center; gap: 6px; /* AC62: the gap between a mark and its word */ }
-.sb-mk { display: inline-block; flex: none; width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--idle); background: var(--surf); }
-.sb-mk.m-filled { background: var(--pass); border-color: var(--pass); }
-.sb-mk.m-light { background: var(--passl); border: 1.5px solid var(--pass); }
-.sb-mk.m-gold { border: 2.5px solid var(--gold); }
-.sb-mk.m-half { border: 1.5px solid var(--ink); background: linear-gradient(90deg, var(--ink) 50%, var(--surf) 50%); }
-.sb-mk.m-empty, .sb-mk.m-todo { border: 2px solid var(--idle); }
-.sb-mk.m-dashed { border: 2px dashed var(--idle); }
-.sb-mk.m-red { background: var(--fail); border-color: var(--fail); }
-.sb-pboxes { position: relative; display: grid; gap: var(--s3); --rail: 30px; }
-.sb-pboxes.cols-2 { --rail: 46px; } .sb-pboxes.cols-3 { --rail: 62px; } .sb-pboxes.cols-4 { --rail: 78px; }
-.sb-pboxes > .sb-rail { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 1; }
-.sb-pbox { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); display: grid; gap: var(--s3);
-  padding: var(--s3) var(--s3) var(--s3) var(--rail); /* AC62: the room kept for the branch drawing */ box-shadow: inset 3px 0 0 var(--ph); }
-.sb-pbox.now { border-color: var(--gold); }
-.sb-pbox.end { border-style: dashed; box-shadow: none; padding-top: var(--s2); padding-bottom: var(--s2); }
-.sb-pbox-h { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
-.sb-pname { font: var(--t-item); }
-.sb-pbox.end .sb-pname { min-height: 44px; display: inline-flex; align-items: center; }
-.sb-pstate { margin-left: auto; font: var(--t-meta); text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
-.sb-pstate.now { color: var(--gold); }
-.sb-prun { display: grid; gap: var(--s2); }
-.sb-prun + .sb-prun { border-top: 1px solid var(--line); padding-top: var(--s3); }
-.sb-rhead { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; font: var(--t-meta); color: var(--muted); }
-.sb-rtag { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; border: 1px solid currentColor; border-radius: 3px;
-  padding: 1px 6px; /* AC62: a tag's inner padding, as drawn */ }
-.sb-rtag.run1 { color: var(--run1); } .sb-rtag.run2 { color: var(--run2); } .sb-rtag.run3 { color: var(--run3); } .sb-rtag.run4 { color: var(--run4); }
-.sb-stdline { font: var(--t-meta); color: var(--muted); }
-/* A run's milestones, tied by a thin light line with a small arrowhead at its top, pointing up: 1 px in the --tie grey. */
-.sb-mslist { position: relative; list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
-.sb-mslist::before { content: ""; position: absolute; left: 5px; /* AC62: puts the line through the marks */ top: 4px; bottom: 10px; width: 1px; background: var(--tie); }
-.sb-mslist::after { content: ""; position: absolute; left: 3px; /* AC62: puts the arrowhead on the line */ top: 2px; width: 4px; height: 4px; border-left: 1px solid var(--tie); border-top: 1px solid var(--tie); transform: rotate(45deg); }
-.sb-ms { position: relative; display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 2px var(--s2); /* AC62: 2 px between a milestone's own lines */ align-items: start; }
-.sb-ms > .sb-mk { margin-top: 5px; /* AC62: puts the mark on its line */ position: relative; z-index: 1; }
-.sb-mname { font: var(--t-item); }
-.sb-mstate { grid-column: 2; font: var(--t-meta); color: var(--muted); }
-.sb-mwhy { grid-column: 2; font: var(--t-quote); color: var(--muted); font-style: italic; }
-/* Softer text (note 11): what the project hasn't taken on, or no record says it did. */
-.sb-ms.soft .sb-mname { color: var(--soft); font-weight: 500; }
-.sb-ms.soft .code, .sb-ms.soft .sb-mstate, .sb-ms.soft .sb-mwhy { color: var(--soft); }
-/* An earlier run: smaller and quieter, each part one role down (AC57, AC62), never a size of its own. */
-.sb-prun.old .sb-mname { font: var(--t-body); color: var(--muted); }
-.sb-prun.old .sb-mstate { font: var(--t-code); }
-.sb-prun.old .sb-mwhy { font: var(--t-meta); }
-.sb-prun.old .sb-rtag { color: var(--muted); }
 /* AC70: why a run began, beside the curve where it starts. */
 .sb-began { display: grid; gap: var(--s1); border-left: 2px solid var(--rk, var(--run2)); padding-left: var(--s3); font: var(--t-meta); }
 /* "Run <k> began" in its run's own shade (AC70, draft 6); a "not recorded" reason stays slate (AC69). */
@@ -334,36 +229,13 @@ p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 /* Queue (AC52, as AC66 changed it): each group a title, a count and a neutral mark; a group holding
    anything that waits on the owner shows the coral diamond, "needs you". Rows that wait on the owner
    keep the coral edge (AC69); every other mark and edge is the muted grey. */
-.sb-groups { display: grid; gap: var(--s3); margin-top: 0; }
-.sb-group { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s1) var(--s3) var(--s2); }
-.sb-group.empty { padding-bottom: var(--s1); }
-.sb-gh { display: flex; gap: var(--s2); align-items: center; margin: var(--s2) 0; font: var(--t-section); text-transform: uppercase; letter-spacing: var(--track); }
 .sb-gcount { margin-left: auto; color: var(--muted); }
-.sb-gmark { width: 16px; text-align: center; color: var(--muted); }
-.sb-gmark.you { color: var(--you); }
-.sb-needs { font: var(--t-meta); text-transform: none; letter-spacing: 0; color: var(--you); }
 .sb-qlist { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
 .sb-qlist > li > a { display: inline-flex; align-items: center; min-height: 24px; max-width: 100%; } /* AC88: a link alone on its row, a target at least 24 px tall (WCAG 2.5.8) */
 .sb-qrow { border-left: 4px solid var(--muted); border-radius: var(--rs); background: var(--page); color: var(--ink); }
-.sb-qrow.g-decisions, .sb-qrow.g-gates, .sb-qrow.g-merges { border-left-color: var(--ink); } /* AC88: what waits on the owner, the heavier edge, never vermilion (AC81) */
-.sb-qrow.g-deploys { padding: var(--s2) var(--s3); }
-.sb-qrow a.sb-qa, .sb-qrow > a { display: grid; gap: var(--s1); padding: var(--s2) var(--s3); min-height: 44px; text-decoration: none; }
+.sb-qrow.g-decisions { border-left-color: var(--ink); } /* AC88: what waits on the owner, the heavier edge, never vermilion (AC81) */
+.sb-qrow > a { display: grid; gap: var(--s1); padding: var(--s2) var(--s3); min-height: 44px; text-decoration: none; }
 .sb-qt { font: var(--t-item); }
-/* AC79: a pull request the automatic job may still merge: the softer activity style, no coral, no count. */
-.sb-reclist { margin-top: var(--s2); }
-.sb-qrow.sb-recrow { border-left: 4px solid var(--soft); background: var(--surf); color: var(--muted); }
-.sb-qrow.sb-recrow .sb-qt { color: var(--muted); }
-.sb-rec-words { font: var(--t-meta); }
-.sb-qrow .sb-left-pr { font: var(--t-meta); font-weight: 700; color: var(--ink); }
-.sb-unb { display: grid; gap: var(--s1); margin: 0 var(--s3) var(--s2); padding-top: var(--s2); border-top: 1px solid var(--line); }
-.sb-unb-l { font: var(--t-meta); }
-.sb-unb-l b { font: var(--t-meta); color: var(--ink); }
-.sb-unb-t { font: var(--t-meta); }
-.sb-facts { list-style: none; margin: 0; padding: 0 0 0 var(--s2); display: grid; gap: var(--s1); border-left: 3px solid var(--line); font: var(--t-body); }
-.sb-donetoday ul { margin-top: var(--s2); }
-.sb-donetoday > summary .sb-ic { margin-right: var(--s1); }
-.sb-safe { display: grid; gap: var(--s1); margin-top: var(--s2); }
-.sb-safe-l { display: flex; gap: var(--s2); align-items: center; font: var(--t-item); }
 .sb-tlink { font: var(--t-meta); text-decoration: underline; color: var(--ink); display: inline-flex; align-items: center; min-height: 24px; } /* AC88: a target at least 24 px tall (WCAG 2.5.8) */
 
 /* The response sheet, and the Team's sheets */
@@ -378,110 +250,28 @@ p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 .sb-sheet-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); position: sticky; top: -8px; background: var(--page); padding: var(--s1) 0; z-index: 1; }
 .sb-sheet-top .sb-grab { margin: 0 0 0 calc(50% - 20px); /* AC62: an offset that centres the grab handle */ }
 .sb-grab { display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: var(--s1) auto var(--s3); }
-.sb-left { border: 1px solid var(--block); border-left: 4px solid var(--block); border-radius: var(--r); padding: var(--s2) var(--s3); background: var(--blocks); margin: var(--s2) 0; }
-.sb-left p { margin: 0 0 var(--s1); }
 /* AC74 (2026-10-19): the tap's line, "Opened from a notification" or "That no longer waits on you". */
 .sb-tap { margin: var(--s2) 0; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: var(--r); background: var(--surf); color: var(--ink); font: var(--t-item); } /* AC88: its words in ink, never the accepted view's `.gone` amber (style.css) */
-.sb-infobtn { display: inline-flex; gap: var(--s2); align-items: center; min-height: 44px; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf); font: var(--t-item); text-decoration: none; }
-.sb-infobtn .ic { width: 18px; height: 18px; }
-.sb-more > summary .sb-h2.flat { margin: 0; }
-.sb-six { margin: var(--s2) 0; padding-left: var(--s4); }
 .sb-sheet-t { margin: var(--s1) 0; font: var(--t-screen); }
 .sb-sec { margin: var(--s3) 0; }
 .sb-sec h3 { margin: 0 0 var(--s1); font: var(--t-section); letter-spacing: var(--track); color: var(--muted); }
 .sb-sec p { margin: 0 0 var(--s1); }
 .sb-sec blockquote { margin: var(--s1) 0; padding: var(--s2) var(--s3); border-left: 3px solid var(--tie); background: var(--page); font: var(--t-quote); }
-.sb-chips { display: flex; flex-wrap: wrap; gap: var(--s2); margin: var(--s2) 0; }
-.sb-chip { min-height: 44px; padding: var(--s2) var(--s3); border: 1.5px solid var(--line); border-radius: var(--rs); background: var(--surf); color: var(--ink); cursor: pointer;
-  font: var(--t-item); text-align: left; text-decoration: none; display: inline-flex; align-items: center; }
-.sb-chip.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
-.sb-chip.on::before { content: "● "; }
-/* Lettered choices (P-001-answer-choice-spacing): one full-width box each, stacked with room
-   between; the letter in its own column, apart from its text, and wrapped lines under the text.
-   The picked mark sits in a third column, so the text never moves when a choice is picked. */
-.sb-chips.sb-choices { flex-direction: column; flex-wrap: nowrap; gap: var(--s3); margin: var(--s3) 0; }
-.sb-choices .sb-chip { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; width: 100%;
-  padding: var(--s3) var(--s4); font: var(--t-body); }
-.sb-choice-l { grid-column: 1; grid-row: 1; min-width: 1.1em; margin-right: var(--s3); font: var(--t-item); }
-.sb-choice-t { grid-column: 2; grid-row: 1; min-width: 0; overflow-wrap: anywhere; }
-.sb-choices .sb-chip.on::before { content: "●"; grid-column: 3; grid-row: 1; margin-left: var(--s3); }
-.sb-rec { font: var(--t-body); }
 .sb-tag { display: inline-block; font: var(--t-section); letter-spacing: var(--track); border: 1px solid currentColor; border-radius: var(--rs); color: var(--muted);
   padding: 1px 6px; /* AC62: a tag's inner padding, as drawn */ }
-/* AC63: every text box's text is at least 16 px, so the iPhone never zooms in on a tap; pinch-to-zoom is left alone. */
-.sb-box textarea { display: block; width: 100%; min-height: 8em; font: 400 16px/1.4 var(--mono); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2) var(--s3);
-  background: var(--page); color: var(--ink); resize: vertical; }
-.sb-rule { margin: var(--s2) 0 var(--s1); font: var(--t-meta); }
-.sb-rule.ok { color: var(--pass); } .sb-rule.ok::before { content: "✓ "; }
-.sb-rule.warn { color: var(--block); } .sb-rule.warn::before { content: "! "; }
-html.sb a.sb-go { display: flex; align-items: center; justify-content: center; min-height: 52px; margin: var(--s2) 0; border-radius: var(--rs); text-decoration: none;
-  font: var(--t-item); background: var(--ink); color: var(--surf); }
 .sb-warn { color: var(--block); background: var(--blocks); border: 1px solid var(--block); border-radius: var(--r); padding: var(--s2); font: var(--t-meta); }
-.sb-strong { font: var(--t-item); }
-.sb-confirm { border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3); background: var(--page); margin: var(--s3) 0; }
-.sb-tracker { list-style: none; margin: var(--s2) 0; padding: 0; display: grid; gap: var(--s1); font: var(--t-meta); }
-.sb-tracker li { display: flex; gap: var(--s2); align-items: flex-start; color: var(--muted); }
-.sb-tracker li.done { color: var(--ink); }
 .sb-record { background: var(--page); border-radius: var(--r); padding: var(--s3); font: var(--t-quote); }
 .sb-record pre, .sb-quote { white-space: pre-wrap; font: var(--t-code); background: var(--page); padding: var(--s2); border-radius: var(--rs); overflow-wrap: anywhere; }
 .sb-sheet .sb-quote { background: var(--surf2); } /* AC88: on a sheet (its ground --page), a quoted record keeps a panel of its own */
 
-/* AC59 and AC60: the Timeline, read from the bottom up. Each run is a block with its band, pinned while
-   its stretch scrolls by; the line runs down the left in the band's phase colour, as thin and light as
-   version 6 draws it (2 px at 45%), dashed and lighter (30%) where it is planned; each milestone a plain
-   neutral circle with its status icon, centred on the line; the gold Now line across. No clock times. */
-.sb-fkeys { display: grid; gap: var(--s1); }
-.sb-bkey { gap: var(--s2); }
-.sb-feed { display: grid; gap: 0; padding-left: 26px; /* AC62: the room for the line and its circles */ }
-.sb-goal { display: grid; gap: var(--s2); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3);
-  margin-left: -26px; /* AC62: the card spans the line's room */ }
-.sb-goal.finish { border-top: 3px solid var(--ink); }
-.sb-goal.start { border-bottom: 3px solid var(--ink); margin-top: var(--s3); }
-.sb-gq { font: var(--t-quote); }
-.sb-blk { position: relative; display: grid; }
+/* A run's band (AC59, AC60): pinned while its stretch scrolls by, in its phase colour. */
 .sb-pband { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; background: var(--page);
   margin-left: -26px; /* AC62: the band spans the line's room */ padding: var(--s2) 0 var(--s2) var(--s1); border-bottom: 2px solid var(--ph); color: var(--ph); }
-.sb-pband.plan { border-bottom-style: dashed; }
-.sb-pband-n { margin: 0; font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--ph); }
-.sb-pband-s { margin-left: auto; font: var(--t-meta); color: var(--muted); }
-.sb-seg { position: relative; display: grid; gap: var(--s5); padding: var(--s4) 0; }
-.sb-seg:empty { padding: 0; }
-.sb-seg::before { content: ""; position: absolute; left: -19px; /* AC62: the line, through each milestone's circle */ top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--ph); opacity: .45; }
-.sb-seg.plan::before { opacity: .3; background: repeating-linear-gradient(var(--ph) 0 6px, transparent 6px 11px); }
-.sb-mile { position: relative; display: grid; gap: var(--s1); min-width: 0; }
-.sb-mile > .sb-mdot { position: absolute; left: -28px; /* AC62: puts the circle on the line */ top: 1px; width: 20px; height: 20px; }
-.sb-mile.untied > .sb-mdot { left: -25px; /* AC62: puts the diamond on the line */ top: 4px; width: 13px; height: 13px; }
-.sb-mhead { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s2); align-items: baseline; }
-.sb-mtitle { font: var(--t-item); }
-.sb-mile.planned .sb-mtitle { color: var(--muted); }
-.sb-mst { font: var(--t-meta); color: var(--muted); }
-.sb-mst.now { color: var(--gold); }
-.sb-dw { font: var(--t-body); }
-.sb-wl { font: var(--t-body); }
-.sb-wl.gap { font: var(--t-meta); }
-.sb-nowline { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s2); border-top: 2px solid var(--gold);
-  margin: var(--s2) 0 0 -26px; /* AC62: the line spans the line's room */ padding: var(--s2) 0 var(--s2) 26px; /* AC62: its words sit beside the line */ }
-.sb-now-t { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--gold); }
-.sb-now-s { font: var(--t-meta); color: var(--muted); }
-.sb-gather { font: var(--t-meta); color: var(--muted); }
-.sb-glist { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s1); font: var(--t-meta); }
-.sb-tasks { display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surf); }
-.sb-task { display: grid; gap: var(--s2); padding: var(--s3); }
-.sb-task + .sb-task { border-top: 1px solid var(--line); }
-.sb-ehead { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: baseline; }
-.sb-date { font: var(--t-meta); color: var(--muted); }
-.sb-marks { display: flex; flex-wrap: wrap; gap: var(--s2); margin-left: auto; justify-content: flex-end; }
 .sb-mkw { font: var(--t-meta); }
 .sb-mkw.sb-why { z-index: auto; }
-.sb-etitle { font: var(--t-item); }
 /* From stage 3 (AC84; AC60 and AC48, changed): the Timeline's Technical, Context and Why are small grey words
    (.v2-bl, below); their own colours (--b-tech, --b-ctx, --b-why) and boxed, upper-case labels are gone. */
-.sb-v { display: grid; gap: var(--s1); }
-.sb-v.code { display: block; }
-.sb-fact { display: block; font: var(--t-body); }
 .sb-para { display: block; }
-.sb-tlink-p { margin: 0; }
-.sb-feednote { margin: var(--s2) 0 0; }
 
 /* Team (AC49, as AC67 changed its cards): each member's state in a plain circle with its word, no light and no glow. */
 .sb-you { display: block; background: var(--surf); border: 1px solid var(--line); border-left: 4px solid var(--tie); border-radius: var(--r); padding: var(--s3); margin: var(--s3) 0; }
@@ -551,15 +341,10 @@ html.sb a.sb-go { display: flex; align-items: center; justify-content: center; m
 .sb-kv { list-style: none; margin: var(--s2) 0; padding: 0; display: grid; gap: var(--s1); font: var(--t-body); }
 
 @media (forced-colors: active) {
-  .circ.tick circle, .sb-mk, .sb-ic { forced-color-adjust: none; }
+  .circ.tick circle, .sb-ic { forced-color-adjust: none; }
 }
 
-.sb-info > summary { justify-content: flex-start; }
-.sb-info .ic { width: 18px; height: 18px; }
-
-/* Home's condensed cards (AC54 (c)): two columns at 360 px. */
-
-/* Status: "Your last action" just above the waiting bar (AC55). */
+/* "Your last action" (AC55). */
 .sb-last { border-left: 3px solid var(--you); background: var(--surf); border-radius: var(--rs); padding: var(--s2) var(--s3); margin: 0; }
 .sb-last-t { margin: 0; font: var(--t-quote); }
 /* A ruling's line 1 (AC55, AC52; 2026-10-16): at most three lines in its box, the rest hidden, never
@@ -588,10 +373,7 @@ button.sb-line:focus-visible { outline: none; }
 .sb-last a.code { text-decoration: underline; }
 
 /* The rebuilt detail views (AC55): Time asked, Agents, the v2.5 reduced view, and the record notes (AC68), in the shared look. */
-.sb-items, .sb-asks, .sb-sessions, .sb-tlx { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
-.sb-item { background: var(--surf); border: 1px solid var(--line); border-left: 4px solid var(--agent); border-radius: var(--r); padding: var(--s2) var(--s3); }
-.sb-item p { margin: var(--s1) 0; }
-.sb-item-l { display: flex; gap: var(--s2); align-items: center; font: var(--t-body); }
+.sb-asks, .sb-sessions, .sb-tlx { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
 .sb-wait-b { display: grid; gap: var(--s1); padding: var(--s2) var(--s3); }
 .sb-ask { display: grid; gap: var(--s1); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2) var(--s3); }
 .sb-ask.open { border-left: 4px solid var(--ink); } /* AC88: an open card the heavier edge, its state in words; never vermilion (AC81) */
@@ -607,20 +389,6 @@ button.sb-line:focus-visible { outline: none; }
 .sb-axis .bar.card { fill: var(--ink); } /* AC88: a card's span in ink, a session's in the agents' grey; each says which in words */
 .sb-axis .bar.open { opacity: .6; }
 
-/* "Done today" (AC52, note 10): what was ruled, in words, then its code. */
-.sb-done-r { padding: var(--s2) 0; border-top: 1px solid var(--line); font: var(--t-quote); }
-.sb-done-r:first-child { border-top: 0; }
-.sb-done-r a.code { text-decoration: underline; }
-
-/* The answer boxes (AC53, note 15): each question on its own, then its own answer box. */
-.sb-answers { display: grid; gap: var(--s1); }
-.sb-q { border: 1px solid var(--line); border-left: 4px solid var(--you); border-radius: var(--r); padding: var(--s2) var(--s3); background: var(--page); }
-.sb-q-t { font: var(--t-item); }
-.sb-words-l { display: grid; gap: var(--s1); margin-top: var(--s2); }
-/* AC63: the per-question words box, at least 16 px. */
-.sb-words { display: block; width: 100%; min-height: 3.2em; font: 400 16px/1.4 var(--font); border: 1px solid var(--line); border-radius: var(--rs); padding: var(--s2) var(--s3);
-  background: var(--surf); color: var(--ink); resize: vertical; }
-.sb-final { border-top: 1px solid var(--line); padding-top: var(--s2); }
 .sb-btn.small { min-height: 44px; font: var(--t-meta); margin: var(--s2) 0; }
 
 /* Notifications (AC75, AC77, AC78; 2026-10-18): the "Notifications" control, "GitHub Actions this
@@ -634,9 +402,6 @@ html.sb .sb-notify-line, html.sb .sb-actions-usage { margin: var(--s3) 0 0; }
 html.sb .sb-h3 { margin: 0 0 var(--s1); font: var(--t-item); }
 html.sb .sb-actions-usage p { margin: var(--s1) 0; }
 html.sb .sb-actions-bar { display: block; width: 100%; height: 12px; margin: var(--s1) 0; accent-color: var(--agent); }
-html.sb .sb-asking .sb-qrow { padding: var(--s2) 0; }
-html.sb .sb-asking p { margin: var(--s1) 0; }
-html.sb .sb-recheck p { margin: var(--s1) 0; }
 
 /* A note clipped to two lines (AC24's estimate notes): the button exactly the two lines it shows. */
 html.sb .sb-lineclip.two { max-height: 2.7em; }
@@ -895,8 +660,6 @@ html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /*
 /* AC81 (settled after round 1): a heading inside quoted record text takes --t-row, the rest --t-body. */
 .v2-sheet .sb-record :is(h1, h2, h3, h4, h5, h6) { font: var(--t-row); margin: 8px 0 4px; }
 .v2-sheet .sb-record :is(p, li, td, th, blockquote) { font: var(--t-body); }
-/* AC81: the sandbox's marker on a screen built to mockup v2 is --t-label, as the mockup's own tags. */
-.v2 .sb-marker { font: var(--t-label); color: var(--ink2); border-color: var(--line2); }
 .v2-sheet .gap { color: var(--ink2); }
 
 /* The question's and the gate's sheets (AC85; frames 3, 3b and 4; desk-v2.html:193-230): the

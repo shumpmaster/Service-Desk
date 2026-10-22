@@ -10,7 +10,8 @@ import {
 } from '../../src/lib/links.js';
 import { buildModel, parseRecord } from '../../src/lib/model.js';
 import { fixture, CONFIG, SD, POOM } from './helpers.mjs';
-import { loadApp, find, findAll } from './page-harness.mjs';
+import { loadSandbox, byClass, findAll as sbFindAll } from './sandbox-helpers.mjs';
+import { V25_RULING_NOTE } from '../../src/lib/links.js';
 import { repo } from './fake-desk.mjs';
 
 const CAP = CONFIG.linkCap;
@@ -124,58 +125,73 @@ function sdRepos(extra = {}) {
   };
 }
 
-test('Page AC16: the card view offers the card\'s options; picking one and typing a note gives J3\'s link, kept across re-renders', async () => {
-  const app = await loadApp({ hash: '#/p/Service-Desk/card/queue%2FP-001-stop-6.md', repos: sdRepos() });
+// From stage 8 (AC44, step 4, specs/S-001.md:2918-2921): the accepted card and question views are gone; these cases are
+// the desk's sheets over Waiting (AC80, AC85), answering through the same J3 links (AC43: "the same J3 links as the real
+// view, and nothing else").
+const sheetOf = (app) => byClass(app.view, 'v2-sheet')[0];
+const answerLinksIn = (el) => sbFindAll(el, (e) => e.tag === 'a' && /\/new\//.test(e.attrs.href || ''));
+const CARD = `#/waiting/card/${encodeURIComponent('Service-Desk|card|queue/P-001-stop-6.md')}`;
+
+test('Page AC16 (the desk from stage 8): a decision card\'s sheet offers one answer per option, each J3\'s link; the note typed in its box goes into them, kept across re-renders', async () => {
+  const app = await loadSandbox({ config: CONFIG, repos: sdRepos(), hash: CARD });
   try {
     await app.advance(1000);
-    const radios = findAll(app.els.view, (e) => e.tag === 'input' && e.attrs.type === 'radio');
-    assert.deepEqual(radios.map((r) => r.attrs.value), ['re-specify', 'criteria-wrong', 'confirm', 're-scope', 'drop']);
-    assert.equal(find(app.els.view, (e) => e.className === 'go'), null, 'no link before an option is picked');
-    const pick = radios.find((r) => r.attrs.value === 're-scope');
-    pick.listeners.change[0]();
-    const note = find(app.els.view, (e) => e.tag === 'textarea');
+    const links = answerLinksIn(sheetOf(app));
+    assert.deepEqual(links.map((a) => a.textContent), ['re-specify', 'criteria-wrong', 'confirm', 're-scope', 'drop'].map((w) => `Answer: ${w} ↗`));
+    // J3's file: the card's answer path, holding `Decision: <word>` and, with no note, nothing after it.
+    const valueOf = (href) => decodeURIComponent(/[?&]value=([^&]*)$/.exec(href)[1]);
+    for (const [i, w] of ['re-specify', 'criteria-wrong', 'confirm', 're-scope', 'drop'].entries()) {
+      assert.match(links[i].attrs.href, /^https:\/\/github\.com\/shumpmaster\/Service-Desk\/new\/main\?filename=decisions%2FP-001%2Fstop-6\.md&value=/, w);
+      assert.equal(valueOf(links[i].attrs.href).trim(), `Decision: ${w}`, w);
+    }
+    const note = sbFindAll(sheetOf(app), (e) => e.tag === 'textarea')[0];
     note.value = 'as agreed';
-    note.listeners.input[0]();
-    const go = find(app.els.view, (e) => e.className === 'go');
-    assert.equal(go.attrs.href, answerPlan(SD, CAP,
-      { kind: 'card', answerPath: 'decisions/P-001/stop-6.md', options: ['re-scope'] }, 're-scope', 'as agreed').url);
+    note.dispatch('input');
+    await app.flush();
+    const go = answerLinksIn(sheetOf(app)).find((a) => a.textContent === 'Answer: re-scope ↗');
+    assert.equal(go.attrs.href, answerPlan(SD, CAP, { kind: 'card', answerPath: 'decisions/P-001/stop-6.md', options: ['re-scope'] }, 're-scope', 'as agreed').url);
     assert.equal(go.attrs.target, '_blank');
-    // The next poll redraws the view; the draft is kept.
+    // The next poll redraws the sheet; the note is kept.
     await app.advance(60_000);
-    const go2 = find(app.els.view, (e) => e.className === 'go');
+    const go2 = answerLinksIn(sheetOf(app)).find((a) => a.textContent === 'Answer: re-scope ↗');
     assert.ok(go2 && go2.attrs.href.includes('as%20agreed'));
   } finally {
     app.restore();
   }
 });
 
-test('Page AC16: once the answer file is on main the card view says "already answered: <verdict>" and has no link', async () => {
+test('Page AC16 (the desk from stage 8): once the answer file is on main the card leaves "Waiting on you" for Done; its open sheet says so, with no answer link and no box', async () => {
   const repos = sdRepos();
-  const app = await loadApp({ hash: '#/p/Service-Desk/card/queue%2FP-001-stop-6.md', repos });
+  const app = await loadSandbox({ config: CONFIG, repos, hash: CARD });
   try {
     await app.advance(1000);
+    assert.equal(answerLinksIn(sheetOf(app)).length, 5);
     repos['Service-Desk'].commit({ 'decisions/P-001/stop-6.md': 'Decision: re-scope\n' });
     await app.advance(60_000);
-    const text = app.els.view.textContent;
-    assert.match(text, /already answered: re-scope/, 'the verdict the log records for this answer');
-    assert.equal(find(app.els.view, (e) => e.className === 'go'), null);
-    assert.equal(findAll(app.els.view, (e) => e.tag === 'input').length, 0);
+    const text = sheetOf(app).textContent;
+    assert.match(text, /That no longer waits on you: it is in Done\./, 'answered');
+    assert.equal(answerLinksIn(sheetOf(app)).length, 0, 'no link');
+    assert.equal(sbFindAll(sheetOf(app), (e) => e.tag === 'textarea').length, 0, 'no box');
+    const done = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'lane:done')[0];
+    assert.ok(done.textContent.includes('The work reached the stop rule. What happens next?'), 'in Done');
   } finally {
     app.restore();
   }
 });
 
-test('Page AC19: a v2.5 question view offers the ruling to copy, with the ledger note, and no link', async () => {
-  const app = await loadApp({ hash: '#/p/Personal-Org-Operating-Model/q/Q-020-x', repos: sdRepos() });
+test('Page AC19 (the desk from stage 8): a v2.5 question\'s sheet offers each ruling to copy, with the ledger note, and no link', async () => {
+  const copiedText = [];
+  const app = await loadSandbox({ config: CONFIG, repos: sdRepos(), hash: `#/waiting/card/${encodeURIComponent('Personal-Org-Operating-Model|question|questions/Q-020-x.md')}`,
+    globals: { navigator: { clipboard: { writeText: async (t) => { copiedText.push(t); } } } } });
   try {
     await app.advance(1000);
-    const radios = findAll(app.els.view, (e) => e.tag === 'input' && e.attrs.type === 'radio');
-    assert.deepEqual(radios.map((r) => r.attrs.value), ['A', 'B']);
-    radios[0].listeners.change[0]();
-    assert.match(app.els.view.textContent, /this repository records rulings in its ledger; give this to your session/);
-    assert.ok(find(app.els.view, (e) => e.tag === 'pre' && e.textContent === 'Ruling: A\n'));
-    assert.ok(find(app.els.view, (e) => e.tag === 'button' && e.textContent === 'Copy'));
-    assert.equal(find(app.els.view, (e) => e.className === 'go'), null);
+    const copies = sbFindAll(sheetOf(app), (e) => e.tag === 'button' && /^Copy answer [AB]$/.test(e.textContent));
+    assert.deepEqual(copies.map((b) => b.textContent), ['Copy answer A', 'Copy answer B']);
+    copies[0].click();
+    await app.flush();
+    assert.match(copiedText[0], /^Ruling: A\n/, 'the ruling text, to copy');
+    assert.ok(sheetOf(app).textContent.includes(V25_RULING_NOTE) || copiedText[0].includes(V25_RULING_NOTE), 'with the ledger note');
+    assert.equal(answerLinksIn(sheetOf(app)).length, 0, 'no link');
   } finally {
     app.restore();
   }

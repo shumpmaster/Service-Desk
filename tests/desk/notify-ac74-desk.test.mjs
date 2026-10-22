@@ -1,16 +1,18 @@
 // ac-test: S-001/AC74 — the desk's side of the tap (the sender's side is notify-ac74.test.mjs). From
 // 2026-10-19 (the owner's ruling "A. Go live now, switch later (Recommended)",
-// decisions/questions/P-001-notify-which-view.md) a tap opens the sandbox view, the owner's page:
-// - at `?sandbox&open=<key>` it opens that project and shows the item, in the sandbox's own design,
-//   marked "Opened from a notification": a card's, a question's and a pull request's response sheet;
-//   a deploy's row in the Queue's Deploys, with its run link; from stage 1a (AC80) the board, Waiting,
-//   with that card's sheet open over it, whatever its kind, a deploy's with its run link;
+// decisions/questions/P-001-notify-which-view.md) a tap opened the trial view at `?sandbox&open=<key>`; from
+// stage 8 (AC44, step 4; the notification view amendment, specs/S-001.md:1139-1142) the trial view is the desk,
+// a tap's address is `/?open=<key>`, and a `?sandbox` address from an old icon or an old notification opens
+// `/` with its other parameters kept, so nothing on the phone breaks:
+// - at `/?open=<key>` the desk opens that project and shows the item, in its own design, marked "Opened from
+//   a notification": from stage 1a (AC80) the board, Waiting, with that card's sheet open over it, whatever
+//   its kind, a deploy's with its run link;
 // - a key that no longer waits says "That no longer waits on you" and shows the project; a project
 //   that can't be read says so instead;
 // - the tap is followed once its project is read, and only once;
-// - `?sandbox&open=actions-usage` opens its More detail at the GitHub Actions line;
-// - the accepted view, given `/?open=<key>`, replaces it with `/?sandbox&open=<key>`; plain `/`
-//   stays the accepted view.
+// - `/?open=actions-usage` opens its More detail at the GitHub Actions line;
+// - an old `/?sandbox&open=<key>` or `/?sandbox` address: the address put right in place, `sandbox` dropped,
+//   the rest kept, and the tap followed; plain `/` is the desk's Home.
 // (The wait for AC77's closed read, and a held question shown as held, are in
 // notify-ac77-desk-reads.test.mjs.) The records are made up (tests/desk/fixtures/notify/made-up,
 // labelled NOT real in the README).
@@ -21,9 +23,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fixture, CONFIG } from './helpers.mjs';
 import { repo, pr } from './fake-desk.mjs';
-import { loadApp, findAll } from './page-harness.mjs';
 import { loadSandbox, byClass, findAll as sbFindAll } from './sandbox-helpers.mjs';
-import { openTarget, sandboxAddress, OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
+import { openTarget, deskAddress, OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { NOTIFY_FIX } from './notify-helpers.mjs';
 
 const made = (p) => readFileSync(join(NOTIFY_FIX, 'made-up', p), 'utf8');
@@ -45,9 +46,9 @@ function repos() {
   };
 }
 
-/** The sandbox opened by a tap, `?sandbox&open=<key>`, read once. */
+/** The desk opened by a tap, `/?open=<key>` from stage 8 (the notification view amendment), read once. */
 async function opened(key, extra = {}) {
-  const app = await loadSandbox({ config: CONFIG, repos: extra.repos || repos(), hash: '', search: SB(key), now: NOW, ...extra });
+  const app = await loadSandbox({ config: CONFIG, repos: extra.repos || repos(), hash: '', search: SEARCH(key), now: NOW, ...extra });
   await app.advance(1000);
   return app;
 }
@@ -66,12 +67,16 @@ test('AC74: the tap\'s address is read as AC73\'s key, the cost tap as actions-u
   assert.equal(openTarget(''), null);
   assert.equal(openTarget('?sandbox'), null);
   assert.equal(openTarget('?open=Service-Desk%7Cnot-a-kind%7Cx').kind, 'bad');
-  // The sandbox's address for an older one: `sandbox` added first, the rest kept.
-  assert.equal(sandboxAddress('/', SEARCH('Service-Desk|pr|108'), '#/x'), `/${SB('Service-Desk|pr|108')}#/x`);
-  assert.equal(sandboxAddress('/', '?sandbox&open=actions-usage', ''), '/?sandbox&open=actions-usage');
+  // From stage 8 (the notification view amendment, specs/S-001.md:1139-1142: "a `?sandbox` address ... opens `/` with
+  // its other parameters kept"): the desk's address for an older one, `sandbox` dropped, the rest and the route kept.
+  assert.equal(deskAddress('/', SB('Service-Desk|pr|108'), '#/x'), `/${SEARCH('Service-Desk|pr|108')}#/x`);
+  assert.equal(deskAddress('/', '?sandbox&open=actions-usage', ''), '/?open=actions-usage');
+  assert.equal(deskAddress('/', '?sandbox', '#/waiting'), '/#/waiting');
+  assert.equal(deskAddress('/', '?exp=1&sandbox=&open=x', ''), '/?exp=1&open=x', 'the others in their order');
+  assert.equal(deskAddress('/', SEARCH('Service-Desk|pr|108'), ''), `/${SEARCH('Service-Desk|pr|108')}`, 'none to drop: unchanged');
 });
 
-test('AC74 (2026-10-19) + AC80: the sandbox at ?sandbox&open=<a question\'s key> opens Waiting with its sheet, marked "Opened from a notification"; the address keeps ?sandbox only', async () => {
+test('AC74 + AC80 (from stage 8): the desk at /?open=<a question\'s key> opens Waiting with its sheet, marked "Opened from a notification"; the address left at /', async () => {
   const app = await opened('Service-Desk|question|questions/N-open.md');
   try {
     assert.equal(app.loc.hash, `#/waiting/card/${encodeURIComponent('Service-Desk|question|questions/N-open.md')}`);
@@ -80,7 +85,8 @@ test('AC74 (2026-10-19) + AC80: the sandbox at ?sandbox&open=<a question\'s key>
     assert.ok(sheet(app).textContent.includes('A made-up open question'));
     assert.ok(findKeyedIn(sheet(app), 'tap-banner'), 'the line in the sheet');
     assert.ok(byClass(app.view, 'v2-lanes').length, 'over the board');
-    assert.deepEqual(app.addresses, ['/?sandbox'], 'the ?open= dropped, so a reload doesn\'t follow it again');
+    // From stage 8 (the notification view amendment, specs/S-001.md:1139-1142): the address left is the desk's own, `/`.
+    assert.deepEqual(app.addresses, ['/'], 'the ?open= dropped, so a reload doesn\'t follow it again');
   } finally {
     app.restore();
   }
@@ -139,7 +145,7 @@ test('AC74 (2026-10-19): a key that no longer waits says "That no longer waits o
 test('AC74 (2026-10-19): the tap is followed once the project is read, not before; a project that can\'t be read says so; and only once', async () => {
   const r = repos();
   r['Service-Desk'].fail = { kind: 'network' };
-  const app = await loadSandbox({ config: CONFIG, repos: r, hash: '', search: SB('Service-Desk|question|questions/N-open.md'), now: NOW });
+  const app = await loadSandbox({ config: CONFIG, repos: r, hash: '', search: SEARCH('Service-Desk|question|questions/N-open.md'), now: NOW });
   try {
     await app.advance(1000);
     // Can't read: it opens the project and says so, rather than claiming the item no longer waits.
@@ -157,7 +163,7 @@ test('AC74 (2026-10-19): the tap is followed once the project is read, not befor
   }
 });
 
-test('AC74, AC78 (2026-10-19): ?sandbox&open=actions-usage opens the sandbox\'s More detail at the "GitHub Actions this month" line', async () => {
+test('AC74, AC78 (from stage 8): /?open=actions-usage opens the desk\'s More detail at the "GitHub Actions this month" line', async () => {
   const app = await opened('actions-usage');
   try {
     assert.equal(app.loc.hash, '#/p/Service-Desk', 'the project whose entry holds actionsUsage (J7)');
@@ -171,53 +177,65 @@ test('AC74, AC78 (2026-10-19): ?sandbox&open=actions-usage opens the sandbox\'s 
   }
 });
 
-test('AC74 (2026-10-19): the accepted view given /?open=<key> replaces it with /?sandbox&open=<key>; plain / stays the accepted view', async () => {
-  for (const key of ['Service-Desk|question|questions/N-open.md', 'Service-Desk|pr|108', 'actions-usage']) {
-    const app = await loadApp({ repos: repos(), search: SEARCH(key), hash: '', now: NOW });
+// From stage 8 (AC44, step 4, specs/S-001.md:2918-2921; the notification view amendment, :1139-1142: "a `?sandbox`
+// address, from an old icon or an old notification, opens `/` with its other parameters kept, so nothing on the phone
+// breaks"): the accepted view's forward to the trial view is gone with both; the page's own entry (app.js) now puts
+// an old `?sandbox` address right in place and draws the desk, and plain `/` is the desk's Home.
+// The counterpart of the accepted view's forward and of its "the address is not stripped first" (2026-10-19, found in
+// Chromium): the old address is put right with its `?open=` kept, and only then is the tap followed and dropped.
+test('AC74 (from stage 8): an old /?sandbox&open=<key> address is put right in place, sandbox dropped and the rest kept (the tap not stripped first), and its tap followed; /?sandbox opens the same screen at /', async () => {
+  for (const [key, landed] of [['Service-Desk|question|questions/N-open.md', /^#\/waiting\/card\//], ['Service-Desk|pr|108', /^#\/waiting\/card\//], ['actions-usage', /^#\/p\/Service-Desk$/]]) {
+    const app = await loadSandbox({ config: CONFIG, repos: repos(), hash: '', search: SB(key), now: NOW, entry: true });
     try {
       await app.advance(1000);
-      assert.deepEqual(app.replaced, [`/${SB(key)}`], key);
-      assert.equal(app.calls().length, 0, 'the accepted view does not start: the sandbox does');
+      assert.equal(app.addresses[0], `/${SEARCH(key)}`, `${key}: sandbox dropped, the tap kept, in place (no second load)`);
+      assert.match(app.loc.hash, landed, `${key}: the tap followed`);
+      assert.equal(app.addresses[app.addresses.length - 1], '/', 'then the ?open= dropped, as for any tap');
+      assert.ok(app.server.calls.some((c) => c.path === '/api/poll'), 'the desk reads');
     } finally {
       app.restore();
     }
   }
-  const app = await loadApp({ repos: repos(), search: '', hash: '#/', now: NOW });
+  let app = await loadSandbox({ config: CONFIG, repos: repos(), hash: '#/waiting', search: '?sandbox', now: NOW, entry: true });
   try {
     await app.advance(1000);
-    assert.deepEqual(app.replaced, [], 'plain /: no forward');
-    assert.ok(app.calls().some((c) => c.path === '/api/poll'), 'the accepted view reads as before');
-    assert.ok(findAll(app.els.view, (e) => e.attrs && e.attrs.id === 'more-detail').length, 'its Home, unchanged');
+    assert.deepEqual(app.addresses, ['/#/waiting'], 'the same screen at /');
+    assert.equal(app.loc.hash, '#/waiting');
+    assert.ok(byClass(app.view, 'v2-board').length, 'Waiting, drawn');
   } finally {
     app.restore();
   }
 });
 
-test('AC74 (2026-10-19): an older service worker handing a tap to the accepted view sends it on to the sandbox', async () => {
-  const nav = { listeners: [], replies: [] };
-  nav.serviceWorker = { addEventListener: (t, fn) => { if (t === 'message') nav.listeners.push(fn); } };
-  const app = await loadApp({ repos: repos(), search: '', hash: '#/', now: NOW, globals: { navigator: nav } });
+test('AC74 (from stage 8): plain / is the desk\'s Home, with nothing to put right; the accepted view\'s Home is gone (AC44, step 4)', async () => {
+  const app = await loadSandbox({ config: CONFIG, repos: repos(), hash: '', search: '', now: NOW, entry: true });
   try {
     await app.advance(1000);
-    for (const fn of nav.listeners) fn({ data: { kind: 'desk-open', navigate: `https://desk.example.invalid/${SEARCH('Service-Desk|pr|108')}` }, ports: [{ postMessage: (m) => nav.replies.push(m) }] });
-    assert.deepEqual(app.replaced, [`/${SB('Service-Desk|pr|108')}#/`]);
-    assert.deepEqual(nav.replies, [{ ok: true }]);
+    assert.deepEqual(app.addresses, [], 'plain /: nothing to put right');
+    assert.ok(app.server.calls.some((c) => c.path === '/api/poll'), 'the desk reads');
+    assert.ok(byClass(app.view, 'v2-home').length, 'the desk\'s Home');
+    assert.equal(sbFindAll(app.view, (e) => e.attrs && e.attrs.id === 'more-detail').length, 0, 'none of the accepted view\'s Home');
   } finally {
     app.restore();
   }
 });
 
-// Found in Chromium at 360×740 (2026-10-19): the accepted view's file must not strip `?open=` from the
-// address when it loads, or the forward, and the sandbox it loads, would lose the tap.
-test('AC74 (2026-10-19): with the browser\'s history, the forward still carries the tap; the address is not stripped first', async () => {
-  const stripped = [];
-  const history = { replaceState: (s0, t, u) => { stripped.push(u); } };
-  const app = await loadApp({ repos: repos(), search: SEARCH('Service-Desk|pr|108'), hash: '', now: NOW, globals: { history } });
-  try {
-    await app.advance(1000);
-    assert.deepEqual(app.replaced, [`/${SB('Service-Desk|pr|108')}`]);
-    assert.deepEqual(stripped, [], 'nothing replaced the address before the forward');
-  } finally {
-    app.restore();
+// From stage 8 (the notification view amendment, specs/S-001.md:1139-1142): every open desk window takes a tap the
+// service worker hands it (sw.js), whatever address the tap carries, an old `?sandbox` one among them.
+test('AC74 (from stage 8): a tap handed to an open desk, at /?open=<key> or at an old /?sandbox&open=<key>, is taken and followed', async () => {
+  for (const search of [SEARCH('Service-Desk|pr|108'), SB('Service-Desk|pr|108')]) {
+    const nav = { listeners: [], replies: [] };
+    nav.serviceWorker = { addEventListener: (t, fn) => { if (t === 'message') nav.listeners.push(fn); } };
+    const app = await loadSandbox({ config: CONFIG, repos: repos(), hash: '#/', search: '', now: NOW, globals: { navigator: nav } });
+    try {
+      await app.advance(1000);
+      for (const fn of nav.listeners) fn({ data: { kind: 'desk-open', navigate: `https://desk.example.invalid/${search}` }, ports: [{ postMessage: (m) => nav.replies.push(m) }] });
+      await app.advance(1000);
+      assert.deepEqual(nav.replies, [{ ok: true }], search);
+      assert.match(app.loc.hash, /^#\/waiting\/card\//, `${search}: the pull request's sheet`);
+      assert.equal(banner(app).textContent, OPENED_WORDS);
+    } finally {
+      app.restore();
+    }
   }
 });

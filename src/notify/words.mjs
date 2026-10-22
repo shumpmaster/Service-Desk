@@ -12,18 +12,18 @@ export function clean(text) {
   return String(text == null ? '' : text).replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-// From 2026-10-19 (the owner's ruling "A. Go live now, switch later (Recommended)",
-// decisions/questions/P-001-notify-which-view.md): every tap opens the sandbox view, the owner's page,
-// until MD3 makes it the desk; then the `sandbox` flag goes (AC74, J17).
+// From stage 8 (AC44, step 4; the notification view amendment: "the sender's tap addresses to `/?open=<key>` and
+// `/`"): every tap opens the desk at its plain address. From 2026-10-19 until then they carried `?sandbox`
+// (decisions/questions/P-001-notify-which-view.md); the desk still takes such an address (app.js).
 
-/** The tap's address for a key: `<deskUrl>/?sandbox&open=<key>`, the key URL-encoded (AC74). */
+/** The tap's address for a key: `<deskUrl>/?open=<key>`, the key URL-encoded (AC74). */
 export function openUrl(deskUrl, key) {
-  return `${deskUrl}/?sandbox&open=${encodeURIComponent(key)}`;
+  return `${deskUrl}/?open=${encodeURIComponent(key)}`;
 }
 
-/** A tap that opens Home (the grouped, start-up, "back on" and test notifications): `<deskUrl>/?sandbox`. */
+/** A tap that opens Home (the grouped, start-up, "back on" and test notifications): `<deskUrl>/`. */
 export function homeUrl(deskUrl) {
-  return `${deskUrl}/?sandbox`;
+  return `${deskUrl}/`;
 }
 
 /** One item's notification (AC74): title the project's name; body "Waits on you: <kind words>: <what>". */

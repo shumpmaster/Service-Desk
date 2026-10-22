@@ -1,6 +1,8 @@
 // ac-test: S-001/AC77 — the desk's reads for a held question (drafts 7 and 8; the hold's words and
-// its other ends are in notify-ac77-desk.test.mjs), on the accepted page with a fake clock and the
-// fake desk function:
+// its other ends are in notify-ac77-desk.test.mjs), on the desk with a fake clock and the fake desk
+// function (from stage 8, AC44 step 4, specs/S-001.md:2918-2921, the accepted page's cases are the desk's: the
+// question's sheet over Waiting, AC80 and AC85, with the board's "Being asked in your session" and "Your answer is
+// being recorded" lines):
 // - the closed read made only once every held question's raised time has arrived (a raised time a
 //   cycle late delaying it, none made before), drafts ending nothing, a full first page reading a
 //   second, a fourth needed failing, a failed read tried again at the next poll;
@@ -24,8 +26,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fixture, CONFIG } from './helpers.mjs';
 import { repo, pr } from './fake-desk.mjs';
-import { loadApp, findAll } from './page-harness.mjs';
-import { loadSandbox } from './sandbox-helpers.mjs';
+import { loadSandbox, findAll } from './sandbox-helpers.mjs';
 import { NOTIFY_FIX } from './notify-helpers.mjs';
 import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { HELD_WORDS, RECORDING_WORDS } from '../../src/lib/model.js';
@@ -57,8 +58,15 @@ const answerPr = (n, o = {}) => ({ ...pr(n, 'Record the answer to the next work'
 const closedPr = (n, o = {}) => ({ ...answerPr(n, o), state: 'closed', closed_at: o.closed || '2026-10-18T11:40:00Z', merged_at: o.merged || null,
   updated_at: o.updated || o.closed || '2026-10-18T11:40:00Z' });
 const merged = (from, count, at = '2026-10-18T13:00:00Z') => Array.from({ length: count }, (_, i) => closedPr(from + i, { merged: at, closed: at, updated: at }));
-const text = (app) => app.els.view.textContent;
-const answerLinks = (app) => findAll(app.els.view, (e) => e.tag === 'a' && /\/new\/main/.test(e.attrs.href || ''));
+/** Everything the screen shows, with the board's held and being-recorded lines opened (AC80's folds). */
+async function text(app) {
+  for (const k of ['asking', 'answerRecording', 'recording']) {
+    const ql = findAll(app.view, (e) => e.dataset && e.dataset.k === `ql:${k}`)[0];
+    if (ql && ql.attrs['aria-expanded'] === 'false') await app.tap(ql);
+  }
+  return app.view.textContent;
+}
+const answerLinks = (app) => findAll(app.view, (e) => e.tag === 'a' && /\/new\/main/.test(e.attrs.href || ''));
 const closedCalls = (app) => app.calls().filter((c) => c.path === '/api/blobs' && c.body.closed);
 const prsCalls = (app) => app.calls().filter((c) => c.path === '/api/blobs' && c.body.prs);
 function storage({ refuse = false } = {}) {
@@ -66,24 +74,21 @@ function storage({ refuse = false } = {}) {
   return { backing, getItem: (k) => (backing.has(k) ? backing.get(k) : null),
     setItem: (k, v) => { if (refuse) throw new Error('QuotaExceededError'); backing.set(k, v); }, removeItem: (k) => backing.delete(k) };
 }
-async function open(r, { now = RAISED_MS + 10 * MIN, hash = '#/p/Service-Desk/q/P-001-next-work', local, navigator, search = '' } = {}) {
-  const app = await loadApp({ repos: r, now, hash, search, globals: { ...(local ? { localStorage: local } : {}), ...(navigator ? { navigator } : {}) } });
-  await app.advance(1000);
-  return app;
-}
-/**
- * From 2026-10-19 a tap opens the sandbox (the owner's ruling "A. Go live now, switch later
- * (Recommended)"): the sandbox loaded, through the same handles as `open` gives.
- */
-async function openSb(r, { now = RAISED_MS + 10 * MIN, hash = '#/', navigator, search = '?sandbox' } = {}) {
-  const sb = await loadSandbox({ config: CONFIG, repos: r, now, hash, search, globals: { ...(navigator ? { navigator } : {}) } });
-  await sb.advance(1000);
-  return { ...sb, calls: () => sb.server.calls, state: () => sb.els['screen-state'], advance: (ms) => sb.advance(ms), flush: () => sb.flush(), restore: () => sb.restore() };
-}
 // From stage 1a (AC80): the board, Waiting, with the question's card sheet open over it; and the board
 // with its "Being asked in your session" fold open, where a held question shows.
 const SB_WAITING = `#/waiting/card/${encodeURIComponent('Service-Desk|question|questions/P-001-next-work.md')}`;
 const SB_HELD = '#/waiting';
+/**
+ * The desk loaded (from stage 8 it is `/`; the accepted page's question view went with AC44's step 4): by default at the
+ * question's sheet over Waiting, the accepted view's `#/p/Service-Desk/q/P-001-next-work`, with the handles the
+ * accepted page's loader gave.
+ */
+async function open(r, { now = RAISED_MS + 10 * MIN, hash = SB_WAITING, local = null, navigator, search = '' } = {}) {
+  const sb = await loadSandbox({ config: CONFIG, repos: r, now, hash, search, store: local, globals: { ...(navigator ? { navigator } : {}) } });
+  await sb.advance(1000);
+  return { ...sb, calls: () => sb.server.calls, state: () => sb.els['screen-state'], advance: (ms) => sb.advance(ms), flush: () => sb.flush(), restore: () => sb.restore() };
+}
+const openSb = (r, o = {}) => open(r, { hash: '#/', ...o });
 
 /** A page whose service worker can hand it a tap's address (sw.js's handover), and the replies it gave. */
 function swNavigator() {
@@ -104,7 +109,7 @@ test('AC77 (draft 7): the closed read waits for every held question\'s raised ti
   const r = repos([], { historyFail: (p) => failing && p === QPATH, closedPulls: [closedPr(98, { closed: '2026-10-18T11:35:00Z' })], prFiles: { 98: ADDS_ANSWER } });
   const app = await open(r);
   try {
-    assert.ok(text(app).includes(HELD_WORDS), 'held while the raised time is unread (the 8-hour fallback from first sight)');
+    assert.ok((await text(app)).includes(HELD_WORDS), 'held while the raised time is unread (the 8-hour fallback from first sight)');
     assert.equal(closedCalls(app).length, 0, 'none made before the raised time arrives');
     await app.advance(MIN);
     assert.equal(closedCalls(app).length, 0, 'still none');
@@ -112,8 +117,12 @@ test('AC77 (draft 7): the closed read waits for every held question\'s raised ti
     await app.advance(MIN);
     assert.equal(closedCalls(app).length, 1, 'made in the cycle the raised time arrived');
     assert.deepEqual(closedCalls(app)[0].body.closed, { since: '2026-10-18T11:26:23.000Z' });
-    assert.ok(!text(app).includes(HELD_WORDS));
-    assert.ok(answerLinks(app).length || text(app).includes('Pick an option'), 'waiting again');
+    assert.ok(!(await text(app)).includes(HELD_WORDS));
+    // Waiting again: its card back in "Waiting on you" (a held question's sheet address shows the board, AC80), and its sheet's answer links.
+    const lane = findAll(app.view, (e) => e.dataset && e.dataset.k === 'lane:wait')[0];
+    assert.ok(lane.textContent.includes('Which piece of later work comes next?'), 'a card again');
+    await app.go(SB_WAITING);
+    assert.ok(answerLinks(app).length, 'waiting again: its sheet\'s answer links');
     assert.equal(app.state().textContent, '1 waiting on you');
   } finally {
     app.restore();
@@ -125,7 +134,7 @@ test('AC77 (draft 7): a closed draft ends nothing; a full first page reads a sec
   let r = repos([], { closedPulls: [closedPr(97, { draft: true, closed: '2026-10-18T11:35:00Z' })], prFiles: { 97: ADDS_ANSWER } });
   let app = await open(r);
   try {
-    assert.ok(text(app).includes(HELD_WORDS));
+    assert.ok((await text(app)).includes(HELD_WORDS));
     assert.ok(!app.calls().some((c) => (c.body.files || []).includes(97)));
   } finally {
     app.restore();
@@ -135,7 +144,7 @@ test('AC77 (draft 7): a closed draft ends nothing; a full first page reads a sec
   app = await open(r);
   try {
     assert.equal(r['Service-Desk'].closedPagesRead, 2);
-    assert.ok(!text(app).includes(HELD_WORDS));
+    assert.ok(!(await text(app)).includes(HELD_WORDS));
     assert.equal(app.state().textContent, '1 waiting on you');
   } finally {
     app.restore();
@@ -145,7 +154,7 @@ test('AC77 (draft 7): a closed draft ends nothing; a full first page reads a sec
   app = await open(r);
   try {
     assert.equal(r['Service-Desk'].closedPagesRead, 3, 'never a fourth');
-    assert.ok(text(app).includes(HELD_WORDS));
+    assert.ok((await text(app)).includes(HELD_WORDS));
     assert.equal(app.state().textContent, 'Quiet');
     // Tried again at the next poll (draft 8, note B).
     await app.advance(MIN);
@@ -159,11 +168,11 @@ test('AC77 (draft 8): a failed closed read is tried again at the next poll, and 
   const r = repos([], { closedFail: (n) => n === 1, closedPulls: [closedPr(98, { closed: '2026-10-18T11:35:00Z' })], prFiles: { 98: ADDS_ANSWER } });
   const app = await open(r);
   try {
-    assert.ok(text(app).includes(HELD_WORDS), 'the first read failed: held');
+    assert.ok((await text(app)).includes(HELD_WORDS), 'the first read failed: held');
     assert.equal(app.state().textContent, 'Quiet');
     await app.advance(MIN);
     assert.equal(closedCalls(app).length, 2, 'tried again at the next poll');
-    assert.ok(!text(app).includes(HELD_WORDS));
+    assert.ok(!(await text(app)).includes(HELD_WORDS));
     assert.equal(app.state().textContent, '1 waiting on you');
     await app.advance(3 * MIN);
     assert.equal(closedCalls(app).length, 2, 'answered: not made again at the polls that follow');
@@ -181,19 +190,19 @@ test('AC77 (draft 7): the recorded pull request merged keeps "being recorded" wi
   const app = await open(r, { local });
   try {
     await app.advance(MIN);
-    assert.ok(text(app).includes(RECORDING_WORDS));
+    assert.ok((await text(app)).includes(RECORDING_WORDS));
     assert.deepEqual(JSON.parse(local.backing.get(ASKING_KEY))['Service-Desk'].recorded, { 'P-001-next-work': 91 }, 'the name and the pull request\'s number');
     r['Service-Desk'].pulls = []; // merged; the tree read has not caught it yet
     await app.advance(MIN);
     assert.deepEqual(prsCalls(app).map((c) => c.body.prs), [[91]]);
-    assert.ok(text(app).includes(RECORDING_WORDS), 'still being recorded');
+    assert.ok((await text(app)).includes(RECORDING_WORDS), 'still being recorded');
     assert.equal(answerLinks(app).length, 0, 'no stale answer link');
-    assert.ok(findAll(app.els.view, (e) => e.tag === 'a' && e.attrs.href === 'https://github.com/shumpmaster/Service-Desk/pull/91').length, 'its pull request\'s link');
+    assert.ok(findAll(app.view, (e) => e.tag === 'a' && e.attrs.href === 'https://github.com/shumpmaster/Service-Desk/pull/91').length, 'its pull request\'s link');
     await app.advance(MIN);
     assert.equal(prsCalls(app).length, 1, 'merged: not read again');
     r['Service-Desk'].commit({ [QPATH]: null, [ANSWER_PATH]: 'Ruling: A\n' });
     await app.advance(MIN);
-    assert.ok(!text(app).includes(RECORDING_WORDS));
+    assert.ok(!(await text(app)).includes(RECORDING_WORDS));
     assert.deepEqual(JSON.parse(local.backing.get(ASKING_KEY))['Service-Desk'].recorded, {}, 'pruned once the question is no longer open');
   } finally {
     app.restore();
@@ -208,7 +217,7 @@ test('AC77 (draft 7): the single read failing keeps "being recorded" and is trie
     r['Service-Desk'].pulls = [];
     await app.advance(MIN);
     assert.equal(prsCalls(app).length, 1);
-    assert.ok(text(app).includes(RECORDING_WORDS), 'kept');
+    assert.ok((await text(app)).includes(RECORDING_WORDS), 'kept');
     assert.equal(answerLinks(app).length, 0);
     assert.equal(app.state().textContent, 'Quiet', 'the question not counted; "read successfully" untouched');
     await app.advance(MIN);
@@ -216,7 +225,7 @@ test('AC77 (draft 7): the single read failing keeps "being recorded" and is trie
     r['Service-Desk'].prFail = [];
     await app.advance(MIN);
     assert.equal(prsCalls(app).length, 3);
-    assert.ok(!text(app).includes(RECORDING_WORDS) && !text(app).includes(HELD_WORDS));
+    assert.ok(!(await text(app)).includes(RECORDING_WORDS) && !(await text(app)).includes(HELD_WORDS));
     assert.equal(app.state().textContent, '1 waiting on you');
   } finally {
     app.restore();
@@ -229,7 +238,7 @@ test('AC77 (draft 7): at a later opening, the device\'s recorded pull request no
     let app = await open(repos([answerPr(91)], { prFiles: { 91: ADDS_ANSWER } }), { local });
     try {
       await app.advance(MIN);
-      assert.ok(text(app).includes(RECORDING_WORDS));
+      assert.ok((await text(app)).includes(RECORDING_WORDS));
     } finally {
       app.restore();
     }
@@ -240,11 +249,11 @@ test('AC77 (draft 7): at a later opening, the device\'s recorded pull request no
       await app.advance(MIN);
       assert.deepEqual(prsCalls(app).map((c) => c.body.prs), [[91]]);
       if (waits) {
-        assert.ok(!text(app).includes(RECORDING_WORDS) && !text(app).includes(HELD_WORDS));
+        assert.ok(!(await text(app)).includes(RECORDING_WORDS) && !(await text(app)).includes(HELD_WORDS));
         assert.equal(app.state().textContent, '1 waiting on you');
         assert.deepEqual(JSON.parse(local.backing.get(ASKING_KEY))['Service-Desk'].ended, ['P-001-next-work'], 'kept as found closed unmerged');
       } else {
-        assert.ok(text(app).includes(RECORDING_WORDS));
+        assert.ok((await text(app)).includes(RECORDING_WORDS));
         assert.equal(answerLinks(app).length, 0);
       }
     } finally {
@@ -260,13 +269,13 @@ test('AC77 (draft 7): a found end is kept on the device across openings, ended w
   const local = storage();
   let app = await open(repos([], { closedPulls: [closedPr(98, { closed: '2026-10-18T11:35:00Z' })], prFiles: { 98: ADDS_ANSWER } }), { local });
   try {
-    assert.ok(!text(app).includes(HELD_WORDS));
+    assert.ok(!(await text(app)).includes(HELD_WORDS));
   } finally {
     app.restore();
   }
   app = await open(repos([], { closedPulls: [] }), { local });
   try {
-    assert.ok(!text(app).includes(HELD_WORDS), 'still ended, off the pages');
+    assert.ok(!(await text(app)).includes(HELD_WORDS), 'still ended, off the pages');
     assert.equal(app.state().textContent, '1 waiting on you');
   } finally {
     app.restore();
@@ -274,13 +283,13 @@ test('AC77 (draft 7): a found end is kept on the device across openings, ended w
   const refused = storage({ refuse: true });
   app = await open(repos([], { closedPulls: [closedPr(98, { closed: '2026-10-18T11:35:00Z' })], prFiles: { 98: ADDS_ANSWER } }), { local: refused });
   try {
-    assert.ok(!text(app).includes(HELD_WORDS), 'found by the reads');
+    assert.ok(!(await text(app)).includes(HELD_WORDS), 'found by the reads');
   } finally {
     app.restore();
   }
   app = await open(repos([], { closedPulls: [closedPr(98, { closed: '2026-10-18T11:35:00Z' })], prFiles: { 98: ADDS_ANSWER } }), { local: refused });
   try {
-    assert.ok(!text(app).includes(HELD_WORDS), 'nothing kept, so the next opening\'s reads find it again');
+    assert.ok(!(await text(app)).includes(HELD_WORDS), 'nothing kept, so the next opening\'s reads find it again');
     assert.equal(closedCalls(app).length, 1);
   } finally {
     app.restore();
@@ -303,12 +312,12 @@ test('AC74, AC77 (draft 8): a tap reaching an already-open desk runs the closed 
     nav.tap(KEY);
     assert.deepEqual(nav.replies, [{ ok: true }], 'the page took the address: no reload');
     assert.equal(app.loc.hash, '#/', 'not shown before the read answers');
-    assert.ok(!text(app).includes(OPENED_WORDS));
+    assert.ok(!(await text(app)).includes(OPENED_WORDS));
     await app.advance(1000);
     assert.equal(closedCalls(app).length, 2, 'the closed read again, for the arrival');
     assert.equal(app.loc.hash, SB_WAITING);
-    assert.ok(text(app).includes(OPENED_WORDS));
-    assert.ok(!text(app).includes(HELD_WORDS));
+    assert.ok((await text(app)).includes(OPENED_WORDS));
+    assert.ok(!(await text(app)).includes(HELD_WORDS));
     assert.equal(app.state().textContent, '1 waiting on you', 'waiting, as the phone said');
   } finally {
     app.restore();
@@ -326,9 +335,9 @@ test('AC74, AC77 (draft 8): that read failing, the tapped question shows held, n
     await app.advance(1000);
     assert.equal(closedCalls(app).length, 2);
     assert.equal(app.loc.hash, SB_HELD);
-    assert.ok(text(app).includes(HELD_WORDS));
-    assert.ok(text(app).includes(OPENED_WORDS));
-    assert.ok(!text(app).includes(GONE_WORDS));
+    assert.ok((await text(app)).includes(HELD_WORDS));
+    assert.ok((await text(app)).includes(OPENED_WORDS));
+    assert.ok(!(await text(app)).includes(GONE_WORDS));
   } finally {
     app.restore();
   }
@@ -343,13 +352,11 @@ test('AC77 (drafts 8 and 9): a return to the foreground runs the closed read aga
     assert.equal(closedCalls(app).length, 1);
     const lastPoll = polls()[polls().length - 1].at;
     // Away 70 seconds: the return polls at once, and the closed read rides that poll.
-    app.doc.visibilityState = 'hidden';
-    app.fire('visibilitychange');
+    await app.visibility('hidden');
     await app.advance(70_000);
     r['Service-Desk'].closedPulls = [closedPr(98, { closed: '2026-10-18T11:45:00Z' })];
     r['Service-Desk'].prFiles = { 98: ADDS_ANSWER };
-    app.doc.visibilityState = 'visible';
-    app.fire('visibilitychange');
+    await app.visibility('visible');
     await app.advance(1000);
     assert.ok(polls()[polls().length - 1].at > lastPoll + 60_000, 'a poll at once');
     assert.equal(closedCalls(app).length, 2, 'the closed read again, in that poll\'s cycle');
@@ -369,11 +376,9 @@ test('AC77 (draft 9, Desk 5; the Reviewer\'s probe G): five returns within 25 se
     const c0 = closedCalls(app).length;
     const last = polls()[n0 - 1].at;
     for (let i = 0; i < 5; i++) {
-      app.doc.visibilityState = 'hidden';
-      app.fire('visibilitychange');
+      await app.visibility('hidden');
       await app.advance(2000);
-      app.doc.visibilityState = 'visible';
-      app.fire('visibilitychange');
+      await app.visibility('visible');
       await app.advance(3000);
     }
     assert.equal(polls().length, n0, 'no poll of their own: A2\'s one poll a minute holds');
@@ -389,14 +394,14 @@ test('AC77 (draft 9, Desk 5; the Reviewer\'s probe G): five returns within 25 se
 
 test('AC74, AC77 (draft 8): a held question whose history read fails: no closed read, the hold standing, and a tap showing it held', async () => {
   const r = repos([], { historyFail: (p) => p === QPATH, closedPulls: [closedPr(98, { closed: '2026-10-18T11:35:00Z' })], prFiles: { 98: ADDS_ANSWER } });
-  const app = await openSb(r, { hash: '', search: `?sandbox&open=${encodeURIComponent(KEY)}` });
+  const app = await openSb(r, { hash: '', search: `?open=${encodeURIComponent(KEY)}` });
   try {
     await app.advance(MIN);
     assert.equal(closedCalls(app).length, 0, 'no closed read');
     assert.equal(app.loc.hash, SB_HELD);
-    assert.ok(text(app).includes(HELD_WORDS));
-    assert.ok(text(app).includes(OPENED_WORDS));
-    assert.ok(!text(app).includes(GONE_WORDS));
+    assert.ok((await text(app)).includes(HELD_WORDS));
+    assert.ok((await text(app)).includes(OPENED_WORDS));
+    assert.ok(!(await text(app)).includes(GONE_WORDS));
   } finally {
     app.restore();
   }
@@ -444,7 +449,7 @@ test('AC74, AC77 (draft 9, Desk 7): a tap during a closed read in flight waits f
     await app.advance(MIN);
     assert.equal(closedCalls(app).length, 3, 'the retry, and a fresh read for the tap');
     assert.equal(app.loc.hash, SB_WAITING);
-    assert.ok(!text(app).includes(HELD_WORDS), 'shown from the fresh read: waiting, not held');
+    assert.ok(!(await text(app)).includes(HELD_WORDS), 'shown from the fresh read: waiting, not held');
     assert.equal(app.state().textContent, '1 waiting on you');
   } finally {
     app.restore();
@@ -456,12 +461,12 @@ test('AC77 (draft 9, Desk 4; the Reviewer\'s probe E): a found closed pull reque
   const app = await open(r);
   const reads98 = () => app.calls().filter((c) => c.path === '/api/blobs' && (c.body.files || []).includes(98)).length;
   try {
-    assert.ok(text(app).includes(HELD_WORDS), 'its file read failed: the hold stands');
+    assert.ok((await text(app)).includes(HELD_WORDS), 'its file read failed: the hold stands');
     const n = reads98();
     r['Service-Desk'].filesFail = [];
     await app.advance(MIN);
     assert.equal(reads98(), n + 1, 'tried again at the next poll, not after 5 minutes');
-    assert.ok(!text(app).includes(HELD_WORDS));
+    assert.ok(!(await text(app)).includes(HELD_WORDS));
     assert.equal(app.state().textContent, '1 waiting on you');
   } finally {
     app.restore();
@@ -471,15 +476,19 @@ test('AC77 (draft 9, Desk 4; the Reviewer\'s probe E): a found closed pull reque
 test('AC77 (draft 9, Desk 3; the Reviewer\'s probe B): a recorded pull request that has left the open list reads "PR #<n>" alone, never ": null"', async () => {
   const r = repos([answerPr(91)], { prFiles: { 91: ADDS_ANSWER }, prAnswers: { 91: closedPr(91, { merged: '2026-10-18T11:50:00Z', closed: '2026-10-18T11:50:00Z' }) } });
   const app = await open(r);
-  const prLink = () => findAll(app.els.view, (e) => e.tag === 'a' && /\/pull\/91$/.test(e.attrs.href || '')).map((a) => a.textContent);
+  const prLink = () => findAll(app.view, (e) => e.tag === 'a' && /\/pull\/91$/.test(e.attrs.href || '')).map((a) => a.textContent);
   try {
     await app.advance(MIN);
-    assert.ok(prLink().some((t) => t === 'PR #91: Record the answer to the next work'), 'open: with its title');
+    // On the desk the "Your answer is being recorded" line's link reads "PR #<n>" (AC80's fold); the open pull
+    // request's title is on its own card in "Waiting on you".
+    await text(app);
+    assert.ok(prLink().includes('PR #91'), 'open: its number');
+    assert.ok(findAll(app.view, (e) => e.dataset && e.dataset.k === 'lane:wait')[0].textContent.includes('Record the answer to the next work'), 'open: its title on its card');
     r['Service-Desk'].pulls = [];
     await app.advance(2 * MIN);
-    assert.ok(text(app).includes(RECORDING_WORDS));
-    assert.ok(prLink().includes('PR #91'), JSON.stringify(prLink()));
-    assert.ok(!text(app).includes('null'));
+    assert.ok((await text(app)).includes(RECORDING_WORDS));
+    assert.deepEqual(prLink(), ['PR #91'], 'left the open list: "PR #91" alone');
+    assert.ok(!(await text(app)).includes('null'));
   } finally {
     app.restore();
   }

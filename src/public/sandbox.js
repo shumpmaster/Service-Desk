@@ -2042,7 +2042,7 @@ function sheetList(sx, wholeWords, fullText, files) {
 function sheetFoot(sx, why, unblocks = null) {
   const { v } = sx;
   return h('div', { class: 'v2-blk v2-foot', key: 'sheet-foot' }, unblocks,
-    why ? h('p', { class: 'v2-small', key: 'foot-why' }, h('span', { class: 'v2-fk' }, 'Why it is here: '), why) : null,
+    why ? h('p', { class: 'v2-small', key: 'foot-why' }, h('span', { class: 'v2-fk' }, 'Why it is here: '), codeWords(why)) : null,
     h('p', { class: 'v2-small', key: 'foot-checked' }, h('span', { class: 'v2-fk' }, 'What was checked: '), v.checked),
     v.links && v.links.length ? h('p', { class: 'v2-small', key: 'links' }, v.links.map((l, i) => [i ? ' · ' : '', ext(l.href, l.text, 'v2-lnk') || `${l.text}: no file recorded`])) : null);
 }

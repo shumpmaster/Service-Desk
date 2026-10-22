@@ -487,6 +487,9 @@ test('AC85 a gate\'s sheet: "<Phase> gate: <the card\'s question>"; "The case op
       [['approve'], ['Reason:'], ['Into: <Phase>', 'Reason:'], ['Proxy:']], 'each `…` a code element, its words as text');
     assert.ok(!opts.some((o) => byClass(o, 'v2-od')[0].textContent.includes('`')), 'no raw backtick');
     assert.match(rule('.v2-code'), /font-family: var\(--mono\)/);
+    // The foot's "Why it is here", the card's section 2, the same way.
+    assert.equal(keyed(app, 'foot-why').textContent, "Why it is here: Route launch-gate of governance/ROUTING.toml (model S-012) sends this card to the owner. NOT a real record: made up for AC85's test.");
+    assert.deepEqual(findAll(keyed(app, 'foot-why'), (e) => e.tag === 'code').map((c) => c.textContent), ['launch-gate']);
     assert.deepEqual(opts.map((o) => byClass(o, 'v2-rec').length), [1, 0, 0, 0], '"Recommended" on the case\'s recommendation (proceed), never the Critic\'s (recycle)');
     assert.deepEqual(opts.map((o) => (keyed(app, 'kill-lock') && o.contains(keyed(app, 'kill-lock')) ? keyed(app, 'kill-lock').textContent : null)), [null, null, null, "Can't be undone"]);
     assert.ok(findAll(keyed(app, 'kill-lock'), (e) => e.tag === 'svg' && /vi-lock/.test(e.attrs.class)).length, 'with the lock');

@@ -1301,7 +1301,7 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-stats { align-items: center; }
 .v2-timeline .v2-stats .sb-mkw, .v2-timeline .v2-stats .sb-mkw > summary { font: 400 11px/1.35 var(--font); color: var(--ink2); }
 .v2-timeline .v2-stats span.sb-mkw, .v2-timeline .v2-stats .sb-mkw > summary { display: inline-flex; align-items: center; gap: 2px; }
-.v2-stats .v2-mk { width: 10px; height: 10px; }
+.v2-stats .v2-smk { width: 10px; height: 10px; color: inherit; } /* the ✕ in its word's --ink2, as frame 7b draws the marks */
 .v2-spt { font: var(--t-row); overflow-wrap: break-word; margin: 0; }
 .v2-bl { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 8px; align-items: start; padding-left: 8px; border-left: 2px solid var(--line2); }
 .v2-bn { font: var(--t-label); color: var(--ink2); padding-top: 1px; }

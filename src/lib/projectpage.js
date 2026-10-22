@@ -62,9 +62,12 @@ export function throughWords(k) {
  * `waits` is { n, read } (the board's count for the project and its read state); until the project is
  * read the waits part is left out, never a quiet "Nothing waits on you" (Part A item 5; C).
  */
+const UNREAD_SENTENCE = `Where it's heading: ${NOT_AVAILABLE} until the project's records are read.`;
 export function pageSentence(ctx, { snap, waits = null } = {}) {
   const { project, pv } = ctx;
   if (project.model !== 'v3') {
+    // Not read yet: where it is heading is unknown, said in words as Home's tile says it, never "No open sprint."
+    if (!(snap && snap.tree)) return UNREAD_SENTENCE;
     const s = sprintStrip(snap);
     const open = s.tracked && s.open ? s.open : null;
     const many = s.tracked && s.rows && s.rows[0].cells.filter((c) => c.state === 'now').length > 1;
@@ -73,7 +76,7 @@ export function pageSentence(ctx, { snap, waits = null } = {}) {
     return `${first} ${waits.n > 0 ? `${waits.n} ${waits.n === 1 ? 'waits' : 'wait'} on you.` : 'Nothing waits on you.'}`;
   }
   if (!ctx.tl || !pv || !pv.tracked) {
-    return pv && pv.why === 'Phases: reading…' ? `Where it's heading: ${NOT_AVAILABLE} until the project's records are read.` : 'Phases not tracked.';
+    return pv && pv.why === 'Phases: reading…' ? UNREAD_SENTENCE : 'Phases not tracked.';
   }
   if (pv.done) return 'Done.';
   const now = ctx.now;

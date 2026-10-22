@@ -20,7 +20,7 @@ import { j77Files, j77Tree, poomFiles, snapOf, SD, POOM, TZ } from './wa-fixture
 import { STANDARD_MILESTONES, NOT_RECORDED_IDS } from '../../src/lib/timeline.js';
 import { j11Records, timelineOf, phaseView } from '../../src/lib/sandbox.js';
 import { runsContext } from '../../src/lib/feed.js';
-import { pageSentence, firstPart, phaseStrip, ranAgainLines, milestonesByPhase, detailWords, PAGE_WORDS, STANDARD_TOTAL } from '../../src/lib/projectpage.js';
+import { pageSentence, firstPart, phaseStrip, phaseLine, ranAgainLines, milestonesByPhase, detailWords, v25Rows, PAGE_WORDS, STANDARD_TOTAL } from '../../src/lib/projectpage.js';
 import { topLine } from '../../src/lib/versions.js';
 
 const NOW = Date.parse('2026-10-19T21:00:00Z');
@@ -576,4 +576,37 @@ test('J9 + AC83 (specs/S-001.md:6834-6835; the Reviewer\'s N2, stage 3 round 1):
   } finally {
     app.restore();
   }
+});
+
+test('AC83 + AC84 (specs/S-001.md:6755-6759, :6885-6889; the Reviewer\'s NB2, stage 3 round 2): a v2.5 project not read yet says where it is heading is not available — on its page and in the phase line atop its Timeline and Team screen — never "No open sprint."; once read with no sprint files, "No open sprint." stands', async () => {
+  const UNREAD = "Where it's heading: not available until the project's records are read.";
+  const p = { ...ctxOf().ctx, project: PUB };
+  assert.equal(pageSentence(p, { snap: null, waits: { n: 0, read: 'cant-read' } }), UNREAD, 'no tree: nothing known of its sprints');
+  assert.equal(phaseLine(p, { snap: null }).words, UNREAD);
+  assert.equal(pageSentence(p, { snap: snapOf({ 'docs/LEDGER.md': poomFiles()['docs/LEDGER.md'] }, 'v2.5'), waits: { n: 0, read: 'ok' } }), 'No open sprint. Nothing waits on you.', 'read, with no sprint files');
+  const r = repo({ ...poomFiles(), ...POOM_PLACEHOLDER });
+  r.fail = { kind: 'network' };
+  const app = await loadSandbox({ config: { ...CONFIG, ownerTimeZone: TZ, projects: [PUB] }, repos: { 'Personal-Org-Operating-Model': r }, hash: '#/p/Personal-Org-Operating-Model', now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(61_000);
+    assert.equal(keyed(app, 'sentence').textContent, UNREAD, 'the page');
+    for (const screen of ['timeline', 'team']) {
+      await app.go(`#/p/Personal-Org-Operating-Model/${screen}`);
+      const phl = byClass(app.view, 'v2-phl')[0];
+      assert.ok(phl, `the ${screen} screen's phase line`);
+      assert.equal(byClass(phl, 'v2-phlw')[0].textContent, UNREAD, `the ${screen} screen's phase line`);
+    }
+    await app.go('#/');
+    assert.ok(app.text().includes('Now: not available'), 'Home\'s tile, in the same words');
+    assert.doesNotMatch(app.text(), /No open sprint/);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC83 (specs/S-001.md:6832-6833; the Reviewer\'s N-d, stage 3 round 2): a v2.5 project\'s CI row with no model — "not available" before its tree is read, "not recorded" once it is', () => {
+  assert.equal(v25Rows(PUB, null, null, NOW, TZ).ci, 'CI on main: not available');
+  assert.equal(v25Rows(PUB, null, snapOf({ ...poomFiles() }, 'v2.5'), NOW, TZ).ci, 'CI on main: not recorded');
+  assert.equal(v25Rows(PUB, { ci: 'passing' }, null, NOW, TZ).ci, 'CI on main: passing', 'the model\'s state when it has one');
 });

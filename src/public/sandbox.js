@@ -1113,7 +1113,8 @@ function detailsNode(p) {
     h('summary', { class: 'v2-prow', key: 'more-detail' }, h('span', { class: 'v2-pmk', 'aria-hidden': 'true' }),
       h('span', { class: 'v2-prt' }, h('span', { class: 'v2-prtt soft' }, PAGE_WORDS.details), h('span', { class: 'v2-small' }, PAGE_WORDS.detailsSmall)), vi('chev', 'v2-k v2-chev')),
     h('section', { class: 'v2-pdbody' },
-      h('p', { class: 'v2-small' }, `CI on ${project.defaultBranch}: ${model ? model.ci : NOT_RECORDED}`),
+      // No model yet (nothing read): "not available", never "not recorded" (the Reviewer's N-d, stage 3 round 2).
+      h('p', { class: 'v2-small' }, `CI on ${project.defaultBranch}: ${model ? model.ci : NOT_AVAILABLE}`),
       // AC68: a v3 project's Pipeline view folds into the Timeline; its record notes get their own screen.
       h('ul', { class: 'v2-links' },
         project.model === 'v3' ? null : h('li', {}, h('a', { class: 'v2-lnk', href: go('p', name, 'pipeline'), key: 'more:pipeline' }, 'Reduced view and waits')),
@@ -2144,12 +2145,14 @@ const FEED_STC = { check: 'check', pastcheck: 'pastcheck', half: 'half', next: '
 /**
  * A sprint's mark (AC60): a mark and a word, never colour alone; its reason one tap away when it has
  * one. ✕, which no Plex file the desk serves holds, is drawn as an icon, its word beside it (AC81;
- * AC84 "every word stays"); ✓ and – are Plex's own, as frame 7b writes them.
+ * AC84 "every word stays"), and named for assistive technology, "failed", as the icon is hidden from
+ * it (AC81: an icon-drawn mark "keeps its word or its accessible name"); ✓ and – are Plex's own, as
+ * frame 7b writes them.
  */
-const MARK_ICON = { '✕': 'bad' };
+const MARK_ICON = { '✕': { icon: 'bad', name: 'failed' } };
 function markNode(m) {
   const icon = MARK_ICON[m.mark];
-  const words = [icon ? vi(icon, 'v2-k v2-mk') : m.mark ? `${m.mark} ` : null, m.word];
+  const words = [icon ? [vi(icon.icon, 'v2-k v2-smk'), h('span', { class: 'sb-vh' }, `${icon.name} `)] : m.mark ? `${m.mark} ` : null, m.word];
   if (!m.why) return h('span', { class: 'sb-mkw' }, words);
   return h('details', { class: 'sb-mkw sb-why' }, h('summary', {}, words), h('p', { class: 'v2-small' }, m.why));
 }

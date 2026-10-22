@@ -462,5 +462,34 @@ test('AC84 (specs/S-001.md:6917-6922; the Design reviewer\'s 1 and 2, stage 3 ro
   const small = CSS.indexOf('\n.v2-timeline .sb-why, .v2-timeline .sb-why > summary');
   assert.ok(small > 0 && CSS.indexOf('\n.v2-timeline .v2-stats .sb-mkw, ') > small, 'after it, and heavier (three classes)');
   assert.match(rule('.v2-timeline .v2-stats span.sb-mkw, .v2-timeline .v2-stats .sb-mkw > summary'), /display: inline-flex; align-items: center; gap: 2px;/);
-  assert.match(rule('.v2-stats .v2-mk'), /width: 10px; height: 10px;/, 'the ✕ icon at the marks\' size');
+  // Its own class, not the board card's .v2-mk (--ink): drawn in currentColor, its word's --ink2 (AC81, specs/S-001.md:6514-6516; the Reviewer's N-a, round 2).
+  assert.match(rule('.v2-stats .v2-smk'), /^ width: 10px; height: 10px; color: inherit; $/, 'the ✕ icon at the marks\' size, in its word\'s colour');
+  assert.match(rule('.v2-k'), /stroke: currentColor;/);
+});
+
+test('AC81 + AC84 (specs/S-001.md:6512-6517, "each keeps its word or its accessible name"; the Reviewer\'s NB1 and N-b, stage 3 round 2): a failed check reads "failed checks" to assistive technology, its icon hidden, never only "checks" as a passed one\'s "✓ checks" would; each mark keeps its own word', async () => {
+  // The accessible text: every text node not inside an aria-hidden part, as a screen reader reads it.
+  const said = (el) => {
+    if (!el.tag) return el.textContent;
+    if (el.attrs && el.attrs['aria-hidden'] === 'true') return '';
+    return el.children.map(said).join('');
+  };
+  const app = await open();
+  try {
+    const marks = (id) => {
+      const sp = findAll(app.view, (e) => e.attrs && e.attrs['data-sprint'] === id)[0];
+      return byClass(byClass(sp, 'v2-sph')[0], 'v2-stats')[0].children.filter((c) => c.tag).map((m) => flat(said(m.tag === 'details' ? m.children.find((c) => c.tag === 'summary') : m)));
+    };
+    assert.deepEqual(marks('PR #40'), ['✓ merged', '✓ review', 'failed checks'], 'J11\'s #40: its checks failed (AC60\'s "✕ checks")');
+    assert.deepEqual(marks('PR #44'), ['✓ merged', '✓ review', '✓ checks'], '#44: passed');
+    assert.notEqual(marks('PR #40')[2], marks('PR #44')[2], 'a failed check never reads as a passed one');
+    const sp40 = findAll(app.view, (e) => e.attrs && e.attrs['data-sprint'] === 'PR #40')[0];
+    const icon = findAll(sp40, (e) => e.tag === 'svg' && /\bvi-bad\b/.test(e.attrs.class || ''))[0];
+    assert.equal(icon.attrs['aria-hidden'], 'true', 'the icon itself hidden from assistive technology');
+    assert.deepEqual(icon.attrs.class.split(' '), ['v2-k', 'v2-smk', 'vi-bad'], 'the marks row\'s own class, never the board card\'s .v2-mk (--ink; the Reviewer\'s N-a)');
+    assert.equal(byClass(sp40, 'sb-vh').map((x) => x.textContent).join(''), 'failed ', 'its name in visually hidden text');
+  } finally {
+    app.restore();
+  }
+  assert.match(RAW, /\n\.sb-vh \{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect\(0 0 0 0\); white-space: nowrap; \}/, 'hidden from sight, read aloud');
 });

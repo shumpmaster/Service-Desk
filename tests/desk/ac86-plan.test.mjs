@@ -212,32 +212,167 @@ test('AC86: a rough finish written shorter at a row\'s right — "<d>–<d> <Mon
   assert.equal(shortRange('2026-12-30', '2027-01-02', t), '30 Dec – 2 Jan 2027');
 });
 
-test('AC86: the vermilion ◆ and "after your ruling" where a gate card waits on the owner for the milestone; a question naming it keeps the row\'s icon and adds AC24\'s "<n> waiting on you in your Queue"', async () => {
-  // A made-up Launch-gate card (NOT a real record: AC85's fixture) whose `Milestone:` line names M3C.
-  const card = fixture('ac85/queue/P-003-launch-1.md').replace(/(answer: [^\n]*\n)/, '$1Milestone: M3C\n');
+// The build review's B1 (stage 5, round 1): a waiting gate card is a row of its own at the top of its
+// project's group, as frame 11 draws it ("Launch gate · waits on you", desk-v2.html:840), taken as Home's tile
+// takes it (any gate card waiting in the project, AC82); no milestone row loses its icon or finish to it. A
+// reading for the Definer to confirm.
+const GATE_ID = 'Service-Desk|gate|queue/P-003-launch-1.md';
+/** A made-up Launch-gate card (NOT a real record: AC85's fixture), its `Milestone:` line as given, or none, and its dispatch line. */
+function gateExtra(milestoneLine) {
+  const base = fixture('ac85/queue/P-003-launch-1.md');
+  const card = milestoneLine == null ? base : base.replace(/(answer: [^\n]*\n)/, `$1${milestoneLine}\n`);
   const log = `${j77Files()['dispatch-log/2026-10.jsonl'].trimEnd()}\n${JSON.stringify({ item: 'P-003', action: 'card', card: 1, gate: 'launch', role: 'user-rep', route: 'launch-gate', stage: 6, gate_n: 1, time: '2026-10-18T15:00:00Z', trigger: 'x' })}\n`;
-  const q = fixture('notify/ac77-real/questions/P-001-next-work.md').replace('Milestone: M3A', 'Milestone: MD3').replace('Which piece of later work comes next?', 'A made-up question for MD3');
-  const app = await open({ extra: { 'intake/estimates.jsonl': WORKED(), 'queue/P-003-launch-1.md': card, 'dispatch-log/2026-10.jsonl': log, 'questions/P-001-made-up-md3.md': q } });
+  return { 'queue/P-003-launch-1.md': card, 'dispatch-log/2026-10.jsonl': log };
+}
+const gateRows = (app) => findAll(app.view, (e) => cls(e, 'v2-plli') && e.attrs && e.attrs['data-gate'] != null);
+const WORKED_RIGHT = ['your acceptance', 'your acceptance', '21–23 Oct', '25–30 Oct', '27 Oct – 3 Nov', '29 Oct – 6 Nov'];
+const WORKED_ICONS = ['st-half', 'st-half', 'st-next', 'st-planned', 'st-planned', 'st-planned'];
+
+test('AC86 (B1): a gate card in the model\'s real form, its `Milestone:` line every milestone of the spec — one gate row of its own at the top of the group, the ◆, "<Phase> gate · waits on you", "after your ruling"; every milestone row keeps its icon and finish', async () => {
+  const app = await open({ extra: { 'intake/estimates.jsonl': WORKED(), ...gateExtra('Milestone: M1, M2, M2B, MD1, MD2, MD3, M3A, M3B, M3C') } });
   try {
-    const r = rows(app);
-    assert.deepEqual(parts(r[5]), { icon: 'st-you', name: 'The desk live at the needs-you address', mono: 'M3C · Launch · about 2–3 days', right: 'after your ruling' });
-    assert.deepEqual(byClass(r[5], 'v2-plyou').map((x) => x.textContent), ['1 waiting on you in your Queue']);
-    assert.deepEqual(parts(r[2]).icon, 'st-next', 'a question: the state\'s own icon');
-    assert.equal(parts(r[2]).right, '21–23 Oct');
-    assert.deepEqual(byClass(r[2], 'v2-plyou').map((x) => x.textContent), ['1 waiting on you in your Queue']);
-    // The ◆'s word is beside it for the reader, and its rough finish is still in its sheet in AC24's words.
-    await app.go('#/work/ms/Service-Desk/M3C');
-    const sh = byClass(app.view, 'v2-sheet')[0];
-    assert.equal(byClass(sh, 'v2-plfin')[0].textContent, '29 Oct – 6 Nov');
-    assert.equal(byClass(sh, 'v2-plyou')[0].textContent, '1 waiting on you in your Queue');
+    const g = gateRows(app);
+    assert.equal(g.length, 1, 'exactly one gate row');
+    const list = byClass(findKeyed(app, 'wa-grp:Service-Desk'), 'v2-rows')[0];
+    assert.equal(list.children[0], g[0], 'at the top of its project\'s group');
+    assert.equal(g[0].attrs['data-gate'], GATE_ID);
+    const title = 'The Launch gate: the launch review passed. The case for going live and graduating the product, with its own monitoring and feedback confirmed running, is in the gate document. Proceed, hold, recycle or kill?';
+    assert.deepEqual(parts(g[0]), { icon: 'st-you', name: title, mono: 'Launch gate · waits on you', right: 'after your ruling' }, 'the card\'s title, as the board shows it');
+    assert.equal(byClass(g[0], 'v2-plrow')[0].attrs.href, `#/waiting/card/${encodeURIComponent(GATE_ID)}`, 'it opens the gate card\'s sheet on Waiting');
+    await app.go('#/waiting');
+    assert.equal(findKeyed(app, `cardlink:${GATE_ID}`).textContent, title, 'the same title on the board');
+    await app.go('#/work');
+    assert.deepEqual(rows(app).map((r) => parts(r).icon), WORKED_ICONS, 'each milestone its own state\'s icon');
+    assert.deepEqual(rows(app).map((r) => parts(r).right), WORKED_RIGHT, 'each its own finish, and "your acceptance" for AC24\'s "once you accept it"');
+    assert.equal(textRuns(byClass(findKeyed(app, 'wa-grp:Service-Desk'), 'v2-plh')[0], () => false)[1], '6', 'the count: milestones ahead, the gate not among them');
+    // AC24's own rule is unchanged: a card whose `Milestone:` line names a milestone counts on that row.
+    assert.ok(rows(app).every((r) => byClass(r, 'v2-plyou').map((x) => x.textContent).join() === '1 waiting on you in your Queue'));
+    // In the ordering the gate is no row: it is in no order and no plan.
+    await app.tap(findKeyed(app, 'plan-order'));
+    assert.equal(gateRows(app).length, 0);
+    assert.doesNotMatch(new URL(findKeyed(app, 'wa-record').attrs.href).searchParams.get('value'), /gate|P-003/);
   } finally {
     app.restore();
   }
-  // The same in the view itself, from a gate card row (pure).
+});
+
+test('AC86 (B1): a gate card with no `Milestone:` line still gives its gate row; Home\'s tile and Plan agree ("Next: the Launch gate, after your ruling" and Plan\'s ◆ row); with none waiting, neither shows one', async () => {
+  for (const [label, extra] of [['no Milestone: line', gateExtra(null)], ['one milestone named', gateExtra('Milestone: M3C')]]) {
+    const app = await open({ hash: '#/', extra: { 'intake/estimates.jsonl': WORKED(), ...extra } });
+    try {
+      const next = byClass(findKeyed(app, 'card:Service-Desk'), 'v2-ln').map((l) => l.textContent).find((t) => /^Next:/.test(t));
+      assert.equal(next, 'Next: the Launch gate, after your ruling', `${label}: Home`);
+      await app.go('#/work');
+      assert.equal(gateRows(app).length, 1, `${label}: Plan`);
+      assert.deepEqual(rows(app).map((r) => parts(r).right), WORKED_RIGHT, `${label}: every finish kept`);
+      assert.deepEqual(rows(app).map((r) => parts(r).icon), WORKED_ICONS, `${label}: every icon kept`);
+      // Marked done on this device: it leaves the board, so both lose it at once (AC80).
+      await app.go(`#/waiting/card/${encodeURIComponent(GATE_ID)}`);
+      await app.tap(findKeyed(app, 'sheet-done'));
+      await app.go('#/work');
+      assert.equal(gateRows(app).length, 0, `${label}: marked done, no gate row`);
+      await app.go('#/');
+      assert.doesNotMatch(byClass(findKeyed(app, 'card:Service-Desk'), 'v2-ln').map((l) => l.textContent).join('\n'), /gate, after your ruling/, `${label}: nor on Home`);
+    } finally {
+      app.restore();
+    }
+  }
+  const none = await open({ extra: { 'intake/estimates.jsonl': WORKED() } });
+  try {
+    assert.equal(gateRows(none).length, 0);
+    assert.ok(rows(none).every((r) => parts(r).icon !== 'st-you'));
+  } finally {
+    none.restore();
+  }
+});
+
+test('AC86: a question naming a milestone keeps the row\'s icon and finish and adds AC24\'s "<n> waiting on you in your Queue", its ◆ vermilion beside words in ink; the same line in the sheet', async () => {
+  const q = fixture('notify/ac77-real/questions/P-001-next-work.md').replace('Milestone: M3A', 'Milestone: MD3').replace('Which piece of later work comes next?', 'A made-up question for MD3');
+  const app = await open({ extra: { 'intake/estimates.jsonl': WORKED(), 'questions/P-001-made-up-md3.md': q } });
+  try {
+    const r = rows(app)[2];
+    assert.deepEqual([parts(r).icon, parts(r).right], ['st-next', '21–23 Oct']);
+    const you = byClass(r, 'v2-plyou')[0];
+    assert.equal(you.textContent, '1 waiting on you in your Queue');
+    assert.match(findAll(you, (e) => e.tag === 'svg')[0].attrs.class, /\bst-you\b/);
+    await app.go('#/work/ms/Service-Desk/MD3');
+    assert.equal(byClass(byClass(app.view, 'v2-sheet')[0], 'v2-plyou')[0].textContent, '1 waiting on you in your Queue');
+  } finally {
+    app.restore();
+  }
+  // The view: a gate card naming a milestone no longer touches that row (pure).
   const gateRow = { flag: { kind: 'card', card: { gate: 'launch', parsed: { text: 'answer: write `x`\nMilestone: M3B\n' } } } };
   const v = viewOf({ extra: { 'intake/estimates.jsonl': WORKED() }, nowMs: NOW, rows: [gateRow] });
   const m3b = v.rows.find((x) => x.code === 'M3B');
-  assert.deepEqual([m3b.icon, m3b.right, m3b.waiting, m3b.gate], ['you', { kind: 'ruling', words: 'after your ruling' }, 1, true]);
+  assert.deepEqual([m3b.icon, m3b.right, m3b.waiting], ['planned', { kind: 'finish', words: '27 Oct – 3 Nov' }, 1]);
+});
+
+// The build review's B2 (stage 5, round 1): J14's "a newer estimate line could not be read" under the
+// estimate the row shows (specs/S-001.md:10361-10364), on the row and in the sheet.
+test('AC86 with J14: a newer estimate line that can\'t be read — the row says "a newer estimate line could not be read" under the estimate it shows, and so does its sheet; no other row says it', async () => {
+  const bad = JSON.stringify({ time: '2026-10-18T17:30:00Z', project: 'Service-Desk', milestone: 'MD3', low_days: 9.5, high_days: 12, note: '', session: 'made_up' });
+  const app = await open({ extra: { 'intake/estimates.jsonl': `${WORKED()}${bad}\n` } });
+  try {
+    const r = rows(app)[2];
+    assert.equal(parts(r).mono, 'MD3 · Design · about 3–5 days', 'the estimate it shows, the older line\'s');
+    assert.deepEqual(byClass(r, 'v2-plnewer').map((x) => x.textContent), ['a newer estimate line could not be read']);
+    assert.ok(rows(app).filter((x) => x !== r).every((x) => byClass(x, 'v2-plnewer').length === 0));
+    await app.go('#/work/ms/Service-Desk/MD3');
+    const sh = byClass(app.view, 'v2-sheet')[0];
+    assert.equal(byClass(sh, 'v2-plest')[0].textContent, 'about 3–5 days of work · your Chief of Staff, 18 Oct');
+    assert.deepEqual(byClass(sh, 'v2-plnewer').map((x) => x.textContent), ['a newer estimate line could not be read']);
+    await app.go('#/work/ms/Service-Desk/MD2');
+    assert.equal(byClass(byClass(app.view, 'v2-sheet')[0], 'v2-plnewer').length, 0);
+  } finally {
+    app.restore();
+  }
+});
+
+// The Design reviewer's finding 1 (stage 5, round 1): grouped by project, a reason naming another project's
+// milestone says whose it is, as Home's tile does (AC82); within a project, AC24's words as they are.
+test('AC86: a rough finish not available because of another project\'s milestone names that project ("not available: Example\'s MD1 has no estimate yet") on the row, in the sheet and on the card; within one project, AC24\'s words', async () => {
+  const EX = { ...SD, name: 'Example', repo: 'example/made-up', planning: false };
+  const name = '2026-10-18T1130Z-01';
+  const plan = `Plan: ${name}\nSupersedes: none\n\n| Order | Project | Milestone |\n|---|---|---|\n| 1 | Service-Desk | MD1 |\n| 2 | Example | MD1 |\n| 3 | Service-Desk | MD2 |\n`;
+  const app = await open({ projects: [SD, EX, POOM], more: { Example: repo(j77Files()) }, extra: { [`docs/planning/${name}.md`]: plan, 'intake/estimates.jsonl': WORKED() } });
+  try {
+    const gap = (project, id) => {
+      const g = findKeyed(app, `wa-grp:${project}`);
+      const r = findAll(g, (e) => e.attrs && e.attrs['data-row'] === id)[0];
+      return byClass(r, 'v2-plgap').map((x) => x.textContent);
+    };
+    assert.deepEqual(gap('Service-Desk', 'MD1'), [], 'before it: its own finish');
+    assert.deepEqual(gap('Service-Desk', 'MD2'), ['Rough finish: not available: Example\'s MD1 has no estimate yet']);
+    assert.deepEqual(gap('Example', 'MD1'), ['Estimate: not made yet', 'Rough finish: not available: MD1 has no estimate yet'], 'its own: AC24\'s words');
+    assert.deepEqual(gap('Example', 'MD2'), ['Estimate: not made yet', 'Rough finish: not available: MD1 has no estimate yet']);
+    await app.go('#/work/ms/Service-Desk/MD2');
+    assert.equal(byClass(byClass(app.view, 'v2-sheet')[0], 'v2-plfin')[0].textContent, 'not available: Example\'s MD1 has no estimate yet');
+    await app.go('#/work');
+    await app.tap(findKeyed(app, 'plan-order'));
+    assert.equal(byClass(app.view, 'v2-plbig')[0].textContent, 'not available: Example\'s MD1 has no estimate yet', 'the card adds up both projects');
+  } finally {
+    app.restore();
+  }
+  // One project: AC24's words, the card too.
+  const one = await open({ extra: { 'intake/estimates.jsonl': WORKED().split('\n').filter((l) => !l.includes('"MD3"')).join('\n') } });
+  try {
+    await one.tap(findKeyed(one, 'plan-order'));
+    assert.equal(byClass(one.view, 'v2-plbig')[0].textContent, 'not available: MD3 has no estimate yet');
+  } finally {
+    one.restore();
+  }
+});
+
+test('AC86 with AC24: the state line reads "Current plan · recorded <date>, <time>", with AC24\'s "·" (specs/S-001.md:8444; the Design reviewer\'s finding 2)', async () => {
+  const name = '2026-10-18T1130Z-01';
+  const app = await open({ extra: { [`docs/planning/${name}.md`]: planText(name, ['M3A', 'MD3']) } });
+  try {
+    const st = byClass(app.view, 'v2-plstate')[0];
+    assert.deepEqual(textRuns(st, () => false), ['Current plan', '· recorded 18 Oct, 06:30']);
+    assert.equal(st.textContent, 'Current plan · recorded 18 Oct, 06:30');
+  } finally {
+    app.restore();
+  }
 });
 
 test('AC86: the groups — one for each connected v3 project, "<project> · milestones ahead" with its count, in the order of each project\'s first milestone in the owner\'s one order; in the ordering, that one order as one list, each row naming its project', async () => {
@@ -366,7 +501,7 @@ test('AC86: Plan\'s records stay where they are (P-001-portfolio-plan.md, A): th
   const app = await open({ extra: { [`docs/planning/${name}.md`]: planText(name, ['M3A', 'MD3']), 'intake/estimates.jsonl': WORKED() } });
   try {
     assert.deepEqual(rows(app).map((r) => parts(r).mono.split(' · ')[0]), ['M3A', 'MD3', 'MD1', 'MD2', 'M3B', 'M3C']);
-    assert.equal(byClass(app.view, 'v2-plstate')[0].textContent, 'Current plan recorded 18 Oct, 06:30');
+    assert.equal(byClass(app.view, 'v2-plstate')[0].textContent, 'Current plan · recorded 18 Oct, 06:30');
     await app.tap(findKeyed(app, 'plan-order'));
     const u = new URL(findKeyed(app, 'wa-record').attrs.href);
     assert.equal(u.origin + u.pathname, 'https://github.com/shumpmaster/Service-Desk/new/main');

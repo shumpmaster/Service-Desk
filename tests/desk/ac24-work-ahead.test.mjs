@@ -435,6 +435,9 @@ test('AC24: an estimate\'s note longer than two lines is clipped to two, with th
 
 // ---------------------------------------------------------------------------
 // Moving rows, the draft and recording the plan
+//
+// "Current plan · recorded <date>, <time>" with AC24's "·" (specs/S-001.md:8444; the Design reviewer's finding 2,
+// stage 5 round 1): the state line's words before had lost it.
 
 test('AC24: moving rows by tap, Enter and Space — the ends disabled, focus kept on the control, the gold edge and "moved", every finish recomputed, "Changed · not recorded"', async () => {
   const store = memStore();
@@ -499,7 +502,7 @@ test('AC24: the draft is kept on the device through a refresh, and set aside whe
     assert.deepEqual(codesOf(again), ['M3C', 'MD1', 'MD2', 'MD3', 'M3A', 'M3B']);
     assert.match(again.text(), /A newer plan was recorded; your draft was set aside/);
     assert.equal(store.m.has(DRAFT_KEY), false);
-    assert.match(byClass(again.view, 'v2-plstate')[0].textContent, /^Current plan recorded 18 Oct, 13:05$/);
+    assert.match(byClass(again.view, 'v2-plstate')[0].textContent, /^Current plan · recorded 18 Oct, 13:05$/);
   } finally {
     again.restore();
   }
@@ -544,7 +547,7 @@ test('AC24: "Record plan" — the link\'s path and its body exactly in J4\'s for
     waSetupRepo(app).commit({ [`docs/planning/${name}.md`]: body });
     await app.advance(61_000);
     assert.deepEqual(codesOf(app), order);
-    assert.equal(byClass(app.view, 'v2-plstate')[0].textContent, 'Current plan recorded 18 Oct, 13:01');
+    assert.equal(byClass(app.view, 'v2-plstate')[0].textContent, 'Current plan · recorded 18 Oct, 13:01');
     assert.match(app.text(), /No changes yet/);
     assert.doesNotMatch(app.text(), /No plan recorded yet/);
     // The next one supersedes it, with the next free name.
@@ -564,7 +567,7 @@ test('AC24: a current plan\'s order; a milestone the plan does not list after th
     assert.deepEqual(codesOf(app), ['M3C', 'MD3', 'M3A', 'MD1', 'MD2', 'M3B']);
     assert.deepEqual(rows(app).filter((r) => byClass(r, 'v2-pltag').some((t) => t.textContent === 'not in your recorded plan')).map(codeOf),
       ['MD1', 'MD2', 'M3B']);
-    assert.equal(byClass(app.view, 'v2-plstate')[0].textContent, 'Current plan recorded 18 Oct, 06:30');
+    assert.equal(byClass(app.view, 'v2-plstate')[0].textContent, 'Current plan · recorded 18 Oct, 06:30');
   } finally {
     app.restore();
   }
@@ -806,7 +809,7 @@ test('AC24 (build review round 1, C): the owner records their own draft — once
     await app.advance(61_000);
     assert.deepEqual(codesOf(app), ['MD1', 'MD2', 'M3A', 'MD3', 'M3B', 'M3C']);
     assert.doesNotMatch(app.text(), /A newer plan was recorded; your draft was set aside/);
-    assert.match(byClass(app.view, 'v2-plstate')[0].textContent, /^Current plan recorded 18 Oct, 13:01$/);
+    assert.match(byClass(app.view, 'v2-plstate')[0].textContent, /^Current plan · recorded 18 Oct, 13:01$/);
     assert.equal(store.m.has(DRAFT_KEY), false, 'the draft cleared');
     assert.match(app.text(), /No changes yet/);
     // A draft in another order when a plan lands: the notice.

@@ -4,12 +4,13 @@
 // plan, the estimates, the later-work list), the owner's draft order and the clock. Pure: no network,
 // no DOM, no storage. The sandbox (src/public/sandbox.js) draws it.
 
-import { milestoneRule, STATUS_MARK, sprintList, ownParts, PHASE_CLASS } from './feed.js';
+import { milestoneRule, STATUS_MARK, FEED_ICON, sprintList, ownParts, PHASE_CLASS } from './feed.js';
+import { GATE_WORDS } from './j11.js';
 import { reachedDateWords } from './sandbox.js';
 import { cappedNewFileLink } from './links.js';
 import {
   WA, planningProject, planFiles, planPath, nextPlanName, planTime, planBody, ESTIMATES_PATH, LATER_WORK_PATH, latestEstimates,
-  estimateStanding, estimateWords, pastWords, roughFinish, dateWords, todayOf, msKey, laterRows, askPath, askBody,
+  estimateStanding, estimateWords, pastWords, roughFinish, dateWords, todayOf, msKey, laterRows, askPath, askBody, shortRange, aboutDays,
 } from './workahead.js';
 import { dayKey, hhmm } from './timefmt.js';
 
@@ -38,29 +39,40 @@ function stateOf(ctx, m) {
   const underway = sprints.length > 0 && !m.reached;
   if (!run) {
     // No run holds it (the model's timeline not read): the words from its plan line alone.
-    return { words: underway ? `Work filed: ${sprintList(sprints)}` : WA.noWork, mark: underway ? 'dashed' : 'empty', underway, rule: null };
+    return { words: underway ? `Work filed: ${sprintList(sprints)}` : WA.noWork, mark: underway ? 'dashed' : 'empty', icon: underway ? 'unrec' : 'planned', underway, rule: null };
   }
   const x = milestoneRule(ctx, run, 'own', run.project.find((y) => y.id === m.id));
   const mark = STATUS_MARK[x.rule];
-  if (x.rule === 2) return { words: WA.nextToReach, mark, underway, rule: 2 };
-  if (x.rule === 4) return { words: WA.goneBack, mark, underway, rule: 4 };
-  if (x.rule === 7) return { words: WA.noWork, mark: 'empty', underway, rule: 7 };
+  // From stage 5 (AC86): the row's icon is the one the project's page gives the same milestone (AC59's,
+  // FEED_ICON, as frame 11 draws them), so Plan and the page never differ.
+  const icon = FEED_ICON[x.rule];
+  if (x.rule === 2) return { words: WA.nextToReach, mark, icon, underway, rule: 2 };
+  if (x.rule === 4) return { words: WA.goneBack, mark, icon, underway, rule: 4 };
+  if (x.rule === 7) return { words: WA.noWork, mark: 'empty', icon, underway, rule: 7 };
   // Rules 3 and 6 in Status's own words; rule 9 (work filed in a run not recorded) as Status shows it.
-  return { words: x.status, mark, underway, rule: x.rule };
+  return { words: x.status, mark, icon, underway, rule: x.rule };
 }
 
-/** How many questions and cards in a project's Queue name a milestone on their own `Milestone:` line (AC24, AC66). */
+/**
+ * How many questions and cards in a project's Queue name a milestone on their own `Milestone:` line
+ * (AC24, AC66): { n, gates }, `gates` those that are gate cards (AC86: the vermilion ◆ and "after your
+ * ruling" where a gate card waits on the owner).
+ */
 function waitingOn(rows, id) {
   let n = 0;
+  let gates = 0;
   for (const row of rows || []) {
     const f = row && row.flag;
     if (!f) continue;
     let parts = null;
     if (f.kind === 'question' && f.question && f.question.parsed) parts = ownParts(f.question.parsed.text || '', 'question');
     else if (f.kind === 'card' && f.card && f.card.parsed) parts = ownParts(f.card.parsed.text || '', 'card');
-    if (parts && parts.milestone && parts.milestone.ids && parts.milestone.ids.includes(id)) n++;
+    if (parts && parts.milestone && parts.milestone.ids && parts.milestone.ids.includes(id)) {
+      n++;
+      if (f.kind === 'card' && GATE_WORDS.includes(f.card.gate)) gates++;
+    }
   }
-  return n;
+  return { n, gates };
 }
 
 /**
@@ -188,8 +200,9 @@ export function workAheadView({ config, entries, snaps, nowMs, tz, draft }) {
   const rows = order.map((k, i) => {
     const x = byKey.get(k);
     const st = stateOf(x.entry.ctx, x.m);
+    const w = waitingOn(x.entry.rows, x.code);
     const r = { ...x, index: i, place: String(i + 1), placeWords: placeWords(i, order.length), state: st, notInPlan: marked.has(k),
-      phase: x.m.phase, phaseClass: PHASE_CLASS[x.m.phase] || null, done: x.m.done, waiting: waitingOn(x.entry.rows, x.code),
+      phase: x.m.phase, phaseClass: PHASE_CLASS[x.m.phase] || null, done: x.m.done, waiting: w.n, gate: w.gates > 0,
       first: i === 0, last: i === order.length - 1 };
     r.estimate = { kind: est.kind === 'ok' ? 'missing' : est.kind === 'none' ? 'missing' : 'na', words: est.kind === 'na' ? WA.estimateNA : WA.noEstimate, note: null, newer: false };
     r.standing = null;
@@ -204,8 +217,12 @@ export function workAheadView({ config, entries, snaps, nowMs, tz, draft }) {
         if (s.kind === 'zero') r.estimate = { kind: 'zero', words: `${WA.zeroZero} · ${WA.byCoS}, ${made}`, note: e.note || null, newer: r.estimate.newer };
         else if (s.kind === 'past') r.estimate = { kind: 'past', words: pastWords(e, made), note: e.note || null, newer: r.estimate.newer };
         else r.estimate = { kind: 'ok', words: `${estimateWords(e.low, e.high)} · ${WA.byCoS}, ${made}${s.stale ? ` · ${WA.mayBeOld}` : ''}`, stale: s.stale, note: e.note || null, newer: r.estimate.newer };
+        // AC86: "about <low>–<high> days" on the row where J14 gives an estimate (its own days of work).
+        if (s.kind === 'ok') r.days = aboutDays(e.low, e.high);
       }
     }
+    // Plan's row (AC86, frame 11): "<id> · <phase>", then the estimate's days where there is one.
+    r.mono = [r.code, r.phase, r.days || null, r.estimate.stale ? WA.mayBeOld : null].filter(Boolean).join(' · ');
     return r;
   });
   let card = WA.notAvailable;
@@ -216,6 +233,27 @@ export function workAheadView({ config, entries, snaps, nowMs, tz, draft }) {
       if (r.finish.stop) r.finish.stop = { ...r.finish.stop, project: rows[r.finish.stop.index].project.name };
     });
     card = rows.length ? rf.card : WA.notAvailable;
+  }
+  // Each row's value at its right (AC86, frame 11): its rough finish, shorter ("22–25 Oct"); "your
+  // acceptance" for AC24's "once you accept it"; "after your ruling" where a gate card waits on the owner.
+  // None where the finish is not available: the row then says why, in AC24's words.
+  for (const r of rows) {
+    if (r.gate) r.right = { kind: 'ruling', words: WA.afterRuling };
+    else if (r.finish && r.finish.accept) r.right = { kind: 'accept', words: WA.yourAcceptance };
+    else if (r.finish && r.finish.from) r.right = { kind: 'finish', words: shortRange(r.finish.from, r.finish.to, today) };
+    else r.right = null;
+    r.icon = r.gate ? 'you' : r.state.icon;
+  }
+  // One group for each connected v3 project, in the order of its first milestone in the order shown
+  // (AC86: one owner order across projects, shown grouped, as drawn).
+  const groups = [];
+  for (const r of rows) {
+    let g = groups.find((x) => x.project === r.project);
+    if (!g) {
+      g = { project: r.project, key: r.project.name, words: WA.ahead(r.project.name), rows: [] };
+      groups.push(g);
+    }
+    g.rows.push(r);
   }
 
   // The state line and the bar (AC24, "Recording the plan").
@@ -281,7 +319,9 @@ export function workAheadView({ config, entries, snaps, nowMs, tz, draft }) {
 
   return {
     header: { eyebrow: WA.eyebrow, title: WA.title, sub: WA.toGo(toGo.length, reached.length) },
-    many, rows, order, baseOrder, changed, keep, setAside, ready, plan, orderLine, stateLine, card, est: est.kind, record, later,
+    // From stage 5 (AC86, frame 11): the title, its line, the groups, and the ideas' words until the desk reads the portfolio (AC87).
+    tab: { title: WA.planTitle, sub: WA.planSub(dateWords(today, today)), ideas: WA.ideasNotRead },
+    groups, many, rows, order, baseOrder, changed, keep, setAside, ready, plan, orderLine, stateLine, card, est: est.kind, record, later,
     reached, dropped, older, unread, notes, planner: planner ? planner.name : null, today,
   };
 }

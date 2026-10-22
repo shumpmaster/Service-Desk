@@ -926,8 +926,6 @@ function v5Line(built) {
 // the milestones by phase, the project's own and the model's standard ones together; then the rest.
 // Every rule is lib/projectpage.js's (and AC57's, in lib/feed.js); this draws it on mockup v2's tokens.
 
-/** A milestone's or a run's mark (AC57): beside its words, never alone (kept for Work ahead's rows, AC24). */
-const mk = (mark) => h('span', { class: `sb-mk m-${mark}`, 'aria-hidden': 'true' });
 
 /** Why a run began (AC70): its date, the ruling's reason quoted, its source one tap from the whole record; or "not recorded" in the agents' grey (AC69). */
 function beganNode(b) {
@@ -1438,6 +1436,8 @@ const V2_ICONS = {
   you: { vb: 16, fill: ['M8 1.8l6.2 6.2L8 14.2 1.8 8z'] },
   back: { vb: 24, d: ['M15 5l-7 7 7 7'] },
   up: { vb: 16, fill: ['M8 3.5l4.5 7.5h-9z'] },
+  down: { vb: 16, fill: ['M8 12.5l4.5-7.5h-9z'] },
+  order: { vb: 24, d: ['M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4'] },
   chev: { vb: 16, d: ['M6 4l4 4-4 4'] },
   chevdown: { vb: 16, d: ['M4 6l4 4 4-4'] },
   bad: { vb: 16, d: ['M4.5 4.5l7 7M11.5 4.5l-7 7'] },
@@ -2882,53 +2882,95 @@ function moveRow(key, dir) {
   render();
 }
 
-/** A move control (AC24): a real button, used by a tap, a click, or Enter or Space; at an end it says it is disabled and does nothing, keeping the focus. */
+/** A move control (AC24): a real button, used by a tap, a click, or Enter or Space; at an end it says it is disabled and does nothing, keeping the focus. Its arrow an icon (AC81: no served file holds ▲ or ▼). */
 function moveButton(r, dir) {
   const off = dir < 0 ? r.first : r.last;
   const words = dir < 0 ? WA.moveUp(r.code) : WA.moveDown(r.code);
   const act = () => { if (!off) moveRow(r.key, dir); };
-  return h('button', { type: 'button', class: 'sb-wa-mv', key: `wa-${dir < 0 ? 'up' : 'down'}:${r.key}`, 'aria-label': words, 'aria-disabled': off ? 'true' : null,
+  return h('button', { type: 'button', class: 'v2-plmv', key: `wa-${dir < 0 ? 'up' : 'down'}:${r.key}`, 'aria-label': words, 'aria-disabled': off ? 'true' : null,
     onclick: act,
     onkeydown: (e) => {
       if (!e || (e.key !== 'Enter' && e.key !== ' ')) return;
       if (e.preventDefault) e.preventDefault();
       act();
-    } }, h('span', { 'aria-hidden': 'true' }, dir < 0 ? '▲' : '▼'));
+    } }, vi(dir < 0 ? 'up' : 'down', 'v2-k'));
 }
 
-/** One milestone's row (AC24, as the mockup draws it, version 2). */
-function waRow(v, r) {
+// ---------------------------------------------------------------------------
+// Plan (AC86; desk mockup v2, frame 11), from stage 5: AC24's Work ahead in the Plan tab, top down,
+// next first (P-001-plan-order.md, A). Every rule is AC24's, in lib/workview.js; only its place and
+// look change. The title "Plan" with "⇅", which opens AC24's ordering; the line under it; one group
+// for each connected v3 project, each row its icon, name, "<id> · <phase> · about <low>–<high> days"
+// and its value at the right, a tap opening its sheet with AC24's whole row; then the v2.5 lines,
+// "Not milestones yet" and "Ideas · from the portfolio".
+
+/** The address of a milestone's sheet over Plan (AC86): its whole row in AC24's words. */
+const planMsRoute = (r) => go('work', 'ms', r.project.name, r.code);
+
+/** "<n> waiting on you in your Queue" (AC24), linked to the board with that project shown (AC80); the ◆ beside it in the owner's vermilion (AC69, AC81). */
+function planYou(r, where) {
+  return h('p', { class: 'v2-plyou', key: `wa-you:${where}:${r.key}` }, h('a', { href: go('waiting', r.project.name), key: `wa-q:${where === 'row' ? '' : 'sheet:'}${r.key}` },
+    stc('you', 'v2-k'), `${r.waiting} waiting on you in your Queue`));
+}
+
+/**
+ * One milestone's row on Plan (AC86, frame 11; AC24's rules): its icon (AC57's state as the page draws
+ * it, or the vermilion ◆ where a gate card waits on the owner), its name, "<id> · <phase> · about
+ * <low>–<high> days", and at the right its rough finish, "your acceptance" or "after your ruling". Where
+ * AC24 gives no estimate or no finish, the row says so in AC24's words. In the ordering (⇅): its place
+ * and the two move controls (AC24).
+ */
+function planRow(v, r, ordering) {
   const moved = planDraft.moved === r.key;
   const est = r.estimate;
-  const kids = [
-    h('p', { class: 'sb-wa-name' }, r.name),
-    h('p', { class: 'sb-wa-meta' }, code(r.code), v.many ? h('span', { class: 'sb-wa-proj' }, r.project.name) : null,
-      r.phase ? h('span', { class: `sb-wa-ph ${r.phaseClass || ''}` }, r.phase) : null,
-      h('span', { class: 'sb-wa-st' }, mk(r.state.mark), r.state.words)),
-    r.notInPlan ? h('p', { class: 'sb-wa-tag' }, WA.notInPlan) : null,
-    r.done ? h('p', { class: 'sb-wa-done' }, `Done when ${r.done}`) : null,
-    h('p', { class: `sb-wa-est ${est.kind}` }, est.kind === 'missing' || est.kind === 'na'
-      ? est.words : [h('span', { class: 'sb-wa-k' }, WA.estimateKey), ' ', h('span', {}, est.words)]),
-    est.note ? h('div', { class: 'sb-wa-note' }, lineBox(`wa-note:${r.key}`, { words: est.note, recCode: `${r.code}'s estimate note`, title: 'Estimate note', lines: 2 })) : null,
-    est.newer ? h('p', { class: 'sb-wa-newer' }, WA.newerUnreadable) : null,
-    r.finish ? h('p', { class: `sb-wa-fin${r.finish.na ? ' na' : ''}` }, `${WA.finish}: `, h('b', {}, r.finish.words)) : null,
-    r.waiting ? h('p', { class: 'sb-wa-you' }, h('a', { href: go('waiting', r.project.name), key: `wa-q:${r.key}` },
-      `${r.waiting} waiting on you in your Queue`)) : null,
-  ];
-  return h('li', { class: `sb-wa-row${r.phaseClass ? ` ${r.phaseClass}` : ''}${moved ? ' moved' : ''}`, key: `wa-row:${r.key}` },
-    h('span', { class: 'sb-wa-ord' }, h('span', { 'aria-hidden': 'true' }, r.place), h('span', { class: 'sb-vh' }, `${r.placeWords}${moved ? ', moved' : ''}`)),
-    h('div', { class: 'sb-wa-body' }, kids),
-    h('div', { class: 'sb-wa-move' }, moveButton(r, -1), moveButton(r, 1)));
+  const under = [];
+  if (est.kind === 'missing' || est.kind === 'na' || est.kind === 'past') under.push(h('p', { class: 'v2-small v2-plgap', key: `gap:est:${r.key}` }, est.words));
+  if (r.finish && r.finish.na) under.push(h('p', { class: 'v2-small v2-plgap', key: `gap:fin:${r.key}` }, `${WA.finish}: ${r.finish.words}`));
+  if (r.notInPlan) under.push(h('p', { class: 'v2-small v2-pltag', key: `gap:tag:${r.key}` }, WA.notInPlan));
+  if (r.waiting) under.push(planYou(r, 'row'));
+  const place = h('span', { class: 'v2-plord' }, ordering ? h('span', { 'aria-hidden': 'true' }, r.place) : null,
+    h('span', { class: 'sb-vh' }, `${r.placeWords}${moved ? ', moved' : ''}`));
+  const main = h('a', { class: 'v2-plrow', key: `wa-open:${r.key}`, href: planMsRoute(r), onclick: () => { nav.opener = `wa-open:${r.key}`; } },
+    place, stc(r.icon),
+    h('span', { class: 'v2-prt' }, h('span', { class: 'v2-prtt v2-plname' }, r.name),
+      h('span', { class: 'v2-mono v2-plm' }, v.many && ordering ? `${r.mono} · ${r.project.name}` : r.mono),
+      h('span', { class: 'sb-vh' }, `: ${r.state.words}`)),
+    h('span', { class: `v2-plv${r.right ? ` ${r.right.kind}` : ''}` }, r.right ? r.right.words : null));
+  return h('li', { class: `v2-plli${ordering ? ' ord' : ''}${moved ? ' moved' : ''}`, key: `wa-row:${r.key}`, 'data-row': r.code },
+    main, under.length ? h('div', { class: 'v2-plunder' }, under) : null,
+    ordering ? h('div', { class: 'v2-plmove' }, moveButton(r, -1), moveButton(r, 1)) : null);
+}
+
+/** A milestone's sheet over Plan (AC86): AC24's whole row, its state beside its icon, "Done when", the estimate and its note, the rough finish, what waits, and the milestone on the Timeline. */
+function planSheet(v, key) {
+  const r = v.rows.find((x) => x.key === key);
+  if (!r) return null; // no longer ahead (reached or dropped since): Plan alone
+  const back = '#/work';
+  const est = r.estimate;
+  // AC24: its code, then its phase in words with its phase colour (AC48); its project where more than one v3 project is connected.
+  const meta = [r.code, r.phase ? [' · ', h('span', { class: `v2-plph ${r.phaseClass || ''}` }, r.phase)] : null, v.many ? ` · ${r.project.name}` : null];
+  const parts = [sheetHead(meta, r.name, back),
+    h('p', { class: 'v2-mark v2-plst', key: 'wa-st' }, stc(r.state.icon), h('span', {}, r.state.words)),
+    r.notInPlan ? h('p', { class: 'v2-small v2-pltag', key: 'wa-tag' }, WA.notInPlan) : null,
+    r.waiting ? planYou(r, 'sheet') : null,
+    r.done ? blk(WA.doneWhen, h('p', { class: 'v2-body v2-pldone' }, r.done)) : null,
+    blk(WA.estimateKey, h('p', { class: `v2-body v2-plest ${est.kind}` }, est.words),
+      est.note ? h('div', { class: 'v2-plnote' }, lineBox(`wa-note:${r.key}`, { words: est.note, recCode: `${r.code}'s estimate note`, title: 'Estimate note', lines: 2 })) : null,
+      est.newer ? h('p', { class: 'v2-small v2-plnewer' }, WA.newerUnreadable) : null),
+    r.finish ? blk(WA.finish, h('p', { class: `v2-body v2-plfin${r.finish.na ? ' na' : ''}` }, r.finish.words),
+      h('p', { class: 'v2-small' }, WA.sheetFinishNote)) : null,
+    h('p', { class: 'v2-acts', key: 'wa-tl' }, h('a', { class: 'v2-lnk', key: 'wa-timeline', href: go('p', r.project.name, 'timeline', 'ms', r.code) }, WA.onTimeline))];
+  return sheetShell(back, r.name, parts, 'wa-sheet');
 }
 
 /** "Record plan" (AC24, J4): the J3-form link holding every row in the order shown, or why there is none. */
 function recordNode(v) {
   if (!v.record.ok) {
-    return [h('button', { type: 'button', class: 'sb-btn sb-wa-rec', key: 'wa-record', disabled: true }, WA.record),
-      h('p', { class: 'sb-muted small sb-wa-why' }, v.record.words)];
+    return [h('button', { type: 'button', class: 'v2-abtn v2-plrec', key: 'wa-record', disabled: true }, WA.record),
+      h('p', { class: 'v2-small v2-plwhy' }, v.record.words)];
   }
   const link = v.record.link;
-  const a = h('a', { class: 'sb-btn sb-wa-rec', key: 'wa-record', href: link.url, rel: 'noopener noreferrer', target: '_blank', onclick: () => {
+  const a = h('a', { class: 'v2-abtn v2-plrec', key: 'wa-record', href: link.url, rel: 'noopener noreferrer', target: '_blank', onclick: () => {
     if (!link.copy) return;
     try {
       navigator.clipboard.writeText(link.copy).catch(() => {});
@@ -2941,55 +2983,83 @@ function recordNode(v) {
 
 /** AC17's fallback, seen (J3, J15): why the link opens with the file name only, the text, and a "Copy" button. */
 function copyFallback(words, text, key, label) {
-  return h('div', { class: 'sb-wa-copy', key: `wa-copy:${key}` }, h('p', { class: 'sb-muted small' }, words),
-    h('pre', { class: 'sb-value' }, text), copyButton(text, key, label));
+  return h('div', { class: 'v2-plcopy', key: `wa-copy:${key}` }, h('p', { class: 'v2-small' }, words),
+    h('pre', { class: 'v2-pre' }, text), copyButton(text, key, label, 'v2-abtn ghost'));
 }
 
-/** "Not milestones yet" (AC24, J15). */
+/** A section's head on Plan (frame 11): its words, a folder before a project's name, and its count at the right in Plex Mono. */
+function planHead(words, n, { proj = false } = {}) {
+  return h('h2', { class: 'v2-sh v2-plh' }, h('span', { class: 'v2-shw v2-plhw' }, proj ? vi('proj') : null, h('span', {}, words)),
+    n == null ? null : h('span', { class: 'v2-mono' }, String(n)));
+}
+
+/** "Not milestones yet" (AC24, J15; frame 11): its head with the count, AC24's line, then each row, "<name>" over "<W-id> · <project>", its note and its state in AC24's words. */
 function laterNode(v) {
-  const kids = [h('h2', { class: 'sb-h2' }, WA.notYet), h('p', { class: 'sb-muted small' }, WA.notYetLine)];
-  if (v.later.kind === 'none') kids.push(h('p', { class: 'sb-muted' }, WA.noLaterWork));
-  else if (v.later.kind === 'na') kids.push(h('p', { class: 'sb-muted' }, `Later work: ${WA.notAvailable}`));
+  const n = v.later.kind === 'ok' ? v.later.rows.length : null;
+  const kids = [planHead(WA.notYet, n), h('p', { class: 'v2-small v2-plline' }, WA.notYetLine)];
+  if (v.later.kind === 'none') kids.push(h('p', { class: 'v2-small' }, WA.noLaterWork));
+  else if (v.later.kind === 'na') kids.push(h('p', { class: 'v2-small' }, `Later work: ${WA.notAvailable}`));
   else {
-    if (!v.later.rows.length && !v.later.notAdded.length) kids.push(h('p', { class: 'sb-muted' }, WA.noLaterWork));
-    kids.push(h('ul', { class: 'sb-wa-later' }, v.later.rows.map((x) => {
-      let act;
+    if (!v.later.rows.length && !v.later.notAdded.length) kids.push(h('p', { class: 'v2-small' }, WA.noLaterWork));
+    kids.push(h('ol', { class: 'v2-rows v2-pllater' }, v.later.rows.map((x) => {
+      const w = x.item.w;
+      const text = (state) => h('span', { class: 'v2-prt' }, h('span', { class: 'v2-prtt v2-plname' }, x.item.name), h('span', { class: 'v2-mono' }, `${w} · ${v.planner}`),
+        h('span', { class: 'v2-small v2-plnote2' }, x.item.note), state);
+      let row;
+      let after = null;
       if (x.state === 'tap') {
-        act = h('a', { class: 'sb-wa-ask', key: `wa-ask:${x.item.w}`, href: x.ask.link.url, rel: 'noopener noreferrer', target: '_blank', onclick: () => {
+        row = h('a', { class: 'v2-plrow later', key: `wa-ask:${w}`, href: x.ask.link.url, rel: 'noopener noreferrer', target: '_blank', onclick: () => {
           if (!x.ask.link.copy) return;
           try {
             navigator.clipboard.writeText(x.ask.link.copy).catch(() => {});
           } catch {
             // the text is short; AC17's fallback is the copy button
           }
-        } }, x.words);
-        if (x.ask.link.copy) act = [act, copyFallback(x.ask.copyWords, x.ask.link.copy, `wa-ask:${x.item.w}`, 'Copy the ask')];
-      } else if (x.state === 'question') act = h('a', { class: 'sb-wa-ask', key: `wa-q:${x.item.w}`, href: go('waiting', v.planner) }, x.words);
-      else if (x.state === 'answered' && x.line1 != null) {
-        act = h('div', { class: 'sb-wa-ans' }, lineBox(`wa-ans:${x.item.w}`, { words: x.line1, recCode: x.answerPath.replace(/^decisions\/questions\/|\.md$/g, ''), title: 'Answered',
-          lead: x.words.slice(0, x.words.length - x.line1.length) }));
-      } else act = h('p', { class: 'sb-muted small' }, x.words);
-      return h('li', { class: 'sb-wa-mini', key: `wa-later:${x.item.w}` }, h('p', {}, h('span', { class: 'sb-wa-t' }, x.item.name), ' ', h('span', { class: 'sb-muted small' }, x.item.note)), act);
+        } }, stc('planned'), text(h('span', { class: 'v2-small v2-plw' }, x.words)), vi('chev', 'v2-k v2-chev'));
+        if (x.ask.link.copy) after = copyFallback(x.ask.copyWords, x.ask.link.copy, `wa-ask:${w}`, 'Copy the ask');
+      } else if (x.state === 'question') {
+        row = h('a', { class: 'v2-plrow later', key: `wa-q:${w}`, href: go('waiting', v.planner) }, stc('planned'), text(h('span', { class: 'v2-small v2-plw' }, x.words)), vi('chev', 'v2-k v2-chev'));
+      } else if (x.state === 'answered' && x.line1 != null) {
+        row = h('div', { class: 'v2-plrow later', key: `wa-l:${w}` }, stc('planned'), text(h('span', { class: 'v2-small v2-plw v2-plans' },
+          lineBox(`wa-ans:${w}`, { words: x.line1, recCode: x.answerPath.replace(/^decisions\/questions\/|\.md$/g, ''), title: 'Answered',
+            lead: x.words.slice(0, x.words.length - x.line1.length) }))), h('span', {}));
+      } else row = h('div', { class: 'v2-plrow later', key: `wa-l:${w}` }, stc('planned'), text(h('span', { class: 'v2-small v2-plw' }, x.words)), h('span', {}));
+      return h('li', { class: 'v2-plli', key: `wa-later:${w}` }, row, after);
     })));
     if (v.later.notAdded.length) {
       const fk = 'wa-notadded';
-      kids.push(foldButton(WA_FOLDS, fk, false, { class: 'sb-more sb-wa-fold' }, `${WA.notAdded} · ${v.later.notAdded.length}`));
+      kids.push(foldButton(WA_FOLDS, fk, false, { class: 'v2-fold v2-plfold' }, `${WA.notAdded} · ${v.later.notAdded.length}`));
       if (isOpenFold(WA_FOLDS, fk, false)) {
-        kids.push(h('ul', { class: 'sb-wa-later', key: 'wa-notadded-l' }, v.later.notAdded.map((x) => h('li', { class: 'sb-wa-mini' },
-          h('p', {}, h('span', { class: 'sb-wa-t' }, x.name), ' ', h('span', { class: 'sb-muted small' }, x.note))))));
+        kids.push(h('ul', { class: 'v2-plmini', key: 'wa-notadded-l' }, v.later.notAdded.map((x) => h('li', { class: 'v2-small' },
+          h('span', { class: 'v2-plt' }, x.name), ' ', h('span', {}, x.note)))));
       }
     }
   }
-  return h('section', { class: 'sb-wa-group', key: 'wa-later' }, kids);
+  return h('section', { class: 'v2-plgrp', key: 'wa-later' }, kids);
 }
 const WA_FOLDS = '#work'; // the folds' keeper for this screen (AC56: kept through every refresh)
 
 /** "Reached · <m>" and "Dropped · <n>" (AC24): folded, opening on a tap. */
 function foldList(key, words, list, extra) {
   const open = isOpenFold(WA_FOLDS, key, false);
-  return h('section', { class: 'sb-wa-group', key: `wa-g:${key}` }, foldButton(WA_FOLDS, key, false, { class: 'sb-more sb-wa-fold' }, words),
-    open ? h('ul', { class: 'sb-wa-later', key: `wa-l:${key}` }, list.map((x) => h('li', { class: `sb-wa-mini ${key}` },
-      h('p', {}, h('span', { class: 'sb-wa-t' }, x.name), ' ', code(x.code), extra(x))))) : null);
+  return h('section', { class: 'v2-plgrp v2-plfolds', key: `wa-g:${key}` }, foldButton(WA_FOLDS, key, false, { class: 'v2-fold v2-plfold' }, words),
+    open ? h('ul', { class: 'v2-plmini', key: `wa-l:${key}` }, list.map((x) => h('li', { class: `v2-small ${key}` },
+      h('span', { class: 'v2-plt' }, x.name), ' ', h('span', { class: 'v2-mono' }, x.code), extra(x)))) : null);
+}
+
+/** "⇅", named "Change the order" (AC86, frame 11's pill): it opens AC24's ordering, and closes it; kept through every refresh (AC56). */
+function orderToggle(ordering) {
+  const toggle = () => {
+    setFold(WA_FOLDS, 'order', !ordering);
+    render();
+  };
+  return h('div', { class: 'v2-pill', key: 'plan-pill' }, h('button', { type: 'button', class: 'v2-ib', key: 'plan-order', 'aria-label': WA.changeOrder,
+    'aria-pressed': ordering ? 'true' : 'false', onclick: toggle,
+    onkeydown: (e) => {
+      if (!e || (e.key !== 'Enter' && e.key !== ' ')) return;
+      if (e.preventDefault) e.preventDefault();
+      toggle();
+    } }, vi('order', 'v2-i')));
 }
 
 function renderWorkAhead(built, nowMs) {
@@ -3003,32 +3073,56 @@ function renderWorkAhead(built, nowMs) {
   }
   if (v.ready && !v.changed && planDraft.read()) planDraft.write(null); // moved back to the order it started from
   waDay = v.today;
-  const body = [marker(), projectHeader(v.header.eyebrow, v.header.title, v.header.sub)];
-  body.push(h('p', { class: `sb-wa-state ${v.stateLine.kind}`, key: 'wa-state' }, v.stateLine.lead ? [h('b', {}, v.stateLine.lead), ' '] : null, h('span', {}, v.stateLine.rest)));
-  if (planDraft.aside) body.push(h('p', { class: 'sb-wa-notice', role: 'status', key: 'wa-aside' }, WA.setAside));
-  if (planDraft.failed) body.push(h('p', { class: 'sb-muted small', key: 'wa-nokeep' }, WA.draftNotKept));
-  body.push(h('section', { class: 'sb-wa-card', key: 'wa-card' }, h('p', { class: 'sb-wa-k' }, WA.cardTitle), h('p', { class: 'sb-wa-big' }, v.card),
-    h('p', { class: 'sb-muted small' }, WA.cardNote)));
-  if (v.orderLine) body.push(h('p', { class: 'sb-muted small sb-wa-order', key: 'wa-order' }, v.orderLine));
-  for (const name of v.unread) body.push(h('p', { class: 'sb-muted small' }, `${name}: its milestones are ${NOT_AVAILABLE}`));
-  body.push(v.rows.length ? h('ol', { class: 'sb-wa-plan', key: 'wa-plan', 'aria-label': 'Milestones in your order' }, v.rows.map((r) => waRow(v, r)))
-    : h('p', { class: 'sb-muted' }, 'No milestones to go'));
-  body.push(laterNode(v));
-  if (v.reached.length) body.push(foldList('reached', `${WA.reached} · ${v.reached.length}`, v.reached, (x) => [' ', h('span', { class: 'sb-muted small' }, x.date)]));
+  const ordering = isOpenFold(WA_FOLDS, 'order', false);
+  const body = [marker(),
+    h('header', { class: 'v2-pltop', key: 'plan-top' }, h('h1', { class: 'v2-title' }, v.tab.title), orderToggle(ordering)),
+    h('p', { class: 'v2-sub', key: 'plan-sub' }, v.tab.sub)];
+  // AC24's state line: in the ordering, always; on Plan itself once it says more than "No changes yet".
+  if (ordering || v.changed || v.stateLine.kind === 'current') {
+    body.push(h('p', { class: `v2-small v2-plstate ${v.stateLine.kind}`, key: 'wa-state' }, v.stateLine.lead ? [h('b', {}, v.stateLine.lead), ' '] : null, h('span', {}, v.stateLine.rest)));
+  }
+  if (planDraft.aside) body.push(h('p', { class: 'v2-small v2-plnotice', role: 'status', key: 'wa-aside' }, WA.setAside));
+  if (planDraft.failed) body.push(h('p', { class: 'v2-small', key: 'wa-nokeep' }, WA.draftNotKept));
+  if (v.orderLine) body.push(h('p', { class: 'v2-small v2-plorder', key: 'wa-order' }, v.orderLine));
+  for (const name of v.unread) body.push(h('p', { class: 'v2-small', key: `wa-unread:${name}` }, `${name}: its milestones are ${NOT_AVAILABLE}`));
+  if (ordering) {
+    body.push(h('section', { class: 'v2-plcard', key: 'wa-card' }, h('p', { class: 'v2-label' }, WA.cardTitle), h('p', { class: 'v2-plbig' }, v.card),
+      h('p', { class: 'v2-small' }, WA.cardNote)));
+    body.push(v.rows.length ? h('ol', { class: 'v2-rows v2-plflat', key: 'wa-plan', 'aria-label': 'Milestones in your order' }, v.rows.map((r) => planRow(v, r, true)))
+      : h('p', { class: 'v2-small', key: 'wa-none' }, 'No milestones to go'));
+  } else if (v.rows.length) {
+    for (const g of v.groups) {
+      body.push(h('section', { class: 'v2-plgrp', key: `wa-grp:${g.key}` }, planHead(g.words, g.rows.length, { proj: true }),
+        h('ol', { class: 'v2-rows', 'aria-label': g.words }, g.rows.map((r) => planRow(v, r, false)))));
+    }
+  } else body.push(h('p', { class: 'v2-small', key: 'wa-none' }, 'No milestones to go'));
+  if (ordering || v.changed) {
+    body.push(h('div', { class: 'v2-plbar', key: 'wa-bar' }, h('p', { class: 'v2-small v2-plsay', role: 'status' }, v.changed ? WA.changed : WA.noChanges), recordNode(v)));
+    // AC17's fallback for the plan, under the bar rather than in it, so the sticky bar stays one line high.
+    if (v.record.ok && v.record.link.copy) body.push(copyFallback(v.record.copyWords, v.record.link.copy, 'wa-record', 'Copy the plan'));
+  }
+  if (v.reached.length) body.push(foldList('reached', `${WA.reached} · ${v.reached.length}`, v.reached, (x) => [' ', h('span', {}, x.date)]));
   if (v.dropped.length) body.push(foldList('dropped', `${WA.dropped} · ${v.dropped.length}`, v.dropped, () => null));
+  // AC24's v2.5 lines, after the milestones (AC86: "then AC24's v2.5 lines (not drawn, C); then "Not milestones yet"").
   for (const o of v.older) {
     const b = built.find((x) => x.project === o.project);
     const href = o.path && b && b.snap ? treeLink(o.project, b.snap.tree, o.path) : null;
-    body.push(h('section', { class: 'sb-wa-group', key: `wa-old:${o.project.name}` }, h('h2', { class: 'sb-h2' }, o.project.name),
-      h('p', {}, href ? ext(href, o.words) : o.words), h('p', { class: 'sb-muted small' }, WA.olderPipeline)));
+    body.push(h('section', { class: 'v2-plgrp', key: `wa-old:${o.project.name}` }, planHead(o.project.name, null, { proj: true }),
+      h('p', { class: 'v2-body' }, href ? ext(href, o.words, 'v2-inl') : o.words), h('p', { class: 'v2-small' }, WA.olderPipeline)));
   }
+  body.push(laterNode(v));
+  // AC86, AC87 (6a): ideas once the desk reads the portfolio; until then it says so.
+  body.push(h('section', { class: 'v2-plgrp', key: 'wa-ideas' }, planHead(WA.ideas, null), h('p', { class: 'v2-small v2-plideas' }, v.tab.ideas)));
   if (v.notes.length && v.planner) {
-    body.push(h('p', { class: 'small' }, h('a', { href: go('p', v.planner, 'notes'), key: 'wa-notes' }, `Record notes (${v.notes.length})`)));
+    body.push(h('p', { class: 'v2-small' }, h('a', { class: 'v2-lnk', href: go('p', v.planner, 'notes'), key: 'wa-notes' }, `Record notes (${v.notes.length})`)));
   }
-  body.push(h('div', { class: 'sb-wa-bar', key: 'wa-bar' }, h('p', { class: 'sb-muted small', role: 'status' }, v.changed ? WA.changed : WA.noChanges), recordNode(v)));
-  // AC17's fallback for the plan, under the bar rather than in it, so the sticky bar stays one line high.
-  if (v.record.ok && v.record.link.copy) body.push(copyFallback(v.record.copyWords, v.record.link.copy, 'wa-record', 'Copy the plan'));
-  return h('section', { class: 'sb-screen sb-wa' }, body);
+  const out = [h('section', { class: `sb-screen v2 v2-plan${ordering ? ' ordering' : ''}`, key: 'plan' }, body)];
+  const sheet = nav.route.sheet;
+  if (sheet && sheet.startsWith('ms:')) {
+    const s = planSheet(v, sheet.slice(3));
+    if (s) out.push(s);
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -3042,7 +3136,8 @@ function renderWorkAhead(built, nowMs) {
 export function parseRoute(hash) {
   const [r0, name, kind, ...rest] = routeParts(hash);
   // AC24 (from 2026-10-18): Work ahead, across projects, a screen of its own: from stage 1a the Plan tab (AC81).
-  if (r0 === 'work') return { key: 'work', screen: '#/work', kind: 'work', name: null, sheet: null };
+  // From stage 5 (AC86): a milestone's sheet over Plan at `work/ms/<project>/<id>` (a sheet is not a screen: no history step).
+  if (r0 === 'work') return { key: 'work', screen: '#/work', kind: 'work', name: null, sheet: name === 'ms' && kind && rest[0] ? `ms:${kind}|${rest[0]}` : null };
   // AC82: the rest of "Since you last looked", in a sheet over Home (a sheet is not a screen: no history step).
   if (r0 === 'since') return { key: 'home', screen: '#/', kind: 'home', name: null, sheet: 'since' };
   // AC80, AC81: Waiting, `waiting` or, with only one project shown, `waiting/<name>`; a card's sheet
@@ -3665,7 +3760,8 @@ export function startSandbox(opts = {}) {
       try {
         node = renderWorkAhead(built, now.getTime());
       } catch (err) {
-        node = h('section', { class: 'sb-screen' }, marker(), projectHeader(WA.eyebrow, WA.title), h('p', { class: 'sb-stale' }, `Can't show Work ahead: ${errorText(err)}`));
+        node = h('section', { class: 'sb-screen v2 v2-plan' }, marker(), h('header', { class: 'v2-pltop' }, h('h1', { class: 'v2-title' }, WA.planTitle)),
+          h('p', { class: 'v2-small bad' }, `Can't show Plan: ${errorText(err)}`));
       }
     } else node = renderHome(desk, built, seen, now.getTime(), bd);
     // AC81: the bar Home · Waiting · Plan, the only bar at the foot of every trial-view screen; a
@@ -3673,7 +3769,8 @@ export function startSandbox(opts = {}) {
     try {
       // The Waiting screen is drawn on mockup v2's ground (sandbox.css, html.v2-page).
       // From stage 3 the project's page and its Timeline too (AC83, AC84).
-      const v2 = r.kind === 'waiting' || r.kind === 'home' || (r.name && (r.kind === 'status' || r.kind === 'timeline' || (r.kind === 'pipeline' && CONFIG.projects.some((x) => x.name === r.name && x.model === 'v3'))));
+      // From stage 5 Plan too (AC86).
+      const v2 = r.kind === 'waiting' || r.kind === 'home' || r.kind === 'work' || (r.name && (r.kind === 'status' || r.kind === 'timeline' || (r.kind === 'pipeline' && CONFIG.projects.some((x) => x.name === r.name && x.model === 'v3'))));
       document.documentElement.classList.toggle('v2-page', Boolean(v2));
       // AC82: Home's column widens to two tiles a row from 720 px (sandbox.css). The root's class is its
       // own: Home's section is `.v2-home`, a grid, which the root must not become (the Design reviewer's

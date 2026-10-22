@@ -660,63 +660,9 @@ html.sb .sb-asking .sb-qrow { padding: var(--s2) 0; }
 html.sb .sb-asking p { margin: var(--s1) 0; }
 html.sb .sb-recheck p { margin: var(--s1) 0; }
 
-/* Work ahead (AC24; M3A, from 2026-10-18): the mockup's screen (docs/design/mockups/work-ahead.html,
-   version 2) in the shared look and its scales. Each row's left edge is its phase's colour; the row
-   moved last keeps a gold edge, with "moved" in its words. Nothing moves unless the owner acts. */
-html.sb .sb-wa-link { margin: var(--s2) 0 0; font: var(--t-item); }
-html.sb .sb-wa-link a { text-decoration: underline; display: inline-flex; align-items: center; min-height: 44px; }
-html.sb .sb-wa-state { margin: var(--s3) 0 0; display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; padding: var(--s2) var(--s3);
-  border-radius: var(--r); background: var(--golds); font: var(--t-meta); }
-html.sb .sb-wa-state b { color: var(--gold); text-transform: uppercase; letter-spacing: var(--track); }
-html.sb .sb-wa-state.current { background: var(--surf2); }
-html.sb .sb-wa-state.current b { color: var(--pass); }
-html.sb .sb-wa-notice { margin: var(--s2) 0 0; padding: var(--s2) var(--s3); border: 1px solid var(--gold); border-radius: var(--r); font: var(--t-meta); }
-html.sb .sb-wa-card { margin: var(--s3) 0 0; padding: var(--s3); display: grid; gap: var(--s1); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); }
-html.sb .sb-wa-k { font: var(--t-section); text-transform: uppercase; letter-spacing: var(--track); color: var(--muted); }
-html.sb .sb-wa-big { font: var(--t-screen); font-variant-numeric: tabular-nums; }
-html.sb .sb-wa-order { margin: var(--s3) 0 0; }
-html.sb .sb-wa-plan { list-style: none; margin: var(--s3) 0 0; padding: 0; display: grid; gap: var(--s2); }
-html.sb .sb-wa-row { --ph: var(--idle); display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: var(--s2) var(--s3); align-items: start;
-  padding: var(--s3); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); box-shadow: inset 3px 0 0 var(--ph); }
-html.sb .sb-wa-row.moved { border-color: var(--gold); box-shadow: inset 3px 0 0 var(--ph), 0 0 0 1px var(--gold); }
-html.sb .sb-wa-ord { font: var(--t-item); color: var(--muted); font-variant-numeric: tabular-nums; }
-html.sb .sb-wa-body { display: grid; gap: var(--s1); min-width: 0; }
-html.sb .sb-wa-name { font: var(--t-item); }
-html.sb .sb-wa-meta { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s2); align-items: center; font: var(--t-meta); color: var(--muted); }
-html.sb .sb-wa-ph { display: inline-flex; align-items: center; gap: var(--s1); }
-html.sb .sb-wa-ph::before { content: ""; width: 9px; height: 9px; border-radius: 3px; background: var(--ph); }
-html.sb .sb-wa-st { display: inline-flex; align-items: center; gap: var(--s1); color: var(--ink); }
-html.sb .sb-wa-tag { font: var(--t-meta); color: var(--muted); }
-html.sb .sb-wa-done { font: var(--t-meta); font-weight: 400; color: var(--muted); }
-html.sb .sb-wa-est { margin: var(--s1) 0 0; font: var(--t-meta); }
-html.sb .sb-wa-est.missing, html.sb .sb-wa-est.na { color: var(--muted); }
-html.sb .sb-wa-note, html.sb .sb-wa-newer { color: var(--muted); font: var(--t-meta); }
-html.sb .sb-wa-note .sb-lineclip, html.sb .sb-wa-note button.sb-line { font: var(--t-meta); font-weight: 400; color: var(--muted); }
+/* A note clipped to two lines (AC24's estimate notes): the button exactly the two lines it shows. */
 html.sb .sb-lineclip.two { max-height: 2.7em; }
-html.sb .sb-lineclip.two.over { height: 2.7em; } /* the button is exactly the two lines it shows, at the meta role's 1.35 */
-html.sb .sb-wa-fin { font: var(--t-meta); color: var(--muted); }
-html.sb .sb-wa-fin b { color: var(--ink); font-variant-numeric: tabular-nums; }
-html.sb .sb-wa-you a { color: var(--you); font: var(--t-meta); text-decoration: underline; }
-html.sb .sb-wa-you a::before { content: "◆ "; }
-html.sb .sb-wa-move { display: grid; gap: var(--s1); }
-html.sb .sb-wa-mv { min-width: 44px; min-height: 44px; border: 1px solid var(--line); border-radius: var(--r); background: var(--page); color: var(--ink); font: var(--t-meta); cursor: pointer; }
-html.sb .sb-wa-mv[aria-disabled="true"] { opacity: .35; cursor: default; }
-html.sb .sb-wa-group { margin: var(--s4) 0 0; display: grid; gap: var(--s2); }
-html.sb .sb-wa-group > .sb-h2 { margin: 0; }
-html.sb .sb-wa-later { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
-html.sb .sb-wa-mini { padding: var(--s2) var(--s3); display: grid; gap: var(--s1); background: var(--surf); border: 1px dashed var(--line); border-radius: var(--r); font: var(--t-meta); }
-html.sb .sb-wa-t { font-weight: 700; }
-html.sb .sb-wa-mini.reached .sb-wa-t::before { content: "✓ "; color: var(--pass); }
-html.sb .sb-wa-ask { display: inline-flex; align-items: center; min-height: 44px; text-decoration: underline; }
-html.sb .sb-wa-fold { justify-self: start; }
-html.sb .sb-wa-bar { position: sticky; bottom: 0; margin: var(--s4) 0 0; padding: var(--s3) 0; display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; justify-content: space-between;
-  background: var(--page); border-top: 1px solid var(--line); }
-html.sb .sb-wa-rec { background: var(--ink); color: var(--page); border-color: var(--ink); }
-html.sb .sb-wa-rec[disabled] { opacity: .5; cursor: default; }
-html.sb .sb-wa-why, html.sb .sb-wa-copy { flex: 1 1 100%; }
-html.sb .sb-wa-copy { display: grid; gap: var(--s2); margin: var(--s2) 0 0; }
-html.sb .sb-wa-copy .sb-value { margin: 0; padding: var(--s2); white-space: pre-wrap; word-break: break-all; font: var(--t-code);
-  background: var(--surf2); border: 1px solid var(--line); border-radius: var(--rs); }
+html.sb .sb-lineclip.two.over { height: 2.7em; }
 
 /* ===========================================================================================
    Desk mockup v2 (spec S-001, AC80 and AC81; docs/design/mockups/desk-v2.html), from stage 1a:
@@ -1357,3 +1303,86 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
   .v2-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .v2-tile .sb-sumclip { height: calc(3 * 1.4em); }
 }
+
+/* Plan (AC86; frame 11; desk-v2.html:824-851), from stage 5: AC24's Work ahead in the Plan tab. The title
+   with frame 11's round pill holding "⇅"; the line under it; each project's group, a head with its count,
+   each row an icon, the name, "<id> · <phase> · about <low>–<high> days" in Plex Mono and its value at the
+   right; under a row only what AC24 must say there. "⇅" opens AC24's ordering: each row's place and its move
+   controls, the card, and the bar sticking above the tab bar. Nothing moves unless the owner acts. */
+.v2-plan { display: grid; gap: 12px; padding-top: 4px; }
+.v2-plan .v2-sub { margin-top: -6px; }
+.v2-pltop { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 44px; }
+.v2-pill { display: flex; padding: 2px; border-radius: 24px; background: var(--bg); box-shadow: var(--shadow); }
+.v2-ib { width: 44px; height: 44px; border-radius: 22px; display: grid; place-items: center; color: var(--ink); }
+.v2-ib[aria-pressed="true"] { background: var(--chip); }
+.v2-plstate b { font-weight: 500; color: var(--ink); }
+.v2-plnotice { color: var(--ink); background: var(--bg2); border-radius: 8px; padding: 6px 10px; }
+.v2-plgrp { display: grid; gap: 0; min-width: 0; }
+.v2-plh { padding-top: 6px; }
+.v2-plhw { display: inline-flex; align-items: center; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.v2-plhw > .v2-k { color: var(--ink2); }
+.v2-plline { padding: 2px 0 4px; }
+.v2-plli { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 8px; min-width: 0; }
+.v2-rows > .v2-plli + .v2-plli { border-top: 1px solid var(--line); }
+.v2-plrow { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 2px 10px; align-items: start; padding: 9px 0; min-height: 40px; width: 100%; color: var(--ink); min-width: 0; }
+.v2-plrow > .v2-s { margin-top: 1px; }
+.v2-plrow > .v2-chev { width: 10px; height: 10px; margin-top: 4px; color: var(--ink2); }
+.v2-plord { display: contents; }
+.v2-plname { overflow-wrap: break-word; }
+.v2-plm { overflow-wrap: anywhere; }
+.v2-plv { font: var(--t-mono); color: var(--ink2); text-align: right; padding-top: 1px; }
+.v2-plv.accept, .v2-plv.ruling { font: var(--t-small); }
+.v2-plunder { display: grid; gap: 2px; padding: 0 0 9px 26px; margin-top: -5px; min-width: 0; }
+.v2-plgap, .v2-pltag { overflow-wrap: anywhere; }
+.v2-plyou { font: var(--t-small); }
+/* Vermilion only on the ◆ beside the words (mockup v2: "the diamond"; AC69); the words in ink. */
+.v2-plyou a { display: inline-flex; align-items: center; gap: 4px; min-height: 24px; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+.v2-plyou .v2-k { flex: none; }
+/* The ordering (⇅): each row's place in Plex Mono before its icon, the two move controls at its right. */
+.v2-plli.ord { grid-template-columns: minmax(0, 1fr) auto; }
+.v2-plli.ord > .v2-plrow { grid-template-columns: 18px 16px minmax(0, 1fr) auto; }
+.v2-plli.ord .v2-plord { display: block; font: var(--t-mono); color: var(--ink2); padding-top: 1px; }
+.v2-plli.ord > .v2-plunder { grid-column: 1; padding-left: 44px; }
+.v2-plmove { grid-column: 2; grid-row: 1 / span 2; display: grid; grid-auto-rows: 32px; gap: 4px; align-content: start; padding: 6px 0; }
+.v2-plmv { width: 36px; height: 32px; display: grid; place-items: center; border-radius: 8px; background: var(--chip); color: var(--ink); }
+.v2-plmv[aria-disabled="true"] { color: var(--ink2); background: var(--bg2); cursor: default; }
+.v2-plmv[aria-disabled="true"] .v2-k { opacity: .45; }
+/* The row moved last: a gold edge until the next move, with "moved" in its words (AC24). */
+.v2-plli.moved { box-shadow: inset 2px 0 0 var(--gold); border-radius: 2px; }
+.v2-plli.moved > .v2-plrow { padding-left: 8px; }
+.v2-plcard { display: grid; gap: 2px; padding: 12px; border-radius: 12px; background: var(--bg2); }
+.v2-plbig { font: var(--t-sheet); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+/* The bar (AC24): what changed and "Record plan", held above the tab bar while the list scrolls under it. */
+.v2-plbar { position: sticky; z-index: 3; bottom: calc(82px + env(safe-area-inset-bottom, 0px)); display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between;
+  padding: 8px 8px 8px 12px; border-radius: 14px; background: var(--bg); box-shadow: var(--shadow); }
+.v2-plsay { color: var(--ink); }
+.v2-plrec { background: var(--ink); color: var(--bg); }
+.v2-plrec[disabled] { background: var(--chip); color: var(--ink2); cursor: default; }
+.v2-plwhy { flex: 1 1 100%; }
+.v2-plcopy { display: grid; gap: 6px; min-width: 0; padding-bottom: 6px; }
+.v2-plcopy .v2-pre { margin: 0; }
+.v2-plcopy .v2-abtn { justify-self: start; }
+.v2-plnote2 { overflow-wrap: anywhere; }
+.v2-plw { color: var(--ink); overflow-wrap: anywhere; }
+.v2-plans .sb-lineclip, .v2-plans button.sb-line, .v2-plans .sb-line-w { font: var(--t-small); color: var(--ink); }
+.v2-plfold { justify-self: start; padding-top: 6px; }
+.v2-plmini { display: grid; gap: 4px; padding: 2px 0 6px; }
+.v2-plmini > li { overflow-wrap: anywhere; }
+.v2-plt { font-weight: 500; color: var(--ink); }
+.v2-plideas { padding: 2px 0; }
+/* A milestone's sheet over Plan (AC86): AC24's whole row, its phase in words with its phase colour (AC24, AC48). */
+.v2-plph.ph-disc { color: var(--ph-disc); }
+.v2-plph.ph-des { color: var(--ph-des); }
+.v2-plph.ph-build { color: var(--ph-build); }
+.v2-plph.ph-launch { color: var(--ph-launch); }
+.v2-plst { font: var(--t-row); }
+.v2-pldone, .v2-plest, .v2-plfin { overflow-wrap: anywhere; }
+.v2-plest.missing, .v2-plest.na { color: var(--ink2); }
+.v2-plnote .sb-lineclip, .v2-plnote button.sb-line, .v2-plnote .sb-line-w { font: var(--t-small); color: var(--ink2); }
+.v2-plnote .sb-lineclip.two { max-height: calc(2 * 1.4em); }
+.v2-plnote .sb-lineclip.two.over { height: calc(2 * 1.4em); }
+.v2-plnote .sb-lineclip.over::after { height: 1.4em; background: linear-gradient(to right, transparent, var(--bg) 85%); }
+.v2-plan .sb-bubble, .v2-sheet .sb-linebub { background: var(--bg); color: var(--ink); border: 1px solid var(--line2); border-radius: 12px; box-shadow: var(--shadow); }
+.v2-sheet .sb-linebub .sb-bubble-top { background: var(--bg); }
+.v2-sheet .sb-linebub .sb-eyebrow { font: var(--t-label); color: var(--ink2); }
+.v2-sheet .sb-linebub .sb-bubble-t { font: var(--t-body); }

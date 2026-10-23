@@ -290,28 +290,44 @@ test('AC89 (k): Plan\'s rule-3 row (work filed in a run still to come) takes AC8
   assert.deepEqual([r('MD1').state.rule, r('MD1').state.icon], [6, 'half'], 'AC86\'s half-filled icon is rule 6\'s');
 });
 
-test('AC89 (k): the ordering view\'s rows have no empty space under them — the two move controls side by side, 44 px tall with their padding, under the row\'s own height', async () => {
-  const app = await open(waSetup({ extra: { 'intake/estimates.jsonl': WORKED() } }), '#/work', { now: Date.parse('2026-10-18T18:00:00Z'), store: memStore() });
-  try {
-    const order = findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-pressed'] != null)[0];
-    await app.tap(order);
-    const tree = drawn(app, WAYS[2]);
-    const moves = nodes(tree).filter((n) => n.cls.has('v2-plmove'));
-    assert.ok(moves.length >= 5, `${moves.length} rows in the ordering`);
-    for (const m of moves) {
-      assert.equal(plain(m.declared.get('grid-auto-flow')), 'column', 'side by side');
-      assert.equal(plain(m.declared.get('grid-row')), '1', 'beside the row only (Chromium: no space under any row, the pull request\'s captures)');
-      assert.equal(m.kids.length, 2);
+test('AC89 (k): the ordering view\'s rows have no empty space under them (specs/S-001.md:7936) — a row with nothing under it keeps its two move controls stacked beside the row only, unpadded; a row with lines under it keeps the controls\' column spanning them', async () => {
+  // Rewritten at stage 6a's design review (N1): side by side, the controls took 40 px from the names at 360 px. Stacked
+  // beside the row only, a row is at least as tall as the two 32 px controls with their 4 px gap (68 px; Chromium: no
+  // space under any row, and every name as wide as at db1474e, at 360 and 414 px, light and dark, the pull request's captures).
+  const ord = async (setup) => {
+    const app = await open(setup, '#/work', { now: Date.parse('2026-10-18T18:00:00Z'), store: memStore() });
+    try {
+      await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-pressed'] != null)[0]);
+      return nodes(drawn(app, WAYS[2])).filter((n) => n.cls.has('v2-plli') && n.cls.has('ord'));
+    } finally {
+      app.restore();
     }
-  } finally {
-    app.restore();
+  };
+  const moveOf = (li) => li.kids.find((k) => k.cls.has('v2-plmove'));
+  const under = (li) => li.kids.some((k) => k.cls.has('v2-plunder'));
+  // Every milestone estimated (the worked example): no row has lines under it.
+  const bare = await ord(waSetup({ extra: { 'intake/estimates.jsonl': WORKED() } }));
+  assert.ok(bare.length >= 5, `${bare.length} rows in the ordering`);
+  // No estimates: every row has its "not estimated" line under it.
+  const lined = await ord(waSetup({}));
+  assert.ok(lined.length >= 5 && lined.every(under), 'each row with a line under it');
+  for (const li of bare) {
+    assert.equal(under(li), false);
+    const m = moveOf(li);
+    assert.equal(m.kids.length, 2);
+    assert.equal(plain(m.declared.get('grid-row')), '1', 'beside the row only');
+    assert.equal(plain(m.declared.get('padding')), '0', 'unpadded: the row is no taller than the stacked controls need');
+    assert.equal(m.declared.get('grid-auto-flow'), undefined, 'stacked, not side by side: the names keep their width');
+  }
+  for (const li of lined) {
+    const m = moveOf(li);
+    assert.equal(plain(m.declared.get('grid-row')), '1 / span 2', 'beside the row and the lines under it');
+    assert.equal(plain(m.declared.get('padding')), '6px 0');
   }
   const r = rule('.v2-plmove');
-  assert.match(r, /grid-auto-rows: 32px;/);
-  assert.match(r, /padding: 6px 0;/);
-  assert.match(rule('.v2-plmove'), /align-content: start;/);
-  // 32 px controls in one row with 6 px above and below: 44 px, under the row's 9 px padding and two lines (AC86).
-  assert.match(CSS, /\n\.v2-plmove \{ grid-row: 1; grid-auto-flow: column; grid-auto-columns: 36px; \}/, 'in the row\'s own line, so no empty line under it');
+  assert.match(r, /grid-column: 2; grid-row: 1 \/ span 2; display: grid; grid-auto-rows: 32px; gap: 4px; align-content: start; padding: 6px 0;/);
+  assert.match(CSS, /\n\.v2-plli\.ord:not\(:has\(\.v2-plunder\)\) > \.v2-plmove \{ grid-row: 1; padding: 0; \}/);
+  assert.doesNotMatch(CSS, /grid-auto-flow: column; grid-auto-columns: 36px/, 'no longer side by side');
   assert.match(rule('.v2-plrow'), /padding: 9px 0; min-height: 40px;/);
 });
 

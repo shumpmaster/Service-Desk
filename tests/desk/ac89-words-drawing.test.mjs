@@ -447,3 +447,58 @@ test('AC89 (k): an unparseable portfolio card names its file once, its "can\'t p
   assert.match(rule('.v2-why.v2-wclip.over'), /mask-image: linear-gradient\(#000 60%, transparent\);/);
   assert.doesNotMatch(rule('.v2-why.v2-wclip'), /ellipsis/);
 });
+
+// Stage 6a's Reviewer, round 1: B1 (a second waiting gate card disappearing from Plan) and B2 (AC24's count of a decision
+// card naming a milestone).
+const gateCard = (item, ms) => fixture('ac85/queue/P-003-launch-1.md').replace(/P-003/g, item).replace(/(\nanswer: [^\n]*\n)/, `$1Milestone: ${ms}\n`);
+const gateLine = (item, time) => JSON.stringify({ item, action: 'card', card: 1, gate: 'launch', role: 'user-rep', route: 'launch-gate', stage: 6, gate_n: 1, time, trigger: 'x' });
+
+test('AC86 with AC89 (k) (stage 6a\'s review, B1): two gate cards waiting on the owner in one project — each a row of its own at the top of its project\'s group, in the board\'s order, each opening its own card; neither counted on the milestone it names; Home\'s tile takes the first (made-up cards from AC85\'s, NOT real records)', async () => {
+  const log = `${j77Files()['dispatch-log/2026-10.jsonl'].trimEnd()}\n${gateLine('P-003', '2026-10-18T15:00:00Z')}\n${gateLine('P-004', '2026-10-18T15:10:00Z')}\n`;
+  const setup = waSetup({ extra: { 'intake/estimates.jsonl': WORKED(), 'queue/P-003-launch-1.md': gateCard('P-003', 'M3A'), 'queue/P-004-launch-1.md': gateCard('P-004', 'M3A'), 'dispatch-log/2026-10.jsonl': log } });
+  const app = await open(setup, '#/waiting', { now: Date.parse('2026-10-18T18:00:00Z'), store: memStore() });
+  try {
+    const board = findAll(app.view, (e) => e.attrs && /\|gate\|/.test(e.attrs['data-card'] || '')).map((e) => e.attrs['data-card']);
+    assert.equal(board.length, 2, 'both on the board');
+    await app.go('#/work');
+    const grp = keyed(app, 'wa-grp:Service-Desk');
+    const list = byClass(grp, 'v2-rows')[0];
+    const gates = list.children.filter((li) => li.attrs && li.attrs['data-gate'] != null);
+    assert.deepEqual(gates.map((li) => li.attrs['data-gate']), board, 'a row each, in the board\'s order');
+    assert.deepEqual(list.children.slice(0, 2), gates, 'at the top of the group');
+    for (const id of board) {
+      const a = keyed(app, `wa-gate:${id}`);
+      assert.equal(a.attrs.href, `#/work/card/${encodeURIComponent(id)}`, `${id}: opens its own card`);
+      assert.match(a.textContent, /Launch gate · waits on you/);
+    }
+    assert.equal(findAll(app.view, (e) => e.dataset && /^wa-you:row:/.test(e.dataset.k || '')).length, 0, 'no milestone row counts either gate card');
+    // Each opens its own sheet over Plan.
+    await app.go(`#/work/card/${encodeURIComponent(board[1])}`);
+    assert.match(byClass(app.view, 'v2-sheet')[0].textContent, /P-004/, 'the second card\'s own sheet');
+    // Home's tile: the first gate card, as Plan's first gate row (one rule, gateCardOf).
+    await app.go('#/');
+    const tile = keyed(app, 'card:Service-Desk');
+    assert.match(tile.textContent, /Next: the launch gate, after your ruling/i);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC24 (stage 6a\'s review, B2): a decision card — not a gate — whose `Milestone:` line names a milestone counts "1 waiting on you in your Queue" on that row (Service-Desk\'s real stop card, given a made-up `Milestone: MD3` line, NOT a real record)', async () => {
+  const card = fixture('service-desk/queue/P-001-stop-6.md').replace(/(\nanswer: [^\n]*\n)/, '$1Milestone: MD3\n');
+  assert.ok(card.includes('\nMilestone: MD3\n'));
+  const line = JSON.stringify({ item: 'P-001', action: 'card', card: 6, gate: 'stop', role: 'critic-triage', route: 'triage-return', stage: 3, time: '2026-10-18T15:00:00Z', trigger: 'x' });
+  const log = `${j77Files()['dispatch-log/2026-10.jsonl'].trimEnd()}\n${line}\n`;
+  const setup = waSetup({ extra: { 'intake/estimates.jsonl': WORKED(), 'queue/P-001-stop-6.md': card, 'dispatch-log/2026-10.jsonl': log } });
+  const app = await open(setup, '#/waiting', { now: Date.parse('2026-10-18T18:00:00Z'), store: memStore() });
+  try {
+    assert.ok(findAll(app.view, (e) => e.attrs && e.attrs['data-card'] === 'Service-Desk|card|queue/P-001-stop-6.md').length, 'the decision card waits');
+    await app.go('#/work');
+    const you = findAll(app.view, (e) => e.dataset && /^wa-you:row:.*\bMD3$/.test(e.dataset.k || ''))[0];
+    assert.ok(you, 'MD3 counts it');
+    assert.equal(you.textContent, '1 waiting on you in your Queue');
+    assert.equal(findAll(app.view, (e) => e.dataset && /^wa-you:row:/.test(e.dataset.k || '')).length, 1, 'on MD3 only');
+  } finally {
+    app.restore();
+  }
+});

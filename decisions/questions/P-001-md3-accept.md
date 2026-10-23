@@ -1,4 +1,4 @@
-Ruling: A — MD3 is accepted: the chosen design (mockup v2 as built) runs on the desk's real back end, showing real records, on its preview site; MD3 is marked reached
+Ruling: accept MD3 (A) — the chosen design (mockup v2 as built) runs on the desk's real back end, showing real records, on its preview site; MD3 is marked reached
 Proxy: done at the owner's request (the owner picked an option in the session on 2026-10-23; the question, the options as put and the owner's answer are quoted verbatim below)
 Milestone: MD3
 

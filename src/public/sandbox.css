@@ -700,6 +700,13 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
    each number the file's own (renderMarkdown's `numbers`); and a card's `code` words in Plex Mono. */
 .v2-sheet .sb-record ol { list-style: decimal; padding-left: 1.6em; }
 .v2-sheet .sb-record ul { list-style: disc; padding-left: 1.2em; }
+/* AC89 (h): the board's held-question fold ("The question and its options, to read") shows its record text in AC81's
+   roles, a heading --t-row and the rest --t-body, its lists' marks kept, as every sheet's record does. */
+.v2-qfold .sb-record { font: var(--t-body); overflow-wrap: anywhere; }
+.v2-qfold .sb-record :is(h1, h2, h3, h4, h5, h6) { font: var(--t-row); margin: 8px 0 4px; }
+.v2-qfold .sb-record :is(p, li, td, th, blockquote) { font: var(--t-body); }
+.v2-qfold .sb-record ol { list-style: decimal; padding-left: 1.6em; }
+.v2-qfold .sb-record ul { list-style: disc; padding-left: 1.2em; }
 .v2-code { font-family: var(--mono); }
 /* The whole record in the fold (and a file that can't be split, shown whole): on mockup v2's surface tokens. */
 .v2-whole .sb-record, .v2-sheet > .sb-record, .v2-fd > .sb-record { background: var(--bg2); border-radius: 10px; padding: 10px 12px; }
@@ -926,6 +933,11 @@ html.sb .v2-home .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-prtt.soft, .v2-prow.soft .v2-prtt { color: var(--ink2); font-weight: 400; }
 .v2-prt .v2-small, .v2-prt .v2-mono { overflow-wrap: anywhere; }
 .v2-prow > .v2-chev { width: 10px; height: 10px; margin-top: 4px; color: var(--ink2); }
+/* AC89 (c): the waits row's short names cut at two lines, the second fading at its end into the page's ground when cut
+   (part A item 16; the browser measures it); the tap opens Waiting, where every title is whole. */
+.v2-wn { display: block; position: relative; max-height: calc(2 * 1.4em); overflow: hidden; overflow: clip; }
+.v2-wn.over::after { content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1.4em; pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--bg) 85%); }
 
 /* Milestones by phase (frames 5, 6 and 6b): one line per phase, bottom up; opened, a thin line with an arrow pointing up. */
 .v2-std { display: grid; }

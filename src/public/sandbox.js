@@ -31,7 +31,7 @@ import { GATE_PHASE } from './lib/j11.js';
 import { composeAnswer, questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, standardLine, headText, buttonFiles } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, WORDS, MARKS_KEY,
-  boardAge, doneTime, HOLD_MS, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX } from './lib/board.js';
+  boardAge, doneTime, HOLD_MS, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, shortName } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
@@ -362,7 +362,7 @@ function buildProject(desk, project, box, now) {
   const model = box.model;
   const j = project.model === 'v3' ? j11Records(project, snap) : null;
   const tl = j ? timelineOf(j) : null;
-  const pv = phaseView(project, tl, snap.tree, j);
+  const pv = phaseView(project, tl, snap.tree, j, Boolean(box.read && box.read.read === 'cant-read'));
   const q = queueView(project, model, snap, now.getTime());
   const ctx = runsContext(project, snap, j, tl, pv, now.getTime(), TZ);
   let feed = null;
@@ -1004,7 +1004,7 @@ function portfolioSheet(pf, key, built) {
   let parts;
   if (key === 'cap') {
     parts = [h('ol', { class: 'v2-rows v2-pfsl', key: 'pfs-cap' }, v.cap.entries.map((e) => item(e.name, e.name,
-        h('span', { class: 'v2-small' }, [e.phase ? (e.phase === 'Done' ? PF_WORDS.capDone : `Now: ${e.phase}`) : e.v3 ? `Phase: ${e.why}` : cap(e.why), e.counted ? PF_WORDS.capCounted : PF_WORDS.capNotCounted].join(' · '))))),
+        h('span', { class: 'v2-small' }, [e.phase ? (e.phase === 'Done' ? PF_WORDS.capDone : `Now: ${e.phase}`) : e.v3 ? `Phase: ${e.why}` : cap(e.why), e.stale || null, e.counted ? PF_WORDS.capCounted : PF_WORDS.capNotCounted].filter(Boolean).join(' · '))))),
       mark('nomodel', `${cap(PF_WORDS.capNoRecord)}. ${PF_WORDS.capModelOpen}`),
       h('p', { class: 'v2-small' }, PF_WORDS.capResearch)];
   } else if (key === 'scorecard') {
@@ -1151,14 +1151,15 @@ function pageWaits(p, bd) {
   const n = c ? c.waiting + c.kicked : 0;
   const read = p.box.drawError ? 'cant-read' : p.box.read ? p.box.read.read : 'checking';
   const rows = bd ? bd.lanes.filter((l) => l.key !== 'done').flatMap((l) => l.groups.filter((g) => g.project === name).flatMap((g) => g.rows)) : [];
-  return { n, read, names: rows.map((r) => r.title).filter(Boolean) };
+  // AC89 (c): each by its short name, from its kind and its own id (board.js, shortName), never a reworded title.
+  return { n, read, names: rows.map((r) => shortName(r) || [{ text: r.kindWord ? r.kindWord.toLowerCase() : NOT_RECORDED, id: false }]) };
 }
 
 /** A row of the page (frames 5 and 8): its mark, its title and its small line, a chevron; a tap opens where it says. */
-function pageRow(key, href, mark, title, small, { cls = '', smallCls = 'v2-small', live = null, onclick = null } = {}) {
+function pageRow(key, href, mark, title, small, { cls = '', smallCls = 'v2-small', live = null, onclick = null, clip = null } = {}) {
   return h('li', { key: `li:${key}` }, h('a', { class: `v2-prow${cls ? ` ${cls}` : ''}`, key, href, onclick },
     mark || h('span', { class: 'v2-pmk', 'aria-hidden': 'true' }),
-    h('span', { class: 'v2-prt' }, h('span', { class: 'v2-prtt' }, title), small != null || live ? h('span', { class: smallCls, live }, small) : null),
+    h('span', { class: 'v2-prt' }, h('span', { class: 'v2-prtt' }, title), small != null || live ? h('span', { class: smallCls, live, 'data-clip': clip }, small) : null),
     vi('chev', 'v2-k v2-chev')));
 }
 
@@ -1173,7 +1174,14 @@ function pageTwoRows(p, bd) {
   const w = pageWaits(p, bd);
   const to = go('waiting', name);
   let waits;
-  if (w.n > 0) waits = pageRow('page-waits', to, stc('you'), `${w.n} ${w.n === 1 ? 'waits' : 'wait'} on you`, w.names.join(' · '), { cls: 'you' });
+  if (w.n > 0) {
+    // AC89 (c): the short names joined by " · ", each id in Plex Mono (AC48), cut at two lines with the fade (part A
+    // item 16; measured as a sheet's three-line text is, measureClips); the tap opens Waiting, where every title is whole.
+    const clip = `page-waits:${name}`;
+    const names = w.names.map((parts, i) => [i ? ' · ' : null, parts.map((x) => (x.id ? h('span', { class: 'v2-mono' }, x.text) : x.text))]);
+    waits = pageRow('page-waits', to, stc('you'), `${w.n} ${w.n === 1 ? 'waits' : 'wait'} on you`, names,
+      { cls: 'you', smallCls: `v2-small v2-wn${clipOver.get(clip) === true ? ' over' : ''}`, clip });
+  }
   else if (w.read === 'cant-read') {
     const r = p.box.read || {};
     waits = pageRow('page-waits', to, vi('bad', 'v2-k bad'), p.box.drawError || (r.since != null ? `Can't read since ${hhmm(new Date(r.since), TZ)}` : "Can't read"), r.words || null, { cls: 'bad' });
@@ -1748,6 +1756,14 @@ function boardOf(built, nowMs, only) {
   const readState = (b) => (b.box && b.box.read ? b.box.read.read : null);
   view.unread = shown.some((b) => readState(b) === 'ok') ? null
     : shown.length && shown.every((b) => readState(b) === 'cant-read') ? 'cant' : 'pending';
+  // AC89 (a): with one project shown, the view follows that project's own read state (one of the table's five).
+  view.one = null;
+  const one = only ? built.find((b) => b.project.name === only) : null;
+  if (one && one.box) {
+    const st = DESK && DESK.states ? DESK.states.get(only) : null;
+    view.one = oneProjectView({ name: only, read: one.box.read, lastSuccessAt: st ? st.lastSuccessAt : null, tz: TZ });
+    view.unread = view.one.unknown ? (view.one.state === 2 ? 'cant' : 'pending') : null;
+  }
   boardState.view = view;
   boardState.cards = new Map(projects.flatMap((p) => p.cards.map((c) => [c.id, c])));
   for (const b of built) {
@@ -2028,7 +2044,8 @@ function laneNode(bd, built, laneKey, only) {
   return h('section', { class: `v2-lane lane-${laneKey}`, key: `lane:${laneKey}`, 'data-lane': laneKey, 'aria-label': l.title },
     h('h2', { class: 'v2-lh' }, h('span', {}, l.title), laneKey === 'done' || unknown ? null : h('span', { class: 'v2-lc' }, String(l.count))),
     groups.length ? groups : h('p', { class: `v2-empty${unknown ? ' unknown' : ''}` },
-      unknown ? (bd.unread === 'cant' ? BOARD_UNREAD.cant : BOARD_UNREAD.pending) : laneKey === 'done' ? WORDS.emptyDone : WORDS.empty));
+      laneKey === 'done' ? WORDS.emptyDone : bd.one ? bd.one.empty
+        : unknown ? (bd.unread === 'cant' ? BOARD_UNREAD.cant : BOARD_UNREAD.pending) : WORDS.empty));
 }
 
 /** A quiet line (AC80): shown only when it has any; a tap opens its fold. */
@@ -2062,12 +2079,19 @@ function quietLines(bd, built, only) {
   if (only) {
     // Filtered (frame 2): the two counts in one small line under the lanes, "With the agents: <n> ·
     // Being recorded by the automatic job: <n>", each count's words a control opening its fold below.
+    // A count of 0 is words, not a control: a quiet line opens a fold only when it has any (AC89 (a); AC80).
     const small = (k, words, n) => {
       const open = boardState.folds.has(k);
+      if (!n) return `${words}: ${n}`;
       return h('button', { type: 'button', class: 'v2-qs', key: `ql:${k}`, 'aria-expanded': open ? 'true' : 'false',
         onclick: () => { if (open) boardState.folds.delete(k); else boardState.folds.add(k); render(); } }, `${words}: ${n}`);
     };
-    if (bd.unread) {
+    const one = bd.one;
+    if (one && one.counts !== 'read') {
+      // AC89 (a): state 4 (not fresh after a read) says "checking…" for the two counts, as main did; states 1, 2
+      // and 5 have no such line (the table: nothing above the lanes, or the "Can't read" line there instead).
+      if (one.counts === 'checking') lines.push(h('p', { class: 'v2-small v2-qsmall unknown', key: 'qsmall' }, `${WORDS.agents}: ${ONE_WORDS.countsChecking} · ${WORDS.recording}: ${ONE_WORDS.countsChecking}`));
+    } else if (!one && bd.unread) {
       // The project not read yet, or not readable: no count for an unknown (Part A item 5; stage 1a's
       // build review, round 2, N1 and F3-r2), the words only, with no fold to open. Only the two counts
       // take them: the held question's and the recorded answer's lines still follow (round 3, finding 1).
@@ -2096,13 +2120,18 @@ function quietLines(bd, built, only) {
 /** The Waiting tab (AC80, frames 1 and 2): the title, "checked <age> ago", the quiet lines, the lanes; a card's sheet over it. */
 function renderWaiting(bd, built, only, sheetId) {
   const name = only && built.some((b) => b.project.name === only) ? only : null;
+  // AC89 (a): with one project shown, the line under the title is that project's own ("Checking…", "Not read in
+  // this opening", or "checked <age> ago" from its own last read in this opening).
+  const one = name ? bd.one : null;
   const body = [
     h('header', { class: 'v2-top' }, h('h1', { class: 'v2-title' }, 'Waiting')),
-    h('p', { class: 'v2-sub', live: checkedWords })];
+    h('p', { class: 'v2-sub', live: one ? () => one.under(Date.now()) : checkedWords })];
   if (name) {
     body.push(h('div', { class: 'v2-filter', key: 'filter' }, h('span', { class: 'v2-chip' }, vi('proj'), h('span', {}, name),
       h('button', { type: 'button', class: 'v2-x', key: 'chip-x', 'aria-label': 'Show all projects', onclick: () => nav.replace('#/waiting') }, vi('x'))),
     h('span', { class: 'v2-small' }, `1 of ${bd.of} project${bd.of === 1 ? '' : 's'}`)));
+    // AC89 (a), states 2 and 5: "Can't read <project> since HH:MM", with AC5's reason in words, above the lanes.
+    if (one && one.cant) body.push(h('div', { class: 'v2-quiet', key: 'quiet-cant' }, h('p', { class: 'v2-ql still bad', key: `ql:cant:${name}` }, vi('bad'), h('span', {}, one.cant))));
   } else body.push(quietLines(bd, built, null));
   body.push(h('div', { class: 'v2-lanes', key: 'lanes' }, LANES.map((l) => laneNode(bd, built, l.key, name))));
   if (name) body.push(quietLines(bd, built, name));
@@ -2485,7 +2514,7 @@ function cardSheet(bd, built, only, sheetId) {
   if (card.kind === 'card' && v.question) parts.push(blk('The question', h('p', { class: 'v2-lead', key: 'card-q' }, v.question)));
   if (card.kind === 'deploy') {
     const dr = deployRows(project, p.snap).find((x) => x.run && card.deploy && x.run.runNumber === card.deploy.runNumber && x.run.path === card.deploy.path);
-    parts.push(blk('Why it is here', h('p', { class: 'v2-body' }, card.flag.words || NOT_RECORDED)));
+    parts.push(blk('Why it is here', h('p', { class: 'v2-body' }, v.why)));
     // AC72's row words, word for word (AC72, changed by AC80): the run, linked, with its code; then
     // whether its commit is a reviewed pull request's merge, a mark beside the words (AC42), and the
     // sources or the reason. The approval itself stays on GitHub (the card's "Approve ↗").

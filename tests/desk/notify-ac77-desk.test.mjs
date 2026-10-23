@@ -512,7 +512,10 @@ test('AC77 (draft 9; the desk): the re-read with a pull request\'s files failing
   }
 });
 
-test('AC77 + AC80 (stage 1a\'s build review, round 3, finding 1): filtered to the project, the "Being asked in your session" and "Your answer is being recorded" lines stay when its reads then fail; only the two counts take "can\'t read"; the held question\'s fold keeps "Answer it here instead"', async () => {
+// Rewritten for AC89 (a) (specs/S-001.md:7823-7852, the table's state 5; AC80, changed, :6503-6506): once the reads fail
+// after a success, the two counts' small line gives way to "Can't read <project> since HH:MM" above the lanes; the held
+// question's and the recorded answer's lines still stay, as round 3's finding 1 has them.
+test('AC77 + AC80 (stage 1a\'s build review, round 3, finding 1), rewritten for AC89 (a): filtered to the project, the "Being asked in your session" and "Your answer is being recorded" lines stay when its reads then fail; the two counts give way to "Can\'t read <project> since HH:MM" above the lanes; the held question\'s fold keeps "Answer it here instead"', async () => {
   const cases = [
     ['ql:asking', 'Being asked in your session: 1', { [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, [], {}],
     ['ql:answerRecording', 'Your answer is being recorded: 1', { [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION, '.github/workflows/asks-merge.yml': 'name: asks-merge\n' },
@@ -522,7 +525,7 @@ test('AC77 + AC80 (stage 1a\'s build review, round 3, finding 1): filtered to th
     const rs = repos(files, pulls, extra);
     const app = await loadSandbox({ config: CONFIG, repos: rs, hash: '#/waiting/Service-Desk', now: RAISED_MS + 10 * MIN });
     const line = () => sbFindAll(app.view, (e) => e.dataset && e.dataset.k === key)[0] || null;
-    const small = () => byClass(app.view, 'v2-qsmall')[0].textContent;
+    const small = () => (byClass(app.view, 'v2-qsmall')[0] || { textContent: null }).textContent;
     try {
       await app.advance(1000);
       await app.advance(60_000);
@@ -531,7 +534,8 @@ test('AC77 + AC80 (stage 1a\'s build review, round 3, finding 1): filtered to th
       rs['Service-Desk'].fail = { kind: 'network' };
       await app.advance(60_000);
       await app.advance(60_000);
-      assert.equal(small(), "With the agents: can't read · Being recorded by the automatic job: can't read", `${key}: the counts unknown`);
+      assert.equal(small(), null, `${key}: no counts while it can't be read`);
+      assert.match(byClass(app.view, 'v2-board')[0].textContent, /Can't read Service-Desk since \d\d:\d\d: network error/, `${key}: said above the lanes`);
       assert.ok(line(), `${key}: the line stays while the project can't be read`);
       assert.equal(line().textContent, words);
       if (key === 'ql:asking') {

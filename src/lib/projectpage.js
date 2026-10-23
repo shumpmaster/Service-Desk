@@ -10,7 +10,7 @@
 
 import { DESK_PHASES, STANDARD_MILESTONES, NOT_RECORDED_IDS } from './timeline.js';
 import { milestoneRule, FEED_ICON, PHASE_CLASS, runBegan, dayWords } from './feed.js';
-import { NOT_RECORDED, NOT_AVAILABLE, deskWords, standardWord, hasWorkFiled, reachedDateWords } from './sandbox.js';
+import { NOT_RECORDED, NOT_AVAILABLE, deskWords, standardWord, hasWorkFiled, reachedDateWords, PHASES_READING, PHASES_NOT_AVAILABLE } from './sandbox.js';
 import { sprintStrip } from './home.js';
 import { SPEC_PATH_RE } from './j11.js';
 
@@ -76,7 +76,7 @@ export function pageSentence(ctx, { snap, waits = null } = {}) {
     return `${first} ${waits.n > 0 ? `${waits.n} ${waits.n === 1 ? 'waits' : 'wait'} on you.` : 'Nothing waits on you.'}`;
   }
   if (!ctx.tl || !pv || !pv.tracked) {
-    return pv && pv.why === 'Phases: reading…' ? UNREAD_SENTENCE : 'Phases not tracked.';
+    return pv && (pv.why === PHASES_READING || pv.why === PHASES_NOT_AVAILABLE) ? UNREAD_SENTENCE : 'Phases not tracked.';
   }
   if (pv.done) return 'Done.';
   const now = ctx.now;

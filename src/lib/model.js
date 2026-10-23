@@ -459,6 +459,8 @@ export function buildModel(input) {
   const tz = config.ownerTimeZone;
   const t = (d) => whenText(d instanceof Date ? d : new Date(d), now, tz);
   const tree = input.tree || new Map();
+  // AC89 (h): a record note says "not found" only for a file the read of the tree reached; before any tree is read, "not read".
+  const absent = input.tree != null ? 'not found' : 'not read';
   const records = input.records || new Map();
   const history = input.history || new Map();
   const notes = [];
@@ -592,7 +594,7 @@ export function buildModel(input) {
   for (const path of input.withdrawn || []) activity.push({ kind: 'withdrawn', text: `withdrawn: ${path}` });
 
   if (!isV3) {
-    return finishV25({ project, records, tree, flagged, activity, notes, ci, questions, otherPulls, pulls, t, history, now, askingRows, recording, beingRecorded });
+    return finishV25({ project, records, tree, absent, flagged, activity, notes, ci, questions, otherPulls, pulls, t, history, now, askingRows, recording, beingRecorded });
   }
 
   // --- Dispatch log (J9)
@@ -613,7 +615,7 @@ export function buildModel(input) {
     entries.push(...rec.entries);
     notes.push(...rec.notes);
   }
-  if (logFound === 0) notes.push('dispatch log: not found');
+  if (logFound === 0) notes.push(`dispatch log: ${absent}`);
   markRetries(entries);
   const cardTimes = new Map();
   const decisions = new Map();
@@ -630,7 +632,7 @@ export function buildModel(input) {
 
   // --- Status files (J9, AC9)
   const routingRec = records.get(ROUTING_PATH);
-  if (!tree.has(ROUTING_PATH)) notes.push('governance/ROUTING.toml: not found');
+  if (!tree.has(ROUTING_PATH)) notes.push(`governance/ROUTING.toml: ${absent}`);
   const items = [];
   const statusByItem = new Map();
   for (const path of [...tree.keys()].sort()) {
@@ -815,7 +817,7 @@ export function buildModel(input) {
     questions: qr.rows, questionsPending: qr.pending, answeredText: null, ready: logLoaded };
   const outcomesRec = records.get(OUTCOMES_PATH);
   if (outcomesRec) notes.push(...outcomesRec.notes);
-  else if (!tree.has(OUTCOMES_PATH)) notes.push(`${OUTCOMES_PATH}: not found`);
+  else if (!tree.has(OUTCOMES_PATH)) notes.push(`${OUTCOMES_PATH}: ${absent}`);
   const sessions = sessionRows(entries, outcomesRec ? outcomesRec.bySession : null, statusDispatch, nowMs);
 
   const openItems = items.filter((i) => !i.finished);
@@ -829,7 +831,7 @@ export function buildModel(input) {
   };
 }
 
-function finishV25({ project, records, tree, flagged, activity, notes, ci, questions, otherPulls, pulls, t, history, now, askingRows, recording, beingRecorded }) {
+function finishV25({ project, records, tree, absent = 'not found', flagged, activity, notes, ci, questions, otherPulls, pulls, t, history, now, askingRows, recording, beingRecorded }) {
   const open = [];
   let sprintFiles = 0;
   for (const path of [...tree.keys()].sort()) {
@@ -841,13 +843,13 @@ function finishV25({ project, records, tree, flagged, activity, notes, ci, quest
   let sprint;
   // `open` and `path` (from 2026-10-18, AC24's v2.5 group): how many sprint files say open, and the one's path.
   if (open.length === 1) sprint = { title: open[0].title, note: null, open: 1, path: open[0].path };
-  else if (sprintFiles === 0) sprint = { title: null, note: 'sprint: not found', open: 0, path: null };
+  else if (sprintFiles === 0) sprint = { title: null, note: `sprint: ${absent}`, open: 0, path: null };
   else sprint = { title: null, note: 'sprint unclear', open: open.length, path: null };
   const ledger = records.get(LEDGER_PATH);
   let headline;
   if (!tree.has(LEDGER_PATH)) {
     headline = { text: NOT_RECORDED, next: NOT_RECORDED, asOf: null };
-    notes.push('docs/LEDGER.md: not found');
+    notes.push(`docs/LEDGER.md: ${absent}`);
   } else if (!ledger) {
     headline = { text: 'loading…', next: null, asOf: null };
   } else {

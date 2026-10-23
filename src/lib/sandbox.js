@@ -238,10 +238,15 @@ export function runStateOf(r, runs, now) {
  * latest run in the model's timeline, the first rule that fits giving it: "Now" (with " · run <k>"
  * when the project has more than one run), "Finished", "Run <k> still to come", "Not started".
  */
-export function phaseView(project, tl, tree, j) {
+/** The phases' words while their records are not in: still being read, or the project can't be read (AC89 (h)). */
+export const PHASES_READING = 'Phases: reading…';
+export const PHASES_NOT_AVAILABLE = `Phases: ${NOT_AVAILABLE}`;
+export function phaseView(project, tl, tree, j, cantRead = false) {
   if (project.model !== 'v3') return { tracked: false, why: 'Phases not tracked', detail: V25_NOT_RECORDED, phases: [], finished: null, done: false };
   if (!tl) {
-    return { tracked: false, why: j && !j.ready ? 'Phases: reading…' : 'Phases not tracked', detail: NOT_AVAILABLE,
+    // AC89 (h): a project the desk can't read never shows "Phases: reading…"; it says "Phases: not available", beside
+    // its "Can't read since HH:MM".
+    return { tracked: false, why: j && !j.ready ? (cantRead ? PHASES_NOT_AVAILABLE : PHASES_READING) : 'Phases not tracked', detail: NOT_AVAILABLE,
       phases: [], finished: null, done: false };
   }
   const runs = tl.runs().filter((r) => DESK_PHASES.includes(r.phase));
@@ -979,8 +984,21 @@ export function sheetView(project, model, snap, j, row) {
       fullText: f.merge.parsed && f.merge.parsed.text ? f.merge.parsed.text : null,
       links: [{ text: 'The merge card on GitHub', href: treeLink(project, tree, f.merge.path) }, { text: `item/${f.merge.item} on GitHub`, href: f.merge.branchLink }] };
   }
+  // AC89 (b): a deploy's sheet says each thing once. What it is and why it is here, without the run's title and number
+  // (AC72's row under "Whether it matches a reviewed pull request" names them), and its last link opens the run's page.
+  if (f.kind === 'deploy') {
+    return { ...base, code: null, what: DEPLOY_SHEET.what, why: DEPLOY_SHEET.why, options: [], recommendation: null, links: [{ text: DEPLOY_SHEET.link, href: f.link }] };
+  }
+  // A sheet's link says "Its status file" only where it opens one (a card that went missing, AC80; AC89 (b)).
   return { ...base, what: row.text, why: f.words || NOT_RECORDED, options: [], recommendation: null, links: [{ text: 'Its status file', href: f.link }] };
 }
+
+/** AC89 (b)'s words for a deploy's sheet. */
+export const DEPLOY_SHEET = Object.freeze({
+  what: 'A deploy waiting for your approval on GitHub',
+  why: 'Its approver: not recorded (no record the desk reads names who approves a deploy)',
+  link: 'The run on GitHub',
+});
 
 // ---------------------------------------------------------------------------
 // AC55 and AC52: the owner's recorded actions
@@ -1057,6 +1075,8 @@ export const MERGES_WHY = "your merges aren't recorded in what the desk reads";
  * line 1 of any that could be the latest) has arrived; a v2.5 project's own words.
  */
 export function lastAction(project, model, snap, j, now, tz) {
+  // AC89 (h): an unread v2.5 project's last action is "not available", not "not recorded", which would claim its records were read.
+  if (project.model !== 'v3' && (!snap || !snap.tree)) return { state: 'pending', text: `Your last action: ${NOT_AVAILABLE}`, merges: MERGES_WHY };
   if (project.model !== 'v3') return { state: 'v25', text: 'Your last action: not recorded (operating model v2.5.1 records rulings in the ledger)', merges: MERGES_WHY };
   if (!snap || !snap.tree) return { state: 'pending', text: 'Your last action: not available yet', merges: MERGES_WHY };
   const { actions, pending } = ownerActions(project, model, snap, j);

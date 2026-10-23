@@ -46,6 +46,48 @@ export const WORDS = Object.freeze({
   cantCheck: "GitHub couldn't be checked yet",
 });
 
+/**
+ * AC89 (a)'s words for Waiting with one project shown, in each of its read states (specs/S-001.md, AC89 (a),
+ * the five-state table).
+ */
+export const ONE_WORDS = Object.freeze({
+  checking: 'Checking…',
+  notRead: 'Not read in this opening',
+  notReadYet: 'Not read yet',
+  cantRead: "Can't read",
+  whenLast: 'Nothing here when last read',
+  countsChecking: 'checking…',
+});
+
+/**
+ * Waiting with one project shown (AC89 (a); AC80, changed): which of the table's five states the project is in,
+ * from main's own read state (`readState`, src/lib/universe.js) and whether a read has succeeded in this opening
+ * (`lastSuccessAt`, which the scheduler sets only in this opening), and what each part of the view says:
+ *   1. not fresh, no read yet in this opening: "Checking…"; nothing above the lanes; no cards; "Not read yet";
+ *   2. can't be read, no read yet: "Not read in this opening"; "Can't read <project> since HH:MM: <reason>"; no cards; "Can't read";
+ *   3. fresh: "checked <age> ago"; the quiet lines with their counts; its cards; "Nothing here";
+ *   4. not fresh after a read: "checked <age> ago"; the quiet lines' two counts "checking…"; its last read's cards; "Nothing here";
+ *   5. can't be read after a read: "checked <age> ago" from that read; the can't-read line; its last read's cards;
+ *      "Nothing here when last read".
+ * "HH:MM" is readState's `since` in `tz` (a failure's first time since the last success, or, for the 3-minute cause, the
+ * last success in this opening or the opening's start). Returns { state, cards, counts ('read' | 'checking' | null),
+ * cant (the line above the lanes, or null), empty (an empty lane's words), unknown (a lane with no count), under(nowMs) }.
+ */
+export function oneProjectView({ name, read, lastSuccessAt, tz }) {
+  const r = read || {};
+  const succeeded = lastSuccessAt != null && Number.isFinite(lastSuccessAt);
+  const checked = (nowMs) => `checked ${durationText(Math.max(0, nowMs - lastSuccessAt))} ago`;
+  const cant = r.read === 'cant-read'
+    ? `Can't read ${name}${r.since != null && Number.isFinite(r.since) ? ` since ${hhmm(new Date(r.since), tz)}` : ''}${r.words ? `: ${r.words}` : ''}` : null;
+  if (r.read === 'ok') return { state: 3, cards: true, counts: 'read', cant: null, empty: WORDS.empty, unknown: false, under: checked };
+  if (r.read === 'cant-read') {
+    return succeeded ? { state: 5, cards: true, counts: null, cant, empty: ONE_WORDS.whenLast, unknown: false, under: checked }
+      : { state: 2, cards: false, counts: null, cant, empty: ONE_WORDS.cantRead, unknown: true, under: () => ONE_WORDS.notRead };
+  }
+  return succeeded ? { state: 4, cards: true, counts: 'checking', cant: null, empty: WORDS.empty, unknown: false, under: checked }
+    : { state: 1, cards: false, counts: null, cant: null, empty: ONE_WORDS.notReadYet, unknown: true, under: () => ONE_WORDS.checking };
+}
+
 /** The board's age form: "35 m", "2 h 53 m" (frame 1). */
 export const boardAge = (ms) => durationText(Math.max(0, ms)).replace(/ min\b/, ' m');
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -283,6 +325,36 @@ export function projectCards(input) {
     cards.push({ ...base, kind: 'missing', kindWord: KIND_WORDS.missing, title: f.title, meta: [], step, buttons: [step] });
   }
   return { cards, agents, keep };
+}
+
+/**
+ * A waiting item's short name for a project page's waits row (AC89 (c); AC83's "the waiting items' short names";
+ * frame 5): from its kind and its own id, never a reworded title (AC9). A pull request "#<n>"; an owner question
+ * "question <its file's name>"; a card "<item> <gate>-<n>" (a card that went missing too, from its status file's
+ * words); a gate card "the <Phase> gate"; a hold card "a governance hold"; a merge card "a merge of <item>"; a deploy
+ * "a deploy, run <n>". Returns its parts, each { text, id } (an id is drawn in Plex Mono, AC48), or null for a card
+ * with no such name.
+ */
+export function shortName(card) {
+  const f = card.flag || {};
+  const id = (text) => ({ text, id: true });
+  const w = (text) => ({ text, id: false });
+  switch (card.kind) {
+    case 'pr': return [id(`#${card.number}`)];
+    case 'question': return [w('question '), id(card.name)];
+    case 'card': return f.card ? [id(`${f.card.item} ${f.card.gate}-${f.card.n}`)] : null;
+    case 'gate': return f.card ? [w(`the ${cap(GATE_PHASE[f.card.gate] || f.card.gate)} gate`)] : null;
+    case 'hold': return [w('a governance hold')];
+    case 'merge': return f.merge ? [w('a merge of '), id(f.merge.item)] : null;
+    case 'deploy': return f.deploy ? [w('a deploy, '), id(`run ${f.deploy.runNumber}`)] : null;
+    case 'missing': {
+      // Its item from its key (`status:<item>`), its gate and number as its status file gives them (model.js).
+      const item = /^status:(.+)$/.exec(String(f.key || ''));
+      const m = /: waiting on you: card (.+) \(card file not found\)$/.exec(String(f.title || card.title || ''));
+      return item && m ? [id(`${item[1]} ${m[1]}`)] : null;
+    }
+    default: return null;
+  }
 }
 
 /** A card's meta line in Plex Mono: `#148 · R3 · 35 m` (the board's age form), the wait from its raised time. */

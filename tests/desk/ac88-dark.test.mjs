@@ -157,7 +157,8 @@ function checkScreen(app, where, fails, seen) {
     if (way.attr) attrs['data-theme'] = way.attr; else delete attrs['data-theme'];
     const tree = treeOf(app.view, { className: root.className, attrs });
     // A clipped text's fade is drawn only once the browser measures the text as cut (`over`): read every box as cut.
-    for (const n of nodes(tree)) if (['sb-sumclip', 'sb-lineclip', 'v2-e1'].some((c) => n.cls.has(c))) n.cls.add('over');
+    // M3D stage 1 (AC89 (c)): the waits row's short names, cut at two lines, fade into the page's ground too.
+    for (const n of nodes(tree)) if (['sb-sumclip', 'sb-lineclip', 'v2-e1', 'v2-wn'].some((c) => n.cls.has(c))) n.cls.add('over');
     openBubbles(tree);
     cascade(tree, RULES, way.env);
     const fail = (n, words) => { const k = `${way.theme} ${label(n)} ${words}`; if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(n)}: ${words}`); } };
@@ -383,6 +384,16 @@ const LOOK = ['font-size', 'font-weight', 'font-family', 'line-height', 'color',
 const excepted = new Set();
 const STAGE8_TOP = (n, d) => (n.cls.has('sb-screen') && n.parent && n.parent.attrs.id === 'view' && /^padding-top: (4px|\(none\)) → 14px$/.test(d))
   || (n.cls.has('v2-tlhead') && n.parent && n.parent.cls.has('v2-timeline') && d === 'margin-top: (none) → -14px');
+/**
+ * M3D stage 1's one change to an element's look on purpose (the brief's after-MD3 rule, specs/S-001.md:15549-15553; AC89 (c),
+ * :7863-7870): a project page's waits row, its short names cut at two lines (part A item 16). Only the names' own box
+ * under a page row's title (`span.v2-small.v2-wn`, in `.v2-prt` of an `a.v2-prow`) takes these four declarations, and
+ * nothing else is excepted; the fade at its cut is drawn only once the browser measures it cut, and AC88's test above
+ * checks its colour.
+ */
+const M3D1_WAITS = new Set(['display: (none) → block', 'position: (none) → relative', 'max-height: (none) → calc(2 * 1.4em)', 'overflow: (none) → clip']);
+const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
+  && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
   for (const way of WAYS) {
     const root = document.documentElement;
@@ -412,6 +423,7 @@ function sameLook(app, where, fails, seen) {
       if (b.text.trim()) for (const k of LOOK) if (plain(a.style.get(k) || '') !== plain(b.style.get(k) || '')) diffs.push(`computed ${k}: ${plain(a.style.get(k) || '(none)')} → ${plain(b.style.get(k) || '(none)')}`);
       for (const d of diffs) {
         if (STAGE8_TOP(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
+        if (M3D1_EXCEPT(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -456,6 +468,9 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   for (const want of ['section.sb-screen.v2.v2-home padding-top: 4px → 14px', 'section.sb-screen padding-top: (none) → 14px', 'div.v2-tlhead margin-top: (none) → -14px']) {
     assert.ok(excepted.has(want), `${want}: ${JSON.stringify([...excepted])}`);
   }
+  // M3D stage 1's exception was met, in exactly its four declarations, and is the only one beside stage 8's.
+  for (const d of M3D1_WAITS) assert.ok(excepted.has(`span.v2-small.v2-wn ${d}`), `${d}: ${JSON.stringify([...excepted])}`);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead)/.test(x)).sort(), [...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`).sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

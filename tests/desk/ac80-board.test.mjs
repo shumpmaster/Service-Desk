@@ -297,7 +297,8 @@ test('AC80 + AC83: a kicked-back card counts again on the project\'s page — "�
     await app.go('#/p/Example');
     const waits = keyed(app, 'page-waits');
     assert.equal(byClass(waits, 'v2-prtt')[0].textContent, '8 wait on you', 'the page counts it, as the badge and the tile do');
-    assert.ok(byClass(waits, 'v2-small')[0].textContent.split(' · ').includes('Merge: the first rough estimates'), 'its short name with the others');
+    // Rewritten for AC89 (c) (specs/S-001.md:7863-7870): each item by its short name, a pull request "#<n>", never its title.
+    assert.ok(byClass(waits, 'v2-small')[0].textContent.split(' · ').includes('#126'), 'its short name with the others');
   } finally {
     app.restore();
   }
@@ -909,21 +910,28 @@ test('AC80 with Part A item 5 (stage 1a\'s build review, round 1, F3): before th
   }
 });
 
-test('AC80 with Part A item 5 (stage 1a\'s build review, round 2, N1 and F3-r2): with the board filtered to one project not read yet or not readable, the small line under the lanes gives no count — before the first read, with every project down, and with only that project down', async () => {
-  const smallLine = (app) => byClass(app.view, 'v2-qsmall')[0].textContent;
+// Rewritten for AC89 (a) (specs/S-001.md:7823-7852, the table's states 1 and 2; AC80, changed, :6503-6506): with one project
+// shown and no read of it yet in this opening, no count anywhere, and the quiet lines' small line is not drawn (the table:
+// "nothing" above the lanes in state 1, the "Can't read" line in state 2); once read, its counts, a 0 being words.
+test('AC80 with Part A item 5 (stage 1a\'s build review, round 2, N1 and F3-r2), rewritten for AC89 (a): with the board filtered to one project not read yet or not readable, no count anywhere and no small line under the lanes — before the first read, with every project down, and with only that project down', async () => {
+  const smallLine = (app) => (byClass(app.view, 'v2-qsmall')[0] || { textContent: null }).textContent;
   const noZero = (app, why) => {
-    assert.doesNotMatch(byClass(app.view, 'v2-quiet')[0].textContent, /\d/, `${why}: no count in the quiet line`);
-    assert.doesNotMatch(byClass(app.view, 'v2-lanes')[0].textContent, /\b0\b|Nothing here/, `${why}: none in the lanes`);
+    assert.doesNotMatch(byClass(app.view, 'v2-lanes')[0].textContent, /\b0\b|Nothing here/, `${why}: no 0, and no "Nothing here", in the lanes`);
+    for (const k of ['wait', 'kick']) assert.equal(byClass(lane(app, k), 'v2-lc').length, 0, `${why}: ${k} has no count`);
+    for (const q of byClass(app.view, 'v2-quiet')) assert.doesNotMatch(q.textContent.replace(/\d\d:\d\d/g, ''), /\b\d+\b/, `${why}: no count in a quiet line`);
+    assert.equal(smallLine(app), null, `${why}: no small line of counts`);
   };
-  // Before the first read.
+  const sub = (app) => byClass(app.view, 'v2-sub')[0].textContent;
+  // Before the first read (state 1).
   let app = await loadSandbox({ config: { ...CONFIG, projects: [EX, v3('Alpha')] }, repos: { Example: exampleRepo(), Alpha: fullRepo('Alpha') }, hash: '#/waiting/Example', now: NOW });
   try {
-    assert.equal(smallLine(app), 'With the agents: not read yet · Being recorded by the automatic job: not read yet');
     noZero(app, 'pre-read');
-    assert.equal(findAll(byClass(app.view, 'v2-qsmall')[0], (e) => e.tag === 'button').length, 0, 'no fold to open');
+    assert.equal(sub(app), 'Checking…');
+    assert.equal(byClass(lane(app, 'wait'), 'v2-empty')[0].textContent, 'Not read yet');
     await app.advance(1000);
     await app.advance(POLL_MS);
     assert.equal(smallLine(app), 'With the agents: 0 · Being recorded by the automatic job: 0', 'read: its real counts');
+    assert.equal(findAll(byClass(app.view, 'v2-qsmall')[0], (e) => e.tag === 'button').length, 0, 'a 0 is words, opening nothing');
   } finally {
     app.restore();
   }
@@ -936,8 +944,9 @@ test('AC80 with Part A item 5 (stage 1a\'s build review, round 2, N1 and F3-r2):
   try {
     await app.advance(1000);
     await app.advance(POLL_MS);
-    assert.equal(smallLine(app), "With the agents: can't read · Being recorded by the automatic job: can't read");
     noZero(app, 'all down');
+    assert.equal(sub(app), 'Not read in this opening', 'state 2');
+    assert.match(byClass(app.view, 'v2-board')[0].textContent, /Can't read Example since \d\d:\d\d: network error/, 'above the lanes, with its reason');
   } finally {
     app.restore();
   }
@@ -948,8 +957,8 @@ test('AC80 with Part A item 5 (stage 1a\'s build review, round 2, N1 and F3-r2):
   try {
     await app.advance(1000);
     await app.advance(POLL_MS);
-    assert.equal(smallLine(app), "With the agents: can't read · Being recorded by the automatic job: can't read");
     noZero(app, 'one down');
+    assert.equal(byClass(lane(app, 'wait'), 'v2-empty')[0].textContent, "Can't read");
     await app.go('#/waiting/Example');
     assert.equal(smallLine(app), 'With the agents: 0 · Being recorded by the automatic job: 0', 'the read project: its counts');
   } finally {

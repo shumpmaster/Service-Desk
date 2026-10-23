@@ -66,3 +66,28 @@ export function boot(render, desk) {
     desk.start();
   }
 }
+
+/** AC89 (h): the page's words when the desk's own code fails to load (stage 8's review, round 1, note 4). */
+export const LOAD_FAILED_WORDS = "The desk couldn't load. Reload to try again.";
+
+/**
+ * Load the desk's code and start it (AC44 step 4: `/` is the desk). If the code can't be loaded, or it throws while
+ * starting, `show(LOAD_FAILED_WORDS)` puts AC89 (h)'s words in place of "Checking…", so the page never reads as
+ * quiet or as still checking for good. Never throws itself. Returns a promise of the started desk, or null.
+ */
+export function startDesk(load, show) {
+  let loading;
+  try {
+    loading = Promise.resolve(load());
+  } catch (err) {
+    loading = Promise.reject(err);
+  }
+  return loading.then((m) => m.startSandbox()).catch(() => {
+    try {
+      show(LOAD_FAILED_WORDS);
+    } catch {
+      // nothing more the page can do
+    }
+    return null;
+  });
+}

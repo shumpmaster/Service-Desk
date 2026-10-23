@@ -539,6 +539,20 @@ export function nowLine(ctx, tz) {
 }
 
 /**
+ * AC90's Home part (P-001-audit-repeat.md, A; AC82, changed): "why it went back: not recorded" shared by two or more
+ * tiles of one group is said once at the group's head, "<k> projects · why their run went back: not recorded" ("<k> of
+ * <n> projects · …" when it covers only some of the group's tiles, AC90's rule), and each such tile's Now line keeps only
+ * its own "went back on <date>" where its record gives the date.
+ */
+export const WHY_BACK_ONCE = (k, n) => `${k === n ? `${n} projects` : `${k} of ${n} projects`} · why their run went back: not recorded`;
+/** A Now line (nowLine's) less the reason its group's head says once: its own "went back on <date>", or nothing. */
+export function nowOwnPart(nl) {
+  if (!nl || !nl.missing) return nl;
+  const m = /^(went back on .+), why not recorded$/.exec(String(nl.rest || ''));
+  return { ...nl, rest: m ? m[1] : null, once: true };
+}
+
+/**
  * The tile's "At work" line (AC82; AC49's who has the ball, in a line): "At work: <role> on <its
  * item>", each working member joined by ", "; else "No agent run recorded since <date>" from the
  * dispatch log's latest line (J9); a v2.5 project, "No dispatch log: not used here".

@@ -391,6 +391,53 @@ export function roughFinish(rows, todayKey) {
 }
 
 // ---------------------------------------------------------------------------
+// AC90 (P-001-audit-repeat.md, A): a "not yet" reason that two or more rows of one project's group on Plan would each
+// show, word for word, is said once at the group's head, with the count it covers; the rows it covers drop it.
+
+const milestones = (k) => `${k} ${k === 1 ? 'milestone' : 'milestones'}`;
+/** The head's words for an estimate line shared by `k` of a group's `n` rows (AC24's note, AC90's Plan part). */
+export function estimateOnce(words, k, n) {
+  const all = k === n;
+  if (words === WA.noEstimate) return all ? `${milestones(n)} · no estimates yet` : `${k} of ${milestones(n)} · no estimate yet`;
+  if (words === WA.estimateNA) return all ? `${milestones(n)} · estimate not available` : `${k} of ${milestones(n)} · estimate not available`;
+  return `${all ? milestones(n) : `${k} of ${milestones(n)}`} · ${words}`;
+}
+/** The head's words for a rough finish not available for one reason shared by `k` rows: "<k> rough finishes not available: <reason>". */
+export const finishOnce = (words, k) => `${k} rough finishes not available: ${String(words).replace(/^not available: /, '')}`;
+
+/**
+ * A group's shared reasons (AC90): rows [{ key, estimate: { kind, words }, finish: { na, words } }] as Plan's list shows
+ * them. Returns { lines: [{ kind: 'estimate' | 'finish', words, keys }], estimate: Set(row keys), finish: Set(row keys) },
+ * the sets naming the rows that drop their own line. A reason only one row shows stays on that row; a group with no
+ * shared reason has no line.
+ */
+export function groupOnce(rows) {
+  const n = rows.length;
+  const byEst = new Map();
+  const byFin = new Map();
+  for (const r of rows) {
+    const e = r.estimate;
+    if (e && ['missing', 'na', 'past'].includes(e.kind) && e.words) byEst.set(e.words, [...(byEst.get(e.words) || []), r.key]);
+    const f = r.finish;
+    if (f && f.na && f.words) byFin.set(f.words, [...(byFin.get(f.words) || []), r.key]);
+  }
+  const lines = [];
+  const estimate = new Set();
+  const finish = new Set();
+  for (const [w, keys] of byEst) {
+    if (keys.length < 2) continue;
+    lines.push({ kind: 'estimate', words: estimateOnce(w, keys.length, n), keys });
+    for (const k of keys) estimate.add(k);
+  }
+  for (const [w, keys] of byFin) {
+    if (keys.length < 2) continue;
+    lines.push({ kind: 'finish', words: finishOnce(w, keys.length), keys });
+    for (const k of keys) finish.add(k);
+  }
+  return { lines, estimate, finish };
+}
+
+// ---------------------------------------------------------------------------
 // J15: the later-work list and its asks
 
 const LATER_LINE_RE = /^- (.+?) \((W[0-9]+)\) · (.+?) · from: (\S+?)(?: · (?:added as: (M[0-9A-Z]{1,7})|(not added)))?$/;

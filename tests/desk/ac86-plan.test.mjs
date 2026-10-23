@@ -168,8 +168,11 @@ test('AC86: where AC24 gives no value — no estimate, a stale one, one run past
     const r = rows(noEst);
     assert.deepEqual(r.map((x) => parts(x).right), ['your acceptance', 'your acceptance', '', '', '', '']);
     assert.equal(parts(r[2]).mono, 'MD3 · Design', 'no days without an estimate');
-    assert.deepEqual(byClass(r[2], 'v2-plgap').map((g) => g.textContent), ['Estimate: not made yet', 'Rough finish: not available: MD3 has no estimate yet']);
-    for (const x of r.slice(3)) assert.deepEqual(byClass(x, 'v2-plgap').map((g) => g.textContent), ['Rough finish: not available: MD3 has no estimate yet']);
+    // Rewritten for AC90 (specs/S-001.md:8011-8022; AC86's note, :7678-7681): MD3's own "Estimate: not made yet" stays (no other
+    // row shares it); the rough finish not available for the four rows from MD3 on is said once at the group's head.
+    assert.deepEqual(byClass(r[2], 'v2-plgap').map((g) => g.textContent), ['Estimate: not made yet']);
+    for (const x of r.slice(3)) assert.deepEqual(byClass(x, 'v2-plgap').map((g) => g.textContent), []);
+    assert.deepEqual(byClass(findKeyed(noEst, 'wa-once:Service-Desk'), 'v2-plgap').map((g) => g.textContent), ['4 rough finishes not available: MD3 has no estimate yet']);
   } finally {
     noEst.restore();
   }
@@ -189,7 +192,9 @@ test('AC86: where AC24 gives no value — no estimate, a stale one, one run past
     assert.equal(parts(r).mono, 'MD3 · Design');
     assert.equal(parts(r).right, '');
     assert.equal(parts(r).icon, 'st-half', 'work filed, under way');
-    assert.deepEqual(byClass(r, 'v2-plgap').map((g) => g.textContent), ['past its estimate of 3–5 days, made 18 Oct; waiting on a new one', 'Rough finish: not available: MD3 is past its estimate']);
+    // Rewritten for AC90 (as above): its own words stay; the shared rough finish is said once at the head.
+    assert.deepEqual(byClass(r, 'v2-plgap').map((g) => g.textContent), ['past its estimate of 3–5 days, made 18 Oct; waiting on a new one']);
+    assert.deepEqual(byClass(findKeyed(past, 'wa-once:Service-Desk'), 'v2-plgap').map((g) => g.textContent), ['4 rough finishes not available: MD3 is past its estimate']);
   } finally {
     past.restore();
   }
@@ -342,10 +347,16 @@ test('AC86: a rough finish not available because of another project\'s milestone
       const r = findAll(g, (e) => e.attrs && e.attrs['data-row'] === id)[0];
       return byClass(r, 'v2-plgap').map((x) => x.textContent);
     };
+    // Rewritten for AC90 (specs/S-001.md:8011-8022; AC86's note, :7678-7681): each reason the group's rows share is said once
+    // at its head, in the same words, and no row repeats it.
+    const once = (project) => byClass(findKeyed(app, `wa-once:${project}`), 'v2-plgap').map((x) => x.textContent);
     assert.deepEqual(gap('Service-Desk', 'MD1'), [], 'before it: its own finish');
-    assert.deepEqual(gap('Service-Desk', 'MD2'), ['Rough finish: not available: Example\'s MD1 has no estimate yet']);
-    assert.deepEqual(gap('Example', 'MD1'), ['Estimate: not made yet', 'Rough finish: not available: MD1 has no estimate yet'], 'its own: AC24\'s words');
-    assert.deepEqual(gap('Example', 'MD2'), ['Estimate: not made yet', 'Rough finish: not available: MD1 has no estimate yet']);
+    assert.deepEqual(gap('Service-Desk', 'MD2'), []);
+    assert.ok(once('Service-Desk').some((w) => /^\d+ rough finishes not available: Example's MD1 has no estimate yet$/.test(w)), JSON.stringify(once('Service-Desk')));
+    assert.deepEqual(gap('Example', 'MD1'), [], 'its own: said at the head');
+    assert.deepEqual(gap('Example', 'MD2'), []);
+    assert.ok(once('Example').some((w) => /^\d+ milestones · no estimates yet$/.test(w)), JSON.stringify(once('Example')));
+    assert.ok(once('Example').some((w) => /^\d+ rough finishes not available: MD1 has no estimate yet$/.test(w)), 'AC24\'s words, once');
     await app.go('#/work/ms/Service-Desk/MD2');
     assert.equal(byClass(byClass(app.view, 'v2-sheet')[0], 'v2-plfin')[0].textContent, 'not available: Example\'s MD1 has no estimate yet');
     await app.go('#/work');

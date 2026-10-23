@@ -227,15 +227,16 @@ test('J14: an id section 3 does not hold, a v2.5 project\'s line, and a reached 
   assert.ok(none.rows.every((r) => r.estimate.words === 'Estimate: not made yet'), 'no file: as no estimate');
 });
 
-test('J14: a failed read shows "Estimate: not available" on every row and no rough finish; the project\'s "read successfully" and Home\'s top line are unchanged', async () => {
+test('J14: a failed read shows "Estimate: not available" for every row (on Plan said once at the group\'s head, AC90) and no rough finish; the project\'s "read successfully" and Home\'s top line are unchanged', async () => {
   const v = viewOf({ extra: { [ESTIMATES_PATH]: WORKED() }, nowMs: NOW, omit: [ESTIMATES_PATH] });
   assert.ok(v.rows.every((r) => r.estimate.words === 'Estimate: not available' && !r.finish));
   assert.equal(v.card, 'not available');
   await failedOptionalRead(ESTIMATES_PATH, WORKED(), (app) => {
-    // From stage 5 (AC86, specs/S-001.md:7041-7046): each of Plan's six rows says it, in AC24's words.
+    // Rewritten for AC90 (specs/S-001.md:8011-8022; AC24's note, :9250-9253): Plan says it once at the group's head, "<n>
+    // milestones · estimate not available", and no row repeats it (each milestone's sheet still says it, AC24's case).
     const gaps = findAll(app.view, (e) => /\bv2-plgap\b/.test(e.className || ''));
-    assert.equal(gaps.length, 6);
-    assert.ok(gaps.every((e) => e.textContent === 'Estimate: not available'));
+    assert.equal(gaps.length, 1, 'once, for the six rows');
+    assert.deepEqual(gaps.map((e) => e.textContent), ['6 milestones · estimate not available']);
   });
 });
 
@@ -353,7 +354,8 @@ test('J15: a failed list read shows "not available" in "Not milestones yet" only
   assert.equal(v.later.kind, 'na');
   await failedOptionalRead(LATER_WORK_PATH, LATER, (app) => {
     assert.match(app.text(), /Later work: not available/);
-    assert.match(app.text(), /about 3–5 days|Estimate/);
+    // Rewritten for AC90 (specs/S-001.md:8019-8022): with no estimate file, Plan's rows are said once at the head, "no estimates yet".
+    assert.match(app.text(), /about 3–5 days|Estimate|no estimates yet/);
   });
 });
 

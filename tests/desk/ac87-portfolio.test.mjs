@@ -181,6 +181,10 @@ test('AC87 (on the page): a v3 project the desk can\'t read — its read refused
       const tile = tileOf(app, 'Example').textContent;
       const t = /Can't read since (\d\d:\d\d)/.exec(tile);
       assert.ok(t, `${JSON.stringify(fail)}: the tile says it can't be read`);
+      // After MD3, stage 8 ((b) item 37; stage 6a's review confirmation, N1): both times in ownerTimeZone (America/Chicago):
+      // the read failed at 18:00Z, which is 13:00 there; UTC would read 18:00.
+      assert.equal(t[1], '13:00', `${JSON.stringify(fail)}: the tile's "since" in the owner's zone`);
+      assert.match(rowLine(app, 'cap').textContent, /can't be read since 13:00 · /, 'the cap\'s too');
       assert.equal(rowLine(app, 'cap').textContent, `In Build or Launch: none · Example's phase: can't be read since ${t[1]} · your cap: no record for this in the model yet`, JSON.stringify(fail));
       assert.doesNotMatch(block(app).textContent, /not read yet: (?!your portfolio)/);
       await app.go('#/pf/cap');

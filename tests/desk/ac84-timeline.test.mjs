@@ -13,6 +13,7 @@ import { loadSandbox, byClass, findAll, El0, j11Files, treePaths } from './sandb
 import { v25, fullRepo } from './sandbox-fixtures.mjs';
 import { models, openSD, keyed, sdRepo, ac61Answer, SD3, openFolds } from './tv2-fixtures.mjs';
 import { feedView } from '../../src/lib/feed.js';
+import { parseCss, treeOf, cascade, nodes } from './css-cascade.mjs';
 import { pageSentence, firstPart, phaseLine } from '../../src/lib/projectpage.js';
 
 const NOW16 = Date.parse('2026-10-16T18:00:00Z');
@@ -476,6 +477,38 @@ test('AC84 (specs/S-001.md:6917-6922; the Design reviewer\'s 1 and 2, stage 3 ro
   // Its own class, not the board card's .v2-mk (--ink): drawn in currentColor, its word's --ink2 (AC81, specs/S-001.md:6514-6516; the Reviewer's N-a, round 2).
   assert.match(rule('.v2-stats .v2-smk'), /^ width: 10px; height: 10px; color: inherit; $/, 'the ✕ icon at the marks\' size, in its word\'s colour');
   assert.match(rule('.v2-k'), /stroke: currentColor;/);
+});
+
+test('AC81 + AC84 (after MD3, stage 8; (b) item 37, stage 3 review round 3, R1): the ✕ icon\'s colour as drawn — through the cascade, at 360 and 414 px, light, the phone\'s dark and forced dark, the icon\'s stroke is its own colour and that colour is its word\'s, --ink2', async () => {
+  // specs/S-001.md:6512-6516 (AC81: a mark keeps its word, in the marks' colour) and the rule test above, which reads only
+  // the rule's text: a later, heavier rule giving the icon --ink passed it (the Reviewer's mutation Na3).
+  const rules = (() => {
+    const a = parseCss(readFileSync(`${SRC}/public/style.css`, 'utf8'), 'style.css');
+    return [...a, ...parseCss(RAW, 'sandbox.css').map((r) => ({ ...r, order: r.order + a.length }))];
+  })();
+  const name = (v) => (/^⟦([^|⟧]*)\|[^⟧]*⟧$/.exec(String(v)) || [])[1] || null;
+  const app = await open();
+  try {
+    const root = document.documentElement;
+    for (const [way, env, attr] of [['light', { scheme: 'light' }, null], ["the phone's dark", { scheme: 'dark' }, null], ['forced dark', { scheme: 'light' }, 'dark']]) {
+      for (const width of [360, 414]) {
+        const attrs = { ...(root.attrs || {}) };
+        if (attr) attrs['data-theme'] = attr; else delete attrs['data-theme'];
+        const tree = cascade(treeOf(app.view, { className: root.className, attrs }), rules, { ...env, width, reducedMotion: false });
+        const icons = nodes(tree).filter((n) => n.tag === 'svg' && n.cls.has('v2-smk'));
+        assert.ok(icons.length >= 1, `${way} ${width}: a ✕ on the Timeline (J11's #40)`);
+        for (const icon of icons) {
+          const word = nodes(tree).find((n) => n.kids.includes(icon));
+          assert.equal(icon.declared.get('stroke'), 'currentColor', 'drawn in its own colour');
+          for (const part of icon.kids.filter((k) => k.cls.has('fill'))) assert.equal(part.declared.get('fill'), 'currentColor');
+          assert.equal(icon.style.get('color'), word.style.get('color'), `${way} ${width}: the icon in its word's colour`);
+          assert.equal(name(icon.style.get('color')), '--ink2', `${way} ${width}: --ink2, as the marks`);
+        }
+      }
+    }
+  } finally {
+    app.restore();
+  }
 });
 
 test('AC81 + AC84 (specs/S-001.md:6512-6517, "each keeps its word or its accessible name"; the Reviewer\'s NB1 and N-b, stage 3 round 2): a failed check reads "failed checks" to assistive technology, its icon hidden, never only "checks" as a passed one\'s "✓ checks" would; each mark keeps its own word', async () => {

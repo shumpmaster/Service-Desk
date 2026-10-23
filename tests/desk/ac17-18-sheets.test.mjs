@@ -70,6 +70,13 @@ test('AC18 on every sheet that answers (from stage 8): with webCommitsToDefault 
       const warn = byClass(sh, 'v2-webwarn');
       assert.equal(warn.length, 1, `${label}: the message once`);
       assert.equal(warn[0].textContent, webCommitsWarning('main', what), `${label}: J7's words`);
+      // After MD3, stage 8 ((b) item 37; stage 8's confirmation review, N1, "No test pins the note's mark"): its one
+      // mark is the eye, the blast-radius line's own, never the ✕ it carried before stage 8's round 2.
+      const marks = findAll(warn[0], (e) => e.tag === 'svg');
+      assert.deepEqual(marks.map((m) => m.attrs.class), ['v2-k vi-eye'], `${label}: the eye`);
+      assert.equal(marks[0].attrs['aria-hidden'], 'true');
+      assert.equal(warn[0].attrs.role, 'note');
+      assert.ok(` ${warn[0].className} `.includes(' v2-mark '), `${label}: the blast-radius line's look`);
       const links = answerLinks(sh);
       assert.ok(links.every((a) => order(sh, warn[0]) < order(sh, a)), `${label}: before the links`);
       assert.deepEqual(links.map((a) => a.attrs.href), hrefs, `${label}: the links J3's URLs, unchanged`);

@@ -2,6 +2,16 @@
 
 *Pre-registered before any run (D-047). Frozen once the line below is set.*
 
+*Withdrawn, never run (2026-10-22), by the owner's ruling decisions/questions/P-001-md-glance-test.md:
+"Ruling: the 5-second glance test (experiments/EXP-005-md-glance-test.md, AC44 step 5) is not run;
+MD's acceptance goes on without it". The owner's words: "Oh I yeah I'm not going to do that, I'm not
+against tests. But that particular test seems a little forced just to check the testing box". It has
+no result, and it did not fail. Nothing below this note is changed: it is the registration as it was
+frozen. What MD's acceptance has in its place is S-001's AC44, step 5, changed after MD3: the
+owner's daily use of the desk on the preview through stages 1a to 8, with the rulings it produced.*
+
+withdrawn: decisions/questions/P-001-md-glance-test.md, 2026-10-22, never run
+
 spec: S-001 (AC35, AC38, AC41, AC44)   milestone: MD, on the preview once the chosen design is the
 desk's default view (AC44 step 4); it is AC44 step 5
 runner:

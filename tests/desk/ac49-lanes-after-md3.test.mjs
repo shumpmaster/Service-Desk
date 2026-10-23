@@ -218,3 +218,66 @@ test('AC49 (after MD3): the piece\'s cut — one line of the row\'s role, hidden
   assert.match(rule('.sb-brow-of.over::after'), /background: linear-gradient\(to right, transparent, var\(--surf\) 85%\);/);
   assert.match(rule('.sb-branch'), /background: var\(--surf\);/, 'the log\'s ground');
 });
+
+test('AC49 (after MD3, the design review\'s B1): with four pieces open together, each "now" row\'s tap reaches its own piece named in full — the Working now sheet from that piece, by its lane in the address; kept through a refresh; focus back on its row', async () => {
+  // specs/S-001.md:3718-3722: each helper and end row adds " · <the piece's `doing`>", cut at one line, the whole one tap
+  // away; :3803: a "now" row opens the Working now sheet; :3820-3823: the Chief of Staff's, "from the piece under way",
+  // Doing "Chief of Staff: <doing>" as written; :11143-11145: pieces under way at once are a lane each, the tile naming the
+  // one started last; AC56 (:4852, :4885, :4899): the sheet comes back by its address, and focus goes back to its opener.
+  const s = cosLanes();
+  const doing = Object.fromEntries(Object.entries(COS_CASES.four).map(([id, t]) => [id, JSON.parse(t.split('\n')[0]).doing]));
+  const app = await loadSandbox({ config: { ...CONFIG, projects: s.projects }, repos: s.repos, hash: '#/p/Lanes-four/team/chief-of-staff', now: LANES_NOW });
+  const sheetOf = (a) => byClass(a.view, 'sb-sheet')[0] || null;
+  const lead = () => { const sh = sheetOf(app); return sh && byClass(sh, 'sb-lead')[0] ? byClass(sh, 'sb-lead')[0].textContent : null; };
+  try {
+    await app.advance(1000);
+    await app.advance(61_000);
+    const nowRows = byClass(app.view, 'sb-brow').filter((li) => /\bnow\b/.test(li.className));
+    assert.equal(nowRows.length, 4, 'four pieces under way, each lane\'s latest row ringed "now"');
+    const started = Object.fromEntries(byClass(app.view, 'sb-brow').map((li) => byClass(li, 'sb-brow-t')[0].textContent)
+      .filter((x) => /^Started: /.test(x)).map((x) => { const id = Object.keys(doing).find((k) => x.includes(doing[k])); return [id, x.split(' · ').pop()]; }));
+    const seenHrefs = new Set();
+    for (const li of nowRows) {
+      const laneId = byClass(li, 'sb-brow-lane')[0].textContent;
+      const id = laneId.split(' ')[0];
+      const a = findAll(li, (e) => e.tag === 'a')[0];
+      assert.equal(a.attrs.href, `#/p/Lanes-four/team/chief-of-staff/now/${encodeURIComponent(laneId)}`, 'its own piece, by its lane');
+      seenHrefs.add(a.attrs.href);
+      assert.equal(byClass(li, 'sb-brow-of')[0].textContent, ` · ${doing[id]}`, 'the row names its piece, cut at one line');
+      a.click();
+      await app.go(a.attrs.href);
+      assert.equal(lead(), `Chief of Staff: ${doing[id]}`, `${id}: the tapped row's piece, named in full`);
+      for (const [other, d] of Object.entries(doing)) if (other !== id) assert.ok(!sheetOf(app).textContent.includes(d), `${id}'s sheet never names ${other}`);
+      assert.match(sheetOf(app).textContent, new RegExp(`Started${started[id].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`), `${id}: its own start, ${started[id]}`);
+      // A refresh keeps the same piece's sheet (AC56).
+      await app.advance(61_000);
+      assert.equal(lead(), `Chief of Staff: ${doing[id]}`, `${id}: kept through a refresh`);
+      await app.key('Escape');
+      assert.equal(app.loc.hash, '#/p/Lanes-four/team/chief-of-staff');
+      assert.equal(document.activeElement, keyed(app, `log:now:${laneId}`), `${id}: focus back on its own row`);
+    }
+    assert.equal(seenHrefs.size, 4, 'four rows, four sheets');
+    // `now` alone (the tile's and who has the ball's way in): the piece started last, as the tile names it (:11145).
+    await app.go('#/p/Lanes-four/team/chief-of-staff/now');
+    assert.equal(lead(), `Chief of Staff: ${doing['four-d']}`);
+  } finally {
+    app.restore();
+  }
+  // A piece no longer under way, and one no longer on the log, by their addresses: said in the Pieces of work group's words.
+  const f = await loadSandbox({ config: { ...CONFIG, projects: s.projects }, repos: s.repos, hash: '#/p/Lanes-fifth/team/chief-of-staff', now: LANES_NOW });
+  try {
+    await f.advance(1000);
+    await f.advance(61_000);
+    // B's end row reads "Handed back · <run time> · <t>": its sheet says "handed back <t>", as the Pieces of work group does.
+    const endB = byClass(f.view, 'sb-brow').filter((li) => byClass(li, 'sb-brow-lane')[0].textContent === 'fifth-b line 1')
+      .map((li) => byClass(li, 'sb-brow-t')[0].textContent).find((x) => /^Handed back · /.test(x));
+    assert.ok(endB, 'B handed back');
+    await f.go(`#/p/Lanes-fifth/team/chief-of-staff/now/${encodeURIComponent('fifth-b line 1')}`);
+    assert.equal(sheetOf(f).textContent.includes(`Chief of Staff: Made-up piece B · handed back ${endB.split(' · ').pop()}`), true, 'an ended piece: its own words');
+    assert.ok(!sheetOf(f).textContent.includes('Made-up piece A, open the whole time'), 'never another piece\'s sheet');
+    await f.go(`#/p/Lanes-fifth/team/chief-of-staff/now/${encodeURIComponent('fifth-z line 1')}`);
+    assert.match(sheetOf(f).textContent, /This entry is no longer in the running log the desk reads\./);
+  } finally {
+    f.restore();
+  }
+});

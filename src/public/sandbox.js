@@ -24,7 +24,7 @@ import {
   NOT_RECORDED, NOT_AVAILABLE, V25_NOT_RECORDED, OWNER_NEXT_LINES,
   j11Records, timelineOf, phaseView, whereLine, queueView, pillView, ballLines, sheetView, treeLink, youWaitText, optionsBlock, waitWords,
 } from './lib/sandbox.js';
-import { teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
+import { teamView, memberPage, workingNow, summarySheet, cosWorkingNow, cosPieceOf, cosPieceWords } from './lib/sandbox.js';
 import { summaryView, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
 import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits, unreadLines, WHY_BACK_ONCE, nowOwnPart } from './lib/home.js';
 import { GATE_PHASE } from './lib/j11.js';
@@ -3134,7 +3134,15 @@ function renderMember(p, tv, id, sub, idx, now) {
   if (!page.log.length) body.push(h('p', { class: `sb-muted${page.sessionLines ? ' sb-logw' : ''}` }, page.logWords));
   else body.push(branchLog(p, page));
   const out = [h('section', { class: 'sb-screen' }, body)];
-  if (sub === 'now') {
+  // AC49 (changed after MD3, stage 4): a Chief of Staff "now" row opens the Working now sheet of its own piece
+  // (`now/<lane>`), so with pieces under way at once the tapped row's piece is named in full; `now` alone is the
+  // piece started last, as its tile names it (J13).
+  const piece = sub === 'now' && idx != null && page.cos ? cosPieceOf(page.cos, idx) : null;
+  if (sub === 'now' && idx != null && page.cos) {
+    out.push(piece && piece.state === 'working' ? workingSheet(p, id, cosWorkingNow(page.cos.cs, piece, now, TZ))
+      : piece ? sheetFrame(go('p', name, 'team', id), 'Working now', [h('p', {}, `${page.label}: ${cosPieceWords(piece, now, TZ)}`)])
+        : sheetFrame(go('p', name, 'team', id), 'Working now', [h('p', {}, 'This entry is no longer in the running log the desk reads.')]));
+  } else if (sub === 'now') {
     out.push(page.working ? workingSheet(p, id, workingNow(p.project, p.model, p.snap, p.j, id, page, now, TZ))
       : sheetFrame(go('p', name, 'team', id), 'Working now', [h('p', {}, `${page.label} is not working now: the work this sheet was about has ended.`)]));
   }
@@ -3167,10 +3175,12 @@ function branchLog(p, page) {
   return h('div', { class: 'sb-branch', key },
     svg,
     h('ol', { class: 'sb-brows' }, page.log.map((e, i) => {
-      const href = e.now ? go('p', p.project.name, 'team', page.id, 'now') : go('p', p.project.name, 'team', page.id, 'e', String(i));
+      // AC49 (after MD3, stage 4): on the Chief of Staff's log, each "now" row opens its own piece's Working now sheet.
+      const own = e.now && page.cos && e.lane ? e.lane : null;
+      const href = e.now ? (own ? go('p', p.project.name, 'team', page.id, 'now', own) : go('p', p.project.name, 'team', page.id, 'now')) : go('p', p.project.name, 'team', page.id, 'e', String(i));
       const lane = L.lanes.find((l) => l.id === e.lane);
       return h('li', { class: `sb-brow${e.now ? ' now' : ''}`, key: `brow:${i}` },
-        opener(e.now ? 'log:now' : `log:${i}`, href, {}, h('span', { class: 'sb-brow-t' }, e.text),
+        opener(e.now ? (own ? `log:now:${own}` : 'log:now') : `log:${i}`, href, {}, h('span', { class: 'sb-brow-t' }, e.text),
           // AC49 (stage 4): a Chief of Staff helper or end row names its piece, cut at one line with the fade; whole in its sheet.
           e.of != null ? h('span', { class: `sb-brow-of${clipOver.get(`brow-of:${page.id}:${i}`) === true ? ' over' : ''}`, 'data-clip': `brow-of:${page.id}:${i}`, key: `brow-of:${i}` }, ` · ${e.of}`) : null,
           e.now ? h('span', { class: 'sb-nowtag' }, 'now') : null,
@@ -3678,7 +3688,7 @@ export function parseRoute(hash) {
   if (kind === 'team') {
     const member = rest[0] || null;
     if (!member) return { ...base, key: `p/${name}/team`, screen: go('p', name, 'team'), kind };
-    const sheet = rest[1] === 'now' ? 'now' : rest[1] === 'e' && rest[2] != null ? `e:${rest[2]}` : null;
+    const sheet = rest[1] === 'now' ? (rest[2] != null ? `now:${rest[2]}` : 'now') : rest[1] === 'e' && rest[2] != null ? `e:${rest[2]}` : null;
     return { ...base, key: `p/${name}/team/${member}`, screen: go('p', name, 'team', member), kind, member, sheet };
   }
   if (kind === 'pipeline' || kind === 'asked' || kind === 'agents' || kind === 'notes') return { ...base, key: `p/${name}/${kind}`, screen: go('p', name, kind), kind };
@@ -3820,6 +3830,7 @@ function openerOf(r) {
   if (sh === 'info') return ['info'];
   if (sh === 'values' || sh === 'experiments') return [`rest:${sh}`];
   if (sh === 'now') return ['log:now'];
+  if (sh.startsWith('now:')) return [`log:${sh}`];
   if (sh.startsWith('e:')) return [`log:${sh.slice(2)}`];
   return null;
 }
@@ -4335,7 +4346,8 @@ export function startSandbox(opts = {}) {
             node = renderTimeline(b);
           } else if (r.kind === 'notes') node = renderNotes(b);
           else if (r.kind === 'team') {
-            const [sub, idx] = r.sheet ? r.sheet.split(':') : [null, null];
+            const cut = r.sheet ? r.sheet.indexOf(':') : -1;
+            const [sub, idx] = !r.sheet ? [null, null] : cut < 0 ? [r.sheet, null] : [r.sheet.slice(0, cut), r.sheet.slice(cut + 1)];
             node = renderTeam(b, r.member || null, sub, idx);
           } else if (r.kind === 'pipeline') node = b.project.model === 'v3' ? renderTimeline(b) : renderPipeline(b);
           else if (r.kind === 'asked') node = renderAsked(b);

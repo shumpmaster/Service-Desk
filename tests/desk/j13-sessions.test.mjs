@@ -315,7 +315,9 @@ test('AC49 (J13): the log — each piece a lane leaving the main line at its sta
     assert.ok(branch, 'the Chief of Staff\'s log is drawn');
     const rows = byClass(branch, 'sb-brow').map((li) => byClass(li, 'sb-brow-lane')[0].textContent).map((x) => (x === 'project' ? null : x));
     assert.equal(checkDrawing('chief-of-staff', branch, rows), 4, 'four pieces, four lanes');
-    assert.ok(linksIn(branch).some((l) => /\/team\/chief-of-staff\/now$/.test(l.href)), 'the "now" row opens Working now');
+    // Rewritten at M3D stage 4's design review (B1): the "now" row opens Working now (specs/S-001.md:3803) for its own
+    // piece, by its lane in the address (:3820-3822, "from the piece under way"; :4852, a sheet comes back by its address).
+    assert.ok(linksIn(branch).some((l) => /\/team\/chief-of-staff\/now\/s-open%20line%201$/.test(l.href)), 'the "now" row opens Working now, for its piece');
     assert.match(app.text(), /Working/);
   } finally {
     app.restore();

@@ -1383,7 +1383,7 @@ function cosPage(project, snap, tv, now, tz) {
   const none = cs.state === 'none' ? `${NOT_RECORDED}: no session file on ${project.defaultBranch} yet` : null;
   const helpers = helperLines(cs).filter((x) => Number.isFinite(x.line.at)).sort((a, b) => a.line.at - b.line.at);
   const pieces = cs.pieces;
-  const pieceWords = (x) => `${x.start.doing} · ${x.state === 'ended' ? `handed back ${t(x.end.at)}` : x.state === 'unrecorded' ? ENDED_UNRECORDED : 'under way'}`;
+  const pieceWords = (x) => cosPieceWords(x, now, tz);
   const noRecord = `${NOT_RECORDED}: no record the desk reads ties these to the Chief of Staff`;
   const files = cs.paths.filter((x) => !cs.missing.includes(x));
   const groups = [
@@ -1400,7 +1400,7 @@ function cosPage(project, snap, tv, now, tz) {
   const rows = [];
   const byLane = new Map();
   for (const x of pieces) {
-    const lane = `${x.session} line ${x.start.n}`; // the piece by its start line: its file and line
+    const lane = cosLaneId(x); // the piece by its start line: its file and line
     byLane.set(lane, x);
     rows.push({ at: x.start.at, text: `Started: ${x.start.doing} · ${t(x.start.at)}`, lane, entry: { shape: 'cos-start', line: x.start, path: x.path, time: x.start.time } });
     // AC49, changed after MD3 (stage 4): each helper row and end row names its lane in words, " · <the piece's doing>" (`of`).
@@ -1528,6 +1528,23 @@ export function workingNow(project, model, snap, j, id, page, now, tz) {
       { label: 'Cost', value: '–', why: 'from the usage record when it ends' },
     ],
   };
+}
+
+/** A piece of the Chief of Staff's work by its start line, "<session file> line <n>": its lane's id and label on the log (AC49). */
+export const cosLaneId = (x) => `${x.session} line ${x.start.n}`;
+
+/** A piece's words in its Pieces of work group (AC49, J13): "<doing> · handed back <t>", "· ended, time not recorded" or "· under way". */
+export function cosPieceWords(x, now, tz) {
+  return `${x.start.doing} · ${x.state === 'ended' ? `handed back ${whenText(new Date(x.end.at), now, tz)}` : x.state === 'unrecorded' ? ENDED_UNRECORDED : 'under way'}`;
+}
+
+/**
+ * The piece of the Chief of Staff's work a "now" row stands for (AC49, changed after MD3, stage 4): the piece whose
+ * lane is `lane`, or null. With pieces under way at once (J13, "Two sessions under way at once"), each lane's "now" row
+ * opens the Working now sheet of its own piece.
+ */
+export function cosPieceOf(cv, lane) {
+  return (cv && cv.cs && Array.isArray(cv.cs.pieces) && cv.cs.pieces.find((x) => cosLaneId(x) === lane)) || null;
 }
 
 export const COS_COST_NR = "not recorded: the Chief of Staff can't read its own cost";

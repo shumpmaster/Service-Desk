@@ -421,6 +421,8 @@ export function createDesk(opts) {
     if (pf.deadline != null) clock.clearTimeout(pf.deadline);
     pf.deadline = null;
     pf.readAt = clock.now();
+    // A read that answers once a mark's read is due serves it: that mark is judged now (AC89 (l)), with no read more.
+    pf.extraDue = pf.extraDue.filter((t) => t > pf.readAt);
     if (outcome.ok) {
       pf.lastSuccessAt = clock.now();
       pf.failure = null;

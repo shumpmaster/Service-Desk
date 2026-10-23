@@ -22,14 +22,14 @@ import { routeParts, guardRender, boot, SIGNED_OUT_STATE } from './lib/page.js';
 import { createSeen, MARKERS_OFF } from './lib/seen.js';
 import {
   NOT_RECORDED, NOT_AVAILABLE, V25_NOT_RECORDED, OWNER_NEXT_LINES,
-  j11Records, timelineOf, phaseView, whereLine, queueView, pillView, ballLines, sheetView, treeLink, youWaitText, optionsBlock, waitWords,
+  j11Records, timelineOf, phaseView, whereLine, queueView, pillView, ballLines, sheetView, treeLink, youWaitText, waitWords,
 } from './lib/sandbox.js';
 import { teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
 import { summaryView, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
 import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits, unreadLines, WHY_BACK_ONCE, nowOwnPart } from './lib/home.js';
 import { GATE_PHASE } from './lib/j11.js';
-import { composeAnswer, questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
-import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, standardLine, headText, buttonFiles } from './lib/sheets.js';
+import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
+import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, WORDS, MARKS_KEY,
   boardAge, doneTime, HOLD_MS, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, shortName, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
@@ -1552,15 +1552,20 @@ function renderAgents(p) {
 // "Waiting" link, the Status screen's queue button and today's Home's pill open Waiting with only
 // that project shown (AC81, "Until stage 3").
 
-/** A copy button; its "Copied" stays through a redraw (kept per key for this window). */
-function copyButton(text, key, label = 'Copy the text', cls = 'sb-btn ghost') {
+/**
+ * A copy button; its "Copied" stays through a redraw (kept per key for this window). opt.aria names it
+ * where its own word alone would not (a choice's "Copy", AC17 changed); opt.failed is where the text
+ * is to select by hand when the copy fails.
+ */
+function copyButton(text, key, label = 'Copy the text', cls = 'sb-btn ghost', opt = {}) {
   const said = copied.get(key);
-  return h('button', { type: 'button', class: cls, key: `copy:${key}`, onclick: () => {
+  const failed = opt.failed || 'Copy failed: select the text above';
+  return h('button', { type: 'button', class: cls, key: `copy:${key}`, 'aria-label': said ? null : opt.aria || null, onclick: () => {
     const done = (w) => { copied.set(key, w); render(); };
     try {
-      navigator.clipboard.writeText(text).then(() => done('Copied'), () => done('Copy failed: select the text above'));
+      navigator.clipboard.writeText(text).then(() => done('Copied'), () => done(failed));
     } catch {
-      done('Copy failed: select the text above');
+      done(failed);
     }
   } }, said || label);
 }
@@ -2039,11 +2044,25 @@ function stepButton(p, card, lane) {
   if (!s) return null;
   // A gate card's step is its four buttons (P-001-gate-buttons.md, A), on its Done card too while it is
   // confirming (P-001-board-done-button.md, A); it has no one label of its own.
-  if (s.gate) return h('span', { class: 'v2-gatebtns', key: `gatebtns:${card.id}:${lane}` }, card.buttons.map((b) => answerLink(p, card, b, 'v2-step', [b.label])));
+  if (s.gate) return h('span', { class: 'v2-gatebtns', key: `gatebtns:${card.id}:${lane}` }, gateButtons(p, card).map((b) => answerLink(p, card, b, 'v2-step', [b.label])));
   // Its key is the opener, so closing the sheet gives the focus back to this step (AC85: "focus going back to the card").
   if (s.opensSheet) return h('a', { class: 'v2-step', href: cardRoute(boardState.view && boardState.view.only, card.id), key: `step:${card.id}`, onclick: () => { nav.opener = `step:${card.id}`; } }, s.label);
   if (!s.href) return h('span', { class: 'v2-step off' }, `${s.label.replace(/ ↗$/, '')}: no link`);
   return ext(s.href, s.label, 'v2-step');
+}
+
+/**
+ * AC89 (j): a gate card's four buttons on the board carry the reason typed in its sheet's "Your reason", placed where
+ * AC85 places it, as AC80's "as in the sheet" says; with nothing typed, the card's own (built with no words).
+ */
+function gateButtons(p, card) {
+  const words = draftOf(card.id);
+  return words ? answerButtons(p.project, card.flag, CONFIG.linkCap, words, { caseRec: card.caseRec }) : card.buttons;
+}
+/** AC89 (j): a card's title cut at three lines with the fade (still no ellipsis, AC80), the whole one tap away in its sheet. */
+function cardTitle(card) {
+  const id = `title:${card.id}`;
+  return h('span', { class: `v2-tt${clipOver.get(id) === true ? ' over' : ''}`, key: `tt:${card.id}`, 'data-clip': id }, card.title);
 }
 
 function cardNode(p, card, lane, only) {
@@ -2051,17 +2070,17 @@ function cardNode(p, card, lane, only) {
     return h('li', { class: `v2-card gate${lane === 'kick' ? ' kick' : ''}`, key: `card:${card.id}`, 'data-card': card.id,
       onpointerdown: (e, el) => onDragDown(card, e, el) },
     kindLine(card, lane),
-    h('a', { class: 'v2-t', href: cardRoute(only, card.id), 'data-cardlink': '', key: `cardlink:${card.id}`, onclick: (e) => cardTap(card, e) }, card.title),
+    h('a', { class: 'v2-t', href: cardRoute(only, card.id), 'data-cardlink': '', key: `cardlink:${card.id}`, onclick: (e) => cardTap(card, e) }, cardTitle(card)),
     h('span', { class: 'v2-gl' }, h('span', { class: 'v2-gk' }, 'Critic:'), ` ${card.critic}`),
     h('span', { class: 'v2-gl' }, h('span', { class: 'v2-gk' }, 'User rep:'), ` ${card.userRep}`),
     h('span', { class: 'v2-m', live: () => metaText(card, Date.now()) }),
     lane === 'kick' && card.kicked ? h('span', { class: 'v2-why' }, card.kicked.reason) : null,
-    h('span', { class: 'v2-gatebtns' }, card.buttons.map((b) => answerLink(p, card, b, 'v2-step', [b.label]))));
+    h('span', { class: 'v2-gatebtns' }, gateButtons(p, card).map((b) => answerLink(p, card, b, 'v2-step', [b.label]))));
   }
   return h('li', { class: `v2-card${lane === 'kick' ? ' kick' : ''}`, key: `card:${card.id}`, 'data-card': card.id,
     onpointerdown: (e, el) => onDragDown(card, e, el) },
   kindLine(card, lane),
-  h('a', { class: 'v2-t', href: cardRoute(only, card.id), 'data-cardlink': '', key: `cardlink:${card.id}`, onclick: (e) => cardTap(card, e) }, card.title),
+  h('a', { class: 'v2-t', href: cardRoute(only, card.id), 'data-cardlink': '', key: `cardlink:${card.id}`, onclick: (e) => cardTap(card, e) }, cardTitle(card)),
   h('span', { class: 'v2-m', live: () => metaText(card, Date.now()) }),
   card.mark ? h('span', { class: 'v2-mk' }, vi(card.mark.icon), h('span', {}, card.mark.words)) : null,
   lane === 'kick' && card.kicked ? h('span', { class: 'v2-why' }, card.kicked.reason) : null,
@@ -2232,9 +2251,11 @@ function sheetShell(back, title, parts, key) {
     h('div', { class: 'v2 v2-sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': title, key },
       h('span', { class: 'v2-grab', 'aria-hidden': 'true' }), parts)];
 }
-function sheetHead(meta, title, back) {
+function sheetHead(meta, title, back, clipId = null) {
+  // AC89 (j): a title given a clip id is cut at three lines with the fade, "Read it all" under it showing the whole.
+  const t = clipId ? [].concat(clipNode(clipId, title, 'v2-stt', true, 'span')) : null;
   return h('div', { class: 'v2-shead' }, h('div', { class: 'v2-blk' }, meta ? h('p', { class: 'v2-mono', live: typeof meta === 'function' ? meta : null }, typeof meta === 'function' ? null : meta) : null,
-    h('h2', { class: 'v2-stitle' }, title)),
+    h('h2', { class: 'v2-stitle' }, t ? t[0] : title), t ? t.slice(1) : null),
   h('button', { type: 'button', class: 'v2-x44', key: 'sheet-close', 'aria-label': 'Close', onclick: () => nav.to(back) }, vi('close', 'v2-i')));
 }
 const blk = (head, ...kids) => h('div', { class: 'v2-blk' }, h('h3', { class: 'v2-bh' }, head), kids);
@@ -2250,24 +2271,42 @@ function wordsBox(id, label, n = 1, placeholder = SHEET_WORDS.optional) {
 const draftOf = (id, n = 1) => boardState.drafts.get(`${id}#${n}`) || '';
 
 /**
- * AC17 and AC18 on a sheet, before its buttons (AC53: "every link follows AC53's 'When it would not fit' ... and
- * AC18's message where `webCommitsToDefault` is `false`, as today", specs/S-001.md:6077-6080; the accepted card view
- * drew them until stage 8, AC44 step 4): J7's web-commit message, word for word; and where a button's link copies,
- * the words naming why with that answer's text and its "Copy". The words are lib/links.js's and lib/sandbox.js's.
+ * AC18 on a sheet, before its buttons (AC53: "every link follows AC53's 'When it would not fit' ... and AC18's
+ * message where `webCommitsToDefault` is `false`, as today", specs/S-001.md:6077-6080): J7's web-commit message,
+ * word for word. The words are lib/links.js's. AC17's copy route is no longer stacked here (changed after MD3,
+ * P-001-audit-copy.md, A): each choice's box holds its own "Copy" (choiceButtons), and the words naming the cause
+ * sit under the choices (copyCause).
  */
 function linkNotes(card, btns) {
   const plans = btns.map((b) => b.plan).filter(Boolean);
   const warn = plans.find((x) => x.warning);
-  const copies = btns.filter((b) => b.plan && b.plan.copy);
   const out = [];
   // Its mark the sheet's neutral note mark (the eye, as on the blast-radius line), never ✕ (the Design reviewer, stage 8 round 1).
   if (warn) out.push(h('p', { class: 'v2-mark v2-webwarn', key: 'web-warn', role: 'note' }, vi('eye'), h('span', {}, warn.warning)));
-  if (copies.length) {
-    out.push(h('div', { class: 'v2-blk v2-copyto', key: 'copy-route' }, h('p', { class: 'v2-small' }, copies[0].plan.words),
-      copies.map((b) => [h('pre', { class: 'v2-pre', key: `copytext:${b.value || ''}` }, b.plan.copy),
-        h('p', { class: 'v2-steps', key: `copybtn:${b.value || ''}` }, copyButton(b.plan.copy, `ans:${card.id}:${b.value || ''}`, copies.length > 1 ? `Copy ${b.value}` : 'Copy', 'v2-abtn'))])));
-  }
   return out;
+}
+
+/**
+ * AC17, changed after MD3 ("Ruling: A — when an answer is too long to prefill, a Copy sits inside each choice's box,
+ * with the text one tap down", decisions/questions/P-001-audit-copy.md, line 1): a choice's answer button and, where
+ * its link can't carry the text (past `linkCap`, or `contentPrefill: false`), its own "Copy" beside it, copying that
+ * choice's answer text with the owner's words where AC53 places them. The text itself is in the sheet's fold.
+ */
+function choiceCopy(card, b) {
+  if (!(b.plan && b.plan.copy)) return null;
+  const name = String(b.label || '').replace(/ ↗$/, '');
+  return copyButton(b.plan.copy, `ans:${card.id}:${b.value || ''}`, 'Copy', 'v2-abtn ghost',
+    { aria: `Copy: ${name}`, failed: 'Copy failed: select the text in the fold below' });
+}
+function choiceButtons(p, card, b, cls, kids) {
+  const a = answerLink(p, card, b, cls, kids);
+  const c = choiceCopy(card, b);
+  return c ? h('span', { class: 'v2-obtns', key: `obtns:${b.value || ''}` }, a, c) : a;
+}
+/** AC17: the words naming the cause (a link too long, or a repository that takes no prefilled content), under the choices. */
+function copyCause(btns) {
+  const c = btns.find((b) => b && b.plan && b.plan.copy);
+  return c ? h('p', { class: 'v2-small', key: 'copy-cause' }, c.plan.words) : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -2307,10 +2346,10 @@ function unblocksNode(p, card, row) {
  */
 const clipOver = new Map();
 const clipOpen = new Set();
-function clipNode(id, text, cls, toggle = true) {
+function clipNode(id, text, cls, toggle = true, tag = 'div') {
   const over = clipOver.get(id) === true;
   const open = over && clipOpen.has(id);
-  const box = h('div', { class: `v2-clip ${cls}${over && !open ? ' over' : ''}${open ? ' open' : ''}`, key: `clip:${id}`, 'data-clip': id }, text);
+  const box = h(tag, { class: `v2-clip ${cls}${over && !open ? ' over' : ''}${open ? ' open' : ''}`, key: `clip:${id}`, 'data-clip': id }, text);
   if (!over || !toggle) return box;
   return [box, h('button', { type: 'button', class: 'v2-fold', key: `clipbtn:${id}`, 'aria-expanded': open ? 'true' : 'false',
     onclick: () => {
@@ -2367,9 +2406,13 @@ function sheetList(sx, wholeWords, fullText, files) {
   return h('div', { class: 'v2-slist', key: 'slist' }, done, fold,
     open ? h('div', { class: 'v2-whole', key: `wholebody:${card.id}` },
       fullText ? h('article', { class: 'sb-record', key: 'whole-record', html: renderMarkdown(fullText, { numbers: true }) }) : h('p', { class: 'v2-small gap' }, `The file: ${NOT_AVAILABLE}`),
-      h('ul', { class: 'v2-files', key: 'whole-files' }, files.map((f) => h('li', { key: `file:${f.label}` },
-        h('p', { class: 'v2-small' }, h('b', {}, f.label), f.path ? [` ${SHEET_WORDS.writes} `, h('span', { class: 'v2-mono' }, f.path), ` ${SHEET_WORDS.atBranch} `, h('span', { class: 'v2-mono' }, f.branch)] : ` ${SHEET_WORDS.copies}`),
-        h('pre', { class: 'v2-pre' }, f.text))))) : null);
+      filesList(files)) : null);
+}
+/** The fold's files: each button's label, the path and branch it writes, and its text exactly as its link carries it (or as it is copied). */
+function filesList(files) {
+  return h('ul', { class: 'v2-files', key: 'whole-files' }, files.map((f) => h('li', { key: `file:${f.label}` },
+    h('p', { class: 'v2-small' }, h('b', {}, f.label), f.path ? [` ${SHEET_WORDS.writes} `, h('span', { class: 'v2-mono' }, f.path), ` ${SHEET_WORDS.atBranch} `, h('span', { class: 'v2-mono' }, f.branch)] : ` ${SHEET_WORDS.copies}`),
+    h('pre', { class: 'v2-pre' }, f.text))));
 }
 
 /**
@@ -2396,9 +2439,11 @@ function questionSheetParts(sx) {
   parts.push(p0 ? clipNode(`why:${card.id}`, whyOpening(p0), 'v2-lead') : h('p', { class: 'v2-small gap', key: 'why-reading' }, `The question file: ${NOT_AVAILABLE}`));
   // Whether it can be undone, or settles itself, by icon and words (AC38), and its blast radius and risk.
   if (p0) {
-    const u = undoLine(p0, card.raisedAt, TZ);
+    const u = undoLine(p0, card.raisedAt, TZ, Date.now());
     parts.push(h('div', { class: 'v2-marks', key: 'marks' },
-      h('p', { class: `v2-mark ${u.kind}`, key: 'undo' }, u.icon ? vi(u.icon) : h('span', { 'aria-hidden': 'true' }), h('span', {}, u.bold ? h('b', {}, u.bold) : null, u.text)),
+      // AC89 (j): the file's own DEFAULT words set apart as quoted record text.
+      h('p', { class: `v2-mark ${u.kind}`, key: 'undo' }, u.icon ? vi(u.icon) : h('span', { 'aria-hidden': 'true' }), h('span', {}, u.bold ? h('b', {}, u.bold) : null, u.text,
+        u.quote ? [' ', h('span', { class: 'v2-quote v2-dq', key: 'default-words' }, u.quote)] : null)),
       h('p', { class: 'v2-mark', key: 'blast' }, vi('eye'), h('span', {}, blastLine(p0)))));
   }
   let files = [];
@@ -2413,7 +2458,9 @@ function questionSheetParts(sx) {
       const btn = answerButtons(project, card.flag, CONFIG.linkCap, words)[0];
       files = [btn];
       parts.push(linkNotes(card, [btn]));
-      parts.push(h('p', { class: 'v2-steps', key: 'numbered-btn' }, answerLink(p, card, btn, 'v2-abtn', [btn.label])));
+      // AC17, changed: its one file's one "Copy", in the box of its one "Answer ↗"; the cause under it.
+      parts.push(h('p', { class: 'v2-steps', key: 'numbered-btn' }, answerLink(p, card, btn, 'v2-abtn', [btn.label]), choiceCopy(card, btn)));
+      parts.push(copyCause([btn]));
     } else {
       const btns = answerButtons(project, card.flag, CONFIG.linkCap, draftOf(card.id));
       files = btns;
@@ -2432,8 +2479,9 @@ function questionSheetParts(sx) {
             c.desc ? h('span', { class: 'v2-od' }, c.desc) : null]
             : h('span', { class: 'v2-ol' }, 'Your ruling, in your own words'),
           b.recommended ? h('span', { class: 'v2-rec' }, SHEET_WORDS.recommended) : null),
-          answerLink(p, card, b, 'v2-abtn', [b.label]));
+          choiceButtons(p, card, b, 'v2-abtn', [b.label]));
       })));
+      parts.push(copyCause(btns));
       parts.push(recLine(p0));
       parts.push(wordsBox(card.id, SHEET_WORDS.words));
     }
@@ -2442,8 +2490,8 @@ function questionSheetParts(sx) {
     const letters = p0 ? p0.options.map((o) => o.letter) : [];
     parts.push(h('p', { class: 'v2-small', key: 'v25-note' }, V25_RULING_NOTE));
     parts.push(h('div', { class: 'v2-opts', key: 'opts' }, (letters.length ? letters : ['']).map((l) => {
-      const text = composeAnswer({ kind: 'question', name: card.name, qs: { form: 'lettered', title: card.title, block: optionsBlock(p0 ? p0.text : '').lines, questions: [] } },
-        { 1: { choice: l, words: draftOf(card.id) } }).text;
+      // AC89 (j): AC19's own form, "Ruling: <letter>", then the owner's words, if any, after a blank line.
+      const text = v25Ruling(l, draftOf(card.id));
       files.push({ label: l ? `Copy answer ${l}` : 'Copy the answer', text });
       const c = splitChoice(l ? (p0.options.find((o) => o.letter === l) || {}).text || '' : '');
       return h('div', { class: 'v2-opt', key: `opt:${l}` }, h('div', { class: 'v2-ot' },
@@ -2472,7 +2520,8 @@ function gateSheetParts(sx) {
   const project = p.project;
   const c = card.flag.card;
   const doc = p.j && p.j.projectDoc ? p.j.projectDoc : null;
-  const parts = [sheetHead(headMeta, gateTitle(c), back), fromTap, sheetState(sx)];
+  // AC89 (j): its title cut at three lines with the fade, the whole one tap away.
+  const parts = [sheetHead(headMeta, gateTitle(c), back, `stitle:${card.id}`), fromTap, sheetState(sx)];
   // "The case opens": its plain-English opening, quoted, three lines at most, faded; the whole case one tap away.
   const g = v.gate || {};
   parts.push(blk(SHEET_WORDS.caseOpens, clipNode(`case:${card.id}`, g.opening || NOT_RECORDED, 'v2-quote', false),
@@ -2494,8 +2543,9 @@ function gateSheetParts(sx) {
       h('div', { class: 'v2-ot' }, h('span', { class: 'v2-ol' }, b.label), h('span', { class: 'v2-od' }, then ? codeWords(then.then) : NOT_RECORDED),
         b.recommended ? h('span', { class: 'v2-rec' }, SHEET_WORDS.recommended) : null,
         kill ? h('span', { class: 'v2-mk v2-undo1', key: 'kill-lock' }, vi('lock'), h('span', {}, SHEET_WORDS.cantUndo)) : null),
-      answerLink(p, card, b, `v2-abtn${kill ? ' danger' : ''}`, [`${b.label} ↗`]));
+      choiceButtons(p, card, b, `v2-abtn${kill ? ' danger' : ''}`, [`${b.label} ↗`]));
   })));
+  parts.push(copyCause(btns));
   // "Your reason": the `Reason: ` line for Hold and Recycle (decisions/README.md:13), after a blank line for Proceed and Kill.
   parts.push(wordsBox(card.id, SHEET_WORDS.reason, 1, SHEET_WORDS.reasonPlaceholder));
   parts.push(sheetList(sx, SHEET_WORDS.wholeCard, c.parsed ? c.parsed.text : null, buttonFiles(btns, project.defaultBranch)));
@@ -2628,6 +2678,7 @@ function cardSheet(bd, built, only, sheetId, backTo = null) {
     parts.push(h('p', { class: 'v2-body', key: 'rec-line' }, rec ? [h('span', { class: 'v2-rec' }, 'Recommended'), ' ', rec] : 'No recommendation given'));
   }
   // The buttons, in full: one per option, each opening a fully filled-in file (the box's words in it).
+  let copyFiles = null;
   if (card.kind === 'card') {
     // A decision card's sheet keeps stage 1a's form (AC80); AC85 lays out the question's and the gate's.
     const btns = answerButtons(project, card.flag, CONFIG.linkCap, draftOf(card.id));
@@ -2637,9 +2688,11 @@ function cardSheet(bd, built, only, sheetId, backTo = null) {
       return h('div', { class: 'v2-opt', role: 'listitem', key: `opt:${b.value}` },
         h('div', { class: 'v2-ot' }, h('span', { class: 'v2-ol' }, b.value), h('span', { class: 'v2-od' }, then ? codeWords(then.then) : NOT_RECORDED),
           b.recommended ? h('span', { class: 'v2-rec' }, 'Recommended') : null),
-        answerLink(p, card, b, 'v2-abtn', [b.label]));
+        choiceButtons(p, card, b, 'v2-abtn', [b.label]));
     })));
+    parts.push(copyCause(btns));
     parts.push(wordsBox(card.id, SHEET_WORDS.words));
+    copyFiles = btns.some((b) => b.plan && b.plan.copy) ? buttonFiles(btns, project.defaultBranch) : null;
   } else {
     const s = card.step;
     const btns = [];
@@ -2650,7 +2703,13 @@ function cardSheet(bd, built, only, sheetId, backTo = null) {
     parts.push(h('p', { class: 'v2-steps', key: 'step-btns' }, btns));
   }
   if (v.links && v.links.length) parts.push(h('p', { class: 'v2-small', key: 'links' }, v.links.map((l, i) => [i ? ' · ' : '', ext(l.href, l.text, 'v2-lnk') || `${l.text}: no file recorded`])));
-  if (v.fullText) parts.push(h('details', { class: 'v2-fd', key: 'full-text' }, h('summary', {}, 'The whole record'), h('article', { class: 'sb-record', html: renderMarkdown(v.fullText) })));
+  // AC89 (j): the whole record keeps the file's own list numbers, as a question's does; AC17, changed: where a
+  // choice copies, the fold holds each answer's file too, the text each "Copy" copies.
+  if (v.fullText || copyFiles) {
+    parts.push(h('details', { class: 'v2-fd', key: 'full-text' }, h('summary', {}, 'The whole record'),
+      v.fullText ? h('article', { class: 'sb-record', key: 'whole-record', html: renderMarkdown(v.fullText, { numbers: true }) }) : h('p', { class: 'v2-small gap' }, `The file: ${NOT_AVAILABLE}`),
+      copyFiles ? filesList(copyFiles) : null));
+  }
   // "Done ✓" from Waiting on you or Kicked back; "Undo" while it is confirming; then "Close".
   const acts = [];
   if (!pending) {
@@ -3420,7 +3479,8 @@ function planGateRow(g) {
   return h('li', { class: 'v2-plli gate', key: `wa-row:${g.key}`, 'data-gate': g.id },
     h('a', { class: 'v2-plrow', key: `wa-gate:${g.id}`, href: go('work', 'card', g.id), onclick: () => { nav.opener = `wa-gate:${g.id}`; } },
       h('span', { class: 'v2-plord' }), stc(g.icon),
-      h('span', { class: 'v2-prt' }, h('span', { class: 'v2-prtt v2-plname' }, g.name), h('span', { class: 'v2-mono v2-plm' }, g.mono)),
+      // AC89 (j): its title cut at three lines with the fade, the whole one tap away in its sheet.
+      h('span', { class: 'v2-prt' }, h('span', { class: `v2-prtt v2-plname${clipOver.get(`plgate:${g.id}`) === true ? ' over' : ''}`, 'data-clip': `plgate:${g.id}` }, g.name), h('span', { class: 'v2-mono v2-plm' }, g.mono)),
       h('span', { class: `v2-plv ${g.right.kind}` }, g.right.words)));
 }
 

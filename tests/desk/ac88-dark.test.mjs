@@ -432,6 +432,19 @@ const M3D4_EXCEPT = (n, d, theme) => {
   const k = n.cls.has('sb-idle') && n.tag === 'button' ? `button.sb-idle ${d}` : n.cls.has('sb-idlelist') && n.tag === 'div' ? `div.sb-idlelist ${d}` : null;
   return Boolean(k && M3D4_ONCE.get(theme) && M3D4_ONCE.get(theme).has(k));
 };
+/**
+ * M3D stage 5's changes to the look on purpose (the brief's after-MD3 rule, specs/S-001.md:15549-15553; AC89 (j),
+ * :7920-7921): long titles cut at three lines with the fade — a board card's title in its own box under the card's link
+ * (`span.v2-tt`, in an `a.v2-t`), and a gate sheet's title in its three-line clip under the sheet's heading
+ * (`span.v2-clip.v2-stt`, in an `h2.v2-stitle`), at the title's own line height. Each declaration pinned to its value,
+ * the same in each theme; the fade (a mask) is drawn only once the browser measures the title cut. AC17's "Copy" in each
+ * choice's box and AC89 (j)'s quoted DEFAULT words are drawn on no screen this guard walks (no fixture here copies, and
+ * none has a DEFAULT naming no letter), so nothing is excepted for them.
+ */
+const M3D5_ONCE = new Map([['v2-tt', new Set(['display: (none) → block', 'max-height: (none) → calc(3 * 1.33em)', 'overflow: (none) → clip'])],
+  ['v2-stt', new Set(['display: (none) → block', 'max-height: calc(3 * 1.45em) → calc(3 * 1.3em)'])]]);
+const M3D5_EXCEPT = (n, d) => (n.tag === 'span' && n.cls.has('v2-tt') && n.parent && n.parent.tag === 'a' && n.parent.cls.has('v2-t') && M3D5_ONCE.get('v2-tt').has(d))
+  || (n.tag === 'span' && n.cls.has('v2-stt') && n.cls.has('v2-clip') && n.parent && n.parent.tag === 'h2' && n.parent.cls.has('v2-stitle') && M3D5_ONCE.get('v2-stt').has(d));
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
@@ -466,6 +479,7 @@ function sameLook(app, where, fails, seen) {
         if (M3D1_EXCEPT(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
         if (M3D3_EXCEPT(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
         if (M3D4_EXCEPT(b, d, way.theme)) { excepted.add(`M3D4 ${way.theme} ${label(b)} ${d}`); continue; }
+        if (M3D5_EXCEPT(b, d)) { excepted.add(`M3D5 ${label(b)} ${d}`); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -519,7 +533,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // nothing else of it: the excepted set is exactly the pinned one.
   const m3d4 = [...M3D4_ONCE].flatMap(([theme, set]) => [...set].map((x) => `M3D4 ${theme} ${x}`)).sort();
   assert.deepEqual([...excepted].filter((x) => /^M3D4 /.test(x)).sort(), m3d4);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D4 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // M3D stage 5's exception was met, each pinned declaration on its own element, and nothing else of it.
+  const m3d5 = [...[...M3D5_ONCE.get('v2-tt')].map((d) => `M3D5 span.v2-tt ${d}`), ...[...M3D5_ONCE.get('v2-stt')].map((d) => `M3D5 span.v2-clip.v2-stt ${d}`)].sort();
+  assert.deepEqual([...excepted].filter((x) => /^M3D5 /.test(x)).sort(), m3d5);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

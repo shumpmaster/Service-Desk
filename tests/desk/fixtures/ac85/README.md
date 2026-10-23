@@ -16,6 +16,10 @@ record of any project:
   more ("irreversible — an email can't be unsent");
 - `questions/P-003-no-default.md`: a reversible question with no DEFAULT (AC12's "not given");
 - `questions/P-003-mixed.md`: a question whose options can't be split (lettered and numbered mixed).
+- `questions/P-003-overdue.md` (stage 5 of "After MD3", AC89 (j)): a reversible question, DEFAULT B and TIMEOUT
+  24, which the test raises so that its settle time has passed while it still waits, across the 1 Nov clock change;
+- `questions/P-003-unlettered.md` (the same stage): a question with one line between its lettered options that is
+  neither lettered nor numbered, so it can't be split.
 
 The real question files AC85's test also renders are elsewhere in the fixtures:
 `notify/ac77-real/questions/P-001-next-work.md` (reversible, DEFAULT A, TIMEOUT 48) and

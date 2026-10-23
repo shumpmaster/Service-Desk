@@ -155,6 +155,10 @@ test('AC56 close: every sheet has "Close" at its top (44 px), and the control, a
         await app.go(screen);
         const op = keyed(app, openerKey);
         assert.ok(op, `${what}: its opener ${openerKey}`);
+        // A link inside a fold is tapped with its fold open, as the owner must open it to reach the link (the fake DOM
+        // draws a closed fold's links too); a closed fold's control takes the focus instead (AC89 (i), stage 2's design
+        // review, B1: ac89-after-md3.test.mjs).
+        for (let a = op.parentNode; a; a = a.parentNode) if (a.tag === 'details') a.setAttribute('open', '');
         op.click(); // the tap that follows the link
         await app.go(route);
         const sh = sheetEl(app);
@@ -688,5 +692,284 @@ test('AC56: the 15-second tick changes only the time-dependent text; every other
     } finally {
       app.restore();
     }
+  }
+});
+
+// ---------------------------------------------------------------------------
+// AC56, changed after MD3 (specs/S-001.md:4843-4868; "Ruling: A — typed words and scroll come back after a full reload,
+// on this phone only", decisions/questions/P-001-audit-reload.md): the reload step. A full reload is the page loaded
+// again from the same device storage, after the page was hidden, as iOS does to a Home Screen app.
+
+/** A device's storage, in memory, kept across loads; `throws` makes every read and write refuse (wa-fixtures.mjs's form). */
+function device() {
+  const m = new Map();
+  const s = { throws: false, m,
+    getItem(k) { if (s.throws) throw new Error('blocked'); return m.has(k) ? m.get(k) : null; },
+    setItem(k, v) { if (s.throws) throw new Error('blocked'); m.set(k, String(v)); },
+    removeItem(k) { if (s.throws) throw new Error('blocked'); m.delete(k); } };
+  return s;
+}
+/** The page hidden, then loaded again from the same device storage at the same address (and later, if given). */
+async function fullReload(app, setup, store, later = 0) {
+  const hash = app.loc.hash;
+  const now = app.now + later;
+  await app.visibility('hidden');
+  app.restore();
+  const b = await loadSandbox({ ...setup, hash, now, store });
+  await b.advance(1000);
+  await b.advance(POLL_MS);
+  return b;
+}
+const boxIn = (app) => findAll(sheetEl(app), (e) => e.tag === 'textarea')[0] || null;
+async function typeIn(app, words) {
+  const box = boxIn(app);
+  box.value = words;
+  box.dispatch('input', { target: box });
+  return box;
+}
+const WORDS_TYPED = 'My own words, typed before the reload (made up for the test).';
+
+test('AC56 reload (changed after MD3): a sheet open and scrolled part way, words typed in its box and the screen under it scrolled — after a full reload, the sheet, its words and both scrolls are as they were, on this device only', async () => {
+  const setup = twoProjects();
+  const store = device();
+  let app = await loadSandbox({ ...setup, hash: waitingCard(Q_ID), now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await typeIn(app, WORDS_TYPED);
+    sheetEl(app).scrollTop = 120;
+    window.scrollY = 500;
+    assert.ok(JSON.parse(store.m.get('desk-sheet-words-v1')).words[`${Q_ID}#1`], 'kept on the device, under a key of its own');
+    assert.equal(JSON.parse(store.m.get('desk-sheet-words-v1')).words[`${Q_ID}#1`].text, WORDS_TYPED);
+    app = await fullReload(app, setup, store);
+    assert.equal(app.loc.hash, waitingCard(Q_ID), 'the sheet comes back by its address');
+    assert.ok(sheetEl(app), 'the sheet open');
+    assert.equal(boxIn(app).value, WORDS_TYPED, 'its words');
+    assert.equal(sheetEl(app).scrollTop, 120, 'the sheet scrolled where it was');
+    assert.deepEqual(app.scrolls.at(-1), [0, 500], 'the screen under it scrolled where it was');
+    assert.match(byClass(sheetEl(app), 'v2-abtn').find((a) => a.textContent === 'Answer A ↗').attrs.href, /My%20own%20words/, 'in each answer link, as before the reload');
+    // Never sent anywhere: no call to the desk function carries them.
+    assert.ok(!app.server.calls.some((c) => JSON.stringify(c.body || {}).includes('My own words')), 'never sent');
+  } finally {
+    app.restore();
+  }
+  // Another device keeps only its own: a fresh storage has no words.
+  const other = await loadSandbox({ ...setup, hash: waitingCard(Q_ID), now: NOW, store: device() });
+  try {
+    await other.advance(1000);
+    await other.advance(POLL_MS);
+    assert.equal(boxIn(other).value, '');
+  } finally {
+    other.restore();
+  }
+});
+
+test('AC56 reload (changed after MD3): the words are gone after the box is emptied, after the item\'s answer arrives and its sheet is closed, and after 7 days; while its sheet is open, an answer arriving keeps them', async () => {
+  // Emptied.
+  let setup = twoProjects();
+  let store = device();
+  let app = await loadSandbox({ ...setup, hash: waitingCard(Q_ID), now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await typeIn(app, WORDS_TYPED);
+    await typeIn(app, '');
+    assert.equal(store.m.has('desk-sheet-words-v1'), false, 'nothing kept once the box is emptied');
+    app = await fullReload(app, setup, store);
+    assert.equal(boxIn(app).value, '');
+  } finally {
+    app.restore();
+  }
+  // The answer arrives: kept while the sheet is open (AC56), dropped once it is closed.
+  setup = twoProjects();
+  store = device();
+  app = await loadSandbox({ ...setup, hash: waitingCard(Q_ID), now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await typeIn(app, WORDS_TYPED);
+    setup.repos.Alpha.commit({ 'decisions/questions/Alpha-pick.md': 'Ruling: B\n\nQuestion: questions/Alpha-pick.md\n' });
+    await app.advance(POLL_MS);
+    assert.match(sheetEl(app).textContent, /That no longer waits on you/);
+    assert.equal(boxIn(app).value, WORDS_TYPED, 'still open: what was typed stays');
+    assert.ok(store.m.has('desk-sheet-words-v1'), 'and stays kept');
+    await app.key('Escape');
+    await app.advance(POLL_MS);
+    assert.equal(store.m.has('desk-sheet-words-v1'), false, 'closed, and its item no longer waits: dropped');
+  } finally {
+    app.restore();
+  }
+  // Seven days.
+  setup = twoProjects();
+  store = device();
+  app = await loadSandbox({ ...setup, hash: waitingCard(Q_ID), now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await typeIn(app, WORDS_TYPED);
+    app = await fullReload(app, setup, store, 6 * 86400e3);
+    assert.equal(boxIn(app).value, WORDS_TYPED, 'six days later, still kept');
+    app = await fullReload(app, setup, store, 86400e3 + 60e3);
+    assert.equal(boxIn(app).value, '', 'past 7 days from its typing: gone');
+    assert.equal(store.m.has('desk-sheet-words-v1'), false);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC56 reload (changed after MD3): with the device\'s storage refusing writes, a reload clears the words, with no error, and nothing else changes', async () => {
+  const setup = twoProjects();
+  const store = device();
+  store.throws = true;
+  let app = await loadSandbox({ ...setup, hash: waitingCard(Q_ID), now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await typeIn(app, WORDS_TYPED);
+    assert.equal(boxIn(app).value, WORDS_TYPED, 'kept for this window');
+    app = await fullReload(app, setup, store);
+    assert.ok(sheetEl(app), 'the sheet comes back by its address');
+    assert.equal(boxIn(app).value, '', 'the words cleared');
+    assert.ok(cardsOn(app) > 0, 'the board drawn as before');
+  } finally {
+    app.restore();
+  }
+});
+const cardsOn = (app) => byClass(app.view, 'v2-card').length;
+
+test('AC56 reload (changed after MD3; the amendment\'s (b) item 23): Home\'s scroll comes back after a full reload; back without a reload, nothing is put back', async () => {
+  const setup = twoProjects();
+  const store = device();
+  let app = await loadSandbox({ ...setup, hash: '#/', now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    window.scrollY = 640;
+    app = await fullReload(app, setup, store);
+    assert.deepEqual(app.scrolls.at(-1), [0, 640], 'Home scrolled where it was');
+    // Hidden and shown again with no reload: the page keeps its own scroll, and the kept one is forgotten.
+    await app.visibility('hidden');
+    await app.visibility('visible');
+    assert.equal(store.m.has('desk-scroll-v1'), false);
+  } finally {
+    app.restore();
+  }
+  // A reload to another address puts nothing back.
+  const s2 = device();
+  s2.m.set('desk-scroll-v1', JSON.stringify({ hash: '#/work', y: 300, sheetY: 0 }));
+  const b = await loadSandbox({ ...setup, hash: '#/', now: NOW, store: s2 });
+  try {
+    await b.advance(1000);
+    await b.advance(POLL_MS);
+    assert.ok(!b.scrolls.some(([, y]) => y === 300), 'another screen\'s scroll is not put back');
+  } finally {
+    b.restore();
+  }
+});
+
+// The Reviewer's stage 2 notes D1, D7 and D9 (AC56, changed after MD3, P-001-audit-reload.md, A).
+test('AC56 reload (changed after MD3; the Reviewer\'s D1): words typed for a project the desk can\'t read are kept — through a reload while it fails, its card not drawn — and come back once it is read again', async () => {
+  const setup = twoProjects();
+  const store = device();
+  let app = await loadSandbox({ ...setup, hash: waitingCard(Q_ID), now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await typeIn(app, WORDS_TYPED);
+    await app.key('Escape');
+    // The project's read now fails, and the question file is gone from what the read would see: judged only for a
+    // project read successfully, the words stay.
+    const file = setup.repos.Alpha.files['questions/Alpha-pick.md'];
+    assert.ok(file, 'the question file');
+    delete setup.repos.Alpha.files['questions/Alpha-pick.md'];
+    setup.repos.Alpha.fail = { state: 'cant-read', reason: 'no-access' };
+    await app.advance(POLL_MS);
+    app = await fullReload(app, setup, store);
+    assert.equal(findAll(app.view, (e) => e.attrs && e.attrs['data-card'] === Q_ID).length, 0, 'its card not drawn');
+    assert.ok(JSON.parse(store.m.get('desk-sheet-words-v1')).words[`${Q_ID}#1`], 'kept while Alpha can\'t be read');
+    await app.advance(5 * POLL_MS);
+    assert.equal(JSON.parse(store.m.get('desk-sheet-words-v1')).words[`${Q_ID}#1`].text, WORDS_TYPED, 'still kept, poll after poll');
+    // Read again: the card waits, and its sheet has the words.
+    setup.repos.Alpha.files['questions/Alpha-pick.md'] = file;
+    setup.repos.Alpha.fail = null;
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    await app.go(waitingCard(Q_ID));
+    assert.equal(boxIn(app).value, WORDS_TYPED, 'back in its box');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC56 reload (changed after MD3; the Reviewer\'s D7): the scroll being put back stops at the owner\'s own input — a tap, a wheel, a touch or a key — and the screen is not scrolled again', async () => {
+  for (const ev of ['pointerdown', 'wheel', 'touchstart', 'keydown']) {
+    const setup = twoProjects();
+    const store = device();
+    store.m.set('desk-scroll-v1', JSON.stringify({ hash: '#/', y: 640, sheetY: 0 }));
+    const app = await loadSandbox({ ...setup, hash: '#/', now: NOW, store });
+    try {
+      // Before every project has been read, the restore keeps trying at each drawing.
+      await app.flush();
+      assert.ok(app.scrolls.some(([, y]) => y === 640), `${ev}: put back at the first drawing`);
+      const n = app.scrolls.length;
+      await app.docEvent(ev, {});
+      await app.advance(1000);
+      await app.advance(POLL_MS);
+      assert.equal(app.scrolls.filter(([, y]) => y === 640).length, app.scrolls.slice(0, n).filter(([, y]) => y === 640).length, `${ev}: never scrolled back after the owner's input`);
+    } finally {
+      app.restore();
+    }
+  }
+});
+
+test('AC56 reload (changed after MD3; the Reviewer\'s D9): the kept scroll is removed from the device once it is read, so a second reload with no hiding between puts nothing back', async () => {
+  const setup = twoProjects();
+  const store = device();
+  store.m.set('desk-scroll-v1', JSON.stringify({ hash: '#/', y: 640, sheetY: 0 }));
+  let app = await loadSandbox({ ...setup, hash: '#/', now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    assert.ok(app.scrolls.some(([, y]) => y === 640), 'put back once');
+    assert.equal(store.m.has('desk-scroll-v1'), false, 'removed once used');
+    // A reload with no `pagehide` between (a crash, a forced reload): nothing kept, so nothing put back.
+    app.restore();
+    app = await loadSandbox({ ...setup, hash: '#/', now: NOW, store });
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    assert.ok(!app.scrolls.some(([, y]) => y === 640), 'not put back a second time');
+  } finally {
+    app.restore();
+  }
+});
+
+// Stage 2's design review, round 1, B1, carried to every sheet that opens from a fold: a Done row's sheet whose row sits
+// under its group's "<n> more", which a reload keeps closed, gives the focus to that "<n> more" when it closes.
+test('AC56 reload + AC89 (i): a Done row\'s sheet, its row under the group\'s "<n> more", open when the page reloads — Escape returns focus to the closed "<n> more" control, never to the body', async () => {
+  const setup = longRuling();
+  for (const n of [1, 2, 3]) {
+    setup.repos.Alpha.commit({ [`decisions/questions/P-001-more-${n}.md`]: `Ruling: A, number ${n}\n` });
+    setup.repos.Alpha.history[`decisions/questions/P-001-more-${n}.md`] = [{ commit: { committer: { date: new Date(NOW - (40 + n) * 60e3).toISOString() } } }];
+  }
+  const HIDDEN = 'Alpha|question|questions/P-001-more-3.md#answer'; // the fifth row: under "2 more"
+  const store = device();
+  let app = await loadSandbox({ ...setup, hash: '#/waiting/Alpha', now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await app.tap(keyed(app, 'more:Alpha'));
+    keyed(app, `drowlink:${HIDDEN}`).click();
+    await app.go(waitingCard(HIDDEN));
+    assert.ok(sheetEl(app), 'its sheet');
+    app = await fullReload(app, setup, store);
+    assert.ok(sheetEl(app), 'back after the reload');
+    assert.equal(keyed(app, 'more:Alpha').attrs['aria-expanded'], 'false', 'the group\'s "<n> more" closed after the reload');
+    assert.equal(keyed(app, `drowlink:${HIDDEN}`), null, 'its row not drawn');
+    await app.key('Escape');
+    await app.flush();
+    assert.equal(app.loc.hash, '#/waiting/Alpha');
+    assert.equal(document.activeElement, keyed(app, 'more:Alpha'), 'focus on the fold\'s own control');
+  } finally {
+    app.restore();
   }
 });

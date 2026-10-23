@@ -24,6 +24,7 @@ export function createSeen({ store, now }) {
   let reference = stored;
   let windowStart = now();
   let open = true;
+  let held = false;
   const seen = {
     get reference() {
       return reference;
@@ -45,10 +46,21 @@ export function createSeen({ store, now }) {
       windowStart = now();
       reference = stored;
     },
-    /** The page was hidden (or closed): a window of 10 s or more moves "last looked" to its end. */
+    /**
+     * AC89 (i): while the "<n> more since <time>" sheet is open, "last looked" does not move, so a reload brings the
+     * sheet back with the lines it held; it moves past them only once that sheet is closed (the next window that ends).
+     */
+    hold(on) {
+      held = Boolean(on);
+    },
+    get held() {
+      return held;
+    },
+    /** The page was hidden (or closed): a window of 10 s or more moves "last looked" to its end, unless the sheet holds it. */
     hidden() {
       if (!open) return;
       open = false;
+      if (held) return;
       const end = now();
       if (end - windowStart >= SEEN_MIN_MS) {
         stored = end;

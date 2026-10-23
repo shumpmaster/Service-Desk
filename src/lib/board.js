@@ -88,6 +88,44 @@ export function oneProjectView({ name, read, lastSuccessAt, tz }) {
     : { state: 1, cards: false, counts: null, cant: null, empty: ONE_WORDS.notReadYet, unknown: true, under: () => ONE_WORDS.checking };
 }
 
+// --- AC56, changed after MD3 (P-001-audit-reload.md, A): what the owner typed in a sheet's box survives a full reload,
+// on this device only, under a key of its own, never sent anywhere. Dropped when the box is emptied, when its item no
+// longer waits on the owner and its sheet is closed, or after DRAFT_KEEP_DAYS.
+export const DRAFTS_KEY = 'desk-sheet-words-v1';
+export const DRAFT_KEEP_DAYS = 7; // C: the spec's "after 7 days"
+
+/** The kept words, as stored ({ v: 1, words: { "<card id>#<box>": { text, at } } }), less any past 7 days or not well formed: a Map. */
+export function readDrafts(raw, nowMs) {
+  const out = new Map();
+  const words = raw && typeof raw === 'object' && raw.v === 1 && raw.words && typeof raw.words === 'object' ? raw.words : {};
+  for (const [k, e] of Object.entries(words)) {
+    if (!e || typeof e.text !== 'string' || !e.text || !Number.isFinite(e.at)) continue;
+    if (nowMs - e.at > DRAFT_KEEP_DAYS * 86400e3) continue;
+    out.set(k, { text: e.text, at: e.at });
+  }
+  return out;
+}
+/** The record to store for a Map of kept words. */
+export const draftsRecord = (map) => ({ v: 1, words: Object.fromEntries(map) });
+/** A box's key's card id: the key less its "#<box>". */
+export const draftCard = (k) => String(k).slice(0, Math.max(0, String(k).lastIndexOf('#')));
+
+/**
+ * The kept words to drop now (AC56, changed): those whose card no longer waits on the owner, judged only for a project
+ * read successfully in this drawing (`readOk(project)`), never while that card's sheet is open (`openId`). `present`:
+ * the ids of every card, pull request with the agents and held question each project has now. Returns the keys.
+ */
+export function draftsToDrop(map, { present, readOk, openId }) {
+  const out = [];
+  for (const k of map.keys()) {
+    const id = draftCard(k);
+    if (!id || id === openId || present.has(id)) continue;
+    if (!readOk(id.split('|')[0])) continue;
+    out.push(k);
+  }
+  return out;
+}
+
 /** The board's age form: "35 m", "2 h 53 m" (frame 1). */
 export const boardAge = (ms) => durationText(Math.max(0, ms)).replace(/ min\b/, ' m');
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

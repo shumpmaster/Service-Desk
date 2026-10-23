@@ -690,3 +690,175 @@ test('AC56: the 15-second tick changes only the time-dependent text; every other
     }
   }
 });
+
+// ---------------------------------------------------------------------------
+// AC56, changed after MD3 (specs/S-001.md:4843-4868; "Ruling: A — typed words and scroll come back after a full reload,
+// on this phone only", decisions/questions/P-001-audit-reload.md): the reload step. A full reload is the page loaded
+// again from the same device storage, after the page was hidden, as iOS does to a Home Screen app.
+
+/** A device's storage, in memory, kept across loads; `throws` makes every read and write refuse (wa-fixtures.mjs's form). */
+function device() {
+  const m = new Map();
+  const s = { throws: false, m,
+    getItem(k) { if (s.throws) throw new Error('blocked'); return m.has(k) ? m.get(k) : null; },
+    setItem(k, v) { if (s.throws) throw new Error('blocked'); m.set(k, String(v)); },
+    removeItem(k) { if (s.throws) throw new Error('blocked'); m.delete(k); } };
+  return s;
+}
+/** The page hidden, then loaded again from the same device storage at the same address (and later, if given). */
+async function fullReload(app, setup, store, later = 0) {
+  const hash = app.loc.hash;
+  const now = app.now + later;
+  await app.visibility('hidden');
+  app.restore();
+  const b = await loadSandbox({ ...setup, hash, now, store });
+  await b.advance(1000);
+  await b.advance(POLL_MS);
+  return b;
+}
+const boxIn = (app) => findAll(sheetEl(app), (e) => e.tag === 'textarea')[0] || null;
+async function typeIn(app, words) {
+  const box = boxIn(app);
+  box.value = words;
+  box.dispatch('input', { target: box });
+  return box;
+}
+const WORDS_TYPED = 'My own words, typed before the reload (made up for the test).';
+
+test('AC56 reload (changed after MD3): a sheet open and scrolled part way, words typed in its box and the screen under it scrolled — after a full reload, the sheet, its words and both scrolls are as they were, on this device only', async () => {
+  const setup = twoProjects();
+  const store = device();
+  let app = await loadSandbox({ ...setup, hash: waitingCard(Q_ID), now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await typeIn(app, WORDS_TYPED);
+    sheetEl(app).scrollTop = 120;
+    window.scrollY = 500;
+    assert.ok(JSON.parse(store.m.get('desk-sheet-words-v1')).words[`${Q_ID}#1`], 'kept on the device, under a key of its own');
+    assert.equal(JSON.parse(store.m.get('desk-sheet-words-v1')).words[`${Q_ID}#1`].text, WORDS_TYPED);
+    app = await fullReload(app, setup, store);
+    assert.equal(app.loc.hash, waitingCard(Q_ID), 'the sheet comes back by its address');
+    assert.ok(sheetEl(app), 'the sheet open');
+    assert.equal(boxIn(app).value, WORDS_TYPED, 'its words');
+    assert.equal(sheetEl(app).scrollTop, 120, 'the sheet scrolled where it was');
+    assert.deepEqual(app.scrolls.at(-1), [0, 500], 'the screen under it scrolled where it was');
+    assert.match(byClass(sheetEl(app), 'v2-abtn').find((a) => a.textContent === 'Answer A ↗').attrs.href, /My%20own%20words/, 'in each answer link, as before the reload');
+    // Never sent anywhere: no call to the desk function carries them.
+    assert.ok(!app.server.calls.some((c) => JSON.stringify(c.body || {}).includes('My own words')), 'never sent');
+  } finally {
+    app.restore();
+  }
+  // Another device keeps only its own: a fresh storage has no words.
+  const other = await loadSandbox({ ...setup, hash: waitingCard(Q_ID), now: NOW, store: device() });
+  try {
+    await other.advance(1000);
+    await other.advance(POLL_MS);
+    assert.equal(boxIn(other).value, '');
+  } finally {
+    other.restore();
+  }
+});
+
+test('AC56 reload (changed after MD3): the words are gone after the box is emptied, after the item\'s answer arrives and its sheet is closed, and after 7 days; while its sheet is open, an answer arriving keeps them', async () => {
+  // Emptied.
+  let setup = twoProjects();
+  let store = device();
+  let app = await loadSandbox({ ...setup, hash: waitingCard(Q_ID), now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await typeIn(app, WORDS_TYPED);
+    await typeIn(app, '');
+    assert.equal(store.m.has('desk-sheet-words-v1'), false, 'nothing kept once the box is emptied');
+    app = await fullReload(app, setup, store);
+    assert.equal(boxIn(app).value, '');
+  } finally {
+    app.restore();
+  }
+  // The answer arrives: kept while the sheet is open (AC56), dropped once it is closed.
+  setup = twoProjects();
+  store = device();
+  app = await loadSandbox({ ...setup, hash: waitingCard(Q_ID), now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await typeIn(app, WORDS_TYPED);
+    setup.repos.Alpha.commit({ 'decisions/questions/Alpha-pick.md': 'Ruling: B\n\nQuestion: questions/Alpha-pick.md\n' });
+    await app.advance(POLL_MS);
+    assert.match(sheetEl(app).textContent, /That no longer waits on you/);
+    assert.equal(boxIn(app).value, WORDS_TYPED, 'still open: what was typed stays');
+    assert.ok(store.m.has('desk-sheet-words-v1'), 'and stays kept');
+    await app.key('Escape');
+    await app.advance(POLL_MS);
+    assert.equal(store.m.has('desk-sheet-words-v1'), false, 'closed, and its item no longer waits: dropped');
+  } finally {
+    app.restore();
+  }
+  // Seven days.
+  setup = twoProjects();
+  store = device();
+  app = await loadSandbox({ ...setup, hash: waitingCard(Q_ID), now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await typeIn(app, WORDS_TYPED);
+    app = await fullReload(app, setup, store, 6 * 86400e3);
+    assert.equal(boxIn(app).value, WORDS_TYPED, 'six days later, still kept');
+    app = await fullReload(app, setup, store, 86400e3 + 60e3);
+    assert.equal(boxIn(app).value, '', 'past 7 days from its typing: gone');
+    assert.equal(store.m.has('desk-sheet-words-v1'), false);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC56 reload (changed after MD3): with the device\'s storage refusing writes, a reload clears the words, with no error, and nothing else changes', async () => {
+  const setup = twoProjects();
+  const store = device();
+  store.throws = true;
+  let app = await loadSandbox({ ...setup, hash: waitingCard(Q_ID), now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await typeIn(app, WORDS_TYPED);
+    assert.equal(boxIn(app).value, WORDS_TYPED, 'kept for this window');
+    app = await fullReload(app, setup, store);
+    assert.ok(sheetEl(app), 'the sheet comes back by its address');
+    assert.equal(boxIn(app).value, '', 'the words cleared');
+    assert.ok(cardsOn(app) > 0, 'the board drawn as before');
+  } finally {
+    app.restore();
+  }
+});
+const cardsOn = (app) => byClass(app.view, 'v2-card').length;
+
+test('AC56 reload (changed after MD3; the amendment\'s (b) item 23): Home\'s scroll comes back after a full reload; back without a reload, nothing is put back', async () => {
+  const setup = twoProjects();
+  const store = device();
+  let app = await loadSandbox({ ...setup, hash: '#/', now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    window.scrollY = 640;
+    app = await fullReload(app, setup, store);
+    assert.deepEqual(app.scrolls.at(-1), [0, 640], 'Home scrolled where it was');
+    // Hidden and shown again with no reload: the page keeps its own scroll, and the kept one is forgotten.
+    await app.visibility('hidden');
+    await app.visibility('visible');
+    assert.equal(store.m.has('desk-scroll-v1'), false);
+  } finally {
+    app.restore();
+  }
+  // A reload to another address puts nothing back.
+  const s2 = device();
+  s2.m.set('desk-scroll-v1', JSON.stringify({ hash: '#/work', y: 300, sheetY: 0 }));
+  const b = await loadSandbox({ ...setup, hash: '#/', now: NOW, store: s2 });
+  try {
+    await b.advance(1000);
+    await b.advance(POLL_MS);
+    assert.ok(!b.scrolls.some(([, y]) => y === 300), 'another screen\'s scroll is not put back');
+  } finally {
+    b.restore();
+  }
+});

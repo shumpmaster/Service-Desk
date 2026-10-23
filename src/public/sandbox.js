@@ -31,7 +31,7 @@ import { GATE_PHASE } from './lib/j11.js';
 import { composeAnswer, questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, standardLine, headText, buttonFiles } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, WORDS, MARKS_KEY,
-  boardAge, doneTime, HOLD_MS, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, shortName } from './lib/board.js';
+  boardAge, doneTime, HOLD_MS, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, shortName, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
@@ -1663,6 +1663,50 @@ const boardState = {
     this.marks = next;
     this.save();
   },
+  // AC56, changed after MD3 (P-001-audit-reload.md, A): the words typed in a sheet's boxes are kept on this device under
+  // DRAFTS_KEY, in a store of their own, so a full reload brings them back; where it can't be written, a reload clears them.
+  draftsStore: null, draftAt: new Map(),
+  loadDrafts(store, nowMs) {
+    this.draftsStore = store;
+    try {
+      const m = readDrafts(store ? store.getJSON(DRAFTS_KEY, null) : null, nowMs);
+      this.drafts = new Map([...m].map(([k, e]) => [k, e.text]));
+      this.draftAt = new Map([...m].map(([k, e]) => [k, e.at]));
+    } catch {
+      this.drafts = new Map();
+      this.draftAt = new Map();
+    }
+    this.saveDrafts();
+  },
+  setDraft(k, text, nowMs) {
+    if (text) {
+      this.drafts.set(k, text);
+      this.draftAt.set(k, nowMs);
+    } else {
+      // An emptied box drops its words.
+      this.drafts.delete(k);
+      this.draftAt.delete(k);
+    }
+    this.saveDrafts();
+  },
+  dropDrafts(keys) {
+    if (!keys.length) return;
+    for (const k of keys) {
+      this.drafts.delete(k);
+      this.draftAt.delete(k);
+    }
+    this.saveDrafts();
+  },
+  saveDrafts() {
+    try {
+      if (!this.draftsStore) return;
+      const m = new Map([...this.drafts].filter(([, t]) => t).map(([k, t]) => [k, { text: t, at: this.draftAt.get(k) ?? Date.now() }]));
+      if (m.size) this.draftsStore.setJSON(DRAFTS_KEY, draftsRecord(m));
+      else this.draftsStore.remove(DRAFTS_KEY);
+    } catch {
+      // the words stay for this window only; nothing else changes
+    }
+  },
 };
 
 /** A project's read state for the board's quiet lines. */
@@ -1766,6 +1810,18 @@ function boardOf(built, nowMs, only) {
   }
   boardState.view = view;
   boardState.cards = new Map(projects.flatMap((p) => p.cards.map((c) => [c.id, c])));
+  // AC56, changed: kept words are dropped once their item no longer waits on the owner and its sheet is closed, judged
+  // only for a project read successfully (a project not read yet, or failing, keeps them), and after DRAFT_KEEP_DAYS.
+  try {
+    const present = new Set(projects.flatMap((p) => [...p.cards.map((c) => c.id), ...(p.agents || []).map((a) => a.id),
+      ...(p.asking || []).concat(p.answerRecording || []).map((a) => waitKey(p.project.name, 'question', a.path))]));
+    const okRead = new Set(built.filter((b) => !b.error && b.box && b.box.read && b.box.read.read === 'ok').map((b) => b.project.name));
+    const drop = draftsToDrop(boardState.drafts, { present, readOk: (name) => okRead.has(name), openId: openSheetCard() });
+    for (const [k, at] of boardState.draftAt) if (nowMs - at > DRAFT_KEEP_DAYS * 86400e3 && !drop.includes(k)) drop.push(k);
+    boardState.dropDrafts(drop);
+  } catch {
+    // the words stay; nothing else changes
+  }
   for (const b of built) {
     if (b.error || !b.model) continue;
     b.q0 = b.q;
@@ -1775,6 +1831,14 @@ function boardOf(built, nowMs, only) {
     b.ball = ballLines(b.project, b.model, b.snap, b.j, b.q, new Date(nowMs), TZ);
   }
   return view;
+}
+
+/** The card whose sheet is open now (on Waiting, or over Plan), as its id, or null (AC56: its words stay while it is open). */
+function openSheetCard() {
+  const r = nav.route;
+  if (r.kind === 'waiting' && r.sheet) return String(r.sheet).split('#')[0];
+  if (r.kind === 'work' && r.sheet && r.sheet.startsWith('card:')) return r.sheet.slice(5);
+  return null;
 }
 
 /** The board's entry for the portfolio (AC87): its cards from its queue, its marks judged at each of its reads that succeeded. */
@@ -2166,7 +2230,7 @@ const blk = (head, ...kids) => h('div', { class: 'v2-blk' }, h('h3', { class: 'v
 function wordsBox(id, label, n = 1, placeholder = SHEET_WORDS.optional) {
   const k = `${id}#${n}`;
   const ta = h('textarea', { rows: '3', key: `words:${k}`, class: 'v2-input', 'aria-label': label, placeholder,
-    oninput: (e, self) => { boardState.drafts.set(k, self.value); render(); } });
+    oninput: (e, self) => { boardState.setDraft(k, self.value, Date.now()); render(); } });
   ta.value = boardState.drafts.get(k) || '';
   return h('label', { class: 'v2-field', key: `field:${k}` }, h('span', { class: 'v2-label' }, label), ta);
 }
@@ -2426,8 +2490,9 @@ function gateSheetParts(sx) {
   return parts;
 }
 
-function cardSheet(bd, built, only, sheetId) {
-  const back = boardRoute(only);
+function cardSheet(bd, built, only, sheetId, backTo = null) {
+  // AC89 (i): a sheet closes back to the screen it was opened from (Waiting, or Plan for a gate's sheet opened there).
+  const back = backTo || boardRoute(only);
   const [cardIdRaw, stepPart] = String(sheetId).split('#');
   // The card's AC73 key, or (from a Queue address kept from before stage 1a) the model's own key for it.
   const byKey = [...boardState.cards.values()].find((c) => c.key === cardIdRaw && (!only || c.project === only)) || null;
@@ -3264,7 +3329,7 @@ function planRow(v, r, ordering) {
  */
 function planGateRow(g) {
   return h('li', { class: 'v2-plli gate', key: `wa-row:${g.key}`, 'data-gate': g.id },
-    h('a', { class: 'v2-plrow', key: `wa-gate:${g.id}`, href: cardRoute(null, g.id), onclick: () => { nav.opener = `wa-gate:${g.id}`; } },
+    h('a', { class: 'v2-plrow', key: `wa-gate:${g.id}`, href: go('work', 'card', g.id), onclick: () => { nav.opener = `wa-gate:${g.id}`; } },
       h('span', { class: 'v2-plord' }), stc(g.icon),
       h('span', { class: 'v2-prt' }, h('span', { class: 'v2-prtt v2-plname' }, g.name), h('span', { class: 'v2-mono v2-plm' }, g.mono)),
       h('span', { class: `v2-plv ${g.right.kind}` }, g.right.words)));
@@ -3485,7 +3550,11 @@ export function parseRoute(hash) {
   const [r0, name, kind, ...rest] = routeParts(hash);
   // AC24 (from 2026-10-18): Work ahead, across projects, a screen of its own: from stage 1a the Plan tab (AC81).
   // From stage 5 (AC86): a milestone's sheet over Plan at `work/ms/<project>/<id>` (a sheet is not a screen: no history step).
-  if (r0 === 'work') return { key: 'work', screen: '#/work', kind: 'work', name: null, sheet: name === 'ms' && kind && rest[0] ? `ms:${kind}|${rest[0]}` : null };
+  // From M3D stage 2 (AC89 (i)): a gate card's sheet opened from Plan sits over Plan, at `work/card/<id>`, so it closes back to Plan.
+  if (r0 === 'work') {
+    const sheet = name === 'ms' && kind && rest[0] ? `ms:${kind}|${rest[0]}` : name === 'card' && kind ? `card:${[kind, ...rest].join('/')}` : null;
+    return { key: 'work', screen: '#/work', kind: 'work', name: null, sheet };
+  }
   // AC82: the rest of "Since you last looked", in a sheet over Home (a sheet is not a screen: no history step).
   if (r0 === 'since') return { key: 'home', screen: '#/', kind: 'home', name: null, sheet: 'since' };
   // AC87 (stage 6a): a row of the portfolio's block opens its sheet over Home at `pf/<row>` (a sheet is not a screen: no history step).
@@ -3582,6 +3651,12 @@ const nav = {
     this.route = parseRoute(location.hash);
     this.lastHash = location.hash;
     this.history = [{ key: this.route.key, hash: this.route.screen }];
+    // AC89 (i): a sheet a reload brings back puts focus on its close (once it is drawn); closing it returns focus to the
+    // card or row it belongs to.
+    if (this.route.sheet) {
+      this.reopened = true;
+      this.sheetOpener = openerOf(this.route);
+    }
     this.scrollTo = this.route.kind === 'timeline' ? this.route.at : null;
     if (this.scrollTo && this.scrollTo.sprint) this.openSprint = { name: this.route.name, sprint: this.scrollTo.sprint };
   },
@@ -3605,11 +3680,12 @@ const nav = {
     else if (!top || top.key !== next.key) this.history.push({ key: next.key, hash: next.screen });
     else top.hash = next.screen;
     const moved = prev.key !== next.key || JSON.stringify(prev.at || null) !== JSON.stringify(next.at || null);
-    if (!moved && prev.sheet && !next.sheet) this.focusNext = this.sheetOpener;
+    if (!moved && prev.sheet && !next.sheet) this.focusNext = this.sheetOpener || openerOf(prev);
     else if (!prev.sheet && next.sheet) {
       this.sheetOpener = this.opener;
       this.focusNext = 'sheet-close';
     } else if (moved) this.focusNext = null;
+    if (moved || !next.sheet) this.reopened = false;
     if (moved) bubble.close();
     // The Timeline scrolls to Now (or to a sprint) only when it is opened, never on a refresh (AC56, AC59).
     this.scrollTo = moved && next.kind === 'timeline' ? next.at : null;
@@ -3621,12 +3697,56 @@ const nav = {
   },
 };
 
+/**
+ * The control a sheet belongs to, from its route (AC89 (i)), for a sheet a reload brought back, whose opener this window
+ * never saw: its card on the board (its title, or its Done row), its row on Plan, or the control that opens it.
+ * Returns a list of keys, the first drawn taking the focus.
+ */
+function openerOf(r) {
+  const sh = r && r.sheet ? String(r.sheet) : null;
+  if (!sh) return null;
+  if (r.kind === 'waiting') {
+    const [id, step] = sh.split('#');
+    return step != null ? [`drowlink:${sh}`] : [`cardlink:${id}`, `donelink:${id}`, `step:${id}`];
+  }
+  if (r.kind === 'work') {
+    if (sh.startsWith('card:')) return [`wa-gate:${sh.slice(5)}`];
+    if (sh.startsWith('ms:')) {
+      const [proj, code] = sh.slice(3).split('|');
+      let key = null;
+      try {
+        const row = workView(Date.now()).rows.find((x) => x.project.name === proj && x.code === code);
+        key = row ? `wa-open:${row.key}` : null;
+      } catch {
+        key = null;
+      }
+      return key ? [key] : null;
+    }
+  }
+  if (sh === 'since') return ['since-more'];
+  if (sh.startsWith('pf:')) return [sh];
+  if (sh === 'info') return ['info'];
+  if (sh === 'values' || sh === 'experiments') return [`rest:${sh}`];
+  if (sh === 'now') return ['log:now'];
+  if (sh.startsWith('e:')) return [`log:${sh.slice(2)}`];
+  return null;
+}
+
 function focusPending() {
-  const k = nav.focusNext;
+  const want = nav.focusNext;
   nav.focusNext = null;
-  if (!k) return;
+  if (!want) return;
   const view = document.getElementById('view');
-  let el = view ? findKey(view, k) : null;
+  const keys = Array.isArray(want) ? want : [want];
+  let el = null;
+  let k = keys[0];
+  for (const x of keys) {
+    el = view ? findKey(view, x) : null;
+    if (el) {
+      k = x;
+      break;
+    }
+  }
   // A held whole-line bubble closed, its control gone with the old line or row: focus goes to the
   // line or fold heading it belonged to (AC56, draft 5).
   if (!el && view && k.startsWith('line:')) el = findKey(view, k === 'line:last' ? 'last-action' : 'done-today-h');
@@ -4002,6 +4122,11 @@ export function startSandbox(opts = {}) {
   // AC80: the Done marks, in a store of their own, so a failure there shows "Done marks not kept on
   // this device" and nothing else breaks.
   boardState.load(createStore());
+  // AC56, changed after MD3: the words typed in sheets' boxes, in a store of their own (DRAFTS_KEY).
+  boardState.loadDrafts(createStore(), Date.now());
+  // AC56, changed after MD3: the screen's and the open sheet's scroll, kept when the page is hidden, for a full reload.
+  const scrollStore = createStore();
+  scrollKept.pending = readScroll(scrollStore);
   // J12: the pull requests are kept under their own key in a store of their own, so a write that
   // fails there (the device's storage full) turns off only that key, never the blob cache.
   const pullsStore = createStore();
@@ -4030,6 +4155,13 @@ export function startSandbox(opts = {}) {
     fitBranches();
     fitTimelineHead();
     measureClips();
+    // AC89 (i): a sheet a reload brought back takes the focus on its close, once it is drawn.
+    if (nav.reopened && nav.route.sheet && findKey(view, 'sheet-close')) {
+      nav.reopened = false;
+      focusKey('sheet-close');
+    }
+    // AC56, changed: after a full reload, the screen's and the sheet's scroll as they were, once there is room for it.
+    restoreScroll(view, desk);
     // The Timeline just opened: scroll to its Now line (or the sprint) once it is drawn (AC59).
     if (nav.scrollTo && nav.route.kind === 'timeline') {
       const t = nav.scrollTo;
@@ -4042,6 +4174,8 @@ export function startSandbox(opts = {}) {
   }, () => desk.signedOut);
   function draw() {
     const now = new Date(Date.now());
+    // AC89 (i): while the "<n> more" sheet is open, "last looked" holds, so a reload brings it back with its lines.
+    seen.hold(nav.route.kind === 'home' && nav.route.sheet === 'since');
     waMemo = null;
     const built = lastBuilt = CONFIG.projects.map((project) => {
       const box = safeBox(project.name, () => desk.model(project.name), desk.states.get(project.name), desk, now.getTime());
@@ -4122,6 +4256,8 @@ export function startSandbox(opts = {}) {
     } else if (r.kind === 'work') {
       try {
         node = renderWorkAhead(built, now.getTime());
+        // AC89 (i): a gate card's sheet over Plan, closing back to Plan with focus on its row.
+        if (r.sheet && r.sheet.startsWith('card:')) node = [node, cardSheet(bd, built, null, r.sheet.slice(5), '#/work')];
       } catch (err) {
         node = h('section', { class: 'sb-screen v2 v2-plan' }, h('header', { class: 'v2-pltop' }, h('h1', { class: 'v2-title' }, WA.planTitle)),
           h('p', { class: 'v2-small bad' }, `Can't show Plan: ${errorText(err)}`));
@@ -4222,11 +4358,30 @@ export function startSandbox(opts = {}) {
   }
   document.addEventListener('click', outsideTapEnd);
   document.addEventListener('visibilitychange', () => {
-    if (isVisible()) seen.visible();
-    else seen.hidden();
+    if (isVisible()) {
+      seen.visible();
+      // Back without a reload: the page kept its own scroll, so the kept one is not needed.
+      forgetScroll(scrollStore);
+    } else {
+      seen.hidden();
+      keepScroll(scrollStore, view);
+    }
     desk.visibilityChanged();
   });
-  window.addEventListener('pagehide', () => seen.hidden());
+  window.addEventListener('pagehide', () => {
+    seen.hidden();
+    keepScroll(scrollStore, view);
+  });
+  // The owner's own scrolling or tapping ends a scroll still being put back (AC56, changed).
+  for (const t of ['pointerdown', 'wheel', 'touchstart', 'keydown']) {
+    try {
+      document.addEventListener(t, () => { scrollKept.pending = null; }, { passive: true });
+    } catch {
+      // no such event here
+    }
+  }
+  // AC89 (i): Tab and Shift-Tab stay inside an open sheet.
+  document.addEventListener('keydown', (e) => trapTab(e, view));
   window.addEventListener('resize', () => {
     fitBranches();
     fitTimelineHead();
@@ -4247,6 +4402,102 @@ export function startSandbox(opts = {}) {
   }, 15_000);
   boot(render, desk);
   return desk;
+}
+
+// ---------------------------------------------------------------------------
+// AC56, changed after MD3 (P-001-audit-reload.md, A): the scroll of the screen and of the open sheet comes back after a
+// full reload, on this device only (SCROLL_KEY, through the wrapped store). It is kept when the page is hidden, which
+// comes before iOS reloads a Home Screen app, and put back after the reload while the address is the same, at each
+// drawing until every project has been read once (so the screen is tall enough) or the owner scrolls or taps first.
+
+export const SCROLL_KEY = 'desk-scroll-v1';
+const scrollKept = { pending: null };
+function readScroll(store) {
+  try {
+    const v = store.getJSON(SCROLL_KEY, null);
+    store.remove(SCROLL_KEY);
+    if (!v || typeof v.hash !== 'string' || !Number.isFinite(v.y)) return null;
+    return { hash: v.hash, y: Math.max(0, v.y), sheetY: Number.isFinite(v.sheetY) ? Math.max(0, v.sheetY) : 0 };
+  } catch {
+    return null;
+  }
+}
+const openSheetEl = (view) => findClass(view, 'v2-sheet') || findClass(view, 'sb-sheet');
+function keepScroll(store, view) {
+  try {
+    const sh = openSheetEl(view);
+    store.setJSON(SCROLL_KEY, { hash: location.hash || '', y: Math.round(window.scrollY || 0), sheetY: sh ? Math.round(sh.scrollTop || 0) : 0 });
+  } catch {
+    // a reload then opens at the top, as before
+  }
+}
+function forgetScroll(store) {
+  try {
+    store.remove(SCROLL_KEY);
+  } catch {
+    // nothing kept
+  }
+}
+function restoreScroll(view, desk) {
+  const k = scrollKept.pending;
+  if (!k) return;
+  if (k.hash !== (location.hash || '')) {
+    scrollKept.pending = null;
+    return;
+  }
+  try {
+    if (k.y && typeof window.scrollTo === 'function') window.scrollTo(0, k.y);
+    const sh = openSheetEl(view);
+    if (sh && k.sheetY) sh.scrollTop = k.sheetY;
+    const states = desk && desk.states ? [...desk.states.values()] : [];
+    const allRead = states.length > 0 && states.every((st) => st.lastSuccessAt != null || st.failure);
+    // Done once both are where they were, or a few drawings after every project was first read (the screen is then as
+    // tall as it gets; a shorter one keeps the browser's nearest place).
+    const there = Math.abs((window.scrollY || 0) - k.y) <= 1 && (!k.sheetY || (sh && Math.abs((sh.scrollTop || 0) - k.sheetY) <= 1));
+    if (allRead) k.tries = (k.tries || 0) + 1;
+    if (allRead && (there || k.tries > 5)) scrollKept.pending = null;
+  } catch {
+    scrollKept.pending = null;
+  }
+}
+
+// AC89 (i): Tab and Shift-Tab stay inside an open sheet (each sheet is a modal dialog, AC56).
+function focusables(root) {
+  const out = [];
+  const closedIn = (el) => {
+    for (let n = el.parentNode; n && n !== root && n.tagName; n = n.parentNode) {
+      if (tagOf(n) === 'details' && !(n.hasAttribute && n.hasAttribute('open')) && !(tagOf(el) === 'summary' && el.parentNode === n)) return true;
+    }
+    return false;
+  };
+  eachElement(root, (el) => {
+    const tag = tagOf(el);
+    const attr = (a) => (el.getAttribute ? el.getAttribute(a) : null);
+    const can = (tag === 'a' && attr('href') != null) || ['button', 'textarea', 'input', 'select', 'summary'].includes(tag) || (attr('tabindex') != null && attr('tabindex') !== '-1');
+    if (!can || attr('tabindex') === '-1' || attr('disabled') != null || el.hidden || closedIn(el)) return;
+    if (tag === 'summary' && !(el.parentNode && tagOf(el.parentNode) === 'details')) return;
+    out.push(el);
+  });
+  return out;
+}
+function trapTab(e, view) {
+  if (!e || e.key !== 'Tab' || !nav.route.sheet) return;
+  let dialog = null;
+  eachElement(view, (el) => { if (!dialog && el.getAttribute && el.getAttribute('role') === 'dialog' && el.getAttribute('aria-modal') === 'true') dialog = el; });
+  if (!dialog) return;
+  const list = focusables(dialog);
+  if (!list.length) return;
+  const i = list.indexOf(document.activeElement);
+  let to = null;
+  if (e.shiftKey) to = i <= 0 ? list[list.length - 1] : null;
+  else to = i === -1 || i === list.length - 1 ? list[0] : null;
+  if (!to) return;
+  if (e.preventDefault) e.preventDefault();
+  try {
+    to.focus();
+  } catch {
+    // focus is a courtesy
+  }
 }
 
 /** The tick: each time-dependent text (`live`) is worked out again; no other element is touched. */

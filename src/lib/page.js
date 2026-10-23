@@ -82,7 +82,13 @@ export function startDesk(load, show) {
   } catch (err) {
     loading = Promise.reject(err);
   }
-  return loading.then((m) => m.startSandbox()).catch(() => {
+  return loading.then((m) => m.startSandbox()).catch((err) => {
+    // A real bug keeps its trace (stage 1's review note).
+    try {
+      console.error(err);
+    } catch {
+      // no console here
+    }
     try {
       show(LOAD_FAILED_WORDS);
     } catch {

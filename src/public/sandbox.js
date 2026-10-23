@@ -26,7 +26,7 @@ import {
 } from './lib/sandbox.js';
 import { teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
 import { summaryView, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
-import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits, unreadLines } from './lib/home.js';
+import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits, unreadLines, WHY_BACK_ONCE, nowOwnPart } from './lib/home.js';
 import { GATE_PHASE } from './lib/j11.js';
 import { composeAnswer, questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, standardLine, headText, buttonFiles } from './lib/sheets.js';
@@ -38,7 +38,7 @@ import { parseWorkflowRuns } from './lib/records.js';
 import { V25_RULING_NOTE } from './lib/links.js';
 import { runsContext, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, TEAM_KEY, itemFeeds,
   stalledLine, deployRows, FEED_ICONS_KEY, doneTarget, JOB_MERGE_WORDS, ESTIMATE_MERGE_WORDS } from './lib/feed.js';
-import { WA, DRAFT_KEY, todayOf } from './lib/workahead.js';
+import { WA, DRAFT_KEY, todayOf, groupOnce } from './lib/workahead.js';
 import { PAGE_WORDS, STANDARD_TOTAL, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, restRows, v25Rows, finishWords } from './lib/projectpage.js';
 import { topLine } from './lib/versions.js';
 import { portfolioView, PF_ROWS, PF_WORDS, cardMilestone, portfolioScreenState, portfolioRead, portfolioCards, ideasView, rareLine, noteIdeas, ideaEvents, SEEN_IDEAS_KEY, PF_BOARD, PF_LABEL } from './lib/portfolio.js';
@@ -828,7 +828,7 @@ function gateCardOf(bd, name) {
 }
 
 /** One tile (AC82, frame H5): its name and what waits, the README summary, the phases as a timeline, "Now:", who is at work, what comes next. A tap opens the project's Status screen until stage 3. */
-function tileNode(b, bd, group, nextRows) {
+function tileNode(b, bd, group, nextRows, whyOnce = null) {
   const { project, box } = b;
   const name = project.name;
   const counts = bd && bd.counts ? bd.counts.get(name) : null;
@@ -846,6 +846,8 @@ function tileNode(b, bd, group, nextRows) {
   if (project.model === 'v3') {
     tl = tileTimeline(b.ctx, gate);
     now = nowLine(b.ctx, TZ);
+    // AC90: the group's head says "why their run went back: not recorded" once; the tile keeps its own date.
+    if (whyOnce && whyOnce.has(name)) now = nowOwnPart(now);
     next = nextLine(project, { gate, row: nextRows ? nextRows.get(name) || null : null, docRead: Boolean(b.j && b.j.ready && b.j.projectDoc), unknown: !nextRows });
   } else {
     tl = sprintStrip(b.snap);
@@ -905,6 +907,16 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
     const words = groupHeaderWords(members.map((x) => ({ waiting: counted(x), cantRead: Boolean(x.box.drawError || (x.box.read && x.box.read.read === 'cant-read')) })));
     const isOpen = homeGroups.isOpen(g.key);
     const id = `grp-${g.key}`;
+    // AC90 (P-001-audit-repeat.md, A): a run's missing why shared by two or more of the group's tiles, said once at its head.
+    const backNames = members.filter((x) => {
+      try {
+        const nl = !x.b.error && x.b.project.model === 'v3' ? nowLine(x.b.ctx, TZ) : null;
+        return Boolean(nl && nl.missing);
+      } catch {
+        return false;
+      }
+    }).map((x) => x.b.project.name);
+    const whyOnce = backNames.length >= 2 ? new Set(backNames) : null;
     return h('section', { class: 'v2-hgroup', key: `hgroup:${g.key}` },
       h('h2', { class: 'v2-hgh' }, h('button', { type: 'button', class: 'v2-hg', key: `hgroup-btn:${g.key}`, 'aria-expanded': isOpen ? 'true' : 'false', 'aria-controls': isOpen ? id : null,
         onclick: () => { homeGroups.toggle(g.key); render(); } },
@@ -914,10 +926,11 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
       h('span', { class: 'v2-hgn' }, String(members.length), h('span', { class: 'sb-vh' }, ` ${members.length === 1 ? 'project' : 'projects'}`)),
       vi(isOpen ? 'chevdown' : 'chev'),
       h('span', { class: 'sb-vh' }, isOpen ? ' (open)' : ' (closed)'))),
+      isOpen && whyOnce ? h('p', { class: 'v2-small gap v2-hgonce', key: `hgonce:${g.key}` }, WHY_BACK_ONCE(whyOnce.size, members.length)) : null,
       isOpen ? h('div', { class: 'v2-tiles', id, key: `tiles:${g.key}` }, members.map(({ b, box }) => {
         try {
           if (b.error) throw b.error;
-          return tileNode(b, bd, g.key, nextRows);
+          return tileNode(b, bd, g.key, nextRows, whyOnce);
         } catch (err) {
           return h('article', { class: 'v2-tile bad', key: `card:${box.name}` }, h('div', { class: 'v2-thd' }, h('h3', { class: 'v2-tnm' }, box.name)),
             h('p', { class: 'v2-ln bad' }, box.drawError || `Can't show this project: ${errorText(err)}`));
@@ -2779,7 +2792,7 @@ function sprintNode(p, s) {
 const sprintsWords = (n) => `${n} sprint${n === 1 ? '' : 's'}`;
 
 /** A milestone on the Timeline (AC59, AC84): its icon in a plain circle on the rail; its name; "<id> · <state> · <rough finish>" in Plex Mono; "Done when" and "Why"; its sprints folded. */
-function mileNode(p, x, finishOf) {
+function mileNode(p, x, finishOf, whyOnce = null) {
   const name = p.project.name;
   const fk = `sprints:${x.key}`;
   const nk = `named:${x.key}`;
@@ -2792,7 +2805,7 @@ function mileNode(p, x, finishOf) {
     h('p', { class: 'v2-msm' }, [x.code, x.words, fin].filter(Boolean).join(' · ')),
     x.doneWhen ? h('p', { class: 'v2-msd' }, h('b', {}, 'Done when'), ' ', x.doneWhen) : null,
     x.why ? h('p', { class: 'v2-msd' }, h('b', {}, 'Why'), ' ', x.why.text, h('span', { class: 'v2-src' }, ` · ${x.why.source}`))
-      : h('p', { class: 'v2-msd gap' }, h('b', {}, 'Why'), ' not recorded yet · for the agents to add'),
+      : whyOnce && whyOnce.has(x.key) ? null : h('p', { class: 'v2-msd gap' }, h('b', {}, 'Why'), ' not recorded yet · for the agents to add'),
     x.sprints.length ? foldButton(name, fk, false, { class: 'v2-fold', 'data-sprints': x.key }, sprintsWords(x.sprints.length)) : h('p', { class: 'v2-small' }, x.fold),
     x.sprints.length && open ? h('div', { class: 'v2-sps', key: `tasks:${x.key}` }, x.sprints.map((s) => sprintNode(p, s))) : null,
     x.namedFold ? foldButton(name, nk, false, { class: 'v2-fold', 'data-sprints': `${x.key}:named` }, x.namedFold) : null,
@@ -2821,8 +2834,8 @@ function gatherNode(p, x) {
     open ? h('ul', { class: 'v2-glist' }, x.items.map((i) => h('li', {}, i.name, ' ', h('span', { class: 'v2-mono' }, i.code), ' ', h('span', { class: 'v2-small' }, i.words)))) : null);
 }
 
-function feedRow(p, x, finishOf) {
-  if (x.kind === 'ms') return mileNode(p, x, finishOf);
+function feedRow(p, x, finishOf, whyOnce = null) {
+  if (x.kind === 'ms') return mileNode(p, x, finishOf, whyOnce);
   if (x.kind === 'untied') return untiedNode(p, x);
   return gatherNode(p, x);
 }
@@ -2884,14 +2897,23 @@ function renderTimeline(p) {
     return h('section', { class: 'sb-screen v2 v2-timeline', key: 'timeline' }, body);
   }
   const finishOf = finishLookup(p.project.name);
-  const blocks = fv.blocks.map((b) => h('section', { class: `v2-tblk ${b.band.cls}${b.plan ? ' plan' : ''}`, key: `blk:${b.key}`, 'data-run': b.key },
+  const blocks = fv.blocks.map((b) => {
+    // AC90 (P-001-audit-repeat.md, A; AC59, changed): a why not recorded yet for two or more of the run's milestones is said
+    // once under its band, and those milestones show no why line until each has one.
+    const mss = [...(b.plannedRows || []), ...b.rows].filter((x) => x.kind === 'ms');
+    const noWhy = mss.filter((x) => !x.why);
+    const whyOnce = noWhy.length >= 2 ? new Set(noWhy.map((x) => x.key)) : null;
+    const row = (x) => feedRow(p, x, finishOf, whyOnce);
+    return h('section', { class: `v2-tblk ${b.band.cls}${b.plan ? ' plan' : ''}`, key: `blk:${b.key}`, 'data-run': b.key },
     h('h2', { class: 'v2-tph sb-pband', key: `band:${b.key}` }, h('span', { class: 'v2-dot', 'aria-hidden': 'true' }),
       h('span', { class: 'v2-tpn' }, b.band.name), h('span', { class: 'v2-tpd' }, b.band.label)),
+    whyOnce ? h('p', { class: 'v2-msd gap v2-tonce', key: `whyonce:${b.key}` }, h('b', {}, 'Why'), ` not recorded yet for ${noWhy.length} of ${mss.length} milestones · for the agents to add`) : null,
     b.nowLine ? [
-      b.plannedRows.length ? h('div', { class: 'v2-tseg plan', key: `seg:${b.key}:plan` }, b.plannedRows.map((x) => feedRow(p, x, finishOf))) : null,
+      b.plannedRows.length ? h('div', { class: 'v2-tseg plan', key: `seg:${b.key}:plan` }, b.plannedRows.map(row)) : null,
       h('p', { class: 'v2-nowl', key: 'nowline', 'data-now': '1' }, h('span', { class: 'v2-nowt' }, b.nowLine.words), ' ',
         h('span', { class: 'v2-nows' }, b.nowLine.sub), b.nowLine.note ? h('span', { class: 'v2-nows' }, ` · ${b.nowLine.note}`) : null)] : null,
-    h('div', { class: `v2-tseg${b.plan ? ' plan' : ''}`, key: `seg:${b.key}` }, b.began ? beganNode(b.began) : null, b.rows.map((x) => feedRow(p, x, finishOf)))));
+    h('div', { class: `v2-tseg${b.plan ? ' plan' : ''}`, key: `seg:${b.key}` }, b.began ? beganNode(b.began) : null, b.rows.map(row)));
+  });
   body.push(goalNode(fv.top, 'finish'), h('div', { class: 'v2-feed', key: 'feed' }, blocks), goalNode(fv.bottom, 'start'));
   for (const n of fv.notes) body.push(h('p', { class: 'v2-small v2-feednote' }, n));
   body.push(feedKeys(p, fv));
@@ -3298,14 +3320,17 @@ function planYou(r, where) {
  * AC24 gives no estimate or no finish, the row says so in AC24's words. In the ordering (⇅): its place
  * and the two move controls (AC24).
  */
-function planRow(v, r, ordering) {
+function planRow(v, r, ordering, once = null) {
   const moved = planDraft.moved === r.key;
   const est = r.estimate;
   const under = [];
-  if (est.kind === 'missing' || est.kind === 'na' || est.kind === 'past') under.push(h('p', { class: 'v2-small v2-plgap', key: `gap:est:${r.key}` }, est.words));
+  // AC90: a reason the group's head says once is not repeated on the row; the row's sheet still says it in full.
+  const estOnce = once && once.estimate.has(r.key);
+  const finOnce = once && once.finish.has(r.key);
+  if (!estOnce && (est.kind === 'missing' || est.kind === 'na' || est.kind === 'past')) under.push(h('p', { class: 'v2-small v2-plgap', key: `gap:est:${r.key}` }, est.words));
   // J14 (specs/S-001.md:10361-10364): under the estimate the row shows, a newer line that can't be read is said.
   if (est.newer) under.push(h('p', { class: 'v2-small v2-plgap v2-plnewer', key: `gap:newer:${r.key}` }, WA.newerUnreadable));
-  if (r.finish && r.finish.na) under.push(h('p', { class: 'v2-small v2-plgap', key: `gap:fin:${r.key}` }, `${WA.finish}: ${r.finish.words}`));
+  if (!finOnce && r.finish && r.finish.na) under.push(h('p', { class: 'v2-small v2-plgap', key: `gap:fin:${r.key}` }, `${WA.finish}: ${r.finish.words}`));
   if (r.notInPlan) under.push(h('p', { class: 'v2-small v2-pltag', key: `gap:tag:${r.key}` }, WA.notInPlan));
   if (r.waiting) under.push(planYou(r, 'row'));
   const place = h('span', { class: 'v2-plord' }, ordering ? h('span', { 'aria-hidden': 'true' }, r.place) : null,
@@ -3504,8 +3529,11 @@ function renderWorkAhead(built, nowMs) {
       : h('p', { class: 'v2-small', key: 'wa-none' }, 'No milestones to go'));
   } else {
     for (const g of v.groups) {
+      // AC90 (P-001-audit-repeat.md, A): a reason two or more of the group's rows share, said once at its head.
+      const once = groupOnce(g.rows);
       body.push(h('section', { class: 'v2-plgrp', key: `wa-grp:${g.key}` }, planHead(g.words, g.rows.length, { proj: true }),
-        h('ol', { class: 'v2-rows', 'aria-label': g.words }, g.gate ? planGateRow(g.gate) : null, g.rows.map((r) => planRow(v, r, false)))));
+        once.lines.length ? h('div', { class: 'v2-plonce', key: `wa-once:${g.key}` }, once.lines.map((l) => h('p', { class: 'v2-small v2-plgap', key: `once:${l.kind}:${l.words}` }, l.words))) : null,
+        h('ol', { class: 'v2-rows', 'aria-label': g.words }, g.gate ? planGateRow(g.gate) : null, g.rows.map((r) => planRow(v, r, false, once)))));
     }
     if (!v.rows.length) body.push(h('p', { class: 'v2-small', key: 'wa-none' }, 'No milestones to go'));
   }

@@ -384,7 +384,7 @@ test('AC24: a range across the year\'s end shows the year', async () => {
   }
 });
 
-test('AC24: J14\'s read failing — "Estimate: not available" on every row and no rough finish', async () => {
+test('AC24: J14\'s read failing — "Estimate: not available" in every sheet, said once at the group\'s head (AC90), and no rough finish', async () => {
   const text = WORKED();
   const app = await loadSandbox({ ...waSetup({ extra: { 'intake/estimates.jsonl': text } }), hash: '#/work', now: NOW, store: memStore() });
   const orig = app.server.call;
@@ -398,8 +398,10 @@ test('AC24: J14\'s read failing — "Estimate: not available" on every row and n
     await app.advance(61_000);
     for (const id of SIX) assert.equal(await estOf(app, id), 'Estimate: not available', id);
     assert.deepEqual(await finishes(app), Array(6).fill(null), 'no rough finish');
-    // From stage 5 (AC86, :7050-7052; AC24's words where it gives no estimate): each row says so, with no value at its right.
-    assert.deepEqual(rows(app).map((r) => byClass(r, 'v2-plgap').map((g) => g.textContent)), Array(6).fill(['Estimate: not available']));
+    // Rewritten for AC90 (specs/S-001.md:8011-8022; AC24's note, :9250-9253): the group's head says it once, "<n> milestones
+    // · estimate not available", and no row repeats it; each milestone's sheet still says it (above), with no value at its right.
+    assert.deepEqual(rows(app).map((r) => byClass(r, 'v2-plgap').map((g) => g.textContent)), Array(6).fill([]));
+    assert.deepEqual(byClass(findKeyed(app, 'wa-once:Service-Desk'), 'v2-plgap').map((g) => g.textContent), ['6 milestones · estimate not available']);
     assert.ok(rows(app).every((r) => byClass(r, 'v2-plv')[0].textContent === ''));
     assert.equal(await card(app), 'not available');
     assert.doesNotMatch(app.text(), /Can't read/);

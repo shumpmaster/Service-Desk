@@ -171,15 +171,24 @@ test('AC84: the rail — a thin line in the phase\'s colour down the band\'s lef
   }
 });
 
-test('AC84: each milestone — its status icon in a plain circle on the rail (the gold ring for next to reach), its name as a row title, then in Plex Mono "<id> · <its state words> · <its rough finish>", then "Done when" and "Why" with the label in weight 500, then "<n> sprints ▸"; a missing why "Why not recorded yet · for the agents to add" in the agents\' grey', async () => {
+test('AC84: each milestone — its status icon in a plain circle on the rail (the gold ring for next to reach), its name as a row title, then in Plex Mono "<id> · <its state words> · <its rough finish>", then "Done when" and "Why" with the label in weight 500, then "<n> sprints ▸"; a missing why "Why not recorded yet · for the agents to add" in the agents\' grey, said once under the band where two or more share it (AC90)', async () => {
   const app = await openSD('#/p/Service-Desk/timeline');
   try {
     const m2b = keyed(app, 'mile:Build-i1:M2B');
-    assert.deepEqual(m2b.children.map((c) => (c.className || c.tag).split(' ')[0]), ['v2-msi', 'v2-mstt', 'v2-msm', 'v2-msd', 'v2-msd', 'v2-fold']);
+    // Rewritten for AC90 (specs/S-001.md:8023-8025; AC59's note, :5246-5249; AC84's, :7518): Build run 1's three milestones
+    // have no why yet, so it is said once under the band, in the agents' grey, and M2B shows no why line until it has one.
+    assert.deepEqual(m2b.children.map((c) => (c.className || c.tag).split(' ')[0]), ['v2-msi', 'v2-mstt', 'v2-msm', 'v2-msd', 'v2-fold']);
     assert.equal(byClass(m2b, 'v2-mstt')[0].textContent, 'Agent usage shown on the desk');
     assert.equal(byClass(m2b, 'v2-msm')[0].textContent, 'M2B · work filed · gone back over');
-    const [dw, why] = byClass(m2b, 'v2-msd');
+    const [dw] = byClass(m2b, 'v2-msd');
     assert.equal(findAll(dw, (e) => e.tag === 'b')[0].textContent, 'Done when');
+    const once = keyed(app, 'whyonce:Build-i1');
+    assert.equal(once.textContent, 'Why not recorded yet for 3 of 3 milestones · for the agents to add');
+    assert.match(once.className, /\bgap\b/);
+    assert.equal(findAll(once, (e) => e.tag === 'b')[0].textContent, 'Why');
+    // A milestone alone in its run with no why keeps its own line (Launch's M3C).
+    const m3c = findAll(app.view, (e) => e.attrs && e.attrs['data-ms'] === 'M3C')[0];
+    const why = byClass(m3c, 'v2-msd').at(-1);
     assert.equal(why.textContent, 'Why not recorded yet · for the agents to add');
     assert.match(why.className, /\bgap\b/);
     assert.equal(byClass(m2b, 'v2-fold')[0].textContent, '2 sprints');

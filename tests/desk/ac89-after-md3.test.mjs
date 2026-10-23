@@ -500,7 +500,9 @@ test('AC89 (h): if the desk\'s own code fails to load, the page says "The desk c
   assert.match(APP, /startDesk\(\(\) => import\('\.\/sandbox\.js'\), \(words\) => \{/);
   const fn = APP.slice(APP.indexOf("startDesk(() => import('./sandbox.js')"));
   assert.match(fn, /stateEl\.textContent = words;/);
-  assert.match(fn, /view\.replaceChildren\(h\('p', \{\}, words\)\);/);
+  // Rewritten at stage 6b of "After MD3" (AC89 (m), specs/S-001.md:7963-7964, and AC89's "Every screen keeps AC81's tokens
+  // and AC88's dark theme", :7810-7811): said once, in the view, on mockup v2's ground as the render-error screen is drawn.
+  assert.match(fn, /view\.replaceChildren\(h\('section', \{ class: 'sb-screen' \}, h\('p', \{ class: 'sb-stale', role: 'alert' \}, words\)\)\);/);
   assert.match(fn, /foot\.hidden = true;/, 'the footer\'s "reading…" not left showing');
   assert.doesNotMatch(APP, /import\('\.\/sandbox\.js'\)\.then/, 'no load left unguarded');
   // The page loaded through its entry still starts the desk when its code loads: page-app.test.mjs's cases, kept.

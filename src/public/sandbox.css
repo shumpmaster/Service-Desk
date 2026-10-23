@@ -1223,10 +1223,11 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 
 /* M3D stage 6a, the words and drawing on the screens (AC89 (f), (g), (k)). (g) The Timeline's sprint marks level: every
    mark, a plain one too, as tall as one with a reason (its 24 px summary), so centred on one line their tops meet. (k) The
-   ordering view's rows have no empty space under them: the two move controls side by side, beside the row only and
-   shorter than it. (k) An
-   unparseable portfolio card's "can't parse" note cut at three lines, faded only once the browser measures the cut. */
+   ordering view's rows have no empty space under them (stage 6a's design review, N1): a row with nothing under it keeps
+   its two move controls stacked, beside the row only and with no padding, so the row is at least as tall as they are
+   and the names keep their width; a row with lines under it keeps the controls' column spanning them, as before.
+   (k) An unparseable portfolio card's "can't parse" note cut at three lines, faded only once the browser measures the cut. */
 .v2-timeline .v2-stats span.sb-mkw { min-height: 24px; }
-.v2-plmove { grid-row: 1; grid-auto-flow: column; grid-auto-columns: 36px; }
+.v2-plli.ord:not(:has(.v2-plunder)) > .v2-plmove { grid-row: 1; padding: 0; }
 .v2-why.v2-wclip { max-height: calc(3 * 1.4em); overflow: hidden; overflow: clip; }
 .v2-why.v2-wclip.over { -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }

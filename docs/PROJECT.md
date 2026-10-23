@@ -102,7 +102,7 @@ that only the owner passes.
     A governance change in Service-Desk (R3): made in the Orchestrator's lane, reviewed, and
     approved by the owner.
 
-**Milestones** (the owner's rulings: decisions/questions/P-001-milestones-adoption.md, decisions/questions/P-001-milestones-ruling-2.md and decisions/questions/P-001-milestones-ruling-3.md for M2; the Critic's checks: decisions/questions/P-001-milestones-adoption-critic-2.md and, for M2, decisions/questions/P-001-milestones-adoption-critic-3.md):
+**Milestones** (the owner's rulings: decisions/questions/P-001-milestones-adoption.md, decisions/questions/P-001-milestones-ruling-2.md and decisions/questions/P-001-milestones-ruling-3.md for M2; the Critic's checks: decisions/questions/P-001-milestones-adoption-critic-2.md and, for M2, decisions/questions/P-001-milestones-adoption-critic-3.md; for M3D, the owner's approval decisions/questions/P-001-m3d-line.md and the Critic's check decisions/questions/P-001-m3d-line-critic-2.md):
 - Every project's status visible on the phone (M1) · done when every connected project's status, and what waits on the owner, shows on the owner's phone · phase: Build · sprints: PR #40, PR #41 · reached: 2026-10-07
 - Cards answered straight from the desk (M2) · done when each card on the desk links the owner straight to its answer · phase: Build · sprints: PR #44 · reached: 2026-10-18
 - Agent usage shown on the desk (M2B) · done when each agent session's usage and context figures show on the desk · phase: Build · sprints: PR #44, PR #52 · reached: 2026-10-18
@@ -111,6 +111,7 @@ that only the owner passes.
 - The chosen design running on the real back end (MD3) · done when the chosen look runs on the desk's real back end, showing real records, on its preview site · phase: Design · reached: 2026-10-23
 - Work ahead planned from the desk (M3A) · done when the desk shows each milestone ahead with the Chief of Staff's rough estimate and a rough finish, the owner's chosen order of them is recorded from the desk for the Chief of Staff to carry out, and later work that is not a milestone yet can be asked for from the desk as a milestone · phase: Build · reached: 2026-10-20 · why: the owner wants to choose the order of the milestones ahead and to know roughly how long each will take, to set expectations
 - The desk's value targets shown (M3B) · done when the desk shows each value target (V1 to V5) from the project document against its measure · phase: Build
+- The desk's faults fixed and the owner's design answers built (M3D) · done when the faults found by the 22 October design audit and by the reviews of the new desk are fixed, a Done portfolio card is kicked back within about 5 minutes, and the owner's 22 October answers (a "not yet" reason said once per group, Copy inside each choice's box, idle team members on one line, typed words and scroll kept across a full reload, and lanes open together never looking alike) show on the desk's preview, each with its tests · phase: Build · why: the owner wants the faults found since the new look went in fixed, and their design choices built, before the desk goes live
 - The desk live at the needs-you address (M3C) · done when the owner's needs-you address opens the desk on production · phase: Launch
 
 **Route to compression (Part 2):** D3.1 and D3.2 need only D2, so they can ship to the preview

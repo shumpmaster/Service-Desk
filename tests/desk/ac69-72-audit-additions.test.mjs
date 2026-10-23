@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { SRC, CONFIG } from './helpers.mjs';
-import { byClass, findAll, linksIn, loadSandbox } from './sandbox-helpers.mjs';
+import { byClass, findAll, linksIn, loadSandbox, openIdle } from './sandbox-helpers.mjs';
 import { twoProjects, v3 } from './sandbox-fixtures.mjs';
 import { openSD, keyed, models, sdRepo, SD3, TZ, NOW, openFolds, pullNodes, answerOf, node, j11Files } from './tv2-fixtures.mjs';
 import { runBegan, stalledLine, deployCheck, deployCommit } from '../../src/lib/feed.js';
@@ -79,6 +79,8 @@ test('AC69 + AC80: on Home, Status, Timeline, Team and Waiting (the cards\' shee
       await app.go(s);
       await openFolds(app);
       await openFolds(app, 'v2-fold'); // the page's phase lines and the Timeline's folds (AC83, AC84)
+      // Rewritten for AC67, changed after MD3 (specs/S-001.md:6093-6105): the Team screen's idle cards opened, so their gaps are checked.
+      await openIdle(app);
       check(app.view, s);
       // AC83 (P-001-why-line.md, A): on the page no row reads "why: not recorded".
       if (s === '#/p/Service-Desk') assert.doesNotMatch(app.view.textContent, /why: not recorded/, 'the page: never "why: not recorded" on a row');

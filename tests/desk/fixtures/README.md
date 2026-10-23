@@ -602,3 +602,15 @@ real; Alpha, made up; Delta in poom/'s placeholder form), and AC77's real asked 
 77bfeae (real), poom/'s placeholder form, AC52's one item of each kind (`fullRepo`, made up), AC61's made-up why lines,
 and wa-fixtures.mjs's estimate lines (made up, NOT real records); the three estimate lines it writes inline (MD1 and MD2
 0 to 0 days, MD3 3 to 5) are made up too, NOT a real record.
+
+## After MD3, stage 4 (2026-10-23, S-001 AC49's lanes, AC67's idle fold, AC90's Team part)
+
+`tests/desk/lanes-fixtures.mjs` writes made-up records inline, each **NOT a real record** (the amendment's (b) item 30,
+second part, and item 36):
+- `cosLanes()`: three made-up projects ("Lanes-four", "Lanes-fifth", "Lanes-five") whose Chief of Staff's session lines,
+  in J13's form as `j13/good/` writes it, give a log of four pieces open together, one where a fifth piece opens while the
+  first is still open after three others came and went, and one of five open together; every `doing` is made up;
+- `ownerStubs()`: a made-up project ("Lanes-owner") whose dispatch log raises three cards in turn, the first answered (its
+  decision filed, with a made-up decision file) and the other two waiting, so the owner's log has a stub on lanes 2 and 3.
+The Team screen's cases reuse Service-Desk at 3117150 (real), AC52's one item of each kind and md-extremes (made up), and
+J13's `good/` files (made up).

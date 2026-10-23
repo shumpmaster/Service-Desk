@@ -1403,8 +1403,9 @@ function cosPage(project, snap, tv, now, tz) {
     const lane = `${x.session} line ${x.start.n}`; // the piece by its start line: its file and line
     byLane.set(lane, x);
     rows.push({ at: x.start.at, text: `Started: ${x.start.doing} · ${t(x.start.at)}`, lane, entry: { shape: 'cos-start', line: x.start, path: x.path, time: x.start.time } });
-    for (const hl of x.helpers) rows.push({ at: hl.at, text: helperWords(hl, now, tz), lane, entry: { shape: 'cos-helper', line: hl, path: x.path, time: hl.ended } });
-    if (x.end) rows.push({ at: x.end.at, text: `${endWords(x.end)} · ${t(x.end.at)}`, lane, entry: { shape: 'cos-end', line: x.end, path: x.path, time: x.end.time } });
+    // AC49, changed after MD3 (stage 4): each helper row and end row names its lane in words, " · <the piece's doing>" (`of`).
+    for (const hl of x.helpers) rows.push({ at: hl.at, text: helperWords(hl, now, tz), lane, of: x.start.doing, entry: { shape: 'cos-helper', line: hl, path: x.path, time: hl.ended } });
+    if (x.end) rows.push({ at: x.end.at, text: `${endWords(x.end)} · ${t(x.end.at)}`, lane, of: x.start.doing, entry: { shape: 'cos-end', line: x.end, path: x.path, time: x.end.time } });
   }
   for (const o of cs.orphans) {
     rows.push({ at: o.line.at, text: `Handed back (no recorded start) · ${runTime(o.line.usage && o.line.usage.duration_ms)} · ${t(o.line.at)}`, lane: null,
@@ -1423,7 +1424,7 @@ function cosPage(project, snap, tv, now, tz) {
     if (r.lane) seen.add(r.lane);
     const now0 = Boolean(first && x && x.state === 'working');
     const text = first && x && x.state === 'unrecorded' ? `${r.text} · ${ENDED_UNRECORDED}` : r.text;
-    return { text, lane: r.lane, entry: r.entry, now: now0 };
+    return { text, lane: r.lane, entry: r.entry, now: now0, ...(r.of != null ? { of: r.of } : {}) };
   });
   const layout = branchLayout(log, (lane) => Boolean(byLane.get(lane) && byLane.get(lane).state === 'ended'));
   return { id: 'chief-of-staff', label: 'Chief of Staff', status: cv.status, groups, logEntries: [], log, lanes: layout.lanes.map((l) => l.id), layout,
@@ -1442,6 +1443,8 @@ function cosPage(project, snap, tv, now, tz) {
  * Returns { rows: n, slots, lanes: [{ id, slot, shade, top, bottom, fork, join, stub, edge }],
  * dots: [{ row, slot (0 is the main line), now }] }.
  */
+/** The running log's four lane looks (AC49): --ink solid, --ink2 dashed, --ink3 dotted, --ink dashed (sandbox.css, shade-0 to shade-3). */
+export const LANE_LOOKS = 4;
 export function branchLayout(log, filed) {
   const n = log.length;
   const byLane = new Map();
@@ -1466,8 +1469,18 @@ export function branchLayout(log, filed) {
     if (!used.has(slot)) used.set(slot, []);
     used.get(slot).push(l);
   }
-  let shade = 0;
-  for (const l of [...lanes].sort((a, b) => b.bottom - a.bottom)) l.shade = shade++ % 4;
+  // Its look (AC49, changed after MD3, stage 4; P-001-lanes-alike.md, A): from the oldest row up, each lane takes the first
+  // of the four looks that no lane still open where it starts is using (the same search, with the same one-row gap, as
+  // the places above), so lanes open at the same time never look alike while at most four are open; with all four in
+  // use, a fifth takes the first look, --ink solid. Lanes from different times may share a look; their rows name them.
+  const looked = [];
+  for (const l of [...lanes].sort((a, b) => b.bottom - a.bottom || a.top - b.top)) {
+    const busy = new Set(looked.filter((o) => !(o.top > l.bottom + 1 || o.bottom < l.top - 1)).map((o) => o.shade));
+    let look = 0;
+    while (look < LANE_LOOKS && busy.has(look)) look++;
+    l.shade = look < LANE_LOOKS ? look : 0;
+    looked.push(l);
+  }
   for (const l of lanes) {
     l.edge = l.bottom === n - 1; // already open at the oldest row shown: runs in from the edge, no fork
     l.fork = !l.edge;
@@ -1571,7 +1584,8 @@ export function summarySheet(project, snap, row, q) {
   // A session line's row (J13): its words and the line as written, linked to its file; Why and For you not recorded.
   if (/^cos-/.test(shape)) {
     const why = 'not recorded in the session line';
-    return { what: row.text, quote: e.line.raw, link: treeLink(project, tree, e.path), why, forYou: why,
+    // AC49 (stage 4): the piece a helper or end row belongs to, whole, where the row cuts it at one line.
+    return { what: row.of != null ? `${row.text} · ${row.of}` : row.text, quote: e.line.raw, link: treeLink(project, tree, e.path), why, forYou: why,
       figures: shape === 'cos-end' ? cosUsageLines(e.line.usage) : null };
   }
   const quote = (() => {

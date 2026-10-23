@@ -20,11 +20,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SRC } from './helpers.mjs';
-import { loadSandbox, findAll } from './sandbox-helpers.mjs';
+import { loadSandbox, findAll, openIdle } from './sandbox-helpers.mjs';
 import { NOW, extremes } from './sandbox-fixtures.mjs';
 import { textSetup } from './screen-text.mjs';
 import { SD3, sdRepo } from './tv2-fixtures.mjs';
 import { waSetup, WORKED, memStore } from './wa-fixtures.mjs';
+import { cosLanes, ownerStubs, LANES_NOW } from './lanes-fixtures.mjs';
 import { CONFIG } from './helpers.mjs';
 import { parseCss, treeOf, cascade, nodes, COLOUR_PROPS } from './css-cascade.mjs';
 import { hexLab, de2000 } from './ciede2000.mjs';
@@ -158,7 +159,8 @@ function checkScreen(app, where, fails, seen) {
     const tree = treeOf(app.view, { className: root.className, attrs });
     // A clipped text's fade is drawn only once the browser measures the text as cut (`over`): read every box as cut.
     // M3D stage 1 (AC89 (c)): the waits row's short names, cut at two lines, fade into the page's ground too.
-    for (const n of nodes(tree)) if (['sb-sumclip', 'sb-lineclip', 'v2-e1', 'v2-wn'].some((c) => n.cls.has(c))) n.cls.add('over');
+    // M3D stage 4 (AC49): a Chief of Staff row's piece, cut at one line, fades into the log's ground too.
+    for (const n of nodes(tree)) if (['sb-sumclip', 'sb-lineclip', 'v2-e1', 'v2-wn', 'sb-brow-of'].some((c) => n.cls.has(c))) n.cls.add('over');
     openBubbles(tree);
     cascade(tree, RULES, way.env);
     const fail = (n, words) => { const k = `${way.theme} ${label(n)} ${words}`; if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(n)}: ${words}`); } };
@@ -265,6 +267,13 @@ async function everyScreen(app, projects, where, fails, seen, counts, check = ch
     else await visit(`${base}/pipeline`);
     for (const s of ['asked', 'agents', 'team']) await visit(`${base}/${s}`);
     await app.go(`${base}/team`);
+    // AC67, changed (stage 4 of "After MD3"): the idle members' cards behind "<n> idle ›", opened, are a screen to check
+    // too, and their pages are reached from there.
+    if (findAll(app.view, (e) => e.dataset && e.dataset.k === 'team-idle').length) {
+      await openIdle(app);
+      check(app, `${where} ${base}/team (idle opened)`, fails, seen);
+      counts.screens++;
+    }
     for (const m of hrefsIn(app, new RegExp(`^${esc(base)}/team/[^/]+$`))) {
       await visit(m);
       for (const s of hrefsIn(app, new RegExp(`^${esc(m)}/(now|e/\\d+)$`)).slice(0, 2)) await visit(s);
@@ -403,6 +412,23 @@ const M3D3_ONCE = new Map([['v2-plonce', new Set(['display: (none) → grid', 'g
   ['v2-tonce', new Set(['padding: (none) → 8px 0 2px 26px'])]]);
 const M3D3_EXCEPT = (n, d) => (n.cls.has('v2-plonce') && n.tag === 'div' && n.parent && n.parent.cls.has('v2-plgrp') && M3D3_ONCE.get('v2-plonce').has(d))
   || (n.cls.has('v2-tonce') && n.tag === 'p' && n.cls.has('v2-msd') && n.cls.has('gap') && n.parent && n.parent.cls.has('v2-tblk') && M3D3_ONCE.get('v2-tonce').has(d));
+/**
+ * M3D stage 4's changes to the look on purpose (the brief's after-MD3 rule, specs/S-001.md:15549-15553; AC67, changed,
+ * :6093-6105; AC49, changed, :3713-3720): on the Team screen, the idle members' one line (`button.sb-idle`, a 44 px control in
+ * the meta role and ink, where a button had the browser's own look) and the opened list under it (`div.sb-idlelist`); on a
+ * Chief of Staff log, a row's piece cut at one line (`span.sb-brow-of`). Only these properties, on only these elements.
+ */
+const M3D4_PROPS = new Map([
+  ['sb-idle', new Set(['display', 'align-items', 'width', 'min-height', 'margin-top', 'font', 'color', 'text-align', 'computed font-size', 'computed line-height', 'computed color'])],
+  ['sb-idlelist', new Set(['display', 'gap'])],
+  ['sb-brow-of', new Set(['position', 'flex', 'min-width', 'max-height', 'overflow', 'overflow-wrap'])]]);
+const M3D4_EXCEPT = (n, d) => {
+  const prop = d.split(':')[0];
+  if (n.cls.has('sb-idle') && n.tag === 'button') return M3D4_PROPS.get('sb-idle').has(prop);
+  if (n.cls.has('sb-idlelist') && n.tag === 'div') return M3D4_PROPS.get('sb-idlelist').has(prop);
+  if (n.cls.has('sb-brow-of') && n.tag === 'span') return M3D4_PROPS.get('sb-brow-of').has(prop);
+  return false;
+};
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
@@ -436,6 +462,7 @@ function sameLook(app, where, fails, seen) {
         if (STAGE8_TOP(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
         if (M3D1_EXCEPT(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
         if (M3D3_EXCEPT(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
+        if (M3D4_EXCEPT(b, d)) { excepted.add(`M3D4 ${label(b)} ${d.split(':')[0]}`); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -485,7 +512,9 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // M3D stage 3's exception was met, in exactly its declarations; with stage 1's and stage 8's, nothing else is excepted.
   const m3d3 = [...M3D3_ONCE.get('v2-plonce')].map((d) => `div.v2-plonce ${d}`).concat([...M3D3_ONCE.get('v2-tonce')].map((d) => `p.v2-msd.gap.v2-tonce ${d}`));
   for (const x of m3d3) assert.ok(excepted.has(x), `${x}: ${JSON.stringify([...excepted])}`);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead)/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // M3D stage 4's exception was met on the Team screen's idle line and list; it covers nothing else.
+  for (const x of ['M3D4 button.sb-idle display', 'M3D4 div.sb-idlelist display']) assert.ok(excepted.has(x), `${x}: ${JSON.stringify([...excepted])}`);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D4 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes
@@ -501,11 +530,17 @@ test('AC49 + AC88 (P-001-desk-v2-lanes, A): on every member page\'s running log,
   // AC88's three ways of showing a screen, each at both widths.
   const ways = WAYS.flatMap((w) => [360, 414].map((width) => ({ ...w, name: `${w.name}, ${width} px`, env: { ...w.env, width } })));
   const apart = (a, b) => a.dash !== b.dash || de2000(hexLab(a.grey), hexLab(b.grey)) >= 10;
-  for (const setup of [textSetup(), extremes(), { config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': sdRepo() } }]) {
-    const app = await opened(setup);
+  // From stage 4 of "After MD3" (the amendment's (b) item 30, second part): the made-up logs too, the Chief of Staff's with
+  // four, then five, lanes open together, and an owner's log with a stub on lanes 2 and 3 (lanes-fixtures.mjs, NOT real).
+  const cl = cosLanes();
+  const os = ownerStubs();
+  for (const setup of [textSetup(), extremes(), { config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': sdRepo() } },
+    { config: { ...CONFIG, projects: [...cl.projects, ...os.projects] }, repos: { ...cl.repos, ...os.repos }, now: LANES_NOW }]) {
+    const app = await opened(setup, '#/', setup.now ? { now: setup.now } : {});
     try {
       for (const p of setup.config.projects) {
         await app.go(`#/p/${encodeURIComponent(p.name)}/team`);
+        await openIdle(app); // AC67, changed (stage 4): every member's log, the idle members' too
         for (const m of hrefsIn(app, new RegExp(`^#/p/${esc(encodeURIComponent(p.name))}/team/[^/]+$`))) {
           await app.go(m);
           for (const way of ways) {
@@ -572,7 +607,10 @@ test('AC49 + AC88 (P-001-desk-v2-lanes, A): on every member page\'s running log,
     }
   }
   assert.ok(pages > 20, `${pages} running logs drawn`);
-  assert.ok(fourLanes >= 4, `${fourLanes} with all four lanes, the owner's among them`);
+  // Rewritten for AC49, changed after MD3 (specs/S-001.md:3709-3716): a lane takes the first look no lane open where it starts
+  // is using, so the fixtures' own logs (at most three open together) no longer draw all four; the made-up log of four open
+  // together does, in each way of showing it.
+  assert.ok(fourLanes >= ways.length, `${fourLanes} with all four lanes, the made-up four-open log among them`);
   assert.ok(stubs.seen > 20 && stubs.pages > 5, `${stubs.seen} stubs on ${stubs.pages} logs`);
   assert.deepEqual([...stubs.onDash].sort(), ['0.01 4', '6 4', 'none'], 'stubs on a solid, a dashed and a dotted lane'); 
   assert.deepEqual(fails, []);

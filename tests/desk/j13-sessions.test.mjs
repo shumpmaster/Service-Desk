@@ -13,7 +13,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { FIX, CONFIG, fixture } from './helpers.mjs';
 import { repo, gitSha } from './fake-desk.mjs';
-import { loadSandbox, byClass, findAll, linksIn, j11Files, SD3 } from './sandbox-helpers.mjs';
+import { loadSandbox, byClass, findAll, linksIn, j11Files, SD3, openIdle } from './sandbox-helpers.mjs';
 import { v3 } from './sandbox-fixtures.mjs';
 import { checkDrawing } from './branch-check.mjs';
 import { SESSION_PATH_RE, parseSessionFile, piecesOf, cosSessions, utcTime, utcParts, COS_OPEN_MS } from '../../src/lib/cos.js';
@@ -153,6 +153,8 @@ test('J13 (build review round 1): a file with such lines leaves the project read
     assert.equal(byClass(app.view, 'v2-wt')[0].textContent, 'Nothing waiting');
     assert.doesNotMatch(app.text(), /Can't read/);
     await app.go('#/p/Alpha/team');
+    // Rewritten for AC67, changed after MD3 (specs/S-001.md:6093-6105; P-001-audit-team.md, B): an idle member's card is behind "<n> idle ›".
+    await openIdle(app);
     assert.match(findAll(app.view, (e) => e.dataset && e.dataset.member === 'chief-of-staff')[0].textContent, /Idle/, 'the rest of the file used');
   } finally {
     app.restore();
@@ -349,7 +351,8 @@ test('AC49 (J13): a session line\'s summary sheet — its words, the line as wri
   const page = memberPage(SD3, { items: [] }, t.snap, t.j, EMPTY_Q, t.tv, 'chief-of-staff', at('12:00'), TZ);
   const end = page.log[0];
   const sm = summarySheet(SD3, t.snap, end, EMPTY_Q);
-  assert.equal(sm.what, 'Handed back · 1 h 10 min 0 s · 09:10');
+  // Rewritten for AC49, changed after MD3 (specs/S-001.md:3713-3720): an end row names its piece, whole in its summary sheet.
+  assert.equal(sm.what, "Handed back · 1 h 10 min 0 s · 09:10 · Filing your question on the desk plan's fourth review");
   assert.equal(sm.quote, GOOD['s-ended'].split('\n')[3]);
   assert.equal(sm.link, 'https://github.com/shumpmaster/Service-Desk/blob/main/sessions/chief-of-staff/s-ended.jsonl');
   assert.equal(sm.why, 'not recorded in the session line');
@@ -396,6 +399,8 @@ test('AC67 (J13): the Chief of Staff\'s icon for each of AC49\'s status words; i
   try {
     await app.advance(1000);
     await app.advance(61_000);
+    // Rewritten for AC67, changed after MD3 (specs/S-001.md:6093-6105; P-001-audit-team.md, B): the idle Chief of Staff's card is behind "<n> idle ›", as built once opened.
+    await openIdle(app);
     const card = (id) => findAll(app.view, (e) => e.dataset && e.dataset.member === id)[0];
     const cos = card('chief-of-staff');
     assert.match(cos.textContent, /Idle/);

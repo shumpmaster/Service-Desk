@@ -614,3 +614,8 @@ second part, and item 36):
   decision filed, with a made-up decision file) and the other two waiting, so the owner's log has a stub on lanes 2 and 3.
 The Team screen's cases reuse Service-Desk at 3117150 (real), AC52's one item of each kind and md-extremes (made up), and
 J13's `good/` files (made up).
+After the Reviewer's round 1 of stage 4, `tests/desk/ac67-90-team-after-md3.test.mjs` adds, inline, four made-up outcome
+lines (**NOT real records**) to Service-Desk's dispatch log at 3117150, one each for the check author, the builder, the
+input reader and the reviewer, so that only the user representative's card has no recorded work (a reason one card has
+stays on that card). Its "Just finished" case uses the real log as it stands, read at 22:00 UTC on 8 Oct, eight minutes
+after the source checker's last outcome line and twelve after the researcher's.

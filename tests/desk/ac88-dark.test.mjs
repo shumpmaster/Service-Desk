@@ -414,20 +414,23 @@ const M3D3_EXCEPT = (n, d) => (n.cls.has('v2-plonce') && n.tag === 'div' && n.pa
   || (n.cls.has('v2-tonce') && n.tag === 'p' && n.cls.has('v2-msd') && n.cls.has('gap') && n.parent && n.parent.cls.has('v2-tblk') && M3D3_ONCE.get('v2-tonce').has(d));
 /**
  * M3D stage 4's changes to the look on purpose (the brief's after-MD3 rule, specs/S-001.md:15549-15553; AC67, changed,
- * :6093-6105; AC49, changed, :3713-3720): on the Team screen, the idle members' one line (`button.sb-idle`, a 44 px control in
- * the meta role and ink, where a button had the browser's own look) and the opened list under it (`div.sb-idlelist`); on a
- * Chief of Staff log, a row's piece cut at one line (`span.sb-brow-of`). Only these properties, on only these elements.
+ * :6093-6105): on the Team screen, the idle members' one line (`button.sb-idle`, a 44 px control in the meta role and ink,
+ * where a button had the browser's own look) and the opened list under it (`div.sb-idlelist`). Each declaration is pinned
+ * to its value, before and after, in each theme (the Reviewer's B1, stage 4 round 1: "pin each excepted declaration's
+ * value, as M3D1_WAITS and M3D3_ONCE do"); only these, on only these elements. A Chief of Staff row's piece
+ * (`span.sb-brow-of`) is drawn on no screen this guard walks, so nothing is excepted for it.
  */
-const M3D4_PROPS = new Map([
-  ['sb-idle', new Set(['display', 'align-items', 'width', 'min-height', 'margin-top', 'font', 'color', 'text-align', 'computed font-size', 'computed line-height', 'computed color'])],
-  ['sb-idlelist', new Set(['display', 'gap'])],
-  ['sb-brow-of', new Set(['position', 'flex', 'min-width', 'max-height', 'overflow', 'overflow-wrap'])]]);
-const M3D4_EXCEPT = (n, d) => {
-  const prop = d.split(':')[0];
-  if (n.cls.has('sb-idle') && n.tag === 'button') return M3D4_PROPS.get('sb-idle').has(prop);
-  if (n.cls.has('sb-idlelist') && n.tag === 'div') return M3D4_PROPS.get('sb-idlelist').has(prop);
-  if (n.cls.has('sb-brow-of') && n.tag === 'span') return M3D4_PROPS.get('sb-brow-of').has(prop);
-  return false;
+const M3D4_FONT = 'font: inherit → 400 12px/1.4 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+const M3D4_IDLE = ['display: (none) → flex', 'align-items: (none) → center', 'width: (none) → 100%', 'min-height: (none) → 44px', 'margin-top: (none) → 8px',
+  'text-align: (none) → left', M3D4_FONT, 'computed font-size: 13px → 12px', 'computed line-height: 18.849999999999998px → 16.799999999999997px'];
+const M3D4_LIST = ['display: (none) → grid', 'gap: (none) → 8px'];
+const M3D4_ONCE = new Map([
+  ['light', new Set([...M3D4_IDLE, 'color: #1b1b1b → #18191c', 'computed color: #1b1b1b → #18191c'].map((d) => `button.sb-idle ${d}`).concat(M3D4_LIST.map((d) => `div.sb-idlelist ${d}`)))],
+  ['dark', new Set([...M3D4_IDLE, 'color: #1b1b1b → #ecedef', 'color: #e8e8e8 → #ecedef', 'computed color: #1b1b1b → #ecedef', 'computed color: #e8e8e8 → #ecedef']
+    .map((d) => `button.sb-idle ${d}`).concat(M3D4_LIST.map((d) => `div.sb-idlelist ${d}`)))]]);
+const M3D4_EXCEPT = (n, d, theme) => {
+  const k = n.cls.has('sb-idle') && n.tag === 'button' ? `button.sb-idle ${d}` : n.cls.has('sb-idlelist') && n.tag === 'div' ? `div.sb-idlelist ${d}` : null;
+  return Boolean(k && M3D4_ONCE.get(theme) && M3D4_ONCE.get(theme).has(k));
 };
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
@@ -462,7 +465,7 @@ function sameLook(app, where, fails, seen) {
         if (STAGE8_TOP(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
         if (M3D1_EXCEPT(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
         if (M3D3_EXCEPT(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
-        if (M3D4_EXCEPT(b, d)) { excepted.add(`M3D4 ${label(b)} ${d.split(':')[0]}`); continue; }
+        if (M3D4_EXCEPT(b, d, way.theme)) { excepted.add(`M3D4 ${way.theme} ${label(b)} ${d}`); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -512,8 +515,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // M3D stage 3's exception was met, in exactly its declarations; with stage 1's and stage 8's, nothing else is excepted.
   const m3d3 = [...M3D3_ONCE.get('v2-plonce')].map((d) => `div.v2-plonce ${d}`).concat([...M3D3_ONCE.get('v2-tonce')].map((d) => `p.v2-msd.gap.v2-tonce ${d}`));
   for (const x of m3d3) assert.ok(excepted.has(x), `${x}: ${JSON.stringify([...excepted])}`);
-  // M3D stage 4's exception was met on the Team screen's idle line and list; it covers nothing else.
-  for (const x of ['M3D4 button.sb-idle display', 'M3D4 div.sb-idlelist display']) assert.ok(excepted.has(x), `${x}: ${JSON.stringify([...excepted])}`);
+  // M3D stage 4's exception was met on the Team screen's idle line and list, each pinned declaration in each theme, and
+  // nothing else of it: the excepted set is exactly the pinned one.
+  const m3d4 = [...M3D4_ONCE].flatMap(([theme, set]) => [...set].map((x) => `M3D4 ${theme} ${x}`)).sort();
+  assert.deepEqual([...excepted].filter((x) => /^M3D4 /.test(x)).sort(), m3d4);
   assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D4 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 

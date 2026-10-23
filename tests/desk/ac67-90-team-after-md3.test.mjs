@@ -141,3 +141,44 @@ test('AC90 (Team part): in the opened idle list, "not recorded in what the desk 
     app.restore();
   }
 });
+
+// The Reviewer's round 1 of stage 4 (mutations I1 and I6): only "Idle" folds; and AC90's line needs two or more cards.
+test('AC67 (after MD3): a member whose word is "Just finished" stays a card and is never folded — Service-Desk\'s real log read at 22:00 UTC on 8 Oct, eight minutes after the source checker\'s last outcome and twelve after the researcher\'s', async () => {
+  const s = { config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': sdRepo() } };
+  const app = await loadSandbox({ ...s, hash: `#/p/${encodeURIComponent('Service-Desk')}/team`, now: Date.parse('2026-10-08T22:00:00Z') });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    const shown = cards(app);
+    const just = shown.filter((c) => statusOf(c) === 'Just finished');
+    assert.deepEqual(ids(just).sort(), ['researcher', 'source-checker'], 'both cards, before any tap');
+    assert.equal(keyed(app, 'team-idle').textContent, '8 idle ›', 'the two not counted');
+    await openIdle(app);
+    const idle = inIdle(app);
+    assert.equal(idle.length, 8);
+    assert.ok(!idle.includes('researcher') && !idle.includes('source-checker'), 'never in the folded list');
+    assert.ok(cards(app).filter((c) => idle.includes(c.attrs['data-member'])).every((c) => statusOf(c) === 'Idle'));
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC90 (Team part): a reason only one card of a list has stays on that card, with no line at the list\'s head — Service-Desk at 3117150 with four made-up outcome lines (NOT real records), leaving only the user representative without recorded work', async () => {
+  const r = sdRepo();
+  const path = 'dispatch-log/2026-10.jsonl';
+  // Made up, NOT real records (tests/desk/fixtures/README.md, "After MD3, stage 4"): one outcome line each, days before NOW.
+  const made = ['check-author', 'builder', 'input-reader', 'reviewer'].map((role, i) => JSON.stringify({ item: 'Q-013', record: null, result: 'ok', role,
+    session: `Q-013:made-up:2026-10-08T23:0${i}:00Z`, time: `2026-10-08T23:0${i}:30Z`, trigger: 'outcome', verdict: 'none' }));
+  r.files[path] = `${r.files[path].replace(/\n$/, '')}\n${made.join('\n')}\n`;
+  const app = await team({ config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': r } }, 'Service-Desk');
+  try {
+    await openIdle(app);
+    assert.equal(keyed(app, 'team-once:idle'), null, 'one card: no line at the head');
+    assert.equal(findAll(app.view, (e) => / sb-tonce /.test(` ${e.className} `)).length, 0);
+    const card = (m) => cards(app).find((c) => c.attrs['data-member'] === m);
+    assert.match(card('user-rep').textContent, /not recorded in what the desk reads/, 'it stays on its one card');
+    for (const m of ['check-author', 'builder', 'input-reader', 'reviewer']) assert.match(card(m).textContent, /last: /, `${m}: its made-up line`);
+  } finally {
+    app.restore();
+  }
+});

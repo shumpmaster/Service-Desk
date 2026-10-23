@@ -155,6 +155,10 @@ test('AC56 close: every sheet has "Close" at its top (44 px), and the control, a
         await app.go(screen);
         const op = keyed(app, openerKey);
         assert.ok(op, `${what}: its opener ${openerKey}`);
+        // A link inside a fold is tapped with its fold open, as the owner must open it to reach the link (the fake DOM
+        // draws a closed fold's links too); a closed fold's control takes the focus instead (AC89 (i), stage 2's design
+        // review, B1: ac89-after-md3.test.mjs).
+        for (let a = op.parentNode; a; a = a.parentNode) if (a.tag === 'details') a.setAttribute('open', '');
         op.click(); // the tap that follows the link
         await app.go(route);
         const sh = sheetEl(app);
@@ -860,5 +864,112 @@ test('AC56 reload (changed after MD3; the amendment\'s (b) item 23): Home\'s scr
     assert.ok(!b.scrolls.some(([, y]) => y === 300), 'another screen\'s scroll is not put back');
   } finally {
     b.restore();
+  }
+});
+
+// The Reviewer's stage 2 notes D1, D7 and D9 (AC56, changed after MD3, P-001-audit-reload.md, A).
+test('AC56 reload (changed after MD3; the Reviewer\'s D1): words typed for a project the desk can\'t read are kept — through a reload while it fails, its card not drawn — and come back once it is read again', async () => {
+  const setup = twoProjects();
+  const store = device();
+  let app = await loadSandbox({ ...setup, hash: waitingCard(Q_ID), now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await typeIn(app, WORDS_TYPED);
+    await app.key('Escape');
+    // The project's read now fails, and the question file is gone from what the read would see: judged only for a
+    // project read successfully, the words stay.
+    const file = setup.repos.Alpha.files['questions/Alpha-pick.md'];
+    assert.ok(file, 'the question file');
+    delete setup.repos.Alpha.files['questions/Alpha-pick.md'];
+    setup.repos.Alpha.fail = { state: 'cant-read', reason: 'no-access' };
+    await app.advance(POLL_MS);
+    app = await fullReload(app, setup, store);
+    assert.equal(findAll(app.view, (e) => e.attrs && e.attrs['data-card'] === Q_ID).length, 0, 'its card not drawn');
+    assert.ok(JSON.parse(store.m.get('desk-sheet-words-v1')).words[`${Q_ID}#1`], 'kept while Alpha can\'t be read');
+    await app.advance(5 * POLL_MS);
+    assert.equal(JSON.parse(store.m.get('desk-sheet-words-v1')).words[`${Q_ID}#1`].text, WORDS_TYPED, 'still kept, poll after poll');
+    // Read again: the card waits, and its sheet has the words.
+    setup.repos.Alpha.files['questions/Alpha-pick.md'] = file;
+    setup.repos.Alpha.fail = null;
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    await app.go(waitingCard(Q_ID));
+    assert.equal(boxIn(app).value, WORDS_TYPED, 'back in its box');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC56 reload (changed after MD3; the Reviewer\'s D7): the scroll being put back stops at the owner\'s own input — a tap, a wheel, a touch or a key — and the screen is not scrolled again', async () => {
+  for (const ev of ['pointerdown', 'wheel', 'touchstart', 'keydown']) {
+    const setup = twoProjects();
+    const store = device();
+    store.m.set('desk-scroll-v1', JSON.stringify({ hash: '#/', y: 640, sheetY: 0 }));
+    const app = await loadSandbox({ ...setup, hash: '#/', now: NOW, store });
+    try {
+      // Before every project has been read, the restore keeps trying at each drawing.
+      await app.flush();
+      assert.ok(app.scrolls.some(([, y]) => y === 640), `${ev}: put back at the first drawing`);
+      const n = app.scrolls.length;
+      await app.docEvent(ev, {});
+      await app.advance(1000);
+      await app.advance(POLL_MS);
+      assert.equal(app.scrolls.filter(([, y]) => y === 640).length, app.scrolls.slice(0, n).filter(([, y]) => y === 640).length, `${ev}: never scrolled back after the owner's input`);
+    } finally {
+      app.restore();
+    }
+  }
+});
+
+test('AC56 reload (changed after MD3; the Reviewer\'s D9): the kept scroll is removed from the device once it is read, so a second reload with no hiding between puts nothing back', async () => {
+  const setup = twoProjects();
+  const store = device();
+  store.m.set('desk-scroll-v1', JSON.stringify({ hash: '#/', y: 640, sheetY: 0 }));
+  let app = await loadSandbox({ ...setup, hash: '#/', now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    assert.ok(app.scrolls.some(([, y]) => y === 640), 'put back once');
+    assert.equal(store.m.has('desk-scroll-v1'), false, 'removed once used');
+    // A reload with no `pagehide` between (a crash, a forced reload): nothing kept, so nothing put back.
+    app.restore();
+    app = await loadSandbox({ ...setup, hash: '#/', now: NOW, store });
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    assert.ok(!app.scrolls.some(([, y]) => y === 640), 'not put back a second time');
+  } finally {
+    app.restore();
+  }
+});
+
+// Stage 2's design review, round 1, B1, carried to every sheet that opens from a fold: a Done row's sheet whose row sits
+// under its group's "<n> more", which a reload keeps closed, gives the focus to that "<n> more" when it closes.
+test('AC56 reload + AC89 (i): a Done row\'s sheet, its row under the group\'s "<n> more", open when the page reloads — Escape returns focus to the closed "<n> more" control, never to the body', async () => {
+  const setup = longRuling();
+  for (const n of [1, 2, 3]) {
+    setup.repos.Alpha.commit({ [`decisions/questions/P-001-more-${n}.md`]: `Ruling: A, number ${n}\n` });
+    setup.repos.Alpha.history[`decisions/questions/P-001-more-${n}.md`] = [{ commit: { committer: { date: new Date(NOW - (40 + n) * 60e3).toISOString() } } }];
+  }
+  const HIDDEN = 'Alpha|question|questions/P-001-more-3.md#answer'; // the fifth row: under "2 more"
+  const store = device();
+  let app = await loadSandbox({ ...setup, hash: '#/waiting/Alpha', now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await app.tap(keyed(app, 'more:Alpha'));
+    keyed(app, `drowlink:${HIDDEN}`).click();
+    await app.go(waitingCard(HIDDEN));
+    assert.ok(sheetEl(app), 'its sheet');
+    app = await fullReload(app, setup, store);
+    assert.ok(sheetEl(app), 'back after the reload');
+    assert.equal(keyed(app, 'more:Alpha').attrs['aria-expanded'], 'false', 'the group\'s "<n> more" closed after the reload');
+    assert.equal(keyed(app, `drowlink:${HIDDEN}`), null, 'its row not drawn');
+    await app.key('Escape');
+    await app.flush();
+    assert.equal(app.loc.hash, '#/waiting/Alpha');
+    assert.equal(document.activeElement, keyed(app, 'more:Alpha'), 'focus on the fold\'s own control');
+  } finally {
+    app.restore();
   }
 });

@@ -597,6 +597,57 @@ test('AC89 (i): a sheet a reload brings back puts focus on its close; Escape, th
   }
 });
 
+// Stage 2's design review, round 1, B1: a sheet whose opener sits inside a fold a reload keeps closed ("About the phases",
+// in the page's "More detail") gives the focus to that fold's own control, never to the page's body.
+test('AC89 (i): "About the phases" (#/p/<name>/info) open when the page reloads — focus on its close; Escape, the close or a tap outside then returns focus to the closed "More detail" fold that holds its link; with the fold open, to the link itself', async () => {
+  for (const [label, mk, name] of [['Alpha', twoOf, 'Alpha'], ['Service-Desk (sdq)', () => ({ config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': sdRepo() } }), 'Service-Desk']]) {
+    for (const how of ['escape', 'control', 'outside']) {
+      const setup = mk();
+      const store = deviceStore();
+      let app = await loadSandbox({ ...setup, hash: `#/p/${name}/info`, now: NOW, store });
+      try {
+        await app.advance(1000);
+        await app.advance(POLL_MS);
+        app = await reloadPage(app, setup, store);
+        assert.equal(document.activeElement, keyed(app, 'sheet-close'), `${label} · ${how}: focus on its close`);
+        if (how === 'escape') await app.key('Escape');
+        else if (how === 'control') await app.tap(keyed(app, 'sheet-close'));
+        else {
+          const scrim = keyed(app, 'scrim') || keyed(app, 'v2-scrim');
+          await app.tap(scrim);
+          await app.go(scrim.attrs.href);
+        }
+        await app.flush();
+        assert.equal(app.loc.hash, `#/p/${name}`, `${label} · ${how}: closed, on the page`);
+        const fold = keyed(app, 'more-detail-fold');
+        assert.ok(fold && !fold.hasAttribute('open'), `${label} · ${how}: the fold is closed after the reload`);
+        assert.equal(document.activeElement, keyed(app, 'more-detail'), `${label} · ${how}: focus on the fold's own control, not the body`);
+        assert.notEqual(document.activeElement, document.body);
+      } finally {
+        app.restore();
+      }
+    }
+  }
+  // Without a reload the fold is open, and the link itself takes the focus back, as before.
+  const setup = twoOf();
+  const app = await loadSandbox({ ...setup, hash: '#/p/Alpha', now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    const fold = keyed(app, 'more-detail-fold');
+    fold.setAttribute('open', '');
+    const link = keyed(app, 'info');
+    await app.tap(link);
+    await app.go(link.attrs.href);
+    await app.key('Escape');
+    await app.flush();
+    assert.equal(app.loc.hash, '#/p/Alpha');
+    assert.equal(document.activeElement, keyed(app, 'info'), 'the open fold: its link');
+  } finally {
+    app.restore();
+  }
+});
+
 test('AC89 (i): Tab and Shift-Tab stay inside an open sheet — from its last control Tab goes to its first, from its first Shift-Tab to its last, and from outside it Tab goes in', async () => {
   const app = await loadSandbox({ ...twoOf(), hash: `#/waiting/Alpha/card/${encodeURIComponent(Q)}`, now: NOW });
   try {

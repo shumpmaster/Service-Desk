@@ -3707,7 +3707,9 @@ function openerOf(r) {
   if (!sh) return null;
   if (r.kind === 'waiting') {
     const [id, step] = sh.split('#');
-    return step != null ? [`drowlink:${sh}`] : [`cardlink:${id}`, `donelink:${id}`, `step:${id}`];
+    // A Done row beyond its group's first rows sits under the group's "<n> more", which a reload keeps closed: that
+    // control takes the focus where the row isn't drawn (AC89 (i), stage 2's design review, B1).
+    return step != null ? [`drowlink:${sh}`, `more:${id.split('|')[0]}`] : [`cardlink:${id}`, `donelink:${id}`, `step:${id}`];
   }
   if (r.kind === 'work') {
     if (sh.startsWith('card:')) return [`wa-gate:${sh.slice(5)}`];
@@ -3732,6 +3734,21 @@ function openerOf(r) {
   return null;
 }
 
+/** The summary of the outermost closed <details> holding `el`, or null where every fold around it is open. */
+function closedFoldControl(el) {
+  let out = null;
+  for (let a = el.parentNode; a && a.tagName !== 'BODY' && a.nodeType === 1; a = a.parentNode) {
+    const tag = String(a.tagName || a.tag || '').toLowerCase();
+    if (tag !== 'details') continue;
+    const isOpen = a.open === true || (a.hasAttribute && a.hasAttribute('open'));
+    if (!isOpen) {
+      const sum = [...(a.children || [])].find((c) => String(c.tagName || c.tag || '').toLowerCase() === 'summary');
+      if (sum) out = sum;
+    }
+  }
+  return out;
+}
+
 function focusPending() {
   const want = nav.focusNext;
   nav.focusNext = null;
@@ -3750,6 +3767,10 @@ function focusPending() {
   // A held whole-line bubble closed, its control gone with the old line or row: focus goes to the
   // line or fold heading it belonged to (AC56, draft 5).
   if (!el && view && k.startsWith('line:')) el = findKey(view, k === 'line:last' ? 'last-action' : 'done-today-h');
+  // AC89 (i) (stage 2's design review, B1): an opener inside a fold that is closed (a reload keeps no fold open, such as
+  // "More detail" holding "About the phases") can't take focus, so its fold's own control takes it: the summary of the
+  // outermost closed <details> around it.
+  if (el) el = closedFoldControl(el) || el;
   if (el && el.focus) {
     try {
       el.focus();

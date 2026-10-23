@@ -238,7 +238,8 @@ test('AC86 (B1): a gate card in the model\'s real form, its `Milestone:` line ev
     assert.equal(g[0].attrs['data-gate'], GATE_ID);
     const title = 'The Launch gate: the launch review passed. The case for going live and graduating the product, with its own monitoring and feedback confirmed running, is in the gate document. Proceed, hold, recycle or kill?';
     assert.deepEqual(parts(g[0]), { icon: 'st-you', name: title, mono: 'Launch gate · waits on you', right: 'after your ruling' }, 'the card\'s title, as the board shows it');
-    assert.equal(byClass(g[0], 'v2-plrow')[0].attrs.href, `#/waiting/card/${encodeURIComponent(GATE_ID)}`, 'it opens the gate card\'s sheet on Waiting');
+    // Rewritten for AC89 (i) (specs/S-001.md:7896-7903): a gate's sheet opened from Plan sits over Plan, so it closes back to Plan.
+    assert.equal(byClass(g[0], 'v2-plrow')[0].attrs.href, `#/work/card/${encodeURIComponent(GATE_ID)}`, 'it opens the gate card\'s sheet over Plan');
     await app.go('#/waiting');
     assert.equal(findKeyed(app, `cardlink:${GATE_ID}`).textContent, title, 'the same title on the board');
     await app.go('#/work');

@@ -520,3 +520,206 @@ test('AC89 (h) with AC80: the v2.5 project shown alone, never read, is AC89 (a)\
     app.restore();
   }
 });
+
+// ---------------------------------------------------------------------------
+// (i) Sheets, focus and reloads (specs/S-001.md:7896-7903; the amendment's (b) items 4, 17, 21 and 22, :2191-2220)
+
+/** A device's storage, kept across loads (memory only, made up). */
+function deviceStore(init = {}) {
+  const m = new Map(Object.entries(init));
+  return { m, getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => { m.set(k, String(v)); }, removeItem: (k) => { m.delete(k); } };
+}
+async function reloadPage(app, setup, store, extra = {}) {
+  const hash = app.loc.hash;
+  const now = app.now;
+  await app.visibility('hidden');
+  app.restore();
+  const b = await loadSandbox({ ...setup, hash, now, store, ...extra });
+  await b.advance(1000);
+  await b.advance(POLL_MS);
+  return b;
+}
+const twoOf = () => ({ config: { ...CONFIG, projects: [v3('Alpha'), v3('Beta')] }, repos: { Alpha: fullRepo('Alpha'), Beta: fullRepo('Beta') } });
+const Q = 'Alpha|question|questions/Alpha-pick.md';
+
+test('AC89 (i): the "<n> more since <time>" sheet, open when the page reloads, comes back with the lines it held; "last looked" moves past them only once that sheet is closed', async () => {
+  const setup = twoOf();
+  const LOOKED = NOW - 10 * 3600e3;
+  const store = deviceStore({ 'desk-seen-v1': JSON.stringify({ lastLooked: LOOKED }) });
+  let app = await loadSandbox({ ...setup, hash: '#/', now: NOW, store });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    const more = keyed(app, 'since-more');
+    assert.ok(more, 'the "<n> more" line');
+    await app.tap(more);
+    await app.go(more.attrs.href);
+    const lines = () => byClass(keyed(app, 'since-sheet'), 'v2-since')[0].children.map((c) => c.textContent);
+    const held = lines();
+    assert.ok(held.length > 0);
+    await app.advance(20_000); // a window of more than 10 s, which would move "last looked" (AC40)
+    app = await reloadPage(app, setup, store);
+    assert.equal(JSON.parse(store.m.get('desk-seen-v1')).lastLooked, LOOKED, 'not moved while the sheet is open');
+    assert.equal(app.loc.hash, '#/since');
+    assert.deepEqual(lines(), held, 'the same lines');
+    // Closed: the next window that ends moves "last looked" past them.
+    await app.key('Escape');
+    await app.advance(20_000);
+    await app.visibility('hidden');
+    assert.ok(JSON.parse(store.m.get('desk-seen-v1')).lastLooked > NOW, 'moved past them once the sheet is closed');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC89 (i): a sheet a reload brings back puts focus on its close; Escape, the close or a tap outside then returns focus to the card it belongs to', async () => {
+  for (const how of ['escape', 'control', 'outside']) {
+    const setup = twoOf();
+    const store = deviceStore();
+    let app = await loadSandbox({ ...setup, hash: `#/waiting/Alpha/card/${encodeURIComponent(Q)}`, now: NOW, store });
+    try {
+      await app.advance(1000);
+      await app.advance(POLL_MS);
+      app = await reloadPage(app, setup, store);
+      assert.equal(document.activeElement, keyed(app, 'sheet-close'), `${how}: focus on its close`);
+      if (how === 'escape') await app.key('Escape');
+      else if (how === 'control') await app.tap(keyed(app, 'sheet-close'));
+      else {
+        await app.tap(keyed(app, 'v2-scrim'));
+        await app.go(keyed(app, 'v2-scrim') ? keyed(app, 'v2-scrim').attrs.href : app.loc.hash);
+      }
+      await app.flush();
+      assert.equal(app.loc.hash, '#/waiting/Alpha', `${how}: closed, on Waiting`);
+      assert.equal(document.activeElement, keyed(app, `cardlink:${Q}`), `${how}: focus on its card`);
+    } finally {
+      app.restore();
+    }
+  }
+});
+
+// Stage 2's design review, round 1, B1: a sheet whose opener sits inside a fold a reload keeps closed ("About the phases",
+// in the page's "More detail") gives the focus to that fold's own control, never to the page's body.
+test('AC89 (i): "About the phases" (#/p/<name>/info) open when the page reloads — focus on its close; Escape, the close or a tap outside then returns focus to the closed "More detail" fold that holds its link; with the fold open, to the link itself', async () => {
+  for (const [label, mk, name] of [['Alpha', twoOf, 'Alpha'], ['Service-Desk (sdq)', () => ({ config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': sdRepo() } }), 'Service-Desk']]) {
+    for (const how of ['escape', 'control', 'outside']) {
+      const setup = mk();
+      const store = deviceStore();
+      let app = await loadSandbox({ ...setup, hash: `#/p/${name}/info`, now: NOW, store });
+      try {
+        await app.advance(1000);
+        await app.advance(POLL_MS);
+        app = await reloadPage(app, setup, store);
+        assert.equal(document.activeElement, keyed(app, 'sheet-close'), `${label} · ${how}: focus on its close`);
+        if (how === 'escape') await app.key('Escape');
+        else if (how === 'control') await app.tap(keyed(app, 'sheet-close'));
+        else {
+          const scrim = keyed(app, 'scrim') || keyed(app, 'v2-scrim');
+          await app.tap(scrim);
+          await app.go(scrim.attrs.href);
+        }
+        await app.flush();
+        assert.equal(app.loc.hash, `#/p/${name}`, `${label} · ${how}: closed, on the page`);
+        const fold = keyed(app, 'more-detail-fold');
+        assert.ok(fold && !fold.hasAttribute('open'), `${label} · ${how}: the fold is closed after the reload`);
+        assert.equal(document.activeElement, keyed(app, 'more-detail'), `${label} · ${how}: focus on the fold's own control, not the body`);
+        assert.notEqual(document.activeElement, document.body);
+      } finally {
+        app.restore();
+      }
+    }
+  }
+  // Without a reload the fold is open, and the link itself takes the focus back, as before.
+  const setup = twoOf();
+  const app = await loadSandbox({ ...setup, hash: '#/p/Alpha', now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    const fold = keyed(app, 'more-detail-fold');
+    fold.setAttribute('open', '');
+    const link = keyed(app, 'info');
+    await app.tap(link);
+    await app.go(link.attrs.href);
+    await app.key('Escape');
+    await app.flush();
+    assert.equal(app.loc.hash, '#/p/Alpha');
+    assert.equal(document.activeElement, keyed(app, 'info'), 'the open fold: its link');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC89 (i): Tab and Shift-Tab stay inside an open sheet — from its last control Tab goes to its first, from its first Shift-Tab to its last, and from outside it Tab goes in', async () => {
+  const app = await loadSandbox({ ...twoOf(), hash: `#/waiting/Alpha/card/${encodeURIComponent(Q)}`, now: NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    const sheet = byClass(app.view, 'v2-sheet')[0];
+    const focusable = findAll(sheet, (e) => (e.tag === 'a' && e.attrs.href != null) || ['button', 'textarea'].includes(e.tag) || (e.tag === 'summary'));
+    assert.ok(focusable.length > 2);
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    assert.equal(first, keyed(app, 'sheet-close'), 'its close is its first control');
+    last.focus();
+    let r = await app.docEvent('keydown', { key: 'Tab', target: last });
+    assert.ok(r.cancelled);
+    assert.equal(document.activeElement, first, 'Tab from its last: its first');
+    r = await app.docEvent('keydown', { key: 'Tab', shiftKey: true, target: first });
+    assert.ok(r.cancelled);
+    assert.equal(document.activeElement, last, 'Shift-Tab from its first: its last');
+    // In the middle, the browser's own order: nothing is held back.
+    const mid = focusable[1];
+    mid.focus();
+    r = await app.docEvent('keydown', { key: 'Tab', target: mid });
+    assert.ok(!r.cancelled);
+    // Focus outside the sheet (on the board under it): Tab goes into the sheet.
+    keyed(app, `cardlink:${Q}`).focus();
+    await app.docEvent('keydown', { key: 'Tab', target: document.activeElement });
+    assert.equal(document.activeElement, first);
+    // No sheet open: Tab is the browser's.
+    await app.key('Escape');
+    keyed(app, `cardlink:${Q}`).focus();
+    r = await app.docEvent('keydown', { key: 'Tab', target: document.activeElement });
+    assert.ok(!r.cancelled);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC89 (i): a gate\'s sheet opened from Plan sits over Plan and closes back to Plan, with focus on its row — by Escape, its close and a tap outside (AC56\'s back rule)', async () => {
+  const GATE = 'Service-Desk|gate|queue/P-003-launch-1.md';
+  const { waSetup, WORKED, j77Files, memStore } = await import('./wa-fixtures.mjs');
+  const log = `${j77Files()['dispatch-log/2026-10.jsonl'].trimEnd()}\n${JSON.stringify({ item: 'P-003', action: 'card', card: 1, gate: 'launch', role: 'user-rep', route: 'launch-gate', stage: 6, gate_n: 1, time: '2026-10-18T15:00:00Z', trigger: 'x' })}\n`;
+  for (const how of ['escape', 'control', 'outside']) {
+    // AC85's made-up Launch-gate card (NOT a real record), on Service-Desk's J11 records at 77bfeae, as AC86's test uses it.
+    const setup = waSetup({ extra: { 'intake/estimates.jsonl': WORKED(), 'queue/P-003-launch-1.md': fixture('ac85/queue/P-003-launch-1.md'), 'dispatch-log/2026-10.jsonl': log } });
+    const app = await loadSandbox({ ...setup, hash: '#/', now: Date.parse('2026-10-18T18:00:00Z'), store: memStore() });
+    try {
+      await app.advance(1000);
+      await app.advance(61_000);
+      await app.go('#/work');
+      const row = keyed(app, `wa-gate:${GATE}`);
+      assert.ok(row, 'Plan\'s gate row');
+      assert.equal(row.attrs.href, `#/work/card/${encodeURIComponent(GATE)}`);
+      await app.tap(row);
+      await app.go(row.attrs.href);
+      assert.ok(byClass(app.view, 'v2-plan').length === 1, `${how}: Plan stays under the sheet`);
+      const sheet = byClass(app.view, 'v2-sheet')[0];
+      assert.ok(sheet && /Launch gate/.test(sheet.textContent), `${how}: the gate's sheet`);
+      assert.ok(findAll(sheet, (e) => e.tag === 'a' && /^Proceed/.test(e.textContent || '')).length, 'its buttons, as on Waiting');
+      if (how === 'escape') await app.key('Escape');
+      else if (how === 'control') await app.tap(keyed(app, 'sheet-close'));
+      else {
+        const scrim = keyed(app, 'v2-scrim');
+        assert.equal(scrim.attrs.href, '#/work');
+        await app.tap(scrim);
+        await app.go(scrim.attrs.href);
+      }
+      await app.flush();
+      assert.equal(app.loc.hash, '#/work', `${how}: back to Plan`);
+      assert.equal(byClass(app.view, 'v2-sheet').length, 0);
+      assert.equal(document.activeElement, keyed(app, `wa-gate:${GATE}`), `${how}: focus on its row`);
+    } finally {
+      app.restore();
+    }
+  }
+});

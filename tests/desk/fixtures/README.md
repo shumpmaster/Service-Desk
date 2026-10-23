@@ -640,3 +640,11 @@ milestone's sheet. `tests/desk/ac89-words-drawing.test.mjs` also writes made-up 
 (`PR #99`) on M3A's line in Service-Desk's docs/PROJECT.md at 77bfeae; a FAIL verdict in place of PASS on Service-Desk's
 Q-013 source check at 3117150; a made-up CI run, with its `updated_at`, for the made-up v2.5 project "Delta"; and two
 made-up portfolio queue files. `tests/desk/fake-desk.mjs` passes a fixture run's `updatedAt` as GitHub's `updated_at`.
+
+## After MD3, stage 7 (2026-10-23, S-001 AC89 (l), J23 changed)
+
+`tests/desk/ac89-portfolio-reads.test.mjs` uses the made-up portfolio of `pf-fixtures.mjs` and adds, inline, made-up files
+in the model portfolio template's form, each **NOT a real record**: `library/facts/_TEMPLATE.md` and
+`intent/PORTFOLIO-INTENT.md` (the template's own files), a queue `README.md` and `.gitkeep`, and a device's made-up count
+of ten reads already made today after portfolio marks. `tests/desk/ac14-budget.test.mjs`'s day adds twelve made-up
+portfolio Done marks on one device.

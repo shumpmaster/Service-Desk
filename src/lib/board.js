@@ -435,6 +435,29 @@ export function markDone(marks, card, nowMs) {
   return { ...marks, marks: { ...marks.marks, [card.id]: m } };
 }
 
+/**
+ * AC89 (l) (J23, changed; A3): the reads due KICK_BACK_MINUTES after a portfolio Done mark, at most 10 a day on this
+ * device, the day running from midnight in `ownerTimeZone`, counted in the device's storage under its own key. Where
+ * that storage can't be read or written, no such read is made. Returns whether this mark may have its read (and, if
+ * so, has counted it); from the 11th mark of a day, a mark is judged at the 5-minute reads as before.
+ */
+export const KICK_READS_KEY = 'desk-pf-kick-reads-v1';
+export const KICK_READS_A_DAY = 10;
+export function kickReadSlot(store, nowMs, tz) {
+  if (!store || !store.usable) return false;
+  const day = dayKey(new Date(nowMs), tz);
+  let v = null;
+  try {
+    v = store.getJSON(KICK_READS_KEY, null);
+  } catch {
+    return false;
+  }
+  if (!store.usable) return false;
+  const n = v && v.day === day && Number.isInteger(v.n) && v.n >= 0 ? v.n : 0;
+  if (n >= KICK_READS_A_DAY) return false;
+  return store.setJSON(KICK_READS_KEY, { day, n: n + 1 }) === true;
+}
+
 /** "Undo": the card returns to the lane it came from ("Kicked back" for a re-mark made there). */
 export function undoMark(marks, id) {
   const m = marks.marks[id];

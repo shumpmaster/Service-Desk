@@ -168,11 +168,17 @@ export function branchShape(ctx) {
  * whose gate word sends the work back), with its record's first `Reason:` line, its date and its
  * source; or "why it went back: not recorded" (slate, AC69) with no such line or no such record.
  */
-export function runBegan(ctx, r, tz) {
+export function runBegan(ctx, r, tz, startMs = null) {
   const k = ctx.cols.k.get(r);
   const i = ctx.cols.runs.indexOf(r);
   if (!(k > 1) || (i > 0 && ctx.cols.k.get(ctx.cols.runs[i - 1]) === k)) return null;
-  const none = { k, head: `Run ${k} began`, missing: true, words: `Run ${k} began · why it went back: not recorded` };
+  // AC89 (k): the band reads "Run <k> began <date>" where the run's record gives its start, as the page's "from <date>"
+  // does: the boundary line's date, or else the run's first routed line's, or else its first recorded time (`startMs`).
+  let routedAt = r.routed && r.routed.length ? t(r.routed[0][1].time) : NaN;
+  if (!Number.isFinite(routedAt) && Number.isFinite(startMs)) routedAt = startMs;
+  const startDate = Number.isFinite(routedAt) ? dayWords(routedAt, tz) : null;
+  const headOf = (d) => `Run ${k} began${d ? ` ${d}` : ''}`;
+  const none = { k, head: headOf(startDate), missing: true, words: `${headOf(startDate)} · why it went back: not recorded` };
   if (r.item == null || r.first == null) return none;
   const lines = (ctx.tl.byItem.get(r.item) || []).filter(([p, o]) => p < r.first && isAppliedDecision(o) && (BOUNDARY_WORDS[o.gate] || []).includes(o.word));
   if (!lines.length) return none;
@@ -181,7 +187,7 @@ export function runBegan(ctx, r, tz) {
   if (!record || !ctx.tree.has(record)) return none;
   const rec = ctx.snap && ctx.snap.records ? ctx.snap.records.get(record) : undefined;
   const at = t(o.time);
-  const head = `Run ${k} began${Number.isFinite(at) ? ` · ${dayWords(at, tz)}` : ''}`;
+  const head = headOf(Number.isFinite(at) ? dayWords(at, tz) : startDate);
   const source = { words: `${o.proxy === true ? 'ruling by proxy' : 'your ruling'} · ${record}`, href: treeLink(ctx.project, ctx.tree, record) };
   if (rec === undefined) return { k, head, reading: true, words: 'why it went back: not available yet', source };
   if (rec && rec.reason) return { k, head, quote: rec.reason, source };
@@ -493,7 +499,8 @@ export function feedView(ctx, model, nowMs, tz) {
     if (/^Q-/.test(sid)) {
       const outs = (ctx.tl.byItem.get(sid) || []).filter(([, o]) => o.trigger === 'outcome' && o.role === 'source-checker');
       const v = outs.length ? outs[outs.length - 1][1].verdict : null;
-      marks.push(v === 'PASS' ? { mark: '✓', word: 'source-checked', why: null } : v === 'FAIL' ? { mark: '✕', word: 'source-checked', why: null }
+      // AC89 (k): the ✕ on a failed source check is spoken "source check failed".
+      marks.push(v === 'PASS' ? { mark: '✓', word: 'source-checked', why: null } : v === 'FAIL' ? { mark: '✕', word: 'source-checked', why: null, spoken: 'source check failed' }
         : { mark: '–', word: 'source check not recorded', why: null });
       const req = records.get(`intake/requests/${sid}.toml`);
       title = req && req.sentence ? `Research: ${req.sentence}` : 'title not recorded';
@@ -596,7 +603,7 @@ export function feedView(ctx, model, nowMs, tz) {
     band.label = bandLabel(band.span, band.state, tz);
     // Bottom up: the gathered lines, the rows no date places, the dated ones, then those with no work filed yet.
     const up = [...gathers, ...noDate, ...dated, ...noWork];
-    blocks.set(r, { key: rk, run: r, state: st, band, began: runBegan(ctx, r, tz), up, planned: noWork, hasTime: ts.length > 0 });
+    blocks.set(r, { key: rk, run: r, state: st, band, began: runBegan(ctx, r, tz, band.span ? band.span[0] : null), up, planned: noWork, hasTime: ts.length > 0 });
   }
 
   // From the top: what we're delivering; runs still to come, latest first; the now run's planned

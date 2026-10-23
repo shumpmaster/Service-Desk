@@ -12,6 +12,7 @@ import { DESK_PHASES, STANDARD_MILESTONES, NOT_RECORDED_IDS } from './timeline.j
 import { milestoneRule, FEED_ICON, PHASE_CLASS, runBegan, dayWords } from './feed.js';
 import { NOT_RECORDED, NOT_AVAILABLE, deskWords, standardWord, hasWorkFiled, reachedDateWords, PHASES_READING, PHASES_NOT_AVAILABLE } from './sandbox.js';
 import { sprintStrip } from './home.js';
+import { dayKey } from './timefmt.js';
 import { SPEC_PATH_RE } from './j11.js';
 
 /** The phases bottom up on the page's list (AC83, note 15): Launch at the top, Discovery at the foot. */
@@ -159,9 +160,10 @@ export function ranAgainLines(ctx, tz, bandOf = null) {
   if (project.model !== 'v3' || !ctx.tl || !pv || !pv.tracked) return [];
   const out = [];
   for (const r of ctx.cols.runs) {
-    const b = runBegan(ctx, r, tz);
+    const band0 = bandOf ? bandOf(r) : null;
+    const b = runBegan(ctx, r, tz, band0 && band0.span ? band0.span[0] : null);
     if (!b) continue;
-    let date = /· (\d{1,2} [A-Z][a-z]{2})$/.exec(b.head || '');
+    let date = /^Run \d+ began (\d{1,2} [A-Z][a-z]{2})$/.exec(b.head || '');
     date = date ? date[1] : null;
     if (!date) {
       const routed = r.routed && r.routed.length ? Date.parse(r.routed[0][1].time) : NaN;
@@ -357,6 +359,18 @@ export function restRows(j, tree) {
  * the tree holds neither a questions nor a queue folder, the agent runs row only while it holds no
  * dispatch log.
  */
+/**
+ * AC89 (k): the v2.5 page's CI row gives its workflow and date where AC29's read gives them (" · <workflow> · <date>"),
+ * and " · workflow and date not read" otherwise; nothing more where the state itself says the runs weren't read.
+ */
+function ciFrom(model, nowMs, tz) {
+  if (!model || !model.ciKnown) return '';
+  const r = model.ciRun;
+  if (!r || !r.name) return ' · workflow and date not read';
+  if (r.at == null) return ` · ${r.name} · date not read`;
+  return ` · ${r.name} · ${reachedDateWords(dayKey(new Date(r.at), tz || 'UTC'), nowMs, tz)}`;
+}
+
 export function v25Rows(project, model, snap, nowMs, tz) {
   // A tree not read yet: every row "not available", never a zero or "not recorded" (the Design reviewer's B2).
   const read = Boolean(snap && snap.tree);
@@ -377,7 +391,7 @@ export function v25Rows(project, model, snap, nowMs, tz) {
   if (read && !has('questions/') && !has('queue/')) notUsed.push({ title: 'Questions and cards', words: 'No questions or queue folder: it asks you through pull requests.' });
   if (read && !has('dispatch-log/')) notUsed.push({ title: 'Agent runs', words: 'No dispatch log.' });
   return {
-    ci: `CI on ${project.defaultBranch}: ${model && model.ci ? model.ci : read ? NOT_RECORDED : NOT_AVAILABLE}`,
+    ci: `CI on ${project.defaultBranch}: ${model && model.ci ? model.ci : read ? NOT_RECORDED : NOT_AVAILABLE}${ciFrom(model, nowMs, tz)}`,
     latest,
     records: read ? `${entries} · ${specs} spec${specs === 1 ? '' : 's'}` : NOT_AVAILABLE,
     notUsed,

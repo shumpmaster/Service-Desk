@@ -831,6 +831,20 @@ const FAILING = new Set(['failure', 'timed_out', 'action_required', 'startup_fai
 const NOT_FAILING = new Set(['success', 'neutral', 'skipped', 'cancelled', 'stale']);
 
 /** Reduce runs ({ status, conclusion }) to failing | running | passing | none (J1). */
+/**
+ * The run the CI state comes from (AC89 (k): the v2.5 page's CI row names its workflow and date): a failing run when
+ * one fails, else one still running, else the latest by time; { name, at } (at null where the read gives no time), or
+ * null with no counted run.
+ */
+export function ciRunOf(runs) {
+  if (!runs.length) return null;
+  const by = (xs) => [...xs].sort((a, b) => (b.at || 0) - (a.at || 0))[0];
+  const failing = runs.filter((r) => r.status === 'completed' && FAILING.has(r.conclusion));
+  const running = runs.filter((r) => r.status !== 'completed');
+  const r = by(failing.length ? failing : running.length ? running : runs);
+  return { name: r.name || r.path, at: Number.isFinite(r.at) ? r.at : null };
+}
+
 export function reduceChecks(runs) {
   if (runs.some((r) => r.status === 'completed' && FAILING.has(r.conclusion))) return 'failing';
   if (runs.some((r) => r.status !== 'completed')) return 'running';
@@ -878,6 +892,8 @@ export function parseWorkflowRuns(pages) {
       runs.push({ id: Number.isInteger(r.id) ? r.id : null, path: r.path.replace(/@.*$/, ''), name: typeof r.name === 'string' ? r.name : r.path,
         event: r.event, status: r.status, conclusion: r.conclusion, runNumber: r.run_number,
         headSha: typeof r.head_sha === 'string' ? r.head_sha : null, url: typeof r.html_url === 'string' ? r.html_url : null,
+        // AC89 (k): when the run last changed (its `updated_at`), for the v2.5 page's CI row; null where the read lacks it.
+        at: typeof r.updated_at === 'string' && Number.isFinite(Date.parse(r.updated_at)) ? Date.parse(r.updated_at) : null,
         // AC72: a hand-started deploy's commit is in its title, `deploy <sha> — <note>` (desk-deploy's run-name).
         title: typeof r.display_title === 'string' ? r.display_title : null });
     }
@@ -929,7 +945,7 @@ export function reduceWorkflowRuns(runs) {
     else if (path === NOTIFY_WORKFLOW) activity.push({ text: `Notifications: ${runWord(r)}`, url: r.url });
     else counted.push(r);
   }
-  return { ci: reduceChecks(counted), activity, governance: latest.get(GOVERNANCE_WORKFLOW) || null, latest };
+  return { ci: reduceChecks(counted), activity, governance: latest.get(GOVERNANCE_WORKFLOW) || null, latest, ciRun: ciRunOf(counted) };
 }
 
 // ---------------------------------------------------------------------------

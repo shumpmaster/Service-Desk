@@ -5,7 +5,7 @@
 // no DOM, no storage. The sandbox (src/public/sandbox.js) draws it.
 
 import { milestoneRule, STATUS_MARK, FEED_ICON, sprintList, ownParts, PHASE_CLASS } from './feed.js';
-import { GATE_PHASE } from './j11.js';
+import { GATE_PHASE, GATE_WORDS } from './j11.js';
 import { reachedDateWords } from './sandbox.js';
 import { cappedNewFileLink } from './links.js';
 import {
@@ -45,7 +45,8 @@ function stateOf(ctx, m) {
   const mark = STATUS_MARK[x.rule];
   // From stage 5 (AC86): the row's icon is the one the project's page gives the same milestone (AC59's,
   // FEED_ICON, as frame 11 draws them), so Plan and the page never differ.
-  const icon = FEED_ICON[x.rule];
+  // AC89 (k): a rule-3 row with work filed (in a run still to come) takes AC86's half-filled icon, "work filed".
+  const icon = x.rule === 3 && sprints.length > 0 ? 'half' : FEED_ICON[x.rule];
   if (x.rule === 2) return { words: WA.nextToReach, mark, icon, underway, rule: 2 };
   if (x.rule === 4) return { words: WA.goneBack, mark, icon, underway, rule: 4 };
   if (x.rule === 7) return { words: WA.noWork, mark: 'empty', icon, underway, rule: 7 };
@@ -53,12 +54,16 @@ function stateOf(ctx, m) {
   return { words: x.status, mark, icon, underway, rule: x.rule };
 }
 
-/** How many questions and cards in a project's Queue name a milestone on their own `Milestone:` line (AC24, AC66). */
+/**
+ * How many questions and cards in a project's Queue name a milestone on their own `Milestone:` line (AC24, AC66). A gate
+ * card is never counted (AC89 (k); AC24's note): its own row on Plan says it waits.
+ */
 function waitingOn(rows, id) {
   let n = 0;
   for (const row of rows || []) {
     const f = row && row.flag;
     if (!f) continue;
+    if (f.kind === 'card' && f.card && GATE_WORDS.includes(f.card.gate)) continue;
     let parts = null;
     if (f.kind === 'question' && f.question && f.question.parsed) parts = ownParts(f.question.parsed.text || '', 'question');
     else if (f.kind === 'card' && f.card && f.card.parsed) parts = ownParts(f.card.parsed.text || '', 'card');

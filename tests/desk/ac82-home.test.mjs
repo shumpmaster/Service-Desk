@@ -297,7 +297,8 @@ const PAST3 = (t) => [estLine('MD1', 2, 3, t), estLine('MD2', 1, 2, t), estLine(
 test('AC82 with AC24: a milestone past its estimate — the tile reads "rough finish: not available: MD1 is past its estimate", as Plan does, not "no estimate yet" (the Reviewer\'s probe p4-past)', async () => {
   const t = '2026-10-18T17:00:00Z';
   for (const [label, now, want] of [['the same day', '2026-10-18T18:00:00Z', /^Next: MD1 · rough finish (?!:)/],
-    ['30 days later', '2026-11-17T18:00:00Z', /^Next: MD1 · rough finish: not available: MD1 is past its estimate$/]]) {
+    // Rewritten at stage 6a of "After MD3" (AC89 (k), specs/S-001.md:7925-7929): the tile names its own code once.
+    ['30 days later', '2026-11-17T18:00:00Z', /^Next: MD1 · rough finish not available: past its estimate$/]]) {
     const app = await open(waSetup({ extra: { 'intake/estimates.jsonl': PAST3(t) } }), { now: Date.parse(now) });
     try {
       const next = nextOf(app);
@@ -344,7 +345,8 @@ test('AC82 with AC24: a milestone with an estimate after one in the order with n
   assert.equal(row('MD1').estimate.kind, 'missing');
   assert.equal(nextLine(SD, { gate: null, row: row('MD1') }).words, 'MD1 · no estimate yet');
   assert.notEqual(row('MD3').estimate.kind, 'missing', 'MD3 has its estimate');
-  assert.equal(nextLine(SD, { gate: null, row: row('MD3') }).words, 'MD3 · rough finish: not available: MD1 has no estimate yet');
+  // Rewritten at stage 6a of "After MD3" (AC89 (k), specs/S-001.md:7925-7929): "<id> · rough finish not available: <reason>".
+  assert.equal(nextLine(SD, { gate: null, row: row('MD3') }).words, 'MD3 · rough finish not available: MD1 has no estimate yet');
   // No estimates file at all (J14's "none"): none is filed for any, so "no estimate yet".
   const none = viewOf({ nowMs: Date.parse('2026-10-18T18:00:00Z'), projects: [SD, POOM] });
   assert.equal(nextLine(SD, { gate: null, row: none.rows[0] }).words, `${none.rows[0].code} · no estimate yet`);
@@ -359,7 +361,8 @@ test('AC82 with AC24: the reason in another project — the tile names that proj
   // Twin first in the order, its MD1 with no estimate; every one of Service-Desk's estimated.
   const none = viewOf({ extra: { 'intake/estimates.jsonl': [...sdLines, ...['MD2', 'MD3'].map((m) => estLine(m, 1, 2, t, '', 'Twin'))].join('\n') + '\n' }, nowMs, projects: [TWIN, SD, POOM] });
   assert.equal(first(none, 'Service-Desk').estimate.kind, 'ok', 'Service-Desk\'s MD1 has its estimate');
-  assert.equal(nextLine(SD, { gate: null, row: first(none, 'Service-Desk') }).words, 'MD1 · rough finish: not available: Twin\'s MD1 has no estimate yet');
+  // Rewritten at stage 6a of "After MD3" (AC89 (k), specs/S-001.md:7925-7929): another project's milestone stays named.
+  assert.equal(nextLine(SD, { gate: null, row: first(none, 'Service-Desk') }).words, 'MD1 · rough finish not available: Twin\'s MD1 has no estimate yet');
   assert.equal(nextLine(TWIN, { gate: null, row: first(none, 'Twin') }).words, 'MD1 · no estimate yet', 'Twin\'s own tile');
   // From stage 5 Plan groups the rows by project (AC86), so its row names the other project too, as the tile
   // does (the Design reviewer's finding 1, stage 5 round 1); Twin's own rows keep AC24's words.
@@ -368,7 +371,7 @@ test('AC82 with AC24: the reason in another project — the tile names that proj
   // Twin's MD1 past its estimate.
   const past = viewOf({ extra: { 'intake/estimates.jsonl': [...sdLines, estLine('MD1', 1, 2, '2026-09-01T17:00:00Z', '', 'Twin')].join('\n') + '\n' }, nowMs, projects: [TWIN, SD, POOM] });
   assert.equal(first(past, 'Twin').estimate.kind, 'past');
-  assert.equal(nextLine(SD, { gate: null, row: first(past, 'Service-Desk') }).words, 'MD1 · rough finish: not available: Twin\'s MD1 is past its estimate');
+  assert.equal(nextLine(SD, { gate: null, row: first(past, 'Service-Desk') }).words, 'MD1 · rough finish not available: Twin\'s MD1 is past its estimate');
   // Service-Desk first: its own finishes, Twin's tile its own words.
   const sdFirst = viewOf({ extra: { 'intake/estimates.jsonl': sdLines.join('\n') + '\n' }, nowMs, projects: [SD, TWIN, POOM] });
   assert.match(nextLine(SD, { gate: null, row: first(sdFirst, 'Service-Desk') }).words, /^MD1 · rough finish \d/);

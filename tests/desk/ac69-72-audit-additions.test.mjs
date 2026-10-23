@@ -52,7 +52,8 @@ test('AC69 + AC80: on Home, Status, Timeline, Team and Waiting (the cards\' shee
   // From stage 3 (AC83, specs/S-001.md:6768-6771 and :6819; AC84, :6915-6916): the page in the Status screen's place says "<phase> ran again from <date> · why it
   // went back: not recorded" (AC70's words, in AC83's line) and, once per phase list, that no standard
   // milestone's why is written yet (P-001-why-line.md, A), never "why: not recorded" on a row.
-  const GAP = /^(Why not recorded yet · for the agents to add|why: not recorded|Why each is taken on or skipped: not written yet\. .+'s Chief of Staff writes its lines\.|[A-Z][a-z]+ ran again from \d+ [A-Z][a-z]{2} · why it went back: not recorded|\d+ sprints? · (\d+ )?for the agents to file|Unblocks: milestone not recorded|Context: not recorded|not recorded|feeds: not tied to a milestone| · sprint: not recorded|Run \d began · why it went back: not recorded)$/;
+  // Rewritten at stage 6a of "After MD3" (AC89 (k), specs/S-001.md:7938-7939): the band's "Run <k> began <date>".
+  const GAP = /^(Why not recorded yet · for the agents to add|why: not recorded|Why each is taken on or skipped: not written yet\. .+'s Chief of Staff writes its lines\.|[A-Z][a-z]+ ran again from \d+ [A-Z][a-z]{2} · why it went back: not recorded|\d+ sprints? · (\d+ )?for the agents to file|Unblocks: milestone not recorded|Context: not recorded|not recorded|feeds: not tied to a milestone| · sprint: not recorded|Run \d began \d+ [A-Z][a-z]{2} · why it went back: not recorded)$/;
   const coralClass = /\b(sb-you|sb-needs|sb-pill|sb-badge|sb-btn|sb-last|sb-ask|sb-q|sb-hg-you|who-you|i-you|v2-badge|v2-kd)\b/;
   const seen = new Set();
   const check = (root, where) => {
@@ -61,7 +62,7 @@ test('AC69 + AC80: on Home, Status, Timeline, Team and Waiting (the cards\' shee
       const t = e.textContent ? e.textContent.trim() : '';
       const inBullet = chain.some((x) => /\b(sb-bul|v2-bl)\b/.test(x.className || '')); // v2-bl: AC84's label rows
       if (GAP.test(t) && (t !== 'not recorded' || inBullet) && !e.children.some((c) => c.tag && GAP.test((c.textContent || '').trim()))) {
-        const words = t.replace(/^\d+ sprints? · (\d+ )?/, '<n> sprints · ').replace(/Run \d/, 'Run <k>').replace(/^[A-Z][a-z]+ ran again from \d+ [A-Z][a-z]{2}/, '<phase> ran again from <date>')
+        const words = t.replace(/^\d+ sprints? · (\d+ )?/, '<n> sprints · ').replace(/Run \d began \d+ [A-Z][a-z]{2}/, 'Run <k> began <date>').replace(/^[A-Z][a-z]+ ran again from \d+ [A-Z][a-z]{2}/, '<phase> ran again from <date>')
           .replace(/^Why each is taken on or skipped: not written yet\. .+'s Chief/, 'Why each is taken on or skipped: not written yet. <project>\'s Chief');
         seen.add(words);
         const slate = [e, ...chain.slice(-1)].some((x) => /\bgap\b|\bnone\b/.test(x.className || '')) || /\bsb-mwhy none\b/.test(e.className || '');
@@ -91,7 +92,7 @@ test('AC69 + AC80: on Home, Status, Timeline, Team and Waiting (the cards\' shee
   // "why: not recorded" (the Status screen's, on every milestone) gives way to the page's one line per phase
   // (AC83; AC57, changed by AC83), and AC70's words on the page are AC83's "<phase> ran again from <date>".
   for (const w of ['Why not recorded yet · for the agents to add', '<n> sprints · for the agents to file', 'Why each is taken on or skipped: not written yet. <project>\'s Chief of Staff writes its lines.',
-    'feeds: not tied to a milestone', 'not recorded', 'Run <k> began · why it went back: not recorded', '<phase> ran again from <date> · why it went back: not recorded']) assert.ok(seen.has(w), `seen: ${w}`);
+    'feeds: not tied to a milestone', 'not recorded', 'Run <k> began <date> · why it went back: not recorded', '<phase> ran again from <date> · why it went back: not recorded']) assert.ok(seen.has(w), `seen: ${w}`);
   // The cards' gaps, in each card's sheet over Waiting (AC80), on AC52's fixture (Service-Desk has nothing waiting at 3117150).
   const a = await (await import('./sandbox-fixtures.mjs')).opened(twoProjects(), '#/waiting/Alpha');
   try {
@@ -131,7 +132,8 @@ test('AC70, with AC83: "Design ran again from 8 Oct · why it went back: not rec
     await app.go('#/p/Service-Desk/timeline');
     const blk = findAll(app.view, (e) => e.attrs && e.attrs['data-run'] === 'Design-i2')[0];
     const tb = byClass(blk, 'sb-began')[0];
-    assert.equal(tb.textContent, 'Run 2 began · why it went back: not recorded');
+    // Rewritten at stage 6a of "After MD3" (AC89 (k), specs/S-001.md:7938-7939): "Run <k> began <date>", as the page's "from <date>".
+    assert.equal(tb.textContent, 'Run 2 began 8 Oct · why it went back: not recorded');
     assert.match(tb.className, /\bgap\b/);
     assert.match(tb.className, /\brun2\b/, 'the run\'s shade');
     const band = byClass(blk, 'sb-pband')[0];
@@ -165,7 +167,8 @@ test('AC70: with a made-up log (NOT a real record) — a dor recycle line and it
     return runBegan({ ...ctx, tl: { ...ctx.tl, byItem }, cols: { ...ctx.cols, runs, k } }, run, TZ);
   };
   const a = made({ word: 'recycle', record: 'decisions/P-001/dor-2.md' });
-  assert.deepEqual(a, { k: 2, head: 'Run 2 began · 8 Oct', quote: 'the design must start again from the owner\'s phone, not the laptop.',
+  // Rewritten at stage 6a of "After MD3" (AC89 (k), specs/S-001.md:7938-7939): "Run <k> began <date>".
+  assert.deepEqual(a, { k: 2, head: 'Run 2 began 8 Oct', quote: 'the design must start again from the owner\'s phone, not the laptop.',
     source: { words: 'your ruling · decisions/P-001/dor-2.md', href: 'https://github.com/shumpmaster/Service-Desk/blob/main/decisions/P-001/dor-2.md' } });
   assert.equal(made({ word: 'recycle', record: 'decisions/P-001/dor-2.md', proxy: true }).source.words, 'ruling by proxy · decisions/P-001/dor-2.md');
   const c = made({ word: 'recycle', record: 'decisions/P-001/dor-3.md' });

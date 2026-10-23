@@ -423,7 +423,8 @@ export function portfolioCards(read) {
     const title = c.rec && c.rec.title ? c.rec.title : c.state === 'too-large' ? `${c.file}: ${PF_WORDS.tooLarge}` : c.state === 'pending' ? `${c.file}: ${PF_WORDS.notReadYet}` : c.file;
     const step = { id: 'open', label: 'Open ↗', sheetLabel: 'Open on GitHub', href: c.link };
     return { id: `${PF_BOARD}|portfolio|${c.path}`, key: `portfolio:${c.path}`, project: PF_BOARD, kind: 'portfolio', kindWord: 'Decision', portfolio: true,
-      title, raisedAt: null, flag: null, mark: null, why: null, note: c.cantParse ? `can't parse: ${c.cantParse}` : null, meta: [c.file], buttons: [step], step,
+      // AC89 (k): a card whose title is its file's name names the file once (no meta beside it).
+      title, raisedAt: null, flag: null, mark: null, why: null, note: c.cantParse ? `can't parse: ${c.cantParse}` : null, meta: title === c.file ? [] : [c.file], buttons: [step], step,
       path: c.path, file: c.file, rec: c.rec, state: c.state, link: c.link };
   });
 }

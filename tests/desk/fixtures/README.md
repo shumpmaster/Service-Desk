@@ -628,3 +628,15 @@ waits, across America/Chicago's clock change of 1 Nov 2026; and `questions/P-003
 lettered options that is neither lettered nor numbered. `tests/desk/ac85-sheets.test.mjs` also gives Service-Desk's real
 `queue/P-001-stop-6.md` two made-up numbered lines ("2." and "3.", **NOT real**) under its Background, inline, so that the
 decision card's whole record is seen keeping the file's own list numbers.
+
+## After MD3, stage 6a (2026-10-23, S-001 AC89 (d) to (g) and (k))
+
+`tests/desk/long-fixtures.mjs` is the amendment's long-text fixture ((b) item 30, first part): Service-Desk's J11 records
+at 77bfeae (real) with made-up records added, each **NOT a real record** — a README whose summary runs long, estimate lines
+with long notes, a later-work list whose first item's answer file holds a long ruling (with its made-up commit time) — so
+that a bubble opens on every screen that has one: Home's tile, the project page's "Your last action", Plan and a
+milestone's sheet. `tests/desk/ac89-words-drawing.test.mjs` also writes made-up records inline, each **NOT real**: a
+`Milestone: MD3` line under AC85's made-up gate card's answer line and a made-up question naming M3A; a made-up sprint
+(`PR #99`) on M3A's line in Service-Desk's docs/PROJECT.md at 77bfeae; a FAIL verdict in place of PASS on Service-Desk's
+Q-013 source check at 3117150; a made-up CI run, with its `updated_at`, for the made-up v2.5 project "Delta"; and two
+made-up portfolio queue files. `tests/desk/fake-desk.mjs` passes a fixture run's `updatedAt` as GitHub's `updated_at`.

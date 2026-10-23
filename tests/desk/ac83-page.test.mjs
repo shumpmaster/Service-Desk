@@ -183,7 +183,10 @@ test('AC83: the two rows, each a tap — "◆ <n> wait on you" with the waiting 
     const waits = keyed(app, 'page-waits');
     assert.equal(byClass(waits, 'v2-prtt')[0].textContent, '2 wait on you');
     assert.equal(iconOf(waits), 'st-you', 'the ◆, in vermilion (AC81)');
-    assert.deepEqual(byClass(waits, 'v2-small')[0].textContent.split(' · ').sort(), ['the first made-up question', 'the second made-up question']);
+    // Rewritten for AC89 (c) (specs/S-001.md:7863-7870; AC83's note, :7430): each item by its short name, "question <its
+    // file's name>", the name in Plex Mono, never its title.
+    assert.deepEqual(byClass(waits, 'v2-small')[0].textContent.split(' · ').sort(), ['question P-001-made-up-one', 'question P-001-made-up-two']);
+    assert.deepEqual(byClass(byClass(waits, 'v2-small')[0], 'v2-mono').map((x) => x.textContent).sort(), ['P-001-made-up-one', 'P-001-made-up-two']);
     assert.equal(waits.attrs.href, '#/waiting/Service-Desk', 'Waiting with only this project shown (AC80, frame 2)');
     await app.tap(waits);
     await app.go(waits.attrs.href);

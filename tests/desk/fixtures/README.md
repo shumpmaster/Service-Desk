@@ -581,3 +581,17 @@ notify-ac77-desk, notify-j16-jobs and j6-j8-function) add no fixture file. What 
 - `stage8/sandbox-bd4097d.css` is a byte-for-byte copy of `src/public/sandbox.css` at bd4097d, before stage 8 took out the
   rules nothing draws once the desk is `/`. AC88's test cascades every desk screen with it and with today's stylesheet,
   and requires every element to look the same (the Reviewer's B1, stage 8 round 1). Nothing in it is made up.
+
+## After MD3, stage 1 (2026-10-23, S-001 AC89 (a), (b), (c) and (h))
+
+`tests/desk/ac89-after-md3.test.mjs` adds no fixture file. Its made-up records are written inline, each **NOT a real
+record**:
+- "Beta" and "Gamma", made-up v3 projects (a README saying so); Gamma's `status/P-001.toml` waits on `stop-6` with no
+  card file, so it shows a card that went missing;
+- a made-up waiting push run, `deploy <sha>` (run 12), on Service-Desk's J11 records at 3117150, with
+  `reviews/77/reviewer.md` reading PASS and J12's built answer giving PR #77's merge commit, as AC72's test makes them;
+- the read states themselves: a read left unanswered (the fake desk function's call held open), a network failure,
+  and a refused read (`cant-read`, reason `token`), each made up.
+It reuses AC52's one item of each kind (`fullRepo`, made up), screen-text.mjs's `textSetup()` (Service-Desk at 3117150,
+real; Alpha, made up; Delta in poom/'s placeholder form), and AC77's real asked question and session file
+(`notify/ac77-real/`).

@@ -78,7 +78,7 @@ export const PF_WORDS = Object.freeze({
 });
 
 /** J23's state words: they follow a colon ("latest: not recorded"), where a version follows a space ("latest 3.5.0"). */
-const isState = (w) => w === NOT_RECORDED || w === NOT_AVAILABLE;
+const isState = (w) => w === NOT_RECORDED || w === NOT_AVAILABLE || /^can't be read\b/.test(w);
 const after = (w) => (isState(w) ? `: ${w}` : ` ${w}`);
 
 // ---------------------------------------------------------------------------
@@ -91,10 +91,15 @@ const after = (w) => (isState(w) ? `: ${w}` : ` ${w}`);
  * "not recorded". `read`: { state: 'ok' | 'checking' | 'cant-read', since: 'HH:MM' | null }, or absent.
  */
 function unknownWhy(pv, error, read) {
-  if (error || (read && read.state === 'cant-read')) return read && read.since ? `can't be read since ${read.since}` : "can't be read";
+  if (error || (read && read.state === 'cant-read')) return cantWords(read);
   if (read ? read.state === 'checking' : pv && pv.why === 'Phases: reading…') return 'not read yet';
   return NOT_RECORDED;
 }
+
+/** "can't be read since HH:MM" (or "can't be read" with no time), the cap's and the versions row's words alike (AC89 (h)). */
+const cantWords = (read) => (read && read.since ? `can't be read since ${read.since}` : "can't be read");
+/** The words for a project read earlier in this opening and now refused or failing (AC89 (h)), else null. */
+const nowCant = (read) => (read && read.state === 'cant-read' ? cantWords(read) : null);
 
 /**
  * Where a project stands for the cap (AC87): each connected v3 project whose now phase (AC50) is Build
@@ -107,11 +112,14 @@ export function capEntry({ project, pv, error, read }) {
   const name = project.name;
   if (project.model !== 'v3') return { name, v3: false, phase: null, counted: false, why: PF_WORDS.capV25 };
   if (error || !pv || !pv.tracked) return { name, v3: true, phase: null, counted: false, why: unknownWhy(pv, error, read) };
-  if (pv.done) return { name, v3: true, phase: 'Done', counted: false, why: null };
+  // AC89 (h) (stage 6a's design round 2, N7): a project read and then refused keeps its last-read phase, with
+  // " · can't be read since HH:MM" after its name (`stale`).
+  const stale = nowCant(read);
+  if (pv.done) return { name, v3: true, phase: 'Done', counted: false, why: null, stale };
   const now = pv.nowRun;
   // Records read, no now run in them: "not recorded", as the tile's "Now: not recorded".
-  if (!now) return { name, v3: true, phase: null, counted: false, why: NOT_RECORDED };
-  return { name, v3: true, phase: now.phase, counted: now.phase === 'Build' || now.phase === 'Launch', why: null };
+  if (!now) return { name, v3: true, phase: null, counted: false, why: NOT_RECORDED, stale };
+  return { name, v3: true, phase: now.phase, counted: now.phase === 'Build' || now.phase === 'Launch', why: null, stale };
 }
 
 /**
@@ -121,9 +129,13 @@ export function capEntry({ project, pv, error, read }) {
  */
 export function capView(entries) {
   const all = entries.map(capEntry);
-  const counted = all.filter((e) => e.counted).map((e) => e.name);
+  const named = (e) => (e.stale ? `${e.name} · ${e.stale}` : e.name);
+  const counted = all.filter((e) => e.counted).map(named);
   const parts = [{ text: `${PF_WORDS.inBuild}: ${counted.length ? counted.join(', ') : PF_WORDS.none}`, mark: null }];
-  for (const e of all) if (e.v3 && e.why) parts.push({ text: `${e.name}'s phase: ${e.why}`, mark: null });
+  for (const e of all) if (e.v3 && e.why) parts.push({ text: `${e.name}'s phase: ${e.why}${e.stale ? ` · ${e.stale}` : ''}`, mark: null });
+  // A project not counted, read earlier and now refused, is still named, so the cap never leaves out silently that it
+  // can't say where that project is now.
+  for (const e of all) if (e.v3 && !e.why && !e.counted && e.stale) parts.push({ text: named(e), mark: null });
   parts.push({ text: PF_WORDS.capNoRecord, mark: 'nomodel' });
   return { entries: all, parts };
 }
@@ -180,13 +192,17 @@ function versionRead(snap, path) {
 export function versionsView(entries) {
   const pub = entries.find((e) => e.project.publishesModel === true) || null;
   const latest = pub ? versionRead(pub.snap, ROOT_VERSION_PATH) : { words: NOT_RECORDED, rec: null };
-  const rows = entries.map(({ project, snap }) => {
+  const rows = entries.map(({ project, snap, read }) => {
     const own = versionRead(snap, MODEL_VERSION_PATH);
-    const ownWords = own.rec ? comparedWords(own.rec, latest.rec) : own.words;
+    // AC89 (h): a project that can't be read says "can't be read since HH:MM", as the cap does: in place of "not
+    // available" when it was never read, and after its last-read version when it was read and is now refused.
+    const cant = nowCant(read);
+    const ownWords = own.rec ? comparedWords(own.rec, latest.rec) : cant && own.words === NOT_AVAILABLE ? cant : own.words;
     let words;
     if (pub && project === pub.project) {
       words = project.model === 'v3' ? `${project.name}${after(ownWords)}, publishes${after(latest.words)}` : `${project.name} runs the v2.5 pipeline, publishes${after(latest.words)}`;
     } else words = `${project.name}${after(ownWords)}`;
+    if (cant && ownWords !== cant) words = `${words} · ${cant}`;
     return { name: project.name, words, own: ownWords };
   });
   return { title: `${PF_WORDS.versions} · latest${after(latest.words)}`, latest: latest.words, publisher: pub ? pub.project.name : null, rows, line: rows.map((r) => r.words).join(' · ') };

@@ -11,6 +11,7 @@ import { callFunction } from './lib/scheduler.js';
 import { exp004Links, cappedNewFileLink } from './lib/links.js';
 import { createRun, summarize, resultMarkdown, rawTable } from './lib/exp001.js';
 import { deskAddress } from './lib/notifyview.js';
+import { startDesk } from './lib/page.js';
 
 const view = document.getElementById('view');
 const stateEl = document.getElementById('screen-state');
@@ -111,5 +112,17 @@ if (exp === '001') startExp001();
 else if (exp === '004') startExp004();
 else {
   if (params.has('sandbox')) dropSandbox();
-  import('./sandbox.js').then((m) => m.startSandbox()); // the desk: mockup v2 as built (AC44, step 4)
+  // The desk: mockup v2 as built (AC44, step 4). If its code fails to load, the page says so (AC89 (h)), never
+  // "Checking…" for good: the state line and the view take the words, and the footer, which would still say
+  // "reading…", is hidden.
+  startDesk(() => import('./sandbox.js'), (words) => {
+    if (stateEl) {
+      stateEl.textContent = words;
+      stateEl.className = 'cant-read';
+    }
+    view.replaceChildren(h('p', {}, words));
+    const foot = document.getElementById('foot');
+    if (foot) foot.hidden = true;
+    document.title = `Service Desk — ${words}`;
+  });
 }

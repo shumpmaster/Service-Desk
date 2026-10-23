@@ -114,7 +114,8 @@ function askOf(planner, item, nowMs, linkCap) {
  * - entries: [{ project, j, ctx, rows (the Queue's rows), model (J9's, for a v2.5 project), error }] in J7's order;
  * - snaps: name → the reader's snapshot (tree, records, history), for the planning project's reads;
  * - nowMs, tz (ownerTimeZone); draft (readDraft's, or null);
- * - gates: name → the board's gate card waiting on the owner in that project (AC80), or none (AC86's gate row).
+ * - gates: name → the board's gate cards waiting on the owner in that project (AC80), in its order, or none: each a
+ *   row of its own at the top of its group (AC86's gate rows; stage 6a's review, B1). One card alone is taken too.
  */
 export function workAheadView({ config, entries, snaps, nowMs, tz, draft, gates = null }) {
   const today = todayOf(nowMs, tz);
@@ -274,15 +275,16 @@ export function workAheadView({ config, entries, snaps, nowMs, tz, draft, gates 
   const groupOf = (project) => {
     let g = groups.find((x) => x.project === project);
     if (!g) {
-      g = { project, key: project.name, words: WA.ahead(project.name), rows: [], gate: null };
+      g = { project, key: project.name, words: WA.ahead(project.name), rows: [], gates: [] };
       groups.push(g);
     }
     return g;
   };
   for (const r of rows) groupOf(r.project).rows.push(r);
   for (const e of v3) {
-    const card = gates && gates.get ? gates.get(e.project.name) : null;
-    if (card) groupOf(e.project).gate = gateRow(card);
+    const cards = gates && gates.get ? gates.get(e.project.name) : null;
+    const list = Array.isArray(cards) ? cards : cards ? [cards] : [];
+    if (list.length) groupOf(e.project).gates = list.map(gateRow);
   }
 
   // The state line and the bar (AC24, "Recording the plan").

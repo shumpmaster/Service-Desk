@@ -818,14 +818,16 @@ function timelineNode(tl, name) {
 }
 
 /**
- * The gate card waiting on the owner in a project, as the board has it (AC80: in "Waiting on you" or
- * "Kicked back", less a card marked done here), or null. Home's tile (AC82) and Plan's gate row (AC86)
- * both take it from here, so the two never differ.
+ * The gate cards waiting on the owner in a project, as the board has them (AC80: in "Waiting on you" or "Kicked back",
+ * less a card marked done here), in the board's order. Plan gives each a row of its own (AC86: "a gate card waiting on
+ * the owner is a row of its own"; stage 6a's review, B1); Home's tile (AC82) takes the first, its ◆ and "the <gate>
+ * gate, after your ruling", so the tile and Plan's first gate row never differ.
  */
-function gateCardOf(bd, name) {
+function gateCardsOf(bd, name) {
   const lanes = bd ? bd.lanes.filter((l) => l.key !== 'done').flatMap((l) => l.groups.filter((g) => g.project === name).flatMap((g) => g.rows)) : [];
-  return lanes.find((c) => c.kind === 'gate' && c.flag && c.flag.card) || null;
+  return lanes.filter((c) => c.kind === 'gate' && c.flag && c.flag.card);
 }
+const gateCardOf = (bd, name) => gateCardsOf(bd, name)[0] || null;
 
 /** One tile (AC82, frame H5): its name and what waits, the README summary, the phases as a timeline, "Now:", who is at work, what comes next. A tap opens the project's Status screen until stage 3. */
 function tileNode(b, bd, group, nextRows, whyOnce = null) {
@@ -3398,8 +3400,8 @@ function workView(nowMs) {
   const snaps = new Map(built.filter((b) => b.snap).map((b) => [b.project.name, b.snap]));
   const gates = new Map();
   for (const b of built) {
-    const c = gateCardOf(lastBoard, b.project.name);
-    if (c) gates.set(b.project.name, c);
+    const cs = gateCardsOf(lastBoard, b.project.name);
+    if (cs.length) gates.set(b.project.name, cs);
   }
   waMemo = workAheadView({ config: CONFIG, entries, snaps, nowMs, tz: TZ, draft: planDraft.read(), gates });
   return waMemo;
@@ -3673,7 +3675,7 @@ function renderWorkAhead(built, nowMs) {
       const once = groupOnce(g.rows);
       body.push(h('section', { class: 'v2-plgrp', key: `wa-grp:${g.key}` }, planHead(g.words, g.rows.length, { proj: true }),
         once.lines.length ? h('div', { class: 'v2-plonce', key: `wa-once:${g.key}` }, once.lines.map((l) => h('p', { class: 'v2-small v2-plgap', key: `once:${l.kind}:${l.words}` }, l.words))) : null,
-        h('ol', { class: 'v2-rows', 'aria-label': g.words }, g.gate ? planGateRow(g.gate) : null, g.rows.map((r) => planRow(v, r, false, once)))));
+        h('ol', { class: 'v2-rows', 'aria-label': g.words }, g.gates.map(planGateRow), g.rows.map((r) => planRow(v, r, false, once)))));
     }
     if (!v.rows.length) body.push(h('p', { class: 'v2-small', key: 'wa-none' }, 'No milestones to go'));
   }

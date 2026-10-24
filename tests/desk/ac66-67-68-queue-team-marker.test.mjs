@@ -116,12 +116,15 @@ test('AC66: each Context fold, in the card\'s sheet — closed to start, opened 
   }
 });
 
-test('AC66 + AC69 (changed by AC80): the groups give way to the lanes\' headings; a card\'s kind icon vermilion only while it waits on the owner, grey in Done; nothing in the quiet lines or Done is coral; no lane or card rule uses a meaning colour but the grey inks and --you', async () => {
+// Rewritten in G2 (AC91 (f); AC80's lane case): the lanes' headings are two, Kicked back a strip above them, here its one
+// quiet line with nothing kicked back.
+test('AC66 + AC69 (changed by AC80; rewritten in G2): the groups give way to the lanes\' headings and the Kicked back strip; a card\'s kind icon vermilion only while it waits on the owner, grey in Done; nothing in the quiet lines or Done is coral; no lane or card rule uses a meaning colour but the grey inks and --you', async () => {
   const setup = ac66Setup();
   const app = await opened(setup, '#/waiting/Alpha');
   try {
     await app.advance(POLL_MS);
-    assert.deepEqual(byClass(app.view, 'v2-lh').map((h) => h.children[0].textContent), ['Waiting on you', 'Kicked back', 'Done · last 24 h']);
+    assert.deepEqual(byClass(app.view, 'v2-lh').map((h) => h.children[0].textContent), ['Waiting on you', 'Done · last 24 h']);
+    assert.equal(byClass(app.view, 'v2-kstrip')[0].textContent, 'Kicked back · none');
     assert.equal(byClass(app.view, 'sb-gh').length, 0, 'no Queue groups');
     for (const k of byClass(byClass(app.view, 'lane-wait')[0], 'v2-kd')) assert.doesNotMatch(k.className, /\bdone\b/);
     setup.repos.Alpha.pulls = setup.repos.Alpha.pulls.filter((x) => x.number !== 44);

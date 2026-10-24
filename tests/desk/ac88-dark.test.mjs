@@ -261,6 +261,7 @@ async function everyScreen(app, projects, where, fails, seen, counts, check = ch
     await app.go(hash);
     check(app, `${where} ${hash}`, fails, seen);
     counts.screens++;
+    if (/\/team\/[^/]+\/now(\/[^/]+)?$/.test(hash)) counts.now = (counts.now || 0) + 1;
   };
   await visit('#/');
   await visit('#/since');
@@ -286,7 +287,9 @@ async function everyScreen(app, projects, where, fails, seen, counts, check = ch
     }
     for (const m of hrefsIn(app, new RegExp(`^${esc(base)}/team/[^/]+$`))) {
       await visit(m);
-      for (const s of hrefsIn(app, new RegExp(`^${esc(m)}/(now|e/\\d+)$`)).slice(0, 2)) await visit(s);
+      // After MD3, stage 8: a Chief of Staff "now" row opens its own piece's sheet at `now/<lane>` (stage 4's design
+      // review, B1), so both forms of the Working now sheet's address are walked.
+      for (const s of hrefsIn(app, new RegExp(`^${esc(m)}/(now(/[^/]+)?|e/\\d+)$`)).slice(0, 2)) await visit(s);
     }
   }
   await visit('#/p/No-such-project');
@@ -549,19 +552,23 @@ const M3D3_EXCEPT = (n, d) => (n.cls.has('v2-plonce') && n.tag === 'div' && n.pa
  * :6093-6105): on the Team screen, the idle members' one line (`button.sb-idle`, a 44 px control in the meta role and ink,
  * where a button had the browser's own look) and the opened list under it (`div.sb-idlelist`). Each declaration is pinned
  * to its value, before and after, in each theme (the Reviewer's B1, stage 4 round 1: "pin each excepted declaration's
- * value, as M3D1_WAITS and M3D3_ONCE do"); only these, on only these elements. A Chief of Staff row's piece
- * (`span.sb-brow-of`) is drawn on no screen this guard walks, so nothing is excepted for it.
+ * value, as M3D1_WAITS and M3D3_ONCE do"); only these, on only these elements. And on the Chief of Staff's log (AC49,
+ * changed, :3718-3722), a helper or end row's piece (`span.sb-brow-of`, in a log row's link), cut at one line: from stage
+ * 8 the walk reaches it, on the made-up log of four pieces open together, so its four declarations are pinned too, the
+ * same in each theme; its fade is drawn only once the browser measures it cut.
  */
 const M3D4_FONT = 'font: inherit → 400 12px/1.4 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 const M3D4_IDLE = ['display: (none) → flex', 'align-items: (none) → center', 'width: (none) → 100%', 'min-height: (none) → 44px', 'margin-top: (none) → 8px',
   'text-align: (none) → left', M3D4_FONT, 'computed font-size: 13px → 12px', 'computed line-height: 18.849999999999998px → 16.799999999999997px'];
 const M3D4_LIST = ['display: (none) → grid', 'gap: (none) → 8px'];
+const M3D4_OF = ['position: (none) → relative', 'flex: (none) → 1 1 100%', 'max-height: (none) → 1.35em', 'overflow: (none) → clip'];
 const M3D4_ONCE = new Map([
-  ['light', new Set([...M3D4_IDLE, 'color: #1b1b1b → #18191c', 'computed color: #1b1b1b → #18191c'].map((d) => `button.sb-idle ${d}`).concat(M3D4_LIST.map((d) => `div.sb-idlelist ${d}`)))],
+  ['light', new Set([...M3D4_IDLE, 'color: #1b1b1b → #18191c', 'computed color: #1b1b1b → #18191c'].map((d) => `button.sb-idle ${d}`).concat(M3D4_LIST.map((d) => `div.sb-idlelist ${d}`), M3D4_OF.map((d) => `span.sb-brow-of ${d}`)))],
   ['dark', new Set([...M3D4_IDLE, 'color: #1b1b1b → #ecedef', 'color: #e8e8e8 → #ecedef', 'computed color: #1b1b1b → #ecedef', 'computed color: #e8e8e8 → #ecedef']
-    .map((d) => `button.sb-idle ${d}`).concat(M3D4_LIST.map((d) => `div.sb-idlelist ${d}`)))]]);
+    .map((d) => `button.sb-idle ${d}`).concat(M3D4_LIST.map((d) => `div.sb-idlelist ${d}`), M3D4_OF.map((d) => `span.sb-brow-of ${d}`)))]]);
 const M3D4_EXCEPT = (n, d, theme) => {
-  const k = n.cls.has('sb-idle') && n.tag === 'button' ? `button.sb-idle ${d}` : n.cls.has('sb-idlelist') && n.tag === 'div' ? `div.sb-idlelist ${d}` : null;
+  const k = n.cls.has('sb-idle') && n.tag === 'button' ? `button.sb-idle ${d}` : n.cls.has('sb-idlelist') && n.tag === 'div' ? `div.sb-idlelist ${d}`
+    : n.cls.has('sb-brow-of') && n.tag === 'span' && n.parent && n.parent.tag === 'a' && n.parent.parent && n.parent.parent.cls.has('sb-brow') ? `span.sb-brow-of ${d}` : null;
   return Boolean(k && M3D4_ONCE.get(theme) && M3D4_ONCE.get(theme).has(k));
 };
 /**
@@ -690,6 +697,19 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
     } finally {
       app.restore();
     }
+  }
+  // After MD3, stage 8: the Chief of Staff's log with four pieces under way at once (made up, NOT real records,
+  // lanes-fixtures.mjs), so the walk reaches its "now" rows' Working now sheets, at `now` or, from stage 4's design
+  // review (B1), at `now/<lane>`.
+  const cl = cosLanes();
+  const four = cl.projects.filter((p) => p.name === 'Lanes-four');
+  app = await opened({ config: { ...CONFIG, projects: four }, repos: { 'Lanes-four': cl.repos['Lanes-four'] } }, '#/', { now: LANES_NOW });
+  try {
+    const before = counts.now || 0;
+    await everyScreen(app, four, 'lanes-four', fails, seen, counts, sameLook);
+    assert.ok((counts.now || 0) > before, 'a Chief of Staff Working now sheet walked');
+  } finally {
+    app.restore();
   }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);

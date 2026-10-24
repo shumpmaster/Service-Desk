@@ -55,4 +55,4 @@ Stage 8 passes. All eleven tests in (b) item 37 exist, and each catches the faul
 None.
 
 My scratch worktree, copies and the scratch merge are removed. I changed no repo files and made no commits. The mutation script is kept at /tmp/claude-0/-home-user/b8bda87f-bf52-5ebb-979f-577e73df7a89/scratchpad/rev7-scripts/mutate17.py.
-(Recorded verbatim by the orchestrator from reviews/M3D/_stage-8-review-r1-verbatim.md. The Reviewer's two later confirmations, both Verdict: PASS, are _stage-8-review-r2-verbatim.md and _stage-8-review-r3-verbatim.md.)
+(Recorded verbatim by the orchestrator from reviews/M3D/_stage-8-review-r1-verbatim.md. The Reviewer's two later confirmations, both passes, are _stage-8-review-r2-verbatim.md and _stage-8-review-r3-verbatim.md.)

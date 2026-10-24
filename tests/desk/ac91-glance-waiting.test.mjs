@@ -461,3 +461,44 @@ test('AC91 (g) with AC56\'s tick: "new" is worked out again from "last looked" o
     app.restore();
   }
 });
+
+// The Design reviewer's N1 and N2 (G2, round 1): a card carried from the strip stays lifted, under the finger and out of
+// the strip's clip, from the moment it is lifted to the moment it lands, whatever redraws the board in between.
+test('AC91 (f) with AC80\'s drag: a card lifted from a scrolled strip is moved back by the row\'s scroll at once, before the finger moves (N2); a redraw mid-carry, by hand or at a poll, keeps the card lifted where the finger has it and its row `carrying` (N1); it still lands in Done', async () => {
+  const app = await open(twoMixState(), { store: kickedStore() });
+  const undo = layout();
+  try {
+    const id = CARD.question(MIX_PROJECT2);
+    const row = byClass(strip(app), 'v2-krow')[0];
+    row.scrollLeft = 288; // the row scrolled to its end before the press
+    const c = cardOf(app, id);
+    c.dispatch('pointerdown', { target: byClass(c, 'v2-t')[0], clientX: 60, clientY: 150, pointerType: 'touch' });
+    await app.flush();
+    await app.advance(HOLD_MS);
+    assert.ok(c.className.split(' ').includes('lifted'));
+    assert.equal(row.className, 'v2-krow carrying');
+    assert.equal(c.style.transform, 'translate(-288px, 0px)', 'N2: under the finger at once, the row\'s 288 px of scroll made up');
+    await app.docEvent('pointermove', { clientX: 200, clientY: 420 });
+    const there = 'translate(-148px, 270px)';
+    assert.equal(c.style.transform, there);
+    // A redraw by hand, then the board's own at its next poll: the carry is kept through each.
+    app.module.refresh();
+    await app.flush();
+    assert.equal(cardOf(app, id), c, 'the same card');
+    assert.deepEqual([c.className.split(' ').includes('lifted'), row.className, c.style.transform], [true, 'v2-krow carrying', there], 'N1: kept through a redraw');
+    await app.advance(POLL_MS);
+    assert.deepEqual([c.className.split(' ').includes('lifted'), row.className, c.style.transform], [true, 'v2-krow carrying', there], 'N1: kept through a poll\'s redraw');
+    assert.deepEqual(Object.keys(c.style), ['transform'], 'its move, its only inline style (AC50 + AC41)');
+    await app.docEvent('pointerup', { clientX: 300, clientY: 420 });
+    assert.ok(!stripCards(app).some((x) => x.attrs['data-card'] === id), 'it lands: out of the strip');
+    assert.ok(byClass(lane(app, 'done'), 'v2-card conf').some((x) => x.textContent.includes("Bravo's question")), 'into Done');
+    assert.equal(row.className, 'v2-krow', 'its row scrolls again');
+    // A redraw after the drag puts nothing back.
+    app.module.refresh();
+    await app.flush();
+    assert.equal(byClass(app.view, 'lifted').length + byClass(app.view, 'carrying').length, 0);
+  } finally {
+    undo();
+    app.restore();
+  }
+});

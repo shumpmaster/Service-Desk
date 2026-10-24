@@ -1984,8 +1984,15 @@ let kickStore = null; // AC89 (l): the device's count of the day's reads after p
 // --- Dragging a card into Done (AC80: a press and hold with a finger, or a mouse drag; a finger
 // that moves before the hold is a scroll, a tap is never a drag). The keyboard and screen readers
 // mark with the sheet's "Done ✓".
-const drag = { card: null, el: null, lane: null, row: null, shift: 0, x: 0, y: 0, pointer: null, timer: null, lifted: false, swallow: false };
+const drag = { card: null, el: null, lane: null, row: null, shift: 0, x: 0, y: 0, dx: 0, dy: 0, pointer: null, timer: null, lifted: false, swallow: false };
 const dropClass = (el, c) => el.setAttribute('class', String(el.getAttribute('class') || '').replace(new RegExp(`\\s*\\b${c}\\b`, 'g'), ''));
+const addClass = (el, c) => {
+  if (el && el.getAttribute && !new RegExp(`\\b${c}\\b`).test(String(el.getAttribute('class') || ''))) el.setAttribute('class', `${el.getAttribute('class') || ''} ${c}`.trim());
+};
+/** The carried card where the finger has it: its move from where it was pressed, less the strip row's scroll it lost. */
+function place() {
+  if (drag.el && drag.el.style) drag.el.style.transform = `translate(${Math.round(drag.dx - drag.shift)}px, ${Math.round(drag.dy)}px)`;
+}
 function dragReset() {
   if (drag.timer != null) clearTimeout(drag.timer);
   if (drag.el && drag.el.setAttribute) {
@@ -1993,7 +2000,18 @@ function dragReset() {
     if (drag.el.style) drag.el.style.transform = '';
   }
   if (drag.row && drag.row.setAttribute) dropClass(drag.row, 'carrying');
-  Object.assign(drag, { card: null, el: null, lane: null, row: null, shift: 0, pointer: null, timer: null, lifted: false });
+  Object.assign(drag, { card: null, el: null, lane: null, row: null, shift: 0, dx: 0, dy: 0, pointer: null, timer: null, lifted: false });
+}
+/**
+ * A redraw while a card is carried (the board redraws at each poll) patches the card's and the row's classes, and the
+ * style attribute with them, back to the drawing's: the carry is put back at once, before anything is painted, so the
+ * card stays lifted under the finger and, from the strip, its row stays `carrying` (the Design reviewer's N1, G2).
+ */
+function keepDrag() {
+  if (!drag.lifted || !drag.el) return;
+  addClass(drag.el, 'lifted');
+  if (drag.row) addClass(drag.row, 'carrying');
+  place();
 }
 /**
  * AC91 (f): a card lifted from the Kicked back strip must leave the strip's row, whose sideways scroll would clip it at
@@ -2005,13 +2023,16 @@ function lift() {
   drag.timer = null;
   if (!drag.el) return;
   drag.lifted = true;
-  drag.el.setAttribute('class', `${drag.el.getAttribute('class') || ''} lifted`);
+  addClass(drag.el, 'lifted');
   const slot = drag.lane === 'kick' ? drag.el.parentNode : null;
   const row = slot && slot.parentNode;
   if (row && row.getAttribute && /\bv2-krow\b/.test(String(row.getAttribute('class') || ''))) {
     drag.row = row;
     drag.shift = Number(row.scrollLeft) || 0;
-    row.setAttribute('class', `${row.getAttribute('class') || ''} carrying`);
+    addClass(row, 'carrying');
+    // The row is no longer scrolled once it is `carrying`: the card is moved back by that scroll at once, so it stays
+    // under the finger before the finger moves (the Design reviewer's N2, G2).
+    if (drag.shift) place();
   }
 }
 /** Whether a point is over the Done lane, with an 8 px margin round it. */
@@ -2043,7 +2064,8 @@ function onDragMove(e) {
     if (!drag.lifted) return;
   }
   if (e.preventDefault) e.preventDefault();
-  if (drag.el && drag.el.style) drag.el.style.transform = `translate(${Math.round(dx - drag.shift)}px, ${Math.round(dy)}px)`;
+  Object.assign(drag, { dx, dy });
+  place();
 }
 function onDragUp(e) {
   if (!drag.card) return;
@@ -4479,6 +4501,7 @@ export function startSandbox(opts = {}) {
     const fresh = document.createElement('main');
     for (const n of [nodes].flat(Infinity)) if (n) fresh.append(n);
     morphChildren(view, fresh);
+    keepDrag(); // a card being carried stays carried through the redraw (AC80, AC91 (f))
     fitBranches();
     fitTimelineHead();
     measureClips();

@@ -14,7 +14,7 @@ import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
-import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, deviceMarks, KICKED, MIX_PROJECT, MIX_PROJECT2, NOW, STALL_NOW } from '../glance-fixtures.mjs';
+import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, deviceMarks, KICKED, MIX_PROJECT, NOW, STALL_NOW } from '../glance-fixtures.mjs';
 
 const PUBLIC = resolve(fileURLToPath(new URL('../../../src/public/', import.meta.url)));
 const OUT = resolve(process.argv[2] || 'glance-shots');
@@ -47,7 +47,6 @@ const SHOTS = [
   { name: 'g2-waiting-kicked-one', state: () => twoMixState(), now: NOW, looked: NOW - 5 * H, hash: `#/waiting/${MIX_PROJECT}`, seed: deviceMarks(KICKED) },
   { name: 'g2-waiting-unread', state: () => unreadState({ who: MIX_PROJECT }), now: NOW, looked: NOW - 5 * H, later: true, hash: '#/waiting' },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
-void MIX_PROJECT2;
 const SIZES = [[360, 740], [414, 896]];
 const THEMES = ['light', 'dark'];
 

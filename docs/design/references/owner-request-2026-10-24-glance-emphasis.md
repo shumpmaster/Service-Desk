@@ -58,3 +58,15 @@ Left by the owner on the mockup page, on 4b's third shot (the strip with an empt
 > When it gets shrunk to a 3rd of the screen like this it kinda hides the intent of the done section which is to move them over
 
 Mocked as item 4c on the chosen layout (P-001-glance-lanes: C, two equal lanes): the Done lane on the briefing's --bg2 ground, rounded, full height. For the build brief with the lanes ruling; the Design reviewer to check it against round 2's R2 (a filled box means the screen's one anchor).
+
+## The owner's round-2 answers and the operating-model go-ahead, word for word
+
+Said by the owner in the same session, after reviewing round 2's mockups (and the explanation of what counting a sprint's pieces of work would take):
+
+> Okay love it, all. Only changes I would propose is the outlined box isn't ONLY for the single most important thing on the page.
+>
+> It should be for the set of most important things on a page. It definitely shouldn't be overdone but only accepting one thing omits other elements that might be close to or as important.
+>
+> Then finally, you can proceed with the changes proposed for the operating model and the steps link back toward milestone. Honestly I had already assumed that existed and finding out it didn't represents that we caught a big gap. It makes no sense to consider the two things as unrelated, it's all a hierarchy of work. You can't progress phases without successfully delivering upon the milestones, the milestones are accomplished by delivering sprints and ultimately the agents should be either following clear tasks or should be recording them for us to see what it took to get there
+
+Read as: all five round-2 choices as recommended (decisions/questions/P-001-glance2-*.md), with the anchor rule widened to "the set of most important things on a page, never overdone"; item 4c (Done shaded) accepted with "all", for the Design reviewer to fit to the widened anchor rule; and a go-ahead for the operating-model change in Personal-Org-Operating-Model: each sprint carries its planned pieces of work (tasks), and every step (agent session) is recorded against its sprint, so the chain phase → milestone → sprint → task/step is whole and the desk can show it.

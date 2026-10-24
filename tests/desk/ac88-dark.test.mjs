@@ -392,6 +392,17 @@ const STAGE8_TOP = (n, d) => (n.cls.has('sb-screen') && n.parent && n.parent.att
  * checks its colour.
  */
 const M3D1_WAITS = new Set(['display: (none) → block', 'position: (none) → relative', 'max-height: (none) → calc(2 * 1.4em)', 'overflow: (none) → clip']);
+/**
+ * M3D stage 3's one change to the look on purpose (the brief's after-MD3 rule, specs/S-001.md:15549-15553; AC90,
+ * :8011-8028): a "not yet" reason said once per group — on Plan, the box under a group's head holding its shared reasons
+ * (`div.v2-plonce`, in a `.v2-plgrp`), and on the Timeline, the line under a band (`p.v2-msd.gap.v2-tonce`, in a
+ * `.v2-tblk`), in line with the rail's milestones. Only these declarations, on only these elements; Home's line takes no
+ * rule of its own.
+ */
+const M3D3_ONCE = new Map([['v2-plonce', new Set(['display: (none) → grid', 'gap: (none) → 2px', 'padding: (none) → 2px 0 4px'])],
+  ['v2-tonce', new Set(['padding: (none) → 8px 0 2px 26px'])]]);
+const M3D3_EXCEPT = (n, d) => (n.cls.has('v2-plonce') && n.tag === 'div' && n.parent && n.parent.cls.has('v2-plgrp') && M3D3_ONCE.get('v2-plonce').has(d))
+  || (n.cls.has('v2-tonce') && n.tag === 'p' && n.cls.has('v2-msd') && n.cls.has('gap') && n.parent && n.parent.cls.has('v2-tblk') && M3D3_ONCE.get('v2-tonce').has(d));
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
@@ -424,6 +435,7 @@ function sameLook(app, where, fails, seen) {
       for (const d of diffs) {
         if (STAGE8_TOP(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
         if (M3D1_EXCEPT(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
+        if (M3D3_EXCEPT(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -470,7 +482,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   }
   // M3D stage 1's exception was met, in exactly its four declarations, and is the only one beside stage 8's.
   for (const d of M3D1_WAITS) assert.ok(excepted.has(`span.v2-small.v2-wn ${d}`), `${d}: ${JSON.stringify([...excepted])}`);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead)/.test(x)).sort(), [...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`).sort());
+  // M3D stage 3's exception was met, in exactly its declarations; with stage 1's and stage 8's, nothing else is excepted.
+  const m3d3 = [...M3D3_ONCE.get('v2-plonce')].map((d) => `div.v2-plonce ${d}`).concat([...M3D3_ONCE.get('v2-tonce')].map((d) => `p.v2-msd.gap.v2-tonce ${d}`));
+  for (const x of m3d3) assert.ok(excepted.has(x), `${x}: ${JSON.stringify([...excepted])}`);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead)/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

@@ -595,3 +595,10 @@ record**:
 It reuses AC52's one item of each kind (`fullRepo`, made up), screen-text.mjs's `textSetup()` (Service-Desk at 3117150,
 real; Alpha, made up; Delta in poom/'s placeholder form), and AC77's real asked question and session file
 (`notify/ac77-real/`).
+
+## After MD3, stage 3 (2026-10-23, S-001 AC90's Plan, Timeline and Home parts)
+
+`tests/desk/ac90-once-per-group.test.mjs` adds no fixture file. It reuses Service-Desk's J11 records at 3117150 and
+77bfeae (real), poom/'s placeholder form, AC52's one item of each kind (`fullRepo`, made up), AC61's made-up why lines,
+and wa-fixtures.mjs's estimate lines (made up, NOT real records); the three estimate lines it writes inline (MD1 and MD2
+0 to 0 days, MD3 3 to 5) are made up too, NOT a real record.

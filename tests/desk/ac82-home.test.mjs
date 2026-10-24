@@ -250,7 +250,10 @@ test('AC82: each tile, top to bottom (frame H5) — Service-Desk (a second run, 
     // This setup names no planning project, so AC24 has no estimates to read and Plan reads "Estimate: not
     // available" for M1: the tile says the same (the Reviewer's B1, stage 2 round 1, in place of "no estimate
     // yet", which claimed none was filed). "no estimate yet" is checked where none is filed, below.
-    assert.deepEqual(lines('Service-Desk'), ['Now: Design, run 2 · why it went back: not recorded', 'No agent run recorded since 8 Oct', 'Next: M1 · rough finish: not available']);
+    // Rewritten for AC90 (specs/S-001.md:8026-8028; AC82's note, :7282-7285): Service-Desk and Alpha both went back with no
+    // why recorded, so their group's head says it once, and each tile's Now line keeps only its own part (no date is recorded).
+    assert.deepEqual(lines('Service-Desk'), ['Now: Design, run 2', 'No agent run recorded since 8 Oct', 'Next: M1 · rough finish: not available']);
+    assert.equal(keyed(app, 'hgonce:active').textContent, '2 projects · why their run went back: not recorded');
     // Alpha (AC52's one-of-each, NOT real): a Build-gate card waiting, a builder dispatched.
     assert.match(top('Alpha').textContent, /^Alpha\d+ wait on you$/);
     assert.equal(lines('Alpha')[1], 'At work: Builder on P-003');
@@ -301,7 +304,13 @@ test('AC82 with AC24: a milestone past its estimate — the tile reads "rough fi
       assert.match(next, want, label);
       assert.doesNotMatch(next, /no estimate yet/, `${label}: an estimate is filed`);
       await app.go('#/work');
-      if (label === '30 days later') assert.match(app.text(), /Rough finish: not available: MD1 is past its estimate/, 'Plan\'s own words');
+      // Rewritten for AC90 (specs/S-001.md:8019-8022; AC86's note, :7678-7681): Plan says the shared reason once at the group's
+      // head, and the milestone's sheet keeps its full state.
+      if (label === '30 days later') {
+        assert.match(app.text(), /6 rough finishes not available: MD1 is past its estimate/, 'Plan\'s own words, once');
+        await app.go('#/work/ms/Service-Desk/MD1');
+        assert.match(byClass(app.view, 'v2-sheet')[0].textContent, /Rough finish\s*not available: MD1 is past its estimate/, 'and in its sheet');
+      }
     } finally {
       app.restore();
     }

@@ -1057,6 +1057,8 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-tpn { font: 600 12px/1.3 var(--font); color: var(--ink); }
 .v2-tpd { margin-left: auto; font: var(--t-mono); color: var(--ink2); text-align: right; }
 .v2-tseg { position: relative; padding-left: 26px; }
+/* AC90 (AC59, changed): a why not recorded yet for two or more of a run's milestones, said once under its band, in line with them. */
+.v2-tonce { padding: 8px 0 2px 26px; }
 .v2-tseg::before { content: ""; position: absolute; left: 7px; top: 0; bottom: 0; width: 1.5px; background: var(--phc); opacity: .55; }
 .v2-tseg.plan::before { background: repeating-linear-gradient(var(--phc) 0 4px, transparent 4px 8px); opacity: .7; }
 .v2-timeline .sb-began { display: block; margin: 0; padding: 8px 0 2px; font: var(--t-small); color: var(--ink2); background: none; border: 0; }
@@ -1140,6 +1142,8 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-plv { font: var(--t-mono); color: var(--ink2); text-align: right; padding-top: 1px; }
 .v2-plv.accept, .v2-plv.ruling { font: var(--t-small); }
 .v2-plunder { display: grid; gap: 2px; padding: 0 0 9px 26px; margin-top: -5px; min-width: 0; }
+/* AC90: a reason two or more of a group's rows share, said once under the group's head, in the agents' grey (AC69). */
+.v2-plonce { display: grid; gap: 2px; padding: 2px 0 4px; min-width: 0; }
 .v2-plgap, .v2-pltag { overflow-wrap: anywhere; }
 .v2-plyou { font: var(--t-small); }
 /* Vermilion only on the ◆ beside the words (mockup v2: "the diamond"; AC69); the words in ink. */

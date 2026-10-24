@@ -565,7 +565,10 @@ test('AC61: on the page, the why text word for word on Status and the Timeline; 
   }
   const plain = await openSD('#/p/Service-Desk/timeline');
   try {
-    assert.match(keyed(plain, 'mile:Build-i1:M2B').textContent, /Why not recorded yet · for the agents to add/);
+    // Rewritten for AC90 (specs/S-001.md:8023-8025; AC59's note, :5246-5249): Build run 1's three milestones have no why yet, so
+    // it is said once under its band, and M2B shows no why line of its own until it has one.
+    assert.equal(keyed(plain, 'whyonce:Build-i1').textContent, 'Why not recorded yet for 3 of 3 milestones · for the agents to add');
+    assert.doesNotMatch(keyed(plain, 'mile:Build-i1:M2B').textContent, /Why/);
   } finally {
     plain.restore();
   }

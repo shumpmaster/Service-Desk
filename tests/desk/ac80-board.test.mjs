@@ -104,14 +104,25 @@ async function markDoneInSheet(app, id) {
 // ---------------------------------------------------------------------------
 // The lanes and the cards
 
-test('AC80: three lanes, left to right, "Waiting on you", "Kicked back" and "Done · last 24 h", their counts and empty words; version 5\'s eight cards, each its kind line, meta, lock or clock line and one step', async () => {
+// Rewritten in G2 (AC91 (f); AC80's note "After the glance audit": "two lanes, "Waiting on you" and "Done · last 24 h", of
+// equal width, with Kicked back as a strip above them and Done shaded"; P-001-glance-lanes.md, C): the lanes' order,
+// headings, counts and empty words, with the strip in place of the middle lane; the cards' part unchanged.
+test('AC80, rewritten in G2 (AC91 (f)): two lanes, left to right, "Waiting on you" and "Done · last 24 h", their counts and empty words, with Kicked back a strip above them reading "Kicked back · none"; version 5\'s eight cards, each its kind line, meta, lock or clock line and one step', async () => {
   const { app } = await openExample();
   try {
     const lanes = byClass(byClass(app.view, 'v2-lanes')[0], 'v2-lane');
-    assert.deepEqual(lanes.map((l) => l.dataset.lane), ['wait', 'kick', 'done']);
-    assert.deepEqual(lanes.map((l) => byClass(l, 'v2-lh')[0].textContent), ['Waiting on you8', 'Kicked back0', 'Done · last 24 h']);
-    assert.equal(byClass(lane(app, 'kick'), 'v2-empty')[0].textContent, 'Nothing here');
+    assert.deepEqual(lanes.map((l) => l.dataset.lane), ['wait', 'done']);
+    assert.deepEqual(lanes.map((l) => byClass(l, 'v2-lh')[0].textContent), ['Waiting on you8', 'Done · last 24 h']);
+    assert.equal(byClass(lane(app, 'wait'), 'v2-empty').length, 0);
     assert.equal(byClass(lane(app, 'done'), 'v2-empty')[0].textContent, 'Hold a card and drag it here');
+    // Kicked back: no column, a strip above the lanes, under the quiet lines, its one quiet line with no count, no
+    // fold mark, no control and nothing to drop on.
+    const board = byClass(app.view, 'v2-board')[0].children;
+    const at = (cls) => board.findIndex((c) => c.className.split(' ').includes(cls));
+    assert.equal(at('v2-kstrip'), at('v2-lanes') - 1, 'directly above the lanes');
+    assert.ok(at('v2-quiet') < at('v2-kstrip'), 'under the quiet lines');
+    assert.equal(lane(app, 'kick').textContent, 'Kicked back · none');
+    assert.equal(findAll(lane(app, 'kick'), (e) => ['button', 'a', 'svg'].includes(e.tag)).length, 0, 'no control and no fold mark');
     // In each lane, a project's cards under its name, a folder icon and its count; no card repeats the name.
     const grp = keyed(app, 'grp:wait:Example');
     assert.equal(grp.textContent, 'Example8');
@@ -266,7 +277,8 @@ test('AC80: a mark is judged only at a successful poll — at 4 minutes 59 secon
     await app.advance(POLL_MS);
     assert.deepEqual(titles(app, 'kick'), ['Merge: the first rough estimates'], 'kicked back at the first successful poll after 5 minutes');
     const k = cardOf(app, PR(126));
-    assert.equal(byClass(k, 'v2-kd')[0].textContent, 'Kicked back');
+    // Rewritten in G2 (AC91 (f)): in the strip, which has no project groups, its kind line names its project.
+    assert.equal(byClass(k, 'v2-kd')[0].textContent, 'Kicked back · Example');
     assert.equal(byClass(k, 'v2-why')[0].textContent, "GitHub doesn't show it merged yet");
     assert.equal(byClass(k, 'v2-step')[0].textContent, 'Merge ↗', 'its current step');
     assert.equal(badge(app), '8', 'counted again, everywhere it counted before');
@@ -387,7 +399,9 @@ test('AC80: an answer is confirmed when its answer file is on the default branch
 // One board for every project, grouped by project
 
 
-test('AC80 (2026-10-20): one board grouped by project in J7\'s order; a tap on a project\'s name shows only it, a chip with ✕ and "1 of 2 projects", the quiet lines then under the lanes in one small line; ✕ goes back to every project, replacing its history entry', async () => {
+// Rewritten in G2 (AC91 (f): "the strip, above the lanes, under the quiet lines (or, with one project shown, above the
+// lanes as frame 2 places them)"): the strip's place, on the whole board and with one project shown.
+test('AC80 (2026-10-20), rewritten in G2: one board grouped by project in J7\'s order; a tap on a project\'s name shows only it, a chip with ✕ and "1 of 2 projects", the Kicked back strip directly above the lanes, the quiet lines then under the lanes in one small line; ✕ goes back to every project, replacing its history entry', async () => {
   const setup = twoProjects();
   const app = await loadSandbox({ ...setup, hash: '#/waiting', now: Date.parse('2026-10-14T15:00:00Z') });
   const replaced = [];
@@ -409,6 +423,10 @@ test('AC80 (2026-10-20): one board grouped by project in J7\'s order; a tap on a
     assert.equal(findAll(app.view, (e) => e.dataset && /^grp:/.test(e.dataset.k || '')).length, 0, 'no group names: one project');
     const kids2 = byClass(app.view, 'v2-board')[0].children.map((c) => c.className);
     assert.ok(kids2.findIndex((c) => /\bv2-quiet under\b/.test(c)) > kids2.findIndex((c) => /\bv2-lanes\b/.test(c)), 'under the lanes, filtered (frame 2)');
+    const strip = kids2.findIndex((c) => /\bv2-kstrip\b/.test(c));
+    assert.equal(strip, kids2.findIndex((c) => /\bv2-lanes\b/.test(c)) - 1, 'the strip directly above the lanes, filtered');
+    assert.ok(strip > kids2.findIndex((c) => /\bv2-filter\b/.test(c)), 'under the chip');
+    assert.equal(lane(app, 'kick').textContent, 'Kicked back · none');
     assert.match(byClass(app.view, 'v2-qsmall')[0].textContent, /^With the agents: 0 · Being recorded by the automatic job: 0$/);
     // A refresh keeps the filter (its address); the bar's Waiting tab is current.
     app.module.refresh();
@@ -488,7 +506,9 @@ function laneLayout() {
   return () => { if (saved) Object.defineProperty(El0.prototype, 'getBoundingClientRect', saved); else delete El0.prototype.getBoundingClientRect; };
 }
 
-test('AC80: a press and hold with a finger (350 ms) lifts a card; dropped over Done (with its 8 px margin) it is marked; a finger that moves more than 8 px before the hold is a scroll; a tap is never a drag; a mouse lifts after 6 px', async () => {
+// Rewritten in G2 (AC91 (f): "each card in it ... a press and hold dragging it into Done (new drag code, as the option
+// said)"): the case's last part carries a card from the Kicked back strip into Done, out of the strip's sideways scroll.
+test('AC80, rewritten in G2: a press and hold with a finger (350 ms) lifts a card; dropped over Done (with its 8 px margin) it is marked; a finger that moves more than 8 px before the hold is a scroll; a tap is never a drag; a mouse lifts after 6 px; a card in the Kicked back strip is lifted out of the strip\'s scroll and carried into Done the same way', async () => {
   assert.deepEqual([HOLD_MS, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX], [350, 6, 8, 8]);
   const undo = laneLayout();
   const { app } = await openExample({ store: storage() });
@@ -546,6 +566,52 @@ test('AC80: a press and hold with a finger (350 ms) lifts a card; dropped over D
   } finally {
     undo();
     app.restore();
+  }
+  // From the Kicked back strip (G2): the card held 350 ms is lifted, and while it is carried its row is clipped sideways
+  // only (`carrying`), so the card shows below the strip; the row is no longer scrolled then, so the card's move makes up
+  // the row's scroll and it stays under the finger. Dropped outside Done it is back in the row, the row scrolling again;
+  // dropped over Done it is marked, a new 5 minutes, as "Done ✓" from Kicked back marks it. Its only inline style is its
+  // move (AC50 + AC41's case, j11-timeline.test.mjs).
+  const undo2 = laneLayout();
+  const styled = Object.getOwnPropertyDescriptor(El0.prototype, 'style');
+  Object.defineProperty(El0.prototype, 'style', { configurable: true, get() { if (!this._st) this._st = {}; return this._st; } });
+  const { app: k } = await openExample({ store: storage() });
+  try {
+    await markDoneInSheet(k, PR(127));
+    for (let i = 1; i <= 6; i++) await k.advance(POLL_MS);
+    assert.deepEqual(titles(k, 'kick'), ['Merge: your later-work list'], 'kicked back, in the strip');
+    const press = async () => {
+      const c = cardOf(k, PR(127));
+      c.dispatch('pointerdown', { target: byClass(c, 'v2-t')[0], clientX: 60, clientY: 120, pointerType: 'touch' });
+      await k.flush();
+      await k.advance(HOLD_MS);
+      return c;
+    };
+    const row = byClass(lane(k, 'kick'), 'v2-krow')[0];
+    row.scrollLeft = 120; // the row scrolled sideways before the press
+    let c = await press();
+    assert.ok(c.className.includes('lifted'), 'lifted at 350 ms');
+    assert.equal(c.parent.className, 'v2-kslot');
+    assert.equal(c.parent.parent, row);
+    assert.equal(row.className, 'v2-krow carrying', 'its row clipped sideways only while it is carried');
+    await k.docEvent('pointermove', { clientX: 200, clientY: 300 });
+    assert.equal(c.style.transform, 'translate(20px, 180px)', 'carried with the finger, the row\'s 120 px of scroll made up');
+    assert.deepEqual(Object.keys(c.style), ['transform'], 'its move, its only inline style');
+    await k.docEvent('pointerup', { clientX: 100, clientY: 300 });
+    assert.deepEqual(titles(k, 'kick'), ['Merge: your later-work list'], 'dropped outside Done: back in the strip');
+    assert.deepEqual([c.style.transform, row.className, c.className.includes('lifted')], ['', 'v2-krow', false], 'back in its row, the row scrolling again');
+    c = await press();
+    await k.docEvent('pointermove', { clientX: 300, clientY: 400 });
+    await k.docEvent('pointerup', { clientX: 300, clientY: 400 });
+    assert.deepEqual(titles(k, 'kick'), [], 'dropped over Done: marked, out of the strip');
+    assert.equal(lane(k, 'kick').textContent, 'Kicked back · none', 'the strip closes to its line');
+    assert.equal(byClass(lane(k, 'done'), 'v2-card conf').length, 1);
+    for (let i = 1; i <= 5; i++) await k.advance(POLL_MS);
+    assert.deepEqual(titles(k, 'kick'), [], 'a new 5 minutes');
+  } finally {
+    if (styled) Object.defineProperty(El0.prototype, 'style', styled); else delete El0.prototype.style;
+    undo2();
+    k.restore();
   }
 });
 
@@ -663,14 +729,17 @@ test('AC80: a mark kept from before this opening is judged only at the first suc
 // ---------------------------------------------------------------------------
 // The look, from the stylesheet (AC42's and AC62's way of reading sandbox.css)
 
-test('AC80: the CSS — three lanes side by side at every width, every board control at least 24 px tall, a board button 28 px, a gate card\'s 26 px; the sizes AC80 names', () => {
+// Rewritten in G2 (AC91 (f): "two lanes ... side by side at every width, of equal width (1 : 1), 6 px apart; AC80's 1.18 : 1 : 1
+// goes"): the lanes' columns; the rest of the case unchanged.
+test('AC80, rewritten in G2 (AC91 (f)): the CSS — two lanes side by side at every width, of equal width, 6 px apart; every board control at least 24 px tall, a board button 28 px, a gate card\'s 26 px; the sizes AC80 names', () => {
   const css = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const rule = (sel) => {
     const m = new RegExp(`(?:^|\\n)${sel.replace(/[.()[\]>*+]/g, (c) => `\\${c}`)} \\{([^}]*)\\}`).exec(css);
     assert.ok(m, `${sel} has its rule`);
     return m[1];
   };
-  assert.match(rule('.v2-lanes'), /display: grid; grid-template-columns: minmax\(0, 1\.18fr\) minmax\(0, 1fr\) minmax\(0, 1fr\);/, 'three columns');
+  assert.match(rule('.v2-lanes'), /display: grid; grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\); gap: 6px;/, 'two columns of equal width, 6 px apart');
+  assert.doesNotMatch(css, /1\.18fr/, 'AC80\'s 1.18 : 1 : 1 gone');
   // No media query changes the lanes' columns.
   for (const m of css.matchAll(/@media[^{]*\{([\s\S]*?)\}\s*\}/g)) assert.doesNotMatch(m[1], /v2-lanes/, 'at every width');
   assert.match(rule('.v2-step'), /min-height: 28px;/);
@@ -866,7 +935,9 @@ test('AC80: a marked "Merge ↗" card whose pull request goes to the agents leav
   }
 });
 
-test('AC80 with Part A item 5 (stage 1a\'s build review, round 1, F3): before the first read the lanes show no count and no "Nothing here", but "Not read yet"; with every project unreadable, "Can\'t read"; never a 0', async () => {
+// Rewritten in G2 (AC91 (f)): Kicked back is a strip, so its unknown is said in its quiet line, "Kicked back · not read
+// yet" or "Kicked back · can't read", never "none" (Part A item 5, as the lanes' words), and "none" once read.
+test('AC80 with Part A item 5 (stage 1a\'s build review, round 1, F3), rewritten in G2: before the first read the lanes show no count and no "Nothing here", but "Not read yet", and the strip "Kicked back · not read yet"; with every project unreadable, "Can\'t read" and "Kicked back · can\'t read"; never a 0 or "none"', async () => {
   // Before the first read.
   let app = await loadSandbox({ config: { ...CONFIG, projects: [EX] }, repos: { Example: exampleRepo() }, hash: '#/waiting', now: NOW });
   try {
@@ -874,14 +945,14 @@ test('AC80 with Part A item 5 (stage 1a\'s build review, round 1, F3): before th
     for (const k of ['wait', 'kick']) {
       assert.equal(cardsIn(app, k).length, 0);
       assert.equal(byClass(lane(app, k), 'v2-lc').length, 0, `${k}: no count before a read`);
-      assert.equal(byClass(lane(app, k), 'v2-empty')[0].textContent, 'Not read yet');
     }
+    assert.equal(byClass(lane(app, 'wait'), 'v2-empty')[0].textContent, 'Not read yet');
+    assert.equal(lane(app, 'kick').textContent, 'Kicked back · not read yet');
     assert.doesNotMatch(byClass(app.view, 'v2-lanes')[0].textContent, /\b0\b|Nothing here/);
     await app.advance(1000);
     await app.advance(POLL_MS);
     assert.equal(byClass(lane(app, 'wait'), 'v2-lc')[0].textContent, '8', 'read: its count');
-    assert.equal(byClass(lane(app, 'kick'), 'v2-lc')[0].textContent, '0', 'a 0 that is a read value');
-    assert.equal(byClass(lane(app, 'kick'), 'v2-empty')[0].textContent, 'Nothing here');
+    assert.equal(lane(app, 'kick').textContent, 'Kicked back · none', 'a "none" that is a read value');
   } finally {
     app.restore();
   }
@@ -895,10 +966,9 @@ test('AC80 with Part A item 5 (stage 1a\'s build review, round 1, F3): before th
     await app.advance(1000);
     await app.advance(POLL_MS);
     assert.match(app.text(), /Can't read Example since \d\d:\d\d/);
-    for (const k of ['wait', 'kick']) {
-      assert.equal(byClass(lane(app, k), 'v2-lc').length, 0, `${k}: no count`);
-      assert.equal(byClass(lane(app, k), 'v2-empty')[0].textContent, "Can't read");
-    }
+    for (const k of ['wait', 'kick']) assert.equal(byClass(lane(app, k), 'v2-lc').length, 0, `${k}: no count`);
+    assert.equal(byClass(lane(app, 'wait'), 'v2-empty')[0].textContent, "Can't read");
+    assert.equal(lane(app, 'kick').textContent, "Kicked back · can't read");
     assert.doesNotMatch(byClass(app.view, 'v2-lanes')[0].textContent, /\b0\b|Nothing here/);
     assert.equal(badge(app), null);
     // One project read again: the lanes show real counts.
@@ -913,10 +983,12 @@ test('AC80 with Part A item 5 (stage 1a\'s build review, round 1, F3): before th
 // Rewritten for AC89 (a) (specs/S-001.md:7823-7852, the table's states 1 and 2; AC80, changed, :6503-6506): with one project
 // shown and no read of it yet in this opening, no count anywhere, and the quiet lines' small line is not drawn (the table:
 // "nothing" above the lanes in state 1, the "Can't read" line in state 2); once read, its counts, a 0 being words.
-test('AC80 with Part A item 5 (stage 1a\'s build review, round 2, N1 and F3-r2), rewritten for AC89 (a): with the board filtered to one project not read yet or not readable, no count anywhere and no small line under the lanes — before the first read, with every project down, and with only that project down', async () => {
+// Rewritten in G2 (AC91 (f)): the strip's quiet line says the project's unknown in AC89 (a)'s words, never "none".
+test('AC80 with Part A item 5 (stage 1a\'s build review, round 2, N1 and F3-r2), rewritten for AC89 (a) and in G2: with the board filtered to one project not read yet or not readable, no count anywhere, no "none" in the Kicked back strip, and no small line under the lanes — before the first read, with every project down, and with only that project down', async () => {
   const smallLine = (app) => (byClass(app.view, 'v2-qsmall')[0] || { textContent: null }).textContent;
   const noZero = (app, why) => {
     assert.doesNotMatch(byClass(app.view, 'v2-lanes')[0].textContent, /\b0\b|Nothing here/, `${why}: no 0, and no "Nothing here", in the lanes`);
+    assert.match(lane(app, 'kick').textContent, /^Kicked back · (not read yet|can't read)$/, `${why}: the strip says the unknown in words`);
     for (const k of ['wait', 'kick']) assert.equal(byClass(lane(app, k), 'v2-lc').length, 0, `${why}: ${k} has no count`);
     for (const q of byClass(app.view, 'v2-quiet')) assert.doesNotMatch(q.textContent.replace(/\d\d:\d\d/g, ''), /\b\d+\b/, `${why}: no count in a quiet line`);
     assert.equal(smallLine(app), null, `${why}: no small line of counts`);

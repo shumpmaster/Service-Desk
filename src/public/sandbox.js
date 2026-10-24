@@ -30,8 +30,8 @@ import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimel
 import { GATE_PHASE } from './lib/j11.js';
 import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
-import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, WORDS, MARKS_KEY,
-  boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, shortName, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
+import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, BOARD_LANES, WORDS, MARKS_KEY,
+  stripEmptyParts, isNewCard, boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, shortName, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
@@ -1705,6 +1705,12 @@ function appBar(current, badge) {
     tab('home', 'Home', '#/'), tab('waiting', 'Waiting', '#/waiting'), tab('plan', 'Plan', '#/work'));
 }
 
+/**
+ * AC40's "last looked" on this device as the board marks against it, or null while the markers are off (startSandbox
+ * sets it from its `seen`): AC91 (g)'s "new" on Waiting's cards.
+ */
+let lastLooked = () => null;
+
 // --- The board's state on this device: the marks (local storage, wrapped as J5's), and for this
 // window the folds, the drafts in the sheets' boxes, each project's last J22 judgement (rule 7) and
 // the cards seen to stop needing the owner while the page was open.
@@ -1978,20 +1984,56 @@ let kickStore = null; // AC89 (l): the device's count of the day's reads after p
 // --- Dragging a card into Done (AC80: a press and hold with a finger, or a mouse drag; a finger
 // that moves before the hold is a scroll, a tap is never a drag). The keyboard and screen readers
 // mark with the sheet's "Done ✓".
-const drag = { card: null, el: null, x: 0, y: 0, pointer: null, timer: null, lifted: false, swallow: false };
+const drag = { card: null, el: null, lane: null, row: null, shift: 0, x: 0, y: 0, dx: 0, dy: 0, pointer: null, timer: null, lifted: false, swallow: false };
+const dropClass = (el, c) => el.setAttribute('class', String(el.getAttribute('class') || '').replace(new RegExp(`\\s*\\b${c}\\b`, 'g'), ''));
+const addClass = (el, c) => {
+  if (el && el.getAttribute && !new RegExp(`\\b${c}\\b`).test(String(el.getAttribute('class') || ''))) el.setAttribute('class', `${el.getAttribute('class') || ''} ${c}`.trim());
+};
+/** The carried card where the finger has it: its move from where it was pressed, less the strip row's scroll it lost. */
+function place() {
+  if (drag.el && drag.el.style) drag.el.style.transform = `translate(${Math.round(drag.dx - drag.shift)}px, ${Math.round(drag.dy)}px)`;
+}
 function dragReset() {
   if (drag.timer != null) clearTimeout(drag.timer);
   if (drag.el && drag.el.setAttribute) {
-    drag.el.setAttribute('class', String(drag.el.getAttribute('class') || '').replace(/\s*\blifted\b/g, ''));
+    dropClass(drag.el, 'lifted');
     if (drag.el.style) drag.el.style.transform = '';
   }
-  Object.assign(drag, { card: null, el: null, pointer: null, timer: null, lifted: false });
+  if (drag.row && drag.row.setAttribute) dropClass(drag.row, 'carrying');
+  Object.assign(drag, { card: null, el: null, lane: null, row: null, shift: 0, dx: 0, dy: 0, pointer: null, timer: null, lifted: false });
 }
+/**
+ * A redraw while a card is carried (the board redraws at each poll) patches the card's and the row's classes, and the
+ * style attribute with them, back to the drawing's: the carry is put back at once, before anything is painted, so the
+ * card stays lifted under the finger and, from the strip, its row stays `carrying` (the Design reviewer's N1, G2).
+ */
+function keepDrag() {
+  if (!drag.lifted || !drag.el) return;
+  addClass(drag.el, 'lifted');
+  if (drag.row) addClass(drag.row, 'carrying');
+  place();
+}
+/**
+ * AC91 (f): a card lifted from the Kicked back strip must leave the strip's row, whose sideways scroll would clip it at
+ * the row's foot (the option's "new drag code"). While it is carried the row is `carrying` (sandbox.css): clipped
+ * sideways only, so the card shows below it and nothing widens the page; the row is then no longer scrolled, so the
+ * card's move makes up its scroll (`shift`) and it stays under the finger. Its class goes when the card lands.
+ */
 function lift() {
   drag.timer = null;
   if (!drag.el) return;
   drag.lifted = true;
-  drag.el.setAttribute('class', `${drag.el.getAttribute('class') || ''} lifted`);
+  addClass(drag.el, 'lifted');
+  const slot = drag.lane === 'kick' ? drag.el.parentNode : null;
+  const row = slot && slot.parentNode;
+  if (row && row.getAttribute && /\bv2-krow\b/.test(String(row.getAttribute('class') || ''))) {
+    drag.row = row;
+    drag.shift = Number(row.scrollLeft) || 0;
+    addClass(row, 'carrying');
+    // The row is no longer scrolled once it is `carrying`: the card is moved back by that scroll at once, so it stays
+    // under the finger before the finger moves (the Design reviewer's N2, G2).
+    if (drag.shift) place();
+  }
 }
 /** Whether a point is over the Done lane, with an 8 px margin round it. */
 function overDone(x, y) {
@@ -2001,14 +2043,14 @@ function overDone(x, y) {
   const r = lane.getBoundingClientRect();
   return x >= r.left - LANE_MARGIN_PX && x <= r.right + LANE_MARGIN_PX && y >= r.top - LANE_MARGIN_PX && y <= r.bottom + LANE_MARGIN_PX;
 }
-function onDragDown(card, e, el) {
+function onDragDown(card, e, el, lane = null) {
   const t0 = e && e.target;
   for (let n = t0; n && n !== el; n = n.parentNode) {
     const tag = String(n.tagName || '').toLowerCase();
     if ((tag === 'a' || tag === 'button') && !(n.getAttribute && n.getAttribute('data-cardlink') != null)) return; // the card's own buttons stay buttons
   }
   dragReset();
-  Object.assign(drag, { card, el, x: e.clientX || 0, y: e.clientY || 0, pointer: e.pointerType || 'touch' });
+  Object.assign(drag, { card, el, lane, x: e.clientX || 0, y: e.clientY || 0, pointer: e.pointerType || 'touch' });
   if (drag.pointer !== 'mouse') drag.timer = setTimeout(lift, HOLD_MS);
 }
 function onDragMove(e) {
@@ -2022,7 +2064,8 @@ function onDragMove(e) {
     if (!drag.lifted) return;
   }
   if (e.preventDefault) e.preventDefault();
-  if (drag.el && drag.el.style) drag.el.style.transform = `translate(${Math.round(dx)}px, ${Math.round(dy)}px)`;
+  Object.assign(drag, { dx, dy });
+  place();
 }
 function onDragUp(e) {
   if (!drag.card) return;
@@ -2040,10 +2083,26 @@ function onDragUp(e) {
 
 const laneOf = (key) => LANES.find((l) => l.key === key);
 
-/** A card's kind line: its icon (vermilion while it waits on the owner, grey in Done) and its word, never ranked (AC38). */
+/**
+ * A card's kind line: its icon (vermilion while it waits on the owner, grey in Done) and its word, never ranked (AC38).
+ * AC91 (f): in the Kicked back strip, which has no project groups, it names its project after " · ". AC91 (g): in
+ * "Waiting on you", a card raised since "last looked" carries "new" beside its kind label, part of the line's text for
+ * assistive technology, in ink with no colour and no box; worked out again on the 15-second tick (AC56), so it follows
+ * "last looked" with no redraw, drawn as nothing while the card is not new.
+ */
 function kindLine(card, lane) {
   const icon = lane === 'kick' ? 'kick' : card.kind === 'portfolio' ? 'card' : card.kind;
-  return h('span', { class: `v2-kd${lane === 'done' ? ' done' : ''}` }, vi(icon), h('span', {}, lane === 'kick' ? 'Kicked back' : card.kindWord));
+  if (lane === 'kick') {
+    return h('span', { class: 'v2-kd' }, vi(icon), h('span', {}, 'Kicked back'), card.stripProject ? h('span', { class: 'v2-kp' }, ` · ${card.stripProject}`) : null);
+  }
+  let fresh = null;
+  if (lane === 'wait') {
+    const isNew = () => isNewCard(card, lane, lastLooked());
+    const cls = () => (isNew() ? 'v2-new' : 'v2-new none');
+    fresh = h('span', { class: cls(), live: () => (isNew() ? ` ${WORDS.newCard}` : '') });
+    fresh._liveClass = cls;
+  }
+  return h('span', { class: `v2-kd${lane === 'done' ? ' done' : ''}` }, vi(icon), h('span', {}, card.kindWord), fresh);
 }
 
 /** An answer button (AC80): its filled-in file in one tap, AC77's re-read first when the project was read more than 30 s ago. */
@@ -2130,10 +2189,10 @@ function noteNode(card) {
   return h('span', { class: `v2-why v2-wclip${clipOver.get(id) === true ? ' over' : ''}`, key: `wclip:${card.id}`, 'data-clip': id }, card.note);
 }
 
-function cardNode(p, card, lane, only) {
+function cardNode(p, card, lane, only, tag = 'li') {
   if (card.kind === 'gate' && lane !== 'done') {
-    return h('li', { class: `v2-card gate${lane === 'kick' ? ' kick' : ''}`, key: `card:${card.id}`, 'data-card': card.id,
-      onpointerdown: (e, el) => onDragDown(card, e, el) },
+    return h(tag, { class: `v2-card gate${lane === 'kick' ? ' kick' : ''}`, key: `card:${card.id}`, 'data-card': card.id,
+      onpointerdown: (e, el) => onDragDown(card, e, el, lane) },
     kindLine(card, lane),
     h('a', { class: 'v2-t', href: cardRoute(only, card.id), 'data-cardlink': '', key: `cardlink:${card.id}`, onclick: (e) => cardTap(card, e) }, cardTitle(card)),
     h('span', { class: 'v2-gl' }, h('span', { class: 'v2-gk' }, 'Critic:'), ` ${card.critic}`),
@@ -2142,8 +2201,8 @@ function cardNode(p, card, lane, only) {
     lane === 'kick' && card.kicked ? h('span', { class: 'v2-why' }, card.kicked.reason) : null,
     h('span', { class: 'v2-gatebtns' }, gateButtons(p, card).map((b) => answerLink(p, card, b, 'v2-step', [b.label]))));
   }
-  return h('li', { class: `v2-card${lane === 'kick' ? ' kick' : ''}`, key: `card:${card.id}`, 'data-card': card.id,
-    onpointerdown: (e, el) => onDragDown(card, e, el) },
+  return h(tag, { class: `v2-card${lane === 'kick' ? ' kick' : ''}`, key: `card:${card.id}`, 'data-card': card.id,
+    onpointerdown: (e, el) => onDragDown(card, e, el, lane) },
   kindLine(card, lane),
   h('a', { class: 'v2-t', href: cardRoute(only, card.id), 'data-cardlink': '', key: `cardlink:${card.id}`, onclick: (e) => cardTap(card, e) }, cardTitle(card)),
   h('span', { class: 'v2-m', live: () => metaText(card, Date.now()) }),
@@ -2207,6 +2266,30 @@ function laneNode(bd, built, laneKey, only) {
     groups.length ? groups : h('p', { class: `v2-empty${unknown ? ' unknown' : ''}` },
       laneKey === 'done' ? WORDS.emptyDone : bd.one ? bd.one.empty
         : unknown ? (bd.unread === 'cant' ? BOARD_UNREAD.cant : BOARD_UNREAD.pending) : WORDS.empty));
+}
+
+/**
+ * AC91 (f) (P-001-glance-lanes.md, C; mock pK): "Kicked back" as a strip above the lanes, never a column. With no
+ * kicked-back card, one quiet line, "Kicked back · none" (an unknown in its words, never "none": stripEmptyWords), with
+ * no fold mark, no control and no drop target. With any, its head ("Kicked back" and its count) over a hairline, then
+ * its cards in one row, left to right, the newest first, each 200 px wide, the row scrolling sideways inside the strip,
+ * snapping to a card; each card AC80's kicked-back card, naming its project, a tap opening its sheet and a press and hold
+ * carrying it into Done. It opens by itself when a card is kicked back and closes to its line when none is left.
+ */
+function kickStrip(bd, built, only) {
+  const l = bd.lanes.find((x) => x.key === 'kick');
+  const rows = bd.strip || [];
+  const attrs = (cls) => ({ class: cls, key: 'lane:kick', 'data-lane': 'kick', 'aria-label': l.title });
+  if (!rows.length) {
+    // " · " and "none" in the count's mono role; the words that are not a count in the line's label role (AC91 (f), amended).
+    const e = stripEmptyParts({ unread: bd.unread || null, one: bd.one || null });
+    return h('section', attrs('v2-lane v2-kstrip none'), h('p', { class: 'v2-kq' }, h('span', { class: 'v2-kl' }, l.title),
+      h('span', { class: 'v2-kn' }, e.count), e.words ? h('span', { class: 'v2-kw' }, e.words) : null));
+  }
+  const pOf = (name) => built.find((b) => b.project.name === name) || null;
+  return h('section', attrs('v2-lane v2-kstrip'),
+    h('h2', { class: 'v2-kh' }, h('span', {}, l.title), h('span', { class: 'v2-lc' }, String(rows.length))),
+    h('ol', { class: 'v2-krow', key: 'krow' }, rows.map((c) => h('li', { class: 'v2-kslot', key: `kslot:${c.id}` }, cardNode(pOf(c.project), c, 'kick', only, 'div')))));
 }
 
 /** A quiet line (AC80): shown only when it has any; a tap opens its fold. */
@@ -2278,7 +2361,11 @@ function quietLines(bd, built, only) {
   return lines.length ? h('div', { class: `v2-quiet${only ? ' under' : ''}`, key: 'quiet' }, lines) : null;
 }
 
-/** The Waiting tab (AC80, frames 1 and 2): the title, "checked <age> ago", the quiet lines, the lanes; a card's sheet over it. */
+/**
+ * The Waiting tab (AC80, frames 1 and 2): the title, "checked <age> ago", the quiet lines, the lanes; a card's sheet over
+ * it. From stage G2 (AC91 (f)): the Kicked back strip under the quiet lines (or, with one project shown, above the lanes,
+ * where frame 2 places them), then two lanes of equal width, "Waiting on you" and "Done · last 24 h".
+ */
 function renderWaiting(bd, built, only, sheetId) {
   const name = only && built.some((b) => b.project.name === only) ? only : null;
   // AC89 (a): with one project shown, the line under the title is that project's own ("Checking…", "Not read in
@@ -2294,7 +2381,8 @@ function renderWaiting(bd, built, only, sheetId) {
     // AC89 (a), states 2 and 5: "Can't read <project> since HH:MM", with AC5's reason in words, above the lanes.
     if (one && one.cant) body.push(h('div', { class: 'v2-quiet', key: 'quiet-cant' }, h('p', { class: 'v2-ql still bad', key: `ql:cant:${name}` }, vi('bad'), h('span', {}, one.cant))));
   } else body.push(quietLines(bd, built, null));
-  body.push(h('div', { class: 'v2-lanes', key: 'lanes' }, LANES.map((l) => laneNode(bd, built, l.key, name))));
+  body.push(kickStrip(bd, built, name));
+  body.push(h('div', { class: 'v2-lanes', key: 'lanes' }, BOARD_LANES.map((k) => laneNode(bd, built, k, name))));
   if (name) body.push(quietLines(bd, built, name));
   body.push(h('p', { class: 'v2-small v2-device', key: 'device' }, boardState.kept ? WORDS.device : WORDS.notKept));
   const out = [h('section', { class: 'sb-screen v2 v2-board', key: 'board' }, body)];
@@ -4375,6 +4463,7 @@ export function startSandbox(opts = {}) {
   const clock = { now: () => Date.now(), setTimeout: (fn, ms) => setTimeout(fn, ms), clearTimeout: (id) => clearTimeout(id) };
   const isVisible = () => document.visibilityState === 'visible';
   const seen = createSeen({ store, now: () => Date.now() });
+  lastLooked = () => (seen.off ? null : seen.reference);
   homeGroups.load(store);
   teamIdle.load(store);
   // AC80: the Done marks, in a store of their own, so a failure there shows "Done marks not kept on
@@ -4414,6 +4503,7 @@ export function startSandbox(opts = {}) {
     const fresh = document.createElement('main');
     for (const n of [nodes].flat(Infinity)) if (n) fresh.append(n);
     morphChildren(view, fresh);
+    keepDrag(); // a card being carried stays carried through the redraw (AC80, AC91 (f))
     fitBranches();
     fitTimelineHead();
     measureClips();

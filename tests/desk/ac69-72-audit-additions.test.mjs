@@ -41,7 +41,10 @@ test('AC69: coral (--you) is used only for the owner\'s own things — the rules
   for (const s of ['.gap', '.sb-feeds.gap', '.sb-began.gap', '.sb-meta.gap', '.sb-unb-t.gap']) assert.ok(gap.sel.split(/\s*,\s*/).includes(s), s);
   assert.ok(!rules().some((r) => /\.(v2-wl|v2-unb-l)\.gap\b/.test(r.sel) && /var\(--you\d?\)/.test(r.body)), 'the desk\'s why lines never take coral');
   assert.match(rules().find((r) => r.sel === '.sb-ic.i-flag').body, /background: var\(--muted\)/, 'the "Not tied to a milestone" diamond, filled slate');
-  assert.match(rules().find((r) => r.sel === '.sb-stall').body, /color: var\(--muted\)/, 'AC71\'s line, slate');
+  // AC71's line, rewritten in G1 of "After the glance audit" (AC91 (b); AC71, changed: "the line is in ink, 500 12 px, with a
+  // clock"; P-001-glance2-palette.md: "the stall line stays ink with a clock"): ink, never coral (checked above) or --bad.
+  assert.match(rules().find((r) => r.sel === '.v2-ln.v2-stall').body, /font: 500 12px\/1\.4 var\(--font\); color: var\(--ink\)/, 'AC71\'s line, ink');
+  assert.ok(!rules().some((r) => /stall/.test(r.sel) && /var\(--(you|bad)\d?\)/.test(r.body)), 'never vermilion or --bad');
   // AC80: nothing in Done or in the quiet lines is coral; a Done card's kind icon is grey; the sheets' gaps grey.
   assert.match(rules().find((r) => r.sel === '.v2-kd.done .v2-k').body, /color: var\(--ink2\)/);
   assert.match(rules().find((r) => r.sel === '.v2-sheet .gap').body, /color: var\(--ink2\)/);
@@ -227,7 +230,9 @@ test('AC71: the line — none at 71 hours, "No movement for 3 days · last: PR #
   assert.match(at(now, { snap: { ...snap, headAt: tie }, j: { ...j, logRows: [...j.logRows, row] } }).words, /last: P-001: builder started/);
 });
 
-test('AC71: no line when something waits, for a project not Active (Done or Closed), for one that can\'t be read, while its reads are not all in; in slate on the tile under who is at work (AC82); the tiles\' order unchanged', async () => {
+// Rewritten in G1 of "After the glance audit" (AC91 (b); AC71, changed, specs/S-001.md:6660-6662): the line's place, colour and
+// clock — directly under the tile's name row, above the summary, in ink with the clock — in place of "in slate, under who is at work".
+test('AC71: no line when something waits, for a project not Active (Done or Closed), for one that can\'t be read, while its reads are not all in; on the tile directly under its name row, in ink with the clock (AC91 (b)); the tiles\' order unchanged', async () => {
   const { snap, j } = models();
   const now = MERGED77 + 80 * H;
   const box = { read: { read: 'ok', since: now - 1000 } };
@@ -251,11 +256,15 @@ test('AC71: no line when something waits, for a project not Active (Done or Clos
       assert.equal(card.textContent, h === 71 ? '' : 'No movement for 3 days · last: PR #77 merged, 16 Oct', `${h} h`);
       const alpha = findAll(app.view, (e) => e.dataset && e.dataset.k === 'stall:Alpha')[0];
       assert.equal(alpha.textContent, '', 'Alpha has things waiting: no line');
-      // From stage 2 (AC82, frame H5): on the tile, under who is at work and what comes next, in grey.
+      // After the glance audit (AC91 (b)): directly under the tile's name row, above the summary, with the clock before it;
+      // drawn as a tile line (`v2-ln`) only once it says something, and as nothing before.
       const parent = card.parent;
-      const next = parent.children.findIndex((c) => /\bv2-ln\b/.test(c.className || '') && /^Next:/.test(c.textContent));
-      assert.ok(next >= 0 && parent.children.indexOf(card) === next + 1, 'under the tile\'s "Next:" line, after who is at work');
       assert.ok(parent.className.split(' ').includes('v2-tile'));
+      assert.ok(parent.children[0].className.split(' ').includes('v2-thd') && parent.children[1] === card, 'directly under the name row');
+      assert.ok(parent.children.indexOf(card) < parent.children.indexOf(byClass(parent, 'sb-sumbox')[0] || byClass(parent, 'sb-sum')[0]), 'above the summary');
+      assert.equal(card.className, h === 71 ? 'v2-stall' : 'v2-ln v2-stall', `${h} h: a tile line only once it says something`);
+      assert.match(card.children[0].getAttribute('class'), /\bvi-clock\b/, 'the clock before it');
+      assert.equal(alpha.className, 'v2-stall');
       order.push(findAll(app.view, (e) => e.dataset && /^card:/.test(e.dataset.k || '')).map((e) => e.dataset.k).join(','));
     } finally {
       app.restore();

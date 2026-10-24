@@ -26,7 +26,7 @@ import {
 } from './lib/sandbox.js';
 import { teamView, memberPage, workingNow, summarySheet, cosWorkingNow, cosPieceOf, cosPieceWords } from './lib/sandbox.js';
 import { summaryView, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
-import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits, unreadLines, WHY_BACK_ONCE, nowOwnPart } from './lib/home.js';
+import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits, tileFoot, atWorkParts, sinceUnreadWords, unreadLines, WHY_BACK_ONCE, nowOwnPart } from './lib/home.js';
 import { GATE_PHASE } from './lib/j11.js';
 import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
@@ -509,8 +509,11 @@ function lineBox(id, { words, recCode, title, lead = null, wcls = 'sb-line-w', m
 }
 
 /**
- * The stalled line (AC71), under who has the ball, in slate: after 72 hours with no movement and
- * nothing waiting on the owner. It depends on the time, so the 15-second tick works it out again.
+ * The stalled line (AC71): after 72 hours with no movement and nothing waiting on the owner. After the glance
+ * audit (AC91 (b); P-001-glance2-palette.md: "the stall line stays ink with a clock"), it sits directly under the
+ * tile's name row, above the summary, in 500 12 px ink with the clock before it, never vermilion or `--bad`. It
+ * depends on the time, so the 15-second tick works its words and its class out again: with no line it is drawn
+ * as nothing (`v2-stall` alone), and as a tile line (`v2-ln v2-stall`) once it says something.
  */
 function stallNode(p, group) {
   const line = () => {
@@ -521,7 +524,10 @@ function stallNode(p, group) {
       return '';
     }
   };
-  return h('p', { class: 'sb-stall', key: `stall:${p.project.name}`, live: line });
+  const cls = () => (line() ? 'v2-ln v2-stall' : 'v2-stall');
+  const el = h('p', { class: cls(), key: `stall:${p.project.name}` }, vi('clock'), h('span', { live: line }));
+  el._liveClass = cls;
+  return el;
 }
 
 // ---------------------------------------------------------------------------
@@ -689,12 +695,23 @@ function briefingNode(desk, built, bd) {
   const view = (nowMs) => briefingView({ bd, reads, flagged, signedOut: desk.signedOut, v3, lastReadMs: stalestRead(), nowMs, tz: TZ,
     portfolio: lastPf ? portfolioRead(desk.portfolio(), nowMs, TZ) : null });
   const v = view(Date.now());
-  const mark = v.kind === 'you' ? stc('you') : v.kind === 'quiet' ? stc('check') : v.kind === 'cant' ? vi('bad', 'v2-k bad') : vi('clock');
+  // AC91 (c): signed out, the ✕ in `--bad` in place of the clock, as a read that can't be made.
+  const mark = v.kind === 'you' ? stc('you') : v.kind === 'quiet' ? stc('check') : v.kind === 'cant' || v.kind === 'signed-out' ? vi('bad', 'v2-k bad') : vi('clock');
+  // AC91 (a): each settle time and what can't be undone on a line of its own under the parts, its clock or lock before
+  // it, in the board's mark treatment; worked out again on the tick, as the parts are (a time to come can pass).
+  const dueWords = (key) => () => { const d = view(Date.now()).due.find((x) => x.key === key); return d ? d.words : ''; };
+  const dueClass = (key) => () => (dueWords(key)() ? 'v2-bdue' : 'v2-bdue none');
+  const dueLine = (d) => {
+    const el = h('span', { class: 'v2-bdue', key: `brief-due:${d.key}` }, vi(d.icon), h('span', { live: dueWords(d.key) }));
+    el._liveClass = dueClass(d.key);
+    return el;
+  };
   return h('a', { class: `v2-brief k-${v.kind}`, href: '#/waiting', key: 'brief', 'aria-label': `${v.head}: open Waiting` },
     h('span', { class: 'v2-bi' }, mark),
     h('span', { class: 'v2-bt1' }, v.head),
     h('span', { class: 'v2-go' }, HOME_WORDS.waitingGo),
     v.parts ? h('span', { class: 'v2-bt2', key: 'brief-parts', live: () => view(Date.now()).parts || '' }) : null,
+    v.due.map(dueLine),
     v.sub ? h('span', { class: 'v2-bt3', key: 'brief-sub', live: () => view(Date.now()).sub || '' }) : null,
     v.cant.map((w, i) => h('span', { class: 'v2-bt3 bad', key: `brief-cant:${i}` }, w)));
 }
@@ -706,8 +723,8 @@ function eventNode(e, nowMs, where) {
   const inner = [
     h('span', { class: 'v2-tm' }, t.day ? h('span', { class: 'v2-tmd' }, t.day) : null, t.time ? h('span', {}, t.time) : null),
     e.icon === 'you' ? stc('you', 'v2-k') : vi(e.icon, `v2-k${e.icon === 'bad' ? ' bad' : ''}`),
-    // Past three lines, the third fades at its end (rulebook item 16; the Design reviewer's N3, stage 2
-    // round 1), measured as the summary's is (measureClips).
+    // Past two lines, the second fades at its end (rulebook item 16; the Design reviewer's N3, stage 2
+    // round 1; after the glance audit, AC91 (e): two lines, not three), measured as the summary's is (measureClips).
     h('span', { class: 'v2-et' }, h('span', { class: `v2-e1${sinceOver.get(k) === true ? ' over' : ''}`, 'data-since': k }, e.words),
       h('span', { class: 'v2-e2' }, [e.project, ...e.codes].join(' · '))),
     vi('chev', 'v2-k v2-chev')];
@@ -771,7 +788,7 @@ function ideaLines(seen, since) {
   return ideaEvents(r.kept, since);
 }
 
-function sinceNode(sv, seen, nowMs) {
+function sinceNode(sv, seen, nowMs, unread = null) {
   const head = h('div', { class: 'v2-sh', key: 'since-h' }, h('h2', { class: 'v2-shw' }, sv.heading),
     sv.off ? null : h('button', { type: 'button', class: 'v2-seen', key: 'mark-seen', onclick: () => {
       seen.markSeen();
@@ -787,7 +804,10 @@ function sinceNode(sv, seen, nowMs) {
       render();
     } }, `${sv.newer} newer`, vi('chev')));
   }
-  if (sv.none) out.push(h('p', { class: 'v2-small', key: 'since-none' }, sv.none));
+  // AC91 (c): while a connected project can't be read, the empty list never reads as quiet ("Nothing new since …"):
+  // "Not read since HH:MM" or "Not read in this opening", the ✕ and the words in `--bad`, as Waiting's line has them.
+  if (sv.none && unread) out.push(h('p', { class: 'v2-ql bad', key: 'since-none' }, vi('bad'), h('span', {}, unread)));
+  else if (sv.none) out.push(h('p', { class: 'v2-small', key: 'since-none' }, sv.none));
   else out.push(h('ol', { class: 'v2-since', key: 'since' }, sv.lines.map((e) => eventNode(e, nowMs, 'ev'))));
   if (sv.more) out.push(h('a', { class: 'v2-more', href: '#/since', key: 'since-more', onclick: () => { nav.opener = 'since-more'; } }, sv.more.replace(/ ›$/, ''), vi('chev')));
   return out;
@@ -837,7 +857,10 @@ function tileNode(b, bd, group, nextRows, whyOnce = null) {
   const n = counts ? counts.waiting + counts.kicked : 0;
   const rs = readStateOf(box);
   const read = rs.state;
-  const waits = tileWaits(n, read);
+  // AC91 (c): the read's failure time, in ownerTimeZone, said once on the tile: in its corner when nothing waits, else at its foot.
+  const since = read === 'cant-read' && rs.since != null ? hhmm(new Date(rs.since), TZ) : null;
+  const waits = tileWaits(n, read, since);
+  const foot = tileFoot(n, read, since, box.read && box.read.words ? box.read.words : null);
   const sum = summaryView(project, box, b.snap);
   // The gate card waiting on the owner (AC82: the ◆ in its phase, and "Next: <the gate>, after your ruling").
   const gateCard = gateCardOf(bd, name);
@@ -859,17 +882,23 @@ function tileNode(b, bd, group, nextRows, whyOnce = null) {
   let work = atWorkLine(project, b.model, b.ball, b.j, TZ);
   // No records held yet, or none ever read: "not available" (home.js, unreadLines).
   if (read !== 'ok' && !(b.snap && b.snap.tree)) ({ now, work, next } = unreadLines(project));
+  const at = atWorkParts(work);
   return h('article', { class: 'v2-tile', key: `card:${name}` },
     h('div', { class: 'v2-thd' }, h('h3', { class: 'v2-tnm' }, h('a', { class: 'v2-ta', href: go('p', name), key: `tile-a:${name}` }, name)),
-      h('span', { class: `v2-wt${waits.you ? ' you' : ''}` }, waits.you ? stc('you', 'v2-k') : null, waits.words)),
+      h('span', { class: `v2-wt${waits.you ? ' you' : ''}${waits.bad ? ' bad' : ''}` }, waits.you ? stc('you', 'v2-k') : waits.bad ? vi('bad') : null, waits.words)),
+    // AC91 (b): the stalled line directly under the name row, above the summary.
+    stallNode(b, group),
     summaryBox(name, sum, ''),
     sum.ok ? null : h('details', { class: 'v2-why', key: `sum-why:${name}` }, h('summary', {}, 'Why'), h('p', {}, sum.why)),
     tl.tracked ? timelineNode(tl, name) : h('p', { class: 'v2-small v2-tnone' }, tl.words),
     now ? h('p', { class: 'v2-ln now' }, h('span', {}), h('span', {}, h('b', {}, now.lead), now.rest ? h('span', { class: 'v2-g' }, ` · ${now.rest}`) : null)) : null,
-    h('p', { class: 'v2-ln' }, vi('agents'), h('span', { class: 'v2-g' }, work)),
+    // AC91 (d): "At work:" grey and its value in ink, as the Next line's; the lines naming no one stay wholly grey.
+    h('p', { class: 'v2-ln' }, vi('agents'), at ? h('span', {}, h('span', { class: 'v2-g' }, at.label), ` ${at.value}`) : h('span', { class: 'v2-g' }, work)),
     h('p', { class: 'v2-ln' }, stc(next.icon, 'v2-k'), h('span', {}, h('span', { class: 'v2-g' }, 'Next:'), ` ${next.words}`)),
-    stallNode(b, group),
-    read === 'cant-read' && rs.since != null ? h('p', { class: 'v2-ln bad' }, vi('bad'), h('span', {}, `Can't read since ${hhmm(new Date(rs.since), TZ)}: ${box.read.words}`)) : null);
+    // AC91 (c): the foot says the time once — "Reason: …" in grey beside a corner that says it can't read, the red
+    // "✕ Can't read since HH:MM: …" beside one that says what waits.
+    foot && foot.bad ? h('p', { class: 'v2-ln bad' }, vi('bad'), h('span', {}, foot.words)) : null,
+    foot && !foot.bad ? h('p', { class: 'v2-small v2-tfoot' }, foot.words) : null);
 }
 
 /**
@@ -880,6 +909,15 @@ function tileNode(b, bd, group, nextRows, whyOnce = null) {
  */
 function readStateOf(box) {
   return { state: box.drawError ? 'cant-read' : box.read ? box.read.read : 'checking', since: box.read && box.read.since != null ? box.read.since : null };
+}
+
+/** "Since you last looked"'s empty line while a connected project can't be read (AC91 (c)), or null: each project's read, and whether a read of it succeeded in this opening. */
+function sinceUnread(built) {
+  const opened = DESK && DESK.openedAt != null ? DESK.openedAt : -Infinity;
+  return sinceUnreadWords(built.map((b) => {
+    const st = DESK && DESK.states ? DESK.states.get(b.project.name) : null;
+    return { read: b.box.drawError ? null : b.box.read, succeeded: Boolean(st && st.lastSuccessAt != null && st.lastSuccessAt >= opened) };
+  }), TZ);
 }
 
 function renderHome(desk, built, seen, nowMs, bd = null) {
@@ -934,8 +972,10 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
           if (b.error) throw b.error;
           return tileNode(b, bd, g.key, nextRows, whyOnce);
         } catch (err) {
-          return h('article', { class: 'v2-tile bad', key: `card:${box.name}` }, h('div', { class: 'v2-thd' }, h('h3', { class: 'v2-tnm' }, box.name)),
-            h('p', { class: 'v2-ln bad' }, box.drawError || `Can't show this project: ${errorText(err)}`));
+          // AC91 (c): a tile the desk can't draw takes the usual tile edge (its red border gone, P-001-glance2-palette.md),
+          // and its line the ✕ and its words in `--bad`, an error state AC92 (a) keeps red.
+          return h('article', { class: 'v2-tile', key: `card:${box.name}` }, h('div', { class: 'v2-thd' }, h('h3', { class: 'v2-tnm' }, box.name)),
+            h('p', { class: 'v2-ln bad' }, vi('bad'), h('span', {}, box.drawError || `Can't show this project: ${errorText(err)}`)));
         }
       })) : null);
   });
@@ -947,7 +987,7 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
     // AC75: "Notifications" on Home's top line until notifications are on for this device; its control is also in the fold at the foot.
     onTopLine(notifyState(notifyEnv())) ? notifyNode(true) : null,
     briefingNode(desk, built, bd),
-    sinceNode(sv, seen, nowMs),
+    sinceNode(sv, seen, nowMs, sinceUnread(built)),
     h('div', { class: 'v2-hgroups', key: 'hgroups' }, groups),
     // Home's foot (AC82, specs/S-001.md:6696-6700): the portfolio's block, read only (AC87, from stage
     // 6a); then "More detail", closed, below everything else on Home (P-001-settings-place.md, A).

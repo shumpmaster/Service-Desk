@@ -584,6 +584,52 @@ const M3D5_ONCE = new Map([['v2-tt', new Set(['display: (none) → block', 'max-
   ['v2-stt', new Set(['display: (none) → block', 'max-height: calc(3 * 1.45em) → calc(3 * 1.3em)'])]]);
 const M3D5_EXCEPT = (n, d) => (n.tag === 'span' && n.cls.has('v2-tt') && n.parent && n.parent.tag === 'a' && n.parent.cls.has('v2-t') && M3D5_ONCE.get('v2-tt').has(d))
   || (n.tag === 'span' && n.cls.has('v2-stt') && n.cls.has('v2-clip') && n.parent && n.parent.tag === 'h2' && n.parent.cls.has('v2-stitle') && M3D5_ONCE.get('v2-stt').has(d));
+/**
+ * G1 of "After the glance audit"'s changes to Home's look on purpose (the brief's rule, specs/S-001.md:16598-16602; AC91 (a)
+ * to (c), :8442-8495), each declaration pinned to its value, before and after, in each theme, on only its own element:
+ * - (a) the briefing that says what needs the owner (`a.v2-brief.k-you`): "<n> need you" in the sheet-title role, the ◆
+ *   sized to it and, with "Waiting ›", centred on its line; and each settle or undo line (`span.v2-bdue`, a new element),
+ *   its clock or lock and its words, in 500 12 px ink;
+ * - (b) the stalled line (`p.v2-stall`, directly under a tile's name row), drawn as nothing while it says nothing (on a
+ *   tile line, `v2-ln v2-stall`, 500 12 px ink, once it does: no fixture this guard walks has a stopped project, so the
+ *   AC91 test, from the `stall` state, locks that look);
+ * - (c) the corner of a tile the desk can't read with nothing waiting (`span.v2-wt.bad`): its words in --bad, 500 12 px.
+ * The red edge of a tile the desk can't draw went with its rule, and that tile's class with it, so no element differs;
+ * the signed-out briefing's ✕ and "Since you last looked"'s "Not read since" take rules that were there (`.v2-brief .v2-k.bad`,
+ * `.v2-ql.bad`); "At work:"'s value (d) is a plain span in the line's ink; and (e)'s two-line cut is drawn on no screen
+ * this guard walks (no fixture here holds a "last looked"), so AC82's and AC91's own cases lock it.
+ */
+const G1_FONT = (f) => `${f} "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+const G1_LOOK = (ink, ink2, bad) => new Map([
+  ['a.v2-brief.k-you', ['grid-template-columns: 16px minmax(0, 1fr) auto → 18px minmax(0, 1fr) auto']],
+  ['span.v2-bi', ['padding-top: 2px → 0', 'align-self: (none) → center']],
+  ['svg.v2-s.st-you', ['width: 16px → 18px', 'height: 16px → 18px']],
+  ['span.v2-bt1', [`font: ${G1_FONT('500 15px/1.35')} → ${G1_FONT('600 18px/1.3')}`, 'computed font-size: 15px → 18px', 'computed font-weight: 500 → 600',
+    'computed line-height: 20.25px → 23.400000000000002px']],
+  ['span.v2-go', ['padding-top: 3px → 0', 'align-self: (none) → center']],
+  ['span.v2-bdue', ['grid-column: (none) → 2 / 4', 'display: (none) → flex', 'gap: (none) → 4px', 'align-items: (none) → flex-start',
+    `font: (none) → ${G1_FONT('500 12px/1.35')}`, `color: (none) → ${ink}`]],
+  ['svg.v2-k (due)', ['margin-top: (none) → 1px', `color: (none) → ${ink}`]],
+  ['span (due words)', ['computed font-size: 13px → 12px', 'computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 16.200000000000003px']],
+  ['p.v2-stall', ['display: (none) → none']],
+  ['span.v2-wt.bad', [`font: ${G1_FONT('400 12px/1.3')} → ${G1_FONT('500 12px/1.3')}`, `color: ${ink2} → ${bad}`, 'computed font-weight: 400 → 500', `computed color: ${ink2} → ${bad}`]],
+]);
+const G1_ONCE = new Map([['light', G1_LOOK('#18191c', '#5c5f66', '#b3162a')], ['dark', G1_LOOK('#ecedef', '#a2a5ac', '#ff6b78')]]);
+const G1_KEY = (n) => {
+  const p = n.parent;
+  const brief = (x) => Boolean(x && x.tag === 'a' && x.cls.has('v2-brief') && x.cls.has('k-you'));
+  if (brief(n)) return 'a.v2-brief.k-you';
+  if (n.tag === 'span' && brief(p)) for (const c of ['v2-bi', 'v2-bt1', 'v2-go', 'v2-bdue']) if (n.cls.has(c)) return `span.${c}`;
+  if (n.tag === 'svg' && n.cls.has('st-you') && p && p.tag === 'span' && p.cls.has('v2-bi') && brief(p.parent)) return 'svg.v2-s.st-you';
+  if (p && p.tag === 'span' && p.cls.has('v2-bdue') && brief(p.parent)) return n.tag === 'svg' && n.cls.has('v2-k') ? 'svg.v2-k (due)' : n.tag === 'span' && !n.cls.size ? 'span (due words)' : null;
+  if (n.tag === 'p' && n.cls.has('v2-stall') && !n.cls.has('v2-ln') && p && p.cls.has('v2-tile')) return 'p.v2-stall';
+  if (n.tag === 'span' && n.cls.has('v2-wt') && n.cls.has('bad') && p && p.cls.has('v2-thd')) return 'span.v2-wt.bad';
+  return null;
+};
+const G1_EXCEPT = (n, d, theme) => {
+  const k = G1_KEY(n);
+  return Boolean(k && G1_ONCE.get(theme) && (G1_ONCE.get(theme).get(k) || []).includes(d)) ? `G1 ${theme} ${k} ${d}` : null;
+};
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
@@ -619,6 +665,8 @@ function sameLook(app, where, fails, seen) {
         if (M3D3_EXCEPT(b, d)) { excepted.add(`${label(b)} ${d}`); continue; }
         if (M3D4_EXCEPT(b, d, way.theme)) { excepted.add(`M3D4 ${way.theme} ${label(b)} ${d}`); continue; }
         if (M3D5_EXCEPT(b, d)) { excepted.add(`M3D5 ${label(b)} ${d}`); continue; }
+        const g1 = G1_EXCEPT(b, d, way.theme);
+        if (g1) { excepted.add(g1); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -729,7 +777,11 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // M3D stage 5's exception was met, each pinned declaration on its own element, and nothing else of it.
   const m3d5 = [...[...M3D5_ONCE.get('v2-tt')].map((d) => `M3D5 span.v2-tt ${d}`), ...[...M3D5_ONCE.get('v2-stt')].map((d) => `M3D5 span.v2-clip.v2-stt ${d}`)].sort();
   assert.deepEqual([...excepted].filter((x) => /^M3D5 /.test(x)).sort(), m3d5);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // G1 of "After the glance audit"'s exception was met, each pinned declaration on its own element in each theme, and
+  // nothing else of it: the excepted set is exactly the pinned one.
+  const g1 = [...G1_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G1 ${theme} ${k} ${d}`))).sort();
+  assert.deepEqual([...excepted].filter((x) => /^G1 /.test(x)).sort(), g1);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G1 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

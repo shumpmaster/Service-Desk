@@ -421,17 +421,22 @@ export function readMarks(raw) {
       title: typeof m.title === 'string' ? m.title : '', kicked: m.kicked && Number.isFinite(m.kicked.at) ? { at: m.kicked.at, reason: String(m.kicked.reason || '') } : null,
       prevKick: m.prevKick && Number.isFinite(m.prevKick.at) ? { at: m.prevKick.at, reason: String(m.prevKick.reason || ''), markAt: m.prevKick.markAt } : null,
       confirmedAt: Number.isFinite(m.confirmedAt) ? m.confirmedAt : null, number: Number.isInteger(m.number) ? m.number : null,
-      kind: typeof m.kind === 'string' ? m.kind : null, name: typeof m.name === 'string' ? m.name : null };
+      kind: typeof m.kind === 'string' ? m.kind : null, name: typeof m.name === 'string' ? m.name : null,
+      ...(m.kickRead === true ? { kickRead: true } : {}) };
   }
   return out;
 }
 
-/** Mark a card done (by dragging it into Done, or "Done ✓"): from "Waiting on you", or again from "Kicked back". */
-export function markDone(marks, card, nowMs) {
+/**
+ * Mark a card done (by dragging it into Done, or "Done ✓"): from "Waiting on you", or again from "Kicked back".
+ * `kickRead`: AC89 (l)'s read after a portfolio mark was asked for it (its day's slot taken), kept with the mark so a
+ * reload asks it again without another slot (kickReadsDue).
+ */
+export function markDone(marks, card, nowMs, { kickRead = false } = {}) {
   const prev = marks.marks[card.id];
   const m = { project: card.project, step: card.step && card.step.id ? card.step.id : 'answer', head: card.headSha || null, at: nowMs, title: card.title,
     kicked: null, prevKick: prev && prev.kicked ? { ...prev.kicked, markAt: prev.at, step: prev.step } : null, confirmedAt: null,
-    number: card.number != null ? card.number : null, kind: card.kind, name: card.name || null };
+    number: card.number != null ? card.number : null, kind: card.kind, name: card.name || null, ...(kickRead ? { kickRead: true } : {}) };
   return { ...marks, marks: { ...marks.marks, [card.id]: m } };
 }
 
@@ -442,6 +447,21 @@ export function markDone(marks, card, nowMs) {
  * so, has counted it); from the 11th mark of a day, a mark is judged at the 5-minute reads as before.
  */
 export const KICK_READS_KEY = 'desk-pf-kick-reads-v1';
+
+/**
+ * AC89 (l) (stage 7's review, round 1, B1): at a new opening, the due times of the reads already asked for marks kept on
+ * this device (`kickRead`) and still within their KICK_BACK_MINUTES, neither kicked back nor confirmed yet: each is asked
+ * again, with no slot more, so a reload between a mark and its read never leaves the mark to the 5-minute reads.
+ */
+export function kickReadsDue(marks, nowMs) {
+  const due = [];
+  for (const m of Object.values((marks && marks.marks) || {})) {
+    if (m.kickRead !== true || m.kicked || m.confirmedAt != null || !Number.isFinite(m.at)) continue;
+    const at = m.at + KICK_BACK_MINUTES * 60e3;
+    if (at > nowMs) due.push(at);
+  }
+  return due.sort((a, b) => a - b);
+}
 export const KICK_READS_A_DAY = 10;
 export function kickReadSlot(store, nowMs, tz) {
   if (!store || !store.usable) return false;

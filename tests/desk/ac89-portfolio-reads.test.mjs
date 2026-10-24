@@ -1,6 +1,6 @@
 // ac-test: S-001/AC89 join-test: S-001/J23 — after MD3, stage 7 (the amendment "After MD3", specs/S-001.md:2330): AC89 (l),
-// the portfolio's reads (specs/S-001.md:7944-7962; the test's list at :7992-7994), and J23 as changed after MD3
-// (:12334-12354): a portfolio Done mark kicked back at the read due 5 minutes after it; the 11th mark of a day judged at
+// the portfolio's reads (specs/S-001.md:7946; the test's list at :7992-7994), and J23 as changed after MD3
+// (:12333-12349): a portfolio Done mark kicked back at the read due 5 minutes after it; the 11th mark of a day judged at
 // the 5-minute reads; the day turning at midnight in `ownerTimeZone`; no such read without device storage; the template's
 // own file names; which queue files are cards; and a read that stays pending counted as failed. AC14's day with A3's 9,952
 // is in tests/desk/ac14-budget.test.mjs. Records: the made-up portfolio of pf-fixtures.mjs (NOT real records) and, for
@@ -8,14 +8,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadSandbox, findAll, byClass } from './sandbox-helpers.mjs';
-import { findKeyed } from './sandbox-fixtures.mjs';
+import { findKeyed, NOW as TEXT_NOW } from './sandbox-fixtures.mjs';
+import { textSetup } from './screen-text.mjs';
 import { CONFIG, fakeClock } from './helpers.mjs';
 import { fakeServer, repo, PORTFOLIO_REPO } from './fake-desk.mjs';
 import { waSetup, memStore } from './wa-fixtures.mjs';
 import { pfFiles, cardText, MADE_UP, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
 import { createDesk, PORTFOLIO_POLL_MS } from '../../src/lib/scheduler.js';
 import { createStore } from '../../src/lib/store.js';
-import { KICK_BACK_MINUTES, kickReadSlot, KICK_READS_KEY, KICK_READS_A_DAY } from '../../src/lib/board.js';
+import { KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, readMarks, KICK_READS_KEY, KICK_READS_A_DAY } from '../../src/lib/board.js';
 import { rareView, intentLine, portfolioKind, QUEUE_FILE_RE, portfolioRead, PF_BOARD, PF_WORDS } from '../../src/lib/portfolio.js';
 
 const NOW = Date.parse('2026-10-22T18:00:00Z'); // 13:00 in ownerTimeZone (America/Chicago)
@@ -148,7 +149,11 @@ test('AC89 (l): with no device storage, or storage that refuses a read or a writ
 /** The model portfolio template's own files, in its form (made up for the test, NOT real records). */
 const TEMPLATE = () => pfFiles({ more: { 'library/facts/_TEMPLATE.md': `# A fact's template (${MADE_UP})\n`, 'intent/PORTFOLIO-INTENT.md': `# Standing intent (${MADE_UP})\n` } });
 
-test('J23 (changed after MD3): the template\'s own files — library/facts/_TEMPLATE.md is no fact ("Library facts: none yet"); intent/PORTFOLIO-INTENT.md is named apart, "Standing intent: intent/PORTFOLIO-INTENT.md (its words not read)"', async () => {
+test('J23 (changed after MD3): the template\'s own files — library/facts/_TEMPLATE.md, that one file and no other, is no fact ("Library facts: none yet"); intent/PORTFOLIO-INTENT.md is named apart, its row the spec\'s alone, "Standing intent: intent/PORTFOLIO-INTENT.md (its words not read)"', async () => {
+  // Rewritten at stage 7's review, round 1 (B2 and N1): specs/S-001.md:12335-12337 names one file, "`library/facts/_TEMPLATE.md`
+  // is the model template's file, not a fact", and AC87 counts facts "by name and count" (:7731-7733), so an owner's
+  // `_draft.md`, or a `_TEMPLATE.md` in a folder under it, is a fact; :12338-12339 gives the intent row's words, and no
+  // others, so other intent files beside the template's are not added to it (the open case is the Definer's).
   const tree = new Map(Object.keys(TEMPLATE()).map((p) => [p, { sha: 'x', size: 1 }]));
   const r = rareView(tree);
   assert.deepEqual(r.facts, [], 'its README and its template only');
@@ -156,17 +161,27 @@ test('J23 (changed after MD3): the template\'s own files — library/facts/_TEMP
   assert.deepEqual(r.intent, []);
   assert.equal(intentLine(r), 'Standing intent: intent/PORTFOLIO-INTENT.md (its words not read)');
   assert.equal(intentLine({ ...r, intentFile: false }), 'Standing intent: none yet');
-  assert.equal(intentLine({ ...r, intent: ['2026-standing.md'] }), 'Standing intent: intent/PORTFOLIO-INTENT.md (its words not read); 1 more · 2026-standing.md');
+  assert.equal(intentLine({ ...r, intent: ['2026-standing.md'] }), 'Standing intent: intent/PORTFOLIO-INTENT.md (its words not read)', 'the spec\'s row, nothing added');
   const withFact = rareView(new Map([...tree, ['library/facts/F-001-made-up.md', { sha: 'y', size: 1 }]]));
   assert.deepEqual(withFact.facts, ['F-001-made-up.md'], 'a fact beside the template counts');
-  // On the rarer records' sheet.
-  const app = await open({ pf: TEMPLATE(), hash: '#/pf/rare' });
+  const owners = rareView(new Map([...tree, ...['library/facts/_draft.md', 'library/facts/sub/_TEMPLATE.md', 'library/facts/_TEMPLATE.md.bak'].map((p) => [p, { sha: 'z', size: 1 }])]));
+  assert.deepEqual(owners.facts, ['_TEMPLATE.md.bak', '_draft.md', 'sub/_TEMPLATE.md'], 'every other file is a fact, a name starting `_` among them');
+  // On the rarer records' sheet, with another intent file beside the template's.
+  const app = await open({ pf: { ...TEMPLATE(), 'intent/2026-standing.md': `Made up (${MADE_UP})\n`, 'library/facts/_draft.md': `Made up (${MADE_UP})\n` }, hash: '#/pf/rare' });
   try {
     const items = byClass(byClass(app.view, 'v2-sheet')[0], 'v2-pfsi').map((li) => li.textContent);
-    assert.ok(items.includes('Library facts: none yet'), items.join(' | '));
+    assert.ok(items.includes('Library facts: 1 · _draft.md'), items.join(' | '));
     assert.ok(items.includes('Standing intent: intent/PORTFOLIO-INTENT.md (its words not read)'), items.join(' | '));
+    assert.ok(!items.some((x) => x.includes('2026-standing.md')), 'no words the spec doesn\'t give');
   } finally {
     app.restore();
+  }
+  const bare = await open({ pf: TEMPLATE(), hash: '#/pf/rare' });
+  try {
+    const items = byClass(byClass(bare.view, 'v2-sheet')[0], 'v2-pfsi').map((li) => li.textContent);
+    assert.ok(items.includes('Library facts: none yet'), items.join(' | '));
+  } finally {
+    bare.restore();
   }
 });
 
@@ -207,8 +222,10 @@ test('J23 (changed after MD3): a portfolio read that has not answered when the n
   const askedAt = NOW + PORTFOLIO_POLL_MS;
   assert.equal(held.length, 1, 'the read asked');
   assert.equal(desk.portfolio().failure, null, 'inside its 5 minutes: not yet failed');
+  // Inside its 5 minutes, no failure's words (stage 7's review, round 1, N3: the old line here could not fail); the
+  // "Checking…" words themselves are 6b's, pinned by j23-portfolio's "review round 1, B1" case.
   const r1 = portfolioRead(desk.portfolio(), clock.now(), TZ);
-  assert.notEqual(r1.state, 'cant');
+  assert.deepEqual([r1.problem, r1.quietWords], [null, null], 'no "Can\'t read" words while the read is due and not answered');
   const polls0 = projectPolls();
   await clock.runUntil(askedAt + PORTFOLIO_POLL_MS + 1_000);
   const f = desk.portfolio().failure;
@@ -228,4 +245,137 @@ test('J23 (changed after MD3): a portfolio read that has not answered when the n
   assert.equal(desk.portfolio().failure, null, 'the read made as due answered: read again');
   desk.stop();
   assert.equal(PF_WORDS.intentFile, 'intent/PORTFOLIO-INTENT.md');
+});
+
+// ---------------------------------------------------------------------------
+// Stage 7's review, round 1 (B1 and B3): a reload between a mark and its read, and the scheduling points
+
+/** A scheduler with the made-up portfolio, on a fake clock; `slow` ms added to each portfolio read, `hang` holding them. */
+function pfDesk() {
+  const clock = fakeClock(NOW);
+  const config = withPortfolio();
+  const repos = { 'Service-Desk': repo({ 'governance/ROUTING.toml': '[time_limits]\n' }), 'Personal-Org-Operating-Model': repo({ 'docs/LEDGER.md': '# Ledger\n' }), [PORTFOLIO_REPO]: repo(pfFiles()) };
+  const server = fakeServer(repos, config, clock);
+  const ctl = { slow: 0, hang: false, held: [], asked: [] };
+  const call = (path, body) => {
+    if (!(body && body.target === 'portfolio')) return server.call(path, body);
+    if (path === '/api/poll') ctl.asked.push(clock.now()); // when the desk asked it (the server sees a slow one later)
+    if (ctl.hang) return new Promise((resolve) => { ctl.held.push(() => server.call(path, body).then(resolve)); });
+    if (ctl.slow) return new Promise((resolve) => clock.setTimeout(() => server.call(path, body).then(resolve), ctl.slow));
+    return server.call(path, body);
+  };
+  const desk = createDesk({ config, call, clock, store: createStore(null), isVisible: () => true, j11: true });
+  const asks = () => [...ctl.asked];
+  return { clock, desk, server, ctl, asks };
+}
+
+test('AC89 (l) (stage 7\'s review, round 1, B1): a reload between a portfolio mark and its read asks that read again, with no slot more — kicked back at about 5 minutes after the mark, whether the reload comes 1 minute after it or at 4 min 50 s', async () => {
+  // specs/S-001.md:7946 (AC89 (l)): one more read due KICK_BACK_MINUTES after each portfolio mark, at most one a mark and
+  // 10 a day; the Orchestrator's ruling on B1: at load, the read for each kept portfolio mark still within its 5 minutes.
+  for (const after of [60_000, 4 * 60_000 + 50_000]) {
+    const store = device();
+    const first = await open({ store });
+    let markAt;
+    try {
+      markAt = first.now;
+      await first.tap(findKeyed(first, 'sheet-done'));
+      assert.deepEqual(JSON.parse(store.m.get(KICK_READS_KEY)), { day: '2026-10-22', n: 1 }, 'the day\'s slot taken');
+      assert.equal(JSON.parse(store.m.get('desk-board-marks-v1')).marks[CARD_ID].kickRead, true, 'the mark keeps that its read was asked');
+    } finally {
+      first.restore();
+    }
+    // The page loaded again on the same device, `after` the mark (open() then runs 62 s of the opening).
+    const again = await open({ store, hash: '#/waiting', now: markAt + after - 62_000 });
+    try {
+      const due = markAt + KICK_BACK_MINUTES * 60_000;
+      await again.advance(Math.max(0, due + 2_000 - again.now));
+      await again.go('#/waiting');
+      assert.match(lane(again, 'kick').textContent, /The card file is still in the portfolio's queue/, `reload at +${after / 1000} s: kicked back at about 5 minutes`);
+      assert.ok(pfPolls(again).some((t) => t >= due && t <= due + 1_000), 'its read, made at its due time');
+      assert.deepEqual(JSON.parse(store.m.get(KICK_READS_KEY)), { day: '2026-10-22', n: 1 }, 'no slot more');
+    } finally {
+      again.restore();
+    }
+  }
+  // Pure: only a kept mark whose read was asked, neither kicked back nor confirmed, inside its 5 minutes.
+  const m = (o) => ({ project: 'x', step: 'answer', at: NOW, title: '', kicked: null, prevKick: null, confirmedAt: null, number: null, kind: 'portfolio', name: null, kickRead: true, ...o });
+  const marks = { marks: { a: m({}), b: m({ kickRead: undefined }), c: m({ kicked: { at: NOW, reason: 'r' } }), d: m({ confirmedAt: NOW }), e: m({ at: NOW - 5 * 60_000 }) } };
+  assert.deepEqual(kickReadsDue(marks, NOW + 60_000), [NOW + 5 * 60_000]);
+  assert.deepEqual(kickReadsDue(marks, NOW + 5 * 60_000), [], 'past its 5 minutes: judged at the reads as before');
+  // A mark without its read asked (the 11th of a day, or no storage) is not given one by a reload.
+  assert.equal(readMarks(JSON.parse(JSON.stringify(marks))).marks.b.kickRead, undefined);
+  assert.equal(readMarks({ marks: { a: { ...m({}), kickRead: 'yes' } } }).marks.a.kickRead, undefined, 'only `true` is kept');
+});
+
+test('AC89 (l) (stage 7\'s review, round 1, B3): a project card\'s mark asks no portfolio read and takes no slot — only a portfolio card\'s does', async () => {
+  // AC62's text fixture (its projects' cards), with the made-up portfolio beside them.
+  const store = device();
+  const setup = textSetup();
+  setup.config = withPortfolio(setup.config);
+  addPortfolio(setup.repos, ONE());
+  const app = await loadSandbox({ ...setup, hash: '#/waiting', now: TEXT_NOW, store });
+  await app.advance(1000);
+  await app.advance(61_000);
+  try {
+    const ids = findAll(app.view, (e) => e.attrs && e.attrs['data-card'] && !/\|portfolio\|/.test(e.attrs['data-card'])).map((e) => e.attrs['data-card']);
+    let marked = null;
+    for (const id of ids) {
+      await app.go(`#/waiting/card/${encodeURIComponent(id)}`);
+      const done = findKeyed(app, 'sheet-done');
+      if (!done) continue;
+      await app.tap(done);
+      marked = id;
+      break;
+    }
+    assert.ok(marked, 'a project card marked done');
+    const at = app.now;
+    await app.advance(KICK_BACK_MINUTES * 60_000 + 2_000);
+    assert.ok(!pfPolls(app).some((t) => t >= at + KICK_BACK_MINUTES * 60_000 - 1 && t <= at + KICK_BACK_MINUTES * 60_000 + 1_000), 'no portfolio read at its 5 minutes');
+    assert.equal(store.m.get(KICK_READS_KEY), undefined, 'no slot taken');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC89 (l) (stage 7\'s review, round 1, B3): a mark\'s read leaves the 5-minute cadence as it was; a read under way when it falls due serves it, with no read more; its deadline is when the next 5-minute read falls due', async () => {
+  // J23, changed after MD3 (specs/S-001.md:12333-12349): "a portfolio read that has not answered when the next 5-minute
+  // read falls due counts as failed … and the next read is made as due".
+  // 1. The cadence: a mark's read at +2 min between two 5-minute reads; the next 5-minute read still at +5 min.
+  let d = pfDesk();
+  d.desk.start();
+  await d.clock.runUntil(NOW + 1_000);
+  const t0 = d.asks()[0];
+  d.desk.portfolioReadAt(t0 + 2 * 60_000);
+  await d.clock.runUntil(t0 + 11 * 60_000);
+  assert.deepEqual(d.asks(), [t0, t0 + 2 * 60_000, t0 + PORTFOLIO_POLL_MS, t0 + 2 * PORTFOLIO_POLL_MS], 'the mark\'s read, then the 5-minute reads where they were');
+  assert.equal(d.desk.portfolio().extraReads, 1);
+  d.desk.stop();
+  // 2. A 5-minute read under way (3 s) when the mark's read falls due: its answer serves the mark, and no read more is made.
+  d = pfDesk();
+  d.desk.start();
+  await d.clock.runUntil(NOW + 1_000);
+  const s0 = d.asks()[0];
+  d.ctl.slow = 3_000;
+  d.desk.portfolioReadAt(s0 + PORTFOLIO_POLL_MS + 1_000);
+  await d.clock.runUntil(s0 + PORTFOLIO_POLL_MS + 4 * 60_000);
+  assert.deepEqual(d.asks(), [s0, s0 + PORTFOLIO_POLL_MS], 'two reads, not three');
+  assert.equal(d.desk.portfolio().extraReads, 0, 'the mark served by the read under way');
+  assert.deepEqual(d.desk.portfolio().extraDue, []);
+  d.desk.stop();
+  // 3. A mark's read asked at +4 min that never answers: failed at +5 min, when the next 5-minute read falls due (not 5
+  // minutes after it was asked), since the time it was asked, and that next read made then.
+  d = pfDesk();
+  d.desk.start();
+  await d.clock.runUntil(NOW + 1_000);
+  const u0 = d.asks()[0];
+  d.ctl.hang = true;
+  d.desk.portfolioReadAt(u0 + 4 * 60_000);
+  await d.clock.runUntil(u0 + PORTFOLIO_POLL_MS - 1);
+  assert.equal(d.desk.portfolio().failure, null, 'inside its time: not failed');
+  await d.clock.runUntil(u0 + PORTFOLIO_POLL_MS + 1);
+  const f = d.desk.portfolio().failure;
+  assert.ok(f, 'failed once the next 5-minute read fell due');
+  assert.equal(f.since, u0 + 4 * 60_000, 'since the time it was asked');
+  assert.deepEqual(d.asks(), [u0, u0 + 4 * 60_000, u0 + PORTFOLIO_POLL_MS], 'the next read made as due');
+  d.desk.stop();
 });

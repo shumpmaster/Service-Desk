@@ -394,17 +394,20 @@ export const ideaStateWords = (i) => i.state || PF_WORDS.stateNotRecorded;
 
 /**
  * The rarer records (J23: names and counts only, no blob): the files under `rulings/` and `library/facts/`
- * by name and count, "none yet" where a folder holds only its README (or nothing); and whether `intent/`
- * holds a file beyond its template's (C: a name starting `_`, the portfolio template's form for its
- * templates, as the queue's `_DECISION_CARD.md`, or its README).
+ * by name and count, "none yet" where a folder holds only its README (or nothing), and `library/facts/_TEMPLATE.md`,
+ * the model template's file, never a fact (J23, changed after MD3, specs/S-001.md:12335-12337: that one file, no other);
+ * and whether `intent/` holds a file beyond its template's (C, as built in stage 6b: a name starting `_`, the portfolio
+ * template's form for its templates, as the queue's `_DECISION_CARD.md`, or its README).
  */
+export const FACTS_TEMPLATE = '_TEMPLATE.md';
 export function rareView(tree) {
   const under = (dir) => [...tree.keys()].filter((p) => p.startsWith(dir) && p.length > dir.length).map((p) => p.slice(dir.length)).sort();
   const notReadme = (n) => n !== 'README.md';
   const notTemplate = (n) => !n.split('/').pop().startsWith('_');
   const rulings = under(RARE_DIRS.rulings).filter(notReadme);
-  // J23, changed after MD3 (AC89 (l)): `library/facts/_TEMPLATE.md` is the model template's file, not a fact.
-  const facts = under(RARE_DIRS.facts).filter((n) => notReadme(n) && notTemplate(n));
+  // J23, changed after MD3 (AC89 (l)): `library/facts/_TEMPLATE.md` is the model template's file, not a fact; every
+  // other file there is one, by name and count (AC87), an owner's `_draft.md` or a nested `_TEMPLATE.md` among them.
+  const facts = under(RARE_DIRS.facts).filter((n) => notReadme(n) && n !== FACTS_TEMPLATE);
   // Standing intent is written into the template's own `intent/PORTFOLIO-INTENT.md`: names alone can't tell whether
   // any is written, so that file is named apart (`intentFile`), its words not read (Known limits, after MD3, 7).
   const file = PF_WORDS.intentFile.slice(RARE_DIRS.intent.length);
@@ -412,11 +415,15 @@ export function rareView(tree) {
   return { rulings, facts, intent: intentAll.filter((n) => n !== file), intentFile: intentAll.includes(file) };
 }
 
-/** The standing intent's line (J23, changed after MD3): the template's own file named, its words not read; any other file as rareLine. */
+/**
+ * The standing intent's line (J23, changed after MD3, specs/S-001.md:12338-12339): where the template's own file is
+ * there, the spec's row and nothing more, "Standing intent: intent/PORTFOLIO-INTENT.md (its words not read)" (stage 7's
+ * review, round 1, N1: the spec gives no words for other files beside it; the open case is the Definer's); otherwise
+ * as rareLine, as built in stage 6b.
+ */
 export function intentLine(r) {
   if (!r.intentFile) return rareLine(PF_WORDS.intent, r.intent);
-  const head = `${PF_WORDS.intent}: ${PF_WORDS.intentFile} ${PF_WORDS.wordsNotRead}`;
-  return r.intent.length ? `${head}; ${r.intent.length} more · ${r.intent.join(', ')}` : head;
+  return `${PF_WORDS.intent}: ${PF_WORDS.intentFile} ${PF_WORDS.wordsNotRead}`;
 }
 
 /** A rarer record's line in its sheet: "<what>: <n> · <names>", or "<what>: none yet". */

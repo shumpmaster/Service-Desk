@@ -31,7 +31,7 @@ import { GATE_PHASE } from './lib/j11.js';
 import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, WORDS, MARKS_KEY,
-  boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, shortName, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
+  boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, shortName, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
@@ -1061,10 +1061,10 @@ function portfolioReadParts(pf, key, row, foot) {
   // "<what>: <n> · <names>" (rareLine's words), each name in Plex Mono.
   const rareNode = (k, what, names) => h('li', { class: 'v2-pfsi', key: `pfs:${k}` }, h('span', { class: 'v2-body' },
     names.length ? [`${what}: ${names.length} · `, names.map((x, i) => [i ? ', ' : null, h('span', { class: 'v2-mono' }, x)])] : rareLine(what, names)));
-  // J23, changed after MD3 (AC89 (l)): the template's own intent file named, its words not read (intentLine's words).
-  const intentNode = (r) => h('li', { class: 'v2-pfsi', key: 'pfs:intent' }, h('span', { class: 'v2-body' }, `${PF_WORDS.intent}: `,
-    h('span', { class: 'v2-mono' }, PF_WORDS.intentFile), ` ${PF_WORDS.wordsNotRead}`,
-    r.intent.length ? [`; ${r.intent.length} more · `, r.intent.map((x, i) => [i ? ', ' : null, h('span', { class: 'v2-mono' }, x)])] : null));
+  // J23, changed after MD3 (AC89 (l)): the template's own intent file named, its words not read, the spec's row and
+  // nothing more (intentLine's words; stage 7's review, round 1, N1).
+  const intentNode = () => h('li', { class: 'v2-pfsi', key: 'pfs:intent' }, h('span', { class: 'v2-body' }, `${PF_WORDS.intent}: `,
+    h('span', { class: 'v2-mono' }, PF_WORDS.intentFile), ` ${PF_WORDS.wordsNotRead}`));
   if (key === 'decisions') {
     const cards = portfolioCards(pf);
     // The row's line, less the problem already said above it.
@@ -1078,7 +1078,7 @@ function portfolioReadParts(pf, key, row, foot) {
   const r = pf.rare;
   return [problem, access,
     r ? h('ul', { class: 'v2-rows v2-pfsl', key: 'pfs-rare' },
-      rareNode('rulings', PF_WORDS.rulings, r.rulings), rareNode('facts', PF_WORDS.facts, r.facts), r.intentFile ? intentNode(r) : rareNode('intent', PF_WORDS.intent, r.intent)) : h('p', { class: 'v2-body', key: 'pfs-rare-none' }, pf.problem || NOT_AVAILABLE),
+      rareNode('rulings', PF_WORDS.rulings, r.rulings), rareNode('facts', PF_WORDS.facts, r.facts), r.intentFile ? intentNode() : rareNode('intent', PF_WORDS.intent, r.intent)) : h('p', { class: 'v2-body', key: 'pfs-rare-none' }, pf.problem || NOT_AVAILABLE),
     h('p', { class: 'v2-mark', key: 'pfs-track' }, stc('nomodel'), h('span', {}, PF_WORDS.trackRecords)), from, h('p', { class: 'v2-small', key: 'pfs-foot' }, foot)];
 }
 
@@ -1921,10 +1921,12 @@ const boardRoute = (only) => (only ? go('waiting', only) : '#/waiting');
 /** Mark a card done (a drop on Done, or "Done ✓"): it leaves every count at once on this device. */
 function markCard(card) {
   const at = Date.now();
-  boardState.set(markDone(boardState.marks, card, at));
   // AC89 (l): a portfolio card's mark has one more portfolio read, due KICK_BACK_MINUTES after it, so a mark GitHub
-  // doesn't confirm is kicked back at about 5 minutes; at most 10 a day on this device (kickReadSlot), none without storage.
-  if (card.portfolio && DESK && typeof DESK.portfolioReadAt === 'function' && kickReadSlot(kickStore, at, TZ)) DESK.portfolioReadAt(at + KICK_BACK_MINUTES * 60e3);
+  // doesn't confirm is kicked back at about 5 minutes; at most 10 a day on this device (kickReadSlot), none without
+  // storage. The mark keeps that its read was asked, so a reload asks it again (kickReadsDue, at startSandbox).
+  const read = Boolean(card.portfolio && DESK && typeof DESK.portfolioReadAt === 'function' && kickReadSlot(kickStore, at, TZ));
+  boardState.set(markDone(boardState.marks, card, at, { kickRead: read }));
+  if (read) DESK.portfolioReadAt(at + KICK_BACK_MINUTES * 60e3);
   render();
 }
 let kickStore = null; // AC89 (l): the device's count of the day's reads after portfolio marks (startSandbox sets it)
@@ -4317,6 +4319,9 @@ export function startSandbox(opts = {}) {
   const desk = createDesk({ config: CONFIG, call, clock, store, pullsStore, waitsStore, isVisible, onChange: () => render(), j11: true,
     lastLooked: () => (seen.off ? null : seen.reference) });
   DESK = desk;
+  // AC89 (l) (stage 7's review, round 1, B1): the reads already asked for marks kept on this device, still due, asked
+  // again for this opening, using no slot more.
+  for (const due of kickReadsDue(boardState.marks, Date.now())) desk.portfolioReadAt(due);
   ns.store = store;
   ns.looked = false;
   // AC74: `?sandbox&open=<key>`: followed once its project is read; the address keeps `?sandbox` only.

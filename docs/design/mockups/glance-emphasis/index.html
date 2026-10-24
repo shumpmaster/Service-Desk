@@ -1,0 +1,296 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Desk Glance Mockups</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one narrow reading column; each proposal is a numbered entry with its two phone captures side by side, tap to enlarge. */
+:root {
+  --bg: #f6f6f4; --panel: #ffffff; --ink: #18191c; --ink2: #5a5d64; --line: #e2e2de;
+  --fix: #1d6b46; --fix-bg: #e5f2ea; --choice: #7a4d0f; --choice-bg: #f6ecda; --accent: #2b4a6f;
+  --shade: rgba(16,17,20,.92);
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111214; --panel: #1a1b1e; --ink: #ecedef; --ink2: #a3a6ad; --line: #2c2e33;
+  --fix: #6fd29c; --fix-bg: #16301f; --choice: #e6b96a; --choice-bg: #33270f; --accent: #9dbbe0; --shade: rgba(0,0,0,.94); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111214; --panel: #1a1b1e; --ink: #ecedef; --ink2: #a3a6ad; --line: #2c2e33;
+  --fix: #6fd29c; --fix-bg: #16301f; --choice: #e6b96a; --choice-bg: #33270f; --accent: #9dbbe0; --shade: rgba(0,0,0,.94); color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 15px/1.55 var(--sans); }
+.wrap { max-width: 760px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 64px; display: grid; gap: 28px; }
+header h1 { font: 700 26px/1.2 var(--sans); margin: 0 0 8px; text-wrap: balance; }
+header p { margin: 0 0 10px; color: var(--ink2); max-width: 62ch; }
+.meta { font: 400 12px/1.5 var(--mono); color: var(--ink2); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 13px; color: var(--ink2); align-items: center; }
+.chip { display: inline-block; font: 600 11px/1 var(--sans); letter-spacing: .04em; text-transform: uppercase; padding: 5px 7px; border-radius: 5px; white-space: nowrap; }
+.chip.fix { color: var(--fix); background: var(--fix-bg); }
+.chip.choice { color: var(--choice); background: var(--choice-bg); }
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px; }
+nav.toc a { font: 500 12px/1 var(--mono); color: var(--accent); text-decoration: none; border: 1px solid var(--line); background: var(--panel); padding: 7px 9px; border-radius: 6px; }
+nav.toc a:focus-visible, button:focus-visible, .shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+article.p { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px 16px; display: grid; gap: 12px; min-width: 0; }
+.ph { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: baseline; }
+.num { font: 500 13px/1 var(--mono); color: var(--ink2); grid-row: span 2; padding-top: 4px; }
+.ph h2 { margin: 0; font: 600 18px/1.3 var(--sans); text-wrap: balance; }
+.ph .where { font-size: 13px; color: var(--ink2); }
+.rows { display: grid; gap: 6px; margin: 0; }
+.rows div { display: grid; grid-template-columns: 76px 1fr; gap: 10px; }
+.rows dt { font: 500 11px/1.9 var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--ink2); }
+.rows dd { margin: 0; min-width: 0; }
+.why { margin: 0; padding: 10px 12px; border-left: 3px solid var(--accent); background: var(--bg); border-radius: 0 8px 8px 0; }
+.why b { display: block; font: 500 11px/1.6 var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--ink2); }
+.serves { font-size: 13px; color: var(--ink2); }
+.pairs { display: grid; gap: 14px; }
+.pair { display: grid; gap: 6px; }
+.pair .cap { font-size: 13px; color: var(--ink2); }
+.ba { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.shot { display: grid; gap: 4px; padding: 0; border: 0; background: none; cursor: zoom-in; text-align: left; color: inherit; font: inherit; min-width: 0; }
+.shot span { font: 600 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink2); }
+.shot.after span { color: var(--accent); }
+.shot img { width: 100%; height: auto; aspect-ratio: 360 / 740; object-fit: cover; object-position: top; border-radius: 8px; border: 1px solid var(--line); background: var(--line); display: block; }
+.note { font-size: 13px; color: var(--ink2); margin: 0; }
+section.all { display: grid; gap: 14px; }
+section.all h2 { margin: 0; font: 700 21px/1.25 var(--sans); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.seg button { border: 0; background: none; color: var(--ink2); font: 500 13px/1 var(--sans); padding: 10px 14px; min-height: 40px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.viewer { position: fixed; inset: 0; background: var(--shade); z-index: 20; display: grid; grid-template-rows: auto 1fr; padding: calc(env(safe-area-inset-top, 0px) + 10px) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 10px) max(12px, env(safe-area-inset-left, 0px)); gap: 10px; }
+.viewer .bar { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.viewer .ttl { color: #f1f1f1; font: 500 14px/1.3 var(--sans); min-width: 0; flex: 1 1 160px; }
+.viewer .seg { border-color: #3a3c42; background: #1d1e22; }
+.viewer .seg button { color: #c4c6cc; }
+.viewer .seg button[aria-pressed="true"] { background: #f1f1f1; color: #111; }
+.viewer .x { min-width: 44px; min-height: 44px; border-radius: 22px; border: 1px solid #3a3c42; background: #1d1e22; color: #f1f1f1; font: 500 20px/1 var(--sans); cursor: pointer; }
+.viewer .stage { overflow: auto; display: grid; justify-items: center; align-content: start; min-height: 0; }
+.viewer img { width: min(100%, 420px); height: auto; border-radius: 10px; }
+footer { font-size: 13px; color: var(--ink2); }
+@media (prefers-reduced-motion: no-preference) { .shot img { transition: transform .15s ease; } .shot:hover img { transform: translateY(-2px); } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Desk Glance Mockups</h1>
+    <p>Before and after for each of the Design reviewer's 11 proposals from the 24 Oct audit, your Kicked back strip idea (4b), then every change together. Each "after" is the real desk with only that proposal's change applied. Nothing here is built yet.</p>
+    <p class="meta">360 px phone · test data, made up · desk at da4a342 · tap any shot to enlarge and flip between before and after</p>
+  </header>
+
+  <p class="note" style="margin:0">Round 1: you accepted all 11, with your Kicked back strip (two equal lanes) for item 4. Round 2, below them: your five ideas, each waiting on your choice.</p>
+  <div class="legend"><span class="chip fix">Fix</span> stays inside your earlier design rulings <span class="chip choice">Your choice</span> bends a ruling or the approved mockup, so you decide</div>
+
+  <nav class="toc" id="toc" aria-label="Proposals"></nav>
+
+  <div id="list" style="display:grid;gap:22px"></div>
+
+  <section class="all" id="all">
+    <h2>Every change together</h2>
+    <p class="note">The same screens with all 11 changes applied at once, first phone screen only.</p>
+    <div class="seg" role="group" aria-label="Theme of the shots">
+      <button type="button" id="t-light" aria-pressed="true">Light</button><button type="button" id="t-dark" aria-pressed="false">Dark</button>
+    </div>
+    <div class="pairs" id="allpairs"></div>
+  </section>
+
+  <section class="all" id="round2">
+    <h2>Round 2: your five ideas</h2>
+    <p class="note">The reviewer's answer to your second message. Here "before" is the desk with all of round 1 already applied (your choices, and your Kicked back strip with two equal lanes), so each pair shows only the round-2 change. Each one waits on your choice, as a question card on the desk.</p>
+  </section>
+  <div id="list2" style="display:grid;gap:22px"></div>
+
+  <section class="all" id="all2">
+    <h2>Round 2, all five together</h2>
+    <p class="note">The reviewer's own shots with all five ideas applied at once, on top of round 1.</p>
+    <div class="seg" role="group" aria-label="Theme of the round 2 shots">
+      <button type="button" id="t2-light" aria-pressed="true">Light</button><button type="button" id="t2-dark" aria-pressed="false">Dark</button>
+    </div>
+    <div class="pairs" id="allpairs2"></div>
+  </section>
+
+  <footer>Audits: docs/design/audit-2026-10-24.md and audit-2026-10-24-round-2.md in Service-Desk. Gate titles in item 5 use stand-in words. The Definer picks the real line from each gate's record.</footer>
+</div>
+
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Enlarged shot">
+  <div class="bar">
+    <span class="ttl" id="v-ttl"></span>
+    <div class="seg" role="group" aria-label="Before or after"><button type="button" id="v-b">Before</button><button type="button" id="v-a">After</button></div>
+    <button type="button" class="x" id="v-x" aria-label="Close">×</button>
+  </div>
+  <div class="stage"><img id="v-img" alt=""></div>
+</div>
+
+<script>
+const P = [
+  { n: 1, id: 'p1', kind: 'fix', t: 'A stopped project hides under a calm Home', where: 'Home · a project tile',
+    now: 'The "No movement for 8 days" line is the last, palest line on the tile, under "Nothing needs you" and a tick.',
+    to: 'The line moves up under the project name, in dark ink with the clock icon. No orange-red: this gap is the agents’ to fill.',
+    why: 'You asked for this signal "so a quiet desk can’t hide a stopped project". Today the desk does exactly that: the tick and "Nothing needs you" win, and the only warning is the faintest line on the screen. This is the one case where "quiet" is misleading, and it is the purpose of this ruling. Ink plus an icon is the smallest step that makes it show without colour, and vermilion stays only on what needs you. The cost is one more line in ink on a calm tile. It appears only after 3 days with no movement and nothing waiting, so it is rare.',
+    serves: 'P-001-trial-view-notes-2 note 34 and its follow-up answer; part A items 4 and 14. S-001 AC71’s "in slate" would need the Definer.',
+    shots: [['01-stall', '']] },
+  { n: 2, id: 'p2', kind: 'fix', t: '"Can’t read" looks five different ways, and once says the opposite', where: 'Home · tile corner, signed-out briefing, "Since you last looked"',
+    now: 'A tile that can’t be read says "Can’t read" in the same grey as "Nothing waiting". Signed out, the briefing shows a clock and "Since you last looked" says "Nothing new".',
+    to: 'One look everywhere, copied from Waiting: ✕ in red with "since 16:00". Signed out, the briefing takes the ✕, and "Nothing new" becomes "Not read since 16:00".',
+    why: 'The tile corner is where you look to find out "does this project need me?", and today a dead project looks the same as a healthy one with nothing waiting. "Can’t read" is the one state where you must not trust "quiet" (the project’s intent: "Missed decisions"). One treatment everywhere means you learn it once. All of these reuse the existing ✕ icon and --bad.',
+    serves: 'Part A items 4 and 13; S-001 AC4 and AC5; PROJECT.md intent ("trust quiet").',
+    shots: [['02a-cant-read-tile', 'One project can’t be read (Alpha)'], ['02b-signed-out', 'Signed out: nothing can be read']] },
+  { n: 3, id: 'p3', kind: 'choice', t: 'Your count is smaller than the word "Home", and due times are buried', where: 'Home · the briefing at the top',
+    now: '"6 need you" is 15 px, lighter than the page title. "One question settles itself Thu 03:20" is the last clause of a small grey sentence.',
+    to: 'The count steps up to the sheet-title size (18 px, bold). The settles-itself or can’t-be-undone part gets its own line with a clock or lock icon, as on the Waiting cards.',
+    why: 'This number is the reason the desk exists (V1: what needs you, on one screen). It should be the heaviest thing on Home, not the second. A time something falls due is the only part of the briefing with a deadline, so it deserves the treatment the board and sheet already give it. Doing it this way is one step up the existing type scale, not a new size. The cost is about 8 px of height on Home.',
+    serves: 'Discovery answers 3 and 6; part A items 8 and 18; part B item 34. Bends: frame H1’s single 15 px briefing line (P-001-redesign-direction-v2).',
+    shots: [['03-count', '']] },
+  { n: 4, id: 'p4', kind: 'choice', t: 'On Waiting, the column that matters gets a third of the width', where: 'Waiting · the three lanes',
+    now: 'Lanes are 117, 99 and 99 px wide. With Kicked back and Done empty, 63% of the width says nothing, and card titles fit about 14 characters a line.',
+    to: 'An empty lane shrinks to its heading and count (about 64 px). Waiting on you takes the rest, about 220 px. All three lanes stay on screen and widen again once a card is in them.',
+    why: 'Waiting’s job is to read and act on what waits. The empty lanes compete with it for space while saying nothing. This keeps your "all three lanes at once" ruling and the drag targets, and only changes widths, so it is far smaller than a new layout. It roughly doubles the line length, which also removes most of the cut gate titles. The cost is that an empty lane’s drop target is narrower.',
+    serves: 'P-001-board-layout; part A item 21; PROJECT.md §2. Bends: frame 1’s lane proportions.',
+    shots: [['04-lanes', '25 cards, two empty lanes']] },
+  { n: '4b', id: 'p4b', kind: 'choice', t: 'Your idea: Kicked back as a strip, not a column', where: 'Waiting · the Kicked back lane',
+    now: 'Kicked back is the middle of three columns and takes about 99 px, even when it is empty, which is most of the time. A card lands there only when you marked it done and GitHub hadn’t confirmed it about 5 minutes later.',
+    to: 'The middle column goes. Kicked back becomes a strip above the lanes: one quiet line, "Kicked back · none", when it is empty, and open with its cards left to right when there are any, each with its reason. Waiting on you and Done share the width. The third pair adds item 4 as well, so an empty Done shrinks too.',
+    why: 'Added from your comment on item 4: "a kicked back queue that is minimized when nothing exists but pops open when something is there". Kicked back is rare, so a column that sits empty most of the time costs width every day for a few minutes’ use. A strip is out of the way when empty and above everything else when not. Kicked-back cards still count as needing you, so putting them first when they exist matches the screen’s job. The costs: an open strip pushes Waiting on you down about 170 px, a card past the second one is reached by swiping sideways, and dragging a card from the strip into Done needs new drag code.',
+    serves: 'Your comment of 24 Oct on this page. Bends: your board ruling P-001-board-layout ("all three lanes at once"), which is yours to change. Not reviewed by the Design reviewer yet.',
+    shots: [['12a-kick-strip-empty', 'Nothing kicked back (the usual case)'], ['12b-kick-strip-cards', 'Two cards kicked back'], ['12c-kick-strip-cards-p4', 'Two kicked back, with item 4 too (an empty Done shrinks)']] },
+  { n: '4c', id: 'p4c', kind: 'choice', t: 'Your comment: shade the Done lane', where: 'Waiting \u00b7 Done, in your chosen layout (strip, two equal lanes)',
+    now: 'In your chosen layout Done is a plain column. When empty it is a heading and "Hold a card and drag it here" in grey, so its job, a place to move cards to, is easy to miss.',
+    to: 'Done gets the soft grey ground the desk already uses for Home\u2019s briefing, with rounded corners, running the full height of the lanes, so it reads as a place to drop cards.',
+    why: 'Added from your comment on 4b: "maybe shade the done section \u2026 it kinda hides the intent of the done section which is to move them over". A shaded area reads as a target before you read its words, and it reuses an existing colour. Two cautions: in light mode the shade is faint (the reviewer measured it at 1.07 to 1 against the page), and round 2\u2019s R2 says a filled box means "the one anchor on this screen", so the reviewer should rule on whether a shaded drop area is a second meaning. Not reviewed yet.',
+    serves: 'Your comment of 24 Oct on this page; your lanes ruling (P-001-glance-lanes, C with equal widths).',
+    shots: [['r4c-empty', 'Your chosen layout: plain Done, then shaded'], ['r4c-cards', 'Today\u2019s desk, then your layout with Done shaded (two cards kicked back)'], ['r4c-dark', 'Dark: today\u2019s desk, then shaded']] },
+  { n: 5, id: 'p5', kind: 'fix', t: 'Gate titles: one short title everywhere', where: 'Waiting card, its sheet, and Plan',
+    now: 'Each place uses the gate’s whole first sentence ("The Launch gate: the launch review passed. The case for going live…"), cut off at 2–3 lines. On the sheet, Kill falls below the first screen.',
+    to: 'A short title naming the gate and its item, as the approved frames draw it. The full sentence moves into the sheet’s lead paragraph.',
+    why: 'A gate is the heaviest decision you make. At a glance you need to know which gate, for which item, and then the four choices. Today the title spends its lines repeating "The Launch gate:", which the kind label already says, and pushes the choices down. This also closes two M3D follow-ups.',
+    serves: 'Part B items 26 and 33 (frames 4 and 11); part A items 16 and 19. Closes M3D stage 5 N1 and stage 6a round 2 N1.',
+    note: 'The short titles here ("P-003: ready to go live?") are stand-in words. The Definer picks the real line from each gate’s record. On the sheet, the choices do not move up: the full sentence, now in the lead, takes the room the shorter title gives back. The gain there is a title you can read at once.',
+    shots: [['05a-gate-board', 'The card on Waiting'], ['05b-gate-sheet', 'The gate’s sheet'], ['05c-gate-plan', 'The gate’s row on Plan']] },
+  { n: 6, id: 'p6', kind: 'choice', t: '"Since you last looked" can push every project off the first screen', where: 'Home · Since you last looked',
+    now: 'Each line can run to 3 lines. With four long ones, no project tile shows on the first screen at 360 px.',
+    to: 'Each line is cut at 2 lines, keeping its fade and the tap through to the full entry.',
+    why: 'You chose "four, then more" because "the tiles start on the first screen" (P-001-since-count). Long lines break that promise on a small phone. Two lines still give the who and what; the rest is one tap away. This is smaller than cutting the number of lines or dropping "New card" lines.',
+    serves: 'P-001-since-count; part B item 28. Bends: P-001-tile-summary-clip sets three lines for ruling lines.',
+    shots: [['06-since', 'Four long entries']] },
+  { n: 7, id: 'p7', kind: 'fix', t: 'The Timeline opens with the next milestone hidden', where: 'A project’s Timeline',
+    now: 'The page opens with Now just under the pinned header, so the next milestone above it ("MD3 · next to reach") is scrolled out of sight.',
+    to: 'It opens with Now about a third of the way down, so the next milestone shows above it.',
+    why: 'The first thing to take in on a Timeline is what comes next and when. Today that is the one thing scrolled out of sight. It is still "opened at Now"; only the resting point moves.',
+    serves: 'Part B item 32 (frame 7b). Closes M3D stage 3 N1. AC59’s "just under the pinned band" would need the Definer.',
+    shots: [['07-timeline', '']] },
+  { n: 8, id: 'p8', kind: 'mixed', t: 'Project page: what waits on you is no louder than "nothing waiting"', where: 'A project’s Overview',
+    now: '"Nothing waiting on you" is as bold as "7 wait on you". Above that row sit 3–4 grey lines, two of them repeating "why it went back: not recorded".',
+    to: '(a) "Nothing waiting on you" goes quiet grey, as it already is on the Home tile. (b) The two ran-again lines become one.',
+    why: 'Calm states should look calm, as they already do on the tile. Then the ◆ row is the only heavy thing between the strip and the milestones. Merging the repeated reason gives about 20 px back above the fold without losing the word.',
+    serves: '(a) Part A items 8 and 14, AC82’s tile: a fix. (b) P-001-audit-repeat, extended to this page: your choice, since that ruling names Plan, Timeline, Home and Team only.',
+    shots: [['08a-nothing-waiting', '(a) Fix: nothing waits'], ['08b-ran-again', '(b) Your choice: two ran-again lines become one']] },
+  { n: 9, id: 'p9', kind: 'choice', t: 'Who has the ball is the faintest line on the tile', where: 'Home · a project tile',
+    now: '"At work: Builder on P-003" is all grey, the same as "no summary in this project’s README".',
+    to: 'Same pattern as "Next:" on the line below: the label stays grey and "Builder on P-003" goes to dark ink.',
+    why: 'Discovery answer 8 asks to see "all the agents that are working, what they’re working on", and P-001-design-lab-1 to see who has the ball. Today the tile shows activity in the same tone as a missing README. This reuses the tile’s own Next pattern.',
+    serves: 'Discovery answer 8; P-001-design-lab-1; part A item 8. Bends: frame H5 draws the work line all grey.',
+    shots: [['09-at-work', '']] },
+  { n: 10, id: 'p10', kind: 'fix', t: 'The failed-load screen is one small line with no way out', where: 'The screen when the desk can’t load',
+    now: 'A 12 px red line, "Reload to try again.", and nothing else. The Home Screen app on iPhone has no reload button, so you have to quit and reopen it.',
+    to: 'Bigger text with the ✕, and a 44 px Reload button.',
+    why: 'When it happens, this is the only thing on screen, and it should say plainly what to do and offer a way to do it. No frame draws this screen.',
+    serves: 'Part A items 4, 11 and 19. Closes M3D step 6b N1/N2 (F1).',
+    shots: [['10-failload', '']] },
+  { n: 11, id: 'p11', kind: 'choice', t: 'New cards look like old ones on Waiting', where: 'Waiting · the cards',
+    now: 'A gate raised this morning looks the same as a pull request from 13 days ago. "New" only shows in Home’s list.',
+    to: 'A small word "new" beside the kind label on cards raised since you last looked. No colour.',
+    why: 'Discovery answer 8 asked for "new since you last looked" markers. On Waiting, "what changed" and "what to do" are on the same screen. A word beside the kind label adds no colour and no layout.',
+    serves: 'Discovery answer 8; part A item 13. Bends: frame 1 draws no marker, and AC82 moved "new" into Home’s list.',
+    shots: [['11-new', '']] },
+];
+const ALL = [['home-mix', 'Home'], ['home-ext', 'Home, 25 waiting'], ['home-stall', 'Home, a stopped project'], ['home-unread', 'Home, one project unreadable'], ['home-signed-out', 'Home, signed out'],
+  ['waiting-mix', 'Waiting'], ['waiting-ext', 'Waiting, 25 cards'], ['gate-sheet', 'A gate’s sheet'], ['plan', 'Plan'], ['project-alpha', 'Project page, things waiting'], ['project-sd', 'Project page, nothing waiting'],
+  ['timeline', 'Timeline'], ['failload', 'Failed load']];
+const P2 = [
+  { n: 'R1', id: 'r1', kind: 'choice', t: 'Green and red, on the status mark only', where: 'Every screen with a status mark',
+    now: 'The desk already has a green and a red but almost never uses them. Reached milestones, merged sprints and failed checks are all black or grey ticks and crosses.',
+    to: 'A finished, confirmed mark (✓) turns green; a failed or not-reached mark (✕) turns red. Only the small mark, never words, rows or borders. Vermilion stays "needs you", gold stays "next to reach", everything else stays grey. No new colour.',
+    why: 'You asked for consistent "going well / not going well". The desk already owns exactly those two tokens and almost never uses them. So the smallest change is to put them on the marks that already mean pass and fail. Colouring only the 14–16 px mark, not words or rows, keeps a long Timeline calm. A column of small green ticks reads as "fine" without shouting. It also leaves vermilion as the one thing that pulls your eye. Keeping absences grey matters most: round 1 found a green-feeling "Nothing needs you" hiding a stopped project, and a green tick there would make that worse.',
+    serves: 'Your words; part A items 13 and 14. A red ✕ shows under "Round 2, all five together" (Design opened, run 1). Changes: notes-2 note 23 and note 28’s pick, notes-1 "no colour", S-001 AC48, P-001-timeline-labels. Optional: a deeper red, further from vermilion.',
+    shots: [['r2-q1-disc', 'A finished phase opened: reached marks turn green'], ['r2-q1-tl', 'The Timeline’s finished phase'], ['r2-q1-home', 'Home tiles: the finished phase’s ✓ turns green']] },
+  { n: 'R2', id: 'r2', kind: 'choice', t: 'One soft box per screen, around its most important fact', where: 'The project page (the only new one)',
+    now: 'Most screens already have their anchor: Home’s briefing box, the Timeline’s Now line. The project page has none: its sentence sits unboxed above the strip.',
+    to: 'The project page’s sentence plus a one-line tally ("8 of 16 milestones reached · 17 sprints: 9 merged, 8 not read") sit in the briefing’s soft grey box, no outline. At most one box per screen, never vermilion.',
+    why: 'Linear-style anchors work because they are rare. The desk already has a calm, approved anchor shape (Home’s briefing), so reusing it means "boxed" carries one meaning across the desk. Edges were rejected because every edged thing on the desk is something to tap or type into.',
+    serves: 'Your words; PROJECT.md §2; part B item 31. Changes: frame 5 and AC83 as drawn; the agents’ "why … not written yet" box becomes a plain line.',
+    note: 'The tally’s numbers are stand-ins the reviewer counted by hand from the test data.',
+    shots: [['r2-q2-page', 'A project page']] },
+  { n: 'R3', id: 'r3', kind: 'choice', t: 'A small arrow at "now" on every timeline and plan drawing', where: 'Timeline, phase strip, Home tiles, Plan, opened phases',
+    now: '"Now" is a short bar on the Timeline, bold type on the strip and tiles, and only the gold ring on Plan.',
+    to: 'One small filled triangle in ink, pointing at the present: on the Timeline’s Now line, above the strip’s current phase, beside each tile’s current dot, at Plan’s next-to-reach row, and in an opened phase. The ▲ "read from the bottom" arrow goes.',
+    why: 'Ink is the Now line’s own colour (frame 7b), so the arrow reads as "Now" everywhere. Vermilion is "needs you". Gold already marks "next to reach", and on Plan the arrow sits beside that ring. A filled shape among stroked icons is noticed without being big. It does not fight round-1 item 7: that item only moves where the Timeline rests, and the arrow lands on the first screen.',
+    serves: 'Your words; part A items 13 and 24; part B item 35. Changes: frames 5, 6, 7b, H5 and 11 as drawn; no ruling.',
+    shots: [['r2-q3-timeline', 'Timeline'], ['r2-q3-page', 'Project page strip'], ['r2-q3-home', 'Home tiles'], ['r2-q3-plan', 'Plan']] },
+  { n: 'R4', id: 'r4', kind: 'spec', t: 'Count all milestones and sprints, not just the standard checklist', where: 'Project page · Milestones by phase',
+    now: 'The only number is the model’s standard checklist, so even Build, where M1, M2 and M2B are reached, says "Standard: 0 of 5 recorded". Your own milestones are listed but never counted.',
+    to: 'Each phase leads with all its milestones and sprints ("3 of 5 reached · 4 sprints") and says the unused standard ones in words ("Standard checklist: none tracked (5)"). The section head reads "8 of 16 reached". Pieces of work inside a sprint: see the note.',
+    why: '"0 of 5" reads as "nothing done" because the only bold number is the checklist you didn’t use. Leading with your own milestones, counted across runs, answers "how far". Saying the unused checklist in words answers "what’s in or out" without a false zero. Option A is the only way to get a true "of total" for pieces; anything else would invent a total.',
+    serves: 'Your words; part A items 5 and 7. Changes: AC83 and AC84’s words; for pieces, the operating model’s sprint form (A) or the desk’s pull-request read (B).',
+    note: 'Pieces of work: nothing the desk reads lists a sprint’s pieces in advance, so a true "7 of 9 pieces done" needs each sprint’s pull request to carry a task list (a change to the operating model). Commit counts are possible sooner, with no total. Running-log entries could show for research sprints, and GitHub Actions runs for the latest commit on main; neither per pull-request sprint without new reads. The numbers shown are stand-ins.',
+    shots: [['r2-q4-counts', 'Milestones by phase']] },
+  { n: 'R5', id: 'r5', kind: 'choice', t: 'Standard milestones in their own labelled group', where: 'Project page · an opened phase; Timeline',
+    now: 'Standard rows differ from yours only by a lighter grey at the same size, under a faint 11 px "The model’s standard five". Earlier runs mix both with no labels.',
+    to: '"Your milestones · 1" and "Standard checklist · 5 · none tracked this run" as clear heads, a rule above the standard group, the untracked ones folded into one line (a tap lists them), and "· standard" on the Timeline.',
+    why: 'You skip the lighter rows because lighter is the only signal, and the labels that should explain it are the faintest text on the screen. A named group with a rule says "in or out" in words. Folding the untracked ones removes most of the grey. Giving your own milestones the row weight keeps them louder than the checklist, as you asked.',
+    serves: 'Your words; P-001-standard-milestones; part B item 30. Changes: frames 6 and 6b as drawn; no ruling.',
+    shots: [['r2-q5-launch', 'Launch opened (your "0 of 5" case)'], ['r2-q5-design', 'Design opened']] },
+];
+const ALL2 = [['mix-page3', 'Project page'], ['mix-openBuild', 'Build opened'], ['mix-openDesign', 'Design opened'], ['text-openLaunch', 'Launch opened'], ['mix-timeline', 'Timeline'], ['mix-plan', 'Plan'], ['mix-home', 'Home']];
+const KIND = { fix: ['fix', 'Fix'], choice: ['choice', 'Your choice'], spec: ['choice', 'Your choice + spec work'] };
+const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) k === 'class' ? (e.className = v) : e.setAttribute(k, v); for (const c of kids) e.append(c); return e; };
+const shotBtn = (src, label, title, pairSrc, isAfter) => {
+  const b = el('button', { class: 'shot' + (isAfter ? ' after' : ''), type: 'button', 'aria-label': `Enlarge: ${title}, ${label}` }, el('span', {}, label), el('img', { src, alt: `${title}, ${label.toLowerCase()}`, loading: 'lazy', width: '360', height: '740' }));
+  b.addEventListener('click', () => openViewer(title, pairSrc, isAfter));
+  return b;
+};
+const pairEl = (base, cap, title) => {
+  const srcs = { b: `shots/${base}-before.webp`, a: `shots/${base}-after.webp` };
+  return el('div', { class: 'pair' }, ...(cap ? [el('div', { class: 'cap' }, cap)] : []),
+    el('div', { class: 'ba' }, shotBtn(srcs.b, 'Before', title, srcs, false), shotBtn(srcs.a, 'After', title, srcs, true)));
+};
+const toc = document.getElementById('toc'), list = document.getElementById('list');
+const list2 = document.getElementById('list2');
+for (const p of [...P, ...P2]) {
+  toc.append(el('a', { href: '#' + p.id }, String(p.n)));
+  const chips = p.kind === 'mixed' ? [el('span', { class: 'chip fix' }, '(a) Fix'), ' ', el('span', { class: 'chip choice' }, '(b) Your choice')] : [el('span', { class: 'chip ' + KIND[p.kind][0] }, KIND[p.kind][1])];
+  const a = el('article', { class: 'p', id: p.id },
+    el('div', { class: 'ph' }, el('span', { class: 'num' }, String(p.n).padStart(2, '0')), el('h2', {}, p.t), el('div', { class: 'where' }, p.where)),
+    el('div', {}, ...chips),
+    el('dl', { class: 'rows' }, el('div', {}, el('dt', {}, 'Now'), el('dd', {}, p.now)), el('div', {}, el('dt', {}, 'Change'), el('dd', {}, p.to))),
+    el('div', { class: 'pairs' }, ...p.shots.map(([b, c]) => pairEl(b, c, `${p.n}. ${p.t}`))),
+    ...(p.note ? [el('p', { class: 'note' }, p.note)] : []),
+    el('p', { class: 'why' }, el('b', {}, 'Reviewer’s rationale'), p.why),
+    el('div', { class: 'serves' }, 'Serves: ' + p.serves));
+  (P2.includes(p) ? list2 : list).append(a);
+}
+toc.append(el('a', { href: '#all' }, 'All 1'), el('a', { href: '#all2' }, 'All 2'));
+const allpairs = document.getElementById('allpairs');
+let theme = 'light';
+const drawAll = () => { allpairs.replaceChildren(...ALL.map(([id, cap]) => pairEl(`all-${id}-${theme}`, cap, `All changes: ${cap} (${theme})`))); };
+const setTheme = (t) => { theme = t; document.getElementById('t-light').setAttribute('aria-pressed', String(t === 'light')); document.getElementById('t-dark').setAttribute('aria-pressed', String(t === 'dark')); drawAll(); };
+document.getElementById('t-light').addEventListener('click', () => setTheme('light'));
+document.getElementById('t-dark').addEventListener('click', () => setTheme('dark'));
+drawAll();
+const allpairs2 = document.getElementById('allpairs2');
+const drawAll2 = (t) => { allpairs2.replaceChildren(...ALL2.map(([id, cap]) => pairEl(`r2all-${id}-${t}`, cap, `Round 2, all together: ${cap} (${t})`)));
+  document.getElementById('t2-light').setAttribute('aria-pressed', String(t === 'light')); document.getElementById('t2-dark').setAttribute('aria-pressed', String(t === 'dark')); };
+document.getElementById('t2-light').addEventListener('click', () => drawAll2('light'));
+document.getElementById('t2-dark').addEventListener('click', () => drawAll2('dark'));
+drawAll2('light');
+const V = { el: document.getElementById('viewer'), img: document.getElementById('v-img'), ttl: document.getElementById('v-ttl'), b: document.getElementById('v-b'), a: document.getElementById('v-a'), srcs: null, last: null };
+const showSide = (after) => { V.img.src = after ? V.srcs.a : V.srcs.b; V.img.alt = V.ttl.textContent + (after ? ', after' : ', before'); V.b.setAttribute('aria-pressed', String(!after)); V.a.setAttribute('aria-pressed', String(after)); };
+function openViewer(title, srcs, after) { V.last = document.activeElement; V.srcs = srcs; V.ttl.textContent = title; showSide(after); V.el.hidden = false; document.body.style.overflow = 'hidden'; document.getElementById('v-x').focus(); }
+const closeViewer = () => { V.el.hidden = true; document.body.style.overflow = ''; if (V.last) V.last.focus(); };
+V.b.addEventListener('click', () => showSide(false));
+V.a.addEventListener('click', () => showSide(true));
+document.getElementById('v-x').addEventListener('click', closeViewer);
+V.el.addEventListener('click', (e) => { if (e.target === V.el || e.target.classList.contains('stage')) closeViewer(); });
+document.addEventListener('keydown', (e) => { if (V.el.hidden) return; if (e.key === 'Escape') closeViewer(); if (e.key === 'ArrowLeft') showSide(false); if (e.key === 'ArrowRight') showSide(true); });
+if (location.hash) { const t = document.getElementById(location.hash.slice(1)); if (t) t.scrollIntoView(); }
+</script>

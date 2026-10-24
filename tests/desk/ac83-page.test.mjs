@@ -391,7 +391,8 @@ test('AC83 (frame 8): a v2.5 project\'s page — the top, the sprint strip, the 
   const app = await openPage('#/p/Personal-Org-Operating-Model');
   try {
     const rows = findAll(keyed(app, 'page-rows'), (e) => / v2-prow /.test(` ${e.className} `));
-    assert.deepEqual(rows.map((r) => byClass(r, 'v2-prtt')[0].textContent), ['Nothing waiting on you', 'CI on main: none', 'Latest in the ledger', 'Records']);
+    // Rewritten at stage 6a of "After MD3" (AC89 (k), specs/S-001.md:7940-7941): the CI row's workflow and date, or "workflow and date not read".
+    assert.deepEqual(rows.map((r) => byClass(r, 'v2-prtt')[0].textContent), ['Nothing waiting on you', 'CI on main: none · workflow and date not read', 'Latest in the ledger', 'Records']);
     assert.equal(byClass(rows[2], 'v2-mono')[0].textContent, "L-0124 · 5 Oct · Continue Service-Desk under the full process, with a checkpoint; S-017's supersession covers two more token pins");
     assert.equal(byClass(rows[3], 'v2-mono')[0].textContent, '2 ledger entries · 0 specs', 'the placeholder ledger\'s two entries; no specs/ in its tree');
     assert.equal(keyed(app, 'page-switch'), null, 'no Overview | Timeline for the older pipeline (frame 8)');

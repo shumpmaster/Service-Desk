@@ -401,12 +401,14 @@ test('AC84 (specs/S-001.md:6917-6922; the Design reviewer\'s 4, stage 3 round 1)
     ctx.getBoundingClientRect = () => ({ top: 0, bottom: 50, height: 50, left: 0, right: 260, width: 260 });
     const facts = ctx.children.filter((c) => c.tag);
     assert.equal(facts.length, 2, 'AC61\'s two facts');
-    facts.forEach((f, i) => { f.getBoundingClientRect = () => ({ top: 0, bottom: [30, 80][i], height: 17, left: 0, right: 260, width: 260 }); });
+    // Rewritten at stage 6a of "After MD3" (AC89 (k), specs/S-001.md:7942-7943): "<n> more" counts the parts not shown at
+    // all, so the second fact starts below the box's foot (a part cut at the third line counts as shown).
+    facts.forEach((f, i) => { f.getBoundingClientRect = () => ({ top: [0, 52][i], bottom: [30, 80][i], height: 17, left: 0, right: 260, width: 260 }); });
     await app.resize(360);
     await app.flush();
     const mores = byClass(app.view, 'v2-inmore');
     assert.deepEqual(mores.map((m) => m.attrs['data-more']), [`${ctx.attrs['data-bt']}`], 'only the one cut text has a control');
-    assert.equal(mores[0].textContent, '1 more', 'the fact not wholly shown');
+    assert.equal(mores[0].textContent, '1 more', 'the fact not shown at all');
     // The second fact moved up into the box (a wider screen): both shown whole, the control goes.
     facts[1].getBoundingClientRect = () => ({ top: 0, bottom: 48, height: 17, left: 0, right: 260, width: 260 });
     ctx.scrollHeight = 50;

@@ -442,7 +442,10 @@ export function timelineWords(rows) {
   const q = (c, k) => (multi && seen.get(c.phase) > 1 ? `${c.phase} run ${k}` : c.phase);
   const parts = [];
   const ahead = [];
-  for (const r of rows) {
+  // AC89 (k) (the Design reviewer's N4, stage 2 round 1): each phase named once — a phase still ahead in one run is
+  // said where it last appears (a later run's gate, now or ahead), never "ahead" twice.
+  const laterSaid = (ri, phase) => rows.slice(ri + 1).some((r) => r.cells.some((c) => c && c.phase === phase && (c.gate || c.state === 'now' || c.state === 'ahead')));
+  for (const [ri, r] of rows.entries()) {
     let cur = null;
     const flush = () => {
       if (!cur) return;
@@ -467,7 +470,7 @@ export function timelineWords(rows) {
       }
       if (c.state === 'ahead') {
         flush();
-        ahead.push(c.phase);
+        if (!laterSaid(ri, c.phase)) ahead.push(c.phase);
         continue;
       }
       if (cur && cur.state === c.state) cur.cells.push(c);
@@ -584,19 +587,26 @@ export function nextLine(project, { gate, row, sprint, docRead, unknown = false 
   if (!row && unknown) return { icon: 'half', words: WA.notAvailable };
   if (!row) return { icon: 'half', words: docRead ? 'no milestone left to reach' : NOT_RECORDED };
   const f = row.finish;
-  if (f && !f.na && f.words) return { icon: 'half', words: `${row.code} · rough finish ${f.words}` };
+  // AC89 (k): " · may be out of date", or " · a newer estimate line could not be read", where J14 says so of the
+  // estimate the finish comes from (the row's own, as Plan's row marks it).
+  const est = row.estimate || {};
+  const stale = est.newer ? ` · ${WA.newerUnreadable}` : est.stale ? ` · ${WA.mayBeOld}` : '';
+  if (f && !f.na && f.words) return { icon: 'half', words: `${row.code} · rough finish ${f.words}${stale}` };
   // "no estimate yet" only where none is filed for it (the Reviewer's B1, stage 2 round 1). Where AC24
   // marks the finish not available for another cause (past its estimate, or an earlier milestone in the
   // order with none), its own words, as Plan shows them; with the estimates read failed, AC24 gives no
   // finish at all: "not available", with no cause to name.
-  if (row.estimate && row.estimate.kind === 'missing') return { icon: 'half', words: `${row.code} · no estimate yet` };
-  // The reason names another project's milestone (always so when its code isn't this tile's own: the
-  // tile's Next is its project's first not reached): that project named, as Plan's row beside it does
-  // (the Design reviewer's B-new, stage 2 round 2). Its own: AC24's words as Plan shows them.
-  if (f && f.na && f.stop && f.stop.project && f.stop.project !== project.name) {
-    return { icon: 'half', words: `${row.code} · rough finish: ${WA.notAvailable}: ${f.stop.project}'s ${f.stop.code} ${f.stop.why}` };
+  if (est.kind === 'missing') return { icon: 'half', words: `${row.code} · no estimate yet` };
+  // AC89 (k): "<id> · rough finish not available: <AC24's reason, its own code left out>", so the tile names its own
+  // code once ("MD1 · rough finish not available: past its estimate"); a reason naming another milestone names it, and
+  // another project's as "<project>'s <code>", as Plan's row beside it does (the Design reviewer's B-new, stage 2 round 2).
+  if (f && f.na && f.stop) {
+    const other = f.stop.project && f.stop.project !== project.name;
+    const why = other ? `${f.stop.project}'s ${f.stop.code} ${f.stop.why}`
+      : f.stop.code !== row.code ? `${f.stop.code} ${f.stop.why}` : f.stop.why.replace(/^(is|has) /, '');
+    return { icon: 'half', words: `${row.code} · rough finish ${WA.notAvailable}: ${why}${stale}` };
   }
-  if (f && f.na && f.words) return { icon: 'half', words: `${row.code} · rough finish: ${f.words}` };
+  if (f && f.na && f.words) return { icon: 'half', words: `${row.code} · rough finish ${f.words}${stale}` };
   return { icon: 'half', words: `${row.code} · rough finish: ${WA.notAvailable}` };
 }
 

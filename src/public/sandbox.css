@@ -1204,6 +1204,8 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-plnote .sb-lineclip.over::after { height: 1.4em; background: linear-gradient(to right, transparent, var(--bg) 85%); }
 .v2-plan .sb-bubble, .v2-sheet .sb-linebub { background: var(--bg); color: var(--ink); border: 1px solid var(--line2); border-radius: 12px; box-shadow: var(--shadow); }
 .v2-sheet .sb-linebub .sb-bubble-top { background: var(--bg); }
+/* AC89 (f) (the audit's item 9): a bubble's top row and its note take the bubble's own ground, never --card over it. */
+.v2-plan .sb-bubble-top, .v2-plan .sb-bubble-note, .v2-sheet .sb-linebub .sb-bubble-note, .v2-home .sb-bubble-note, .v2-proj .sb-bubble-note { background: var(--bg); }
 .v2-sheet .sb-linebub .sb-eyebrow { font: var(--t-label); color: var(--ink2); }
 .v2-sheet .sb-linebub .sb-bubble-t { font: var(--t-body); }
 
@@ -1218,3 +1220,16 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-tt.over, .v2-plli.gate .v2-plname.over { -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
 .v2-clip.v2-stt { display: block; max-height: calc(3 * 1.3em); }
 .v2-clip.v2-stt.open { max-height: none; }
+
+/* M3D stage 6a, the words and drawing on the screens (AC89 (f), (g), (k)). (g) The Timeline's sprint marks level: every
+   mark, a plain one too, as tall as one with a reason (its 24 px summary), so centred on one line their tops meet. (k) The
+   ordering view's rows have no empty space under them (stage 6a's design reviews, N1 and round 2's B1): a row with
+   nothing under it keeps its two move controls stacked beside the row only, with no padding, filling the row's own
+   height, shared between the two (each at least 24 px, the target floor), so they are never taller than its
+   words and the names keep their width; a row with lines under it keeps the controls' column spanning them, as before.
+   (k) An unparseable portfolio card's "can't parse" note cut at three lines, faded only once the browser measures the cut. */
+.v2-timeline .v2-stats span.sb-mkw { min-height: 24px; }
+.v2-plli.ord:not(:has(.v2-plunder)) > .v2-plmove { grid-row: 1; padding: 0; align-self: stretch; grid-auto-rows: minmax(24px, 1fr); }
+.v2-plli.ord:not(:has(.v2-plunder)) > .v2-plmove > .v2-plmv { height: auto; }
+.v2-why.v2-wclip { max-height: calc(3 * 1.4em); overflow: hidden; overflow: clip; }
+.v2-why.v2-wclip.over { -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }

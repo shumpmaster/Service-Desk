@@ -450,7 +450,8 @@ test('AC49: every Working now value against its record, and "–" wherever a rec
   assert.equal(wn.doing, 'builder on P-003, Produce');
   assert.deepEqual(wn.tiles.map((t) => [t.label, t.value]), [['Started', '14:35'], ['Time so far', '25 min'], ['Last check-in', '14:55'], ['Next check-in', '15:30']]);
   assert.equal(wn.tiles[1].why, 'counted from the start');
-  assert.deepEqual(wn.lines.map((l) => [l.label, l.value]), [['Update', 'P-003: builder started (Produce), 14:55'], ['Next', 'the Orchestrator routes its return'], ['Cost', '–']]);
+  // Rewritten at stage 6a of "After MD3" (AC89 (e), specs/S-001.md:7874-7879): the lines say an unknown in words, never "–".
+  assert.deepEqual(wn.lines.map((l) => [l.label, l.value]), [['Update', 'P-003: builder started (Produce), 14:55'], ['Next', 'the Orchestrator routes its return'], ['Cost', 'not known yet · from the usage record when it ends']]);
   assert.match(wn.lines[1].why, /not a record/);
   const noSched = workingNow(P, { ...model, items: [{ ...model.items[0], running: { role: 'builder', since: null }, asOf: null }] }, {}, { workflow: null }, 'builder', {}, now, 'UTC');
   assert.deepEqual(noSched.tiles.map((t) => t.value), ['–', '–', '–', '–']);
@@ -460,7 +461,8 @@ test('AC49: every Working now value against its record, and "–" wherever a rec
   assert.equal(ahead.tiles[1].value, '–');
   assert.match(ahead.tiles[1].why, /later than this device's clock/);
   const cos = workingNow(P, model, {}, null, 'chief-of-staff', {}, now, 'UTC');
-  assert.deepEqual([cos.tiles[0].value, cos.tiles[1].value, cos.lines[2].value], ['–', '–', '–']);
+  // Rewritten at stage 6a (AC89 (e), specs/S-001.md:7874-7879): the tiles keep "–"; the Cost line says it in words.
+  assert.deepEqual([cos.tiles[0].value, cos.tiles[1].value, cos.lines[2].value], ['–', '–', 'not recorded: no piece of its work is under way']);
   assert.match(cos.tiles[0].why, /not recorded: no piece of its work is under way/, 'from 2026-10-17 (J13): no session file, so nothing under way');
 });
 

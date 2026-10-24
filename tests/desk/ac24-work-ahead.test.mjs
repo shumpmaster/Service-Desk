@@ -256,7 +256,9 @@ test('AC24: the states, as Status gives them — MD1 and MD2 work filed (half-fi
   // under way for the rough finish (on 20 Oct its 4–7 counts from 18 Oct: 2–5 left).
   const app2 = await open({ now: at('2026-10-20T18:00:00Z'), extra: { 'docs/PROJECT.md': withSprint('M3A', 'PR #901'), 'intake/estimates.jsonl': WORKED() } });
   try {
-    assert.deepEqual(await stateIn(app2, 'M3A'), ['Work filed: PR #901', 'st-planned']);
+    // Rewritten at stage 6a of "After MD3" (AC89 (k), specs/S-001.md:7934-7935): "Plan's rule-3 row (work filed in a run
+    // still to come) takes AC86's half-filled icon, 'work filed'", on the row and in its sheet.
+    assert.deepEqual(await stateIn(app2, 'M3A'), ['Work filed: PR #901', 'st-half']);
     // MD3 3–5 not under way from 20 Oct: 23 Oct – 25 Oct; M3A then 2–5 more: 25 Oct – 30 Oct.
     assert.equal(await finishOf(app2, 'MD3'), '23 Oct – 25 Oct');
     assert.equal(await finishOf(app2, 'M3A'), '25 Oct – 30 Oct');

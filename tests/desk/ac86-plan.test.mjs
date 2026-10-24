@@ -251,8 +251,9 @@ test('AC86 (B1): a gate card in the model\'s real form, its `Milestone:` line ev
     assert.deepEqual(rows(app).map((r) => parts(r).icon), WORKED_ICONS, 'each milestone its own state\'s icon');
     assert.deepEqual(rows(app).map((r) => parts(r).right), WORKED_RIGHT, 'each its own finish, and "your acceptance" for AC24\'s "once you accept it"');
     assert.equal(textRuns(byClass(findKeyed(app, 'wa-grp:Service-Desk'), 'v2-plh')[0], () => false)[1], '6', 'the count: milestones ahead, the gate not among them');
-    // AC24's own rule is unchanged: a card whose `Milestone:` line names a milestone counts on that row.
-    assert.ok(rows(app).every((r) => byClass(r, 'v2-plyou').map((x) => x.textContent).join() === '1 waiting on you in your Queue'));
+    // Rewritten at stage 6a of "After MD3" (AC89 (k), specs/S-001.md:7932-7933; AC86's note, :7676-7677): "a gate card is
+    // never counted in a milestone row's '<n> waiting on you in your Queue' (AC24's note); its own row says it waits".
+    assert.ok(rows(app).every((r) => byClass(r, 'v2-plyou').length === 0), 'no milestone row counts the gate card');
     // In the ordering the gate is no row: it is in no order and no plan.
     await app.tap(findKeyed(app, 'plan-order'));
     assert.equal(gateRows(app).length, 0);
@@ -310,7 +311,8 @@ test('AC86: a question naming a milestone keeps the row\'s icon and finish and a
   const gateRow = { flag: { kind: 'card', card: { gate: 'launch', parsed: { text: 'answer: write `x`\nMilestone: M3B\n' } } } };
   const v = viewOf({ extra: { 'intake/estimates.jsonl': WORKED() }, nowMs: NOW, rows: [gateRow] });
   const m3b = v.rows.find((x) => x.code === 'M3B');
-  assert.deepEqual([m3b.icon, m3b.right, m3b.waiting], ['planned', { kind: 'finish', words: '27 Oct – 3 Nov' }, 1]);
+  // Rewritten at stage 6a (AC89 (k), specs/S-001.md:7932-7933): nor is it counted in the row's waiting.
+  assert.deepEqual([m3b.icon, m3b.right, m3b.waiting], ['planned', { kind: 'finish', words: '27 Oct – 3 Nov' }, 0]);
 });
 
 // The build review's B2 (stage 5, round 1): J14's "a newer estimate line could not be read" under the

@@ -148,7 +148,9 @@ export function fakeServer(repos, config, clock) {
         event: x.event || 'push', status: x.status, conclusion: x.conclusion, run_number: x.run_number || i + 1,
         head_sha: x.headSha || head, html_url: `https://github.com/${project.repo}/actions/runs/${i + 1}`,
         // AC72: a run's title (GitHub's `display_title`), when the fixture gives one.
-        ...(x.title != null ? { display_title: x.title } : {}) }));
+        ...(x.title != null ? { display_title: x.title } : {}),
+        // AC89 (k): a run's `updated_at`, when the fixture gives one (the v2.5 page's CI row names its date).
+        ...(x.updatedAt != null ? { updated_at: x.updatedAt } : {}) }));
       const runLists = ['push', 'workflow_dispatch'].map((ev) => {
         const url = u.runs(head, ev);
         const list = runs.filter((x) => x.event === ev);

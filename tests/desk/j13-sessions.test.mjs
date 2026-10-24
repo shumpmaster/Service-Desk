@@ -336,16 +336,18 @@ test('AC49 (J13): every Chief of Staff Working now value against its line; Cost 
   assert.equal(line.Update.value, 'definer helper · 11:10 to 11:31 · 1,200 tokens · 4 tool uses · 21 min 0 s');
   assert.equal(line.Next.value, 'hands the work back to you');
   assert.match(line.Next.why, /fixed statement of the model's rule \(S-033 AC6/);
-  assert.deepEqual([line.Cost.value, line.Cost.why], ['–', COS_COST_NR]);
+  // Rewritten at stage 6a of "After MD3" (AC89 (e), specs/S-001.md:7874-7879): "Cost: not recorded: the Chief of Staff can't read its own cost".
+  assert.deepEqual([line.Cost.value, line.Cost.why], [COS_COST_NR, null]);
   const two = team(['s-two'], at('12:00'));
   const w2 = workingNow(SD3, { items: [] }, two.snap, two.j, 'chief-of-staff', memberPage(SD3, { items: [] }, two.snap, two.j, EMPTY_Q, two.tv, 'chief-of-staff', at('12:00'), TZ), at('12:00'), TZ);
-  assert.deepEqual([w2.lines[0].value, w2.lines[0].why], ['–', 'no helper recorded yet']);
+  // Rewritten at stage 6a (AC89 (e), specs/S-001.md:7874-7879): "not recorded", in words, with its reason.
+  assert.deepEqual([w2.lines[0].value, w2.lines[0].why], ['not recorded', 'no helper recorded yet']);
   // After it ends: its end line's cost.
   const cs = cosSessions(snapOf(['s-cost']), at('12:00').getTime());
   const done = cosWorkingNow(cs, cs.pieces[0], at('12:00'), TZ);
   assert.equal(done.lines[2].value, 'estimate $1.23');
   const cs2 = cosSessions(snapOf(['s-ended']), at('12:00').getTime());
-  assert.deepEqual([cosWorkingNow(cs2, cs2.pieces[0], at('12:00'), TZ).lines[2].why], [COS_COST_NR], 'a null cost after it ends: still not recorded');
+  assert.deepEqual([cosWorkingNow(cs2, cs2.pieces[0], at('12:00'), TZ).lines[2].value], [COS_COST_NR], 'a null cost after it ends: still not recorded (AC89 (e): in its words)');
 });
 
 test('AC49 (J13): a session line\'s summary sheet — its words, the line as written linked to its file; Why and For you "not recorded in the session line"; an end line\'s figures one tap away, each null "not recorded"', () => {

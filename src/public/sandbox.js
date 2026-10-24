@@ -818,14 +818,16 @@ function timelineNode(tl, name) {
 }
 
 /**
- * The gate card waiting on the owner in a project, as the board has it (AC80: in "Waiting on you" or
- * "Kicked back", less a card marked done here), or null. Home's tile (AC82) and Plan's gate row (AC86)
- * both take it from here, so the two never differ.
+ * The gate cards waiting on the owner in a project, as the board has them (AC80: in "Waiting on you" or "Kicked back",
+ * less a card marked done here), in the board's order. Plan gives each a row of its own (AC86: "a gate card waiting on
+ * the owner is a row of its own"; stage 6a's review, B1); Home's tile (AC82) takes the first, its ◆ and "the <gate>
+ * gate, after your ruling", so the tile and Plan's first gate row never differ.
  */
-function gateCardOf(bd, name) {
+function gateCardsOf(bd, name) {
   const lanes = bd ? bd.lanes.filter((l) => l.key !== 'done').flatMap((l) => l.groups.filter((g) => g.project === name).flatMap((g) => g.rows)) : [];
-  return lanes.find((c) => c.kind === 'gate' && c.flag && c.flag.card) || null;
+  return lanes.filter((c) => c.kind === 'gate' && c.flag && c.flag.card);
 }
+const gateCardOf = (bd, name) => gateCardsOf(bd, name)[0] || null;
 
 /** One tile (AC82, frame H5): its name and what waits, the README summary, the phases as a timeline, "Now:", who is at work, what comes next. A tap opens the project's Status screen until stage 3. */
 function tileNode(b, bd, group, nextRows, whyOnce = null) {
@@ -1399,8 +1401,9 @@ function lastActionNode(p) {
       : h('p', { class: 'sb-last-t' }, lead, h('span', { class: 'sb-line-w' }, la.words), after(true));
   }
   // tabindex -1: where focus goes when a held bubble closes and its control has gone (AC56, draft 5).
+  // AC89 (d): a v2.5 project's line has no "Your merges?" fold under it; a v3 project's keeps AC55's reason one tap away.
   return h('div', { class: 'sb-last', key: 'last-action', tabindex: '-1' }, line,
-    h('details', { class: 'sb-why', key: `last-why:${name}` }, h('summary', {}, 'Your merges?'), h('p', { class: 'small' }, `Not in this line: ${la.merges} (the desk reads only open pull requests).`)));
+    p.project.model === 'v3' ? h('details', { class: 'sb-why', key: `last-why:${name}` }, h('summary', {}, 'Your merges?'), h('p', { class: 'small' }, `Not in this line: ${la.merges} (the desk reads only open pull requests).`)) : null);
 }
 /** What "Your last action" shows, as one string, to tell whether a refresh would change it. */
 const laSig = (la) => `${la.state}|${la.text}|${la.code || ''}`;
@@ -2065,6 +2068,13 @@ function cardTitle(card) {
   return h('span', { class: `v2-tt${clipOver.get(id) === true ? ' over' : ''}`, key: `tt:${card.id}`, 'data-clip': id }, card.title);
 }
 
+/** A card's note; a portfolio card's "can't parse" note cut at three lines with the fade (AC89 (k)), the whole in its sheet. */
+function noteNode(card) {
+  if (!card.portfolio) return h('span', { class: 'v2-why' }, card.note);
+  const id = `note:${card.id}`;
+  return h('span', { class: `v2-why v2-wclip${clipOver.get(id) === true ? ' over' : ''}`, key: `wclip:${card.id}`, 'data-clip': id }, card.note);
+}
+
 function cardNode(p, card, lane, only) {
   if (card.kind === 'gate' && lane !== 'done') {
     return h('li', { class: `v2-card gate${lane === 'kick' ? ' kick' : ''}`, key: `card:${card.id}`, 'data-card': card.id,
@@ -2084,7 +2094,7 @@ function cardNode(p, card, lane, only) {
   h('span', { class: 'v2-m', live: () => metaText(card, Date.now()) }),
   card.mark ? h('span', { class: 'v2-mk' }, vi(card.mark.icon), h('span', {}, card.mark.words)) : null,
   lane === 'kick' && card.kicked ? h('span', { class: 'v2-why' }, card.kicked.reason) : null,
-  card.note ? h('span', { class: 'v2-why' }, card.note) : null,
+  card.note ? noteNode(card) : null,
   card.changes ? h('span', { class: 'v2-why' }, 'You asked for changes') : null,
   // No check line on a pull request's card: no read gives its own checks (AC80, settled after round 1).
   stepButton(p, card, lane));
@@ -2786,7 +2796,9 @@ const FEED_STC = { check: 'check', pastcheck: 'pastcheck', half: 'half', next: '
 const MARK_ICON = { '✕': { icon: 'bad', name: 'failed' } };
 function markNode(m) {
   const icon = MARK_ICON[m.mark];
-  const words = [icon ? [vi(icon.icon, 'v2-k v2-smk'), h('span', { class: 'sb-vh' }, `${icon.name} `)] : m.mark ? `${m.mark} ` : null, m.word];
+  // AC89 (k): a mark with its own spoken name (a failed source check, "source check failed") says that, its drawn word hidden.
+  const words = m.spoken && icon ? [vi(icon.icon, 'v2-k v2-smk'), h('span', { class: 'sb-vh' }, m.spoken), h('span', { 'aria-hidden': 'true' }, m.word)]
+    : [icon ? [vi(icon.icon, 'v2-k v2-smk'), h('span', { class: 'sb-vh' }, `${icon.name} `)] : m.mark ? `${m.mark} ` : null, m.word];
   if (!m.why) return h('span', { class: 'sb-mkw' }, words);
   return h('details', { class: 'sb-mkw sb-why' }, h('summary', {}, words), h('p', { class: 'v2-small' }, m.why));
 }
@@ -2808,11 +2820,16 @@ function longText(name, key, items, render) {
   const hidden = moreHidden.has(key) ? moreHidden.get(key) : guess;
   const text = h('span', { class: `v2-bt${open ? '' : ' cut'}`, key: `bt:${key}`, 'data-bt': open ? null : key }, items.map(render));
   if (!open && !hidden) return text;
-  const more = items.length > 1 ? `${hidden} more` : 'more';
+  // AC89 (k): "<n> more" counts the parts not shown at all; with only a part cut at the third line, "more".
+  const more = items.length > 1 && hidden !== CUT_ONLY ? `${hidden} more` : 'more';
   return [text, foldButton(name, fk, false, { class: 'v2-fold v2-inmore', 'data-more': key }, open ? 'less' : more)];
 }
 
-/** How many of a cut text's parts are not wholly shown; null where the browser can't say. */
+/**
+ * How many of a cut text's parts are not shown at all (AC89 (k): a part cut at the third line counts as shown); CUT_ONLY
+ * where the text is cut but every part shows at least its start; 0 where nothing is cut; null where the browser can't say.
+ */
+const CUT_ONLY = 'cut';
 function hiddenParts(el) {
   const [sh, ch] = [el.scrollHeight, el.clientHeight];
   if (typeof sh !== 'number' || typeof ch !== 'number' || !ch) return null;
@@ -2820,7 +2837,8 @@ function hiddenParts(el) {
   const box = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
   const kids = [...(el.children || [])];
   if (!box || !(box.height > 0) || !kids.length) return 1;
-  return Math.max(1, kids.filter((k) => k.getBoundingClientRect && k.getBoundingClientRect().bottom > box.bottom + 1).length);
+  const unseen = kids.filter((k) => k.getBoundingClientRect && k.getBoundingClientRect().top >= box.bottom - 1).length;
+  return unseen || CUT_ONLY;
 }
 
 /** One sprint, top to bottom (AC60, frame 7b): date and code, its marks at the right; its title as recorded; Technical, Context and Why as three grey-labelled rows; and the link to its tasks. */
@@ -3392,8 +3410,8 @@ function workView(nowMs) {
   const snaps = new Map(built.filter((b) => b.snap).map((b) => [b.project.name, b.snap]));
   const gates = new Map();
   for (const b of built) {
-    const c = gateCardOf(lastBoard, b.project.name);
-    if (c) gates.set(b.project.name, c);
+    const cs = gateCardsOf(lastBoard, b.project.name);
+    if (cs.length) gates.set(b.project.name, cs);
   }
   waMemo = workAheadView({ config: CONFIG, entries, snaps, nowMs, tz: TZ, draft: planDraft.read(), gates });
   return waMemo;
@@ -3667,7 +3685,7 @@ function renderWorkAhead(built, nowMs) {
       const once = groupOnce(g.rows);
       body.push(h('section', { class: 'v2-plgrp', key: `wa-grp:${g.key}` }, planHead(g.words, g.rows.length, { proj: true }),
         once.lines.length ? h('div', { class: 'v2-plonce', key: `wa-once:${g.key}` }, once.lines.map((l) => h('p', { class: 'v2-small v2-plgap', key: `once:${l.kind}:${l.words}` }, l.words))) : null,
-        h('ol', { class: 'v2-rows', 'aria-label': g.words }, g.gate ? planGateRow(g.gate) : null, g.rows.map((r) => planRow(v, r, false, once)))));
+        h('ol', { class: 'v2-rows', 'aria-label': g.words }, g.gates.map(planGateRow), g.rows.map((r) => planRow(v, r, false, once)))));
     }
     if (!v.rows.length) body.push(h('p', { class: 'v2-small', key: 'wa-none' }, 'No milestones to go'));
   }

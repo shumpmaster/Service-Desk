@@ -664,3 +664,26 @@ read that stays pending, and `pfDesk()`) also build fake repos holding a made-up
 (`[time_limits]` alone) and a made-up Personal-Org-Operating-Model `docs/LEDGER.md` (`# Ledger` alone), each **NOT a real
 record**. `tests/desk/ac14-budget.test.mjs`'s day adds twelve made-up
 portfolio Done marks on one device.
+
+## After the glance audit, G1 (2026-10-24, S-001 AC91 (a) to (e), AC71 and AC82 changed)
+
+`tests/desk/glance-fixtures.mjs` builds the fixture states AC91's note names that G1 needs, on `fake-desk.mjs`'s in-memory
+repositories, from committed fixtures; `tests/desk/ac91-glance-home.test.mjs` opens Home on them:
+- **`text`**: Service-Desk's records at 77bfeae (`j11-77bfeae/`, real, as committed) and Personal-Org-Operating-Model in
+  `poom/`'s placeholder form (`waSetup()` of `wa-fixtures.mjs`); nothing added.
+- **`mix`**: `text`, with one made-up project, "Alpha", holding one card of each kind: AC52's one-of-each fixture
+  (`fullRepo` of `sandbox-fixtures.mjs`: `md-extremes/`'s gate card and case, `orchestrator-m2/`'s hold and merge cards, a
+  question, a pull request and a deploy waiting), **NOT real records**. The F1 and F2 Launch run is G5's, added there.
+- **`unread`**: `mix` with one project's reads failing (Service-Desk by default, or "Alpha"): the fake desk's function made
+  unreachable for it, a made-up failure, **NOT a real event**.
+- **signed-out**: `mix` with every read refused as signed out (the fake desk's 403), made up, **NOT a real event**.
+- **`stall`**: `text` with Service-Desk's J12 answer the built one (`github/j12-pulls-built.json`, NOT as GitHub sent it,
+  above), whose latest movement is PR #77's merge on 16 Oct, opened at a made-up clock, 2026-10-24T12:00:00Z, so nothing
+  has moved for 8 days: **made-up times**.
+- **`ext`**: `md-extremes/` as AC42's tests hold it (`extremes()`), **NOT real records**.
+
+The AC91 test also adds, inline, each **NOT a real record**: on "Alpha", a reversible question past its settle time
+(`questions/Alpha-past.md`, raised 6 Oct, TIMEOUT 24) and an irreversible one (`questions/Alpha-final.md`), with made-up
+raised times; a second dispatched member (`status/P-004.toml`, a reviewer); a pull request whose title can't be printed
+(`BAD_PR`), so the tile can't be drawn; and a device's made-up "last looked" times, one of them 19 Oct, after the records'
+last dates.

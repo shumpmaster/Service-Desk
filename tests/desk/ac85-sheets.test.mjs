@@ -837,7 +837,12 @@ test('AC89 (j): a settle time already past says so — "Was due to settle itself
     assert.equal(findAll(undo, (e) => e.tag === 'b')[0].textContent, 'Was due to settle itself as B', 'its words in bold');
     assert.ok(findAll(undo, (e) => e.tag === 'svg' && /vi-clock/.test(e.attrs.class)).length, 'the clock');
     await app.go('#/');
-    assert.match(byClass(app.view, 'v2-brief')[0].textContent, /one question was due to settle itself 1 Nov, 13:00/, 'the briefing');
+    // Rewritten in G1 of "After the glance audit" (AC91 (a): the briefing's settle line on a line of its own, AC89 (j)'s words
+    // "unchanged but for the capital", with the clock).
+    assert.match(byClass(app.view, 'v2-brief')[0].textContent, /One question was due to settle itself 1 Nov, 13:00/, 'the briefing');
+    const dueLine = byClass(byClass(app.view, 'v2-brief')[0], 'v2-bdue')[0];
+    assert.equal(dueLine.textContent, 'One question was due to settle itself 1 Nov, 13:00', 'on a line of its own');
+    assert.ok(findAll(dueLine, (e) => e.tag === 'svg' && /vi-clock/.test(e.attrs.class)).length, 'with the clock');
     assert.doesNotMatch(byClass(app.view, 'v2-brief')[0].textContent, /settles itself|Sun 13:00/);
   } finally {
     app.restore();
@@ -861,7 +866,8 @@ test('AC89 (j): a settle time already past says so — "Was due to settle itself
   const bd = { badge: 2, counts: new Map([['Letters', { waiting: 2, kicked: 0 }]]), quiet: { agents: [] },
     lanes: [{ key: 'wait', groups: [{ project: 'Letters', rows: [qc(raised), qc(now - 3600e3)] }] }, { key: 'kick', groups: [] }, { key: 'done', groups: [] }] };
   const v = briefingView({ bd, reads: [{ name: 'Letters', read: { read: 'ok', since: now }, drawError: null }], flagged: 2, signedOut: false, v3: () => true, lastReadMs: now, nowMs: now, tz: TZ });
-  assert.equal(v.parts, '2 waiting · oldest 1 d · one question was due to settle itself 1 Nov, 13:00 · one question settles itself Tue 08:00');
+  assert.equal(v.parts, '2 waiting · oldest 1 d');
+  assert.deepEqual(v.due.map((d) => d.words), ['One question was due to settle itself 1 Nov, 13:00', 'One question settles itself Tue 08:00'], 'each said, past first (AC91 (a))');
 });
 
 test('AC89 (j): the board\'s gate buttons carry the reason typed in the gate\'s sheet — each of the four files on the board, character for character, the file the sheet\'s button opens', async () => {

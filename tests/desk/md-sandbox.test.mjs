@@ -154,7 +154,9 @@ test('AC48 with AC82: a project whose read goes stale shows no quiet on Home ("N
     await app.go('#/');
     assert.doesNotMatch(app.text(), /Nothing needs you|Nothing waiting|All clear/);
     assert.match(byClass(app.view, 'v2-brief')[0].textContent, /^Can't read Quiet since \d\d:\d\d/, 'AC5\'s words, in the briefing');
-    assert.equal(byClass(app.view, 'v2-wt')[0].textContent, "Can't read");
+    // Rewritten in G1 of "After the glance audit" (AC91 (c); AC82, changed): the tile's corner says when, in --bad.
+    assert.match(byClass(app.view, 'v2-wt')[0].textContent, /^Can't read since \d\d:\d\d$/);
+    assert.ok(byClass(app.view, 'v2-wt')[0].className.split(' ').includes('bad'));
   } finally {
     app.restore();
   }

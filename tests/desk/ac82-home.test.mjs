@@ -53,24 +53,31 @@ const view = (bd, extra = {}) => briefingView({ bd, reads: [ok('Alpha'), ok('Bet
 const REV = { reversibility: 'reversible', default: 'C', timeout: '48' };
 const IRR = { reversibility: 'irreversible' };
 
-test('AC82: the briefing when something needs the owner — "<n> need you", then the parts that apply in order, each left out at zero: "<w> waiting, <k> kicked back", "oldest <age>" from the cards with a raised time, the settle times, "can\'t be undone"', () => {
+// Rewritten in G1 of "After the glance audit" (AC91 (a); AC82, changed, specs/S-001.md:7609-7613): the settle times and
+// "can't be undone" leave the parts line, each for a line of its own under it (`due`), with its clock or lock, capitalised.
+test('AC82 (changed by AC91 (a)): the briefing when something needs the owner — "<n> need you", then the parts that apply in order, each left out at zero: "<w> waiting, <k> kicked back", "oldest <age>" from the cards with a raised time; then the settle times and "can\'t be undone", each on a line of its own', () => {
   const raised = NOW - 4 * 3600e3;
   const full = view(board({
     wait: [card('Alpha', { raisedAt: raised }), card('Alpha', { raisedAt: NOW - 3600e3 }), card('Beta'), question('Alpha', REV, NOW - 3600e3), question('Beta', IRR, null), card('Beta'), card('Alpha')],
     kick: [card('Beta', { raisedAt: NOW - 9 * 86400e3 })] }));
   assert.equal(full.kind, 'you');
   assert.equal(full.head, '8 need you', 'n is Waiting\'s badge');
-  assert.equal(full.parts, `7 waiting, 1 kicked back · oldest 4 h · one question settles itself ${settleWords(NOW - 3600e3 + 48 * 3600e3, NOW, TZ)} · one can't be undone`);
+  assert.equal(full.parts, '7 waiting, 1 kicked back · oldest 4 h');
+  assert.deepEqual(full.due, [{ key: 'coming', icon: 'clock', words: `One question settles itself ${settleWords(NOW - 3600e3 + 48 * 3600e3, NOW, TZ)}` },
+    { key: 'undo', icon: 'lock', words: "One can't be undone" }]);
   assert.equal(settleWords(NOW - 3600e3 + 48 * 3600e3, NOW, TZ), 'Fri 09:00', 'within 7 days: weekday and time, in ownerTimeZone');
   // "oldest": "Waiting on you"'s cards only (not "Kicked back"), and only those with a raised time.
   assert.equal(view(board({ wait: [card('Alpha')], kick: [] })).parts, '1 waiting', 'no raised time: no "oldest"');
+  assert.deepEqual(view(board({ wait: [card('Alpha')], kick: [] })).due, [], 'nothing settling, nothing that can\'t be undone: no line');
   assert.equal(view(board({ wait: [], kick: [card('Alpha', { raisedAt: raised })] })).parts, '1 kicked back', 'the waiting part left out at zero; a kicked-back card gives no "oldest"');
   assert.equal(view(board({ wait: [card('Alpha', { raisedAt: raised })] })).head, '1 needs you');
   // Two settling; two that can't be undone; a v2.5 project's question counts for neither (v3 owner questions only).
   const two = view(board({ wait: [question('Alpha', REV, NOW - 3600e3), question('Beta', { ...REV, timeout: '24' }, NOW - 3600e3), question('Alpha', IRR, NOW - 60e3), question('Beta', IRR, NOW - 60e3),
     { ...question('Old', REV, NOW - 3600e3), v25: true }] }));
-  assert.equal(two.parts, `5 waiting · oldest 1 h · 2 questions settle themselves, the first ${settleWords(NOW + 23 * 3600e3, NOW, TZ)} · 2 can't be undone`);
-  assert.equal(view(board({ wait: [question('Alpha', { reversibility: 'reversible', default: 'B' }, NOW)] })).parts, '1 waiting · oldest 0 s', 'no TIMEOUT: it does not settle itself');
+  assert.equal(two.parts, '5 waiting · oldest 1 h');
+  assert.deepEqual(two.due.map((d) => d.words), [`2 questions settle themselves, the first ${settleWords(NOW + 23 * 3600e3, NOW, TZ)}`, "2 can't be undone"]);
+  const noTimeout = view(board({ wait: [question('Alpha', { reversibility: 'reversible', default: 'B' }, NOW)] }));
+  assert.deepEqual([noTimeout.parts, noTimeout.due], ['1 waiting · oldest 0 s', []], 'no TIMEOUT: it does not settle itself');
   assert.deepEqual([briefAge(35 * 60e3), briefAge(4 * 3600e3 + 59 * 60e3), briefAge(2 * 86400e3 + 3600e3)], ['35 m', '4 h', '2 d'], 'the board\'s age form, brief');
 });
 
@@ -80,8 +87,9 @@ test('AC82: the settle time is AC12\'s sum (its raised time plus TIMEOUT hours) 
   assert.equal(settleWords(at, Date.parse('2026-10-31T20:00:00Z'), TZ), 'Mon 12:37', '48 hours later is 12:37 CST: the hour the clocks went back');
   assert.equal(settleWords(raised + 240 * 3600e3, Date.parse('2026-10-31T20:00:00Z'), TZ), '10 Nov, 12:37', 'beyond 7 days: the date and time');
   assert.equal(settleWords(Date.parse('2026-10-21T18:37:00Z'), Date.parse('2026-10-31T20:00:00Z'), TZ), '21 Oct, 13:37', 'a time already past reads as a date');
+  // Rewritten in G1 (AC91 (a)): the settle time on its own line, its words AC82's but for the capital.
   const v = view(board({ wait: [question('Alpha', REV, raised)] }), { nowMs: Date.parse('2026-10-31T20:00:00Z') });
-  assert.match(v.parts, /one question settles itself Mon 12:37$/);
+  assert.equal(v.due[0].words, 'One question settles itself Mon 12:37');
 });
 
 test('AC82: "Nothing needs you" only under Quiet\'s rule, with "Every project read <age> ago" and "with the agents: <n>" from 1; otherwise "Checking…", "Can\'t read <project> since HH:MM" (AC5), "Nothing waiting on you · confirming with GitHub" (a mark unconfirmed), or signed out', () => {
@@ -472,6 +480,7 @@ test('AC82, from stage 3: a tile\'s tap opens the project\'s page, its Overview,
   }
 });
 
+// Rewritten in G1 of "After the glance audit" (AC91 (c)): the unreadable tile's corner says when, "Can't read since HH:MM".
 test('AC82 (part A, items 4 and 6): Home from H5\'s extremes and from a project that can\'t be read renders without error; never quiet while one can\'t be read', async () => {
   const { extremes } = await import('./sandbox-fixtures.mjs');
   const x = await open(extremes(), { store: looked(NOW - 9 * 86400e3) });
@@ -487,7 +496,7 @@ test('AC82 (part A, items 4 and 6): Home from H5\'s extremes and from a project 
   try {
     await app.advance(4 * POLL_MS);
     assert.ok(brief(app).textContent.includes("Can't read Delta since"), brief(app).textContent);
-    assert.equal(byClass(keyed(app, 'card:Delta'), 'v2-wt')[0].textContent, "Can't read");
+    assert.match(byClass(keyed(app, 'card:Delta'), 'v2-wt')[0].textContent, /^Can't read since \d\d:\d\d$/, 'AC91 (c): the corner says when');
     assert.doesNotMatch(app.text(), /Nothing needs you/);
   } finally {
     app.restore();
@@ -497,6 +506,7 @@ test('AC82 (part A, items 4 and 6): Home from H5\'s extremes and from a project 
 // ---------------------------------------------------------------------------
 // Round 1's further findings (stage 2): the Design reviewer's N2 and N3, the Reviewer's N2
 
+// Rewritten in G1 of "After the glance audit" (AC91 (c)): the corner reads "Can't read since HH:MM", so the foot says only the reason.
 test('AC82, the Design reviewer\'s N2: a tile whose records the page doesn\'t hold — still "Checking…" at first paint, or "Can\'t read" with none ever read — says "not available" in its "Now", "At work" and "Next" lines, not "not recorded"', async () => {
   const setup = textSetup();
   setup.config.projects.push(v3('Zeta'));
@@ -511,10 +521,10 @@ test('AC82, the Design reviewer\'s N2: a tile whose records the page doesn\'t ho
     assert.deepEqual(lines('Delta'), ['Now: not available', 'No dispatch log: not used here', 'Next: not available'], 'a v2.5 project: its model\'s line stays');
     await app.advance(1000);
     await app.advance(61_000);
-    assert.equal(keyed(app, 'card:Zeta').children[0].children[1].textContent, "Can't read");
+    assert.match(keyed(app, 'card:Zeta').children[0].children[1].textContent, /^Can't read since \d\d:\d\d$/);
     const z = lines('Zeta');
-    assert.deepEqual(z.slice(0, 3), ['Now: not available', 'At work: not available', 'Next: not available'], 'can\'t read, none ever read: not available');
-    assert.match(z[3], /^Can't read since \d\d:\d\d: /, 'and the tile\'s red line says why');
+    assert.deepEqual(z, ['Now: not available', 'At work: not available', 'Next: not available'], 'can\'t read, none ever read: not available');
+    assert.match(byClass(keyed(app, 'card:Zeta'), 'v2-tfoot')[0].textContent, /^Reason: /, 'and the tile\'s foot says why, the time said once in the corner');
     assert.ok(!lines('Alpha').some((l) => /not available$/.test(l) && /^(Now|At work):/.test(l)), 'read: its own lines');
     assert.doesNotMatch(keyed(app, 'card:Zeta').textContent, /not recorded/);
   } finally {
@@ -522,14 +532,15 @@ test('AC82, the Design reviewer\'s N2: a tile whose records the page doesn\'t ho
   }
 });
 
-test('AC82, the Design reviewer\'s N3: a "Since you last looked" line cut at three lines fades at its end (rulebook item 16); one that fits has no fade', async () => {
+// Rewritten in G1 of "After the glance audit" (AC91 (e); P-001-glance-since.md, A): cut at two lines, not three, the fade kept.
+test('AC82, the Design reviewer\'s N3 (changed by AC91 (e)): a "Since you last looked" line cut at two lines fades at its end (rulebook item 16); one that fits has no fade', async () => {
   const app = await open(twoProjects(), { store: looked(NOW - 10 * 3600e3) });
   try {
     const e1s = () => byClass(keyed(app, 'since'), 'v2-e1');
     assert.ok(e1s().length >= 2);
     const [a, b] = e1s();
-    // The fake DOM can't lay out text: the first line's words run to 8 lines in its 3-line box, the second fits.
-    a.clientHeight = 57; a.scrollHeight = 152;
+    // The fake DOM can't lay out text: the first line's words run to 8 lines in its 2-line box, the second fits.
+    a.clientHeight = 38; a.scrollHeight = 152;
     b.clientHeight = 19; b.scrollHeight = 19;
     await app.resize(360);
     await app.flush();
@@ -540,9 +551,9 @@ test('AC82, the Design reviewer\'s N3: a "Since you last looked" line cut at thr
     app.restore();
   }
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
-  assert.match(css, /\n\.v2-e1 \{ position: relative; font: var\(--t-body\); overflow-wrap: anywhere; max-height: calc\(3 \* 1\.45em\); overflow: hidden; overflow: clip; \}/, 'three lines, never an ellipsis');
+  assert.match(css, /\n\.v2-e1 \{ position: relative; font: var\(--t-body\); overflow-wrap: anywhere; max-height: calc\(2 \* 1\.45em\); overflow: hidden; overflow: clip; \}/, 'two lines, never an ellipsis');
   assert.match(css, /\n\.v2-e1\.over::after \{ content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1\.45em; pointer-events: none;\s+background: linear-gradient\(to right, transparent, var\(--bg\) 85%\); \}/,
-    'the third line fades at its end into the ground');
+    'the second line fades at its end into the ground');
 });
 
 // The Reviewer's N2 (stage 2, round 1): AC82's rules no test held.

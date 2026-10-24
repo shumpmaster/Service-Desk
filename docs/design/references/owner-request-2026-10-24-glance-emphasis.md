@@ -24,3 +24,23 @@ Left by the owner on the mockup page (docs/design/mockups/glance-emphasis/), on 
 > Is it possible scrap the middle column, and rather opt for a collapsible section that shows kicked back cards left to right in a line? Almost like a kicked back queue that is minimized when nothing exists but pops open when something is there?
 
 Mocked as item 4b of the mockup, and added as options C and D to questions/P-001-glance-lanes.md.
+
+## The owner's answers and round 2, word for word
+
+Said by the owner in the same session, after the six questions were filed (pull request #217):
+
+> Okay so I like all of your proposals, and for the kicked back idea, I like the option with the two state columns equally sized.
+>
+> Then going back to your proposals, I like them, they are solid. However a few things I want the reviewer to consider.
+>
+> I'm not against slight color, I know we have some strict enforcement around color in the spec. I am willing to adjust that, for a limited palette that enforces consistent indication of things that are going well, and things that aren't.
+>
+> Additionally I want to propose the occasional usage of outlined boxes or subtle callouts that an assist as visual anchors on pages for the most important information on it.
+>
+> My two final ideas are more targeted. On any timeline element or plan element, can we are add a subtle but noticeable visual arrow indicator for where we are?
+>
+> And then finally when I look at the milestones page I am consistently met with a 0 out of X milestones. Even on phases we've fully completed. My understanding is that is referring to the standard milestones. I want to expand that to all milestones, in some way that highlights the fact we didn't use the x standard ones but we still have y number of milestones and this is what we've completed so far. I want that same logic applied to sprints and actions. So I can see the volume progress for each.
+>
+> And in hand with that - please visual segregate the standard milestones a little bit more than they currently are. The lighter color just kind of gets skipped by me and I get confused on what's in or out
+
+What it starts: the six answers are recorded in decisions/questions/P-001-glance-*.md. The five further ideas (a limited status palette, occasional callouts, a where-we-are arrow, counts of all milestones, sprints and actions, and standard milestones set apart) go to the Design reviewer as round 2 of the glance audit, recorded at docs/design/audit-2026-10-24-round-2.md when it returns, then mocked up as before.

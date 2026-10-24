@@ -3,7 +3,8 @@
 // marks, what the board shows: three lanes, "Waiting on you", "Kicked back" and "Done · last 24 h",
 // each project's cards together under its name, the quiet lines above them, and every count less the
 // cards marked done here. No network, no DOM; the page (public/sandbox.js) draws it and keeps the
-// marks in local storage (`desk-board-marks-v1`), every read and write wrapped as J5's are.
+// marks in local storage (`desk-board-marks-v1`), every read and write wrapped as J5's are. From stage G2 of "After
+// the glance audit" (AC91 (f)) the page draws "Kicked back" as a strip above the two other lanes (`strip`).
 //
 // Marks never change what needs the owner, "Quiet" or what is notified (Terms, "Board"): they live
 // on this device only, and only the board's own counts leave a marked card out.
@@ -31,6 +32,12 @@ export const LANES = [
   { key: 'kick', title: 'Kicked back' },
   { key: 'done', title: 'Done · last 24 h' },
 ];
+/**
+ * AC91 (f) (after the glance audit, stage G2; P-001-glance-lanes.md, C, with equal widths): the board's model keeps its
+ * three lanes, and the page draws two of them side by side, "Waiting on you" and "Done · last 24 h", of equal width, with
+ * "Kicked back" as a strip above them (`strip`, below), never a column.
+ */
+export const BOARD_LANES = ['wait', 'done'];
 export const WORDS = Object.freeze({
   empty: 'Nothing here',
   emptyDone: 'Hold a card and drag it here',
@@ -44,7 +51,42 @@ export const WORDS = Object.freeze({
   answerRecording: 'Your answer is being recorded',
   nothing: 'Nothing waiting',
   cantCheck: "GitHub couldn't be checked yet",
+  // AC91 (f): the strip's quiet line with no kicked-back card, "Kicked back · none" (the ruling's words).
+  stripNone: 'none',
+  // AC91 (g) (P-001-glance-new.md, A): the word on a card in "Waiting on you" raised since "last looked".
+  newCard: 'new',
 });
+
+/**
+ * AC91 (f): the strip's quiet line with no kicked-back card says "none" only when that is known (AC91 (f)'s words);
+ * an unknown is said in words, never as "none" (Part A item 5, as the lanes' empty words are, AC80 and AC89 (a)):
+ * with one project shown, its state's words (AC89 (a)'s table: "Nothing here" is "none", "Nothing here when last
+ * read" is "none when last read", "Not read yet" and "Can't read" as they are); with every project shown, before any
+ * is read "not read yet", and with none readable "can't read". `unread`: the board's 'pending' | 'cant' | null;
+ * `one`: oneProjectView's result, or null. Returns the words after "Kicked back · ".
+ */
+export function stripEmptyWords({ unread = null, one = null } = {}) {
+  const low = (w) => w.charAt(0).toLowerCase() + w.slice(1);
+  if (one) {
+    if (one.empty === WORDS.empty) return WORDS.stripNone;
+    if (one.empty === ONE_WORDS.whenLast) return `${WORDS.stripNone} when last read`;
+    return low(one.empty);
+  }
+  if (unread === 'cant') return low(ONE_WORDS.cantRead);
+  if (unread) return low(ONE_WORDS.notReadYet);
+  return WORDS.stripNone;
+}
+
+/**
+ * AC91 (g) (P-001-glance-new.md, A): whether a card in "Waiting on you" carries "new": raised after AC40's "last
+ * looked" on this device. None with no raised time, none in the strip or in Done (`lane` other than 'wait'), and none
+ * while the device holds no "last looked" (`reference` null: AC40's markers off).
+ */
+export function isNewCard(card, lane, reference) {
+  if (lane !== 'wait' || !card || reference == null || !Number.isFinite(reference)) return false;
+  const at = card.raisedAt;
+  return at != null && Number.isFinite(at) && at > reference;
+}
 
 /**
  * AC89 (a)'s words for Waiting with one project shown, in each of its read states (specs/S-001.md, AC89 (a),
@@ -642,7 +684,8 @@ export function recordDone(project, model, snap, j, nowMs) {
  * The whole board (AC80): input: { projects: [{ project, cards, agents, read: { ok, cantRead,
  * since }, recording: [], asking: [], answerRecording: [], recordRows: [], seenRows: [] }] in J7's
  * order, marks, only (a project's name, or null), nowMs, tz }. Returns { lanes: [{ key, title,
- * count, groups: [{ project, rows, more }] }], counts: Map(project → { waiting, kicked }), badge,
+ * count, groups: [{ project, rows, more }] }], strip (AC91 (f): the kicked-back cards, newest first, each with its
+ * `stripProject`), counts: Map(project → { waiting, kicked }), badge,
  * quiet, only, of, nothingWaiting, cantRead, done, pending }.
  */
 export function boardView(input) {
@@ -731,8 +774,13 @@ export function boardView(input) {
   const lane = (k) => lanes[k].reduce((n, g) => n + (k === 'done' ? g.all.length : g.rows.length), 0);
   let badge = 0;
   for (const c of counts.values()) badge += c.waiting + c.kicked;
+  // AC91 (f): the strip's cards in one row, the newest first across every project shown, each naming its project (the
+  // strip has no project groups); with one project shown, only that project's. A tie keeps J7's order.
+  const strip = lanes.kick.flatMap((g) => g.rows.map((c) => ({ ...c, stripProject: g.label })))
+    .sort((a, b) => b.kicked.at - a.kicked.at);
   return {
     lanes: LANES.map((l) => ({ ...l, count: lane(l.key), groups: lanes[l.key] })),
+    strip,
     counts, counted, badge, quiet, only, of: input.projects.filter((p) => p.project.portfolio !== true).length, nothingWaiting, cantRead, pendingAny,
   };
 }

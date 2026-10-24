@@ -477,8 +477,11 @@ test('AC88 + AC69 (after MD3, stage 8; (b) item 37, the plan review of draft 1, 
       kicked = byClassIn(findAll(app.view, (e) => e.dataset && e.dataset.lane === 'kick')[0], 'v2-card').length;
     }
     assert.ok(kicked >= 1, 'a card kicked back');
-    // And one marked done just now, still confirming in Done (its kind icon grey).
-    for (const h of hrefsIn(app, /^#\/waiting\/card\//)) {
+    // And one marked done just now, still confirming in Done (its kind icon grey). Rewritten in G2 (AC91 (f)): taken from
+    // "Waiting on you", since the Kicked back strip, above the lanes, now comes first on the page and its card is the one
+    // kept kicked back.
+    const waitLane = findAll(app.view, (e) => e.dataset && e.dataset.lane === 'wait')[0];
+    for (const h of findAll(waitLane, (e) => e.tag === 'a' && /^#\/waiting\/card\//.test(e.attrs.href || '')).map((a) => a.attrs.href)) {
       await app.go(h);
       const done = keyed('sheet-done');
       if (!done) continue;
@@ -634,6 +637,49 @@ const G1_EXCEPT = (n, d, theme) => {
   const k = G1_KEY(n);
   return Boolean(k && G1_ONCE.get(theme) && (G1_ONCE.get(theme).get(k) || []).includes(d)) ? `G1 ${theme} ${k} ${d}` : null;
 };
+/**
+ * G2 of "After the glance audit"'s changes to Waiting's look on purpose (the brief's rule; AC91 (f) and (g), with AC80's
+ * changed parts), each declaration pinned to its value, before and after, in each theme, on only its own element:
+ * - (f) the two lanes of equal width (`div.v2-lanes` in the board): AC80's 1.18 : 1 : 1 gone for 1 : 1;
+ * - (f), item 4c, Done shaded: the Done lane (`section.v2-lane.lane-done` in the lanes) on --bg2, 12 px round, 8 px inside
+ *   its sides and 10 px at its foot, stretched to the taller lane, and its head (`h2.v2-lh` in it) 6 px from its top;
+ * - (f), the Kicked back strip's one quiet line (`p.v2-kq`, a new element, in `section.v2-kstrip`), "Kicked back"
+ *   (`span.v2-kl`) in --t-label --ink2 and " · none" (`span.v2-kn`) in --t-mono --ink2;
+ * - (g), "new"'s place in a card's kind line (`span.v2-new`, a new element, in `span.v2-kd`), drawn as nothing while the
+ *   card is not new (`.none`): no fixture this guard walks holds a "last looked", so none is new here.
+ * The strip with cards (its head, row and 200 px places) and a shown "new" are drawn on no screen this guard walks (no
+ * fixture here keeps a kicked-back mark or a "last looked"), so AC91's own cases (tests/desk/ac91-glance-waiting.test.mjs)
+ * lock their look; the strip's section takes `.v2-lane`'s rules, as the middle lane did, so its own look is unchanged.
+ */
+const G2_FONT = G1_FONT;
+const G2_LOOK = (ink, ink2, bg2) => new Map([
+  ['div.v2-lanes', ['grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr) minmax(0, 1fr) → minmax(0, 1fr) minmax(0, 1fr)']],
+  ['section.v2-lane.lane-done', [`background: (none) → ${bg2}`, 'border-radius: (none) → 12px', 'padding: (none) → 0 8px 10px', 'align-self: (none) → stretch']],
+  ['h2.v2-lh (Done)', ['padding-top: (none) → 6px']],
+  ['p.v2-kq', [`font: (none) → ${G2_FONT('500 11px/1.35')}`, `color: (none) → ${ink2}`, 'padding: (none) → 4px 0']],
+  ['span.v2-kl', ['computed font-size: 13px → 11px', 'computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 14.850000000000001px',
+    `computed color: ${ink} → ${ink2}`]],
+  ['span.v2-kn', ['font: (none) → 400 11px/1.4 "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace', `color: (none) → ${ink2}`,
+    'computed font-size: 13px → 11px', 'computed line-height: 18.849999999999998px → 15.399999999999999px',
+    'computed font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif → "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace',
+    `computed color: ${ink} → ${ink2}`]],
+  ['span.v2-new.none', [`font: (none) → ${G2_FONT('500 11px/1.35')}`, `color: (none) → ${ink}`, 'flex: (none) → none', 'display: (none) → none']],
+]);
+const G2_ONCE = new Map([['light', G2_LOOK('#18191c', '#5c5f66', '#f7f7f8')], ['dark', G2_LOOK('#ecedef', '#a2a5ac', '#141517')]]);
+const G2_KEY = (n) => {
+  const p = n.parent;
+  if (n.tag === 'div' && n.cls.has('v2-lanes') && p && p.cls.has('v2-board')) return 'div.v2-lanes';
+  if (n.tag === 'section' && n.cls.has('v2-lane') && n.cls.has('lane-done') && p && p.cls.has('v2-lanes')) return 'section.v2-lane.lane-done';
+  if (n.tag === 'h2' && n.cls.has('v2-lh') && p && p.tag === 'section' && p.cls.has('lane-done')) return 'h2.v2-lh (Done)';
+  if (n.tag === 'p' && n.cls.has('v2-kq') && p && p.tag === 'section' && p.cls.has('v2-kstrip')) return 'p.v2-kq';
+  if (n.tag === 'span' && p && p.tag === 'p' && p.cls.has('v2-kq')) for (const c of ['v2-kl', 'v2-kn']) if (n.cls.has(c)) return `span.${c}`;
+  if (n.tag === 'span' && n.cls.has('v2-new') && n.cls.has('none') && p && p.tag === 'span' && p.cls.has('v2-kd')) return 'span.v2-new.none';
+  return null;
+};
+const G2_EXCEPT = (n, d, theme) => {
+  const k = G2_KEY(n);
+  return Boolean(k && G2_ONCE.get(theme) && (G2_ONCE.get(theme).get(k) || []).includes(d)) ? `G2 ${theme} ${k} ${d}` : null;
+};
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
@@ -671,6 +717,8 @@ function sameLook(app, where, fails, seen) {
         if (M3D5_EXCEPT(b, d)) { excepted.add(`M3D5 ${label(b)} ${d}`); continue; }
         const g1 = G1_EXCEPT(b, d, way.theme);
         if (g1) { excepted.add(g1); continue; }
+        const g2 = G2_EXCEPT(b, d, way.theme);
+        if (g2) { excepted.add(g2); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -785,7 +833,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // nothing else of it: the excepted set is exactly the pinned one.
   const g1 = [...G1_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G1 ${theme} ${k} ${d}`))).sort();
   assert.deepEqual([...excepted].filter((x) => /^G1 /.test(x)).sort(), g1);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G1 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // G2's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
+  const g2 = [...G2_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G2 ${theme} ${k} ${d}`))).sort();
+  assert.deepEqual([...excepted].filter((x) => /^G2 /.test(x)).sort(), g2);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[12] )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

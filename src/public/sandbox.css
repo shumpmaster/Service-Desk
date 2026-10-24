@@ -590,10 +590,32 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
 .v2-filter { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .v2-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 4px 0 12px; border-radius: 16px; background: var(--chip); font: var(--t-label); color: var(--ink); }
 .v2-x { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 14px; }
-.v2-lanes { display: grid; grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr) minmax(0, 1fr); gap: 6px; align-items: start; }
+/* AC91 (f) (stage G2; P-001-glance-lanes.md, C, with equal widths): two lanes, "Waiting on you" and "Done · last 24 h",
+   side by side at every width, 1 : 1, 6 px apart; Kicked back is a strip above them (below), never a column. */
+.v2-lanes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; align-items: start; }
 .v2-lane { min-width: 0; display: grid; gap: 6px; align-content: start; }
 .v2-lh { font: 600 11px/1.3 var(--font); color: var(--ink); padding: 4px 0 6px; border-bottom: 1px solid var(--line); height: 44px; display: flex; flex-direction: column; justify-content: flex-end; overflow-wrap: anywhere; }
 .v2-lc { font: var(--t-mono); color: var(--ink2); }
+/* AC91 (f), item 4c (mock pD): the Done lane's ground is --bg2, 12 px round, the full height of the lanes (as tall as
+   the taller), 8 px inside its sides and 10 px at its foot, its head 6 px from its top; its cards keep --card. A lane's
+   ground, the place cards move to, not a soft box (AC92 (e)). */
+.v2-lane.lane-done { align-self: stretch; background: var(--bg2); border-radius: 12px; padding: 0 8px 10px; }
+.v2-lane.lane-done > .v2-lh { padding-top: 6px; }
+/* AC91 (f) (mock pK): the Kicked back strip. With no card, one quiet line, "Kicked back" in --t-label and " · none" in
+   --t-mono, both --ink2, with no fold mark, no control and no drop target. With any, its head, "Kicked back" in 600 12 px
+   ink with its count in --t-mono, over a hairline, then its cards in one row, each 200 px wide, the row scrolling
+   sideways inside the strip, snapping to a card, so the page itself never scrolls sideways. */
+.v2-kq { font: var(--t-label); color: var(--ink2); padding: 4px 0; overflow-wrap: anywhere; }
+.v2-kn { font: var(--t-mono); color: var(--ink2); }
+.v2-kh { display: flex; align-items: center; gap: 6px; min-height: 28px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font: 600 12px/1.3 var(--font); color: var(--ink); }
+.v2-krow { display: flex; gap: 8px; max-width: 100%; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; padding: 2px 0 6px; }
+.v2-kslot { flex: 0 0 200px; min-width: 0; display: grid; scroll-snap-align: start; }
+/* While one of its cards is carried into Done, the row is clipped sideways only, so the card shows below it. */
+.v2-krow.carrying { overflow-x: clip; overflow-y: visible; }
+/* AC91 (g) (P-001-glance-new.md, A): "new" beside a card's kind label, in ink, with no colour and no box; drawn as
+   nothing on a card that isn't new, so the 15-second tick can show or hide it. */
+.v2-new { font: var(--t-label); color: var(--ink); flex: none; }
+.v2-new.none { display: none; }
 .v2-grp { display: flex; align-items: center; gap: 4px; min-height: 26px; font: var(--t-label); color: var(--ink2); width: 100%; flex-wrap: wrap; padding-top: 2px; }
 .v2-gn { color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
 .v2-gc { font: var(--t-mono); }

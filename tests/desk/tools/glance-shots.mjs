@@ -1,17 +1,20 @@
 // Chromium captures of Home on the fixture states of "After the glance audit" (spec S-001, AC91's note; the stage
 // table's "Chromium captures at 360 × 740 and 414 × 896, light and dark"), for a stage's pull request. Not a test: run by
-// hand, `node tests/desk/tools/glance-shots.mjs <out dir>` (Playwright and its Chromium as installed in the session).
+// hand, `node tests/desk/tools/glance-shots.mjs <out dir> [name prefix]` (Playwright and its Chromium as installed in the
+// session); a name prefix, such as `g2-`, takes only those captures.
 //
 // The page is the desk's own code (src/public/), served as it deploys, started with each state's config, its function
 // calls answered by tests/desk/fake-desk.mjs from the state's in-memory repositories (tests/desk/glance-fixtures.mjs,
 // whose made-up parts tests/desk/fixtures/README.md labels NOT real). The page's clock is Playwright's, set to the
-// state's time; the fake desk's clock follows it. Each capture's file names its state, width and theme.
+// state's time; the fake desk's clock follows it. Each capture's file names its state, width and theme. Each line printed
+// says whether the page scrolls sideways (it must not), and, where the Kicked back strip holds cards (G2, AC91 (f)), how
+// far its row scrolls sideways inside itself.
 import { createServer } from 'node:http';
 import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
-import { mixState, unreadState, signedOutState, stallState, extState, MIX_PROJECT, NOW, STALL_NOW } from '../glance-fixtures.mjs';
+import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, deviceMarks, KICKED, MIX_PROJECT, MIX_PROJECT2, NOW, STALL_NOW } from '../glance-fixtures.mjs';
 
 const PUBLIC = resolve(fileURLToPath(new URL('../../../src/public/', import.meta.url)));
 const OUT = resolve(process.argv[2] || 'glance-shots');
@@ -24,7 +27,10 @@ const Q = (title, rev, def, timeout) => `# Ruling needed: ${title}\n\nWHY: a tes
 const THREE = { extra: { 'questions/Alpha-past.md': Q('a made-up question past its time', 'reversible', 'A', '24'), 'questions/Alpha-final.md': Q('a made-up choice that can\'t be undone', 'irreversible', 'none', 'none') },
   raised: { 'questions/Alpha-past.md': Date.parse('2026-10-06T15:00:00Z'), 'questions/Alpha-final.md': NOW - 2 * H } };
 
-/** Each capture: its name, the state, its clock, "last looked", and what fails before the page opens or after its first reads. */
+/**
+ * Each capture: its name, the state, its clock, "last looked", the screen (`hash`, Home by default), what the device keeps
+ * besides (`seed`, made up: G2's Done marks), and what fails before the page opens or after its first reads.
+ */
 const SHOTS = [
   { name: 'g1-count-mix', state: () => mixState(THREE), now: NOW, looked: NOW - H },
   { name: 'g1-stall', state: stallState, now: STALL_NOW, looked: LATE },
@@ -32,7 +38,16 @@ const SHOTS = [
   { name: 'g1-unread-cards-waiting', state: () => unreadState({ who: MIX_PROJECT }), now: NOW, looked: NOW - H, later: true },
   { name: 'g1-signed-out', state: signedOutState, now: NOW, looked: NOW - H, before: true },
   { name: 'g1-ext', state: extState, now: NOW, looked: NOW - 9 * 24 * H },
-];
+  // G2: Waiting (AC91 (f) and (g)). `mix` with "last looked" 5 hours back, so two cards are new; `quiet`, with nothing
+  // waiting ("Kicked back · none", an empty Done shaded); two made-up projects with three cards kicked back on the device
+  // and one confirming in Done, on the whole board and with one project shown; and `unread` on Waiting.
+  { name: 'g2-waiting-mix', state: () => mixState(), now: NOW, looked: NOW - 5 * H, hash: '#/waiting' },
+  { name: 'g2-waiting-quiet', state: quietState, now: NOW, looked: NOW - 5 * H, hash: '#/waiting' },
+  { name: 'g2-waiting-kicked', state: () => twoMixState(), now: NOW, looked: NOW - 5 * H, hash: '#/waiting', seed: deviceMarks(KICKED) },
+  { name: 'g2-waiting-kicked-one', state: () => twoMixState(), now: NOW, looked: NOW - 5 * H, hash: `#/waiting/${MIX_PROJECT}`, seed: deviceMarks(KICKED) },
+  { name: 'g2-waiting-unread', state: () => unreadState({ who: MIX_PROJECT }), now: NOW, looked: NOW - 5 * H, later: true, hash: '#/waiting' },
+].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
+void MIX_PROJECT2;
 const SIZES = [[360, 740], [414, 896]];
 const THEMES = ['light', 'dark'];
 
@@ -92,8 +107,13 @@ async function main() {
           const ctx = await browser.newContext({ viewport: { width: w, height: hgt }, deviceScaleFactor: 2, colorScheme: theme });
           const page = await ctx.newPage();
           await page.clock.install({ time: shot.now });
-          await page.addInitScript((looked) => { try { localStorage.setItem('desk-seen-v1', JSON.stringify({ lastLooked: looked })); } catch { /* none */ } }, shot.looked);
-          await page.goto(base);
+          await page.addInitScript(([looked, seed]) => {
+            try {
+              localStorage.setItem('desk-seen-v1', JSON.stringify({ lastLooked: looked }));
+              for (const [k, v] of Object.entries(seed || {})) localStorage.setItem(k, v);
+            } catch { /* none */ }
+          }, [shot.looked, shot.seed || null]);
+          await page.goto(base + (shot.hash || ''));
           const run = async (ms) => {
             for (let t = 0; t < ms; t += 1000) {
               await page.clock.runFor(1000);
@@ -108,9 +128,10 @@ async function main() {
           }
           await page.waitForTimeout(300);
           const scroll = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+          const strip = await page.evaluate(() => { const r = document.querySelector('.v2-krow'); return r ? r.scrollWidth - r.clientWidth : null; });
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: true });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}`);
           await ctx.close();
         }
       }

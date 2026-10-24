@@ -687,3 +687,19 @@ The AC91 test also adds, inline, each **NOT a real record**: on "Alpha", a rever
 raised times; a second dispatched member (`status/P-004.toml`, a reviewer); a pull request whose title can't be printed
 (`BAD_PR`), so the tile can't be drawn; and a device's made-up "last looked" times, one of them 19 Oct, after the records'
 last dates.
+
+## After the glance audit, G2 (2026-10-24, S-001 AC91 (f) and (g), AC80 changed)
+
+`tests/desk/glance-fixtures.mjs` adds the states G2 needs; `tests/desk/ac91-glance-waiting.test.mjs` opens Waiting on them,
+and `tests/desk/tools/glance-shots.mjs` captures it:
+- **`quiet`**: `text`, with the made-up project "Alpha" holding no card (its README alone, **NOT a real record**), so every
+  project is read and nothing waits.
+- **two made-up projects**: `mix` with a second made-up project, "Bravo", holding one card of each kind (`fullRepo`, as
+  "Alpha"'s), **NOT real records**, so the Kicked back strip holds two projects' cards.
+- **Done marks kept on a device** (`deviceMarks`, `KICKED`): made up, **NOT real** (no owner made them): Alpha's pull
+  request, Bravo's question and Alpha's gate card marked done and kicked back 1, 3 and 7 minutes before the clock, and
+  Bravo's pull request marked a minute before it, still confirming; stored as the board stores its marks
+  (`desk-board-marks-v1`).
+- **"last looked" times** on a device (`desk-seen-v1`), made up: 5 hours and 30 days before the clock, and none.
+
+AC80's, AC66's, AC88's and AC89's tests rewritten in G2 add nothing new: they use their own made-up records, above.

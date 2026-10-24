@@ -30,6 +30,8 @@ const cardsIn = (app, k) => byClass(lane(app, k), 'v2-card');
 const sub = (app) => byClass(app.view, 'v2-sub')[0].textContent;
 const smallLine = (app) => (byClass(app.view, 'v2-qsmall')[0] || { textContent: null }).textContent;
 const empty = (app, k) => (byClass(lane(app, k), 'v2-empty')[0] || { textContent: null }).textContent;
+/** Rewritten in G2 (AC91 (f)): Kicked back is a strip above the lanes, its empty state one quiet line, "Kicked back · <words>". */
+const strip = (app) => lane(app, 'kick').textContent;
 const count = (app, k) => (byClass(lane(app, k), 'v2-lc')[0] || { textContent: null }).textContent;
 /** The line above the lanes (AC89 (a), states 2 and 5): the quiet lines' box that comes before the lanes, or null. */
 function aboveLanes(app) {
@@ -127,7 +129,7 @@ test('AC89 (a), state 4: back in view after 10 minutes — "checked 10 min ago",
     assert.match(sub(app), /^checked 1[01] min ago$/, sub(app));
     assert.equal(cardsIn(app, 'wait').length, n, 'its last read\'s cards');
     assert.equal(smallLine(app), 'With the agents: checking… · Being recorded by the automatic job: checking…');
-    assert.equal(empty(app, 'kick'), 'Nothing here');
+    assert.equal(strip(app), 'Kicked back · none', 'rewritten in G2: the strip\'s "none" for the lanes\' "Nothing here"');
     assert.equal(aboveLanes(app), null);
     await app.advance(POLL_MS);
     assert.match(sub(app), /^checked \d+ s ago$/, 'read again: state 3');
@@ -148,7 +150,7 @@ test('AC89 (a), states 1 then 2: a first read unanswered for 3 minutes in view �
     assert.equal(aboveLanes(app), null, 'nothing above the lanes');
     assert.equal(cardsIn(app, 'wait').length, 0, 'no cards');
     assert.equal(empty(app, 'wait'), 'Not read yet');
-    assert.equal(empty(app, 'kick'), 'Not read yet');
+    assert.equal(strip(app), 'Kicked back · not read yet', 'rewritten in G2: the strip says the unknown in the state\'s words');
     assert.equal(count(app, 'wait'), null, 'no count for an unknown');
     assert.equal(smallLine(app), null, 'no counts under the lanes');
     await app.advance(STALE_MS - POLL_MS);
@@ -198,7 +200,7 @@ test('AC89 (a), state 5: a failure after a success — "checked <age> ago" from 
     assert.equal(aboveLanes(app), `Can't read Alpha since ${hhmm(new Date(failedAt), TZ)}: ${REASON_WORDS.network}`, 'since the first failure');
     assert.deepEqual(cardsIn(app, 'wait').map((c) => c.dataset.k), ids, 'no card ever hides');
     assert.equal(count(app, 'wait'), n);
-    assert.equal(empty(app, 'kick'), 'Nothing here when last read');
+    assert.equal(strip(app), 'Kicked back · none when last read', 'rewritten in G2: the strip in the state\'s words');
     assert.equal(smallLine(app), null, 'no counts under the lanes: the line above says it can\'t be read');
     noChecking(app, 'state 5');
     // The whole board, every project shown, is unchanged by AC89 (a): its own quiet line, as AC80 says.

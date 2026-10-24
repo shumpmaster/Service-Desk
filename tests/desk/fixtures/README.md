@@ -641,10 +641,26 @@ milestone's sheet. `tests/desk/ac89-words-drawing.test.mjs` also writes made-up 
 Q-013 source check at 3117150; a made-up CI run, with its `updated_at`, for the made-up v2.5 project "Delta"; and two
 made-up portfolio queue files. `tests/desk/fake-desk.mjs` passes a fixture run's `updatedAt` as GitHub's `updated_at`.
 
+From stage 6a's reviews, more made-up records, each **NOT a real record**:
+- `shortRowsSetup()` in `tests/desk/wa-fixtures.mjs` (the design review's round 2, B1): Service-Desk's docs/PROJECT.md
+  at 77bfeae with MD1's and MD2's names shortened ("Desk known" and "Look chosen", `SHORT_NAMES`), so that their rows on
+  Plan take one line, and the worked example's estimates, so that no row has a line under it;
+- in `tests/desk/ac89-words-drawing.test.mjs` (the review's round 1, B1): a second Launch-gate card, `queue/P-004-launch-1.md`,
+  made from AC85's made-up `P-003-launch-1.md` with its item renamed P-004, both given a `Milestone: M3A` line under
+  their answer lines, with a made-up dispatch-log line raising each card;
+- in the same file (round 1, B2): Service-Desk's real stop card, `queue/P-001-stop-6.md`, given a made-up
+  `Milestone: MD3` line under its answer line, with a made-up dispatch-log line raising it.
+
 ## After MD3, stage 7 (2026-10-23, S-001 AC89 (l), J23 changed)
 
 `tests/desk/ac89-portfolio-reads.test.mjs` uses the made-up portfolio of `pf-fixtures.mjs` and adds, inline, made-up files
 in the model portfolio template's form, each **NOT a real record**: `library/facts/_TEMPLATE.md` and
 `intent/PORTFOLIO-INTENT.md` (the template's own files), a queue `README.md` and `.gitkeep`, and a device's made-up count
-of ten reads already made today after portfolio marks. `tests/desk/ac14-budget.test.mjs`'s day adds twelve made-up
+of ten reads already made today after portfolio marks. From its review's round 1 (B2 and N1), more made-up files beside
+those, each **NOT a real record**: `library/facts/_draft.md`, `library/facts/sub/_TEMPLATE.md` and
+`library/facts/_TEMPLATE.md.bak` (each a fact, by name), and `intent/2026-standing.md` (an intent file beside the
+template's own); and kept Done marks on a device, made up, for the reload case. Its scheduler cases (the J23 case for a
+read that stays pending, and `pfDesk()`) also build fake repos holding a made-up Service-Desk `governance/ROUTING.toml`
+(`[time_limits]` alone) and a made-up Personal-Org-Operating-Model `docs/LEDGER.md` (`# Ledger` alone), each **NOT a real
+record**. `tests/desk/ac14-budget.test.mjs`'s day adds twelve made-up
 portfolio Done marks on one device.

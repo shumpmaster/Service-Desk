@@ -1025,3 +1025,23 @@ test('AC89 (j): long titles cut at three lines with the fade, the whole one tap 
   assert.match(rule('.v2-clip.v2-stt.open'), /max-height: none;/);
   assert.doesNotMatch(CSS, /\.v2-(tt|stt|plname)[^{]*\{[^}]*text-overflow/, 'no ellipsis');
 });
+
+// After MD3, stage 8 ((b) item 37): the `^` anchor in defaultLetter (stage 4's review, round 2, R2-N1) and the lone
+// backtick (stage 4's review confirmation, N1).
+test('AC85 (stage 8): a DEFAULT naming a letter only after other words is no default ("none (see option B)"); a lone backtick in a card\'s words stays as written, never a code element, the pair before it drawn as code (AC85\'s card, made up, NOT a real record)', async () => {
+  assert.equal(defaultLetter({ default: 'none (see option B)' }), null, 'the spec\'s example: never "defaults to B"');
+  assert.equal(defaultLetter({ default: 'B (see option A)' }), 'B', 'a letter starting the field still reads');
+  // Three backticks: one pair, then a lone one.
+  const card = ac85('queue/P-003-launch-1.md').replace(/- `hold` — [^\n]*/, '- `hold` — with `code`, then ` a lone backtick (made up): nothing moves.');
+  assert.ok(card.includes('then ` a lone backtick'));
+  const app = await openLetters({ repos: { Letters: lettersRepo({ gateCard: card }) } });
+  try {
+    const sh = await openSheet(app, GATE);
+    const hold = byClass(sh, 'v2-opt').find((o) => /^Hold/.test(byClass(o, 'v2-ol')[0].textContent));
+    const od = byClass(hold, 'v2-od')[0];
+    assert.equal(od.textContent, 'with code, then ` a lone backtick (made up): nothing moves.', 'the lone backtick as written');
+    assert.deepEqual(findAll(od, (e) => e.tag === 'code').map((c) => c.textContent), ['code'], 'the pair before it, as code; nothing else');
+  } finally {
+    app.restore();
+  }
+});

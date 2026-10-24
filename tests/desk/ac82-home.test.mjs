@@ -612,3 +612,21 @@ test('AC82, the Reviewer\'s N-3 (stage 2, round 2): a "Can\'t read" tile whose r
     app.restore();
   }
 });
+
+// After MD3, stage 8 ((b) item 37; stage 2's review confirmation, N-5, probe p9): the reason's row by its index — the row
+// AC24's reason names is a later project's, not the first row of the view (made-up projects and estimates, NOT real records).
+test('AC82 with AC24 (stage 8, the reason row\'s index): Service-Desk all estimated, then Twin with no estimate for MD1, then Third — Third\'s tile names Twin\'s MD1, the row the reason is about, never the view\'s first project', () => {
+  const TWIN = { ...SD, name: 'Twin', repo: 'shumpmaster/Twin', planning: false };
+  const THIRD = { ...SD, name: 'Third', repo: 'shumpmaster/Third', planning: false };
+  const t = '2026-10-18T17:00:00Z';
+  const nowMs = Date.parse('2026-10-18T18:00:00Z');
+  const lines = (proj, ms) => ms.map((m) => estLine(m, 1, 2, t, '', proj));
+  const v = viewOf({ extra: { 'intake/estimates.jsonl': [...lines('Service-Desk', ['MD1', 'MD2', 'MD3', 'M3A', 'M3B', 'M3C']), ...lines('Twin', ['MD2', 'MD3', 'M3A', 'M3B', 'M3C']),
+    ...lines('Third', ['MD1', 'MD2', 'MD3', 'M3A', 'M3B', 'M3C'])].join('\n') + '\n' }, nowMs, projects: [SD, TWIN, THIRD, POOM] });
+  const first = (n) => v.rows.find((r) => r.project.name === n);
+  assert.match(nextLine(SD, { gate: null, row: first('Service-Desk') }).words, /^MD1 · rough finish \d/, 'Service-Desk, first: its own finish');
+  assert.equal(nextLine(TWIN, { gate: null, row: first('Twin') }).words, 'MD1 · no estimate yet');
+  assert.equal(nextLine(THIRD, { gate: null, row: first('Third') }).words, "MD1 · rough finish not available: Twin's MD1 has no estimate yet", 'the stop row\'s own project, by its index');
+  assert.equal(first('Third').finish.stop.project, 'Twin');
+  assert.ok(first('Third').finish.stop.index > 0, 'not the first row of the view');
+});

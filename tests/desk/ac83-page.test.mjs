@@ -617,3 +617,25 @@ test('AC83 (specs/S-001.md:6832-6833; the Reviewer\'s N-d, stage 3 round 2): a v
   assert.equal(v25Rows(PUB, null, snapOf({ ...poomFiles() }, 'v2.5'), NOW, TZ).ci, 'CI on main: not recorded');
   assert.equal(v25Rows(PUB, { ci: 'passing' }, null, NOW, TZ).ci, 'CI on main: passing', 'the model\'s state when it has one');
 });
+
+test('AC83 + AC29 (after MD3, stage 8; (b) item 37, stage 3 review round 3, R2): Details\' CI line with no model reads "not available", never "not recorded" — the branch pinned in the page\'s source, since today a missing model never reaches it (a draw error is shown instead)', async () => {
+  // The Reviewer's mutation Nd2 (that line back to NOT_RECORDED) passed every test: the branch can't be drawn today. A
+  // box is made only from a built model (src/lib/universe.js, makeBox reads model.name), so a null model is a draw
+  // error, "Can't show this project: …", and the page shows that in place of its rows and Details.
+  const { safeBox } = await import('../../src/lib/universe.js');
+  const box = safeBox('Personal-Org-Operating-Model', () => null, undefined, { signedOut: false }, NOW);
+  assert.equal(box.model, null);
+  assert.match(box.drawError, /^Can't show this project: /, 'a null model is a draw error, not a page with Details');
+  // So the branch's words are pinned where the page draws them.
+  const page = readFileSync(join(SRC, 'public', 'sandbox.js'), 'utf8');
+  const at = page.indexOf('\nfunction detailsNode(p) {');
+  assert.ok(at > 0, 'Details is drawn by detailsNode');
+  const body = page.slice(at, page.indexOf('\n}\n', at));
+  assert.match(body, /const \{ project, model \} = p;/);
+  assert.match(body, /h\('p', \{ class: 'v2-small' \}, `CI on \$\{project\.defaultBranch\}: \$\{model \? model\.ci : NOT_AVAILABLE\}`\)/, 'no model: "not available"');
+  assert.doesNotMatch(body, /CI on [^`]*NOT_RECORDED/, 'never "not recorded"');
+  const from = /import \{([^}]*)\} from '\.\/lib\/([a-z]+)\.js';/g;
+  const lib = [...page.matchAll(from)].find((m) => /\bNOT_AVAILABLE\b/.test(m[1]));
+  assert.ok(lib, 'NOT_AVAILABLE imported from the lib');
+  assert.equal((await import(`../../src/lib/${lib[2]}.js`)).NOT_AVAILABLE, 'not available');
+});

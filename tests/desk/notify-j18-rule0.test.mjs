@@ -120,7 +120,9 @@ test('J18 rule 0 (made-up, NOT real): its entries count toward the 5,000 with th
   for (const [bad, why] of [[{ v: { [hex(1, 'd')]: 'maybe' }, h: {} }, 'a verdict'], [{ v: {}, h: { [hex(1, 'e')]: { ...good, etag: '"a"\r\nX: y' } } }, 'a head'],
     [{ v: {}, h: { [hex(1, 'e')]: { ...good, state: 'weird' } } }, 'a head'], [{ v: {}, h: { [hex(1, 'e')]: { ...good, after: 'yes' } } }, 'a head'],
     [{ v: {}, h: { [hex(1, 'e')]: { ...good, description: 'Owner: after agents' } } }, 'a head'], [{ v: {}, h: {}, extra: 1 }, 'its parts'],
-    [{ v: { [hex(1)]: 'PASS' }, h: {} }, 'a verdict']]) {
+    [{ v: { [hex(1)]: 'PASS' }, h: {} }, 'a verdict'],
+    // After MD3, stage 8 ((b) item 37; stage 1b's review, round 2, R2-N1): a head key out of form, its entry in form.
+    [{ v: {}, h: { [hex(1)]: good } }, 'a head']]) {
     assert.equal(rule0Problem(bad), why, JSON.stringify(bad));
     const t = emptyState('2026-10-18T12:00:00.000Z');
     t.rule0 = sealRule0(key, bad);

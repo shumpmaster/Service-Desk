@@ -32,6 +32,8 @@ import { hexLab, de2000 } from './ciede2000.mjs';
 import { PF_ROWS } from '../../src/public/lib/portfolio.js';
 import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
+import { BAD_PR } from './fake-desk.mjs';
+import { POLL_MS } from '../../src/lib/scheduler.js';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -85,6 +87,8 @@ const lum = (hex) => {
   const c = [0, 2, 4].map((i) => parseInt(hex.slice(1 + i, 3 + i), 16) / 255).map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
   return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 };
+/** AC81's roles' sizes (--t-title 24, --t-sheet 18, --t-lead 15, --t-row and --t-body 13, --t-small 12, --t-label and --t-mono 11), and AC63's 16 px text box. */
+const ROLE_PX = [24, 18, 15, 13, 12, 11, 16];
 const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 
 /** A node's own ground: its background's first colour when that is opaque (a token's six-digit value). */
@@ -224,6 +228,12 @@ function checkScreen(app, where, fails, seen) {
       if (!fg || !bg) { fail(n, `text "${n.text.trim().slice(0, 30)}" with no resolved colour (${n.style.get('color')}) or ground (${bg})`); continue; }
       const size = parseFloat(n.style.get('font-size') || '16');
       const large = size >= 24 || (size >= 18.66 && Number(n.style.get('font-weight')) >= 700);
+      // After MD3, stage 8 ((b) item 37; stage 8's review, round 1, B1: `.sb-unb-t` lost its role and no test saw it): every drawn
+      // text takes one of AC81's roles' sizes (24, 18, 15, 13, 12 and 11 px; 16 px for text boxes, AC63), never one of its own.
+      const fpx = parseFloat(n.style.get('font-size') || '');
+      if (!ROLE_PX.includes(fpx)) fail(n, `"${n.text.trim().slice(0, 30)}" at ${n.style.get('font-size')}: no role's size`);
+      // After MD3, stage 8 ((b) item 37): a text drawn under an opacity below 1 is a contrast the cascade can't read, so it fails.
+      if (n.opacity < 1) { fail(n, `"${n.text.trim().slice(0, 30)}" under opacity ${n.opacity}: its contrast not read`); continue; }
       const r = contrast(fg, bg);
       if (r < (large ? 3 : 4.5)) fail(n, `"${n.text.trim().slice(0, 30)}" ${fg} on ${bg}: ${r.toFixed(2)}:1`);
     }
@@ -251,6 +261,7 @@ async function everyScreen(app, projects, where, fails, seen, counts, check = ch
     await app.go(hash);
     check(app, `${where} ${hash}`, fails, seen);
     counts.screens++;
+    if (/\/team\/[^/]+\/now(\/[^/]+)?$/.test(hash)) counts.now = (counts.now || 0) + 1;
   };
   await visit('#/');
   await visit('#/since');
@@ -276,7 +287,9 @@ async function everyScreen(app, projects, where, fails, seen, counts, check = ch
     }
     for (const m of hrefsIn(app, new RegExp(`^${esc(base)}/team/[^/]+$`))) {
       await visit(m);
-      for (const s of hrefsIn(app, new RegExp(`^${esc(m)}/(now|e/\\d+)$`)).slice(0, 2)) await visit(s);
+      // After MD3, stage 8: a Chief of Staff "now" row opens its own piece's sheet at `now/<lane>` (stage 4's design
+      // review, B1), so both forms of the Working now sheet's address are walked.
+      for (const s of hrefsIn(app, new RegExp(`^${esc(m)}/(now(/[^/]+)?|e/\\d+)$`)).slice(0, 2)) await visit(s);
     }
   }
   await visit('#/p/No-such-project');
@@ -371,6 +384,128 @@ test('AC88: every trial-view screen and sheet, from each fixture, in dark (force
   assert.deepEqual(fails, []);
 });
 
+// After MD3, stage 8 ((b) item 37; the plan review of draft 1, B1): where vermilion is drawn on the screens, through the
+// cascade, as AC69's note lists it (specs/S-001.md:6219-6236, "Settled after MD3, as main draws it"): only on the ◆ (a
+// plain-circle `.sb-ic.i-you`, or the state icon's `.you` diamond), Waiting's badge, and the kind icons of cards in
+// "Waiting on you" and "Kicked back". A colour is vermilion when it comes from --you or one of the owner's lane shades
+// (--you0 to --you3) as a literal, or has the theme's --you value under any name.
+const byClassIn = (root, c) => (root ? findAll(root, (e) => ` ${e.className || ''} `.includes(` ${c} `)) : []);
+const VERMILION_NAMES = ['--you', '--you0', '--you1', '--you2', '--you3'];
+/** Where a vermilion use sits, by AC69's list, or null when the list has no place for it. */
+function vermilionPlace(n) {
+  const up = (pred) => { for (let a = n.parent; a; a = a.parent) if (pred(a)) return a; return null; };
+  if (n.tag === 'span' && n.cls.has('sb-ic') && n.cls.has('i-you')) return 'the ◆';
+  if (n.tag === 'path' && n.cls.has('you') && n.parent && n.parent.tag === 'svg' && n.parent.cls.has('st-you')) return 'the ◆';
+  if (n.tag === 'span' && n.cls.has('v2-badge') && up((a) => a.cls.has('v2-bar'))) return "Waiting's badge";
+  if (n.tag === 'svg' && n.cls.has('v2-k') && n.parent && n.parent.cls.has('v2-kd') && !n.parent.cls.has('done')) {
+    const lane = up((a) => a.tag === 'section' && a.cls.has('v2-lane'));
+    if (lane && ['wait', 'kick'].includes(lane.attrs['data-lane'])) return `a card's kind icon in ${lane.attrs['aria-label']}`;
+  }
+  return null;
+}
+function vermilionCheck(app, where, fails, seen, places) {
+  for (const way of WAYS) {
+    const root = document.documentElement;
+    const attrs = { ...(root.attrs || {}) };
+    if (way.attr) attrs['data-theme'] = way.attr; else delete attrs['data-theme'];
+    const tree = cascade(treeOf(app.view, { className: root.className, attrs }), RULES, way.env);
+    const you = THEME[way.theme]['--you'].toLowerCase();
+    const isYou = (v) => marks(v).some((m) => VERMILION_NAMES.includes(m.name) || m.value.toLowerCase() === you);
+    for (const n of nodes(tree)) {
+      const uses = [];
+      for (const prop of COLOUR_PROPS) if (n.declared.get(prop) != null && isYou(n.declared.get(prop))) uses.push(prop);
+      for (const [pe, p] of Object.entries(n.pseudo)) for (const prop of COLOUR_PROPS) if (p.declared.get(prop) != null && isYou(p.declared.get(prop))) uses.push(`::${pe} ${prop}`);
+      // A text in vermilion, by its own rule or its parent's.
+      if (n.text.trim() && isYou(n.style.get('color') || '')) uses.push('its text');
+      if (!uses.length) continue;
+      const place = vermilionPlace(n);
+      if (place && !uses.includes('its text')) { places.add(place); continue; }
+      const k = `${way.theme} ${label(n)} ${uses.join(', ')}`;
+      if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(n)}${n.text.trim() ? ` "${n.text.trim().slice(0, 30)}"` : ''}: vermilion ${uses.join(', ')}, not on AC69's list`); }
+    }
+  }
+}
+
+test('AC88 + AC69 (after MD3, stage 8; (b) item 37, the plan review of draft 1, B1): where vermilion is drawn — on every trial-view screen and sheet, from each fixture, in dark (forced, and the phone\'s own) and light, only on the ◆, Waiting\'s badge, and the kind icons of cards in "Waiting on you" and "Kicked back" (AC69\'s note, specs/S-001.md:6219-6236); never on a board card\'s edge or buttons, the owner\'s Team tile, the waits list or "Your last action"', async () => {
+  const fails = [];
+  const seen = new Set();
+  const places = new Set();
+  const counts = { screens: 0 };
+  const check = (app, where, f, s) => vermilionCheck(app, where, f, s, places);
+  const t = textSetup();
+  let app = await opened(t);
+  try {
+    await everyScreen(app, t.config.projects, 'text', fails, seen, counts, check);
+  } finally {
+    app.restore();
+  }
+  const x = extremes();
+  app = await opened(x);
+  try {
+    await everyScreen(app, x.config.projects, 'md-extremes', fails, seen, counts, check);
+  } finally {
+    app.restore();
+  }
+  app = await opened({ config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': sdRepo() } });
+  try {
+    await everyScreen(app, [SD3], 'service-desk + J12', fails, seen, counts, check);
+  } finally {
+    app.restore();
+  }
+  const w = waSetup({ extra: { 'intake/estimates.jsonl': WORKED() } });
+  app = await opened(w, '#/work', { now: Date.parse('2026-10-18T18:00:00Z'), store: memStore() });
+  try {
+    await everyScreen(app, [], 'plan', fails, seen, counts, check);
+  } finally {
+    app.restore();
+  }
+  // A card kicked back (AC80): marked done in its sheet, and GitHub not showing it done at the first poll after 5 minutes.
+  const k = textSetup();
+  app = await opened(k, '#/waiting', { store: memStore() });
+  try {
+    const keyed = (key) => findAll(app.view, (e) => e.dataset && e.dataset.k === key)[0] || null;
+    const ids = hrefsIn(app, /^#\/waiting\/card\//);
+    let kicked = 0;
+    for (const h of ids) {
+      if (kicked) break;
+      await app.go(h);
+      const done = keyed('sheet-done');
+      if (!done) continue;
+      await app.tap(done);
+      await app.go('#/waiting');
+      for (let i = 0; i < 6; i++) await app.advance(POLL_MS);
+      kicked = byClassIn(findAll(app.view, (e) => e.dataset && e.dataset.lane === 'kick')[0], 'v2-card').length;
+    }
+    assert.ok(kicked >= 1, 'a card kicked back');
+    // And one marked done just now, still confirming in Done (its kind icon grey).
+    for (const h of hrefsIn(app, /^#\/waiting\/card\//)) {
+      await app.go(h);
+      const done = keyed('sheet-done');
+      if (!done) continue;
+      await app.tap(done);
+      break;
+    }
+    await app.go('#/waiting');
+    assert.ok(byClassIn(findAll(app.view, (e) => e.dataset && e.dataset.lane === 'done')[0], 'v2-kd').length >= 1, 'a card confirming in Done');
+    await everyScreen(app, [], 'kicked back', fails, seen, counts, check);
+  } finally {
+    app.restore();
+  }
+  // The owner's own running log (its lanes take --you0 to --you3's names, each set to a grey on the trial view's screens).
+  const o = ownerStubs();
+  app = await opened({ config: { ...CONFIG, projects: o.projects }, repos: o.repos }, '#/p/Lanes-owner/team/owner', { now: LANES_NOW });
+  try {
+    check(app, 'owner log', fails, seen);
+    counts.screens++;
+  } finally {
+    app.restore();
+  }
+  assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
+  assert.deepEqual(fails, []);
+  // Each place on the list was drawn, so the check read vermilion where it is meant to be.
+  for (const want of ['the ◆', "Waiting's badge", 'a card\'s kind icon in Waiting on you', 'a card\'s kind icon in Kicked back']) assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
+});
+
 // Stage 8 (AC44, step 4; the Reviewer's B1, stage 8 round 1): the rules stage 8 removed from sandbox.css were the ones
 // nothing draws once the desk is `/`, so taking them out changes nothing the owner sees. Every desk screen and sheet from
 // each fixture is cascaded twice, in dark (forced and the phone's own) and light: once with the stylesheets as they stood
@@ -417,19 +552,23 @@ const M3D3_EXCEPT = (n, d) => (n.cls.has('v2-plonce') && n.tag === 'div' && n.pa
  * :6093-6105): on the Team screen, the idle members' one line (`button.sb-idle`, a 44 px control in the meta role and ink,
  * where a button had the browser's own look) and the opened list under it (`div.sb-idlelist`). Each declaration is pinned
  * to its value, before and after, in each theme (the Reviewer's B1, stage 4 round 1: "pin each excepted declaration's
- * value, as M3D1_WAITS and M3D3_ONCE do"); only these, on only these elements. A Chief of Staff row's piece
- * (`span.sb-brow-of`) is drawn on no screen this guard walks, so nothing is excepted for it.
+ * value, as M3D1_WAITS and M3D3_ONCE do"); only these, on only these elements. And on the Chief of Staff's log (AC49,
+ * changed, :3718-3722), a helper or end row's piece (`span.sb-brow-of`, in a log row's link), cut at one line: from stage
+ * 8 the walk reaches it, on the made-up log of four pieces open together, so its four declarations are pinned too, the
+ * same in each theme; its fade is drawn only once the browser measures it cut.
  */
 const M3D4_FONT = 'font: inherit → 400 12px/1.4 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 const M3D4_IDLE = ['display: (none) → flex', 'align-items: (none) → center', 'width: (none) → 100%', 'min-height: (none) → 44px', 'margin-top: (none) → 8px',
   'text-align: (none) → left', M3D4_FONT, 'computed font-size: 13px → 12px', 'computed line-height: 18.849999999999998px → 16.799999999999997px'];
 const M3D4_LIST = ['display: (none) → grid', 'gap: (none) → 8px'];
+const M3D4_OF = ['position: (none) → relative', 'flex: (none) → 1 1 100%', 'max-height: (none) → 1.35em', 'overflow: (none) → clip'];
 const M3D4_ONCE = new Map([
-  ['light', new Set([...M3D4_IDLE, 'color: #1b1b1b → #18191c', 'computed color: #1b1b1b → #18191c'].map((d) => `button.sb-idle ${d}`).concat(M3D4_LIST.map((d) => `div.sb-idlelist ${d}`)))],
+  ['light', new Set([...M3D4_IDLE, 'color: #1b1b1b → #18191c', 'computed color: #1b1b1b → #18191c'].map((d) => `button.sb-idle ${d}`).concat(M3D4_LIST.map((d) => `div.sb-idlelist ${d}`), M3D4_OF.map((d) => `span.sb-brow-of ${d}`)))],
   ['dark', new Set([...M3D4_IDLE, 'color: #1b1b1b → #ecedef', 'color: #e8e8e8 → #ecedef', 'computed color: #1b1b1b → #ecedef', 'computed color: #e8e8e8 → #ecedef']
-    .map((d) => `button.sb-idle ${d}`).concat(M3D4_LIST.map((d) => `div.sb-idlelist ${d}`)))]]);
+    .map((d) => `button.sb-idle ${d}`).concat(M3D4_LIST.map((d) => `div.sb-idlelist ${d}`), M3D4_OF.map((d) => `span.sb-brow-of ${d}`)))]]);
 const M3D4_EXCEPT = (n, d, theme) => {
-  const k = n.cls.has('sb-idle') && n.tag === 'button' ? `button.sb-idle ${d}` : n.cls.has('sb-idlelist') && n.tag === 'div' ? `div.sb-idlelist ${d}` : null;
+  const k = n.cls.has('sb-idle') && n.tag === 'button' ? `button.sb-idle ${d}` : n.cls.has('sb-idlelist') && n.tag === 'div' ? `div.sb-idlelist ${d}`
+    : n.cls.has('sb-brow-of') && n.tag === 'span' && n.parent && n.parent.tag === 'a' && n.parent.parent && n.parent.parent.cls.has('sb-brow') ? `span.sb-brow-of ${d}` : null;
   return Boolean(k && M3D4_ONCE.get(theme) && M3D4_ONCE.get(theme).has(k));
 };
 /**
@@ -515,6 +654,60 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   app = await opened(w, '#/work', { now: Date.parse('2026-10-18T18:00:00Z'), store: memStore() });
   try {
     await everyScreen(app, [], 'plan', fails, seen, counts, sameLook);
+  } finally {
+    app.restore();
+  }
+  // After MD3, stage 8 ((b) item 37; stage 8's review, round 2, note 1): the states the walk above never reaches. The
+  // tap's line in both its states, on the screen each opens (as AC88's test above draws them); a project that can't be
+  // read, one whose drawing throws ("Can't show this project"), and the whole desk signed out, each on Home, Waiting
+  // and the project's page.
+  for (const [key, words] of [['Alpha|question|questions/Alpha-gone.md', GONE_WORDS], ['Alpha|question|questions/Alpha-pick.md', OPENED_WORDS]]) {
+    app = await loadSandbox({ ...textSetup(), hash: '', search: `?sandbox&open=${encodeURIComponent(key)}`, now: NOW });
+    try {
+      await app.advance(1000);
+      await app.advance(61_000);
+      const line = findAll(app.view, (e) => e.dataset && e.dataset.k === 'tap-banner')[0];
+      assert.equal(line && line.textContent, words, 'the tap\'s line is drawn');
+      sameLook(app, `tap ${words} ${app.loc.hash}`, fails, seen);
+      counts.screens++;
+    } finally {
+      app.restore();
+    }
+  }
+  const states = [
+    ["can't read", (r) => { r.Alpha.fail = { state: 'cant-read', reason: 'not-found' }; }, /Can't read since \d\d:\d\d/, true],
+    ['render error', (r) => { r.Alpha.pulls.push(BAD_PR); }, /Can't show this project: /, false],
+    ['signed out', (r) => { for (const x of Object.values(r)) x.fail = { kind: 'signed-out' }; }, /Signed out — reload to sign in/, true],
+  ];
+  for (const [what, make, shown, later] of states) {
+    const st = textSetup();
+    if (!later) make(st.repos);
+    app = await opened(st);
+    try {
+      if (later) {
+        make(st.repos);
+        await app.advance(3 * POLL_MS);
+      }
+      assert.match(app.text(), shown, `${what}: drawn`);
+      for (const hash of ['#/', '#/waiting', '#/p/Alpha']) {
+        await app.go(hash);
+        sameLook(app, `${what} ${hash}`, fails, seen);
+        counts.screens++;
+      }
+    } finally {
+      app.restore();
+    }
+  }
+  // After MD3, stage 8: the Chief of Staff's log with four pieces under way at once (made up, NOT real records,
+  // lanes-fixtures.mjs), so the walk reaches its "now" rows' Working now sheets, at `now` or, from stage 4's design
+  // review (B1), at `now/<lane>`.
+  const cl = cosLanes();
+  const four = cl.projects.filter((p) => p.name === 'Lanes-four');
+  app = await opened({ config: { ...CONFIG, projects: four }, repos: { 'Lanes-four': cl.repos['Lanes-four'] } }, '#/', { now: LANES_NOW });
+  try {
+    const before = counts.now || 0;
+    await everyScreen(app, four, 'lanes-four', fails, seen, counts, sameLook);
+    assert.ok((counts.now || 0) > before, 'a Chief of Staff Working now sheet walked');
   } finally {
     app.restore();
   }

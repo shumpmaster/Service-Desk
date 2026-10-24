@@ -6,6 +6,13 @@
 // fallback. Each colour keeps where it came from: the custom property that held its literal value, so a
 // test can say whether it resolves to one of AC81's tokens. Interaction states (:hover, :focus-visible)
 // never match: the screen is read at rest.
+//
+// After MD3, stage 8 ((b) item 37; stage 7's review, round 1 note 5 and round 2 note 5): it fails loudly on what it
+// can't read, rather than reading it as nothing — an unknown pseudo-class or pseudo-element, and an at-rule other than
+// @media, @font-face and @keyframes, each throw; `accent-color` is a colour property; `::placeholder` is cascaded as
+// `::before` and `::after` are; each node's effective `opacity` is kept (node.opacity), so a check that reads contrast
+// can refuse a text drawn under one; and a shorthand and its longhands are merged as a browser does (the later-winning
+// declaration resets or overrides the other).
 
 /** Strip comments, keeping line breaks. */
 const uncomment = (s) => s.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
@@ -51,7 +58,9 @@ export function parseCss(text, sheet = 'sheet') {
       const prelude = src.slice(i, open).trim();
       const close = block(open + 1);
       if (prelude.startsWith('@media')) walk(open + 1, close - 1, [...media, prelude.slice(6).trim()]);
-      else if (prelude.startsWith('@')) { /* @font-face, @keyframes: no element styles */ } else if (prelude && !/^(from|to|\d+%)$/.test(prelude)) {
+      else if (/^@(font-face|keyframes|-webkit-keyframes)\b/.test(prelude)) { /* no element styles */ } else if (prelude.startsWith('@')) {
+        throw new Error(`css-cascade: the at-rule ${prelude.split(/\s/)[0]} is not read (${sheet})`);
+      } else if (prelude && !/^(from|to|\d+%)$/.test(prelude)) {
         const body = src.slice(open + 1, close - 1);
         const decls = [];
         for (const d of splitTop(body, ';')) {
@@ -135,7 +144,13 @@ function parseCompound(text) {
       continue;
     }
     if (c === ':') {
-      if (text[i + 1] === ':') { i += 2; out.element = ident().toLowerCase(); if (text[i] === '(') balanced(); continue; }
+      if (text[i + 1] === ':') {
+        i += 2;
+        out.element = ident().toLowerCase();
+        if (!PSEUDO_ELEMENTS.has(out.element)) throw new Error(`css-cascade: the pseudo-element ::${out.element} is not read (${text})`);
+        if (text[i] === '(') balanced();
+        continue;
+      }
       i++;
       const name = ident().toLowerCase();
       let arg = null;
@@ -168,6 +183,10 @@ export function specificity(parsed) {
 }
 const cmp = (x, y) => x[0] - y[0] || x[1] - y[1] || x[2] - y[2];
 
+/** The pseudo-elements read: before, after and placeholder cascaded; the details marker drawn by the browser, its own rules only. */
+const PSEUDO_ELEMENTS = new Set(['before', 'after', 'placeholder', '-webkit-details-marker', 'marker']);
+/** The pseudo-classes read (the structural ones and :is/:where/:not/:has), and the states that never match at rest. */
+const KNOWN_PSEUDOS = new Set(['is', 'where', 'not', 'has', 'root', 'first-child', 'last-child', 'only-child', 'empty', 'disabled']);
 const STATES = new Set(['hover', 'focus', 'focus-visible', 'focus-within', 'active', 'visited', 'checked', 'target', 'placeholder-shown', 'invalid', 'indeterminate']);
 
 function matchCompound(n, s, pseudoEl) {
@@ -196,7 +215,7 @@ function matchCompound(n, s, pseudoEl) {
     if (p.name === 'empty') { if (n.kids.length || n.text) return false; continue; }
     if (p.name === 'disabled') { if (!('disabled' in n.attrs)) return false; continue; }
     if (STATES.has(p.name) || p.name.startsWith('-webkit-') || p.name.startsWith('-moz-')) return false;
-    return false; // anything else: not matched (none is used for colours)
+    throw new Error(`css-cascade: the pseudo-class :${p.name} is not read`);
   }
   return true;
 }
@@ -290,9 +309,24 @@ export function treeOf(view, root) {
 // ---------------------------------------------------------------------------
 // The cascade
 
+/** Each shorthand the stylesheets use, with the longhands it sets. */
+const SHORTHANDS = new Map([
+  ['background', ['background-color', 'background-image', 'background-position', 'background-size', 'background-repeat', 'background-attachment', 'background-origin', 'background-clip']],
+  ['font', ['font-style', 'font-variant', 'font-weight', 'font-stretch', 'font-size', 'line-height', 'font-family']],
+  ['border', ['border-width', 'border-style', 'border-color', 'border-top', 'border-right', 'border-bottom', 'border-left', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color']],
+  ['border-color', ['border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color']],
+  ['outline', ['outline-color', 'outline-style', 'outline-width']],
+  ['margin', ['margin-top', 'margin-right', 'margin-bottom', 'margin-left']],
+  ['padding', ['padding-top', 'padding-right', 'padding-bottom', 'padding-left']],
+  ['overflow', ['overflow-x', 'overflow-y']],
+  ['inset', ['top', 'right', 'bottom', 'left']],
+  ['gap', ['row-gap', 'column-gap']],
+  ['text-decoration', ['text-decoration-line', 'text-decoration-color', 'text-decoration-style', 'text-decoration-thickness']],
+]);
 const INHERITED = new Set(['color', 'fill', 'stroke', 'font-family', 'font-size', 'font-weight', 'line-height', 'visibility']);
 const COLOUR_PROPS = ['color', 'background', 'background-color', 'background-image', 'border', 'border-top', 'border-right', 'border-bottom', 'border-left',
-  'border-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'border-inline-start', 'outline', 'outline-color', 'fill', 'stroke', 'box-shadow'];
+  'border-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'border-inline-start', 'outline', 'outline-color', 'fill', 'stroke', 'box-shadow',
+  'accent-color', 'caret-color', 'text-decoration-color', 'column-rule-color'];
 export { COLOUR_PROPS };
 
 /** Rules indexed by their subject compound's first class, else its tag, else '*'. */
@@ -357,7 +391,14 @@ export function cascade(tree, rules, env) {
     for (const r of hits) for (const d of r.decls) decls.push({ ...d, spec: spec.get(r), order: r.order, sel: r.sel });
     decls.sort((a, b) => (a.important - b.important) || cmp(a.spec, b.spec) || a.order - b.order);
     const win = new Map();
-    for (const d of decls) win.set(d.prop, d);
+    const rank = new Map();
+    decls.forEach((d, i) => { win.set(d.prop, d); rank.set(d.prop, i); });
+    // A shorthand that wins after its longhands resets them, as a browser does; a longhand that wins after it
+    // overrides its part (kept beside it).
+    for (const [short, longs] of SHORTHANDS) {
+      if (!win.has(short)) continue;
+      for (const l of longs) if (win.has(l) && rank.get(l) < rank.get(short)) win.delete(l);
+    }
     return win;
   };
   const custom = (win, parentEnv) => {
@@ -412,8 +453,11 @@ export function cascade(tree, rules, env) {
       if (v != null && v !== 'inherit') n.style.set(p, v);
     }
     if (!n.style.has('font-weight') && ['b', 'strong', 'th', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(n.tag)) n.style.set('font-weight', '700');
+    // Effective opacity: its own (a plain number) times its parent's.
+    const op = parseFloat(String(n.declared.get('opacity') || '').replace(/⟦[^|]*\|([^⟧]*)⟧/g, '$1'));
+    n.opacity = (parent ? parent.opacity : 1) * (Number.isFinite(op) ? op : 1);
     n.pseudo = {};
-    for (const pe of ['before', 'after']) {
+    for (const pe of ['before', 'after', ...(['input', 'textarea'].includes(n.tag) ? ['placeholder'] : [])]) {
       const pw = winners(n, pe);
       if (!pw.size) continue;
       const pv = { get: (k) => n.custom.get(k) };

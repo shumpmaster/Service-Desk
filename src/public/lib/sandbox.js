@@ -1509,7 +1509,12 @@ export function branchLayout(log, filed) {
   return { rows: n, slots: Math.max(0, ...lanes.map((l) => l.slot)), lanes, dots };
 }
 
-/** The Working now sheet (AC49): one line, four tiles and three short lines, each from a record or "–" with the reason. */
+/**
+ * The Working now sheet (AC49): one line, four tiles and three short lines, each from a record or, on a tile, "–" with
+ * the reason. AC89 (e): the lines Update, Next and Cost say an unknown in words, never "–" — "not known yet · from the
+ * usage record when it ends" for a piece under way's cost, and "not recorded" otherwise; the tiles keep "–".
+ */
+export const COST_NOT_YET = 'not known yet · from the usage record when it ends';
 export function workingNow(project, model, snap, j, id, page, now, tz) {
   const items = (model && model.items) || [];
   const it = items.find((i) => i.state === 'dispatched' && i.running && i.running.role === id);
@@ -1522,7 +1527,7 @@ export function workingNow(project, model, snap, j, id, page, now, tz) {
     const nr = id === 'chief-of-staff' ? `${NOT_RECORDED}: no piece of its work is under way` : NOT_RECORDED;
     return { doing: `${label(id)}: not working now`,
       tiles: [{ label: 'Started', ...dash(nr) }, { label: 'Time so far', ...dash(nr) }, { label: 'Last check-in', ...dash(NOT_RECORDED) }, { label: 'Next check-in', ...dash(NOT_RECORDED) }],
-      lines: [{ label: 'Update', value: '–', why: NOT_RECORDED }, { label: 'Next', value: '–', why: NOT_RECORDED }, { label: 'Cost', value: '–', why: nr }] };
+      lines: [{ label: 'Update', value: NOT_RECORDED, why: null }, { label: 'Next', value: NOT_RECORDED, why: null }, { label: 'Cost', value: nr, why: null }] };
   }
   const since = it.running.since;
   const due = nextOrchestratorRun(j, now);
@@ -1538,9 +1543,9 @@ export function workingNow(project, model, snap, j, id, page, now, tz) {
       { label: 'Next check-in', ...(due ? { value: hhmm(due, tz), why: "the Orchestrator's next run by its schedule" } : dash('schedule not readable')) },
     ],
     lines: [
-      { label: 'Update', value: lastE ? entryWords(lastE, whenText(new Date(lastE.time), now, tz)) : '–', why: lastE ? null : NOT_RECORDED },
+      { label: 'Update', value: lastE ? entryWords(lastE, whenText(new Date(lastE.time), now, tz)) : NOT_RECORDED, why: null },
       { label: 'Next', value: 'the Orchestrator routes its return', why: 'a fixed statement of what the model does next, not a record' },
-      { label: 'Cost', value: '–', why: 'from the usage record when it ends' },
+      { label: 'Cost', value: COST_NOT_YET, why: null },
     ],
   };
 }
@@ -1578,7 +1583,7 @@ export function cosWorkingNow(cs, piece, now, tz) {
   const helper = [...piece.helpers].filter((hl) => Number.isFinite(hl.at)).sort((a, b) => a.at - b.at).pop() || null;
   const since = piece.start.at;
   const cost = piece.end && piece.end.usage && typeof piece.end.usage.cost_usd_estimate === 'number'
-    ? { value: costText(piece.end.usage.cost_usd_estimate), why: "from its end line's usage" } : dash(COS_COST_NR);
+    ? { value: costText(piece.end.usage.cost_usd_estimate), why: "from its end line's usage" } : { value: COS_COST_NR, why: null };
   return {
     doing: `Chief of Staff: ${piece.start.doing}`,
     tiles: [
@@ -1588,7 +1593,7 @@ export function cosWorkingNow(cs, piece, now, tz) {
       { label: 'Next check-in', ...dash('the Chief of Staff runs on no schedule') },
     ],
     lines: [
-      { label: 'Update', value: helper ? helperWords(helper, now, tz) : '–', why: helper ? null : 'no helper recorded yet' },
+      { label: 'Update', value: helper ? helperWords(helper, now, tz) : NOT_RECORDED, why: helper ? null : 'no helper recorded yet' },
       { label: 'Next', value: 'hands the work back to you', why: "a fixed statement of the model's rule (S-033 AC6: an end line when it hands the work back), not a record" },
       { label: 'Cost', ...cost },
     ],

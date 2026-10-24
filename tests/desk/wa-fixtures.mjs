@@ -135,3 +135,16 @@ export function viewOf({ extra = {}, nowMs, draft = null, projects = [SD, POOM],
 }
 /** Each row's code and rough finish's words, in the order shown. */
 export const finishes = (v) => v.rows.map((r) => [r.code, r.finish ? r.finish.words : null]);
+
+/**
+ * Stage 6a's design review, round 2 (B1): Plan's rows with a one-line name and nothing under them. Service-Desk's
+ * docs/PROJECT.md at 77bfeae with MD1's and MD2's names shortened (made up for the test, NOT a real record), and the
+ * worked example's estimates, so no row has a line under it.
+ */
+export const SHORT_NAMES = { MD1: 'Desk known', MD2: 'Look chosen' };
+export function shortRowsSetup() {
+  const doc = j77Files()['docs/PROJECT.md']
+    .replace('- What a good desk looks like is known (MD1)', `- ${SHORT_NAMES.MD1} (MD1)`)
+    .replace("- The desk's look and screens chosen (MD2)", `- ${SHORT_NAMES.MD2} (MD2)`);
+  return waSetup({ extra: { 'docs/PROJECT.md': doc, 'intake/estimates.jsonl': WORKED() } });
+}

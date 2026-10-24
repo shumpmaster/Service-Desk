@@ -630,7 +630,10 @@ test('AC42: no packages, the security headers and CSP unchanged, nothing from an
   const AC75_LINKS = '<link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">\n<link rel="apple-touch-icon" href="/icons/desk-180.png">\n';
   const html = readFileSync(`${SRC}/public/index.html`, 'utf8');
   assert.ok(html.includes(AC75_LINKS));
-  assert.equal(html.replace(AC75_LINKS, ''), at('index.html'));
+  // From stage 6b of "After MD3" (AC89 (m), specs/S-001.md:7964): the old header and footer hidden while the desk loads,
+  // their `hidden` the only other change; the CSP and every other line still the accepted page's.
+  assert.ok(html.includes('<header id="top" hidden>') && html.includes('<footer id="foot" hidden>'));
+  assert.equal(html.replace(AC75_LINKS, '').replace('<header id="top" hidden>', '<header id="top">').replace('<footer id="foot" hidden>', '<footer id="foot">'), at('index.html'));
   const css = readFileSync(`${SRC}/public/sandbox.css`, 'utf8');
   const page = readFileSync(`${SRC}/public/sandbox.js`, 'utf8');
   // From stage 1a (AC81): IBM Plex, served by the desk itself; no font, image or stylesheet from another origin.

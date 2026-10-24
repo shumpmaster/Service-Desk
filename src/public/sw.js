@@ -87,9 +87,12 @@ self.addEventListener('notificationclick', (event) => {
   const data = event.notification.data || {};
   const target = safeAddress(data.navigate);
   event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    // AC89 (m): a tap is handed only to a desk window whose address holds no `exp=` (an experiment panel is not the
+    // desk); with none, the worker opens the desk as AC74 says.
     const desks = (list || []).filter((c) => {
       try {
-        return new URL(c.url).origin === origin();
+        const u = new URL(c.url);
+        return u.origin === origin() && !u.searchParams.has('exp');
       } catch (e) {
         return false;
       }

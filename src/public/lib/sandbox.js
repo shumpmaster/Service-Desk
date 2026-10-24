@@ -761,7 +761,22 @@ export function questionQuestions(text, title) {
     return { form: 'numbered', why: null, title, block: lines,
       questions: numbered.map((m, i) => ({ n: ns[i], text: m[2].trim(), choices: [], recommendation: numberRecommendation(rec, ns[i]) })) };
   }
-  return fallback(lettered.some(Boolean) && numbered.some(Boolean) ? 'its lettered and numbered lines are mixed' : 'its lines are neither lettered nor numbered');
+  return fallback(splitWhy(lettered, numbered));
+}
+
+/**
+ * What a file that can't be split into options found (AC89 (j): "such as 'a line between its options is
+ * neither lettered nor numbered', never that every line is"): lettered and numbered lines mixed; every line
+ * neither; or the one line, or how many, that is neither among lines that are.
+ */
+function splitWhy(lettered, numbered) {
+  if (lettered.some(Boolean) && numbered.some(Boolean)) return 'its lettered and numbered lines are mixed';
+  const neither = lettered.map((m, i) => !m && !numbered[i]);
+  const k = neither.filter(Boolean).length;
+  if (k === neither.length) return 'its lines are neither lettered nor numbered';
+  if (k > 1) return `${k} of its lines are neither lettered nor numbered`;
+  const i = neither.indexOf(true);
+  return i > 0 && i < neither.length - 1 ? 'a line between its options is neither lettered nor numbered' : 'one of its lines is neither lettered nor numbered';
 }
 
 /**

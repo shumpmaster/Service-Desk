@@ -11,7 +11,7 @@
 import { flaggedWait, waitKey } from './waiting.js';
 import { GATE_PHASE, GATE_WORDS } from './j11.js';
 import { ruleZero, prStep, judgeFiles, listAt, verdictPath, OWNER, STEP2_NOTE, WHY, ownerCheckAt } from './j22.js';
-import { durationText, hhmm, dayKey } from './timefmt.js';
+import { durationText, hhmm, dayKey, dayDateTime } from './timefmt.js';
 import { composeAnswer, questionQuestions, boxPlan, VERDICT_START, GATE_STANDARD_WORDS, ownerActions, treeLink } from './sandbox.js';
 import { milestoneValue, firstMilestoneLine } from './records.js';
 import { canRecord } from './model.js';
@@ -158,9 +158,10 @@ const cap = (s) => String(s).replace(/^./, (c) => c.toUpperCase());
  * <when>". From stage 4 the clock shows only where the sheet says it settles itself (sheets.js's
  * undoLine): reversible, a DEFAULT naming a letter, and a TIMEOUT in hours; a file whose DEFAULT or
  * TIMEOUT is "none" or missing settles nothing, so its card says nothing of it (AC12: the desk must
- * not imply a default). With no raised time, "Settles as <letter>".
+ * not imply a default). With no raised time, "Settles as <letter>". Given nowMs, a settle time already past while it
+ * still waits reads "Was due to settle as <letter> · <when>", <when> a date (AC89 (j)).
  */
-export function questionMark(q, raisedAt, tz) {
+export function questionMark(q, raisedAt, tz, nowMs = null) {
   if (!q) return null;
   const rev = String(q.reversibility || '').toLowerCase();
   if (rev.startsWith('irreversible')) return { icon: 'lock', words: "Can't be undone" };
@@ -168,7 +169,10 @@ export function questionMark(q, raisedAt, tz) {
   const hours = q.timeout && /^[0-9]+(\.[0-9]+)?/.exec(String(q.timeout).trim());
   if (!rev.startsWith('reversible') || !letter || !hours) return null;
   if (raisedAt == null) return { icon: 'clock', words: `Settles as ${letter}` };
-  return { icon: 'clock', words: `Settles as ${letter} · ${weekdayTime(raisedAt + Number(hours[0]) * 3600e3, tz)}` };
+  const at = raisedAt + Number(hours[0]) * 3600e3;
+  // AC89 (j): past its settle time and still waiting, it says so, its time a date ("8 Oct, 05:00"), never a weekday alone.
+  if (nowMs != null && at < nowMs) return { icon: 'clock', words: `Was due to settle as ${letter} · ${dayDateTime(at, nowMs, tz)}` };
+  return { icon: 'clock', words: `Settles as ${letter} · ${weekdayTime(at, tz)}` };
 }
 
 /**
@@ -316,7 +320,7 @@ export function projectCards(input) {
       const step = { id: 'answer', label: 'Answer', sheetLabel: null, href: null, opensSheet: true };
       cards.push({ ...base, kind: 'question', kindWord: KIND_WORDS.question, title: q.title, name: q.name,
         meta: [ms && ms.ids && ms.ids.length ? ms.ids.join(', ') : null].filter(Boolean),
-        mark: questionMark(p, raisedAt, tz), step, buttons: [step], v25: project.model !== 'v3' });
+        mark: questionMark(p, raisedAt, tz, nowMs), step, buttons: [step], v25: project.model !== 'v3' });
       continue;
     }
     if (f.kind === 'card') {

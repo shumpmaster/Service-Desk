@@ -13,8 +13,8 @@
 import { GATE_PHASE } from './j11.js';
 import { STANDARD_MILESTONES } from './timeline.js';
 import { NOT_RECORDED, NOT_AVAILABLE } from './sandbox.js';
-import { defaultLabel, defaultLetter } from './records.js';
-import { hhmm } from './timefmt.js';
+import { defaultLetter } from './records.js';
+import { hhmm, dayDateTime } from './timefmt.js';
 
 /** The sheets' fixed words (AC85; frames 3, 3b and 4; the gate's reason box as the spec corrects it). */
 export const SHEET_WORDS = Object.freeze({
@@ -80,10 +80,15 @@ export function reversibilityRest(rev) {
  * - reversible with DEFAULT and a TIMEOUT in hours: the clock, "Settles itself as <letter>" and
  *   " on <when> if left (per the question file: <TIMEOUT> hours). Reversible." (<when>, its raised
  *   time plus TIMEOUT, in the owner's time zone; with no raised time, said so, C);
- * - otherwise AC12's "not given" words, no icon.
- * Returns { icon: 'lock' | 'clock' | null, bold, text, kind: 'irreversible' | 'settles' | 'other' }.
+ * - past that time and still waiting (AC89 (j), given nowMs): the clock, "Was due to settle itself as
+ *   <letter>" and " on <when> (per the question file: <TIMEOUT> hours); not settled yet", <when> a date
+ *   ("8 Oct, 05:00"), never a weekday alone;
+ * - otherwise AC12's "not given" words, no icon, the DEFAULT line reading "Default, per the question
+ *   file: " and the file's DEFAULT words set apart as quoted record text (`quote`), never "DEFAULT" twice
+ *   (AC89 (j)); with no DEFAULT, "Default: not given".
+ * Returns { icon: 'lock' | 'clock' | null, bold, text, quote?, kind: 'irreversible' | 'settles' | 'due' | 'other' }.
  */
-export function undoLine(q, raisedAt, tz) {
+export function undoLine(q, raisedAt, tz, nowMs = null) {
   const rev = String((q && q.reversibility) || '').trim();
   const low = rev.toLowerCase();
   if (low.startsWith('irreversible')) {
@@ -98,11 +103,24 @@ export function undoLine(q, raisedAt, tz) {
     if (raisedAt == null) {
       return { kind: 'settles', icon: 'clock', bold: `Settles itself as ${letter}`, text: ` ${unit} after it was raised, if left (per the question file: ${unit}; its raised time not recorded). Reversible.` };
     }
-    return { kind: 'settles', icon: 'clock', bold: `Settles itself as ${letter}`, text: ` on ${settleWhen(raisedAt + Number(h) * 3600e3, tz)} if left (per the question file: ${unit}). Reversible.` };
+    const at = raisedAt + Number(h) * 3600e3;
+    if (nowMs != null && at < nowMs) {
+      return { kind: 'due', icon: 'clock', bold: `Was due to settle itself as ${letter}`, text: ` on ${dayDateTime(at, nowMs, tz)} (per the question file: ${unit}); not settled yet` };
+    }
+    return { kind: 'settles', icon: 'clock', bold: `Settles itself as ${letter}`, text: ` on ${settleWhen(at, tz)} if left (per the question file: ${unit}). Reversible.` };
   }
-  // AC12's words for what the file lacks: its reversibility, and its DEFAULT label.
-  return { kind: 'other', icon: null, bold: null,
-    text: `Reversibility: ${rev || 'not given'} · Default: ${defaultLabel(q || {}, raisedAt != null ? new Date(raisedAt) : null, (d) => settleWhen(d.getTime(), tz))}` };
+  // AC12's words for what the file lacks: its reversibility (and a lettered DEFAULT's missing TIMEOUT), then
+  // the file's own DEFAULT words, quoted as it writes them, never read as "defaults to" anything.
+  const def = String((q && q.default) || '').trim();
+  const head = `Reversibility: ${rev || 'not given'}${letter && low.startsWith('reversible') && !hours ? ' · TIMEOUT: not given' : ''}`;
+  if (!def) return { kind: 'other', icon: null, bold: null, text: `${head} · Default: not given` };
+  return { kind: 'other', icon: null, bold: null, text: `${head} · Default, per the question file:`, quote: def };
+}
+
+/** A v2.5 question's text to copy (AC19's own form, AC89 (j)): "Ruling: <letter>", then the owner's words, if any, after a blank line. */
+export function v25Ruling(letter, words = '') {
+  const w = String(words == null ? '' : words).replace(/\r\n?/g, '\n').replace(/\s+$/, '').replace(/^\s*\n/, '');
+  return `Ruling: ${letter || ''}\n${w ? `\n${w}\n` : ''}`;
 }
 
 /** The option letter a question's DEFAULT names (records.js's one rule, shared with the accepted view's label). */

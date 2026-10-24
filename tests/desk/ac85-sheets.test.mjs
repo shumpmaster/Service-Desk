@@ -1,4 +1,4 @@
-// ac-test: S-001/AC85 — the question's and the gate's sheets (desk mockup v2, frames 3, 3b and 4;
+// ac-test: S-001/AC85 ac-test: S-001/AC89 — the question's and the gate's sheets (desk mockup v2, frames 3, 3b and 4;
 // stage 4), from made-up records (the "Letters" project, NOT real records, labelled so in
 // tests/desk/fixtures/ac85/README.md and tests/desk/fixtures/README.md) and the real question files in
 // the fixtures (notify/ac77-real's P-001-next-work.md, trial-view's P-001-design-lab-open.md). The suite
@@ -204,8 +204,10 @@ test('AC85 whether it can be undone, or settles itself: the lock and "Can\'t be 
       [SEND, 'lock', "Can't be undone.", " An email can't be unsent. Never settles itself: it waits for you (per the question file).", "Blast radius: every member's inbox · risk R2"],
       [NEXT, 'clock', 'Settles itself as A', ' on Wed 21 Oct, 13:07 if left (per the question file: 48 hours). Reversible.', 'Blast radius: the order of the coming work only; nothing built changes · risk R0'],
       [NODEF, null, null, 'Reversibility: reversible · Default: not given', "Blast radius: the digest's day only · risk R0"],
-      // Its DEFAULT names no letter, so it is quoted as the file writes it (stage 4's build review, round 1, B1).
-      [LAB, null, null, 'Reversibility: reversible · Default: per the question file: DEFAULT none — these are yours and never default',
+      // Its DEFAULT names no letter, so it is quoted as the file writes it (stage 4's build review, round 1, B1); rewritten at
+      // stage 5 of "After MD3" (AC89 (j), specs/S-001.md:7916-7917): "Default, per the question file: <its DEFAULT: words>",
+      // the file's words set apart as quoted record text, never "DEFAULT" twice.
+      [LAB, null, null, 'Reversibility: reversible · Default, per the question file: none — these are yours and never default',
         'Blast radius: the desk\'s screens and, for 5, 6 and 10, a later operating-model change you approve separately · risk R0'],
     ];
     for (const [id, icon, bold, rest, eye] of forms) {
@@ -245,7 +247,9 @@ test('AC85 the undo and settle forms, pure: the rest of the REVERSIBILITY line, 
   assert.equal(undoLine(q({ reversibility: 'reversible', default: 'C', timeout: '48' }), null, TZ).text,
     ' 48 hours after it was raised, if left (per the question file: 48 hours; its raised time not recorded). Reversible.');
   assert.equal(undoLine(q({ reversibility: 'reversible', default: 'none', timeout: '48' }), raised, TZ).kind, 'other', 'a DEFAULT naming no letter settles nothing');
-  assert.equal(undoLine(q({ reversibility: 'reversible', default: 'C', timeout: 'none' }), raised, TZ).text, 'Reversibility: reversible · Default: per the question file: defaults to C (TIMEOUT not given)');
+  // Rewritten at stage 5 of "After MD3" (AC89 (j), specs/S-001.md:7916-7917): the file's DEFAULT words quoted, apart.
+  assert.deepEqual(undoLine(q({ reversibility: 'reversible', default: 'C', timeout: 'none' }), raised, TZ), { kind: 'other', icon: null, bold: null,
+    text: 'Reversibility: reversible · TIMEOUT: not given · Default, per the question file:', quote: 'C' });
   assert.equal(undoLine(q({}), raised, TZ).text, 'Reversibility: not given · Default: not given');
   assert.equal(blastLine(q({})), 'Blast radius: not given · risk not given');
   assert.equal(settleWhen(Date.parse('2026-12-31T23:30:00Z'), TZ), 'Thu 31 Dec, 17:30');
@@ -528,11 +532,13 @@ test('AC85 the gate\'s reason: with the box empty, each file is AC80\'s; its tex
       'Kill ↗': 'Decision: kill\n\n  The sign-up must show\n  a sample letter first.\n',
     };
     for (const [l, t] of Object.entries(want)) assert.equal(fileOf(app, l), t, l);
-    // The board's four buttons carry the same files (AC80): the box's words with them.
+    // The board's four buttons carry the same files (AC80): the box's words with them. Rewritten at stage 5 of "After MD3"
+    // (AC89 (j), specs/S-001.md:7911-7913): "text typed in a gate's 'Your reason' goes into each file its four buttons on
+    // the board open, where AC85 places it, as AC80's 'as in the sheet' says" (stage 4 left the words in the sheet).
     await app.go('#/waiting');
     const gate = findAll(app.view, (e) => e.attrs && e.attrs['data-card'] === GATE)[0];
-    assert.deepEqual(byClass(gate, 'v2-step').map((b) => [b.textContent, decodeValue(b.attrs.href)]), Object.entries(want0).map(([l, t]) => [l.replace(' ↗', ''), t]),
-      'the card\'s own buttons: AC80\'s files, the sheet\'s words left in the sheet');
+    assert.deepEqual(byClass(gate, 'v2-step').map((b) => [b.textContent, decodeValue(b.attrs.href)]), Object.entries(want).map(([l, t]) => [l.replace(' ↗', ''), t]),
+      'the card\'s own buttons: the sheet\'s files, the box\'s words in them');
   } finally {
     app.restore();
   }
@@ -644,7 +650,7 @@ test('AC85 a v2.5 project\'s question (AC19\'s copy route, as today, AC53): AC85
 
 /** Service-Desk's real questions/P-001-design-pick.md at f8dfd1b: reversible, `DEFAULT: none — this is your pick and never defaults (AC43)`, `TIMEOUT: none`. */
 const DESIGN_PICK = fixture('trial-view/P-001-design-pick.md');
-const PICK_WORDS = 'per the question file: DEFAULT none — this is your pick and never defaults (AC43)';
+const PICK_WORDS = 'none — this is your pick and never defaults (AC43)';
 
 test('AC85 + AC12 (round 1, B1): a DEFAULT naming no letter is no default — the sheet quotes it as written, the card shows no clock, Home counts nothing settling; no letter from elsewhere in the field ("AC43"), no raw time', async () => {
   const p = parseQuestion(DESIGN_PICK, 'P-001-design-pick');
@@ -657,7 +663,8 @@ test('AC85 + AC12 (round 1, B1): a DEFAULT naming no letter is no default — th
     assert.equal(byClass(card, 'v2-mk').length, 0, 'the card: no lock or clock line');
     const sh = await openSheet(app, Q('P-001-design-pick'));
     const undo = byClass(byClass(sh, 'v2-marks')[0], 'v2-mark')[0];
-    assert.equal(undo.textContent, `Reversibility: reversible · Default: ${PICK_WORDS}`, 'the sheet: what the file says, word for word');
+    // Rewritten at stage 5 of "After MD3" (AC89 (j), specs/S-001.md:7916-7917): never "DEFAULT" twice.
+    assert.equal(undo.textContent, `Reversibility: reversible · Default, per the question file: ${PICK_WORDS}`, 'the sheet: what the file says, word for word');
     assert.doesNotMatch(sh.textContent, /defaults to|Settles/);
   } finally {
     app.restore();
@@ -665,7 +672,8 @@ test('AC85 + AC12 (round 1, B1): a DEFAULT naming no letter is no default — th
   // DEFAULT none with a TIMEOUT in hours: still no default, and no time of any kind.
   const none48 = { reversibility: 'reversible', default: 'none', timeout: '48', riskClass: null, blastRadius: null };
   const raised = Date.parse('2026-10-19T18:37:00Z');
-  assert.deepEqual(undoLine(none48, raised, TZ), { kind: 'other', icon: null, bold: null, text: 'Reversibility: reversible · Default: per the question file: DEFAULT none' });
+  // Rewritten at stage 5 of "After MD3" (AC89 (j), specs/S-001.md:7916-7917): the DEFAULT words quoted, apart.
+  assert.deepEqual(undoLine(none48, raised, TZ), { kind: 'other', icon: null, bold: null, text: 'Reversibility: reversible · Default, per the question file:', quote: 'none' });
   assert.equal(questionMark(none48, raised, TZ), null);
   assert.equal(settleAt(none48, raised), null, "Home's briefing: nothing settles itself");
   assert.equal(settleAt({ ...none48, default: 'C' }, raised), raised + 48 * 3600e3, 'a letter still settles');
@@ -704,7 +712,9 @@ test('AC85 (round 1, N3): a v2.5 question\'s text to copy carries the owner\'s w
     await app.advance(POLL_MS);
     const id = 'Older|question|questions/N-old.md';
     await openSheet(app, id);
-    const base = (l) => ['Ruling: ' + l, '', 'Question: questions/N-old.md', '', 'Question, as put: A made-up v2.5 question', 'Options, as put:', '  A. Keep it — As it is.', '  B. Drop it — Gone.', ''].join('\n');
+    // Rewritten at stage 5 of "After MD3" (AC89 (j), specs/S-001.md:7914-7915): "a v2.5 question's copy text is AC19's:
+    // 'Ruling: <letter>', then the owner's words, if any, after a blank line".
+    const base = (l) => `Ruling: ${l}\n`;
     await type(app, 'Keep it for now.\nAsk me again in May.');
     await app.tap(keyed(app, `fold:whole:${id}`));
     const pres = findAll(keyed(app, 'whole-files'), (e) => e.tag === 'pre').map((x) => x.textContent);
@@ -781,4 +791,237 @@ test('AC12 + AC85 (Reviewer round 2, R2-N1): a default\'s letter must start the 
   assert.equal(defaultLetter({ default: 'none, unlike B' }), null);
   assert.equal(defaultLetter({ default: '  B' }), 'B', 'leading spaces trimmed');
   assert.equal(defaultLabel({ reversibility: 'reversible', default: 'see option B', timeout: '24' }, null), 'per the question file: DEFAULT see option B');
+});
+
+// ---------------------------------------------------------------------------
+// AC89 (j), answering (stage 5 of "After MD3", specs/S-001.md:7904-7923; the test's list at :7986-7988): a past settle
+// time in the sheet, on the card and in the briefing, across the 1 Nov clock change; the gate's reason in each board
+// button's file; the v2.5 copy text; the default line; a decision card's numbered list; the split message; the
+// three-line cuts. Made-up records: fixtures/ac85/questions/P-003-overdue.md and P-003-unlettered.md (NOT real).
+
+const OVERDUE = Q('P-003-overdue');
+const iso = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z');
+/** Letters with only the made-up overdue questions settling: raised at the given times (the others that settle taken out). */
+function overdueRepo(raised) {
+  const extra = Object.fromEntries(Object.keys(raised).map((n) => [`questions/${n}.md`, ac85('questions/P-003-overdue.md')]));
+  const r = lettersRepo({ extra });
+  for (const n of ['P-001-next-work', 'P-003-mixed']) delete r.files[`questions/${n}.md`];
+  for (const [n, at] of Object.entries(raised)) r.history[`questions/${n}.md`] = [{ commit: { committer: { date: iso(at) } } }];
+  return r;
+}
+async function openAt(repos, now, hash = '#/waiting', config = lettersConfig()) {
+  const app = await loadSandbox({ config, repos, hash, now });
+  await app.advance(1000);
+  await app.advance(POLL_MS);
+  return app;
+}
+const markOf = (app, id) => { const c = findAll(app.view, (e) => e.attrs && e.attrs['data-card'] === id)[0]; const m = c ? byClass(c, 'v2-mk')[0] : null; return m ? m.textContent : null; };
+
+test('AC89 (j): a settle time already past says so — "Was due to settle itself as <letter> on <when> (per the question file: <TIMEOUT> hours); not settled yet" in the sheet, "Was due to settle as <letter> · <when>" on the card, "one question was due to settle itself <when>" in the briefing; <when> a date, never a weekday alone; across the 1 Nov clock change in America/Chicago', async () => {
+  // Raised Sat 31 Oct, 14:00 CDT; 24 hours later is Sun 1 Nov, 13:00 CST (the clocks went back at 02:00 that morning).
+  const raised = Date.parse('2026-10-31T19:00:00Z');
+  const before = await openAt({ Letters: overdueRepo({ 'P-003-overdue': raised }) }, Date.parse('2026-11-01T12:00:00Z'));
+  try {
+    assert.equal(markOf(before, OVERDUE), 'Settles as B · Sun 13:00', 'before: the coming weekday, the hour as the clock will read it');
+    const sh = await openSheet(before, OVERDUE);
+    assert.equal(byClass(byClass(sh, 'v2-marks')[0], 'v2-mark')[0].textContent, 'Settles itself as B on Sun 1 Nov, 13:00 if left (per the question file: 24 hours). Reversible.');
+  } finally {
+    before.restore();
+  }
+  const app = await openAt({ Letters: overdueRepo({ 'P-003-overdue': raised }) }, Date.parse('2026-11-02T15:00:00Z'));
+  try {
+    assert.equal(markOf(app, OVERDUE), 'Was due to settle as B · 1 Nov, 13:00', 'the card: past, with its date');
+    const sh = await openSheet(app, OVERDUE);
+    const undo = byClass(byClass(sh, 'v2-marks')[0], 'v2-mark')[0];
+    assert.equal(undo.textContent, 'Was due to settle itself as B on 1 Nov, 13:00 (per the question file: 24 hours); not settled yet');
+    assert.equal(findAll(undo, (e) => e.tag === 'b')[0].textContent, 'Was due to settle itself as B', 'its words in bold');
+    assert.ok(findAll(undo, (e) => e.tag === 'svg' && /vi-clock/.test(e.attrs.class)).length, 'the clock');
+    await app.go('#/');
+    assert.match(byClass(app.view, 'v2-brief')[0].textContent, /one question was due to settle itself 1 Nov, 13:00/, 'the briefing');
+    assert.doesNotMatch(byClass(app.view, 'v2-brief')[0].textContent, /settles itself|Sun 13:00/);
+  } finally {
+    app.restore();
+  }
+  // Two past: "<k> questions were due to settle themselves, the first <when>".
+  const two = await openAt({ Letters: overdueRepo({ 'P-003-overdue': raised, 'P-003-overdue-2': Date.parse('2026-10-30T12:00:00Z') }) }, Date.parse('2026-11-02T15:00:00Z'), '#/');
+  try {
+    assert.match(byClass(two.view, 'v2-brief')[0].textContent, /2 questions were due to settle themselves, the first 31 Oct, 07:00/);
+  } finally {
+    two.restore();
+  }
+  // Pure: the sheet's and the card's forms; one past and one to come in the briefing, each said; a past year named.
+  const q = { reversibility: 'reversible', default: 'B', timeout: '24', riskClass: null, blastRadius: null };
+  const now = Date.parse('2026-11-02T15:00:00Z');
+  assert.deepEqual(undoLine(q, raised, TZ, now), { kind: 'due', icon: 'clock', bold: 'Was due to settle itself as B', text: ' on 1 Nov, 13:00 (per the question file: 24 hours); not settled yet' });
+  assert.equal(undoLine(q, raised, TZ, raised).kind, 'settles', 'still to come');
+  assert.deepEqual(questionMark(q, raised, TZ, now), { icon: 'clock', words: 'Was due to settle as B · 1 Nov, 13:00' });
+  assert.deepEqual(questionMark(q, Date.parse('2025-12-30T12:00:00Z'), TZ, now), { icon: 'clock', words: 'Was due to settle as B · 31 Dec 2025, 06:00' });
+  const { briefingView } = await import('../../src/lib/home.js');
+  const qc = (at) => ({ project: 'Letters', kind: 'question', raisedAt: at, flag: { question: { parsed: q } } });
+  const bd = { badge: 2, counts: new Map([['Letters', { waiting: 2, kicked: 0 }]]), quiet: { agents: [] },
+    lanes: [{ key: 'wait', groups: [{ project: 'Letters', rows: [qc(raised), qc(now - 3600e3)] }] }, { key: 'kick', groups: [] }, { key: 'done', groups: [] }] };
+  const v = briefingView({ bd, reads: [{ name: 'Letters', read: { read: 'ok', since: now }, drawError: null }], flagged: 2, signedOut: false, v3: () => true, lastReadMs: now, nowMs: now, tz: TZ });
+  assert.equal(v.parts, '2 waiting · oldest 1 d · one question was due to settle itself 1 Nov, 13:00 · one question settles itself Tue 08:00');
+});
+
+test('AC89 (j): the board\'s gate buttons carry the reason typed in the gate\'s sheet — each of the four files on the board, character for character, the file the sheet\'s button opens', async () => {
+  const app = await openLetters();
+  try {
+    const boardFiles = () => {
+      const c = findAll(app.view, (e) => e.attrs && e.attrs['data-card'] === GATE)[0];
+      return findAll(byClass(c, 'v2-gatebtns')[0], (e) => e.tag === 'a').map((a) => [a.textContent, decodeValue(a.attrs.href)]);
+    };
+    const empty = boardFiles();
+    assert.deepEqual(empty.map((x) => x[0]), ['Proceed', 'Hold', 'Recycle', 'Kill']);
+    let sh = await openSheet(app, GATE);
+    const sheetFiles = () => byClass(sheet(app), 'v2-abtn').filter((b) => b.tag === 'a').map((a) => [a.textContent.replace(/ ↗$/, ''), decodeValue(a.attrs.href)]);
+    assert.deepEqual(sheetFiles(), empty, 'with nothing typed, the same files');
+    await type(app, 'Made-up reason for AC89 (j)\'s test (NOT a real ruling).\nIts second line.');
+    const typed = sheetFiles();
+    assert.ok(typed.every(([, f]) => f.includes('Made-up reason for AC89 (j)\'s test (NOT a real ruling).')), 'the sheet\'s files hold the reason, as AC85 places it');
+    await app.go('#/waiting');
+    assert.equal(sheet(app), null);
+    assert.deepEqual(boardFiles(), typed, 'each board button\'s file, character for character');
+    assert.notDeepEqual(boardFiles(), empty);
+    sh = await openSheet(app, GATE);
+    assert.ok(sh);
+    await type(app, '');
+    await app.go('#/waiting');
+    assert.deepEqual(boardFiles(), empty, 'the reason cleared: the card\'s own files again');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC89 (j): a v2.5 question\'s copy text is AC19\'s — "Ruling: <letter>", then the owner\'s words, if any, after a blank line', async () => {
+  const { v25Ruling } = await import('../../src/lib/sheets.js');
+  assert.equal(v25Ruling('A'), 'Ruling: A\n');
+  assert.equal(v25Ruling('B', ''), 'Ruling: B\n');
+  assert.equal(v25Ruling('B', 'Keep it.\nAsk again in May.\n\n'), 'Ruling: B\n\nKeep it.\nAsk again in May.\n');
+  assert.equal(v25Ruling('C', '\n  Indented first line'), 'Ruling: C\n\n  Indented first line\n', 'leading blank lines dropped, the words as typed');
+  assert.ok(!readFileSync(join(SRC, 'public', 'sandbox.js'), 'utf8').includes('composeAnswer('), 'the sheet no longer builds a v3 ruling file for a v2.5 question');
+});
+
+test('AC89 (j): the default line reads "Default, per the question file: <its DEFAULT: words>", the file\'s words set apart as quoted record text, never "DEFAULT" twice', async () => {
+  const app = await openLetters();
+  try {
+    const sh = await openSheet(app, LAB);
+    const undo = byClass(byClass(sh, 'v2-marks')[0], 'v2-mark')[0];
+    assert.equal(undo.textContent, 'Reversibility: reversible · Default, per the question file: none — these are yours and never default');
+    const dq = byClass(undo, 'v2-dq');
+    assert.equal(dq.length, 1);
+    assert.equal(dq[0].textContent, 'none — these are yours and never default', 'the file\'s words, as it writes them');
+    assert.match(dq[0].className, /\bv2-quote\b/, 'quoted record text: body with a left rule (AC81\'s role)');
+    assert.doesNotMatch(undo.textContent, /DEFAULT/, 'never "DEFAULT" twice, nor once');
+  } finally {
+    app.restore();
+  }
+  assert.match(rule('.v2-dq'), /display: block;/);
+  const q = (o) => ({ reversibility: 'reversible', default: null, timeout: null, riskClass: null, blastRadius: null, ...o });
+  assert.deepEqual(undoLine(q({ default: 'none — never' }), null, TZ), { kind: 'other', icon: null, bold: null, text: 'Reversibility: reversible · Default, per the question file:', quote: 'none — never' });
+  assert.deepEqual(undoLine(q({ reversibility: null, default: 'A' }), null, TZ), { kind: 'other', icon: null, bold: null, text: 'Reversibility: not given · Default, per the question file:', quote: 'A' });
+  assert.equal(undoLine(q({}), null, TZ).text, 'Reversibility: reversible · Default: not given');
+});
+
+test('AC89 (j): a decision card\'s whole record keeps the file\'s own list numbers, as a question\'s does — Service-Desk\'s real stop-6 card with two made-up numbered lines (NOT real)', async () => {
+  const { CONFIG } = await import('./helpers.mjs');
+  const { repo } = await import('./fake-desk.mjs');
+  const text = fixture('service-desk/queue/P-001-stop-6.md').replace('- spec: S-001\n', '- spec: S-001\n\n2. A made-up numbered line (NOT a real record).\n3. Another made-up line (NOT a real record).\n');
+  assert.ok(text.includes('2. A made-up numbered line'));
+  const sd = repo({ 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml'), 'dispatch-log/2026-10.jsonl': fixture('service-desk/dispatch-log/2026-10.jsonl'),
+    'queue/P-001-stop-6.md': text }, [], [{ name: 'governance', status: 'completed', conclusion: 'success' }]);
+  const project = CONFIG.projects.find((p) => p.name === 'Service-Desk');
+  const app = await openAt({ 'Service-Desk': sd }, Date.parse('2026-10-07T12:00:00Z'), route('Service-Desk|card|queue/P-001-stop-6.md'), { ...CONFIG, projects: [project] });
+  try {
+    const html = keyed(app, 'whole-record').innerHTML;
+    assert.match(html, /<ol><li value="2">A made-up numbered line \(NOT a real record\)\.<\/li><li value="3">Another made-up line \(NOT a real record\)\.<\/li><\/ol>/, 'the file\'s own 2 and 3');
+    assert.match(html, /<ul><li>stage 3, role critic-triage/, 'its bullets too');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC89 (j): a file that can\'t be split into options says what it found — "a line between its options is neither lettered nor numbered", never that every line is', async () => {
+  const UNL = Q('P-003-unlettered');
+  const app = await openLetters({ repos: { Letters: lettersRepo({ extra: { 'questions/P-003-unlettered.md': ac85('questions/P-003-unlettered.md') } }) } });
+  try {
+    const sh = await openSheet(app, UNL);
+    assert.equal(keyed(app, 'cant-split').textContent, `${CANT_SPLIT} (a line between its options is neither lettered nor numbered).`);
+    assert.doesNotMatch(sh.textContent, /its lines are neither/);
+    await openSheet(app, MIXED);
+    assert.equal(keyed(app, 'cant-split').textContent, `${CANT_SPLIT} (its lettered and numbered lines are mixed).`, 'the mixed file as before');
+  } finally {
+    app.restore();
+  }
+  const { questionQuestions } = await import('../../src/lib/sandbox.js');
+  const why = (lines) => questionQuestions(`OPTIONS:\n${lines.map((l) => `  ${l}`).join('\n')}\n`, 't').why;
+  assert.equal(why(['A. one', 'between', 'B. two']), 'a line between its options is neither lettered nor numbered');
+  assert.equal(why(['first', 'A. one', 'B. two']), 'one of its lines is neither lettered nor numbered', 'not between: said so plainly');
+  assert.equal(why(['1. one', '2. two', 'after']), 'one of its lines is neither lettered nor numbered');
+  assert.equal(why(['A. one', 'x', 'y', 'B. two']), '2 of its lines are neither lettered nor numbered');
+  assert.equal(why(['x', 'y']), 'its lines are neither lettered nor numbered', 'every line: said so only then');
+  assert.equal(why(['A. one', '2. two', 'z']), 'its lettered and numbered lines are mixed');
+});
+
+test('AC89 (j): long titles cut at three lines with the fade, the whole one tap away — a board card\'s title, a gate sheet\'s title (with "Read it all"), and Plan\'s gate row; three lines or fewer, no fade; never an ellipsis', async () => {
+  const measure = (el, lines, line = 16) => { el.clientHeight = Math.round(Math.min(3, lines) * line); el.scrollHeight = Math.round(lines * line); };
+  const app = await openLetters();
+  try {
+    // The board's card titles: the title's own box, measured.
+    for (const id of [NEXT, GATE]) {
+      const t = keyed(app, `tt:${id}`);
+      assert.ok(t, `${id}: the title's box`);
+      assert.equal(t.attrs['data-clip'], `title:${id}`);
+      measure(t, 3);
+      await app.resize(360);
+      assert.doesNotMatch(keyed(app, `tt:${id}`).className, /\bover\b/, `${id}: three lines, no fade`);
+      measure(keyed(app, `tt:${id}`), 5);
+      await app.resize(360);
+      assert.match(keyed(app, `tt:${id}`).className, /\bover\b/, `${id}: past three, faded at the cut`);
+      assert.equal(keyed(app, `cardlink:${id}`).attrs.href, route(id), `${id}: the whole one tap away, in its sheet`);
+    }
+    // The gate sheet's title: cut at three lines with the fade, "Read it all" opening the whole in place.
+    await openSheet(app, GATE);
+    const id = `stitle:${GATE}`;
+    const box = keyed(app, `clip:${id}`);
+    assert.equal(box.tag, 'span', 'inside the heading');
+    assert.equal(findAll(sheet(app), (e) => e.tag === 'h2')[0].textContent, box.textContent);
+    measure(box, 5, 23.4);
+    await app.resize(360);
+    assert.match(keyed(app, `clip:${id}`).className, /\bover\b/);
+    const more = keyed(app, `clipbtn:${id}`);
+    assert.equal(more.textContent, SHEET_WORDS.readAll);
+    await app.tap(more);
+    assert.match(keyed(app, `clip:${id}`).className, /\bopen\b/, 'the whole title, in place');
+  } finally {
+    app.restore();
+  }
+  // Plan's gate row (AC85's made-up Launch-gate card, NOT a real record, on Service-Desk's J11 records at 77bfeae, as AC86's test uses it).
+  const PG = 'Service-Desk|gate|queue/P-003-launch-1.md';
+  const { waSetup, WORKED, j77Files, memStore } = await import('./wa-fixtures.mjs');
+  const log = `${j77Files()['dispatch-log/2026-10.jsonl'].trimEnd()}\n${JSON.stringify({ item: 'P-003', action: 'card', card: 1, gate: 'launch', role: 'user-rep', route: 'launch-gate', stage: 6, gate_n: 1, time: '2026-10-18T15:00:00Z', trigger: 'x' })}\n`;
+  const setup = waSetup({ extra: { 'intake/estimates.jsonl': WORKED(), 'queue/P-003-launch-1.md': fixture('ac85/queue/P-003-launch-1.md'), 'dispatch-log/2026-10.jsonl': log } });
+  const plan = await loadSandbox({ ...setup, hash: '#/work', now: Date.parse('2026-10-18T18:00:00Z'), store: memStore() });
+  try {
+    await plan.advance(1000);
+    await plan.advance(61_000);
+    const name = () => findAll(plan.view, (e) => e.attrs && e.attrs['data-clip'] === `plgate:${PG}`)[0];
+    assert.ok(name(), 'the gate row\'s title box');
+    measure(name(), 2, 18.2);
+    await plan.resize(360);
+    assert.doesNotMatch(name().className, /\bover\b/);
+    measure(name(), 4, 18.2);
+    await plan.resize(360);
+    assert.match(name().className, /\bover\b/, 'faded at the cut');
+    assert.equal(findAll(plan.view, (e) => e.dataset && e.dataset.k === `wa-gate:${PG}`)[0].attrs.href, `#/work/card/${encodeURIComponent(PG)}`, 'the whole in its sheet');
+  } finally {
+    plan.restore();
+  }
+  // The look: three lines each, the fade a mask to the ground behind, no ellipsis.
+  assert.match(rule('.v2-tt'), /display: block; max-height: calc\(3 \* 1\.33em\); overflow: hidden; overflow: clip;/);
+  assert.match(rule('.v2-tt.over, .v2-plli.gate .v2-plname.over'), /mask-image: linear-gradient\(#000 60%, transparent\);/);
+  assert.match(rule('.v2-plli.gate .v2-plname'), /max-height: calc\(3 \* 1\.35em\);/);
+  assert.match(rule('.v2-clip.v2-stt'), /display: block; max-height: calc\(3 \* 1\.3em\);/);
+  assert.match(rule('.v2-clip.v2-stt.open'), /max-height: none;/);
+  assert.doesNotMatch(CSS, /\.v2-(tt|stt|plname)[^{]*\{[^}]*text-overflow/, 'no ellipsis');
 });

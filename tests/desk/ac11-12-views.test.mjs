@@ -109,7 +109,9 @@ test('AC12 (S-001 stage 4\'s build review, round 1, B1 and N5): the desk\'s DEFA
   // A letter starting the field reads as before.
   assert.equal(defaultLabel({ reversibility: 'reversible', default: 'A', timeout: '24' }, raised, fmt), 'per the question file: defaults to A at 2026-10-15T16:00:00.000Z');
   // On the desk's question sheet itself (from stage 8, AC44, step 4, specs/S-001.md:2918-2921: the accepted question view
-  // is gone; AC85's sheet gives the same label, from the same rule, records.js's defaultLabel).
+  // is gone; AC85's sheet quotes the same field, from the same rule, records.js's defaultLetter). Rewritten at stage 5 of
+  // "After MD3" (AC89 (j), :7916-7917): "the default line reads 'Default, per the question file: <its DEFAULT: words>',
+  // the file's words set apart as quoted record text, never 'DEFAULT' twice".
   const { loadSandbox, byClass } = await import('./sandbox-helpers.mjs');
   const { repo } = await import('./fake-desk.mjs');
   const sd = repo({ 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml'), 'questions/P-001-design-pick.md': text }, [], [{ name: 'governance', status: 'completed', conclusion: 'success' }]);
@@ -120,7 +122,8 @@ test('AC12 (S-001 stage 4\'s build review, round 1, B1 and N5): the desk\'s DEFA
     await app.advance(1000);
     const sheet = byClass(app.view, 'v2-sheet')[0];
     assert.ok(sheet, 'the question\'s sheet');
-    assert.ok(sheet.textContent.includes('Default: per the question file: DEFAULT none — this is your pick and never defaults (AC43)'), sheet.textContent);
+    assert.ok(sheet.textContent.includes('Default, per the question file: none — this is your pick and never defaults (AC43)'), sheet.textContent);
+    assert.equal(byClass(sheet, 'v2-dq')[0].textContent, 'none — this is your pick and never defaults (AC43)', 'the file\'s words, quoted, "DEFAULT" never twice');
     assert.doesNotMatch(sheet.textContent, /Settles itself|defaults to A/, 'never "defaults to A" from AC43');
   } finally {
     app.restore();

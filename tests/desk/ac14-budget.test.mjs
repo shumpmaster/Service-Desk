@@ -718,7 +718,7 @@ test('AC14 (desk mockup v2, J23): the worst case with the portfolio read too —
   assert.ok(Math.max(...d.cycles.values()) <= 16, 'A3: 6 + 2 × 5');
 });
 
-// From stage 7 of "After MD3" (AC89 (l); A3's 9,952, specs/S-001.md:14019-14026): the same worst case with portfolio Done
+// From stage 7 of "After MD3" (AC89 (l); A3's 9,952, specs/S-001.md:14020): the same worst case with portfolio Done
 // marks on the device all day — 12 of them, so past the day's cap of 10: one more portfolio read each for the first ten,
 // none for the eleventh and twelfth (judged at the 5-minute reads), and the day under 10,000 with at most 10 calls more.
 test('AC14 (AC89 (l)): AC14\'s day with A3\'s 9,952 — the J23 worst case with 12 portfolio Done marks on one device: 10 more portfolio reads, one each for the day\'s first ten marks and none after; under 10,000 calls, at most 10 more than the same day with no marks', async (t) => {

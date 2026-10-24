@@ -149,7 +149,7 @@ test('AC87 + AC80 (6b): "Done ✓" on a portfolio card leaves every count at onc
   const kick = await open({ pf: ONE(), hash: `#/waiting/card/${encodeURIComponent(CARD_ID)}`, store: memStore() });
   try {
     await kick.tap(findKeyed(kick, 'sheet-done'));
-    // Rewritten at stage 7 of "After MD3" (AC89 (l), specs/S-001.md:7944-7949): one more portfolio read is due
+    // Rewritten at stage 7 of "After MD3" (AC89 (l), specs/S-001.md:7946): one more portfolio read is due
     // KICK_BACK_MINUTES after the mark, so a mark the queue still holds is kicked back at about 5 minutes, not up to 10.
     await kick.advance(KICK_BACK_MINUTES * 60_000 - 5_000);
     await kick.go('#/waiting');

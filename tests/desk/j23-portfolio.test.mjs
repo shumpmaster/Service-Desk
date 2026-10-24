@@ -279,7 +279,7 @@ test('J23 (awkward cases, made up): no ideas/IDEAS.md, an empty one, or one with
 
 test('J23 (the rarer records, made up): names and counts only, from the tree, no blob — the files under rulings/ and library/facts/ by name, "none yet" where a folder holds only its README; whether intent/ holds a file beyond its template', () => {
   const r = rareView(snapOf(pfFiles()).tree);
-  // Rewritten at stage 7 of "After MD3" (J23, changed, specs/S-001.md:12334-12339): whether the template's own
+  // Rewritten at stage 7 of "After MD3" (J23, changed, specs/S-001.md:12333-12349): whether the template's own
   // intent/PORTFOLIO-INTENT.md is there, named apart (`intentFile`).
   assert.deepEqual(r, { rulings: ['R-001-made-up.md', 'R-002-made-up.md'], facts: [], intent: [], intentFile: false });
   const more = rareView(snapOf(pfFiles({ more: { 'intent/2026-standing.md': `Made up (${MADE_UP})\n`, 'library/facts/F-1.md': `Made up (${MADE_UP})\n` } })).tree);

@@ -59,6 +59,26 @@ window.__mock = (() => {
       for (const n of $$('.v2-plli.gate .v2-plname')) { const g = gateOf(n.closest('.v2-plli').textContent); const it = itemOf(n);
         if (g) { n.textContent = `${it}: ${GATE_Q[g]}`; n.classList.remove('over'); } }
     },
+
+    pK() { // the owner's idea (comment on item 4): no Kicked back column; a strip above the lanes, minimized when empty, open with cards left to right
+      css('.mk-ks{display:grid;gap:6px;margin:0 0 10px;} .mk-ksh{display:flex;align-items:center;gap:6px;min-height:28px;font:var(--t-label);color:var(--ink2);border-bottom:1px solid var(--line);padding-bottom:4px;} .mk-ksh b{font:600 12px/1.3 var(--font);color:var(--ink);} .mk-ksh .mk-c{font:400 12px/1.3 var(--mono,ui-monospace);color:var(--ink2);} .mk-ks.empty .mk-ksh{border-bottom:0;} .mk-ks.empty .mk-ksh b{font-weight:500;color:var(--ink2);} .mk-ksh svg{width:10px;height:10px;margin-left:auto;stroke:currentColor;fill:none;stroke-width:1.6;} .mk-krow{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 0 6px;list-style:none;margin:0;} .mk-krow > li{flex:0 0 200px;scroll-snap-align:start;} .mk-kp{font:var(--t-label);color:var(--ink2);}');
+      for (const lanes of $$('.v2-lanes')) {
+        const kick = lanes.querySelector(':scope > .v2-lane.lane-kick'); if (!kick) continue;
+        const cards = $$('.v2-card', kick);
+        const strip = document.createElement('section'); strip.className = 'mk-ks' + (cards.length ? '' : ' empty');
+        const chev = cards.length ? '<svg viewBox="0 0 10 10"><path d="M2 3.5l3 3 3-3"/></svg>' : '';
+        strip.innerHTML = `<div class="mk-ksh"><b>Kicked back</b><span class="mk-c">${cards.length || 'none'}</span>${chev}</div>`;
+        if (cards.length) { const row = document.createElement('ol'); row.className = 'mk-krow';
+          for (const c of cards) { const grp = c.closest('ol').previousElementSibling; const pn = grp && grp.querySelector('.v2-gn') ? grp.querySelector('.v2-gn').textContent : '';
+            const kd = c.querySelector('.v2-kd'); if (pn && kd) { const s = document.createElement('span'); s.className = 'mk-kp'; s.textContent = ' · ' + pn; kd.append(s); }
+            row.append(c); }
+          strip.append(row); }
+        kick.remove();
+        lanes.before(strip);
+        const ls = $$(':scope > .v2-lane', lanes);
+        lanes.style.gridTemplateColumns = ls.map((l, i) => (i === 0 ? 'minmax(0,1.18fr)' : 'minmax(0,1fr)')).join(' ');
+      }
+    },
     p6() { css('.v2-e1{max-height:calc(2 * 1.45em)!important;}'); },
     p7() { const n = document.querySelector('.v2-nowl'); if (n) window.scrollBy(0, n.getBoundingClientRect().top - Math.round(innerHeight / 3)); },
     p8a() { for (const t of $$('.v2-prow .v2-prtt')) if (/^Nothing waiting on you/.test(t.textContent)) t.classList.add('soft'); },

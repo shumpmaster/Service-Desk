@@ -35,4 +35,5 @@ screens with all 11 changes applied, light and dark.
 | shots/09-at-work-* | A Home tile's "At work" line (item 9) |
 | shots/10-failload-* | The failed-load screen (item 10) |
 | shots/11-new-* | Waiting: a card new since you last looked (item 11) |
+| shots/12a-kick-strip-empty-*, 12b-kick-strip-cards-*, 12c-kick-strip-cards-p4-* | Item 4b, the owner's idea from a comment on item 4: Kicked back as a strip above the lanes, empty and with two cards (made-up marks on this device), alone and with item 4 (change pK in changes.js; not reviewed by the Design reviewer) |
 | shots/all-<screen>-<theme>-* | Every change together, 13 screens, light and dark |

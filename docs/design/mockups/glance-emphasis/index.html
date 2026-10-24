@@ -75,7 +75,7 @@ footer { font-size: 13px; color: var(--ink2); }
 <div class="wrap">
   <header>
     <h1>Desk Glance Mockups</h1>
-    <p>Before and after for each of the Design reviewer's 11 proposals from the 24 Oct audit, then every change together. Each "after" is the real desk with only that proposal's change applied. Nothing here is built yet.</p>
+    <p>Before and after for each of the Design reviewer's 11 proposals from the 24 Oct audit, your Kicked back strip idea (4b), then every change together. Each "after" is the real desk with only that proposal's change applied. Nothing here is built yet.</p>
     <p class="meta">360 px phone · test data, made up · desk at da4a342 · tap any shot to enlarge and flip between before and after</p>
   </header>
 
@@ -132,6 +132,12 @@ const P = [
     why: 'Waiting’s job is to read and act on what waits. The empty lanes compete with it for space while saying nothing. This keeps your "all three lanes at once" ruling and the drag targets, and only changes widths, so it is far smaller than a new layout. It roughly doubles the line length, which also removes most of the cut gate titles. The cost is that an empty lane’s drop target is narrower.',
     serves: 'P-001-board-layout; part A item 21; PROJECT.md §2. Bends: frame 1’s lane proportions.',
     shots: [['04-lanes', '25 cards, two empty lanes']] },
+  { n: '4b', id: 'p4b', kind: 'choice', t: 'Your idea: Kicked back as a strip, not a column', where: 'Waiting · the Kicked back lane',
+    now: 'Kicked back is the middle of three columns and takes about 99 px, even when it is empty, which is most of the time. A card lands there only when you marked it done and GitHub hadn’t confirmed it about 5 minutes later.',
+    to: 'The middle column goes. Kicked back becomes a strip above the lanes: one quiet line, "Kicked back · none", when it is empty, and open with its cards left to right when there are any, each with its reason. Waiting on you and Done share the width. The third pair adds item 4 as well, so an empty Done shrinks too.',
+    why: 'Added from your comment on item 4: "a kicked back queue that is minimized when nothing exists but pops open when something is there". Kicked back is rare, so a column that sits empty most of the time costs width every day for a few minutes’ use. A strip is out of the way when empty and above everything else when not. Kicked-back cards still count as needing you, so putting them first when they exist matches the screen’s job. The costs: an open strip pushes Waiting on you down about 170 px, a card past the second one is reached by swiping sideways, and dragging a card from the strip into Done needs new drag code.',
+    serves: 'Your comment of 24 Oct on this page. Bends: your board ruling P-001-board-layout ("all three lanes at once"), which is yours to change. Not reviewed by the Design reviewer yet.',
+    shots: [['12a-kick-strip-empty', 'Nothing kicked back (the usual case)'], ['12b-kick-strip-cards', 'Two cards kicked back'], ['12c-kick-strip-cards-p4', 'Two kicked back, with item 4 too (an empty Done shrinks)']] },
   { n: 5, id: 'p5', kind: 'fix', t: 'Gate titles: one short title everywhere', where: 'Waiting card, its sheet, and Plan',
     now: 'Each place uses the gate’s whole first sentence ("The Launch gate: the launch review passed. The case for going live…"), cut off at 2–3 lines. On the sheet, Kill falls below the first screen.',
     to: 'A short title naming the gate and its item, as the approved frames draw it. The full sentence moves into the sheet’s lead paragraph.',

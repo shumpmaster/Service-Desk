@@ -16,3 +16,11 @@ After the Chief of Staff proposed a Design reviewer audit of each screen ("what 
 - A whole-desk audit by the Design reviewer, focused on emphasis at a glance, each proposal with its rationale. Recorded verbatim at docs/design/audit-2026-10-24.md when it returns.
 - Ordered first among the remaining work, ahead of the three threads in docs/CHECKPOINT.md.
 - It restates the owner's discovery answer 3 (P-001-design-discovery.md): "I want to glance for a few seconds, but pick up enough information from that glance to know where to press into more details."
+
+## Comment on item 4, word for word
+
+Left by the owner on the mockup page (docs/design/mockups/glance-emphasis/), on item 4's "after" shot, 2026-10-24:
+
+> Is it possible scrap the middle column, and rather opt for a collapsible section that shows kicked back cards left to right in a line? Almost like a kicked back queue that is minimized when nothing exists but pops open when something is there?
+
+Mocked as item 4b of the mockup, and added as options C and D to questions/P-001-glance-lanes.md.

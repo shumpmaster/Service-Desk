@@ -62,7 +62,7 @@ test('AC84 ("what stays"): every word AC59 to AC61 show is still on the Timeline
           for (const s of [...(x.sprints || []), ...(x.named || [])]) {
             want.push(s.code, s.title, s.missing, s.none, s.tasks && s.tasks.line, s.tasks && s.tasks.none);
             if (s.date) want.push(`${s.date} · ${s.code}`);
-            // ✕ is no Plex character: drawn as an icon, its word kept beside it (AC81, specs/S-001.md:6563-6565; AC84 "every word stays").
+            // ✕ is no Plex character: drawn as an icon, its word kept beside it (AC81, specs/S-001.md:7072-7074; AC84 "every word stays").
             for (const mk of s.marks || []) {
               want.push(mk.mark === '✕' ? mk.word : `${mk.mark ? `${mk.mark} ` : ''}${mk.word}`, mk.why);
               if (mk.mark === '✕') crosses += 1;
@@ -474,13 +474,13 @@ test('AC84 (specs/S-001.md:6917-6922; the Design reviewer\'s 1 and 2, stage 3 ro
   const small = CSS.indexOf('\n.v2-timeline .sb-why, .v2-timeline .sb-why > summary');
   assert.ok(small > 0 && CSS.indexOf('\n.v2-timeline .v2-stats .sb-mkw, ') > small, 'after it, and heavier (three classes)');
   assert.match(rule('.v2-timeline .v2-stats span.sb-mkw, .v2-timeline .v2-stats .sb-mkw > summary'), /display: inline-flex; align-items: center; gap: 2px;/);
-  // Its own class, not the board card's .v2-mk (--ink): drawn in currentColor, its word's --ink2 (AC81, specs/S-001.md:6514-6516; the Reviewer's N-a, round 2).
+  // Its own class, not the board card's .v2-mk (--ink): drawn in currentColor, its word's --ink2 (AC81, specs/S-001.md:7072-7074; the Reviewer's N-a, round 2).
   assert.match(rule('.v2-stats .v2-smk'), /^ width: 10px; height: 10px; color: inherit; $/, 'the ✕ icon at the marks\' size, in its word\'s colour');
   assert.match(rule('.v2-k'), /stroke: currentColor;/);
 });
 
 test('AC81 + AC84 (after MD3, stage 8; (b) item 37, stage 3 review round 3, R1): the ✕ icon\'s colour as drawn — through the cascade, at 360 and 414 px, light, the phone\'s dark and forced dark, the icon\'s stroke is its own colour and that colour is its word\'s, --ink2', async () => {
-  // specs/S-001.md:6512-6516 (AC81: a mark keeps its word, in the marks' colour) and the rule test above, which reads only
+  // specs/S-001.md:7072-7074 (AC81: a mark drawn in currentColor, keeping its word) and the rule test above, which reads only
   // the rule's text: a later, heavier rule giving the icon --ink passed it (the Reviewer's mutation Na3).
   const rules = (() => {
     const a = parseCss(readFileSync(`${SRC}/public/style.css`, 'utf8'), 'style.css');
@@ -511,7 +511,7 @@ test('AC81 + AC84 (after MD3, stage 8; (b) item 37, stage 3 review round 3, R1):
   }
 });
 
-test('AC81 + AC84 (specs/S-001.md:6512-6517, "each keeps its word or its accessible name"; the Reviewer\'s NB1 and N-b, stage 3 round 2): a failed check reads "failed checks" to assistive technology, its icon hidden, never only "checks" as a passed one\'s "✓ checks" would; each mark keeps its own word', async () => {
+test('AC81 + AC84 (specs/S-001.md:7072-7074, "each keeps its word or its accessible name"; the Reviewer\'s NB1 and N-b, stage 3 round 2): a failed check reads "failed checks" to assistive technology, its icon hidden, never only "checks" as a passed one\'s "✓ checks" would; each mark keeps its own word', async () => {
   // The accessible text: every text node not inside an aria-hidden part, as a screen reader reads it.
   const said = (el) => {
     if (!el.tag) return el.textContent;

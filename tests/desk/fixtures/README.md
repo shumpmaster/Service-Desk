@@ -619,3 +619,12 @@ lines (**NOT real records**) to Service-Desk's dispatch log at 3117150, one each
 input reader and the reviewer, so that only the user representative's card has no recorded work (a reason one card has
 stays on that card). Its "Just finished" case uses the real log as it stands, read at 22:00 UTC on 8 Oct, eight minutes
 after the source checker's last outcome line and twelve after the researcher's.
+
+## After MD3, stage 5 (2026-10-23, S-001 AC17, changed; AC89 (j))
+
+Two made-up question files join AC85's made-up "Letters" records, each **NOT a real record** (fixtures/ac85/README.md):
+`questions/P-003-overdue.md`, a reversible question raised by the test so that its settle time has passed while it still
+waits, across America/Chicago's clock change of 1 Nov 2026; and `questions/P-003-unlettered.md`, with one line between its
+lettered options that is neither lettered nor numbered. `tests/desk/ac85-sheets.test.mjs` also gives Service-Desk's real
+`queue/P-001-stop-6.md` two made-up numbered lines ("2." and "3.", **NOT real**) under its Background, inline, so that the
+decision card's whole record is seen keeping the file's own list numbers.

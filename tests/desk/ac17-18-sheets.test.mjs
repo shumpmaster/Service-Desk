@@ -4,7 +4,8 @@
 // link follows AC53's 'When it would not fit' (AC17's copy route past `linkCap`, or where `contentPrefill` is
 // `false`) and AC18's message where `webCommitsToDefault` is `false`, as today" (:6077-6080).
 // - AC18 (:2536-2541): before the link, J7's message word for word; the link itself J3's URL, unchanged.
-// - AC17 (:2531-2535): the answer text shown with a "Copy" button, and the new-file page opened with only the file name.
+// - AC17 (:2531-2535): the answer text shown with a "Copy" button, and the new-file page opened with only the file name;
+//   changed after MD3 (:2911-2927): each choice's box holds its own "Copy", the texts one tap down in the sheet's fold.
 // Fixtures: Service-Desk's real P-001-stop-6 card (tests/desk/fixtures/service-desk/) for the decision sheet, and AC85's
 // made-up "Letters" project (NOT real records, tests/desk/fixtures/ac85/README.md) for the questions and the gate.
 import test from 'node:test';
@@ -39,8 +40,8 @@ function sheets(change = {}) {
   ];
 }
 
-async function open(project, repos, id, now, globals = {}) {
-  const app = await loadSandbox({ config: { ...CONFIG, projects: [project] }, repos, hash: route(id), now, globals });
+async function open(project, repos, id, now, globals = {}, linkCap = CONFIG.linkCap) {
+  const app = await loadSandbox({ config: { ...CONFIG, linkCap, projects: [project] }, repos, hash: route(id), now, globals });
   await app.advance(1000);
   await app.advance(POLL);
   return app;
@@ -78,43 +79,87 @@ test('AC18 on every sheet that answers (from stage 8): with webCommitsToDefault 
   }
 });
 
-test('AC17 on every sheet that answers (from stage 8): with contentPrefill false, the words naming why, each answer\'s text shown with its own "Copy", and each link opening the new-file page with only the file name; none where content prefills', async () => {
+// AC17, changed after MD3 (specs/S-001.md:2911-2927; "Ruling: A — when an answer is too long to prefill, a Copy sits
+// inside each choice's box, with the text one tap down", decisions/questions/P-001-audit-copy.md, line 1; stage 5 of
+// "After MD3"): this case replaces stage 8's, which checked the texts and their buttons stacked above the choices.
+const boxesOf = (sh) => {
+  const opts = byClass(sh, 'v2-opt').filter((o) => answerLinks(o).length);
+  return opts.length ? opts : findAll(sh, (e) => e.dataset && e.dataset.k === 'numbered-btn');
+};
+const copiesIn = (el) => findAll(el, (e) => e.tag === 'button' && /^(Copy|Copied)$/.test(e.textContent));
+/** The texts in the sheet's fold that holds each answer's file (opened first where it is a fold button). */
+async function foldTexts(app, id) {
+  const fold = findAll(sheetOf(app), (e) => e.dataset && e.dataset.k === `fold:whole:${id}`)[0];
+  if (fold && fold.attrs['aria-expanded'] !== 'true') await app.tap(fold);
+  const files = findAll(sheetOf(app), (e) => e.dataset && e.dataset.k === 'whole-files')[0];
+  assert.ok(files, 'the fold holds each answer\'s file');
+  return findAll(files, (e) => e.tag === 'pre').map((p) => p.textContent);
+}
+async function typeWords(app, text) {
+  const ta = findAll(sheetOf(app), (e) => e.tag === 'textarea' && /#1$/.test(e.dataset.k || ''))[0];
+  assert.ok(ta, 'the sheet\'s box');
+  ta.value = text;
+  ta.dispatch('input', { target: ta });
+  await app.flush();
+}
+
+test('AC17, changed after MD3 (P-001-audit-copy, A): on each sheet with choices, with contentPrefill false and with a text past linkCap — one "Copy" in each choice\'s box and none above the choices; each Copy\'s text equal, character for character, to that choice\'s file in the fold, with and without the owner\'s words; each answer button\'s link holding the file name only; the cause\'s words under the choices; none of it where content prefills', async () => {
   for (const [label, project, repos, id, , now] of sheets()) {
     const app = await open(project, repos, id, now);
     try {
-      assert.equal(byClass(sheetOf(app), 'v2-copyto').length, 0, `${label}: no copy route where the content prefills`);
-      assert.ok(answerLinks(sheetOf(app)).every((a) => /&value=/.test(a.attrs.href)), `${label}: each link prefilled`);
+      const sh = sheetOf(app);
+      assert.equal(copiesIn(sh).length, 0, `${label}: no "Copy" where the content prefills`);
+      assert.ok(!sh.textContent.includes(COPY_WORDS), `${label}: no cause's words`);
+      assert.ok(answerLinks(sh).every((a) => /&value=/.test(a.attrs.href)), `${label}: each link prefilled`);
     } finally {
       app.restore();
     }
   }
-  for (const [label, project, repos, id, , now] of sheets({ contentPrefill: false })) {
-    const copied = [];
-    const app = await open(project, repos, id, now, { navigator: { clipboard: { writeText: async (t) => { copied.push(t); } } } });
-    try {
-      const sh = sheetOf(app);
-      const route17 = byClass(sh, 'v2-copyto');
-      assert.equal(route17.length, 1, `${label}: the copy route`);
-      assert.equal(byClass(route17[0], 'v2-small')[0].textContent, COPY_WORDS, `${label}: the words naming why`);
-      const links = answerLinks(sh);
-      assert.ok(links.length >= 1);
-      for (const a of links) {
-        assert.doesNotMatch(a.attrs.href, /[?&]value=/, `${label}: ${a.textContent} opens with only the file name`);
-        assert.match(a.attrs.href, /\/new\/main\?filename=/);
+  const ways = [['contentPrefill false', sheets({ contentPrefill: false }), CONFIG.linkCap], ['a text past linkCap', sheets(), 60]];
+  for (const [way, list, linkCap] of ways) {
+    for (const [name, project, repos, id, , now] of list) {
+      const label = `${name}, ${way}`;
+      const copied = [];
+      const app = await open(project, repos, id, now, { navigator: { clipboard: { writeText: async (t) => { copied.push(t); } } } }, linkCap);
+      try {
+        const sh = sheetOf(app);
+        const boxes = boxesOf(sh);
+        const links = answerLinks(sh);
+        assert.ok(boxes.length >= 1, `${label}: its choices`);
+        assert.equal(boxes.length, links.length, `${label}: each answer button in its choice's box`);
+        for (const b of boxes) {
+          assert.equal(copiesIn(b).length, 1, `${label}: one "Copy" in each choice's box`);
+          assert.equal(answerLinks(b).length, 1, `${label}: beside its one answer button`);
+        }
+        assert.equal(copiesIn(sh).length, boxes.length, `${label}: no other "Copy" on the sheet`);
+        const first = order(sh, boxes[0]);
+        assert.ok(findAll(sh, (e) => e.tag === 'pre' || (e.tag === 'button' && /^Copy/.test(e.textContent))).every((e) => order(sh, e) > first), `${label}: nothing stacked above the choices`);
+        assert.equal(byClass(sh, 'v2-copyto').length, 0, `${label}: no copy route block`);
+        for (const a of links) {
+          assert.doesNotMatch(a.attrs.href, /[?&]value=/, `${label}: ${a.textContent} opens with only the file name`);
+          assert.match(a.attrs.href, /\/new\/main\?filename=/);
+        }
+        const cause = findAll(sh, (e) => e.tag === 'p' && e.textContent === COPY_WORDS);
+        assert.equal(cause.length, 1, `${label}: the cause's words, once`);
+        assert.ok(order(sh, cause[0]) > order(sh, boxes[boxes.length - 1]), `${label}: under the choices`);
+        // Each Copy's text is that choice's file in the fold, character for character: first with the box empty, then with words.
+        for (const words of [null, 'Made-up words for AC17\'s test (NOT a real ruling).\nA second line.']) {
+          if (words) await typeWords(app, words);
+          const texts = await foldTexts(app, id);
+          assert.equal(texts.length, boxes.length, `${label}: one file in the fold for each choice`);
+          if (words) assert.ok(texts.every((t) => t.includes('Made-up words for AC17')), `${label}: the owner's words in each file`);
+          copied.length = 0;
+          const now2 = boxesOf(sheetOf(app));
+          for (let i = 0; i < now2.length; i++) {
+            copiesIn(boxesOf(sheetOf(app))[i])[0].dispatch('click');
+            await app.flush();
+          }
+          assert.deepEqual(copied, texts, `${label}${words ? ', with words' : ''}: each "Copy" copies its choice's file`);
+          assert.ok(copiesIn(sheetOf(app)).every((b) => b.textContent === 'Copied'), `${label}: each says it copied`);
+        }
+      } finally {
+        app.restore();
       }
-      const texts = findAll(route17[0], (e) => e.tag === 'pre').map((p) => p.textContent);
-      const buttons = findAll(route17[0], (e) => e.tag === 'button');
-      assert.equal(texts.length, links.length, `${label}: each answer's text shown`);
-      assert.equal(buttons.length, links.length, `${label}: each with its own button`);
-      assert.ok(buttons.every((b) => /^Copy\b/.test(b.textContent)), `${label}: "Copy"`);
-      for (const t of texts) assert.ok(t.trim().length > 0, `${label}: a text to copy`);
-      assert.ok(order(sh, route17[0]) < order(sh, links[0]), `${label}: before the links`);
-      buttons[0].dispatch('click');
-      await app.flush();
-      assert.deepEqual(copied, [texts[0]], `${label}: "Copy" puts that text on the clipboard`);
-      assert.equal(buttons[0].textContent, 'Copied');
-    } finally {
-      app.restore();
     }
   }
 });

@@ -1206,3 +1206,15 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-sheet .sb-linebub .sb-bubble-top { background: var(--bg); }
 .v2-sheet .sb-linebub .sb-eyebrow { font: var(--t-label); color: var(--ink2); }
 .v2-sheet .sb-linebub .sb-bubble-t { font: var(--t-body); }
+
+/* M3D stage 5, answering. AC17, changed after MD3 ("Ruling: A — when an answer is too long to prefill, a Copy sits inside
+   each choice's box, with the text one tap down", P-001-audit-copy.md): where a choice's link can't carry its text, its
+   "Copy" sits in the choice's box under its answer button, nothing stacked above the choices. AC89 (j): a question file's
+   DEFAULT words set apart as quoted record text; long titles cut at three lines with the fade, the whole one tap away
+   (the board's card titles, Plan's gate row, a gate sheet's title), the fade drawn only once the browser measures the cut. */
+.v2-obtns { display: grid; gap: 6px; }
+.v2-dq { display: block; margin-top: 4px; }
+.v2-tt { display: block; max-height: calc(3 * 1.33em); overflow: hidden; overflow: clip; }
+.v2-tt.over, .v2-plli.gate .v2-plname.over { -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
+.v2-clip.v2-stt { display: block; max-height: calc(3 * 1.3em); }
+.v2-clip.v2-stt.open { max-height: none; }

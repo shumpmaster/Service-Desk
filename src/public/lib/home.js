@@ -8,7 +8,7 @@
 // AC82 and J24 quote; the desk never rewords a record (AC9): a commit's first line and a title are
 // shown as written; a value no record gives says so in words (AC41).
 
-import { hhmm, dayKey, durationText, zonedToUtc } from './timefmt.js';
+import { hhmm, dayKey, durationText, zonedToUtc, dayDateTime } from './timefmt.js';
 import { weekdayTime } from './board.js';
 import { entryShape, defaultLetter } from './records.js';
 import { dayWords, headlineWords, branchShape, runBegan, PHASE_CLASS } from './feed.js';
@@ -95,9 +95,7 @@ export function lineTime(e, nowMs, tz) {
 /** A settle time (AC82): "Wed 13:37" within the next 7 days, "21 Oct, 13:37" beyond (and before now), in ownerTimeZone. */
 export function settleWords(at, nowMs, tz) {
   if (at >= nowMs && at - nowMs <= 7 * 86400e3) return weekdayTime(at, tz);
-  const [y, mo, d] = dayKey(new Date(at), tz).split('-').map(Number);
-  const thisYear = Number(dayKey(new Date(nowMs), tz).slice(0, 4));
-  return `${d} ${MONTHS[mo - 1]}${y !== thisYear ? ` ${y}` : ''}, ${hhmm(new Date(at), tz)}`;
+  return dayDateTime(at, nowMs, tz);
 }
 
 // ---------------------------------------------------------------------------
@@ -152,8 +150,13 @@ export function briefingView(input) {
     // The counted v3 owner questions: settling themselves, and those that can't be undone (AC12, AC38).
     const questions = [...wait, ...kick].filter((c) => c.kind === 'question' && !c.v25 && input.v3 && input.v3(c.project));
     const settles = questions.map((c) => settleAt(c.flag && c.flag.question ? c.flag.question.parsed : null, c.raisedAt)).filter((x) => x != null).sort((a, b) => a - b);
-    if (settles.length === 1) parts.push(`one question settles itself ${settleWords(settles[0], nowMs, tz)}`);
-    else if (settles.length > 1) parts.push(`${settles.length} questions settle themselves, the first ${settleWords(settles[0], nowMs, tz)}`);
+    // AC89 (j): a settle time already past, on a question that still waits, says so, its time always a date.
+    const due = settles.filter((x) => x < nowMs);
+    const ahead = settles.filter((x) => x >= nowMs);
+    if (due.length === 1) parts.push(`one question was due to settle itself ${dayDateTime(due[0], nowMs, tz)}`);
+    else if (due.length > 1) parts.push(`${due.length} questions were due to settle themselves, the first ${dayDateTime(due[0], nowMs, tz)}`);
+    if (ahead.length === 1) parts.push(`one question settles itself ${settleWords(ahead[0], nowMs, tz)}`);
+    else if (ahead.length > 1) parts.push(`${ahead.length} questions settle themselves, the first ${settleWords(ahead[0], nowMs, tz)}`);
     const irr = questions.filter((c) => irreversible(c.flag && c.flag.question ? c.flag.question.parsed : null)).length;
     if (irr === 1) parts.push("one can't be undone");
     else if (irr > 1) parts.push(`${irr} can't be undone`);

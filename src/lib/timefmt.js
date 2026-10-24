@@ -45,6 +45,18 @@ export function dateTimeText(date, timeZone) {
   return `${MONTHS[Number(p.month) - 1]} ${Number(p.day)} ${p.hour}:${p.minute}`;
 }
 
+/**
+ * A day and time that may be past (AC82's settle time beyond the week; AC89 (j): "A past `<when>` is always a date,
+ * '8 Oct, 05:00', never a weekday alone, which reads as the coming one"): "8 Oct, 05:00", with the year when it is not
+ * now's year, in the zone.
+ */
+export function dayDateTime(ms, nowMs, timeZone) {
+  const d = new Date(ms);
+  const [y, mo, day] = dayKey(d, timeZone).split('-').map(Number);
+  const thisYear = Number(dayKey(new Date(nowMs), timeZone).slice(0, 4));
+  return `${day} ${MONTHS[mo - 1]}${y !== thisYear ? ` ${y}` : ''}, ${hhmm(d, timeZone)}`;
+}
+
 /** A duration in words: 2 h 8 min, 45 min, 30 s. */
 export function durationText(ms) {
   if (!Number.isFinite(ms) || ms < 0) return 'not recorded';

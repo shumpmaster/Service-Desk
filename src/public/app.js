@@ -15,6 +15,12 @@ import { startDesk } from './lib/page.js';
 
 const view = document.getElementById('view');
 const stateEl = document.getElementById('screen-state');
+// AC89 (m): the old header and footer are hidden in index.html, so neither shows while the desk loads; an experiment
+// panel, which titles itself in the header's state line, shows the header (its footer, read by no view now, stays hidden).
+const showHeader = () => {
+  const top = document.getElementById('top');
+  if (top) top.hidden = false;
+};
 
 function h(tag, attrs = {}, ...children) {
   const el = document.createElement(tag);
@@ -44,11 +50,13 @@ const params = new URLSearchParams(location.search);
 // EXP-004: the prefilled-link test (experiments/EXP-004-prefilled-link-per-repo.md)
 
 function startExp004() {
+  showHeader();
   stateEl.textContent = 'EXP-004 — prefilled links';
   view.replaceChildren(h('section', {},
     h('p', {}, 'For each link: open it on the phone, choose “Create a new branch” named ', h('code', {}, 'desk-link-test'),
       ' at commit, and record whether the file name and the content were filled, and any error page. On link (a), also record whether “Commit directly to the main branch” is offered (Q1). Afterwards delete the branch.'),
-    h('p', {}, 'Q4: on the Universe screen, record each box’s CI field.'),
+    // AC89 (m): where CI shows now (each project's page, "Details"), never a screen the desk no longer has.
+    h('p', {}, 'Q4: on each project’s page, open “Details” and record its CI line.'),
     CONFIG.projects.map((p) => h('div', { class: 'record' },
       h('h3', {}, p.name),
       h('ul', { class: 'plain' }, exp004Links(p).map((l) => h('li', {},
@@ -60,6 +68,7 @@ function startExp004() {
 // EXP-001: the CPU and wall-time panel (experiments/EXP-001-o3-cpu-walltime.md)
 
 function startExp001() {
+  showHeader();
   stateEl.textContent = 'EXP-001 — CPU and wall time';
   const resultsProject = CONFIG.projects.find((p) => p.planning) || CONFIG.projects[0];
   const status = h('p', {}, 'Ready. The run takes about an hour; keep this tab in the foreground on a desktop browser.');
@@ -113,16 +122,22 @@ else if (exp === '004') startExp004();
 else {
   if (params.has('sandbox')) dropSandbox();
   // The desk: mockup v2 as built (AC44, step 4). If its code fails to load, the page says so (AC89 (h)), never
-  // "Checking…" for good: the state line and the view take the words, and the footer, which would still say
-  // "reading…", is hidden.
+  // "Checking…" for good, once, on mockup v2's ground and tokens as the desk's own render-error screen is drawn
+  // (AC89: "Every screen keeps AC81's tokens and AC88's dark theme"; AC88), its header and footer still hidden (AC89 (m)).
   startDesk(() => import('./sandbox.js'), (words) => {
     if (stateEl) {
       stateEl.textContent = words;
       stateEl.className = 'cant-read';
     }
-    view.replaceChildren(h('p', {}, words));
     const foot = document.getElementById('foot');
     if (foot) foot.hidden = true;
+    try {
+      document.documentElement.classList.add('sb', 'v2-page');
+      if (!document.querySelector('link[href="sandbox.css"]')) document.head.append(h('link', { rel: 'stylesheet', href: 'sandbox.css' }));
+    } catch {
+      // the words still show, in style.css's look
+    }
+    view.replaceChildren(h('section', { class: 'sb-screen' }, h('p', { class: 'sb-stale', role: 'alert' }, words)));
     document.title = `Service Desk — ${words}`;
   });
 }

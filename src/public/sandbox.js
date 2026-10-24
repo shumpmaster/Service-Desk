@@ -698,12 +698,16 @@ function briefingNode(desk, built, bd) {
   // AC91 (c): signed out, the ✕ in `--bad` in place of the clock, as a read that can't be made.
   const mark = v.kind === 'you' ? stc('you') : v.kind === 'quiet' ? stc('check') : v.kind === 'cant' || v.kind === 'signed-out' ? vi('bad', 'v2-k bad') : vi('clock');
   // AC91 (a): each settle time and what can't be undone on a line of its own under the parts, its clock or lock before
-  // it, in the board's mark treatment; worked out again on the tick, as the parts are (a time to come can pass).
+  // it, in the board's mark treatment. While something needs the owner its three places are always drawn, in their
+  // order (past, coming, undo), each worked out again on the 15-second tick, as the parts are, and drawn as nothing
+  // while it has no line: so a time to come that passes leaves "settles itself" for "was due" on the tick, with no
+  // redraw between (the Reviewer's note 2, G1 round 1).
+  const DUE_SLOTS = [['past', 'clock'], ['coming', 'clock'], ['undo', 'lock']];
   const dueWords = (key) => () => { const d = view(Date.now()).due.find((x) => x.key === key); return d ? d.words : ''; };
   const dueClass = (key) => () => (dueWords(key)() ? 'v2-bdue' : 'v2-bdue none');
-  const dueLine = (d) => {
-    const el = h('span', { class: 'v2-bdue', key: `brief-due:${d.key}` }, vi(d.icon), h('span', { live: dueWords(d.key) }));
-    el._liveClass = dueClass(d.key);
+  const dueLine = ([key, icon]) => {
+    const el = h('span', { class: dueClass(key)(), key: `brief-due:${key}` }, vi(icon), h('span', { live: dueWords(key) }));
+    el._liveClass = dueClass(key);
     return el;
   };
   return h('a', { class: `v2-brief k-${v.kind}`, href: '#/waiting', key: 'brief', 'aria-label': `${v.head}: open Waiting` },
@@ -711,7 +715,7 @@ function briefingNode(desk, built, bd) {
     h('span', { class: 'v2-bt1' }, v.head),
     h('span', { class: 'v2-go' }, HOME_WORDS.waitingGo),
     v.parts ? h('span', { class: 'v2-bt2', key: 'brief-parts', live: () => view(Date.now()).parts || '' }) : null,
-    v.due.map(dueLine),
+    v.kind === 'you' ? DUE_SLOTS.map(dueLine) : null,
     v.sub ? h('span', { class: 'v2-bt3', key: 'brief-sub', live: () => view(Date.now()).sub || '' }) : null,
     v.cant.map((w, i) => h('span', { class: 'v2-bt3 bad', key: `brief-cant:${i}` }, w)));
 }

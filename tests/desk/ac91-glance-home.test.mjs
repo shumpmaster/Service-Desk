@@ -55,6 +55,8 @@ const tile = (app, name) => keyed(app, `card:${name}`);
 const brief = (app) => byClass(app.view, 'v2-brief')[0];
 const svgOf = (el) => (el.children || []).find((c) => c.tag === 'svg') || null;
 const iconOf = (el) => { const s = svgOf(el); return s ? s.getAttribute('class') : ''; };
+/** The briefing's due and undo lines drawn (a slot with no line is drawn as nothing, `v2-bdue none`). */
+const shown = (b) => byClass(b, 'v2-bdue').filter((d) => !d.className.split(' ').includes('none'));
 const looked = (ms) => memStore({ 'desk-seen-v1': JSON.stringify({ lastLooked: ms }) });
 async function open(setup, { now = NOW, store = looked(now - H), before = null } = {}) {
   if (before) before();
@@ -120,7 +122,7 @@ test('AC91 (a): on Home (`mix`), "<n> need you" takes --t-sheet (600 18 px) in i
     assert.match(head.textContent, /^\d+ need you$/);
     const parts = byClass(b, 'v2-bt2')[0];
     assert.match(parts.textContent, /^\d+ waiting · oldest \d+ [smhd]$/, 'the parts line without the due and undo parts');
-    const due = byClass(b, 'v2-bdue');
+    const due = shown(b);
     assert.deepEqual(due.map((d) => d.textContent), ['One question was due to settle itself 7 Oct, 10:00', 'One question settles itself Thu 03:20', "One can't be undone"]);
     assert.deepEqual(due.map((d) => /vi-(clock|lock)/.exec(iconOf(d))[1]), ['clock', 'clock', 'lock'], 'the clock, the clock, the lock, each before its words');
     assert.ok(b.children.indexOf(due[0]) === b.children.indexOf(parts) + 1, 'directly under the parts line');
@@ -158,18 +160,42 @@ test('AC91 (a): "Nothing needs you" and the briefing\'s other forms keep AC82\'s
     assert.equal(b.className, 'v2-brief k-quiet');
     const L = looks(quiet, 'light');
     assert.deepEqual([L.get(byClass(b, 'v2-bt1')[0]).size, L.get(byClass(b, 'v2-bt1')[0]).weight], ['15px', '500'], 'as built');
-    assert.equal(byClass(b, 'v2-bdue').length, 0);
+    assert.equal(shown(b).length, 0);
   } finally {
     quiet.restore();
   }
   const ext = await open(extState());
   try {
-    const due = byClass(brief(ext), 'v2-bdue');
+    const due = shown(brief(ext));
     assert.equal(due.length, 1, 'one line for all four');
     assert.match(due[0].textContent, /^4 questions settle themselves, the first [A-Z][a-z]{2} \d\d:\d\d$/);
     assert.doesNotMatch(byClass(brief(ext), 'v2-bt2')[0].textContent, /settle|undone/);
   } finally {
     ext.restore();
+  }
+});
+
+// The Reviewer's note 2 (G1, round 1): the due lines follow the clock on the 15-second tick, as the single parts line did
+// before G1, with no redraw between: a time to come that passes leaves "settles itself" and joins "was due to settle".
+test('AC91 (a) with AC82\'s tick: past a coming settle time, on the 15-second tick alone, the "coming" line goes and the "past" line appears, with its clock, in its place in the order', async () => {
+  const app = await open(mixState({ extra: { 'questions/Alpha-final.md': FINAL_Q }, raised: { 'questions/Alpha-final.md': NOW - 2 * H } }));
+  const harnessNow = Date.now;
+  try {
+    const b = brief(app);
+    assert.deepEqual(shown(b).map((d) => d.textContent), ['One question settles itself Thu 03:20', "One can't be undone"]);
+    // fullRepo's question, raised NOW - 400 minutes with a 24-hour TIMEOUT, settles at 08:20Z on 15 Oct (03:20 in
+    // ownerTimeZone). The clock moves a minute past it, and only the tick runs: no poll, no redraw.
+    const due = NOW - 400 * 60e3 + 24 * H;
+    Date.now = () => due + 60e3;
+    await app.tick();
+    assert.equal(brief(app), b, 'the same briefing, not redrawn');
+    assert.deepEqual(shown(b).map((d) => d.textContent), ['One question was due to settle itself 15 Oct, 03:20', "One can't be undone"], 'past, then undo');
+    assert.deepEqual(shown(b).map((d) => /vi-(clock|lock)/.exec(iconOf(d))[1]), ['clock', 'lock']);
+    assert.ok(!byClass(b, 'v2-bdue').some((d) => !d.className.split(' ').includes('none') && /settles itself/.test(d.textContent)), 'the coming line gone');
+    for (const d of byClass(b, 'v2-bdue')) assert.equal(d.className.split(' ').includes('none'), d.textContent === '', 'a line with no words is drawn as nothing');
+  } finally {
+    Date.now = harnessNow;
+    app.restore();
   }
 });
 

@@ -589,7 +589,8 @@ const M3D5_EXCEPT = (n, d) => (n.tag === 'span' && n.cls.has('v2-tt') && n.paren
  * to (c), :8442-8495), each declaration pinned to its value, before and after, in each theme, on only its own element:
  * - (a) the briefing that says what needs the owner (`a.v2-brief.k-you`): "<n> need you" in the sheet-title role, the ◆
  *   sized to it and, with "Waiting ›", centred on its line; and each settle or undo line (`span.v2-bdue`, a new element),
- *   its clock or lock and its words, in 500 12 px ink;
+ *   its clock or lock and its words, in 500 12 px ink, a place with no line drawn as nothing (`span.v2-bdue.none`: the
+ *   three places are always there while something needs the owner, so the tick can fill or empty each);
  * - (b) the stalled line (`p.v2-stall`, directly under a tile's name row), drawn as nothing while it says nothing (on a
  *   tile line, `v2-ln v2-stall`, 500 12 px ink, once it does: no fixture this guard walks has a stopped project, so the
  *   AC91 test, from the `stall` state, locks that look);
@@ -609,6 +610,8 @@ const G1_LOOK = (ink, ink2, bad) => new Map([
   ['span.v2-go', ['padding-top: 3px → 0', 'align-self: (none) → center']],
   ['span.v2-bdue', ['grid-column: (none) → 2 / 4', 'display: (none) → flex', 'gap: (none) → 4px', 'align-items: (none) → flex-start',
     `font: (none) → ${G1_FONT('500 12px/1.35')}`, `color: (none) → ${ink}`]],
+  ['span.v2-bdue.none', ['grid-column: (none) → 2 / 4', 'display: (none) → none', 'gap: (none) → 4px', 'align-items: (none) → flex-start',
+    `font: (none) → ${G1_FONT('500 12px/1.35')}`, `color: (none) → ${ink}`]],
   ['svg.v2-k (due)', ['margin-top: (none) → 1px', `color: (none) → ${ink}`]],
   ['span (due words)', ['computed font-size: 13px → 12px', 'computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 16.200000000000003px']],
   ['p.v2-stall', ['display: (none) → none']],
@@ -619,7 +622,8 @@ const G1_KEY = (n) => {
   const p = n.parent;
   const brief = (x) => Boolean(x && x.tag === 'a' && x.cls.has('v2-brief') && x.cls.has('k-you'));
   if (brief(n)) return 'a.v2-brief.k-you';
-  if (n.tag === 'span' && brief(p)) for (const c of ['v2-bi', 'v2-bt1', 'v2-go', 'v2-bdue']) if (n.cls.has(c)) return `span.${c}`;
+  if (n.tag === 'span' && brief(p) && n.cls.has('v2-bdue')) return n.cls.has('none') ? 'span.v2-bdue.none' : 'span.v2-bdue';
+  if (n.tag === 'span' && brief(p)) for (const c of ['v2-bi', 'v2-bt1', 'v2-go']) if (n.cls.has(c)) return `span.${c}`;
   if (n.tag === 'svg' && n.cls.has('st-you') && p && p.tag === 'span' && p.cls.has('v2-bi') && brief(p.parent)) return 'svg.v2-s.st-you';
   if (p && p.tag === 'span' && p.cls.has('v2-bdue') && brief(p.parent)) return n.tag === 'svg' && n.cls.has('v2-k') ? 'svg.v2-k (due)' : n.tag === 'span' && !n.cls.size ? 'span (due words)' : null;
   if (n.tag === 'p' && n.cls.has('v2-stall') && !n.cls.has('v2-ln') && p && p.cls.has('v2-tile')) return 'p.v2-stall';

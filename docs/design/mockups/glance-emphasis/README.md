@@ -37,3 +37,20 @@ screens with all 11 changes applied, light and dark.
 | shots/11-new-* | Waiting: a card new since you last looked (item 11) |
 | shots/12a-kick-strip-empty-*, 12b-kick-strip-cards-*, 12c-kick-strip-cards-p4-* | Item 4b, the owner's idea from a comment on item 4: Kicked back as a strip above the lanes, empty and with two cards (made-up marks on this device), alone and with item 4 (change pK in changes.js; not reviewed by the Design reviewer) |
 | shots/all-<screen>-<theme>-* | Every change together, 13 screens, light and dark |
+
+## Round 2 (the owner's five ideas)
+
+The Design reviewer's round 2 (../../audit-2026-10-24-round-2.md) answers the owner's second message: a limited
+status palette, occasional anchors, a "you are here" arrow, counts of all milestones, sprints and pieces of work,
+and standard milestones set apart. Its changes are in [changes2.js](changes2.js), q1 to q5, written by the
+reviewer. Each round-2 "before" is the desk with all of round 1 already applied (p1 to p11, pK with two equal
+lanes), so each pair shows only the round-2 change.
+
+| File | What it shows |
+|---|---|
+| shots/r2-q1-disc-*, r2-q1-tl-*, r2-q1-home-* | R1: green and red on the status mark only (a finished phase opened, the Timeline, Home tiles) |
+| shots/r2-q2-page-* | R2: the project page's one anchor box, with a stand-in tally |
+| shots/r2-q3-timeline-*, r2-q3-page-*, r2-q3-home-*, r2-q3-plan-* | R3: the "you are here" arrow |
+| shots/r2-q4-counts-* | R4: milestones and sprints counted (stand-in numbers, counted by hand by the reviewer) |
+| shots/r2-q5-launch-*, r2-q5-design-* | R5: standard milestones in their own labelled group |
+| shots/r2all-<screen>-<theme>-* | All five together, the reviewer's own captures, light and dark |

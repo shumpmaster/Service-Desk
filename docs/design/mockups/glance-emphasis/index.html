@@ -79,6 +79,7 @@ footer { font-size: 13px; color: var(--ink2); }
     <p class="meta">360 px phone · test data, made up · desk at da4a342 · tap any shot to enlarge and flip between before and after</p>
   </header>
 
+  <p class="note" style="margin:0">Round 1: you accepted all 11, with your Kicked back strip (two equal lanes) for item 4. Round 2, below them: your five ideas, each waiting on your choice.</p>
   <div class="legend"><span class="chip fix">Fix</span> stays inside your earlier design rulings <span class="chip choice">Your choice</span> bends a ruling or the approved mockup, so you decide</div>
 
   <nav class="toc" id="toc" aria-label="Proposals"></nav>
@@ -94,7 +95,22 @@ footer { font-size: 13px; color: var(--ink2); }
     <div class="pairs" id="allpairs"></div>
   </section>
 
-  <footer>Audit: docs/design/audit-2026-10-24.md in Service-Desk. Gate titles in item 5 use stand-in words. The Definer picks the real line from each gate's record.</footer>
+  <section class="all" id="round2">
+    <h2>Round 2: your five ideas</h2>
+    <p class="note">The reviewer's answer to your second message. Here "before" is the desk with all of round 1 already applied (your choices, and your Kicked back strip with two equal lanes), so each pair shows only the round-2 change. Each one waits on your choice, as a question card on the desk.</p>
+  </section>
+  <div id="list2" style="display:grid;gap:22px"></div>
+
+  <section class="all" id="all2">
+    <h2>Round 2, all five together</h2>
+    <p class="note">The reviewer's own shots with all five ideas applied at once, on top of round 1.</p>
+    <div class="seg" role="group" aria-label="Theme of the round 2 shots">
+      <button type="button" id="t2-light" aria-pressed="true">Light</button><button type="button" id="t2-dark" aria-pressed="false">Dark</button>
+    </div>
+    <div class="pairs" id="allpairs2"></div>
+  </section>
+
+  <footer>Audits: docs/design/audit-2026-10-24.md and audit-2026-10-24-round-2.md in Service-Desk. Gate titles in item 5 use stand-in words. The Definer picks the real line from each gate's record.</footer>
 </div>
 
 <div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Enlarged shot">
@@ -185,7 +201,42 @@ const P = [
 const ALL = [['home-mix', 'Home'], ['home-ext', 'Home, 25 waiting'], ['home-stall', 'Home, a stopped project'], ['home-unread', 'Home, one project unreadable'], ['home-signed-out', 'Home, signed out'],
   ['waiting-mix', 'Waiting'], ['waiting-ext', 'Waiting, 25 cards'], ['gate-sheet', 'A gate’s sheet'], ['plan', 'Plan'], ['project-alpha', 'Project page, things waiting'], ['project-sd', 'Project page, nothing waiting'],
   ['timeline', 'Timeline'], ['failload', 'Failed load']];
-const KIND = { fix: ['fix', 'Fix'], choice: ['choice', 'Your choice'] };
+const P2 = [
+  { n: 'R1', id: 'r1', kind: 'choice', t: 'Green and red, on the status mark only', where: 'Every screen with a status mark',
+    now: 'The desk already has a green and a red but almost never uses them. Reached milestones, merged sprints and failed checks are all black or grey ticks and crosses.',
+    to: 'A finished, confirmed mark (✓) turns green; a failed or not-reached mark (✕) turns red. Only the small mark, never words, rows or borders. Vermilion stays "needs you", gold stays "next to reach", everything else stays grey. No new colour.',
+    why: 'You asked for consistent "going well / not going well". The desk already owns exactly those two tokens and almost never uses them. So the smallest change is to put them on the marks that already mean pass and fail. Colouring only the 14–16 px mark, not words or rows, keeps a long Timeline calm. A column of small green ticks reads as "fine" without shouting. It also leaves vermilion as the one thing that pulls your eye. Keeping absences grey matters most: round 1 found a green-feeling "Nothing needs you" hiding a stopped project, and a green tick there would make that worse.',
+    serves: 'Your words; part A items 13 and 14. A red ✕ shows under "Round 2, all five together" (Design opened, run 1). Changes: notes-2 note 23 and note 28’s pick, notes-1 "no colour", S-001 AC48, P-001-timeline-labels. Optional: a deeper red, further from vermilion.',
+    shots: [['r2-q1-disc', 'A finished phase opened: reached marks turn green'], ['r2-q1-tl', 'The Timeline’s finished phase'], ['r2-q1-home', 'Home tiles: the finished phase’s ✓ turns green']] },
+  { n: 'R2', id: 'r2', kind: 'choice', t: 'One soft box per screen, around its most important fact', where: 'The project page (the only new one)',
+    now: 'Most screens already have their anchor: Home’s briefing box, the Timeline’s Now line. The project page has none: its sentence sits unboxed above the strip.',
+    to: 'The project page’s sentence plus a one-line tally ("8 of 16 milestones reached · 17 sprints: 9 merged, 8 not read") sit in the briefing’s soft grey box, no outline. At most one box per screen, never vermilion.',
+    why: 'Linear-style anchors work because they are rare. The desk already has a calm, approved anchor shape (Home’s briefing), so reusing it means "boxed" carries one meaning across the desk. Edges were rejected because every edged thing on the desk is something to tap or type into.',
+    serves: 'Your words; PROJECT.md §2; part B item 31. Changes: frame 5 and AC83 as drawn; the agents’ "why … not written yet" box becomes a plain line.',
+    note: 'The tally’s numbers are stand-ins the reviewer counted by hand from the test data.',
+    shots: [['r2-q2-page', 'A project page']] },
+  { n: 'R3', id: 'r3', kind: 'choice', t: 'A small arrow at "now" on every timeline and plan drawing', where: 'Timeline, phase strip, Home tiles, Plan, opened phases',
+    now: '"Now" is a short bar on the Timeline, bold type on the strip and tiles, and only the gold ring on Plan.',
+    to: 'One small filled triangle in ink, pointing at the present: on the Timeline’s Now line, above the strip’s current phase, beside each tile’s current dot, at Plan’s next-to-reach row, and in an opened phase. The ▲ "read from the bottom" arrow goes.',
+    why: 'Ink is the Now line’s own colour (frame 7b), so the arrow reads as "Now" everywhere. Vermilion is "needs you". Gold already marks "next to reach", and on Plan the arrow sits beside that ring. A filled shape among stroked icons is noticed without being big. It does not fight round-1 item 7: that item only moves where the Timeline rests, and the arrow lands on the first screen.',
+    serves: 'Your words; part A items 13 and 24; part B item 35. Changes: frames 5, 6, 7b, H5 and 11 as drawn; no ruling.',
+    shots: [['r2-q3-timeline', 'Timeline'], ['r2-q3-page', 'Project page strip'], ['r2-q3-home', 'Home tiles'], ['r2-q3-plan', 'Plan']] },
+  { n: 'R4', id: 'r4', kind: 'spec', t: 'Count all milestones and sprints, not just the standard checklist', where: 'Project page · Milestones by phase',
+    now: 'The only number is the model’s standard checklist, so even Build, where M1, M2 and M2B are reached, says "Standard: 0 of 5 recorded". Your own milestones are listed but never counted.',
+    to: 'Each phase leads with all its milestones and sprints ("3 of 5 reached · 4 sprints") and says the unused standard ones in words ("Standard checklist: none tracked (5)"). The section head reads "8 of 16 reached". Pieces of work inside a sprint: see the note.',
+    why: '"0 of 5" reads as "nothing done" because the only bold number is the checklist you didn’t use. Leading with your own milestones, counted across runs, answers "how far". Saying the unused checklist in words answers "what’s in or out" without a false zero. Option A is the only way to get a true "of total" for pieces; anything else would invent a total.',
+    serves: 'Your words; part A items 5 and 7. Changes: AC83 and AC84’s words; for pieces, the operating model’s sprint form (A) or the desk’s pull-request read (B).',
+    note: 'Pieces of work: nothing the desk reads lists a sprint’s pieces in advance, so a true "7 of 9 pieces done" needs each sprint’s pull request to carry a task list (a change to the operating model). Commit counts are possible sooner, with no total. Running-log entries could show for research sprints, and GitHub Actions runs for the latest commit on main; neither per pull-request sprint without new reads. The numbers shown are stand-ins.',
+    shots: [['r2-q4-counts', 'Milestones by phase']] },
+  { n: 'R5', id: 'r5', kind: 'choice', t: 'Standard milestones in their own labelled group', where: 'Project page · an opened phase; Timeline',
+    now: 'Standard rows differ from yours only by a lighter grey at the same size, under a faint 11 px "The model’s standard five". Earlier runs mix both with no labels.',
+    to: '"Your milestones · 1" and "Standard checklist · 5 · none tracked this run" as clear heads, a rule above the standard group, the untracked ones folded into one line (a tap lists them), and "· standard" on the Timeline.',
+    why: 'You skip the lighter rows because lighter is the only signal, and the labels that should explain it are the faintest text on the screen. A named group with a rule says "in or out" in words. Folding the untracked ones removes most of the grey. Giving your own milestones the row weight keeps them louder than the checklist, as you asked.',
+    serves: 'Your words; P-001-standard-milestones; part B item 30. Changes: frames 6 and 6b as drawn; no ruling.',
+    shots: [['r2-q5-launch', 'Launch opened (your "0 of 5" case)'], ['r2-q5-design', 'Design opened']] },
+];
+const ALL2 = [['mix-page3', 'Project page'], ['mix-openBuild', 'Build opened'], ['mix-openDesign', 'Design opened'], ['text-openLaunch', 'Launch opened'], ['mix-timeline', 'Timeline'], ['mix-plan', 'Plan'], ['mix-home', 'Home']];
+const KIND = { fix: ['fix', 'Fix'], choice: ['choice', 'Your choice'], spec: ['choice', 'Your choice + spec work'] };
 const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) k === 'class' ? (e.className = v) : e.setAttribute(k, v); for (const c of kids) e.append(c); return e; };
 const shotBtn = (src, label, title, pairSrc, isAfter) => {
   const b = el('button', { class: 'shot' + (isAfter ? ' after' : ''), type: 'button', 'aria-label': `Enlarge: ${title}, ${label}` }, el('span', {}, label), el('img', { src, alt: `${title}, ${label.toLowerCase()}`, loading: 'lazy', width: '360', height: '740' }));
@@ -198,7 +249,8 @@ const pairEl = (base, cap, title) => {
     el('div', { class: 'ba' }, shotBtn(srcs.b, 'Before', title, srcs, false), shotBtn(srcs.a, 'After', title, srcs, true)));
 };
 const toc = document.getElementById('toc'), list = document.getElementById('list');
-for (const p of P) {
+const list2 = document.getElementById('list2');
+for (const p of [...P, ...P2]) {
   toc.append(el('a', { href: '#' + p.id }, String(p.n)));
   const chips = p.kind === 'mixed' ? [el('span', { class: 'chip fix' }, '(a) Fix'), ' ', el('span', { class: 'chip choice' }, '(b) Your choice')] : [el('span', { class: 'chip ' + KIND[p.kind][0] }, KIND[p.kind][1])];
   const a = el('article', { class: 'p', id: p.id },
@@ -209,9 +261,9 @@ for (const p of P) {
     ...(p.note ? [el('p', { class: 'note' }, p.note)] : []),
     el('p', { class: 'why' }, el('b', {}, 'Reviewer’s rationale'), p.why),
     el('div', { class: 'serves' }, 'Serves: ' + p.serves));
-  list.append(a);
+  (P2.includes(p) ? list2 : list).append(a);
 }
-toc.append(el('a', { href: '#all' }, 'All'));
+toc.append(el('a', { href: '#all' }, 'All 1'), el('a', { href: '#all2' }, 'All 2'));
 const allpairs = document.getElementById('allpairs');
 let theme = 'light';
 const drawAll = () => { allpairs.replaceChildren(...ALL.map(([id, cap]) => pairEl(`all-${id}-${theme}`, cap, `All changes: ${cap} (${theme})`))); };
@@ -219,6 +271,12 @@ const setTheme = (t) => { theme = t; document.getElementById('t-light').setAttri
 document.getElementById('t-light').addEventListener('click', () => setTheme('light'));
 document.getElementById('t-dark').addEventListener('click', () => setTheme('dark'));
 drawAll();
+const allpairs2 = document.getElementById('allpairs2');
+const drawAll2 = (t) => { allpairs2.replaceChildren(...ALL2.map(([id, cap]) => pairEl(`r2all-${id}-${t}`, cap, `Round 2, all together: ${cap} (${t})`)));
+  document.getElementById('t2-light').setAttribute('aria-pressed', String(t === 'light')); document.getElementById('t2-dark').setAttribute('aria-pressed', String(t === 'dark')); };
+document.getElementById('t2-light').addEventListener('click', () => drawAll2('light'));
+document.getElementById('t2-dark').addEventListener('click', () => drawAll2('dark'));
+drawAll2('light');
 const V = { el: document.getElementById('viewer'), img: document.getElementById('v-img'), ttl: document.getElementById('v-ttl'), b: document.getElementById('v-b'), a: document.getElementById('v-a'), srcs: null, last: null };
 const showSide = (after) => { V.img.src = after ? V.srcs.a : V.srcs.b; V.img.alt = V.ttl.textContent + (after ? ', after' : ', before'); V.b.setAttribute('aria-pressed', String(!after)); V.a.setAttribute('aria-pressed', String(after)); };
 function openViewer(title, srcs, after) { V.last = document.activeElement; V.srcs = srcs; V.ttl.textContent = title; showSide(after); V.el.hidden = false; document.body.style.overflow = 'hidden'; document.getElementById('v-x').focus(); }

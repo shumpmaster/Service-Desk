@@ -48,3 +48,13 @@ What it starts: the six answers are recorded in decisions/questions/P-001-glance
 Asked what "actions" meant (the pieces of work inside a milestone, the steps agents record in their running logs, or GitHub Actions runs), the owner said, word for word:
 
 > I meant the pieces of work within a sprint in a milestone, but I wouldn't be against the last two being visible somewhere as well if it's a simple ask
+
+## Comment on item 4b, word for word
+
+Left by the owner on the mockup page, on 4b's third shot (the strip with an empty Done shrunk), 2026-10-24:
+
+> FYI, maybe shade the done section.
+>
+> When it gets shrunk to a 3rd of the screen like this it kinda hides the intent of the done section which is to move them over
+
+Mocked as item 4c on the chosen layout (P-001-glance-lanes: C, two equal lanes): the Done lane on the briefing's --bg2 ground, rounded, full height. For the build brief with the lanes ruling; the Design reviewer to check it against round 2's R2 (a filled box means the screen's one anchor).

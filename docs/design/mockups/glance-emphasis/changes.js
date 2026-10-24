@@ -79,6 +79,11 @@ window.__mock = (() => {
         lanes.style.gridTemplateColumns = ls.map((l, i) => (i === 0 ? 'minmax(0,1.18fr)' : 'minmax(0,1fr)')).join(' ');
       }
     },
+
+    pEq() { for (const l of $$('.v2-lanes')) l.style.gridTemplateColumns = 'minmax(0,1fr) minmax(0,1fr)'; },
+    pD() { // the owner's comment on 4b: shade the Done lane so it reads as the place to move cards to
+      css('.v2-lane.lane-done{background:var(--bg2);border-radius:12px;padding:0 8px 10px;align-self:stretch;} .v2-lane.lane-done > .v2-lh{padding-top:6px;}');
+    },
     p6() { css('.v2-e1{max-height:calc(2 * 1.45em)!important;}'); },
     p7() { const n = document.querySelector('.v2-nowl'); if (n) window.scrollBy(0, n.getBoundingClientRect().top - Math.round(innerHeight / 3)); },
     p8a() { for (const t of $$('.v2-prow .v2-prtt')) if (/^Nothing waiting on you/.test(t.textContent)) t.classList.add('soft'); },

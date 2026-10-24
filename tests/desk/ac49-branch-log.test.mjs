@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CONFIG } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
-import { loadSandbox, byClass, findAll, j11Files, SD3 } from './sandbox-helpers.mjs';
+import { loadSandbox, byClass, findAll, j11Files, SD3, openIdle } from './sandbox-helpers.mjs';
 import { NOW, twoProjects } from './sandbox-fixtures.mjs';
 import { branchLayout } from '../../src/lib/sandbox.js';
 
@@ -16,7 +16,9 @@ test('AC49 (note 11): every member\'s running log in the roster fixture, the Chi
   const app = await loadSandbox({ config, repos: { 'Service-Desk': repo(j11Files()) }, hash: '#/p/Service-Desk/team', now: NOW });
   try {
     await app.advance(1000);
-    // AC67 (2026-10-16): each card is a box whose name links to the member's page.
+    // AC67 (2026-10-16): each card is a box whose name links to the member's page; from stage 4 of "After MD3" (AC67,
+    // changed, specs/S-001.md:6093-6105) the idle members' cards are behind "<n> idle ›", opened here.
+    await openIdle(app);
     const ids = byClass(app.view, 'sb-tile-n').map((t) => t.attrs.href.split('/').pop());
     assert.ok(ids.includes('chief-of-staff') && ids.includes('researcher') && ids.includes('orchestrator'), ids.join(' '));
     let lanes = 0;

@@ -282,6 +282,10 @@ p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 .sb-next { list-style: none; margin: var(--s2) 0 0; padding: 0; display: grid; gap: var(--s2); }
 .sb-next li { display: grid; grid-template-columns: 52px 1fr; gap: var(--s2); align-items: start; font: var(--t-body); border-top: 1px solid var(--line); padding-top: var(--s2); }
 .sb-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+/* AC67, changed after MD3 (P-001-audit-team.md, B): the idle members folded into one line, "<n> idle ›", a 44 px control;
+   opened, their cards below it, with AC90's line at the list's head where they share a reason. */
+.sb-idle { display: flex; align-items: center; width: 100%; min-height: 44px; margin-top: var(--s2); font: var(--t-meta); color: var(--ink); text-align: left; }
+.sb-idlelist { display: grid; gap: var(--s2); }
 .sb-tile { display: grid; gap: var(--s1); align-content: start; background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3) var(--s2); min-height: 92px; }
 .sb-tile-n { display: flex; gap: var(--s2); align-items: center; min-height: 44px; text-decoration: none; font: var(--t-item); }
 .sb-tile-n strong { font: var(--t-item); }
@@ -299,6 +303,11 @@ p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
 .sb-brow a { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s2); padding: var(--s1) 0; text-decoration: none; font: var(--t-meta); flex: 1; min-height: 44px; align-content: center; }
 .sb-brow.now .sb-brow-t { font-weight: 600; } /* AC88: mockup v2's weights are 400, 500 and 600 (AC81) */
 .sb-brow-lane { font: var(--t-code); color: var(--muted); }
+/* AC49, changed after MD3 (stage 4): a Chief of Staff helper or end row's piece, " · <doing>", cut at one line, faded at
+   its end into the log's ground when cut (the browser measures it); the whole is in the row's summary sheet. */
+.sb-brow-of { position: relative; flex: 1 1 100%; min-width: 0; max-height: 1.35em; overflow: hidden; overflow: clip; overflow-wrap: anywhere; }
+.sb-brow-of.over::after { content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1.35em; pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--surf) 85%); }
 .sb-nowtag { font: var(--t-section); letter-spacing: var(--track); color: var(--ink); border: 1px solid var(--tie); border-radius: var(--rs);
   padding: 1px 6px; /* AC62: a tag's inner padding */ }
 /* The running log's drawing (AC49): one SVG behind the rows; straight vertical lines, a curve out and back, shades per lane. */

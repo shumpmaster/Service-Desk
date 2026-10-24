@@ -24,7 +24,7 @@ import {
   NOT_RECORDED, NOT_AVAILABLE, V25_NOT_RECORDED, OWNER_NEXT_LINES,
   j11Records, timelineOf, phaseView, whereLine, queueView, pillView, ballLines, sheetView, treeLink, youWaitText, optionsBlock, waitWords,
 } from './lib/sandbox.js';
-import { teamView, memberPage, workingNow, summarySheet } from './lib/sandbox.js';
+import { teamView, memberPage, workingNow, summarySheet, cosWorkingNow, cosPieceOf, cosPieceWords } from './lib/sandbox.js';
 import { summaryView, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
 import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits, unreadLines, WHY_BACK_ONCE, nowOwnPart } from './lib/home.js';
 import { GATE_PHASE } from './lib/j11.js';
@@ -36,7 +36,7 @@ import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
 import { V25_RULING_NOTE } from './lib/links.js';
-import { runsContext, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, TEAM_KEY, itemFeeds,
+import { runsContext, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, itemFeeds,
   stalledLine, deployRows, FEED_ICONS_KEY, doneTarget, JOB_MERGE_WORDS, ESTIMATE_MERGE_WORDS } from './lib/feed.js';
 import { WA, DRAFT_KEY, todayOf, groupOnce } from './lib/workahead.js';
 import { PAGE_WORDS, STANDARD_TOTAL, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, restRows, v25Rows, finishWords } from './lib/projectpage.js';
@@ -3035,9 +3035,10 @@ function renderTeam(p, member, sub, idx) {
         h('span', {}, n.text, ' ', code(n.code), h('span', { class: 'sb-muted small', live: () => ` · ${waitWords(n.raisedAt, Date.now())}` }),
           h('span', { class: `sb-unb-t${row && /not recorded/.test(unb(row) || '') ? ' gap' : ''}` }, row ? unb(row) : null)));
     })) : h('p', { class: 'sb-muted small' }, 'Nothing in your queue.')));
-  body.push(h('p', { class: 'sb-keyl sb-tkey' }, TEAM_KEY.map(([k, w]) => h('span', { class: 'sb-keye' }, ic(k), w))));
+  // AC67, changed after MD3 ("Ruling: B — the Team screen folds idle members into one line and drops its five-mark key",
+  // P-001-audit-team.md): no key above the cards (each mark keeps its word beside it on its card).
   const rows = tv.rows || [];
-  body.push(h('div', { class: 'sb-tiles' }, tv.members.map((m) => {
+  const tileOf = (m, once) => {
     const isCos = m.id === 'chief-of-staff';
     const v3 = p.project.model === 'v3' && !isCos;
     const work = v3 ? memberWork(p.ctx, fv, rows, m.id, TZ, m.helper || null) : null;
@@ -3050,13 +3051,73 @@ function renderTeam(p, member, sub, idx) {
     return h('div', { class: 'sb-tile', key: `tile:${m.id}`, 'data-member': m.id },
       h('a', { class: 'sb-tile-n', href: go('p', name, 'team', m.id) }, ic(memberIcon(m.status)), h('strong', {}, m.label)),
       h('span', { class: 'sb-tile-st' }, m.status),
-      h('span', { class: 'sb-muted small' }, last),
+      // AC90's Team part: a reason the list's head says once is not repeated on the card.
+      once && last === NOT_IN_READS ? null : h('span', { class: 'sb-muted small' }, last),
       feeds ? (feeds.feeds ? h('span', { class: 'sb-feeds' }, 'feeds ', h('b', {}, feeds.feeds.code), ` · ${feeds.feeds.name}`)
         : h('span', { class: 'sb-feeds gap' }, 'feeds: not tied to a milestone')) : noFeeds ? h('span', { class: 'sb-feeds gap' }, 'feeds: not recorded') : null,
       place ? h('a', { class: 'sb-tlink', href: go('p', name, 'timeline', 'sprint', item) }, 'On the Timeline ›') : null);
-  })));
+  };
+  // Each card's "last:" as drawn, for AC90's rule (the same words on two or more cards of one list).
+  const lastOf = (m) => {
+    if (m.id === 'chief-of-staff') return m.card || NOT_RECORDED;
+    if (m.status === 'Working') return m.last;
+    const work = p.project.model === 'v3' ? memberWork(p.ctx, fv, rows, m.id, TZ, m.helper || null) : null;
+    return work ? work.last : m.last;
+  };
+  /** A list of cards, with AC90's line at its head when two or more of them share "not recorded in what the desk reads". */
+  const cardList = (ms, k) => {
+    const covered = ms.filter((m) => lastOf(m) === NOT_IN_READS);
+    const once = covered.length >= 2;
+    return [once ? h('p', { class: 'sb-muted small sb-tonce', key: `team-once:${k}` }, teamOnce(covered.length, ms.length)) : null,
+      h('div', { class: 'sb-tiles', key: `tiles:${k}` }, ms.map((m) => tileOf(m, once)))];
+  };
+  const idle = tv.members.filter((m) => m.status === 'Idle');
+  const others = tv.members.filter((m) => m.status !== 'Idle');
+  if (others.length) body.push(cardList(others, 'cards'));
+  // Idle members fold into one line after the other cards, "<n> idle ›"; a tap opens them in place, and the choice is kept
+  // on the device (AC54 (d)'s way). With none idle, no line.
+  if (idle.length) {
+    const open = teamIdle.isOpen(name);
+    body.push(h('button', { type: 'button', class: 'sb-idle', key: 'team-idle', 'aria-expanded': open ? 'true' : 'false',
+      onclick: () => { teamIdle.toggle(name); render(); } }, IDLE_LINE(idle.length)));
+    if (open) body.push(h('div', { class: 'sb-idlelist', key: 'team-idle-list', role: 'region', 'aria-label': `${idle.length} idle` }, cardList(idle, 'idle')));
+  }
   return h('section', { class: 'sb-screen' }, body);
 }
+
+/** AC67, changed: the idle members' one line, "<n> idle ›" (one: "1 idle ›"). */
+export const IDLE_LINE = (n) => `${n} idle ›`;
+
+/** AC90's Team part (P-001-audit-repeat.md, A): "<k> members · last work not recorded in what the desk reads" ("<k> of <n> …" for some of the list). */
+const NOT_IN_READS = 'not recorded in what the desk reads';
+export const teamOnce = (k, n) => `${k === n ? `${n} members` : `${k} of ${n} members`} · last work ${NOT_IN_READS}`;
+
+/** Whether each project's idle members are opened on the Team screen (AC67, changed), kept on the device under its own key, as Home's groups are. */
+export const TEAM_IDLE_KEY = 'desk-team-idle-v1';
+const teamIdle = {
+  store: null,
+  state: {},
+  load(store) {
+    this.store = store;
+    try {
+      const v = store ? store.getJSON(TEAM_IDLE_KEY, null) : null;
+      this.state = v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).filter(([, x]) => typeof x === 'boolean')) : {};
+    } catch {
+      this.state = {};
+    }
+  },
+  isOpen(name) {
+    return this.state[name] === true;
+  },
+  toggle(name) {
+    this.state = { ...this.state, [name]: !this.isOpen(name) };
+    try {
+      if (this.store) this.store.setJSON(TEAM_IDLE_KEY, this.state);
+    } catch {
+      // storage failing costs only the memory of the fold (AC54 (d)'s way)
+    }
+  },
+};
 
 function renderMember(p, tv, id, sub, idx, now) {
   const name = p.project.name;
@@ -3073,7 +3134,15 @@ function renderMember(p, tv, id, sub, idx, now) {
   if (!page.log.length) body.push(h('p', { class: `sb-muted${page.sessionLines ? ' sb-logw' : ''}` }, page.logWords));
   else body.push(branchLog(p, page));
   const out = [h('section', { class: 'sb-screen' }, body)];
-  if (sub === 'now') {
+  // AC49 (changed after MD3, stage 4): a Chief of Staff "now" row opens the Working now sheet of its own piece
+  // (`now/<lane>`), so with pieces under way at once the tapped row's piece is named in full; `now` alone is the
+  // piece started last, as its tile names it (J13).
+  const piece = sub === 'now' && idx != null && page.cos ? cosPieceOf(page.cos, idx) : null;
+  if (sub === 'now' && idx != null && page.cos) {
+    out.push(piece && piece.state === 'working' ? workingSheet(p, id, cosWorkingNow(page.cos.cs, piece, now, TZ))
+      : piece ? sheetFrame(go('p', name, 'team', id), 'Working now', [h('p', {}, `${page.label}: ${cosPieceWords(piece, now, TZ)}`)])
+        : sheetFrame(go('p', name, 'team', id), 'Working now', [h('p', {}, 'This entry is no longer in the running log the desk reads.')]));
+  } else if (sub === 'now') {
     out.push(page.working ? workingSheet(p, id, workingNow(p.project, p.model, p.snap, p.j, id, page, now, TZ))
       : sheetFrame(go('p', name, 'team', id), 'Working now', [h('p', {}, `${page.label} is not working now: the work this sheet was about has ended.`)]));
   }
@@ -3106,10 +3175,15 @@ function branchLog(p, page) {
   return h('div', { class: 'sb-branch', key },
     svg,
     h('ol', { class: 'sb-brows' }, page.log.map((e, i) => {
-      const href = e.now ? go('p', p.project.name, 'team', page.id, 'now') : go('p', p.project.name, 'team', page.id, 'e', String(i));
+      // AC49 (after MD3, stage 4): on the Chief of Staff's log, each "now" row opens its own piece's Working now sheet.
+      const own = e.now && page.cos && e.lane ? e.lane : null;
+      const href = e.now ? (own ? go('p', p.project.name, 'team', page.id, 'now', own) : go('p', p.project.name, 'team', page.id, 'now')) : go('p', p.project.name, 'team', page.id, 'e', String(i));
       const lane = L.lanes.find((l) => l.id === e.lane);
       return h('li', { class: `sb-brow${e.now ? ' now' : ''}`, key: `brow:${i}` },
-        opener(e.now ? 'log:now' : `log:${i}`, href, {}, h('span', { class: 'sb-brow-t' }, e.text), e.now ? h('span', { class: 'sb-nowtag' }, 'now') : null,
+        opener(e.now ? (own ? `log:now:${own}` : 'log:now') : `log:${i}`, href, {}, h('span', { class: 'sb-brow-t' }, e.text),
+          // AC49 (stage 4): a Chief of Staff helper or end row names its piece, cut at one line with the fade; whole in its sheet.
+          e.of != null ? h('span', { class: `sb-brow-of${clipOver.get(`brow-of:${page.id}:${i}`) === true ? ' over' : ''}`, 'data-clip': `brow-of:${page.id}:${i}`, key: `brow-of:${i}` }, ` · ${e.of}`) : null,
+          e.now ? h('span', { class: 'sb-nowtag' }, 'now') : null,
           h('span', { class: `sb-brow-lane${lane ? ` shade-${lane.shade}` : ''}` }, e.lane || 'project')));
     })));
 }
@@ -3614,7 +3688,7 @@ export function parseRoute(hash) {
   if (kind === 'team') {
     const member = rest[0] || null;
     if (!member) return { ...base, key: `p/${name}/team`, screen: go('p', name, 'team'), kind };
-    const sheet = rest[1] === 'now' ? 'now' : rest[1] === 'e' && rest[2] != null ? `e:${rest[2]}` : null;
+    const sheet = rest[1] === 'now' ? (rest[2] != null ? `now:${rest[2]}` : 'now') : rest[1] === 'e' && rest[2] != null ? `e:${rest[2]}` : null;
     return { ...base, key: `p/${name}/team/${member}`, screen: go('p', name, 'team', member), kind, member, sheet };
   }
   if (kind === 'pipeline' || kind === 'asked' || kind === 'agents' || kind === 'notes') return { ...base, key: `p/${name}/${kind}`, screen: go('p', name, kind), kind };
@@ -3758,6 +3832,7 @@ function openerOf(r) {
   if (sh === 'info') return ['info'];
   if (sh === 'values' || sh === 'experiments') return [`rest:${sh}`];
   if (sh === 'now') return ['log:now'];
+  if (sh.startsWith('now:')) return [`log:${sh}`];
   if (sh.startsWith('e:')) return [`log:${sh.slice(2)}`];
   return null;
 }
@@ -4168,6 +4243,7 @@ export function startSandbox(opts = {}) {
   const isVisible = () => document.visibilityState === 'visible';
   const seen = createSeen({ store, now: () => Date.now() });
   homeGroups.load(store);
+  teamIdle.load(store);
   // AC80: the Done marks, in a store of their own, so a failure there shows "Done marks not kept on
   // this device" and nothing else breaks.
   boardState.load(createStore());
@@ -4291,7 +4367,8 @@ export function startSandbox(opts = {}) {
             node = renderTimeline(b);
           } else if (r.kind === 'notes') node = renderNotes(b);
           else if (r.kind === 'team') {
-            const [sub, idx] = r.sheet ? r.sheet.split(':') : [null, null];
+            const cut = r.sheet ? r.sheet.indexOf(':') : -1;
+            const [sub, idx] = !r.sheet ? [null, null] : cut < 0 ? [r.sheet, null] : [r.sheet.slice(0, cut), r.sheet.slice(cut + 1)];
             node = renderTeam(b, r.member || null, sub, idx);
           } else if (r.kind === 'pipeline') node = b.project.model === 'v3' ? renderTimeline(b) : renderPipeline(b);
           else if (r.kind === 'asked') node = renderAsked(b);

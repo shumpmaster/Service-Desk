@@ -10,7 +10,7 @@
 // same fixtures today and leaves out the parts as they are drawn now.
 import { CONFIG, fixture } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
-import { loadSandbox, j11Files, El0, SD3 } from './sandbox-helpers.mjs';
+import { loadSandbox, j11Files, El0, SD3, openIdle } from './sandbox-helpers.mjs';
 import { NOW, fullRepo, v25 } from './sandbox-fixtures.mjs';
 
 /** The fixtures: Service-Desk at 3117150 (J11's), a project with one item of each queue group (AC52's), and a v2.5 project. */
@@ -114,7 +114,8 @@ export function NEW_REBUILT(route) {
       if (has(el, 'sb-sub')) return true;
     }
     if (kind === 'queue' && (has(el, 'sb-qrow') || has(el, 'sb-shape') || has(el, 'sb-done-r') || has(el, 'sb-gmark') || has(el, 'sb-needs'))) return true;
-    if (kind === 'team' && route.split('/').length === 4 && (has(el, 'sb-tiles') || has(el, 'sb-you') || has(el, 'sb-tkey'))) return true;
+    // From stage 4 of "After MD3" (AC67, changed): the cards' idle line, "<n> idle ›", and the opened idle list are AC67's too.
+    if (kind === 'team' && route.split('/').length === 4 && (has(el, 'sb-tiles') || has(el, 'sb-you') || has(el, 'sb-tkey') || has(el, 'sb-idle') || has(el, 'sb-idlelist') || has(el, 'sb-tonce'))) return true;
     // From 2026-10-17 (model 3.5.0's records): AC49 as changed in place gives a v3 project's Chief of Staff
     // page its status, groups and running log from its session lines (J13), so those parts are rebuilt
     // too; its header, marker and bottom bar, and a v2.5 project's page, stay word for word.
@@ -145,6 +146,7 @@ export async function discoverRoutes(app) {
     out.push(base, `${base}/info`, `${base}/timeline`, `${base}/team`, `${base}/queue`, `${base}/asked`, `${base}/agents`);
     if (p === 'Delta') out.push(`${base}/pipeline`);
     await app.go(`${base}/team`);
+    await openIdle(app); // AC67, changed (stage 4): every member's page, the idle members' too
     for (const h of links(new RegExp(`^${base.replace(/[/#]/g, '\\$&')}/team/[^/]+$`))) out.push(h);
     await app.go(`${base}/queue`);
     for (const h of links(new RegExp(`^${base.replace(/[/#]/g, '\\$&')}/queue/.+$`))) out.push(h);

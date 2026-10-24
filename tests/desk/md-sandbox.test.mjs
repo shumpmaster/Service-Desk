@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fixture, CONFIG, SRC, fakeClock } from './helpers.mjs';
 import { repo, pr, fakeServer } from './fake-desk.mjs';
-import { loadSandbox, byClass, linksIn, findAll, j11Files } from './sandbox-helpers.mjs';
+import { loadSandbox, byClass, linksIn, findAll, j11Files, openIdle } from './sandbox-helpers.mjs';
 import { createDesk, POLL_MS } from '../../src/lib/scheduler.js';
 import { createStore } from '../../src/lib/store.js';
 import { createSeen, MARKERS_OFF, SEEN_KEY } from '../../src/lib/seen.js';
@@ -404,6 +404,8 @@ test('AC49 + AC67: the Team screen — your tile with the next three queue lines
     const you = byClass(app.view, 'sb-you')[0];
     assert.equal(findAll(you, (e) => e.tag === 'li').length, 3, 'the next three lines');
     assert.match(you.textContent, /You · waiting on you: 6 in your queue/);
+    // Rewritten for AC67, changed after MD3 (specs/S-001.md:6093-6105; P-001-audit-team.md, B): one card per member once the idle ones, behind "<n> idle ›", are opened.
+    await openIdle(app);
     const tiles = byClass(app.view, 'sb-tile');
     const id = (t) => byClass(t, 'sb-tile-n')[0].attrs.href.split('/').pop();
     const ids = tiles.map(id);

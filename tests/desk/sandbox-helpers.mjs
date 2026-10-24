@@ -265,3 +265,13 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
   };
   return app;
 }
+
+/**
+ * AC67, changed after MD3 (stage 4; P-001-audit-team.md, B): the Team screen folds its idle members into "<n> idle ›".
+ * Opens them as the owner's tap does, so a test can read every member's card and link; nothing when none is idle or
+ * they are open already.
+ */
+export async function openIdle(app) {
+  const b = findAll(app.view, (e) => e.dataset && e.dataset.k === 'team-idle')[0];
+  if (b && b.attrs['aria-expanded'] === 'false') await app.tap(b);
+}

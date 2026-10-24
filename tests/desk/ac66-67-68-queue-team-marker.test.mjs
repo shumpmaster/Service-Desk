@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { FIX, SRC } from './helpers.mjs';
 import { pr } from './fake-desk.mjs';
-import { byClass, findAll, linksIn, loadSandbox } from './sandbox-helpers.mjs';
+import { byClass, findAll, linksIn, loadSandbox, openIdle } from './sandbox-helpers.mjs';
 import { NOW, iso, md, twoProjects, opened, v25, fullRepo } from './sandbox-fixtures.mjs';
 import { openSD, keyed, models, AC61_DOC, SD3, CONFIG, j11Files, sdRepo, railLayout } from './tv2-fixtures.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
@@ -187,12 +187,13 @@ test('AC66 (changed by AC80): each confirmed Done row\'s sheet links "On the Tim
 // ---------------------------------------------------------------------------
 // AC67
 
-test('AC67: each card\'s state icon and word, with the key above; no light, no glow, nothing that loops on the Team screen', async () => {
+// Rewritten for AC67, changed after MD3 (specs/S-001.md:6093-6105; P-001-audit-team.md, B): "the key goes", each mark keeping its word beside it on its card; the idle cards behind "<n> idle ›".
+test('AC67: each card\'s state icon and word beside it, with no key above (changed after MD3); no light, no glow, nothing that loops on the Team screen', async () => {
   const app = await opened(twoProjects(), '#/p/Alpha/team');
   try {
-    const key = byClass(app.view, 'sb-tkey')[0];
-    assert.deepEqual(findAll(key, (e) => /\bsb-keye\b/.test(e.className || '')).map((e) => [byClass(e, 'sb-ic')[0].className.match(/i-[a-z]+/)[0], e.textContent]),
-      [['i-half', 'working'], ['i-check', 'just finished'], ['i-planned', 'idle'], ['i-you', 'waiting on you'], ['i-unrec', 'not recorded']]);
+    assert.equal(byClass(app.view, 'sb-tkey').length, 0, 'no five-mark key');
+    assert.equal(byClass(app.view, 'sb-keye').length, 0);
+    await openIdle(app);
     const tiles = byClass(app.view, 'sb-tile');
     const id = (t) => byClass(t, 'sb-tile-n')[0].attrs.href.split('/').pop();
     const icon = (t) => byClass(t, 'sb-ic')[0].className.match(/i-[a-z]+/)[0];
@@ -217,6 +218,10 @@ test('AC67: each card\'s state icon and word, with the key above; no light, no g
 test('AC67: each card\'s "last:" and "feeds" against its records (J11\'s fixture) — Q-013\'s members feeding MD1, P-001 "not tied to a milestone", "not recorded in what the desk reads"; each link\'s target', async () => {
   const app = await openSD('#/p/Service-Desk/team');
   try {
+    // Rewritten for AC67, changed after MD3 (specs/S-001.md:6093-6105; P-001-audit-team.md, B) and AC90 (:8029-8032): the idle cards opened; the five builders' and others' shared "not recorded
+    // in what the desk reads" is said once at the opened list's head, so their cards drop it.
+    await openIdle(app);
+    assert.equal(keyed(app, 'team-once:idle').textContent, '5 of 10 members · last work not recorded in what the desk reads');
     const tiles = byClass(app.view, 'sb-tile');
     const card = (m) => tiles.find((t) => byClass(t, 'sb-tile-n')[0].attrs.href.endsWith(`/team/${m}`));
     const parts = (m) => [byClass(card(m), 'sb-muted').map((x) => x.textContent).find((x) => /^last: |^not recorded/.test(x)) || null, byClass(card(m), 'sb-feeds')[0]?.textContent || null,
@@ -225,7 +230,7 @@ test('AC67: each card\'s "last:" and "feeds" against its records (J11\'s fixture
     assert.deepEqual(parts('source-checker'), ['last: Q-013: source-checker finished — ok, verdict PASS, 8 Oct', 'feeds MD1 · What a good desk looks like is known', '#/p/Service-Desk/timeline/sprint/Q-013']);
     assert.deepEqual(parts('definer'), ['last: P-001: definer finished — ok, 6 Oct', 'feeds: not tied to a milestone', null], 'P-001, the project item itself, is no sprint');
     assert.match(byClass(card('definer'), 'sb-feeds')[0].className, /\bgap\b/, 'slate (AC69)');
-    assert.deepEqual(parts('builder'), ['not recorded in what the desk reads', null, null], 'work outside the pipeline');
+    assert.deepEqual(parts('builder'), [null, null, null], 'work outside the pipeline: said once at the list\'s head');
     // The link opens the Timeline at that sprint, its milestone's sprints opened.
     await app.go('#/p/Service-Desk/timeline/sprint/Q-013');
     assert.equal(keyed(app, 'fold:sprints:Design-i2:MD1').attrs['aria-expanded'], 'true');

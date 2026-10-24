@@ -254,6 +254,9 @@ export function createDesk(opts) {
   const pf = pfConf ? {
     head: null, headAt: null, etags: {}, tree: null, truncated: false, pending: false, timer: null, turn: false, lastPollStart: -Infinity,
     retryUntil: 0, lastSuccessAt: null, failure: null, readAt: null, polls: 0, blobCalls: 0, checking: false,
+    // AC89 (l): the reads due KICK_BACK_MINUTES after a portfolio Done mark (times), and the read under way: its
+    // generation (a read abandoned as pending is never applied), when it was asked, and its 5-minute deadline's timer.
+    extraDue: [], extraReads: 0, gen: 0, askedAt: null, deadline: null, extra: false,
   } : null;
   const pfCache = new Map();
   if (pf && store && store.remove) for (const k of OLD_PORTFOLIO_CACHE_KEYS) store.remove(k);
@@ -304,7 +307,10 @@ export function createDesk(opts) {
     if (pf.timer != null) clock.clearTimeout(pf.timer);
     pf.timer = null;
     if (!desk.running || !isVisible() || pf.pending) return;
-    const at = Math.max(pf.lastPollStart + PORTFOLIO_POLL_MS, pf.retryUntil, clock.now());
+    const regular = Math.max(pf.lastPollStart + PORTFOLIO_POLL_MS, pf.retryUntil, clock.now());
+    // AC89 (l): a read due after a Done mark comes before the next 5-minute one when it falls due first.
+    const extra = pf.extraDue.length ? Math.max(Math.min(...pf.extraDue), pf.retryUntil, clock.now()) : Infinity;
+    const at = Math.min(regular, extra);
     pf.timer = clock.setTimeout(() => {
       pf.timer = null;
       if (!desk.running || !isVisible() || pf.pending) return;
@@ -314,19 +320,60 @@ export function createDesk(opts) {
       else pfCycle();
     }, at - clock.now());
   }
+  /**
+   * AC89 (l): one more portfolio read, due at `atMs` (KICK_BACK_MINUTES after a portfolio Done mark), so a mark GitHub
+   * doesn't confirm is kicked back at about 5 minutes. The page asks it at most once a mark, within its day's cap.
+   */
+  desk.portfolioReadAt = (atMs) => {
+    if (!pf || !Number.isFinite(atMs)) return false;
+    pf.extraDue.push(atMs);
+    pfSchedule();
+    return true;
+  };
   /** Called as each project's cycle ends: the portfolio's read, if it was waiting its turn, once no project's is under way. */
   function pfTurn() {
     if (!pf || !pf.turn || anyProjectPending() || pf.pending || !desk.running || !isVisible()) return;
     pf.turn = false;
     pfCycle();
   }
+  /**
+   * J23, changed after MD3: a read that has not answered when the next 5-minute read falls due counts as failed ("Can't
+   * read your portfolio since HH:MM", from the time it was asked), and the next read is made as due; its late answer,
+   * if any, is never applied.
+   */
+  function pfAbandon(gen) {
+    if (!pf.pending || pf.gen !== gen) return;
+    pf.gen++;
+    pf.pending = false;
+    pf.checking = false;
+    pf.readAt = clock.now();
+    pf.failure = { kind: 'other', reason: 'pending', since: pf.failure ? pf.failure.since : pf.askedAt };
+    try {
+      onChange();
+    } catch {
+      // as in cycle
+    } finally {
+      pfSchedule();
+    }
+  }
   async function pfCycle() {
+    const now0 = clock.now();
+    // AC89 (l): a read made for marks now due serves every mark due by now; it leaves the 5-minute cadence as it was.
+    const due = pf.extraDue.filter((t) => t <= now0);
+    const isExtra = due.length > 0 && pf.lastPollStart + PORTFOLIO_POLL_MS > now0;
+    pf.extraDue = pf.extraDue.filter((t) => t > now0);
     pf.pending = true;
-    pf.lastPollStart = clock.now();
+    const gen = ++pf.gen;
+    pf.askedAt = now0;
+    if (isExtra) pf.extraReads++;
+    else pf.lastPollStart = now0;
     pf.polls++;
+    if (pf.deadline != null) clock.clearTimeout(pf.deadline);
+    pf.deadline = clock.setTimeout(() => { pf.deadline = null; pfAbandon(gen); }, Math.max(1, pf.lastPollStart + PORTFOLIO_POLL_MS - now0) || PORTFOLIO_POLL_MS);
     let outcome;
     try {
       const res = await call('/api/poll', { target: 'portfolio', head: pf.head, etags: pf.head ? { ...pf.etags } : {} });
+      if (gen !== pf.gen) return; // abandoned as pending: its answer is not applied
       if (!res.ok) outcome = { ok: false, reason: res.reason || 'network' };
       else if (res.json.state === 'cant-read') outcome = { ok: false, reason: res.json.reason || 'github', retryAfter: res.json.retryAfter };
       else {
@@ -353,6 +400,7 @@ export function createDesk(opts) {
             const batch = need.slice(0, BLOB_BATCH);
             pf.blobCalls++;
             const b = await call('/api/blobs', { target: 'portfolio', blobs: [...new Set(batch.map((x) => x.sha))] });
+            if (gen !== pf.gen) return;
             if (!b.ok) outcome = { ok: false, reason: b.reason || 'network' };
             else if (b.json.state !== 'ok') outcome = { ok: false, reason: b.json.reason || 'github', retryAfter: b.json.retryAfter };
             else {
@@ -367,9 +415,14 @@ export function createDesk(opts) {
         }
       }
     } catch {
+      if (gen !== pf.gen) return;
       outcome = { ok: false, reason: 'page' };
     }
+    if (pf.deadline != null) clock.clearTimeout(pf.deadline);
+    pf.deadline = null;
     pf.readAt = clock.now();
+    // A read that answers once a mark's read is due serves it: that mark is judged now (AC89 (l)), with no read more.
+    pf.extraDue = pf.extraDue.filter((t) => t > pf.readAt);
     if (outcome.ok) {
       pf.lastSuccessAt = clock.now();
       pf.failure = null;
@@ -1366,7 +1419,8 @@ export function createDesk(opts) {
       st.timer = null;
     }
     if (pf && pf.timer != null) clock.clearTimeout(pf.timer);
-    if (pf) Object.assign(pf, { timer: null, turn: false });
+    if (pf && pf.deadline != null) clock.clearTimeout(pf.deadline);
+    if (pf) Object.assign(pf, { timer: null, turn: false, deadline: null });
   };
   desk.visibilityChanged = () => {
     if (isVisible()) {
@@ -1511,7 +1565,8 @@ export function createDesk(opts) {
    * failure: { kind: 'access' | 'other', reason, since } | null, readAt, checking, polls, blobCalls }.
    */
   desk.portfolio = () => (pf ? { ...pfConf, head: pf.head, headAt: pf.headAt, tree: pf.tree, truncated: pf.truncated, records: pfRecords(),
-    lastSuccessAt: pf.lastSuccessAt, failure: pf.failure, readAt: pf.readAt, checking: pf.checking, polls: pf.polls, blobCalls: pf.blobCalls } : null);
+    lastSuccessAt: pf.lastSuccessAt, failure: pf.failure, readAt: pf.readAt, checking: pf.checking, polls: pf.polls, blobCalls: pf.blobCalls,
+    extraReads: pf.extraReads, extraDue: [...pf.extraDue] } : null);
   /** J22 (the MD sandbox): what the board judges a project's pull requests from, as last read. */
   desk.j22 = (name) => {
     const st = states.get(name);

@@ -400,7 +400,7 @@ test('AC14 (AC79): every head a job candidate in 5 projects, 288 head changes, 1
 // same day with the portfolio read too (a made-up portfolio, NOT real records: its idea log and a card in its queue),
 // its every 5 minutes, each opening's first read at once and its cold blob call (the cache empty at every opening),
 // and one in five of A4's 100 changes a day made in the portfolio instead of a project's ledger.
-async function combinedDay({ worst, storageThrows = false, j24 = null, portfolio = false } = {}) {
+async function combinedDay({ worst, storageThrows = false, j24 = null, portfolio = false, pfMarks = 0 } = {}) {
   const { readFileSync } = await import('node:fs');
   const { join } = await import('node:path');
   const { NOTIFY_FIX } = await import('./notify-helpers.mjs');
@@ -526,6 +526,15 @@ async function combinedDay({ worst, storageThrows = false, j24 = null, portfolio
   let prChanges = 0;
   let waited = 0;
   const waitedByOpening = [];
+  // AC89 (l) (stage 7 of "After MD3"): portfolio Done marks on this device, as the page makes them — each asks one more
+  // portfolio read KICK_BACK_MINUTES after it, within the day's 10 (kickReadSlot, the device's own count).
+  const { kickReadSlot, KICK_BACK_MINUTES } = await import('../../src/lib/board.js');
+  const kickBacking = new Map();
+  const kickStore = createStore(storageThrows ? { getItem: no, setItem: no, removeItem: no }
+    : { getItem: (k) => (kickBacking.has(k) ? kickBacking.get(k) : null), setItem: (k, v) => { kickBacking.set(k, String(v)); }, removeItem: (k) => { kickBacking.delete(k); } });
+  let marks = 0;
+  let kickReads = 0;
+  let extraReads = 0;
   const perHead = new Map(); // `${project}|${number}@${head}` → the most of the head's 5 used, over the day
   for (let o = 0; o < openings; o++) {
     opening = o;
@@ -538,6 +547,12 @@ async function combinedDay({ worst, storageThrows = false, j24 = null, portfolio
     for (let m = 1; m * 60_000 <= windowMs; m++) {
       await clock.runUntil(open + m * 60_000 - 30_000);
       for (const p of config.projects) desk.setWaited(p.name, NUMS);
+      // Marks spread over one owner's day: two in each opening from the fourth (07:12Z, 01:12 in America/Chicago, the day
+      // having turned at 06:00Z) until pfMarks are made, all on 3 Nov on the owner's clock.
+      if (portfolio && marks < pfMarks && o >= 3 && (m === 7 || m === 41)) {
+        marks++;
+        if (kickReadSlot(kickStore, clock.now(), config.ownerTimeZone) && desk.portfolioReadAt(clock.now() + KICK_BACK_MINUTES * 60_000)) kickReads++;
+      }
       if (m % 5 === 0) addRuns(open + m * 60_000 - 30_000);
       if (m % 9 === 5 && changes < (o + 1) * 10) {
         if (portfolio && changes % 5 === 4) {
@@ -572,6 +587,7 @@ async function combinedDay({ worst, storageThrows = false, j24 = null, portfolio
         }
       }
     }
+    if (portfolio && desk.portfolio()) extraReads += desk.portfolio().extraReads;
     for (const p of config.projects) {
       waited += desk.j22(p.name).soloCalls.waited;
       waitedByOpening.push({ opening: o, project: p.name, n: desk.j22(p.name).soloCalls.waited });
@@ -580,7 +596,8 @@ async function combinedDay({ worst, storageThrows = false, j24 = null, portfolio
   }
   const pfCalls = server.calls.filter((c) => c.target === 'portfolio');
   return { calls: server.calls.length, changes, prChanges, waited, perHead, verdictCalls, cycles, maxOwnerHeads, HEAD_POLLS, waitsBacking, soloLog, waitedByOpening, span, j24Calls,
-    pfChanges, pfPolls: pfCalls.filter((c) => c.path === '/api/poll'), pfBlobs: pfCalls.filter((c) => c.path === '/api/blobs'), openings, windowMs };
+    pfChanges, pfPolls: pfCalls.filter((c) => c.path === '/api/poll'), pfBlobs: pfCalls.filter((c) => c.path === '/api/blobs'), openings, windowMs,
+    marks, kickReads, extraReads };
 }
 
 
@@ -699,4 +716,23 @@ test('AC14 (desk mockup v2, J23): the worst case with the portfolio read too —
   assert.ok(d.pfPolls.length + d.pfBlobs.length <= 212 + d.pfChanges, `the portfolio's ${d.pfPolls.length + d.pfBlobs.length} calls: A3's 212, and its head changes' among A4's`);
   for (const c of [...d.pfPolls, ...d.pfBlobs]) assert.ok(!('project' in c.body), 'never a project\'s call');
   assert.ok(Math.max(...d.cycles.values()) <= 16, 'A3: 6 + 2 × 5');
+});
+
+// From stage 7 of "After MD3" (AC89 (l); A3's 9,952, specs/S-001.md:14020): the same worst case with portfolio Done
+// marks on the device all day — 12 of them, so past the day's cap of 10: one more portfolio read each for the first ten,
+// none for the eleventh and twelfth (judged at the 5-minute reads), and the day under 10,000 with at most 10 calls more.
+test('AC14 (AC89 (l)): AC14\'s day with A3\'s 9,952 — the J23 worst case with 12 portfolio Done marks on one device: 10 more portfolio reads, one each for the day\'s first ten marks and none after; under 10,000 calls, at most 10 more than the same day with no marks', async (t) => {
+  const base = await combinedDay({ worst: 'verdicts', j24: 'ok', portfolio: true });
+  const d = await combinedDay({ worst: 'verdicts', j24: 'ok', portfolio: true, pfMarks: 12 });
+  t.diagnostic(`AC14 (AC89 (l)): ${d.calls} calls with ${d.marks} marks and ${d.extraReads} reads after them; ${base.calls} with none`);
+  assert.equal(d.marks, 12, 'twelve marks in the day');
+  assert.equal(d.kickReads, 10, 'the day\'s first ten have a read of their own (the device\'s count)');
+  assert.equal(d.extraReads, 10, 'and each was made, once');
+  assert.ok(d.calls < 10_000, `${d.calls} calls`);
+  assert.ok(d.calls - base.calls <= 10, `${d.calls - base.calls} calls more than with no marks: A3 counts 10`);
+  assert.ok(d.pfPolls.length - base.pfPolls.length <= 10);
+  // With no device storage, no such read is made at all.
+  const none = await combinedDay({ worst: 'verdicts', j24: 'ok', portfolio: true, pfMarks: 12, storageThrows: true });
+  assert.equal(none.kickReads, 0, 'no device storage: none');
+  assert.equal(none.extraReads, 0);
 });

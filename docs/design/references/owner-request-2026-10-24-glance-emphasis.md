@@ -44,3 +44,7 @@ Said by the owner in the same session, after the six questions were filed (pull 
 > And in hand with that - please visual segregate the standard milestones a little bit more than they currently are. The lighter color just kind of gets skipped by me and I get confused on what's in or out
 
 What it starts: the six answers are recorded in decisions/questions/P-001-glance-*.md. The five further ideas (a limited status palette, occasional callouts, a where-we-are arrow, counts of all milestones, sprints and actions, and standard milestones set apart) go to the Design reviewer as round 2 of the glance audit, recorded at docs/design/audit-2026-10-24-round-2.md when it returns, then mocked up as before.
+
+Asked what "actions" meant (the pieces of work inside a milestone, the steps agents record in their running logs, or GitHub Actions runs), the owner said, word for word:
+
+> I meant the pieces of work within a sprint in a milestone, but I wouldn't be against the last two being visible somewhere as well if it's a simple ask

@@ -21,8 +21,8 @@ import { loadSandbox, byClass, findAll, El0 } from './sandbox-helpers.mjs';
 import { memStore } from './wa-fixtures.mjs';
 import { parseCss, treeOf, cascade, nodes } from './css-cascade.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
-import { HOLD_MS, WORDS, stripEmptyWords, isNewCard, oneProjectView, ONE_WORDS } from '../../src/lib/board.js';
-import { mixState, quietState, twoMixState, deviceMarks, KICKED, CARD, MIX_PROJECT, MIX_PROJECT2, NOW } from './glance-fixtures.mjs';
+import { HOLD_MS, WORDS, stripEmptyWords, stripEmptyParts, isNewCard, oneProjectView, ONE_WORDS } from '../../src/lib/board.js';
+import { mixState, quietState, signedOutState, twoMixState, deviceMarks, KICKED, CARD, MIX_PROJECT, MIX_PROJECT2, NOW } from './glance-fixtures.mjs';
 
 const H = 3600e3;
 const CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
@@ -178,6 +178,67 @@ test('AC91 (f), as Part A item 5: an unknown is said in words in the strip\'s li
   assert.equal(stripEmptyWords({ unread: 'cant', one: one({ read: 'cant-read', since: NOW }, null) }), "can't read", 'state 2');
   assert.equal(stripEmptyWords({ one: one({ read: 'cant-read', since: NOW }, NOW) }), 'none when last read', 'state 5');
   assert.equal(ONE_WORDS.whenLast, 'Nothing here when last read');
+});
+
+// AC91 (f) as amended after G2's reviews (the Reviewer's note 2, the Design reviewer's N3 and Q2): "none" alone is in
+// --t-mono, standing in the count's place; the words that are not a count are in --t-label --ink2, as "Kicked back" is.
+test('AC91 (f), amended: the empty strip\'s parts each in their role — " · " and "none" in --t-mono --ink2; "when last read", "not read yet" and "can\'t read" in --t-label --ink2, as "Kicked back" — in each state, in both themes; the words unchanged', async () => {
+  assert.deepEqual([stripEmptyParts({}), stripEmptyParts({ unread: 'pending' }), stripEmptyParts({ unread: 'cant' })],
+    [{ count: ' · none', words: '' }, { count: ' · ', words: 'not read yet' }, { count: ' · ', words: "can't read" }]);
+  const state5 = oneProjectView({ name: 'Alpha', read: { read: 'cant-read', since: NOW }, lastSuccessAt: NOW, tz: 'America/Chicago' });
+  assert.deepEqual(stripEmptyParts({ one: state5 }), { count: ' · none', words: ' when last read' });
+  const check = (app, what, want) => {
+    const s = strip(app);
+    assert.equal(s.textContent, `Kicked back${want.count}${want.words}`, `${what}: the words unchanged`);
+    const kn = byClass(s, 'v2-kn')[0];
+    const kw = byClass(s, 'v2-kw')[0] || null;
+    assert.equal(kn.textContent, want.count, `${what}: the count's place`);
+    assert.equal(kw ? kw.textContent : '', want.words, `${what}: the words that are not a count`);
+    for (const theme of THEMES) {
+      const L = looks(app, theme);
+      const c = INK[theme];
+      assert.match(L.get(kn).raw('font'), /^400 11px\/1\.4 ⟦--mono\|/, `${what}, ${theme}: " · " and "none" in --t-mono`);
+      assert.equal(L.get(kn).colour, c.ink2);
+      for (const el of [byClass(s, 'v2-kl')[0], kw].filter(Boolean)) {
+        assert.deepEqual([L.get(el).size, L.get(el).weight, L.get(el).colour], ['11px', '500', c.ink2], `${what}, ${theme}: "${el.textContent}" in --t-label --ink2`);
+        assert.doesNotMatch(L.get(el).family, /Mono/, `${what}, ${theme}: "${el.textContent}" not in mono`);
+      }
+    }
+  };
+  // Read, nothing kicked back: "none".
+  let app = await open(quietState());
+  try {
+    check(app, 'read', { count: ' · none', words: '' });
+  } finally {
+    app.restore();
+  }
+  // Before the first read: "not read yet".
+  app = await loadSandbox({ ...quietState(), hash: '#/waiting', now: NOW, store: looked(NOW - 5 * H) });
+  try {
+    check(app, 'before the first read', { count: ' · ', words: 'not read yet' });
+  } finally {
+    app.restore();
+  }
+  // No project can be read: "can't read".
+  const so = signedOutState();
+  so.fail();
+  app = await open(so);
+  try {
+    check(app, 'none readable', { count: ' · ', words: "can't read" });
+  } finally {
+    app.restore();
+  }
+  // One project shown, read and then failing (AC89 (a)'s state 5): "none when last read".
+  const m = mixState();
+  app = await open(m, { hash: `#/waiting/${MIX_PROJECT}` });
+  try {
+    m.repos[MIX_PROJECT].fail = { kind: 'network' };
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    check(app, 'state 5', { count: ' · none', words: ' when last read' });
+  } finally {
+    app.restore();
+  }
 });
 
 test('AC91 (f): with kicked-back cards, the strip\'s head "Kicked back" (600 12 px ink) with its count (--t-mono) over a hairline, then its cards in one row, the newest first across both projects, each 200 px wide, naming its project after " · ", with its reason and its button; the row scrolls sideways inside the strip, snapping to a card', async () => {

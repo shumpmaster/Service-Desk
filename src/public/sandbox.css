@@ -602,7 +602,8 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
 .v2-lane.lane-done { align-self: stretch; background: var(--bg2); border-radius: 12px; padding: 0 8px 10px; }
 .v2-lane.lane-done > .v2-lh { padding-top: 6px; }
 /* AC91 (f) (mock pK): the Kicked back strip. With no card, one quiet line, "Kicked back" in --t-label and " · none" in
-   --t-mono, both --ink2, with no fold mark, no control and no drop target. With any, its head, "Kicked back" in 600 12 px
+   --t-mono, both --ink2, with no fold mark, no control and no drop target; words that are not a count ("not read yet",
+   "can't read", " when last read", `.v2-kw`) keep the line's --t-label --ink2, as "Kicked back" does. With any, its head, "Kicked back" in 600 12 px
    ink with its count in --t-mono, over a hairline, then its cards in one row, each 200 px wide, the row scrolling
    sideways inside the strip, snapping to a card, so the page itself never scrolls sideways. */
 .v2-kq { font: var(--t-label); color: var(--ink2); padding: 4px 0; overflow-wrap: anywhere; }

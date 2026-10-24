@@ -644,7 +644,8 @@ const G1_EXCEPT = (n, d, theme) => {
  * - (f), item 4c, Done shaded: the Done lane (`section.v2-lane.lane-done` in the lanes) on --bg2, 12 px round, 8 px inside
  *   its sides and 10 px at its foot, stretched to the taller lane, and its head (`h2.v2-lh` in it) 6 px from its top;
  * - (f), the Kicked back strip's one quiet line (`p.v2-kq`, a new element, in `section.v2-kstrip`), "Kicked back"
- *   (`span.v2-kl`) in --t-label --ink2 and " · none" (`span.v2-kn`) in --t-mono --ink2;
+ *   (`span.v2-kl`) in --t-label --ink2 and " · none" (`span.v2-kn`) in --t-mono --ink2; and, as AC91 (f) was amended after G2's
+ *   reviews, the words that are not a count ("can't read" here, signed out; `span.v2-kw`) in --t-label --ink2, as "Kicked back";
  * - (g), "new"'s place in a card's kind line (`span.v2-new`, a new element, in `span.v2-kd`), drawn as nothing while the
  *   card is not new (`.none`): no fixture this guard walks holds a "last looked", so none is new here.
  * The strip with cards (its head, row and 200 px places) and a shown "new" are drawn on no screen this guard walks (no
@@ -659,6 +660,8 @@ const G2_LOOK = (ink, ink2, bg2) => new Map([
   ['p.v2-kq', [`font: (none) → ${G2_FONT('500 11px/1.35')}`, `color: (none) → ${ink2}`, 'padding: (none) → 4px 0']],
   ['span.v2-kl', ['computed font-size: 13px → 11px', 'computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 14.850000000000001px',
     `computed color: ${ink} → ${ink2}`]],
+  ['span.v2-kw', ['computed font-size: 13px → 11px', 'computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 14.850000000000001px',
+    `computed color: ${ink} → ${ink2}`]],
   ['span.v2-kn', ['font: (none) → 400 11px/1.4 "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace', `color: (none) → ${ink2}`,
     'computed font-size: 13px → 11px', 'computed line-height: 18.849999999999998px → 15.399999999999999px',
     'computed font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif → "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace',
@@ -672,7 +675,7 @@ const G2_KEY = (n) => {
   if (n.tag === 'section' && n.cls.has('v2-lane') && n.cls.has('lane-done') && p && p.cls.has('v2-lanes')) return 'section.v2-lane.lane-done';
   if (n.tag === 'h2' && n.cls.has('v2-lh') && p && p.tag === 'section' && p.cls.has('lane-done')) return 'h2.v2-lh (Done)';
   if (n.tag === 'p' && n.cls.has('v2-kq') && p && p.tag === 'section' && p.cls.has('v2-kstrip')) return 'p.v2-kq';
-  if (n.tag === 'span' && p && p.tag === 'p' && p.cls.has('v2-kq')) for (const c of ['v2-kl', 'v2-kn']) if (n.cls.has(c)) return `span.${c}`;
+  if (n.tag === 'span' && p && p.tag === 'p' && p.cls.has('v2-kq')) for (const c of ['v2-kl', 'v2-kw', 'v2-kn']) if (n.cls.has(c)) return `span.${c}`;
   if (n.tag === 'span' && n.cls.has('v2-new') && n.cls.has('none') && p && p.tag === 'span' && p.cls.has('v2-kd')) return 'span.v2-new.none';
   return null;
 };

@@ -31,7 +31,7 @@ import { GATE_PHASE } from './lib/j11.js';
 import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, BOARD_LANES, WORDS, MARKS_KEY,
-  stripEmptyWords, isNewCard, boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, shortName, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
+  stripEmptyParts, isNewCard, boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, shortName, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
@@ -2281,8 +2281,10 @@ function kickStrip(bd, built, only) {
   const rows = bd.strip || [];
   const attrs = (cls) => ({ class: cls, key: 'lane:kick', 'data-lane': 'kick', 'aria-label': l.title });
   if (!rows.length) {
+    // " · " and "none" in the count's mono role; the words that are not a count in the line's label role (AC91 (f), amended).
+    const e = stripEmptyParts({ unread: bd.unread || null, one: bd.one || null });
     return h('section', attrs('v2-lane v2-kstrip none'), h('p', { class: 'v2-kq' }, h('span', { class: 'v2-kl' }, l.title),
-      h('span', { class: 'v2-kn' }, ` · ${stripEmptyWords({ unread: bd.unread || null, one: bd.one || null })}`)));
+      h('span', { class: 'v2-kn' }, e.count), e.words ? h('span', { class: 'v2-kw' }, e.words) : null));
   }
   const pOf = (name) => built.find((b) => b.project.name === name) || null;
   return h('section', attrs('v2-lane v2-kstrip'),

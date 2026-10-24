@@ -78,6 +78,19 @@ export function stripEmptyWords({ unread = null, one = null } = {}) {
 }
 
 /**
+ * AC91 (f), as amended after G2's reviews (the Reviewer's note 2, the Design reviewer's N3 and Q2): the empty strip's
+ * words after "Kicked back", in their two roles. `count`: what stands in the count's place, " · " and "none" (or " · "
+ * alone), in --t-mono; `words`: the words that are not a count (" when last read", "not read yet", "can't read"), in
+ * --t-label, as "Kicked back" is, since words in mono read as code. The text is stripEmptyWords' unchanged.
+ */
+export function stripEmptyParts(input = {}) {
+  const w = stripEmptyWords(input);
+  if (w === WORDS.stripNone) return { count: ` · ${WORDS.stripNone}`, words: '' };
+  if (w.startsWith(`${WORDS.stripNone} `)) return { count: ` · ${WORDS.stripNone}`, words: w.slice(WORDS.stripNone.length) };
+  return { count: ' · ', words: w };
+}
+
+/**
  * AC91 (g) (P-001-glance-new.md, A): whether a card in "Waiting on you" carries "new": raised after AC40's "last
  * looked" on this device. None with no raised time, none in the strip or in Done (`lane` other than 'wait'), and none
  * while the device holds no "last looked" (`reference` null: AC40's markers off).

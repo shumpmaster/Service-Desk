@@ -15,7 +15,7 @@ import { loadSandbox, byClass, findAll } from './sandbox-helpers.mjs';
 import { NOW } from './sandbox-fixtures.mjs';
 import { textSetup } from './screen-text.mjs';
 import { SD3, sdRepo, openSD, ac61Answer } from './tv2-fixtures.mjs';
-import { waSetup, WORKED, j77Files, memStore, viewOf, estLine, SD, POOM } from './wa-fixtures.mjs';
+import { waSetup, WORKED, j77Files, memStore, viewOf, estLine, SD, POOM, shortRowsSetup, SHORT_NAMES } from './wa-fixtures.mjs';
 import { cosLanes, LANES_NOW } from './lanes-fixtures.mjs';
 import { longSetup, LONG_NOW } from './long-fixtures.mjs';
 import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
@@ -290,10 +290,13 @@ test('AC89 (k): Plan\'s rule-3 row (work filed in a run still to come) takes AC8
   assert.deepEqual([r('MD1').state.rule, r('MD1').state.icon], [6, 'half'], 'AC86\'s half-filled icon is rule 6\'s');
 });
 
-test('AC89 (k): the ordering view\'s rows have no empty space under them (specs/S-001.md:7936) — a row with nothing under it keeps its two move controls stacked beside the row only, unpadded; a row with lines under it keeps the controls\' column spanning them', async () => {
-  // Rewritten at stage 6a's design review (N1): side by side, the controls took 40 px from the names at 360 px. Stacked
-  // beside the row only, a row is at least as tall as the two 32 px controls with their 4 px gap (68 px; Chromium: no
-  // space under any row, and every name as wide as at db1474e, at 360 and 414 px, light and dark, the pull request's captures).
+test('AC89 (k): the ordering view\'s rows have no empty space under them (specs/S-001.md:7936) — a row with nothing under it keeps its two move controls stacked beside the row only, filling the row\'s own height, never taller than its words, a one-line row too; a row with lines under it keeps the controls\' column spanning them', async () => {
+  // Rewritten at stage 6a's design review, round 2 (B1): stacked at 32 px each with their 4 px gap (68 px), the controls
+  // left 15.1 px under a row whose name takes one line (52.9 px tall, Chromium). They now fill the row's height, each at
+  // least 24 px. What this case can catch: the declarations that make them fill, and, from the cascade's own figures, that
+  // the controls' least height fits in the shortest row a bare row can be (one line of name and one of code). What it
+  // can't: the browser's layout itself (text that wraps, font metrics, grid sizing); that is the pull request's Chromium
+  // captures, 0 px under every row and every name as wide as at db1474e, at 360 and 414 px, light and dark.
   const ord = async (setup) => {
     const app = await open(setup, '#/work', { now: Date.parse('2026-10-18T18:00:00Z'), store: memStore() });
     try {
@@ -305,28 +308,48 @@ test('AC89 (k): the ordering view\'s rows have no empty space under them (specs/
   };
   const moveOf = (li) => li.kids.find((k) => k.cls.has('v2-plmove'));
   const under = (li) => li.kids.some((k) => k.cls.has('v2-plunder'));
+  const px = (v) => { const m = /^([\d.]+)px$/.exec(plain(v || '').trim()); assert.ok(m, `a length in px: ${v}`); return Number(m[1]); };
+  const pad = (v) => plain(v).trim().split(/\s+/).map((x) => (x === '0' ? 0 : px(x)));
   // Every milestone estimated (the worked example): no row has lines under it.
   const bare = await ord(waSetup({ extra: { 'intake/estimates.jsonl': WORKED() } }));
   assert.ok(bare.length >= 5, `${bare.length} rows in the ordering`);
+  // The same with MD1's and MD2's names short enough for one line (made up, NOT a real record: shortRowsSetup).
+  const short = await ord(shortRowsSetup());
+  const names = short.map((li) => nodes(li).find((n) => n.cls.has('v2-plname')).text.trim());
+  assert.ok(names.includes(SHORT_NAMES.MD1) && names.includes(SHORT_NAMES.MD2), names.join(' | '));
   // No estimates: every row has its "not estimated" line under it.
   const lined = await ord(waSetup({}));
   assert.ok(lined.length >= 5 && lined.every(under), 'each row with a line under it');
-  for (const li of bare) {
+  for (const li of [...bare, ...short]) {
     assert.equal(under(li), false);
     const m = moveOf(li);
     assert.equal(m.kids.length, 2);
     assert.equal(plain(m.declared.get('grid-row')), '1', 'beside the row only');
-    assert.equal(plain(m.declared.get('padding')), '0', 'unpadded: the row is no taller than the stacked controls need');
+    assert.equal(plain(m.declared.get('padding')), '0', 'unpadded');
     assert.equal(m.declared.get('grid-auto-flow'), undefined, 'stacked, not side by side: the names keep their width');
+    assert.equal(plain(m.declared.get('align-self')), 'stretch', 'as tall as the row, from its words');
+    assert.equal(plain(m.declared.get('grid-auto-rows')), 'minmax(24px, 1fr)', 'the row\'s height shared, each at least 24 px');
+    for (const b of m.kids) assert.equal(plain(b.declared.get('height')), 'auto', 'each control its share, not its own 32 px');
+    // The outcome, from the cascade's figures: the controls' least height (two 24 px tracks and their gap) fits in the
+    // shortest this row can be, one line of its name and one of its code with the row's padding and the gap between.
+    const row = li.kids.find((k) => k.cls.has('v2-plrow'));
+    const prt = row.kids.find((k) => k.cls.has('v2-prt'));
+    const name = nodes(prt).find((n) => n.cls.has('v2-plname'));
+    const code = nodes(prt).find((n) => n.cls.has('v2-plm'));
+    const [pt, , pb = pt] = pad(row.declared.get('padding'));
+    const oneLine = pt + pb + px(name.style.get('line-height')) + px(prt.declared.get('gap')) + px(code.style.get('line-height'));
+    const least = 2 * 24 + px(m.declared.get('gap'));
+    assert.ok(least <= oneLine, `controls at least ${least} px in a row of ${oneLine.toFixed(1)} px at one line`);
   }
   for (const li of lined) {
     const m = moveOf(li);
     assert.equal(plain(m.declared.get('grid-row')), '1 / span 2', 'beside the row and the lines under it');
     assert.equal(plain(m.declared.get('padding')), '6px 0');
+    assert.equal(plain(m.declared.get('grid-auto-rows')), '32px');
   }
   const r = rule('.v2-plmove');
   assert.match(r, /grid-column: 2; grid-row: 1 \/ span 2; display: grid; grid-auto-rows: 32px; gap: 4px; align-content: start; padding: 6px 0;/);
-  assert.match(CSS, /\n\.v2-plli\.ord:not\(:has\(\.v2-plunder\)\) > \.v2-plmove \{ grid-row: 1; padding: 0; \}/);
+  assert.match(rule('.v2-plmv'), /width: 36px; height: 32px;/, 'a row with lines under it: 36 × 32');
   assert.doesNotMatch(CSS, /grid-auto-flow: column; grid-auto-columns: 36px/, 'no longer side by side');
   assert.match(rule('.v2-plrow'), /padding: 9px 0; min-height: 40px;/);
 });

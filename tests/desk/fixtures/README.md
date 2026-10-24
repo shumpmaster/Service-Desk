@@ -659,5 +659,8 @@ in the model portfolio template's form, each **NOT a real record**: `library/fac
 of ten reads already made today after portfolio marks. From its review's round 1 (B2 and N1), more made-up files beside
 those, each **NOT a real record**: `library/facts/_draft.md`, `library/facts/sub/_TEMPLATE.md` and
 `library/facts/_TEMPLATE.md.bak` (each a fact, by name), and `intent/2026-standing.md` (an intent file beside the
-template's own); and kept Done marks on a device, made up, for the reload case. `tests/desk/ac14-budget.test.mjs`'s day adds twelve made-up
+template's own); and kept Done marks on a device, made up, for the reload case. Its scheduler cases (the J23 case for a
+read that stays pending, and `pfDesk()`) also build fake repos holding a made-up Service-Desk `governance/ROUTING.toml`
+(`[time_limits]` alone) and a made-up Personal-Org-Operating-Model `docs/LEDGER.md` (`# Ledger` alone), each **NOT a real
+record**. `tests/desk/ac14-budget.test.mjs`'s day adds twelve made-up
 portfolio Done marks on one device.

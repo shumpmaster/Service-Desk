@@ -195,9 +195,6 @@ button.sb-sum:focus-visible { outline: none; }
 .sb-ball li.who-you { color: var(--ink); } /* AC88: the words in ink; vermilion only on the ◆ beside them (AC81) */
 .sb-v5 { color: var(--muted); font: var(--t-meta); margin: var(--s3) 0; }
 /* Home has no bottom band (AC48, 2026-10-16): the owner dropped the "Tell your Chief of Staff…" bar it held. */
-/* AC71: the stalled line, in slate (a heads-up, not a decision for the owner). */
-.sb-stall { margin: 0; font: var(--t-meta); color: var(--muted); }
-.sb-stall:empty { display: none; }
 
 /* The Home tile's old phases (AC65, AC58) gave way to AC82's timeline at stage 2, and their rules went at stage 7 (AC88). */
 
@@ -731,8 +728,20 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
 .v2-brief { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 4px 10px; align-items: start; padding: 12px; border-radius: 12px; background: var(--bg2); color: var(--ink); }
 .v2-bi { display: grid; padding-top: 2px; }
 .v2-bt1 { font: 500 15px/1.35 var(--font); overflow-wrap: anywhere; }
+/* After the glance audit (AC91 (a); P-001-glance-count.md, A): "<n> need you" in the sheet-title role, the largest text
+   under the screen's title, the vermilion ◆ sized to it and, with "Waiting ›", centred on its line. The briefing's other
+   forms keep their look (C). */
+.v2-brief.k-you { grid-template-columns: 18px minmax(0, 1fr) auto; }
+.v2-brief.k-you .v2-bt1 { font: var(--t-sheet); }
+.v2-brief.k-you .v2-bi, .v2-brief.k-you .v2-go { align-self: center; padding-top: 0; }
+.v2-brief.k-you .v2-bi > .v2-s { width: 18px; height: 18px; }
 .v2-bt2 { grid-column: 2 / 4; font: var(--t-small); color: var(--ink); }
 .v2-bt3 { grid-column: 2 / 4; font: var(--t-small); color: var(--ink2); }
+/* AC91 (a): a settle time or what can't be undone, each on a line of its own under the parts, in 500 12 px ink (the
+   card-title pair) with its clock or lock in ink before it, as the board's cards mark them (`.v2-mk`). */
+.v2-bdue { grid-column: 2 / 4; display: flex; gap: 4px; align-items: flex-start; font: 500 12px/1.35 var(--font); color: var(--ink); }
+.v2-bdue > .v2-k { margin-top: 1px; color: var(--ink); }
+.v2-bdue.none { display: none; }
 .v2-bt3.bad, .v2-brief .v2-k.bad { color: var(--bad); }
 .v2-go { font: var(--t-label); color: var(--ink2); padding-top: 3px; }
 .v2-brief:focus-visible { outline-offset: 2px; }
@@ -749,9 +758,10 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
 .v2-ev > .v2-k { margin-top: 2px; color: var(--ink2); }
 .v2-ev > .v2-k.bad { color: var(--bad); }
 .v2-et { display: grid; gap: 1px; min-width: 0; }
-/* At most three lines, as the board's titles (AC80): never an ellipsis; the whole record is one tap away where the line opens. */
-.v2-e1 { position: relative; font: var(--t-body); overflow-wrap: anywhere; max-height: calc(3 * 1.45em); overflow: hidden; overflow: clip; }
-/* Cut at three lines, the third fades at its end into the ground, Home's and the sheet's alike (rulebook item 16). */
+/* At most two lines (after the glance audit, AC91 (e); P-001-glance-since.md, A): never an ellipsis; the whole record is
+   one tap away where the line opens. */
+.v2-e1 { position: relative; font: var(--t-body); overflow-wrap: anywhere; max-height: calc(2 * 1.45em); overflow: hidden; overflow: clip; }
+/* Cut at two lines, the second fades at its end into the ground, Home's and the sheet's alike (rulebook item 16). */
 .v2-e1.over::after { content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1.45em; pointer-events: none;
   background: linear-gradient(to right, transparent, var(--bg) 85%); }
 .v2-e2 { font: var(--t-mono); color: var(--ink2); overflow-wrap: anywhere; }
@@ -767,7 +777,6 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
 .v2-hg > .v2-k { width: 10px; height: 10px; color: var(--ink2); }
 .v2-tiles { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .v2-tile { position: relative; display: grid; gap: 6px; align-content: start; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); min-width: 0; }
-.v2-tile.bad { border-color: var(--bad); }
 .v2-thd { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
 .v2-tnm { font: 600 13px/1.3 var(--font); overflow-wrap: anywhere; }
 /* The whole tile opens the project (its name's link, stretched over it); the summary's control and "Why" sit above that link. */
@@ -776,6 +785,8 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
 .v2-ta:focus-visible::after { outline: 2px solid var(--ink); outline-offset: 2px; }
 .v2-wt { display: inline-flex; gap: 4px; align-items: center; font: 400 12px/1.3 var(--font); color: var(--ink2); }
 .v2-wt.you { font: 500 12px/1.3 var(--font); color: var(--ink); }
+/* AC91 (c): a project the desk can't read, with nothing waiting in it: "✕ Can't read since HH:MM", the ✕ and the words in --bad. */
+.v2-wt.bad { font: 500 12px/1.3 var(--font); color: var(--bad); }
 /* The summary (AC54 (a), kept by AC82): its first three lines, faded at the cut into the tile's ground, the whole one tap away. */
 .v2-tile .sb-sumclip { font: var(--t-small); height: auto; max-height: calc(3 * 1.4em); }
 .v2-tile .sb-sumclip.over { height: calc(3 * 1.4em); }
@@ -796,7 +807,11 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
 .v2-ln b { font-weight: 600; }
 .v2-g { color: var(--ink2); }
 .v2-tnone { padding: 2px 0; }
-.v2-tile .sb-stall { font: var(--t-small); color: var(--ink2); }
+/* After the glance audit (AC91 (b); AC71, changed): a stopped project's line, directly under the tile's name row, in
+   500 12 px ink with the clock in ink before it, never vermilion or --bad (AC69: the gap is the agents'). Drawn
+   only once it says something: the tick gives it `v2-ln` then (sandbox.js, stallNode). */
+.v2-stall { display: none; }
+.v2-ln.v2-stall { display: grid; font: 500 12px/1.4 var(--font); color: var(--ink); }
 /* The tile's phases as a timeline (frame H5): one row per run, a cell per phase, the line between cells in
    the phase's colour, solid where finished and dashed where still to come, lighter where gone back over;
    a later run's short dashed drop from the run above. Drawn only: its sentence carries it in words. */

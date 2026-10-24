@@ -117,7 +117,8 @@ export const irreversible = (q) => Boolean(q) && String(q.reversibility || '').t
  * flagged (the trial view's flagged count over every project: Quiet's rule, Terms), signedOut,
  * v3 (name → whether the project is v3), lastReadMs (the stalest project's last successful read, or
  * null), nowMs, tz }. Returns { kind: 'you' | 'quiet' | 'confirming' | 'checking' | 'cant' |
- * 'signed-out', head, parts (the second line, or null), sub (the third line, or null), cant (lines) }.
+ * 'signed-out', head, parts (the second line, or null), due (the lines under it, each { key: 'past' |
+ * 'coming' | 'undo', icon: 'clock' | 'lock', words }, AC91 (a)), sub (the third line, or null), cant (lines) }.
  */
 export function briefingView(input) {
   const { bd, reads, nowMs, tz } = input;
@@ -125,7 +126,7 @@ export function briefingView(input) {
     .map((r) => (r.read && r.read.read === 'cant-read' && Number.isFinite(r.read.since)
       ? `Can't read ${r.name} since ${hhmm(new Date(r.read.since), tz)}`
       : `Can't show ${r.name}`));
-  if (input.signedOut) return { kind: 'signed-out', head: 'Signed out — reload to sign in', parts: null, sub: null, cant: [] };
+  if (input.signedOut) return { kind: 'signed-out', head: 'Signed out — reload to sign in', parts: null, due: [], sub: null, cant: [] };
   // From stage 6b (Terms' Quiet; AC87): the portfolio read within its 6 minutes, or its own words, one line
   // as a project's (`portfolio`: portfolioRead's answer, or null with no portfolio in J7).
   const pf = input.portfolio || null;
@@ -148,28 +149,32 @@ export function briefingView(input) {
     const raised = wait.map((c) => c.raisedAt).filter((x) => x != null && Number.isFinite(x));
     if (raised.length) parts.push(`oldest ${briefAge(nowMs - Math.min(...raised))}`);
     // The counted v3 owner questions: settling themselves, and those that can't be undone (AC12, AC38).
+    // After the glance audit (AC91 (a)): each is a line of its own under the parts, with its clock or lock, in
+    // home.js's order — a time already past, a time to come, then what can't be undone — its words AC82's and
+    // AC89 (j)'s, but for the capital.
+    const due = [];
     const questions = [...wait, ...kick].filter((c) => c.kind === 'question' && !c.v25 && input.v3 && input.v3(c.project));
     const settles = questions.map((c) => settleAt(c.flag && c.flag.question ? c.flag.question.parsed : null, c.raisedAt)).filter((x) => x != null).sort((a, b) => a - b);
     // AC89 (j): a settle time already past, on a question that still waits, says so, its time always a date.
-    const due = settles.filter((x) => x < nowMs);
+    const past = settles.filter((x) => x < nowMs);
     const ahead = settles.filter((x) => x >= nowMs);
-    if (due.length === 1) parts.push(`one question was due to settle itself ${dayDateTime(due[0], nowMs, tz)}`);
-    else if (due.length > 1) parts.push(`${due.length} questions were due to settle themselves, the first ${dayDateTime(due[0], nowMs, tz)}`);
-    if (ahead.length === 1) parts.push(`one question settles itself ${settleWords(ahead[0], nowMs, tz)}`);
-    else if (ahead.length > 1) parts.push(`${ahead.length} questions settle themselves, the first ${settleWords(ahead[0], nowMs, tz)}`);
+    if (past.length === 1) due.push({ key: 'past', icon: 'clock', words: `One question was due to settle itself ${dayDateTime(past[0], nowMs, tz)}` });
+    else if (past.length > 1) due.push({ key: 'past', icon: 'clock', words: `${past.length} questions were due to settle themselves, the first ${dayDateTime(past[0], nowMs, tz)}` });
+    if (ahead.length === 1) due.push({ key: 'coming', icon: 'clock', words: `One question settles itself ${settleWords(ahead[0], nowMs, tz)}` });
+    else if (ahead.length > 1) due.push({ key: 'coming', icon: 'clock', words: `${ahead.length} questions settle themselves, the first ${settleWords(ahead[0], nowMs, tz)}` });
     const irr = questions.filter((c) => irreversible(c.flag && c.flag.question ? c.flag.question.parsed : null)).length;
-    if (irr === 1) parts.push("one can't be undone");
-    else if (irr > 1) parts.push(`${irr} can't be undone`);
-    return { kind: 'you', head: `${n} need${n === 1 ? 's' : ''} you`, n, parts: parts.join(' · ') || null, sub: null, cant };
+    if (irr === 1) due.push({ key: 'undo', icon: 'lock', words: "One can't be undone" });
+    else if (irr > 1) due.push({ key: 'undo', icon: 'lock', words: `${irr} can't be undone` });
+    return { kind: 'you', head: `${n} need${n === 1 ? 's' : ''} you`, n, parts: parts.join(' · ') || null, due, sub: null, cant };
   }
   const unread = reads.some((r) => !r.drawError && (!r.read || r.read.read === 'checking')) || Boolean(pf && !pf.fresh && !pf.quietWords);
-  if (cant.length) return { kind: 'cant', head: cant[0], parts: null, sub: null, cant: cant.slice(1) };
-  if (unread) return { kind: 'checking', head: HOME_WORDS.checking, parts: null, sub: null, cant: [] };
+  if (cant.length) return { kind: 'cant', head: cant[0], parts: null, due: [], sub: null, cant: cant.slice(1) };
+  if (unread) return { kind: 'checking', head: HOME_WORDS.checking, parts: null, due: [], sub: null, cant: [] };
   // Nothing on the board, but Quiet still needs GitHub's word: a mark not yet confirmed (AC80).
-  if (input.flagged > 0 || (bd && bd.pendingAny)) return { kind: 'confirming', head: HOME_WORDS.confirming, parts: null, sub: null, cant: [] };
+  if (input.flagged > 0 || (bd && bd.pendingAny)) return { kind: 'confirming', head: HOME_WORDS.confirming, parts: null, due: [], sub: null, cant: [] };
   const agents = bd ? bd.quiet.agents.length : 0;
   const age = input.lastReadMs != null ? `Every project read ${durationText(Math.max(0, nowMs - input.lastReadMs))} ago` : null;
-  return { kind: 'quiet', head: HOME_WORDS.nothing, parts: null, sub: [age, agents ? `with the agents: ${agents}` : null].filter(Boolean).join(' · ') || null, cant: [] };
+  return { kind: 'quiet', head: HOME_WORDS.nothing, parts: null, due: [], sub: [age, agents ? `with the agents: ${agents}` : null].filter(Boolean).join(' · ') || null, cant: [] };
 }
 
 // ---------------------------------------------------------------------------
@@ -622,10 +627,55 @@ export function unreadLines(project) {
     next: { icon: 'unrec', words: WA.notAvailable } };
 }
 
-/** "◆ <n> wait on you" (one: "◆ 1 waits on you"), counted as the board counts the project's cards; else "Nothing waiting", "Can't read" or "Checking…". */
-export function tileWaits(n, read) {
-  if (n > 0) return { you: true, words: `${n} ${n === 1 ? 'waits' : 'wait'} on you` };
-  if (read === 'cant-read') return { you: false, words: HOME_WORDS.cantRead };
-  if (read !== 'ok') return { you: false, words: HOME_WORDS.checking };
-  return { you: false, words: HOME_WORDS.nothingWaiting };
+/**
+ * "◆ <n> wait on you" (one: "◆ 1 waits on you"), counted as the board counts the project's cards; else "Nothing
+ * waiting", "Checking…", or, for a project whose read fails (after the glance audit, AC91 (c)), "✕ Can't read since
+ * HH:MM" in `--bad` (`bad`), "✕ Can't read" where no time is held. `since`: the failure's time as "HH:MM", or null.
+ * With cards waiting the corner keeps what waits, and the failure is said at the tile's foot (tileFoot).
+ */
+export function tileWaits(n, read, since = null) {
+  if (n > 0) return { you: true, bad: false, words: `${n} ${n === 1 ? 'waits' : 'wait'} on you` };
+  if (read === 'cant-read') return { you: false, bad: true, words: since ? `${HOME_WORDS.cantRead} since ${since}` : HOME_WORDS.cantRead };
+  if (read !== 'ok') return { you: false, bad: false, words: HOME_WORDS.checking };
+  return { you: false, bad: false, words: HOME_WORDS.nothingWaiting };
+}
+
+/**
+ * The tile's foot line for a project whose read fails (AC91 (c); AC5's reason in `reason`), saying the time once:
+ * beside a corner that says "Can't read since HH:MM" or "Can't read", "Reason: <reason>" in grey (`bad` false);
+ * beside a corner that says what waits, "✕ Can't read since HH:MM: <reason>", or "✕ Can't read: <reason>" with no
+ * time held, in `--bad`, so the failure is always on the tile. Null when the read doesn't fail or no reason is held.
+ */
+export function tileFoot(n, read, since, reason) {
+  if (read !== 'cant-read' || !reason) return null;
+  if (n > 0) return { bad: true, words: `${HOME_WORDS.cantRead}${since ? ` since ${since}` : ''}: ${reason}` };
+  return { bad: false, words: `Reason: ${reason}` };
+}
+
+/**
+ * "At work:" and its value (AC91 (d); P-001-glance-at-work.md, A): for a line naming who is at work, the label
+ * stays grey and the value, each "<role> on <its item>" joined by ", ", is in ink, as the Next line's is. Null for
+ * the lines that stay wholly grey: "No agent run recorded since <date>", "At work: not available" and "No dispatch
+ * log: not used here".
+ */
+export function atWorkParts(line) {
+  const m = /^At work: (.+)$/.exec(String(line || ''));
+  if (!m || m[1] === WA.notAvailable) return null;
+  return { label: 'At work:', value: m[1] };
+}
+
+/**
+ * "Since you last looked"'s empty line while any connected project can't be read (AC91 (c); signed out included):
+ * "Not read since HH:MM", the earliest "since" among those projects (AC5; AC89 (a)'s rule for the 3-minute cause), or
+ * "Not read in this opening" where one of them has had no read succeed in this opening (AC89 (a)'s state 2 words,
+ * C: its lines since "last looked" are all missing, so no time would be true for it). Never "Nothing new since
+ * <time>", which would read as quiet (the rulebook's part A item 4). reads: [{ read, succeeded }]; null when every
+ * project can be read.
+ */
+export function sinceUnreadWords(reads, tz) {
+  const cant = (reads || []).filter((r) => r && r.read && r.read.read === 'cant-read');
+  if (!cant.length) return null;
+  if (cant.some((r) => !r.succeeded)) return 'Not read in this opening';
+  const times = cant.map((r) => r.read.since).filter((x) => x != null && Number.isFinite(x));
+  return times.length ? `Not read since ${hhmm(new Date(Math.min(...times)), tz)}` : 'Not read in this opening';
 }

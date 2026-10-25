@@ -685,6 +685,15 @@ function smk(kind, cls = 'v2-s') {
   return s;
 }
 /**
+ * Where the project is now (AC92 (b), from G8; P-001-glance2-arrow.md, A: "one small filled ink triangle points at the
+ * present"): one shape everywhere, a small filled triangle in --ink, `r` pointing right on a vertical drawing and `d`
+ * down on a horizontal one, never up; drawn as a shape (sandbox.css, `.v2-here`: a clip-path on an empty span), no
+ * character, so no font can change it; hidden from assistive technology, the words beside it already saying now, Now
+ * or next to reach; still. Its size and place are its drawing's: the Timeline's Now line, the page's strip, a Home
+ * tile's drawing, Plan's next-to-reach row and an opened phase's.
+ */
+const hereMark = (dir) => h('span', { class: `v2-here ${dir}`, 'aria-hidden': 'true' });
+/**
  * A CI line's mark (AC92 (a), from G7): a ✓ in --ok before the words of a CI line that reads passing (AC29's state), a ✕ in
  * --bad before one that reads failing, hidden from assistive technology (the words say it); none for running, none or
  * not recorded, whose words stay as they are.
@@ -855,8 +864,9 @@ function timelineNode(tl, name) {
       const drop = i === r.down;
       const rise = i === r.up;
       if (!c) return h('span', { class: `v2-c${drop ? ' dn' : ''}${rise ? ' up' : ''}` }, drop || rise ? h('i', {}) : null);
+      // AC92 (b), from G8: the arrow, 3 px left of the now run's icon (a span: `.v2-c.up > i` is the dashed drop).
       return h('span', { class: `v2-c ${c.cls || 'ph-none'} s-${c.state}${c.l ? ' l' : ''}${c.r ? ' r' : ''}${drop ? ' dn' : ''}${rise ? ' up' : ''}` },
-        drop || rise ? h('i', {}) : null, smk(c.icon, 'v2-s'));
+        drop || rise ? h('i', {}) : null, smk(c.icon, 'v2-s'), c.here ? hereMark('r') : null);
     })));
   return [h('div', { class: `v2-ptl${tl.sprints ? ' sprints' : ''}`, key: `ptl:${name}`, 'aria-hidden': 'true' },
     tl.rows.map(row),
@@ -1304,19 +1314,22 @@ function pageTwoRows(p, bd) {
 function stripNode(st) {
   if (!st.tracked) return h('p', { class: 'v2-small', key: 'strip-none' }, st.words);
   return h('ol', { class: `v2-strip${st.sprints ? ' sprints' : ''}`, key: 'strip', 'aria-label': st.sprints ? 'Sprints, the last four' : 'Phases, start to finish' },
-    st.cells.map((c) => h('li', { class: `v2-ph ${c.cls || 'ph-none'} b-${c.bar}${c.now ? ' now' : ''}`, key: `ph:${c.phase}` },
+    st.cells.map((c) => h('li', { class: `v2-ph ${c.cls || 'ph-none'} b-${c.bar}${c.now ? ' now' : ''}${c.here ? ' here' : ''}`, key: `ph:${c.phase}` },
       h('span', { class: 'v2-bar3', 'aria-hidden': 'true' }),
       h('span', { class: 'v2-pn' }, smk(c.icon), h('span', { class: st.sprints ? 'v2-pnm mono' : 'v2-pnm' }, c.phase)),
-      h('span', { class: 'v2-ps' }, c.words))));
+      h('span', { class: 'v2-ps' }, c.words),
+      // AC92 (b), from G8: the arrow pointing down at the now phase's bar, in the gap above the strip.
+      c.here ? hereMark('d') : null)));
 }
 
 /** One milestone in an opened phase (AC83, frames 6 and 6b): its icon, its id in Plex Mono, its name, its state in words under it. */
 function smRow(x) {
   // AC92 (d), from G6: `own` or `std` on the row, so the owner's own rows' names take the row weight (500) and a standard
   // row's stays 400.
-  return h('li', { class: `v2-sm ${x.kind}${x.soft ? ' soft' : ''}${x.old ? ' old' : ''}`, key: `sm:${x.kind}:${x.id}`, 'data-ms': x.id },
+  // AC92 (b), from G8: `here` on the now run's next-to-reach row, in the now phase only: the arrow on the phase's thin line.
+  return h('li', { class: `v2-sm ${x.kind}${x.soft ? ' soft' : ''}${x.old ? ' old' : ''}${x.here ? ' here' : ''}`, key: `sm:${x.kind}:${x.id}`, 'data-ms': x.id },
     smk(x.icon), h('span', { class: 'v2-smt' }, h('span', { class: 'v2-smn' }, h('span', { class: 'v2-id' }, x.id), ' ', x.name),
-      h('span', { class: 'v2-sms' }, x.words)));
+      h('span', { class: 'v2-sms' }, x.words)), x.here ? hereMark('r') : null);
 }
 
 /**
@@ -1338,13 +1351,14 @@ function untrackedRows(name, r) {
 }
 
 /**
- * An opened phase (AC83, frame 6): a thin line with an arrow pointing up; the latest run in full, then each earlier run,
- * smaller. From G6 (AC92 (d)), every run, earlier ones included, under two heads in --t-label --ink, "Your milestones ·
+ * An opened phase (AC83, frame 6): a thin line; the latest run in full, then each earlier run, smaller. From G8 (AC92
+ * (b)), the arrow pointing up that said the reading order is gone ("↑ start at the foot" in the section's head says it
+ * once), and the now run's next-to-reach row has the arrow pointing at it on the line (smRow). From G6 (AC92 (d)), every run, earlier ones included, under two heads in --t-label --ink, "Your milestones ·
  * <n>" and "Standard checklist · <n> · <h> tracked" (or "· none tracked this run"), the standard group with a 1 px --line
  * rule above its head and 8 px over it; its untracked rows folded into one; skipped, not-needed and taken-on rows listed.
  */
 function phaseOpenNode(name, line) {
-  const kids = [h('span', { class: 'v2-arrow', 'aria-hidden': 'true' }, vi('up', 'v2-k'))];
+  const kids = [];
   for (const r of line.runs) {
     // Each run's head and container keyed by the run itself, its key and its run number, since two runs can share
     // "<Phase>-i<n>" (G6's review, round 1).
@@ -3225,7 +3239,8 @@ function renderTimeline(p) {
     whyOnce ? h('p', { class: 'v2-msd gap v2-tonce', key: `whyonce:${b.key}` }, h('b', {}, 'Why'), ` not recorded yet for ${noWhy.length} of ${mss.length} milestones · for the agents to add`) : null,
     b.nowLine ? [
       b.plannedRows.length ? h('div', { class: 'v2-tseg plan', key: `seg:${b.key}:plan` }, b.plannedRows.map(row)) : null,
-      h('p', { class: 'v2-nowl', key: 'nowline', 'data-now': '1' }, h('span', { class: 'v2-nowt' }, b.nowLine.words), ' ',
+      // AC92 (b), from G8: the Now line's mark is the arrow pointing right, centred on the rail, in place of its bar.
+      h('p', { class: 'v2-nowl', key: 'nowline', 'data-now': '1' }, hereMark('r'), h('span', { class: 'v2-nowt' }, b.nowLine.words), ' ',
         h('span', { class: 'v2-nows' }, b.nowLine.sub), b.nowLine.note ? h('span', { class: 'v2-nows' }, ` · ${b.nowLine.note}`) : null)] : null,
     h('div', { class: `v2-tseg${b.plan ? ' plan' : ''}`, key: `seg:${b.key}` }, b.began ? beganNode(b.began) : null, b.rows.map(row)));
   });
@@ -3736,12 +3751,13 @@ function planRow(v, r, ordering, once = null) {
   if (r.waiting) under.push(planYou(r, 'row'));
   const place = h('span', { class: 'v2-plord' }, ordering ? h('span', { 'aria-hidden': 'true' }, r.place) : null,
     h('span', { class: 'sb-vh' }, `${r.placeWords}${moved ? ', moved' : ''}`));
-  const main = h('a', { class: 'v2-plrow', key: `wa-open:${r.key}`, href: planMsRoute(r), onclick: () => { nav.opener = `wa-open:${r.key}`; } },
+  // AC92 (b), from G8: the next-to-reach row has the arrow in the page's margin, level with its icon.
+  const main = h('a', { class: `v2-plrow${r.here ? ' here' : ''}`, key: `wa-open:${r.key}`, href: planMsRoute(r), onclick: () => { nav.opener = `wa-open:${r.key}`; } },
     place, stc(r.icon),
     h('span', { class: 'v2-prt' }, h('span', { class: 'v2-prtt v2-plname' }, r.name),
       h('span', { class: 'v2-mono v2-plm' }, v.many && ordering ? `${r.mono} · ${r.project.name}` : r.mono),
       h('span', { class: 'sb-vh' }, `: ${r.state.words}`)),
-    h('span', { class: `v2-plv${r.right ? ` ${r.right.kind}` : ''}` }, r.right ? r.right.words : null));
+    h('span', { class: `v2-plv${r.right ? ` ${r.right.kind}` : ''}` }, r.right ? r.right.words : null), r.here ? hereMark('r') : null);
   return h('li', { class: `v2-plli${ordering ? ' ord' : ''}${moved ? ' moved' : ''}`, key: `wa-row:${r.key}`, 'data-row': r.code },
     main, under.length ? h('div', { class: 'v2-plunder' }, under) : null,
     ordering ? h('div', { class: 'v2-plmove' }, moveButton(r, -1), moveButton(r, 1)) : null);

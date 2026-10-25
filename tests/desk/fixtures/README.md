@@ -814,3 +814,19 @@ check and the stage-8 guard's `G7_ONCE`) and G7's rewritten cases open the state
   up) and a project whose drawing throws (`BAD_PR`) are as AC88's walk already makes them.
 - **made-up runs** written in `ac92-glance-palette.test.mjs` for a "carried over" milestone in a run now and reached and
   carried-over ones in a run gone back over, each only the shape the desk's timeline gives; **NOT real records**.
+
+## After the glance audit, G8 (2026-10-25, S-001 AC92 (b); AC82, AC83, AC84 and AC86 changed)
+
+G8 adds no fixture file. `tests/desk/ac92-glance-arrow.test.mjs`, G8's walk in `ac88-dark.test.mjs` (the stage-8 guard's
+`G8_ONCE`) and G8's rewritten cases open the states above, with these made-up parts, each **NOT real**, and
+`tests/desk/tools/glance-shots.mjs` captures them (`g8-`):
+- **`nowShared`** (`glance-fixtures.mjs`): the made-up project's docs/PROJECT.md (Service-Desk's section 3 at 3117150, as
+  `fullRepo` copies it) with its lines' sprints changed, so its now run shares its key with later runs: `build`, on `mix`,
+  M2's "PR #44" taken off its line, so run 1's "Build-i1" is now and run 3's "Build-i1" shares the key; `launch`, on
+  `gates`, MD2, MD3, M3A and M3B each given a made-up sprint "PR #90", so run 2's "Launch-i1" is now and runs 3 and 4
+  (P-004's and P-005's "Launch-i1") share the key. **NOT real records.**
+- **`sprintsState`** (`glance-fixtures.mjs`): Personal-Org-Operating-Model's sprints with a made-up open sprint,
+  `docs/sprints/m1.5-made-up.md`, beside the real m1.4 (two open), or m1.4 written `status: closed` (none open).
+  **NOT real records.**
+- **a graduation ruling** written in `ac92-glance-arrow.test.mjs`, `decisions/questions/P-001-graduation.md` ("Ruling:
+  proceed"), so `text`'s Service-Desk is Done, as AC83's Done case makes it. **NOT a real record.**

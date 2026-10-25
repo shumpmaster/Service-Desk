@@ -11,7 +11,8 @@
 // far its row scrolls sideways inside itself, and, where gate titles are drawn (G3, AC91 (h)), how many lines each takes
 // and whether any is cut at its two; and, on a Timeline (G4, AC91 (i)), where the Now line's top rests against a third of
 // the viewport; and, on G5's waits rows (AC89 (c)), the row's words and whether its cut hides any; and, on G6's pages
-// (AC92 (d)), each opened phase's heads and fold rows; and, on G7's (AC92 (a)), how many status marks are green and red.
+// (AC92 (d)), each opened phase's heads and fold rows; and, on G7's (AC92 (a)), how many status marks are green and red;
+// and, on G8's (AC92 (b)), each arrow, its drawing, its size and where it sits against what it points at.
 // G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
 // the screen as it opens (the viewport), not the whole page.
@@ -20,7 +21,7 @@ import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
-import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, ciState, mismatchState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM } from '../glance-fixtures.mjs';
+import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, ciState, mismatchState, nowShared, sprintsState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM } from '../glance-fixtures.mjs';
 import { sdRepo, SD3 } from '../tv2-fixtures.mjs';
 import { CONFIG } from '../helpers.mjs';
 import { waSetup, WORKED } from '../wa-fixtures.mjs';
@@ -139,6 +140,24 @@ const SHOTS = [
   { name: 'g7-brief-cant-show', state: () => { const s = unreadState(); s.repos[MIX_PROJECT].pulls.push(BAD_PR); return s; }, now: NOW, looked: LATE, later: true },
   { name: 'g7-brief-portfolio', state: () => { const p = waSetup({}); p.config = withPortfolio(p.config); addPortfolio(p.repos, pfFiles({})).fail = { state: 'cant-read', reason: 'no-access' }; return p; },
     now: Date.parse('2026-10-22T18:00:00Z'), looked: LATE, polls: 7 },
+  // G8: the arrow at "now" (AC92 (b)) on its five drawings: Home's tiles (`mix`: the made-up project with two "Build-i1"
+  // runs; `nowShared`: its now run sharing its key with later runs, "Build-i1" and "Launch-i1"); a page's strip and an
+  // opened now phase (`text`'s Design; `nowShared`'s Build and Launch, the now run an earlier run of its phase); a v2.5
+  // page's strip, one sprint open and two (none); the Timeline as it opens; and Plan, grouped and in the ordering.
+  { name: 'g8-home-mix', state: () => mixState(), now: NOW, looked: LATE },
+  { name: 'g8-home-now-build', state: () => nowShared('build'), now: NOW, looked: LATE },
+  { name: 'g8-home-now-launch', state: () => nowShared('launch'), now: NOW, looked: LATE },
+  { name: 'g8-home-two-open', state: () => sprintsState(2), now: NOW, looked: LATE },
+  { name: 'g8-page-design', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-phase="Design"] > button'] },
+  { name: 'g8-page-now-build', state: () => nowShared('build'), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}`, click: ['[data-phase="Build"] > button'] },
+  { name: 'g8-page-now-launch', state: () => nowShared('launch'), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}`, click: ['[data-phase="Launch"] > button'] },
+  { name: 'g8-page-v25', state: textState, now: NOW, looked: LATE, hash: `#/p/${POOM.name}` },
+  { name: 'g8-page-v25-two-open', state: () => sprintsState(2), now: NOW, looked: LATE, hash: `#/p/${POOM.name}` },
+  { name: 'g8-timeline', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}`, then: `#/p/${SD.name}/timeline`, viewport: true },
+  { name: 'g8-timeline-now-launch', state: () => nowShared('launch'), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}`, then: `#/p/${MIX_PROJECT}/timeline`, viewport: true },
+  { name: 'g8-plan-mix', state: () => mixState(), now: NOW, looked: LATE, hash: '#/work' },
+  { name: 'g8-plan-now-launch', state: () => nowShared('launch'), now: NOW, looked: LATE, hash: '#/work' },
+  { name: 'g8-plan-ordering', state: () => mixState(), now: NOW, looked: LATE, hash: '#/work', click: ['[data-k="plan-order"]'] },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {
@@ -279,9 +298,37 @@ async function main() {
             }
             return `${g} green, ${r} red`;
           });
+          // G8 (AC92 (b)): each arrow, its drawing, its box and where it sits against what it points at.
+          const arrows = await page.evaluate(() => [...document.querySelectorAll('.v2-here')].map((a) => {
+            const b = a.getBoundingClientRect();
+            const box = `${Math.round(b.width)}×${Math.round(b.height)}`;
+            const mid = (r) => r.top + r.height / 2;
+            const p = a.parentElement;
+            const hidden = a.closest('[aria-hidden="true"]') ? 'hidden' : 'NOT hidden';
+            if (p.classList.contains('v2-nowl')) {
+              // The rail: the run's segment's line (`.v2-tseg::before`).
+              const seg = p.closest('.v2-tblk') && p.closest('.v2-tblk').querySelector('.v2-tseg');
+              const rr = seg ? getComputedStyle(seg, '::before') : null;
+              const rx = seg ? seg.getBoundingClientRect().left + parseFloat(rr.left) + parseFloat(rr.width) / 2 : NaN;
+              return `Timeline ${box}, centre x ${(b.left + b.width / 2 - rx).toFixed(1)} px off the rail's, ${hidden}`;
+            }
+            if (p.classList.contains('v2-ph')) {
+              const bar = p.querySelector('.v2-bar3').getBoundingClientRect();
+              return `strip ${box}, centre ${Math.round(b.left + b.width / 2 - (bar.left + bar.width / 2))} px off the bar's, ${Math.round(bar.top - b.bottom)} px above it, ${hidden}`;
+            }
+            if (p.classList.contains('v2-c')) {
+              const i = p.querySelector('.v2-s').getBoundingClientRect();
+              return `tile ${box}, ${Math.round(i.left - b.right)} px left of the icon, centre ${Math.round(mid(b) - mid(i))} px off its, ${hidden}`;
+            }
+            const i = p.querySelector('.v2-s').getBoundingClientRect();
+            if (p.classList.contains('v2-plrow')) return `Plan ${box}, x ${Math.round(b.left)}–${Math.round(b.right)}, centre ${Math.round(mid(b) - mid(i))} px off the icon's, ${hidden}`;
+            const line = p.closest('.v2-stdl');
+            const lx = line ? line.getBoundingClientRect().left + parseFloat(getComputedStyle(line, '::before').left) + 0.5 : NaN;
+            return `opened phase ${box}, centre x ${Math.round(b.left + b.width / 2 - lx)} px off the line's, centre ${Math.round(mid(b) - mid(i))} px off the icon's, ${hidden}`;
+          }));
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}`);
           await ctx.close();
         }
       }

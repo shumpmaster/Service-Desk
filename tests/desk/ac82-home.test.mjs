@@ -277,6 +277,16 @@ test('AC82: each tile, top to bottom (frame H5) — Service-Desk (a second run, 
     const cellIcons = ['Service-Desk', 'Alpha'].flatMap((n) => findAll(keyed(app, `card:${n}`), (e) => e.tag === 'svg' && e.parent && / v2-c /.test(` ${e.parent.className} `)).map((x) => x.getAttribute('class')));
     assert.ok(cellIcons.some((c) => / st-pastcheck /.test(` ${c} `)), JSON.stringify(cellIcons));
     for (const c of cellIcons) assert.equal(/ ok /.test(` ${c} `), / st-check /.test(` ${c} `), `${c}: green only on a reached check`);
+    // Rewritten in G8 (AC92 (b): "a Home tile's drawing: a 6 × 8 px triangle pointing right, 3 px left of the now phase run's
+    // icon; on a v2.5 tile, of the open sprint's"): each tile's drawing has one arrow, in its now cell, after the cell's icon,
+    // hidden (its size and place in the cascade: tests/desk/ac92-glance-arrow.test.mjs).
+    for (const n of ['Service-Desk', 'Alpha', 'Delta']) {
+      const here = findAll(keyed(app, `card:${n}`), (e) => / v2-here /.test(` ${e.className} `));
+      assert.equal(here.length, 1, `${n}: one arrow on its drawing`);
+      assert.deepEqual([here[0].tag, here[0].className, here[0].attrs['aria-hidden']], ['span', 'v2-here r', 'true'], n);
+      assert.match(here[0].parent.className, /^v2-c .* s-now\b/, `${n}: in the now cell`);
+      assert.equal(here[0].parent.children[here[0].parent.children.length - 1], here[0], `${n}: after the cell's icon`);
+    }
     assert.deepEqual(lines('Delta'), ['Now: sprint m1.4 · older pipeline: sprints, not phases', 'No dispatch log: not used here', 'Next: sprint m1.4 · no estimate filed']);
     for (const n of ['Service-Desk', 'Alpha', 'Delta']) {
       assert.equal(byClass(keyed(app, `card:${n}`), 'sb-bubble').length + findAll(keyed(app, `card:${n}`), (e) => e.attrs && e.attrs['aria-label'] === 'Latest').length, 0, `${n}: no "Latest"`);

@@ -121,9 +121,9 @@ export function phaseLine(ctx, opts = {}) {
 /**
  * The phase strip: Discovery, Design, Build and Launch left to right, each { phase, cls, icon, bar
  * ('solid' | 'dashed'), words, now }: "finished", "run <k> · now", "run <k> gone back over · run <k+1>
- * ahead", "planned", or "not recorded" (AC57's states, J11). Done is not a column. A v2.5 project's
- * strip holds its last four sprints instead, "closed" or "open" (frame 8; J9). Untracked: { tracked:
- * false, words }.
+ * ahead", "planned", or "not recorded" (AC57's states, J11); `here` marks the cell the arrow points down at (AC92 (b),
+ * from G8). Done is not a column. A v2.5 project's strip holds its last four sprints instead, "closed" or "open" (frame
+ * 8; J9), `here` on the open one where one alone is open. Untracked: { tracked: false, words }.
  */
 export function phaseStrip(ctx, snap) {
   const { project, pv } = ctx;
@@ -131,7 +131,7 @@ export function phaseStrip(ctx, snap) {
     const s = sprintStrip(snap);
     if (!s.tracked) return { tracked: false, words: s.words };
     const W = { now: 'open', done: 'closed', unrec: 'not read yet' };
-    return { tracked: true, sprints: true, cells: s.rows[0].cells.map((c) => ({ phase: c.id, cls: null, icon: c.icon, bar: 'solid', words: W[c.state], now: c.state === 'now' })) };
+    return { tracked: true, sprints: true, cells: s.rows[0].cells.map((c) => ({ phase: c.id, cls: null, icon: c.icon, bar: 'solid', words: W[c.state], now: c.state === 'now', here: c.here })) };
   }
   if (!ctx.tl || !pv || !pv.tracked) return { tracked: false, words: pv && pv.why ? pv.why : 'Phases not tracked' };
   const cells = DESK_PHASES.map((phase) => {
@@ -141,7 +141,8 @@ export function phaseStrip(ctx, snap) {
     if (!ctx.now || !runs.length) return cell;
     const st = (r) => ctx.state.get(r);
     const nowRun = runs.find((r) => st(r) === 'now');
-    if (nowRun) return { ...cell, icon: 'half', bar: 'solid', words: `run ${ctx.cols.k.get(nowRun)} · now`, now: true };
+    // AC92 (b), from G8: `here`, the cell the arrow points down at, the phase holding the now run itself.
+    if (nowRun) return { ...cell, icon: 'half', bar: 'solid', words: `run ${ctx.cols.k.get(nowRun)} · now`, now: true, here: nowRun === ctx.now };
     const latest = runs[runs.length - 1];
     if (st(latest) === 'still to come') {
       const before = runs.filter((r) => st(r) !== 'still to come');
@@ -440,7 +441,8 @@ function stdRow(ctx, run, s, old) {
  *   in place of an earlier run's gathered line ("Design-2 to Design-5 · not recorded, or no record in the model");
  *   skipped, not-needed and taken-on rows stay listed. From G5 (AC92 (c)), a milestone's row
  *   with sprints drawn under it on the Timeline adds them after its state words, in the one sprint form ("work filed · 1
- *   sprint · 1 merged");
+ *   sprint · 1 merged"). From G8 (AC92 (b)), in the now phase only, the now run's next-to-reach row carries `here`, the
+ *   arrow on the phase's thin line beside it;
  * - whyOnce: where at least one of the phase's standard milestones has no why written yet, the one
  *   line saying so (P-001-why-line.md, A).
  * The head's sums are { R, T } over the phases. `finishOf(code)` gives AC24's rough finish for one of the project's own
@@ -467,6 +469,7 @@ export function milestonesByPhase(ctx, { finishOf = null, bandOf = null, ruled =
       else if (st(latest) === 'still to come') word = runs.some((r) => st(r) !== 'still to come') ? `run ${ctx.cols.k.get(latest)} ahead` : 'planned';
       else if (st(latest) === 'finished') word = 'finished';
     }
+    const nowPhase = word.endsWith('· now');
     // The two lines of detail (AC92 (c)).
     const counts = phaseCounts(ctx, phase, feed);
     const ids = STANDARD_MILESTONES.filter((m) => m[1] === phase).map((m) => m[0]);
@@ -476,7 +479,10 @@ export function milestonesByPhase(ctx, { finishOf = null, bandOf = null, ruled =
       const k = ctx.cols.k.get(r);
       const band = bandOf ? bandOf(r) : null;
       const head = `Run ${k} · ${band && band.label ? band.label : st(r) === 'still to come' ? 'planned' : ({ now: 'now', finished: 'finished', 'gone back over': 'gone back over' }[st(r)] || NOT_RECORDED)}`;
-      const ownRows = [...r.project].sort((a, b) => a.lineno - b.lineno).map((m) => withSprints(ownRow(ctx, r, m, isLatest ? finishOf : null, !isLatest), r)).reverse();
+      // AC92 (b), from G8: in the now phase only, the now run's next-to-reach row (AC57's rule 2, which holds only in the now
+      // run) takes `here`, the arrow on the phase's thin line beside it; the run is the run itself, never its key.
+      const here = (x) => (nowPhase && r === ctx.now && x.rule === 2 ? { ...x, here: true } : x);
+      const ownRows = [...r.project].sort((a, b) => a.lineno - b.lineno).map((m) => here(withSprints(ownRow(ctx, r, m, isLatest ? finishOf : null, !isLatest), r))).reverse();
       const stdRows = r.standard.map((s) => withSprints(stdRow(ctx, r, s, !isLatest), r));
       // AC92 (d), from G6: every run, earlier ones included, takes the two heads; the standard rows not tracked in that run
       // ("not recorded yet", or "no record for this in the model yet") fold into one row, listed in place on a tap.
@@ -488,7 +494,7 @@ export function milestonesByPhase(ctx, { finishOf = null, bandOf = null, ruled =
     });
     const noWhy = ids.some((id) => !(ctx.standard[id] && ctx.standard[id].why));
     const whyOnce = noWhy ? `Why each is taken on or skipped: not written yet. ${project.name}'s Chief of Staff writes its lines${ruled ? ' (your ruling, P-001-standard-milestones)' : ''}.` : null;
-    return { phase, cls: PHASE_CLASS[phase], word, now: word.endsWith('· now'), counts, detail: countLines(counts), runs: runViews, whyOnce };
+    return { phase, cls: PHASE_CLASS[phase], word, now: nowPhase, counts, detail: countLines(counts), runs: runViews, whyOnce };
   });
   const sum = { R: lines.reduce((a, l) => a + l.counts.R, 0), T: lines.reduce((a, l) => a + l.counts.T, 0) };
   return { tracked: true, n: STANDARD_TOTAL, sum, lines };

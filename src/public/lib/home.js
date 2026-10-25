@@ -396,8 +396,8 @@ const STATE = { filled: 'done', light: 'gone', gold: 'now', half: 'now', todo: '
  * row per run, a cell for each of Discovery, Design, Build, Launch and Done, each phase's name once
  * under the rows (the now phase's in bold), each cell's icon, its line solid or dashed, a later run
  * dropping from the phase it went back to; and one sentence carrying it. `gatePhase`: the phase
- * whose gate card waits on the owner, or null (the vermilion ◆). Returns { tracked, rows, labels,
- * words } or { tracked: false, words }.
+ * whose gate card waits on the owner, or null (the vermilion ◆). From G8 (AC92 (b)), the now run's own cell carries
+ * `here`, the arrow 3 px left of its icon. Returns { tracked, rows, labels, words } or { tracked: false, words }.
  */
 export function tileTimeline(ctx, gatePhase = null) {
   const { project, pv } = ctx;
@@ -410,7 +410,9 @@ export function tileTimeline(ctx, gatePhase = null) {
     const cells = PHASES.map((phase) => {
       const d = shape.dots.find((x) => x.k === k && x.phase === phase);
       if (!d) return null;
-      return { phase, cls: PHASE_CLASS[phase], icon: ICON[d.mark] || 'unrec', state: STATE[d.mark] || 'unrec' };
+      // AC92 (b), from G8: `here`, the cell the arrow points at, is the now run's own dot, found by the run itself, never by
+      // its key ("<Phase>-i<n>", which two runs can share).
+      return { phase, cls: PHASE_CLASS[phase], icon: ICON[d.mark] || 'unrec', state: STATE[d.mark] || 'unrec', here: Boolean(ctx.now && d.run === ctx.now) };
     });
     rows.push({ k, label: `run ${k}`, cells });
   }
@@ -514,6 +516,9 @@ export function sprintStrip(snap) {
   });
   cells.forEach((c, i) => { c.l = i > 0; c.r = i < cells.length - 1; c.cls = null; });
   const open = cells.filter((c) => c.state === 'now');
+  // AC92 (b), from G8: the arrow points at the open sprint, where one alone is open; with two or more, which is now is
+  // unclear (the page says "Which sprint is open is unclear."), so it points at none.
+  cells.forEach((c) => { c.here = open.length === 1 && c === open[0]; });
   const closed = cells.filter((c) => c.state === 'done');
   const unread = cells.filter((c) => c.state === 'unrec');
   const words = [closed.length ? `${joinAnd(closed.map((c) => c.id))} closed` : null, open.length ? `${joinAnd(open.map((c) => c.id))} open` : null,

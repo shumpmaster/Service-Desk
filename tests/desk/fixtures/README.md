@@ -991,3 +991,25 @@ these made-up parts, each **NOT real**:
 - **made-up sprint views** (`ac92-glance-boxes.test.mjs`, its pure case for the tally's sprints): two runs' blocks drawing
   "PR #1" in each, a pull request not read ("PR #2"), a pipeline item ("P-003") and one named by its pull request ("PR #4"),
   so a sprint drawn twice counts once. **NOT real records.**
+
+## After the glance audit, G9b (2026-10-25, S-001 AC91 (c) and AC82 changed, AC80, AC89 (a) and AC91 (f) noted; the owner's ruling of 2026-10-25, "Ruling: A", decisions/questions/P-001-glance-checking-line.md)
+
+G9b adds no fixture file. `tests/desk/ac91-g9b-checking-line.test.mjs` (its pure cases of home.js's `titleLine` and its
+screen cases on Home and Waiting), G9b's walk over `G9B_OPENS` in `ac88-dark.test.mjs` (AC92 (a)'s cascade check, whose
+want-list gains the line under the title as a grey place, and the stage-8 guard, with no exception added: no CSS changed,
+so there is no `G9B_ONCE`) and the `g9b-` captures open the states above (`unread`, `signedOutState`,
+`signedOutMixedState`, `openingState`, `orderState`, `blobFailState`, as they are) and these made-up parts, each **NOT real**:
+- **`failedHeldState`** (`glance-fixtures.mjs`): `mix` with three projects, each first read in its own state: the made-up
+  project's failing from the start (the fake desk's network cause), Service-Desk's held pending (its calls wait on a
+  promise, fake-desk.mjs's `hold`) and Personal-Org-Operating-Model read (poom/'s placeholder form); `release()` lets the
+  held read answer and `mend()` lets the made-up project's reads succeed. **NOT real records, NOT how any read failed or
+  went.**
+- **`G9B_OPENS`** (`glance-fixtures.mjs`): Home and Waiting with every project shown on `failedHeldState` (one first read
+  failed, one on its way), on `orderState` (every first read failed, nothing waiting) and on `signedOutState` refused from
+  the start (no read before the sign-out); and Waiting with Service-Desk alone shown on `failedHeldState` (its own first read
+  on its way beside the made-up project's failed one); each with "last looked" after the records' dates (G8c's `g8cStore`).
+  **NOT real records or failures.**
+- **two held reads** (`ac91-g9b-checking-line.test.mjs`, AC91 (f)'s lanes and strip kept): `failedHeldState` with
+  Personal-Org-Operating-Model's first read held too, so no project is read; **a reader that never answers**, Service-Desk's
+  calls on `mix` left unanswered for 3 minutes in view (as ac89-after-md3.test.mjs's `hang`); and **reads made to work
+  again**, the made-up project's failure removed on `orderState`. **NOT how any read went.**

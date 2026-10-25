@@ -26,7 +26,7 @@ import {
 } from './lib/sandbox.js';
 import { teamView, memberPage, workingNow, summarySheet, cosWorkingNow, cosPieceOf, cosPieceWords } from './lib/sandbox.js';
 import { summaryView, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
-import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits, tileFoot, atWorkParts, sinceUnreadWords, sinceMissingLines, unreadLines, WHY_BACK_ONCE, nowOwnPart } from './lib/home.js';
+import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits, tileFoot, atWorkParts, sinceUnreadWords, sinceMissingLines, unreadLines, WHY_BACK_ONCE, nowOwnPart, titleLine } from './lib/home.js';
 import { GATE_PHASE } from './lib/j11.js';
 import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, gateOpening, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
@@ -712,10 +712,22 @@ function stalestRead() {
   if (!times.length || times.some((x) => x == null)) return null;
   return Math.min(...times);
 }
-function homeChecked() {
-  const t = stalestRead();
-  return t == null ? HOME_WORDS.checking : `checked ${durationText(Math.max(0, Date.now() - t))} ago`;
+/**
+ * The line under Home's title and, with every project shown, Waiting's (AC82's rule; AC80), from stage G9b (AC91 (c); the
+ * owner's "Ruling: A", decisions/questions/P-001-glance-checking-line.md): home.js's `titleLine` over each connected
+ * project, its read as this draw's box has it (the read Home's and Waiting's other can't-read words take, a project the desk
+ * can't draw by its read alone) and the reader's state (`readInOpening`, `lastSuccessAt`), so "Not read in this opening"
+ * while any project's first read has failed and, else, the words as built. No read added (A3).
+ */
+function titleReads(built) {
+  const states = DESK && DESK.states ? [...DESK.states.entries()] : [];
+  return states.map(([name, st]) => {
+    const b = (built || []).find((x) => x.project.name === name);
+    return { read: b && b.box && b.box.read ? b.box.read.read : null, succeeded: readInOpening(name), lastSuccessAt: st.lastSuccessAt };
+  });
 }
+const homeChecked = (built) => () => titleLine({ reads: titleReads(built), nowMs: Date.now() });
+const waitingChecked = (built) => () => titleLine({ reads: titleReads(built), nowMs: Date.now(), waiting: true });
 
 /**
  * The briefing (AC82, frames H1 and H3): one block, a tap anywhere on it opening Waiting. From stage G8c, `built` comes in
@@ -1069,7 +1081,7 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
   const pf = portfolioOf(built);
   const body = [
     h('header', { class: 'v2-top' }, h('h1', { class: 'v2-title' }, HOME_WORDS.title)),
-    h('p', { class: 'v2-sub', key: 'home-checked', live: homeChecked }),
+    h('p', { class: 'v2-sub', key: 'home-checked', live: homeChecked(built) }),
     // AC75: "Notifications" on Home's top line until notifications are on for this device; its control is also in the fold at the foot.
     onTopLine(notifyState(notifyEnv())) ? notifyNode(true) : null,
     briefingNode(desk, tileOrdered, bd),
@@ -2117,7 +2129,11 @@ function withPortfolio(s, boxes, signedOut) {
   return portfolioScreenState(boxes, signedOut, lastPf, lastPf.cards.length);
 }
 
-/** "checked <age> ago" (AC80; AC82's rule): from the stalest project's last successful read. */
+/**
+ * "checked <age> ago" (AC80; AC82's rule): from the stalest project's last successful read. From stage G9b only a project's
+ * page's "Nothing waiting on you" row takes it, its words unchanged (AC91 (c)); Waiting's line under the title, with every
+ * project shown, takes `titleLine` (waitingChecked, above).
+ */
 function checkedWords() {
   const states = DESK && DESK.states ? [...DESK.states.values()] : [];
   const times = states.map((s) => s.lastSuccessAt);
@@ -2552,7 +2568,7 @@ function renderWaiting(bd, built, only, sheetId) {
   const one = name ? bd.one : null;
   const body = [
     h('header', { class: 'v2-top' }, h('h1', { class: 'v2-title' }, 'Waiting')),
-    h('p', { class: 'v2-sub', live: one ? () => one.under(Date.now()) : checkedWords })];
+    h('p', { class: 'v2-sub', live: one ? () => one.under(Date.now()) : waitingChecked(built) })];
   if (name) {
     body.push(h('div', { class: 'v2-filter', key: 'filter' }, h('span', { class: 'v2-chip' }, vi('proj'), h('span', {}, name),
       h('button', { type: 'button', class: 'v2-x', key: 'chip-x', 'aria-label': 'Show all projects', onclick: () => nav.replace('#/waiting') }, vi('x'))),

@@ -74,7 +74,10 @@ test('AC15: package.json has no dependency block or lifecycle script, wrangler p
   for (const s of ['preinstall', 'install', 'postinstall', 'preprepare', 'prepare', 'postprepare', 'prepack', 'postpack',
     'prepublish', 'prepublishOnly', 'publish', 'postpublish']) assert.ok(!(s in pkg.scripts), s);
   assert.deepEqual(pkg.devDependencies, { wrangler: '4.148.0' });
-  assert.equal(pkg.scripts.test, 'node --test ../tests/desk/');
+  // From G9's round 2: each test file in its own process (Node's default for named files), not every file in one, where
+  // every page load stays in memory and the suite outgrew the default heap (specs/S-001.md, Known limits, after the glance
+  // audit, 1).
+  assert.equal(pkg.scripts.test, 'node --test ../tests/desk/*.test.mjs');
   assert.ok(pkg.scripts.build);
   const lock = JSON.parse(readFileSync(join(SRC, 'package-lock.json'), 'utf8'));
   assert.equal(lock.packages['node_modules/wrangler'].version, '4.148.0');

@@ -107,12 +107,16 @@ async function markDoneInSheet(app, id) {
 // Rewritten in G2 (AC91 (f); AC80's note "After the glance audit": "two lanes, "Waiting on you" and "Done · last 24 h", of
 // equal width, with Kicked back as a strip above them and Done shaded"; P-001-glance-lanes.md, C): the lanes' order,
 // headings, counts and empty words, with the strip in place of the middle lane; the cards' part unchanged.
-test('AC80, rewritten in G2 (AC91 (f)): two lanes, left to right, "Waiting on you" and "Done · last 24 h", their counts and empty words, with Kicked back a strip above them reading "Kicked back · none"; version 5\'s eight cards, each its kind line, meta, lock or clock line and one step', async () => {
+// Rewritten in QW1 (AC94; AC80's note "After the questions request": "the owner's questions leave the lanes and the strip
+// for the "Questions for you" section above the quiet lines, grouped by project … the lane's and its groups' counts count
+// the cards left in the lane"): version 5's three questions are in the section, each its kind line, meta, clock line and
+// "More about it ›" to its sheet; the lane and its group count the five pull requests; the badge still counts all eight.
+test('AC80, rewritten in G2 (AC91 (f)) and in QW1 (AC94): two lanes, left to right, "Waiting on you" and "Done · last 24 h", their counts and empty words, with Kicked back a strip above them reading "Kicked back · none"; version 5\'s eight cards, each its kind line, meta, lock or clock line and one step, its three questions in the "Questions for you" section above the quiet lines', async () => {
   const { app } = await openExample();
   try {
     const lanes = byClass(byClass(app.view, 'v2-lanes')[0], 'v2-lane');
     assert.deepEqual(lanes.map((l) => l.dataset.lane), ['wait', 'done']);
-    assert.deepEqual(lanes.map((l) => byClass(l, 'v2-lh')[0].textContent), ['Waiting on you8', 'Done · last 24 h']);
+    assert.deepEqual(lanes.map((l) => byClass(l, 'v2-lh')[0].textContent), ['Waiting on you5', 'Done · last 24 h']);
     assert.equal(byClass(lane(app, 'wait'), 'v2-empty').length, 0);
     assert.equal(byClass(lane(app, 'done'), 'v2-empty')[0].textContent, 'Hold a card and drag it here');
     // Kicked back: no column, a strip above the lanes, under the quiet lines, its one quiet line with no count, no
@@ -121,22 +125,32 @@ test('AC80, rewritten in G2 (AC91 (f)): two lanes, left to right, "Waiting on yo
     const at = (cls) => board.findIndex((c) => c.className.split(' ').includes(cls));
     assert.equal(at('v2-kstrip'), at('v2-lanes') - 1, 'directly above the lanes');
     assert.ok(at('v2-quiet') < at('v2-kstrip'), 'under the quiet lines');
+    assert.equal(at('v2-qsec'), at('v2-sub') + 1, 'QW1: the section under the title and its line, above the quiet lines (none here) and the strip');
+    assert.ok(at('v2-qsec') < at('v2-kstrip'));
     assert.equal(lane(app, 'kick').textContent, 'Kicked back · none');
     assert.equal(findAll(lane(app, 'kick'), (e) => ['button', 'a', 'svg'].includes(e.tag)).length, 0, 'no control and no fold mark');
     // In each lane, a project's cards under its name, a folder icon and its count; no card repeats the name.
     const grp = keyed(app, 'grp:wait:Example');
-    assert.equal(grp.textContent, 'Example8');
+    assert.equal(grp.textContent, 'Example5');
     assert.equal(grp.attrs['aria-label'], 'Show only Example');
     const want = [
       ['Pull request', 'Merge: the first rough estimates', '#126 · R0 · 3 h 21 m', null, 'Merge ↗', 'https://github.com/shumpmaster/Example/pull/126'],
       ['Pull request', 'Merge: your later-work list', '#127 · R0 · 3 h 11 m', null, 'Merge ↗', 'https://github.com/shumpmaster/Example/pull/127'],
       ['Pull request', 'Merge: Work ahead (M3A)', '#128 · R0 · 3 h 1 m', null, 'Merge ↗', 'https://github.com/shumpmaster/Example/pull/128'],
-      ['Question', "How should a question's card fill in your answer?", 'MD2 · 2 h 54 m', 'Settles as C · Wed 13:07', 'Answer', `#/waiting/card/${encodeURIComponent(Q('P-001-board-answer'))}`],
-      ['Question', 'How long do finished cards stay in Done?', 'MD2 · 1 h 1 m', 'Settles as B · Wed 15:00', 'Answer', `#/waiting/card/${encodeURIComponent(Q('P-001-board-done-keep'))}`],
       ['Pull request', 'Make two notification files high-risk', '#130 · R3 · 51 m', null, 'Verdict ↗', null],
       ['Pull request', "Show the automatic job's pull requests as being recorded", '#135 · R3 · 36 m', null, 'Verdict ↗', null],
-      ['Question', 'Approve the new wording of M3A, the Work ahead milestone?', 'M3A · 21 m', 'Settles as A · Wed 15:40', 'Answer', `#/waiting/card/${encodeURIComponent(Q('P-001-m3a-done-when'))}`],
     ];
+    // QW1 (AC94): the questions, in the section in AC80's lane order, each "More about it ›" opening its sheet.
+    const inSection = [
+      ['Question', "How should a question's card fill in your answer?", 'MD2 · 2 h 54 m', 'Settles as C · Wed 13:07', 'More about it ›', `#/waiting/card/${encodeURIComponent(Q('P-001-board-answer'))}`],
+      ['Question', 'How long do finished cards stay in Done?', 'MD2 · 1 h 1 m', 'Settles as B · Wed 15:00', 'More about it ›', `#/waiting/card/${encodeURIComponent(Q('P-001-board-done-keep'))}`],
+      ['Question', 'Approve the new wording of M3A, the Work ahead milestone?', 'M3A · 21 m', 'Settles as A · Wed 15:40', 'More about it ›', `#/waiting/card/${encodeURIComponent(Q('P-001-m3a-done-when'))}`],
+    ];
+    const qcards = byClass(keyed(app, 'qsec'), 'v2-card');
+    assert.deepEqual(qcards.map((c) => [byClass(c, 'v2-kd')[0].textContent, byClass(c, 'v2-t')[0].textContent, byClass(c, 'v2-m')[0].textContent,
+      (byClass(c, 'v2-mk')[0] || { textContent: null }).textContent, byClass(c, 'v2-step')[0].textContent]), inSection.map((w) => w.slice(0, 5)));
+    for (const [i, c] of qcards.entries()) assert.equal(byClass(c, 'v2-step')[0].attrs.href, inSection[i][5], inSection[i][1]);
+    for (const c of qcards) assert.equal(byClass(byClass(c, 'v2-kd')[0], 'v2-k').length, 1);
     const got = cardsIn(app, 'wait').map((c) => [byClass(c, 'v2-kd')[0].textContent, byClass(c, 'v2-t')[0].textContent, byClass(c, 'v2-m')[0].textContent,
       (byClass(c, 'v2-mk')[0] || { textContent: null }).textContent, byClass(c, 'v2-step')[0].textContent]);
     assert.deepEqual(got, want.map((w) => w.slice(0, 5)));

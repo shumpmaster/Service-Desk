@@ -26,8 +26,9 @@ export const PAGE_WORDS = Object.freeze({
   overview: 'Overview',
   timeline: 'Timeline',
   // AC92 (c), from G5: "Milestones by phase · <R> of <T> reached", R and T summed over the phases, in place of "yours and
-  // the model's <n>"; with nothing tracked, the head alone, never a count the records don't give.
-  milestonesHead: (c) => (c ? `Milestones by phase · ${c.R} of ${c.T} reached` : 'Milestones by phase'),
+  // the model's <n>"; where T sums to 0, "Milestones by phase · none tracked yet", never "0 of 0" (G5's review, round 1,
+  // note 2); where the phases aren't tracked (no sums), the head alone, never a count the records don't give.
+  milestonesHead: (c) => (!c ? 'Milestones by phase' : c.T ? `Milestones by phase · ${c.R} of ${c.T} reached` : 'Milestones by phase · none tracked yet'),
   startFoot: '↑ start at the foot',
   rest: 'The rest',
   values: 'Value targets',
@@ -262,9 +263,20 @@ export function sprintsWords(c) {
   return `${c.s} sprint${c.s === 1 ? '' : 's'} · ${parts.length ? parts.join(', ') : 'none merged yet'}`;
 }
 
+/**
+ * The Timeline's block for one run (feed.js, feedView), or null: the block drawn for that very run, and only where none is
+ * (a run from another reading of the records) the block whose key, "<Phase>-i<n>", is the run's. Two runs can share a key
+ * (a project's first item's run and a later item's, as `mix`'s made-up project has two "Build-i1" runs), so the key
+ * alone can give the other run's block (G5's review, round 1, B1).
+ */
+export function blockOf(feed, run) {
+  if (!feed || !feed.ok || !run) return null;
+  return feed.blocks.find((x) => x.run === run) || feed.blocks.find((x) => x.key === `${run.phase}-i${run.iteration}`) || null;
+}
+
 /** Every sprint view the Timeline draws in one run's block: under its milestones (their plan lists and `Milestone:` lines) and "Not tied to a milestone". */
 export function runSprintViews(feed, run) {
-  const b = feed && feed.ok ? feed.blocks.find((x) => x.run === run || x.key === `${run.phase}-i${run.iteration}`) : null;
+  const b = blockOf(feed, run);
   if (!b) return [];
   return [...(b.plannedRows || []), ...b.rows].flatMap((row) => [...(row.sprints || []), ...(row.named || [])]);
 }
@@ -272,7 +284,7 @@ export function runSprintViews(feed, run) {
 /** The sprints the Timeline draws under one milestone in one run (its fold's, AC84): { s, m, w }, or null where the Timeline isn't drawn. */
 export function milestoneSprints(feed, run, id) {
   if (!feed || !feed.ok) return null;
-  const b = feed.blocks.find((x) => x.run === run || x.key === `${run.phase}-i${run.iteration}`);
+  const b = blockOf(feed, run);
   const row = b ? [...(b.plannedRows || []), ...b.rows].find((x) => x.kind === 'ms' && x.code === id) : null;
   return sprintCount(row ? row.sprints : []);
 }

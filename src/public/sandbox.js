@@ -39,7 +39,7 @@ import { V25_RULING_NOTE } from './lib/links.js';
 import { runsContext, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, itemFeeds,
   stalledLine, deployRows, FEED_ICONS_KEY, doneTarget, JOB_MERGE_WORDS, ESTIMATE_MERGE_WORDS } from './lib/feed.js';
 import { WA, DRAFT_KEY, todayOf, groupOnce } from './lib/workahead.js';
-import { PAGE_WORDS, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, restRows, v25Rows, finishWords, sprintCount, sprintsWords, ciPassed } from './lib/projectpage.js';
+import { PAGE_WORDS, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, restRows, v25Rows, finishWords, sprintCount, sprintsWords, ciPassed, blockOf } from './lib/projectpage.js';
 import { topLine } from './lib/versions.js';
 import { portfolioView, PF_ROWS, PF_WORDS, cardMilestone, portfolioScreenState, portfolioRead, portfolioCards, ideasView, rareLine, noteIdeas, ideaEvents, SEEN_IDEAS_KEY, PF_BOARD, PF_LABEL } from './lib/portfolio.js';
 import { workAheadView, readDraft } from './lib/workview.js';
@@ -1209,8 +1209,10 @@ function bandLookup(p) {
   } catch {
     fv = null;
   }
+  // The run's own block first, its key only where none is (G5's review, round 1: two runs can share a key, so the key
+  // alone gave an earlier run gone back over the band of a later run still to come, "Run 1 · planned").
   return (r) => {
-    const b = fv && fv.ok ? fv.blocks.find((x) => x.key === `${r.phase}-i${r.iteration}`) : null;
+    const b = blockOf(fv, r);
     return b ? b.band : null;
   };
 }

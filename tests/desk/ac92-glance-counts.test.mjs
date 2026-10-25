@@ -21,12 +21,12 @@ import { join } from 'node:path';
 import { SRC } from './helpers.mjs';
 import { loadSandbox, byClass, findAll } from './sandbox-helpers.mjs';
 import { j77Files, snapOf, SD, TZ } from './wa-fixtures.mjs';
-import { textState, mixState, NOW, LATER_LAUNCH_LINES, laterLaunchLog } from './glance-fixtures.mjs';
+import { textState, mixState, MIX_PROJECT, NOW, LATER_LAUNCH_LINES, laterLaunchLog } from './glance-fixtures.mjs';
 import { pullsAnswer } from './j12-fixture.mjs';
 import { STANDARD_MILESTONES, NOT_RECORDED_IDS } from '../../src/lib/timeline.js';
 import { j11Records, timelineOf, phaseView } from '../../src/lib/sandbox.js';
 import { runsContext, feedView } from '../../src/lib/feed.js';
-import { phaseCounts, countLines, sprintCount, sprintsWords, milestonesByPhase, milestoneSprints, standardClass, modelRecords, detailLines, ciPassed, ciWords, PAGE_WORDS } from '../../src/lib/projectpage.js';
+import { phaseCounts, countLines, sprintCount, sprintsWords, milestonesByPhase, milestoneSprints, runSprintViews, blockOf, standardClass, modelRecords, detailLines, ciPassed, ciWords, PAGE_WORDS } from '../../src/lib/projectpage.js';
 import { reduceWorkflowRuns, ciCounts } from '../../src/lib/records.js';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 
@@ -176,6 +176,61 @@ test('AC92 (c): the one sprint form — "<s> sprints · <m> merged, <w> not read
   assert.equal(phaseCounts(ctx, 'Launch', feed).sprints.s, 0, 'a phase with no runs: no sprints');
   assert.equal(phaseCounts(ctx, 'Build', null).sprints, null, 'no Timeline drawn: no count');
   assert.equal(sprintsWords(null), 'sprints not available', 'and in words, never a 0');
+});
+
+// Added after G5's review, round 1, note 2 (AC92 (c)'s head, the Definer's note: "where T sums to 0, "Milestones by phase ·
+// none tracked yet", never "0 of 0""): the head's three forms, and the sums of a made-up project with nothing counted.
+test('AC92 (c) (G5\'s review, note 2): the section\'s head — "Milestones by phase · <R> of <T> reached"; "Milestones by phase · none tracked yet" where every phase\'s T sums to 0, never "0 of 0 reached"; "Milestones by phase" alone where the phases aren\'t tracked', async () => {
+  assert.equal(PAGE_WORDS.milestonesHead({ R: 3, T: 5 }), 'Milestones by phase · 3 of 5 reached');
+  assert.equal(PAGE_WORDS.milestonesHead({ R: 0, T: 1 }), 'Milestones by phase · 0 of 1 reached');
+  assert.equal(PAGE_WORDS.milestonesHead({ R: 0, T: 0 }), 'Milestones by phase · none tracked yet');
+  assert.equal(PAGE_WORDS.milestonesHead(null), 'Milestones by phase');
+  // A made-up context (NOT real) with runs in every phase and nothing counted: the sums are { R: 0, T: 0 }.
+  const ctx = fake({ runs: ['Discovery', 'Design', 'Build', 'Launch'].map((phase) => ({ phase, iteration: 1, state: phase === 'Discovery' ? 'now' : 'still to come' })) });
+  const sum = ['Discovery', 'Design', 'Build', 'Launch'].map((ph) => phaseCounts(ctx, ph)).reduce((a, c) => ({ R: a.R + c.R, T: a.T + c.T }), { R: 0, T: 0 });
+  assert.deepEqual(sum, { R: 0, T: 0 });
+  assert.equal(PAGE_WORDS.milestonesHead(sum), 'Milestones by phase · none tracked yet');
+});
+
+// Added after G5's review, round 1 (B1): two runs can share a Timeline block's key, "<Phase>-i<n>" (a project's first
+// item's run and a later item's), and the blocks come in display order, so a lookup by key alone gave the other run's
+// block, and a phase lost its sprints. Each run's block is now found by the run itself, the key only where none is.
+test('AC92 (c) (G5\'s review, B1): two runs sharing a key — each run\'s sprints from its own Timeline block, whichever comes first in the Timeline\'s order; the key only where no block is the run\'s own', () => {
+  const ctx = fake({ runs: [
+    { phase: 'Build', iteration: 1, state: 'gone back over', own: [{ id: 'B1' }] },
+    { phase: 'Build', iteration: 1, state: 'still to come', own: [{ id: 'B9' }] },
+  ] });
+  const [early, later] = ctx.runs;
+  const made = feedOf(ctx, [[['B1', [SP.unread(40), SP.unread(41)]]], [['B9', []]]]);
+  // The Timeline draws the run still to come above the earlier one: its block first, with the same key.
+  const feed = { ok: true, blocks: [...made.blocks].reverse() };
+  assert.equal(feed.blocks[0].key, feed.blocks[1].key, 'one key, two runs');
+  assert.equal(blockOf(feed, early).run, early);
+  assert.equal(blockOf(feed, later).run, later);
+  assert.deepEqual(runSprintViews(feed, early).map((v) => v.id), ['PR #40', 'PR #41']);
+  assert.deepEqual(milestoneSprints(feed, early, 'B1'), { s: 2, m: 0, w: 2 });
+  assert.deepEqual(phaseCounts(ctx, 'Build', feed).sprints, { s: 2, m: 0, w: 2 }, 'the phase keeps its two sprints');
+  // A run from another reading of the records (not the drawn object): its block by key.
+  const twin = { ...early };
+  assert.equal(blockOf(feed, twin).key, 'Build-i1');
+  assert.equal(blockOf(null, early), null);
+});
+
+test('AC92 (c) (G5\'s review, B1), on `mix`\'s made-up project (NOT real), whose Build has two "Build-i1" runs: Build\'s line counts the sprints its Timeline folds draw, and its opened rows carry the same, M1, M2 and M2B as on the Timeline', async () => {
+  const app = await openPage(mixState(), `#/p/${MIX_PROJECT}/timeline`);
+  try {
+    const folds = Object.fromEntries(findAll(app.view, (e) => e.tag === 'button' && e.attrs && /^Build-/.test(e.attrs['data-sprints'] || '')).map((f) => [f.attrs['data-sprints'], f.textContent]));
+    assert.deepEqual(folds, { 'Build-i1:M1': '2 sprints · 2 not read', 'Build-i1:M2': '1 sprint · 1 not read', 'Build-i1:M2B': '2 sprints · 2 not read' });
+    await app.go(`#/p/${MIX_PROJECT}`);
+    assert.equal(detail(app, 'Build')[0], '0 of 8 reached · 4 sprints · 4 not read', 'PR #44 under M2 and M2B once: 4, as the Timeline draws them');
+    await app.tap(fold(app, 'Build'));
+    const open = keyed(app, 'stdl:Build');
+    const row = (code) => byClass(findAll(open, (e) => e.attrs && e.attrs['data-ms'] === code)[0], 'v2-sms')[0].textContent;
+    assert.deepEqual(['M1', 'M2', 'M2B'].map(row), ['work filed · gone back over · 2 sprints · 2 not read', 'work filed · gone back over · 1 sprint · 1 not read',
+      'work filed · gone back over · 2 sprints · 2 not read'], 'each row\'s sprints as its Timeline fold');
+  } finally {
+    app.restore();
+  }
 });
 
 // ---------------------------------------------------------------------------

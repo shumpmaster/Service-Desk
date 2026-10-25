@@ -759,6 +759,25 @@ const G4_EXCEPT = (n, d) => {
   const k = G4_KEY(n);
   return Boolean(k && (G4_ONCE.get(k) || []).includes(d)) ? `G4 ${k} ${d}` : null;
 };
+/**
+ * G5 of "After the glance audit"'s one change to the look on purpose (the brief's rule; AC92 (c): "each phase's folded
+ * line, under its name and state word, takes two lines of detail"), pinned to its value, before and after, the same in
+ * each theme, on only its own element: each of the two lines (`span.v2-sdl`, a new element) inside a phase line's detail
+ * (`span.v2-sd`, in the fold `button.v2-stdr`) a block, so "<R> of <T> reached · <sprints>" and "Standard checklist: …"
+ * stand one over the other. Every other part of G5 (the head's sums, the Timeline's fold words, an opened phase's row
+ * words, Details' CI line, the waits row's gate names said once) is words in elements and rules that were there.
+ */
+const G5_ONCE = new Map([
+  ['span.v2-sdl (phase line)', ['display: (none) → block']],
+]);
+const G5_KEY = (n) => {
+  const p = n.parent;
+  return n.tag === 'span' && n.cls.has('v2-sdl') && p && p.tag === 'span' && p.cls.has('v2-sd') && p.parent && p.parent.cls.has('v2-stdr') ? 'span.v2-sdl (phase line)' : null;
+};
+const G5_EXCEPT = (n, d) => {
+  const k = G5_KEY(n);
+  return Boolean(k && (G5_ONCE.get(k) || []).includes(d)) ? `G5 ${k} ${d}` : null;
+};
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
@@ -802,6 +821,8 @@ function sameLook(app, where, fails, seen) {
         if (g3) { excepted.add(g3); continue; }
         const g4 = G4_EXCEPT(b, d);
         if (g4) { excepted.add(g4); continue; }
+        const g5 = G5_EXCEPT(b, d);
+        if (g5) { excepted.add(g5); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -945,7 +966,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // G4's exception was met, each pinned declaration on its own element, and nothing else of it.
   const g4 = [...G4_ONCE].flatMap(([k, ds]) => ds.map((d) => `G4 ${k} ${d}`)).sort();
   assert.deepEqual([...excepted].filter((x) => /^G4 /.test(x)).sort(), g4);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[1234] )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // G5's exception was met, its pinned declaration on its own element, and nothing else of it.
+  const g5 = [...G5_ONCE].flatMap(([k, ds]) => ds.map((d) => `G5 ${k} ${d}`)).sort();
+  assert.deepEqual([...excepted].filter((x) => /^G5 /.test(x)).sort(), g5);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[12345] )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

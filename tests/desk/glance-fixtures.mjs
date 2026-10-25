@@ -4,7 +4,7 @@
 // for the Kicked back strip a second made-up project and the Done marks a device keeps; G3 (gate titles) adds `gates`, two
 // made-up gate cards at one gate; G4 adds `gates`' `sameItem` (one item's two gate cards at one gate) and Done marks
 // with `id`, `title` and `confirmedAt` (its failed load is app.js served with no sandbox.js, built in its own test and
-// tools/glance-shots.mjs); the later stages add theirs (`mix`'s made-up later Launch run for F1 and F2 is G5's). Each
+// tools/glance-shots.mjs); G5 adds `mix`'s made-up later Launch run for F1 and F2 (`laterLaunch`); the later stages add theirs. Each
 // made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
 import { CONFIG, fixture } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
@@ -31,8 +31,9 @@ export const MIX_PROJECT = 'Alpha';
  * (NOT real records: md-extremes/'s gate card and its case, orchestrator-m2/'s hold and merge cards, a question, a pull
  * request, a deploy waiting, as AC52's fixture holds them). `extra` adds made-up files to that project.
  */
-export function mixState({ extra = {}, raised = {} } = {}) {
+export function mixState({ extra = {}, raised = {}, laterLaunch = false } = {}) {
   const s = textState();
+  if (laterLaunch) s.repos[SD.name].commit({ [LOG]: laterLaunchLog(s.repos[SD.name].files[LOG]) });
   const alpha = fullRepo(MIX_PROJECT);
   alpha.commit(extra);
   // A made-up file's raised time (J2: its first commit), as fullRepo gives its question's.
@@ -41,6 +42,26 @@ export function mixState({ extra = {}, raised = {} } = {}) {
   s.repos[MIX_PROJECT] = alpha;
   return s;
 }
+
+/**
+ * G5's F1 and F2 (AC92 (c); round 2's "Problems that were already there"; AC91's note, "The fixtures": "for F1 and F2, a
+ * made-up later Launch run recording Launch-3 "not reached" and M3C planned in an earlier run"), on `mix` with
+ * `laterLaunch: true`: Service-Desk's dispatch log at 77bfeae with five made-up lines after its own (NOT real records):
+ * P-001 sent to stage 6 (the Launch phase's builder) on the morning of 2026-10-14, before the states' clock, with its
+ * outcome, the owner's "revise" at its Launch gate, and stage 6 again with its outcome. The model's timeline then holds two Launch runs still to come (Design run 2
+ * stays now): Launch run 2 holding M3C, planned, and Launch run 3 recording Launch-3 "not reached" (no handover package
+ * in the tree). Before G5, Launch's line read "Yours: M3C · Standard: 0 of 5, not recorded yet" on these records: F1
+ * (a recorded "not reached" read as not recorded) and F2 (M3C, an earlier run's, dropped from the line's sum).
+ */
+const LOG = 'dispatch-log/2026-10.jsonl';
+export const LATER_LAUNCH_LINES = [
+  { action: 'dispatch', gate: null, item: 'P-001', role: 'builder', route: 'launch-dispatch', spec: 'S-001', stage: 6, time: '2026-10-14T09:00:00Z', trigger: 'step' },
+  { item: 'P-001', record: null, result: 'ok', role: 'builder', session: 'P-001:launch-dispatch:2026-10-14T09:00:00Z', time: '2026-10-14T10:00:00Z', trigger: 'outcome', verdict: null },
+  { card: 9, gate: 'launch', item: 'P-001', proxy: false, record: 'decisions/P-001/launch-9.md', result: 'ready/6/builder', time: '2026-10-14T11:00:00Z', trigger: 'decision', word: 'revise' },
+  { action: 'dispatch', gate: null, item: 'P-001', role: 'builder', route: 'launch-dispatch', spec: 'S-001', stage: 6, time: '2026-10-14T12:00:00Z', trigger: 'step' },
+  { item: 'P-001', record: null, result: 'ok', role: 'builder', session: 'P-001:launch-dispatch:2026-10-14T12:00:00Z', time: '2026-10-14T13:00:00Z', trigger: 'outcome', verdict: null },
+];
+export const laterLaunchLog = (log) => `${log.trimEnd()}\n${LATER_LAUNCH_LINES.map((o) => JSON.stringify(o)).join('\n')}\n`;
 
 /**
  * `unread`: `mix` with one project's read failing (made up: the fake desk's function can't be reached for it, AC5's

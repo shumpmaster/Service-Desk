@@ -312,13 +312,15 @@ test('AC60: untied merged pull requests placed by their merge time (18 in Design
   assert.ok(!f2.blocks.some((b) => rowsOf(b).some((x) => (x.sprints || []).some((s) => s.id === 'PR #991'))), 'an open one is in the Queue, not here');
 });
 
-test('AC60, changed by AC84: each list starts folded ("<n> sprints ▸", frame 7b), and opens and folds by a tap, Enter and Space, with its state and its mark', async () => {
+test('AC60, changed by AC84 and by AC92 (c) in G5: each list starts folded ("<s> sprints · <m> merged ›", frame 7b), and opens and folds by a tap, Enter and Space, with its state and its mark', async () => {
   const app = await openSD('#/p/Service-Desk/timeline');
   try {
     const f = () => keyed(app, 'fold:sprints:Build-i1:M1');
     assert.equal(f().attrs['aria-expanded'], 'false');
     // AC84 (:6914-6915): "then "<n> sprints ▸", folded" (rewritten from AC60's "2 sprints feed this"); the mark an icon (AC81).
-    assert.equal(f().textContent, '2 sprints');
+    // Rewritten in G5 of "After the glance audit" (AC84's fold, changed by AC92 (c): "<sprints> ›" in the one sprint form,
+    // "4 sprints · 3 merged ›"): it read "2 sprints" before G5; M1's two are merged in J12's read.
+    assert.equal(f().textContent, '2 sprints · 2 merged');
     assert.equal(byClass(f(), 'vi-chev').length, 1, 'folded: its mark');
     assert.equal(keyed(app, 'tasks:Build-i1:M1'), null);
     await app.tap(f());
@@ -331,7 +333,7 @@ test('AC60, changed by AC84: each list starts folded ("<n> sprints ▸", frame 7
     f().dispatch('keydown', { key: ' ' });
     await app.flush();
     assert.equal(f().attrs['aria-expanded'], 'true');
-    assert.equal(keyed(app, 'fold:sprints:Design-i2:MD1').textContent, '1 sprint');
+    assert.equal(keyed(app, 'fold:sprints:Design-i2:MD1').textContent, '1 sprint · 1 merged', 'one: "1 sprint" (rewritten in G5, as above; it read "1 sprint")');
     assert.match(keyed(app, 'mile:Design-i2:MD2').textContent, /No sprints planned yet/);
   } finally {
     app.restore();

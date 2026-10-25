@@ -172,7 +172,7 @@ test('AC84: the rail — a thin line in the phase\'s colour down the band\'s lef
   }
 });
 
-test('AC84: each milestone — its status icon in a plain circle on the rail (the gold ring for next to reach), its name as a row title, then in Plex Mono "<id> · <its state words> · <its rough finish>", then "Done when" and "Why" with the label in weight 500, then "<n> sprints ▸"; a missing why "Why not recorded yet · for the agents to add" in the agents\' grey, said once under the band where two or more share it (AC90)', async () => {
+test('AC84: each milestone — its status icon in a plain circle on the rail (the gold ring for next to reach), its name as a row title, then in Plex Mono "<id> · <its state words> · <its rough finish>", then "Done when" and "Why" with the label in weight 500, then its sprints folded ("<s> sprints · <m> merged ›", rewritten in G5 for AC92 (c)); a missing why "Why not recorded yet · for the agents to add" in the agents\' grey, said once under the band where two or more share it (AC90)', async () => {
   const app = await openSD('#/p/Service-Desk/timeline');
   try {
     const m2b = keyed(app, 'mile:Build-i1:M2B');
@@ -192,7 +192,9 @@ test('AC84: each milestone — its status icon in a plain circle on the rail (th
     const why = byClass(m3c, 'v2-msd').at(-1);
     assert.equal(why.textContent, 'Why not recorded yet · for the agents to add');
     assert.match(why.className, /\bgap\b/);
-    assert.equal(byClass(m2b, 'v2-fold')[0].textContent, '2 sprints');
+    // Rewritten in G5 of "After the glance audit" (AC84, changed by AC92 (c): "a milestone's fold counts its sprints and
+    // merges", "<sprints> ›" in the one sprint form, in place of "<n> sprints ▸"): it read "2 sprints" before G5.
+    assert.equal(byClass(m2b, 'v2-fold')[0].textContent, '2 sprints · 2 merged');
     const md2 = keyed(app, 'mile:Design-i2:MD2');
     assert.match(findAll(md2, (e) => e.tag === 'svg')[0].attrs.class, /\bst-next\b/, 'MD2: the gold ring');
     assert.match(rule('.v2-msm'), /font: var\(--t-mono\);/);

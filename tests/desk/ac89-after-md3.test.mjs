@@ -22,7 +22,7 @@ import { capView, versionsView } from '../../src/lib/portfolio.js';
 import { DEPLOY_SHEET, phaseView, PHASES_NOT_AVAILABLE, PHASES_READING } from '../../src/lib/sandbox.js';
 import { startDesk, LOAD_FAILED_WORDS } from '../../src/lib/page.js';
 import { hhmm } from '../../src/lib/timefmt.js';
-import { gatesState, MIX_PROJECT } from './glance-fixtures.mjs';
+import { gatesState, MIX_PROJECT, deviceMarks, GATE_KEY, GATE4, GATE5 } from './glance-fixtures.mjs';
 import { parseCss, treeOf, cascade, nodes } from './css-cascade.mjs';
 
 const TZ = CONFIG.ownerTimeZone;
@@ -291,24 +291,47 @@ test('AC89 (b): a sheet\'s link says "Its status file" only where it opens one �
 // is named "the <Phase> gate for <item>", the item in Plex Mono as ids are, so two gate cards at one gate read apart here
 // as they do on the board and on Plan (AC91 (h)); one item's two gate cards at one gate add their case, or their card's
 // own "<gate>-<n>" where the card has no case line. Before G4 a gate card read "the <Phase> gate".
-test('AC89 (c) (rewritten in G4): the waits row names each item by its kind and its own id — "#<n>", "question <name>", "<item> <gate>-<n>", "the <Phase> gate for <item>", "a governance hold", "a merge of <item>", "a deploy, run <n>" — joined by " · ", the ids in Plex Mono, never a title; two gate cards at one gate named apart', async () => {
+// Rewritten again in G5 (AC89 (c)'s "The owner's ruling (2026-10-25; built in G5)", B, and the Definer's settlings): a gate's
+// cards are named once, in the place of the first of them, the count, order and cut unchanged.
+test('AC89 (c) (rewritten in G4, and in G5 for the owner\'s ruling B): the waits row names each item by its kind and its own id — "#<n>", "question <name>", "<item> <gate>-<n>", "the <Phase> gate for <item>", "a governance hold", "a merge of <item>", "a deploy, run <n>" — joined by " · ", the ids in Plex Mono, never a title; a gate\'s cards named once ("the Launch gate for P-004 and P-005", "…P-004, cases 1 and 2", "…P-004, launch-1 and launch-2"), the count, order and cut unchanged, with the Definer\'s settlings', async () => {
   // Pure, one of each kind (as the board's cards give them).
   const named = (c) => shortName(c).map((x) => (x.id ? `[${x.text}]` : x.text)).join('');
-  const all = (cs) => shortNames(cs).map((parts) => parts.map((x) => (x.id ? `[${x.text}]` : x.text)).join(''));
+  const all = (cs) => shortNames(cs).map((parts) => (parts === false ? '(joined)' : parts === null ? '(none)' : parts.map((x) => (x.id ? `[${x.text}]` : x.text)).join('')));
   assert.equal(named({ kind: 'pr', number: 80 }), '[#80]');
   assert.equal(named({ kind: 'question', name: 'P-001-next-work' }), 'question [P-001-next-work]');
   assert.equal(named({ kind: 'card', flag: { card: { item: 'Q-020', gate: 'stop', n: 1 } } }), '[Q-020 stop-1]');
   assert.equal(named({ kind: 'gate', flag: { card: { item: 'P-002', gate: 'criteria', n: 1 } } }), 'the Build gate for [P-002]');
   assert.equal(named({ kind: 'gate', flag: { card: { item: 'P-002', gate: 'dor', n: 1 } } }), 'the Design gate for [P-002]');
-  // Two gate cards at one gate: apart by their items; one item's two, by their case (from the short title) or their own
-  // "<gate>-<n>" where the card has no case line; a gate card alone at its gate, and another gate's, add nothing.
+  // Rewritten in G5 (the owner's ruling, decisions/questions/P-001-glance-waits-gates.md, B): a gate's cards are named
+  // once, "the <Phase> gate for " and then each item, in the place of the first of them; the others give no name of their
+  // own (`false`, drawn as nothing). Before G5 each card had its own name, "the Launch gate for P-004 · the Launch gate for
+  // P-005". Two items at one gate; one item's two cases (from the short title); one item's two cards without case lines,
+  // by their own "<gate>-<n>"; a gate card alone at its gate, and another gate's, keep "the <Phase> gate for <item>".
   const gate = (item, n, title, g = 'launch') => ({ kind: 'gate', title, flag: { card: { item, gate: g, n } } });
-  assert.deepEqual(all([gate('P-004', 1, 'The Launch gate, case 1 · P-004'), gate('P-005', 2, 'The Launch gate, case 2 · P-005')]),
-    ['the Launch gate for [P-004]', 'the Launch gate for [P-005]']);
-  assert.deepEqual(all([gate('P-004', 1, 'The Launch gate, case 1 · P-004'), gate('P-004', 2, 'The Launch gate, case 2 · P-004'), gate('P-004', 1, 'The Build gate · P-004', 'criteria')]),
-    ['the Launch gate for [P-004], case 1', 'the Launch gate for [P-004], case 2', 'the Build gate for [P-004]']);
+  const c1 = (item, n = 1) => gate(item, n, `The Launch gate, case ${n} · ${item}`);
+  assert.deepEqual(all([c1('P-004'), c1('P-005', 2)]), ['the Launch gate for [P-004] and [P-005]', '(joined)'], 'two items at one gate');
+  assert.deepEqual(all([c1('P-004'), c1('P-004', 2), gate('P-004', 1, 'The Build gate · P-004', 'criteria')]),
+    ['the Launch gate for [P-004], cases 1 and 2', '(joined)', 'the Build gate for [P-004]'], 'one item\'s two cases; another gate named apart');
   assert.deepEqual(all([gate('P-004', 1, 'The Launch gate · P-004'), gate('P-004', 2, 'The Launch gate · P-004')]),
-    ['the Launch gate for [P-004], [launch-1]', 'the Launch gate for [P-004], [launch-2]']);
+    ['the Launch gate for [P-004], [launch-1] and [launch-2]', '(joined)'], 'one item\'s two cards without case lines: their own "<gate>-<n>", ids');
+  assert.deepEqual(all([{ kind: 'pr', number: 148 }, c1('P-004'), { kind: 'hold', flag: {} }, c1('P-004', 2)]),
+    ['[#148]', 'the Launch gate for [P-004], cases 1 and 2', 'a governance hold', '(joined)'], 'among other waits: in the place of the first, the others\' order kept');
+  assert.deepEqual(all([c1('P-004')]), ['the Launch gate for [P-004]'], 'a lone gate card keeps "the <Phase> gate for <item>"');
+  // The Definer's settlings (AC89 (c), C), each a case.
+  assert.deepEqual(all([c1('P-004'), c1('P-005', 2), c1('P-006', 3)]), ['the Launch gate for [P-004], [P-005] and [P-006]', '(joined)', '(joined)'], 'three items: ", " and " and " before the last, no comma before it');
+  assert.deepEqual(all([c1('P-004'), c1('P-004', 2), c1('P-004', 3)]), ['the Launch gate for [P-004], cases 1, 2 and 3', '(joined)', '(joined)'], 'three cases');
+  assert.deepEqual(all([c1('P-004'), gate('P-004', 2, 'The Launch gate · P-004')]), ['the Launch gate for [P-004], case 1 and [launch-2]', '(joined)'],
+    'mixed case lines: each its own part, "cases" only when every one has one');
+  assert.deepEqual(all([c1('P-004'), c1('P-004', 2), c1('P-005', 3)]), ['the Launch gate for [P-004], cases 1 and 2, and [P-005]', '(joined)', '(joined)'], 'an item\'s cases before another item: a comma closes them');
+  assert.deepEqual(all([c1('P-004'), c1('P-004', 2), c1('P-005', 3), c1('P-006', 4)]), ['the Launch gate for [P-004], cases 1 and 2, [P-005] and [P-006]', '(joined)', '(joined)', '(joined)'],
+    'an item\'s cases before two more items');
+  assert.deepEqual(all([c1('P-005', 3), c1('P-004', 2), c1('P-004', 1)]), ['the Launch gate for [P-005] and [P-004], cases 1 and 2', '(joined)', '(joined)'],
+    'the items in the order their first cards stand; one item\'s cases rising, never "cases 2 and 1", out of order on the board');
+  assert.deepEqual(all([gate('P-004', 2, 'The Launch gate · P-004'), gate('P-004', 1, 'The Launch gate · P-004')]), ['the Launch gate for [P-004], [launch-1] and [launch-2]', '(joined)'], 'cards\' numbers rising too');
+  assert.deepEqual(all([c1('P-004'), gate('P-002', 1, 'The Build gate · P-002', 'criteria'), c1('P-005', 2), gate('P-003', 1, 'The Build gate · P-003', 'criteria')]),
+    ['the Launch gate for [P-004] and [P-005]', 'the Build gate for [P-002] and [P-003]', '(joined)', '(joined)'], 'cards at two gates: each gate named once, apart');
+  assert.deepEqual(all([{ kind: 'gate', title: 'unread', flag: {} }, c1('P-004'), c1('P-005', 2)]), ['(none)', 'the Launch gate for [P-004] and [P-005]', '(joined)'],
+    'a gate card whose gate or item is not read keeps its kind\'s word (no short name) and joins no other card');
   assert.deepEqual(all([{ kind: 'pr', number: 80 }, { kind: 'hold', flag: {} }]), ['[#80]', 'a governance hold'], 'the other kinds as shortName gives them');
   assert.equal(named({ kind: 'hold', flag: {} }), 'a governance hold');
   assert.equal(named({ kind: 'merge', flag: { merge: { item: 'P-002' } } }), 'a merge of [P-002]');
@@ -349,28 +372,44 @@ test('AC89 (c) (rewritten in G4): the waits row names each item by its kind and 
   } finally {
     d.restore();
   }
-  // On the page, from G4's fixtures (tests/desk/glance-fixtures.mjs, `gates`, NOT real records): two Launch-gate cards at
-  // one gate, for P-004 and P-005, read apart by their items; one item's two (P-004's cards 1 and 2), by their case, or,
-  // written without their case lines, by their own "launch-<n>".
-  const rowOf = async (opts) => {
-    const g = await loadSandbox({ ...gatesState(opts), hash: `#/p/${MIX_PROJECT}`, now: NOW });
+  // On the page, from G3's and G4's fixtures (tests/desk/glance-fixtures.mjs, `gates`, NOT real records), rewritten in G5
+  // for the owner's ruling B: two Launch-gate cards at one gate, for P-004 and P-005, named once in the place of the
+  // first; one item's two (P-004's cards 1 and 2) by their cases, or, written without their case lines, by their own
+  // "launch-<n>"; the Build gate's card (P-002) named apart; the count still each card's, so the row holds fewer names.
+  const rowOf = async (opts, store = null) => {
+    const g = await loadSandbox({ ...gatesState(opts), hash: `#/p/${MIX_PROJECT}`, now: NOW, store });
     try {
       await g.advance(1000);
       await g.advance(POLL_MS);
-      const wn = byClass(keyed(g, 'page-waits'), 'v2-wn')[0];
-      return { text: wn.textContent, ids: byClass(wn, 'v2-mono').map((x) => x.textContent) };
+      const row = keyed(g, 'page-waits');
+      const wn = byClass(row, 'v2-wn')[0];
+      return { title: byClass(row, 'v2-prtt')[0].textContent, text: wn.textContent, ids: byClass(wn, 'v2-mono').map((x) => x.textContent), cut: wn.attrs['data-clip'], href: row.attrs.href };
     } finally {
       g.restore();
     }
   };
+  const LEAD = '#80 · question Alpha-pick · the Build gate for P-002 · Q-020 stop-1 · ';
+  const TAIL = ' · a governance hold · a merge of P-002';
   const two = await rowOf({});
-  assert.match(two.text, / · the Launch gate for P-004 · the Launch gate for P-005 · /);
-  assert.ok(!/the Launch gate · the Launch gate/.test(two.text), 'never "the Launch gate · the Launch gate" (G3\'s Design review, Q2)');
+  assert.equal(two.text, `${LEAD}the Launch gate for P-004 and P-005${TAIL}`, 'the joined name in the place of the first card, the others\' order kept');
+  assert.equal(two.title, '8 wait on you', 'the count unchanged: each card, so the row holds fewer names than its count');
+  assert.equal(two.text.split(' · ').length, 7, 'seven names for eight cards');
   assert.deepEqual(two.ids.filter((x) => /^P-00[45]$/.test(x)), ['P-004', 'P-005'], 'the items in Plex Mono');
-  assert.match((await rowOf({ sameItem: true })).text, / · the Launch gate for P-004, case 1 · the Launch gate for P-004, case 2 · /);
+  assert.equal(two.cut, `page-waits:${MIX_PROJECT}`, 'the two-line cut unchanged');
+  assert.equal(two.href, `#/waiting/${MIX_PROJECT}`, 'its tap unchanged');
+  assert.equal((await rowOf({ sameItem: true })).text, `${LEAD}the Launch gate for P-004, cases 1 and 2${TAIL}`);
   const bare = await rowOf({ sameItem: true, caseLines: false });
-  assert.match(bare.text, / · the Launch gate for P-004, launch-1 · the Launch gate for P-004, launch-2 · /);
-  assert.deepEqual(bare.ids.filter((x) => /P-004|launch/.test(x)), ['P-004', 'launch-1', 'P-004', 'launch-2'], 'each card\'s own "<gate>-<n>" an id, in Plex Mono');
+  assert.equal(bare.text, `${LEAD}the Launch gate for P-004, launch-1 and launch-2${TAIL}`);
+  assert.deepEqual(bare.ids.filter((x) => /P-004|launch/.test(x)), ['P-004', 'launch-1', 'launch-2'], 'each card\'s own "<gate>-<n>" an id, in Plex Mono; the words not');
+  // A gate's cards split between Waiting on you and Kicked back (made up: a device's Done mark on one Launch card that
+  // GitHub did not confirm, kicked back 7 minutes ago, NOT a real mark): one name, in the place of the first of them in the
+  // row, whichever part of Waiting it is in; the items in the order their first cards stand.
+  const { memStore } = await import('./wa-fixtures.mjs');
+  const kick = (path) => memStore(deviceMarks([{ project: MIX_PROJECT, kind: 'gate', id: GATE_KEY(MIX_PROJECT, path), at: NOW - 13 * 60e3, kickedAt: NOW - 7 * 60e3 }]));
+  assert.equal((await rowOf({}, kick(GATE5))).text, `${LEAD}the Launch gate for P-004 and P-005${TAIL}`, 'P-005 kicked back: joined to P-004\'s card');
+  const k4 = await rowOf({}, kick(GATE4));
+  assert.equal(k4.text, `${LEAD}the Launch gate for P-005 and P-004${TAIL}`, 'P-004 kicked back: P-005\'s card, in Waiting on you, stands first in the row');
+  assert.equal(k4.title, '8 wait on you');
 });
 
 const CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -399,7 +438,9 @@ test('AC89 (c) (G4\'s fix round): each id in the waits row is kept whole — an 
     const row = keyed(g, 'page-waits');
     const wn = byClass(row, 'v2-wn')[0];
     const ids = wn.children.filter((c) => c.tag === 'span' && / v2-mono /.test(` ${c.className} `));
-    assert.deepEqual(ids.map((x) => x.textContent), ['#80', 'Alpha-pick', 'P-002', 'Q-020 stop-1', 'P-004', 'launch-1', 'P-004', 'launch-2', 'P-002'],
+    // Rewritten in G5 (the owner's ruling B, AC89 (c)): P-004's two Launch cards are named once, "the Launch gate for
+    // P-004, launch-1 and launch-2", so P-004 is one id there, not two; every id is still kept whole as before.
+    assert.deepEqual(ids.map((x) => x.textContent), ['#80', 'Alpha-pick', 'P-002', 'Q-020 stop-1', 'P-004', 'launch-1', 'launch-2', 'P-002'],
       'every id in the row, a gate\'s item, a card\'s "<item> <gate>-<n>" and "launch-<n>" among them');
     for (const theme of ['light', 'dark']) {
       for (const width of [360, 414]) {

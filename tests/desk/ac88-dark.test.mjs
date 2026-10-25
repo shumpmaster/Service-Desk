@@ -583,8 +583,10 @@ const M3D4_EXCEPT = (n, d, theme) => {
  * choice's box and AC89 (j)'s quoted DEFAULT words are drawn on no screen this guard walks (no fixture here copies, and
  * none has a DEFAULT naming no letter), so nothing is excepted for them.
  */
+// Rewritten in G3 (AC91 (h)): a gate sheet's title is the only sheet title held to lines, and G3 holds it to two, so its
+// max-height is G3's exception (G3_ONCE, below) and no longer stage 5's; its `display` stays stage 5's.
 const M3D5_ONCE = new Map([['v2-tt', new Set(['display: (none) → block', 'max-height: (none) → calc(3 * 1.33em)', 'overflow: (none) → clip'])],
-  ['v2-stt', new Set(['display: (none) → block', 'max-height: calc(3 * 1.45em) → calc(3 * 1.3em)'])]]);
+  ['v2-stt', new Set(['display: (none) → block'])]]);
 const M3D5_EXCEPT = (n, d) => (n.tag === 'span' && n.cls.has('v2-tt') && n.parent && n.parent.tag === 'a' && n.parent.cls.has('v2-t') && M3D5_ONCE.get('v2-tt').has(d))
   || (n.tag === 'span' && n.cls.has('v2-stt') && n.cls.has('v2-clip') && n.parent && n.parent.tag === 'h2' && n.parent.cls.has('v2-stitle') && M3D5_ONCE.get('v2-stt').has(d));
 /**
@@ -683,6 +685,43 @@ const G2_EXCEPT = (n, d, theme) => {
   const k = G2_KEY(n);
   return Boolean(k && G2_ONCE.get(theme) && (G2_ONCE.get(theme).get(k) || []).includes(d)) ? `G2 ${theme} ${k} ${d}` : null;
 };
+/**
+ * G3 of "After the glance audit"'s changes to the look on purpose (the brief's rule; AC91 (h), with AC89 (j)'s note "After
+ * the glance audit": "a gate sheet's title, Plan's gate row and a gate card's title take the gate's short title, cut at two
+ * lines only where it doesn't fit; the three-line cut still applies to the board's other card titles"), each declaration
+ * pinned to its value, before and after, the same in each theme, on only its own element:
+ * - a gate card's title on the board (`span.v2-tt` in the `a.v2-t` of an `li.v2-card.gate`) held to two lines, where the
+ *   board's other card titles keep stage 5's three;
+ * - a gate sheet's title (`span.v2-clip.v2-stt` in an `h2.v2-stitle`) held to two lines, at the title's line height;
+ * - Plan's gate row's title (`span.v2-plname` in an `li.v2-plli.gate`) held to two lines;
+ * - in each of the three, the item ending the short title (`span.v2-gitem`, a new element) an inline block, moving to
+ *   the next line as one piece, so a wrap never splits "P-004" at its hyphen.
+ * The gate sheet's opening (section 1's whole first line) takes the question sheet's opening rules (`.v2-clip.v2-lead`),
+ * which were there, so it adds no exception; its text is AC91 (h)'s test's (tests/desk/ac91-glance-gates.test.mjs).
+ */
+const G3_ONCE = new Map([
+  ['span.v2-tt (gate card)', ['max-height: (none) → calc(2 * 1.33em)']],
+  ['span.v2-clip.v2-stt', ['max-height: calc(3 * 1.45em) → calc(2 * 1.3em)']],
+  ['span.v2-plname (gate row)', ['max-height: calc(3 * 1.35em) → calc(2 * 1.35em)']],
+  ['span.v2-gitem', ['display: (none) → inline-block']],
+]);
+const G3_KEY = (n) => {
+  const up = (x, k) => { let a = x; for (let i = 0; i < k && a; i++) a = a.parent; return a; };
+  const p = n.parent;
+  if (n.tag === 'span' && n.cls.has('v2-gitem') && p && (p.cls.has('v2-tt') || p.cls.has('v2-stt') || p.cls.has('v2-plname'))) return 'span.v2-gitem';
+  if (n.tag === 'span' && n.cls.has('v2-tt') && p && p.tag === 'a' && p.cls.has('v2-t')) {
+    for (let a = p.parent; a; a = a.parent) if (a.cls.has('v2-card')) return a.cls.has('gate') ? 'span.v2-tt (gate card)' : null;
+    return null;
+  }
+  if (n.tag === 'span' && n.cls.has('v2-stt') && n.cls.has('v2-clip') && p && p.tag === 'h2' && p.cls.has('v2-stitle')) return 'span.v2-clip.v2-stt';
+  const li = up(n, 3);
+  if (n.tag === 'span' && n.cls.has('v2-plname') && p && p.cls.has('v2-prt') && li && li.tag === 'li' && li.cls.has('v2-plli') && li.cls.has('gate')) return 'span.v2-plname (gate row)';
+  return null;
+};
+const G3_EXCEPT = (n, d) => {
+  const k = G3_KEY(n);
+  return Boolean(k && (G3_ONCE.get(k) || []).includes(d)) ? `G3 ${k} ${d}` : null;
+};
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
@@ -722,6 +761,8 @@ function sameLook(app, where, fails, seen) {
         if (g1) { excepted.add(g1); continue; }
         const g2 = G2_EXCEPT(b, d, way.theme);
         if (g2) { excepted.add(g2); continue; }
+        const g3 = G3_EXCEPT(b, d);
+        if (g3) { excepted.add(g3); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -839,7 +880,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // G2's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
   const g2 = [...G2_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G2 ${theme} ${k} ${d}`))).sort();
   assert.deepEqual([...excepted].filter((x) => /^G2 /.test(x)).sort(), g2);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[12] )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // G3's exception was met, each pinned declaration on its own element, and nothing else of it.
+  const g3 = [...G3_ONCE].flatMap(([k, ds]) => ds.map((d) => `G3 ${k} ${d}`)).sort();
+  assert.deepEqual([...excepted].filter((x) => /^G3 /.test(x)).sort(), g3);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[123] )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

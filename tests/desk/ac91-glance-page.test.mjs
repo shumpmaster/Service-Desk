@@ -58,8 +58,8 @@ async function open(state, hash) {
 // (j) The project page
 
 test('AC91 (j): calm looks calm — "Nothing waiting on you" in the soft row, 400 13 px --ink2, its ✓ and "checked <age> ago" unchanged; "◆ <n> wait on you" stays 500 13 px --ink; in light and dark', async () => {
+  // One page open at a time: each app's restore puts back the globals it found (sandbox-helpers.mjs).
   const calm = await open(quietState(), `#/p/${MIX_PROJECT}`);
-  const waits = await open(mixState(), `#/p/${MIX_PROJECT}`);
   try {
     const row = keyed(calm, 'page-waits');
     const title = byClass(row, 'v2-prtt')[0];
@@ -67,19 +67,25 @@ test('AC91 (j): calm looks calm — "Nothing waiting on you" in the soft row, 40
     assert.equal(title.className, 'v2-prtt soft');
     assert.equal(findAll(row, (e) => e.tag === 'svg')[0].attrs.class.split(' ')[1], 'st-check', 'its ✓, as built');
     assert.match(byClass(row, 'v2-small')[0].textContent, /^checked \d+ s ago$/, 'and "checked <age> ago", as built');
-    const busy = byClass(keyed(waits, 'page-waits'), 'v2-prtt')[0];
-    assert.match(busy.textContent, /^\d+ wait on you$/);
-    assert.equal(busy.className, 'v2-prtt');
-    for (const [theme, ink, ink2] of THEMES) {
+    for (const [theme, , ink2] of THEMES) {
       const a = looks(calm, theme).get(title);
       assert.deepEqual([a.size, a.weight, a.color], ['13px', '400', ink2], `${theme}: the calm row soft`);
-      const b = looks(waits, theme).get(busy);
-      assert.deepEqual([b.size, b.weight, b.color], ['13px', '500', ink], `${theme}: what waits keeps its weight`);
     }
     // "At work now" keeps its own weight (draft 2, the plan review's N2).
     assert.equal(byClass(keyed(calm, 'page-work'), 'v2-prtt')[0].className, 'v2-prtt');
   } finally {
     calm.restore();
+  }
+  const waits = await open(mixState(), `#/p/${MIX_PROJECT}`);
+  try {
+    const busy = byClass(keyed(waits, 'page-waits'), 'v2-prtt')[0];
+    assert.match(busy.textContent, /^\d+ wait on you$/);
+    assert.equal(busy.className, 'v2-prtt');
+    for (const [theme, ink] of THEMES) {
+      const b = looks(waits, theme).get(busy);
+      assert.deepEqual([b.size, b.weight, b.color], ['13px', '500', ink], `${theme}: what waits keeps its weight`);
+    }
+  } finally {
     waits.restore();
   }
 });

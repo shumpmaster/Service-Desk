@@ -1002,8 +1002,9 @@ export function boardView(input) {
         cantShow.push(name);
         cantLines.push({ project: name, show: true });
       } else {
-        // From G9c (AC91 (c)): a first read still on its way (AC89 (a)'s state 1), named in a grey line until it answers.
-        if (p.read && p.read.onWay) reading.push(name);
+        // From G9c (AC91 (c)): a first read still on its way (AC89 (a)'s state 1), named in a grey line until it answers, with
+        // every project shown only (P-001-glance-g9c-alone.md, A).
+        if (p.read && p.read.onWay && !only) reading.push(name);
         if (p.read && p.read.ok && !waitRows.length && !kickRows.length && !doneRows.length) nothingWaiting.push(name);
       }
     }

@@ -314,14 +314,19 @@ test('AC91 (c), G8d: the v2.5 Pipeline view\'s state line — "Can\'t read in th
   }
 });
 
-test('AC91 (c), G8d, signed out: each project by its own — Service-Desk, never read before the sign-out, "in this opening" in its quiet line, above the lanes and on its page; the others, read before it, "since HH:MM" in their quiet lines and the Pipeline view; signed out from the start, every quiet line "in this opening"', async () => {
+// Rewritten in G9c (the owner's rulings of 2026-10-25, decisions/questions/P-001-glance-waiting-signed-out.md, "Ruling: A",
+// "Say it on Waiting too — the same "Signed out — reload to sign in" line at the top of Waiting's quiet lines, in place of
+// one red line per project.", and P-001-glance-g9c-signed-out-all.md, "Ruling: A", "Replace every red line"; AC91 (c)): with
+// every project shown, the two parts that read each project's own red quiet line signed out (`quietCant` on
+// `signedOutMixedState`, and on `signedOutState` failed from the start) now find none and the one signed-out line; what each
+// project was is still said where it is shown alone, on its page and in the Pipeline view, those parts kept as they were.
+const SIGNED_OUT = 'Signed out — reload to sign in';
+test('AC91 (c), G8d, signed out: each project by its own where one project speaks — Service-Desk, never read before the sign-out, "in this opening" above the lanes and on its page; the others, read before it, "since HH:MM" above the lanes and in the Pipeline view; from G9c, with every project shown, the one "Signed out — reload to sign in" line in place of each project\'s red line, read before the sign-out or not', async () => {
   const s = signedOutMixedState();
   const app = await open(s, '#/waiting', { later: true });
   try {
-    const ql = new Map(quietCant(app));
-    assert.equal(ql.get(SD.name), OPENING(SD.name));
-    assert.match(ql.get(POOM.name), SINCE(POOM.name));
-    assert.match(ql.get(MIX_PROJECT), SINCE(MIX_PROJECT));
+    assert.deepEqual(quietCant(app), [], 'from G9c: no project\'s own red quiet line');
+    assert.equal(keyed(app, 'ql:signed-out').textContent, SIGNED_OUT, 'from G9c: the one line in their place');
     await app.go(`#/waiting/${enc(SD.name)}`);
     assert.match(aboveLanes(app), new RegExp(`^${OPENING(SD.name)}: `));
     await app.go(`#/waiting/${MIX_PROJECT}`);
@@ -337,10 +342,13 @@ test('AC91 (c), G8d, signed out: each project by its own — Service-Desk, never
   o.fail();
   const all = await open(o, '#/waiting');
   try {
-    const ql = quietCant(all);
-    assert.deepEqual(ql.map(([n]) => n), CONFIG.projects.map((p) => p.name).concat(MIX_PROJECT).filter((n) => ql.some(([m]) => m === n)));
-    assert.ok(ql.length >= 2, JSON.stringify(ql));
-    for (const [n, w] of ql) assert.equal(w, OPENING(n), n);
+    assert.deepEqual(quietCant(all), [], 'from G9c: signed out from the start, no project\'s own red quiet line');
+    assert.equal(keyed(all, 'ql:signed-out').textContent, SIGNED_OUT);
+    // Each project alone shown still says it was never read in this opening (AC89 (a), state 2), as the quiet lines did.
+    for (const n of CONFIG.projects.map((p) => p.name).concat(MIX_PROJECT)) {
+      await all.go(`#/waiting/${enc(n)}`);
+      assert.match(aboveLanes(all), new RegExp(`^${OPENING(n)}: `), n);
+    }
     await all.go(`#/p/${enc(POOM.name)}/pipeline`);
     assert.match(pipeLead(all), /^Can't read in this opening: /);
   } finally {

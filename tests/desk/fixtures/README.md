@@ -899,3 +899,25 @@ above, with these made-up parts, each **NOT real**, and `tests/desk/tools/glance
   this opening. **NOT how any read failed.**
 - **a portfolio that refuses the desk** (`ac91-g8c-home.test.mjs`, pf-fixtures.mjs's `pfFiles` with `no-access`), as G7's
   palette test makes it. **NOT a real record.**
+
+## After the glance audit, G8d (2026-10-25, S-001 AC91 (c), AC89 (a) and (h) and AC54 changed; the owner's answers of 2026-10-25 to G8c's design review, docs/design/references/owner-answers-2026-10-25-g8c-review.md: "Yes, everywhere (Recommended)", "Say "can't be shown" (Recommended)", "Keep it, as built (Recommended)")
+
+G8d adds no fixture file. `tests/desk/ac91-g8d.test.mjs`, G8d's walks in `ac88-dark.test.mjs` (AC92 (a)'s cascade check,
+its want-list with the group head's new "can't be shown" part, and the stage-8 guard, no `G8D_ONCE` since that part takes
+`.v2-hgb`'s look) and the locked cases it rewrites open G8c's states above and these made-up parts, each **NOT real**, and
+`tests/desk/tools/glance-shots.mjs` captures them (`g8d-`):
+- **`blobFailState`** (`glance-fixtures.mjs`): `unread` with the made-up project's `blobFail` (fake-desk.mjs) naming every
+  file's blob sha, or one file's, as G8c's B1 case makes it, so its first read holds the tree, and with it the cards, but
+  fails in its blob phase (AC5's GitHub cause): AC89 (a)'s state 2 with cards. **NOT how any read failed.**
+- **`cantShowState`** (`glance-fixtures.mjs`): Home's "Your projects · active" with a made-up project the desk can read but
+  can't draw (fake-desk.mjs's `BAD_PR`, a made-up pull request) beside Service-Desk failing from the start (the network
+  cause): on `quiet` (nothing waiting, `orderState`'s `cantShow` with only Service-Desk failing), or with `waiting` on
+  `twoMix`, its second made-up project (Bravo) the one it can't draw beside the first's cards. **NOT real records or
+  failures.**
+- **`G8D_OPENS`** (`glance-fixtures.mjs`): Waiting (every project shown on `openingState` and `signedOutMixedState`;
+  Service-Desk alone shown; the made-up project alone shown on `blobFailState`), Service-Desk's page, the v2.5 Pipeline view
+  (`orderState({ waiting: true })`) and Home on `cantShowState`, each opened at its address as the owner opens it.
+  **NOT real records or failures.**
+- **a reader that never answers** (`ac91-g8d.test.mjs`, as G8c's), for the 3-minute cause on Waiting, a page and the
+  Pipeline view; **a project's reads failing after its first ones** (`ac91-g8d.test.mjs`: Personal-Org-Operating-Model on
+  `mix`, the made-up project with `BAD_PR` on `mix`), for the "since HH:MM" kept. **NOT how any read failed.**

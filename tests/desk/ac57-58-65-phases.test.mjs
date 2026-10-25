@@ -289,19 +289,32 @@ test('AC57, changed by AC83 (rewrites "the drawing\'s shapes"): the branch drawi
 // Rewritten in stage 3 (S-001 AC57, changed by AC83; AC83's opened line, specs/S-001.md:6793-6796: "a thin line with
 // an arrow pointing up (notes 12 and 19)"): the Status screen's drawing and its tie line give way to the page's
 // opened phase, and the drawing to the Home tile's timeline (AC82, frame H5).
-test('AC57, changed by AC83: the opened phase\'s line — 1 px in --line2, with an arrowhead pointing up at its top, drawn as an icon; the tile\'s lines 2 px in the phase\'s colour, dashed ahead and lighter gone back over (AC82)', async () => {
+// Rewritten again in G8 of "After the glance audit" (AC92 (b): "the reading arrow goes: the opened phase's arrow pointing up
+// … is removed; "↑ start at the foot" in the section's head says the reading order once"): the line stays, its arrowhead
+// at the top is gone, and the only arrow in the opened phase is AC92 (b)'s, beside the next-to-reach row
+// (tests/desk/ac92-glance-arrow.test.mjs).
+test('AC57, changed by AC83 and by AC92 (b) (G8): the opened phase\'s line — 1 px in --line2, with no arrowhead at its top now, the reading order said once by "↑ start at the foot"; the tile\'s lines 2 px in the phase\'s colour, dashed ahead and lighter gone back over (AC82)', async () => {
   assert.match(rule('.v2-stdl::before'), /width: 1px; background: var\(--line2\);/);
-  assert.match(rule('.v2-arrow'), /position: absolute; left: -1px; top: -2px;/, 'the arrowhead at the line\'s top');
+  assert.doesNotMatch(css(), /\.v2-arrow\b/, 'the arrowhead\'s rule is gone');
   assert.match(rule('.v2-c.l::before, .v2-c.r::after'), /height: 2px; margin-top: -1px; background: var\(--phc\);/);
   assert.match(rule('.v2-c.s-ahead.l::before, .v2-c.s-ahead.r::after'), /repeating-linear-gradient/);
   assert.match(rule('.v2-c.s-gone.l::before, .v2-c.s-gone.r::after'), /opacity: \.4;/);
   const app = await openSD('#/p/Service-Desk');
   try {
     await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-label'] === 'Design')[0]);
-    const arrow = byClass(keyed(app, 'stdl:Design'), 'v2-arrow')[0];
-    assert.equal(arrow.attrs['aria-hidden'], 'true');
-    assert.equal(byClass(arrow, 'vi-up').length, 1, 'an icon pointing up, never ▲ as text (AC81)');
-    assert.equal(keyed(app, 'stdl:Design').children[0], arrow, 'at the list\'s top');
+    const list = keyed(app, 'stdl:Design');
+    assert.equal(byClass(list, 'v2-arrow').length + byClass(list, 'vi-up').length, 0, 'no arrow pointing up');
+    assert.match(list.children[0].className, /^v2-runh\b/, 'the list opens with its first run\'s head');
+    assert.equal(list.attrs['aria-label'], 'Design: its milestones, read from the bottom up');
+    // Said exactly once (G8's round 2, from G8's review, round 1, N4): the one innermost element holding the words, on the
+    // whole page with the phase opened, is the section's head's own (`ms-h`), and the opened phase holds none.
+    const FOOT = '↑ start at the foot';
+    const holds = (e) => (e.textContent || '').includes(FOOT);
+    const said = findAll(app.view, (e) => holds(e) && !(e.children || []).some((c) => c instanceof El0 && holds(c)));
+    assert.equal(said.length, 1, 'the reading order, said once on the page');
+    assert.equal(said[0].textContent, FOOT, 'in words of its own');
+    assert.ok(findAll(keyed(app, 'ms-h'), (e) => e === said[0]).length === 1, 'in the section\'s head');
+    assert.equal(findAll(list, holds).length, 0, 'not in the opened phase');
   } finally {
     app.restore();
   }

@@ -130,6 +130,11 @@ test('AC83 (frame 5; P-001-redesign-conflicts.md, answer 4): the strip — Disco
       ['Launch', 'planned', 'st-planned', 'b-dashed', 'ph-launch'],
     ]);
     assert.ok(cells[1].className.split(' ').includes('now'), 'the now phase');
+    // Rewritten in G8 (AC92 (b): "the project page's strip: a 10 × 6 px triangle pointing down, centred 9 px above the now
+    // phase's bar"): the now cell alone holds the arrow, last in it (placed above the bar by the cascade, checked in
+    // tests/desk/ac92-glance-arrow.test.mjs), hidden.
+    assert.deepEqual(cells.map((c) => byClass(c, 'v2-here').map((a) => [a.tag, a.className, a.attrs['aria-hidden']])), [[], [['span', 'v2-here d', 'true']], [], []]);
+    assert.ok(cells[1].className.split(' ').includes('here'));
     // Rewritten in G7 (AC92 (a): "the reached check … on the project page's strip" in --ok, on the mark only): the finished
     // phase's check is a status mark (`.ok`, --ok); the now, gone-back-over and planned ones are not; the names stay ink.
     assert.deepEqual(cells.map((c) => / ok /.test(` ${findAll(c, (e) => e.tag === 'svg')[0].attrs.class} `)), [true, false, false, false], 'only the finished phase\'s check is green');
@@ -142,6 +147,7 @@ test('AC83 (frame 5; P-001-redesign-conflicts.md, answer 4): the strip — Disco
     await app.go('#/p/Personal-Org-Operating-Model');
     assert.deepEqual(findAll(keyed(app, 'strip'), (e) => e.tag === 'li').map((c) => [byClass(c, 'v2-pnm')[0].textContent, byClass(c, 'v2-ps')[0].textContent]), [['m1.4', 'open']],
       'the placeholder\'s one sprint file, open');
+    assert.equal(byClass(keyed(app, 'strip'), 'v2-here').length, 1, 'G8: the arrow on the one open sprint');
   } finally {
     app.restore();
   }
@@ -300,7 +306,10 @@ test('AC83 (frames 5, 6; P-001-milestones-together.md, A; rewritten in G5 for AC
 // heads, "Your milestones · <n>" and "Standard checklist · <n> · <h> tracked", and the rows not tracked in a run fold into
 // one row; opened, they are listed in place, Design-1 still at the foot. The bottom-up order, the earlier run smaller and
 // softer, each row's parts and AC56's folds are as before.
-test('AC83 (frame 6; notes 2, 12, 15, 19; AC92 (d), rewritten in G6): opened, a thin line with an arrow pointing up; the latest run first, "Run <k> · <its dates> · <how it ran>", then "Your milestones · <n>", the first at the foot, then "Standard checklist · <n> · <h> tracked", <Phase>-1 at the foot, its untracked rows folded into one; then each earlier run, smaller, under the same two heads', async () => {
+// Rewritten again in G8 (AC83, changed by AC92 (b): "the reading arrow goes", and "an opened phase: the same 6 × 8 px
+// triangle on the phase's thin line beside its next-to-reach row, in the now phase only"): the thin line has no arrow pointing
+// up now; MD3's row, the next to reach in the now run, holds the arrow, and no other row does.
+test('AC83 (frame 6; notes 2, 12, 15, 19; AC92 (d), rewritten in G6; AC92 (b), rewritten in G8): opened, a thin line, its arrow pointing up gone, the arrow pointing right beside the now run\'s next-to-reach row; the latest run first, "Run <k> · <its dates> · <how it ran>", then "Your milestones · <n>", the first at the foot, then "Standard checklist · <n> · <h> tracked", <Phase>-1 at the foot, its untracked rows folded into one; then each earlier run, smaller, under the same two heads', async () => {
   const app = await openPage('#/p/Service-Desk');
   try {
     await app.tap(fold(app, 'Design'));
@@ -327,6 +336,10 @@ test('AC83 (frame 6; notes 2, 12, 15, 19; AC92 (d), rewritten in G6): opened, a 
     const md3 = rowsIn(keyed(app, 'own:Design-i2'))[0];
     assert.equal(iconOf(md3), 'st-next', 'the gold ring for next to reach');
     assert.equal(byClass(md3, 'v2-sms')[0].textContent, 'next to reach');
+    // G8 (AC92 (b)): the arrow beside MD3 on the thin line, last in its row, hidden; on no other row; no arrow pointing up.
+    assert.deepEqual(findAll(open, (e) => / v2-here /.test(` ${e.className} `)).map((a) => [a.parent, a.className, a.attrs['aria-hidden']]), [[md3, 'v2-here r', 'true']]);
+    assert.equal(md3.children[md3.children.length - 1].className, 'v2-here r');
+    assert.equal(findAll(open, (e) => / (v2-arrow|vi-up) /.test(` ${e.className || (e.getAttribute && e.getAttribute('class')) || ''} `)).length, 0, 'no arrow pointing up');
     assert.match(rule('.v2-id'), /font: var\(--t-mono\);/);
     // Folding or opening one line never moves another; a refresh keeps each as left (AC56).
     await app.tap(fold(app, 'Launch'));

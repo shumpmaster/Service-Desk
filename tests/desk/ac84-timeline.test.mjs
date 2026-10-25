@@ -145,7 +145,10 @@ test('AC84: the bands — "<Phase> · run <k>" in 600 12 px with a small square 
   }
 });
 
-test('AC84: the rail — a thin line in the phase\'s colour down the band\'s left edge, solid through what has happened, dashed through what is planned; the Now line the only heavy rule on the screen, "NOW · <date>" in Plex Mono with "ahead above · done below"', async () => {
+// Rewritten in G8 of "After the glance audit" (AC84, changed by AC92 (b): "the Now line's mark becomes an 8 × 10 px triangle
+// pointing right, centred on the rail, in place of its 16 × 2 px bar"): the Now line's mark is the arrow, first in the line,
+// hidden from assistive technology, where its `::before` bar was; the rest of the case as before.
+test('AC84 (AC92 (b), rewritten in G8): the rail — a thin line in the phase\'s colour down the band\'s left edge, solid through what has happened, dashed through what is planned; the Now line the only heavy rule on the screen, "NOW · <date>" in Plex Mono with "ahead above · done below", its mark the arrow pointing right in place of its bar', async () => {
   assert.match(rule('.v2-tseg::before'), /width: 1\.5px; background: var\(--phc\);/);
   assert.match(rule('.v2-tseg.plan::before'), /repeating-linear-gradient/);
   const app = await openSD('#/p/Service-Desk/timeline', {});
@@ -155,18 +158,26 @@ test('AC84: the rail — a thin line in the phase\'s colour down the band\'s lef
     const now = keyed(app, 'nowline');
     assert.equal(byClass(now, 'v2-nowt')[0].textContent, 'Now · 14 Oct', 'its words: today, in ownerTimeZone');
     assert.equal(byClass(now, 'v2-nows')[0].textContent, 'ahead above · done below');
+    // G8 (AC92 (b)): the line's first child is the arrow, an empty span pointing right, hidden; the one on the Timeline.
+    const arrow = now.children[0];
+    assert.deepEqual([arrow.tag, arrow.className, arrow.attrs['aria-hidden'], arrow.textContent], ['span', 'v2-here r', 'true', '']);
+    assert.equal(byClass(app.view, 'v2-here').length, 1, 'one arrow on the Timeline');
   } finally {
     app.restore();
   }
   assert.match(rule('.v2-nowt'), /text-transform: uppercase;/, 'NOW, in capitals, as drawn');
   assert.match(rule('.v2-nowl'), /font: 500 11px\/1\.4 var\(--mono\); color: var\(--ink\);/, 'Plex Mono 500 11 px (desk-v2.html:297)');
-  assert.match(rule('.v2-nowl::before'), /height: 2px; background: var\(--ink\);/);
+  // G8: the 16 × 2 px bar is gone; the arrow, 8 × 10 px, filled in --ink, pointing right, 4 px in, centred on the rail.
+  assert.doesNotMatch(CSS, /\.v2-nowl::before/);
+  assert.equal(rule('.v2-nowl > .v2-here'), ' flex: none; width: 8px; height: 10px; margin-left: 4px; ');
+  assert.equal(rule('.v2-here'), ' display: block; background: var(--ink); ');
+  assert.equal(rule('.v2-here.r'), ' clip-path: polygon(0 0, 100% 50%, 0 100%); ');
   assert.match(rule('.v2-nowl::after'), /border-top: 1px solid var\(--ink\);/);
   // The only heavy rule: no other rule on the Timeline draws a line in --ink or wider than its hairlines.
   const tl = [...CSS.matchAll(/\n(\.v2-(?:timeline|tlhead|thead|tph|tblk|tseg|ms|msi|sp|sps|sph|bl|goal|feed|gather|fkeys|nowl)[^{]*)\{([^}]*)\}/g)];
   assert.ok(tl.length > 15, `${tl.length} Timeline rules`);
   for (const [, sel, body] of tl) {
-    if (/^\.v2-nowl::(before|after)/.test(sel.trim())) continue;
+    if (/^\.v2-nowl::after/.test(sel.trim())) continue;
     assert.doesNotMatch(body, /border[^;]*var\(--ink\)|background: var\(--ink\)/, `${sel.trim()}: no line in --ink`);
     for (const w of body.matchAll(/border(?:-top|-bottom)?: (\d+(?:\.\d+)?)px/g)) assert.ok(Number(w[1]) <= 1, `${sel.trim()}: a ${w[1]} px rule`);
   }

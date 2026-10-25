@@ -403,7 +403,10 @@ test('AC83 (the README, inventory §4; part B, item 30; AC92 (d), rewritten in G
   assert.match(js, /unrec: \{ ring: 'dash',/, 'the dashed circle with "?"');
 });
 
-test('AC83 (P-001-why-line.md, A): the why line once — in an opened phase with a standard milestone whose why isn\'t written, one line at the foot of its list, in the agents\' grey, with "(your ruling, P-001-standard-milestones)" where the ruling is in the tree; never "why: not recorded" on a row; none with every why written', async () => {
+// Rewritten in G9 (AC92 (e): "the why-not-written box becomes a plain line … loses its filled ground and reads as a
+// `--t-small` line in the grey of a gap the agents fill, with its eye icon (AC69)"): the line keeps its words, its place and
+// its once, and is now a plain line, its rule with no ground, padding or radius. Every assertion of the case before G9 is kept.
+test('AC83 (P-001-why-line.md, A; AC92 (e), rewritten in G9): the why line once, a plain line — in an opened phase with a standard milestone whose why isn\'t written, one line at the foot of its list, its eye icon first, in the agents\' grey (--t-small, --ink2) with no filled ground, with "(your ruling, P-001-standard-milestones)" where the ruling is in the tree; never "why: not recorded" on a row; none with every why written', async () => {
   const ruling = readFileSync(join(SRC, '..', 'decisions', 'questions', 'P-001-standard-milestones.md'), 'utf8');
   const app = await openPage('#/p/Service-Desk', { extra: { 'decisions/questions/P-001-standard-milestones.md': ruling } });
   try {
@@ -414,6 +417,20 @@ test('AC83 (P-001-why-line.md, A): the why line once — in an opened phase with
       assert.equal(w[0].textContent, "Why each is taken on or skipped: not written yet. Service-Desk's Chief of Staff writes its lines (your ruling, P-001-standard-milestones).");
       assert.match(w[0].className, /\bgap\b/);
       assert.equal(keyed(app, `stdl:${ph}`).children.at(-1), w[0], 'at the foot of its list');
+      // G9: a plain line — a paragraph whose first child is the eye icon and whose words are the agents' gap.
+      assert.equal(w[0].tag, 'p', `${ph}: a line`);
+      assert.match(w[0].children[0].getAttribute('class'), /\bvi-eye\b/, `${ph}: its eye icon first (AC69)`);
+      assert.match(w[0].children[1].className, /\bgap\b/, `${ph}: its words the agents' gap`);
+    }
+    // G9: its rule draws no filled ground — no background, no padding, no radius — in --t-small and --ink2, the icon in the
+    // rows' 16 px column (as `.v2-sm`), and no other rule gives it one.
+    const r = rule('.v2-callout');
+    assert.match(r, /font: var\(--t-small\);/);
+    assert.match(r, /color: var\(--ink2\);/);
+    assert.match(r, /grid-template-columns: 16px minmax\(0, 1fr\);/);
+    assert.doesNotMatch(r, /background|padding|border-radius|border:|box-shadow/, 'no filled ground');
+    for (const m of css().matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+      if (/\.v2-callout\b/.test(m[1])) assert.doesNotMatch(m[2], /background|box-shadow|border(-radius)?:/, `${m[1].trim()} gives it no ground`);
     }
     assert.doesNotMatch(keyed(app, 'ms-lines').textContent, /why: not recorded/);
   } finally {

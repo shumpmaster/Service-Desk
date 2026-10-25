@@ -672,7 +672,12 @@ test('AC83 + AC29 (after MD3, stage 8; (b) item 37, stage 3 review round 3, R2):
   assert.ok(at > 0, 'Details is drawn by detailsNode');
   const body = page.slice(at, page.indexOf('\n}\n', at));
   assert.match(body, /const \{ project, model \} = p;/);
-  assert.match(body, /h\('p', \{ class: 'v2-small' \}, `CI on \$\{project\.defaultBranch\}: \$\{model \? model\.ci : NOT_AVAILABLE\}`\)/, 'no model: "not available"');
+  // Rewritten in G5 of "After the glance audit" (AC92 (c): Details' CI line adds " · <y> of <x> workflows passed" after
+  // AC29's state): the branch's words pinned as before, the counted workflows' part (ciPassed) drawn after them in the same
+  // line, and none with no model (its cases in tests/desk/ac92-glance-counts.test.mjs). Before G5 the line ended at the state.
+  assert.match(body, /h\('p', \{ class: 'v2-small' \}, `CI on \$\{project\.defaultBranch\}: \$\{model \? model\.ci : NOT_AVAILABLE\}`, ciPassed\(model\)\)/, 'no model: "not available"');
+  const { ciPassed } = await import('../../src/lib/projectpage.js');
+  assert.equal(ciPassed(null), '', 'no model: nothing after "not available"');
   assert.doesNotMatch(body, /CI on [^`]*NOT_RECORDED/, 'never "not recorded"');
   const from = /import \{([^}]*)\} from '\.\/lib\/([a-z]+)\.js';/g;
   const lib = [...page.matchAll(from)].find((m) => /\bNOT_AVAILABLE\b/.test(m[1]));

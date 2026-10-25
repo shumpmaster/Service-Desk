@@ -165,18 +165,22 @@ test('AC48 with AC82: a project whose read goes stale shows no quiet on Home ("N
 // ---------------------------------------------------------------------------
 // AC52 and AC53
 
-test('AC52 (changed by AC80): every item that needs the owner is one card in "Waiting on you", in AC52\'s order (raised first, no raised time last); no card says whether it can be acted on; a deploy is not counted where J7 does not mark deploysNeedOwner', async () => {
+// Rewritten in QW1 (AC94; AC80's note "after the questions request"): the question is one card in the "Questions for you"
+// section, not in "Waiting on you"; the lane holds the five others in AC52's order and counts them; the badge counts six.
+test('AC52 (changed by AC80, and by AC94 in QW1): every item that needs the owner is one card, in "Waiting on you" in AC52\'s order (raised first, no raised time last) or, a question, in the "Questions for you" section; no card says whether it can be acted on; a deploy is not counted where J7 does not mark deploysNeedOwner', async () => {
   const app = await opened(twoProjects(), '#/waiting/Alpha');
   try {
     const lane = byClass(app.view, 'lane-wait')[0];
     const titles = byClass(lane, 'v2-t').map((r) => r.textContent);
-    assert.equal(titles.length, 6, 'a pull request, a question, a gate card, a decision card, a hold card and a merge card');
+    assert.equal(titles.length, 5, 'a pull request, a gate card, a decision card, a hold card and a merge card');
     assert.match(titles[0], /a change to merge/, 'the pull request, raised first (6 Oct)');
-    assert.match(titles[1], /Alpha's question/, 'then the question raised 400 min ago');
-    assert.match(titles[2], /Pass the Build gate|Build gate/, 'then the gate card raised 270 min ago');
-    assert.match(titles[3], /Q-020/, 'then the card raised 200 min ago');
-    assert.ok(/governance run is not green|merge conflict/.test(titles[4]) && /governance run is not green|merge conflict/.test(titles[5]), 'no raised time: last');
-    assert.equal(byClass(lane, 'v2-lc')[0].textContent, '6', 'the deploy is not counted');
+    assert.match(titles[1], /Pass the Build gate|Build gate/, 'then the gate card raised 270 min ago');
+    assert.match(titles[2], /Q-020/, 'then the card raised 200 min ago');
+    assert.ok(/governance run is not green|merge conflict/.test(titles[3]) && /governance run is not green|merge conflict/.test(titles[4]), 'no raised time: last');
+    assert.equal(byClass(lane, 'v2-lc')[0].textContent, '5', 'the deploy is not counted');
+    const qs = byClass(findAll(app.view, (e) => e.dataset && e.dataset.k === 'qsec')[0], 'v2-t').map((r) => r.textContent);
+    assert.deepEqual(qs, ["Alpha's question"], 'the question, one card, in the section');
+    assert.equal(byClass(app.view, 'v2-badge')[0].children[0].textContent, '12', 'every card counted, both projects\' (the badge unchanged)');
     assert.doesNotMatch(app.text(), /desk-deploy: waiting/, 'nor shown as a card');
     assert.doesNotMatch(app.text(), /do first|can be acted on|ready to act|after #/i);
   } finally {

@@ -1100,12 +1100,15 @@ const G6_EXCEPT = (n, d, theme) => {
  * - a waiting deploy's mismatch mark (`svg.v2-k.vi-x` in the `p.v2-safe-l` of a `.v2-safe.bad`) in --bad;
  * - the briefing's can't-read line under its first (`span.v2-bt3.bad.v2-bcant`), the ✕ (`svg.v2-k.bad`, a new element) and
  *   the words side by side, as a due line (`.v2-bdue`), the ✕ 1 px down;
- * - Plan's moved row (`li.v2-plli.moved`): its edge --line2, not --gold.
- * The walk reaches each on G7's screens (tests/desk/glance-fixtures.mjs's G7_OPENS, below) and the states above. A sprint's ✓
- * (`span.v2-okm`, a new element) and ✕ (`.v2-stats .v2-smk`) are drawn only with a sprint opened, which this walk leaves
- * out (see below), so tests/desk/ac92-glance-palette.test.mjs and AC84's cases lock them.
+ * - Plan's moved row (`li.v2-plli.moved`): its edge --line2, not --gold;
+ * - a sprint's marks, in a sprint's stats (`.v2-stats`, drawn with a sprint opened): the ✓ (`span.v2-okm`, a new element) in
+ *   --ok at weight 600, so its text's colour and weight change from the word's --ink2 and 400; and the ✕
+ *   (`svg.v2-k.v2-smk`) in --bad, where it inherited the word's colour.
+ * The walk reaches each on G7's screens (tests/desk/glance-fixtures.mjs's G7_OPENS, below) and the states above; a sprint's
+ * marks on the Timeline with every sprint opened (G8's round 2, from G7's reviews, round 1, note 1), where G8's arrow on
+ * the Now line is met too.
  */
-const G7_LOOK = (ink, ok, bad, gold, line2) => new Map([
+const G7_LOOK = (ink, ink2, ok, bad, gold, line2) => new Map([
   ['svg.v2-s.st-check.ok (a status mark)', [`color: ${ink} → ${ok}`]],
   ['svg.v2-s.st-check.ok (Plan\'s Reached list)', [`color: ${ink} → ${ok}`, 'width: 16px → 14px', 'height: 16px → 14px', 'vertical-align: (none) → -2px', 'margin-right: (none) → 6px']],
   ['svg.v2-s.st-cross.bad (a status mark)', [`color: ${ink} → ${bad}`]],
@@ -1115,8 +1118,10 @@ const G7_LOOK = (ink, ok, bad, gold, line2) => new Map([
   ['span.v2-bt3.bad.v2-bcant', ['display: (none) → flex', 'gap: (none) → 4px', 'align-items: (none) → flex-start']],
   ['svg.v2-k.bad (the briefing\'s can\'t-read line)', ['margin-top: (none) → 1px']],
   ['li.v2-plli.moved', [`box-shadow: inset 2px 0 0 ${gold} → inset 2px 0 0 ${line2}`]],
+  ['span.v2-okm (a sprint\'s ✓)', [`color: (none) → ${ok}`, 'font-weight: (none) → 600', `computed color: ${ink2} → ${ok}`, 'computed font-weight: 400 → 600']],
+  ['svg.v2-k.v2-smk (a sprint\'s ✕)', [`color: inherit → ${bad}`]],
 ]);
-const G7_ONCE = new Map([['light', G7_LOOK('#18191c', '#12733a', '#b3162a', '#8a6a10', '#d6d6db')], ['dark', G7_LOOK('#ecedef', '#4cc06a', '#ff6b78', '#c9b04f', '#34363c')]]);
+const G7_ONCE = new Map([['light', G7_LOOK('#18191c', '#5c5f66', '#12733a', '#b3162a', '#8a6a10', '#d6d6db')], ['dark', G7_LOOK('#ecedef', '#a2a5ac', '#4cc06a', '#ff6b78', '#c9b04f', '#34363c')]]);
 const G7_KEY = (n) => {
   const p = n.parent;
   const svg = n.tag === 'svg';
@@ -1133,11 +1138,37 @@ const G7_KEY = (n) => {
   if (bcant(n)) return 'span.v2-bt3.bad.v2-bcant';
   if (svg && n.cls.has('v2-k') && n.cls.has('bad') && bcant(p)) return 'svg.v2-k.bad (the briefing\'s can\'t-read line)';
   if (n.tag === 'li' && n.cls.has('v2-plli') && n.cls.has('moved')) return 'li.v2-plli.moved';
+  // A sprint's mark sits in its word (`span.sb-mkw`, or a `details.sb-mkw`'s summary), in a sprint's stats.
+  const mkw = Boolean(p && ((p.tag === 'span' && p.cls.has('sb-mkw')) || (p.tag === 'summary' && p.parent && p.parent.cls.has('sb-mkw'))) && inStats(p));
+  if (n.tag === 'span' && n.cls.has('v2-okm') && mkw) return 'span.v2-okm (a sprint\'s ✓)';
+  if (svg && n.cls.has('v2-k') && n.cls.has('v2-smk') && mkw) return 'svg.v2-k.v2-smk (a sprint\'s ✕)';
   return null;
 };
+const inStats = (n) => { for (let q = n; q; q = q.parent) if (q.cls.has('v2-stats')) return true; return false; };
 const G7_EXCEPT = (n, d, theme) => {
   const k = G7_KEY(n);
   return Boolean(k && G7_ONCE.get(theme) && (G7_ONCE.get(theme).get(k) || []).includes(d)) ? `G7 ${theme} ${k} ${d}` : null;
+};
+/**
+ * Older than G7, and no stage of the glance audit's: stage 6a after MD3 (dc6325c; AC89 (g), "every sprint mark as tall as
+ * one with a reason, so the marks' tops meet") gave each sprint mark on the Timeline (`span.sb-mkw` in a Timeline's
+ * `.v2-stats`) a 24 px target, `.v2-timeline .v2-stats span.sb-mkw { min-height: 24px; }`, after bd4097d. The walk first
+ * reaches it on the Timeline with every sprint opened (G8's round 2, from G7's reviews, round 1, note 1), so it is named
+ * here, on its own element, its one declaration, the same in each theme.
+ */
+const PRE_G7_ONCE = new Map([['span.sb-mkw (a Timeline\'s sprint mark)', ['min-height: (none) → 24px']]]);
+const PRE_G7_KEY = (n) => {
+  if (n.tag !== 'span' || !n.cls.has('sb-mkw')) return null;
+  let stats = false;
+  for (let q = n.parent; q; q = q.parent) {
+    if (q.cls.has('v2-stats')) stats = true;
+    if (stats && q.cls.has('v2-timeline')) return 'span.sb-mkw (a Timeline\'s sprint mark)';
+  }
+  return null;
+};
+const PRE_G7_EXCEPT = (n, d) => {
+  const k = PRE_G7_KEY(n);
+  return Boolean(k && (PRE_G7_ONCE.get(k) || []).includes(d)) ? `PRE-G7 ${k} ${d}` : null;
 };
 /**
  * G7b of "After the glance audit"'s changes to the look on purpose (the brief's rule; AC91 (c): "the list ends with one
@@ -1254,6 +1285,8 @@ function sameLook(app, where, fails, seen) {
         if (g6) { excepted.add(g6); continue; }
         const g7 = G7_EXCEPT(b, d, way.theme);
         if (g7) { excepted.add(g7); continue; }
+        const pre7 = PRE_G7_EXCEPT(b, d);
+        if (pre7) { excepted.add(pre7); continue; }
         const g7b = G7B_EXCEPT(b, d);
         if (g7b) { excepted.add(g7b); continue; }
         const g8 = G8_EXCEPT(b, d, way.theme);
@@ -1390,13 +1423,18 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   }
   // G7 of "After the glance audit" (AC92 (a)): the screens its marks are drawn on that the walk above doesn't open
   // (tests/desk/glance-fixtures.mjs's G7_OPENS, its made-up parts NOT real), so the walk reaches each mark G7 colours, the
-  // moved row's edge and the briefing's can't-read lines. The Timeline with its sprints opened is left out here: there
-  // every sprint mark's `span.sb-mkw` also takes the 24 px target `.v2-timeline .v2-stats span.sb-mkw` gave it after
-  // bd4097d, a change of no stage of G7's that this walk never reached; G7's sprint ✓ and ✕ are locked by its own test
-  // (tests/desk/ac92-glance-palette.test.mjs) and AC84's (tests/desk/ac84-timeline.test.mjs).
-  for (const [where, open] of G7_OPENS.filter(([w]) => w !== 'Timeline, every sprint opened')) {
+  // moved row's edge and the briefing's can't-read lines. With the Timeline's every sprint opened (G8's round 2, from G7's
+  // reviews, round 1, note 1), it reaches a sprint's ✓ and ✕, pinned in G7_ONCE, with G8's arrow on the Now line, and the
+  // 24 px target older than G7 that each sprint mark there takes (PRE_G7_ONCE, above).
+  for (const [where, open] of G7_OPENS) {
     const g7 = await open();
     try {
+      if (where === 'Timeline, every sprint opened') {
+        const of = (c) => findAll(g7.view, (e) => (` ${e.className || ''} `).includes(` ${c} `));
+        assert.ok(of('v2-okm').length > 0 && of('v2-smk').length > 0, `${where}: a sprint's ✓ and ✕ drawn`);
+        const here = of('v2-here');
+        assert.ok(here.length === 1 && / v2-nowl /.test(` ${here[0].parentNode.className} `), `${where}: G8's one arrow, on the Now line`);
+      }
       sameLook(g7, `G7 ${where}`, fails, seen);
       counts.screens++;
     } finally {
@@ -1460,13 +1498,16 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // G7's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
   const g7 = [...G7_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G7 ${theme} ${k} ${d}`))).sort();
   assert.deepEqual([...excepted].filter((x) => /^G7 /.test(x)).sort(), g7);
+  // The exception older than G7 (stage 6a after MD3) was met, its one declaration on its own element, and nothing else of it.
+  const pre7 = [...PRE_G7_ONCE].flatMap(([k, ds]) => ds.map((d) => `PRE-G7 ${k} ${d}`)).sort();
+  assert.deepEqual([...excepted].filter((x) => /^PRE-G7 /.test(x)).sort(), pre7);
   // G7b's exception was met, each pinned declaration on its own element, and nothing else of it.
   const g7b = [...G7B_ONCE].flatMap(([k, ds]) => ds.map((d) => `G7B ${k} ${d}`)).sort();
   assert.deepEqual([...excepted].filter((x) => /^G7B /.test(x)).sort(), g7b);
   // G8's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
   const g8 = [...G8_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G8 ${theme} ${k} ${d}`))).sort();
   assert.deepEqual([...excepted].filter((x) => /^G8 /.test(x)).sort(), g8);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[12345678] |G7B )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[12345678] |G7B |PRE-G7 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

@@ -397,14 +397,22 @@ export function homeGroupOf(project, snap, pv) {
 
 const projectsWord = (n) => `${n} project${n === 1 ? '' : 's'}`;
 
-/** A group's header words (AC54 (d)): its count, what waits on the owner and what can't be read, open or closed. */
+/**
+ * A group's header words (AC54 (d)): its count, what waits on the owner and what can't be read, open or closed. From stage
+ * G8d (AC91 (c); the owner's "Say "can't be shown" (Recommended)"), a project the desk can read but can't draw (`cantShow`)
+ * is counted apart, "<m> can't be shown", after the can't-read count: "2 projects · 1 can't be read · 1 can't be shown". A
+ * box marked both is counted "can't be read" only, so each project is counted once.
+ */
 export function groupHeaderWords(boxes) {
   const waiting = boxes.reduce((n, b) => n + (b.waiting || 0), 0);
   const cant = boxes.filter((b) => b.cantRead).length;
+  const shown = boxes.filter((b) => b.cantShow && !b.cantRead).length;
   const parts = [projectsWord(boxes.length)];
   if (waiting) parts.push(`${waiting} waiting on you`);
   if (cant) parts.push(`${cant} can't be read`);
-  return { count: projectsWord(boxes.length), waiting: waiting ? `${waiting} waiting on you` : null, cant: cant ? `${cant} can't be read` : null, words: parts.join(' · ') };
+  if (shown) parts.push(`${shown} can't be shown`);
+  return { count: projectsWord(boxes.length), waiting: waiting ? `${waiting} waiting on you` : null, cant: cant ? `${cant} can't be read` : null,
+    shown: shown ? `${shown} can't be shown` : null, words: parts.join(' · ') };
 }
 
 // ---------------------------------------------------------------------------

@@ -12,10 +12,13 @@
 // `longNameState`, a milestone with a long made-up name, and Plan with a row moved, opened as the owner moves it
 // (`G8B_OPENS`); G8c adds Home with projects never read in this opening, read earlier, signed out, in an order the config
 // doesn't give, one the desk can't draw, and a line into the now circle (`openingState`, `signedOutMixedState`, `orderState`,
-// `sprintsState(1)`, `g8cStore`, `G8C_OPENS`); the later stages add theirs. Each
+// `sprintsState(1)`, `g8cStore`, `G8C_OPENS`); G8d adds Waiting, a project's page and the Pipeline view with a project never
+// read in this opening, a first read whose blobs fail, and Home with a project the desk can read but can't draw beside one
+// it can't read (`blobFailState`, `cantShowState`, `G8D_OPENS`), and in its round 3 Waiting with none read and drawn and a
+// project the desk can't draw in state 5 (`noneDrawnState`, `cantShowLastState`); the later stages add theirs. Each
 // made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
 import { CONFIG, fixture } from './helpers.mjs';
-import { repo, BAD_PR } from './fake-desk.mjs';
+import { repo, BAD_PR, gitSha } from './fake-desk.mjs';
 import { waSetup, WORKED, memStore, SD, POOM } from './wa-fixtures.mjs';
 import { loadSandbox, findAll } from './sandbox-helpers.mjs';
 import { sdRepo, SD3, pullNodes, answerOf } from './tv2-fixtures.mjs';
@@ -549,6 +552,159 @@ export const G8C_OPENS = [
   ['Home, a project the desk can\'t draw beside two failing, nothing waiting', () => g8cOpen(orderState({ cantShow: true }))],
   ['Home, a line into the now circle', () => g8cOpen(nowShared('build'))],
   ['Home, a v2.5 tile, its open sprint after a closed one', () => g8cOpen(sprintsState(1))],
+];
+
+/**
+ * G8d (AC89 (a), C, as settled after G8c's review): `unread` with the made-up project's first read holding the tree, and with
+ * it the cards, but failing in its blob phase (fake-desk.mjs's `blobFail`, NOT how any read failed: GitHub fails those blobs),
+ * for `which` blobs, every file's or one file's: a project with cards and no read succeeded in this opening, as G8c's B1 case.
+ */
+export function blobFailState(which = 'every file') {
+  const s = unreadState({ who: MIX_PROJECT });
+  const alpha = s.repos[MIX_PROJECT];
+  const files = Object.values(alpha.files);
+  alpha.blobFail = (which === 'every file' ? files : files.slice(0, 1)).map(gitSha); // made up (NOT real)
+  return s;
+}
+
+/**
+ * G8d (AC91 (c); the owner's "Say "can't be shown" (Recommended)"): Home's "Your projects · active" with one project the desk
+ * can read but can't draw (fake-desk.mjs's `BAD_PR`, NOT a real pull request) and one whose reads fail from the start
+ * (Service-Desk, the network cause, NOT how any read failed): with `waiting`, `twoMix`'s second made-up project can't be drawn
+ * beside the first's cards; without, `quiet`'s made-up project can't be drawn and nothing waits.
+ */
+export function cantShowState({ waiting = false } = {}) {
+  if (!waiting) return orderState({ cantShow: true, only: [SD.name] });
+  const s = twoMixState();
+  s.repos[MIX_PROJECT2].pulls.push(BAD_PR);
+  s.repos[SD.name].fail = { kind: 'network' };
+  s.fail = () => {};
+  return s;
+}
+
+/**
+ * G8d's round 2 (the Reviewer's N3; AC89 (a)): `quiet` with the made-up project holding one status file that gives no card
+ * (a project dispatched to the builder, NOT a real record) and its first read holding the tree but failing in its blob phase
+ * on that file's blob (fake-desk.mjs's `blobFail`, NOT how any read failed): AC89 (a)'s state 2 on the blob-failure path with
+ * no card, so its lanes are empty.
+ */
+export function blobFailNoCardState() {
+  const s = quietState();
+  const alpha = s.repos[MIX_PROJECT];
+  alpha.commit({ 'status/P-009.toml': 'kind = "project"\nstage = 5\nstate = "dispatched"\nrole = "builder"\n' }); // made up (NOT real)
+  alpha.blobFail = [gitSha(alpha.files['status/P-009.toml'])]; // made up (NOT real)
+  return s;
+}
+
+/**
+ * G8d's round 2 (AC80; AC91 (c); the owner's ""✕ Can't show Bravo" (Recommended)"): `twoMix` with the made-up project Alpha
+ * the desk can read but can't draw (fake-desk.mjs's `BAD_PR`, NOT a real pull request) between two whose reads fail from the
+ * start (Service-Desk and the made-up Bravo, the network cause, NOT how any read failed), so Waiting's "Can't show" line sits
+ * among the can't-read lines in the board's order.
+ */
+export function cantShowAmongState() {
+  const s = twoMixState();
+  s.repos[MIX_PROJECT].pulls.push(BAD_PR);
+  for (const n of [SD.name, MIX_PROJECT2]) s.repos[n].fail = { kind: 'network' };
+  s.fail = () => {};
+  return s;
+}
+
+/**
+ * G8d's round 3 (AC91 (f); the owner's ruling of 2026-10-25, "Ruling: A", decisions/questions/P-001-glance-no-quiet-lanes.md):
+ * Waiting with every project shown and no shown project both read and drawn, each made-up part NOT real (fake-desk.mjs's
+ * `BAD_PR`, NOT a real pull request; the network cause, NOT how any read failed):
+ * - by default, `quiet` with Service-Desk and Personal-Org-Operating-Model failing from the start and the made-up project
+ *   the desk can read but can't draw (G8c's `orderState({ cantShow: true })`);
+ * - with `every`, `quiet` with every project holding `BAD_PR`, every read working: none can be drawn;
+ * - with `waiting`, `twoMix` with Service-Desk and Personal-Org-Operating-Model failing from the start, the made-up Bravo
+ *   the desk can't draw, and the made-up Alpha's reads failing after its first ones (`fail()`), its last read's cards kept;
+ * - with `pending`, as by default, but Service-Desk's first read never answers (a reader that never answers, NOT how any
+ *   read went), so a read is pending while the 3 minutes have not passed.
+ */
+export function noneDrawnState({ every = false, waiting = false, pending = false } = {}) {
+  const net = () => ({ kind: 'network' });
+  if (waiting) {
+    const s = twoMixState();
+    s.repos[MIX_PROJECT2].pulls.push(BAD_PR);
+    for (const n of [SD.name, POOM.name]) s.repos[n].fail = net();
+    s.fail = () => { s.repos[MIX_PROJECT].fail = net(); };
+    return s;
+  }
+  if (every) {
+    const s = quietState();
+    for (const n of [SD.name, POOM.name, MIX_PROJECT]) s.repos[n].pulls.push(BAD_PR);
+    s.fail = () => {};
+    return s;
+  }
+  const s = orderState({ cantShow: true });
+  if (pending) {
+    delete s.repos[SD.name].fail;
+    s.repos[SD.name].hold = new Promise(() => {});
+  }
+  return s;
+}
+
+/**
+ * G8d's round 3 (AC89 (a)'s state 5; the owner's ruling of 2026-10-25, "Ruling: A",
+ * decisions/questions/P-001-glance-cant-show-last-read.md): the made-up project the desk can't draw (fake-desk.mjs's `BAD_PR`,
+ * NOT a real pull request), read in this opening and then failing (`fail()`, the network cause, NOT how any read failed), for
+ * Waiting with it alone shown: on `quiet` (its README alone, so no card) by default; with `cards`, on `mix` (its cards, of
+ * which the desk draws none); with `signedOut`, on `signedOutState` (every read refused as signed out after the first ones, J6).
+ */
+export function cantShowLastState({ cards = false, signedOut = false } = {}) {
+  if (signedOut) {
+    const s = signedOutState();
+    s.repos[MIX_PROJECT].pulls.push(BAD_PR);
+    return s;
+  }
+  const s = cards ? mixState() : quietState();
+  s.repos[MIX_PROJECT].pulls.push(BAD_PR);
+  s.fail = () => { s.repos[MIX_PROJECT].fail = { kind: 'network' }; };
+  return s;
+}
+
+/** G8d's screens, opened at `hash` with "last looked" after the records' dates, `fail()` called after the first reads where `later`. */
+async function g8dOpen(setup, hash, { later = false, polls = 1 } = {}) {
+  const app = await loadSandbox({ ...setup, hash, now: NOW, store: g8cStore(SINCE_LATE) });
+  await app.advance(1000);
+  await app.advance(polls * POLL_MS);
+  if (later) {
+    setup.fail();
+    await app.advance(3 * POLL_MS);
+  }
+  return app;
+}
+const enc = encodeURIComponent;
+/**
+ * G8d (AC91 (c); AC89 (a)): the screens it changes, as [name, open() → the open page], each made-up part NOT real: Waiting
+ * with every project shown (one project never read in this opening, one read earlier; and signed out), with Service-Desk alone
+ * shown never read, and with the made-up project alone shown on the blob-failure path; Service-Desk's page never read; the
+ * v2.5 Pipeline view never read; and Home with a project the desk can't draw beside one it can't read, nothing waiting and
+ * cards waiting; from G8d's round 2, Waiting with a project the desk can read but can't show, every project shown (nothing
+ * waiting and cards waiting) and it alone shown.
+ */
+export const G8D_OPENS = [
+  ['Waiting, every project shown, one project never read in this opening, one read earlier', () => g8dOpen(openingState(), '#/waiting', { later: true })],
+  ['Waiting, signed out, one project never read before it and the others read', () => g8dOpen(signedOutMixedState(), '#/waiting', { later: true })],
+  ['Waiting, Service-Desk alone shown, never read in this opening', () => g8dOpen(openingState(), `#/waiting/${enc(SD.name)}`)],
+  ['Waiting, the made-up project alone shown, its blobs failing (every file)', () => g8dOpen(blobFailState('every file'), `#/waiting/${MIX_PROJECT}`, { polls: 2 })],
+  ['Waiting, the made-up project alone shown, its blobs failing (one file)', () => g8dOpen(blobFailState('one file'), `#/waiting/${MIX_PROJECT}`, { polls: 2 })],
+  ['Service-Desk\'s page, never read in this opening', () => g8dOpen(openingState(), `#/p/${enc(SD.name)}`)],
+  ['the v2.5 Pipeline view, never read in this opening', () => g8dOpen(orderState({ waiting: true }), `#/p/${enc(POOM.name)}/pipeline`)],
+  ['Home, a project the desk can\'t draw beside one it can\'t read, nothing waiting', () => g8dOpen(cantShowState(), '#/')],
+  ['Home, a project the desk can\'t draw beside one it can\'t read, cards waiting', () => g8dOpen(cantShowState({ waiting: true }), '#/')],
+  // G8d's round 2 (AC80; AC89 (a); the owner's ""✕ Can't show Bravo" (Recommended)"): Waiting with a project the desk can read
+  // but can't show, every project shown and it alone shown.
+  ['Waiting, every project shown, a project that can\'t be shown beside one that can\'t be read', () => g8dOpen(cantShowState(), '#/waiting')],
+  ['Waiting, every project shown, cards waiting, a project that can\'t be shown', () => g8dOpen(cantShowState({ waiting: true }), '#/waiting')],
+  ['Waiting, the made-up project alone shown, it can\'t be shown', () => g8dOpen(cantShowState(), `#/waiting/${MIX_PROJECT}`)],
+  // G8d's round 3 (AC91 (f), AC89 (a); P-001-glance-no-quiet-lanes.md and P-001-glance-cant-show-last-read.md, both "Ruling:
+  // A"): Waiting with every project shown and none both read and drawn, and the made-up project the desk can't draw alone
+  // shown in state 5, one screen for each new phrase: the suite runs in one process, and each page opened keeps its own copy
+  // of sandbox.js (about 1.25 MB) for good.
+  ['Waiting, every project shown, none read and drawn, can\'t read or show', () => g8dOpen(noneDrawnState(), '#/waiting')],
+  ['Waiting, the made-up project alone shown, can\'t show when last read', () => g8dOpen(cantShowLastState(), `#/waiting/${MIX_PROJECT}`, { later: true })],
 ];
 
 export { SD, POOM, CONFIG };

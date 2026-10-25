@@ -899,3 +899,72 @@ above, with these made-up parts, each **NOT real**, and `tests/desk/tools/glance
   this opening. **NOT how any read failed.**
 - **a portfolio that refuses the desk** (`ac91-g8c-home.test.mjs`, pf-fixtures.mjs's `pfFiles` with `no-access`), as G7's
   palette test makes it. **NOT a real record.**
+
+## After the glance audit, G8d (2026-10-25, S-001 AC91 (c), AC89 (a) and (h) and AC54 changed; the owner's answers of 2026-10-25 to G8c's design review, docs/design/references/owner-answers-2026-10-25-g8c-review.md: "Yes, everywhere (Recommended)", "Say "can't be shown" (Recommended)", "Keep it, as built (Recommended)")
+
+G8d adds no fixture file. `tests/desk/ac91-g8d.test.mjs`, G8d's walks in `ac88-dark.test.mjs` (AC92 (a)'s cascade check,
+its want-list with the group head's new "can't be shown" part, and the stage-8 guard, no `G8D_ONCE` since that part takes
+`.v2-hgb`'s look) and the locked cases it rewrites open G8c's states above and these made-up parts, each **NOT real**, and
+`tests/desk/tools/glance-shots.mjs` captures them (`g8d-`):
+- **`blobFailState`** (`glance-fixtures.mjs`): `unread` with the made-up project's `blobFail` (fake-desk.mjs) naming every
+  file's blob sha, or one file's, as G8c's B1 case makes it, so its first read holds the tree, and with it the cards, but
+  fails in its blob phase (AC5's GitHub cause): AC89 (a)'s state 2 with cards. **NOT how any read failed.**
+- **`cantShowState`** (`glance-fixtures.mjs`): Home's "Your projects · active" with a made-up project the desk can read but
+  can't draw (fake-desk.mjs's `BAD_PR`, a made-up pull request) beside Service-Desk failing from the start (the network
+  cause): on `quiet` (nothing waiting, `orderState`'s `cantShow` with only Service-Desk failing), or with `waiting` on
+  `twoMix`, its second made-up project (Bravo) the one it can't draw beside the first's cards. **NOT real records or
+  failures.**
+- **`G8D_OPENS`** (`glance-fixtures.mjs`): Waiting (every project shown on `openingState` and `signedOutMixedState`;
+  Service-Desk alone shown; the made-up project alone shown on `blobFailState`), Service-Desk's page, the v2.5 Pipeline view
+  (`orderState({ waiting: true })`) and Home on `cantShowState`, each opened at its address as the owner opens it.
+  **NOT real records or failures.**
+- **a reader that never answers** (`ac91-g8d.test.mjs`, as G8c's), for the 3-minute cause on Waiting, a page and the
+  Pipeline view; **a project's reads failing after its first ones** (`ac91-g8d.test.mjs`: Personal-Org-Operating-Model on
+  `mix`, the made-up project with `BAD_PR` on `mix`), for the "since HH:MM" kept. **NOT how any read failed.**
+
+### G8d's round 2 (2026-10-25, S-001 AC80, AC89 (a) and AC91 (c) changed; the owner's answer of 2026-10-25 to G8d's design review, item 4: ""✕ Can't show Bravo" (Recommended)"; the Reviewer's N1 to N5)
+
+Still no fixture file. `tests/desk/ac91-g8d.test.mjs`'s round-2 cases, G8d's walks in `ac88-dark.test.mjs` and the
+`g8d-` captures open these made-up parts, each **NOT real**:
+- **`blobFailNoCardState`** (`glance-fixtures.mjs`, the Reviewer's N3): `quiet` with the made-up project holding one
+  made-up status file that gives no card (`status/P-009.toml`, a project dispatched to the builder) and its first read
+  holding the tree but failing in its blob phase on that file's blob (fake-desk.mjs's `blobFail`): AC89 (a)'s state 2 on the
+  blob-failure path with empty lanes. **NOT a real record, NOT how any read failed.**
+- **`cantShowAmongState`** (`glance-fixtures.mjs`): `twoMix` with the made-up project Alpha the desk can read but can't draw
+  (fake-desk.mjs's `BAD_PR`) between Service-Desk and the made-up Bravo, whose reads fail from the start (the network
+  cause), so Waiting's "Can't show" line sits among the can't-read lines in the board's order. **NOT real records or
+  failures.**
+- **`G8D_OPENS`'s three round-2 entries** (`glance-fixtures.mjs`): Waiting on `cantShowState`, every project shown (nothing
+  waiting, and with `waiting` beside the first made-up project's cards) and the made-up project alone shown. **NOT real
+  records or failures.**
+- **a project the desk can't draw whose read fails** (`ac91-g8d.test.mjs`): `BAD_PR` on the made-up project with
+  `blobFailState('every file')` (never read in this opening, the Reviewer's N4), with its reads failing after its first ones
+  on `mix` (the network cause), and on `signedOutState` (every read refused as signed out after the first ones, J6).
+  **NOT how any read failed.**
+- **a reader that never answers** for Waiting's quiet line with every project shown (the Reviewer's N1), and
+  **`signedOutState`** for Service-Desk's page read before the sign-out (N2), as above. **NOT how any read went.**
+
+### G8d's round 3 (2026-10-25, S-001 AC89 (a) and AC91 (f) changed, AC80 noted; the owner's rulings of 2026-10-25 on G8d's round-2 reviews, both "Ruling: A": decisions/questions/P-001-glance-no-quiet-lanes.md and P-001-glance-cant-show-last-read.md)
+
+Still no fixture file. `tests/desk/ac91-g8d.test.mjs`'s round-3 cases, G8d's walks in `ac88-dark.test.mjs` and the
+`g8d-` captures open these made-up parts, each **NOT real**:
+- **`noneDrawnState`** (`glance-fixtures.mjs`): Waiting with every project shown and no shown project both read and drawn.
+  By default, `quiet` with Service-Desk and Personal-Org-Operating-Model failing from the start (the network cause) and the
+  made-up project the desk can read but can't draw (fake-desk.mjs's `BAD_PR`), as G8c's `orderState({ cantShow: true })`;
+  with `every`, `quiet` with `BAD_PR` on every project, every read working; with `waiting`, `twoMix` with the made-up Bravo
+  holding `BAD_PR`, Service-Desk and Personal-Org-Operating-Model failing from the start and the made-up Alpha's reads
+  failing after its first ones, its last read's cards kept; with `pending`, as by default but Service-Desk's first read
+  never answering (a reader that never answers). **NOT real records, NOT a real pull request, NOT how any read failed or went.**
+- **`cantShowLastState`** (`glance-fixtures.mjs`): the made-up project with `BAD_PR`, read in this opening and then failing
+  (the network cause), for AC89 (a)'s state 5 alone shown: on `quiet` (no card) by default, on `mix` with `cards`, and with
+  `signedOut` on `signedOutState` (every read refused as signed out after the first ones, J6). **NOT real records, NOT a
+  real pull request, NOT how any read failed.**
+- **`G8D_OPENS`'s two round-3 entries** (`glance-fixtures.mjs`): Waiting on `noneDrawnState` (by default) with every
+  project shown, and on `cantShowLastState` (by default) with the made-up project alone shown. **NOT real records or
+  failures.**
+- **a drawn project in state 5** (`ac91-g8d.test.mjs`): `quiet`'s made-up project read and then failing (the network
+  cause), for "Nothing here when last read" kept; and **a project the desk can't draw, never read in this opening**,
+  `BAD_PR` on `blobFailState('every file')`, for state 2's "Can't read" kept, as round 2's. **NOT how any read failed.**
+- **reads made to work again** (`ac91-g8d.test.mjs`, "gone once a project reads and draws again"): Service-Desk's made-up
+  failure removed on `noneDrawnState`, and the made-up project's failure (and, for one step, its `BAD_PR`) removed on
+  `cantShowLastState`. **NOT how any read went.**

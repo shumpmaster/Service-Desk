@@ -9,7 +9,7 @@
 // shown as written; a value no record gives says so in words (AC41).
 
 import { hhmm, dayKey, durationText, zonedToUtc, dayDateTime } from './timefmt.js';
-import { weekdayTime } from './board.js';
+import { weekdayTime, IN_OPENING } from './board.js';
 import { entryShape, defaultLetter } from './records.js';
 import { dayWords, headlineWords, branchShape, runBegan, PHASE_CLASS } from './feed.js';
 import { GATE_PHASE } from './j11.js';
@@ -48,8 +48,8 @@ export const HOME_WORDS = Object.freeze({
   noDispatchLog: 'No dispatch log: not used here',
   olderPipeline: 'older pipeline: sprints, not phases',
 });
-/** Home's words for a project no read of which has succeeded in this opening, in place of "since HH:MM" (AC91 (c), from G8c; P-001-glance-opening-wording.md, B). */
-export const IN_OPENING = 'in this opening';
+/** Home's words for a project no read of which has succeeded in this opening, in place of "since HH:MM" (AC91 (c), from G8c; P-001-glance-opening-wording.md, B), held in board.js from G8d, where Waiting's take them too. */
+export { IN_OPENING };
 
 const enc = (...parts) => parts.map(encodeURIComponent).join('/');
 const go = (...parts) => `#/${enc(...parts)}`;

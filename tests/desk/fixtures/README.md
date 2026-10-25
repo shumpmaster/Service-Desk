@@ -968,3 +968,26 @@ Still no fixture file. `tests/desk/ac91-g8d.test.mjs`'s round-3 cases, G8d's wal
 - **reads made to work again** (`ac91-g8d.test.mjs`, "gone once a project reads and draws again"): Service-Desk's made-up
   failure removed on `noneDrawnState`, and the made-up project's failure (and, for one step, its `BAD_PR`) removed on
   `cantShowLastState`. **NOT how any read went.**
+
+## After the glance audit, G9 (2026-10-25, S-001 AC92 (e); AC83 changed; P-001-glance2-anchor.md, A, widened by the owner)
+
+G9 adds no fixture file. `tests/desk/ac92-glance-boxes.test.mjs` (its every-screen walk over `mix`, `gates`, `quiet`, `ext`
+and the portfolio, and G9's own screens, `G9_OPENS`, each opened once), G9's walks over `G9_OPENS` in `ac88-dark.test.mjs`
+(AC92 (a)'s cascade check, whose want-list gains the page's soft box and the plain why line, and the stage-8 guard, whose
+`G9_ONCE` pins them and, from G9's round 2, the run heads), AC83's rewritten sentence and why-line cases
+(`ac83-page.test.mjs`, on 77bfeae's real records), G9's round-2 run-heading case (`ac92-glance-standard.test.mjs`, on
+`mix`'s made-up project's Build and `gates`' Launch, the states above) and the `g9-` captures open the states above and
+these made-up parts, each **NOT real**:
+- **`fiveLinesState`** (`glance-fixtures.mjs`): `mix` with two made-up questions on the made-up project, one past its settle
+  time (raised 6 Oct, 24 hours) and one that can't be undone, beside fullRepo's question that settles itself, as AC91 (a)'s
+  test adds them, so Home's briefing holds five lines (its count, its parts and the three due and undo lines). **NOT real
+  records.**
+- **`G9_OPENS`** (`glance-fixtures.mjs`): Service-Desk's page on `mix` with its made-up later Launch run (so its tally reads
+  the spec's example, "8 of 16 milestones reached · 17 sprints · 9 merged, 8 not read"), the made-up project's page, and
+  Service-Desk's page on `text` with every phase opened; the v2.5 page (poom/'s placeholder form); `quiet`'s made-up project's
+  page (its README alone, nothing recorded: "no milestones tracked yet"); Service-Desk's page never read in this opening
+  (`openingState`, the network cause); Home on `fiveLinesState`; and Waiting on `gates` with a device's made-up Done mark (a
+  confirmed gate row in the Done lane). **NOT real records, marks or failures.**
+- **made-up sprint views** (`ac92-glance-boxes.test.mjs`, its pure case for the tally's sprints): two runs' blocks drawing
+  "PR #1" in each, a pull request not read ("PR #2"), a pipeline item ("P-003") and one named by its pull request ("PR #4"),
+  so a sprint drawn twice counts once. **NOT real records.**

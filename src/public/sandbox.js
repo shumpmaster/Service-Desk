@@ -39,7 +39,7 @@ import { V25_RULING_NOTE } from './lib/links.js';
 import { runsContext, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, itemFeeds,
   stalledLine, deployRows, FEED_ICONS_KEY, doneTarget, JOB_MERGE_WORDS, ESTIMATE_MERGE_WORDS } from './lib/feed.js';
 import { WA, DRAFT_KEY, todayOf, groupOnce } from './lib/workahead.js';
-import { PAGE_WORDS, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, restRows, v25Rows, finishWords, sprintCount, sprintsWords, ciPassed, blockOf } from './lib/projectpage.js';
+import { PAGE_WORDS, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, pageTally, restRows, v25Rows, finishWords, sprintCount, sprintsWords, ciPassed, blockOf } from './lib/projectpage.js';
 import { topLine } from './lib/versions.js';
 import { portfolioView, PF_ROWS, PF_WORDS, cardMilestone, portfolioScreenState, portfolioRead, portfolioCards, ideasView, rareLine, noteIdeas, ideaEvents, SEEN_IDEAS_KEY, PF_BOARD, PF_LABEL } from './lib/portfolio.js';
 import { workAheadView, readDraft } from './lib/workview.js';
@@ -1430,11 +1430,16 @@ function phaseOpenNode(name, line) {
   return h('div', { class: 'v2-stdl', key: `stdl:${line.phase}`, id: `phase-${line.phase}`, role: 'region', 'aria-label': `${line.phase}: its milestones, read from the bottom up` }, kids);
 }
 
-/** Milestones by phase (AC83, frames 5, 6 and 6b): one folded line per phase, bottom up; a tap, Enter or Space opens one below itself. */
-function milestonesNode(p) {
+/** The milestones by phase as the page draws them (AC83, AC92 (c) and (d)): one reading for the list and the tally above it. */
+function pageMilestones(p) {
   const name = p.project.name;
-  const mv = milestonesByPhase(p.ctx, { finishOf: finishLookup(name), bandOf: bandLookup(p), feed: feedOf(p),
+  return milestonesByPhase(p.ctx, { finishOf: finishLookup(name), bandOf: bandLookup(p), feed: feedOf(p),
     ruled: Boolean(p.snap && p.snap.tree && p.snap.tree.has('decisions/questions/P-001-standard-milestones.md')) });
+}
+
+/** Milestones by phase (AC83, frames 5, 6 and 6b): one folded line per phase, bottom up; a tap, Enter or Space opens one below itself. */
+function milestonesNode(p, mv) {
+  const name = p.project.name;
   // AC92 (c), from G5: the head sums each phase's "<R> of <T> reached"; "↑ start at the foot" stays.
   const head = h('div', { class: 'v2-sh', key: 'ms-h' }, h('h2', { class: 'v2-shw' }, PAGE_WORDS.milestonesHead(mv.tracked ? mv.sum : null)), h('span', { class: 'v2-mono' }, PAGE_WORDS.startFoot));
   if (!mv.tracked) return [head, h('p', { class: 'v2-small', key: 'ms-none' }, mv.words)];
@@ -1518,15 +1523,24 @@ function renderPage(p, bd) {
         x.source ? [' · ', x.source.href ? ext(x.source.href, x.source.words, 'v2-inl') : x.source.words] : null));
     }
   }
+  const mv = project.model === 'v3' ? pageMilestones(p) : null;
+  // AC92 (e), from G9 (P-001-glance2-anchor.md, A): the page's soft box, the briefing's own look (--bg2, its radius, padding
+  // and gap; no edge, no shadow), holding the set of the page's most important things, as the Design reviewer's list names
+  // them: the one sentence, and on a v3 page whose phases are tracked the one-line tally under it, "<R> of <T> milestones
+  // reached · <sprints>" (pageTally). The waits row stays a row of its own (round 2's list: "vermilion already anchors it,
+  // and it is absent when nothing waits").
+  const tally = pageTally(mv);
   const body = [
     h('header', { class: 'v2-ptop', key: 'page-top' }, backControl('#/')),
     h('div', { class: 'v2-phead', key: 'page-head' }, h('h1', { class: 'v2-title' }, name), h('p', { class: 'v2-mono', key: 'top-line' }, topLine(project, p.snap))),
     project.model === 'v3' ? pageSwitch(name, 'overview') : null,
-    h('p', { class: 'v2-lead', key: 'sentence' }, sentence),
+    h('div', { class: 'v2-anchor', key: 'anchor' },
+      h('p', { class: 'v2-lead', key: 'sentence' }, sentence),
+      tally ? h('p', { class: 'v2-small v2-tally', key: 'tally' }, tally.bold ? h('b', {}, tally.bold) : null, tally.rest) : null),
     stripNode(phaseStrip(p.ctx, p.snap)),
     h('div', { class: 'v2-under', key: 'under' }, under, lastActionNode(p)),
   ];
-  if (project.model === 'v3') body.push(h('ol', { class: 'v2-rows', key: 'page-rows' }, pageTwoRows(p, bd)), ...milestonesNode(p), ...restNode(p));
+  if (project.model === 'v3') body.push(h('ol', { class: 'v2-rows', key: 'page-rows' }, pageTwoRows(p, bd)), ...milestonesNode(p, mv), ...restNode(p));
   else body.push(...v25PageNodes(p, bd), detailsNode(p));
   const out = [h('section', { class: 'sb-screen v2 v2-proj', key: 'page' }, body)];
   const back = go('p', name);

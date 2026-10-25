@@ -176,7 +176,9 @@ test('AC89 (a), states 1 then 2: a first read unanswered for 3 minutes in view â
   }
 });
 
-test('AC89 (a), state 2 for a failed read: "Can\'t read <project> since HH:MM" with the failure\'s reason in words, above the lanes', async () => {
+// Rewritten in G8d (AC89 (a), changed: the owner's "Yes, everywhere (Recommended)"): a failed read with no read succeeded in
+// this opening says "in this opening" above the lanes in place of the failure's "since HH:MM".
+test('AC89 (a), state 2 for a failed read: "Can\'t read <project> in this opening" (from G8d; before it, "since HH:MM") with the failure\'s reason in words, above the lanes', async () => {
   const s = boardSetup();
   s.repos.Alpha.fail = { kind: 'network' };
   const app = await loadSandbox({ ...s, hash: '#/waiting/Alpha', now: NOW });
@@ -184,7 +186,8 @@ test('AC89 (a), state 2 for a failed read: "Can\'t read <project> since HH:MM" w
     await app.advance(1000);
     await app.advance(POLL_MS);
     assert.equal(sub(app), 'Not read in this opening');
-    assert.equal(aboveLanes(app), `Can't read Alpha since ${hhmm(new Date(NOW + 1000), TZ)}: ${REASON_WORDS.network}`);
+    assert.equal(aboveLanes(app), `Can't read Alpha in this opening: ${REASON_WORDS.network}`);
+    assert.ok(!aboveLanes(app).includes(hhmm(new Date(NOW + 1000), TZ)), 'no time');
     assert.equal(empty(app, 'wait'), "Can't read");
     noChecking(app, 'failed');
   } finally {

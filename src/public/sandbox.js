@@ -2293,7 +2293,10 @@ function answerLink(p, card, btn, cls, kids) {
   const plan = btn.plan || { url: btn.href, copy: null };
   const guard = card.kind === 'question' ? { target: { kind: 'question', name: card.flag.question.name }, answerPath: `decisions/questions/${card.flag.question.name}.md` }
     : card.flag && card.flag.card ? { target: { kind: 'card', path: card.flag.card.path }, answerPath: card.flag.card.answerPath } : null;
-  const said = rechecks.get(key);
+  // AC94 (QW1): what the re-read found keeps the question's title and project, so the section can say it once the question
+  // has left it (answered meanwhile), as a sheet that stays open says it (AC56).
+  const said = (v) => rechecks.set(key, { ...v, id: card.id, title: card.title, project: p.project.name });
+  const was = rechecks.get(key);
   const a = h('a', { class: cls, key: `ans:${key}`, href: plan.url, rel: 'noopener noreferrer', target: '_blank', 'aria-label': btn.aria || null,
     onclick: (e) => {
       // AC77, changed by AC94 and AC95 (QW1; the owner's answer 3): a held question's choice ends its hold on this device
@@ -2301,10 +2304,10 @@ function answerLink(p, card, btn, cls, kids) {
       if (card.held && DESK && DESK.answerHere) DESK.answerHere(p.project.name, card.name);
       if (guard && DESK && DESK.needsRecheck(p.project.name)) {
         if (e && e.preventDefault) e.preventDefault();
-        rechecks.set(key, { words: RECHECK_WORDS.checking });
+        said({ words: RECHECK_WORDS.checking });
         render();
         DESK.recheck(p.project.name, guard.answerPath).then((r) => {
-          if (!r.ok) rechecks.set(key, { words: RECHECK_WORDS.failed, anyway: plan.url });
+          if (!r.ok) said({ words: RECHECK_WORDS.failed, anyway: plan.url });
           else {
             const o = recheckOutcome(DESK.model(p.project.name), guard.target);
             if (o.kind === 'open') {
@@ -2316,8 +2319,8 @@ function answerLink(p, card, btn, cls, kids) {
               } catch {
                 w = null;
               }
-              if (!w) rechecks.set(key, { words: 'Still open:', anyway: plan.url, again: 'open GitHub' });
-            } else rechecks.set(key, { words: o.words, pr: o.pr || null });
+              if (!w) said({ words: 'Still open:', anyway: plan.url, again: 'open GitHub' });
+            } else said({ words: o.words, pr: o.pr || null });
           }
           render();
         });
@@ -2332,10 +2335,10 @@ function answerLink(p, card, btn, cls, kids) {
       }
     } }, kids);
   const out = [a];
-  if (said) {
-    out.push(h('span', { class: 'v2-recheck', role: 'status', key: `recheck:${key}` }, said.words,
-      said.pr ? [' ', ext(said.pr.url, `PR #${said.pr.number}, which records it`, 'v2-lnk')] : null,
-      said.anyway ? [' ', h('a', { class: 'v2-lnk', href: said.anyway, rel: 'noopener noreferrer', target: '_blank', key: `anyway:${key}` }, said.again || RECHECK_WORDS.anyway)] : null));
+  if (was) {
+    out.push(h('span', { class: 'v2-recheck', role: 'status', key: `recheck:${key}` }, was.words,
+      was.pr ? [' ', ext(was.pr.url, `PR #${was.pr.number}, which records it`, 'v2-lnk')] : null,
+      was.anyway ? [' ', h('a', { class: 'v2-lnk', href: was.anyway, rel: 'noopener noreferrer', target: '_blank', key: `anyway:${key}` }, was.again || RECHECK_WORDS.anyway)] : null));
   }
   return out;
 }
@@ -2630,6 +2633,7 @@ function questionsSection(bd, built, only) {
       h('span', { class: 'v2-kn' }, e.count), e.words ? h('span', { class: 'v2-kw' }, e.words) : null), missing);
   }
   const shown = new Set(qv.order.slice(0, SECTION_CHOICES_SHOWN).map((c) => c.id));
+  const gone = goneRechecks(qv, only);
   const groups = qv.groups.map((g) => {
     const p = pOf(g.project);
     const head = only ? null : h('button', { type: 'button', class: 'v2-grp', key: `grp:qsec:${g.project}`, 'aria-label': `Show only ${g.project}`,
@@ -2639,7 +2643,25 @@ function questionsSection(bd, built, only) {
   return h('section', attrs,
     h('h2', { class: 'v2-kh', key: 'qhead' }, h('span', {}, SECTION_WORDS.title), h('span', { class: 'v2-kn' }, ' · '), h('span', { class: 'v2-lc' }, String(qv.count)),
       qv.held ? [h('span', { class: 'v2-kn' }, ' · '), h('span', { class: 'v2-small' }, `${qv.held} ${SECTION_WORDS.heldCount}`)] : null),
-    missing, groups);
+    missing, gone, groups);
+}
+
+/**
+ * AC94 ("Before and around a link": "a question answered meanwhile shows "already answered: <ruling>" with no link"): a
+ * section question whose re-read found it answered or being recorded has left the section by the time the words are
+ * known, so the section keeps them, once per question, "<its title>: <the words>", under its head, for this window (as a
+ * sheet open over it keeps them, AC56). One project shown, only that project's.
+ */
+function goneRechecks(qv, only) {
+  const here = new Set(qv.order.map((c) => c.id));
+  const out = new Map();
+  for (const [k, v] of rechecks) {
+    if (!v || !v.id || here.has(v.id) || out.has(v.id) || (only && v.project !== only) || !/^question\|/.test(String(v.id).split('|').slice(1).join('|'))) continue;
+    if (v.words === RECHECK_WORDS.checking) continue;
+    out.set(v.id, h('p', { class: 'v2-recheck', role: 'status', key: `qgone:${k}` }, `${v.title}: `, v.words,
+      v.pr ? [' ', ext(v.pr.url, `PR #${v.pr.number}, which records it`, 'v2-lnk')] : null));
+  }
+  return [...out.values()];
 }
 
 /** A quiet line (AC80): shown only when it has any; a tap opens its fold. */

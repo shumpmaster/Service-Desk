@@ -335,7 +335,10 @@ test('AC91 (c), G8c, signed out: each project by its own — "in this opening" o
   }
 });
 
-test('AC91 (c), G8c, not on Home, kept as built: the same never-read project on Waiting (its quiet line, and with it alone shown its line above the lanes), its page\'s waits row and the v2.5 Pipeline view\'s state line still say "since HH:MM"', async () => {
+// Rewritten in G8d (the owner's answer of 2026-10-25 to G8c's design review, question 1, "Yes, everywhere (Recommended)";
+// docs/design/references/owner-answers-2026-10-25-g8c-review.md): the places G8c kept as built off Home now say "in this
+// opening" for the same never-read project, as Home does; the read-earlier cases are G8d's, in ac91-g8d.test.mjs.
+test('AC91 (c), G8c, rewritten in G8d (beyond Home, "Yes, everywhere (Recommended)"): the same never-read project on Waiting (its quiet line, and with it alone shown its line above the lanes), its page\'s waits row and the v2.5 Pipeline view\'s state line say "in this opening" as Home does, never "since HH:MM"', async () => {
   // Service-Desk and Personal-Org-Operating-Model (v2.5) failing from the start (made up).
   const s = orderState({ waiting: true });
   const app = await open(s);
@@ -343,15 +346,16 @@ test('AC91 (c), G8c, not on Home, kept as built: the same never-read project on 
     assert.equal(corner(app, SD.name).textContent, "Can't read in this opening", 'Home says "in this opening"');
     assert.equal(corner(app, POOM.name).textContent, "Can't read in this opening");
     await app.go('#/waiting');
-    assert.match(keyed(app, `ql:cant:${SD.name}`).textContent, new RegExp(`^Can't read ${SD.name} since \\d\\d:\\d\\d$`), 'Waiting\'s quiet line');
+    assert.equal(keyed(app, `ql:cant:${SD.name}`).textContent, OPENING(SD.name), 'Waiting\'s quiet line');
+    assert.equal(keyed(app, `ql:cant:${POOM.name}`).textContent, OPENING(POOM.name));
     await app.go(`#/waiting/${encodeURIComponent(SD.name)}`);
-    assert.match(keyed(app, 'quiet-cant').textContent, new RegExp(`^Can't read ${SD.name} since \\d\\d:\\d\\d: ${REASON}$`), 'its line above the lanes, one project shown');
+    assert.equal(keyed(app, 'quiet-cant').textContent, `${OPENING(SD.name)}: ${REASON}`, 'its line above the lanes, one project shown');
     await app.go(`#/p/${encodeURIComponent(SD.name)}`);
-    assert.match(keyed(app, 'page-waits').textContent, /Can't read since \d\d:\d\d/, 'its page\'s waits row');
-    assert.doesNotMatch(keyed(app, 'page-waits').textContent, /in this opening/);
+    assert.equal(byClass(keyed(app, 'page-waits'), 'v2-prtt')[0].textContent, "Can't read in this opening", 'its page\'s waits row');
+    assert.doesNotMatch(keyed(app, 'page-waits').textContent, /since \d\d:\d\d/);
     await app.go(`#/p/${encodeURIComponent(POOM.name)}/pipeline`);
-    assert.match(app.text(), /Can't read since \d\d:\d\d: network error/, 'the v2.5 Pipeline view\'s state line');
-    assert.doesNotMatch(app.text(), /in this opening/);
+    assert.ok(app.text().includes(`Can't read in this opening: ${REASON}`), 'the v2.5 Pipeline view\'s state line');
+    assert.doesNotMatch(app.text(), /Can't read since \d\d:\d\d/);
   } finally {
     app.restore();
   }

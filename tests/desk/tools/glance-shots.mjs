@@ -17,7 +17,13 @@
 // (AC24's note), Plan's word "moved": how many are drawn, how far under the code line and how far from the name's left it
 // sits, its lines, and the moved row's name, its lines and whether it is cut (it must not be); and, on G8c's (AC91 (c),
 // AC92 (b)), the briefing's lines in order, the missing lines, and on each tile's now cell whether a line comes in and how
-// far it ends before the arrow, the arrow's gap to the icon.
+// far it ends before the arrow, the arrow's gap to the icon; and, on G8d's (AC91 (c), AC89 (a)), the can't-read lines on
+// Waiting, a page and the Pipeline view, the cards drawn in "Waiting on you", and each group head's count parts, and, from
+// G8d's round 2, the red "Can't show" lines among them and the lanes' empty words and the strip's line (from its round 3,
+// "Can't read or show" and "Can't show when last read" among them); and, on G9's (AC92 (e)), each soft box's size,
+// padding, ground and edge, its tally's lines, whether anything in it is cut, how far the strip's arrow sits under the
+// page's box, and each why line's ground; and, from G9's round 2 (AC92 (d)), each opened phase's run heads, each found
+// by its run, its colour, weight and size, the rule above it and the gap over that rule.
 // G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
 // the screen as it opens (the viewport), not the whole page.
@@ -27,7 +33,7 @@ import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
 import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, ciState, mismatchState, nowShared, sprintsState, longNameState, PLAN_NOW,
-  openingState, signedOutMixedState, orderState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
+  openingState, signedOutMixedState, orderState, blobFailState, cantShowState, noneDrawnState, cantShowLastState, fiveLinesState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
 import { sdRepo, SD3 } from '../tv2-fixtures.mjs';
 import { CONFIG } from '../helpers.mjs';
 import { waSetup, WORKED } from '../wa-fixtures.mjs';
@@ -201,6 +207,63 @@ const SHOTS = [
   { name: 'g8c-cant-show-beside-two', state: () => orderState({ cantShow: true }), now: NOW, looked: LATE },
   { name: 'g8c-line-now-build', state: () => nowShared('build'), now: NOW, looked: LATE },
   { name: 'g8c-line-sprint-after', state: () => sprintsState(1), now: NOW, looked: LATE },
+  // G8d (AC91 (c); AC89 (a)), each failure made up (NOT how any read failed): Waiting with every project shown, Service-Desk
+  // never read in this opening beside the made-up project read earlier, and signed out with Service-Desk never read before
+  // it; Waiting with Service-Desk alone shown, never read; with the made-up project alone shown, its first read's blobs
+  // failing (fake-desk.mjs's blobFail), every file's and one file's, so its cards show with no read succeeded; Service-Desk's
+  // page never read; the v2.5 Pipeline view never read; and Home with a project the desk can't draw (BAD_PR, NOT a real pull
+  // request) beside one it can't read, nothing waiting and cards waiting, and signed out with the one it can't draw.
+  { name: 'g8d-waiting-two', state: openingState, now: NOW, looked: LATE, later: true, hash: '#/waiting' },
+  { name: 'g8d-waiting-signed-out-mixed', state: signedOutMixedState, now: NOW, looked: LATE, later: true, hash: '#/waiting' },
+  { name: 'g8d-waiting-one-never', state: openingState, now: NOW, looked: LATE, hash: `#/waiting/${encodeURIComponent(SD.name)}` },
+  { name: 'g8d-waiting-one-blobs-every', state: () => blobFailState('every file'), now: NOW, looked: LATE, polls: 2, hash: `#/waiting/${MIX_PROJECT}` },
+  { name: 'g8d-waiting-one-blobs-one', state: () => blobFailState('one file'), now: NOW, looked: LATE, polls: 2, hash: `#/waiting/${MIX_PROJECT}` },
+  { name: 'g8d-page-never', state: openingState, now: NOW, looked: LATE, hash: `#/p/${encodeURIComponent(SD.name)}` },
+  { name: 'g8d-pipeline-never', state: () => orderState({ waiting: true }), now: NOW, looked: LATE, hash: `#/p/${encodeURIComponent(POOM.name)}/pipeline` },
+  { name: 'g8d-home-cant-show', state: () => cantShowState(), now: NOW, looked: LATE },
+  { name: 'g8d-home-cant-show-waiting', state: () => cantShowState({ waiting: true }), now: NOW, looked: LATE },
+  // G8d's round 2 (AC80; AC89 (a); the owner's ""✕ Can't show Bravo" (Recommended)"): Waiting with a project the desk can read
+  // but can't draw (BAD_PR, NOT real), every project shown (nothing waiting and cards waiting) and it alone shown.
+  { name: 'g8d-waiting-cant-show', state: () => cantShowState(), now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g8d-waiting-cant-show-cards', state: () => cantShowState({ waiting: true }), now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g8d-waiting-one-cant-show', state: () => cantShowState(), now: NOW, looked: LATE, hash: `#/waiting/${MIX_PROJECT}` },
+  // G8d's round 3 (AC91 (f), AC89 (a); P-001-glance-no-quiet-lanes.md and P-001-glance-cant-show-last-read.md, both "Ruling:
+  // A"): Waiting with every project shown and none read and drawn (BAD_PR and the failures made up, NOT real), with no card
+  // and with a last read's cards; the made-up project the desk can't draw alone shown in state 5, and both signed out.
+  { name: 'g8d-waiting-cant-read-or-show', state: () => noneDrawnState(), now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g8d-waiting-none-drawn', state: () => noneDrawnState({ every: true }), now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g8d-waiting-cant-read-or-show-cards', state: () => noneDrawnState({ waiting: true }), now: NOW, looked: LATE, later: true, hash: '#/waiting' },
+  { name: 'g8d-waiting-one-cant-show-last', state: () => cantShowLastState(), now: NOW, looked: LATE, later: true, hash: `#/waiting/${MIX_PROJECT}` },
+  { name: 'g8d-waiting-signed-out-cant-show', state: () => cantShowLastState({ signedOut: true }), now: NOW, looked: LATE, later: true, hash: '#/waiting' },
+  { name: 'g8d-waiting-one-signed-out-cant-show-last', state: () => cantShowLastState({ signedOut: true }), now: NOW, looked: LATE, later: true, hash: `#/waiting/${MIX_PROJECT}` },
+  { name: 'g8d-home-signed-out-cant-show', state: () => { const s = signedOutState(); s.repos[MIX_PROJECT].pulls.push(BAD_PR); return s; }, now: NOW, looked: LATE, later: true },
+  // G9 (AC92 (e); AC83, changed): the soft boxes the Design reviewer's list names, and the why line plain. Home's briefing
+  // holding five lines (`fiveLinesState`, made up, NOT real); Service-Desk's page with its sentence and tally (`text`, and
+  // `mix` with its made-up later Launch run, the spec's example tally), the made-up project's, `ext`'s long-named made-up
+  // project's (its tally wrapping at 360 px), a v2.5 page (its sentence alone), `quiet`'s made-up project (nothing recorded:
+  // "no milestones tracked yet") and Service-Desk never read in this opening (the network cause, NOT how any read failed);
+  // Service-Desk's page with Design opened (its why line a plain line) and every phase opened; and Waiting with a device's
+  // made-up Done mark (the Done lane's ground, no box), each made-up part NOT real.
+  { name: 'g9-home-five-lines', state: fiveLinesState, now: NOW, looked: LATE },
+  { name: 'g9-page-text', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}` },
+  { name: 'g9-page-example', state: () => mixState({ laterLaunch: true }), now: NOW, looked: LATE, hash: `#/p/${SD.name}` },
+  { name: 'g9-page-mix', state: () => mixState(), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}` },
+  { name: 'g9-page-ext-long', state: extState, now: NOW, looked: LATE, hash: `#/p/${encodeURIComponent(EXT_LONG)}` },
+  { name: 'g9-page-v25', state: textState, now: NOW, looked: LATE, hash: `#/p/${encodeURIComponent(POOM.name)}` },
+  { name: 'g9-page-nothing-recorded', state: quietState, now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}` },
+  { name: 'g9-page-never-read', state: openingState, now: NOW, looked: LATE, hash: `#/p/${encodeURIComponent(SD.name)}` },
+  { name: 'g9-page-design-why', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-phase="Design"] > button'] },
+  { name: 'g9-page-every-phase', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}`,
+    click: ['[data-phase="Launch"] > button', '[data-phase="Build"] > button', '[data-phase="Design"] > button', '[data-phase="Discovery"] > button'] },
+  // G9's round 2 (AC92 (d), the Design reviewer's call): an opened phase with two or more runs, each run's head in --ink at
+  // 600 with a rule above each after the first: the made-up project's Build (`mix`, its two "Build-i1" runs, gone back over
+  // and still to come, with Build-i2 between), `gates`' Launch (three "Launch-i1" runs) and Service-Desk's Build and Design
+  // (`text`, 77bfeae, real), each made-up part NOT real.
+  { name: 'g9-runs-mix-build', state: () => mixState(), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}`, click: ['[data-phase="Build"] > button'] },
+  { name: 'g9-runs-gates-launch', state: () => gatesState(), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}`, click: ['[data-phase="Launch"] > button'] },
+  { name: 'g9-runs-text', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-phase="Build"] > button', '[data-phase="Design"] > button'] },
+  { name: 'g9-waiting-done', state: () => gatesState(), now: NOW, looked: LATE, hash: '#/waiting', seed: deviceMarks([
+    { project: MIX_PROJECT, kind: 'gate', id: GATE_KEY(MIX_PROJECT, 'queue/P-009-launch-1.md'), title: 'The Launch gate, case 1 · P-009', at: NOW - 3 * H, confirmedAt: NOW - 2 * H }]) },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {
@@ -403,9 +466,46 @@ async function main() {
             });
             return `briefing: ${brief.join(' | ')}; missing: ${missLines.join(' | ') || 'none'}; now cells: ${cells.join('; ') || 'none'}`;
           });
+          // G8d (AC91 (c); AC89 (a)): the can't-read lines (Waiting's quiet lines, the line above the lanes, a page's waits row,
+          // the Pipeline view's state line), the lanes' cards, and each group head's count parts.
+          const g8d = await page.evaluate(() => {
+            const cant = [...document.querySelectorAll('.v2-ql.bad, [data-k="page-waits"], .sb-lead')].map((e) => e.textContent);
+            const cards = document.querySelectorAll('[data-k="lane:wait"] .v2-card').length;
+            const heads = [...document.querySelectorAll('.v2-hg')].map((b) => [...b.querySelectorAll('.v2-hgy, .v2-hgb, .v2-hgn')].map((x) => x.textContent).join(' · '));
+            // From G8d's round 2: the lanes' empty words and the strip's line, where Waiting draws them.
+            const empty = [...document.querySelectorAll('.v2-empty, .v2-kq')].map((e) => e.textContent);
+            return `lines: ${cant.join(' | ') || 'none'}; cards waiting drawn: ${cards}; heads: ${heads.join(' | ') || 'none'}${empty.length ? `; empty: ${empty.join(' | ')}` : ''}`;
+          });
+          // G9 (AC92 (e)): each soft box on the screen (the briefing, a page's box), its size, padding and ground, its lines
+          // (the tally's), whether anything in it is cut, how far the strip's arrow sits under it; and each why line's ground.
+          const g9 = await page.evaluate(() => {
+            const lines = (e) => { const cs = getComputedStyle(e); return Math.round(e.getBoundingClientRect().height / parseFloat(cs.lineHeight)); };
+            const boxes = [...document.querySelectorAll('.v2-brief, .v2-anchor')].map((b) => {
+              const cs = getComputedStyle(b);
+              const r = b.getBoundingClientRect();
+              const tally = b.querySelector('.v2-tally');
+              const arrow = b.classList.contains('v2-anchor') ? document.querySelector('.v2-strip .v2-here') : null;
+              const cut = [...b.querySelectorAll('*')].some((x) => x.scrollWidth > x.clientWidth + 1 && getComputedStyle(x).overflow !== 'visible');
+              return `${b.classList.contains('v2-brief') ? 'briefing' : 'page box'} ${Math.round(r.width)}×${Math.round(r.height)}, padding ${cs.padding}, radius ${cs.borderRadius}, ground ${cs.backgroundColor}, border ${cs.borderStyle}, shadow ${cs.boxShadow}`
+                + `${tally ? `, tally "${tally.textContent}" on ${lines(tally)} line(s)` : ''}${arrow ? `, the strip's arrow ${Math.round(arrow.getBoundingClientRect().top - r.bottom)} px under it` : ''}${cut ? ', something in it cut' : ''}`;
+            });
+            const why = [...document.querySelectorAll('.v2-callout')].map((e) => `why line: ground ${getComputedStyle(e).backgroundColor}, ${lines(e)} line(s)`);
+            // G9's round 2 (AC92 (d)): each opened phase's run heads, by run (its key and run number), against its group heads.
+            const runs = [...document.querySelectorAll('.v2-stdl')].map((ph) => {
+              const group = ph.querySelector('.v2-subh');
+              const gcs = group ? getComputedStyle(group) : null;
+              const heads = [...ph.querySelectorAll(':scope > .v2-runh')].map((e) => {
+                const cs = getComputedStyle(e);
+                const run = (e.getAttribute('data-k') || '').replace(/^runh:/, '');
+                return `${run} "${e.textContent}" ${cs.color} ${cs.fontWeight} ${cs.fontSize}, rule ${cs.borderTopWidth} ${cs.borderTopStyle} ${cs.borderTopColor}, ${cs.marginTop} over it`;
+              });
+              return `${ph.id}: ${heads.join(' | ')}${gcs ? `; group heads ${gcs.color} ${gcs.fontWeight} ${gcs.fontSize}` : ''}`;
+            });
+            return [...boxes, ...why, ...(runs.length ? [`run heads: ${runs.join(' / ')}`] : [])].join('; ') || 'no box';
+          });
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}${/^g8d-/.test(shot.name) ? `  (${g8d})` : ''}${/^g9-/.test(shot.name) ? `  (${g9})` : ''}`);
           await ctx.close();
         }
       }

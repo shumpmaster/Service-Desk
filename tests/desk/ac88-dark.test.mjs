@@ -34,7 +34,7 @@ import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
 import { BAD_PR } from './fake-desk.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
-import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS } from './glance-fixtures.mjs';
+import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS, G8D_OPENS, G9_OPENS } from './glance-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -573,6 +573,8 @@ function okBadPlace(n) {
   if (n.cls.has('v2-prow') && n.cls.has('bad')) return 'ruled: a page\'s waits row';
   if (svg && n.cls.has('v2-k') && p && p.cls.has('v2-prow') && p.cls.has('bad')) return 'ruled: a page\'s waits row';
   if (n.tag === 'p' && n.cls.has('v2-ql') && n.cls.has('bad')) return 'ruled: Waiting\'s and "Since you last looked"\'s quiet line';
+  // G8d (AC91 (c); the owner's "Say "can't be shown" (Recommended)"): the head's new count part, an element of its own in the same look.
+  if (n.tag === 'span' && n.cls.has('v2-hgb') && /^hgb-shown:/.test(n.attrs['data-k'] || '')) return 'ruled: a group head\'s can\'t-be-shown count';
   if (n.tag === 'span' && n.cls.has('v2-hgb')) return 'ruled: a group head\'s can\'t-read count';
   // A failed read in "Since you last looked" (reading (e)).
   if (svg && n.cls.has('v2-k') && n.cls.has('bad') && p && p.cls.has('v2-ev')) return 'reading (e): a failed read\'s ✕';
@@ -637,6 +639,39 @@ function okBadCheck(app, where, fails, seen, places) {
         else if (n.kids.some((c) => c.tag === 'svg')) fail(n, 'Plan\'s "moved" word with an icon: it has none');
         else if (!row || !row.cls.has('moved')) fail(n, 'Plan\'s "moved" word on a row not moved');
         else places.add('grey: Plan\'s "moved" word');
+      }
+      // G9 (AC92 (e): "the box: the briefing's own look … no edge … no shadow, never vermilion in its ground or edge; its words
+      // in ink in their own roles"): a project page's soft box on --bg2, with no border, outline or shadow, and nothing in it
+      // --ok, --bad or --you: the sentence in ink, the tally --ink2 with its "<R> of <T>" in ink.
+      if (n.tag === 'div' && n.cls.has('v2-anchor')) {
+        const inside = [];
+        const walkIn = (x) => { inside.push(x); x.kids.forEach(walkIn); };
+        walkIn(n);
+        const bg = marks(n.declared.get('background') || '');
+        const edge = ['border', 'border-color', 'outline', 'box-shadow'].filter((prop) => n.declared.get(prop) != null && !/^(none|0)$/.test(plain(n.declared.get(prop)).trim()));
+        const you = THEME[way.theme]['--you'].toLowerCase();
+        const loud = inside.filter((x) => COLOUR_PROPS.some((prop) => x.declared.get(prop) != null && (isOkBad(x.declared.get(prop)) || marks(x.declared.get(prop)).some((m) => m.name === '--you' || m.value.toLowerCase() === you)))
+          || isOkBad(x.style.get('color') || '') || plain(x.style.get('color') || '').trim().toLowerCase() === you);
+        const col = (x) => plain(x.style.get('color') || '').trim().toLowerCase();
+        const lead = inside.find((x) => x.cls.has('v2-lead'));
+        const tally = inside.find((x) => x.cls.has('v2-tally'));
+        const bold = tally ? tally.kids.find((x) => x.tag === 'b') : null;
+        if (!(bg.length === 1 && bg[0].name === '--bg2')) fail(n, `a page's soft box on ${plain(n.declared.get('background') || '(none)')}: its ground is --bg2`);
+        else if (edge.length) fail(n, `a page's soft box with ${edge.join(', ')}: it has no edge or shadow`);
+        else if (loud.length) fail(n, `a page's soft box: ${loud.map(label).join(', ')} in --ok, --bad or --you, where its words stay ink`);
+        else if (!lead || col(lead) !== THEME[way.theme]['--ink'].toLowerCase()) fail(n, 'a page\'s soft box: its sentence not in --ink');
+        else if (tally && (col(tally) !== THEME[way.theme]['--ink2'].toLowerCase() || (bold && col(bold) !== THEME[way.theme]['--ink'].toLowerCase()))) fail(n, 'a page\'s soft box: its tally not --ink2 with its "<R> of <T>" in --ink');
+        else places.add(tally ? 'ink: a project page\'s soft box, its sentence and tally' : 'ink: a project page\'s soft box, its sentence alone');
+      }
+      // G9 (AC92 (e): "a `--t-small` line in the grey of a gap the agents fill, with its eye icon (AC69)"): an opened phase's
+      // why line in --ink2 with no ground, never --ok or --bad, its eye icon first.
+      if (n.tag === 'p' && n.cls.has('v2-callout')) {
+        const raw = n.style.get('color') || '';
+        const col = plain(raw).trim().toLowerCase();
+        if (isOkBad(raw) || col !== THEME[way.theme]['--ink2'].toLowerCase()) fail(n, `an opened phase's why line in ${col}: it stays --ink2`);
+        else if (n.declared.get('background') != null || n.declared.get('background-color') != null) fail(n, 'an opened phase\'s why line on a filled ground: it has none');
+        else if (!(n.kids[0] && n.kids[0].tag === 'svg' && n.kids[0].cls.has('vi-eye'))) fail(n, 'an opened phase\'s why line without its eye icon first');
+        else places.add('grey: an opened phase\'s why line, with no ground');
       }
       // The grey "Can't show this" lines and the rules that draw nothing: never red, and never matched.
       if (n.cls.has('v2-small') && n.cls.has('bad') && n.text.trim()) {
@@ -787,6 +822,31 @@ test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --o
       app.restore();
     }
   }
+  // G8d (AC91 (c); AC89 (a)): Waiting, a project's page and the Pipeline view saying "in this opening", Waiting's state 2
+  // holding a held tree's cards, and Home's group head counting a project the desk can't draw apart (tests/desk/
+  // glance-fixtures.mjs's G8D_OPENS, its made-up parts NOT real), so the walk reads each where it is drawn; the want-list
+  // gains only the head's new count part.
+  for (const [where, open] of G8D_OPENS) {
+    const app = await open();
+    try {
+      check(app, `G8d ${where}`, fails, seen);
+      counts.screens++;
+    } finally {
+      app.restore();
+    }
+  }
+  // G9 (AC92 (e)): the screens its soft boxes and plain why line are drawn on (tests/desk/glance-fixtures.mjs's G9_OPENS, its
+  // made-up parts NOT real), so the walk reads the page's box with its tally and with its sentence alone, and the why line;
+  // the want-list gains each.
+  for (const [where, open] of G9_OPENS) {
+    const app = await open();
+    try {
+      check(app, `G9 ${where}`, fails, seen);
+      counts.screens++;
+    } finally {
+      app.restore();
+    }
+  }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // Each mark on AC92 (a)'s list and each exception the fixtures reach was drawn, so the check read them where they are meant to be.
@@ -795,9 +855,10 @@ test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --o
     'mark: the Done lane\'s ✓', 'mark: a passing CI line\'s ✓', 'mark: a failing CI line\'s ✕', 'mark: a deploy\'s mismatch', 'mark: the Timeline key\'s check',
     'mark: the Timeline key\'s cross', 'ruled: the briefing\'s ✕', 'ruled: the briefing\'s can\'t-read line', 'ruled: a tile\'s corner',
     'ruled: a tile\'s foot or a tile the desk can\'t draw', 'ruled: a page\'s waits row', 'ruled: Waiting\'s and "Since you last looked"\'s quiet line',
-    'ruled: a group head\'s can\'t-read count', 'reading (e): the notifications warning', 'grey: a "Can\'t show this" line',
+    'ruled: a group head\'s can\'t-read count', 'ruled: a group head\'s can\'t-be-shown count', 'reading (e): the notifications warning', 'grey: a "Can\'t show this" line',
     'ink: the portfolio\'s problem line', 'ink: a portfolio card\'s note', 'ink: the portfolio block\'s "nothing queued" tick', 'ink: a portfolio block\'s mark',
-    'ink: Plan\'s ideas', 'grey: "Since you last looked"\'s missing line', 'grey: Plan\'s "moved" word']) {
+    'ink: Plan\'s ideas', 'grey: "Since you last looked"\'s missing line', 'grey: Plan\'s "moved" word',
+    'ink: a project page\'s soft box, its sentence and tally', 'ink: a project page\'s soft box, its sentence alone', 'grey: an opened phase\'s why line, with no ground']) {
     assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
   }
 });
@@ -1332,6 +1393,49 @@ const G8C_EXCEPT = (n, d, theme) => {
   const k = G8C_KEY(n);
   return Boolean(k && G8C_ONCE.get(theme) && (G8C_ONCE.get(theme).get(k) || []).includes(d)) ? `G8C ${theme} ${k} ${d}` : null;
 };
+/**
+ * G9 of "After the glance audit"'s changes to the look on purpose (the brief's rule; AC92 (e): "the box: the briefing's own
+ * look, as built (`.v2-brief`: the `--bg2` ground, its radius, padding and gap); no edge … no shadow, never vermilion"; "the
+ * why-not-written box becomes a plain line … loses its filled ground"), each declaration pinned to its value, before and
+ * after, in each theme, on only its own element:
+ * - a project page's soft box (`div.v2-anchor`, a new element in the page's `section.v2-proj`, holding the sentence and the
+ *   tally): a grid, the briefing's gap, 12 px padding and radius, the --bg2 ground and ink; the sentence in it (`p.v2-lead`)
+ *   and the tally (`p.v2-small.v2-tally`, a new element) take rules that were there, so they add none;
+ * - the tally's "<R> of <T>" (`b` in the tally): 500 in ink, as a phase's line has it (`.v2-sd b`);
+ * - an opened phase's why line (`p.v2-callout.gap` in a `div.v2-stdl`): its ground, padding and radius gone;
+ * - from G9's round 2 (AC92 (d), changed: the Design reviewer's call, B1), an opened phase's run heads (`p.v2-runh` in a
+ *   `div.v2-stdl`): each in --ink at weight 600, its size 11 px kept (`font: var(--t-label)` unchanged), so its text's
+ *   weight and colour change from 500 --ink2; each after the first (a `p.v2-runh` with one before it in the same phase) also
+ *   takes the standard group head's own rule and gap, a 1 px --line rule with 8 px over it; the first takes no rule.
+ * The walk reaches the box on every project page, the tally on each v3 page whose phases are tracked, the why line and the
+ * run heads, the first and those after it, on the `text` page with every phase opened, and G9's own screens
+ * (tests/desk/glance-fixtures.mjs's G9_OPENS, below).
+ */
+const G9_RUNH = (ink, ink2) => [`color: ${ink2} → ${ink}`, 'font-weight: (none) → 600', 'computed font-weight: 500 → 600', `computed color: ${ink2} → ${ink}`];
+const G9_LOOK = (ink, ink2, bg2, line) => new Map([
+  ['div.v2-anchor (a project page\'s soft box)', ['display: (none) → grid', 'gap: (none) → 4px 10px', 'padding: (none) → 12px', 'border-radius: (none) → 12px',
+    `background: (none) → ${bg2}`, `color: (none) → ${ink}`]],
+  ['b (the tally\'s "<R> of <T>")', ['font-weight: 600 → 500', `color: (none) → ${ink}`, 'computed font-weight: 600 → 500', `computed color: ${ink2} → ${ink}`]],
+  ['p.v2-callout.gap (an opened phase\'s why line)', ['padding: 10px 12px → (none)', 'border-radius: 10px → (none)', `background: ${bg2} → (none)`]],
+  ['p.v2-runh (an opened phase\'s first run head)', G9_RUNH(ink, ink2)],
+  ['p.v2-runh (a run head after the first)', [...G9_RUNH(ink, ink2), 'margin-top: (none) → 8px', `border-top: (none) → 1px solid ${line}`]],
+]);
+const G9_ONCE = new Map([['light', G9_LOOK('#18191c', '#5c5f66', '#f7f7f8', '#e7e7ea')], ['dark', G9_LOOK('#ecedef', '#a2a5ac', '#141517', '#26282c')]]);
+const G9_KEY = (n) => {
+  const p = n.parent;
+  if (n.tag === 'div' && n.cls.has('v2-anchor') && p && p.tag === 'section' && p.cls.has('v2-proj')) return 'div.v2-anchor (a project page\'s soft box)';
+  if (n.tag === 'b' && p && p.tag === 'p' && p.cls.has('v2-tally') && p.parent && p.parent.cls.has('v2-anchor')) return 'b (the tally\'s "<R> of <T>")';
+  if (n.tag === 'p' && n.cls.has('v2-callout') && n.cls.has('gap') && p && p.tag === 'div' && p.cls.has('v2-stdl')) return 'p.v2-callout.gap (an opened phase\'s why line)';
+  if (n.tag === 'p' && n.cls.has('v2-runh') && p && p.tag === 'div' && p.cls.has('v2-stdl')) {
+    const before = p.kids.slice(0, p.kids.indexOf(n));
+    return before.some((x) => x.tag === 'p' && x.cls.has('v2-runh')) ? 'p.v2-runh (a run head after the first)' : 'p.v2-runh (an opened phase\'s first run head)';
+  }
+  return null;
+};
+const G9_EXCEPT = (n, d, theme) => {
+  const k = G9_KEY(n);
+  return Boolean(k && G9_ONCE.get(theme) && (G9_ONCE.get(theme).get(k) || []).includes(d)) ? `G9 ${theme} ${k} ${d}` : null;
+};
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
@@ -1391,6 +1495,8 @@ function sameLook(app, where, fails, seen) {
         if (g8b) { excepted.add(g8b); continue; }
         const g8c = G8C_EXCEPT(b, d, way.theme);
         if (g8c) { excepted.add(g8c); continue; }
+        const g9 = G9_EXCEPT(b, d, way.theme);
+        if (g9) { excepted.add(g9); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -1586,6 +1692,33 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
       g8c.restore();
     }
   }
+  // G8d of "After the glance audit" (AC91 (c); AC89 (a)): Waiting, a project's page and the Pipeline view with their "in this
+  // opening" lines, Waiting's state 2 with a held tree's cards, and Home's group head with its "can't be shown" count
+  // (tests/desk/glance-fixtures.mjs's G8D_OPENS, its made-up parts NOT real), so the walk shows G8d adds no declaration: the
+  // head's new count part takes `.v2-hgb`'s look, so there is no G8D_ONCE.
+  for (const [where, open] of G8D_OPENS) {
+    const g8d = await open();
+    try {
+      if (/can't draw/.test(where)) assert.equal(findAll(g8d.view, (e) => e.dataset && /^hgb-shown:/.test(e.dataset.k || '')).length, 1, `${where}: the head's new count part drawn`);
+      sameLook(g8d, `G8d ${where}`, fails, seen);
+      counts.screens++;
+    } finally {
+      g8d.restore();
+    }
+  }
+  // G9 of "After the glance audit" (AC92 (e); AC92 (d) from its round 2): the screens its soft boxes and plain why line are
+  // drawn on, and the ones its rule keeps a box off (tests/desk/glance-fixtures.mjs's G9_OPENS, its made-up parts NOT real),
+  // so the walk reaches the box with and without its tally, the why line and the run heads, the first and those after it,
+  // pinned in G9_ONCE, and shows the briefing and the Done lane add none.
+  for (const [where, open] of G9_OPENS) {
+    const g9 = await open();
+    try {
+      sameLook(g9, `G9 ${where}`, fails, seen);
+      counts.screens++;
+    } finally {
+      g9.restore();
+    }
+  }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // The named exception was met, and only in its own forms: Home, Waiting, Plan, a project, Team and the Timeline.
@@ -1641,7 +1774,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // G8c's exception was met, its pinned declaration on its own element in each theme, and nothing else of it.
   const g8c = [...G8C_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G8C ${theme} ${k} ${d}`))).sort();
   assert.deepEqual([...excepted].filter((x) => /^G8C /.test(x)).sort(), g8c);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[12345678] |G7B |G8B |G8C |PRE-G7 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // G9's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
+  const g9 = [...G9_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G9 ${theme} ${k} ${d}`))).sort();
+  assert.deepEqual([...excepted].filter((x) => /^G9 /.test(x)).sort(), g9);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[123456789] |G7B |G8B |G8C |PRE-G7 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

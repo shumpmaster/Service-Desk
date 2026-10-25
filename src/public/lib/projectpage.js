@@ -497,7 +497,32 @@ export function milestonesByPhase(ctx, { finishOf = null, bandOf = null, ruled =
     return { phase, cls: PHASE_CLASS[phase], word, now: nowPhase, counts, detail: countLines(counts), runs: runViews, whyOnce };
   });
   const sum = { R: lines.reduce((a, l) => a + l.counts.R, 0), T: lines.reduce((a, l) => a + l.counts.T, 0) };
-  return { tracked: true, n: STANDARD_TOTAL, sum, lines };
+  return { tracked: true, n: STANDARD_TOTAL, sum, sprints: pageSprints(ctx, feed), lines };
+}
+
+/**
+ * The page's sprints, each once however many phases, runs or milestones draw it (AC92 (e): the tally's "<sprints>",
+ * "summed over the page, each sprint once"): the Timeline's sprint views in every run, by the run itself (blockOf), as
+ * each phase's count takes them (phaseCounts); { s: 0, m: 0, w: 0 } where there is no run; null where the Timeline isn't
+ * drawn, so the words say "not available", never a count the records don't give.
+ */
+export function pageSprints(ctx, feed = null) {
+  if (feed && feed.ok) return sprintCount(ctx.cols.runs.flatMap((r) => runSprintViews(feed, r)));
+  return ctx.cols.runs.length ? null : { s: 0, m: 0, w: 0 };
+}
+
+/**
+ * The one-line tally under the page's sentence, in its soft box (AC92 (e); P-001-glance2-anchor.md, A: "the project page
+ * gets its boxed sentence and tally"): "<R> of <T> milestones reached · <sprints>", R and T summed over the phases as the
+ * section's head sums them (AC92 (c)), R and T the bold part, and the sprints in (c)'s one form, each sprint once
+ * ("8 of 16 milestones reached · 17 sprints · 9 merged, 8 not read"); "no milestones tracked yet · <sprints>" where T sums
+ * to 0, never "0 of 0", as a phase's line says it (C). Null where the phases aren't tracked (milestonesByPhase's
+ * `tracked: false`), so the box holds the sentence alone. Returns { bold, rest }, as countLines' `reached`.
+ */
+export function pageTally(mv) {
+  if (!mv || !mv.tracked) return null;
+  const sp = sprintsWords(mv.sprints);
+  return mv.sum.T ? { bold: `${mv.sum.R} of ${mv.sum.T}`, rest: ` milestones reached · ${sp}` } : { bold: null, rest: `no milestones tracked yet · ${sp}` };
 }
 
 /** The two lines of detail in words (their bold part included): for assistive technology and the tests. */

@@ -973,6 +973,12 @@ html.sb .v2-home .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-sega { min-height: 32px; min-width: 88px; padding: 0 12px; display: grid; place-items: center; border-radius: 8px; font: 500 12px/1.35 var(--font); color: var(--ink2); }
 .v2-sega[aria-current="page"] { background: var(--bg); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
 .v2-lead { font: var(--t-lead); overflow-wrap: break-word; }
+/* AC92 (e), from G9 (P-001-glance2-anchor.md, A): the page's soft box, the briefing's own look (`.v2-brief`: the --bg2
+   ground, its 12 px radius, 12 px padding and its gap), no edge and no shadow, never vermilion; it holds the sentence and,
+   under it, the one-line tally (`.v2-small`, wrapping as every line on a screen does), "<R> of <T>" in 500 12 px ink as a
+   phase's line has it (`.v2-sd b`), the rest --t-small grey. */
+.v2-anchor { display: grid; gap: 4px 10px; padding: 12px; border-radius: 12px; background: var(--bg2); color: var(--ink); }
+.v2-tally b { font-weight: 500; color: var(--ink); }
 
 /* The phase strip (frame 5): a thin bar in each phase's colour, solid where finished or now, dashed
    where still to come, over its icon and name, its state in words under it; frame 8's sprints in grey. */
@@ -1044,7 +1050,11 @@ html.sb .v2-home .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-sdl { display: block; }
 .v2-stdl { display: grid; padding: 0 0 10px 20px; position: relative; }
 .v2-stdl::before { content: ""; position: absolute; left: 4px; top: 10px; bottom: 14px; width: 1px; background: var(--line2); }
-.v2-runh { font: var(--t-label); color: var(--ink2); padding: 8px 0 2px; }
+.v2-runh { font: var(--t-label); font-weight: 600; color: var(--ink); padding: 8px 0 2px; }
+/* AC92 (d), from G9's round 2 (the Design reviewer's call, B1): a run's head outranks its two group heads, in --ink at 600,
+   its size 11 px; each run's head after the first in an opened phase set apart by the standard group head's own rule and
+   gap, a 1 px --line rule with 8 px over it; the first, the latest run's, has none. */
+.v2-runh ~ .v2-runh { margin-top: 8px; border-top: 1px solid var(--line); }
 /* AC92 (d), from G6 (P-001-glance2-standard.md, A; round 2's mock, changes2.js q5): an opened phase's two heads on every
    run, "Your milestones · <n>" and "Standard checklist · <n> · <h> tracked", in --t-label --ink; the standard group set
    apart by a 1 px --line rule above its head, 8 px over it; the owner's own rows' names in --t-row (500 13 px), a standard
@@ -1065,7 +1075,9 @@ html.sb .v2-home .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-sm.old.own .v2-smn { font-weight: 500; }
 .v2-untr { display: grid; }
 .v2-fold.v2-untrb { display: grid; grid-template-columns: 16px minmax(0, 1fr) 10px; gap: 8px; align-items: center; width: 100%; min-height: 32px; padding: 4px 0; font: var(--t-small); color: var(--ink2); text-align: left; }
-.v2-callout { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; margin-top: 6px; padding: 10px 12px; border-radius: 10px; background: var(--bg2); font: var(--t-small); color: var(--ink2); }
+/* The why line (AC83; P-001-why-line.md's words): from G9 (AC92 (e)) a plain --t-small line in the grey of a gap the agents
+   fill, its eye icon in the rows' icon column (AC69), with no filled ground, so a filled box never holds an agents' gap. */
+.v2-callout { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; margin-top: 6px; font: var(--t-small); color: var(--ink2); }
 .v2-callout > .v2-k { margin-top: 1px; }
 
 /* The rest, "Details" and its views (AC55, AC36), and a v2.5 project's "Not used by this project" (frame 8). */

@@ -204,7 +204,7 @@ test('AC77 (the desk): within one opening, the answer\'s pull request merging le
     r['Service-Desk'].pulls = []; // closed unmerged: the question still open on the default branch
     await app.advance(60_000);
     const v = await projectText(app);
-    assert.ok(!v.includes(RECORDING_WORDS) && !v.includes(HELD_WORDS));
+    assert.ok(!v.includes(RECORDING_WORDS) && !v.includes(HELD_SHOWN));
     assert.equal(stateOf(app), '1 waiting on you');
     assert.ok(await pick(app), 'waiting, with its answer link');
     assert.deepEqual(app.server.calls.filter((c) => c.body.prs).map((c) => c.body.prs), [[91]], 'one read by number');
@@ -222,7 +222,7 @@ test('AC77 (the desk): within one opening, the answer\'s pull request merging le
     // Merged: answered. On the desk the held question was never a card (AC80), so "already answered" is: nothing waits on
     // you, neither line stands, the answer's pull request is in Done, and the question's own address offers no answer.
     const v = await projectText(app2);
-    assert.ok(!v.includes(RECORDING_WORDS) && !v.includes(HELD_WORDS), 'merged: answered');
+    assert.ok(!v.includes(RECORDING_WORDS) && !v.includes(HELD_SHOWN), 'merged: answered');
     assert.equal(waitCards(app2).length, 0);
     assert.equal(stateOf(app2), 'Quiet');
     const done = sbFindAll(app2.view, (e) => e.dataset && e.dataset.k === 'lane:done')[0];

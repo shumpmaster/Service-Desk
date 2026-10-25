@@ -1144,20 +1144,14 @@ const G7_EXCEPT = (n, d, theme) => {
  * line for each such project … each in `--t-small` `--ink2`, grey, with no icon … wrapped at 360 px, never cut"), each
  * declaration pinned to its value, before and after, on only its own element, the same in each theme: the box of the
  * lines that end "Since you last looked" (`div.v2-smiss`, a new element under the list), its lines 2 px apart and 6 px
- * under the list's last line; and each line (`p.v2-small` in it) wrapping at a long name. Each line's font and colour are
- * `.v2-small`'s, a rule that was there. The walk reaches them on G7b's screens (tests/desk/glance-fixtures.mjs's
- * G7B_OPENS, below).
+ * under the list's last line. Each line (`p.v2-small` in it) takes rules that were there: `.v2-small`'s font and colour,
+ * and style.css's `overflow-wrap: anywhere` on every p, so it wraps at a long name. The walk reaches them on G7b's screens
+ * (tests/desk/glance-fixtures.mjs's G7B_OPENS, below).
  */
 const G7B_ONCE = new Map([
   ['div.v2-smiss', ['display: (none) → grid', 'gap: (none) → 2px', 'margin-top: (none) → -6px']],
-  ['p.v2-small (a missing line)', ['overflow-wrap: (none) → anywhere']],
 ]);
-const G7B_KEY = (n) => {
-  const box = (x) => Boolean(x && x.tag === 'div' && x.cls.has('v2-smiss') && x.parent && x.parent.cls.has('v2-home'));
-  if (box(n)) return 'div.v2-smiss';
-  if (n.tag === 'p' && n.cls.has('v2-small') && box(n.parent)) return 'p.v2-small (a missing line)';
-  return null;
-};
+const G7B_KEY = (n) => (n.tag === 'div' && n.cls.has('v2-smiss') && n.parent && n.parent.cls.has('v2-home') ? 'div.v2-smiss' : null);
 const G7B_EXCEPT = (n, d) => {
   const k = G7B_KEY(n);
   return Boolean(k && (G7B_ONCE.get(k) || []).includes(d)) ? `G7B ${k} ${d}` : null;

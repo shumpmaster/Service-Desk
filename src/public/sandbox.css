@@ -795,9 +795,8 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
 .v2-ev > .v2-chev { width: 10px; height: 10px; margin-top: 4px; color: var(--ink2); }
 /* AC91 (c), from G7b (P-001-glance-since-incomplete.md, A): while a project can't be read, the grey lines that end the
    list, one a project, 6 px under its last line (Home's 12 px gap, less 6), 2 px apart; `.v2-small`'s --t-small --ink2,
-   no icon; each wraps at a long name, never cut. */
+   no icon; each wraps at a long name, never cut (style.css's `overflow-wrap: anywhere` on every p). */
 .v2-smiss { display: grid; gap: 2px; margin-top: -6px; }
-.v2-smiss > .v2-small { overflow-wrap: anywhere; }
 .v2-hgroups { display: grid; gap: 8px; }
 .v2-hgroup { display: grid; gap: 8px; }
 .v2-hgh { font: var(--t-label); }

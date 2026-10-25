@@ -1264,6 +1264,12 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
    glance audit, G7, P-001-glance-plan-gold.md, A: gold means only "next to reach"). */
 .v2-plli.moved { box-shadow: inset 2px 0 0 var(--line2); border-radius: 2px; }
 .v2-plli.moved > .v2-plrow { padding-left: 8px; }
+/* G8b (AC24's note; P-001-glance-moved-word.md, B: "Show the word — a small grey 'moved' on the row, in the secondary text
+   colour, beside the light-grey edge; gold keeps its one meaning"): the word "moved" on the moved row only, on a line of
+   its own in the row's text column, directly under its code line and left-aligned with the name, in --t-small --ink2,
+   never --gold or --you, with no icon, fill or border; it takes no width from the name. Hidden from assistive technology:
+   the place's words say ", moved" once. */
+.v2-plmoved { font: var(--t-small); color: var(--ink2); }
 .v2-plcard { display: grid; gap: 2px; padding: 12px; border-radius: 12px; background: var(--bg2); }
 .v2-plbig { font: var(--t-sheet); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 /* The bar (AC24): what changed and "Record plan", held above the tab bar while the list scrolls under it. */

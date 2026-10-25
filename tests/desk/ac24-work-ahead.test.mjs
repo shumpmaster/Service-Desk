@@ -448,7 +448,7 @@ test('AC24: an estimate\'s note longer than two lines is clipped to two, with th
 // "Current plan · recorded <date>, <time>" with AC24's "·" (specs/S-001.md:8444; the Design reviewer's finding 2,
 // stage 5 round 1): the state line's words before had lost it.
 
-test('AC24: moving rows by tap, Enter and Space — the ends disabled, focus kept on the control, the moved row\'s edge (from G7 the light line grey, --line2, not gold: P-001-glance-plan-gold.md, A) and "moved" in its accessible text, every finish recomputed, "Changed · not recorded"', async () => {
+test('AC24: moving rows by tap, Enter and Space — the ends disabled, focus kept on the control, the moved row\'s edge (from G7 the light line grey, --line2, not gold: P-001-glance-plan-gold.md, A) and "moved" in its accessible text (from G8b also shown, under the code line, said once: P-001-glance-moved-word.md, B), every finish recomputed, "Changed · not recorded"', async () => {
   const store = memStore();
   const app = await open({ extra: { 'intake/estimates.jsonl': WORKED() }, store });
   try {
@@ -468,6 +468,17 @@ test('AC24: moving rows by tap, Enter and Space — the ends disabled, focus kep
     assert.equal(document.activeElement && document.activeElement.dataset.k, `wa-up:${key('M3A')}`, 'focus stays on the control used');
     assert.ok(cls(rowOf(app, 'M3A'), 'moved'));
     assert.deepEqual(textRuns(byClass(rowOf(app, 'M3A'), 'v2-plord')[0], () => false), ['3', '3rd of 6, moved']);
+    // From G8b (AC24's note; P-001-glance-moved-word.md, B: "Show the word"): the word "moved" shown on the moved row, on a
+    // line of its own directly under its code line, hidden from assistive technology so the place's words above say it once;
+    // on that row only (its look, its line at 360 px and where it never is: tests/desk/ac24-g8b-moved-word.test.mjs).
+    const shownWord = (r) => byClass(r, 'v2-plmoved');
+    assert.equal(shownWord(rowOf(app, 'M3A')).length, 1, 'the word shown on the moved row');
+    assert.equal(shownWord(rowOf(app, 'M3A'))[0].textContent, 'moved');
+    assert.equal(shownWord(rowOf(app, 'M3A'))[0].attrs['aria-hidden'], 'true', 'said once: the place\'s words say it');
+    const col = byClass(rowOf(app, 'M3A'), 'v2-plm')[0].parent;
+    const inCol = col.children.filter((c) => c.tag);
+    assert.equal(inCol[inCol.indexOf(byClass(rowOf(app, 'M3A'), 'v2-plm')[0]) + 1], shownWord(rowOf(app, 'M3A'))[0], 'directly under the code line');
+    assert.equal(byClass(app.view, 'v2-plmoved').length, 1, 'on no other row');
     // Rewritten in G7 of "After the glance audit" (AC24's note; P-001-glance-plan-gold.md, A: "Plan's "moved" edge becomes the
     // light line grey, with its word "moved" kept"): the edge is drawn in --line2 and never --gold, so gold means only "next
     // to reach" (its cascade in both themes: tests/desk/ac92-glance-palette.test.mjs). Before G7 it was gold.
@@ -482,6 +493,11 @@ test('AC24: moving rows by tap, Enter and Space — the ends disabled, focus kep
     assert.deepEqual(codesOf(app), ['MD1', 'MD2', 'M3A', 'M3B', 'MD3', 'M3C']);
     assert.ok(!cls(rowOf(app, 'M3A'), 'moved'), 'the earlier edge gone at the next move');
     assert.ok(cls(rowOf(app, 'M3B'), 'moved'));
+    // From G8b: the word goes with the edge, and is on the row moved last.
+    assert.equal(byClass(rowOf(app, 'M3A'), 'v2-plmoved').length, 0, 'the earlier word gone at the next move');
+    assert.equal(byClass(rowOf(app, 'M3B'), 'v2-plmoved').length, 1, 'the word on the row moved last');
+    assert.equal(byClass(app.view, 'v2-plmoved').length, 1, 'and on no other');
+    assert.deepEqual(textRuns(byClass(rowOf(app, 'M3B'), 'v2-plord')[0], () => false), ['4', '4th of 6, moved']);
     // Space: MD1 down.
     await press(app, await btn(app, `wa-down:${key('MD1')}`), ' ');
     assert.deepEqual(codesOf(app), ['MD2', 'MD1', 'M3A', 'M3B', 'MD3', 'M3C']);

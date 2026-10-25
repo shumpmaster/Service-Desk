@@ -8,8 +8,9 @@
 // standard line written in Service-Desk's section 3; G7 adds made-up workflow runs on a head (`ciState`) and the screens
 // its palette's marks are drawn on, opened as the owner opens them (`G7_OPENS`); G7b adds Home with "Since you last
 // looked" ending in its missing lines (`G7B_OPENS`), with the "last looked" a device holds; G8 adds `nowShared`, a now
-// run sharing its key with later runs, and `sprintsState`, a v2.5 project with two open sprints or none; the later
-// stages add theirs. Each
+// run sharing its key with later runs, and `sprintsState`, a v2.5 project with two open sprints or none; G8b adds
+// `longNameState`, a milestone with a long made-up name, and Plan with a row moved, opened as the owner moves it
+// (`G8B_OPENS`); the later stages add theirs. Each
 // made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
 import { CONFIG, fixture } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
@@ -420,5 +421,48 @@ export function sprintsState(open) {
   else r.commit({ 'docs/sprints/m1.4-v3-build.md': m14.replace(/^status: open$/m, 'status: closed') });
   return s;
 }
+
+/**
+ * G8b (AC24's note; P-001-glance-moved-word.md, B): `text`'s Service-Desk with the worked estimates (wa-fixtures.mjs's
+ * WORKED, made up) and M3B's name on its docs/PROJECT.md line made long (G8B_LONG, made up, NOT a real record), so the
+ * moved row's name wraps at 360 px, in the ordering and out of it, with one word too long for its column, and must never
+ * be cut by the word "moved" under it.
+ */
+export const G8B_LONG = 'A made-up long milestone name, NOT real, to wrap on Plan at 360 px: Pneumonoultramicroscopicsilicovolcanoconiosis shown against its measure';
+export function longNameState() {
+  const s = waSetup({ extra: { 'intake/estimates.jsonl': WORKED() } });
+  const r = s.repos[SD.name];
+  const doc = r.files['docs/PROJECT.md'];
+  const made = doc.replace("- The desk's value targets shown (M3B) · ", `- ${G8B_LONG} (M3B) · `);
+  if (made === doc) throw new Error('longNameState: Service-Desk\'s M3B line has changed');
+  r.commit({ 'docs/PROJECT.md': made });
+  return s;
+}
+/** Plan's clock in the states G8b opens with the worked estimates (AC24's tests' NOW, 18 Oct, 13:00 in Chicago). */
+export const PLAN_NOW = Date.parse('2026-10-18T18:00:00Z');
+/** The move control `wa-<up|down>:<project>|<id>` (AC24), keyed by the row's identity. */
+const moveKey = (dir, project, id) => `wa-${dir}:${project}|${id}`;
+async function g8bOpen(setup, moves, { ordering, now = NOW } = {}) {
+  const app = await g7Open(setup, '#/work', { now });
+  app.repos = setup.repos; // so a test can land a newer plan (made up) while the draft holds the move
+  await app.tap(byKey(app, 'plan-order'));
+  for (const [dir, project, id] of moves) await app.tap(byKey(app, moveKey(dir, project, id)));
+  if (!ordering) await app.tap(byKey(app, 'plan-order')); // the ordering closed again: the moved row keeps its edge and its word
+  return app;
+}
+/**
+ * G8b (AC24's note): Plan with a row moved, as [name, open() → the open page], in the ordering (⇅) and out of it: `text`'s
+ * Service-Desk with the worked estimates (M3A moved up, as AC24's test moves it); `longNameState`'s long-named M3B moved
+ * up; and `gates` (`mix` with two more made-up gate cards, NOT real), so a gate card's row sits in the made-up project's
+ * group beside the moved row, the ordering one list of two projects (each code line naming its project), its MD3 moved up.
+ */
+export const G8B_OPENS = [true, false].flatMap((ordering) => {
+  const where = ordering ? 'the ordering open' : 'the ordering closed';
+  return [
+    [`Plan, M3A moved, ${where}`, () => g8bOpen(waSetup({ extra: { 'intake/estimates.jsonl': WORKED() } }), [['up', SD.name, 'M3A']], { ordering, now: PLAN_NOW })],
+    [`Plan, the long made-up name moved, ${where}`, () => g8bOpen(longNameState(), [['up', SD.name, 'M3B']], { ordering, now: PLAN_NOW })],
+    [`Plan with a gate card, ${MIX_PROJECT}'s MD3 moved, ${where}`, () => g8bOpen(gatesState(), [['up', MIX_PROJECT, 'MD3']], { ordering })],
+  ];
+});
 
 export { SD, POOM, CONFIG };

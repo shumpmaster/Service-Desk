@@ -851,3 +851,20 @@ G8 adds no fixture file. `tests/desk/ac92-glance-arrow.test.mjs`, G8's walk in `
   **NOT real records.**
 - **a graduation ruling** written in `ac92-glance-arrow.test.mjs`, `decisions/questions/P-001-graduation.md` ("Ruling:
   proceed"), so `text`'s Service-Desk is Done, as AC83's Done case makes it. **NOT a real record.**
+
+## After the glance audit, G8b (2026-10-25, S-001 AC24's note changed, P-001-glance-moved-word.md, B; AC92 (a) noted)
+
+G8b adds no fixture file. `tests/desk/ac24-g8b-moved-word.test.mjs`, G8b's walks in `ac88-dark.test.mjs` (AC92 (a)'s
+cascade check, its want-list holding Plan's "moved" word, and the stage-8 guard's `G8B_ONCE`) and G8b's extended cases
+(AC24's moving case, G7's Plan case) open the states above, with these made-up parts, each **NOT real**, and
+`tests/desk/tools/glance-shots.mjs` captures them (`g8b-`):
+- **`longNameState`** (`glance-fixtures.mjs`, `G8B_LONG`): `text`'s Service-Desk with the worked estimates
+  (`wa-fixtures.mjs`'s `WORKED`, made up) and M3B's name on its docs/PROJECT.md line replaced by a long made-up name,
+  "A made-up long milestone name, NOT real, to wrap on Plan at 360 px: Pneumonoultramicroscopicsilicovolcanoconiosis
+  shown against its measure", one word of it too long for the row's column, so the moved row's name wraps under the word
+  "moved" and must never be cut. **NOT a real record.**
+- **`G8B_OPENS`** (`glance-fixtures.mjs`): Plan with a row moved (a draft on the device, made up: no owner moved it), in
+  the ordering and out of it: `text` with the worked estimates, M3A moved up; `longNameState`, the long-named M3B moved
+  up; and `gates`, the made-up project's MD3 moved up beside its gate cards' rows. **NOT a real device's draft.**
+- **a newer plan** written in `ac24-g8b-moved-word.test.mjs`, `docs/planning/2026-10-18T1805Z-01.md`, as AC24's test
+  writes it, so the draft is set aside and the word goes. **NOT a real record.**

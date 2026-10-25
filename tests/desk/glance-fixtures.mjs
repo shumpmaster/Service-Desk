@@ -15,8 +15,9 @@
 // `sprintsState(1)`, `g8cStore`, `G8C_OPENS`); G8d adds Waiting, a project's page and the Pipeline view with a project never
 // read in this opening, a first read whose blobs fail, and Home with a project the desk can read but can't draw beside one
 // it can't read (`blobFailState`, `cantShowState`, `G8D_OPENS`), and in its round 3 Waiting with none read and drawn and a
-// project the desk can't draw in state 5 (`noneDrawnState`, `cantShowLastState`); the later stages add theirs. Each
-// made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
+// project the desk can't draw in state 5 (`noneDrawnState`, `cantShowLastState`); G9 adds Home's briefing holding five
+// lines and the screens its soft boxes and plain why line are drawn on (`fiveLinesState`, `G9_OPENS`); the later stages
+// add theirs. Each made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
 import { CONFIG, fixture } from './helpers.mjs';
 import { repo, BAD_PR, gitSha } from './fake-desk.mjs';
 import { waSetup, WORKED, memStore, SD, POOM } from './wa-fixtures.mjs';
@@ -705,6 +706,43 @@ export const G8D_OPENS = [
   // of sandbox.js (about 1.25 MB) for good.
   ['Waiting, every project shown, none read and drawn, can\'t read or show', () => g8dOpen(noneDrawnState(), '#/waiting')],
   ['Waiting, the made-up project alone shown, can\'t show when last read', () => g8dOpen(cantShowLastState(), `#/waiting/${MIX_PROJECT}`, { later: true })],
+];
+
+/**
+ * G9 (AC92 (e); P-001-glance2-anchor.md, A): Home's briefing holding five lines (made up, NOT real records, as AC91 (a)'s
+ * test adds them to `mix`'s made-up project): its count, its parts, and a question past its settle time (raised 6 Oct, 24
+ * hours), one that settles itself (fullRepo's) and one that can't be undone, each due or undo line of its own.
+ */
+const G9_Q = (title, rev, def, timeout) => `# Ruling needed: ${title}\n\nWHY: a test.\nOPTIONS:\n  A. Yes.\n  B. No.\nRECOMMENDATION: A — yes.\nRISK CLASS: R0\nREVERSIBILITY: ${rev}\nBLAST RADIUS: none\nDEFAULT: ${def}\nTIMEOUT: ${timeout}\n`;
+export function fiveLinesState() {
+  return mixState({ extra: { 'questions/Alpha-past.md': G9_Q('a made-up question past its time', 'reversible', 'A', '24'), 'questions/Alpha-final.md': G9_Q('a made-up choice that can\'t be undone', 'irreversible', 'none', 'none') },
+    raised: { 'questions/Alpha-past.md': Date.parse('2026-10-06T15:00:00Z'), 'questions/Alpha-final.md': NOW - 2 * 3600e3 } });
+}
+
+/**
+ * G9 (AC92 (e)): the screens it changes and the ones its rule keeps a box off, as [name, open() → the open page], each
+ * made-up part NOT real: a v3 page's sentence and tally in its box (`mix` with its made-up later Launch run, so
+ * Service-Desk's tally reads the spec's example, "8 of 16 milestones reached · 17 sprints · 9 merged, 8 not read"), and the
+ * made-up project's; Service-Desk's page with every phase opened, each why line a plain line; a v2.5 page's sentence alone in
+ * its box; a v3 page with nothing recorded (`quiet`'s made-up project, its README alone: no run, so its tally reads "no
+ * milestones tracked yet · no sprints filed yet", never "0 of 0"); one never read in this opening (`openingState`), its
+ * sentence alone in its box; Home's briefing holding five lines; and Waiting with the Done
+ * lane's ground holding a confirmed row (a device's made-up Done marks), with no box.
+ */
+export const G9_OPENS = [
+  ['a v3 page, its sentence and tally boxed', () => g7Open(mixState({ laterLaunch: true }), `#/p/${SD.name}`)],
+  ['the made-up project\'s page, its sentence and tally boxed', () => g7Open(mixState(), `#/p/${MIX_PROJECT}`)],
+  ['a v3 page, every phase opened, each why line plain', async () => {
+    const app = await g7Open(textState(), `#/p/${SD.name}`);
+    for (const ph of ['Launch', 'Build', 'Design', 'Discovery']) await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs && e.attrs['aria-label'] === ph)[0]);
+    return app;
+  }],
+  ['a v2.5 page, its sentence alone boxed', () => g7Open(textState(), `#/p/${POOM.name}`)],
+  ['a v3 page with nothing recorded, its tally "no milestones tracked yet"', () => g7Open(quietState(), `#/p/${MIX_PROJECT}`)],
+  ['a v3 page never read in this opening, its sentence alone boxed', () => g7Open(openingState(), `#/p/${SD.name}`)],
+  ['Home, the briefing holding five lines', () => g7Open(fiveLinesState(), '#/')],
+  ['Waiting, the Done lane\'s ground and no box', () => g7Open(gatesState(), '#/waiting', { store: memStore(deviceMarks([
+    { project: MIX_PROJECT, kind: 'gate', id: GATE_KEY(MIX_PROJECT, 'queue/P-009-launch-1.md'), title: 'The Launch gate, case 1 · P-009', at: NOW - 3 * 3600e3, confirmedAt: NOW - 2 * 3600e3 }])), polls: 0 })],
 ];
 
 export { SD, POOM, CONFIG };

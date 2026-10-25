@@ -818,3 +818,20 @@ check and the stage-8 guard's `G7_ONCE`) and G7's rewritten cases open the state
   the Home Screen (`matchMedia` answering standalone) with the phone's notification permission `denied`, so AC75's
   warning is drawn; and the portfolio with nothing queued (`pfFiles({})`, no failure), beside AC88's own portfolio states.
   **NOT a real phone's settings, NOT real records.**
+
+## After the glance audit, G7b (2026-10-25, S-001 AC91 (c) changed; AC92 (a) noted)
+
+G7b adds no fixture file. `tests/desk/ac91-g7b-since-missing.test.mjs`, G7b's walks in `ac88-dark.test.mjs` (AC92 (a)'s
+cascade check, its want-list holding the grey missing line, and the stage-8 guard's `G7B_ONCE`) open the states above, with
+these made-up parts, each **NOT real**, and `tests/desk/tools/glance-shots.mjs` captures them (`g7b-`):
+- **a "last looked" held on the device** (`glance-fixtures.mjs`, `lookedAt`, `SINCE_LATE` and `SINCE_FULL`; and 18 Oct
+  00:00 in `ac91-g7b-since-missing.test.mjs`): 19 Oct, after the records' last dates, so the list holds no line; ten days
+  before the states' clock, so it holds four lines and "<n> more"; or 18 Oct, so it holds two of Service-Desk's lines.
+  **NOT a real device's record.**
+- **`G7B_OPENS`** (`glance-fixtures.mjs`): Home on `unread`, signed-out and `ext` with reads failing (the fake desk's
+  network cause, AC5, or every read refused as signed out, J6): Service-Desk failing after its first reads; Service-Desk
+  failing from the start and the made-up project after its first reads; signed out from the start; `ext`'s made-up Beta
+  and long-named Epsilon failing after their first reads; and Service-Desk failing with the list full. **NOT how any read
+  failed.**
+- **a read still in flight** (`fake-desk.mjs`, a project's `hold`, as the portfolio's): Service-Desk's first read held
+  pending while the made-up project's fails, so its tile says "Checking…". **NOT a real read.**

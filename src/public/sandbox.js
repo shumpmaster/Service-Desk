@@ -26,7 +26,7 @@ import {
 } from './lib/sandbox.js';
 import { teamView, memberPage, workingNow, summarySheet, cosWorkingNow, cosPieceOf, cosPieceWords } from './lib/sandbox.js';
 import { summaryView, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWords, lastAction } from './lib/sandbox.js';
-import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits, tileFoot, atWorkParts, sinceUnreadWords, unreadLines, WHY_BACK_ONCE, nowOwnPart } from './lib/home.js';
+import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits, tileFoot, atWorkParts, sinceUnreadWords, sinceMissingLines, unreadLines, WHY_BACK_ONCE, nowOwnPart } from './lib/home.js';
 import { GATE_PHASE } from './lib/j11.js';
 import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, gateOpening, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
@@ -815,7 +815,7 @@ function ideaLines(seen, since) {
   return ideaEvents(r.kept, since);
 }
 
-function sinceNode(sv, seen, nowMs, unread = null) {
+function sinceNode(sv, seen, nowMs, unread = null, missing = []) {
   const head = h('div', { class: 'v2-sh', key: 'since-h' }, h('h2', { class: 'v2-shw' }, sv.heading),
     sv.off ? null : h('button', { type: 'button', class: 'v2-seen', key: 'mark-seen', onclick: () => {
       seen.markSeen();
@@ -837,6 +837,13 @@ function sinceNode(sv, seen, nowMs, unread = null) {
   else if (sv.none) out.push(h('p', { class: 'v2-small', key: 'since-none' }, sv.none));
   else out.push(h('ol', { class: 'v2-since', key: 'since' }, sv.lines.map((e) => eventNode(e, nowMs, 'ev'))));
   if (sv.more) out.push(h('a', { class: 'v2-more', href: '#/since', key: 'since-more', onclick: () => { nav.opener = 'since-more'; } }, sv.more.replace(/ ›$/, ''), vi('chev')));
+  // AC91 (c), from G7b (P-001-glance-since-incomplete.md, A): while a connected project can't be read, the list ends,
+  // under its last line, with one grey line for each such project in its tiles' order, "<project> not read since HH:MM,
+  // its lines may be missing": `--t-small` `--ink2`, no icon, not a link, not one of the four lines and not counted in
+  // "<n> more". Each keyed by its project's name, the desk's identity for a project (J7).
+  if (missing && missing.length) {
+    out.push(h('div', { class: 'v2-smiss', key: 'since-miss' }, missing.map((m) => h('p', { class: 'v2-small', key: `since-miss:${m.name}` }, m.words))));
+  }
   return out;
 }
 
@@ -938,13 +945,17 @@ function readStateOf(box) {
   return { state: box.drawError ? 'cant-read' : box.read ? box.read.read : 'checking', since: box.read && box.read.since != null ? box.read.since : null };
 }
 
-/** "Since you last looked"'s empty line while a connected project can't be read (AC91 (c)), or null: each project's read, and whether a read of it succeeded in this opening. */
-function sinceUnread(built) {
+/**
+ * Each project's read as "Since you last looked" takes it (AC91 (c)), in the order given: its name, its read (none for a
+ * project the desk can't draw), and whether a read of it succeeded in this opening. What the briefing's can't-read lines
+ * and the tiles already read (the box's read, the reader's state); no read of its own.
+ */
+function sinceReads(built) {
   const opened = DESK && DESK.openedAt != null ? DESK.openedAt : -Infinity;
-  return sinceUnreadWords(built.map((b) => {
+  return built.map((b) => {
     const st = DESK && DESK.states ? DESK.states.get(b.project.name) : null;
-    return { read: b.box.drawError ? null : b.box.read, succeeded: Boolean(st && st.lastSuccessAt != null && st.lastSuccessAt >= opened) };
-  }), TZ);
+    return { name: b.project.name, read: b.box.drawError ? null : b.box.read, succeeded: Boolean(st && st.lastSuccessAt != null && st.lastSuccessAt >= opened) };
+  });
 }
 
 function renderHome(desk, built, seen, nowMs, bd = null) {
@@ -1007,6 +1018,9 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
       })) : null);
   });
   const sv = sinceModel(built, seen, nowMs);
+  // AC91 (c), from G7b: the projects' reads in the order of their tiles on Home (its groups in order, each group's tiles
+  // as drawn), so the lines that end "Since you last looked" name them in that order.
+  const reads = sinceReads(HOME_GROUPS.flatMap((g) => placed.filter((x) => x.group === g.key).map((x) => x.b)));
   const pf = portfolioOf(built);
   const body = [
     h('header', { class: 'v2-top' }, h('h1', { class: 'v2-title' }, HOME_WORDS.title)),
@@ -1014,7 +1028,7 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
     // AC75: "Notifications" on Home's top line until notifications are on for this device; its control is also in the fold at the foot.
     onTopLine(notifyState(notifyEnv())) ? notifyNode(true) : null,
     briefingNode(desk, built, bd),
-    sinceNode(sv, seen, nowMs, sinceUnread(built)),
+    sinceNode(sv, seen, nowMs, sinceUnreadWords(reads, TZ), sinceMissingLines(reads, TZ)),
     h('div', { class: 'v2-hgroups', key: 'hgroups' }, groups),
     // Home's foot (AC82, specs/S-001.md:6696-6700): the portfolio's block, read only (AC87, from stage
     // 6a); then "More detail", closed, below everything else on Home (P-001-settings-place.md, A).

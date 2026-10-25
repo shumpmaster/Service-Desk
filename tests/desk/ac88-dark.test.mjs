@@ -1315,7 +1315,7 @@ const G8B_EXCEPT = (n, d, theme) => {
  * G8c of "After the glance audit"'s change to the look on purpose (the brief's rule; AC92 (b), P-001-glance-arrow-on-line.md,
  * B: "where a line leads into the now circle, it ends before the arrow, so the arrow stands on its own"), its one
  * declaration pinned to its value, before and after, in each theme, on only its own element: a Home tile's now cell with a
- * line coming in from the left (`span.v2-c.here.l` in a drawing's row, `div.v2-rw`; the cell's new class `here` adds no
+ * line coming in from the left (`span.v2-c.here.l` in a drawing's row, `span.v2-rw`; the cell's new class `here` adds no
  * declaration of its own), its ::before's `right` from 50% to 19 px left of the cell's centre, 3 px clear of G8's arrow.
  * Its other declarations, the line leaving the circle, every other cell and the arrow are unchanged. The words "in this
  * opening", the briefing's order and the "not shown" line add no declaration (that line takes `div.v2-smiss`'s G7b look,

@@ -27,7 +27,7 @@ import { parseCss, treeOf, cascade, nodes } from './css-cascade.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { briefingView, tileWaits, tileFoot, sinceMissingLines, sinceUnreadWords } from '../../src/lib/home.js';
 import { capView, capEntry, versionsView } from '../../src/lib/portfolio.js';
-import { BAD_PR } from './fake-desk.mjs';
+import { BAD_PR, gitSha } from './fake-desk.mjs';
 import { withPortfolio, addPortfolio, pfFiles } from './pf-fixtures.mjs';
 import { unreadState, orderState, nowShared, mixState, sprintsState, g8cStore, lookedAt, MIX_PROJECT, NOW, SD, POOM, CONFIG, SINCE_LATE, SINCE_FULL, G8C_OPENS } from './glance-fixtures.mjs';
 
@@ -213,7 +213,7 @@ test('AC91 (c), G8c: on one Home, Service-Desk never read in this opening and th
   }
 });
 
-test('AC91 (c), G8c: the briefing\'s line under "<n> need you", and its first line where it is the can\'t-read line, with its ✕ and its accessible name; a project never read holds no cards, so its corner says it can\'t read', async () => {
+test('AC91 (c), G8c: the briefing\'s line under "<n> need you", and its first line where it is the can\'t-read line, with its ✕ and its accessible name; a project whose first read fails outright (no tree held) holds no cards, so its corner says it can\'t read', async () => {
   // Service-Desk alone failing from the start, nothing waiting on it, but the made-up project's cards: so its line is under "<n> need you".
   const s = unreadState();
   s.fail();
@@ -234,9 +234,9 @@ test('AC91 (c), G8c: the briefing\'s line under "<n> need you", and its first li
   } finally {
     app.restore();
   }
-  // The made-up project failing from the start: no read of it, so no cards held and its corner says it can't read (the red
-  // foot beside a corner that says what waits needs cards from a read in this opening, so it keeps "since HH:MM" on the
-  // page: tileFoot's never-read case is the pure function's, above).
+  // The made-up project's reads failing outright from the start (the network cause, no tree held): no cards, so its corner
+  // says it can't read. A first read that holds the tree but fails in its blob phase does hold cards, with no read succeeded
+  // in this opening: the red foot's case, below.
   const u = unreadState({ who: MIX_PROJECT });
   u.fail();
   app = await open(u);
@@ -244,6 +244,40 @@ test('AC91 (c), G8c: the briefing\'s line under "<n> need you", and its first li
     assert.equal(corner(app, MIX_PROJECT).textContent, "Can't read in this opening");
   } finally {
     app.restore();
+  }
+});
+
+// G8c's review, round 1, B1: the scheduler builds the project's model from the tree it holds (src/lib/scheduler.js, desk.model)
+// while `lastSuccessAt` is set only when the whole cycle succeeds, so a first read whose blob phase fails gives a project
+// with cards that was never read in this opening.
+test('AC91 (c), G8c (G8c\'s review, round 1, B1): the red foot beside a corner that says what waits, for a project never read in this opening — its first read holding the tree but failing in its blob phase (fake-desk.mjs\'s blobFail, NOT real), so its cards show and no read succeeded: the corner "<n> wait on you", the foot exactly "✕ Can\'t read in this opening: <reason>" in --bad with its ✕, no time', async () => {
+  for (const which of ['every file', 'one file']) {
+    const s = unreadState({ who: MIX_PROJECT });
+    const alpha = s.repos[MIX_PROJECT];
+    const files = Object.values(alpha.files);
+    alpha.blobFail = (which === 'every file' ? files : files.slice(0, 1)).map(gitSha); // made up: GitHub fails those blobs (NOT real)
+    const app = await loadSandbox({ ...s, hash: '#/', now: NOW, store: lookedAt(SINCE_LATE) });
+    try {
+      await app.advance(1000);
+      await app.advance(2 * POLL_MS);
+      const where = `blobs failing, ${which}`;
+      assert.equal(app.desk.states.get(MIX_PROJECT).lastSuccessAt ?? null, null, `${where}: no read of it succeeded in this opening`);
+      assert.match(corner(app, MIX_PROJECT).textContent, /^\d+ wait on you$/, `${where}: the corner says what waits`);
+      assert.ok(has(corner(app, MIX_PROJECT), 'you') && !has(corner(app, MIX_PROJECT), 'bad'), `${where}: the corner as built`);
+      const reason = app.desk.states.get(MIX_PROJECT).failure.words;
+      assert.ok(reason, `${where}: AC5's reason held`);
+      const foot = byClass(tile(app, MIX_PROJECT), 'v2-ln').filter((l) => has(l, 'bad'));
+      assert.deepEqual(foot.map((l) => l.textContent), [`Can't read in this opening: ${reason}`], `${where}: the foot, exactly, with no time`);
+      assert.doesNotMatch(foot[0].textContent, /since|\d\d:\d\d/, `${where}: no time`);
+      assert.ok(has(svgOf(foot[0]), 'vi-bad'), `${where}: its ✕`);
+      for (const theme of THEMES) assert.equal(looks(app, theme).get(foot[0]).colour, INK[theme].bad, `${where}, ${theme}: in --bad`);
+      assert.equal(byClass(tile(app, MIX_PROJECT), 'v2-tfoot').length, 0, `${where}: no grey "Reason:" beside a corner that says what waits`);
+      // The other places agree: the briefing's line and the grey line.
+      assert.ok(under(app).includes(OPENING(MIX_PROJECT)), `${where}: ${JSON.stringify(under(app))}`);
+      assert.ok(missing(app).includes(MISS(MIX_PROJECT, 'in this opening')), `${where}: ${JSON.stringify(missing(app))}`);
+    } finally {
+      app.restore();
+    }
   }
 });
 

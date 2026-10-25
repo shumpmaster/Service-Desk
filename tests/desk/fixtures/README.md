@@ -893,5 +893,9 @@ above, with these made-up parts, each **NOT real**, and `tests/desk/tools/glance
   made-up project, each opened as the owner opens Home. **NOT real records or failures.**
 - **a reader that never answers** (`ac91-g8c-home.test.mjs`, the fake desk's `hold` set to a promise that never settles), so
   a read stays unanswered for 3 minutes, AC89 (a)'s 3-minute cause. **NOT how any read went.**
+- **blobs GitHub fails** (`ac91-g8c-home.test.mjs`, from G8c's review, round 1, B1): `unread` with the made-up project's
+  `blobFail` (fake-desk.mjs) naming every file's blob sha, or one file's, so its first read holds the tree, and with it the
+  cards, but fails in its blob phase (AC5's GitHub cause): a project with cards waiting that no read has succeeded for in
+  this opening. **NOT how any read failed.**
 - **a portfolio that refuses the desk** (`ac91-g8c-home.test.mjs`, pf-fixtures.mjs's `pfFiles` with `no-access`), as G7's
   palette test makes it. **NOT a real record.**

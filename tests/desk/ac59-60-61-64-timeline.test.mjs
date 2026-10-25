@@ -160,12 +160,18 @@ test('AC59 (note 21): the delivery order within each run — first the rows no d
   assert.deepEqual(block(noJ12, 'Build-i1').up.map(label), ['gather(5)', 'M1', 'M2', 'M2B']);
 });
 
-test('AC59: the gathered "not recorded" line and its count, opening on a tap; Build i2\'s and Launch i1\'s "5 standard … milestones · still to come" lines, with no rows for them', async () => {
+// Rewritten in G6 of "After the glance audit" (AC59's gathered line, changed by AC92 (d): "the gathered line reads
+// "Standard checklist · <n> not recorded for this run ›" in place of "<n> standard <Phase> milestones · not recorded for
+// this run""): it read "6 standard Design milestones · not recorded for this run", and a run still to come's "5 standard
+// Build milestones · still to come"; that one now reads "Standard checklist · 5 still to come" the same way (C, as round 2's
+// mock, changes2.js q5). The count, the rows it gathers, its fold and its list are as before.
+test('AC59 (AC92 (d), rewritten in G6): the gathered "not recorded" line and its count, opening on a tap; Build i2\'s and Launch i1\'s "Standard checklist · 5 still to come" lines, with no rows for them', async () => {
   const { feed } = models({ now: NOW16 });
   const g = (key) => rowsOf(block(feed, key)).filter((x) => x.kind === 'gather').map((x) => x.words);
-  assert.deepEqual(g('Design-i2'), ['6 standard Design milestones · not recorded for this run']);
-  assert.deepEqual(g('Build-i2'), ['5 standard Build milestones · still to come']);
-  assert.deepEqual(g('Launch-i1'), ['5 standard Launch milestones · still to come']);
+  assert.deepEqual(g('Design-i2'), ['Standard checklist · 6 not recorded for this run']);
+  assert.deepEqual(g('Build-i2'), ['Standard checklist · 5 still to come']);
+  assert.deepEqual(g('Launch-i1'), ['Standard checklist · 5 still to come']);
+  assert.deepEqual(rowsOf(block(feed, 'Design-i2')).filter((x) => x.kind === 'gather').map((x) => x.items.length), [6], 'the six it gathers');
   assert.ok(!rowsOf(block(feed, 'Build-i2')).some((x) => /^Build-\d/.test(x.code || '')), 'no rows for them');
   const app = await openSD('#/p/Service-Desk/timeline');
   try {

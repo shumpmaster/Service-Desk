@@ -505,7 +505,13 @@ test('G8d\'s screens (tests/desk/glance-fixtures.mjs\'s G8D_OPENS) each draw wha
       const t = app.text();
       if (/never read|blobs failing/.test(where)) assert.match(t, /in this opening/, where);
       if (/blobs failing/.test(where)) assert.ok(cardsIn(app, 'wait').length > 0, `${where}: its cards`);
-      if (/signed out/.test(where)) assert.match(t, /Can't read Service-Desk in this opening/, where);
+      // Rewritten in G9c (P-001-glance-waiting-signed-out.md and P-001-glance-g9c-signed-out-all.md, each "Ruling: A"; AC91
+      // (c)): Waiting signed out, every project shown, says the one "Signed out — reload to sign in" line in place of
+      // Service-Desk's own "Can't read Service-Desk in this opening", which it said here before.
+      if (/signed out/.test(where)) {
+        assert.match(t, /Signed out — reload to sign in/, where);
+        assert.doesNotMatch(t, /Can't read Service-Desk/, `${where}: no project's own red line`);
+      }
       if (/can't draw/.test(where)) assert.equal(byClass(groupBtn(app, 'active'), 'v2-hgb').map((x) => x.textContent).join(' · '), "1 can't be read · 1 can't be shown", where);
     } finally {
       app.restore();

@@ -124,7 +124,8 @@ function jobLogAnswer(J, id) {
  * fakeServer({ name: repo }, config, clock) → { call(path, body), calls: [{ path, project, at }] }.
  * A repo's `fail` can be set to { kind: 'network' | 'signed-out' | 'cloudflare' } or
  * { state: 'cant-read', reason, retryAfter? } or { state: 'partial' }. From G7b, a repo's `hold` (a promise) is waited on
- * before its call answers, a read still in flight, as the portfolio's is.
+ * before its call answers, a read still in flight, as the portfolio's is. From G9c, a repo's `blobHold` (a promise) is
+ * waited on by its blob calls only: a first read whose tree is held and whose parts are still arriving.
  */
 export function fakeServer(repos, config, clock) {
   const calls = [];
@@ -137,6 +138,9 @@ export function fakeServer(repos, config, clock) {
     const project = byName(body.project);
     // From G7b (AC91 (c)): `hold`, a promise the call waits on before it answers (a first read still pending, "Checking…").
     if (r && r.hold) await r.hold;
+    // From G9c (AC91 (c)): `blobHold`, a promise only the project's blob calls wait on, so its first read holds the tree and
+    // its pull requests while its parts are still arriving (the scheduler's pending outcome), made up (NOT how any read went).
+    if (r && r.blobHold && path !== '/api/poll') await r.blobHold;
     const f = r.fail;
     if (f && f.kind === 'network') return { ok: false, status: 0, reason: 'network' };
     if (f && f.kind === 'signed-out') return { ok: false, status: 403, reason: 'signed-out' };

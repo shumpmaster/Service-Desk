@@ -25,7 +25,9 @@
 // page's box, and each why line's ground; and, from G9's round 2 (AC92 (d)), each opened phase's run heads, each found
 // by its run, its colour, weight and size, the rule above it and the gap over that rule; and, on G9b's (AC91 (c), AC82),
 // the line under Home's and Waiting's titles, its words, colour, size and weight and whether an icon is drawn in it, the
-// list's red line under it on Home, and Waiting's lanes' empty words and the strip's line.
+// list's red line under it on Home, and Waiting's lanes' empty words and the strip's line; and, on G9c's (AC91 (c)), Waiting's
+// quiet lines top to bottom, each one's words, colour, size, whether an icon is drawn in it, the lines it takes and whether it
+// is cut, and a project's page's "Nothing waiting on you" row's small line.
 // G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
 // the screen as it opens (the viewport), not the whole page.
@@ -35,7 +37,7 @@ import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
 import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, ciState, mismatchState, nowShared, sprintsState, longNameState, PLAN_NOW,
-  openingState, signedOutMixedState, orderState, blobFailState, cantShowState, noneDrawnState, cantShowLastState, fiveLinesState, failedHeldState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
+  openingState, signedOutMixedState, orderState, blobFailState, cantShowState, noneDrawnState, cantShowLastState, fiveLinesState, failedHeldState, heldReadsState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
 import { sdRepo, SD3 } from '../tv2-fixtures.mjs';
 import { CONFIG } from '../helpers.mjs';
 import { waSetup, WORKED } from '../wa-fixtures.mjs';
@@ -277,6 +279,18 @@ const SHOTS = [
   { name: 'g9b-home-signed-out', state: signedOutState, now: NOW, looked: LATE, before: true },
   { name: 'g9b-waiting-signed-out', state: signedOutState, now: NOW, looked: LATE, before: true, hash: '#/waiting' },
   { name: 'g9b-waiting-one-checking', state: failedHeldState, now: NOW, looked: LATE, hash: `#/waiting/${encodeURIComponent(SD.name)}` },
+  // G9c (AC91 (c), "Waiting's quiet lines while a read is on its way or signed out" and "a project's page's "Nothing waiting on
+  // you" row"; the owner's rulings P-001-glance-waiting-pending.md, -waiting-signed-out.md and -page-checking.md, each A, and
+  // -g9c-portfolio.md, B): Waiting with every project shown on `failedHeldState` ("Still reading Service-Desk…" beside the
+  // lanes' "Nothing here"); Waiting's first paint, every first read held on its way with a made-up portfolio in J7 (its line
+  // last); Waiting signed out on `signedOutMixedState` (the one line); Waiting with every project failed, not signed out
+  // (`orderState`), beside it, so the two differ; and Service-Desk's page beside the made-up project failing from the start,
+  // "checked <age> ago" from its own read. Each made-up part NOT real.
+  { name: 'g9c-waiting-failed-held', state: failedHeldState, now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g9c-waiting-first-paint', state: () => heldReadsState({ held: [SD.name, POOM.name, MIX_PROJECT], portfolio: true, portfolioHeld: true }), now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g9c-waiting-signed-out', state: signedOutMixedState, now: NOW, looked: LATE, later: true, hash: '#/waiting' },
+  { name: 'g9c-waiting-every-failed', state: () => orderState(), now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g9c-page-own-age', state: () => unreadState({ who: MIX_PROJECT }), now: NOW, looked: LATE, before: true, hash: `#/p/${encodeURIComponent(SD.name)}` },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {
@@ -526,9 +540,24 @@ async function main() {
             return `line "${sub.textContent}" ${cs.color} ${cs.fontSize} ${cs.fontWeight}${sub.querySelector('svg') ? ', an icon in it' : ', no icon'}`
               + `${red ? `; the list's "${red.textContent}" ${getComputedStyle(red).color}` : ''}${lanes.length ? `; lanes: ${lanes.join(' | ')}` : ''}`;
           });
+          // G9c (AC91 (c)): Waiting's quiet lines, top to bottom, each line's words, colour, size, lines taken and whether an icon
+          // is drawn in it or it is cut; and a page's "Nothing waiting on you" row's small line.
+          const g9c = await page.evaluate(() => {
+            const box = document.querySelector('.v2-board > .v2-quiet');
+            const ql = box ? [...box.children].map((e) => {
+              const cs = getComputedStyle(e);
+              const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.4;
+              const span = e.querySelector('span') || e;
+              const lines = Math.round(span.getBoundingClientRect().height / lh);
+              return `"${e.textContent}" ${cs.color} ${cs.fontSize}${e.querySelector('svg') ? ' with an icon' : ' no icon'}, ${lines} line${lines === 1 ? '' : 's'}${span.scrollWidth > span.clientWidth + 1 ? ', cut' : ''}`;
+            }) : [];
+            const row = document.querySelector('[data-k="page-waits"]');
+            const small = row ? row.querySelector('.v2-small') : null;
+            return [...(ql.length ? [`quiet lines: ${ql.join(' / ')}`] : []), ...(row ? [`page row: "${row.querySelector('.v2-prtt').textContent}" · "${small ? small.textContent : ''}"${small ? ` ${getComputedStyle(small).color}` : ''}`] : [])].join('; ') || 'no quiet lines';
+          });
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}${/^g8d-/.test(shot.name) ? `  (${g8d})` : ''}${/^g9-/.test(shot.name) ? `  (${g9})` : ''}${/^g9b-/.test(shot.name) ? `  (${g9b})` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}${/^g8d-/.test(shot.name) ? `  (${g8d})` : ''}${/^g9-/.test(shot.name) ? `  (${g9})` : ''}${/^g9b-/.test(shot.name) ? `  (${g9b})` : ''}${/^g9c-/.test(shot.name) ? `  (${g9c})` : ''}`);
           await ctx.close();
         }
       }

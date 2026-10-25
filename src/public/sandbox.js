@@ -1430,7 +1430,6 @@ function phaseOpenNode(name, line) {
   return h('div', { class: 'v2-stdl', key: `stdl:${line.phase}`, id: `phase-${line.phase}`, role: 'region', 'aria-label': `${line.phase}: its milestones, read from the bottom up` }, kids);
 }
 
-/** Milestones by phase (AC83, frames 5, 6 and 6b): one folded line per phase, bottom up; a tap, Enter or Space opens one below itself. */
 /** The milestones by phase as the page draws them (AC83, AC92 (c) and (d)): one reading for the list and the tally above it. */
 function pageMilestones(p) {
   const name = p.project.name;
@@ -1438,6 +1437,7 @@ function pageMilestones(p) {
     ruled: Boolean(p.snap && p.snap.tree && p.snap.tree.has('decisions/questions/P-001-standard-milestones.md')) });
 }
 
+/** Milestones by phase (AC83, frames 5, 6 and 6b): one folded line per phase, bottom up; a tap, Enter or Space opens one below itself. */
 function milestonesNode(p, mv) {
   const name = p.project.name;
   // AC92 (c), from G5: the head sums each phase's "<R> of <T> reached"; "↑ start at the foot" stays.

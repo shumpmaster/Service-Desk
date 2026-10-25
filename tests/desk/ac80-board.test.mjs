@@ -911,13 +911,15 @@ test('AC80 + J22 rule 0, on the page: a Reviewer\'s verdict reading FAIL and an 
       if (withAgents) {
         assert.equal(c.agents, 'With the agents: 1', name);
         assert.ok(!titles(app, 'wait').includes('A made-up code change'), `${name}: not a card`);
-        assert.deepEqual([c.badge, c.lane, c.home], ['8', '8', '8'], `${name}: in no count`);
+        // Rewritten in QW1 (AC94): the lane counts its own cards (five pull requests), the three questions being in the
+        // section; the badge and Home still count all eight.
+        assert.deepEqual([c.badge, c.lane, c.home], ['8', '5', '8'], `${name}: in no count`);
         await app.tap(keyed(app, 'ql:agents'));
         assert.ok(byClass(keyed(app, 'fold:agents'), 'v2-fw').some((x) => x.textContent === words), `${name}: ${words}`);
       } else {
         assert.equal(c.agents, null, `${name}: not with the agents`);
         assert.ok(titles(app, 'wait').includes('A made-up code change'), `${name}: a card, the verdict counted as given`);
-        assert.deepEqual([c.badge, c.lane, c.home], ['9', '9', '9'], `${name}: counted`);
+        assert.deepEqual([c.badge, c.lane, c.home], ['9', '6', '9'], `${name}: counted`);
       }
     } finally {
       app.restore();

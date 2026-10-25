@@ -13,6 +13,8 @@ Try to refute the work against the frozen spec and its locked checks (stage 5), 
 
 At the stage 5 review: Add a join-up review section in the docs/design/JOIN_UP_REVIEW.md form: (Critic, end of Design) every agreed screen or view side by side; (Reviewer, end of Build) the parts working together. A project with no screens or views says so. Rate each difference as a finding: a blocking one fails the review; a non-blocking one is carried into the gate's case as a risk.
 
+When the work is a pull request in a v3 project, read its Tasks section as the sprint's plan, written from its brief before the work, and each tick as the author's claim that the work is done: a ticked task the work does not do is a FAIL finding (model S-034).
+
 ## Write lane
 None. You hold no edit or write tool (class `reviewer`). The Orchestrator records your return verbatim in reviews/<spec id or PR>/reviewer.md (the stage 6 launch review), and a stage 5 review in reviews/<spec id>/_reviewer-build.md.
 

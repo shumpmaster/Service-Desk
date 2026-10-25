@@ -57,6 +57,23 @@ test('AC55: "Your last action" — a card answer latest, a ruling latest, a prox
   assert.equal(older.text, 'Your last action: P-001: you answered dor-4 with build · 09:55', 'an older one not read yet cannot be');
 });
 
+// Added in G4 of "After the glance audit" (AC55's note "After the glance audit": ""Your last action" writes a time from an
+// earlier day "14 Oct, 09:40", not J9's "Oct 14 09:40", and a time from today "09:30" as now (AC91 (l))"). The today cases
+// above ("· 09:30") stand unchanged. NOW is 10:00 on 14 Oct in Chicago.
+test('AC55 (AC91 (l), added in G4): "Your last action" from an earlier day reads "13 Oct, 09:30", never J9\'s "Oct 13 09:30"; a card answer and a ruling alike; today\'s "09:30" alone, as the cases above keep it', () => {
+  const card = la({ allEntries: [dec(24 * 60 + 30)] }, snapWith({}));
+  assert.equal(card.text, 'Your last action: P-001: you answered dor-4 with build · 13 Oct, 09:30');
+  assert.equal(card.when, '13 Oct, 09:30');
+  const ruling = la({ allEntries: [] }, snapWith({ 'P-001-design-pick': ['Ruling: the five agreed screens are the direction', 9 * 24 * 60] }));
+  assert.equal(ruling.text, 'Your last action: the five agreed screens are the direction · 5 Oct, 10:00');
+  // Just before midnight in Chicago (05:00Z is midnight CDT): yesterday's 23:50 is a date, today's 00:05 a time alone.
+  const late = la({ allEntries: [dec(10 * 60 + 10)] }, snapWith({}));
+  assert.equal(late.when, '13 Oct, 23:50');
+  assert.equal(la({ allEntries: [dec(9 * 60 + 55)] }, snapWith({})).when, '00:05');
+  assert.equal(la({ allEntries: [dec(30)] }, snapWith({})).when, '09:30', 'today: as now');
+  for (const x of [card, ruling, late]) assert.doesNotMatch(x.text, /\bOct \d{1,2} \d\d:\d\d\b/);
+});
+
 test('AC55 + AC52: a Critic\'s verdict in decisions/questions/, newer than every ruling and card answer, is never named nor shown in "Done today"; nor is a -notes file', () => {
   const snap = snapWith({ 'P-001-design-pick': ['Ruling: the five agreed screens', 60], 'P-001-milestones-adoption-critic-1': ['Verdict: FAIL', 5] });
   snap.tree.set('decisions/questions/P-001-design-pick-notes.md', {});

@@ -152,10 +152,38 @@ export function phaseStrip(ctx, snap) {
 /**
  * Under the strip (AC83; AC70, unchanged in its sources): for each phase that ran again, "<phase> ran
  * again from <date> · why it went back: <the reason quoted from its record, with its source | not
- * recorded>". Returns [{ key, words, quote, source }]: `quote` (the record's reason, quoted) and
- * `source` ({ words, href }) only where a record gives the reason.
+ * recorded>". Returns [{ key, phase, words, quote, source }]: `quote` (the record's reason, quoted) and
+ * `source` ({ words, href }) only where a record gives the reason. From G4 of "After the glance audit"
+ * (AC91 (j); P-001-glance-ran-again.md, A), two or more lines with no reason recorded are said once
+ * (sayUnrecordedOnce, below).
  */
 export function ranAgainLines(ctx, tz, bandOf = null) {
+  return sayUnrecordedOnce(ranAgainEach(ctx, tz, bandOf));
+}
+
+/** "Design and Build", "Discovery, Design and Build": a list of phases in words. */
+const andList = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+
+/**
+ * Ran again, said once (AC91 (j); P-001-glance-ran-again.md, A: "repeated "ran again · why it went back: not recorded"
+ * lines become one ("Design and Build ran again · why: not recorded")"): where two or more lines have no reason
+ * recorded, they become one, "<Phase> and <Phase> ran again · why: not recorded", each phase named once even when it ran
+ * again more than once, the phases in the strip's order (Discovery, Design, Build, Launch), in the place of the first of
+ * them, still a gap the agents fill (`missing`, AC69); their dates stay on the Timeline. A line whose reason is recorded
+ * keeps its own date and reason (AC70), a line still reading ("not available yet") its own, and a single unrecorded line
+ * AC83's form. Pure.
+ */
+export function sayUnrecordedOnce(lines) {
+  const un = lines.filter((x) => x.missing);
+  if (un.length < 2) return lines;
+  const phases = DESK_PHASES.filter((ph) => un.some((x) => x.phase === ph));
+  const one = { key: 'again:unrecorded', phase: null, phases, words: `${andList(phases)} ran again · why: ${NOT_RECORDED}`, quote: null, source: null, missing: true };
+  const at = lines.indexOf(un[0]);
+  return [...lines.slice(0, at).filter((x) => !x.missing), one, ...lines.slice(at + 1).filter((x) => !x.missing)];
+}
+
+/** Each run that went back, its own line (AC83, AC70): ranAgainLines' lines before they are said once. */
+export function ranAgainEach(ctx, tz, bandOf = null) {
   const { project, pv } = ctx;
   if (project.model !== 'v3' || !ctx.tl || !pv || !pv.tracked) return [];
   const out = [];
@@ -173,10 +201,11 @@ export function ranAgainLines(ctx, tz, bandOf = null) {
     }
     const lead = `${r.phase} ran again${date ? ` from ${date}` : ''} · why it went back: `;
     const key = `again:${r.phase}-i${r.iteration}`;
-    if (b.quote) out.push({ key, words: `${lead}“${b.quote}”`, quote: b.quote, source: b.source });
-    else if (b.plain) out.push({ key, words: `${lead}${b.plain} (${b.code})`, quote: null, source: b.source });
-    else if (b.reading) out.push({ key, words: `${lead}${NOT_AVAILABLE} yet`, quote: null, source: b.source });
-    else out.push({ key, words: `${lead}${NOT_RECORDED}`, quote: null, source: null, missing: true });
+    const phase = r.phase;
+    if (b.quote) out.push({ key, phase, words: `${lead}“${b.quote}”`, quote: b.quote, source: b.source });
+    else if (b.plain) out.push({ key, phase, words: `${lead}${b.plain} (${b.code})`, quote: null, source: b.source });
+    else if (b.reading) out.push({ key, phase, words: `${lead}${NOT_AVAILABLE} yet`, quote: null, source: b.source });
+    else out.push({ key, phase, words: `${lead}${NOT_RECORDED}`, quote: null, source: null, missing: true });
   }
   return out;
 }

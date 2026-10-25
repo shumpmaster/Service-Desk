@@ -17,11 +17,12 @@ import { textSetup } from './screen-text.mjs';
 import { sdRepo, SD3, NOW as SD_NOW, pullNodes, answerOf } from './tv2-fixtures.mjs';
 import { NOTIFY_FIX } from './notify-helpers.mjs';
 import { POLL_MS, STALE_MS, REASON_WORDS } from '../../src/lib/scheduler.js';
-import { oneProjectView, ONE_WORDS, shortName, WORDS } from '../../src/lib/board.js';
+import { oneProjectView, ONE_WORDS, shortName, shortNames, WORDS } from '../../src/lib/board.js';
 import { capView, versionsView } from '../../src/lib/portfolio.js';
 import { DEPLOY_SHEET, phaseView, PHASES_NOT_AVAILABLE, PHASES_READING } from '../../src/lib/sandbox.js';
 import { startDesk, LOAD_FAILED_WORDS } from '../../src/lib/page.js';
 import { hhmm } from '../../src/lib/timefmt.js';
+import { gatesState, MIX_PROJECT } from './glance-fixtures.mjs';
 
 const TZ = CONFIG.ownerTimeZone;
 const keyed = (app, k) => findAll(app.view, (e) => e.dataset && e.dataset.k === k)[0] || null;
@@ -285,14 +286,29 @@ test('AC89 (b): a sheet\'s link says "Its status file" only where it opens one �
 // ---------------------------------------------------------------------------
 // (c) A project page's waits row by short names (specs/S-001.md:7863-7870)
 
-test('AC89 (c): the waits row names each item by its kind and its own id — "#<n>", "question <name>", "<item> <gate>-<n>", "the <Phase> gate", "a governance hold", "a merge of <item>", "a deploy, run <n>" — joined by " · ", the ids in Plex Mono, never a title', async () => {
+// Rewritten in G4 of "After the glance audit" (AC89 (c)'s note "After G3's review (2026-10-24; built in G4)"): a gate card
+// is named "the <Phase> gate for <item>", the item in Plex Mono as ids are, so two gate cards at one gate read apart here
+// as they do on the board and on Plan (AC91 (h)); one item's two gate cards at one gate add their case, or their card's
+// own "<gate>-<n>" where the card has no case line. Before G4 a gate card read "the <Phase> gate".
+test('AC89 (c) (rewritten in G4): the waits row names each item by its kind and its own id — "#<n>", "question <name>", "<item> <gate>-<n>", "the <Phase> gate for <item>", "a governance hold", "a merge of <item>", "a deploy, run <n>" — joined by " · ", the ids in Plex Mono, never a title; two gate cards at one gate named apart', async () => {
   // Pure, one of each kind (as the board's cards give them).
   const named = (c) => shortName(c).map((x) => (x.id ? `[${x.text}]` : x.text)).join('');
+  const all = (cs) => shortNames(cs).map((parts) => parts.map((x) => (x.id ? `[${x.text}]` : x.text)).join(''));
   assert.equal(named({ kind: 'pr', number: 80 }), '[#80]');
   assert.equal(named({ kind: 'question', name: 'P-001-next-work' }), 'question [P-001-next-work]');
   assert.equal(named({ kind: 'card', flag: { card: { item: 'Q-020', gate: 'stop', n: 1 } } }), '[Q-020 stop-1]');
-  assert.equal(named({ kind: 'gate', flag: { card: { item: 'P-002', gate: 'criteria', n: 1 } } }), 'the Build gate');
-  assert.equal(named({ kind: 'gate', flag: { card: { item: 'P-002', gate: 'dor', n: 1 } } }), 'the Design gate');
+  assert.equal(named({ kind: 'gate', flag: { card: { item: 'P-002', gate: 'criteria', n: 1 } } }), 'the Build gate for [P-002]');
+  assert.equal(named({ kind: 'gate', flag: { card: { item: 'P-002', gate: 'dor', n: 1 } } }), 'the Design gate for [P-002]');
+  // Two gate cards at one gate: apart by their items; one item's two, by their case (from the short title) or their own
+  // "<gate>-<n>" where the card has no case line; a gate card alone at its gate, and another gate's, add nothing.
+  const gate = (item, n, title, g = 'launch') => ({ kind: 'gate', title, flag: { card: { item, gate: g, n } } });
+  assert.deepEqual(all([gate('P-004', 1, 'The Launch gate, case 1 · P-004'), gate('P-005', 2, 'The Launch gate, case 2 · P-005')]),
+    ['the Launch gate for [P-004]', 'the Launch gate for [P-005]']);
+  assert.deepEqual(all([gate('P-004', 1, 'The Launch gate, case 1 · P-004'), gate('P-004', 2, 'The Launch gate, case 2 · P-004'), gate('P-004', 1, 'The Build gate · P-004', 'criteria')]),
+    ['the Launch gate for [P-004], case 1', 'the Launch gate for [P-004], case 2', 'the Build gate for [P-004]']);
+  assert.deepEqual(all([gate('P-004', 1, 'The Launch gate · P-004'), gate('P-004', 2, 'The Launch gate · P-004')]),
+    ['the Launch gate for [P-004], [launch-1]', 'the Launch gate for [P-004], [launch-2]']);
+  assert.deepEqual(all([{ kind: 'pr', number: 80 }, { kind: 'hold', flag: {} }]), ['[#80]', 'a governance hold'], 'the other kinds as shortName gives them');
   assert.equal(named({ kind: 'hold', flag: {} }), 'a governance hold');
   assert.equal(named({ kind: 'merge', flag: { merge: { item: 'P-002' } } }), 'a merge of [P-002]');
   assert.equal(named({ kind: 'deploy', flag: { deploy: { runNumber: 12 } } }), 'a deploy, [run 12]');
@@ -305,8 +321,8 @@ test('AC89 (c): the waits row names each item by its kind and its own id — "#<
     await app.advance(POLL_MS);
     const waits = keyed(app, 'page-waits');
     const small = byClass(waits, 'v2-wn')[0];
-    assert.equal(small.textContent, '#80 · question Alpha-pick · the Build gate · Q-020 stop-1 · a governance hold · a merge of P-002');
-    assert.deepEqual(byClass(small, 'v2-mono').map((x) => x.textContent), ['#80', 'Alpha-pick', 'Q-020 stop-1', 'P-002'], 'each id in Plex Mono (AC48)');
+    assert.equal(small.textContent, '#80 · question Alpha-pick · the Build gate for P-002 · Q-020 stop-1 · a governance hold · a merge of P-002');
+    assert.deepEqual(byClass(small, 'v2-mono').map((x) => x.textContent), ['#80', 'Alpha-pick', 'P-002', 'Q-020 stop-1', 'P-002'], 'each id in Plex Mono (AC48), the gate\'s item among them');
     for (const title of ['Alpha: a change to merge', "Alpha's question", 'The plan passed review']) assert.ok(!small.textContent.includes(title), `no title: ${title}`);
     assert.equal(waits.attrs.href, '#/waiting/Alpha', 'its tap opens Waiting with only this project shown, where every title is whole');
     // Cut at two lines with the fade: measured as the sheets' three-line texts are; the class only once it is cut.
@@ -332,6 +348,28 @@ test('AC89 (c): the waits row names each item by its kind and its own id — "#<
   } finally {
     d.restore();
   }
+  // On the page, from G4's fixtures (tests/desk/glance-fixtures.mjs, `gates`, NOT real records): two Launch-gate cards at
+  // one gate, for P-004 and P-005, read apart by their items; one item's two (P-004's cards 1 and 2), by their case, or,
+  // written without their case lines, by their own "launch-<n>".
+  const rowOf = async (opts) => {
+    const g = await loadSandbox({ ...gatesState(opts), hash: `#/p/${MIX_PROJECT}`, now: NOW });
+    try {
+      await g.advance(1000);
+      await g.advance(POLL_MS);
+      const wn = byClass(keyed(g, 'page-waits'), 'v2-wn')[0];
+      return { text: wn.textContent, ids: byClass(wn, 'v2-mono').map((x) => x.textContent) };
+    } finally {
+      g.restore();
+    }
+  };
+  const two = await rowOf({});
+  assert.match(two.text, / · the Launch gate for P-004 · the Launch gate for P-005 · /);
+  assert.ok(!/the Launch gate · the Launch gate/.test(two.text), 'never "the Launch gate · the Launch gate" (G3\'s Design review, Q2)');
+  assert.deepEqual(two.ids.filter((x) => /^P-00[45]$/.test(x)), ['P-004', 'P-005'], 'the items in Plex Mono');
+  assert.match((await rowOf({ sameItem: true })).text, / · the Launch gate for P-004, case 1 · the Launch gate for P-004, case 2 · /);
+  const bare = await rowOf({ sameItem: true, caseLines: false });
+  assert.match(bare.text, / · the Launch gate for P-004, launch-1 · the Launch gate for P-004, launch-2 · /);
+  assert.deepEqual(bare.ids.filter((x) => /P-004|launch/.test(x)), ['P-004', 'launch-1', 'P-004', 'launch-2'], 'each card\'s own "<gate>-<n>" an id, in Plex Mono');
 });
 
 const CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -483,8 +521,13 @@ test('AC89 (h): the board\'s held-question fold shows its record text in AC81\'s
   }
 });
 
-test('AC89 (h): if the desk\'s own code fails to load, the page says "The desk couldn\'t load. Reload to try again." in place of "Checking…", and never reads as quiet', async () => {
-  assert.equal(LOAD_FAILED_WORDS, "The desk couldn't load. Reload to try again.");
+// Rewritten in G4 of "After the glance audit" (AC89 (h)'s note "After the glance audit": "it says "The desk couldn't
+// load." in `--t-lead`, with the ✕ in `--bad` and a "Reload" button (AC91 (k))"): the words lose "Reload to try again.",
+// which the button now does, and the view holds the failed-load screen app.js draws (loadFailedScreen), in place of the
+// render-error screen's 12 px line. The screen itself, its ✕, its button and its look with and without sandbox.css, is
+// AC91 (k)'s case (tests/desk/ac91-glance-load.test.mjs), which loads app.js with the desk's code missing.
+test('AC89 (h) (rewritten in G4): if the desk\'s own code fails to load, the page says "The desk couldn\'t load." in place of "Checking…", with its Reload button, and never reads as quiet', async () => {
+  assert.equal(LOAD_FAILED_WORDS, "The desk couldn't load.");
   const shown = [];
   const show = (w) => shown.push(w);
   // The module fails to load (a network drop, a stale cache), the loader throws, or the desk throws while starting.
@@ -503,8 +546,12 @@ test('AC89 (h): if the desk\'s own code fails to load, the page says "The desk c
   const fn = APP.slice(APP.indexOf("startDesk(() => import('./sandbox.js')"));
   assert.match(fn, /stateEl\.textContent = words;/);
   // Rewritten at stage 6b of "After MD3" (AC89 (m), specs/S-001.md:7963-7964, and AC89's "Every screen keeps AC81's tokens
-  // and AC88's dark theme", :7810-7811): said once, in the view, on mockup v2's ground as the render-error screen is drawn.
-  assert.match(fn, /view\.replaceChildren\(h\('section', \{ class: 'sb-screen' \}, h\('p', \{ class: 'sb-stale', role: 'alert' \}, words\)\)\);/);
+  // and AC88's dark theme", :7810-7811): said once, in the view, on mockup v2's ground; from G4 (AC91 (k)), as the
+  // failed-load screen with its ✕ and Reload button, the words its alert.
+  assert.match(fn, /view\.replaceChildren\(loadFailedScreen\(words\)\);/);
+  assert.match(APP, /h\('p', \{ class: 'v2-lf', role: 'alert' \}, loadFailedCross\(\), h\('span', \{ class: 'v2-lfw' \}, words\)\)/);
+  assert.match(APP, /h\('button', \{ type: 'button', class: 'v2-reload', onclick: \(\) => location\.reload\(\) \}, 'Reload'\)/);
+  assert.doesNotMatch(APP, /Reload to try again/, 'the button says it; the words don\'t');
   assert.match(fn, /foot\.hidden = true;/, 'the footer\'s "reading…" not left showing');
   assert.doesNotMatch(APP, /import\('\.\/sandbox\.js'\)\.then/, 'no load left unguarded');
   // The page loaded through its entry still starts the desk when its code loads: page-app.test.mjs's cases, kept.

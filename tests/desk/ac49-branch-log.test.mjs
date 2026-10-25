@@ -76,3 +76,39 @@ test('AC49: the Team member pages of the sandbox fixture still draw without erro
     app.restore();
   }
 });
+
+// Added in G4 of "After the glance audit" (AC49's note "After the glance audit": "a team member's page writes a date from
+// an earlier day "14 Oct, 09:40", not J9's "Oct 14 09:40", and a time from today "09:30" as now (AC91 (l)); the Team
+// screen's cards keep J9's form"). Service-Desk's dispatch log at 3117150 (real), with one made-up outcome line for the
+// Definer 30 minutes before NOW (NOT a real record), so its page holds a time from today beside its earlier days'.
+test('AC49 (AC91 (l), added in G4): a member\'s page writes an earlier day\'s date "6 Oct, 11:40" and today\'s time "09:30" alone, never J9\'s "Oct 6 11:40"; the Team screen\'s cards keep their form', async () => {
+  const files = j11Files();
+  const LOG = 'dispatch-log/2026-10.jsonl';
+  const made = { item: 'P-001', record: 'docs/reports/P-001-definer.md', result: 'ok', role: 'definer', session: 'P-001:made-up-for-G4',
+    time: new Date(NOW - 30 * 60e3).toISOString().replace(/\.\d+Z$/, 'Z'), trigger: 'outcome', verdict: 'none' };
+  files[LOG] = `${files[LOG].trimEnd()}\n${JSON.stringify(made)}\n`;
+  const J9_FORM = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{1,2} \d\d:\d\d\b/;
+  const app = await loadSandbox({ config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': repo(files) }, hash: '#/p/Service-Desk/team/definer', now: NOW });
+  try {
+    await app.advance(1000);
+    const page = app.text();
+    assert.ok(page.includes('P-001: definer finished — ok, 09:30'), 'today: "09:30" alone, as now');
+    assert.ok(page.includes('P-001: definer finished — ok, 6 Oct, 11:40'), 'an earlier day: "6 Oct, 11:40"');
+    assert.ok(page.includes('P-001: definer started (Define), 5 Oct, 12:20'));
+    assert.doesNotMatch(page, J9_FORM, 'never J9\'s "Oct 6 11:40" on the page');
+    const rows = byClass(byClass(app.view, 'sb-branch')[0], 'sb-brow-t').map((r) => r.textContent);
+    assert.equal(rows[0], 'P-001: definer finished — ok, 09:30', 'the running log\'s newest row');
+    assert.equal(rows[1], 'P-001: definer finished — ok, 6 Oct, 11:40');
+    // The owner's page: its groups' latest lines and its log, the Rulings group's latest among them.
+    await app.go('#/p/Service-Desk/team/owner');
+    assert.doesNotMatch(app.text(), J9_FORM);
+    assert.match(app.text(), /\b\d{1,2} Oct, \d\d:\d\d\b/);
+    // The Team screen's cards keep their form (AC91 (l): "the Team screen's cards keep J9's form"), AC67's day words as built.
+    await app.go('#/p/Service-Desk/team');
+    await openIdle(app);
+    assert.ok(app.text().includes('last: P-001: definer finished — ok, 14 Oct'), 'the card\'s last work, its day as built');
+    assert.ok(app.text().includes('last: Q-013 done, 8 Oct'));
+  } finally {
+    app.restore();
+  }
+});

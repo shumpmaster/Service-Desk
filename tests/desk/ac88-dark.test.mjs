@@ -34,6 +34,7 @@ import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
 import { BAD_PR } from './fake-desk.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
+import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT } from './glance-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -722,6 +723,34 @@ const G3_EXCEPT = (n, d) => {
   const k = G3_KEY(n);
   return Boolean(k && (G3_ONCE.get(k) || []).includes(d)) ? `G3 ${k} ${d}` : null;
 };
+/**
+ * G4 of "After the glance audit"'s one change to the look on purpose (the brief's rule; AC91 (h), from G4, after G3's
+ * reviews: "a gate card's Done row takes the short title as the board's card title … From G4 its item is kept whole there
+ * as in the three places (`.v2-gitem`), on the card while it is confirmed with GitHub and on the confirmed row"), pinned
+ * to its value, before and after, the same in each theme, on only its own two elements: the item ending a gate card's
+ * short title (`span.v2-gitem`) in the confirming card's title link (`a.v2-t` in an `li.v2-card.conf`) and in the
+ * confirmed row's (`a.v2-dt` in an `li.v2-drow`), each an inline block, as G3 made it in the other three places. The
+ * rule is G3's (`.v2-gitem`); G4 adds only the element. Every other part of G4 (the calm row's soft title, the ran-again
+ * line said once, the waits row's gate names, the Timeline's opening scroll, the one date form) uses rules that were
+ * there, and the failed-load screen's new rules draw only on a screen no fixture's desk reaches (its code failed), which
+ * AC91 (k)'s own case locks (tests/desk/ac91-glance-load.test.mjs). This guard reaches the two Done rows in the walk's
+ * `gates` state with a device's Done marks (tests/desk/glance-fixtures.mjs, NOT real), below.
+ */
+const G4_ONCE = new Map([
+  ['span.v2-gitem (confirming card)', ['display: (none) → inline-block']],
+  ['span.v2-gitem (confirmed row)', ['display: (none) → inline-block']],
+]);
+const G4_KEY = (n) => {
+  const p = n.parent;
+  if (!(n.tag === 'span' && n.cls.has('v2-gitem') && p && p.tag === 'a' && p.parent && p.parent.tag === 'li')) return null;
+  if (p.cls.has('v2-t') && p.parent.cls.has('v2-card') && p.parent.cls.has('conf')) return 'span.v2-gitem (confirming card)';
+  if (p.cls.has('v2-dt') && p.parent.cls.has('v2-drow')) return 'span.v2-gitem (confirmed row)';
+  return null;
+};
+const G4_EXCEPT = (n, d) => {
+  const k = G4_KEY(n);
+  return Boolean(k && (G4_ONCE.get(k) || []).includes(d)) ? `G4 ${k} ${d}` : null;
+};
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
@@ -763,6 +792,8 @@ function sameLook(app, where, fails, seen) {
         if (g2) { excepted.add(g2); continue; }
         const g3 = G3_EXCEPT(b, d);
         if (g3) { excepted.add(g3); continue; }
+        const g4 = G4_EXCEPT(b, d);
+        if (g4) { excepted.add(g4); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -855,6 +886,26 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   } finally {
     app.restore();
   }
+  // G4 of "After the glance audit" (AC91 (h), from G4): Waiting with a gate card's Done rows, the one confirming and the one
+  // confirmed (made up, NOT real records or marks: tests/desk/glance-fixtures.mjs's `gates` and deviceMarks), so the walk
+  // reaches the item kept whole in each.
+  {
+    const P9 = GATE_KEY(MIX_PROJECT, 'queue/P-009-launch-1.md');
+    const seed = deviceMarks([
+      { project: MIX_PROJECT, kind: 'gate', id: GATE_KEY(MIX_PROJECT, GATE4), at: NOW - 60e3 },
+      { project: MIX_PROJECT, kind: 'gate', id: P9, title: 'The Launch gate, case 1 · P-009', at: NOW - 3 * 3600e3, confirmedAt: NOW - 2 * 3600e3 },
+    ]);
+    app = await loadSandbox({ ...gatesState(), hash: '#/waiting', now: NOW, store: memStore(seed) });
+    try {
+      await app.advance(1000);
+      assert.equal(findAll(app.view, (e) => / v2-gitem /.test(` ${e.className || ''} `) && e.parent && ['v2-t', 'v2-dt'].includes(e.parent.className)).length, 2,
+        'both Done rows drawn, each with its item');
+      sameLook(app, 'gates Done rows #/waiting', fails, seen);
+      counts.screens++;
+    } finally {
+      app.restore();
+    }
+  }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // The named exception was met, and only in its own forms: Home, Waiting, Plan, a project, Team and the Timeline.
@@ -883,7 +934,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // G3's exception was met, each pinned declaration on its own element, and nothing else of it.
   const g3 = [...G3_ONCE].flatMap(([k, ds]) => ds.map((d) => `G3 ${k} ${d}`)).sort();
   assert.deepEqual([...excepted].filter((x) => /^G3 /.test(x)).sort(), g3);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[123] )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // G4's exception was met, each pinned declaration on its own element, and nothing else of it.
+  const g4 = [...G4_ONCE].flatMap(([k, ds]) => ds.map((d) => `G4 ${k} ${d}`)).sort();
+  assert.deepEqual([...excepted].filter((x) => /^G4 /.test(x)).sort(), g4);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[1234] )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

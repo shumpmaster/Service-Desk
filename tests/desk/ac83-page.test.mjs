@@ -22,6 +22,7 @@ import { j11Records, timelineOf, phaseView } from '../../src/lib/sandbox.js';
 import { runsContext } from '../../src/lib/feed.js';
 import { pageSentence, firstPart, phaseStrip, phaseLine, ranAgainLines, milestonesByPhase, detailWords, v25Rows, PAGE_WORDS, STANDARD_TOTAL } from '../../src/lib/projectpage.js';
 import { topLine } from '../../src/lib/versions.js';
+import { mixState, MIX_PROJECT, NOW as GLANCE_NOW } from './glance-fixtures.mjs';
 
 const NOW = Date.parse('2026-10-19T21:00:00Z');
 const css = () => readFileSync(`${SRC}/public/sandbox.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -148,15 +149,30 @@ test('AC83 (frame 5; P-001-redesign-conflicts.md, answer 4): the strip — Disco
   assert.deepEqual(phaseStrip({ ...ctx, project: PUB }, ps).cells.map((c) => [c.phase, c.words]), [['m1.1', 'closed'], ['m1.2', 'closed'], ['m1.3', 'closed'], ['m1.4', 'open']], 'at most the last four');
 });
 
-test('AC83 (AC70, AC55): under the strip, in small text, "<phase> ran again from <date> · why it went back: not recorded" (77bfeae) or the reason quoted with its source (made up); then "Your last action"', async () => {
+// Rewritten in G4 of "After the glance audit" (AC83's note "Changed after the glance audit": "unrecorded ran-again lines
+// said once"; AC91 (j); P-001-glance-ran-again.md, A): a single unrecorded line keeps this form, in the grey of a gap the
+// agents fill; two or more become one, "<Phase> and <Phase> ran again · why: not recorded" (the made-up project of
+// tests/desk/glance-fixtures.mjs, NOT real records, whose Design and Build both ran again with no reason recorded).
+test('AC83 (AC70, AC55; AC91 (j), rewritten in G4): under the strip, in small text, "<phase> ran again from <date> · why it went back: not recorded" (77bfeae) or the reason quoted with its source (made up); two unrecorded said once; then "Your last action"', async () => {
   const app = await openPage('#/p/Service-Desk');
   try {
     const under = keyed(app, 'under');
-    assert.equal(under.children[0].textContent, 'Design ran again from 8 Oct · why it went back: not recorded');
+    assert.equal(under.children[0].textContent, 'Design ran again from 8 Oct · why it went back: not recorded', 'a single unrecorded line: AC83\'s form');
     assert.match(under.children[0].className, /\bv2-small\b/);
+    assert.match(under.children[0].className, /\bgap\b/, 'in the grey of a gap the agents fill (AC69)');
     assert.match(under.children[1].textContent, /^Your last action: /);
   } finally {
     app.restore();
+  }
+  const mix = await loadSandbox({ ...mixState(), hash: `#/p/${MIX_PROJECT}`, now: GLANCE_NOW });
+  try {
+    await mix.advance(1000);
+    await mix.advance(61_000);
+    const under = findAll(mix.view, (e) => e.dataset && e.dataset.k === 'under')[0];
+    assert.deepEqual(under.children.slice(0, -1).map((c) => [c.textContent, c.className]), [['Design and Build ran again · why: not recorded', 'v2-small gap']],
+      'two unrecorded: one line, the phases in the strip\'s order, no dates');
+  } finally {
+    mix.restore();
   }
   // A run 2 with a recorded reason (made up, NOT a real record): a dor recycle line and its answer's Reason: line.
   const { ctx } = ctxOf({ 'decisions/P-001/dor-2.md': 'Decision: recycle\nReason: the design must start again from the owner\'s phone.\n' });
@@ -175,13 +191,16 @@ test('AC83 (AC70, AC55): under the strip, in small text, "<phase> ran again from
 // ---------------------------------------------------------------------------
 // The two rows
 
-test('AC83: the two rows, each a tap — "◆ <n> wait on you" with the waiting items\' short names joined by " · ", opening Waiting with only this project shown; "Nothing waiting on you" with a ✓ and "checked <age> ago"; "Checking…" before a read; "At work now: …" with "with the agents: <n>", opening the Team screen', async () => {
+// Rewritten in G4 of "After the glance audit" (AC83's note "Changed after the glance audit": ""Nothing waiting on you"
+// soft"; AC91 (j)): the calm row's title takes the soft row (`.v2-prtt.soft`), the waiting row's does not.
+test('AC83 (AC91 (j), rewritten in G4): the two rows, each a tap — "◆ <n> wait on you" with the waiting items\' short names joined by " · ", opening Waiting with only this project shown; "Nothing waiting on you", soft, with a ✓ and "checked <age> ago"; "Checking…" before a read; "At work now: …" with "with the agents: <n>", opening the Team screen', async () => {
   // Two questions waiting on the owner (made up, NOT real records).
   const q = (title) => `# Ruling needed: ${title}\n\nWHY: made up for the test.\nOPTIONS:\n  A. Yes.\n  B. No.\nRECOMMENDATION: A\nRISK CLASS: R0\nREVERSIBILITY: reversible\nBLAST RADIUS: none\nDEFAULT: A\nTIMEOUT: 48\n`;
   const app = await openPage('#/p/Service-Desk', { extra: { 'questions/P-001-made-up-one.md': q('the first made-up question'), 'questions/P-001-made-up-two.md': q('the second made-up question') } });
   try {
     const waits = keyed(app, 'page-waits');
     assert.equal(byClass(waits, 'v2-prtt')[0].textContent, '2 wait on you');
+    assert.equal(byClass(waits, 'v2-prtt')[0].className, 'v2-prtt', 'what waits keeps the row\'s own weight (500 13 px --ink)');
     assert.equal(iconOf(waits), 'st-you', 'the ◆, in vermilion (AC81)');
     // Rewritten for AC89 (c) (specs/S-001.md:7863-7870; AC83's note, :7430): each item by its short name, "question <its
     // file's name>", the name in Plex Mono, never its title.
@@ -201,6 +220,8 @@ test('AC83: the two rows, each a tap — "◆ <n> wait on you" with the waiting 
     await app.go('#/p/Personal-Org-Operating-Model');
     const quiet = keyed(app, 'page-waits');
     assert.equal(byClass(quiet, 'v2-prtt')[0].textContent, 'Nothing waiting on you');
+    assert.equal(byClass(quiet, 'v2-prtt')[0].className, 'v2-prtt soft', 'the soft row: calm looks calm (AC91 (j))');
+    assert.match(rule('.v2-prtt.soft, .v2-prow.soft .v2-prtt'), /color: var\(--ink2\); font-weight: 400;/, '400 13 px --ink2');
     assert.equal(iconOf(quiet), 'st-check', 'with a ✓');
     assert.match(byClass(quiet, 'v2-small')[0].textContent, /^checked \d+ s ago$/, 'and "checked <age> ago" (frame 8)');
     assert.equal(keyed(app, 'page-work'), null, 'no "At work now" for a v2.5 project (frame 8)');

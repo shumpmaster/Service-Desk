@@ -67,8 +67,11 @@ export function boot(render, desk) {
   }
 }
 
-/** AC89 (h): the page's words when the desk's own code fails to load (stage 8's review, round 1, note 4). */
-export const LOAD_FAILED_WORDS = "The desk couldn't load. Reload to try again.";
+/**
+ * AC89 (h): the page's words when the desk's own code fails to load (stage 8's review, round 1, note 4); from G4 of
+ * "After the glance audit", "The desk couldn't load.", with the ✕ and a "Reload" button under it (AC91 (k)).
+ */
+export const LOAD_FAILED_WORDS = "The desk couldn't load.";
 
 /**
  * Load the desk's code and start it (AC44 step 4: `/` is the desk). If the code can't be loaded, or it throws while

@@ -16,7 +16,7 @@ import { createDesk, callFunction, errorText } from './lib/scheduler.js';
 import { createStore } from './lib/store.js';
 import { safeBox, orderBoxes, screenState, boxStateText } from './lib/universe.js';
 import { renderMarkdown } from './lib/markdown.js';
-import { hhmm, durationText, whenText } from './lib/timefmt.js';
+import { hhmm, durationText, whenText, dayTimeText } from './lib/timefmt.js';
 import { v5Footer, usageLines, notReadText } from './lib/asked.js';
 import { routeParts, guardRender, boot, SIGNED_OUT_STATE } from './lib/page.js';
 import { createSeen, MARKERS_OFF } from './lib/seen.js';
@@ -31,7 +31,7 @@ import { GATE_PHASE } from './lib/j11.js';
 import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, gateOpening, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, BOARD_LANES, WORDS, MARKS_KEY,
-  stripEmptyParts, isNewCard, boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, shortName, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
+  stripEmptyParts, isNewCard, boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
@@ -1214,15 +1214,16 @@ function pageWaits(p, bd) {
   const n = c ? c.waiting + c.kicked : 0;
   const read = p.box.drawError ? 'cant-read' : p.box.read ? p.box.read.read : 'checking';
   const rows = bd ? bd.lanes.filter((l) => l.key !== 'done').flatMap((l) => l.groups.filter((g) => g.project === name).flatMap((g) => g.rows)) : [];
-  // AC89 (c): each by its short name, from its kind and its own id (board.js, shortName), never a reworded title.
-  return { n, read, names: rows.map((r) => shortName(r) || [{ text: r.kindWord ? r.kindWord.toLowerCase() : NOT_RECORDED, id: false }]) };
+  // AC89 (c): each by its short name, from its kind and its own id (board.js, shortNames), never a reworded title; two gate
+  // cards for one item at one gate told apart by their case or their own "<gate>-<n>" (after G3's review, built in G4).
+  return { n, read, names: shortNames(rows).map((parts, i) => parts || [{ text: rows[i].kindWord ? rows[i].kindWord.toLowerCase() : NOT_RECORDED, id: false }]) };
 }
 
 /** A row of the page (frames 5 and 8): its mark, its title and its small line, a chevron; a tap opens where it says. */
-function pageRow(key, href, mark, title, small, { cls = '', smallCls = 'v2-small', live = null, onclick = null, clip = null } = {}) {
+function pageRow(key, href, mark, title, small, { cls = '', titleCls = '', smallCls = 'v2-small', live = null, onclick = null, clip = null } = {}) {
   return h('li', { key: `li:${key}` }, h('a', { class: `v2-prow${cls ? ` ${cls}` : ''}`, key, href, onclick },
     mark || h('span', { class: 'v2-pmk', 'aria-hidden': 'true' }),
-    h('span', { class: 'v2-prt' }, h('span', { class: 'v2-prtt' }, title), small != null || live ? h('span', { class: smallCls, live, 'data-clip': clip }, small) : null),
+    h('span', { class: 'v2-prt' }, h('span', { class: `v2-prtt${titleCls ? ` ${titleCls}` : ''}` }, title), small != null || live ? h('span', { class: smallCls, live, 'data-clip': clip }, small) : null),
     vi('chev', 'v2-k v2-chev')));
 }
 
@@ -1249,7 +1250,9 @@ function pageTwoRows(p, bd) {
     const r = p.box.read || {};
     waits = pageRow('page-waits', to, vi('bad', 'v2-k bad'), p.box.drawError || (r.since != null ? `Can't read since ${hhmm(new Date(r.since), TZ)}` : "Can't read"), r.words || null, { cls: 'bad' });
   } else if (w.read !== 'ok') waits = pageRow('page-waits', to, vi('clock'), PAGE_WORDS.checking, null);
-  else waits = pageRow('page-waits', to, stc('check'), PAGE_WORDS.nothingWaiting, null, { live: checkedWords });
+  // AC91 (j): calm looks calm — "Nothing waiting on you" takes the soft row (400 13 px --ink2, `.v2-prtt.soft`), its ✓ and
+  // "checked <age> ago" unchanged, so a calm page no longer looks like one that waits ("◆ <n> wait on you" stays 500 --ink).
+  else waits = pageRow('page-waits', to, stc('check'), PAGE_WORDS.nothingWaiting, null, { live: checkedWords, titleCls: 'soft' });
   const rows = [waits];
   if (p.project.model === 'v3') {
     // No records held yet, or none ever read: "not available", as Home's tile says (home.js, unreadLines), never a zero.
@@ -1442,7 +1445,7 @@ function lastActionNode(p) {
   if (la.state !== 'ok') line = h('p', { class: 'sb-last-t' }, la.text);
   else {
     const proxy = la.action.kind === 'ruling' && la.action.proxy;
-    const after = (sep) => [sep ? h('span', { class: 'sb-sep' }, ' · ') : null, h('span', { class: 'sb-last-when', live: () => whenText(new Date(la.action.at), new Date(Date.now()), TZ) }),
+    const after = (sep) => [sep ? h('span', { class: 'sb-sep' }, ' · ') : null, h('span', { class: 'sb-last-when', live: () => dayTimeText(new Date(la.action.at), new Date(Date.now()), TZ) }),
       ' ', la.link ? ext(la.link, la.code, 'code') : code(la.code)];
     line = la.action.clip
       ? h('div', { class: 'sb-last-t' }, lineBox('last', { words: la.action.words, recCode: la.code, title: 'Your last action', lead, mark: proxy ? ' (proxy)' : null, after, notice }))
@@ -2236,19 +2239,24 @@ function cardTap(card, e) {
   nav.opener = `cardlink:${card.id}`;
 }
 
-/** A row in Done: a pending mark is a card ("Confirming with GitHub", its step's button and "Undo"); a confirmed one a ✓, its title and time. */
+/**
+ * A row in Done: a pending mark is a card ("Confirming with GitHub", its step's button and "Undo"); a confirmed one a ✓, its
+ * title and time. A gate card's title is its short title, its item kept whole as on the board, in its sheet and on Plan
+ * (`.v2-gitem`; AC91 (h), from G4, after G3's reviews), on the confirming card and on the confirmed row.
+ */
 function doneNode(p, r, only) {
+  const title = /\|gate\|/.test(String(r.id)) ? gateTitleNode(r.title) : r.title;
   if (r.pending) {
     return h('li', { class: 'v2-card conf', key: `done:${r.id}` },
       h('span', { class: 'v2-kd done' }, vi('clock'), h('span', {}, WORDS.confirming)),
-      h('a', { class: 'v2-t', href: cardRoute(only, r.id), key: `donelink:${r.id}`, onclick: () => { nav.opener = `donelink:${r.id}`; } }, r.title),
+      h('a', { class: 'v2-t', href: cardRoute(only, r.id), key: `donelink:${r.id}`, onclick: () => { nav.opener = `donelink:${r.id}`; } }, title),
       h('span', { class: 'v2-m', live: () => `moved ${boardAge(Date.now() - r.at)} ago` }),
       h('span', { class: 'v2-steps' }, r.card ? stepButton(p, r.card, 'done') : null,
         h('button', { type: 'button', class: 'v2-undo', key: `undo:${r.id}`, onclick: () => { boardState.set(undoMark(boardState.marks, r.id)); render(); } }, 'Undo')));
   }
   return h('li', { class: 'v2-drow', key: `done:${r.id}#${r.step || ''}` }, vi('done', 'v2-k ok'),
     h('a', { class: 'v2-dt', href: cardRoute(only, `${r.id}#${r.step || ''}`), key: `drowlink:${r.id}#${r.step || ''}`,
-      onclick: () => { nav.opener = `drowlink:${r.id}#${r.step || ''}`; } }, r.title),
+      onclick: () => { nav.opener = `drowlink:${r.id}#${r.step || ''}`; } }, title),
     // Its small line (its code, as frame 1's "#135 · 12:28"), then its time; the ✓ is the row's mark.
     h('span', { class: 'v2-m' }, r.code ? h('span', { class: 'v2-dc' }, r.code) : null, r.code ? ' · ' : null, doneTime(r.at, Date.now(), TZ)));
 }
@@ -3182,9 +3190,12 @@ function fitTimelineHead() {
 }
 
 /**
- * Where the Timeline opens (AC59): with the Now line just under the pinned band; or, from a link to
- * one of its sprints (AC66, AC67), with that sprint's milestone's sprints opened and the sprint in
- * view. Only when the owner opens the Timeline, never on a refresh (AC56).
+ * Where the Timeline opens (AC59, AC84; AC91 (i)): with the top of the Now line a third of the way down the viewport
+ * (its height divided by 3, rounded), so the nearest milestone above Now and its run's shared line (AC90) show under
+ * the pinned header and band, or as far as it goes where less lies above Now; or, from a link to one of its sprints
+ * (AC66, AC67), with that sprint's milestone's sprints opened and the sprint in view just under the pinned header and
+ * band, as built. Only when the owner opens the Timeline (or taps its phase line, which scrolls back to Now), never on a
+ * refresh (AC56).
  */
 function scrollToTarget(target) {
   const view = document.getElementById('view');
@@ -3196,6 +3207,12 @@ function scrollToTarget(target) {
     eachElement(view, (e) => { if (!el && e.getAttribute && e.getAttribute(attr) === want) el = e; });
   }
   if (!el || !el.getBoundingClientRect) return Boolean(el);
+  if (target.now) {
+    // AC91 (i): the Now line's top at a third of the viewport; window.scrollTo stops at the top where less lies above it.
+    const third = Math.round((window.innerHeight || 0) / 3);
+    window.scrollTo(0, Math.max(0, Math.round((window.scrollY || 0) + el.getBoundingClientRect().top - third)));
+    return true;
+  }
   let blk = el.parentNode;
   while (blk && !(blk.getAttribute && blk.getAttribute('data-run'))) blk = blk.parentNode;
   const band = blk ? findClass(blk, 'sb-pband') : null;
@@ -3358,6 +3375,7 @@ const teamIdle = {
 
 function renderMember(p, tv, id, sub, idx, now) {
   const name = p.project.name;
+  memberDay = todayOf(now.getTime(), TZ);
   const page = memberPage(p.project, p.model, p.snap, p.j, p.q, tv, id, now, TZ);
   if (!page) return h('section', { class: 'sb-screen' }, projectHeader(name, 'Team'), h('p', {}, 'No such member.'));
   const body = [projectHeader(name, page.label, page.status)];
@@ -3525,6 +3543,7 @@ function summaryNode(p, id, sm) {
 let lastBuilt = null; // the projects as the current drawing built them
 let lastPf = null; // J23 (stage 6b): the portfolio as this drawing read it (portfolioRead), or null with no `portfolio` in J7
 let waDay = null; // the owner's today when Work ahead was last drawn
+let memberDay = null; // the owner's today when a member's page was last drawn (AC91 (l): its dates turn at midnight)
 let waMemo = null; // Work ahead's view, worked out once per drawing
 let lastBoard = null; // the board as the current drawing built it (AC86: each project's waiting gate card)
 
@@ -4770,6 +4789,12 @@ export function startSandbox(opts = {}) {
     tick(view);
     // Work ahead's today moves at ownerTimeZone's midnight, on this tick (AC24, step 1): every finish is redrawn.
     if (nav.route.kind === 'work' && waDay && todayOf(Date.now(), TZ) !== waDay) render();
+    // A member's page writes a time from today "09:30" and one from an earlier day "14 Oct, 09:40" (AC91 (l)): drawn
+    // again on the tick that crosses ownerTimeZone's midnight, so yesterday's times take their date then.
+    else if (memberDay && todayOf(Date.now(), TZ) !== memberDay) {
+      memberDay = null;
+      render();
+    }
   }, 15_000);
   boot(render, desk);
   return desk;

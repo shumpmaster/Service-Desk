@@ -719,3 +719,28 @@ sheets and Plan on it, and `tests/desk/tools/glance-shots.mjs` captures them (`g
   written before the Orchestrator named its case).
 
 AC80's, AC85's, AC86's, AC88's and AC89 (j)'s tests rewritten in G3 add nothing new: they use their own made-up records, above.
+
+## After the glance audit, G4 (2026-10-25, S-001 AC91 (i) to (l); AC49, AC55, AC59, AC83, AC84 and AC89 (c), (h) changed)
+
+G4 adds no fixture file. `tests/desk/ac91-glance-page.test.mjs`, `ac91-glance-timeline.test.mjs`,
+`ac91-glance-load.test.mjs` and G4's cases in `ac91-glance-gates.test.mjs` open the states above, with these made-up
+parts, each **NOT real**, and `tests/desk/tools/glance-shots.mjs` captures them (`g4-`):
+- **`gates` with `sameItem: true`** (`glance-fixtures.mjs`): the second made-up Launch-gate card is item P-004's own card 2
+  (`queue/P-004-launch-2.md`, "The Launch gate, case 2."), in place of P-005's, its case under
+  `docs/gates/P-004/launch-gate-2-case.md`; so one item has two gate cards waiting at one gate (AC89 (c)). **NOT real
+  records.**
+- **a gate card listed but not read** (`fake-desk.mjs`'s `blobNull`): in `gates`, the made-up P-004 card's file is in the
+  tree and its blob answers null, as a read still to come; made up, **NOT** how GitHub answered any read.
+- **Done marks kept on a device** (`deviceMarks`, now taking `id`, `title` and `confirmedAt`): the made-up P-004 gate card
+  marked done a minute before the clock, still confirming, and a made-up P-009 gate card ("The Launch gate, case 1 ·
+  P-009", no file anywhere) GitHub confirmed two hours before it; **NOT real** (no owner made them).
+- **a made-up outcome line** in Service-Desk's dispatch log at 3117150 (`j11-3117150/dispatch-log/2026-10.jsonl`, real),
+  added in the tests only: the Definer's "finished — ok" 30 minutes before the clock (and at 23:30 on 14 Oct for the
+  midnight case), session `P-001:made-up-for-G4`; **NOT a real record**.
+- **a made-up ruling** (`decisions/questions/Alpha-late.md`, "Ruling: B") in sandbox-fixtures.mjs's made-up project,
+  first committed at 23:49 on 14 Oct in Chicago, for "Your last action" across midnight; **NOT a real record**.
+- **the failed-load page**: `src/public/app.js` copied as it is into a scratch folder with no `sandbox.js` beside it, so
+  the desk's code fails to load (made up: a dropped network or a stale cache does this in the browser).
+
+AC49's, AC55's, AC59's, AC62's, AC83's, AC84's, AC88's and AC89's tests rewritten or extended in G4 add nothing new beyond
+these: they use their own records, above.

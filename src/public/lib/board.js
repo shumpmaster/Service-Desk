@@ -441,7 +441,9 @@ export function shortName(card) {
     case 'pr': return [id(`#${card.number}`)];
     case 'question': return [w('question '), id(card.name)];
     case 'card': return f.card ? [id(`${f.card.item} ${f.card.gate}-${f.card.n}`)] : null;
-    case 'gate': return f.card ? [w(`the ${cap(GATE_PHASE[f.card.gate] || f.card.gate)} gate`)] : null;
+    // After G3's review (AC89 (c), built in G4): "the <Phase> gate for <item>", the item in Plex Mono, so two gate cards
+    // at one gate read apart here as on the board and on Plan (AC91 (h)).
+    case 'gate': return f.card ? [w(`the ${cap(GATE_PHASE[f.card.gate] || f.card.gate)} gate for `), id(f.card.item)] : null;
     case 'hold': return [w('a governance hold')];
     case 'merge': return f.merge ? [w('a merge of '), id(f.merge.item)] : null;
     case 'deploy': return f.deploy ? [w('a deploy, '), id(`run ${f.deploy.runNumber}`)] : null;
@@ -453,6 +455,30 @@ export function shortName(card) {
     }
     default: return null;
   }
+}
+
+/**
+ * The waits row's short names for a list of waiting items (AC89 (c), after G3's review, built in G4): each its
+ * shortName; and should one item have two or more gate cards waiting at one gate, each of those adds its case as its
+ * short title gives it ("the Launch gate for P-004, case 2"), or, where its card has no case line, its card's own
+ * "<gate>-<n>" ("the Launch gate for P-004, launch-2"), from the card's kind and its own id, never its title's other
+ * words (C). Returns one list of parts per item, as shortName, or null where an item has no such name.
+ */
+export function shortNames(cards) {
+  const atGate = (c) => (c.kind === 'gate' && c.flag && c.flag.card ? `${c.flag.card.gate}|${c.flag.card.item}` : null);
+  const counts = new Map();
+  for (const c of cards) {
+    const k = atGate(c);
+    if (k) counts.set(k, (counts.get(k) || 0) + 1);
+  }
+  return cards.map((c) => {
+    const parts = shortName(c);
+    const k = atGate(c);
+    if (!parts || !k || counts.get(k) < 2) return parts;
+    const m = /, case (\d+) · [^·]*$/.exec(String(c.title || ''));
+    if (m) return [...parts, { text: `, case ${m[1]}`, id: false }];
+    return [...parts, { text: ', ', id: false }, { text: `${c.flag.card.gate}-${c.flag.card.n}`, id: true }];
+  });
 }
 
 /** A card's meta line in Plex Mono: `#148 · R3 · 35 m` (the board's age form), the wait from its raised time. */

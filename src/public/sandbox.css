@@ -1280,3 +1280,13 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-plli.ord:not(:has(.v2-plunder)) > .v2-plmove > .v2-plmv { height: auto; }
 .v2-why.v2-wclip { max-height: calc(3 * 1.4em); overflow: hidden; overflow: clip; }
 .v2-why.v2-wclip.over { -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
+
+/* G4 of "After the glance audit" (AC91 (k); AC89 (h), changed): the failed-load screen, which app.js draws when the
+   desk's own code fails to load: "The desk couldn't load." in --t-lead --ink, the ✕ (app.js's own inline SVG) in --bad
+   before it, and under it a "Reload" button at least 44 px tall in 500 15 px (the briefing's pair), which reloads the
+   page; nothing else. style.css holds the few rules it keeps should this sheet not load either. */
+.v2-loadfail { display: grid; gap: 12px; justify-items: start; }
+.v2-lf { display: flex; gap: 8px; align-items: flex-start; margin: 0; font: var(--t-lead); color: var(--ink); }
+.v2-lf > .v2-lfx { width: 16px; height: 16px; flex: none; margin-top: 3px; color: var(--bad); }
+.v2-reload { min-height: 44px; padding: 0 20px; border: 1px solid var(--line2); border-radius: 10px; background: var(--bg); color: var(--ink);
+  font: 500 15px/1.35 var(--font); cursor: pointer; }

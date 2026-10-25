@@ -324,7 +324,10 @@ test('AC84 (P-001-timeline-marker.md, A): the phase line\'s words for a second r
   }
 });
 
-test('AC84: the phase line\'s tap scrolls the Timeline to Now (C); on the Team screen it opens the Timeline at Now; and the Timeline opens at Now — opening asks the Now line to come to rest just under the pinned header and band (a recorded call), a refresh restores the saved scroll with no such call', async () => {
+// Rewritten in G4 of "After the glance audit" (AC84's note "Changed after the glance audit": "it opens with the Now line a
+// third of the way down"; AC91 (i)): opening, and the phase line's tap, ask the Now line's top to rest a third of the
+// way down the viewport, no longer just under the pinned header and band.
+test('AC84 (AC91 (i), rewritten in G4): the phase line\'s tap scrolls the Timeline to Now (C); on the Team screen it opens the Timeline at Now; and the Timeline opens at Now — opening asks the Now line\'s top to come to rest a third of the way down the viewport (a recorded call), a refresh restores the saved scroll with no such call', async () => {
   const saved = Object.getOwnPropertyDescriptor(El0.prototype, 'getBoundingClientRect');
   El0.prototype.getBoundingClientRect = function rect() {
     if (this.attrs && this.attrs['data-k'] === 'nowline') return { top: 2200, bottom: 2228, height: 28, left: 0, right: 360, width: 360 };
@@ -341,7 +344,8 @@ test('AC84: the phase line\'s tap scrolls the Timeline to Now (C); on the Team s
       pl.dispatch('keydown', { key: 'Enter', preventDefault() {} });
       await app.flush();
       assert.equal(app.loc.hash, '#/p/Service-Desk/timeline', 'from the Team screen: the Timeline');
-      assert.deepEqual(app.scrolls, [[0, 2200 - 90 - 36 - 8]], 'at Now: just under the pinned header and band');
+      assert.deepEqual(app.scrolls, [[0, 2200 - Math.round(740 / 3)]], 'at Now: its top a third of the way down (740 / 3, rounded: 247 px)');
+      assert.ok(Math.round(740 / 3) > 90 + 36 + 8, 'below the pinned header and band');
       app.scrolls.length = 0;
       window.scrollY = 3000;
       await app.advance(61_000);
@@ -352,6 +356,7 @@ test('AC84: the phase line\'s tap scrolls the Timeline to Now (C); on the Team s
       byClass(app.view, 'v2-phl')[0].dispatch('keydown', { key: ' ', preventDefault() {} });
       await app.flush();
       assert.equal(app.scrolls.length, 1, 'on the Timeline, a tap on the line scrolls back to Now');
+      assert.equal(app.scrolls[0][1], 3000 + 2200 - Math.round(740 / 3), 'to the same third of the way down');
       assert.equal(app.loc.hash, '#/p/Service-Desk/timeline', 'without leaving it');
     } finally {
       app.restore();

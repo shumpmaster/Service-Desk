@@ -498,6 +498,8 @@ test('AC82, from stage 3: a tile\'s tap opens the project\'s page, its Overview,
 });
 
 // Rewritten in G1 of "After the glance audit" (AC91 (c)): the unreadable tile's corner says when, "Can't read since HH:MM".
+// Rewritten in G8c (P-001-glance-opening-wording.md, B): Delta's reads fail from the start, so no read of it succeeds in this
+// opening and the briefing and its corner say "in this opening" in place of the opening's time.
 test('AC82 (part A, items 4 and 6): Home from H5\'s extremes and from a project that can\'t be read renders without error; never quiet while one can\'t be read', async () => {
   const { extremes } = await import('./sandbox-fixtures.mjs');
   const x = await open(extremes(), { store: looked(NOW - 9 * 86400e3) });
@@ -512,8 +514,9 @@ test('AC82 (part A, items 4 and 6): Home from H5\'s extremes and from a project 
   const app = await open(setup);
   try {
     await app.advance(4 * POLL_MS);
-    assert.ok(brief(app).textContent.includes("Can't read Delta since"), brief(app).textContent);
-    assert.match(byClass(keyed(app, 'card:Delta'), 'v2-wt')[0].textContent, /^Can't read since \d\d:\d\d$/, 'AC91 (c): the corner says when');
+    assert.ok(brief(app).textContent.includes("Can't read Delta in this opening"), brief(app).textContent);
+    assert.ok(!brief(app).textContent.includes("Can't read Delta since"), 'never read in this opening: no time');
+    assert.equal(byClass(keyed(app, 'card:Delta'), 'v2-wt')[0].textContent, "Can't read in this opening", 'AC91 (c), from G8c: the corner says when, "in this opening"');
     assert.doesNotMatch(app.text(), /Nothing needs you/);
   } finally {
     app.restore();

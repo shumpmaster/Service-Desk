@@ -852,7 +852,6 @@ const stripParts = (app) => [byClass(lane(app, 'kick'), 'v2-kn')[0].textContent,
 /** G8d's round-3 screen in G8D_OPENS of that name, opened as AC88's walk opens it, so the cases read what the walk reads. */
 const R3 = {
   orShow: 'Waiting, every project shown, none read and drawn, can\'t read or show',
-  orShowCards: 'Waiting, every project shown, none read and drawn, can\'t read or show, a last read\'s cards',
   showLast: 'Waiting, the made-up project alone shown, can\'t show when last read',
 };
 const openR3 = (name) => { const e = G8D_OPENS.find(([w]) => w === name); assert.ok(e, `G8D_OPENS holds "${name}"`); return e[1](); };
@@ -970,7 +969,7 @@ test('AC91 (f), AC80, G8d round 3: Waiting with every project shown and no shown
 });
 
 test('AC91 (f), AC80, G8d round 3: every project shown, none read and drawn, a lane holding a can\'t-read project\'s last read\'s cards (made up, NOT real: Alpha read and then failing, Bravo can\'t be drawn, the others failing from the start) — those cards and the lane\'s count, as AC80 keeps them; the strip "Kicked back · can\'t read or show"', async () => {
-  const app = await openR3(R3.orShowCards);
+  const app = await open(noneDrawnState({ waiting: true }), '#/waiting', { later: true });
   try {
     assert.ok(app.desk.states.get(MIX_PROJECT).lastSuccessAt != null, 'Alpha read in this opening');
     const n = cardsIn(app, 'wait').length;
@@ -1037,20 +1036,10 @@ test('AC89 (a), G8d round 3: Waiting with the made-up project the desk can\'t dr
   }
 });
 
-test('AC89 (a), G8d round 3, kept beside it: the project the desk can\'t draw with no read succeeded in this opening (state 2; its blobs failing, made up) keeps "Can\'t read" and "Kicked back · can\'t read"; a project the desk draws in state 5 (made up: quiet\'s Alpha read and then failing) keeps "Nothing here when last read", its count and "Kicked back · none when last read"', async () => {
-  const n = blobFailState('every file');
-  n.repos[MIX_PROJECT].pulls.push(BAD_PR);
-  let app = await open(n, `#/waiting/${MIX_PROJECT}`, { polls: 2 });
-  try {
-    assert.equal(app.desk.states.get(MIX_PROJECT).lastSuccessAt ?? null, null);
-    assert.deepEqual([sub(app), emptyOf(app, 'wait'), laneCount(app, 'wait'), stripText(app)], ['Not read in this opening', "Can't read", null, "Kicked back · can't read"]);
-    assert.doesNotMatch(keyed(app, 'board').textContent, /Can't show/);
-  } finally {
-    app.restore();
-  }
+test('AC89 (a), G8d round 3, kept beside it: a project the desk draws in state 5 (made up: quiet\'s Alpha read and then failing) keeps "Nothing here when last read", its count and "Kicked back · none when last read" (the project the desk can\'t draw in state 2 keeping "Can\'t read" and "Kicked back · can\'t read": round 2\'s locked case "a project the desk can\'t draw whose read fails keeps its can\'t-read words", its first step)', async () => {
   const q = quietState();
   q.fail = () => { q.repos[MIX_PROJECT].fail = { kind: 'network' }; };
-  app = await open(q, `#/waiting/${MIX_PROJECT}`, { later: true });
+  const app = await open(q, `#/waiting/${MIX_PROJECT}`, { later: true });
   try {
     assert.match(aboveLanes(app), new RegExp(`^Can't read ${MIX_PROJECT} since \\d\\d:\\d\\d: ${REASON}$`));
     assert.deepEqual([emptyOf(app, 'wait'), laneCount(app, 'wait'), stripText(app)], ['Nothing here when last read', '0', 'Kicked back · none when last read']);

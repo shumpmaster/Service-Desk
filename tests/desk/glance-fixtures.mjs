@@ -700,11 +700,10 @@ export const G8D_OPENS = [
   ['Waiting, every project shown, cards waiting, a project that can\'t be shown', () => g8dOpen(cantShowState({ waiting: true }), '#/waiting')],
   ['Waiting, the made-up project alone shown, it can\'t be shown', () => g8dOpen(cantShowState(), `#/waiting/${MIX_PROJECT}`)],
   // G8d's round 3 (AC91 (f), AC89 (a); P-001-glance-no-quiet-lanes.md and P-001-glance-cant-show-last-read.md, both "Ruling:
-  // A"): Waiting with every project shown and none both read and drawn (with no card and with a last read's cards), and the
-  // made-up project the desk can't draw alone shown in state 5. Three screens, not more: the suite runs in one process, and
-  // each page opened keeps its own copy of sandbox.js (about 1.25 MB) for good.
+  // A"): Waiting with every project shown and none both read and drawn, and the made-up project the desk can't draw alone
+  // shown in state 5, one screen for each new phrase: the suite runs in one process, and each page opened keeps its own copy
+  // of sandbox.js (about 1.25 MB) for good.
   ['Waiting, every project shown, none read and drawn, can\'t read or show', () => g8dOpen(noneDrawnState(), '#/waiting')],
-  ['Waiting, every project shown, none read and drawn, can\'t read or show, a last read\'s cards', () => g8dOpen(noneDrawnState({ waiting: true }), '#/waiting', { later: true })],
   ['Waiting, the made-up project alone shown, can\'t show when last read', () => g8dOpen(cantShowLastState(), `#/waiting/${MIX_PROJECT}`, { later: true })],
 ];
 

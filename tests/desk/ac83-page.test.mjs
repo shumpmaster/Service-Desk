@@ -502,6 +502,22 @@ test('AC83 + AC81: the page\'s type is the tokens\' or desk-v2.html\'s pairs; th
   assert.equal(PAGE_WORDS.milestonesHead(null), 'Milestones by phase');
 });
 
+// Added after G5's review, round 1 (the Reviewer's note beside B1; it predates G5): an opened phase's run heads take each
+// run's own band from the Timeline, found by the run itself, its key ("<Phase>-i<n>") only where no block is the run's.
+// `mix`'s made-up project (tests/desk/glance-fixtures.mjs, NOT real records) has a "Build-i1" gone back over and a later
+// "Build-i1" still to come; by key alone, run 1 took the later run's band and read "Run 1 · planned".
+test('AC83 (frame 6; G5\'s review): an opened phase\'s run heads each take their own run\'s band — two runs sharing a key ("Build-i1") read apart, run 1 "gone back over", never the later run\'s "planned"', async () => {
+  const app = await loadSandbox({ ...mixState(), hash: `#/p/${MIX_PROJECT}`, now: GLANCE_NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(61_000);
+    await app.tap(fold(app, 'Build'));
+    assert.deepEqual(byClass(keyed(app, 'stdl:Build'), 'v2-runh').map((x) => x.textContent), ['Run 3 · planned', 'Run 2 · planned', 'Run 1 · dates not recorded · gone back over']);
+  } finally {
+    app.restore();
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Stage 3, review round 1
 

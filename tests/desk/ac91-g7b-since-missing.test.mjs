@@ -18,6 +18,7 @@ import { loadSandbox, byClass, findAll } from './sandbox-helpers.mjs';
 import { parseCss, treeOf, cascade, nodes } from './css-cascade.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { sinceMissingLines, sinceUnreadWords } from '../../src/lib/home.js';
+import { BAD_PR } from './fake-desk.mjs';
 import { unreadState, signedOutState, extState, MIX_PROJECT, NOW, SD, POOM, CONFIG, G7B_OPENS, EXT_LONG, SINCE_LATE, SINCE_FULL, lookedAt } from './glance-fixtures.mjs';
 
 const TZ = CONFIG.ownerTimeZone;
@@ -281,6 +282,29 @@ test('AC91 (c), G7b: a read that then succeeds — its line goes on the first dr
     }
     assert.equal(box(app), null, 'every project read: no line and no box');
     assert.match(keyed(app, 'since-none').textContent, /^Nothing new since /, 'the list as built');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC91 (c), G7b (the Reviewer\'s B1, round 1): a project the desk can\'t draw whose read then fails — its grey line shows, with the briefing\'s "Can\'t read <project> since HH:MM" time, and the empty list reads "Not read since HH:MM", never "Nothing new since"; while its read succeeds, no line', async () => {
+  // Alpha can't be drawn (fake-desk.mjs's BAD_PR, made up, NOT a real pull request), then its read fails (made up).
+  const s = unreadState({ who: MIX_PROJECT });
+  s.repos[MIX_PROJECT].pulls.push(BAD_PR);
+  const app = await open(s);
+  try {
+    assert.match(keyed(app, `card:${MIX_PROJECT}`).textContent, /Can't show this project: /, 'Alpha can\'t be drawn');
+    assert.equal(box(app), null, 'its read succeeds: no line');
+    assert.match(keyed(app, 'since-none').textContent, /^Nothing new since /, 'the list as built');
+    s.fail();
+    await app.advance(3 * POLL_MS);
+    const at = briefTimes(app).get(MIX_PROJECT);
+    assert.match(at, /^\d\d:\d\d$/, 'the briefing: "Can\'t read Alpha since HH:MM"');
+    assert.deepEqual(words(app), [MISS(MIX_PROJECT, `since ${at}`)]);
+    const none = keyed(app, 'since-none');
+    assert.deepEqual([none.textContent, none.className], [`Not read since ${at}`, 'v2-ql bad'], 'G1\'s line too, never "Nothing new since"');
+    assert.deepEqual(sinceKeys(app), ['since-h', 'since-none', 'since-miss']);
+    assertGrey(app, 'can\'t draw, read failing');
   } finally {
     app.restore();
   }

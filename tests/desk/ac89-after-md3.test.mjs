@@ -602,7 +602,11 @@ test('AC89 (h): AC87\'s cap and versions rows say "can\'t be read since HH:MM" a
   }
 });
 
-test('AC89 (h): the board\'s held-question fold shows its record text in AC81\'s roles, a heading --t-row and the rest --t-body, its lists\' marks kept, as every sheet\'s record does', async () => {
+// Rewritten in QW1 (AC77, changed by AC94 and AC95: a held question "leaves the quiet line "Being asked in your session""
+// for the "Questions for you" section): the board's fold that held the question's record is gone with that line; the held
+// question's record is in its sheet, opened from "More about it ›" in the section, under the sheet's rules, which the fold's
+// rules equal (they stay in sandbox.css, kept for any fold that shows a record).
+test('AC89 (h), rewritten in QW1: a held question\'s record text shows in AC81\'s roles, a heading --t-row and the rest --t-body, its lists\' marks kept, as every sheet\'s record does — now in its sheet, opened from the "Questions for you" section', async () => {
   assert.match(rule('.v2-qfold .sb-record'), /font: var\(--t-body\); overflow-wrap: anywhere;/);
   assert.match(rule('.v2-qfold .sb-record :is(h1, h2, h3, h4, h5, h6)'), /font: var\(--t-row\);/);
   assert.match(rule('.v2-qfold .sb-record :is(p, li, td, th, blockquote)'), /font: var\(--t-body\);/);
@@ -622,11 +626,15 @@ test('AC89 (h): the board\'s held-question fold shows its record text in AC81\'s
   const app = await loadSandbox({ config: CONFIG, repos: { 'Service-Desk': sd, 'Personal-Org-Operating-Model': om }, hash: '#/waiting/Service-Desk', now: Date.parse('2026-10-18T11:26:23Z') + 54 * 60e3 });
   try {
     await app.advance(1000);
-    await app.tap(keyed(app, 'ql:asking'));
-    const fold = keyed(app, 'fold:asking');
-    assert.ok(/\bv2-qfold\b/.test(fold.className));
-    const art = findAll(fold, (e) => e.tag === 'article')[0];
-    assert.ok(/\bsb-record\b/.test(art.className), 'its record, under the fold\'s rules');
+    assert.equal(keyed(app, 'ql:asking'), null, 'no "Being asked in your session" line');
+    const id = 'Service-Desk|question|questions/P-001-next-work.md';
+    const more = keyed(app, `qmore:${id}`);
+    assert.ok(more, 'the held question in the section');
+    await app.go(more.attrs.href);
+    const sh = byClass(app.view, 'v2-sheet')[0];
+    await app.tap(keyed(app, `fold:whole:${id}`));
+    const art = findAll(byClass(app.view, 'v2-sheet')[0] || sh, (e) => e.tag === 'article')[0];
+    assert.ok(/\bsb-record\b/.test(art.className), 'its record, under the sheet\'s rules');
   } finally {
     app.restore();
   }

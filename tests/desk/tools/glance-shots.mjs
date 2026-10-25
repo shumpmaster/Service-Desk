@@ -23,7 +23,9 @@
 // "Can't read or show" and "Can't show when last read" among them); and, on G9's (AC92 (e)), each soft box's size,
 // padding, ground and edge, its tally's lines, whether anything in it is cut, how far the strip's arrow sits under the
 // page's box, and each why line's ground; and, from G9's round 2 (AC92 (d)), each opened phase's run heads, each found
-// by its run, its colour, weight and size, the rule above it and the gap over that rule.
+// by its run, its colour, weight and size, the rule above it and the gap over that rule; and, on G9b's (AC91 (c), AC82),
+// the line under Home's and Waiting's titles, its words, colour, size and weight and whether an icon is drawn in it, the
+// list's red line under it on Home, and Waiting's lanes' empty words and the strip's line.
 // G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
 // the screen as it opens (the viewport), not the whole page.
@@ -33,7 +35,7 @@ import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
 import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, ciState, mismatchState, nowShared, sprintsState, longNameState, PLAN_NOW,
-  openingState, signedOutMixedState, orderState, blobFailState, cantShowState, noneDrawnState, cantShowLastState, fiveLinesState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
+  openingState, signedOutMixedState, orderState, blobFailState, cantShowState, noneDrawnState, cantShowLastState, fiveLinesState, failedHeldState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
 import { sdRepo, SD3 } from '../tv2-fixtures.mjs';
 import { CONFIG } from '../helpers.mjs';
 import { waSetup, WORKED } from '../wa-fixtures.mjs';
@@ -264,6 +266,17 @@ const SHOTS = [
   { name: 'g9-runs-text', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-phase="Build"] > button', '[data-phase="Design"] > button'] },
   { name: 'g9-waiting-done', state: () => gatesState(), now: NOW, looked: LATE, hash: '#/waiting', seed: deviceMarks([
     { project: MIX_PROJECT, kind: 'gate', id: GATE_KEY(MIX_PROJECT, 'queue/P-009-launch-1.md'), title: 'The Launch gate, case 1 · P-009', at: NOW - 3 * H, confirmedAt: NOW - 2 * H }]) },
+  // G9b (AC91 (c), "the line under Home's and Waiting's titles"; AC82; the owner's "Ruling: A", P-001-glance-checking-line.md):
+  // Home and Waiting with every project shown, one first read failed and one on its way (`failedHeldState`: Service-Desk's
+  // first read held, made up), every first read failed (`orderState`) and signed out from the start; and Waiting with
+  // Service-Desk alone shown, its own first read on its way beside the made-up project's failed one (AC89 (a)'s state 1).
+  { name: 'g9b-home-failed-held', state: failedHeldState, now: NOW, looked: LATE },
+  { name: 'g9b-waiting-failed-held', state: failedHeldState, now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g9b-home-every-failed', state: () => orderState(), now: NOW, looked: LATE },
+  { name: 'g9b-waiting-every-failed', state: () => orderState(), now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g9b-home-signed-out', state: signedOutState, now: NOW, looked: LATE, before: true },
+  { name: 'g9b-waiting-signed-out', state: signedOutState, now: NOW, looked: LATE, before: true, hash: '#/waiting' },
+  { name: 'g9b-waiting-one-checking', state: failedHeldState, now: NOW, looked: LATE, hash: `#/waiting/${encodeURIComponent(SD.name)}` },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {
@@ -503,9 +516,19 @@ async function main() {
             });
             return [...boxes, ...why, ...(runs.length ? [`run heads: ${runs.join(' / ')}`] : [])].join('; ') || 'no box';
           });
+          // G9b (AC91 (c)): the line under the title, its words and look, the list's red line under it, and Waiting's lanes.
+          const g9b = await page.evaluate(() => {
+            const sub = document.querySelector('.v2-home > .v2-sub, .v2-board > .v2-sub');
+            if (!sub) return 'no line under the title';
+            const cs = getComputedStyle(sub);
+            const red = document.querySelector('[data-k="since-none"]');
+            const lanes = [...document.querySelectorAll('.v2-empty, .v2-kq')].map((e) => e.textContent);
+            return `line "${sub.textContent}" ${cs.color} ${cs.fontSize} ${cs.fontWeight}${sub.querySelector('svg') ? ', an icon in it' : ', no icon'}`
+              + `${red ? `; the list's "${red.textContent}" ${getComputedStyle(red).color}` : ''}${lanes.length ? `; lanes: ${lanes.join(' | ')}` : ''}`;
+          });
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}${/^g8d-/.test(shot.name) ? `  (${g8d})` : ''}${/^g9-/.test(shot.name) ? `  (${g9})` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}${/^g8d-/.test(shot.name) ? `  (${g8d})` : ''}${/^g9-/.test(shot.name) ? `  (${g9})` : ''}${/^g9b-/.test(shot.name) ? `  (${g9b})` : ''}`);
           await ctx.close();
         }
       }

@@ -9,7 +9,7 @@
 // shown as written; a value no record gives says so in words (AC41).
 
 import { hhmm, dayKey, durationText, zonedToUtc, dayDateTime } from './timefmt.js';
-import { weekdayTime, IN_OPENING } from './board.js';
+import { weekdayTime, IN_OPENING, ONE_WORDS } from './board.js';
 import { entryShape, defaultLetter } from './records.js';
 import { dayWords, headlineWords, branchShape, runBegan, PHASE_CLASS } from './feed.js';
 import { GATE_PHASE } from './j11.js';
@@ -50,6 +50,33 @@ export const HOME_WORDS = Object.freeze({
 });
 /** Home's words for a project no read of which has succeeded in this opening, in place of "since HH:MM" (AC91 (c), from G8c; P-001-glance-opening-wording.md, B), held in board.js from G8d, where Waiting's take them too. */
 export { IN_OPENING };
+/** Waiting's line under its title while a first read is still on its way, lower case as built from stage 1a (AC80; sandbox.js `checkedWords`). */
+export const WAITING_CHECKING = 'checking…';
+
+/**
+ * The line under Home's title, and under Waiting's with every project shown (AC82's "Under the title"; AC80, AC82's rule),
+ * as changed in stage G9b (AC91 (c), "the line under Home's and Waiting's titles"; the owner's ruling of 2026-10-25,
+ * "Ruling: A", decisions/questions/P-001-glance-checking-line.md). Pure. `reads`: each connected project, in any of Home's
+ * groups, as { read (its read state's `read`: 'ok' | 'checking' | 'cant-read', or null before it has one), succeeded
+ * (whether a read of it has succeeded in this opening, the page's `readInOpening`), lastSuccessAt (the reader's) }.
+ * `waiting`: Waiting's words in place of Home's. Says, at each call:
+ *   - "Not read in this opening" (board.js's `ONE_WORDS.notRead`, the words Waiting shows for one project in AC89 (a)'s state
+ *     2), with no time and no count, while any project is in that state 2: it can't be read (a read failed for one of AC5's
+ *     causes, a sign-out's refusal among them, or 3 minutes passed in view with no read answered; C) and no read of it has
+ *     succeeded in this opening. Its read alone counts, so a project the desk can't draw counts too (C);
+ *   - else, as built: "Checking…" on Home and "checking…" on Waiting while some project has no successful read yet (its
+ *     first read on its way: not yet answered, or its parts still arriving); "checked <age> ago" from the stalest
+ *     project's last successful read once every project has one.
+ * A project read in this opening and then failing (AC89 (a)'s state 5) has no first read that failed, so it leaves the
+ * line as built. The line shown with one project alone is that project's own (board.js's `oneProjectView`, `under`).
+ */
+export function titleLine({ reads, nowMs, waiting = false }) {
+  const list = reads || [];
+  if (list.some((r) => r && r.read === 'cant-read' && !r.succeeded)) return ONE_WORDS.notRead;
+  const times = list.map((r) => (r ? r.lastSuccessAt : null));
+  if (!times.length || times.some((x) => x == null)) return waiting ? WAITING_CHECKING : HOME_WORDS.checking;
+  return `checked ${durationText(Math.max(0, nowMs - Math.min(...times)))} ago`;
+}
 
 const enc = (...parts) => parts.map(encodeURIComponent).join('/');
 const go = (...parts) => `#/${enc(...parts)}`;

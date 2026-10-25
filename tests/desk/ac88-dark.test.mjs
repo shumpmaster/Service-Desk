@@ -34,7 +34,7 @@ import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
 import { BAD_PR } from './fake-desk.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
-import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS, G8D_OPENS, G9_OPENS } from './glance-fixtures.mjs';
+import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS, G8D_OPENS, G9_OPENS, G9B_OPENS } from './glance-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -673,6 +673,17 @@ function okBadCheck(app, where, fails, seen, places) {
         else if (!(n.kids[0] && n.kids[0].tag === 'svg' && n.kids[0].cls.has('vi-eye'))) fail(n, 'an opened phase\'s why line without its eye icon first');
         else places.add('grey: an opened phase\'s why line, with no ground');
       }
+      // G9b (AC91 (c), "the line under Home's and Waiting's titles"; the owner's "Ruling: A", P-001-glance-checking-line.md:
+      // "Not read in this opening" in place of "Checking…" while a first read has failed, the words only): the line under
+      // Home's title and Waiting's (`p.v2-sub`, the screen's own child), whatever it says, in --ink2, never --ok or --bad,
+      // with no icon.
+      if (n.tag === 'p' && n.cls.has('v2-sub') && n.parent && n.parent.tag === 'section' && (n.parent.cls.has('v2-home') || n.parent.cls.has('v2-board'))) {
+        const raw = n.style.get('color') || '';
+        const col = plain(raw).trim().toLowerCase();
+        if (isOkBad(raw) || col !== THEME[way.theme]['--ink2'].toLowerCase()) fail(n, `the line under the title in ${col}: it stays --ink2`);
+        else if (n.kids.some((c) => c.tag === 'svg')) fail(n, 'the line under the title with an icon: it has none');
+        else places.add('grey: the line under the title');
+      }
       // The grey "Can't show this" lines and the rules that draw nothing: never red, and never matched.
       if (n.cls.has('v2-small') && n.cls.has('bad') && n.text.trim()) {
         if (isOkBad(n.style.get('color') || '')) fail(n, 'a "Can\'t show this" line in --ok or --bad: it stays grey');
@@ -858,7 +869,8 @@ test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --o
     'ruled: a group head\'s can\'t-read count', 'ruled: a group head\'s can\'t-be-shown count', 'reading (e): the notifications warning', 'grey: a "Can\'t show this" line',
     'ink: the portfolio\'s problem line', 'ink: a portfolio card\'s note', 'ink: the portfolio block\'s "nothing queued" tick', 'ink: a portfolio block\'s mark',
     'ink: Plan\'s ideas', 'grey: "Since you last looked"\'s missing line', 'grey: Plan\'s "moved" word',
-    'ink: a project page\'s soft box, its sentence and tally', 'ink: a project page\'s soft box, its sentence alone', 'grey: an opened phase\'s why line, with no ground']) {
+    'ink: a project page\'s soft box, its sentence and tally', 'ink: a project page\'s soft box, its sentence alone', 'grey: an opened phase\'s why line, with no ground',
+    'grey: the line under the title']) {
     assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
   }
 });
@@ -1877,4 +1889,36 @@ test('AC49 + AC88 (P-001-desk-v2-lanes, A): on every member page\'s running log,
   assert.ok(stubs.seen > 20 && stubs.pages > 5, `${stubs.seen} stubs on ${stubs.pages} logs`);
   assert.deepEqual([...stubs.onDash].sort(), ['0.01 4', '6 4', 'none'], 'stubs on a solid, a dashed and a dotted lane'); 
   assert.deepEqual(fails, []);
+});
+
+// G9b of "After the glance audit" (AC91 (c), "the line under Home's and Waiting's titles"; AC82; the owner's ruling of
+// 2026-10-25, "Ruling: A", decisions/questions/P-001-glance-checking-line.md): Home and Waiting in the states the line under
+// the title says "Not read in this opening" in, signed out among them, and Waiting with one project shown beside a failed one
+// (tests/desk/glance-fixtures.mjs's G9B_OPENS, its made-up parts NOT real). The walks above draw the line in its as-built
+// words; here each screen is opened once (the suite's memory: each page load keeps its own copy of sandbox.js) and read by
+// both checks: AC92 (a)'s cascade check, the line a grey place ("grey: the line under the title"), and the stage-8 guard,
+// which shows G9b adds no declaration: no CSS changed, so there is no G9B_ONCE and no exception is met.
+test('AC88 + AC92 (a) + AC44 step 4 (G9b of "After the glance audit"; AC91 (c)): on G9b\'s screens (G9B_OPENS, made up, NOT real), in dark (forced, and the phone\'s own) and light, the line under Home\'s and Waiting\'s titles is a grey place — "Not read in this opening" (and "Checking…" for one project shown alone) in --ink2 with no icon, never --ok or --bad — and every element\'s look is bd4097d\'s, with no exception added', async () => {
+  const fails = [];
+  const seen = new Set();
+  const places = new Set();
+  const before = new Set(excepted);
+  for (const [where, open] of G9B_OPENS) {
+    const app = await open();
+    try {
+      const sub = findAll(app.view, (e) => / v2-sub /.test(` ${e.className || ''} `) && e.parent && / (v2-home|v2-board) /.test(` ${e.parent.className || ''} `));
+      assert.equal(sub.length, 1, `${where}: the line under the title`);
+      assert.equal(sub[0].textContent, /alone shown/.test(where) ? 'Checking…' : 'Not read in this opening', `${where}: its words`);
+      const mine = new Set();
+      okBadCheck(app, `G9b ${where}`, fails, seen, mine);
+      assert.ok(mine.has('grey: the line under the title'), `${where}: read as a grey place`);
+      for (const p of mine) places.add(p);
+      sameLook(app, `G9b ${where}`, fails, seen);
+    } finally {
+      app.restore();
+    }
+  }
+  assert.deepEqual(fails, []);
+  assert.ok(places.has('grey: the line under the title'));
+  assert.deepEqual([...excepted].filter((x) => !before.has(x)), [], 'no exception met that the walks above had not met: no G9B_ONCE');
 });

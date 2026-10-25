@@ -160,7 +160,7 @@ test('AC77 (the desk): a line in another form or place is ignored: the question 
   for (const q of [v3q('Asked in session:s-x'), v3q(' Asked in session: s-x'), '# Ruling needed: x\n\nMilestone: M1\n\nAsked in session: s-x\nOPTIONS:\n  A. a\n']) {
     const app = await open({ 'questions/N-x.md': q }, { name: 'N-x' });
     try {
-      assert.ok(!(await projectText(app)).includes(HELD_WORDS), q);
+      assert.ok(!(await projectText(app)).includes(HELD_SHOWN), q);
       assert.equal(stateOf(app), '1 waiting on you');
     } finally {
       app.restore();

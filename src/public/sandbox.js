@@ -717,9 +717,14 @@ function homeChecked() {
   return t == null ? HOME_WORDS.checking : `checked ${durationText(Math.max(0, Date.now() - t))} ago`;
 }
 
-/** The briefing (AC82, frames H1 and H3): one block, a tap anywhere on it opening Waiting. */
+/**
+ * The briefing (AC82, frames H1 and H3): one block, a tap anywhere on it opening Waiting. From stage G8c, `built` comes in
+ * Home's tile order (P-001-glance-cant-read-order.md, B), so its per-project lines name their projects as the tiles and
+ * "Since you last looked"'s grey lines do; each read carries whether a read of it succeeded in this opening, so a project
+ * never read in it says "in this opening" (P-001-glance-opening-wording.md, B).
+ */
 function briefingNode(desk, built, bd) {
-  const reads = built.map((b) => ({ name: b.project.name, read: b.box.read, drawError: b.box.drawError || null }));
+  const reads = built.map((b) => ({ name: b.project.name, read: b.box.read, drawError: b.box.drawError || null, opening: !readInOpening(b.project.name) }));
   const flagged = sandboxBoxes(built).reduce((n, b) => n + (b.flaggedCount || 0), 0);
   const v3 = (name) => { const p = CONFIG.projects.find((x) => x.name === name); return Boolean(p && p.model === 'v3'); };
   const view = (nowMs) => briefingView({ bd, reads, flagged, signedOut: desk.signedOut, v3, lastReadMs: stalestRead(), nowMs, tz: TZ,
@@ -872,7 +877,8 @@ function timelineNode(tl, name) {
       const rise = i === r.up;
       if (!c) return h('span', { class: `v2-c${drop ? ' dn' : ''}${rise ? ' up' : ''}` }, drop || rise ? h('i', {}) : null);
       // AC92 (b), from G8: the arrow, 3 px left of the now run's icon (a span: `.v2-c.up > i` is the dashed drop).
-      return h('span', { class: `v2-c ${c.cls || 'ph-none'} s-${c.state}${c.l ? ' l' : ''}${c.r ? ' r' : ''}${drop ? ' dn' : ''}${rise ? ' up' : ''}` },
+      // From G8c (P-001-glance-arrow-on-line.md, B): the now cell is `here`, so a line coming into it stops 3 px before the arrow.
+      return h('span', { class: `v2-c ${c.cls || 'ph-none'} s-${c.state}${c.l ? ' l' : ''}${c.r ? ' r' : ''}${drop ? ' dn' : ''}${rise ? ' up' : ''}${c.here ? ' here' : ''}` },
         drop || rise ? h('i', {}) : null, smk(c.icon, 'v2-s'), c.here ? hereMark('r') : null);
     })));
   return [h('div', { class: `v2-ptl${tl.sprints ? ' sprints' : ''}`, key: `ptl:${name}`, 'aria-hidden': 'true' },
@@ -901,10 +907,12 @@ function tileNode(b, bd, group, nextRows, whyOnce = null) {
   const n = counts ? counts.waiting + counts.kicked : 0;
   const rs = readStateOf(box);
   const read = rs.state;
-  // AC91 (c): the read's failure time, in ownerTimeZone, said once on the tile: in its corner when nothing waits, else at its foot.
+  // AC91 (c): the read's failure time, in ownerTimeZone, said once on the tile: in its corner when nothing waits, else at its foot;
+  // from G8c, "in this opening" for a project no read of which has succeeded in this opening (P-001-glance-opening-wording.md, B).
   const since = read === 'cant-read' && rs.since != null ? hhmm(new Date(rs.since), TZ) : null;
-  const waits = tileWaits(n, read, since);
-  const foot = tileFoot(n, read, since, box.read && box.read.words ? box.read.words : null);
+  const opening = read === 'cant-read' && !readInOpening(name);
+  const waits = tileWaits(n, read, since, opening);
+  const foot = tileFoot(n, read, since, box.read && box.read.words ? box.read.words : null, opening);
   const sum = summaryView(project, box, b.snap);
   // The gate card waiting on the owner (AC82: the ◆ in its phase, and "Next: <the gate>, after your ruling").
   const gateCard = gateCardOf(bd, name);
@@ -956,18 +964,28 @@ function readStateOf(box) {
 }
 
 /**
+ * Whether a read of the project has succeeded in this opening (the reader's `lastSuccessAt` at or after the desk's
+ * `openedAt`): G7b's `succeeded`, which, from G8c, also tells Home's other can't-read words to say "in this opening" in
+ * place of "since HH:MM" (AC91 (c); P-001-glance-opening-wording.md, B). Reads the reader's state only; no read added.
+ */
+function readInOpening(name) {
+  const opened = DESK && DESK.openedAt != null ? DESK.openedAt : -Infinity;
+  const st = DESK && DESK.states ? DESK.states.get(name) : null;
+  return Boolean(st && st.lastSuccessAt != null && st.lastSuccessAt >= opened);
+}
+
+/**
  * Each project's read as "Since you last looked" takes it (AC91 (c)), in the order given: its name, its read, and whether
  * a read of it succeeded in this opening. What the briefing's can't-read lines and the tiles already read (the box's
  * read, the reader's state); no read of its own. A project the desk can't draw keeps its read where that read fails
  * (safeBox keeps a real read on such a box), so it is counted as can't-read here as the briefing's "Can't read <project>
- * since HH:MM" counts it (G7b's review, B1); while its read succeeds it has none, and the list stands as built.
+ * since HH:MM" counts it (G7b's review, B1); while its read succeeds it has none. From G8c it hands on the box's
+ * `drawError` with its read, so such a project gets its grey "not shown" line (P-001-glance-cant-show-line.md, B).
  */
 function sinceReads(built) {
-  const opened = DESK && DESK.openedAt != null ? DESK.openedAt : -Infinity;
   return built.map((b) => {
-    const st = DESK && DESK.states ? DESK.states.get(b.project.name) : null;
     const failing = Boolean(b.box.read && b.box.read.read === 'cant-read');
-    return { name: b.project.name, read: b.box.drawError && !failing ? null : b.box.read, succeeded: Boolean(st && st.lastSuccessAt != null && st.lastSuccessAt >= opened) };
+    return { name: b.project.name, read: b.box.drawError && !failing ? null : b.box.read, succeeded: readInOpening(b.project.name), drawError: b.box.drawError || null };
   });
 }
 
@@ -1031,16 +1049,18 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
       })) : null);
   });
   const sv = sinceModel(built, seen, nowMs);
-  // AC91 (c), from G7b: the projects' reads in the order of their tiles on Home (its groups in order, each group's tiles
-  // as drawn), so the lines that end "Since you last looked" name them in that order.
-  const reads = sinceReads(HOME_GROUPS.flatMap((g) => placed.filter((x) => x.group === g.key).map((x) => x.b)));
+  // AC91 (c), from G7b: the projects in the order of their tiles on Home (its groups in order, each group's tiles as
+  // drawn, folded groups included), so the lines that end "Since you last looked" name them in that order; from G8c the
+  // briefing's per-project lines take the same order (P-001-glance-cant-read-order.md, B).
+  const tileOrdered = HOME_GROUPS.flatMap((g) => placed.filter((x) => x.group === g.key).map((x) => x.b));
+  const reads = sinceReads(tileOrdered);
   const pf = portfolioOf(built);
   const body = [
     h('header', { class: 'v2-top' }, h('h1', { class: 'v2-title' }, HOME_WORDS.title)),
     h('p', { class: 'v2-sub', key: 'home-checked', live: homeChecked }),
     // AC75: "Notifications" on Home's top line until notifications are on for this device; its control is also in the fold at the foot.
     onTopLine(notifyState(notifyEnv())) ? notifyNode(true) : null,
-    briefingNode(desk, built, bd),
+    briefingNode(desk, tileOrdered, bd),
     sinceNode(sv, seen, nowMs, sinceUnreadWords(reads, TZ), sinceMissingLines(reads, TZ)),
     h('div', { class: 'v2-hgroups', key: 'hgroups' }, groups),
     // Home's foot (AC82, specs/S-001.md:6696-6700): the portfolio's block, read only (AC87, from stage
@@ -1067,9 +1087,11 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
 function portfolioOf(built) {
   try {
     return { view: portfolioView(built.map((b) => {
-      // The tile's read state (readStateOf), its time in ownerTimeZone as the tile's "Can't read since HH:MM".
+      // The tile's read state (readStateOf), its time in ownerTimeZone as the tile's "Can't read since HH:MM", and, from
+      // G8c, whether no read of it has succeeded in this opening, as the tile's corner takes it ("in this opening").
       const rs = readStateOf(b.box);
-      const read = { state: rs.state, since: rs.state === 'cant-read' && rs.since != null ? hhmm(new Date(rs.since), TZ) : null };
+      const read = { state: rs.state, since: rs.state === 'cant-read' && rs.since != null ? hhmm(new Date(rs.since), TZ) : null,
+        opening: rs.state === 'cant-read' && !readInOpening(b.project.name) };
       return { project: b.project, pv: b.error ? null : b.pv, snap: b.error ? null : b.snap, error: Boolean(b.error), read };
     }), lastPf), error: null };
   } catch (err) {

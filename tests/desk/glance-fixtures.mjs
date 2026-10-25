@@ -10,10 +10,12 @@
 // looked" ending in its missing lines (`G7B_OPENS`), with the "last looked" a device holds; G8 adds `nowShared`, a now
 // run sharing its key with later runs, and `sprintsState`, a v2.5 project with two open sprints or none; G8b adds
 // `longNameState`, a milestone with a long made-up name, and Plan with a row moved, opened as the owner moves it
-// (`G8B_OPENS`); the later stages add theirs. Each
+// (`G8B_OPENS`); G8c adds Home with projects never read in this opening, read earlier, signed out, in an order the config
+// doesn't give, one the desk can't draw, and a line into the now circle (`openingState`, `signedOutMixedState`, `orderState`,
+// `sprintsState(1)`, `g8cStore`, `G8C_OPENS`); the later stages add theirs. Each
 // made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
 import { CONFIG, fixture } from './helpers.mjs';
-import { repo } from './fake-desk.mjs';
+import { repo, BAD_PR } from './fake-desk.mjs';
 import { waSetup, WORKED, memStore, SD, POOM } from './wa-fixtures.mjs';
 import { loadSandbox, findAll } from './sandbox-helpers.mjs';
 import { sdRepo, SD3, pullNodes, answerOf } from './tv2-fixtures.mjs';
@@ -21,6 +23,7 @@ import { POLL_MS } from '../../src/lib/scheduler.js';
 import { fullRepo, v3, extremes, NOW } from './sandbox-fixtures.mjs';
 import { pullsAnswer } from './j12-fixture.mjs';
 import { STANDARD_MILESTONES } from '../../src/lib/timeline.js';
+import { HOME_GROUPS_KEY } from '../../src/lib/sandbox.js';
 
 /** The clock the states open at, as the suite's other trial-view tests (2026-10-14T15:00:00Z). */
 export { NOW };
@@ -411,13 +414,16 @@ export function nowShared(at) {
 /**
  * G8 (AC92 (b)): Personal-Org-Operating-Model's sprints (v2.5, J9) with `open` open: 2, its real m1.4 (poom/, open) and a
  * made-up m1.5 (NOT a real record), so which sprint is open is unclear and the arrow points at none; 0, m1.4 written
- * closed (NOT as the record is), so no sprint is open.
+ * closed (NOT as the record is), so no sprint is open. From G8c (AC92 (b), the line that stops short): 1, poom/'s
+ * placeholder m1.3 (closed) added before m1.4 (open), so the one open sprint follows a closed one and a line leads into its
+ * circle (NOT the project's sprints: poom/ holds placeholders, and this state holds two of them).
  */
 export function sprintsState(open) {
   const s = textState();
   const r = s.repos[POOM.name];
   const m14 = r.files['docs/sprints/m1.4-v3-build.md'];
   if (open === 2) r.commit({ 'docs/sprints/m1.5-made-up.md': '# m1.5 — a made-up sprint (NOT a real record: made up for G8\'s test)\n\nstatus: open\n' });
+  else if (open === 1) r.commit({ 'docs/sprints/m1.3-pilot-and-s004.md': fixture('poom/docs/sprints/m1.3-pilot-and-s004.md') });
   else r.commit({ 'docs/sprints/m1.4-v3-build.md': m14.replace(/^status: open$/m, 'status: closed') });
   return s;
 }
@@ -464,5 +470,85 @@ export const G8B_OPENS = [true, false].flatMap((ordering) => {
     [`Plan with a gate card, ${MIX_PROJECT}'s MD3 moved, ${where}`, () => g8bOpen(gatesState(), [['up', MIX_PROJECT, 'MD3']], { ordering })],
   ];
 });
+
+/**
+ * G8c (AC91 (c); P-001-glance-opening-wording.md, B): `unread` with Service-Desk's reads failing from the start (made up:
+ * the fake desk's network cause, AC5), so no read of it succeeds in this opening; `fail()` makes the made-up project's
+ * fail later, after its first reads succeeded (its cards waiting): one project never read in this opening and one read
+ * earlier, on one Home.
+ */
+export function openingState() {
+  const s = unreadState();
+  s.repos[SD.name].fail = { kind: 'network' };
+  s.fail = () => { s.repos[MIX_PROJECT].fail = { kind: 'network' }; };
+  return s;
+}
+
+/**
+ * G8c, signed out each project by its own: `mix` with Service-Desk's reads failing from the start (made up, the network
+ * cause); `fail()` then refuses every read as signed out (made up, J6), after the others' first reads succeeded.
+ */
+export function signedOutMixedState() {
+  const s = signedOutState();
+  s.repos[SD.name].fail = { kind: 'network' };
+  return s;
+}
+
+/**
+ * G8c (P-001-glance-cant-read-order.md, B): the config's order (Service-Desk, Personal-Org-Operating-Model, the made-up
+ * project) is not Home's tile order (the made-up project and Service-Desk in "Your projects · active", the made-up one first
+ * by its name or its cards; Personal-Org-Operating-Model, v2.5, in "Closed or not run by the desk"), each failure made up
+ * (the network cause, NOT how any read failed):
+ * - nothing waiting (`quiet`, the made-up project holding no card): the projects `only` names (all three by default) fail
+ *   from the start; with `cantShow`, the made-up project can't be drawn (fake-desk.mjs's BAD_PR, NOT a real pull request)
+ *   and its read works, so it is not in `only`'s failures;
+ * - with `waiting` (`mix`, the made-up project's cards): Service-Desk and Personal-Org-Operating-Model fail from the start,
+ *   and `fail()` makes the made-up project's fail later, after its first reads (its cards kept).
+ */
+export function orderState({ waiting = false, cantShow = false, only = null } = {}) {
+  const s = waiting ? mixState() : quietState();
+  const net = () => ({ kind: 'network' });
+  if (waiting) {
+    for (const n of [SD.name, POOM.name]) s.repos[n].fail = net();
+    s.fail = () => { s.repos[MIX_PROJECT].fail = net(); };
+    return s;
+  }
+  if (cantShow) s.repos[MIX_PROJECT].pulls.push(BAD_PR);
+  for (const n of only || [SD.name, POOM.name, MIX_PROJECT]) if (!(cantShow && n === MIX_PROJECT)) s.repos[n].fail = net();
+  s.fail = () => {};
+  return s;
+}
+
+/** G8c: what a device keeps (made up, NOT a real device's record): "last looked" (`desk-seen-v1`) and Home's groups as folded (`desk-home-groups-v1`, `{ closed: false }` folds "Closed or not run by the desk"). */
+export const g8cStore = (looked, groups = null) => memStore({ 'desk-seen-v1': JSON.stringify({ lastLooked: looked }), ...(groups ? { [HOME_GROUPS_KEY]: JSON.stringify(groups) } : {}) });
+/** G8c's Home, opened with "last looked" after the records' dates (SINCE_LATE), `groups` as folded, and `fail()` called after the first reads where `later`. */
+async function g8cOpen(setup, { groups = null, later = false } = {}) {
+  const app = await loadSandbox({ ...setup, hash: '#/', now: NOW, store: g8cStore(SINCE_LATE, groups) });
+  await app.advance(1000);
+  await app.advance(POLL_MS);
+  if (later) {
+    setup.fail();
+    await app.advance(3 * POLL_MS);
+  }
+  return app;
+}
+/**
+ * G8c (AC91 (c); AC92 (b)): the Home screens it changes, as [name, open() → the open page], each made-up part NOT real:
+ * one project never read in this opening and one read earlier; signed out from the start, and with one project never read
+ * before it; three projects failing in an order the config doesn't give, with nothing waiting and with cards waiting, the
+ * closed group folded; a project the desk can't draw, alone and beside two failing; and a tile with a line into its now
+ * circle, v3 (`nowShared('build')`) and v2.5 (`sprintsState(1)`).
+ */
+export const G8C_OPENS = [
+  ['Home, one project never read in this opening, one read earlier', () => g8cOpen(openingState(), { later: true })],
+  ['Home, signed out from the start', () => { const s = signedOutState(); s.fail(); return g8cOpen(s); }],
+  ['Home, signed out, one project never read before it and the others read', () => g8cOpen(signedOutMixedState(), { later: true })],
+  ['Home, three projects failing, nothing waiting, the closed group folded', () => g8cOpen(orderState(), { groups: { closed: false } })],
+  ['Home, three projects failing, cards waiting, the closed group folded', () => g8cOpen(orderState({ waiting: true }), { groups: { closed: false }, later: true })],
+  ['Home, a project the desk can\'t draw, its read working', () => { const s = mixState(); s.repos[MIX_PROJECT].pulls.push(BAD_PR); return g8cOpen(s); }],
+  ['Home, a project the desk can\'t draw beside two failing, nothing waiting', () => g8cOpen(orderState({ cantShow: true }))],
+  ['Home, a line into the now circle', () => g8cOpen(nowShared('build'))],
+  ['Home, a v2.5 tile, its open sprint after a closed one', () => g8cOpen(sprintsState(1))],
+];
 
 export { SD, POOM, CONFIG };

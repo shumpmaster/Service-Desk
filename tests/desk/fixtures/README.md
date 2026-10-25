@@ -868,3 +868,34 @@ cascade check, its want-list holding Plan's "moved" word, and the stage-8 guard'
   up; and `gates`, the made-up project's MD3 moved up beside its gate cards' rows. **NOT a real device's draft.**
 - **a newer plan** written in `ac24-g8b-moved-word.test.mjs`, `docs/planning/2026-10-18T1805Z-01.md`, as AC24's test
   writes it, so the draft is set aside and the word goes. **NOT a real record.**
+
+## After the glance audit, G8c (2026-10-25, S-001 AC91 (c), AC92 (b) and AC89 (a) changed, P-001-glance-opening-wording.md, P-001-glance-cant-read-order.md, P-001-glance-cant-show-line.md and P-001-glance-arrow-on-line.md, each B)
+
+G8c adds no fixture file. `tests/desk/ac91-g8c-home.test.mjs`, G8c's walks in `ac88-dark.test.mjs` (AC92 (a)'s cascade
+check, its want-list unchanged, and the stage-8 guard's `G8C_ONCE`) and the locked cases it rewrites open the states
+above, with these made-up parts, each **NOT real**, and `tests/desk/tools/glance-shots.mjs` captures them (`g8c-`):
+- **`openingState`** (`glance-fixtures.mjs`): `unread` with Service-Desk's reads failing from the start (the fake desk's
+  network cause, AC5), so no read of it succeeds in this opening; `fail()` makes the made-up project's reads fail after its
+  first reads succeeded. **NOT how any read failed.**
+- **`signedOutMixedState`** (`glance-fixtures.mjs`): `mix` with Service-Desk's reads failing from the start (the network
+  cause); `fail()` then refuses every read as signed out (J6). **NOT how any read failed.**
+- **`orderState`** (`glance-fixtures.mjs`): the config's order (Service-Desk, Personal-Org-Operating-Model, the made-up
+  project) unlike Home's tile order, each failure made up (the network cause): on `quiet`, nothing waiting, the projects it
+  names failing from the start, or with `cantShow` the made-up project drawn with fake-desk.mjs's `BAD_PR` (a made-up pull
+  request the desk can't draw) and its read working; with `waiting`, on `mix`, Service-Desk and Personal-Org-Operating-Model
+  failing from the start and the made-up project, its cards held, failing later. **NOT real records or failures.**
+- **`sprintsState(1)`** (`glance-fixtures.mjs`): Personal-Org-Operating-Model's sprints with poom/'s placeholder m1.3
+  (closed) added before m1.4 (open), so its one open sprint follows a closed one and a line leads into its circle.
+  **NOT the project's sprints** (poom/ holds placeholders only).
+- **`g8cStore`** (`glance-fixtures.mjs`): what a device keeps, "last looked" (`desk-seen-v1`) and Home's groups folded
+  (`desk-home-groups-v1`, "Closed or not run by the desk" folded). **NOT a real device's record.**
+- **`G8C_OPENS`** (`glance-fixtures.mjs`): Home on the states above, on `nowShared('build')` and with `BAD_PR` on `mix`'s
+  made-up project, each opened as the owner opens Home. **NOT real records or failures.**
+- **a reader that never answers** (`ac91-g8c-home.test.mjs`, the fake desk's `hold` set to a promise that never settles), so
+  a read stays unanswered for 3 minutes, AC89 (a)'s 3-minute cause. **NOT how any read went.**
+- **blobs GitHub fails** (`ac91-g8c-home.test.mjs`, from G8c's review, round 1, B1): `unread` with the made-up project's
+  `blobFail` (fake-desk.mjs) naming every file's blob sha, or one file's, so its first read holds the tree, and with it the
+  cards, but fails in its blob phase (AC5's GitHub cause): a project with cards waiting that no read has succeeded for in
+  this opening. **NOT how any read failed.**
+- **a portfolio that refuses the desk** (`ac91-g8c-home.test.mjs`, pf-fixtures.mjs's `pfFiles` with `no-access`), as G7's
+  palette test makes it. **NOT a real record.**

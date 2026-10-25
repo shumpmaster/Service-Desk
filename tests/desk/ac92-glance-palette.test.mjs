@@ -220,12 +220,19 @@ test('AC92 (a), the page\'s strip (`text`) and a Home tile\'s drawing (`mix`): a
 // ---------------------------------------------------------------------------
 // Plan: the Reached list green, the moved edge in --line2
 
-test('AC92 (a) with AC24, rewritten for the --line2 edge (P-001-glance-plan-gold.md, A): on Plan, the moved row\'s edge is the light line grey, never gold, "moved" kept in its accessible text; the gold ring still marks the next to reach; and the Reached list\'s marks are green, each a check before its name, the words in ink', async () => {
+test('AC92 (a) with AC24, rewritten for the --line2 edge (P-001-glance-plan-gold.md, A): on Plan, the moved row\'s edge is the light line grey, never gold, "moved" kept in its accessible text, and from G8b shown on the row in --t-small --ink2, never gold or vermilion (P-001-glance-moved-word.md, B); the gold ring still marks the next to reach; and the Reached list\'s marks are green, each a check before its name, the words in ink', async () => {
   const app = await opened('Plan, a row moved and Reached opened');
   try {
     const moved = findAll(app.view, (e) => e.tag === 'li' && has(e, 'v2-plli') && has(e, 'moved'));
     assert.equal(moved.length, 1, 'the row moved last');
     assert.match(byClass(moved[0], 'v2-plord')[0].textContent, /, moved$/, '"moved" in its accessible text');
+    // From G8b (AC24's note; P-001-glance-moved-word.md, B): the word shown on the moved row, and on no other, hidden from
+    // assistive technology (the place's words above say it).
+    const word = byClass(app.view, 'v2-plmoved');
+    assert.equal(word.length, 1, 'the word, once on the page');
+    assert.ok(moved[0].contains(word[0]), 'on the moved row');
+    assert.equal(word[0].textContent, 'moved');
+    assert.equal(word[0].attrs['aria-hidden'], 'true');
     const reached = findAll(app.view, (e) => e.tag === 'li' && has(e, 'reached') && e.parent && has(e.parent, 'v2-plmini'));
     assert.deepEqual(reached.map((r) => byClass(r, 'v2-plt')[0].textContent).length, 3, 'Reached · 3');
     for (const r of reached) {
@@ -238,6 +245,12 @@ test('AC92 (a) with AC24, rewritten for the --line2 edge (P-001-glance-plan-gold
       const c = T[theme];
       assert.equal(L.get(moved[0]).decl('box-shadow'), `inset 2px 0 0 ${c.line2}`, `${theme}: the moved edge in --line2`);
       assert.doesNotMatch(L.get(moved[0]).decl('box-shadow'), new RegExp(c.gold), `${theme}: never gold`);
+      // G8b: the word in --t-small's weight and --ink2, never --gold or --you, with no fill or border.
+      assert.equal(L.get(word[0]).colour, c.ink2, `${theme}: the word in --ink2`);
+      assert.notEqual(L.get(word[0]).colour, c.gold, `${theme}: the word never gold`);
+      assert.notEqual(L.get(word[0]).colour, c.you, `${theme}: the word never vermilion`);
+      assert.equal(L.get(word[0]).weight, '400', `${theme}: --t-small's weight`);
+      for (const p of ['background', 'border', 'box-shadow']) assert.equal(L.get(word[0]).decl(p), '', `${theme}: the word has no ${p}`);
       for (const r of reached) {
         assert.equal(L.get(svgOf(r)).colour, c.ok, `${theme}: ${r.textContent}`);
         assert.equal(L.get(byClass(r, 'v2-plt')[0]).colour, c.ink, `${theme}: its name in ink`);

@@ -101,6 +101,27 @@ export function isNewCard(card, lane, reference) {
   return at != null && Number.isFinite(at) && at > reference;
 }
 
+/** The words for a project no read of which has succeeded in this opening, in place of "since HH:MM" (AC91 (c); Home's from G8c, Waiting's, a project's page's and the Pipeline view's from G8d). */
+export const IN_OPENING = 'in this opening';
+
+/**
+ * When a project's read began failing, as Waiting, a project's page and the Pipeline view say it (AC91 (c), from G8d; the
+ * owner's "Yes, everywhere (Recommended)"): " in this opening" where no read of it has succeeded in this opening
+ * (`opening`, from sandbox.js's readInOpening, as Home's places take it), else " since HH:MM" (`since` in `tz`), or
+ * nothing with no time held.
+ */
+export function cantSince({ since = null, opening = false } = {}, tz) {
+  if (opening) return ` ${IN_OPENING}`;
+  return since != null && Number.isFinite(since) ? ` since ${hhmm(new Date(since), tz)}` : '';
+}
+
+/**
+ * Waiting's can't-read quiet line (AC80; AC89 (a)), from boardView's `cantRead` entry ({ project, since, opening }):
+ * "Can't read <project> since HH:MM", or, from G8d, "Can't read <project> in this opening" for a project no read of which
+ * has succeeded in this opening. The line above the lanes with one project shown begins with the same words.
+ */
+export const quietCantWords = (c, tz) => `Can't read ${c.project}${cantSince(c, tz)}`;
+
 /**
  * AC89 (a)'s words for Waiting with one project shown, in each of its read states (specs/S-001.md, AC89 (a),
  * the five-state table).
@@ -119,25 +140,30 @@ export const ONE_WORDS = Object.freeze({
  * from main's own read state (`readState`, src/lib/universe.js) and whether a read has succeeded in this opening
  * (`lastSuccessAt`, which the scheduler sets only in this opening), and what each part of the view says:
  *   1. not fresh, no read yet in this opening: "Checking…"; nothing above the lanes; no cards; "Not read yet";
- *   2. can't be read, no read yet: "Not read in this opening"; "Can't read <project> since HH:MM: <reason>"; no cards; "Can't read";
+ *   2. can't be read, no read yet: "Not read in this opening"; "Can't read <project> in this opening: <reason>" (from stage G8d,
+ *      AC91 (c), the owner's "Yes, everywhere (Recommended)"; "since HH:MM" before it); the cards a read in this opening gave,
+ *      if any (AC89 (a), C, locked in G8d: a first read that holds the tree and then fails in its blob phase gives cards with
+ *      no read succeeded; one that fails with no tree held gives none); "Can't read";
  *   3. fresh: "checked <age> ago"; the quiet lines with their counts; its cards; "Nothing here";
  *   4. not fresh after a read: "checked <age> ago"; the quiet lines' two counts "checking…"; its last read's cards; "Nothing here";
  *   5. can't be read after a read: "checked <age> ago" from that read; the can't-read line; its last read's cards;
  *      "Nothing here when last read".
  * "HH:MM" is readState's `since` in `tz` (a failure's first time since the last success, or, for the 3-minute cause, the
- * last success in this opening or the opening's start). Returns { state, cards, counts ('read' | 'checking' | null),
- * cant (the line above the lanes, or null), empty (an empty lane's words), unknown (a lane with no count), under(nowMs) }.
+ * last success in this opening or the opening's start); state 5's line keeps it, and state 2's, a project no read of which
+ * has succeeded in this opening, says "in this opening" in its place (G8d). Returns { state, cards (whether the lanes hold
+ * the project's cards as its reads in this opening gave them: in state 2 those of a held tree, if any), counts ('read' |
+ * 'checking' | null), cant (the line above the lanes, or null), empty (an empty lane's words), unknown (a lane with no
+ * count), under(nowMs) }.
  */
 export function oneProjectView({ name, read, lastSuccessAt, tz }) {
   const r = read || {};
   const succeeded = lastSuccessAt != null && Number.isFinite(lastSuccessAt);
   const checked = (nowMs) => `checked ${durationText(Math.max(0, nowMs - lastSuccessAt))} ago`;
-  const cant = r.read === 'cant-read'
-    ? `Can't read ${name}${r.since != null && Number.isFinite(r.since) ? ` since ${hhmm(new Date(r.since), tz)}` : ''}${r.words ? `: ${r.words}` : ''}` : null;
+  const cant = r.read === 'cant-read' ? `${quietCantWords({ project: name, since: r.since, opening: !succeeded }, tz)}${r.words ? `: ${r.words}` : ''}` : null;
   if (r.read === 'ok') return { state: 3, cards: true, counts: 'read', cant: null, empty: WORDS.empty, unknown: false, under: checked };
   if (r.read === 'cant-read') {
     return succeeded ? { state: 5, cards: true, counts: null, cant, empty: ONE_WORDS.whenLast, unknown: false, under: checked }
-      : { state: 2, cards: false, counts: null, cant, empty: ONE_WORDS.cantRead, unknown: true, under: () => ONE_WORDS.notRead };
+      : { state: 2, cards: true, counts: null, cant, empty: ONE_WORDS.cantRead, unknown: true, under: () => ONE_WORDS.notRead };
   }
   return succeeded ? { state: 4, cards: true, counts: 'checking', cant: null, empty: WORDS.empty, unknown: false, under: checked }
     : { state: 1, cards: false, counts: null, cant: null, empty: ONE_WORDS.notReadYet, unknown: true, under: () => ONE_WORDS.checking };
@@ -774,7 +800,7 @@ export function recordDone(project, model, snap, j, nowMs) {
 
 /**
  * The whole board (AC80): input: { projects: [{ project, cards, agents, read: { ok, cantRead,
- * since }, recording: [], asking: [], answerRecording: [], recordRows: [], seenRows: [] }] in J7's
+ * since, words, opening (from G8d: no read of it has succeeded in this opening) }, recording: [], asking: [], answerRecording: [], recordRows: [], seenRows: [] }] in J7's
  * order, marks, only (a project's name, or null), nowMs, tz }. Returns { lanes: [{ key, title,
  * count, groups: [{ project, rows, more }] }], strip (AC91 (f): the kicked-back cards, newest first, each with its
  * `stripProject`), counts: Map(project → { waiting, kicked }), badge,
@@ -859,7 +885,7 @@ export function boardView(input) {
       quiet.recording.push(...(p.recording || []));
       quiet.asking.push(...(p.asking || []));
       quiet.answerRecording.push(...(p.answerRecording || []));
-      if (p.read && p.read.cantRead) cantRead.push({ project: name, since: p.read.since, words: p.read.words });
+      if (p.read && p.read.cantRead) cantRead.push({ project: name, since: p.read.since, words: p.read.words, opening: Boolean(p.read.opening) });
       else if (p.read && p.read.ok && !waitRows.length && !kickRows.length && !doneRows.length) nothingWaiting.push(name);
     }
   }

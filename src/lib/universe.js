@@ -43,13 +43,18 @@ export function orderBoxes(boxes) {
   return [...boxes].sort((a, b) => boxRank(a) - boxRank(b) || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 }
 
-/** The words of a box's state line (AC5, AC8). */
-export function boxStateText(box, timeZone) {
+/**
+ * The words of a box's state line (AC5, AC8). From stage G8d (AC91 (c); the owner's "Yes, everywhere (Recommended)"),
+ * `opening`: no read of the project has succeeded in this opening (the sandbox's readInOpening, as Home's places take it),
+ * so its failing read says "Can't read in this opening: <reason>" in place of "Can't read since HH:MM: <reason>"; absent,
+ * as built.
+ */
+export function boxStateText(box, timeZone, opening = false) {
   const parts = [];
   if (box.drawError) parts.push(box.drawError);
   if (box.flaggedCount > 0) parts.push(`${box.flaggedCount} waiting on you`);
   if (box.read.read === 'cant-read') {
-    parts.push(`Can't read since ${hhmm(new Date(box.read.since), timeZone)}: ${box.read.words}`);
+    parts.push(`Can't read ${opening ? 'in this opening' : `since ${hhmm(new Date(box.read.since), timeZone)}`}: ${box.read.words}`);
   } else if (box.read.read === 'checking') {
     parts.push('Checking…');
   } else if (box.flaggedCount === 0 && !box.drawError) {

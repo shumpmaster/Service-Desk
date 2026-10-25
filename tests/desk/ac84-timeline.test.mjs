@@ -492,12 +492,16 @@ test('AC84 (specs/S-001.md:6917-6922; the Design reviewer\'s 1 and 2, stage 3 ro
   const small = CSS.indexOf('\n.v2-timeline .sb-why, .v2-timeline .sb-why > summary');
   assert.ok(small > 0 && CSS.indexOf('\n.v2-timeline .v2-stats .sb-mkw, ') > small, 'after it, and heavier (three classes)');
   assert.match(rule('.v2-timeline .v2-stats span.sb-mkw, .v2-timeline .v2-stats .sb-mkw > summary'), /display: inline-flex; align-items: center; gap: 2px;/);
-  // Its own class, not the board card's .v2-mk (--ink): drawn in currentColor, its word's --ink2 (AC81, specs/S-001.md:7072-7074; the Reviewer's N-a, round 2).
-  assert.match(rule('.v2-stats .v2-smk'), /^ width: 10px; height: 10px; color: inherit; $/, 'the ✕ icon at the marks\' size, in its word\'s colour');
+  // Its own class, not the board card's .v2-mk (--ink): drawn in currentColor (AC81, specs/S-001.md:7072-7074; the Reviewer's N-a, round 2).
+  // Rewritten in G7 of "After the glance audit" (AC92 (a): "the ✕ of a sprint's "review failed", "checks failed" and "source
+  // check failed"" in --bad, on the mark only): the ✕ in --bad, its word still --ink2; the ✓ in its own span in --ok. Before
+  // G7 the ✕ took its word's colour (`color: inherit`).
+  assert.match(rule('.v2-stats .v2-smk'), /^ width: 10px; height: 10px; color: var\(--bad\); $/, 'the ✕ icon at the marks\' size, in --bad');
+  assert.match(rule('.v2-stats .v2-okm'), /^ color: var\(--ok\); font-weight: 600; $/, 'the ✓ in --ok');
   assert.match(rule('.v2-k'), /stroke: currentColor;/);
 });
 
-test('AC81 + AC84 (after MD3, stage 8; (b) item 37, stage 3 review round 3, R1): the ✕ icon\'s colour as drawn — through the cascade, at 360 and 414 px, light, the phone\'s dark and forced dark, the icon\'s stroke is its own colour and that colour is its word\'s, --ink2', async () => {
+test('AC81 + AC84 (after MD3, stage 8; (b) item 37, stage 3 review round 3, R1; rewritten in G7 for AC92 (a)): the ✕ icon\'s colour as drawn — through the cascade, at 360 and 414 px, light, the phone\'s dark and forced dark, the icon\'s stroke is its own colour and that colour is --bad, its word staying --ink2', async () => {
   // specs/S-001.md:7072-7074 (AC81: a mark drawn in currentColor, keeping its word) and the rule test above, which reads only
   // the rule's text: a later, heavier rule giving the icon --ink passed it (the Reviewer's mutation Na3).
   const rules = (() => {
@@ -519,8 +523,9 @@ test('AC81 + AC84 (after MD3, stage 8; (b) item 37, stage 3 review round 3, R1):
           const word = nodes(tree).find((n) => n.kids.includes(icon));
           assert.equal(icon.declared.get('stroke'), 'currentColor', 'drawn in its own colour');
           for (const part of icon.kids.filter((k) => k.cls.has('fill'))) assert.equal(part.declared.get('fill'), 'currentColor');
-          assert.equal(icon.style.get('color'), word.style.get('color'), `${way} ${width}: the icon in its word's colour`);
-          assert.equal(name(icon.style.get('color')), '--ink2', `${way} ${width}: --ink2, as the marks`);
+          // G7 (AC92 (a)): the ✕ in --bad, on the mark only; its word keeps the marks' --ink2. Before G7 the icon took its word's colour.
+          assert.equal(name(icon.style.get('color')), '--bad', `${way} ${width}: the ✕ in --bad`);
+          assert.equal(name(word.style.get('color')), '--ink2', `${way} ${width}: its word stays --ink2, as the marks`);
         }
       }
     }

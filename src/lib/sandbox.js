@@ -929,7 +929,9 @@ export function sheetView(project, model, snap, j, row) {
   const tree = (snap && snap.tree) || new Map();
   const f = row.flag;
   const ci = model ? model.ci : NOT_RECORDED;
-  const base = { key: row.key, kind: f.kind, title: row.text, code: row.code, wait: row.wait, checked: `CI on ${project.defaultBranch}'s head: ${ci}`, links: [] };
+  const base = { key: row.key, kind: f.kind, title: row.text, code: row.code, wait: row.wait, checked: `CI on ${project.defaultBranch}'s head: ${ci}`,
+    // AC92 (a), from G7: AC29's state alone, so the sheet's CI line takes its ✓ or ✕ (sandbox.js, ciMark).
+    ci: model ? model.ci : null, links: [] };
   if (f.kind === 'card') {
     const c = f.card;
     const p = c.parsed;

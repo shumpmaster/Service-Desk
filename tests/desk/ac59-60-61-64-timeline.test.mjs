@@ -134,8 +134,23 @@ test('AC59: each milestone\'s icon and words, its "Done when" against its sectio
   assert.ok(all.every((x) => x.icon !== 'next' || x.code === 'MD2'));
 });
 
-test('AC59 + AC48: no milestone\'s circle uses a phase or state colour of its own; only "next to reach" takes the gold ring', () => {
+test('AC59 + AC48 (rewritten in G7 for AC92 (a)): no milestone\'s circle uses a phase colour; only "next to reach" takes the gold ring; and, from G7, only the reached check takes --ok and only the not-reached cross --bad, each on the mark alone', () => {
   const sheet = css();
+  // G7 of "After the glance audit" (AC92 (a); AC48, changed: "a milestone's name and heading stay neutral; its status mark
+  // alone takes `--ok` or `--bad`"): mockup v2's circles (`.v2-s`, the Timeline's, the page's, Plan's and a tile's) take
+  // --ok only on a reached check drawn as a status mark (`.v2-s.st-check.ok`) and --bad only on a not-reached cross
+  // (`.v2-s.st-cross.bad`), as their colour (never a fill, ring or ground of their own); gold only the next-to-reach ring;
+  // vermilion only the ◆; no phase colour on any. The old look's `.sb-ic` circles, below, stay as they were.
+  for (const m of sheet.matchAll(/([^{}]*\.v2-s\b[^{}]*)\{([^}]*)\}/g)) {
+    const sel = m[1].trim();
+    for (const [, prop, tok] of m[2].matchAll(/([a-z-]+):[^;]*var\((--[a-z0-9-]+)\)/g)) {
+      assert.ok(!/^--ph-|^--phc$/.test(tok), `${sel}: no phase colour (${tok})`);
+      if (tok === '--ok') assert.deepEqual([sel, prop], ['.v2-s.st-check.ok', 'color'], 'green: the reached check, its colour alone');
+      if (tok === '--bad') assert.deepEqual([sel, prop], ['.v2-s.st-cross.bad', 'color'], 'red: the not-reached cross, its colour alone');
+      if (tok === '--gold') assert.match(sel, /\.gold$/, 'gold: the next-to-reach ring alone');
+      if (tok === '--you') assert.match(sel, /\.you$/, 'vermilion: the ◆ alone');
+    }
+  }
   for (const m of sheet.matchAll(/(\.sb-ic[^{]*)\{([^}]*)\}/g)) {
     const used = [...m[2].matchAll(/var\((--[a-z0-9-]+)\)/g)].map((x) => x[1]);
     for (const tok of used.filter((t) => !/^--s\d$/.test(t))) {

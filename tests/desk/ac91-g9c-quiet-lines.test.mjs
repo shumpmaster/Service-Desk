@@ -24,12 +24,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { SRC, CONFIG as BASE_CONFIG, fixture } from './helpers.mjs';
+import { SRC } from './helpers.mjs';
 import { loadSandbox, byClass, findAll } from './sandbox-helpers.mjs';
 import { parseCss, treeOf, cascade, nodes } from './css-cascade.mjs';
-import { repo } from './fake-desk.mjs';
-import { NOTIFY_FIX } from './notify-helpers.mjs';
-import { withPortfolio, addPortfolio, pfFiles } from './pf-fixtures.mjs';
 import { POLL_MS, STALE_MS, REASON_WORDS } from '../../src/lib/scheduler.js';
 import { readState } from '../../src/lib/universe.js';
 import { boardView, noMarks, quietReadLines, READING_WORDS, ONE_WORDS, quietTroubleWords } from '../../src/lib/board.js';
@@ -42,7 +39,7 @@ import { portfolioRead, PF_WORDS } from '../../src/lib/portfolio.js';
 import { durationText } from '../../src/lib/timefmt.js';
 import { BEING_RECORDED_WORDS } from '../../src/lib/model.js';
 import { failedHeldState, heldReadsState, cantShowHeldState, G9C_OPENS, unreadState, signedOutState, signedOutMixedState, openingState, orderState,
-  mixState, cantShowLastState, g8cStore, MIX_PROJECT, NOW, SD, POOM, CONFIG, SINCE_LATE } from './glance-fixtures.mjs';
+  mixState, cantShowLastState, agentsState, recordingState, RECORDING_NOW, g8cStore, MIX_PROJECT, NOW, SD, POOM, CONFIG, SINCE_LATE } from './glance-fixtures.mjs';
 
 const TZ = CONFIG.ownerTimeZone;
 const NOT_READ = 'Not read in this opening';
@@ -341,7 +338,7 @@ test('AC91 (c), AC91 (f), G9c: `failedHeldState` with Personal-Org-Operating-Mod
     t.release(MIX_PROJECT);
     await two.advance(2 * POLL_MS);
     assert.ok(lastSuccess(two, MIX_PROJECT) != null);
-    assert.deepEqual(qlines(two).filter(([k]) => /^ql:reading:/.test(k)), [R(SD.name)], 'the made-up project\'s gone, Service-Desk\'s kept');
+    assert.deepEqual(qlines(two), [NOTHING(POOM.name), R(SD.name)], 'the made-up project\'s gone, Service-Desk\'s kept');
     assert.ok(laneCount(two, 'wait') > 0, 'the made-up project\'s cards in the lanes');
   } finally {
     t.release();
@@ -368,10 +365,10 @@ test('AC91 (c), G9c: the held read failing instead, its red line in the line\'s 
     await h.advance(1000);
     await h.advance(POLL_MS);
     await redraw(h);
-    assert.deepEqual(qlines(h).filter(([k]) => /^ql:(reading|cant):/.test(k)), [R(SD.name)], 'state 1, on its way');
+    assert.deepEqual(qlines(h), [NOTHING(POOM.name), R(SD.name)], 'state 1, on its way');
     await h.advance(STALE_MS - POLL_MS);
     await redraw(h);
-    assert.deepEqual(qlines(h).filter(([k]) => /^ql:(reading|cant):/.test(k)), [X(SD.name)], 'after 3 minutes in view: its red line');
+    assert.deepEqual(qlines(h), [NOTHING(POOM.name), X(SD.name)], 'after 3 minutes in view: its red line');
   } finally {
     h.restore();
   }
@@ -408,28 +405,86 @@ test('AC91 (c), G9c: the can\'t-draw project (`BAD_PR`, NOT real) with its parts
   }
 });
 
-/** AC79's asks-merge fixture (ac79-desk.test.mjs): Service-Desk's records at ef8daf4 (real), one made-up pull request the job is recording, made-up job runs (NOT real). */
-const T79 = Date.parse('2026-10-18T12:00:00Z');
-const HEAD79 = 'c'.repeat(40);
-function recordingState() {
-  const sd = (p) => readFileSync(join(NOTIFY_FIX, 'sd-ef8daf4', p), 'utf8');
-  const stamped = (...ls) => ls.map((l) => `2026-10-18T11:41:05.1234567Z ${l}`).join('\n') + '\n';
-  const own = (n, title) => ({ number: n, title, html_url: `https://github.com/shumpmaster/Service-Desk/pull/${n}`, draft: false, base: { ref: 'main' },
-    head: { ref: `cos/made-up-${n}`, sha: HEAD79, repo: { full_name: 'shumpmaster/Service-Desk' } }, user: { login: 'shumpmaster' }, author_association: 'OWNER',
-    created_at: '2026-10-18T11:00:00Z', state: 'open' });
-  const r = repo({ 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml'), 'docs/LEDGER.md': sd('docs/LEDGER.md'),
-    'decisions/questions/P-001-asks-merge.md': sd('decisions/questions/P-001-asks-merge.md'), '.github/workflows/asks-merge.yml': sd('.github/workflows/asks-merge.yml') },
-  [own(7, 'File a made-up question')], [{ name: 'governance', status: 'completed', conclusion: 'success' }]);
-  r.prFiles = { 7: [{ filename: 'questions/N-filed.md', status: 'added' }] };
-  r.jobs = { asksRuns: [{ id: 1, event: 'workflow_run', head_branch: 'main', status: 'completed', conclusion: 'success', run_started_at: '2026-10-18T11:30:00Z', updated_at: '2026-10-18T11:30:00Z' }],
-    checks: { [HEAD79]: { checkRuns: [{ id: 1, name: 'build', status: 'in_progress', conclusion: null, completed_at: null, check_suite: { id: 10 } }], statuses: [], workflowRuns: [{ check_suite_id: 10, path: '.github/workflows/desk-build.yml' }] } },
-    runJobs: { 1: [{ id: 101, name: 'merge', status: 'completed', conclusion: 'success' }] }, logs: { 101: stamped('NOTE: the asks-merge grant is L-0017') }, commits: {} };
-  const repos = { 'Service-Desk': r, 'Personal-Org-Operating-Model': repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md') }, [], [{ name: 'tests', status: 'completed', conclusion: 'success' }]) };
-  const pfRepo = addPortfolio(repos, pfFiles());
-  let free = null;
-  pfRepo.hold = new Promise((ok) => { free = ok; }); // made up (NOT real)
-  return { config: withPortfolio(BASE_CONFIG), repos, release: () => { pfRepo.hold = null; free(); }, pfRepo };
+// Round 2 (the Reviewer's B2): "states 3 to 5 never get one" was locked only on this file's own copy of `readOf`; these read
+// the page's own derivation (sandbox.js `readOf`'s `onWay`) on the screen, a project read in this opening in state 3 and then
+// in state 4, its first read long answered.
+test('AC91 (c), AC89 (a), G9c: with every project shown, a project read in this opening gets no "Still reading" line — state 3 (read, fresh), and state 4 (back in view after 10 minutes, its re-read held: not fresh, a read on its way again, made up), each list whole', async () => {
+  const s = heldReadsState();
+  const app = await open(s);
+  try {
+    for (const n of [SD.name, POOM.name, MIX_PROJECT]) assert.equal(readState(app.desk.states.get(n), app.desk, app.now).read, 'ok', `${n}: state 3`);
+    assert.deepEqual(qlines(app), [NOTHING(SD.name, POOM.name)], 'state 3: no "Still reading" line, the made-up project\'s cards in the lanes');
+    s.repos[MIX_PROJECT].hold = new Promise(() => {}); // made up (NOT how any read went): its re-reads never answer
+    await app.visibility('hidden');
+    await app.advance(10 * 60e3);
+    await app.visibility('visible');
+    await app.advance(1000);
+    const st = app.desk.states.get(MIX_PROJECT);
+    assert.equal(readState(st, app.desk, app.now).read, 'checking', 'its read on its way again');
+    assert.ok(st.lastSuccessAt != null && st.lastSuccessAt >= app.desk.openedAt, 'read in this opening: state 4');
+    assert.deepEqual(qlines(app), [NOTHING(SD.name, POOM.name)], 'state 4: no "Still reading" line, its re-read not its first');
+  } finally {
+    app.restore();
+  }
+});
+
+// From G9c's draft 3 (the owner's ruling of 2026-10-25, "Ruling: A", decisions/questions/P-001-glance-g9c-row.md: "Each on its
+// own row — every "Still reading" line starts a new row; a small style change in G9c."; AC91 (c), "each on a row of its
+// own"). The suite has no browser, so here each layout is the cascade's: the quiet lines' box a wrapping flex row, each
+// "Still reading" line `flex-basis: 100%` (a row it alone holds) and every other line with none, so the lines between two
+// "Still reading" lines wrap side by side as before. Each line's box is measured in Chromium, its top against the lines
+// before and after it and its width against the box's, at 360 × 740 and 414 × 896 in light and dark, by the capture tool's
+// g9c- run (tests/desk/tools/glance-shots.mjs, its "rows" readout; a failure fails that run).
+/** The quiet lines as the box lays them out by the cascade: runs of lines that may share rows, each "Still reading" line a run of its own. */
+function runsOf(app, theme, width) {
+  const c = cascaded(app, theme, width);
+  const box = quiet(app);
+  const b = c.get(box);
+  assert.equal(plain(b.declared.get('display')), 'flex', `${theme}, ${width} px: the box a flex row`);
+  assert.equal(plain(b.declared.get('flex-wrap')), 'wrap', `${theme}, ${width} px: wrapping`);
+  const runs = [];
+  let run = null;
+  for (const el of box.children.filter((e) => e.dataset && e.dataset.k)) {
+    const basis = plain(c.get(el).declared.get('flex-basis') || '');
+    const own = /^ql:reading:/.test(el.dataset.k);
+    assert.equal(basis, own ? '100%' : '', `${theme}, ${width} px: ${el.dataset.k}'s flex-basis`);
+    if (own) {
+      assert.ok(has(el, 'v2-ql') && has(el, 'v2-qread'), `${el.dataset.k}: \`.v2-qread\` beside \`.v2-ql\``);
+      runs.push([el.dataset.k]);
+      run = null;
+    } else {
+      if (!run) runs.push(run = []);
+      run.push(el.dataset.k);
+    }
+  }
+  return runs;
 }
+const RUNS = [
+  ['after a red line (`failedHeldState`)', () => open(failedHeldState()), [['ql:nothing', `ql:cant:${MIX_PROJECT}`], [`ql:reading:${SD.name}`]]],
+  ['after another "Still reading" line (`failedHeldState({ poomHeld: true })`)', () => open(failedHeldState({ poomHeld: true })), [[`ql:cant:${MIX_PROJECT}`], [`ql:reading:${SD.name}`], [`ql:reading:${POOM.name}`]]],
+  ['before the portfolio\'s line, the first paint', () => loadSandbox({ ...heldReadsState({ portfolio: true }), hash: '#/waiting', now: NOW, store: g8cStore(SINCE_LATE) }),
+    [[`ql:reading:${SD.name}`], [`ql:reading:${POOM.name}`], [`ql:reading:${MIX_PROJECT}`], ['ql:reading:portfolio']]],
+  ['before a grey quiet line, "Being recorded by the automatic job" (`recordingState`)', async () => {
+    const r = recordingState();
+    const app = await loadSandbox({ config: r.config, repos: r.repos, hash: '#/waiting', now: RECORDING_NOW });
+    for (let i = 0; i < 4; i++) await app.advance(60_000);
+    return app;
+  }, [['ql:nothing'], ['ql:reading:portfolio'], ['ql:recording']]],
+  ['the other lines side by side: "With the agents" beside "Nothing waiting" (`agentsState`)', () => open(agentsState({ held: [SD.name, POOM.name] })),
+    [['ql:agents', 'ql:nothing'], [`ql:reading:${SD.name}`], [`ql:reading:${POOM.name}`]]],
+  ['the other lines side by side: the red lines (`orderState`)', () => open(orderState()), [[`ql:cant:${SD.name}`, `ql:cant:${POOM.name}`, `ql:cant:${MIX_PROJECT}`]]],
+];
+
+test('AC91 (c), G9c draft 3: each "Still reading" line holds a row of its own — after a red line, after another "Still reading" line, before the portfolio\'s line and before a grey quiet line; the other quiet lines wrap side by side as before where none falls between them; at 360 and 414 px, in light and dark', async () => {
+  for (const [what, openIt, want] of RUNS) {
+    const app = await openIt();
+    try {
+      for (const theme of ['light', 'dark']) for (const width of [360, 414]) assert.deepEqual(runsOf(app, theme, width), want, `${what}, ${theme}, ${width} px`);
+    } finally {
+      app.restore();
+    }
+  }
+});
 
 test('AC91 (c), G9c: the portfolio\'s read held (made up) — "Still reading the portfolio…" last of the "Still reading" lines and before "Being recorded by the automatic job", in the same grey look; its read answering, gone; its read failing instead, "✕ Can\'t read your portfolio since HH:MM" in its place, as built', async () => {
   // Beside Service-Desk's held first read, on `mix` with a made-up portfolio.
@@ -442,7 +497,7 @@ test('AC91 (c), G9c: the portfolio\'s read held (made up) — "Still reading the
     s.release();
     await app.advance(2 * POLL_MS);
     assert.ok(app.desk.portfolio().tree, 'the portfolio read');
-    assert.deepEqual(qlines(app).filter(([k]) => /^ql:(reading|cant):/.test(k)), [], 'its read answered: gone, with Service-Desk\'s');
+    assert.deepEqual(qlines(app), [NOTHING(SD.name, POOM.name)], 'its read answered: gone, with Service-Desk\'s');
   } finally {
     s.release();
     app.restore();
@@ -450,12 +505,13 @@ test('AC91 (c), G9c: the portfolio\'s read held (made up) — "Still reading the
   const f = heldReadsState({ portfolio: true, portfolioHeld: true });
   const failing = await open(f);
   try {
-    assert.deepEqual(qlines(failing).slice(-1), [RP]);
+    assert.deepEqual(qlines(failing), [NOTHING(SD.name, POOM.name), RP]);
     f.failPortfolio();
     await failing.advance(2 * POLL_MS);
-    const last = qlines(failing).slice(-1)[0];
-    assert.equal(last[0], 'ql:cant:portfolio');
-    assert.match(last[1], /^Can't read your portfolio since \d\d:\d\d$/, 'J23\'s words, as built');
+    const got = qlines(failing);
+    assert.deepEqual(got.map(([k]) => k), ['ql:nothing', 'ql:cant:portfolio'], JSON.stringify(got));
+    assert.deepEqual(got[0], NOTHING(SD.name, POOM.name));
+    assert.match(got[1][1], /^Can't read your portfolio since \d\d:\d\d$/, 'J23\'s words, as built');
     assert.equal(keyed(failing, 'ql:reading:portfolio'), null, 'the two never together');
   } finally {
     f.release();
@@ -463,13 +519,10 @@ test('AC91 (c), G9c: the portfolio\'s read held (made up) — "Still reading the
   }
   // Beside AC79's "Being recorded by the automatic job" (Service-Desk's records at ef8daf4, real; its pull request and job made up).
   const r = recordingState();
-  const rec = await loadSandbox({ config: r.config, repos: r.repos, hash: '#/waiting', now: T79 });
+  const rec = await loadSandbox({ config: r.config, repos: r.repos, hash: '#/waiting', now: RECORDING_NOW });
   try {
     for (let i = 0; i < 4; i++) await rec.advance(60_000);
-    const keys = qlines(rec).map(([k]) => k);
-    assert.ok(keys.includes('ql:recording'), JSON.stringify(qlines(rec)));
-    assert.equal(keyed(rec, 'ql:recording').textContent, `${BEING_RECORDED_WORDS}: 1`);
-    assert.equal(keys.indexOf('ql:reading:portfolio') + 1, keys.indexOf('ql:recording'), 'the portfolio\'s line just before it');
+    assert.deepEqual(qlines(rec), [NOTHING(SD.name, POOM.name), RP, ['ql:recording', `${BEING_RECORDED_WORDS}: 1`]], 'the portfolio\'s line just before it');
   } finally {
     r.release();
     rec.restore();
@@ -497,7 +550,7 @@ test('AC89 (a), G9c: one project shown alone in state 1, no "Still reading" line
   }
 });
 
-test('AC91 (c), AC80, G9c: signed out — `signedOutState` (no read before the sign-out), `signedOutState` read before it and `signedOutMixedState`: one "✕ Signed out — reload to sign in" line, keyed once, first among the quiet lines, and no `ql:cant:` or `ql:show:` line and no portfolio red line; the line under the title as G9b gives it; the lanes\' "Can\'t read" and "Kicked back · can\'t read"; Home\'s signed-out briefing unchanged', async () => {
+test('AC91 (c), AC80, G9c: signed out — `signedOutState` (no read before the sign-out), `signedOutState` read before it and `signedOutMixedState`: the quiet lines are the one "✕ Signed out — reload to sign in" line, keyed once, and no `ql:cant:` or `ql:show:` line and no portfolio red line; the line under the title as G9b gives it; the lanes\' "Can\'t read" and "Kicked back · can\'t read"; Home\'s signed-out briefing unchanged', async () => {
   const cases = [
     ['no read before the sign-out', () => { const s = signedOutState(); return open(s, '#/waiting', { before: s.fail }); }, NOT_READ],
     ['every project read before it', () => { const s = signedOutState(); return open(s, '#/waiting', { later: s.fail }); }, CHECKED],
@@ -506,9 +559,9 @@ test('AC91 (c), AC80, G9c: signed out — `signedOutState` (no read before the s
   for (const [what, opened, under] of cases) {
     const app = await opened();
     try {
-      const all = qlines(app);
-      assert.deepEqual(all[0], SO, `${what}: first among the quiet lines`);
-      assert.equal(all.filter(([k]) => k === 'ql:signed-out').length, 1, `${what}: keyed once`);
+      // Round 2 (the Reviewer's N2): the whole list. Here it holds the one line alone; its place first among other quiet lines is
+      // the next case's (the Reviewer's B1).
+      assert.deepEqual(qlines(app), [SO], `${what}: the quiet lines, whole`);
       assert.equal(findAll(app.view, (e) => e.dataset && /^ql:(cant|show):/.test(e.dataset.k || '')).length, 0, `${what}: no project's red line, and no portfolio's`);
       assert.ok(has(keyed(app, 'ql:signed-out'), 'bad') && findAll(keyed(app, 'ql:signed-out'), (e) => e.tag === 'svg').length === 1, `${what}: in its red look with its ✕`);
       if (under instanceof RegExp) assert.match(sub(app), under, what); else assert.equal(sub(app), under, what);
@@ -525,8 +578,26 @@ test('AC91 (c), AC80, G9c: signed out — `signedOutState` (no read before the s
 });
 
 const has = (e, c) => ` ${(e && e.className) || ''} `.includes(` ${c} `);
+const AGENTS = ['ql:agents', 'With the agents: 1'];
 
-test('AC91 (c), G9c: signed out, a held read not yet refused keeps its "Still reading" line under the signed-out one until refused — a project\'s and the portfolio\'s (made up); the other quiet lines as built under it; with one project shown, G8d\'s line above the lanes ending "Signed out — reload to sign in", kept', async () => {
+// Round 2 (the Reviewer's B1): the three states above draw no other quiet line, so they could not tell whether the
+// signed-out line is first. `agentsState` (made up, NOT real) keeps "With the agents: 1" drawn from the made-up project's last
+// read once every read is refused, so the signed-out line's place above it, the top of the quiet lines, is asserted whole.
+test('AC91 (c), AC80, G9c: signed out with another quiet line still drawn (`agentsState`, made up: a pull request "With the agents") — "✕ Signed out — reload to sign in" first, above "With the agents", the whole list in order; before the sign-out, "With the agents" beside "Nothing waiting" and no signed-out line', async () => {
+  const s = agentsState();
+  const app = await open(s);
+  try {
+    assert.deepEqual(qlines(app), [AGENTS, NOTHING(SD.name, POOM.name, MIX_PROJECT)], 'before the sign-out, as built');
+    s.fail();
+    await app.advance(3 * POLL_MS);
+    assert.ok(app.desk.signedOut, 'signed out');
+    assert.deepEqual(qlines(app), [SO, AGENTS], 'the signed-out line at the top, the other quiet lines as built under it');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC91 (c), G9c: signed out, a held read not yet refused keeps its "Still reading" line under the signed-out one until refused — a project\'s and the portfolio\'s (made up), each list whole; with one project shown, G8d\'s line above the lanes ending "Signed out — reload to sign in", kept', async () => {
   const s = heldReadsState({ held: [SD.name], portfolio: true, portfolioHeld: true });
   const app = await open(s);
   try {
@@ -685,11 +756,11 @@ const INK2 = { light: '#5c5f66', dark: '#a2a5ac' };
 const BAD = { light: '#b3162a', dark: '#ff6b78' };
 const plain = (v) => String(v == null ? '' : v).replace(/⟦[^|⟧]*\|([^⟧]*)⟧/g, '$1').trim();
 const marksIn = (v) => [...String(v || '').matchAll(/⟦([^|⟧]*)\|/g)].map((m) => m[1]);
-function cascaded(app, theme) {
+function cascaded(app, theme, width = 360) {
   const root = document.documentElement;
   const attrs = { ...(root.attrs || {}) };
   if (theme === 'dark') attrs['data-theme'] = 'dark'; else delete attrs['data-theme'];
-  const tree = cascade(treeOf(app.view, { className: root.className, attrs }), RULES, { scheme: 'light', width: 360, reducedMotion: false });
+  const tree = cascade(treeOf(app.view, { className: root.className, attrs }), RULES, { scheme: 'light', width, reducedMotion: false });
   const out = new Map();
   for (const n of nodes(tree)) if (n.el) out.set(n.el, n);
   return out;
@@ -699,11 +770,11 @@ assert.match(SANDBOX_CSS, /\.v2-ql \{ display: inline-flex; align-items: center;
 assert.match(SANDBOX_CSS, /\.v2-ql\.bad \{ color: var\(--bad\); \}/, 'the red quiet line\'s rule, unchanged in G9c');
 /** What each of G9C_OPENS draws: its read lines and signed-out line on Waiting, or its page's row. */
 const G9C_WANT = new Map([
-  ['Waiting, every project shown, one first read failed and one on its way', [X(MIX_PROJECT), R(SD.name)]],
+  ['Waiting, every project shown, one first read failed and one on its way', [NOTHING(POOM.name), X(MIX_PROJECT), R(SD.name)]],
   ['Waiting, every project shown, one first read failed and two on their way', [X(MIX_PROJECT), R(SD.name), R(POOM.name)]],
   ['Waiting, every project shown, the first paint, every first read on its way, the portfolio\'s among them', [R(SD.name), R(POOM.name), R(MIX_PROJECT), RP]],
-  ['Waiting, every project shown, the portfolio\'s read on its way beside Service-Desk\'s', [R(SD.name), RP]],
-  ['Waiting, every project shown, a project the desk can\'t draw, its parts still arriving', [[`ql:show:${MIX_PROJECT}`, `Can't show ${MIX_PROJECT}`]]],
+  ['Waiting, every project shown, the portfolio\'s read on its way beside Service-Desk\'s', [NOTHING(POOM.name), R(SD.name), RP]],
+  ['Waiting, every project shown, a project the desk can\'t draw, its parts still arriving', [NOTHING(SD.name, POOM.name), [`ql:show:${MIX_PROJECT}`, `Can't show ${MIX_PROJECT}`]]],
   ['Waiting, every project shown, signed out, one project never read before it and the others read', [SO]],
   ['Waiting, every project shown, signed out from the start', [SO]],
   ['Waiting, every project shown, every first read failed, not signed out', [X(SD.name), X(POOM.name), X(MIX_PROJECT)]],
@@ -717,7 +788,7 @@ test('AC91 (c), AC88, G9c, on G9C_OPENS (made up, NOT real), in light and dark: 
     try {
       const want = G9C_WANT.get(where);
       if (want) {
-        assert.deepEqual(qlines(app).filter(([k]) => /^ql:(reading|cant|show|signed-out):/.test(`${k}:`)), want, `${where}: its lines`);
+        assert.deepEqual(qlines(app), want, `${where}: its quiet lines, whole`);
       } else {
         await redraw(app);
         assert.deepEqual(pageRow(app), ['Nothing waiting on you', own(app, SD.name)], `${where}: its row`);

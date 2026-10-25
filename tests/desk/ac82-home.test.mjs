@@ -270,6 +270,13 @@ test('AC82: each tile, top to bottom (frame H5) — Service-Desk (a second run, 
     assert.match(nextIcon.getAttribute('class'), /st-you/, 'the vermilion ◆ beside it');
     assert.match(keyed(app, 'ptl-words:Alpha').textContent, /the Build gate waits on you/, 'and in the timeline, said in words');
     assert.ok(findAll(keyed(app, 'card:Alpha'), (e) => / v2-c /.test(` ${e.className} `) && /\bph-build\b/.test(e.className) && e.children.some((x) => x.tag === 'svg' && /st-you/.test(x.getAttribute('class')))).length, 'the ◆ in the Build cell');
+    // Rewritten in G7 of "After the glance audit" (AC92 (a): "the reached check … on a Home tile's drawing" in --ok, on the
+    // mark only; "a reached mark in a run later gone back over stays grey"): a tile's finished phase's check is a status mark
+    // (`.ok`), a gone-back-over one's lighter check is not, and no other cell's icon is (their cascade in light and dark:
+    // tests/desk/ac92-glance-palette.test.mjs).
+    const cellIcons = ['Service-Desk', 'Alpha'].flatMap((n) => findAll(keyed(app, `card:${n}`), (e) => e.tag === 'svg' && e.parent && / v2-c /.test(` ${e.parent.className} `)).map((x) => x.getAttribute('class')));
+    assert.ok(cellIcons.some((c) => / st-pastcheck /.test(` ${c} `)), JSON.stringify(cellIcons));
+    for (const c of cellIcons) assert.equal(/ ok /.test(` ${c} `), / st-check /.test(` ${c} `), `${c}: green only on a reached check`);
     assert.deepEqual(lines('Delta'), ['Now: sprint m1.4 · older pipeline: sprints, not phases', 'No dispatch log: not used here', 'Next: sprint m1.4 · no estimate filed']);
     for (const n of ['Service-Desk', 'Alpha', 'Delta']) {
       assert.equal(byClass(keyed(app, `card:${n}`), 'sb-bubble').length + findAll(keyed(app, `card:${n}`), (e) => e.attrs && e.attrs['aria-label'] === 'Latest').length, 0, `${n}: no "Latest"`);

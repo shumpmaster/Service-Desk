@@ -5,11 +5,15 @@
 // made-up gate cards at one gate; G4 adds `gates`' `sameItem` (one item's two gate cards at one gate) and Done marks
 // with `id`, `title` and `confirmedAt` (its failed load is app.js served with no sandbox.js, built in its own test and
 // tools/glance-shots.mjs); G5 adds `mix`'s made-up later Launch run for F1 and F2 (`laterLaunch`); G6 adds `standard`, every
-// standard line written in Service-Desk's section 3; the later stages add theirs. Each
+// standard line written in Service-Desk's section 3; G7 adds made-up workflow runs on a head (`ciState`) and the screens
+// its palette's marks are drawn on, opened as the owner opens them (`G7_OPENS`); the later stages add theirs. Each
 // made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
 import { CONFIG, fixture } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
-import { waSetup, SD, POOM } from './wa-fixtures.mjs';
+import { waSetup, WORKED, memStore, SD, POOM } from './wa-fixtures.mjs';
+import { loadSandbox, findAll } from './sandbox-helpers.mjs';
+import { sdRepo, SD3, pullNodes, answerOf } from './tv2-fixtures.mjs';
+import { POLL_MS } from '../../src/lib/scheduler.js';
 import { fullRepo, v3, extremes, NOW } from './sandbox-fixtures.mjs';
 import { pullsAnswer } from './j12-fixture.mjs';
 import { STANDARD_MILESTONES } from '../../src/lib/timeline.js';
@@ -232,5 +236,106 @@ export function standardState({ ids = null } = {}) {
   s.repos[SD.name].commit({ 'docs/PROJECT.md': standardLines(s.repos[SD.name].files['docs/PROJECT.md'], ids) });
   return s;
 }
+
+/**
+ * G7 (AC92 (a)): made-up workflow runs on a project's head (NOT how GitHub answered any read), so its CI reads `passing`
+ * (one run, success) or `failing` (one run, failure), AC29's states: on `text`, Service-Desk's (in place of none), or
+ * with `who` the made-up project of `mix` (beside its deploy waiting), or Personal-Org-Operating-Model's (v2.5).
+ */
+export const G7_RUN = { passing: { name: 'desk-tests', status: 'completed', conclusion: 'success' }, failing: { name: 'desk-tests', status: 'completed', conclusion: 'failure' } };
+export function ciState(ci, { who = SD.name } = {}) {
+  const s = who === MIX_PROJECT ? mixState() : textState();
+  s.repos[who].runs.push({ ...G7_RUN[ci] });
+  return s;
+}
+
+/**
+ * G7 (AC92 (a)): a waiting deploy whose commit is no passed pull request's merge, so its sheet's mark is the mismatch's
+ * ✕ (AC72), as AC72's test makes it: Service-Desk at 3117150 with J12's built answer, PR #77's merge commit made the
+ * fake repository's head and a made-up PASS verdict for it (NOT real records, NOT as GitHub sent it), a push run of
+ * desk-deploy waiting (a match) and a hand-started one at another commit (made up: no merge has it).
+ */
+export function mismatchState() {
+  const r = sdRepo({ extra: { 'reviews/77/reviewer.md': 'Verdict: PASS\n\nMade up for the test (NOT a real record).\n' } });
+  const head = r.head();
+  r.pullsAnswer = answerOf(pullNodes().map((n) => (n.number === 77 ? { ...n, mergeCommit: { oid: head } } : n)));
+  r.runs.push({ name: 'desk-deploy', path: '.github/workflows/desk-deploy.yml', status: 'waiting', conclusion: null, event: 'workflow_dispatch', run_number: 7,
+    headSha: 'd'.repeat(40), title: `deploy ${'d'.repeat(40)} — production` });
+  return { config: { ...CONFIG, projects: [{ ...SD3, deploysNeedOwner: true }] }, repos: { 'Service-Desk': r } };
+}
+
+const tapAll = async (app, pick) => {
+  for (let i = 0; i < 200; i++) {
+    const b = findAll(app.view, pick)[0];
+    if (!b) return;
+    await app.tap(b);
+  }
+};
+const closed = (attr) => (e) => e.tag === 'button' && e.attrs && e.attrs[attr] != null && e.attrs['aria-expanded'] === 'false';
+const byKey = (app, k) => findAll(app.view, (e) => e.dataset && e.dataset.k === k)[0] || null;
+async function g7Open(setup, hash, { now = NOW, store = memStore(), polls = 1 } = {}) {
+  const app = await loadSandbox({ ...setup, hash, now, store });
+  await app.advance(1000);
+  for (let i = 0; i < polls; i++) await app.advance(POLL_MS);
+  return app;
+}
+/**
+ * G7 (AC92 (a)): the screens the palette's marks are drawn on that AC88's walk doesn't open, each opened as the owner
+ * opens it, as [name, open() → the open page]: a project's page with every phase opened; the Timeline with every
+ * sprint fold and the status icons' key opened (J11's 3117150, its #40's checks failed); Plan with a row moved in its
+ * ordering, the ordering closed again, and Reached opened; Details opened over a passing and a failing CI line, a v2.5 page's CI row passing, and
+ * a card's sheets over a failing one; a deploy's mismatch; the Done lane's confirmed row; a page that can't be read with
+ * nothing waiting (its waits row's can't-read line); and the briefing holding a can't-read line under its count.
+ */
+export const G7_OPENS = [
+  ['page, every phase opened', async () => {
+    const app = await g7Open(textState(), `#/p/${SD.name}`);
+    for (const ph of ['Launch', 'Build', 'Design', 'Discovery']) await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs && e.attrs['aria-label'] === ph)[0]);
+    return app;
+  }],
+  ['Timeline, every sprint opened', async () => {
+    const app = await g7Open({ config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': sdRepo() } }, '#/p/Service-Desk/timeline', { polls: 2 });
+    await tapAll(app, closed('data-sprints'));
+    await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.textContent === 'Status icons')[0]);
+    return app;
+  }],
+  ['Plan, a row moved and Reached opened', async () => {
+    const app = await g7Open(waSetup({ extra: { 'intake/estimates.jsonl': WORKED() } }), '#/work', { now: Date.parse('2026-10-18T18:00:00Z') });
+    await app.tap(byKey(app, 'plan-order'));
+    await app.tap(findAll(app.view, (e) => e.tag === 'button' && /^wa-up:/.test((e.dataset && e.dataset.k) || '') && e.attrs['aria-disabled'] !== 'true')[0]);
+    await app.tap(byKey(app, 'plan-order')); // the ordering closed again: the moved row keeps its edge until the next move
+    await app.tap(findAll(app.view, (e) => e.tag === 'button' && / v2-plfold /.test(` ${e.className} `) && /^Reached/.test(e.textContent))[0]);
+    return app;
+  }],
+  ...['passing', 'failing'].map((ci) => [`Details, CI ${ci}`, async () => {
+    const app = await g7Open(ciState(ci), `#/p/${SD.name}`);
+    await app.tap(byKey(app, 'more-detail'));
+    return app;
+  }]),
+  ['a v2.5 page, CI passing', async () => g7Open(ciState('passing', { who: POOM.name }), `#/p/${POOM.name}`)],
+  ...['question', 'pr'].map((kind) => [`a ${kind}'s sheet, CI failing`, async () => g7Open(ciState('failing', { who: MIX_PROJECT }), `#/waiting/card/${encodeURIComponent(CARD[kind](MIX_PROJECT))}`)]),
+  ['a deploy\'s mismatch', async () => {
+    const app = await g7Open(mismatchState(), '#/waiting/Service-Desk', { polls: 2 });
+    const sheet = findAll(app.view, (e) => e.tag === 'a' && /\/card\/[^/]*%7Cdeploy%7C/.test(e.attrs.href || ''))[0];
+    await app.go(sheet.attrs.href);
+    return app;
+  }],
+  ['the Done lane, a confirmed row', async () => g7Open(gatesState(), '#/waiting', { store: memStore(deviceMarks([
+    { project: MIX_PROJECT, kind: 'gate', id: GATE_KEY(MIX_PROJECT, 'queue/P-009-launch-1.md'), title: 'The Launch gate, case 1 · P-009', at: NOW - 3 * 3600e3, confirmedAt: NOW - 2 * 3600e3 }])), polls: 0 })],
+  ['a page that can\'t be read, nothing waiting', async () => {
+    const s = unreadState({ who: SD.name });
+    const app = await g7Open(s, `#/p/${SD.name}`);
+    s.fail();
+    await app.advance(3 * POLL_MS);
+    return app;
+  }],
+  ['the briefing, a can\'t-read line under its count', async () => {
+    const s = unreadState({ who: SD.name });
+    const app = await g7Open(s, '#/');
+    s.fail();
+    await app.advance(3 * POLL_MS);
+    return app;
+  }],
+];
 
 export { SD, POOM, CONFIG };

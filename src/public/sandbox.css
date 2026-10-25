@@ -766,6 +766,10 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
 .v2-bdue > .v2-k { margin-top: 1px; color: var(--ink); }
 .v2-bdue.none { display: none; }
 .v2-bt3.bad, .v2-brief .v2-k.bad { color: var(--bad); }
+/* AC91 (c), from G7: a can't-read line under the briefing's first carries the ✕ before its words, as the due lines carry
+   their clock (`.v2-bdue`). */
+.v2-bcant { display: flex; gap: 4px; align-items: flex-start; }
+.v2-bcant > .v2-k { margin-top: 1px; }
 .v2-go { font: var(--t-label); color: var(--ink2); padding-top: 3px; }
 .v2-brief:focus-visible { outline-offset: 2px; }
 .v2-sh { display: flex; align-items: center; justify-content: space-between; gap: 8px; font: var(--t-label); color: var(--ink2); padding-top: 10px; min-height: 28px; }
@@ -847,6 +851,17 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
 .v2-s.soft { color: var(--ink2); }
 .v2-s.st-pastcheck { opacity: .5; }
 .v2-k.st-you .you { fill: var(--you); }
+/* After the glance audit, G7 (AC92 (a); P-001-glance2-palette.md, A, "on the 14–16 px mark only, never on words, rows or
+   borders"): a status mark the page draws as one (sandbox.js, smk) takes --ok where reached and --bad where not reached;
+   its words stay ink or grey, and every other mark (absences, the lighter gone-back-over check) keeps its own. */
+.v2-s.st-check.ok { color: var(--ok); }
+.v2-s.st-cross.bad { color: var(--bad); }
+/* A CI line's ✓ or ✕ before its words (AC92 (a), sandbox.js, ciMark), inline in the line's text. */
+.v2-cim { vertical-align: -2px; margin-right: 4px; }
+.v2-cim.ok { color: var(--ok); }
+.v2-cim.bad { color: var(--bad); }
+/* A waiting deploy's mismatch mark (AC72), its words in ink. */
+.v2-safe.bad > .v2-safe-l > .v2-k { color: var(--bad); }
 .v2-ptl { display: grid; gap: 0; margin-top: 2px; }
 .v2-rwl, .v2-lbl { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; }
 .v2-rk { font: 400 11px/1.35 var(--font); color: var(--ink2); }
@@ -1161,7 +1176,8 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-stats { align-items: center; }
 .v2-timeline .v2-stats .sb-mkw, .v2-timeline .v2-stats .sb-mkw > summary { font: 400 11px/1.35 var(--font); color: var(--ink2); }
 .v2-timeline .v2-stats span.sb-mkw, .v2-timeline .v2-stats .sb-mkw > summary { display: inline-flex; align-items: center; gap: 2px; }
-.v2-stats .v2-smk { width: 10px; height: 10px; color: inherit; } /* the ✕ in its word's --ink2, as frame 7b draws the marks */
+.v2-stats .v2-smk { width: 10px; height: 10px; color: var(--bad); } /* the ✕ in --bad, its word staying --ink2 (AC92 (a), from G7) */
+.v2-stats .v2-okm { color: var(--ok); font-weight: 600; } /* the ✓ in --ok, its word staying --ink2 (AC92 (a), from G7; round 2's mock, changes2.js q1) */
 .v2-spt { font: var(--t-row); overflow-wrap: break-word; margin: 0; }
 .v2-bl { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 8px; align-items: start; padding-left: 8px; border-left: 2px solid var(--line2); }
 .v2-bn { font: var(--t-label); color: var(--ink2); padding-top: 1px; }
@@ -1227,8 +1243,9 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-plmv { width: 36px; height: 32px; display: grid; place-items: center; border-radius: 8px; background: var(--chip); color: var(--ink); }
 .v2-plmv[aria-disabled="true"] { color: var(--ink2); background: var(--bg2); cursor: default; }
 .v2-plmv[aria-disabled="true"] .v2-k { opacity: .45; }
-/* The row moved last: a gold edge until the next move, with "moved" in its words (AC24). */
-.v2-plli.moved { box-shadow: inset 2px 0 0 var(--gold); border-radius: 2px; }
+/* The row moved last: an edge in the light line grey until the next move, with "moved" in its words (AC24; after the
+   glance audit, G7, P-001-glance-plan-gold.md, A: gold means only "next to reach"). */
+.v2-plli.moved { box-shadow: inset 2px 0 0 var(--line2); border-radius: 2px; }
 .v2-plli.moved > .v2-plrow { padding-left: 8px; }
 .v2-plcard { display: grid; gap: 2px; padding: 12px; border-radius: 12px; background: var(--bg2); }
 .v2-plbig { font: var(--t-sheet); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -1249,6 +1266,8 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-plmini { display: grid; gap: 4px; padding: 2px 0 6px; }
 .v2-plmini > li { overflow-wrap: anywhere; }
 .v2-plt { font-weight: 500; color: var(--ink); }
+/* The Reached list's check before each name (AC92 (a), from G7), in its line's text. */
+.v2-plmini > li > .v2-s { width: 14px; height: 14px; vertical-align: -2px; margin-right: 6px; }
 .v2-plideas { padding: 2px 0; }
 /* A milestone's sheet over Plan (AC86): AC24's whole row, its phase in words with its phase colour (AC24, AC48). */
 .v2-plph.ph-disc { color: var(--ph-disc); }

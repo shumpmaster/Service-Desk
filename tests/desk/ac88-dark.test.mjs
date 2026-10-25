@@ -34,7 +34,7 @@ import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
 import { BAD_PR } from './fake-desk.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
-import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD } from './glance-fixtures.mjs';
+import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS } from './glance-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -528,6 +528,222 @@ test('AC88 + AC69 (after MD3, stage 8; (b) item 37, the plan review of draft 1, 
   for (const want of ['the ◆', "Waiting's badge", 'a card\'s kind icon in Waiting on you', 'a card\'s kind icon in Kicked back']) assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
 });
 
+// G7 of "After the glance audit" (AC92 (a); AC88, changed: "the cascade check also checks where `--ok` and `--bad` are
+// drawn, in both themes: on status marks and the named error and can't-read states only"): every element whose colour,
+// ground, border colour or fill (its ::before and ::after too) resolves to --ok or --bad — by name (with the old look's
+// --pass, --fail and --block, which the trial view sets to them) or by the theme's value — and every text drawn in either,
+// is a status mark AC92 (a) lists or one of its named exceptions, and nothing else; the only border is AC75's warning's.
+const OKBAD_NAMES = ['--ok', '--bad', '--pass', '--fail', '--block'];
+/** Where a use of --ok or --bad sits, by AC92 (a)'s lists, or null when they have no place for it. */
+function okBadPlace(n) {
+  const up = (pred) => { for (let a = n.parent; a; a = a.parent) if (pred(a)) return a; return null; };
+  const p = n.parent;
+  const svg = n.tag === 'svg';
+  // Green, on the mark only.
+  if (svg && n.cls.has('v2-s') && n.cls.has('st-check') && n.cls.has('ok')) {
+    if (p && p.cls.has('v2-msi')) return 'mark: a reached check on the Timeline';
+    if (p && p.tag === 'li' && up((a) => a.cls.has('v2-keyl'))) return 'mark: the Timeline key\'s check';
+    if (p && p.cls.has('v2-pn')) return 'mark: a finished phase on the page\'s strip';
+    if (p && p.cls.has('v2-sm')) return 'mark: a reached check in an opened phase';
+    if (p && p.cls.has('v2-c')) return 'mark: a reached check on a Home tile\'s drawing';
+    if (p && p.tag === 'li' && up((a) => a.cls.has('v2-plmini'))) return 'mark: a check in Plan\'s Reached list';
+    if (p && p.cls.has('v2-prow') && p.attrs['data-k'] === 'page-ci') return 'mark: a passing CI row\'s check';
+    return null;
+  }
+  if (n.tag === 'span' && n.cls.has('v2-okm') && up((a) => a.cls.has('v2-stats'))) return 'mark: a sprint\'s ✓';
+  if (svg && n.cls.has('v2-k') && n.cls.has('ok') && p && p.cls.has('v2-drow')) return 'mark: the Done lane\'s ✓';
+  if (svg && n.cls.has('v2-cim') && n.cls.has('ok')) return 'mark: a passing CI line\'s ✓';
+  // Red, on the mark only.
+  if (svg && n.cls.has('v2-s') && n.cls.has('st-cross') && n.cls.has('bad')) {
+    if (p && (p.cls.has('v2-msi') || p.cls.has('v2-sm') || p.cls.has('v2-c') || p.cls.has('v2-pn'))) return 'mark: a not-reached cross';
+    if (p && p.tag === 'li' && up((a) => a.cls.has('v2-keyl'))) return 'mark: the Timeline key\'s cross';
+    if (p && p.cls.has('v2-prow') && p.attrs['data-k'] === 'page-ci') return 'mark: a failing CI row\'s cross';
+    return null;
+  }
+  if (svg && n.cls.has('v2-smk') && up((a) => a.cls.has('v2-stats'))) return 'mark: a sprint\'s ✕';
+  if (svg && n.cls.has('v2-cim') && n.cls.has('bad')) return 'mark: a failing CI line\'s ✕';
+  if (svg && n.cls.has('v2-k') && p && p.cls.has('v2-safe-l') && p.parent && p.parent.cls.has('v2-safe') && p.parent.cls.has('bad')) return 'mark: a deploy\'s mismatch';
+  // The named exceptions: can't-read lines, words and ✕ (ruled).
+  const brief = up((a) => a.cls.has('v2-brief'));
+  if (brief && svg && n.cls.has('v2-k') && n.cls.has('bad') && p && (p.cls.has('v2-bi') || p.cls.has('v2-bcant'))) return 'ruled: the briefing\'s ✕';
+  if (brief && n.tag === 'span' && n.cls.has('v2-bt3') && n.cls.has('bad')) return 'ruled: the briefing\'s can\'t-read line';
+  if (n.tag === 'span' && n.cls.has('v2-wt') && n.cls.has('bad')) return 'ruled: a tile\'s corner';
+  if (n.tag === 'p' && n.cls.has('v2-ln') && n.cls.has('bad')) return 'ruled: a tile\'s foot or a tile the desk can\'t draw';
+  if (svg && n.cls.has('v2-k') && p && p.tag === 'p' && p.cls.has('v2-ln') && p.cls.has('bad')) return 'ruled: a tile\'s foot or a tile the desk can\'t draw';
+  if (n.cls.has('v2-prow') && n.cls.has('bad')) return 'ruled: a page\'s waits row';
+  if (svg && n.cls.has('v2-k') && p && p.cls.has('v2-prow') && p.cls.has('bad')) return 'ruled: a page\'s waits row';
+  if (n.tag === 'p' && n.cls.has('v2-ql') && n.cls.has('bad')) return 'ruled: Waiting\'s and "Since you last looked"\'s quiet line';
+  if (n.tag === 'span' && n.cls.has('v2-hgb')) return 'ruled: a group head\'s can\'t-read count';
+  // A failed read in "Since you last looked" (reading (e)).
+  if (svg && n.cls.has('v2-k') && n.cls.has('bad') && p && p.cls.has('v2-ev')) return 'reading (e): a failed read\'s ✕';
+  // Error states (reading (e)).
+  if (n.tag === 'p' && n.cls.has('sb-stale')) return 'reading (e): a render-error screen';
+  if (n.cls.has('sb-warn') && up((a) => a.cls.has('sb-notify'))) return 'reading (e): the notifications warning';
+  if (svg && n.cls.has('v2-lfx')) return 'reading (e): the failed-load screen\'s ✕';
+  return null;
+}
+/** The lines AC92 (a) keeps ink or grey that G7's check names, or null: the portfolio's ink lines, its block's marks and Plan's ideas. */
+function okBadInk(n) {
+  const k = n.attrs['data-k'];
+  if (n.tag === 'p' && n.cls.has('v2-mark') && k === 'pfs-problem') return 'ink: the portfolio\'s problem line';
+  if (n.tag === 'p' && n.cls.has('v2-mark') && k === 'pf-note') return 'ink: a portfolio card\'s note';
+  if (n.tag === 'span' && n.cls.has('v2-pfnb')) {
+    for (const c of n.kids) if (c.tag === 'svg' && c.cls.has('st-check')) return 'ink: the portfolio block\'s "nothing queued" tick';
+    return 'ink: a portfolio block\'s mark';
+  }
+  if (n.cls.has('v2-plrow') && n.cls.has('v2-plidea')) return 'ink: Plan\'s ideas';
+  return null;
+}
+function okBadCheck(app, where, fails, seen, places) {
+  for (const way of WAYS) {
+    const root = document.documentElement;
+    const attrs = { ...(root.attrs || {}) };
+    if (way.attr) attrs['data-theme'] = way.attr; else delete attrs['data-theme'];
+    const tree = cascade(treeOf(app.view, { className: root.className, attrs }), RULES, way.env);
+    const vals = [THEME[way.theme]['--ok'].toLowerCase(), THEME[way.theme]['--bad'].toLowerCase()];
+    const isOkBad = (v) => marks(v).some((m) => OKBAD_NAMES.includes(m.name) || vals.includes(m.value.toLowerCase()));
+    const fail = (n, words) => { const k = `${way.theme} ${label(n)} ${words}`; if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(n)}${n.text.trim() ? ` "${n.text.trim().slice(0, 30)}"` : ''}: ${words}`); } };
+    for (const n of nodes(tree)) {
+      // The ink portfolio lines (AC92 (a): "the portfolio block's problem line and a card's note at Home's foot …
+      // `.v2-mark`, ink, their ✕ uncoloured, stay as built"), the portfolio block's own marks (its "nothing queued" tick an
+      // absence, never green) and Plan's ideas (not a status mark AC92 (a) lists): each drawn, and nothing in it --ok or
+      // --bad (the Reviewer's B1, G7 round 1).
+      const ink = okBadInk(n);
+      if (ink) {
+        const inside = [];
+        const walkIn = (x) => { inside.push(x); x.kids.forEach(walkIn); };
+        walkIn(n);
+        const red = inside.filter((x) => COLOUR_PROPS.some((prop) => x.declared.get(prop) != null && isOkBad(x.declared.get(prop))) || isOkBad(x.style.get('color') || ''));
+        if (red.length) fail(n, `${ink}: ${red.map(label).join(', ')} in --ok or --bad, where AC92 (a) keeps ink or grey`);
+        else places.add(ink);
+      }
+      // The grey "Can't show this" lines and the rules that draw nothing: never red, and never matched.
+      if (n.cls.has('v2-small') && n.cls.has('bad') && n.text.trim()) {
+        if (isOkBad(n.style.get('color') || '')) fail(n, 'a "Can\'t show this" line in --ok or --bad: it stays grey');
+        else places.add('grey: a "Can\'t show this" line');
+      }
+      if ((n.cls.has('v2-why') && n.cls.has('bad')) || (n.cls.has('circ') && n.cls.has('tick'))) fail(n, 'drawn by a rule AC92 (a) says draws nothing');
+      const uses = [];
+      for (const prop of COLOUR_PROPS) if (n.declared.get(prop) != null && isOkBad(n.declared.get(prop))) uses.push(prop);
+      for (const [pe, ps] of Object.entries(n.pseudo)) for (const prop of COLOUR_PROPS) if (ps.declared.get(prop) != null && isOkBad(ps.declared.get(prop))) uses.push(`::${pe} ${prop}`);
+      // A text in --ok or --bad, by its own rule or one above it: the element that gives it the colour must have a place.
+      let owner = null;
+      if (n.text.trim() && isOkBad(n.style.get('color') || '')) {
+        for (let a = n; a && !owner; a = a.parent) if (a.declared.get('color') != null && isOkBad(a.declared.get('color'))) owner = a;
+        if (!owner || !okBadPlace(owner)) fail(n, `its text in --ok or --bad${owner ? ` (from ${label(owner)})` : ''}, not a mark or exception AC92 (a) names`);
+      }
+      if (!uses.length) continue;
+      const place = okBadPlace(n);
+      if (!place) { fail(n, `--ok or --bad on ${uses.join(', ')}, not a mark or exception AC92 (a) names`); continue; }
+      places.add(place);
+      if (uses.some((u) => /border/.test(u)) && !n.cls.has('sb-warn')) fail(n, `a border in --ok or --bad (${uses.join(', ')}): AC75's warning's is the only one`);
+      if (uses.some((u) => /background|::/.test(u))) fail(n, `--ok or --bad on ${uses.join(', ')}: never on a fill`);
+    }
+  }
+}
+
+test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --ok and --bad are drawn — on every trial-view screen and sheet AC88\'s walks draw, from each of its fixtures (its portfolio states among them, with one nothing queued), the states where reads fail, the notifications refused and G7\'s own screens, in dark (forced, and the phone\'s own) and light, only on the status marks AC92 (a) lists and its named exceptions (the can\'t-read lines, a failed read in "Since you last looked", the error states and AC75\'s warning, its border the only one); never on a fill, a row, a heading or other words; the grey "Can\'t show this" lines still not red', async () => {
+  const fails = [];
+  const seen = new Set();
+  const places = new Set();
+  const counts = { screens: 0 };
+  const check = (app, where, f, s) => okBadCheck(app, where, f, s, places);
+  const walk = async (setup, projects, where, { hash = '#/', now = NOW, store = null } = {}) => {
+    const app = await opened(setup, hash, { now, store });
+    try {
+      await everyScreen(app, projects, where, fails, seen, counts, check);
+    } finally {
+      app.restore();
+    }
+  };
+  const t = textSetup();
+  await walk(t, t.config.projects, 'text');
+  const x = extremes();
+  await walk(x, x.config.projects, 'md-extremes');
+  await walk({ config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': sdRepo() } }, [SD3], 'service-desk + J12');
+  await walk(waSetup({ extra: { 'intake/estimates.jsonl': WORKED() } }), [], 'plan', { hash: '#/work', now: Date.parse('2026-10-18T18:00:00Z'), store: memStore() });
+  // The states the walk above never reaches: a project that can't be read, one whose drawing throws, the whole desk signed
+  // out, and the portfolio refused, each on Home, Waiting and the project's page.
+  const states = [
+    ["can't read", (r) => { r.Alpha.fail = { state: 'cant-read', reason: 'not-found' }; }, true],
+    ['render error', (r) => { r.Alpha.pulls.push(BAD_PR); }, false],
+    ['signed out', (r) => { for (const v of Object.values(r)) v.fail = { kind: 'signed-out' }; }, true],
+  ];
+  for (const [what, make, later] of states) {
+    const st = textSetup();
+    if (!later) make(st.repos);
+    const app = await opened(st);
+    try {
+      if (later) {
+        make(st.repos);
+        await app.advance(3 * POLL_MS);
+      }
+      for (const hash of ['#/', '#/waiting', '#/p/Alpha']) {
+        await app.go(hash);
+        check(app, `${what} ${hash}`, fails, seen);
+        counts.screens++;
+      }
+    } finally {
+      app.restore();
+    }
+  }
+  // The portfolio (from stage 6b, AC87, J23; made up, NOT real records, tests/desk/pf-fixtures.mjs), as AC88's own test
+  // walks it: a queued card and an odd one (the block's rows and sheets, a card under "Portfolio" with its note, Plan's
+  // ideas in each state); nothing queued (the block's "nothing queued" tick, an absence); and refused (its can't-read words).
+  // The Reviewer's B1 (G7 round 1): the first two were not walked, so an ink line or an absence could turn green unseen.
+  for (const [files, fail, where] of [
+    [{ queue: { 'PF-001-explore-1.md': cardText(1), 'PF-002-odd.md': 'Not a card (made up, NOT a real record)\n' } }, null, 'portfolio'],
+    [{}, null, 'portfolio, nothing queued'],
+    [{}, { state: 'cant-read', reason: 'no-access' }, 'portfolio refused']]) {
+    const p = waSetup({});
+    p.config = withPortfolio(p.config);
+    const r = addPortfolio(p.repos, pfFiles(files));
+    if (fail) r.fail = fail;
+    await walk(p, [], where, { now: Date.parse('2026-10-22T18:00:00Z'), store: memStore() });
+  }
+  // AC75's warning (made up: the desk added to the Home Screen, notifications refused in the phone's settings): its words
+  // and its 1 px border in --bad, the one red border (reading (e)), on Home and in a project's Details.
+  {
+    const app = await loadSandbox({ ...textSetup(), hash: '#/', now: NOW, win: { matchMedia: () => ({ matches: true }) }, globals: { Notification: { permission: 'denied' } } });
+    try {
+      await app.advance(1000);
+      await app.advance(61_000);
+      check(app, 'notifications refused #/', fails, seen);
+      await app.go('#/p/Service-Desk');
+      await app.tap(findAll(app.view, (e) => e.dataset && e.dataset.k === 'more-detail')[0]);
+      check(app, 'notifications refused #/p/Service-Desk Details', fails, seen);
+      counts.screens += 2;
+    } finally {
+      app.restore();
+    }
+  }
+  // Each mark AC92 (a) lists, drawn where the walk above doesn't open it, from the states G7's own test opens
+  // (tests/desk/ac92-glance-palette.test.mjs): an opened phase's rows and every sprint's marks; Plan's moved row and its
+  // Reached list; Details' and the sheets' CI lines, passing and failing; a deploy's mismatch; and the Done lane's ✓.
+  for (const [where, open] of G7_OPENS) {
+    const app = await open();
+    try {
+      check(app, `G7 ${where}`, fails, seen);
+      counts.screens++;
+    } finally {
+      app.restore();
+    }
+  }
+  assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
+  assert.deepEqual(fails, []);
+  // Each mark on AC92 (a)'s list and each exception the fixtures reach was drawn, so the check read them where they are meant to be.
+  for (const want of ['mark: a reached check on the Timeline', 'mark: a finished phase on the page\'s strip', 'mark: a reached check in an opened phase',
+    'mark: a reached check on a Home tile\'s drawing', 'mark: a check in Plan\'s Reached list', 'mark: a not-reached cross', 'mark: a sprint\'s ✓', 'mark: a sprint\'s ✕',
+    'mark: the Done lane\'s ✓', 'mark: a passing CI line\'s ✓', 'mark: a failing CI line\'s ✕', 'mark: a deploy\'s mismatch', 'mark: the Timeline key\'s check',
+    'mark: the Timeline key\'s cross', 'ruled: the briefing\'s ✕', 'ruled: the briefing\'s can\'t-read line', 'ruled: a tile\'s corner',
+    'ruled: a tile\'s foot or a tile the desk can\'t draw', 'ruled: a page\'s waits row', 'ruled: Waiting\'s and "Since you last looked"\'s quiet line',
+    'ruled: a group head\'s can\'t-read count', 'reading (e): the notifications warning', 'grey: a "Can\'t show this" line',
+    'ink: the portfolio\'s problem line', 'ink: a portfolio card\'s note', 'ink: the portfolio block\'s "nothing queued" tick', 'ink: a portfolio block\'s mark',
+    'ink: Plan\'s ideas']) {
+    assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
+  }
+});
+
 // Stage 8 (AC44, step 4; the Reviewer's B1, stage 8 round 1): the rules stage 8 removed from sandbox.css were the ones
 // nothing draws once the desk is `/`, so taking them out changes nothing the owner sees. Every desk screen and sheet from
 // each fixture is cascaded twice, in dark (forced and the phone's own) and light: once with the stylesheets as they stood
@@ -848,6 +1064,60 @@ const G6_EXCEPT = (n, d, theme) => {
   const k = G6_KEY(n);
   return Boolean(k && G6_ONCE.get(theme) && (G6_ONCE.get(theme).get(k) || []).includes(d)) ? `G6 ${theme} ${k} ${d}` : null;
 };
+/**
+ * G7 of "After the glance audit"'s changes to the look on purpose (the brief's rule; AC92 (a): "Green, `--ok`, on the mark
+ * only … Red, `--bad`, on the mark only"; AC24's note: "the edge is `--line2`, the light line grey, not gold"; AC91 (c): "each
+ * carries the ✕ icon in `--bad` before it"), each declaration pinned to its value, before and after, in each theme, on only
+ * its own element:
+ * - a status mark (sandbox.js's smk): the reached check (`svg.v2-s.st-check.ok`) in --ok and the not-reached cross
+ *   (`svg.v2-s.st-cross.bad`) in --bad, where AC92 (a) lists them — on the Timeline's rail (`.v2-msi`) and its key
+ *   (`.v2-keyl`), the page's strip (`.v2-pn`), an opened phase's rows (`li.v2-sm`), a Home tile's drawing (`.v2-c`) and a
+ *   v2.5 page's CI row (`page-ci`); and in Plan's Reached list (`ul.v2-plmini`, a new element there), the check at 14 px in
+ *   the line's text, 6 px before the name;
+ * - a CI line's ✓ or ✕ (`svg.v2-k.v2-cim`, a new element: Details' line, a sheet's "What was checked"), in the line's text,
+ *   4 px before its words, in --ok or --bad;
+ * - a waiting deploy's mismatch mark (`svg.v2-k.vi-x` in the `p.v2-safe-l` of a `.v2-safe.bad`) in --bad;
+ * - the briefing's can't-read line under its first (`span.v2-bt3.bad.v2-bcant`), the ✕ (`svg.v2-k.bad`, a new element) and
+ *   the words side by side, as a due line (`.v2-bdue`), the ✕ 1 px down;
+ * - Plan's moved row (`li.v2-plli.moved`): its edge --line2, not --gold.
+ * The walk reaches each on G7's screens (tests/desk/glance-fixtures.mjs's G7_OPENS, below) and the states above. A sprint's ✓
+ * (`span.v2-okm`, a new element) and ✕ (`.v2-stats .v2-smk`) are drawn only with a sprint opened, which this walk leaves
+ * out (see below), so tests/desk/ac92-glance-palette.test.mjs and AC84's cases lock them.
+ */
+const G7_LOOK = (ink, ok, bad, gold, line2) => new Map([
+  ['svg.v2-s.st-check.ok (a status mark)', [`color: ${ink} → ${ok}`]],
+  ['svg.v2-s.st-check.ok (Plan\'s Reached list)', [`color: ${ink} → ${ok}`, 'width: 16px → 14px', 'height: 16px → 14px', 'vertical-align: (none) → -2px', 'margin-right: (none) → 6px']],
+  ['svg.v2-s.st-cross.bad (a status mark)', [`color: ${ink} → ${bad}`]],
+  ['svg.v2-k.v2-cim.ok (a CI line passing)', ['vertical-align: (none) → -2px', 'margin-right: (none) → 4px', `color: (none) → ${ok}`]],
+  ['svg.v2-k.v2-cim.bad (a CI line failing)', ['vertical-align: (none) → -2px', 'margin-right: (none) → 4px', `color: (none) → ${bad}`]],
+  ['svg.v2-k.vi-x (a deploy\'s mismatch)', [`color: (none) → ${bad}`]],
+  ['span.v2-bt3.bad.v2-bcant', ['display: (none) → flex', 'gap: (none) → 4px', 'align-items: (none) → flex-start']],
+  ['svg.v2-k.bad (the briefing\'s can\'t-read line)', ['margin-top: (none) → 1px']],
+  ['li.v2-plli.moved', [`box-shadow: inset 2px 0 0 ${gold} → inset 2px 0 0 ${line2}`]],
+]);
+const G7_ONCE = new Map([['light', G7_LOOK('#18191c', '#12733a', '#b3162a', '#8a6a10', '#d6d6db')], ['dark', G7_LOOK('#ecedef', '#4cc06a', '#ff6b78', '#c9b04f', '#34363c')]]);
+const G7_KEY = (n) => {
+  const p = n.parent;
+  const svg = n.tag === 'svg';
+  const at = (x) => Boolean(p && (p.cls.has('v2-msi') || p.cls.has('v2-pn') || p.cls.has('v2-c') || (p.tag === 'li' && p.cls.has('v2-sm'))
+    || (p.tag === 'li' && p.parent && p.parent.cls.has('v2-keyl')) || (p.cls.has('v2-prow') && p.attrs['data-k'] === 'page-ci')) && x);
+  if (svg && n.cls.has('v2-s') && n.cls.has('st-check') && n.cls.has('ok')) {
+    if (p && p.tag === 'li' && p.parent && p.parent.tag === 'ul' && p.parent.cls.has('v2-plmini')) return 'svg.v2-s.st-check.ok (Plan\'s Reached list)';
+    return at(true) ? 'svg.v2-s.st-check.ok (a status mark)' : null;
+  }
+  if (svg && n.cls.has('v2-s') && n.cls.has('st-cross') && n.cls.has('bad')) return at(true) ? 'svg.v2-s.st-cross.bad (a status mark)' : null;
+  if (svg && n.cls.has('v2-k') && n.cls.has('v2-cim') && p && p.tag === 'p') return n.cls.has('ok') ? 'svg.v2-k.v2-cim.ok (a CI line passing)' : n.cls.has('bad') ? 'svg.v2-k.v2-cim.bad (a CI line failing)' : null;
+  if (svg && n.cls.has('v2-k') && n.cls.has('vi-x') && p && p.cls.has('v2-safe-l') && p.parent && p.parent.cls.has('v2-safe') && p.parent.cls.has('bad')) return 'svg.v2-k.vi-x (a deploy\'s mismatch)';
+  const bcant = (x) => Boolean(x && x.tag === 'span' && x.cls.has('v2-bt3') && x.cls.has('bad') && x.cls.has('v2-bcant') && x.parent && x.parent.cls.has('v2-brief'));
+  if (bcant(n)) return 'span.v2-bt3.bad.v2-bcant';
+  if (svg && n.cls.has('v2-k') && n.cls.has('bad') && bcant(p)) return 'svg.v2-k.bad (the briefing\'s can\'t-read line)';
+  if (n.tag === 'li' && n.cls.has('v2-plli') && n.cls.has('moved')) return 'li.v2-plli.moved';
+  return null;
+};
+const G7_EXCEPT = (n, d, theme) => {
+  const k = G7_KEY(n);
+  return Boolean(k && G7_ONCE.get(theme) && (G7_ONCE.get(theme).get(k) || []).includes(d)) ? `G7 ${theme} ${k} ${d}` : null;
+};
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
@@ -895,6 +1165,8 @@ function sameLook(app, where, fails, seen) {
         if (g5) { excepted.add(g5); continue; }
         const g6 = G6_EXCEPT(b, d, way.theme);
         if (g6) { excepted.add(g6); continue; }
+        const g7 = G7_EXCEPT(b, d, way.theme);
+        if (g7) { excepted.add(g7); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -1025,6 +1297,21 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
       app.restore();
     }
   }
+  // G7 of "After the glance audit" (AC92 (a)): the screens its marks are drawn on that the walk above doesn't open
+  // (tests/desk/glance-fixtures.mjs's G7_OPENS, its made-up parts NOT real), so the walk reaches each mark G7 colours, the
+  // moved row's edge and the briefing's can't-read lines. The Timeline with its sprints opened is left out here: there
+  // every sprint mark's `span.sb-mkw` also takes the 24 px target `.v2-timeline .v2-stats span.sb-mkw` gave it after
+  // bd4097d, a change of no stage of G7's that this walk never reached; G7's sprint ✓ and ✕ are locked by its own test
+  // (tests/desk/ac92-glance-palette.test.mjs) and AC84's (tests/desk/ac84-timeline.test.mjs).
+  for (const [where, open] of G7_OPENS.filter(([w]) => w !== 'Timeline, every sprint opened')) {
+    const g7 = await open();
+    try {
+      sameLook(g7, `G7 ${where}`, fails, seen);
+      counts.screens++;
+    } finally {
+      g7.restore();
+    }
+  }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // The named exception was met, and only in its own forms: Home, Waiting, Plan, a project, Team and the Timeline.
@@ -1062,7 +1349,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // G6's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
   const g6 = [...G6_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G6 ${theme} ${k} ${d}`))).sort();
   assert.deepEqual([...excepted].filter((x) => /^G6 /.test(x)).sort(), g6);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[123456] )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // G7's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
+  const g7 = [...G7_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G7 ${theme} ${k} ${d}`))).sort();
+  assert.deepEqual([...excepted].filter((x) => /^G7 /.test(x)).sort(), g7);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[1234567] )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

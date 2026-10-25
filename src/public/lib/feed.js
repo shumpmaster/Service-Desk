@@ -13,7 +13,7 @@
 import { DESK_PHASES, isAppliedDecision } from './timeline.js';
 import { NOT_RECORDED, NOT_AVAILABLE, deskWords, standardWord, treeLink, pullLink, commitLink, columnsOf, nowRule, runStateOf,
   queueView, hasWorkFiled, reachedDateWords } from './sandbox.js';
-import { entryShape, entryWords, parseWorkflowRuns, questionName, firstMilestoneLine, milestoneValue, cardMilestoneLine } from './records.js';
+import { entryShape, headlineWords, parseWorkflowRuns, questionName, firstMilestoneLine, milestoneValue, cardMilestoneLine } from './records.js';
 import { dayKey, zonedToUtc } from './timefmt.js';
 import { checksMark, prBodyParts, pullRead, TOO_MANY_WORDS } from './pulls.js';
 import { REVIEW_VERDICT_RE } from './j11.js';
@@ -33,11 +33,9 @@ export function dayWords(ms, tz) {
   return `${Number(k[2])} ${MONTHS[Number(k[1]) - 1]}`;
 }
 
-/** J9's headline words for a log entry, with no time (AC60, AC67, AC71: dates only, never a clock time). */
-export function headlineWords(e) {
-  const w = entryWords(e, '\u0000');
-  return w ? w.replace(/,? \u0000/, '').replace('\u0000', '') : null;
-}
+// J9's headline words for a log entry, with no time (AC60, AC67, AC71): records.js's, kept here for its readers (from G4's
+// fix round it lives beside entryWords, so a member's page, src/lib/sandbox.js, reads it with no import cycle).
+export { headlineWords };
 
 /** "PR #44, #52": a pull request right after another drops its "PR " (AC57's "Work filed: PR #44, #52"). */
 export function sprintList(ids) {

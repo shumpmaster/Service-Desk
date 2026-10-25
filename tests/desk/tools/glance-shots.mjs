@@ -9,13 +9,16 @@
 // state's time; the fake desk's clock follows it. Each capture's file names its state, width and theme. Each line printed
 // says whether the page scrolls sideways (it must not), and, where the Kicked back strip holds cards (G2, AC91 (f)), how
 // far its row scrolls sideways inside itself, and, where gate titles are drawn (G3, AC91 (h)), how many lines each takes
-// and whether any is cut at its two.
+// and whether any is cut at its two; and, on a Timeline (G4, AC91 (i)), where the Now line's top rests against a third of
+// the viewport. G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
+// sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
+// the screen as it opens (the viewport), not the whole page.
 import { createServer } from 'node:http';
 import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
-import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW } from '../glance-fixtures.mjs';
+import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD } from '../glance-fixtures.mjs';
 
 const PUBLIC = resolve(fileURLToPath(new URL('../../../src/public/', import.meta.url)));
 const OUT = resolve(process.argv[2] || 'glance-shots');
@@ -59,6 +62,25 @@ const SHOTS = [
   { name: 'g3-waiting-nocase', state: () => gatesState({ caseLines: false }), now: NOW, looked: LATE, hash: '#/waiting' },
   { name: 'g3-plan-nocase', state: () => gatesState({ caseLines: false }), now: NOW, looked: LATE, hash: '#/work' },
   { name: 'g3-waiting-ext', state: extState, now: NOW, looked: LATE, hash: '#/waiting' },
+  // G4: a project's page, the Timeline, a failed load and the one date form (AC91 (i) to (l)), and G3's follow-ups.
+  // `quiet`: Service-Desk's page, "Nothing waiting on you" soft and "Your last action" from an earlier day, and a member's
+  // page; `mix`: the made-up project's page, its two unrecorded runs said once; `gates`: the waits row's gate names, two
+  // gate cards at one gate (for two items, and one item's two without case lines); the Timeline as it opens; Done's gate
+  // rows (made-up marks); a gate card not read yet, its sheet; and the failed-load screen, with and without sandbox.css.
+  { name: 'g4-page-quiet', state: quietState, now: NOW, looked: LATE, hash: `#/p/${SD.name}` },
+  { name: 'g4-page-mix', state: () => mixState(), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}` },
+  { name: 'g4-page-gates', state: () => gatesState(), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}` },
+  { name: 'g4-page-gates-one-item', state: () => gatesState({ sameItem: true, caseLines: false }), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}` },
+  { name: 'g4-timeline-opens', state: quietState, now: NOW, looked: LATE, hash: `#/p/${SD.name}`, then: `#/p/${SD.name}/timeline`, viewport: true },
+  { name: 'g4-member-page', state: quietState, now: NOW, looked: LATE, hash: `#/p/${SD.name}/team/orchestrator` },
+  { name: 'g4-done-gates', state: () => gatesState(), now: NOW, looked: LATE, hash: '#/waiting', seed: deviceMarks([
+    { project: MIX_PROJECT, kind: 'gate', id: GATE_KEY(MIX_PROJECT, GATE4), at: NOW - 60e3 },
+    { project: MIX_PROJECT, kind: 'gate', id: GATE_KEY(MIX_PROJECT, 'queue/P-009-launch-1.md'), title: 'The Launch gate, case 1 · P-009', at: NOW - 3 * H, confirmedAt: NOW - 2 * H },
+  ]) },
+  { name: 'g4-sheet-unread-gate', state: () => { const st = gatesState(); st.repos[MIX_PROJECT].blobNull = [GATE4]; return st; }, now: NOW, looked: LATE,
+    hash: `#/waiting/card/${encodeURIComponent(GATE_KEY(MIX_PROJECT, GATE4))}` },
+  { name: 'g4-failed-load', state: quietState, now: NOW, looked: LATE, missing: ['sandbox.js'] },
+  { name: 'g4-failed-load-no-css', state: quietState, now: NOW, looked: LATE, missing: ['sandbox.js', 'sandbox.css'] },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 const SIZES = [[360, 740], [414, 896]];
 const THEMES = ['light', 'dark'];
@@ -79,6 +101,9 @@ m.startSandbox({ config, call });
 function serve(cur) {
   const srv = createServer((req, res) => {
     const url = new URL(req.url, 'http://x');
+    // A failed load (G4): the page's own index.html and app.js, the files the shot names missing.
+    if (cur.missing && cur.missing.includes(url.pathname.replace(/^\//, ''))) return res.writeHead(404).end();
+    if (cur.missing && (url.pathname === '/' || url.pathname === '/index.html')) return res.writeHead(200, { 'content-type': 'text/html' }).end(readFileSync(join(PUBLIC, 'index.html')));
     if (url.pathname === '/' || url.pathname === '/index.html') return res.writeHead(200, { 'content-type': 'text/html' }).end(SHELL);
     if (url.pathname === '/__config') return res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(cur.setup.config));
     if (url.pathname === '/__call') {
@@ -114,6 +139,7 @@ async function main() {
           const setup = shot.state();
           cur.setup = setup;
           cur.now = shot.now;
+          cur.missing = shot.missing || null;
           cur.server = fakeServer(setup.repos, setup.config, { now: () => cur.now });
           if (shot.before) setup.fail();
           const ctx = await browser.newContext({ viewport: { width: w, height: hgt }, deviceScaleFactor: 2, colorScheme: theme });
@@ -138,6 +164,11 @@ async function main() {
             setup.fail();
             await run(3 * POLL);
           }
+          // Opened from the screen before it, as the owner opens it (G4's Timeline: opening scrolls it to Now).
+          if (shot.then) {
+            await page.evaluate((h) => { location.hash = h; }, shot.then);
+            await run(2000);
+          }
           await page.waitForTimeout(300);
           const scroll = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
           const strip = await page.evaluate(() => { const r = document.querySelector('.v2-krow'); return r ? r.scrollWidth - r.clientWidth : null; });
@@ -145,9 +176,10 @@ async function main() {
             const lh = parseFloat(getComputedStyle(e).lineHeight) || 1;
             return `${Math.round(e.getBoundingClientRect().height / lh)} line(s)${e.scrollHeight > e.clientHeight + 1 ? ', cut' : ''}`;
           }));
+          const now = await page.evaluate(() => { const n = document.querySelector('[data-k="nowline"]'); return n ? Math.round(n.getBoundingClientRect().top) : null; });
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
-          await page.screenshot({ path: file, fullPage: true });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}`);
+          await page.screenshot({ path: file, fullPage: !shot.viewport });
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}`);
           await ctx.close();
         }
       }

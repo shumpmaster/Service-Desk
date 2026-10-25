@@ -38,6 +38,20 @@ export function whenText(date, now, timeZone) {
   return `${MONTHS[Number(p.month) - 1]} ${Number(p.day)} ${t}`;
 }
 
+/**
+ * One date form in the two places the glance audit named (AC91 (l)): "Your last action" on a project's page (AC55, AC83)
+ * and the dates on a team member's page (AC49). A time from an earlier (or a later) day reads "14 Oct, 09:40", AC82's
+ * form with feed.js's `dayWords` and `hhmm`; a time from today "09:30" alone, as J9's `<t>` gives it. J9's `<t>`
+ * (`whenText`, above) and its other uses are unchanged.
+ */
+export function dayTimeText(date, now, timeZone) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return 'time not recorded';
+  const p = parts(date, timeZone);
+  const t = `${p.hour}:${p.minute}`;
+  if (dayKey(date, timeZone) === dayKey(now, timeZone)) return t;
+  return `${Number(p.day)} ${MONTHS[Number(p.month) - 1]}, ${t}`;
+}
+
 /** Always with the date: "Oct 7 05:00" (for times that may not be today, such as a DEFAULT's). */
 export function dateTimeText(date, timeZone) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return 'time not recorded';

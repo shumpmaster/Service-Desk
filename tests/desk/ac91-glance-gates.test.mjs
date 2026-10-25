@@ -23,7 +23,7 @@ import { parseCss, treeOf, cascade, nodes } from './css-cascade.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { SHEET_WORDS, gateTitle, gateOpening } from '../../src/lib/sheets.js';
 import { GATE_TITLE } from '../../src/lib/j11.js';
-import { gatesState, GATE4, GATE5, GATE_KEY, CARD, MIX_PROJECT, NOW } from './glance-fixtures.mjs';
+import { gatesState, deviceMarks, GATE4, GATE5, GATE_KEY, CARD, MIX_PROJECT, NOW } from './glance-fixtures.mjs';
 
 const RULES = (() => {
   const a = parseCss(readFileSync(join(SRC, 'public', 'style.css'), 'utf8'), 'style.css');
@@ -236,6 +236,87 @@ test('AC91 (h) with AC89 (j): the gate\'s short title is cut at two lines only w
           assert.equal(L.get(planName(app, id)).decl('max-height'), 'calc(2 * 1.35em)', `${theme}, ${w} px, ${id}: Plan`);
           assert.equal(L.get(byClass(planName(app, id), 'v2-gitem')[0]).decl('display'), 'inline-block', `${theme}, ${w} px, ${id}: its item unbroken`);
         }
+      }
+    }
+  } finally {
+    app.restore();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// (h), from G4 (G3's reviews: the Reviewer's notes 2 and 3, the Design reviewer's N4)
+
+test('AC91 (h), from G4: a gate card not read yet (its file listed, its read still to come) — its title "<the gate\'s title> · <item>" from its path\'s item on the board, as its sheet\'s title and on Plan; its sheet says "The card\'s file: not available" in --t-small --ink2 in place of the opening', async () => {
+  // `gates`, with the made-up P-004 card's blob answering null (tests/desk/fake-desk.mjs's `blobNull`): listed, not read.
+  const s = gatesState();
+  s.repos[MIX_PROJECT].blobNull = [GATE4];
+  const app = await loadSandbox({ ...s, hash: '#/waiting', now: NOW, store: memStore() });
+  try {
+    await app.advance(1000);
+    await app.advance(61_000);
+    assert.equal(keyed(app, `tt:${G4}`).textContent, 'The Launch gate · P-004', 'on the board: no case it has not read');
+    assert.equal(keyed(app, `tt:${G5}`).textContent, 'The Launch gate, case 2 · P-005', 'the card read beside it keeps its case');
+    await app.go(route(G4));
+    assert.equal(sheetTitle(app), 'The Launch gate · P-004', 'as its sheet\'s title');
+    const unread = keyed(app, 'gopen-reading');
+    assert.equal(unread.textContent, "The card's file: not available", 'an unknown said in words (part A item 5)');
+    assert.equal(keyed(app, `clip:gopen:${G4}`), null, 'no opening drawn for a card not read');
+    const parts = sheet(app).children.map((c) => c.attrs && c.attrs['data-k']);
+    assert.ok(parts.indexOf('gopen-reading') > -1, 'in the opening\'s place');
+    assert.ok(byClass(sheet(app), 'v2-stitle')[0].textContent === 'The Launch gate · P-004');
+    for (const theme of THEMES) {
+      const L = looks(app, theme).get(unread);
+      assert.deepEqual([L.size, L.weight], ['12px', '400'], `${theme}: --t-small`);
+      assert.equal(L.decl('color'), theme === 'light' ? '#5c5f66' : '#a2a5ac', `${theme}: --ink2`);
+    }
+    await app.go('#/work');
+    assert.equal(planName(app, G4).textContent, 'The Launch gate · P-004', 'on Plan');
+  } finally {
+    app.restore();
+  }
+  // Once read, the case line comes back and the opening takes the line's place (G3, as built).
+  const read = await open();
+  try {
+    await read.go(route(G4));
+    assert.equal(sheetTitle(read), 'The Launch gate, case 1 · P-004');
+    assert.equal(keyed(read, 'gopen-reading'), null);
+    assert.equal(keyed(read, `clip:gopen:${G4}`).textContent, FIRST);
+  } finally {
+    read.restore();
+  }
+});
+
+test('AC91 (h), from G4: a gate card\'s Done row keeps its item whole (`.v2-gitem`, an inline block) — on the card while it is confirmed with GitHub and on the confirmed row — its words and its link\'s name unchanged; another kind\'s row has none; in light and dark, at 360 and 414 px', async () => {
+  // Done marks a device keeps (made up, NOT real): the made-up P-004 gate card marked a minute ago, still confirming; a
+  // made-up P-009 gate card GitHub confirmed two hours ago; and the made-up project's pull request, confirming.
+  const P9 = GATE_KEY(MIX_PROJECT, 'queue/P-009-launch-1.md');
+  const seed = deviceMarks([
+    { project: MIX_PROJECT, kind: 'gate', id: G4, at: NOW - 60e3 },
+    { project: MIX_PROJECT, kind: 'gate', id: P9, title: 'The Launch gate, case 1 · P-009', at: NOW - 3 * 3600e3, confirmedAt: NOW - 2 * 3600e3 },
+    { project: MIX_PROJECT, kind: 'pr', at: NOW - 60e3 },
+  ]);
+  const store = memStore();
+  for (const [k, v] of Object.entries(seed)) store.setItem(k, v);
+  const app = await loadSandbox({ ...gatesState(), hash: '#/waiting', now: NOW, store });
+  try {
+    await app.advance(1000);
+    const conf = keyed(app, `donelink:${G4}`);
+    assert.equal(conf.textContent, 'The Launch gate, case 1 · P-004', 'the confirming card: the short title, its words unchanged');
+    assert.equal(conf.parent.className, 'v2-card conf');
+    const row = keyed(app, `drowlink:${P9}#`);
+    assert.equal(row.textContent, 'The Launch gate, case 1 · P-009', 'the confirmed row');
+    assert.equal(row.parent.className, 'v2-drow');
+    for (const [link, item] of [[conf, 'P-004'], [row, 'P-009']]) {
+      const g = byClass(link, 'v2-gitem');
+      assert.deepEqual(g.map((x) => x.textContent), [item], 'the item, after the title\'s last " · ", one piece');
+      assert.equal(link.children[0].text || link.children[0].textContent, `${link.textContent.slice(0, -item.length)}`, 'the words before it as they were');
+    }
+    const pr = keyed(app, `donelink:${CARD.pr(MIX_PROJECT)}`);
+    assert.equal(byClass(pr, 'v2-gitem').length, 0, 'a pull request\'s row: its title as it is');
+    for (const theme of THEMES) {
+      for (const w of WIDTHS) {
+        const L = looks(app, theme, w);
+        for (const link of [conf, row]) assert.equal(L.get(byClass(link, 'v2-gitem')[0]).decl('display'), 'inline-block', `${theme}, ${w} px: kept whole`);
       }
     }
   } finally {

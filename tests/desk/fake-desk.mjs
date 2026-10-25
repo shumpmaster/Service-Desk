@@ -189,8 +189,11 @@ export function fakeServer(repos, config, clock) {
     // (a verdict file on a pull request's branch); a sha `blobFail` names fails the whole call, as a
     // failed blob does at the function (src/lib/github.js). `blobCalls` records each call's shas.
     const texts = new Map([...Object.values(r.files).map((t) => [gitSha(t), t]), ...Object.entries(r.blobs || {})]);
+    // From G4 of "After the glance audit" (AC91 (h)): `blobNull` names paths the tree lists whose blobs answer null, as a
+    // file listed but not read yet (its read still to come); the rest of the call answers as before.
+    const held = new Set((r.blobNull || []).filter((p) => p in r.files).map((p) => gitSha(r.files[p])));
     const blobs = {};
-    for (const s of body.blobs) blobs[s] = texts.has(s) ? texts.get(s) : null;
+    for (const s of body.blobs) blobs[s] = texts.has(s) && !held.has(s) ? texts.get(s) : null;
     (r.blobCalls ||= []).push([...body.blobs]);
     if (body.blobs.some((x) => (r.blobFail || []).includes(x))) return { ok: true, status: 200, json: { ...base, state: 'cant-read', reason: 'github', blobs: {}, history: {}, compare: {} } };
     const history = {};

@@ -180,7 +180,10 @@ test('AC59: the gathered "not recorded" line and its count, opening on a tap; Bu
   }
 });
 
-test('AC59 (note 18): the Now line\'s place, the Timeline opening with it in view (360×740 and 414×896), and no scroll back on a refresh', async () => {
+// Rewritten in G4 of "After the glance audit" (AC59's note "After the glance audit"; AC91 (i)): the Timeline opens with the
+// top of the Now line a third of the way down the viewport (its height divided by 3, rounded), no longer just under the
+// pinned band, so what comes next above Now is in view; still never on a refresh.
+test('AC59 (note 18; AC91 (i), rewritten in G4): the Now line\'s place, the Timeline opening with it a third of the way down the screen (360×740 and 414×896), and no scroll back on a refresh', async () => {
   for (const [w, h] of [[360, 740], [414, 896]]) {
     const saved = Object.getOwnPropertyDescriptor(El0.prototype, 'getBoundingClientRect');
     El0.prototype.getBoundingClientRect = function rect() {
@@ -196,8 +199,9 @@ test('AC59 (note 18): the Now line\'s place, the Timeline opening with it in vie
         await app.advance(1000);
         app.scrolls.length = 0;
         await app.go('#/p/Service-Desk/timeline');
-        assert.deepEqual(app.scrolls, [[0, 2200 - 38 - 8]], `${w}×${h}: the Now line just under the pinned band`);
-        assert.ok(2200 - (2200 - 38 - 8) < h, 'in view');
+        assert.deepEqual(app.scrolls, [[0, 2200 - Math.round(h / 3)]], `${w}×${h}: the Now line's top a third of the way down`);
+        assert.equal(2200 - app.scrolls[0][1], Math.round(h / 3), 'in view, with a third of the screen above it');
+        assert.ok(2200 - app.scrolls[0][1] > 38 + 8, 'below the pinned band, with room above for what comes next');
         app.scrolls.length = 0;
         window.scrollY = 3000;
         await app.advance(61_000);

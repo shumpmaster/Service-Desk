@@ -38,6 +38,35 @@ function h(tag, attrs = {}, ...children) {
 }
 const ext = (href, text) => h('a', { href, rel: 'noopener noreferrer', target: '_blank' }, text);
 
+/**
+ * The failed-load screen's ✕ (AC91 (k)): drawn here, by app.js itself, as an inline SVG, since sandbox.js, whose `vi()`
+ * draws the desk's icons, is the code that failed. Its own attributes size and stroke it, so it shows where sandbox.css
+ * can't load either; its colour is the stylesheets' (`--bad`, or style.css's red).
+ */
+function loadFailedCross() {
+  const NS = 'http://www.w3.org/2000/svg';
+  const s = document.createElementNS(NS, 'svg');
+  const at = { viewBox: '0 0 16 16', width: '16', height: '16', class: 'v2-k v2-lfx', 'aria-hidden': 'true', focusable: 'false',
+    fill: 'none', stroke: 'currentColor', 'stroke-width': '1.6', 'stroke-linecap': 'round' };
+  for (const [k, v] of Object.entries(at)) s.setAttribute(k, v);
+  const path = document.createElementNS(NS, 'path');
+  path.setAttribute('d', 'M4.5 4.5l7 7M11.5 4.5l-7 7');
+  s.append(path);
+  return s;
+}
+
+/**
+ * The failed-load screen (AC91 (k); AC89 (h), changed after the glance audit): "The desk couldn't load." in --t-lead
+ * --ink, the ✕ in --bad before it, and under it a "Reload" button, at least 44 px tall, in 500 15 px, which reloads the
+ * page; nothing else, and never anything that reads as quiet. Its rules are sandbox.css's (`.v2-loadfail`), and
+ * style.css's where sandbox.css can't load either, so the words and the button still show and work.
+ */
+function loadFailedScreen(words) {
+  return h('section', { class: 'sb-screen v2-loadfail' },
+    h('p', { class: 'v2-lf', role: 'alert' }, loadFailedCross(), h('span', { class: 'v2-lfw' }, words)),
+    h('button', { type: 'button', class: 'v2-reload', onclick: () => location.reload() }, 'Reload'));
+}
+
 const clock = {
   now: () => Date.now(),
   setTimeout: (fn, ms) => setTimeout(fn, ms),
@@ -122,8 +151,9 @@ else if (exp === '004') startExp004();
 else {
   if (params.has('sandbox')) dropSandbox();
   // The desk: mockup v2 as built (AC44, step 4). If its code fails to load, the page says so (AC89 (h)), never
-  // "Checking…" for good, once, on mockup v2's ground and tokens as the desk's own render-error screen is drawn
-  // (AC89: "Every screen keeps AC81's tokens and AC88's dark theme"; AC88), its header and footer still hidden (AC89 (m)).
+  // "Checking…" for good, once, on mockup v2's ground and tokens (AC89: "Every screen keeps AC81's tokens and AC88's
+  // dark theme"; AC88), its header and footer still hidden (AC89 (m)); from G4 of "After the glance audit", with its ✕
+  // and a Reload button (AC91 (k): "a Home Screen app on iOS has no reload").
   startDesk(() => import('./sandbox.js'), (words) => {
     if (stateEl) {
       stateEl.textContent = words;
@@ -137,7 +167,7 @@ else {
     } catch {
       // the words still show, in style.css's look
     }
-    view.replaceChildren(h('section', { class: 'sb-screen' }, h('p', { class: 'sb-stale', role: 'alert' }, words)));
+    view.replaceChildren(loadFailedScreen(words));
     document.title = `Service Desk — ${words}`;
   });
 }

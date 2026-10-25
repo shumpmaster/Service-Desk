@@ -130,6 +130,11 @@ test('AC83 (frame 5; P-001-redesign-conflicts.md, answer 4): the strip — Disco
       ['Launch', 'planned', 'st-planned', 'b-dashed', 'ph-launch'],
     ]);
     assert.ok(cells[1].className.split(' ').includes('now'), 'the now phase');
+    // Rewritten in G7 (AC92 (a): "the reached check … on the project page's strip" in --ok, on the mark only): the finished
+    // phase's check is a status mark (`.ok`, --ok); the now, gone-back-over and planned ones are not; the names stay ink.
+    assert.deepEqual(cells.map((c) => / ok /.test(` ${findAll(c, (e) => e.tag === 'svg')[0].attrs.class} `)), [true, false, false, false], 'only the finished phase\'s check is green');
+    assert.match(rule('.v2-s.st-check.ok'), /^ color: var\(--ok\); $/);
+    assert.match(rule('.v2-pn'), /color: var\(--ink\);/, 'the phase names in ink');
     assert.equal(cells.length, 4, 'Done is not a column');
     assert.match(rule('.v2-bar3'), /height: 3px; border-radius: 2px; background: var\(--phc\);/);
     assert.match(rule('.v2-ph.b-dashed .v2-bar3'), /background: repeating-linear-gradient\(90deg, var\(--phc\) 0 6px, transparent 6px 10px\);/);
@@ -312,6 +317,10 @@ test('AC83 (frame 6; notes 2, 12, 15, 19; AC92 (d), rewritten in G6): opened, a 
     assert.match(old.className, /\bv2-oldrun\b/, 'an earlier run, under its own heads');
     assert.ok(rowsIn(old).every((r) => /\bold\b/.test(r.className)), 'smaller and softer (note 2)');
     assert.deepEqual(rowsIn(old).map((r) => r.textContent), ['Design-6 A plan that passed reviewnot reached', 'Design-1 Done defined in real scenariosreached']);
+    // Rewritten in G7 (AC92 (a)): the not-reached cross is red (`.bad`, --bad) in any run; a reached mark in a run gone back
+    // over is the lighter check, grey, and no status mark.
+    assert.deepEqual(rowsIn(old).map((r) => findAll(r, (e) => e.tag === 'svg')[0].attrs.class), ['v2-s st-cross bad', 'v2-s st-pastcheck soft']);
+    assert.match(rule('.v2-s.st-cross.bad'), /^ color: var\(--bad\); $/);
     assert.equal(findAll(old, (e) => e.tag === 'button')[0].textContent, '4 not tracked this run: 2 not recorded yet, 2 no record in the model', 'in place of "Design-2 to Design-5 · not recorded, or no record in the model"');
     assert.match(rule('.v2-sm.old .v2-smn'), /font: var\(--t-small\); color: var\(--ink2\);/);
     // Each row: its icon in a plain circle, its id in Plex Mono, its name, its state in words under it.
@@ -707,7 +716,11 @@ test('AC83 + AC29 (after MD3, stage 8; (b) item 37, stage 3 review round 3, R2):
   // Rewritten in G5 of "After the glance audit" (AC92 (c): Details' CI line adds " · <y> of <x> workflows passed" after
   // AC29's state): the branch's words pinned as before, the counted workflows' part (ciPassed) drawn after them in the same
   // line, and none with no model (its cases in tests/desk/ac92-glance-counts.test.mjs). Before G5 the line ended at the state.
-  assert.match(body, /h\('p', \{ class: 'v2-small' \}, `CI on \$\{project\.defaultBranch\}: \$\{model \? model\.ci : NOT_AVAILABLE\}`, ciPassed\(model\)\)/, 'no model: "not available"');
+  // Rewritten in G7 (AC92 (a): "a ✓ before the words of a CI line that reads passing", a ✕ before one that reads failing):
+  // the line keyed `details-ci` and its mark (ciMark, which draws none for a missing model) before the same words; the
+  // branch's words pinned as before (the mark's cases in tests/desk/ac92-glance-palette.test.mjs).
+  assert.match(body, /h\('p', \{ class: 'v2-small', key: 'details-ci' \}, ciMark\(model && model\.ci\), `CI on \$\{project\.defaultBranch\}: \$\{model \? model\.ci : NOT_AVAILABLE\}`, ciPassed\(model\)\)/, 'no model: "not available"');
+  assert.match(page, /\nconst ciMark = \(ci\) => \(ci === 'passing' \? [^\n]* : ci === 'failing' \? [^\n]* : null\);/, 'no mark for a missing model (null), as for any state but passing and failing');
   const { ciPassed } = await import('../../src/lib/projectpage.js');
   assert.equal(ciPassed(null), '', 'no model: nothing after "not available"');
   assert.doesNotMatch(body, /CI on [^`]*NOT_RECORDED/, 'never "not recorded"');

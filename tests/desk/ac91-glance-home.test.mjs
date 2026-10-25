@@ -292,7 +292,7 @@ test('AC91 (c), from `unread`: nothing waiting and its read failing — the corn
   }
 });
 
-test('AC91 (c), from `unread`: cards waiting and the read failing — the corner keeps "◆ <n> wait on you" from the last read\'s cards; the foot keeps its red "✕ Can\'t read since HH:MM: <reason>"; and "Checking…" in the corner as now', async () => {
+test('AC91 (c), from `unread`: cards waiting and the read failing — the corner keeps "◆ <n> wait on you" from the last read\'s cards; the foot keeps its red "✕ Can\'t read since HH:MM: <reason>"; "Checking…" in the corner as now; and, from G7, the briefing\'s can\'t-read line under its count carries the ✕ before its words, both in --bad', async () => {
   const s = unreadState({ who: MIX_PROJECT });
   const app = await loadSandbox({ ...s, hash: '#/', now: NOW, store: looked(NOW - H) });
   try {
@@ -314,6 +314,20 @@ test('AC91 (c), from `unread`: cards waiting and the read failing — the corner
     assert.match(iconOf(red[0]), /\bvi-bad\b/);
     assert.equal(byClass(t, 'v2-tfoot').length, 0);
     for (const [theme] of THEMES) assert.equal(looks(app, theme).get(red[0]).colour, INK[theme].bad, theme);
+    // Extended in G7 (AC91 (c): "each carries the ✕ icon in --bad before it, as Waiting's line does … G1 built these lines
+    // without it; the ✕ is built in G7"): the briefing says what needs the owner first, and the project it can't read
+    // under it, its ✕ before its words.
+    const b = brief(app);
+    assert.equal(b.className, 'v2-brief k-you');
+    const cant = byClass(b, 'v2-bt3').filter((x) => / bad /.test(` ${x.className} `));
+    assert.equal(cant.length, 1);
+    assert.match(cant[0].textContent, new RegExp(`^Can't read ${MIX_PROJECT} since \\d\\d:\\d\\d$`));
+    assert.equal(cant[0].children[0], svgOf(cant[0]), 'the ✕ before its words');
+    assert.match(iconOf(cant[0]), /\bvi-bad\b/);
+    for (const [theme] of THEMES) {
+      const L = looks(app, theme);
+      assert.deepEqual([L.get(svgOf(cant[0])).colour, L.get(cant[0]).colour], [INK[theme].bad, INK[theme].bad], `${theme}: the ✕ and the words in --bad`);
+    }
   } finally {
     app.restore();
   }

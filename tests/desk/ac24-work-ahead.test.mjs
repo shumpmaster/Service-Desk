@@ -18,10 +18,12 @@
 // ordering before they move a row or read the card or the bar.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { loadSandbox, findAll, byClass } from './sandbox-helpers.mjs';
 import { findKeyed } from './sandbox-fixtures.mjs';
 import { textRuns } from './screen-text.mjs';
-import { fixture } from './helpers.mjs';
+import { fixture, SRC } from './helpers.mjs';
 import { repo, gitSha } from './fake-desk.mjs';
 import { SD, POOM, waSetup, WORKED, LATER, estLine, planText, memStore, j77Files, j77Notes, poomFiles } from './wa-fixtures.mjs';
 import { planBody, DRAFT_KEY, WA } from '../../src/lib/workahead.js';
@@ -446,7 +448,7 @@ test('AC24: an estimate\'s note longer than two lines is clipped to two, with th
 // "Current plan · recorded <date>, <time>" with AC24's "·" (specs/S-001.md:8444; the Design reviewer's finding 2,
 // stage 5 round 1): the state line's words before had lost it.
 
-test('AC24: moving rows by tap, Enter and Space — the ends disabled, focus kept on the control, the gold edge and "moved", every finish recomputed, "Changed · not recorded"', async () => {
+test('AC24: moving rows by tap, Enter and Space — the ends disabled, focus kept on the control, the moved row\'s edge (from G7 the light line grey, --line2, not gold: P-001-glance-plan-gold.md, A) and "moved" in its accessible text, every finish recomputed, "Changed · not recorded"', async () => {
   const store = memStore();
   const app = await open({ extra: { 'intake/estimates.jsonl': WORKED() }, store });
   try {
@@ -466,6 +468,12 @@ test('AC24: moving rows by tap, Enter and Space — the ends disabled, focus kep
     assert.equal(document.activeElement && document.activeElement.dataset.k, `wa-up:${key('M3A')}`, 'focus stays on the control used');
     assert.ok(cls(rowOf(app, 'M3A'), 'moved'));
     assert.deepEqual(textRuns(byClass(rowOf(app, 'M3A'), 'v2-plord')[0], () => false), ['3', '3rd of 6, moved']);
+    // Rewritten in G7 of "After the glance audit" (AC24's note; P-001-glance-plan-gold.md, A: "Plan's "moved" edge becomes the
+    // light line grey, with its word "moved" kept"): the edge is drawn in --line2 and never --gold, so gold means only "next
+    // to reach" (its cascade in both themes: tests/desk/ac92-glance-palette.test.mjs). Before G7 it was gold.
+    const movedRule = [...readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((m) => /\.moved\b/.test(m[1]));
+    assert.deepEqual(movedRule.map((m) => [m[1].trim(), m[2].trim()]).filter(([, b]) => /box-shadow/.test(b)), [['.v2-plli.moved', 'box-shadow: inset 2px 0 0 var(--line2); border-radius: 2px;']]);
+    assert.ok(movedRule.every((m) => !/--gold/.test(m[2])), 'no moved rule in gold');
     assert.deepEqual(await finishes(app), ['once you accept it', 'once you accept it', '25 Oct – 30 Oct', '22 Oct – 25 Oct', '27 Oct – 3 Nov', '29 Oct – 6 Nov']);
     assert.equal(byClass(app.view, 'v2-plbar')[0].children[0].textContent, 'Changed · not recorded');
     assert.equal(byClass(app.view, 'v2-plstate')[0].textContent, 'Draft not recorded · your changes are on this phone only');

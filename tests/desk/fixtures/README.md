@@ -794,3 +794,27 @@ G6 adds no fixture file. `tests/desk/ac92-glance-standard.test.mjs`, G6's rewrit
   states' clock, and J12 answering two made-up merged pull requests, #901 (250 minutes before, in run 1) and #902 (5
   minutes before, in P-003's run 3), so two runs that share the key "Build-i1" each draw "Not tied to a milestone"; **NOT
   real records**.
+
+## After the glance audit, G7 (2026-10-25, S-001 AC92 (a); AC24, AC48, AC81, AC88 and AC91 (c) changed)
+
+G7 adds no fixture file. `tests/desk/ac92-glance-palette.test.mjs`, G7's walk in `ac88-dark.test.mjs` (AC92 (a)'s cascade
+check and the stage-8 guard's `G7_ONCE`) and G7's rewritten cases open the states above, with these made-up parts, each
+**NOT real**, and `tests/desk/tools/glance-shots.mjs` captures them (`g7-`):
+- **`ciState`** (`glance-fixtures.mjs`, `G7_RUN`): one made-up workflow run, `desk-tests`, completed with success
+  (`passing`) or failure (`failing`), on the head of `text`'s Service-Desk, of Personal-Org-Operating-Model's v2.5
+  placeholder, or of `mix`'s made-up project beside its deploy waiting, so a CI line reads AC29's passing or failing.
+  **NOT how GitHub answered any read.**
+- **`mismatchState`** (`glance-fixtures.mjs`): J11's records at 3117150 with J12's built answer, PR #77's merge commit made
+  the fake repository's head and a made-up PASS verdict for it (`reviews/77/reviewer.md`), as AC72's test makes them, and
+  a hand-started desk-deploy run waiting at a made-up commit (`ddd…d`) that no merge has, so its sheet shows the mismatch.
+  **NOT real records, NOT as GitHub sent them.**
+- **`G7_OPENS`** (`glance-fixtures.mjs`): those states and earlier stages' (`text`, `mix`, `unread`, `gates` with a
+  made-up confirmed Done mark), each opened as the owner opens it (every phase, every sprint fold, Plan's ordering with a
+  row moved, Reached, Details, a card's sheet, Home after a read fails). The portfolio refused (`pf-fixtures.mjs`, made
+  up) and a project whose drawing throws (`BAD_PR`) are as AC88's walk already makes them.
+- **made-up runs** written in `ac92-glance-palette.test.mjs` for a "carried over" milestone in a run now and reached and
+  carried-over ones in a run gone back over, each only the shape the desk's timeline gives; **NOT real records**.
+- **notifications refused** (G7's round-1 fix, in `ac88-dark.test.mjs`'s G7 cascade walk): `text` opened as if added to
+  the Home Screen (`matchMedia` answering standalone) with the phone's notification permission `denied`, so AC75's
+  warning is drawn; and the portfolio with nothing queued (`pfFiles({})`, no failure), beside AC88's own portfolio states.
+  **NOT a real phone's settings, NOT real records.**

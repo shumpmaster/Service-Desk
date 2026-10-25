@@ -11,7 +11,8 @@
 // far its row scrolls sideways inside itself, and, where gate titles are drawn (G3, AC91 (h)), how many lines each takes
 // and whether any is cut at its two; and, on a Timeline (G4, AC91 (i)), where the Now line's top rests against a third of
 // the viewport; and, on G5's waits rows (AC89 (c)), the row's words and whether its cut hides any; and, on G6's pages
-// (AC92 (d)), each opened phase's heads and fold rows. G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
+// (AC92 (d)), each opened phase's heads and fold rows; and, on G7's (AC92 (a)), how many status marks are green and red.
+// G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
 // the screen as it opens (the viewport), not the whole page.
 import { createServer } from 'node:http';
@@ -19,7 +20,12 @@ import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
-import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD } from '../glance-fixtures.mjs';
+import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, ciState, mismatchState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM } from '../glance-fixtures.mjs';
+import { sdRepo, SD3 } from '../tv2-fixtures.mjs';
+import { CONFIG } from '../helpers.mjs';
+import { waSetup, WORKED } from '../wa-fixtures.mjs';
+import { withPortfolio, addPortfolio, pfFiles } from '../pf-fixtures.mjs';
+import { BAD_PR } from '../fake-desk.mjs';
 import { pullsAnswer } from '../j12-fixture.mjs';
 
 const PUBLIC = resolve(fileURLToPath(new URL('../../../src/public/', import.meta.url)));
@@ -111,6 +117,28 @@ const SHOTS = [
   { name: 'g6-page-three-states', state: () => standardState({ ids: ['Build-4'] }), now: NOW, looked: LATE, hash: `#/p/${SD.name}`,
     click: ['[data-phase="Build"] > button', '[data-untracked="Build-i1"]'] },
   { name: 'g6-timeline', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}/timeline` },
+  // G7: the status palette (AC92 (a)), Plan's moved edge in --line2 and the briefing's ✕ (AC91 (c)). `mix` on Home (a tile's
+  // green check beside the lighter grey ones); `text`'s page with Design and Discovery opened (green checks, a red cross,
+  // the gone-back-over run grey) and its strip; J11's Timeline at 3117150 with its sprints and the status icons' key opened
+  // (the sprints' ✓ green and #40's ✕ red); Plan with a row moved, the ordering closed and Reached opened; Details over a
+  // made-up passing and failing CI line, a card's sheet over a failing one, and a v2.5 page's passing CI row; a made-up
+  // deploy's mismatch; and the briefing with a can't-read line under its count, with "Can't show <project>", and with the
+  // portfolio refused (all made up, NOT real).
+  { name: 'g7-home-mix', state: () => mixState(), now: NOW, looked: LATE },
+  { name: 'g7-page-phases', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-phase="Design"] > button', '[data-phase="Discovery"] > button'] },
+  { name: 'g7-timeline-sprints', state: () => ({ config: { ...CONFIG, projects: [SD3] }, repos: { [SD3.name]: sdRepo() } }), now: NOW, looked: LATE, hash: `#/p/${SD3.name}/timeline`,
+    clickAll: '[data-sprints][aria-expanded="false"]', click: ['button.v2-fold:text-is("Status icons")'] },
+  { name: 'g7-plan-moved', state: () => waSetup({ extra: { 'intake/estimates.jsonl': WORKED() } }), now: Date.parse('2026-10-18T18:00:00Z'), looked: LATE, hash: '#/work',
+    click: ['[data-k="plan-order"]', '[data-k^="wa-up:"]:not([aria-disabled="true"])', '[data-k="plan-order"]', 'button.v2-plfold:has-text("Reached")'] },
+  { name: 'g7-details-passing', state: () => ciState('passing'), now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-k="more-detail"]'] },
+  { name: 'g7-details-failing', state: () => ciState('failing'), now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-k="more-detail"]'] },
+  { name: 'g7-sheet-failing', state: () => ciState('failing', { who: MIX_PROJECT }), now: NOW, looked: LATE, hash: `#/waiting/card/${encodeURIComponent(CARD.pr(MIX_PROJECT))}` },
+  { name: 'g7-v25-passing', state: () => ciState('passing', { who: POOM.name }), now: NOW, looked: LATE, hash: `#/p/${POOM.name}` },
+  { name: 'g7-deploy-mismatch', state: mismatchState, now: NOW, looked: LATE, hash: `#/waiting/${SD3.name}`, polls: 2, click: ['.v2-card a.v2-t[href*="%7Cdeploy%7C"]'] },
+  { name: 'g7-brief-cant', state: () => unreadState(), now: NOW, looked: LATE, later: true },
+  { name: 'g7-brief-cant-show', state: () => { const s = unreadState(); s.repos[MIX_PROJECT].pulls.push(BAD_PR); return s; }, now: NOW, looked: LATE, later: true },
+  { name: 'g7-brief-portfolio', state: () => { const p = waSetup({}); p.config = withPortfolio(p.config); addPortfolio(p.repos, pfFiles({})).fail = { state: 'cant-read', reason: 'no-access' }; return p; },
+    now: Date.parse('2026-10-22T18:00:00Z'), looked: LATE, polls: 7 },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {
@@ -202,7 +230,7 @@ async function main() {
               await page.waitForTimeout(25);
             }
           };
-          await run(62_000);
+          await run(2000 + 60_000 * (shot.polls || 1));
           if (shot.later) {
             setup.fail();
             await run(3 * POLL);
@@ -211,6 +239,13 @@ async function main() {
           if (shot.then) {
             await page.evaluate((h) => { location.hash = h; }, shot.then);
             await run(2000);
+          }
+          // G7: every fold of a kind opened, one tap each, until none is left closed.
+          if (shot.clickAll) {
+            for (let i = 0; i < 200 && (await page.locator(shot.clickAll).count()); i++) {
+              await page.locator(shot.clickAll).first().click();
+              await run(200);
+            }
           }
           // G5: folds opened as the owner opens them, one tap each.
           for (const sel of shot.click || []) {
@@ -229,9 +264,24 @@ async function main() {
           const waits = await page.evaluate(() => { const e = document.querySelector('[data-k="page-waits"] .v2-wn'); return e ? `${e.textContent}${e.scrollHeight > e.clientHeight + 1 ? ' [cut]' : ''}` : null; });
           // G6 (AC92 (d)): each opened phase's heads and fold rows, in order.
           const std = await page.evaluate(() => [...document.querySelectorAll('.v2-stdl .v2-subh, .v2-stdl .v2-untrw')].map((e) => e.textContent).join(' | '));
+          // G7 (AC92 (a)): how many marks the page draws green and red, by their own colour.
+          const marks = await page.evaluate(() => {
+            const css = getComputedStyle(document.querySelector('.v2-page') || document.documentElement);
+            const want = (v) => css.getPropertyValue(v).trim().toLowerCase();
+            const rgb = (hex) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')})`;
+            const [ok, bad] = [rgb(want('--ok')), rgb(want('--bad'))];
+            let g = 0;
+            let r = 0;
+            for (const e of document.querySelectorAll('.v2-s.ok, .v2-s.bad, .v2-cim, .v2-okm, .v2-smk, .v2-safe.bad .v2-k, .v2-bcant > .v2-k')) {
+              const c = getComputedStyle(e).color;
+              if (c === ok) g++;
+              else if (c === bad) r++;
+            }
+            return `${g} green, ${r} red`;
+          });
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}`);
           await ctx.close();
         }
       }

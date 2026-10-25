@@ -170,12 +170,13 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
   set('Notification', globals.Notification); // AC75's control (from 2026-10-18); none by default
   Date.now = () => now;
   const server = fakeServer(repos, config, { now: () => now });
+  const held = { server };
   const flush = async () => { for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r)); };
   let mod = null;
   let desk = null;
   if (entry) {
     set('fetch', async (path, init) => {
-      const r = await server.call(path, JSON.parse(init.body));
+      const r = await held.server.call(path, JSON.parse(init.body));
       if (!r.ok) return { status: r.status || 500, ok: false, type: 'basic', text: async () => 'error' };
       return { status: 200, ok: true, type: 'basic', text: async () => JSON.stringify(r.json) };
     });
@@ -183,7 +184,7 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
     await flush();
   } else {
     mod = await import(`../../src/public/sandbox.js?load=${++loads}`);
-    desk = mod.startSandbox({ config, call: (p, b) => server.call(p, b) });
+    desk = mod.startSandbox({ config, call: (p, b) => held.server.call(p, b) });
   }
   const app = {
     els, desk, server, flush, view: els.view, head, scrolls, loc, module: mod, addresses,
@@ -257,6 +258,7 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
     restore() {
       Date.now = realNow;
       if (desk) desk.stop();
+      held.server = null;
       for (const k of names) {
         if (saved[k]) Object.defineProperty(globalThis, k, saved[k]);
         else delete globalThis[k];

@@ -672,6 +672,27 @@ function stc(kind, cls = 'v2-s') {
   return s;
 }
 
+/**
+ * A status mark (AC92 (a), from G7; P-001-glance2-palette.md, A): the reached check green (`ok`, --ok) and the
+ * not-reached cross red (`bad`, --bad), on the 14–16 px mark only, its words beside it in ink or grey. Drawn only where
+ * AC92 (a) names a status mark: the Timeline, the page's strip, an opened phase's rows, a Home tile's drawing, Plan's
+ * Reached list and a CI line. Every other kind, and every check that marks an absence ("Nothing waiting", "Nothing needs
+ * you"), is stc's own, in ink or grey.
+ */
+function smk(kind, cls = 'v2-s') {
+  const s = stc(kind, cls);
+  if (kind === 'check' || kind === 'cross') s.setAttribute('class', `${s.getAttribute('class')} ${kind === 'check' ? 'ok' : 'bad'}`);
+  return s;
+}
+/**
+ * A CI line's mark (AC92 (a), from G7): a ✓ in --ok before the words of a CI line that reads passing (AC29's state), a ✕ in
+ * --bad before one that reads failing, hidden from assistive technology (the words say it); none for running, none or
+ * not recorded, whose words stay as they are.
+ */
+const ciMark = (ci) => (ci === 'passing' ? vi('done', 'v2-k v2-cim ok') : ci === 'failing' ? vi('bad', 'v2-k v2-cim bad') : null);
+/** A v2.5 page's CI row's circle (AC92 (a), from G7): the check, green, where it reads passing; the cross, red, where failing; else the dashed "?". */
+const ciCircle = (ci) => smk(/: passing\b/.test(ci) ? 'check' : /: failing\b/.test(ci) ? 'cross' : 'unrec');
+
 /** Home's state for this window: the question titles this opening saw (J24's answers), the lines on the screen (AC40's no-reorder rule), "<n> newer". */
 const homeState = { titles: new Map(), accepted: null, since: null };
 
@@ -717,7 +738,9 @@ function briefingNode(desk, built, bd) {
     v.parts ? h('span', { class: 'v2-bt2', key: 'brief-parts', live: () => view(Date.now()).parts || '' }) : null,
     v.kind === 'you' ? DUE_SLOTS.map(dueLine) : null,
     v.sub ? h('span', { class: 'v2-bt3', key: 'brief-sub', live: () => view(Date.now()).sub || '' }) : null,
-    v.cant.map((w, i) => h('span', { class: 'v2-bt3 bad', key: `brief-cant:${i}` }, w)));
+    // AC91 (c), from G7: each can't-read line under the first carries the ✕ in --bad before its words, as Waiting's line
+    // does; where the first line is itself one, its mark (above) is that ✕, as built.
+    v.cant.map((w, i) => h('span', { class: 'v2-bt3 bad v2-bcant', key: `brief-cant:${i}` }, vi('bad', 'v2-k bad'), h('span', {}, w))));
 }
 
 /** One line of "Since you last looked" (AC82, frame H1): its time in Plex Mono, its icon, the record's own words, then "<project> · <its codes>"; a tap opens where it happened. */
@@ -833,7 +856,7 @@ function timelineNode(tl, name) {
       const rise = i === r.up;
       if (!c) return h('span', { class: `v2-c${drop ? ' dn' : ''}${rise ? ' up' : ''}` }, drop || rise ? h('i', {}) : null);
       return h('span', { class: `v2-c ${c.cls || 'ph-none'} s-${c.state}${c.l ? ' l' : ''}${c.r ? ' r' : ''}${drop ? ' dn' : ''}${rise ? ' up' : ''}` },
-        drop || rise ? h('i', {}) : null, stc(c.icon, 'v2-s'));
+        drop || rise ? h('i', {}) : null, smk(c.icon, 'v2-s'));
     })));
   return [h('div', { class: `v2-ptl${tl.sprints ? ' sprints' : ''}`, key: `ptl:${name}`, 'aria-hidden': 'true' },
     tl.rows.map(row),
@@ -1283,7 +1306,7 @@ function stripNode(st) {
   return h('ol', { class: `v2-strip${st.sprints ? ' sprints' : ''}`, key: 'strip', 'aria-label': st.sprints ? 'Sprints, the last four' : 'Phases, start to finish' },
     st.cells.map((c) => h('li', { class: `v2-ph ${c.cls || 'ph-none'} b-${c.bar}${c.now ? ' now' : ''}`, key: `ph:${c.phase}` },
       h('span', { class: 'v2-bar3', 'aria-hidden': 'true' }),
-      h('span', { class: 'v2-pn' }, stc(c.icon), h('span', { class: st.sprints ? 'v2-pnm mono' : 'v2-pnm' }, c.phase)),
+      h('span', { class: 'v2-pn' }, smk(c.icon), h('span', { class: st.sprints ? 'v2-pnm mono' : 'v2-pnm' }, c.phase)),
       h('span', { class: 'v2-ps' }, c.words))));
 }
 
@@ -1292,7 +1315,7 @@ function smRow(x) {
   // AC92 (d), from G6: `own` or `std` on the row, so the owner's own rows' names take the row weight (500) and a standard
   // row's stays 400.
   return h('li', { class: `v2-sm ${x.kind}${x.soft ? ' soft' : ''}${x.old ? ' old' : ''}`, key: `sm:${x.kind}:${x.id}`, 'data-ms': x.id },
-    stc(x.icon), h('span', { class: 'v2-smt' }, h('span', { class: 'v2-smn' }, h('span', { class: 'v2-id' }, x.id), ' ', x.name),
+    smk(x.icon), h('span', { class: 'v2-smt' }, h('span', { class: 'v2-smn' }, h('span', { class: 'v2-id' }, x.id), ' ', x.name),
       h('span', { class: 'v2-sms' }, x.words)));
 }
 
@@ -1386,7 +1409,7 @@ function detailsNode(p) {
     h('section', { class: 'v2-pdbody' },
       // No model yet (nothing read): "not available", never "not recorded" (the Reviewer's N-d, stage 3 round 2).
       // AC92 (c), from G5: after AC29's state, the counted workflows passed, in the same line (projectpage.js, ciPassed).
-      h('p', { class: 'v2-small' }, `CI on ${project.defaultBranch}: ${model ? model.ci : NOT_AVAILABLE}`, ciPassed(model)),
+      h('p', { class: 'v2-small', key: 'details-ci' }, ciMark(model && model.ci), `CI on ${project.defaultBranch}: ${model ? model.ci : NOT_AVAILABLE}`, ciPassed(model)),
       // AC68: a v3 project's Pipeline view folds into the Timeline; its record notes get their own screen.
       h('ul', { class: 'v2-links' },
         project.model === 'v3' ? null : h('li', {}, h('a', { class: 'v2-lnk', href: go('p', name, 'pipeline'), key: 'more:pipeline' }, 'Reduced view and waits')),
@@ -1405,7 +1428,7 @@ function v25PageNodes(p, bd) {
   const name = p.project.name;
   const ledger = treeLink(p.project, p.snap && p.snap.tree, 'docs/LEDGER.md');
   const rows = [...pageTwoRows(p, bd),
-    pageRow('page-ci', go('p', name, 'pipeline'), stc(/passing/.test(v.ci) ? 'check' : 'unrec'), v.ci, null),
+    pageRow('page-ci', go('p', name, 'pipeline'), ciCircle(v.ci), v.ci, null),
     pageRow('page-ledger', ledger || go('p', name, 'pipeline'), null, PAGE_WORDS.ledgerLatest, v.latest, { smallCls: 'v2-mono' }),
     pageRow('page-records', go('p', name, 'pipeline'), null, PAGE_WORDS.records, v.records, { smallCls: 'v2-mono', cls: 'soft' })];
   return [h('ol', { class: 'v2-rows', key: 'page-rows' }, rows),
@@ -1533,7 +1556,7 @@ function renderPipeline(p) {
   const m = p.model;
   const kids = [];
   kids.push(h('p', { class: 'sb-lead small' }, boxStateText(p.box, TZ)));
-  kids.push(h('p', { class: 'sb-muted small' }, `CI on ${m.defaultBranch}: ${m.ci}`));
+  kids.push(h('p', { class: 'sb-muted small' }, ciMark(m.ci), `CI on ${m.defaultBranch}: ${m.ci}`));
   kids.push(h('h2', { class: 'sb-h2' }, 'Waiting on you'), waitsNode(p));
   kids.push(h('h2', { class: 'sb-h2' }, 'Reduced view (operating model v2.5.1)'),
     h('dl', { class: 'sb-dl sb-card' },
@@ -2641,7 +2664,7 @@ function sheetFoot(sx, why, unblocks = null) {
   const { v } = sx;
   return h('div', { class: 'v2-blk v2-foot', key: 'sheet-foot' }, unblocks,
     why ? h('p', { class: 'v2-small', key: 'foot-why' }, h('span', { class: 'v2-fk' }, 'Why it is here: '), codeWords(why)) : null,
-    h('p', { class: 'v2-small', key: 'foot-checked' }, h('span', { class: 'v2-fk' }, 'What was checked: '), v.checked),
+    h('p', { class: 'v2-small', key: 'foot-checked' }, h('span', { class: 'v2-fk' }, 'What was checked: '), ciMark(v.ci), v.checked),
     v.links && v.links.length ? h('p', { class: 'v2-small', key: 'links' }, v.links.map((l, i) => [i ? ' · ' : '', ext(l.href, l.text, 'v2-lnk') || `${l.text}: no file recorded`])) : null);
 }
 
@@ -2871,6 +2894,7 @@ function cardSheet(bd, built, only, sheetId, backTo = null) {
     parts.push(h('div', { class: `v2-blk v2-safe${check ? ` ${check.kind}` : ''}`, key: `safe:${card.key}` },
       h('p', { class: 'v2-bh' }, 'Whether it matches a reviewed pull request'),
       h('p', { class: 'v2-body v2-deploy-l' }, row.link ? ext(row.link, row.text, 'v2-lnk') : row.text, row.code ? [' ', h('span', { class: 'v2-mono' }, row.code)] : null),
+      // AC92 (a), from G7: a mismatch's mark in --bad (`.v2-safe.bad`), its words in ink; a match and a wait keep theirs.
       check ? [h('p', { class: 'v2-mark v2-safe-l' }, vi(check.kind === 'ok' ? 'done' : check.kind === 'bad' ? 'x' : 'clock'), h('span', {}, check.words)),
         check.sources ? h('p', { class: 'v2-small' }, check.sources.map((x, i) => [i ? ' · ' : '', x.href ? ext(x.href, x.words, 'v2-lnk') : x.words]))
           : h('p', { class: 'v2-small' }, check.reason)] : null));
@@ -2882,7 +2906,7 @@ function cardSheet(bd, built, only, sheetId, backTo = null) {
       f.leftWords ? h('p', { class: 'v2-mark', key: 'left-words' }, vi('kick'), h('span', {}, f.leftWords)) : null,
       f.answerWords ? h('p', { class: 'v2-body', key: 'answer-words' }, f.answerWords) : null));
   }
-  parts.push(blk('What was checked', h('p', { class: 'v2-body' }, v.checked),
+  parts.push(blk('What was checked', h('p', { class: 'v2-body' }, ciMark(v.ci), v.checked),
     // AC80 (settled after stage 1a's build review, round 1): no read gives a pull request's own checks,
     // so its card has no check line, and its sheet says so, never letting a missing line pass for passing.
     card.kind === 'pr' ? h('p', { class: 'v2-small', key: 'own-checks' }, PR_CHECKS_WORDS) : null));
@@ -3009,7 +3033,7 @@ function markNode(m) {
   const icon = MARK_ICON[m.mark];
   // AC89 (k): a mark with its own spoken name (a failed source check, "source check failed") says that, its drawn word hidden.
   const words = m.spoken && icon ? [vi(icon.icon, 'v2-k v2-smk'), h('span', { class: 'sb-vh' }, m.spoken), h('span', { 'aria-hidden': 'true' }, m.word)]
-    : [icon ? [vi(icon.icon, 'v2-k v2-smk'), h('span', { class: 'sb-vh' }, `${icon.name} `)] : m.mark ? `${m.mark} ` : null, m.word];
+    : [icon ? [vi(icon.icon, 'v2-k v2-smk'), h('span', { class: 'sb-vh' }, `${icon.name} `)] : m.mark === '✓' ? [h('span', { class: 'v2-okm' }, '✓'), ' '] : m.mark ? `${m.mark} ` : null, m.word];
   if (!m.why) return h('span', { class: 'sb-mkw' }, words);
   return h('details', { class: 'sb-mkw sb-why' }, h('summary', {}, words), h('p', { class: 'v2-small' }, m.why));
 }
@@ -3091,7 +3115,7 @@ function mileNode(p, x, finishOf, whyOnce = null) {
   // AC92 (d), from G6: a standard milestone's meta line reads "<id> · standard · <its state words>", its name in 400 13 px
   // (`.v2-ms.std`); the owner's own keep AC84's weight.
   return h('div', { class: `v2-ms${x.icon === 'planned' || x.icon === 'next' ? ' planned' : ''}${x.std ? ' std' : ''}`, key: `mile:${x.key}`, 'data-ms': x.code },
-    h('span', { class: 'v2-msi' }, stc(FEED_STC[x.icon] || 'unrec')),
+    h('span', { class: 'v2-msi' }, smk(FEED_STC[x.icon] || 'unrec')),
     h('p', { class: 'v2-mstt' }, x.name),
     h('p', { class: 'v2-msm' }, [x.code, x.std ? 'standard' : null, x.words, fin].filter(Boolean).join(' · ')),
     x.doneWhen ? h('p', { class: 'v2-msd' }, h('b', {}, 'Done when'), ' ', x.doneWhen) : null,
@@ -3148,7 +3172,7 @@ function feedKeys(p, fv) {
   const name = p.project.name;
   const open = isOpenFold(name, 'feed-keys', false);
   return h('div', { class: 'v2-fkeys', key: 'feed-keys' }, foldButton(name, 'feed-keys', false, { class: 'v2-fold' }, 'Status icons'),
-    open ? h('ul', { class: 'v2-keyl' }, fv.iconsKey.map(([k, w]) => h('li', { key: `fk:${k}` }, stc(FEED_STC[k] || 'unrec'), h('span', {}, w)))) : null);
+    open ? h('ul', { class: 'v2-keyl' }, fv.iconsKey.map(([k, w]) => h('li', { key: `fk:${k}` }, smk(FEED_STC[k] || 'unrec'), h('span', {}, w)))) : null);
 }
 
 /**
@@ -3603,7 +3627,7 @@ const planDraft = {
   mem: undefined, // undefined: not read yet; null: none
   failed: false,
   aside: false, // a newer plan landed and the draft was set aside: said until the next move
-  moved: null, // the key of the row last moved (its gold edge, "moved"), until the next move
+  moved: null, // the key of the row last moved (its edge in --line2 from G7, "moved"), until the next move
   focus: null, // the control to give the focus back to after a move
   read() {
     if (this.mem !== undefined) return this.mem;
@@ -3860,6 +3884,8 @@ function foldList(key, words, list, extra) {
   const open = isOpenFold(WA_FOLDS, key, false);
   return h('section', { class: 'v2-plgrp v2-plfolds', key: `wa-g:${key}` }, foldButton(WA_FOLDS, key, false, { class: 'v2-fold v2-plfold' }, words),
     open ? h('ul', { class: 'v2-plmini', key: `wa-l:${key}` }, list.map((x) => h('li', { class: `v2-small ${key}` },
+      // AC92 (a), from G7 (AC86's note: "the Reached list's marks are green"): each reached one its check, green, before its name.
+      key === 'reached' ? smk('check') : null,
       h('span', { class: 'v2-plt' }, x.name), ' ', h('span', { class: 'v2-mono' }, x.code), extra(x)))) : null);
 }
 

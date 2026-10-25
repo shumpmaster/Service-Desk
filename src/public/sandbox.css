@@ -579,6 +579,8 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
 .v2-ql { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; font: var(--t-small); color: var(--ink2); }
 .v2-ql b { font-weight: 500; color: var(--ink); }
 .v2-ql.bad { color: var(--bad); }
+/* G9c (AC91 (c), "each on a row of its own"; P-001-glance-g9c-row.md, A): Waiting's "Still reading" line holds a row of its own in the quiet lines' wrapping box, as .v2-qfold does. */
+.v2-qread { flex-basis: 100%; }
 .v2-qsmall { display: flex; flex-wrap: wrap; gap: 0 4px; align-items: center; font: var(--t-small); color: var(--ink2); }
 .v2-qfold { flex-basis: 100%; padding: 4px 0 8px; }
 .v2-flist { display: grid; gap: 8px; }

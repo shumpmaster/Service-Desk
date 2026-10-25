@@ -190,10 +190,12 @@ test('AC59 (AC92 (d), rewritten in G6): the gathered "not recorded" line and its
   assert.ok(!rowsOf(block(feed, 'Build-i2')).some((x) => /^Build-\d/.test(x.code || '')), 'no rows for them');
   const app = await openSD('#/p/Service-Desk/timeline');
   try {
-    const f = keyed(app, 'fold:Design-i2:gather:nr');
+    // Rewritten after G6's review (round 1): the line's key names its run, "<Phase>-i<n>" and its run number, since two runs
+    // can share the first; Design i2 is run 2.
+    const f = keyed(app, 'fold:Design-i2:gather:nr:run2');
     assert.equal(f.attrs['aria-expanded'], 'false');
     await app.tap(f);
-    const list = byClass(keyed(app, 'gather:Design-i2:gather:nr'), 'v2-glist')[0]; // AC84's look (from `sb-glist`)
+    const list = byClass(keyed(app, 'gather:Design-i2:gather:nr:run2'), 'v2-glist')[0]; // AC84's look (from `sb-glist`)
     assert.equal(list.children.length, 6, 'listed in place on a tap');
     assert.match(list.textContent, /Done defined in real scenarios Design-1 not recorded/);
   } finally {
@@ -336,7 +338,7 @@ test('AC60: untied merged pull requests placed by their merge time (18 in Design
 test('AC60, changed by AC84 and by AC92 (c) in G5: each list starts folded ("<s> sprints · <m> merged ›", frame 7b), and opens and folds by a tap, Enter and Space, with its state and its mark', async () => {
   const app = await openSD('#/p/Service-Desk/timeline');
   try {
-    const f = () => keyed(app, 'fold:sprints:Build-i1:M1');
+    const f = () => keyed(app, 'fold:sprints:Build-i1:M1:run1');
     assert.equal(f().attrs['aria-expanded'], 'false');
     // AC84 (:6914-6915): "then "<n> sprints ▸", folded" (rewritten from AC60's "2 sprints feed this"); the mark an icon (AC81).
     // Rewritten in G5 of "After the glance audit" (AC84's fold, changed by AC92 (c): "<sprints> ›" in the one sprint form,
@@ -354,7 +356,7 @@ test('AC60, changed by AC84 and by AC92 (c) in G5: each list starts folded ("<s>
     f().dispatch('keydown', { key: ' ' });
     await app.flush();
     assert.equal(f().attrs['aria-expanded'], 'true');
-    assert.equal(keyed(app, 'fold:sprints:Design-i2:MD1').textContent, '1 sprint · 1 merged', 'one: "1 sprint" (rewritten in G5, as above; it read "1 sprint")');
+    assert.equal(keyed(app, 'fold:sprints:Design-i2:MD1:run2').textContent, '1 sprint · 1 merged', 'one: "1 sprint" (rewritten in G5, as above; it read "1 sprint")');
     assert.match(keyed(app, 'mile:Design-i2:MD2').textContent, /No sprints planned yet/);
   } finally {
     app.restore();
@@ -435,7 +437,7 @@ test('AC60, changed by AC84: each bullet\'s label and order, each a small grey w
   assert.doesNotMatch(rule('.v2-bn'), /text-transform|border:|background/, 'never boxed or in capitals');
   const app = await openSD('#/p/Service-Desk/timeline');
   try {
-    await app.tap(keyed(app, 'fold:sprints:Build-i1:M2B'));
+    await app.tap(keyed(app, 'fold:sprints:Build-i1:M2B:run1'));
     const task = byClass(keyed(app, 'tasks:Build-i1:M2B'), 'v2-sp')[0];
     const rows = byClass(task, 'v2-bl');
     assert.deepEqual(rows.map((l) => [l.className, byClass(l, 'v2-bn')[0].textContent]), [['v2-bl tech', 'Technical'], ['v2-bl ctx', 'Context'], ['v2-bl why', 'Why']]);
@@ -574,13 +576,13 @@ test('AC61: on the page, the why text word for word on Status and the Timeline; 
   try {
     // AC84 (:6913-6914): "Why <…>" with the label in weight 500 and the text in body; its source after it.
     assert.match(keyed(app, 'mile:Build-i1:M2B').textContent, /Why "It's important for me to see timelines and context windows to be able to drive things\." · docs\/PROJECT\.md/);
-    await app.tap(keyed(app, 'fold:sprints:Design-i2:untied'));
+    await app.tap(keyed(app, 'fold:sprints:Design-i2:untied:run2'));
     const task = (n) => findAll(app.view, (e) => e.attrs && e.attrs['data-sprint'] === `PR #${n}`)[0];
     // AC84 (frame 7b: "… reached · docs/LEDGER.md, L-0016"): each fact, then " · " and its source, in grey.
     assert.match(task(906).textContent, /A fact whose source is not named · source not recorded/);
     assert.match(task(906).textContent, /A fact with one · docs\/PROJECT\.md/);
     assert.match(task(905).textContent, /ContextNone beyond the ruling quoted in WhyWhy"One thing to change here\./);
-    await app.tap(keyed(app, 'fold:named:Design-i2:MD3'));
+    await app.tap(keyed(app, 'fold:named:Design-i2:MD3:run2'));
     assert.match(task(901).textContent, /So a glance shows where the work is\.And a second paragraph, kept as its own\./);
     // From stage 3 the Status screen gives way to the page (AC81, AC83): a project milestone's why shows on the
     // Timeline (above), and a standard milestone's on the page, from its section 3 line, "· why: <its why>".
@@ -663,7 +665,7 @@ test('AC60 + J12 (build review round 1, B2): while a J12 failure is set, every p
     app.desk.states.get('Service-Desk').j12.wait = null;
     app.desk.states.get('Service-Desk').j12.head = 'f'.repeat(40);
     await app.advance(61_000);
-    await app.tap(keyed(app, 'fold:sprints:Build-i1:M2B'));
+    await app.tap(keyed(app, 'fold:sprints:Build-i1:M2B:run1'));
     const tasks = keyed(app, 'tasks:Build-i1:M2B');
     assert.match(tasks.textContent, /PR #44 not available/);
     assert.match(tasks.textContent, /PR #52 not available/);

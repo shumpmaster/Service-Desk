@@ -313,7 +313,7 @@ test('AC83 (frame 6; notes 2, 12, 15, 19; AC92 (d), rewritten in G6): opened, a 
     assert.equal(untr.textContent, '6 not tracked this run: 4 not recorded yet, 2 no record in the model', 'the six folded into one row');
     await app.tap(untr);
     assert.deepEqual(rowsIn(keyed(app, 'std:Design-i2')).map((r) => byClass(r, 'v2-id')[0].textContent), ['Design-6', 'Design-5', 'Design-4', 'Design-3', 'Design-2', 'Design-1'], 'opened: Design-1 at the foot');
-    const old = keyed(app, 'old:Design-i1');
+    const old = keyed(app, 'old:Design-i1:run1');
     assert.match(old.className, /\bv2-oldrun\b/, 'an earlier run, under its own heads');
     assert.ok(rowsIn(old).every((r) => /\bold\b/.test(r.className)), 'smaller and softer (note 2)');
     assert.deepEqual(rowsIn(old).map((r) => r.textContent), ['Design-6 A plan that passed reviewnot reached', 'Design-1 Done defined in real scenariosreached']);

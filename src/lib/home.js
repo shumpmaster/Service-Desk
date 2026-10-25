@@ -51,7 +51,7 @@ export const HOME_WORDS = Object.freeze({
 });
 /** Home's words for a project no read of which has succeeded in this opening, in place of "since HH:MM" (AC91 (c), from G8c; P-001-glance-opening-wording.md, B), held in board.js from G8d, where Waiting's take them too. */
 export { IN_OPENING };
-/** Waiting's line under its title while a first read is still on its way, lower case as built from stage 1a (AC80; sandbox.js `checkedWords`). */
+/** Waiting's line under its title while a first read is still on its way, lower case as built from stage 1a (AC80; `titleLine`'s Waiting form, below), and, from G9c, a project's page's row's words with no success held (projectpage.js's `pageCheckedWords`). */
 export const WAITING_CHECKING = 'checking…';
 
 /**

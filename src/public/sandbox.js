@@ -3773,6 +3773,9 @@ function planRow(v, r, ordering, once = null) {
     place, stc(r.icon),
     h('span', { class: 'v2-prt' }, h('span', { class: 'v2-prtt v2-plname' }, r.name),
       h('span', { class: 'v2-mono v2-plm' }, v.many && ordering ? `${r.mono} · ${r.project.name}` : r.mono),
+      // G8b (AC24's note; P-001-glance-moved-word.md, B): on the moved row only, the word "moved" on a line of its own
+      // under the code line, small and grey; hidden from assistive technology, since the place's words say ", moved".
+      moved ? h('span', { class: 'v2-plmoved', 'aria-hidden': 'true' }, 'moved') : null,
       h('span', { class: 'sb-vh' }, `: ${r.state.words}`)),
     h('span', { class: `v2-plv${r.right ? ` ${r.right.kind}` : ''}` }, r.right ? r.right.words : null), r.here ? hereMark('r') : null);
   return h('li', { class: `v2-plli${ordering ? ' ord' : ''}${moved ? ' moved' : ''}`, key: `wa-row:${r.key}`, 'data-row': r.code },

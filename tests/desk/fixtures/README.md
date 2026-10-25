@@ -1013,3 +1013,33 @@ so there is no `G9B_ONCE`) and the `g9b-` captures open the states above (`unrea
   Personal-Org-Operating-Model's first read held too, so no project is read; **a reader that never answers**, Service-Desk's
   calls on `mix` left unanswered for 3 minutes in view (as ac89-after-md3.test.mjs's `hang`); and **reads made to work
   again**, the made-up project's failure removed on `orderState`. **NOT how any read went.**
+
+## After the questions request, QW1 (2026-10-25, S-001 AC94; AC52, AC77, AC80, AC89 (j) and AC91 (f) changed; the owner's "Top of Waiting", "One tap, then commit" and "In the section", and the approved picture, decisions/questions/P-001-m3g-picture.md, A)
+
+QW1 adds `tests/desk/qw1-fixtures.mjs` and no fixture file. `tests/desk/ac94-qw1-questions.test.mjs` (its pure cases of
+board.js's section and its screen cases), QW1's walk over `QW1_OPENS` in `ac88-dark.test.mjs` (AC69's vermilion check,
+whose want-list gains a question's kind icon in the section; AC92 (a)'s cascade check, whose want-list gains the section's
+grey line; and the stage-8 guard, whose `QW1_ONCE` pins the section's own look), the locked cases QW1 rewrites, and the
+`qw1-` captures open the states above (`quiet`, `orderState`, `noneDrawnState`, `cantShowState`, `cantShowLastState`,
+`twoMixState` with `KICKED`, md-extremes/, as they are) and these made-up parts, each **NOT real**:
+- **made-up question files** (`qw1-fixtures.mjs`'s `qFile`, `Q_ALPHA` to `Q_EPSILON`, `Q_HELD`, `K_FILES` and `K25_FILES`):
+  owner questions in questions/_TEMPLATE.md's form (J2), none of them ever put to the owner: lettered with and without a
+  `Milestone:` line, with four to six choices, some with a description after " — ", one that can't be undone and some that
+  settle themselves; a numbered one with its parts' options and recommendations on its lines; one whose OPTIONS: lines mix
+  letters, numbers and neither, so it can't be split; one with no OPTIONS: block; v2.5 ones with letters and without; a long
+  title holding md-extremes/' long unbroken word, with long choices; and one held as being asked in a session (its `Asked in
+  session:` line naming a made-up session id, `session_0QW1MadeUpNotARealSession01`, with no session file). Their raised
+  times (J2's first commits) are made up. **NOT real records.**
+- **`busiestState`** (`qw1-fixtures.mjs`): md-extremes/ (AC42's five connected projects, twelve waits) with each project's own
+  question replaced by one of the made-up ones above and Beta holding the held one too; the device's Done mark on Beta's
+  question, kicked back three minutes before the clock (made up, as `deviceMarks` makes them); and `fail()`, Delta's reads
+  failing after its first read (the network cause). **NOT real records, marks or failures.**
+- **`kindsState`** (`qw1-fixtures.mjs`): two made-up projects, "Kinds" (v3) and "Ledger" (v2.5, poom/'s LEDGER.md placeholder),
+  holding the kinds above; with `linkCap`, a small cap so each link is past it; and, in the cases, Kinds with
+  `contentPrefill: false` or `webCommitsToDefault: false`, a made-up answer's pull request (#70) adding its answer file, its
+  answer committed to the default branch, Ledger failing from the start or holding `BAD_PR`, and two more made-up projects,
+  "Held" (only the held question) and "Quiet" (a README alone). **NOT real records, pull requests or failures.**
+- **words a device keeps** (`desk-sheet-words-v1`) for a question, made up, and **"last looked"** times before and after the
+  questions' raised times. **NOT a real device's record.**
+- **`QW1_OPENS`** (`qw1-fixtures.mjs`): Waiting on `busiestState` with every fold opened and Delta then failing; Beta alone
+  shown; the held question's sheet; and Waiting on `kindsState` with every fold opened and kept words. **NOT real.**

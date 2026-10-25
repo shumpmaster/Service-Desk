@@ -380,11 +380,16 @@ test('AC91 (f): the strip opens by itself when a card is kicked back and closes 
   }
 });
 
-test('AC91 (f): the counts are unchanged — the badge and Home\'s briefing still count "Waiting on you" plus "Kicked back"', async () => {
+// Rewritten in QW1 (AC94: "It is counted exactly as before … the badge counts the section, the strip and the lane, as now,
+// so it is their sum"): the lane and the strip count what they hold, and each project's questions waiting and kicked back
+// are in the "Questions for you" section; added back, the counts are the same 8 waiting and 3 kicked back.
+test('AC91 (f), rewritten in QW1: the counts are unchanged — the badge and Home\'s briefing still count "Waiting on you" plus "Kicked back", the section\'s questions among them', async () => {
   const app = await open(twoMixState(), { store: kickedStore() });
   try {
-    const w = Number(byClass(lane(app, 'wait'), 'v2-lc')[0].textContent);
-    const k = Number(byClass(byClass(strip(app), 'v2-kh')[0], 'v2-lc')[0].textContent);
+    const inSection = (kind) => findAll(keyed(app, 'qsec'), (e) => e.attrs && e.attrs['data-question'] === kind).length;
+    const w = Number(byClass(lane(app, 'wait'), 'v2-lc')[0].textContent) + inSection('counted');
+    const k = Number(byClass(byClass(strip(app), 'v2-kh')[0], 'v2-lc')[0].textContent) + inSection('kicked');
+    assert.deepEqual([inSection('counted'), inSection('kicked')], [1, 1], 'Alpha\'s question waiting, Bravo\'s kicked back');
     assert.deepEqual([w, k], [8, 3]);
     assert.equal(badge(app), w + k, 'the badge');
     await app.go('#/');

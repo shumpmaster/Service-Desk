@@ -62,14 +62,18 @@ async function redraw(app) {
 // ---------------------------------------------------------------------------
 // (a) Waiting for one project the desk can't read (specs/S-001.md:7823-7852)
 
-test('AC89 (a): the five states as a pure view, from readState — each one\'s line under the title, the line above the lanes, the cards and an empty lane\'s word; "HH:MM" in ownerTimeZone', () => {
+// Rewritten in G8d (AC89 (a), changed: the owner's "Yes, everywhere (Recommended)", and state 2's lanes read so, C): state 2,
+// no read of the project succeeded in this opening, says "Can't read <project> in this opening: <reason>" above the lanes,
+// and its `cards` is what is drawn, the cards a read in this opening gave, if any (a held tree's); state 5 keeps "HH:MM".
+test('AC89 (a): the five states as a pure view, from readState — each one\'s line under the title, the line above the lanes, the cards and an empty lane\'s word; "HH:MM" in ownerTimeZone, and state 2 "in this opening" (from G8d)', () => {
   const at = Date.parse('2026-10-14T15:02:00Z');
   const v = (read, last) => oneProjectView({ name: 'Alpha', read, lastSuccessAt: last, tz: TZ });
   const s1 = v({ read: 'checking', since: null }, null);
   assert.deepEqual([s1.state, s1.under(at), s1.cant, s1.cards, s1.empty, s1.counts], [1, 'Checking…', null, false, 'Not read yet', null]);
   const s2 = v({ read: 'cant-read', since: Date.parse('2026-10-14T15:00:00Z'), words: REASON_WORDS.stale }, null);
   assert.deepEqual([s2.state, s2.under(at), s2.cant, s2.cards, s2.empty, s2.counts],
-    [2, 'Not read in this opening', "Can't read Alpha since 10:00: no successful read for 3 minutes", false, "Can't read", null]);
+    [2, 'Not read in this opening', "Can't read Alpha in this opening: no successful read for 3 minutes", true, "Can't read", null]);
+  assert.doesNotMatch(s2.cant, /since|10:00/, 'state 2: no time');
   const s3 = v({ read: 'ok', since: at - 30e3 }, at - 30e3);
   assert.deepEqual([s3.state, s3.under(at), s3.cant, s3.cards, s3.empty, s3.counts], [3, 'checked 30 s ago', null, true, 'Nothing here', 'read']);
   const s4 = v({ read: 'checking', since: null }, at - 10 * 60e3);

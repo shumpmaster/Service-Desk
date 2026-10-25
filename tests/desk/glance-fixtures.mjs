@@ -22,8 +22,10 @@
 // on their way, a project's, two, every one, the portfolio's, and the can't-draw project's parts, and Waiting and a
 // project's page in the states its quiet lines and the page's row are drawn in (`failedHeldState({ poomHeld })`,
 // `heldReadsState`, `cantShowHeldState`, `G9C_OPENS`); the later stages add theirs. Each made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
-import { CONFIG, fixture } from './helpers.mjs';
-import { repo, BAD_PR, gitSha } from './fake-desk.mjs';
+import { CONFIG, fixture, FIX } from './helpers.mjs';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { repo, BAD_PR, gitSha, pr } from './fake-desk.mjs';
 import { waSetup, WORKED, memStore, SD, POOM } from './wa-fixtures.mjs';
 import { loadSandbox, findAll } from './sandbox-helpers.mjs';
 import { sdRepo, SD3, pullNodes, answerOf } from './tv2-fixtures.mjs';
@@ -842,6 +844,60 @@ export function cantShowHeldState() {
   s.release = () => { alpha.blobHold = null; free(); };
   s.fail = () => {};
   return s;
+}
+
+/**
+ * G9c round 2 (AC91 (c); the Reviewer's B1, and draft 3's "the other quiet lines still side by side"): `quiet` with the
+ * made-up project holding one made-up pull request "With the agents" (a code change from a builder's branch, its required
+ * reviewer's verdict missing under the made-up risk paths of tests/desk/fixtures/board-v5/, as AC80's case has it, J22 rule
+ * 0), so Waiting's quiet lines draw "With the agents: 1" beside "Nothing waiting: <project>"; the first reads `held` names
+ * held on their way (fake-desk.mjs's `hold`). `fail()` refuses every read as signed out (J6) from the next one; `release()`
+ * lets the held reads answer. **NOT real records, pull requests or reads.**
+ */
+export function agentsState({ held = [] } = {}) {
+  const s = quietState();
+  const alpha = s.repos[MIX_PROJECT];
+  alpha.commit({ 'governance/risk-paths.toml': readFileSync(join(FIX, 'board-v5', 'governance', 'risk-paths.toml'), 'utf8') }); // made up (NOT real)
+  alpha.pulls.push({ ...pr(140, 'A made-up code change', { head: 'build/builder/x-140', headRepo: `shumpmaster/${MIX_PROJECT}`, sha: `0140${'a'.repeat(36)}`,
+    createdAt: new Date(NOW - 10 * 60e3).toISOString(), private: false }), html_url: `https://github.com/shumpmaster/${MIX_PROJECT}/pull/140` }); // made up (NOT real)
+  alpha.prFiles = { 140: [{ filename: 'src/x.js', status: 'modified' }] };
+  const free = [];
+  for (const n of held) s.repos[n].hold = new Promise((ok) => { free.push(ok); }); // made up (NOT real)
+  s.release = () => { for (const n of held) s.repos[n].hold = null; for (const f of free) f(); };
+  s.fail = () => { for (const r of Object.values(s.repos)) r.fail = { kind: 'signed-out' }; }; // made up (J6)
+  return s;
+}
+
+/** AC79's asks-merge fixture's clock (ac79-desk.test.mjs's T0, 2026-10-18T12:00:00Z), made up. */
+export const RECORDING_NOW = Date.parse('2026-10-18T12:00:00Z');
+/**
+ * G9c (AC91 (c); draft 3's "before a grey quiet line"): AC79's asks-merge fixture as tests/desk/ac79-desk.test.mjs builds it,
+ * Service-Desk's records at ef8daf4 (real: tests/desk/fixtures/notify/sd-ef8daf4/) with one made-up pull request the
+ * asks-merge job is recording and made-up job runs and log line, so Waiting draws "Being recorded by the automatic job: 1";
+ * Personal-Org-Operating-Model in poom/'s placeholder form; and a made-up portfolio in J7 (pf-fixtures.mjs) whose reads are
+ * held (fake-desk.mjs's `hold`), so "Still reading the portfolio…" stands just before it. Open it at RECORDING_NOW.
+ * `release()` lets the portfolio's read answer. **NOT real pull requests, runs or reads.**
+ */
+export function recordingState() {
+  const notify = (p) => readFileSync(join(FIX, 'notify', 'sd-ef8daf4', p), 'utf8');
+  const head = 'c'.repeat(40);
+  const stamped = (...ls) => ls.map((l) => `2026-10-18T11:41:05.1234567Z ${l}`).join('\n') + '\n';
+  const own = (n, title) => ({ number: n, title, html_url: `https://github.com/shumpmaster/Service-Desk/pull/${n}`, draft: false, base: { ref: 'main' },
+    head: { ref: `cos/made-up-${n}`, sha: head, repo: { full_name: 'shumpmaster/Service-Desk' } }, user: { login: 'shumpmaster' }, author_association: 'OWNER',
+    created_at: '2026-10-18T11:00:00Z', state: 'open' });
+  const r = repo({ 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml'), 'docs/LEDGER.md': notify('docs/LEDGER.md'),
+    'decisions/questions/P-001-asks-merge.md': notify('decisions/questions/P-001-asks-merge.md'), '.github/workflows/asks-merge.yml': notify('.github/workflows/asks-merge.yml') },
+  [own(7, 'File a made-up question')], [{ name: 'governance', status: 'completed', conclusion: 'success' }]);
+  r.prFiles = { 7: [{ filename: 'questions/N-filed.md', status: 'added' }] };
+  r.jobs = { asksRuns: [{ id: 1, event: 'workflow_run', head_branch: 'main', status: 'completed', conclusion: 'success', run_started_at: '2026-10-18T11:30:00Z', updated_at: '2026-10-18T11:30:00Z' }],
+    checks: { [head]: { checkRuns: [{ id: 1, name: 'build', status: 'in_progress', conclusion: null, completed_at: null, check_suite: { id: 10 } }], statuses: [],
+      workflowRuns: [{ check_suite_id: 10, path: '.github/workflows/desk-build.yml' }] } },
+    runJobs: { 1: [{ id: 101, name: 'merge', status: 'completed', conclusion: 'success' }] }, logs: { 101: stamped('NOTE: the asks-merge grant is L-0017') }, commits: {} };
+  const repos = { 'Service-Desk': r, 'Personal-Org-Operating-Model': repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md') }, [], [{ name: 'tests', status: 'completed', conclusion: 'success' }]) };
+  const pfRepo = addPortfolio(repos, pfFiles());
+  let free = null;
+  pfRepo.hold = new Promise((ok) => { free = ok; }); // made up (NOT real)
+  return { config: withPortfolio(CONFIG), repos, release: () => { pfRepo.hold = null; free(); }, pfRepo, fail: () => {} };
 }
 
 /**

@@ -1041,10 +1041,16 @@ above (`unread`, `signedOutState`, `signedOutMixedState`, `openingState`, `order
   first read failed not signed out (`orderState`), and Service-Desk's page, read, beside the made-up project failing from
   the start (`unread`); each with "last looked" after the records' dates (G8c's `g8cStore`). **NOT real records or
   failures.**
-- **the portfolio beside "Being recorded by the automatic job"** (`ac91-g9c-quiet-lines.test.mjs`, `recordingState`):
-  AC79's asks-merge fixture as `ac79-desk.test.mjs` builds it, Service-Desk's records at ef8daf4 (real) with one made-up
-  pull request the job is recording and made-up job runs and log line, beside a made-up portfolio whose read is held.
-  **NOT real pull requests, runs or reads.**
+- **`recordingState`** (`glance-fixtures.mjs` from G9c's round 2, in the test file before it): the portfolio beside "Being
+  recorded by the automatic job": AC79's asks-merge fixture as `ac79-desk.test.mjs` builds it, Service-Desk's records at
+  ef8daf4 (real) with one made-up pull request the job is recording and made-up job runs and log line, beside a made-up
+  portfolio whose read is held, opened at `RECORDING_NOW` (AC79's clock). **NOT real pull requests, runs or reads.**
+- **`agentsState`** (`glance-fixtures.mjs`, G9c's round 2: the Reviewer's B1 and draft 3's lines side by side): `quiet`
+  with the made-up project holding one made-up pull request "With the agents" (a code change from a builder's branch, its
+  required reviewer's verdict missing under board-v5/'s made-up risk paths, J22 rule 0), the first reads it names held on
+  their way, and `fail()` refusing every read as signed out (J6). **NOT real records, pull requests or reads.**
+- **a read in state 4** (`ac91-g9c-quiet-lines.test.mjs`, G9c's round 2, the Reviewer's B2): on `heldReadsState`, the
+  made-up project read, then its re-reads held while the page is hidden for 10 minutes. **NOT how any read went.**
 - **reads changed in the cases** (`ac91-g9c-quiet-lines.test.mjs`): a held read made to fail instead (the network cause)
   and every read refused as signed out while two reads are held (J6), and the made-up project's re-reads held after its
   first read, so its last read grows older than Service-Desk's. **NOT how any read went or failed.**

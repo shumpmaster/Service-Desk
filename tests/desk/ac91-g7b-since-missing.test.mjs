@@ -156,14 +156,21 @@ test('AC91 (c), G7b: a project with no read in this opening — "Service-Desk no
   }
 });
 
-test('AC91 (c), G7b: two projects that can\'t be read — two lines, in the order of their tiles on Home (not the config\'s or the briefing\'s), each with its own words: one since its own time, one not read in this opening', async () => {
+// Rewritten in G8c (P-001-glance-cant-read-order.md, B: "Tile order in both — the briefing's can't-read lines follow the
+// tiles too"; P-001-glance-opening-wording.md, B): the briefing now names them in the tiles' order too, and says "in this
+// opening" for Service-Desk, so the case asserts the tiles' order against the config's, and the briefing's beside it.
+test('AC91 (c), G7b: two projects that can\'t be read — two lines, in the order of their tiles on Home (not the config\'s), each with its own words: one since its own time, one not read in this opening; from G8c the briefing names them in the same order', async () => {
   const app = await opened('Home, two projects, one not read in this opening');
   try {
     const order = tileOrder(app);
     const cant = order.filter((n) => n === SD.name || n === MIX_PROJECT);
     assert.deepEqual(cant, [MIX_PROJECT, SD.name], 'the made-up project\'s tile, with cards waiting, first');
+    assert.deepEqual(unreadState().config.projects.map((p) => p.name).filter((n) => cant.includes(n)), [SD.name, MIX_PROJECT], 'the config\'s order is the other one');
     const t = briefTimes(app);
-    assert.deepEqual([...t.keys()], [SD.name, MIX_PROJECT], 'the briefing names them in the config\'s order, so the order here is the tiles\'');
+    assert.deepEqual([...t.keys()], [MIX_PROJECT], 'the briefing gives the made-up project, read earlier, its time');
+    const b = byClass(app.view, 'v2-brief')[0];
+    const briefed = [...byClass(b, 'v2-bt1'), ...byClass(b, 'v2-bcant')].map((e) => e.textContent).filter((w) => /^Can't read /.test(w));
+    assert.deepEqual(briefed, [`Can't read ${MIX_PROJECT} since ${t.get(MIX_PROJECT)}`, `Can't read ${SD.name} in this opening`], 'the briefing in the tiles\' order, as the lines');
     assert.deepEqual(words(app), [MISS(MIX_PROJECT, `since ${t.get(MIX_PROJECT)}`), MISS(SD.name, 'in this opening')]);
     assert.deepEqual(lines(app).map((p) => p.dataset.k), [`since-miss:${MIX_PROJECT}`, `since-miss:${SD.name}`], 'each keyed by its project');
     assert.deepEqual(sinceKeys(app), ['since-h', 'since-none', 'since-miss']);
@@ -287,15 +294,20 @@ test('AC91 (c), G7b: a read that then succeeds — its line goes on the first dr
   }
 });
 
-test('AC91 (c), G7b (the Reviewer\'s B1, round 1): a project the desk can\'t draw whose read then fails — its grey line shows, with the briefing\'s "Can\'t read <project> since HH:MM" time, and the empty list reads "Not read since HH:MM", never "Nothing new since"; while its read succeeds, no line', async () => {
+// The first step rewritten in G8c (P-001-glance-cant-show-line.md, B: "A line for it too — "<project> not shown, its lines
+// may be missing""): while its read succeeds it now has the grey "not shown" line, not no line; the later steps kept.
+test('AC91 (c), G7b (the Reviewer\'s B1, round 1): a project the desk can\'t draw whose read then fails — its grey line shows, with the briefing\'s "Can\'t read <project> since HH:MM" time, and the empty list reads "Not read since HH:MM", never "Nothing new since"; while its read succeeds, from G8c its "not shown" line, never a "not read" one', async () => {
   // Alpha can't be drawn (fake-desk.mjs's BAD_PR, made up, NOT a real pull request), then its read fails (made up).
   const s = unreadState({ who: MIX_PROJECT });
   s.repos[MIX_PROJECT].pulls.push(BAD_PR);
   const app = await open(s);
   try {
     assert.match(keyed(app, `card:${MIX_PROJECT}`).textContent, /Can't show this project: /, 'Alpha can\'t be drawn');
-    assert.equal(box(app), null, 'its read succeeds: no line');
+    assert.deepEqual(words(app), [`${MIX_PROJECT} not shown, its lines may be missing`], 'its read succeeds: its "not shown" line, no "not read" line');
+    assert.deepEqual(lines(app).map((p) => p.dataset.k), [`since-miss:${MIX_PROJECT}`], 'one line, keyed by its project');
     assert.match(keyed(app, 'since-none').textContent, /^Nothing new since /, 'the list as built');
+    assert.deepEqual(sinceKeys(app), ['since-h', 'since-none', 'since-miss'], 'the line under the empty line');
+    assertGrey(app, 'can\'t draw, read working');
     s.fail();
     await app.advance(3 * POLL_MS);
     const at = briefTimes(app).get(MIX_PROJECT);

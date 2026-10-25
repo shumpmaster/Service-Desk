@@ -900,6 +900,9 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
 .v2-c.l::before, .v2-c.r::after { content: ""; position: absolute; top: 50%; height: 2px; margin-top: -1px; background: var(--phc); }
 .v2-c.l::before { left: 0; right: 50%; }
 .v2-c.r::after { left: 50%; right: 0; }
+/* AC92 (b), from G8c (P-001-glance-arrow-on-line.md, B): in the now cell, the line coming in from the left stops 3 px before
+   the arrow (whose left edge is 16 px left of the cell's centre), so the arrow stands on its own; too narrow a cell keeps none. */
+.v2-c.here.l::before { right: calc(50% + 19px); }
 .v2-c.s-ahead.l::before, .v2-c.s-ahead.r::after { background: repeating-linear-gradient(90deg, var(--phc) 0 3px, transparent 3px 6px); }
 .v2-c.s-gone.l::before, .v2-c.s-gone.r::after { opacity: .4; }
 .v2-c.dn > i, .v2-c.up > i { position: absolute; left: 50%; width: 0; border-left: 1.5px dashed var(--ink2); margin-left: -.75px; }

@@ -34,7 +34,7 @@ import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
 import { BAD_PR } from './fake-desk.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
-import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS } from './glance-fixtures.mjs';
+import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS } from './glance-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -774,6 +774,19 @@ test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --o
       app.restore();
     }
   }
+  // G8c (AC91 (c); AC92 (b)): Home with projects never read in this opening and read earlier, signed out, the briefing's lines
+  // in the tiles' order with the closed group folded, a project the desk can't draw beside its grey "not shown" line, and a
+  // line into a tile's now circle (tests/desk/glance-fixtures.mjs's G8C_OPENS, its made-up parts NOT real), so the walk reads
+  // each of Home's "in this opening" lines and the "not shown" line where they are drawn; the want-list is unchanged.
+  for (const [where, open] of G8C_OPENS) {
+    const app = await open();
+    try {
+      check(app, `G8c ${where}`, fails, seen);
+      counts.screens++;
+    } finally {
+      app.restore();
+    }
+  }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // Each mark on AC92 (a)'s list and each exception the fixtures reach was drawn, so the check read them where they are meant to be.
@@ -1298,6 +1311,27 @@ const G8B_EXCEPT = (n, d, theme) => {
   const k = G8B_KEY(n);
   return Boolean(k && G8B_ONCE.get(theme) && (G8B_ONCE.get(theme).get(k) || []).includes(d)) ? `G8B ${theme} ${k} ${d}` : null;
 };
+/**
+ * G8c of "After the glance audit"'s change to the look on purpose (the brief's rule; AC92 (b), P-001-glance-arrow-on-line.md,
+ * B: "where a line leads into the now circle, it ends before the arrow, so the arrow stands on its own"), its one
+ * declaration pinned to its value, before and after, in each theme, on only its own element: a Home tile's now cell with a
+ * line coming in from the left (`span.v2-c.here.l` in a drawing's row, `span.v2-rw`; the cell's new class `here` adds no
+ * declaration of its own), its ::before's `right` from 50% to 19 px left of the cell's centre, 3 px clear of G8's arrow.
+ * Its other declarations, the line leaving the circle, every other cell and the arrow are unchanged. The words "in this
+ * opening", the briefing's order and the "not shown" line add no declaration (that line takes `div.v2-smiss`'s G7b look,
+ * G7B_ONCE unchanged). The walk reaches the cell on G8c's screens (tests/desk/glance-fixtures.mjs's G8C_OPENS, below): a v3
+ * tile (`nowShared('build')`) and a v2.5 one (`sprintsState(1)`).
+ */
+const G8C_LOOK = () => new Map([
+  ['span.v2-c.here.l (a Home tile\'s now cell, a line coming in)', ['::before right: 50% → calc(50% + 19px)']],
+]);
+const G8C_ONCE = new Map([['light', G8C_LOOK()], ['dark', G8C_LOOK()]]);
+const G8C_KEY = (n) => (n.tag === 'span' && n.cls.has('v2-c') && n.cls.has('here') && n.cls.has('l') && n.parent && n.parent.tag === 'span' && n.parent.cls.has('v2-rw')
+  ? 'span.v2-c.here.l (a Home tile\'s now cell, a line coming in)' : null);
+const G8C_EXCEPT = (n, d, theme) => {
+  const k = G8C_KEY(n);
+  return Boolean(k && G8C_ONCE.get(theme) && (G8C_ONCE.get(theme).get(k) || []).includes(d)) ? `G8C ${theme} ${k} ${d}` : null;
+};
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
@@ -1355,6 +1389,8 @@ function sameLook(app, where, fails, seen) {
         if (g8) { excepted.add(g8); continue; }
         const g8b = G8B_EXCEPT(b, d, way.theme);
         if (g8b) { excepted.add(g8b); continue; }
+        const g8c = G8C_EXCEPT(b, d, way.theme);
+        if (g8c) { excepted.add(g8c); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -1535,6 +1571,21 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
       g8b.restore();
     }
   }
+  // G8c of "After the glance audit" (AC91 (c); AC92 (b)): Home with its "in this opening" lines, the briefing's lines in the
+  // tiles' order, the "not shown" line and a line into a tile's now circle (tests/desk/glance-fixtures.mjs's G8C_OPENS, its
+  // made-up parts NOT real), so the walk reaches the stopped line, pinned in G8C_ONCE, and shows the rest adds no declaration.
+  for (const [where, open] of G8C_OPENS) {
+    const g8c = await open();
+    try {
+      if (/now circle|open sprint after/.test(where)) {
+        assert.ok(findAll(g8c.view, (e) => / v2-c /.test(` ${e.className || ''} `) && / here /.test(` ${e.className} `) && / l /.test(` ${e.className} `)).length === 1, `${where}: a line into the now circle`);
+      }
+      sameLook(g8c, `G8c ${where}`, fails, seen);
+      counts.screens++;
+    } finally {
+      g8c.restore();
+    }
+  }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // The named exception was met, and only in its own forms: Home, Waiting, Plan, a project, Team and the Timeline.
@@ -1587,7 +1638,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // G8b's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
   const g8b = [...G8B_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G8B ${theme} ${k} ${d}`))).sort();
   assert.deepEqual([...excepted].filter((x) => /^G8B /.test(x)).sort(), g8b);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[12345678] |G7B |G8B |PRE-G7 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // G8c's exception was met, its pinned declaration on its own element in each theme, and nothing else of it.
+  const g8c = [...G8C_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G8C ${theme} ${k} ${d}`))).sort();
+  assert.deepEqual([...excepted].filter((x) => /^G8C /.test(x)).sort(), g8c);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[12345678] |G7B |G8B |G8C |PRE-G7 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

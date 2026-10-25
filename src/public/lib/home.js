@@ -48,6 +48,8 @@ export const HOME_WORDS = Object.freeze({
   noDispatchLog: 'No dispatch log: not used here',
   olderPipeline: 'older pipeline: sprints, not phases',
 });
+/** Home's words for a project no read of which has succeeded in this opening, in place of "since HH:MM" (AC91 (c), from G8c; P-001-glance-opening-wording.md, B). */
+export const IN_OPENING = 'in this opening';
 
 const enc = (...parts) => parts.map(encodeURIComponent).join('/');
 const go = (...parts) => `#/${enc(...parts)}`;
@@ -113,19 +115,33 @@ export function settleAt(q, raisedAt) {
 export const irreversible = (q) => Boolean(q) && String(q.reversibility || '').toLowerCase().startsWith('irreversible');
 
 /**
- * The briefing. input: { bd (the board's view, every project shown), reads: [{ name, read, drawError }],
+ * The briefing. input: { bd (the board's view, every project shown), reads: [{ name, read, drawError, opening }], in
+ * Home's tile order (from stage G8c, P-001-glance-cant-read-order.md, B: so its can't-read and can't-show lines name their
+ * projects in the order the tiles and "Since you last looked"'s grey lines do; `opening`: no read of the project has
+ * succeeded in this opening, so its can't-read line says "in this opening" in place of "since HH:MM", G8c,
+ * P-001-glance-opening-wording.md, B; absent, the time as built),
  * flagged (the trial view's flagged count over every project: Quiet's rule, Terms), signedOut,
  * v3 (name → whether the project is v3), lastReadMs (the stalest project's last successful read, or
  * null), nowMs, tz }. Returns { kind: 'you' | 'quiet' | 'confirming' | 'checking' | 'cant' |
  * 'signed-out', head, parts (the second line, or null), due (the lines under it, each { key: 'past' |
  * 'coming' | 'undo', icon: 'clock' | 'lock', words }, AC91 (a)), sub (the third line, or null), cant (lines) }.
  */
+/**
+ * One of the briefing's per-project lines (AC82; AC91 (c)): "Can't read <project> since HH:MM", or, from G8c, "Can't read
+ * <project> in this opening" where no read of it has succeeded in this opening (with or without a time held, never "Can't
+ * show" for want of one); else "Can't show <project>" for a project the desk can't draw.
+ */
+function cantReadLine(r, tz) {
+  if (r.read && r.read.read === 'cant-read') {
+    if (r.opening) return `Can't read ${r.name} ${IN_OPENING}`;
+    if (Number.isFinite(r.read.since)) return `Can't read ${r.name} since ${hhmm(new Date(r.read.since), tz)}`;
+  }
+  return `Can't show ${r.name}`;
+}
+
 export function briefingView(input) {
   const { bd, reads, nowMs, tz } = input;
-  const cant = reads.filter((r) => r.drawError || (r.read && r.read.read === 'cant-read'))
-    .map((r) => (r.read && r.read.read === 'cant-read' && Number.isFinite(r.read.since)
-      ? `Can't read ${r.name} since ${hhmm(new Date(r.read.since), tz)}`
-      : `Can't show ${r.name}`));
+  const cant = reads.filter((r) => r.drawError || (r.read && r.read.read === 'cant-read')).map((r) => cantReadLine(r, tz));
   if (input.signedOut) return { kind: 'signed-out', head: 'Signed out — reload to sign in', parts: null, due: [], sub: null, cant: [] };
   // From stage 6b (Terms' Quiet; AC87): the portfolio read within its 6 minutes, or its own words, one line
   // as a project's (`portfolio`: portfolioRead's answer, or null with no portfolio in J7).
@@ -636,24 +652,30 @@ export function unreadLines(project) {
  * "◆ <n> wait on you" (one: "◆ 1 waits on you"), counted as the board counts the project's cards; else "Nothing
  * waiting", "Checking…", or, for a project whose read fails (after the glance audit, AC91 (c)), "✕ Can't read since
  * HH:MM" in `--bad` (`bad`), "✕ Can't read" where no time is held. `since`: the failure's time as "HH:MM", or null.
- * With cards waiting the corner keeps what waits, and the failure is said at the tile's foot (tileFoot).
+ * From G8c (P-001-glance-opening-wording.md, B), `opening`: no read of the project has succeeded in this opening, so
+ * "✕ Can't read in this opening", with or without a time held. With cards waiting the corner keeps what waits, and the
+ * failure is said at the tile's foot (tileFoot).
  */
-export function tileWaits(n, read, since = null) {
+export function tileWaits(n, read, since = null, opening = false) {
   if (n > 0) return { you: true, bad: false, words: `${n} ${n === 1 ? 'waits' : 'wait'} on you` };
-  if (read === 'cant-read') return { you: false, bad: true, words: since ? `${HOME_WORDS.cantRead} since ${since}` : HOME_WORDS.cantRead };
+  if (read === 'cant-read') return { you: false, bad: true, words: `${HOME_WORDS.cantRead}${cantWhen(since, opening)}` };
   if (read !== 'ok') return { you: false, bad: false, words: HOME_WORDS.checking };
   return { you: false, bad: false, words: HOME_WORDS.nothingWaiting };
 }
+
+/** The corner's and the foot's time: " since HH:MM", " in this opening" (G8c's `opening`), or nothing with no time held. */
+const cantWhen = (since, opening) => (opening ? ` ${IN_OPENING}` : since ? ` since ${since}` : '');
 
 /**
  * The tile's foot line for a project whose read fails (AC91 (c); AC5's reason in `reason`), saying the time once:
  * beside a corner that says "Can't read since HH:MM" or "Can't read", "Reason: <reason>" in grey (`bad` false);
  * beside a corner that says what waits, "✕ Can't read since HH:MM: <reason>", or "✕ Can't read: <reason>" with no
- * time held, in `--bad`, so the failure is always on the tile. Null when the read doesn't fail or no reason is held.
+ * time held, in `--bad`, so the failure is always on the tile; from G8c, "✕ Can't read in this opening: <reason>" where
+ * no read of the project has succeeded in this opening (`opening`). Null when the read doesn't fail or no reason is held.
  */
-export function tileFoot(n, read, since, reason) {
+export function tileFoot(n, read, since, reason, opening = false) {
   if (read !== 'cant-read' || !reason) return null;
-  if (n > 0) return { bad: true, words: `${HOME_WORDS.cantRead}${since ? ` since ${since}` : ''}: ${reason}` };
+  if (n > 0) return { bad: true, words: `${HOME_WORDS.cantRead}${cantWhen(since, opening)}: ${reason}` };
   return { bad: false, words: `Reason: ${reason}` };
 }
 
@@ -691,12 +713,20 @@ export function sinceUnreadWords(reads, tz) {
  * the order `reads` gives (the tiles' order on Home), "<project> not read since HH:MM, its lines may be missing", HH:MM
  * that project's own "since" as the briefing's "Can't read <project> since HH:MM" gives it, or "<project> not read in this
  * opening, its lines may be missing" where no read of it has succeeded in this opening (or no time is held). None for a
- * project still "Checking…" or read. From the reads sinceUnreadWords takes, each with its project's `name`; no read of
- * its own. Returns [{ name, words }], empty when every project can be read.
+ * project still "Checking…" or read. From stage G8c (P-001-glance-cant-show-line.md, B), a project the desk can't draw
+ * (its `drawError`) whose read does not fail gets "<project> not shown, its lines may be missing", in the same order; one
+ * whose read fails keeps its "not read" line alone, so each project has one line at most. From the reads
+ * sinceUnreadWords takes, each with its project's `name` and `drawError`; no read of its own. Returns [{ name, words }],
+ * empty when every project can be read and drawn.
  */
 export function sinceMissingLines(reads, tz) {
-  return (reads || []).filter((r) => r && r.read && r.read.read === 'cant-read').map((r) => {
-    const at = r.succeeded && r.read.since != null && Number.isFinite(r.read.since) ? `since ${hhmm(new Date(r.read.since), tz)}` : 'in this opening';
-    return { name: r.name, words: `${r.name} not read ${at}, its lines may be missing` };
+  return (reads || []).flatMap((r) => {
+    if (!r) return [];
+    if (r.read && r.read.read === 'cant-read') {
+      const at = r.succeeded && r.read.since != null && Number.isFinite(r.read.since) ? `since ${hhmm(new Date(r.read.since), tz)}` : IN_OPENING;
+      return [{ name: r.name, words: `${r.name} not read ${at}, its lines may be missing` }];
+    }
+    if (r.drawError) return [{ name: r.name, words: `${r.name} not shown, its lines may be missing` }];
+    return [];
   });
 }

@@ -475,7 +475,9 @@ test('AC89 (c): the row\'s cut — two lines of the small role, hidden past them
 // ---------------------------------------------------------------------------
 // (h) Nothing unread reads as read (specs/S-001.md:7884-7896)
 
-test('AC89 (h): a project the desk can\'t read never shows "Phases: reading…" — its tile and page say "Phases: not available" beside "Can\'t read since HH:MM"; its Record notes say "not read"; an unread v2.5 project\'s "Your last action" reads "not available"', async () => {
+// Rewritten in G8c (P-001-glance-opening-wording.md, B): Alpha's reads fail from the start, so on Home its tile says "Can't
+// read in this opening"; its page, off Home, keeps "Can't read since HH:MM" (AC91 (c): not on Home, kept as built).
+test('AC89 (h): a project the desk can\'t read never shows "Phases: reading…" — its tile and page say "Phases: not available", the tile beside "Can\'t read in this opening" where no read of it succeeded in this opening and the page beside "Can\'t read since HH:MM"; its Record notes say "not read"; an unread v2.5 project\'s "Your last action" reads "not available"', async () => {
   const pv = phaseView(v3('X'), null, new Map(), { ready: false }, true);
   assert.equal(pv.why, PHASES_NOT_AVAILABLE);
   assert.equal(PHASES_NOT_AVAILABLE, 'Phases: not available');
@@ -492,7 +494,8 @@ test('AC89 (h): a project the desk can\'t read never shows "Phases: reading…" 
     const since = hhmm(new Date(NOW + 1000), TZ);
     const tile = findAll(app.view, (e) => e.dataset && e.dataset.k === 'card:Alpha')[0];
     assert.ok(tile.textContent.includes('Phases: not available'), tile.textContent);
-    assert.ok(tile.textContent.includes(`Can't read since ${since}`));
+    assert.ok(tile.textContent.includes("Can't read in this opening"), tile.textContent);
+    assert.ok(!tile.textContent.includes(`Can't read since ${since}`), 'on Home, no time for a project never read in this opening');
     assert.ok(!app.text().includes('Phases: reading…'), 'never "Phases: reading…"');
     await app.go('#/p/Alpha');
     assert.ok(app.text().includes('Phases: not available'));
@@ -523,14 +526,20 @@ test('AC89 (h): a project the desk can\'t read never shows "Phases: reading…" 
   }
 });
 
-test('AC89 (h): AC87\'s cap and versions rows say "can\'t be read since HH:MM" alike; a project read and then refused keeps its last-read phase in the cap with " · can\'t be read since HH:MM" after its name', async () => {
+// Rewritten in G8c (P-001-glance-opening-wording.md, B; AC89 (h) noted): a project no read of which has succeeded in this
+// opening says "can't be read in this opening" in the cap and the versions row, as its tile does; one read and then refused
+// keeps "since HH:MM". The pure cases with no `opening` given are kept, and their never-read counterparts added.
+test('AC89 (h): AC87\'s cap and versions rows say "can\'t be read since HH:MM" alike, and "can\'t be read in this opening" alike for a project never read in this opening; a project read and then refused keeps its last-read phase in the cap with " · can\'t be read since HH:MM" after its name', async () => {
   const p = (name, extra = {}) => ({ name, model: 'v3', ...extra });
   const cant = { state: 'cant-read', since: '10:02' };
   const ok = { state: 'ok', since: null };
   const tracked = (phase) => ({ tracked: true, done: false, nowRun: { phase } });
-  // Never read: "<project>'s phase: can't be read since HH:MM", as before.
+  // No records held, its read failing since a time and no `opening` given: "<project>'s phase: can't be read since HH:MM", as before.
   assert.deepEqual(capView([{ project: p('A'), pv: { tracked: false }, error: false, read: cant }]).parts.map((x) => x.text),
     ['In Build or Launch: none', "A's phase: can't be read since 10:02", 'your cap: no record for this in the model yet']);
+  // From G8c, never read in this opening (`opening`): "<project>'s phase: can't be read in this opening".
+  assert.deepEqual(capView([{ project: p('A'), pv: { tracked: false }, error: false, read: { ...cant, opening: true } }]).parts.map((x) => x.text),
+    ['In Build or Launch: none', "A's phase: can't be read in this opening", 'your cap: no record for this in the model yet']);
   // Read, then refused: its last-read phase kept, the words after its name; counted in Build, or named apart when not counted.
   assert.deepEqual(capView([{ project: p('B'), pv: tracked('Build'), error: false, read: cant }, { project: p('C'), pv: tracked('Launch'), error: false, read: ok }]).parts[0].text,
     "In Build or Launch: B · can't be read since 10:02, C");
@@ -544,6 +553,7 @@ test('AC89 (h): AC87\'s cap and versions rows say "can\'t be read since HH:MM" a
   const snapOf = (files) => ({ tree: new Map(Object.keys(files).map((f) => [f, { sha: f }])), records: new Map(Object.entries(files)) });
   const v = versionsView([{ project: p('A'), snap: null, read: cant }, { project: p('B'), snap: snapOf({}), read: cant }, { project: p('C'), snap: snapOf({}), read: ok }]);
   assert.deepEqual(v.rows.map((x) => x.words), ["A: can't be read since 10:02", "B: not recorded · can't be read since 10:02", 'C: not recorded']);
+  assert.deepEqual(versionsView([{ project: p('A'), snap: null, read: { ...cant, opening: true } }]).rows.map((x) => x.words), ["A: can't be read in this opening"], 'never read in this opening (G8c)');
   // On Home: Alpha never read, then (a second opening) Alpha read and then refused.
   const t = textSetup();
   t.repos.Alpha.fail = { kind: 'network' };
@@ -553,8 +563,9 @@ test('AC89 (h): AC87\'s cap and versions rows say "can\'t be read since HH:MM" a
     await app.advance(POLL_MS);
     const since = hhmm(new Date(NOW + 1000), TZ);
     const pf = keyed(app, 'portfolio').textContent;
-    assert.ok(pf.includes(`Alpha's phase: can't be read since ${since}`), pf);
-    assert.ok(pf.includes(`Alpha: can't be read since ${since}`), 'the versions row alike');
+    assert.ok(pf.includes("Alpha's phase: can't be read in this opening"), pf);
+    assert.ok(pf.includes("Alpha: can't be read in this opening"), 'the versions row alike');
+    assert.ok(!pf.includes(`can't be read since ${since}`), 'no time for a project never read in this opening');
     assert.ok(!/Alpha: not available/.test(pf));
   } finally {
     app.restore();

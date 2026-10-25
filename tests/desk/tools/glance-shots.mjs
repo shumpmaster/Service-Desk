@@ -21,7 +21,8 @@
 // Waiting, a page and the Pipeline view, the cards drawn in "Waiting on you", and each group head's count parts, and, from
 // G8d's round 2, the red "Can't show" lines among them and the lanes' empty words and the strip's line; and, on G9's
 // (AC92 (e)), each soft box's size, padding, ground and edge, its tally's lines, whether anything in it is cut, how far the
-// strip's arrow sits under the page's box, and each why line's ground.
+// strip's arrow sits under the page's box, and each why line's ground; and, from G9's round 2 (AC92 (d)), each opened
+// phase's run heads, each found by its run, its colour, weight and size, the rule above it and the gap over that rule.
 // G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
 // the screen as it opens (the viewport), not the whole page.
@@ -244,6 +245,13 @@ const SHOTS = [
   { name: 'g9-page-design-why', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-phase="Design"] > button'] },
   { name: 'g9-page-every-phase', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}`,
     click: ['[data-phase="Launch"] > button', '[data-phase="Build"] > button', '[data-phase="Design"] > button', '[data-phase="Discovery"] > button'] },
+  // G9's round 2 (AC92 (d), the Design reviewer's call): an opened phase with two or more runs, each run's head in --ink at
+  // 600 with a rule above each after the first: the made-up project's Build (`mix`, its two "Build-i1" runs, gone back over
+  // and still to come, with Build-i2 between), `gates`' Launch (three "Launch-i1" runs) and Service-Desk's Build and Design
+  // (`text`, 77bfeae, real), each made-up part NOT real.
+  { name: 'g9-runs-mix-build', state: () => mixState(), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}`, click: ['[data-phase="Build"] > button'] },
+  { name: 'g9-runs-gates-launch', state: () => gatesState(), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}`, click: ['[data-phase="Launch"] > button'] },
+  { name: 'g9-runs-text', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-phase="Build"] > button', '[data-phase="Design"] > button'] },
   { name: 'g9-waiting-done', state: () => gatesState(), now: NOW, looked: LATE, hash: '#/waiting', seed: deviceMarks([
     { project: MIX_PROJECT, kind: 'gate', id: GATE_KEY(MIX_PROJECT, 'queue/P-009-launch-1.md'), title: 'The Launch gate, case 1 · P-009', at: NOW - 3 * H, confirmedAt: NOW - 2 * H }]) },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
@@ -472,7 +480,18 @@ async function main() {
                 + `${tally ? `, tally "${tally.textContent}" on ${lines(tally)} line(s)` : ''}${arrow ? `, the strip's arrow ${Math.round(arrow.getBoundingClientRect().top - r.bottom)} px under it` : ''}${cut ? ', something in it cut' : ''}`;
             });
             const why = [...document.querySelectorAll('.v2-callout')].map((e) => `why line: ground ${getComputedStyle(e).backgroundColor}, ${lines(e)} line(s)`);
-            return [...boxes, ...why].join('; ') || 'no box';
+            // G9's round 2 (AC92 (d)): each opened phase's run heads, by run (its key and run number), against its group heads.
+            const runs = [...document.querySelectorAll('.v2-stdl')].map((ph) => {
+              const group = ph.querySelector('.v2-subh');
+              const gcs = group ? getComputedStyle(group) : null;
+              const heads = [...ph.querySelectorAll(':scope > .v2-runh')].map((e) => {
+                const cs = getComputedStyle(e);
+                const run = (e.getAttribute('data-k') || '').replace(/^runh:/, '');
+                return `${run} "${e.textContent}" ${cs.color} ${cs.fontWeight} ${cs.fontSize}, rule ${cs.borderTopWidth} ${cs.borderTopStyle} ${cs.borderTopColor}, ${cs.marginTop} over it`;
+              });
+              return `${ph.id}: ${heads.join(' | ')}${gcs ? `; group heads ${gcs.color} ${gcs.fontWeight} ${gcs.fontSize}` : ''}`;
+            });
+            return [...boxes, ...why, ...(runs.length ? [`run heads: ${runs.join(' / ')}`] : [])].join('; ') || 'no box';
           });
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });

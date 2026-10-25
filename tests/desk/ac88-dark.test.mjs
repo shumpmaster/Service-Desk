@@ -735,13 +735,21 @@ const G3_EXCEPT = (n, d) => {
  * there, and the failed-load screen's new rules draw only on a screen no fixture's desk reaches (its code failed), which
  * AC91 (k)'s own case locks (tests/desk/ac91-glance-load.test.mjs). This guard reaches the two Done rows in the walk's
  * `gates` state with a device's Done marks (tests/desk/glance-fixtures.mjs, NOT real), below.
+ * From G4's fix round (AC89 (c)'s note "After G4's reviews": "each id in the row … is kept whole … as an inline block, as
+ * `.v2-gitem` keeps a gate's item"), one more, the same in each theme: each id in a project page's waits row
+ * (`span.v2-mono`, a direct child of the row's `span.v2-small.v2-wn` in a `.v2-prt`) an inline block; the walk reaches it
+ * on every page with something waiting (the made-up project's, among them).
  */
 const G4_ONCE = new Map([
   ['span.v2-gitem (confirming card)', ['display: (none) → inline-block']],
   ['span.v2-gitem (confirmed row)', ['display: (none) → inline-block']],
+  ['span.v2-mono (waits row id)', ['display: (none) → inline-block']],
 ]);
 const G4_KEY = (n) => {
   const p = n.parent;
+  if (n.tag === 'span' && n.cls.has('v2-mono') && p && p.tag === 'span' && p.cls.has('v2-wn') && p.cls.has('v2-small') && p.parent && p.parent.cls.has('v2-prt')) {
+    return 'span.v2-mono (waits row id)';
+  }
   if (!(n.tag === 'span' && n.cls.has('v2-gitem') && p && p.tag === 'a' && p.parent && p.parent.tag === 'li')) return null;
   if (p.cls.has('v2-t') && p.parent.cls.has('v2-card') && p.parent.cls.has('conf')) return 'span.v2-gitem (confirming card)';
   if (p.cls.has('v2-dt') && p.parent.cls.has('v2-drow')) return 'span.v2-gitem (confirmed row)';

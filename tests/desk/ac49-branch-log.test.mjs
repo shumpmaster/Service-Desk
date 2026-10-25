@@ -81,28 +81,44 @@ test('AC49: the Team member pages of the sandbox fixture still draw without erro
 // an earlier day "14 Oct, 09:40", not J9's "Oct 14 09:40", and a time from today "09:30" as now (AC91 (l)); the Team
 // screen's cards keep J9's form"). Service-Desk's dispatch log at 3117150 (real), with one made-up outcome line for the
 // Definer 30 minutes before NOW (NOT a real record), so its page holds a time from today beside its earlier days'.
-test('AC49 (AC91 (l), added in G4): a member\'s page writes an earlier day\'s date "6 Oct, 11:40" and today\'s time "09:30" alone, never J9\'s "Oct 6 11:40"; the Team screen\'s cards keep their form', async () => {
+// Rewritten in G4's fix round (AC91 (l)'s note "After G4's reviews": "each line built from J9's entry words … reads the
+// entry's words without their time, as J9's headline words give them, then " · " and the time in the one form"; "the
+// Rulings group's line reads "latest: <file> · <time>"; a ruling by proxy keeps " (proxy)" after its words, and an
+// anomaly's ": <error>" follows the time"): each row's time after " · ", where G4 first built ", 09:30".
+test('AC49 (AC91 (l), added in G4, rewritten in its fix round): a member\'s page writes each line\'s time after " · ", an earlier day\'s "6 Oct, 11:40" and today\'s "09:30" alone, never J9\'s "Oct 6 11:40"; a proxy ruling keeps " (proxy)" after its words, an anomaly its ": <error>" after the time; the Team screen\'s cards keep their form', async () => {
   const files = j11Files();
   const LOG = 'dispatch-log/2026-10.jsonl';
   const made = { item: 'P-001', record: 'docs/reports/P-001-definer.md', result: 'ok', role: 'definer', session: 'P-001:made-up-for-G4',
     time: new Date(NOW - 30 * 60e3).toISOString().replace(/\.\d+Z$/, 'Z'), trigger: 'outcome', verdict: 'none' };
   files[LOG] = `${files[LOG].trimEnd()}\n${JSON.stringify(made)}\n`;
   const J9_FORM = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{1,2} \d\d:\d\d\b/;
+  // Each row ends with " · " and its time in the one form, never ", <time>" (G4's Design review, N3: three commas in a row).
+  const TIME_LAST = / · (\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec), )?\d\d:\d\d$/;
   const app = await loadSandbox({ config: { ...CONFIG, projects: [SD3] }, repos: { 'Service-Desk': repo(files) }, hash: '#/p/Service-Desk/team/definer', now: NOW });
   try {
     await app.advance(1000);
     const page = app.text();
-    assert.ok(page.includes('P-001: definer finished — ok, 09:30'), 'today: "09:30" alone, as now');
-    assert.ok(page.includes('P-001: definer finished — ok, 6 Oct, 11:40'), 'an earlier day: "6 Oct, 11:40"');
-    assert.ok(page.includes('P-001: definer started (Define), 5 Oct, 12:20'));
+    assert.ok(page.includes('P-001: definer finished — ok · 09:30'), 'today: "09:30" alone, after " · "');
+    assert.ok(page.includes('P-001: definer finished — ok · 6 Oct, 11:40'), 'an earlier day: "6 Oct, 11:40", after " · "');
+    assert.ok(page.includes('P-001: definer started (Define) · 5 Oct, 12:20'));
     assert.doesNotMatch(page, J9_FORM, 'never J9\'s "Oct 6 11:40" on the page');
     const rows = byClass(byClass(app.view, 'sb-branch')[0], 'sb-brow-t').map((r) => r.textContent);
-    assert.equal(rows[0], 'P-001: definer finished — ok, 09:30', 'the running log\'s newest row');
-    assert.equal(rows[1], 'P-001: definer finished — ok, 6 Oct, 11:40');
-    // The owner's page: its groups' latest lines and its log, the Rulings group's latest among them.
+    assert.equal(rows[0], 'P-001: definer finished — ok · 09:30', 'the running log\'s newest row');
+    assert.equal(rows[1], 'P-001: definer finished — ok · 6 Oct, 11:40');
+    for (const r of rows) assert.match(r, TIME_LAST, `${r}: its time after " · "`);
+    assert.equal(byClass(app.view, 'sb-latest')[1].textContent, 'P-001: definer finished — ok · 09:30', 'the Returns group\'s latest line');
+    // The owner's page: its groups' latest lines and its log; a ruling by proxy keeps " (proxy)" after its words.
     await app.go('#/p/Service-Desk/team/owner');
     assert.doesNotMatch(app.text(), J9_FORM);
-    assert.match(app.text(), /\b\d{1,2} Oct, \d\d:\d\d\b/);
+    assert.equal(byClass(app.view, 'sb-latest')[0].textContent, 'latest: Q-012 closed: drop (card stop-1) · 8 Oct, 16:42');
+    const owner = byClass(byClass(app.view, 'sb-branch')[0], 'sb-brow-t').map((r) => r.textContent);
+    assert.ok(owner.includes('Q-012: waiting on you — card stop-1 · 8 Oct, 12:22'));
+    assert.ok(owner.some((r) => /^P-001: you answered dor-fail-1 with resubmit \(proxy\) · \d{1,2} Oct, \d\d:\d\d$/.test(r)), 'a proxy ruling: " (proxy)" after its words, then the time');
+    for (const r of owner) assert.match(r, TIME_LAST, `${r}: its time after " · "`);
+    // The Orchestrator's page: an anomaly's ": <error>" follows the time.
+    await app.go('#/p/Service-Desk/team/orchestrator');
+    assert.match(app.text(), /Q-013: Orchestrator anomaly · 8 Oct, 16:48: session Q-013:ready-dispatch:/);
+    assert.equal(byClass(app.view, 'sb-latest')[1].textContent, 'Q-012: waiting on you — card stop-1 · 8 Oct, 12:22');
     // The Team screen's cards keep their form (AC91 (l): "the Team screen's cards keep J9's form"), AC67's day words as built.
     await app.go('#/p/Service-Desk/team');
     await openIdle(app);

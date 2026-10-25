@@ -23,6 +23,7 @@ import { DEPLOY_SHEET, phaseView, PHASES_NOT_AVAILABLE, PHASES_READING } from '.
 import { startDesk, LOAD_FAILED_WORDS } from '../../src/lib/page.js';
 import { hhmm } from '../../src/lib/timefmt.js';
 import { gatesState, MIX_PROJECT } from './glance-fixtures.mjs';
+import { parseCss, treeOf, cascade, nodes } from './css-cascade.mjs';
 
 const TZ = CONFIG.ownerTimeZone;
 const keyed = (app, k) => findAll(app.view, (e) => e.dataset && e.dataset.k === k)[0] || null;
@@ -377,6 +378,52 @@ const rule = (sel) => {
   const m = [...CSS.matchAll(/([^{}]+)\{([^}]*)\}/g)].find((x) => x[1].trim() === sel);
   return m ? m[2] : '';
 };
+
+// Added in G4's fix round of "After the glance audit" (AC89 (c)'s note "After G4's reviews": "each id in the row … is
+// kept whole, moving to the next line as one piece, never split at its hyphen or its space, as an inline block, as
+// `.v2-gitem` keeps a gate's item (AC91 (h)), not `nowrap` (AC42); an id longer than the line still wraps inside itself
+// … The row's two-line cut, its fade and its tap are unchanged"). As built to G4, "the Build gate for P-002" broke "P-" /
+// "002" at 360 px (the capture g4-page-gates-one-item). The made-up project's page (`gates` with one item's two gate cards
+// and no case lines, tests/desk/glance-fixtures.mjs, NOT real), cascaded at 360 and 414 px, light and dark.
+test('AC89 (c) (G4\'s fix round): each id in the waits row is kept whole — an inline block, never `nowrap`, still able to wrap inside itself — at 360 and 414 px, in light and dark; the two-line cut, its fade and its tap unchanged', async () => {
+  const sheets = (() => {
+    const a = parseCss(readFileSync(join(SRC, 'public', 'style.css'), 'utf8'), 'style.css');
+    const b = parseCss(readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8'), 'sandbox.css').map((r) => ({ ...r, order: r.order + a.length }));
+    return [...a, ...b];
+  })();
+  const plain = (v) => String(v == null ? '' : v).replace(/⟦[^|⟧]*\|([^⟧]*)⟧/g, '$1');
+  const g = await loadSandbox({ ...gatesState({ sameItem: true, caseLines: false }), hash: `#/p/${MIX_PROJECT}`, now: NOW });
+  try {
+    await g.advance(1000);
+    await g.advance(POLL_MS);
+    const row = keyed(g, 'page-waits');
+    const wn = byClass(row, 'v2-wn')[0];
+    const ids = wn.children.filter((c) => c.tag === 'span' && / v2-mono /.test(` ${c.className} `));
+    assert.deepEqual(ids.map((x) => x.textContent), ['#80', 'Alpha-pick', 'P-002', 'Q-020 stop-1', 'P-004', 'launch-1', 'P-004', 'launch-2', 'P-002'],
+      'every id in the row, a gate\'s item, a card\'s "<item> <gate>-<n>" and "launch-<n>" among them');
+    for (const theme of ['light', 'dark']) {
+      for (const width of [360, 414]) {
+        const root = document.documentElement;
+        const attrs = { ...(root.attrs || {}) };
+        if (theme === 'dark') attrs['data-theme'] = 'dark'; else delete attrs['data-theme'];
+        const tree = cascade(treeOf(g.view, { className: root.className, attrs }), sheets, { scheme: 'light', width, reducedMotion: false });
+        const by = new Map(nodes(tree).filter((n) => n.el).map((n) => [n.el, n]));
+        for (const id of ids) {
+          const n = by.get(id);
+          assert.equal(plain(n.declared.get('display')), 'inline-block', `${theme}, ${width} px, ${id.textContent}: one piece`);
+          assert.equal(plain(n.declared.get('white-space') || ''), '', `${theme}, ${width} px, ${id.textContent}: never nowrap (AC42)`);
+          assert.equal(plain(n.declared.get('overflow-wrap')), 'anywhere', `${theme}, ${width} px, ${id.textContent}: one longer than the line still wraps inside itself`);
+        }
+        const cut = by.get(wn);
+        assert.deepEqual(['display', 'max-height'].map((k) => plain(cut.declared.get(k))), ['block', 'calc(2 * 1.4em)'], `${theme}, ${width} px: the two-line cut unchanged`);
+      }
+    }
+    assert.match(rule('.v2-wn > .v2-mono'), /^\s*display: inline-block;\s*$/, 'the rule: an inline block, and only that');
+    assert.equal(row.attrs.href, `#/waiting/${MIX_PROJECT}`, 'its tap unchanged');
+  } finally {
+    g.restore();
+  }
+});
 
 test('AC89 (c): the row\'s cut — two lines of the small role, hidden past them with no scroll, the fade at the cut ending in the page\'s ground (--bg)', () => {
   assert.match(rule('.v2-wn'), /display: block; position: relative; max-height: calc\(2 \* 1\.4em\); overflow: hidden; overflow: clip;/);

@@ -7,7 +7,7 @@
 // fraction. Codes come after the plain words.
 
 import { isOwnerRuling } from './model.js';
-import { STATUS_RE, LOG_RE, MERGES_PATH, parseCardPath, questionAnswerName, parseWorkflowRuns, stageName, entryWords,
+import { STATUS_RE, LOG_RE, MERGES_PATH, parseCardPath, questionAnswerName, parseWorkflowRuns, stageName, entryWords, headlineWords,
   OUTCOMES_PATH, ROUTING_PATH, entryShape, timeLimitMinutes, parseAnswerPath, firstMilestoneLine } from './records.js';
 import { PROJECT_DOC_PATH, SURFACES_PATH, ORCH_WORKFLOW_PATH, SPEC_PATH_RE, REQUEST_PATH_RE, HANDOVER_PREFIX,
   HANDOVER_TEMPLATE, GATE_PHASE, GATE_WORDS, isGroundwork, nextCronRun, README_PATH } from './j11.js';
@@ -1278,19 +1278,32 @@ function rulingsGroup(paths, snap, link, now, tz) {
   const history = (snap && snap.history) || new Map();
   const timed = paths.map((p) => ({ p, at: history.get(p) && history.get(p).oldest ? Date.parse(history.get(p).oldest) : null }));
   const known = timed.filter((x) => Number.isFinite(x.at)).sort((a, b) => b.at - a.at);
-  const latest = known.length ? `latest: ${known[0].p}, ${dayTimeText(new Date(known[0].at), now, tz)}` : null; // AC91 (l)
+  // AC91 (l), from G4's fix round: "latest: <file> · <time>", the time in the one date form after " · ".
+  const latest = known.length ? `latest: ${known[0].p} · ${dayTimeText(new Date(known[0].at), now, tz)}` : null;
   return { title: 'Rulings', count: paths.length, latest, latestWhy: 'latest: not recorded (no commit time read for the ruling files yet)',
     items: [...known.map((x) => x.p), ...timed.filter((x) => !Number.isFinite(x.at)).map((x) => x.p).sort().reverse()].map((p) => ({ text: p, link: link(p) })), why: null };
 }
 
 /**
+ * A line built from J9's entry words on a member's page and the sheets over it (AC91 (l), from G4's fix round): the
+ * entry's words without their time, as J9's headline words give them (" (proxy)" kept after a ruling's words), then " · "
+ * and the time in the one date form, "Q-012: waiting on you — card stop-1 · 8 Oct, 12:22", today "… · 12:22"; null where
+ * J9 gives the entry no words. The dispatch-log headlines and the Team screen's cards keep J9's ", <t>".
+ */
+export function memberEntryWords(e, now, tz) {
+  const w = headlineWords(e);
+  return w == null ? null : `${w} · ${dayTimeText(new Date(e.time), now, tz)}`;
+}
+
+/**
  * A member's page (AC49): status, what they are responsible for, and the running log. Its dates take the one date form
- * (AC91 (l)): "14 Oct, 09:40" for an earlier day, "09:30" today (dayTimeText); the Team screen's cards keep J9's.
+ * (AC91 (l)): "14 Oct, 09:40" for an earlier day, "09:30" today (dayTimeText), each after " · " (memberEntryWords); the
+ * Team screen's cards keep J9's.
  */
 export function memberPage(project, model, snap, j, q, tv, id, now, tz) {
   const tree = (snap && snap.tree) || new Map();
   const rows = tv.rows;
-  const at = (e) => dayTimeText(new Date(e.time), now, tz);
+  const words = (e) => memberEntryWords(e, now, tz);
   const link = (path) => treeLink(project, tree, path);
   let page;
   if (id === 'owner') {
@@ -1298,7 +1311,7 @@ export function memberPage(project, model, snap, j, q, tv, id, now, tz) {
     const rulingFiles = [...tree.keys()].filter((p) => questionAnswerName(p)).sort();
     const decisions = newest(rows.filter((e) => e.shape === 'decision'));
     page = { id, label: 'You', status: tv.owner.status, groups: [
-      { title: 'Decisions', count: decisionFiles.length, latest: decisions[0] ? `latest: ${entryWords(decisions[0], at(decisions[0]))}` : null,
+      { title: 'Decisions', count: decisionFiles.length, latest: decisions[0] ? `latest: ${words(decisions[0])}` : null,
         latestWhy: 'latest: not recorded (no decision entry in the dispatch log the desk reads)',
         items: decisionFiles.slice().reverse().map((p) => ({ text: p, link: link(p) })), why: null },
       rulingsGroup(rulingFiles, snap, link, now, tz),
@@ -1320,14 +1333,14 @@ export function memberPage(project, model, snap, j, q, tv, id, now, tz) {
     const merges = j && j.merges ? j.merges : [];
     const tile = tv.members.find((m) => m.id === id);
     page = { id, label: 'Orchestrator', status: tile ? tile.status : 'Idle', groups: [
-      { title: 'Dispatches', count: dispatches.length, latest: dispatches.length ? entryWords(dispatches[dispatches.length - 1], at(dispatches[dispatches.length - 1])) : null,
-        items: newest(dispatches).map((e) => ({ text: entryWords(e, at(e)), link: link(e.month) })) },
-      { title: 'Cards raised', count: cards.length, latest: cards.length ? entryWords(cards[cards.length - 1], at(cards[cards.length - 1])) : null,
-        items: newest(cards).map((e) => ({ text: entryWords(e, at(e)), link: link(`queue/${e.item}-${e.gate}-${e.card}.md`) })) },
+      { title: 'Dispatches', count: dispatches.length, latest: dispatches.length ? words(dispatches[dispatches.length - 1]) : null,
+        items: newest(dispatches).map((e) => ({ text: words(e), link: link(e.month) })) },
+      { title: 'Cards raised', count: cards.length, latest: cards.length ? words(cards[cards.length - 1]) : null,
+        items: newest(cards).map((e) => ({ text: words(e), link: link(`queue/${e.item}-${e.gate}-${e.card}.md`) })) },
       { title: 'Merges by the merge gate', count: j && j.ready ? merges.length : null, latest: merges.length ? `latest: ${merges[merges.length - 1].item}` : null,
         items: newest(merges).map((m) => ({ text: `${m.item} merged`, link: m.merge ? commitLink(project, m.merge) : null })), why: j && j.ready ? null : NOT_AVAILABLE },
-      { title: 'Anomalies', count: anomalies.length, latest: anomalies.length ? entryWords(anomalies[anomalies.length - 1], at(anomalies[anomalies.length - 1])) : null,
-        items: newest(anomalies).map((e) => ({ text: `${entryWords(e, at(e))}: ${e.error}`, link: link(e.month) })) },
+      { title: 'Anomalies', count: anomalies.length, latest: anomalies.length ? words(anomalies[anomalies.length - 1]) : null,
+        items: newest(anomalies).map((e) => ({ text: `${words(e)}: ${e.error}`, link: link(e.month) })) },
     ], logEntries: rows.filter((e) => e.shape === 'dispatch' || e.shape === 'card' || e.shape === 'done' || e.shape === 'anomaly') };
   } else {
     const tile = tv.members.find((m) => m.id === id);
@@ -1337,10 +1350,10 @@ export function memberPage(project, model, snap, j, q, tv, id, now, tz) {
     const recs = [...new Set(returns.map((e) => e.record).filter((r) => typeof r === 'string'))];
     const none = 'not recorded in what the desk reads';
     page = { id, label: tile.label, status: tile.status, groups: [
-      { title: 'Sessions', count: sessions.length, latest: sessions.length ? entryWords(sessions[sessions.length - 1], at(sessions[sessions.length - 1])) : null,
-        items: newest(sessions).map((e) => ({ text: entryWords(e, at(e)), link: link(`status/${e.item}.toml`) })), why: sessions.length ? null : none },
-      { title: 'Returns', count: returns.length, latest: returns.length ? entryWords(returns[returns.length - 1], at(returns[returns.length - 1])) : null,
-        items: newest(returns).map((e) => ({ text: entryWords(e, at(e)), link: link(e.record) })), why: returns.length ? null : none },
+      { title: 'Sessions', count: sessions.length, latest: sessions.length ? words(sessions[sessions.length - 1]) : null,
+        items: newest(sessions).map((e) => ({ text: words(e), link: link(`status/${e.item}.toml`) })), why: sessions.length ? null : none },
+      { title: 'Returns', count: returns.length, latest: returns.length ? words(returns[returns.length - 1]) : null,
+        items: newest(returns).map((e) => ({ text: words(e), link: link(e.record) })), why: returns.length ? null : none },
       { title: 'Records written', count: recs.length, latest: recs.length ? recs[recs.length - 1] : null,
         items: recs.slice().reverse().map((r) => ({ text: r, link: link(r) })), why: recs.length ? null : none },
     ], logEntries: rows.filter((e) => e.role === id && (e.shape === 'dispatch' || e.shape === 'outcome')) };
@@ -1353,7 +1366,7 @@ export function memberPage(project, model, snap, j, q, tv, id, now, tz) {
   const log = entries.map((e) => {
     const isNow = Boolean(working && e.shape === 'dispatch' && e.item === working.id && working.running && working.running.since
       && Date.parse(e.time) === working.running.since.getTime());
-    return { text: entryWords(e, at(e)), lane: e.item || null, entry: e, now: isNow };
+    return { text: words(e), lane: e.item || null, entry: e, now: isNow };
   });
   // J13 (from 2026-10-17): each helper line naming this member, a row of its own on the main line at its `ended`, with the Chief of Staff's words.
   if (id !== 'owner' && id !== 'orchestrator') {
@@ -1540,14 +1553,16 @@ export function workingNow(project, model, snap, j, id, page, now, tz) {
   return {
     doing: `${it.running.role} on ${it.id}, ${String(it.stage).replace(/^[0-9]+ /, '')}`,
     tiles: [
-      { label: 'Started', ...(since ? { value: whenText(since, now, tz), why: null } : dash(`${NOT_RECORDED}: no dispatched_at in status/${it.id}.toml`)) },
+      // AC91 (l), from G4's fix round: the sheet over a member's page reads the page's one date form; Next check-in, a
+      // time to come, stays "HH:MM".
+      { label: 'Started', ...(since ? { value: dayTimeText(since, now, tz), why: null } : dash(`${NOT_RECORDED}: no dispatched_at in status/${it.id}.toml`)) },
       { label: 'Time so far', ...(!since ? dash(NOT_RECORDED) : now - since < 0 ? dash("not available: the start is later than this device's clock")
         : { value: durationText(now - since), why: 'counted from the start', since: since.getTime() }) },
-      { label: 'Last check-in', ...(it.asOf ? { value: whenText(it.asOf, now, tz), why: 'the latest dispatch-log entry naming it' } : dash(NOT_RECORDED)) },
+      { label: 'Last check-in', ...(it.asOf ? { value: dayTimeText(it.asOf, now, tz), why: 'the latest dispatch-log entry naming it' } : dash(NOT_RECORDED)) },
       { label: 'Next check-in', ...(due ? { value: hhmm(due, tz), why: "the Orchestrator's next run by its schedule" } : dash('schedule not readable')) },
     ],
     lines: [
-      { label: 'Update', value: lastE ? entryWords(lastE, whenText(new Date(lastE.time), now, tz)) : NOT_RECORDED, why: null },
+      { label: 'Update', value: lastE ? memberEntryWords(lastE, now, tz) : NOT_RECORDED, why: null },
       { label: 'Next', value: 'the Orchestrator routes its return', why: 'a fixed statement of what the model does next, not a record' },
       { label: 'Cost', value: COST_NOT_YET, why: null },
     ],
@@ -1591,13 +1606,14 @@ export function cosWorkingNow(cs, piece, now, tz) {
   return {
     doing: `Chief of Staff: ${piece.start.doing}`,
     tiles: [
-      { label: 'Started', value: whenText(new Date(since), now, tz), why: null },
+      // AC91 (l), from G4's fix round: the one date form, as the member's page under it.
+      { label: 'Started', value: dayTimeText(new Date(since), now, tz), why: null },
       { label: 'Time so far', ...(nowMs - since < 0 ? dash("not available: the start is later than this device's clock") : { value: durationText(nowMs - since), why: 'counted from the start', since }) },
-      { label: 'Last check-in', ...(lastAt != null ? { value: whenText(new Date(lastAt), now, tz), why: "the latest time among the session's lines" } : dash(NOT_RECORDED)) },
+      { label: 'Last check-in', ...(lastAt != null ? { value: dayTimeText(new Date(lastAt), now, tz), why: "the latest time among the session's lines" } : dash(NOT_RECORDED)) },
       { label: 'Next check-in', ...dash('the Chief of Staff runs on no schedule') },
     ],
     lines: [
-      { label: 'Update', value: helper ? helperWords(helper, now, tz) : NOT_RECORDED, why: helper ? null : 'no helper recorded yet' },
+      { label: 'Update', value: helper ? helperWords(helper, now, tz, dayTimeText) : NOT_RECORDED, why: helper ? null : 'no helper recorded yet' },
       { label: 'Next', value: 'hands the work back to you', why: "a fixed statement of the model's rule (S-033 AC6: an end line when it hands the work back), not a record" },
       { label: 'Cost', ...cost },
     ],

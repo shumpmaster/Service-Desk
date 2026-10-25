@@ -292,14 +292,26 @@ test('AC62: every word kept — each sandbox screen\'s text, outside the parts A
   // the desk and its marker, "Sandbox: candidate design", leaves every screen: it leaves the snapshot's runs too, and
   // every other word is compared, as before.
   const lessMarker = (runs) => runs.filter((w) => w !== 'Sandbox: candidate design');
-  // From G4 of "After the glance audit" (AC91 (l); AC49's note "After the glance audit": "a team member's page writes a
+  // From G4 of "After the glance audit" (named in G4's row after its reviews; AC91 (l); AC49's note "After the glance audit": "a team member's page writes a
   // date from an earlier day "14 Oct, 09:40", not J9's "Oct 14 09:40", and a time from today "09:30" as now"): on a
   // member's page (`#/p/<project>/team/<member>`) each of the snapshot's J9 dates, "<Mon> <d> <HH:MM>", is compared in the
   // one date form, "<d> <Mon>, <HH:MM>"; every other word, and every date on the other screens (the Team screen, Details'
-  // views), is compared as it was.
+  // views), is compared as it was. From G4's fix round (AC91 (l)'s note "After G4's reviews": each line built from J9's
+  // entry words "reads the entry's words without their time … then " · " and the time in the one form"; "A ruling by proxy
+  // keeps " (proxy)" after its words, and an anomaly's ": <error>" follows the time"): the snapshot's ", <Mon> <d> <HH:MM>"
+  // after an entry's words is compared as " · <d> <Mon>, <HH:MM>", and a time from the snapshot's today, ", <HH:MM>", as
+  // " · <HH:MM>", a " (proxy)" that followed the time now before it, an anomaly's ": <error>" still after it. Every dated
+  // run on the six pages is such a line (each ends its words with ", <t>", or ", <t> (proxy)").
   const MON = 'Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec';
   const memberPage = (r) => /^#\/p\/[^/]+\/team\/[^/]+$/.test(r);
-  const oneDateForm = (r, runs) => (memberPage(r) ? runs.map((w) => w.replace(new RegExp(`\\b(${MON}) (\\d{1,2}) (\\d\\d:\\d\\d)\\b`, 'g'), '$2 $1, $3')) : runs);
+  const oneDateForm = (r, runs) => (memberPage(r)
+    ? runs.map((w) => w.replace(new RegExp(`, (?:(${MON}) (\\d{1,2}) )?(\\d\\d:\\d\\d)( \\(proxy\\))?(?=$|: )`), (m, mon, d, t, proxy) => `${proxy || ''} · ${mon ? `${d} ${mon}, ` : ''}${t}`))
+    : runs);
+  for (const r of routes.filter(memberPage)) {
+    for (const w of snap[r]) {
+      assert.ok(!new RegExp(`\\b(${MON}) \\d{1,2} \\d\\d:\\d\\d`).test(w) || new RegExp(`, (${MON}) \\d{1,2} \\d\\d:\\d\\d`).test(w), `${r}: "${w}" is an entry line`);
+    }
+  }
   const changed = routes.filter((r) => memberPage(r) && snap[r].some((w) => new RegExp(`\\b(${MON}) \\d{1,2} \\d\\d:\\d\\d\\b`).test(w)));
   assert.deepEqual(changed, ['#/p/Service-Desk/team/owner', '#/p/Service-Desk/team/orchestrator', '#/p/Service-Desk/team/definer',
     '#/p/Service-Desk/team/source-checker', '#/p/Service-Desk/team/researcher', '#/p/Service-Desk/team/critic'], 'the member pages whose dates G4 changes');

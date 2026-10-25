@@ -742,5 +742,10 @@ parts, each **NOT real**, and `tests/desk/tools/glance-shots.mjs` captures them 
 - **the failed-load page**: `src/public/app.js` copied as it is into a scratch folder with no `sandbox.js` beside it, so
   the desk's code fails to load (made up: a dropped network or a stale cache does this in the browser).
 
+- **G4's fix round** (AC89 (c), AC91 (l)): a made-up dispatched item P-003 with its dispatch line, and a made-up Chief of
+  Staff piece with a helper and, ended, its hand-back, each from late on 14 Oct (in `ac91-glance-page.test.mjs`, written
+  in the test, **NOT real records**); `lanes-fixtures.mjs`'s made-up session lines opened a day after them; `gates` with
+  `sameItem` and no case lines for the waits row's ids.
+
 AC49's, AC55's, AC59's, AC62's, AC83's, AC84's, AC88's and AC89's tests rewritten or extended in G4 add nothing new beyond
 these: they use their own records, above.

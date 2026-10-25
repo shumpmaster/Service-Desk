@@ -453,7 +453,9 @@ test('AC49: every Working now value against its record, and "–" wherever a rec
   assert.deepEqual(wn.tiles.map((t) => [t.label, t.value]), [['Started', '14:35'], ['Time so far', '25 min'], ['Last check-in', '14:55'], ['Next check-in', '15:30']]);
   assert.equal(wn.tiles[1].why, 'counted from the start');
   // Rewritten at stage 6a of "After MD3" (AC89 (e), specs/S-001.md:7874-7879): the lines say an unknown in words, never "–".
-  assert.deepEqual(wn.lines.map((l) => [l.label, l.value]), [['Update', 'P-003: builder started (Produce), 14:55'], ['Next', 'the Orchestrator routes its return'], ['Cost', 'not known yet · from the usage record when it ends']]);
+  // Rewritten in G4's fix round of "After the glance audit" (AC91 (l)'s note "After G4's reviews": the Working now sheet's
+  // Update, a line built from J9's entry words over a member's page, reads the headline words, then " · " and the time).
+  assert.deepEqual(wn.lines.map((l) => [l.label, l.value]), [['Update', 'P-003: builder started (Produce) · 14:55'], ['Next', 'the Orchestrator routes its return'], ['Cost', 'not known yet · from the usage record when it ends']]);
   assert.match(wn.lines[1].why, /not a record/);
   const noSched = workingNow(P, { ...model, items: [{ ...model.items[0], running: { role: 'builder', since: null }, asOf: null }] }, {}, { workflow: null }, 'builder', {}, now, 'UTC');
   assert.deepEqual(noSched.tiles.map((t) => t.value), ['–', '–', '–', '–']);
@@ -506,7 +508,9 @@ test('AC49 (review B1): under each group\'s count the page draws its latest reco
       if (count === 'not recorded') assert.match(under, /^not recorded/);
     }
     const rulings = groups.find((g) => g.textContent.startsWith('Rulings'));
-    assert.match(byClass(rulings, 'sb-latest')[0].textContent, /^latest: (decisions\/questions\/Alpha-old\.md, |not recorded \()/);
+    // Rewritten in G4's fix round of "After the glance audit" (AC91 (l)'s note "After G4's reviews": "the Rulings group's
+    // line reads "latest: <file> · <time>"").
+    assert.match(byClass(rulings, 'sb-latest')[0].textContent, /^latest: (decisions\/questions\/Alpha-old\.md · |not recorded \()/);
     const decisions = groups.find((g) => g.textContent.startsWith('Decisions'));
     assert.match(byClass(decisions, 'sb-latest')[0].textContent, /^latest: not recorded \(no decision entry in the dispatch log/);
   } finally {

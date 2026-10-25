@@ -3395,7 +3395,8 @@ function renderMember(p, tv, id, sub, idx, now) {
   const piece = sub === 'now' && idx != null && page.cos ? cosPieceOf(page.cos, idx) : null;
   if (sub === 'now' && idx != null && page.cos) {
     out.push(piece && piece.state === 'working' ? workingSheet(p, id, cosWorkingNow(page.cos.cs, piece, now, TZ))
-      : piece ? sheetFrame(go('p', name, 'team', id), 'Working now', [h('p', {}, `${page.label}: ${cosPieceWords(piece, now, TZ)}`)])
+      // AC91 (l), from G4's fix round: a handed-back piece's sheet in the member page's one date form.
+      : piece ? sheetFrame(go('p', name, 'team', id), 'Working now', [h('p', {}, `${page.label}: ${cosPieceWords(piece, now, TZ, dayTimeText)}`)])
         : sheetFrame(go('p', name, 'team', id), 'Working now', [h('p', {}, 'This entry is no longer in the running log the desk reads.')]));
   } else if (sub === 'now') {
     out.push(page.working ? workingSheet(p, id, workingNow(p.project, p.model, p.snap, p.j, id, page, now, TZ))

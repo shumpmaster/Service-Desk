@@ -148,7 +148,7 @@ test('AC77 (the desk): end lines in the session file: one before the raised time
   for (const [lines, held, label] of cases) {
     const app = await open({ 'questions/N-x.md': v3q('Asked in session: s-x'), [sp]: `${lines.join('\n')}\n` }, { name: 'N-x' });
     try {
-      assert.equal((await projectText(app)).includes(HELD_WORDS), held, label);
+      assert.equal((await projectText(app)).includes(HELD_SHOWN), held, label);
       assert.equal(stateOf(app), held ? 'Quiet' : '1 waiting on you', label);
     } finally {
       app.restore();

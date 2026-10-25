@@ -443,7 +443,10 @@ test('AC80 (2026-10-20), rewritten in G2: one board grouped by project in J7\'s 
   }
 });
 
-test('AC80: "Nothing waiting: <project>" for a project read with no card in any lane; "Can\'t read <project> since HH:MM" for one that can\'t be read', async () => {
+// Rewritten in G8d (a locked case G8d's row doesn't name, forced by AC91 (c)'s "Yes, everywhere (Recommended)"): Down fails
+// from the start, so no read of it succeeds in this opening and its quiet line says "in this opening"; "since HH:MM" is kept
+// for a project read earlier in this opening and then failing, checked in a step of its own.
+test('AC80: "Nothing waiting: <project>" for a project read with no card in any lane; "Can\'t read <project> since HH:MM" for one that can\'t be read after a read in this opening, "Can\'t read <project> in this opening" for one never read in it (from G8d)', async () => {
   const config = { ...CONFIG, projects: [EX, v3('Quiet'), v3('Down')] };
   const quiet = repo({ 'README.md': '# Quiet\n\nNOT a real project.\n' });
   const down = repo({ 'README.md': '# Down\n' });
@@ -451,9 +454,20 @@ test('AC80: "Nothing waiting: <project>" for a project read with no card in any 
   const { app } = await openExample({ config, repos: { Example: exampleRepo(), Quiet: quiet, Down: down } });
   try {
     assert.ok(app.text().includes('Nothing waiting: Quiet'), app.text());
-    assert.match(app.text(), /Can't read Down since \d\d:\d\d/);
+    assert.equal(keyed(app, 'ql:cant:Down').textContent, "Can't read Down in this opening");
+    assert.doesNotMatch(app.text(), /Can't read Down since/);
   } finally {
     app.restore();
+  }
+  // Read in this opening, then failing (made up, the network cause): its time kept.
+  const later = repo({ 'README.md': '# Down\n' });
+  const { app: b } = await openExample({ config, repos: { Example: exampleRepo(), Quiet: repo({ 'README.md': '# Quiet\n\nNOT a real project.\n' }), Down: later } });
+  try {
+    later.fail = { kind: 'network' };
+    await b.advance(2 * POLL_MS);
+    assert.match(keyed(b, 'ql:cant:Down').textContent, /^Can't read Down since \d\d:\d\d$/);
+  } finally {
+    b.restore();
   }
 });
 

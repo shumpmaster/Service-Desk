@@ -11,9 +11,23 @@
 import { DESK_PHASES, STANDARD_MILESTONES, NOT_RECORDED_IDS } from './timeline.js';
 import { milestoneRule, FEED_ICON, PHASE_CLASS, runBegan, dayWords } from './feed.js';
 import { NOT_RECORDED, NOT_AVAILABLE, deskWords, standardWord, reachedDateWords, PHASES_READING, PHASES_NOT_AVAILABLE } from './sandbox.js';
-import { sprintStrip } from './home.js';
-import { dayKey } from './timefmt.js';
+import { sprintStrip, WAITING_CHECKING } from './home.js';
+import { dayKey, durationText } from './timefmt.js';
 import { SPEC_PATH_RE } from './j11.js';
+
+/**
+ * A project's page's "Nothing waiting on you" row's small line (AC83, frame 8), from stage G9c (AC91 (c), "a project's
+ * page's "Nothing waiting on you" row"; the owner's ruling of 2026-10-25, "Ruling: A",
+ * decisions/questions/P-001-glance-page-checking.md, "The page's own project — the row says "checked <age> ago" from that
+ * project's own last read."). Pure: "checked <age> ago", <age> from that project's own last successful read (the reader's
+ * `lastSuccessAt` for it) at `nowMs`, in the form the line under the title gives an age (`durationText`); never another
+ * project's read. With no success held, which the row's state never has (it shows only while its project is fresh, AC89
+ * (a)'s state 3), "checking…", the words as built, so the function is total (C).
+ */
+export function pageCheckedWords({ lastSuccessAt = null, nowMs }) {
+  if (lastSuccessAt == null || !Number.isFinite(lastSuccessAt)) return WAITING_CHECKING;
+  return `checked ${durationText(Math.max(0, nowMs - lastSuccessAt))} ago`;
+}
 
 /** The phases bottom up on the page's list (AC83, note 15): Launch at the top, Discovery at the foot. */
 export const LIST_TOP_DOWN = ['Launch', 'Build', 'Design', 'Discovery'];

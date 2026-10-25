@@ -293,7 +293,8 @@ export function modelRecords(ctx, id) {
  * the model can't record it, or its phase has no run now or still to come); 6 not tracked.
  * R3-a (the plan review's carried risk, round 3): a phase whose runs are neither finished nor now nor still to come
  * (their state "not recorded") has no run now or to come, so a taken-on recordable milestone there falls to class 5,
- * "taken on, not recorded by the model", never to class 6: its count agrees with its row's "taken on" (C).
+ * "taken on, not recorded by the model", never to class 6: its count agrees with its row's "taken on" (C), which from G6
+ * (R3-b; AC92 (d)) reads "taken on · not recorded by the model", such a run being neither now nor still to come.
  */
 export function standardClass(ctx, runs, id) {
   const plan = ctx.standard[id] || null;

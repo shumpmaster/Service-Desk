@@ -2558,9 +2558,10 @@ function quietLines(bd, built, only) {
     // AC87 (stage 6b; J23's failures): the portfolio's read that isn't current, in its own words, never a project's, in its slot after
     // them. From G9c (AC91 (c); P-001-glance-waiting-pending.md, A; -g9c-portfolio.md, B): after the red lines, a grey "Still reading
     // <project>…" for each project whose first read is on its way, then the portfolio's slot, "Still reading the portfolio…" while its
-    // read is on its way; signed out, no red line here (board.js's `readLines`).
+    // read is on its way; signed out, no red line here (board.js's `readLines`). From G9c's draft 3 (P-001-glance-g9c-row.md, A),
+    // each "Still reading" line takes `.v2-qread` beside `.v2-ql`, a row of its own in the wrapping box (`flex-basis: 100%`).
     for (const r of bd.readLines) {
-      lines.push(r.bad ? h('p', { class: 'v2-ql still bad', key: r.key }, vi('bad'), h('span', {}, r.words)) : h('p', { class: 'v2-ql', key: r.key }, h('span', {}, r.words)));
+      lines.push(r.bad ? h('p', { class: 'v2-ql still bad', key: r.key }, vi('bad'), h('span', {}, r.words)) : h('p', { class: 'v2-ql v2-qread', key: r.key }, h('span', {}, r.words)));
     }
     if (q.recording.length) lines.push(quietLine('recording', 'eye', WORDS.recording, q.recording.length, recFold));
   }

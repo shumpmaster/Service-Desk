@@ -21,6 +21,7 @@ import { loadSandbox, byClass, findAll as sbFindAll } from './sandbox-helpers.mj
 import { NOTIFY_FIX } from './notify-helpers.mjs';
 import { RECHECK_WORDS } from '../../src/lib/notifyview.js';
 import { HELD_WORDS, RECORDING_WORDS } from '../../src/lib/model.js';
+import { SECTION_WORDS } from '../../src/lib/board.js';
 
 const SID = 'session_012RJPVKAoLga2RkqLYRDcBY';
 const SESSION_PATH = `sessions/chief-of-staff/${SID}.jsonl`;
@@ -60,6 +61,11 @@ async function projectText(app) {
 const answerLinks = (app) => sbFindAll(app.view, (e) => e.tag === 'a' && /\/new\/main/.test(e.attrs.href || ''));
 const stateOf = (app) => app.els['screen-state'].textContent;
 const waitCards = (app) => byClass(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'lane:wait')[0], 'v2-card');
+// From QW1 (AC77, changed by AC94 and AC95; the owner's answer 3, "In the section"): a held question shows in the "Questions
+// for you" section, "Also asked in your session: answer in one place" under its title, its choices live, and no longer in the
+// quiet line "Being asked in your session" (whose words, HELD_WORDS, the model and AC77's re-read keep).
+const HELD_SHOWN = SECTION_WORDS.heldLine;
+const heldCards = (app) => sbFindAll(app.view, (e) => e.attrs && e.attrs['data-question'] === 'held');
 async function open(files, { now = RAISED_MS + 10 * MIN, pulls = [], name = 'P-001-next-work', extra = {}, store = null, win = {}, rs = null } = {}) {
   const app = await loadSandbox({ config: CONFIG, repos: rs || repos(files, pulls, extra), now, hash: board(), store, win });
   app.qname = name;
@@ -75,23 +81,27 @@ async function pick(app, name = app.qname) {
 /** A click whose preventDefault is recorded (the answer link holds GitHub back for AC77's re-read). */
 const clickOf = (el) => el.dispatch('click', { defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } });
 
-test('AC77 (the desk from stage 8): a question with the line is held: "Being asked in your session: answer there", its title and options to read, no answer link, not counted', async () => {
+// Rewritten in QW1 (AC77, changed by AC94 and AC95; the owner's answer 3, "In the section (Recommended)": "with its answer
+// buttons, unnumbered, marked "Also asked in your session: answer in one place""): the held question shows in the "Questions
+// for you" section, its options as live buttons, never counted; the quiet line "Being asked in your session" is gone.
+test('AC77 (the desk from stage 8), rewritten in QW1: a question with the line is held — in the "Questions for you" section, "Also asked in your session: answer in one place", its title and its options as live answer buttons, with no "Done ✓", not counted', async () => {
   const app = await open({ [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, { now: RAISED_MS + 54 * MIN });
   try {
     const v = await projectText(app);
-    assert.ok(v.includes(HELD_WORDS));
-    assert.equal(HELD_WORDS, 'Being asked in your session: answer there');
+    assert.ok(v.includes(HELD_SHOWN));
+    assert.equal(HELD_WORDS, 'Being asked in your session: answer there', 'the model\'s words, kept for AC77\'s re-read');
     assert.ok(v.includes('Which piece of later work comes next?'));
-    // Its options, to read: the question file drawn whole in the held line's fold ("The question and its options, to read").
-    const fold = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'fold:asking')[0];
-    const article = sbFindAll(fold, (e) => e.tag === 'article')[0];
-    assert.ok(article && String(article._html || '').includes('Plan M3A around milestones'), 'its options, to read');
-    assert.equal(sbFindAll(app.view, (e) => e.tag === 'textarea' || e.tag === 'input').length, 0, 'no answer box');
-    assert.equal(answerLinks(app).length, 0, 'no answer link');
+    const [card] = heldCards(app);
+    assert.ok(card, 'in the section');
+    assert.ok(card.textContent.includes('Plan M3A around milestones, mockup first'), 'its options, as boxes');
+    assert.equal(sbFindAll(app.view, (e) => e.tag === 'textarea' || e.tag === 'input').length, 0, 'no answer box open ("Add your own words" folded)');
+    assert.equal(answerLinks(app).length, 5, 'its five choices\' answer links, live (answer 3)');
+    assert.equal(sbFindAll(card, (e) => e.textContent === 'Done ✓').length, 0, 'no "Done ✓"');
     assert.ok(!v.includes('Open the question on GitHub'), 'no "Open in GitHub" to answer');
     assert.equal(stateOf(app), 'Quiet', 'not counted: the 03:08:21Z end line, before the raised time, ends nothing');
     assert.equal(waitCards(app).length, 0, 'nothing waiting on you here');
-    assert.equal(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'ql:asking')[0].textContent, 'Being asked in your session: 1');
+    assert.equal(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'ql:asking').length, 0, 'no "Being asked in your session" line');
+    assert.equal(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'qhead')[0].textContent, 'Questions for you · 0 · 1 being asked in your session');
   } finally {
     app.restore();
   }

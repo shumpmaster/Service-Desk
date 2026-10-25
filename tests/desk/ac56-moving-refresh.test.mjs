@@ -619,20 +619,20 @@ test('AC56 refresh, Timeline (step 4, 2026-10-16: AC59, AC60): scrolled away fro
   try {
     await app.advance(POLL_MS);
     const fold = (k) => keyed(app, `fold:sprints:${k}`);
-    const ms = fold('Build-i1:M2B');
-    const untied = fold('Design-i2:untied');
+    const ms = fold('Build-i1:M2B:run1');
+    const untied = fold('Design-i2:untied:run2');
     assert.ok(ms && untied, 'both folds drawn');
     assert.equal(ms.attrs['aria-expanded'], 'false', 'every list starts folded');
     await app.tap(ms);
     await app.tap(untied);
-    assert.equal(fold('Build-i1:M2B').attrs['aria-expanded'], 'true');
+    assert.equal(fold('Build-i1:M2B:run1').attrs['aria-expanded'], 'true');
     const tasks = keyed(app, 'tasks:Build-i1:M2B');
     assert.ok(tasks, 'its sprints are open');
     window.scrollY = 2400; // the owner scrolled away from Now
     app.scrolls.length = 0;
     await everyRefresh(app, setup);
-    assert.equal(fold('Build-i1:M2B').attrs['aria-expanded'], 'true', 'the milestone\'s sprints stay open');
-    assert.equal(fold('Design-i2:untied').attrs['aria-expanded'], 'true', 'and the untied ones');
+    assert.equal(fold('Build-i1:M2B:run1').attrs['aria-expanded'], 'true', 'the milestone\'s sprints stay open');
+    assert.equal(fold('Design-i2:untied:run2').attrs['aria-expanded'], 'true', 'and the untied ones');
     assert.equal(keyed(app, 'tasks:Build-i1:M2B'), tasks, 'the same element');
     assert.deepEqual(app.scrolls, [], 'no scroll back to Now on a refresh');
   } finally {
@@ -656,12 +656,12 @@ test('AC56 refresh, the page (AC83, in the Status screen\'s place): one phase li
     assert.equal(line('Launch').attrs['aria-expanded'], 'false');
     assert.equal(line('Discovery').attrs['aria-expanded'], 'true');
     const design = keyed(app, 'stdl:Design');
-    assert.ok(design && keyed(app, 'old:Design-i1'), 'Design opened, its earlier run listed');
+    assert.ok(design && keyed(app, 'old:Design-i1:run1'), 'Design opened, its earlier run listed');
     await everyRefresh(app, setup);
     assert.equal(line('Launch').attrs['aria-expanded'], 'false', 'Launch stays folded');
     assert.equal(line('Discovery').attrs['aria-expanded'], 'true', 'Discovery stays open');
     assert.equal(keyed(app, 'stdl:Design'), design, 'Design stays open, the same element');
-    assert.ok(keyed(app, 'old:Design-i1'), 'its earlier run still listed');
+    assert.ok(keyed(app, 'old:Design-i1:run1'), 'its earlier run still listed');
   } finally {
     app.restore();
   }

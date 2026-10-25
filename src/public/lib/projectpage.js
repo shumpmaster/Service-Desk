@@ -39,14 +39,18 @@ export const PAGE_WORDS = Object.freeze({
   detailsSmall: 'Agents and usage · time asked of you · CI · record notes',
   nothingWaiting: 'Nothing waiting on you',
   checking: 'Checking…',
-  yours: 'Yours',
-  standardOf: (n) => `The model's standard ${n === 1 ? 'one' : NUMBER_WORDS[n] || n}`,
+  // AC92 (d), from G6 (P-001-glance2-standard.md, A): an opened phase's two heads on every run, "Your milestones · <n>" and
+  // "Standard checklist · <n> · <h> tracked" (or "· none tracked this run"), in place of "Yours" and "The model's standard <n>".
+  yoursHead: (n) => `Your milestones · ${n}`,
+  standardHead: (n, h) => `Standard checklist · ${n} · ${h ? `${h} tracked` : 'none tracked this run'}`,
+  // The untracked ones folded into one row (AC92 (d)): "<n> not tracked this run: <a> not recorded yet, <b> no record in the
+  // model", each part left out when 0; the words are "not tracked", not "not used" (the ruling).
+  untracked: (a, b) => `${a + b} not tracked this run: ${[a ? `${a} not recorded yet` : null, b ? `${b} no record in the model` : null].filter(Boolean).join(', ')}`,
   notUsed: 'Not used by this project',
   olderPipeline: 'older pipeline',
   ledgerLatest: 'Latest in the ledger',
   records: 'Records',
 });
-const NUMBER_WORDS = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 
 // ---------------------------------------------------------------------------
 // The one sentence (AC83) and the short phase line (AC84)
@@ -216,14 +220,6 @@ export function ranAgainEach(ctx, tz, bandOf = null) {
 // ---------------------------------------------------------------------------
 // Milestones by phase (AC83, frames 5, 6 and 6b)
 
-/** A list of standard ids in words: "Design-2 to Design-5" when they run on without a gap, else "Design-2, Design-4". */
-export function idRange(ids) {
-  if (ids.length <= 1) return ids.join('');
-  const n = ids.map((id) => Number(/-(\d+)$/.exec(id)[1]));
-  const runOn = n.every((x, i) => i === 0 || x === n[i - 1] + 1);
-  return runOn ? `${ids[0]} to ${ids[ids.length - 1]}` : ids.join(', ');
-}
-
 /** A rough finish as a milestone's row says it (AC24's, where it gives one): "rough finish 22–25 Oct", "only your acceptance remains", or null. */
 export function finishWords(f, { label = true } = {}) {
   if (!f || f.na || !f.words) return null;
@@ -309,7 +305,8 @@ export function modelRecords(ctx, id) {
  * the model can't record it, or its phase has no run now or still to come); 6 not tracked.
  * R3-a (the plan review's carried risk, round 3): a phase whose runs are neither finished nor now nor still to come
  * (their state "not recorded") has no run now or to come, so a taken-on recordable milestone there falls to class 5,
- * "taken on, not recorded by the model", never to class 6: its count agrees with its row's "taken on" (C).
+ * "taken on, not recorded by the model", never to class 6: its count agrees with its row's "taken on" (C), which from G6
+ * (R3-b; AC92 (d)) reads "taken on · not recorded by the model", such a run being neither now nor still to come.
  */
 export function standardClass(ctx, runs, id) {
   const plan = ctx.standard[id] || null;
@@ -380,6 +377,22 @@ function ownRow(ctx, run, m, finishOf, old) {
 }
 
 /**
+ * Whether a standard milestone is tracked in one run (AC92 (d)'s h, per run, where (c)'s count is per phase): "reached",
+ * "carried over" or "not reached" recorded for it in that run, its line not marking it skipped (the states of (c)'s
+ * classes 2 and 4); or "taken on" by its line, the model able to record its state (modelRecords), while that run is now or
+ * still to come. A "not needed" recorded in the run, and a skipped one whatever state it records, are outside h, as they
+ * are outside (c)'s k, so in a phase with one run the head's h is its line's k (G6's review, round 1, note 1; the
+ * Definer's narrowing of h from "a state recorded in that run", which counted them).
+ */
+export function trackedInRun(ctx, run, s) {
+  const plan = ctx.standard[s.id] || null;
+  if (plan && plan.state === 'skipped') return false;
+  if (['reached', 'carried over', 'not reached'].includes(standardWord(s.state))) return true;
+  if (s.state !== 'not recorded') return false;
+  return Boolean(plan && plan.state === 'taken on' && modelRecords(ctx, s.id) && ['now', 'still to come'].includes(ctx.state.get(run)));
+}
+
+/**
  * One standard milestone (AC83): reached, taken on, skipped (each with its why where its line gives
  * one), not reached, not needed; or, with no state recorded, one of the three states told apart: not
  * used by this project ("skipped · why: …"), not recorded yet (a dashed circle with "?"), and no record
@@ -387,6 +400,7 @@ function ownRow(ctx, run, m, finishOf, old) {
  */
 function stdRow(ctx, run, s, old) {
   const plan = ctx.standard[s.id] || null;
+  const tracked = trackedInRun(ctx, run, s);
   const why = plan && plan.why ? ` · why: ${plan.why}` : '';
   const w = standardWord(s.state);
   const base = { kind: 'std', id: s.id, name: deskWords(s.name), old };
@@ -400,8 +414,14 @@ function stdRow(ctx, run, s, old) {
   if (w === 'reached' || w === 'carried over') return { ...base, icon: gone ? 'pastcheck' : 'check', state: 'reached', words: `${w}${why}`, soft: false };
   if (w === 'not reached') return { ...base, icon: 'cross', state: 'not reached', words: `not reached${why}`, soft: false };
   if (w === 'not needed') return { ...base, icon: 'skip', state: 'not needed', words: `not needed${why}`, soft: true };
-  // Taken on by its line, with no state in the model's records yet: its line's words (AC83: "never shown as missing").
-  if (plan && plan.state === 'taken on') return { ...base, icon: 'planned', state: 'taken on', words: `taken on${why}`, soft: true };
+  // Taken on by its line, with no state in the model's records yet: its line's words (AC83: "never shown as missing"). From
+  // G6 (AC92 (d)), one outside h (tracked in that run) reads "taken on · not recorded by the model": one the model can't
+  // record (class 5 in (c)), in any run; and, R3-b (the plan review's carried risk, round 3), a recordable one in a run that
+  // is neither now nor still to come (a finished phase's, class 5 too, or an earlier run gone back over), so every row a
+  // run's head leaves out of its "<h> tracked" says why, as the phase line's "taken on, not recorded by the model" does (C).
+  if (plan && plan.state === 'taken on') {
+    return { ...base, icon: 'planned', state: 'taken on', tracked, words: `taken on${tracked ? '' : ' · not recorded by the model'}${why}`, soft: true };
+  }
   if (NOT_RECORDED_IDS.has(s.id)) return { ...base, icon: 'nomodel', state: 'no record', words: 'no record for this in the model yet', soft: true };
   return { ...base, icon: 'unrec', state: 'not recorded', words: 'not recorded yet', soft: true };
 }
@@ -413,8 +433,12 @@ function stdRow(ctx, run, s, old) {
  * - counts and detail, from G5 (AC92 (c)), in place of "Yours: … · Standard: <k> of <n> …": the phase's counts
  *   (phaseCounts) and its two lines of detail (countLines), "<R> of <T> reached · <sprints>" over "Standard checklist: …";
  * - runs, opened: the latest first, { k, head, latest, own (the first at the foot), std (`<Phase>-1` at
- *   the foot), gathered }; earlier runs smaller, their standard milestones gathered where none was
- *   recorded ("Design-2 to Design-5 · not recorded, or no record in the model"). From G5 (AC92 (c)), a milestone's row
+ *   the foot), stdCount, h, untracked }; earlier runs smaller. From G6 (AC92 (d)), every run, earlier ones included, is
+ *   drawn under two heads, "Your milestones · <n>" and "Standard checklist · <n> · <h> tracked", h the standard ones
+ *   tracked in that run (trackedInRun); its standard rows not tracked there ("not recorded yet", or "no record for this
+ *   in the model yet") leave `std` for `untracked`, { n, a, b, words, rows }, one row that lists them in place on a tap,
+ *   in place of an earlier run's gathered line ("Design-2 to Design-5 · not recorded, or no record in the model");
+ *   skipped, not-needed and taken-on rows stay listed. From G5 (AC92 (c)), a milestone's row
  *   with sprints drawn under it on the Timeline adds them after its state words, in the one sprint form ("work filed · 1
  *   sprint · 1 merged");
  * - whyOnce: where at least one of the phase's standard milestones has no why written yet, the one
@@ -453,18 +477,14 @@ export function milestonesByPhase(ctx, { finishOf = null, bandOf = null, ruled =
       const band = bandOf ? bandOf(r) : null;
       const head = `Run ${k} · ${band && band.label ? band.label : st(r) === 'still to come' ? 'planned' : ({ now: 'now', finished: 'finished', 'gone back over': 'gone back over' }[st(r)] || NOT_RECORDED)}`;
       const ownRows = [...r.project].sort((a, b) => a.lineno - b.lineno).map((m) => withSprints(ownRow(ctx, r, m, isLatest ? finishOf : null, !isLatest), r)).reverse();
-      let stdRows = r.standard.map((s) => withSprints(stdRow(ctx, r, s, !isLatest), r));
-      let gathered = null;
-      if (!isLatest) {
-        const gone = stdRows.filter((x) => (x.state === 'not recorded' || x.state === 'no record'));
-        if (gone.length) {
-          const both = gone.some((x) => x.state === 'no record') && gone.some((x) => x.state === 'not recorded');
-          const w = both ? 'not recorded, or no record in the model' : gone[0].state === 'no record' ? 'no record for this in the model yet' : 'not recorded';
-          gathered = { ids: gone.map((x) => x.id), words: `${idRange(gone.map((x) => x.id))} · ${w}` };
-          stdRows = stdRows.filter((x) => !gone.includes(x));
-        }
-      }
-      return { k, key: `${r.phase}-i${r.iteration}`, head, latest: isLatest, own: ownRows, std: [...stdRows].reverse(), stdCount: r.standard.length, gathered };
+      const stdRows = r.standard.map((s) => withSprints(stdRow(ctx, r, s, !isLatest), r));
+      // AC92 (d), from G6: every run, earlier ones included, takes the two heads; the standard rows not tracked in that run
+      // ("not recorded yet", or "no record for this in the model yet") fold into one row, listed in place on a tap.
+      const out = stdRows.filter((x) => x.state === 'not recorded' || x.state === 'no record');
+      const a = out.filter((x) => x.state === 'not recorded').length;
+      const untracked = out.length ? { n: out.length, a, b: out.length - a, words: PAGE_WORDS.untracked(a, out.length - a), rows: [...out].reverse() } : null;
+      const h = r.standard.filter((s) => trackedInRun(ctx, r, s)).length;
+      return { k, key: `${r.phase}-i${r.iteration}`, head, latest: isLatest, own: ownRows, std: stdRows.filter((x) => !out.includes(x)).reverse(), stdCount: r.standard.length, h, untracked };
     });
     const noWhy = ids.some((id) => !(ctx.standard[id] && ctx.standard[id].why));
     const whyOnce = noWhy ? `Why each is taken on or skipped: not written yet. ${project.name}'s Chief of Staff writes its lines${ruled ? ' (your ruling, P-001-standard-milestones)' : ''}.` : null;

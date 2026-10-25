@@ -283,6 +283,9 @@ test('AC50 (review B2): "Graduated" is never a label or a milestone name on any 
     // AC57 changed by AC83); opened, its standard milestones read id first, then name (frame 6).
     await app.go('#/p/Service-Desk');
     await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-label'] === 'Launch')[0]);
+    // Rewritten in G6 of "After the glance audit" (AC92 (d)): Launch-5, not tracked in its run, is folded with the run's
+    // other untracked rows, so the fold is opened before it is read; both assertions as before, with it open.
+    await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs && /^Launch-i\d+$/.test(e.attrs['data-untracked'] || ''))[0]);
     assert.doesNotMatch(drawn(app.view), /Graduated/, 'the opened Launch line draws no "Graduated"');
     assert.match(app.view.textContent, /Launch-5\s*Done/, 'Launch-5 is drawn as "Done"');
   } finally {
@@ -303,6 +306,8 @@ test('AC50: a record\'s own text holding "Graduated" is drawn exactly as written
     assert.ok(drawn(app.view).includes('Keep Graduated.'), 'and its options unchanged');
     await app.go('#/p/Service-Desk');
     await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs['aria-label'] === 'Launch')[0]);
+    // Rewritten in G6 (AC92 (d)): Launch-5 read after its run's fold of untracked rows is opened.
+    await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs && /^Launch-i\d+$/.test(e.attrs['data-untracked'] || ''))[0]);
     assert.match(app.view.textContent, /Launch-5\s*Done/, 'the page\'s Launch line, opened, names Launch-5 "Done" (AC83, in the Status screen\'s place)');
     await app.go('#/p/Service-Desk/timeline');
     assert.doesNotMatch(app.view.textContent, /Graduated/, 'no label on the timeline reads "Graduated"');

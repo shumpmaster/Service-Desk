@@ -65,12 +65,17 @@ test('AC89 (m): while the desk loads, the old header and footer are not shown �
   assert.match(desk, /foot\.hidden = true;/, 'the footer\'s "reading…" never shown, the load failed or not');
 });
 
-test('AC89 (m) with (h): the desk\'s code failing to load says "The desk couldn\'t load. Reload to try again." once, in the view, on mockup v2\'s ground and tokens as the desk\'s own render-error screen is drawn (section.sb-screen, p.sb-stale), not style.css\'s bold amber state line', () => {
+// Rewritten in G4 of "After the glance audit" (AC89 (h)'s note "After the glance audit": "it says "The desk couldn't load."
+// in `--t-lead`, with the ✕ in `--bad` and a "Reload" button (AC91 (k))"): the screen is no longer the render-error
+// screen's 12 px line (p.sb-stale) but the failed-load screen app.js draws (section.sb-screen.v2-loadfail), still said once,
+// in the view, on mockup v2's ground and tokens. AC91 (k)'s own case (tests/desk/ac91-glance-load.test.mjs) draws it.
+test('AC89 (m) with (h) (rewritten in G4): the desk\'s code failing to load says "The desk couldn\'t load." once, in the view, on mockup v2\'s ground and tokens, as the failed-load screen with its ✕ and Reload button (section.sb-screen.v2-loadfail), not style.css\'s bold amber state line', () => {
   const fn = APP.slice(APP.indexOf("startDesk(() => import('./sandbox.js')"));
   assert.match(fn, /document\.documentElement\.classList\.add\('sb', 'v2-page'\);/, 'mockup v2\'s ground and tokens (AC88)');
   assert.match(fn, /document\.head\.append\(h\('link', \{ rel: 'stylesheet', href: 'sandbox\.css' \}\)\)/, 'sandbox.css, as the desk itself adds it');
-  assert.match(fn, /view\.replaceChildren\(h\('section', \{ class: 'sb-screen' \}, h\('p', \{ class: 'sb-stale', role: 'alert' \}, words\)\)\);/);
-  // The render-error screen's own form, which this follows (sandbox.js's guardRender call).
+  assert.match(fn, /view\.replaceChildren\(loadFailedScreen\(words\)\);/);
+  assert.match(APP, /return h\('section', \{ class: 'sb-screen v2-loadfail' \},/, 'one screen in the view, as the desk\'s own screens are');
+  // The render-error screen's own form stays the desk's, for a drawing that throws (sandbox.js's guardRender call).
   assert.match(readFileSync(join(PUBLIC, 'sandbox.js'), 'utf8'), /show\(h\('section', \{ class: 'sb-screen' \}, h\('p', \{ class: 'sb-stale' \}, state\.text\)/);
   // Said once: the state line that also holds them sits in the hidden header.
   assert.match(HTML, /<header id="top" hidden>\s*<a class="brand" href="#\/">Service Desk<\/a>\s*<p id="screen-state"/);

@@ -292,9 +292,20 @@ test('AC62: every word kept — each sandbox screen\'s text, outside the parts A
   // the desk and its marker, "Sandbox: candidate design", leaves every screen: it leaves the snapshot's runs too, and
   // every other word is compared, as before.
   const lessMarker = (runs) => runs.filter((w) => w !== 'Sandbox: candidate design');
+  // From G4 of "After the glance audit" (AC91 (l); AC49's note "After the glance audit": "a team member's page writes a
+  // date from an earlier day "14 Oct, 09:40", not J9's "Oct 14 09:40", and a time from today "09:30" as now"): on a
+  // member's page (`#/p/<project>/team/<member>`) each of the snapshot's J9 dates, "<Mon> <d> <HH:MM>", is compared in the
+  // one date form, "<d> <Mon>, <HH:MM>"; every other word, and every date on the other screens (the Team screen, Details'
+  // views), is compared as it was.
+  const MON = 'Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec';
+  const memberPage = (r) => /^#\/p\/[^/]+\/team\/[^/]+$/.test(r);
+  const oneDateForm = (r, runs) => (memberPage(r) ? runs.map((w) => w.replace(new RegExp(`\\b(${MON}) (\\d{1,2}) (\\d\\d:\\d\\d)\\b`, 'g'), '$2 $1, $3')) : runs);
+  const changed = routes.filter((r) => memberPage(r) && snap[r].some((w) => new RegExp(`\\b(${MON}) \\d{1,2} \\d\\d:\\d\\d\\b`).test(w)));
+  assert.deepEqual(changed, ['#/p/Service-Desk/team/owner', '#/p/Service-Desk/team/orchestrator', '#/p/Service-Desk/team/definer',
+    '#/p/Service-Desk/team/source-checker', '#/p/Service-Desk/team/researcher', '#/p/Service-Desk/team/critic'], 'the member pages whose dates G4 changes');
   for (const r of routes) {
     if (queueRoutes.includes(r) || builtV2.includes(r)) continue;
-    assert.deepEqual(now[r], lessMarker(lessBar(rebuiltCos.includes(r) ? cosParts(snap[r]) : snap[r])), r);
+    assert.deepEqual(now[r], oneDateForm(r, lessMarker(lessBar(rebuiltCos.includes(r) ? cosParts(snap[r]) : snap[r]))), r);
   }
   assert.deepEqual(cosParts(snap[rebuiltCos[0]]), ['Sandbox: candidate design', 'Back', 'Home', 'Service-Desk', 'Chief of Staff', 'Responsible for', 'Running log', 'Status', 'Timeline', 'Team', 'Queue']);
   assert.ok(snap['#/p/Delta/team/chief-of-staff'].includes("Its sessions aren't recorded"), 'the v2.5 project\'s page is compared whole, unchanged');

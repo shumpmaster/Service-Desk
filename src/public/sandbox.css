@@ -866,6 +866,22 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
 .v2-cim.bad { color: var(--bad); }
 /* A waiting deploy's mismatch mark (AC72), its words in ink. */
 .v2-safe.bad > .v2-safe-l > .v2-k { color: var(--bad); }
+/* Where the project is now (AC92 (b), from G8; P-001-glance2-arrow.md, A; round 2's mock, changes2.js q3): one small filled
+   triangle in --ink pointing at the present, right on a vertical drawing (`.r`) and down on a horizontal one (`.d`), never
+   up; a clip-path on an empty span, so no font can change it; hidden from assistive technology (sandbox.js, hereMark); still.
+   On the Timeline's Now line, 8 x 10 px in place of its bar, centred on the rail; above the page's strip, 10 x 6 px, centred
+   9 px above the now phase's bar, in the gap under the sentence; on a Home tile, 6 x 8 px, 3 px left of the now run's icon;
+   on Plan, 6 x 8 px in the page's 16 px margin, level with the next-to-reach row's icon; in an opened phase, 6 x 8 px on
+   the phase's thin line, beside the now run's next-to-reach row. */
+.v2-here { display: block; background: var(--ink); }
+.v2-here.r { clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.v2-here.d { clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.v2-nowl > .v2-here { flex: none; width: 8px; height: 10px; margin-left: 4px; }
+.v2-ph.here, .v2-plrow.here, .v2-sm.here { position: relative; }
+.v2-ph > .v2-here { position: absolute; top: -9px; left: 50%; width: 10px; height: 6px; margin-left: -5px; }
+.v2-c > .v2-here { position: absolute; top: 50%; right: calc(50% + 10px); width: 6px; height: 8px; margin-top: -4px; }
+.v2-plrow > .v2-here { position: absolute; top: 14px; left: -12px; width: 6px; height: 8px; }
+.v2-sm > .v2-here { position: absolute; top: 10px; left: -19px; width: 6px; height: 8px; }
 .v2-ptl { display: grid; gap: 0; margin-top: 2px; }
 .v2-rwl, .v2-lbl { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; }
 .v2-rk { font: 400 11px/1.35 var(--font); color: var(--ink2); }
@@ -1025,8 +1041,6 @@ html.sb .v2-home .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-sdl { display: block; }
 .v2-stdl { display: grid; padding: 0 0 10px 20px; position: relative; }
 .v2-stdl::before { content: ""; position: absolute; left: 4px; top: 10px; bottom: 14px; width: 1px; background: var(--line2); }
-.v2-arrow { position: absolute; left: -1px; top: -2px; display: grid; color: var(--ink2); }
-.v2-arrow > .v2-k { width: 11px; height: 11px; }
 .v2-runh { font: var(--t-label); color: var(--ink2); padding: 8px 0 2px; }
 /* AC92 (d), from G6 (P-001-glance2-standard.md, A; round 2's mock, changes2.js q5): an opened phase's two heads on every
    run, "Your milestones · <n>" and "Standard checklist · <n> · <h> tracked", in --t-label --ink; the standard group set
@@ -1166,7 +1180,6 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-glist, .v2-keyl { display: grid; gap: 2px; padding: 0 0 6px; font: var(--t-small); color: var(--ink2); }
 .v2-keyl > li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: center; }
 .v2-nowl { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 4px 0; min-height: 28px; font: 500 11px/1.4 var(--mono); color: var(--ink); }
-.v2-nowl::before { content: ""; width: 16px; height: 2px; background: var(--ink); }
 .v2-nowl::after { content: ""; flex: 1 1 24px; border-top: 1px solid var(--ink); }
 .v2-nowt { text-transform: uppercase; letter-spacing: .04em; }
 .v2-nows { font: var(--t-small); color: var(--ink2); }

@@ -1100,12 +1100,15 @@ const G6_EXCEPT = (n, d, theme) => {
  * - a waiting deploy's mismatch mark (`svg.v2-k.vi-x` in the `p.v2-safe-l` of a `.v2-safe.bad`) in --bad;
  * - the briefing's can't-read line under its first (`span.v2-bt3.bad.v2-bcant`), the ✕ (`svg.v2-k.bad`, a new element) and
  *   the words side by side, as a due line (`.v2-bdue`), the ✕ 1 px down;
- * - Plan's moved row (`li.v2-plli.moved`): its edge --line2, not --gold.
- * The walk reaches each on G7's screens (tests/desk/glance-fixtures.mjs's G7_OPENS, below) and the states above. A sprint's ✓
- * (`span.v2-okm`, a new element) and ✕ (`.v2-stats .v2-smk`) are drawn only with a sprint opened, which this walk leaves
- * out (see below), so tests/desk/ac92-glance-palette.test.mjs and AC84's cases lock them.
+ * - Plan's moved row (`li.v2-plli.moved`): its edge --line2, not --gold;
+ * - a sprint's marks, in a sprint's stats (`.v2-stats`, drawn with a sprint opened): the ✓ (`span.v2-okm`, a new element) in
+ *   --ok at weight 600, so its text's colour and weight change from the word's --ink2 and 400; and the ✕
+ *   (`svg.v2-k.v2-smk`) in --bad, where it inherited the word's colour.
+ * The walk reaches each on G7's screens (tests/desk/glance-fixtures.mjs's G7_OPENS, below) and the states above; a sprint's
+ * marks on the Timeline with every sprint opened (G8's round 2, from G7's reviews, round 1, note 1), where G8's arrow on
+ * the Now line is met too.
  */
-const G7_LOOK = (ink, ok, bad, gold, line2) => new Map([
+const G7_LOOK = (ink, ink2, ok, bad, gold, line2) => new Map([
   ['svg.v2-s.st-check.ok (a status mark)', [`color: ${ink} → ${ok}`]],
   ['svg.v2-s.st-check.ok (Plan\'s Reached list)', [`color: ${ink} → ${ok}`, 'width: 16px → 14px', 'height: 16px → 14px', 'vertical-align: (none) → -2px', 'margin-right: (none) → 6px']],
   ['svg.v2-s.st-cross.bad (a status mark)', [`color: ${ink} → ${bad}`]],
@@ -1115,8 +1118,10 @@ const G7_LOOK = (ink, ok, bad, gold, line2) => new Map([
   ['span.v2-bt3.bad.v2-bcant', ['display: (none) → flex', 'gap: (none) → 4px', 'align-items: (none) → flex-start']],
   ['svg.v2-k.bad (the briefing\'s can\'t-read line)', ['margin-top: (none) → 1px']],
   ['li.v2-plli.moved', [`box-shadow: inset 2px 0 0 ${gold} → inset 2px 0 0 ${line2}`]],
+  ['span.v2-okm (a sprint\'s ✓)', [`color: (none) → ${ok}`, 'font-weight: (none) → 600', `computed color: ${ink2} → ${ok}`, 'computed font-weight: 400 → 600']],
+  ['svg.v2-k.v2-smk (a sprint\'s ✕)', [`color: inherit → ${bad}`]],
 ]);
-const G7_ONCE = new Map([['light', G7_LOOK('#18191c', '#12733a', '#b3162a', '#8a6a10', '#d6d6db')], ['dark', G7_LOOK('#ecedef', '#4cc06a', '#ff6b78', '#c9b04f', '#34363c')]]);
+const G7_ONCE = new Map([['light', G7_LOOK('#18191c', '#5c5f66', '#12733a', '#b3162a', '#8a6a10', '#d6d6db')], ['dark', G7_LOOK('#ecedef', '#a2a5ac', '#4cc06a', '#ff6b78', '#c9b04f', '#34363c')]]);
 const G7_KEY = (n) => {
   const p = n.parent;
   const svg = n.tag === 'svg';
@@ -1133,11 +1138,37 @@ const G7_KEY = (n) => {
   if (bcant(n)) return 'span.v2-bt3.bad.v2-bcant';
   if (svg && n.cls.has('v2-k') && n.cls.has('bad') && bcant(p)) return 'svg.v2-k.bad (the briefing\'s can\'t-read line)';
   if (n.tag === 'li' && n.cls.has('v2-plli') && n.cls.has('moved')) return 'li.v2-plli.moved';
+  // A sprint's mark sits in its word (`span.sb-mkw`, or a `details.sb-mkw`'s summary), in a sprint's stats.
+  const mkw = Boolean(p && ((p.tag === 'span' && p.cls.has('sb-mkw')) || (p.tag === 'summary' && p.parent && p.parent.cls.has('sb-mkw'))) && inStats(p));
+  if (n.tag === 'span' && n.cls.has('v2-okm') && mkw) return 'span.v2-okm (a sprint\'s ✓)';
+  if (svg && n.cls.has('v2-k') && n.cls.has('v2-smk') && mkw) return 'svg.v2-k.v2-smk (a sprint\'s ✕)';
   return null;
 };
+const inStats = (n) => { for (let q = n; q; q = q.parent) if (q.cls.has('v2-stats')) return true; return false; };
 const G7_EXCEPT = (n, d, theme) => {
   const k = G7_KEY(n);
   return Boolean(k && G7_ONCE.get(theme) && (G7_ONCE.get(theme).get(k) || []).includes(d)) ? `G7 ${theme} ${k} ${d}` : null;
+};
+/**
+ * Older than G7, and no stage of the glance audit's: stage 6a after MD3 (dc6325c; AC89 (g), "every sprint mark as tall as
+ * one with a reason, so the marks' tops meet") gave each sprint mark on the Timeline (`span.sb-mkw` in a Timeline's
+ * `.v2-stats`) a 24 px target, `.v2-timeline .v2-stats span.sb-mkw { min-height: 24px; }`, after bd4097d. The walk first
+ * reaches it on the Timeline with every sprint opened (G8's round 2, from G7's reviews, round 1, note 1), so it is named
+ * here, on its own element, its one declaration, the same in each theme.
+ */
+const PRE_G7_ONCE = new Map([['span.sb-mkw (a Timeline\'s sprint mark)', ['min-height: (none) → 24px']]]);
+const PRE_G7_KEY = (n) => {
+  if (n.tag !== 'span' || !n.cls.has('sb-mkw')) return null;
+  let stats = false;
+  for (let q = n.parent; q; q = q.parent) {
+    if (q.cls.has('v2-stats')) stats = true;
+    if (stats && q.cls.has('v2-timeline')) return 'span.sb-mkw (a Timeline\'s sprint mark)';
+  }
+  return null;
+};
+const PRE_G7_EXCEPT = (n, d) => {
+  const k = PRE_G7_KEY(n);
+  return Boolean(k && (PRE_G7_ONCE.get(k) || []).includes(d)) ? `PRE-G7 ${k} ${d}` : null;
 };
 /**
  * G7b of "After the glance audit"'s changes to the look on purpose (the brief's rule; AC91 (c): "the list ends with one
@@ -1155,6 +1186,55 @@ const G7B_KEY = (n) => (n.tag === 'div' && n.cls.has('v2-smiss') && n.parent && 
 const G7B_EXCEPT = (n, d) => {
   const k = G7B_KEY(n);
   return Boolean(k && (G7B_ONCE.get(k) || []).includes(d)) ? `G7B ${k} ${d}` : null;
+};
+/**
+ * G8 of "After the glance audit"'s changes to the look on purpose (the brief's rule; AC92 (b): "one shape everywhere, a small
+ * filled triangle in `--ink` pointing at the present, right on a vertical drawing and down on a horizontal one"; "the Now
+ * line's mark becomes an 8 × 10 px triangle pointing right, centred on the rail, in place of its 16 × 2 px bar"), each
+ * declaration pinned to its value, before and after, in each theme, on only its own element:
+ * - the Timeline's Now line (`p.v2-nowl`): its `::before` bar gone;
+ * - the arrow (`span.v2-here`, a new element): filled in --ink by a clip-path, `.r` pointing right and `.d` down, its size
+ *   and place its drawing's — first in the Now line (8 × 10, 4 px in); in the page strip's now cell, above its bar (10 × 6,
+ *   9 px up, centred); in a Home tile's now cell, 3 px left of its icon (6 × 8); in Plan's next-to-reach row, in the page's
+ *   margin (6 × 8, 12 px out, 14 px down); and in an opened phase's next-to-reach row, on the phase's thin line (6 × 8, 19 px
+ *   out, 10 px down);
+ * - the element each absolute arrow is placed in (the strip's now cell, Plan's row, the opened phase's row): `position:
+ *   relative`, on that one element only (`.here`); a tile's cell already was.
+ * The opened phase's reading arrow (`span.v2-arrow`) is gone, an element no longer drawn, so the walk compares nothing for it.
+ */
+const G8_SHAPE = (ink, clip) => ['display: (none) → block', `background: (none) → ${ink}`, `clip-path: (none) → ${clip}`];
+const G8_R = 'polygon(0 0, 100% 50%, 0 100%)';
+const G8_D = 'polygon(0 0, 100% 0, 50% 100%)';
+const G8_LOOK = (ink) => new Map([
+  ['p.v2-nowl', ['::before content: "" → (none)', '::before width: 16px → (none)', '::before height: 2px → (none)', `::before background: ${ink} → (none)`]],
+  ['span.v2-here.r (the Now line)', [...G8_SHAPE(ink, G8_R), 'flex: (none) → none', 'width: (none) → 8px', 'height: (none) → 10px', 'margin-left: (none) → 4px']],
+  ['li.v2-ph.now.here', ['position: (none) → relative']],
+  ['span.v2-here.d (the page\'s strip)', [...G8_SHAPE(ink, G8_D), 'position: (none) → absolute', 'top: (none) → -9px', 'left: (none) → 50%', 'width: (none) → 10px', 'height: (none) → 6px', 'margin-left: (none) → -5px']],
+  ['span.v2-here.r (a Home tile\'s drawing)', [...G8_SHAPE(ink, G8_R), 'position: (none) → absolute', 'top: (none) → 50%', 'right: (none) → calc(50% + 10px)', 'width: (none) → 6px', 'height: (none) → 8px', 'margin-top: (none) → -4px']],
+  ['a.v2-plrow.here', ['position: (none) → relative']],
+  ['span.v2-here.r (Plan)', [...G8_SHAPE(ink, G8_R), 'position: (none) → absolute', 'top: (none) → 14px', 'left: (none) → -12px', 'width: (none) → 6px', 'height: (none) → 8px']],
+  ['li.v2-sm.here', ['position: (none) → relative']],
+  ['span.v2-here.r (an opened phase)', [...G8_SHAPE(ink, G8_R), 'position: (none) → absolute', 'top: (none) → 10px', 'left: (none) → -19px', 'width: (none) → 6px', 'height: (none) → 8px']],
+]);
+const G8_ONCE = new Map([['light', G8_LOOK('#18191c')], ['dark', G8_LOOK('#ecedef')]]);
+const G8_KEY = (n) => {
+  const p = n.parent;
+  if (n.tag === 'p' && n.cls.has('v2-nowl')) return 'p.v2-nowl';
+  if (n.tag === 'li' && n.cls.has('v2-ph') && n.cls.has('now') && n.cls.has('here') && p && p.cls.has('v2-strip')) return 'li.v2-ph.now.here';
+  if (n.tag === 'a' && n.cls.has('v2-plrow') && n.cls.has('here')) return 'a.v2-plrow.here';
+  if (n.tag === 'li' && n.cls.has('v2-sm') && n.cls.has('own') && n.cls.has('here') && p && p.cls.has('v2-sml')) return 'li.v2-sm.here';
+  if (n.tag !== 'span' || !n.cls.has('v2-here') || !p || n.kids.length) return null;
+  if (n.cls.has('d')) return p.tag === 'li' && p.cls.has('v2-ph') && p.cls.has('here') ? 'span.v2-here.d (the page\'s strip)' : null;
+  if (!n.cls.has('r')) return null;
+  if (p.tag === 'p' && p.cls.has('v2-nowl')) return 'span.v2-here.r (the Now line)';
+  if (p.tag === 'span' && p.cls.has('v2-c') && p.cls.has('s-now')) return 'span.v2-here.r (a Home tile\'s drawing)';
+  if (p.tag === 'a' && p.cls.has('v2-plrow') && p.cls.has('here')) return 'span.v2-here.r (Plan)';
+  if (p.tag === 'li' && p.cls.has('v2-sm') && p.cls.has('here')) return 'span.v2-here.r (an opened phase)';
+  return null;
+};
+const G8_EXCEPT = (n, d, theme) => {
+  const k = G8_KEY(n);
+  return Boolean(k && G8_ONCE.get(theme) && (G8_ONCE.get(theme).get(k) || []).includes(d)) ? `G8 ${theme} ${k} ${d}` : null;
 };
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
@@ -1205,8 +1285,12 @@ function sameLook(app, where, fails, seen) {
         if (g6) { excepted.add(g6); continue; }
         const g7 = G7_EXCEPT(b, d, way.theme);
         if (g7) { excepted.add(g7); continue; }
+        const pre7 = PRE_G7_EXCEPT(b, d);
+        if (pre7) { excepted.add(pre7); continue; }
         const g7b = G7B_EXCEPT(b, d);
         if (g7b) { excepted.add(g7b); continue; }
+        const g8 = G8_EXCEPT(b, d, way.theme);
+        if (g8) { excepted.add(g8); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -1339,13 +1423,18 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   }
   // G7 of "After the glance audit" (AC92 (a)): the screens its marks are drawn on that the walk above doesn't open
   // (tests/desk/glance-fixtures.mjs's G7_OPENS, its made-up parts NOT real), so the walk reaches each mark G7 colours, the
-  // moved row's edge and the briefing's can't-read lines. The Timeline with its sprints opened is left out here: there
-  // every sprint mark's `span.sb-mkw` also takes the 24 px target `.v2-timeline .v2-stats span.sb-mkw` gave it after
-  // bd4097d, a change of no stage of G7's that this walk never reached; G7's sprint ✓ and ✕ are locked by its own test
-  // (tests/desk/ac92-glance-palette.test.mjs) and AC84's (tests/desk/ac84-timeline.test.mjs).
-  for (const [where, open] of G7_OPENS.filter(([w]) => w !== 'Timeline, every sprint opened')) {
+  // moved row's edge and the briefing's can't-read lines. With the Timeline's every sprint opened (G8's round 2, from G7's
+  // reviews, round 1, note 1), it reaches a sprint's ✓ and ✕, pinned in G7_ONCE, with G8's arrow on the Now line, and the
+  // 24 px target older than G7 that each sprint mark there takes (PRE_G7_ONCE, above).
+  for (const [where, open] of G7_OPENS) {
     const g7 = await open();
     try {
+      if (where === 'Timeline, every sprint opened') {
+        const of = (c) => findAll(g7.view, (e) => (` ${e.className || ''} `).includes(` ${c} `));
+        assert.ok(of('v2-okm').length > 0 && of('v2-smk').length > 0, `${where}: a sprint's ✓ and ✕ drawn`);
+        const here = of('v2-here');
+        assert.ok(here.length === 1 && / v2-nowl /.test(` ${here[0].parentNode.className} `), `${where}: G8's one arrow, on the Now line`);
+      }
       sameLook(g7, `G7 ${where}`, fails, seen);
       counts.screens++;
     } finally {
@@ -1409,10 +1498,16 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // G7's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
   const g7 = [...G7_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G7 ${theme} ${k} ${d}`))).sort();
   assert.deepEqual([...excepted].filter((x) => /^G7 /.test(x)).sort(), g7);
+  // The exception older than G7 (stage 6a after MD3) was met, its one declaration on its own element, and nothing else of it.
+  const pre7 = [...PRE_G7_ONCE].flatMap(([k, ds]) => ds.map((d) => `PRE-G7 ${k} ${d}`)).sort();
+  assert.deepEqual([...excepted].filter((x) => /^PRE-G7 /.test(x)).sort(), pre7);
   // G7b's exception was met, each pinned declaration on its own element, and nothing else of it.
   const g7b = [...G7B_ONCE].flatMap(([k, ds]) => ds.map((d) => `G7B ${k} ${d}`)).sort();
   assert.deepEqual([...excepted].filter((x) => /^G7B /.test(x)).sort(), g7b);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[1234567] |G7B )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // G8's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
+  const g8 = [...G8_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G8 ${theme} ${k} ${d}`))).sort();
+  assert.deepEqual([...excepted].filter((x) => /^G8 /.test(x)).sort(), g8);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[12345678] |G7B |PRE-G7 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

@@ -7,7 +7,9 @@
 // tools/glance-shots.mjs); G5 adds `mix`'s made-up later Launch run for F1 and F2 (`laterLaunch`); G6 adds `standard`, every
 // standard line written in Service-Desk's section 3; G7 adds made-up workflow runs on a head (`ciState`) and the screens
 // its palette's marks are drawn on, opened as the owner opens them (`G7_OPENS`); G7b adds Home with "Since you last
-// looked" ending in its missing lines (`G7B_OPENS`), with the "last looked" a device holds; the later stages add theirs. Each
+// looked" ending in its missing lines (`G7B_OPENS`), with the "last looked" a device holds; G8 adds `nowShared`, a now
+// run sharing its key with later runs, and `sprintsState`, a v2.5 project with two open sprints or none; the later
+// stages add theirs. Each
 // made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
 import { CONFIG, fixture } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
@@ -381,5 +383,42 @@ export const G7B_OPENS = [
   }],
   ['Home, the list with "<n> more", one project not read since a time', () => { const s = unreadState(); return g7bOpen(s, { looked: SINCE_FULL, later: s.fail }); }],
 ];
+
+/**
+ * G8 (AC92 (b)): a now run whose key ("<Phase>-i<n>") later runs share, so the arrow is checked to point at the now run
+ * itself (G5's and G6's reviews: two runs can share a key). Each is NOT a real record: the made-up project's
+ * docs/PROJECT.md (Service-Desk's section 3 at 3117150, as sandbox-fixtures.mjs's fullRepo copies it) with its lines'
+ * sprints changed.
+ * - `build`: `mix` with M2's sprints ("PR #44") taken off its line, so M2 has no work filed and run 1's "Build-i1" (P-002's),
+ *   which holds it, is the earliest run holding a milestone with no work filed: the now run (AC50), M2 next to reach. Run
+ *   3's "Build-i1" (P-003's, still to come) shares its key.
+ * - `launch`: `gates` with MD2, MD3, M3A and M3B each given a made-up sprint, "PR #90", so the earliest such run is run 2's
+ *   "Launch-i1" (M3C, next to reach): the now run. Runs 3 and 4 (P-004's and P-005's "Launch-i1", still to come) share
+ *   its key, three runs with one key.
+ */
+export function nowShared(at) {
+  const s = at === 'launch' ? gatesState() : mixState();
+  const alpha = s.repos[MIX_PROJECT];
+  const doc = alpha.files['docs/PROJECT.md'];
+  const made = at === 'launch' ? doc.replace(/^(- .*\((MD2|MD3|M3A|M3B)\) · .*)$/mg, '$1 · sprints: PR #90')
+    : doc.replace(/^(- .*\(M2\) · .*) · sprints: PR #44$/m, '$1');
+  if (made === doc) throw new Error('nowShared: the made-up project\'s section 3 has changed');
+  alpha.commit({ 'docs/PROJECT.md': made });
+  return s;
+}
+
+/**
+ * G8 (AC92 (b)): Personal-Org-Operating-Model's sprints (v2.5, J9) with `open` open: 2, its real m1.4 (poom/, open) and a
+ * made-up m1.5 (NOT a real record), so which sprint is open is unclear and the arrow points at none; 0, m1.4 written
+ * closed (NOT as the record is), so no sprint is open.
+ */
+export function sprintsState(open) {
+  const s = textState();
+  const r = s.repos[POOM.name];
+  const m14 = r.files['docs/sprints/m1.4-v3-build.md'];
+  if (open === 2) r.commit({ 'docs/sprints/m1.5-made-up.md': '# m1.5 — a made-up sprint (NOT a real record: made up for G8\'s test)\n\nstatus: open\n' });
+  else r.commit({ 'docs/sprints/m1.4-v3-build.md': m14.replace(/^status: open$/m, 'status: closed') });
+  return s;
+}
 
 export { SD, POOM, CONFIG };

@@ -266,6 +266,9 @@ export function workAheadView({ config, entries, snaps, nowMs, tz, draft, gates 
     else if (r.finish && r.finish.from) r.right = { kind: 'finish', words: shortRange(r.finish.from, r.finish.to, today) };
     else r.right = null;
     r.icon = r.state.icon;
+    // AC92 (b), from G8: the row that is next to reach (AC57's rule 2, which holds only in the now run) takes the arrow in
+    // the page's margin; one in each project's group at most, a gate card's row never.
+    r.here = r.state.rule === 2;
   }
   // One group for each connected v3 project, in the order of its first milestone in the order shown
   // (AC86: one owner order across projects, shown grouped, as drawn); a project whose gate card waits on

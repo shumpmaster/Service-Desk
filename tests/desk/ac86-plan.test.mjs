@@ -154,6 +154,11 @@ test('AC86: each row — its icon (AC57\'s states as the page draws them), its p
     // --ok or --bad; gold stays the next to reach's ring alone. Plan's green marks are its Reached list's
     // (tests/desk/ac92-glance-palette.test.mjs).
     for (const r of rows(app)) assert.doesNotMatch(` ${findAll(byClass(r, 'v2-plrow')[0], (e) => e.tag === 'svg')[0].attrs.class} `, / (ok|bad) /, 'no status mark on a row ahead');
+    // Rewritten in G8 (AC92 (b): "Plan: a 6 × 8 px triangle pointing right, in the page's 16 px margin, level with the icon
+    // of the row that is next to reach, one in each project's group"): MD3's row alone holds the arrow, last in it, hidden
+    // (its size and place in the cascade: tests/desk/ac92-glance-arrow.test.mjs).
+    assert.deepEqual(rows(app).map((r) => byClass(r, 'v2-here').map((a) => [a.parent === byClass(r, 'v2-plrow')[0], a.className, a.attrs['aria-hidden']])),
+      [[], [], [[true, 'v2-here r', 'true']], [], [], []]);
     // Its state in words for the reader, beside the icon (the icon is hidden from assistive technology).
     assert.deepEqual(rows(app).map((r) => byClass(byClass(r, 'v2-plrow')[0], 'sb-vh').map((e) => e.textContent).join('')),
       ['1st of 6: Work filed: Q-013', '2nd of 6: Work filed: PR #72, #74, #75, #77', '3rd of 6: No work filed yet · next to reach', '4th of 6: No work filed yet', '5th of 6: No work filed yet', '6th of 6: No work filed yet']);

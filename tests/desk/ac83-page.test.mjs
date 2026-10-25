@@ -506,7 +506,7 @@ test('AC83 (specs/S-001.md:6755-6771, :6845-6855; the Reviewer\'s N3, stage 3 ro
       assert.deepEqual(cells.map((c) => byClass(c, 'v2-ps')[0].textContent), phaseStrip(ctx, snap).cells.map((c) => c.words));
       assert.deepEqual(cells.map((c) => byClass(c, 'v2-pnm')[0].textContent), ['Discovery', 'Design', 'Build', 'Launch'], 'Done is not a column (:6766)');
       const under = byClass(keyed(app, 'under'), 'v2-small').map((x) => x.textContent).filter((t) => /ran again/.test(t));
-      assert.equal(under.length, ranAgainLines(ctx, TZ, () => null).length, `${label}: one line for each phase that ran again`);
+      assert.equal(under.length, ranAgainLines(ctx, TZ, () => null).length, `${label}: the lines ranAgainLines gives, two or more unrecorded said once (AC91 (j))`);
       if (label === 'first run') assert.deepEqual(under, [], 'a first run: no "ran again" line, there being none to say (:6768-6770)');
       if (label === 'Done') assert.deepEqual(under, ['Design ran again from 8 Oct · why it went back: not recorded'], 'Done: the history stays');
       if (label === 'Done') assert.equal(cells.filter((c) => / now\b/.test(c.className)).length, 0, 'Done: no cell is now');

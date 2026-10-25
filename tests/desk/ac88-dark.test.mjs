@@ -1952,7 +1952,11 @@ test('AC88 + AC92 (a) + AC44 step 4 (G9b of "After the glance audit"; AC91 (c)):
   }
   assert.deepEqual(fails, []);
   assert.ok(places.has('grey: the line under the title'));
-  assert.deepEqual([...excepted].filter((x) => !before.has(x)), [], 'no exception met that the walks above had not met: no G9B_ONCE');
+  // Rewritten in G9c's round 2 (the owner's ruling of 2026-10-25, "Ruling: A", decisions/questions/P-001-glance-g9c-row.md;
+  // AC91 (c), "each on a row of its own"): G9B_OPENS' Waiting on `failedHeldState` now draws G9c's "Still reading
+  // Service-Desk…" line, whose one declaration G9C_ONCE pins exactly (G9c's walk, below); any other is still none of G9b's.
+  assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^G9C /.test(x)), [], 'no exception met that the walks above had not met: no G9B_ONCE');
+  assert.ok([...excepted].filter((x) => /^G9C /.test(x)).every((x) => G9C_FLAT.includes(x)), 'G9c\'s line: only its pinned declaration');
 });
 
 // G9c of "After the glance audit" (AC91 (c), "Waiting's quiet lines while a read is on its way or signed out" and "a

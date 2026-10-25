@@ -204,6 +204,57 @@ test('AC92 (d), on Service-Desk\'s records at 77bfeae (real): every run, earlier
   }
 });
 
+/** An opened phase's run heads, in the order drawn, each found by its run, its key and its run number, never by its key alone. */
+const runHeads = (app, ph) => byClass(keyed(app, `stdl:${ph}`), 'v2-runh').map((el) => {
+  const m = /^runh:(.+):run(\d+)$/.exec(el.dataset.k || '');
+  assert.ok(m, `a run head keyed by its run: ${el.dataset.k}`);
+  return { el, key: m[1], k: Number(m[2]), run: `${m[1]} run ${m[2]}`, text: el.textContent };
+});
+
+// G9's round 2 (AC92 (d), changed: the Design reviewer's call, G9's design review, round 1, B1): a run's head outranks its
+// two group heads.
+test('AC92 (d), from G9\'s round 2: an opened phase\'s run heads outrank its two group heads — each in --ink at weight 600, its size 11 px, in light and dark; each after the first set apart by a 1 px --line rule with 8 px over it, the standard group head\'s own rule and gap, and none above the first (the latest run\'s); on `mix`\'s made-up project, Build\'s runs with its two "Build-i1" runs (gone back over and still to come), and on `gates`\', Launch\'s three "Launch-i1" runs (NOT real records), each run found by itself', async () => {
+  const cases = [
+    [mixState(), 'Build', ['Build-i1 run 3', 'Build-i2 run 2', 'Build-i1 run 1'], { 'Build-i1 run 3': /^Run 3 · planned$/, 'Build-i1 run 1': /· gone back over$/ }],
+    [gatesState(), 'Launch', ['Launch-i1 run 4', 'Launch-i1 run 3', 'Launch-i1 run 2'], {}],
+  ];
+  for (const [state, ph, runs, said] of cases) {
+    const app = await openPage(state, `#/p/${MIX_PROJECT}`);
+    try {
+      await app.tap(foldOf(app, ph));
+      const rh = runHeads(app, ph);
+      assert.deepEqual(rh.map((r) => r.run), runs, `${ph}: every run's head, each its own run`);
+      assert.equal(new Set(rh.map((r) => r.el)).size, runs.length, `${ph}: one head for each run`);
+      for (const [run, re] of Object.entries(said)) assert.match(rh.find((r) => r.run === run).text, re, `${ph}: ${run}'s head`);
+      // The runs that share a key are each found by the run itself, so each is held to its own place: first or not.
+      const shared = rh.filter((r) => rh.filter((x) => x.key === r.key).length > 1);
+      assert.ok(shared.length >= 2, `${ph}: two or more runs share a key (${shared.map((r) => r.run).join(', ')})`);
+      const std = byClass(keyed(app, `stdl:${ph}`), 'v2-subh').filter((x) => /\bstd\b/.test(x.className));
+      const groups = byClass(keyed(app, `stdl:${ph}`), 'v2-subh');
+      assert.equal(groups.length, 2 * runs.length, `${ph}: two group heads under every run`);
+      for (const [theme, ink, , line] of THEMES) {
+        const L = looks(app, theme);
+        rh.forEach((r, i) => {
+          const at = L.get(r.el);
+          assert.deepEqual([at.size, at.weight, at.color], ['11px', '600', ink], `${theme}: ${ph}'s ${r.run} head in --ink at 600, 11 px`);
+          for (const g of groups) {
+            assert.equal(L.get(g).color, ink, `${theme}: the group head "${g.textContent}" stays --ink`);
+            assert.ok(Number(at.weight) > Number(L.get(g).weight), `${theme}: ${r.run}'s head (${at.weight}) outranks "${g.textContent}" (${L.get(g).weight})`);
+            assert.equal(L.get(g).size, at.size, `${theme}: the same size, 11 px, as the group heads`);
+          }
+          if (i === 0) assert.deepEqual([at.borderTop, at.marginTop], ['', ''], `${theme}: no rule above the first run's head (${r.run})`);
+          else {
+            assert.deepEqual([at.borderTop, at.marginTop], [`1px solid ${line}`, '8px'], `${theme}: a 1 px --line rule with 8 px over it above ${r.run}'s head`);
+            assert.deepEqual([at.borderTop, at.marginTop], [L.get(std[0]).borderTop, L.get(std[0]).marginTop], `${theme}: the standard group head's own rule and gap`);
+          }
+        });
+      }
+    } finally {
+      app.restore();
+    }
+  }
+});
+
 // ---------------------------------------------------------------------------
 // The untracked ones folded, and the three states after the fold's tap
 

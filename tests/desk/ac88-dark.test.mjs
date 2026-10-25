@@ -1179,9 +1179,22 @@ const G7_EXCEPT = (n, d, theme) => {
  * `.v2-stats`) a 24 px target, `.v2-timeline .v2-stats span.sb-mkw { min-height: 24px; }`, after bd4097d. The walk first
  * reaches it on the Timeline with every sprint opened (G8's round 2, from G7's reviews, round 1, note 1), so it is named
  * here, on its own element, its one declaration, the same in each theme.
+ * The same stage's design review (22eca92, and 00446a5, round 2: "the move controls fill the row") gave the ordering's
+ * move controls, on a row with no lines under it (`li.v2-plli.ord` holding no `.v2-plunder`), the row's height shared
+ * between the two: `.v2-plli.ord:not(:has(.v2-plunder)) > .v2-plmove { grid-row: 1; padding: 0; align-self: stretch;
+ * grid-auto-rows: minmax(24px, 1fr); }` and its buttons `height: auto`. The walk first reaches the ordering opened on G8b's
+ * screens (tests/desk/glance-fixtures.mjs's G8B_OPENS), so it is named here too, on its own elements, the same in each theme.
  */
-const PRE_G7_ONCE = new Map([['span.sb-mkw (a Timeline\'s sprint mark)', ['min-height: (none) → 24px']]]);
+const PRE_G7_ONCE = new Map([
+  ['span.sb-mkw (a Timeline\'s sprint mark)', ['min-height: (none) → 24px']],
+  ['div.v2-plmove (the ordering, a row with nothing under it)', ['grid-row: 1 / span 2 → 1', 'grid-auto-rows: 32px → minmax(24px, 1fr)', 'padding: 6px 0 → 0', 'align-self: (none) → stretch']],
+  ['button.v2-plmv (the ordering, a row with nothing under it)', ['height: 32px → auto']],
+]);
 const PRE_G7_KEY = (n) => {
+  const bare = (x) => Boolean(x && x.tag === 'div' && x.cls.has('v2-plmove') && x.parent && x.parent.tag === 'li' && x.parent.cls.has('v2-plli') && x.parent.cls.has('ord')
+    && !x.parent.kids.some((c) => c.cls.has('v2-plunder')));
+  if (bare(n)) return 'div.v2-plmove (the ordering, a row with nothing under it)';
+  if (n.tag === 'button' && n.cls.has('v2-plmv') && bare(n.parent)) return 'button.v2-plmv (the ordering, a row with nothing under it)';
   if (n.tag !== 'span' || !n.cls.has('sb-mkw')) return null;
   let stats = false;
   for (let q = n.parent; q; q = q.parent) {
@@ -1562,7 +1575,7 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // G7's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
   const g7 = [...G7_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G7 ${theme} ${k} ${d}`))).sort();
   assert.deepEqual([...excepted].filter((x) => /^G7 /.test(x)).sort(), g7);
-  // The exception older than G7 (stage 6a after MD3) was met, its one declaration on its own element, and nothing else of it.
+  // The exceptions older than G7 (stage 6a after MD3) were met, each declaration on its own element, and nothing else of them.
   const pre7 = [...PRE_G7_ONCE].flatMap(([k, ds]) => ds.map((d) => `PRE-G7 ${k} ${d}`)).sort();
   assert.deepEqual([...excepted].filter((x) => /^PRE-G7 /.test(x)).sort(), pre7);
   // G7b's exception was met, each pinned declaration on its own element, and nothing else of it.

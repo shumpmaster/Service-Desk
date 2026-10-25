@@ -17,6 +17,7 @@ import { composeAnswer, questionQuestions, boxPlan, VERDICT_START, GATE_STANDARD
 import { milestoneValue, firstMilestoneLine } from './records.js';
 import { canRecord } from './model.js';
 import { gateWords, gateTitle, caseWord, defaultLetter } from './sheets.js';
+import { SIGNED_OUT_STATE } from './page.js';
 
 export const KICK_BACK_MINUTES = 5; // P-001-board-bounce.md: "after about 5 minutes" (C, a setting to tune)
 export const DONE_KEEP_HOURS = 24; // P-001-board-done-keep.md, B
@@ -170,6 +171,18 @@ export const cantShowWords = (project) => `Can't show ${project}`;
  * desk can read but can't draw (`show`, from G8d's round 2), else its can't-read words (quietCantWords).
  */
 export const quietTroubleWords = (c, tz) => (c.show ? cantShowWords(c.project) : quietCantWords(c, tz));
+
+/**
+ * From stage G9c (AC91 (c), "Waiting's quiet lines while a read is on its way or signed out"; the owner's rulings of
+ * 2026-10-25, decisions/questions/P-001-glance-waiting-pending.md, "Ruling: A", and P-001-glance-g9c-portfolio.md, "Ruling:
+ * B"): Waiting's grey line, with every project shown, for a project whose first read is still on its way (AC89 (a)'s state
+ * 1), "Still reading <project>…", <project> as Waiting's red lines name it and "…" the one character "Checking…" ends with;
+ * and the portfolio's while its read is on its way (portfolio.js's `portfolioRead` state `pending`).
+ */
+export const READING_WORDS = Object.freeze({
+  project: (project) => `Still reading ${project}…`,
+  portfolio: 'Still reading the portfolio…',
+});
 
 /**
  * AC89 (a)'s words for Waiting with one project shown, in each of its read states (specs/S-001.md, AC89 (a),
@@ -882,6 +895,21 @@ export function recordDone(project, model, snap, j, nowMs) {
  * reads do not fail), cantLines (the can't-read entries and, from G8d's round 2, the can't-show ones, `show` true, in the
  * board's order: Waiting's red quiet lines), done, pending }. A project that can't be read is never in `cantShow`, and one
  * in `cantShow` is in no "Nothing waiting" line.
+ *
+ * From stage G9c (AC91 (c), "Waiting's quiet lines while a read is on its way or signed out"; the owner's rulings of
+ * 2026-10-25, P-001-glance-waiting-pending.md and -waiting-signed-out.md, each "Ruling: A", with P-001-glance-g9c-several.md,
+ * -g9c-alone.md and -g9c-signed-out-all.md, each A, and -g9c-portfolio.md, B), with every project shown only (`only` null),
+ * the input also takes `signedOut` (the desk's, J6) and `portfolio` (portfolio.js's `portfolioRead`, { state, problem }, or
+ * null with no `portfolio` in J7), and each project's `read` its `onWay` (AC89 (a)'s state 1: no read of it succeeded in
+ * this opening and its read not failing, the 3-minute cause and the sign-out's refusal counted as failing). It returns:
+ *   - `signedOutLine`: { key, words: page.js's SIGNED_OUT_STATE.text, bad: true } while signed out, else null: the one red
+ *     line at the top of the quiet lines;
+ *   - `readLines`: the projects' read lines and the portfolio's slot, in order, each { key, words, bad }: the red can't-read
+ *     and can't-show lines (cantLines, as built), then "Still reading <project>…" for each project on its way in J7's order
+ *     (none for one the desk can't draw, whose can't-show line stands), then the portfolio's slot, "Still reading the
+ *     portfolio…" while its read is `pending`, or its red line (its `problem`, J23's words) once it fails. Signed out, every
+ *     red line among them goes (the one signed-out line stands in their place) and each "Still reading" line stays until its
+ *     read is refused. With one project shown, both are empty: AC89 (a)'s table says both.
  */
 export function boardView(input) {
   const { marks, nowMs, tz } = input;
@@ -894,6 +922,7 @@ export function boardView(input) {
   const cantRead = [];
   const cantShow = [];
   const cantLines = [];
+  const reading = [];
   let pendingAny = false;
   for (const p of input.projects) {
     const name = p.project.name;
@@ -972,7 +1001,12 @@ export function boardView(input) {
         // From G8d's round 2 (AC80; AC91 (c)): read but not drawn, so never "Nothing waiting: <project>", a false all-clear.
         cantShow.push(name);
         cantLines.push({ project: name, show: true });
-      } else if (p.read && p.read.ok && !waitRows.length && !kickRows.length && !doneRows.length) nothingWaiting.push(name);
+      } else {
+        // From G9c (AC91 (c)): a first read still on its way (AC89 (a)'s state 1), named in a grey line until it answers, with
+        // every project shown only (P-001-glance-g9c-alone.md, A).
+        if (p.read && p.read.onWay && !only) reading.push(name);
+        if (p.read && p.read.ok && !waitRows.length && !kickRows.length && !doneRows.length) nothingWaiting.push(name);
+      }
     }
   }
   const lane = (k) => lanes[k].reduce((n, g) => n + (k === 'done' ? g.all.length : g.rows.length), 0);
@@ -982,11 +1016,28 @@ export function boardView(input) {
   // strip has no project groups); with one project shown, only that project's. A tie keeps J7's order.
   const strip = lanes.kick.flatMap((g) => g.rows.map((c) => ({ ...c, stripProject: g.label })))
     .sort((a, b) => b.kicked.at - a.kicked.at);
+  const { signedOutLine, readLines } = only ? { signedOutLine: null, readLines: [] }
+    : quietReadLines({ cantLines, reading, portfolio: input.portfolio || null, signedOut: Boolean(input.signedOut), tz });
   return {
     lanes: LANES.map((l) => ({ ...l, count: lane(l.key), groups: lanes[l.key] })),
     strip,
     counts, counted, badge, quiet, only, of: input.projects.filter((p) => p.project.portfolio !== true).length, nothingWaiting, cantRead, cantShow, cantLines, pendingAny,
+    reading, signedOutLine, readLines,
   };
+}
+
+/**
+ * Waiting's read lines with every project shown (boardView's `signedOutLine` and `readLines`, above; AC91 (c), from stage
+ * G9c). Pure. `cantLines`: boardView's; `reading`: the projects on their way, in J7's order; `portfolio`: { state, problem }
+ * or null; `signedOut`: the desk's.
+ */
+export function quietReadLines({ cantLines = [], reading = [], portfolio = null, signedOut = false, tz }) {
+  const readLines = [];
+  if (!signedOut) for (const c of cantLines) readLines.push({ key: `ql:${c.show ? 'show' : 'cant'}:${c.project}`, words: quietTroubleWords(c, tz), bad: true });
+  for (const name of reading) readLines.push({ key: `ql:reading:${name}`, words: READING_WORDS.project(name), bad: false });
+  if (portfolio && portfolio.state === 'pending') readLines.push({ key: 'ql:reading:portfolio', words: READING_WORDS.portfolio, bad: false });
+  else if (portfolio && portfolio.problem && !signedOut) readLines.push({ key: 'ql:cant:portfolio', words: portfolio.problem, bad: true });
+  return { signedOutLine: signedOut ? { key: 'ql:signed-out', words: SIGNED_OUT_STATE.text, bad: true } : null, readLines };
 }
 
 export { STEP2_NOTE };

@@ -18,9 +18,14 @@
 // project the desk can't draw in state 5 (`noneDrawnState`, `cantShowLastState`); G9 adds Home's briefing holding five
 // lines and the screens its soft boxes and plain why line are drawn on (`fiveLinesState`, `G9_OPENS`); G9b adds a desk with
 // one project's first read failing, another's held pending and a third read, and Home and Waiting in the states its line
-// under the title is drawn in, signed out among them (`failedHeldState`, `G9B_OPENS`); the later stages add theirs. Each made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
-import { CONFIG, fixture } from './helpers.mjs';
-import { repo, BAD_PR, gitSha } from './fake-desk.mjs';
+// under the title is drawn in, signed out among them (`failedHeldState`, `G9B_OPENS`); G9c adds desks with first reads held
+// on their way, a project's, two, every one, the portfolio's, and the can't-draw project's parts, and Waiting and a
+// project's page in the states its quiet lines and the page's row are drawn in (`failedHeldState({ poomHeld })`,
+// `heldReadsState`, `cantShowHeldState`, `G9C_OPENS`); the later stages add theirs. Each made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
+import { CONFIG, fixture, FIX } from './helpers.mjs';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { repo, BAD_PR, gitSha, pr } from './fake-desk.mjs';
 import { waSetup, WORKED, memStore, SD, POOM } from './wa-fixtures.mjs';
 import { loadSandbox, findAll } from './sandbox-helpers.mjs';
 import { sdRepo, SD3, pullNodes, answerOf } from './tv2-fixtures.mjs';
@@ -29,6 +34,8 @@ import { fullRepo, v3, extremes, NOW } from './sandbox-fixtures.mjs';
 import { pullsAnswer } from './j12-fixture.mjs';
 import { STANDARD_MILESTONES } from '../../src/lib/timeline.js';
 import { HOME_GROUPS_KEY } from '../../src/lib/sandbox.js';
+import { withPortfolio, addPortfolio, pfFiles } from './pf-fixtures.mjs';
+import { PORTFOLIO_REPO } from './fake-desk.mjs';
 
 /** The clock the states open at, as the suite's other trial-view tests (2026-10-14T15:00:00Z). */
 export { NOW };
@@ -755,11 +762,14 @@ export const G9_OPENS = [
  * Personal-Org-Operating-Model read (poom/'s placeholder form). `release()` lets the held read answer; `mend()` lets the
  * made-up project's reads succeed from its next one.
  */
-export function failedHeldState() {
+export function failedHeldState({ poomHeld = false } = {}) {
   const s = unreadState({ who: MIX_PROJECT });
   let release = null;
   s.repos[SD.name].hold = new Promise((r) => { release = r; }); // made up (NOT real)
-  s.release = () => { s.repos[SD.name].hold = null; release(); };
+  // G9c's variant (AC91 (c)): Personal-Org-Operating-Model's first read held too (made up, NOT how any read went), so no
+  // project is read; `release()` lets both answer.
+  if (poomHeld) s.repos[POOM.name].hold = s.repos[SD.name].hold;
+  s.release = () => { s.repos[SD.name].hold = null; if (poomHeld) s.repos[POOM.name].hold = null; release(); };
   s.mend = () => { s.repos[MIX_PROJECT].fail = null; };
   s.fail();
   return s;
@@ -782,6 +792,136 @@ export const G9B_OPENS = [
   ['Home, signed out, no read before it', () => { const s = signedOutState(); s.fail(); return g8dOpen(s, '#/'); }],
   ['Waiting, every project shown, signed out, no read before it', () => { const s = signedOutState(); s.fail(); return g8dOpen(s, '#/waiting'); }],
   ['Waiting, Service-Desk alone shown, its first read on its way beside a failed one', () => g8dOpen(failedHeldState(), `#/waiting/${enc(SD.name)}`)],
+];
+
+/**
+ * G9c (AC91 (c), "Waiting's quiet lines while a read is on its way or signed out"; the owner's rulings of 2026-10-25,
+ * P-001-glance-waiting-pending.md, A, -g9c-several.md, A, and -g9c-portfolio.md, B): `mix` (or, with `quiet`, `quiet`) with
+ * the first reads `held` names held on their way (each call waits on a promise of its own, fake-desk.mjs's `hold`, NOT how
+ * any read went: AC89 (a)'s state 1); with `portfolio`, a made-up portfolio in J7 (tests/desk/pf-fixtures.mjs, NOT real
+ * records, its queue holding one made-up card), its reads held too where `portfolioHeld`. `release(name)` lets one held
+ * read answer ('portfolio' the portfolio's), `release()` every one; `failPortfolio()` makes the portfolio's reads fail from
+ * its next one (the network cause, NOT how any read failed), its held read let go to fail.
+ */
+export function heldReadsState({ held = [], portfolio = false, portfolioHeld = false, quiet = false } = {}) {
+  const s = quiet ? quietState() : mixState();
+  const free = new Map();
+  const hold = (r, k) => { r.hold = new Promise((ok) => { free.set(k, ok); }); }; // made up (NOT real)
+  const repoOf = (k) => (k === 'portfolio' ? s.repos[PORTFOLIO_REPO] : s.repos[k]);
+  for (const n of held) hold(s.repos[n], n);
+  if (portfolio) {
+    s.config = withPortfolio(s.config);
+    const pf = addPortfolio(s.repos, pfFiles({ queue: { 'PF-001-explore-1.md': `# Decision card — PF-001 (made up for the desk's tests, NOT a real record)\n\n## 1. The decision\nA made-up decision.\n\n## 4. Options\n- \`explore\` — made up\n- \`park\` — made up\n` } }));
+    if (portfolioHeld) hold(pf, 'portfolio');
+  }
+  s.release = (k = null) => {
+    for (const key of k == null ? [...free.keys()] : [k]) {
+      const r = repoOf(key);
+      if (r) r.hold = null;
+      if (free.has(key)) free.get(key)();
+      free.delete(key);
+    }
+  };
+  s.failPortfolio = () => {
+    s.repos[PORTFOLIO_REPO].fail = { kind: 'network' }; // made up (NOT real)
+    s.release('portfolio');
+  };
+  return s;
+}
+
+/**
+ * G9c (AC91 (c), "a project the desk can't draw"; AC91 (f)): `quiet` with the made-up project the desk can read but can't
+ * draw (fake-desk.mjs's `BAD_PR`, NOT a real pull request) and its first read on its way, its tree and pull requests held and
+ * its parts still arriving (fake-desk.mjs's `blobHold`, its blob calls waiting on a promise, NOT how any read went): no read
+ * of it succeeded in this opening, none failed, and the desk can't draw what it holds. `release()` lets its parts answer.
+ */
+export function cantShowHeldState() {
+  const s = quietState();
+  const alpha = s.repos[MIX_PROJECT];
+  alpha.pulls.push(BAD_PR);
+  let free = null;
+  alpha.blobHold = new Promise((ok) => { free = ok; }); // made up (NOT real)
+  s.release = () => { alpha.blobHold = null; free(); };
+  s.fail = () => {};
+  return s;
+}
+
+/**
+ * G9c round 2 (AC91 (c); the Reviewer's B1, and draft 3's "the other quiet lines still side by side"): `quiet` with the
+ * made-up project holding one made-up pull request "With the agents" (a code change from a builder's branch, its required
+ * reviewer's verdict missing under the made-up risk paths of tests/desk/fixtures/board-v5/, as AC80's case has it, J22 rule
+ * 0), so Waiting's quiet lines draw "With the agents: 1" beside "Nothing waiting: <project>"; the first reads `held` names
+ * held on their way (fake-desk.mjs's `hold`). `fail()` refuses every read as signed out (J6) from the next one; `release()`
+ * lets the held reads answer. **NOT real records, pull requests or reads.**
+ */
+export function agentsState({ held = [] } = {}) {
+  const s = quietState();
+  const alpha = s.repos[MIX_PROJECT];
+  alpha.commit({ 'governance/risk-paths.toml': readFileSync(join(FIX, 'board-v5', 'governance', 'risk-paths.toml'), 'utf8') }); // made up (NOT real)
+  alpha.pulls.push({ ...pr(140, 'A made-up code change', { head: 'build/builder/x-140', headRepo: `shumpmaster/${MIX_PROJECT}`, sha: `0140${'a'.repeat(36)}`,
+    createdAt: new Date(NOW - 10 * 60e3).toISOString(), private: false }), html_url: `https://github.com/shumpmaster/${MIX_PROJECT}/pull/140` }); // made up (NOT real)
+  alpha.prFiles = { 140: [{ filename: 'src/x.js', status: 'modified' }] };
+  const free = [];
+  for (const n of held) s.repos[n].hold = new Promise((ok) => { free.push(ok); }); // made up (NOT real)
+  s.release = () => { for (const n of held) s.repos[n].hold = null; for (const f of free) f(); };
+  s.fail = () => { for (const r of Object.values(s.repos)) r.fail = { kind: 'signed-out' }; }; // made up (J6)
+  return s;
+}
+
+/** AC79's asks-merge fixture's clock (ac79-desk.test.mjs's T0, 2026-10-18T12:00:00Z), made up. */
+export const RECORDING_NOW = Date.parse('2026-10-18T12:00:00Z');
+/**
+ * G9c (AC91 (c); draft 3's "before a grey quiet line"): AC79's asks-merge fixture as tests/desk/ac79-desk.test.mjs builds it,
+ * Service-Desk's records at ef8daf4 (real: tests/desk/fixtures/notify/sd-ef8daf4/) with one made-up pull request the
+ * asks-merge job is recording and made-up job runs and log line, so Waiting draws "Being recorded by the automatic job: 1";
+ * Personal-Org-Operating-Model in poom/'s placeholder form; and a made-up portfolio in J7 (pf-fixtures.mjs) whose reads are
+ * held (fake-desk.mjs's `hold`), so "Still reading the portfolio…" stands just before it. Open it at RECORDING_NOW.
+ * `release()` lets the portfolio's read answer. **NOT real pull requests, runs or reads.**
+ */
+export function recordingState() {
+  const notify = (p) => readFileSync(join(FIX, 'notify', 'sd-ef8daf4', p), 'utf8');
+  const head = 'c'.repeat(40);
+  const stamped = (...ls) => ls.map((l) => `2026-10-18T11:41:05.1234567Z ${l}`).join('\n') + '\n';
+  const own = (n, title) => ({ number: n, title, html_url: `https://github.com/shumpmaster/Service-Desk/pull/${n}`, draft: false, base: { ref: 'main' },
+    head: { ref: `cos/made-up-${n}`, sha: head, repo: { full_name: 'shumpmaster/Service-Desk' } }, user: { login: 'shumpmaster' }, author_association: 'OWNER',
+    created_at: '2026-10-18T11:00:00Z', state: 'open' });
+  const r = repo({ 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml'), 'docs/LEDGER.md': notify('docs/LEDGER.md'),
+    'decisions/questions/P-001-asks-merge.md': notify('decisions/questions/P-001-asks-merge.md'), '.github/workflows/asks-merge.yml': notify('.github/workflows/asks-merge.yml') },
+  [own(7, 'File a made-up question')], [{ name: 'governance', status: 'completed', conclusion: 'success' }]);
+  r.prFiles = { 7: [{ filename: 'questions/N-filed.md', status: 'added' }] };
+  r.jobs = { asksRuns: [{ id: 1, event: 'workflow_run', head_branch: 'main', status: 'completed', conclusion: 'success', run_started_at: '2026-10-18T11:30:00Z', updated_at: '2026-10-18T11:30:00Z' }],
+    checks: { [head]: { checkRuns: [{ id: 1, name: 'build', status: 'in_progress', conclusion: null, completed_at: null, check_suite: { id: 10 } }], statuses: [],
+      workflowRuns: [{ check_suite_id: 10, path: '.github/workflows/desk-build.yml' }] } },
+    runJobs: { 1: [{ id: 101, name: 'merge', status: 'completed', conclusion: 'success' }] }, logs: { 101: stamped('NOTE: the asks-merge grant is L-0017') }, commits: {} };
+  const repos = { 'Service-Desk': r, 'Personal-Org-Operating-Model': repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md') }, [], [{ name: 'tests', status: 'completed', conclusion: 'success' }]) };
+  const pfRepo = addPortfolio(repos, pfFiles());
+  let free = null;
+  pfRepo.hold = new Promise((ok) => { free = ok; }); // made up (NOT real)
+  return { config: withPortfolio(CONFIG), repos, release: () => { pfRepo.hold = null; free(); }, pfRepo, fail: () => {} };
+}
+
+/**
+ * G9c (AC91 (c); AC80; AC83; AC89 (a)): Waiting with every project shown in the states its quiet lines are drawn in, and a
+ * project's page's "Nothing waiting on you" row beside another project's failed first read, as [name, open() → the open
+ * page], each opened with "last looked" after the records' dates, each made-up part NOT real: Service-Desk's first read on
+ * its way beside the made-up project's failed one and Personal-Org-Operating-Model read (`failedHeldState`), and with
+ * Personal-Org-Operating-Model's held too; the first paint, every first read on its way, the portfolio's among them
+ * (`heldReadsState`, every read held); the portfolio's read on its way beside Service-Desk's (`heldReadsState`); the
+ * can't-draw project with its parts still arriving (`cantShowHeldState`); signed out, one project never read before it
+ * (`signedOutMixedState`), and from the start (`signedOutState`); every first read failed, not signed out (G8c's
+ * `orderState`); and Service-Desk's page, read, beside the made-up project failing from the start (`unread`). No CSS changed
+ * in G9c, so AC88's walks read these with no exception.
+ */
+export const G9C_OPENS = [
+  ['Waiting, every project shown, one first read failed and one on its way', () => g8dOpen(failedHeldState(), '#/waiting')],
+  ['Waiting, every project shown, one first read failed and two on their way', () => g8dOpen(failedHeldState({ poomHeld: true }), '#/waiting')],
+  ['Waiting, every project shown, the first paint, every first read on its way, the portfolio\'s among them', () => g8dOpen(heldReadsState({ held: [SD.name, POOM.name, MIX_PROJECT], portfolio: true, portfolioHeld: true }), '#/waiting')],
+  ['Waiting, every project shown, the portfolio\'s read on its way beside Service-Desk\'s', () => g8dOpen(heldReadsState({ held: [SD.name], portfolio: true, portfolioHeld: true }), '#/waiting')],
+  ['Waiting, every project shown, a project the desk can\'t draw, its parts still arriving', () => g8dOpen(cantShowHeldState(), '#/waiting')],
+  ['Waiting, every project shown, signed out, one project never read before it and the others read', () => g8dOpen(signedOutMixedState(), '#/waiting', { later: true })],
+  ['Waiting, every project shown, signed out from the start', () => { const s = signedOutState(); s.fail(); return g8dOpen(s, '#/waiting'); }],
+  ['Waiting, every project shown, every first read failed, not signed out', () => g8dOpen(orderState(), '#/waiting')],
+  ['Service-Desk\'s page, read, beside the made-up project failing from the start', () => { const s = unreadState({ who: MIX_PROJECT }); s.fail(); return g8dOpen(s, `#/p/${enc(SD.name)}`); }],
 ];
 
 export { SD, POOM, CONFIG };

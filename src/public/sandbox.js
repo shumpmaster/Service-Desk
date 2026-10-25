@@ -39,7 +39,7 @@ import { V25_RULING_NOTE } from './lib/links.js';
 import { runsContext, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, itemFeeds,
   stalledLine, deployRows, FEED_ICONS_KEY, doneTarget, JOB_MERGE_WORDS, ESTIMATE_MERGE_WORDS } from './lib/feed.js';
 import { WA, DRAFT_KEY, todayOf, groupOnce } from './lib/workahead.js';
-import { PAGE_WORDS, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, pageTally, restRows, v25Rows, finishWords, sprintCount, sprintsWords, ciPassed, blockOf } from './lib/projectpage.js';
+import { PAGE_WORDS, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, pageTally, restRows, v25Rows, finishWords, sprintCount, sprintsWords, ciPassed, blockOf, pageCheckedWords } from './lib/projectpage.js';
 import { topLine } from './lib/versions.js';
 import { portfolioView, PF_ROWS, PF_WORDS, cardMilestone, portfolioScreenState, portfolioRead, portfolioCards, ideasView, rareLine, noteIdeas, ideaEvents, SEEN_IDEAS_KEY, PF_BOARD, PF_LABEL } from './lib/portfolio.js';
 import { workAheadView, readDraft } from './lib/workview.js';
@@ -1363,7 +1363,9 @@ function pageTwoRows(p, bd) {
   } else if (w.read !== 'ok') waits = pageRow('page-waits', to, vi('clock'), PAGE_WORDS.checking, null);
   // AC91 (j): calm looks calm — "Nothing waiting on you" takes the soft row (400 13 px --ink2, `.v2-prtt.soft`), its ✓ and
   // "checked <age> ago" unchanged, so a calm page no longer looks like one that waits ("◆ <n> wait on you" stays 500 --ink).
-  else waits = pageRow('page-waits', to, stc('check'), PAGE_WORDS.nothingWaiting, null, { live: checkedWords, titleCls: 'soft' });
+  // From G9c (AC91 (c); AC83; P-001-glance-page-checking.md, A): its "checked <age> ago" from this project's own last read
+  // (projectpage.js's pageCheckedWords), never the whole desk's stalest.
+  else waits = pageRow('page-waits', to, stc('check'), PAGE_WORDS.nothingWaiting, null, { live: () => pageCheckedWords({ lastSuccessAt: ownSuccess(name), nowMs: Date.now() }), titleCls: 'soft' });
   const rows = [waits];
   if (p.project.model === 'v3') {
     // No records held yet, or none ever read: "not available", as Home's tile says (home.js, unreadLines), never a zero.
@@ -1955,7 +1957,11 @@ function readOf(box, name) {
   // From G8d's round 2 (AC80; the owner's ""✕ Can't show Bravo" (Recommended)"): `cantShow`, the desk can read the project but
   // can't draw it (its box's `drawError`, its read not failing), so it is not `ok` and never "Nothing waiting: <project>".
   const cantShow = cantShown(box);
-  return { ok: r.read === 'ok' && !cantShow, cantRead: r.read === 'cant-read', cantShow, since: r.since, words: r.words, opening: r.read === 'cant-read' && !readInOpening(name) };
+  // From G9c (AC91 (c)): `onWay`, AC89 (a)'s state 1, the project's first read still on its way: no read of it has succeeded
+  // in this opening and its read is not failing (readState counts the 3-minute cause and the sign-out's refusal as failing),
+  // from the same reads the line under the title takes; no read added (A3).
+  const onWay = r.read !== 'cant-read' && !cantShow && !readInOpening(name);
+  return { ok: r.read === 'ok' && !cantShow, cantRead: r.read === 'cant-read', cantShow, since: r.since, words: r.words, opening: r.read === 'cant-read' && !readInOpening(name), onWay };
 }
 
 /** The queue less what the board does not count (AC48, AC49, AC54, AC55, AC24): the pull requests with the agents and the cards marked done here. */
@@ -2036,7 +2042,9 @@ function boardOf(built, nowMs, only) {
       // the portfolio's group can't be drawn: the projects' board stands
     }
   }
-  const view = boardView({ projects, marks: boardState.marks, only, nowMs, tz: TZ });
+  // From G9c (AC91 (c)): the desk's sign-out (J6) and the portfolio's read state (J23) for Waiting's read lines, every project shown.
+  const view = boardView({ projects, marks: boardState.marks, only, nowMs, tz: TZ, signedOut: Boolean(DESK && DESK.signedOut),
+    portfolio: lastPf ? { state: lastPf.state, problem: lastPf.problem } : null });
   // Part A item 5 (stage 1a's build review, round 1, F3): before any project is read, or when none can
   // be, an unknown is said in words, never as a 0 or "Nothing here".
   const shown = only ? built.filter((b) => b.project.name === only) : built;
@@ -2130,15 +2138,13 @@ function withPortfolio(s, boxes, signedOut) {
 }
 
 /**
- * "checked <age> ago" (AC80; AC82's rule): from the stalest project's last successful read. From stage G9b only a project's
- * page's "Nothing waiting on you" row takes it, its words unchanged (AC91 (c)); Waiting's line under the title, with every
- * project shown, takes `titleLine` (waitingChecked, above).
+ * A project's own last successful read (the reader's `lastSuccessAt`), or null: a project's page's "Nothing waiting on you"
+ * row takes its age from it from stage G9c (AC91 (c); P-001-glance-page-checking.md, A), in place of G9b's `checkedWords`
+ * (the whole desk's stalest), which then had no caller and went.
  */
-function checkedWords() {
-  const states = DESK && DESK.states ? [...DESK.states.values()] : [];
-  const times = states.map((s) => s.lastSuccessAt);
-  if (!times.length || times.some((x) => x == null)) return 'checking…';
-  return `checked ${durationText(Math.max(0, Date.now() - Math.min(...times)))} ago`;
+function ownSuccess(name) {
+  const st = DESK && DESK.states ? DESK.states.get(name) : null;
+  return st && st.lastSuccessAt != null ? st.lastSuccessAt : null;
 }
 
 const cardRoute = (only, id) => (only ? go('waiting', only, 'card', id) : go('waiting', 'card', id));
@@ -2542,13 +2548,21 @@ function quietLines(bd, built, only) {
       if (boardState.folds.has('recording')) lines.push(h('div', { class: 'v2-qfold', key: 'fold:recording', role: 'region', 'aria-label': WORDS.recording }, recFold()));
     }
   } else {
+    // From G9c (AC91 (c); P-001-glance-waiting-signed-out.md, A): signed out, one "✕ Signed out — reload to sign in" line at
+    // the top of the quiet lines, in the red quiet line's look, in place of every red line below (board.js's `signedOutLine`).
+    if (bd.signedOutLine) lines.push(h('p', { class: 'v2-ql still bad', key: bd.signedOutLine.key }, vi('bad'), h('span', {}, bd.signedOutLine.words)));
     if (q.agents.length) lines.push(quietLine('agents', 'agents', WORDS.agents, q.agents.length, agentsFold));
     if (bd.nothingWaiting.length) lines.push(h('p', { class: 'v2-ql still', key: 'ql:nothing' }, vi('eye'), h('span', {}, `${WORDS.nothing}: ${bd.nothingWaiting.join(', ')}`)));
     // AC80, AC89 (a); from G8d (AC91 (c)), "Can't read <project> in this opening" for a project no read of which has succeeded in this opening;
-    // from G8d's round 2, "Can't show <project>" for one the desk can read but can't draw, in the same look, among them in the board's order.
-    for (const c of bd.cantLines) lines.push(h('p', { class: 'v2-ql still bad', key: `ql:${c.show ? 'show' : 'cant'}:${c.project}` }, vi('bad'), h('span', {}, quietTroubleWords(c, TZ))));
-    // AC87 (stage 6b; J23's failures): the portfolio's read that isn't current, in its own words, never a project's.
-    if (lastPf && lastPf.problem && lastPf.state !== 'pending') lines.push(h('p', { class: 'v2-ql still bad', key: 'ql:cant:portfolio' }, vi('bad'), h('span', {}, lastPf.problem)));
+    // from G8d's round 2, "Can't show <project>" for one the desk can read but can't draw, in the same look, among them in the board's order;
+    // AC87 (stage 6b; J23's failures): the portfolio's read that isn't current, in its own words, never a project's, in its slot after
+    // them. From G9c (AC91 (c); P-001-glance-waiting-pending.md, A; -g9c-portfolio.md, B): after the red lines, a grey "Still reading
+    // <project>…" for each project whose first read is on its way, then the portfolio's slot, "Still reading the portfolio…" while its
+    // read is on its way; signed out, no red line here (board.js's `readLines`). From G9c's draft 3 (P-001-glance-g9c-row.md, A),
+    // each "Still reading" line takes `.v2-qread` beside `.v2-ql`, a row of its own in the wrapping box (`flex-basis: 100%`).
+    for (const r of bd.readLines) {
+      lines.push(r.bad ? h('p', { class: 'v2-ql still bad', key: r.key }, vi('bad'), h('span', {}, r.words)) : h('p', { class: 'v2-ql v2-qread', key: r.key }, h('span', {}, r.words)));
+    }
     if (q.recording.length) lines.push(quietLine('recording', 'eye', WORDS.recording, q.recording.length, recFold));
   }
   if (q.asking.length) lines.push(quietLine('asking', 'clock', WORDS.asking, q.asking.length, askFold));

@@ -585,7 +585,9 @@ export function feedView(ctx, model, nowMs, tz) {
     // AC92 (d), from G6 (P-001-glance2-standard.md, A): "Standard checklist · <n> not recorded for this run", in place of
     // "<n> standard <Phase> milestones · not recorded for this run"; a run still to come's line the same way, "Standard
     // checklist · <n> still to come" (C: as round 2's mock, changes2.js q5, rewrites both).
-    const g = (list, tail) => (list.length ? { kind: 'gather', key: `${rk}:gather:${tail}`, items: list,
+    // Its key names the run itself, its "<Phase>-i<n>" and its run number (G6's review, round 1): two runs can share the
+    // first (`gates`' made-up project has three "Launch-i1" runs), and a tap on one run's line must open that one only.
+    const g = (list, tail) => (list.length ? { kind: 'gather', key: `${rk}:gather:${tail}:run${ctx.cols.k.get(r)}`, items: list,
       words: `Standard checklist · ${list.length} ${tail === 'stc' ? 'still to come' : 'not recorded for this run'}` } : null);
     for (const x of [g(gatherNr, 'nr'), g(gatherStc, 'stc')]) if (x) gathers.push(x);
     const ts = times.get(r);

@@ -307,6 +307,25 @@ test('AC92 (d) and AC56 (G6\'s review, round 1, B1): runs that share a key ("<Ph
   }
 });
 
+test('AC59 and AC92 (d) (G6\'s review, round 1, outside G6\'s row): on the Timeline, runs that share a key keep a gathered line each — on `gates`\' made-up project (NOT real records), its three "Launch-i1" runs\' "Standard checklist · 5 still to come" lines: a tap on one opens that one only, and a refresh keeps it so', async () => {
+  const app = await openPage(gatesState(), `#/p/${MIX_PROJECT}/timeline`);
+  try {
+    const lines = () => findAll(app.view, (e) => e.tag === 'button' && e.dataset && /^fold:Launch-i1:gather:stc:run\d+$/.test(e.dataset.k || ''));
+    assert.equal(lines().length, 3, 'three runs keyed Launch-i1, a line each');
+    assert.equal(new Set(lines().map((b) => b.dataset.k)).size, 3, 'each keyed by its run');
+    const lists = () => lines().map((b) => byClass(b.parent, 'v2-glist').length);
+    await app.tap(lines()[1]);
+    assert.deepEqual(lines().map((b) => b.attrs['aria-expanded']), ['false', 'true', 'false'], 'only the tapped run\'s line opens');
+    assert.deepEqual(lists(), [0, 1, 0], 'and lists its milestones');
+    app.module.refresh();
+    await app.flush();
+    assert.deepEqual(lines().map((b) => b.attrs['aria-expanded']), ['false', 'true', 'false'], 'a refresh keeps it so');
+    assert.deepEqual(lists(), [0, 1, 0]);
+  } finally {
+    app.restore();
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Skipped, not-needed and "taken on · not recorded by the model" rows kept; R3-b
 
@@ -425,14 +444,14 @@ test('AC92 (d) and AC84, changed: on the Timeline a standard milestone\'s meta l
       assert.deepEqual(t('M2B'), ['13px', '500', ink], `${theme}: an own milestone's, --t-row as AC84 has it`);
     }
     const g = (key) => keyed(app, `fold:${key}`);
-    assert.equal(g('Design-i2:gather:nr').textContent, 'Standard checklist · 6 not recorded for this run');
-    assert.equal(byClass(g('Design-i2:gather:nr'), 'vi-chev').length, 1, 'its ›');
-    assert.equal(g('Design-i1:gather:nr').textContent, 'Standard checklist · 4 not recorded for this run');
-    assert.equal(g('Build-i2:gather:stc').textContent, 'Standard checklist · 5 still to come');
-    assert.equal(g('Launch-i1:gather:stc').textContent, 'Standard checklist · 5 still to come');
+    assert.equal(g('Design-i2:gather:nr:run2').textContent, 'Standard checklist · 6 not recorded for this run');
+    assert.equal(byClass(g('Design-i2:gather:nr:run2'), 'vi-chev').length, 1, 'its ›');
+    assert.equal(g('Design-i1:gather:nr:run1').textContent, 'Standard checklist · 4 not recorded for this run');
+    assert.equal(g('Build-i2:gather:stc:run2').textContent, 'Standard checklist · 5 still to come');
+    assert.equal(g('Launch-i1:gather:stc:run2').textContent, 'Standard checklist · 5 still to come');
     assert.doesNotMatch(app.view.textContent, /\d+ standard (Discovery|Design|Build|Launch) milestones?/, 'the old words gone');
-    await app.tap(g('Design-i2:gather:nr'));
-    assert.match(byClass(keyed(app, 'gather:Design-i2:gather:nr'), 'v2-glist')[0].textContent, /Done defined in real scenarios Design-1 not recorded/, 'still listed in place on a tap (AC59)');
+    await app.tap(g('Design-i2:gather:nr:run2'));
+    assert.match(byClass(keyed(app, 'gather:Design-i2:gather:nr:run2'), 'v2-glist')[0].textContent, /Done defined in real scenarios Design-1 not recorded/, 'still listed in place on a tap (AC59)');
   } finally {
     app.restore();
   }

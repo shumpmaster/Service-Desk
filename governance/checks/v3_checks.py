@@ -157,6 +157,24 @@ model S-033 adds (every ask filed):
             `chief-of-staff` after the commit that added the first session file whose Agent-Session: has no
             start line at HEAD is a NOTE, never a failure.
 
+model S-034 adds (tasks and steps):
+  trace     also lists, under each `sprint PR #<n>` line, that pull request's steps. Its merge commit is a
+            commit reachable from HEAD whose first line is `Merge pull request #<n> from …` (two or more
+            parents) or ends ` (#<n>)` (exactly two): of those, the first in `git rev-list --first-parent HEAD`
+            order, else the first in `git rev-list --merges HEAD` order. Its commits are
+            `git rev-list --reverse --topo-order <first parent>..<second parent>`, in-branch merges included,
+            grouped by author: an agent's (`<id>@agents.invalid`) by its id and its one `Agent-Session:` value
+            (`no session` with none, more than one or an empty one), a humans-block email's (governance/
+            SURFACES.md, case ignored) not at all, any other by its author email. One line per group, in the
+            order of each group's first commit: `step <id> <session> (<k> commit[s])` or `step other <email>
+            (<k> commit[s])`; then `review <path>` for each file the merge adds under reviews/ (`git diff
+            --name-only --diff-filter=A --no-renames <first parent> <merge> -- reviews/`, in its order) not
+            named owner.md. No group and no review: `steps not recorded`; no commit naming n: `steps not read:
+            no merge commit for PR #<n> here`; a merge whose history cannot be read here (a shallow clone):
+            `steps not read: PR #<n>'s merge commit <sha> and its history cannot be read here`. An item's
+            sprint keeps its dispatch-log steps. No milestone's state reads tasks or steps, and no finding is
+            added.
+
 Findings are reported under the check names v3_checks.<subcommand>, which
 governance/enforcement.toml can set to warn-only, apart from v3_checks.milestones,
 v3_checks.gates and v3_checks.sessions.
@@ -680,6 +698,88 @@ def merged_pr_numbers(repo):
         return set()
 
 
+def pr_number(c):
+    """The pull request number a commit's first line names (model S-032 AC9, as `merged_pr_numbers` reads it), or
+    None: `Merge pull request #<n> from …` on two or more parents, or a first line ending ` (#<n>)` on exactly two."""
+    if not c.is_merge():
+        return None
+    first = c.message.split("\n", 1)[0]
+    m = MERGE_PR_RE.match(first) or (MERGE_TITLE_RE.search(first) if len(c.parents) == 2 else None)
+    return int(m.group(1)) if m else None
+
+
+def pr_merge_commits(repo):
+    """model S-034 AC5: {pull request number: its merge commit (a govlib Commit)} for the commits reachable from
+    HEAD that name one. Of the commits naming n, the first in `git rev-list --first-parent HEAD` order (the
+    newest on HEAD's first-parent line); when none is on that line, the first in `git rev-list --merges HEAD`
+    order (the newest anywhere)."""
+    out = {}
+    try:
+        if not g.git_ok(repo, ["rev-parse", "--verify", "-q", "HEAD^{commit}"]):
+            return out
+        # `--merges` keeps each list's own order and drops only commits that cannot name a pull request; the
+        # second list adds only the numbers the first-parent line does not name.
+        for args in (["--first-parent", "--merges", "HEAD"], ["--merges", "HEAD"]):
+            for c in g.read_commits(repo, g.rev_list(repo, args)):
+                n = pr_number(c)
+                if n is not None and n not in out:
+                    out[n] = c
+    except (g.GitError, OSError, ValueError):
+        return {}
+    return out
+
+
+def human_emails(root):
+    """The humans block's lower-cased emails (governance/SURFACES.md), or none when it cannot be read."""
+    try:
+        return g.load_surfaces(root).human_emails()
+    except (g.UsageError, OSError, ValueError):
+        return set()
+
+
+def pr_steps(repo, merge, humans):
+    """model S-034 AC5, J2: ([(agent id or None, session or author email, commits)], [review record paths]) of a
+    merged pull request: the commits from its merge commit's first parent to its second, in-branch merges
+    included, grouped by author in the order of each group's first commit (a humans-block author's skipped);
+    and the files the merge adds under reviews/, except any named owner.md (the owner's verdict)."""
+    first, second = merge.parents[0], merge.parents[1]
+    groups, index = [], {}
+    for c in g.read_commits(repo, g.rev_list(repo, ["--reverse", "--topo-order", "%s..%s" % (first, second)])):
+        agent = c.agent_id()
+        if agent is not None:
+            sessions = c.trailer("Agent-Session")
+            key = (agent, sessions[0] if len(sessions) == 1 and sessions[0] else "no session")
+        elif c.author_email.lower() in humans:
+            continue
+        else:
+            key = (None, c.author_email)
+        if key not in index:
+            index[key] = len(groups)
+            groups.append([key[0], key[1], 0])
+        groups[index[key]][2] += 1
+    added = g.split_z(g.git(repo, ["diff", "--name-only", "-z", "--diff-filter=A", "--no-renames", first, merge.sha,
+                                   "--", "reviews/"]))
+    return [tuple(x) for x in groups], [p for p in added if posixpath.basename(p) != "owner.md"]
+
+
+def pr_step_lines(repo, n, merges, humans):
+    """The lines `trace` prints under `sprint PR #<n>` (model S-034 AC5)."""
+    merge = merges.get(n)
+    if merge is None:
+        return ["      steps not read: no merge commit for PR #%d here" % n]
+    try:
+        groups, reviews = pr_steps(repo, merge, humans)
+    except (g.GitError, OSError, ValueError):
+        return ["      steps not read: PR #%d's merge commit %s and its history cannot be read here"
+                % (n, merge.sha[:12])]
+    out = []
+    for agent, who, k in groups:
+        out.append("      step %s %s (%d commit%s)" % (agent if agent is not None else "other", who, k,
+                                                         "" if k == 1 else "s"))
+    out += ["      review %s" % p for p in reviews]
+    return out or ["      steps not recorded"]
+
+
 def handover_files(root):
     d = os.path.join(root, "docs", "handover")
     out = []
@@ -753,6 +853,7 @@ class Timeline(object):
         self.groundwork = set(i for i in self.by_item if i.startswith("Q-")
                               and research_question(root, i).startswith(GROUNDWORK_PREFIXES))
         self.notes = []
+        self._pr_merges = None   # model S-034 AC5: read on the first `PR #<n>` sprint's lines
         self.blocks = []         # [(item, [Run], graduation line or None)]
         self._all_runs = []
         for item in self.project_items:
@@ -1125,6 +1226,10 @@ class Timeline(object):
         if not s.startswith("PR #"):
             out += ["      step %s %s stage %s" % (o.get("time"), o.get("role"), o.get("stage"))
                     for _, o in self.steps_of(s)]
+        else:
+            if self._pr_merges is None:
+                self._pr_merges, self._humans = pr_merge_commits(self.repo), human_emails(self.root)
+            out += pr_step_lines(self.repo, int(s[4:]), self._pr_merges, self._humans)
         return out
 
     def lines(self):

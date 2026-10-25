@@ -70,8 +70,27 @@ continues it, a blank line ends it), each with a fact and a record that is not "
 stop allowed), and then Why quotes the ruling (a line starting `>` with words after it, or words in double
 quotes). The line ending Context is the Why heading. Each Why line is read as the desk reads it, a leading
 `>` and one space or tab dropped, and Why must hold words, not only "not recorded", "none", "n/a" or "tbd".
-Anything may follow Why. Each problem is one finding; a body whose first line is not the lead heading gets
-that one finding only. Without --root's governance/v3.toml, only the lead is read, with the output as before.
+A Tasks section follows Why, other sections allowed between; anything may follow it. Each problem is one
+finding; a body whose first line is not the lead heading gets that one finding only. Without --root's
+governance/v3.toml, only the lead is read, with the output as before.
+
+The Tasks section (model S-034 AC3) is read in a v3 project once the Why heading is found; when it is not,
+model S-032's findings stand alone. Among the lines after the Why heading, the first line `#` to `######`, a
+space or tab, `Tasks`, an optional colon (case ignored) is its heading; other headings, a bare-hashes line among
+them, may come between, and a second such heading anywhere after it is a finding. After its blank lines come the tasks, at least
+one: a task line starts in column 0 with `- [ ] `, `- [x] ` or `- [X] `; a line starting with a space or tab and
+holding a non-space character, straight after a task line or one of its continuation lines, continues it (so a
+nested item is part of the task above it); a blank line ends a task. The section ends at its first line that is
+none of these (the next heading, a `---` line and a footer, a closing paragraph, anything), or at the body's end,
+and anything may follow it; a line ending it that looks like a task-list item (a list marker, then `[`, at most
+one character, `]`) but is not in the form is a finding. Each task is read with its lines joined by single
+spaces, after its box; from its end, first an optional ` (not done: <reason>)`, then before it an optional
+` (added: <reason>)`, each running from its last opener in what is left to the `)` ending what is left. A reason
+must not be empty, "not recorded", "none" or "unknown" (case ignored); the task's own words must not be empty or
+only "not recorded", "none", "n/a" or "tbd" (case ignored, a final full stop allowed). A ticked task must not end
+` (not done: …)`. Unless the payload's `pull_request.draft` is `true` (a payload without it is read as not a
+draft), every unticked task must end ` (not done: <reason>)`. Its findings follow model S-032's. The check reads
+neither the repository's plan nor its visibility.
 
 `questions` (model S-033 AC2), where governance/v3.toml exists, also reads each questions/*.md file not
 starting with `_`: its first `Milestone:` line in column 0 must be in model S-032's form (as `pr-body` reads
@@ -546,7 +565,8 @@ def check_pr_body(payload, root=None):
     """(problems, notes) for a GitHub event payload (model S-020 AC7). Blank lines straight after the
     heading are skipped; the lead paragraph is then read up to the first blank line or the next
     heading, whichever comes first. When `root` holds governance/v3.toml, the body must then go on with
-    a `Milestone:` line, a Context section and a Why section (model S-032 AC6)."""
+    a `Milestone:` line, a Context section and a Why section (model S-032 AC6), and after Why a Tasks section,
+    read with the payload's draft state (model S-034 AC3)."""
     if not isinstance(payload, dict):
         raise g.UsageError("the event payload is not a JSON object")
     pr = payload.get("pull_request")
@@ -570,7 +590,7 @@ def check_pr_body(payload, root=None):
         return ["the body's first line is %r, not a '## What this means for you' heading" % first[:80]], []
     problems = lead_problems(lines[1:])
     if root is not None and g.is_v3(root):
-        problems += context_problems(lines[1:])
+        problems += context_problems(lines[1:], draft=pr.get("draft") is True)
     return problems, []
 
 
@@ -676,9 +696,10 @@ def _bullets(lines):
     return [" ".join(b).strip() for b in bullets], problems
 
 
-def context_problems(lines):
+def context_problems(lines, draft=False):
     """Problems with what follows the lead paragraph in a v3 project's body (model S-032 AC6): `lines` are the
-    lines after the 'What this means for you' heading."""
+    lines after the 'What this means for you' heading. Once the Why heading is found, the Tasks section's
+    problems follow (model S-034 AC3); `draft` is whether the pull request is a draft."""
     problems = []
     i = 0
     while i < len(lines) and not lines[i].strip():
@@ -740,6 +761,71 @@ def context_problems(lines):
                                                      or PR_QUOTE_RE.search("\n".join(why))):
         problems.append("the Context section cites only the ruling, so the Why section must quote it (a line "
                         "starting '>' and its words, or the ruling's words in double quotes)")
+    return problems + tasks_problems(lines, end + 1, draft)
+
+
+# model S-034 AC3: in a v3 project a Tasks section follows Why, other sections allowed between.
+PR_TASKS_RE = re.compile(r"^#{1,6}[ \t]+Tasks[ \t]*:?[ \t]*$", re.IGNORECASE)
+# GFM's task-list marker in column 0: a space or an `x` in either case between the brackets, then one space.
+PR_TASK_RE = re.compile(r"^- \[([ xX])\] (.*)$")
+PR_TASK_LIKE_RE = re.compile(r"^[ \t]*(?:[-*+]|[0-9]+[.)])[ \t]*\[[^\]]?\]")
+PR_NOT_DONE = " (not done: "
+PR_ADDED = " (added: "
+PR_EMPTY_REASON = ("not recorded", "none", "unknown")
+PR_EMPTY_TASK = ("not recorded", "none", "n/a", "tbd")
+PR_TASK_FORM = "'- [ ] <task>' or '- [x] <task>'"
+
+
+def _task_mark(text, opener):
+    """(what is left, reason or None) of a task's text ending ` (<opener> <reason>)`: the mark runs from the last
+    `opener` in `text` to the `)` that ends it."""
+    k = text.rfind(opener)
+    if not text.endswith(")") or k < 0:
+        return text, None
+    return text[:k], text[k + len(opener):-1]
+
+
+def tasks_problems(lines, start, draft):
+    """Problems with the Tasks section among lines[start:], the lines after the Why heading (model S-034 AC3)."""
+    heads = [k for k in range(start, len(lines)) if PR_TASKS_RE.match(lines[k])]
+    if not heads:
+        return ["there is no '## Tasks' section after the Why section"]
+    problems = ["the body has a second '## Tasks' section: %r" % lines[k][:80] for k in heads[1:]]
+    j = heads[0] + 1
+    while j < len(lines) and not lines[j].strip():
+        j += 1
+    tasks, open_ = [], False          # [ticked, [its lines' text], its first line]
+    while j < len(lines):
+        line = lines[j]
+        m = PR_TASK_RE.match(line)
+        if m:
+            tasks.append([m.group(1) != " ", [m.group(2).strip()], line.rstrip()])
+            open_ = True
+        elif not line.strip():
+            open_ = False
+        elif open_ and PR_CONTINUATION_RE.match(line):
+            tasks[-1][1].append(line.strip())
+        else:
+            break
+        j += 1
+    if not tasks:
+        first = lines[j] if j < len(lines) else ""
+        return problems + ["the Tasks section holds no task %s: its first line is %r" % (PR_TASK_FORM, first[:80])]
+    if j < len(lines) and PR_TASK_LIKE_RE.match(lines[j]):
+        problems.append("a line in the Tasks section is not a task %s: %r" % (PR_TASK_FORM, lines[j][:80]))
+    for ticked, parts, shown in tasks:
+        rest, not_done = _task_mark(" " + " ".join(p for p in parts if p), PR_NOT_DONE)
+        rest, added = _task_mark(rest, PR_ADDED)
+        for word, reason in (("not done", not_done), ("added", added)):
+            if reason is not None and reason.strip().lower() in PR_EMPTY_REASON + ("",):
+                problems.append("a task's '%s' gives no reason: %r" % (word, shown))
+        if not rest.strip() or _bare(rest) in PR_EMPTY_TASK:
+            problems.append("a task has no words: %r" % shown)
+        if ticked and not_done is not None:
+            problems.append("a ticked task says it was not done: %r" % shown)
+        if not ticked and not_done is None and not draft:
+            problems.append("the pull request is not a draft, but a task is neither ticked nor says why it was not "
+                            "done: %r" % shown)
     return problems
 
 

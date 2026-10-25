@@ -241,25 +241,31 @@ test('AC91 (f), amended: the empty strip\'s parts each in their role — " · " 
   }
 });
 
-test('AC91 (f): with kicked-back cards, the strip\'s head "Kicked back" (600 12 px ink) with its count (--t-mono) over a hairline, then its cards in one row, the newest first across both projects, each 200 px wide, naming its project after " · ", with its reason and its button; the row scrolls sideways inside the strip, snapping to a card', async () => {
+// Rewritten in QW1 (AC91 (f)'s note "after the questions request": "from stage QW1 a kicked-back question shows in the
+// "Questions for you" section with its reason, not in the strip"; AC94, reading (a)): of KICKED's three cards, Bravo's
+// question is in the section, "Kicked back · Question" with its reason; the strip holds Alpha's two, the newest first.
+test('AC91 (f), rewritten in QW1: with kicked-back cards, the strip\'s head "Kicked back" (600 12 px ink) with its count (--t-mono) over a hairline, then its cards in one row, the newest first across both projects, each 200 px wide, naming its project after " · ", with its reason and its button; the row scrolls sideways inside the strip, snapping to a card; a kicked-back question in the "Questions for you" section instead', async () => {
   const app = await open(twoMixState(), { store: kickedStore() });
   try {
     const s = strip(app);
     const head = byClass(s, 'v2-kh')[0];
     assert.equal(head.tag, 'h2');
-    assert.deepEqual(head.children.map((c) => c.textContent), ['Kicked back', '3']);
+    assert.deepEqual(head.children.map((c) => c.textContent), ['Kicked back', '2']);
     const row = byClass(s, 'v2-krow')[0];
     assert.equal(row.tag, 'ol');
-    assert.deepEqual(row.children.map((li) => li.className), ['v2-kslot', 'v2-kslot', 'v2-kslot'], 'one row of three places');
-    assert.deepEqual(stripCards(app).map((c) => c.attrs['data-card']), [CARD.pr(MIX_PROJECT), CARD.question(MIX_PROJECT2), CARD.gate(MIX_PROJECT)], 'the newest first, across both projects');
-    assert.deepEqual(stripCards(app).map(kindText), ['Kicked back · Alpha', 'Kicked back · Bravo', 'Kicked back · Alpha'], 'each names its project: the strip has no groups');
+    assert.deepEqual(row.children.map((li) => li.className), ['v2-kslot', 'v2-kslot'], 'one row of two places');
+    assert.deepEqual(stripCards(app).map((c) => c.attrs['data-card']), [CARD.pr(MIX_PROJECT), CARD.gate(MIX_PROJECT)], 'the newest first');
+    assert.deepEqual(stripCards(app).map(kindText), ['Kicked back · Alpha', 'Kicked back · Alpha'], 'each names its project: the strip has no groups');
     assert.equal(findAll(s, (e) => e.dataset && /^grp:/.test(e.dataset.k || '')).length, 0, 'no project groups in the strip');
-    const [pr, q, gate] = stripCards(app);
+    const [pr, gate] = stripCards(app);
+    const q = cardOf(app, CARD.question(MIX_PROJECT2));
+    assert.ok(findAll(keyed(app, 'qsec'), (e) => e === q).length, 'the kicked-back question in the section, not the strip');
+    assert.equal(kindText(q), 'Kicked back · Question');
     assert.equal(byClass(pr, 'v2-why')[0].textContent, 'The pull request is still open as it was', 'its reason');
     assert.equal(byClass(gate, 'v2-why')[0].textContent, 'GitHub shows no answer file yet');
     assert.ok(byClass(q, 'v2-why')[0].textContent.length > 0);
     assert.deepEqual(byClass(pr, 'v2-step').map((b) => b.textContent), ['Open ↗'], 'its button');
-    assert.deepEqual(byClass(q, 'v2-step').map((b) => b.textContent), ['Answer']);
+    assert.deepEqual(byClass(q, 'v2-step').map((b) => b.textContent), ['More about it ›', 'Done ✓']);
     assert.deepEqual(byClass(gate, 'v2-step').map((b) => b.textContent), ['Proceed', 'Hold', 'Recycle', 'Kill']);
     for (const theme of THEMES) {
       const L = looks(app, theme);

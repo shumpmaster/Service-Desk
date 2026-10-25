@@ -90,8 +90,10 @@ const after = (w) => (isState(w) ? `: ${w}` : ` ${w}`);
 /**
  * Why a v3 project's phase isn't known, in the words of its read state, the one Home's tile takes
  * (public/sandbox.js, readStateOf; AC5): a read refused or failed, "can't be read since HH:MM" (or
- * "can't be read" with no time); the first read still pending, "not read yet"; read, but no now run,
- * "not recorded". `read`: { state: 'ok' | 'checking' | 'cant-read', since: 'HH:MM' | null }, or absent.
+ * "can't be read" with no time; from G8c, "can't be read in this opening" where no read of it has
+ * succeeded in this opening); the first read still pending, "not read yet"; read, but no now run,
+ * "not recorded". `read`: { state: 'ok' | 'checking' | 'cant-read', since: 'HH:MM' | null, opening:
+ * whether no read of it has succeeded in this opening (as the tile's corner takes it) }, or absent.
  */
 function unknownWhy(pv, error, read) {
   if (error || (read && read.state === 'cant-read')) return cantWords(read);
@@ -99,8 +101,12 @@ function unknownWhy(pv, error, read) {
   return NOT_RECORDED;
 }
 
-/** "can't be read since HH:MM" (or "can't be read" with no time), the cap's and the versions row's words alike (AC89 (h)). */
-const cantWords = (read) => (read && read.since ? `can't be read since ${read.since}` : "can't be read");
+/**
+ * "can't be read since HH:MM" (or "can't be read" with no time), the cap's and the versions row's words alike (AC89 (h));
+ * from stage G8c (AC91 (c); P-001-glance-opening-wording.md, B), "can't be read in this opening" for a project no read of
+ * which has succeeded in this opening (`read.opening`), with or without a time held, as the tile's corner says it.
+ */
+const cantWords = (read) => (read && read.opening ? "can't be read in this opening" : read && read.since ? `can't be read since ${read.since}` : "can't be read");
 /** The words for a project read earlier in this opening and now refused or failing (AC89 (h)), else null. */
 const nowCant = (read) => (read && read.state === 'cant-read' ? cantWords(read) : null);
 

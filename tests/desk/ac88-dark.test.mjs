@@ -1394,22 +1394,33 @@ const G8C_EXCEPT = (n, d, theme) => {
  *   tally): a grid, the briefing's gap, 12 px padding and radius, the --bg2 ground and ink; the sentence in it (`p.v2-lead`)
  *   and the tally (`p.v2-small.v2-tally`, a new element) take rules that were there, so they add none;
  * - the tally's "<R> of <T>" (`b` in the tally): 500 in ink, as a phase's line has it (`.v2-sd b`);
- * - an opened phase's why line (`p.v2-callout.gap` in a `div.v2-stdl`): its ground, padding and radius gone.
- * The walk reaches the box on every project page, the tally on each v3 page whose phases are tracked, and the why line on
- * the `text` page with every phase opened.
+ * - an opened phase's why line (`p.v2-callout.gap` in a `div.v2-stdl`): its ground, padding and radius gone;
+ * - from G9's round 2 (AC92 (d), changed: the Design reviewer's call, B1), an opened phase's run heads (`p.v2-runh` in a
+ *   `div.v2-stdl`): each in --ink at weight 600, its size 11 px kept (`font: var(--t-label)` unchanged), so its text's
+ *   weight and colour change from 500 --ink2; each after the first (a `p.v2-runh` with one before it in the same phase) also
+ *   takes the standard group head's own rule and gap, a 1 px --line rule with 8 px over it; the first takes no rule.
+ * The walk reaches the box on every project page, the tally on each v3 page whose phases are tracked, the why line and the
+ * run heads, the first and those after it, on the `text` page with every phase opened.
  */
-const G9_LOOK = (ink, ink2, bg2) => new Map([
+const G9_RUNH = (ink, ink2) => [`color: ${ink2} → ${ink}`, 'font-weight: (none) → 600', 'computed font-weight: 500 → 600', `computed color: ${ink2} → ${ink}`];
+const G9_LOOK = (ink, ink2, bg2, line) => new Map([
   ['div.v2-anchor (a project page\'s soft box)', ['display: (none) → grid', 'gap: (none) → 4px 10px', 'padding: (none) → 12px', 'border-radius: (none) → 12px',
     `background: (none) → ${bg2}`, `color: (none) → ${ink}`]],
   ['b (the tally\'s "<R> of <T>")', ['font-weight: 600 → 500', `color: (none) → ${ink}`, 'computed font-weight: 600 → 500', `computed color: ${ink2} → ${ink}`]],
   ['p.v2-callout.gap (an opened phase\'s why line)', ['padding: 10px 12px → (none)', 'border-radius: 10px → (none)', `background: ${bg2} → (none)`]],
+  ['p.v2-runh (an opened phase\'s first run head)', G9_RUNH(ink, ink2)],
+  ['p.v2-runh (a run head after the first)', [...G9_RUNH(ink, ink2), 'margin-top: (none) → 8px', `border-top: (none) → 1px solid ${line}`]],
 ]);
-const G9_ONCE = new Map([['light', G9_LOOK('#18191c', '#5c5f66', '#f7f7f8')], ['dark', G9_LOOK('#ecedef', '#a2a5ac', '#141517')]]);
+const G9_ONCE = new Map([['light', G9_LOOK('#18191c', '#5c5f66', '#f7f7f8', '#e7e7ea')], ['dark', G9_LOOK('#ecedef', '#a2a5ac', '#141517', '#26282c')]]);
 const G9_KEY = (n) => {
   const p = n.parent;
   if (n.tag === 'div' && n.cls.has('v2-anchor') && p && p.tag === 'section' && p.cls.has('v2-proj')) return 'div.v2-anchor (a project page\'s soft box)';
   if (n.tag === 'b' && p && p.tag === 'p' && p.cls.has('v2-tally') && p.parent && p.parent.cls.has('v2-anchor')) return 'b (the tally\'s "<R> of <T>")';
   if (n.tag === 'p' && n.cls.has('v2-callout') && n.cls.has('gap') && p && p.tag === 'div' && p.cls.has('v2-stdl')) return 'p.v2-callout.gap (an opened phase\'s why line)';
+  if (n.tag === 'p' && n.cls.has('v2-runh') && p && p.tag === 'div' && p.cls.has('v2-stdl')) {
+    const before = p.kids.slice(0, p.kids.indexOf(n));
+    return before.some((x) => x.tag === 'p' && x.cls.has('v2-runh')) ? 'p.v2-runh (a run head after the first)' : 'p.v2-runh (an opened phase\'s first run head)';
+  }
   return null;
 };
 const G9_EXCEPT = (n, d, theme) => {

@@ -668,7 +668,9 @@ test('AC89 (h) (rewritten in G4): if the desk\'s own code fails to load, the pag
   // The page loaded through its entry still starts the desk when its code loads: page-app.test.mjs's cases, kept.
 });
 
-test('AC89 (h) with AC80: the v2.5 project shown alone, never read, is AC89 (a)\'s state 2 too', async () => {
+// Rewritten in G8d (AC89 (a), changed: the owner's "Yes, everywhere (Recommended)"): its line above the lanes says "in this
+// opening", as state 2's does for any project.
+test('AC89 (h) with AC80: the v2.5 project shown alone, never read, is AC89 (a)\'s state 2 too, its line above the lanes "in this opening" (from G8d)', async () => {
   const s = { config: { ...CONFIG, projects: [v25('Delta'), v3('Beta')] }, repos: { Delta: repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md') }), Beta: repo({ 'README.md': '# Beta\n\nNOT a real project.\n' }) } };
   s.repos.Delta.fail = { kind: 'network' };
   const app = await loadSandbox({ ...s, hash: '#/waiting/Delta', now: NOW });
@@ -676,7 +678,8 @@ test('AC89 (h) with AC80: the v2.5 project shown alone, never read, is AC89 (a)\
     await app.advance(1000);
     await app.advance(POLL_MS);
     assert.equal(sub(app), 'Not read in this opening');
-    assert.match(aboveLanes(app), /^Can't read Delta since \d\d:\d\d: network error/);
+    assert.match(aboveLanes(app), /^Can't read Delta in this opening: network error/);
+    assert.doesNotMatch(aboveLanes(app), /since|\d\d:\d\d/, 'no time');
     assert.equal(empty(app, 'wait'), "Can't read");
   } finally {
     app.restore();

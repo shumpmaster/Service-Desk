@@ -271,30 +271,32 @@ test('AC77 (the desk): in a v2.5 project (poom/\'s placeholder form) the line ho
   }
 });
 
-test('AC77 (the desk): "Answer it here instead" ends the hold on this device only', async () => {
+// Rewritten in QW1 (AC77, changed by AC94 and AC95: "a tap ending the hold on that device as "Answer it here instead"
+// does"): the held question's choice, in the section, ends the hold on this device, where "Answer it here instead" did.
+test('AC77 (the desk), rewritten in QW1: a tap on a held question\'s choice in the section ends the hold on this device only, as "Answer it here instead" did', async () => {
   const backing = new Map();
   const local = { getItem: (k) => (backing.has(k) ? backing.get(k) : null), setItem: (k, v) => backing.set(k, v), removeItem: (k) => backing.delete(k) };
   const files = { [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION };
   let app = await open(files, { store: local });
   try {
     await projectText(app);
-    const btn = sbFindAll(app.view, (e) => e.tag === 'button' && e.textContent === 'Answer it here instead')[0];
-    btn.click();
+    const choice = byClass(heldCards(app)[0], 'v2-abtn').find((a) => a.tag === 'a' && /^Answer A/.test(a.textContent));
+    clickOf(choice);
     await app.flush();
-    assert.ok(!(await projectText(app)).includes(HELD_WORDS));
+    assert.ok(!(await projectText(app)).includes(HELD_SHOWN));
     assert.ok(await pick(app), 'the answer link');
   } finally {
     app.restore();
   }
   app = await open(files, { store: local });
   try {
-    assert.ok(!(await projectText(app)).includes(HELD_WORDS), 'kept on this device');
+    assert.ok(!(await projectText(app)).includes(HELD_SHOWN), 'kept on this device');
   } finally {
     app.restore();
   }
   app = await open(files);
   try {
-    assert.ok((await projectText(app)).includes(HELD_WORDS), 'another device still holds it');
+    assert.ok((await projectText(app)).includes(HELD_SHOWN), 'another device still holds it');
   } finally {
     app.restore();
   }

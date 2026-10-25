@@ -31,7 +31,7 @@ import { GATE_PHASE } from './lib/j11.js';
 import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, gateOpening, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, BOARD_LANES, WORDS, MARKS_KEY,
-  stripEmptyParts, isNewCard, boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, quietTroubleWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
+  stripEmptyParts, isNewCard, boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, everyProjectUnread, unreadLaneWords, quietTroubleWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
@@ -2014,17 +2014,20 @@ function boardOf(built, nowMs, only) {
   // Part A item 5 (stage 1a's build review, round 1, F3): before any project is read, or when none can
   // be, an unknown is said in words, never as a 0 or "Nothing here".
   const shown = only ? built.filter((b) => b.project.name === only) : built;
+  // From G8d's round 3 (AC91 (f); decisions/questions/P-001-glance-no-quiet-lanes.md, "Ruling: A"): a project the desk can't
+  // draw (its box's `drawError`) is never read and drawn here, so with none both, the lanes say "Can't read or show" with no count.
   const readState = (b) => (b.box && b.box.read ? b.box.read.read : null);
-  view.unread = shown.some((b) => readState(b) === 'ok') ? null
-    : shown.length && shown.every((b) => readState(b) === 'cant-read') ? 'cant' : 'pending';
+  view.unread = everyProjectUnread(shown.map((b) => ({ read: readState(b), drawError: Boolean(b.box && b.box.drawError) })));
   // AC89 (a): with one project shown, the view follows that project's own read state (one of the table's five).
   view.one = null;
   const one = only ? built.find((b) => b.project.name === only) : null;
   if (one && one.box) {
     const st = DESK && DESK.states ? DESK.states.get(only) : null;
     // From G8d's round 2: a project the desk can read but can't draw says "Can't show <project>" above the lanes, with no counts.
-    view.one = oneProjectView({ name: only, read: one.box.read, lastSuccessAt: st ? st.lastSuccessAt : null, tz: TZ, cantShow: cantShown(one.box) });
-    view.unread = view.one.unknown ? (view.one.cantShow ? 'cant-show' : view.one.state === 2 ? 'cant' : 'pending') : null;
+    // From G8d's round 3 (AC89 (a); P-001-glance-cant-show-last-read.md, "Ruling: A"): `cantShow` is the box's `drawError`
+    // whatever its read, so state 5 for a project the desk couldn't draw says "Can't show when last read", with no count.
+    view.one = oneProjectView({ name: only, read: one.box.read, lastSuccessAt: st ? st.lastSuccessAt : null, tz: TZ, cantShow: Boolean(one.box.drawError) });
+    view.unread = view.one.unknown ? (view.one.cantShow ? 'cant-show' : view.one.state === 2 ? 'cant' : view.one.state === 5 ? 'cant-show-last' : 'pending') : null;
   }
   boardState.view = view;
   boardState.cards = new Map(projects.flatMap((p) => p.cards.map((c) => [c.id, c])));
@@ -2425,7 +2428,7 @@ function laneNode(bd, built, laneKey, only) {
     h('h2', { class: 'v2-lh' }, h('span', {}, l.title), laneKey === 'done' || unknown ? null : h('span', { class: 'v2-lc' }, String(l.count))),
     groups.length ? groups : h('p', { class: `v2-empty${unknown ? ' unknown' : ''}` },
       laneKey === 'done' ? WORDS.emptyDone : bd.one ? bd.one.empty
-        : unknown ? (bd.unread === 'cant' ? BOARD_UNREAD.cant : BOARD_UNREAD.pending) : WORDS.empty));
+        : unknown ? unreadLaneWords(bd.unread) : WORDS.empty));
 }
 
 /**

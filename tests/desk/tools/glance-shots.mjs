@@ -18,7 +18,8 @@
 // sits, its lines, and the moved row's name, its lines and whether it is cut (it must not be); and, on G8c's (AC91 (c),
 // AC92 (b)), the briefing's lines in order, the missing lines, and on each tile's now cell whether a line comes in and how
 // far it ends before the arrow, the arrow's gap to the icon; and, on G8d's (AC91 (c), AC89 (a)), the can't-read lines on
-// Waiting, a page and the Pipeline view, the cards drawn in "Waiting on you", and each group head's count parts.
+// Waiting, a page and the Pipeline view, the cards drawn in "Waiting on you", and each group head's count parts, and, from
+// G8d's round 2, the red "Can't show" lines among them and the lanes' empty words and the strip's line.
 // G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
 // the screen as it opens (the viewport), not the whole page.
@@ -217,6 +218,11 @@ const SHOTS = [
   { name: 'g8d-pipeline-never', state: () => orderState({ waiting: true }), now: NOW, looked: LATE, hash: `#/p/${encodeURIComponent(POOM.name)}/pipeline` },
   { name: 'g8d-home-cant-show', state: () => cantShowState(), now: NOW, looked: LATE },
   { name: 'g8d-home-cant-show-waiting', state: () => cantShowState({ waiting: true }), now: NOW, looked: LATE },
+  // G8d's round 2 (AC80; AC89 (a); the owner's ""✕ Can't show Bravo" (Recommended)"): Waiting with a project the desk can read
+  // but can't draw (BAD_PR, NOT real), every project shown (nothing waiting and cards waiting) and it alone shown.
+  { name: 'g8d-waiting-cant-show', state: () => cantShowState(), now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g8d-waiting-cant-show-cards', state: () => cantShowState({ waiting: true }), now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g8d-waiting-one-cant-show', state: () => cantShowState(), now: NOW, looked: LATE, hash: `#/waiting/${MIX_PROJECT}` },
   { name: 'g8d-home-signed-out-cant-show', state: () => { const s = signedOutState(); s.repos[MIX_PROJECT].pulls.push(BAD_PR); return s; }, now: NOW, looked: LATE, later: true },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
@@ -426,7 +432,9 @@ async function main() {
             const cant = [...document.querySelectorAll('.v2-ql.bad, [data-k="page-waits"], .sb-lead')].map((e) => e.textContent);
             const cards = document.querySelectorAll('[data-k="lane:wait"] .v2-card').length;
             const heads = [...document.querySelectorAll('.v2-hg')].map((b) => [...b.querySelectorAll('.v2-hgy, .v2-hgb, .v2-hgn')].map((x) => x.textContent).join(' · '));
-            return `lines: ${cant.join(' | ') || 'none'}; cards waiting drawn: ${cards}; heads: ${heads.join(' | ') || 'none'}`;
+            // From G8d's round 2: the lanes' empty words and the strip's line, where Waiting draws them.
+            const empty = [...document.querySelectorAll('.v2-empty, .v2-kq')].map((e) => e.textContent);
+            return `lines: ${cant.join(' | ') || 'none'}; cards waiting drawn: ${cards}; heads: ${heads.join(' | ') || 'none'}${empty.length ? `; empty: ${empty.join(' | ')}` : ''}`;
           });
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });

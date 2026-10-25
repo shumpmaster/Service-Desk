@@ -34,7 +34,7 @@ import { withPortfolio, addPortfolio, pfFiles } from './pf-fixtures.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { STANDARD_MILESTONES } from '../../src/lib/timeline.js';
 import { milestonesByPhase } from '../../src/lib/projectpage.js';
-import { G7_OPENS, mixState, twoMixState, deviceMarks, KICKED, quietState, stallState, STALL_NOW, MIX_PROJECT, SD, NOW } from './glance-fixtures.mjs';
+import { G7_OPENS, ciState, POOM, mixState, twoMixState, deviceMarks, KICKED, quietState, stallState, STALL_NOW, MIX_PROJECT, SD, NOW } from './glance-fixtures.mjs';
 
 const CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const RULES = (() => {
@@ -255,7 +255,7 @@ test('AC92 (a) with AC24, rewritten for the --line2 edge (P-001-glance-plan-gold
 // ---------------------------------------------------------------------------
 // CI lines, a deploy's mismatch, the Done lane
 
-test('AC92 (a), CI lines (made-up workflow runs, NOT real): Details\' line, a v2.5 page\'s CI row and a card\'s sheets — a ✓ in --ok before a line that reads passing, a ✕ in --bad before one that reads failing, hidden from assistive technology; the words unchanged and grey; no mark where it reads none', async () => {
+test('AC92 (a), CI lines (made-up workflow runs, NOT real): Details\' line, a v2.5 page\'s CI row and its Pipeline view, and a card\'s sheets — a ✓ in --ok before a line that reads passing, a ✕ in --bad before one that reads failing, hidden from assistive technology; the words unchanged and grey; no mark where it reads none', async () => {
   for (const [name, ci] of [['Details, CI passing', 'passing'], ['Details, CI failing', 'failing']]) {
     const app = await opened(name);
     try {
@@ -291,6 +291,31 @@ test('AC92 (a), CI lines (made-up workflow runs, NOT real): Details\' line, a v2
       const mark = svgs(lines[0], 'v2-cim')[0];
       assert.ok(mark && has(mark, 'vi-bad'), 'a ✕ before its words');
       for (const theme of THEMES) assert.equal(looks(app, theme).get(mark).colour, T[theme].bad, `${name} ${theme}`);
+    } finally {
+      app.restore();
+    }
+  }
+  // A v2.5 page's CI row reading failing: the cross, red; and its Pipeline view's line, a ✕ before its words (the Reviewer's
+  // note 3, G7 round 1), passing there a ✓.
+  for (const ci of ['failing', 'passing']) {
+    app = await open(ciState(ci, { who: POOM.name }), `#/p/${POOM.name}`);
+    try {
+      const row = keyed(app, 'page-ci');
+      assert.match(row.textContent, new RegExp(`CI on main: ${ci}`));
+      const circle = svgOf(row);
+      assert.ok(has(circle, ci === 'failing' ? 'st-cross' : 'st-check') && has(circle, ci === 'failing' ? 'bad' : 'ok'), `the row's ${ci === 'failing' ? 'cross' : 'check'}, a status mark`);
+      if (ci === 'failing') assert.deepEqual(pathsOf(circle), [CROSS]);
+      await app.go(`#/p/${POOM.name}/pipeline`);
+      const line = findAll(app.view, (e) => e.tag === 'p' && new RegExp(`^CI on main: ${ci}$`).test(e.textContent))[0];
+      assert.ok(line, `the Pipeline view's CI line, ${ci}`);
+      const mark = svgOf(line);
+      assert.equal(line.children[0], mark, 'its mark before its words');
+      assert.ok(has(mark, ci === 'failing' ? 'vi-bad' : 'vi-done'));
+      await app.go(`#/p/${POOM.name}`);
+      for (const theme of THEMES) assert.equal(looks(app, theme).get(svgOf(keyed(app, 'page-ci'))).colour, T[theme][ci === 'failing' ? 'bad' : 'ok'], `${theme}: the v2.5 row, ${ci}`);
+      await app.go(`#/p/${POOM.name}/pipeline`);
+      const again = findAll(app.view, (e) => e.tag === 'p' && new RegExp(`^CI on main: ${ci}$`).test(e.textContent))[0];
+      for (const theme of THEMES) assert.equal(looks(app, theme).get(svgOf(again)).colour, T[theme][ci === 'failing' ? 'bad' : 'ok'], `${theme}: the Pipeline view, ${ci}`);
     } finally {
       app.restore();
     }

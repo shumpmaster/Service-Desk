@@ -814,6 +814,10 @@ check and the stage-8 guard's `G7_ONCE`) and G7's rewritten cases open the state
   up) and a project whose drawing throws (`BAD_PR`) are as AC88's walk already makes them.
 - **made-up runs** written in `ac92-glance-palette.test.mjs` for a "carried over" milestone in a run now and reached and
   carried-over ones in a run gone back over, each only the shape the desk's timeline gives; **NOT real records**.
+- **notifications refused** (G7's round-1 fix, in `ac88-dark.test.mjs`'s G7 cascade walk): `text` opened as if added to
+  the Home Screen (`matchMedia` answering standalone) with the phone's notification permission `denied`, so AC75's
+  warning is drawn; and the portfolio with nothing queued (`pfFiles({})`, no failure), beside AC88's own portfolio states.
+  **NOT a real phone's settings, NOT real records.**
 
 ## After the glance audit, G8 (2026-10-25, S-001 AC92 (b); AC82, AC83, AC84 and AC86 changed)
 

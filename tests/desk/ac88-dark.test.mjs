@@ -582,6 +582,18 @@ function okBadPlace(n) {
   if (svg && n.cls.has('v2-lfx')) return 'reading (e): the failed-load screen\'s ✕';
   return null;
 }
+/** The lines AC92 (a) keeps ink or grey that G7's check names, or null: the portfolio's ink lines, its block's marks and Plan's ideas. */
+function okBadInk(n) {
+  const k = n.attrs['data-k'];
+  if (n.tag === 'p' && n.cls.has('v2-mark') && k === 'pfs-problem') return 'ink: the portfolio\'s problem line';
+  if (n.tag === 'p' && n.cls.has('v2-mark') && k === 'pf-note') return 'ink: a portfolio card\'s note';
+  if (n.tag === 'span' && n.cls.has('v2-pfnb')) {
+    for (const c of n.kids) if (c.tag === 'svg' && c.cls.has('st-check')) return 'ink: the portfolio block\'s "nothing queued" tick';
+    return 'ink: a portfolio block\'s mark';
+  }
+  if (n.cls.has('v2-plrow') && n.cls.has('v2-plidea')) return 'ink: Plan\'s ideas';
+  return null;
+}
 function okBadCheck(app, where, fails, seen, places) {
   for (const way of WAYS) {
     const root = document.documentElement;
@@ -592,6 +604,19 @@ function okBadCheck(app, where, fails, seen, places) {
     const isOkBad = (v) => marks(v).some((m) => OKBAD_NAMES.includes(m.name) || vals.includes(m.value.toLowerCase()));
     const fail = (n, words) => { const k = `${way.theme} ${label(n)} ${words}`; if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(n)}${n.text.trim() ? ` "${n.text.trim().slice(0, 30)}"` : ''}: ${words}`); } };
     for (const n of nodes(tree)) {
+      // The ink portfolio lines (AC92 (a): "the portfolio block's problem line and a card's note at Home's foot …
+      // `.v2-mark`, ink, their ✕ uncoloured, stay as built"), the portfolio block's own marks (its "nothing queued" tick an
+      // absence, never green) and Plan's ideas (not a status mark AC92 (a) lists): each drawn, and nothing in it --ok or
+      // --bad (the Reviewer's B1, G7 round 1).
+      const ink = okBadInk(n);
+      if (ink) {
+        const inside = [];
+        const walkIn = (x) => { inside.push(x); x.kids.forEach(walkIn); };
+        walkIn(n);
+        const red = inside.filter((x) => COLOUR_PROPS.some((prop) => x.declared.get(prop) != null && isOkBad(x.declared.get(prop))) || isOkBad(x.style.get('color') || ''));
+        if (red.length) fail(n, `${ink}: ${red.map(label).join(', ')} in --ok or --bad, where AC92 (a) keeps ink or grey`);
+        else places.add(ink);
+      }
       // The grey "Can't show this" lines and the rules that draw nothing: never red, and never matched.
       if (n.cls.has('v2-small') && n.cls.has('bad') && n.text.trim()) {
         if (isOkBad(n.style.get('color') || '')) fail(n, 'a "Can\'t show this" line in --ok or --bad: it stays grey');
@@ -617,7 +642,7 @@ function okBadCheck(app, where, fails, seen, places) {
   }
 }
 
-test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --ok and --bad are drawn — on every trial-view screen and sheet, from each fixture and the states where reads fail, in dark (forced, and the phone\'s own) and light, only on the status marks AC92 (a) lists and its named exceptions (the can\'t-read lines, a failed read in "Since you last looked", the error states and AC75\'s warning, its border the only one); never on a fill, a row, a heading or other words; the grey "Can\'t show this" lines still not red', async () => {
+test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --ok and --bad are drawn — on every trial-view screen and sheet AC88\'s walks draw, from each of its fixtures (its portfolio states among them, with one nothing queued), the states where reads fail, the notifications refused and G7\'s own screens, in dark (forced, and the phone\'s own) and light, only on the status marks AC92 (a) lists and its named exceptions (the can\'t-read lines, a failed read in "Since you last looked", the error states and AC75\'s warning, its border the only one); never on a fill, a row, a heading or other words; the grey "Can\'t show this" lines still not red', async () => {
   const fails = [];
   const seen = new Set();
   const places = new Set();
@@ -662,12 +687,35 @@ test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --o
       app.restore();
     }
   }
-  {
+  // The portfolio (from stage 6b, AC87, J23; made up, NOT real records, tests/desk/pf-fixtures.mjs), as AC88's own test
+  // walks it: a queued card and an odd one (the block's rows and sheets, a card under "Portfolio" with its note, Plan's
+  // ideas in each state); nothing queued (the block's "nothing queued" tick, an absence); and refused (its can't-read words).
+  // The Reviewer's B1 (G7 round 1): the first two were not walked, so an ink line or an absence could turn green unseen.
+  for (const [files, fail, where] of [
+    [{ queue: { 'PF-001-explore-1.md': cardText(1), 'PF-002-odd.md': 'Not a card (made up, NOT a real record)\n' } }, null, 'portfolio'],
+    [{}, null, 'portfolio, nothing queued'],
+    [{}, { state: 'cant-read', reason: 'no-access' }, 'portfolio refused']]) {
     const p = waSetup({});
     p.config = withPortfolio(p.config);
-    const r = addPortfolio(p.repos, pfFiles({}));
-    r.fail = { state: 'cant-read', reason: 'no-access' };
-    await walk(p, [], 'portfolio refused', { now: Date.parse('2026-10-22T18:00:00Z'), store: memStore() });
+    const r = addPortfolio(p.repos, pfFiles(files));
+    if (fail) r.fail = fail;
+    await walk(p, [], where, { now: Date.parse('2026-10-22T18:00:00Z'), store: memStore() });
+  }
+  // AC75's warning (made up: the desk added to the Home Screen, notifications refused in the phone's settings): its words
+  // and its 1 px border in --bad, the one red border (reading (e)), on Home and in a project's Details.
+  {
+    const app = await loadSandbox({ ...textSetup(), hash: '#/', now: NOW, win: { matchMedia: () => ({ matches: true }) }, globals: { Notification: { permission: 'denied' } } });
+    try {
+      await app.advance(1000);
+      await app.advance(61_000);
+      check(app, 'notifications refused #/', fails, seen);
+      await app.go('#/p/Service-Desk');
+      await app.tap(findAll(app.view, (e) => e.dataset && e.dataset.k === 'more-detail')[0]);
+      check(app, 'notifications refused #/p/Service-Desk Details', fails, seen);
+      counts.screens += 2;
+    } finally {
+      app.restore();
+    }
   }
   // Each mark AC92 (a) lists, drawn where the walk above doesn't open it, from the states G7's own test opens
   // (tests/desk/ac92-glance-palette.test.mjs): an opened phase's rows and every sprint's marks; Plan's moved row and its
@@ -689,7 +737,9 @@ test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --o
     'mark: the Done lane\'s ✓', 'mark: a passing CI line\'s ✓', 'mark: a failing CI line\'s ✕', 'mark: a deploy\'s mismatch', 'mark: the Timeline key\'s check',
     'mark: the Timeline key\'s cross', 'ruled: the briefing\'s ✕', 'ruled: the briefing\'s can\'t-read line', 'ruled: a tile\'s corner',
     'ruled: a tile\'s foot or a tile the desk can\'t draw', 'ruled: a page\'s waits row', 'ruled: Waiting\'s and "Since you last looked"\'s quiet line',
-    'grey: a "Can\'t show this" line']) {
+    'ruled: a group head\'s can\'t-read count', 'reading (e): the notifications warning', 'grey: a "Can\'t show this" line',
+    'ink: the portfolio\'s problem line', 'ink: a portfolio card\'s note', 'ink: the portfolio block\'s "nothing queued" tick', 'ink: a portfolio block\'s mark',
+    'ink: Plan\'s ideas']) {
     assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
   }
 });

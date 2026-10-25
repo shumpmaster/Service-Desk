@@ -476,8 +476,9 @@ test('AC89 (c): the row\'s cut — two lines of the small role, hidden past them
 // (h) Nothing unread reads as read (specs/S-001.md:7884-7896)
 
 // Rewritten in G8c (P-001-glance-opening-wording.md, B): Alpha's reads fail from the start, so on Home its tile says "Can't
-// read in this opening"; its page, off Home, keeps "Can't read since HH:MM" (AC91 (c): not on Home, kept as built).
-test('AC89 (h): a project the desk can\'t read never shows "Phases: reading…" — its tile and page say "Phases: not available", the tile beside "Can\'t read in this opening" where no read of it succeeded in this opening and the page beside "Can\'t read since HH:MM"; its Record notes say "not read"; an unread v2.5 project\'s "Your last action" reads "not available"', async () => {
+// read in this opening"; its page, off Home, kept "Can't read since HH:MM" (AC91 (c): not on Home, kept as built). Its page
+// half rewritten in G8d (the owner's "Yes, everywhere (Recommended)"): the page says "Can't read in this opening" too.
+test('AC89 (h): a project the desk can\'t read never shows "Phases: reading…" — its tile and page say "Phases: not available", each beside "Can\'t read in this opening" where no read of it succeeded in this opening (the page from G8d); its Record notes say "not read"; an unread v2.5 project\'s "Your last action" reads "not available"', async () => {
   const pv = phaseView(v3('X'), null, new Map(), { ready: false }, true);
   assert.equal(pv.why, PHASES_NOT_AVAILABLE);
   assert.equal(PHASES_NOT_AVAILABLE, 'Phases: not available');
@@ -500,7 +501,8 @@ test('AC89 (h): a project the desk can\'t read never shows "Phases: reading…" 
     await app.go('#/p/Alpha');
     assert.ok(app.text().includes('Phases: not available'));
     assert.ok(!app.text().includes('Phases: reading…'));
-    assert.ok(app.text().includes(`Can't read since ${since}`));
+    assert.ok(app.text().includes("Can't read in this opening"), 'its page, from G8d');
+    assert.ok(!app.text().includes(`Can't read since ${since}`), 'its page: no time for a project never read in this opening');
     assert.ok(app.text().includes("Where it's heading: not available until the project's records are read."), 'its sentence unchanged');
     await app.go('#/p/Alpha/notes');
     assert.ok(app.text().includes('dispatch log: not read'), app.text());

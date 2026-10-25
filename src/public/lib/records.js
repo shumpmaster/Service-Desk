@@ -940,9 +940,19 @@ export function deployWords(r) {
 }
 
 /**
+ * The counted workflows on the head (AC92 (c), Details' CI line; built in G5): x the workflows AC29 counts as CI (the
+ * latest run of each, the deploy, Orchestrator and notification workflows set aside), y those whose latest run
+ * completed with a conclusion AC29 counts as not failing (NOT_FAILING), z those still running.
+ */
+export function ciCounts(counted) {
+  return { x: counted.length, y: counted.filter((r) => r.status === 'completed' && NOT_FAILING.has(r.conclusion)).length,
+    z: counted.filter((r) => r.status !== 'completed').length };
+}
+
+/**
  * J1's CI result for a head from its workflow runs (3a and 3b together): the latest run per
  * workflow; desk-deploy and the Orchestrator are activity; the rest reduce to failing | running |
- * passing | none. Returns { ci, activity: [text], governance: run|null, latest: Map }.
+ * passing | none. Returns { ci, activity: [text], governance: run|null, latest: Map, ciRun, counts: ciCounts' { x, y, z } }.
  */
 export function reduceWorkflowRuns(runs) {
   const latest = latestPerWorkflow(runs);
@@ -954,7 +964,7 @@ export function reduceWorkflowRuns(runs) {
     else if (path === NOTIFY_WORKFLOW) activity.push({ text: `Notifications: ${runWord(r)}`, url: r.url });
     else counted.push(r);
   }
-  return { ci: reduceChecks(counted), activity, governance: latest.get(GOVERNANCE_WORKFLOW) || null, latest, ciRun: ciRunOf(counted) };
+  return { ci: reduceChecks(counted), activity, governance: latest.get(GOVERNANCE_WORKFLOW) || null, latest, ciRun: ciRunOf(counted), counts: ciCounts(counted) };
 }
 
 // ---------------------------------------------------------------------------

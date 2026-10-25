@@ -10,7 +10,7 @@
 // says whether the page scrolls sideways (it must not), and, where the Kicked back strip holds cards (G2, AC91 (f)), how
 // far its row scrolls sideways inside itself, and, where gate titles are drawn (G3, AC91 (h)), how many lines each takes
 // and whether any is cut at its two; and, on a Timeline (G4, AC91 (i)), where the Now line's top rests against a third of
-// the viewport. G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
+// the viewport; and, on G5's waits rows (AC89 (c)), the row's words and whether its cut hides any. G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
 // the screen as it opens (the viewport), not the whole page.
 import { createServer } from 'node:http';
@@ -18,7 +18,8 @@ import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
-import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD } from '../glance-fixtures.mjs';
+import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD } from '../glance-fixtures.mjs';
+import { pullsAnswer } from '../j12-fixture.mjs';
 
 const PUBLIC = resolve(fileURLToPath(new URL('../../../src/public/', import.meta.url)));
 const OUT = resolve(process.argv[2] || 'glance-shots');
@@ -81,7 +82,35 @@ const SHOTS = [
     hash: `#/waiting/card/${encodeURIComponent(GATE_KEY(MIX_PROJECT, GATE4))}` },
   { name: 'g4-failed-load', state: quietState, now: NOW, looked: LATE, missing: ['sandbox.js'] },
   { name: 'g4-failed-load-no-css', state: quietState, now: NOW, looked: LATE, missing: ['sandbox.js', 'sandbox.css'] },
+  // G5: every milestone and sprint counted (AC92 (c)), and a gate's cards named once in the waits row (AC89 (c), ruling B).
+  // `text`: Service-Desk's page as committed (its pull requests not read); `text` with J12's built answer, so they are
+  // read: the page with Design opened (its rows' sprints), and the Timeline (each fold's words); `mix` with its made-up
+  // later Launch run (F1 and F2), Launch opened; Details opened over made-up workflow runs; and `gates`: two items at one
+  // gate, one item's two cases, its two cards without case lines, and a gate's cards split by a made-up kicked-back mark.
+  { name: 'g5-page-text', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}` },
+  { name: 'g5-page-pulls-design', state: withPulls, now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-phase="Design"] > button'] },
+  { name: 'g5-timeline-pulls', state: withPulls, now: NOW, looked: LATE, hash: `#/p/${SD.name}/timeline` },
+  { name: 'g5-page-mix-launch', state: () => mixState({ laterLaunch: true }), now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-phase="Launch"] > button'] },
+  { name: 'g5-details-ci', state: withRuns, now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-k="more-detail"]'] },
+  { name: 'g5-page-gates-two', state: () => gatesState(), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}` },
+  { name: 'g5-page-gates-cases', state: () => gatesState({ sameItem: true }), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}` },
+  { name: 'g5-page-gates-nocase', state: () => gatesState({ sameItem: true, caseLines: false }), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}` },
+  { name: 'g5-page-gates-kicked', state: () => gatesState(), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}`,
+    seed: deviceMarks([{ project: MIX_PROJECT, kind: 'gate', id: GATE_KEY(MIX_PROJECT, GATE4), at: NOW - 13 * 60e3, kickedAt: NOW - 7 * 60e3 }]) },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
+/** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
+function withPulls() {
+  const s = textState();
+  s.repos[SD.name].pullsAnswer = pullsAnswer();
+  return s;
+}
+/** G5: `text` with made-up workflow runs on Service-Desk's head (NOT real): two passing, one running, the deploy and the Orchestrator's set aside. */
+function withRuns() {
+  const s = textState();
+  s.repos[SD.name].runs = [{ name: 'governance', status: 'completed', conclusion: 'success' }, { name: 'desk-tests', status: 'completed', conclusion: 'success' },
+    { name: 'lint', status: 'in_progress', conclusion: null }, { name: 'desk-deploy', status: 'waiting', conclusion: null }, { name: 'orchestrator', status: 'completed', conclusion: 'skipped' }];
+  return s;
+}
 const SIZES = [[360, 740], [414, 896]];
 const THEMES = ['light', 'dark'];
 
@@ -169,6 +198,11 @@ async function main() {
             await page.evaluate((h) => { location.hash = h; }, shot.then);
             await run(2000);
           }
+          // G5: folds opened as the owner opens them, one tap each.
+          for (const sel of shot.click || []) {
+            await page.click(sel);
+            await run(1000);
+          }
           await page.waitForTimeout(300);
           const scroll = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
           const strip = await page.evaluate(() => { const r = document.querySelector('.v2-krow'); return r ? r.scrollWidth - r.clientWidth : null; });
@@ -177,9 +211,11 @@ async function main() {
             return `${Math.round(e.getBoundingClientRect().height / lh)} line(s)${e.scrollHeight > e.clientHeight + 1 ? ', cut' : ''}`;
           }));
           const now = await page.evaluate(() => { const n = document.querySelector('[data-k="nowline"]'); return n ? Math.round(n.getBoundingClientRect().top) : null; });
+          // G5 (AC89 (c)): the waits row's words and whether its two-line cut hides any of them.
+          const waits = await page.evaluate(() => { const e = document.querySelector('[data-k="page-waits"] .v2-wn'); return e ? `${e.textContent}${e.scrollHeight > e.clientHeight + 1 ? ' [cut]' : ''}` : null; });
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}`);
           await ctx.close();
         }
       }

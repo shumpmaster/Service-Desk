@@ -1002,6 +1002,8 @@ html.sb .v2-home .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-std .v2-stdr > .v2-k { grid-column: 4; grid-row: 1; width: 10px; height: 10px; color: var(--ink2); justify-self: end; }
 .v2-sd { grid-column: 2 / 4; grid-row: 2; font: var(--t-small); color: var(--ink2); overflow-wrap: break-word; }
 .v2-sd b { font-weight: 500; color: var(--ink); }
+/* AC92 (c), from G5: the phase's two lines of detail, "<R> of <T> reached · <sprints>" over "Standard checklist: …". */
+.v2-sdl { display: block; }
 .v2-stdl { display: grid; padding: 0 0 10px 20px; position: relative; }
 .v2-stdl::before { content: ""; position: absolute; left: 4px; top: 10px; bottom: 14px; width: 1px; background: var(--line2); }
 .v2-arrow { position: absolute; left: -1px; top: -2px; display: grid; color: var(--ink2); }

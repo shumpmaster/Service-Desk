@@ -490,6 +490,7 @@ export function buildModel(input) {
   let governance = null; // the latest governance run on the head, or null (unknown or none)
   let ciKnown = false;
   let ciRun = null; // AC89 (k): the run the state comes from, for the v2.5 page's CI row
+  let ciCounts = null; // AC92 (c), from G5: the counted workflows, { x, y, z }, for Details' CI line (null until the runs are read)
   if (input.checksState === 'cant-read') ci = CI_CANT_READ;
   else if (input.checkPages == null) ci = 'not read yet';
   else {
@@ -498,6 +499,7 @@ export function buildModel(input) {
     const red = reduceWorkflowRuns(runs);
     ci = red.ci;
     ciRun = red.ciRun || null;
+    ciCounts = red.counts || null;
     governance = red.governance;
     ciKnown = true;
     for (const a of red.activity) activity.push({ kind: 'run', text: a.text, link: a.url || undefined });
@@ -596,7 +598,7 @@ export function buildModel(input) {
   for (const path of input.withdrawn || []) activity.push({ kind: 'withdrawn', text: `withdrawn: ${path}` });
 
   if (!isV3) {
-    return finishV25({ project, records, tree, absent, flagged, activity, notes, ci, ciKnown, ciRun, questions, otherPulls, pulls, t, history, now, askingRows, recording, beingRecorded });
+    return finishV25({ project, records, tree, absent, flagged, activity, notes, ci, ciKnown, ciRun, ciCounts, questions, otherPulls, pulls, t, history, now, askingRows, recording, beingRecorded });
   }
 
   // --- Dispatch log (J9)
@@ -825,7 +827,7 @@ export function buildModel(input) {
   const openItems = items.filter((i) => !i.finished);
   return {
     name: project.name, model: project.model, repo: project.repo, defaultBranch: project.defaultBranch,
-    flagged, activity, notes, ci, headline, items, openItems, questions, pulls, otherPulls, asking: askingRows,
+    flagged, activity, notes, ci, ciCounts, headline, items, openItems, questions, pulls, otherPulls, asking: askingRows,
     recording: [...recording.keys()], beingRecorded,
     sprint: null, answeredCards, rulings, timeAsked, logLoaded, v5Waits: v5Waits(askedCards, nowMs, config),
     sessions, timelines: timelines(sessions, askedCards, nowMs),
@@ -833,7 +835,7 @@ export function buildModel(input) {
   };
 }
 
-function finishV25({ project, records, tree, absent = 'not found', flagged, activity, notes, ci, ciKnown = false, ciRun = null, questions, otherPulls, pulls, t, history, now, askingRows, recording, beingRecorded }) {
+function finishV25({ project, records, tree, absent = 'not found', flagged, activity, notes, ci, ciKnown = false, ciRun = null, ciCounts = null, questions, otherPulls, pulls, t, history, now, askingRows, recording, beingRecorded }) {
   const open = [];
   let sprintFiles = 0;
   for (const path of [...tree.keys()].sort()) {
@@ -860,7 +862,7 @@ function finishV25({ project, records, tree, absent = 'not found', flagged, acti
   }
   return {
     name: project.name, model: project.model, repo: project.repo, defaultBranch: project.defaultBranch,
-    flagged, activity, notes, ci, ciKnown, ciRun, headline, items: null, openItems: null, questions, pulls, otherPulls, asking: askingRows,
+    flagged, activity, notes, ci, ciKnown, ciRun, ciCounts, headline, items: null, openItems: null, questions, pulls, otherPulls, asking: askingRows,
     recording: [...recording.keys()], beingRecorded: beingRecorded || [],
     sprint, itemsText: V25_NOT_RECORDED, runningText: V25_NOT_RECORDED,
     answeredCards: {}, rulings: {}, v5Waits: [], sessions: null, timelines: [], allEntries: [],

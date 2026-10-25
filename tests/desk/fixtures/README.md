@@ -749,3 +749,28 @@ parts, each **NOT real**, and `tests/desk/tools/glance-shots.mjs` captures them 
 
 AC49's, AC55's, AC59's, AC62's, AC83's, AC84's, AC88's and AC89's tests rewritten or extended in G4 add nothing new beyond
 these: they use their own records, above.
+
+## After the glance audit, G5 (2026-10-25, S-001 AC92 (c); AC83, AC84 and AC89 (c) changed)
+
+G5 adds no fixture file. `tests/desk/ac92-glance-counts.test.mjs` and G5's cases in `ac89-after-md3.test.mjs` open the
+states above, with these made-up parts, each **NOT real**, and `tests/desk/tools/glance-shots.mjs` captures them (`g5-`):
+- **`mix` with `laterLaunch: true`** (`glance-fixtures.mjs`, `LATER_LAUNCH_LINES`), for round 2's F1 and F2: five lines
+  added after Service-Desk's own dispatch log at 77bfeae (`j11-77bfeae/dispatch-log/2026-10.jsonl`, real): P-001 sent to
+  stage 6 (the Launch phase's builder) on the morning of 2026-10-14 (before the states' clock) with its outcome, a
+  "revise" at its Launch gate (`decisions/P-001/launch-9.md`, a file that exists nowhere), and stage 6 again with its
+  outcome. The model's timeline
+  then holds two Launch runs still to come: run 2 holding M3C, planned, and run 3 recording Launch-3 "not reached".
+  **NOT real records** (Service-Desk has never reached its Launch phase).
+- **made-up runs, sprints and section-3 lines** written in `ac92-glance-counts.test.mjs` for the counts' classes (own
+  milestones over two runs, dropped, planned in an earlier run; standard ones reached, carried over, not reached, not
+  needed, skipped, taken on; sprints merged, not read, open, closed, a pipeline item with and without its merge), each
+  only the shape the desk's timeline gives; **NOT real records**.
+- **made-up workflow runs** on the head (Details' CI line: passing, failing, running, queued, skipped, cancelled, neutral,
+  stale and timed out, with the deploy, Orchestrator and notification workflows' runs), in `ac92-glance-counts.test.mjs`
+  and on `text`'s Service-Desk for the page and its captures; **NOT how GitHub answered any read**.
+- **a Done mark kept on a device that GitHub did not confirm** (`deviceMarks` with `kickedAt`), on one of `gates`' made-up
+  Launch-gate cards, so a gate's cards stand in both parts of Waiting (AC89 (c)); **NOT real** (no owner made it).
+- J12's built answer (`github/j12-pulls-built.json`, from REST answers, **NOT as GitHub sent it**) on `text`, as `stall`
+  uses it, so the pull requests are read.
+
+AC83's, AC84's, AC57's (j11-reached) and AC88's tests rewritten or extended in G5 add nothing new beyond these.

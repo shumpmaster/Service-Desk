@@ -29,7 +29,7 @@ import { loadSandbox, byClass, findAll } from './sandbox-helpers.mjs';
 import { memStore } from './wa-fixtures.mjs';
 import { openSD } from './tv2-fixtures.mjs';
 import { parseCss, treeOf, cascade, nodes } from './css-cascade.mjs';
-import { textState, standardState, STANDARD_SKIPPED, SD, NOW } from './glance-fixtures.mjs';
+import { textState, standardState, mixState, gatesState, STANDARD_SKIPPED, MIX_PROJECT, SD, NOW } from './glance-fixtures.mjs';
 import { STANDARD_MILESTONES, NOT_RECORDED_IDS } from '../../src/lib/timeline.js';
 import { milestonesByPhase, trackedInRun, detailLines, PAGE_WORDS } from '../../src/lib/projectpage.js';
 import { POLL_MS } from '../../src/lib/scheduler.js';
@@ -269,6 +269,41 @@ test('AC92 (d) and part B item 30: the fold\'s tap (and Enter or Space) lists th
     assert.ok(NOT_RECORDED_IDS.has('Build-5') && !NOT_RECORDED_IDS.has('Build-3'));
   } finally {
     st.restore();
+  }
+});
+
+/** The opened phase's lists holding each fold row with key `key`, in the order drawn, and each fold's state. */
+const sharedFolds = (app, ph, key) => findAll(keyed(app, `stdl:${ph}`), (e) => e.tag === 'button' && e.attrs && e.attrs['data-untracked'] === key);
+const foldStates = (app, ph, key) => sharedFolds(app, ph, key).map((b) => b.attrs['aria-expanded']);
+const listedUnder = (app, ph, key) => sharedFolds(app, ph, key).map((b) => rowsIn(b.parent.parent).length);
+
+test('AC92 (d) and AC56 (G6\'s review, round 1, B1): runs that share a key ("<Phase>-i<n>") keep a fold each — on `mix`\'s made-up project, Build\'s two "Build-i1" runs, and on `gates`\', Launch\'s three "Launch-i1" runs (NOT real records): a tap on one run\'s fold opens that one only, a refresh keeps it so, and a tap on another opens it alone beside it', async () => {
+  for (const [state, ph, key, n] of [[mixState(), 'Build', 'Build-i1', 2], [gatesState(), 'Launch', 'Launch-i1', 3]]) {
+    const app = await openPage(state, `#/p/${MIX_PROJECT}`);
+    try {
+      await app.tap(foldOf(app, ph));
+      const runs = sharedFolds(app, ph, key).map((b) => b.attrs['data-runk']);
+      assert.equal(runs.length, n, `${ph}: ${n} runs keyed ${key}, each with its fold`);
+      assert.equal(new Set(runs).size, n, `${ph}: each its own run number (${runs.join(', ')})`);
+      const before = listedUnder(app, ph, key);
+      assert.deepEqual(foldStates(app, ph, key), runs.map(() => 'false'));
+      await app.tap(sharedFolds(app, ph, key)[0]);
+      const one = runs.map((_, i) => (i === 0 ? 'true' : 'false'));
+      assert.deepEqual(foldStates(app, ph, key), one, `${ph}: only the tapped run's fold opens`);
+      const after = listedUnder(app, ph, key);
+      assert.ok(after[0] > before[0], `${ph}: the tapped run lists its untracked rows`);
+      assert.deepEqual(after.slice(1), before.slice(1), `${ph}: the other runs list nothing more`);
+      app.module.refresh();
+      await app.flush();
+      assert.deepEqual(foldStates(app, ph, key), one, `${ph}: a refresh keeps it as the owner left it`);
+      assert.deepEqual(listedUnder(app, ph, key), after);
+      await app.tap(sharedFolds(app, ph, key)[n - 1]);
+      assert.deepEqual(foldStates(app, ph, key), runs.map((_, i) => (i === 0 || i === n - 1 ? 'true' : 'false')), `${ph}: the last run's opens beside it, any between stays folded`);
+      await app.tap(sharedFolds(app, ph, key)[0]);
+      assert.deepEqual(foldStates(app, ph, key), runs.map((_, i) => (i === n - 1 ? 'true' : 'false')), `${ph}: folding the first leaves the last open`);
+    } finally {
+      app.restore();
+    }
   }
 });
 

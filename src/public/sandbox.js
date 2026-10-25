@@ -1304,10 +1304,13 @@ function smRow(x) {
  */
 function untrackedRows(name, r) {
   if (!r.untracked) return [];
-  const fk = `untracked:${r.key}`;
+  // Kept by the run itself, its key and its run number (G6's review, round 1, B1): two runs can share a key ("<Phase>-i<n>",
+  // as `mix`'s made-up project has two "Build-i1" runs), and a tap on one run's fold must open that one only. The run number
+  // k is the run's own within its phase (columnsOf starts a new one whenever a phase comes round again).
+  const fk = `untracked:${r.key}:run${r.k}`;
   const open = isOpenFold(name, fk, false);
   return [h('li', { class: 'v2-untr', key: `untr:${r.key}` },
-    foldButton(name, fk, false, { class: 'v2-fold v2-untrb', 'data-untracked': r.key }, stc('planned'), h('span', { class: 'v2-untrw' }, r.untracked.words))),
+    foldButton(name, fk, false, { class: 'v2-fold v2-untrb', 'data-untracked': r.key, 'data-runk': r.k }, stc('planned'), h('span', { class: 'v2-untrw' }, r.untracked.words))),
   ...(open ? r.untracked.rows.map(smRow) : [])];
 }
 

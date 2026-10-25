@@ -16,6 +16,7 @@ import { GATE_PHASE } from './j11.js';
 import { ownerActions, memberLabel, NOT_RECORDED, pullLink, treeLink } from './sandbox.js';
 import { waitKey } from './waiting.js';
 import { WA } from './workahead.js';
+import { SIGNED_OUT_STATE } from './page.js';
 
 export { parseCommitPages } from './prfiles.js';
 
@@ -169,7 +170,8 @@ function cantReadLine(r, tz) {
 export function briefingView(input) {
   const { bd, reads, nowMs, tz } = input;
   const cant = reads.filter((r) => r.drawError || (r.read && r.read.read === 'cant-read')).map((r) => cantReadLine(r, tz));
-  if (input.signedOut) return { kind: 'signed-out', head: 'Signed out — reload to sign in', parts: null, due: [], sub: null, cant: [] };
+  // AC32's words; from G9c page.js's `SIGNED_OUT_STATE.text`, the one constant Waiting's signed-out quiet line takes too (AC91 (c)).
+  if (input.signedOut) return { kind: 'signed-out', head: SIGNED_OUT_STATE.text, parts: null, due: [], sub: null, cant: [] };
   // From stage 6b (Terms' Quiet; AC87): the portfolio read within its 6 minutes, or its own words, one line
   // as a project's (`portfolio`: portfolioRead's answer, or null with no portfolio in J7).
   const pf = input.portfolio || null;

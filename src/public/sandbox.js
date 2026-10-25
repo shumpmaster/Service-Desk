@@ -956,15 +956,18 @@ function readStateOf(box) {
 }
 
 /**
- * Each project's read as "Since you last looked" takes it (AC91 (c)), in the order given: its name, its read (none for a
- * project the desk can't draw), and whether a read of it succeeded in this opening. What the briefing's can't-read lines
- * and the tiles already read (the box's read, the reader's state); no read of its own.
+ * Each project's read as "Since you last looked" takes it (AC91 (c)), in the order given: its name, its read, and whether
+ * a read of it succeeded in this opening. What the briefing's can't-read lines and the tiles already read (the box's
+ * read, the reader's state); no read of its own. A project the desk can't draw keeps its read where that read fails
+ * (safeBox keeps a real read on such a box), so it is counted as can't-read here as the briefing's "Can't read <project>
+ * since HH:MM" counts it (G7b's review, B1); while its read succeeds it has none, and the list stands as built.
  */
 function sinceReads(built) {
   const opened = DESK && DESK.openedAt != null ? DESK.openedAt : -Infinity;
   return built.map((b) => {
     const st = DESK && DESK.states ? DESK.states.get(b.project.name) : null;
-    return { name: b.project.name, read: b.box.drawError ? null : b.box.read, succeeded: Boolean(st && st.lastSuccessAt != null && st.lastSuccessAt >= opened) };
+    const failing = Boolean(b.box.read && b.box.read.read === 'cant-read');
+    return { name: b.project.name, read: b.box.drawError && !failing ? null : b.box.read, succeeded: Boolean(st && st.lastSuccessAt != null && st.lastSuccessAt >= opened) };
   });
 }
 

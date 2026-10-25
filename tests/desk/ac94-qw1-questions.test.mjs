@@ -31,7 +31,7 @@ import { boardView, noMarks, waitLaneEmpty, sectionMissingWords, heldCard, secti
 import * as PUBLIC_BOARD from '../../src/public/lib/board.js';
 import { V25_RULING_NOTE } from '../../src/lib/links.js';
 import { v25Ruling } from '../../src/lib/sheets.js';
-import { quietState, orderState, noneDrawnState, cantShowState, cantShowLastState, MIX_PROJECT } from './glance-fixtures.mjs';
+import { quietState, orderState, noneDrawnState, cantShowState, cantShowLastState, failedHeldState, signedOutMixedState, MIX_PROJECT, SD, POOM } from './glance-fixtures.mjs';
 import { kindsState, busiestState, qFile, qid, K, KINDS, LEDGER, QPATH, HELD_PATH, Q_HELD, SID, NOW, openFolds } from './qw1-fixtures.mjs';
 
 const H = 3600e3;
@@ -919,6 +919,56 @@ test('AC94 (settled, 1): with one project shown, the focus order is the title, t
     assert.ok(inside, `then the section: ${focusable[1].tag} ${focusable[1].textContent}`);
     const idx = (el) => all.indexOf(el);
     assert.ok(idx(section(app)) < idx(lane(app, 'kick')) && idx(section(app)) < idx(lane(app, 'wait')), 'before the strip and the lanes');
+  } finally {
+    app.restore();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// AC94's "What QW1 keeps from stage G9c" (G9c landed before QW1, #243; AC91 (c), "Waiting's quiet lines while a read is on
+// its way or signed out"; P-001-glance-waiting-pending.md and -waiting-signed-out.md, each A, with -g9c-signed-out-all.md, A)
+
+const boardKids = (app) => byClass(app.view, 'v2-board')[0].children;
+const quietKeys = (app) => { const box = boardKids(app).find((c) => c.className === 'v2-quiet'); return box ? box.children.map((c) => c.dataset.k) : []; };
+
+test('AC94 ("What QW1 keeps from stage G9c"): the section first, then the quiet lines — the red lines, then each "Still reading <project>…" — then the strip and the lanes; the section\'s "none" beside a project still being read, with no grey line of its own for it (state 1)', async () => {
+  // failedHeldState (made up, NOT how any read went): the made-up project's first read failing, Service-Desk's held on its way.
+  const s = failedHeldState();
+  const app = await open(s, { store: seen() });
+  try {
+    const kids = boardKids(app);
+    const at = (cls) => kids.findIndex((c) => c.className.split(' ').includes(cls));
+    assert.deepEqual([at('v2-sub') + 1, at('v2-qsec') + 1, at('v2-quiet') + 1], [at('v2-qsec'), at('v2-quiet'), at('v2-kstrip')], 'the section, the quiet lines, the strip');
+    assert.deepEqual(quietKeys(app).filter((k) => /^ql:(cant|show|reading|signed-out):/.test(k) || k === 'ql:signed-out'), [`ql:cant:${MIX_PROJECT}`, `ql:reading:${SD.name}`],
+      'the red line, then "Still reading"');
+    assert.equal(keyed(app, `ql:reading:${SD.name}`).textContent, `Still reading ${SD.name}…`);
+    assert.equal(section(app).children[0].textContent, 'Questions for you · none', '"none" while a project is still being read');
+    const grey = byClass(section(app), 'v2-small').filter((p) => p.parent === section(app)).map((p) => p.textContent);
+    assert.deepEqual(grey, [`${MIX_PROJECT} not read in this opening, its new questions may be missing`], 'a grey line for the project in state 2 only, none for the one on its way');
+  } finally {
+    s.release();
+    app.restore();
+  }
+});
+
+test('AC94 ("What QW1 keeps from stage G9c"): signed out, the one "Signed out — reload to sign in" line first among the quiet lines, below the section, in place of every red line; the section\'s own grey lines, one per project, as AC94 has them, and its questions from their last read', async () => {
+  // signedOutMixedState (made up, NOT how any read went): Service-Desk failing from the start, then every read refused as signed out.
+  const s = signedOutMixedState();
+  const app = await open(s, { store: seen() });
+  try {
+    s.fail();
+    await app.advance(3 * POLL_MS);
+    const keys = quietKeys(app);
+    assert.equal(keys[0], 'ql:signed-out', 'first among the quiet lines');
+    assert.equal(keyed(app, 'ql:signed-out').textContent, 'Signed out — reload to sign in');
+    assert.deepEqual(keys.filter((k) => /^ql:(cant|show):/.test(k)), [], 'no red line per project');
+    const kids = boardKids(app);
+    assert.ok(kids.indexOf(section(app)) < kids.findIndex((c) => c.className === 'v2-quiet'), 'below the section');
+    const grey = byClass(section(app), 'v2-small').filter((p) => p.parent === section(app)).map((p) => p.textContent);
+    assert.equal(grey.length, 3, 'one grey line per project');
+    assert.equal(grey[0], `${SD.name} not read in this opening, its new questions may be missing`);
+    for (const [i, n] of [[1, POOM.name], [2, MIX_PROJECT]]) assert.match(grey[i], new RegExp(`^${n} not read since \\d\\d:\\d\\d, its new questions may be missing$`));
+    assert.ok(qcard(app, `${MIX_PROJECT}|question|questions/${MIX_PROJECT}-pick.md`), 'the made-up project\'s question from its last read');
   } finally {
     app.restore();
   }

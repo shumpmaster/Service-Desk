@@ -422,29 +422,31 @@ test('AC77 (draft 6; the desk): closed before the raised time, merged, from a fo
 // ---------------------------------------------------------------------------
 // The desk's board and sheets (AC80, AC85): AC77's lines and the re-read
 
-test('AC77 + AC80 on the desk: the held question is no card and in no count, in the board\'s "Being asked in your session" line with no answer box; "Answer it here instead" brings it back as a card', async () => {
+// Rewritten in QW1 (AC77, changed by AC94 and AC95; AC80's note "after the questions request"): the held question is in the
+// "Questions for you" section, never a card in the lane and counted nowhere, its choices live; a tap on one ends the hold
+// on this device and it is a counted question in the section, the badge counting it.
+test('AC77 + AC80 on the desk, rewritten in QW1: the held question is no card and in no count, in the "Questions for you" section with its choices live and no answer box open; a tap on a choice brings it back as a counted question', async () => {
   const config = { ...CONFIG };
   const app = await loadSandbox({ config, repos: repos({ [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }), hash: '#/waiting/Service-Desk', now: RAISED_MS + 10 * MIN });
   const lane = () => sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'lane:wait')[0];
   try {
     await app.advance(1000);
     await app.advance(60_000);
-    const ql = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'ql:asking')[0];
-    assert.ok(ql, 'Being asked in your session');
-    assert.equal(ql.textContent, 'Being asked in your session: 1');
-    await app.tap(ql);
-    const fold = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'fold:asking')[0];
-    assert.ok(fold.textContent.includes(HELD_WORDS));
-    assert.ok(fold.textContent.includes('Which piece of later work comes next?'));
-    assert.ok(!sbFindAll(app.view, (e) => e.tag === 'textarea').length, 'no answer box');
-    assert.ok(!sbFindAll(fold, (e) => e.tag === 'a' && /\/new\//.test(e.attrs.href || '')).length, 'no answer link');
+    assert.equal(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'ql:asking').length, 0, 'no "Being asked in your session" line');
+    const [card] = heldCards(app);
+    assert.ok(card, 'in the section');
+    assert.ok(card.textContent.includes(HELD_SHOWN));
+    assert.ok(card.textContent.includes('Which piece of later work comes next?'));
+    assert.ok(!sbFindAll(app.view, (e) => e.tag === 'textarea').length, 'no answer box open');
+    const links = sbFindAll(card, (e) => e.tag === 'a' && /\/new\//.test(e.attrs.href || ''));
+    assert.equal(links.length, 5, 'its choices live');
     assert.equal(byClass(lane(), 'v2-card').length, 0, 'not a card');
     assert.equal(byClass(app.view, 'v2-badge').length, 0, 'not counted');
-    const btn = sbFindAll(app.view, (e) => e.tag === 'button' && e.textContent === 'Answer it here instead')[0];
-    btn.click();
+    clickOf(links[0]);
     await app.flush();
-    assert.equal(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'ql:asking').length, 0);
-    assert.ok(byClass(lane(), 'v2-card').some((c) => c.textContent.includes('Which piece of later work comes next?')), 'a card again');
+    assert.equal(heldCards(app).length, 0, 'the hold ended on this device');
+    assert.equal(sbFindAll(app.view, (e) => e.attrs && e.attrs['data-question'] === 'counted').filter((c) => c.textContent.includes('Which piece of later work comes next?')).length, 1, 'a counted question in the section');
+    assert.equal(byClass(lane(), 'v2-card').length, 0, 'still no lane card');
     assert.equal(byClass(app.view, 'v2-badge')[0].children[0].textContent, '1');
   } finally {
     app.restore();

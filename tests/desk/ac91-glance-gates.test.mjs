@@ -188,7 +188,7 @@ test('AC91 (h): the sheet\'s opening is the card\'s section 1\'s whole first lin
   assert.equal(gateOpening({ gate: 'launch', parsed: null }), null, 'a card not read yet: none');
 });
 
-test('AC91 (h) with AC89 (j): the gate\'s short title is cut at two lines only where it doesn\'t fit — on its card (the board\'s other titles keep three), as its sheet\'s title in --t-sheet and on Plan\'s gate row, its item never split; the opening in --t-lead at three; in light and dark, at 360 and 414 px', async () => {
+test('AC91 (h) with AC89 (j): the gate\'s short title is cut at two lines only where it doesn\'t fit — on its card (the board\'s other titles keep three; from QW1 a question\'s, in the section, three of --t-row), as its sheet\'s title in --t-sheet and on Plan\'s gate row, its item never split; the opening in --t-lead at three; in light and dark, at 360 and 414 px', async () => {
   const app = await open();
   try {
     // The board: the gate cards' titles at two lines, a question's at three.
@@ -196,7 +196,10 @@ test('AC91 (h) with AC89 (j): the gate\'s short title is cut at two lines only w
       for (const w of WIDTHS) {
         const L = looks(app, theme, w);
         for (const id of [G2, G4, G5]) assert.equal(L.get(keyed(app, `tt:${id}`)).decl('max-height'), 'calc(2 * 1.33em)', `${theme}, ${w} px, ${id}`);
-        assert.equal(L.get(keyed(app, `tt:${QN}`)).decl('max-height'), 'calc(3 * 1.33em)', `${theme}, ${w} px: a question's title keeps three`);
+        // Rewritten in QW1 (AC94: a section question's title "in `--t-row`, cut at three lines with the fade"): the question is
+        // in the "Questions for you" section, its title in --t-row (13 px / 1.35), so its three lines are three of that line height.
+        assert.equal(L.get(keyed(app, `tt:${QN}`)).decl('max-height'), 'calc(3 * 1.35em)', `${theme}, ${w} px: a question's title keeps three`);
+        assert.ok(findAll(keyed(app, 'qsec'), (e) => e.dataset && e.dataset.k === `tt:${QN}`).length, 'the question in the section');
         assert.equal(L.get(keyed(app, `tt:${G4}`)).decl('overflow'), 'clip');
         // The item ending the title an inline block, moving to the next line as one piece, so a wrap never splits "P-004"
         // at its hyphen (never `nowrap`, AC42); the words unchanged.

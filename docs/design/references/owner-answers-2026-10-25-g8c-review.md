@@ -11,3 +11,11 @@ Asked by the Chief of Staff in session session_017seyaGqUxAff6E8dKWHDCR on 2026-
 3. Asked: "If nothing is new and a project can't be drawn, the list reads "Nothing new since 18 Oct" with a grey "Alpha not shown, its lines may be missing" under it. Should the "Nothing new" line change?"
    Options offered: "Keep it, as built (Recommended)"; "Reword it" — "Nothing new from the projects read since 18 Oct".
    **Answer: "Keep it, as built (Recommended)".**
+
+## Two more, after G8d's design review (same session, 2026-10-25)
+4. Asked: "On Waiting, a project the desk can read but can't draw is listed as "Nothing waiting: Bravo", a false all-clear. Every other screen says it "can't be shown". What should Waiting say?"
+   Options offered: ""✕ Can't show Bravo" (Recommended)" — a red line like the briefing's, in Waiting's quiet lines; with that project shown alone, the same line above the lanes, with no counts; "Leave as built".
+   **Answer: ""✕ Can't show Bravo" (Recommended)".**
+5. Asked: "On a phone with cards waiting, Home's group head "Your projects · 2 projects · 1 can't be read · 1 can't be shown 3 ⌄" now wraps onto a second line. Is that fine?"
+   Options offered: "Fine as it is (Recommended)" — it only wraps when two kinds of problem show at once; "Lay it out differently" — merge the counts.
+   **Answer: "Fine as it is (Recommended)".**

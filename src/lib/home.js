@@ -176,7 +176,9 @@ export function briefingView(input) {
   if (pf && pf.quietWords) cant.push(pf.quietWords);
   const n = bd ? bd.badge : 0;
   if (n > 0) {
-    const lane = (k) => (bd.lanes.find((l) => l.key === k) || { groups: [] }).groups.flatMap((g) => g.rows);
+    // From QW1 (AC94), `waits`: the cards as they were before the questions left the lanes for Waiting's section, so the
+    // briefing is unchanged ("Not changed: … Home's briefing", the amendment).
+    const lane = (k) => ((bd.waits || bd.lanes).find((l) => l.key === k) || { groups: [] }).groups.flatMap((g) => g.rows);
     const wait = lane('wait');
     const kick = lane('kick');
     let w = 0;

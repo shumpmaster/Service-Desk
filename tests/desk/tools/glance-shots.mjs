@@ -37,7 +37,7 @@ import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
 import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, ciState, mismatchState, nowShared, sprintsState, longNameState, PLAN_NOW,
-  openingState, signedOutMixedState, orderState, blobFailState, cantShowState, noneDrawnState, cantShowLastState, fiveLinesState, failedHeldState, heldReadsState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
+  openingState, signedOutMixedState, orderState, blobFailState, cantShowState, noneDrawnState, cantShowLastState, fiveLinesState, failedHeldState, heldReadsState, agentsState, recordingState, RECORDING_NOW, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
 import { sdRepo, SD3 } from '../tv2-fixtures.mjs';
 import { CONFIG } from '../helpers.mjs';
 import { waSetup, WORKED } from '../wa-fixtures.mjs';
@@ -291,6 +291,14 @@ const SHOTS = [
   { name: 'g9c-waiting-signed-out', state: signedOutMixedState, now: NOW, looked: LATE, later: true, hash: '#/waiting' },
   { name: 'g9c-waiting-every-failed', state: () => orderState(), now: NOW, looked: LATE, hash: '#/waiting' },
   { name: 'g9c-page-own-age', state: () => unreadState({ who: MIX_PROJECT }), now: NOW, looked: LATE, before: true, hash: `#/p/${encodeURIComponent(SD.name)}` },
+  // G9c's draft 3 (AC91 (c), "each on a row of its own"; P-001-glance-g9c-row.md, A): each "Still reading" line on a row of its
+  // own, measured below on every g9c- Waiting capture; and two more states for it: "Still reading the portfolio…" just before
+  // a grey quiet line, "Being recorded by the automatic job" (AC79's fixture, Service-Desk's records at ef8daf4, real, its
+  // pull request, job and the portfolio made up), and "With the agents" beside "Nothing waiting: <project>" on one row with
+  // "Still reading Service-Desk…" and "Still reading Personal-Org-Operating-Model…" each on its own after them (`agentsState`,
+  // made up).
+  { name: 'g9c-waiting-recording', state: recordingState, now: RECORDING_NOW, looked: RECORDING_NOW - 24 * H, hash: '#/waiting', polls: 3 },
+  { name: 'g9c-waiting-agents', state: () => agentsState({ held: [SD.name, POOM.name] }), now: NOW, looked: LATE, hash: '#/waiting' },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {
@@ -355,6 +363,7 @@ async function main() {
   const base = `http://127.0.0.1:${srv.address().port}/`;
   const browser = await chromium.launch();
   const made = [];
+  const rowFails = []; // G9c's draft 3: the own-row measures that failed
   try {
     for (const shot of SHOTS) {
       for (const [w, hgt] of SIZES) {
@@ -555,9 +564,42 @@ async function main() {
             const small = row ? row.querySelector('.v2-small') : null;
             return [...(ql.length ? [`quiet lines: ${ql.join(' / ')}`] : []), ...(row ? [`page row: "${row.querySelector('.v2-prtt').textContent}" · "${small ? small.textContent : ''}"${small ? ` ${getComputedStyle(small).color}` : ''}`] : [])].join('; ') || 'no quiet lines';
           });
+          // G9c's draft 3 (AC91 (c), "each on a row of its own"): on Waiting's quiet lines, each "Still reading" line (keyed `ql:reading:`)
+          // starts a row (its top at or below the bottom of the line before it) and holds it alone (its width the box's, and the
+          // line after it starting below it); any two other lines next to each other share a row where the second fits after the
+          // first (the box's 10 px gap between them), and only then; no line's words cut. A failure is printed and fails the run.
+          const rows = /^g9c-waiting/.test(shot.name) ? await page.evaluate(() => {
+            const box = document.querySelector('.v2-board > .v2-quiet');
+            if (!box) return { fails: ['no quiet lines'], said: 'no quiet lines' };
+            const b = box.getBoundingClientRect();
+            const gap = parseFloat(getComputedStyle(box).columnGap) || 0;
+            const kids = [...box.children].map((e) => ({ e, r: e.getBoundingClientRect(), own: /^ql:reading:/.test(e.getAttribute('data-k') || ''), name: e.textContent.slice(0, 28) }));
+            const fails = [];
+            const said = [];
+            kids.forEach((k, i) => {
+              const prev = kids[i - 1];
+              const next = kids[i + 1];
+              const span = k.e.querySelector('span') || k.e;
+              if (span.scrollWidth > span.clientWidth + 1) fails.push(`"${k.name}" cut`);
+              if (k.own) {
+                if (prev && k.r.top < prev.r.bottom - 0.5) fails.push(`"${k.name}" shares a row with "${prev.name}" before it`);
+                if (next && next.r.top < k.r.bottom - 0.5) fails.push(`"${next.name}" shares a row with "${k.name}" before it`);
+                if (Math.abs(k.r.width - b.width) > 0.5) fails.push(`"${k.name}" ${k.r.width} px wide in a ${b.width} px box`);
+                said.push(`"${k.name}" own row, ${Math.round(k.r.width)}/${Math.round(b.width)} px${next ? `, "${next.name}" below it` : ''}`);
+              } else if (prev && !prev.own) {
+                const fits = prev.r.right + gap + k.r.width <= b.right + 0.5;
+                const same = Math.abs(k.r.top - prev.r.top) < 1;
+                if (fits !== same) fails.push(`"${k.name}" ${same ? 'shares' : 'does not share'} a row with "${prev.name}" though it ${fits ? 'fits' : 'does not fit'}`);
+                said.push(`"${k.name}" ${same ? 'beside' : 'below'} "${prev.name}"`);
+              }
+            });
+            return { fails, said: said.join(' / ') || 'no pair to measure' };
+          }) : null;
+          if (rows && rows.fails.length) rowFails.push(`${shot.name}-${w}x${hgt}-${theme}: ${rows.fails.join('; ')}`);
+          if (/^g9c-/.test(shot.name) && scroll > 0) rowFails.push(`${shot.name}-${w}x${hgt}-${theme}: scrolls sideways by ${scroll} px`);
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}${/^g8d-/.test(shot.name) ? `  (${g8d})` : ''}${/^g9-/.test(shot.name) ? `  (${g9})` : ''}${/^g9b-/.test(shot.name) ? `  (${g9b})` : ''}${/^g9c-/.test(shot.name) ? `  (${g9c})` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}${/^g8d-/.test(shot.name) ? `  (${g8d})` : ''}${/^g9-/.test(shot.name) ? `  (${g9})` : ''}${/^g9b-/.test(shot.name) ? `  (${g9b})` : ''}${/^g9c-/.test(shot.name) ? `  (${g9c})` : ''}${rows ? `  (rows: ${rows.fails.length ? `FAIL ${rows.fails.join('; ')}` : `ok; ${rows.said}`})` : ''}`);
           await ctx.close();
         }
       }
@@ -567,6 +609,10 @@ async function main() {
     srv.close();
   }
   console.log(made.join('\n'));
+  if (rowFails.length) {
+    console.error(`G9c's rows: ${rowFails.length} failed\n${rowFails.join('\n')}`);
+    process.exitCode = 1;
+  }
 }
 
 main().catch((err) => {

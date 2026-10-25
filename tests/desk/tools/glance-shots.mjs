@@ -12,6 +12,7 @@
 // and whether any is cut at its two; and, on a Timeline (G4, AC91 (i)), where the Now line's top rests against a third of
 // the viewport; and, on G5's waits rows (AC89 (c)), the row's words and whether its cut hides any; and, on G6's pages
 // (AC92 (d)), each opened phase's heads and fold rows; and, on G7's (AC92 (a)), how many status marks are green and red;
+// and, on G7b's (AC91 (c)), each of "Since you last looked"'s missing lines, how many lines it takes and whether any is cut;
 // and, on G8's (AC92 (b)), each arrow, its drawing, its size and where it sits against what it points at.
 // G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
@@ -21,7 +22,7 @@ import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
-import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, ciState, mismatchState, nowShared, sprintsState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM } from '../glance-fixtures.mjs';
+import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, ciState, mismatchState, nowShared, sprintsState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
 import { sdRepo, SD3 } from '../tv2-fixtures.mjs';
 import { CONFIG } from '../helpers.mjs';
 import { waSetup, WORKED } from '../wa-fixtures.mjs';
@@ -140,6 +141,18 @@ const SHOTS = [
   { name: 'g7-brief-cant-show', state: () => { const s = unreadState(); s.repos[MIX_PROJECT].pulls.push(BAD_PR); return s; }, now: NOW, looked: LATE, later: true },
   { name: 'g7-brief-portfolio', state: () => { const p = waSetup({}); p.config = withPortfolio(p.config); addPortfolio(p.repos, pfFiles({})).fail = { state: 'cant-read', reason: 'no-access' }; return p; },
     now: Date.parse('2026-10-22T18:00:00Z'), looked: LATE, polls: 7 },
+  // G7b: "Since you last looked" ending in its grey missing lines (AC91 (c); P-001-glance-since-incomplete.md, A), each
+  // failure made up (NOT how any read failed). `unread`: the list empty, Service-Desk not read since a time; the list
+  // holding its four lines and "<n> more"; two projects, Service-Desk with no read in this opening and the made-up one
+  // since a time, in their tiles' order; signed out from the start, a line for each project; and `ext`, two made-up
+  // projects failing, the long name wrapping at 360 px.
+  { name: 'g7b-unread', state: () => unreadState(), now: NOW, looked: LATE, later: true },
+  { name: 'g7b-unread-more', state: () => unreadState(), now: NOW, looked: NOW - 10 * 24 * H, later: true },
+  { name: 'g7b-unread-two', state: () => { const s = unreadState(); s.fail = () => { s.repos[MIX_PROJECT].fail = { kind: 'network' }; }; s.repos[SD.name].fail = { kind: 'network' }; return s; },
+    now: NOW, looked: LATE, later: true },
+  { name: 'g7b-signed-out', state: signedOutState, now: NOW, looked: LATE, before: true },
+  { name: 'g7b-ext', state: () => { const s = extState(); s.fail = () => { s.repos.Beta.fail = { kind: 'network' }; s.repos[EXT_LONG].fail = { kind: 'network' }; }; return s; },
+    now: NOW, looked: LATE, later: true },
   // G8: the arrow at "now" (AC92 (b)) on its five drawings: Home's tiles (`mix`: the made-up project with two "Build-i1"
   // runs; `nowShared`: its now run sharing its key with later runs, "Build-i1" and "Launch-i1"); a page's strip and an
   // opened now phase (`text`'s Design; `nowShared`'s Build and Launch, the now run an earlier run of its phase); a v2.5
@@ -298,6 +311,11 @@ async function main() {
             }
             return `${g} green, ${r} red`;
           });
+          // G7b (AC91 (c)): each missing line, how many lines it takes, and whether it is cut (it must not be).
+          const miss = await page.evaluate(() => [...document.querySelectorAll('.v2-smiss > p')].map((e) => {
+            const lh = parseFloat(getComputedStyle(e).lineHeight) || 1;
+            return `${Math.round(e.getBoundingClientRect().height / lh)} line(s)${e.scrollHeight > e.clientHeight + 1 || e.scrollWidth > e.clientWidth + 1 ? ', cut' : ''}`;
+          }));
           // G8 (AC92 (b)): each arrow, its drawing, its box and where it sits against what it points at.
           const arrows = await page.evaluate(() => [...document.querySelectorAll('.v2-here')].map((a) => {
             const b = a.getBoundingClientRect();
@@ -328,7 +346,7 @@ async function main() {
           }));
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}`);
           await ctx.close();
         }
       }

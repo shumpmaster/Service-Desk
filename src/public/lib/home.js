@@ -684,3 +684,19 @@ export function sinceUnreadWords(reads, tz) {
   const times = cant.map((r) => r.read.since).filter((x) => x != null && Number.isFinite(x));
   return times.length ? `Not read since ${hhmm(new Date(Math.min(...times)), tz)}` : 'Not read in this opening';
 }
+
+/**
+ * The lines that end "Since you last looked" while a connected project can't be read (AC91 (c), stage G7b; the owner's
+ * "Ruling: A", decisions/questions/P-001-glance-since-incomplete.md): one for each such project, signed out included, in
+ * the order `reads` gives (the tiles' order on Home), "<project> not read since HH:MM, its lines may be missing", HH:MM
+ * that project's own "since" as the briefing's "Can't read <project> since HH:MM" gives it, or "<project> not read in this
+ * opening, its lines may be missing" where no read of it has succeeded in this opening (or no time is held). None for a
+ * project still "Checking…" or read. From the reads sinceUnreadWords takes, each with its project's `name`; no read of
+ * its own. Returns [{ name, words }], empty when every project can be read.
+ */
+export function sinceMissingLines(reads, tz) {
+  return (reads || []).filter((r) => r && r.read && r.read.read === 'cant-read').map((r) => {
+    const at = r.succeeded && r.read.since != null && Number.isFinite(r.read.since) ? `since ${hhmm(new Date(r.read.since), tz)}` : 'in this opening';
+    return { name: r.name, words: `${r.name} not read ${at}, its lines may be missing` };
+  });
+}

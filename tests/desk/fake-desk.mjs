@@ -123,7 +123,8 @@ function jobLogAnswer(J, id) {
 /**
  * fakeServer({ name: repo }, config, clock) → { call(path, body), calls: [{ path, project, at }] }.
  * A repo's `fail` can be set to { kind: 'network' | 'signed-out' | 'cloudflare' } or
- * { state: 'cant-read', reason, retryAfter? } or { state: 'partial' }.
+ * { state: 'cant-read', reason, retryAfter? } or { state: 'partial' }. From G7b, a repo's `hold` (a promise) is waited on
+ * before its call answers, a read still in flight, as the portfolio's is.
  */
 export function fakeServer(repos, config, clock) {
   const calls = [];
@@ -134,6 +135,8 @@ export function fakeServer(repos, config, clock) {
     calls.push({ path, project: body.project, at: clock.now(), body });
     const r = repos[body.project];
     const project = byName(body.project);
+    // From G7b (AC91 (c)): `hold`, a promise the call waits on before it answers (a first read still pending, "Checking…").
+    if (r && r.hold) await r.hold;
     const f = r.fail;
     if (f && f.kind === 'network') return { ok: false, status: 0, reason: 'network' };
     if (f && f.kind === 'signed-out') return { ok: false, status: 403, reason: 'signed-out' };

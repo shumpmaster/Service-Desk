@@ -6,8 +6,10 @@
 // with `id`, `title` and `confirmedAt` (its failed load is app.js served with no sandbox.js, built in its own test and
 // tools/glance-shots.mjs); G5 adds `mix`'s made-up later Launch run for F1 and F2 (`laterLaunch`); G6 adds `standard`, every
 // standard line written in Service-Desk's section 3; G7 adds made-up workflow runs on a head (`ciState`) and the screens
-// its palette's marks are drawn on, opened as the owner opens them (`G7_OPENS`); G8 adds `nowShared`, a now run sharing its
-// key with later runs, and `sprintsState`, a v2.5 project with two open sprints or none; the later stages add theirs. Each
+// its palette's marks are drawn on, opened as the owner opens them (`G7_OPENS`); G7b adds Home with "Since you last
+// looked" ending in its missing lines (`G7B_OPENS`), with the "last looked" a device holds; G8 adds `nowShared`, a now
+// run sharing its key with later runs, and `sprintsState`, a v2.5 project with two open sprints or none; the later
+// stages add theirs. Each
 // made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
 import { CONFIG, fixture } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
@@ -337,6 +339,49 @@ export const G7_OPENS = [
     await app.advance(3 * POLL_MS);
     return app;
   }],
+];
+
+/**
+ * G7b (AC91 (c); P-001-glance-since-incomplete.md, A): the "last looked" a device holds (made up, NOT a real device's
+ * record), as `desk-seen-v1` keeps it: `SINCE_LATE`, 19 Oct, after the records' last dates (J24's "Reached" lines of 18 Oct
+ * among them), so nothing is new and the list holds no line; or ten days before NOW, so it holds four lines and "<n> more".
+ */
+export const SINCE_LATE = Date.parse('2026-10-19T00:00:00Z');
+export const SINCE_FULL = NOW - 10 * 24 * 3600e3;
+export const lookedAt = (ms) => memStore({ 'desk-seen-v1': JSON.stringify({ lastLooked: ms }) });
+/** `ext`'s long-named made-up project (md-extremes/, NOT a real project), whose missing line must wrap at 360 px, never cut. */
+export const EXT_LONG = 'Epsilon-with-a-very-long-project-name-that-wraps';
+async function g7bOpen(setup, { looked = SINCE_LATE, before = null, later = null } = {}) {
+  if (before) before();
+  const app = await loadSandbox({ ...setup, hash: '#/', now: NOW, store: lookedAt(looked) });
+  await app.advance(1000);
+  await app.advance(POLL_MS);
+  if (later) {
+    later();
+    await app.advance(3 * POLL_MS);
+  }
+  return app;
+}
+/**
+ * G7b (AC91 (c)): Home with "Since you last looked" ending in its grey missing lines, as [name, open() → the open page]:
+ * each read failure made up (NOT how any read failed: the fake desk's network cause, AC5, or every read refused as signed
+ * out, J6), on `unread`, signed-out and `ext`. The list empty, with one project not read since a time; two projects, one
+ * not read in this opening, the other since a time (their lines in their tiles' order: the made-up project's tile, with
+ * cards waiting, first); signed out from the start; `ext` with two made-up projects failing, the long name among them; and
+ * the list holding its four lines and "<n> more", one project not read since a time.
+ */
+export const G7B_OPENS = [
+  ['Home, the list empty, one project not read since a time', () => { const s = unreadState(); return g7bOpen(s, { later: s.fail }); }],
+  ['Home, two projects, one not read in this opening', () => {
+    const s = unreadState();
+    return g7bOpen(s, { before: s.fail, later: () => { s.repos[MIX_PROJECT].fail = { kind: 'network' }; } });
+  }],
+  ['Home, signed out', () => { const s = signedOutState(); return g7bOpen(s, { before: s.fail }); }],
+  ['Home, ext, two projects not read since a time', () => {
+    const s = extState();
+    return g7bOpen(s, { later: () => { s.repos.Beta.fail = { kind: 'network' }; s.repos[EXT_LONG].fail = { kind: 'network' }; } });
+  }],
+  ['Home, the list with "<n> more", one project not read since a time', () => { const s = unreadState(); return g7bOpen(s, { looked: SINCE_FULL, later: s.fail }); }],
 ];
 
 /**

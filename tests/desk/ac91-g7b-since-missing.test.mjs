@@ -156,14 +156,21 @@ test('AC91 (c), G7b: a project with no read in this opening — "Service-Desk no
   }
 });
 
-test('AC91 (c), G7b: two projects that can\'t be read — two lines, in the order of their tiles on Home (not the config\'s or the briefing\'s), each with its own words: one since its own time, one not read in this opening', async () => {
+// Rewritten in G8c (P-001-glance-cant-read-order.md, B: "Tile order in both — the briefing's can't-read lines follow the
+// tiles too"; P-001-glance-opening-wording.md, B): the briefing now names them in the tiles' order too, and says "in this
+// opening" for Service-Desk, so the case asserts the tiles' order against the config's, and the briefing's beside it.
+test('AC91 (c), G7b: two projects that can\'t be read — two lines, in the order of their tiles on Home (not the config\'s), each with its own words: one since its own time, one not read in this opening; from G8c the briefing names them in the same order', async () => {
   const app = await opened('Home, two projects, one not read in this opening');
   try {
     const order = tileOrder(app);
     const cant = order.filter((n) => n === SD.name || n === MIX_PROJECT);
     assert.deepEqual(cant, [MIX_PROJECT, SD.name], 'the made-up project\'s tile, with cards waiting, first');
+    assert.deepEqual(unreadState().config.projects.map((p) => p.name).filter((n) => cant.includes(n)), [SD.name, MIX_PROJECT], 'the config\'s order is the other one');
     const t = briefTimes(app);
-    assert.deepEqual([...t.keys()], [SD.name, MIX_PROJECT], 'the briefing names them in the config\'s order, so the order here is the tiles\'');
+    assert.deepEqual([...t.keys()], [MIX_PROJECT], 'the briefing gives the made-up project, read earlier, its time');
+    const b = byClass(app.view, 'v2-brief')[0];
+    const briefed = [...byClass(b, 'v2-bt1'), ...byClass(b, 'v2-bcant')].map((e) => e.textContent).filter((w) => /^Can't read /.test(w));
+    assert.deepEqual(briefed, [`Can't read ${MIX_PROJECT} since ${t.get(MIX_PROJECT)}`, `Can't read ${SD.name} in this opening`], 'the briefing in the tiles\' order, as the lines');
     assert.deepEqual(words(app), [MISS(MIX_PROJECT, `since ${t.get(MIX_PROJECT)}`), MISS(SD.name, 'in this opening')]);
     assert.deepEqual(lines(app).map((p) => p.dataset.k), [`since-miss:${MIX_PROJECT}`, `since-miss:${SD.name}`], 'each keyed by its project');
     assert.deepEqual(sinceKeys(app), ['since-h', 'since-none', 'since-miss']);

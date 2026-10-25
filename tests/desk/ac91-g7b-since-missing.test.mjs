@@ -294,15 +294,20 @@ test('AC91 (c), G7b: a read that then succeeds — its line goes on the first dr
   }
 });
 
-test('AC91 (c), G7b (the Reviewer\'s B1, round 1): a project the desk can\'t draw whose read then fails — its grey line shows, with the briefing\'s "Can\'t read <project> since HH:MM" time, and the empty list reads "Not read since HH:MM", never "Nothing new since"; while its read succeeds, no line', async () => {
+// The first step rewritten in G8c (P-001-glance-cant-show-line.md, B: "A line for it too — "<project> not shown, its lines
+// may be missing""): while its read succeeds it now has the grey "not shown" line, not no line; the later steps kept.
+test('AC91 (c), G7b (the Reviewer\'s B1, round 1): a project the desk can\'t draw whose read then fails — its grey line shows, with the briefing\'s "Can\'t read <project> since HH:MM" time, and the empty list reads "Not read since HH:MM", never "Nothing new since"; while its read succeeds, from G8c its "not shown" line, never a "not read" one', async () => {
   // Alpha can't be drawn (fake-desk.mjs's BAD_PR, made up, NOT a real pull request), then its read fails (made up).
   const s = unreadState({ who: MIX_PROJECT });
   s.repos[MIX_PROJECT].pulls.push(BAD_PR);
   const app = await open(s);
   try {
     assert.match(keyed(app, `card:${MIX_PROJECT}`).textContent, /Can't show this project: /, 'Alpha can\'t be drawn');
-    assert.equal(box(app), null, 'its read succeeds: no line');
+    assert.deepEqual(words(app), [`${MIX_PROJECT} not shown, its lines may be missing`], 'its read succeeds: its "not shown" line, no "not read" line');
+    assert.deepEqual(lines(app).map((p) => p.dataset.k), [`since-miss:${MIX_PROJECT}`], 'one line, keyed by its project');
     assert.match(keyed(app, 'since-none').textContent, /^Nothing new since /, 'the list as built');
+    assert.deepEqual(sinceKeys(app), ['since-h', 'since-none', 'since-miss'], 'the line under the empty line');
+    assertGrey(app, 'can\'t draw, read working');
     s.fail();
     await app.advance(3 * POLL_MS);
     const at = briefTimes(app).get(MIX_PROJECT);

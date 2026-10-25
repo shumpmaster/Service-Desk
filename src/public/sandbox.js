@@ -1323,7 +1323,9 @@ function untrackedRows(name, r) {
 function phaseOpenNode(name, line) {
   const kids = [h('span', { class: 'v2-arrow', 'aria-hidden': 'true' }, vi('up', 'v2-k'))];
   for (const r of line.runs) {
-    kids.push(h('p', { class: `v2-runh${r.latest ? '' : ' old'}`, key: `runh:${r.key}` }, r.head));
+    // Each run's head and container keyed by the run itself, its key and its run number, since two runs can share
+    // "<Phase>-i<n>" (G6's review, round 1).
+    kids.push(h('p', { class: `v2-runh${r.latest ? '' : ' old'}`, key: `runh:${r.key}:run${r.k}` }, r.head));
     const ol = r.latest ? 'v2-sml' : 'v2-sml old';
     const body = [
       h('p', { class: 'v2-subh', key: `yours:${r.key}` }, PAGE_WORDS.yoursHead(r.own.length)),
@@ -1331,7 +1333,7 @@ function phaseOpenNode(name, line) {
       h('p', { class: 'v2-subh std', key: `stdh:${r.key}` }, PAGE_WORDS.standardHead(r.stdCount, r.h)),
       h('ol', { class: ol, key: `std:${r.key}` }, r.std.map(smRow), untrackedRows(name, r)),
     ];
-    kids.push(r.latest ? body : h('div', { class: 'v2-oldrun', key: `old:${r.key}` }, body));
+    kids.push(r.latest ? body : h('div', { class: 'v2-oldrun', key: `old:${r.key}:run${r.k}` }, body));
   }
   if (line.whyOnce) kids.push(h('p', { class: 'v2-callout gap', key: `why:${line.phase}` }, vi('eye'), h('span', { class: 'gap' }, line.whyOnce)));
   return h('div', { class: 'v2-stdl', key: `stdl:${line.phase}`, id: `phase-${line.phase}`, role: 'region', 'aria-label': `${line.phase}: its milestones, read from the bottom up` }, kids);
@@ -3080,8 +3082,9 @@ const foldWords = (views) => sprintsWords(sprintCount(views));
 /** A milestone on the Timeline (AC59, AC84): its icon in a plain circle on the rail; its name; "<id> · <state> · <rough finish>" in Plex Mono; "Done when" and "Why"; its sprints folded. */
 function mileNode(p, x, finishOf, whyOnce = null) {
   const name = p.project.name;
-  const fk = `sprints:${x.key}`;
-  const nk = `named:${x.key}`;
+  // Kept by the run itself (`x.foldKey`, "<Phase>-i<n>:<id>:run<k>"), never shared by two runs with one key (G6's review).
+  const fk = `sprints:${x.foldKey}`;
+  const nk = `named:${x.foldKey}`;
   const open = isOpenFold(name, fk, false);
   const nOpen = isOpenFold(name, nk, false);
   const fin = x.kind === 'ms' && x.rule !== 1 && !/^reached/.test(x.words) && finishOf ? finishWords(finishOf(x.code), { label: false }) : null;
@@ -3103,7 +3106,7 @@ function mileNode(p, x, finishOf, whyOnce = null) {
 /** The run's "Not tied to a milestone" line (AC60, AC69): the grey diamond, its count, who files them, the fixed sentence and its sprints folded. */
 function untiedNode(p, x) {
   const name = p.project.name;
-  const fk = `sprints:${x.key}`;
+  const fk = `sprints:${x.foldKey}`;
   const open = isOpenFold(name, fk, false);
   return h('div', { class: 'v2-ms untied', key: `mile:${x.key}`, 'data-ms': 'untied' },
     h('span', { class: 'v2-msi' }, stc('flag')),
@@ -3274,7 +3277,7 @@ function openSprintFolds(p, sprint) {
   const fv = p.feed();
   if (!fv.ok) return;
   const at = fv.index.get(sprint);
-  if (at) setFold(p.project.name, `sprints:${at.row}`, true);
+  if (at) setFold(p.project.name, `sprints:${at.foldKey}`, true);
 }
 
 /** Record notes (AC68): each record line or field skipped (AC31) and each plan line out of form or repeated (AC61), word for word. */

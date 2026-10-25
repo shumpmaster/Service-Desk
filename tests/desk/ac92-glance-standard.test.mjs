@@ -33,6 +33,7 @@ import { textState, standardState, mixState, gatesState, STANDARD_SKIPPED, MIX_P
 import { STANDARD_MILESTONES, NOT_RECORDED_IDS } from '../../src/lib/timeline.js';
 import { milestonesByPhase, trackedInRun, detailLines, PAGE_WORDS } from '../../src/lib/projectpage.js';
 import { POLL_MS } from '../../src/lib/scheduler.js';
+import { answerOf, node } from './j12-fixture.mjs';
 
 const RULES = (() => {
   const a = parseCss(readFileSync(join(SRC, 'public', 'style.css'), 'utf8'), 'style.css');
@@ -185,7 +186,7 @@ test('AC92 (d), on Service-Desk\'s records at 77bfeae (real): every run, earlier
       assert.deepEqual(seq, byClass(open, 'v2-runh').flatMap(() => ['run', 'yours', 'std']), `${ph}: two heads under every run`);
     }
     // An earlier run (Design run 1, gone back over) now has its heads; before G6 it had none (sandbox.js, the old branch).
-    const old = keyed(app, 'old:Design-i1');
+    const old = keyed(app, 'old:Design-i1:run1');
     assert.match(old.className, /\bv2-oldrun\b/);
     assert.deepEqual(heads(old), ['Your milestones · 0', 'Standard checklist · 6 · 2 tracked']);
     for (const [theme, ink] of THEMES) {
@@ -361,6 +362,53 @@ test('AC59 and AC92 (d) (G6\'s review, round 1, outside G6\'s row): on the Timel
     assert.deepEqual(lists(), [0, 1, 0]);
   } finally {
     app.restore();
+  }
+});
+
+/**
+ * `mix` with both of its made-up project's "Build-i1" runs holding a sprint "Not tied to a milestone" (NOT real records): a
+ * made-up step sending P-002 to its Build stage 260 minutes before the clock, so its run 1 has a time, and two made-up
+ * merged pull requests, #901 (250 minutes before, in run 1) and #902 (5 minutes before, in P-003's run 3).
+ */
+function sharedUntied() {
+  const st = mixState();
+  const a = st.repos[MIX_PROJECT];
+  const iso = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z');
+  const line = { item: 'P-002', action: 'dispatch', role: 'builder', route: 'ready-dispatch', stage: 5, time: iso(NOW - 260 * 60e3), trigger: 'step', gate: null };
+  a.commit({ 'dispatch-log/2026-10.jsonl': `${a.files['dispatch-log/2026-10.jsonl'].trimEnd()}\n${JSON.stringify(line)}\n` });
+  a.pullsAnswer = answerOf([node(901, { mergedAt: iso(NOW - 250 * 60e3) }), node(902, { mergedAt: iso(NOW - 5 * 60e3) })]);
+  return st;
+}
+
+test('AC60, AC84 and AC83 (G6\'s review, round 1, outside G6\'s row, older than G6): runs that share a key keep their folds apart — on the Timeline, both "Build-i1" runs\' "Not tied to a milestone" (made up, NOT real records) open on their own and stay so on a refresh; on the page, the runs\' heads and earlier-run containers keyed by run', async () => {
+  const app = await openPage(sharedUntied(), `#/p/${MIX_PROJECT}/timeline`);
+  try {
+    const folds = () => findAll(app.view, (e) => e.tag === 'button' && e.dataset && /^fold:sprints:Build-i1:untied:run\d+$/.test(e.dataset.k || ''));
+    assert.deepEqual(folds().map((b) => b.dataset.k), ['fold:sprints:Build-i1:untied:run3', 'fold:sprints:Build-i1:untied:run1'], 'one fold each, keyed by its run');
+    const state = () => folds().map((b) => b.attrs['aria-expanded']);
+    const opened = () => folds().map((b) => byClass(b.parent, 'v2-sp').map((x) => x.attrs['data-sprint']).join());
+    await app.tap(folds()[1]);
+    assert.deepEqual(state(), ['false', 'true'], 'only the tapped run\'s fold opens');
+    assert.deepEqual(opened(), ['', 'PR #901'], 'and only its sprint is drawn');
+    app.module.refresh();
+    await app.flush();
+    assert.deepEqual(state(), ['false', 'true'], 'a refresh keeps it so');
+    await app.tap(folds()[0]);
+    assert.deepEqual(opened(), ['PR #902', 'PR #901'], 'the other opens beside it');
+    await app.tap(folds()[1]);
+    assert.deepEqual(state(), ['true', 'false'], 'folding one leaves the other open');
+  } finally {
+    app.restore();
+  }
+  const page = await openPage(mixState(), `#/p/${MIX_PROJECT}`);
+  try {
+    await page.tap(foldOf(page, 'Build'));
+    const open = keyed(page, 'stdl:Build');
+    const ks = findAll(open, (e) => e.dataset && /^(runh|old):/.test(e.dataset.k || '')).map((e) => e.dataset.k);
+    assert.deepEqual(ks, ['runh:Build-i1:run3', 'runh:Build-i2:run2', 'old:Build-i2:run2', 'runh:Build-i1:run1', 'old:Build-i1:run1'], 'every run\'s head and container its own key');
+    assert.equal(new Set(ks).size, ks.length);
+  } finally {
+    page.restore();
   }
 });
 

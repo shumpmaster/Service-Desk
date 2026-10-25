@@ -571,7 +571,7 @@ export function feedView(ctx, model, nowMs, tz) {
       const toFile = loose.filter((x) => !x.none).length;
       const n = loose.length;
       const sp = (k) => `${k} sprint${k === 1 ? '' : 's'}`;
-      dated.push({ kind: 'untied', key: `${rk}:untied`, icon: 'flag', name: 'Not tied to a milestone',
+      dated.push({ kind: 'untied', key: `${rk}:untied`, foldKey: `${rk}:untied:run${ctx.cols.k.get(r)}`, icon: 'flag', name: 'Not tied to a milestone',
         words: toFile === n ? `${sp(n)} · for the agents to file` : `${sp(n)} · ${toFile} for the agents to file`,
         sentence: 'No milestone in the plan lists these sprints, and they name none.', sprints: loose, at: latestAt(loose), untied: true });
     }
@@ -650,7 +650,7 @@ export function feedView(ctx, model, nowMs, tz) {
   const index = new Map();
   for (const b of order) {
     for (const row of [...(b.plannedRows || []), ...b.rows]) {
-      for (const sp of [...(row.sprints || []), ...(row.named || [])]) if (!index.has(sp.id)) index.set(sp.id, { run: b.key, row: row.key, sprint: sp.key });
+      for (const sp of [...(row.sprints || []), ...(row.named || [])]) if (!index.has(sp.id)) index.set(sp.id, { run: b.key, row: row.key, foldKey: row.foldKey, sprint: sp.key });
     }
   }
   const msIndex = new Map();
@@ -701,8 +701,10 @@ function msRow(ctx, r, kind, m, x, sprints, named) {
   const why = kind === 'std' ? (ctx.standard[m.id] ? ctx.standard[m.id].why : null) : m.why;
   const planned = x.rule === 2 || x.rule === 3 || x.rule === 7;
   return {
-    // `std`: one of the model's standard milestones (AC92 (d): its meta line says "standard", its name in 400).
-    kind: 'ms', key: `${r.phase}-i${r.iteration}:${m.id}`, code: m.id, lineno: m.lineno || 0, name: kind === 'std' ? deskWords(m.name) : m.name, std: kind === 'std',
+    // `std`: one of the model's standard milestones (AC92 (d): its meta line says "standard", its name in 400). `foldKey`: what
+    // its folds (its sprints, those named by their pull requests) are kept under, naming the run itself, its key and its run
+    // number, since two runs can share "<Phase>-i<n>" (G6's review, round 1; the page's and the gathered lines' the same).
+    kind: 'ms', key: `${r.phase}-i${r.iteration}:${m.id}`, foldKey: `${r.phase}-i${r.iteration}:${m.id}:run${ctx.cols.k.get(r)}`, code: m.id, lineno: m.lineno || 0, name: kind === 'std' ? deskWords(m.name) : m.name, std: kind === 'std',
     icon: FEED_ICON[x.rule], rule: x.rule, words: x.feed, doneWhen: kind === 'own' ? m.done : null,
     why: why ? { text: why, source: 'docs/PROJECT.md' } : null, sprints, named,
     fold: sprints.length > 1 ? `${sprints.length} sprints feed this` : sprints.length === 1 ? '1 sprint feeds this'

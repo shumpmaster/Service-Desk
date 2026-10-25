@@ -789,3 +789,8 @@ G6 adds no fixture file. `tests/desk/ac92-glance-standard.test.mjs`, G6's rewrit
   lists (states reached, carried over, not reached and not needed in runs now, gone back over, still to come and finished;
   taken-on lines the model can and can't record; skipped lines), each only the shape the desk's timeline gives; **NOT
   real records**.
+- **`mix` with both "Build-i1" runs holding an untied sprint** (G6's fix round; `sharedUntied` in
+  `ac92-glance-standard.test.mjs`): a made-up dispatch line sending P-002 to its Build stage 260 minutes before the
+  states' clock, and J12 answering two made-up merged pull requests, #901 (250 minutes before, in run 1) and #902 (5
+  minutes before, in P-003's run 3), so two runs that share the key "Build-i1" each draw "Not tied to a milestone"; **NOT
+  real records**.

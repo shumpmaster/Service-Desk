@@ -529,9 +529,11 @@ test('AC77 (draft 9; the desk): the re-read with a pull request\'s files failing
 // Rewritten for AC89 (a) (specs/S-001.md:7823-7852, the table's state 5; AC80, changed, :6503-6506): once the reads fail
 // after a success, the two counts' small line gives way to "Can't read <project> since HH:MM" above the lanes; the held
 // question's and the recorded answer's lines still stay, as round 3's finding 1 has them.
-test('AC77 + AC80 (stage 1a\'s build review, round 3, finding 1), rewritten for AC89 (a): filtered to the project, the "Being asked in your session" and "Your answer is being recorded" lines stay when its reads then fail; the two counts give way to "Can\'t read <project> since HH:MM" above the lanes; the held question\'s fold keeps "Answer it here instead"', async () => {
+// Rewritten in QW1 (AC77, changed by AC94 and AC95): the held question is in the "Questions for you" section, not a quiet
+// line; it stays there when the project's reads then fail, its choices still live where "Answer it here instead" stayed.
+test('AC77 + AC80 (stage 1a\'s build review, round 3, finding 1), rewritten for AC89 (a) and in QW1: filtered to the project, the held question in the "Questions for you" section and the "Your answer is being recorded" line stay when its reads then fail; the two counts give way to "Can\'t read <project> since HH:MM" above the lanes; the held question keeps its live choices', async () => {
   const cases = [
-    ['ql:asking', 'Being asked in your session: 1', { [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, [], {}],
+    ['qcard:Service-Desk|question|questions/P-001-next-work.md', null, { [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, [], {}],
     ['ql:answerRecording', 'Your answer is being recorded: 1', { [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION, '.github/workflows/asks-merge.yml': 'name: asks-merge\n' },
       [answerPr(90)], { repo: { prFiles: { 90: ADDS_ANSWER } } }],
   ];
@@ -543,7 +545,8 @@ test('AC77 + AC80 (stage 1a\'s build review, round 3, finding 1), rewritten for 
     try {
       await app.advance(1000);
       await app.advance(60_000);
-      assert.equal(line().textContent, words, `${key}: read`);
+      if (words) assert.equal(line().textContent, words, `${key}: read`);
+      else assert.ok(line().textContent.includes(HELD_SHOWN), `${key}: read`);
       assert.equal(small(), 'With the agents: 0 · Being recorded by the automatic job: 0');
       rs['Service-Desk'].fail = { kind: 'network' };
       await app.advance(60_000);
@@ -551,12 +554,11 @@ test('AC77 + AC80 (stage 1a\'s build review, round 3, finding 1), rewritten for 
       assert.equal(small(), null, `${key}: no counts while it can't be read`);
       assert.match(byClass(app.view, 'v2-board')[0].textContent, /Can't read Service-Desk since \d\d:\d\d: network error/, `${key}: said above the lanes`);
       assert.ok(line(), `${key}: the line stays while the project can't be read`);
-      assert.equal(line().textContent, words);
-      if (key === 'ql:asking') {
-        await app.tap(line());
-        const fold = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'fold:asking')[0];
-        assert.ok(fold && fold.textContent.includes(HELD_WORDS));
-        assert.ok(sbFindAll(fold, (e) => e.tag === 'button' && e.textContent === 'Answer it here instead').length, '"Answer it here instead" stays');
+      if (words) assert.equal(line().textContent, words);
+      if (!words) {
+        assert.ok(line().textContent.includes(HELD_SHOWN));
+        assert.equal(line().attrs['data-question'], 'held');
+        assert.equal(sbFindAll(line(), (e) => e.tag === 'a' && /\/new\//.test(e.attrs.href || '')).length, 5, 'its choices stay live');
       } else {
         await app.tap(line());
         assert.ok(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'fold:answerRecording')[0].textContent.includes(RECORDING_WORDS));

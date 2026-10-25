@@ -484,11 +484,17 @@ test('AC91 (g), rewritten in QW1: "new" on a card in "Waiting on you" raised aft
   }
 });
 
-test('AC91 (g): none in the Kicked back strip or in Done, even raised after "last looked"; none while the device holds no "last looked" (AC40\'s markers off); and gone after Home\'s "Mark as seen"', async () => {
+// Rewritten in QW1 (AC94; QW1's row: "`isNewCard`'s lane rule … and its cases, "new" now also in the section"): the lane
+// holds three new cards, its question being in the "Questions for you" section, where it is new too; the kicked-back
+// question there, as the strip's cards, is not; and `isNewCard` gives it for the section ('section').
+test('AC91 (g), rewritten in QW1: none in the Kicked back strip or in Done, even raised after "last looked"; none while the device holds no "last looked" (AC40\'s markers off); and gone after Home\'s "Mark as seen"; in the "Questions for you" section by the lane\'s rule, never on a kicked-back question', async () => {
   // "Last looked" 30 days back: every card with a raised time is raised after it.
   const app = await open(twoMixState(), { store: kickedStore(NOW - 30 * 24 * H) });
   try {
-    assert.ok(waitCards(app).filter(isShownNew).length >= 4, 'in "Waiting on you": new');
+    assert.ok(waitCards(app).filter(isShownNew).length >= 3, 'in "Waiting on you": new');
+    const inSection = (id) => findAll(keyed(app, 'qsec'), (e) => e.attrs && e.attrs['data-card'] === id)[0];
+    assert.equal(isShownNew(inSection(CARD.question(MIX_PROJECT))), true, 'in the section: new');
+    assert.equal(newOf(inSection(CARD.question(MIX_PROJECT2))), null, 'a kicked-back question in the section: none, as in the strip');
     for (const c of stripCards(app)) assert.equal(newOf(c), null, `${c.attrs['data-card']}: none in the strip`);
     for (const c of byClass(lane(app, 'done'), 'v2-card')) assert.equal(newOf(c), null, 'none in Done');
     assert.doesNotMatch(strip(app).textContent + lane(app, 'done').textContent, /\bnew\b/);
@@ -497,6 +503,7 @@ test('AC91 (g): none in the Kicked back strip or in Done, even raised after "las
     await app.tap(keyed(app, 'mark-seen'));
     await app.go('#/waiting');
     assert.deepEqual(waitCards(app).filter(isShownNew), [], 'gone after "Mark as seen"');
+    assert.equal(isShownNew(inSection(CARD.question(MIX_PROJECT))), false, 'in the section too');
   } finally {
     app.restore();
   }
@@ -510,6 +517,8 @@ test('AC91 (g): none in the Kicked back strip or in Done, even raised after "las
   const card = { raisedAt: NOW - H };
   assert.deepEqual([isNewCard(card, 'wait', NOW - 2 * H), isNewCard(card, 'wait', NOW - H), isNewCard(card, 'kick', NOW - 2 * H), isNewCard(card, 'done', NOW - 2 * H),
     isNewCard({ raisedAt: null }, 'wait', NOW - 2 * H), isNewCard(card, 'wait', null)], [true, false, false, false, false, false]);
+  assert.deepEqual([isNewCard(card, 'section', NOW - 2 * H), isNewCard(card, 'section', NOW - H), isNewCard({ raisedAt: null }, 'section', NOW - 2 * H), isNewCard(card, 'section', null)],
+    [true, false, false, false], 'QW1: in the section, by the same rule');
 });
 
 // The Reviewer's lesson from G1 (note 2): what shows a state that moves must follow it on the 15-second tick, not only

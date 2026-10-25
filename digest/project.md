@@ -19,6 +19,7 @@
 | L-0016 | Copied byte for byte from the model at 90f53e3: governance/checks/ governance_checks.py, v3_checks.py, record_checks.py, govlib.py, orchestrator.py, check_all.sh and the new asks_merge.py. The model's new template workflow … | 2026-10-17 | never |
 | L-0017 | asks-merge: granted, until the owner withdraws it by a later delegation entry superseding this one, with a decision beginning "asks-merge withdrawn:". The workflow merges only … | 2026-10-17 | never |
 | L-0018 | design-reviewer joins the roster as a read-only reviewer with the design domain pack (governance/domains/design/README.md). Its verdict is required on src/public/** (governance/risk-paths.toml), without raising a change's … | 2026-10-19 | never |
+| L-0019 | Until 09:36 UTC on the expiry date, the Orchestrator goes on with the plan after the glance audit (M3E's stages, then the plan's order) and … | 2026-10-25 | 2026-10-25 |
 
 ## Kills
 None.

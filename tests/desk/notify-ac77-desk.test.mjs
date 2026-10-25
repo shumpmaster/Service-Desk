@@ -263,7 +263,7 @@ test('AC77 (the desk): in a v2.5 project (poom/\'s placeholder form) the line ho
     await app.advance(1000);
     await app.advance(60_000);
     const v = await projectText(app);
-    assert.ok(v.includes(HELD_WORDS));
+    assert.ok(v.includes(HELD_SHOWN));
     assert.ok(v.includes(RECORDING_WORDS));
     assert.equal(stateOf(app), '1 waiting on you', 'only the pull request counts');
   } finally {

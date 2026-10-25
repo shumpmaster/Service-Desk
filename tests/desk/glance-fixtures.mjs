@@ -1,10 +1,11 @@
 // The fixture states of "After the glance audit" (spec S-001, AC91's note, "The fixtures"), built by the Builder on
 // tests/desk/fake-desk.mjs's in-memory repositories from committed fixtures, in the stage that first needs each.
 // G1 (Home at a glance) builds `text`, `mix`, `unread`, `stall`, signed-out and `ext`; G2 (Waiting) adds `quiet`, and
-// for the Kicked back strip a second made-up project and the Done marks a device keeps; the later stages add theirs
+// for the Kicked back strip a second made-up project and the Done marks a device keeps; G3 (gate titles) adds `gates`, two
+// made-up gate cards at one gate; the later stages add theirs
 // (`mix`'s made-up later Launch run for F1 and F2 is G5's; failed-load is G4's). Each made-up part is labelled NOT real
 // here and in tests/desk/fixtures/README.md.
-import { CONFIG } from './helpers.mjs';
+import { CONFIG, fixture } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
 import { waSetup, SD, POOM } from './wa-fixtures.mjs';
 import { fullRepo, v3, extremes, NOW } from './sandbox-fixtures.mjs';
@@ -144,5 +145,40 @@ export const KICKED = [
   { project: MIX_PROJECT, kind: 'gate', at: NOW - 13 * 60e3, kickedAt: NOW - 7 * 60e3 },
   { project: MIX_PROJECT2, kind: 'pr', at: NOW - 60e3 },
 ];
+
+/**
+ * `gates` (G3): `mix` with two more gate cards in the made-up project, both at the Launch gate (NOT real records), so one
+ * gate holds two cards whose first lines are the same: AC85's made-up Launch-gate card (tests/desk/fixtures/ac85/, in the
+ * Orchestrator's form, its section 1's second line naming the gate and its case) as item P-004's card 1, "The Launch
+ * gate, case 1.", and the same card as item P-005's card 2, "The Launch gate, case 2.", each with its status file, its
+ * `card` line in the dispatch log (raised 60 and 30 minutes before NOW) and AC85's made-up case under its own path. The
+ * made-up project's own Build-gate card (md-extremes/gate-card.md, P-002) has no case line. With `caseLines: false`, the
+ * two Launch cards' case lines are left out too, as a card written before the Orchestrator named its case.
+ */
+export const GATE4 = 'queue/P-004-launch-1.md';
+export const GATE5 = 'queue/P-005-launch-2.md';
+export const GATE_KEY = (p, path) => `${p}|gate|${path}`;
+export function gatesState({ caseLines = true } = {}) {
+  const s = mixState();
+  const alpha = s.repos[MIX_PROJECT];
+  const base = fixture('ac85/queue/P-003-launch-1.md');
+  const card = (item, n) => {
+    let t = base.replace(/P-003/g, item).replace(/launch-1/g, `launch-${n}`).replace(/card: 1 /, `card: ${n} `).replace('The Launch gate, case 1.', `The Launch gate, case ${n}.`);
+    if (!caseLines) t = t.replace(/^The Launch gate, case \d+\.\n/m, '');
+    return t.replace("NOT a real record: made up for AC85's test.", "NOT a real record: made up for AC85's test, and copied for G3's two cards at one gate.");
+  };
+  const at = (min) => new Date(NOW - min * 60e3).toISOString().replace(/\.\d+Z$/, 'Z');
+  const status = (n) => `kind = "project"\nstage = 6\nstate = "waiting-owner"\nrole = "user-rep"\ngate = "launch"\ncard = ${n}\ngate_n = ${n}\n`;
+  const lines = [['P-004', 1, 60], ['P-005', 2, 30]].map(([item, n, min]) => JSON.stringify({ item, action: 'card', card: n, gate: 'launch', role: 'user-rep',
+    route: 'launch-gate', stage: 6, gate_n: n, time: at(min), trigger: 'x' }));
+  alpha.commit({
+    [GATE4]: card('P-004', 1), [GATE5]: card('P-005', 2),
+    'status/P-004.toml': status(1), 'status/P-005.toml': status(2),
+    'docs/gates/P-004/launch-gate-1-case.md': fixture('ac85/docs/gates/P-003/launch-gate-1-case.md'),
+    'docs/gates/P-005/launch-gate-2-case.md': fixture('ac85/docs/gates/P-003/launch-gate-1-case.md'),
+    'dispatch-log/2026-10.jsonl': `${alpha.files['dispatch-log/2026-10.jsonl'].trimEnd()}\n${lines.join('\n')}\n`,
+  });
+  return s;
+}
 
 export { SD, POOM, CONFIG };

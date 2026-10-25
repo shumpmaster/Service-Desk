@@ -703,3 +703,19 @@ and `tests/desk/tools/glance-shots.mjs` captures it:
 - **"last looked" times** on a device (`desk-seen-v1`), made up: 5 hours and 30 days before the clock, and none.
 
 AC80's, AC66's, AC88's and AC89's tests rewritten in G2 add nothing new: they use their own made-up records, above.
+
+## After the glance audit, G3 (2026-10-24, S-001 AC91 (h); AC80, AC85, AC86 and AC89 (j) changed)
+
+`tests/desk/glance-fixtures.mjs` adds the state G3 needs; `tests/desk/ac91-glance-gates.test.mjs` opens Waiting, the gate
+sheets and Plan on it, and `tests/desk/tools/glance-shots.mjs` captures them (`g3-`):
+- **`gates`**: `mix`, with two more gate cards in the made-up project "Alpha", both at the Launch gate, **NOT real
+  records**: AC85's made-up Launch-gate card (`ac85/queue/P-003-launch-1.md`, above) copied as item P-004's card 1 ("The
+  Launch gate, case 1.") and as item P-005's card 2 ("The Launch gate, case 2."), its section 2 saying it was copied for
+  G3; for each, a made-up status file (`status/P-004.toml`, `status/P-005.toml`, waiting on the owner at that card), a
+  made-up `card` line in Alpha's dispatch log (raised 60 and 30 minutes before the clock) and AC85's made-up case under its
+  own path (`docs/gates/P-004/launch-gate-1-case.md`, `docs/gates/P-005/launch-gate-2-case.md`). Alpha's own Build-gate
+  card (`md-extremes/gate-card.md`, P-002) has no case line in its section 1.
+- **`gates` with `caseLines: false`**: the same, with the two Launch cards' case lines left out (made up: as a card
+  written before the Orchestrator named its case).
+
+AC80's, AC85's, AC86's, AC88's and AC89 (j)'s tests rewritten in G3 add nothing new: they use their own made-up records, above.

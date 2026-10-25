@@ -75,7 +75,7 @@ function waitingOn(rows, id) {
 /**
  * A gate card waiting on the owner, as a row of its own in its project's group (AC86, frame 11:
  * "Launch gate · waits on you", desk-v2.html:840; the build review's B1, round 1): the vermilion ◆, the
- * card's title as the board shows it, "<Phase> gate · waits on you" and "after your ruling" at its right.
+ * card's title as the board shows it (the gate's short title, AC91 (h)), "<Phase> gate · waits on you" and "after your ruling" at its right.
  * `card` is the board's card (AC80, kind `gate`). It is never one of the milestones, so it is in no
  * order, no plan and no rough finish, and no milestone row loses its state or finish to it.
  */

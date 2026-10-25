@@ -1183,8 +1183,9 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-plrow > .v2-chev { width: 10px; height: 10px; margin-top: 4px; color: var(--ink2); }
 .v2-plord { display: contents; }
 .v2-plname { overflow-wrap: break-word; }
-/* A gate card's row (AC86, frame 11): its title held to three lines, as the board's (AC80); the whole card one tap away. */
-.v2-plli.gate .v2-plname { max-height: calc(3 * 1.35em); overflow: hidden; overflow: clip; }
+/* A gate card's row (AC86, frame 11): its title the gate's short title, held to two lines, as the board's (AC91 (h); AC89 (j),
+   changed after the glance audit); the whole card one tap away. */
+.v2-plli.gate .v2-plname { max-height: calc(2 * 1.35em); overflow: hidden; overflow: clip; }
 .v2-plm { overflow-wrap: anywhere; }
 .v2-plv { font: var(--t-mono); color: var(--ink2); text-align: right; padding-top: 1px; }
 .v2-plv.accept, .v2-plv.ruling { font: var(--t-small); }
@@ -1256,8 +1257,16 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-dq { display: block; margin-top: 4px; }
 .v2-tt { display: block; max-height: calc(3 * 1.33em); overflow: hidden; overflow: clip; }
 .v2-tt.over, .v2-plli.gate .v2-plname.over { -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
-.v2-clip.v2-stt { display: block; max-height: calc(3 * 1.3em); }
+.v2-clip.v2-stt { display: block; max-height: calc(2 * 1.3em); }
 .v2-clip.v2-stt.open { max-height: none; }
+/* G3 of "After the glance audit" (AC91 (h)): one short title for every gate, the same words on the board, in its sheet and
+   on Plan, so it takes one line or two at 360 px; should it need more, it is cut at two lines with the fade: a gate card's
+   title on the board, a gate sheet's (the only sheet title held to lines) and Plan's gate row (above). The board's other
+   card titles keep AC89 (j)'s three. */
+.v2-card.gate .v2-tt { max-height: calc(2 * 1.33em); }
+/* G3: the item ending a gate's short title ("P-004") moves to the next line as one piece, so a wrap never splits it at its
+   hyphen; an inline block, not `nowrap`, so it still wraps inside should it ever be wider than its line (AC42). */
+.v2-gitem { display: inline-block; }
 
 /* M3D stage 6a, the words and drawing on the screens (AC89 (f), (g), (k)). (g) The Timeline's sprint marks level: every
    mark, a plain one too, as tall as one with a reason (its 24 px summary), so centred on one line their tops meet. (k) The

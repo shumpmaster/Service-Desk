@@ -679,7 +679,9 @@ test('AC80 with AC74: a tap\'s address opens the board with that card\'s sheet i
 // AC52's one card of each kind
 
 
-test('AC80, rewritten in G3 (AC91 (h)): AC52\'s one card of each kind — a decision card\'s "Answer", a gate card\'s short title, its four buttons and two lines, a hold card\'s and a merge card\'s "Open ↗", a pull request\'s step, a deploy\'s "Approve ↗" in a deploysNeedOwner project', async () => {
+// Rewritten in QW1 (AC94, reading (b)): the question of AC52's one of each is in the "Questions for you" section, its
+// choices as buttons, not a card in "Waiting on you"; the lane holds the six other kinds, as the section holds no other.
+test('AC80, rewritten in G3 (AC91 (h)) and in QW1 (AC94): AC52\'s one card of each kind — a decision card\'s "Answer", a gate card\'s short title, its four buttons and two lines, a hold card\'s and a merge card\'s "Open ↗", a pull request\'s step, a deploy\'s "Approve ↗" in a deploysNeedOwner project; the question in the section', async () => {
   const project = { ...v3('Alpha'), deploysNeedOwner: true };
   const app = await loadSandbox({ config: { ...CONFIG, projects: [project] }, repos: { Alpha: fullRepo('Alpha') }, hash: '#/waiting', now: Date.parse('2026-10-14T15:00:00Z') });
   try {
@@ -688,7 +690,10 @@ test('AC80, rewritten in G3 (AC91 (h)): AC52\'s one card of each kind — a deci
     const cards = cardsIn(app, 'wait');
     const by = (kind) => cards.filter((c) => byClass(c, 'v2-kd')[0].textContent === kind);
     const kinds = cards.map((c) => byClass(c, 'v2-kd')[0].textContent).sort();
-    assert.deepEqual(kinds, ['Decision', 'Deploy', 'Gate · Build', 'Hold', 'Merge card', 'Pull request', 'Question'].sort(), kinds.join(', '));
+    assert.deepEqual(kinds, ['Decision', 'Deploy', 'Gate · Build', 'Hold', 'Merge card', 'Pull request'].sort(), kinds.join(', '));
+    const qs = byClass(keyed(app, 'qsec'), 'v2-card');
+    assert.deepEqual(qs.map((c) => [byClass(c, 'v2-kd')[0].textContent, byClass(c, 'v2-t')[0].textContent]), [['Question', "Alpha's question"]], 'the question, in the section only');
+    assert.deepEqual(byClass(qs[0], 'v2-abtn').map((b) => b.textContent), ['Answer A ↗', 'Answer B ↗'], 'its choices as buttons');
     assert.equal(byClass(by('Decision')[0], 'v2-step')[0].textContent, 'Answer');
     const gate = by('Gate · Build')[0];
     // Rewritten in G3 (AC91 (h); AC80's note "After the glance audit": "a gate card's short title"): the made-up Build-gate

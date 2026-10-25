@@ -216,7 +216,9 @@ test('AC80: "Done ✓" in a sheet marks the card at once: it heads Done as "Conf
     assert.equal(byClass(conf[0], 'v2-step')[0].textContent, 'Merge ↗', 'its step\'s button, beside "Undo"');
     assert.ok(findAll(conf[0], (e) => e.tag === 'button' && e.textContent === 'Undo').length);
     assert.equal(badge(app), '7', 'the badge at once');
-    assert.equal(byClass(lane(app, 'wait'), 'v2-lc')[0].textContent, '7');
+    // Rewritten in QW1 (AC94): the lane counts the cards left in it, the four pull requests; the three questions are in the
+    // "Questions for you" section, still in the badge.
+    assert.equal(byClass(lane(app, 'wait'), 'v2-lc')[0].textContent, '4');
     const kept = JSON.parse(store.backing.get(MARKS_KEY));
     assert.ok(kept.marks[PR(126)], 'kept on the device');
     assert.equal(kept.marks[PR(126)].step, 'merge');

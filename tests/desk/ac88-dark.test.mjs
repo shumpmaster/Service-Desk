@@ -34,7 +34,7 @@ import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
 import { BAD_PR } from './fake-desk.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
-import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS } from './glance-fixtures.mjs';
+import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS } from './glance-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -626,6 +626,18 @@ function okBadCheck(app, where, fails, seen, places) {
         else if (n.kids.some((c) => c.tag === 'svg')) fail(n, '"Since you last looked"\'s missing line with an icon: it has none');
         else places.add('grey: "Since you last looked"\'s missing line');
       }
+      // G8b (AC24's note, P-001-glance-moved-word.md, B; AC92 (a), noted: "the word also shown, small and grey, in --ink2 …
+      // and no third colour"): Plan's moved row's word "moved", in --ink2, never --ok, --bad, --gold or --you, with no icon.
+      if (n.tag === 'span' && n.cls.has('v2-plmoved')) {
+        const raw = n.style.get('color') || '';
+        const col = plain(raw).trim().toLowerCase();
+        const not = ['--gold', '--you'].map((t) => THEME[way.theme][t].toLowerCase());
+        const row = (() => { for (let a = n.parent; a; a = a.parent) if (a.tag === 'li' && a.cls.has('v2-plli')) return a; return null; })();
+        if (isOkBad(raw) || not.includes(col) || marks(raw).some((m) => ['--gold', '--you'].includes(m.name)) || col !== THEME[way.theme]['--ink2'].toLowerCase()) fail(n, `Plan's "moved" word in ${col}: it is --ink2`);
+        else if (n.kids.some((c) => c.tag === 'svg')) fail(n, 'Plan\'s "moved" word with an icon: it has none');
+        else if (!row || !row.cls.has('moved')) fail(n, 'Plan\'s "moved" word on a row not moved');
+        else places.add('grey: Plan\'s "moved" word');
+      }
       // The grey "Can't show this" lines and the rules that draw nothing: never red, and never matched.
       if (n.cls.has('v2-small') && n.cls.has('bad') && n.text.trim()) {
         if (isOkBad(n.style.get('color') || '')) fail(n, 'a "Can\'t show this" line in --ok or --bad: it stays grey');
@@ -750,6 +762,18 @@ test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --o
       app.restore();
     }
   }
+  // G8b (AC24's note; P-001-glance-moved-word.md, B): Plan with a row moved, in the ordering and out of it, beside a gate
+  // card's row and with a long made-up name (tests/desk/glance-fixtures.mjs's G8B_OPENS, NOT real), so the walk reads the
+  // word "moved" on each; G7's Plan above draws it too, Reached opened.
+  for (const [where, open] of G8B_OPENS) {
+    const app = await open();
+    try {
+      check(app, `G8b ${where}`, fails, seen);
+      counts.screens++;
+    } finally {
+      app.restore();
+    }
+  }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // Each mark on AC92 (a)'s list and each exception the fixtures reach was drawn, so the check read them where they are meant to be.
@@ -760,7 +784,7 @@ test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --o
     'ruled: a tile\'s foot or a tile the desk can\'t draw', 'ruled: a page\'s waits row', 'ruled: Waiting\'s and "Since you last looked"\'s quiet line',
     'ruled: a group head\'s can\'t-read count', 'reading (e): the notifications warning', 'grey: a "Can\'t show this" line',
     'ink: the portfolio\'s problem line', 'ink: a portfolio card\'s note', 'ink: the portfolio block\'s "nothing queued" tick', 'ink: a portfolio block\'s mark',
-    'ink: Plan\'s ideas', 'grey: "Since you last looked"\'s missing line']) {
+    'ink: Plan\'s ideas', 'grey: "Since you last looked"\'s missing line', 'grey: Plan\'s "moved" word']) {
     assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
   }
 });
@@ -1155,9 +1179,22 @@ const G7_EXCEPT = (n, d, theme) => {
  * `.v2-stats`) a 24 px target, `.v2-timeline .v2-stats span.sb-mkw { min-height: 24px; }`, after bd4097d. The walk first
  * reaches it on the Timeline with every sprint opened (G8's round 2, from G7's reviews, round 1, note 1), so it is named
  * here, on its own element, its one declaration, the same in each theme.
+ * The same stage's design review (22eca92, and 00446a5, round 2: "the move controls fill the row") gave the ordering's
+ * move controls, on a row with no lines under it (`li.v2-plli.ord` holding no `.v2-plunder`), the row's height shared
+ * between the two: `.v2-plli.ord:not(:has(.v2-plunder)) > .v2-plmove { grid-row: 1; padding: 0; align-self: stretch;
+ * grid-auto-rows: minmax(24px, 1fr); }` and its buttons `height: auto`. The walk first reaches the ordering opened on G8b's
+ * screens (tests/desk/glance-fixtures.mjs's G8B_OPENS), so it is named here too, on its own elements, the same in each theme.
  */
-const PRE_G7_ONCE = new Map([['span.sb-mkw (a Timeline\'s sprint mark)', ['min-height: (none) → 24px']]]);
+const PRE_G7_ONCE = new Map([
+  ['span.sb-mkw (a Timeline\'s sprint mark)', ['min-height: (none) → 24px']],
+  ['div.v2-plmove (the ordering, a row with nothing under it)', ['grid-row: 1 / span 2 → 1', 'grid-auto-rows: 32px → minmax(24px, 1fr)', 'padding: 6px 0 → 0', 'align-self: (none) → stretch']],
+  ['button.v2-plmv (the ordering, a row with nothing under it)', ['height: 32px → auto']],
+]);
 const PRE_G7_KEY = (n) => {
+  const bare = (x) => Boolean(x && x.tag === 'div' && x.cls.has('v2-plmove') && x.parent && x.parent.tag === 'li' && x.parent.cls.has('v2-plli') && x.parent.cls.has('ord')
+    && !x.parent.kids.some((c) => c.cls.has('v2-plunder')));
+  if (bare(n)) return 'div.v2-plmove (the ordering, a row with nothing under it)';
+  if (n.tag === 'button' && n.cls.has('v2-plmv') && bare(n.parent)) return 'button.v2-plmv (the ordering, a row with nothing under it)';
   if (n.tag !== 'span' || !n.cls.has('sb-mkw')) return null;
   let stats = false;
   for (let q = n.parent; q; q = q.parent) {
@@ -1236,6 +1273,31 @@ const G8_EXCEPT = (n, d, theme) => {
   const k = G8_KEY(n);
   return Boolean(k && G8_ONCE.get(theme) && (G8_ONCE.get(theme).get(k) || []).includes(d)) ? `G8 ${theme} ${k} ${d}` : null;
 };
+/**
+ * G8b of "After the glance audit"'s change to the look on purpose (the brief's rule; AC24's note, P-001-glance-moved-word.md,
+ * B: "the one word "moved", in `--t-small` and `--ink2` … never `--gold` and never `--you`, with no icon, no fill and no
+ * border"), each declaration pinned to its value, before and after, in each theme, on only its own element: the word
+ * (`span.v2-plmoved`, a new element in the moved row's text column, `li.v2-plli.moved > a.v2-plrow > span.v2-prt`), its
+ * font --t-small and its colour --ink2, so its text's size, line height and colour change from the column's 13 px ink.
+ * Its line of its own is the column's grid (`.v2-prt`, a rule that was there); the edge is G7's, unchanged. The walk
+ * reaches it on G7's Plan (G7_OPENS) and G8b's screens (tests/desk/glance-fixtures.mjs's G8B_OPENS, below).
+ */
+const G8B_LOOK = (ink, ink2) => new Map([
+  ['span.v2-plmoved (Plan\'s moved row)', [`font: (none) → ${G1_FONT('400 12px/1.4')}`, `color: (none) → ${ink2}`,
+    'computed font-size: 13px → 12px', 'computed line-height: 18.849999999999998px → 16.799999999999997px', `computed color: ${ink} → ${ink2}`]],
+]);
+const G8B_ONCE = new Map([['light', G8B_LOOK('#18191c', '#5c5f66')], ['dark', G8B_LOOK('#ecedef', '#a2a5ac')]]);
+const G8B_KEY = (n) => {
+  const col = n.parent;
+  const link = col && col.parent;
+  const li = link && link.parent;
+  return n.tag === 'span' && n.cls.has('v2-plmoved') && col.tag === 'span' && col.cls.has('v2-prt') && link.tag === 'a' && link.cls.has('v2-plrow')
+    && li && li.tag === 'li' && li.cls.has('v2-plli') && li.cls.has('moved') ? 'span.v2-plmoved (Plan\'s moved row)' : null;
+};
+const G8B_EXCEPT = (n, d, theme) => {
+  const k = G8B_KEY(n);
+  return Boolean(k && G8B_ONCE.get(theme) && (G8B_ONCE.get(theme).get(k) || []).includes(d)) ? `G8B ${theme} ${k} ${d}` : null;
+};
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
@@ -1291,6 +1353,8 @@ function sameLook(app, where, fails, seen) {
         if (g7b) { excepted.add(g7b); continue; }
         const g8 = G8_EXCEPT(b, d, way.theme);
         if (g8) { excepted.add(g8); continue; }
+        const g8b = G8B_EXCEPT(b, d, way.theme);
+        if (g8b) { excepted.add(g8b); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -1458,6 +1522,19 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
       g7b.restore();
     }
   }
+  // G8b of "After the glance audit" (AC24's note; P-001-glance-moved-word.md, B): Plan with a row moved, in the ordering and
+  // out of it, with a long made-up name and beside a gate card's row (tests/desk/glance-fixtures.mjs's G8B_OPENS, its
+  // made-up parts NOT real), so the walk reaches the word "moved" in each, pinned in G8B_ONCE.
+  for (const [where, open] of G8B_OPENS) {
+    const g8b = await open();
+    try {
+      assert.equal(findAll(g8b.view, (e) => / v2-plmoved /.test(` ${e.className || ''} `)).length, 1, `${where}: the word drawn`);
+      sameLook(g8b, `G8b ${where}`, fails, seen);
+      counts.screens++;
+    } finally {
+      g8b.restore();
+    }
+  }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // The named exception was met, and only in its own forms: Home, Waiting, Plan, a project, Team and the Timeline.
@@ -1498,7 +1575,7 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // G7's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
   const g7 = [...G7_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G7 ${theme} ${k} ${d}`))).sort();
   assert.deepEqual([...excepted].filter((x) => /^G7 /.test(x)).sort(), g7);
-  // The exception older than G7 (stage 6a after MD3) was met, its one declaration on its own element, and nothing else of it.
+  // The exceptions older than G7 (stage 6a after MD3) were met, each declaration on its own element, and nothing else of them.
   const pre7 = [...PRE_G7_ONCE].flatMap(([k, ds]) => ds.map((d) => `PRE-G7 ${k} ${d}`)).sort();
   assert.deepEqual([...excepted].filter((x) => /^PRE-G7 /.test(x)).sort(), pre7);
   // G7b's exception was met, each pinned declaration on its own element, and nothing else of it.
@@ -1507,7 +1584,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // G8's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
   const g8 = [...G8_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G8 ${theme} ${k} ${d}`))).sort();
   assert.deepEqual([...excepted].filter((x) => /^G8 /.test(x)).sort(), g8);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[12345678] |G7B |PRE-G7 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // G8b's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
+  const g8b = [...G8B_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G8B ${theme} ${k} ${d}`))).sort();
+  assert.deepEqual([...excepted].filter((x) => /^G8B /.test(x)).sort(), g8b);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[12345678] |G7B |G8B |PRE-G7 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

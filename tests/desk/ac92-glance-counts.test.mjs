@@ -178,6 +178,20 @@ test('AC92 (c): the one sprint form — "<s> sprints · <m> merged, <w> not read
   assert.equal(sprintsWords(null), 'sprints not available', 'and in words, never a 0');
 });
 
+// Added after G5's review, round 1, note 2 (AC92 (c)'s head, the Definer's note: "where T sums to 0, "Milestones by phase ·
+// none tracked yet", never "0 of 0""): the head's three forms, and the sums of a made-up project with nothing counted.
+test('AC92 (c) (G5\'s review, note 2): the section\'s head — "Milestones by phase · <R> of <T> reached"; "Milestones by phase · none tracked yet" where every phase\'s T sums to 0, never "0 of 0 reached"; "Milestones by phase" alone where the phases aren\'t tracked', async () => {
+  assert.equal(PAGE_WORDS.milestonesHead({ R: 3, T: 5 }), 'Milestones by phase · 3 of 5 reached');
+  assert.equal(PAGE_WORDS.milestonesHead({ R: 0, T: 1 }), 'Milestones by phase · 0 of 1 reached');
+  assert.equal(PAGE_WORDS.milestonesHead({ R: 0, T: 0 }), 'Milestones by phase · none tracked yet');
+  assert.equal(PAGE_WORDS.milestonesHead(null), 'Milestones by phase');
+  // A made-up context (NOT real) with runs in every phase and nothing counted: the sums are { R: 0, T: 0 }.
+  const ctx = fake({ runs: ['Discovery', 'Design', 'Build', 'Launch'].map((phase) => ({ phase, iteration: 1, state: phase === 'Discovery' ? 'now' : 'still to come' })) });
+  const sum = ['Discovery', 'Design', 'Build', 'Launch'].map((ph) => phaseCounts(ctx, ph)).reduce((a, c) => ({ R: a.R + c.R, T: a.T + c.T }), { R: 0, T: 0 });
+  assert.deepEqual(sum, { R: 0, T: 0 });
+  assert.equal(PAGE_WORDS.milestonesHead(sum), 'Milestones by phase · none tracked yet');
+});
+
 // Added after G5's review, round 1 (B1): two runs can share a Timeline block's key, "<Phase>-i<n>" (a project's first
 // item's run and a later item's), and the blocks come in display order, so a lookup by key alone gave the other run's
 // block, and a phase lost its sprints. Each run's block is now found by the run itself, the key only where none is.

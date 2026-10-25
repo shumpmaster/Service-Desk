@@ -26,8 +26,9 @@ export const PAGE_WORDS = Object.freeze({
   overview: 'Overview',
   timeline: 'Timeline',
   // AC92 (c), from G5: "Milestones by phase · <R> of <T> reached", R and T summed over the phases, in place of "yours and
-  // the model's <n>"; with nothing tracked, the head alone, never a count the records don't give.
-  milestonesHead: (c) => (c ? `Milestones by phase · ${c.R} of ${c.T} reached` : 'Milestones by phase'),
+  // the model's <n>"; where T sums to 0, "Milestones by phase · none tracked yet", never "0 of 0" (G5's review, round 1,
+  // note 2); where the phases aren't tracked (no sums), the head alone, never a count the records don't give.
+  milestonesHead: (c) => (!c ? 'Milestones by phase' : c.T ? `Milestones by phase · ${c.R} of ${c.T} reached` : 'Milestones by phase · none tracked yet'),
   startFoot: '↑ start at the foot',
   rest: 'The rest',
   values: 'Value targets',

@@ -127,7 +127,7 @@ test('AC77 (the desk): still held at 7 hours 59 minutes; ordinary at 8 hours, wi
 test('AC77 (the desk): the real question unchanged (no line) is an ordinary waiting question, with its answer link', async () => {
   const app = await open({ [QPATH]: REAL_Q, [SESSION_PATH]: REAL_SESSION });
   try {
-    assert.ok(!(await projectText(app)).includes(HELD_WORDS));
+    assert.ok(!(await projectText(app)).includes(HELD_SHOWN));
     assert.equal(stateOf(app), '1 waiting on you');
     assert.ok(await pick(app));
   } finally {

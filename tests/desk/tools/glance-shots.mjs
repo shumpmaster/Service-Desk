@@ -13,7 +13,9 @@
 // the viewport; and, on G5's waits rows (AC89 (c)), the row's words and whether its cut hides any; and, on G6's pages
 // (AC92 (d)), each opened phase's heads and fold rows; and, on G7's (AC92 (a)), how many status marks are green and red;
 // and, on G7b's (AC91 (c)), each of "Since you last looked"'s missing lines, how many lines it takes and whether any is cut;
-// and, on G8's (AC92 (b)), each arrow, its drawing, its size and where it sits against what it points at.
+// and, on G8's (AC92 (b)), each arrow, its drawing, its size and where it sits against what it points at; and, on G8b's
+// (AC24's note), Plan's word "moved": how many are drawn, how far under the code line and how far from the name's left it
+// sits, its lines, and the moved row's name, its lines and whether it is cut (it must not be).
 // G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
 // the screen as it opens (the viewport), not the whole page.
@@ -22,7 +24,7 @@ import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
-import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, ciState, mismatchState, nowShared, sprintsState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
+import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, ciState, mismatchState, nowShared, sprintsState, longNameState, PLAN_NOW, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
 import { sdRepo, SD3 } from '../tv2-fixtures.mjs';
 import { CONFIG } from '../helpers.mjs';
 import { waSetup, WORKED } from '../wa-fixtures.mjs';
@@ -171,6 +173,14 @@ const SHOTS = [
   { name: 'g8-plan-mix', state: () => mixState(), now: NOW, looked: LATE, hash: '#/work' },
   { name: 'g8-plan-now-launch', state: () => nowShared('launch'), now: NOW, looked: LATE, hash: '#/work' },
   { name: 'g8-plan-ordering', state: () => mixState(), now: NOW, looked: LATE, hash: '#/work', click: ['[data-k="plan-order"]'] },
+  // G8b: Plan's moved row shows the word "moved" (AC24's note; P-001-glance-moved-word.md, B), each draft made up (NOT a real
+  // device's): `text` with the worked estimates, M3A moved up; the long made-up name (NOT real) on M3B, moved up; and `gates`'
+  // made-up project's MD3 moved up beside its gate cards' rows; each with the ordering closed again and open.
+  ...[['plan', () => waSetup({ extra: { 'intake/estimates.jsonl': WORKED() } }), PLAN_NOW, `${SD.name}|M3A`], ['plan-long', longNameState, PLAN_NOW, `${SD.name}|M3B`],
+    ['plan-gates', () => gatesState(), NOW, `${MIX_PROJECT}|MD3`]].flatMap(([n, state, now, k]) => [
+    { name: `g8b-${n}-moved`, state, now, looked: LATE, hash: '#/work', click: ['[data-k="plan-order"]', `[data-k="wa-up:${k}"]`, '[data-k="plan-order"]'] },
+    { name: `g8b-${n}-moved-ordering`, state, now, looked: LATE, hash: '#/work', click: ['[data-k="plan-order"]', `[data-k="wa-up:${k}"]`] },
+  ]),
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {
@@ -344,9 +354,21 @@ async function main() {
             const lx = line ? line.getBoundingClientRect().left + parseFloat(getComputedStyle(line, '::before').left) + 0.5 : NaN;
             return `opened phase ${box}, centre x ${Math.round(b.left + b.width / 2 - lx)} px off the line's, centre ${Math.round(mid(b) - mid(i))} px off the icon's, ${hidden}`;
           }));
+          // G8b (AC24's note): each "moved" word, where it sits against its row's code line and name, its lines, and the
+          // moved row's name, its lines and whether anything cuts it.
+          const moved = await page.evaluate(() => [...document.querySelectorAll('.v2-plmoved')].map((e) => {
+            const lines = (x) => Math.round(x.getBoundingClientRect().height / (parseFloat(getComputedStyle(x).lineHeight) || 1));
+            const cut = (x) => x.scrollHeight > x.clientHeight + 1 || x.scrollWidth > x.clientWidth + 1;
+            const li = e.closest('li');
+            const code = e.parentElement.querySelector('.v2-plm').getBoundingClientRect();
+            const nm = e.parentElement.querySelector('.v2-plname');
+            const b = e.getBoundingClientRect();
+            const n = nm.getBoundingClientRect();
+            return `${li.dataset.row}: "${e.textContent}" ${lines(e)} line(s), ${Math.round(b.top - code.bottom)} px under the code line, ${Math.round(b.left - n.left)} px from the name's left, ${Math.round(b.width)} px wide${cut(e) ? ', CUT' : ''}; the name ${lines(nm)} line(s), ${Math.round(n.width)} px wide${cut(nm) ? ', CUT' : ', whole'}${li.classList.contains('moved') ? '' : ', NOT on the moved row'}${e.getAttribute('aria-hidden') === 'true' ? '' : ', NOT hidden'}`;
+          }));
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}`);
           await ctx.close();
         }
       }

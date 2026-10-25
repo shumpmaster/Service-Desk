@@ -376,7 +376,7 @@ test('AC77 (draft 6; the desk): at a new opening, an answer\'s own-branch pull r
     { extra: { repo: { closedPulls: [closedPr(98, { closed: '2026-10-18T11:35:00Z' })], prFiles: { 98: ADDS_ANSWER } } } });
   try {
     await app.advance(60_000);
-    assert.ok(!(await projectText(app)).includes(HELD_WORDS));
+    assert.ok(!(await projectText(app)).includes(HELD_SHOWN));
     assert.equal(stateOf(app), '1 waiting on you');
     const closedCalls = app.server.calls.filter((c) => c.path === '/api/blobs' && c.body.closed);
     assert.equal(closedCalls.length, 1, 'the closed read, once');

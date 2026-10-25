@@ -90,8 +90,9 @@ function followOpening(desk, built) {
   // "Opened from a notification"; a key this device marked done opens its Done row.
   if (d.kind === 'item') return { hash: go('waiting', 'card', t.key), words: OPENED_WORDS, key: t.key };
   if (d.kind === 'held') {
-    // AC77: the "Being asked in your session" fold, open.
-    boardState.folds.add('asking');
+    // AC77, changed by AC94 and AC95 (QW1): a held question is in the "Questions for you" section, at the top of Waiting,
+    // with that question in view (the quiet line "Being asked in your session" and its fold are gone).
+    scrollToRow = rowId(`q:${t.key}`);
     return { hash: '#/waiting', words: OPENED_WORDS, key: t.key };
   }
   if (d.kind === 'recording') {
@@ -2600,7 +2601,7 @@ function sectionCard(p, card, only, shown) {
   body.push(h('p', { class: 'v2-steps', key: `qacts:${id}` },
     h('a', { class: 'v2-step', href: cardRoute(only, id), key: `qmore:${id}`, onclick: () => { nav.opener = `qmore:${id}`; } }, SECTION_WORDS.more),
     card.held ? null : h('button', { type: 'button', class: 'v2-step', key: `qdone:${id}`, onclick: () => markCard(card) }, SECTION_WORDS.done)));
-  return h('li', { class: 'v2-card v2-qcard', key: `qcard:${id}`, 'data-card': id, 'data-question': card.held ? 'held' : kicked ? 'kicked' : 'counted' },
+  return h('li', { class: 'v2-card v2-qcard', key: `qcard:${id}`, id: rowId(`q:${id}`), 'data-card': id, 'data-question': card.held ? 'held' : kicked ? 'kicked' : 'counted' },
     kind,
     h('a', { class: 'v2-t', href: cardRoute(only, id), 'data-cardlink': '', key: `cardlink:${id}`, onclick: () => { nav.opener = `cardlink:${id}`; } }, cardTitle(card)),
     card.held ? h('span', { class: 'v2-body', key: 'qheld' }, SECTION_WORDS.heldLine) : null,

@@ -31,7 +31,7 @@ import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mj
 import { PF_ROWS } from '../../src/public/lib/portfolio.js';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { pageTally, pageSprints, sprintsWords } from '../../src/lib/projectpage.js';
-import { G9_OPENS, mixState, gatesState, extState, NOW } from './glance-fixtures.mjs';
+import { G9_OPENS, mixState, gatesState, quietState, extState, NOW } from './glance-fixtures.mjs';
 
 const RULES = (() => {
   const a = parseCss(readFileSync(join(SRC, 'public', 'style.css'), 'utf8'), 'style.css');
@@ -177,13 +177,13 @@ async function everyScreen(app, projects, where, fails, seen, counts) {
   }
 }
 
-test('AC92 (e): a box only on the screens the table names — Home\'s briefing on Home, the sentence and tally on a project\'s page, one at most on a screen, and none on the Timeline, Plan, Waiting, a sheet, Team, a member\'s page, Details or the portfolio; never inside a card, tile, sheet or box, never around an agents\' gap or a list of rows; no box on Waiting beside the Done lane\'s ground; every other filled ground one the criterion names (`mix`, with `text`\'s records, `gates`, `ext` and the portfolio; made-up parts NOT real)', async () => {
+test('AC92 (e): a box only on the screens the table names — Home\'s briefing on Home, the sentence and tally on a project\'s page, one at most on a screen, and none on the Timeline, Plan, Waiting, a sheet, Team, a member\'s page, Details or the portfolio; never inside a card, tile, sheet or box, never around an agents\' gap or a list of rows; no box on Waiting beside the Done lane\'s ground; every other filled ground one the criterion names (`mix`, with `text`\'s records, `gates`, `quiet`, `ext` and the portfolio; made-up parts NOT real)', async () => {
   const fails = [];
   const seen = new Set();
   const counts = { screens: 0 };
-  // `mix` holds `text`'s two projects with its made-up one; `gates` its gate cards and lanes; `ext` five projects and long
-  // texts; G9's own screens are checked to the same rule in the test below. One load a state: every load stays in memory.
-  for (const [where, state] of [['mix', () => mixState()], ['gates', () => gatesState()], ['ext', extState]]) {
+  // `mix` holds `text`'s two projects with its made-up one; `gates` its gate cards and lanes; `quiet` a project with
+  // nothing recorded; `ext` five projects and long texts; G9's own screens are checked to the same rule in the test below.
+  for (const [where, state] of [['mix', () => mixState()], ['gates', () => gatesState()], ['quiet', quietState], ['ext', extState]]) {
     const s = state();
     const app = await loadSandbox({ ...s, hash: '#/', now: NOW, store: memStore() });
     try {
@@ -209,7 +209,7 @@ test('AC92 (e): a box only on the screens the table names — Home\'s briefing o
     }
   }
   assert.deepEqual(fails, []);
-  assert.ok(counts.screens > 100, `${counts.screens} screens and sheets checked`);
+  assert.ok(counts.screens > 200, `${counts.screens} screens and sheets checked`);
   for (const want of ['box: Home\'s briefing', 'box: a project page\'s sentence and tally', 'box on Home', 'box on a project page', 'a screen with none',
     'not a box: the Done lane\'s ground', 'not a box: a Timeline goal box', 'not a box: a sheet\'s text box', 'not a box: a sheet\'s record']) {
     assert.ok(seen.has(want), `${want}: ${JSON.stringify([...seen])}`);

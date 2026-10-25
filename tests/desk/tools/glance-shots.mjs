@@ -19,7 +19,8 @@
 // AC92 (b)), the briefing's lines in order, the missing lines, and on each tile's now cell whether a line comes in and how
 // far it ends before the arrow, the arrow's gap to the icon; and, on G8d's (AC91 (c), AC89 (a)), the can't-read lines on
 // Waiting, a page and the Pipeline view, the cards drawn in "Waiting on you", and each group head's count parts, and, from
-// G8d's round 2, the red "Can't show" lines among them and the lanes' empty words and the strip's line.
+// G8d's round 2, the red "Can't show" lines among them and the lanes' empty words and the strip's line (from its round 3,
+// "Can't read or show" and "Can't show when last read" among them).
 // G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
 // the screen as it opens (the viewport), not the whole page.
@@ -29,7 +30,7 @@ import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
 import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, ciState, mismatchState, nowShared, sprintsState, longNameState, PLAN_NOW,
-  openingState, signedOutMixedState, orderState, blobFailState, cantShowState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
+  openingState, signedOutMixedState, orderState, blobFailState, cantShowState, noneDrawnState, cantShowLastState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
 import { sdRepo, SD3 } from '../tv2-fixtures.mjs';
 import { CONFIG } from '../helpers.mjs';
 import { waSetup, WORKED } from '../wa-fixtures.mjs';
@@ -223,6 +224,15 @@ const SHOTS = [
   { name: 'g8d-waiting-cant-show', state: () => cantShowState(), now: NOW, looked: LATE, hash: '#/waiting' },
   { name: 'g8d-waiting-cant-show-cards', state: () => cantShowState({ waiting: true }), now: NOW, looked: LATE, hash: '#/waiting' },
   { name: 'g8d-waiting-one-cant-show', state: () => cantShowState(), now: NOW, looked: LATE, hash: `#/waiting/${MIX_PROJECT}` },
+  // G8d's round 3 (AC91 (f), AC89 (a); P-001-glance-no-quiet-lanes.md and P-001-glance-cant-show-last-read.md, both "Ruling:
+  // A"): Waiting with every project shown and none read and drawn (BAD_PR and the failures made up, NOT real), with no card
+  // and with a last read's cards; the made-up project the desk can't draw alone shown in state 5, and both signed out.
+  { name: 'g8d-waiting-cant-read-or-show', state: () => noneDrawnState(), now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g8d-waiting-none-drawn', state: () => noneDrawnState({ every: true }), now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g8d-waiting-cant-read-or-show-cards', state: () => noneDrawnState({ waiting: true }), now: NOW, looked: LATE, later: true, hash: '#/waiting' },
+  { name: 'g8d-waiting-one-cant-show-last', state: () => cantShowLastState(), now: NOW, looked: LATE, later: true, hash: `#/waiting/${MIX_PROJECT}` },
+  { name: 'g8d-waiting-signed-out-cant-show', state: () => cantShowLastState({ signedOut: true }), now: NOW, looked: LATE, later: true, hash: '#/waiting' },
+  { name: 'g8d-waiting-one-signed-out-cant-show-last', state: () => cantShowLastState({ signedOut: true }), now: NOW, looked: LATE, later: true, hash: `#/waiting/${MIX_PROJECT}` },
   { name: 'g8d-home-signed-out-cant-show', state: () => { const s = signedOutState(); s.repos[MIX_PROJECT].pulls.push(BAD_PR); return s; }, now: NOW, looked: LATE, later: true },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */

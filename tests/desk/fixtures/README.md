@@ -946,10 +946,13 @@ Still no fixture file. `tests/desk/ac91-g8d.test.mjs`'s round-2 cases, G8d's wal
 
 ## After the glance audit, G9 (2026-10-25, S-001 AC92 (e); AC83 changed; P-001-glance2-anchor.md, A, widened by the owner)
 
-G9 adds no fixture file. `tests/desk/ac92-glance-boxes.test.mjs`, G9's walks in `ac88-dark.test.mjs` (AC92 (a)'s cascade
-check, whose want-list gains the page's soft box and the plain why line, and the stage-8 guard's `G9_ONCE`), AC83's
-rewritten sentence and why-line cases (`ac83-page.test.mjs`, on 77bfeae's real records) and the `g9-` captures open the
-states above and these made-up parts, each **NOT real**:
+G9 adds no fixture file. `tests/desk/ac92-glance-boxes.test.mjs` (its every-screen walk over `mix`, `gates`, `quiet`, `ext`
+and the portfolio, and G9's own screens, `G9_OPENS`, each opened once), G9's walks over `G9_OPENS` in `ac88-dark.test.mjs`
+(AC92 (a)'s cascade check, whose want-list gains the page's soft box and the plain why line, and the stage-8 guard, whose
+`G9_ONCE` pins them and, from G9's round 2, the run heads), AC83's rewritten sentence and why-line cases
+(`ac83-page.test.mjs`, on 77bfeae's real records), G9's round-2 run-heading case (`ac92-glance-standard.test.mjs`, on
+`mix`'s made-up project's Build and `gates`' Launch, the states above) and the `g9-` captures open the states above and
+these made-up parts, each **NOT real**:
 - **`fiveLinesState`** (`glance-fixtures.mjs`): `mix` with two made-up questions on the made-up project, one past its settle
   time (raised 6 Oct, 24 hours) and one that can't be undone, beside fullRepo's question that settles itself, as AC91 (a)'s
   test adds them, so Home's briefing holds five lines (its count, its parts and the three due and undo lines). **NOT real

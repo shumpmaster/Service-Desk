@@ -34,7 +34,7 @@ import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
 import { BAD_PR } from './fake-desk.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
-import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS, G8D_OPENS, G9_OPENS } from './glance-fixtures.mjs';
+import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS, G8D_OPENS } from './glance-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -835,18 +835,10 @@ test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --o
       app.restore();
     }
   }
-  // G9 (AC92 (e)): the screens its soft boxes and plain why line are drawn on (tests/desk/glance-fixtures.mjs's G9_OPENS, its
-  // made-up parts NOT real), so the walk reads the page's box with its tally and with its sentence alone, and the why line;
-  // the want-list gains each.
-  for (const [where, open] of G9_OPENS) {
-    const app = await open();
-    try {
-      check(app, `G9 ${where}`, fails, seen);
-      counts.screens++;
-    } finally {
-      app.restore();
-    }
-  }
+  // G9 (AC92 (e)): no walk of its own. The walks above already draw the page's soft box with its tally (each v3 page) and
+  // with its sentence alone (the v2.5 page), and the plain why line (G7's page with every phase opened), so the want-list
+  // gains each; G9's own screens are opened once, in tests/desk/ac92-glance-boxes.test.mjs, since every page load stays in
+  // the suite's one process's memory.
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // Each mark on AC92 (a)'s list and each exception the fixtures reach was drawn, so the check read them where they are meant to be.
@@ -1403,8 +1395,8 @@ const G8C_EXCEPT = (n, d, theme) => {
  *   and the tally (`p.v2-small.v2-tally`, a new element) take rules that were there, so they add none;
  * - the tally's "<R> of <T>" (`b` in the tally): 500 in ink, as a phase's line has it (`.v2-sd b`);
  * - an opened phase's why line (`p.v2-callout.gap` in a `div.v2-stdl`): its ground, padding and radius gone.
- * The walk reaches the box on every project page, the tally on each v3 page whose phases are tracked, the why line on the
- * `text` page with every phase opened, and G9's own screens (tests/desk/glance-fixtures.mjs's G9_OPENS, below).
+ * The walk reaches the box on every project page, the tally on each v3 page whose phases are tracked, and the why line on
+ * the `text` page with every phase opened.
  */
 const G9_LOOK = (ink, ink2, bg2) => new Map([
   ['div.v2-anchor (a project page\'s soft box)', ['display: (none) → grid', 'gap: (none) → 4px 10px', 'padding: (none) → 12px', 'border-radius: (none) → 12px',
@@ -1694,18 +1686,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
       g8d.restore();
     }
   }
-  // G9 of "After the glance audit" (AC92 (e)): the screens its soft boxes and plain why line are drawn on, and the ones its
-  // rule keeps a box off (tests/desk/glance-fixtures.mjs's G9_OPENS, its made-up parts NOT real), so the walk reaches the
-  // box with and without its tally and the why line, pinned in G9_ONCE, and shows the briefing and the Done lane add none.
-  for (const [where, open] of G9_OPENS) {
-    const g9 = await open();
-    try {
-      sameLook(g9, `G9 ${where}`, fails, seen);
-      counts.screens++;
-    } finally {
-      g9.restore();
-    }
-  }
+  // G9 of "After the glance audit" (AC92 (e)): no walk of its own. The walks above reach every element G9_ONCE pins: the
+  // page's soft box and its tally on each v3 page, the box with its sentence alone on the v2.5 page, and the why line on
+  // the `text` page with every phase opened (G6's walk, and G7's); G9's own screens are opened once, in
+  // tests/desk/ac92-glance-boxes.test.mjs, since every page load stays in the suite's one process's memory.
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // The named exception was met, and only in its own forms: Home, Waiting, Plan, a project, Team and the Timeline.

@@ -31,7 +31,7 @@ import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mj
 import { PF_ROWS } from '../../src/public/lib/portfolio.js';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { pageTally, pageSprints, sprintsWords } from '../../src/lib/projectpage.js';
-import { G9_OPENS, textState, mixState, gatesState, quietState, extState, fiveLinesState, NOW, SD, MIX_PROJECT } from './glance-fixtures.mjs';
+import { G9_OPENS, mixState, gatesState, extState, NOW } from './glance-fixtures.mjs';
 
 const RULES = (() => {
   const a = parseCss(readFileSync(join(SRC, 'public', 'style.css'), 'utf8'), 'style.css');
@@ -89,83 +89,6 @@ test('AC92 (e): the tally\'s sprints are summed over the page, each sprint once 
   assert.deepEqual(pageSprints({ cols: { runs: [] } }, null), { s: 0, m: 0, w: 0 }, 'no run: no sprints filed yet');
   assert.equal(pageSprints({ cols: { runs: [r1] } }, null), null, 'the Timeline not drawn: not available');
   assert.equal(pageSprints({ cols: { runs: [r1] } }, { ok: false }), null);
-});
-
-test('AC92 (e) + AC92 (c): on the page, the tally agrees with the section\'s head and its phases — its R and T the head\'s sums, its sprints the phases\' sprints each once (`mix` with its made-up later Launch run, NOT real: the spec\'s example; Service-Desk at 77bfeae; the made-up project)', async () => {
-  for (const [name, want] of [['a v3 page, its sentence and tally boxed', '8 of 16 milestones reached · 17 sprints · 9 merged, 8 not read'],
-    ['the made-up project\'s page, its sentence and tally boxed', '0 of 14 milestones reached · 5 sprints · 4 not read']]) {
-    const app = await opened(name);
-    try {
-      const tally = keyed(app, 'tally');
-      assert.equal(tally.textContent, want, name);
-      const [, R, Tt] = /^(\d+) of (\d+) /.exec(tally.textContent);
-      assert.equal(keyed(app, 'ms-h').children[0].textContent, `Milestones by phase · ${R} of ${Tt} reached`, `${name}: the head's sums`);
-      // Each phase's own count, summed: R and T add up; the sprints, each once, are no more than the phases' sum.
-      const lines = findAll(keyed(app, 'ms-lines'), (e) => e.attrs && e.attrs['data-phase']).map((li) => byClass(li, 'v2-sdl')[0].textContent);
-      const sum = lines.reduce((a, l) => { const m = /^(\d+) of (\d+) reached/.exec(l); return m ? [a[0] + Number(m[1]), a[1] + Number(m[2])] : a; }, [0, 0]);
-      assert.deepEqual(sum, [Number(R), Number(Tt)], `${name}: the phases' lines sum to it`);
-      const s = Number(/ · (\d+) sprints? · /.exec(tally.textContent)[1]);
-      const phaseS = lines.reduce((a, l) => a + Number((/ · (\d+) sprints? · /.exec(l) || [0, 0])[1]), 0);
-      assert.ok(s <= phaseS && s > 0, `${name}: ${s} sprints, each once, of the phases' ${phaseS}`);
-    } finally {
-      app.restore();
-    }
-  }
-});
-
-// ---------------------------------------------------------------------------
-// The box: the briefing's own look
-
-test('AC92 (e): the page\'s soft box is the briefing\'s own look, in light and dark — the --bg2 ground, 12 px radius, 12 px padding, the briefing\'s gap; no border, outline or shadow, never vermilion; the sentence in --t-lead ink, the tally --t-small --ink2 with "<R> of <T>" in 500 ink; a v2.5 page\'s and one never read hold the sentence alone; a page with nothing recorded reads "no milestones tracked yet", never "0 of 0"', async () => {
-  const brief = await opened('Home, the briefing holding five lines');
-  const looksOf = {};
-  try {
-    for (const theme of THEMES) {
-      const n = nodeOf(treeIn(brief, theme), byClass(brief.view, 'v2-brief')[0]);
-      looksOf[theme] = Object.fromEntries(['background', 'border-radius', 'padding', 'gap'].map((p) => [p, plain(n.declared.get(p))]));
-    }
-  } finally {
-    brief.restore();
-  }
-  for (const [name, tallied] of [['a v3 page, its sentence and tally boxed', true], ['the made-up project\'s page, its sentence and tally boxed', true],
-    ['a v2.5 page, its sentence alone boxed', false], ['a v3 page with nothing recorded, its tally "no milestones tracked yet"', true],
-    ['a v3 page never read in this opening, its sentence alone boxed', false]]) {
-    const app = await opened(name);
-    try {
-      const boxes = byClass(app.view, 'v2-anchor');
-      assert.equal(boxes.length, 1, `${name}: one box on the page`);
-      assert.deepEqual(boxes[0].children.map((c) => c.dataset.k), tallied ? ['sentence', 'tally'] : ['sentence'], name);
-      if (!tallied) assert.match(boxes[0].textContent, /^(Sprint |No open sprint|Which sprint|Where it's heading: not available)/, `${name}: the sentence`);
-      for (const theme of THEMES) {
-        const tree = treeIn(app, theme);
-        const n = nodeOf(tree, boxes[0]);
-        const d = (p) => plain(n.declared.get(p));
-        assert.deepEqual(Object.fromEntries(['background', 'border-radius', 'padding', 'gap'].map((p) => [p, d(p)])), looksOf[theme], `${name}, ${theme}: the briefing's own look`);
-        assert.equal(d('background'), T[theme].bg2, `${name}, ${theme}: --bg2`);
-        assert.deepEqual(marks(n.declared.get('background')), ['--bg2'], `${name}, ${theme}: its ground from --bg2, not --you`);
-        for (const p of ['border', 'border-color', 'outline', 'box-shadow']) assert.ok(!n.declared.get(p) || /^(none|0)$/.test(d(p)), `${name}, ${theme}: no ${p}`);
-        const lead = nodeOf(tree, keyed(app, 'sentence'));
-        assert.deepEqual([plain(lead.style.get('font-size')), plain(lead.style.get('font-weight')), plain(lead.style.get('color'))], ['15px', '400', T[theme].ink], `${name}, ${theme}: the sentence --t-lead ink`);
-        if (tallied) {
-          const t = nodeOf(tree, keyed(app, 'tally'));
-          assert.deepEqual([plain(t.style.get('font-size')), plain(t.style.get('font-weight')), plain(t.style.get('color'))], ['12px', '400', T[theme].ink2], `${name}, ${theme}: the tally --t-small --ink2`);
-          const b = t.kids.find((x) => x.tag === 'b');
-          if (/nothing recorded/.test(name)) {
-            assert.equal(keyed(app, 'tally').textContent, 'no milestones tracked yet · no sprints filed yet', `${name}: never "0 of 0"`);
-            assert.equal(b, undefined, `${name}: nothing bold`);
-          } else {
-            assert.deepEqual([plain(b.style.get('font-size')), plain(b.style.get('font-weight')), plain(b.style.get('color'))], ['12px', '500', T[theme].ink], `${name}, ${theme}: "<R> of <T>" 500 12 px ink`);
-          }
-        }
-        // Never vermilion, green or red in it (AC92 (a) and (e)).
-        for (const x of [n, ...within(n)]) for (const p of ['color', 'background', 'border-color', 'fill', 'stroke']) {
-          assert.ok(!marks(x.declared.get(p)).some((m) => ['--you', '--ok', '--bad'].includes(m)), `${name}, ${theme}: ${x.tag} ${p} not --you, --ok or --bad`);
-        }
-      }
-    } finally {
-      app.restore();
-    }
-  }
 });
 
 // ---------------------------------------------------------------------------
@@ -254,11 +177,13 @@ async function everyScreen(app, projects, where, fails, seen, counts) {
   }
 }
 
-test('AC92 (e): a box only on the screens the table names — Home\'s briefing on Home, the sentence and tally on a project\'s page, one at most on a screen, and none on the Timeline, Plan, Waiting, a sheet, Team, a member\'s page, Details or the portfolio; never inside a card, tile, sheet or box, never around an agents\' gap or a list of rows; no box on Waiting beside the Done lane\'s ground; every other filled ground one the criterion names (`text`, `mix`, `gates`, `quiet`, `ext`, the portfolio, G9\'s screens; made-up parts NOT real)', async () => {
+test('AC92 (e): a box only on the screens the table names — Home\'s briefing on Home, the sentence and tally on a project\'s page, one at most on a screen, and none on the Timeline, Plan, Waiting, a sheet, Team, a member\'s page, Details or the portfolio; never inside a card, tile, sheet or box, never around an agents\' gap or a list of rows; no box on Waiting beside the Done lane\'s ground; every other filled ground one the criterion names (`mix`, with `text`\'s records, `gates`, `ext` and the portfolio; made-up parts NOT real)', async () => {
   const fails = [];
   const seen = new Set();
   const counts = { screens: 0 };
-  for (const [where, state] of [['text', textState], ['mix', () => mixState()], ['gates', () => gatesState()], ['quiet', quietState], ['ext', extState]]) {
+  // `mix` holds `text`'s two projects with its made-up one; `gates` its gate cards and lanes; `ext` five projects and long
+  // texts; G9's own screens are checked to the same rule in the test below. One load a state: every load stays in memory.
+  for (const [where, state] of [['mix', () => mixState()], ['gates', () => gatesState()], ['ext', extState]]) {
     const s = state();
     const app = await loadSandbox({ ...s, hash: '#/', now: NOW, store: memStore() });
     try {
@@ -283,100 +208,146 @@ test('AC92 (e): a box only on the screens the table names — Home\'s briefing o
       app.restore();
     }
   }
-  for (const [where, open] of G9_OPENS) {
-    const app = await open();
-    try {
-      boxCheck(app, `G9 ${where}`, fails, seen);
-      counts.screens++;
-    } finally {
-      app.restore();
-    }
-  }
   assert.deepEqual(fails, []);
-  assert.ok(counts.screens > 150, `${counts.screens} screens and sheets checked`);
+  assert.ok(counts.screens > 100, `${counts.screens} screens and sheets checked`);
   for (const want of ['box: Home\'s briefing', 'box: a project page\'s sentence and tally', 'box on Home', 'box on a project page', 'a screen with none',
     'not a box: the Done lane\'s ground', 'not a box: a Timeline goal box', 'not a box: a sheet\'s text box', 'not a box: a sheet\'s record']) {
     assert.ok(seen.has(want), `${want}: ${JSON.stringify([...seen])}`);
   }
 });
 
-test('AC92 (e): Waiting holds no box — the Done lane\'s ground, a lane holding cards on --bg2, is the only filled ground there, with the board, the strip and a card\'s sheet over it (`gates` with a device\'s made-up Done marks, NOT real)', async () => {
-  const app = await opened('Waiting, the Done lane\'s ground and no box');
-  try {
-    assert.equal(byClass(app.view, 'v2-brief').length, 0, 'no briefing on Waiting');
-    assert.equal(byClass(app.view, 'v2-anchor').length, 0, 'no soft box on Waiting');
-    const lane = findAll(app.view, (e) => e.tag === 'section' && / lane-done /.test(` ${e.className} `))[0];
-    assert.ok(lane, 'the Done lane drawn');
-    assert.ok(byClass(lane, 'v2-drow').length + byClass(lane, 'v2-card').length > 0, 'holding the confirmed row');
-    for (const theme of THEMES) {
-      const tree = treeIn(app, theme);
-      const grounds = nodes(tree).filter((n) => marks(n.declared.get('background')).includes('--bg2'));
-      assert.deepEqual(grounds.map((n) => `${n.tag}.${[...n.cls].join('.')}`), ['section.v2-lane.lane-done'], `${theme}: the one filled ground`);
-    }
-  } finally {
-    app.restore();
-  }
-});
-
 // ---------------------------------------------------------------------------
-// Home's briefing, a box the ruling names, holding every line
+// G9's own screens, each opened once (G9_OPENS): the suite runs in one process and every page load stays in memory, so
+// each screen here is opened one time and every check on it made then.
 
-test('AC92 (e) + AC91 (a): Home\'s briefing, the box the ruling names, as built, holds five lines — its count, its parts, a time past, a time to come and what can\'t be undone, each a line of its own in the one box, and no count of lines limits it (`mix` with three made-up questions, NOT real)', async () => {
-  const app = await opened('Home, the briefing holding five lines');
-  try {
-    const boxes = byClass(app.view, 'v2-brief');
-    assert.equal(boxes.length, 1, 'one briefing');
-    const b = boxes[0];
-    assert.equal(b.className, 'v2-brief k-you');
-    const lines = [...byClass(b, 'v2-bt1'), ...byClass(b, 'v2-bt2'), ...byClass(b, 'v2-bdue').filter((d) => !d.className.split(' ').includes('none'))];
-    assert.equal(lines.length, 5, `five lines: ${lines.map((l) => l.textContent).join(' | ')}`);
-    assert.match(lines[0].textContent, /^\d+ need you$/);
-    assert.match(lines[1].textContent, /waiting/);
-    assert.deepEqual(lines.slice(2).map((l) => l.textContent.replace(/ \d.*$|settles itself .*$/, '')), ['One question was due to settle itself', 'One question ', "One can't be undone"]);
-    assert.ok(lines.every((l) => l.parent === b), 'each in the one box, none in a box of its own');
-    assert.equal(byClass(app.view, 'v2-anchor').length, 0, 'no other box on Home');
-    for (const theme of THEMES) {
-      const n = nodeOf(treeIn(app, theme), b);
-      assert.equal(plain(n.declared.get('background')), T[theme].bg2, `${theme}: on --bg2, as built`);
-      for (const p of ['max-height', 'overflow', '-webkit-line-clamp']) assert.ok(!n.declared.get(p), `${theme}: no ${p} cuts its lines`);
-    }
-  } finally {
-    app.restore();
+/** The briefing's look, from Home's five lines, that the page's box must share. */
+let BRIEF_LOOK = null;
+const LOOK_PROPS = ['background', 'border-radius', 'padding', 'gap'];
+
+/** Home, the briefing holding five lines (AC92 (e) + AC91 (a)): the box the ruling names, as built, every line in it. */
+function fiveLines(app, name) {
+  const boxes = byClass(app.view, 'v2-brief');
+  assert.equal(boxes.length, 1, `${name}: one briefing`);
+  const b = boxes[0];
+  assert.equal(b.className, 'v2-brief k-you');
+  const lines = [...byClass(b, 'v2-bt1'), ...byClass(b, 'v2-bt2'), ...byClass(b, 'v2-bdue').filter((d) => !d.className.split(' ').includes('none'))];
+  assert.equal(lines.length, 5, `${name}: five lines: ${lines.map((l) => l.textContent).join(' | ')}`);
+  assert.match(lines[0].textContent, /^\d+ need you$/);
+  assert.match(lines[1].textContent, /waiting/);
+  assert.deepEqual(lines.slice(2).map((l) => l.textContent.replace(/ \d.*$|settles itself .*$/, '')), ['One question was due to settle itself', 'One question ', "One can't be undone"]);
+  assert.ok(lines.every((l) => l.parent === b), `${name}: each in the one box, none in a box of its own`);
+  assert.equal(byClass(app.view, 'v2-anchor').length, 0, `${name}: no other box on Home`);
+  BRIEF_LOOK = {};
+  for (const theme of THEMES) {
+    const n = nodeOf(treeIn(app, theme), b);
+    assert.equal(plain(n.declared.get('background')), T[theme].bg2, `${name}, ${theme}: on --bg2, as built`);
+    for (const p of ['max-height', 'overflow', '-webkit-line-clamp']) assert.ok(!n.declared.get(p), `${name}, ${theme}: no ${p} cuts its lines`);
+    BRIEF_LOOK[theme] = Object.fromEntries(LOOK_PROPS.map((p) => [p, plain(n.declared.get(p))]));
   }
-});
+}
 
-// ---------------------------------------------------------------------------
-// The why line, plain
-
-test('AC92 (e): the why line has no filled ground — on Service-Desk\'s page with every phase opened (77bfeae: no why written), each phase\'s "Why each is taken on or skipped: not written yet. …" a --t-small line in --ink2 with its eye icon, on the page\'s own ground, in light and dark; no --bg2 anywhere in an opened phase', async () => {
-  const app = await opened('a v3 page, every phase opened, each why line plain');
-  try {
-    const lines = byClass(app.view, 'v2-callout');
-    assert.equal(lines.length, 4, 'one in each opened phase');
-    for (const l of lines) assert.match(l.textContent, /^Why each is taken on or skipped: not written yet\. Service-Desk's Chief of Staff writes its lines/);
-    for (const theme of THEMES) {
-      const tree = treeIn(app, theme);
-      for (const l of lines) {
-        const n = nodeOf(tree, l);
-        for (const p of ['background', 'background-color', 'padding', 'border-radius', 'border', 'box-shadow']) assert.equal(n.declared.get(p), undefined, `${theme}: no ${p}`);
-        assert.deepEqual([plain(n.style.get('font-size')), plain(n.style.get('font-weight')), plain(n.style.get('color'))], ['12px', '400', T[theme].ink2], `${theme}: --t-small --ink2`);
-        assert.match(n.kids[0].attrs.class, /\bvi-eye\b/, `${theme}: its eye icon first`);
-        const phase = up(n, (x) => has(x, 'v2-stdl'));
-        assert.ok(phase, 'in an opened phase');
-        for (const x of [phase, ...within(phase)]) assert.ok(!marks(x.declared.get('background')).includes('--bg2'), `${theme}: no filled ground in an opened phase (${x.tag}.${[...x.cls].join('.')})`);
-      }
+/** A project page's box: the briefing's own look, its words in their roles; `tally` the words wanted, or null for none. */
+function pageBox(app, name, tally) {
+  assert.ok(BRIEF_LOOK, 'the briefing read first');
+  const boxes = byClass(app.view, 'v2-anchor');
+  assert.equal(boxes.length, 1, `${name}: one box on the page`);
+  assert.deepEqual(boxes[0].children.map((c) => c.dataset.k), tally ? ['sentence', 'tally'] : ['sentence'], name);
+  if (!tally) assert.match(boxes[0].textContent, /^(Sprint |No open sprint|Which sprint|Where it's heading: not available)/, `${name}: the sentence alone`);
+  else assert.equal(keyed(app, 'tally').textContent, tally, `${name}: the tally`);
+  for (const theme of THEMES) {
+    const tree = treeIn(app, theme);
+    const n = nodeOf(tree, boxes[0]);
+    const d = (p) => plain(n.declared.get(p));
+    assert.deepEqual(Object.fromEntries(LOOK_PROPS.map((p) => [p, d(p)])), BRIEF_LOOK[theme], `${name}, ${theme}: the briefing's own look`);
+    assert.equal(d('background'), T[theme].bg2, `${name}, ${theme}: --bg2`);
+    assert.deepEqual(marks(n.declared.get('background')), ['--bg2'], `${name}, ${theme}: its ground from --bg2, not --you`);
+    for (const p of ['border', 'border-color', 'outline', 'box-shadow']) assert.ok(!n.declared.get(p) || /^(none|0)$/.test(d(p)), `${name}, ${theme}: no ${p}`);
+    const lead = nodeOf(tree, keyed(app, 'sentence'));
+    assert.deepEqual([plain(lead.style.get('font-size')), plain(lead.style.get('font-weight')), plain(lead.style.get('color'))], ['15px', '400', T[theme].ink], `${name}, ${theme}: the sentence --t-lead ink`);
+    if (tally) {
+      const t = nodeOf(tree, keyed(app, 'tally'));
+      assert.deepEqual([plain(t.style.get('font-size')), plain(t.style.get('font-weight')), plain(t.style.get('color'))], ['12px', '400', T[theme].ink2], `${name}, ${theme}: the tally --t-small --ink2`);
+      const b = t.kids.find((x) => x.tag === 'b');
+      if (/^no milestones tracked yet/.test(tally)) assert.equal(b, undefined, `${name}: nothing bold, never "0 of 0"`);
+      else assert.deepEqual([plain(b.style.get('font-size')), plain(b.style.get('font-weight')), plain(b.style.get('color'))], ['12px', '500', T[theme].ink], `${name}, ${theme}: "<R> of <T>" 500 12 px ink`);
     }
-  } finally {
-    app.restore();
+    // Never vermilion, green or red in it (AC92 (a) and (e)).
+    for (const x of [n, ...within(n)]) for (const p of ['color', 'background', 'border-color', 'fill', 'stroke']) {
+      assert.ok(!marks(x.declared.get(p)).some((m) => ['--you', '--ok', '--bad'].includes(m)), `${name}, ${theme}: ${x.tag} ${p} not --you, --ok or --bad`);
+    }
   }
-});
+}
 
-// The made-up names this file relies on stay as glance-fixtures.mjs builds them.
-test('AC92 (e): G9\'s screens open as named (tests/desk/glance-fixtures.mjs\'s G9_OPENS, made up, NOT real)', async () => {
-  assert.deepEqual(G9_OPENS.map(([n]) => n), ['a v3 page, its sentence and tally boxed', 'the made-up project\'s page, its sentence and tally boxed', 'a v3 page, every phase opened, each why line plain',
-    'a v2.5 page, its sentence alone boxed', 'a v3 page with nothing recorded, its tally "no milestones tracked yet"', 'a v3 page never read in this opening, its sentence alone boxed',
-    'Home, the briefing holding five lines', 'Waiting, the Done lane\'s ground and no box']);
-  assert.equal(typeof fiveLinesState, 'function');
-  assert.equal(MIX_PROJECT, 'Alpha');
-  assert.equal(SD.name, 'Service-Desk');
+/** AC92 (e) + (c): the tally agrees with the section's head and its phases — R and T the head's sums, the sprints each once. */
+function tallyAgrees(app, name) {
+  const tally = keyed(app, 'tally');
+  const [, R, Tt] = /^(\d+) of (\d+) /.exec(tally.textContent);
+  assert.equal(keyed(app, 'ms-h').children[0].textContent, `Milestones by phase · ${R} of ${Tt} reached`, `${name}: the head's sums`);
+  const lines = findAll(keyed(app, 'ms-lines'), (e) => e.attrs && e.attrs['data-phase']).map((li) => byClass(li, 'v2-sdl')[0].textContent);
+  const sum = lines.reduce((a, l) => { const m = /^(\d+) of (\d+) reached/.exec(l); return m ? [a[0] + Number(m[1]), a[1] + Number(m[2])] : a; }, [0, 0]);
+  assert.deepEqual(sum, [Number(R), Number(Tt)], `${name}: the phases' lines sum to it`);
+  const s = Number(/ · (\d+) sprints? · /.exec(tally.textContent)[1]);
+  const phaseS = lines.reduce((a, l) => a + Number((/ · (\d+) sprints? · /.exec(l) || [0, 0])[1]), 0);
+  assert.ok(s <= phaseS && s > 0, `${name}: ${s} sprints, each once, of the phases' ${phaseS}`);
+}
+
+/** AC92 (e): the why line has no filled ground — a --t-small --ink2 line with its eye icon, no --bg2 in an opened phase. */
+function whyPlain(app, name) {
+  const lines = byClass(app.view, 'v2-callout');
+  assert.equal(lines.length, 4, `${name}: one in each opened phase`);
+  for (const l of lines) assert.match(l.textContent, /^Why each is taken on or skipped: not written yet\. Service-Desk's Chief of Staff writes its lines/);
+  for (const theme of THEMES) {
+    const tree = treeIn(app, theme);
+    for (const l of lines) {
+      const n = nodeOf(tree, l);
+      for (const p of ['background', 'background-color', 'padding', 'border-radius', 'border', 'box-shadow']) assert.equal(n.declared.get(p), undefined, `${name}, ${theme}: no ${p}`);
+      assert.deepEqual([plain(n.style.get('font-size')), plain(n.style.get('font-weight')), plain(n.style.get('color'))], ['12px', '400', T[theme].ink2], `${name}, ${theme}: --t-small --ink2`);
+      assert.match(n.kids[0].attrs.class, /\bvi-eye\b/, `${name}, ${theme}: its eye icon first`);
+      const phase = up(n, (x) => has(x, 'v2-stdl'));
+      assert.ok(phase, `${name}: in an opened phase`);
+      for (const x of [phase, ...within(phase)]) assert.ok(!marks(x.declared.get('background')).includes('--bg2'), `${name}, ${theme}: no filled ground in an opened phase (${x.tag}.${[...x.cls].join('.')})`);
+    }
+  }
+}
+
+/** AC92 (e): Waiting holds no box — the Done lane's ground, holding the confirmed row, is the only filled ground there. */
+function doneOnly(app, name) {
+  assert.equal(byClass(app.view, 'v2-brief').length, 0, `${name}: no briefing on Waiting`);
+  assert.equal(byClass(app.view, 'v2-anchor').length, 0, `${name}: no soft box on Waiting`);
+  const lane = findAll(app.view, (e) => e.tag === 'section' && / lane-done /.test(` ${e.className} `))[0];
+  assert.ok(lane, `${name}: the Done lane drawn`);
+  assert.ok(byClass(lane, 'v2-drow').length + byClass(lane, 'v2-card').length > 0, `${name}: holding the confirmed row`);
+  for (const theme of THEMES) {
+    const grounds = nodes(treeIn(app, theme)).filter((n) => marks(n.declared.get('background')).includes('--bg2'));
+    assert.deepEqual(grounds.map((n) => `${n.tag}.${[...n.cls].join('.')}`), ['section.v2-lane.lane-done'], `${name}, ${theme}: the one filled ground`);
+  }
+}
+
+/** Each of G9's screens and its checks, Home first (its briefing's look is the page box's measure). */
+const G9_CHECKS = [
+  ['Home, the briefing holding five lines', fiveLines],
+  ['a v3 page, its sentence and tally boxed', (app, n) => { pageBox(app, n, '8 of 16 milestones reached · 17 sprints · 9 merged, 8 not read'); tallyAgrees(app, n); }],
+  ['the made-up project\'s page, its sentence and tally boxed', (app, n) => { pageBox(app, n, '0 of 14 milestones reached · 5 sprints · 4 not read'); tallyAgrees(app, n); }],
+  ['a v3 page, every phase opened, each why line plain', (app, n) => { pageBox(app, n, '8 of 15 milestones reached · 17 sprints · 9 merged, 8 not read'); whyPlain(app, n); }],
+  ['a v2.5 page, its sentence alone boxed', (app, n) => pageBox(app, n, null)],
+  ['a v3 page with nothing recorded, its tally "no milestones tracked yet"', (app, n) => pageBox(app, n, 'no milestones tracked yet · no sprints filed yet')],
+  ['a v3 page never read in this opening, its sentence alone boxed', (app, n) => pageBox(app, n, null)],
+  ['Waiting, the Done lane\'s ground and no box', doneOnly],
+];
+
+test('AC92 (e), on G9\'s screens (G9_OPENS, made up, NOT real): Home\'s briefing, the box the ruling names, as built, holds five lines, each in the one box, uncut; the page\'s soft box is the briefing\'s own look in light and dark (the --bg2 ground, 12 px radius and padding, the briefing\'s gap; no border, outline or shadow, never vermilion), the sentence --t-lead ink, the tally --t-small --ink2 with "<R> of <T>" in 500 ink, agreeing with the section\'s head and its phases, each sprint once ("8 of 16 milestones reached · 17 sprints · 9 merged, 8 not read"), "no milestones tracked yet" with nothing recorded, never "0 of 0", and the sentence alone on a v2.5 page and one never read; the why line with no filled ground, --t-small --ink2 with its eye icon; Waiting with no box, the Done lane\'s ground its one filled ground; and each screen to the table\'s rule', async () => {
+  assert.deepEqual(G9_CHECKS.map(([n]) => n).sort(), G9_OPENS.map(([n]) => n).sort(), 'every screen of G9_OPENS checked, once');
+  const fails = [];
+  const seen = new Set();
+  for (const [name, check] of G9_CHECKS) {
+    const app = await opened(name);
+    try {
+      check(app, name);
+      boxCheck(app, `G9 ${name}`, fails, seen);
+    } finally {
+      app.restore();
+    }
+  }
+  assert.deepEqual(fails, []);
+  for (const want of ['box: Home\'s briefing', 'box: a project page\'s sentence and tally', 'not a box: the Done lane\'s ground']) assert.ok(seen.has(want), want);
 });

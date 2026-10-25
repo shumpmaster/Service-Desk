@@ -558,11 +558,13 @@ test('AC91 (g) with AC56\'s tick: "new" is worked out again from "last looked" o
 
 // The Design reviewer's N1 and N2 (G2, round 1): a card carried from the strip stays lifted, under the finger and out of
 // the strip's clip, from the moment it is lifted to the moment it lands, whatever redraws the board in between.
-test('AC91 (f) with AC80\'s drag: a card lifted from a scrolled strip is moved back by the row\'s scroll at once, before the finger moves (N2); a redraw mid-carry, by hand or at a poll, keeps the card lifted where the finger has it and its row `carrying` (N1); it still lands in Done', async () => {
+// Rewritten in QW1 (AC94: a kicked-back question is in the "Questions for you" section, "not dragged from the section"):
+// the card carried is the strip's other card, Alpha's gate card, in place of Bravo's question.
+test('AC91 (f) with AC80\'s drag, rewritten in QW1: a card lifted from a scrolled strip is moved back by the row\'s scroll at once, before the finger moves (N2); a redraw mid-carry, by hand or at a poll, keeps the card lifted where the finger has it and its row `carrying` (N1); it still lands in Done', async () => {
   const app = await open(twoMixState(), { store: kickedStore() });
   const undo = layout();
   try {
-    const id = CARD.question(MIX_PROJECT2);
+    const id = CARD.gate(MIX_PROJECT);
     const row = byClass(strip(app), 'v2-krow')[0];
     row.scrollLeft = 288; // the row scrolled to its end before the press
     const c = cardOf(app, id);
@@ -585,7 +587,7 @@ test('AC91 (f) with AC80\'s drag: a card lifted from a scrolled strip is moved b
     assert.deepEqual(Object.keys(c.style), ['transform'], 'its move, its only inline style (AC50 + AC41)');
     await app.docEvent('pointerup', { clientX: 300, clientY: 420 });
     assert.ok(!stripCards(app).some((x) => x.attrs['data-card'] === id), 'it lands: out of the strip');
-    assert.ok(byClass(lane(app, 'done'), 'v2-card conf').some((x) => x.textContent.includes("Bravo's question")), 'into Done');
+    assert.ok(byClass(lane(app, 'done'), 'v2-card conf').some((x) => x.textContent.includes('The Build gate · P-002')), 'into Done');
     assert.equal(row.className, 'v2-krow', 'its row scrolls again');
     // A redraw after the drag puts nothing back.
     app.module.refresh();

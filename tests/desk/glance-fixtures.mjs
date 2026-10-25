@@ -16,8 +16,9 @@
 // read in this opening, a first read whose blobs fail, and Home with a project the desk can read but can't draw beside one
 // it can't read (`blobFailState`, `cantShowState`, `G8D_OPENS`), and in its round 3 Waiting with none read and drawn and a
 // project the desk can't draw in state 5 (`noneDrawnState`, `cantShowLastState`); G9 adds Home's briefing holding five
-// lines and the screens its soft boxes and plain why line are drawn on (`fiveLinesState`, `G9_OPENS`); the later stages
-// add theirs. Each made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
+// lines and the screens its soft boxes and plain why line are drawn on (`fiveLinesState`, `G9_OPENS`); G9b adds a desk with
+// one project's first read failing, another's held pending and a third read, and Home and Waiting in the states its line
+// under the title is drawn in, signed out among them (`failedHeldState`, `G9B_OPENS`); the later stages add theirs. Each made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
 import { CONFIG, fixture } from './helpers.mjs';
 import { repo, BAD_PR, gitSha } from './fake-desk.mjs';
 import { waSetup, WORKED, memStore, SD, POOM } from './wa-fixtures.mjs';
@@ -743,6 +744,44 @@ export const G9_OPENS = [
   ['Home, the briefing holding five lines', () => g7Open(fiveLinesState(), '#/')],
   ['Waiting, the Done lane\'s ground and no box', () => g7Open(gatesState(), '#/waiting', { store: memStore(deviceMarks([
     { project: MIX_PROJECT, kind: 'gate', id: GATE_KEY(MIX_PROJECT, 'queue/P-009-launch-1.md'), title: 'The Launch gate, case 1 · P-009', at: NOW - 3 * 3600e3, confirmedAt: NOW - 2 * 3600e3 }])), polls: 0 })],
+];
+
+/**
+ * G9b (AC91 (c), "the line under Home's and Waiting's titles"; the owner's ruling of 2026-10-25, "Ruling: A",
+ * decisions/questions/P-001-glance-checking-line.md): `mix` with three projects, each first read in its own state, each
+ * made-up part NOT real: the made-up project's first read failing from the start (the fake desk's network cause, AC5, NOT how
+ * any read failed), so no read of it succeeds in this opening (AC89 (a)'s state 2); Service-Desk's first read held pending
+ * (its calls wait on a promise, fake-desk.mjs's `hold`, NOT how any read went: a first read still on its way, state 1); and
+ * Personal-Org-Operating-Model read (poom/'s placeholder form). `release()` lets the held read answer; `mend()` lets the
+ * made-up project's reads succeed from its next one.
+ */
+export function failedHeldState() {
+  const s = unreadState({ who: MIX_PROJECT });
+  let release = null;
+  s.repos[SD.name].hold = new Promise((r) => { release = r; }); // made up (NOT real)
+  s.release = () => { s.repos[SD.name].hold = null; release(); };
+  s.mend = () => { s.repos[MIX_PROJECT].fail = null; };
+  s.fail();
+  return s;
+}
+
+/**
+ * G9b (AC91 (c); AC82; AC80): Home and Waiting with every project shown in the states its line under the title is drawn in,
+ * and Waiting with one project shown beside a failed one, as [name, open() → the open page], each opened with "last looked"
+ * after the records' dates (so on Home the list's red "Not read in this opening" shows below the grey line), each made-up
+ * part NOT real: one first read failed and one on its way (`failedHeldState`); every first read failed (G8c's `orderState`,
+ * the network cause, nothing waiting); signed out from the start, no read before it (`signedOutState`, the fake desk
+ * refusing every read as signed out, J6); and Service-Desk alone shown, its own first read on its way (AC89 (a)'s state 1)
+ * beside the made-up project's failed one. No CSS changed in G9b, so AC88's walks read these with no exception.
+ */
+export const G9B_OPENS = [
+  ['Home, one first read failed and one on its way', () => g8dOpen(failedHeldState(), '#/')],
+  ['Waiting, every project shown, one first read failed and one on its way', () => g8dOpen(failedHeldState(), '#/waiting')],
+  ['Home, every first read failed', () => g8dOpen(orderState(), '#/')],
+  ['Waiting, every project shown, every first read failed', () => g8dOpen(orderState(), '#/waiting')],
+  ['Home, signed out, no read before it', () => { const s = signedOutState(); s.fail(); return g8dOpen(s, '#/'); }],
+  ['Waiting, every project shown, signed out, no read before it', () => { const s = signedOutState(); s.fail(); return g8dOpen(s, '#/waiting'); }],
+  ['Waiting, Service-Desk alone shown, its first read on its way beside a failed one', () => g8dOpen(failedHeldState(), `#/waiting/${enc(SD.name)}`)],
 ];
 
 export { SD, POOM, CONFIG };

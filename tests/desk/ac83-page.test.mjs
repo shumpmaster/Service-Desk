@@ -89,13 +89,29 @@ test('AC83: the top — the back control and the name as the title; in Plex Mono
 // ---------------------------------------------------------------------------
 // The one sentence and the strip
 
-test('AC83: the one sentence (--t-lead) — "<now phase>, <first time through | second time through | run <k>>. Next: <the next milestone to reach, by its name>."; "Next: not recorded"; "Done."; a v2.5 project\'s "Sprint <id> is open. Nothing waits on you."', async () => {
+// Rewritten in G9 (AC92 (e); AC83, changed: "the sentence and its tally in a soft box"): the sentence now stands first in the
+// page's soft box (`div.v2-anchor`, the briefing's own look), with the one-line tally under it on a v3 page; on a v2.5 page
+// the box holds the sentence alone. Every assertion of the case before G9 is kept.
+test('AC83 (AC92 (e), rewritten in G9): the one sentence (--t-lead), first in the page\'s soft box, with the one-line tally under it — "<now phase>, <first time through | second time through | run <k>>. Next: <the next milestone to reach, by its name>."; "Next: not recorded"; "Done."; a v2.5 project\'s "Sprint <id> is open. Nothing waits on you.", alone in its box', async () => {
   const app = await openPage('#/p/Service-Desk');
   try {
     assert.equal(keyed(app, 'sentence').textContent, 'Design, second time through. Next: The chosen design running on the real back end.', 'MD3, the next to reach at 77bfeae, by its name');
     assert.match(rule('.v2-lead'), /font: var\(--t-lead\);/);
+    // G9: in the box, the sentence first and the tally under it, nothing else; the box between the switch and the strip.
+    const box = keyed(app, 'anchor');
+    assert.ok(box && box.tag === 'div' && box.className === 'v2-anchor', 'the page\'s soft box');
+    assert.deepEqual(box.children.map((c) => c.dataset.k), ['sentence', 'tally'], 'the sentence, then the tally, and nothing else');
+    assert.equal(keyed(app, 'tally').className, 'v2-small v2-tally');
+    assert.equal(keyed(app, 'tally').textContent, '8 of 15 milestones reached · 17 sprints · 9 merged, 8 not read', 'summed over the page (77bfeae, its pull requests not read)');
+    assert.equal(findAll(keyed(app, 'tally'), (e) => e.tag === 'b').map((b) => b.textContent).join(), '8 of 15', 'R and T the bold part');
+    const page = box.parent;
+    const at = page.children.indexOf(box);
+    assert.equal(page.children[at - 1].dataset.k, 'page-switch', 'under Overview | Timeline');
+    assert.match(page.children[at + 1].className, /\bv2-strip\b/, 'over the strip');
     await app.go('#/p/Personal-Org-Operating-Model');
     assert.equal(keyed(app, 'sentence').textContent, 'Sprint m1.4 is open. Nothing waits on you.');
+    assert.deepEqual(keyed(app, 'anchor').children.map((c) => c.dataset.k), ['sentence'], 'a v2.5 page: the sentence alone in its box, no milestones to tally');
+    assert.equal(keyed(app, 'tally'), null);
   } finally {
     app.restore();
   }

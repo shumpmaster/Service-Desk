@@ -34,7 +34,7 @@ import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
 import { BAD_PR } from './fake-desk.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
-import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS, G8D_OPENS, G9_OPENS, G9B_OPENS } from './glance-fixtures.mjs';
+import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS, G8D_OPENS, G9_OPENS, G9B_OPENS, G9C_OPENS } from './glance-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -683,6 +683,18 @@ function okBadCheck(app, where, fails, seen, places) {
         if (isOkBad(raw) || col !== THEME[way.theme]['--ink2'].toLowerCase()) fail(n, `the line under the title in ${col}: it stays --ink2`);
         else if (n.kids.some((c) => c.tag === 'svg')) fail(n, 'the line under the title with an icon: it has none');
         else places.add('grey: the line under the title');
+      }
+      // G9c (AC91 (c), "Waiting's quiet lines while a read is on its way or signed out"; the owner's "Ruling: A",
+      // P-001-glance-waiting-pending.md: "a grey line "Still reading Service-Desk…""; -g9c-portfolio.md, B): Waiting's "Still
+      // reading <project>…" and "Still reading the portfolio…" lines (`p.v2-ql`, keyed `ql:reading:`), whatever they name, in
+      // --ink2, never --ok, --bad or --you, never `.bad`, with no icon. The signed-out line takes the red quiet lines' place.
+      if (n.tag === 'p' && n.cls.has('v2-ql') && /^ql:reading:/.test(n.attrs['data-k'] || '')) {
+        const raw = n.style.get('color') || '';
+        const col = plain(raw).trim().toLowerCase();
+        const you = THEME[way.theme]['--you'].toLowerCase();
+        if (isOkBad(raw) || col === you || marks(raw).some((m) => m.name === '--you') || col !== THEME[way.theme]['--ink2'].toLowerCase()) fail(n, `Waiting's "Still reading" line in ${col}: it stays --ink2`);
+        else if (n.cls.has('bad') || n.kids.some((c) => c.tag === 'svg')) fail(n, 'Waiting\'s "Still reading" line with `.bad` or an icon: it has neither');
+        else places.add('grey: Waiting\'s "Still reading" line');
       }
       // The grey "Can't show this" lines and the rules that draw nothing: never red, and never matched.
       if (n.cls.has('v2-small') && n.cls.has('bad') && n.text.trim()) {
@@ -1448,6 +1460,22 @@ const G9_EXCEPT = (n, d, theme) => {
   const k = G9_KEY(n);
   return Boolean(k && G9_ONCE.get(theme) && (G9_ONCE.get(theme).get(k) || []).includes(d)) ? `G9 ${theme} ${k} ${d}` : null;
 };
+/**
+ * G9c's one change to an element's look on purpose (AC91 (c), "each on a row of its own", from G9c's draft 3; the owner's
+ * ruling of 2026-10-25, "Ruling: A", decisions/questions/P-001-glance-g9c-row.md: "Each on its own row — every "Still
+ * reading" line starts a new row; a small style change in G9c."): Waiting's "Still reading" line (`p.v2-ql.v2-qread`, keyed
+ * `ql:reading:`, a project's or the portfolio's, in the quiet lines' box) takes `flex-basis: 100%`, so it holds a row of its
+ * own, as `.v2-qfold` does there. In both themes, that declaration only, on that element only; the line is new in G9c, so
+ * bd4097d's stylesheet gives it none.
+ */
+const G9C_ONCE = new Map(['light', 'dark'].map((theme) => [theme, new Map([['p.v2-ql.v2-qread (Waiting\'s "Still reading" line)', ['flex-basis: (none) → 100%']]])]));
+const G9C_KEY = (n) => (n.tag === 'p' && n.cls.has('v2-ql') && n.cls.has('v2-qread') && /^ql:reading:/.test(n.attrs['data-k'] || '') && n.parent && n.parent.tag === 'div'
+  && n.parent.cls.has('v2-quiet') ? 'p.v2-ql.v2-qread (Waiting\'s "Still reading" line)' : null);
+const G9C_EXCEPT = (n, d, theme) => {
+  const k = G9C_KEY(n);
+  return Boolean(k && (G9C_ONCE.get(theme).get(k) || []).includes(d)) ? `G9C ${theme} ${k} ${d}` : null;
+};
+const G9C_FLAT = [...G9C_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G9C ${theme} ${k} ${d}`))).sort();
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
@@ -1509,6 +1537,8 @@ function sameLook(app, where, fails, seen) {
         if (g8c) { excepted.add(g8c); continue; }
         const g9 = G9_EXCEPT(b, d, way.theme);
         if (g9) { excepted.add(g9); continue; }
+        const g9c = G9C_EXCEPT(b, d, way.theme);
+        if (g9c) { excepted.add(g9c); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -1789,7 +1819,9 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // G9's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
   const g9 = [...G9_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G9 ${theme} ${k} ${d}`))).sort();
   assert.deepEqual([...excepted].filter((x) => /^G9 /.test(x)).sort(), g9);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[123456789] |G7B |G8B |G8C |PRE-G7 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // G9c's exception (G9C_ONCE) is pinned by G9c's own walk, the last test below; any the walks above meet is of it alone.
+  assert.ok([...excepted].filter((x) => /^G9C /.test(x)).every((x) => G9C_FLAT.includes(x)), 'G9C: only its pinned declaration');
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[123456789] |G7B |G8B |G8C |G9C |PRE-G7 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes
@@ -1920,5 +1952,47 @@ test('AC88 + AC92 (a) + AC44 step 4 (G9b of "After the glance audit"; AC91 (c)):
   }
   assert.deepEqual(fails, []);
   assert.ok(places.has('grey: the line under the title'));
-  assert.deepEqual([...excepted].filter((x) => !before.has(x)), [], 'no exception met that the walks above had not met: no G9B_ONCE');
+  // Rewritten in G9c's round 2 (the owner's ruling of 2026-10-25, "Ruling: A", decisions/questions/P-001-glance-g9c-row.md;
+  // AC91 (c), "each on a row of its own"): G9B_OPENS' Waiting on `failedHeldState` now draws G9c's "Still reading
+  // Service-Desk…" line, whose one declaration G9C_ONCE pins exactly (G9c's walk, below); any other is still none of G9b's.
+  assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^G9C /.test(x)), [], 'no exception met that the walks above had not met: no G9B_ONCE');
+  assert.ok([...excepted].filter((x) => /^G9C /.test(x)).every((x) => G9C_FLAT.includes(x)), 'G9c\'s line: only its pinned declaration');
+});
+
+// G9c of "After the glance audit" (AC91 (c), "Waiting's quiet lines while a read is on its way or signed out" and "a
+// project's page's "Nothing waiting on you" row"; the owner's rulings of 2026-10-25, each "Ruling: A",
+// decisions/questions/P-001-glance-waiting-pending.md, -waiting-signed-out.md and -page-checking.md, with -g9c-portfolio.md,
+// B): Waiting with every project shown in the states its quiet lines are drawn in, signed out among them, and Service-Desk's
+// page beside a project failing (tests/desk/glance-fixtures.mjs's G9C_OPENS, its made-up parts NOT real). As G9b's, each
+// screen is opened once (the suite's memory: each page load keeps its own copy of sandbox.js) and read by both checks: AC92
+// (a)'s cascade check, the "Still reading" line a new grey place ("grey: Waiting's "Still reading" line") and the signed-out
+// line the place the red quiet lines already have, and the stage-8 guard, which shows G9c adds one declaration only: from
+// G9c's draft 3 (P-001-glance-g9c-row.md, A), the "Still reading" line's `flex-basis: 100%`, pinned exactly in G9C_ONCE.
+test('AC88 + AC92 (a) + AC44 step 4 (G9c of "After the glance audit"; AC91 (c)): on G9c\'s screens (G9C_OPENS, made up, NOT real), in dark (forced, and the phone\'s own) and light, Waiting\'s "Still reading" line is a grey place — in --ink2 with no icon, never --ok, --bad or --you — the signed-out line the red quiet lines\' place, no new red place, and every element\'s look is bd4097d\'s but the "Still reading" line\'s `flex-basis: 100%` (G9C_ONCE, exactly, from draft 3)', async () => {
+  const fails = [];
+  const seen = new Set();
+  const places = new Set();
+  const before = new Set(excepted);
+  for (const [where, open] of G9C_OPENS) {
+    const app = await open();
+    try {
+      const mine = new Set();
+      okBadCheck(app, `G9c ${where}`, fails, seen, mine);
+      const keys = findAll(app.view, (e) => e.dataset && /^ql:(reading|signed-out)/.test(e.dataset.k || '')).map((e) => e.dataset.k);
+      if (keys.some((k) => /^ql:reading:/.test(k))) assert.ok(mine.has('grey: Waiting\'s "Still reading" line'), `${where}: read as a grey place`);
+      if (keys.includes('ql:signed-out')) assert.ok(mine.has('ruled: Waiting\'s and "Since you last looked"\'s quiet line'), `${where}: the red quiet lines' place`);
+      for (const p of mine) places.add(p);
+      sameLook(app, `G9c ${where}`, fails, seen);
+    } finally {
+      app.restore();
+    }
+  }
+  assert.deepEqual(fails, []);
+  for (const want of ['grey: Waiting\'s "Still reading" line', 'ruled: Waiting\'s and "Since you last looked"\'s quiet line', 'grey: the line under the title']) {
+    assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
+  }
+  // From G9c's draft 3 (P-001-glance-g9c-row.md, A): one CSS change, so G9C_ONCE was met, its one declaration on its own
+  // element in each theme, and no other exception was met that the walks above had not met.
+  assert.deepEqual([...excepted].filter((x) => /^G9C /.test(x)).sort(), G9C_FLAT, 'G9C_ONCE met exactly');
+  assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^G9C /.test(x)), [], 'no other exception added');
 });

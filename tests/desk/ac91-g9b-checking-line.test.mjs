@@ -363,13 +363,18 @@ test('AC89 (a), kept in G9b: one project shown alone, its own line beside anothe
   }
 });
 
-test('AC83 + AC80, unchanged in G9b: a project\'s page\'s "Nothing waiting on you" row beside a project in state 2 keeps `checkedWords`\' words, as built', async () => {
+// Rewritten in G9c (the owner's ruling of 2026-10-25, "Ruling: A", decisions/questions/P-001-glance-page-checking.md, "The
+// page's own project — the row says "checked <age> ago" from that project's own last read."; AC91 (c); AC83): G9b left this
+// row on the whole desk's `checkedWords` on purpose, so beside a project in state 2 it said "checking…"; from G9c it takes
+// Service-Desk's own age. G9c's own cases are in tests/desk/ac91-g9c-quiet-lines.test.mjs.
+test('AC83 + AC80, changed in G9c: a project\'s page\'s "Nothing waiting on you" row beside a project in state 2 says "checked <age> ago" from its own project\'s read, never "checking…" for the other\'s', async () => {
   const s = unreadState({ who: MIX_PROJECT });
   const app = await open(s, `#/p/${enc(SD.name)}`, { before: s.fail });
   try {
     const row = keyed(app, 'page-waits');
     assert.equal(byClass(row, 'v2-prtt')[0].textContent, 'Nothing waiting on you');
-    assert.equal(byClass(row, 'v2-small')[0].textContent, 'checking…', 'as built: the stalest project has no read');
+    assert.equal(lastSuccess(app, MIX_PROJECT), null, 'the made-up project in state 2');
+    assert.match(byClass(row, 'v2-small')[0].textContent, CHECKED, 'Service-Desk\'s own read, never `checkedWords`\' "checking…"');
     assert.doesNotMatch(row.textContent, /Not read in this opening/);
   } finally {
     app.restore();

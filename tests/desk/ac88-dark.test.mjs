@@ -34,7 +34,7 @@ import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
 import { BAD_PR } from './fake-desk.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
-import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS, G8D_OPENS, G9_OPENS, G9B_OPENS } from './glance-fixtures.mjs';
+import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS, G8D_OPENS, G9_OPENS, G9B_OPENS, G9C_OPENS } from './glance-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -683,6 +683,18 @@ function okBadCheck(app, where, fails, seen, places) {
         if (isOkBad(raw) || col !== THEME[way.theme]['--ink2'].toLowerCase()) fail(n, `the line under the title in ${col}: it stays --ink2`);
         else if (n.kids.some((c) => c.tag === 'svg')) fail(n, 'the line under the title with an icon: it has none');
         else places.add('grey: the line under the title');
+      }
+      // G9c (AC91 (c), "Waiting's quiet lines while a read is on its way or signed out"; the owner's "Ruling: A",
+      // P-001-glance-waiting-pending.md: "a grey line "Still reading Service-Desk…""; -g9c-portfolio.md, B): Waiting's "Still
+      // reading <project>…" and "Still reading the portfolio…" lines (`p.v2-ql`, keyed `ql:reading:`), whatever they name, in
+      // --ink2, never --ok, --bad or --you, never `.bad`, with no icon. The signed-out line takes the red quiet lines' place.
+      if (n.tag === 'p' && n.cls.has('v2-ql') && /^ql:reading:/.test(n.attrs['data-k'] || '')) {
+        const raw = n.style.get('color') || '';
+        const col = plain(raw).trim().toLowerCase();
+        const you = THEME[way.theme]['--you'].toLowerCase();
+        if (isOkBad(raw) || col === you || marks(raw).some((m) => m.name === '--you') || col !== THEME[way.theme]['--ink2'].toLowerCase()) fail(n, `Waiting's "Still reading" line in ${col}: it stays --ink2`);
+        else if (n.cls.has('bad') || n.kids.some((c) => c.tag === 'svg')) fail(n, 'Waiting\'s "Still reading" line with `.bad` or an icon: it has neither');
+        else places.add('grey: Waiting\'s "Still reading" line');
       }
       // The grey "Can't show this" lines and the rules that draw nothing: never red, and never matched.
       if (n.cls.has('v2-small') && n.cls.has('bad') && n.text.trim()) {
@@ -1921,4 +1933,39 @@ test('AC88 + AC92 (a) + AC44 step 4 (G9b of "After the glance audit"; AC91 (c)):
   assert.deepEqual(fails, []);
   assert.ok(places.has('grey: the line under the title'));
   assert.deepEqual([...excepted].filter((x) => !before.has(x)), [], 'no exception met that the walks above had not met: no G9B_ONCE');
+});
+
+// G9c of "After the glance audit" (AC91 (c), "Waiting's quiet lines while a read is on its way or signed out" and "a
+// project's page's "Nothing waiting on you" row"; the owner's rulings of 2026-10-25, each "Ruling: A",
+// decisions/questions/P-001-glance-waiting-pending.md, -waiting-signed-out.md and -page-checking.md, with -g9c-portfolio.md,
+// B): Waiting with every project shown in the states its quiet lines are drawn in, signed out among them, and Service-Desk's
+// page beside a project failing (tests/desk/glance-fixtures.mjs's G9C_OPENS, its made-up parts NOT real). As G9b's, each
+// screen is opened once (the suite's memory: each page load keeps its own copy of sandbox.js) and read by both checks: AC92
+// (a)'s cascade check, the "Still reading" line a new grey place ("grey: Waiting's "Still reading" line") and the signed-out
+// line the place the red quiet lines already have, and the stage-8 guard, which shows G9c adds no declaration: no CSS
+// changed, so there is no G9C_ONCE and no exception is met.
+test('AC88 + AC92 (a) + AC44 step 4 (G9c of "After the glance audit"; AC91 (c)): on G9c\'s screens (G9C_OPENS, made up, NOT real), in dark (forced, and the phone\'s own) and light, Waiting\'s "Still reading" line is a grey place — in --ink2 with no icon, never --ok, --bad or --you — the signed-out line the red quiet lines\' place, no new red place, and every element\'s look is bd4097d\'s, with no exception added', async () => {
+  const fails = [];
+  const seen = new Set();
+  const places = new Set();
+  const before = new Set(excepted);
+  for (const [where, open] of G9C_OPENS) {
+    const app = await open();
+    try {
+      const mine = new Set();
+      okBadCheck(app, `G9c ${where}`, fails, seen, mine);
+      const keys = findAll(app.view, (e) => e.dataset && /^ql:(reading|signed-out)/.test(e.dataset.k || '')).map((e) => e.dataset.k);
+      if (keys.some((k) => /^ql:reading:/.test(k))) assert.ok(mine.has('grey: Waiting\'s "Still reading" line'), `${where}: read as a grey place`);
+      if (keys.includes('ql:signed-out')) assert.ok(mine.has('ruled: Waiting\'s and "Since you last looked"\'s quiet line'), `${where}: the red quiet lines' place`);
+      for (const p of mine) places.add(p);
+      sameLook(app, `G9c ${where}`, fails, seen);
+    } finally {
+      app.restore();
+    }
+  }
+  assert.deepEqual(fails, []);
+  for (const want of ['grey: Waiting\'s "Still reading" line', 'ruled: Waiting\'s and "Since you last looked"\'s quiet line', 'grey: the line under the title']) {
+    assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
+  }
+  assert.deepEqual([...excepted].filter((x) => !before.has(x)), [], 'no exception met that the walks above had not met: no G9C_ONCE');
 });

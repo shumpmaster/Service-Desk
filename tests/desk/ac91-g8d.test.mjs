@@ -5,11 +5,15 @@
 // (Recommended)" — "the cap row, the versions row and the group head say "can't be shown" for such a project, matching the
 // briefing and tile"; 3, "Keep it, as built (Recommended)": "Nothing new since <time>" stays, nothing built). With them, AC89
 // (a)'s state 2 holding the cards a read in this opening gave where its tree was held and its blob phase failed (AC89 (a),
-// C, the Definer's reading after G8c's review), locked on Waiting as G8c's fix round locked Home's corner.
+// C, the Definer's reading after G8c's review), locked on Waiting as G8c's fix round locked Home's corner. From G8d's round 2
+// (the owner's answer of 2026-10-25 to G8d's design review, item 4, ""✕ Can't show Bravo" (Recommended)" — "a red line like
+// the briefing's, in Waiting's quiet lines; with that project shown alone, the same line above the lanes, with no counts"):
+// Waiting's "Can't show <project>" for a project the desk can read but can't draw, and the Reviewer's test gaps N1 to N5.
 // ac-test: S-001/AC89 ac-test: S-001/AC54 ac-test: S-001/AC80 ac-test: S-001/AC87
 //
 // The page is the sandbox's own code under the fake DOM, on the fixture states of tests/desk/glance-fixtures.mjs (G8c's
-// `openingState`, `signedOutMixedState`, `orderState`, and G8d's `blobFailState`, `cantShowState` and `G8D_OPENS`) over
+// `openingState`, `signedOutMixedState`, `orderState`, and G8d's `blobFailState`, `cantShowState` and `G8D_OPENS`, and round
+// 2's `blobFailNoCardState` and `cantShowAmongState`) over
 // `mix`, `quiet` and `twoMix`: Service-Desk's records at 77bfeae, real, with made-up projects, failures and pull requests,
 // each labelled NOT real in tests/desk/fixtures/README.md. The suite has no browser, so each look is the cascade of the
 // page's own stylesheets over what it drew (tests/desk/css-cascade.mjs), in light and dark; the stage's pull request
@@ -22,14 +26,14 @@ import { SRC } from './helpers.mjs';
 import { loadSandbox, byClass, findAll } from './sandbox-helpers.mjs';
 import { parseCss, treeOf, cascade, nodes } from './css-cascade.mjs';
 import { POLL_MS, REASON_WORDS } from '../../src/lib/scheduler.js';
-import { oneProjectView, quietCantWords, cantSince, IN_OPENING } from '../../src/lib/board.js';
+import { oneProjectView, quietCantWords, cantSince, IN_OPENING, cantShowWords, quietTroubleWords, ONE_WORDS, boardView, noMarks, stripEmptyWords } from '../../src/lib/board.js';
 import { boxStateText } from '../../src/lib/universe.js';
 import { capEntry, capView, versionsView, CANT_SHOWN } from '../../src/lib/portfolio.js';
 import { groupHeaderWords } from '../../src/lib/sandbox.js';
 import { IN_OPENING as HOME_IN_OPENING } from '../../src/lib/home.js';
 import { BAD_PR } from './fake-desk.mjs';
 import { unreadState, signedOutState, signedOutMixedState, openingState, orderState, mixState, blobFailState, cantShowState, g8cStore,
-  MIX_PROJECT, MIX_PROJECT2, NOW, SD, POOM, CONFIG, SINCE_LATE, G8D_OPENS } from './glance-fixtures.mjs';
+  MIX_PROJECT, MIX_PROJECT2, NOW, SD, POOM, CONFIG, SINCE_LATE, G8D_OPENS, blobFailNoCardState, cantShowAmongState } from './glance-fixtures.mjs';
 
 const TZ = CONFIG.ownerTimeZone;
 const RULES = (() => {
@@ -489,6 +493,316 @@ test('G8d\'s screens (tests/desk/glance-fixtures.mjs\'s G8D_OPENS) each draw wha
       if (/blobs failing/.test(where)) assert.ok(cardsIn(app, 'wait').length > 0, `${where}: its cards`);
       if (/signed out/.test(where)) assert.match(t, /Can't read Service-Desk in this opening/, where);
       if (/can't draw/.test(where)) assert.equal(byClass(groupBtn(app, 'active'), 'v2-hgb').map((x) => x.textContent).join(' · '), "1 can't be read · 1 can't be shown", where);
+    } finally {
+      app.restore();
+    }
+  }
+});
+
+// ---------------------------------------------------------------------------
+// G8d's round 2: "Can't show <project>" on Waiting (the owner's answer of 2026-10-25 to G8d's design review, item 4, ""✕
+// Can't show Bravo" (Recommended)" — "a red line like the briefing's, in Waiting's quiet lines; with that project shown alone,
+// the same line above the lanes, with no counts"; AC80, AC89 (a), AC91 (c)), and the Reviewer's test gaps N1 to N5.
+
+const SHOW = (name) => `Can't show ${name}`;
+/** Waiting's red quiet lines, every project shown, as [kind ('cant' | 'show'), project, words], in the order drawn. */
+const troubleLines = (app) => findAll(app.view, (e) => e.dataset && /^ql:(cant|show):/.test(e.dataset.k || '') && e.dataset.k !== 'ql:cant:portfolio')
+  .map((e) => { const [, kind, ...rest] = e.dataset.k.split(':'); return [kind, rest.join(':'), e.textContent]; });
+const nothingLine = (app) => (keyed(app, 'ql:nothing') ? keyed(app, 'ql:nothing').textContent : null);
+
+test('AC80, AC89 (a), AC91 (c), G8d round 2, the pure functions: "Can\'t show <project>" — boardView puts a project the desk can read but can\'t draw in `cantShow` and `cantLines` (among the can\'t-read entries, in the board\'s order), never in `nothingWaiting`; oneProjectView\'s can\'t-show view has the line, no counts, "Can\'t show" for an empty lane and the strip, its own "checked <age> ago"; a failing read keeps its can\'t-read words', () => {
+  const at = Date.parse('2026-10-14T15:02:00Z'); // 10:02 in Chicago
+  assert.equal(cantShowWords('Bravo'), "Can't show Bravo");
+  assert.equal(ONE_WORDS.cantShow, "Can't show");
+  assert.equal(quietTroubleWords({ project: 'Bravo', show: true }, TZ), "Can't show Bravo");
+  assert.equal(quietTroubleWords({ project: 'Bravo', show: false, since: at, opening: true }, TZ), OPENING('Bravo'), 'a can\'t-read entry: its words');
+  assert.equal(quietTroubleWords({ project: 'Bravo', show: false, since: at, opening: false }, TZ), "Can't read Bravo since 10:02");
+  // boardView: three projects quiet by their cards, one read and drawn, one read but not drawn, one failing, and a fourth
+  // failing after the one not drawn.
+  const proj = (name, read) => ({ project: { name }, cards: [], agents: [], read });
+  const bd = boardView({ projects: [
+    proj('A', { ok: true, cantRead: false, cantShow: false }),
+    proj('B', { ok: false, cantRead: true, since: at, words: REASON, opening: true }),
+    proj('C', { ok: false, cantRead: false, cantShow: true }),
+    proj('D', { ok: false, cantRead: true, since: at, words: REASON, opening: false }),
+    proj('E', { ok: true, cantRead: false, cantShow: true }), // `ok` as a caller might leave it: can't show still wins
+  ], marks: noMarks(), only: null, nowMs: at, tz: TZ });
+  assert.deepEqual(bd.nothingWaiting, ['A'], 'a project not drawn is in no "Nothing waiting" line');
+  assert.deepEqual(bd.cantShow, ['C', 'E']);
+  assert.deepEqual(bd.cantRead.map((c) => c.project), ['B', 'D'], 'the can\'t-read entries as built');
+  assert.deepEqual(bd.cantLines.map((c) => [c.project, c.show, quietTroubleWords(c, TZ)]),
+    [['B', false, OPENING('B')], ['C', true, SHOW('C')], ['D', false, "Can't read D since 10:02"], ['E', true, SHOW('E')]], 'in the board\'s order');
+  // Can't be drawn and its read failing: its can't-read words, never "Can't show".
+  const both = boardView({ projects: [proj('F', { ok: false, cantRead: true, cantShow: false, since: at, words: REASON, opening: true })], marks: noMarks(), only: null, nowMs: at, tz: TZ });
+  assert.deepEqual([both.cantShow, both.cantLines.map((c) => c.show)], [[], [false]]);
+  // With one project shown, only its own line.
+  assert.deepEqual(boardView({ projects: [proj('A', { ok: true }), proj('C', { cantShow: true })], marks: noMarks(), only: 'A', nowMs: at, tz: TZ }).cantLines, []);
+  // oneProjectView: read and fresh but not drawn.
+  const one = (read, last, cantShow) => oneProjectView({ name: 'Bravo', read, lastSuccessAt: last, tz: TZ, cantShow });
+  const v = one({ read: 'ok', since: at }, at - 60e3, true);
+  assert.deepEqual([v.cantShow, v.cant, v.counts, v.unknown, v.empty, v.under(at)], [true, SHOW('Bravo'), null, true, "Can't show", 'checked 1 min ago']);
+  assert.equal(stripEmptyWords({ one: v }), "can't show", 'the strip: "Kicked back · can\'t show"');
+  assert.notEqual(v.empty, 'Nothing here');
+  const c4 = one({ read: 'checking' }, at - 60e3, true);
+  assert.deepEqual([c4.cant, c4.counts, c4.empty], [SHOW('Bravo'), null, "Can't show"], 're-checking after a read: still not drawn');
+  // Its read failing: state 2 or 5, its can't-read words kept.
+  const f2 = one({ read: 'cant-read', since: at, words: REASON }, null, true);
+  assert.deepEqual([f2.state, f2.cant, f2.empty, Boolean(f2.cantShow)], [2, `${OPENING('Bravo')}: ${REASON}`, "Can't read", false]);
+  const f5 = one({ read: 'cant-read', since: at, words: REASON }, at - 60e3, true);
+  assert.deepEqual([f5.state, f5.cant, Boolean(f5.cantShow)], [5, `Can't read Bravo since 10:02: ${REASON}`, false]);
+  // Without `cantShow`: as built.
+  assert.deepEqual([one({ read: 'ok', since: at }, at - 60e3).state, one({ read: 'ok', since: at }, at - 60e3).cant, Boolean(one({ read: 'ok', since: at }, at - 60e3).cantShow)], [3, null, false]);
+});
+
+test('AC80, AC91 (c), G8d round 2: Waiting with every project shown and a made-up project the desk can read but can\'t draw (BAD_PR, NOT real) — "✕ Can\'t show Alpha" in the quiet lines, in --bad with its ✕ as the can\'t-read line, among the can\'t-read lines in the board\'s order; Alpha in no "Nothing waiting" line, that line kept for the other quiet projects; Home unchanged', async () => {
+  let app = await open(cantShowState(), '#/waiting');
+  try {
+    assert.deepEqual(troubleLines(app), [['cant', SD.name, OPENING(SD.name)], ['show', MIX_PROJECT, SHOW(MIX_PROJECT)]]);
+    const line = keyed(app, `ql:show:${MIX_PROJECT}`);
+    assertBad(app, line, 'the can\'t-show line');
+    assert.ok(has(line, 'v2-ql') && has(line, 'still') && has(line, 'bad'), 'the can\'t-read line\'s look: p.v2-ql.still.bad');
+    assert.equal(line.tag, 'p', 'a line, not a control');
+    assert.ok(has(line.parent, 'v2-quiet'), 'in the quiet lines\' box');
+    assert.equal(nothingLine(app), `Nothing waiting: ${POOM.name}`, 'the "Nothing waiting" line kept for the other quiet project');
+    assert.doesNotMatch(nothingLine(app), new RegExp(MIX_PROJECT), 'never "Nothing waiting: Alpha"');
+    assert.equal(findAll(app.view, (e) => e.dataset && e.dataset.k === `ql:show:${MIX_PROJECT}`).length, 1, 'once');
+    assert.doesNotMatch(line.textContent, /since|\d\d:\d\d|can't be read/, 'no time and no can\'t-read words: its read works');
+    // Home beside it: the briefing, the cap, the versions row and the group head as G8d's round 1 built them.
+    await app.go('#/');
+    assert.match(byClass(app.view, 'v2-brief')[0].textContent, /Can't show Alpha/);
+    assert.match(capLine(app), new RegExp(`${MIX_PROJECT}'s phase: can't be shown`));
+    assert.match(versionsLine(app), new RegExp(`${MIX_PROJECT}: can't be shown`));
+    assert.deepEqual(headParts(app, 'active').bad, ["1 can't be read", "1 can't be shown"]);
+  } finally {
+    app.restore();
+  }
+  // Among the can't-read lines: Alpha (not drawn) between Service-Desk and Bravo (failing from the start), in the config's order.
+  app = await open(cantShowAmongState(), '#/waiting');
+  try {
+    assert.deepEqual(troubleLines(app), [['cant', SD.name, OPENING(SD.name)], ['show', MIX_PROJECT, SHOW(MIX_PROJECT)], ['cant', MIX_PROJECT2, OPENING(MIX_PROJECT2)]]);
+    for (const [kind, name] of troubleLines(app)) assertBad(app, keyed(app, `ql:${kind}:${name}`), `${name}'s line`);
+    assert.doesNotMatch(nothingLine(app) || '', new RegExp(MIX_PROJECT));
+  } finally {
+    app.restore();
+  }
+  // Cards waiting from another project: the line the same, those cards in the lanes.
+  app = await open(cantShowState({ waiting: true }), '#/waiting');
+  try {
+    assert.deepEqual(troubleLines(app), [['cant', SD.name, OPENING(SD.name)], ['show', MIX_PROJECT2, SHOW(MIX_PROJECT2)]]);
+    assert.ok(cardsIn(app, 'wait').length > 0, 'Alpha\'s cards in the lanes');
+    assert.doesNotMatch(nothingLine(app) || '', new RegExp(MIX_PROJECT2));
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC89 (a), AC91 (c), G8d round 2: Waiting with the made-up project the desk can read but can\'t draw (BAD_PR, NOT real) alone shown — "✕ Can\'t show Alpha" above the lanes in --bad, with no counts: no small line, no count on the lane, the empty lane "Can\'t show", the strip "Kicked back · can\'t show", never "Nothing here", "none" or a 0; "checked <age> ago" under the title', async () => {
+  const app = await open(cantShowState(), `#/waiting/${MIX_PROJECT}`);
+  try {
+    assert.match(sub(app), /^checked \d+ (s|min) ago$/, 'its read works: its own "checked <age> ago"');
+    assert.equal(aboveLanes(app), SHOW(MIX_PROJECT));
+    const line = keyed(app, `ql:show:${MIX_PROJECT}`);
+    assertBad(app, line, 'above the lanes');
+    assert.ok(has(line, 'v2-ql') && has(line, 'still') && has(line, 'bad'));
+    assert.equal(keyed(app, `ql:cant:${MIX_PROJECT}`), null, 'no can\'t-read line');
+    assert.equal(byClass(app.view, 'v2-qsmall').length, 0, 'no small line of counts');
+    assert.equal(keyed(app, 'quiet'), null, 'no quiet lines under the lanes');
+    assert.equal(laneCount(app, 'wait'), null, 'no count on the lane');
+    assert.equal(emptyOf(app, 'wait'), "Can't show");
+    assert.ok(has(byClass(lane(app, 'wait'), 'v2-empty')[0], 'unknown'), 'an unknown, in its look');
+    assert.equal(lane(app, 'kick').textContent, "Kicked back · can't show");
+    assert.equal(emptyOf(app, 'done'), 'Hold a card and drag it here', 'Done as built');
+    const board = keyed(app, 'board').textContent;
+    assert.doesNotMatch(board, /Nothing here|\bnone\b|: 0\b|Nothing waiting/, board);
+    assert.equal(findAll(keyed(app, 'board'), (e) => e.textContent === '0' && (!e.children || !e.children.length)).length, 0, 'no 0 drawn');
+    assert.match(app.text(), /1 of 3 projects/, 'the chip as built');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC80, AC89 (a), AC91 (c), G8d round 2: a project the desk can\'t draw whose read fails keeps its can\'t-read words on Waiting, every project shown and alone shown, never "Can\'t show" — never read in this opening (its blobs failing, made up), read earlier and then failing, and signed out', async () => {
+  // Never read in this opening: the first read holds the tree (and the made-up BAD_PR) but fails in its blob phase (NOT real).
+  const n = blobFailState('every file');
+  n.repos[MIX_PROJECT].pulls.push(BAD_PR);
+  let app = await open(n, '#/waiting', { polls: 2 });
+  try {
+    assert.equal(app.desk.states.get(MIX_PROJECT).lastSuccessAt ?? null, null, 'no read of it succeeded in this opening');
+    await app.go('#/');
+    assert.match(keyed(app, `card:${MIX_PROJECT}`).textContent, /Can't show this project: /, 'the desk can\'t draw it');
+    await app.go('#/waiting');
+    assert.deepEqual(troubleLines(app).filter(([, p]) => p === MIX_PROJECT), [['cant', MIX_PROJECT, OPENING(MIX_PROJECT)]]);
+    await app.go(`#/waiting/${MIX_PROJECT}`);
+    const reason = app.desk.states.get(MIX_PROJECT).failure.words;
+    assert.equal(aboveLanes(app), `${OPENING(MIX_PROJECT)}: ${reason}`);
+    assert.equal(emptyOf(app, 'wait'), "Can't read");
+    assert.equal(lane(app, 'kick').textContent, "Kicked back · can't read");
+    assert.doesNotMatch(keyed(app, 'board').textContent, /Can't show/);
+  } finally {
+    app.restore();
+  }
+  // Read earlier in this opening, then failing (made up).
+  const e = mixState();
+  e.repos[MIX_PROJECT].pulls.push(BAD_PR);
+  e.fail = () => { e.repos[MIX_PROJECT].fail = { kind: 'network' }; };
+  app = await open(e, '#/waiting', { later: true });
+  try {
+    const mine = troubleLines(app).filter(([, p]) => p === MIX_PROJECT);
+    assert.equal(mine.length, 1);
+    assert.equal(mine[0][0], 'cant');
+    assert.match(mine[0][2], SINCE(MIX_PROJECT));
+    await app.go(`#/waiting/${MIX_PROJECT}`);
+    assert.match(aboveLanes(app), new RegExp(`^Can't read ${MIX_PROJECT} since \\d\\d:\\d\\d: ${REASON}$`));
+    assert.doesNotMatch(keyed(app, 'board').textContent, /Can't show/);
+  } finally {
+    app.restore();
+  }
+  // Signed out: its read refused with the others' (made up, J6), after its first reads: its can't-read words.
+  const o = signedOutState();
+  o.repos[MIX_PROJECT].pulls.push(BAD_PR);
+  app = await open(o, '#/waiting', { later: true });
+  try {
+    const mine = troubleLines(app).filter(([, p]) => p === MIX_PROJECT);
+    assert.deepEqual(mine.map(([k]) => k), ['cant']);
+    assert.match(mine[0][2], SINCE(MIX_PROJECT));
+    assert.equal(troubleLines(app).filter(([k]) => k === 'show').length, 0, 'signed out: no "Can\'t show" line');
+    await app.go(`#/waiting/${MIX_PROJECT}`);
+    assert.match(aboveLanes(app), new RegExp(`^Can't read ${MIX_PROJECT} since \\d\\d:\\d\\d: `));
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC80, AC89 (a), G8d round 2: "Can\'t show <project>" goes on the first draw after the project draws again — every project shown, the line or "Nothing waiting: Alpha", never both nor neither; alone shown, the lanes\' counts and "Nothing here" back', async () => {
+  for (const hash of ['#/waiting', `#/waiting/${MIX_PROJECT}`]) {
+    const s = cantShowState();
+    const app = await open(s, hash);
+    try {
+      assert.ok(keyed(app, `ql:show:${MIX_PROJECT}`), `${hash}: drawn first`);
+      s.repos[MIX_PROJECT].pulls = s.repos[MIX_PROJECT].pulls.filter((x) => x !== BAD_PR);
+      let steps = 0;
+      for (;;) {
+        const shown = Boolean(keyed(app, `ql:show:${MIX_PROJECT}`));
+        if (hash === '#/waiting') assert.notEqual(shown, new RegExp(`\\b${MIX_PROJECT}\\b`).test(nothingLine(app) || ''), `${hash}: the line or "Nothing waiting", in one draw`);
+        else assert.equal(shown, emptyOf(app, 'wait') === "Can't show", `${hash}: the line and the lane's words, in one draw`);
+        if (!shown) break;
+        await app.advance(1000);
+        assert.ok(++steps < 3 * POLL_MS / 1000, `${hash}: drawn again`);
+      }
+      if (hash === '#/waiting') assert.match(nothingLine(app), new RegExp(`${MIX_PROJECT}$`));
+      else {
+        assert.equal(aboveLanes(app), null);
+        assert.equal(emptyOf(app, 'wait'), 'Nothing here');
+        assert.equal(laneCount(app, 'wait'), '0');
+        assert.equal(lane(app, 'kick').textContent, 'Kicked back · none');
+      }
+    } finally {
+      app.restore();
+    }
+  }
+});
+
+test('AC91 (c), G8d round 2, the Reviewer\'s N1: Waiting with every project shown, the 3-minute cause — Service-Desk\'s first read never answered (made up): its quiet line "✕ Can\'t read Service-Desk in this opening" in --bad, never its opening\'s time', async () => {
+  const h = unreadState();
+  h.repos[SD.name].hold = new Promise(() => {});
+  const app = await open(h, '#/waiting', { polls: 4 });
+  try {
+    assert.equal(app.desk.states.get(SD.name).lastSuccessAt ?? null, null);
+    const mine = troubleLines(app).filter(([, p]) => p === SD.name);
+    assert.deepEqual(mine, [['cant', SD.name, OPENING(SD.name)]]);
+    assertBad(app, keyed(app, `ql:cant:${SD.name}`), 'the 3-minute cause\'s quiet line');
+    assert.doesNotMatch(keyed(app, `ql:cant:${SD.name}`).textContent, /since|\d\d:\d\d/);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC91 (c), G8d round 2, the Reviewer\'s N2: a project\'s page for a project read before the sign-out — Service-Desk\'s waits row "✕ Can\'t read since HH:MM", with the sign-out\'s reason under it; signed out with Service-Desk never read before it, "Can\'t read in this opening"', async () => {
+  let app = await open(signedOutState(), `#/p/${enc(SD.name)}`, { later: true });
+  try {
+    assert.ok(app.desk.states.get(SD.name).lastSuccessAt != null, 'read before the sign-out');
+    const row = pageWaits(app);
+    assert.match(byClass(row, 'v2-prtt')[0].textContent, /^Can't read since \d\d:\d\d$/);
+    assert.equal(byClass(row, 'v2-small')[0].textContent, app.desk.states.get(SD.name).failure.words, 'the sign-out\'s reason under it');
+    assert.match(byClass(row, 'v2-small')[0].textContent, /^Signed out/);
+    assert.ok(has(row, 'bad') && has(svgOf(row), 'vi-bad'));
+    for (const theme of THEMES) assert.equal(colours(app, theme).get(byClass(row, 'v2-prtt')[0]), BAD[theme], `${theme}: in --bad`);
+  } finally {
+    app.restore();
+  }
+  app = await open(signedOutMixedState(), `#/p/${enc(SD.name)}`, { later: true });
+  try {
+    assert.equal(byClass(pageWaits(app), 'v2-prtt')[0].textContent, "Can't read in this opening", 'never read before the sign-out');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC89 (a), G8d round 2, the Reviewer\'s N3: an empty lane\'s "Can\'t read" on the blob-failure path — a made-up project (NOT real) whose held tree gives no card, its first read failing in its blob phase: its Waiting lane "Can\'t read" with no count, as on the no-tree path; "Not read in this opening", its line above the lanes, the strip "Kicked back · can\'t read"', async () => {
+  const s = blobFailNoCardState();
+  const app = await open(s, `#/waiting/${MIX_PROJECT}`, { polls: 2 });
+  try {
+    const alpha = s.repos[MIX_PROJECT];
+    assert.ok((alpha.blobCalls || []).some((c) => c.some((x) => alpha.blobFail.includes(x))), 'its read reached the blob phase: the tree was held');
+    assert.equal(app.desk.states.get(MIX_PROJECT).lastSuccessAt ?? null, null, 'no read of it succeeded in this opening');
+    const reason = app.desk.states.get(MIX_PROJECT).failure.words;
+    assert.equal(sub(app), 'Not read in this opening');
+    assert.equal(aboveLanes(app), `${OPENING(MIX_PROJECT)}: ${reason}`);
+    assert.equal(cardsIn(app, 'wait').length, 0, 'the held tree gives no card');
+    assert.equal(emptyOf(app, 'wait'), "Can't read");
+    assert.equal(laneCount(app, 'wait'), null, 'no count for an unknown');
+    assert.ok(has(byClass(lane(app, 'wait'), 'v2-empty')[0], 'unknown'));
+    assert.equal(lane(app, 'kick').textContent, "Kicked back · can't read");
+    assert.equal(emptyOf(app, 'done'), 'Hold a card and drag it here', 'Done always says so');
+    assert.equal(byClass(app.view, 'v2-qsmall').length, 0);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC87, AC54, AC91 (c), G8d round 2, the Reviewer\'s N4: a made-up project the desk can\'t draw (BAD_PR, NOT real), never read in this opening, its read failing (its blobs, made up) — in the DOM, the cap\'s row "Alpha\'s phase: can\'t be read in this opening", the versions row "Alpha: can\'t be read in this opening", the head\'s "1 can\'t be read"; no "can\'t be shown"', async () => {
+  const s = blobFailState('every file');
+  s.repos[MIX_PROJECT].pulls.push(BAD_PR);
+  const app = await open(s, '#/', { polls: 2 });
+  try {
+    assert.equal(app.desk.states.get(MIX_PROJECT).lastSuccessAt ?? null, null, 'never read in this opening');
+    assert.match(keyed(app, `card:${MIX_PROJECT}`).textContent, /Can't show this project: /, 'the desk can\'t draw it');
+    assert.match(capLine(app), new RegExp(`${MIX_PROJECT}'s phase: can't be read in this opening`));
+    assert.match(versionsLine(app), new RegExp(`${MIX_PROJECT}: can't be read in this opening`));
+    assert.deepEqual(headParts(app, 'active').bad, ["1 can't be read"]);
+    assert.doesNotMatch(capLine(app) + versionsLine(app) + groupBtn(app, 'active').textContent, /can't be shown/);
+    assert.doesNotMatch(capLine(app) + versionsLine(app), /\d\d:\d\d/, 'no time');
+    await app.go('#/pf/cap');
+    assert.equal(byClass(keyed(app, `pfs:${MIX_PROJECT}`), 'v2-small')[0].textContent, "Phase: can't be read in this opening · not counted");
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC91 (c), G8d round 2, the Reviewer\'s N5: boxStateText takes its words from IN_OPENING — its line holds the constant, and its source (and its src/public/lib copy) imports it from board.js, with no words of its own', () => {
+  const box = { flaggedCount: 0, read: { read: 'cant-read', since: Date.parse('2026-10-14T15:02:00Z'), words: REASON } };
+  const line = boxStateText(box, TZ, true);
+  assert.ok(line.includes(IN_OPENING), line);
+  assert.equal(line, `Can't read ${IN_OPENING}: ${REASON}`);
+  for (const f of [join(SRC, 'lib', 'universe.js'), join(SRC, 'public', 'lib', 'universe.js')]) {
+    const code = readFileSync(f, 'utf8');
+    assert.match(code, /^import \{ IN_OPENING \} from '\.\/board\.js';$/m, f);
+    const body = code.slice(code.indexOf('export function boxStateText'), code.indexOf('export function screenState'));
+    assert.match(body, /\$\{opening \? IN_OPENING : /, f);
+    assert.doesNotMatch(body.replace(/^\s*(\/\/|\*).*$/gm, ''), /in this opening/, `${f}: no words of its own`);
+  }
+});
+
+// G8d's round 2's screens in G8D_OPENS draw what they are named for.
+test('G8d round 2: G8D_OPENS\'s Waiting screens with a project that can\'t be shown each draw "Can\'t show <project>"', async () => {
+  const mine = G8D_OPENS.filter(([where]) => /can't be shown/.test(where));
+  assert.equal(mine.length, 3);
+  for (const [where, open2] of mine) {
+    const app = await open2();
+    try {
+      assert.equal(findAll(app.view, (e) => e.dataset && /^ql:show:/.test(e.dataset.k || '')).length, 1, where);
+      assert.match(app.text(), /Can't show (Alpha|Bravo)/, where);
+      if (/alone shown/.test(where)) assert.equal(emptyOf(app, 'wait'), "Can't show", where);
     } finally {
       app.restore();
     }

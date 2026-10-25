@@ -581,6 +581,34 @@ export function cantShowState({ waiting = false } = {}) {
   return s;
 }
 
+/**
+ * G8d's round 2 (the Reviewer's N3; AC89 (a)): `quiet` with the made-up project holding one status file that gives no card
+ * (a project dispatched to the builder, NOT a real record) and its first read holding the tree but failing in its blob phase
+ * on that file's blob (fake-desk.mjs's `blobFail`, NOT how any read failed): AC89 (a)'s state 2 on the blob-failure path with
+ * no card, so its lanes are empty.
+ */
+export function blobFailNoCardState() {
+  const s = quietState();
+  const alpha = s.repos[MIX_PROJECT];
+  alpha.commit({ 'status/P-009.toml': 'kind = "project"\nstage = 5\nstate = "dispatched"\nrole = "builder"\n' }); // made up (NOT real)
+  alpha.blobFail = [gitSha(alpha.files['status/P-009.toml'])]; // made up (NOT real)
+  return s;
+}
+
+/**
+ * G8d's round 2 (AC80; AC91 (c); the owner's ""✕ Can't show Bravo" (Recommended)"): `twoMix` with the made-up project Alpha
+ * the desk can read but can't draw (fake-desk.mjs's `BAD_PR`, NOT a real pull request) between two whose reads fail from the
+ * start (Service-Desk and the made-up Bravo, the network cause, NOT how any read failed), so Waiting's "Can't show" line sits
+ * among the can't-read lines in the board's order.
+ */
+export function cantShowAmongState() {
+  const s = twoMixState();
+  s.repos[MIX_PROJECT].pulls.push(BAD_PR);
+  for (const n of [SD.name, MIX_PROJECT2]) s.repos[n].fail = { kind: 'network' };
+  s.fail = () => {};
+  return s;
+}
+
 /** G8d's screens, opened at `hash` with "last looked" after the records' dates, `fail()` called after the first reads where `later`. */
 async function g8dOpen(setup, hash, { later = false, polls = 1 } = {}) {
   const app = await loadSandbox({ ...setup, hash, now: NOW, store: g8cStore(SINCE_LATE) });
@@ -598,7 +626,8 @@ const enc = encodeURIComponent;
  * with every project shown (one project never read in this opening, one read earlier; and signed out), with Service-Desk alone
  * shown never read, and with the made-up project alone shown on the blob-failure path; Service-Desk's page never read; the
  * v2.5 Pipeline view never read; and Home with a project the desk can't draw beside one it can't read, nothing waiting and
- * cards waiting.
+ * cards waiting; from G8d's round 2, Waiting with a project the desk can read but can't show, every project shown (nothing
+ * waiting and cards waiting) and it alone shown.
  */
 export const G8D_OPENS = [
   ['Waiting, every project shown, one project never read in this opening, one read earlier', () => g8dOpen(openingState(), '#/waiting', { later: true })],
@@ -610,6 +639,11 @@ export const G8D_OPENS = [
   ['the v2.5 Pipeline view, never read in this opening', () => g8dOpen(orderState({ waiting: true }), `#/p/${enc(POOM.name)}/pipeline`)],
   ['Home, a project the desk can\'t draw beside one it can\'t read, nothing waiting', () => g8dOpen(cantShowState(), '#/')],
   ['Home, a project the desk can\'t draw beside one it can\'t read, cards waiting', () => g8dOpen(cantShowState({ waiting: true }), '#/')],
+  // G8d's round 2 (AC80; AC89 (a); the owner's ""✕ Can't show Bravo" (Recommended)"): Waiting with a project the desk can read
+  // but can't show, every project shown and it alone shown.
+  ['Waiting, every project shown, a project that can\'t be shown beside one that can\'t be read', () => g8dOpen(cantShowState(), '#/waiting')],
+  ['Waiting, every project shown, cards waiting, a project that can\'t be shown', () => g8dOpen(cantShowState({ waiting: true }), '#/waiting')],
+  ['Waiting, the made-up project alone shown, it can\'t be shown', () => g8dOpen(cantShowState(), `#/waiting/${MIX_PROJECT}`)],
 ];
 
 export { SD, POOM, CONFIG };

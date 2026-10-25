@@ -921,3 +921,25 @@ its want-list with the group head's new "can't be shown" part, and the stage-8 g
 - **a reader that never answers** (`ac91-g8d.test.mjs`, as G8c's), for the 3-minute cause on Waiting, a page and the
   Pipeline view; **a project's reads failing after its first ones** (`ac91-g8d.test.mjs`: Personal-Org-Operating-Model on
   `mix`, the made-up project with `BAD_PR` on `mix`), for the "since HH:MM" kept. **NOT how any read failed.**
+
+### G8d's round 2 (2026-10-25, S-001 AC80, AC89 (a) and AC91 (c) changed; the owner's answer of 2026-10-25 to G8d's design review, item 4: ""✕ Can't show Bravo" (Recommended)"; the Reviewer's N1 to N5)
+
+Still no fixture file. `tests/desk/ac91-g8d.test.mjs`'s round-2 cases, G8d's walks in `ac88-dark.test.mjs` and the
+`g8d-` captures open these made-up parts, each **NOT real**:
+- **`blobFailNoCardState`** (`glance-fixtures.mjs`, the Reviewer's N3): `quiet` with the made-up project holding one
+  made-up status file that gives no card (`status/P-009.toml`, a project dispatched to the builder) and its first read
+  holding the tree but failing in its blob phase on that file's blob (fake-desk.mjs's `blobFail`): AC89 (a)'s state 2 on the
+  blob-failure path with empty lanes. **NOT a real record, NOT how any read failed.**
+- **`cantShowAmongState`** (`glance-fixtures.mjs`): `twoMix` with the made-up project Alpha the desk can read but can't draw
+  (fake-desk.mjs's `BAD_PR`) between Service-Desk and the made-up Bravo, whose reads fail from the start (the network
+  cause), so Waiting's "Can't show" line sits among the can't-read lines in the board's order. **NOT real records or
+  failures.**
+- **`G8D_OPENS`'s three round-2 entries** (`glance-fixtures.mjs`): Waiting on `cantShowState`, every project shown (nothing
+  waiting, and with `waiting` beside the first made-up project's cards) and the made-up project alone shown. **NOT real
+  records or failures.**
+- **a project the desk can't draw whose read fails** (`ac91-g8d.test.mjs`): `BAD_PR` on the made-up project with
+  `blobFailState('every file')` (never read in this opening, the Reviewer's N4), with its reads failing after its first ones
+  on `mix` (the network cause), and on `signedOutState` (every read refused as signed out after the first ones, J6).
+  **NOT how any read failed.**
+- **a reader that never answers** for Waiting's quiet line with every project shown (the Reviewer's N1), and
+  **`signedOutState`** for Service-Desk's page read before the sign-out (N2), as above. **NOT how any read went.**

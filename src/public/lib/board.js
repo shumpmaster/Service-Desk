@@ -16,7 +16,7 @@ import { durationText, hhmm, dayKey, dayDateTime } from './timefmt.js';
 import { composeAnswer, questionQuestions, boxPlan, VERDICT_START, GATE_STANDARD_WORDS, ownerActions, treeLink } from './sandbox.js';
 import { milestoneValue, firstMilestoneLine } from './records.js';
 import { canRecord } from './model.js';
-import { gateWords, caseWord, defaultLetter } from './sheets.js';
+import { gateWords, gateTitle, caseWord, defaultLetter } from './sheets.js';
 
 export const KICK_BACK_MINUTES = 5; // P-001-board-bounce.md: "after about 5 minutes" (C, a setting to tune)
 export const DONE_KEEP_HOURS = 24; // P-001-board-done-keep.md, B
@@ -391,7 +391,8 @@ export function projectCards(input) {
         const buttons = answerButtons(project, f, linkCap, '', { caseRec });
         // AC85 ("On the board"): "Critic: <its word>" and "User rep: <its word>", each from its record.
         const gw = gateWords(c.parsed ? c.parsed.text : '', { criticInTree: tree.has(criticPath), ownerIsUser: doc ? doc.ownerIsUser === true : null });
-        cards.push({ ...base, kind: 'gate', kindWord: `Gate · ${cap(phase)}`, title, meta: [c.item],
+        // AC91 (h): its title the gate's short title, from the card's own record, as its sheet and Plan's gate row have it.
+        cards.push({ ...base, kind: 'gate', kindWord: `Gate · ${cap(phase)}`, title: gateTitle(c), meta: [c.item],
           critic: gw.critic, userRep: gw.user, casePath, criticPath, caseRec, step: { id: 'answer', gate: true }, buttons });
         continue;
       }

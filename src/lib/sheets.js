@@ -10,7 +10,7 @@
 // a question settles is reported as its file states it, "(per the question file)", never implied
 // (AC12; the Chief of Staff records a default, which the owner then merges, AGENTS.md §5).
 
-import { GATE_PHASE } from './j11.js';
+import { GATE_PHASE, GATE_TITLE } from './j11.js';
 import { STANDARD_MILESTONES } from './timeline.js';
 import { NOT_RECORDED, NOT_AVAILABLE } from './sandbox.js';
 import { defaultLetter } from './records.js';
@@ -214,17 +214,39 @@ export function viewRows(cardText, ownerIsUser) {
   return rows;
 }
 
+/** The card's own `item:` (its header line, "item: P-003   kind: …"), or the item its path names while the card is unread. */
+function cardItem(card) {
+  const m = /^item:[ \t]*(\S+)/m.exec(card.parsed && card.parsed.text ? String(card.parsed.text) : '');
+  return m ? m[1] : card.item || '';
+}
+
 /**
- * The gate sheet's title (AC85): "<Phase> gate: <the card's question>", the question the first line
- * of the card's `## 1. The decision` with the model's own lead "The <Phase> gate: " left out, so the
- * phase is not said twice (C).
+ * A gate's short title (AC91 (h); AC80, AC85 and AC86, changed after the glance audit): the gate card's own record, never
+ * reworded. Its section 1's second line, which names the gate and its case as the Orchestrator writes it
+ * (orchestrator.py:893-895, "The Launch gate, case 1."), without its full stop, then " · " and the card's `item:`: "The
+ * Launch gate, case 1 · P-003". A card with no such line (none, or a second line in another form, or a card not read
+ * yet) takes "<the gate's title> · <item>", the title orchestrator.py's GATE_TITLE gives its `gate:` ("The Launch gate ·
+ * P-003") (C). The same words are the card's title on the board, its sheet's title and Plan's gate row.
  */
 export function gateTitle(card) {
-  const phase = cap(GATE_PHASE[card.gate] || card.gate || '');
+  const own = GATE_TITLE[card.gate] || `The ${cap(GATE_PHASE[card.gate] || card.gate || '')} gate`;
   const sec = sectionLines(card.parsed ? card.parsed.text : '', 1) || [];
-  const first = (sec.find((l) => l.trim()) || '').trim();
-  const q = first.replace(new RegExp(`^The ${phase} gate:\\s*`, 'i'), '');
-  return `${phase} gate: ${q ? cap(q) : NOT_RECORDED}`;
+  const said = sec.map((l) => l.trim()).filter(Boolean);
+  const m = said.length > 1 ? new RegExp(`^(${own.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}, case \\d+)\\.?$`).exec(said[1]) : null;
+  const item = cardItem(card);
+  return [m ? m[1] : own, item].filter(Boolean).join(' · ');
+}
+
+/**
+ * The gate sheet's opening (AC91 (h)): the card's section 1's whole first line, as GATE_QUESTION writes it
+ * (orchestrator.py:806-814, "The Launch gate: the launch review passed. … Proceed, hold, recycle or kill?"), word for
+ * word; "not recorded" where the card's section 1 holds no line, and null while the card is not read.
+ */
+export function gateOpening(card) {
+  if (!card.parsed) return null;
+  const sec = sectionLines(card.parsed.text, 1) || [];
+  const first = sec.find((l) => l.trim());
+  return first ? first.trim() : NOT_RECORDED;
 }
 
 /**

@@ -649,7 +649,7 @@ test('AC80 with AC74: a tap\'s address opens the board with that card\'s sheet i
 // AC52's one card of each kind
 
 
-test('AC80: AC52\'s one card of each kind — a decision card\'s "Answer", a gate card\'s four buttons and two lines, a hold card\'s and a merge card\'s "Open ↗", a pull request\'s step, a deploy\'s "Approve ↗" in a deploysNeedOwner project', async () => {
+test('AC80, rewritten in G3 (AC91 (h)): AC52\'s one card of each kind — a decision card\'s "Answer", a gate card\'s short title, its four buttons and two lines, a hold card\'s and a merge card\'s "Open ↗", a pull request\'s step, a deploy\'s "Approve ↗" in a deploysNeedOwner project', async () => {
   const project = { ...v3('Alpha'), deploysNeedOwner: true };
   const app = await loadSandbox({ config: { ...CONFIG, projects: [project] }, repos: { Alpha: fullRepo('Alpha') }, hash: '#/waiting', now: Date.parse('2026-10-14T15:00:00Z') });
   try {
@@ -661,6 +661,11 @@ test('AC80: AC52\'s one card of each kind — a decision card\'s "Answer", a gat
     assert.deepEqual(kinds, ['Decision', 'Deploy', 'Gate · Build', 'Hold', 'Merge card', 'Pull request', 'Question'].sort(), kinds.join(', '));
     assert.equal(byClass(by('Decision')[0], 'v2-step')[0].textContent, 'Answer');
     const gate = by('Gate · Build')[0];
+    // Rewritten in G3 (AC91 (h); AC80's note "After the glance audit": "a gate card's short title"): the made-up Build-gate
+    // card (NOT a real record, md-extremes/gate-card.md) has no case line in its section 1, so its title is "<the gate's
+    // title> · <item>", never the question its first line asks; every other card keeps its own title.
+    assert.equal(byClass(gate, 'v2-t')[0].textContent, 'The Build gate · P-002');
+    assert.equal(byClass(by('Decision')[0], 'v2-t')[0].textContent, 'Research Q-020 (Alpha) failed: re-specify, drop or retry?', 'a decision card keeps its section 1\'s first line');
     assert.deepEqual(byClass(gate, 'v2-step').map((b) => b.textContent), ['Proceed', 'Hold', 'Recycle', 'Kill']);
     assert.deepEqual(byClass(gate, 'v2-gl').map((l) => l.textContent.split(':')[0]), ['Critic', 'User rep']);
     const proceed = decodeValue(byClass(gate, 'v2-step')[0].attrs.href);

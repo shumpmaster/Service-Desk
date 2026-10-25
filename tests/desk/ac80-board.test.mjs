@@ -1023,7 +1023,9 @@ test('AC80 with Part A item 5 (stage 1a\'s build review, round 2, N1 and F3-r2),
     await app.advance(POLL_MS);
     noZero(app, 'all down');
     assert.equal(sub(app), 'Not read in this opening', 'state 2');
-    assert.match(byClass(app.view, 'v2-board')[0].textContent, /Can't read Example since \d\d:\d\d: network error/, 'above the lanes, with its reason');
+    // Rewritten in G8d (AC89 (a), changed: the owner's "Yes, everywhere (Recommended)"): state 2's line says "in this opening".
+    assert.match(byClass(app.view, 'v2-board')[0].textContent, /Can't read Example in this opening: network error/, 'above the lanes, with its reason');
+    assert.doesNotMatch(byClass(app.view, 'v2-board')[0].textContent, /Can't read Example since/, 'never read in this opening: no time');
   } finally {
     app.restore();
   }

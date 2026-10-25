@@ -342,16 +342,23 @@ test('AC77 (the desk): the re-read at 31 seconds gives each of its four outcomes
       assert.equal(e.defaultPrevented, true, `${kind}: held back for the re-read`);
       await app.flush();
       assert.equal(app.server.calls.filter((c) => c.path === '/api/poll').length, polls + 1, `${kind}: one poll call`);
-      const said = byClass(app.view, 'v2-recheck')[0];
+      // Rewritten after QW1's settled notes (AC94, "Settled from QW1's build", 2): the words are read in the sheet, the link's
+      // own place; the "Questions for you" section, under its "none" line once the question has left it, says them too, after
+      // the question's title.
+      const said = byClass(byClass(app.view, 'v2-sheet')[0], 'v2-recheck')[0];
       const text = said ? said.textContent : '';
+      const inSection = byClass(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'qsec')[0], 'v2-recheck').map((x) => x.textContent);
       if (kind === 'open') {
         assert.deepEqual(opened2, [link.attrs.href], 'still open: GitHub opens');
+        assert.deepEqual(inSection, []);
       } else if (kind === 'answered') {
         assert.equal(text, 'Already answered: Ruling: B — made up');
+        assert.deepEqual(inSection, ['A made-up question: Already answered: Ruling: B — made up'], 'the section says it under its "none" line');
         assert.deepEqual(opened2, []);
       } else if (kind === 'recording') {
         assert.ok(text.includes(RECHECK_WORDS.recording));
         assert.ok(text.includes('PR #97'));
+        assert.ok(inSection.length === 1 && inSection[0].startsWith('A made-up question: ') && inSection[0].includes('PR #97'), 'and the section, with its link');
         assert.deepEqual(opened2, []);
       } else {
         assert.ok(text.includes("The desk couldn't check just now"));

@@ -653,7 +653,12 @@ test('AC80, AC89 (a), AC91 (c), G8d round 2: a project the desk can\'t draw whos
     assert.match(mine[0][2], SINCE(MIX_PROJECT));
     await app.go(`#/waiting/${MIX_PROJECT}`);
     assert.match(aboveLanes(app), new RegExp(`^Can't read ${MIX_PROJECT} since \\d\\d:\\d\\d: ${REASON}$`));
-    assert.doesNotMatch(keyed(app, 'board').textContent, /Can't show/);
+    // From G8d's round 3 (AC89 (a); P-001-glance-cant-show-last-read.md, "Ruling: A"): its empty lane now says "Can't show
+    // when last read", so the board holds "Can't show" there; still no "✕ Can't show <project>" line and no ql:show: key.
+    assert.doesNotMatch(keyed(app, 'board').textContent, new RegExp(SHOW(MIX_PROJECT)), 'no "Can\'t show Alpha" anywhere on the board');
+    assert.equal(findAll(keyed(app, 'board'), (x) => has(x, 'v2-ql') && /^Can't show /.test(x.textContent)).length, 0, 'no ✕ Can\'t show line');
+    assert.equal(findAll(app.view, (x) => x.dataset && /^ql:show:/.test(x.dataset.k || '')).length, 0, 'no ql:show: key');
+    assert.ok(keyed(app, `ql:cant:${MIX_PROJECT}`), 'its can\'t-read line above the lanes, keyed so');
   } finally {
     app.restore();
   }

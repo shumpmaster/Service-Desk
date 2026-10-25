@@ -975,9 +975,9 @@ html.sb .v2-home .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-lead { font: var(--t-lead); overflow-wrap: break-word; }
 /* AC92 (e), from G9 (P-001-glance2-anchor.md, A): the page's soft box, the briefing's own look (`.v2-brief`: the --bg2
    ground, its 12 px radius, 12 px padding and its gap), no edge and no shadow, never vermilion; it holds the sentence and,
-   under it, the one-line tally, "<R> of <T>" in 500 12 px ink as a phase's line has it (`.v2-sd b`), the rest --t-small grey. */
+   under it, the one-line tally (`.v2-small`, wrapping as every line on a screen does), "<R> of <T>" in 500 12 px ink as a
+   phase's line has it (`.v2-sd b`), the rest --t-small grey. */
 .v2-anchor { display: grid; gap: 4px 10px; padding: 12px; border-radius: 12px; background: var(--bg2); color: var(--ink); }
-.v2-tally { overflow-wrap: break-word; }
 .v2-tally b { font-weight: 500; color: var(--ink); }
 
 /* The phase strip (frame 5): a thin bar in each phase's colour, solid where finished or now, dashed

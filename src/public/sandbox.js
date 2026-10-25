@@ -31,7 +31,7 @@ import { GATE_PHASE } from './lib/j11.js';
 import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, gateOpening, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, BOARD_LANES, WORDS, MARKS_KEY,
-  stripEmptyParts, isNewCard, boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, quietCantWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
+  stripEmptyParts, isNewCard, boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, quietTroubleWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
@@ -1926,7 +1926,10 @@ const boardState = {
 function readOf(box, name) {
   const r = (box && box.read) || {};
   // From G8d (AC91 (c)): `opening`, no read of the project has succeeded in this opening, so Waiting's quiet line says "in this opening".
-  return { ok: r.read === 'ok', cantRead: r.read === 'cant-read', since: r.since, words: r.words, opening: r.read === 'cant-read' && !readInOpening(name) };
+  // From G8d's round 2 (AC80; the owner's ""✕ Can't show Bravo" (Recommended)"): `cantShow`, the desk can read the project but
+  // can't draw it (its box's `drawError`, its read not failing), so it is not `ok` and never "Nothing waiting: <project>".
+  const cantShow = cantShown(box);
+  return { ok: r.read === 'ok' && !cantShow, cantRead: r.read === 'cant-read', cantShow, since: r.since, words: r.words, opening: r.read === 'cant-read' && !readInOpening(name) };
 }
 
 /** The queue less what the board does not count (AC48, AC49, AC54, AC55, AC24): the pull requests with the agents and the cards marked done here. */
@@ -2019,8 +2022,9 @@ function boardOf(built, nowMs, only) {
   const one = only ? built.find((b) => b.project.name === only) : null;
   if (one && one.box) {
     const st = DESK && DESK.states ? DESK.states.get(only) : null;
-    view.one = oneProjectView({ name: only, read: one.box.read, lastSuccessAt: st ? st.lastSuccessAt : null, tz: TZ });
-    view.unread = view.one.unknown ? (view.one.state === 2 ? 'cant' : 'pending') : null;
+    // From G8d's round 2: a project the desk can read but can't draw says "Can't show <project>" above the lanes, with no counts.
+    view.one = oneProjectView({ name: only, read: one.box.read, lastSuccessAt: st ? st.lastSuccessAt : null, tz: TZ, cantShow: cantShown(one.box) });
+    view.unread = view.one.unknown ? (view.one.cantShow ? 'cant-show' : view.one.state === 2 ? 'cant' : 'pending') : null;
   }
   boardState.view = view;
   boardState.cards = new Map(projects.flatMap((p) => p.cards.map((c) => [c.id, c])));
@@ -2507,8 +2511,9 @@ function quietLines(bd, built, only) {
   } else {
     if (q.agents.length) lines.push(quietLine('agents', 'agents', WORDS.agents, q.agents.length, agentsFold));
     if (bd.nothingWaiting.length) lines.push(h('p', { class: 'v2-ql still', key: 'ql:nothing' }, vi('eye'), h('span', {}, `${WORDS.nothing}: ${bd.nothingWaiting.join(', ')}`)));
-    // AC80, AC89 (a); from G8d (AC91 (c)), "Can't read <project> in this opening" for a project no read of which has succeeded in this opening.
-    for (const c of bd.cantRead) lines.push(h('p', { class: 'v2-ql still bad', key: `ql:cant:${c.project}` }, vi('bad'), h('span', {}, quietCantWords(c, TZ))));
+    // AC80, AC89 (a); from G8d (AC91 (c)), "Can't read <project> in this opening" for a project no read of which has succeeded in this opening;
+    // from G8d's round 2, "Can't show <project>" for one the desk can read but can't draw, in the same look, among them in the board's order.
+    for (const c of bd.cantLines) lines.push(h('p', { class: 'v2-ql still bad', key: `ql:${c.show ? 'show' : 'cant'}:${c.project}` }, vi('bad'), h('span', {}, quietTroubleWords(c, TZ))));
     // AC87 (stage 6b; J23's failures): the portfolio's read that isn't current, in its own words, never a project's.
     if (lastPf && lastPf.problem && lastPf.state !== 'pending') lines.push(h('p', { class: 'v2-ql still bad', key: 'ql:cant:portfolio' }, vi('bad'), h('span', {}, lastPf.problem)));
     if (q.recording.length) lines.push(quietLine('recording', 'eye', WORDS.recording, q.recording.length, recFold));
@@ -2536,8 +2541,9 @@ function renderWaiting(bd, built, only, sheetId) {
       h('button', { type: 'button', class: 'v2-x', key: 'chip-x', 'aria-label': 'Show all projects', onclick: () => nav.replace('#/waiting') }, vi('x'))),
     h('span', { class: 'v2-small' }, `1 of ${bd.of} project${bd.of === 1 ? '' : 's'}`)));
     // AC89 (a), states 2 and 5: "Can't read <project> since HH:MM", with AC5's reason in words, above the lanes; from G8d,
-    // state 2's "Can't read <project> in this opening: <reason>" (oneProjectView).
-    if (one && one.cant) body.push(h('div', { class: 'v2-quiet', key: 'quiet-cant' }, h('p', { class: 'v2-ql still bad', key: `ql:cant:${name}` }, vi('bad'), h('span', {}, one.cant))));
+    // state 2's "Can't read <project> in this opening: <reason>" (oneProjectView); from G8d's round 2, "Can't show <project>"
+    // for a project the desk can read but can't draw, in the same place and look.
+    if (one && one.cant) body.push(h('div', { class: 'v2-quiet', key: 'quiet-cant' }, h('p', { class: 'v2-ql still bad', key: `ql:${one.cantShow ? 'show' : 'cant'}:${name}` }, vi('bad'), h('span', {}, one.cant))));
   } else body.push(quietLines(bd, built, null));
   body.push(kickStrip(bd, built, name));
   body.push(h('div', { class: 'v2-lanes', key: 'lanes' }, BOARD_LANES.map((k) => laneNode(bd, built, k, name))));

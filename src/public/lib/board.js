@@ -123,6 +123,20 @@ export function cantSince({ since = null, opening = false } = {}, tz) {
 export const quietCantWords = (c, tz) => `Can't read ${c.project}${cantSince(c, tz)}`;
 
 /**
+ * From G8d's round 2 (AC80; AC91 (c); the owner's answer of 2026-10-25 to G8d's design review, ""✕ Can't show Bravo"
+ * (Recommended)"): the words for a project the desk can read but can't draw (its box's `drawError`, its read not
+ * failing), in Waiting's quiet lines and, with it alone shown, above the lanes, in the can't-read line's look; never
+ * "Nothing waiting: <project>". No time: its read works.
+ */
+export const cantShowWords = (project) => `Can't show ${project}`;
+
+/**
+ * Waiting's quiet line for an entry of boardView's `cantLines` (AC80; AC89 (a)): "Can't show <project>" for a project the
+ * desk can read but can't draw (`show`, from G8d's round 2), else its can't-read words (quietCantWords).
+ */
+export const quietTroubleWords = (c, tz) => (c.show ? cantShowWords(c.project) : quietCantWords(c, tz));
+
+/**
  * AC89 (a)'s words for Waiting with one project shown, in each of its read states (specs/S-001.md, AC89 (a),
  * the five-state table).
  */
@@ -131,6 +145,7 @@ export const ONE_WORDS = Object.freeze({
   notRead: 'Not read in this opening',
   notReadYet: 'Not read yet',
   cantRead: "Can't read",
+  cantShow: "Can't show",
   whenLast: 'Nothing here when last read',
   countsChecking: 'checking…',
 });
@@ -154,11 +169,22 @@ export const ONE_WORDS = Object.freeze({
  * the project's cards as its reads in this opening gave them: in state 2 those of a held tree, if any), counts ('read' |
  * 'checking' | null), cant (the line above the lanes, or null), empty (an empty lane's words), unknown (a lane with no
  * count), under(nowMs) }.
+ * From G8d's round 2 (AC89 (a); the owner's ""✕ Can't show Bravo" (Recommended)"), `cantShow`: the desk can read the
+ * project but can't draw it (its box's `drawError`). Where its read does not fail, it is fresh by the table but with nothing
+ * drawn: `cantShow` true, the line above the lanes "Can't show <project>" in place of the quiet lines, no counts (`counts`
+ * null, `unknown`, so no small line and no count on a lane), an empty lane "Can't show" (the strip "Kicked back · can't
+ * show"), never "Nothing here" or a 0; under the title its own "checked <age> ago", as built, since its read works. One
+ * whose read fails is in state 2 or 5 as above, its can't-read words kept.
  */
-export function oneProjectView({ name, read, lastSuccessAt, tz }) {
+export function oneProjectView({ name, read, lastSuccessAt, tz, cantShow = false }) {
   const r = read || {};
   const succeeded = lastSuccessAt != null && Number.isFinite(lastSuccessAt);
   const checked = (nowMs) => `checked ${durationText(Math.max(0, nowMs - lastSuccessAt))} ago`;
+  if (cantShow && r.read !== 'cant-read') {
+    const state = r.read === 'ok' ? 3 : succeeded ? 4 : 1;
+    return { state, cantShow: true, cards: false, counts: null, cant: cantShowWords(name), empty: ONE_WORDS.cantShow, unknown: true,
+      under: succeeded ? checked : () => ONE_WORDS.checking };
+  }
   const cant = r.read === 'cant-read' ? `${quietCantWords({ project: name, since: r.since, opening: !succeeded }, tz)}${r.words ? `: ${r.words}` : ''}` : null;
   if (r.read === 'ok') return { state: 3, cards: true, counts: 'read', cant: null, empty: WORDS.empty, unknown: false, under: checked };
   if (r.read === 'cant-read') {
@@ -800,11 +826,15 @@ export function recordDone(project, model, snap, j, nowMs) {
 
 /**
  * The whole board (AC80): input: { projects: [{ project, cards, agents, read: { ok, cantRead,
- * since, words, opening (from G8d: no read of it has succeeded in this opening) }, recording: [], asking: [], answerRecording: [], recordRows: [], seenRows: [] }] in J7's
+ * since, words, opening (from G8d: no read of it has succeeded in this opening), cantShow (from G8d's round 2: the desk can
+ * read it but can't draw it) }, recording: [], asking: [], answerRecording: [], recordRows: [], seenRows: [] }] in J7's
  * order, marks, only (a project's name, or null), nowMs, tz }. Returns { lanes: [{ key, title,
  * count, groups: [{ project, rows, more }] }], strip (AC91 (f): the kicked-back cards, newest first, each with its
  * `stripProject`), counts: Map(project → { waiting, kicked }), badge,
- * quiet, only, of, nothingWaiting, cantRead, done, pending }.
+ * quiet, only, of, nothingWaiting, cantRead, cantShow (the names of the projects the desk can read but can't draw, whose
+ * reads do not fail), cantLines (the can't-read entries and, from G8d's round 2, the can't-show ones, `show` true, in the
+ * board's order: Waiting's red quiet lines), done, pending }. A project that can't be read is never in `cantShow`, and one
+ * in `cantShow` is in no "Nothing waiting" line.
  */
 export function boardView(input) {
   const { marks, nowMs, tz } = input;
@@ -815,6 +845,8 @@ export function boardView(input) {
   const quiet = { agents: [], recording: [], asking: [], answerRecording: [] };
   const nothingWaiting = [];
   const cantRead = [];
+  const cantShow = [];
+  const cantLines = [];
   let pendingAny = false;
   for (const p of input.projects) {
     const name = p.project.name;
@@ -885,8 +917,15 @@ export function boardView(input) {
       quiet.recording.push(...(p.recording || []));
       quiet.asking.push(...(p.asking || []));
       quiet.answerRecording.push(...(p.answerRecording || []));
-      if (p.read && p.read.cantRead) cantRead.push({ project: name, since: p.read.since, words: p.read.words, opening: Boolean(p.read.opening) });
-      else if (p.read && p.read.ok && !waitRows.length && !kickRows.length && !doneRows.length) nothingWaiting.push(name);
+      if (p.read && p.read.cantRead) {
+        const c = { project: name, since: p.read.since, words: p.read.words, opening: Boolean(p.read.opening) };
+        cantRead.push(c);
+        cantLines.push({ ...c, show: false });
+      } else if (p.read && p.read.cantShow) {
+        // From G8d's round 2 (AC80; AC91 (c)): read but not drawn, so never "Nothing waiting: <project>", a false all-clear.
+        cantShow.push(name);
+        cantLines.push({ project: name, show: true });
+      } else if (p.read && p.read.ok && !waitRows.length && !kickRows.length && !doneRows.length) nothingWaiting.push(name);
     }
   }
   const lane = (k) => lanes[k].reduce((n, g) => n + (k === 'done' ? g.all.length : g.rows.length), 0);
@@ -899,7 +938,7 @@ export function boardView(input) {
   return {
     lanes: LANES.map((l) => ({ ...l, count: lane(l.key), groups: lanes[l.key] })),
     strip,
-    counts, counted, badge, quiet, only, of: input.projects.filter((p) => p.project.portfolio !== true).length, nothingWaiting, cantRead, pendingAny,
+    counts, counted, badge, quiet, only, of: input.projects.filter((p) => p.project.portfolio !== true).length, nothingWaiting, cantRead, cantShow, cantLines, pendingAny,
   };
 }
 

@@ -5,6 +5,7 @@
 
 import { STALE_MS, REASON_WORDS, errorText } from './scheduler.js';
 import { hhmm } from './timefmt.js';
+import { IN_OPENING } from './board.js';
 
 /**
  * A project's read state: { read: 'ok' | 'checking' | 'cant-read', since, reason, words }.
@@ -47,14 +48,14 @@ export function orderBoxes(boxes) {
  * The words of a box's state line (AC5, AC8). From stage G8d (AC91 (c); the owner's "Yes, everywhere (Recommended)"),
  * `opening`: no read of the project has succeeded in this opening (the sandbox's readInOpening, as Home's places take it),
  * so its failing read says "Can't read in this opening: <reason>" in place of "Can't read since HH:MM: <reason>"; absent,
- * as built.
+ * as built. Its words are board.js's `IN_OPENING`, as Waiting's and Home's are (G8d's round 2, the Reviewer's N5).
  */
 export function boxStateText(box, timeZone, opening = false) {
   const parts = [];
   if (box.drawError) parts.push(box.drawError);
   if (box.flaggedCount > 0) parts.push(`${box.flaggedCount} waiting on you`);
   if (box.read.read === 'cant-read') {
-    parts.push(`Can't read ${opening ? 'in this opening' : `since ${hhmm(new Date(box.read.since), timeZone)}`}: ${box.read.words}`);
+    parts.push(`Can't read ${opening ? IN_OPENING : `since ${hhmm(new Date(box.read.since), timeZone)}`}: ${box.read.words}`);
   } else if (box.read.read === 'checking') {
     parts.push('Checking…');
   } else if (box.flaggedCount === 0 && !box.drawError) {

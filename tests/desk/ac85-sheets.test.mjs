@@ -379,7 +379,7 @@ test('AC85 a question that can\'t be split keeps AC53\'s one box and AC80\'s one
   }
 });
 
-test('AC85 "✓ Move to Done · then answer on GitHub" marks the card as AC80\'s "Done ✓" does: it heads Done, confirming, and leaves the count; its sheet then offers "Undo"', async () => {
+test('AC85 "✓ Move to Done · then answer on GitHub" marks the card as AC80\'s "Done ✓" does: it heads Done, confirming, and leaves the count; its sheet then offers "Undo" (rewritten in QW1: the count the section\'s and the lane\'s sum)', async () => {
   const app = await openLetters();
   try {
     for (const id of [NEXT, GATE]) {
@@ -401,7 +401,12 @@ test('AC85 "✓ Move to Done · then answer on GitHub" marks the card as AC80\'s
       assert.equal(keyed(app, 'sheet-state').textContent, WORDS.confirming);
     }
     await app.go('#/waiting');
-    assert.equal(byClass(keyed(app, 'lane:wait'), 'v2-lc')[0].textContent, '4', 'both left the count at once');
+    // Rewritten in QW1 (AC94): the lane and the "Questions for you" section count their own cards, so the count both left at
+    // once is their sum (the badge's, unchanged), read here from the lane's count and the section's head.
+    const sec = Number((byClass(byClass(keyed(app, 'qsec'), 'v2-kh')[0], 'v2-lc')[0] || { textContent: '0' }).textContent);
+    const ln = Number((byClass(keyed(app, 'lane:wait'), 'v2-lc')[0] || { textContent: '0' }).textContent);
+    assert.equal(ln + sec, 4, 'both left the count at once');
+    assert.equal(byClass(app.view, 'v2-badge')[0].children[0].textContent, '4');
     // The gate's Done card keeps its step while it is confirming (P-001-board-done-button.md, A): its four buttons, and "Undo".
     const conf = byClass(keyed(app, 'lane:done'), 'v2-card conf').find((c) => c.textContent.includes('The Launch gate'));
     assert.deepEqual(byClass(conf, 'v2-step').map((b) => b.textContent), ['Proceed', 'Hold', 'Recycle', 'Kill']);
@@ -410,7 +415,8 @@ test('AC85 "✓ Move to Done · then answer on GitHub" marks the card as AC80\'s
     await openSheet(app, NEXT);
     await app.tap(keyed(app, 'sheet-undo'));
     await app.go('#/waiting');
-    assert.equal(byClass(keyed(app, 'lane:wait'), 'v2-lc')[0].textContent, '5', '"Undo" returns it');
+    assert.equal(byClass(app.view, 'v2-badge')[0].children[0].textContent, '5', '"Undo" returns it');
+    assert.ok(findAll(keyed(app, 'qsec'), (e) => e.attrs && e.attrs['data-card'] === NEXT).length, 'back in the section it came from (QW1)');
     assert.match(rule('.v2-sitem'), /min-height: 44px/);
   } finally {
     app.restore();

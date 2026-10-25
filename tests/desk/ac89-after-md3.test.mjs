@@ -475,7 +475,9 @@ test('AC89 (c): the row\'s cut — two lines of the small role, hidden past them
 // ---------------------------------------------------------------------------
 // (h) Nothing unread reads as read (specs/S-001.md:7884-7896)
 
-test('AC89 (h): a project the desk can\'t read never shows "Phases: reading…" — its tile and page say "Phases: not available" beside "Can\'t read since HH:MM"; its Record notes say "not read"; an unread v2.5 project\'s "Your last action" reads "not available"', async () => {
+// Rewritten in G8c (P-001-glance-opening-wording.md, B): Alpha's reads fail from the start, so on Home its tile says "Can't
+// read in this opening"; its page, off Home, keeps "Can't read since HH:MM" (AC91 (c): not on Home, kept as built).
+test('AC89 (h): a project the desk can\'t read never shows "Phases: reading…" — its tile and page say "Phases: not available", the tile beside "Can\'t read in this opening" where no read of it succeeded in this opening and the page beside "Can\'t read since HH:MM"; its Record notes say "not read"; an unread v2.5 project\'s "Your last action" reads "not available"', async () => {
   const pv = phaseView(v3('X'), null, new Map(), { ready: false }, true);
   assert.equal(pv.why, PHASES_NOT_AVAILABLE);
   assert.equal(PHASES_NOT_AVAILABLE, 'Phases: not available');
@@ -492,7 +494,8 @@ test('AC89 (h): a project the desk can\'t read never shows "Phases: reading…" 
     const since = hhmm(new Date(NOW + 1000), TZ);
     const tile = findAll(app.view, (e) => e.dataset && e.dataset.k === 'card:Alpha')[0];
     assert.ok(tile.textContent.includes('Phases: not available'), tile.textContent);
-    assert.ok(tile.textContent.includes(`Can't read since ${since}`));
+    assert.ok(tile.textContent.includes("Can't read in this opening"), tile.textContent);
+    assert.ok(!tile.textContent.includes(`Can't read since ${since}`), 'on Home, no time for a project never read in this opening');
     assert.ok(!app.text().includes('Phases: reading…'), 'never "Phases: reading…"');
     await app.go('#/p/Alpha');
     assert.ok(app.text().includes('Phases: not available'));

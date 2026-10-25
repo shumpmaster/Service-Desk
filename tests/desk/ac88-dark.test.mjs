@@ -34,7 +34,7 @@ import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
 import { BAD_PR } from './fake-desk.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
-import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS } from './glance-fixtures.mjs';
+import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS } from './glance-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -617,6 +617,15 @@ function okBadCheck(app, where, fails, seen, places) {
         if (red.length) fail(n, `${ink}: ${red.map(label).join(', ')} in --ok or --bad, where AC92 (a) keeps ink or grey`);
         else places.add(ink);
       }
+      // G7b (AC92 (a)'s "Stays grey": "Since you last looked"'s "<project> not read since HH:MM, its lines may be missing"
+      // lines, grey as the owner ruled, AC91 (c)): each in --ink2, never --ok or --bad, and with no icon.
+      if (n.tag === 'p' && n.cls.has('v2-small') && n.parent && n.parent.tag === 'div' && n.parent.cls.has('v2-smiss')) {
+        const raw = n.style.get('color') || '';
+        const col = plain(raw).trim().toLowerCase();
+        if (isOkBad(raw) || col !== THEME[way.theme]['--ink2'].toLowerCase()) fail(n, `"Since you last looked"'s missing line in ${col}: it stays --ink2`);
+        else if (n.kids.some((c) => c.tag === 'svg')) fail(n, '"Since you last looked"\'s missing line with an icon: it has none');
+        else places.add('grey: "Since you last looked"\'s missing line');
+      }
       // The grey "Can't show this" lines and the rules that draw nothing: never red, and never matched.
       if (n.cls.has('v2-small') && n.cls.has('bad') && n.text.trim()) {
         if (isOkBad(n.style.get('color') || '')) fail(n, 'a "Can\'t show this" line in --ok or --bad: it stays grey');
@@ -729,6 +738,18 @@ test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --o
       app.restore();
     }
   }
+  // G7b (AC91 (c); P-001-glance-since-incomplete.md, A): Home with a "last looked" held and a project that can't be read, so
+  // "Since you last looked" ends in its grey missing lines (tests/desk/glance-fixtures.mjs's G7B_OPENS, its made-up
+  // failures NOT real), which no screen above draws: the walk above opens Home with no "last looked", markers off.
+  for (const [where, open] of G7B_OPENS) {
+    const app = await open();
+    try {
+      check(app, `G7b ${where}`, fails, seen);
+      counts.screens++;
+    } finally {
+      app.restore();
+    }
+  }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // Each mark on AC92 (a)'s list and each exception the fixtures reach was drawn, so the check read them where they are meant to be.
@@ -739,7 +760,7 @@ test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --o
     'ruled: a tile\'s foot or a tile the desk can\'t draw', 'ruled: a page\'s waits row', 'ruled: Waiting\'s and "Since you last looked"\'s quiet line',
     'ruled: a group head\'s can\'t-read count', 'reading (e): the notifications warning', 'grey: a "Can\'t show this" line',
     'ink: the portfolio\'s problem line', 'ink: a portfolio card\'s note', 'ink: the portfolio block\'s "nothing queued" tick', 'ink: a portfolio block\'s mark',
-    'ink: Plan\'s ideas']) {
+    'ink: Plan\'s ideas', 'grey: "Since you last looked"\'s missing line']) {
     assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
   }
 });
@@ -1118,6 +1139,23 @@ const G7_EXCEPT = (n, d, theme) => {
   const k = G7_KEY(n);
   return Boolean(k && G7_ONCE.get(theme) && (G7_ONCE.get(theme).get(k) || []).includes(d)) ? `G7 ${theme} ${k} ${d}` : null;
 };
+/**
+ * G7b of "After the glance audit"'s changes to the look on purpose (the brief's rule; AC91 (c): "the list ends with one
+ * line for each such project … each in `--t-small` `--ink2`, grey, with no icon … wrapped at 360 px, never cut"), each
+ * declaration pinned to its value, before and after, on only its own element, the same in each theme: the box of the
+ * lines that end "Since you last looked" (`div.v2-smiss`, a new element under the list), its lines 2 px apart and 6 px
+ * under the list's last line. Each line (`p.v2-small` in it) takes rules that were there: `.v2-small`'s font and colour,
+ * and style.css's `overflow-wrap: anywhere` on every p, so it wraps at a long name. The walk reaches them on G7b's screens
+ * (tests/desk/glance-fixtures.mjs's G7B_OPENS, below).
+ */
+const G7B_ONCE = new Map([
+  ['div.v2-smiss', ['display: (none) → grid', 'gap: (none) → 2px', 'margin-top: (none) → -6px']],
+]);
+const G7B_KEY = (n) => (n.tag === 'div' && n.cls.has('v2-smiss') && n.parent && n.parent.cls.has('v2-home') ? 'div.v2-smiss' : null);
+const G7B_EXCEPT = (n, d) => {
+  const k = G7B_KEY(n);
+  return Boolean(k && (G7B_ONCE.get(k) || []).includes(d)) ? `G7B ${k} ${d}` : null;
+};
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
@@ -1167,6 +1205,8 @@ function sameLook(app, where, fails, seen) {
         if (g6) { excepted.add(g6); continue; }
         const g7 = G7_EXCEPT(b, d, way.theme);
         if (g7) { excepted.add(g7); continue; }
+        const g7b = G7B_EXCEPT(b, d);
+        if (g7b) { excepted.add(g7b); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -1312,6 +1352,23 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
       g7.restore();
     }
   }
+  // G7b of "After the glance audit" (AC91 (c)): Home with a "last looked" held and a project that can't be read
+  // (tests/desk/glance-fixtures.mjs's G7B_OPENS, its made-up failures NOT real), so the walk reaches the grey lines that
+  // end "Since you last looked", which the walk above, holding no "last looked", never draws. The list holding its four
+  // lines and "<n> more" is left out here: there each line's two-line cut (`span.v2-e1`, G1's AC91 (e), calc(3 * 1.45em) →
+  // calc(2 * 1.45em)) differs too, a change of G1's that this walk never reached and G1_ONCE doesn't pin; AC82's and AC91's
+  // own cases lock it, and G7b's own test (tests/desk/ac91-g7b-since-missing.test.mjs) and the cascade check above draw
+  // its missing line there.
+  for (const [where, open] of G7B_OPENS.filter(([w]) => !/"<n> more"/.test(w))) {
+    const g7b = await open();
+    try {
+      assert.ok(findAll(g7b.view, (e) => e.dataset && e.dataset.k === 'since-miss').length === 1, `${where}: the missing lines drawn`);
+      sameLook(g7b, `G7b ${where}`, fails, seen);
+      counts.screens++;
+    } finally {
+      g7b.restore();
+    }
+  }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // The named exception was met, and only in its own forms: Home, Waiting, Plan, a project, Team and the Timeline.
@@ -1352,7 +1409,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // G7's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
   const g7 = [...G7_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G7 ${theme} ${k} ${d}`))).sort();
   assert.deepEqual([...excepted].filter((x) => /^G7 /.test(x)).sort(), g7);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[1234567] )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // G7b's exception was met, each pinned declaration on its own element, and nothing else of it.
+  const g7b = [...G7B_ONCE].flatMap(([k, ds]) => ds.map((d) => `G7B ${k} ${d}`)).sort();
+  assert.deepEqual([...excepted].filter((x) => /^G7B /.test(x)).sort(), g7b);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[1234567] |G7B )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

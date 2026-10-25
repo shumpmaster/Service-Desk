@@ -256,3 +256,17 @@ options_considered: "A new domain reviewer" (proposed); "A responsibility added 
 decided_by: owner (the owner's verdict on this pull request)
 proposed_by: orchestrator
 reversibility: reversible
+
+## L-0019 — Overnight proxy: the Orchestrator works on and merges reviewed pull requests for six hours while the owner sleeps
+date: 2026-10-25
+type: delegation
+supersedes: []
+scope: project
+expires: 2026-10-25
+asked: none; the owner said in the session (session_017seyaGqUxAff6E8dKWHDCR, 2026-10-25 03:36 UTC): "I'm going to bed, you have my permission to act as my proxy to work through the night for the next 6 hours".
+decision: Until 09:36 UTC on the expiry date, the Orchestrator goes on with the plan after the glance audit (M3E's stages, then the plan's order) and may merge a pull request itself when every verdict its risk class needs is recorded as PASS, CI on its head is green apart from the owner signal, it has no conflict and its Tasks are all ticked or explained: records (R0) and the desk's code (R1) only, read as narrowly as L-0010 and the owner's earlier "Merge low-risk only" allow, widened to R1 by the owner's words "act as my proxy". Each merge commit names this entry, and each is listed for the owner when they are back. Governance changes (R3), any owner verdict file, deploy approvals, gate rulings and the owner's open questions are not answered or done by proxy; they wait for the owner, and a question's own default and timeout apply as written. Nothing irreversible is done.
+licenses_next: The merges of M3E's reviewed stage pull requests, and their records, until 09:36 UTC on 2026-10-25.
+options_considered: "Work only, merge nothing" (the owner's words grant more); "Full authority, R3 and verdicts included" (beyond what a proxy should do unasked, and against L-0010's line on verdicts).
+decided_by: owner ("you have my permission to act as my proxy to work through the night for the next 6 hours", 2026-10-25, in the session)
+proposed_by: orchestrator
+reversibility: reversible

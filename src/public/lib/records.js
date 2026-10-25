@@ -615,6 +615,15 @@ export function entryWords(e, t) {
 }
 
 /**
+ * J9's headline words for a log entry, with no time (AC60, AC67, AC71: dates only, never a clock time): entryWords with
+ * its ", <t>" left out, " (proxy)" kept after a ruling's words; null where entryWords gives none.
+ */
+export function headlineWords(e) {
+  const w = entryWords(e, '\u0000');
+  return w ? w.replace(/,? \u0000/, '').replace('\u0000', '') : null;
+}
+
+/**
  * Mark retries: a dispatch of the same item and role right after an outcome of that item with
  * result `error` (J9). Mutates and returns entries (each gets `retry: true|undefined`).
  */

@@ -83,3 +83,8 @@ progress.usage-bar { display: block; width: 100%; height: 12px; margin: 6px 0; a
 .gone { color: var(--warn); background: var(--warn-bg); }
 li.opened-item { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 4px; }
 .recheck p { margin: 4px 0; }
+/* AC91 (k): the failed-load screen in this sheet's look, should sandbox.css not load either: the words beside the ✕
+   (app.js's inline SVG, sized by its own attributes) in red, and the Reload button at least 44 px tall. */
+.v2-lf { display: flex; gap: 8px; align-items: flex-start; }
+.v2-lfx { flex: none; margin-top: 4px; color: var(--bad, var(--flag)); }
+.v2-reload { min-height: 44px; }

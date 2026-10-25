@@ -2,9 +2,10 @@
 // tests/desk/fake-desk.mjs's in-memory repositories from committed fixtures, in the stage that first needs each.
 // G1 (Home at a glance) builds `text`, `mix`, `unread`, `stall`, signed-out and `ext`; G2 (Waiting) adds `quiet`, and
 // for the Kicked back strip a second made-up project and the Done marks a device keeps; G3 (gate titles) adds `gates`, two
-// made-up gate cards at one gate; the later stages add theirs
-// (`mix`'s made-up later Launch run for F1 and F2 is G5's; failed-load is G4's). Each made-up part is labelled NOT real
-// here and in tests/desk/fixtures/README.md.
+// made-up gate cards at one gate; G4 adds `gates`' `sameItem` (one item's two gate cards at one gate) and Done marks
+// with `id`, `title` and `confirmedAt` (its failed load is app.js served with no sandbox.js, built in its own test and
+// tools/glance-shots.mjs); the later stages add theirs (`mix`'s made-up later Launch run for F1 and F2 is G5's). Each
+// made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
 import { CONFIG, fixture } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
 import { waSetup, SD, POOM } from './wa-fixtures.mjs';
@@ -120,14 +121,15 @@ const TITLE = { pr: (p) => `${p}: a change to merge`, question: (p) => `${p}'s q
  * Done marks a device keeps (made up, NOT real: no owner made them), as the board stores them under `desk-board-marks-v1`
  * (src/lib/board.js, readMarks): each { project, kind, at, kickedAt } marks that project's card of that kind at `at`;
  * with `kickedAt`, GitHub did not confirm it and it was kicked back then (its reason is worked out again at the first
- * read). Returns the store's entry, { key: JSON }.
+ * read). From G4: `id` marks that card in place of the kind's own, `title` is the title kept with the mark, and
+ * `confirmedAt` marks one GitHub confirmed then (a row with its ✓ in Done). Returns the store's entry, { key: JSON }.
  */
 export function deviceMarks(list) {
   const marks = {};
   for (const m of list) {
-    const id = CARD[m.kind](m.project);
-    marks[id] = { project: m.project, step: STEP[m.kind], head: null, at: m.at, title: TITLE[m.kind] ? TITLE[m.kind](m.project) : '',
-      kicked: m.kickedAt != null ? { at: m.kickedAt, reason: '' } : null, prevKick: null, confirmedAt: null,
+    const id = m.id || CARD[m.kind](m.project);
+    marks[id] = { project: m.project, step: STEP[m.kind], head: null, at: m.at, title: m.title != null ? m.title : TITLE[m.kind] ? TITLE[m.kind](m.project) : '',
+      kicked: m.kickedAt != null ? { at: m.kickedAt, reason: '' } : null, prevKick: null, confirmedAt: m.confirmedAt != null ? m.confirmedAt : null,
       number: m.kind === 'pr' ? 80 : null, kind: m.kind, name: m.kind === 'question' ? `${m.project}-pick` : null };
   }
   return { 'desk-board-marks-v1': JSON.stringify({ v: 1, marks }) };
@@ -157,8 +159,14 @@ export const KICKED = [
  */
 export const GATE4 = 'queue/P-004-launch-1.md';
 export const GATE5 = 'queue/P-005-launch-2.md';
+/** G4's `sameItem` option: the second Launch card is item P-004's own card 2 (NOT a real record), in place of P-005's. */
+export const GATE4B = 'queue/P-004-launch-2.md';
 export const GATE_KEY = (p, path) => `${p}|gate|${path}`;
-export function gatesState({ caseLines = true } = {}) {
+/**
+ * With `sameItem: true` (G4, AC89 (c) after G3's review), the second Launch card is item P-004's card 2 ("The Launch
+ * gate, case 2.", GATE4B), so one item has two gate cards waiting at one gate; P-005 and its files are not added.
+ */
+export function gatesState({ caseLines = true, sameItem = false } = {}) {
   const s = mixState();
   const alpha = s.repos[MIX_PROJECT];
   const base = fixture('ac85/queue/P-003-launch-1.md');
@@ -169,13 +177,14 @@ export function gatesState({ caseLines = true } = {}) {
   };
   const at = (min) => new Date(NOW - min * 60e3).toISOString().replace(/\.\d+Z$/, 'Z');
   const status = (n) => `kind = "project"\nstage = 6\nstate = "waiting-owner"\nrole = "user-rep"\ngate = "launch"\ncard = ${n}\ngate_n = ${n}\n`;
-  const lines = [['P-004', 1, 60], ['P-005', 2, 30]].map(([item, n, min]) => JSON.stringify({ item, action: 'card', card: n, gate: 'launch', role: 'user-rep',
+  const second = sameItem ? 'P-004' : 'P-005';
+  const lines = [['P-004', 1, 60], [second, 2, 30]].map(([item, n, min]) => JSON.stringify({ item, action: 'card', card: n, gate: 'launch', role: 'user-rep',
     route: 'launch-gate', stage: 6, gate_n: n, time: at(min), trigger: 'x' }));
   alpha.commit({
-    [GATE4]: card('P-004', 1), [GATE5]: card('P-005', 2),
-    'status/P-004.toml': status(1), 'status/P-005.toml': status(2),
+    [GATE4]: card('P-004', 1), [sameItem ? GATE4B : GATE5]: card(second, 2),
+    'status/P-004.toml': status(sameItem ? 2 : 1), ...(sameItem ? {} : { 'status/P-005.toml': status(2) }),
     'docs/gates/P-004/launch-gate-1-case.md': fixture('ac85/docs/gates/P-003/launch-gate-1-case.md'),
-    'docs/gates/P-005/launch-gate-2-case.md': fixture('ac85/docs/gates/P-003/launch-gate-1-case.md'),
+    [`docs/gates/${second}/launch-gate-2-case.md`]: fixture('ac85/docs/gates/P-003/launch-gate-1-case.md'),
     'dispatch-log/2026-10.jsonl': `${alpha.files['dispatch-log/2026-10.jsonl'].trimEnd()}\n${lines.join('\n')}\n`,
   });
   return s;

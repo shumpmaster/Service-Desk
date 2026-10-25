@@ -14,7 +14,8 @@
 // doesn't give, one the desk can't draw, and a line into the now circle (`openingState`, `signedOutMixedState`, `orderState`,
 // `sprintsState(1)`, `g8cStore`, `G8C_OPENS`); G8d adds Waiting, a project's page and the Pipeline view with a project never
 // read in this opening, a first read whose blobs fail, and Home with a project the desk can read but can't draw beside one
-// it can't read (`blobFailState`, `cantShowState`, `G8D_OPENS`); the later stages add theirs. Each
+// it can't read (`blobFailState`, `cantShowState`, `G8D_OPENS`), and in its round 3 Waiting with none read and drawn and a
+// project the desk can't draw in state 5 (`noneDrawnState`, `cantShowLastState`); the later stages add theirs. Each
 // made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
 import { CONFIG, fixture } from './helpers.mjs';
 import { repo, BAD_PR, gitSha } from './fake-desk.mjs';
@@ -609,6 +610,60 @@ export function cantShowAmongState() {
   return s;
 }
 
+/**
+ * G8d's round 3 (AC91 (f); the owner's ruling of 2026-10-25, "Ruling: A", decisions/questions/P-001-glance-no-quiet-lanes.md):
+ * Waiting with every project shown and no shown project both read and drawn, each made-up part NOT real (fake-desk.mjs's
+ * `BAD_PR`, NOT a real pull request; the network cause, NOT how any read failed):
+ * - by default, `quiet` with Service-Desk and Personal-Org-Operating-Model failing from the start and the made-up project
+ *   the desk can read but can't draw (G8c's `orderState({ cantShow: true })`);
+ * - with `every`, `quiet` with every project holding `BAD_PR`, every read working: none can be drawn;
+ * - with `waiting`, `twoMix` with Service-Desk and Personal-Org-Operating-Model failing from the start, the made-up Bravo
+ *   the desk can't draw, and the made-up Alpha's reads failing after its first ones (`fail()`), its last read's cards kept;
+ * - with `pending`, as by default, but Service-Desk's first read never answers (a reader that never answers, NOT how any
+ *   read went), so a read is pending while the 3 minutes have not passed.
+ */
+export function noneDrawnState({ every = false, waiting = false, pending = false } = {}) {
+  const net = () => ({ kind: 'network' });
+  if (waiting) {
+    const s = twoMixState();
+    s.repos[MIX_PROJECT2].pulls.push(BAD_PR);
+    for (const n of [SD.name, POOM.name]) s.repos[n].fail = net();
+    s.fail = () => { s.repos[MIX_PROJECT].fail = net(); };
+    return s;
+  }
+  if (every) {
+    const s = quietState();
+    for (const n of [SD.name, POOM.name, MIX_PROJECT]) s.repos[n].pulls.push(BAD_PR);
+    s.fail = () => {};
+    return s;
+  }
+  const s = orderState({ cantShow: true });
+  if (pending) {
+    delete s.repos[SD.name].fail;
+    s.repos[SD.name].hold = new Promise(() => {});
+  }
+  return s;
+}
+
+/**
+ * G8d's round 3 (AC89 (a)'s state 5; the owner's ruling of 2026-10-25, "Ruling: A",
+ * decisions/questions/P-001-glance-cant-show-last-read.md): the made-up project the desk can't draw (fake-desk.mjs's `BAD_PR`,
+ * NOT a real pull request), read in this opening and then failing (`fail()`, the network cause, NOT how any read failed), for
+ * Waiting with it alone shown: on `quiet` (its README alone, so no card) by default; with `cards`, on `mix` (its cards, of
+ * which the desk draws none); with `signedOut`, on `signedOutState` (every read refused as signed out after the first ones, J6).
+ */
+export function cantShowLastState({ cards = false, signedOut = false } = {}) {
+  if (signedOut) {
+    const s = signedOutState();
+    s.repos[MIX_PROJECT].pulls.push(BAD_PR);
+    return s;
+  }
+  const s = cards ? mixState() : quietState();
+  s.repos[MIX_PROJECT].pulls.push(BAD_PR);
+  s.fail = () => { s.repos[MIX_PROJECT].fail = { kind: 'network' }; };
+  return s;
+}
+
 /** G8d's screens, opened at `hash` with "last looked" after the records' dates, `fail()` called after the first reads where `later`. */
 async function g8dOpen(setup, hash, { later = false, polls = 1 } = {}) {
   const app = await loadSandbox({ ...setup, hash, now: NOW, store: g8cStore(SINCE_LATE) });
@@ -644,6 +699,14 @@ export const G8D_OPENS = [
   ['Waiting, every project shown, a project that can\'t be shown beside one that can\'t be read', () => g8dOpen(cantShowState(), '#/waiting')],
   ['Waiting, every project shown, cards waiting, a project that can\'t be shown', () => g8dOpen(cantShowState({ waiting: true }), '#/waiting')],
   ['Waiting, the made-up project alone shown, it can\'t be shown', () => g8dOpen(cantShowState(), `#/waiting/${MIX_PROJECT}`)],
+  // G8d's round 3 (AC91 (f), AC89 (a); P-001-glance-no-quiet-lanes.md and P-001-glance-cant-show-last-read.md, both "Ruling:
+  // A"): Waiting with every project shown and none both read and drawn, and the made-up project the desk can't draw alone shown
+  // in state 5, and signed out.
+  ['Waiting, every project shown, none read and drawn, can\'t read or show', () => g8dOpen(noneDrawnState(), '#/waiting')],
+  ['Waiting, every project shown, none can be drawn, can\'t read or show', () => g8dOpen(noneDrawnState({ every: true }), '#/waiting')],
+  ['Waiting, every project shown, none read and drawn, can\'t read or show, a last read\'s cards', () => g8dOpen(noneDrawnState({ waiting: true }), '#/waiting', { later: true })],
+  ['Waiting, the made-up project alone shown, can\'t show when last read', () => g8dOpen(cantShowLastState(), `#/waiting/${MIX_PROJECT}`, { later: true })],
+  ['Waiting, the made-up project alone shown, its reads refused after the sign-out, can\'t show when last read', () => g8dOpen(cantShowLastState({ signedOut: true }), `#/waiting/${MIX_PROJECT}`, { later: true })],
 ];
 
 export { SD, POOM, CONFIG };

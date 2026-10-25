@@ -171,24 +171,43 @@ test('AC87 + AC50 (made up, NOT real): Build and Launch counted, in J7\'s order;
 });
 
 // Rewritten in round 1 (Design B2): a project whose read fails or is refused is not "not read yet"; it says what its tile says.
+// Rewritten in G8c (P-001-glance-opening-wording.md, B; AC89 (h)): Example's reads fail from its first, so no read of it
+// succeeds in this opening and the cap, its sheet and the tile say "in this opening" in place of the time; the time in the
+// owner's zone (After MD3, stage 8, (b) item 37) is asserted where a read of Example succeeded first and then failed.
 const tileOf = (app, name) => findKeyed(app, `card:${name}`);
-test('AC87 (on the page): a v3 project the desk can\'t read — its read refused, or failing — is named in the cap\'s line and its sheet as "can\'t be read since HH:MM", the time its tile gives ("Can\'t read since HH:MM"); never "not read yet", and never "none" alone over it', async () => {
+test('AC87 (on the page): a v3 project the desk can\'t read — its read refused, or failing — is named in the cap\'s line and its sheet with its tile\'s words: "can\'t be read in this opening" where no read of it succeeded in this opening (the tile\'s "Can\'t read in this opening"), "can\'t be read since HH:MM" in the owner\'s zone where one did (the tile\'s time); never "not read yet", and never "none" alone over it', async () => {
   for (const fail of [{ state: 'cant-read', reason: 'not-found' }, { kind: 'network' }]) {
     const down = repo(files({ ids: ['MD3'] }));
     down.fail = fail;
-    const app = await open({ more: { Example: down } });
+    let app = await open({ more: { Example: down } });
     try {
       const tile = tileOf(app, 'Example').textContent;
-      const t = /Can't read since (\d\d:\d\d)/.exec(tile);
-      assert.ok(t, `${JSON.stringify(fail)}: the tile says it can't be read`);
-      // After MD3, stage 8 ((b) item 37; stage 6a's review confirmation, N1): both times in ownerTimeZone (America/Chicago):
-      // the read failed at 18:00Z, which is 13:00 there; UTC would read 18:00.
-      assert.equal(t[1], '13:00', `${JSON.stringify(fail)}: the tile's "since" in the owner's zone`);
-      assert.match(rowLine(app, 'cap').textContent, /can't be read since 13:00 · /, 'the cap\'s too');
-      assert.equal(rowLine(app, 'cap').textContent, `In Build or Launch: none · Example's phase: can't be read since ${t[1]} · your cap: no record for this in the model yet`, JSON.stringify(fail));
+      assert.ok(tile.includes("Can't read in this opening"), `${JSON.stringify(fail)}: the tile says it can't be read, in this opening`);
+      assert.doesNotMatch(tile, /Can't read since/, `${JSON.stringify(fail)}: no time for a project never read in this opening`);
+      assert.equal(rowLine(app, 'cap').textContent, "In Build or Launch: none · Example's phase: can't be read in this opening · your cap: no record for this in the model yet", JSON.stringify(fail));
       assert.doesNotMatch(block(app).textContent, /not read yet: (?!your portfolio)/);
       await app.go('#/pf/cap');
-      assert.ok(textRuns(byClass(app.view, 'v2-sheet')[0], () => false).includes(`Phase: can't be read since ${t[1]} · not counted`), 'its sheet, the same');
+      assert.ok(textRuns(byClass(app.view, 'v2-sheet')[0], () => false).includes("Phase: can't be read in this opening · not counted"), 'its sheet, the same');
+    } finally {
+      app.restore();
+    }
+    // Read once, then refused or failing: the tile's time, and the cap's and its sheet's the same, in ownerTimeZone
+    // (America/Chicago): the failure at 18:01Z reads 13:01 there; UTC would read 18:01.
+    const later = repo(files({ ids: ['MD3'] }));
+    app = await open({ more: { Example: later } });
+    try {
+      later.fail = fail;
+      await app.advance(61_000);
+      const tile = tileOf(app, 'Example').textContent;
+      const t = /Can't read since (\d\d:\d\d)/.exec(tile);
+      assert.ok(t, `${JSON.stringify(fail)}: read earlier, the tile gives its time: ${tile}`);
+      const at = app.server.calls.filter((c) => c.project === 'Example').at(-1).at;
+      assert.equal(t[1], new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(at)), `${JSON.stringify(fail)}: the tile's "since" in the owner's zone`);
+      assert.notEqual(t[1], new Date(at).toISOString().slice(11, 16), 'not UTC');
+      assert.match(rowLine(app, 'cap').textContent, new RegExp(`can't be read since ${t[1]}`), 'the cap\'s too');
+      assert.doesNotMatch(block(app).textContent, /not read yet: (?!your portfolio)|in this opening/);
+      await app.go('#/pf/cap');
+      assert.ok(textRuns(byClass(app.view, 'v2-sheet')[0], () => false).some((x) => x.includes(`can't be read since ${t[1]}`)), 'its sheet, the same');
     } finally {
       app.restore();
     }

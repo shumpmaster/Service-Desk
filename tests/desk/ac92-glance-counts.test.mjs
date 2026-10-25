@@ -301,6 +301,9 @@ test('AC92 (c): an opened phase\'s row adds its sprints after its state words, "
     assert.equal(byClass(row('MD1'), 'v2-sms')[0].textContent, 'work filed · 1 sprint · 1 merged', 'as AC92 (c) writes it');
     assert.equal(byClass(row('MD2'), 'v2-sms')[0].textContent, 'work filed · 4 sprints · 4 merged');
     assert.equal(byClass(row('MD3'), 'v2-sms')[0].textContent, 'next to reach', 'no sprints: nothing added');
+    // Rewritten in G6 (AC92 (d)): Design-6, not tracked in the now run, is folded with the run's other untracked rows, so it
+    // is read after the fold's tap; its words as before.
+    await app.tap(findAll(keyed(app, 'stdl:Design'), (e) => e.tag === 'button' && e.attrs && e.attrs['data-untracked'] === 'Design-i2')[0]);
     assert.equal(byClass(row('Design-6'), 'v2-sms')[0].textContent, 'not recorded yet', 'a standard row with none: nothing added');
   } finally {
     app.restore();

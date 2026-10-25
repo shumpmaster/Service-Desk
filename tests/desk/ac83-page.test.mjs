@@ -20,7 +20,7 @@ import { j77Files, j77Tree, poomFiles, snapOf, SD, POOM, TZ } from './wa-fixture
 import { STANDARD_MILESTONES, NOT_RECORDED_IDS } from '../../src/lib/timeline.js';
 import { j11Records, timelineOf, phaseView } from '../../src/lib/sandbox.js';
 import { runsContext } from '../../src/lib/feed.js';
-import { pageSentence, firstPart, phaseStrip, phaseLine, ranAgainLines, milestonesByPhase, detailWords, v25Rows, PAGE_WORDS, STANDARD_TOTAL } from '../../src/lib/projectpage.js';
+import { pageSentence, firstPart, phaseStrip, phaseLine, ranAgainLines, milestonesByPhase, detailLines, v25Rows, PAGE_WORDS, STANDARD_TOTAL } from '../../src/lib/projectpage.js';
 import { topLine } from '../../src/lib/versions.js';
 import { mixState, MIX_PROJECT, NOW as GLANCE_NOW } from './glance-fixtures.mjs';
 
@@ -241,36 +241,52 @@ test('AC83 (AC91 (j), rewritten in G4): the two rows, each a tap — "◆ <n> wa
 // ---------------------------------------------------------------------------
 // Milestones by phase
 
-test('AC83 (frames 5, 6; P-001-milestones-together.md, A): one line per phase, bottom up, the own and the standard together — its square, name, state word, fold mark and one line of detail ("Yours: …" with "reached" or "in progress", earlier runs\' reached ones after "run <k>:", "Standard: <k> of <n> <reached | recorded>" or "0 of <n>, not recorded yet"); headed "Milestones by phase · yours and the model\'s 24" with "↑ start at the foot"', async () => {
+// Rewritten in G5 of "After the glance audit" (AC83, changed by AC92 (c): "every milestone and sprint counted, in place
+// of "Yours: … · Standard: <k> of <n>" and the head's "yours and the model's <n>""): each phase's folded line takes two lines
+// of detail, "<R> of <T> reached · <sprints>" over "Standard checklist: …", and the head sums R and T. Before G5 the line
+// read "Yours: M3C · Standard: 0 of 5, not recorded yet" (Launch) and the head "Milestones by phase · yours and the
+// model's 24". The square, name, state word, fold mark and the head's "↑ start at the foot" are as they were; AC92 (c)'s
+// own test (tests/desk/ac92-glance-counts.test.mjs) holds every count's case.
+test('AC83 (frames 5, 6; P-001-milestones-together.md, A; rewritten in G5 for AC92 (c)): one line per phase, bottom up, the own and the standard together — its square, name, state word, fold mark and two lines of detail ("<R> of <T> reached · <sprints>", R and T in 500 --ink, over "Standard checklist: …"); headed "Milestones by phase · <R> of <T> reached" with "↑ start at the foot"', async () => {
   const app = await openPage('#/p/Service-Desk');
   try {
     const head = keyed(app, 'ms-h');
-    assert.equal(byClass(head, 'v2-shw')[0].textContent, "Milestones by phase · yours and the model's 24");
+    assert.equal(byClass(head, 'v2-shw')[0].textContent, 'Milestones by phase · 8 of 15 reached', 'R and T summed over the phases: 0 + 3 + 1 + 4 of 1 + 5 + 5 + 4');
     assert.equal(byClass(head, 'v2-mono')[0].textContent, '↑ start at the foot');
     assert.equal(STANDARD_TOTAL, 24);
-    const got = ['Launch', 'Build', 'Design', 'Discovery'].map((ph) => [ph, byClass(fold(app, ph), 'v2-sv')[0].textContent, byClass(fold(app, ph), 'v2-sd')[0].textContent]);
+    const lines = (ph) => byClass(byClass(fold(app, ph), 'v2-sd')[0], 'v2-sdl').map((x) => x.textContent);
+    const got = ['Launch', 'Build', 'Design', 'Discovery'].map((ph) => [ph, byClass(fold(app, ph), 'v2-sv')[0].textContent, ...lines(ph)]);
+    // Service-Desk's records at 77bfeae, with J12's pull requests not given here (so "not read") and the pipeline items'
+    // merges in the dispatch log.
     assert.deepEqual(got, [
-      ['Launch', 'planned', 'Yours: M3C · Standard: 0 of 5, not recorded yet'],
-      ['Build', 'run 2 ahead', 'Yours: M3A, M3B · run 1: M1, M2, M2B reached · Standard: 0 of 5 recorded'],
-      ['Design', 'run 2 · now', 'Yours: MD1 in progress, MD2 in progress, MD3 · Standard: 0 of 6 recorded'],
-      ['Discovery', 'finished', 'Standard: 4 of 8 reached'],
+      ['Launch', 'planned', '0 of 1 reached · no sprints filed yet', 'Standard checklist: none tracked (5)'],
+      ['Build', 'run 2 ahead', '3 of 5 reached · 4 sprints · 4 not read', 'Standard checklist: none tracked (5)'],
+      ['Design', 'run 2 · now', '1 of 5 reached · 6 sprints · 2 merged, 4 not read', 'Standard checklist: 2 tracked · 4 not tracked'],
+      ['Discovery', 'finished', '4 of 4 reached · 7 sprints · 7 merged', 'Standard checklist: 4 tracked · 4 not tracked'],
     ]);
-    assert.equal(findAll(byClass(fold(app, 'Design'), 'v2-sd')[0], (e) => e.tag === 'b')[0].textContent, '0 of 6', 'the count in weight 600');
+    assert.equal(findAll(byClass(fold(app, 'Design'), 'v2-sd')[0], (e) => e.tag === 'b')[0].textContent, '1 of 5', 'R and T the bold part');
+    assert.match(rule('.v2-sd b'), /font-weight: 500; color: var\(--ink\);/, 'R and T in 500 --ink');
+    assert.match(rule('.v2-sd'), /font: var\(--t-small\); color: var\(--ink2\);/, 'the rest --t-small --ink2');
+    assert.match(rule('.v2-sdl'), /^\s*display: block;\s*$/, 'two lines');
     for (const ph of ['Launch', 'Build', 'Design', 'Discovery']) {
       assert.equal(fold(app, ph).attrs['aria-describedby'], `phase-d-${ph}`, `${ph}: its detail describes it`);
       assert.equal(byClass(fold(app, ph), 'vi-chev').length, 1, `${ph}: its fold mark`);
+      assert.doesNotMatch(fold(app, ph).textContent, /Yours: |Standard: |0 of \d+ (recorded|,)/, `${ph}: never "Yours: …" or "0 of <n>"`);
     }
   } finally {
     app.restore();
   }
-  // With every standard line written (made up): skipped and taken on counted, the line's own words where nothing has run.
+  // With every standard line written (made up): skipped ones said in words, taken-on ones the model can record tracked
+  // in a phase with a run now or still to come, and those it can't record "taken on, not recorded by the model".
   const lines = milestonesByPhase(ctxOf({ 'docs/PROJECT.md': ALL_24 }).ctx).lines;
-  assert.deepEqual(lines.map((l) => detailWords(l.detail)), [
-    'Yours: M3C · Standard: 0 of 5, 5 taken on',
-    'Yours: M3A, M3B · run 1: M1, M2, M2B reached · Standard: 0 of 5 recorded, 1 skipped',
-    'Yours: MD1 in progress, MD2 in progress, MD3 · Standard: 0 of 6 recorded, 1 skipped',
-    'Standard: 4 of 8 reached',
+  assert.deepEqual(lines.map((l) => detailLines(l.detail)[1]), [
+    'Standard checklist: 1 tracked · 4 taken on, not recorded by the model',
+    'Standard checklist: 3 tracked · 1 taken on, not recorded by the model · 1 skipped',
+    'Standard checklist: 3 tracked · 2 taken on, not recorded by the model · 1 skipped',
+    'Standard checklist: 4 tracked · 4 taken on, not recorded by the model',
   ]);
+  assert.deepEqual(lines.map((l) => detailLines(l.detail)[0].replace(/ · .*$/, '')), ['0 of 2 reached', '3 of 8 reached', '1 of 6 reached', '4 of 4 reached'],
+    'Launch-3, Build-1 to Build-3 and Design-4 and Design-6, taken on in phases with a run now or still to come, are tracked; Discovery, finished, still "4 of 4"');
 });
 
 test('AC83 (frame 6; notes 2, 12, 15, 19): opened, a thin line with an arrow pointing up; the latest run first, "Run <k> · <its dates> · <how it ran>", then "Yours", the first at the foot, then "The model\'s standard <n>", <Phase>-1 at the foot; then each earlier run, smaller, its unrecorded ones gathered', async () => {
@@ -480,7 +496,26 @@ test('AC83 + AC81: the page\'s type is the tokens\' or desk-v2.html\'s pairs; th
   } finally {
     down.restore();
   }
-  assert.equal(PAGE_WORDS.milestonesHead(24), "Milestones by phase · yours and the model's 24");
+  // Rewritten in G5 (AC92 (c)): the head's words, summed, and the head alone with nothing tracked (it was "Milestones by
+  // phase · yours and the model's 24").
+  assert.equal(PAGE_WORDS.milestonesHead({ R: 8, T: 16 }), 'Milestones by phase · 8 of 16 reached');
+  assert.equal(PAGE_WORDS.milestonesHead(null), 'Milestones by phase');
+});
+
+// Added after G5's review, round 1 (the Reviewer's note beside B1; it predates G5): an opened phase's run heads take each
+// run's own band from the Timeline, found by the run itself, its key ("<Phase>-i<n>") only where no block is the run's.
+// `mix`'s made-up project (tests/desk/glance-fixtures.mjs, NOT real records) has a "Build-i1" gone back over and a later
+// "Build-i1" still to come; by key alone, run 1 took the later run's band and read "Run 1 · planned".
+test('AC83 (frame 6; G5\'s review): an opened phase\'s run heads each take their own run\'s band — two runs sharing a key ("Build-i1") read apart, run 1 "gone back over", never the later run\'s "planned"', async () => {
+  const app = await loadSandbox({ ...mixState(), hash: `#/p/${MIX_PROJECT}`, now: GLANCE_NOW });
+  try {
+    await app.advance(1000);
+    await app.advance(61_000);
+    await app.tap(fold(app, 'Build'));
+    assert.deepEqual(byClass(keyed(app, 'stdl:Build'), 'v2-runh').map((x) => x.textContent), ['Run 3 · planned', 'Run 2 · planned', 'Run 1 · dates not recorded · gone back over']);
+  } finally {
+    app.restore();
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -653,7 +688,12 @@ test('AC83 + AC29 (after MD3, stage 8; (b) item 37, stage 3 review round 3, R2):
   assert.ok(at > 0, 'Details is drawn by detailsNode');
   const body = page.slice(at, page.indexOf('\n}\n', at));
   assert.match(body, /const \{ project, model \} = p;/);
-  assert.match(body, /h\('p', \{ class: 'v2-small' \}, `CI on \$\{project\.defaultBranch\}: \$\{model \? model\.ci : NOT_AVAILABLE\}`\)/, 'no model: "not available"');
+  // Rewritten in G5 of "After the glance audit" (AC92 (c): Details' CI line adds " · <y> of <x> workflows passed" after
+  // AC29's state): the branch's words pinned as before, the counted workflows' part (ciPassed) drawn after them in the same
+  // line, and none with no model (its cases in tests/desk/ac92-glance-counts.test.mjs). Before G5 the line ended at the state.
+  assert.match(body, /h\('p', \{ class: 'v2-small' \}, `CI on \$\{project\.defaultBranch\}: \$\{model \? model\.ci : NOT_AVAILABLE\}`, ciPassed\(model\)\)/, 'no model: "not available"');
+  const { ciPassed } = await import('../../src/lib/projectpage.js');
+  assert.equal(ciPassed(null), '', 'no model: nothing after "not available"');
   assert.doesNotMatch(body, /CI on [^`]*NOT_RECORDED/, 'never "not recorded"');
   const from = /import \{([^}]*)\} from '\.\/lib\/([a-z]+)\.js';/g;
   const lib = [...page.matchAll(from)].find((m) => /\bNOT_AVAILABLE\b/.test(m[1]));

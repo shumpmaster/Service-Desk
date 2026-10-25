@@ -39,7 +39,7 @@ import { V25_RULING_NOTE } from './lib/links.js';
 import { runsContext, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, itemFeeds,
   stalledLine, deployRows, FEED_ICONS_KEY, doneTarget, JOB_MERGE_WORDS, ESTIMATE_MERGE_WORDS } from './lib/feed.js';
 import { WA, DRAFT_KEY, todayOf, groupOnce } from './lib/workahead.js';
-import { PAGE_WORDS, STANDARD_TOTAL, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, restRows, v25Rows, finishWords } from './lib/projectpage.js';
+import { PAGE_WORDS, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, restRows, v25Rows, finishWords, sprintCount, sprintsWords, ciPassed, blockOf } from './lib/projectpage.js';
 import { topLine } from './lib/versions.js';
 import { portfolioView, PF_ROWS, PF_WORDS, cardMilestone, portfolioScreenState, portfolioRead, portfolioCards, ideasView, rareLine, noteIdeas, ideaEvents, SEEN_IDEAS_KEY, PF_BOARD, PF_LABEL } from './lib/portfolio.js';
 import { workAheadView, readDraft } from './lib/workview.js';
@@ -1193,6 +1193,14 @@ function finishLookup(name) {
     return r ? r.finish : null;
   };
 }
+/** The Timeline's model for a v3 project (feed.js, feedView), or null where it can't be built: the counts take its sprints (AC92 (c)). */
+function feedOf(p) {
+  try {
+    return p.project.model === 'v3' ? p.feed() : null;
+  } catch {
+    return null;
+  }
+}
 /** The Timeline's band for a run (its frame 7b dates), from the drawing's feed. */
 function bandLookup(p) {
   let fv = null;
@@ -1201,8 +1209,10 @@ function bandLookup(p) {
   } catch {
     fv = null;
   }
+  // The run's own block first, its key only where none is (G5's review, round 1: two runs can share a key, so the key
+  // alone gave an earlier run gone back over the band of a later run still to come, "Run 1 · planned").
   return (r) => {
-    const b = fv && fv.ok ? fv.blocks.find((x) => x.key === `${r.phase}-i${r.iteration}`) : null;
+    const b = blockOf(fv, r);
     return b ? b.band : null;
   };
 }
@@ -1214,9 +1224,11 @@ function pageWaits(p, bd) {
   const n = c ? c.waiting + c.kicked : 0;
   const read = p.box.drawError ? 'cant-read' : p.box.read ? p.box.read.read : 'checking';
   const rows = bd ? bd.lanes.filter((l) => l.key !== 'done').flatMap((l) => l.groups.filter((g) => g.project === name).flatMap((g) => g.rows)) : [];
-  // AC89 (c): each by its short name, from its kind and its own id (board.js, shortNames), never a reworded title; two gate
-  // cards for one item at one gate told apart by their case or their own "<gate>-<n>" (after G3's review, built in G4).
-  return { n, read, names: shortNames(rows).map((parts, i) => parts || [{ text: rows[i].kindWord ? rows[i].kindWord.toLowerCase() : NOT_RECORDED, id: false }]) };
+  // AC89 (c): each by its short name, from its kind and its own id (board.js, shortNames), never a reworded title; from G5
+  // (the owner's ruling, P-001-glance-waits-gates.md, B) a gate's cards named once, in the place of the first of them, the
+  // others giving no name of their own (`false`), so the row holds fewer names than its count, which still counts each card.
+  const names = shortNames(rows).map((parts, i) => (parts === false ? null : parts || [{ text: rows[i].kindWord ? rows[i].kindWord.toLowerCase() : NOT_RECORDED, id: false }]));
+  return { n, read, names: names.filter(Boolean) };
 }
 
 /** A row of the page (frames 5 and 8): its mark, its title and its small line, a chevron; a tap opens where it says. */
@@ -1302,17 +1314,19 @@ function phaseOpenNode(line) {
 /** Milestones by phase (AC83, frames 5, 6 and 6b): one folded line per phase, bottom up; a tap, Enter or Space opens one below itself. */
 function milestonesNode(p) {
   const name = p.project.name;
-  const mv = milestonesByPhase(p.ctx, { finishOf: finishLookup(name), bandOf: bandLookup(p),
+  const mv = milestonesByPhase(p.ctx, { finishOf: finishLookup(name), bandOf: bandLookup(p), feed: feedOf(p),
     ruled: Boolean(p.snap && p.snap.tree && p.snap.tree.has('decisions/questions/P-001-standard-milestones.md')) });
-  const head = h('div', { class: 'v2-sh', key: 'ms-h' }, h('h2', { class: 'v2-shw' }, PAGE_WORDS.milestonesHead(STANDARD_TOTAL)), h('span', { class: 'v2-mono' }, PAGE_WORDS.startFoot));
+  // AC92 (c), from G5: the head sums each phase's "<R> of <T> reached"; "↑ start at the foot" stays.
+  const head = h('div', { class: 'v2-sh', key: 'ms-h' }, h('h2', { class: 'v2-shw' }, PAGE_WORDS.milestonesHead(mv.tracked ? mv.sum : null)), h('span', { class: 'v2-mono' }, PAGE_WORDS.startFoot));
   if (!mv.tracked) return [head, h('p', { class: 'v2-small', key: 'ms-none' }, mv.words)];
   return [head, h('ol', { class: 'v2-std', key: 'ms-lines' }, mv.lines.map((l) => {
     const fk = `phase:${l.phase}`;
     const open = isOpenFold(name, fk, false);
     const d = l.detail;
+    // AC92 (c): two lines of detail, "<R> of <T> reached · <sprints>" (R and T in 500 12 px --ink) over "Standard checklist: …".
     const detail = h('span', { class: 'v2-sd', id: `phase-d-${l.phase}` },
-      d.yours ? `Yours: ${d.yours}` : null, ...d.earlier.map((e) => ` · ${e}`), d.yours || d.earlier.length ? ' · ' : null,
-      'Standard: ', h('b', {}, d.std.bold), d.std.rest);
+      h('span', { class: 'v2-sdl' }, d.reached.bold ? h('b', {}, d.reached.bold) : null, d.reached.rest),
+      h('span', { class: 'v2-sdl' }, d.standard));
     return h('li', { key: `line:${l.phase}`, 'data-phase': l.phase },
       foldButton(name, fk, false, { class: `v2-stdr v2-fold ${l.cls}`, 'aria-label': l.phase, 'aria-describedby': `phase-d-${l.phase}`, 'aria-controls': open ? `phase-${l.phase}` : null },
         h('span', { class: 'v2-dot', 'aria-hidden': 'true' }), h('span', { class: 'v2-sn' }, l.phase), h('span', { class: 'v2-sv' }, l.word), detail),
@@ -1343,7 +1357,8 @@ function detailsNode(p) {
       h('span', { class: 'v2-prt' }, h('span', { class: 'v2-prtt soft' }, PAGE_WORDS.details), h('span', { class: 'v2-small' }, PAGE_WORDS.detailsSmall)), vi('chev', 'v2-k v2-chev')),
     h('section', { class: 'v2-pdbody' },
       // No model yet (nothing read): "not available", never "not recorded" (the Reviewer's N-d, stage 3 round 2).
-      h('p', { class: 'v2-small' }, `CI on ${project.defaultBranch}: ${model ? model.ci : NOT_AVAILABLE}`),
+      // AC92 (c), from G5: after AC29's state, the counted workflows passed, in the same line (projectpage.js, ciPassed).
+      h('p', { class: 'v2-small' }, `CI on ${project.defaultBranch}: ${model ? model.ci : NOT_AVAILABLE}`, ciPassed(model)),
       // AC68: a v3 project's Pipeline view folds into the Timeline; its record notes get their own screen.
       h('ul', { class: 'v2-links' },
         project.model === 'v3' ? null : h('li', {}, h('a', { class: 'v2-lnk', href: go('p', name, 'pipeline'), key: 'more:pipeline' }, 'Reduced view and waits')),
@@ -3033,8 +3048,8 @@ function sprintNode(p, s) {
       : h('p', { class: 'v2-small gap' }, s.tasks.none));
 }
 
-/** "<n> sprints" (AC84: "<n> sprints ▸", folded), from AC60's fold words. */
-const sprintsWords = (n) => `${n} sprint${n === 1 ? '' : 's'}`;
+/** A fold's words over the sprints it opens (AC92 (c), from G5, in place of AC84's "<n> sprints ▸"): the one sprint form, "4 sprints · 3 merged". */
+const foldWords = (views) => sprintsWords(sprintCount(views));
 
 /** A milestone on the Timeline (AC59, AC84): its icon in a plain circle on the rail; its name; "<id> · <state> · <rough finish>" in Plex Mono; "Done when" and "Why"; its sprints folded. */
 function mileNode(p, x, finishOf, whyOnce = null) {
@@ -3051,7 +3066,7 @@ function mileNode(p, x, finishOf, whyOnce = null) {
     x.doneWhen ? h('p', { class: 'v2-msd' }, h('b', {}, 'Done when'), ' ', x.doneWhen) : null,
     x.why ? h('p', { class: 'v2-msd' }, h('b', {}, 'Why'), ' ', x.why.text, h('span', { class: 'v2-src' }, ` · ${x.why.source}`))
       : whyOnce && whyOnce.has(x.key) ? null : h('p', { class: 'v2-msd gap' }, h('b', {}, 'Why'), ' not recorded yet · for the agents to add'),
-    x.sprints.length ? foldButton(name, fk, false, { class: 'v2-fold', 'data-sprints': x.key }, sprintsWords(x.sprints.length)) : h('p', { class: 'v2-small' }, x.fold),
+    x.sprints.length ? foldButton(name, fk, false, { class: 'v2-fold', 'data-sprints': x.key }, foldWords(x.sprints)) : h('p', { class: 'v2-small' }, x.fold),
     x.sprints.length && open ? h('div', { class: 'v2-sps', key: `tasks:${x.key}` }, x.sprints.map((s) => sprintNode(p, s))) : null,
     x.namedFold ? foldButton(name, nk, false, { class: 'v2-fold', 'data-sprints': `${x.key}:named` }, x.namedFold) : null,
     x.namedFold && nOpen ? h('div', { class: 'v2-sps', key: `named:${x.key}` }, x.named.map((s) => sprintNode(p, s))) : null);
@@ -3067,7 +3082,7 @@ function untiedNode(p, x) {
     h('p', { class: 'v2-mstt' }, x.name),
     h('p', { class: 'v2-msm gap' }, x.words),
     h('p', { class: 'v2-small' }, x.sentence),
-    foldButton(name, fk, false, { class: 'v2-fold', 'data-sprints': x.key }, sprintsWords(x.sprints.length)),
+    foldButton(name, fk, false, { class: 'v2-fold', 'data-sprints': x.key }, foldWords(x.sprints)),
     open ? h('div', { class: 'v2-sps', key: `tasks:${x.key}` }, x.sprints.map((s) => sprintNode(p, s))) : null);
 }
 

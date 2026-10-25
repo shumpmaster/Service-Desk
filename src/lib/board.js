@@ -458,27 +458,79 @@ export function shortName(card) {
 }
 
 /**
- * The waits row's short names for a list of waiting items (AC89 (c), after G3's review, built in G4): each its
- * shortName; and should one item have two or more gate cards waiting at one gate, each of those adds its case as its
- * short title gives it ("the Launch gate for P-004, case 2"), or, where its card has no case line, its card's own
- * "<gate>-<n>" ("the Launch gate for P-004, launch-2"), from the card's kind and its own id, never its title's other
- * words (C). Returns one list of parts per item, as shortName, or null where an item has no such name.
+ * "P-004 and P-005", "P-004, P-005 and P-006": a list as this spec writes it, ", " with " and " before the last and no
+ * comma before that "and" (AC89 (c), the Definer's settlings).
+ */
+const andWords = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+
+/**
+ * The waits row's short names for a list of waiting items (AC89 (c)): each its shortName, but a gate's cards are named
+ * once (the owner's ruling, decisions/questions/P-001-glance-waits-gates.md, B; built in G5). The gate cards waiting at
+ * one gate (one phase's gate, as "the <Phase> gate" names it) take one name, "the <Phase> gate for " and then each item,
+ * in the place of the first of them in the row; the others give no name of their own. An item with one card at that
+ * gate reads by its item alone ("the Launch gate for P-004 and P-005"); an item with two or more, its item, then ", "
+ * and their cases as their short titles give them ("…for P-004, cases 1 and 2"), or, where a card has no case line,
+ * its own "<gate>-<n>" ("…for P-004, launch-1 and launch-2"), each card its own part where only some have one ("…, case
+ * 1 and launch-2"; "cases" only when every one has a case line). The Definer's settlings (AC89 (c), C): three or more
+ * are joined by ", " with " and " before the last; a comma closes an item's cases before the next item ("…, cases 1
+ * and 2, and P-005"); the items in the order their first cards stand in the row, one item's cases or numbers rising;
+ * the items and each "<gate>-<n>" are ids (Plex Mono), every other part words; and a gate card whose gate or item is
+ * not read (no short name) keeps its kind's word and joins no other card. Gate cards at different gates are named
+ * apart; a lone gate card at its gate keeps "the <Phase> gate for <item>". The words are built from the cards' kind and
+ * their own ids, never their titles' other words.
+ * Returns one entry per card, in the cards' order: its name's parts (each { text, id }, as shortName), `false` for a
+ * gate card named in an earlier card's place, or null where a card has no such name.
  */
 export function shortNames(cards) {
-  const atGate = (c) => (c.kind === 'gate' && c.flag && c.flag.card ? `${c.flag.card.gate}|${c.flag.card.item}` : null);
-  const counts = new Map();
-  for (const c of cards) {
-    const k = atGate(c);
-    if (k) counts.set(k, (counts.get(k) || 0) + 1);
-  }
-  return cards.map((c) => {
-    const parts = shortName(c);
-    const k = atGate(c);
-    if (!parts || !k || counts.get(k) < 2) return parts;
-    const m = /, case (\d+) · [^·]*$/.exec(String(c.title || ''));
-    if (m) return [...parts, { text: `, case ${m[1]}`, id: false }];
-    return [...parts, { text: ', ', id: false }, { text: `${c.flag.card.gate}-${c.flag.card.n}`, id: true }];
+  const gateOf = (c) => (c.kind === 'gate' && c.flag && c.flag.card && c.flag.card.item != null && c.flag.card.gate ? String(c.flag.card.gate) : null);
+  const groups = new Map(); // gate → [index]
+  cards.forEach((c, i) => {
+    const g = gateOf(c);
+    if (g == null || !shortName(c)) return;
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(i);
   });
+  const out = cards.map((c) => shortName(c));
+  for (const [gate, at] of groups) {
+    if (at.length < 2) continue;
+    const items = [];
+    for (const i of at) {
+      const item = String(cards[i].flag.card.item);
+      let x = items.find((y) => y.item === item);
+      if (!x) items.push((x = { item, cards: [] }));
+      x.cards.push(cards[i]);
+    }
+    const parts = [{ text: `the ${cap(GATE_PHASE[gate] || gate)} gate for `, id: false }];
+    const word = (text) => {
+      const last = parts[parts.length - 1];
+      if (last && !last.id) last.text += text;
+      else parts.push({ text, id: false });
+    };
+    items.forEach((x, k) => {
+      if (k) word(items[k - 1].cases ? `, ${k === items.length - 1 ? 'and ' : ''}` : k === items.length - 1 ? ' and ' : ', ');
+      parts.push({ text: x.item, id: true });
+      if (x.cards.length < 2) return;
+      x.cases = true;
+      const each = x.cards.map((c) => {
+        const m = /, case (\d+) · [^·]*$/.exec(String(c.title || ''));
+        const n = Number(c.flag.card.n);
+        return m ? { n: Number(m[1]), tie: n, text: m[1], isCase: true } : { n, tie: n, text: `${gate}-${c.flag.card.n}`, isCase: false };
+      }).sort((a, b) => a.n - b.n || a.tie - b.tie);
+      word(', ');
+      if (each.every((e) => e.isCase)) {
+        word(`cases ${andWords(each.map((e) => e.text))}`);
+        return;
+      }
+      each.forEach((e, j) => {
+        if (j) word(j === each.length - 1 ? ' and ' : ', ');
+        if (e.isCase) word(`case ${e.text}`);
+        else parts.push({ text: e.text, id: true });
+      });
+    });
+    out[at[0]] = parts;
+    for (const i of at.slice(1)) out[i] = false;
+  }
+  return out;
 }
 
 /** A card's meta line in Plex Mono: `#148 · R3 · 35 m` (the board's age form), the wait from its raised time. */

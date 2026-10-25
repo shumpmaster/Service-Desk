@@ -10,7 +10,7 @@
 
 import { DESK_PHASES, STANDARD_MILESTONES, NOT_RECORDED_IDS } from './timeline.js';
 import { milestoneRule, FEED_ICON, PHASE_CLASS, runBegan, dayWords } from './feed.js';
-import { NOT_RECORDED, NOT_AVAILABLE, deskWords, standardWord, hasWorkFiled, reachedDateWords, PHASES_READING, PHASES_NOT_AVAILABLE } from './sandbox.js';
+import { NOT_RECORDED, NOT_AVAILABLE, deskWords, standardWord, reachedDateWords, PHASES_READING, PHASES_NOT_AVAILABLE } from './sandbox.js';
 import { sprintStrip } from './home.js';
 import { dayKey } from './timefmt.js';
 import { SPEC_PATH_RE } from './j11.js';
@@ -25,7 +25,10 @@ export const STANDARD_TOTAL = STANDARD_MILESTONES.length;
 export const PAGE_WORDS = Object.freeze({
   overview: 'Overview',
   timeline: 'Timeline',
-  milestonesHead: (n) => `Milestones by phase · yours and the model's ${n}`,
+  // AC92 (c), from G5: "Milestones by phase · <R> of <T> reached", R and T summed over the phases, in place of "yours and
+  // the model's <n>"; where T sums to 0, "Milestones by phase · none tracked yet", never "0 of 0" (G5's review, round 1,
+  // note 2); where the phases aren't tracked (no sums), the head alone, never a count the records don't give.
+  milestonesHead: (c) => (!c ? 'Milestones by phase' : c.T ? `Milestones by phase · ${c.R} of ${c.T} reached` : 'Milestones by phase · none tracked yet'),
   startFoot: '↑ start at the foot',
   rest: 'The rest',
   values: 'Value targets',
@@ -228,6 +231,143 @@ export function finishWords(f, { label = true } = {}) {
   return label ? `rough finish ${f.words}` : f.words;
 }
 
+// ---------------------------------------------------------------------------
+// Every milestone and sprint counted (AC92 (c); round 2, item 4; P-001-glance2-counts.md, A; built in G5)
+
+/** A sprint the Timeline marks "✓ merged" (AC60: a pull request's `mergedAt` in J12, a pipeline item's merge in the dispatch log). */
+const mergedMark = (v) => Boolean(v && Array.isArray(v.marks) && v.marks.some((x) => x && x.word === 'merged' && x.mark === '✓'));
+
+/**
+ * The sprints of a list of the Timeline's sprint views, each id once: { s, m, w }. s is every one; m those the Timeline
+ * marks "✓ merged", from the same view, so the count and the ticks never disagree; w the pull requests it draws as not
+ * read (J12's read does not hold them: "not recorded in what the desk reads" or "not available"). A pipeline item is
+ * never in w; an open pull request, one closed unmerged and a pipeline item with no merge are in s only.
+ */
+export function sprintCount(views) {
+  const by = new Map();
+  for (const v of views || []) if (v && v.id != null && !by.has(v.id)) by.set(v.id, v);
+  let m = 0;
+  let w = 0;
+  for (const v of by.values()) {
+    if (mergedMark(v)) m++;
+    else if (v.missing && /^PR #\d+$/.test(v.id)) w++;
+  }
+  return { s: by.size, m, w };
+}
+
+/**
+ * AC92 (c)'s one sprint form, used everywhere a sprint count shows: "<s> sprints" ("1 sprint"), then " · " and its
+ * parts, "<m> merged" when m is 1 or more and "<w> not read" when w is 1 or more, joined by ", ", or "none merged yet"
+ * when both are 0; "no sprints filed yet" when s is 0. Null (no count) gives "sprints not available".
+ */
+export function sprintsWords(c) {
+  if (!c) return `sprints ${NOT_AVAILABLE}`;
+  if (!c.s) return 'no sprints filed yet';
+  const parts = [c.m ? `${c.m} merged` : null, c.w ? `${c.w} not read` : null].filter(Boolean);
+  return `${c.s} sprint${c.s === 1 ? '' : 's'} · ${parts.length ? parts.join(', ') : 'none merged yet'}`;
+}
+
+/**
+ * The Timeline's block for one run (feed.js, feedView), or null: the block drawn for that very run, and only where none is
+ * (a run from another reading of the records) the block whose key, "<Phase>-i<n>", is the run's. Two runs can share a key
+ * (a project's first item's run and a later item's, as `mix`'s made-up project has two "Build-i1" runs), so the key
+ * alone can give the other run's block (G5's review, round 1, B1).
+ */
+export function blockOf(feed, run) {
+  if (!feed || !feed.ok || !run) return null;
+  return feed.blocks.find((x) => x.run === run) || feed.blocks.find((x) => x.key === `${run.phase}-i${run.iteration}`) || null;
+}
+
+/** Every sprint view the Timeline draws in one run's block: under its milestones (their plan lists and `Milestone:` lines) and "Not tied to a milestone". */
+export function runSprintViews(feed, run) {
+  const b = blockOf(feed, run);
+  if (!b) return [];
+  return [...(b.plannedRows || []), ...b.rows].flatMap((row) => [...(row.sprints || []), ...(row.named || [])]);
+}
+
+/** The sprints the Timeline draws under one milestone in one run (its fold's, AC84): { s, m, w }, or null where the Timeline isn't drawn. */
+export function milestoneSprints(feed, run, id) {
+  if (!feed || !feed.ok) return null;
+  const b = blockOf(feed, run);
+  const row = b ? [...(b.plannedRows || []), ...b.rows].find((x) => x.kind === 'ms' && x.code === id) : null;
+  return sprintCount(row ? row.sprints : []);
+}
+
+/** Whether the model can record a state for a standard milestone (AC92 (c), class 5): not one of NOT_RECORDED_IDS, not Launch-4, not Discovery-3 while no groundwork is recorded. */
+export function modelRecords(ctx, id) {
+  if (NOT_RECORDED_IDS.has(id) || id === 'Launch-4') return false;
+  if (id === 'Discovery-3') return Boolean(ctx.j && Array.isArray(ctx.j.groundwork) && ctx.j.groundwork.length);
+  return true;
+}
+
+/**
+ * The standard milestone's class in its phase (AC92 (c); C, readings (f), (g) and (i), P-001-glance-plan-readings.md, A),
+ * the first that fits, from AC61's line and its states in every run of the phase: 1 skipped (its line); 2 reached
+ * ("reached" or "carried over" in any run, a run gone back over included); 3 not needed (recorded, never reached); 4
+ * tracked, not reached ("not reached" recorded in a run, or "taken on" by its line, the model able to record its state,
+ * and its phase with a run now or still to come); 5 taken on, not recorded by the model (taken on, nothing recorded, and
+ * the model can't record it, or its phase has no run now or still to come); 6 not tracked.
+ * R3-a (the plan review's carried risk, round 3): a phase whose runs are neither finished nor now nor still to come
+ * (their state "not recorded") has no run now or to come, so a taken-on recordable milestone there falls to class 5,
+ * "taken on, not recorded by the model", never to class 6: its count agrees with its row's "taken on" (C).
+ */
+export function standardClass(ctx, runs, id) {
+  const plan = ctx.standard[id] || null;
+  if (plan && plan.state === 'skipped') return 1;
+  const words = runs.map((r) => {
+    const s = r.standard.find((x) => x.id === id);
+    return s ? standardWord(s.state) : 'not recorded';
+  });
+  if (words.some((w) => w === 'reached' || w === 'carried over')) return 2;
+  if (words.includes('not needed')) return 3;
+  if (words.includes('not reached')) return 4;
+  if (plan && plan.state === 'taken on') {
+    const live = runs.some((r) => ['now', 'still to come'].includes(ctx.state.get(r)));
+    return modelRecords(ctx, id) && live ? 4 : 5;
+  }
+  return 6;
+}
+
+/**
+ * One phase's counts (AC92 (c)): each milestone once in its phase, whatever number of runs list it. T is the phase's own
+ * milestones (docs/PROJECT.md section 3) not dropped, over every run (a planned one of an earlier run counts, round 2's
+ * F2), and its standard ones in classes 2 and 4 (a recorded "not reached" is tracked, round 2's F1); R those of T reached
+ * (an own one whose line carries `· reached:`, a standard one in class 2). For the checklist, k is classes 2 and 4, o
+ * class 5, q class 6, j class 1 and e class 3, so k + o + q + j + e is the phase's standard milestones. The sprints, each
+ * once, as the Timeline draws them in the phase's runs (sprintCount), or null where the Timeline isn't drawn.
+ */
+export function phaseCounts(ctx, phase, feed = null) {
+  const runs = ctx.cols.runs.filter((r) => r.phase === phase);
+  const own = new Map();
+  for (const r of runs) for (const m of r.project) if (!own.has(m.id)) own.set(m.id, m);
+  const ownCounted = [...own.values()].filter((m) => !m.dropped);
+  const cls = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+  const ids = STANDARD_MILESTONES.filter((m) => m[1] === phase).map((m) => m[0]);
+  for (const id of ids) cls[standardClass(ctx, runs, id)]++;
+  const T = ownCounted.length + cls[2] + cls[4];
+  const R = ownCounted.filter((m) => m.reached).length + cls[2];
+  let sprints = null;
+  if (feed && feed.ok) sprints = sprintCount(runs.flatMap((r) => runSprintViews(feed, r)));
+  else if (!ctx.cols.runs.length) sprints = { s: 0, m: 0, w: 0 };
+  return { phase, R, T, n: ids.length, k: cls[2] + cls[4], o: cls[5], q: cls[6], j: cls[1], e: cls[3], sprints };
+}
+
+/**
+ * Each phase's folded line, its two lines of detail (AC92 (c)): "<R> of <T> reached · <sprints>" (R and T the bold part,
+ * 500 12 px `--ink`), or "no milestones tracked yet · <sprints>" with a T of 0 (C); and "Standard checklist: <k> tracked
+ * · <o> taken on, not recorded by the model · <q> not tracked · <j> skipped · <e> not needed", each part left out when
+ * it is 0; with k of 0, "Standard checklist: none tracked (<n>)", then its other parts, the not-tracked one apart, which
+ * "none tracked" already says (C: as AC92 (c)'s example, "Standard checklist: none tracked (5)", and round 2's L2 have
+ * it). The unused ones are said in words, never as "0 of <n>".
+ */
+export function countLines(c) {
+  const sp = sprintsWords(c.sprints);
+  const reached = c.T ? { bold: `${c.R} of ${c.T}`, rest: ` reached · ${sp}` } : { bold: null, rest: `no milestones tracked yet · ${sp}` };
+  const rest = [c.o ? `${c.o} taken on, not recorded by the model` : null, c.j ? `${c.j} skipped` : null, c.e ? `${c.e} not needed` : null];
+  const parts = c.k ? [`${c.k} tracked`, rest[0], c.q ? `${c.q} not tracked` : null, rest[1], rest[2]] : [`none tracked (${c.n})`, ...rest];
+  return { reached, standard: `Standard checklist: ${parts.filter(Boolean).join(' · ')}` };
+}
+
 /**
  * One of the project's own milestones as the page's list shows it (AC83): its status icon (AC59's
  * set), id, plain-English name, and its state in words (AC57's states, AC50's reached date) with AC24's
@@ -268,26 +408,31 @@ function stdRow(ctx, run, s, old) {
 
 /**
  * Milestones by phase (AC83): one line per phase, read from the bottom up (Launch at the top,
- * Discovery at the foot), each { phase, cls, word, detail, runs, whyOnce }:
+ * Discovery at the foot), each { phase, cls, word, counts, detail, runs, whyOnce }:
  * - word, at the right: "planned", "run <k> ahead", "run <k> · now", "finished" (or "not recorded");
- * - detail: { yours, earlier, std: { bold, rest } }, "Yours: <each own milestone's id, with "reached",
- *   "in progress" or nothing> · run <k>: <earlier runs' reached ones> reached · Standard: <k> of <n>
- *   <reached | recorded>" ("0 of <n>, not recorded yet" when none of its lines exists);
+ * - counts and detail, from G5 (AC92 (c)), in place of "Yours: … · Standard: <k> of <n> …": the phase's counts
+ *   (phaseCounts) and its two lines of detail (countLines), "<R> of <T> reached · <sprints>" over "Standard checklist: …";
  * - runs, opened: the latest first, { k, head, latest, own (the first at the foot), std (`<Phase>-1` at
  *   the foot), gathered }; earlier runs smaller, their standard milestones gathered where none was
- *   recorded ("Design-2 to Design-5 · not recorded, or no record in the model").
+ *   recorded ("Design-2 to Design-5 · not recorded, or no record in the model"). From G5 (AC92 (c)), a milestone's row
+ *   with sprints drawn under it on the Timeline adds them after its state words, in the one sprint form ("work filed · 1
+ *   sprint · 1 merged");
  * - whyOnce: where at least one of the phase's standard milestones has no why written yet, the one
  *   line saying so (P-001-why-line.md, A).
- * `finishOf(code)` gives AC24's rough finish for one of the project's own milestones; `bandOf(run)`
- * the Timeline's band for a run (its label, frame 7b's dates).
+ * The head's sums are { R, T } over the phases. `finishOf(code)` gives AC24's rough finish for one of the project's own
+ * milestones; `bandOf(run)` the Timeline's band for a run (its label, frame 7b's dates); `feed` the Timeline's model
+ * (feed.js, feedView), whose sprints the counts take, so the page and the Timeline never disagree.
  */
-export function milestonesByPhase(ctx, { finishOf = null, bandOf = null, ruled = false } = {}) {
+export function milestonesByPhase(ctx, { finishOf = null, bandOf = null, ruled = false, feed = null } = {}) {
   const { project, pv } = ctx;
   if (project.model !== 'v3' || !ctx.tl || !pv || !pv.tracked) return { tracked: false, words: pv && pv.why ? pv.why : 'Phases not tracked' };
+  const withSprints = (row, run) => {
+    const c = milestoneSprints(feed, run, row.id);
+    return c && c.s ? { ...row, words: `${row.words} · ${sprintsWords(c)}`, sprints: c } : row;
+  };
   const lines = LIST_TOP_DOWN.map((phase) => {
     const runs = ctx.cols.runs.filter((r) => r.phase === phase);
     const st = (r) => ctx.state.get(r);
-    const n = STANDARD_COUNT[phase];
     const latest = runs[runs.length - 1] || null;
     // The state word at the right.
     let word = NOT_RECORDED;
@@ -298,37 +443,20 @@ export function milestonesByPhase(ctx, { finishOf = null, bandOf = null, ruled =
       else if (st(latest) === 'still to come') word = runs.some((r) => st(r) !== 'still to come') ? `run ${ctx.cols.k.get(latest)} ahead` : 'planned';
       else if (st(latest) === 'finished') word = 'finished';
     }
-    // The line of detail.
-    const own = latest ? [...latest.project].sort((a, b) => a.lineno - b.lineno) : [];
-    const ownWord = (r, m) => (m.dropped ? ' dropped' : m.reached ? ' reached' : hasWorkFiled(r, m) ? ' in progress' : '');
-    const yours = own.length ? own.map((m) => `${m.id}${ownWord(latest, m)}`).join(', ') : null;
-    const earlier = runs.slice(0, -1).map((r) => ({ k: ctx.cols.k.get(r), ids: [...r.project].sort((a, b) => a.lineno - b.lineno).filter((m) => m.reached && !m.dropped).map((m) => m.id) }))
-      .filter((e) => e.ids.length).map((e) => `run ${e.k}: ${e.ids.join(', ')} reached`);
+    // The two lines of detail (AC92 (c)).
+    const counts = phaseCounts(ctx, phase, feed);
     const ids = STANDARD_MILESTONES.filter((m) => m[1] === phase).map((m) => m[0]);
-    const lines3 = ids.map((id) => ctx.standard[id]).filter(Boolean);
-    const skipped = lines3.filter((l) => l.state === 'skipped').length;
-    const takenOn = lines3.filter((l) => l.state === 'taken on').length;
-    const states = latest ? latest.standard.map((s) => standardWord(s.state)) : [];
-    const reached = states.filter((w) => w === 'reached' || w === 'carried over').length;
-    const recorded = states.filter((w) => w !== 'not recorded').length;
-    const everRun = runs.some((r) => st(r) && st(r) !== 'still to come' && st(r) !== 'not recorded');
-    let std;
-    if (reached > 0) std = { bold: `${reached} of ${n}`, rest: ` reached${skipped ? `, ${skipped} skipped` : ''}` };
-    else if (!everRun) {
-      const extras = [takenOn ? `${takenOn} taken on` : null, skipped ? `${skipped} skipped` : null].filter(Boolean);
-      std = { bold: `0 of ${n}`, rest: extras.length ? `, ${extras.join(', ')}` : ', not recorded yet' };
-    } else std = { bold: `${recorded} of ${n}`, rest: ` recorded${skipped ? `, ${skipped} skipped` : ''}` };
     // Opened: each run, the latest first.
     const runViews = [...runs].reverse().map((r, i) => {
       const isLatest = i === 0;
       const k = ctx.cols.k.get(r);
       const band = bandOf ? bandOf(r) : null;
       const head = `Run ${k} · ${band && band.label ? band.label : st(r) === 'still to come' ? 'planned' : ({ now: 'now', finished: 'finished', 'gone back over': 'gone back over' }[st(r)] || NOT_RECORDED)}`;
-      const ownRows = [...r.project].sort((a, b) => a.lineno - b.lineno).map((m) => ownRow(ctx, r, m, isLatest ? finishOf : null, !isLatest)).reverse();
-      let stdRows = r.standard.map((s) => stdRow(ctx, r, s, !isLatest));
+      const ownRows = [...r.project].sort((a, b) => a.lineno - b.lineno).map((m) => withSprints(ownRow(ctx, r, m, isLatest ? finishOf : null, !isLatest), r)).reverse();
+      let stdRows = r.standard.map((s) => withSprints(stdRow(ctx, r, s, !isLatest), r));
       let gathered = null;
       if (!isLatest) {
-        const gone = stdRows.filter((x) => x.state === 'not recorded' || x.state === 'no record');
+        const gone = stdRows.filter((x) => (x.state === 'not recorded' || x.state === 'no record'));
         if (gone.length) {
           const both = gone.some((x) => x.state === 'no record') && gone.some((x) => x.state === 'not recorded');
           const w = both ? 'not recorded, or no record in the model' : gone[0].state === 'no record' ? 'no record for this in the model yet' : 'not recorded';
@@ -340,18 +468,15 @@ export function milestonesByPhase(ctx, { finishOf = null, bandOf = null, ruled =
     });
     const noWhy = ids.some((id) => !(ctx.standard[id] && ctx.standard[id].why));
     const whyOnce = noWhy ? `Why each is taken on or skipped: not written yet. ${project.name}'s Chief of Staff writes its lines${ruled ? ' (your ruling, P-001-standard-milestones)' : ''}.` : null;
-    return { phase, cls: PHASE_CLASS[phase], word, now: word.endsWith('· now'), detail: { yours, earlier, std }, runs: runViews, whyOnce };
+    return { phase, cls: PHASE_CLASS[phase], word, now: word.endsWith('· now'), counts, detail: countLines(counts), runs: runViews, whyOnce };
   });
-  return { tracked: true, n: STANDARD_TOTAL, lines };
+  const sum = { R: lines.reduce((a, l) => a + l.counts.R, 0), T: lines.reduce((a, l) => a + l.counts.T, 0) };
+  return { tracked: true, n: STANDARD_TOTAL, sum, lines };
 }
 
-/** The detail line in words, as one string (its bold part included): for assistive technology and the tests. */
-export function detailWords(d) {
-  const parts = [];
-  if (d.yours) parts.push(`Yours: ${d.yours}`);
-  parts.push(...d.earlier);
-  parts.push(`Standard: ${d.std.bold}${d.std.rest}`);
-  return parts.join(' · ');
+/** The two lines of detail in words (their bold part included): for assistive technology and the tests. */
+export function detailLines(d) {
+  return [`${d.reached.bold || ''}${d.reached.rest}`, d.standard];
 }
 
 // ---------------------------------------------------------------------------
@@ -399,6 +524,20 @@ function ciFrom(model, nowMs, tz) {
   if (r.at == null) return ` · ${r.name} · date not read`;
   return ` · ${r.name} · ${reachedDateWords(dayKey(new Date(r.at), tz || 'UTC'), nowMs, tz)}`;
 }
+
+/**
+ * Details' CI line (AC92 (c); round 2's "only if simple", C; reading (a), P-001-glance-plan-readings.md, A; built in G5):
+ * "CI on <branch>: <AC29's state> · <y> of <x> workflows passed", adding ", <z> running" when z is 1 or more ("1 of 1
+ * workflow passed" for a single one, C), from the counted workflows (records.js, ciCounts). `ciPassed` is the part after
+ * AC29's state: none when x is 0, AC29's state is "none", or the runs aren't read (no counts).
+ */
+export function ciPassed(model) {
+  const c = model && model.ciCounts;
+  if (!c || !c.x || model.ci === 'none') return '';
+  return ` · ${c.y} of ${c.x} workflow${c.x === 1 ? '' : 's'} passed${c.z ? `, ${c.z} running` : ''}`;
+}
+/** The whole line, as Details draws it ("not available" with no model yet). */
+export const ciWords = (project, model) => `CI on ${project.defaultBranch}: ${model ? model.ci : NOT_AVAILABLE}${ciPassed(model)}`;
 
 export function v25Rows(project, model, snap, nowMs, tz) {
   // A tree not read yet: every row "not available", never a zero or "not recorded" (the Design reviewer's B2).

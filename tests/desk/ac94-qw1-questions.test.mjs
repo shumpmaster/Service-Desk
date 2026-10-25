@@ -759,3 +759,167 @@ test('AC94: each control a target of at least 24 × 24 px ("Done ✓" a 28 px `.
     app.restore();
   }
 });
+
+// ---------------------------------------------------------------------------
+// AC94's "Settled from QW1's build" (the Definer's notes on the Builder's seven points, each C)
+
+/** `kindsState` cut down to the given Kinds questions and none of Ledger's (made up, NOT real). */
+function fewState(keep) {
+  const s = kindsState();
+  for (const p of Object.values(K)) if (!keep.includes(p)) { delete s.repos[KINDS].files[p]; delete s.repos[LEDGER].files[p]; }
+  return s;
+}
+
+test('AC94 (settled, 2): AC77\'s re-read words for a question it takes out of the section stay under the head while others are left, and under "Questions for you · none" once none is left, for this opening; "being recorded" with its pull request\'s link; with one project shown, only that project\'s', async () => {
+  const s = fewState([K.lettered, K.bare]);
+  const opened = [];
+  const app = await open(s, { win: { open: (u) => { opened.push(u); return {}; } } });
+  try {
+    await app.advance(31_000);
+    // The first: answered meanwhile.
+    s.repos[KINDS].commit({ 'decisions/questions/Kinds-lettered.md': 'Ruling: B — made up, NOT real\n' });
+    choiceLinks(qcard(app, qid(KINDS, K.lettered)))[0].dispatch('click', { preventDefault() {} });
+    await app.flush();
+    const said = () => byClass(section(app), 'v2-recheck').map((x) => x.textContent);
+    assert.deepEqual(said(), ["Which colour should a kicked-back card's icon take?: Already answered: Ruling: B — made up, NOT real"], 'under the head, one question left');
+    assert.equal(section(app).children[0].dataset.k, 'qhead');
+    // The second, the last: its answer's pull request open meanwhile (made up, NOT a real pull request), more than 30 s after
+    // the last read (the poll after the first re-read), so the link is re-read again.
+    await app.advance(62_000);
+    s.repos[KINDS].pulls.push({ ...pr(71, 'Record the answer, made up', { head: 'cos/answer-71' }), head: { ref: 'cos/answer-71', sha: '8'.repeat(40), repo: { full_name: `shumpmaster/${KINDS}` } } });
+    s.repos[KINDS].prFiles = { 71: [{ filename: 'decisions/questions/Kinds-bare.md', status: 'added' }, { filename: K.bare, status: 'removed' }] };
+    choiceLinks(qcard(app, qid(KINDS, K.bare)))[0].dispatch('click', { preventDefault() {} });
+    await app.flush();
+    await app.advance(POLL_MS);
+    assert.equal(qcards(app).length, 0, 'none left');
+    assert.equal(section(app).children[0].textContent, 'Questions for you · none');
+    assert.equal(said().length, 2, 'both said under the "none" line');
+    assert.equal(said()[0], "Which colour should a kicked-back card's icon take?: Already answered: Ruling: B — made up, NOT real");
+    assert.match(said()[1], /^Should the strip scroll by card or by page\?: .*PR #71, which records it$/, 'being recorded, with its link');
+    const link = findAll(byClass(section(app), 'v2-recheck')[1], (e) => e.tag === 'a')[0];
+    assert.equal(link.attrs.href, s.repos[KINDS].pulls[0].html_url);
+    for (const x of byClass(section(app), 'v2-recheck')) assert.equal(x.attrs.role, 'status');
+    assert.deepEqual(opened, [], 'nothing opened');
+    // Still said at the next polls, in this opening.
+    await app.advance(2 * POLL_MS);
+    assert.equal(said().length, 2);
+    // One project shown: only that project's.
+    await app.go(`#/waiting/${LEDGER}`);
+    assert.deepEqual(said(), [], 'not Ledger\'s');
+    await app.go(`#/waiting/${KINDS}`);
+    assert.equal(said().length, 2, 'Kinds\'');
+  } finally {
+    app.restore();
+  }
+});
+
+/** A made-up v3 project "Held" with a held numbered question and a held lettered one, and Ledger (v2.5) with a held one (NOT real). */
+function heldKindsState() {
+  const s = kindsState();
+  const at = [{ commit: { committer: { date: new Date(NOW - H).toISOString() } } }];
+  const held = repo({ 'governance/ROUTING.toml': s.repos[KINDS].files['governance/ROUTING.toml'],
+    'questions/Held-num.md': qFile({ title: 'Two made-up held parts', milestone: 'M3C', asked: SID, options: ['1. Which day? A. Monday · B. Friday', '2. Which hour? A. 08:00 · B. 18:00'], rec: '1 B; 2 A' }),
+    'questions/Held-let.md': qFile({ title: 'A made-up held lettered question', milestone: 'M3G', asked: SID, options: ['A. Yes.', 'B. No.'], rec: 'A' }) });
+  held.history = { 'questions/Held-num.md': at, 'questions/Held-let.md': at };
+  s.repos.Held = held;
+  s.repos[LEDGER].commit({ 'questions/Ledger-held.md': qFile({ title: 'A made-up held v2.5 question', asked: SID, options: ['A. This.', 'B. That.'], rec: 'A' }) });
+  s.repos[LEDGER].history['questions/Ledger-held.md'] = at;
+  s.config = { ...s.config, projects: [v3('Held'), ...s.config.projects] };
+  return s;
+}
+const isHeld = (app, id) => (qcard(app, id) || { attrs: {} }).attrs['data-question'] === 'held';
+
+test('AC94 (settled, 4) with AC77: a held question\'s hold is ended on this device by its answer and copy taps, in the section and in its sheet, and by nothing else — "Answer in its sheet ›", "Show choices ›", "Add your own words" and "More about it ›" end nothing', async () => {
+  const copied = [];
+  const navigator = { clipboard: { writeText: async (t) => { copied.push(t); } } };
+  const NUM = 'Held|question|questions/Held-num.md';
+  const LET = 'Held|question|questions/Held-let.md';
+  const V25 = `${LEDGER}|question|questions/Ledger-held.md`;
+  // Taps that end nothing.
+  let app = await open(heldKindsState(), { globals: { navigator } });
+  try {
+    for (const id of [NUM, LET, V25]) assert.ok(isHeld(app, id), `${id}: held`);
+    await app.tap(findAll(qcard(app, NUM), (e) => e.tag === 'a' && e.textContent === SECTION_WORDS.inSheet)[0]);
+    await app.go('#/waiting');
+    for (const id of [NUM, LET, V25]) {
+      for (const k of [`fold:qchoices:${id}`, `fold:qwords:${id}`]) {
+        const b = keyed(app, k);
+        if (b) await app.tap(b);
+      }
+      await app.tap(keyed(app, `qmore:${id}`));
+      await app.go('#/waiting');
+    }
+    for (const id of [NUM, LET, V25]) assert.ok(isHeld(app, id), `${id}: still held after "Answer in its sheet ›", "Show choices ›", "Add your own words" and "More about it ›"`);
+    assert.equal(copied.length, 0);
+    // A copy tap in the section: the v2.5 question's hold ends, then its text is copied.
+    await app.tap(byClass(qcard(app, V25), 'v2-abtn').find((b) => b.textContent === 'Copy answer A'));
+    assert.equal(isHeld(app, V25), false, 'a copy in the section ends it');
+    assert.equal(qcard(app, V25).attrs['data-question'], 'counted');
+    assert.equal(copied[0], v25Ruling('A', ''));
+  } finally {
+    app.restore();
+  }
+  // Taps in the sheet: an answer link, and a copy.
+  app = await open(heldKindsState(), { globals: { navigator } });
+  try {
+    await app.go(`#/waiting/card/${enc(LET)}`);
+    const a = choiceLinks(sheet(app))[0];
+    a.dispatch('click', { preventDefault() {} });
+    await app.flush();
+    await app.go('#/waiting');
+    assert.equal(isHeld(app, LET), false, 'an answer link in its sheet ends it');
+    await app.go(`#/waiting/card/${enc(V25)}`);
+    await app.tap(byClass(sheet(app), 'v2-abtn').find((b) => b.textContent === 'Copy answer B'));
+    await app.go('#/waiting');
+    assert.equal(isHeld(app, V25), false, 'a copy in its sheet ends it');
+    assert.ok(isHeld(app, NUM), 'the other held question untouched');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 (settled, 3 and 7): one project shown in state 5 with no question, "Questions for you · none when last read", by the strip\'s rule; the grey line under the "none" line for a project the desk can\'t read', async () => {
+  const q = quietState();
+  const one = await open(q, { hash: `#/waiting/${MIX_PROJECT}` });
+  try {
+    q.repos[MIX_PROJECT].fail = { kind: 'network' };
+    await one.advance(3 * POLL_MS);
+    assert.equal(section(one).children[0].textContent, 'Questions for you · none when last read');
+    assert.equal(lane(one, 'kick').textContent, 'Kicked back · none when last read', 'as the strip');
+    const grey = section(one).children[1];
+    assert.match(grey.textContent, new RegExp(`^${MIX_PROJECT} not read since \\d\\d:\\d\\d, its new questions may be missing$`), 'the grey line under the "none" line');
+    assert.equal(grey.className, 'v2-small');
+  } finally {
+    one.restore();
+  }
+  const every = quietState();
+  const app = await open(every);
+  try {
+    every.repos[MIX_PROJECT].fail = { kind: 'network' };
+    await app.advance(3 * POLL_MS);
+    const [line, grey] = section(app).children;
+    assert.equal(line.textContent, 'Questions for you · none', 'every project shown: another read, so "none"');
+    assert.match(grey.textContent, new RegExp(`^${MIX_PROJECT} not read since (\\d\\d:\\d\\d), its new questions may be missing$`));
+    for (const theme of THEMES) assert.equal(looks(app, theme).get(grey).colour, INK[theme].ink2, `${theme}: --ink2`);
+    assert.ok(keyed(app, `ql:cant:${MIX_PROJECT}`), 'beside the red quiet line');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 (settled, 1): with one project shown, the focus order is the title, the chip and its "×", then the section, before the strip and the lanes', async () => {
+  const app = await open(kindsState(), { hash: `#/waiting/${KINDS}` });
+  try {
+    const all = findAll(app.view, () => true);
+    const h1 = all.findIndex((e) => e.tag === 'h1');
+    const focusable = all.slice(h1 + 1).filter((e) => ['a', 'button', 'textarea', 'input'].includes(e.tag));
+    assert.equal(focusable[0].attrs['aria-label'], 'Show all projects', 'the chip\'s "×" first');
+    let inside = false;
+    for (let n = focusable[1]; n; n = n.parent) if (n === section(app)) inside = true;
+    assert.ok(inside, `then the section: ${focusable[1].tag} ${focusable[1].textContent}`);
+    const idx = (el) => all.indexOf(el);
+    assert.ok(idx(section(app)) < idx(lane(app, 'kick')) && idx(section(app)) < idx(lane(app, 'wait')), 'before the strip and the lanes');
+  } finally {
+    app.restore();
+  }
+});

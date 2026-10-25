@@ -959,9 +959,9 @@ Still no fixture file. `tests/desk/ac91-g8d.test.mjs`'s round-3 cases, G8d's wal
   (the network cause), for AC89 (a)'s state 5 alone shown: on `quiet` (no card) by default, on `mix` with `cards`, and with
   `signedOut` on `signedOutState` (every read refused as signed out after the first ones, J6). **NOT real records, NOT a
   real pull request, NOT how any read failed.**
-- **`G8D_OPENS`'s five round-3 entries** (`glance-fixtures.mjs`): Waiting on `noneDrawnState` (by default, `every`, and
-  `waiting` with its later failure) with every project shown, and on `cantShowLastState` (by default and `signedOut`) with
-  the made-up project alone shown. **NOT real records or failures.**
+- **`G8D_OPENS`'s three round-3 entries** (`glance-fixtures.mjs`): Waiting on `noneDrawnState` (by default, and `waiting`
+  with its later failure) with every project shown, and on `cantShowLastState` (by default) with the made-up project alone
+  shown. **NOT real records or failures.**
 - **a drawn project in state 5** (`ac91-g8d.test.mjs`): `quiet`'s made-up project read and then failing (the network
   cause), for "Nothing here when last read" kept; and **a project the desk can't draw, never read in this opening**,
   `BAD_PR` on `blobFailState('every file')`, for state 2's "Can't read" kept, as round 2's. **NOT how any read failed.**

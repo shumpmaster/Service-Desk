@@ -1032,7 +1032,10 @@ test('AC89 (a), G8d round 3: Waiting with the made-up project the desk can\'t dr
         assert.equal(byClass(app.view, 'v2-qsmall').length, 0, `${where}: no small line of counts`);
         assert.equal(emptyOf(app, 'done'), 'Hold a card and drag it here', `${where}: Done as built`);
         assertNoQuiet(app, where);
-        assert.doesNotMatch(keyed(app, 'board').textContent, /when last read.*when last read.*when last read/, `${where}: the words twice, lane and strip`);
+        // Rewritten in QW1 (AC94: "from G8d "can't show", "can't read or show" and "can't show when last read", in the
+        // section's quiet line as in the strip's"): the words three times, the section's line, the lane and the strip.
+        assert.equal(keyed(app, 'qsec').children[0].textContent, "Questions for you · can't show when last read", `${where}: the section's line`);
+        assert.doesNotMatch(keyed(app, 'board').textContent, /(when last read.*){4}/, `${where}: the words three times, the section, lane and strip`);
       } finally {
         app.restore();
       }

@@ -175,10 +175,12 @@ test('AC59 (AC92 (d), rewritten in G6): the gathered "not recorded" line and its
   assert.ok(!rowsOf(block(feed, 'Build-i2')).some((x) => /^Build-\d/.test(x.code || '')), 'no rows for them');
   const app = await openSD('#/p/Service-Desk/timeline');
   try {
-    const f = keyed(app, 'fold:Design-i2:gather:nr');
+    // Rewritten after G6's review (round 1): the line's key names its run, "<Phase>-i<n>" and its run number, since two runs
+    // can share the first; Design i2 is run 2.
+    const f = keyed(app, 'fold:Design-i2:gather:nr:run2');
     assert.equal(f.attrs['aria-expanded'], 'false');
     await app.tap(f);
-    const list = byClass(keyed(app, 'gather:Design-i2:gather:nr'), 'v2-glist')[0]; // AC84's look (from `sb-glist`)
+    const list = byClass(keyed(app, 'gather:Design-i2:gather:nr:run2'), 'v2-glist')[0]; // AC84's look (from `sb-glist`)
     assert.equal(list.children.length, 6, 'listed in place on a tap');
     assert.match(list.textContent, /Done defined in real scenarios Design-1 not recorded/);
   } finally {

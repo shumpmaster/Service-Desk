@@ -245,7 +245,7 @@ test('AC66 (asks-merge) + AC80: a job\'s merge leaving the board — its Done ro
     assert.equal((await sheetOfRow('P-001-asks-merge-on-desk')).tl.href, '#/p/Service-Desk/timeline/ms/MD2', 'still its own row and link');
     // The plan-listed one's link opens its sprint under MD3.
     await page.go(listed);
-    assert.equal(keyed(page, 'fold:sprints:Design-i2:MD3').attrs['aria-expanded'], 'true');
+    assert.equal(keyed(page, 'fold:sprints:Design-i2:MD3:run2').attrs['aria-expanded'], 'true');
   } finally {
     page.restore();
   }

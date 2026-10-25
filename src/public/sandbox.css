@@ -1009,15 +1009,26 @@ html.sb .v2-home .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-arrow { position: absolute; left: -1px; top: -2px; display: grid; color: var(--ink2); }
 .v2-arrow > .v2-k { width: 11px; height: 11px; }
 .v2-runh { font: var(--t-label); color: var(--ink2); padding: 8px 0 2px; }
-.v2-subh { font: 400 11px/1.35 var(--font); color: var(--ink2); padding: 6px 0 0; }
+/* AC92 (d), from G6 (P-001-glance2-standard.md, A; round 2's mock, changes2.js q5): an opened phase's two heads on every
+   run, "Your milestones · <n>" and "Standard checklist · <n> · <h> tracked", in --t-label --ink; the standard group set
+   apart by a 1 px --line rule above its head, 8 px over it; the owner's own rows' names in --t-row (500 13 px), a standard
+   row's in 400 13 px, an earlier run's rows smaller (note 2) with the same weights; the untracked ones folded into one row,
+   the dashed ring, its words in --t-small --ink2 and the chevron. */
+.v2-subh { font: var(--t-label); color: var(--ink); padding: 10px 0 0; }
+.v2-subh.std { margin-top: 8px; border-top: 1px solid var(--line); }
 .v2-sml { display: grid; }
+.v2-oldrun { display: grid; }
 .v2-sm { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: start; padding: 6px 0; }
 .v2-smt { display: grid; gap: 1px; min-width: 0; }
 .v2-smn { font: var(--t-body); color: var(--ink); overflow-wrap: break-word; }
+.v2-sm.own .v2-smn { font: var(--t-row); }
 .v2-id { font: var(--t-mono); color: var(--ink2); }
 .v2-sms { font: var(--t-small); color: var(--ink2); overflow-wrap: break-word; }
 .v2-sm.soft .v2-smn { color: var(--ink2); }
 .v2-sm.old .v2-smn { font: var(--t-small); color: var(--ink2); }
+.v2-sm.old.own .v2-smn { font-weight: 500; }
+.v2-untr { display: grid; }
+.v2-fold.v2-untrb { display: grid; grid-template-columns: 16px minmax(0, 1fr) 10px; gap: 8px; align-items: center; width: 100%; min-height: 32px; padding: 4px 0; font: var(--t-small); color: var(--ink2); text-align: left; }
 .v2-callout { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; margin-top: 6px; padding: 10px 12px; border-radius: 10px; background: var(--bg2); font: var(--t-small); color: var(--ink2); }
 .v2-callout > .v2-k { margin-top: 1px; }
 
@@ -1125,6 +1136,8 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-ms { position: relative; display: grid; gap: 3px; padding: 10px 0 8px; }
 .v2-msi { position: absolute; left: -26px; top: 10px; display: grid; background: var(--bg); border-radius: 8px; }
 .v2-mstt { font: var(--t-row); overflow-wrap: break-word; }
+/* AC92 (d), from G6: a standard milestone's name in 400 13 px; the owner's own keep --t-row's 500 (AC84). */
+.v2-ms.std .v2-mstt { font-weight: 400; }
 .v2-msm { font: var(--t-mono); color: var(--ink2); overflow-wrap: anywhere; }
 .v2-msd { font: var(--t-small); color: var(--ink2); overflow-wrap: break-word; }
 .v2-msd b { font-weight: 500; color: var(--ink); }

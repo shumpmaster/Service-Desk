@@ -172,7 +172,10 @@ test('AC84: the rail — a thin line in the phase\'s colour down the band\'s lef
   }
 });
 
-test('AC84: each milestone — its status icon in a plain circle on the rail (the gold ring for next to reach), its name as a row title, then in Plex Mono "<id> · <its state words> · <its rough finish>", then "Done when" and "Why" with the label in weight 500, then its sprints folded ("<s> sprints · <m> merged ›", rewritten in G5 for AC92 (c)); a missing why "Why not recorded yet · for the agents to add" in the agents\' grey, said once under the band where two or more share it (AC90)', async () => {
+// Rewritten in G6 of "After the glance audit" (AC84, changed by AC92 (d): "a standard milestone's meta says "standard""):
+// a standard milestone's meta line reads "<id> · standard · <its state words>" and its name 400, where it read "<id> · <its
+// state words>" in --t-row; the owner's own are as before.
+test('AC84 (AC92 (d), rewritten in G6): each milestone — its status icon in a plain circle on the rail (the gold ring for next to reach), its name as a row title (a standard one\'s in 400), then in Plex Mono "<id> · <its state words> · <its rough finish>" ("<id> · standard · <its state words>" for a standard one), then "Done when" and "Why" with the label in weight 500, then its sprints folded ("<s> sprints · <m> merged ›", rewritten in G5 for AC92 (c)); a missing why "Why not recorded yet · for the agents to add" in the agents\' grey, said once under the band where two or more share it (AC90)', async () => {
   const app = await openSD('#/p/Service-Desk/timeline');
   try {
     const m2b = keyed(app, 'mile:Build-i1:M2B');
@@ -197,6 +200,14 @@ test('AC84: each milestone — its status icon in a plain circle on the rail (th
     assert.equal(byClass(m2b, 'v2-fold')[0].textContent, '2 sprints · 2 merged');
     const md2 = keyed(app, 'mile:Design-i2:MD2');
     assert.match(findAll(md2, (e) => e.tag === 'svg')[0].attrs.class, /\bst-next\b/, 'MD2: the gold ring');
+    // A standard milestone (AC92 (d)): "<id> · standard · <its state words>", its name 400 13 px.
+    const d6 = keyed(app, 'mile:Design-i1:Design-6');
+    assert.deepEqual(d6.children.map((c) => (c.className || c.tag).split(' ')[0]).slice(0, 3), ['v2-msi', 'v2-mstt', 'v2-msm']);
+    assert.equal(byClass(d6, 'v2-mstt')[0].textContent, 'A plan that passed review');
+    assert.equal(byClass(d6, 'v2-msm')[0].textContent, 'Design-6 · standard · not reached');
+    assert.match(d6.className, /\bstd\b/);
+    assert.doesNotMatch(m2b.className, /\bstd\b/, 'the owner\'s own: no "standard", --t-row');
+    assert.match(rule('.v2-ms.std .v2-mstt'), /^ font-weight: 400; $/);
     assert.match(rule('.v2-msm'), /font: var\(--t-mono\);/);
     assert.match(rule('.v2-mstt'), /font: var\(--t-row\);/);
     assert.match(rule('.v2-msd b'), /font-weight: 500;/);
@@ -251,7 +262,7 @@ test('AC84 (P-001-timeline-labels.md, A): each sprint, opened — its date and c
 test('AC84: a long Context cut at three lines with "<n> more ▸" opening the rest (AC60\'s text, unchanged); a short one whole', async () => {
   const app = await openSD('#/p/Service-Desk/timeline', { repoOpts: { ac61: true, answer: ac61Answer() } });
   try {
-    await app.tap(keyed(app, 'fold:sprints:Design-i2:untied'));
+    await app.tap(keyed(app, 'fold:sprints:Design-i2:untied:run2'));
     const sp = findAll(app.view, (e) => e.attrs && e.attrs['data-sprint'] === 'PR #906')[0];
     const ctx = byClass(sp, 'v2-bl')[1];
     const bt = byClass(ctx, 'v2-bt')[0];
@@ -392,7 +403,7 @@ test('AC84 + AC81: the Timeline\'s type is the tokens\' or desk-v2.html\'s pairs
 test('AC84 (specs/S-001.md:6917-6922; the Design reviewer\'s 4, stage 3 round 1): "<n> more ▸" only when something is hidden — the page measures each cut Context and Why, and a text that fits whole has no control; one cut counts the parts not wholly shown', async () => {
   const app = await openSD('#/p/Service-Desk/timeline', { repoOpts: { ac61: true, answer: ac61Answer() } });
   try {
-    await app.tap(keyed(app, 'fold:sprints:Design-i2:untied'));
+    await app.tap(keyed(app, 'fold:sprints:Design-i2:untied:run2'));
     const cut = () => findAll(app.view, (e) => e.attrs && e.attrs['data-bt'] != null);
     const sp = () => findAll(app.view, (e) => e.attrs && e.attrs['data-sprint'] === 'PR #906')[0];
     assert.ok(cut().length >= 2, 'each Context and Why, cut at three lines, measured');

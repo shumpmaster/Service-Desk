@@ -396,7 +396,7 @@ test('AC89 (k): the v2.5 page\'s CI row gives its workflow and date where AC29\'
 test('AC89 (k): "<n> more ▸" counts the parts not shown at all — a part cut at the third line counts as shown, and with only that, "more"', async () => {
   const app = await openSD('#/p/Service-Desk/timeline', { repoOpts: { ac61: true, answer: ac61Answer() } });
   try {
-    await app.tap(keyed(app, 'fold:sprints:Design-i2:untied'));
+    await app.tap(keyed(app, 'fold:sprints:Design-i2:untied:run2'));
     const cut = () => findAll(app.view, (e) => e.attrs && e.attrs['data-bt'] != null);
     const sp = () => findAll(app.view, (e) => e.attrs && e.attrs['data-sprint'] === 'PR #906')[0];
     for (const el of cut()) {

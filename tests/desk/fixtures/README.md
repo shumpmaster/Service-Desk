@@ -1043,3 +1043,7 @@ grey line; and the stage-8 guard, whose `QW1_ONCE` pins the section's own look),
   questions' raised times. **NOT a real device's record.**
 - **`QW1_OPENS`** (`qw1-fixtures.mjs`): Waiting on `busiestState` with every fold opened and Delta then failing; Beta alone
   shown; the held question's sheet; and Waiting on `kindsState` with every fold opened and kept words. **NOT real.**
+- **for AC94's "Settled from QW1's build"** (`ac94-qw1-questions.test.mjs`): `kindsState` cut down to two Kinds questions,
+  one answered meanwhile and one with a made-up answer pull request (#71) opened meanwhile; and `kindsState` with a made-up
+  project "Held" holding a held numbered and a held lettered question and Ledger holding a held v2.5 one, each asked in the
+  made-up session above and raised an hour before the clock. **NOT real records or pull requests.**

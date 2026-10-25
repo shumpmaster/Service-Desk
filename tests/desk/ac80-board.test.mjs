@@ -990,10 +990,12 @@ test('AC80 with Part A item 5 (stage 1a\'s build review, round 1, F3), rewritten
     }
     assert.equal(byClass(lane(app, 'wait'), 'v2-empty')[0].textContent, 'Not read yet');
     assert.equal(lane(app, 'kick').textContent, 'Kicked back · not read yet');
+    assert.equal(keyed(app, 'qsec').textContent, 'Questions for you · not read yet', 'QW1 (AC94): the section says it too, never "none"');
     assert.doesNotMatch(byClass(app.view, 'v2-lanes')[0].textContent, /\b0\b|Nothing here/);
     await app.advance(1000);
     await app.advance(POLL_MS);
-    assert.equal(byClass(lane(app, 'wait'), 'v2-lc')[0].textContent, '8', 'read: its count');
+    // Rewritten in QW1 (AC94): the lane's count counts the five pull requests left in it; its three questions are in the section.
+    assert.equal(byClass(lane(app, 'wait'), 'v2-lc')[0].textContent, '5', 'read: its count');
     assert.equal(lane(app, 'kick').textContent, 'Kicked back · none', 'a "none" that is a read value');
   } finally {
     app.restore();

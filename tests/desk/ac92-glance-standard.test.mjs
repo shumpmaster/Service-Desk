@@ -94,10 +94,14 @@ const runView = (ctx, phase, iteration) => milestonesByPhase(ctx).lines.find((l)
 // ---------------------------------------------------------------------------
 // h, per run
 
-test('AC92 (d): h per run — a state recorded in that run ("reached", "carried over", "not reached", "not needed"), or "taken on" by its line, the model able to record it, while that run is now or still to come; never one it can\'t record (Launch-4, NOT_RECORDED_IDS, Discovery-3 with no groundwork), a skipped one with nothing recorded, one not recorded, or a taken-on one in a run finished or gone back over', () => {
+// Rewritten in G6's fix round (G6's review, round 1, note 1; the Definer's narrowing of AC92 (d)'s h): h counted "a state
+// recorded in that run", "not needed" and a skipped line's recorded state among them; it now counts only "reached",
+// "carried over" or "not reached" on a line not marked skipped (the states of (c)'s classes 2 and 4), and the recordable
+// taken-on ones while the run is now or still to come.
+test('AC92 (d): h per run (narrowed in G6\'s fix round) — "reached", "carried over" or "not reached" recorded in that run on a line not marked skipped, or "taken on" by its line, the model able to record it, while that run is now or still to come; never "not needed", a skipped one whatever it records, one the model can\'t record (Launch-4, NOT_RECORDED_IDS, Discovery-3 with no groundwork), one not recorded, or a taken-on one in a run finished or gone back over', () => {
   const ctx = fake({
     runs: [
-      { phase: 'Design', iteration: 1, state: 'gone back over', std: { 'Design-1': 'reached', 'Design-6': 'not reached' } },
+      { phase: 'Design', iteration: 1, state: 'gone back over', std: { 'Design-1': 'reached', 'Design-6': 'not reached', 'Design-2': 'reached' } },
       { phase: 'Design', iteration: 2, state: 'now', std: { 'Design-1': 'reached (carried over from Design i1)', 'Design-6': 'not needed' } },
       { phase: 'Launch', iteration: 1, state: 'still to come' },
       { phase: 'Discovery', iteration: 1, state: 'finished', std: { 'Discovery-1': 'reached' } },
@@ -107,9 +111,10 @@ test('AC92 (d): h per run — a state recorded in that run ("reached", "carried 
   });
   const [d1, d2, l1, disc] = ctx.runs;
   const t = (run, id) => trackedInRun(ctx, run, run.standard.find((s) => s.id === id));
-  assert.deepEqual(['Design-1', 'Design-6', 'Design-4', 'Design-3', 'Design-2', 'Design-5'].map((id) => t(d2, id)), [true, true, true, false, false, false],
-    'run 2 (now): carried over and not needed recorded; Design-4 taken on and recordable; Design-3 taken on but of NOT_RECORDED_IDS; Design-2 skipped, nothing recorded; Design-5 not recorded');
-  assert.deepEqual(['Design-1', 'Design-6', 'Design-4'].map((id) => t(d1, id)), [true, true, false], 'run 1 (gone back over): its recorded states; Design-4 taken on, outside h');
+  assert.deepEqual(['Design-1', 'Design-6', 'Design-4', 'Design-3', 'Design-2', 'Design-5'].map((id) => t(d2, id)), [true, false, true, false, false, false],
+    'run 2 (now): carried over recorded; Design-6\'s "not needed" outside h; Design-4 taken on and recordable; Design-3 taken on but of NOT_RECORDED_IDS; Design-2 skipped, nothing recorded; Design-5 not recorded');
+  assert.deepEqual(['Design-1', 'Design-6', 'Design-4', 'Design-2'].map((id) => t(d1, id)), [true, true, false, false],
+    'run 1 (gone back over): reached and not reached recorded; Design-4 taken on, outside h; Design-2 skipped by its line though "reached" is recorded, outside h');
   assert.deepEqual(['Launch-3', 'Launch-4', 'Launch-1', 'Launch-2'].map((id) => t(l1, id)), [true, false, false, false], 'a run still to come: Launch-3 in h; Launch-4 and Launch-1 (the model can\'t record them) and Launch-2 (no line) not');
   assert.deepEqual(['Discovery-1', 'Discovery-2', 'Discovery-3'].map((id) => t(disc, id)), [true, false, false], 'a finished run: only what it recorded');
   assert.ok(NOT_RECORDED_IDS.has('Design-3') && NOT_RECORDED_IDS.has('Launch-1') && !NOT_RECORDED_IDS.has('Design-4'));
@@ -120,10 +125,43 @@ test('AC92 (d): h per run — a state recorded in that run ("reached", "carried 
   assert.equal(trackedInRun(no, no.runs[0], no.runs[0].standard[2]), false, 'no groundwork: outside h');
   assert.equal(trackedInRun(yes, yes.runs[0], yes.runs[0].standard[2]), true, 'groundwork recorded: in h');
   // The heads' numbers, from the same runs.
-  assert.deepEqual([runView(ctx, 'Design', 2).h, runView(ctx, 'Design', 1).h, runView(ctx, 'Launch', 1).h, runView(ctx, 'Discovery', 1).h], [3, 2, 1, 1]);
+  assert.deepEqual([runView(ctx, 'Design', 2).h, runView(ctx, 'Design', 1).h, runView(ctx, 'Launch', 1).h, runView(ctx, 'Discovery', 1).h], [2, 2, 1, 1]);
   assert.equal(PAGE_WORDS.standardHead(6, 3), 'Standard checklist · 6 · 3 tracked');
   assert.equal(PAGE_WORDS.standardHead(5, 0), 'Standard checklist · 5 · none tracked this run', 'never "0 tracked"');
   assert.equal(PAGE_WORDS.yoursHead(3), 'Your milestones · 3');
+});
+
+test('AC92 (d) (G6\'s fix round, the Definer\'s narrowing): in a phase with one run, the head\'s h equals the phase line\'s k — each state and line, "not needed" and a skipped one with a recorded state among them; and on Service-Desk\'s records at 77bfeae (real) and on `standard` (made up, NOT real), each one-run phase\'s head against its line', async () => {
+  const one = (state, std, standard) => {
+    const ctx = fake({ runs: [{ phase: 'Design', iteration: 1, state, std }], standard });
+    const line = milestonesByPhase(ctx).lines.find((l) => l.phase === 'Design');
+    return [line.runs[0].h, line.counts.k];
+  };
+  const STD = { 'Design-1': 'reached', 'Design-2': 'reached', 'Design-3': 'not needed', 'Design-4': 'not reached', 'Design-6': 'reached (carried over from Design i1)' };
+  const LINES = { 'Design-2': { state: 'skipped' }, 'Design-5': { state: 'taken on' }, 'Design-6': { state: 'taken on' }, 'Design-4': { state: 'taken on' } };
+  for (const state of ['now', 'still to come', 'finished', 'not recorded']) {
+    const [h, k] = one(state, STD, LINES);
+    assert.equal(h, k, `${state}: h ${h}, k ${k}`);
+    assert.equal(h, 3, `${state}: Design-1, Design-4 and Design-6; not Design-2 (skipped, though reached), Design-3 (not needed) or Design-5 (the model can't record it)`);
+  }
+  // A recordable taken-on one with nothing recorded: in h and in k while the run is now or still to come, out of both otherwise.
+  for (const [state, want] of [['now', 1], ['still to come', 1], ['finished', 0]]) assert.deepEqual(one(state, {}, { 'Design-4': { state: 'taken on' } }), [want, want], state);
+  // On the records: each phase with one run, its head's h against its line's k.
+  for (const st of [textState(), standardState()]) {
+    const app = await openPage(st);
+    try {
+      for (const ph of PHASES) {
+        await app.tap(foldOf(app, ph));
+        const open = keyed(app, `stdl:${ph}`);
+        if (byClass(open, 'v2-runh').length !== 1) continue;
+        const h = /· (\d+) tracked$/.exec(heads(open)[1]);
+        const k = /Standard checklist: (\d+) tracked/.exec(byClass(foldOf(app, ph), 'v2-sdl')[1].textContent);
+        assert.equal(h ? Number(h[1]) : 0, k ? Number(k[1]) : 0, `${ph}: "${heads(open)[1]}" against "${byClass(foldOf(app, ph), 'v2-sdl')[1].textContent}"`);
+      }
+    } finally {
+      app.restore();
+    }
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -344,7 +382,8 @@ test('AC92 (d): skipped, not-needed and taken-on rows stay listed, outside the f
   ], 'Build-4, of NOT_RECORDED_IDS: its why after the words');
   assert.ok(NOT_RECORDED_IDS.has('Build-4') && !NOT_RECORDED_IDS.has('Build-2'));
   assert.equal(r.untracked, null, 'nothing left to fold');
-  assert.equal(r.h, 3, 'Build-1 (not needed recorded), Build-2 (taken on, recordable, now) and Build-3; not Build-4 or Build-5 (skipped, nothing recorded)');
+  // Rewritten in G6's fix round (the Definer's narrowing of h): Build-1's recorded "not needed" is outside h, as it is outside k.
+  assert.equal(r.h, 2, 'Build-2 (taken on, recordable, now) and Build-3 (reached); not Build-1 (not needed), Build-4 (the model can\'t record it) or Build-5 (skipped, nothing recorded)');
   // The phase line's count agrees: Build-4 is "1 taken on, not recorded by the model".
   assert.match(milestonesByPhase(ctx).lines.find((l) => l.phase === 'Build').detail.standard, /· 1 taken on, not recorded by the model ·/);
 });

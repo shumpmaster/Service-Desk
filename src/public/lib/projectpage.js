@@ -377,13 +377,18 @@ function ownRow(ctx, run, m, finishOf, old) {
 }
 
 /**
- * Whether a standard milestone is tracked in one run (AC92 (d)'s h, per run, where (c)'s count is per phase): a state
- * recorded for it in that run ("reached", "carried over", "not reached" or "not needed"), or "taken on" by its line, the
- * model able to record its state (modelRecords), while that run is now or still to come.
+ * Whether a standard milestone is tracked in one run (AC92 (d)'s h, per run, where (c)'s count is per phase): "reached",
+ * "carried over" or "not reached" recorded for it in that run, its line not marking it skipped (the states of (c)'s
+ * classes 2 and 4); or "taken on" by its line, the model able to record its state (modelRecords), while that run is now or
+ * still to come. A "not needed" recorded in the run, and a skipped one whatever state it records, are outside h, as they
+ * are outside (c)'s k, so in a phase with one run the head's h is its line's k (G6's review, round 1, note 1; the
+ * Definer's narrowing of h from "a state recorded in that run", which counted them).
  */
 export function trackedInRun(ctx, run, s) {
-  if (s.state !== 'not recorded') return true;
   const plan = ctx.standard[s.id] || null;
+  if (plan && plan.state === 'skipped') return false;
+  if (['reached', 'carried over', 'not reached'].includes(standardWord(s.state))) return true;
+  if (s.state !== 'not recorded') return false;
   return Boolean(plan && plan.state === 'taken on' && modelRecords(ctx, s.id) && ['now', 'still to come'].includes(ctx.state.get(run)));
 }
 

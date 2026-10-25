@@ -4,13 +4,15 @@
 // for the Kicked back strip a second made-up project and the Done marks a device keeps; G3 (gate titles) adds `gates`, two
 // made-up gate cards at one gate; G4 adds `gates`' `sameItem` (one item's two gate cards at one gate) and Done marks
 // with `id`, `title` and `confirmedAt` (its failed load is app.js served with no sandbox.js, built in its own test and
-// tools/glance-shots.mjs); G5 adds `mix`'s made-up later Launch run for F1 and F2 (`laterLaunch`); the later stages add theirs. Each
+// tools/glance-shots.mjs); G5 adds `mix`'s made-up later Launch run for F1 and F2 (`laterLaunch`); G6 adds `standard`, every
+// standard line written in Service-Desk's section 3; the later stages add theirs. Each
 // made-up part is labelled NOT real here and in tests/desk/fixtures/README.md.
 import { CONFIG, fixture } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
 import { waSetup, SD, POOM } from './wa-fixtures.mjs';
 import { fullRepo, v3, extremes, NOW } from './sandbox-fixtures.mjs';
 import { pullsAnswer } from './j12-fixture.mjs';
+import { STANDARD_MILESTONES } from '../../src/lib/timeline.js';
 
 /** The clock the states open at, as the suite's other trial-view tests (2026-10-14T15:00:00Z). */
 export { NOW };
@@ -208,6 +210,26 @@ export function gatesState({ caseLines = true, sameItem = false } = {}) {
     [`docs/gates/${second}/launch-gate-2-case.md`]: fixture('ac85/docs/gates/P-003/launch-gate-1-case.md'),
     'dispatch-log/2026-10.jsonl': `${alpha.files['dispatch-log/2026-10.jsonl'].trimEnd()}\n${lines.join('\n')}\n`,
   });
+  return s;
+}
+
+/**
+ * `standard` (G6, AC92 (d)): `text` with every one of the model's 24 standard milestones given a line in Service-Desk's
+ * docs/PROJECT.md section 3 (made up, NOT real records: Service-Desk's own section 3 at 77bfeae holds none), each "taken
+ * on" with a made-up why, but STANDARD_SKIPPED's, "skipped", as ac83-page.test.mjs's `ALL_24` writes them. So an opened
+ * phase shows each kind of row its standard group lists: tracked ones with a state recorded, taken-on ones the model can
+ * record in a run now (in h), taken-on ones it can't (Design-3 and Design-5, of NOT_RECORDED_IDS) and recordable ones in
+ * a finished phase or an earlier run gone back over (R3-b: "taken on · not recorded by the model"), skipped ones, and none
+ * left to fold where every line is written. With `ids`, only those standard milestones get their line (the rest none, as
+ * at 77bfeae), so one phase shows the three states together: a skipped one listed, the untracked ones folded.
+ */
+export const STANDARD_SKIPPED = ['Design-2', 'Build-4'];
+export function standardLines(doc, ids = null) {
+  return doc.replace(/^## 3\. The 25,000-foot plan\n/m, (head) => `${head}${STANDARD_MILESTONES.filter(([id]) => !ids || ids.includes(id)).map(([id]) => `- ${id} (standard) · ${STANDARD_SKIPPED.includes(id) ? 'skipped' : 'taken on'} · why: made up for the test, ${id}`).join('\n')}\n`);
+}
+export function standardState({ ids = null } = {}) {
+  const s = textState();
+  s.repos[SD.name].commit({ 'docs/PROJECT.md': standardLines(s.repos[SD.name].files['docs/PROJECT.md'], ids) });
   return s;
 }
 

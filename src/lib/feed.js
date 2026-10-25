@@ -582,8 +582,11 @@ export function feedView(ctx, model, nowMs, tz) {
       return (a.lineno || 0) - (b.lineno || 0);
     });
     const gathers = [];
+    // AC92 (d), from G6 (P-001-glance2-standard.md, A): "Standard checklist · <n> not recorded for this run", in place of
+    // "<n> standard <Phase> milestones · not recorded for this run"; a run still to come's line the same way, "Standard
+    // checklist · <n> still to come" (C: as round 2's mock, changes2.js q5, rewrites both).
     const g = (list, tail) => (list.length ? { kind: 'gather', key: `${rk}:gather:${tail}`, items: list,
-      words: `${list.length} standard ${r.phase} milestone${list.length === 1 ? '' : 's'} · ${tail === 'stc' ? 'still to come' : 'not recorded for this run'}` } : null);
+      words: `Standard checklist · ${list.length} ${tail === 'stc' ? 'still to come' : 'not recorded for this run'}` } : null);
     for (const x of [g(gatherNr, 'nr'), g(gatherStc, 'stc')]) if (x) gathers.push(x);
     const ts = times.get(r);
     const band = {
@@ -696,7 +699,8 @@ function msRow(ctx, r, kind, m, x, sprints, named) {
   const why = kind === 'std' ? (ctx.standard[m.id] ? ctx.standard[m.id].why : null) : m.why;
   const planned = x.rule === 2 || x.rule === 3 || x.rule === 7;
   return {
-    kind: 'ms', key: `${r.phase}-i${r.iteration}:${m.id}`, code: m.id, lineno: m.lineno || 0, name: kind === 'std' ? deskWords(m.name) : m.name,
+    // `std`: one of the model's standard milestones (AC92 (d): its meta line says "standard", its name in 400).
+    kind: 'ms', key: `${r.phase}-i${r.iteration}:${m.id}`, code: m.id, lineno: m.lineno || 0, name: kind === 'std' ? deskWords(m.name) : m.name, std: kind === 'std',
     icon: FEED_ICON[x.rule], rule: x.rule, words: x.feed, doneWhen: kind === 'own' ? m.done : null,
     why: why ? { text: why, source: 'docs/PROJECT.md' } : null, sprints, named,
     fold: sprints.length > 1 ? `${sprints.length} sprints feed this` : sprints.length === 1 ? '1 sprint feeds this'

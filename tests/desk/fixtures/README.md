@@ -774,3 +774,18 @@ states above, with these made-up parts, each **NOT real**, and `tests/desk/tools
   uses it, so the pull requests are read.
 
 AC83's, AC84's, AC57's (j11-reached) and AC88's tests rewritten or extended in G5 add nothing new beyond these.
+
+## After the glance audit, G6 (2026-10-25, S-001 AC92 (d); AC83 and AC84 changed)
+
+G6 adds no fixture file. `tests/desk/ac92-glance-standard.test.mjs`, G6's rewritten cases in `ac83-page.test.mjs` and
+`ac84-timeline.test.mjs`, and G6's walk in `ac88-dark.test.mjs` open the states above, with these made-up parts, each
+**NOT real**, and `tests/desk/tools/glance-shots.mjs` captures them (`g6-`):
+- **`standard`** (`glance-fixtures.mjs`, `standardState` and `standardLines`): `text` with a line in Service-Desk's
+  docs/PROJECT.md section 3 for each of the model's 24 standard milestones, each "taken on" with the why "made up for the
+  test, <id>", but Design-2 and Build-4 (`STANDARD_SKIPPED`), "skipped", as `ac83-page.test.mjs`'s `ALL_24` writes them;
+  with `ids`, only those milestones' lines (Build-4's alone for the three states together). **NOT real records**
+  (Service-Desk's own section 3 at 77bfeae holds no standard line).
+- **made-up runs and section-3 lines** written in `ac92-glance-standard.test.mjs` for h per run and the rows each run
+  lists (states reached, carried over, not reached and not needed in runs now, gone back over, still to come and finished;
+  taken-on lines the model can and can't record; skipped lines), each only the shape the desk's timeline gives; **NOT
+  real records**.

@@ -1287,23 +1287,46 @@ function stripNode(st) {
 
 /** One milestone in an opened phase (AC83, frames 6 and 6b): its icon, its id in Plex Mono, its name, its state in words under it. */
 function smRow(x) {
-  return h('li', { class: `v2-sm${x.soft ? ' soft' : ''}${x.old ? ' old' : ''}`, key: `sm:${x.kind}:${x.id}`, 'data-ms': x.id },
+  // AC92 (d), from G6: `own` or `std` on the row, so the owner's own rows' names take the row weight (500) and a standard
+  // row's stays 400.
+  return h('li', { class: `v2-sm ${x.kind}${x.soft ? ' soft' : ''}${x.old ? ' old' : ''}`, key: `sm:${x.kind}:${x.id}`, 'data-ms': x.id },
     stc(x.icon), h('span', { class: 'v2-smt' }, h('span', { class: 'v2-smn' }, h('span', { class: 'v2-id' }, x.id), ' ', x.name),
       h('span', { class: 'v2-sms' }, x.words)));
 }
 
-/** An opened phase (AC83, frame 6): a thin line with an arrow pointing up; the latest run in full, then each earlier run, smaller. */
-function phaseOpenNode(line) {
+/**
+ * The standard rows not tracked in a run, folded into one row (AC92 (d), from G6; P-001-glance2-standard.md, A): the dashed
+ * ring, then "<n> not tracked this run: <a> not recorded yet, <b> no record in the model ›" in --t-small --ink2; a tap,
+ * Enter or Space lists them in place under it, each with its own mark and words, so part B item 30's three states
+ * survive; a refresh keeps it as the owner left it (AC56).
+ */
+function untrackedRows(name, r) {
+  if (!r.untracked) return [];
+  const fk = `untracked:${r.key}`;
+  const open = isOpenFold(name, fk, false);
+  return [h('li', { class: 'v2-untr', key: `untr:${r.key}` },
+    foldButton(name, fk, false, { class: 'v2-fold v2-untrb', 'data-untracked': r.key }, stc('planned'), h('span', { class: 'v2-untrw' }, r.untracked.words))),
+  ...(open ? r.untracked.rows.map(smRow) : [])];
+}
+
+/**
+ * An opened phase (AC83, frame 6): a thin line with an arrow pointing up; the latest run in full, then each earlier run,
+ * smaller. From G6 (AC92 (d)), every run, earlier ones included, under two heads in --t-label --ink, "Your milestones ·
+ * <n>" and "Standard checklist · <n> · <h> tracked" (or "· none tracked this run"), the standard group with a 1 px --line
+ * rule above its head and 8 px over it; its untracked rows folded into one; skipped, not-needed and taken-on rows listed.
+ */
+function phaseOpenNode(name, line) {
   const kids = [h('span', { class: 'v2-arrow', 'aria-hidden': 'true' }, vi('up', 'v2-k'))];
   for (const r of line.runs) {
     kids.push(h('p', { class: `v2-runh${r.latest ? '' : ' old'}`, key: `runh:${r.key}` }, r.head));
-    if (r.latest) {
-      if (r.own.length) kids.push(h('p', { class: 'v2-subh', key: `yours:${r.key}` }, PAGE_WORDS.yours), h('ol', { class: 'v2-sml', key: `own:${r.key}` }, r.own.map(smRow)));
-      if (r.std.length) kids.push(h('p', { class: 'v2-subh', key: `stdh:${r.key}` }, PAGE_WORDS.standardOf(r.stdCount)), h('ol', { class: 'v2-sml', key: `std:${r.key}` }, r.std.map(smRow)));
-    } else {
-      kids.push(h('ol', { class: 'v2-sml old', key: `old:${r.key}` }, [...r.own, ...r.std].map(smRow),
-        r.gathered ? h('li', { class: 'v2-sm old soft', key: `gather:${r.key}` }, stc('unrec'), h('span', { class: 'v2-smt' }, h('span', { class: 'v2-smn' }, r.gathered.words))) : null));
-    }
+    const ol = r.latest ? 'v2-sml' : 'v2-sml old';
+    const body = [
+      h('p', { class: 'v2-subh', key: `yours:${r.key}` }, PAGE_WORDS.yoursHead(r.own.length)),
+      r.own.length ? h('ol', { class: ol, key: `own:${r.key}` }, r.own.map(smRow)) : null,
+      h('p', { class: 'v2-subh std', key: `stdh:${r.key}` }, PAGE_WORDS.standardHead(r.stdCount, r.h)),
+      h('ol', { class: ol, key: `std:${r.key}` }, r.std.map(smRow), untrackedRows(name, r)),
+    ];
+    kids.push(r.latest ? body : h('div', { class: 'v2-oldrun', key: `old:${r.key}` }, body));
   }
   if (line.whyOnce) kids.push(h('p', { class: 'v2-callout gap', key: `why:${line.phase}` }, vi('eye'), h('span', { class: 'gap' }, line.whyOnce)));
   return h('div', { class: 'v2-stdl', key: `stdl:${line.phase}`, id: `phase-${line.phase}`, role: 'region', 'aria-label': `${line.phase}: its milestones, read from the bottom up` }, kids);
@@ -1328,7 +1351,7 @@ function milestonesNode(p) {
     return h('li', { key: `line:${l.phase}`, 'data-phase': l.phase },
       foldButton(name, fk, false, { class: `v2-stdr v2-fold ${l.cls}`, 'aria-label': l.phase, 'aria-describedby': `phase-d-${l.phase}`, 'aria-controls': open ? `phase-${l.phase}` : null },
         h('span', { class: 'v2-dot', 'aria-hidden': 'true' }), h('span', { class: 'v2-sn' }, l.phase), h('span', { class: 'v2-sv' }, l.word), detail),
-      open ? phaseOpenNode(l) : null);
+      open ? phaseOpenNode(name, l) : null);
   }))];
 }
 
@@ -3057,10 +3080,12 @@ function mileNode(p, x, finishOf, whyOnce = null) {
   const open = isOpenFold(name, fk, false);
   const nOpen = isOpenFold(name, nk, false);
   const fin = x.kind === 'ms' && x.rule !== 1 && !/^reached/.test(x.words) && finishOf ? finishWords(finishOf(x.code), { label: false }) : null;
-  return h('div', { class: `v2-ms${x.icon === 'planned' || x.icon === 'next' ? ' planned' : ''}`, key: `mile:${x.key}`, 'data-ms': x.code },
+  // AC92 (d), from G6: a standard milestone's meta line reads "<id> · standard · <its state words>", its name in 400 13 px
+  // (`.v2-ms.std`); the owner's own keep AC84's weight.
+  return h('div', { class: `v2-ms${x.icon === 'planned' || x.icon === 'next' ? ' planned' : ''}${x.std ? ' std' : ''}`, key: `mile:${x.key}`, 'data-ms': x.code },
     h('span', { class: 'v2-msi' }, stc(FEED_STC[x.icon] || 'unrec')),
     h('p', { class: 'v2-mstt' }, x.name),
-    h('p', { class: 'v2-msm' }, [x.code, x.words, fin].filter(Boolean).join(' · ')),
+    h('p', { class: 'v2-msm' }, [x.code, x.std ? 'standard' : null, x.words, fin].filter(Boolean).join(' · ')),
     x.doneWhen ? h('p', { class: 'v2-msd' }, h('b', {}, 'Done when'), ' ', x.doneWhen) : null,
     x.why ? h('p', { class: 'v2-msd' }, h('b', {}, 'Why'), ' ', x.why.text, h('span', { class: 'v2-src' }, ` · ${x.why.source}`))
       : whyOnce && whyOnce.has(x.key) ? null : h('p', { class: 'v2-msd gap' }, h('b', {}, 'Why'), ' not recorded yet · for the agents to add'),

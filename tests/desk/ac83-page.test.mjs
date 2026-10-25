@@ -289,19 +289,30 @@ test('AC83 (frames 5, 6; P-001-milestones-together.md, A; rewritten in G5 for AC
     'Launch-3, Build-1 to Build-3 and Design-4 and Design-6, taken on in phases with a run now or still to come, are tracked; Discovery, finished, still "4 of 4"');
 });
 
-test('AC83 (frame 6; notes 2, 12, 15, 19): opened, a thin line with an arrow pointing up; the latest run first, "Run <k> · <its dates> · <how it ran>", then "Yours", the first at the foot, then "The model\'s standard <n>", <Phase>-1 at the foot; then each earlier run, smaller, its unrecorded ones gathered', async () => {
+// Rewritten in G6 of "After the glance audit" (AC83, changed by AC92 (d): "the standard checklist set apart"): the heads
+// were "Yours" and "The model's standard six" on the latest run only, its six standard rows listed, and the earlier run's
+// unrecorded ones gathered ("Design-2 to Design-5 · not recorded, or no record in the model"). Now every run has two
+// heads, "Your milestones · <n>" and "Standard checklist · <n> · <h> tracked", and the rows not tracked in a run fold into
+// one row; opened, they are listed in place, Design-1 still at the foot. The bottom-up order, the earlier run smaller and
+// softer, each row's parts and AC56's folds are as before.
+test('AC83 (frame 6; notes 2, 12, 15, 19; AC92 (d), rewritten in G6): opened, a thin line with an arrow pointing up; the latest run first, "Run <k> · <its dates> · <how it ran>", then "Your milestones · <n>", the first at the foot, then "Standard checklist · <n> · <h> tracked", <Phase>-1 at the foot, its untracked rows folded into one; then each earlier run, smaller, under the same two heads', async () => {
   const app = await openPage('#/p/Service-Desk');
   try {
     await app.tap(fold(app, 'Design'));
     const open = keyed(app, 'stdl:Design');
     assert.equal(fold(app, 'Design').attrs['aria-controls'], 'phase-Design');
     assert.deepEqual(byClass(open, 'v2-runh').map((x) => x.textContent), ['Run 2 · 8 Oct – now', 'Run 1 · 5–8 Oct · gone back over']);
-    assert.deepEqual(byClass(open, 'v2-subh').map((x) => x.textContent), ['Yours', "The model's standard six"]);
+    assert.deepEqual(byClass(open, 'v2-subh').map((x) => x.textContent), ['Your milestones · 3', 'Standard checklist · 6 · none tracked this run', 'Your milestones · 0', 'Standard checklist · 6 · 2 tracked']);
     assert.deepEqual(rowsIn(keyed(app, 'own:Design-i2')).map((r) => byClass(r, 'v2-id')[0].textContent), ['MD3', 'MD2', 'MD1'], 'yours, the first (MD1) at the foot');
-    assert.deepEqual(rowsIn(keyed(app, 'std:Design-i2')).map((r) => byClass(r, 'v2-id')[0].textContent), ['Design-6', 'Design-5', 'Design-4', 'Design-3', 'Design-2', 'Design-1'], 'Design-1 at the foot');
+    const untr = findAll(keyed(app, 'std:Design-i2'), (e) => e.tag === 'button')[0];
+    assert.equal(untr.textContent, '6 not tracked this run: 4 not recorded yet, 2 no record in the model', 'the six folded into one row');
+    await app.tap(untr);
+    assert.deepEqual(rowsIn(keyed(app, 'std:Design-i2')).map((r) => byClass(r, 'v2-id')[0].textContent), ['Design-6', 'Design-5', 'Design-4', 'Design-3', 'Design-2', 'Design-1'], 'opened: Design-1 at the foot');
     const old = keyed(app, 'old:Design-i1');
-    assert.match(old.className, /\bold\b/, 'an earlier run, smaller and softer (note 2)');
-    assert.deepEqual(rowsIn(old).map((r) => r.textContent), ['Design-6 A plan that passed reviewnot reached', 'Design-1 Done defined in real scenariosreached', 'Design-2 to Design-5 · not recorded, or no record in the model']);
+    assert.match(old.className, /\bv2-oldrun\b/, 'an earlier run, under its own heads');
+    assert.ok(rowsIn(old).every((r) => /\bold\b/.test(r.className)), 'smaller and softer (note 2)');
+    assert.deepEqual(rowsIn(old).map((r) => r.textContent), ['Design-6 A plan that passed reviewnot reached', 'Design-1 Done defined in real scenariosreached']);
+    assert.equal(findAll(old, (e) => e.tag === 'button')[0].textContent, '4 not tracked this run: 2 not recorded yet, 2 no record in the model', 'in place of "Design-2 to Design-5 · not recorded, or no record in the model"');
     assert.match(rule('.v2-sm.old .v2-smn'), /font: var\(--t-small\); color: var\(--ink2\);/);
     // Each row: its icon in a plain circle, its id in Plex Mono, its name, its state in words under it.
     const md3 = rowsIn(keyed(app, 'own:Design-i2'))[0];
@@ -320,7 +331,11 @@ test('AC83 (frame 6; notes 2, 12, 15, 19): opened, a thin line with an arrow poi
   }
 });
 
-test('AC83 (the README, inventory §4; part B, item 30): the three states told apart — "skipped" with its why (made up), a dashed circle with "?" and "not recorded yet", a slashed circle with "no record for this in the model yet" for the ids the model\'s trace never reads; each with its words; and "taken on · why: …", never shown as missing', async () => {
+// Rewritten in G6 of "After the glance audit" (AC83, changed by AC92 (d)): a taken-on line the model can't record
+// (Design-5, of NOT_RECORDED_IDS) reads "taken on · not recorded by the model · why: …", outside its run's h, where it read
+// "taken on · why: …"; and the rows not tracked in a run are folded into one, so the plain records' Design-4 and Design-5
+// are read after the fold's tap: the three states kept after it.
+test('AC83 (the README, inventory §4; part B, item 30; AC92 (d), rewritten in G6): the three states told apart — "skipped" with its why (made up), a dashed circle with "?" and "not recorded yet", a slashed circle with "no record for this in the model yet" for the ids the model\'s trace never reads, each kept after the fold\'s tap; each with its words; "taken on · why: …", and "taken on · not recorded by the model · why: …" for one the model can\'t record, never shown as missing', async () => {
   const app = await openPage('#/p/Service-Desk', { extra: { 'docs/PROJECT.md': ALL_24 } });
   try {
     await app.tap(fold(app, 'Design'));
@@ -329,7 +344,7 @@ test('AC83 (the README, inventory §4; part B, item 30): the three states told a
     assert.deepEqual([iconOf(row('Design-2')), byClass(row('Design-2'), 'v2-sms')[0].textContent], ['st-skip', 'skipped · why: made up for the test, Design-2']);
     assert.match(row('Design-2').className, /\bsoft\b/, 'in softer text');
     assert.deepEqual([iconOf(row('Design-4')), byClass(row('Design-4'), 'v2-sms')[0].textContent], ['st-planned', 'taken on · why: made up for the test, Design-4']);
-    assert.deepEqual([iconOf(row('Design-5')), byClass(row('Design-5'), 'v2-sms')[0].textContent], ['st-planned', 'taken on · why: made up for the test, Design-5'], 'taken on by its line: never "no record"');
+    assert.deepEqual([iconOf(row('Design-5')), byClass(row('Design-5'), 'v2-sms')[0].textContent], ['st-planned', 'taken on · not recorded by the model · why: made up for the test, Design-5'], 'taken on by its line: never "no record"; the model can\'t record it (AC92 (d))');
     assert.deepEqual([iconOf(row('Build-4')), byClass(row('Build-4'), 'v2-sms')[0].textContent], ['st-skip', 'skipped · why: made up for the test, Build-4']);
   } finally {
     app.restore();
@@ -337,6 +352,7 @@ test('AC83 (the README, inventory §4; part B, item 30): the three states told a
   const plain = await openPage('#/p/Service-Desk');
   try {
     await plain.tap(fold(plain, 'Design'));
+    await plain.tap(findAll(keyed(plain, 'std:Design-i2'), (e) => e.tag === 'button')[0]); // the untracked ones, folded (AC92 (d))
     const row = (id) => rowsIn(keyed(plain, 'std:Design-i2')).find((r) => byClass(r, 'v2-id')[0].textContent === id);
     assert.deepEqual([iconOf(row('Design-4')), byClass(row('Design-4'), 'v2-sms')[0].textContent], ['st-unrec', 'not recorded yet'], 'a dashed circle with "?"');
     assert.deepEqual([iconOf(row('Design-5')), byClass(row('Design-5'), 'v2-sms')[0].textContent], ['st-nomodel', 'no record for this in the model yet'], 'a slashed circle');

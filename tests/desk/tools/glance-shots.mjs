@@ -10,7 +10,8 @@
 // says whether the page scrolls sideways (it must not), and, where the Kicked back strip holds cards (G2, AC91 (f)), how
 // far its row scrolls sideways inside itself, and, where gate titles are drawn (G3, AC91 (h)), how many lines each takes
 // and whether any is cut at its two; and, on a Timeline (G4, AC91 (i)), where the Now line's top rests against a third of
-// the viewport; and, on G5's waits rows (AC89 (c)), the row's words and whether its cut hides any. G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
+// the viewport; and, on G5's waits rows (AC89 (c)), the row's words and whether its cut hides any; and, on G6's pages
+// (AC92 (d)), each opened phase's heads and fold rows. G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
 // the screen as it opens (the viewport), not the whole page.
 import { createServer } from 'node:http';
@@ -18,7 +19,7 @@ import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
-import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD } from '../glance-fixtures.mjs';
+import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD } from '../glance-fixtures.mjs';
 import { pullsAnswer } from '../j12-fixture.mjs';
 
 const PUBLIC = resolve(fileURLToPath(new URL('../../../src/public/', import.meta.url)));
@@ -97,6 +98,19 @@ const SHOTS = [
   { name: 'g5-page-gates-nocase', state: () => gatesState({ sameItem: true, caseLines: false }), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}` },
   { name: 'g5-page-gates-kicked', state: () => gatesState(), now: NOW, looked: LATE, hash: `#/p/${MIX_PROJECT}`,
     seed: deviceMarks([{ project: MIX_PROJECT, kind: 'gate', id: GATE_KEY(MIX_PROJECT, GATE4), at: NOW - 13 * 60e3, kickedAt: NOW - 7 * 60e3 }]) },
+  // G6: the standard checklist set apart (AC92 (d)). `text`: Service-Desk's page with Design opened (both runs' two heads,
+  // the rule, each run's untracked rows folded into one), then with its now run's fold opened (the six listed in place);
+  // Launch opened, as round 2's mock drew it; `standard` (every standard line written, made up) with Discovery and Design
+  // opened, for the taken-on rows "not recorded by the model" (R3-b) and the skipped ones; `standard` with Build-4's line
+  // alone, Build and its earlier run's fold opened (the three states together); and the Timeline (each standard
+  // milestone's "· standard ·" and the gathered lines).
+  { name: 'g6-page-design', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-phase="Design"] > button'] },
+  { name: 'g6-page-design-fold-open', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-phase="Design"] > button', '[data-untracked="Design-i2"]'] },
+  { name: 'g6-page-launch', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-phase="Launch"] > button'] },
+  { name: 'g6-page-standard', state: () => standardState(), now: NOW, looked: LATE, hash: `#/p/${SD.name}`, click: ['[data-phase="Discovery"] > button', '[data-phase="Design"] > button'] },
+  { name: 'g6-page-three-states', state: () => standardState({ ids: ['Build-4'] }), now: NOW, looked: LATE, hash: `#/p/${SD.name}`,
+    click: ['[data-phase="Build"] > button', '[data-untracked="Build-i1"]'] },
+  { name: 'g6-timeline', state: textState, now: NOW, looked: LATE, hash: `#/p/${SD.name}/timeline` },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {
@@ -213,9 +227,11 @@ async function main() {
           const now = await page.evaluate(() => { const n = document.querySelector('[data-k="nowline"]'); return n ? Math.round(n.getBoundingClientRect().top) : null; });
           // G5 (AC89 (c)): the waits row's words and whether its two-line cut hides any of them.
           const waits = await page.evaluate(() => { const e = document.querySelector('[data-k="page-waits"] .v2-wn'); return e ? `${e.textContent}${e.scrollHeight > e.clientHeight + 1 ? ' [cut]' : ''}` : null; });
+          // G6 (AC92 (d)): each opened phase's heads and fold rows, in order.
+          const std = await page.evaluate(() => [...document.querySelectorAll('.v2-stdl .v2-subh, .v2-stdl .v2-untrw')].map((e) => e.textContent).join(' | '));
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}`);
           await ctx.close();
         }
       }

@@ -34,7 +34,7 @@ import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
 import { BAD_PR } from './fake-desk.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
-import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT } from './glance-fixtures.mjs';
+import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD } from './glance-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -504,6 +504,24 @@ test('AC88 + AC69 (after MD3, stage 8; (b) item 37, the plan review of draft 1, 
   } finally {
     app.restore();
   }
+  // G6 of "After the glance audit" (AC92 (d)): a project's page with every phase opened and every run's untracked rows
+  // listed (Service-Desk's records at 77bfeae, real, as tests/desk/glance-fixtures.mjs's `text` holds them), so the walk
+  // reaches an opened phase's heads, the rule above the standard group, the fold row and the rows' weights, which no
+  // screen above opens.
+  {
+    app = await loadSandbox({ ...textState(), hash: `#/p/${SD.name}`, now: NOW, store: memStore() });
+    try {
+      await app.advance(1000);
+      await app.advance(POLL_MS);
+      for (const ph of ['Launch', 'Build', 'Design', 'Discovery']) await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs && e.attrs['aria-label'] === ph)[0]);
+      for (const b of findAll(app.view, (e) => e.tag === 'button' && e.attrs && e.attrs['data-untracked'])) await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs && e.attrs['data-untracked'] === b.attrs['data-untracked'])[0]);
+      assert.equal(findAll(app.view, (e) => e.attrs && e.attrs['data-untracked'] && e.attrs['aria-expanded'] === 'true').length, 6, 'six runs\' untracked rows listed');
+      sameLook(app, 'text phases opened #/p/Service-Desk', fails, seen);
+      counts.screens++;
+    } finally {
+      app.restore();
+    }
+  }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // Each place on the list was drawn, so the check read vermilion where it is meant to be.
@@ -778,6 +796,58 @@ const G5_EXCEPT = (n, d) => {
   const k = G5_KEY(n);
   return Boolean(k && (G5_ONCE.get(k) || []).includes(d)) ? `G5 ${k} ${d}` : null;
 };
+/**
+ * G6 of "After the glance audit"'s changes to the look on purpose (the brief's rule; AC92 (d): "two heads in `--t-label`
+ * `--ink` … the standard group with a 1 px `--line` rule above its head and 8 px over it"; "the untracked ones folded …
+ * in `--t-small` `--ink2`"; "weights: the owner's own rows' names in `--t-row` (500 13 px); a tracked standard row's name in
+ * 400 13 px"; on the Timeline "its name 400 13 px"), each declaration pinned to its value, before and after, in each theme,
+ * on only its own element. The walk reaches the page's in an opened phase (the `text` page with every phase and every
+ * run's untracked rows opened, below):
+ * - an opened phase's two heads (`p.v2-subh`, "Your milestones · <n>", and `p.v2-subh.std`, "Standard checklist · …") in
+ *   --t-label --ink, 10 px over them, as round 2's mock (changes2.js q5), the standard one with its rule and 8 px;
+ * - an own row's name (`span.v2-smn` in an `li.v2-sm.own`) in --t-row, 500 13 px; in an earlier run's row (`.old`), still
+ *   12 px (note 2), at 500;
+ * - the fold row (`li.v2-untr`, a new element) a grid; its button (`button.v2-fold.v2-untrb`) the ring, the words and the
+ *   chevron in three columns, a 32 px target, in --t-small; its words (`span.v2-untrw`) taking it;
+ * - an earlier run's heads and lists in a grid of their own (`div.v2-oldrun`, a new element);
+ * - on the Timeline, a standard milestone's name (`p.v2-mstt` in a `div.v2-ms.std`) at 400.
+ * A standard row's name keeps its 400 13 px (`--t-body`), so it adds none.
+ */
+const G6_HEAD = (ink, ink2) => [`font: ${G1_FONT('400 11px/1.35')} → ${G1_FONT('500 11px/1.35')}`, `color: ${ink2} → ${ink}`, 'padding: 6px 0 0 → 10px 0 0',
+  'computed font-weight: 400 → 500', `computed color: ${ink2} → ${ink}`];
+const G6_LOOK = (ink, ink2, line) => new Map([
+  ['p.v2-subh', G6_HEAD(ink, ink2)],
+  ['p.v2-subh.std', [...G6_HEAD(ink, ink2), 'margin-top: (none) → 8px', `border-top: (none) → 1px solid ${line}`]],
+  ['span.v2-smn (own row)', [`font: ${G1_FONT('400 13px/1.45')} → ${G1_FONT('500 13px/1.35')}`, 'computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 17.55px']],
+  ['span.v2-smn (earlier run\'s own row)', ['font-weight: (none) → 500', 'computed font-weight: 400 → 500']],
+  ['li.v2-untr', ['display: (none) → grid']],
+  ['button.v2-fold.v2-untrb', [`font: ${G1_FONT('500 11px/1.35')} → ${G1_FONT('400 12px/1.4')}`, 'padding: 0 → 4px 0', 'display: inline-flex → grid', 'gap: 4px → 8px',
+    'min-height: 28px → 32px', 'grid-template-columns: (none) → 16px minmax(0, 1fr) 10px', 'width: (none) → 100%']],
+  ['span.v2-untrw', ['computed font-size: 11px → 12px', 'computed font-weight: 500 → 400', 'computed line-height: 14.850000000000001px → 16.799999999999997px']],
+  ['div.v2-oldrun', ['display: (none) → grid']],
+  ['p.v2-mstt (standard milestone)', ['font-weight: (none) → 400', 'computed font-weight: 500 → 400']],
+]);
+const G6_ONCE = new Map([['light', G6_LOOK('#18191c', '#5c5f66', '#e7e7ea')], ['dark', G6_LOOK('#ecedef', '#a2a5ac', '#26282c')]]);
+const G6_KEY = (n) => {
+  const p = n.parent;
+  const phase = (x) => Boolean(x && x.tag === 'div' && (x.cls.has('v2-stdl') || (x.cls.has('v2-oldrun') && x.parent && x.parent.cls.has('v2-stdl'))));
+  if (n.tag === 'p' && n.cls.has('v2-subh') && phase(p)) return n.cls.has('std') ? 'p.v2-subh.std' : 'p.v2-subh';
+  if (n.tag === 'div' && n.cls.has('v2-oldrun') && p && p.cls.has('v2-stdl')) return 'div.v2-oldrun';
+  if (n.tag === 'span' && n.cls.has('v2-smn') && p && p.cls.has('v2-smt')) {
+    const li = p.parent;
+    if (li && li.tag === 'li' && li.cls.has('v2-sm') && li.cls.has('own')) return li.cls.has('old') ? 'span.v2-smn (earlier run\'s own row)' : 'span.v2-smn (own row)';
+    return null;
+  }
+  if (n.tag === 'li' && n.cls.has('v2-untr') && p && p.tag === 'ol' && p.cls.has('v2-sml')) return 'li.v2-untr';
+  if (n.tag === 'button' && n.cls.has('v2-untrb') && n.cls.has('v2-fold') && p && p.cls.has('v2-untr')) return 'button.v2-fold.v2-untrb';
+  if (n.tag === 'span' && n.cls.has('v2-untrw') && p && p.cls.has('v2-untrb')) return 'span.v2-untrw';
+  if (n.tag === 'p' && n.cls.has('v2-mstt') && p && p.tag === 'div' && p.cls.has('v2-ms') && p.cls.has('std')) return 'p.v2-mstt (standard milestone)';
+  return null;
+};
+const G6_EXCEPT = (n, d, theme) => {
+  const k = G6_KEY(n);
+  return Boolean(k && G6_ONCE.get(theme) && (G6_ONCE.get(theme).get(k) || []).includes(d)) ? `G6 ${theme} ${k} ${d}` : null;
+};
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
 function sameLook(app, where, fails, seen) {
@@ -823,6 +893,8 @@ function sameLook(app, where, fails, seen) {
         if (g4) { excepted.add(g4); continue; }
         const g5 = G5_EXCEPT(b, d);
         if (g5) { excepted.add(g5); continue; }
+        const g6 = G6_EXCEPT(b, d, way.theme);
+        if (g6) { excepted.add(g6); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -935,6 +1007,24 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
       app.restore();
     }
   }
+  // G6 of "After the glance audit" (AC92 (d)): a project's page with every phase opened and every run's untracked rows
+  // listed (Service-Desk's records at 77bfeae, real, as tests/desk/glance-fixtures.mjs's `text` holds them), so the walk
+  // reaches an opened phase's heads, the rule above the standard group, the fold row and the rows' weights, which no
+  // screen above opens.
+  {
+    app = await loadSandbox({ ...textState(), hash: `#/p/${SD.name}`, now: NOW, store: memStore() });
+    try {
+      await app.advance(1000);
+      await app.advance(POLL_MS);
+      for (const ph of ['Launch', 'Build', 'Design', 'Discovery']) await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs && e.attrs['aria-label'] === ph)[0]);
+      for (const b of findAll(app.view, (e) => e.tag === 'button' && e.attrs && e.attrs['data-untracked'])) await app.tap(findAll(app.view, (e) => e.tag === 'button' && e.attrs && e.attrs['data-untracked'] === b.attrs['data-untracked'])[0]);
+      assert.equal(findAll(app.view, (e) => e.attrs && e.attrs['data-untracked'] && e.attrs['aria-expanded'] === 'true').length, 6, 'six runs\' untracked rows listed');
+      sameLook(app, 'text phases opened #/p/Service-Desk', fails, seen);
+      counts.screens++;
+    } finally {
+      app.restore();
+    }
+  }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // The named exception was met, and only in its own forms: Home, Waiting, Plan, a project, Team and the Timeline.
@@ -969,7 +1059,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // G5's exception was met, its pinned declaration on its own element, and nothing else of it.
   const g5 = [...G5_ONCE].flatMap(([k, ds]) => ds.map((d) => `G5 ${k} ${d}`)).sort();
   assert.deepEqual([...excepted].filter((x) => /^G5 /.test(x)).sort(), g5);
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[12345] )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // G6's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
+  const g6 = [...G6_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G6 ${theme} ${k} ${d}`))).sort();
+  assert.deepEqual([...excepted].filter((x) => /^G6 /.test(x)).sort(), g6);
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[123456] )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

@@ -145,7 +145,9 @@ test('AC89 (a), state 4: back in view after 10 minutes — "checked 10 min ago",
   }
 });
 
-test('AC89 (a), states 1 then 2: a first read unanswered for 3 minutes in view — "Checking…", nothing above the lanes, no cards, "Not read yet"; then "Not read in this opening", "Can\'t read <project> since HH:MM" from the opening\'s start with AC5\'s reason, "Can\'t read", and never "checking…"', async () => {
+// Rewritten in G8d (AC89 (a), changed: the owner's "Yes, everywhere (Recommended)"): state 2's line above the lanes says
+// "in this opening" in place of the opening's start as "since HH:MM".
+test('AC89 (a), states 1 then 2: a first read unanswered for 3 minutes in view — "Checking…", nothing above the lanes, no cards, "Not read yet"; then "Not read in this opening", "Can\'t read <project> in this opening" (from G8d; before it, "since HH:MM" from the opening\'s start) with AC5\'s reason, "Can\'t read", and never "checking…"', async () => {
   const app = await loadSandbox({ ...boardSetup(), hash: '#/waiting/Alpha', now: NOW });
   hang(app, 'Alpha', () => true);
   try {
@@ -162,7 +164,8 @@ test('AC89 (a), states 1 then 2: a first read unanswered for 3 minutes in view �
     await app.advance(STALE_MS - POLL_MS);
     await redraw(app);
     assert.equal(sub(app), 'Not read in this opening', 'state 2, after 3 minutes in view');
-    assert.equal(aboveLanes(app), `Can't read Alpha since ${hhmm(new Date(NOW), TZ)}: ${REASON_WORDS.stale}`, 'since the opening\'s start');
+    assert.equal(aboveLanes(app), `Can't read Alpha in this opening: ${REASON_WORDS.stale}`, 'from G8d, "in this opening" in place of the opening\'s start');
+    assert.ok(!aboveLanes(app).includes(hhmm(new Date(NOW), TZ)), 'no time');
     assert.equal(cardsIn(app, 'wait').length, 0);
     assert.equal(empty(app, 'wait'), "Can't read");
     assert.equal(count(app, 'wait'), null);

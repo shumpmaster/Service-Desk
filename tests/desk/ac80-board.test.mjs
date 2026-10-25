@@ -984,7 +984,9 @@ test('AC80 with Part A item 5 (stage 1a\'s build review, round 1, F3), rewritten
   try {
     await app.advance(1000);
     await app.advance(POLL_MS);
-    assert.match(app.text(), /Can't read Example since \d\d:\d\d/);
+    // Rewritten in G8d (forced by AC91 (c)'s "Yes, everywhere (Recommended)"): never read in this opening, so "in this opening".
+    assert.match(app.text(), /Can't read Example in this opening/);
+    assert.doesNotMatch(app.text(), /Can't read Example since/);
     for (const k of ['wait', 'kick']) assert.equal(byClass(lane(app, k), 'v2-lc').length, 0, `${k}: no count`);
     assert.equal(byClass(lane(app, 'wait'), 'v2-empty')[0].textContent, "Can't read");
     assert.equal(lane(app, 'kick').textContent, "Kicked back · can't read");

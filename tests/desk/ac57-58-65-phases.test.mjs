@@ -306,7 +306,15 @@ test('AC57, changed by AC83 and by AC92 (b) (G8): the opened phase\'s line — 1
     assert.equal(byClass(list, 'v2-arrow').length + byClass(list, 'vi-up').length, 0, 'no arrow pointing up');
     assert.match(list.children[0].className, /^v2-runh\b/, 'the list opens with its first run\'s head');
     assert.equal(list.attrs['aria-label'], 'Design: its milestones, read from the bottom up');
-    assert.ok(findAll(app.view, (e) => e.textContent === '↑ start at the foot').length >= 1, 'the reading order, said once in the section\'s head');
+    // Said exactly once (G8's round 2, from G8's review, round 1, N4): the one innermost element holding the words, on the
+    // whole page with the phase opened, is the section's head's own (`ms-h`), and the opened phase holds none.
+    const FOOT = '↑ start at the foot';
+    const holds = (e) => (e.textContent || '').includes(FOOT);
+    const said = findAll(app.view, (e) => holds(e) && !(e.children || []).some((c) => c instanceof El0 && holds(c)));
+    assert.equal(said.length, 1, 'the reading order, said once on the page');
+    assert.equal(said[0].textContent, FOOT, 'in words of its own');
+    assert.ok(findAll(keyed(app, 'ms-h'), (e) => e === said[0]).length === 1, 'in the section\'s head');
+    assert.equal(findAll(list, holds).length, 0, 'not in the opened phase');
   } finally {
     app.restore();
   }

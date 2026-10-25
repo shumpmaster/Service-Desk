@@ -211,7 +211,7 @@ test('AC92 (b), the page\'s strip: a 10 × 6 px arrow pointing down, centred 9 p
 // ---------------------------------------------------------------------------
 // Home's tiles
 
-test('AC92 (b), each Home tile\'s drawing: a 6 × 8 px arrow pointing right, 3 px left of the now run\'s icon, in the now run\'s own row — `mix`\'s made-up project on run 2\'s Design, never on a "Build-i1" run; `nowShared` on run 1\'s "Build-i1" (not run 3\'s) and run 2\'s "Launch-i1" (not runs 3\'s and 4\'s); a v2.5 tile on its open sprint, none with two open', async () => {
+test('AC92 (b), each Home tile\'s drawing: a 6 × 8 px arrow pointing right, 3 px left of the now run\'s icon, in the now run\'s own row — `mix`\'s made-up project on run 2\'s Design, never on a "Build-i1" run; `nowShared` on run 1\'s "Build-i1" (not run 3\'s) and run 2\'s "Launch-i1" (not runs 3\'s and 4\'s); a v2.5 tile on its open sprint, none with two open or none open', async () => {
   // The drawing's rows, each [its label, the cells' phases], and the cell holding the arrow.
   const tileOf = (app, name) => keyed(app, `card:${name}`);
   const placeOf = (tile) => arrows(tile).map((a) => {
@@ -227,6 +227,8 @@ test('AC92 (b), each Home tile\'s drawing: a 6 × 8 px arrow pointing right, 3 p
     ['nowShared build', () => nowShared('build'), [[MIX_PROJECT, 'run 1', 'Build']]],
     ['nowShared launch', () => nowShared('launch'), [[MIX_PROJECT, 'run 2', 'Launch']]],
     ['v2.5, two sprints open', () => sprintsState(2), [[SD.name, 'run 2', 'Design'], [POOM.name, null, null]]],
+    // G8's round 2 (from G8's review, round 1, N4): no sprint open, so no sprint is now and the v2.5 tile draws none.
+    ['v2.5, none open', () => sprintsState(0), [[SD.name, 'run 2', 'Design'], [POOM.name, null, null]]],
   ];
   for (const [label, state, want] of cases) {
     const app = await open(state(), '#/');
@@ -237,6 +239,7 @@ test('AC92 (b), each Home tile\'s drawing: a 6 × 8 px arrow pointing right, 3 p
         const got = placeOf(tile);
         if (!row) {
           assert.equal(got.length, 0, `${label}, ${name}: none where no sprint is now`);
+          assert.ok(findAll(tile, (e) => has(e, 'v2-c')).length > 0, `${label}, ${name}: the drawing is drawn`);
           continue;
         }
         assert.equal(got.length, 1, `${label}, ${name}: exactly one`);

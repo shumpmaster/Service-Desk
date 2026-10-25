@@ -2627,13 +2627,15 @@ function questionsSection(bd, built, only) {
   const pOf = (name) => built.find((b) => b.project.name === name) || null;
   const missing = (bd.cantLines || []).map((c) => h('p', { class: 'v2-small', key: `qmiss:${c.project}` }, sectionMissingWords(c, TZ)));
   const attrs = { class: 'v2-qsec', key: 'qsec', 'aria-label': SECTION_WORDS.title };
+  // AC94 ("Settled from QW1's build", 2): the re-read's words for a question it took out of the section, under the head, or,
+  // once none is left, under the "none" line, for this opening.
+  const gone = goneRechecks(qv, only);
   if (!qv.order.length) {
     const e = stripEmptyParts({ unread: bd.unread || null, one: bd.one || null });
     return h('section', attrs, h('p', { class: 'v2-kq', key: 'qnone' }, h('span', { class: 'v2-kl' }, SECTION_WORDS.title),
-      h('span', { class: 'v2-kn' }, e.count), e.words ? h('span', { class: 'v2-kw' }, e.words) : null), missing);
+      h('span', { class: 'v2-kn' }, e.count), e.words ? h('span', { class: 'v2-kw' }, e.words) : null), missing, gone);
   }
   const shown = new Set(qv.order.slice(0, SECTION_CHOICES_SHOWN).map((c) => c.id));
-  const gone = goneRechecks(qv, only);
   const groups = qv.groups.map((g) => {
     const p = pOf(g.project);
     const head = only ? null : h('button', { type: 'button', class: 'v2-grp', key: `grp:qsec:${g.project}`, 'aria-label': `Show only ${g.project}`,
@@ -2649,8 +2651,9 @@ function questionsSection(bd, built, only) {
 /**
  * AC94 ("Before and around a link": "a question answered meanwhile shows "already answered: <ruling>" with no link"): a
  * section question whose re-read found it answered or being recorded has left the section by the time the words are
- * known, so the section keeps them, once per question, "<its title>: <the words>", under its head, for this window (as a
- * sheet open over it keeps them, AC56). One project shown, only that project's.
+ * known, so the section keeps them, once per question, "<its title>: <the words>", under its head, or under the "Questions
+ * for you · none" line once the last question has left (AC94, "Settled from QW1's build", 2), for this opening (as a sheet open
+ * over it keeps them, AC56); "being recorded" keeps its pull request's link. One project shown, only that project's.
  */
 function goneRechecks(qv, only) {
   const here = new Set(qv.order.map((c) => c.id));

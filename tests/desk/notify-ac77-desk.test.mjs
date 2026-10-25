@@ -395,7 +395,7 @@ test('AC77 (draft 6; the desk): closed before the raised time, merged, from a fo
   let app = await open({ [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, { extra: { repo: { closedPulls: closed, prFiles: files } } });
   try {
     await app.advance(60_000);
-    assert.ok((await projectText(app)).includes(HELD_WORDS));
+    assert.ok((await projectText(app)).includes(HELD_SHOWN));
     assert.ok(!app.server.calls.some((c) => c.path === '/api/blobs' && (c.body.files || []).some((n) => n >= 80 && n <= 83)), 'their files are not read');
   } finally {
     app.restore();
@@ -403,7 +403,7 @@ test('AC77 (draft 6; the desk): closed before the raised time, merged, from a fo
   app = await open({ [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, { extra: { repo: { closedFail: true, closedPulls: [closedPr(98)], prFiles: { 98: ADDS_ANSWER } } } });
   try {
     await app.advance(3 * 60_000);
-    assert.ok((await projectText(app)).includes(HELD_WORDS), 'the hold stands');
+    assert.ok((await projectText(app)).includes(HELD_SHOWN), 'the hold stands');
     assert.equal(stateOf(app), 'Quiet', '"read successfully" and the counts untouched');
     // Draft 8 (note B): tried again at each next poll, once a poll.
     assert.equal(app.server.calls.filter((c) => c.path === '/api/blobs' && c.body.closed).length, 4, 'the first cycle and each of the three polls after');

@@ -18,7 +18,7 @@ import { questionMark } from '../../src/lib/board.js';
 import { parseQuestion } from '../../src/lib/records.js';
 import { parseGateCase } from '../../src/lib/j11.js';
 import { CANT_SPLIT } from '../../src/lib/sandbox.js';
-import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, gateViews, gateWords, viewRows, gateTitle, standardLine, caseWord, settleWhen, reversibilityRest, defaultLetter } from '../../src/lib/sheets.js';
+import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, gateViews, gateWords, viewRows, gateTitle, gateOpening, standardLine, caseWord, settleWhen, reversibilityRest, defaultLetter } from '../../src/lib/sheets.js';
 import { lettersRepo, lettersConfig, NOW, Q, GATE, NEXT_WORK, DESIGN_LAB, RAISED } from './ac85-fixtures.mjs';
 import { defaultLabel } from '../../src/lib/records.js';
 import { settleAt } from '../../src/lib/home.js';
@@ -454,12 +454,20 @@ test('AC85 "▸ The whole question · and the file each answer writes": a fold h
 // ---------------------------------------------------------------------------
 // A gate's sheet (frame 4; P-001-gate-card.md, A)
 
-test('AC85 a gate\'s sheet: "<Phase> gate: <the card\'s question>"; "The case opens", quoted, three lines at most, the whole case one tap away; "Their views"; the phase\'s standard milestones; the four choices, each with what follows, "Recommended" on the case\'s recommendation, "Can\'t be undone" on Kill only; "Your reason"', async () => {
+test('AC85, rewritten in G3 (AC91 (h)): a gate\'s sheet: titled with the gate\'s short title, "The Launch gate, case 1 · P-003", from the card\'s own record, and opening with the card\'s section 1\'s whole first line in --t-lead; "The case opens", quoted, three lines at most, the whole case one tap away; "Their views"; the phase\'s standard milestones; the four choices, each with what follows, "Recommended" on the case\'s recommendation, "Can\'t be undone" on Kill only; "Your reason"', async () => {
   const app = await openLetters();
   try {
     const sh = await openSheet(app, GATE);
-    assert.equal(byClass(sh, 'v2-stitle')[0].textContent,
-      'Launch gate: The launch review passed. The case for going live and graduating the product, with its own monitoring and feedback confirmed running, is in the gate document. Proceed, hold, recycle or kill?');
+    // Rewritten in G3 (AC91 (h); AC85's note "Changed after the glance audit"): the title is the gate's short title, its
+    // section 1's second line without its full stop, then " · " and the card's `item:`, in place of "<Phase> gate: <the
+    // card's question>"; that question, section 1's whole first line, is the sheet's opening, under the title, in --t-lead.
+    assert.equal(byClass(sh, 'v2-stitle')[0].textContent, 'The Launch gate, case 1 · P-003');
+    const lead = keyed(app, `clip:gopen:${GATE}`);
+    assert.equal(lead.textContent,
+      'The Launch gate: the launch review passed. The case for going live and graduating the product, with its own monitoring and feedback confirmed running, is in the gate document. Proceed, hold, recycle or kill?');
+    assert.match(lead.className, /\bv2-lead\b/);
+    const order = findAll(sh, (e) => e === byClass(sh, 'v2-stitle')[0] || e === lead || (e.className || '').split(' ').includes('v2-bh'));
+    assert.deepEqual(order.slice(0, 3).map((e) => (e === lead ? 'opening' : e.tag)), ['h2', 'opening', 'h3'], 'the opening under the title, before "The case opens"');
     const heads = byClass(sh, 'v2-bh').map((x) => x.textContent);
     assert.deepEqual(heads.slice(0, 2), ['The case opens', 'Their views']);
     const opening = parseGateCase(ac85('docs/gates/P-003/launch-gate-1-case.md')).opening;
@@ -596,7 +604,7 @@ test('AC85 their views where the records differ: "not recorded" where no record 
   }
 });
 
-test('AC85 the gate sheet\'s parts, pure: the views a card quotes, the card\'s two words, the title, the standard line and the case\'s recommendation', () => {
+test('AC85 the gate sheet\'s parts, pure: the views a card quotes, the card\'s two words, the title (rewritten in G3, AC91 (h): the gate\'s short title) and its opening, the standard line and the case\'s recommendation', () => {
   const card = ac85('queue/P-003-launch-1.md');
   assert.deepEqual(gateViews(card), {
     critic: { word: 'recycle into Design', line: 'recycle into Design — the handover package names no on-call hours, and the sign-up asks for a card before a sample letter.' },
@@ -605,9 +613,15 @@ test('AC85 the gate sheet\'s parts, pure: the views a card quotes, the card\'s t
   assert.deepEqual(gateWords('', { criticInTree: true }), { critic: 'its view is on GitHub', user: 'not recorded' }, "with no word quoted, stage 1a's words stand");
   assert.deepEqual(gateWords('', { ownerIsUser: true }), { critic: 'not recorded', user: 'not needed' });
   assert.deepEqual(viewRows(card, true).map((r) => r.who), ['Critic'], 'nothing for the representative where the owner is the user');
-  assert.equal(gateTitle({ gate: 'criteria', parsed: { text: '## 1. The decision\nThe plan passed review. Pass?\n' } }), 'Build gate: The plan passed review. Pass?');
-  assert.equal(gateTitle({ gate: 'dor', parsed: { text: '## 1. The decision\nThe Design gate: the project passed. Proceed?\n' } }), 'Design gate: The project passed. Proceed?', 'the phase said once');
-  assert.equal(gateTitle({ gate: 'launch', parsed: null }), 'Launch gate: not recorded');
+  // Rewritten in G3 (AC91 (h)): the title is the gate's short title, from the card's own record, never reworded: its
+  // section 1's second line without its full stop, " · ", its `item:`; with no such line, "<the gate's title> · <item>".
+  assert.equal(gateTitle({ gate: 'launch', item: 'P-003', parsed: { text: card } }), 'The Launch gate, case 1 · P-003');
+  assert.equal(gateTitle({ gate: 'criteria', item: 'P-002', parsed: { text: 'item: P-002   kind: project\n\n## 1. The decision\nThe plan passed review. Pass?\n' } }), 'The Build gate · P-002', 'no case line: the gate\'s title');
+  assert.equal(gateTitle({ gate: 'dor', item: 'P-004', parsed: { text: 'item: P-004   kind: project\n\n## 1. The decision\nThe Design gate: the project passed. Proceed?\nThe Design gate, case 2.\n' } }), 'The Design gate, case 2 · P-004');
+  assert.equal(gateTitle({ gate: 'launch', item: 'P-003', parsed: null }), 'The Launch gate · P-003', 'not read yet: the gate\'s title and the item its path names');
+  assert.equal(gateOpening({ gate: 'launch', parsed: { text: card } }).slice(0, 44), 'The Launch gate: the launch review passed. T', 'the opening: section 1\'s first line, word for word');
+  assert.equal(gateOpening({ gate: 'launch', parsed: { text: '## 1. The decision\n\n## 2. Why\n' } }), 'not recorded');
+  assert.equal(gateOpening({ gate: 'launch', parsed: null }), null);
   assert.equal(standardLine('launch', null), "Launch's standard milestones: not available");
   assert.equal(standardLine('criteria', { standard: {} }), "Build's standard milestones: not recorded yet");
   assert.equal(standardLine('dor', { standard: { 'Design-1': { state: 'taken on' }, 'Design-2': { state: 'skipped' }, 'Build-1': { state: 'taken on' } } }), "Design's standard milestones: 1 taken on, 1 skipped");
@@ -969,30 +983,38 @@ test('AC89 (j): a file that can\'t be split into options says what it found — 
   assert.equal(why(['A. one', '2. two', 'z']), 'its lettered and numbered lines are mixed');
 });
 
-test('AC89 (j): long titles cut at three lines with the fade, the whole one tap away — a board card\'s title, a gate sheet\'s title (with "Read it all"), and Plan\'s gate row; three lines or fewer, no fade; never an ellipsis', async () => {
-  const measure = (el, lines, line = 16) => { el.clientHeight = Math.round(Math.min(3, lines) * line); el.scrollHeight = Math.round(lines * line); };
+// Rewritten in G3 (AC91 (h); AC89 (j)'s note "After the glance audit": "a gate sheet's title, Plan's gate row and a gate
+// card's title take the gate's short title (AC91 (h)), cut at two lines only where it doesn't fit; the three-line cut still
+// applies to the board's other card titles").
+test('AC89 (j), rewritten in G3 (AC91 (h)): long titles cut with the fade, the whole one tap away — a board card\'s title at three lines; the gate\'s short title at two, on its card, in its sheet (with "Read it all") and on Plan\'s gate row; within them, no fade; never an ellipsis', async () => {
+  const measure = (el, lines, line = 16, max = 3) => { el.clientHeight = Math.round(Math.min(max, lines) * line); el.scrollHeight = Math.round(lines * line); };
   const app = await openLetters();
   try {
-    // The board's card titles: the title's own box, measured.
-    for (const id of [NEXT, GATE]) {
+    // The board's card titles: the title's own box, measured; a question's at three lines, the gate card's at two.
+    for (const [id, max] of [[NEXT, 3], [GATE, 2]]) {
       const t = keyed(app, `tt:${id}`);
       assert.ok(t, `${id}: the title's box`);
       assert.equal(t.attrs['data-clip'], `title:${id}`);
-      measure(t, 3);
+      measure(t, max, 16, max);
       await app.resize(360);
-      assert.doesNotMatch(keyed(app, `tt:${id}`).className, /\bover\b/, `${id}: three lines, no fade`);
-      measure(keyed(app, `tt:${id}`), 5);
+      assert.doesNotMatch(keyed(app, `tt:${id}`).className, /\bover\b/, `${id}: ${max} lines, no fade`);
+      measure(keyed(app, `tt:${id}`), max + 2, 16, max);
       await app.resize(360);
-      assert.match(keyed(app, `tt:${id}`).className, /\bover\b/, `${id}: past three, faded at the cut`);
+      assert.match(keyed(app, `tt:${id}`).className, /\bover\b/, `${id}: past ${max}, faded at the cut`);
       assert.equal(keyed(app, `cardlink:${id}`).attrs.href, route(id), `${id}: the whole one tap away, in its sheet`);
     }
-    // The gate sheet's title: cut at three lines with the fade, "Read it all" opening the whole in place.
+    assert.equal(keyed(app, `tt:${GATE}`).textContent, 'The Launch gate, case 1 · P-003', 'the gate card\'s title is the short title');
+    // The gate sheet's title: cut at two lines with the fade, "Read it all" opening the whole in place.
     await openSheet(app, GATE);
     const id = `stitle:${GATE}`;
     const box = keyed(app, `clip:${id}`);
     assert.equal(box.tag, 'span', 'inside the heading');
     assert.equal(findAll(sheet(app), (e) => e.tag === 'h2')[0].textContent, box.textContent);
-    measure(box, 5, 23.4);
+    measure(box, 2, 23.4, 2);
+    await app.resize(360);
+    assert.doesNotMatch(keyed(app, `clip:${id}`).className, /\bover\b/, 'two lines: no fade');
+    assert.equal(keyed(app, `clipbtn:${id}`), null, 'and no control');
+    measure(box, 3, 23.4, 2);
     await app.resize(360);
     assert.match(keyed(app, `clip:${id}`).className, /\bover\b/);
     const more = keyed(app, `clipbtn:${id}`);
@@ -1013,21 +1035,23 @@ test('AC89 (j): long titles cut at three lines with the fade, the whole one tap 
     await plan.advance(61_000);
     const name = () => findAll(plan.view, (e) => e.attrs && e.attrs['data-clip'] === `plgate:${PG}`)[0];
     assert.ok(name(), 'the gate row\'s title box');
-    measure(name(), 2, 18.2);
+    assert.equal(name().textContent, 'The Launch gate, case 1 · P-003', 'the gate\'s short title');
+    measure(name(), 2, 18.2, 2);
     await plan.resize(360);
     assert.doesNotMatch(name().className, /\bover\b/);
-    measure(name(), 4, 18.2);
+    measure(name(), 3, 18.2, 2);
     await plan.resize(360);
-    assert.match(name().className, /\bover\b/, 'faded at the cut');
+    assert.match(name().className, /\bover\b/, 'past two lines, faded at the cut');
     assert.equal(findAll(plan.view, (e) => e.dataset && e.dataset.k === `wa-gate:${PG}`)[0].attrs.href, `#/work/card/${encodeURIComponent(PG)}`, 'the whole in its sheet');
   } finally {
     plan.restore();
   }
-  // The look: three lines each, the fade a mask to the ground behind, no ellipsis.
+  // The look: a card's title three lines, the gate's short title two in each place, the fade a mask to the ground behind, no ellipsis.
   assert.match(rule('.v2-tt'), /display: block; max-height: calc\(3 \* 1\.33em\); overflow: hidden; overflow: clip;/);
+  assert.match(rule('.v2-card.gate .v2-tt'), /^ max-height: calc\(2 \* 1\.33em\); $/);
   assert.match(rule('.v2-tt.over, .v2-plli.gate .v2-plname.over'), /mask-image: linear-gradient\(#000 60%, transparent\);/);
-  assert.match(rule('.v2-plli.gate .v2-plname'), /max-height: calc\(3 \* 1\.35em\);/);
-  assert.match(rule('.v2-clip.v2-stt'), /display: block; max-height: calc\(3 \* 1\.3em\);/);
+  assert.match(rule('.v2-plli.gate .v2-plname'), /max-height: calc\(2 \* 1\.35em\);/);
+  assert.match(rule('.v2-clip.v2-stt'), /display: block; max-height: calc\(2 \* 1\.3em\);/);
   assert.match(rule('.v2-clip.v2-stt.open'), /max-height: none;/);
   assert.doesNotMatch(CSS, /\.v2-(tt|stt|plname)[^{]*\{[^}]*text-overflow/, 'no ellipsis');
 });

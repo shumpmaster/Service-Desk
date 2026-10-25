@@ -233,7 +233,7 @@ const gateRows = (app) => findAll(app.view, (e) => cls(e, 'v2-plli') && e.attrs 
 const WORKED_RIGHT = ['your acceptance', 'your acceptance', '21–23 Oct', '25–30 Oct', '27 Oct – 3 Nov', '29 Oct – 6 Nov'];
 const WORKED_ICONS = ['st-half', 'st-half', 'st-next', 'st-planned', 'st-planned', 'st-planned'];
 
-test('AC86 (B1): a gate card in the model\'s real form, its `Milestone:` line every milestone of the spec — one gate row of its own at the top of the group, the ◆, "<Phase> gate · waits on you", "after your ruling"; every milestone row keeps its icon and finish', async () => {
+test('AC86 (B1), rewritten in G3 (AC91 (h)): a gate card in the model\'s real form, its `Milestone:` line every milestone of the spec — one gate row of its own at the top of the group, the ◆, the gate\'s short title, "<Phase> gate · waits on you", "after your ruling"; every milestone row keeps its icon and finish', async () => {
   const app = await open({ extra: { 'intake/estimates.jsonl': WORKED(), ...gateExtra('Milestone: M1, M2, M2B, MD1, MD2, MD3, M3A, M3B, M3C') } });
   try {
     const g = gateRows(app);
@@ -241,8 +241,10 @@ test('AC86 (B1): a gate card in the model\'s real form, its `Milestone:` line ev
     const list = byClass(findKeyed(app, 'wa-grp:Service-Desk'), 'v2-rows')[0];
     assert.equal(list.children[0], g[0], 'at the top of its project\'s group');
     assert.equal(g[0].attrs['data-gate'], GATE_ID);
-    const title = 'The Launch gate: the launch review passed. The case for going live and graduating the product, with its own monitoring and feedback confirmed running, is in the gate document. Proceed, hold, recycle or kill?';
-    assert.deepEqual(parts(g[0]), { icon: 'st-you', name: title, mono: 'Launch gate · waits on you', right: 'after your ruling' }, 'the card\'s title, as the board shows it');
+    // Rewritten in G3 (AC91 (h); AC86's note "Changed after the glance audit": "a gate row's title is the gate's short
+    // title, so two gates read apart"): the card's section 1's second line without its full stop, " · ", its `item:`.
+    const title = 'The Launch gate, case 1 · P-003';
+    assert.deepEqual(parts(g[0]), { icon: 'st-you', name: title, mono: 'Launch gate · waits on you', right: 'after your ruling' }, 'the gate\'s short title, as the board shows it');
     // Rewritten for AC89 (i) (specs/S-001.md:7896-7903): a gate's sheet opened from Plan sits over Plan, so it closes back to Plan.
     assert.equal(byClass(g[0], 'v2-plrow')[0].attrs.href, `#/work/card/${encodeURIComponent(GATE_ID)}`, 'it opens the gate card\'s sheet over Plan');
     await app.go('#/waiting');

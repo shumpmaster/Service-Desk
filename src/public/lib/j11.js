@@ -22,6 +22,12 @@ export const REVIEW_VERDICT_RE = /^reviews\/([0-9]+)\/((?!_)(?!README\.md$)[^/]+
 /** A card gate's phase for its gate document (docs/gates/_GATE.md:4): dor → design, criteria → build, launch → launch. */
 export const GATE_PHASE = { dor: 'design', criteria: 'build', launch: 'launch' };
 export const GATE_WORDS = ['dor', 'criteria', 'launch'];
+/**
+ * A gate's title as the Orchestrator writes it on its card (governance/checks/orchestrator.py, GATE_TITLE, :105): the
+ * card's section 1 names its gate and case with it ("The Launch gate, case 1."), and a card without that line takes it
+ * for its short title (AC91 (h)).
+ */
+export const GATE_TITLE = { dor: 'The Design gate', criteria: 'The Build gate', launch: 'The Launch gate' };
 
 /** The J11 kind of a path in a v3 project, or null (not one of J11's records). */
 export function j11Kind(path) {

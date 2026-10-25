@@ -29,7 +29,7 @@ import { summaryView, HOME_GROUPS, HOME_GROUPS_KEY, homeGroupOf, groupHeaderWord
 import { HOME_WORDS, briefingView, projectEvents, sinceView, lineTime, tileTimeline, sprintStrip, nowLine, atWorkLine, nextLine, tileWaits, tileFoot, atWorkParts, sinceUnreadWords, unreadLines, WHY_BACK_ONCE, nowOwnPart } from './lib/home.js';
 import { GATE_PHASE } from './lib/j11.js';
 import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
-import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
+import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, gateOpening, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, BOARD_LANES, WORDS, MARKS_KEY,
   stripEmptyParts, isNewCard, boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, shortName, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
@@ -2176,10 +2176,22 @@ function gateButtons(p, card) {
   const words = draftOf(card.id);
   return words ? answerButtons(p.project, card.flag, CONFIG.linkCap, words, { caseRec: card.caseRec }) : card.buttons;
 }
-/** AC89 (j): a card's title cut at three lines with the fade (still no ellipsis, AC80), the whole one tap away in its sheet. */
+/**
+ * AC89 (j): a card's title cut at three lines with the fade (still no ellipsis, AC80), the whole one tap away in its sheet;
+ * a gate card's, the gate's short title (AC91 (h)), at two (the stylesheet's `.v2-card.gate .v2-tt`).
+ */
 function cardTitle(card) {
   const id = `title:${card.id}`;
-  return h('span', { class: `v2-tt${clipOver.get(id) === true ? ' over' : ''}`, key: `tt:${card.id}`, 'data-clip': id }, card.title);
+  return h('span', { class: `v2-tt${clipOver.get(id) === true ? ' over' : ''}`, key: `tt:${card.id}`, 'data-clip': id }, card.kind === 'gate' ? gateTitleNode(card.title) : card.title);
+}
+/**
+ * The gate's short title as drawn (AC91 (h)): its words as they are, the item after its last " · " kept on one line
+ * (`.v2-gitem`, an inline block), so a wrap never splits "P-004" at its hyphen; the text, and what a screen reader hears, unchanged.
+ */
+function gateTitleNode(title) {
+  const t = String(title);
+  const i = t.lastIndexOf(' · ');
+  return i < 0 ? t : [t.slice(0, i + 3), h('span', { class: 'v2-gitem', key: 'gitem' }, t.slice(i + 3))];
 }
 
 /** A card's note; a portfolio card's "can't parse" note cut at three lines with the fade (AC89 (k)), the whole in its sheet. */
@@ -2405,7 +2417,8 @@ function sheetShell(back, title, parts, key) {
       h('span', { class: 'v2-grab', 'aria-hidden': 'true' }), parts)];
 }
 function sheetHead(meta, title, back, clipId = null) {
-  // AC89 (j): a title given a clip id is cut at three lines with the fade, "Read it all" under it showing the whole.
+  // AC89 (j): a title given a clip id (a gate sheet's, the gate's short title: two lines, AC91 (h)) is cut with the fade,
+  // "Read it all" under it showing the whole.
   const t = clipId ? [].concat(clipNode(clipId, title, 'v2-stt', true, 'span')) : null;
   return h('div', { class: 'v2-shead' }, h('div', { class: 'v2-blk' }, meta ? h('p', { class: 'v2-mono', live: typeof meta === 'function' ? meta : null }, typeof meta === 'function' ? null : meta) : null,
     h('h2', { class: 'v2-stitle' }, t ? t[0] : title), t ? t.slice(1) : null),
@@ -2673,8 +2686,12 @@ function gateSheetParts(sx) {
   const project = p.project;
   const c = card.flag.card;
   const doc = p.j && p.j.projectDoc ? p.j.projectDoc : null;
-  // AC89 (j): its title cut at three lines with the fade, the whole one tap away.
-  const parts = [sheetHead(headMeta, gateTitle(c), back, `stitle:${card.id}`), fromTap, sheetState(sx)];
+  // AC91 (h): its title the gate's short title, as on the board and Plan, cut at two lines with the fade only where it
+  // doesn't fit, "Read it all" showing the whole (AC89 (j), changed after the glance audit).
+  const parts = [sheetHead(headMeta, gateTitleNode(gateTitle(c)), back, `stitle:${card.id}`), fromTap, sheetState(sx)];
+  // Its opening: the card's section 1's whole first line, in --t-lead, three lines at most, the whole one tap away (AC91 (h)).
+  const opening = gateOpening(c);
+  parts.push(opening != null ? clipNode(`gopen:${card.id}`, opening, 'v2-lead') : h('p', { class: 'v2-small gap', key: 'gopen-reading' }, `The card's file: ${NOT_AVAILABLE}`));
   // "The case opens": its plain-English opening, quoted, three lines at most, faded; the whole case one tap away.
   const g = v.gate || {};
   parts.push(blk(SHEET_WORDS.caseOpens, clipNode(`case:${card.id}`, g.opening || NOT_RECORDED, 'v2-quote', false),
@@ -3650,8 +3667,9 @@ function planGateRow(g) {
   return h('li', { class: 'v2-plli gate', key: `wa-row:${g.key}`, 'data-gate': g.id },
     h('a', { class: 'v2-plrow', key: `wa-gate:${g.id}`, href: go('work', 'card', g.id), onclick: () => { nav.opener = `wa-gate:${g.id}`; } },
       h('span', { class: 'v2-plord' }), stc(g.icon),
-      // AC89 (j): its title cut at three lines with the fade, the whole one tap away in its sheet.
-      h('span', { class: 'v2-prt' }, h('span', { class: `v2-prtt v2-plname${clipOver.get(`plgate:${g.id}`) === true ? ' over' : ''}`, 'data-clip': `plgate:${g.id}` }, g.name), h('span', { class: 'v2-mono v2-plm' }, g.mono)),
+      // AC91 (h): its title the gate's short title, cut at two lines with the fade only where it doesn't fit (AC89 (j),
+      // changed after the glance audit), the whole one tap away in its sheet.
+      h('span', { class: 'v2-prt' }, h('span', { class: `v2-prtt v2-plname${clipOver.get(`plgate:${g.id}`) === true ? ' over' : ''}`, 'data-clip': `plgate:${g.id}` }, gateTitleNode(g.name)), h('span', { class: 'v2-mono v2-plm' }, g.mono)),
       h('span', { class: `v2-plv ${g.right.kind}` }, g.right.words)));
 }
 

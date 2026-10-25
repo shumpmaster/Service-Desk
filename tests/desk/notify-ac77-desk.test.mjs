@@ -110,13 +110,13 @@ test('AC77 (the desk from stage 8), rewritten in QW1: a question with the line i
 test('AC77 (the desk): still held at 7 hours 59 minutes; ordinary at 8 hours, with its answer link and counted', async () => {
   let app = await open({ [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, { now: RAISED_MS + 8 * 60 * MIN - MIN });
   try {
-    assert.ok((await projectText(app)).includes(HELD_WORDS));
+    assert.ok((await projectText(app)).includes(HELD_SHOWN));
   } finally {
     app.restore();
   }
   app = await open({ [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, { now: RAISED_MS + 8 * 60 * MIN });
   try {
-    assert.ok(!(await projectText(app)).includes(HELD_WORDS));
+    assert.ok(!(await projectText(app)).includes(HELD_SHOWN));
     assert.equal(stateOf(app), '1 waiting on you');
     assert.ok(await pick(app), 'the answer link');
   } finally {

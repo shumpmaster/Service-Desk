@@ -15,7 +15,9 @@
 // and, on G7b's (AC91 (c)), each of "Since you last looked"'s missing lines, how many lines it takes and whether any is cut;
 // and, on G8's (AC92 (b)), each arrow, its drawing, its size and where it sits against what it points at; and, on G8b's
 // (AC24's note), Plan's word "moved": how many are drawn, how far under the code line and how far from the name's left it
-// sits, its lines, and the moved row's name, its lines and whether it is cut (it must not be).
+// sits, its lines, and the moved row's name, its lines and whether it is cut (it must not be); and, on G8c's (AC91 (c),
+// AC92 (b)), the briefing's lines in order, the missing lines, and on each tile's now cell whether a line comes in and how
+// far it ends before the arrow, the arrow's gap to the icon.
 // G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
 // the screen as it opens (the viewport), not the whole page.
@@ -24,7 +26,8 @@ import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
-import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, ciState, mismatchState, nowShared, sprintsState, longNameState, PLAN_NOW, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
+import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, ciState, mismatchState, nowShared, sprintsState, longNameState, PLAN_NOW,
+  openingState, signedOutMixedState, orderState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
 import { sdRepo, SD3 } from '../tv2-fixtures.mjs';
 import { CONFIG } from '../helpers.mjs';
 import { waSetup, WORKED } from '../wa-fixtures.mjs';
@@ -181,6 +184,23 @@ const SHOTS = [
     { name: `g8b-${n}-moved`, state, now, looked: LATE, hash: '#/work', click: ['[data-k="plan-order"]', `[data-k="wa-up:${k}"]`, '[data-k="plan-order"]'] },
     { name: `g8b-${n}-moved-ordering`, state, now, looked: LATE, hash: '#/work', click: ['[data-k="plan-order"]', `[data-k="wa-up:${k}"]`] },
   ]),
+  // G8c: on Home (AC91 (c); AC92 (b)), each failure made up (NOT how any read failed): Service-Desk never read in this
+  // opening beside the made-up project read earlier; signed out from the start, and with Service-Desk never read before it;
+  // three projects failing in an order the config doesn't give (the made-up project's tile first), with nothing waiting
+  // and with cards waiting, the closed group folded (made up, a device's fold); two failing, in each of those orders; the
+  // made-up project the desk can't draw (BAD_PR, NOT a real pull request), its read working, alone and beside two failing;
+  // and a line into a tile's now circle, v3 (`nowShared('build')`) and v2.5 (`sprintsState(1)`).
+  { name: 'g8c-opening-two', state: openingState, now: NOW, looked: LATE, later: true },
+  { name: 'g8c-signed-out', state: signedOutState, now: NOW, looked: LATE, before: true },
+  { name: 'g8c-signed-out-mixed', state: signedOutMixedState, now: NOW, looked: LATE, later: true },
+  { name: 'g8c-order-three-quiet', state: () => orderState(), now: NOW, looked: LATE, seed: { 'desk-home-groups-v1': JSON.stringify({ closed: false }) } },
+  { name: 'g8c-order-three-waiting', state: () => orderState({ waiting: true }), now: NOW, looked: LATE, later: true, seed: { 'desk-home-groups-v1': JSON.stringify({ closed: false }) } },
+  { name: 'g8c-order-two-quiet', state: () => orderState({ only: [SD.name, MIX_PROJECT] }), now: NOW, looked: LATE },
+  { name: 'g8c-order-two-waiting', state: () => { const s = orderState({ waiting: true }); s.repos[POOM.name].fail = null; return s; }, now: NOW, looked: LATE, later: true },
+  { name: 'g8c-cant-show', state: () => { const s = mixState(); s.repos[MIX_PROJECT].pulls.push(BAD_PR); return s; }, now: NOW, looked: LATE },
+  { name: 'g8c-cant-show-beside-two', state: () => orderState({ cantShow: true }), now: NOW, looked: LATE },
+  { name: 'g8c-line-now-build', state: () => nowShared('build'), now: NOW, looked: LATE },
+  { name: 'g8c-line-sprint-after', state: () => sprintsState(1), now: NOW, looked: LATE },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {
@@ -366,9 +386,26 @@ async function main() {
             const n = nm.getBoundingClientRect();
             return `${li.dataset.row}: "${e.textContent}" ${lines(e)} line(s), ${Math.round(b.top - code.bottom)} px under the code line, ${Math.round(b.left - n.left)} px from the name's left, ${Math.round(b.width)} px wide${cut(e) ? ', CUT' : ''}; the name ${lines(nm)} line(s), ${Math.round(n.width)} px wide${cut(nm) ? ', CUT' : ', whole'}${li.classList.contains('moved') ? '' : ', NOT on the moved row'}${e.getAttribute('aria-hidden') === 'true' ? '' : ', NOT hidden'}`;
           }));
+          // G8c (AC91 (c); AC92 (b)): the briefing's lines in order, the missing lines, and each tile's now cell: whether a line
+          // comes in (its ::before drawn), how far it ends before the arrow, and the arrow's gap to the icon.
+          const g8c = await page.evaluate(() => {
+            const brief = [...document.querySelectorAll('.v2-brief .v2-bt1, .v2-brief .v2-bcant')].map((e) => e.textContent);
+            const missLines = [...document.querySelectorAll('.v2-smiss > p')].map((e) => e.textContent);
+            const cells = [...document.querySelectorAll('.v2-c.here')].map((c) => {
+              const r = c.getBoundingClientRect();
+              const a = c.querySelector('.v2-here').getBoundingClientRect();
+              const i = c.querySelector('.v2-s').getBoundingClientRect();
+              const b = getComputedStyle(c, '::before');
+              const name = c.closest('.v2-tile').querySelector('.v2-tnm').textContent;
+              if (b.content === 'none' || b.content === 'normal') return `${name}: no line in, the arrow ${Math.round(i.left - a.right)} px left of the icon`;
+              const end = r.left + parseFloat(b.left) + parseFloat(b.width);
+              return `${name}: a line in, ${Math.round(parseFloat(b.width))} px in its ${Math.round(r.width)} px cell, ending ${(a.left - end).toFixed(1)} px before the arrow; the arrow ${Math.round(a.width)}×${Math.round(a.height)}, ${Math.round(i.left - a.right)} px left of the icon`;
+            });
+            return `briefing: ${brief.join(' | ')}; missing: ${missLines.join(' | ') || 'none'}; now cells: ${cells.join('; ') || 'none'}`;
+          });
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}`);
           await ctx.close();
         }
       }

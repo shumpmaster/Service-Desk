@@ -181,7 +181,7 @@ test('AC66 (changed by AC80): each confirmed Done row\'s sheet links "On the Tim
     }
     // The link opens the Timeline at that sprint, its milestone's sprints opened.
     await app.go('#/p/Alpha/timeline/sprint/Q-013');
-    assert.equal(keyed(app, 'fold:sprints:Design-i2:MD1').attrs['aria-expanded'], 'true');
+    assert.equal(keyed(app, 'fold:sprints:Design-i2:MD1:run2').attrs['aria-expanded'], 'true');
   } finally {
     app.restore();
   }
@@ -236,7 +236,7 @@ test('AC67: each card\'s "last:" and "feeds" against its records (J11\'s fixture
     assert.deepEqual(parts('builder'), [null, null, null], 'work outside the pipeline: said once at the list\'s head');
     // The link opens the Timeline at that sprint, its milestone's sprints opened.
     await app.go('#/p/Service-Desk/timeline/sprint/Q-013');
-    assert.equal(keyed(app, 'fold:sprints:Design-i2:MD1').attrs['aria-expanded'], 'true');
+    assert.equal(keyed(app, 'fold:sprints:Design-i2:MD1:run2').attrs['aria-expanded'], 'true');
     assert.ok(findAll(app.view, (e) => e.attrs && e.attrs['data-sprint'] === 'Q-013').length);
   } finally {
     app.restore();

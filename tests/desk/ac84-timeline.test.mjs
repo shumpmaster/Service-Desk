@@ -262,7 +262,7 @@ test('AC84 (P-001-timeline-labels.md, A): each sprint, opened — its date and c
 test('AC84: a long Context cut at three lines with "<n> more ▸" opening the rest (AC60\'s text, unchanged); a short one whole', async () => {
   const app = await openSD('#/p/Service-Desk/timeline', { repoOpts: { ac61: true, answer: ac61Answer() } });
   try {
-    await app.tap(keyed(app, 'fold:sprints:Design-i2:untied'));
+    await app.tap(keyed(app, 'fold:sprints:Design-i2:untied:run2'));
     const sp = findAll(app.view, (e) => e.attrs && e.attrs['data-sprint'] === 'PR #906')[0];
     const ctx = byClass(sp, 'v2-bl')[1];
     const bt = byClass(ctx, 'v2-bt')[0];
@@ -403,7 +403,7 @@ test('AC84 + AC81: the Timeline\'s type is the tokens\' or desk-v2.html\'s pairs
 test('AC84 (specs/S-001.md:6917-6922; the Design reviewer\'s 4, stage 3 round 1): "<n> more ▸" only when something is hidden — the page measures each cut Context and Why, and a text that fits whole has no control; one cut counts the parts not wholly shown', async () => {
   const app = await openSD('#/p/Service-Desk/timeline', { repoOpts: { ac61: true, answer: ac61Answer() } });
   try {
-    await app.tap(keyed(app, 'fold:sprints:Design-i2:untied'));
+    await app.tap(keyed(app, 'fold:sprints:Design-i2:untied:run2'));
     const cut = () => findAll(app.view, (e) => e.attrs && e.attrs['data-bt'] != null);
     const sp = () => findAll(app.view, (e) => e.attrs && e.attrs['data-sprint'] === 'PR #906')[0];
     assert.ok(cut().length >= 2, 'each Context and Why, cut at three lines, measured');

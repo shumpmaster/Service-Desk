@@ -81,7 +81,7 @@ export const PF_WORDS = Object.freeze({
 });
 
 /** J23's state words: they follow a colon ("latest: not recorded"), where a version follows a space ("latest 3.5.0"). */
-const isState = (w) => w === NOT_RECORDED || w === NOT_AVAILABLE || /^can't be read\b/.test(w);
+const isState = (w) => w === NOT_RECORDED || w === NOT_AVAILABLE || /^can't be (read|shown)\b/.test(w);
 const after = (w) => (isState(w) ? `: ${w}` : ` ${w}`);
 
 // ---------------------------------------------------------------------------
@@ -92,10 +92,13 @@ const after = (w) => (isState(w) ? `: ${w}` : ` ${w}`);
  * (public/sandbox.js, readStateOf; AC5): a read refused or failed, "can't be read since HH:MM" (or
  * "can't be read" with no time; from G8c, "can't be read in this opening" where no read of it has
  * succeeded in this opening); the first read still pending, "not read yet"; read, but no now run,
- * "not recorded". `read`: { state: 'ok' | 'checking' | 'cant-read', since: 'HH:MM' | null, opening:
- * whether no read of it has succeeded in this opening (as the tile's corner takes it) }, or absent.
+ * "not recorded". From stage G8d (AC91 (c); the owner's "Say "can't be shown" (Recommended)"), a project the desk can
+ * read but can't draw, "can't be shown", with no time. `read`: { state: 'ok' | 'checking' | 'cant-read' | 'cant-show'
+ * (G8d: its box's `drawError`, its read not failing), since: 'HH:MM' | null, opening: whether no read of it has succeeded
+ * in this opening (as the tile's corner takes it) }, or absent.
  */
 function unknownWhy(pv, error, read) {
+  if (read && read.state === 'cant-show') return CANT_SHOWN;
   if (error || (read && read.state === 'cant-read')) return cantWords(read);
   if (read ? read.state === 'checking' : pv && pv.why === 'Phases: reading…') return 'not read yet';
   return NOT_RECORDED;
@@ -107,8 +110,13 @@ function unknownWhy(pv, error, read) {
  * which has succeeded in this opening (`read.opening`), with or without a time held, as the tile's corner says it.
  */
 const cantWords = (read) => (read && read.opening ? "can't be read in this opening" : read && read.since ? `can't be read since ${read.since}` : "can't be read");
-/** The words for a project read earlier in this opening and now refused or failing (AC89 (h)), else null. */
-const nowCant = (read) => (read && read.state === 'cant-read' ? cantWords(read) : null);
+/** From stage G8d (AC91 (c), AC89 (h)): the cap's, its sheet's and the versions row's words for a project the desk can read but can't draw. */
+export const CANT_SHOWN = "can't be shown";
+/**
+ * The words for a project read earlier in this opening and now refused or failing (AC89 (h)), or, from G8d, one the desk
+ * can read but can't draw ("can't be shown"), else null.
+ */
+const nowCant = (read) => (read && read.state === 'cant-read' ? cantWords(read) : read && read.state === 'cant-show' ? CANT_SHOWN : null);
 
 /**
  * Where a project stands for the cap (AC87): each connected v3 project whose now phase (AC50) is Build
@@ -204,7 +212,8 @@ export function versionsView(entries) {
   const rows = entries.map(({ project, snap, read }) => {
     const own = versionRead(snap, MODEL_VERSION_PATH);
     // AC89 (h): a project that can't be read says "can't be read since HH:MM", as the cap does: in place of "not
-    // available" when it was never read, and after its last-read version when it was read and is now refused.
+    // available" when it was never read, and after its last-read version when it was read and is now refused; from G8d,
+    // one the desk can read but can't draw says "can't be shown" in the same places.
     const cant = nowCant(read);
     const ownWords = own.rec ? comparedWords(own.rec, latest.rec) : cant && own.words === NOT_AVAILABLE ? cant : own.words;
     let words;

@@ -62,14 +62,18 @@ async function redraw(app) {
 // ---------------------------------------------------------------------------
 // (a) Waiting for one project the desk can't read (specs/S-001.md:7823-7852)
 
-test('AC89 (a): the five states as a pure view, from readState — each one\'s line under the title, the line above the lanes, the cards and an empty lane\'s word; "HH:MM" in ownerTimeZone', () => {
+// Rewritten in G8d (AC89 (a), changed: the owner's "Yes, everywhere (Recommended)", and state 2's lanes read so, C): state 2,
+// no read of the project succeeded in this opening, says "Can't read <project> in this opening: <reason>" above the lanes,
+// and its `cards` is what is drawn, the cards a read in this opening gave, if any (a held tree's); state 5 keeps "HH:MM".
+test('AC89 (a): the five states as a pure view, from readState — each one\'s line under the title, the line above the lanes, the cards and an empty lane\'s word; "HH:MM" in ownerTimeZone, and state 2 "in this opening" (from G8d)', () => {
   const at = Date.parse('2026-10-14T15:02:00Z');
   const v = (read, last) => oneProjectView({ name: 'Alpha', read, lastSuccessAt: last, tz: TZ });
   const s1 = v({ read: 'checking', since: null }, null);
   assert.deepEqual([s1.state, s1.under(at), s1.cant, s1.cards, s1.empty, s1.counts], [1, 'Checking…', null, false, 'Not read yet', null]);
   const s2 = v({ read: 'cant-read', since: Date.parse('2026-10-14T15:00:00Z'), words: REASON_WORDS.stale }, null);
   assert.deepEqual([s2.state, s2.under(at), s2.cant, s2.cards, s2.empty, s2.counts],
-    [2, 'Not read in this opening', "Can't read Alpha since 10:00: no successful read for 3 minutes", false, "Can't read", null]);
+    [2, 'Not read in this opening', "Can't read Alpha in this opening: no successful read for 3 minutes", true, "Can't read", null]);
+  assert.doesNotMatch(s2.cant, /since|10:00/, 'state 2: no time');
   const s3 = v({ read: 'ok', since: at - 30e3 }, at - 30e3);
   assert.deepEqual([s3.state, s3.under(at), s3.cant, s3.cards, s3.empty, s3.counts], [3, 'checked 30 s ago', null, true, 'Nothing here', 'read']);
   const s4 = v({ read: 'checking', since: null }, at - 10 * 60e3);
@@ -141,7 +145,9 @@ test('AC89 (a), state 4: back in view after 10 minutes — "checked 10 min ago",
   }
 });
 
-test('AC89 (a), states 1 then 2: a first read unanswered for 3 minutes in view — "Checking…", nothing above the lanes, no cards, "Not read yet"; then "Not read in this opening", "Can\'t read <project> since HH:MM" from the opening\'s start with AC5\'s reason, "Can\'t read", and never "checking…"', async () => {
+// Rewritten in G8d (AC89 (a), changed: the owner's "Yes, everywhere (Recommended)"): state 2's line above the lanes says
+// "in this opening" in place of the opening's start as "since HH:MM".
+test('AC89 (a), states 1 then 2: a first read unanswered for 3 minutes in view — "Checking…", nothing above the lanes, no cards, "Not read yet"; then "Not read in this opening", "Can\'t read <project> in this opening" (from G8d; before it, "since HH:MM" from the opening\'s start) with AC5\'s reason, "Can\'t read", and never "checking…"', async () => {
   const app = await loadSandbox({ ...boardSetup(), hash: '#/waiting/Alpha', now: NOW });
   hang(app, 'Alpha', () => true);
   try {
@@ -158,7 +164,8 @@ test('AC89 (a), states 1 then 2: a first read unanswered for 3 minutes in view �
     await app.advance(STALE_MS - POLL_MS);
     await redraw(app);
     assert.equal(sub(app), 'Not read in this opening', 'state 2, after 3 minutes in view');
-    assert.equal(aboveLanes(app), `Can't read Alpha since ${hhmm(new Date(NOW), TZ)}: ${REASON_WORDS.stale}`, 'since the opening\'s start');
+    assert.equal(aboveLanes(app), `Can't read Alpha in this opening: ${REASON_WORDS.stale}`, 'from G8d, "in this opening" in place of the opening\'s start');
+    assert.ok(!aboveLanes(app).includes(hhmm(new Date(NOW), TZ)), 'no time');
     assert.equal(cardsIn(app, 'wait').length, 0);
     assert.equal(empty(app, 'wait'), "Can't read");
     assert.equal(count(app, 'wait'), null);
@@ -169,7 +176,9 @@ test('AC89 (a), states 1 then 2: a first read unanswered for 3 minutes in view �
   }
 });
 
-test('AC89 (a), state 2 for a failed read: "Can\'t read <project> since HH:MM" with the failure\'s reason in words, above the lanes', async () => {
+// Rewritten in G8d (AC89 (a), changed: the owner's "Yes, everywhere (Recommended)"): a failed read with no read succeeded in
+// this opening says "in this opening" above the lanes in place of the failure's "since HH:MM".
+test('AC89 (a), state 2 for a failed read: "Can\'t read <project> in this opening" (from G8d; before it, "since HH:MM") with the failure\'s reason in words, above the lanes', async () => {
   const s = boardSetup();
   s.repos.Alpha.fail = { kind: 'network' };
   const app = await loadSandbox({ ...s, hash: '#/waiting/Alpha', now: NOW });
@@ -177,7 +186,8 @@ test('AC89 (a), state 2 for a failed read: "Can\'t read <project> since HH:MM" w
     await app.advance(1000);
     await app.advance(POLL_MS);
     assert.equal(sub(app), 'Not read in this opening');
-    assert.equal(aboveLanes(app), `Can't read Alpha since ${hhmm(new Date(NOW + 1000), TZ)}: ${REASON_WORDS.network}`);
+    assert.equal(aboveLanes(app), `Can't read Alpha in this opening: ${REASON_WORDS.network}`);
+    assert.ok(!aboveLanes(app).includes(hhmm(new Date(NOW + 1000), TZ)), 'no time');
     assert.equal(empty(app, 'wait'), "Can't read");
     noChecking(app, 'failed');
   } finally {
@@ -476,8 +486,9 @@ test('AC89 (c): the row\'s cut — two lines of the small role, hidden past them
 // (h) Nothing unread reads as read (specs/S-001.md:7884-7896)
 
 // Rewritten in G8c (P-001-glance-opening-wording.md, B): Alpha's reads fail from the start, so on Home its tile says "Can't
-// read in this opening"; its page, off Home, keeps "Can't read since HH:MM" (AC91 (c): not on Home, kept as built).
-test('AC89 (h): a project the desk can\'t read never shows "Phases: reading…" — its tile and page say "Phases: not available", the tile beside "Can\'t read in this opening" where no read of it succeeded in this opening and the page beside "Can\'t read since HH:MM"; its Record notes say "not read"; an unread v2.5 project\'s "Your last action" reads "not available"', async () => {
+// read in this opening"; its page, off Home, kept "Can't read since HH:MM" (AC91 (c): not on Home, kept as built). Its page
+// half rewritten in G8d (the owner's "Yes, everywhere (Recommended)"): the page says "Can't read in this opening" too.
+test('AC89 (h): a project the desk can\'t read never shows "Phases: reading…" — its tile and page say "Phases: not available", each beside "Can\'t read in this opening" where no read of it succeeded in this opening (the page from G8d); its Record notes say "not read"; an unread v2.5 project\'s "Your last action" reads "not available"', async () => {
   const pv = phaseView(v3('X'), null, new Map(), { ready: false }, true);
   assert.equal(pv.why, PHASES_NOT_AVAILABLE);
   assert.equal(PHASES_NOT_AVAILABLE, 'Phases: not available');
@@ -500,7 +511,8 @@ test('AC89 (h): a project the desk can\'t read never shows "Phases: reading…" 
     await app.go('#/p/Alpha');
     assert.ok(app.text().includes('Phases: not available'));
     assert.ok(!app.text().includes('Phases: reading…'));
-    assert.ok(app.text().includes(`Can't read since ${since}`));
+    assert.ok(app.text().includes("Can't read in this opening"), 'its page, from G8d');
+    assert.ok(!app.text().includes(`Can't read since ${since}`), 'its page: no time for a project never read in this opening');
     assert.ok(app.text().includes("Where it's heading: not available until the project's records are read."), 'its sentence unchanged');
     await app.go('#/p/Alpha/notes');
     assert.ok(app.text().includes('dispatch log: not read'), app.text());
@@ -656,7 +668,9 @@ test('AC89 (h) (rewritten in G4): if the desk\'s own code fails to load, the pag
   // The page loaded through its entry still starts the desk when its code loads: page-app.test.mjs's cases, kept.
 });
 
-test('AC89 (h) with AC80: the v2.5 project shown alone, never read, is AC89 (a)\'s state 2 too', async () => {
+// Rewritten in G8d (AC89 (a), changed: the owner's "Yes, everywhere (Recommended)"): its line above the lanes says "in this
+// opening", as state 2's does for any project.
+test('AC89 (h) with AC80: the v2.5 project shown alone, never read, is AC89 (a)\'s state 2 too, its line above the lanes "in this opening" (from G8d)', async () => {
   const s = { config: { ...CONFIG, projects: [v25('Delta'), v3('Beta')] }, repos: { Delta: repo({ 'docs/LEDGER.md': fixture('poom/docs/LEDGER.md') }), Beta: repo({ 'README.md': '# Beta\n\nNOT a real project.\n' }) } };
   s.repos.Delta.fail = { kind: 'network' };
   const app = await loadSandbox({ ...s, hash: '#/waiting/Delta', now: NOW });
@@ -664,7 +678,8 @@ test('AC89 (h) with AC80: the v2.5 project shown alone, never read, is AC89 (a)\
     await app.advance(1000);
     await app.advance(POLL_MS);
     assert.equal(sub(app), 'Not read in this opening');
-    assert.match(aboveLanes(app), /^Can't read Delta since \d\d:\d\d: network error/);
+    assert.match(aboveLanes(app), /^Can't read Delta in this opening: network error/);
+    assert.doesNotMatch(aboveLanes(app), /since|\d\d:\d\d/, 'no time');
     assert.equal(empty(app, 'wait'), "Can't read");
   } finally {
     app.restore();

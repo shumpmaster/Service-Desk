@@ -31,7 +31,7 @@ import { GATE_PHASE } from './lib/j11.js';
 import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, gateOpening, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, BOARD_LANES, WORDS, MARKS_KEY,
-  stripEmptyParts, isNewCard, boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
+  stripEmptyParts, isNewCard, boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, everyProjectUnread, unreadLaneWords, quietTroubleWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
@@ -954,14 +954,23 @@ function tileNode(b, bd, group, nextRows, whyOnce = null) {
 }
 
 /**
- * A project's read state as Home draws it (AC82's tile; AC5): 'cant-read' for a project that can't be
- * drawn or whose read is refused or failing, 'checking' while its first read is pending, else its
- * read's own; with the time it began failing. The tile and the portfolio's cap (AC87) both take it from
- * here, so the two never differ.
+ * A project's read state as Home draws it (AC82's tile; AC5): 'cant-read' for a project whose read is refused or
+ * failing, 'checking' while its first read is pending, else its read's own; with the time it began failing. From stage
+ * G8d (AC91 (c); the owner's "Say "can't be shown" (Recommended)"), 'cant-show' for a project the desk can't draw (its
+ * box's `drawError`) whose read does not fail, with no time, where G8c and before gave it 'cant-read' with its last
+ * read's time; one the desk can't draw whose read fails stays 'cant-read'. The tile and the portfolio's cap (AC87) both
+ * take it from here, so the two never differ (a tile the desk can't draw says "Can't show this project: <the error>").
  */
 function readStateOf(box) {
-  return { state: box.drawError ? 'cant-read' : box.read ? box.read.read : 'checking', since: box.read && box.read.since != null ? box.read.since : null };
+  const failing = Boolean(box.read && box.read.read === 'cant-read');
+  if (box.drawError && !failing) return { state: 'cant-show', since: null };
+  return { state: failing || box.drawError ? 'cant-read' : box.read ? box.read.read : 'checking', since: box.read && box.read.since != null ? box.read.since : null };
 }
+
+/** Whether the project's read is refused or failing; from G8d a project the desk can't draw is told apart from it (cantShown). */
+const readFails = (box) => Boolean(box && box.read && box.read.read === 'cant-read');
+/** A project the desk can read but can't draw (G8d): its box's `drawError`, its read not failing. */
+const cantShown = (box) => Boolean(box && box.drawError && !readFails(box));
 
 /**
  * Whether a read of the project has succeeded in this opening (the reader's `lastSuccessAt` at or after the desk's
@@ -1013,7 +1022,9 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
   const groups = HOME_GROUPS.map((g) => {
     const members = placed.filter((x) => x.group === g.key);
     const counted = (x) => { const c = bd && bd.counts ? bd.counts.get(x.b.project.name) : null; return c ? c.waiting + c.kicked : 0; };
-    const words = groupHeaderWords(members.map((x) => ({ waiting: counted(x), cantRead: Boolean(x.box.drawError || (x.box.read && x.box.read.read === 'cant-read')) })));
+    // From G8d (AC91 (c)): a project the desk can read but can't draw counted apart, "<m> can't be shown"; one whose read
+    // fails counted "can't be read", whether it can be drawn or not.
+    const words = groupHeaderWords(members.map((x) => ({ waiting: counted(x), cantRead: readFails(x.box), cantShow: cantShown(x.box) })));
     const isOpen = homeGroups.isOpen(g.key);
     const id = `grp-${g.key}`;
     // AC90 (P-001-audit-repeat.md, A): a run's missing why shared by two or more of the group's tiles, said once at its head.
@@ -1032,6 +1043,7 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
       h('span', { class: 'v2-hgt' }, g.title),
       words.waiting ? h('span', { class: 'v2-hgy' }, stc('you', 'v2-k'), words.waiting) : null,
       words.cant ? h('span', { class: 'v2-hgb' }, words.cant) : null,
+      words.shown ? h('span', { class: 'v2-hgb', key: `hgb-shown:${g.key}` }, words.shown) : null,
       h('span', { class: 'v2-hgn' }, String(members.length), h('span', { class: 'sb-vh' }, ` ${members.length === 1 ? 'project' : 'projects'}`)),
       vi(isOpen ? 'chevdown' : 'chev'),
       h('span', { class: 'sb-vh' }, isOpen ? ' (open)' : ' (closed)'))),
@@ -1332,7 +1344,10 @@ function pageTwoRows(p, bd) {
   }
   else if (w.read === 'cant-read') {
     const r = p.box.read || {};
-    waits = pageRow('page-waits', to, vi('bad', 'v2-k bad'), p.box.drawError || (r.since != null ? `Can't read since ${hhmm(new Date(r.since), TZ)}` : "Can't read"), r.words || null, { cls: 'bad' });
+    // From G8d (AC91 (c)): "Can't read in this opening" for a project no read of which has succeeded in this opening, its
+    // reason under it as built; a page whose project can't be drawn keeps its "Can't show this project: <the error>".
+    const opening = r.read === 'cant-read' && !readInOpening(name);
+    waits = pageRow('page-waits', to, vi('bad', 'v2-k bad'), p.box.drawError || `Can't read${cantSince({ since: r.since, opening }, TZ)}`, r.words || null, { cls: 'bad' });
   } else if (w.read !== 'ok') waits = pageRow('page-waits', to, vi('clock'), PAGE_WORDS.checking, null);
   // AC91 (j): calm looks calm — "Nothing waiting on you" takes the soft row (400 13 px --ink2, `.v2-prtt.soft`), its ✓ and
   // "checked <age> ago" unchanged, so a calm page no longer looks like one that waits ("◆ <n> wait on you" stays 500 --ink).
@@ -1608,7 +1623,8 @@ function waitsNode(p) {
 function renderPipeline(p) {
   const m = p.model;
   const kids = [];
-  kids.push(h('p', { class: 'sb-lead small' }, boxStateText(p.box, TZ)));
+  // From G8d (AC91 (c)): "Can't read in this opening: <reason>" for a project no read of which has succeeded in this opening.
+  kids.push(h('p', { class: 'sb-lead small' }, boxStateText(p.box, TZ, p.box.read.read === 'cant-read' && !readInOpening(p.project.name))));
   kids.push(h('p', { class: 'sb-muted small' }, ciMark(m.ci), `CI on ${m.defaultBranch}: ${m.ci}`));
   kids.push(h('h2', { class: 'sb-h2' }, 'Waiting on you'), waitsNode(p));
   kids.push(h('h2', { class: 'sb-h2' }, 'Reduced view (operating model v2.5.1)'),
@@ -1907,9 +1923,13 @@ const boardState = {
 };
 
 /** A project's read state for the board's quiet lines. */
-function readOf(box) {
+function readOf(box, name) {
   const r = (box && box.read) || {};
-  return { ok: r.read === 'ok', cantRead: r.read === 'cant-read', since: r.since, words: r.words };
+  // From G8d (AC91 (c)): `opening`, no read of the project has succeeded in this opening, so Waiting's quiet line says "in this opening".
+  // From G8d's round 2 (AC80; the owner's ""✕ Can't show Bravo" (Recommended)"): `cantShow`, the desk can read the project but
+  // can't draw it (its box's `drawError`, its read not failing), so it is not `ok` and never "Nothing waiting: <project>".
+  const cantShow = cantShown(box);
+  return { ok: r.read === 'ok' && !cantShow, cantRead: r.read === 'cant-read', cantShow, since: r.since, words: r.words, opening: r.read === 'cant-read' && !readInOpening(name) };
 }
 
 /** The queue less what the board does not count (AC48, AC49, AC54, AC55, AC24): the pull requests with the agents and the cards marked done here. */
@@ -1932,7 +1952,7 @@ function boardOf(built, nowMs, only) {
   for (const b of built) {
     const name = b.project.name;
     if (b.error || !b.model) {
-      projects.push({ project: b.project, cards: [], agents: [], read: readOf(b.box) });
+      projects.push({ project: b.project, cards: [], agents: [], read: readOf(b.box, name) });
       continue;
     }
     const j = DESK && DESK.j22 ? DESK.j22(name) : null;
@@ -1975,7 +1995,7 @@ function boardOf(built, nowMs, only) {
       }
       DESK.setWaited(name, [...waited]);
     }
-    projects.push({ project: b.project, cards: pc.cards, agents: pc.agents, read: readOf(b.box),
+    projects.push({ project: b.project, cards: pc.cards, agents: pc.agents, read: readOf(b.box, name),
       recording: b.model.beingRecorded || [], asking: (b.model.asking || []).filter((a) => a.state === 'held'),
       answerRecording: (b.model.asking || []).filter((a) => a.state !== 'held'),
       recordRows: recordDone(b.project, b.model, b.snap, b.j, nowMs), seenRows: boardState.seen.get(name) });
@@ -1994,16 +2014,20 @@ function boardOf(built, nowMs, only) {
   // Part A item 5 (stage 1a's build review, round 1, F3): before any project is read, or when none can
   // be, an unknown is said in words, never as a 0 or "Nothing here".
   const shown = only ? built.filter((b) => b.project.name === only) : built;
+  // From G8d's round 3 (AC91 (f); decisions/questions/P-001-glance-no-quiet-lanes.md, "Ruling: A"): a project the desk can't
+  // draw (its box's `drawError`) is never read and drawn here, so with none both, the lanes say "Can't read or show" with no count.
   const readState = (b) => (b.box && b.box.read ? b.box.read.read : null);
-  view.unread = shown.some((b) => readState(b) === 'ok') ? null
-    : shown.length && shown.every((b) => readState(b) === 'cant-read') ? 'cant' : 'pending';
+  view.unread = everyProjectUnread(shown.map((b) => ({ read: readState(b), drawError: Boolean(b.box && b.box.drawError) })));
   // AC89 (a): with one project shown, the view follows that project's own read state (one of the table's five).
   view.one = null;
   const one = only ? built.find((b) => b.project.name === only) : null;
   if (one && one.box) {
     const st = DESK && DESK.states ? DESK.states.get(only) : null;
-    view.one = oneProjectView({ name: only, read: one.box.read, lastSuccessAt: st ? st.lastSuccessAt : null, tz: TZ });
-    view.unread = view.one.unknown ? (view.one.state === 2 ? 'cant' : 'pending') : null;
+    // From G8d's round 2: a project the desk can read but can't draw says "Can't show <project>" above the lanes, with no counts.
+    // From G8d's round 3 (AC89 (a); P-001-glance-cant-show-last-read.md, "Ruling: A"): `cantShow` is the box's `drawError`
+    // whatever its read, so state 5 for a project the desk couldn't draw says "Can't show when last read", with no count.
+    view.one = oneProjectView({ name: only, read: one.box.read, lastSuccessAt: st ? st.lastSuccessAt : null, tz: TZ, cantShow: Boolean(one.box.drawError) });
+    view.unread = view.one.unknown ? (view.one.cantShow ? 'cant-show' : view.one.state === 2 ? 'cant' : view.one.state === 5 ? 'cant-show-last' : 'pending') : null;
   }
   boardState.view = view;
   boardState.cards = new Map(projects.flatMap((p) => p.cards.map((c) => [c.id, c])));
@@ -2404,7 +2428,7 @@ function laneNode(bd, built, laneKey, only) {
     h('h2', { class: 'v2-lh' }, h('span', {}, l.title), laneKey === 'done' || unknown ? null : h('span', { class: 'v2-lc' }, String(l.count))),
     groups.length ? groups : h('p', { class: `v2-empty${unknown ? ' unknown' : ''}` },
       laneKey === 'done' ? WORDS.emptyDone : bd.one ? bd.one.empty
-        : unknown ? (bd.unread === 'cant' ? BOARD_UNREAD.cant : BOARD_UNREAD.pending) : WORDS.empty));
+        : unknown ? unreadLaneWords(bd.unread) : WORDS.empty));
 }
 
 /**
@@ -2490,7 +2514,9 @@ function quietLines(bd, built, only) {
   } else {
     if (q.agents.length) lines.push(quietLine('agents', 'agents', WORDS.agents, q.agents.length, agentsFold));
     if (bd.nothingWaiting.length) lines.push(h('p', { class: 'v2-ql still', key: 'ql:nothing' }, vi('eye'), h('span', {}, `${WORDS.nothing}: ${bd.nothingWaiting.join(', ')}`)));
-    for (const c of bd.cantRead) lines.push(h('p', { class: 'v2-ql still bad', key: `ql:cant:${c.project}` }, vi('bad'), h('span', {}, `Can't read ${c.project} since ${hhmm(new Date(c.since), TZ)}`)));
+    // AC80, AC89 (a); from G8d (AC91 (c)), "Can't read <project> in this opening" for a project no read of which has succeeded in this opening;
+    // from G8d's round 2, "Can't show <project>" for one the desk can read but can't draw, in the same look, among them in the board's order.
+    for (const c of bd.cantLines) lines.push(h('p', { class: 'v2-ql still bad', key: `ql:${c.show ? 'show' : 'cant'}:${c.project}` }, vi('bad'), h('span', {}, quietTroubleWords(c, TZ))));
     // AC87 (stage 6b; J23's failures): the portfolio's read that isn't current, in its own words, never a project's.
     if (lastPf && lastPf.problem && lastPf.state !== 'pending') lines.push(h('p', { class: 'v2-ql still bad', key: 'ql:cant:portfolio' }, vi('bad'), h('span', {}, lastPf.problem)));
     if (q.recording.length) lines.push(quietLine('recording', 'eye', WORDS.recording, q.recording.length, recFold));
@@ -2517,8 +2543,10 @@ function renderWaiting(bd, built, only, sheetId) {
     body.push(h('div', { class: 'v2-filter', key: 'filter' }, h('span', { class: 'v2-chip' }, vi('proj'), h('span', {}, name),
       h('button', { type: 'button', class: 'v2-x', key: 'chip-x', 'aria-label': 'Show all projects', onclick: () => nav.replace('#/waiting') }, vi('x'))),
     h('span', { class: 'v2-small' }, `1 of ${bd.of} project${bd.of === 1 ? '' : 's'}`)));
-    // AC89 (a), states 2 and 5: "Can't read <project> since HH:MM", with AC5's reason in words, above the lanes.
-    if (one && one.cant) body.push(h('div', { class: 'v2-quiet', key: 'quiet-cant' }, h('p', { class: 'v2-ql still bad', key: `ql:cant:${name}` }, vi('bad'), h('span', {}, one.cant))));
+    // AC89 (a), states 2 and 5: "Can't read <project> since HH:MM", with AC5's reason in words, above the lanes; from G8d,
+    // state 2's "Can't read <project> in this opening: <reason>" (oneProjectView); from G8d's round 2, "Can't show <project>"
+    // for a project the desk can read but can't draw, in the same place and look.
+    if (one && one.cant) body.push(h('div', { class: 'v2-quiet', key: 'quiet-cant' }, h('p', { class: 'v2-ql still bad', key: `ql:${one.cantShow ? 'show' : 'cant'}:${name}` }, vi('bad'), h('span', {}, one.cant))));
   } else body.push(quietLines(bd, built, null));
   body.push(kickStrip(bd, built, name));
   body.push(h('div', { class: 'v2-lanes', key: 'lanes' }, BOARD_LANES.map((k) => laneNode(bd, built, k, name))));

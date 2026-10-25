@@ -10,7 +10,7 @@
   "scripts": {
     "build": "node tools/build.mjs",
     "sync": "node tools/build.mjs --write",
-    "test": "node --test ../tests/desk/"
+    "test": "node --test ../tests/desk/*.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.148.0"

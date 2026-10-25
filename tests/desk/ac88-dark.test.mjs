@@ -34,7 +34,7 @@ import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
 import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mjs';
 import { BAD_PR } from './fake-desk.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
-import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS } from './glance-fixtures.mjs';
+import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS, G8D_OPENS } from './glance-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -573,6 +573,8 @@ function okBadPlace(n) {
   if (n.cls.has('v2-prow') && n.cls.has('bad')) return 'ruled: a page\'s waits row';
   if (svg && n.cls.has('v2-k') && p && p.cls.has('v2-prow') && p.cls.has('bad')) return 'ruled: a page\'s waits row';
   if (n.tag === 'p' && n.cls.has('v2-ql') && n.cls.has('bad')) return 'ruled: Waiting\'s and "Since you last looked"\'s quiet line';
+  // G8d (AC91 (c); the owner's "Say "can't be shown" (Recommended)"): the head's new count part, an element of its own in the same look.
+  if (n.tag === 'span' && n.cls.has('v2-hgb') && /^hgb-shown:/.test(n.attrs['data-k'] || '')) return 'ruled: a group head\'s can\'t-be-shown count';
   if (n.tag === 'span' && n.cls.has('v2-hgb')) return 'ruled: a group head\'s can\'t-read count';
   // A failed read in "Since you last looked" (reading (e)).
   if (svg && n.cls.has('v2-k') && n.cls.has('bad') && p && p.cls.has('v2-ev')) return 'reading (e): a failed read\'s ✕';
@@ -787,6 +789,19 @@ test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --o
       app.restore();
     }
   }
+  // G8d (AC91 (c); AC89 (a)): Waiting, a project's page and the Pipeline view saying "in this opening", Waiting's state 2
+  // holding a held tree's cards, and Home's group head counting a project the desk can't draw apart (tests/desk/
+  // glance-fixtures.mjs's G8D_OPENS, its made-up parts NOT real), so the walk reads each where it is drawn; the want-list
+  // gains only the head's new count part.
+  for (const [where, open] of G8D_OPENS) {
+    const app = await open();
+    try {
+      check(app, `G8d ${where}`, fails, seen);
+      counts.screens++;
+    } finally {
+      app.restore();
+    }
+  }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // Each mark on AC92 (a)'s list and each exception the fixtures reach was drawn, so the check read them where they are meant to be.
@@ -795,7 +810,7 @@ test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --o
     'mark: the Done lane\'s ✓', 'mark: a passing CI line\'s ✓', 'mark: a failing CI line\'s ✕', 'mark: a deploy\'s mismatch', 'mark: the Timeline key\'s check',
     'mark: the Timeline key\'s cross', 'ruled: the briefing\'s ✕', 'ruled: the briefing\'s can\'t-read line', 'ruled: a tile\'s corner',
     'ruled: a tile\'s foot or a tile the desk can\'t draw', 'ruled: a page\'s waits row', 'ruled: Waiting\'s and "Since you last looked"\'s quiet line',
-    'ruled: a group head\'s can\'t-read count', 'reading (e): the notifications warning', 'grey: a "Can\'t show this" line',
+    'ruled: a group head\'s can\'t-read count', 'ruled: a group head\'s can\'t-be-shown count', 'reading (e): the notifications warning', 'grey: a "Can\'t show this" line',
     'ink: the portfolio\'s problem line', 'ink: a portfolio card\'s note', 'ink: the portfolio block\'s "nothing queued" tick', 'ink: a portfolio block\'s mark',
     'ink: Plan\'s ideas', 'grey: "Since you last looked"\'s missing line', 'grey: Plan\'s "moved" word']) {
     assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
@@ -1584,6 +1599,20 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
       counts.screens++;
     } finally {
       g8c.restore();
+    }
+  }
+  // G8d of "After the glance audit" (AC91 (c); AC89 (a)): Waiting, a project's page and the Pipeline view with their "in this
+  // opening" lines, Waiting's state 2 with a held tree's cards, and Home's group head with its "can't be shown" count
+  // (tests/desk/glance-fixtures.mjs's G8D_OPENS, its made-up parts NOT real), so the walk shows G8d adds no declaration: the
+  // head's new count part takes `.v2-hgb`'s look, so there is no G8D_ONCE.
+  for (const [where, open] of G8D_OPENS) {
+    const g8d = await open();
+    try {
+      if (/can't draw/.test(where)) assert.equal(findAll(g8d.view, (e) => e.dataset && /^hgb-shown:/.test(e.dataset.k || '')).length, 1, `${where}: the head's new count part drawn`);
+      sameLook(g8d, `G8d ${where}`, fails, seen);
+      counts.screens++;
+    } finally {
+      g8d.restore();
     }
   }
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);

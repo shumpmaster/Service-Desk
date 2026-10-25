@@ -358,11 +358,20 @@ test('AC91 (f): the strip opens by itself when a card is kicked back and closes 
     undo();
     app.restore();
   }
-  // One project shown: only its cards in the strip, the strip above the lanes, under the chip.
-  const one = await open(twoMixState(), { store: kickedStore(), hash: `#/waiting/${MIX_PROJECT2}` });
+  // One project shown: only its cards in the strip, the strip above the lanes, under the chip. Rewritten in QW1 (AC91 (f)'s
+  // note: "from stage QW1 a kicked-back question shows in the "Questions for you" section … not in the strip"): Bravo's one
+  // kicked-back card is its question, now in the section, so its strip is "none"; Alpha's two are in Alpha's.
+  const bravo = await open(twoMixState(), { store: kickedStore(), hash: `#/waiting/${MIX_PROJECT2}` });
   try {
-    assert.deepEqual(stripCards(one).map((c) => c.attrs['data-card']), [CARD.question(MIX_PROJECT2)]);
-    assert.equal(byClass(strip(one), 'v2-kh')[0].textContent, 'Kicked back1');
+    assert.equal(strip(bravo).textContent, 'Kicked back · none');
+    assert.equal(kindText(findAll(keyed(bravo, 'qsec'), (e) => e.attrs && e.attrs['data-card'] === CARD.question(MIX_PROJECT2))[0]), 'Kicked back · Question', 'in the section');
+  } finally {
+    bravo.restore();
+  }
+  const one = await open(twoMixState(), { store: kickedStore(), hash: `#/waiting/${MIX_PROJECT}` });
+  try {
+    assert.deepEqual(stripCards(one).map((c) => c.attrs['data-card']), [CARD.pr(MIX_PROJECT), CARD.gate(MIX_PROJECT)]);
+    assert.equal(byClass(strip(one), 'v2-kh')[0].textContent, 'Kicked back2');
     const kids = byClass(one.view, 'v2-board')[0].children;
     const at = (cls) => kids.findIndex((c) => c.className.split(' ').includes(cls));
     assert.ok(at('v2-filter') < at('v2-kstrip') && at('v2-kstrip') === at('v2-lanes') - 1, 'under the chip, directly above the lanes');

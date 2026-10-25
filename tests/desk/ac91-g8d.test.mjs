@@ -365,12 +365,16 @@ test('AC89 (a), G8d (C, after G8c\'s review): Waiting with the made-up project a
       const n = cardsIn(app, 'wait').length;
       assert.ok(n > 0, `${where}: its cards in the lanes`);
       assert.equal(laneCount(app, 'wait'), String(n), `${where}: the lane counts them`);
+      // Rewritten in QW1 (AC94: state 2 "may show questions"): the held tree's question is in the "Questions for you"
+      // section, not the lane, so Home's corner counts the lane's cards and the section's question.
+      const q = byClass(keyed(app, 'qsec'), 'v2-card').length;
+      assert.equal(q, 1, `${where}: its question in the section`);
       assert.equal(lane(app, 'kick').textContent, "Kicked back · can't read", `${where}: the strip in state 2's words`);
       assert.equal(byClass(app.view, 'v2-qsmall').length, 0, `${where}: no counts under the lanes, as state 2 has them`);
       assert.doesNotMatch(keyed(app, 'board').textContent, /checking…|Checking…/, `${where}: never "checking…"`);
       // Home's corner counts the same cards.
       await app.go('#/');
-      assert.equal(corner(app, MIX_PROJECT).textContent, `${n} wait on you`, `${where}: Home's corner`);
+      assert.equal(corner(app, MIX_PROJECT).textContent, `${n + q} wait on you`, `${where}: Home's corner`);
     } finally {
       app.restore();
     }

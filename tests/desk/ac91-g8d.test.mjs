@@ -635,7 +635,7 @@ test('AC89 (a), AC91 (c), G8d round 2: Waiting with the made-up project the desk
   }
 });
 
-test('AC80, AC89 (a), AC91 (c), G8d round 2: a project the desk can\'t draw whose read fails keeps its can\'t-read words on Waiting, every project shown and alone shown, never "Can\'t show" — never read in this opening (its blobs failing, made up), read earlier and then failing, and signed out', async () => {
+test('AC80, AC89 (a), AC91 (c), G8d round 2: a project the desk can\'t draw whose read fails keeps its can\'t-read words on Waiting, every project shown and alone shown, never "Can\'t show" — never read in this opening (its blobs failing, made up), read earlier and then failing, and signed out (from G9c, signed out with every project shown, the one signed-out line in its place)', async () => {
   // Never read in this opening: the first read holds the tree (and the made-up BAD_PR) but fails in its blob phase (NOT real).
   const n = blobFailState('every file');
   n.repos[MIX_PROJECT].pulls.push(BAD_PR);
@@ -676,15 +676,18 @@ test('AC80, AC89 (a), AC91 (c), G8d round 2: a project the desk can\'t draw whos
   } finally {
     app.restore();
   }
-  // Signed out: its read refused with the others' (made up, J6), after its first reads: its can't-read words.
+  // Signed out: its read refused with the others' (made up, J6), after its first reads. Rewritten in G9c (the owner's
+  // rulings of 2026-10-25, decisions/questions/P-001-glance-waiting-signed-out.md and P-001-glance-g9c-signed-out-all.md,
+  // each "Ruling: A": one "Signed out — reload to sign in" line "in place of one red line per project", "every red line"):
+  // with every project shown it has no red line of its own, can't-read or can't-show, the one signed-out line standing in
+  // their place; alone shown, its can't-read words, as before.
   const o = signedOutState();
   o.repos[MIX_PROJECT].pulls.push(BAD_PR);
   app = await open(o, '#/waiting', { later: true });
   try {
-    const mine = troubleLines(app).filter(([, p]) => p === MIX_PROJECT);
-    assert.deepEqual(mine.map(([k]) => k), ['cant']);
-    assert.match(mine[0][2], SINCE(MIX_PROJECT));
-    assert.equal(troubleLines(app).filter(([k]) => k === 'show').length, 0, 'signed out: no "Can\'t show" line');
+    assert.deepEqual(troubleLines(app), [], 'from G9c, signed out: no red line of its own, nor any other project\'s');
+    assert.equal(keyed(app, 'ql:signed-out').textContent, 'Signed out — reload to sign in', 'from G9c: the one line in their place');
+    assert.equal(findAll(app.view, (x) => x.dataset && /^ql:show:/.test(x.dataset.k || '')).length, 0, 'signed out: no "Can\'t show" line');
     await app.go(`#/waiting/${MIX_PROJECT}`);
     assert.match(aboveLanes(app), new RegExp(`^Can't read ${MIX_PROJECT} since \\d\\d:\\d\\d: `));
   } finally {

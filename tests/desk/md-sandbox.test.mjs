@@ -188,13 +188,15 @@ test('AC52 (changed by AC80, and by AC94 in QW1): every item that needs the owne
   }
 });
 
-test('AC52 + AC80: the recommendation is labelled and never preselected; one button per option, each its filled-in file; a pull request\'s sheet offers its step, never a verdict on every pull request', async () => {
+// Rewritten in QW1 (AC94): the question is in the "Questions for you" section, its sheet opened from "More about it ›", and
+// the section's own boxes stay on the screen under the sheet, so the sheet's boxes are read inside the sheet.
+test('AC52 + AC80 (rewritten in QW1): the recommendation is labelled and never preselected; one button per option, each its filled-in file; a pull request\'s sheet offers its step, never a verdict on every pull request', async () => {
   const app = await opened(twoProjects(), '#/waiting/Alpha');
   try {
     const card = byClass(app.view, 'v2-card').find((c) => c.textContent.includes("Alpha's question"));
-    const open = findAll(card, (e) => e.tag === 'a' && e.textContent === 'Answer')[0];
+    const open = findAll(card, (e) => e.tag === 'a' && e.textContent === 'More about it ›')[0];
     await app.go(open.attrs.href);
-    const opts = byClass(app.view, 'v2-opt');
+    const opts = byClass(byClass(app.view, 'v2-sheet')[0], 'v2-opt');
     assert.equal(opts.length, 2);
     assert.deepEqual(opts.map((o) => byClass(o, 'v2-ol')[0].textContent), ['A. Yes.', 'B. No.']);
     assert.deepEqual(opts.map((o) => byClass(o, 'v2-rec').length), [0, 1], '"Recommended" on B only, never picked');
@@ -209,7 +211,7 @@ test('AC52 + AC80: the recommendation is labelled and never preselected; one but
     assert.equal(b.attrs.href, `https://github.com/shumpmaster/Alpha/new/main?filename=decisions%2Fquestions%2FAlpha-pick.md&value=${encodeURIComponent(text.replace('Ruling: A', 'Ruling: B'))}`);
     // The pull request's sheet: no answer buttons and no verdict box; its one step (here J22's "not known": Open ↗).
     await app.go('#/waiting/Alpha/card/Alpha%7Cpr%7C80');
-    assert.equal(byClass(app.view, 'v2-opt').length, 0, 'a pull request has no options');
+    assert.equal(byClass(byClass(app.view, 'v2-sheet')[0], 'v2-opt').length, 0, 'a pull request has no options');
     assert.equal(findAll(app.view, (e) => e.tag === 'textarea').length, 0, 'no verdict box');
     assert.match(app.text(), /Whether it needs your verdict: not known yet/);
     const steps = byClass(byClass(app.view, 'v2-sheet')[0], 'v2-abtn').filter((x) => x.tag === 'a').map((x) => [x.textContent, x.attrs.href]);

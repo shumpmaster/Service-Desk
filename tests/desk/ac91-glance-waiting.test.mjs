@@ -448,7 +448,9 @@ test('AC92 (e)\'s rule for a filled ground: on Waiting, in each state and theme,
 // ---------------------------------------------------------------------------
 // (g) "new" on Waiting
 
-test('AC91 (g): "new" on a card in "Waiting on you" raised after "last looked", in --t-label --ink beside its kind label, part of the kind line\'s text, with no colour and no box; none before it, none without a raised time', async () => {
+// Rewritten in QW1 (AC94: "`isNewCard` … gives it in the section too"): the question is in the "Questions for you" section,
+// where it carries "new" by the same rule; raised before "last looked", none there either.
+test('AC91 (g), rewritten in QW1: "new" on a card in "Waiting on you" raised after "last looked", in --t-label --ink beside its kind label, part of the kind line\'s text, with no colour and no box; none before it, none without a raised time; the question, in the section, by the same rule', async () => {
   // `mix`'s made-up project: its pull request raised 8 days ago, its question 6 h 41 m, its gate card 4 h 31 m and its
   // decision card 3 h 21 m before the clock; its hold and merge cards have no raised time. "Last looked" 5 hours ago.
   const app = await open(mixState(), { store: looked(NOW - 5 * H) });
@@ -456,12 +458,14 @@ test('AC91 (g): "new" on a card in "Waiting on you" raised after "last looked", 
     const got = Object.fromEntries(waitCards(app).map((c) => [c.attrs['data-card'], [kindText(c), isShownNew(c)]]));
     assert.deepEqual(got, {
       [CARD.pr(MIX_PROJECT)]: ['Pull request', false],
-      [CARD.question(MIX_PROJECT)]: ['Question', false],
       [CARD.gate(MIX_PROJECT)]: ['Gate · Build new', true],
       [CARD.card(MIX_PROJECT)]: ['Decision new', true],
       [CARD.hold(MIX_PROJECT)]: ['Hold', false],
       [CARD.merge(MIX_PROJECT)]: ['Merge card', false],
     }, 'raised after "last looked": "new", part of the kind line\'s text; before it, or with no raised time, none');
+    const q = cardOf(app, CARD.question(MIX_PROJECT));
+    assert.ok(findAll(keyed(app, 'qsec'), (e) => e === q).length, 'the question in the section');
+    assert.deepEqual([kindText(q), isShownNew(q)], ['Question', false], 'raised before "last looked": none in the section');
     const fresh = newOf(cardOf(app, CARD.card(MIX_PROJECT)));
     assert.equal(fresh.parent, byClass(cardOf(app, CARD.card(MIX_PROJECT)), 'v2-kd')[0], 'in the kind line, beside the kind label');
     assert.equal(fresh.parent.children.indexOf(fresh), 2, 'after the icon and the label');

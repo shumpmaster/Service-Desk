@@ -184,18 +184,23 @@ test('AC57 (reached): M3A in Build i2, a run still to come, marked ` · reached:
 // Rewritten in stage 3 (S-001 AC57, changed by AC83, specs/S-001.md:4478-4486: the Status screen's phase
 // boxes give way to the page's milestones by phase, whose rows take AC57's rules and AC59's words, AC83's
 // "each milestone's row"): this case checked the reached words and marks on the Status screen.
-test('AC57 (reached), changed by AC83: the page draws the words and marks in its milestones by phase — "run 1: M1 reached" on Build\'s line; opened, M1\'s lighter check "reached 7 Oct · gone back over", MD2\'s check "reached 16 Oct", MD3 the gold ring "next to reach"', async () => {
+test('AC57 (reached), changed by AC83 (and in G5 by AC92 (c)): the page draws the words and marks in its milestones by phase — M1 counted reached on Build\'s line ("1 of 5 reached"); opened, M1\'s lighter check "reached 7 Oct · gone back over", MD2\'s check "reached 16 Oct", MD3 the gold ring "next to reach"', async () => {
   const app = await openSD('#/p/Service-Desk', { repoOpts: { extra: { 'docs/PROJECT.md': REACHED } } });
   try {
     const line = (ph) => findAll(keyed(app, 'ms-lines'), (e) => e.attrs && e.attrs['data-phase'] === ph)[0];
-    assert.match(line('Build').textContent, /run 1: M1 reached/, 'M1, reached in an earlier run, named on its phase\'s line');
-    assert.match(line('Design').textContent, /Yours: MD1 in progress, MD2 reached, MD3 · /, 'MD2 reached in the now run');
+    // Rewritten in G5 of "After the glance audit" (AC83's phase line, changed by AC92 (c): "<R> of <T> reached · <sprints>"
+    // in place of "Yours: … · run <k>: … reached · Standard: …"): M1, reached in an earlier run, and MD2, reached in the now
+    // run, each counted reached on its phase's line, which before G5 read "run 1: M1 reached" and "Yours: MD1 in progress,
+    // MD2 reached, MD3"; opened, each row's state words come first, then (from G5) its sprints in the one form.
+    const detail = (ph) => byClass(findAll(line(ph), (e) => e.tag === 'button')[0], 'v2-sdl').map((x) => x.textContent)[0];
+    assert.equal(detail('Build'), '1 of 5 reached · 16 sprints · 16 merged', 'M1, reached in an earlier run, counted on its phase\'s line');
+    assert.equal(detail('Design'), '2 of 5 reached · 26 sprints · 26 merged', 'MD2, reached in the now run, counted (with Design-1, reached in run 1)');
     for (const ph of ['Build', 'Design']) {
       await app.tap(findAll(line(ph), (e) => e.tag === 'button')[0]);
     }
     const row = (code) => findAll(app.view, (e) => e.attrs && e.attrs['data-ms'] === code && ` ${e.className} `.includes(' v2-sm '))[0];
     const mark = (code) => findAll(row(code), (e) => e.tag === 'svg')[0].attrs.class;
-    assert.equal(byClass(row('M1'), 'v2-sms')[0].textContent, 'reached 7 Oct · gone back over', 'M1');
+    assert.equal(byClass(row('M1'), 'v2-sms')[0].textContent, 'reached 7 Oct · gone back over · 2 sprints · 2 merged', 'M1, its two sprints after its words (G5)');
     assert.match(mark('M1'), /st-pastcheck/);
     assert.equal(byClass(row('MD2'), 'v2-sms')[0].textContent, 'reached 16 Oct', 'MD2');
     assert.match(mark('MD2'), /st-check/);

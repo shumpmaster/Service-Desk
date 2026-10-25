@@ -62,8 +62,10 @@ export const WORDS = Object.freeze({
  * an unknown is said in words, never as "none" (Part A item 5, as the lanes' empty words are, AC80 and AC89 (a)):
  * with one project shown, its state's words (AC89 (a)'s table: "Nothing here" is "none", "Nothing here when last
  * read" is "none when last read", "Not read yet" and "Can't read" as they are); with every project shown, before any
- * is read "not read yet", and with none readable "can't read". `unread`: the board's 'pending' | 'cant' | null;
- * `one`: oneProjectView's result, or null. Returns the words after "Kicked back · ".
+ * is read "not read yet", and with none readable "can't read"; from G8d's round 3, with none both read and drawn and
+ * at least one the desk can't draw, "can't read or show" (everyProjectUnread). `unread`: the board's everyProjectUnread
+ * value ('pending' | 'cant' | 'cant-read-or-show' | null); `one`: oneProjectView's result, or null. Returns the words
+ * after "Kicked back · ", what an empty "Waiting on you" lane says then, lower-cased, so the strip and the lanes agree.
  */
 export function stripEmptyWords({ unread = null, one = null } = {}) {
   const low = (w) => w.charAt(0).toLowerCase() + w.slice(1);
@@ -72,9 +74,42 @@ export function stripEmptyWords({ unread = null, one = null } = {}) {
     if (one.empty === ONE_WORDS.whenLast) return `${WORDS.stripNone} when last read`;
     return low(one.empty);
   }
-  if (unread === 'cant') return low(ONE_WORDS.cantRead);
-  if (unread) return low(ONE_WORDS.notReadYet);
-  return WORDS.stripNone;
+  return unread ? low(unreadLaneWords(unread)) : WORDS.stripNone;
+}
+
+/**
+ * AC80's Part A item 5 and AC91 (f), with every project shown: an empty "Waiting on you" lane's words while what it would
+ * hold is unknown (its count not drawn), for everyProjectUnread's value: "Can't read", "Can't read or show" (from G8d's
+ * round 3) or "Not read yet". The strip says the same, lower-cased (stripEmptyWords).
+ */
+export const UNREAD_WORDS = Object.freeze({ pending: 'Not read yet', cant: "Can't read", cantReadOrShow: "Can't read or show" });
+export function unreadLaneWords(unread) {
+  if (unread === 'cant') return UNREAD_WORDS.cant;
+  if (unread === 'cant-read-or-show') return UNREAD_WORDS.cantReadOrShow;
+  return UNREAD_WORDS.pending;
+}
+
+/**
+ * Waiting with every project shown (AC80's Part A item 5; AC91 (f)): whether the lanes' and the strip's emptiness is known,
+ * from each shown project's read (`read`: readState's 'ok' | 'cant-read' | 'checking' | null) and whether the desk can draw
+ * it (`drawError`, its box's). A project the desk can't draw whose read does not fail is "can't be drawn" (G8d's round 2's
+ * "can't show"), so never read and drawn; one whose read fails is "can't be read". In order (from G8d's round 3, the owner's
+ * ruling of 2026-10-25, "Ruling: A", decisions/questions/P-001-glance-no-quiet-lanes.md):
+ *   any shown project read and drawn: null (known: "Nothing here", its count, "Kicked back · none");
+ *   else every one can't be read: 'cant' ("Can't read");
+ *   else any read pending (neither working nor failing, the desk drawing what it holds): 'pending' ("Not read yet");
+ *   else, each can't be read or can't be drawn and at least one can't be drawn: 'cant-read-or-show' ("Can't read or show").
+ * Before round 3 a project the desk can read but can't draw counted as read here (sandbox.js's `view.unread` from the raw
+ * read state), so a board with none read and drawn said "Waiting on you 0", "Nothing here" and "Kicked back · none".
+ * With no project shown, 'pending', as before.
+ */
+export function everyProjectUnread(reads = []) {
+  const fails = (r) => r.read === 'cant-read';
+  const undrawn = (r) => Boolean(r.drawError) && !fails(r);
+  if (reads.some((r) => r.read === 'ok' && !undrawn(r))) return null;
+  if (reads.length && reads.every(fails)) return 'cant';
+  if (!reads.length || reads.some((r) => !undrawn(r) && !fails(r))) return 'pending';
+  return 'cant-read-or-show';
 }
 
 /**
@@ -147,6 +182,9 @@ export const ONE_WORDS = Object.freeze({
   cantRead: "Can't read",
   cantShow: "Can't show",
   whenLast: 'Nothing here when last read',
+  // From G8d's round 3 (AC89 (a)'s state 5; decisions/questions/P-001-glance-cant-show-last-read.md, "Ruling: A"): a project
+  // the desk couldn't draw when last read, its read now failing, so "nothing here" is not known.
+  cantShowLast: "Can't show when last read",
   countsChecking: 'checking…',
 });
 
@@ -174,7 +212,15 @@ export const ONE_WORDS = Object.freeze({
  * drawn: `cantShow` true, the line above the lanes "Can't show <project>" in place of the quiet lines, no counts (`counts`
  * null, `unknown`, so no small line and no count on a lane), an empty lane "Can't show" (the strip "Kicked back · can't
  * show"), never "Nothing here" or a 0; under the title its own "checked <age> ago", as built, since its read works. One
- * whose read fails is in state 2 or 5 as above, its can't-read words kept.
+ * whose read fails is in state 2 or 5 as above, its can't-read words kept. Read so after G8d's round 2 (the Reviewer's N2,
+ * settled, C): one whose read neither works nor fails says "Checking…" under the title where no read has succeeded in this
+ * opening (state 1) and "checked <age> ago" where one has (state 4), the rest as above.
+ * From G8d's round 3 (AC89 (a); the owner's ruling of 2026-10-25, "Ruling: A", decisions/questions/P-001-glance-cant-show-last-read.md):
+ * `cantShow` is the box's `drawError` whatever its read, and one whose read fails after a read in this opening (state 5) has
+ * an empty lane "Can't show when last read" and the strip "Kicked back · can't show when last read", with no count
+ * (`unknown`), never "Nothing here when last read" or a 0; the rest as state 5 has it ("checked <age> ago", its can't-read
+ * line above the lanes, never "Can't show <project>" (`cantShow` false in the result), no small line of counts). In state 2
+ * it keeps "Can't read".
  */
 export function oneProjectView({ name, read, lastSuccessAt, tz, cantShow = false }) {
   const r = read || {};
@@ -188,6 +234,7 @@ export function oneProjectView({ name, read, lastSuccessAt, tz, cantShow = false
   const cant = r.read === 'cant-read' ? `${quietCantWords({ project: name, since: r.since, opening: !succeeded }, tz)}${r.words ? `: ${r.words}` : ''}` : null;
   if (r.read === 'ok') return { state: 3, cards: true, counts: 'read', cant: null, empty: WORDS.empty, unknown: false, under: checked };
   if (r.read === 'cant-read') {
+    if (succeeded && cantShow) return { state: 5, cards: true, counts: null, cant, empty: ONE_WORDS.cantShowLast, unknown: true, under: checked };
     return succeeded ? { state: 5, cards: true, counts: null, cant, empty: ONE_WORDS.whenLast, unknown: false, under: checked }
       : { state: 2, cards: true, counts: null, cant, empty: ONE_WORDS.cantRead, unknown: true, under: () => ONE_WORDS.notRead };
   }

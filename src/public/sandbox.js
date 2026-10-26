@@ -62,6 +62,7 @@ let CONFIG = DEFAULT_CONFIG; // J7; the tests pass their own (AC42's five projec
 const opening = { target: null, done: true, banner: null, more: null };
 let openMore = null; // a project whose More detail opens at AC78's line on its next drawing
 let scrollToRow = null; // a tapped row's id, brought into view on its next drawing
+let focusToRow = false; // and, from QW3 (AC96's "Settled from QW3's build"), whether that row takes the focus too, as a link within the page moves it
 /** A queue row's element id, from its key. */
 const rowId = (key) => `row-${String(key).replace(/[^A-Za-z0-9_-]/g, '-')}`;
 
@@ -2339,7 +2340,10 @@ function waitsLines(card, only) {
         // AC95's "A held question": a tap opens it in the section, its card brought into view (as a notification's tap on a
         // held question does, c959fe5).
         if (e && e.preventDefault) e.preventDefault();
+        // AC96's "Settled from QW3's build" (the one change): the focus moves to its card too, as a link within the page moves it,
+        // so a keyboard or screen-reader user lands where the owner's eye does (AC94's region and focus order).
         scrollToRow = rowId(`q:${x.id}`);
+        focusToRow = true;
         if (location.hash !== boardRoute(only)) nav.to(boardRoute(only));
         else render();
       } }, BLOCK_WORDS.waitsHeld)));
@@ -2697,7 +2701,10 @@ function sectionCard(p, card, only, shown) {
   body.push(h('p', { class: 'v2-steps', key: `qacts:${id}` },
     h('a', { class: 'v2-step', href: cardRoute(only, id), key: `qmore:${id}`, onclick: () => { nav.opener = `qmore:${id}`; } }, SECTION_WORDS.more),
     card.held ? null : h('button', { type: 'button', class: 'v2-step', key: `qdone:${id}`, onclick: () => markCard(card) }, SECTION_WORDS.done)));
-  return h('li', { class: 'v2-card v2-qcard', key: `qcard:${id}`, id: rowId(`q:${id}`), 'data-card': id, 'data-question': card.held ? 'held' : kicked ? 'kicked' : 'counted' },
+  // A held question's card takes the focus when a "Waits on a question being asked in your session" tap brings it into view
+  // (QW3; AC96's "Settled from QW3's build"): tabindex -1, focusable by the page and outside the tab order.
+  return h('li', { class: 'v2-card v2-qcard', key: `qcard:${id}`, id: rowId(`q:${id}`), 'data-card': id, 'data-question': card.held ? 'held' : kicked ? 'kicked' : 'counted',
+    tabindex: card.held ? '-1' : null },
     placeLine(card),
     kind,
     h('a', { class: 'v2-t', href: cardRoute(only, id), 'data-cardlink': '', key: `cardlink:${id}`, onclick: () => { nav.opener = `cardlink:${id}`; } }, cardTitle(card)),
@@ -5225,6 +5232,16 @@ export function startSandbox(opts = {}) {
         if (row.getBoundingClientRect && typeof window.scrollTo === 'function') {
           window.scrollTo(0, Math.max(0, Math.round((window.scrollY || 0) + row.getBoundingClientRect().top - 8)));
         }
+        // QW3: a held question's card (tabindex -1, so it takes the focus without joining the tab order) takes it, the page
+        // already scrolled.
+        if (focusToRow && row.focus) {
+          try {
+            row.focus({ preventScroll: true });
+          } catch {
+            // the scroll stands
+          }
+        }
+        focusToRow = false;
       }
     }
   }

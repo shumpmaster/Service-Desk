@@ -401,7 +401,7 @@ test('AC95 ("What a blocker says"; AC94\'s "Each question shows"): "Answer first
   }
 });
 
-test('AC95 (the taps): "Waits on question <k>" opens that question\'s sheet, each number its own link ("Waits on questions 1", " and 2"); "Waits on a question being asked in your session" brings that question\'s card in the section into view; with one project shown, the same', async () => {
+test('AC95 (the taps): "Waits on question <k>" opens that question\'s sheet, each number its own link ("Waits on questions 1", " and 2"); "Waits on a question being asked in your session" brings that question\'s card in the section into view and moves the focus to it (AC96\'s "Settled from QW3\'s build"); with one project shown, the same', async () => {
   const s = qw3BusiestState();
   const rowOf = (id) => `row-q-${id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
   const saved = Object.getOwnPropertyDescriptor(El0.prototype, 'getBoundingClientRect');
@@ -425,12 +425,27 @@ test('AC95 (the taps): "Waits on question <k>" opens that question\'s sheet, eac
     await app.tap(heldLink);
     assert.equal(app.loc.hash, '#/waiting', 'it stays on Waiting');
     assert.ok(app.scrolls.slice(before).some(([x, y]) => x === 0 && y === 1192), `its card brought into view: ${JSON.stringify(app.scrolls.slice(before))}`);
+    // AC96's "Settled from QW3's build" (the one change): the focus moves to that card too, as a link within the page moves it;
+    // the card takes it with tabindex -1, outside the tab order; a counted question's card has none.
+    const heldCardEl = cardOf(app, qid('Alpha', ALPHA_HELD));
+    assert.equal(document.activeElement, heldCardEl, 'the focus on the held question\'s card');
+    assert.equal(heldCardEl.attrs.tabindex, '-1');
+    assert.equal(cardOf(app, ALPHA('Alpha-pick')).attrs.tabindex, undefined, 'a counted question\'s card: no tabindex');
+    // A later drawing leaves the focus where the owner put it (no second scroll or focus).
+    const scrolled = app.scrolls.length;
+    document.activeElement.blur();
+    await app.advance(POLL_MS);
+    assert.equal(app.scrolls.length, scrolled, 'brought into view once');
+    assert.notEqual(document.activeElement, heldCardEl, 'focused once');
     // One project shown: the links keep to that address.
     await app.go('#/waiting/Alpha');
     assert.equal(placeAt(app, 'Alpha|pr|81'), '5 of 12 waiting', 'each card keeps its place');
     assert.equal(waitLinks(cardOf(app, 'Alpha|pr|81'))[0].attrs.href, `#/waiting/Alpha/card/${enc(ALPHA('Alpha-pick'))}`);
     const heldOne = waitLinks(cardOf(app, 'Alpha|hold|queue/ci-hold-4a2448939173.md'))[0];
     assert.equal(heldOne.attrs.href, '#/waiting/Alpha');
+    await app.tap(heldOne);
+    assert.equal(app.loc.hash, '#/waiting/Alpha', 'one project shown: it stays there');
+    assert.equal(document.activeElement, cardOf(app, qid('Alpha', ALPHA_HELD)), 'and the focus on the held question\'s card');
     assert.deepEqual(afirst(cardOf(app, qid('Alpha', ALPHA_HELD))), ['Answer first · cards 4 and 10 wait on it']);
     assert.deepEqual(sectionIds(app), [ALPHA('Alpha-pick'), ALPHA('Alpha-second'), qid('Alpha', ALPHA_HELD)], 'Alpha\'s section alone, in its order');
   } finally {

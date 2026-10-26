@@ -37,6 +37,7 @@ import { POLL_MS } from '../../src/lib/scheduler.js';
 import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS, G8D_OPENS, G9_OPENS, G9B_OPENS, G9C_OPENS } from './glance-fixtures.mjs';
 import { QW1_OPENS } from './qw1-fixtures.mjs';
 import { QW2_OPENS } from './qw2-fixtures.mjs';
+import { QW3_OPENS } from './qw3-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -636,6 +637,17 @@ function okBadCheck(app, where, fails, seen, places) {
         if (isOkBad(raw) || col === you || col !== want) fail(n, `a card's place line in ${col}: it is ${heldLine ? '--ink2' : '--ink'}`);
         else if (n.kids.some((c) => c.tag === 'svg')) fail(n, 'a card\'s place line with an icon: it has none');
         else places.add(heldLine ? 'grey: a held question\'s place line' : 'ink: a card\'s place line');
+      }
+      // QW3 (AC95, "What a blocker says": "Answer first · …" and "Waits on question <k>", each "in `--t-small` `--ink`"; the
+      // sheet's "Cards waiting on it" rows): each in --ink, its links too, never --ok, --bad or --you, with no icon.
+      const qw3Line = (n.tag === 'span' && (n.cls.has('v2-afirst') || n.cls.has('v2-waits'))) ? (n.cls.has('v2-afirst') ? 'ink: a blocker\'s "Answer first" line' : 'ink: a card\'s "Waits on" line')
+        : n.tag === 'a' && n.parent && n.parent.tag === 'li' && n.parent.parent && n.parent.parent.cls.has('v2-wlist') ? 'ink: a "Cards waiting on it" row' : null;
+      if (qw3Line) {
+        const all = [n, ...n.kids.filter((x) => x.tag === 'a')];
+        const off = all.filter((x) => { const raw = x.style.get('color') || ''; return isOkBad(raw) || plain(raw).trim().toLowerCase() !== THEME[way.theme]['--ink'].toLowerCase(); });
+        if (off.length) fail(n, `${qw3Line}: ${off.map((x) => plain(x.style.get('color') || '').trim()).join(', ')}, where it is --ink`);
+        else if (n.kids.some((c) => c.tag === 'svg')) fail(n, `${qw3Line} with an icon: it has none`);
+        else places.add(qw3Line);
       }
       // G7b (AC92 (a)'s "Stays grey": "Since you last looked"'s "<project> not read since HH:MM, its lines may be missing"
       // lines, grey as the owner ruled, AC91 (c)): each in --ink2, never --ok or --bad, and with no icon.
@@ -1595,6 +1607,49 @@ const STRIP_EXCEPT = (n, d, theme) => {
   const k = STRIP_KEY(n);
   return Boolean(k && (STRIP_ONCE.get(theme).get(k) || []).includes(d)) ? `G2-STRIP ${theme} ${k} ${d}` : null;
 };
+/**
+ * QW3's changes to an element's look on purpose (AC95's blocker parts and AC96, stage QW3 of "After the questions request";
+ * the stage's row: "`QW3_ONCE`"; C, (n), "in `--t-small` `--ink`"; draft 3, the Design reviewer's build note 1: the "Waits on"
+ * line "a target of at least 24 px tall, drawn above the card's full-card link (`.v2-t::after`) as `.v2-step` is"; draft 6, the
+ * picture's note: "as a link, its underline is the text's own"). Each element is new in QW3, so bd4097d's stylesheet gives it
+ * only what it gave any such element; each declaration before and after, in each theme, on only its own element:
+ * - "Answer first · …" under a question's lock or clock line (`span.v2-afirst`, a section card's child): --t-small --ink, its
+ *   text so computed;
+ * - "Waits on …" under a card's meta line (`span.v2-waits`, a card's child, a lane's or section's `li` or the strip's card): --t-small --ink, a block at least 24 px tall, 4 px
+ *   over and under its line, above the full-card link (position and z-index, as `.v2-step`);
+ * - each of its links (`a`, the line's child): underlined 2 px under its own text, 5 px over and under it (its target at least
+ *   24 px tall), its text --t-small;
+ * - the sheet's "Cards waiting on it" list (`ul.v2-wlist`, its block's child): a grid;
+ * - each of its rows' links (`a` in an `li` of that list): a block at least 24 px tall, 3 px over and under, --t-small --ink,
+ *   underlined 2 px under its text, wrapping anywhere, its text so computed.
+ * The walk reaches them on QW3's own screens (tests/desk/qw3-fixtures.mjs's QW3_OPENS, below); no earlier walk draws any.
+ */
+const QW3_FONT = (f) => `${f} "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+const QW3_SMALL = ['computed font-size: 13px → 12px', 'computed line-height: 18.849999999999998px → 16.799999999999997px'];
+const QW3_LOOK = (ink) => new Map([
+  ['span.v2-afirst ("Answer first")', [`font: (none) → ${QW3_FONT('400 12px/1.4')}`, `color: (none) → ${ink}`, ...QW3_SMALL]],
+  ['span.v2-waits ("Waits on")', [`font: (none) → ${QW3_FONT('400 12px/1.4')}`, `color: (none) → ${ink}`, 'display: (none) → block', 'min-height: (none) → 24px', 'padding: (none) → 4px 0',
+    'position: (none) → relative', 'z-index: (none) → 1']],
+  ['a (a "Waits on" link)', ['padding: (none) → 5px 0', 'text-decoration: none → underline', 'text-underline-offset: (none) → 2px', ...QW3_SMALL]],
+  ['ul.v2-wlist ("Cards waiting on it")', ['display: (none) → grid']],
+  ['a (a "Cards waiting on it" row)', [`font: (none) → ${QW3_FONT('400 12px/1.4')}`, `color: inherit → ${ink}`, 'display: (none) → block', 'min-height: (none) → 24px', 'padding: (none) → 3px 0',
+    'overflow-wrap: (none) → anywhere', 'text-decoration: none → underline', 'text-underline-offset: (none) → 2px', ...QW3_SMALL]],
+]);
+const QW3_ONCE = new Map([['light', QW3_LOOK('#18191c')], ['dark', QW3_LOOK('#ecedef')]]);
+const QW3_KEY = (n) => {
+  const p = n.parent;
+  if (n.tag === 'span' && n.cls.has('v2-afirst') && p && p.tag === 'li' && p.cls.has('v2-qcard')) return 'span.v2-afirst ("Answer first")';
+  if (n.tag === 'span' && n.cls.has('v2-waits') && p && p.cls.has('v2-card')) return 'span.v2-waits ("Waits on")';
+  if (n.tag === 'a' && p && p.tag === 'span' && p.cls.has('v2-waits')) return 'a (a "Waits on" link)';
+  if (n.tag === 'ul' && n.cls.has('v2-wlist') && p && p.tag === 'div' && p.cls.has('v2-blk')) return 'ul.v2-wlist ("Cards waiting on it")';
+  if (n.tag === 'a' && p && p.tag === 'li' && p.parent && p.parent.tag === 'ul' && p.parent.cls.has('v2-wlist')) return 'a (a "Cards waiting on it" row)';
+  return null;
+};
+const QW3_EXCEPT = (n, d, theme) => {
+  const k = QW3_KEY(n);
+  return Boolean(k && (QW3_ONCE.get(theme).get(k) || []).includes(d)) ? `QW3 ${theme} ${k} ${d}` : null;
+};
+const QW3_FLAT = [...QW3_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `QW3 ${theme} ${k} ${d}`))).sort();
 const STRIP_FLAT = [...STRIP_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G2-STRIP ${theme} ${k} ${d}`))).sort();
 const G9C_FLAT = [...G9C_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G9C ${theme} ${k} ${d}`))).sort();
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
@@ -1664,6 +1719,8 @@ function sameLook(app, where, fails, seen) {
         if (g9c) { excepted.add(g9c); continue; }
         const strip = STRIP_EXCEPT(b, d, way.theme);
         if (strip) { excepted.add(strip); continue; }
+        const qw3 = QW3_EXCEPT(b, d, way.theme);
+        if (qw3) { excepted.add(qw3); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -2186,4 +2243,36 @@ test('AC88 + AC69 + AC92 (a) + AC44 step 4 (QW2 of "After the questions request"
   // G2's strip with cards, first drawn here, met exactly; and nothing else the walks above had not met: no QW2_ONCE.
   assert.deepEqual([...excepted].filter((x) => /^G2-STRIP /.test(x)).sort(), STRIP_FLAT, 'G2\'s strip, as pinned');
   assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^G2-STRIP /.test(x)), [], 'no exception met that the walks above had not met: no QW2_ONCE');
+});
+
+
+// QW3 of "After the questions request" (AC96 and AC95's blocker parts; the stage's row: "`QW3_ONCE`"): the busiest board with
+// blockers in three projects, a held blocker and a kicked-back one, every "Answer first" and "Waits on" line on section, lane and
+// strip cards, and the held blocker's sheet with its "Cards waiting on it" (tests/desk/qw3-fixtures.mjs's QW3_OPENS, its made-up
+// parts NOT real), each opened once (the suite's memory) and read by all three checks: AC69's (no vermilion in the new lines),
+// AC92 (a)'s (each new line and row --ink, never --ok, --bad or --you, with no icon), and the stage-8 guard, which meets
+// QW3_ONCE exactly and no other exception the walks above had not met.
+test('AC88 + AC69 + AC92 (a) + AC44 step 4 (QW3 of "After the questions request"; AC95, AC96): on QW3\'s screens (QW3_OPENS, made up, NOT real), in dark (forced, and the phone\'s own) and light — blockers in three projects, a held blocker, "Answer first" and "Waits on" on section, lane and strip cards, a blocker\'s sheet with "Cards waiting on it" — vermilion only on the places AC69 lists; each new line --ink with no icon; and every element\'s look bd4097d\'s but for QW3_ONCE, met exactly', async () => {
+  const fails = [];
+  const seen = new Set();
+  const places = new Set();
+  const before = new Set(excepted);
+  for (const [where, open] of QW3_OPENS) {
+    const app = await open();
+    try {
+      assert.ok(findAll(app.view, (e) => / v2-waits /.test(` ${e.className || ''} `)).length >= 7, `${where}: the "Waits on" lines`);
+      vermilionCheck(app, `QW3 ${where}`, fails, seen, places);
+      okBadCheck(app, `QW3 ${where}`, fails, seen, places);
+      sameLook(app, `QW3 ${where}`, fails, seen);
+    } finally {
+      app.restore();
+    }
+  }
+  assert.deepEqual(fails, []);
+  for (const want of ['ink: a blocker\'s "Answer first" line', 'ink: a card\'s "Waits on" line', 'ink: a "Cards waiting on it" row', 'ink: a card\'s place line',
+    'a question\'s kind icon in Questions for you', 'a card\'s kind icon in Waiting on you', 'a card\'s kind icon in Kicked back', "Waiting's badge"]) {
+    assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
+  }
+  assert.deepEqual([...excepted].filter((x) => /^QW3 /.test(x)).sort(), QW3_FLAT, 'QW3_ONCE met exactly');
+  assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^QW3 /.test(x)), [], 'no other exception the walks above had not met');
 });

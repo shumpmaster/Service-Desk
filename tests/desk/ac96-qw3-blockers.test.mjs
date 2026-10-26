@@ -29,7 +29,8 @@ import { boardView, blockTies, blockerOrder, placesOf, noMarks, BLOCK_WORDS, PLA
 import * as PUBLIC_BOARD from '../../src/public/lib/board.js';
 import { qw3BusiestState, qw3Open, withBlocks, ALPHA_HELD, ALPHA_QW3, ALPHA_BLOCKS, NOW } from './qw3-fixtures.mjs';
 import { Q_SECOND } from './qw2-fixtures.mjs';
-import { qFile, qid, QPATH, HELD_PATH, SID, Q_ALPHA, Q_DELTA } from './qw1-fixtures.mjs';
+import { qFile, qid, QPATH, HELD_PATH, SID, Q_ALPHA, Q_DELTA, kindsState, K, K25_FILES, LEDGER } from './qw1-fixtures.mjs';
+import { pr } from './fake-desk.mjs';
 
 const H = 3600e3;
 const MIN = 60e3;
@@ -268,6 +269,22 @@ test('AC95 (pure, what the cards say): a blocker\'s "Answer first" names the pla
   assert.ok(Object.values(BLOCK_WORDS).every((w) => !/unblock/i.test(typeof w === 'function' ? w([1, 2]) : w)));
 });
 
+test('AC95 (pure, the tie rule among blockers; QW3\'s review, round 1, N3): a waiting blocker and a kicked-back blocker raised at the same instant go by their AC73 keys in code-unit order, whatever order the cards come in', () => {
+  // "Q-b" waits; "Q-a" is kicked back on this device, so it comes after "Q-b" in the counted cards (waiting, then kicked back).
+  // Both are free and raised at NOW − 1 h: "…questions/Q-a.md" before "…questions/Q-b.md" in code units.
+  const cards = [qc('Alpha', 'Q-b', NOW - H, 'Blocks: #1'), qc('Alpha', 'Q-a', NOW - H, 'Blocks: #2'), prc('Alpha', 1, NOW - 9 * H), prc('Alpha', 2, NOW - 9 * H)];
+  for (const input of [cards, [...cards].reverse()]) {
+    const v = view([entry(P, input)], { marks: marksOf(kick(ALPHA('Q-a'))) });
+    assert.deepEqual(order(v, 'Alpha').slice(0, 2), [ALPHA('Q-a'), ALPHA('Q-b')], 'the kicked-back one first, by its key');
+    assert.equal(v.questions.order.find((c) => c.name === 'Q-a').lane, 'kick');
+  }
+  // And on blockerOrder alone, the input reversed.
+  const qs = cards.slice(0, 2);
+  const holds = new Map([[ALPHA('Q-b'), ['Alpha|pr|1']], [ALPHA('Q-a'), ['Alpha|pr|2']]]);
+  assert.deepEqual(blockerOrder(qs, holds).map((c) => c.name), ['Q-a', 'Q-b']);
+  assert.deepEqual(blockerOrder([...qs].reverse(), holds).map((c) => c.name), ['Q-a', 'Q-b']);
+});
+
 test('AC95 + AC96 (pure, a held blocker; the owner\'s answer 3 and "After the blockers"): a held question has no place and is never a blocker in the order; its line\'s cards say they wait on a question being asked in your session and take their places by age; it says "Answer first" too; it sits after its project\'s blockers and before its other questions, with no "Done ✓"; a card held up by both a numbered and a held question names the numbered first', () => {
   const cards = [qc('Alpha', 'blk', NOW - 2 * H, 'Blocks: #2'), qc('Alpha', 'other', NOW - 9 * H), prc('Alpha', 2, NOW - 8 * H), prc('Alpha', 3, NOW - 7 * H)];
   const v = view([entry(P, cards, { asking: [heldRow('held', 'Blocks: #3, #2, questions/held.md', NOW - 20 * H)] })]);
@@ -490,6 +507,64 @@ test('AC95 + AC94 (the held tap\'s focus, and only its): a notification\'s tap o
     assert.ok(document.activeElement === cardOf(app, key), 'the "Waits on" tap: the focus on its card');
   } finally {
     if (saved) Object.defineProperty(El0.prototype, 'getBoundingClientRect', saved); else delete El0.prototype.getBoundingClientRect;
+    app.restore();
+  }
+});
+
+test('AC95 + AC94 (the held tap\'s focus, once; QW3\'s review, round 1, N2): after a "Waits on a question being asked in your session" tap has moved the focus to the held card, and the owner has moved it away, a notification\'s tap to the same held question brings the card into view again and leaves the focus where it is', async () => {
+  const s = qw3BusiestState();
+  const key = qid('Alpha', ALPHA_HELD);
+  const listeners = [];
+  const navigator = { serviceWorker: { addEventListener: (t, fn) => { if (t === 'message') listeners.push(fn); } } };
+  const notify = () => { for (const fn of listeners) fn({ data: { kind: 'desk-open', navigate: `https://desk.example.invalid/?open=${enc(key)}` }, ports: [] }); };
+  // A layout (made up): the held question's card 700 px down the page, everything else at the top.
+  const rowOf = `row-q-${key.replace(/[^A-Za-z0-9_-]/g, '-')}`;
+  const saved = Object.getOwnPropertyDescriptor(El0.prototype, 'getBoundingClientRect');
+  El0.prototype.getBoundingClientRect = function rect() {
+    const top = this.attrs && this.attrs.id === rowOf ? 700 : 0;
+    return { left: 0, right: 0, top, bottom: top, width: 0, height: 0 };
+  };
+  const app = await loadSandbox({ ...s, hash: '#/waiting', now: NOW, store: seen(s.seed), globals: { navigator } });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    await app.tap(waitLinks(cardOf(app, 'Alpha|pr|80'))[0]);
+    assert.ok(document.activeElement === cardOf(app, key), 'the "Waits on" tap: the focus on its card');
+    document.activeElement.blur();
+    const other = keyed(app, `qmore:${ALPHA('Alpha-pick')}`);
+    other.focus();
+    const before = app.scrolls.length;
+    assert.equal(listeners.length, 1, 'the page listens for a notification\'s tap');
+    notify();
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    assert.ok(app.scrolls.slice(before).some(([x, y]) => x === 0 && y === 692), `the notification's tap: its card brought into view again: ${JSON.stringify(app.scrolls.slice(before))}`);
+    assert.ok(document.activeElement === other, 'and the focus left where the owner put it');
+  } finally {
+    if (saved) Object.defineProperty(El0.prototype, 'getBoundingClientRect', saved); else delete El0.prototype.getBoundingClientRect;
+    app.restore();
+  }
+});
+
+test('AC95 + AC96 (a v2.5 question; QW3\'s review, round 1, N4): a v2.5 question\'s `Blocks:` line is read as a v3 one\'s, so it comes first, its cards say "Waits on question 1", and its sheet, which has no Unblocks line, lists "Cards waiting on it" and the entries that do not count', async () => {
+  // kindsState's Ledger (v2.5, made up, NOT real) with a made-up pull request #61 and a `Blocks:` line on its first question.
+  const s = kindsState({ ledger: { pulls: [pr(61, 'Ledger: a made-up change, NOT real', { createdAt: new Date(NOW - 50 * H).toISOString() })] } });
+  s.repos[LEDGER].commit({ [K.v25]: withBlocks(K25_FILES[K.v25], 'Blocks: #61, questions/Ledger-plain.md, #62') });
+  const app = await qw3Open(s, '#/waiting', { store: seen() });
+  try {
+    const q = qid(LEDGER, K.v25);
+    assert.equal(placeAt(app, q), '1 of 3 waiting', 'first, a blocker');
+    assert.deepEqual(afirst(cardOf(app, q)), ['Answer first · cards 2 and 3 wait on it']);
+    assert.deepEqual([waitsOf(cardOf(app, `${LEDGER}|pr|61`)), waitsOf(cardOf(app, qid(LEDGER, K.v25none)))], [['Waits on question 1'], ['Waits on question 1']]);
+    await app.go(`#/waiting/card/${enc(q)}`);
+    const b = blocksBlock(app);
+    assert.ok(b, 'the list on a v2.5 question\'s sheet');
+    assert.equal(findAll(sheet(app), (e) => e.className === 'v2-blk' && /Unblocks/.test(e.textContent) && e !== b).length, 0, 'no Unblocks line in a v2.5 sheet');
+    assert.deepEqual(findAll(b, (e) => e.tag === 'a').map((a) => a.textContent), ['2 of 3 waiting · Pull request · Ledger: a made-up change, NOT real',
+      '3 of 3 waiting · Question · What should the digest be called?']);
+    assert.deepEqual(byClass(b, 'v2-small').map((p) => p.textContent), ['#62: not waiting on you now']);
+  } finally {
     app.restore();
   }
 });

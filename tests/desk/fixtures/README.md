@@ -1128,5 +1128,8 @@ the blocker order's worked cases and boardView's blockers, pure, and their scree
   form; Beta's kicked-back question blocking Beta's #80 and naming Beta's held question; and Gamma's question blocking Gamma's
   kicked-back merge card and (from QW3's round 2) Gamma's Build-gate card. As the approved picture's frame 1 (itself made up) draws them. **NOT real records or marks.**
 - **`QW3_OPENS`** (`qw3-fixtures.mjs`): Waiting on `qw3BusiestState`, and the held blocker's sheet over it. **NOT real.**
+- **a v2.5 blocker** (`ac96-qw3-blockers.test.mjs`, from QW3's round 2): QW1's `kindsState` with a made-up pull request #61 in
+  the made-up v2.5 project "Ledger" and a made-up `Blocks:` line on its first question naming #61, Ledger's other question
+  and #62 (not there). **NOT real records or pull requests.**
 - **the worked cases' cards** (`ac96-qw3-blockers.test.mjs`): AC95's five worked cases (X, Y, Z; A, B, C, D; U, V, W), as
   made-up questions in a made-up project, each raised at a made-up time in the case's order. **NOT real records.**

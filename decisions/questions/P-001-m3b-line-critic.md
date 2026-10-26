@@ -1,5 +1,9 @@
 Verdict: PASS
 
+The line committed, line A, as the owner answered (decisions/questions/P-001-m3b-line.md):
+
+- The desk's value targets shown (M3B) · done when the desk's preview shows each value target (V1 to V5) from the project document against its measure, the figure where one is recorded or worked out from the records and the measure's state in words where none is yet, and the desk notes on each device what the missed-decision and false-alarm counts need and offers each week's figures for the owner to commit, each with its tests · phase: Build · why: the owner wants to see on the desk whether it is meeting its targets, its response time among them
+
 The lines checked (question 2, questions/P-001-m3b-line.md):
 
 - A: "The desk's value targets shown (M3B) · done when the desk's preview shows each value target (V1 to V5) from the project document against its measure, the figure where one is recorded or worked out from the records and the measure's state in words where none is yet, and the desk notes on each device what the missed-decision and false-alarm counts need and offers each week's figures for the owner to commit, each with its tests · phase: Build · why: the owner wants to see on the desk whether it is meeting its targets, its response time among them"

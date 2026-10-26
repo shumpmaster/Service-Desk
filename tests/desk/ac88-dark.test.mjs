@@ -1609,16 +1609,16 @@ const STRIP_EXCEPT = (n, d, theme) => {
 };
 /**
  * QW3's changes to an element's look on purpose (AC95's blocker parts and AC96, stage QW3 of "After the questions request";
- * the stage's row: "`QW3_ONCE`"; C, (n), "in `--ink`", at `--t-body` by AC96's "Settled from QW3's build", 3; draft 3, the Design reviewer's build note 1: the "Waits on"
+ * the stage's row: "`QW3_ONCE`"; C, (n), "in `--t-small` `--ink`", the picture's 12 px (AC96's "Settled from QW3's build", 3); draft 3, the Design reviewer's build note 1: the "Waits on"
  * line "a target of at least 24 px tall, drawn above the card's full-card link (`.v2-t::after`) as `.v2-step` is"; draft 6, the
  * picture's note: "as a link, its underline is the text's own"). Each element is new in QW3, so bd4097d's stylesheet gives it
  * only what it gave any such element; each declaration before and after, in each theme, on only its own element:
- * - "Answer first · …" under a question's lock or clock line (`span.v2-afirst`, a section card's child): --t-body --ink, the
- *   picture's size (AC96's "Settled from QW3's build", 3), the size its text already took from the card, so only declared;
- * - "Waits on …" under a card's meta line (`span.v2-waits`, a card's child, a lane's or section's `li` or the strip's card): --t-body --ink (the same), a block at least 24 px tall, 4 px
+ * - "Answer first · …" under a question's lock or clock line (`span.v2-afirst`, a section card's child): --t-small --ink, the
+ *   picture's 12 px (AC96's "Settled from QW3's build", 3), its text so computed;
+ * - "Waits on …" under a card's meta line (`span.v2-waits`, a card's child, a lane's or section's `li` or the strip's card): --t-small --ink, a block at least 24 px tall, 4 px
  *   over and under its line, above the full-card link (position and z-index, as `.v2-step`);
  * - each of its links (`a`, the line's child): underlined 2 px under its own text, 5 px over and under it (its target at least
- *   24 px tall), its text the line's --t-body;
+ *   24 px tall), its text the line's --t-small;
  * - the sheet's "Cards waiting on it" list (`ul.v2-wlist`, its block's child): a grid;
  * - each of its rows' links (`a` in an `li` of that list): a block at least 24 px tall, 3 px over and under, --t-small --ink,
  *   underlined 2 px under its text, wrapping anywhere, its text so computed.
@@ -1627,10 +1627,10 @@ const STRIP_EXCEPT = (n, d, theme) => {
 const QW3_FONT = (f) => `${f} "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
 const QW3_SMALL = ['computed font-size: 13px → 12px', 'computed line-height: 18.849999999999998px → 16.799999999999997px'];
 const QW3_LOOK = (ink) => new Map([
-  ['span.v2-afirst ("Answer first")', [`font: (none) → ${QW3_FONT('400 13px/1.45')}`, `color: (none) → ${ink}`]],
-  ['span.v2-waits ("Waits on")', [`font: (none) → ${QW3_FONT('400 13px/1.45')}`, `color: (none) → ${ink}`, 'display: (none) → block', 'min-height: (none) → 24px', 'padding: (none) → 4px 0',
+  ['span.v2-afirst ("Answer first")', [`font: (none) → ${QW3_FONT('400 12px/1.4')}`, `color: (none) → ${ink}`, ...QW3_SMALL]],
+  ['span.v2-waits ("Waits on")', [`font: (none) → ${QW3_FONT('400 12px/1.4')}`, `color: (none) → ${ink}`, 'display: (none) → block', 'min-height: (none) → 24px', 'padding: (none) → 4px 0',
     'position: (none) → relative', 'z-index: (none) → 1']],
-  ['a (a "Waits on" link)', ['padding: (none) → 5px 0', 'text-decoration: none → underline', 'text-underline-offset: (none) → 2px']],
+  ['a (a "Waits on" link)', ['padding: (none) → 5px 0', 'text-decoration: none → underline', 'text-underline-offset: (none) → 2px', ...QW3_SMALL]],
   ['ul.v2-wlist ("Cards waiting on it")', ['display: (none) → grid']],
   ['a (a "Cards waiting on it" row)', [`font: (none) → ${QW3_FONT('400 12px/1.4')}`, `color: inherit → ${ink}`, 'display: (none) → block', 'min-height: (none) → 24px', 'padding: (none) → 3px 0',
     'overflow-wrap: (none) → anywhere', 'text-decoration: none → underline', 'text-underline-offset: (none) → 2px', ...QW3_SMALL]],

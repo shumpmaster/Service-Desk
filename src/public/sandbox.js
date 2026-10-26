@@ -2296,7 +2296,7 @@ function placeLine(card) {
 /**
  * AC95 (stage QW3; C, (n); the approved picture's "Answer first · cards 4 and 10 wait on it"): a question other cards wait on
  * says so, "Answer first · card <k> waits on it" or "Answer first · cards <k> and <j> wait on it", the places of the cards
- * its `Blocks:` line names that wait on the owner in its project (AC96), in `--t-body` `--ink`, the picture's size (`.v2-afirst`;
+ * its `Blocks:` line names that wait on the owner in its project (AC96), in `--t-small` `--ink`, the picture's 12 px (`.v2-afirst`;
  * AC96's "Settled from QW3's build", 3); a held
  * question too, outside the numbers. Nothing for a question that holds up no card with a place.
  */
@@ -2309,7 +2309,7 @@ function answerFirstLine(card) {
  * AC95 (stage QW3; C, (n); draft 3, the Design reviewer's build note 1; draft 6, the picture's note): under a held-up card's
  * meta line, "Waits on question <k>" ("Waits on questions <k> and <j>"), <k> each question's place, each number a tap opening
  * that question's sheet; and, for a question being asked in the owner's session, which has no place, "Waits on a question
- * being asked in your session", a tap opening it in the "Questions for you" section. In `--t-body` `--ink` (the picture's size,
+ * being asked in your session", a tap opening it in the "Questions for you" section. In `--t-small` `--ink` (the picture's 12 px,
  * AC96's "Settled from QW3's build", 3), a line that may
  * wrap to two, at least 24 px tall, drawn above the card's full-card link (`.v2-t::after`) as `.v2-step` is (`.v2-waits`);
  * each link underlined under its own text, so a wrapped line is underlined under each of its lines, never a rule across it.

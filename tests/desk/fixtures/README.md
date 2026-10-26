@@ -1109,3 +1109,24 @@ these made-up parts, each **NOT real**:
   portfolio's card, each kicked back at a made-up minute chosen so the newest kick first, the age order across projects and
   the strip's order all differ. **NOT real records or marks.**
 - **`QW2_OPENS`** (`qw2-fixtures.mjs`): Waiting on `qw2BusiestState`, and a made-up pull request's sheet over it. **NOT real.**
+
+## After the questions request, QW3 (2026-10-26, S-001 AC96 and AC95's blocker parts; J2 changed; the owner's "Blockers first", answer 2, "The question names them (Recommended)", and "After the blockers (Recommended)", decisions/questions/P-001-m3g-held-place.md, B)
+
+QW3 adds `tests/desk/qw3-fixtures.mjs` and no fixture file. `tests/desk/ac96-qw3-blockers.test.mjs` (the `Blocks:` line's read,
+the blocker order's worked cases and boardView's blockers, pure, and their screen cases), QW3's walk over `QW3_OPENS` in
+`ac88-dark.test.mjs` (with `QW3_ONCE`) and the `qw3-` captures open these made-up parts, each **NOT real**:
+- **made-up `Blocks:` lines** (`qw3-fixtures.mjs`'s `withBlocks` and `ALPHA_BLOCKS`; the test file's own question texts): lines
+  in AC96's form put into QW1's and QW2's made-up question files and into question texts written inline in the cases, before
+  and after their `Milestone:` and `Asked in session:` lines, after `WHY:` (not read), in files with no `WHY:` line, a second
+  line, malformed lines (no space after a comma, an empty line, a pull request `#0`, words), and entries naming pull requests,
+  card files, other questions, the question itself, a held question, a question in another project, and items not there. No
+  Chief of Staff wrote any of them. **NOT real records.**
+- **`qw3BusiestState`** (`qw3-fixtures.mjs`): QW2's `qw2BusiestState` with those lines: Alpha's two questions blocking #81,
+  #82 (kicked back) and the decision card Q-020-stop-1; a made-up question held as asked in a session in Alpha
+  (`questions/Alpha-held.md`, in the made-up session `session_0QW1MadeUpNotARealSession01`, raised 3 hours before the clock)
+  blocking #80 and the hold card and naming itself, Beta's held question, #999, a card file not there and an entry in no
+  form; Beta's kicked-back question blocking Beta's #80 and naming Beta's held question; and Gamma's question blocking Gamma's
+  kicked-back merge card. As the approved picture's frame 1 (itself made up) draws them. **NOT real records or marks.**
+- **`QW3_OPENS`** (`qw3-fixtures.mjs`): Waiting on `qw3BusiestState`, and the held blocker's sheet over it. **NOT real.**
+- **the worked cases' cards** (`ac96-qw3-blockers.test.mjs`): AC95's five worked cases (X, Y, Z; A, B, C, D; U, V, W), as
+  made-up questions in a made-up project, each raised at a made-up time in the case's order. **NOT real records.**

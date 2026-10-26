@@ -1062,6 +1062,13 @@ test('AC94 (the owner\'s reload answer, P-001-m3g-reload-fold.md, A): after a fu
     assert.deepEqual(findAll(qcard(app, qid(KINDS, K.numbered)), (e) => e.tag === 'textarea').map((t) => t.value), ['', 'Kept for part 2, NOT real.'], 'each part\'s box');
     assert.equal(keyed(app, `fold:qchoices:${qid(KINDS, K.split)}`).attrs['aria-expanded'], 'false', '"Show choices ›" not opened');
     assert.ok(calls.some(([y, shown]) => y === 900 && shown), 'the scroll put back with the words already shown');
+    // With one project shown (AC94: "every project shown and with one", QW1's round 3, N3): the same folds open, the same words.
+    await app.go(`#/waiting/${KINDS}`);
+    for (const path of [K.bare, K.numbered, K.split]) assert.equal(fold(path).attrs['aria-expanded'], 'true', `${KINDS} alone, ${path}: open`);
+    for (const path of [K.lettered, K.none]) assert.equal(fold(path).attrs['aria-expanded'], 'false', `${KINDS} alone, ${path}: closed`);
+    assert.equal(findAll(qcard(app, qid(KINDS, K.bare)), (e) => e.tag === 'textarea')[0].value, 'Kept made-up words, NOT real.');
+    assert.equal(keyed(app, `fold:qchoices:${qid(KINDS, K.split)}`).attrs['aria-expanded'], 'false');
+    await app.go('#/waiting');
     // Closed by the owner: stays closed within the opening.
     await app.tap(fold(K.bare));
     assert.equal(fold(K.bare).attrs['aria-expanded'], 'false');
@@ -1162,6 +1169,88 @@ test('AC94 + AC91 (c) (round 2, N4; "What QW1 keeps from stage G9c"): "Still rea
     assert.equal(findAll(section(app), (e) => /portfolio/i.test(e.textContent || '') && e.tag === 'p').length, 0, 'the section says nothing of the portfolio');
   } finally {
     s.release();
+    app.restore();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// QW1's round 3 (the Reviewer's N1 to N3, round 2)
+
+/** Past 30 s since the last read, Kinds' reads made to fail (made up, NOT how any read went), then "Answer A ↗" tapped in `root`. */
+async function failedTap(s, app, root) {
+  for (let i = 0; i < 70 && !app.desk.needsRecheck(KINDS); i++) await app.advance(1000);
+  s.repos[KINDS].fail = { kind: 'network' };
+  choiceLinks(root())[0].dispatch('click', { preventDefault() {} });
+  await app.flush();
+  assert.match(byClass(root(), 'v2-recheck').map((x) => x.textContent).join(' '), /The desk couldn't check just now/, 'couldn\'t check');
+}
+const couldnt = (el) => byClass(el, 'v2-recheck').filter((x) => /couldn't check/.test(x.textContent)).length;
+
+test('AC94 (settled, 2; round 3, N1): a "couldn\'t check" beside a question\'s button stays while another project is shown alone and back — its question never left the section', async () => {
+  const s = kindsState();
+  const id = qid(KINDS, K.lettered);
+  const app = await open(s);
+  try {
+    await failedTap(s, app, () => qcard(app, id));
+    await app.go(`#/waiting/${LEDGER}`);
+    await app.go('#/waiting');
+    assert.ok(qcard(app, id), 'still in the section');
+    assert.equal(couldnt(qcard(app, id)), 1, 'its words still beside its button');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 (the owner\'s reload answer; round 3, N2 (a)): only a full reload opens a fold — words typed in a question\'s sheet within an opening leave the section\'s "Add your own words" closed', async () => {
+  const id = qid(KINDS, K.bare);
+  const app = await open(kindsState());
+  try {
+    await app.go(`#/waiting/card/${enc(id)}`);
+    const box = findAll(sheet(app), (e) => e.tag === 'textarea')[0];
+    box.value = 'Made-up words typed in the sheet, NOT real.';
+    box.dispatch('input');
+    await app.flush();
+    await app.go('#/waiting');
+    await app.advance(POLL_MS);
+    assert.equal(keyed(app, `fold:qwords:${id}`).attrs['aria-expanded'], 'false', 'closed');
+    assert.equal(findAll(qcard(app, id), (e) => e.tag === 'textarea').length, 0);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 (settled, 2) + AC56 (round 3, N2 (b)): a sheet open over Waiting keeps its "couldn\'t check" words when its question leaves the section', async () => {
+  const s = kindsState();
+  const id = qid(KINDS, K.lettered);
+  const app = await open(s, { hash: `#/waiting/card/${enc(id)}` });
+  try {
+    await failedTap(s, app, () => sheet(app));
+    s.repos[KINDS].fail = null;
+    s.repos[KINDS].commit({ 'decisions/questions/Kinds-lettered.md': 'Ruling: A — made up, NOT real\n' });
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    assert.equal(qcard(app, id), null, 'out of the section');
+    assert.ok(sheet(app), 'the sheet still open');
+    assert.equal(couldnt(sheet(app)), 1, 'its words kept while it is open');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 (settled, 2; round 3, N2 (c)): a "couldn\'t check" is dropped when its question leaves — after "Done ✓" and "Undo", the question back in the section without it', async () => {
+  const s = kindsState();
+  const id = qid(KINDS, K.lettered);
+  const app = await open(s);
+  try {
+    await failedTap(s, app, () => qcard(app, id));
+    s.repos[KINDS].fail = null;
+    await app.tap(keyed(app, `qdone:${id}`));
+    assert.equal(qcard(app, id), null, 'marked: out of the section');
+    await app.tap(findAll(lane(app, 'done'), (e) => e.tag === 'button' && e.textContent === 'Undo')[0]);
+    assert.ok(qcard(app, id), '"Undo": back in the section');
+    assert.equal(couldnt(qcard(app, id)), 0, 'without its old words');
+    assert.equal(couldnt(app.view), 0);
+  } finally {
     app.restore();
   }
 });

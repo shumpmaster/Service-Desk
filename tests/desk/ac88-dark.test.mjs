@@ -2220,8 +2220,13 @@ test('AC88 + AC69 + AC92 (a) + AC44 step 4 (QW1 of "After the questions request"
   assert.deepEqual(fails, []);
   for (const want of ['a question\'s kind icon in Questions for you', 'grey: the "Questions for you" section\'s line for a project not read or not shown',
     'ruled: Waiting\'s and "Since you last looked"\'s quiet line', "Waiting's badge"]) assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
-  // Only declarations the walks above met (QW1_ONCE among them), so QW1_ONCE stays exact.
-  assert.deepEqual([...excepted].filter((x) => !before.has(x)), [], 'no exception met that the walks above had not met');
+  // Only declarations the walks above met (QW1_ONCE among them), so QW1_ONCE stays exact. Rewritten in QW3's round 2 (forced:
+  // QW1's held line, "Also asked in your session: answer in one place", is --t-small --ink from then, AC96's "From QW3's design
+  // review, round 1", N1, and these screens are the first to draw a held question, so its exception, QW3_ONCE's
+  // `span.v2-heldl`, is first met here): that one exception, and nothing else new.
+  const held = (x) => /^QW3 (light|dark) span\.v2-heldl \(QW1's held line\) /.test(x);
+  assert.deepEqual([...excepted].filter((x) => !before.has(x) && !held(x)), [], 'no exception met that the walks above had not met, but QW1\'s held line\'s');
+  assert.deepEqual([...excepted].filter((x) => !before.has(x) && held(x)).sort(), QW3_FLAT.filter(held), 'the held line\'s, exactly');
 });
 
 // QW2 of "After the questions request" (AC95; the stage's row: AC88's cascade for the new place, `QW2_ONCE` for any CSS it

@@ -31,7 +31,7 @@ import { GATE_PHASE } from './lib/j11.js';
 import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, gateOpening, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, BOARD_LANES, WORDS, MARKS_KEY,
-  stripEmptyParts, isNewCard, boardAge, SECTION_WORDS, SECTION_CHOICES_SHOWN, waitLaneEmpty, sectionMissingWords, sectionMeta, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, everyProjectUnread, unreadLaneWords, quietTroubleWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
+  stripEmptyParts, isNewCard, boardAge, SECTION_WORDS, SECTION_CHOICES_SHOWN, waitLaneEmpty, sectionMissingWords, sectionMeta, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, everyProjectUnread, unreadLaneWords, quietTroubleWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS, draftCard } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
@@ -1910,7 +1910,9 @@ const boardState = {
   },
   // AC56, changed after MD3 (P-001-audit-reload.md, A): the words typed in a sheet's boxes are kept on this device under
   // DRAFTS_KEY, in a store of their own, so a full reload brings them back; where it can't be written, a reload clears them.
-  draftsStore: null, draftAt: new Map(),
+  // From QW1's round 2 (the owner's answer, decisions/questions/P-001-m3g-reload-fold.md, A): the cards whose words this
+  // device kept when the page loaded, so their "Add your own words" folds open again after a full reload.
+  draftsStore: null, draftAt: new Map(), keptAtLoad: new Set(),
   loadDrafts(store, nowMs) {
     this.draftsStore = store;
     try {
@@ -1921,6 +1923,7 @@ const boardState = {
       this.drafts = new Map();
       this.draftAt = new Map();
     }
+    this.keptAtLoad = new Set([...this.drafts.keys()].map(draftCard).filter(Boolean));
     this.saveDrafts();
   },
   setDraft(k, text, nowMs) {
@@ -2299,8 +2302,8 @@ function answerLink(p, card, btn, cls, kids) {
   const plan = btn.plan || { url: btn.href, copy: null };
   const guard = card.kind === 'question' ? { target: { kind: 'question', name: card.flag.question.name }, answerPath: `decisions/questions/${card.flag.question.name}.md` }
     : card.flag && card.flag.card ? { target: { kind: 'card', path: card.flag.card.path }, answerPath: card.flag.card.answerPath } : null;
-  // AC94 (QW1): what the re-read found keeps the question's title and project, so the section can say it once the question
-  // has left it (answered meanwhile), as a sheet that stays open says it (AC56).
+  // AC94 (QW1): what the re-read found keeps its outcome's kind, the question's title and project, so the section can say it
+  // once the question has left it (answered meanwhile, or being recorded), as a sheet that stays open says it (AC56).
   const said = (v) => rechecks.set(key, { ...v, id: card.id, title: card.title, project: p.project.name });
   const was = rechecks.get(key);
   const a = h('a', { class: cls, key: `ans:${key}`, href: plan.url, rel: 'noopener noreferrer', target: '_blank', 'aria-label': btn.aria || null,
@@ -2310,10 +2313,10 @@ function answerLink(p, card, btn, cls, kids) {
       if (card.held && DESK && DESK.answerHere) DESK.answerHere(p.project.name, card.name);
       if (guard && DESK && DESK.needsRecheck(p.project.name)) {
         if (e && e.preventDefault) e.preventDefault();
-        said({ words: RECHECK_WORDS.checking });
+        said({ kind: 'checking', words: RECHECK_WORDS.checking });
         render();
         DESK.recheck(p.project.name, guard.answerPath).then((r) => {
-          if (!r.ok) said({ words: RECHECK_WORDS.failed, anyway: plan.url });
+          if (!r.ok) said({ kind: 'failed', words: RECHECK_WORDS.failed, anyway: plan.url });
           else {
             const o = recheckOutcome(DESK.model(p.project.name), guard.target);
             if (o.kind === 'open') {
@@ -2325,8 +2328,8 @@ function answerLink(p, card, btn, cls, kids) {
               } catch {
                 w = null;
               }
-              if (!w) said({ words: 'Still open:', anyway: plan.url, again: 'open GitHub' });
-            } else said({ words: o.words, pr: o.pr || null });
+              if (!w) said({ kind: 'open', words: 'Still open:', anyway: plan.url, again: 'open GitHub' });
+            } else said({ kind: o.kind, words: o.words, pr: o.pr || null });
           }
           render();
         });
@@ -2605,8 +2608,13 @@ function sectionCard(p, card, only, shown) {
   const body = [];
   if (open) body.push(sectionChoices(p, card, only));
   if (!shown) body.push(foldButton(name, `qchoices:${id}`, false, { class: 'v2-fold' }, SECTION_WORDS.showChoices));
-  body.push(foldButton(name, `qwords:${id}`, false, { class: 'v2-fold' }, SECTION_WORDS.ownWords));
-  if (isOpenFold(name, `qwords:${id}`, false)) body.push(sectionWords(p, card));
+  // The owner's answer of QW1's round 2 (P-001-m3g-reload-fold.md, A): after a full reload, a fold that holds words this
+  // device kept opens again in the first drawing, so the words show where they were left before AC56 restores the scroll;
+  // one with none stays closed; within an opening, a fold the owner closed stays closed (its own state wins), and "Show
+  // choices ›" is not opened by it (C).
+  const wordsOpen = boardState.keptAtLoad.has(id);
+  body.push(foldButton(name, `qwords:${id}`, wordsOpen, { class: 'v2-fold' }, SECTION_WORDS.ownWords));
+  if (isOpenFold(name, `qwords:${id}`, wordsOpen)) body.push(sectionWords(p, card));
   body.push(h('p', { class: 'v2-steps', key: `qacts:${id}` },
     h('a', { class: 'v2-step', href: cardRoute(only, id), key: `qmore:${id}`, onclick: () => { nav.opener = `qmore:${id}`; } }, SECTION_WORDS.more),
     card.held ? null : h('button', { type: 'button', class: 'v2-step', key: `qdone:${id}`, onclick: () => markCard(card) }, SECTION_WORDS.done)));
@@ -2655,19 +2663,31 @@ function questionsSection(bd, built, only) {
 }
 
 /**
- * AC94 ("Before and around a link": "a question answered meanwhile shows "already answered: <ruling>" with no link"): a
- * section question whose re-read found it answered or being recorded has left the section by the time the words are
- * known, so the section keeps them, once per question, "<its title>: <the words>", under its head, or under the "Questions
- * for you · none" line once the last question has left (AC94, "Settled from QW1's build", 2), for this opening (as a sheet open
- * over it keeps them, AC56); "being recorded" keeps its pull request's link. One project shown, only that project's.
+ * AC94 ("Before and around a link": "a question answered meanwhile shows "already answered: <ruling>" with no link"; its
+ * "Settled from QW1's build", 2): a section question whose re-read found it answered or being recorded has left the section
+ * by the time the words are known, so the section keeps them, once per question, "<its title>: <the words>", under its head,
+ * or under the "Questions for you · none" line once the last question has left, for this opening (as a sheet open over it
+ * keeps them, AC56); "being recorded" keeps its pull request's link. Only those two outcomes of a re-read stay: any other
+ * saved for a question that has left ("The desk couldn't check just now" with its "Open GitHub anyway", "Still open:" with
+ * a pop-up blocked) is dropped, unless the question's sheet is open (AC56 keeps an open sheet's words). A question that left
+ * by an ordinary read, with no re-read finding it so, has no line. One project shown, only that project's.
  */
 function goneRechecks(qv, only) {
   const here = new Set(qv.order.map((c) => c.id));
   const out = new Map();
-  for (const [k, v] of rechecks) {
-    if (!v || !v.id || here.has(v.id) || out.has(v.id) || (only && v.project !== only) || !/^question\|/.test(String(v.id).split('|').slice(1).join('|'))) continue;
-    if (v.words === RECHECK_WORDS.checking) continue;
-    out.set(v.id, h('p', { class: 'v2-recheck', role: 'status', key: `qgone:${k}` }, `${v.title}: `, v.words,
+  const open = openSheetCard();
+  for (const [k, v] of [...rechecks]) {
+    if (!v || !v.id || here.has(v.id) || !/^question\|/.test(String(v.id).split('|').slice(1).join('|'))) continue;
+    // With one project shown, the section holds only that project's questions, so another project's result is not judged
+    // here: its question may still be in the section with every project shown (QW1's round 3, the Reviewer's N1).
+    if (only && v.project !== only) continue;
+    if (v.kind === 'checking') continue;
+    if (v.kind !== 'answered' && v.kind !== 'recording') {
+      if (v.id !== open) rechecks.delete(k);
+      continue;
+    }
+    if (out.has(v.id)) continue;
+    out.set(v.id, h('p', { class: 'v2-recheck', role: 'status', key: `qgone:${v.id}` }, `${v.title}: `, v.words,
       v.pr ? [' ', ext(v.pr.url, `PR #${v.pr.number}, which records it`, 'v2-lnk')] : null));
   }
   return [...out.values()];

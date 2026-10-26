@@ -21,7 +21,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SRC, CONFIG } from './helpers.mjs';
 import { repo, pr, BAD_PR, gitSha } from './fake-desk.mjs';
-import { loadSandbox, byClass, findAll } from './sandbox-helpers.mjs';
+import { loadSandbox, byClass, findAll, El0 } from './sandbox-helpers.mjs';
 import { memStore } from './wa-fixtures.mjs';
 import { v3 } from './sandbox-fixtures.mjs';
 import { parseCss, treeOf, cascade, nodes } from './css-cascade.mjs';
@@ -31,7 +31,7 @@ import { boardView, noMarks, waitLaneEmpty, sectionMissingWords, heldCard, secti
 import * as PUBLIC_BOARD from '../../src/public/lib/board.js';
 import { V25_RULING_NOTE } from '../../src/lib/links.js';
 import { v25Ruling } from '../../src/lib/sheets.js';
-import { quietState, orderState, noneDrawnState, cantShowState, cantShowLastState, failedHeldState, signedOutMixedState, MIX_PROJECT, SD, POOM } from './glance-fixtures.mjs';
+import { quietState, orderState, noneDrawnState, cantShowState, cantShowLastState, failedHeldState, signedOutMixedState, heldReadsState, MIX_PROJECT, SD, POOM } from './glance-fixtures.mjs';
 import { kindsState, busiestState, qFile, qid, K, KINDS, LEDGER, QPATH, HELD_PATH, Q_HELD, SID, NOW, openFolds } from './qw1-fixtures.mjs';
 
 const H = 3600e3;
@@ -814,7 +814,7 @@ test('AC94 (settled, 2): AC77\'s re-read words for a question it takes out of th
 });
 
 /** A made-up v3 project "Held" with a held numbered question and a held lettered one, and Ledger (v2.5) with a held one (NOT real). */
-function heldKindsState() {
+function heldKindsState({ heldLast = false } = {}) {
   const s = kindsState();
   const at = [{ commit: { committer: { date: new Date(NOW - H).toISOString() } } }];
   const held = repo({ 'governance/ROUTING.toml': s.repos[KINDS].files['governance/ROUTING.toml'],
@@ -824,7 +824,7 @@ function heldKindsState() {
   s.repos.Held = held;
   s.repos[LEDGER].commit({ 'questions/Ledger-held.md': qFile({ title: 'A made-up held v2.5 question', asked: SID, options: ['A. This.', 'B. That.'], rec: 'A' }) });
   s.repos[LEDGER].history['questions/Ledger-held.md'] = at;
-  s.config = { ...s.config, projects: [v3('Held'), ...s.config.projects] };
+  s.config = { ...s.config, projects: heldLast ? [...s.config.projects, v3('Held')] : [v3('Held'), ...s.config.projects] };
   return s;
 }
 const isHeld = (app, id) => (qcard(app, id) || { attrs: {} }).attrs['data-question'] === 'held';
@@ -969,6 +969,287 @@ test('AC94 ("What QW1 keeps from stage G9c"): signed out, the one "Signed out �
     assert.equal(grey[0], `${SD.name} not read in this opening, its new questions may be missing`);
     for (const [i, n] of [[1, POOM.name], [2, MIX_PROJECT]]) assert.match(grey[i], new RegExp(`^${n} not read since \\d\\d:\\d\\d, its new questions may be missing$`));
     assert.ok(qcard(app, `${MIX_PROJECT}|question|questions/${MIX_PROJECT}-pick.md`), 'the made-up project\'s question from its last read');
+  } finally {
+    app.restore();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// QW1's round 2 (the Reviewer's B1): only "Already answered" and "being recorded" stay said once a question has left
+
+/** Kinds' reads failing (made up, the network cause), then "Answer A ↗" on Kinds-lettered tapped: AC77's re-read fails. */
+async function failedReread(s, app) {
+  const id = qid(KINDS, K.lettered);
+  s.repos[KINDS].fail = { kind: 'network' };
+  await app.advance(POLL_MS);
+  await app.advance(31_000);
+  choiceLinks(qcard(app, id))[0].dispatch('click', { preventDefault() {} });
+  await app.flush();
+  assert.match(byClass(qcard(app, id), 'v2-recheck').map((x) => x.textContent).join(' '), /The desk couldn't check just now/, 'the card says it couldn\'t check');
+  s.repos[KINDS].fail = null;
+  await app.advance(POLL_MS);
+  return id;
+}
+
+test('AC94 (settled, 2; round 2, B1): a question that leaves the section by "Done ✓" after a re-read that couldn\'t check leaves no "couldn\'t check" line, nor its "Open GitHub anyway"', async () => {
+  const s = kindsState();
+  const app = await open(s);
+  try {
+    const id = await failedReread(s, app);
+    await app.tap(keyed(app, `qdone:${id}`));
+    assert.equal(qcard(app, id), null, 'marked: out of the section');
+    assert.doesNotMatch(section(app).textContent, /couldn't check|anyway/i);
+    assert.deepEqual(byClass(section(app), 'v2-recheck'), [], 'nothing said for it');
+    await app.advance(POLL_MS);
+    assert.deepEqual(byClass(section(app), 'v2-recheck'), [], 'and at the next poll');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 (settled, 2; round 2, B1): a question answered by an ordinary read after a re-read that couldn\'t check leaves no line — no "couldn\'t check", and no "Already answered", which only a re-read gives', async () => {
+  const s = kindsState();
+  const app = await open(s);
+  try {
+    const id = await failedReread(s, app);
+    s.repos[KINDS].commit({ 'decisions/questions/Kinds-lettered.md': 'Ruling: A — made up, NOT real\n' });
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    assert.equal(qcard(app, id), null, 'answered: out of the section');
+    assert.doesNotMatch(section(app).textContent, /couldn't check|anyway/i);
+    assert.deepEqual(byClass(section(app), 'v2-recheck'), [], 'nothing said: no re-read found it answered');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 (settled, 2; round 2, B1): a re-read that couldn\'t check, then one that finds the question answered — "Already answered: <ruling>" alone', async () => {
+  const s = kindsState();
+  const app = await open(s);
+  try {
+    const id = await failedReread(s, app);
+    // Past 30 s since the last read, so the next tap re-reads (AC77).
+    for (let i = 0; i < 70 && !app.desk.needsRecheck(KINDS); i++) await app.advance(1000);
+    assert.ok(app.desk.needsRecheck(KINDS));
+    s.repos[KINDS].commit({ 'decisions/questions/Kinds-lettered.md': 'Ruling: A — made up, NOT real\n' });
+    choiceLinks(qcard(app, id))[0].dispatch('click', { preventDefault() {} });
+    await app.flush();
+    assert.equal(qcard(app, id), null, 'answered: out of the section');
+    assert.deepEqual(byClass(section(app), 'v2-recheck').map((x) => x.textContent),
+      ["Which colour should a kicked-back card's icon take?: Already answered: Ruling: A — made up, NOT real"], 'alone');
+    await app.advance(POLL_MS);
+    assert.equal(byClass(section(app), 'v2-recheck').length, 1, 'still said at the next poll');
+  } finally {
+    app.restore();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// QW1's round 2: the owner's answer (decisions/questions/P-001-m3g-reload-fold.md, A) and the reviewers' notes
+
+test('AC94 (the owner\'s reload answer, P-001-m3g-reload-fold.md, A): after a full reload, each "Add your own words" fold holding words this device kept opens again in the first drawing, before AC56 puts the scroll back; one with none stays closed; "Show choices ›" not opened by it; within the opening a fold the owner closed stays closed', async () => {
+  const kept = savedWords({ [wordsKey(qid(KINDS, K.bare))]: 'Kept made-up words, NOT real.', [wordsKey(qid(KINDS, K.numbered), 2)]: 'Kept for part 2, NOT real.',
+    [wordsKey(qid(KINDS, K.split))]: 'Kept for the split one, NOT real.' });
+  const store = seen(NOW + H, { ...kept, 'desk-scroll-v1': JSON.stringify({ hash: '#/waiting', y: 900, sheetY: 0 }) });
+  const calls = [];
+  const typedShown = () => findAll(document.getElementById('view'), (e) => e.tag === 'textarea' && e.value === 'Kept made-up words, NOT real.').length > 0;
+  const app = await open(kindsState(), { store, win: { scrollTo: (x, y) => { calls.push([y, typedShown()]); } } });
+  try {
+    const fold = (path) => keyed(app, `fold:qwords:${qid(KINDS, path)}`);
+    for (const path of [K.bare, K.numbered, K.split]) assert.equal(fold(path).attrs['aria-expanded'], 'true', `${path}: open again`);
+    for (const path of [K.lettered, K.none]) assert.equal(fold(path).attrs['aria-expanded'], 'false', `${path}: no kept words, closed`);
+    assert.equal(findAll(qcard(app, qid(KINDS, K.bare)), (e) => e.tag === 'textarea')[0].value, 'Kept made-up words, NOT real.', 'the words where they were left');
+    assert.deepEqual(findAll(qcard(app, qid(KINDS, K.numbered)), (e) => e.tag === 'textarea').map((t) => t.value), ['', 'Kept for part 2, NOT real.'], 'each part\'s box');
+    assert.equal(keyed(app, `fold:qchoices:${qid(KINDS, K.split)}`).attrs['aria-expanded'], 'false', '"Show choices ›" not opened');
+    assert.ok(calls.some(([y, shown]) => y === 900 && shown), 'the scroll put back with the words already shown');
+    // With one project shown (AC94: "every project shown and with one", QW1's round 3, N3): the same folds open, the same words.
+    await app.go(`#/waiting/${KINDS}`);
+    for (const path of [K.bare, K.numbered, K.split]) assert.equal(fold(path).attrs['aria-expanded'], 'true', `${KINDS} alone, ${path}: open`);
+    for (const path of [K.lettered, K.none]) assert.equal(fold(path).attrs['aria-expanded'], 'false', `${KINDS} alone, ${path}: closed`);
+    assert.equal(findAll(qcard(app, qid(KINDS, K.bare)), (e) => e.tag === 'textarea')[0].value, 'Kept made-up words, NOT real.');
+    assert.equal(keyed(app, `fold:qchoices:${qid(KINDS, K.split)}`).attrs['aria-expanded'], 'false');
+    await app.go('#/waiting');
+    // Closed by the owner: stays closed within the opening.
+    await app.tap(fold(K.bare));
+    assert.equal(fold(K.bare).attrs['aria-expanded'], 'false');
+    await app.advance(POLL_MS);
+    assert.equal(fold(K.bare).attrs['aria-expanded'], 'false', 'still closed at the next poll');
+    assert.equal(findAll(qcard(app, qid(KINDS, K.bare)), (e) => e.tag === 'textarea').length, 0);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 (round 2, N1): a numbered question\'s "Add your own words" holds its sheet\'s boxes, one per part, each its own saved words, the same as the sheet\'s', async () => {
+  const id = qid(KINDS, K.numbered);
+  const app = await open(kindsState());
+  try {
+    await app.tap(keyed(app, `fold:qwords:${id}`));
+    const boxes = findAll(qcard(app, id), (e) => e.tag === 'textarea');
+    assert.deepEqual(boxes.map((b) => b.attrs['aria-label']), ['Your answer to 1', 'Your answer to 2'], 'one box per part, labelled as the sheet\'s');
+    boxes[1].value = 'Made-up words for part 2, NOT real.';
+    boxes[1].dispatch('input');
+    await app.flush();
+    await app.go(`#/waiting/card/${enc(id)}`);
+    assert.deepEqual(findAll(sheet(app), (e) => e.tag === 'textarea').map((t) => [t.attrs['aria-label'], t.value]),
+      [['Your answer to 1', ''], ['Your answer to 2', 'Made-up words for part 2, NOT real.']], 'the sheet\'s boxes, part 2\'s words in it');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 + AC77 (round 2, N2): a notification\'s tap on a held question opens Waiting with its card in the section brought into view', async () => {
+  const b = busiestState();
+  const key = qid('Beta', HELD_PATH);
+  const rowOf = `row-q-${key.replace(/[^A-Za-z0-9_-]/g, '-')}`;
+  // A layout (made up): the held question's card 1500 px down the page, everything else at the top.
+  const saved = Object.getOwnPropertyDescriptor(El0.prototype, 'getBoundingClientRect');
+  El0.prototype.getBoundingClientRect = function rect() {
+    const top = this.attrs && this.attrs.id === rowOf ? 1500 : 0;
+    return { left: 0, right: 0, top, bottom: top, width: 0, height: 0 };
+  };
+  const app = await loadSandbox({ ...b, hash: '', search: `?open=${enc(key)}`, now: NOW, store: seen(NOW + H, b.seed) });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    assert.equal(app.loc.hash, '#/waiting');
+    const card = qcard(app, key);
+    assert.equal(card.attrs['data-question'], 'held');
+    assert.equal(card.attrs.id, rowOf, 'its card carries the row id the tap scrolls to');
+    assert.ok(app.scrolls.some(([x, y]) => x === 0 && y === 1492), `brought into view, 8 px above its top: ${JSON.stringify(app.scrolls)}`);
+    assert.equal(keyed(app, 'tap-banner').textContent, 'Opened from a notification');
+  } finally {
+    if (saved) Object.defineProperty(El0.prototype, 'getBoundingClientRect', saved); else delete El0.prototype.getBoundingClientRect;
+    app.restore();
+  }
+});
+
+test('AC94 (settled, 4; round 2, the open question): a held lettered and a held v2.5 question, fourth and later — "Show choices ›" and "Add your own words" in the section, and in each one\'s sheet its words box and "The whole question" fold, end no hold', async () => {
+  const LET = 'Held|question|questions/Held-let.md';
+  const V25 = `${LEDGER}|question|questions/Ledger-held.md`;
+  const app = await open(heldKindsState({ heldLast: true }));
+  try {
+    for (const id of [LET, V25]) {
+      assert.ok(isHeld(app, id), `${id}: held`);
+      assert.ok(qcards(app).map((c) => c.attrs['data-card']).indexOf(id) >= SECTION_CHOICES_SHOWN, `${id}: fourth or later`);
+      await app.tap(keyed(app, `fold:qchoices:${id}`));
+      await app.tap(keyed(app, `fold:qwords:${id}`));
+      const box = findAll(qcard(app, id), (e) => e.tag === 'textarea')[0];
+      box.value = 'Made-up words, NOT real.';
+      box.dispatch('input');
+      await app.flush();
+      assert.ok(isHeld(app, id), `${id}: still held after "Show choices ›" and "Add your own words"`);
+      await app.go(`#/waiting/card/${enc(id)}`);
+      const sbox = findAll(sheet(app), (e) => e.tag === 'textarea')[0];
+      sbox.value = 'More made-up words, NOT real.';
+      sbox.dispatch('input');
+      await app.flush();
+      await app.tap(keyed(app, `fold:whole:${id}`));
+      await app.go('#/waiting');
+      assert.ok(isHeld(app, id), `${id}: still held after its sheet's words box and "The whole question"`);
+    }
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 + AC91 (c) (round 2, N4; "What QW1 keeps from stage G9c"): "Still reading the portfolio…" in the quiet lines below the section holding questions, last of the read lines, before the strip', async () => {
+  // heldReadsState (G9c, made up, NOT how any read went): the made-up portfolio's read held on its way, the projects read.
+  const s = heldReadsState({ portfolio: true, portfolioHeld: true });
+  const app = await open(s, { store: seen() });
+  try {
+    assert.ok(headCount(app) >= 1, 'the section holds questions');
+    const kids = boardKids(app);
+    const q = kids.findIndex((c) => c.className === 'v2-quiet');
+    assert.ok(kids.indexOf(section(app)) < q && q < kids.indexOf(lane(app, 'kick')), 'the section, the quiet lines, the strip');
+    assert.equal(keyed(app, 'ql:reading:portfolio').textContent, 'Still reading the portfolio…');
+    const reads = quietKeys(app).filter((k) => /^ql:(cant|show|reading|signed-out)/.test(k));
+    assert.equal(reads[reads.length - 1], 'ql:reading:portfolio', 'last of the read lines');
+    assert.equal(findAll(section(app), (e) => /portfolio/i.test(e.textContent || '') && e.tag === 'p').length, 0, 'the section says nothing of the portfolio');
+  } finally {
+    s.release();
+    app.restore();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// QW1's round 3 (the Reviewer's N1 to N3, round 2)
+
+/** Past 30 s since the last read, Kinds' reads made to fail (made up, NOT how any read went), then "Answer A ↗" tapped in `root`. */
+async function failedTap(s, app, root) {
+  for (let i = 0; i < 70 && !app.desk.needsRecheck(KINDS); i++) await app.advance(1000);
+  s.repos[KINDS].fail = { kind: 'network' };
+  choiceLinks(root())[0].dispatch('click', { preventDefault() {} });
+  await app.flush();
+  assert.match(byClass(root(), 'v2-recheck').map((x) => x.textContent).join(' '), /The desk couldn't check just now/, 'couldn\'t check');
+}
+const couldnt = (el) => byClass(el, 'v2-recheck').filter((x) => /couldn't check/.test(x.textContent)).length;
+
+test('AC94 (settled, 2; round 3, N1): a "couldn\'t check" beside a question\'s button stays while another project is shown alone and back — its question never left the section', async () => {
+  const s = kindsState();
+  const id = qid(KINDS, K.lettered);
+  const app = await open(s);
+  try {
+    await failedTap(s, app, () => qcard(app, id));
+    await app.go(`#/waiting/${LEDGER}`);
+    await app.go('#/waiting');
+    assert.ok(qcard(app, id), 'still in the section');
+    assert.equal(couldnt(qcard(app, id)), 1, 'its words still beside its button');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 (the owner\'s reload answer; round 3, N2 (a)): only a full reload opens a fold — words typed in a question\'s sheet within an opening leave the section\'s "Add your own words" closed', async () => {
+  const id = qid(KINDS, K.bare);
+  const app = await open(kindsState());
+  try {
+    await app.go(`#/waiting/card/${enc(id)}`);
+    const box = findAll(sheet(app), (e) => e.tag === 'textarea')[0];
+    box.value = 'Made-up words typed in the sheet, NOT real.';
+    box.dispatch('input');
+    await app.flush();
+    await app.go('#/waiting');
+    await app.advance(POLL_MS);
+    assert.equal(keyed(app, `fold:qwords:${id}`).attrs['aria-expanded'], 'false', 'closed');
+    assert.equal(findAll(qcard(app, id), (e) => e.tag === 'textarea').length, 0);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 (settled, 2) + AC56 (round 3, N2 (b)): a sheet open over Waiting keeps its "couldn\'t check" words when its question leaves the section', async () => {
+  const s = kindsState();
+  const id = qid(KINDS, K.lettered);
+  const app = await open(s, { hash: `#/waiting/card/${enc(id)}` });
+  try {
+    await failedTap(s, app, () => sheet(app));
+    s.repos[KINDS].fail = null;
+    s.repos[KINDS].commit({ 'decisions/questions/Kinds-lettered.md': 'Ruling: A — made up, NOT real\n' });
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    assert.equal(qcard(app, id), null, 'out of the section');
+    assert.ok(sheet(app), 'the sheet still open');
+    assert.equal(couldnt(sheet(app)), 1, 'its words kept while it is open');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 (settled, 2; round 3, N2 (c)): a "couldn\'t check" is dropped when its question leaves — after "Done ✓" and "Undo", the question back in the section without it', async () => {
+  const s = kindsState();
+  const id = qid(KINDS, K.lettered);
+  const app = await open(s);
+  try {
+    await failedTap(s, app, () => qcard(app, id));
+    s.repos[KINDS].fail = null;
+    await app.tap(keyed(app, `qdone:${id}`));
+    assert.equal(qcard(app, id), null, 'marked: out of the section');
+    await app.tap(findAll(lane(app, 'done'), (e) => e.tag === 'button' && e.textContent === 'Undo')[0]);
+    assert.ok(qcard(app, id), '"Undo": back in the section');
+    assert.equal(couldnt(qcard(app, id)), 0, 'without its old words');
+    assert.equal(couldnt(app.view), 0);
   } finally {
     app.restore();
   }

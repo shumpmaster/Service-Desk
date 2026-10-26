@@ -47,7 +47,7 @@ import { waSetup, WORKED } from '../wa-fixtures.mjs';
 import { withPortfolio, addPortfolio, pfFiles } from '../pf-fixtures.mjs';
 import { BAD_PR } from '../fake-desk.mjs';
 import { pullsAnswer } from '../j12-fixture.mjs';
-import { busiestState, kindsState, qid, QPATH } from '../qw1-fixtures.mjs';
+import { busiestState, kindsState, qid, QPATH, EXT_LONG as QW1_EXT } from '../qw1-fixtures.mjs';
 
 const PUBLIC = resolve(fileURLToPath(new URL('../../../src/public/', import.meta.url)));
 const OUT = resolve(process.argv[2] || 'glance-shots');
@@ -306,17 +306,22 @@ const SHOTS = [
   // QW1 of "After the questions request" (AC94; the approved picture's frames, docs/design/builds/m3g-picture/): the busiest
   // case (`busiestState`: md-extremes/ with five made-up questions of four to six choices, a sixth held as being asked in a
   // session, Beta's kicked back on this device, Delta read and then failing; NOT real), as it opens and with the fourth and
-  // fifth questions' "Show choices ›" and a question's "Add your own words" opened over words the device keeps (made up);
+  // fifth questions' "Show choices ›" opened and a question's "Add your own words" open by itself over words the device keeps
+  // (made up; the owner's reload answer, P-001-m3g-reload-fold.md, A);
   // one project shown, Beta (its held and kicked-back questions) and Delta (v2.5); nothing waiting (`quiet`), "Questions for
   // you · none" above "Kicked back · none"; and every kind of question (`kindsState`, NOT real) with its choices opened.
   { name: 'qw1-busiest', state: busiestState, now: NOW, looked: LATE, later: true, hash: '#/waiting', seed: busiestState().seed },
   { name: 'qw1-busiest-folds', state: busiestState, now: NOW, looked: LATE, later: true, hash: '#/waiting',
     seed: { ...busiestState().seed, 'desk-sheet-words-v1': JSON.stringify({ v: 1, words: { [`${qid('Alpha', QPATH.Alpha)}#1`]: { text: 'Keep it short; I look every evening.', at: NOW - 60e3 } } }) },
-    click: [`[data-k="fold:qchoices:${qid('Gamma', QPATH.Gamma)}"]`, `[data-k="fold:qchoices:${qid('Delta', QPATH.Delta)}"]`, `[data-k="fold:qwords:${qid('Alpha', QPATH.Alpha)}"]`] },
+    click: [`[data-k="fold:qchoices:${qid('Gamma', QPATH.Gamma)}"]`, `[data-k="fold:qchoices:${qid('Delta', QPATH.Delta)}"]`] },
   { name: 'qw1-one-beta', state: busiestState, now: NOW, looked: LATE, hash: '#/waiting/Beta', seed: busiestState().seed },
   { name: 'qw1-one-delta', state: busiestState, now: NOW, looked: LATE, hash: '#/waiting/Delta', seed: busiestState().seed },
   { name: 'qw1-empty', state: quietState, now: NOW, looked: LATE, hash: '#/waiting' },
   { name: 'qw1-kinds', state: () => kindsState(), now: NOW, looked: LATE, hash: '#/waiting', clickAll: '.v2-qsec button.v2-fold[aria-expanded="false"][data-k^="fold:qchoices"]' },
+  // QW1's round 2 (the Design reviewer's N2): Epsilon's question (md-extremes/' long unbroken title, its six long made-up choices,
+  // NOT real), fifth in the busiest case, its "Show choices ›" opened, so its long choices are drawn at 360 and 414 px.
+  { name: 'qw1-epsilon-choices', state: busiestState, now: NOW, looked: LATE, hash: '#/waiting', seed: busiestState().seed,
+    click: [`[data-k="fold:qchoices:${qid(QW1_EXT, QPATH[QW1_EXT])}"]`] },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {

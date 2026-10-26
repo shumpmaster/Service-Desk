@@ -355,7 +355,7 @@ test('AC95 + AC96 on the busiest board (qw3BusiestState, made up, NOT real; the 
   }
 });
 
-test('AC95 ("What a blocker says"; AC94\'s "Each question shows"): "Answer first" under the question\'s lock or clock line, before its choices; "Waits on" under the meta line, on lane, gate-less, strip and section cards; each in --t-small --ink; the Waits line at least 24 px tall, above the full-card link, its links underlined under their own text — in light and dark, at 360 and 414 px', async () => {
+test('AC95 ("What a blocker says"; AC94\'s "Each question shows"): "Answer first" under the question\'s lock or clock line, before its choices; "Waits on" under the meta line, on lane, gate-less, strip and section cards; each in --t-body --ink, the picture\'s size (AC96\'s "Settled from QW3\'s build", 3); the Waits line at least 24 px tall, above the full-card link, its links underlined under their own text — in light and dark, at 360 and 414 px', async () => {
   const app = await qw3Open(qw3BusiestState(), '#/waiting');
   try {
     const pick = cardOf(app, ALPHA('Alpha-pick'));
@@ -375,17 +375,17 @@ test('AC95 ("What a blocker says"; AC94\'s "Each question shows"): "Answer first
         const at = `${theme}, ${w} px`;
         for (const el of byClass(app.view, 'v2-afirst')) {
           const l = L.get(el);
-          assert.match(l.raw('font'), /^400 12px\/1\.4 ⟦--font\|/, `${at}: "Answer first" --t-small`);
+          assert.match(l.raw('font'), /^400 13px\/1\.45 ⟦--font\|/, `${at}: "Answer first" --t-body, the picture's size`);
           assert.equal(l.colour, INK[theme].ink, `${at}: --ink`);
         }
         const lines = byClass(app.view, 'v2-waits');
         assert.equal(lines.length, 7, 'Q-020, #81, #82, #80, the hold card, Beta\'s #80, Gamma\'s merge card');
         for (const el of lines) {
           const l = L.get(el);
-          assert.match(l.raw('font'), /^400 12px\/1\.4 ⟦--font\|/, `${at}: "Waits on" --t-small`);
+          assert.match(l.raw('font'), /^400 13px\/1\.45 ⟦--font\|/, `${at}: "Waits on" --t-body, the picture's size`);
           assert.equal(l.colour, INK[theme].ink, `${at}: --ink`);
           assert.deepEqual([l.decl('position'), l.decl('z-index'), l.decl('display'), l.decl('min-height'), l.decl('padding')], ['relative', '1', 'block', '24px', '4px 0'],
-            `${at}: above the full-card link, at least 24 px (12 × 1.4 + 8 = 24.8 px)`);
+            `${at}: above the full-card link, at least 24 px (13 × 1.45 + 8 = 26.85 px)`);
           for (const a of el.children) {
             assert.equal(a.tag, 'a');
             const la = L.get(a);

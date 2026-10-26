@@ -332,7 +332,13 @@ const SHOTS = [
   { name: 'qw2-busiest', state: qw2BusiestState, now: NOW, looked: LATE, hash: '#/waiting', seed: qw2BusiestState().seed, polls: 2 },
   { name: 'qw2-one-alpha', state: qw2BusiestState, now: NOW, looked: LATE, hash: '#/waiting/Alpha', seed: qw2BusiestState().seed, polls: 2 },
   { name: 'qw2-strip', state: stripState, now: NOW, looked: LATE, hash: '#/waiting', seed: stripState().seed },
-  { name: 'qw2-sheet', state: qw2BusiestState, now: NOW, looked: LATE, hash: `#/waiting/card/${encodeURIComponent('Alpha|pr|81')}`, seed: qw2BusiestState().seed, polls: 2, viewport: true },
+  // The sheet opened from the board, a tap on the card's title, as the owner opens it (a page opened straight at a sheet holds
+  // the first board drawn under it, AC95's "Settled from QW2's build", 3); and a held question's sheet, its small line's
+  // " · being asked in your session" (point 5).
+  { name: 'qw2-sheet', state: qw2BusiestState, now: NOW, looked: LATE, hash: '#/waiting', seed: qw2BusiestState().seed, polls: 2, viewport: true,
+    click: ['[data-k="cardlink:Alpha|pr|81"]'] },
+  { name: 'qw2-held-sheet', state: qw2BusiestState, now: NOW, looked: LATE, hash: '#/waiting', seed: qw2BusiestState().seed, polls: 2, viewport: true,
+    click: [`[data-k="cardlink:${qid('Beta', 'questions/Beta-plan-units.md')}"]`] },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {

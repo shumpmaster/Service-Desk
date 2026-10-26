@@ -143,6 +143,12 @@ export async function qw2Open(setup, hash, { store = null } = {}) {
  */
 export const QW2_OPENS = [
   ['Waiting, the busiest case with two-digit places', () => qw2Open(qw2BusiestState(), '#/waiting')],
-  ['a pull request\'s sheet over Waiting, its place in its small line', () => qw2Open(qw2BusiestState(), `#/waiting/card/${encodeURIComponent('Alpha|pr|81')}`)],
+  // Opened from the board, as the owner opens it: a page opened straight at a sheet holds the first board drawn under it,
+  // drawn while other projects' first reads are still on their way (AC95's "Settled from QW2's build", 3).
+  ['a pull request\'s sheet over Waiting, its place in its small line', async () => {
+    const app = await qw2Open(qw2BusiestState(), '#/waiting');
+    await app.go(`#/waiting/card/${encodeURIComponent('Alpha|pr|81')}`);
+    return app;
+  }],
 ];
 export { CONFIG };

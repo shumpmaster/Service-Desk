@@ -64,14 +64,17 @@ test('AC81: the trial view opens on Home; every screen carries the one bar Home 
   }
 });
 
-test('AC81: Waiting\'s badge is the board\'s own "Waiting on you" plus "Kicked back", shown only when 1 or more; a refresh keeps the tab', async () => {
+test('AC81: Waiting\'s badge is the board\'s own "Waiting on you" plus "Kicked back" (from QW1 with the "Questions for you" section\'s count, its sum unchanged), shown only when 1 or more; a refresh keeps the tab', async () => {
   const app = await opened('#/waiting');
   try {
     // Rewritten in G2 (one line; AC91 (f): "the counts are unchanged: the badge ... still count "Waiting on you" plus "Kicked
     // back""): Kicked back is a strip, its count in its head while it holds cards, and its one line "Kicked back · none" with
     // no count when it holds none, read as 0.
     const laneCount = (k) => { const c = byClass(keyed(app, `lane:${k}`), 'v2-lc')[0]; return c ? Number(c.textContent) : k === 'kick' && keyed(app, 'lane:kick').textContent === 'Kicked back · none' ? 0 : NaN; };
-    const n = ['wait', 'kick'].map(laneCount).reduce((a, b) => a + b, 0);
+    // Rewritten in QW1 (AC94: "the badge counts the section, the strip and the lane, as now, so it is their sum"): the
+    // questions left the lane and the strip for the "Questions for you" section, whose head counts them ("· <q>").
+    const section = Number((byClass(byClass(keyed(app, 'qsec'), 'v2-kh')[0], 'v2-lc')[0] || { textContent: '0' }).textContent);
+    const n = ['wait', 'kick'].map(laneCount).reduce((a, b) => a + b, 0) + section;
     assert.ok(n > 0);
     assert.equal(byClass(bar(app)[0], 'v2-badge')[0].children[0].textContent, String(n));
     await app.go('#/work');

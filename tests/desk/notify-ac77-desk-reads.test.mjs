@@ -29,7 +29,8 @@ import { repo, pr } from './fake-desk.mjs';
 import { loadSandbox, findAll } from './sandbox-helpers.mjs';
 import { NOTIFY_FIX } from './notify-helpers.mjs';
 import { OPENED_WORDS, GONE_WORDS } from '../../src/lib/notifyview.js';
-import { HELD_WORDS, RECORDING_WORDS } from '../../src/lib/model.js';
+import { RECORDING_WORDS } from '../../src/lib/model.js';
+import { SECTION_WORDS } from '../../src/lib/board.js';
 import { ASKING_KEY } from '../../src/lib/scheduler.js';
 
 const SID = 'session_012RJPVKAoLga2RkqLYRDcBY';
@@ -66,6 +67,10 @@ async function text(app) {
   }
   return app.view.textContent;
 }
+// From QW1 (AC77, changed by AC94 and AC95; the owner's answer 3, "In the section"): a held question shows in the "Questions
+// for you" section with "Also asked in your session: answer in one place", no longer in the quiet line "Being asked in your
+// session: answer there" (the model's HELD_WORDS), so a held question is read by the section's words.
+const HELD_WORDS = SECTION_WORDS.heldLine;
 const answerLinks = (app) => findAll(app.view, (e) => e.tag === 'a' && /\/new\/main/.test(e.attrs.href || ''));
 const closedCalls = (app) => app.calls().filter((c) => c.path === '/api/blobs' && c.body.closed);
 const prsCalls = (app) => app.calls().filter((c) => c.path === '/api/blobs' && c.body.prs);
@@ -118,9 +123,9 @@ test('AC77 (draft 7): the closed read waits for every held question\'s raised ti
     assert.equal(closedCalls(app).length, 1, 'made in the cycle the raised time arrived');
     assert.deepEqual(closedCalls(app)[0].body.closed, { since: '2026-10-18T11:26:23.000Z' });
     assert.ok(!(await text(app)).includes(HELD_WORDS));
-    // Waiting again: its card back in "Waiting on you" (a held question's sheet address shows the board, AC80), and its sheet's answer links.
-    const lane = findAll(app.view, (e) => e.dataset && e.dataset.k === 'lane:wait')[0];
-    assert.ok(lane.textContent.includes('Which piece of later work comes next?'), 'a card again');
+    // Waiting again: a counted question again (from QW1, AC94, in the "Questions for you" section, not the lane), and its sheet's answer links.
+    const counted = findAll(app.view, (e) => e.attrs && e.attrs['data-question'] === 'counted');
+    assert.ok(counted.some((c) => c.textContent.includes('Which piece of later work comes next?')), 'a card again');
     await app.go(SB_WAITING);
     assert.ok(answerLinks(app).length, 'waiting again: its sheet\'s answer links');
     assert.equal(app.state().textContent, '1 waiting on you');

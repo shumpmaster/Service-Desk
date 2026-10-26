@@ -32,7 +32,7 @@ import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, gateOpening, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, BOARD_LANES, WORDS, MARKS_KEY,
   stripEmptyParts, isNewCard, boardAge, SECTION_WORDS, SECTION_CHOICES_SHOWN, waitLaneEmpty, sectionMissingWords, sectionMeta, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, everyProjectUnread, unreadLaneWords, quietTroubleWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS, draftCard,
-  PLACE_WORDS, heldBoard } from './lib/board.js';
+  PLACE_WORDS, heldBoard, BLOCK_WORDS } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
@@ -62,6 +62,7 @@ let CONFIG = DEFAULT_CONFIG; // J7; the tests pass their own (AC42's five projec
 const opening = { target: null, done: true, banner: null, more: null };
 let openMore = null; // a project whose More detail opens at AC78's line on its next drawing
 let scrollToRow = null; // a tapped row's id, brought into view on its next drawing
+let focusToRow = null; // from QW3 (AC96's "Settled from QW3's build"): the row id that takes the focus too when it is brought into view, as a link within the page moves it
 /** A queue row's element id, from its key. */
 const rowId = (key) => `row-${String(key).replace(/[^A-Za-z0-9_-]/g, '-')}`;
 
@@ -2293,6 +2294,64 @@ function placeLine(card) {
 }
 
 /**
+ * AC95 (stage QW3; C, (n); the approved picture's "Answer first · cards 4 and 10 wait on it"): a question other cards wait on
+ * says so, "Answer first · card <k> waits on it" or "Answer first · cards <k> and <j> wait on it", the places of the cards
+ * its `Blocks:` line names that wait on the owner in its project (AC96), in `--t-small` `--ink`, the picture's 12 px (`.v2-afirst`;
+ * AC96's "Settled from QW3's build", 3); a held
+ * question too, outside the numbers. Nothing for a question that holds up no card with a place.
+ */
+function answerFirstLine(card) {
+  if (!card.answerFirst || !card.answerFirst.length) return null;
+  return h('span', { class: 'v2-afirst', key: `afirst:${card.id}` }, BLOCK_WORDS.answerFirst(card.answerFirst));
+}
+
+/**
+ * AC95 (stage QW3; C, (n); draft 3, the Design reviewer's build note 1; draft 6, the picture's note): under a held-up card's
+ * meta line, "Waits on question <k>" ("Waits on questions <k> and <j>"), <k> each question's place, each number a tap opening
+ * that question's sheet; and, for a question being asked in the owner's session, which has no place, "Waits on a question
+ * being asked in your session", a tap opening it in the "Questions for you" section. In `--t-small` `--ink` (the picture's 12 px,
+ * AC96's "Settled from QW3's build", 3), a line that may
+ * wrap to two, at least 24 px tall, drawn above the card's full-card link (`.v2-t::after`) as `.v2-step` is (`.v2-waits`);
+ * each link underlined under its own text, so a wrapped line is underlined under each of its lines, never a rule across it.
+ */
+function waitsLines(card, only) {
+  const w = card.waitsOn;
+  if (!w || !w.length) return null;
+  const out = [];
+  const numbered = w.filter((x) => !x.held);
+  if (numbered.length) {
+    const words = BLOCK_WORDS.waitsOn(numbered.map((x) => x.k));
+    // The words cut at each number after the first, so each number is its own link: "Waits on questions 2", " and 3".
+    const parts = [];
+    let rest = words;
+    for (let i = numbered.length - 1; i > 0; i--) {
+      const sep = i === numbered.length - 1 ? ' and ' : ', ';
+      const tail = `${sep}${numbered[i].k}`;
+      parts.unshift(tail);
+      rest = rest.slice(0, rest.length - tail.length);
+    }
+    parts.unshift(rest);
+    out.push(h('span', { class: 'v2-waits', key: `waits:${card.id}` }, numbered.map((x, i) => h('a', { href: cardRoute(only, x.id), key: `waitson:${card.id}:${x.id}`,
+      'aria-label': i ? BLOCK_WORDS.waitsOn([x.k]) : null, onclick: () => { nav.opener = `waitson:${card.id}:${x.id}`; } }, parts[i]))));
+  }
+  for (const x of w.filter((y) => y.held)) {
+    out.push(h('span', { class: 'v2-waits', key: `waitsheld:${card.id}:${x.id}` }, h('a', { href: boardRoute(only), key: `waitsheld:${card.id}:${x.id}`,
+      onclick: (e) => {
+        // AC95's "A held question": a tap opens it in the section, its card brought into view (as a notification's tap on a
+        // held question does, c959fe5).
+        if (e && e.preventDefault) e.preventDefault();
+        // AC96's "Settled from QW3's build" (the one change): the focus moves to its card too, as a link within the page moves it,
+        // so a keyboard or screen-reader user lands where the owner's eye does (AC94's region and focus order).
+        scrollToRow = rowId(`q:${x.id}`);
+        focusToRow = scrollToRow;
+        if (location.hash !== boardRoute(only)) nav.to(boardRoute(only));
+        else render();
+      } }, BLOCK_WORDS.waitsHeld)));
+  }
+  return out;
+}
+
+/**
  * A card's kind line: its icon (vermilion while it waits on the owner, grey in Done) and its word, never ranked (AC38).
  * AC91 (f): in the Kicked back strip, which has no project groups, it names its project after " · ". AC91 (g): in
  * "Waiting on you", a card raised since "last looked" carries "new" beside its kind label, part of the line's text for
@@ -2426,6 +2485,7 @@ function cardNode(p, card, lane, only, tag = 'li') {
     h('span', { class: 'v2-gl' }, h('span', { class: 'v2-gk' }, 'Critic:'), ` ${card.critic}`),
     h('span', { class: 'v2-gl' }, h('span', { class: 'v2-gk' }, 'User rep:'), ` ${card.userRep}`),
     h('span', { class: 'v2-m', live: () => metaText(card, Date.now()) }),
+    waitsLines(card, only),
     lane === 'kick' && card.kicked ? h('span', { class: 'v2-why' }, card.kicked.reason) : null,
     h('span', { class: 'v2-gatebtns' }, gateButtons(p, card).map((b) => answerLink(p, card, b, 'v2-step', [b.label]))));
   }
@@ -2435,6 +2495,7 @@ function cardNode(p, card, lane, only, tag = 'li') {
   kindLine(card, lane),
   h('a', { class: 'v2-t', href: cardRoute(only, card.id), 'data-cardlink': '', key: `cardlink:${card.id}`, onclick: (e) => cardTap(card, e) }, cardTitle(card)),
   h('span', { class: 'v2-m', live: () => metaText(card, Date.now()) }),
+  waitsLines(card, only),
   card.mark ? h('span', { class: 'v2-mk' }, vi(card.mark.icon), h('span', {}, card.mark.words)) : null,
   lane === 'kick' && card.kicked ? h('span', { class: 'v2-why' }, card.kicked.reason) : null,
   card.note ? noteNode(card) : null,
@@ -2640,14 +2701,21 @@ function sectionCard(p, card, only, shown) {
   body.push(h('p', { class: 'v2-steps', key: `qacts:${id}` },
     h('a', { class: 'v2-step', href: cardRoute(only, id), key: `qmore:${id}`, onclick: () => { nav.opener = `qmore:${id}`; } }, SECTION_WORDS.more),
     card.held ? null : h('button', { type: 'button', class: 'v2-step', key: `qdone:${id}`, onclick: () => markCard(card) }, SECTION_WORDS.done)));
-  return h('li', { class: 'v2-card v2-qcard', key: `qcard:${id}`, id: rowId(`q:${id}`), 'data-card': id, 'data-question': card.held ? 'held' : kicked ? 'kicked' : 'counted' },
+  // A held question's card takes the focus when a "Waits on a question being asked in your session" tap brings it into view
+  // (QW3; AC96's "Settled from QW3's build"): tabindex -1, focusable by the page and outside the tab order.
+  return h('li', { class: 'v2-card v2-qcard', key: `qcard:${id}`, id: rowId(`q:${id}`), 'data-card': id, 'data-question': card.held ? 'held' : kicked ? 'kicked' : 'counted',
+    tabindex: card.held ? '-1' : null },
     placeLine(card),
     kind,
     h('a', { class: 'v2-t', href: cardRoute(only, id), 'data-cardlink': '', key: `cardlink:${id}`, onclick: () => { nav.opener = `cardlink:${id}`; } }, cardTitle(card)),
-    card.held ? h('span', { class: 'v2-body', key: 'qheld' }, SECTION_WORDS.heldLine) : null,
+    // "Also asked in your session: answer in one place" in --t-small --ink, as the picture draws it at 12 px (AC94's "Settled from
+    // QW1's build", 5, corrected by AC96's "From QW3's design review, round 1", N1; QW1 built it in --t-body).
+    card.held ? h('span', { class: 'v2-heldl', key: 'qheld' }, SECTION_WORDS.heldLine) : null,
     h('span', { class: 'v2-m', live: () => sectionMeta(card, Date.now()) }),
+    waitsLines(card, only),
     kicked && card.kicked ? h('span', { class: 'v2-why' }, card.kicked.reason) : null,
     card.mark ? h('span', { class: 'v2-mk' }, vi(card.mark.icon), h('span', {}, card.mark.words)) : null,
+    answerFirstLine(card),
     h('div', { class: 'v2-qbody', key: `qbody:${id}` }, body));
 }
 
@@ -2677,7 +2745,8 @@ function questionsSection(bd, built, only) {
     const p = pOf(g.project);
     const head = only ? null : h('button', { type: 'button', class: 'v2-grp', key: `grp:qsec:${g.project}`, 'aria-label': `Show only ${g.project}`,
       onclick: () => nav.to(go('waiting', g.project)) }, vi('proj'), h('span', { class: 'v2-gn' }, g.project), h('span', { class: 'v2-gc' }, String(g.count)));
-    return [head, h('ol', { class: 'v2-list', key: `qlist:${g.project}` }, [...g.held, ...g.rows].map((c) => sectionCard(p, c, only, shown.has(c.id))))];
+    // From QW3 (AC95, "After the blockers"): its blockers, then its held questions, then its other questions (boardView's `cards`).
+    return [head, h('ol', { class: 'v2-list', key: `qlist:${g.project}` }, (g.cards || [...g.held, ...g.rows]).map((c) => sectionCard(p, c, only, shown.has(c.id))))];
   });
   return h('section', attrs,
     h('h2', { class: 'v2-kh', key: 'qhead' }, h('span', {}, SECTION_WORDS.title), h('span', { class: 'v2-kn' }, ' · '), h('span', { class: 'v2-lc' }, String(qv.count)),
@@ -2822,7 +2891,7 @@ function renderWaiting(bd, built, only, sheetId, fresh = bd) {
   body.push(h('p', { class: 'v2-small v2-device', key: 'device' }, boardState.kept ? WORDS.device : WORDS.notKept));
   const out = [h('section', { class: 'sb-screen v2 v2-board', key: 'board' }, body)];
   // The sheet reads what is true now (`fresh`); its place is the board's under it, so it moves with the board (AC95).
-  if (sheetId != null) out.push(cardSheet(fresh, built, name, sheetId, null, bd.places));
+  if (sheetId != null) out.push(cardSheet(fresh, built, name, sheetId, null, bd.places, bd.blocking));
   return out;
 }
 
@@ -3095,8 +3164,35 @@ function questionSheetParts(sx) {
   }
   if (files.length && files[0].form === 'numbered') parts.push(recLine(p0));
   parts.push(sheetList(sx, SHEET_WORDS.wholeQuestion, p0 ? p0.text : null, buttonFiles(files, project.defaultBranch)));
-  parts.push(sheetFoot(sx, null, project.model === 'v3' ? unblocksNode(p, card, row) : null));
+  parts.push(sheetFoot(sx, null, [project.model === 'v3' ? unblocksNode(p, card, row) : null, blocksNode(sx)]));
   return parts;
+}
+
+/**
+ * AC95 and AC96 (stage QW3; C, (m)): a question's sheet, under AC66's "Unblocks" line (which still names the milestone), lists
+ * what its `Blocks:` line names, as the board it is open over read it (its places held with the board's, AC40): "Cards
+ * waiting on it", each card waiting on the owner in its project by its place and kind, whole, on a line of its own, then its
+ * title cut at three lines with the fade, as on the board (AC96's "From QW3's design review, round 1", N3; the whole title in
+ * the card's own sheet, which the row opens), a " · " between them read but not drawn; then each entry that does not count,
+ * in its words ("<entry>: being asked in your session", "<entry>: not waiting on you now", "can't read: <entry>"), the entry,
+ * a code, in `--t-mono` and the words in `--t-small` `--ink2` (N2). Nothing for a question whose file has no such line.
+ */
+function blocksNode(sx) {
+  const b = sx.blocks;
+  if (!b || (!b.cards.length && !b.words.length)) return null;
+  const said = (w) => {
+    const i = w.words.indexOf(w.entry);
+    return i < 0 ? w.words : [w.words.slice(0, i) || null, h('span', { class: 'v2-mono', key: 'code' }, w.entry), w.words.slice(i + w.entry.length) || null];
+  };
+  return h('div', { class: 'v2-blk', key: 'blocks' }, h('h3', { class: 'v2-bh' }, BLOCK_WORDS.list),
+    b.cards.length ? h('ul', { class: 'v2-wlist', key: 'blocks-cards' }, b.cards.map((c) => {
+      const clip = `wl:${c.id}`;
+      return h('li', { key: `blk:${c.id}` },
+        h('a', { href: cardRoute(sx.only, c.id), key: `blocks:${c.id}` }, h('span', { class: 'v2-wlk', key: 'wlk' }, `${PLACE_WORDS.line(c.k, c.n)} · ${c.kindWord}`),
+          h('span', { class: 'sb-vh', key: 'wlsep' }, ' · '),
+          h('span', { class: `v2-tt${clipOver.get(clip) === true ? ' over' : ''}`, key: `wltt:${c.id}`, 'data-clip': clip }, c.title)));
+    })) : null,
+    b.words.map((w) => h('p', { class: 'v2-small', key: `blkw:${w.entry}` }, said(w))));
 }
 
 /** AC80's why line for a question, under its boxes: "Recommended: <the RECOMMENDATION: line's words>", or "No recommendation given". */
@@ -3159,7 +3255,7 @@ function placeOfSheet(places, card) {
   return pl ? PLACE_WORDS.line(pl.k, pl.n) : null;
 }
 
-function cardSheet(bd, built, only, sheetId, backTo = null, places = bd.places) {
+function cardSheet(bd, built, only, sheetId, backTo = null, places = bd.places, blocking = bd.blocking) {
   // AC89 (i): a sheet closes back to the screen it was opened from (Waiting, or Plan for a gate's sheet opened there).
   const back = backTo || boardRoute(only);
   const [cardIdRaw, stepPart] = String(sheetId).split('#');
@@ -3237,7 +3333,7 @@ function cardSheet(bd, built, only, sheetId, backTo = null, places = bd.places) 
   const headMeta = () => headText([project.name, HEAD_KIND[card.kind] || card.kindWord.toLowerCase(), card.kind === 'question' ? card.name : card.meta[0] || null, msPart,
     card.raisedAt != null ? `waiting ${boardAge(Date.now() - card.raisedAt)}` : 'wait not recorded', pl]);
   if (card.kind === 'question' || card.kind === 'gate') {
-    const sx = { p, card, row, v, back, lane, pending, kicked, fromTap, headMeta, k2 };
+    const sx = { p, card, row, v, back, lane, pending, kicked, fromTap, headMeta, k2, only, blocks: blocking ? blocking.get(card.id) || null : null };
     return sheetShell(back, card.kind === 'gate' ? gateTitle(card.flag.card) : card.title, card.kind === 'gate' ? gateSheetParts(sx) : questionSheetParts(sx), `sheet:${sheetId}`);
   }
   const parts = [sheetHead(headMeta, card.title, back), fromTap,
@@ -5149,6 +5245,16 @@ export function startSandbox(opts = {}) {
         if (row.getBoundingClientRect && typeof window.scrollTo === 'function') {
           window.scrollTo(0, Math.max(0, Math.round((window.scrollY || 0) + row.getBoundingClientRect().top - 8)));
         }
+        // QW3: a held question's card (tabindex -1, so it takes the focus without joining the tab order) takes it, the page
+        // already scrolled.
+        if (focusToRow === row.getAttribute('id') && row.focus) {
+          try {
+            row.focus({ preventScroll: true });
+          } catch {
+            // the scroll stands
+          }
+        }
+        focusToRow = null;
       }
     }
   }

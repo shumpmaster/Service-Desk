@@ -223,6 +223,42 @@ export function parseAnswer(text) {
 }
 
 // ---------------------------------------------------------------------------
+// A question's `Blocks:` line (J2, from 2026-10-25; AC96, stage QW3 of "After the questions request"; the owner's answer 2,
+// "The question names them (Recommended)": "the Chief of Staff writes a "Blocks:" line in the question file when filing it").
+
+/**
+ * The `Blocks:` line of a question's text, v3 or v2.5 (J2; AC96, "The line"): the first column-0 line starting `Blocks:`
+ * before the file's `WHY:` line (its first column-0 `WHY:` line), or, in a file with no `WHY:` line, before its
+ * `## Context` line or its end; a `Blocks:` line after that, and a second one, are not read. Its entries are split on ", ",
+ * each trimmed, an empty one dropped, each in AC96's forms: `#<n>`, a pull request in the question's own project
+ * ({ kind: 'pr', number }); `queue/<file>.md`, a card ({ kind: 'card', path }); `questions/<name>.md`, another question
+ * ({ kind: 'question', path }); anything else an entry in no form ({ kind: 'bad' }). Each keeps its words (`entry`) for the
+ * sheet. Returns null for a text with no such line (a record naming nothing), else { line, entries }. Read from the text J2
+ * already reads whole, so no read is added (A3); the cached parse is unchanged (J6's blob cache keeps the text).
+ */
+export function blocksLine(text) {
+  if (text == null) return null;
+  const all = lines(text);
+  let stop = all.findIndex((l) => l.startsWith('WHY:'));
+  if (stop < 0) stop = all.findIndex((l) => /^## Context[ \t]*$/.test(l));
+  if (stop < 0) stop = all.length;
+  const at = all.slice(0, stop).findIndex((l) => l.startsWith('Blocks:'));
+  if (at < 0) return null;
+  const line = all[at].replace(/[ \t]+$/, '');
+  const entries = line.slice('Blocks:'.length).split(', ').map((x) => x.trim()).filter(Boolean).map(blocksEntry);
+  return { line, entries };
+}
+
+/** One entry of a `Blocks:` line in AC96's forms (blocksLine, above). */
+export function blocksEntry(entry) {
+  const pr = /^#([1-9][0-9]*)$/.exec(entry);
+  if (pr) return { entry, kind: 'pr', number: Number(pr[1]) };
+  if (/^queue\/[^/\s]+\.md$/.test(entry)) return { entry, kind: 'card', path: entry };
+  if (/^questions\/[^/\s]+\.md$/.test(entry)) return { entry, kind: 'question', path: entry };
+  return { entry, kind: 'bad' };
+}
+
+// ---------------------------------------------------------------------------
 // Model S-033's `Milestone:` lines (J2, from 2026-10-17; L-0016): a question's, an answer record's and a card's.
 
 /**

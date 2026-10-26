@@ -973,3 +973,53 @@ test('AC94 ("What QW1 keeps from stage G9c"): signed out, the one "Signed out �
     app.restore();
   }
 });
+
+// ---------------------------------------------------------------------------
+// QW1's round 2 (the Reviewer's B1): only "Already answered" and "being recorded" stay said once a question has left
+
+/** Kinds' reads failing (made up, the network cause), then "Answer A ↗" on Kinds-lettered tapped: AC77's re-read fails. */
+async function failedReread(s, app) {
+  const id = qid(KINDS, K.lettered);
+  s.repos[KINDS].fail = { kind: 'network' };
+  await app.advance(POLL_MS);
+  await app.advance(31_000);
+  choiceLinks(qcard(app, id))[0].dispatch('click', { preventDefault() {} });
+  await app.flush();
+  assert.match(byClass(qcard(app, id), 'v2-recheck').map((x) => x.textContent).join(' '), /The desk couldn't check just now/, 'the card says it couldn\'t check');
+  s.repos[KINDS].fail = null;
+  await app.advance(POLL_MS);
+  return id;
+}
+
+test('AC94 (settled, 2; round 2, B1): a question that leaves the section by "Done ✓" after a re-read that couldn\'t check leaves no "couldn\'t check" line, nor its "Open GitHub anyway"', async () => {
+  const s = kindsState();
+  const app = await open(s);
+  try {
+    const id = await failedReread(s, app);
+    await app.tap(keyed(app, `qdone:${id}`));
+    assert.equal(qcard(app, id), null, 'marked: out of the section');
+    assert.doesNotMatch(section(app).textContent, /couldn't check|anyway/i);
+    assert.deepEqual(byClass(section(app), 'v2-recheck'), [], 'nothing said for it');
+    await app.advance(POLL_MS);
+    assert.deepEqual(byClass(section(app), 'v2-recheck'), [], 'and at the next poll');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 (settled, 2; round 2, B1): a question answered after a re-read that couldn\'t check says it was already answered, never "couldn\'t check"', async () => {
+  const s = kindsState();
+  const app = await open(s);
+  try {
+    const id = await failedReread(s, app);
+    s.repos[KINDS].commit({ 'decisions/questions/Kinds-lettered.md': 'Ruling: A — made up, NOT real\n' });
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    assert.equal(qcard(app, id), null, 'answered: out of the section');
+    assert.deepEqual(byClass(section(app), 'v2-recheck').map((x) => x.textContent),
+      ["Which colour should a kicked-back card's icon take?: Already answered: Ruling: A — made up, NOT real"]);
+    assert.doesNotMatch(section(app).textContent, /couldn't check|anyway/i);
+  } finally {
+    app.restore();
+  }
+});

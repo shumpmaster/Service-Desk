@@ -128,17 +128,95 @@ export function stripEmptyParts(input = {}) {
 
 /**
  * AC91 (g) (P-001-glance-new.md, A): whether a card in "Waiting on you" carries "new": raised after AC40's "last
- * looked" on this device. None with no raised time, none in the strip or in Done (`lane` other than 'wait'), and none
- * while the device holds no "last looked" (`reference` null: AC40's markers off).
+ * looked" on this device. None with no raised time, none in the strip or in Done, and none while the device holds no
+ * "last looked" (`reference` null: AC40's markers off). From stage QW1 (AC94: "`isNewCard`, which gives "new" in the
+ * lane only today … gives it in the section too"), a question in the "Questions for you" section (`lane` 'section')
+ * carries it by the same rule; a kicked-back question there keeps its "Kicked back" kind line, as the strip's card, and
+ * the page asks for none.
  */
 export function isNewCard(card, lane, reference) {
-  if (lane !== 'wait' || !card || reference == null || !Number.isFinite(reference)) return false;
+  if ((lane !== 'wait' && lane !== 'section') || !card || reference == null || !Number.isFinite(reference)) return false;
   const at = card.raisedAt;
   return at != null && Number.isFinite(at) && at > reference;
 }
 
 /** The words for a project no read of which has succeeded in this opening, in place of "since HH:MM" (AC91 (c); Home's from G8c, Waiting's, a project's page's and the Pipeline view's from G8d). */
 export const IN_OPENING = 'in this opening';
+
+// ---------------------------------------------------------------------------
+// The "Questions for you" section (AC94, stage QW1 of "After the questions request"; the owner's "Top of Waiting" and
+// "One tap, then commit"; the approved picture, docs/design/builds/m3g-picture/, P-001-m3g-picture.md, A).
+
+/** AC94's words for the section, as AC94 and the approved picture give them. */
+export const SECTION_WORDS = Object.freeze({
+  title: 'Questions for you',
+  // The head's "· <h> being asked in your session" while any held question is there (AC94, "The section's head").
+  heldCount: 'being asked in your session',
+  // A held question (AC95's "A held question"; the owner's answer 3, "In the section (Recommended)"), under its title.
+  heldLine: 'Also asked in your session: answer in one place',
+  showChoices: 'Show choices',
+  ownWords: 'Add your own words',
+  more: 'More about it ›',
+  done: 'Done ✓',
+  inSheet: 'Answer in its sheet ›',
+  choicesInSheet: 'Its choices are in its sheet',
+  waitNotRecorded: 'wait not recorded',
+  // An empty "Waiting on you" lane while the section holds questions (AC94, "The lanes once the questions leave").
+  above: 'your questions are above',
+});
+/** The first three questions in the section's order show their choices; the rest have "Show choices ›" (P-001-m3g-length, B). */
+export const SECTION_CHOICES_SHOWN = 3;
+
+/**
+ * AC94 ("The lanes once the questions leave"): what an empty "Waiting on you" lane says. With every project shown, "Nothing
+ * here; your questions are above" in place of "Nothing here" while the section holds questions; the words for the unknown
+ * (unreadLaneWords) with nothing added. With one project shown (`one`, oneProjectView's result), its state's words (AC89
+ * (a)), the section's words added after them only where it holds that project's questions and the words are "Nothing here"
+ * (states 3 and 4) or "Nothing here when last read" (state 5); every other word for the unknown ("Not read yet", "Can't
+ * read", and G8d's "Can't show", "Can't show when last read" and "Can't read or show") with nothing added.
+ * `questions`: whether the section holds any question (counted or held) in the view drawn.
+ */
+export function waitLaneEmpty({ one = null, unread = null, questions = false } = {}) {
+  const add = (w) => (questions ? `${w}; ${SECTION_WORDS.above}` : w);
+  if (one) return one.empty === WORDS.empty || one.empty === ONE_WORDS.whenLast ? add(one.empty) : one.empty;
+  if (unread) return unreadLaneWords(unread);
+  return add(WORDS.empty);
+}
+
+/**
+ * AC94 ("A project the desk can't read or can't show"; G7b's form, G8c's words): the section's grey line for an entry of
+ * boardView's `cantLines` — "<project> not read since HH:MM, its new questions may be missing" (AC89 (a)'s state 5),
+ * "<project> not read in this opening, its new questions may be missing" (state 2), or, for a project read but not drawn
+ * (G8d's "Can't show"), "<project> not shown, its questions may be missing".
+ */
+export function sectionMissingWords(c, tz) {
+  if (c.show) return `${c.project} not shown, its questions may be missing`;
+  return `${c.project} not read${cantSince(c, tz)}, its new questions may be missing`;
+}
+
+/**
+ * A question held as being asked in a session (AC77; one of the model's `askingRows`, src/lib/model.js, never a card), as
+ * the section draws it (AC95's "A held question"; the owner's answer 3): its id the AC73 key a card for it has once its hold
+ * ends, its flag a question's, so its answer links are the sheet's (answerButtons); `held` true. It is counted nowhere and
+ * has no mark: no "Done ✓".
+ */
+export function heldCard(project, row, tz, nowMs) {
+  const raisedAt = row.raisedAt == null ? null : t(row.raisedAt);
+  const p = row.parsed || null;
+  const ms = p ? milestoneValue(firstMilestoneLine(p.text)) : null;
+  const flag = { kind: 'question', key: `q:${row.name}`, title: `Question: ${row.title}`, link: row.link, raisedAt: row.raisedAt, question: row };
+  return { id: waitKey(project.name, 'question', row.path), key: flag.key, project: project.name, kind: 'question', kindWord: KIND_WORDS.question,
+    title: row.title, name: row.name, raisedAt: Number.isFinite(raisedAt) ? raisedAt : null, flag, held: true, mark: questionMark(p, Number.isFinite(raisedAt) ? raisedAt : null, tz, nowMs),
+    meta: [ms && ms.ids && ms.ids.length ? ms.ids.join(', ') : null].filter(Boolean), step: { id: 'answer', label: 'Answer', opensSheet: true }, buttons: [],
+    v25: project.model !== 'v3', why: null, note: null, critic: null, userRep: null };
+}
+
+/** AC94: a section question's meta line, its wait in the board's age form, or "wait not recorded" (P-001-m3g-age-double, A). */
+export function sectionMeta(card, nowMs) {
+  const m = metaText(card, nowMs);
+  if (card.raisedAt != null) return m;
+  return [m, SECTION_WORDS.waitNotRecorded].filter(Boolean).join(' · ');
+}
 
 /**
  * When a project's read began failing, as Waiting, a project's page and the Pipeline view say it (AC91 (c), from G8d; the
@@ -884,13 +962,25 @@ export function recordDone(project, model, snap, j, nowMs) {
   return out;
 }
 
+/** AC52's and AC80's order: the earliest raised first, one with no raised time last, then by id in code-unit order. */
+function raisedOrder(a, b) {
+  if (a.raisedAt == null && b.raisedAt == null) return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  if (a.raisedAt == null) return 1;
+  if (b.raisedAt == null) return -1;
+  return a.raisedAt - b.raisedAt || (a.id < b.id ? -1 : 1);
+}
+
 /**
  * The whole board (AC80): input: { projects: [{ project, cards, agents, read: { ok, cantRead,
  * since, words, opening (from G8d: no read of it has succeeded in this opening), cantShow (from G8d's round 2: the desk can
  * read it but can't draw it) }, recording: [], asking: [], answerRecording: [], recordRows: [], seenRows: [] }] in J7's
  * order, marks, only (a project's name, or null), nowMs, tz }. Returns { lanes: [{ key, title,
- * count, groups: [{ project, rows, more }] }], strip (AC91 (f): the kicked-back cards, newest first, each with its
- * `stripProject`), counts: Map(project → { waiting, kicked }), badge,
+ * count, groups: [{ project, rows, more }] }] (from QW1 "Waiting on you" and "Kicked back" hold no question), strip (AC91
+ * (f): the kicked-back cards, newest first, each with its `stripProject`), questions (AC94, from QW1: the "Questions for you"
+ * section, { groups: [{ project, label, rows (its counted questions, each with its `lane`, 'wait' or 'kick'), held (its held
+ * questions, heldCard's), count }], order (every question as drawn), count, held }), counts: Map(project → { waiting,
+ * kicked }, the section's questions among them), waits (AC94: "Waiting on you"'s and "Kicked back"'s groups as they were
+ * before the questions left them, [{ key, groups }], for Home, a project's page and Plan, which QW1 does not change), badge,
  * quiet, only, of, nothingWaiting, cantRead, cantShow (the names of the projects the desk can read but can't draw, whose
  * reads do not fail), cantLines (the can't-read entries and, from G8d's round 2, the can't-show ones, `show` true, in the
  * board's order: Waiting's red quiet lines), done, pending }. A project that can't be read is never in `cantShow`, and one
@@ -915,6 +1005,9 @@ export function boardView(input) {
   const { marks, nowMs, tz } = input;
   const only = input.only || null;
   const lanes = { wait: [], kick: [], done: [] };
+  // AC94 (QW1): what "Waiting on you" and "Kicked back" held before the questions left them, each project's cards in their
+  // order as before, for every count and list that is not changed (Home's briefing, a project's waits row, Plan's gate rows).
+  const waits = { wait: [], kick: [] };
   const counts = new Map();
   const counted = new Map(); // project → Set(the model's keys of the cards counted: "Waiting on you" and "Kicked back")
   const quiet = { agents: [], recording: [], asking: [], answerRecording: [] };
@@ -922,6 +1015,7 @@ export function boardView(input) {
   const cantRead = [];
   const cantShow = [];
   const cantLines = [];
+  const section = []; // AC94: the "Questions for you" section's groups, in J7's order
   const reading = [];
   let pendingAny = false;
   for (const p of input.projects) {
@@ -969,29 +1063,39 @@ export function boardView(input) {
     }
     // Waiting on you: AC52's order (the earliest raised first, one with no raised time last); Kicked
     // back and Done: the newest first.
-    waitRows.sort((a, b) => {
-      if (a.raisedAt == null && b.raisedAt == null) return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-      if (a.raisedAt == null) return 1;
-      if (b.raisedAt == null) return -1;
-      return a.raisedAt - b.raisedAt || (a.id < b.id ? -1 : 1);
-    });
+    waitRows.sort(raisedOrder);
     kickRows.sort((a, b) => b.kicked.at - a.kicked.at);
     doneRows.sort((a, b) => (b.pending === a.pending ? b.at - a.at : b.pending ? 1 : -1));
+    // Counted as before (AC94: a question in the section "is counted exactly as before"), so the badge is the section's,
+    // the strip's and the lane's sum.
     counts.set(name, { waiting: waitRows.length, kicked: kickRows.length, pending: doneRows.filter((r) => r.pending).length });
     counted.set(name, new Set([...waitRows, ...kickRows].map((c) => c.key)));
+    // AC94 (stage QW1; C, (a) and (b)): every owner question that would be a card in "Waiting on you" or the Kicked back
+    // strip is in the "Questions for you" section instead, a kicked-back one with its kick and reason; in QW1 they go in
+    // AC80's lane order (the earliest raised first; the plan review's N4) until QW2. A question held as being asked in a
+    // session (AC77) is no card, and shows there too (the owner's answer 3), at the head of its group until QW3 (AC95).
+    const isQ = (c) => c.kind === 'question';
+    const sectionRows = [...waitRows.filter(isQ).map((c) => ({ ...c, lane: 'wait' })), ...kickRows.filter(isQ).map((c) => ({ ...c, lane: 'kick' }))].sort(raisedOrder);
+    const heldRows = (p.asking || []).map((a) => heldCard(p.project, a, tz, nowMs));
+    const laneRows = waitRows.filter((c) => !isQ(c));
+    const stripRows = kickRows.filter((c) => !isQ(c));
     // AC87 (stage 6b): the portfolio's group, "Portfolio", after the projects', on the whole board only; it
     // is never a project, so it is in no project's quiet lines ("Nothing waiting", "Can't read <project>").
     const portfolio = p.project.portfolio === true;
     const label = p.project.label || name;
     if (portfolio ? !only : !only || only === name) {
-      if (waitRows.length) lanes.wait.push({ project: name, label, portfolio, rows: waitRows });
-      if (kickRows.length) lanes.kick.push({ project: name, label, portfolio, rows: kickRows });
+      if (waitRows.length) waits.wait.push({ project: name, label, portfolio, rows: waitRows });
+      if (kickRows.length) waits.kick.push({ project: name, label, portfolio, rows: kickRows });
+      if (sectionRows.length || heldRows.length) section.push({ project: name, label, portfolio, rows: sectionRows, held: heldRows, count: sectionRows.length });
+      if (laneRows.length) lanes.wait.push({ project: name, label, portfolio, rows: laneRows });
+      if (stripRows.length) lanes.kick.push({ project: name, label, portfolio, rows: stripRows });
       if (doneRows.length) lanes.done.push({ project: name, label, portfolio, rows: doneRows.slice(0, DONE_GROUP_ROWS), more: doneRows.length - DONE_GROUP_ROWS, all: doneRows });
     }
     if (!portfolio && (!only || only === name)) {
       quiet.agents.push(...p.agents);
       quiet.recording.push(...(p.recording || []));
-      quiet.asking.push(...(p.asking || []));
+      // AC77, changed by AC94 and AC95 (QW1): a held question shows in the section and leaves the quiet line "Being asked
+      // in your session", which then lists none.
       quiet.answerRecording.push(...(p.answerRecording || []));
       if (p.read && p.read.cantRead) {
         const c = { project: name, since: p.read.since, words: p.read.words, opening: Boolean(p.read.opening) };
@@ -1005,7 +1109,8 @@ export function boardView(input) {
         // From G9c (AC91 (c)): a first read still on its way (AC89 (a)'s state 1), named in a grey line until it answers, with
         // every project shown only (P-001-glance-g9c-alone.md, A).
         if (p.read && p.read.onWay && !only) reading.push(name);
-        if (p.read && p.read.ok && !waitRows.length && !kickRows.length && !doneRows.length) nothingWaiting.push(name);
+        // AC94: "Nothing waiting: <project>" only with nothing in the section (a held question among it), the strip or the lanes.
+        if (p.read && p.read.ok && !waitRows.length && !kickRows.length && !doneRows.length && !heldRows.length) nothingWaiting.push(name);
       }
     }
   }
@@ -1016,11 +1121,15 @@ export function boardView(input) {
   // strip has no project groups); with one project shown, only that project's. A tie keeps J7's order.
   const strip = lanes.kick.flatMap((g) => g.rows.map((c) => ({ ...c, stripProject: g.label })))
     .sort((a, b) => b.kicked.at - a.kicked.at);
+  // AC94: the section's order, the order it draws its questions in (each group's held question first until QW3, then its
+  // counted questions), and its head's counts: q the counted questions, h the held ones.
+  const order = section.flatMap((g) => [...g.held, ...g.rows]);
+  const questions = { groups: section, order, count: section.reduce((n, g) => n + g.rows.length, 0), held: section.reduce((n, g) => n + g.held.length, 0) };
   const { signedOutLine, readLines } = only ? { signedOutLine: null, readLines: [] }
     : quietReadLines({ cantLines, reading, portfolio: input.portfolio || null, signedOut: Boolean(input.signedOut), tz });
   return {
     lanes: LANES.map((l) => ({ ...l, count: lane(l.key), groups: lanes[l.key] })),
-    strip,
+    strip, questions, waits: [{ key: 'wait', groups: waits.wait }, { key: 'kick', groups: waits.kick }],
     counts, counted, badge, quiet, only, of: input.projects.filter((p) => p.project.portfolio !== true).length, nothingWaiting, cantRead, cantShow, cantLines, pendingAny,
     reading, signedOutLine, readLines,
   };

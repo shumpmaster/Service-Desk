@@ -27,7 +27,10 @@
 // the line under Home's and Waiting's titles, its words, colour, size and weight and whether an icon is drawn in it, the
 // list's red line under it on Home, and Waiting's lanes' empty words and the strip's line; and, on G9c's (AC91 (c)), Waiting's
 // quiet lines top to bottom, each one's words, colour, size, whether an icon is drawn in it, the lines it takes and whether it
-// is cut, and a project's page's "Nothing waiting on you" row's small line.
+// is cut, and a project's page's "Nothing waiting on you" row's small line; and, from QW1 of "After the
+// questions request" (AC94), the "Questions for you" section's head or line, its grey lines with their colour, each
+// question's title lines and whether it is cut, whether a choice's box or button runs past its card, the answer buttons'
+// heights, and Waiting's lanes' empty words and the strip's line.
 // G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
 // the screen as it opens (the viewport), not the whole page.
@@ -44,6 +47,7 @@ import { waSetup, WORKED } from '../wa-fixtures.mjs';
 import { withPortfolio, addPortfolio, pfFiles } from '../pf-fixtures.mjs';
 import { BAD_PR } from '../fake-desk.mjs';
 import { pullsAnswer } from '../j12-fixture.mjs';
+import { busiestState, kindsState, qid, QPATH, EXT_LONG as QW1_EXT } from '../qw1-fixtures.mjs';
 
 const PUBLIC = resolve(fileURLToPath(new URL('../../../src/public/', import.meta.url)));
 const OUT = resolve(process.argv[2] || 'glance-shots');
@@ -299,6 +303,25 @@ const SHOTS = [
   // made up).
   { name: 'g9c-waiting-recording', state: recordingState, now: RECORDING_NOW, looked: RECORDING_NOW - 24 * H, hash: '#/waiting', polls: 3 },
   { name: 'g9c-waiting-agents', state: () => agentsState({ held: [SD.name, POOM.name] }), now: NOW, looked: LATE, hash: '#/waiting' },
+  // QW1 of "After the questions request" (AC94; the approved picture's frames, docs/design/builds/m3g-picture/): the busiest
+  // case (`busiestState`: md-extremes/ with five made-up questions of four to six choices, a sixth held as being asked in a
+  // session, Beta's kicked back on this device, Delta read and then failing; NOT real), as it opens and with the fourth and
+  // fifth questions' "Show choices ›" opened and a question's "Add your own words" open by itself over words the device keeps
+  // (made up; the owner's reload answer, P-001-m3g-reload-fold.md, A);
+  // one project shown, Beta (its held and kicked-back questions) and Delta (v2.5); nothing waiting (`quiet`), "Questions for
+  // you · none" above "Kicked back · none"; and every kind of question (`kindsState`, NOT real) with its choices opened.
+  { name: 'qw1-busiest', state: busiestState, now: NOW, looked: LATE, later: true, hash: '#/waiting', seed: busiestState().seed },
+  { name: 'qw1-busiest-folds', state: busiestState, now: NOW, looked: LATE, later: true, hash: '#/waiting',
+    seed: { ...busiestState().seed, 'desk-sheet-words-v1': JSON.stringify({ v: 1, words: { [`${qid('Alpha', QPATH.Alpha)}#1`]: { text: 'Keep it short; I look every evening.', at: NOW - 60e3 } } }) },
+    click: [`[data-k="fold:qchoices:${qid('Gamma', QPATH.Gamma)}"]`, `[data-k="fold:qchoices:${qid('Delta', QPATH.Delta)}"]`] },
+  { name: 'qw1-one-beta', state: busiestState, now: NOW, looked: LATE, hash: '#/waiting/Beta', seed: busiestState().seed },
+  { name: 'qw1-one-delta', state: busiestState, now: NOW, looked: LATE, hash: '#/waiting/Delta', seed: busiestState().seed },
+  { name: 'qw1-empty', state: quietState, now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'qw1-kinds', state: () => kindsState(), now: NOW, looked: LATE, hash: '#/waiting', clickAll: '.v2-qsec button.v2-fold[aria-expanded="false"][data-k^="fold:qchoices"]' },
+  // QW1's round 2 (the Design reviewer's N2): Epsilon's question (md-extremes/' long unbroken title, its six long made-up choices,
+  // NOT real), fifth in the busiest case, its "Show choices ›" opened, so its long choices are drawn at 360 and 414 px.
+  { name: 'qw1-epsilon-choices', state: busiestState, now: NOW, looked: LATE, hash: '#/waiting', seed: busiestState().seed,
+    click: [`[data-k="fold:qchoices:${qid(QW1_EXT, QPATH[QW1_EXT])}"]`] },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {
@@ -597,9 +620,27 @@ async function main() {
           }) : null;
           if (rows && rows.fails.length) rowFails.push(`${shot.name}-${w}x${hgt}-${theme}: ${rows.fails.join('; ')}`);
           if (/^g9c-/.test(shot.name) && scroll > 0) rowFails.push(`${shot.name}-${w}x${hgt}-${theme}: scrolls sideways by ${scroll} px`);
+          // QW1 (AC94): the section's head and lines, each question's title lines (cut at three or not), the widest choice box
+          // against the card, and Waiting's lane and strip words.
+          const qw1 = await page.evaluate(() => {
+            const sec = document.querySelector('.v2-qsec');
+            if (!sec) return 'no section';
+            const head = sec.querySelector(':scope > .v2-kh, :scope > .v2-kq');
+            const grey = [...sec.querySelectorAll(':scope > p.v2-small')].map((e) => `"${e.textContent}" ${getComputedStyle(e).color}`);
+            const cards = [...sec.querySelectorAll('.v2-qcard')].map((c) => {
+              const tt = c.querySelector('.v2-tt');
+              const lh = parseFloat(getComputedStyle(tt).lineHeight) || 1;
+              const over = [...c.querySelectorAll('.v2-opt, .v2-abtn')].some((x) => x.getBoundingClientRect().right > c.getBoundingClientRect().right + 0.5);
+              return `${Math.round(tt.getBoundingClientRect().height / lh)} line(s)${tt.scrollHeight > tt.clientHeight + 1 ? ' cut' : ''}${over ? ', a box past the card' : ''}`;
+            });
+            const btn = [...sec.querySelectorAll('.v2-abtn')].map((e) => Math.round(e.getBoundingClientRect().height));
+            const lanes = [...document.querySelectorAll('.v2-empty, .v2-kq')].map((e) => e.textContent);
+            return `head "${head ? head.textContent : ''}"; ${grey.length ? `grey: ${grey.join(', ')}; ` : ''}questions: ${cards.join(' | ') || 'none'}`
+              + `${btn.length ? `; buttons ${Math.min(...btn)}–${Math.max(...btn)} px tall` : ''}; lanes: ${lanes.join(' | ')}`;
+          });
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}${/^g8d-/.test(shot.name) ? `  (${g8d})` : ''}${/^g9-/.test(shot.name) ? `  (${g9})` : ''}${/^g9b-/.test(shot.name) ? `  (${g9b})` : ''}${/^g9c-/.test(shot.name) ? `  (${g9c})` : ''}${rows ? `  (rows: ${rows.fails.length ? `FAIL ${rows.fails.join('; ')}` : `ok; ${rows.said}`})` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}${/^g8d-/.test(shot.name) ? `  (${g8d})` : ''}${/^g9-/.test(shot.name) ? `  (${g9})` : ''}${/^g9b-/.test(shot.name) ? `  (${g9b})` : ''}${/^g9c-/.test(shot.name) ? `  (${g9c})` : ''}${/^qw1-/.test(shot.name) ? `  (${qw1})` : ''}${rows ? `  (rows: ${rows.fails.length ? `FAIL ${rows.fails.join('; ')}` : `ok; ${rows.said}`})` : ''}`);
           await ctx.close();
         }
       }

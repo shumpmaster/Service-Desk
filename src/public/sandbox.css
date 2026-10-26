@@ -615,6 +615,17 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
 .v2-kslot { flex: 0 0 200px; min-width: 0; display: grid; scroll-snap-align: start; }
 /* While one of its cards is carried into Done, the row is clipped sideways only, so the card shows below it. */
 .v2-krow.carrying { overflow-x: clip; overflow-y: visible; }
+/* AC94 (stage QW1 of "After the questions request"; reading (o): as the approved picture draws it, docs/design/builds/
+   m3g-picture/): the "Questions for you" section at Waiting's full width, its head and its empty line the Kicked back
+   strip's (`.v2-kh`, `.v2-kq`), its groups a lane's (`.v2-grp`, `.v2-list`), each question a board card (`.v2-card`) with
+   its title in --t-row, cut at three of its own lines (AC89 (j)), and its choices the sheet's boxes (`.v2-opt`, `.v2-abtn`).
+   Everything under its lock or clock line (its choices, its folds, the words box, "More about it ›" and "Done ✓") is drawn
+   above the card's full-card link (`.v2-t::after`), as `.v2-step` is, so a tap on one never opens the sheet instead. No
+   soft box, no new colour, size or weight. */
+.v2-qsec { display: grid; gap: 6px; min-width: 0; }
+.v2-qcard .v2-t { font: var(--t-row); max-height: calc(3 * 1.35em); }
+.v2-qcard .v2-tt { max-height: calc(3 * 1.35em); }
+.v2-qbody { position: relative; z-index: 1; display: grid; gap: 8px; min-width: 0; }
 /* AC91 (g) (P-001-glance-new.md, A): "new" beside a card's kind label, in ink, with no colour and no box; drawn as
    nothing on a card that isn't new, so the 15-second tick can show or hide it. */
 .v2-new { font: var(--t-label); color: var(--ink); flex: none; }

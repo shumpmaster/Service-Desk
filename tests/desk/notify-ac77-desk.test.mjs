@@ -21,6 +21,7 @@ import { loadSandbox, byClass, findAll as sbFindAll } from './sandbox-helpers.mj
 import { NOTIFY_FIX } from './notify-helpers.mjs';
 import { RECHECK_WORDS } from '../../src/lib/notifyview.js';
 import { HELD_WORDS, RECORDING_WORDS } from '../../src/lib/model.js';
+import { SECTION_WORDS } from '../../src/lib/board.js';
 
 const SID = 'session_012RJPVKAoLga2RkqLYRDcBY';
 const SESSION_PATH = `sessions/chief-of-staff/${SID}.jsonl`;
@@ -60,6 +61,11 @@ async function projectText(app) {
 const answerLinks = (app) => sbFindAll(app.view, (e) => e.tag === 'a' && /\/new\/main/.test(e.attrs.href || ''));
 const stateOf = (app) => app.els['screen-state'].textContent;
 const waitCards = (app) => byClass(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'lane:wait')[0], 'v2-card');
+// From QW1 (AC77, changed by AC94 and AC95; the owner's answer 3, "In the section"): a held question shows in the "Questions
+// for you" section, "Also asked in your session: answer in one place" under its title, its choices live, and no longer in the
+// quiet line "Being asked in your session" (whose words, HELD_WORDS, the model and AC77's re-read keep).
+const HELD_SHOWN = SECTION_WORDS.heldLine;
+const heldCards = (app) => sbFindAll(app.view, (e) => e.attrs && e.attrs['data-question'] === 'held');
 async function open(files, { now = RAISED_MS + 10 * MIN, pulls = [], name = 'P-001-next-work', extra = {}, store = null, win = {}, rs = null } = {}) {
   const app = await loadSandbox({ config: CONFIG, repos: rs || repos(files, pulls, extra), now, hash: board(), store, win });
   app.qname = name;
@@ -75,23 +81,27 @@ async function pick(app, name = app.qname) {
 /** A click whose preventDefault is recorded (the answer link holds GitHub back for AC77's re-read). */
 const clickOf = (el) => el.dispatch('click', { defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } });
 
-test('AC77 (the desk from stage 8): a question with the line is held: "Being asked in your session: answer there", its title and options to read, no answer link, not counted', async () => {
+// Rewritten in QW1 (AC77, changed by AC94 and AC95; the owner's answer 3, "In the section (Recommended)": "with its answer
+// buttons, unnumbered, marked "Also asked in your session: answer in one place""): the held question shows in the "Questions
+// for you" section, its options as live buttons, never counted; the quiet line "Being asked in your session" is gone.
+test('AC77 (the desk from stage 8), rewritten in QW1: a question with the line is held — in the "Questions for you" section, "Also asked in your session: answer in one place", its title and its options as live answer buttons, with no "Done ✓", not counted', async () => {
   const app = await open({ [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, { now: RAISED_MS + 54 * MIN });
   try {
     const v = await projectText(app);
-    assert.ok(v.includes(HELD_WORDS));
-    assert.equal(HELD_WORDS, 'Being asked in your session: answer there');
+    assert.ok(v.includes(HELD_SHOWN));
+    assert.equal(HELD_WORDS, 'Being asked in your session: answer there', 'the model\'s words, kept for AC77\'s re-read');
     assert.ok(v.includes('Which piece of later work comes next?'));
-    // Its options, to read: the question file drawn whole in the held line's fold ("The question and its options, to read").
-    const fold = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'fold:asking')[0];
-    const article = sbFindAll(fold, (e) => e.tag === 'article')[0];
-    assert.ok(article && String(article._html || '').includes('Plan M3A around milestones'), 'its options, to read');
-    assert.equal(sbFindAll(app.view, (e) => e.tag === 'textarea' || e.tag === 'input').length, 0, 'no answer box');
-    assert.equal(answerLinks(app).length, 0, 'no answer link');
+    const [card] = heldCards(app);
+    assert.ok(card, 'in the section');
+    assert.ok(card.textContent.includes('Plan M3A around milestones, mockup first'), 'its options, as boxes');
+    assert.equal(sbFindAll(app.view, (e) => e.tag === 'textarea' || e.tag === 'input').length, 0, 'no answer box open ("Add your own words" folded)');
+    assert.equal(answerLinks(app).length, 5, 'its five choices\' answer links, live (answer 3)');
+    assert.equal(sbFindAll(card, (e) => e.textContent === 'Done ✓').length, 0, 'no "Done ✓"');
     assert.ok(!v.includes('Open the question on GitHub'), 'no "Open in GitHub" to answer');
     assert.equal(stateOf(app), 'Quiet', 'not counted: the 03:08:21Z end line, before the raised time, ends nothing');
     assert.equal(waitCards(app).length, 0, 'nothing waiting on you here');
-    assert.equal(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'ql:asking')[0].textContent, 'Being asked in your session: 1');
+    assert.equal(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'ql:asking').length, 0, 'no "Being asked in your session" line');
+    assert.equal(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'qhead')[0].textContent, 'Questions for you · 0 · 1 being asked in your session');
   } finally {
     app.restore();
   }
@@ -100,13 +110,13 @@ test('AC77 (the desk from stage 8): a question with the line is held: "Being ask
 test('AC77 (the desk): still held at 7 hours 59 minutes; ordinary at 8 hours, with its answer link and counted', async () => {
   let app = await open({ [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, { now: RAISED_MS + 8 * 60 * MIN - MIN });
   try {
-    assert.ok((await projectText(app)).includes(HELD_WORDS));
+    assert.ok((await projectText(app)).includes(HELD_SHOWN));
   } finally {
     app.restore();
   }
   app = await open({ [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, { now: RAISED_MS + 8 * 60 * MIN });
   try {
-    assert.ok(!(await projectText(app)).includes(HELD_WORDS));
+    assert.ok(!(await projectText(app)).includes(HELD_SHOWN));
     assert.equal(stateOf(app), '1 waiting on you');
     assert.ok(await pick(app), 'the answer link');
   } finally {
@@ -117,7 +127,7 @@ test('AC77 (the desk): still held at 7 hours 59 minutes; ordinary at 8 hours, wi
 test('AC77 (the desk): the real question unchanged (no line) is an ordinary waiting question, with its answer link', async () => {
   const app = await open({ [QPATH]: REAL_Q, [SESSION_PATH]: REAL_SESSION });
   try {
-    assert.ok(!(await projectText(app)).includes(HELD_WORDS));
+    assert.ok(!(await projectText(app)).includes(HELD_SHOWN));
     assert.equal(stateOf(app), '1 waiting on you');
     assert.ok(await pick(app));
   } finally {
@@ -138,7 +148,7 @@ test('AC77 (the desk): end lines in the session file: one before the raised time
   for (const [lines, held, label] of cases) {
     const app = await open({ 'questions/N-x.md': v3q('Asked in session: s-x'), [sp]: `${lines.join('\n')}\n` }, { name: 'N-x' });
     try {
-      assert.equal((await projectText(app)).includes(HELD_WORDS), held, label);
+      assert.equal((await projectText(app)).includes(HELD_SHOWN), held, label);
       assert.equal(stateOf(app), held ? 'Quiet' : '1 waiting on you', label);
     } finally {
       app.restore();
@@ -150,7 +160,7 @@ test('AC77 (the desk): a line in another form or place is ignored: the question 
   for (const q of [v3q('Asked in session:s-x'), v3q(' Asked in session: s-x'), '# Ruling needed: x\n\nMilestone: M1\n\nAsked in session: s-x\nOPTIONS:\n  A. a\n']) {
     const app = await open({ 'questions/N-x.md': q }, { name: 'N-x' });
     try {
-      assert.ok(!(await projectText(app)).includes(HELD_WORDS), q);
+      assert.ok(!(await projectText(app)).includes(HELD_SHOWN), q);
       assert.equal(stateOf(app), '1 waiting on you');
     } finally {
       app.restore();
@@ -194,7 +204,7 @@ test('AC77 (the desk): within one opening, the answer\'s pull request merging le
     r['Service-Desk'].pulls = []; // closed unmerged: the question still open on the default branch
     await app.advance(60_000);
     const v = await projectText(app);
-    assert.ok(!v.includes(RECORDING_WORDS) && !v.includes(HELD_WORDS));
+    assert.ok(!v.includes(RECORDING_WORDS) && !v.includes(HELD_SHOWN));
     assert.equal(stateOf(app), '1 waiting on you');
     assert.ok(await pick(app), 'waiting, with its answer link');
     assert.deepEqual(app.server.calls.filter((c) => c.body.prs).map((c) => c.body.prs), [[91]], 'one read by number');
@@ -212,7 +222,7 @@ test('AC77 (the desk): within one opening, the answer\'s pull request merging le
     // Merged: answered. On the desk the held question was never a card (AC80), so "already answered" is: nothing waits on
     // you, neither line stands, the answer's pull request is in Done, and the question's own address offers no answer.
     const v = await projectText(app2);
-    assert.ok(!v.includes(RECORDING_WORDS) && !v.includes(HELD_WORDS), 'merged: answered');
+    assert.ok(!v.includes(RECORDING_WORDS) && !v.includes(HELD_SHOWN), 'merged: answered');
     assert.equal(waitCards(app2).length, 0);
     assert.equal(stateOf(app2), 'Quiet');
     const done = sbFindAll(app2.view, (e) => e.dataset && e.dataset.k === 'lane:done')[0];
@@ -253,7 +263,7 @@ test('AC77 (the desk): in a v2.5 project (poom/\'s placeholder form) the line ho
     await app.advance(1000);
     await app.advance(60_000);
     const v = await projectText(app);
-    assert.ok(v.includes(HELD_WORDS));
+    assert.ok(v.includes(HELD_SHOWN));
     assert.ok(v.includes(RECORDING_WORDS));
     assert.equal(stateOf(app), '1 waiting on you', 'only the pull request counts');
   } finally {
@@ -261,30 +271,32 @@ test('AC77 (the desk): in a v2.5 project (poom/\'s placeholder form) the line ho
   }
 });
 
-test('AC77 (the desk): "Answer it here instead" ends the hold on this device only', async () => {
+// Rewritten in QW1 (AC77, changed by AC94 and AC95: "a tap ending the hold on that device as "Answer it here instead"
+// does"): the held question's choice, in the section, ends the hold on this device, where "Answer it here instead" did.
+test('AC77 (the desk), rewritten in QW1: a tap on a held question\'s choice in the section ends the hold on this device only, as "Answer it here instead" did', async () => {
   const backing = new Map();
   const local = { getItem: (k) => (backing.has(k) ? backing.get(k) : null), setItem: (k, v) => backing.set(k, v), removeItem: (k) => backing.delete(k) };
   const files = { [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION };
   let app = await open(files, { store: local });
   try {
     await projectText(app);
-    const btn = sbFindAll(app.view, (e) => e.tag === 'button' && e.textContent === 'Answer it here instead')[0];
-    btn.click();
+    const choice = byClass(heldCards(app)[0], 'v2-abtn').find((a) => a.tag === 'a' && /^Answer A/.test(a.textContent));
+    clickOf(choice);
     await app.flush();
-    assert.ok(!(await projectText(app)).includes(HELD_WORDS));
+    assert.ok(!(await projectText(app)).includes(HELD_SHOWN));
     assert.ok(await pick(app), 'the answer link');
   } finally {
     app.restore();
   }
   app = await open(files, { store: local });
   try {
-    assert.ok(!(await projectText(app)).includes(HELD_WORDS), 'kept on this device');
+    assert.ok(!(await projectText(app)).includes(HELD_SHOWN), 'kept on this device');
   } finally {
     app.restore();
   }
   app = await open(files);
   try {
-    assert.ok((await projectText(app)).includes(HELD_WORDS), 'another device still holds it');
+    assert.ok((await projectText(app)).includes(HELD_SHOWN), 'another device still holds it');
   } finally {
     app.restore();
   }
@@ -330,16 +342,23 @@ test('AC77 (the desk): the re-read at 31 seconds gives each of its four outcomes
       assert.equal(e.defaultPrevented, true, `${kind}: held back for the re-read`);
       await app.flush();
       assert.equal(app.server.calls.filter((c) => c.path === '/api/poll').length, polls + 1, `${kind}: one poll call`);
-      const said = byClass(app.view, 'v2-recheck')[0];
+      // Rewritten after QW1's settled notes (AC94, "Settled from QW1's build", 2): the words are read in the sheet, the link's
+      // own place; the "Questions for you" section, under its "none" line once the question has left it, says them too, after
+      // the question's title.
+      const said = byClass(byClass(app.view, 'v2-sheet')[0], 'v2-recheck')[0];
       const text = said ? said.textContent : '';
+      const inSection = byClass(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'qsec')[0], 'v2-recheck').map((x) => x.textContent);
       if (kind === 'open') {
         assert.deepEqual(opened2, [link.attrs.href], 'still open: GitHub opens');
+        assert.deepEqual(inSection, []);
       } else if (kind === 'answered') {
         assert.equal(text, 'Already answered: Ruling: B — made up');
+        assert.deepEqual(inSection, ['A made-up question: Already answered: Ruling: B — made up'], 'the section says it under its "none" line');
         assert.deepEqual(opened2, []);
       } else if (kind === 'recording') {
         assert.ok(text.includes(RECHECK_WORDS.recording));
         assert.ok(text.includes('PR #97'));
+        assert.ok(inSection.length === 1 && inSection[0].startsWith('A made-up question: ') && inSection[0].includes('PR #97'), 'and the section, with its link');
         assert.deepEqual(opened2, []);
       } else {
         assert.ok(text.includes("The desk couldn't check just now"));
@@ -364,7 +383,7 @@ test('AC77 (draft 6; the desk): at a new opening, an answer\'s own-branch pull r
     { extra: { repo: { closedPulls: [closedPr(98, { closed: '2026-10-18T11:35:00Z' })], prFiles: { 98: ADDS_ANSWER } } } });
   try {
     await app.advance(60_000);
-    assert.ok(!(await projectText(app)).includes(HELD_WORDS));
+    assert.ok(!(await projectText(app)).includes(HELD_SHOWN));
     assert.equal(stateOf(app), '1 waiting on you');
     const closedCalls = app.server.calls.filter((c) => c.path === '/api/blobs' && c.body.closed);
     assert.equal(closedCalls.length, 1, 'the closed read, once');
@@ -383,7 +402,7 @@ test('AC77 (draft 6; the desk): closed before the raised time, merged, from a fo
   let app = await open({ [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, { extra: { repo: { closedPulls: closed, prFiles: files } } });
   try {
     await app.advance(60_000);
-    assert.ok((await projectText(app)).includes(HELD_WORDS));
+    assert.ok((await projectText(app)).includes(HELD_SHOWN));
     assert.ok(!app.server.calls.some((c) => c.path === '/api/blobs' && (c.body.files || []).some((n) => n >= 80 && n <= 83)), 'their files are not read');
   } finally {
     app.restore();
@@ -391,7 +410,7 @@ test('AC77 (draft 6; the desk): closed before the raised time, merged, from a fo
   app = await open({ [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, { extra: { repo: { closedFail: true, closedPulls: [closedPr(98)], prFiles: { 98: ADDS_ANSWER } } } });
   try {
     await app.advance(3 * 60_000);
-    assert.ok((await projectText(app)).includes(HELD_WORDS), 'the hold stands');
+    assert.ok((await projectText(app)).includes(HELD_SHOWN), 'the hold stands');
     assert.equal(stateOf(app), 'Quiet', '"read successfully" and the counts untouched');
     // Draft 8 (note B): tried again at each next poll, once a poll.
     assert.equal(app.server.calls.filter((c) => c.path === '/api/blobs' && c.body.closed).length, 4, 'the first cycle and each of the three polls after');
@@ -410,29 +429,31 @@ test('AC77 (draft 6; the desk): closed before the raised time, merged, from a fo
 // ---------------------------------------------------------------------------
 // The desk's board and sheets (AC80, AC85): AC77's lines and the re-read
 
-test('AC77 + AC80 on the desk: the held question is no card and in no count, in the board\'s "Being asked in your session" line with no answer box; "Answer it here instead" brings it back as a card', async () => {
+// Rewritten in QW1 (AC77, changed by AC94 and AC95; AC80's note "after the questions request"): the held question is in the
+// "Questions for you" section, never a card in the lane and counted nowhere, its choices live; a tap on one ends the hold
+// on this device and it is a counted question in the section, the badge counting it.
+test('AC77 + AC80 on the desk, rewritten in QW1: the held question is no card and in no count, in the "Questions for you" section with its choices live and no answer box open; a tap on a choice brings it back as a counted question', async () => {
   const config = { ...CONFIG };
   const app = await loadSandbox({ config, repos: repos({ [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }), hash: '#/waiting/Service-Desk', now: RAISED_MS + 10 * MIN });
   const lane = () => sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'lane:wait')[0];
   try {
     await app.advance(1000);
     await app.advance(60_000);
-    const ql = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'ql:asking')[0];
-    assert.ok(ql, 'Being asked in your session');
-    assert.equal(ql.textContent, 'Being asked in your session: 1');
-    await app.tap(ql);
-    const fold = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'fold:asking')[0];
-    assert.ok(fold.textContent.includes(HELD_WORDS));
-    assert.ok(fold.textContent.includes('Which piece of later work comes next?'));
-    assert.ok(!sbFindAll(app.view, (e) => e.tag === 'textarea').length, 'no answer box');
-    assert.ok(!sbFindAll(fold, (e) => e.tag === 'a' && /\/new\//.test(e.attrs.href || '')).length, 'no answer link');
+    assert.equal(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'ql:asking').length, 0, 'no "Being asked in your session" line');
+    const [card] = heldCards(app);
+    assert.ok(card, 'in the section');
+    assert.ok(card.textContent.includes(HELD_SHOWN));
+    assert.ok(card.textContent.includes('Which piece of later work comes next?'));
+    assert.ok(!sbFindAll(app.view, (e) => e.tag === 'textarea').length, 'no answer box open');
+    const links = sbFindAll(card, (e) => e.tag === 'a' && /\/new\//.test(e.attrs.href || ''));
+    assert.equal(links.length, 5, 'its choices live');
     assert.equal(byClass(lane(), 'v2-card').length, 0, 'not a card');
     assert.equal(byClass(app.view, 'v2-badge').length, 0, 'not counted');
-    const btn = sbFindAll(app.view, (e) => e.tag === 'button' && e.textContent === 'Answer it here instead')[0];
-    btn.click();
+    clickOf(links[0]);
     await app.flush();
-    assert.equal(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'ql:asking').length, 0);
-    assert.ok(byClass(lane(), 'v2-card').some((c) => c.textContent.includes('Which piece of later work comes next?')), 'a card again');
+    assert.equal(heldCards(app).length, 0, 'the hold ended on this device');
+    assert.equal(sbFindAll(app.view, (e) => e.attrs && e.attrs['data-question'] === 'counted').filter((c) => c.textContent.includes('Which piece of later work comes next?')).length, 1, 'a counted question in the section');
+    assert.equal(byClass(lane(), 'v2-card').length, 0, 'still no lane card');
     assert.equal(byClass(app.view, 'v2-badge')[0].children[0].textContent, '1');
   } finally {
     app.restore();
@@ -515,9 +536,11 @@ test('AC77 (draft 9; the desk): the re-read with a pull request\'s files failing
 // Rewritten for AC89 (a) (specs/S-001.md:7823-7852, the table's state 5; AC80, changed, :6503-6506): once the reads fail
 // after a success, the two counts' small line gives way to "Can't read <project> since HH:MM" above the lanes; the held
 // question's and the recorded answer's lines still stay, as round 3's finding 1 has them.
-test('AC77 + AC80 (stage 1a\'s build review, round 3, finding 1), rewritten for AC89 (a): filtered to the project, the "Being asked in your session" and "Your answer is being recorded" lines stay when its reads then fail; the two counts give way to "Can\'t read <project> since HH:MM" above the lanes; the held question\'s fold keeps "Answer it here instead"', async () => {
+// Rewritten in QW1 (AC77, changed by AC94 and AC95): the held question is in the "Questions for you" section, not a quiet
+// line; it stays there when the project's reads then fail, its choices still live where "Answer it here instead" stayed.
+test('AC77 + AC80 (stage 1a\'s build review, round 3, finding 1), rewritten for AC89 (a) and in QW1: filtered to the project, the held question in the "Questions for you" section and the "Your answer is being recorded" line stay when its reads then fail; the two counts give way to "Can\'t read <project> since HH:MM" above the lanes; the held question keeps its live choices', async () => {
   const cases = [
-    ['ql:asking', 'Being asked in your session: 1', { [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, [], {}],
+    ['qcard:Service-Desk|question|questions/P-001-next-work.md', null, { [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION }, [], {}],
     ['ql:answerRecording', 'Your answer is being recorded: 1', { [QPATH]: ASKED_Q, [SESSION_PATH]: REAL_SESSION, '.github/workflows/asks-merge.yml': 'name: asks-merge\n' },
       [answerPr(90)], { repo: { prFiles: { 90: ADDS_ANSWER } } }],
   ];
@@ -529,7 +552,8 @@ test('AC77 + AC80 (stage 1a\'s build review, round 3, finding 1), rewritten for 
     try {
       await app.advance(1000);
       await app.advance(60_000);
-      assert.equal(line().textContent, words, `${key}: read`);
+      if (words) assert.equal(line().textContent, words, `${key}: read`);
+      else assert.ok(line().textContent.includes(HELD_SHOWN), `${key}: read`);
       assert.equal(small(), 'With the agents: 0 · Being recorded by the automatic job: 0');
       rs['Service-Desk'].fail = { kind: 'network' };
       await app.advance(60_000);
@@ -537,12 +561,11 @@ test('AC77 + AC80 (stage 1a\'s build review, round 3, finding 1), rewritten for 
       assert.equal(small(), null, `${key}: no counts while it can't be read`);
       assert.match(byClass(app.view, 'v2-board')[0].textContent, /Can't read Service-Desk since \d\d:\d\d: network error/, `${key}: said above the lanes`);
       assert.ok(line(), `${key}: the line stays while the project can't be read`);
-      assert.equal(line().textContent, words);
-      if (key === 'ql:asking') {
-        await app.tap(line());
-        const fold = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'fold:asking')[0];
-        assert.ok(fold && fold.textContent.includes(HELD_WORDS));
-        assert.ok(sbFindAll(fold, (e) => e.tag === 'button' && e.textContent === 'Answer it here instead').length, '"Answer it here instead" stays');
+      if (words) assert.equal(line().textContent, words);
+      if (!words) {
+        assert.ok(line().textContent.includes(HELD_SHOWN));
+        assert.equal(line().attrs['data-question'], 'held');
+        assert.equal(sbFindAll(line(), (e) => e.tag === 'a' && /\/new\//.test(e.attrs.href || '')).length, 5, 'its choices stay live');
       } else {
         await app.tap(line());
         assert.ok(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'fold:answerRecording')[0].textContent.includes(RECORDING_WORDS));

@@ -241,25 +241,31 @@ test('AC91 (f), amended: the empty strip\'s parts each in their role — " · " 
   }
 });
 
-test('AC91 (f): with kicked-back cards, the strip\'s head "Kicked back" (600 12 px ink) with its count (--t-mono) over a hairline, then its cards in one row, the newest first across both projects, each 200 px wide, naming its project after " · ", with its reason and its button; the row scrolls sideways inside the strip, snapping to a card', async () => {
+// Rewritten in QW1 (AC91 (f)'s note "after the questions request": "from stage QW1 a kicked-back question shows in the
+// "Questions for you" section with its reason, not in the strip"; AC94, reading (a)): of KICKED's three cards, Bravo's
+// question is in the section, "Kicked back · Question" with its reason; the strip holds Alpha's two, the newest first.
+test('AC91 (f), rewritten in QW1: with kicked-back cards, the strip\'s head "Kicked back" (600 12 px ink) with its count (--t-mono) over a hairline, then its cards in one row, the newest first across both projects, each 200 px wide, naming its project after " · ", with its reason and its button; the row scrolls sideways inside the strip, snapping to a card; a kicked-back question in the "Questions for you" section instead', async () => {
   const app = await open(twoMixState(), { store: kickedStore() });
   try {
     const s = strip(app);
     const head = byClass(s, 'v2-kh')[0];
     assert.equal(head.tag, 'h2');
-    assert.deepEqual(head.children.map((c) => c.textContent), ['Kicked back', '3']);
+    assert.deepEqual(head.children.map((c) => c.textContent), ['Kicked back', '2']);
     const row = byClass(s, 'v2-krow')[0];
     assert.equal(row.tag, 'ol');
-    assert.deepEqual(row.children.map((li) => li.className), ['v2-kslot', 'v2-kslot', 'v2-kslot'], 'one row of three places');
-    assert.deepEqual(stripCards(app).map((c) => c.attrs['data-card']), [CARD.pr(MIX_PROJECT), CARD.question(MIX_PROJECT2), CARD.gate(MIX_PROJECT)], 'the newest first, across both projects');
-    assert.deepEqual(stripCards(app).map(kindText), ['Kicked back · Alpha', 'Kicked back · Bravo', 'Kicked back · Alpha'], 'each names its project: the strip has no groups');
+    assert.deepEqual(row.children.map((li) => li.className), ['v2-kslot', 'v2-kslot'], 'one row of two places');
+    assert.deepEqual(stripCards(app).map((c) => c.attrs['data-card']), [CARD.pr(MIX_PROJECT), CARD.gate(MIX_PROJECT)], 'the newest first');
+    assert.deepEqual(stripCards(app).map(kindText), ['Kicked back · Alpha', 'Kicked back · Alpha'], 'each names its project: the strip has no groups');
     assert.equal(findAll(s, (e) => e.dataset && /^grp:/.test(e.dataset.k || '')).length, 0, 'no project groups in the strip');
-    const [pr, q, gate] = stripCards(app);
+    const [pr, gate] = stripCards(app);
+    const q = cardOf(app, CARD.question(MIX_PROJECT2));
+    assert.ok(findAll(keyed(app, 'qsec'), (e) => e === q).length, 'the kicked-back question in the section, not the strip');
+    assert.equal(kindText(q), 'Kicked back · Question');
     assert.equal(byClass(pr, 'v2-why')[0].textContent, 'The pull request is still open as it was', 'its reason');
     assert.equal(byClass(gate, 'v2-why')[0].textContent, 'GitHub shows no answer file yet');
     assert.ok(byClass(q, 'v2-why')[0].textContent.length > 0);
     assert.deepEqual(byClass(pr, 'v2-step').map((b) => b.textContent), ['Open ↗'], 'its button');
-    assert.deepEqual(byClass(q, 'v2-step').map((b) => b.textContent), ['Answer']);
+    assert.deepEqual(byClass(q, 'v2-step').map((b) => b.textContent), ['More about it ›', 'Done ✓']);
     assert.deepEqual(byClass(gate, 'v2-step').map((b) => b.textContent), ['Proceed', 'Hold', 'Recycle', 'Kill']);
     for (const theme of THEMES) {
       const L = looks(app, theme);
@@ -352,11 +358,20 @@ test('AC91 (f): the strip opens by itself when a card is kicked back and closes 
     undo();
     app.restore();
   }
-  // One project shown: only its cards in the strip, the strip above the lanes, under the chip.
-  const one = await open(twoMixState(), { store: kickedStore(), hash: `#/waiting/${MIX_PROJECT2}` });
+  // One project shown: only its cards in the strip, the strip above the lanes, under the chip. Rewritten in QW1 (AC91 (f)'s
+  // note: "from stage QW1 a kicked-back question shows in the "Questions for you" section … not in the strip"): Bravo's one
+  // kicked-back card is its question, now in the section, so its strip is "none"; Alpha's two are in Alpha's.
+  const bravo = await open(twoMixState(), { store: kickedStore(), hash: `#/waiting/${MIX_PROJECT2}` });
   try {
-    assert.deepEqual(stripCards(one).map((c) => c.attrs['data-card']), [CARD.question(MIX_PROJECT2)]);
-    assert.equal(byClass(strip(one), 'v2-kh')[0].textContent, 'Kicked back1');
+    assert.equal(strip(bravo).textContent, 'Kicked back · none');
+    assert.equal(kindText(findAll(keyed(bravo, 'qsec'), (e) => e.attrs && e.attrs['data-card'] === CARD.question(MIX_PROJECT2))[0]), 'Kicked back · Question', 'in the section');
+  } finally {
+    bravo.restore();
+  }
+  const one = await open(twoMixState(), { store: kickedStore(), hash: `#/waiting/${MIX_PROJECT}` });
+  try {
+    assert.deepEqual(stripCards(one).map((c) => c.attrs['data-card']), [CARD.pr(MIX_PROJECT), CARD.gate(MIX_PROJECT)]);
+    assert.equal(byClass(strip(one), 'v2-kh')[0].textContent, 'Kicked back2');
     const kids = byClass(one.view, 'v2-board')[0].children;
     const at = (cls) => kids.findIndex((c) => c.className.split(' ').includes(cls));
     assert.ok(at('v2-filter') < at('v2-kstrip') && at('v2-kstrip') === at('v2-lanes') - 1, 'under the chip, directly above the lanes');
@@ -365,11 +380,16 @@ test('AC91 (f): the strip opens by itself when a card is kicked back and closes 
   }
 });
 
-test('AC91 (f): the counts are unchanged — the badge and Home\'s briefing still count "Waiting on you" plus "Kicked back"', async () => {
+// Rewritten in QW1 (AC94: "It is counted exactly as before … the badge counts the section, the strip and the lane, as now,
+// so it is their sum"): the lane and the strip count what they hold, and each project's questions waiting and kicked back
+// are in the "Questions for you" section; added back, the counts are the same 8 waiting and 3 kicked back.
+test('AC91 (f), rewritten in QW1: the counts are unchanged — the badge and Home\'s briefing still count "Waiting on you" plus "Kicked back", the section\'s questions among them', async () => {
   const app = await open(twoMixState(), { store: kickedStore() });
   try {
-    const w = Number(byClass(lane(app, 'wait'), 'v2-lc')[0].textContent);
-    const k = Number(byClass(byClass(strip(app), 'v2-kh')[0], 'v2-lc')[0].textContent);
+    const inSection = (kind) => findAll(keyed(app, 'qsec'), (e) => e.attrs && e.attrs['data-question'] === kind).length;
+    const w = Number(byClass(lane(app, 'wait'), 'v2-lc')[0].textContent) + inSection('counted');
+    const k = Number(byClass(byClass(strip(app), 'v2-kh')[0], 'v2-lc')[0].textContent) + inSection('kicked');
+    assert.deepEqual([inSection('counted'), inSection('kicked')], [1, 1], 'Alpha\'s question waiting, Bravo\'s kicked back');
     assert.deepEqual([w, k], [8, 3]);
     assert.equal(badge(app), w + k, 'the badge');
     await app.go('#/');
@@ -428,7 +448,9 @@ test('AC92 (e)\'s rule for a filled ground: on Waiting, in each state and theme,
 // ---------------------------------------------------------------------------
 // (g) "new" on Waiting
 
-test('AC91 (g): "new" on a card in "Waiting on you" raised after "last looked", in --t-label --ink beside its kind label, part of the kind line\'s text, with no colour and no box; none before it, none without a raised time', async () => {
+// Rewritten in QW1 (AC94: "`isNewCard` … gives it in the section too"): the question is in the "Questions for you" section,
+// where it carries "new" by the same rule; raised before "last looked", none there either.
+test('AC91 (g), rewritten in QW1: "new" on a card in "Waiting on you" raised after "last looked", in --t-label --ink beside its kind label, part of the kind line\'s text, with no colour and no box; none before it, none without a raised time; the question, in the section, by the same rule', async () => {
   // `mix`'s made-up project: its pull request raised 8 days ago, its question 6 h 41 m, its gate card 4 h 31 m and its
   // decision card 3 h 21 m before the clock; its hold and merge cards have no raised time. "Last looked" 5 hours ago.
   const app = await open(mixState(), { store: looked(NOW - 5 * H) });
@@ -436,12 +458,14 @@ test('AC91 (g): "new" on a card in "Waiting on you" raised after "last looked", 
     const got = Object.fromEntries(waitCards(app).map((c) => [c.attrs['data-card'], [kindText(c), isShownNew(c)]]));
     assert.deepEqual(got, {
       [CARD.pr(MIX_PROJECT)]: ['Pull request', false],
-      [CARD.question(MIX_PROJECT)]: ['Question', false],
       [CARD.gate(MIX_PROJECT)]: ['Gate · Build new', true],
       [CARD.card(MIX_PROJECT)]: ['Decision new', true],
       [CARD.hold(MIX_PROJECT)]: ['Hold', false],
       [CARD.merge(MIX_PROJECT)]: ['Merge card', false],
     }, 'raised after "last looked": "new", part of the kind line\'s text; before it, or with no raised time, none');
+    const q = cardOf(app, CARD.question(MIX_PROJECT));
+    assert.ok(findAll(keyed(app, 'qsec'), (e) => e === q).length, 'the question in the section');
+    assert.deepEqual([kindText(q), isShownNew(q)], ['Question', false], 'raised before "last looked": none in the section');
     const fresh = newOf(cardOf(app, CARD.card(MIX_PROJECT)));
     assert.equal(fresh.parent, byClass(cardOf(app, CARD.card(MIX_PROJECT)), 'v2-kd')[0], 'in the kind line, beside the kind label');
     assert.equal(fresh.parent.children.indexOf(fresh), 2, 'after the icon and the label');
@@ -460,11 +484,17 @@ test('AC91 (g): "new" on a card in "Waiting on you" raised after "last looked", 
   }
 });
 
-test('AC91 (g): none in the Kicked back strip or in Done, even raised after "last looked"; none while the device holds no "last looked" (AC40\'s markers off); and gone after Home\'s "Mark as seen"', async () => {
+// Rewritten in QW1 (AC94; QW1's row: "`isNewCard`'s lane rule … and its cases, "new" now also in the section"): the lane
+// holds three new cards, its question being in the "Questions for you" section, where it is new too; the kicked-back
+// question there, as the strip's cards, is not; and `isNewCard` gives it for the section ('section').
+test('AC91 (g), rewritten in QW1: none in the Kicked back strip or in Done, even raised after "last looked"; none while the device holds no "last looked" (AC40\'s markers off); and gone after Home\'s "Mark as seen"; in the "Questions for you" section by the lane\'s rule, never on a kicked-back question', async () => {
   // "Last looked" 30 days back: every card with a raised time is raised after it.
   const app = await open(twoMixState(), { store: kickedStore(NOW - 30 * 24 * H) });
   try {
-    assert.ok(waitCards(app).filter(isShownNew).length >= 4, 'in "Waiting on you": new');
+    assert.ok(waitCards(app).filter(isShownNew).length >= 3, 'in "Waiting on you": new');
+    const inSection = (id) => findAll(keyed(app, 'qsec'), (e) => e.attrs && e.attrs['data-card'] === id)[0];
+    assert.equal(isShownNew(inSection(CARD.question(MIX_PROJECT))), true, 'in the section: new');
+    assert.equal(newOf(inSection(CARD.question(MIX_PROJECT2))), null, 'a kicked-back question in the section: none, as in the strip');
     for (const c of stripCards(app)) assert.equal(newOf(c), null, `${c.attrs['data-card']}: none in the strip`);
     for (const c of byClass(lane(app, 'done'), 'v2-card')) assert.equal(newOf(c), null, 'none in Done');
     assert.doesNotMatch(strip(app).textContent + lane(app, 'done').textContent, /\bnew\b/);
@@ -473,6 +503,7 @@ test('AC91 (g): none in the Kicked back strip or in Done, even raised after "las
     await app.tap(keyed(app, 'mark-seen'));
     await app.go('#/waiting');
     assert.deepEqual(waitCards(app).filter(isShownNew), [], 'gone after "Mark as seen"');
+    assert.equal(isShownNew(inSection(CARD.question(MIX_PROJECT))), false, 'in the section too');
   } finally {
     app.restore();
   }
@@ -486,6 +517,8 @@ test('AC91 (g): none in the Kicked back strip or in Done, even raised after "las
   const card = { raisedAt: NOW - H };
   assert.deepEqual([isNewCard(card, 'wait', NOW - 2 * H), isNewCard(card, 'wait', NOW - H), isNewCard(card, 'kick', NOW - 2 * H), isNewCard(card, 'done', NOW - 2 * H),
     isNewCard({ raisedAt: null }, 'wait', NOW - 2 * H), isNewCard(card, 'wait', null)], [true, false, false, false, false, false]);
+  assert.deepEqual([isNewCard(card, 'section', NOW - 2 * H), isNewCard(card, 'section', NOW - H), isNewCard({ raisedAt: null }, 'section', NOW - 2 * H), isNewCard(card, 'section', null)],
+    [true, false, false, false], 'QW1: in the section, by the same rule');
 });
 
 // The Reviewer's lesson from G1 (note 2): what shows a state that moves must follow it on the 15-second tick, not only
@@ -525,11 +558,13 @@ test('AC91 (g) with AC56\'s tick: "new" is worked out again from "last looked" o
 
 // The Design reviewer's N1 and N2 (G2, round 1): a card carried from the strip stays lifted, under the finger and out of
 // the strip's clip, from the moment it is lifted to the moment it lands, whatever redraws the board in between.
-test('AC91 (f) with AC80\'s drag: a card lifted from a scrolled strip is moved back by the row\'s scroll at once, before the finger moves (N2); a redraw mid-carry, by hand or at a poll, keeps the card lifted where the finger has it and its row `carrying` (N1); it still lands in Done', async () => {
+// Rewritten in QW1 (AC94: a kicked-back question is in the "Questions for you" section, "not dragged from the section"):
+// the card carried is the strip's other card, Alpha's gate card, in place of Bravo's question.
+test('AC91 (f) with AC80\'s drag, rewritten in QW1: a card lifted from a scrolled strip is moved back by the row\'s scroll at once, before the finger moves (N2); a redraw mid-carry, by hand or at a poll, keeps the card lifted where the finger has it and its row `carrying` (N1); it still lands in Done', async () => {
   const app = await open(twoMixState(), { store: kickedStore() });
   const undo = layout();
   try {
-    const id = CARD.question(MIX_PROJECT2);
+    const id = CARD.gate(MIX_PROJECT);
     const row = byClass(strip(app), 'v2-krow')[0];
     row.scrollLeft = 288; // the row scrolled to its end before the press
     const c = cardOf(app, id);
@@ -552,7 +587,7 @@ test('AC91 (f) with AC80\'s drag: a card lifted from a scrolled strip is moved b
     assert.deepEqual(Object.keys(c.style), ['transform'], 'its move, its only inline style (AC50 + AC41)');
     await app.docEvent('pointerup', { clientX: 300, clientY: 420 });
     assert.ok(!stripCards(app).some((x) => x.attrs['data-card'] === id), 'it lands: out of the strip');
-    assert.ok(byClass(lane(app, 'done'), 'v2-card conf').some((x) => x.textContent.includes("Bravo's question")), 'into Done');
+    assert.ok(byClass(lane(app, 'done'), 'v2-card conf').some((x) => x.textContent.includes('The Build gate · P-002')), 'into Done');
     assert.equal(row.className, 'v2-krow', 'its row scrolls again');
     // A redraw after the drag puts nothing back.
     app.module.refresh();

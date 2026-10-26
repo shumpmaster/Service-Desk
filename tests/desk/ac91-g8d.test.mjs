@@ -373,12 +373,16 @@ test('AC89 (a), G8d (C, after G8c\'s review): Waiting with the made-up project a
       const n = cardsIn(app, 'wait').length;
       assert.ok(n > 0, `${where}: its cards in the lanes`);
       assert.equal(laneCount(app, 'wait'), String(n), `${where}: the lane counts them`);
+      // Rewritten in QW1 (AC94: state 2 "may show questions"): the held tree's question is in the "Questions for you"
+      // section, not the lane, so Home's corner counts the lane's cards and the section's question.
+      const q = byClass(keyed(app, 'qsec'), 'v2-card').length;
+      assert.equal(q, 1, `${where}: its question in the section`);
       assert.equal(lane(app, 'kick').textContent, "Kicked back · can't read", `${where}: the strip in state 2's words`);
       assert.equal(byClass(app.view, 'v2-qsmall').length, 0, `${where}: no counts under the lanes, as state 2 has them`);
       assert.doesNotMatch(keyed(app, 'board').textContent, /checking…|Checking…/, `${where}: never "checking…"`);
       // Home's corner counts the same cards.
       await app.go('#/');
-      assert.equal(corner(app, MIX_PROJECT).textContent, `${n} wait on you`, `${where}: Home's corner`);
+      assert.equal(corner(app, MIX_PROJECT).textContent, `${n + q} wait on you`, `${where}: Home's corner`);
     } finally {
       app.restore();
     }
@@ -1045,7 +1049,10 @@ test('AC89 (a), G8d round 3: Waiting with the made-up project the desk can\'t dr
         assert.equal(byClass(app.view, 'v2-qsmall').length, 0, `${where}: no small line of counts`);
         assert.equal(emptyOf(app, 'done'), 'Hold a card and drag it here', `${where}: Done as built`);
         assertNoQuiet(app, where);
-        assert.doesNotMatch(keyed(app, 'board').textContent, /when last read.*when last read.*when last read/, `${where}: the words twice, lane and strip`);
+        // Rewritten in QW1 (AC94: "from G8d "can't show", "can't read or show" and "can't show when last read", in the
+        // section's quiet line as in the strip's"): the words three times, the section's line, the lane and the strip.
+        assert.equal(keyed(app, 'qsec').children[0].textContent, "Questions for you · can't show when last read", `${where}: the section's line`);
+        assert.doesNotMatch(keyed(app, 'board').textContent, /(when last read.*){4}/, `${where}: the words three times, the section, lane and strip`);
       } finally {
         app.restore();
       }

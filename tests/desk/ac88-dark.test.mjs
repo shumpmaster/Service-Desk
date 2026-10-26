@@ -35,6 +35,7 @@ import { pfFiles, cardText, withPortfolio, addPortfolio } from './pf-fixtures.mj
 import { BAD_PR } from './fake-desk.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS, G8D_OPENS, G9_OPENS, G9B_OPENS, G9C_OPENS } from './glance-fixtures.mjs';
+import { QW1_OPENS } from './qw1-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -401,6 +402,9 @@ function vermilionPlace(n) {
   if (n.tag === 'svg' && n.cls.has('v2-k') && n.parent && n.parent.cls.has('v2-kd') && !n.parent.cls.has('done')) {
     const lane = up((a) => a.tag === 'section' && a.cls.has('v2-lane'));
     if (lane && ['wait', 'kick'].includes(lane.attrs['data-lane'])) return `a card's kind icon in ${lane.attrs['aria-label']}`;
+    // QW1 (AC94: "its kind icon in vermilion as on every waiting card (AC81)"): a question's in the "Questions for you"
+    // section, a kicked-back one's kick icon among them (its "Kicked back" kind line, as the strip's card has it).
+    if (up((a) => a.tag === 'section' && a.cls.has('v2-qsec') && a.attrs['aria-label'] === 'Questions for you')) return 'a question\'s kind icon in Questions for you';
   }
   return null;
 }
@@ -525,7 +529,7 @@ test('AC88 + AC69 (after MD3, stage 8; (b) item 37, the plan review of draft 1, 
   assert.ok(counts.screens > 250, `${counts.screens} screens and sheets drawn`);
   assert.deepEqual(fails, []);
   // Each place on the list was drawn, so the check read vermilion where it is meant to be.
-  for (const want of ['the ◆', "Waiting's badge", 'a card\'s kind icon in Waiting on you', 'a card\'s kind icon in Kicked back']) assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
+  for (const want of ['the ◆', "Waiting's badge", 'a card\'s kind icon in Waiting on you', 'a card\'s kind icon in Kicked back', 'a question\'s kind icon in Questions for you']) assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
 });
 
 // G7 of "After the glance audit" (AC92 (a); AC88, changed: "the cascade check also checks where `--ok` and `--bad` are
@@ -683,6 +687,16 @@ function okBadCheck(app, where, fails, seen, places) {
         if (isOkBad(raw) || col !== THEME[way.theme]['--ink2'].toLowerCase()) fail(n, `the line under the title in ${col}: it stays --ink2`);
         else if (n.kids.some((c) => c.tag === 'svg')) fail(n, 'the line under the title with an icon: it has none');
         else places.add('grey: the line under the title');
+      }
+      // QW1 (AC94, "A project the desk can't read or can't show": "one grey line in `--ink2` with no icon", beside the red quiet
+      // line below the section, P-001-m3g-age-double, A): the section's line for a project not read or not shown (`p.v2-small`,
+      // the section's own child), in --ink2, never --ok or --bad, with no icon.
+      if (n.tag === 'p' && n.cls.has('v2-small') && n.parent && n.parent.tag === 'section' && n.parent.cls.has('v2-qsec')) {
+        const raw = n.style.get('color') || '';
+        const col = plain(raw).trim().toLowerCase();
+        if (isOkBad(raw) || col !== THEME[way.theme]['--ink2'].toLowerCase()) fail(n, `the section's grey line in ${col}: it stays --ink2`);
+        else if (n.kids.some((c) => c.tag === 'svg')) fail(n, 'the section\'s grey line with an icon: it has none');
+        else places.add('grey: the "Questions for you" section\'s line for a project not read or not shown');
       }
       // G9c (AC91 (c), "Waiting's quiet lines while a read is on its way or signed out"; the owner's "Ruling: A",
       // P-001-glance-waiting-pending.md: "a grey line "Still reading Service-Desk…""; -g9c-portfolio.md, B): Waiting's "Still
@@ -882,7 +896,7 @@ test('AC88 + AC92 (a) (G7 of "After the glance audit"; AC88, changed): where --o
     'ink: the portfolio\'s problem line', 'ink: a portfolio card\'s note', 'ink: the portfolio block\'s "nothing queued" tick', 'ink: a portfolio block\'s mark',
     'ink: Plan\'s ideas', 'grey: "Since you last looked"\'s missing line', 'grey: Plan\'s "moved" word',
     'ink: a project page\'s soft box, its sentence and tally', 'ink: a project page\'s soft box, its sentence alone', 'grey: an opened phase\'s why line, with no ground',
-    'grey: the line under the title']) {
+    'grey: the line under the title', 'grey: the "Questions for you" section\'s line for a project not read or not shown']) {
     assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
   }
 });
@@ -1461,6 +1475,63 @@ const G9_EXCEPT = (n, d, theme) => {
   return Boolean(k && G9_ONCE.get(theme) && (G9_ONCE.get(theme).get(k) || []).includes(d)) ? `G9 ${theme} ${k} ${d}` : null;
 };
 /**
+ * QW1 of "After the questions request"'s changes to Waiting's look on purpose (AC94; the brief's rule: "each writes the
+ * stage-8 guard's exception … for exactly what it changes on purpose"), each declaration pinned to its value, before and
+ * after, in each theme, on only its own element, all in the "Questions for you" section (`section.v2-qsec`, a new element
+ * under the board's title):
+ * - the section itself: a grid, 6 px between its parts;
+ * - its head (`h2.v2-kh`, its own child), as the Kicked back strip's head (AC91 (f), which this guard never drew: no fixture
+ *   here keeps a kicked-back mark): a flex row, 6 px gaps, 28 px tall, a 1 px --line hairline 4 px under it, 600 12 px in
+ *   --ink; its title's text (the head's first `span`) so in 600 12 px; and its " · " (`span.v2-kn` in the head) in --t-mono
+ *   --ink2 ("Each " · " is in `--t-mono` `--ink2`", AC94);
+ * - its one quiet line with no question (`p.v2-kq`, its own child): the strip's line's --t-label --ink2 and padding (its
+ *   spans take G2's pinned look, as the strip's);
+ * - a question's title (`a.v2-t` in an `li.v2-card.v2-qcard`): --t-row (500 13 px / 1.35, "in `--t-row`") in place of the lane
+ *   card's 500 12 px / 1.33, and its three-line cut by that line height, on the link and its clip (`span.v2-tt`), with the
+ *   title's text so computed;
+ * - what sits under its lock or clock line (`div.v2-qbody`, a new element in the card): a grid, 8 px gaps, drawn above the
+ *   card's full-card link (position and z-index, as `.v2-step`).
+ * Everything else in the section takes rules that were there (the cards', the groups', the sheet's boxes and buttons), so
+ * adds none. The walk reaches the section with questions on md-extremes and with none on `text`, and QW1's own screens
+ * (tests/desk/qw1-fixtures.mjs's QW1_OPENS, below).
+ */
+const QW1_FONT = (f) => `${f} "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+const QW1_LOOK = (ink, ink2, line) => new Map([
+  ['section.v2-qsec', ['display: (none) → grid', 'gap: (none) → 6px']],
+  ['h2.v2-kh (the section\'s head)', ['display: (none) → flex', 'align-items: (none) → center', 'gap: (none) → 6px', 'min-height: (none) → 28px', 'padding-bottom: (none) → 4px',
+    `border-bottom: (none) → 1px solid ${line}`, `font: (none) → ${QW1_FONT('600 12px/1.3')}`, `color: (none) → ${ink}`]],
+  ['span (the section\'s title)', ['computed font-size: 13px → 12px', 'computed font-weight: 400 → 600', 'computed line-height: 18.849999999999998px → 15.600000000000001px']],
+  ['span.v2-kn (the head\'s " · ")', ['font: (none) → 400 11px/1.4 "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace', `color: (none) → ${ink2}`,
+    'computed font-size: 13px → 11px', 'computed line-height: 18.849999999999998px → 15.399999999999999px',
+    'computed font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif → "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace',
+    `computed color: ${ink} → ${ink2}`]],
+  ['p.v2-kq (the section\'s line)', [`font: (none) → ${QW1_FONT('500 11px/1.35')}`, `color: (none) → ${ink2}`, 'padding: (none) → 4px 0']],
+  ['a.v2-t (a section question\'s title)', [`font: ${QW1_FONT('500 12px/1.33')} → ${QW1_FONT('500 13px/1.35')}`, 'max-height: calc(3 * 1.33em) → calc(3 * 1.35em)']],
+  // Its clip (`span.v2-tt`) is M3D5's, newer than bd4097d, so its display and overflow are M3D5_ONCE's; only its height is QW1's.
+  ['span.v2-tt (a section question\'s title)', ['max-height: (none) → calc(3 * 1.35em)', 'computed font-size: 12px → 13px', 'computed line-height: 15.96px → 17.55px']],
+  ['div.v2-qbody', ['position: (none) → relative', 'z-index: (none) → 1', 'display: (none) → grid', 'gap: (none) → 8px']],
+]);
+const QW1_ONCE = new Map([['light', QW1_LOOK('#18191c', '#5c5f66', '#e7e7ea')], ['dark', QW1_LOOK('#ecedef', '#a2a5ac', '#26282c')]]);
+const QW1_KEY = (n) => {
+  const p = n.parent;
+  const sec = (x) => x && x.tag === 'section' && x.cls.has('v2-qsec');
+  if (sec(n)) return 'section.v2-qsec';
+  if (n.tag === 'h2' && n.cls.has('v2-kh') && sec(p)) return 'h2.v2-kh (the section\'s head)';
+  if (n.tag === 'span' && p && p.tag === 'h2' && p.cls.has('v2-kh') && sec(p.parent)) {
+    if (n.cls.size === 0 && p.kids[0] === n) return 'span (the section\'s title)';
+    if (n.cls.has('v2-kn')) return 'span.v2-kn (the head\'s " · ")';
+  }
+  if (n.tag === 'p' && n.cls.has('v2-kq') && sec(p)) return 'p.v2-kq (the section\'s line)';
+  if (n.tag === 'a' && n.cls.has('v2-t') && p && p.tag === 'li' && p.cls.has('v2-qcard')) return 'a.v2-t (a section question\'s title)';
+  if (n.tag === 'span' && n.cls.has('v2-tt') && p && p.tag === 'a' && p.parent && p.parent.cls.has('v2-qcard')) return 'span.v2-tt (a section question\'s title)';
+  if (n.tag === 'div' && n.cls.has('v2-qbody') && p && p.cls.has('v2-qcard')) return 'div.v2-qbody';
+  return null;
+};
+const QW1_EXCEPT = (n, d, theme) => {
+  const k = QW1_KEY(n);
+  return Boolean(k && QW1_ONCE.get(theme) && (QW1_ONCE.get(theme).get(k) || []).includes(d)) ? `QW1 ${theme} ${k} ${d}` : null;
+};
+/**
  * G9c's one change to an element's look on purpose (AC91 (c), "each on a row of its own", from G9c's draft 3; the owner's
  * ruling of 2026-10-25, "Ruling: A", decisions/questions/P-001-glance-g9c-row.md: "Each on its own row — every "Still
  * reading" line starts a new row; a small style change in G9c."): Waiting's "Still reading" line (`p.v2-ql.v2-qread`, keyed
@@ -1537,6 +1608,8 @@ function sameLook(app, where, fails, seen) {
         if (g8c) { excepted.add(g8c); continue; }
         const g9 = G9_EXCEPT(b, d, way.theme);
         if (g9) { excepted.add(g9); continue; }
+        const qw1 = QW1_EXCEPT(b, d, way.theme);
+        if (qw1) { excepted.add(qw1); continue; }
         const g9c = G9C_EXCEPT(b, d, way.theme);
         if (g9c) { excepted.add(g9c); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
@@ -1819,9 +1892,12 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // G9's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
   const g9 = [...G9_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G9 ${theme} ${k} ${d}`))).sort();
   assert.deepEqual([...excepted].filter((x) => /^G9 /.test(x)).sort(), g9);
-  // G9c's exception (G9C_ONCE) is pinned by G9c's own walk, the last test below; any the walks above meet is of it alone.
+  // QW1's exception was met, each pinned declaration on its own element in each theme, and nothing else of it.
+  const qw1 = [...QW1_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `QW1 ${theme} ${k} ${d}`))).sort();
+  assert.deepEqual([...excepted].filter((x) => /^QW1 /.test(x)).sort(), qw1);
+  // G9c's exception (G9C_ONCE) is pinned by G9c's own walk, below; any the walks above meet is of it alone.
   assert.ok([...excepted].filter((x) => /^G9C /.test(x)).every((x) => G9C_FLAT.includes(x)), 'G9C: only its pinned declaration');
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[123456789] |G7B |G8B |G8C |G9C |PRE-G7 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[123456789] |G7B |G8B |G8C |G9C |PRE-G7 |QW1 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes
@@ -1995,4 +2071,32 @@ test('AC88 + AC92 (a) + AC44 step 4 (G9c of "After the glance audit"; AC91 (c)):
   // element in each theme, and no other exception was met that the walks above had not met.
   assert.deepEqual([...excepted].filter((x) => /^G9C /.test(x)).sort(), G9C_FLAT, 'G9C_ONCE met exactly');
   assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^G9C /.test(x)), [], 'no other exception added');
+});
+
+// QW1 of "After the questions request" (AC94; the stage's row: "AC88's cascade want-list"): the "Questions for you" section's
+// own screens (tests/desk/qw1-fixtures.mjs's QW1_OPENS, its made-up parts NOT real), each opened once (the suite's memory: each
+// page load keeps its own copy of sandbox.js) and read by all three checks: AC69's (vermilion only on a question's kind icon
+// there, among its places), AC92 (a)'s (the section's grey line a grey place, the red quiet line below it ruled as before), and
+// the stage-8 guard, which shows these screens add no declaration beyond QW1_ONCE, met by the walks above.
+test('AC88 + AC69 + AC92 (a) + AC44 step 4 (QW1 of "After the questions request"; AC94): on QW1\'s screens (QW1_OPENS, made up, NOT real), in dark (forced, and the phone\'s own) and light — every fold opened, a question held, one kicked back, a project read and then failing, every kind of question — vermilion only on the places AC69 lists and a question\'s kind icon in the section; the section\'s grey line --ink2 with no icon beside the red quiet line; and every element\'s look bd4097d\'s but for QW1_ONCE', async () => {
+  const fails = [];
+  const seen = new Set();
+  const places = new Set();
+  const before = new Set(excepted);
+  for (const [where, open] of QW1_OPENS) {
+    const app = await open();
+    try {
+      assert.ok(findAll(app.view, (e) => / v2-qsec /.test(` ${e.className || ''} `)).length === 1, `${where}: the section`);
+      vermilionCheck(app, `QW1 ${where}`, fails, seen, places);
+      okBadCheck(app, `QW1 ${where}`, fails, seen, places);
+      sameLook(app, `QW1 ${where}`, fails, seen);
+    } finally {
+      app.restore();
+    }
+  }
+  assert.deepEqual(fails, []);
+  for (const want of ['a question\'s kind icon in Questions for you', 'grey: the "Questions for you" section\'s line for a project not read or not shown',
+    'ruled: Waiting\'s and "Since you last looked"\'s quiet line', "Waiting's badge"]) assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
+  // Only declarations the walks above met (QW1_ONCE among them), so QW1_ONCE stays exact.
+  assert.deepEqual([...excepted].filter((x) => !before.has(x)), [], 'no exception met that the walks above had not met');
 });

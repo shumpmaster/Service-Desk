@@ -111,7 +111,12 @@ async function markDoneInSheet(app, id) {
 // for the "Questions for you" section above the quiet lines, grouped by project … the lane's and its groups' counts count
 // the cards left in the lane"): version 5's three questions are in the section, each its kind line, meta, clock line and
 // "More about it ›" to its sheet; the lane and its group count the five pull requests; the badge still counts all eight.
-test('AC80, rewritten in G2 (AC91 (f)) and in QW1 (AC94): two lanes, left to right, "Waiting on you" and "Done · last 24 h", their counts and empty words, with Kicked back a strip above them reading "Kicked back · none"; version 5\'s eight cards, each its kind line, meta, lock or clock line and one step, its three questions in the "Questions for you" section above the quiet lines', async () => {
+// Rewritten in QW2 (not forced: it passed, the place line being an element it did not look at; the row names AC80's
+// card-layout cases "for the new top line"): each card now opens with its place line (AC95, "Where the place shows": "on a
+// line of its own at the card's top, above its kind line"), the case reading each card's lines top to bottom, the place
+// line first, the kind line, title, meta, lock or clock line and step as before. Example's eight cards in its one order
+// (answer 1): the three questions and five pull requests by age.
+test('AC80, rewritten in G2 (AC91 (f)), in QW1 (AC94) and in QW2 (AC95): two lanes, left to right, "Waiting on you" and "Done · last 24 h", their counts and empty words, with Kicked back a strip above them reading "Kicked back · none"; version 5\'s eight cards, each its place line first, then its kind line, meta, lock or clock line and one step, its three questions in the "Questions for you" section above the quiet lines', async () => {
   const { app } = await openExample();
   try {
     const lanes = byClass(byClass(app.view, 'v2-lanes')[0], 'v2-lane');
@@ -147,6 +152,13 @@ test('AC80, rewritten in G2 (AC91 (f)) and in QW1 (AC94): two lanes, left to rig
       ['Question', 'Approve the new wording of M3A, the Work ahead milestone?', 'M3A · 21 m', 'Settles as A · Wed 15:40', 'More about it ›', `#/waiting/card/${encodeURIComponent(Q('P-001-m3a-done-when'))}`],
     ];
     const qcards = byClass(keyed(app, 'qsec'), 'v2-card');
+    // QW2 (AC95): each card's first line its place, "<k> of <N> waiting" (read as "Place <k> of <N> waiting on you in
+    // Example"), the kind line next; Example's eight cards numbered by age, the questions and the pull requests in one order.
+    const lines = (c) => c.children.filter((x) => x.nodeType !== 3).map((x) => x.className.split(' ')[0]);
+    const placeOf = (c) => { const pl = c.children[0]; assert.equal(pl.className, 'v2-place v2-mono ink', 'the place line, first'); return pl.textContent.replace(/^Place /, '').replace(/ on you in Example$/, ''); };
+    assert.deepEqual(qcards.map(placeOf), ['4 of 8 waiting', '5 of 8 waiting', '8 of 8 waiting'], 'the questions\' places (raised 2 h 54 m, 1 h 1 m and 21 m ago)');
+    assert.deepEqual(cardsIn(app, 'wait').map(placeOf), ['1 of 8 waiting', '2 of 8 waiting', '3 of 8 waiting', '6 of 8 waiting', '7 of 8 waiting'], 'the pull requests\' places (opened 3 h 21 m to 36 m ago)');
+    for (const c of [...qcards, ...cardsIn(app, 'wait')]) assert.deepEqual(lines(c).slice(0, 3), ['v2-place', 'v2-kd', 'v2-t'], 'its place, then its kind line, then its title');
     assert.deepEqual(qcards.map((c) => [byClass(c, 'v2-kd')[0].textContent, byClass(c, 'v2-t')[0].textContent, byClass(c, 'v2-m')[0].textContent,
       (byClass(c, 'v2-mk')[0] || { textContent: null }).textContent, byClass(c, 'v2-step')[0].textContent]), inSection.map((w) => w.slice(0, 5)));
     for (const [i, c] of qcards.entries()) assert.equal(byClass(c, 'v2-step')[0].attrs.href, inSection[i][5], inSection[i][1]);
@@ -681,7 +693,10 @@ test('AC80 with AC74: a tap\'s address opens the board with that card\'s sheet i
 
 // Rewritten in QW1 (AC94, reading (b)): the question of AC52's one of each is in the "Questions for you" section, its
 // choices as buttons, not a card in "Waiting on you"; the lane holds the six other kinds, as the section holds no other.
-test('AC80, rewritten in G3 (AC91 (h)) and in QW1 (AC94): AC52\'s one card of each kind — a decision card\'s "Answer", a gate card\'s short title, its four buttons and two lines, a hold card\'s and a merge card\'s "Open ↗", a pull request\'s step, a deploy\'s "Approve ↗" in a deploysNeedOwner project; the question in the section', async () => {
+// Rewritten in QW2 (not forced: it passed; the row names AC80's card-layout cases "for the new top line"): each card of each
+// kind opens with its place line, its kind line under it (AC95), Alpha's seven cards numbered 1 to 7 in one order, the
+// three with no raised time (the deploy, the hold card, the merge card) after the rest (C, (e)).
+test('AC80, rewritten in G3 (AC91 (h)), in QW1 (AC94) and in QW2 (AC95): AC52\'s one card of each kind — its place line first, then its kind line; a decision card\'s "Answer", a gate card\'s short title, its four buttons and two lines, a hold card\'s and a merge card\'s "Open ↗", a pull request\'s step, a deploy\'s "Approve ↗" in a deploysNeedOwner project; the question in the section', async () => {
   const project = { ...v3('Alpha'), deploysNeedOwner: true };
   const app = await loadSandbox({ config: { ...CONFIG, projects: [project] }, repos: { Alpha: fullRepo('Alpha') }, hash: '#/waiting', now: Date.parse('2026-10-14T15:00:00Z') });
   try {
@@ -693,6 +708,11 @@ test('AC80, rewritten in G3 (AC91 (h)) and in QW1 (AC94): AC52\'s one card of ea
     assert.deepEqual(kinds, ['Decision', 'Deploy', 'Gate · Build', 'Hold', 'Merge card', 'Pull request'].sort(), kinds.join(', '));
     const qs = byClass(keyed(app, 'qsec'), 'v2-card');
     assert.deepEqual(qs.map((c) => [byClass(c, 'v2-kd')[0].textContent, byClass(c, 'v2-t')[0].textContent]), [['Question', "Alpha's question"]], 'the question, in the section only');
+    // QW2 (AC95): each card's place line first, its kind line under it, so the kind line and its icon are as before.
+    const placeText = (c) => { const [pl, kd] = c.children; assert.equal(pl.className, 'v2-place v2-mono ink'); assert.equal(kd.className.split(' ')[0], 'v2-kd'); return pl.textContent; };
+    assert.deepEqual([...qs, ...cards].map(placeText).map((t) => t.replace(/^Place (\d+) of (\d+) waiting on you in Alpha$/, '$1/$2')),
+      ['2/7', '1/7', '3/7', '4/7', '5/7', '6/7', '7/7'], 'the question, then the lane: Alpha\'s one order (answer 1)');
+    assert.deepEqual(cards.slice(-3).map((c) => byClass(c, 'v2-kd')[0].textContent), ['Deploy', 'Hold', 'Merge card'], 'no raised time: last, by the AC73 key');
     assert.deepEqual(byClass(qs[0], 'v2-abtn').map((b) => b.textContent), ['Answer A ↗', 'Answer B ↗'], 'its choices as buttons');
     assert.equal(byClass(by('Decision')[0], 'v2-step')[0].textContent, 'Answer');
     const gate = by('Gate · Build')[0];

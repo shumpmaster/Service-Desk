@@ -282,7 +282,11 @@ test('AC79 with AC74\'s tap (and AC80): a notified pull request the desk still s
     assert.ok(sheet, 'its sheet, still open');
     assert.ok(sheet.textContent.includes(BEING_RECORDED_WORDS) && sheet.textContent.includes('File a made-up question'));
     assert.deepEqual(sbFindAll(sheet, (e) => e.tag === 'a' && /^https:/.test(e.attrs.href || '')).map((a) => a.attrs.href), ['https://github.com/shumpmaster/Service-Desk/pull/7']);
-    // And the board under it: the pull request in the "Being recorded by the automatic job" line, no card.
+    // And the board: the pull request in the "Being recorded by the automatic job" line, no card.
+    // Rewritten in QW2 (forced: it failed once a sheet the page opens straight at holds the first board drawn under it until it closes, AC95's "Settled from QW2's build", 3): the board under the
+    // open sheet holds as first drawn under it (its card); closed, the board shows the line.
+    assert.ok(!app.text().includes(`${BEING_RECORDED_WORDS}: 1`), 'the board under the open sheet holds');
+    await app.go('#/waiting');
     assert.ok(app.text().includes(`${BEING_RECORDED_WORDS}: 1`));
   } finally {
     app.restore();

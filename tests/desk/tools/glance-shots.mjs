@@ -30,7 +30,9 @@
 // is cut, and a project's page's "Nothing waiting on you" row's small line; and, from QW1 of "After the
 // questions request" (AC94), the "Questions for you" section's head or line, its grey lines with their colour, each
 // question's title lines and whether it is cut, whether a choice's box or button runs past its card, the answer buttons'
-// heights, and Waiting's lanes' empty words and the strip's line.
+// heights, and Waiting's lanes' empty words and the strip's line; and, from QW3 (AC95's blocker parts, AC96), each "Waits on"
+// line's box and links (each at least 24 px tall, on at most two lines, underlined, inside its card), each "Answer first" line's
+// lines, and a sheet's "Cards waiting on it" rows' heights.
 // G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
 // the screen as it opens (the viewport), not the whole page.
@@ -49,6 +51,7 @@ import { BAD_PR } from '../fake-desk.mjs';
 import { pullsAnswer } from '../j12-fixture.mjs';
 import { busiestState, kindsState, qid, QPATH, EXT_LONG as QW1_EXT } from '../qw1-fixtures.mjs';
 import { qw2BusiestState, stripState } from '../qw2-fixtures.mjs';
+import { qw3BusiestState, ALPHA_HELD } from '../qw3-fixtures.mjs';
 
 const PUBLIC = resolve(fileURLToPath(new URL('../../../src/public/', import.meta.url)));
 const OUT = resolve(process.argv[2] || 'glance-shots');
@@ -339,6 +342,17 @@ const SHOTS = [
     click: ['[data-k="cardlink:Alpha|pr|81"]'] },
   { name: 'qw2-held-sheet', state: qw2BusiestState, now: NOW, looked: LATE, hash: '#/waiting', seed: qw2BusiestState().seed, polls: 2, viewport: true,
     click: [`[data-k="cardlink:${qid('Beta', 'questions/Beta-plan-units.md')}"]`] },
+  // QW3 of "After the questions request" (AC96, AC95's blocker parts; the approved picture's frame 1 draws "Answer first · cards
+  // 4 and 10 wait on it" and "Waits on question 1"): the busiest case with made-up `Blocks:` lines (`qw3BusiestState`, NOT
+  // real: blockers in Alpha, Beta and Gamma, Alpha's held blocker, Beta's kicked-back blocker with its held question after it,
+  // "Waits on" on lane and strip cards), to compare with the picture's frame 1; Alpha alone shown; and the held blocker's and a
+  // counted blocker's sheets, opened from the board, scrolled to their "Cards waiting on it".
+  { name: 'qw3-busiest', state: qw3BusiestState, now: NOW, looked: LATE, hash: '#/waiting', seed: qw3BusiestState().seed, polls: 2 },
+  { name: 'qw3-one-alpha', state: qw3BusiestState, now: NOW, looked: LATE, hash: '#/waiting/Alpha', seed: qw3BusiestState().seed, polls: 2 },
+  { name: 'qw3-held-sheet', state: qw3BusiestState, now: NOW, looked: LATE, hash: '#/waiting', seed: qw3BusiestState().seed, polls: 2, viewport: true,
+    click: [`[data-k="cardlink:${qid('Alpha', ALPHA_HELD)}"]`], scrollTo: '[data-k="blocks"]' },
+  { name: 'qw3-blocker-sheet', state: qw3BusiestState, now: NOW, looked: LATE, hash: '#/waiting', seed: qw3BusiestState().seed, polls: 2, viewport: true,
+    click: [`[data-k="cardlink:${qid('Alpha', 'questions/Alpha-second.md')}"]`], scrollTo: '[data-k="blocks"]' },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {
@@ -452,6 +466,11 @@ async function main() {
           for (const sel of shot.click || []) {
             await page.click(sel);
             await run(1000);
+          }
+          // QW3: a sheet's "Cards waiting on it" brought into view, as the owner scrolls to it.
+          if (shot.scrollTo) {
+            await page.evaluate((sel) => { const e = document.querySelector(sel); if (e) e.scrollIntoView({ block: 'center' }); }, shot.scrollTo);
+            await run(500);
           }
           await page.waitForTimeout(300);
           const scroll = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -685,9 +704,46 @@ async function main() {
           }) : null;
           if (qw2 && qw2.fails.length) rowFails.push(`${shot.name}-${w}x${hgt}-${theme}: ${qw2.fails.join('; ')}`);
           if (/^qw2-/.test(shot.name) && scroll > 0) rowFails.push(`${shot.name}-${w}x${hgt}-${theme}: scrolls sideways by ${scroll} px`);
+          // QW3 (AC95, "What a blocker says"): each "Waits on" line's box and links (each at least 24 px tall, on at most two
+          // lines, underlined, inside its card), each "Answer first" line's lines (inside its card), and each sheet row's height (at
+          // least 24 px). A failure, or a page that scrolls sideways, fails the run.
+          const qw3 = /^qw3-/.test(shot.name) ? await page.evaluate(() => {
+            const out = { fails: [], said: [] };
+            const inCard = (e) => { const c = e.closest('.v2-card'); return !c || e.getBoundingClientRect().right <= c.getBoundingClientRect().right + 0.5; };
+            const ws = [...document.querySelectorAll('.v2-board .v2-waits')];
+            const minH = { box: Infinity, link: Infinity };
+            let most = 0;
+            for (const w of ws) {
+              const r = w.getBoundingClientRect();
+              const links = [...w.querySelectorAll('a')];
+              const rects = links.flatMap((a) => [...a.getClientRects()]);
+              const lines = new Set(rects.map((x) => Math.round(x.top))).size;
+              most = Math.max(most, lines);
+              minH.box = Math.min(minH.box, r.height);
+              for (const x of rects) minH.link = Math.min(minH.link, x.height);
+              if (r.height < 24) out.fails.push(`"${w.textContent}" ${r.height} px tall`);
+              if (rects.some((x) => x.height < 24)) out.fails.push(`"${w.textContent}": a link ${Math.min(...rects.map((x) => x.height))} px tall`);
+              if (lines > 2) out.fails.push(`"${w.textContent}" on ${lines} lines`);
+              if (links.some((a) => !getComputedStyle(a).textDecorationLine.includes('underline'))) out.fails.push(`"${w.textContent}" not underlined`);
+              if (!inCard(w) || links.some((a) => !inCard(a))) out.fails.push(`"${w.textContent}" past its card`);
+            }
+            const af = [...document.querySelectorAll('.v2-board .v2-afirst')].map((e) => {
+              const lh = parseFloat(getComputedStyle(e).lineHeight) || 16.8;
+              if (!inCard(e)) out.fails.push(`"${e.textContent}" past its card`);
+              return Math.round(e.getBoundingClientRect().height / lh);
+            });
+            const rows = [...document.querySelectorAll('.v2-sheet .v2-wlist a')].map((a) => a.getBoundingClientRect().height);
+            if (rows.some((h) => h < 24)) out.fails.push(`a "Cards waiting on it" row ${Math.min(...rows)} px tall`);
+            if (ws.length) out.said.push(`${ws.length} "Waits on" lines, boxes ≥ ${Math.round(minH.box * 10) / 10} px, links ≥ ${Math.round(minH.link * 10) / 10} px, at most ${most} line(s)`);
+            if (af.length) out.said.push(`${af.length} "Answer first" lines, ${Math.min(...af)}–${Math.max(...af)} line(s)`);
+            if (rows.length) out.said.push(`${rows.length} sheet rows ≥ ${Math.round(Math.min(...rows) * 10) / 10} px`);
+            return { fails: out.fails, said: out.said.join('; ') || 'no blocker lines' };
+          }) : null;
+          if (qw3 && qw3.fails.length) rowFails.push(`${shot.name}-${w}x${hgt}-${theme}: ${qw3.fails.join('; ')}`);
+          if (/^qw3-/.test(shot.name) && scroll > 0) rowFails.push(`${shot.name}-${w}x${hgt}-${theme}: scrolls sideways by ${scroll} px`);
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}${/^g8d-/.test(shot.name) ? `  (${g8d})` : ''}${/^g9-/.test(shot.name) ? `  (${g9})` : ''}${/^g9b-/.test(shot.name) ? `  (${g9b})` : ''}${/^g9c-/.test(shot.name) ? `  (${g9c})` : ''}${/^qw1-/.test(shot.name) ? `  (${qw1})` : ''}${qw2 ? `  (${qw2.fails.length ? `FAIL ${qw2.fails.join('; ')}` : qw2.said})` : ''}${rows ? `  (rows: ${rows.fails.length ? `FAIL ${rows.fails.join('; ')}` : `ok; ${rows.said}`})` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}${/^g8d-/.test(shot.name) ? `  (${g8d})` : ''}${/^g9-/.test(shot.name) ? `  (${g9})` : ''}${/^g9b-/.test(shot.name) ? `  (${g9b})` : ''}${/^g9c-/.test(shot.name) ? `  (${g9c})` : ''}${/^qw1-/.test(shot.name) ? `  (${qw1})` : ''}${qw2 ? `  (${qw2.fails.length ? `FAIL ${qw2.fails.join('; ')}` : qw2.said})` : ''}${qw3 ? `  (${qw3.fails.length ? `FAIL ${qw3.fails.join('; ')}` : qw3.said})` : ''}${rows ? `  (rows: ${rows.fails.length ? `FAIL ${rows.fails.join('; ')}` : `ok; ${rows.said}`})` : ''}`);
           await ctx.close();
         }
       }
@@ -698,7 +754,7 @@ async function main() {
   }
   console.log(made.join('\n'));
   if (rowFails.length) {
-    console.error(`G9c's rows and QW2's place lines: ${rowFails.length} failed\n${rowFails.join('\n')}`);
+    console.error(`G9c's rows, QW2's place lines and QW3's blocker lines: ${rowFails.length} failed\n${rowFails.join('\n')}`);
     process.exitCode = 1;
   }
 }

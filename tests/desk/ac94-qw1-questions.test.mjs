@@ -31,7 +31,7 @@ import { boardView, noMarks, waitLaneEmpty, sectionMissingWords, heldCard, secti
 import * as PUBLIC_BOARD from '../../src/public/lib/board.js';
 import { V25_RULING_NOTE } from '../../src/lib/links.js';
 import { v25Ruling } from '../../src/lib/sheets.js';
-import { quietState, orderState, noneDrawnState, cantShowState, cantShowLastState, failedHeldState, signedOutMixedState, MIX_PROJECT, SD, POOM } from './glance-fixtures.mjs';
+import { quietState, orderState, noneDrawnState, cantShowState, cantShowLastState, failedHeldState, signedOutMixedState, heldReadsState, MIX_PROJECT, SD, POOM } from './glance-fixtures.mjs';
 import { kindsState, busiestState, qFile, qid, K, KINDS, LEDGER, QPATH, HELD_PATH, Q_HELD, SID, NOW, openFolds } from './qw1-fixtures.mjs';
 
 const H = 3600e3;
@@ -814,7 +814,7 @@ test('AC94 (settled, 2): AC77\'s re-read words for a question it takes out of th
 });
 
 /** A made-up v3 project "Held" with a held numbered question and a held lettered one, and Ledger (v2.5) with a held one (NOT real). */
-function heldKindsState() {
+function heldKindsState({ heldLast = false } = {}) {
   const s = kindsState();
   const at = [{ commit: { committer: { date: new Date(NOW - H).toISOString() } } }];
   const held = repo({ 'governance/ROUTING.toml': s.repos[KINDS].files['governance/ROUTING.toml'],
@@ -824,7 +824,7 @@ function heldKindsState() {
   s.repos.Held = held;
   s.repos[LEDGER].commit({ 'questions/Ledger-held.md': qFile({ title: 'A made-up held v2.5 question', asked: SID, options: ['A. This.', 'B. That.'], rec: 'A' }) });
   s.repos[LEDGER].history['questions/Ledger-held.md'] = at;
-  s.config = { ...s.config, projects: [v3('Held'), ...s.config.projects] };
+  s.config = { ...s.config, projects: heldLast ? [...s.config.projects, v3('Held')] : [v3('Held'), ...s.config.projects] };
   return s;
 }
 const isHeld = (app, id) => (qcard(app, id) || { attrs: {} }).attrs['data-question'] === 'held';
@@ -1114,6 +1114,54 @@ test('AC94 + AC77 (round 2, N2): a notification\'s tap on a held question opens 
     assert.equal(keyed(app, 'tap-banner').textContent, 'Opened from a notification');
   } finally {
     if (saved) Object.defineProperty(El0.prototype, 'getBoundingClientRect', saved); else delete El0.prototype.getBoundingClientRect;
+    app.restore();
+  }
+});
+
+test('AC94 (settled, 4; round 2, the open question): a held lettered and a held v2.5 question, fourth and later — "Show choices ›" and "Add your own words" in the section, and in each one\'s sheet its words box and "The whole question" fold, end no hold', async () => {
+  const LET = 'Held|question|questions/Held-let.md';
+  const V25 = `${LEDGER}|question|questions/Ledger-held.md`;
+  const app = await open(heldKindsState({ heldLast: true }));
+  try {
+    for (const id of [LET, V25]) {
+      assert.ok(isHeld(app, id), `${id}: held`);
+      assert.ok(qcards(app).map((c) => c.attrs['data-card']).indexOf(id) >= SECTION_CHOICES_SHOWN, `${id}: fourth or later`);
+      await app.tap(keyed(app, `fold:qchoices:${id}`));
+      await app.tap(keyed(app, `fold:qwords:${id}`));
+      const box = findAll(qcard(app, id), (e) => e.tag === 'textarea')[0];
+      box.value = 'Made-up words, NOT real.';
+      box.dispatch('input');
+      await app.flush();
+      assert.ok(isHeld(app, id), `${id}: still held after "Show choices ›" and "Add your own words"`);
+      await app.go(`#/waiting/card/${enc(id)}`);
+      const sbox = findAll(sheet(app), (e) => e.tag === 'textarea')[0];
+      sbox.value = 'More made-up words, NOT real.';
+      sbox.dispatch('input');
+      await app.flush();
+      await app.tap(keyed(app, `fold:whole:${id}`));
+      await app.go('#/waiting');
+      assert.ok(isHeld(app, id), `${id}: still held after its sheet's words box and "The whole question"`);
+    }
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 + AC91 (c) (round 2, N4; "What QW1 keeps from stage G9c"): "Still reading the portfolio…" in the quiet lines below the section holding questions, last of the read lines, before the strip', async () => {
+  // heldReadsState (G9c, made up, NOT how any read went): the made-up portfolio's read held on its way, the projects read.
+  const s = heldReadsState({ portfolio: true, portfolioHeld: true });
+  const app = await open(s, { store: seen() });
+  try {
+    assert.ok(headCount(app) >= 1, 'the section holds questions');
+    const kids = boardKids(app);
+    const q = kids.findIndex((c) => c.className === 'v2-quiet');
+    assert.ok(kids.indexOf(section(app)) < q && q < kids.indexOf(lane(app, 'kick')), 'the section, the quiet lines, the strip');
+    assert.equal(keyed(app, 'ql:reading:portfolio').textContent, 'Still reading the portfolio…');
+    const reads = quietKeys(app).filter((k) => /^ql:(cant|show|reading|signed-out)/.test(k));
+    assert.equal(reads[reads.length - 1], 'ql:reading:portfolio', 'last of the read lines');
+    assert.equal(findAll(section(app), (e) => /portfolio/i.test(e.textContent || '') && e.tag === 'p').length, 0, 'the section says nothing of the portfolio');
+  } finally {
+    s.release();
     app.restore();
   }
 });

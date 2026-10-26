@@ -32,7 +32,7 @@ import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, gateOpening, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, BOARD_LANES, WORDS, MARKS_KEY,
   stripEmptyParts, isNewCard, boardAge, SECTION_WORDS, SECTION_CHOICES_SHOWN, waitLaneEmpty, sectionMissingWords, sectionMeta, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, everyProjectUnread, unreadLaneWords, quietTroubleWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS, draftCard,
-  PLACE_WORDS, heldView } from './lib/board.js';
+  PLACE_WORDS, heldBoard } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
@@ -3150,10 +3150,12 @@ function gateSheetParts(sx) {
 
 /**
  * AC95 (QW2): a sheet's place, "<k> of <N> waiting", which its small line adds after " · " (sheets.js's headText joins the
- * parts so), from the board's places (boardView's `places`); null for a card with none (a held question, a mark in Done).
+ * parts so), from the board's places (boardView's `places`); a held question's "being asked in your session", the words its
+ * card's place line has ("Settled from QW2's build", 5); null for a card with none (a mark in Done).
  */
 function placeOfSheet(places, card) {
-  const pl = card && !card.held && places ? places.get(card.id) : null;
+  if (card && card.held) return PLACE_WORDS.heldSheet;
+  const pl = card && places ? places.get(card.id) : null;
   return pl ? PLACE_WORDS.line(pl.k, pl.n) : null;
 }
 
@@ -3230,7 +3232,7 @@ function cardSheet(bd, built, only, sheetId, backTo = null, places = bd.places) 
   // only when its record gives it; the wait from its raised time, or "wait not recorded" (AC52).
   const u0 = project.model === 'v3' && ['question', 'card', 'gate', 'pr'].includes(card.kind) ? unblocksOf(p.ctx, row) : null;
   const msPart = u0 && u0.milestones && u0.milestones.length ? u0.milestones.map((m) => m.code).join(', ') : null;
-  // AC95 (QW2): the small line adds " · <k> of <N> waiting", the card's place; a held question, counted nowhere, has none.
+  // AC95 (QW2): the small line adds " · <k> of <N> waiting", the card's place; a held question's " · being asked in your session".
   const pl = placeOfSheet(places, card);
   const headMeta = () => headText([project.name, HEAD_KIND[card.kind] || card.kindWord.toLowerCase(), card.kind === 'question' ? card.name : card.meta[0] || null, msPart,
     card.raisedAt != null ? `waiting ${boardAge(Date.now() - card.raisedAt)}` : 'wait not recorded', pl]);
@@ -5050,10 +5052,13 @@ export function startSandbox(opts = {}) {
       for (const k of [...heldDone.keys()]) if (k !== String(r.sheet)) heldDone.delete(k);
       for (const k of [...sheetCards.keys()]) if (k !== String(r.sheet)) sheetCards.delete(k);
       // AC95 ("When the order changes"; AC40): while a card is held for a drag or a sheet is open, nothing on Waiting moves:
-      // the board is drawn as it was last drawn before the hold, and the new places when the drag ends or the sheet closes.
+      // the board is drawn as it was last drawn before the hold, and the new places when the drag ends or the sheet closes;
+      // a page opened straight at a sheet holds the first board drawn under the sheet on its item ("Settled from QW2's
+      // build", 3). The bar's badge stays live (a count, not a place).
       const hold = r.sheet != null || drag.card != null;
-      const shownBoard = heldView({ fresh: bd, drawn: boardState.drawn, hold, only: r.only || null });
-      if (!hold) boardState.drawn = bd;
+      const held = heldBoard({ fresh: bd, drawn: boardState.drawn, hold, only: r.only || null, found: r.sheet == null || sheetFound(r.sheet, r.only) });
+      const shownBoard = held.view;
+      boardState.drawn = held.drawn;
       try {
         node = renderWaiting(shownBoard, built, r.only, r.sheet, bd);
       } catch (err) {

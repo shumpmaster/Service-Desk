@@ -985,6 +985,8 @@ export const PLACE_WORDS = Object.freeze({
   after: (project) => ` on you in ${project}`,
   // A held question (AC77; one of the model's `askingRows`, never a card) has no place: its place line says so.
   held: 'Being asked in your session',
+  // Its sheet's small line adds the same words after " · " ("Settled from QW2's build", 5).
+  heldSheet: 'being asked in your session',
 });
 
 /**
@@ -1030,6 +1032,21 @@ const byPlace = (a, b) => (a.place ? a.place.k : Infinity) - (b.place ? b.place.
 export function heldView({ fresh, drawn = null, hold = false, only = null }) {
   if (!hold || !drawn) return fresh;
   return (drawn.only || null) === (only || null) ? drawn : fresh;
+}
+
+/**
+ * AC95 ("When the order changes"; "Settled from QW2's build", 3): the board Waiting draws now and the one it holds next.
+ * With no hold, the fresh view, held from now on. While a card is held or a sheet is open, the view held for this screen
+ * (heldView); and where none is held, a page opened straight at a sheet, the fresh view, held from the first drawing in
+ * which the sheet is open on an item the board has (`found`), so that board, the open sheet's place with it, stays until
+ * the sheet closes. Before that drawing (the project's first read still on its way, the sheet not yet on its item) nothing
+ * is held, so the board's first read is not frozen out. Returns { view, drawn }.
+ */
+export function heldBoard({ fresh, drawn = null, hold = false, only = null, found = true }) {
+  const view = heldView({ fresh, drawn, hold, only });
+  if (!hold) return { view, drawn: fresh };
+  if (view !== fresh) return { view, drawn };
+  return { view, drawn: found ? fresh : null };
 }
 
 /**

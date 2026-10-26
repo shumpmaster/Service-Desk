@@ -31,7 +31,7 @@ import { GATE_PHASE } from './lib/j11.js';
 import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, gateOpening, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, BOARD_LANES, WORDS, MARKS_KEY,
-  stripEmptyParts, isNewCard, boardAge, SECTION_WORDS, SECTION_CHOICES_SHOWN, waitLaneEmpty, sectionMissingWords, sectionMeta, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, everyProjectUnread, unreadLaneWords, quietTroubleWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
+  stripEmptyParts, isNewCard, boardAge, SECTION_WORDS, SECTION_CHOICES_SHOWN, waitLaneEmpty, sectionMissingWords, sectionMeta, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, everyProjectUnread, unreadLaneWords, quietTroubleWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS, draftCard } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
@@ -1910,7 +1910,9 @@ const boardState = {
   },
   // AC56, changed after MD3 (P-001-audit-reload.md, A): the words typed in a sheet's boxes are kept on this device under
   // DRAFTS_KEY, in a store of their own, so a full reload brings them back; where it can't be written, a reload clears them.
-  draftsStore: null, draftAt: new Map(),
+  // From QW1's round 2 (the owner's answer, decisions/questions/P-001-m3g-reload-fold.md, A): the cards whose words this
+  // device kept when the page loaded, so their "Add your own words" folds open again after a full reload.
+  draftsStore: null, draftAt: new Map(), keptAtLoad: new Set(),
   loadDrafts(store, nowMs) {
     this.draftsStore = store;
     try {
@@ -1921,6 +1923,7 @@ const boardState = {
       this.drafts = new Map();
       this.draftAt = new Map();
     }
+    this.keptAtLoad = new Set([...this.drafts.keys()].map(draftCard).filter(Boolean));
     this.saveDrafts();
   },
   setDraft(k, text, nowMs) {
@@ -2605,8 +2608,13 @@ function sectionCard(p, card, only, shown) {
   const body = [];
   if (open) body.push(sectionChoices(p, card, only));
   if (!shown) body.push(foldButton(name, `qchoices:${id}`, false, { class: 'v2-fold' }, SECTION_WORDS.showChoices));
-  body.push(foldButton(name, `qwords:${id}`, false, { class: 'v2-fold' }, SECTION_WORDS.ownWords));
-  if (isOpenFold(name, `qwords:${id}`, false)) body.push(sectionWords(p, card));
+  // The owner's answer of QW1's round 2 (P-001-m3g-reload-fold.md, A): after a full reload, a fold that holds words this
+  // device kept opens again in the first drawing, so the words show where they were left before AC56 restores the scroll;
+  // one with none stays closed; within an opening, a fold the owner closed stays closed (its own state wins), and "Show
+  // choices ›" is not opened by it (C).
+  const wordsOpen = boardState.keptAtLoad.has(id);
+  body.push(foldButton(name, `qwords:${id}`, wordsOpen, { class: 'v2-fold' }, SECTION_WORDS.ownWords));
+  if (isOpenFold(name, `qwords:${id}`, wordsOpen)) body.push(sectionWords(p, card));
   body.push(h('p', { class: 'v2-steps', key: `qacts:${id}` },
     h('a', { class: 'v2-step', href: cardRoute(only, id), key: `qmore:${id}`, onclick: () => { nav.opener = `qmore:${id}`; } }, SECTION_WORDS.more),
     card.held ? null : h('button', { type: 'button', class: 'v2-step', key: `qdone:${id}`, onclick: () => markCard(card) }, SECTION_WORDS.done)));

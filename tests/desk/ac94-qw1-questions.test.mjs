@@ -1007,7 +1007,7 @@ test('AC94 (settled, 2; round 2, B1): a question that leaves the section by "Don
   }
 });
 
-test('AC94 (settled, 2; round 2, B1): a question answered after a re-read that couldn\'t check says it was already answered, never "couldn\'t check"', async () => {
+test('AC94 (settled, 2; round 2, B1): a question answered by an ordinary read after a re-read that couldn\'t check leaves no line — no "couldn\'t check", and no "Already answered", which only a re-read gives', async () => {
   const s = kindsState();
   const app = await open(s);
   try {
@@ -1016,9 +1016,29 @@ test('AC94 (settled, 2; round 2, B1): a question answered after a re-read that c
     await app.advance(POLL_MS);
     await app.advance(POLL_MS);
     assert.equal(qcard(app, id), null, 'answered: out of the section');
-    assert.deepEqual(byClass(section(app), 'v2-recheck').map((x) => x.textContent),
-      ["Which colour should a kicked-back card's icon take?: Already answered: Ruling: A — made up, NOT real"]);
     assert.doesNotMatch(section(app).textContent, /couldn't check|anyway/i);
+    assert.deepEqual(byClass(section(app), 'v2-recheck'), [], 'nothing said: no re-read found it answered');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 (settled, 2; round 2, B1): a re-read that couldn\'t check, then one that finds the question answered — "Already answered: <ruling>" alone', async () => {
+  const s = kindsState();
+  const app = await open(s);
+  try {
+    const id = await failedReread(s, app);
+    // Past 30 s since the last read, so the next tap re-reads (AC77).
+    for (let i = 0; i < 70 && !app.desk.needsRecheck(KINDS); i++) await app.advance(1000);
+    assert.ok(app.desk.needsRecheck(KINDS));
+    s.repos[KINDS].commit({ 'decisions/questions/Kinds-lettered.md': 'Ruling: A — made up, NOT real\n' });
+    choiceLinks(qcard(app, id))[0].dispatch('click', { preventDefault() {} });
+    await app.flush();
+    assert.equal(qcard(app, id), null, 'answered: out of the section');
+    assert.deepEqual(byClass(section(app), 'v2-recheck').map((x) => x.textContent),
+      ["Which colour should a kicked-back card's icon take?: Already answered: Ruling: A — made up, NOT real"], 'alone');
+    await app.advance(POLL_MS);
+    assert.equal(byClass(section(app), 'v2-recheck').length, 1, 'still said at the next poll');
   } finally {
     app.restore();
   }

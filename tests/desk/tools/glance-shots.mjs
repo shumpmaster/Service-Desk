@@ -735,7 +735,8 @@ async function main() {
             const rows = [...document.querySelectorAll('.v2-sheet .v2-wlist a')].map((a) => a.getBoundingClientRect().height);
             if (rows.some((h) => h < 24)) out.fails.push(`a "Cards waiting on it" row ${Math.min(...rows)} px tall`);
             if (ws.length) out.said.push(`${ws.length} "Waits on" lines, boxes ≥ ${Math.round(minH.box * 10) / 10} px, links ≥ ${Math.round(minH.link * 10) / 10} px, at most ${most} line(s)`);
-            if (af.length) out.said.push(`${af.length} "Answer first" lines, ${Math.min(...af)}–${Math.max(...af)} line(s)`);
+            if (af.length) out.said.push(`${af.length} "Answer first" lines, ${Math.min(...af)}–${Math.max(...af)} line(s), ${getComputedStyle(document.querySelector('.v2-afirst')).fontSize}`);
+            if (ws.length) out.said.push(`"Waits on" at ${getComputedStyle(ws[0]).fontSize}`);
             if (rows.length) out.said.push(`${rows.length} sheet rows ≥ ${Math.round(Math.min(...rows) * 10) / 10} px`);
             return { fails: out.fails, said: out.said.join('; ') || 'no blocker lines' };
           }) : null;

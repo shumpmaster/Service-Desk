@@ -2708,7 +2708,9 @@ function sectionCard(p, card, only, shown) {
     placeLine(card),
     kind,
     h('a', { class: 'v2-t', href: cardRoute(only, id), 'data-cardlink': '', key: `cardlink:${id}`, onclick: () => { nav.opener = `cardlink:${id}`; } }, cardTitle(card)),
-    card.held ? h('span', { class: 'v2-body', key: 'qheld' }, SECTION_WORDS.heldLine) : null,
+    // "Also asked in your session: answer in one place" in --t-small --ink, as the picture draws it at 12 px (AC94's "Settled from
+    // QW1's build", 5, corrected by AC96's "From QW3's design review, round 1", N1; QW1 built it in --t-body).
+    card.held ? h('span', { class: 'v2-heldl', key: 'qheld' }, SECTION_WORDS.heldLine) : null,
     h('span', { class: 'v2-m', live: () => sectionMeta(card, Date.now()) }),
     waitsLines(card, only),
     kicked && card.kicked ? h('span', { class: 'v2-why' }, card.kicked.reason) : null,

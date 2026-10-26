@@ -1640,11 +1640,15 @@ const QW3_LOOK = (ink) => new Map([
   ['span.v2-wlk (a row\'s place and kind)', ['display: (none) → block', ...QW3_SMALL]],
   ['span.sb-vh (a row\'s " · ")', [...QW3_SMALL]],
   ['span.v2-tt (a row\'s title)', ['display: (none) → block', 'max-height: (none) → calc(3 * 1.4em)', 'overflow: (none) → clip', ...QW3_SMALL]],
+  // From QW3's round 2 (AC96's "From QW3's design review, round 1", N1): QW1's held line, "Also asked in your session: answer in
+  // one place", in --t-small --ink, the picture's 12 px, its text so computed (QW1 drew it in .v2-body's --t-body).
+  ['span.v2-heldl (QW1\'s held line)', [`font: (none) → ${QW3_FONT('400 12px/1.4')}`, `color: (none) → ${ink}`, ...QW3_SMALL]],
 ]);
 const QW3_ONCE = new Map([['light', QW3_LOOK('#18191c')], ['dark', QW3_LOOK('#ecedef')]]);
 const QW3_KEY = (n) => {
   const p = n.parent;
   if (n.tag === 'span' && n.cls.has('v2-afirst') && p && p.tag === 'li' && p.cls.has('v2-qcard')) return 'span.v2-afirst ("Answer first")';
+  if (n.tag === 'span' && n.cls.has('v2-heldl') && p && p.tag === 'li' && p.cls.has('v2-qcard')) return 'span.v2-heldl (QW1\'s held line)';
   if (n.tag === 'span' && n.cls.has('v2-waits') && p && p.cls.has('v2-card')) return 'span.v2-waits ("Waits on")';
   if (n.tag === 'a' && p && p.tag === 'span' && p.cls.has('v2-waits')) return 'a (a "Waits on" link)';
   if (n.tag === 'ul' && n.cls.has('v2-wlist') && p && p.tag === 'div' && p.cls.has('v2-blk')) return 'ul.v2-wlist ("Cards waiting on it")';

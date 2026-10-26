@@ -364,8 +364,8 @@ test('AC95 ("What a blocker says"; AC94\'s "Each question shows"): "Answer first
     const kids = pick.children.map((c) => (c.className || '').split(' ')[0] || c.tag);
     assert.deepEqual(kids, ['v2-place', 'v2-kd', 'v2-t', 'v2-m', 'v2-mk', 'v2-afirst', 'v2-qbody'], 'place, kind, title, meta, lock, "Answer first", then its choices');
     const held = cardOf(app, qid('Alpha', ALPHA_HELD));
-    assert.deepEqual(held.children.map((c) => (c.className || '').split(' ')[0]), ['v2-place', 'v2-kd', 'v2-t', 'v2-body', 'v2-m', 'v2-mk', 'v2-afirst', 'v2-qbody'],
-      'the held one: "Also asked in your session…" under its title, its clock, then "Answer first"');
+    assert.deepEqual(held.children.map((c) => (c.className || '').split(' ')[0]), ['v2-place', 'v2-kd', 'v2-t', 'v2-heldl', 'v2-m', 'v2-mk', 'v2-afirst', 'v2-qbody'],
+      'the held one: "Also asked in your session…" under its title, its meta, its clock, then "Answer first"');
     const card = cardOf(app, 'Alpha|card|queue/Q-020-stop-1.md');
     const m = byClass(card, 'v2-m')[0];
     assert.equal(card.children[card.children.indexOf(m) + 1].className, 'v2-waits', 'under its meta line');
@@ -401,6 +401,11 @@ test('AC95 ("What a blocker says"; AC94\'s "Each question shows"): "Answer first
             assert.deepEqual([la.decl('text-decoration'), la.decl('padding'), la.colour], ['underline', '5px 0', INK[theme].ink], `${at}: underlined under its own text, its target the line's height`);
           }
         }
+        // QW1's "Also asked in your session: answer in one place", in --t-small --ink as "Answer first" is, the picture's 12 px
+        // (AC96's "From QW3's design review, round 1", N1).
+        const hl = L.get(byClass(held, 'v2-heldl')[0]);
+        assert.match(hl.raw('font'), /^400 12px\/1\.4 ⟦--font\|/, `${at}: the held line --t-small`);
+        assert.equal(hl.colour, INK[theme].ink, `${at}: the held line --ink`);
         // AC69: no vermilion, --ok or --bad in either line (none declares a colour of its own).
         for (const el of [...byClass(app.view, 'v2-afirst'), ...byClass(app.view, 'v2-waits')]) assert.equal(L.get(el).decl('background'), '', `${at}: no ground`);
       }

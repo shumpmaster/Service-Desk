@@ -646,6 +646,9 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
    cut at three of its own lines (--t-small's 1.4), faded at the cut once the browser measures it cut (`.v2-tt.over`), as a
    card's title on the board is; the whole title in the card's sheet, which the row opens. */
 .v2-wlk { display: block; }
+/* AC94's held question's "Also asked in your session: answer in one place" (QW1's line), in --t-small --ink, the picture's
+   12 px, as "Answer first" (AC96's "From QW3's design review, round 1", N1; QW1 drew it in --t-body). */
+.v2-heldl { font: var(--t-small); color: var(--ink); overflow-wrap: anywhere; }
 .v2-wlist .v2-tt { max-height: calc(3 * 1.4em); }
 /* AC91 (g) (P-001-glance-new.md, A): "new" beside a card's kind label, in ink, with no colour and no box; drawn as
    nothing on a card that isn't new, so the 15-second tick can show or hide it. */

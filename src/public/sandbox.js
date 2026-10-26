@@ -2299,8 +2299,8 @@ function answerLink(p, card, btn, cls, kids) {
   const plan = btn.plan || { url: btn.href, copy: null };
   const guard = card.kind === 'question' ? { target: { kind: 'question', name: card.flag.question.name }, answerPath: `decisions/questions/${card.flag.question.name}.md` }
     : card.flag && card.flag.card ? { target: { kind: 'card', path: card.flag.card.path }, answerPath: card.flag.card.answerPath } : null;
-  // AC94 (QW1): what the re-read found keeps the question's title and project, so the section can say it once the question
-  // has left it (answered meanwhile), as a sheet that stays open says it (AC56).
+  // AC94 (QW1): what the re-read found keeps its outcome's kind, the question's title and project, so the section can say it
+  // once the question has left it (answered meanwhile, or being recorded), as a sheet that stays open says it (AC56).
   const said = (v) => rechecks.set(key, { ...v, id: card.id, title: card.title, project: p.project.name });
   const was = rechecks.get(key);
   const a = h('a', { class: cls, key: `ans:${key}`, href: plan.url, rel: 'noopener noreferrer', target: '_blank', 'aria-label': btn.aria || null,
@@ -2310,10 +2310,10 @@ function answerLink(p, card, btn, cls, kids) {
       if (card.held && DESK && DESK.answerHere) DESK.answerHere(p.project.name, card.name);
       if (guard && DESK && DESK.needsRecheck(p.project.name)) {
         if (e && e.preventDefault) e.preventDefault();
-        said({ words: RECHECK_WORDS.checking });
+        said({ kind: 'checking', words: RECHECK_WORDS.checking });
         render();
         DESK.recheck(p.project.name, guard.answerPath).then((r) => {
-          if (!r.ok) said({ words: RECHECK_WORDS.failed, anyway: plan.url });
+          if (!r.ok) said({ kind: 'failed', words: RECHECK_WORDS.failed, anyway: plan.url });
           else {
             const o = recheckOutcome(DESK.model(p.project.name), guard.target);
             if (o.kind === 'open') {
@@ -2325,8 +2325,8 @@ function answerLink(p, card, btn, cls, kids) {
               } catch {
                 w = null;
               }
-              if (!w) said({ words: 'Still open:', anyway: plan.url, again: 'open GitHub' });
-            } else said({ words: o.words, pr: o.pr || null });
+              if (!w) said({ kind: 'open', words: 'Still open:', anyway: plan.url, again: 'open GitHub' });
+            } else said({ kind: o.kind, words: o.words, pr: o.pr || null });
           }
           render();
         });
@@ -2635,7 +2635,7 @@ function questionsSection(bd, built, only) {
   const attrs = { class: 'v2-qsec', key: 'qsec', 'aria-label': SECTION_WORDS.title };
   // AC94 ("Settled from QW1's build", 2): the re-read's words for a question it took out of the section, under the head, or,
   // once none is left, under the "none" line, for this opening.
-  const gone = goneRechecks(qv, only, built);
+  const gone = goneRechecks(qv, only);
   if (!qv.order.length) {
     const e = stripEmptyParts({ unread: bd.unread || null, one: bd.one || null });
     return h('section', attrs, h('p', { class: 'v2-kq', key: 'qnone' }, h('span', { class: 'v2-kl' }, SECTION_WORDS.title),
@@ -2656,33 +2656,28 @@ function questionsSection(bd, built, only) {
 
 /**
  * AC94 ("Before and around a link": "a question answered meanwhile shows "already answered: <ruling>" with no link"; its
- * "Settled from QW1's build", 2): a section question whose re-read left words beside its button has left the section by the
- * time they could be read, so the section says, once per question, "<its title>: <the words>", under its head, or under the
- * "Questions for you · none" line once the last question has left, for this opening (as a sheet open over it keeps them,
- * AC56), only where the question has left as answered or as being recorded: the words AC77's re-read gives from the
- * project's model as this drawing has it (recheckOutcome), "Already answered: <ruling>", or the being-recorded words with their pull
- * request's link. Any other saved outcome ("The desk couldn't check just now" and its "Open GitHub anyway", "Still open:" with
- * a pop-up blocked, a question marked Done or gone) is dropped once its question leaves, unless its sheet is open (AC56
- * keeps a sheet's words while it is open). One project shown, only that project's.
+ * "Settled from QW1's build", 2): a section question whose re-read found it answered or being recorded has left the section
+ * by the time the words are known, so the section keeps them, once per question, "<its title>: <the words>", under its head,
+ * or under the "Questions for you · none" line once the last question has left, for this opening (as a sheet open over it
+ * keeps them, AC56); "being recorded" keeps its pull request's link. Only those two outcomes of a re-read stay: any other
+ * saved for a question that has left ("The desk couldn't check just now" with its "Open GitHub anyway", "Still open:" with
+ * a pop-up blocked) is dropped, unless the question's sheet is open (AC56 keeps an open sheet's words). A question that left
+ * by an ordinary read, with no re-read finding it so, has no line. One project shown, only that project's.
  */
-function goneRechecks(qv, only, built) {
+function goneRechecks(qv, only) {
   const here = new Set(qv.order.map((c) => c.id));
   const out = new Map();
   const open = openSheetCard();
   for (const [k, v] of [...rechecks]) {
     if (!v || !v.id || here.has(v.id) || !/^question\|/.test(String(v.id).split('|').slice(1).join('|'))) continue;
-    if (v.words === RECHECK_WORDS.checking) continue;
-    const name = (/\|questions\/([^/]+)\.md$/.exec(v.id) || [])[1];
-    const b = built.find((x) => x.project.name === v.project);
-    const model = b && !b.error ? b.model : null;
-    const o = model && name ? recheckOutcome(model, { kind: 'question', name }) : null;
-    if (!o || (o.kind !== 'answered' && o.kind !== 'recording')) {
+    if (v.kind === 'checking') continue;
+    if (v.kind !== 'answered' && v.kind !== 'recording') {
       if (v.id !== open) rechecks.delete(k);
       continue;
     }
     if (out.has(v.id) || (only && v.project !== only)) continue;
-    out.set(v.id, h('p', { class: 'v2-recheck', role: 'status', key: `qgone:${v.id}` }, `${v.title}: `, o.words,
-      o.pr ? [' ', ext(o.pr.url, `PR #${o.pr.number}, which records it`, 'v2-lnk')] : null));
+    out.set(v.id, h('p', { class: 'v2-recheck', role: 'status', key: `qgone:${v.id}` }, `${v.title}: `, v.words,
+      v.pr ? [' ', ext(v.pr.url, `PR #${v.pr.number}, which records it`, 'v2-lnk')] : null));
   }
   return [...out.values()];
 }

@@ -23,6 +23,7 @@ import { parseCss, treeOf, cascade, nodes } from './css-cascade.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { HOLD_MS, WORDS, stripEmptyWords, stripEmptyParts, isNewCard, oneProjectView, ONE_WORDS } from '../../src/lib/board.js';
 import { mixState, quietState, signedOutState, twoMixState, deviceMarks, KICKED, CARD, MIX_PROJECT, MIX_PROJECT2, NOW } from './glance-fixtures.mjs';
+import { stripState, STRIP_ORDER, STRIP_KICKS } from './qw2-fixtures.mjs';
 
 const H = 3600e3;
 const CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
@@ -242,20 +243,33 @@ test('AC91 (f), amended: the empty strip\'s parts each in their role — " · " 
 });
 
 // Rewritten in QW1 (AC91 (f)'s note "after the questions request": "from stage QW1 a kicked-back question shows in the
-// "Questions for you" section with its reason, not in the strip"; AC94, reading (a)): of KICKED's three cards, Bravo's
-// question is in the section, "Kicked back · Question" with its reason; the strip holds Alpha's two, the newest first.
-test('AC91 (f), rewritten in QW1: with kicked-back cards, the strip\'s head "Kicked back" (600 12 px ink) with its count (--t-mono) over a hairline, then its cards in one row, the newest first across both projects, each 200 px wide, naming its project after " · ", with its reason and its button; the row scrolls sideways inside the strip, snapping to a card; a kicked-back question in the "Questions for you" section instead', async () => {
-  const app = await open(twoMixState(), { store: kickedStore() });
+// "Questions for you" section with its reason, not in the strip"; AC94, reading (a)): Bravo's question is in the section,
+// "Kicked back · Question" with its reason.
+// Rewritten in QW2 (not forced: on QW1's fixture, Alpha's two cards, the newest kick first happened to be the place order,
+// so the case passed and checked nothing of the new rule; the row names it): the strip-order case, on `stripState`
+// (tests/desk/qw2-fixtures.mjs, made up, NOT real), cards kicked back from two projects and the portfolio, each project's
+// out of age order with the other's (Alpha's pull request, Bravo's, Alpha's gate card by age), the kicks in another order
+// again: the strip goes by project in J7's order, the portfolio's last, then place (AC95; reading (p)), each card naming its
+// project and showing its place.
+test('AC91 (f), rewritten in QW1 and in QW2 (AC95): with kicked-back cards, the strip\'s head "Kicked back" (600 12 px ink) with its count (--t-mono) over a hairline, then its cards in one row, by project in J7\'s order, the portfolio\'s last, then in place order — not the newest first, nor by age across projects — each 200 px wide, naming its project after " · ", with its place, its reason and its button; the row scrolls sideways inside the strip, snapping to a card; a kicked-back question in the "Questions for you" section instead', async () => {
+  const st = stripState();
+  const app = await open(st, { store: looked(NOW - 5 * H, st.seed) });
   try {
     const s = strip(app);
     const head = byClass(s, 'v2-kh')[0];
     assert.equal(head.tag, 'h2');
-    assert.deepEqual(head.children.map((c) => c.textContent), ['Kicked back', '2']);
+    assert.deepEqual(head.children.map((c) => c.textContent), ['Kicked back', '5']);
     const row = byClass(s, 'v2-krow')[0];
     assert.equal(row.tag, 'ol');
-    assert.deepEqual(row.children.map((li) => li.className), ['v2-kslot', 'v2-kslot'], 'one row of two places');
-    assert.deepEqual(stripCards(app).map((c) => c.attrs['data-card']), [CARD.pr(MIX_PROJECT), CARD.gate(MIX_PROJECT)], 'the newest first');
-    assert.deepEqual(stripCards(app).map(kindText), ['Kicked back · Alpha', 'Kicked back · Alpha'], 'each names its project: the strip has no groups');
+    assert.deepEqual(row.children.map((li) => li.className), Array(5).fill('v2-kslot'), 'one row of five places');
+    assert.deepEqual(stripCards(app).map((c) => c.attrs['data-card']), STRIP_ORDER, 'by project in J7\'s order, the portfolio\'s last, then place');
+    const newest = [...STRIP_KICKS].filter((k) => k.kind !== 'question').sort((a, b) => b.kickedAt - a.kickedAt).map((k) => k.id || CARD[k.kind](k.project));
+    assert.notDeepEqual(STRIP_ORDER, newest, 'the fixture tells the order from the newest kick first');
+    assert.notDeepEqual(STRIP_ORDER.slice(0, 3), [CARD.pr(MIX_PROJECT), CARD.pr(MIX_PROJECT2), CARD.gate(MIX_PROJECT)], 'and from age across projects');
+    assert.deepEqual(stripCards(app).map((c) => byClass(c, 'v2-place')[0].textContent),
+      ['Place 1 of 6 waiting on you in Alpha', 'Place 3 of 6 waiting on you in Alpha', 'Place 1 of 6 waiting on you in Bravo', 'Place 5 of 6 waiting on you in Bravo', 'Place 1 of 1 waiting on you in Portfolio'],
+      'each its place in its own project, read with the project its kind line names');
+    assert.deepEqual(stripCards(app).map(kindText), ['Kicked back · Alpha', 'Kicked back · Alpha', 'Kicked back · Bravo', 'Kicked back · Bravo', 'Kicked back · Portfolio'], 'each names its project: the strip has no groups');
     assert.equal(findAll(s, (e) => e.dataset && /^grp:/.test(e.dataset.k || '')).length, 0, 'no project groups in the strip');
     const [pr, gate] = stripCards(app);
     const q = cardOf(app, CARD.question(MIX_PROJECT2));
@@ -319,7 +333,7 @@ test('AC91 (f): the page scrolls sideways nowhere but the strip\'s row — on ev
   }
 });
 
-test('AC91 (f): the strip opens by itself when a card is kicked back and closes to its line when none is left — a card marked on this device, kicked back at about 5 minutes, then confirmed by GitHub; its "Done ✓" in its sheet and its drag into Done; with one project shown, only that project\'s cards', async () => {
+test('AC91 (f), rewritten in QW2 (AC95): the strip opens by itself when a card is kicked back and closes to its line when none is left — a card marked on this device, kicked back at about 5 minutes, then confirmed by GitHub; its "Done ✓" in its sheet and its drag into Done; with one project shown, only that project\'s cards', async () => {
   const setup = mixState();
   const store = looked(NOW - 5 * H);
   const app = await open(setup, { store });
@@ -335,7 +349,10 @@ test('AC91 (f): the strip opens by itself when a card is kicked back and closes 
       await app.advance(POLL_MS);
     }
     for (let i = 0; i < 5; i++) await app.advance(POLL_MS);
-    assert.deepEqual(stripCards(app).map((c) => c.attrs['data-card']), [CARD.hold(MIX_PROJECT), CARD.pr(MIX_PROJECT)], 'opened by itself, the newest first');
+    // Rewritten in QW2 (forced: it failed; AC95 and reading (p): the strip goes "within each project in place order", no
+    // longer the newest first): the pull request, raised first, before the hold card, which has no raised time (C, (e)),
+    // though the hold card was kicked back last.
+    assert.deepEqual(stripCards(app).map((c) => c.attrs['data-card']), [CARD.pr(MIX_PROJECT), CARD.hold(MIX_PROJECT)], 'opened by itself, in place order');
     assert.equal(byClass(strip(app), 'v2-kh')[0].textContent, 'Kicked back2');
     // "Done ✓" in a strip card's sheet: out of the strip, into Done, a new 5 minutes.
     await app.go(`#/waiting/card/${encodeURIComponent(CARD.hold(MIX_PROJECT))}`);

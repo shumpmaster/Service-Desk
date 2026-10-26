@@ -1088,3 +1088,24 @@ grey line; and the stage-8 guard, whose `QW1_ONCE` pins the section's own look),
   one answered meanwhile and one with a made-up answer pull request (#71) opened meanwhile; and `kindsState` with a made-up
   project "Held" holding a held numbered and a held lettered question and Ledger holding a held v2.5 one, each asked in the
   made-up session above and raised an hour before the clock. **NOT real records or pull requests.**
+
+## After the questions request, QW2 (2026-10-26, S-001 AC95, all but its blocker parts; AC80, AC85, AC87 and AC91 (f) changed; the owner's "Blockers first" and answer 1, "One order per project (Recommended)")
+
+QW2 adds `tests/desk/qw2-fixtures.mjs` and no fixture file. `tests/desk/ac95-qw2-places.test.mjs` (its pure cases of
+board.js's places and its screen cases), QW2's walk over `QW2_OPENS` in `ac88-dark.test.mjs`, the locked cases QW2
+rewrites, and the `qw2-` captures open the states above (QW1's `busiestState`, `twoMixState`, AC85's Letters, Example) and
+these made-up parts, each **NOT real**:
+- **`qw2BusiestState`** (`qw2-fixtures.mjs`): QW1's `busiestState` with Alpha brought to twelve cards waiting, for two-digit
+  places (AC94's "Settled from QW1's build", point 6): three made-up pull requests (#81, #82, #83, opened 3 days, 2 hours and
+  9 days before the clock, on made-up `build/builder/qw2-<n>` branches), a made-up second question
+  (`questions/Alpha-second.md`, raised 6 hours before the clock), a deploy waiting for its approval (Alpha made
+  `deploysNeedOwner`, md-extremes/' own waiting `desk-deploy` run), and a made-up status file (`status/P-009.toml`) naming
+  card criteria-2 with no card file (a card that went missing); the portfolio with two made-up cards (pf-fixtures.mjs's card
+  form); and the device's Done marks on Alpha's #82, Gamma's merge card and the portfolio's first card, each kicked back
+  (made up, as `deviceMarks` makes them), beside QW1's on Beta's question. **NOT real records, pull requests, cards or marks.**
+- **`stripState`** (`qw2-fixtures.mjs`): `twoMixState` (Service-Desk at 77bfeae, real, with the made-up Alpha and Bravo) with
+  Bravo's made-up pull request #80 opened two days before the clock, the portfolio with one made-up card, and the device's
+  Done marks (`STRIP_KICKS`) on Alpha's pull request and gate card, Bravo's pull request, hold card and question, and the
+  portfolio's card, each kicked back at a made-up minute chosen so the newest kick first, the age order across projects and
+  the strip's order all differ. **NOT real records or marks.**
+- **`QW2_OPENS`** (`qw2-fixtures.mjs`): Waiting on `qw2BusiestState`, and a made-up pull request's sheet over it. **NOT real.**

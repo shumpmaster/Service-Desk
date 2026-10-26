@@ -970,13 +970,94 @@ function raisedOrder(a, b) {
   return a.raisedAt - b.raisedAt || (a.id < b.id ? -1 : 1);
 }
 
+// ---------------------------------------------------------------------------
+// Each card's place (AC95, stage QW2 of "After the questions request"; the owner's "Blockers first" and answer 1, "One
+// order per project (Recommended)"): every card waiting on the owner shows "<k> of <N> waiting", its place in its
+// project's published order. QW2 builds the places by age; the blocker parts (a question other cards wait on first) are
+// QW3's, with AC96, so until then no card is a blocker and every card takes its place by age.
+
+/** AC95's words for a place. */
+export const PLACE_WORDS = Object.freeze({
+  // On a line of its own at the card's top, above its kind line (C, (n)).
+  line: (k, n) => `${k} of ${n} waiting`,
+  // Its accessible text, read first: the line's words with "Place " before them and " on you in <project>" after.
+  before: 'Place ',
+  after: (project) => ` on you in ${project}`,
+  // A held question (AC77; one of the model's `askingRows`, never a card) has no place: its place line says so.
+  held: 'Being asked in your session',
+  // Its sheet's small line adds the same words after " · " ("Settled from QW2's build", 5).
+  heldSheet: 'being asked in your session',
+});
+
+/**
+ * AC95, "The order of a set of cards", part 2 and 3 (QW2; part 1, the blockers first, is QW3's): the earliest raised first,
+ * as AC52 and AC80 order them; every card the records give no raised time (a merge card, a hold card, a deploy waiting for
+ * approval, a card that went missing, every portfolio card) after every card with one (C, (e)); ties, in either part, by
+ * the card's AC73 key (`id`: `<project>|<kind>|<id>`; a portfolio card's, which has no AC73 key, its own id,
+ * portfolio.js's `Portfolio|portfolio|<path>`), compared character by character in code-unit order, never a locale's, so
+ * the order is total and two devices reading the same records and marks agree. A kicked-back card is placed by its own
+ * raised time, not its kick's (C, (k)).
+ */
+export function placeOrder(a, b) {
+  const ra = a.raisedAt == null || !Number.isFinite(a.raisedAt) ? null : a.raisedAt;
+  const rb = b.raisedAt == null || !Number.isFinite(b.raisedAt) ? null : b.raisedAt;
+  if (ra != null && rb != null && ra !== rb) return ra - rb;
+  if (ra == null && rb != null) return 1;
+  if (rb == null && ra != null) return -1;
+  const x = String(a.id);
+  const y = String(b.id);
+  return x < y ? -1 : x > y ? 1 : 0;
+}
+
+/**
+ * AC95, "One order per project": one project's places (or the portfolio's group's), over every card of it with a place
+ * (every card Waiting's badge counts: "Waiting on you" and Kicked back, the section's questions among them; AC81). N is
+ * their count. Returns Map(card id → { k, n }), k from 1.
+ */
+export function placesOf(cards) {
+  const sorted = [...cards].sort(placeOrder);
+  const n = sorted.length;
+  return new Map(sorted.map((c, i) => [c.id, { k: i + 1, n }]));
+}
+
+/** AC95: a set of cards with places, in place order (a card with no place, none here, last). */
+const byPlace = (a, b) => (a.place ? a.place.k : Infinity) - (b.place ? b.place.k : Infinity);
+
+/**
+ * AC95 ("When the order changes"; AC40: "nothing reorders under the owner's thumb"): which board view to draw on Waiting.
+ * While a card is held for a drag or a sheet is open over Waiting (`hold`), nothing on Waiting moves: the view drawn last
+ * before the hold (`drawn`), when it was drawn for the same screen (`only`); else, with nothing drawn before it (the
+ * page opened straight at a sheet), the fresh one. With no hold, the fresh view (`fresh`), whose places are the new ones.
+ */
+export function heldView({ fresh, drawn = null, hold = false, only = null }) {
+  if (!hold || !drawn) return fresh;
+  return (drawn.only || null) === (only || null) ? drawn : fresh;
+}
+
+/**
+ * AC95 ("When the order changes"; "Settled from QW2's build", 3): the board Waiting draws now and the one it holds next.
+ * With no hold, the fresh view, held from now on. While a card is held or a sheet is open, the view held for this screen
+ * (heldView); and where none is held, a page opened straight at a sheet, the fresh view, held from the first drawing in
+ * which the sheet is open on an item the board has (`found`), so that board, the open sheet's place with it, stays until
+ * the sheet closes. Before that drawing (the project's first read still on its way, the sheet not yet on its item) nothing
+ * is held, so the board's first read is not frozen out. Returns { view, drawn }.
+ */
+export function heldBoard({ fresh, drawn = null, hold = false, only = null, found = true }) {
+  const view = heldView({ fresh, drawn, hold, only });
+  if (!hold) return { view, drawn: fresh };
+  if (view !== fresh) return { view, drawn };
+  return { view, drawn: found ? fresh : null };
+}
+
 /**
  * The whole board (AC80): input: { projects: [{ project, cards, agents, read: { ok, cantRead,
  * since, words, opening (from G8d: no read of it has succeeded in this opening), cantShow (from G8d's round 2: the desk can
  * read it but can't draw it) }, recording: [], asking: [], answerRecording: [], recordRows: [], seenRows: [] }] in J7's
  * order, marks, only (a project's name, or null), nowMs, tz }. Returns { lanes: [{ key, title,
- * count, groups: [{ project, rows, more }] }] (from QW1 "Waiting on you" and "Kicked back" hold no question), strip (AC91
- * (f): the kicked-back cards, newest first, each with its `stripProject`), questions (AC94, from QW1: the "Questions for you"
+ * count, groups: [{ project, rows, more }] }] (from QW1 "Waiting on you" and "Kicked back" hold no question; from QW2 each
+ * card with its `place`, { k, n }, in place order), strip (AC91 (f): the kicked-back cards, from QW2 by project in J7's
+ * order, the portfolio's last, then in place order, each with its `stripProject`), places (AC95, from QW2: Map(card id →
+ * { k, n, project, label }), every counted card's place, for its sheet), questions (AC94, from QW1: the "Questions for you"
  * section, { groups: [{ project, label, rows (its counted questions, each with its `lane`, 'wait' or 'kick'), held (its held
  * questions, heldCard's), count }], order (every question as drawn), count, held }), counts: Map(project → { waiting,
  * kicked }, the section's questions among them), waits (AC94: "Waiting on you"'s and "Kicked back"'s groups as they were
@@ -1017,6 +1098,7 @@ export function boardView(input) {
   const cantLines = [];
   const section = []; // AC94: the "Questions for you" section's groups, in J7's order
   const reading = [];
+  const placeById = new Map(); // AC95: every card's place, by its id, { k, n, project, label }
   let pendingAny = false;
   for (const p of input.projects) {
     const name = p.project.name;
@@ -1062,7 +1144,8 @@ export function boardView(input) {
       doneRows.push({ ...r, pending: false });
     }
     // Waiting on you: AC52's order (the earliest raised first, one with no raised time last); Kicked
-    // back and Done: the newest first.
+    // back and Done: the newest first, as Home, a project's page and Plan read them (`waits`); from QW2 the board draws its
+    // lanes, section and strip in place order (below).
     waitRows.sort(raisedOrder);
     kickRows.sort((a, b) => b.kicked.at - a.kicked.at);
     doneRows.sort((a, b) => (b.pending === a.pending ? b.at - a.at : b.pending ? 1 : -1));
@@ -1070,15 +1153,22 @@ export function boardView(input) {
     // the strip's and the lane's sum.
     counts.set(name, { waiting: waitRows.length, kicked: kickRows.length, pending: doneRows.filter((r) => r.pending).length });
     counted.set(name, new Set([...waitRows, ...kickRows].map((c) => c.key)));
+    // AC95 (stage QW2; the owner's answer 1, "One order per project"): each card the badge counts takes its place in its
+    // project's order (the portfolio's group's for a portfolio card), N their count, whatever is shown (with one project
+    // shown, each card keeps its place, C, (c)). Done's rows, the quiet lines' items and a held question have none.
+    const places = placesOf([...waitRows, ...kickRows]);
+    // Each place with its project's name as the board shows it (the portfolio's group's "Portfolio"), for its accessible text.
+    const placed = (c) => ({ ...c, place: places.has(c.id) ? { ...places.get(c.id), label: p.project.label || name } : null });
     // AC94 (stage QW1; C, (a) and (b)): every owner question that would be a card in "Waiting on you" or the Kicked back
-    // strip is in the "Questions for you" section instead, a kicked-back one with its kick and reason; in QW1 they go in
-    // AC80's lane order (the earliest raised first; the plan review's N4) until QW2. A question held as being asked in a
-    // session (AC77) is no card, and shows there too (the owner's answer 3), at the head of its group until QW3 (AC95).
+    // strip is in the "Questions for you" section instead, a kicked-back one with its kick and reason. From QW2 (AC95) the
+    // section and the lanes draw their cards in place order within each project's group. A question held as being asked in
+    // a session (AC77) is no card, and shows there too (the owner's answer 3), at the head of its group until QW3 (AC95).
     const isQ = (c) => c.kind === 'question';
-    const sectionRows = [...waitRows.filter(isQ).map((c) => ({ ...c, lane: 'wait' })), ...kickRows.filter(isQ).map((c) => ({ ...c, lane: 'kick' }))].sort(raisedOrder);
-    const heldRows = (p.asking || []).map((a) => heldCard(p.project, a, tz, nowMs));
-    const laneRows = waitRows.filter((c) => !isQ(c));
-    const stripRows = kickRows.filter((c) => !isQ(c));
+    const sectionRows = [...waitRows.filter(isQ).map((c) => ({ ...placed(c), lane: 'wait' })), ...kickRows.filter(isQ).map((c) => ({ ...placed(c), lane: 'kick' }))].sort(byPlace);
+    const heldRows = (p.asking || []).map((a) => ({ ...heldCard(p.project, a, tz, nowMs), place: null }));
+    const laneRows = waitRows.filter((c) => !isQ(c)).map(placed).sort(byPlace);
+    const stripRows = kickRows.filter((c) => !isQ(c)).map(placed).sort(byPlace);
+    for (const [id, pl] of places) placeById.set(id, { ...pl, project: name, label: p.project.label || name });
     // AC87 (stage 6b): the portfolio's group, "Portfolio", after the projects', on the whole board only; it
     // is never a project, so it is in no project's quiet lines ("Nothing waiting", "Can't read <project>").
     const portfolio = p.project.portfolio === true;
@@ -1117,10 +1207,11 @@ export function boardView(input) {
   const lane = (k) => lanes[k].reduce((n, g) => n + (k === 'done' ? g.all.length : g.rows.length), 0);
   let badge = 0;
   for (const c of counts.values()) badge += c.waiting + c.kicked;
-  // AC91 (f): the strip's cards in one row, the newest first across every project shown, each naming its project (the
-  // strip has no project groups); with one project shown, only that project's. A tie keeps J7's order.
-  const strip = lanes.kick.flatMap((g) => g.rows.map((c) => ({ ...c, stripProject: g.label })))
-    .sort((a, b) => b.kicked.at - a.kicked.at);
+  // AC91 (f), changed by AC95 (stage QW2; C, (p); round 3, the Critic's finding 1): the strip's cards in one row, each
+  // naming its project (the strip has no project groups), by project in J7's order, the portfolio's last, and within each
+  // project in place order (stripRows'), no longer the newest first; with one project shown, only that project's.
+  const strip = [...lanes.kick.filter((g) => !g.portfolio), ...lanes.kick.filter((g) => g.portfolio)]
+    .flatMap((g) => g.rows.map((c) => ({ ...c, stripProject: g.label })));
   // AC94: the section's order, the order it draws its questions in (each group's held question first until QW3, then its
   // counted questions), and its head's counts: q the counted questions, h the held ones.
   const order = section.flatMap((g) => [...g.held, ...g.rows]);
@@ -1129,7 +1220,7 @@ export function boardView(input) {
     : quietReadLines({ cantLines, reading, portfolio: input.portfolio || null, signedOut: Boolean(input.signedOut), tz });
   return {
     lanes: LANES.map((l) => ({ ...l, count: lane(l.key), groups: lanes[l.key] })),
-    strip, questions, waits: [{ key: 'wait', groups: waits.wait }, { key: 'kick', groups: waits.kick }],
+    strip, questions, places: placeById, waits: [{ key: 'wait', groups: waits.wait }, { key: 'kick', groups: waits.kick }],
     counts, counted, badge, quiet, only, of: input.projects.filter((p) => p.project.portfolio !== true).length, nothingWaiting, cantRead, cantShow, cantLines, pendingAny,
     reading, signedOutLine, readLines,
   };

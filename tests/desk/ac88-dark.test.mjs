@@ -36,6 +36,7 @@ import { BAD_PR } from './fake-desk.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G7_OPENS, G7B_OPENS, G8B_OPENS, G8C_OPENS, G8D_OPENS, G9_OPENS, G9B_OPENS, G9C_OPENS } from './glance-fixtures.mjs';
 import { QW1_OPENS } from './qw1-fixtures.mjs';
+import { QW2_OPENS } from './qw2-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -622,6 +623,19 @@ function okBadCheck(app, where, fails, seen, places) {
         const red = inside.filter((x) => COLOUR_PROPS.some((prop) => x.declared.get(prop) != null && isOkBad(x.declared.get(prop))) || isOkBad(x.style.get('color') || ''));
         if (red.length) fail(n, `${ink}: ${red.map(label).join(', ')} in --ok or --bad, where AC92 (a) keeps ink or grey`);
         else places.add(ink);
+      }
+      // QW2 (AC95, "Where the place shows": "<k> of <N> waiting" in `--t-mono` `--ink`; a held question's "Being asked in your
+      // session" in that line's place in `--t-mono` `--ink2`): each card's place line, in --ink (a held question's --ink2),
+      // never --ok, --bad or --you, with no icon.
+      if (n.tag === 'span' && n.cls.has('v2-place')) {
+        const raw = n.style.get('color') || '';
+        const col = plain(raw).trim().toLowerCase();
+        const heldLine = !n.cls.has('ink');
+        const want = THEME[way.theme][heldLine ? '--ink2' : '--ink'].toLowerCase();
+        const you = THEME[way.theme]['--you'].toLowerCase();
+        if (isOkBad(raw) || col === you || col !== want) fail(n, `a card's place line in ${col}: it is ${heldLine ? '--ink2' : '--ink'}`);
+        else if (n.kids.some((c) => c.tag === 'svg')) fail(n, 'a card\'s place line with an icon: it has none');
+        else places.add(heldLine ? 'grey: a held question\'s place line' : 'ink: a card\'s place line');
       }
       // G7b (AC92 (a)'s "Stays grey": "Since you last looked"'s "<project> not read since HH:MM, its lines may be missing"
       // lines, grey as the owner ruled, AC91 (c)): each in --ink2, never --ok or --bad, and with no icon.
@@ -1546,6 +1560,42 @@ const G9C_EXCEPT = (n, d, theme) => {
   const k = G9C_KEY(n);
   return Boolean(k && (G9C_ONCE.get(theme).get(k) || []).includes(d)) ? `G9C ${theme} ${k} ${d}` : null;
 };
+/**
+ * G2's Kicked back strip with cards (AC91 (f), built in G2 after bd4097d), which no walk here drew until QW2: QW1_OPENS's one
+ * kicked-back card is a question, which goes to the "Questions for you" section, and no other fixture here keeps a kicked-back
+ * mark. QW2's screens (QW2_OPENS) draw it, with a place line on each of its cards, so its own look on purpose, as G2 built it
+ * and AC91 (f) states it, is pinned here, each declaration before and after, in each theme, on only its own element; QW2
+ * itself adds no declaration (its place line takes `.v2-mono` and `.v2-mono.ink`, both in bd4097d's stylesheet):
+ * - the strip's head (`h2.v2-kh`, the strip's own child): a flex row, 6 px gaps, 28 px tall, a 1 px --line hairline 4 px under
+ *   it, 600 12 px in --ink ("its head, "Kicked back" in 600 12 px `--ink`"), its title's text (its first `span`) so computed;
+ * - its row (`ol.v2-krow`): one row, 8 px between cards, scrolling sideways inside the strip and snapping to a card, never
+ *   wider than the strip, 2 px over it and 6 px under it;
+ * - each card's place in the row (`li.v2-kslot`): 200 px wide, a grid, snapping at its start.
+ */
+const STRIP_FONT = (f) => `${f} "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+const STRIP_LOOK = (ink, line) => new Map([
+  ['h2.v2-kh (the strip\'s head)', ['display: (none) → flex', 'align-items: (none) → center', 'gap: (none) → 6px', 'min-height: (none) → 28px', 'padding-bottom: (none) → 4px',
+    `border-bottom: (none) → 1px solid ${line}`, `font: (none) → ${STRIP_FONT('600 12px/1.3')}`, `color: (none) → ${ink}`]],
+  ['span (the strip\'s title)', ['computed font-size: 13px → 12px', 'computed font-weight: 400 → 600', 'computed line-height: 18.849999999999998px → 15.600000000000001px']],
+  ['ol.v2-krow', ['padding: 0 → 2px 0 6px', 'display: (none) → flex', 'gap: (none) → 8px', 'max-width: (none) → 100%', 'overflow-x: (none) → auto', 'overflow-y: (none) → hidden',
+    'overscroll-behavior-x: (none) → contain', 'scroll-snap-type: (none) → x mandatory']],
+  ['li.v2-kslot', ['flex: (none) → 0 0 200px', 'display: (none) → grid', 'scroll-snap-align: (none) → start']],
+]);
+const STRIP_ONCE = new Map([['light', STRIP_LOOK('#18191c', '#e7e7ea')], ['dark', STRIP_LOOK('#ecedef', '#26282c')]]);
+const STRIP_KEY = (n) => {
+  const p = n.parent;
+  const strip = (x) => x && x.tag === 'section' && x.cls.has('v2-kstrip');
+  if (n.tag === 'h2' && n.cls.has('v2-kh') && strip(p)) return 'h2.v2-kh (the strip\'s head)';
+  if (n.tag === 'span' && n.cls.size === 0 && p && p.tag === 'h2' && p.cls.has('v2-kh') && strip(p.parent) && p.kids[0] === n) return 'span (the strip\'s title)';
+  if (n.tag === 'ol' && n.cls.has('v2-krow') && strip(p)) return 'ol.v2-krow';
+  if (n.tag === 'li' && n.cls.has('v2-kslot') && p && p.tag === 'ol' && p.cls.has('v2-krow')) return 'li.v2-kslot';
+  return null;
+};
+const STRIP_EXCEPT = (n, d, theme) => {
+  const k = STRIP_KEY(n);
+  return Boolean(k && (STRIP_ONCE.get(theme).get(k) || []).includes(d)) ? `G2-STRIP ${theme} ${k} ${d}` : null;
+};
+const STRIP_FLAT = [...STRIP_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G2-STRIP ${theme} ${k} ${d}`))).sort();
 const G9C_FLAT = [...G9C_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G9C ${theme} ${k} ${d}`))).sort();
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
   && n.parent.parent && n.parent.parent.cls.has('v2-prow') && M3D1_WAITS.has(d);
@@ -1612,6 +1662,8 @@ function sameLook(app, where, fails, seen) {
         if (qw1) { excepted.add(qw1); continue; }
         const g9c = G9C_EXCEPT(b, d, way.theme);
         if (g9c) { excepted.add(g9c); continue; }
+        const strip = STRIP_EXCEPT(b, d, way.theme);
+        if (strip) { excepted.add(strip); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -2099,4 +2151,39 @@ test('AC88 + AC69 + AC92 (a) + AC44 step 4 (QW1 of "After the questions request"
     'ruled: Waiting\'s and "Since you last looked"\'s quiet line', "Waiting's badge"]) assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
   // Only declarations the walks above met (QW1_ONCE among them), so QW1_ONCE stays exact.
   assert.deepEqual([...excepted].filter((x) => !before.has(x)), [], 'no exception met that the walks above had not met');
+});
+
+// QW2 of "After the questions request" (AC95; the stage's row: AC88's cascade for the new place, `QW2_ONCE` for any CSS it
+// adds): the place line on every kind of card (two-digit places, the held question's words, the strip's three groups, the
+// portfolio's group) and a card's sheet with its place (tests/desk/qw2-fixtures.mjs's QW2_OPENS, its made-up parts NOT
+// real), each opened once (the suite's memory) and read by all three checks: AC69's (no vermilion in a place line: the kind
+// icon below it keeps its own), AC92 (a)'s (the place line --ink, the held question's --ink2, never --ok or --bad, with no
+// icon), and the stage-8 guard. QW2 adds no declaration to the stylesheets: the place line takes `.v2-mono` and
+// `.v2-mono.ink`, and its screen-reader words `.sb-vh`, all in bd4097d's stylesheet, so there is no `QW2_ONCE`, and these
+// screens meet no exception the walks above had not met, but G2's strip with cards, which they are the first here to draw
+// (STRIP_ONCE, pinned exactly).
+test('AC88 + AC69 + AC92 (a) + AC44 step 4 (QW2 of "After the questions request"; AC95): on QW2\'s screens (QW2_OPENS, made up, NOT real), in dark (forced, and the phone\'s own) and light — every kind of card with its place, two-digit places, a held question\'s words, the strip\'s three groups, a sheet\'s small line — vermilion only on the places AC69 lists; each place line --ink (a held question\'s --ink2) with no icon; and every element\'s look bd4097d\'s, with no exception of QW2\'s own', async () => {
+  const fails = [];
+  const seen = new Set();
+  const places = new Set();
+  const before = new Set(excepted);
+  for (const [where, open] of QW2_OPENS) {
+    const app = await open();
+    try {
+      assert.ok(findAll(app.view, (e) => / v2-place /.test(` ${e.className || ''} `)).length >= 30, `${where}: the place lines`);
+      vermilionCheck(app, `QW2 ${where}`, fails, seen, places);
+      okBadCheck(app, `QW2 ${where}`, fails, seen, places);
+      sameLook(app, `QW2 ${where}`, fails, seen);
+    } finally {
+      app.restore();
+    }
+  }
+  assert.deepEqual(fails, []);
+  for (const want of ['ink: a card\'s place line', 'grey: a held question\'s place line', 'a question\'s kind icon in Questions for you', 'a card\'s kind icon in Waiting on you',
+    'a card\'s kind icon in Kicked back', "Waiting's badge"]) {
+    assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
+  }
+  // G2's strip with cards, first drawn here, met exactly; and nothing else the walks above had not met: no QW2_ONCE.
+  assert.deepEqual([...excepted].filter((x) => /^G2-STRIP /.test(x)).sort(), STRIP_FLAT, 'G2\'s strip, as pinned');
+  assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^G2-STRIP /.test(x)), [], 'no exception met that the walks above had not met: no QW2_ONCE');
 });

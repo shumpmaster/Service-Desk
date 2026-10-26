@@ -85,14 +85,18 @@ const LAB_BLOCK = LAB_LINES.slice(LAB_LINES.indexOf('OPTIONS:') + 1, LAB_LINES.f
 // ---------------------------------------------------------------------------
 // Every sheet (frames 3, 3b and 4)
 
-test('AC85 every sheet: the head in Plex Mono, "<project> · <kind> · <its name or id> · <milestone> · waiting <age>", each part only when its record gives it; its title in --t-sheet; a 44 × 44 px close', async () => {
+// Rewritten in QW2 (forced: it failed once the place was added; AC95, "Where the place shows": "In its sheet the small line
+// adds " · <k> of <N> waiting""): each head ends with its card's place in Letters' order, six cards waiting (AC95's age
+// order: the design-lab question raised first, the Launch gate's card second, then the next-work question, … the send
+// question last).
+test('AC85 every sheet, rewritten in QW2 (AC95): the head in Plex Mono, "<project> · <kind> · <its name or id> · <milestone> · waiting <age>", each part only when its record gives it, then " · <k> of <N> waiting"; its title in --t-sheet; a 44 × 44 px close', async () => {
   const app = await openLetters();
   try {
     const heads = [
-      [SEND, /^Letters · question · P-003-send-issue · waiting 21 m$/, 'Send the first paid issue to every member?'], // its Milestone line is `none (…)`: no milestone part
-      [NEXT, /^Letters · question · P-001-next-work · M3A · waiting 2 h 54 m$/, 'Which piece of later work comes next?'],
-      [LAB, /^Letters · question · P-001-design-lab-open · waiting 5 h 1 m$/, "eleven short questions on the desk's screens"], // the old form: no Milestone line
-      [GATE, /^Letters · gate · P-003 · waiting 3 h 1 m$/, null],
+      [SEND, /^Letters · question · P-003-send-issue · waiting 21 m · 6 of 6 waiting$/, 'Send the first paid issue to every member?'], // its Milestone line is `none (…)`: no milestone part
+      [NEXT, /^Letters · question · P-001-next-work · M3A · waiting 2 h 54 m · 3 of 6 waiting$/, 'Which piece of later work comes next?'],
+      [LAB, /^Letters · question · P-001-design-lab-open · waiting 5 h 1 m · 1 of 6 waiting$/, "eleven short questions on the desk's screens"], // the old form: no Milestone line
+      [GATE, /^Letters · gate · P-003 · waiting 3 h 1 m · 2 of 6 waiting$/, null],
     ];
     for (const [id, meta, title] of heads) {
       const sh = await openSheet(app, id);

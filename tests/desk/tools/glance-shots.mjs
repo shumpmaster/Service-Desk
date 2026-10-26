@@ -734,10 +734,26 @@ async function main() {
             });
             const rows = [...document.querySelectorAll('.v2-sheet .v2-wlist a')].map((a) => a.getBoundingClientRect().height);
             if (rows.some((h) => h < 24)) out.fails.push(`a "Cards waiting on it" row ${Math.min(...rows)} px tall`);
+            // From QW3's round 2 (AC96's "From QW3's design review, round 1", N3): each row's title at most three lines, faded
+            // only where it is cut; N2: each uncounted entry's code in Plex Mono.
+            const tts = [...document.querySelectorAll('.v2-sheet .v2-wlist .v2-tt')].map((t) => {
+              const lh = parseFloat(getComputedStyle(t).lineHeight) || 16.8;
+              const lines = Math.round(t.getBoundingClientRect().height / lh);
+              const cut = t.scrollHeight > t.clientHeight + 1;
+              if (lines > 3) out.fails.push(`a row's title on ${lines} lines`);
+              if (cut !== t.classList.contains('over')) out.fails.push(`a row's title ${cut ? 'cut with no fade' : 'faded with no cut'}`);
+              return `${lines}${cut ? ' cut, faded' : ''}`;
+            });
+            const codes = [...document.querySelectorAll('.v2-sheet [data-k="blocks"] p.v2-small .v2-mono')].map((c) => getComputedStyle(c).fontFamily.split(',')[0]);
+            if (codes.some((f) => !/Plex Mono/.test(f))) out.fails.push(`a code not in Plex Mono: ${codes.join(', ')}`);
+            const hl = document.querySelector('.v2-board .v2-heldl');
             if (ws.length) out.said.push(`${ws.length} "Waits on" lines, boxes ≥ ${Math.round(minH.box * 10) / 10} px, links ≥ ${Math.round(minH.link * 10) / 10} px, at most ${most} line(s)`);
             if (af.length) out.said.push(`${af.length} "Answer first" lines, ${Math.min(...af)}–${Math.max(...af)} line(s), ${getComputedStyle(document.querySelector('.v2-afirst')).fontSize}`);
             if (ws.length) out.said.push(`"Waits on" at ${getComputedStyle(ws[0]).fontSize}`);
             if (rows.length) out.said.push(`${rows.length} sheet rows ≥ ${Math.round(Math.min(...rows) * 10) / 10} px`);
+            if (tts.length) out.said.push(`row titles: ${tts.join(', ')} line(s)`);
+            if (codes.length) out.said.push(`${codes.length} codes in ${codes[0]}`);
+            if (hl) out.said.push(`held line at ${getComputedStyle(hl).fontSize}`);
             return { fails: out.fails, said: out.said.join('; ') || 'no blocker lines' };
           }) : null;
           if (qw3 && qw3.fails.length) rowFails.push(`${shot.name}-${w}x${hgt}-${theme}: ${qw3.fails.join('; ')}`);

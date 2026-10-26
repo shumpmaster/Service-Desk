@@ -2635,7 +2635,7 @@ function questionsSection(bd, built, only) {
   const attrs = { class: 'v2-qsec', key: 'qsec', 'aria-label': SECTION_WORDS.title };
   // AC94 ("Settled from QW1's build", 2): the re-read's words for a question it took out of the section, under the head, or,
   // once none is left, under the "none" line, for this opening.
-  const gone = goneRechecks(qv, only);
+  const gone = goneRechecks(qv, only, built);
   if (!qv.order.length) {
     const e = stripEmptyParts({ unread: bd.unread || null, one: bd.one || null });
     return h('section', attrs, h('p', { class: 'v2-kq', key: 'qnone' }, h('span', { class: 'v2-kl' }, SECTION_WORDS.title),
@@ -2655,20 +2655,34 @@ function questionsSection(bd, built, only) {
 }
 
 /**
- * AC94 ("Before and around a link": "a question answered meanwhile shows "already answered: <ruling>" with no link"): a
- * section question whose re-read found it answered or being recorded has left the section by the time the words are
- * known, so the section keeps them, once per question, "<its title>: <the words>", under its head, or under the "Questions
- * for you · none" line once the last question has left (AC94, "Settled from QW1's build", 2), for this opening (as a sheet open
- * over it keeps them, AC56); "being recorded" keeps its pull request's link. One project shown, only that project's.
+ * AC94 ("Before and around a link": "a question answered meanwhile shows "already answered: <ruling>" with no link"; its
+ * "Settled from QW1's build", 2): a section question whose re-read left words beside its button has left the section by the
+ * time they could be read, so the section says, once per question, "<its title>: <the words>", under its head, or under the
+ * "Questions for you · none" line once the last question has left, for this opening (as a sheet open over it keeps them,
+ * AC56), only where the question has left as answered or as being recorded: the words AC77's re-read gives from the
+ * project's model as this drawing has it (recheckOutcome), "Already answered: <ruling>", or the being-recorded words with their pull
+ * request's link. Any other saved outcome ("The desk couldn't check just now" and its "Open GitHub anyway", "Still open:" with
+ * a pop-up blocked, a question marked Done or gone) is dropped once its question leaves, unless its sheet is open (AC56
+ * keeps a sheet's words while it is open). One project shown, only that project's.
  */
-function goneRechecks(qv, only) {
+function goneRechecks(qv, only, built) {
   const here = new Set(qv.order.map((c) => c.id));
   const out = new Map();
-  for (const [k, v] of rechecks) {
-    if (!v || !v.id || here.has(v.id) || out.has(v.id) || (only && v.project !== only) || !/^question\|/.test(String(v.id).split('|').slice(1).join('|'))) continue;
+  const open = openSheetCard();
+  for (const [k, v] of [...rechecks]) {
+    if (!v || !v.id || here.has(v.id) || !/^question\|/.test(String(v.id).split('|').slice(1).join('|'))) continue;
     if (v.words === RECHECK_WORDS.checking) continue;
-    out.set(v.id, h('p', { class: 'v2-recheck', role: 'status', key: `qgone:${k}` }, `${v.title}: `, v.words,
-      v.pr ? [' ', ext(v.pr.url, `PR #${v.pr.number}, which records it`, 'v2-lnk')] : null));
+    const name = (/\|questions\/([^/]+)\.md$/.exec(v.id) || [])[1];
+    const b = built.find((x) => x.project.name === v.project);
+    const model = b && !b.error ? b.model : null;
+    const o = model && name ? recheckOutcome(model, { kind: 'question', name }) : null;
+    if (!o || (o.kind !== 'answered' && o.kind !== 'recording')) {
+      if (v.id !== open) rechecks.delete(k);
+      continue;
+    }
+    if (out.has(v.id) || (only && v.project !== only)) continue;
+    out.set(v.id, h('p', { class: 'v2-recheck', role: 'status', key: `qgone:${v.id}` }, `${v.title}: `, o.words,
+      o.pr ? [' ', ext(o.pr.url, `PR #${o.pr.number}, which records it`, 'v2-lnk')] : null));
   }
   return [...out.values()];
 }

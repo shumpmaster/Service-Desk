@@ -2678,12 +2678,15 @@ function goneRechecks(qv, only) {
   const open = openSheetCard();
   for (const [k, v] of [...rechecks]) {
     if (!v || !v.id || here.has(v.id) || !/^question\|/.test(String(v.id).split('|').slice(1).join('|'))) continue;
+    // With one project shown, the section holds only that project's questions, so another project's result is not judged
+    // here: its question may still be in the section with every project shown (QW1's round 3, the Reviewer's N1).
+    if (only && v.project !== only) continue;
     if (v.kind === 'checking') continue;
     if (v.kind !== 'answered' && v.kind !== 'recording') {
       if (v.id !== open) rechecks.delete(k);
       continue;
     }
-    if (out.has(v.id) || (only && v.project !== only)) continue;
+    if (out.has(v.id)) continue;
     out.set(v.id, h('p', { class: 'v2-recheck', role: 'status', key: `qgone:${v.id}` }, `${v.title}: `, v.words,
       v.pr ? [' ', ext(v.pr.url, `PR #${v.pr.number}, which records it`, 'v2-lnk')] : null));
   }

@@ -18,7 +18,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { SRC, CONFIG } from './helpers.mjs';
+import { SRC, CONFIG, fixture } from './helpers.mjs';
+import { PORTFOLIO_REPO } from './fake-desk.mjs';
+import { waSetup, WORKED, j77Files } from './wa-fixtures.mjs';
 import { loadSandbox, byClass, findAll, El0 } from './sandbox-helpers.mjs';
 import { memStore } from './wa-fixtures.mjs';
 import { v3, fullRepo } from './sandbox-fixtures.mjs';
@@ -29,7 +31,7 @@ import * as PUBLIC_BOARD from '../../src/public/lib/board.js';
 import { PF_BOARD } from '../../src/lib/portfolio.js';
 import { qw2BusiestState, stripState, qw2Open, ALPHA_TWELVE, STRIP_ORDER, pfId, MISSING_ID, NOW } from './qw2-fixtures.mjs';
 import { CARD, MIX_PROJECT, MIX_PROJECT2 } from './glance-fixtures.mjs';
-import { qid, HELD_PATH, QPATH, qFile } from './qw1-fixtures.mjs';
+import { qid, HELD_PATH, QPATH, qFile, EXT_LONG } from './qw1-fixtures.mjs';
 
 const H = 3600e3;
 const MIN = 60e3;
@@ -476,6 +478,78 @@ test('AC95 ("Settled from QW2\'s build", 3): a page opened straight at a sheet h
     assert.equal(placeAt(app, CARD.card('Alpha')), '5 of 7 waiting');
     await app.go(`#/waiting/card/${enc(CARD.card('Alpha'))}`);
     assert.match(sheetHead(app), / · 5 of 7 waiting$/, 'opened again: its new place');
+  } finally {
+    app.restore();
+  }
+});
+
+// QW2's review, round 1, the Reviewer's N2 (AC95's "Settled from QW2's build", 3, as read after N1): the held board is the one
+// drawn once the sheet has found its item, held whole: a project not yet read then keeps its "Still reading <project>…" line
+// and its cards stay out until the sheet closes, while the badge counts live.
+test('AC95 (QW2\'s review, N2): opened straight at a sheet while other projects are still being read — the board held through two polls, only Alpha\'s places, the other projects\' "Still reading…" lines kept, the badge counting live; closed, their cards and places', async () => {
+  const s = qw2BusiestState();
+  const others = ['Beta', 'Gamma', 'Delta', EXT_LONG];
+  const free = [];
+  for (const r of [...others.map((n) => s.repos[n]), s.repos[PORTFOLIO_REPO]]) r.hold = new Promise((ok) => { free.push(() => { r.hold = null; ok(); }); }); // made up (NOT real): first reads held
+  const app = await loadSandbox({ ...s, hash: `#/waiting/card/${enc('Alpha|pr|81')}`, now: NOW, store: seen(s.seed) });
+  const reading = () => findAll(app.view, (e) => e.dataset && /^ql:reading:/.test(e.dataset.k || '')).map((e) => e.textContent);
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    assert.match(sheetHead(app), / · 3 of 12 waiting$/, 'the sheet on its item, its place');
+    const first = drawn(app);
+    assert.deepEqual(first.map(([id]) => id).filter((id) => !id.startsWith('Alpha|')), [], 'only Alpha\'s cards');
+    assert.deepEqual(ALPHA_TWELVE.map((id) => placeAt(app, id)), ALPHA_TWELVE.map((_, i) => `${i + 1} of 12 waiting`), 'Alpha\'s places');
+    const lines = reading();
+    assert.deepEqual(lines, [...others.map((n) => `Still reading ${n}…`), 'Still reading the portfolio…'], 'the other projects\' "Still reading" lines');
+    assert.equal(badge(app), 12);
+    // The other reads arrive: two polls, and nothing on Waiting moves; the badge counts them.
+    for (const f of free) f();
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    assert.deepEqual(drawn(app), first, 'the board under the open sheet: held');
+    assert.deepEqual(reading(), lines, 'their "Still reading" lines kept');
+    assert.match(sheetHead(app), / · 3 of 12 waiting$/);
+    assert.equal(badge(app), 33, 'the badge live');
+    // Closed: the other projects' cards and places.
+    await app.go('#/waiting');
+    assert.deepEqual(reading(), [], 'read');
+    assert.equal(placeAt(app, CARD.pr('Beta')), '1 of 6 waiting');
+    assert.equal(placeAt(app, qid('Delta', QPATH.Delta)), '1 of 1 waiting');
+    assert.equal(placeAt(app, pfId('PF-002-explore-1.md')), '2 of 2 waiting');
+    assert.equal(allCards(app).filter((c) => placeEl(c) && c.attrs['data-question'] !== 'held').length, 33);
+  } finally {
+    app.restore();
+  }
+});
+
+// QW2's review, round 1, the Reviewer's N5: a gate card's sheet opened over Plan (AC89 (i)) says its place too, while Plan's
+// rows and their order are as before (AC95: "Not changed: … Plan"). Two made-up Launch-gate cards (AC85's, NOT real records).
+const gateCard = (item, ms) => fixture('ac85/queue/P-003-launch-1.md').replace(/P-003/g, item).replace(/(\nanswer: [^\n]*\n)/, `$1Milestone: ${ms}\n`);
+const gateLine = (item, time) => JSON.stringify({ item, action: 'card', card: 1, gate: 'launch', role: 'user-rep', route: 'launch-gate', stage: 6, gate_n: 1, time, trigger: 'x' });
+test('AC95 (QW2\'s review, N5): a gate card\'s sheet opened over Plan adds " · <k> of <N> waiting" to its small line, the place the board gives it; Plan\'s rows and their order unchanged, with no place on them', async () => {
+  const log = `${j77Files()['dispatch-log/2026-10.jsonl'].trimEnd()}\n${gateLine('P-003', '2026-10-18T15:00:00Z')}\n${gateLine('P-004', '2026-10-18T15:10:00Z')}\n`;
+  const setup = waSetup({ extra: { 'intake/estimates.jsonl': WORKED(), 'queue/P-003-launch-1.md': gateCard('P-003', 'M3A'), 'queue/P-004-launch-1.md': gateCard('P-004', 'M3A'), 'dispatch-log/2026-10.jsonl': log } });
+  const app = await loadSandbox({ ...setup, hash: '#/waiting', now: Date.parse('2026-10-18T18:00:00Z'), store: memStore() });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    const gates = allCards(app).map((c) => c.attrs['data-card']).filter((id) => /\|gate\|/.test(id));
+    assert.equal(gates.length, 2);
+    const places = Object.fromEntries(gates.map((id) => [id, placeAt(app, id)]));
+    for (const p of Object.values(places)) assert.match(p, /^\d+ of \d+ waiting$/);
+    await app.go('#/work');
+    const rows = () => byClass(keyed(app, 'wa-grp:Service-Desk'), 'v2-rows')[0].children.map((li) => li.textContent);
+    const plan = rows();
+    for (const id of gates) {
+      await app.go(`#/work/card/${enc(id)}`);
+      assert.ok(sheet(app), `${id}: its sheet over Plan`);
+      assert.ok(sheetHead(app).endsWith(` · ${places[id]}`), `${id}: "${sheetHead(app)}" ends with its board place`);
+      assert.deepEqual(rows(), plan, 'Plan\'s rows under it unchanged');
+      await app.go('#/work');
+    }
+    assert.deepEqual(byClass(keyed(app, 'wa-grp:Service-Desk'), 'v2-rows')[0].children.filter((li) => li.attrs && li.attrs['data-gate'] != null).map((li) => li.attrs['data-gate']), gates, 'its gate rows in the board\'s order, as before');
+    assert.equal(findAll(app.view, (e) => / v2-place /.test(` ${e.className || ''} `)).length, 0, 'no place on Plan');
   } finally {
     app.restore();
   }

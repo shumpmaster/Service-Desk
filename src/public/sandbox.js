@@ -62,7 +62,7 @@ let CONFIG = DEFAULT_CONFIG; // J7; the tests pass their own (AC42's five projec
 const opening = { target: null, done: true, banner: null, more: null };
 let openMore = null; // a project whose More detail opens at AC78's line on its next drawing
 let scrollToRow = null; // a tapped row's id, brought into view on its next drawing
-let focusToRow = false; // and, from QW3 (AC96's "Settled from QW3's build"), whether that row takes the focus too, as a link within the page moves it
+let focusToRow = null; // from QW3 (AC96's "Settled from QW3's build"): the row id that takes the focus too when it is brought into view, as a link within the page moves it
 /** A queue row's element id, from its key. */
 const rowId = (key) => `row-${String(key).replace(/[^A-Za-z0-9_-]/g, '-')}`;
 
@@ -2343,7 +2343,7 @@ function waitsLines(card, only) {
         // AC96's "Settled from QW3's build" (the one change): the focus moves to its card too, as a link within the page moves it,
         // so a keyboard or screen-reader user lands where the owner's eye does (AC94's region and focus order).
         scrollToRow = rowId(`q:${x.id}`);
-        focusToRow = true;
+        focusToRow = scrollToRow;
         if (location.hash !== boardRoute(only)) nav.to(boardRoute(only));
         else render();
       } }, BLOCK_WORDS.waitsHeld)));
@@ -5234,14 +5234,14 @@ export function startSandbox(opts = {}) {
         }
         // QW3: a held question's card (tabindex -1, so it takes the focus without joining the tab order) takes it, the page
         // already scrolled.
-        if (focusToRow && row.focus) {
+        if (focusToRow === row.getAttribute('id') && row.focus) {
           try {
             row.focus({ preventScroll: true });
           } catch {
             // the scroll stands
           }
         }
-        focusToRow = false;
+        focusToRow = null;
       }
     }
   }

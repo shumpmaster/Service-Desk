@@ -47,7 +47,7 @@ import { waSetup, WORKED } from '../wa-fixtures.mjs';
 import { withPortfolio, addPortfolio, pfFiles } from '../pf-fixtures.mjs';
 import { BAD_PR } from '../fake-desk.mjs';
 import { pullsAnswer } from '../j12-fixture.mjs';
-import { busiestState, kindsState, qid, QPATH } from '../qw1-fixtures.mjs';
+import { busiestState, kindsState, qid, QPATH, EXT_LONG as QW1_EXT } from '../qw1-fixtures.mjs';
 
 const PUBLIC = resolve(fileURLToPath(new URL('../../../src/public/', import.meta.url)));
 const OUT = resolve(process.argv[2] || 'glance-shots');
@@ -317,6 +317,10 @@ const SHOTS = [
   { name: 'qw1-one-delta', state: busiestState, now: NOW, looked: LATE, hash: '#/waiting/Delta', seed: busiestState().seed },
   { name: 'qw1-empty', state: quietState, now: NOW, looked: LATE, hash: '#/waiting' },
   { name: 'qw1-kinds', state: () => kindsState(), now: NOW, looked: LATE, hash: '#/waiting', clickAll: '.v2-qsec button.v2-fold[aria-expanded="false"][data-k^="fold:qchoices"]' },
+  // QW1's round 2 (the Design reviewer's N2): Epsilon's question (md-extremes/' long unbroken title, its six long made-up choices,
+  // NOT real), fifth in the busiest case, its "Show choices ›" opened, so its long choices are drawn at 360 and 414 px.
+  { name: 'qw1-epsilon-choices', state: busiestState, now: NOW, looked: LATE, hash: '#/waiting', seed: busiestState().seed,
+    click: [`[data-k="fold:qchoices:${qid(QW1_EXT, QPATH[QW1_EXT])}"]`] },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {

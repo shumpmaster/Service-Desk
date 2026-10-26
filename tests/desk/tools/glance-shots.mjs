@@ -306,13 +306,14 @@ const SHOTS = [
   // QW1 of "After the questions request" (AC94; the approved picture's frames, docs/design/builds/m3g-picture/): the busiest
   // case (`busiestState`: md-extremes/ with five made-up questions of four to six choices, a sixth held as being asked in a
   // session, Beta's kicked back on this device, Delta read and then failing; NOT real), as it opens and with the fourth and
-  // fifth questions' "Show choices ›" and a question's "Add your own words" opened over words the device keeps (made up);
+  // fifth questions' "Show choices ›" opened and a question's "Add your own words" open by itself over words the device keeps
+  // (made up; the owner's reload answer, P-001-m3g-reload-fold.md, A);
   // one project shown, Beta (its held and kicked-back questions) and Delta (v2.5); nothing waiting (`quiet`), "Questions for
   // you · none" above "Kicked back · none"; and every kind of question (`kindsState`, NOT real) with its choices opened.
   { name: 'qw1-busiest', state: busiestState, now: NOW, looked: LATE, later: true, hash: '#/waiting', seed: busiestState().seed },
   { name: 'qw1-busiest-folds', state: busiestState, now: NOW, looked: LATE, later: true, hash: '#/waiting',
     seed: { ...busiestState().seed, 'desk-sheet-words-v1': JSON.stringify({ v: 1, words: { [`${qid('Alpha', QPATH.Alpha)}#1`]: { text: 'Keep it short; I look every evening.', at: NOW - 60e3 } } }) },
-    click: [`[data-k="fold:qchoices:${qid('Gamma', QPATH.Gamma)}"]`, `[data-k="fold:qchoices:${qid('Delta', QPATH.Delta)}"]`, `[data-k="fold:qwords:${qid('Alpha', QPATH.Alpha)}"]`] },
+    click: [`[data-k="fold:qchoices:${qid('Gamma', QPATH.Gamma)}"]`, `[data-k="fold:qchoices:${qid('Delta', QPATH.Delta)}"]`] },
   { name: 'qw1-one-beta', state: busiestState, now: NOW, looked: LATE, hash: '#/waiting/Beta', seed: busiestState().seed },
   { name: 'qw1-one-delta', state: busiestState, now: NOW, looked: LATE, hash: '#/waiting/Delta', seed: busiestState().seed },
   { name: 'qw1-empty', state: quietState, now: NOW, looked: LATE, hash: '#/waiting' },

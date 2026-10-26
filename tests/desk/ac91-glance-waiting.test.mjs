@@ -319,7 +319,7 @@ test('AC91 (f): the page scrolls sideways nowhere but the strip\'s row — on ev
   }
 });
 
-test('AC91 (f): the strip opens by itself when a card is kicked back and closes to its line when none is left — a card marked on this device, kicked back at about 5 minutes, then confirmed by GitHub; its "Done ✓" in its sheet and its drag into Done; with one project shown, only that project\'s cards', async () => {
+test('AC91 (f), rewritten in QW2 (AC95): the strip opens by itself when a card is kicked back and closes to its line when none is left — a card marked on this device, kicked back at about 5 minutes, then confirmed by GitHub; its "Done ✓" in its sheet and its drag into Done; with one project shown, only that project\'s cards', async () => {
   const setup = mixState();
   const store = looked(NOW - 5 * H);
   const app = await open(setup, { store });
@@ -335,7 +335,10 @@ test('AC91 (f): the strip opens by itself when a card is kicked back and closes 
       await app.advance(POLL_MS);
     }
     for (let i = 0; i < 5; i++) await app.advance(POLL_MS);
-    assert.deepEqual(stripCards(app).map((c) => c.attrs['data-card']), [CARD.hold(MIX_PROJECT), CARD.pr(MIX_PROJECT)], 'opened by itself, the newest first');
+    // Rewritten in QW2 (forced: it failed; AC95 and reading (p): the strip goes "within each project in place order", no
+    // longer the newest first): the pull request, raised first, before the hold card, which has no raised time (C, (e)),
+    // though the hold card was kicked back last.
+    assert.deepEqual(stripCards(app).map((c) => c.attrs['data-card']), [CARD.pr(MIX_PROJECT), CARD.hold(MIX_PROJECT)], 'opened by itself, in place order');
     assert.equal(byClass(strip(app), 'v2-kh')[0].textContent, 'Kicked back2');
     // "Done ✓" in a strip card's sheet: out of the strip, into Done, a new 5 minutes.
     await app.go(`#/waiting/card/${encodeURIComponent(CARD.hold(MIX_PROJECT))}`);

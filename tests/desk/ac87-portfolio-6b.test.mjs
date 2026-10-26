@@ -109,7 +109,9 @@ test('AC87 (6b): the portfolio card\'s sheet shows the card\'s sections as AC52 
     const t = textRuns(s, () => false);
     assert.equal(byClass(s, 'v2-stitle')[0].textContent, 'Whether to explore the made-up reading-list app as a project');
     // Review round 1, N3: its milestone from the card's own `Milestone:` line (J23: "its `Milestone:` line when it has one").
-    assert.ok(t.includes('portfolio · decision · PF-001-explore-1.md · PM1 · wait not recorded'), 'its head: its milestone; no raised time is read for it (J23 reads no history)');
+    // Rewritten in QW2 (forced: it failed once the place was added; AC95: "In its sheet the small line adds " · <k> of <N>
+    // waiting""): the portfolio's group numbered on its own, its one card "1 of 1 waiting".
+    assert.ok(t.includes('portfolio · decision · PF-001-explore-1.md · PM1 · wait not recorded · 1 of 1 waiting'), 'its head: its milestone; no raised time is read for it (J23 reads no history); its place in the portfolio\'s group');
     assert.doesNotMatch(s.textContent, /can't parse/, 'a card in the template\'s form, with no answer: line, is no parse problem (review round 1, B2)');
     for (const w of ['The question', 'Why it is here', 'A made-up idea reached shaping in the made-up idea log.', 'The options', 'explore', 'park',
       'Recommended', PF_WORDS.phoneNote, PF_WORDS.noAnswerLink]) assert.ok(t.some((x) => x.includes(w)), w);

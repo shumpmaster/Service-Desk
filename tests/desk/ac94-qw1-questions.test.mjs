@@ -387,7 +387,12 @@ test('AC94 + AC95\'s "A held question" (answer 3; until QW3 at the head of its g
     assert.deepEqual(ids, [id, qid('Beta', QPATH.Beta)], 'the held question first in its group (no blockers before QW3)');
     const c = qcard(app, id);
     assert.equal(c.attrs['data-question'], 'held');
-    assert.equal(byClass(c, 'v2-body')[0].textContent, SECTION_WORDS.heldLine);
+    // Rewritten in QW3's round 2 (forced: it found the line by .v2-body, QW1's --t-body; AC96's "From QW3's design review,
+    // round 1", N1, corrects AC94's "Settled from QW1's build", 5): the line is .v2-heldl, --t-small --ink, under the title.
+    const heldLine = byClass(c, 'v2-heldl')[0];
+    assert.equal(heldLine.textContent, SECTION_WORDS.heldLine);
+    assert.equal(c.children[c.children.indexOf(byClass(c, 'v2-t')[0]) + 1], heldLine, 'under its title');
+    assert.equal(byClass(c, 'v2-body').filter((x) => x.textContent === SECTION_WORDS.heldLine).length, 0, 'no longer --t-body');
     assert.equal(SECTION_WORDS.heldLine, 'Also asked in your session: answer in one place');
     assert.equal(choiceLinks(c).length, 4, 'its choices live');
     assert.equal(keyed(app, `qdone:${id}`), null, 'no "Done ✓"');

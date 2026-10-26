@@ -14,7 +14,7 @@ import { GATE_PHASE, GATE_WORDS } from './j11.js';
 import { ruleZero, prStep, judgeFiles, listAt, verdictPath, OWNER, STEP2_NOTE, WHY, ownerCheckAt } from './j22.js';
 import { durationText, hhmm, dayKey, dayDateTime } from './timefmt.js';
 import { composeAnswer, questionQuestions, boxPlan, VERDICT_START, GATE_STANDARD_WORDS, ownerActions, treeLink } from './sandbox.js';
-import { milestoneValue, firstMilestoneLine } from './records.js';
+import { milestoneValue, firstMilestoneLine, blocksLine } from './records.js';
 import { canRecord } from './model.js';
 import { gateWords, gateTitle, caseWord, defaultLetter } from './sheets.js';
 import { SIGNED_OUT_STATE } from './page.js';
@@ -1012,12 +1012,124 @@ export function placeOrder(a, b) {
 /**
  * AC95, "One order per project": one project's places (or the portfolio's group's), over every card of it with a place
  * (every card Waiting's badge counts: "Waiting on you" and Kicked back, the section's questions among them; AC81). N is
- * their count. Returns Map(card id → { k, n }), k from 1.
+ * their count. From QW3, given `ties` (blockTies'), the blockers first, by blockerOrder (a blocker: a question with a place
+ * that at least one other card with a place waits on, AC96; a held question, which has no place, never is), then every
+ * other card by placeOrder. Returns Map(card id → { k, n }), k from 1.
  */
-export function placesOf(cards) {
-  const sorted = [...cards].sort(placeOrder);
+export function placesOf(cards, ties = null) {
+  const ids = new Set(cards.map((c) => c.id));
+  const holds = new Map();
+  if (ties) for (const [id, t] of ties) if (ids.has(id) && !t.held) holds.set(id, t.holds.filter((x) => ids.has(x) && x !== id));
+  const blockers = cards.filter((c) => holds.has(c.id) && holds.get(c.id).length);
+  const first = blockerOrder(blockers, holds);
+  const lead = new Set(first.map((c) => c.id));
+  const sorted = [...first, ...cards.filter((c) => !lead.has(c.id)).sort(placeOrder)];
   const n = sorted.length;
   return new Map(sorted.map((c, i) => [c.id, { k: i + 1, n }]));
+}
+
+// ---------------------------------------------------------------------------
+// The blockers (AC95's blocker parts and AC96, stage QW3 of "After the questions request"; the owner's "Blockers first" and
+// answer 2, "The question names them (Recommended)"; readings (l), (m) and (n)): a question other cards wait on comes first in
+// its project's order and says which cards wait on it; each card it holds up says "Waits on question <k>".
+
+/** AC95's and AC96's words for the blockers (C, (n); the approved picture's "Answer first" and "Waits on question 1"). */
+export const BLOCK_WORDS = Object.freeze({
+  // Under a blocker's title (AC95, "What a blocker says"): the held-up cards' places, rising.
+  answerFirst: (ks) => (ks.length === 1 ? `Answer first · card ${ks[0]} waits on it` : `Answer first · cards ${andWords(ks.map(String))} wait on it`),
+  // Under a held-up card's meta line: the blockers' places, rising ("Waits on questions <k> and <j>" for two).
+  waitsOn: (ks) => (ks.length === 1 ? `Waits on question ${ks[0]}` : `Waits on questions ${andWords(ks.map(String))}`),
+  // A card a held question holds up (AC95's "A held question": it has no place to name).
+  waitsHeld: 'Waits on a question being asked in your session',
+  // The blocker's sheet (AC95; AC96's "Shown").
+  list: 'Cards waiting on it',
+  // The entries that do not count, each in its words (AC96's "What counts"; C, (m)).
+  held: (e) => `${e}: being asked in your session`,
+  gone: (e) => `${e}: not waiting on you now`,
+  bad: (e) => `can't read: ${e}`,
+});
+
+/** The kinds a `queue/<file>.md` entry may name (AC96: "a card file's card"): a decision card, a gate's, a hold card, a merge card. */
+const QUEUE_KINDS = ['card', 'gate', 'hold', 'merge'];
+
+/**
+ * AC96 ("What counts"): which cards each question of one project holds up, from its `Blocks:` line alone (records.js's
+ * blocksLine, J2), read from the question's text as last read. `project`: the project's name; `cards`: its cards with a
+ * place (every card the badge counts, AC95); `held`: its held questions (heldCard's; AC77's `askingRows` held as being asked
+ * in a session). An entry tying the question to a card with a place in the same project (a pull request's card at any step,
+ * a card file's card, a question's card) counts; anything else is kept in its words for the sheet: a held question's
+ * "<entry>: being asked in your session", "<entry>: not waiting on you now" for an item merged, answered, with the agents,
+ * being recorded, marked done on this device or not found, "can't read: <entry>" for an entry in no form; an entry naming
+ * the question itself is dropped. Entries repeated count once. Returns Map(question id → { holds: [card ids, in the line's
+ * order], words: [{ entry, words }], held }), for each question (counted or held) whose file has the line.
+ */
+export function blockTies({ project, cards, held = [] }) {
+  const ids = new Set(cards.map((c) => c.id));
+  const heldPaths = new Set(held.map((q) => (q.flag && q.flag.question ? q.flag.question.path : null)).filter(Boolean));
+  const out = new Map();
+  for (const q of [...cards.filter((c) => c.kind === 'question'), ...held]) {
+    const row = q.flag && q.flag.question ? q.flag.question : null;
+    const b = row && row.parsed ? blocksLine(row.parsed.text) : null;
+    if (!b) continue;
+    const holds = [];
+    const words = [];
+    const said = new Set();
+    const say = (entry, w) => {
+      if (said.has(entry)) return;
+      said.add(entry);
+      words.push({ entry, words: w });
+    };
+    for (const e of b.entries) {
+      if (e.kind === 'bad') { say(e.entry, BLOCK_WORDS.bad(e.entry)); continue; }
+      if (e.kind === 'question' && e.path === row.path) continue; // the question itself: dropped
+      if (e.kind === 'question' && heldPaths.has(e.path)) { say(e.entry, BLOCK_WORDS.held(e.entry)); continue; }
+      const cand = e.kind === 'pr' ? [waitKey(project, 'pr', e.number)] : e.kind === 'question' ? [waitKey(project, 'question', e.path)]
+        : QUEUE_KINDS.map((k) => waitKey(project, k, e.path));
+      const id = cand.find((x) => ids.has(x));
+      if (id == null) say(e.entry, BLOCK_WORDS.gone(e.entry));
+      else if (id !== q.id && !holds.includes(id)) holds.push(id);
+    }
+    out.set(q.id, { holds, words, held: q.held === true });
+  }
+  return out;
+}
+
+/**
+ * AC95, "The order of a set of cards", part 1 (QW3; C, (l)): the blockers' order. A blocker is *free* when every blocker it
+ * waits on (every blocker whose line names it, `holds`: Map(id → the ids it holds up)) has been placed; while any is left,
+ * the earliest raised free one goes next; if none is free, the earliest raised of those left that waits on itself,
+ * directly or through others left (a loop), goes next. "Earliest raised" is placeOrder's: no raised time after every one
+ * with one, then the tie rule. Returns the blockers in order.
+ */
+export function blockerOrder(blockers, holds) {
+  const left = [...blockers].sort(placeOrder);
+  const at = new Set(left.map((b) => b.id));
+  // waits.get(x): the blockers x waits on (those whose line holds x up).
+  const waits = new Map(left.map((b) => [b.id, new Set()]));
+  for (const b of left) for (const x of (holds && holds.get(b.id)) || []) if (at.has(x) && waits.has(x)) waits.get(x).add(b.id);
+  const placed = new Set();
+  const inLoop = (id) => {
+    const seen = new Set();
+    const stack = [...waits.get(id)].filter((x) => !placed.has(x));
+    while (stack.length) {
+      const x = stack.pop();
+      if (x === id) return true;
+      if (seen.has(x)) continue;
+      seen.add(x);
+      for (const y of waits.get(x)) if (!placed.has(y)) stack.push(y);
+    }
+    return false;
+  };
+  const out = [];
+  while (left.length) {
+    let i = left.findIndex((b) => [...waits.get(b.id)].every((x) => placed.has(x)));
+    if (i < 0) i = left.findIndex((b) => inLoop(b.id));
+    if (i < 0) i = 0; // never: with none free, some blocker left is in a loop
+    const [b] = left.splice(i, 1);
+    placed.add(b.id);
+    out.push(b);
+  }
+  return out;
 }
 
 /** AC95: a set of cards with places, in place order (a card with no place, none here, last). */
@@ -1057,9 +1169,14 @@ export function heldBoard({ fresh, drawn = null, hold = false, only = null, foun
  * count, groups: [{ project, rows, more }] }] (from QW1 "Waiting on you" and "Kicked back" hold no question; from QW2 each
  * card with its `place`, { k, n }, in place order), strip (AC91 (f): the kicked-back cards, from QW2 by project in J7's
  * order, the portfolio's last, then in place order, each with its `stripProject`), places (AC95, from QW2: Map(card id →
- * { k, n, project, label }), every counted card's place, for its sheet), questions (AC94, from QW1: the "Questions for you"
+ * { k, n, project, label }), every counted card's place, for its sheet), blocking (AC95 and AC96, from QW3: Map(question id →
+ * { cards: [{ id, k, n, kind, kindWord, title }], words: [{ entry, words }], held }), each question's `Blocks:` line as read, for
+ * its sheet's "Cards waiting on it"), questions (AC94, from QW1: the "Questions for you"
  * section, { groups: [{ project, label, rows (its counted questions, each with its `lane`, 'wait' or 'kick'), held (its held
- * questions, heldCard's), count }], order (every question as drawn), count, held }), counts: Map(project → { waiting,
+ * questions, heldCard's), count, cards (from QW3: its questions as drawn, its blockers, its held ones, then the rest) }], order
+ * (every question as drawn), count, held }); from QW3 each card with a place, and each held question, carries `answerFirst`
+ * (the places of the cards it holds up, rising, or null), `waitsOn` (the questions it waits on, [{ id, k }, then { id, held:
+ * true }], or null) and `blocker`, counts: Map(project → { waiting,
  * kicked }, the section's questions among them), waits (AC94: "Waiting on you"'s and "Kicked back"'s groups as they were
  * before the questions left them, [{ key, groups }], for Home, a project's page and Plan, which QW1 does not change), badge,
  * quiet, only, of, nothingWaiting, cantRead, cantShow (the names of the projects the desk can read but can't draw, whose
@@ -1099,6 +1216,7 @@ export function boardView(input) {
   const section = []; // AC94: the "Questions for you" section's groups, in J7's order
   const reading = [];
   const placeById = new Map(); // AC95: every card's place, by its id, { k, n, project, label }
+  const blocking = new Map(); // AC95 and AC96 (QW3): each question's `Blocks:` line read, by its id, for its sheet
   let pendingAny = false;
   for (const p of input.projects) {
     const name = p.project.name;
@@ -1156,19 +1274,52 @@ export function boardView(input) {
     // AC95 (stage QW2; the owner's answer 1, "One order per project"): each card the badge counts takes its place in its
     // project's order (the portfolio's group's for a portfolio card), N their count, whatever is shown (with one project
     // shown, each card keeps its place, C, (c)). Done's rows, the quiet lines' items and a held question have none.
-    const places = placesOf([...waitRows, ...kickRows]);
+    // From QW3 (AC95's blocker parts, AC96): the questions other cards wait on first, by their `Blocks:` lines (blockTies).
+    const held0 = (p.asking || []).map((a) => heldCard(p.project, a, tz, nowMs));
+    const ties = blockTies({ project: name, cards: [...waitRows, ...kickRows], held: held0 });
+    const places = placesOf([...waitRows, ...kickRows], ties);
+    // AC95 (QW3; C, (n)): what each card says of the blockers. A question holding up cards with places: "Answer first" and
+    // their places, rising (`answerFirst`); a blocker among them (`blocker`, a question with a place, first in the order). A
+    // card held up: the places of the questions it waits on, rising, then each held question it waits on (`waitsOn`, each
+    // { id, k } or { id, held: true }).
+    const answerFirst = new Map();
+    const waitsOn = new Map();
+    for (const [qid, t] of ties) {
+      const ks = t.holds.filter((x) => places.has(x)).map((x) => places.get(x).k).sort((a, b) => a - b);
+      if (ks.length) answerFirst.set(qid, ks);
+      for (const x of t.holds) {
+        if (!places.has(x)) continue;
+        if (!waitsOn.has(x)) waitsOn.set(x, []);
+        waitsOn.get(x).push(t.held ? { id: qid, held: true } : { id: qid, k: places.get(qid).k });
+      }
+    }
+    for (const w of waitsOn.values()) w.sort((a, b) => (a.held === b.held ? (a.k || 0) - (b.k || 0) || (a.id < b.id ? -1 : 1) : a.held ? 1 : -1));
+    const tieParts = (id) => ({ answerFirst: answerFirst.get(id) || null, waitsOn: waitsOn.get(id) || null });
     // Each place with its project's name as the board shows it (the portfolio's group's "Portfolio"), for its accessible text.
-    const placed = (c) => ({ ...c, place: places.has(c.id) ? { ...places.get(c.id), label: p.project.label || name } : null });
+    const placed = (c) => ({ ...c, place: places.has(c.id) ? { ...places.get(c.id), label: p.project.label || name } : null, ...tieParts(c.id),
+      blocker: places.has(c.id) && answerFirst.has(c.id) });
     // AC94 (stage QW1; C, (a) and (b)): every owner question that would be a card in "Waiting on you" or the Kicked back
     // strip is in the "Questions for you" section instead, a kicked-back one with its kick and reason. From QW2 (AC95) the
     // section and the lanes draw their cards in place order within each project's group. A question held as being asked in
-    // a session (AC77) is no card, and shows there too (the owner's answer 3), at the head of its group until QW3 (AC95).
+    // a session (AC77) is no card, and shows there too (the owner's answer 3); from QW3 after its project's numbered questions
+    // that hold others up and before its other numbered questions, outside its numbers (the owner's "After the blockers
+    // (Recommended)", P-001-m3g-held-place, B), saying "Answer first" too when its line names cards with places.
     const isQ = (c) => c.kind === 'question';
     const sectionRows = [...waitRows.filter(isQ).map((c) => ({ ...placed(c), lane: 'wait' })), ...kickRows.filter(isQ).map((c) => ({ ...placed(c), lane: 'kick' }))].sort(byPlace);
-    const heldRows = (p.asking || []).map((a) => ({ ...heldCard(p.project, a, tz, nowMs), place: null }));
+    const heldRows = held0.map((c) => ({ ...c, place: null, ...tieParts(c.id), blocker: false }));
     const laneRows = waitRows.filter((c) => !isQ(c)).map(placed).sort(byPlace);
     const stripRows = kickRows.filter((c) => !isQ(c)).map(placed).sort(byPlace);
     for (const [id, pl] of places) placeById.set(id, { ...pl, project: name, label: p.project.label || name });
+    // AC95 and AC96 (QW3): each question's sheet lists the cards its line names, "Cards waiting on it", each by its place, kind
+    // and title, and the rest of its entries in words (C, (m)), counted or held.
+    const cardById = new Map([...waitRows, ...kickRows].map((c) => [c.id, c]));
+    for (const [qid, t] of ties) {
+      const cards = t.holds.filter((x) => places.has(x)).map((x) => {
+        const c = cardById.get(x);
+        return { id: x, ...places.get(x), kind: c.kind, kindWord: c.origKindWord || c.kindWord, title: c.title };
+      }).sort((a, b) => a.k - b.k);
+      blocking.set(qid, { cards, words: t.words, held: t.held });
+    }
     // AC87 (stage 6b): the portfolio's group, "Portfolio", after the projects', on the whole board only; it
     // is never a project, so it is in no project's quiet lines ("Nothing waiting", "Can't read <project>").
     const portfolio = p.project.portfolio === true;
@@ -1176,7 +1327,11 @@ export function boardView(input) {
     if (portfolio ? !only : !only || only === name) {
       if (waitRows.length) waits.wait.push({ project: name, label, portfolio, rows: waitRows });
       if (kickRows.length) waits.kick.push({ project: name, label, portfolio, rows: kickRows });
-      if (sectionRows.length || heldRows.length) section.push({ project: name, label, portfolio, rows: sectionRows, held: heldRows, count: sectionRows.length });
+      // `cards`: the group's questions in the order drawn: its blockers, then its held questions, then its other questions.
+      if (sectionRows.length || heldRows.length) {
+        section.push({ project: name, label, portfolio, rows: sectionRows, held: heldRows, count: sectionRows.length,
+          cards: [...sectionRows.filter((c) => c.blocker), ...heldRows, ...sectionRows.filter((c) => !c.blocker)] });
+      }
       if (laneRows.length) lanes.wait.push({ project: name, label, portfolio, rows: laneRows });
       if (stripRows.length) lanes.kick.push({ project: name, label, portfolio, rows: stripRows });
       if (doneRows.length) lanes.done.push({ project: name, label, portfolio, rows: doneRows.slice(0, DONE_GROUP_ROWS), more: doneRows.length - DONE_GROUP_ROWS, all: doneRows });
@@ -1212,15 +1367,15 @@ export function boardView(input) {
   // project in place order (stripRows'), no longer the newest first; with one project shown, only that project's.
   const strip = [...lanes.kick.filter((g) => !g.portfolio), ...lanes.kick.filter((g) => g.portfolio)]
     .flatMap((g) => g.rows.map((c) => ({ ...c, stripProject: g.label })));
-  // AC94: the section's order, the order it draws its questions in (each group's held question first until QW3, then its
-  // counted questions), and its head's counts: q the counted questions, h the held ones.
-  const order = section.flatMap((g) => [...g.held, ...g.rows]);
+  // AC94: the section's order, the order it draws its questions in (from QW3 each group's blockers, then its held questions,
+  // then its other counted questions; "After the blockers"), and its head's counts: q the counted questions, h the held ones.
+  const order = section.flatMap((g) => g.cards);
   const questions = { groups: section, order, count: section.reduce((n, g) => n + g.rows.length, 0), held: section.reduce((n, g) => n + g.held.length, 0) };
   const { signedOutLine, readLines } = only ? { signedOutLine: null, readLines: [] }
     : quietReadLines({ cantLines, reading, portfolio: input.portfolio || null, signedOut: Boolean(input.signedOut), tz });
   return {
     lanes: LANES.map((l) => ({ ...l, count: lane(l.key), groups: lanes[l.key] })),
-    strip, questions, places: placeById, waits: [{ key: 'wait', groups: waits.wait }, { key: 'kick', groups: waits.kick }],
+    strip, questions, places: placeById, blocking, waits: [{ key: 'wait', groups: waits.wait }, { key: 'kick', groups: waits.kick }],
     counts, counted, badge, quiet, only, of: input.projects.filter((p) => p.project.portfolio !== true).length, nothingWaiting, cantRead, cantShow, cantLines, pendingAny,
     reading, signedOutLine, readLines,
   };

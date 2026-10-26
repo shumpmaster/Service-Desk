@@ -25,7 +25,12 @@
 // page's box, and each why line's ground; and, from G9's round 2 (AC92 (d)), each opened phase's run heads, each found
 // by its run, its colour, weight and size, the rule above it and the gap over that rule; and, on G9b's (AC91 (c), AC82),
 // the line under Home's and Waiting's titles, its words, colour, size and weight and whether an icon is drawn in it, the
-// list's red line under it on Home, and Waiting's lanes' empty words and the strip's line.
+// list's red line under it on Home, and Waiting's lanes' empty words and the strip's line; and, on G9c's (AC91 (c)), Waiting's
+// quiet lines top to bottom, each one's words, colour, size, whether an icon is drawn in it, the lines it takes and whether it
+// is cut, and a project's page's "Nothing waiting on you" row's small line; and, from QW1 of "After the
+// questions request" (AC94), the "Questions for you" section's head or line, its grey lines with their colour, each
+// question's title lines and whether it is cut, whether a choice's box or button runs past its card, the answer buttons'
+// heights, and Waiting's lanes' empty words and the strip's line.
 // G4's failed-load captures serve the page's own index.html and app.js with sandbox.js (and, for one,
 // sandbox.css) answering 404, so the desk's code fails to load as it can in the browser; its Timeline captures are of
 // the screen as it opens (the viewport), not the whole page.
@@ -35,13 +40,14 @@ import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
 import { mixState, unreadState, signedOutState, stallState, extState, quietState, twoMixState, gatesState, textState, standardState, ciState, mismatchState, nowShared, sprintsState, longNameState, PLAN_NOW,
-  openingState, signedOutMixedState, orderState, blobFailState, cantShowState, noneDrawnState, cantShowLastState, fiveLinesState, failedHeldState, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
+  openingState, signedOutMixedState, orderState, blobFailState, cantShowState, noneDrawnState, cantShowLastState, fiveLinesState, failedHeldState, heldReadsState, agentsState, recordingState, RECORDING_NOW, deviceMarks, KICKED, CARD, GATE4, GATE5, GATE_KEY, MIX_PROJECT, NOW, STALL_NOW, SD, POOM, EXT_LONG } from '../glance-fixtures.mjs';
 import { sdRepo, SD3 } from '../tv2-fixtures.mjs';
 import { CONFIG } from '../helpers.mjs';
 import { waSetup, WORKED } from '../wa-fixtures.mjs';
 import { withPortfolio, addPortfolio, pfFiles } from '../pf-fixtures.mjs';
 import { BAD_PR } from '../fake-desk.mjs';
 import { pullsAnswer } from '../j12-fixture.mjs';
+import { busiestState, kindsState, qid, QPATH } from '../qw1-fixtures.mjs';
 
 const PUBLIC = resolve(fileURLToPath(new URL('../../../src/public/', import.meta.url)));
 const OUT = resolve(process.argv[2] || 'glance-shots');
@@ -277,6 +283,40 @@ const SHOTS = [
   { name: 'g9b-home-signed-out', state: signedOutState, now: NOW, looked: LATE, before: true },
   { name: 'g9b-waiting-signed-out', state: signedOutState, now: NOW, looked: LATE, before: true, hash: '#/waiting' },
   { name: 'g9b-waiting-one-checking', state: failedHeldState, now: NOW, looked: LATE, hash: `#/waiting/${encodeURIComponent(SD.name)}` },
+  // G9c (AC91 (c), "Waiting's quiet lines while a read is on its way or signed out" and "a project's page's "Nothing waiting on
+  // you" row"; the owner's rulings P-001-glance-waiting-pending.md, -waiting-signed-out.md and -page-checking.md, each A, and
+  // -g9c-portfolio.md, B): Waiting with every project shown on `failedHeldState` ("Still reading Service-Desk…" beside the
+  // lanes' "Nothing here"); Waiting's first paint, every first read held on its way with a made-up portfolio in J7 (its line
+  // last); Waiting signed out on `signedOutMixedState` (the one line); Waiting with every project failed, not signed out
+  // (`orderState`), beside it, so the two differ; and Service-Desk's page beside the made-up project failing from the start,
+  // "checked <age> ago" from its own read. Each made-up part NOT real.
+  { name: 'g9c-waiting-failed-held', state: failedHeldState, now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g9c-waiting-first-paint', state: () => heldReadsState({ held: [SD.name, POOM.name, MIX_PROJECT], portfolio: true, portfolioHeld: true }), now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g9c-waiting-signed-out', state: signedOutMixedState, now: NOW, looked: LATE, later: true, hash: '#/waiting' },
+  { name: 'g9c-waiting-every-failed', state: () => orderState(), now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'g9c-page-own-age', state: () => unreadState({ who: MIX_PROJECT }), now: NOW, looked: LATE, before: true, hash: `#/p/${encodeURIComponent(SD.name)}` },
+  // G9c's draft 3 (AC91 (c), "each on a row of its own"; P-001-glance-g9c-row.md, A): each "Still reading" line on a row of its
+  // own, measured below on every g9c- Waiting capture; and two more states for it: "Still reading the portfolio…" just before
+  // a grey quiet line, "Being recorded by the automatic job" (AC79's fixture, Service-Desk's records at ef8daf4, real, its
+  // pull request, job and the portfolio made up), and "With the agents" beside "Nothing waiting: <project>" on one row with
+  // "Still reading Service-Desk…" and "Still reading Personal-Org-Operating-Model…" each on its own after them (`agentsState`,
+  // made up).
+  { name: 'g9c-waiting-recording', state: recordingState, now: RECORDING_NOW, looked: RECORDING_NOW - 24 * H, hash: '#/waiting', polls: 3 },
+  { name: 'g9c-waiting-agents', state: () => agentsState({ held: [SD.name, POOM.name] }), now: NOW, looked: LATE, hash: '#/waiting' },
+  // QW1 of "After the questions request" (AC94; the approved picture's frames, docs/design/builds/m3g-picture/): the busiest
+  // case (`busiestState`: md-extremes/ with five made-up questions of four to six choices, a sixth held as being asked in a
+  // session, Beta's kicked back on this device, Delta read and then failing; NOT real), as it opens and with the fourth and
+  // fifth questions' "Show choices ›" and a question's "Add your own words" opened over words the device keeps (made up);
+  // one project shown, Beta (its held and kicked-back questions) and Delta (v2.5); nothing waiting (`quiet`), "Questions for
+  // you · none" above "Kicked back · none"; and every kind of question (`kindsState`, NOT real) with its choices opened.
+  { name: 'qw1-busiest', state: busiestState, now: NOW, looked: LATE, later: true, hash: '#/waiting', seed: busiestState().seed },
+  { name: 'qw1-busiest-folds', state: busiestState, now: NOW, looked: LATE, later: true, hash: '#/waiting',
+    seed: { ...busiestState().seed, 'desk-sheet-words-v1': JSON.stringify({ v: 1, words: { [`${qid('Alpha', QPATH.Alpha)}#1`]: { text: 'Keep it short; I look every evening.', at: NOW - 60e3 } } }) },
+    click: [`[data-k="fold:qchoices:${qid('Gamma', QPATH.Gamma)}"]`, `[data-k="fold:qchoices:${qid('Delta', QPATH.Delta)}"]`, `[data-k="fold:qwords:${qid('Alpha', QPATH.Alpha)}"]`] },
+  { name: 'qw1-one-beta', state: busiestState, now: NOW, looked: LATE, hash: '#/waiting/Beta', seed: busiestState().seed },
+  { name: 'qw1-one-delta', state: busiestState, now: NOW, looked: LATE, hash: '#/waiting/Delta', seed: busiestState().seed },
+  { name: 'qw1-empty', state: quietState, now: NOW, looked: LATE, hash: '#/waiting' },
+  { name: 'qw1-kinds', state: () => kindsState(), now: NOW, looked: LATE, hash: '#/waiting', clickAll: '.v2-qsec button.v2-fold[aria-expanded="false"][data-k^="fold:qchoices"]' },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {
@@ -341,6 +381,7 @@ async function main() {
   const base = `http://127.0.0.1:${srv.address().port}/`;
   const browser = await chromium.launch();
   const made = [];
+  const rowFails = []; // G9c's draft 3: the own-row measures that failed
   try {
     for (const shot of SHOTS) {
       for (const [w, hgt] of SIZES) {
@@ -526,9 +567,75 @@ async function main() {
             return `line "${sub.textContent}" ${cs.color} ${cs.fontSize} ${cs.fontWeight}${sub.querySelector('svg') ? ', an icon in it' : ', no icon'}`
               + `${red ? `; the list's "${red.textContent}" ${getComputedStyle(red).color}` : ''}${lanes.length ? `; lanes: ${lanes.join(' | ')}` : ''}`;
           });
+          // G9c (AC91 (c)): Waiting's quiet lines, top to bottom, each line's words, colour, size, lines taken and whether an icon
+          // is drawn in it or it is cut; and a page's "Nothing waiting on you" row's small line.
+          const g9c = await page.evaluate(() => {
+            const box = document.querySelector('.v2-board > .v2-quiet');
+            const ql = box ? [...box.children].map((e) => {
+              const cs = getComputedStyle(e);
+              const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.4;
+              const span = e.querySelector('span') || e;
+              const lines = Math.round(span.getBoundingClientRect().height / lh);
+              return `"${e.textContent}" ${cs.color} ${cs.fontSize}${e.querySelector('svg') ? ' with an icon' : ' no icon'}, ${lines} line${lines === 1 ? '' : 's'}${span.scrollWidth > span.clientWidth + 1 ? ', cut' : ''}`;
+            }) : [];
+            const row = document.querySelector('[data-k="page-waits"]');
+            const small = row ? row.querySelector('.v2-small') : null;
+            return [...(ql.length ? [`quiet lines: ${ql.join(' / ')}`] : []), ...(row ? [`page row: "${row.querySelector('.v2-prtt').textContent}" · "${small ? small.textContent : ''}"${small ? ` ${getComputedStyle(small).color}` : ''}`] : [])].join('; ') || 'no quiet lines';
+          });
+          // G9c's draft 3 (AC91 (c), "each on a row of its own"): on Waiting's quiet lines, each "Still reading" line (keyed `ql:reading:`)
+          // starts a row (its top at or below the bottom of the line before it) and holds it alone (its width the box's, and the
+          // line after it starting below it); any two other lines next to each other share a row where the second fits after the
+          // first (the box's 10 px gap between them), and only then; no line's words cut. A failure is printed and fails the run.
+          const rows = /^g9c-waiting/.test(shot.name) ? await page.evaluate(() => {
+            const box = document.querySelector('.v2-board > .v2-quiet');
+            if (!box) return { fails: ['no quiet lines'], said: 'no quiet lines' };
+            const b = box.getBoundingClientRect();
+            const gap = parseFloat(getComputedStyle(box).columnGap) || 0;
+            const kids = [...box.children].map((e) => ({ e, r: e.getBoundingClientRect(), own: /^ql:reading:/.test(e.getAttribute('data-k') || ''), name: e.textContent.slice(0, 28) }));
+            const fails = [];
+            const said = [];
+            kids.forEach((k, i) => {
+              const prev = kids[i - 1];
+              const next = kids[i + 1];
+              const span = k.e.querySelector('span') || k.e;
+              if (span.scrollWidth > span.clientWidth + 1) fails.push(`"${k.name}" cut`);
+              if (k.own) {
+                if (prev && k.r.top < prev.r.bottom - 0.5) fails.push(`"${k.name}" shares a row with "${prev.name}" before it`);
+                if (next && next.r.top < k.r.bottom - 0.5) fails.push(`"${next.name}" shares a row with "${k.name}" before it`);
+                if (Math.abs(k.r.width - b.width) > 0.5) fails.push(`"${k.name}" ${k.r.width} px wide in a ${b.width} px box`);
+                said.push(`"${k.name}" own row, ${Math.round(k.r.width)}/${Math.round(b.width)} px${next ? `, "${next.name}" below it` : ''}`);
+              } else if (prev && !prev.own) {
+                const fits = prev.r.right + gap + k.r.width <= b.right + 0.5;
+                const same = Math.abs(k.r.top - prev.r.top) < 1;
+                if (fits !== same) fails.push(`"${k.name}" ${same ? 'shares' : 'does not share'} a row with "${prev.name}" though it ${fits ? 'fits' : 'does not fit'}`);
+                said.push(`"${k.name}" ${same ? 'beside' : 'below'} "${prev.name}"`);
+              }
+            });
+            return { fails, said: said.join(' / ') || 'no pair to measure' };
+          }) : null;
+          if (rows && rows.fails.length) rowFails.push(`${shot.name}-${w}x${hgt}-${theme}: ${rows.fails.join('; ')}`);
+          if (/^g9c-/.test(shot.name) && scroll > 0) rowFails.push(`${shot.name}-${w}x${hgt}-${theme}: scrolls sideways by ${scroll} px`);
+          // QW1 (AC94): the section's head and lines, each question's title lines (cut at three or not), the widest choice box
+          // against the card, and Waiting's lane and strip words.
+          const qw1 = await page.evaluate(() => {
+            const sec = document.querySelector('.v2-qsec');
+            if (!sec) return 'no section';
+            const head = sec.querySelector(':scope > .v2-kh, :scope > .v2-kq');
+            const grey = [...sec.querySelectorAll(':scope > p.v2-small')].map((e) => `"${e.textContent}" ${getComputedStyle(e).color}`);
+            const cards = [...sec.querySelectorAll('.v2-qcard')].map((c) => {
+              const tt = c.querySelector('.v2-tt');
+              const lh = parseFloat(getComputedStyle(tt).lineHeight) || 1;
+              const over = [...c.querySelectorAll('.v2-opt, .v2-abtn')].some((x) => x.getBoundingClientRect().right > c.getBoundingClientRect().right + 0.5);
+              return `${Math.round(tt.getBoundingClientRect().height / lh)} line(s)${tt.scrollHeight > tt.clientHeight + 1 ? ' cut' : ''}${over ? ', a box past the card' : ''}`;
+            });
+            const btn = [...sec.querySelectorAll('.v2-abtn')].map((e) => Math.round(e.getBoundingClientRect().height));
+            const lanes = [...document.querySelectorAll('.v2-empty, .v2-kq')].map((e) => e.textContent);
+            return `head "${head ? head.textContent : ''}"; ${grey.length ? `grey: ${grey.join(', ')}; ` : ''}questions: ${cards.join(' | ') || 'none'}`
+              + `${btn.length ? `; buttons ${Math.min(...btn)}–${Math.max(...btn)} px tall` : ''}; lanes: ${lanes.join(' | ')}`;
+          });
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}${/^g8d-/.test(shot.name) ? `  (${g8d})` : ''}${/^g9-/.test(shot.name) ? `  (${g9})` : ''}${/^g9b-/.test(shot.name) ? `  (${g9b})` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}${/^g8d-/.test(shot.name) ? `  (${g8d})` : ''}${/^g9-/.test(shot.name) ? `  (${g9})` : ''}${/^g9b-/.test(shot.name) ? `  (${g9b})` : ''}${/^g9c-/.test(shot.name) ? `  (${g9c})` : ''}${/^qw1-/.test(shot.name) ? `  (${qw1})` : ''}${rows ? `  (rows: ${rows.fails.length ? `FAIL ${rows.fails.join('; ')}` : `ok; ${rows.said}`})` : ''}`);
           await ctx.close();
         }
       }
@@ -538,6 +645,10 @@ async function main() {
     srv.close();
   }
   console.log(made.join('\n'));
+  if (rowFails.length) {
+    console.error(`G9c's rows: ${rowFails.length} failed\n${rowFails.join('\n')}`);
+    process.exitCode = 1;
+  }
 }
 
 main().catch((err) => {

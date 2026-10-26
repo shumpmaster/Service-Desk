@@ -1013,3 +1013,78 @@ so there is no `G9B_ONCE`) and the `g9b-` captures open the states above (`unrea
   Personal-Org-Operating-Model's first read held too, so no project is read; **a reader that never answers**, Service-Desk's
   calls on `mix` left unanswered for 3 minutes in view (as ac89-after-md3.test.mjs's `hang`); and **reads made to work
   again**, the made-up project's failure removed on `orderState`. **NOT how any read went.**
+
+## After the glance audit, G9c (2026-10-25, S-001 AC91 (c), AC80 and AC83 changed, AC89 (a), AC91 (f) and AC94 noted; the owner's rulings of 2026-10-25, each "Ruling: A", decisions/questions/P-001-glance-waiting-pending.md, -waiting-signed-out.md and -page-checking.md, with -g9c-several.md, -g9c-alone.md and -g9c-signed-out-all.md, each A, and -g9c-portfolio.md, B)
+
+G9c adds no fixture file. `tests/desk/ac91-g9c-quiet-lines.test.mjs` (its pure cases of board.js's read lines and
+projectpage.js's `pageCheckedWords`, and its screen cases on Waiting and a project's page), G9c's walk over `G9C_OPENS` in
+`ac88-dark.test.mjs` (AC92 (a)'s cascade check, whose want-list gains the "Still reading" line as a grey place, and the
+stage-8 guard, with no exception added: no CSS changed, so there is no `G9C_ONCE`) and the `g9c-` captures open the states
+above (`unread`, `signedOutState`, `signedOutMixedState`, `openingState`, `orderState`, `cantShowLastState`,
+`failedHeldState`, as they are, with fake-desk.mjs's `hold`, AC89 (a)'s `hang` and the made-up portfolio of
+`pf-fixtures.mjs`) and these made-up parts, each **NOT real**:
+- **`failedHeldState({ poomHeld: true })`** (`glance-fixtures.mjs`): `failedHeldState` with Personal-Org-Operating-Model's
+  first read held too (the form G9b's case built in place), so no project is read; `release()` lets both answer. **NOT how
+  any read went.**
+- **`heldReadsState`** (`glance-fixtures.mjs`): `mix` (or `quiet`) with the first reads it names held on their way, each
+  call waiting on a promise of its own (fake-desk.mjs's `hold`): two held (Service-Desk's and the made-up project's), every
+  one held, or Service-Desk's alone; with `portfolio`, a made-up portfolio in J7 (`pf-fixtures.mjs`'s files, its queue
+  holding one made-up card) whose reads are held too; `release(name)` lets one answer, `failPortfolio()` makes the
+  portfolio's fail (the network cause). **NOT real records, NOT how any read went or failed.**
+- **`cantShowHeldState`** (`glance-fixtures.mjs`): `quiet` with the made-up project the desk can read but can't draw
+  (fake-desk.mjs's `BAD_PR`, NOT a real pull request) and its first read on its way, its tree and pull requests answered and
+  its blob calls held (**fake-desk.mjs's `blobHold`**, new in G9c: a promise only a project's blob calls wait on). **NOT
+  real records, NOT how any read went.**
+- **`G9C_OPENS`** (`glance-fixtures.mjs`): Waiting with every project shown on `failedHeldState` and its variant, the first
+  paint with every first read held (the portfolio's among them), the portfolio's read held beside Service-Desk's, the
+  can't-draw project's parts still arriving, signed out (`signedOutMixedState`, and `signedOutState` from the start), every
+  first read failed not signed out (`orderState`), and Service-Desk's page, read, beside the made-up project failing from
+  the start (`unread`); each with "last looked" after the records' dates (G8c's `g8cStore`). **NOT real records or
+  failures.**
+- **`recordingState`** (`glance-fixtures.mjs` from G9c's round 2, in the test file before it): the portfolio beside "Being
+  recorded by the automatic job": AC79's asks-merge fixture as `ac79-desk.test.mjs` builds it, Service-Desk's records at
+  ef8daf4 (real) with one made-up pull request the job is recording and made-up job runs and log line, beside a made-up
+  portfolio whose read is held, opened at `RECORDING_NOW` (AC79's clock). **NOT real pull requests, runs or reads.**
+- **`agentsState`** (`glance-fixtures.mjs`, G9c's round 2: the Reviewer's B1 and draft 3's lines side by side): `quiet`
+  with the made-up project holding one made-up pull request "With the agents" (a code change from a builder's branch, its
+  required reviewer's verdict missing under board-v5/'s made-up risk paths, J22 rule 0), the first reads it names held on
+  their way, and `fail()` refusing every read as signed out (J6). **NOT real records, pull requests or reads.**
+- **a read in state 4** (`ac91-g9c-quiet-lines.test.mjs`, G9c's round 2, the Reviewer's B2): on `heldReadsState`, the
+  made-up project read, then its re-reads held while the page is hidden for 10 minutes. **NOT how any read went.**
+- **reads changed in the cases** (`ac91-g9c-quiet-lines.test.mjs`): a held read made to fail instead (the network cause)
+  and every read refused as signed out while two reads are held (J6), and the made-up project's re-reads held after its
+  first read, so its last read grows older than Service-Desk's. **NOT how any read went or failed.**
+
+## After the questions request, QW1 (2026-10-25, S-001 AC94; AC52, AC77, AC80, AC89 (j) and AC91 (f) changed; the owner's "Top of Waiting", "One tap, then commit" and "In the section", and the approved picture, decisions/questions/P-001-m3g-picture.md, A)
+
+QW1 adds `tests/desk/qw1-fixtures.mjs` and no fixture file. `tests/desk/ac94-qw1-questions.test.mjs` (its pure cases of
+board.js's section and its screen cases), QW1's walk over `QW1_OPENS` in `ac88-dark.test.mjs` (AC69's vermilion check,
+whose want-list gains a question's kind icon in the section; AC92 (a)'s cascade check, whose want-list gains the section's
+grey line; and the stage-8 guard, whose `QW1_ONCE` pins the section's own look), the locked cases QW1 rewrites, and the
+`qw1-` captures open the states above (`quiet`, `orderState`, `noneDrawnState`, `cantShowState`, `cantShowLastState`,
+`twoMixState` with `KICKED`, md-extremes/, as they are) and these made-up parts, each **NOT real**:
+- **made-up question files** (`qw1-fixtures.mjs`'s `qFile`, `Q_ALPHA` to `Q_EPSILON`, `Q_HELD`, `K_FILES` and `K25_FILES`):
+  owner questions in questions/_TEMPLATE.md's form (J2), none of them ever put to the owner: lettered with and without a
+  `Milestone:` line, with four to six choices, some with a description after " — ", one that can't be undone and some that
+  settle themselves; a numbered one with its parts' options and recommendations on its lines; one whose OPTIONS: lines mix
+  letters, numbers and neither, so it can't be split; one with no OPTIONS: block; v2.5 ones with letters and without; a long
+  title holding md-extremes/' long unbroken word, with long choices; and one held as being asked in a session (its `Asked in
+  session:` line naming a made-up session id, `session_0QW1MadeUpNotARealSession01`, with no session file). Their raised
+  times (J2's first commits) are made up. **NOT real records.**
+- **`busiestState`** (`qw1-fixtures.mjs`): md-extremes/ (AC42's five connected projects, twelve waits) with each project's own
+  question replaced by one of the made-up ones above and Beta holding the held one too; the device's Done mark on Beta's
+  question, kicked back three minutes before the clock (made up, as `deviceMarks` makes them); and `fail()`, Delta's reads
+  failing after its first read (the network cause). **NOT real records, marks or failures.**
+- **`kindsState`** (`qw1-fixtures.mjs`): two made-up projects, "Kinds" (v3) and "Ledger" (v2.5, poom/'s LEDGER.md placeholder),
+  holding the kinds above; with `linkCap`, a small cap so each link is past it; and, in the cases, Kinds with
+  `contentPrefill: false` or `webCommitsToDefault: false`, a made-up answer's pull request (#70) adding its answer file, its
+  answer committed to the default branch, Ledger failing from the start or holding `BAD_PR`, and two more made-up projects,
+  "Held" (only the held question) and "Quiet" (a README alone). **NOT real records, pull requests or failures.**
+- **words a device keeps** (`desk-sheet-words-v1`) for a question, made up, and **"last looked"** times before and after the
+  questions' raised times. **NOT a real device's record.**
+- **`QW1_OPENS`** (`qw1-fixtures.mjs`): Waiting on `busiestState` with every fold opened and Delta then failing; Beta alone
+  shown; the held question's sheet; and Waiting on `kindsState` with every fold opened and kept words. **NOT real.**
+- **for AC94's "Settled from QW1's build"** (`ac94-qw1-questions.test.mjs`): `kindsState` cut down to two Kinds questions,
+  one answered meanwhile and one with a made-up answer pull request (#71) opened meanwhile; and `kindsState` with a made-up
+  project "Held" holding a held numbered and a held lettered question and Ledger holding a held v2.5 one, each asked in the
+  made-up session above and raised an hour before the clock. **NOT real records or pull requests.**

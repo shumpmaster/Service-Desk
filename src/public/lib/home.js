@@ -16,6 +16,7 @@ import { GATE_PHASE } from './j11.js';
 import { ownerActions, memberLabel, NOT_RECORDED, pullLink, treeLink } from './sandbox.js';
 import { waitKey } from './waiting.js';
 import { WA } from './workahead.js';
+import { SIGNED_OUT_STATE } from './page.js';
 
 export { parseCommitPages } from './prfiles.js';
 
@@ -50,7 +51,7 @@ export const HOME_WORDS = Object.freeze({
 });
 /** Home's words for a project no read of which has succeeded in this opening, in place of "since HH:MM" (AC91 (c), from G8c; P-001-glance-opening-wording.md, B), held in board.js from G8d, where Waiting's take them too. */
 export { IN_OPENING };
-/** Waiting's line under its title while a first read is still on its way, lower case as built from stage 1a (AC80; sandbox.js `checkedWords`). */
+/** Waiting's line under its title while a first read is still on its way, lower case as built from stage 1a (AC80; `titleLine`'s Waiting form, below), and, from G9c, a project's page's row's words with no success held (projectpage.js's `pageCheckedWords`). */
 export const WAITING_CHECKING = 'checking…';
 
 /**
@@ -169,14 +170,17 @@ function cantReadLine(r, tz) {
 export function briefingView(input) {
   const { bd, reads, nowMs, tz } = input;
   const cant = reads.filter((r) => r.drawError || (r.read && r.read.read === 'cant-read')).map((r) => cantReadLine(r, tz));
-  if (input.signedOut) return { kind: 'signed-out', head: 'Signed out — reload to sign in', parts: null, due: [], sub: null, cant: [] };
+  // AC32's words; from G9c page.js's `SIGNED_OUT_STATE.text`, the one constant Waiting's signed-out quiet line takes too (AC91 (c)).
+  if (input.signedOut) return { kind: 'signed-out', head: SIGNED_OUT_STATE.text, parts: null, due: [], sub: null, cant: [] };
   // From stage 6b (Terms' Quiet; AC87): the portfolio read within its 6 minutes, or its own words, one line
   // as a project's (`portfolio`: portfolioRead's answer, or null with no portfolio in J7).
   const pf = input.portfolio || null;
   if (pf && pf.quietWords) cant.push(pf.quietWords);
   const n = bd ? bd.badge : 0;
   if (n > 0) {
-    const lane = (k) => (bd.lanes.find((l) => l.key === k) || { groups: [] }).groups.flatMap((g) => g.rows);
+    // From QW1 (AC94), `waits`: the cards as they were before the questions left the lanes for Waiting's section, so the
+    // briefing is unchanged ("Not changed: … Home's briefing", the amendment).
+    const lane = (k) => ((bd.waits || bd.lanes).find((l) => l.key === k) || { groups: [] }).groups.flatMap((g) => g.rows);
     const wait = lane('wait');
     const kick = lane('kick');
     let w = 0;

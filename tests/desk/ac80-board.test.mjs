@@ -107,12 +107,16 @@ async function markDoneInSheet(app, id) {
 // Rewritten in G2 (AC91 (f); AC80's note "After the glance audit": "two lanes, "Waiting on you" and "Done · last 24 h", of
 // equal width, with Kicked back as a strip above them and Done shaded"; P-001-glance-lanes.md, C): the lanes' order,
 // headings, counts and empty words, with the strip in place of the middle lane; the cards' part unchanged.
-test('AC80, rewritten in G2 (AC91 (f)): two lanes, left to right, "Waiting on you" and "Done · last 24 h", their counts and empty words, with Kicked back a strip above them reading "Kicked back · none"; version 5\'s eight cards, each its kind line, meta, lock or clock line and one step', async () => {
+// Rewritten in QW1 (AC94; AC80's note "After the questions request": "the owner's questions leave the lanes and the strip
+// for the "Questions for you" section above the quiet lines, grouped by project … the lane's and its groups' counts count
+// the cards left in the lane"): version 5's three questions are in the section, each its kind line, meta, clock line and
+// "More about it ›" to its sheet; the lane and its group count the five pull requests; the badge still counts all eight.
+test('AC80, rewritten in G2 (AC91 (f)) and in QW1 (AC94): two lanes, left to right, "Waiting on you" and "Done · last 24 h", their counts and empty words, with Kicked back a strip above them reading "Kicked back · none"; version 5\'s eight cards, each its kind line, meta, lock or clock line and one step, its three questions in the "Questions for you" section above the quiet lines', async () => {
   const { app } = await openExample();
   try {
     const lanes = byClass(byClass(app.view, 'v2-lanes')[0], 'v2-lane');
     assert.deepEqual(lanes.map((l) => l.dataset.lane), ['wait', 'done']);
-    assert.deepEqual(lanes.map((l) => byClass(l, 'v2-lh')[0].textContent), ['Waiting on you8', 'Done · last 24 h']);
+    assert.deepEqual(lanes.map((l) => byClass(l, 'v2-lh')[0].textContent), ['Waiting on you5', 'Done · last 24 h']);
     assert.equal(byClass(lane(app, 'wait'), 'v2-empty').length, 0);
     assert.equal(byClass(lane(app, 'done'), 'v2-empty')[0].textContent, 'Hold a card and drag it here');
     // Kicked back: no column, a strip above the lanes, under the quiet lines, its one quiet line with no count, no
@@ -121,22 +125,32 @@ test('AC80, rewritten in G2 (AC91 (f)): two lanes, left to right, "Waiting on yo
     const at = (cls) => board.findIndex((c) => c.className.split(' ').includes(cls));
     assert.equal(at('v2-kstrip'), at('v2-lanes') - 1, 'directly above the lanes');
     assert.ok(at('v2-quiet') < at('v2-kstrip'), 'under the quiet lines');
+    assert.equal(at('v2-qsec'), at('v2-sub') + 1, 'QW1: the section under the title and its line, above the quiet lines (none here) and the strip');
+    assert.ok(at('v2-qsec') < at('v2-kstrip'));
     assert.equal(lane(app, 'kick').textContent, 'Kicked back · none');
     assert.equal(findAll(lane(app, 'kick'), (e) => ['button', 'a', 'svg'].includes(e.tag)).length, 0, 'no control and no fold mark');
     // In each lane, a project's cards under its name, a folder icon and its count; no card repeats the name.
     const grp = keyed(app, 'grp:wait:Example');
-    assert.equal(grp.textContent, 'Example8');
+    assert.equal(grp.textContent, 'Example5');
     assert.equal(grp.attrs['aria-label'], 'Show only Example');
     const want = [
       ['Pull request', 'Merge: the first rough estimates', '#126 · R0 · 3 h 21 m', null, 'Merge ↗', 'https://github.com/shumpmaster/Example/pull/126'],
       ['Pull request', 'Merge: your later-work list', '#127 · R0 · 3 h 11 m', null, 'Merge ↗', 'https://github.com/shumpmaster/Example/pull/127'],
       ['Pull request', 'Merge: Work ahead (M3A)', '#128 · R0 · 3 h 1 m', null, 'Merge ↗', 'https://github.com/shumpmaster/Example/pull/128'],
-      ['Question', "How should a question's card fill in your answer?", 'MD2 · 2 h 54 m', 'Settles as C · Wed 13:07', 'Answer', `#/waiting/card/${encodeURIComponent(Q('P-001-board-answer'))}`],
-      ['Question', 'How long do finished cards stay in Done?', 'MD2 · 1 h 1 m', 'Settles as B · Wed 15:00', 'Answer', `#/waiting/card/${encodeURIComponent(Q('P-001-board-done-keep'))}`],
       ['Pull request', 'Make two notification files high-risk', '#130 · R3 · 51 m', null, 'Verdict ↗', null],
       ['Pull request', "Show the automatic job's pull requests as being recorded", '#135 · R3 · 36 m', null, 'Verdict ↗', null],
-      ['Question', 'Approve the new wording of M3A, the Work ahead milestone?', 'M3A · 21 m', 'Settles as A · Wed 15:40', 'Answer', `#/waiting/card/${encodeURIComponent(Q('P-001-m3a-done-when'))}`],
     ];
+    // QW1 (AC94): the questions, in the section in AC80's lane order, each "More about it ›" opening its sheet.
+    const inSection = [
+      ['Question', "How should a question's card fill in your answer?", 'MD2 · 2 h 54 m', 'Settles as C · Wed 13:07', 'More about it ›', `#/waiting/card/${encodeURIComponent(Q('P-001-board-answer'))}`],
+      ['Question', 'How long do finished cards stay in Done?', 'MD2 · 1 h 1 m', 'Settles as B · Wed 15:00', 'More about it ›', `#/waiting/card/${encodeURIComponent(Q('P-001-board-done-keep'))}`],
+      ['Question', 'Approve the new wording of M3A, the Work ahead milestone?', 'M3A · 21 m', 'Settles as A · Wed 15:40', 'More about it ›', `#/waiting/card/${encodeURIComponent(Q('P-001-m3a-done-when'))}`],
+    ];
+    const qcards = byClass(keyed(app, 'qsec'), 'v2-card');
+    assert.deepEqual(qcards.map((c) => [byClass(c, 'v2-kd')[0].textContent, byClass(c, 'v2-t')[0].textContent, byClass(c, 'v2-m')[0].textContent,
+      (byClass(c, 'v2-mk')[0] || { textContent: null }).textContent, byClass(c, 'v2-step')[0].textContent]), inSection.map((w) => w.slice(0, 5)));
+    for (const [i, c] of qcards.entries()) assert.equal(byClass(c, 'v2-step')[0].attrs.href, inSection[i][5], inSection[i][1]);
+    for (const c of qcards) assert.equal(byClass(byClass(c, 'v2-kd')[0], 'v2-k').length, 1);
     const got = cardsIn(app, 'wait').map((c) => [byClass(c, 'v2-kd')[0].textContent, byClass(c, 'v2-t')[0].textContent, byClass(c, 'v2-m')[0].textContent,
       (byClass(c, 'v2-mk')[0] || { textContent: null }).textContent, byClass(c, 'v2-step')[0].textContent]);
     assert.deepEqual(got, want.map((w) => w.slice(0, 5)));
@@ -202,7 +216,9 @@ test('AC80: "Done ✓" in a sheet marks the card at once: it heads Done as "Conf
     assert.equal(byClass(conf[0], 'v2-step')[0].textContent, 'Merge ↗', 'its step\'s button, beside "Undo"');
     assert.ok(findAll(conf[0], (e) => e.tag === 'button' && e.textContent === 'Undo').length);
     assert.equal(badge(app), '7', 'the badge at once');
-    assert.equal(byClass(lane(app, 'wait'), 'v2-lc')[0].textContent, '7');
+    // Rewritten in QW1 (AC94): the lane counts the cards left in it, the four pull requests; the three questions are in the
+    // "Questions for you" section, still in the badge.
+    assert.equal(byClass(lane(app, 'wait'), 'v2-lc')[0].textContent, '4');
     const kept = JSON.parse(store.backing.get(MARKS_KEY));
     assert.ok(kept.marks[PR(126)], 'kept on the device');
     assert.equal(kept.marks[PR(126)].step, 'merge');
@@ -663,7 +679,9 @@ test('AC80 with AC74: a tap\'s address opens the board with that card\'s sheet i
 // AC52's one card of each kind
 
 
-test('AC80, rewritten in G3 (AC91 (h)): AC52\'s one card of each kind — a decision card\'s "Answer", a gate card\'s short title, its four buttons and two lines, a hold card\'s and a merge card\'s "Open ↗", a pull request\'s step, a deploy\'s "Approve ↗" in a deploysNeedOwner project', async () => {
+// Rewritten in QW1 (AC94, reading (b)): the question of AC52's one of each is in the "Questions for you" section, its
+// choices as buttons, not a card in "Waiting on you"; the lane holds the six other kinds, as the section holds no other.
+test('AC80, rewritten in G3 (AC91 (h)) and in QW1 (AC94): AC52\'s one card of each kind — a decision card\'s "Answer", a gate card\'s short title, its four buttons and two lines, a hold card\'s and a merge card\'s "Open ↗", a pull request\'s step, a deploy\'s "Approve ↗" in a deploysNeedOwner project; the question in the section', async () => {
   const project = { ...v3('Alpha'), deploysNeedOwner: true };
   const app = await loadSandbox({ config: { ...CONFIG, projects: [project] }, repos: { Alpha: fullRepo('Alpha') }, hash: '#/waiting', now: Date.parse('2026-10-14T15:00:00Z') });
   try {
@@ -672,7 +690,10 @@ test('AC80, rewritten in G3 (AC91 (h)): AC52\'s one card of each kind — a deci
     const cards = cardsIn(app, 'wait');
     const by = (kind) => cards.filter((c) => byClass(c, 'v2-kd')[0].textContent === kind);
     const kinds = cards.map((c) => byClass(c, 'v2-kd')[0].textContent).sort();
-    assert.deepEqual(kinds, ['Decision', 'Deploy', 'Gate · Build', 'Hold', 'Merge card', 'Pull request', 'Question'].sort(), kinds.join(', '));
+    assert.deepEqual(kinds, ['Decision', 'Deploy', 'Gate · Build', 'Hold', 'Merge card', 'Pull request'].sort(), kinds.join(', '));
+    const qs = byClass(keyed(app, 'qsec'), 'v2-card');
+    assert.deepEqual(qs.map((c) => [byClass(c, 'v2-kd')[0].textContent, byClass(c, 'v2-t')[0].textContent]), [['Question', "Alpha's question"]], 'the question, in the section only');
+    assert.deepEqual(byClass(qs[0], 'v2-abtn').map((b) => b.textContent), ['Answer A ↗', 'Answer B ↗'], 'its choices as buttons');
     assert.equal(byClass(by('Decision')[0], 'v2-step')[0].textContent, 'Answer');
     const gate = by('Gate · Build')[0];
     // Rewritten in G3 (AC91 (h); AC80's note "After the glance audit": "a gate card's short title"): the made-up Build-gate
@@ -890,13 +911,15 @@ test('AC80 + J22 rule 0, on the page: a Reviewer\'s verdict reading FAIL and an 
       if (withAgents) {
         assert.equal(c.agents, 'With the agents: 1', name);
         assert.ok(!titles(app, 'wait').includes('A made-up code change'), `${name}: not a card`);
-        assert.deepEqual([c.badge, c.lane, c.home], ['8', '8', '8'], `${name}: in no count`);
+        // Rewritten in QW1 (AC94): the lane counts its own cards (five pull requests), the three questions being in the
+        // section; the badge and Home still count all eight.
+        assert.deepEqual([c.badge, c.lane, c.home], ['8', '5', '8'], `${name}: in no count`);
         await app.tap(keyed(app, 'ql:agents'));
         assert.ok(byClass(keyed(app, 'fold:agents'), 'v2-fw').some((x) => x.textContent === words), `${name}: ${words}`);
       } else {
         assert.equal(c.agents, null, `${name}: not with the agents`);
         assert.ok(titles(app, 'wait').includes('A made-up code change'), `${name}: a card, the verdict counted as given`);
-        assert.deepEqual([c.badge, c.lane, c.home], ['9', '9', '9'], `${name}: counted`);
+        assert.deepEqual([c.badge, c.lane, c.home], ['9', '6', '9'], `${name}: counted`);
       }
     } finally {
       app.restore();
@@ -967,10 +990,12 @@ test('AC80 with Part A item 5 (stage 1a\'s build review, round 1, F3), rewritten
     }
     assert.equal(byClass(lane(app, 'wait'), 'v2-empty')[0].textContent, 'Not read yet');
     assert.equal(lane(app, 'kick').textContent, 'Kicked back · not read yet');
+    assert.equal(keyed(app, 'qsec').textContent, 'Questions for you · not read yet', 'QW1 (AC94): the section says it too, never "none"');
     assert.doesNotMatch(byClass(app.view, 'v2-lanes')[0].textContent, /\b0\b|Nothing here/);
     await app.advance(1000);
     await app.advance(POLL_MS);
-    assert.equal(byClass(lane(app, 'wait'), 'v2-lc')[0].textContent, '8', 'read: its count');
+    // Rewritten in QW1 (AC94): the lane's count counts the five pull requests left in it; its three questions are in the section.
+    assert.equal(byClass(lane(app, 'wait'), 'v2-lc')[0].textContent, '5', 'read: its count');
     assert.equal(lane(app, 'kick').textContent, 'Kicked back · none', 'a "none" that is a read value');
   } finally {
     app.restore();

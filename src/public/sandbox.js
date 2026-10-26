@@ -31,7 +31,7 @@ import { GATE_PHASE } from './lib/j11.js';
 import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, gateOpening, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, BOARD_LANES, WORDS, MARKS_KEY,
-  stripEmptyParts, isNewCard, boardAge, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, everyProjectUnread, unreadLaneWords, quietTroubleWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
+  stripEmptyParts, isNewCard, boardAge, SECTION_WORDS, SECTION_CHOICES_SHOWN, waitLaneEmpty, sectionMissingWords, sectionMeta, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, everyProjectUnread, unreadLaneWords, quietTroubleWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
@@ -39,7 +39,7 @@ import { V25_RULING_NOTE } from './lib/links.js';
 import { runsContext, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, itemFeeds,
   stalledLine, deployRows, FEED_ICONS_KEY, doneTarget, JOB_MERGE_WORDS, ESTIMATE_MERGE_WORDS } from './lib/feed.js';
 import { WA, DRAFT_KEY, todayOf, groupOnce } from './lib/workahead.js';
-import { PAGE_WORDS, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, pageTally, restRows, v25Rows, finishWords, sprintCount, sprintsWords, ciPassed, blockOf } from './lib/projectpage.js';
+import { PAGE_WORDS, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, pageTally, restRows, v25Rows, finishWords, sprintCount, sprintsWords, ciPassed, blockOf, pageCheckedWords } from './lib/projectpage.js';
 import { topLine } from './lib/versions.js';
 import { portfolioView, PF_ROWS, PF_WORDS, cardMilestone, portfolioScreenState, portfolioRead, portfolioCards, ideasView, rareLine, noteIdeas, ideaEvents, SEEN_IDEAS_KEY, PF_BOARD, PF_LABEL } from './lib/portfolio.js';
 import { workAheadView, readDraft } from './lib/workview.js';
@@ -90,8 +90,9 @@ function followOpening(desk, built) {
   // "Opened from a notification"; a key this device marked done opens its Done row.
   if (d.kind === 'item') return { hash: go('waiting', 'card', t.key), words: OPENED_WORDS, key: t.key };
   if (d.kind === 'held') {
-    // AC77: the "Being asked in your session" fold, open.
-    boardState.folds.add('asking');
+    // AC77, changed by AC94 and AC95 (QW1): a held question is in the "Questions for you" section, at the top of Waiting,
+    // with that question in view (the quiet line "Being asked in your session" and its fold are gone).
+    scrollToRow = rowId(`q:${t.key}`);
     return { hash: '#/waiting', words: OPENED_WORDS, key: t.key };
   }
   if (d.kind === 'recording') {
@@ -906,7 +907,7 @@ function timelineNode(tl, name) {
  * gate, after your ruling", so the tile and Plan's first gate row never differ.
  */
 function gateCardsOf(bd, name) {
-  const lanes = bd ? bd.lanes.filter((l) => l.key !== 'done').flatMap((l) => l.groups.filter((g) => g.project === name).flatMap((g) => g.rows)) : [];
+  const lanes = bd ? (bd.waits || bd.lanes.filter((l) => l.key !== 'done')).flatMap((l) => l.groups.filter((g) => g.project === name).flatMap((g) => g.rows)) : [];
   return lanes.filter((c) => c.kind === 'gate' && c.flag && c.flag.card);
 }
 const gateCardOf = (bd, name) => gateCardsOf(bd, name)[0] || null;
@@ -1319,7 +1320,8 @@ function pageWaits(p, bd) {
   const c = bd && bd.counts ? bd.counts.get(name) : null;
   const n = c ? c.waiting + c.kicked : 0;
   const read = p.box.drawError ? 'cant-read' : p.box.read ? p.box.read.read : 'checking';
-  const rows = bd ? bd.lanes.filter((l) => l.key !== 'done').flatMap((l) => l.groups.filter((g) => g.project === name).flatMap((g) => g.rows)) : [];
+  // From QW1 (AC94), the board's `waits`: the cards as they were before the questions left the lanes, so the row is unchanged.
+  const rows = bd ? (bd.waits || bd.lanes.filter((l) => l.key !== 'done')).flatMap((l) => l.groups.filter((g) => g.project === name).flatMap((g) => g.rows)) : [];
   // AC89 (c): each by its short name, from its kind and its own id (board.js, shortNames), never a reworded title; from G5
   // (the owner's ruling, P-001-glance-waits-gates.md, B) a gate's cards named once, in the place of the first of them, the
   // others giving no name of their own (`false`), so the row holds fewer names than its count, which still counts each card.
@@ -1363,7 +1365,9 @@ function pageTwoRows(p, bd) {
   } else if (w.read !== 'ok') waits = pageRow('page-waits', to, vi('clock'), PAGE_WORDS.checking, null);
   // AC91 (j): calm looks calm — "Nothing waiting on you" takes the soft row (400 13 px --ink2, `.v2-prtt.soft`), its ✓ and
   // "checked <age> ago" unchanged, so a calm page no longer looks like one that waits ("◆ <n> wait on you" stays 500 --ink).
-  else waits = pageRow('page-waits', to, stc('check'), PAGE_WORDS.nothingWaiting, null, { live: checkedWords, titleCls: 'soft' });
+  // From G9c (AC91 (c); AC83; P-001-glance-page-checking.md, A): its "checked <age> ago" from this project's own last read
+  // (projectpage.js's pageCheckedWords), never the whole desk's stalest.
+  else waits = pageRow('page-waits', to, stc('check'), PAGE_WORDS.nothingWaiting, null, { live: () => pageCheckedWords({ lastSuccessAt: ownSuccess(name), nowMs: Date.now() }), titleCls: 'soft' });
   const rows = [waits];
   if (p.project.model === 'v3') {
     // No records held yet, or none ever read: "not available", as Home's tile says (home.js, unreadLines), never a zero.
@@ -1776,6 +1780,8 @@ function copyButton(text, key, label = 'Copy the text', cls = 'sb-btn ghost', op
   const said = copied.get(key);
   const failed = opt.failed || 'Copy failed: select the text above';
   return h('button', { type: 'button', class: cls, key: `copy:${key}`, 'aria-label': said ? null : opt.aria || null, onclick: () => {
+    // AC94 (QW1): `before`, a held question's hook, ends its hold on this device before its answer is copied (AC77, changed).
+    if (opt.before) opt.before();
     const done = (w) => { copied.set(key, w); render(); };
     try {
       navigator.clipboard.writeText(text).then(() => done('Copied'), () => done(failed));
@@ -1955,7 +1961,11 @@ function readOf(box, name) {
   // From G8d's round 2 (AC80; the owner's ""✕ Can't show Bravo" (Recommended)"): `cantShow`, the desk can read the project but
   // can't draw it (its box's `drawError`, its read not failing), so it is not `ok` and never "Nothing waiting: <project>".
   const cantShow = cantShown(box);
-  return { ok: r.read === 'ok' && !cantShow, cantRead: r.read === 'cant-read', cantShow, since: r.since, words: r.words, opening: r.read === 'cant-read' && !readInOpening(name) };
+  // From G9c (AC91 (c)): `onWay`, AC89 (a)'s state 1, the project's first read still on its way: no read of it has succeeded
+  // in this opening and its read is not failing (readState counts the 3-minute cause and the sign-out's refusal as failing),
+  // from the same reads the line under the title takes; no read added (A3).
+  const onWay = r.read !== 'cant-read' && !cantShow && !readInOpening(name);
+  return { ok: r.read === 'ok' && !cantShow, cantRead: r.read === 'cant-read', cantShow, since: r.since, words: r.words, opening: r.read === 'cant-read' && !readInOpening(name), onWay };
 }
 
 /** The queue less what the board does not count (AC48, AC49, AC54, AC55, AC24): the pull requests with the agents and the cards marked done here. */
@@ -2036,7 +2046,9 @@ function boardOf(built, nowMs, only) {
       // the portfolio's group can't be drawn: the projects' board stands
     }
   }
-  const view = boardView({ projects, marks: boardState.marks, only, nowMs, tz: TZ });
+  // From G9c (AC91 (c)): the desk's sign-out (J6) and the portfolio's read state (J23) for Waiting's read lines, every project shown.
+  const view = boardView({ projects, marks: boardState.marks, only, nowMs, tz: TZ, signedOut: Boolean(DESK && DESK.signedOut),
+    portfolio: lastPf ? { state: lastPf.state, problem: lastPf.problem } : null });
   // Part A item 5 (stage 1a's build review, round 1, F3): before any project is read, or when none can
   // be, an unknown is said in words, never as a 0 or "Nothing here".
   const shown = only ? built.filter((b) => b.project.name === only) : built;
@@ -2056,7 +2068,9 @@ function boardOf(built, nowMs, only) {
     view.unread = view.one.unknown ? (view.one.cantShow ? 'cant-show' : view.one.state === 2 ? 'cant' : view.one.state === 5 ? 'cant-show-last' : 'pending') : null;
   }
   boardState.view = view;
-  boardState.cards = new Map(projects.flatMap((p) => p.cards.map((c) => [c.id, c])));
+  // AC94 (QW1): a held question shown in the section has its sheet too ("More about it ›"), under the id its card takes once its hold ends.
+  boardState.cards = new Map([...projects.flatMap((p) => p.cards.map((c) => [c.id, c])),
+    ...(view.questions ? view.questions.groups.flatMap((g) => g.held.map((c) => [c.id, c])) : [])]);
   // AC56, changed: kept words are dropped once their item no longer waits on the owner and its sheet is closed, judged
   // only for a project read successfully (a project not read yet, or failing, keeps them), and after DRAFT_KEEP_DAYS.
   try {
@@ -2130,15 +2144,13 @@ function withPortfolio(s, boxes, signedOut) {
 }
 
 /**
- * "checked <age> ago" (AC80; AC82's rule): from the stalest project's last successful read. From stage G9b only a project's
- * page's "Nothing waiting on you" row takes it, its words unchanged (AC91 (c)); Waiting's line under the title, with every
- * project shown, takes `titleLine` (waitingChecked, above).
+ * A project's own last successful read (the reader's `lastSuccessAt`), or null: a project's page's "Nothing waiting on you"
+ * row takes its age from it from stage G9c (AC91 (c); P-001-glance-page-checking.md, A), in place of G9b's `checkedWords`
+ * (the whole desk's stalest), which then had no caller and went.
  */
-function checkedWords() {
-  const states = DESK && DESK.states ? [...DESK.states.values()] : [];
-  const times = states.map((s) => s.lastSuccessAt);
-  if (!times.length || times.some((x) => x == null)) return 'checking…';
-  return `checked ${durationText(Math.max(0, Date.now() - Math.min(...times)))} ago`;
+function ownSuccess(name) {
+  const st = DESK && DESK.states ? DESK.states.get(name) : null;
+  return st && st.lastSuccessAt != null ? st.lastSuccessAt : null;
 }
 
 const cardRoute = (only, id) => (only ? go('waiting', only, 'card', id) : go('waiting', 'card', id));
@@ -2287,15 +2299,21 @@ function answerLink(p, card, btn, cls, kids) {
   const plan = btn.plan || { url: btn.href, copy: null };
   const guard = card.kind === 'question' ? { target: { kind: 'question', name: card.flag.question.name }, answerPath: `decisions/questions/${card.flag.question.name}.md` }
     : card.flag && card.flag.card ? { target: { kind: 'card', path: card.flag.card.path }, answerPath: card.flag.card.answerPath } : null;
-  const said = rechecks.get(key);
+  // AC94 (QW1): what the re-read found keeps the question's title and project, so the section can say it once the question
+  // has left it (answered meanwhile), as a sheet that stays open says it (AC56).
+  const said = (v) => rechecks.set(key, { ...v, id: card.id, title: card.title, project: p.project.name });
+  const was = rechecks.get(key);
   const a = h('a', { class: cls, key: `ans:${key}`, href: plan.url, rel: 'noopener noreferrer', target: '_blank', 'aria-label': btn.aria || null,
     onclick: (e) => {
+      // AC77, changed by AC94 and AC95 (QW1; the owner's answer 3): a held question's choice ends its hold on this device
+      // first, as "Answer it here instead" does, then AC77's re-read and the link.
+      if (card.held && DESK && DESK.answerHere) DESK.answerHere(p.project.name, card.name);
       if (guard && DESK && DESK.needsRecheck(p.project.name)) {
         if (e && e.preventDefault) e.preventDefault();
-        rechecks.set(key, { words: RECHECK_WORDS.checking });
+        said({ words: RECHECK_WORDS.checking });
         render();
         DESK.recheck(p.project.name, guard.answerPath).then((r) => {
-          if (!r.ok) rechecks.set(key, { words: RECHECK_WORDS.failed, anyway: plan.url });
+          if (!r.ok) said({ words: RECHECK_WORDS.failed, anyway: plan.url });
           else {
             const o = recheckOutcome(DESK.model(p.project.name), guard.target);
             if (o.kind === 'open') {
@@ -2307,8 +2325,8 @@ function answerLink(p, card, btn, cls, kids) {
               } catch {
                 w = null;
               }
-              if (!w) rechecks.set(key, { words: 'Still open:', anyway: plan.url, again: 'open GitHub' });
-            } else rechecks.set(key, { words: o.words, pr: o.pr || null });
+              if (!w) said({ words: 'Still open:', anyway: plan.url, again: 'open GitHub' });
+            } else said({ words: o.words, pr: o.pr || null });
           }
           render();
         });
@@ -2323,10 +2341,10 @@ function answerLink(p, card, btn, cls, kids) {
       }
     } }, kids);
   const out = [a];
-  if (said) {
-    out.push(h('span', { class: 'v2-recheck', role: 'status', key: `recheck:${key}` }, said.words,
-      said.pr ? [' ', ext(said.pr.url, `PR #${said.pr.number}, which records it`, 'v2-lnk')] : null,
-      said.anyway ? [' ', h('a', { class: 'v2-lnk', href: said.anyway, rel: 'noopener noreferrer', target: '_blank', key: `anyway:${key}` }, said.again || RECHECK_WORDS.anyway)] : null));
+  if (was) {
+    out.push(h('span', { class: 'v2-recheck', role: 'status', key: `recheck:${key}` }, was.words,
+      was.pr ? [' ', ext(was.pr.url, `PR #${was.pr.number}, which records it`, 'v2-lnk')] : null,
+      was.anyway ? [' ', h('a', { class: 'v2-lnk', href: was.anyway, rel: 'noopener noreferrer', target: '_blank', key: `anyway:${key}` }, was.again || RECHECK_WORDS.anyway)] : null));
   }
   return out;
 }
@@ -2456,9 +2474,10 @@ function laneNode(bd, built, laneKey, only) {
   const unknown = bd.unread && laneKey !== 'done' && !groups.length;
   return h('section', { class: `v2-lane lane-${laneKey}`, key: `lane:${laneKey}`, 'data-lane': laneKey, 'aria-label': l.title },
     h('h2', { class: 'v2-lh' }, h('span', {}, l.title), laneKey === 'done' || unknown ? null : h('span', { class: 'v2-lc' }, String(l.count))),
+    // AC94 (QW1): an empty "Waiting on you" lane under a section holding questions says so ("Nothing here; your questions
+    // are above"); each word for the unknown is kept with nothing added (waitLaneEmpty).
     groups.length ? groups : h('p', { class: `v2-empty${unknown ? ' unknown' : ''}` },
-      laneKey === 'done' ? WORDS.emptyDone : bd.one ? bd.one.empty
-        : unknown ? unreadLaneWords(bd.unread) : WORDS.empty));
+      laneKey === 'done' ? WORDS.emptyDone : waitLaneEmpty({ one: bd.one || null, unread: unknown ? bd.unread : null, questions: Boolean(bd.questions && bd.questions.order.length) })));
 }
 
 /**
@@ -2485,6 +2504,175 @@ function kickStrip(bd, built, only) {
     h('ol', { class: 'v2-krow', key: 'krow' }, rows.map((c) => h('li', { class: 'v2-kslot', key: `kslot:${c.id}` }, cardNode(pOf(c.project), c, 'kick', only, 'div')))));
 }
 
+// ---------------------------------------------------------------------------
+// The "Questions for you" section (AC94, stage QW1 of "After the questions request"; the owner's "Top of Waiting" and
+// "One tap, then commit"; drawn as the approved picture draws it, docs/design/builds/m3g-picture/, P-001-m3g-picture.md,
+// A, with the owner's answers on it: the first three questions with their choices (P-001-m3g-length, B), each question's
+// age with the grey line and the red quiet line both kept (P-001-m3g-age-double, A)). Each question is answered from here
+// with the same links, or the same copied text, its sheet gives at that moment, the saved words included; the desk writes
+// nothing.
+
+/**
+ * A section question's choices (AC94, "Its choices as buttons, in the sheet's form"): a lettered v3 question's boxes, each
+ * with "Answer <letter> ↗" opening its sheet's link (answerButtons, with draftOf's saved words, as the sheet calls it); a
+ * v2.5 question's, each with "Copy answer <letter>" (v25Ruling, as the sheet's), and AC19's note under them; a numbered or
+ * can't-split question's parts or its OPTIONS: lines as text, then "Answer in its sheet ›", which opens its sheet.
+ * "Recommended" on the box whose letter starts the RECOMMENDATION: line.
+ */
+function sectionChoices(p, card, only) {
+  const project = p.project;
+  const p0 = card.flag.question.parsed;
+  const id = card.id;
+  const inSheet = () => h('p', { class: 'v2-steps', key: `qsheet:${id}` }, h('a', { class: 'v2-abtn', href: cardRoute(only, id), key: `qinsheet:${id}`,
+    onclick: () => { nav.opener = `qinsheet:${id}`; } }, SECTION_WORDS.inSheet));
+  const box = (key, letter, text, recommended, btn) => {
+    const c = splitChoice(text);
+    return h('div', { class: 'v2-opt', role: 'listitem', key }, h('div', { class: 'v2-ot' },
+      [h('span', { class: 'v2-ol' }, h('b', { class: 'v2-letter' }, `${letter}.`), ' ', h('span', { class: 'v2-ow' }, c.words)), c.desc ? h('span', { class: 'v2-od' }, c.desc) : null],
+      recommended ? h('span', { class: 'v2-rec' }, SHEET_WORDS.recommended) : null), btn);
+  };
+  if (card.v25) {
+    // AC19's route (C, (g)): the sheet's v2.5 text to copy, "Recommended" on its box (the sheet says it in a line instead).
+    const letters = p0 ? p0.options.map((o) => o.letter) : [];
+    const recLetter = p0 && p0.recommendation ? (/^([A-Z])\b/.exec(String(p0.recommendation).trim()) || [])[1] || null : null;
+    const held = heldFirst(p, card);
+    const opts = (letters.length ? letters : ['']).map((l) => {
+      const text = v25Ruling(l, draftOf(id));
+      const words = l ? (p0.options.find((o) => o.letter === l) || {}).text || '' : '';
+      const label = l ? `Copy answer ${l}` : 'Copy the answer';
+      const btn = copyButton(text, `qv25:${id}:${l}`, label, 'v2-abtn', { aria: l ? `${label}: ${splitChoice(words).words}` : null, before: held });
+      return l ? box(`qopt:${l}`, l, words, recLetter === l, btn)
+        : h('div', { class: 'v2-opt', role: 'listitem', key: 'qopt:' }, h('div', { class: 'v2-ot' }, h('span', { class: 'v2-ol' }, 'Your ruling')), btn);
+    });
+    return [h('div', { class: 'v2-opts', role: 'list', key: `qopts:${id}` }, opts), h('p', { class: 'v2-small', key: `qv25note:${id}` }, V25_RULING_NOTE)];
+  }
+  const qs = p0 ? questionQuestions(p0.text, p0.title) : null;
+  if (qs && qs.form === 'lettered') {
+    const btns = answerButtons(project, card.flag, CONFIG.linkCap, draftOf(id));
+    return [linkNotes(card, btns), h('div', { class: 'v2-opts', role: 'list', key: `qopts:${id}` }, btns.map((b) => box(`qopt:${b.value}`, b.value, b.words, b.recommended,
+      choiceButtons(p, card, { ...b, aria: `Answer ${b.value}: ${splitChoice(b.words).words}` }, 'v2-abtn', [b.label])))), copyCause(btns)];
+  }
+  if (qs && qs.form === 'numbered') {
+    // Each part's number and words with its recommendation, as its sheet's numbered boxes show them, with no box for words (C, (h)).
+    return [h('div', { class: 'v2-opts', key: `qnum:${id}` }, qs.questions.map((x) => h('div', { class: 'v2-opt num', key: `qn:${x.n}` },
+      h('div', { class: 'v2-ot' }, h('span', { class: 'v2-ol' }, `${x.n}. ${x.text}`),
+        x.recommendation ? h('span', { class: 'v2-od' }, [h('span', { class: 'v2-rec' }, SHEET_WORDS.recommended), ' ', x.recommendation]) : null)))), inSheet()];
+  }
+  // A question that can't be split (AC53): the lines of its OPTIONS: block as the file writes them, in --t-body, or, with no
+  // such block (or an empty one), "Its choices are in its sheet"; then its one button to its sheet.
+  const lines = qs ? qs.block.filter((l) => l.trim()) : [];
+  return [lines.length ? h('div', { class: 'v2-blk', key: `qlines:${id}` }, lines.map((l, i) => h('p', { class: 'v2-body', key: `ql${i}` }, l.trim())))
+    : h('p', { class: 'v2-body', key: `qlines:${id}` }, SECTION_WORDS.choicesInSheet), inSheet()];
+}
+
+/**
+ * AC77, changed by AC94 and AC95 (the owner's answer 3): a tap on a held question's choice ends its hold on this device, as
+ * "Answer it here instead" does, before AC77's re-read and the link. Returns the hook, or null for a card.
+ */
+function heldFirst(p, card) {
+  return card.held ? () => { if (DESK && DESK.answerHere) DESK.answerHere(p.project.name, card.name); } : null;
+}
+
+/** The section's box for the owner's own words, folded behind "Add your own words" (C, (j)): the sheet's box(es), the same saved words. */
+function sectionWords(p, card) {
+  const p0 = card.flag.question.parsed;
+  const qs = !card.v25 && p0 ? questionQuestions(p0.text, p0.title) : null;
+  if (qs && qs.form === 'numbered') return qs.questions.map((x) => wordsBox(card.id, `Your answer to ${x.n}`, x.n));
+  return wordsBox(card.id, SHEET_WORDS.words);
+}
+
+/**
+ * One question in the section (AC94, "Each question shows"): its kind line ("Question", its icon vermilion, "new" by
+ * isNewCard; a kicked-back one "Kicked back · Question" with the kick icon and its reason), its title cut at three lines
+ * (AC89 (j)), a held one's "Also asked in your session: answer in one place", its meta line with its age, its lock or
+ * clock line, its choices (the first three in the section's order) or "Show choices ›", "Add your own words", "More about
+ * it ›" and "Done ✓" (none on a held question). Never dragged; a tap outside its controls opens its sheet.
+ */
+function sectionCard(p, card, only, shown) {
+  const name = p.project.name;
+  const id = card.id;
+  const kicked = card.lane === 'kick';
+  let kind;
+  if (kicked) kind = h('span', { class: 'v2-kd' }, vi('kick'), h('span', {}, `Kicked back · ${card.origKindWord || card.kindWord}`));
+  else {
+    const isNew = () => isNewCard(card, 'section', lastLooked());
+    const cls = () => (isNew() ? 'v2-new' : 'v2-new none');
+    const fresh = h('span', { class: cls(), live: () => (isNew() ? ` ${WORDS.newCard}` : '') });
+    fresh._liveClass = cls;
+    kind = h('span', { class: 'v2-kd' }, vi('question'), h('span', {}, card.kindWord), fresh);
+  }
+  const open = shown || isOpenFold(name, `qchoices:${id}`, false);
+  const body = [];
+  if (open) body.push(sectionChoices(p, card, only));
+  if (!shown) body.push(foldButton(name, `qchoices:${id}`, false, { class: 'v2-fold' }, SECTION_WORDS.showChoices));
+  body.push(foldButton(name, `qwords:${id}`, false, { class: 'v2-fold' }, SECTION_WORDS.ownWords));
+  if (isOpenFold(name, `qwords:${id}`, false)) body.push(sectionWords(p, card));
+  body.push(h('p', { class: 'v2-steps', key: `qacts:${id}` },
+    h('a', { class: 'v2-step', href: cardRoute(only, id), key: `qmore:${id}`, onclick: () => { nav.opener = `qmore:${id}`; } }, SECTION_WORDS.more),
+    card.held ? null : h('button', { type: 'button', class: 'v2-step', key: `qdone:${id}`, onclick: () => markCard(card) }, SECTION_WORDS.done)));
+  return h('li', { class: 'v2-card v2-qcard', key: `qcard:${id}`, id: rowId(`q:${id}`), 'data-card': id, 'data-question': card.held ? 'held' : kicked ? 'kicked' : 'counted' },
+    kind,
+    h('a', { class: 'v2-t', href: cardRoute(only, id), 'data-cardlink': '', key: `cardlink:${id}`, onclick: () => { nav.opener = `cardlink:${id}`; } }, cardTitle(card)),
+    card.held ? h('span', { class: 'v2-body', key: 'qheld' }, SECTION_WORDS.heldLine) : null,
+    h('span', { class: 'v2-m', live: () => sectionMeta(card, Date.now()) }),
+    kicked && card.kicked ? h('span', { class: 'v2-why' }, card.kicked.reason) : null,
+    card.mark ? h('span', { class: 'v2-mk' }, vi(card.mark.icon), h('span', {}, card.mark.words)) : null,
+    h('div', { class: 'v2-qbody', key: `qbody:${id}` }, body));
+}
+
+/**
+ * The section itself (AC94): a region named "Questions for you", at the screen's full width, under the title (and, with one
+ * project shown, under the chip and that project's can't-read line), above the quiet lines, the strip and the lanes. With
+ * none, one quiet line, "Questions for you · none" by the Kicked back strip's rule (stripEmptyParts: the words for the
+ * unknown in place of "none"); with any, its head "Questions for you · <q>" (and " · <h> being asked in your session")
+ * over a hairline, each project's group under its name in J7's order. Under the line or the head, a grey line for each
+ * project the desk can't read or can't show (sectionMissingWords).
+ */
+function questionsSection(bd, built, only) {
+  const qv = bd.questions || { groups: [], order: [], count: 0, held: 0 };
+  const pOf = (name) => built.find((b) => b.project.name === name) || null;
+  const missing = (bd.cantLines || []).map((c) => h('p', { class: 'v2-small', key: `qmiss:${c.project}` }, sectionMissingWords(c, TZ)));
+  const attrs = { class: 'v2-qsec', key: 'qsec', 'aria-label': SECTION_WORDS.title };
+  // AC94 ("Settled from QW1's build", 2): the re-read's words for a question it took out of the section, under the head, or,
+  // once none is left, under the "none" line, for this opening.
+  const gone = goneRechecks(qv, only);
+  if (!qv.order.length) {
+    const e = stripEmptyParts({ unread: bd.unread || null, one: bd.one || null });
+    return h('section', attrs, h('p', { class: 'v2-kq', key: 'qnone' }, h('span', { class: 'v2-kl' }, SECTION_WORDS.title),
+      h('span', { class: 'v2-kn' }, e.count), e.words ? h('span', { class: 'v2-kw' }, e.words) : null), missing, gone);
+  }
+  const shown = new Set(qv.order.slice(0, SECTION_CHOICES_SHOWN).map((c) => c.id));
+  const groups = qv.groups.map((g) => {
+    const p = pOf(g.project);
+    const head = only ? null : h('button', { type: 'button', class: 'v2-grp', key: `grp:qsec:${g.project}`, 'aria-label': `Show only ${g.project}`,
+      onclick: () => nav.to(go('waiting', g.project)) }, vi('proj'), h('span', { class: 'v2-gn' }, g.project), h('span', { class: 'v2-gc' }, String(g.count)));
+    return [head, h('ol', { class: 'v2-list', key: `qlist:${g.project}` }, [...g.held, ...g.rows].map((c) => sectionCard(p, c, only, shown.has(c.id))))];
+  });
+  return h('section', attrs,
+    h('h2', { class: 'v2-kh', key: 'qhead' }, h('span', {}, SECTION_WORDS.title), h('span', { class: 'v2-kn' }, ' · '), h('span', { class: 'v2-lc' }, String(qv.count)),
+      qv.held ? [h('span', { class: 'v2-kn' }, ' · '), h('span', { class: 'v2-small' }, `${qv.held} ${SECTION_WORDS.heldCount}`)] : null),
+    missing, gone, groups);
+}
+
+/**
+ * AC94 ("Before and around a link": "a question answered meanwhile shows "already answered: <ruling>" with no link"): a
+ * section question whose re-read found it answered or being recorded has left the section by the time the words are
+ * known, so the section keeps them, once per question, "<its title>: <the words>", under its head, or under the "Questions
+ * for you · none" line once the last question has left (AC94, "Settled from QW1's build", 2), for this opening (as a sheet open
+ * over it keeps them, AC56); "being recorded" keeps its pull request's link. One project shown, only that project's.
+ */
+function goneRechecks(qv, only) {
+  const here = new Set(qv.order.map((c) => c.id));
+  const out = new Map();
+  for (const [k, v] of rechecks) {
+    if (!v || !v.id || here.has(v.id) || out.has(v.id) || (only && v.project !== only) || !/^question\|/.test(String(v.id).split('|').slice(1).join('|'))) continue;
+    if (v.words === RECHECK_WORDS.checking) continue;
+    out.set(v.id, h('p', { class: 'v2-recheck', role: 'status', key: `qgone:${k}` }, `${v.title}: `, v.words,
+      v.pr ? [' ', ext(v.pr.url, `PR #${v.pr.number}, which records it`, 'v2-lnk')] : null));
+  }
+  return [...out.values()];
+}
+
 /** A quiet line (AC80): shown only when it has any; a tap opens its fold. */
 function quietLine(k, icon, words, n, fold) {
   const open = boardState.folds.has(k);
@@ -2503,14 +2691,6 @@ function quietLines(bd, built, only) {
   const recFold = () => h('ul', { class: 'v2-flist' }, q.recording.map((r) => h('li', { key: `rec:${r.key}`, id: rowId(`rec:${r.key}`) },
     ext(r.link, r.pr.title, 'v2-ft'), h('span', { class: 'v2-m' }, `#${r.pr.number}`), h('span', { class: 'v2-fw' }, r.recordingWords),
     r.answerWords ? h('span', { class: 'v2-fw' }, r.answerWords) : null)));
-  const askFold = () => h('ul', { class: 'v2-flist' }, q.asking.map((a) => {
-    const proj = built.find((b) => b.model && (b.model.asking || []).includes(a));
-    const pname = proj ? proj.project.name : null;
-    return h('li', { key: `asking:${a.name}` }, h('span', { class: 'v2-fw strong' }, a.words), h('span', { class: 'v2-ft' }, a.title), h('span', { class: 'v2-m' }, a.name),
-      a.parsed ? h('details', { class: 'v2-fd', key: `asking-text:${a.name}` }, h('summary', {}, 'The question and its options, to read'),
-        h('article', { class: 'sb-record', html: renderMarkdown(a.parsed.text || '') })) : null,
-      h('button', { type: 'button', class: 'v2-step', key: `answer-here:${a.name}`, onclick: () => { if (DESK && pname) DESK.answerHere(pname, a.name); } }, 'Answer it here instead'));
-  }));
   const ansFold = () => h('ul', { class: 'v2-flist' }, q.answerRecording.map((a) => h('li', { key: `ansrec:${a.name}` },
     h('span', { class: 'v2-fw strong' }, a.words), h('span', { class: 'v2-ft' }, a.title), a.pr ? ext(a.pr.url, `PR #${a.pr.number}`, 'v2-lnk') : null)));
   if (only) {
@@ -2542,16 +2722,25 @@ function quietLines(bd, built, only) {
       if (boardState.folds.has('recording')) lines.push(h('div', { class: 'v2-qfold', key: 'fold:recording', role: 'region', 'aria-label': WORDS.recording }, recFold()));
     }
   } else {
+    // From G9c (AC91 (c); P-001-glance-waiting-signed-out.md, A): signed out, one "✕ Signed out — reload to sign in" line at
+    // the top of the quiet lines, in the red quiet line's look, in place of every red line below (board.js's `signedOutLine`).
+    if (bd.signedOutLine) lines.push(h('p', { class: 'v2-ql still bad', key: bd.signedOutLine.key }, vi('bad'), h('span', {}, bd.signedOutLine.words)));
     if (q.agents.length) lines.push(quietLine('agents', 'agents', WORDS.agents, q.agents.length, agentsFold));
     if (bd.nothingWaiting.length) lines.push(h('p', { class: 'v2-ql still', key: 'ql:nothing' }, vi('eye'), h('span', {}, `${WORDS.nothing}: ${bd.nothingWaiting.join(', ')}`)));
     // AC80, AC89 (a); from G8d (AC91 (c)), "Can't read <project> in this opening" for a project no read of which has succeeded in this opening;
-    // from G8d's round 2, "Can't show <project>" for one the desk can read but can't draw, in the same look, among them in the board's order.
-    for (const c of bd.cantLines) lines.push(h('p', { class: 'v2-ql still bad', key: `ql:${c.show ? 'show' : 'cant'}:${c.project}` }, vi('bad'), h('span', {}, quietTroubleWords(c, TZ))));
-    // AC87 (stage 6b; J23's failures): the portfolio's read that isn't current, in its own words, never a project's.
-    if (lastPf && lastPf.problem && lastPf.state !== 'pending') lines.push(h('p', { class: 'v2-ql still bad', key: 'ql:cant:portfolio' }, vi('bad'), h('span', {}, lastPf.problem)));
+    // from G8d's round 2, "Can't show <project>" for one the desk can read but can't draw, in the same look, among them in the board's order;
+    // AC87 (stage 6b; J23's failures): the portfolio's read that isn't current, in its own words, never a project's, in its slot after
+    // them. From G9c (AC91 (c); P-001-glance-waiting-pending.md, A; -g9c-portfolio.md, B): after the red lines, a grey "Still reading
+    // <project>…" for each project whose first read is on its way, then the portfolio's slot, "Still reading the portfolio…" while its
+    // read is on its way; signed out, no red line here (board.js's `readLines`). From G9c's draft 3 (P-001-glance-g9c-row.md, A),
+    // each "Still reading" line takes `.v2-qread` beside `.v2-ql`, a row of its own in the wrapping box (`flex-basis: 100%`).
+    for (const r of bd.readLines) {
+      lines.push(r.bad ? h('p', { class: 'v2-ql still bad', key: r.key }, vi('bad'), h('span', {}, r.words)) : h('p', { class: 'v2-ql v2-qread', key: r.key }, h('span', {}, r.words)));
+    }
     if (q.recording.length) lines.push(quietLine('recording', 'eye', WORDS.recording, q.recording.length, recFold));
   }
-  if (q.asking.length) lines.push(quietLine('asking', 'clock', WORDS.asking, q.asking.length, askFold));
+  // AC77, changed by AC94 and AC95 (QW1; the owner's answer 3, "In the section"): a held question shows in the "Questions
+  // for you" section, so the quiet line "Being asked in your session" lists none and is not drawn.
   if (q.answerRecording.length) lines.push(quietLine('answerRecording', 'clock', WORDS.answerRecording, q.answerRecording.length, ansFold));
   return lines.length ? h('div', { class: `v2-quiet${only ? ' under' : ''}`, key: 'quiet' }, lines) : null;
 }
@@ -2577,7 +2766,13 @@ function renderWaiting(bd, built, only, sheetId) {
     // state 2's "Can't read <project> in this opening: <reason>" (oneProjectView); from G8d's round 2, "Can't show <project>"
     // for a project the desk can read but can't draw, in the same place and look.
     if (one && one.cant) body.push(h('div', { class: 'v2-quiet', key: 'quiet-cant' }, h('p', { class: 'v2-ql still bad', key: `ql:${one.cantShow ? 'show' : 'cant'}:${name}` }, vi('bad'), h('span', {}, one.cant))));
-  } else body.push(quietLines(bd, built, null));
+    // AC94 (QW1; C, (c)): with one project shown, the section under the chip and its can't-read line, above the strip.
+    body.push(questionsSection(bd, built, name));
+  } else {
+    // AC94 (QW1; the owner's "Top of Waiting"): under the title and its line, above the quiet lines, the strip and the lanes.
+    body.push(questionsSection(bd, built, null));
+    body.push(quietLines(bd, built, null));
+  }
   body.push(kickStrip(bd, built, name));
   body.push(h('div', { class: 'v2-lanes', key: 'lanes' }, BOARD_LANES.map((k) => laneNode(bd, built, k, name))));
   if (name) body.push(quietLines(bd, built, name));
@@ -2748,7 +2943,8 @@ function sheetList(sx, wholeWords, fullText, files) {
     setFold(name, fk, !isOpenFold(name, fk, false));
     render();
   };
-  const done = pending
+  // AC94 (QW1; AC95's "A held question"): a held question is counted nowhere, so its sheet has no "Move to Done" either.
+  const done = card.held ? null : pending
     ? h('button', { type: 'button', class: 'v2-sitem', key: 'sheet-undo', onclick: () => { boardState.set(undoMark(boardState.marks, card.id)); render(); } }, vi('kick'), h('span', {}, 'Undo'))
     : h('button', { type: 'button', class: 'v2-sitem', key: 'sheet-done', onclick: () => { markCard(card); nav.to(back); } },
       vi('done'), h('span', {}, SHEET_WORDS.moveToDone), h('span', { class: 'v2-sv' }, h('span', { class: 'sb-vh' }, ' · '), SHEET_WORDS.moveToDoneThen));
@@ -2848,7 +3044,7 @@ function questionSheetParts(sx) {
       return h('div', { class: 'v2-opt', key: `opt:${l}` }, h('div', { class: 'v2-ot' },
         l ? [h('span', { class: 'v2-ol' }, h('b', { class: 'v2-letter' }, `${l}.`), ' ', h('span', { class: 'v2-ow' }, c.words)), c.desc ? h('span', { class: 'v2-od' }, c.desc) : null]
           : h('span', { class: 'v2-ol' }, 'Your ruling')),
-        copyButton(text, `v25:${card.id}:${l}`, l ? `Copy answer ${l}` : 'Copy the answer', 'v2-abtn'));
+        copyButton(text, `v25:${card.id}:${l}`, l ? `Copy answer ${l}` : 'Copy the answer', 'v2-abtn', { before: heldFirst(p, card) }));
     })));
     parts.push(recLine(p0));
     parts.push(wordsBox(card.id, SHEET_WORDS.words));

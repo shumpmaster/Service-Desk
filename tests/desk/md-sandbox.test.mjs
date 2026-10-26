@@ -165,18 +165,22 @@ test('AC48 with AC82: a project whose read goes stale shows no quiet on Home ("N
 // ---------------------------------------------------------------------------
 // AC52 and AC53
 
-test('AC52 (changed by AC80): every item that needs the owner is one card in "Waiting on you", in AC52\'s order (raised first, no raised time last); no card says whether it can be acted on; a deploy is not counted where J7 does not mark deploysNeedOwner', async () => {
+// Rewritten in QW1 (AC94; AC80's note "after the questions request"): the question is one card in the "Questions for you"
+// section, not in "Waiting on you"; the lane holds the five others in AC52's order and counts them; the badge counts six.
+test('AC52 (changed by AC80, and by AC94 in QW1): every item that needs the owner is one card, in "Waiting on you" in AC52\'s order (raised first, no raised time last) or, a question, in the "Questions for you" section; no card says whether it can be acted on; a deploy is not counted where J7 does not mark deploysNeedOwner', async () => {
   const app = await opened(twoProjects(), '#/waiting/Alpha');
   try {
     const lane = byClass(app.view, 'lane-wait')[0];
     const titles = byClass(lane, 'v2-t').map((r) => r.textContent);
-    assert.equal(titles.length, 6, 'a pull request, a question, a gate card, a decision card, a hold card and a merge card');
+    assert.equal(titles.length, 5, 'a pull request, a gate card, a decision card, a hold card and a merge card');
     assert.match(titles[0], /a change to merge/, 'the pull request, raised first (6 Oct)');
-    assert.match(titles[1], /Alpha's question/, 'then the question raised 400 min ago');
-    assert.match(titles[2], /Pass the Build gate|Build gate/, 'then the gate card raised 270 min ago');
-    assert.match(titles[3], /Q-020/, 'then the card raised 200 min ago');
-    assert.ok(/governance run is not green|merge conflict/.test(titles[4]) && /governance run is not green|merge conflict/.test(titles[5]), 'no raised time: last');
-    assert.equal(byClass(lane, 'v2-lc')[0].textContent, '6', 'the deploy is not counted');
+    assert.match(titles[1], /Pass the Build gate|Build gate/, 'then the gate card raised 270 min ago');
+    assert.match(titles[2], /Q-020/, 'then the card raised 200 min ago');
+    assert.ok(/governance run is not green|merge conflict/.test(titles[3]) && /governance run is not green|merge conflict/.test(titles[4]), 'no raised time: last');
+    assert.equal(byClass(lane, 'v2-lc')[0].textContent, '5', 'the deploy is not counted');
+    const qs = byClass(findAll(app.view, (e) => e.dataset && e.dataset.k === 'qsec')[0], 'v2-t').map((r) => r.textContent);
+    assert.deepEqual(qs, ["Alpha's question"], 'the question, one card, in the section');
+    assert.equal(byClass(app.view, 'v2-badge')[0].children[0].textContent, '12', 'every card counted, both projects\' (the badge unchanged)');
     assert.doesNotMatch(app.text(), /desk-deploy: waiting/, 'nor shown as a card');
     assert.doesNotMatch(app.text(), /do first|can be acted on|ready to act|after #/i);
   } finally {
@@ -184,13 +188,15 @@ test('AC52 (changed by AC80): every item that needs the owner is one card in "Wa
   }
 });
 
-test('AC52 + AC80: the recommendation is labelled and never preselected; one button per option, each its filled-in file; a pull request\'s sheet offers its step, never a verdict on every pull request', async () => {
+// Rewritten in QW1 (AC94): the question is in the "Questions for you" section, its sheet opened from "More about it ›", and
+// the section's own boxes stay on the screen under the sheet, so the sheet's boxes are read inside the sheet.
+test('AC52 + AC80 (rewritten in QW1): the recommendation is labelled and never preselected; one button per option, each its filled-in file; a pull request\'s sheet offers its step, never a verdict on every pull request', async () => {
   const app = await opened(twoProjects(), '#/waiting/Alpha');
   try {
     const card = byClass(app.view, 'v2-card').find((c) => c.textContent.includes("Alpha's question"));
-    const open = findAll(card, (e) => e.tag === 'a' && e.textContent === 'Answer')[0];
+    const open = findAll(card, (e) => e.tag === 'a' && e.textContent === 'More about it ›')[0];
     await app.go(open.attrs.href);
-    const opts = byClass(app.view, 'v2-opt');
+    const opts = byClass(byClass(app.view, 'v2-sheet')[0], 'v2-opt');
     assert.equal(opts.length, 2);
     assert.deepEqual(opts.map((o) => byClass(o, 'v2-ol')[0].textContent), ['A. Yes.', 'B. No.']);
     assert.deepEqual(opts.map((o) => byClass(o, 'v2-rec').length), [0, 1], '"Recommended" on B only, never picked');
@@ -205,7 +211,7 @@ test('AC52 + AC80: the recommendation is labelled and never preselected; one but
     assert.equal(b.attrs.href, `https://github.com/shumpmaster/Alpha/new/main?filename=decisions%2Fquestions%2FAlpha-pick.md&value=${encodeURIComponent(text.replace('Ruling: A', 'Ruling: B'))}`);
     // The pull request's sheet: no answer buttons and no verdict box; its one step (here J22's "not known": Open ↗).
     await app.go('#/waiting/Alpha/card/Alpha%7Cpr%7C80');
-    assert.equal(byClass(app.view, 'v2-opt').length, 0, 'a pull request has no options');
+    assert.equal(byClass(byClass(app.view, 'v2-sheet')[0], 'v2-opt').length, 0, 'a pull request has no options');
     assert.equal(findAll(app.view, (e) => e.tag === 'textarea').length, 0, 'no verdict box');
     assert.match(app.text(), /Whether it needs your verdict: not known yet/);
     const steps = byClass(byClass(app.view, 'v2-sheet')[0], 'v2-abtn').filter((x) => x.tag === 'a').map((x) => [x.textContent, x.attrs.href]);

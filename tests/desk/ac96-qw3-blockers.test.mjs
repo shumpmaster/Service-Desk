@@ -374,7 +374,7 @@ test('AC95 ("What a blocker says"; AC94\'s "Each question shows"): "Answer first
           for (const a of el.children) {
             assert.equal(a.tag, 'a');
             const la = L.get(a);
-            assert.deepEqual([la.decl('text-decoration'), la.decl('padding'), la.colour], ['underline', '4px 0', INK[theme].ink], `${at}: underlined under its own text, its target the line's height`);
+            assert.deepEqual([la.decl('text-decoration'), la.decl('padding'), la.colour], ['underline', '5px 0', INK[theme].ink], `${at}: underlined under its own text, its target the line's height`);
           }
         }
         // AC69: no vermilion, --ok or --bad in either line (none declares a colour of its own).

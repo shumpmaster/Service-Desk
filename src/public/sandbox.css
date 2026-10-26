@@ -632,12 +632,13 @@ html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
    every line does. A card it holds up: "Waits on question <k>" under its meta line, in --t-small --ink, wrapping to two lines
    if it must, its box at least 24 px tall (16.8 px of text and 4 px over and under it), drawn above the card's full-card
    link (`.v2-t::after`) as `.v2-step` is; each number a link underlined under its own text, so a wrapped line is underlined
-   under each of its lines, never a rule across the block, its padding the box's, so the target is the box's height. The
+   under each of its lines, never a rule across the block, 5 px over and under its text, so each link's target is at least
+   24 px tall too (Plex Sans' 12 px text box, about 15.6 px, and 10 px). The
    question's sheet: "Cards waiting on it", each card a link on a line of its own, at least 24 px tall, underlined, in
    --t-small --ink. No new colour, size or weight. */
 .v2-afirst { font: var(--t-small); color: var(--ink); overflow-wrap: anywhere; }
 .v2-waits { position: relative; z-index: 1; display: block; min-height: 24px; padding: 4px 0; font: var(--t-small); color: var(--ink); overflow-wrap: anywhere; }
-.v2-waits > a { text-decoration: underline; text-underline-offset: 2px; padding: 4px 0; }
+.v2-waits > a { text-decoration: underline; text-underline-offset: 2px; padding: 5px 0; }
 .v2-wlist { display: grid; }
 .v2-wlist a { display: block; min-height: 24px; padding: 3px 0; font: var(--t-small); color: var(--ink); text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
 /* AC91 (g) (P-001-glance-new.md, A): "new" beside a card's kind label, in ink, with no colour and no box; drawn as

@@ -2507,7 +2507,8 @@ function laneNode(bd, built, laneKey, only) {
  * AC91 (f) (P-001-glance-lanes.md, C; mock pK): "Kicked back" as a strip above the lanes, never a column. With no
  * kicked-back card, one quiet line, "Kicked back · none" (an unknown in its words, never "none": stripEmptyWords), with
  * no fold mark, no control and no drop target. With any, its head ("Kicked back" and its count) over a hairline, then
- * its cards in one row, left to right, the newest first, each 200 px wide, the row scrolling sideways inside the strip,
+ * its cards in one row, left to right (from QW2, AC95 and reading (p): by project in J7's order, the portfolio's last, then
+ * in place order, each with its place line; the newest first before), each 200 px wide, the row scrolling sideways inside the strip,
  * snapping to a card; each card AC80's kicked-back card, naming its project, a tap opening its sheet and a press and hold
  * carrying it into Done. It opens by itself when a card is kicked back and closes to its line when none is left.
  */

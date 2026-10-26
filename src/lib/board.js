@@ -1127,7 +1127,8 @@ export function boardView(input) {
       doneRows.push({ ...r, pending: false });
     }
     // Waiting on you: AC52's order (the earliest raised first, one with no raised time last); Kicked
-    // back and Done: the newest first.
+    // back and Done: the newest first, as Home, a project's page and Plan read them (`waits`); from QW2 the board draws its
+    // lanes, section and strip in place order (below).
     waitRows.sort(raisedOrder);
     kickRows.sort((a, b) => b.kicked.at - a.kicked.at);
     doneRows.sort((a, b) => (b.pending === a.pending ? b.at - a.at : b.pending ? 1 : -1));

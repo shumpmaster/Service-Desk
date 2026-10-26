@@ -48,6 +48,7 @@ import { withPortfolio, addPortfolio, pfFiles } from '../pf-fixtures.mjs';
 import { BAD_PR } from '../fake-desk.mjs';
 import { pullsAnswer } from '../j12-fixture.mjs';
 import { busiestState, kindsState, qid, QPATH, EXT_LONG as QW1_EXT } from '../qw1-fixtures.mjs';
+import { qw2BusiestState, stripState } from '../qw2-fixtures.mjs';
 
 const PUBLIC = resolve(fileURLToPath(new URL('../../../src/public/', import.meta.url)));
 const OUT = resolve(process.argv[2] || 'glance-shots');
@@ -322,6 +323,16 @@ const SHOTS = [
   // NOT real), fifth in the busiest case, its "Show choices ›" opened, so its long choices are drawn at 360 and 414 px.
   { name: 'qw1-epsilon-choices', state: busiestState, now: NOW, looked: LATE, hash: '#/waiting', seed: busiestState().seed,
     click: [`[data-k="fold:qchoices:${qid(QW1_EXT, QPATH[QW1_EXT])}"]`] },
+  // QW2 of "After the questions request" (AC95; the approved picture, docs/design/builds/m3g-picture/, draws the place lines):
+  // the busiest case (`qw2BusiestState`: QW1's busiest board with Alpha holding twelve cards waiting, two-digit places, every
+  // kind with no raised time among them, the portfolio's two cards, kicked-back cards from Alpha, Gamma and the portfolio;
+  // NOT real), to compare with the picture's frame 1; Alpha alone shown (its places kept); the strip across projects
+  // (`stripState`, NOT real: by project in J7's order, the portfolio's last, then place); and a made-up pull request's sheet,
+  // its place in its small line.
+  { name: 'qw2-busiest', state: qw2BusiestState, now: NOW, looked: LATE, hash: '#/waiting', seed: qw2BusiestState().seed, polls: 2 },
+  { name: 'qw2-one-alpha', state: qw2BusiestState, now: NOW, looked: LATE, hash: '#/waiting/Alpha', seed: qw2BusiestState().seed, polls: 2 },
+  { name: 'qw2-strip', state: stripState, now: NOW, looked: LATE, hash: '#/waiting', seed: stripState().seed },
+  { name: 'qw2-sheet', state: qw2BusiestState, now: NOW, looked: LATE, hash: `#/waiting/card/${encodeURIComponent('Alpha|pr|81')}`, seed: qw2BusiestState().seed, polls: 2, viewport: true },
 ].filter((s) => !process.argv[3] || s.name.startsWith(process.argv[3]));
 /** G5: `text` with J12's built answer (NOT as GitHub sent it), as `stall` has it. */
 function withPulls() {
@@ -638,9 +649,39 @@ async function main() {
             return `head "${head ? head.textContent : ''}"; ${grey.length ? `grey: ${grey.join(', ')}; ` : ''}questions: ${cards.join(' | ') || 'none'}`
               + `${btn.length ? `; buttons ${Math.min(...btn)}–${Math.max(...btn)} px tall` : ''}; lanes: ${lanes.join(' | ')}`;
           });
+          // QW2 (AC95, "Where the place shows": "At 360 px the line fits one line in a lane card"): each place line's lines, its
+          // left edge against its kind line's (the kind line unchanged under it), the widest against its card, and the sheet's
+          // small line. A place line on more than one line, or not on its kind line's left edge, fails the run.
+          const qw2 = /^qw2-/.test(shot.name) ? await page.evaluate(() => {
+            const out = { fails: [], lines: [], said: '' };
+            const all = [...document.querySelectorAll('.v2-board .v2-place')];
+            let widest = null;
+            for (const pl of all) {
+              const card = pl.closest('.v2-card');
+              const r = pl.getBoundingClientRect();
+              const kd = card.querySelector('.v2-kd');
+              // The words drawn (its text, less the screen reader's `.sb-vh` words): the lines their boxes take. A strip card
+              // shorter than the row's tallest is stretched (the row's cards are one height), so the line's box may be taller
+              // than its words: the words' own boxes are measured, never the element's height.
+              const text = [...pl.childNodes].filter((n) => n.nodeType === 3);
+              const words = text.map((n) => n.textContent).join('') || pl.textContent;
+              const boxes = text.flatMap((n) => { const range = document.createRange(); range.selectNodeContents(n); return [...range.getClientRects()]; });
+              const lines = new Set(boxes.map((b) => Math.round(b.top))).size;
+              if (lines !== 1) out.fails.push(`"${words}" on ${lines} lines`);
+              if (kd && Math.abs(kd.getBoundingClientRect().left - r.left) > 0.5) out.fails.push(`"${words}" ${Math.round(r.left)} px, its kind line ${Math.round(kd.getBoundingClientRect().left)} px`);
+              const textW = boxes.reduce((m, x) => Math.max(m, x.right), 0) - r.left;
+              if (!widest || textW / r.width > widest.share) widest = { words, w: Math.round(textW), of: Math.round(r.width), share: textW / r.width };
+              out.lines.push(lines);
+            }
+            const head = document.querySelector('.v2-sheet .v2-shead .v2-mono');
+            out.said = `${all.length} place lines, each on one line on its kind line's left edge${widest ? `; widest "${widest.words}" ${widest.w} of ${widest.of} px` : ''}${head ? `; the sheet's small line "${head.textContent}"` : ''}`;
+            return out;
+          }) : null;
+          if (qw2 && qw2.fails.length) rowFails.push(`${shot.name}-${w}x${hgt}-${theme}: ${qw2.fails.join('; ')}`);
+          if (/^qw2-/.test(shot.name) && scroll > 0) rowFails.push(`${shot.name}-${w}x${hgt}-${theme}: scrolls sideways by ${scroll} px`);
           const file = join(OUT, `${shot.name}-${w}x${hgt}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: !shot.viewport });
-          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}${/^g8d-/.test(shot.name) ? `  (${g8d})` : ''}${/^g9-/.test(shot.name) ? `  (${g9})` : ''}${/^g9b-/.test(shot.name) ? `  (${g9b})` : ''}${/^g9c-/.test(shot.name) ? `  (${g9c})` : ''}${/^qw1-/.test(shot.name) ? `  (${qw1})` : ''}${rows ? `  (rows: ${rows.fails.length ? `FAIL ${rows.fails.join('; ')}` : `ok; ${rows.said}`})` : ''}`);
+          made.push(`${file}${scroll > 0 ? `  (scrolls sideways by ${scroll} px)` : ''}${strip != null ? `  (the strip's row scrolls ${strip} px inside itself)` : ''}${gates.length ? `  (gate titles: ${gates.join('; ')})` : ''}${shot.viewport && now != null ? `  (the Now line's top at ${now} px; a third of the screen is ${Math.round(hgt / 3)} px)` : ''}${waits && /^g5-page-gates/.test(shot.name) ? `  (waits row: ${waits})` : ''}${std && /^g6-page/.test(shot.name) ? `  (${std})` : ''}${/^g7-/.test(shot.name) ? `  (marks: ${marks})` : ''}${/^g7b-/.test(shot.name) ? `  (missing lines: ${miss.join('; ') || 'none'})` : ''}${/^g8-/.test(shot.name) ? `  (arrows: ${arrows.length ? arrows.join('; ') : 'none'})` : ''}${/^g8b-/.test(shot.name) ? `  (moved: ${moved.length ? moved.join('; ') : 'none'})` : ''}${/^g8c-/.test(shot.name) ? `  (${g8c})` : ''}${/^g8d-/.test(shot.name) ? `  (${g8d})` : ''}${/^g9-/.test(shot.name) ? `  (${g9})` : ''}${/^g9b-/.test(shot.name) ? `  (${g9b})` : ''}${/^g9c-/.test(shot.name) ? `  (${g9c})` : ''}${/^qw1-/.test(shot.name) ? `  (${qw1})` : ''}${qw2 ? `  (${qw2.fails.length ? `FAIL ${qw2.fails.join('; ')}` : qw2.said})` : ''}${rows ? `  (rows: ${rows.fails.length ? `FAIL ${rows.fails.join('; ')}` : `ok; ${rows.said}`})` : ''}`);
           await ctx.close();
         }
       }
@@ -651,7 +692,7 @@ async function main() {
   }
   console.log(made.join('\n'));
   if (rowFails.length) {
-    console.error(`G9c's rows: ${rowFails.length} failed\n${rowFails.join('\n')}`);
+    console.error(`G9c's rows and QW2's place lines: ${rowFails.length} failed\n${rowFails.join('\n')}`);
     process.exitCode = 1;
   }
 }

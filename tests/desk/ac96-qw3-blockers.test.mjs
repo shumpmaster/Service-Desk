@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SRC, CONFIG, fixture } from './helpers.mjs';
 import { memStore } from './wa-fixtures.mjs';
-import { byClass, findAll, El0 } from './sandbox-helpers.mjs';
+import { byClass, findAll, El0, loadSandbox } from './sandbox-helpers.mjs';
 import { parseCss, treeOf, cascade, nodes } from './css-cascade.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 import { blocksLine, blocksEntry } from '../../src/lib/records.js';
@@ -449,6 +449,31 @@ test('AC95 (the taps): "Waits on question <k>" opens that question\'s sheet, eac
     assert.ok(document.activeElement === cardOf(app, qid('Alpha', ALPHA_HELD)), 'and the focus on the held question\'s card');
     assert.deepEqual(afirst(cardOf(app, qid('Alpha', ALPHA_HELD))), ['Answer first · cards 4 and 10 wait on it']);
     assert.deepEqual(sectionIds(app), [ALPHA('Alpha-pick'), ALPHA('Alpha-second'), qid('Alpha', ALPHA_HELD)], 'Alpha\'s section alone, in its order');
+  } finally {
+    if (saved) Object.defineProperty(El0.prototype, 'getBoundingClientRect', saved); else delete El0.prototype.getBoundingClientRect;
+    app.restore();
+  }
+});
+
+test('AC95 + AC94 (the held tap\'s focus, and only its): a notification\'s tap on the held blocker still brings its card into view with the focus left where it was (c959fe5\'s case), and only a "Waits on a question being asked in your session" tap moves the focus there', async () => {
+  const s = qw3BusiestState();
+  const key = qid('Alpha', ALPHA_HELD);
+  const rowOf = `row-q-${key.replace(/[^A-Za-z0-9_-]/g, '-')}`;
+  const saved = Object.getOwnPropertyDescriptor(El0.prototype, 'getBoundingClientRect');
+  El0.prototype.getBoundingClientRect = function rect() {
+    const top = this.attrs && this.attrs.id === rowOf ? 900 : 0;
+    return { left: 0, right: 0, top, bottom: top, width: 0, height: 0 };
+  };
+  const app = await loadSandbox({ ...s, hash: '', search: `?open=${enc(key)}`, now: NOW, store: seen(s.seed) });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    assert.equal(app.loc.hash, '#/waiting');
+    assert.ok(app.scrolls.some(([x, y]) => x === 0 && y === 892), `the notification's tap: its card brought into view: ${JSON.stringify(app.scrolls)}`);
+    assert.ok(document.activeElement !== cardOf(app, key), 'and the focus left where it was');
+    await app.tap(waitLinks(cardOf(app, 'Alpha|pr|80'))[0]);
+    assert.ok(document.activeElement === cardOf(app, key), 'the "Waits on" tap: the focus on its card');
   } finally {
     if (saved) Object.defineProperty(El0.prototype, 'getBoundingClientRect', saved); else delete El0.prototype.getBoundingClientRect;
     app.restore();

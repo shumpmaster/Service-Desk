@@ -19,12 +19,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SRC, CONFIG } from './helpers.mjs';
-import { byClass, findAll, El0 } from './sandbox-helpers.mjs';
+import { loadSandbox, byClass, findAll, El0 } from './sandbox-helpers.mjs';
 import { memStore } from './wa-fixtures.mjs';
 import { v3, fullRepo } from './sandbox-fixtures.mjs';
 import { parseCss, treeOf, cascade, nodes } from './css-cascade.mjs';
 import { POLL_MS } from '../../src/lib/scheduler.js';
-import { boardView, placeOrder, placesOf, heldView, noMarks, PLACE_WORDS, WORDS, HOLD_MS, KICK_BACK_MINUTES } from '../../src/lib/board.js';
+import { boardView, placeOrder, placesOf, heldView, heldBoard, noMarks, PLACE_WORDS, WORDS, HOLD_MS, KICK_BACK_MINUTES } from '../../src/lib/board.js';
 import * as PUBLIC_BOARD from '../../src/public/lib/board.js';
 import { PF_BOARD } from '../../src/lib/portfolio.js';
 import { qw2BusiestState, stripState, qw2Open, ALPHA_TWELVE, STRIP_ORDER, pfId, MISSING_ID, NOW } from './qw2-fixtures.mjs';
@@ -215,6 +215,21 @@ test('AC95 (pure, heldView): while a card is held or a sheet is open, the view d
   assert.equal(heldView({ fresh, drawn: drawnBefore, hold: false, only: null }), fresh);
   assert.equal(heldView({ fresh, drawn: null, hold: true, only: null }), fresh);
   assert.equal(heldView({ fresh: { only: 'Alpha' }, drawn: drawnBefore, hold: true, only: 'Alpha' }).only, 'Alpha', 'another screen\'s view is never drawn');
+});
+
+test('AC95 (pure, heldBoard; "Settled from QW2\'s build", 3): with no hold, the fresh board, held next; held, the board held for this screen, kept; a page opened straight at a sheet, the first board drawn under the sheet on its item, held from then; before the sheet finds its item, nothing held', () => {
+  const before = { only: null, n: 'before' };
+  const fresh = { only: null, n: 'fresh' };
+  assert.deepEqual(heldBoard({ fresh, drawn: before, hold: false }), { view: fresh, drawn: fresh }, 'no hold');
+  assert.deepEqual(heldBoard({ fresh, drawn: before, hold: true }), { view: before, drawn: before }, 'a sheet opened over the board drawn before it');
+  // Opened straight at a sheet: none held; the first drawing with the sheet on its item is drawn and held.
+  const first = heldBoard({ fresh, drawn: null, hold: true, found: true });
+  assert.deepEqual(first, { view: fresh, drawn: fresh });
+  const next = { only: null, n: 'a later read' };
+  assert.deepEqual(heldBoard({ fresh: next, drawn: first.drawn, hold: true, found: true }), { view: fresh, drawn: fresh }, 'a later read moves nothing');
+  assert.deepEqual(heldBoard({ fresh, drawn: null, hold: true, found: false }), { view: fresh, drawn: null }, 'before its item is read: nothing held');
+  assert.deepEqual(heldBoard({ fresh: { only: 'Alpha' }, drawn: before, hold: true, only: 'Alpha', found: true }).drawn.only, 'Alpha', 'another screen\'s board is never held over');
+  assert.equal(PUBLIC_BOARD.heldBoard.toString(), heldBoard.toString());
 });
 
 // ---------------------------------------------------------------------------
@@ -430,6 +445,38 @@ test('AC95 + AC40 ("nothing reorders under the owner\'s thumb"): while a sheet i
     assert.equal(placeAt(app, CARD.hold('Alpha')), '5 of 6 waiting', 'and the new places');
   } finally {
     undo();
+    app.restore();
+  }
+});
+
+// AC95's "Settled from QW2's build", 3: a page opened straight at a sheet (a notification's tap, an address kept) holds the
+// first board drawn under the sheet on its item, the sheet's own place with it, until it closes; the bar's badge stays live.
+test('AC95 ("Settled from QW2\'s build", 3): a page opened straight at a sheet holds the first board drawn under it — a read that changes the order moves neither the board nor the sheet\'s " · <k> of <N> waiting"; the badge counts the new card meanwhile; closed, the new places', async () => {
+  const s = one();
+  const app = await loadSandbox({ ...s, hash: `#/waiting/card/${enc(CARD.card('Alpha'))}`, now: NOW, store: seen() });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    assert.match(sheetHead(app), / · 4 of 6 waiting$/, 'the sheet on its item, its place');
+    const first = drawn(app);
+    assert.deepEqual(first.map(([, p]) => p), ['2 of 6 waiting', '1 of 6 waiting', '3 of 6 waiting', '4 of 6 waiting', '5 of 6 waiting', '6 of 6 waiting'], 'the first board drawn under it');
+    assert.equal(badge(app), 6);
+    // A made-up question raised before every other (NOT real) arrives at the next reads.
+    const NEW = 'questions/Alpha-first.md';
+    s.r.commit({ [NEW]: qFile({ title: 'A made-up question raised first, NOT real', options: ['A. Yes.', 'B. No.'], rec: 'A' }) });
+    s.r.history[NEW] = hist(NOW - 20 * D);
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    assert.deepEqual(drawn(app), first, 'the board under the sheet: nothing moved');
+    assert.match(sheetHead(app), / · 4 of 6 waiting$/, 'nor the sheet\'s place');
+    assert.equal(badge(app), 7, 'the badge live: a count, not a place');
+    // Closed: the new places.
+    await app.go('#/waiting');
+    assert.equal(placeAt(app, `Alpha|question|${NEW}`), '1 of 7 waiting');
+    assert.equal(placeAt(app, CARD.card('Alpha')), '5 of 7 waiting');
+    await app.go(`#/waiting/card/${enc(CARD.card('Alpha'))}`);
+    assert.match(sheetHead(app), / · 5 of 7 waiting$/, 'opened again: its new place');
+  } finally {
     app.restore();
   }
 });

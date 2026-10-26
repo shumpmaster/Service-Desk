@@ -213,6 +213,21 @@ for (const [name, lines, raised, want] of WORKED) {
   });
 }
 
+test('AC95 (pure, the blocker order, loops): with none free, the earliest raised of those in a loop goes next, never an earlier one that only waits on the loop (which goes once it is free); a loop through three; a loop left after the free ones', () => {
+  // X (1st) waits on A (2nd); A and B (3rd) wait on each other. None is free; X is earliest but in no loop, so A goes first;
+  // then X and B are both free, and X, the earlier raised, goes before B: A, X, B.
+  const run = (raised, lines) => {
+    const qs = raised.map((n, i) => qc('Alpha', n, NOW - (10 - i) * H, `Blocks: ${lines[n].join(', ')}`));
+    const holds = new Map([...blockTies({ project: 'Alpha', cards: [...qs, prc('Alpha', 91, NOW)] })].map(([id, t]) => [id, t.holds]));
+    return blockerOrder(qs, holds).map((c) => c.name);
+  };
+  assert.deepEqual(run(['X', 'A', 'B'], { X: ['#91'], A: ['questions/X.md', 'questions/B.md'], B: ['questions/A.md'] }), ['A', 'X', 'B']);
+  // P (1st) → Q (2nd) → R (3rd) → P: a loop through three, the earliest first, then each as it is freed.
+  assert.deepEqual(run(['P', 'Q', 'R'], { P: ['questions/Q.md'], Q: ['questions/R.md'], R: ['questions/P.md'] }), ['P', 'Q', 'R']);
+  // F (3rd) free goes before the loop A (1st) and B (2nd).
+  assert.deepEqual(run(['A', 'B', 'F'], { A: ['questions/B.md'], B: ['questions/A.md'], F: ['#91'] }), ['F', 'A', 'B']);
+});
+
 test('AC95 (pure, the blocker order): a question that waits on a blocker but holds up nothing is no blocker and takes its place by age; a blocker with no raised time after every blocker with one, then by the tie rule; ties in code-unit order; one with no loop never jumps a free one', () => {
   // Y waits on X but holds up nothing: Z, X, then the rest by age (#5 raised before Y).
   const v = view([entry(P, [qc('Alpha', 'Y', NOW - 10 * H), qc('Alpha', 'Z', NOW - 9 * H, 'Blocks: #6'), qc('Alpha', 'X', NOW - 8 * H, 'Blocks: questions/Y.md'), prc('Alpha', 5, NOW - 20 * H), prc('Alpha', 6, NOW - H)])]);

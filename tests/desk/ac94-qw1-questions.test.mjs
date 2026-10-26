@@ -1229,9 +1229,14 @@ test('AC94 (settled, 2) + AC56 (round 3, N2 (b)): a sheet open over Waiting keep
     s.repos[KINDS].commit({ 'decisions/questions/Kinds-lettered.md': 'Ruling: A — made up, NOT real\n' });
     await app.advance(POLL_MS);
     await app.advance(POLL_MS);
-    assert.equal(qcard(app, id), null, 'out of the section');
+    // Rewritten in QW2 (forced: it failed once a sheet the page opens straight at holds the first board drawn under it until it closes, AC95's "Settled from QW2's build", 3): the section under the
+    // open sheet holds its question; closed, the question is out of the section and its "couldn't check" dropped.
+    assert.ok(qcard(app, id), 'the board under the open sheet holds');
     assert.ok(sheet(app), 'the sheet still open');
     assert.equal(couldnt(sheet(app)), 1, 'its words kept while it is open');
+    await app.go('#/waiting');
+    assert.equal(qcard(app, id), null, 'closed: out of the section');
+    assert.equal(couldnt(app.view), 0, 'and its words dropped');
   } finally {
     app.restore();
   }

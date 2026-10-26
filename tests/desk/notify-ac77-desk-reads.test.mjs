@@ -122,6 +122,10 @@ test('AC77 (draft 7): the closed read waits for every held question\'s raised ti
     await app.advance(MIN);
     assert.equal(closedCalls(app).length, 1, 'made in the cycle the raised time arrived');
     assert.deepEqual(closedCalls(app)[0].body.closed, { since: '2026-10-18T11:26:23.000Z' });
+    // Rewritten in QW2 (forced: it failed once a sheet the page opens straight at holds the first board drawn under it until it closes, AC95's "Settled from QW2's build", 3): the board under the
+    // question's open sheet holds; closed, the hold has ended.
+    assert.ok((await text(app)).includes(HELD_WORDS), 'the board under the open sheet holds');
+    await app.go(SB_HELD);
     assert.ok(!(await text(app)).includes(HELD_WORDS));
     // Waiting again: a counted question again (from QW1, AC94, in the "Questions for you" section, not the lane), and its sheet's answer links.
     const counted = findAll(app.view, (e) => e.attrs && e.attrs['data-question'] === 'counted');
@@ -177,6 +181,8 @@ test('AC77 (draft 8): a failed closed read is tried again at the next poll, and 
     assert.equal(app.state().textContent, 'Quiet');
     await app.advance(MIN);
     assert.equal(closedCalls(app).length, 2, 'tried again at the next poll');
+    // Rewritten in QW2 (forced: it failed once a sheet the page opens straight at holds the first board drawn under it until it closes, AC95's "Settled from QW2's build", 3): closed, the hold has ended.
+    await app.go(SB_HELD);
     assert.ok(!(await text(app)).includes(HELD_WORDS));
     assert.equal(app.state().textContent, '1 waiting on you');
     await app.advance(3 * MIN);
@@ -471,6 +477,8 @@ test('AC77 (draft 9, Desk 4; the Reviewer\'s probe E): a found closed pull reque
     r['Service-Desk'].filesFail = [];
     await app.advance(MIN);
     assert.equal(reads98(), n + 1, 'tried again at the next poll, not after 5 minutes');
+    // Rewritten in QW2 (forced: it failed once a sheet the page opens straight at holds the first board drawn under it until it closes, AC95's "Settled from QW2's build", 3): closed, the hold has ended.
+    await app.go(SB_HELD);
     assert.ok(!(await text(app)).includes(HELD_WORDS));
     assert.equal(app.state().textContent, '1 waiting on you');
   } finally {

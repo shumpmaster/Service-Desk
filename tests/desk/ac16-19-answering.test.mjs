@@ -172,8 +172,13 @@ test('Page AC16 (the desk from stage 8): once the answer file is on main the car
     assert.match(text, /That no longer waits on you: it is in Done\./, 'answered');
     assert.equal(answerLinksIn(sheetOf(app)).length, 0, 'no link');
     assert.equal(sbFindAll(sheetOf(app), (e) => e.tag === 'textarea').length, 0, 'no box');
-    const done = sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'lane:done')[0];
-    assert.ok(done.textContent.includes('The work reached the stop rule. What happens next?'), 'in Done');
+    // Rewritten in QW2 (forced: it failed once a sheet the page opens straight at holds the first board drawn under it until it closes, AC95's "Settled from QW2's build", 3): the board under the open sheet
+    // holds, the card still in "Waiting on you"; closed, the card is in Done.
+    const laneText = (k) => sbFindAll(app.view, (e) => e.dataset && e.dataset.k === `lane:${k}`)[0].textContent;
+    assert.ok(laneText('wait').includes('The work reached the stop rule. What happens next?'), 'the board under the open sheet holds');
+    await app.go('#/waiting');
+    assert.ok(laneText('done').includes('The work reached the stop rule. What happens next?'), 'closed: in Done');
+    assert.ok(!laneText('wait').includes('The work reached the stop rule. What happens next?'));
   } finally {
     app.restore();
   }

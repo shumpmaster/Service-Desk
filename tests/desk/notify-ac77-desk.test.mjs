@@ -347,7 +347,14 @@ test('AC77 (the desk): the re-read at 31 seconds gives each of its four outcomes
       // the question's title.
       const said = byClass(byClass(app.view, 'v2-sheet')[0], 'v2-recheck')[0];
       const text = said ? said.textContent : '';
-      const inSection = byClass(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'qsec')[0], 'v2-recheck').map((x) => x.textContent);
+      // Rewritten in QW2 (forced: it failed once a sheet the page opens straight at holds the first board drawn under it until it closes, AC95's "Settled from QW2's build", 3): the section under the
+      // open sheet holds the question, the words beside its own button; closed, the section says them under its "none" line.
+      const sectionSays = () => byClass(sbFindAll(app.view, (e) => e.dataset && e.dataset.k === 'qsec')[0], 'v2-recheck').map((x) => x.textContent);
+      if (kind === 'answered' || kind === 'recording') {
+        assert.ok(sbFindAll(app.view, (e) => e.attrs && e.attrs['data-card'] === 'Service-Desk|question|questions/N-x.md').length, `${kind}: the board under the open sheet holds`);
+        await app.go('#/waiting');
+      }
+      const inSection = sectionSays();
       if (kind === 'open') {
         assert.deepEqual(opened2, [link.attrs.href], 'still open: GitHub opens');
         assert.deepEqual(inSection, []);

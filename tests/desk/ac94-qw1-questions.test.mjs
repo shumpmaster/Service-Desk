@@ -21,7 +21,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SRC, CONFIG } from './helpers.mjs';
 import { repo, pr, BAD_PR, gitSha } from './fake-desk.mjs';
-import { loadSandbox, byClass, findAll } from './sandbox-helpers.mjs';
+import { loadSandbox, byClass, findAll, El0 } from './sandbox-helpers.mjs';
 import { memStore } from './wa-fixtures.mjs';
 import { v3 } from './sandbox-fixtures.mjs';
 import { parseCss, treeOf, cascade, nodes } from './css-cascade.mjs';
@@ -1040,6 +1040,80 @@ test('AC94 (settled, 2; round 2, B1): a re-read that couldn\'t check, then one t
     await app.advance(POLL_MS);
     assert.equal(byClass(section(app), 'v2-recheck').length, 1, 'still said at the next poll');
   } finally {
+    app.restore();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// QW1's round 2: the owner's answer (decisions/questions/P-001-m3g-reload-fold.md, A) and the reviewers' notes
+
+test('AC94 (the owner\'s reload answer, P-001-m3g-reload-fold.md, A): after a full reload, each "Add your own words" fold holding words this device kept opens again in the first drawing, before AC56 puts the scroll back; one with none stays closed; "Show choices ›" not opened by it; within the opening a fold the owner closed stays closed', async () => {
+  const kept = savedWords({ [wordsKey(qid(KINDS, K.bare))]: 'Kept made-up words, NOT real.', [wordsKey(qid(KINDS, K.numbered), 2)]: 'Kept for part 2, NOT real.',
+    [wordsKey(qid(KINDS, K.split))]: 'Kept for the split one, NOT real.' });
+  const store = seen(NOW + H, { ...kept, 'desk-scroll-v1': JSON.stringify({ hash: '#/waiting', y: 900, sheetY: 0 }) });
+  const calls = [];
+  const typedShown = () => findAll(document.getElementById('view'), (e) => e.tag === 'textarea' && e.value === 'Kept made-up words, NOT real.').length > 0;
+  const app = await open(kindsState(), { store, win: { scrollTo: (x, y) => { calls.push([y, typedShown()]); } } });
+  try {
+    const fold = (path) => keyed(app, `fold:qwords:${qid(KINDS, path)}`);
+    for (const path of [K.bare, K.numbered, K.split]) assert.equal(fold(path).attrs['aria-expanded'], 'true', `${path}: open again`);
+    for (const path of [K.lettered, K.none]) assert.equal(fold(path).attrs['aria-expanded'], 'false', `${path}: no kept words, closed`);
+    assert.equal(findAll(qcard(app, qid(KINDS, K.bare)), (e) => e.tag === 'textarea')[0].value, 'Kept made-up words, NOT real.', 'the words where they were left');
+    assert.deepEqual(findAll(qcard(app, qid(KINDS, K.numbered)), (e) => e.tag === 'textarea').map((t) => t.value), ['', 'Kept for part 2, NOT real.'], 'each part\'s box');
+    assert.equal(keyed(app, `fold:qchoices:${qid(KINDS, K.split)}`).attrs['aria-expanded'], 'false', '"Show choices ›" not opened');
+    assert.ok(calls.some(([y, shown]) => y === 900 && shown), 'the scroll put back with the words already shown');
+    // Closed by the owner: stays closed within the opening.
+    await app.tap(fold(K.bare));
+    assert.equal(fold(K.bare).attrs['aria-expanded'], 'false');
+    await app.advance(POLL_MS);
+    assert.equal(fold(K.bare).attrs['aria-expanded'], 'false', 'still closed at the next poll');
+    assert.equal(findAll(qcard(app, qid(KINDS, K.bare)), (e) => e.tag === 'textarea').length, 0);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 (round 2, N1): a numbered question\'s "Add your own words" holds its sheet\'s boxes, one per part, each its own saved words, the same as the sheet\'s', async () => {
+  const id = qid(KINDS, K.numbered);
+  const app = await open(kindsState());
+  try {
+    await app.tap(keyed(app, `fold:qwords:${id}`));
+    const boxes = findAll(qcard(app, id), (e) => e.tag === 'textarea');
+    assert.deepEqual(boxes.map((b) => b.attrs['aria-label']), ['Your answer to 1', 'Your answer to 2'], 'one box per part, labelled as the sheet\'s');
+    boxes[1].value = 'Made-up words for part 2, NOT real.';
+    boxes[1].dispatch('input');
+    await app.flush();
+    await app.go(`#/waiting/card/${enc(id)}`);
+    assert.deepEqual(findAll(sheet(app), (e) => e.tag === 'textarea').map((t) => [t.attrs['aria-label'], t.value]),
+      [['Your answer to 1', ''], ['Your answer to 2', 'Made-up words for part 2, NOT real.']], 'the sheet\'s boxes, part 2\'s words in it');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC94 + AC77 (round 2, N2): a notification\'s tap on a held question opens Waiting with its card in the section brought into view', async () => {
+  const b = busiestState();
+  const key = qid('Beta', HELD_PATH);
+  const rowOf = `row-q-${key.replace(/[^A-Za-z0-9_-]/g, '-')}`;
+  // A layout (made up): the held question's card 1500 px down the page, everything else at the top.
+  const saved = Object.getOwnPropertyDescriptor(El0.prototype, 'getBoundingClientRect');
+  El0.prototype.getBoundingClientRect = function rect() {
+    const top = this.attrs && this.attrs.id === rowOf ? 1500 : 0;
+    return { left: 0, right: 0, top, bottom: top, width: 0, height: 0 };
+  };
+  const app = await loadSandbox({ ...b, hash: '', search: `?open=${enc(key)}`, now: NOW, store: seen(NOW + H, b.seed) });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await app.advance(POLL_MS);
+    assert.equal(app.loc.hash, '#/waiting');
+    const card = qcard(app, key);
+    assert.equal(card.attrs['data-question'], 'held');
+    assert.equal(card.attrs.id, rowOf, 'its card carries the row id the tap scrolls to');
+    assert.ok(app.scrolls.some(([x, y]) => x === 0 && y === 1492), `brought into view, 8 px above its top: ${JSON.stringify(app.scrolls)}`);
+    assert.equal(keyed(app, 'tap-banner').textContent, 'Opened from a notification');
+  } finally {
+    if (saved) Object.defineProperty(El0.prototype, 'getBoundingClientRect', saved); else delete El0.prototype.getBoundingClientRect;
     app.restore();
   }
 });

@@ -3169,17 +3169,28 @@ function questionSheetParts(sx) {
 /**
  * AC95 and AC96 (stage QW3; C, (m)): a question's sheet, under AC66's "Unblocks" line (which still names the milestone), lists
  * what its `Blocks:` line names, as the board it is open over read it (its places held with the board's, AC40): "Cards
- * waiting on it", each card waiting on the owner in its project by its place, kind and title, a tap opening that card's
- * sheet; then each entry that does not count, in its words ("<entry>: being asked in your session", "<entry>: not waiting on
- * you now", "can't read: <entry>"). Nothing for a question whose file has no such line.
+ * waiting on it", each card waiting on the owner in its project by its place and kind, whole, on a line of its own, then its
+ * title cut at three lines with the fade, as on the board (AC96's "From QW3's design review, round 1", N3; the whole title in
+ * the card's own sheet, which the row opens), a " · " between them read but not drawn; then each entry that does not count,
+ * in its words ("<entry>: being asked in your session", "<entry>: not waiting on you now", "can't read: <entry>"), the entry,
+ * a code, in `--t-mono` and the words in `--t-small` `--ink2` (N2). Nothing for a question whose file has no such line.
  */
 function blocksNode(sx) {
   const b = sx.blocks;
   if (!b || (!b.cards.length && !b.words.length)) return null;
+  const said = (w) => {
+    const i = w.words.indexOf(w.entry);
+    return i < 0 ? w.words : [w.words.slice(0, i) || null, h('span', { class: 'v2-mono', key: 'code' }, w.entry), w.words.slice(i + w.entry.length) || null];
+  };
   return h('div', { class: 'v2-blk', key: 'blocks' }, h('h3', { class: 'v2-bh' }, BLOCK_WORDS.list),
-    b.cards.length ? h('ul', { class: 'v2-wlist', key: 'blocks-cards' }, b.cards.map((c) => h('li', { key: `blk:${c.id}` },
-      h('a', { href: cardRoute(sx.only, c.id), key: `blocks:${c.id}` }, `${PLACE_WORDS.line(c.k, c.n)} · ${c.kindWord} · ${c.title}`)))) : null,
-    b.words.map((w) => h('p', { class: 'v2-small', key: `blkw:${w.entry}` }, w.words)));
+    b.cards.length ? h('ul', { class: 'v2-wlist', key: 'blocks-cards' }, b.cards.map((c) => {
+      const clip = `wl:${c.id}`;
+      return h('li', { key: `blk:${c.id}` },
+        h('a', { href: cardRoute(sx.only, c.id), key: `blocks:${c.id}` }, h('span', { class: 'v2-wlk', key: 'wlk' }, `${PLACE_WORDS.line(c.k, c.n)} · ${c.kindWord}`),
+          h('span', { class: 'sb-vh', key: 'wlsep' }, ' · '),
+          h('span', { class: `v2-tt${clipOver.get(clip) === true ? ' over' : ''}`, key: `wltt:${c.id}`, 'data-clip': clip }, c.title)));
+    })) : null,
+    b.words.map((w) => h('p', { class: 'v2-small', key: `blkw:${w.entry}` }, said(w))));
 }
 
 /** AC80's why line for a question, under its boxes: "Recommended: <the RECOMMENDATION: line's words>", or "No recommendation given". */

@@ -489,7 +489,7 @@ test('AC95 + AC94 (the held tap\'s focus, and only its): a notification\'s tap o
   }
 });
 
-test('AC95 + AC96 (the sheet): a blocker\'s sheet lists "Cards waiting on it" under AC66\'s Unblocks line, each card by its place, kind and title, a tap opening its sheet; then each entry that does not count in its words; the held blocker\'s too; a question with no line lists nothing; the list\'s links at least 24 px tall, underlined, --t-small --ink in light and dark', async () => {
+test('AC95 + AC96 (the sheet): a blocker\'s sheet lists "Cards waiting on it" under AC66\'s Unblocks line, each card by its place, kind and title, a tap opening its sheet; then each entry that does not count in its words, its code in --t-mono and its words --t-small --ink2; each row\'s title cut at three lines with the fade, its place and kind whole (the design review\'s N2 and N3); the held blocker\'s too; a question with no line lists nothing; the list\'s links at least 24 px tall, underlined, --t-small --ink in light and dark', async () => {
   const s = qw3BusiestState();
   const app = await qw3Open(s, '#/waiting', { store: seen(s.seed) });
   try {
@@ -503,6 +503,30 @@ test('AC95 + AC96 (the sheet): a blocker\'s sheet lists "Cards waiting on it" un
       ['10 of 12 waiting · Hold · The default branch\'s governance run is not green', `#/waiting/card/${enc('Alpha|hold|queue/ci-hold-4a2448939173.md')}`]]);
     assert.deepEqual(byClass(b, 'v2-small').map((p) => p.textContent), ['questions/Beta-plan-units.md: not waiting on you now', '#999: not waiting on you now',
       'queue/P-404-stop-1.md: not waiting on you now', 'can\'t read: card 7'], 'itself dropped; another project\'s held question is not this project\'s');
+    // AC96's "From QW3's design review, round 1", N2: each entry's code in --t-mono, its words in --t-small --ink2.
+    const smalls = byClass(b, 'v2-small');
+    assert.deepEqual(smalls.map((p) => byClass(p, 'v2-mono').map((x) => x.textContent)), [['questions/Beta-plan-units.md'], ['#999'], ['queue/P-404-stop-1.md'], ['card 7']]);
+    // N3: each row's place and kind whole on their own line, its title under them in a three-line cut; " · " read, not drawn.
+    for (const a of rows) {
+      assert.deepEqual(a.children.map((x) => x.className), ['v2-wlk', 'sb-vh', 'v2-tt']);
+      assert.ok(a.children[2].attrs['data-clip'], 'measured by the browser, faded only once it is cut');
+    }
+    for (const theme of THEMES) {
+      const L = looks(app, theme, 360);
+      for (const p of smalls) {
+        assert.match(L.get(p).raw('font'), /^400 12px\/1\.4 ⟦--font\|/, `${theme}: the words --t-small`);
+        assert.equal(L.get(p).colour, INK[theme].ink2, `${theme}: the words --ink2`);
+        const code = byClass(p, 'v2-mono')[0];
+        assert.match(L.get(code).raw('font'), /^400 11px\/1\.4 ⟦--mono\|/, `${theme}: the code --t-mono`);
+        assert.equal(L.get(code).colour, INK[theme].ink2);
+      }
+      for (const a of rows) {
+        const [wlk, vh, tt] = a.children;
+        assert.equal(L.get(wlk).decl('display'), 'block', `${theme}: place and kind on a line of their own`);
+        assert.equal(L.get(vh).decl('position'), 'absolute', `${theme}: the " · " takes no room`);
+        assert.deepEqual([L.get(tt).decl('display'), L.get(tt).decl('max-height'), L.get(tt).decl('overflow')], ['block', 'calc(3 * 1.4em)', 'clip'], `${theme}: the title cut at three lines`);
+      }
+    }
     // Under the Unblocks line, in the sheet's foot.
     const foot = findAll(sheet(app), (e) => e.dataset && e.dataset.k === 'sheet-foot')[0];
     const unb = foot.children.findIndex((c) => (c.className || '').includes('v2-blk') && /Unblocks/.test(c.textContent));
@@ -522,6 +546,18 @@ test('AC95 + AC96 (the sheet): a blocker\'s sheet lists "Cards waiting on it" un
     await app.go(`#/waiting/card/${enc(ALPHA('Alpha-second'))}`);
     assert.deepEqual(findAll(blocksBlock(app), (e) => e.tag === 'a').map((a) => a.textContent), ['7 of 12 waiting · Decision · ' + cardOf(app, 'Alpha|card|queue/Q-020-stop-1.md').children[2].textContent,
       '8 of 12 waiting · Pull request · Alpha: fix the badge after the phone wakes (made up, NOT real)']);
+    // N3: Q-020's long title (md-extremes/' long card, NOT real), measured cut by the browser (here, made up: 90 px of text in a
+    // 50 px box), takes the fade, as a card's title on the board does; its whole title in its own sheet.
+    const tt = findAll(blocksBlock(app), (e) => e.attrs && e.attrs['data-clip'] === 'wl:Alpha|card|queue/Q-020-stop-1.md')[0];
+    assert.doesNotMatch(tt.className, /\bover\b/, 'not faded before it is measured');
+    tt.scrollHeight = 90;
+    tt.clientHeight = 50;
+    await app.resize(360);
+    await app.flush();
+    const cut = findAll(blocksBlock(app), (e) => e.attrs && e.attrs['data-clip'] === 'wl:Alpha|card|queue/Q-020-stop-1.md')[0];
+    assert.match(cut.className, /\bover\b/, 'faded at the cut');
+    const short = findAll(blocksBlock(app), (e) => e.attrs && e.attrs['data-clip'] === 'wl:Alpha|pr|82')[0];
+    assert.doesNotMatch(short.className, /\bover\b/, 'a title that fits: no fade');
     await app.go(`#/waiting/card/${enc(qid('Delta', QPATH.Delta))}`);
     assert.equal(blocksBlock(app), null);
   } finally {

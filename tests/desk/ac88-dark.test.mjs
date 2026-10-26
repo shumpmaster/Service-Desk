@@ -1621,7 +1621,9 @@ const STRIP_EXCEPT = (n, d, theme) => {
  *   24 px tall), its text the line's --t-small;
  * - the sheet's "Cards waiting on it" list (`ul.v2-wlist`, its block's child): a grid;
  * - each of its rows' links (`a` in an `li` of that list): a block at least 24 px tall, 3 px over and under, --t-small --ink,
- *   underlined 2 px under its text, wrapping anywhere, its text so computed.
+ *   underlined 2 px under its text, wrapping anywhere; from QW3's round 2 (AC96's "From QW3's design review, round 1", N3) its
+ *   text in three parts, each so computed: its place and kind (`span.v2-wlk`) a block of their own, a " · " for screen readers
+ *   (`span.sb-vh`), and its title (`span.v2-tt`), a block cut at three of its lines (calc(3 * 1.4em), clipped).
  * The walk reaches them on QW3's own screens (tests/desk/qw3-fixtures.mjs's QW3_OPENS, below); no earlier walk draws any.
  */
 const QW3_FONT = (f) => `${f} "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
@@ -1633,7 +1635,11 @@ const QW3_LOOK = (ink) => new Map([
   ['a (a "Waits on" link)', ['padding: (none) → 5px 0', 'text-decoration: none → underline', 'text-underline-offset: (none) → 2px', ...QW3_SMALL]],
   ['ul.v2-wlist ("Cards waiting on it")', ['display: (none) → grid']],
   ['a (a "Cards waiting on it" row)', [`font: (none) → ${QW3_FONT('400 12px/1.4')}`, `color: inherit → ${ink}`, 'display: (none) → block', 'min-height: (none) → 24px', 'padding: (none) → 3px 0',
-    'overflow-wrap: (none) → anywhere', 'text-decoration: none → underline', 'text-underline-offset: (none) → 2px', ...QW3_SMALL]],
+    'overflow-wrap: (none) → anywhere', 'text-decoration: none → underline', 'text-underline-offset: (none) → 2px']],
+  // From QW3's round 2 (AC96's "From QW3's design review, round 1", N3): the row's text is in its three parts.
+  ['span.v2-wlk (a row\'s place and kind)', ['display: (none) → block', ...QW3_SMALL]],
+  ['span.sb-vh (a row\'s " · ")', [...QW3_SMALL]],
+  ['span.v2-tt (a row\'s title)', ['display: (none) → block', 'max-height: (none) → calc(3 * 1.4em)', 'overflow: (none) → clip', ...QW3_SMALL]],
 ]);
 const QW3_ONCE = new Map([['light', QW3_LOOK('#18191c')], ['dark', QW3_LOOK('#ecedef')]]);
 const QW3_KEY = (n) => {
@@ -1643,6 +1649,10 @@ const QW3_KEY = (n) => {
   if (n.tag === 'a' && p && p.tag === 'span' && p.cls.has('v2-waits')) return 'a (a "Waits on" link)';
   if (n.tag === 'ul' && n.cls.has('v2-wlist') && p && p.tag === 'div' && p.cls.has('v2-blk')) return 'ul.v2-wlist ("Cards waiting on it")';
   if (n.tag === 'a' && p && p.tag === 'li' && p.parent && p.parent.tag === 'ul' && p.parent.cls.has('v2-wlist')) return 'a (a "Cards waiting on it" row)';
+  const row = p && p.tag === 'a' && p.parent && p.parent.tag === 'li' && p.parent.parent && p.parent.parent.cls.has('v2-wlist');
+  if (row && n.tag === 'span' && n.cls.has('v2-wlk')) return 'span.v2-wlk (a row\'s place and kind)';
+  if (row && n.tag === 'span' && n.cls.has('sb-vh')) return 'span.sb-vh (a row\'s " · ")';
+  if (row && n.tag === 'span' && n.cls.has('v2-tt')) return 'span.v2-tt (a row\'s title)';
   return null;
 };
 const QW3_EXCEPT = (n, d, theme) => {

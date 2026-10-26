@@ -1122,11 +1122,11 @@ the blocker order's worked cases and boardView's blockers, pure, and their scree
   card files, other questions, the question itself, a held question, a question in another project, and items not there. No
   Chief of Staff wrote any of them. **NOT real records.**
 - **`qw3BusiestState`** (`qw3-fixtures.mjs`): QW2's `qw2BusiestState` with those lines: Alpha's two questions blocking #81,
-  #82 (kicked back) and the decision card Q-020-stop-1; a made-up question held as asked in a session in Alpha
+  #82 (kicked back) and the decision card Q-020-stop-1, the first blocking the second too (from QW3's round 2); a made-up question held as asked in a session in Alpha
   (`questions/Alpha-held.md`, in the made-up session `session_0QW1MadeUpNotARealSession01`, raised 3 hours before the clock)
   blocking #80 and the hold card and naming itself, Beta's held question, #999, a card file not there and an entry in no
   form; Beta's kicked-back question blocking Beta's #80 and naming Beta's held question; and Gamma's question blocking Gamma's
-  kicked-back merge card. As the approved picture's frame 1 (itself made up) draws them. **NOT real records or marks.**
+  kicked-back merge card and (from QW3's round 2) Gamma's Build-gate card. As the approved picture's frame 1 (itself made up) draws them. **NOT real records or marks.**
 - **`QW3_OPENS`** (`qw3-fixtures.mjs`): Waiting on `qw3BusiestState`, and the held blocker's sheet over it. **NOT real.**
 - **the worked cases' cards** (`ac96-qw3-blockers.test.mjs`): AC95's five worked cases (X, Y, Z; A, B, C, D; U, V, W), as
   made-up questions in a made-up project, each raised at a made-up time in the case's order. **NOT real records.**

@@ -320,19 +320,20 @@ test('AC95 (pure, a blocker answered): once it leaves, its cards lose their "Wai
 // ---------------------------------------------------------------------------
 // The screen cases, on qw3BusiestState (made up, NOT real).
 
-test('AC95 + AC96 on the busiest board (qw3BusiestState, made up, NOT real; the picture\'s frame 1): Alpha\'s blockers first, "1 of 12" and "2 of 12", the held blocker after them saying "Answer first · cards 4 and 10 wait on it"; Beta\'s kicked-back blocker with its held question after it; every "Answer first" and "Waits on" line as the lines name them, on lane, strip and section cards', async () => {
+test('AC95 + AC96 on the busiest board (qw3BusiestState, made up, NOT real; the picture\'s frame 1): Alpha\'s blockers first, "1 of 12" and "2 of 12", the held blocker after them saying "Answer first · cards 4 and 10 wait on it"; Beta\'s kicked-back blocker with its held question after it; every "Answer first" and "Waits on" line as the lines name them, on lane, gate, strip and section cards', async () => {
   const app = await qw3Open(qw3BusiestState(), '#/waiting');
   try {
     assert.deepEqual(ALPHA_QW3.map((id) => placeAt(app, id)), ALPHA_QW3.map((_, i) => `${i + 1} of 12 waiting`));
     // The section: Alpha's blockers, its held blocker, then Beta's blocker and its held question (no line), then the rest.
     assert.deepEqual(sectionIds(app).slice(0, 6), [ALPHA('Alpha-pick'), ALPHA('Alpha-second'), qid('Alpha', ALPHA_HELD), qid('Beta', QPATH.Beta), qid('Beta', HELD_PATH), qid('Gamma', QPATH.Gamma)]);
     const says = (id) => [afirst(cardOf(app, id)), waitsOf(cardOf(app, id))];
-    assert.deepEqual(says(ALPHA('Alpha-pick')), [['Answer first · cards 5 and 7 wait on it'], []]);
-    assert.deepEqual(says(ALPHA('Alpha-second')), [['Answer first · cards 7 and 8 wait on it'], []]);
+    assert.deepEqual(says(ALPHA('Alpha-pick')), [['Answer first · cards 2, 5 and 7 wait on it'], []]);
+    // A section question that waits on another (QW3's review, round 1, the Reviewer's B1): its "Waits on" line under its meta line.
+    assert.deepEqual(says(ALPHA('Alpha-second')), [['Answer first · cards 7 and 8 wait on it'], ['Waits on question 1']]);
     assert.deepEqual(says(qid('Alpha', ALPHA_HELD)), [['Answer first · cards 4 and 10 wait on it'], []], 'the picture\'s held blocker');
     assert.deepEqual(says(qid('Beta', QPATH.Beta)), [['Answer first · card 2 waits on it'], []]);
     assert.deepEqual(says(qid('Beta', HELD_PATH)), [[], []], 'a held question with no line');
-    assert.deepEqual(says(qid('Gamma', QPATH.Gamma)), [['Answer first · card 6 waits on it'], []]);
+    assert.deepEqual(says(qid('Gamma', QPATH.Gamma)), [['Answer first · cards 3 and 6 wait on it'], []]);
     assert.deepEqual(says('Alpha|card|queue/Q-020-stop-1.md'), [[], ['Waits on questions 1 and 2']]);
     assert.deepEqual(says('Alpha|pr|81'), [[], ['Waits on question 1']]);
     assert.deepEqual(says('Alpha|pr|82'), [[], ['Waits on question 2']], 'a strip card');
@@ -340,6 +341,7 @@ test('AC95 + AC96 on the busiest board (qw3BusiestState, made up, NOT real; the 
     assert.deepEqual(says('Alpha|hold|queue/ci-hold-4a2448939173.md'), [[], ['Waits on a question being asked in your session']]);
     assert.deepEqual(says('Beta|pr|80'), [[], ['Waits on question 1']]);
     assert.deepEqual(says('Gamma|merge|queue/P-002-merge-conflict.md'), [[], ['Waits on question 1']], 'a strip card in another project');
+    assert.deepEqual(says('Gamma|gate|queue/P-002-criteria-1.md'), [[], ['Waits on question 1']], 'a gate card (the Reviewer\'s N1)');
     assert.deepEqual(says('Alpha|pr|83'), [[], []]);
     // The held blocker: no place, "Being asked in your session", and no "Done ✓".
     const hc = cardOf(app, qid('Alpha', ALPHA_HELD));
@@ -355,7 +357,7 @@ test('AC95 + AC96 on the busiest board (qw3BusiestState, made up, NOT real; the 
   }
 });
 
-test('AC95 ("What a blocker says"; AC94\'s "Each question shows"): "Answer first" under the question\'s lock or clock line, before its choices; "Waits on" under the meta line, on lane, gate-less, strip and section cards; each in --t-small --ink, the picture\'s 12 px (AC96\'s "Settled from QW3\'s build", 3); the Waits line at least 24 px tall, above the full-card link, its links underlined under their own text — in light and dark, at 360 and 414 px', async () => {
+test('AC95 ("What a blocker says"; AC94\'s "Each question shows"): "Answer first" under the question\'s lock or clock line, before its choices; "Waits on" under the meta line, on lane, gate, strip and section cards; each in --t-small --ink, the picture\'s 12 px (AC96\'s "Settled from QW3\'s build", 3); the Waits line at least 24 px tall, above the full-card link, its links underlined under their own text — in light and dark, at 360 and 414 px', async () => {
   const app = await qw3Open(qw3BusiestState(), '#/waiting');
   try {
     const pick = cardOf(app, ALPHA('Alpha-pick'));
@@ -369,6 +371,13 @@ test('AC95 ("What a blocker says"; AC94\'s "Each question shows"): "Answer first
     assert.equal(card.children[card.children.indexOf(m) + 1].className, 'v2-waits', 'under its meta line');
     const strip = cardOf(app, 'Alpha|pr|82');
     assert.equal(strip.children[strip.children.indexOf(byClass(strip, 'v2-m')[0]) + 1].className, 'v2-waits');
+    // A section question (the Reviewer's B1) and a gate card (N1): each under its meta line.
+    const second = cardOf(app, ALPHA('Alpha-second'));
+    assert.deepEqual(second.children.map((c) => (c.className || '').split(' ')[0]), ['v2-place', 'v2-kd', 'v2-t', 'v2-m', 'v2-waits', 'v2-afirst', 'v2-qbody'],
+      'a section question: place, kind, title, meta, "Waits on", "Answer first", its choices');
+    const gate = cardOf(app, 'Gamma|gate|queue/P-002-criteria-1.md');
+    assert.equal(gate.children[gate.children.indexOf(byClass(gate, 'v2-m')[0]) + 1].className, 'v2-waits', 'a gate card: under its meta line');
+    assert.equal(gate.children[gate.children.indexOf(byClass(gate, 'v2-waits')[0]) + 1].className, 'v2-gatebtns', 'above its four buttons');
     for (const theme of THEMES) {
       for (const w of WIDTHS) {
         const L = looks(app, theme, w);
@@ -379,7 +388,7 @@ test('AC95 ("What a blocker says"; AC94\'s "Each question shows"): "Answer first
           assert.equal(l.colour, INK[theme].ink, `${at}: --ink`);
         }
         const lines = byClass(app.view, 'v2-waits');
-        assert.equal(lines.length, 7, 'Q-020, #81, #82, #80, the hold card, Beta\'s #80, Gamma\'s merge card');
+        assert.equal(lines.length, 9, 'Alpha-second, Q-020, #81, #82, #80, the hold card, Beta\'s #80, Gamma\'s merge card and gate card');
         for (const el of lines) {
           const l = L.get(el);
           assert.match(l.raw('font'), /^400 12px\/1\.4 ⟦--font\|/, `${at}: "Waits on" --t-small, the picture's 12 px`);

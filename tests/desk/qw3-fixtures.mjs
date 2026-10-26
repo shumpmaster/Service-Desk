@@ -7,9 +7,10 @@
 // - `qw3BusiestState`: QW2's busiest state (QW1's busiest board, md-extremes/' five projects, with Alpha holding twelve cards;
 //   tests/desk/qw2-fixtures.mjs), its made-up questions given `Blocks:` lines, as the approved picture's frame 1 draws them
 //   (docs/design/builds/m3g-picture/, made up too):
-//   - Alpha: its first question (`Alpha-pick`, raised 30 hours before NOW) blocks pull request #81 and the decision card
-//     Q-020-stop-1; its second (`Alpha-second`, 6 hours) blocks the same card and pull request #82, kicked back on this device;
-//     so both are blockers, "1 of 12" and "2 of 12", the card "Waits on questions 1 and 2". A made-up question held as being
+//   - Alpha: its first question (`Alpha-pick`, raised 30 hours before NOW) blocks pull request #81, the decision card
+//     Q-020-stop-1 and its second question (`Alpha-second`, 6 hours), which blocks the same card and pull request #82, kicked
+//     back on this device; so both are blockers, "1 of 12" and "2 of 12", the second free once the first is placed, the card
+//     "Waits on questions 1 and 2", and the second question, in the section, "Waits on question 1" under its meta line. A made-up question held as being
 //     asked in a session (`Alpha-held`, its `Asked in session:` line under its `Milestone:` line, its `Blocks:` line after
 //     them) blocks #80 and the hold card, "Answer first · cards 4 and 10 wait on it" as in the picture, and names itself
 //     (dropped), Beta's held question (another project's path: not found here), a pull request not open (#999), a card file
@@ -17,7 +18,7 @@
 //   - Beta: its question, kicked back on this device (QW1's), blocks Beta's pull request #80 and names Beta's held question
 //     (which has no `Blocks:` line), so the held question sits after it ("After the blockers");
 //   - Gamma: its numbered question blocks Gamma's merge card, kicked back on this device (QW2's), so a strip card says "Waits
-//     on question 1".
+//     on question 1", and Gamma's Build-gate card, so a gate card says it too.
 // - `QW3_OPENS`: the screens QW3's cascade checks walk (tests/desk/ac88-dark.test.mjs), opened as the owner opens them.
 import { CONFIG } from './helpers.mjs';
 import { memStore } from './wa-fixtures.mjs';
@@ -45,7 +46,7 @@ export function withBlocks(text, line, at = 'after') {
 /** The busiest state's held blocker in Alpha (made up, NOT real): the picture's held question, its line after `Asked in session:`. */
 export const ALPHA_HELD = 'questions/Alpha-held.md';
 export const ALPHA_BLOCKS = {
-  pick: 'Blocks: #81, queue/Q-020-stop-1.md',
+  pick: 'Blocks: #81, queue/Q-020-stop-1.md, questions/Alpha-second.md',
   second: 'Blocks: queue/Q-020-stop-1.md, #82',
   held: `Blocks: #80, queue/ci-hold-4a2448939173.md, ${ALPHA_HELD}, ${HELD_PATH}, #999, queue/P-404-stop-1.md, card 7`,
 };
@@ -58,7 +59,7 @@ export const Q_ALPHA_HELD = withBlocks(qFile({ title: 'Should Plan show estimate
  */
 export const ALPHA_QW3 = [
   'Alpha|question|questions/Alpha-pick.md', // a blocker, raised 30 hours before NOW
-  'Alpha|question|questions/Alpha-second.md', // a blocker, raised 6 hours before NOW
+  'Alpha|question|questions/Alpha-second.md', // a blocker, raised 6 hours before NOW, held up by question 1
   'Alpha|pr|83',
   'Alpha|pr|80', // held up by the held question
   'Alpha|pr|81', // held up by question 1
@@ -82,7 +83,7 @@ export function qw3BusiestState({ kicked = true, held = true } = {}) {
   });
   if (held) a.history[ALPHA_HELD] = hist(NOW - 3 * H);
   s.repos.Beta.commit({ [QPATH.Beta]: withBlocks(Q_BETA, `Blocks: #80, ${HELD_PATH}`) });
-  s.repos.Gamma.commit({ [QPATH.Gamma]: withBlocks(Q_GAMMA, 'Blocks: queue/P-002-merge-conflict.md') });
+  s.repos.Gamma.commit({ [QPATH.Gamma]: withBlocks(Q_GAMMA, 'Blocks: queue/P-002-merge-conflict.md, queue/P-002-criteria-1.md') });
   s.store = (extra = {}) => memStore({ ...s.seed, ...extra });
   return s;
 }
@@ -92,8 +93,8 @@ export { qid, HELD_PATH, QPATH };
 
 /**
  * QW3's screens (each made-up part NOT real), for the cascade checks (tests/desk/ac88-dark.test.mjs): the busiest board, with
- * blockers in three projects, a held blocker, a kicked-back blocker, "Answer first", "Waits on question <k>" on lane, strip and
- * gate-less cards, and "Waits on a question being asked in your session"; and a blocker's sheet with its "Cards waiting on it"
+ * blockers in three projects, a held blocker, a kicked-back blocker, "Answer first", "Waits on question <k>" on lane, strip,
+ * gate and section cards, and "Waits on a question being asked in your session"; and a blocker's sheet with its "Cards waiting on it"
  * and the entries that do not count, opened from the board.
  */
 export const QW3_OPENS = [

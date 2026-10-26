@@ -2247,12 +2247,12 @@ test('AC88 + AC69 + AC92 (a) + AC44 step 4 (QW2 of "After the questions request"
 
 
 // QW3 of "After the questions request" (AC96 and AC95's blocker parts; the stage's row: "`QW3_ONCE`"): the busiest board with
-// blockers in three projects, a held blocker and a kicked-back one, every "Answer first" and "Waits on" line on section, lane and
-// strip cards, and the held blocker's sheet with its "Cards waiting on it" (tests/desk/qw3-fixtures.mjs's QW3_OPENS, its made-up
+// blockers in three projects, a held blocker and a kicked-back one, every "Answer first" and "Waits on" line on section, lane, gate
+// and strip cards, and the held blocker's sheet with its "Cards waiting on it" (tests/desk/qw3-fixtures.mjs's QW3_OPENS, its made-up
 // parts NOT real), each opened once (the suite's memory) and read by all three checks: AC69's (no vermilion in the new lines),
 // AC92 (a)'s (each new line and row --ink, never --ok, --bad or --you, with no icon), and the stage-8 guard, which meets
 // QW3_ONCE exactly and no other exception the walks above had not met.
-test('AC88 + AC69 + AC92 (a) + AC44 step 4 (QW3 of "After the questions request"; AC95, AC96): on QW3\'s screens (QW3_OPENS, made up, NOT real), in dark (forced, and the phone\'s own) and light — blockers in three projects, a held blocker, "Answer first" and "Waits on" on section, lane and strip cards, a blocker\'s sheet with "Cards waiting on it" — vermilion only on the places AC69 lists; each new line --ink with no icon; and every element\'s look bd4097d\'s but for QW3_ONCE, met exactly', async () => {
+test('AC88 + AC69 + AC92 (a) + AC44 step 4 (QW3 of "After the questions request"; AC95, AC96): on QW3\'s screens (QW3_OPENS, made up, NOT real), in dark (forced, and the phone\'s own) and light — blockers in three projects, a held blocker, "Answer first" and "Waits on" on section, lane, gate and strip cards, a blocker\'s sheet with "Cards waiting on it" — vermilion only on the places AC69 lists; each new line --ink with no icon; and every element\'s look bd4097d\'s but for QW3_ONCE, met exactly', async () => {
   const fails = [];
   const seen = new Set();
   const places = new Set();
@@ -2260,7 +2260,14 @@ test('AC88 + AC69 + AC92 (a) + AC44 step 4 (QW3 of "After the questions request"
   for (const [where, open] of QW3_OPENS) {
     const app = await open();
     try {
-      assert.ok(findAll(app.view, (e) => / v2-waits /.test(` ${e.className || ''} `)).length >= 7, `${where}: the "Waits on" lines`);
+      const waitsIn = (cls) => findAll(app.view, (e) => / v2-waits /.test(` ${e.className || ''} `) && e.parent && new RegExp(` ${cls} `).test(` ${e.parent.className || ''} `));
+      assert.ok(findAll(app.view, (e) => / v2-waits /.test(` ${e.className || ''} `)).length >= 9, `${where}: the "Waits on" lines`);
+      // Each kind of card the title names draws one (QW3's review, round 1, the Reviewer's B1 and N1): a section question, a gate
+      // card, a strip card, a lane card.
+      assert.ok(waitsIn('v2-qcard').length >= 1, `${where}: on a section question`);
+      assert.ok(waitsIn('gate').length >= 1, `${where}: on a gate card`);
+      assert.ok(waitsIn('kick').length >= 1, `${where}: on a strip card`);
+      assert.ok(findAll(app.view, (e) => / v2-waits /.test(` ${e.className || ''} `) && e.parent && e.parent.tag === 'li' && !/ (v2-qcard|gate|kick) /.test(` ${e.parent.className} `)).length >= 1, `${where}: on a lane card`);
       vermilionCheck(app, `QW3 ${where}`, fails, seen, places);
       okBadCheck(app, `QW3 ${where}`, fails, seen, places);
       sameLook(app, `QW3 ${where}`, fails, seen);

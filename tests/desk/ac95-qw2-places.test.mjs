@@ -311,7 +311,9 @@ test('AC95 ("Where the place shows"; AC80\'s card, changed): the place on a line
   }
 });
 
-test('AC95 (AC85\'s head, changed): a card\'s sheet\'s small line adds " · <k> of <N> waiting" — a pull request, a question, a gate card, a card with no raised time, the portfolio\'s — and the held question\'s none', async () => {
+// Rewritten after the Definer's notes (not forced: it passed, its "no place" now saying nothing true; AC95's "Settled from
+// QW2's build", 5): the held question's sheet's small line adds " · being asked in your session", its card's words.
+test('AC95 (AC85\'s head, changed): a card\'s sheet\'s small line adds " · <k> of <N> waiting" — a pull request, a question, a gate card, a card with no raised time, the portfolio\'s — and the held question\'s " · being asked in your session", no number', async () => {
   const s = qw2BusiestState();
   const app = await qw2Open(s, '#/waiting');
   try {
@@ -329,7 +331,8 @@ test('AC95 (AC85\'s head, changed): a card\'s sheet\'s small line adds " · <k> 
       await app.go('#/waiting');
     }
     await app.go(`#/waiting/card/${enc(qid('Beta', HELD_PATH))}`);
-    assert.doesNotMatch(sheetHead(app), /waiting$/, 'the held question: no place, counted nowhere');
+    assert.match(sheetHead(app), /^Beta · question · Beta-plan-units · M3B · waiting 2 h \d+ m · being asked in your session$/, 'the held question: its card\'s words, no number');
+    assert.equal(byClass(cardOf(app, qid('Beta', HELD_PATH)), 'v2-place')[0].textContent.toLowerCase(), 'being asked in your session', 'the words its card\'s place line has');
   } finally {
     app.restore();
   }

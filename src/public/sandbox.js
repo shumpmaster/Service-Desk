@@ -31,7 +31,8 @@ import { GATE_PHASE } from './lib/j11.js';
 import { questionQuestions, CANT_SPLIT } from './lib/sandbox.js';
 import { SHEET_WORDS, undoLine, blastLine, splitChoice, whyOpening, viewRows, gateTitle, gateOpening, standardLine, headText, buttonFiles, v25Ruling } from './lib/sheets.js';
 import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noMarks, recordDone, answerButtons, metaText, LANES, BOARD_LANES, WORDS, MARKS_KEY,
-  stripEmptyParts, isNewCard, boardAge, SECTION_WORDS, SECTION_CHOICES_SHOWN, waitLaneEmpty, sectionMissingWords, sectionMeta, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, everyProjectUnread, unreadLaneWords, quietTroubleWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS, draftCard } from './lib/board.js';
+  stripEmptyParts, isNewCard, boardAge, SECTION_WORDS, SECTION_CHOICES_SHOWN, waitLaneEmpty, sectionMissingWords, sectionMeta, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, everyProjectUnread, unreadLaneWords, quietTroubleWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS, draftCard,
+  PLACE_WORDS, heldView } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
 import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
@@ -1887,6 +1888,8 @@ let lastLooked = () => null;
 const boardState = {
   store: null, marks: noMarks(), kept: true, judged: new Map(), last: new Map(), seen: new Map(), prev: new Map(),
   more: new Set(), folds: new Set(), drafts: new Map(), view: null, cards: new Map(),
+  // AC95 (QW2): the board view Waiting drew last with no card held and no sheet open, drawn again while one is (heldView).
+  drawn: null,
   load(store) {
     this.store = store;
     try {
@@ -2275,6 +2278,21 @@ function onDragUp(e) {
 const laneOf = (key) => LANES.find((l) => l.key === key);
 
 /**
+ * AC95 (stage QW2; C, (n); draft 2, the Design reviewer's F2 and F5): a card's place, on a line of its own at its top, above
+ * its kind line, "<k> of <N> waiting" in `--t-mono` `--ink` (`.v2-mono.ink`), so the kind line, its icons' left edge and its
+ * "new" are unchanged; its accessible text, "Place <k> of <N> waiting on you in <project>", read first (the words around
+ * the line's own in `.sb-vh`). A held question (AC77; no card, so no place) says "Being asked in your session" in that
+ * line's place, in `--t-mono` `--ink2` (`.v2-mono`). Nothing for a card with no place.
+ */
+function placeLine(card) {
+  if (card.held) return h('span', { class: 'v2-place v2-mono', key: `place:${card.id}` }, PLACE_WORDS.held);
+  const pl = card.place;
+  if (!pl) return null;
+  return h('span', { class: 'v2-place v2-mono ink', key: `place:${card.id}` }, h('span', { class: 'sb-vh' }, PLACE_WORDS.before),
+    PLACE_WORDS.line(pl.k, pl.n), h('span', { class: 'sb-vh' }, PLACE_WORDS.after(pl.label || card.project)));
+}
+
+/**
  * A card's kind line: its icon (vermilion while it waits on the owner, grey in Done) and its word, never ranked (AC38).
  * AC91 (f): in the Kicked back strip, which has no project groups, it names its project after " · ". AC91 (g): in
  * "Waiting on you", a card raised since "last looked" carries "new" beside its kind label, part of the line's text for
@@ -2402,6 +2420,7 @@ function cardNode(p, card, lane, only, tag = 'li') {
   if (card.kind === 'gate' && lane !== 'done') {
     return h(tag, { class: `v2-card gate${lane === 'kick' ? ' kick' : ''}`, key: `card:${card.id}`, 'data-card': card.id,
       onpointerdown: (e, el) => onDragDown(card, e, el, lane) },
+    placeLine(card),
     kindLine(card, lane),
     h('a', { class: 'v2-t', href: cardRoute(only, card.id), 'data-cardlink': '', key: `cardlink:${card.id}`, onclick: (e) => cardTap(card, e) }, cardTitle(card)),
     h('span', { class: 'v2-gl' }, h('span', { class: 'v2-gk' }, 'Critic:'), ` ${card.critic}`),
@@ -2412,6 +2431,7 @@ function cardNode(p, card, lane, only, tag = 'li') {
   }
   return h(tag, { class: `v2-card${lane === 'kick' ? ' kick' : ''}`, key: `card:${card.id}`, 'data-card': card.id,
     onpointerdown: (e, el) => onDragDown(card, e, el, lane) },
+  placeLine(card),
   kindLine(card, lane),
   h('a', { class: 'v2-t', href: cardRoute(only, card.id), 'data-cardlink': '', key: `cardlink:${card.id}`, onclick: (e) => cardTap(card, e) }, cardTitle(card)),
   h('span', { class: 'v2-m', live: () => metaText(card, Date.now()) }),
@@ -2585,7 +2605,8 @@ function sectionWords(p, card) {
 }
 
 /**
- * One question in the section (AC94, "Each question shows"): its kind line ("Question", its icon vermilion, "new" by
+ * One question in the section (AC94, "Each question shows"): from QW2 its place line first (AC95: "<k> of <N> waiting", or a
+ * held one's "Being asked in your session"; placeLine), then its kind line ("Question", its icon vermilion, "new" by
  * isNewCard; a kicked-back one "Kicked back · Question" with the kick icon and its reason), its title cut at three lines
  * (AC89 (j)), a held one's "Also asked in your session: answer in one place", its meta line with its age, its lock or
  * clock line, its choices (the first three in the section's order) or "Show choices ›", "Add your own words", "More about
@@ -2619,6 +2640,7 @@ function sectionCard(p, card, only, shown) {
     h('a', { class: 'v2-step', href: cardRoute(only, id), key: `qmore:${id}`, onclick: () => { nav.opener = `qmore:${id}`; } }, SECTION_WORDS.more),
     card.held ? null : h('button', { type: 'button', class: 'v2-step', key: `qdone:${id}`, onclick: () => markCard(card) }, SECTION_WORDS.done)));
   return h('li', { class: 'v2-card v2-qcard', key: `qcard:${id}`, id: rowId(`q:${id}`), 'data-card': id, 'data-question': card.held ? 'held' : kicked ? 'kicked' : 'counted' },
+    placeLine(card),
     kind,
     h('a', { class: 'v2-t', href: cardRoute(only, id), 'data-cardlink': '', key: `cardlink:${id}`, onclick: () => { nav.opener = `cardlink:${id}`; } }, cardTitle(card)),
     card.held ? h('span', { class: 'v2-body', key: 'qheld' }, SECTION_WORDS.heldLine) : null,
@@ -2770,7 +2792,7 @@ function quietLines(bd, built, only) {
  * it. From stage G2 (AC91 (f)): the Kicked back strip under the quiet lines (or, with one project shown, above the lanes,
  * where frame 2 places them), then two lanes of equal width, "Waiting on you" and "Done · last 24 h".
  */
-function renderWaiting(bd, built, only, sheetId) {
+function renderWaiting(bd, built, only, sheetId, fresh = bd) {
   const name = only && built.some((b) => b.project.name === only) ? only : null;
   // AC89 (a): with one project shown, the line under the title is that project's own ("Checking…", "Not read in
   // this opening", or "checked <age> ago" from its own last read in this opening).
@@ -2798,7 +2820,8 @@ function renderWaiting(bd, built, only, sheetId) {
   if (name) body.push(quietLines(bd, built, name));
   body.push(h('p', { class: 'v2-small v2-device', key: 'device' }, boardState.kept ? WORDS.device : WORDS.notKept));
   const out = [h('section', { class: 'sb-screen v2 v2-board', key: 'board' }, body)];
-  if (sheetId != null) out.push(cardSheet(bd, built, name, sheetId));
+  // The sheet reads what is true now (`fresh`); its place is the board's under it, so it moves with the board (AC95).
+  if (sheetId != null) out.push(cardSheet(fresh, built, name, sheetId, null, bd.places));
   return out;
 }
 
@@ -3124,7 +3147,16 @@ function gateSheetParts(sx) {
   return parts;
 }
 
-function cardSheet(bd, built, only, sheetId, backTo = null) {
+/**
+ * AC95 (QW2): a sheet's place, "<k> of <N> waiting", which its small line adds after " · " (sheets.js's headText joins the
+ * parts so), from the board's places (boardView's `places`); null for a card with none (a held question, a mark in Done).
+ */
+function placeOfSheet(places, card) {
+  const pl = card && !card.held && places ? places.get(card.id) : null;
+  return pl ? PLACE_WORDS.line(pl.k, pl.n) : null;
+}
+
+function cardSheet(bd, built, only, sheetId, backTo = null, places = bd.places) {
   // AC89 (i): a sheet closes back to the screen it was opened from (Waiting, or Plan for a gate's sheet opened there).
   const back = backTo || boardRoute(only);
   const [cardIdRaw, stepPart] = String(sheetId).split('#');
@@ -3183,7 +3215,7 @@ function cardSheet(bd, built, only, sheetId, backTo = null) {
       h('p', { class: 'v2-acts', key: 'acts' }, h('button', { type: 'button', class: 'v2-abtn ghost', key: 'sheet-close2', onclick: () => nav.to(back) }, 'Close'))], `sheet:${sheetId}`);
   }
   sheetCards.set(String(sheetId), { id: card.id, title: card.title });
-  if (card.portfolio) return portfolioCardSheet(card, mark, back, fromTap, sheetId);
+  if (card.portfolio) return portfolioCardSheet(card, mark, back, fromTap, sheetId, placeOfSheet(places, card));
   const p = built.find((b) => b.project.name === card.project);
   const project = p.project;
   const row = (p.q0 || p.q).rows.find((x) => x.flag && x.flag.key === card.key) || (p.q0 || p.q).deploys.find((x) => x.flag && x.flag.key === card.key)
@@ -3197,8 +3229,10 @@ function cardSheet(bd, built, only, sheetId, backTo = null) {
   // only when its record gives it; the wait from its raised time, or "wait not recorded" (AC52).
   const u0 = project.model === 'v3' && ['question', 'card', 'gate', 'pr'].includes(card.kind) ? unblocksOf(p.ctx, row) : null;
   const msPart = u0 && u0.milestones && u0.milestones.length ? u0.milestones.map((m) => m.code).join(', ') : null;
+  // AC95 (QW2): the small line adds " · <k> of <N> waiting", the card's place; a held question, counted nowhere, has none.
+  const pl = placeOfSheet(places, card);
   const headMeta = () => headText([project.name, HEAD_KIND[card.kind] || card.kindWord.toLowerCase(), card.kind === 'question' ? card.name : card.meta[0] || null, msPart,
-    card.raisedAt != null ? `waiting ${boardAge(Date.now() - card.raisedAt)}` : 'wait not recorded']);
+    card.raisedAt != null ? `waiting ${boardAge(Date.now() - card.raisedAt)}` : 'wait not recorded', pl]);
   if (card.kind === 'question' || card.kind === 'gate') {
     const sx = { p, card, row, v, back, lane, pending, kicked, fromTap, headMeta, k2 };
     return sheetShell(back, card.kind === 'gate' ? gateTitle(card.flag.card) : card.title, card.kind === 'gate' ? gateSheetParts(sx) : questionSheetParts(sx), `sheet:${sheetId}`);
@@ -3298,7 +3332,7 @@ function cardSheet(bd, built, only, sheetId, backTo = null) {
  * GitHub ↗" opening the card file, no answer link (C: no portfolio answer form is read, J23), the phone
  * note, "Done ✓" (confirmed once the file has left the queue) or "Undo", and "Close".
  */
-function portfolioCardSheet(card, mark, back, fromTap, sheetId) {
+function portfolioCardSheet(card, mark, back, fromTap, sheetId, pl = null) {
   const pending = mark && mark.confirmedAt == null && !mark.kicked;
   const kicked = mark && mark.confirmedAt == null && mark.kicked ? mark.kicked : null;
   const pfProject = { name: PF_LABEL, repo: lastPf ? lastPf.repo : '', defaultBranch: lastPf ? lastPf.defaultBranch : 'main' };
@@ -3308,7 +3342,7 @@ function portfolioCardSheet(card, mark, back, fromTap, sheetId) {
     flag: { kind: 'card', key: card.key, card: { path: card.path, answerPath: null, gate: null, n: null, item: null, parsed: card.rec } } };
   const v = sheetView(pfProject, null, { tree }, null, row);
   // AC85's head: "<project> · <kind> · <its name> · <milestone> · …", its milestone from the card's own `Milestone:` line when it has one (J23).
-  const headMeta = headText(['portfolio', 'decision', card.file, cardMilestone(card.rec), 'wait not recorded']);
+  const headMeta = headText(['portfolio', 'decision', card.file, cardMilestone(card.rec), 'wait not recorded', pl]);
   const parts = [sheetHead(headMeta, card.title, back), fromTap,
     h('p', { class: 'v2-small' }, kicked ? 'Kicked back' : pending ? WORDS.confirming : card.kindWord),
     kicked ? h('p', { class: 'v2-mark' }, vi('kick'), h('span', {}, kicked.reason)) : null,
@@ -5014,12 +5048,18 @@ export function startSandbox(opts = {}) {
       }
       for (const k of [...heldDone.keys()]) if (k !== String(r.sheet)) heldDone.delete(k);
       for (const k of [...sheetCards.keys()]) if (k !== String(r.sheet)) sheetCards.delete(k);
+      // AC95 ("When the order changes"; AC40): while a card is held for a drag or a sheet is open, nothing on Waiting moves:
+      // the board is drawn as it was last drawn before the hold, and the new places when the drag ends or the sheet closes.
+      const hold = r.sheet != null || drag.card != null;
+      const shownBoard = heldView({ fresh: bd, drawn: boardState.drawn, hold, only: r.only || null });
+      if (!hold) boardState.drawn = bd;
       try {
-        node = renderWaiting(bd, built, r.only, r.sheet);
+        node = renderWaiting(shownBoard, built, r.only, r.sheet, bd);
       } catch (err) {
         node = h('section', { class: 'sb-screen' }, h('p', { class: 'sb-stale' }, `Can't show Waiting: ${errorText(err)}`));
       }
     } else if (r.name) {
+      boardState.drawn = null;
       const name = r.name;
       const b = built.find((x) => x.project.name === name);
       if (!b) node = h('section', { class: 'sb-screen' }, h('p', {}, 'No such project. ', h('a', { href: '#/' }, 'Home')));
@@ -5049,6 +5089,7 @@ export function startSandbox(opts = {}) {
         }
       }
     } else if (r.kind === 'work') {
+      boardState.drawn = null;
       try {
         node = renderWorkAhead(built, now.getTime());
         // AC89 (i): a gate card's sheet over Plan, closing back to Plan with focus on its row.
@@ -5057,7 +5098,10 @@ export function startSandbox(opts = {}) {
         node = h('section', { class: 'sb-screen v2 v2-plan' }, h('header', { class: 'v2-pltop' }, h('h1', { class: 'v2-title' }, WA.planTitle)),
           h('p', { class: 'v2-small bad' }, `Can't show Plan: ${errorText(err)}`));
       }
-    } else node = renderHome(desk, built, seen, now.getTime(), bd);
+    } else {
+      boardState.drawn = null;
+      node = renderHome(desk, built, seen, now.getTime(), bd);
+    }
     // AC81: the bar Home · Waiting · Plan, the only bar at the foot of every trial-view screen; a
     // project's screens count as Home's.
     try {

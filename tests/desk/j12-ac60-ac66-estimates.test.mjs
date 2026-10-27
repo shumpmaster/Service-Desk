@@ -111,9 +111,11 @@ test('J12 (estimates): the rebuilt real fixture holds REST\'s changed paths for 
   assert.ok(judgePulls(pullsAnswer()).pulls.every((p) => p.estimate === false));
 });
 
-test('J12 (estimates): the kept list is under desk-pulls-v3; desk-pulls-v2 (and v1) are removed on load and their entries read again from J12; the requests per J12 read are unchanged', async () => {
-  assert.equal(PULLS_KEY, 'desk-pulls-v3');
-  assert.deepEqual(OLD_PULLS_KEYS, ['desk-pulls-v1', 'desk-pulls-v2']);
+// Rewritten in VT1 of M3B (forced: J12, changed for M3B, moves the key to desk-pulls-v4, v3 among the old keys;
+// j12-value-checks.test.mjs checks v3's removal): v2 and v1 still removed on load and read again, as before.
+test('J12 (estimates): the kept list is under desk-pulls-v3 (desk-pulls-v4 from VT1); desk-pulls-v2 (and v1) are removed on load and their entries read again from J12; the requests per J12 read are unchanged', async () => {
+  assert.equal(PULLS_KEY, 'desk-pulls-v4');
+  assert.deepEqual(OLD_PULLS_KEYS, ['desk-pulls-v1', 'desk-pulls-v2', 'desk-pulls-v3']);
   // A v2 entry, as a device that loaded the desk before this deploy holds it: no estimate-only yes or no.
   const v2 = { [SD3.name]: { day: '2026-10-18', head: null, tooMany: false, pulls: judgePulls(answerOf([est(970)])).pulls.map((p) => { const q = { ...p }; delete q.estimate; return q; }) } };
   const backing = new Map([['desk-pulls-v2', JSON.stringify(v2)], ['desk-pulls-v1', '{}']]);
@@ -129,7 +131,7 @@ test('J12 (estimates): the kept list is under desk-pulls-v3; desk-pulls-v2 (and 
   await clock.runUntil(clock.now() + 3 * POLL_MS);
   desk.stop();
   assert.equal(server.calls.filter((c) => c.path === '/api/blobs' && c.body.pulls).length, 1, 'one J12 read, as before');
-  const kept = JSON.parse(backing.get('desk-pulls-v3'))[SD3.name].pulls;
+  const kept = JSON.parse(backing.get(PULLS_KEY))[SD3.name].pulls;
   assert.ok(kept.every((p) => typeof p.estimate === 'boolean'), 'every entry read again, with its yes or no');
   assert.deepEqual(kept.filter((p) => p.estimate).map((p) => p.number), [970]);
 });

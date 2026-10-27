@@ -69,7 +69,10 @@ test('J12 (estimates): one changed path, intake/estimates.jsonl, gives yes; two 
   for (const p of v.pulls) {
     assert.doesNotMatch(JSON.stringify(p), /intake\/estimates\.jsonl|later-work\.md|changedFiles|"files"/, `#${p.number}: no paths kept`);
   }
-  assert.deepEqual(Object.keys(keptPull(est(970), null)).sort(), ['checks', 'createdAt', 'estimate', 'estimateLine', 'head', 'job', 'mergeCommit', 'mergedAt', 'number', 'parts', 'state', 'title']);
+  // Rewritten in VT1 of M3B (forced: J12, changed for M3B, adds `valueCheck` and `valueCheckLine` to the kept entry).
+  assert.deepEqual(Object.keys(keptPull(est(970), null)).sort(), ['checks', 'createdAt', 'estimate', 'estimateLine', 'head', 'job', 'mergeCommit', 'mergedAt', 'number', 'parts', 'state', 'title',
+    'valueCheck', 'valueCheckLine']);
+  assert.equal(keptPull(est(970), null).valueCheck, false, 'an estimate is no value check');
 });
 
 test('J12 (estimates): `files` null, missing, and a field error whose path ends in `files` or `changedFiles`, each give "not estimate-only" for every pull request, the rest of the answer used', () => {

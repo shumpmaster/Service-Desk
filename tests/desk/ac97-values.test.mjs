@@ -502,6 +502,10 @@ test('AC97: the left icon, one rule — red with any red mark; green only in sta
   const nm = sd({ now: '2026-12-24', lines: notMeasured });
   assert.deepEqual([nm.row.words, nm.row.icon], ['5 targets · first 14 days checked · 3 met · 2 not measured', 'half']);
   assert.equal(sd({ now: '2026-12-10', state: 'failed' }).row.icon, null);
+  // Every latest line met but the window's end not yet covered: state 7, not final, so never the green check.
+  const notFinal = ['V1', 'V2', 'V3', 'V5'].map((id) => vc({ target: id, from: '2026-12-03', to: '2026-12-13', value: 0, state: 'met', at: chi('2026-12-14', '09:00') }));
+  const seven = sd({ now: '2026-12-18', lines: [...notFinal, vc({ target: 'V4', from: '2026-12-02', to: '2026-12-02', state: 'met' })] });
+  assert.deepEqual([seven.row.state, seven.row.icon], [7, 'half']);
 });
 
 test('AC97: no date of the desk\'s own before launch — the row, every target\'s words and lines, and the sheet\'s; record text quoted as written', () => {

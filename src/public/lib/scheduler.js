@@ -26,10 +26,10 @@ const MAX_BLOB_CALLS_PER_CYCLE = 6;
 // an answer's `Reason:` and the review verdict files, AC57 to AC61 and AC70; v6, model 3.5.0's records,
 // 2026-10-17: a milestone's ` · reached:` part, an answer record's `Milestone:` line and the Chief of
 // Staff's session files, J2, J6, J11 and J13; v7, stage 4 of mockup v2, 2026-10-22: a gate case's
-// proposer's recommendation, AC85), and list the old keys here so their entries are dropped, not
-// left to fill storage.
-export const BLOB_CACHE_KEY = 'desk-blobs-v7';
-export const OLD_BLOB_CACHE_KEYS = ['desk-blobs-v1', 'desk-blobs-v2', 'desk-blobs-v3', 'desk-blobs-v4', 'desk-blobs-v5', 'desk-blobs-v6'];
+// proposer's recommendation, AC85; v8, stage VT1 of M3B, 2026-10-27: section 6's miss and stop rule quoted from
+// docs/PROJECT.md, AC97), and list the old keys here so their entries are dropped, not left to fill storage.
+export const BLOB_CACHE_KEY = 'desk-blobs-v8';
+export const OLD_BLOB_CACHE_KEYS = ['desk-blobs-v1', 'desk-blobs-v2', 'desk-blobs-v3', 'desk-blobs-v4', 'desk-blobs-v5', 'desk-blobs-v6', 'desk-blobs-v7'];
 const HISTORY_CACHE_KEY = 'desk-history-v1';
 // AC77 (2026-10-18; draft 7): what this device keeps of questions asked in a session, per project:
 // `recorded`, each question whose answer's pull request it saw recording, with that pull request's
@@ -157,6 +157,10 @@ function newProjectState(project) {
     // and time (asked again at most once in FILES_RETRY_MS, only in a call made anyway); each pull
     // request's first head this opening (a head change while open is due); and the counts.
     j24: { commits: new Map(), tried: new Map(), firstHead: new Map(), rode: new Map(), reads: 0, calls: 0, alone: 0 },
+    // J25 (VT1, AC97), in memory for this opening: the blob shas whose read was asked in a call that failed, so an
+    // optional record's read can be told failed ("not available") from not made yet ("not read yet"); a later call
+    // that answers one takes it off.
+    blobFailed: new Set(),
   };
 }
 
@@ -963,6 +967,12 @@ export function createDesk(opts) {
     for (const c of st.closed.pulls) if (!heads.has(c.number)) heads.set(c.number, c.headSha);
     const res = await call('/api/blobs', body);
     const r0 = res.ok ? res.json : null;
+    // J25 (VT1): a blob asked for and not answered (a call that failed, a state other than ok, as a blob the function
+    // could not read gives, or a null answer, as J14's failed read has it) is marked; a blob answered takes its mark off.
+    for (const sha of batch.blobs) {
+      if (r0 && r0.state === 'ok' && r0.blobs && r0.blobs[sha] != null) st.blobFailed.delete(sha);
+      else st.blobFailed.add(sha);
+    }
     let extras = false;
     // J20: each answer kept by the head sha it was asked at; a failed one tried again later.
     for (const n of batch.files || []) {
@@ -1593,6 +1603,8 @@ export function createDesk(opts) {
     const j = st.j12;
     return { tree: st.tree, records: recordsFor(st), history: historyFor(st), head: st.head, headAt: st.headAt,
       pullPages: st.pullRaws || [], checkPages: st.checksRead ? st.checkRaws : null, lastSuccessAt: st.lastSuccessAt,
+      // J25 (VT1): whether a blob's last read failed (`blobFailed(sha)`), for an optional record's "not available".
+      blobFailed: (sha) => st.blobFailed.has(sha),
       // J12: the pull requests kept (null until a read has answered on this device), and how the reads stand.
       // current: the kept list is today's read at this head, with no failure since and no cold read under way (AC72).
       pulls: { list: j.pulls, failure: j.failure, rate: j.rate === true, tooMany: j.tooMany, fieldError: j.fieldError, reading: Boolean(j.cold),

@@ -474,14 +474,14 @@ function countTarget(t, goal, { phase, days, today, known, unknownWord, check, t
     const dates = rangeWords(worst.from, worst.to);
     const one = valued.length === 1;
     if (goal.minutes) t.figure = { big: `${worst.value} min`, words: one ? `your estimate, ${dates}` : `a week at most, your estimate (${dates})` };
-    // "1" "false alarm, …" when the one week's figure is 1 (draft 11; VT1's design review, round 1, N2).
-    else t.figure = { big: String(worst.value), words: one ? `false alarm${worst.value === 1 ? '' : 's'}, ${dates}` : `false alarms in a week, the most (${dates})` };
+    // "1" "false alarm, …" and "1" "false alarm in a week, the most (…)" when the figure is 1 (draft 11).
+    else t.figure = { big: String(worst.value), words: one ? `false alarm${worst.value === 1 ? '' : 's'}, ${dates}` : `false alarm${worst.value === 1 ? '' : 's'} in a week, the most (${dates})` };
     t.chart = chartOf(goal, valued.map((x) => bar(rangeWords(x.from, x.to), x.value, goal, x.value <= goal.max ? 'ok' : 'bad')));
   }
-  // After the window, the final check (its `to` on or after WN) saying `not measured` sets the planned ring over the desk's
-  // figure (P-001-m3b-not-measured-mark.md, B); in the window, and after it for an earlier week's line, the desk's verdict
-  // stays the mark, the check line saying "not measured" (draft 10's rule).
-  if (after && finalNotMeasured(check, days)) return notMeasured(t, check, goalLine, tz);
+  // The final check (its `to` on or after WN) saying `not measured` sets the planned ring over the desk's figure
+  // (P-001-m3b-not-measured-mark.md, B), after the window and on WN itself (draft 11, round 12); an earlier week's line, in the
+  // window or after it while the final check is not in, keeps the desk's verdict the mark, the check line "not measured".
+  if (finalNotMeasured(check, days)) return notMeasured(t, check, goalLine, tz);
   const words = verdictWords(within, phase);
   t.mark = within ? 'check' : 'cross';
   t.verdict = { mark: t.mark, first: words, second: `goal: ${goal.words}` };
@@ -570,8 +570,8 @@ function v5Target(t, goal, { phase, days, known, check, v5, tz, all, earlierOf }
   if (weekly) bars.push(['Weekly check', weekly.value * 60000]);
   t.figure = { big: hm(ms), words: figWords };
   t.chart = chartOf(goal, bars.map(([label, m]) => bar(label, Math.floor(m / 60000), goal, fill(m))));
-  // After the window, the final V5 check saying `not measured` sets the planned ring over the desk's figure (P-001-m3b-not-measured-mark.md, B).
-  if (after && known && finalNotMeasured(check, days)) return notMeasured(t, check, `Goal: ${goal.words}`, tz);
+  // The final V5 check saying `not measured` sets the planned ring over the desk's figure (P-001-m3b-not-measured-mark.md, B).
+  if (known && finalNotMeasured(check, days)) return notMeasured(t, check, `Goal: ${goal.words}`, tz);
   const words = verdictWords(within, phase);
   t.mark = within ? 'check' : 'cross';
   t.verdict = { mark: t.mark, first: words, second: goalWords };

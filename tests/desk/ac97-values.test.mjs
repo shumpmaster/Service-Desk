@@ -650,3 +650,30 @@ test('AC97 (VT1 round 2; draft 11, C): the same days twice — a later line with
   assert.deepEqual([fig(gone), gone.chart.bars.map((b) => [b.label, b.value]), verdict(gone)],
     [['2h 20m', "median, your Chief of Staff's check, 3 – 16 Dec"], [['Weekly check', '2h 20m']], 'Within target · goal: under 4h']);
 });
+
+test('AC97 (draft 11, round 12): a final check landing on WN itself (its `to` WN) takes the final-check rule in the window\'s column too — the planned ring over the desk\'s figure, grey bars, "Not measured · your Chief of Staff\'s check, <date>"; a line ending the day before keeps the desk\'s verdict', () => {
+  const at = chi('2026-12-16', '20:00');
+  const now = chi('2026-12-16', '21:00');
+  const lines = (to) => [vc({ target: 'V3', from: '2026-12-03', to: '2026-12-06', value: 20 }), vc({ target: 'V3', from: '2026-12-07', to, value: null, state: 'not measured', at }),
+    vc({ target: 'V5', from: '2026-12-03', to, value: null, state: 'not measured', at })];
+  const onWN = sd({ now, lines: lines('2026-12-16') });
+  assert.equal(onWN.phase, 'window');
+  for (const id of ['V3', 'V5']) {
+    const t = T(onWN, id);
+    assert.deepEqual([t.mark, verdict(t), t.lines, t.chart.bars.every((b) => b.fill === 'grey')], ['planned', "Not measured · your Chief of Staff's check, 16 Dec", [`Goal: ${GOALS[id].words}`], true], id);
+  }
+  const before = sd({ now, lines: lines('2026-12-15') });
+  assert.deepEqual([T(before, 'V3').mark, T(before, 'V3').verdict.first, T(before, 'V3').lines], ['check', 'Within target so far', ["Your Chief of Staff's check, 16 Dec: not measured"]]);
+  assert.equal(T(before, 'V5').mark, 'check');
+});
+
+test('AC97 (draft 11): "1" "false alarm in a week, the most (…)" singular when the worst of two or more weeks is 1; an earlier week\'s `not measured` with no figure after the window, the final check not in (state 7), the planned ring and the "Not measured" line', () => {
+  const two = sd({ now: '2026-12-15', lines: [vc({ target: 'V2', from: '2026-12-03', to: '2026-12-06', value: 1 }), vc({ target: 'V2', from: '2026-12-07', to: '2026-12-13', value: 0 })] });
+  assert.deepEqual(fig(T(two, 'V2')), ['1', 'false alarm in a week, the most (3 – 6 Dec)']);
+  const three = sd({ now: '2026-12-15', lines: [vc({ target: 'V2', from: '2026-12-03', to: '2026-12-06', value: 2 }), vc({ target: 'V2', from: '2026-12-07', to: '2026-12-13', value: 0 })] });
+  assert.deepEqual(fig(T(three, 'V2')), ['2', 'false alarms in a week, the most (3 – 6 Dec)']);
+  const v = sd({ now: '2026-12-18', lines: [...DAY5.filter((l) => !/"target":"V3"/.test(l)), vc({ target: 'V3', from: '2026-12-07', to: '2026-12-13', value: null, state: 'not measured' })] });
+  assert.equal(v.row.state, 7);
+  assert.deepEqual([T(v, 'V3').mark, verdict(T(v, 'V3')), T(v, 'V3').figure], ['planned', "Not measured · your Chief of Staff's check, 14 Dec", null]);
+  assert.match(v.row.words, /· 1 not measured yet ·/);
+});

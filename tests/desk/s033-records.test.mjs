@@ -335,8 +335,9 @@ test('AC53 (S-033) + AC80, on the page: a question in S-033\'s form gives each a
 test('J6 (S-033): the key is not desk-blobs-v5, which is among the old keys; a parse stored under it is dropped and its blob read and parsed again', async () => {
   // v7 from stage 4 (a gate case's parse gains its proposer's recommendation for AC85's "Recommended",
   // specs/S-001.md:7008; the cache key names the parse's shape, src/lib/scheduler.js:22-28); v5
-  // stays among the old keys, as this case checks.
-  assert.equal(BLOB_CACHE_KEY, 'desk-blobs-v7');
+  // stays among the old keys, as this case checks. Rewritten in VT1 of M3B (forced: the key moved to v8, docs/PROJECT.md's
+  // parse gaining section 6's quoted miss and stop rule, AC97); the case's own check is unchanged.
+  assert.equal(BLOB_CACHE_KEY, 'desk-blobs-v8');
   assert.notEqual(BLOB_CACHE_KEY, 'desk-blobs-v5');
   assert.ok(OLD_BLOB_CACHE_KEYS.includes('desk-blobs-v5'));
   const doc = readFileSync(join(FIX, 'j11-reached', 'docs', 'PROJECT.md'), 'utf8');

@@ -707,8 +707,11 @@ test('AC85 + AC12 (round 1, B1): a DEFAULT naming no letter is no default — th
   assert.equal(defaultLabel({ reversibility: 'reversible', default: 'C — the board only', timeout: '24' }, new Date(raised), (d) => d.toISOString()), 'per the question file: defaults to C at 2026-10-20T18:37:00.000Z');
 });
 
-test('AC85 (round 1, N2): the blob cache key is v7, and v6 is among the old keys, so a parse stored under it is dropped from storage', async () => {
-  assert.equal(BLOB_CACHE_KEY, 'desk-blobs-v7');
+// Rewritten in VT1 of M3B (forced: it failed once the key moved to desk-blobs-v8 for docs/PROJECT.md's parse gaining
+// section 6's quoted miss and stop rule, AC97): the key is past v6 and v6 still among the old keys, so the case's own
+// check, a v6 parse dropped from storage and the case parsed afresh, is unchanged.
+test('AC85 (round 1, N2): the blob cache key is past v6 (v8 from VT1, AC97), and v6 is among the old keys, so a parse stored under it is dropped from storage', async () => {
+  assert.equal(BLOB_CACHE_KEY, 'desk-blobs-v8');
   assert.ok(OLD_BLOB_CACHE_KEYS.includes('desk-blobs-v6'));
   const backing = new Map([['desk-blobs-v6', JSON.stringify({ 'gate-case:0000': { opening: 'an old parse, with no recommendation' } })]]);
   const storage = { getItem: (k) => (backing.has(k) ? backing.get(k) : null), setItem: (k, v) => backing.set(k, v), removeItem: (k) => backing.delete(k) };

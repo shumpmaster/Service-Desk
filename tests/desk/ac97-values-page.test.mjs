@@ -72,7 +72,9 @@ test('AC97: Service-Desk\'s "Value targets V1 to V5" row — five marks under it
   }
 });
 
-test('AC97: the sheet — "From the project document, section 6 · weekly checks by your Chief of Staff"; each target\'s block in order (its id in Plex Mono and its short name, the figure, the chart, the verdict, the check\'s line, "The whole target ›", "<k> earlier checks ›"); the quote whole when opened; the opened states kept through a refresh; Escape closes it (AC56)', async () => {
+// Rewritten in VT1's round 2 (forced: draft 11 puts "<k> earlier checks ›" before "The whole target ›", as the approved image,
+// round 2's frame 4, draws them).
+test('AC97: the sheet — "From the project document, section 6 · weekly checks by your Chief of Staff"; each target\'s block in order (its id in Plex Mono and its short name, the figure, the chart, the verdict, the check\'s line, "<k> earlier checks ›", "The whole target ›"); the quote whole when opened; the opened states kept through a refresh; Escape closes it (AC56)', async () => {
   const app = await open(vt1State({ lines: FINAL, cards: windowCards() }), chi('2026-12-24', '15:00'), '#/p/Service-Desk/values');
   try {
     const sh = sheet(app);
@@ -88,15 +90,15 @@ test('AC97: the sheet — "From the project document, section 6 · weekly checks
     assert.equal(byClass(v2, 'v2-vverd')[0].textContent, 'Missed · goal: at most 1 a week');
     assert.equal(findAll(byClass(v2, 'v2-vverd')[0], (e) => e.tag === 'b')[0].textContent, 'Missed');
     assert.equal(v2.children[4].textContent, "Your Chief of Staff's check, 21 Dec: missed");
-    assert.deepEqual([v2.children[5].textContent, v2.children[6].textContent], ['The whole target', '2 earlier checks']);
+    assert.deepEqual([v2.children[5].textContent, v2.children[6].textContent], ['2 earlier checks', 'The whole target']);
     // The figure in --t-title, its words in --t-small.
     const n = cascaded(app);
     const big = n.find((x) => x.el === byClass(v2, 'v2-vbig')[0]);
     assert.equal(plain(big.declared.get('font')), '600 24px/1.2 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif');
     assert.equal(plain(n.find((x) => x.el === byClass(v2, 'v2-vfw')[0]).declared.get('font')), '400 12px/1.4 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif');
     // Opened: the line quoted whole; the earlier checks listed, newest first.
+    await app.tap(v2.children[6]);
     await app.tap(v2.children[5]);
-    await app.tap(block(app, 'V2').children[block(app, 'V2').children.length - 1]);
     const opened = block(app, 'V2');
     assert.equal(byClass(opened, 'v2-quote')[0].textContent, J7B_LINES[1], 'word for word');
     assert.deepEqual(findAll(byClass(opened, 'v2-vearly')[0], (e) => e.tag === 'li').map((x) => x.textContent),

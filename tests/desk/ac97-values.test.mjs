@@ -677,3 +677,14 @@ test('AC97 (draft 11): "1" "false alarm in a week, the most (…)" singular when
   assert.deepEqual([T(v, 'V3').mark, verdict(T(v, 'V3')), T(v, 'V3').figure], ['planned', "Not measured · your Chief of Staff's check, 14 Dec", null]);
   assert.match(v.row.words, /· 1 not measured yet ·/);
 });
+
+test('AC97 (VT1 round 3, the Reviewer\'s N1): V5 with its log gone, its latest line the final check saying `not measured` — the planned ring and "Not measured · your Chief of Staff\'s check, <date>", never the dashed "?"', () => {
+  const t = T(sd({ now: '2027-02-10', lines: [vc({ target: 'V5', from: '2026-12-03', to: '2026-12-16', value: null, state: 'not measured', at: chi('2026-12-21', '09:00') })] }), 'V5');
+  assert.deepEqual([t.mark, t.verdict.mark, verdict(t), t.lines, t.figure, t.chart], ['planned', 'planned', "Not measured · your Chief of Staff's check, 21 Dec", ['Goal: under 4h'], null, null]);
+  assert.notEqual(t.mark, 'unrec');
+});
+
+test('AC97 (VT1 round 3, the Reviewer\'s N2): another project\'s green check needs every target to have a line — "3 targets · 2 met · 1 not recorded yet" takes the half circle, never ✓', () => {
+  const v = alpha({ lines: ['V1', 'V2'].map((id) => A(id, { from: '2026-11-30', to: '2026-12-06', value: null, figure: 'as aimed', state: 'met' })) });
+  assert.deepEqual([v.row.words, v.row.icon], ['3 targets · 2 met · 1 not recorded yet', 'half']);
+});

@@ -38,6 +38,7 @@ import { gatesState, deviceMarks, GATE4, GATE_KEY, MIX_PROJECT, textState, SD, G
 import { QW1_OPENS } from './qw1-fixtures.mjs';
 import { QW2_OPENS } from './qw2-fixtures.mjs';
 import { QW3_OPENS } from './qw3-fixtures.mjs';
+import { VT1_OPENS } from './vt1-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -554,6 +555,10 @@ function okBadPlace(n) {
     if (p && p.cls.has('v2-c')) return 'mark: a reached check on a Home tile\'s drawing';
     if (p && p.tag === 'li' && up((a) => a.cls.has('v2-plmini'))) return 'mark: a check in Plan\'s Reached list';
     if (p && p.cls.has('v2-prow') && p.attrs['data-k'] === 'page-ci') return 'mark: a passing CI row\'s check';
+    // VT1 (AC97, the owner's approval of round 2's picture and "The desk, live (Recommended)", P-001-m3b-good-bad.md, A): a
+    // value target's ✓ on the row's marks, its left icon, the sheet's verdict and V4's steps.
+    if (p && (p.cls.has('v2-vmk') || p.cls.has('v2-vverd') || (p.tag === 'li' && p.parent && p.parent.cls.has('v2-vsteps'))
+      || (p.cls.has('v2-prow') && p.attrs['data-k'] === 'rest:values'))) return 'mark: a value target\'s ✓';
     return null;
   }
   if (n.tag === 'span' && n.cls.has('v2-okm') && up((a) => a.cls.has('v2-stats'))) return 'mark: a sprint\'s ✓';
@@ -564,8 +569,12 @@ function okBadPlace(n) {
     if (p && (p.cls.has('v2-msi') || p.cls.has('v2-sm') || p.cls.has('v2-c') || p.cls.has('v2-pn'))) return 'mark: a not-reached cross';
     if (p && p.tag === 'li' && up((a) => a.cls.has('v2-keyl'))) return 'mark: the Timeline key\'s cross';
     if (p && p.cls.has('v2-prow') && p.attrs['data-k'] === 'page-ci') return 'mark: a failing CI row\'s cross';
+    if (p && (p.cls.has('v2-vmk') || p.cls.has('v2-vverd') || (p.cls.has('v2-prow') && p.attrs['data-k'] === 'rest:values'))) return 'mark: a value target\'s ✕';
     return null;
   }
+  // VT1 (AC97, "Green and red on the chart's fills": the owner's approval of round 2's picture, which draws each bar filled
+  // green or red, covering these charts only): a value target's bar's fill, beside its value in words.
+  if (n.tag === 'rect' && n.cls.has('fl') && (n.cls.has('ok') || n.cls.has('bad')) && p && p.tag === 'svg' && p.cls.has('v2-vsvg')) return 'fill: a value target\'s bar';
   if (svg && n.cls.has('v2-smk') && up((a) => a.cls.has('v2-stats'))) return 'mark: a sprint\'s ✕';
   if (svg && n.cls.has('v2-cim') && n.cls.has('bad')) return 'mark: a failing CI line\'s ✕';
   if (svg && n.cls.has('v2-k') && p && p.cls.has('v2-safe-l') && p.parent && p.parent.cls.has('v2-safe') && p.parent.cls.has('bad')) return 'mark: a deploy\'s mismatch';
@@ -1664,6 +1673,126 @@ const QW3_EXCEPT = (n, d, theme) => {
   return Boolean(k && (QW3_ONCE.get(theme).get(k) || []).includes(d)) ? `QW3 ${theme} ${k} ${d}` : null;
 };
 const QW3_FLAT = [...QW3_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `QW3 ${theme} ${k} ${d}`))).sort();
+/**
+ * VT1 of M3B's changes to an element's look on purpose (AC97; the stage's row: "`VT1_ONCE`"; the approved picture, round 2,
+ * docs/design/builds/m3b-picture/round-2/), each declaration before and after, in each theme, on only its own element. Every
+ * element is new in VT1, so bd4097d's stylesheet gives it only what it gave any such element; the one element VT1 changes that
+ * was drawn before is the stop rule's clipped quote, the fix AC97 names (sandbox.css's `.v2-sheet .v2-quote`, 2 px over and
+ * under, outweighed the clip's padding, so a quote of exactly three lines was cut):
+ * - the row (`a.v2-prow` keyed `rest:values`): under its title the five marks (`span.v2-vmarks`, a wrapping flex row), each
+ *   mark (`span.v2-vmk`) its icon at 14 px (a ✓ in --ok and a ✕ in --bad, AC92 (a)'s status mark, the rest ink or grey) and
+ *   its id in Plex Mono (`.v2-mono`, as built); its left icon a ✕ in --bad or a ✓ in --ok where AC97's rule gives one;
+ * - the sheet's blocks (`section.v2-tgt`, and `section.v2-vstop` for the rule), each a grid under a 1 px --line hairline: the
+ *   head (`h3.v2-vth`, --t-row --ink) and its short name (`span`, so computed); the figure (`p.v2-vfig`, a wrapping flex row; its
+ *   number `span.v2-vbig`, --t-title --ink, and its words `span.v2-vfw`, --t-small --ink2); the chart (`div.v2-vchart`, one grid,
+ *   its rows `div.v2-vrow` `display: contents`), each bar's label (`span.v2-vbl`, --t-label at 400 --ink2), its value
+ *   (`span.v2-vbv`, --t-mono --ink), the goal's label over the tick (`span.v2-vgt`, `span.v2-vgl` placed by its class), and the
+ *   bar itself (`svg.v2-vsvg`; its `rect.tr` --line, `rect.fl` --ok, --bad or --ink3, `rect.gl` --ink); V4's steps
+ *   (`ol.v2-vsteps`, each `li` a grid with its mark, a 1 px --line connector before each after the first); the verdict
+ *   (`p.v2-vverd`, a grid, --t-small --ink, its first part `b` at 600, its mark a ✓ in --ok or ✕ in --bad); the lines under it
+ *   (`p.v2-vline`, --t-small --ink2, 24 px in) and the earlier checks (`ul.v2-vearly`); and the rule's quote (`p.v2-clip.v2-quote`
+ *   in `section.v2-vstop`), its padding the clip's own.
+ * The walk reaches them on VT1's own screens (tests/desk/vt1-fixtures.mjs's VT1_OPENS, below) and, the row and the sheet
+ * before launch on another project's form, on every fixture above.
+ */
+const VT1_FONT = (f) => `${f} "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+const VT1_SMALL = ['computed font-size: 13px → 12px', 'computed line-height: 18.849999999999998px → 16.799999999999997px'];
+const VT1_LABEL = (t) => [`font: (none) → ${VT1_FONT('500 11px/1.35')}`, 'font-weight: (none) → 400', `color: (none) → ${t.ink2}`, `computed color: ${t.ink} → ${t.ink2}`,
+  'computed font-size: 13px → 11px', 'computed line-height: 18.849999999999998px → 14.850000000000001px'];
+const VT1_BLOCK = (t) => ['display: (none) → grid', 'gap: (none) → 6px', 'min-width: (none) → 0', 'padding-top: (none) → 12px', `border-top: (none) → 1px solid ${t.line}`];
+const VT1_LOOK = (t) => new Map([
+  // The row.
+  ['span.v2-vmarks (the row\'s marks)', ['display: (none) → flex', 'flex-wrap: (none) → wrap', 'align-items: (none) → center', 'gap: (none) → 2px 12px']],
+  ['span.v2-vmk (a mark)', ['display: (none) → inline-flex', 'align-items: (none) → center', 'gap: (none) → 3px']],
+  ['svg.v2-s (a mark\'s icon, 14 px)', ['width: 16px → 14px', 'height: 16px → 14px', `color: ${t.ink} → ${t.ok}`, `color: ${t.ink} → ${t.bad}`]],
+  ['svg.v2-s (the row\'s left icon, a ✕)', [`color: ${t.ink} → ${t.bad}`]],
+  // The sheet's blocks.
+  ['section.v2-tgt (a target)', VT1_BLOCK(t)],
+  ['section.v2-vstop (the miss and stop rule)', VT1_BLOCK(t)],
+  ['h3.v2-vth (a target\'s id and short name)', [`font: (none) → ${VT1_FONT('500 13px/1.35')}`, `color: (none) → ${t.ink}`]],
+  ['span (a target\'s short name)', ['computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 17.55px']],
+  ['p.v2-vfig (a figure and its words)', ['display: (none) → flex', 'flex-wrap: (none) → wrap', 'align-items: (none) → baseline', 'gap: (none) → 2px 8px']],
+  ['span.v2-vbig (a figure)', [`font: (none) → ${VT1_FONT('600 24px/1.2')}`, `color: (none) → ${t.ink}`, 'overflow-wrap: (none) → anywhere', 'computed font-size: 13px → 24px',
+    'computed font-weight: 400 → 600', 'computed line-height: 18.849999999999998px → 28.799999999999997px']],
+  ['span.v2-vfw (a figure\'s words)', [`font: (none) → ${VT1_FONT('400 12px/1.4')}`, `color: (none) → ${t.ink2}`, `computed color: ${t.ink} → ${t.ink2}`, ...VT1_SMALL]],
+  // The chart.
+  ['div.v2-vchart (a chart)', ['display: (none) → grid', 'grid-template-columns: (none) → auto minmax(0, 1fr) auto', 'align-items: (none) → center', 'gap: (none) → 5px 8px']],
+  ['div.v2-vrow (a chart\'s row)', ['display: (none) → contents']],
+  ['span.v2-vbl (a bar\'s label)', [...VT1_LABEL(t), 'overflow-wrap: (none) → anywhere']],
+  ['span.v2-vbv (a bar\'s value)', ['font: (none) → 400 11px/1.4 "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace', `color: (none) → ${t.ink}`, 'text-align: (none) → right',
+    'computed font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif → "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace',
+    'computed font-size: 13px → 11px', 'computed line-height: 18.849999999999998px → 15.399999999999999px']],
+  ['span.v2-vgt (the goal\'s place)', ['position: (none) → relative', 'height: (none) → 14px']],
+  ['span.v2-vgl (the goal\'s label, at its tick)', [...VT1_LABEL(t), 'position: (none) → absolute', 'bottom: (none) → 0', 'left: (none) → 0', 'left: (none) → 33.333%', 'left: (none) → 50%',
+    'transform: (none) → none', 'transform: (none) → translateX(-50%)']],
+  ['svg.v2-vsvg (a bar)', ['display: (none) → block', 'width: (none) → 100%', 'height: (none) → 18px', 'overflow: (none) → visible']],
+  ['rect.tr (a bar\'s track)', [`fill: (none) → ${t.line}`]],
+  ['rect.fl (a bar\'s fill)', [`fill: (none) → ${t.ok}`, `fill: (none) → ${t.bad}`, `fill: (none) → ${t.ink3}`]],
+  ['rect.gl (the goal\'s line)', [`fill: (none) → ${t.ink}`]],
+  // V4's steps.
+  ['ol.v2-vsteps (V4\'s steps)', ['display: (none) → grid']],
+  ['li (a step)', ['position: (none) → relative', 'display: (none) → grid', 'grid-template-columns: (none) → 16px minmax(0, 1fr)', 'gap: (none) → 8px', 'align-items: (none) → start',
+    'padding: (none) → 3px 0', `font: (none) → ${VT1_FONT('400 12px/1.4')}`, `color: (none) → ${t.ink}`, '::before content: (none) → ""', '::before position: (none) → absolute',
+    '::before left: (none) → 7.5px', '::before top: (none) → -8px', '::before width: (none) → 1px', '::before height: (none) → 10px', `::before background: (none) → ${t.line}`]],
+  ['span (a step\'s words)', VT1_SMALL],
+  ['svg.v2-s (a step\'s ✓)', [`color: ${t.ink} → ${t.ok}`]],
+  // The verdict and the lines under it.
+  ['p.v2-vverd (a verdict)', ['display: (none) → grid', 'grid-template-columns: (none) → 16px minmax(0, 1fr)', 'gap: (none) → 8px', 'align-items: (none) → start',
+    `font: (none) → ${VT1_FONT('400 12px/1.4')}`, `color: (none) → ${t.ink}`]],
+  ['svg.v2-s (a verdict\'s ✓ or ✕)', [`color: ${t.ink} → ${t.ok}`, `color: ${t.ink} → ${t.bad}`]],
+  ['span (a verdict\'s words)', VT1_SMALL],
+  ['b (a verdict\'s first part)', VT1_SMALL],
+  ['p.v2-vline (a line under a verdict)', [`font: (none) → ${VT1_FONT('400 12px/1.4')}`, `color: (none) → ${t.ink2}`, 'padding-left: (none) → 24px', `computed color: ${t.ink} → ${t.ink2}`, ...VT1_SMALL]],
+  ['ul.v2-vearly (the earlier checks)', ['display: (none) → grid', 'gap: (none) → 4px', `font: (none) → ${VT1_FONT('400 12px/1.4')}`, `color: (none) → ${t.ink2}`, 'padding-left: (none) → 24px',
+    'overflow-wrap: (none) → anywhere']],
+  ['li (an earlier check)', [`computed color: ${t.ink} → ${t.ink2}`, ...VT1_SMALL]],
+  // The rule's quote: AC97's follow-up, its clip exact.
+  ['p.v2-clip.v2-quote (the rule\'s quote)', ['padding: 2px 0 2px 10px → 0 0 0 10px']],
+]);
+const VT1_ONCE = new Map([['light', VT1_LOOK({ ink: '#18191c', ink2: '#5c5f66', line: '#e7e7ea', ok: '#12733a', bad: '#b3162a', ink3: '#6a6d75' })],
+  ['dark', VT1_LOOK({ ink: '#ecedef', ink2: '#a2a5ac', line: '#26282c', ok: '#4cc06a', bad: '#ff6b78', ink3: '#9a9da5' })]]);
+const VT1_KEY = (n) => {
+  const p = n.parent;
+  const is = (x, tag, cls) => Boolean(x && x.tag === tag && (!cls || x.cls.has(cls)));
+  const tgt = (x) => is(x, 'section', 'v2-tgt');
+  if (is(n, 'span', 'v2-vmarks') && p && p.cls.has('v2-prt')) return 'span.v2-vmarks (the row\'s marks)';
+  if (is(n, 'span', 'v2-vmk') && is(p, 'span', 'v2-vmarks')) return 'span.v2-vmk (a mark)';
+  if (is(n, 'svg', 'v2-s') && is(p, 'span', 'v2-vmk')) return 'svg.v2-s (a mark\'s icon, 14 px)';
+  if (is(n, 'svg', 'v2-s') && n.cls.has('st-cross') && is(p, 'a', 'v2-prow') && p.attrs['data-k'] === 'rest:values') return 'svg.v2-s (the row\'s left icon, a ✕)';
+  if (tgt(n) && p && p.cls.has('v2-sheet')) return 'section.v2-tgt (a target)';
+  if (is(n, 'section', 'v2-vstop') && p && p.cls.has('v2-sheet')) return 'section.v2-vstop (the miss and stop rule)';
+  if (is(n, 'h3', 'v2-vth') && tgt(p)) return 'h3.v2-vth (a target\'s id and short name)';
+  if (is(n, 'span') && n.cls.size === 0 && is(p, 'h3', 'v2-vth')) return 'span (a target\'s short name)';
+  if (is(n, 'p', 'v2-vfig') && tgt(p)) return 'p.v2-vfig (a figure and its words)';
+  if (is(n, 'span', 'v2-vbig') && is(p, 'p', 'v2-vfig')) return 'span.v2-vbig (a figure)';
+  if (is(n, 'span', 'v2-vfw') && is(p, 'p', 'v2-vfig')) return 'span.v2-vfw (a figure\'s words)';
+  if (is(n, 'div', 'v2-vchart') && tgt(p)) return 'div.v2-vchart (a chart)';
+  if (is(n, 'div', 'v2-vrow') && is(p, 'div', 'v2-vchart')) return 'div.v2-vrow (a chart\'s row)';
+  if (is(n, 'span', 'v2-vbl') && is(p, 'div', 'v2-vrow')) return 'span.v2-vbl (a bar\'s label)';
+  if (is(n, 'span', 'v2-vbv') && is(p, 'div', 'v2-vrow')) return 'span.v2-vbv (a bar\'s value)';
+  if (is(n, 'span', 'v2-vgt') && is(p, 'div', 'v2-vrow')) return 'span.v2-vgt (the goal\'s place)';
+  if (is(n, 'span', 'v2-vgl') && is(p, 'span', 'v2-vgt')) return 'span.v2-vgl (the goal\'s label, at its tick)';
+  if (is(n, 'svg', 'v2-vsvg') && is(p, 'div', 'v2-vrow')) return 'svg.v2-vsvg (a bar)';
+  if (is(n, 'rect') && is(p, 'svg', 'v2-vsvg')) return n.cls.has('tr') ? 'rect.tr (a bar\'s track)' : n.cls.has('fl') ? 'rect.fl (a bar\'s fill)' : n.cls.has('gl') ? 'rect.gl (the goal\'s line)' : null;
+  if (is(n, 'ol', 'v2-vsteps') && tgt(p)) return 'ol.v2-vsteps (V4\'s steps)';
+  if (is(n, 'li') && is(p, 'ol', 'v2-vsteps')) return 'li (a step)';
+  if (is(n, 'span') && n.cls.size === 0 && is(p, 'li') && is(p.parent, 'ol', 'v2-vsteps')) return 'span (a step\'s words)';
+  if (is(n, 'svg', 'v2-s') && is(p, 'li') && is(p.parent, 'ol', 'v2-vsteps')) return 'svg.v2-s (a step\'s ✓)';
+  if (is(n, 'p', 'v2-vverd') && tgt(p)) return 'p.v2-vverd (a verdict)';
+  if (is(n, 'svg', 'v2-s') && is(p, 'p', 'v2-vverd')) return 'svg.v2-s (a verdict\'s ✓ or ✕)';
+  if (is(n, 'span') && n.cls.size === 0 && is(p, 'p', 'v2-vverd')) return 'span (a verdict\'s words)';
+  if (is(n, 'b') && is(p, 'span') && is(p.parent, 'p', 'v2-vverd')) return 'b (a verdict\'s first part)';
+  if (is(n, 'p', 'v2-vline') && tgt(p)) return 'p.v2-vline (a line under a verdict)';
+  if (is(n, 'ul', 'v2-vearly') && tgt(p)) return 'ul.v2-vearly (the earlier checks)';
+  if (is(n, 'li') && is(p, 'ul', 'v2-vearly')) return 'li (an earlier check)';
+  if (is(n, 'p', 'v2-clip') && n.cls.has('v2-quote') && is(p, 'section', 'v2-vstop')) return 'p.v2-clip.v2-quote (the rule\'s quote)';
+  return null;
+};
+const VT1_EXCEPT = (n, d, theme) => {
+  const k = VT1_KEY(n);
+  return Boolean(k && (VT1_ONCE.get(theme).get(k) || []).includes(d)) ? `VT1 ${theme} ${k} ${d}` : null;
+};
+const VT1_FLAT = [...VT1_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `VT1 ${theme} ${k} ${d}`))).sort();
 const STRIP_FLAT = [...STRIP_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G2-STRIP ${theme} ${k} ${d}`))).sort();
 const G9C_FLAT = [...G9C_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G9C ${theme} ${k} ${d}`))).sort();
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
@@ -1735,6 +1864,8 @@ function sameLook(app, where, fails, seen) {
         if (strip) { excepted.add(strip); continue; }
         const qw3 = QW3_EXCEPT(b, d, way.theme);
         if (qw3) { excepted.add(qw3); continue; }
+        const vt1 = VT1_EXCEPT(b, d, way.theme);
+        if (vt1) { excepted.add(vt1); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -2301,4 +2432,39 @@ test('AC88 + AC69 + AC92 (a) + AC44 step 4 (QW3 of "After the questions request"
   }
   assert.deepEqual([...excepted].filter((x) => /^QW3 /.test(x)).sort(), QW3_FLAT, 'QW3_ONCE met exactly');
   assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^QW3 /.test(x)), [], 'no other exception the walks above had not met');
+});
+
+
+// VT1 of M3B (AC97; the stage's row: "AC88's dark cascade for every new place" and "`VT1_ONCE`"): Service-Desk's "Value targets"
+// row and sheet before launch, on day 5 with one target outside (its whole targets and the stop rule opened) and after the 14
+// days with one missed (its earlier checks opened), and another v3 project's row and sheet (tests/desk/vt1-fixtures.mjs's
+// VT1_OPENS, made up, NOT real), three page loads (the suite's memory), each screen read by all four checks: AC88's (every
+// colour one of AC81's tokens with the theme's value, every text 4.5:1), AC69's (no vermilion), AC92 (a)'s with AC97's later
+// ruling (green and red on the ✓ and ✕ marks and the charts' fills only) and the stage-8 guard, which meets VT1_ONCE exactly and
+// no other exception the walks above had not met.
+test('AC88 + AC69 + AC92 (a) + AC44 step 4 (VT1 of M3B; AC97): on VT1\'s screens (VT1_OPENS, made up, NOT real), in dark (forced, and the phone\'s own) and light — the value targets\' row in its states and the sheet before launch, on day 5 and after the 14 days, another project\'s — every colour a token, every text 4.5:1, no vermilion, green and red only on the marks and the charts\' fills, and every element\'s look bd4097d\'s but for VT1_ONCE, met exactly', async () => {
+  const fails = [];
+  const seen = new Set();
+  const places = new Set();
+  const before = new Set(excepted);
+  for (const [where, open, screens] of VT1_OPENS) {
+    const app = await open();
+    try {
+      for (const [hash, prepare] of screens) {
+        await app.go(hash);
+        if (prepare) await prepare(app);
+        const w = `VT1 ${where} ${hash}`;
+        checkScreen(app, w, fails, seen);
+        vermilionCheck(app, w, fails, seen, places);
+        okBadCheck(app, w, fails, seen, places);
+        sameLook(app, w, fails, seen);
+      }
+    } finally {
+      app.restore();
+    }
+  }
+  assert.deepEqual(fails, []);
+  for (const want of ['mark: a value target\'s ✓', 'mark: a value target\'s ✕', 'fill: a value target\'s bar']) assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
+  assert.deepEqual([...excepted].filter((x) => /^VT1 /.test(x)).sort(), VT1_FLAT, 'VT1_ONCE met exactly');
+  assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^VT1 /.test(x)), [], 'no other exception the walks above had not met');
 });

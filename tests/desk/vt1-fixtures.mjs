@@ -9,9 +9,9 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { FIX, CONFIG } from './helpers.mjs';
 import { repo } from './fake-desk.mjs';
-import { j77Files, poomFiles, SD, POOM, TZ } from './wa-fixtures.mjs';
+import { j77Files, poomFiles, memStore, SD, POOM, TZ } from './wa-fixtures.mjs';
 import { fullRepo, v3 } from './sandbox-fixtures.mjs';
-import { j11Files } from './sandbox-helpers.mjs';
+import { j11Files, loadSandbox, findAll as findAllEls } from './sandbox-helpers.mjs';
 
 export { SD, POOM, TZ };
 /** Service-Desk's docs/PROJECT.md at 7b69b2b, as CS36 left section 6 (real). */
@@ -157,3 +157,36 @@ export function vt1State({ launch = LAUNCH, lines = null, cards = [], nov = [], 
   }
   return { config: { ...CONFIG, ownerTimeZone: TZ, projects }, repos };
 }
+
+// ---------------------------------------------------------------------------
+// VT1_OPENS: the screens VT1's cascade checks walk (tests/desk/ac88-dark.test.mjs), each a page load (the suite's memory:
+// three), with the screens in it to read: [where, open() → app, [[hash, prepare(app)?]]]. Made up, NOT real.
+
+async function vt1Open(st, now, hash) {
+  const app = await loadSandbox({ ...st, hash, now, store: memStore() });
+  await app.advance(1000);
+  await app.advance(61_000);
+  return app;
+}
+const keyedEl = (app, k) => findAllEls(app.view, (e) => e.dataset && e.dataset.k === k)[0] || null;
+const tapText = async (app, text) => { for (const b of findAllEls(app.view, (e) => e.tag === 'button' && e.textContent === text)) await app.tap(b); };
+/** The stop rule's quote measured past three lines (the fake DOM lays out no text) and opened with "Read it all". */
+async function stopOpened(app) {
+  const c = keyedEl(app, 'clip:vt-stop:Service-Desk');
+  if (!c) return;
+  c.clientHeight = 57;
+  c.scrollHeight = 95;
+  await app.resize(360);
+  const more = keyedEl(app, 'clipbtn:vt-stop:Service-Desk');
+  if (more) await app.tap(more);
+}
+export const VT1_OPENS = [
+  ['before launch (made up: no reached date): the row and the sheet, V5 grey', () => vt1Open(vt1State({ launch: null, nov: novemberCards() }), chi('2026-11-27', '15:00'), '#/p/Service-Desk'),
+    [['#/p/Service-Desk'], ['#/p/Service-Desk/values']]],
+  ['day 5 (made up): one target outside, the whole targets opened, the stop rule cut and opened', () => vt1Open(vt1State({ lines: DAY5, cards: windowCards() }), chi('2026-12-07', '15:00'), '#/p/Service-Desk'),
+    [['#/p/Service-Desk'], ['#/p/Service-Desk/values', async (app) => { await tapText(app, 'The whole target'); }], ['#/p/Service-Desk/values', stopOpened]]],
+  ['after the 14 days (made up): one missed, the earlier checks opened; Alpha, another v3 project, with a check', () => vt1Open(vt1State({ lines: [...FINAL,
+    vc({ target: 'V1', project: 'Alpha', from: '2026-11-30', to: '2026-12-06', value: 14, figure: '14 signups', state: 'missed' })], cards: windowCards(), alpha: ALPHA_TARGETS }),
+  chi('2026-12-24', '15:00'), '#/p/Service-Desk'),
+  [['#/p/Service-Desk'], ['#/p/Service-Desk/values', async (app) => { await tapText(app, '2 earlier checks'); }], ['#/p/Alpha'], ['#/p/Alpha/values']]],
+];

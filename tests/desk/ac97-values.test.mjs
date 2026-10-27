@@ -290,17 +290,31 @@ test('AC97: the latest window line\'s `met` or `missed` sets the mark over the d
   assert.deepEqual([ot.mark, ot.verdict.first, ot.lines], ['cross', 'Outside target so far', ["Your Chief of Staff's check, 7 Dec: on track"]]);
 });
 
-test('AC97: V4 judged from launch day — "Under way" with the half circle until the archive is recorded, within only with both steps, never outside; before launch nothing judged', () => {
+// Rewritten in VT1's round 2 (forced: draft 11, C, settles V4's archive by its latest line — the Reviewer's Q2 and Q3 — so an
+// `on track` line no longer reads as archived and a `missed` one no longer shows "archived" with "The desk's own reading").
+test('AC97: V4 judged from launch day — "Under way" with the half circle until its latest line says `met`; `met` archived with ✓ and "Within target"; `missed` "Old repository not archived" with ✕ beside the check\'s "Missed"; `on track` and `not measured` the step not done, "Under way"; never outside; V4 lines before launch ignored', () => {
   for (const day of ['2026-12-02', '2026-12-05', '2026-12-20']) {
     const t = T(sd({ now: day }), 'V4');
     assert.deepEqual([t.mark, verdict(t)], ['half', 'Under way · goal: both at launch'], day);
   }
-  const done = T(sd({ now: '2026-12-20', lines: [vc({ target: 'V4', from: '2026-12-09', to: '2026-12-09', state: 'on track' })] }), 'V4');
-  assert.deepEqual([done.mark, verdict(done), done.steps[1].words], ['check', 'Within target · goal: both at launch', 'Old repository archived 9 Dec']);
-  const missed = T(sd({ now: '2026-12-20', lines: [vc({ target: 'V4', from: '2026-12-09', to: '2026-12-09', state: 'missed' })] }), 'V4');
-  assert.deepEqual([missed.mark, missed.verdict.first], ['cross', 'Missed']);
-  assert.ok(missed.lines.includes("The desk's own reading: within target"));
-  assert.equal(T(sd({ now: '2026-11-20', L: null }), 'V4').mark, 'planned');
+  const v4 = (state) => T(sd({ now: '2026-12-20', lines: [vc({ target: 'V4', from: '2026-12-09', to: '2026-12-09', state })] }), 'V4');
+  const met = v4('met');
+  assert.deepEqual([met.mark, verdict(met), met.steps[1], fig(met)], ['check', 'Met · goal: both at launch', { mark: 'check', words: 'Old repository archived 9 Dec' }, ['2 of 2', 'steps done at launch']]);
+  assert.deepEqual(met.lines, ["Your Chief of Staff's check, 14 Dec: met"], 'agreeing: no difference line');
+  const missed = v4('missed');
+  assert.deepEqual([missed.mark, missed.verdict.first, missed.steps[1], fig(missed)], ['cross', 'Missed', { mark: 'cross', words: 'Old repository not archived' }, ['1 of 2', 'steps done']]);
+  assert.deepEqual(missed.lines, ["Your Chief of Staff's check, 14 Dec: missed"], 'no "archived", no difference line');
+  for (const state of ['on track', 'not measured']) {
+    const t = v4(state);
+    assert.deepEqual([t.mark, verdict(t), t.steps[1], fig(t)], ['half', 'Under way · goal: both at launch',
+      { mark: 'planned', words: 'Old repository archived: your Chief of Staff checks it after launch' }, ['1 of 2', 'steps done']], state);
+    assert.deepEqual(t.lines, [`Your Chief of Staff's check, 14 Dec: ${state}`], `${state}: V4's own case is its steps', its check line kept`);
+  }
+  // Before launch: nothing judged, a V4 line (made up, written before the reached date) ignored.
+  const early = vc({ target: 'V4', from: '2026-11-20', to: '2026-11-20', state: 'met', at: chi('2026-11-20', '12:00') });
+  const before = T(sd({ now: '2026-11-25', L: null, cards: novemberCards(), lines: [early] }), 'V4');
+  assert.deepEqual([before.mark, verdict(before), before.steps.map((x) => x.words), before.lines, before.figure],
+    ['planned', 'Not measured yet · goal: both at launch', ['Serving the Operations-Hub address: not yet', 'Old repository archived: not yet'], [], null]);
 });
 
 test('AC97: a target whose latest window line says `not measured` (value null): "Not measured · your Chief of Staff\'s check, <date>" with the planned ring, never the dashed "?", in place of the check line; counted "not measured yet" on the row, not "check late"', () => {

@@ -1161,5 +1161,9 @@ VT1 adds `tests/desk/vt1-fixtures.mjs`. `ac97-values.test.mjs`, `ac97-values-pag
 - **other v3 projects** (`docWithTargets`, `ALPHA_TARGETS`, and lines written inline): sandbox-fixtures.mjs's made-up
   `fullRepo('Alpha')` with a made-up section 6 in place of the 3117150 doc's own: three targets with no J25 line, ids out of
   order, a long target line, and no `V<n>:` line. **NOT real records.**
-- **J12 pull requests 990 to 996** (`j12-value-checks.test.mjs`): made-up merged weekly value check pull requests and their
-  changed paths. **NOT real records.**
+- **J12 pull requests 990 to 997** (`j12-value-checks.test.mjs`): made-up weekly value check pull requests and their
+  changed paths, #997 opened and then merged for AC66's Done row. **NOT real records.**
+- **VT1's round 2** (`vt1-fixtures.mjs`'s `ALL_MET` and `FINAL_NOT_MEASURED`, and lines written inline): `FINAL` with every
+  last check met, and with V3's and V5's final checks `not measured`; Alpha's three targets each `met`; V4 lines `met`,
+  `missed`, `on track` and `not measured`, and one dated before launch; lines for the same days twice; a V5 line counting
+  "1 card" and one with no count. **NOT real records.**

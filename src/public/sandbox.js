@@ -38,7 +38,7 @@ import { canRecord } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
 import { V25_RULING_NOTE } from './lib/links.js';
 import { runsContext, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, itemFeeds,
-  stalledLine, deployRows, FEED_ICONS_KEY, doneTarget, JOB_MERGE_WORDS, ESTIMATE_MERGE_WORDS } from './lib/feed.js';
+  stalledLine, deployRows, FEED_ICONS_KEY, doneTarget, JOB_MERGE_WORDS, ESTIMATE_MERGE_WORDS, VALUE_CHECK_MERGE_WORDS } from './lib/feed.js';
 import { WA, DRAFT_KEY, todayOf, groupOnce } from './lib/workahead.js';
 import { PAGE_WORDS, pageSentence, phaseLine, phaseStrip, ranAgainLines, milestonesByPhase, pageTally, restRows, v25Rows, finishWords, sprintCount, sprintsWords, ciPassed, blockOf, pageCheckedWords } from './lib/projectpage.js';
 import { topLine } from './lib/versions.js';
@@ -1499,8 +1499,11 @@ function restNode(p) {
 function valueChecksRead(nowMs) {
   const built = lastBuilt || [];
   const empty = { checks: new Map(), unreadable: new Map(), notes: [] };
-  const pb = built.find((b) => b.project.planning === true && b.project.model === 'v3' && !b.error);
+  const pb = built.find((b) => b.project.planning === true && b.project.model === 'v3');
   if (!pb) return { state: 'none', ...empty };
+  // The planning project can't be drawn: J25 counts as failed for every project, "weekly checks not available", never "not
+  // recorded yet" (draft 11, C; VT1's review, round 1, the Reviewer's N3).
+  if (pb.error || (pb.box && pb.box.drawError)) return { state: 'failed', ...empty };
   const snap = pb.snap || {};
   if (!snap.tree) return { state: pb.box && pb.box.read && pb.box.read.read === 'cant-read' ? 'failed' : 'pending', ...empty };
   const e = snap.tree.get(VALUE_CHECKS_PATH);
@@ -1599,10 +1602,11 @@ function vtBlock(name, t) {
       h('span', {}, h('b', {}, v.first), v.second ? ` · ${v.second}` : null)),
     t.lines.map((l, i) => h('p', { class: 'v2-vline', key: `vline:${t.id}:${i}` }, l)),
     t.newer ? h('p', { class: 'v2-vline', key: `vnewer:${t.id}` }, VALUES_WORDS.newer) : null,
-    foldButton(name, `vt-whole:${t.id}`, false, { class: 'v2-fold v2-vfold' }, VALUES_WORDS.whole),
-    whole ? h('p', { class: 'v2-quote', key: `vquote:${t.id}` }, t.quote) : null,
+    // "<k> earlier checks ›" before "The whole target ›", as the approved image (round 2, frame 4) draws them (draft 11).
     t.earlier.length ? foldButton(name, `vt-earlier:${t.id}`, false, { class: 'v2-fold v2-vfold' }, VALUES_WORDS.earlier(t.earlier.length)) : null,
-    t.earlier.length && early ? h('ul', { class: 'v2-vearly', key: `vearly:${t.id}` }, t.earlier.map((x, i) => h('li', { key: `ve:${i}` }, x))) : null);
+    t.earlier.length && early ? h('ul', { class: 'v2-vearly', key: `vearly:${t.id}` }, t.earlier.map((x, i) => h('li', { key: `ve:${i}` }, x))) : null,
+    foldButton(name, `vt-whole:${t.id}`, false, { class: 'v2-fold v2-vfold' }, VALUES_WORDS.whole),
+    whole ? h('p', { class: 'v2-quote', key: `vquote:${t.id}` }, t.quote) : null);
 }
 
 /** The sheet's body (AC97): its small line, J25's state once where it is not read, each target's block, then the miss and stop rule. */
@@ -1937,6 +1941,7 @@ function doneLink(p, kind, codeText) {
   if (at && at.ms) return [' ', h('a', { class: 'v2-lnk', href: go('p', name, 'timeline', 'ms', at.ms) }, 'On the Timeline')];
   if (at && at.job) return h('span', { class: 'v2-small' }, ` · ${JOB_MERGE_WORDS}`);
   if (at && at.estimate) return h('span', { class: 'v2-small' }, ` · ${ESTIMATE_MERGE_WORDS}`);
+  if (at && at.valueCheck) return h('span', { class: 'v2-small' }, ` · ${VALUE_CHECK_MERGE_WORDS}`);
   return h('span', { class: 'v2-small gap' }, ' · sprint: not recorded');
 }
 

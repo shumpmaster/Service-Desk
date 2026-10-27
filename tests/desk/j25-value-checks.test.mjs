@@ -202,3 +202,42 @@ test('J25: a newer line\'s malformed time is skipped, never silently replacing i
   assert.deepEqual([V(v, 'V1').figure.big, V(v, 'V1').verdict.first, V(v, 'V1').newer], ['1', 'Missed', true]);
   assert.equal(isoZ(chi('2026-12-07', '09:00')), '2026-12-07T15:00:00Z');
 });
+
+test('J6 (VT1; draft 11, the Reviewer\'s N2): the blob cache key is desk-blobs-v8, docs/PROJECT.md\'s parse having gained section 6\'s quoted stop rule; desk-blobs-v7 is among the old keys and dropped on load, its parse read afresh', async () => {
+  const { BLOB_CACHE_KEY, OLD_BLOB_CACHE_KEYS, createDesk, POLL_MS } = await import('../../src/lib/scheduler.js');
+  const { createStore } = await import('../../src/lib/store.js');
+  const { fakeServer, repo } = await import('./fake-desk.mjs');
+  const { CONFIG, fakeClock } = await import('./helpers.mjs');
+  assert.equal(BLOB_CACHE_KEY, 'desk-blobs-v8');
+  assert.ok(OLD_BLOB_CACHE_KEYS.includes('desk-blobs-v7'));
+  const doc = withLaunch(J7B_DOC);
+  // A v7 parse of this very blob, as a device that loaded the desk before VT1 holds it: no `stopRule`.
+  const old = parseRecord('project-doc', doc, 'docs/PROJECT.md');
+  delete old.stopRule;
+  const backing = new Map([['desk-blobs-v7', JSON.stringify({ [`project-doc:${gitSha(doc)}`]: old })]]);
+  const storage = { getItem: (k) => (backing.has(k) ? backing.get(k) : null), setItem: (k, v) => backing.set(k, v), removeItem: (k) => backing.delete(k) };
+  const clock = fakeClock(NOW);
+  const config = { ...CONFIG, projects: [SD] };
+  const server = fakeServer({ [SD.name]: repo({ 'docs/PROJECT.md': doc }) }, config, clock);
+  const desk = createDesk({ config, call: (p, b) => server.call(p, b), clock, store: createStore(storage), pullsStore: createStore(null), isVisible: () => true, j11: true });
+  assert.equal(backing.has('desk-blobs-v7'), false, 'the v7 key dropped, not left to fill storage');
+  desk.start();
+  await clock.runUntil(clock.now() + 2 * POLL_MS);
+  desk.stop();
+  assert.match(desk.snapshot(SD.name).records.get('docs/PROJECT.md').stopRule, /^A miss is /, 'read and parsed afresh, its stop rule with it');
+});
+
+test('AC97 (draft 11, the Reviewer\'s N3): another project\'s row reads state 0\'s "weekly checks not available", never "not recorded yet", when the planning project can\'t be read', async () => {
+  const st = vt1State({ lines: [], alpha: ['V1: Signups: 20 (made up)', 'V2: Bounce: under 2% (made up)'] });
+  st.repos['Service-Desk'].fail = { kind: 'network' };
+  const app = await loadSandbox({ ...st, hash: '#/p/Alpha', now: chi('2026-12-07', '15:00'), store: memStore() });
+  try {
+    await app.advance(1000);
+    await app.advance(61_000);
+    const row = keyed(app, 'rest:values');
+    assert.equal(byClass(row, 'v2-small')[0].textContent, '2 targets · weekly checks not available');
+    assert.equal(row.children[0].className, 'v2-pmk', 'no left icon');
+  } finally {
+    app.restore();
+  }
+});

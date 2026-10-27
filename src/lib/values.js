@@ -315,6 +315,27 @@ function withCheck(t, check, desk, tz) {
 }
 
 /**
+ * A latest window line saying `not measured` sets the planned ring: with no figure of the desk's own in the window or after
+ * it, and after the window even with one (the owner's answer "Grey ring (Recommended)", B,
+ * decisions/questions/P-001-m3b-not-measured-mark.md), the figure and its chart still shown, every bar grey `--ink3`, judged
+ * by no one. Its line, "Not measured · your Chief of Staff's check, <date>", takes the place of the check line; no
+ * difference line, the check having made no judgment to differ from.
+ */
+/**
+ * The final check saying `not measured` (draft 11): the target's latest line, its `to` on or after WN. An earlier week's
+ * `not measured` line after the window (state 7) keeps draft 10's rule, the desk's verdict the mark.
+ */
+const finalNotMeasured = (check, days) => Boolean(check && check.state === 'not measured' && days && check.to >= days.WN);
+function notMeasured(t, check, goalLine, tz) {
+  t.mark = 'planned';
+  t.verdict = { mark: 'planned', first: 'Not measured', second: `your Chief of Staff's check, ${dayWords(dateOfLine(check, tz))}` };
+  if (t.chart) t.chart = { ...t.chart, bars: t.chart.bars.map((b) => ({ ...b, fill: 'grey' })) };
+  t.lines = t.lines.filter((l) => !l.startsWith('Weekly check:'));
+  t.lines.push(goalLine);
+  return t;
+}
+
+/**
  * The targets of a v3 project's section 6, each as the sheet shows it, and the row (AC97). input: { project, doc (J11's
  * parse of docs/PROJECT.md), planning (the project J7 marks `"planning": true`), j25: { state: 'ok' | 'none' | 'pending' |
  * 'failed', checks, unreadable } (readValueChecks', for every project), v5In ({ projects, config }: v5Figure's input less
@@ -425,14 +446,9 @@ function countTarget(t, goal, { phase, days, today, known, unknownWord, check, t
   const after = phase === 'after';
   t.earlier = earlierOf(all, check);
   if (!valued.length) {
-    if (check && check.state === 'not measured') {
-      // A recorded `not measured` (round 8, the Reviewer's B1; round 9, the Design reviewer's N1): a record that exists, so
-      // the planned ring, never the dashed "?"; this line takes the place of the check line.
-      t.mark = 'planned';
-      t.verdict = { mark: 'planned', first: 'Not measured', second: `your Chief of Staff's check, ${dayWords(dateOfLine(check, tz))}` };
-      t.lines.push(goalLine);
-      return t;
-    }
+    // A recorded `not measured` (round 8, the Reviewer's B1; round 9, the Design reviewer's N1): a record that exists, so the
+    // planned ring, never the dashed "?"; its line takes the place of the check line.
+    if (check && check.state === 'not measured') return notMeasured(t, check, goalLine, tz);
     if (!after && today <= days.D1) {
       t.mark = 'planned';
       t.verdict = { mark: 'planned', first: 'Not measured yet', second: `first check due ${dayWords(days.D1)}` };
@@ -458,9 +474,14 @@ function countTarget(t, goal, { phase, days, today, known, unknownWord, check, t
     const dates = rangeWords(worst.from, worst.to);
     const one = valued.length === 1;
     if (goal.minutes) t.figure = { big: `${worst.value} min`, words: one ? `your estimate, ${dates}` : `a week at most, your estimate (${dates})` };
-    else t.figure = { big: String(worst.value), words: one ? `false alarms, ${dates}` : `false alarms in a week, the most (${dates})` };
+    // "1" "false alarm, …" when the one week's figure is 1 (draft 11; VT1's design review, round 1, N2).
+    else t.figure = { big: String(worst.value), words: one ? `false alarm${worst.value === 1 ? '' : 's'}, ${dates}` : `false alarms in a week, the most (${dates})` };
     t.chart = chartOf(goal, valued.map((x) => bar(rangeWords(x.from, x.to), x.value, goal, x.value <= goal.max ? 'ok' : 'bad')));
   }
+  // After the window, the final check (its `to` on or after WN) saying `not measured` sets the planned ring over the desk's
+  // figure (P-001-m3b-not-measured-mark.md, B); in the window, and after it for an earlier week's line, the desk's verdict
+  // stays the mark, the check line saying "not measured" (draft 10's rule).
+  if (after && finalNotMeasured(check, days)) return notMeasured(t, check, goalLine, tz);
   const words = verdictWords(within, phase);
   t.mark = within ? 'check' : 'cross';
   t.verdict = { mark: t.mark, first: words, second: `goal: ${goal.words}` };
@@ -476,8 +497,10 @@ function v4Target(t, { phase, days, known, unknownWord, check, tz, all, earlierO
     t.verdict = { mark: 'planned', first: 'Not measured yet', second: goalWords };
     return t;
   }
-  // The archive line: V4's latest line, whatever its dates (round 7, the Design reviewer's B3), unless it says not measured.
-  const archive = known && check && check.state !== 'not measured' ? check : null;
+  // The archive, by V4's latest line, whatever its dates (round 7, the Design reviewer's B3; draft 11, C, the Reviewer's Q2 and
+  // Q3): `met`, archived, the step done; `missed`, "Old repository not archived" with ✕, beside the check's "Missed"; `on track`
+  // or `not measured`, the step not done, as from launch day. So no V4 line but `met` reads as archived.
+  const archive = known && check && check.state === 'met' ? check : null;
   const serving = { mark: 'check', words: `Serving the Operations-Hub address since ${dayWords(days.L)}` };
   if (archive) {
     t.steps = [serving, { mark: 'check', words: `Old repository archived ${dayWords(archive.from)}` }];
@@ -485,8 +508,9 @@ function v4Target(t, { phase, days, known, unknownWord, check, tz, all, earlierO
     t.mark = 'check';
     t.verdict = { mark: 'check', first: 'Within target', second: goalWords };
   } else {
-    const second = known ? 'Old repository archived: your Chief of Staff checks it after launch' : `Old repository archived: ${unknownWord}`;
-    t.steps = [serving, { mark: 'planned', words: second }];
+    let second = known ? { mark: 'planned', words: 'Old repository archived: your Chief of Staff checks it after launch' } : { mark: 'planned', words: `Old repository archived: ${unknownWord}` };
+    if (known && check && check.state === 'missed') second = { mark: 'cross', words: 'Old repository not archived' };
+    t.steps = [serving, second];
     t.figure = { big: '1 of 2', words: 'steps done' };
     t.mark = 'half';
     t.verdict = { mark: 'half', first: 'Under way', second: goalWords };
@@ -522,6 +546,7 @@ function v5Target(t, goal, { phase, days, known, check, v5, tz, all, earlierOf }
   if (f.gone) {
     // The window's cards no longer read (round 5, the Reviewer's N1): with no weekly V5 line, a check late; with one, its
     // figure is the record's.
+    if (!weekly && known && check && check.state === 'not measured') return notMeasured(t, check, `Goal: ${goal.words}`, tz);
     if (!weekly) {
       t.mark = 'unrec';
       t.verdict = { mark: 'unrec', first: 'Not measured yet', second: 'weekly check not recorded yet' };
@@ -534,6 +559,7 @@ function v5Target(t, goal, { phase, days, known, check, v5, tz, all, earlierOf }
   if (ms == null) {
     // No figure (AC21's "no weekday cards", or the projects not read yet): the planned ring, under AC21's words.
     t.aside = f.words;
+    if (known && check && check.state === 'not measured') return notMeasured(t, check, `Goal: ${goal.words}`, tz);
     t.mark = 'planned';
     t.verdict = { mark: 'planned', first: 'Not measured yet', second: goalWords };
     if (weekly && !after) t.lines.push(`Weekly check: ${weeklyWords(weekly)}`);
@@ -544,6 +570,8 @@ function v5Target(t, goal, { phase, days, known, check, v5, tz, all, earlierOf }
   if (weekly) bars.push(['Weekly check', weekly.value * 60000]);
   t.figure = { big: hm(ms), words: figWords };
   t.chart = chartOf(goal, bars.map(([label, m]) => bar(label, Math.floor(m / 60000), goal, fill(m))));
+  // After the window, the final V5 check saying `not measured` sets the planned ring over the desk's figure (P-001-m3b-not-measured-mark.md, B).
+  if (after && known && finalNotMeasured(check, days)) return notMeasured(t, check, `Goal: ${goal.words}`, tz);
   const words = verdictWords(within, phase);
   t.mark = within ? 'check' : 'cross';
   t.verdict = { mark: t.mark, first: words, second: goalWords };

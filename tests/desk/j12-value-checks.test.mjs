@@ -6,17 +6,18 @@
 // is; one changing another path, carrying another line, or in another project is placed as any pull request is. Every
 // pull request numbered 990 and up here is made up (NOT a real record).
 // join-test: S-001/J12 join-test: S-001/J25
-// ac-test: S-001/AC60
+// ac-test: S-001/AC60 ac-test: S-001/AC66
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CONFIG, fakeClock } from './helpers.mjs';
-import { fakeServer } from './fake-desk.mjs';
-import { j11Snapshot, SD3 } from './sandbox-helpers.mjs';
-import { sdRepo } from './tv2-fixtures.mjs';
+import { fakeServer, pr } from './fake-desk.mjs';
+import { j11Snapshot, SD3, loadSandbox, byClass, linksIn } from './sandbox-helpers.mjs';
+import { sdRepo, keyed } from './tv2-fixtures.mjs';
+import { NOW } from './sandbox-fixtures.mjs';
 import { pullNodes, answerOf, node } from './j12-fixture.mjs';
 import { judgePulls, keptPull, valueCheckOnly, valueCheckLine, PULLS_KEY, OLD_PULLS_KEYS, VALUE_CHECK_PATH, ESTIMATE_PATH } from '../../src/lib/pulls.js';
 import { j11Records, timelineOf, phaseView } from '../../src/lib/sandbox.js';
-import { runsContext, feedView, valueCheckMerge } from '../../src/lib/feed.js';
+import { runsContext, feedView, valueCheckMerge, VALUE_CHECK_MERGE_WORDS } from '../../src/lib/feed.js';
 import { createDesk, POLL_MS } from '../../src/lib/scheduler.js';
 import { createStore } from '../../src/lib/store.js';
 
@@ -110,4 +111,36 @@ test('AC60 (value checks): placed as any pull request — another changed path, 
   for (const [why, n] of cases) assert.deepEqual(untiedIn(feedOf(answerOf([n])).feed), [`PR #${n.number}`], why);
   assert.deepEqual(untiedIn(feedOf(answerOf([chk(996)]), { project: { ...SD3, planning: false } }).feed), ['PR #996'], 'not the planning project');
   assert.equal(valueCheckMerge({ ...SD3, planning: false }, judgePulls(answerOf([chk(996)])).pulls[0]), false);
+});
+
+test('AC66 (value checks; draft 11) + AC80: a weekly value check\'s merge leaving the board — its Done row\'s sheet has no Timeline link and reads "not on the Timeline: a weekly value check"; with its changed paths not read, it links to its sprint as any pull request', async () => {
+  assert.equal(VALUE_CHECK_MERGE_WORDS, 'not on the Timeline: a weekly value check');
+  for (const unread of [false, true]) {
+    const repo = sdRepo({ answer: answerOf(pullNodes()) });
+    repo.pulls.push(pr(997, 'Weekly value check, made up 997', { head: 'cos/value-check-997' }));
+    const page = await loadSandbox({ config: { ...CONFIG, projects: [PLANNER] }, repos: { 'Service-Desk': repo }, hash: '#/waiting/Service-Desk', now: NOW });
+    try {
+      await page.advance(1000);
+      await page.advance(POLL_MS);
+      repo.pulls = repo.pulls.filter((x) => x.number !== 997);
+      const merged = chk(997, { mergedAt: new Date(page.now).toISOString().replace(/\.\d+Z$/, 'Z'), files: unread ? null : undefined });
+      repo.pullsAnswer = answerOf([merged, ...pullNodes()]);
+      repo.commit({ 'intake/value-checks.jsonl': '{"made up": true}\n' });
+      await page.advance(POLL_MS);
+      await page.advance(POLL_MS);
+      const more = keyed(page, 'more:Service-Desk');
+      if (more && more.attrs['aria-expanded'] === 'false') await page.tap(more);
+      const row = byClass(keyed(page, 'lane:done'), 'v2-drow').find((x) => byClass(x, 'v2-dc').some((c) => c.textContent === '#997'));
+      assert.ok(row, 'a Done row for #997');
+      await page.go(byClass(row, 'v2-dt')[0].attrs.href);
+      const sheet = byClass(page.view, 'v2-sheet')[0];
+      const tl = linksIn(sheet).find((l) => l.text === 'On the Timeline');
+      if (!unread) {
+        assert.match(sheet.textContent, new RegExp(`#997 · ${VALUE_CHECK_MERGE_WORDS}Close$`));
+        assert.equal(tl, undefined, 'no Timeline link');
+      } else assert.match(tl.href, /^#\/p\/Service-Desk\/timeline\/sprint\/PR(%20| )(%23|#)997$/, 'placed as any pull request');
+    } finally {
+      page.restore();
+    }
+  }
 });

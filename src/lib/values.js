@@ -315,17 +315,17 @@ function withCheck(t, check, desk, tz) {
 }
 
 /**
- * A latest window line saying `not measured` sets the planned ring: with no figure of the desk's own in the window or after
- * it, and after the window even with one (the owner's answer "Grey ring (Recommended)", B,
- * decisions/questions/P-001-m3b-not-measured-mark.md), the figure and its chart still shown, every bar grey `--ink3`, judged
- * by no one. Its line, "Not measured · your Chief of Staff's check, <date>", takes the place of the check line; no
- * difference line, the check having made no judgment to differ from.
- */
-/**
- * The final check saying `not measured` (draft 11): the target's latest line, its `to` on or after WN. An earlier week's
- * `not measured` line after the window (state 7) keeps draft 10's rule, the desk's verdict the mark.
+ * The final check saying `not measured` (draft 11): the target's latest line, its `to` on or after WN, in the window (on WN
+ * itself) or after it. An earlier week's `not measured` line, the final check not in, keeps draft 10's rule, the desk's
+ * verdict the mark.
  */
 const finalNotMeasured = (check, days) => Boolean(check && check.state === 'not measured' && days && check.to >= days.WN);
+/**
+ * A latest window line saying `not measured` sets the planned ring: with no figure of the desk's own, and, on the final check,
+ * even with one (the owner's answer "Grey ring (Recommended)", B, decisions/questions/P-001-m3b-not-measured-mark.md), the
+ * figure and its chart still shown, every bar grey `--ink3`, judged by no one. Its line, "Not measured · your Chief of Staff's
+ * check, <date>", takes the place of the check line; no difference line, the check having made no judgment to differ from.
+ */
 function notMeasured(t, check, goalLine, tz) {
   t.mark = 'planned';
   t.verdict = { mark: 'planned', first: 'Not measured', second: `your Chief of Staff's check, ${dayWords(dateOfLine(check, tz))}` };

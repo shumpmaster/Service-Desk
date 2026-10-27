@@ -2151,7 +2151,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   assert.deepEqual([...excepted].filter((x) => /^QW1 /.test(x)).sort(), qw1);
   // G9c's exception (G9C_ONCE) is pinned by G9c's own walk, below; any the walks above meet is of it alone.
   assert.ok([...excepted].filter((x) => /^G9C /.test(x)).every((x) => G9C_FLAT.includes(x)), 'G9C: only its pinned declaration');
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[123456789] |G7B |G8B |G8C |G9C |PRE-G7 |QW1 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // Rewritten in VT1 of M3B (forced: the walks above now draw the value targets' row and sheet, AC97, whose new look VT1_ONCE
+  // pins): VT1's exception is pinned exactly by VT1's own walk, below; any the walks above meet is of it alone.
+  assert.ok([...excepted].filter((x) => /^VT1 /.test(x)).every((x) => VT1_FLAT.includes(x)), 'VT1: only its pinned declarations');
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[123456789] |G7B |G8B |G8C |G9C |PRE-G7 |QW1 |VT1 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes

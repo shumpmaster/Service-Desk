@@ -463,16 +463,24 @@ test('AC83 (conflict 2, settled as drawn; part B, item 35): no key — no "Statu
 // ---------------------------------------------------------------------------
 // The rest, a v2.5 project's page, and "Details"
 
-test('AC83 (frame 5): the rest — "Value targets V1 to V5", "5 targets · measured on the desk once that is built", its sheet quoting each line word for word; "Experiments", "<n> registered" from the tree\'s experiments/EXP-*.md, its sheet naming them; "Details"', async () => {
+// Rewritten in VT1 of M3B (forced: it failed once the row and the sheet became AC97's; AC83's "Changed for M3B",
+// specs/S-001.md:8761-8766): the row keeps its title, its place and its sheet; its small line and icon are AC97's (on these
+// records, before launch: no reached date on M3C's line, so the fixed words and the planned ring), and the sheet holds each
+// target's measure first, its line quoted whole one tap away ("The whole target"), each still checked word for word.
+test('AC83 (frame 5; changed for M3B): the rest — "Value targets V1 to V5", its small line and icon AC97\'s ("Measured from launch · V4, replacing the old page, at launch" before launch, five marks), its sheet each target\'s measure with its line quoted whole word for word one tap away; "Experiments", "<n> registered" from the tree\'s experiments/EXP-*.md, its sheet naming them; "Details"', async () => {
   const app = await openPage('#/p/Service-Desk');
   try {
     const v = keyed(app, 'rest:values');
     assert.equal(byClass(v, 'v2-prtt')[0].textContent, 'Value targets V1 to V5');
-    assert.equal(byClass(v, 'v2-small')[0].textContent, '5 targets · measured on the desk once that is built');
+    assert.equal(byClass(v, 'v2-small')[0].textContent, 'Measured from launch · V4, replacing the old page, at launch');
+    assert.deepEqual(byClass(v, 'v2-vmk').map((m) => byClass(m, 'v2-mono')[0].textContent), ['V1', 'V2', 'V3', 'V4', 'V5']);
+    assert.equal(iconOf(v), 'st-planned', 'the planned ring before launch');
     await app.tap(v);
     await app.go(v.attrs.href);
-    const sheet = byClass(app.view, 'v2-sheet')[0];
-    const quoted = byClass(sheet, 'v2-quote').map((x) => x.textContent);
+    const sheet = () => byClass(app.view, 'v2-sheet')[0];
+    // Each target's line, one tap away and then whole.
+    for (const b of byClass(sheet(), 'v2-tgt')) await app.tap(findAll(b, (e) => e.tag === 'button' && e.textContent === 'The whole target')[0]);
+    const quoted = byClass(sheet(), 'v2-tgt').flatMap((b) => byClass(b, 'v2-quote')).map((x) => x.textContent);
     assert.deepEqual(quoted, PROJECT_DOC.split('\n').filter((l) => /^V\d+:/.test(l)), 'each line word for word');
     await app.key('Escape');
     const e = keyed(app, 'rest:experiments');

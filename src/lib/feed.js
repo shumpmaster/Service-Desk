@@ -349,6 +349,17 @@ export function estimateMerge(project, pr) {
   return Boolean(project && project.planning === true && pr && pr.mergedAt && pr.estimate === true && pr.estimateLine === true);
 }
 
+/**
+ * AC60, changed for M3B (J25; built in stage VT1): the Chief of Staff's weekly value check pull requests are never a
+ * sprint either, by the same rules as its estimate pull requests: a merged pull request of the planning project whose
+ * only changed path is `intake/value-checks.jsonl` (J12's `valueCheck`) and whose body's `Milestone:` line, trimmed, is
+ * exactly `none (a weekly value check)` (`valueCheckLine`). One changing another path, carrying another line, or in
+ * another project is placed as any pull request is.
+ */
+export function valueCheckMerge(project, pr) {
+  return Boolean(project && project.planning === true && pr && pr.mergedAt && pr.valueCheck === true && pr.valueCheckLine === true);
+}
+
 /** The pull requests J12 holds, by number, and why they are missing when they are. */
 function pullsIndex(snap, model) {
   const p = snap && snap.pulls;
@@ -447,6 +458,8 @@ export function feedView(ctx, model, nowMs, tz) {
     // Timeline as the job's merges are, whoever merged them, by the same rules, the plan's exception
     // included (listed ones are placed above).
     if (estimateMerge(project, pr)) continue;
+    // AC60, changed for M3B: a weekly value check's, likewise (VT1), so it never shows as a gap under "Not tied to a milestone".
+    if (valueCheckMerge(project, pr)) continue;
     const ml = pr.parts && pr.parts.milestone;
     const run = placeByTime(t(pr.mergedAt));
     if (ml && ml.ids) {

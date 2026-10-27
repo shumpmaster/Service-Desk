@@ -44,6 +44,7 @@ import { PAGE_WORDS, pageSentence, phaseLine, phaseStrip, ranAgainLines, milesto
 import { topLine } from './lib/versions.js';
 import { portfolioView, PF_ROWS, PF_WORDS, cardMilestone, portfolioScreenState, portfolioRead, portfolioCards, ideasView, rareLine, noteIdeas, ideaEvents, SEEN_IDEAS_KEY, PF_BOARD, PF_LABEL } from './lib/portfolio.js';
 import { workAheadView, readDraft } from './lib/workview.js';
+import { valuesView, readValueChecks, VALUE_CHECKS_PATH, VALUES_WORDS } from './lib/values.js';
 
 import {
   NOTIFY_WORDS, NOTIFY_STORE_KEY, COPY_DONE_WORDS, SHOW_AGAIN_WORDS, SEND_TEST_WORDS, copySteps, testSteps, notifyState, onTopLine,
@@ -1481,9 +1482,138 @@ function restNode(p) {
   const name = p.project.name;
   const rr = restRows(p.j, p.snap && p.snap.tree);
   const rows = [];
-  if (p.project.model === 'v3' && rr.values) rows.push(pageRow('rest:values', go('p', name, 'values'), stc('planned'), rr.values.title, rr.values.small, { onclick: () => { nav.opener = 'rest:values'; } }));
+  if (p.project.model === 'v3' && rr.values) rows.push(valuesRow(p, rr.values));
   if (p.project.model === 'v3') rows.push(pageRow('rest:experiments', go('p', name, 'experiments'), stc('half'), rr.experiments.title, rr.experiments.small, { onclick: () => { nav.opener = 'rest:experiments'; } }));
   return [h('h2', { class: 'v2-sh v2-shw', key: 'rest-h' }, PAGE_WORDS.rest), rows.length ? h('ol', { class: 'v2-rows', key: 'rest-rows' }, rows) : null, detailsNode(p)];
+}
+
+// ---------------------------------------------------------------------------
+// The value targets (AC97, J25; stage VT1 of M3B): the row's five marks and words, and its sheet, each target's measure
+// first. Every rule is lib/values.js's; this draws it.
+
+/**
+ * J25's read, as last read (the planning project's `intake/value-checks.jsonl`): { state: 'ok' | 'none' (no file) |
+ * 'pending' (not read yet) | 'failed' (its read failed: "not available"), checks, unreadable, notes }. A failed read never
+ * makes the planning project "Can't read" (A3): it is an optional blob.
+ */
+function valueChecksRead(nowMs) {
+  const built = lastBuilt || [];
+  const empty = { checks: new Map(), unreadable: new Map(), notes: [] };
+  const pb = built.find((b) => b.project.planning === true && b.project.model === 'v3' && !b.error);
+  if (!pb) return { state: 'none', ...empty };
+  const snap = pb.snap || {};
+  if (!snap.tree) return { state: pb.box && pb.box.read && pb.box.read.read === 'cant-read' ? 'failed' : 'pending', ...empty };
+  const e = snap.tree.get(VALUE_CHECKS_PATH);
+  if (!e) return { state: 'none', ...empty };
+  const rec = snap.records ? snap.records.get(VALUE_CHECKS_PATH) : null;
+  if (!rec || !Array.isArray(rec.lines)) return { state: typeof snap.blobFailed === 'function' && snap.blobFailed(e.sha) ? 'failed' : 'pending', ...empty };
+  const targetsOf = (name) => {
+    const b = built.find((x) => x.project.name === name);
+    const doc = b && b.j && b.j.projectDoc;
+    return doc && Array.isArray(doc.valueTargets) ? new Set(doc.valueTargets) : null;
+  };
+  return { state: 'ok', ...readValueChecks({ lines: rec.lines, nowMs, projects: CONFIG.projects, targetsOf }) };
+}
+
+/** A v3 project's value targets as the row and the sheet show them (values.js, valuesView), or null with no `V<n>:` line. */
+function valuesOf(p) {
+  const doc = p.j && p.j.projectDoc;
+  if (p.project.model !== 'v3' || !doc) return null;
+  const nowMs = Date.now();
+  const planning = p.project.planning === true;
+  // V5's figure: AC21's waits over every connected project, as Home's line counts them (v5Line).
+  const v5In = planning ? { config: CONFIG, projects: (lastBuilt || []).map((b) => ({ name: b.project.name, v3: b.project.model === 'v3',
+    readOk: Boolean(b.box && b.box.read && b.box.read.read === 'ok'), model: b.box ? b.box.model : null, tree: b.snap ? b.snap.tree : null })) } : null;
+  return valuesView({ project: p.project, doc, planning, j25: valueChecksRead(nowMs), v5In, nowMs, tz: TZ });
+}
+
+/** A target's mark (AC97): ✓ green and ✕ red as status marks (smk), the half circle, the planned ring and the dashed "?" in ink or grey. */
+const vtMark = (kind, cls = 'v2-s') => (kind === 'check' || kind === 'cross' ? smk(kind, cls) : stc(kind, cls));
+
+/**
+ * The "Value targets <ids>" row (AC97, "The row's small line and marks"; AC83's row, its title and place kept): its left
+ * icon by the one rule, then under the title the five marks, each its icon and its id in Plex Mono, and the row's words by
+ * its state (0 to 8). With section 6 not read, AC83's row as it was.
+ */
+function valuesRow(p, rv) {
+  const name = p.project.name;
+  let vv = null;
+  try {
+    vv = valuesOf(p);
+  } catch {
+    vv = null;
+  }
+  const onclick = () => { nav.opener = 'rest:values'; };
+  if (!vv) return pageRow('rest:values', go('p', name, 'values'), stc('planned'), rv.title, rv.small, { onclick });
+  const word = new Map(vv.targets.map((t) => [t.id, t.verdict.first.toLowerCase()]));
+  const marks = h('span', { class: 'v2-vmarks', key: 'vt-marks' }, vv.row.marks.map((m) => h('span', { class: 'v2-vmk', key: `vmk:${m.id}` },
+    m.mark ? vtMark(m.mark) : null, h('span', { class: 'v2-mono' }, m.id), h('span', { class: 'sb-vh' }, ` ${word.get(m.id)},`))));
+  return h('li', { key: 'li:rest:values' }, h('a', { class: 'v2-prow', key: 'rest:values', href: go('p', name, 'values'), onclick },
+    vv.row.icon ? vtMark(vv.row.icon) : h('span', { class: 'v2-pmk', 'aria-hidden': 'true' }),
+    h('span', { class: 'v2-prt' }, h('span', { class: 'v2-prtt' }, rv.title), marks, h('span', { class: 'v2-small', key: 'vt-words' }, vv.row.words)),
+    vi('chev', 'v2-k v2-chev')));
+}
+
+/**
+ * A target's small chart (AC97, item 3; round 2's picture): over the bars, the goal's label at its tick; each bar its label
+ * at its left, its fill on a `--line` track against the goal's 2 px `--ink` line, and its value at its right in Plex Mono.
+ * The fill is drawn in SVG, its width an attribute (no inline style, AC41); the tick's place one of the scale's three
+ * (0, a third, half way), each a class.
+ */
+function vtChart(t) {
+  const c = t.chart;
+  const x = { 0: '0', 33: '33.333%', 50: '50%' }[c.at];
+  const svg = (b) => {
+    const s = document.createElementNS(SVGNS, 'svg');
+    s.setAttribute('class', 'v2-vsvg');
+    s.setAttribute('aria-hidden', 'true');
+    s.setAttribute('focusable', 'false');
+    const r = (attrs) => {
+      const n = document.createElementNS(SVGNS, 'rect');
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+      s.append(n);
+    };
+    r({ class: 'tr', x: 0, y: 4, width: '100%', height: 10, rx: 3 });
+    // A measured zero is a 4 px stub, never nothing; a value past the scale fills the track.
+    r({ class: `fl ${b.fill}`, x: 0, y: 4, width: b.zero ? 4 : `${Math.round(b.width * 100) / 100}%`, height: 10, rx: b.zero ? 1 : 3 });
+    r({ class: 'gl', x, y: 0, width: 2, height: 18, transform: c.at === '0' ? 'translate(0 0)' : 'translate(-1 0)' });
+    return s;
+  };
+  return h('div', { class: 'v2-vchart', key: `vchart:${t.id}` },
+    h('div', { class: 'v2-vrow v2-vgoal' }, h('span', { class: 'v2-vbl' }), h('span', { class: 'v2-vgt' }, h('span', { class: `v2-vgl at${c.at}` }, c.label)), h('span', {})),
+    c.bars.map((b, i) => h('div', { class: 'v2-vrow', key: `vbar:${t.id}:${i}` }, h('span', { class: 'v2-vbl' }, b.label), svg(b), h('span', { class: 'v2-vbv' }, b.value))));
+}
+
+/** One target's block on the sheet (AC97, items 1 to 5), in section 6's order. */
+function vtBlock(name, t) {
+  const whole = isOpenFold(name, `vt-whole:${t.id}`, false);
+  const early = isOpenFold(name, `vt-earlier:${t.id}`, false);
+  const v = t.verdict;
+  return h('section', { class: 'v2-tgt', key: `vt:${t.id}`, 'data-target': t.id },
+    h('h3', { class: 'v2-vth' }, h('span', { class: 'v2-mono' }, t.id), ' ', h('span', {}, t.name)),
+    t.figure ? h('p', { class: 'v2-vfig', key: `vfig:${t.id}` }, h('span', { class: t.figure.text ? 'v2-vbig txt' : 'v2-vbig' }, t.figure.big), ' ', h('span', { class: 'v2-vfw' }, t.figure.words)) : null,
+    t.aside ? h('p', { class: 'v2-vline', key: `vaside:${t.id}` }, t.aside) : null,
+    t.chart ? vtChart(t) : null,
+    t.steps ? h('ol', { class: 'v2-vsteps', key: `vsteps:${t.id}` }, t.steps.map((x, i) => h('li', { key: `vstep:${i}` }, vtMark(x.mark), h('span', {}, x.words)))) : null,
+    h('p', { class: 'v2-vverd', key: `vverd:${t.id}` }, v.mark ? vtMark(v.mark) : h('span', { class: 'v2-pmk', 'aria-hidden': 'true' }),
+      h('span', {}, h('b', {}, v.first), v.second ? ` · ${v.second}` : null)),
+    t.lines.map((l, i) => h('p', { class: 'v2-vline', key: `vline:${t.id}:${i}` }, l)),
+    t.newer ? h('p', { class: 'v2-vline', key: `vnewer:${t.id}` }, VALUES_WORDS.newer) : null,
+    foldButton(name, `vt-whole:${t.id}`, false, { class: 'v2-fold v2-vfold' }, VALUES_WORDS.whole),
+    whole ? h('p', { class: 'v2-quote', key: `vquote:${t.id}` }, t.quote) : null,
+    t.earlier.length ? foldButton(name, `vt-earlier:${t.id}`, false, { class: 'v2-fold v2-vfold' }, VALUES_WORDS.earlier(t.earlier.length)) : null,
+    t.earlier.length && early ? h('ul', { class: 'v2-vearly', key: `vearly:${t.id}` }, t.earlier.map((x, i) => h('li', { key: `ve:${i}` }, x))) : null);
+}
+
+/** The sheet's body (AC97): its small line, J25's state once where it is not read, each target's block, then the miss and stop rule. */
+function valuesSheetBody(p, vv) {
+  const name = p.project.name;
+  return [h('p', { class: 'v2-small', key: 'vt-small' }, vv.small),
+    vv.j25Line ? h('p', { class: 'v2-small', key: 'vt-j25' }, vv.j25Line) : null,
+    vv.targets.map((t) => vtBlock(name, t)),
+    // The rule quoted (P-001-m3b-stop-rule.md, A): three lines on screen, "Read it all ›" for the rest; its clip exact
+    // (sandbox.css, `.v2-vstop .v2-clip.v2-quote`: the sheet's quote padding no longer cuts a quote of three lines).
+    vv.stop ? h('section', { class: 'v2-vstop', key: 'vt-stop' }, h('h3', { class: 'v2-bh' }, VALUES_WORDS.stopHead), clipNode(`vt-stop:${name}`, vv.stop, 'v2-quote', true, 'p')) : null];
 }
 
 /**
@@ -1572,10 +1702,9 @@ function renderPage(p, bd) {
     const rr = restRows(p.j, p.snap && p.snap.tree);
     if (sheet === 'values') {
       const title = rr.values ? rr.values.title : PAGE_WORDS.values;
+      const vv = rr.values ? valuesOf(p) : null;
       out.push(sheetShell(back, title, [sheetHead(null, title, back),
-        rr.values ? h('p', { class: 'v2-small' }, `${rr.values.small} · docs/PROJECT.md, section 6`) : null,
-        rr.values ? h('ul', { class: 'v2-qlist' }, rr.values.lines.map((l) => h('li', { class: 'v2-quote', key: `vt:${l.id}` }, l.text)))
-          : h('p', { class: 'v2-small' }, 'No value targets in docs/PROJECT.md, section 6.')], 'page-sheet'));
+        vv ? valuesSheetBody(p, vv) : h('p', { class: 'v2-small' }, 'No value targets in docs/PROJECT.md, section 6.')], 'page-sheet'));
     } else {
       out.push(sheetShell(back, PAGE_WORDS.experiments, [sheetHead(null, PAGE_WORDS.experiments, back),
         h('p', { class: 'v2-small' }, `${rr.experiments.small} · experiments/`),
@@ -3777,6 +3906,12 @@ function recordNotes(p) {
       if (v) out.push(...v.notes);
     } catch {
       // Work ahead's own screen says what went wrong
+    }
+    // J25 (VT1): the weekly value checks' notes, "value checks line <n>: <reason>", in the planning project's.
+    try {
+      out.push(...valueChecksRead(Date.now()).notes);
+    } catch {
+      // the targets' sheet says what it can
     }
   }
   return out;

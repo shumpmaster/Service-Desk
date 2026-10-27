@@ -204,6 +204,29 @@ export function valueTargets(text) {
   return out;
 }
 
+const STOP_LABEL = '**Miss and stop rule:**';
+const STOP_END = 'where the owner rules continue, re-aim or stop.';
+/**
+ * Section 6's miss and stop rule, quoted (AC97, the owner's answer "Quote it (Recommended)", A,
+ * decisions/questions/P-001-m3b-stop-rule.md): from after its "**Miss and stop rule:**" to the end of its sentence "…
+ * where the owner rules continue, re-aim or stop.", its lines joined, its first letter capitalised, the one change to its
+ * words (P-001-m3b-picture-small.md, A, (a)). The measuring design after it in the same paragraph is not quoted. Null
+ * where section 6 holds no such paragraph or no such sentence.
+ */
+export function stopRule(text) {
+  const sec = part1Sections(text || '')[6];
+  if (!sec) return null;
+  const i = sec.body.findIndex((l) => l.trim().startsWith(STOP_LABEL));
+  if (i < 0) return null;
+  const para = [];
+  for (let j = i; j < sec.body.length && sec.body[j].trim(); j++) para.push(sec.body[j].trim());
+  const words = para.join(' ').slice(STOP_LABEL.length).trim();
+  const end = words.indexOf(STOP_END);
+  if (end < 0) return null;
+  const quote = words.slice(0, end + STOP_END.length);
+  return quote[0].toUpperCase() + quote.slice(1);
+}
+
 const MILESTONE_MARK_RE = /\(M[0-9A-Z]{1,7}\) · /;
 const MILESTONE_LINE_RE = new RegExp('^(?:- )?(?<name>\\S.*?) \\((?<id>M[0-9A-Z]{1,7})\\) · done when (?<done>\\S.*?) · '
   + 'phase: (?<phase>Discovery|Design|Build|Launch)(?: · for: (?<for>P-\\d{3,}))?'
@@ -400,7 +423,8 @@ export const OWNER_IS_USER = 'The owner is the user.';
  * section 6's value targets, whether sections 1, 4 and 5 hold a line beyond their instructions
  * (Discovery-7's file part), and section 9's "The owner is the user." (AC52); from 2026-10-16, each
  * milestone's why (AC61 (a)), section 3's standard-milestone lines (AC61 (b)) and the Intent's
- * Purpose items (AC59). `problems` names each line out of form or repeated (AC61, AC68's record notes).
+ * Purpose items (AC59); from VT1 (AC97), section 6's miss and stop rule, quoted (`stopRule`). `problems`
+ * names each line out of form or repeated (AC61, AC68's record notes).
  */
 export function parseProjectDoc(text) {
   const secs = part1Sections(text || '');
@@ -410,7 +434,7 @@ export function parseProjectDoc(text) {
   const filled = (n) => Boolean(secs[n]) && secs[n].body.some((l) => l.trim() && !isInstructionLine(l));
   const s9 = secs[9] ? secs[9].body.map((l) => l.trim()).filter((l) => l && !isInstructionLine(l)) : null;
   return {
-    milestones, problems, valueTargets: valueTargets(text), valueLines: valueTargetLines(text),
+    milestones, problems, valueTargets: valueTargets(text), valueLines: valueTargetLines(text), stopRule: stopRule(text),
     scopeLimitsOwnersFilled: filled(1) && filled(4) && filled(5),
     section9: s9, ownerIsUser: Boolean(s9 && s9.includes(OWNER_IS_USER)),
     standard: std.standard, purpose: purposeItems(text),

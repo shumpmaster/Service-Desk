@@ -1133,3 +1133,33 @@ the blocker order's worked cases and boardView's blockers, pure, and their scree
   and #62 (not there). **NOT real records or pull requests.**
 - **the worked cases' cards** (`ac96-qw3-blockers.test.mjs`): AC95's five worked cases (X, Y, Z; A, B, C, D; U, V, W), as
   made-up questions in a made-up project, each raised at a made-up time in the case's order. **NOT real records.**
+
+## The value targets shown, VT1 (2026-10-27, S-001 AC97 and J25; AC60 and J12 changed for M3B; stage VT1 of "The desk's value targets shown: M3B")
+
+- `j11-7b69b2b/docs/PROJECT.md`: **real.** Service-Desk's docs/PROJECT.md at 7b69b2b (`git show 7b69b2b:docs/PROJECT.md`),
+  section 3 and section 6 as CS36 left them (V4 at launch with no date, the 14 days after launch, the miss rule's time limit
+  only), copied unchanged. AC97's tests read its section 6 lines and its miss and stop rule from it, over the other records
+  of `j11-77bfeae/` (real), as AC97 names it (round 6, the Reviewer's N2).
+
+VT1 adds `tests/desk/vt1-fixtures.mjs`. `ac97-values.test.mjs`, `ac97-values-page.test.mjs`, `j25-value-checks.test.mjs`,
+`j12-value-checks.test.mjs`, VT1's walk in `ac88-dark.test.mjs` (with `VT1_ONCE`) and the `vt1-` captures
+(`tools/vt1-shots.mjs`) open these made-up parts, each **NOT real**:
+- **the launch** (`LAUNCH`, `withLaunch`): M3C's line given ` · reached: 2026-12-02`, the approved picture's made-up launch
+  day (Wed 2 Dec 2026), and other made-up days (28 Nov, 6 and 7 Dec 2026, 8 Jan 2027) for launches on other weekdays. Not a
+  plan: launch has no date (P-001-m3b-launch-date.md, A). **NOT a real record.**
+- **J25 lines** (`vc`, `DAY5`, `FINAL`, and lines written inline in the tests): Chief of Staff weekly value checks in J25's
+  form, in every state and awkward case (two checks of one target, malformed lines of every kind, a time 5 and 11 minutes
+  after the clock, either side of midnight in Chicago, `Z` and `+00:00`, a target section 6 does not hold, a project not
+  connected, a v2.5 project's line, a line dated before an earlier one, values at 0, at each goal, past it and past the
+  chart's scale, `null` on V4 and `not measured` lines). Their figures are the approved picture's or made up; every
+  `session` is `session_made_up_for_vt1`, every `source` a made-up path. No Chief of Staff wrote any of them. **NOT real
+  records.**
+- **dispatch-log cards** (`cardsLog`, `windowCards`, `novemberCards`): item Q-901's failure cards in made-up
+  `dispatch-log/2026-11.jsonl` and `2026-12.jsonl`, raised and answered at made-up times — inside and outside the 14 days
+  (one raised on launch day), one open at the window's end and one answered after it — with made-up answer records and card
+  files. **NOT real records.**
+- **other v3 projects** (`docWithTargets`, `ALPHA_TARGETS`, and lines written inline): sandbox-fixtures.mjs's made-up
+  `fullRepo('Alpha')` with a made-up section 6 in place of the 3117150 doc's own: three targets with no J25 line, ids out of
+  order, a long target line, and no `V<n>:` line. **NOT real records.**
+- **J12 pull requests 990 to 996** (`j12-value-checks.test.mjs`): made-up merged weekly value check pull requests and their
+  changed paths. **NOT real records.**

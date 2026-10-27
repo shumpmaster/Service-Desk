@@ -6,7 +6,7 @@
 // the launch (the approved picture's Wed 2 Dec 2026, not a plan); Service-Desk's section 3 and 6 are 7b69b2b's (real).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { gitSha } from './fake-desk.mjs';
+import { gitSha, BAD_PR } from './fake-desk.mjs';
 import { loadSandbox, findAll, byClass } from './sandbox-helpers.mjs';
 import { memStore } from './wa-fixtures.mjs';
 import { parseProjectDoc } from '../../src/lib/j11.js';
@@ -237,6 +237,25 @@ test('AC97 (draft 11, the Reviewer\'s N3): another project\'s row reads state 0\
     const row = keyed(app, 'rest:values');
     assert.equal(byClass(row, 'v2-small')[0].textContent, '2 targets · weekly checks not available');
     assert.equal(row.children[0].className, 'v2-pmk', 'no left icon');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC97 (VT1 round 3, the Reviewer\'s B1; draft 11\'s N3): another project\'s row reads state 0\'s "weekly checks not available", with no left icon, when the planning project can\'t be drawn (its pull requests holding one the page can\'t draw, fake-desk.mjs\'s BAD_PR, made up)', async () => {
+  const st = vt1State({ lines: [], alpha: ['V1: Signups: 20 (made up)', 'V2: Bounce: under 2% (made up)'] });
+  st.repos['Service-Desk'].pulls.push(BAD_PR);
+  const app = await loadSandbox({ ...st, hash: '#/p/Alpha', now: chi('2026-12-07', '15:00'), store: memStore() });
+  try {
+    await app.advance(1000);
+    await app.advance(61_000);
+    await app.go('#/p/Service-Desk');
+    assert.match(app.text(), /Can't show this project/, 'the planning project can\'t be drawn');
+    await app.go('#/p/Alpha');
+    const row = keyed(app, 'rest:values');
+    assert.equal(byClass(row, 'v2-small')[0].textContent, '2 targets · weekly checks not available');
+    assert.equal(row.children[0].className, 'v2-pmk', 'no left icon');
+    assert.deepEqual(byClass(row, 'v2-vmk').map((m) => findAll(m, (e) => e.tag === 'svg').length), [0, 0], 'no mark');
   } finally {
     app.restore();
   }

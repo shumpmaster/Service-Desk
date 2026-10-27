@@ -15,7 +15,7 @@ import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join, extname, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
-import { vt1State, chi, vc, DAY5, FINAL, windowCards, novemberCards, ALPHA_TARGETS } from '../vt1-fixtures.mjs';
+import { vt1State, chi, vc, DAY5, FINAL, ALL_MET, FINAL_NOT_MEASURED, windowCards, novemberCards, ALPHA_TARGETS } from '../vt1-fixtures.mjs';
 
 const PUBLIC = resolve(fileURLToPath(new URL('../../../src/public/', import.meta.url)));
 const OUT = resolve(process.argv[2] || 'vt1-shots');
@@ -24,9 +24,6 @@ const SIZES = [[360, 740], [414, 896]];
 const THEMES = ['light', 'dark'];
 const SD = '#/p/Service-Desk';
 
-/** Every check met (made up): V2 at its goal. */
-const ALL_MET = FINAL.map((l) => l.replace('"state":"missed"', '"state":"met"')).map((l) => (/"target":"V2"/.test(l) ? l.replace(/"value":2,/, '"value":1,') : l));
-const NOT_MEASURED = ALL_MET.map((l) => (/"target":"V(3|5)"/.test(l) && /"to":"2026-12-16"/.test(l) ? l.replace(/"value":\d+/, '"value":null').replace('"state":"met"', '"state":"not measured"') : l));
 const DAY5_IN = DAY5.map((l) => (/"target":"V2"/.test(l) ? l.replace('"value":2', '"value":1').replace('"state":"missed"', '"state":"on track"') : l));
 const ALPHA_LINE = vc({ target: 'V1', project: 'Alpha', from: '2026-11-30', to: '2026-12-06', value: 14, figure: '14 signups', state: 'missed' });
 
@@ -43,13 +40,15 @@ const SHOTS = [
   { name: 'vt1-row-6-over-no-check', state: () => vt1State({ lines: [], cards: windowCards() }), now: chi('2026-12-17', '15:00'), row: true },
   { name: 'vt1-row-8a-final-all-met', state: () => vt1State({ lines: ALL_MET, cards: windowCards() }), now: chi('2026-12-24', '15:00'), row: true },
   { name: 'vt1-row-8b-final-one-missed', state: () => vt1State({ lines: FINAL, cards: windowCards() }), now: chi('2026-12-24', '15:00'), row: true },
-  { name: 'vt1-row-8c-final-not-measured', state: () => vt1State({ lines: NOT_MEASURED, cards: windowCards() }), now: chi('2026-12-24', '15:00'), row: true },
+  { name: 'vt1-row-8c-final-not-measured', state: () => vt1State({ lines: FINAL_NOT_MEASURED, cards: windowCards() }), now: chi('2026-12-24', '15:00'), row: true },
   { name: 'vt1-row-0-checks-unreadable', state: () => vt1State({ lines: DAY5, cards: windowCards() }), now: chi('2026-12-07', '15:00'), row: true, failJ25: true },
+  { name: 'vt1-row-alpha-all-met', state: () => vt1State({ lines: ['V1', 'V2', 'V3'].map((id) => vc({ target: id, project: 'Alpha', from: '2026-11-30', to: '2026-12-06', value: null, figure: 'as aimed', state: 'met' })), alpha: ALPHA_TARGETS }), now: chi('2026-12-07', '15:00'), row: true, hash: '#/p/Alpha' },
   { name: 'vt1-row-alpha-no-check', state: () => vt1State({ lines: [], alpha: ALPHA_TARGETS }), now: chi('2026-12-07', '15:00'), row: true, hash: '#/p/Alpha' },
   // The sheet: before launch, on day 5 with one target outside (its whole line opened), after the 14 days with one missed.
   { name: 'vt1-sheet-before-launch', state: () => vt1State({ launch: null, nov: novemberCards() }), now: chi('2026-11-27', '15:00'), sheet: true },
   { name: 'vt1-sheet-launch-week-day3', state: () => vt1State({ cards: windowCards() }), now: chi('2026-12-05', '15:00'), sheet: true },
   { name: 'vt1-sheet-day5-one-outside', state: () => vt1State({ lines: DAY5, cards: windowCards() }), now: chi('2026-12-07', '15:00'), sheet: true, open: ['V2'] },
+  { name: 'vt1-sheet-after-14-days-two-not-measured', state: () => vt1State({ lines: FINAL_NOT_MEASURED, cards: windowCards() }), now: chi('2026-12-24', '15:00'), sheet: true },
   { name: 'vt1-sheet-after-14-days-one-missed', state: () => vt1State({ lines: FINAL, cards: windowCards() }), now: chi('2026-12-24', '15:00'), sheet: true },
   { name: 'vt1-sheet-checks-unreadable', state: () => vt1State({ lines: DAY5, cards: windowCards() }), now: chi('2026-12-07', '15:00'), sheet: true, failJ25: true },
   { name: 'vt1-sheet-alpha', state: () => vt1State({ lines: [ALPHA_LINE], alpha: ALPHA_TARGETS }), now: chi('2026-12-07', '15:00'), sheet: true, hash: '#/p/Alpha' },

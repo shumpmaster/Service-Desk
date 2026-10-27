@@ -1681,7 +1681,8 @@ const QW3_FLAT = [...QW3_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k,
  * under, outweighed the clip's padding, so a quote of exactly three lines was cut):
  * - the row (`a.v2-prow` keyed `rest:values`): under its title the five marks (`span.v2-vmarks`, a wrapping flex row), each
  *   mark (`span.v2-vmk`) its icon at 14 px (a ✓ in --ok and a ✕ in --bad, AC92 (a)'s status mark, the rest ink or grey) and
- *   its id in Plex Mono (`.v2-mono`, as built); its left icon a ✕ in --bad or a ✓ in --ok where AC97's rule gives one;
+ *   its id in Plex Mono (`.v2-mono`, as built); its left icon a ✕ in --bad or a ✓ in --ok where AC97's rule gives one (the
+ *   all-met ✓ walked from VT1's round 2, the Reviewer's N4);
  * - the sheet's blocks (`section.v2-tgt`, and `section.v2-vstop` for the rule), each a grid under a 1 px --line hairline: the
  *   head (`h3.v2-vth`, --t-row --ink) and its short name (`span`, so computed); the figure (`p.v2-vfig`, a wrapping flex row; its
  *   number `span.v2-vbig`, --t-title --ink, and its words `span.v2-vfw`, --t-small --ink2); the chart (`div.v2-vchart`, one grid,
@@ -1705,7 +1706,7 @@ const VT1_LOOK = (t) => new Map([
   ['span.v2-vmarks (the row\'s marks)', ['display: (none) → flex', 'flex-wrap: (none) → wrap', 'align-items: (none) → center', 'gap: (none) → 2px 12px']],
   ['span.v2-vmk (a mark)', ['display: (none) → inline-flex', 'align-items: (none) → center', 'gap: (none) → 3px']],
   ['svg.v2-s (a mark\'s icon, 14 px)', ['width: 16px → 14px', 'height: 16px → 14px', `color: ${t.ink} → ${t.ok}`, `color: ${t.ink} → ${t.bad}`]],
-  ['svg.v2-s (the row\'s left icon, a ✕)', [`color: ${t.ink} → ${t.bad}`]],
+  ['svg.v2-s (the row\'s left icon, a ✓ or ✕)', [`color: ${t.ink} → ${t.ok}`, `color: ${t.ink} → ${t.bad}`]],
   // The sheet's blocks.
   ['section.v2-tgt (a target)', VT1_BLOCK(t)],
   ['section.v2-vstop (the miss and stop rule)', VT1_BLOCK(t)],
@@ -1758,7 +1759,7 @@ const VT1_KEY = (n) => {
   if (is(n, 'span', 'v2-vmarks') && p && p.cls.has('v2-prt')) return 'span.v2-vmarks (the row\'s marks)';
   if (is(n, 'span', 'v2-vmk') && is(p, 'span', 'v2-vmarks')) return 'span.v2-vmk (a mark)';
   if (is(n, 'svg', 'v2-s') && is(p, 'span', 'v2-vmk')) return 'svg.v2-s (a mark\'s icon, 14 px)';
-  if (is(n, 'svg', 'v2-s') && n.cls.has('st-cross') && is(p, 'a', 'v2-prow') && p.attrs['data-k'] === 'rest:values') return 'svg.v2-s (the row\'s left icon, a ✕)';
+  if (is(n, 'svg', 'v2-s') && (n.cls.has('st-cross') || n.cls.has('st-check')) && is(p, 'a', 'v2-prow') && p.attrs['data-k'] === 'rest:values') return 'svg.v2-s (the row\'s left icon, a ✓ or ✕)';
   if (tgt(n) && p && p.cls.has('v2-sheet')) return 'section.v2-tgt (a target)';
   if (is(n, 'section', 'v2-vstop') && p && p.cls.has('v2-sheet')) return 'section.v2-vstop (the miss and stop rule)';
   if (is(n, 'h3', 'v2-vth') && tgt(p)) return 'h3.v2-vth (a target\'s id and short name)';
@@ -2468,6 +2469,9 @@ test('AC88 + AC69 + AC92 (a) + AC44 step 4 (VT1 of M3B; AC97): on VT1\'s screens
   }
   assert.deepEqual(fails, []);
   for (const want of ['mark: a value target\'s ✓', 'mark: a value target\'s ✕', 'fill: a value target\'s bar']) assert.ok(places.has(want), `${want}: ${JSON.stringify([...places])}`);
+  // The all-met green left icon walked (VT1's round 2, the Reviewer's N4), for Service-Desk and for Alpha (VT1_OPENS's last open
+  // checks each is the green check before the four checks read it).
+  assert.ok(excepted.has('VT1 light svg.v2-s (the row\'s left icon, a ✓ or ✕) color: #18191c → #12733a'));
   assert.deepEqual([...excepted].filter((x) => /^VT1 /.test(x)).sort(), VT1_FLAT, 'VT1_ONCE met exactly');
   assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^VT1 /.test(x)), [], 'no other exception the walks above had not met');
 });

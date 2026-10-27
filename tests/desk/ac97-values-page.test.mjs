@@ -143,6 +143,10 @@ test('AC97: the charts drawn — a `--line` track, the fill by its verdict (V5 `
     const r2 = findAll(byClass(block(app, 'V2'), 'v2-vsvg')[0], (e) => e.tag === 'rect');
     assert.deepEqual(r2.map((r) => decl(r, 'fill')), ['#e7e7ea', '#b3162a', '#18191c']);
     assert.equal(decl(byClass(block(app, 'V2'), 'v2-vbv')[0], 'font'), '400 11px/1.4 "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace');
+    // Only the value in Plex Mono (draft 11, the Builder's point 9): the label --t-label at 400, Plex Sans.
+    const lbl = n.find((x) => x.el === byClass(block(app, 'V2'), 'v2-vbl')[1]);
+    assert.equal(plain(lbl.declared.get('font')), '500 11px/1.35 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif');
+    assert.equal(plain(lbl.declared.get('font-weight')), '400');
   } finally {
     app.restore();
   }

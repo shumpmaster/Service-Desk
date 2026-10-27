@@ -73,6 +73,12 @@ export const FINAL = [
   vc({ target: 'V5', from: '2026-12-03', to: '2026-12-16', value: 140, state: 'met', figure: '2h 20m median, 21 cards', at: chi('2026-12-21', '09:00') }),
 ];
 
+/** Every last check met (made up): FINAL with V2 at its goal and every `missed` a `met` (the row's green check, state 8). */
+export const ALL_MET = FINAL.map((l) => l.replace('"state":"missed"', '"state":"met"')).map((l) => (/"target":"V2"/.test(l) ? l.replace(/"value":2,/, '"value":1,') : l));
+/** ALL_MET with V3's and V5's final checks `not measured` (made up): the owner's answer B's grey ring with the desk's figure. */
+export const FINAL_NOT_MEASURED = ALL_MET.map((l) => (/"target":"V(3|5)"/.test(l) && /"to":"2026-12-16"/.test(l)
+  ? l.replace(/"value":\d+/, '"value":null').replace('"state":"met"', '"state":"not measured"') : l));
+
 // ---------------------------------------------------------------------------
 // Cards in the dispatch log (NOT real records): item Q-901's failure cards, raised and answered at made-up times
 
@@ -180,6 +186,12 @@ async function stopOpened(app) {
   const more = keyedEl(app, 'clipbtn:vt-stop:Service-Desk');
   if (more) await app.tap(more);
 }
+/** The row's left icon the green check (throws otherwise, so the walk can't pass on another icon). */
+async function greenIcon(app) {
+  const row = keyedEl(app, 'rest:values');
+  const icon = row && row.children[0];
+  if (!icon || icon.tag !== 'svg' || !/\bst-check\b/.test(icon.attrs.class) || !/\bok\b/.test(icon.attrs.class)) throw new Error(`${app.loc.hash}: the row's left icon is not the green check`);
+}
 export const VT1_OPENS = [
   ['before launch (made up: no reached date): the row and the sheet, V5 grey', () => vt1Open(vt1State({ launch: null, nov: novemberCards() }), chi('2026-11-27', '15:00'), '#/p/Service-Desk'),
     [['#/p/Service-Desk'], ['#/p/Service-Desk/values']]],
@@ -189,4 +201,9 @@ export const VT1_OPENS = [
     vc({ target: 'V1', project: 'Alpha', from: '2026-11-30', to: '2026-12-06', value: 14, figure: '14 signups', state: 'missed' })], cards: windowCards(), alpha: ALPHA_TARGETS }),
   chi('2026-12-24', '15:00'), '#/p/Service-Desk'),
   [['#/p/Service-Desk'], ['#/p/Service-Desk/values', async (app) => { await tapText(app, '2 earlier checks'); }], ['#/p/Alpha'], ['#/p/Alpha/values']]],
+  // VT1's round 2 (the Reviewer's N4): the all-met final state's green left icon, for Service-Desk and for Alpha.
+  ['after the 14 days (made up): every check met, Service-Desk\'s and Alpha\'s', () => vt1Open(vt1State({ lines: [...ALL_MET,
+    ...['V1', 'V2', 'V3'].map((id) => vc({ target: id, project: 'Alpha', from: '2026-11-30', to: '2026-12-06', value: null, figure: 'as aimed', state: 'met' }))], cards: windowCards(), alpha: ALPHA_TARGETS }),
+  chi('2026-12-24', '15:00'), '#/p/Service-Desk'),
+  [['#/p/Service-Desk', greenIcon], ['#/p/Alpha', greenIcon]]],
 ];

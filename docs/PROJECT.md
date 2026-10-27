@@ -177,32 +177,33 @@ before D4. A read-only preview could replace the old page early, with acting fol
 
 *Proposed values; the owner sets them on the move-to-Build card.*
 
-V1: Missed decisions: items waiting on the owner in a connected project that the desk did not show within 5 minutes, 0 over the first 14 days after launch, 2026-11-25 (14 days after V4's date; moves with it)
-V2: False alarms: items the desk flagged that did not need the owner, at most 1 a week over the first 14 days after launch, 2026-11-25 (14 days after V4's date; moves with it)
-V3: Owner upkeep: the owner's time on the desk itself (tokens, settings, adding repositories), at most 30 minutes a week after launch, 2026-11-25 (14 days after V4's date; moves with it)
-V4: Replacement: the desk serves the Operations-Hub address and the old repository is archived, by 2026-11-11
-V5: Owner response time: the median time from a card appearing in a connected project to its answer being committed, counting only 07:00 to 22:00 Monday to Friday (America/Chicago), with a card still open at the window's end counted at its wait so far, tracked and shown on the desk, under 4 hours, over the first 14 days after launch, 2026-11-25 (14 days after V4's date; moves with it)
+V1: Missed decisions: items waiting on the owner in a connected project that the desk did not show within 5 minutes, 0 over the first 14 days after launch
+V2: False alarms: items the desk flagged that did not need the owner, at most 1 a week over the first 14 days after launch
+V3: Owner upkeep: the owner's time on the desk itself (tokens, settings, adding repositories), at most 30 minutes a week after launch
+V4: Replacement: the desk serves the Operations-Hub address and the old repository is archived, at launch
+V5: Owner response time: the median time from a card appearing in a connected project to its answer being committed, counting only 07:00 to 22:00 Monday to Friday (America/Chicago), with a card still open at the window's end counted at its wait so far, tracked and shown on the desk, under 4 hours, over the first 14 days after launch
 
-V4's date is proposed as 2026-11-11, the Chief of Staff's estimate with D7 (E: about two weeks for a model change's spec, build, review and owner approval, then
-its adoption here). The owner sets the date on the
-move-to-Build card. V1 to V3 run for the 14 days after launch, so their date is V4's date plus 14
-days and moves with it, and the stop rule below uses V4's date as set.
+V4 has no date: the owner dropped it, since the launch date was set arbitrarily and there is no
+deadline (decisions/questions/P-001-m3b-launch-date.md, A). Launch is the day it happens. V1, V2,
+V3 and V5 run over the 14 days after launch day, whenever it is
+(decisions/questions/P-001-m3b-window.md, A).
 
-**Miss and stop rule:** a miss is V4 not met by its date (proposed 2026-11-11), or the redesign taking more than about
+**Miss and stop rule:** a miss is the redesign taking more than about
 2 hours a week of the owner's time before launch. At a miss, the owner rules: re-aim (for example,
 launch read-only and add acting after) or stop. A V1 to V3 miss after launch goes to the stage-8
 evidence review, where the owner rules continue, re-aim or stop. How V1 and V2 are measured (design, C;
 the Definer fixes the details in Define): the desk notes, on the device in use, the times it was
 open and when it first showed each card, and the owner's "didn't need me" marks. Once a week it
-offers a prefilled link (the same route as answers, D4.1) that commits those figures to
-`docs/metrics/<week>.md` in Service-Desk, so the record is in the repository, not only on a device.
+offers a prefilled link (the same route as answers, D4.1) that commits those figures to the
+owner's private portfolio repository, so the record is in a repository, not only on a device, and
+none of it is published (decisions/questions/P-001-m3b-weekly-file.md, C).
 The Chief of Staff's weekly check counts, for V1, cards whose commit fell in an open window and that
 were shown more than 5 minutes later, or not at all (a card committed while the desk was closed is
 not a miss, matching "Show" in §8); and for V2, the marked items. Nothing is stored on Cloudflare,
 so the $0 ceiling and the data boundaries are unchanged; the cost is one commit a week by the
 owner, inside V3's 30 minutes. V3 and the pre-launch time are the
-owner's own weekly estimate, which the Chief of Staff asks for and records each week in
-docs/LEDGER.md. The Chief of Staff owns all four weekly checks (§4). Operations-Hub stays live until launch, so stopping
+owner's own weekly estimate, which the Chief of Staff asks for and records each week in the
+weekly value check, intake/value-checks.jsonl (specs/S-001.md, J25). The Chief of Staff owns all four weekly checks (§4). Operations-Hub stays live until launch, so stopping
 loses nothing that exists today. The 5-minute figure in V1 rests on U4.
 
 ## 7. Solid foundation

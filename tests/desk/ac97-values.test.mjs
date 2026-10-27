@@ -292,7 +292,7 @@ test('AC97: the latest window line\'s `met` or `missed` sets the mark over the d
 
 // Rewritten in VT1's round 2 (forced: draft 11, C, settles V4's archive by its latest line — the Reviewer's Q2 and Q3 — so an
 // `on track` line no longer reads as archived and a `missed` one no longer shows "archived" with "The desk's own reading").
-test('AC97: V4 judged from launch day — "Under way" with the half circle until its latest line says `met`; `met` archived with ✓ and "Within target"; `missed` "Old repository not archived" with ✕ beside the check\'s "Missed"; `on track` and `not measured` the step not done, "Under way"; never outside; V4 lines before launch ignored', () => {
+test('AC97: V4 judged from launch day — "Under way" with the half circle until its latest line says `met`; `met` archived with ✓, "2 of 2", and the check\'s "Met" (the desk\'s own "Within target" agreeing); `missed` "Old repository not archived" with ✕ beside the check\'s "Missed"; `on track` and `not measured` the step not done, "Under way"; never outside; V4 lines before launch ignored', () => {
   for (const day of ['2026-12-02', '2026-12-05', '2026-12-20']) {
     const t = T(sd({ now: day }), 'V4');
     assert.deepEqual([t.mark, verdict(t)], ['half', 'Under way · goal: both at launch'], day);

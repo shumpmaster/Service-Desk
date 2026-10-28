@@ -34,6 +34,10 @@ const SHOTS = [
   { name: 'vt2-confirming-sheet-marked', state: () => everyKind(), now: NOW, key: KEYS.card, steps: ['mark', 'done', 'reopen'] },
   { name: 'vt2-kicked-back-sheet-marked', state: () => everyKind(), now: NOW, key: KEYS.card, steps: ['mark', 'done', 'kick', 'reopen'] },
   { name: 'vt2-question-confirming-sheet', state: () => everyKind(), now: NOW, key: KEYS.question, steps: ['move', 'reopen'] },
+  // VT2's round 2 (the Reviewer's N3): a gate's confirming and kicked-back sheets, and a question's kicked-back sheet, each marked.
+  { name: 'vt2-gate-confirming-sheet-marked', state: () => everyKind(), now: NOW, key: KEYS.gate, steps: ['mark', 'move', 'reopen'] },
+  { name: 'vt2-gate-kicked-back-sheet-marked', state: () => everyKind(), now: NOW, key: KEYS.gate, steps: ['mark', 'move', 'kick', 'reopen'] },
+  { name: 'vt2-question-kicked-back-sheet-marked', state: () => everyKind(), now: NOW, key: KEYS.question, steps: ['mark', 'move', 'kick', 'reopen'] },
   { name: 'vt2-no-longer-waiting-sheet-marked', state: () => everyKind(), now: NOW, key: KEYS.hold, steps: ['mark', 'gone'] },
   { name: 'vt2-being-recorded-sheet', state: () => recordingState(), now: REC_NOW, key: REC_KEY, steps: ['recorded'] },
   { name: 'vt2-portfolio-sheet-no-control', state: () => everyKind(), now: NOW, key: KEYS.portfolio },

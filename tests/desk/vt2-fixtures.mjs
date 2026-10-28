@@ -102,8 +102,8 @@ export const targetsState = () => vt1State({ launch: null });
 // The page
 
 /** The page opened on `st` at `now` with `store` (a memStore), read once. */
-export async function vt2Open(st, { hash = '#/waiting', now = NOW, store = memStore() } = {}) {
-  const app = await loadSandbox({ ...st, hash, now, store });
+export async function vt2Open(st, { hash = '#/waiting', now = NOW, store = memStore(), visibility = 'visible' } = {}) {
+  const app = await loadSandbox({ ...st, hash, now, store, visibility });
   await app.advance(1000);
   app.store = store;
   return app;

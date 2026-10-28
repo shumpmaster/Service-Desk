@@ -80,6 +80,49 @@ test('AC25 + J5 on the page: a window opens at load (visible) and at each visibl
   }
 });
 
+// VT2's round 2 (the Reviewer's N1, M17): the page's own split, in ownerTimeZone (Chicago), not UTC.
+test('AC25 on the page: a window open across Monday 00:00 in Chicago (ownerTimeZone) is split there, at the tick after it, not at Monday 00:00 UTC', async () => {
+  const MON = Date.parse('2026-10-19T05:00:00Z'); // Mon 19 Oct, 00:00 CDT; Monday 00:00 UTC was five hours before
+  const t0 = MON - 30_000; // Sun 18 Oct, 23:59:30 in Chicago
+  const store = memStore();
+  const app = await vt2Open(everyKind({ portfolio: false }), { store, now: t0 });
+  try {
+    assert.deepEqual(notesIn(store).windows, [[t0, t0]]);
+    await app.advance(14_000);
+    await app.tick();
+    assert.deepEqual(notesIn(store).windows, [[t0, t0 + 15_000]], 'Sunday still, in Chicago');
+    await app.advance(30_000);
+    await app.tick();
+    assert.deepEqual(notesIn(store).windows, [[t0, MON], [MON, MON + 15_000]], 'split at Monday 00:00 in Chicago');
+    await app.advance(5_000);
+    await app.visibility('hidden');
+    assert.deepEqual(notesIn(store).windows, [[t0, MON], [MON, MON + 20_000]]);
+  } finally {
+    app.restore();
+  }
+});
+
+// VT2's round 2 (the Reviewer's N1, M22): a page loaded in a background tab.
+test('AC25 on the page: a page loaded hidden opens no window and notes nothing, its reads included, until it becomes visible; then a window opens and its read notes what it counts', async () => {
+  const store = memStore();
+  const app = await vt2Open(everyKind({ portfolio: false }), { store, visibility: 'hidden' });
+  try {
+    await app.advance(2 * POLL_MS);
+    await app.tick();
+    const n = notesIn(store);
+    assert.ok(n === null || (n.windows.length === 0 && Object.keys(n.shown).length === 0), `no window, no note: ${JSON.stringify(n)}`);
+    const opened = app.now;
+    await app.visibility('visible');
+    assert.deepEqual(notesIn(store).windows, [[opened, opened]], 'a window from the visible event');
+    await app.advance(POLL_MS);
+    const shown = Object.values(notesIn(store).shown);
+    assert.equal(shown.length, COUNTED.length, 'every counted item noted at the opening\'s read');
+    assert.ok(shown.every((t) => t >= opened), 'none before the page was visible');
+  } finally {
+    app.restore();
+  }
+});
+
 // VT2's round 2 (the Reviewer's N4): a page restored from the back-forward cache.
 test('AC25 on the page: a page restored from the back-forward cache (pageshow, persisted) and visible opens a window again, even with no visible event; a second open changes nothing', async () => {
   const store = memStore();
@@ -354,6 +397,39 @@ test('AC25: kept with its mark on a confirming sheet ("Undo · Close") and on a 
     parts = sheetParts(app);
     assert.match(parts.at(-2).className, /\bv2-foot\b/);
     assert.equal(parts.at(-1).textContent, "Didn't need me");
+  } finally {
+    app.restore();
+  }
+});
+
+// VT2's round 2 (the Reviewer's N3): a gate's confirming and kicked-back sheets, and a question's kicked-back sheet, each marked.
+test('AC25: kept with its mark, the last line below `sheetFoot`, on a gate\'s confirming and kicked-back sheets and a question\'s kicked-back sheet', async () => {
+  const app = await vt2Open(everyKind({ portfolio: false }));
+  const moveToDone = () => app.tap(findAll(sheetOf(app), (e) => e.tag === 'button' && /Move to Done/.test(e.textContent))[0]);
+  const endsMarked = (what) => {
+    const parts = sheetParts(app);
+    assert.match(parts.at(-2).className, /\bv2-foot\b/, `${what}: below sheetFoot`);
+    assert.equal(parts.at(-1).textContent, 'Marked as not needing you · Unmark', `${what}: kept with its mark, the last line`);
+    assert.equal(findAll(sheetOf(app), (e) => /\bv2-dnm\b/.test(e.className || '')).length, 1, `${what}: once`);
+  };
+  try {
+    for (const k of ['gate', 'question']) {
+      await openSheet(app, KEYS[k]);
+      await app.tap(dnmButton(app));
+      await moveToDone();
+      await openSheet(app, KEYS[k]);
+      assert.ok(sheetOf(app).textContent.includes('Confirming with GitHub'), `${k}: the confirming sheet`);
+      endsMarked(`${k}, confirming`);
+      await app.go('#/waiting');
+    }
+    // GitHub shows no answer for either: both kicked back after their minutes.
+    await app.advance(10 * MIN);
+    for (const k of ['gate', 'question']) {
+      await openSheet(app, KEYS[k]);
+      assert.ok(sheetOf(app).textContent.includes('Kicked back'), `${k}: the kicked-back sheet`);
+      assert.ok(!sheetOf(app).textContent.includes('Confirming with GitHub'));
+      endsMarked(`${k}, kicked back`);
+    }
   } finally {
     app.restore();
   }

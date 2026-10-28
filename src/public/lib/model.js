@@ -15,6 +15,7 @@ import { SESSION_PATH_RE, parseSessionFile } from './cos.js';
 import { j11Kind, parseJ11, PROJECT_DOC_PATH, SURFACES_PATH, ORCH_WORKFLOW_PATH, SPEC_PATH_RE, REQUEST_PATH_RE,
   GATE_PHASE, README_PATH, REVIEW_VERDICT_RE } from './j11.js';
 import { PLAN_PATH_RE, ESTIMATES_PATH, LATER_WORK_PATH, LATER_Q_RE, planFiles, planPath, parsePlan, parseEstimates, parseLaterWork } from './workahead.js';
+import { VALUE_CHECKS_PATH, parseValueChecks } from './values.js';
 import { cardRows, questionRows, cardSummary, v5Waits, sessionRows, timelines, V25_NO_CARDS, V25_ANSWERED } from './asked.js';
 import { parseRiskPaths, RISK_PATHS_PATH } from './j22.js';
 import { askedInSession, questionHold } from './asking.js';
@@ -68,6 +69,9 @@ export function recordKind(path, model) {
     if (PLAN_PATH_RE.test(path)) return 'work-plan';
     if (path === ESTIMATES_PATH) return 'estimates';
     if (path === LATER_WORK_PATH) return 'later-work';
+    // J25 (VT1, AC97): the Chief of Staff's weekly value checks, read only in the planning project and only when
+    // the sandbox asks (neededReads' ctx.j11).
+    if (path === VALUE_CHECKS_PATH) return 'value-checks';
   } else {
     if (path === LEDGER_PATH) return 'ledger';
     if (isSprintPath(path)) return 'sprint';
@@ -112,6 +116,7 @@ export function parseRecord(kind, text, path) {
     case 'work-plan': return { name: PLAN_PATH_RE.exec(path || '') ? PLAN_PATH_RE.exec(path)[1] : null, ...parsePlan(text) };
     case 'estimates': return { lines: parseEstimates(text) };
     case 'later-work': return parseLaterWork(text);
+    case 'value-checks': return { lines: parseValueChecks(text) };
     case 'risk-paths': return parseRiskPaths(text);
     case 'model-version': case 'agents-tier': case 'root-version': return parseVersionRecord(kind, text);
     case 'project-doc': case 'surfaces': case 'orch-workflow': case 'spec': case 'request': case 'gate-case': case 'readme-root': case 'review-verdict':
@@ -323,6 +328,8 @@ export function neededReads(project, tree, records, now, ctx = {}) {
         if (current) opt(planPath(current));
         opt(ESTIMATES_PATH);
         opt(LATER_WORK_PATH);
+        // J25 (VT1, AC97): one more small optional blob, read once per device and again only when its sha changes (A3).
+        opt(VALUE_CHECKS_PATH);
         for (const path of [...tree.keys()].sort()) {
           const m = LATER_Q_RE.exec(path);
           if (m && m[1]) opt(path);

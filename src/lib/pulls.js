@@ -12,13 +12,19 @@ export const PULLS_MAX_PAGES = 3;
 // records, draft 5): each kept entry holds whether its merge is the asks-merge job's, so the key moved
 // on and v1 is removed on load, every entry read again from J12. v3 from 2026-10-19 (draft 4 of "Work
 // ahead by milestones"): each kept entry also holds whether it is estimate-only (AC60), so the key
-// moved on again and v2 is removed on load too.
-export const PULLS_KEY = 'desk-pulls-v3';
-export const OLD_PULLS_KEYS = ['desk-pulls-v1', 'desk-pulls-v2'];
+// moved on again and v2 is removed on load too. v4 from stage VT1 of M3B (J12 and AC60, changed for M3B): each kept
+// entry also holds whether it is a weekly value check (`valueCheck` and `valueCheckLine`), so the key moved on again and
+// v3 is removed on load, every entry read again from J12, so none lacks them.
+export const PULLS_KEY = 'desk-pulls-v4';
+export const OLD_PULLS_KEYS = ['desk-pulls-v1', 'desk-pulls-v2', 'desk-pulls-v3'];
 /** AC60's estimate-only exception (J14): the one path such a pull request changes. */
 export const ESTIMATE_PATH = 'intake/estimates.jsonl';
 /** AC60: an estimate pull request's `Milestone:` line, exactly, after trimming. */
 export const ESTIMATE_MILESTONE = 'none (a rough estimate)';
+/** AC60, changed for M3B (J25): the one path a weekly value check's pull request changes. */
+export const VALUE_CHECK_PATH = 'intake/value-checks.jsonl';
+/** AC60, changed for M3B: a weekly value check's pull request's `Milestone:` line, exactly, after trimming. */
+export const VALUE_CHECK_MILESTONE = 'none (a weekly value check)';
 export const PULLS_RATE_MS = 60 * 60e3; // J12: after a RATE_LIMITED answer, no read for 60 minutes, then the read again (C; draft 6)
 // J12's backoff (2026-10-17, the desk follow-ups; build review round 2 of trial-view notes 2, N1): after
 // any other failed read, the next J12 read comes 5, 10, 20 and 40 minutes after failures in a row,
@@ -265,10 +271,21 @@ export function isJobMerge(mergeCommit) {
  * read (missing, `null`, or a field error on `changedFiles` or `files`: `unread`).
  */
 export function estimateOnly(n, unread = false) {
+  return onlyPath(n, ESTIMATE_PATH, unread);
+}
+/** Whether a pull request's one changed path is `path` (J12's `changedFiles` 1 and that path), never when its paths are not read. */
+function onlyPath(n, path, unread) {
   if (unread || !n || n.changedFiles !== 1 || !n.files || !Array.isArray(n.files.nodes) || n.files.nodes.length !== 1) return false;
   const f = n.files.nodes[0];
-  return Boolean(f) && f.path === ESTIMATE_PATH;
+  return Boolean(f) && f.path === path;
 }
+/**
+ * Whether a pull request changes `intake/value-checks.jsonl` only (J12, changed for M3B; stage VT1): worked out as
+ * `estimate` is, yes when `changedFiles` is 1 and that one path is it; no when its changed paths are not read.
+ */
+export const valueCheckOnly = (n, unread = false) => onlyPath(n, VALUE_CHECK_PATH, unread);
+/** Whether a body's `Milestone:` line, trimmed as a whole, is exactly `none (a weekly value check)` (AC60, changed for M3B). */
+export const valueCheckLine = (body) => milestoneLineValue(body) === VALUE_CHECK_MILESTONE;
 
 /** Whether a body's `Milestone:` line, trimmed as a whole, is exactly `none (a rough estimate)` (AC60; no inner space or letter case forgiven). */
 export const estimateLine = (body) => milestoneLineValue(body) === ESTIMATE_MILESTONE;
@@ -280,7 +297,8 @@ export const estimateLine = (body) => milestoneLineValue(body) === ESTIMATE_MILE
  * of its changed paths only `estimate`, whether it changes `intake/estimates.jsonl` only (from
  * 2026-10-19; never the paths); and `estimateLine`, whether its `Milestone:` line, trimmed as a whole,
  * is exactly `none (a rough estimate)` (AC60's exact match, worked out here since the body is not
- * kept). `filesUnread`: the answer's field error on its changed paths.
+ * kept); from VT1 (J12 changed for M3B), `valueCheck` and `valueCheckLine`, worked out the same way for
+ * `intake/value-checks.jsonl` and `none (a weekly value check)`. `filesUnread`: the answer's field error on its changed paths.
  */
 export function keptPull(n, checks, filesUnread = false) {
   const out = {
@@ -288,6 +306,8 @@ export function keptPull(n, checks, filesUnread = false) {
     head: typeof n.headRefName === 'string' ? n.headRefName : null,
     mergeCommit: n.mergeCommit && typeof n.mergeCommit.oid === 'string' ? n.mergeCommit.oid : null,
     checks, parts: prBodyParts(n.body), estimate: estimateOnly(n, filesUnread), estimateLine: estimateLine(n.body),
+    // J12, changed for M3B (VT1): whether it is a weekly value check's, never the paths or the line itself.
+    valueCheck: valueCheckOnly(n, filesUnread), valueCheckLine: valueCheckLine(n.body),
   };
   const job = isJobMerge(n.mergeCommit);
   if (job !== null) out.job = job;

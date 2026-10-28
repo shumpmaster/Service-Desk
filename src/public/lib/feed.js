@@ -349,6 +349,17 @@ export function estimateMerge(project, pr) {
   return Boolean(project && project.planning === true && pr && pr.mergedAt && pr.estimate === true && pr.estimateLine === true);
 }
 
+/**
+ * AC60, changed for M3B (J25; built in stage VT1): the Chief of Staff's weekly value check pull requests are never a
+ * sprint either, by the same rules as its estimate pull requests: a merged pull request of the planning project whose
+ * only changed path is `intake/value-checks.jsonl` (J12's `valueCheck`) and whose body's `Milestone:` line, trimmed, is
+ * exactly `none (a weekly value check)` (`valueCheckLine`). One changing another path, carrying another line, or in
+ * another project is placed as any pull request is.
+ */
+export function valueCheckMerge(project, pr) {
+  return Boolean(project && project.planning === true && pr && pr.mergedAt && pr.valueCheck === true && pr.valueCheckLine === true);
+}
+
 /** The pull requests J12 holds, by number, and why they are missing when they are. */
 function pullsIndex(snap, model) {
   const p = snap && snap.pulls;
@@ -447,6 +458,8 @@ export function feedView(ctx, model, nowMs, tz) {
     // Timeline as the job's merges are, whoever merged them, by the same rules, the plan's exception
     // included (listed ones are placed above).
     if (estimateMerge(project, pr)) continue;
+    // AC60, changed for M3B: a weekly value check's, likewise (VT1), so it never shows as a gap under "Not tied to a milestone".
+    if (valueCheckMerge(project, pr)) continue;
     const ml = pr.parts && pr.parts.milestone;
     const run = placeByTime(t(pr.mergedAt));
     if (ml && ml.ids) {
@@ -802,6 +815,8 @@ export function doneTarget(feed, snap, kind, code, project = null) {
     if (kept && kept.mergedAt && kept.job === true) return { job: true };
     // AC66 (from 2026-10-19): an estimate-only merge, whoever merged it, unless a plan line lists it (above).
     if (kept && estimateMerge(project, kept)) return { estimate: true };
+    // AC66 (draft 11; AC60 as changed for M3B): a weekly value check's merge, likewise, unless a plan line lists it (above).
+    if (kept && valueCheckMerge(project, kept)) return { valueCheck: true };
     return null;
   }
   if (kind === 'ruling') {
@@ -821,6 +836,8 @@ export function doneTarget(feed, snap, kind, code, project = null) {
 export const JOB_MERGE_WORDS = 'not on the Timeline: merged by the automatic job';
 /** AC66's words for an estimate-only merge's "Done today" row (from 2026-10-19). */
 export const ESTIMATE_MERGE_WORDS = 'not on the Timeline: a rough estimate';
+/** AC66's words for a weekly value check's merge's "Done today" row (draft 11 of M3B's plan; built in VT1). */
+export const VALUE_CHECK_MERGE_WORDS = 'not on the Timeline: a weekly value check';
 
 /** AC66's neutral group marks; a group holding anything that waits on the owner shows the coral diamond instead. */
 export const GROUP_MARK = { decisions: '◇', gates: '▲', verdicts: '✎', merges: '⇄', deploys: '▸' };

@@ -1405,3 +1405,47 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-lf > .v2-lfx { width: 16px; height: 16px; flex: none; margin-top: 3px; color: var(--bad); }
 .v2-reload { min-height: 44px; padding: 0 20px; border: 1px solid var(--line2); border-radius: 10px; background: var(--bg); color: var(--ink);
   font: 500 15px/1.35 var(--font); cursor: pointer; }
+
+/* VT1 of M3B (AC97; round 2's approved picture, docs/design/builds/m3b-picture/round-2/): each value target against its
+   measure. AC81's tokens and type roles only, no new colour, size or weight: the figure is --t-title (24 px 600, in the
+   scale); green and red only on the 14 to 16 px marks with ✓ or ✕ and words beside them, and on the charts' fills, which
+   the owner's approval of round 2's picture covers (P-001-m3b-picture-approve.md, A; AC97, "Green and red on the chart's
+   fills"); V5's grey before W1 is --ink3 (4.19:1 on the track in light, 5.44:1 in dark), never --line2. */
+/* The row: under its title, the five marks, each its icon (14 px) and its id in Plex Mono, then the row's words. */
+.v2-vmarks { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; }
+.v2-vmk { display: inline-flex; align-items: center; gap: 3px; }
+.v2-vmk > .v2-s { width: 14px; height: 14px; }
+/* The sheet: a block per target, a hairline above it. */
+.v2-tgt, .v2-vstop { display: grid; gap: 6px; min-width: 0; padding-top: 12px; border-top: 1px solid var(--line); }
+.v2-vth { margin: 0; font: var(--t-row); color: var(--ink); overflow-wrap: anywhere; }
+.v2-vfig { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin: 0; }
+.v2-vbig { font: var(--t-title); color: var(--ink); overflow-wrap: anywhere; }
+.v2-vfw { font: var(--t-small); color: var(--ink2); }
+/* The chart: one grid, so every bar's track starts and ends at the same place; its label, the track, its value. */
+.v2-vchart { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 5px 8px; }
+.v2-vrow { display: contents; }
+.v2-vbl { font: var(--t-label); font-weight: 400; color: var(--ink2); overflow-wrap: anywhere; }
+.v2-vbv { font: var(--t-mono); color: var(--ink); text-align: right; }
+.v2-vgt { position: relative; height: 14px; }
+.v2-vgl { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font: var(--t-label); font-weight: 400; color: var(--ink2); }
+.v2-vgl.at0 { left: 0; transform: none; }
+.v2-vgl.at33 { left: 33.333%; }
+.v2-vsvg { display: block; width: 100%; height: 18px; overflow: visible; }
+.v2-vsvg .tr { fill: var(--line); }
+.v2-vsvg .fl.ok { fill: var(--ok); }
+.v2-vsvg .fl.bad { fill: var(--bad); }
+.v2-vsvg .fl.grey { fill: var(--ink3); }
+.v2-vsvg .gl { fill: var(--ink); }
+/* V4's two steps, joined by a thin --line connector. */
+.v2-vsteps { display: grid; margin: 0; padding: 0; list-style: none; }
+.v2-vsteps > li { position: relative; display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: start; padding: 3px 0; font: var(--t-small); color: var(--ink); }
+.v2-vsteps > li + li::before { content: ""; position: absolute; left: 7.5px; top: -8px; width: 1px; height: 10px; background: var(--line); }
+/* The verdict: its mark, its first part in 600, " · " and the rest; under it the check's line and the rest in --ink2. */
+.v2-vverd { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: start; margin: 0; font: var(--t-small); color: var(--ink); overflow-wrap: anywhere; }
+.v2-vverd b { font-weight: 600; }
+.v2-vline, .v2-vearly { margin: 0; padding-left: 24px; font: var(--t-small); color: var(--ink2); overflow-wrap: anywhere; }
+.v2-vearly { display: grid; gap: 4px; list-style: none; }
+/* The stop rule's quote held to exactly three lines (AC97's follow-up from the picture): the sheet's quote padding
+   (`.v2-sheet .v2-quote`, 2 px over and under) outweighed the clip's (`.v2-clip.v2-quote`, none), so a quote of exactly
+   three lines was cut; here the clip's own padding wins. */
+.v2-vstop .v2-clip.v2-quote { padding: 0 0 0 10px; }

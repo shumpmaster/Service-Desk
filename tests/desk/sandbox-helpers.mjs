@@ -254,9 +254,9 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
       for (const fn of docListeners.visibilitychange || []) fn();
       await flush();
     },
-    /** An event that reaches the window's own listeners (pagehide, an unload: AC25's window end, from VT2). */
-    async winEvent(type) {
-      for (const fn of winListeners[type] || []) fn({ type });
+    /** An event that reaches the window's own listeners (pagehide, an unload, and pageshow: AC25's windows, from VT2), with `props`. */
+    async winEvent(type, props = {}) {
+      for (const fn of winListeners[type] || []) fn({ type, ...props });
       await flush();
     },
     text: () => els.view.textContent,

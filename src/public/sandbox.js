@@ -5527,6 +5527,11 @@ export function startSandbox(opts = {}) {
     metrics.close();
     keepScroll(scrollStore, view);
   });
+  // AC25 (VT2's round 2, the Reviewer's N4): a page restored from the back-forward cache, visible, opens a window again, whether
+  // or not the browser also sends a visible event (a second open while one is open changes nothing).
+  window.addEventListener('pageshow', (e) => {
+    if (e && e.persisted && isVisible()) metrics.open();
+  });
   // The owner's own scrolling or tapping ends a scroll still being put back (AC56, changed).
   for (const t of ['pointerdown', 'wheel', 'touchstart', 'keydown']) {
     try {

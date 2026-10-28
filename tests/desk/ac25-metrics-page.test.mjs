@@ -80,6 +80,42 @@ test('AC25 + J5 on the page: a window opens at load (visible) and at each visibl
   }
 });
 
+// VT2's round 2 (the Reviewer's N4): a page restored from the back-forward cache.
+test('AC25 on the page: a page restored from the back-forward cache (pageshow, persisted) and visible opens a window again, even with no visible event; a second open changes nothing', async () => {
+  const store = memStore();
+  const app = await vt2Open(everyKind({ portfolio: false }), { store });
+  const t0 = NOW;
+  try {
+    await app.advance(9_000);
+    await app.winEvent('pagehide', { persisted: true });
+    assert.deepEqual(notesIn(store).windows, [[t0, t0 + 10_000]], 'ended at the unload');
+    await app.advance(H);
+    const back = app.now;
+    await app.winEvent('pageshow', { persisted: true });
+    assert.deepEqual(notesIn(store).windows, [[t0, t0 + 10_000], [back, back]], 'a window again on restore');
+    await app.visibility('visible');
+    await app.advance(14_000);
+    await app.tick();
+    assert.deepEqual(notesIn(store).windows, [[t0, t0 + 10_000], [back, back + 14_000]], 'one window, its end written at the tick');
+    // A first load's pageshow (not persisted) opens nothing more.
+    await app.winEvent('pageshow', { persisted: false });
+    assert.equal(notesIn(store).windows.length, 2);
+  } finally {
+    app.restore();
+  }
+  // Restored while hidden: no window until it is visible.
+  const hid = await vt2Open(everyKind({ portfolio: false }), { store: memStore() });
+  try {
+    await hid.winEvent('pagehide', { persisted: true });
+    await hid.advance(H);
+    document.visibilityState = 'hidden';
+    await hid.winEvent('pageshow', { persisted: true });
+    assert.equal(notesIn(hid.store).windows.length, 1, 'restored hidden: no window');
+  } finally {
+    hid.restore();
+  }
+});
+
 test('AC25: first shown once per AC73 key, at the first read counting it while visible — every counted kind in a connected project, never a portfolio card; an item that leaves and comes back keeps its first time', async () => {
   const st = everyKind();
   const app = await vt2Open(st);

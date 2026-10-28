@@ -1449,3 +1449,10 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
    (`.v2-sheet .v2-quote`, 2 px over and under) outweighed the clip's (`.v2-clip.v2-quote`, none), so a quote of exactly
    three lines was cut; here the clip's own padding wins. */
 .v2-vstop .v2-clip.v2-quote { padding: 0 0 0 10px; }
+
+/* AC25, as changed for M3B (stage VT2): "Didn't need me", a sheet's last line, under a hairline, in --t-small --ink2, never
+   --you; a text button at least 24 px tall, underlined as the sheet's quiet links are. Marked, "Marked as not needing you · "
+   in --ink2 and "Unmark" its own button. */
+.v2-dnm { margin: 0; padding-top: 8px; border-top: 1px solid var(--line); min-height: 24px; font: var(--t-small); color: var(--ink2); overflow-wrap: anywhere; }
+.v2-dnmb { display: inline-flex; align-items: center; min-height: 24px; margin: 0; padding: 0; border: 0; border-radius: 0; background: none;
+  font: var(--t-small); color: var(--ink2); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; vertical-align: middle; }

@@ -254,6 +254,11 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
       for (const fn of docListeners.visibilitychange || []) fn();
       await flush();
     },
+    /** An event that reaches the window's own listeners (pagehide, an unload: AC25's window end, from VT2). */
+    async winEvent(type) {
+      for (const fn of winListeners[type] || []) fn({ type });
+      await flush();
+    },
     text: () => els.view.textContent,
     restore() {
       Date.now = realNow;

@@ -131,7 +131,7 @@ let loads = 0;
  * imports the desk itself with J7's committed config (src/config/projects.json): the fake desk function then answers
  * through `fetch`, and `desk` is null.
  */
-export async function loadSandbox({ config, repos, hash = '#/', search = '', now: start = Date.parse('2026-10-14T15:00:00Z'), store = null, win = {}, globals = {}, entry = false, breakView = false }) {
+export async function loadSandbox({ config, repos, hash = '#/', search = '', now: start = Date.parse('2026-10-14T15:00:00Z'), store = null, win = {}, globals = {}, entry = false, breakView = false, visibility = 'visible' }) {
   const { fakeServer } = await import('./fake-desk.mjs');
   const names = ['document', 'window', 'location', 'Node', 'setTimeout', 'clearTimeout', 'setInterval', 'navigator', 'localStorage', 'Notification', 'history', 'fetch'];
   const saved = Object.fromEntries(names.map((k) => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
@@ -148,7 +148,7 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
   const set = (k, v) => Object.defineProperty(globalThis, k, { value: v, configurable: true, writable: true });
   set('Node', Node0);
   set('document', {
-    activeElement: null, title: '', visibilityState: 'visible', head, documentElement: new El0('html'),
+    activeElement: null, title: '', visibilityState: visibility, head, documentElement: new El0('html'),
     createElement: (t) => new El0(t), createElementNS: (ns, t) => new El0(t), createTextNode: (t) => new Text0(t),
     getElementById: (id) => els[id] || null,
     addEventListener: (t, fn) => { (docListeners[t] ||= []).push(fn); },
@@ -252,6 +252,11 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
     async visibility(state) {
       document.visibilityState = state;
       for (const fn of docListeners.visibilitychange || []) fn();
+      await flush();
+    },
+    /** An event that reaches the window's own listeners (pagehide, an unload, and pageshow: AC25's windows, from VT2), with `props`. */
+    async winEvent(type, props = {}) {
+      for (const fn of winListeners[type] || []) fn({ type, ...props });
       await flush();
     },
     text: () => els.view.textContent,

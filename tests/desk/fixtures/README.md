@@ -1167,3 +1167,24 @@ VT1 adds `tests/desk/vt1-fixtures.mjs`. `ac97-values.test.mjs`, `ac97-values-pag
   last check met, and with V3's and V5's final checks `not measured`; Alpha's three targets each `met`; V4 lines `met`,
   `missed`, `on track` and `not measured`, and one dated before launch; lines for the same days twice; a V5 line counting
   "1 card" and one with no count. **NOT real records.**
+
+## The device's notes and "Didn't need me", VT2 (2026-10-28, S-001 AC25's first two parts as changed for M3B, and J5's storage; stage VT2 of "The desk's value targets shown: M3B")
+
+VT2 adds `tests/desk/vt2-fixtures.mjs`. `ac25-metrics.test.mjs`, `ac25-metrics-page.test.mjs`, VT2's walk in
+`ac88-dark.test.mjs` (with `VT2_ONCE`) and the `vt2-` captures (`tools/vt2-shots.mjs`) open these made-up parts, each
+**NOT real**:
+- **every kind** (`everyKind`, `KEYS`, `missingRepo`): sandbox-fixtures.mjs's made-up `fullRepo('Alpha')` (a card, a question,
+  a hold card, a gate card and its case, a pull request, a merge card, and its waiting deploy, counted here with
+  `deploysNeedOwner`), a made-up project Gamma whose card went missing (its status file only), and pf-fixtures.mjs's made-up
+  portfolio with one card in its queue. **NOT real records.**
+- **a held question** (`withHeld`, `heldText`, `HELD_SID`): a made-up question in qw1's form with an `Asked in session:` line
+  naming the made-up `session_0VT2MadeUpNotARealSession1`, and the same file with the line gone (its hold ended). **NOT a
+  real record.**
+- **a pull request being recorded** (`recordingState`): ac79-desk.test.mjs's made-up case — PR #7 "File a made-up question",
+  its made-up changed file, check runs, job run and log line — over Service-Desk's ledger, grant record and asks-merge
+  workflow at ef8daf4 (`notify/sd-ef8daf4/`, real, unchanged). **NOT a real record** (the pull request and the job's run).
+- **the device's notes** (`ac25-metrics.test.mjs` and the page tests): open windows, first-shown times, marks, device codes
+  and the day the notes start, all at made-up times (October to December 2026) on made-up AC73 keys, and stores in
+  `desk-metrics-v1`'s form, some in another form or broken on purpose. No device kept them. **NOT real records.**
+- **the targets' sheet** (`targetsState`): vt1-fixtures.mjs's state before launch (Service-Desk's section 6 at 7b69b2b, real,
+  over its records at 77bfeae, real), with storage made to throw. **NOT a real device.**

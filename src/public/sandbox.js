@@ -45,6 +45,7 @@ import { topLine } from './lib/versions.js';
 import { portfolioView, PF_ROWS, PF_WORDS, cardMilestone, portfolioScreenState, portfolioRead, portfolioCards, ideasView, rareLine, noteIdeas, ideaEvents, SEEN_IDEAS_KEY, PF_BOARD, PF_LABEL } from './lib/portfolio.js';
 import { workAheadView, readDraft } from './lib/workview.js';
 import { valuesView, readValueChecks, VALUE_CHECKS_PATH, VALUES_WORDS } from './lib/values.js';
+import { createMetrics, NOT_NOTED, DNM_WORDS } from './lib/metrics.js';
 
 import {
   NOTIFY_WORDS, NOTIFY_STORE_KEY, COPY_DONE_WORDS, SHOW_AGAIN_WORDS, SEND_TEST_WORDS, copySteps, testSteps, notifyState, onTopLine,
@@ -1613,6 +1614,8 @@ function vtBlock(name, t) {
 function valuesSheetBody(p, vv) {
   const name = p.project.name;
   return [h('p', { class: 'v2-small', key: 'vt-small' }, vv.small),
+    // AC25 (VT2): where this device keeps nothing (its storage can't be read or written), the sheet says so.
+    metrics && metrics.off ? h('p', { class: 'v2-small v2-nonote', key: 'vt-nonote' }, NOT_NOTED) : null,
     vv.j25Line ? h('p', { class: 'v2-small', key: 'vt-j25' }, vv.j25Line) : null,
     vv.targets.map((t) => vtBlock(name, t)),
     // The rule quoted (P-001-m3b-stop-rule.md, A): three lines on screen, "Read it all ›" for the rest; its clip exact
@@ -3389,6 +3392,52 @@ function placeOfSheet(places, card) {
   return pl ? PLACE_WORDS.line(pl.k, pl.n) : null;
 }
 
+// ---------------------------------------------------------------------------
+// AC25's first two parts, as changed for M3B (stage VT2): the device's notes (lib/metrics.js) and "Didn't need me".
+
+let metrics = null; // the device's notes, made when the desk starts (startSandbox)
+
+/**
+ * First shown (AC25; C, (j)): each item a read counts as waiting on the owner (the badge's and Home's count: "Waiting on you"
+ * and Kicked back) in a connected project, noted once per AC73 key, now, while the page is visible in an open window. Never a
+ * portfolio card (in no connected project) and never a held question (counted nowhere, so never among the counted cards).
+ */
+function noteShown(bd, built) {
+  // No window open (the page hidden or unloaded): nothing is shown, so nothing is noted.
+  if (!metrics || metrics.openedAt == null || !bd || !bd.counted) return;
+  const connected = new Set(CONFIG.projects.map((p) => p.name));
+  // A read in this window: one finished while the page was hidden counts nothing until the opening's read (VT2's row: "a card
+  // raised while the desk is closed first shown at the next opening's read").
+  const readNow = (name) => {
+    const st = DESK && DESK.states ? DESK.states.get(name) : null;
+    return Boolean(st && st.lastSuccessAt != null && st.lastSuccessAt >= metrics.openedAt);
+  };
+  const keys = [];
+  for (const c of boardState.cards.values()) {
+    if (!c || c.portfolio || !connected.has(c.project) || !readNow(c.project)) continue;
+    const counted = bd.counted.get(c.project);
+    if (counted && counted.has(c.key)) keys.push(c.id);
+  }
+  metrics.shown(keys);
+}
+
+/**
+ * "Didn't need me" (AC25; C, (k)): a quiet text button on a line of its own, the sheet's last line, on any sheet whose item this
+ * device has a first-shown note for; a tap marks it on this device, and the line becomes "Marked as not needing you · Unmark",
+ * "Unmark" its own button. In --t-small --ink2 under a hairline, never --you, at least 24 px tall. The mark changes nothing else
+ * on the desk. Where the device keeps nothing, no control.
+ */
+function dnmNode(id) {
+  // One key for its button marked and unmarked, so a tap leaves the focus on it (the words change in place).
+  if (!metrics || metrics.off || !id || !metrics.hasShown(id)) return null;
+  if (metrics.isMarked(id)) {
+    return h('p', { class: 'v2-dnm marked', key: `dnm:${id}` }, h('span', {}, `${DNM_WORDS.marked} · `),
+      h('button', { type: 'button', class: 'v2-dnmb', key: `dnm-btn:${id}`, onclick: () => { metrics.unmark(id); render(); } }, DNM_WORDS.unmark));
+  }
+  return h('p', { class: 'v2-dnm', key: `dnm:${id}` },
+    h('button', { type: 'button', class: 'v2-dnmb', key: `dnm-btn:${id}`, onclick: () => { metrics.mark(id); render(); } }, DNM_WORDS.mark));
+}
+
 function cardSheet(bd, built, only, sheetId, backTo = null, places = bd.places, blocking = bd.blocking) {
   // AC89 (i): a sheet closes back to the screen it was opened from (Waiting, or Plan for a gate's sheet opened there).
   const back = backTo || boardRoute(only);
@@ -3436,7 +3485,7 @@ function cardSheet(bd, built, only, sheetId, backTo = null, places = bd.places, 
         rec.answerWords ? h('p', { class: 'v2-body' }, rec.answerWords) : null,
         h('p', { class: 'v2-small' }, ext(rec.link, `PR #${rec.pr.number} ↗`, 'v2-lnk')),
         typed.map((k) => wordsBox(id, 'Your own words, if you want them in the answer', Number(k.split('#')[1]) || 1)),
-        h('p', { class: 'v2-acts', key: 'acts' }, h('button', { type: 'button', class: 'v2-abtn ghost', key: 'sheet-close2', onclick: () => nav.to(back) }, 'Close'))], `sheet:${sheetId}`);
+        h('p', { class: 'v2-acts', key: 'acts' }, h('button', { type: 'button', class: 'v2-abtn ghost', key: 'sheet-close2', onclick: () => nav.to(back) }, 'Close')), dnmNode(id)], `sheet:${sheetId}`);
     }
     return sheetShell(back, was ? was.title : 'No longer waiting', [sheetHead(null, was ? was.title : GONE_WORDS, back), fromTap,
       h('p', { class: 'v2-mark', role: 'status', key: 'left-notice' }, vi('done'), h('span', {}, GONE_WORDS, inDone ? ': it is in Done.' : '.')),
@@ -3445,7 +3494,7 @@ function cardSheet(bd, built, only, sheetId, backTo = null, places = bd.places, 
         said.pr ? [' ', ext(said.pr.url, `PR #${said.pr.number}, which records it`, 'v2-lnk')] : null)),
       h('p', { class: 'v2-body' }, 'It is no longer on the board: answered, merged, withdrawn, or not read yet.'),
       typed.map((k) => wordsBox(id, 'Your own words, if you want them in the answer', Number(k.split('#')[1]) || 1)),
-      h('p', { class: 'v2-acts', key: 'acts' }, h('button', { type: 'button', class: 'v2-abtn ghost', key: 'sheet-close2', onclick: () => nav.to(back) }, 'Close'))], `sheet:${sheetId}`);
+      h('p', { class: 'v2-acts', key: 'acts' }, h('button', { type: 'button', class: 'v2-abtn ghost', key: 'sheet-close2', onclick: () => nav.to(back) }, 'Close')), dnmNode(id)], `sheet:${sheetId}`);
   }
   sheetCards.set(String(sheetId), { id: card.id, title: card.title });
   if (card.portfolio) return portfolioCardSheet(card, mark, back, fromTap, sheetId, placeOfSheet(places, card));
@@ -3468,7 +3517,8 @@ function cardSheet(bd, built, only, sheetId, backTo = null, places = bd.places, 
     card.raisedAt != null ? `waiting ${boardAge(Date.now() - card.raisedAt)}` : 'wait not recorded', pl]);
   if (card.kind === 'question' || card.kind === 'gate') {
     const sx = { p, card, row, v, back, lane, pending, kicked, fromTap, headMeta, k2, only, blocks: blocking ? blocking.get(card.id) || null : null };
-    return sheetShell(back, card.kind === 'gate' ? gateTitle(card.flag.card) : card.title, card.kind === 'gate' ? gateSheetParts(sx) : questionSheetParts(sx), `sheet:${sheetId}`);
+    // AC25 (VT2): "Didn't need me" below `sheetFoot`, the sheet's last line.
+    return sheetShell(back, card.kind === 'gate' ? gateTitle(card.flag.card) : card.title, [...(card.kind === 'gate' ? gateSheetParts(sx) : questionSheetParts(sx)), dnmNode(card.id)], `sheet:${sheetId}`);
   }
   const parts = [sheetHead(headMeta, card.title, back), fromTap,
     h('p', { class: 'v2-small' }, `${lane === 'kick' ? 'Kicked back' : pending ? WORDS.confirming : card.kindWord}${k2}`),
@@ -3556,6 +3606,8 @@ function cardSheet(bd, built, only, sheetId, backTo = null, places = bd.places, 
   } else acts.push(h('button', { type: 'button', class: 'v2-abtn', key: 'sheet-undo', onclick: () => { boardState.set(undoMark(boardState.marks, card.id)); render(); } }, 'Undo'));
   acts.push(h('button', { type: 'button', class: 'v2-abtn ghost', key: 'sheet-close2', onclick: () => nav.to(back) }, 'Close'));
   parts.push(h('p', { class: 'v2-acts', key: 'acts' }, acts));
+  // AC25 (VT2): "Didn't need me" below the closing row ("Done ✓ · Close" or "Undo · Close"), the sheet's last line.
+  parts.push(dnmNode(card.id));
   return sheetShell(back, card.title, parts, `sheet:${sheetId}`);
 }
 
@@ -5178,6 +5230,9 @@ export function startSandbox(opts = {}) {
   const clock = { now: () => Date.now(), setTimeout: (fn, ms) => setTimeout(fn, ms), clearTimeout: (id) => clearTimeout(id) };
   const isVisible = () => document.visibilityState === 'visible';
   const seen = createSeen({ store, now: () => Date.now() });
+  // AC25 (VT2): the device's notes, in a store of their own, so a failure there turns off only them ("Not noted on this device").
+  metrics = createMetrics({ store: createStore(), now: () => Date.now(), tz: TZ });
+  if (isVisible()) metrics.open();
   lastLooked = () => (seen.off ? null : seen.reference);
   homeGroups.load(store);
   teamIdle.load(store);
@@ -5263,6 +5318,12 @@ export function startSandbox(opts = {}) {
     // AC80: the board, its marks judged at each successful poll; every count less the marked cards.
     const bd = boardOf(built, now.getTime(), nav.route.kind === 'waiting' ? nav.route.only : null);
     lastBoard = bd;
+    // AC25 (VT2): each item this read counts as waiting on the owner, noted as first shown on this device.
+    try {
+      noteShown(bd, built);
+    } catch {
+      // the notes are unseen: a failure there changes nothing drawn
+    }
     // AC74: a notification's tap, once its project is read: going there draws that screen (nav.to renders).
     const tap = followOpening(desk, built);
     if (tap) {
@@ -5451,17 +5512,25 @@ export function startSandbox(opts = {}) {
   document.addEventListener('visibilitychange', () => {
     if (isVisible()) {
       seen.visible();
+      metrics.open();
       // Back without a reload: the page kept its own scroll, so the kept one is not needed.
       forgetScroll(scrollStore);
     } else {
       seen.hidden();
+      metrics.close();
       keepScroll(scrollStore, view);
     }
     desk.visibilityChanged();
   });
   window.addEventListener('pagehide', () => {
     seen.hidden();
+    metrics.close();
     keepScroll(scrollStore, view);
+  });
+  // AC25 (VT2's round 2, the Reviewer's N4): a page restored from the back-forward cache, visible, opens a window again, whether
+  // or not the browser also sends a visible event (a second open while one is open changes nothing).
+  window.addEventListener('pageshow', (e) => {
+    if (e && e.persisted && isVisible()) metrics.open();
   });
   // The owner's own scrolling or tapping ends a scroll still being put back (AC56, changed).
   for (const t of ['pointerdown', 'wheel', 'touchstart', 'keydown']) {
@@ -5486,6 +5555,8 @@ export function startSandbox(opts = {}) {
   });
   // The 15-second tick (AC56) changes only the text that depends on the time, in place.
   setInterval(() => {
+    // AC25 (VT2): an open window's end written again, so a window whose tab was killed ends at its last write.
+    metrics.tick();
     if (!isVisible()) return;
     tick(view);
     // Work ahead's today moves at ownerTimeZone's midnight, on this tick (AC24, step 1): every finish is redrawn.

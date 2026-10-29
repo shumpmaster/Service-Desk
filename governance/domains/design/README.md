@@ -245,6 +245,17 @@ Mockup v2 and its details (2026-10-20)
   so once; each milestone shows its why only once there is one.
 - **P-001-domain-review-count.md**, **P-001-gate-buttons.md**: above.
 
+Bigger headers (2026-10-29; the owner's request, docs/design/references/owner-request-2026-10-29-header-sizes.md;
+the picture, docs/design/builds/headers-picture/)
+- **P-001-headers-approve.md**: B — the bigger headers as drawn, and bigger titles too: screen titles
+  600 28 px and sheet titles 600 20 px, section and sheet-block heads 600 15 px, sub-heads 600 13 px,
+  an opened phase's group heads 600 12 px. This adds 28 and 20 px to the sizes "Sized like Linear"
+  and part B item 27 list; S-001 AC98 gives each role by selector.
+- **P-001-headers-colour.md**: A — every section head in `--ink`, Home, the project page and Plan
+  included.
+- **P-001-headers-wrap.md**: A — in "Since you last looked · <time>" and "Milestones by phase ·
+  <count>", the part after " · " stays at 12 px so each heading fits one line.
+
 This setup
 - **P-001-design-reviewer-stop.md**: A — the round-3 findings fixed, the setup sent to the owner with
   no fourth review. **P-001-design-reviewer-verdict.md**: A — a fresh Reviewer confirms only that the
@@ -374,9 +385,10 @@ where v2 draws a point, v2 governs; a brief item v2 does not draw is not a findi
 
 26. Frames: does each screen the change carries out match the frame that draws it, as far as the
     frame draws it? Name the frame and the difference.
-27. Sizes: are the only text sizes 24, 18, 15, 13, 12 and 11 px, the only weights 400, 500 and 600,
-    text boxes 16 px and board text 11 and 12 px, as the README states and the `--t-*` tokens set?
-    (P-001-redesign-conflicts.md item 5; P-001-text-box-size.md; "Sized like Linear" above)
+27. Sizes: are the only text sizes 28, 24, 20, 18, 15, 13, 12 and 11 px, the only weights 400, 500 and 600,
+    text boxes 16 px and board text 11 and 12 px, as the README states, the `--t-*` tokens set, and
+    P-001-headers-approve.md adds (28 px screen titles, 20 px sheet titles; S-001 AC98)?
+    (P-001-redesign-conflicts.md item 5; P-001-text-box-size.md; "Sized like Linear" above; P-001-headers-approve.md)
 28. Home: does the desk open on Home with its briefing, counted from what the board counts, one tap
     to Waiting; "Since you last looked" with its time and "Mark as seen"; one full-width tile per
     project with its phases as a timeline; and the portfolio, read only, at its foot? (frames H1,

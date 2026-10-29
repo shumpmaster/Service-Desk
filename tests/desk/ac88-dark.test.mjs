@@ -1542,8 +1542,9 @@ const QW1_FONT = (f) => `${f} "IBM Plex Sans", system-ui, -apple-system, "Segoe 
 const QW1_LOOK = (ink, ink2, line) => new Map([
   ['section.v2-qsec', ['display: (none) → grid', 'gap: (none) → 6px']],
   ['h2.v2-kh (the section\'s head)', ['display: (none) → flex', 'align-items: (none) → center', 'gap: (none) → 6px', 'min-height: (none) → 28px', 'padding-bottom: (none) → 4px',
-    `border-bottom: (none) → 1px solid ${line}`, `font: (none) → ${QW1_FONT('600 12px/1.3')}`, `color: (none) → ${ink}`]],
-  ['span (the section\'s title)', ['computed font-size: 13px → 12px', 'computed font-weight: 400 → 600', 'computed line-height: 18.849999999999998px → 15.600000000000001px']],
+    // Rewritten in HD1 (forced: AC98 puts the section head at 600 15 px; tests/desk/ac88-dark.test.mjs:1538-1540).
+    `border-bottom: (none) → 1px solid ${line}`, `font: (none) → ${QW1_FONT('600 15px/1.3')}`, `color: (none) → ${ink}`]],
+  ['span (the section\'s title)', ['computed font-size: 13px → 15px', 'computed font-weight: 400 → 600', 'computed line-height: 18.849999999999998px → 19.5px']],
   ['span.v2-kn (the head\'s " · ")', ['font: (none) → 400 11px/1.4 "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace', `color: (none) → ${ink2}`,
     'computed font-size: 13px → 11px', 'computed line-height: 18.849999999999998px → 15.399999999999999px',
     'computed font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif → "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace',

@@ -556,7 +556,12 @@ test('AC83 + AC36: "Details" opens AC55\'s views as built, so every M1 and M2 vi
 });
 
 test('AC83 + AC81: the page\'s type is the tokens\' or desk-v2.html\'s pairs; the page renders from each fixture without error, and from a project that can\'t be read', async () => {
-  for (const sel of ['.v2-sn', '.v2-sd', '.v2-sv', '.v2-smn', '.v2-sms', '.v2-runh', '.v2-prtt', '.v2-callout']) assert.match(rule(sel), /font: var\(--t-(row|small|body|label)\);/, sel);
+  // Rewritten in HD1 (vacuous: `.v2-runh`'s first rule still takes --t-label, but AC98's later rule draws a run's head at its
+  // pair, 600 13 px; tests/desk/ac83-page.test.mjs:559): `.v2-runh` leaves the token list for its pair, the font that wins.
+  for (const sel of ['.v2-sn', '.v2-sd', '.v2-sv', '.v2-smn', '.v2-sms', '.v2-prtt', '.v2-callout']) assert.match(rule(sel), /font: var\(--t-(row|small|body|label)\);/, sel);
+  const won = (sel) => [...css().matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((m) => m[1].split(',').map((x) => x.trim()).includes(sel))
+    .map((m) => (/(?:^|;)\s*font:\s*([^;]+)/.exec(m[2]) || [])[1]).filter(Boolean).at(-1);
+  assert.equal(won('.v2-runh').trim(), '600 13px/1.3 var(--font)', 'a run\'s head 600 13 px (AC98)');
   assert.match(rule('.v2-ph.now .v2-pn'), /font: 600 12px\/1\.3 var\(--font\);/, 'the now phase\'s name, desk-v2.html:282');
   const app = await openPage('#/p/Service-Desk');
   try {

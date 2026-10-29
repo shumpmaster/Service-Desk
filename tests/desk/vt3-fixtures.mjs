@@ -81,10 +81,11 @@ export function weekCards() {
 /**
  * VT3's state: Service-Desk launched on `launch` (null: before launch), November's dispatch log holding `cards`, the made-up
  * portfolio as J7's `portfolio` (with `pfConf`'s keys, which J7's check refuses beyond `repo` and `defaultBranch`) whose tree also holds
- * `pfMore` (made-up weekly files), and J7's `linkCap` as given. `portfolio: false` leaves J7's `portfolio` out.
+ * `pfMore` (made-up weekly files), and J7's `linkCap` as given. `portfolio: false` leaves J7's `portfolio` out; `alpha`, a
+ * made-up v3 project's section 6 lines (vt1-fixtures.mjs's Alpha), adds it.
  */
-export function vt3State({ launch = LAUNCH_EARLY, cards = weekCards(), pfMore = {}, pfConf = {}, linkCap = null, portfolio = true } = {}) {
-  const st = vt1State({ launch, nov: cards });
+export function vt3State({ launch = LAUNCH_EARLY, cards = weekCards(), pfMore = {}, pfConf = {}, linkCap = null, portfolio = true, alpha = null } = {}) {
+  const st = vt1State({ launch, nov: cards, alpha });
   if (linkCap != null) st.config = { ...st.config, linkCap };
   if (!portfolio) return st;
   const c = withPortfolio(st.config);

@@ -1633,7 +1633,12 @@ function weeklyNow() {
   const nowMs = Date.now();
   const snap = DESK && DESK.portfolio ? DESK.portfolio() : null;
   const projects = v5Projects();
-  const offer = weeklyOffer({ notes: metrics.notes, off: metrics.off, nowMs, tz: TZ, launch: launchOf(doc), tree: snap ? snap.tree : null,
+  // VT3's review, N2: a week is offered only once every v3 project's records its V5 line needs are read, the dispatch log
+  // included, so no file is saved with V5 "not available"; until then neither the line nor the block shows.
+  if (projects.some((x) => x.v3 && !(x.readOk && x.model && x.model.logLoaded))) return null;
+  // VT3's review, N3: a truncated tree is unread, as the portfolio's block takes it (portfolio.js): nothing offered.
+  const tree = snap && snap.tree && !snap.truncated ? snap.tree : null;
+  const offer = weeklyOffer({ notes: metrics.notes, off: metrics.off, nowMs, tz: TZ, launch: launchOf(doc), tree,
     v5Of: (startMs, endMs) => v5Week({ projects, startMs, endMs, nowMs, config: CONFIG }) });
   if (!offer) return null;
   return { ...offer, project: pb.project, target, weeks: offer.weeks.map((w) => ({ ...w, link: weekLink(target, w, CONFIG.linkCap) })) };

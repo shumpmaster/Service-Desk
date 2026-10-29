@@ -23,6 +23,7 @@ import {
   vt3State, vt3Open, storeWith, notesOf, J5_WEEK, J5_FILE, MON16, MONDAY, EIGHT, weeksOfWindows, memStore, keyed, weeklyLine, weeklyBlock, sheetOf,
   saveLinks, landed, chi, MIN, H, z,
 } from './vt3-fixtures.mjs';
+import { ALPHA_TARGETS } from './vt1-fixtures.mjs';
 
 const RULES = (() => {
   const a = parseCss(readFileSync(join(SRC, 'public', 'style.css'), 'utf8'), 'style.css');
@@ -308,6 +309,62 @@ test('AC25 (VT3\'s design review, N1): Home\'s line\'s chevron in --ink2, as "Mo
       assert.equal(plain(chev.style.get('color') || chev.declared.get('color')), scheme === 'light' ? '#5c5f66' : '#a2a5ac');
       assert.equal(plain(n.find((x) => x.el === line).declared.get('color')), scheme === 'light' ? '#18191c' : '#ecedef');
     }
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC25 (VT3\'s review, N2): nothing offered — neither Home\'s line nor the block — until every v3 project\'s records the V5 line needs are read, the dispatch log included; then offered, its V5 line a figure', async () => {
+  // A v3 project not read (Alpha, made up, its every read failing).
+  const st = vt3State({ alpha: ALPHA_TARGETS });
+  st.repos.Alpha.fail = { kind: 'network' };
+  const app = await vt3Open(st, { store: j5Store() });
+  try {
+    assert.equal(weeklyLine(app), null, 'Alpha not read: no line');
+    await app.go('#/p/Service-Desk/values/weekly');
+    assert.ok(sheetOf(app));
+    assert.equal(weeklyBlock(app), null, 'and no block');
+    await app.go('#/');
+    st.repos.Alpha.fail = null;
+    await app.advance(3 * 61_000);
+    assert.equal(weeklyLine(app).textContent, "Last week's desk figures are ready to save", 'read: offered');
+    await app.go('#/p/Service-Desk/values/weekly');
+    assert.match(saveLinks(app)[0].content, /\nV5 median \(weekday cards\): 2h 10m over 7 cards\n/);
+  } finally {
+    app.restore();
+  }
+  // The dispatch log not loaded while the project's read stands (the log's blob still to come in a later blob call, which
+  // the fake desk never splits: the model the desk builds is given `logLoaded: false` here).
+  const b = await vt3Open(vt3State(), { store: j5Store() });
+  try {
+    assert.equal(weeklyLine(b).textContent, "Last week's desk figures are ready to save");
+    const real = b.desk.model;
+    b.desk.model = (name) => (name === 'Service-Desk' ? { ...real(name), logLoaded: false } : real(name));
+    await b.visibility('visible'); // a drawing
+    assert.equal(weeklyLine(b), null, 'the dispatch log not loaded: no line');
+    await b.go('#/p/Service-Desk/values/weekly');
+    assert.equal(weeklyBlock(b), null, 'and no block');
+    b.desk.model = real;
+    await b.go('#/');
+    assert.equal(weeklyLine(b).textContent, "Last week's desk figures are ready to save", 'the log loaded: offered');
+  } finally {
+    b.restore();
+  }
+});
+
+test('AC25 (VT3\'s review, N3): a truncated portfolio tree is unread, as the portfolio\'s block takes it — nothing offered; once whole, offered', async () => {
+  const st = vt3State();
+  st.pf.truncated = true;
+  const app = await vt3Open(st, { store: j5Store() });
+  try {
+    assert.equal(weeklyLine(app), null, 'a truncated tree: no line');
+    await app.go('#/p/Service-Desk/values/weekly');
+    assert.equal(weeklyBlock(app), null, 'and no block');
+    await app.go('#/');
+    st.pf.truncated = false;
+    st.pf.commit({ 'README.md': 'A made-up change (NOT real).\n' });
+    await app.advance(PF_POLL + 61_000);
+    assert.equal(weeklyLine(app).textContent, "Last week's desk figures are ready to save", 'whole: offered');
   } finally {
     app.restore();
   }

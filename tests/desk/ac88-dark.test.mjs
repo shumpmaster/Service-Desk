@@ -95,7 +95,9 @@ const lum = (hex) => {
   return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 };
 /** AC81's roles' sizes (--t-title 24, --t-sheet 18, --t-lead 15, --t-row and --t-body 13, --t-small 12, --t-label and --t-mono 11), and AC63's 16 px text box. */
-const ROLE_PX = [24, 18, 15, 13, 12, 11, 16];
+// Rewritten in HD1 (forced: AC81 as changed for HD1 adds the owner's two titles' sizes, 28 px a screen's and 20 px a sheet's;
+// AC98; tests/desk/ac88-dark.test.mjs:98, not named in HD1's row).
+const ROLE_PX = [28, 24, 20, 18, 15, 13, 12, 11, 16];
 const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 
 /** A node's own ground: its background's first colour when that is opaque (a token's six-digit value). */
@@ -236,7 +238,8 @@ function checkScreen(app, where, fails, seen) {
       const size = parseFloat(n.style.get('font-size') || '16');
       const large = size >= 24 || (size >= 18.66 && Number(n.style.get('font-weight')) >= 700);
       // After MD3, stage 8 ((b) item 37; stage 8's review, round 1, B1: `.sb-unb-t` lost its role and no test saw it): every drawn
-      // text takes one of AC81's roles' sizes (24, 18, 15, 13, 12 and 11 px; 16 px for text boxes, AC63), never one of its own.
+      // text takes one of AC81's roles' sizes (from HD1 28, 24, 20, 18, 15, 13, 12 and 11 px; 16 px for text boxes, AC63), never
+      // one of its own.
       const fpx = parseFloat(n.style.get('font-size') || '');
       if (!ROLE_PX.includes(fpx)) fail(n, `"${n.text.trim().slice(0, 30)}" at ${n.style.get('font-size')}: no role's size`);
       // After MD3, stage 8 ((b) item 37): a text drawn under an opacity below 1 is a contrast the cascade can't read, so it fails.

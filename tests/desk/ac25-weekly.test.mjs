@@ -160,3 +160,11 @@ test('J5 (VT3\'s review, N4): the week\'s V5 line says why it has no figure — 
   // On Tue 1 Dec 2026, November's log is still read.
   assert.equal(v5Week({ projects: [read('Service-Desk')], ...week, nowMs: chi('2026-12-01', '10:00'), config }).words, 'no weekday cards');
 });
+
+// VT3's review, round 2, F1 (draft 13's row: "a sub-second one kept").
+test('J5 (VT3\'s review, round 2, F1): a window shorter than a second is kept, its two times cut to the same second (13:02:11.200 to 13:02:11.900 written 13:02:11-13:02:11); only a window of no length at all is left out', () => {
+  const notes = notesOf({ from: '2026-11-01', windows: [[z('2026-11-10T13:02:11.200Z'), z('2026-11-10T13:02:11.900Z')], [z('2026-11-10T14:00:00.500Z'), z('2026-11-10T14:00:00.500Z')]] });
+  const lines = weekFile({ notes, start: W46, tz: TZ, v5: V5_7 }).split('\n');
+  assert.deepEqual(lines.slice(lines.indexOf('## Open windows (UTC)') + 1, lines.indexOf('## First shown (UTC)')), ['2026-11-10: 13:02:11-13:02:11']);
+  assert.deepEqual(notedWeeks(notes, MON16, TZ), [W46], 'and its week offered');
+});

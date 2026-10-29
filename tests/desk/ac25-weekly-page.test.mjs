@@ -430,7 +430,7 @@ test('AC18 + AC17 on the page (VT3\'s review, N4, B3): with `webCommitsToDefault
   }
 });
 
-test('AC17 on the page (VT3\'s review, B26): a tap on a week whose link holds the file name only copies the week\'s file; one whose link holds it all copies nothing', async () => {
+test('AC17 on the page (VT3\'s review, B26, and round 2\'s N7): a tap on a week whose link holds the file name only copies the week\'s file, as a tap on its "Copy the week" does; one whose link holds it all copies nothing', async () => {
   const copied = [];
   const navigator = { clipboard: { writeText: async (t) => { copied.push(t); } } };
   const app = await vt3Open(vt3State({ linkCap: 200 }), { store: j5Store(), globals: { navigator } });
@@ -438,6 +438,13 @@ test('AC17 on the page (VT3\'s review, B26): a tap on a week whose link holds th
     await app.go('#/p/Service-Desk/values/weekly');
     await app.tap(saveLinks(app)[0].el);
     assert.deepEqual(copied, [J5_FILE]);
+    // VT3's review, round 2, N7: a tap on "Copy the week" puts the week's file on the clipboard too, and says so.
+    copied.length = 0;
+    const btn = findAll(weeklyBlock(app), (e) => e.tag === 'button' && e.textContent === 'Copy the week')[0];
+    assert.ok(btn, '"Copy the week"');
+    await app.tap(btn);
+    assert.deepEqual(copied, [J5_FILE], 'the file, character for character');
+    assert.ok(findAll(weeklyBlock(app), (e) => e.tag === 'button' && e.textContent === 'Copied').length, '"Copied"');
   } finally {
     app.restore();
   }

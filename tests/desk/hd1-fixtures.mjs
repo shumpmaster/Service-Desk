@@ -8,7 +8,7 @@ import { mixState, NOW } from './glance-fixtures.mjs';
 
 export const H = 3600e3;
 /** A device's "last looked" (AC40's record, `desk-seen-v1`), made up. */
-export const lookedAt = (ms) => memStore({ 'desk-seen-v1': JSON.stringify({ lastLooked: ms }) });
+export const lookedAt = (ms, extra = {}) => memStore({ 'desk-seen-v1': JSON.stringify({ lastLooked: ms }), ...extra });
 /** `mix` opened at its clock with "last looked" `ago` ms before it, read once. */
 export async function hd1Open({ ago = 20 * H, hash = '#/', state = mixState() } = {}) {
   const app = await loadSandbox({ ...state, hash, now: NOW, store: lookedAt(NOW - ago) });

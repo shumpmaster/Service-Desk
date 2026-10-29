@@ -1220,3 +1220,5 @@ labelled there), with one made-up part, **NOT real**:
 - **"last looked"** (`lookedAt`, and times written inline): the device's `desk-seen-v1` record at a made-up time, 20 hours
   or 9 days before the fixtures' clock, so Home's "Since you last looked" reads "· yesterday, 14:00" or "· in the last 7
   days". No device kept it. **NOT a real record.**
+- **`hd1/sandbox-2c20c9a.css`**: src/public/sandbox.css as it stood at 2c20c9a, before HD1, copied unchanged (the desk's own
+  stylesheet, not a record), so `ac98-headers.test.mjs` can measure each kept-small role against the look it had.

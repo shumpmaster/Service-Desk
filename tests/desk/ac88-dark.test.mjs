@@ -1490,7 +1490,9 @@ const G8C_EXCEPT = (n, d, theme) => {
  * run heads, the first and those after it, on the `text` page with every phase opened, and G9's own screens
  * (tests/desk/glance-fixtures.mjs's G9_OPENS, below).
  */
-const G9_RUNH = (ink, ink2) => [`color: ${ink2} → ${ink}`, 'font-weight: (none) → 600', 'computed font-weight: 500 → 600', `computed color: ${ink2} → ${ink}`];
+// Rewritten in HD1 (forced: AC98 draws a run's head at 600 13 px; tests/desk/ac88-dark.test.mjs:1489-1496).
+const G9_RUNH = (ink, ink2) => [`color: ${ink2} → ${ink}`, `font: ${G1_FONT('500 11px/1.35')} → ${G1_FONT('600 13px/1.3')}`,
+  'computed font-weight: 500 → 600', 'computed font-size: 11px → 13px', 'computed line-height: 14.850000000000001px → 16.900000000000002px', `computed color: ${ink2} → ${ink}`];
 const G9_LOOK = (ink, ink2, bg2, line) => new Map([
   ['div.v2-anchor (a project page\'s soft box)', ['display: (none) → grid', 'gap: (none) → 4px 10px', 'padding: (none) → 12px', 'border-radius: (none) → 12px',
     `background: (none) → ${bg2}`, `color: (none) → ${ink}`]],

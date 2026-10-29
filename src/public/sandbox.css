@@ -1456,3 +1456,14 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
 .v2-dnm { margin: 0; padding-top: 8px; border-top: 1px solid var(--line); min-height: 24px; font: var(--t-small); color: var(--ink2); overflow-wrap: anywhere; }
 .v2-dnmb { display: inline-flex; align-items: center; min-height: 24px; margin: 0; padding: 0; border: 0; border-radius: 0; background: none;
   font: var(--t-small); color: var(--ink2); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; vertical-align: middle; }
+
+/* AC25, as changed for M3B (stage VT3): Home's weekly line, a plain row between the portfolio's block and "More detail", in
+   --t-body --ink with a chevron, no soft box and no icon of its own (never --you); and the targets' sheet's last block, "Your
+   weekly figures", under a hairline as the stop rule's, each week its "Save the week of …" button. */
+.v2-wkline { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; font: var(--t-body); color: var(--ink);
+  text-decoration: none; overflow-wrap: anywhere; }
+/* Its chevron in --ink2, as "More detail"'s and the portfolio's rows' (VT3's design review, N1). */
+.v2-wkline > .v2-k { color: var(--ink2); }
+.v2-vweek { display: grid; gap: 6px; min-width: 0; padding-top: 12px; border-top: 1px solid var(--line); }
+.v2-wkl { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.v2-wkw { display: grid; gap: 6px; justify-items: start; min-width: 0; }

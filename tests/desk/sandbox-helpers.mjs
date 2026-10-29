@@ -131,7 +131,7 @@ let loads = 0;
  * imports the desk itself with J7's committed config (src/config/projects.json): the fake desk function then answers
  * through `fetch`, and `desk` is null.
  */
-export async function loadSandbox({ config, repos, hash = '#/', search = '', now: start = Date.parse('2026-10-14T15:00:00Z'), store = null, win = {}, globals = {}, entry = false, breakView = false, visibility = 'visible' }) {
+export async function loadSandbox({ config, repos, hash = '#/', search = '', now: start = Date.parse('2026-10-14T15:00:00Z'), store = null, win = {}, globals = {}, entry = false, breakView = false, visibility = 'visible', serverConfig = null }) {
   const { fakeServer } = await import('./fake-desk.mjs');
   const names = ['document', 'window', 'location', 'Node', 'setTimeout', 'clearTimeout', 'setInterval', 'navigator', 'localStorage', 'Notification', 'history', 'fetch'];
   const saved = Object.fromEntries(names.map((k) => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
@@ -141,6 +141,7 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
   let seq = 0;
   const winListeners = {};
   const docListeners = {};
+  const docCapture = {}; // from VT3's round 4: the document's capture-phase listeners, run before the target's own
   const els = { view: new El0('main'), 'screen-state': new El0('p'), foot: new El0('footer') };
   const head = new El0('head');
   // `breakView`: every change to the view throws, so no drawing, the render-error screen's included, can reach it (PR #40 review, N6).
@@ -151,7 +152,7 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
     activeElement: null, title: '', visibilityState: visibility, head, documentElement: new El0('html'),
     createElement: (t) => new El0(t), createElementNS: (ns, t) => new El0(t), createTextNode: (t) => new Text0(t),
     getElementById: (id) => els[id] || null,
-    addEventListener: (t, fn) => { (docListeners[t] ||= []).push(fn); },
+    addEventListener: (t, fn, opt) => { ((opt === true || (opt && opt.capture)) ? (docCapture[t] ||= []) : (docListeners[t] ||= [])).push(fn); },
   });
   // From 2026-10-19 the tap's `?sandbox&open=<key>` (search); history.replaceState records the address left after it.
   const loc = { hash, search, pathname: '/' };
@@ -169,7 +170,9 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
   set('localStorage', store);
   set('Notification', globals.Notification); // AC75's control (from 2026-10-18); none by default
   Date.now = () => now;
-  const server = fakeServer(repos, config, { now: () => now });
+  // `serverConfig` (from VT3's round 2): the desk function's own J7 where a test gives the page keys the function's check
+  // would refuse (J7's `portfolio` takes `repo` and `defaultBranch` alone), so the page's drawing of them can be tested.
+  const server = fakeServer(repos, serverConfig || config, { now: () => now });
   const held = { server };
   const flush = async () => { for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r)); };
   let mod = null;
@@ -191,17 +194,17 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
     /** The sandbox's 15-second tick (setInterval), run once. */
     async tick() { for (const i of intervals) if (i.ms === 15_000) i.fn(); await flush(); },
     /** A key pressed on the document (Escape and the like). */
-    async key(k) { for (const fn of docListeners.keydown || []) fn({ key: k, target: document.activeElement, preventDefault() {} }); await flush(); },
-    /** An event that reaches the document's own listeners (AC80's drag: pointermove, pointerup, touchmove). */
+    async key(k) { for (const fn of [...(docCapture.keydown || []), ...(docListeners.keydown || [])]) fn({ key: k, target: document.activeElement, preventDefault() {} }); await flush(); },
+    /** An event that reaches the document's own listeners (AC80's drag: pointermove, pointerup, touchmove), its capture-phase ones first. */
     async docEvent(type, ev = {}) {
       let cancelled = false;
       const e = { type, target: els.view, preventDefault() { cancelled = true; }, stopPropagation() {}, ...ev };
-      for (const fn of docListeners[type] || []) fn(e);
+      for (const fn of [...(docCapture[type] || []), ...(docListeners[type] || [])]) fn(e);
       await flush();
       return { cancelled };
     },
-    /** A tap on the document's background, outside any sheet or bubble. */
-    async tapOutside(target = els.view) { for (const t of ['pointerdown', 'click']) for (const fn of docListeners[t] || []) fn({ type: t, target, pointerType: 'touch', preventDefault() {} }); await flush(); },
+    /** A tap on the document's background, outside any sheet or bubble: each event to the capture-phase listeners first, as a browser does (from VT3's round 5). */
+    async tapOutside(target = els.view) { for (const t of ['pointerdown', 'click']) for (const fn of [...(docCapture[t] || []), ...(docListeners[t] || [])]) fn({ type: t, target, pointerType: 'touch', preventDefault() {} }); await flush(); },
     /**
      * A real tap or click on an element, in a browser's order: pointerdown on it (then on the
      * document, as it bubbles), the old focus lost (blur, focusout), focus on it (focus, focusin),
@@ -210,6 +213,7 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
     async tap(el, { pointerType = 'touch', hover = pointerType === 'mouse' } = {}) {
       const ev = (type) => ({ type, target: el, pointerType, preventDefault() {}, stopPropagation() {} });
       if (hover) { el.dispatch('pointerenter', ev('pointerenter')); await flush(); }
+      for (const fn of docCapture.pointerdown || []) fn(ev('pointerdown'));
       el.dispatch('pointerdown', ev('pointerdown'));
       for (const fn of docListeners.pointerdown || []) fn(ev('pointerdown'));
       await flush();
@@ -219,6 +223,20 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
       if (into) into.focus();
       else if (globalThis.document.activeElement && globalThis.document.activeElement.blur) globalThis.document.activeElement.blur();
       await flush();
+      for (const fn of docCapture.click || []) fn(ev('click'));
+      el.dispatch('click', ev('click'));
+      for (const fn of docListeners.click || []) fn(ev('click'));
+      await flush();
+    },
+    /**
+     * A keyboard activation of a control (Enter or Space): no pointer, so no pointerdown; the focus on it, then its click, the
+     * document's capture-phase listeners first, then the control's own, then the document's (from VT3's round 4).
+     */
+    async press(el) {
+      const ev = (type) => ({ type, target: el, pointerType: '', detail: 0, preventDefault() {}, stopPropagation() {} });
+      if (el.focus) el.focus();
+      await flush();
+      for (const fn of docCapture.click || []) fn(ev('click'));
       el.dispatch('click', ev('click'));
       for (const fn of docListeners.click || []) fn(ev('click'));
       await flush();

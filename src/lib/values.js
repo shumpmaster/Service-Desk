@@ -243,6 +243,33 @@ export function v5Figure({ phase, days, projects, nowMs, config }) {
   return { ms: median(waits), k: waits.length, words: null, gone: false };
 }
 
+/**
+ * V5's figure for one week (J5 as changed, the weekly file's V5 line; stage VT3): the cards raised in [startMs, endMs), each
+ * counted by J2's counted time, an open card, or one answered after the week, at its wait to the week's end. input:
+ * { projects (as v5Figure's), startMs, endMs, nowMs, config }. Returns { ms, k, words }: `words` "no weekday cards", or why
+ * there is no figure ("not available until <project> has been read", or the dispatch-log months J2 reads no longer cover
+ * the week), with `ms` null.
+ */
+export function v5Week({ projects, startMs, endMs, nowMs, config }) {
+  const v3 = (projects || []).filter((p) => p.v3);
+  const waiting = v3.filter((p) => !p.readOk || !p.model || !p.model.logLoaded).map((p) => p.name);
+  if (waiting.length) return { ms: null, k: 0, words: notReadText(waiting) };
+  const now = new Date(nowMs);
+  if (startMs < Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)) return { ms: null, k: 0, words: 'not available: the dispatch log months the desk reads no longer cover this week' };
+  const tz = config.ownerTimeZone;
+  const end = Math.min(endMs, nowMs);
+  const waits = [];
+  for (const p of v3) {
+    for (const r of cardRows(p.model.allEntries || [], p.tree || new Map(), nowMs, Infinity)) {
+      if (r.raisedAt < startMs || r.raisedAt >= endMs) continue;
+      if (r.state === 'answered') waits.push(countedMs(r.raisedAt, Math.min(r.answeredAt, end), config.v5Clock, tz));
+      else if (r.state === 'open') waits.push(countedMs(r.raisedAt, end, config.v5Clock, tz));
+    }
+  }
+  if (!waits.length) return { ms: null, k: 0, words: 'no weekday cards' };
+  return { ms: median(waits), k: waits.length, words: null };
+}
+
 // ---------------------------------------------------------------------------
 // The words (AC97)
 

@@ -1210,3 +1210,13 @@ VT3 adds `tests/desk/vt3-fixtures.mjs`. `ac25-weekly.test.mjs`, `ac25-weekly-pag
 - **the portfolio's weekly files** (`landed`, and paths written inline): made-up files at
   `metrics/service-desk/<YYYY>-W<ww>-<device>.md` in pf-fixtures.mjs's made-up portfolio, added and deleted between reads.
   The real portfolio repository is private; nothing of it is copied. **NOT real records.**
+
+## The headers sized up, HD1 (2026-10-29, S-001 AC98; AC81, AC80, AC85, AC91 (f), AC92 (d) and AC94 as noted; stage HD1)
+
+HD1 adds `tests/desk/hd1-fixtures.mjs`. `ac98-headers.test.mjs`, HD1's walk in `ac88-dark.test.mjs` (with `HD1_ONCE`) and the
+`hd1-` captures (`tools/hd1-shots.mjs`) open the suite's existing fixtures (glance-fixtures.mjs's `mix` and `gates`,
+vt1-fixtures.mjs's day 5, screen-text.mjs's `text` and `ext`, and the rest as their own entries above list them, each
+labelled there), with one made-up part, **NOT real**:
+- **"last looked"** (`lookedAt`, and times written inline): the device's `desk-seen-v1` record at a made-up time, 20 hours
+  or 9 days before the fixtures' clock, so Home's "Since you last looked" reads "· yesterday, 14:00" or "· in the last 7
+  days". No device kept it. **NOT a real record.**

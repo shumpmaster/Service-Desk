@@ -39,6 +39,7 @@ import { QW1_OPENS } from './qw1-fixtures.mjs';
 import { QW2_OPENS } from './qw2-fixtures.mjs';
 import { QW3_OPENS } from './qw3-fixtures.mjs';
 import { VT1_OPENS } from './vt1-fixtures.mjs';
+import { VT2_OPENS } from './vt2-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -1794,6 +1795,43 @@ const VT1_EXCEPT = (n, d, theme) => {
   return Boolean(k && (VT1_ONCE.get(theme).get(k) || []).includes(d)) ? `VT1 ${theme} ${k} ${d}` : null;
 };
 const VT1_FLAT = [...VT1_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `VT1 ${theme} ${k} ${d}`))).sort();
+/**
+ * VT2 of M3B's changes to an element's look on purpose (AC25's first two parts as changed for M3B; the stage's row: "`VT2_ONCE`";
+ * the picture, docs/design/builds/m3b-picture/m3b-overview-3-didnt-need-me-360-light.png), each declaration before and after,
+ * in each theme, on only its own element. Every element is new in VT2, so bd4097d's stylesheet gives it only what it gave any
+ * such element:
+ * - "Didn't need me", a sheet's last line (`p.v2-dnm`, a child of the sheet): under a 1 px --line hairline, 8 px above its
+ *   words, at least 24 px tall, in --t-small --ink2 (C, (k): never --you);
+ * - its button (`button.v2-dnmb`, "Didn't need me" or "Unmark"): a text button at least 24 px tall, no corner, in --t-small
+ *   --ink2, underlined as the sheet's quiet links are (its own words computed in --t-small --ink2);
+ * - marked, the words before "Unmark" (`span` in `p.v2-dnm.marked`, "Marked as not needing you · "), computed in --t-small
+ *   --ink2.
+ * "Not noted on this device" on the targets' sheet takes `.v2-small`, in bd4097d's stylesheet, so it adds none.
+ * The walk reaches them on VT2's own screens (tests/desk/vt2-fixtures.mjs's VT2_OPENS, below) and, unmarked, on every fixture
+ * above that opens a sheet with a noted item.
+ */
+const VT2_SMALL = (t) => [`font: (none) → ${VT1_FONT('400 12px/1.4')}`, `color: (none) → ${t.ink2}`];
+const VT2_LOOK = (t) => new Map([
+  ['p.v2-dnm (the "Didn\'t need me" line)', ['padding-top: (none) → 8px', `border-top: (none) → 1px solid ${t.line}`, 'min-height: (none) → 24px', ...VT2_SMALL(t)]],
+  ['button.v2-dnmb (its button, "Didn\'t need me" or "Unmark")', [`font: inherit → ${VT1_FONT('400 12px/1.4')}`, 'border-radius: 8px → 0', `color: inherit → ${t.ink2}`,
+    'display: (none) → inline-flex', 'align-items: (none) → center', 'min-height: (none) → 24px', 'margin: (none) → 0', 'text-decoration: (none) → underline',
+    'text-underline-offset: (none) → 2px', 'vertical-align: (none) → middle', ...VT1_SMALL, `computed color: ${t.ink} → ${t.ink2}`]],
+  ['span (the marked line\'s words)', [...VT1_SMALL, `computed color: ${t.ink} → ${t.ink2}`]],
+]);
+const VT2_ONCE = new Map([['light', VT2_LOOK({ ink: '#18191c', ink2: '#5c5f66', line: '#e7e7ea' })], ['dark', VT2_LOOK({ ink: '#ecedef', ink2: '#a2a5ac', line: '#26282c' })]]);
+const VT2_KEY = (n) => {
+  const p = n.parent;
+  const is = (x, tag, cls) => Boolean(x && x.tag === tag && (!cls || x.cls.has(cls)));
+  if (is(n, 'p', 'v2-dnm') && p && p.cls.has('v2-sheet')) return 'p.v2-dnm (the "Didn\'t need me" line)';
+  if (is(n, 'button', 'v2-dnmb') && is(p, 'p', 'v2-dnm')) return 'button.v2-dnmb (its button, "Didn\'t need me" or "Unmark")';
+  if (is(n, 'span') && n.cls.size === 0 && is(p, 'p', 'v2-dnm') && p.cls.has('marked')) return 'span (the marked line\'s words)';
+  return null;
+};
+const VT2_EXCEPT = (n, d, theme) => {
+  const k = VT2_KEY(n);
+  return Boolean(k && (VT2_ONCE.get(theme).get(k) || []).includes(d)) ? `VT2 ${theme} ${k} ${d}` : null;
+};
+const VT2_FLAT = [...VT2_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `VT2 ${theme} ${k} ${d}`))).sort();
 const STRIP_FLAT = [...STRIP_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G2-STRIP ${theme} ${k} ${d}`))).sort();
 const G9C_FLAT = [...G9C_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G9C ${theme} ${k} ${d}`))).sort();
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
@@ -1867,6 +1905,8 @@ function sameLook(app, where, fails, seen) {
         if (qw3) { excepted.add(qw3); continue; }
         const vt1 = VT1_EXCEPT(b, d, way.theme);
         if (vt1) { excepted.add(vt1); continue; }
+        const vt2 = VT2_EXCEPT(b, d, way.theme);
+        if (vt2) { excepted.add(vt2); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -2155,7 +2195,11 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // Rewritten in VT1 of M3B (forced: the walks above now draw the value targets' row and sheet, AC97, whose new look VT1_ONCE
   // pins): VT1's exception is pinned exactly by VT1's own walk, below; any the walks above meet is of it alone.
   assert.ok([...excepted].filter((x) => /^VT1 /.test(x)).every((x) => VT1_FLAT.includes(x)), 'VT1: only its pinned declarations');
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[123456789] |G7B |G8B |G8C |G9C |PRE-G7 |QW1 |VT1 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // Rewritten in VT2 of M3B (forced: the walks above now open sheets whose item the device noted, so they draw "Didn't need me",
+  // AC25, whose new look VT2_ONCE pins): VT2's exception is pinned exactly by VT2's own walk, below; any the walks above meet is
+  // of it alone.
+  assert.ok([...excepted].filter((x) => /^VT2 /.test(x)).every((x) => VT2_FLAT.includes(x)), 'VT2: only its pinned declarations');
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[123456789] |G7B |G8B |G8C |G9C |PRE-G7 |QW1 |VT1 |VT2 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes
@@ -2474,4 +2518,44 @@ test('AC88 + AC69 + AC92 (a) + AC44 step 4 (VT1 of M3B; AC97): on VT1\'s screens
   assert.ok(excepted.has('VT1 light svg.v2-s (the row\'s left icon, a ✓ or ✕) color: #18191c → #12733a'));
   assert.deepEqual([...excepted].filter((x) => /^VT1 /.test(x)).sort(), VT1_FLAT, 'VT1_ONCE met exactly');
   assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^VT1 /.test(x)), [], 'no other exception the walks above had not met');
+});
+
+
+// VT2 of M3B (AC25's first two parts as changed for M3B; the stage's row: "AC88's dark cascade for every new place" and
+// "`VT2_ONCE`"): "Didn't need me" as the last line of a card's, a question's and a gate's sheet, and marked ("Marked as not needing
+// you · Unmark") on a card's and a question's, and Service-Desk's targets' sheet with "Not noted on this device" where the
+// device's storage throws (tests/desk/vt2-fixtures.mjs's VT2_OPENS, made up, NOT real), two page loads (the suite's memory),
+// each screen read by all four checks: AC88's (every colour one of AC81's tokens with the theme's value, every text 4.5:1),
+// AC69's (no vermilion: never --you), AC92 (a)'s (no green or red) and the stage-8 guard, which meets VT2_ONCE exactly and no
+// other exception the walks above had not met.
+test('AC88 + AC69 + AC92 (a) + AC44 step 4 (VT2 of M3B; AC25): on VT2\'s screens (VT2_OPENS, made up, NOT real), in dark (forced, and the phone\'s own) and light — "Didn\'t need me" on a card\'s, a question\'s and a gate\'s sheet, marked with "Unmark", and the targets\' sheet with "Not noted on this device" — every colour a token, every text 4.5:1, no vermilion, no green or red, and every element\'s look bd4097d\'s but for VT2_ONCE, met exactly', async () => {
+  const fails = [];
+  const seen = new Set();
+  const places = new Set();
+  const before = new Set(excepted);
+  const drawn = { line: 0, marked: 0, none: 0 };
+  for (const [where, open, screens] of VT2_OPENS) {
+    const app = await open();
+    try {
+      for (const [hash, prepare] of screens) {
+        await app.go(hash);
+        if (prepare) await prepare(app);
+        const w = `VT2 ${where} ${hash}`;
+        const lines = findAll(app.view, (e) => / v2-dnm /.test(` ${e.className || ''} `));
+        drawn.line += lines.length;
+        drawn.marked += lines.filter((e) => / marked /.test(` ${e.className} `)).length;
+        drawn.none += findAll(app.view, (e) => e.textContent === 'Not noted on this device' && e.tag === 'p').length;
+        checkScreen(app, w, fails, seen);
+        vermilionCheck(app, w, fails, seen, places);
+        okBadCheck(app, w, fails, seen, places);
+        sameLook(app, w, fails, seen);
+      }
+    } finally {
+      app.restore();
+    }
+  }
+  assert.deepEqual(fails, []);
+  assert.ok(drawn.line >= 5 && drawn.marked >= 2 && drawn.none >= 1, JSON.stringify(drawn));
+  assert.deepEqual([...excepted].filter((x) => /^VT2 /.test(x)).sort(), VT2_FLAT, 'VT2_ONCE met exactly');
+  assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^VT2 /.test(x)), [], 'no other exception the walks above had not met');
 });

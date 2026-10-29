@@ -1091,11 +1091,11 @@ const G2_LOOK = (ink, ink2, bg2) => new Map([
   ['div.v2-lanes', ['grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr) minmax(0, 1fr) → minmax(0, 1fr) minmax(0, 1fr)']],
   ['section.v2-lane.lane-done', [`background: (none) → ${bg2}`, 'border-radius: (none) → 12px', 'padding: (none) → 0 8px 10px', 'align-self: (none) → stretch']],
   ['h2.v2-lh (Done)', ['padding-top: (none) → 6px']],
-  ['p.v2-kq', [`font: (none) → ${G2_FONT('500 11px/1.35')}`, `color: (none) → ${ink2}`, 'padding: (none) → 4px 0']],
-  ['span.v2-kl', ['computed font-size: 13px → 11px', 'computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 14.850000000000001px',
-    `computed color: ${ink} → ${ink2}`]],
-  ['span.v2-kw', ['computed font-size: 13px → 11px', 'computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 14.850000000000001px',
-    `computed color: ${ink} → ${ink2}`]],
+  // Rewritten in HD1 (forced: AC98 puts the empty line on --t-row, 500 13 px, so its words keep the 13 px they had before G2
+  // and take --t-row's line height; tests/desk/ac88-dark.test.mjs:1091 and the lines under it).
+  ['p.v2-kq', [`font: (none) → ${G2_FONT('500 13px/1.35')}`, `color: (none) → ${ink2}`, 'padding: (none) → 4px 0']],
+  ['span.v2-kl', ['computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 17.55px', `computed color: ${ink} → ${ink2}`]],
+  ['span.v2-kw', ['computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 17.55px', `computed color: ${ink} → ${ink2}`]],
   ['span.v2-kn', ['font: (none) → 400 11px/1.4 "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace', `color: (none) → ${ink2}`,
     'computed font-size: 13px → 11px', 'computed line-height: 18.849999999999998px → 15.399999999999999px',
     'computed font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif → "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace',

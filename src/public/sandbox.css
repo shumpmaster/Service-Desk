@@ -1494,4 +1494,8 @@ html.sb .v2-home .sb-h3, html.sb .v2-proj .sb-h3 { font: 600 13px/1.3 var(--font
 /* The two headings on one line at 360 px (answer A): " · " and the time or count after it small and grey; a clock time in
    Plex Mono (P-001-redesign-type.md, A), "in the last 7 days" and a count in Plex Sans (sandbox.js splits the words). */
 .v2-htail { font: var(--t-small); color: var(--ink2); }
+/* Where the heading and the control beside it ("Mark as seen", "↑ start at the foot") don't fit one line together, the
+   control moves under it, at its right, so the heading itself stays one line (AC98; at 360 px neither fits beside). */
+.v2-sh.v2-shsplit { flex-wrap: wrap; row-gap: 4px; }
+.v2-sh.v2-shsplit > :last-child:not(:first-child) { margin-left: auto; }
 .v2-htime { font: 400 12px/1.4 var(--mono); }

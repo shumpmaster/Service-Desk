@@ -863,7 +863,7 @@ function splitHead(words, mono) {
 function sinceNode(sv, seen, nowMs, unread = null, missing = []) {
   // The time after "Since you last looked · " is a clock time with its day ("yesterday, 04:00"), in Plex Mono; "in the last
   // 7 days" is words, in Plex Sans (AC98).
-  const head = h('div', { class: 'v2-sh', key: 'since-h' }, h('h2', { class: 'v2-shw' }, splitHead(sv.heading, Boolean(sv.time) && sv.time !== HOME_WORDS.lastWeek)),
+  const head = h('div', { class: 'v2-sh v2-shsplit', key: 'since-h' }, h('h2', { class: 'v2-shw' }, splitHead(sv.heading, Boolean(sv.time) && sv.time !== HOME_WORDS.lastWeek)),
     sv.off ? null : h('button', { type: 'button', class: 'v2-seen', key: 'mark-seen', onclick: () => {
       seen.markSeen();
       homeState.accepted = null;
@@ -1479,7 +1479,7 @@ function pageMilestones(p) {
 function milestonesNode(p, mv) {
   const name = p.project.name;
   // AC92 (c), from G5: the head sums each phase's "<R> of <T> reached"; "↑ start at the foot" stays.
-  const head = h('div', { class: 'v2-sh', key: 'ms-h' }, h('h2', { class: 'v2-shw' }, splitHead(PAGE_WORDS.milestonesHead(mv.tracked ? mv.sum : null), false)), h('span', { class: 'v2-mono' }, PAGE_WORDS.startFoot));
+  const head = h('div', { class: 'v2-sh v2-shsplit', key: 'ms-h' }, h('h2', { class: 'v2-shw' }, splitHead(PAGE_WORDS.milestonesHead(mv.tracked ? mv.sum : null), false)), h('span', { class: 'v2-mono' }, PAGE_WORDS.startFoot));
   if (!mv.tracked) return [head, h('p', { class: 'v2-small', key: 'ms-none' }, mv.words)];
   return [head, h('ol', { class: 'v2-std', key: 'ms-lines' }, mv.lines.map((l) => {
     const fk = `phase:${l.phase}`;

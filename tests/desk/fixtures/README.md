@@ -1188,3 +1188,25 @@ VT2 adds `tests/desk/vt2-fixtures.mjs`. `ac25-metrics.test.mjs`, `ac25-metrics-p
   `desk-metrics-v1`'s form, some in another form or broken on purpose. No device kept them. **NOT real records.**
 - **the targets' sheet** (`targetsState`): vt1-fixtures.mjs's state before launch (Service-Desk's section 6 at 7b69b2b, real,
   over its records at 77bfeae, real), with storage made to throw. **NOT a real device.**
+
+## The weekly file, VT3 (2026-10-29, S-001 AC25's third part and J5 as changed for M3B, AC82 changed; stage VT3 of "The desk's value targets shown: M3B")
+
+VT3 adds `tests/desk/vt3-fixtures.mjs`. `ac25-weekly.test.mjs`, `ac25-weekly-page.test.mjs`, VT3's walk in
+`ac88-dark.test.mjs` (with `VT3_ONCE`), the second halves of AC82's top-to-bottom case and AC87's Home-foot case, and the
+`vt3-` captures (`tools/vt3-shots.mjs`) open these made-up parts, each **NOT real**:
+- **J5's example week** (`J5_WEEK`, `J5_FILE`): the spec's own made-up week of Mon 9 Nov 2026 (J5 as changed, "NOT a real
+  record; the figures and dates are made up, not a launch"): device `d3fa2`, its open windows, its two first-shown items
+  (`Service-Desk|card|queue/P-002-dor-1.md`, `Personal-Org-Operating-Model|pr|42`) and its one mark
+  (`Service-Desk|pr|251`), some times given milliseconds of .999 to be cut; and the file J5 writes for it. **NOT real
+  records.**
+- **the device's notes** (`notesOf`, `storeWith`, `win`, `weeksOfWindows`, `EIGHT`, and notes written inline): windows,
+  first-shown notes and marks at made-up times from September 2026 to January 2027, devices `d3fa2` and `d0001`, and the
+  day the notes start, in `desk-metrics-v1`'s form. No device kept them. **NOT real records.**
+- **the week's cards** (`weekCards`): item Q-901's made-up failure cards in `dispatch-log/2026-11.jsonl` (vt1-fixtures.mjs's
+  `cardsLog`), raised in the week of 9 Nov at made-up times, six answered within the day and one open at the week's end,
+  with one before and one after the week. **NOT real records.**
+- **launch days** (`LAUNCH_EARLY`, and days written inline): M3C's line given ` · reached: 2026-11-02` or `2026-11-04` (and
+  other days in the pure tests). Not a plan: launch has no date (P-001-m3b-launch-date.md, A). **NOT a real record.**
+- **the portfolio's weekly files** (`landed`, and paths written inline): made-up files at
+  `metrics/service-desk/<YYYY>-W<ww>-<device>.md` in pf-fixtures.mjs's made-up portfolio, added and deleted between reads.
+  The real portfolio repository is private; nothing of it is copied. **NOT real records.**

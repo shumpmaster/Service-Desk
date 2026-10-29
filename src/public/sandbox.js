@@ -44,7 +44,8 @@ import { PAGE_WORDS, pageSentence, phaseLine, phaseStrip, ranAgainLines, milesto
 import { topLine } from './lib/versions.js';
 import { portfolioView, PF_ROWS, PF_WORDS, cardMilestone, portfolioScreenState, portfolioRead, portfolioCards, ideasView, rareLine, noteIdeas, ideaEvents, SEEN_IDEAS_KEY, PF_BOARD, PF_LABEL } from './lib/portfolio.js';
 import { workAheadView, readDraft } from './lib/workview.js';
-import { valuesView, readValueChecks, VALUE_CHECKS_PATH, VALUES_WORDS } from './lib/values.js';
+import { valuesView, readValueChecks, VALUE_CHECKS_PATH, VALUES_WORDS, v5Week, launchOf } from './lib/values.js';
+import { weeklyOffer, weekLink, portfolioTarget, WEEKLY_WORDS } from './lib/weekly.js';
 import { createMetrics, NOT_NOTED, DNM_WORDS } from './lib/metrics.js';
 
 import {
@@ -1095,6 +1096,8 @@ function renderHome(desk, built, seen, nowMs, bd = null) {
     // Home's foot (AC82, specs/S-001.md:6696-6700): the portfolio's block, read only (AC87, from stage
     // 6a); then "More detail", closed, below everything else on Home (P-001-settings-place.md, A).
     portfolioNode(pf),
+    // AC25 (VT3; AC82 changed): the weekly line, between the portfolio's block and "More detail".
+    weeklyLineNode(weeklySafe()),
     h('details', { class: 'v2-mdetail', key: 'home-more-detail' }, h('summary', { class: 'v2-mds', key: 'home-more' }, h('span', {}, HOME_WORDS.moreDetail), vi('chev')),
       h('section', { class: 'sb-notify-line', key: 'notify-line' }, h('h3', { class: 'sb-h3' }, 'Notifications'), notifyNode(false)),
       usageNode(),
@@ -1519,6 +1522,10 @@ function valueChecksRead(nowMs) {
   return { state: 'ok', ...readValueChecks({ lines: rec.lines, nowMs, projects: CONFIG.projects, targetsOf }) };
 }
 
+/** Every connected project as V5's figures take it (values.js: v5Figure, v5Week), as last drawn. */
+const v5Projects = () => (lastBuilt || []).map((b) => ({ name: b.project.name, v3: b.project.model === 'v3',
+  readOk: Boolean(b.box && b.box.read && b.box.read.read === 'ok'), model: b.box ? b.box.model : null, tree: b.snap ? b.snap.tree : null }));
+
 /** A v3 project's value targets as the row and the sheet show them (values.js, valuesView), or null with no `V<n>:` line. */
 function valuesOf(p) {
   const doc = p.j && p.j.projectDoc;
@@ -1526,8 +1533,7 @@ function valuesOf(p) {
   const nowMs = Date.now();
   const planning = p.project.planning === true;
   // V5's figure: AC21's waits over every connected project, as Home's line counts them (v5Line).
-  const v5In = planning ? { config: CONFIG, projects: (lastBuilt || []).map((b) => ({ name: b.project.name, v3: b.project.model === 'v3',
-    readOk: Boolean(b.box && b.box.read && b.box.read.read === 'ok'), model: b.box ? b.box.model : null, tree: b.snap ? b.snap.tree : null })) } : null;
+  const v5In = planning ? { config: CONFIG, projects: v5Projects() } : null;
   return valuesView({ project: p.project, doc, planning, j25: valueChecksRead(nowMs), v5In, nowMs, tz: TZ });
 }
 
@@ -1610,6 +1616,77 @@ function vtBlock(name, t) {
     whole ? h('p', { class: 'v2-quote', key: `vquote:${t.id}` }, t.quote) : null);
 }
 
+// ---------------------------------------------------------------------------
+// The weekly file (AC25's third part and J5, as changed for M3B; stage VT3): Home's line and the targets' sheet's "Your
+// weekly figures". Every rule is lib/weekly.js's; this draws it.
+
+/**
+ * What is offered now (weekly.js, weeklyOffer), with each week's link (J3's form against J7's `portfolio`), or null: no
+ * planning project read, no `portfolio` in J7, the device keeping nothing, the portfolio's tree not read, or every noted
+ * week's file in it.
+ */
+function weeklyNow() {
+  const target = portfolioTarget(CONFIG.portfolio);
+  const pb = (lastBuilt || []).find((b) => b.project.planning === true && b.project.model === 'v3' && !b.error);
+  const doc = pb && pb.j ? pb.j.projectDoc : null;
+  if (!metrics || !target || !doc) return null;
+  const nowMs = Date.now();
+  const snap = DESK && DESK.portfolio ? DESK.portfolio() : null;
+  const projects = v5Projects();
+  const offer = weeklyOffer({ notes: metrics.notes, off: metrics.off, nowMs, tz: TZ, launch: launchOf(doc), tree: snap ? snap.tree : null,
+    v5Of: (startMs, endMs) => v5Week({ projects, startMs, endMs, nowMs, config: CONFIG }) });
+  if (!offer) return null;
+  return { ...offer, project: pb.project, target, weeks: offer.weeks.map((w) => ({ ...w, link: weekLink(target, w, CONFIG.linkCap) })) };
+}
+/** weeklyNow, never throwing: a failure here costs only the offer. */
+function weeklySafe() {
+  try {
+    return weeklyNow();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Home's line (AC25, "The weekly offer"; AC82 changed): between the portfolio's block and "More detail", a plain row in
+ * --t-body with a chevron, no soft box and no icon of its own, never counted, never coral, never notified; it opens
+ * Service-Desk's page with the targets' sheet over it, at "Your weekly figures".
+ */
+function weeklyLineNode(wk) {
+  if (!wk) return null;
+  return h('a', { class: 'v2-wkline', key: 'home-weekly', href: go('p', wk.project.name, 'values', 'weekly'), onclick: () => { nav.opener = 'home-weekly'; } },
+    h('span', {}, wk.line), vi('chev', 'v2-k'));
+}
+
+/**
+ * "Your weekly figures" (AC25; round 2's picture, frame 5): the sheet's last block, after the stop rule: AC18's words where
+ * the repository takes no commits from the web; each week offered, newest first, "Save the week of <its Monday> ↗", with
+ * AC17's Copy under it where its link holds the file name only; the weeks before launch together under one line; then the
+ * notes' 8 weeks.
+ */
+function weeklyBlock(wk) {
+  if (!wk) return null;
+  const item = (w) => h('li', { class: 'v2-wkw', key: `wk:${w.monday}` },
+    h('a', { class: 'v2-abtn v2-wkbtn', key: `wk-save:${w.monday}`, href: w.link.url, rel: 'noopener noreferrer', target: '_blank', onclick: () => {
+      if (!w.link.copy) return;
+      try {
+        navigator.clipboard.writeText(w.link.copy).catch(() => {});
+      } catch {
+        // the Copy under it still holds it
+      }
+    } }, `${w.words} ↗`),
+    w.link.copy ? copyFallback(w.link.copyWords, w.link.copy, `wk:${w.monday}`, WEEKLY_WORDS.copyButton) : null);
+  const counted = wk.weeks.filter((w) => !w.trial);
+  const trial = wk.weeks.filter((w) => w.trial);
+  const warning = wk.weeks.length ? wk.weeks[0].link.warning : null;
+  return h('section', { class: 'v2-vweek', key: 'vt-weekly' }, h('h3', { class: 'v2-bh' }, WEEKLY_WORDS.head),
+    warning ? h('p', { class: 'v2-small', key: 'wk-warn' }, warning) : null,
+    counted.length ? h('ul', { class: 'v2-wkl', key: 'wk-counted' }, counted.map(item)) : null,
+    trial.length ? h('p', { class: 'v2-small', key: 'wk-trial' }, WEEKLY_WORDS.trial) : null,
+    trial.length ? h('ul', { class: 'v2-wkl', key: 'wk-trials' }, trial.map(item)) : null,
+    h('p', { class: 'v2-small', key: 'wk-kept' }, WEEKLY_WORDS.kept));
+}
+
 /** The sheet's body (AC97): its small line, J25's state once where it is not read, each target's block, then the miss and stop rule. */
 function valuesSheetBody(p, vv) {
   const name = p.project.name;
@@ -1620,7 +1697,9 @@ function valuesSheetBody(p, vv) {
     vv.targets.map((t) => vtBlock(name, t)),
     // The rule quoted (P-001-m3b-stop-rule.md, A): three lines on screen, "Read it all ›" for the rest; its clip exact
     // (sandbox.css, `.v2-vstop .v2-clip.v2-quote`: the sheet's quote padding no longer cuts a quote of three lines).
-    vv.stop ? h('section', { class: 'v2-vstop', key: 'vt-stop' }, h('h3', { class: 'v2-bh' }, VALUES_WORDS.stopHead), clipNode(`vt-stop:${name}`, vv.stop, 'v2-quote', true, 'p')) : null];
+    vv.stop ? h('section', { class: 'v2-vstop', key: 'vt-stop' }, h('h3', { class: 'v2-bh' }, VALUES_WORDS.stopHead), clipNode(`vt-stop:${name}`, vv.stop, 'v2-quote', true, 'p')) : null,
+    // AC25 (VT3): "Your weekly figures", the planning project's sheet's last block, after the stop rule.
+    p.project.planning === true ? weeklyBlock(weeklySafe()) : null];
 }
 
 /**
@@ -4682,7 +4761,9 @@ export function parseRoute(hash) {
   if (kind === 'pipeline' || kind === 'asked' || kind === 'agents' || kind === 'notes') return { ...base, key: `p/${name}/${kind}`, screen: go('p', name, kind), kind };
   // From stage 3 (AC81, AC83): the project's page, at the Status screen's address, with its sheets over
   // it: "About the phases" (`info`), and the rest's "Value targets" (`values`) and "Experiments" (`experiments`).
-  return { ...base, key: `p/${name}`, screen: go('p', name), kind: 'status', sheet: ['info', 'values', 'experiments'].includes(kind) ? kind : null };
+  // From VT3 (AC25): `values/weekly`, the targets' sheet opened at "Your weekly figures" (Home's weekly line).
+  return { ...base, key: `p/${name}`, screen: go('p', name), kind: 'status', sheet: ['info', 'values', 'experiments'].includes(kind) ? kind : null,
+    weekly: kind === 'values' && rest[0] === 'weekly' };
 }
 
 /** Set the address without a history entry of its own. */
@@ -4781,6 +4862,8 @@ const nav = {
     this.scrollTo = moved && next.kind === 'timeline' ? next.at : null;
     if (this.scrollTo && this.scrollTo.sprint) this.openSprint = { name: next.name, sprint: this.scrollTo.sprint };
     const toTop = moved && !this.scrollTo;
+    // AC25 (VT3): the targets' sheet opened at "Your weekly figures" scrolls to it once, when it opens there.
+    this.scrollWeekly = Boolean(next.weekly && !(prev.weekly && prev.sheet === 'values'));
     render();
     if (toTop) window.scrollTo(0, 0);
     focusPending();
@@ -4864,7 +4947,9 @@ function focusPending() {
   if (el) el = closedFoldControl(el) || el;
   if (el && el.focus) {
     try {
-      el.focus();
+      // AC25 (VT3): the targets' sheet opened at "Your weekly figures" keeps that scroll while its close takes the focus.
+      if (nav.route && nav.route.weekly) el.focus({ preventScroll: true });
+      else el.focus();
     } catch {
       // focus is a courtesy; the screen is right either way
     }
@@ -5284,6 +5369,17 @@ export function startSandbox(opts = {}) {
     }
     // AC56, changed: after a full reload, the screen's and the sheet's scroll as they were, once there is room for it.
     restoreScroll(view, desk);
+    // AC25 (VT3): the targets' sheet opened from Home's weekly line: the sheet scrolled so "Your weekly figures" is at its top.
+    if (nav.scrollWeekly && nav.route.sheet === 'values') {
+      const blk = findKey(view, 'vt-weekly');
+      const sh = findClass(view, 'v2-sheet');
+      if (blk && sh) {
+        nav.scrollWeekly = false;
+        if (blk.getBoundingClientRect && sh.getBoundingClientRect) {
+          sh.scrollTop = Math.max(0, Math.round((sh.scrollTop || 0) + blk.getBoundingClientRect().top - sh.getBoundingClientRect().top - 12));
+        }
+      }
+    }
     // The Timeline just opened: scroll to its Now line (or the sprint) once it is drawn (AC59).
     if (nav.scrollTo && nav.route.kind === 'timeline') {
       const t = nav.scrollTo;

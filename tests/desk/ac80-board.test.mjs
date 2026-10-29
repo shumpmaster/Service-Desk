@@ -805,7 +805,18 @@ test('AC80, rewritten in G2 (AC91 (f)): the CSS — two lanes side by side at ev
   assert.match(rule('.v2-step'), /min-height: 28px;/);
   assert.match(rule('.v2-gatebtns .v2-step'), /min-height: 26px;/);
   assert.match(rule('.v2-undo'), /min-height: 28px;/);
-  assert.match(rule('.v2-lh'), /font: 600 11px\/[\d.]+ var\(--font\);/, 'lane headings 600 11 px');
+  // Rewritten in HD1 (vacuous: the first `.v2-lh` rule still says 600 11 px, but AC98's later rule draws the lane headings at
+  // 600 13 px; tests/desk/ac80-board.test.mjs:808): the font that wins, the last rule naming the selector.
+  const lastFont = (sel) => {
+    let out = null;
+    for (const m of css.matchAll(/(?:^|\})\s*([^{}@]+?)\s*\{([^}]*)\}/g)) {
+      if (!m[1].split(',').map((x) => x.trim()).includes(sel)) continue;
+      const f = /(?:^|;)\s*font:\s*([^;]+)/.exec(m[2]);
+      if (f) out = f[1].trim();
+    }
+    return out;
+  };
+  assert.equal(lastFont('.v2-lh'), '600 13px/1.3 var(--font)', 'lane headings 600 13 px (AC98)');
   assert.match(rule('.v2-lc'), /font: var\(--t-mono\);/, 'their counts in Plex Mono 11 px');
   assert.match(rule('.v2-t'), /font: 500 12px\/[\d.]+ var\(--font\);/, 'a card\'s title 500 12 px');
   assert.match(rule('.v2-m'), /font: var\(--t-mono\);/, 'its meta in Plex Mono 11 px');

@@ -40,6 +40,7 @@ import { QW2_OPENS } from './qw2-fixtures.mjs';
 import { QW3_OPENS } from './qw3-fixtures.mjs';
 import { VT1_OPENS } from './vt1-fixtures.mjs';
 import { VT2_OPENS } from './vt2-fixtures.mjs';
+import { VT3_OPENS } from './vt3-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -1832,6 +1833,44 @@ const VT2_EXCEPT = (n, d, theme) => {
   return Boolean(k && (VT2_ONCE.get(theme).get(k) || []).includes(d)) ? `VT2 ${theme} ${k} ${d}` : null;
 };
 const VT2_FLAT = [...VT2_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `VT2 ${theme} ${k} ${d}`))).sort();
+/**
+ * VT3 of M3B's changes to an element's look on purpose (AC25's third part as changed for M3B, AC82 changed; the stage's row:
+ * "`VT3_ONCE`"; the approved picture's Home frame, docs/design/builds/m3b-picture/m3b-overview-4-home-weekly-360-*.png, and
+ * round 2's "Your weekly figures", round-2/m3b-r2-5-weekly-figures-trial-weeks-360-*.png), each declaration before and after,
+ * in each theme, on only its own element. Every element is new in VT3, so bd4097d's stylesheet gives it only what it gave
+ * any such element:
+ * - Home's weekly line (`a.v2-wkline`, between the portfolio's block and "More detail"): a plain row, a flex line at least
+ *   44 px tall, its words and chevron apart, in --t-body --ink, never --you, no soft box, no underline;
+ * - "Your weekly figures" (`section.v2-vweek`, the targets' sheet's last block): a grid under a 1 px --line hairline, as the
+ *   stop rule's block; its weeks' lists (`ul.v2-wkl`, a grid with no bullets) and each week (`li.v2-wkw`, its button and,
+ *   past `linkCap`, AC17's Copy under it).
+ * The weeks' buttons take `.v2-abtn`, their words `.v2-small` and the Copy `.v2-plcopy`, `.v2-pre` and `.v2-abtn.ghost`,
+ * all in bd4097d's stylesheet. The walk reaches them on VT3's own screens (tests/desk/vt3-fixtures.mjs's VT3_OPENS, below).
+ */
+const VT3_LOOK = (t) => new Map([
+  ['a.v2-wkline (Home\'s weekly line)', ['display: (none) → flex', 'align-items: (none) → center', 'justify-content: (none) → space-between', 'gap: (none) → 8px',
+    'min-height: (none) → 44px', `font: (none) → ${VT1_FONT('400 13px/1.45')}`, `color: inherit → ${t.ink}`]],
+  ['section.v2-vweek ("Your weekly figures")', ['display: (none) → grid', 'gap: (none) → 6px', 'min-width: (none) → 0', 'padding-top: (none) → 12px', `border-top: (none) → 1px solid ${t.line}`]],
+  ['ul.v2-wkl (a list of weeks)', ['display: (none) → grid', 'gap: (none) → 8px']],
+  ['li.v2-wkw (a week)', ['display: (none) → grid', 'gap: (none) → 6px', 'justify-items: (none) → start', 'min-width: (none) → 0']],
+]);
+const VT3_ONCE = new Map([['light', VT3_LOOK({ ink: '#18191c', ink2: '#5c5f66', line: '#e7e7ea' })], ['dark', VT3_LOOK({ ink: '#ecedef', ink2: '#a2a5ac', line: '#26282c' })]]);
+const VT3_KEY = (n) => {
+  const p = n.parent;
+  const is = (x, tag, cls) => Boolean(x && x.tag === tag && (!cls || x.cls.has(cls)));
+  if (is(n, 'a', 'v2-wkline') && p && p.cls.has('v2-home')) return 'a.v2-wkline (Home\'s weekly line)';
+  if (is(n, 'span') && n.cls.size === 0 && is(p, 'a', 'v2-wkline')) return 'span (the weekly line\'s words)';
+  if (is(n, 'svg') && is(p, 'a', 'v2-wkline')) return 'svg (the weekly line\'s chevron)';
+  if (is(n, 'section', 'v2-vweek') && p && p.cls.has('v2-sheet')) return 'section.v2-vweek ("Your weekly figures")';
+  if (is(n, 'ul', 'v2-wkl') && is(p, 'section', 'v2-vweek')) return 'ul.v2-wkl (a list of weeks)';
+  if (is(n, 'li', 'v2-wkw') && is(p, 'ul', 'v2-wkl')) return 'li.v2-wkw (a week)';
+  return null;
+};
+const VT3_EXCEPT = (n, d, theme) => {
+  const k = VT3_KEY(n);
+  return Boolean(k && (VT3_ONCE.get(theme).get(k) || []).includes(d)) ? `VT3 ${theme} ${k} ${d}` : null;
+};
+const VT3_FLAT = [...VT3_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `VT3 ${theme} ${k} ${d}`))).sort();
 const STRIP_FLAT = [...STRIP_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G2-STRIP ${theme} ${k} ${d}`))).sort();
 const G9C_FLAT = [...G9C_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G9C ${theme} ${k} ${d}`))).sort();
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
@@ -1907,6 +1946,8 @@ function sameLook(app, where, fails, seen) {
         if (vt1) { excepted.add(vt1); continue; }
         const vt2 = VT2_EXCEPT(b, d, way.theme);
         if (vt2) { excepted.add(vt2); continue; }
+        const vt3 = VT3_EXCEPT(b, d, way.theme);
+        if (vt3) { excepted.add(vt3); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -2558,4 +2599,45 @@ test('AC88 + AC69 + AC92 (a) + AC44 step 4 (VT2 of M3B; AC25): on VT2\'s screens
   assert.ok(drawn.line >= 5 && drawn.marked >= 2 && drawn.none >= 1, JSON.stringify(drawn));
   assert.deepEqual([...excepted].filter((x) => /^VT2 /.test(x)).sort(), VT2_FLAT, 'VT2_ONCE met exactly');
   assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^VT2 /.test(x)), [], 'no other exception the walks above had not met');
+});
+
+
+// VT3 of M3B (AC25's third part as changed for M3B, AC82 changed; the stage's row: "AC88's dark cascade for every new place"
+// and "`VT3_ONCE`"): Home's foot with the weekly line, for one week and for eight (six before launch), and the targets'
+// sheet's "Your weekly figures" with its weeks, its trial line and AC17's Copy past `linkCap` (tests/desk/vt3-fixtures.mjs's
+// VT3_OPENS, made up, NOT real), two page loads (the suite's memory), each screen read by all four checks: AC88's (every
+// colour one of AC81's tokens with the theme's value, every text 4.5:1), AC69's (no vermilion: never --you), AC92 (a)'s (no
+// green or red) and the stage-8 guard, which meets VT3_ONCE exactly and no other exception the walks above had not met.
+test('AC88 + AC69 + AC92 (a) + AC44 step 4 (VT3 of M3B; AC25, AC82): on VT3\'s screens (VT3_OPENS, made up, NOT real), in dark (forced, and the phone\'s own) and light — Home\'s weekly line for one week and for eight, and "Your weekly figures" with its trial weeks and AC17\'s Copy — every colour a token, every text 4.5:1, no vermilion, no green or red, and every element\'s look bd4097d\'s but for VT3_ONCE, met exactly', async () => {
+  const fails = [];
+  const seen = new Set();
+  const places = new Set();
+  const before = new Set(excepted);
+  const drawn = { line: 0, block: 0, weeks: 0, copy: 0, trial: 0 };
+  for (const [where, open, screens] of VT3_OPENS) {
+    const app = await open();
+    try {
+      for (const [hash, prepare] of screens) {
+        await app.go(hash);
+        if (prepare) await prepare(app);
+        const w = `VT3 ${where} ${hash}`;
+        const has = (cls) => findAll(app.view, (e) => new RegExp(` ${cls} `).test(` ${e.className || ''} `)).length;
+        drawn.line += has('v2-wkline');
+        drawn.block += has('v2-vweek');
+        drawn.weeks += has('v2-wkw');
+        drawn.copy += has('v2-plcopy');
+        drawn.trial += findAll(app.view, (e) => e.tag === 'p' && e.textContent === 'Before launch: a trial, not counted').length;
+        checkScreen(app, w, fails, seen);
+        vermilionCheck(app, w, fails, seen, places);
+        okBadCheck(app, w, fails, seen, places);
+        sameLook(app, w, fails, seen);
+      }
+    } finally {
+      app.restore();
+    }
+  }
+  assert.deepEqual(fails, []);
+  assert.ok(drawn.line >= 2 && drawn.block >= 2 && drawn.weeks >= 9 && drawn.copy >= 8 && drawn.trial >= 1, JSON.stringify(drawn));
+  assert.deepEqual([...excepted].filter((x) => /^VT3 /.test(x)).sort(), VT3_FLAT, 'VT3_ONCE met exactly');
+  assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^VT3 /.test(x)), [], 'no other exception the walks above had not met');
 });

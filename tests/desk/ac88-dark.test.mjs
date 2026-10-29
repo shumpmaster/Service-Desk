@@ -1721,8 +1721,10 @@ const VT1_LOOK = (t) => new Map([
   // The sheet's blocks.
   ['section.v2-tgt (a target)', VT1_BLOCK(t)],
   ['section.v2-vstop (the miss and stop rule)', VT1_BLOCK(t)],
-  ['h3.v2-vth (a target\'s id and short name)', [`font: (none) → ${VT1_FONT('500 13px/1.35')}`, `color: (none) → ${t.ink}`]],
-  ['span (a target\'s short name)', ['computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 17.55px']],
+  // Rewritten in HD1 (forced: AC98 puts each target's id and short name, a sheet-block head, at 600 15 px;
+  // tests/desk/ac88-dark.test.mjs:1715 and the line under it).
+  ['h3.v2-vth (a target\'s id and short name)', [`font: (none) → ${VT1_FONT('600 15px/1.3')}`, `color: (none) → ${t.ink}`]],
+  ['span (a target\'s short name)', ['computed font-size: 13px → 15px', 'computed font-weight: 400 → 600', 'computed line-height: 18.849999999999998px → 19.5px']],
   ['p.v2-vfig (a figure and its words)', ['display: (none) → flex', 'flex-wrap: (none) → wrap', 'align-items: (none) → baseline', 'gap: (none) → 2px 8px']],
   ['span.v2-vbig (a figure)', [`font: (none) → ${VT1_FONT('600 24px/1.2')}`, `color: (none) → ${t.ink}`, 'overflow-wrap: (none) → anywhere', 'computed font-size: 13px → 24px',
     'computed font-weight: 400 → 600', 'computed line-height: 18.849999999999998px → 28.799999999999997px']],

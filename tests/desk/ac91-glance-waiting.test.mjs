@@ -125,7 +125,7 @@ test('AC91 (f): two lanes, "Waiting on you" and "Done · last 24 h", side by sid
   assert.doesNotMatch(flat, /lane-done[^{]*\{[^}]*(width|grid-column|flex)/, 'an empty Done never shrinks');
 });
 
-test('AC91 (f): with no kicked-back card, one quiet line in the ruling\'s words, "Kicked back · none" — "Kicked back" in --t-label --ink2, " · none" in --t-mono --ink2 — under the quiet lines and above the lanes, with no fold mark, no control, no hairline and no drop target', async () => {
+test('AC91 (f): with no kicked-back card, one quiet line in the ruling\'s words, "Kicked back · none" — "Kicked back" in --t-row --ink2 (from HD1, AC98; --t-label before), " · none" in --t-mono --ink2 — under the quiet lines and above the lanes, with no fold mark, no control, no hairline and no drop target', async () => {
   const app = await open(quietState());
   const undo = layout();
   try {
@@ -142,7 +142,9 @@ test('AC91 (f): with no kicked-back card, one quiet line in the ruling\'s words,
     for (const theme of THEMES) {
       const L = looks(app, theme);
       const c = INK[theme];
-      assert.deepEqual([L.get(label).size, L.get(label).weight, L.get(label).colour], ['11px', '500', c.ink2], `${theme}: "Kicked back" in --t-label --ink2`);
+      // Rewritten in HD1 (forced: AC98 puts the empty section's line, `.v2-kq`, on --t-row, 500 13 px, still --ink2, a step up
+      // and quieter than a full head; tests/desk/ac91-glance-waiting.test.mjs:145).
+      assert.deepEqual([L.get(label).size, L.get(label).weight, L.get(label).colour], ['13px', '500', c.ink2], `${theme}: "Kicked back" in --t-row --ink2 (AC98)`);
       assert.deepEqual([L.get(none).size, L.get(none).weight, L.get(none).colour], ['11px', '400', c.ink2], `${theme}: " · none" in --t-mono --ink2`);
       assert.match(L.get(none).family, /Plex Mono/);
       assert.match(L.get(none).raw('font'), /^400 11px\/1\.4 ⟦--mono\|/, `${theme}: the --t-mono role`);

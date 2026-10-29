@@ -215,7 +215,7 @@ const runHeads = (app, ph) => byClass(keyed(app, `stdl:${ph}`), 'v2-runh').map((
 
 // G9's round 2 (AC92 (d), changed: the Design reviewer's call, G9's design review, round 1, B1): a run's head outranks its
 // two group heads.
-test('AC92 (d), from G9\'s round 2: an opened phase\'s run heads outrank its two group heads — each in --ink at weight 600, its size 11 px, in light and dark; each after the first set apart by a 1 px --line rule with 8 px over it, the standard group head\'s own rule and gap, and none above the first (the latest run\'s); on `mix`\'s made-up project, Build\'s runs with its two "Build-i1" runs (gone back over and still to come), and on `gates`\', Launch\'s three "Launch-i1" runs (NOT real records), each run found by itself', async () => {
+test('AC92 (d), from G9\'s round 2: an opened phase\'s run heads outrank its two group heads — each in --ink at weight 600, 13 px over their 12 px from HD1 (AC98; 11 px both before), in light and dark; each after the first set apart by a 1 px --line rule with 8 px over it, the standard group head\'s own rule and gap, and none above the first (the latest run\'s); on `mix`\'s made-up project, Build\'s runs with its two "Build-i1" runs (gone back over and still to come), and on `gates`\', Launch\'s three "Launch-i1" runs (NOT real records), each run found by itself', async () => {
   const cases = [
     [mixState(), 'Build', ['Build-i1 run 3', 'Build-i2 run 2', 'Build-i1 run 1'], { 'Build-i1 run 3': /^Run 3 · planned$/, 'Build-i1 run 1': /· gone back over$/ }],
     [gatesState(), 'Launch', ['Launch-i1 run 4', 'Launch-i1 run 3', 'Launch-i1 run 2'], {}],
@@ -238,11 +238,14 @@ test('AC92 (d), from G9\'s round 2: an opened phase\'s run heads outrank its two
         const L = looks(app, theme);
         rh.forEach((r, i) => {
           const at = L.get(r.el);
-          assert.deepEqual([at.size, at.weight, at.color], ['11px', '600', ink], `${theme}: ${ph}'s ${r.run} head in --ink at 600, 11 px`);
+          // Rewritten in HD1 (forced: AC98 draws a run's head at 600 13 px and its two group heads at 600 12 px, so the run's
+          // head outranks them by a size step, no longer by weight at one size; tests/desk/ac92-glance-standard.test.mjs:239).
+          assert.deepEqual([at.size, at.weight, at.color], ['13px', '600', ink], `${theme}: ${ph}'s ${r.run} head in --ink at 600, 13 px (AC98)`);
           for (const g of groups) {
             assert.equal(L.get(g).color, ink, `${theme}: the group head "${g.textContent}" stays --ink`);
-            assert.ok(Number(at.weight) > Number(L.get(g).weight), `${theme}: ${r.run}'s head (${at.weight}) outranks "${g.textContent}" (${L.get(g).weight})`);
-            assert.equal(L.get(g).size, at.size, `${theme}: the same size, 11 px, as the group heads`);
+            assert.equal(L.get(g).weight, at.weight, `${theme}: "${g.textContent}" at the run head's weight, 600`);
+            assert.ok(parseFloat(at.size) > parseFloat(L.get(g).size), `${theme}: ${r.run}'s head (${at.size}) outranks "${g.textContent}" (${L.get(g).size}) by a size step`);
+            assert.equal(L.get(g).size, '12px', `${theme}: the group heads 12 px`);
           }
           if (i === 0) assert.deepEqual([at.borderTop, at.marginTop], ['', ''], `${theme}: no rule above the first run's head (${r.run})`);
           else {

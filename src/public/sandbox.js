@@ -1657,8 +1657,15 @@ function weeklySafe() {
  * is at its top (as far as the sheet scrolls), so the whole block shows, its last line included. Once landed it holds: at
  * every drawing, and at three later looks (50, 250 and 1000 ms, for layout that comes without a drawing, such as a font),
  * the sheet is scrolled there again while the owner has not scrolled it themselves (its scroll still where the landing
- * left it) and the route is still the block's. A landing waits for the block and the sheet to be drawn.
+ * left it), nor tapped inside it (VT3's review, round 2, N6), and the route is still the block's. A landing waits for the
+ * block and the sheet to be drawn.
  */
+/** Whether `el` is inside a sheet. */
+function inSheet(el) {
+  for (let n = el; n; n = n.parentNode) if (/(^| )v2-sheet( |$)/.test(typeof n.className === 'string' ? n.className : '')) return true;
+  return false;
+}
+
 function landWeekly(view) {
   if (!view) return;
   const here = nav.route && nav.route.weekly && nav.route.sheet === 'values';
@@ -5634,6 +5641,9 @@ export function startSandbox(opts = {}) {
     // no touch events here
   }
   document.addEventListener('click', outsideTapEnd);
+  // AC25 (VT3's review, round 2, N6): the owner's own tap inside the sheet (a press or a click, a key's included) ends the
+  // landing's hold at "Your weekly figures", as their own scroll does, so what the tap opens is never scrolled away.
+  for (const t of ['pointerdown', 'click']) document.addEventListener(t, (e) => { if (nav.weeklyHold && inSheet(e && e.target)) nav.weeklyHold = null; });
   document.addEventListener('visibilitychange', () => {
     if (isVisible()) {
       seen.visible();

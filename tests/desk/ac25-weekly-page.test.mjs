@@ -300,6 +300,47 @@ test('AC25 (VT3\'s design review, B1): the landing at "Your weekly figures" hold
   }
 });
 
+test('AC25 (VT3\'s review, round 2, N6): the owner\'s own tap inside the sheet ends the landing\'s hold — "Read it all" on the stop rule opens the rule where it is, the sheet never re-landed under it, at a drawing or at a later look; a tap outside the sheet is no such tap', async () => {
+  const lay = { at: 900, shift: 0 };
+  const restoreLayout = layout(lay);
+  const app = await vt3Open(vt3State(), { store: j5Store() });
+  try {
+    await app.go(weeklyLine(app).attrs.href);
+    assert.equal(sheetOf(app).scrollTop, 888, 'landed');
+    // The stop rule measured past three lines (the fake DOM lays out no text): its "Read it all" drawn, the landing held.
+    const clip = keyed(app, 'clip:vt-stop:Service-Desk');
+    clip.clientHeight = 57;
+    clip.scrollHeight = 95;
+    await app.resize(360);
+    assert.equal(sheetOf(app).scrollTop, 888, 'still landed');
+    // "Read it all" on the stop rule: the rule opens, 120 px taller, pushing the block down; the sheet stays where it was.
+    const more = keyed(app, 'clipbtn:vt-stop:Service-Desk');
+    assert.ok(more, 'the stop rule\'s "Read it all"');
+    lay.shift = 120;
+    await app.tap(more);
+    await app.visibility('visible'); // a drawing
+    await app.advance(1200); // and the later looks
+    assert.equal(sheetOf(app).scrollTop, 888, 'never re-landed after the owner\'s own tap');
+  } finally {
+    restoreLayout();
+    app.restore();
+  }
+  // A tap on Home's own screen under the sheet (outside it) leaves the hold: the late row still re-lands it.
+  const lay2 = { at: 900, shift: 0 };
+  const restore2 = layout(lay2);
+  const b = await vt3Open(vt3State(), { store: j5Store() });
+  try {
+    await b.go(weeklyLine(b).attrs.href);
+    await b.tapOutside(byClass(b.view, 'v2-proj')[0]);
+    lay2.shift = 34;
+    await b.visibility('visible');
+    assert.equal(sheetOf(b).scrollTop, 922, 'still held');
+  } finally {
+    restore2();
+    b.restore();
+  }
+});
+
 test('AC25 (VT3\'s design review, N1): Home\'s line\'s chevron in --ink2, as "More detail"\'s and the portfolio rows\' are, its words --ink', async () => {
   const app = await vt3Open(vt3State(), { store: j5Store() });
   try {

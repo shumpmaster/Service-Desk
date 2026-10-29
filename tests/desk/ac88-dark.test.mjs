@@ -1606,8 +1606,9 @@ const G9C_EXCEPT = (n, d, theme) => {
 const STRIP_FONT = (f) => `${f} "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
 const STRIP_LOOK = (ink, line) => new Map([
   ['h2.v2-kh (the strip\'s head)', ['display: (none) → flex', 'align-items: (none) → center', 'gap: (none) → 6px', 'min-height: (none) → 28px', 'padding-bottom: (none) → 4px',
-    `border-bottom: (none) → 1px solid ${line}`, `font: (none) → ${STRIP_FONT('600 12px/1.3')}`, `color: (none) → ${ink}`]],
-  ['span (the strip\'s title)', ['computed font-size: 13px → 12px', 'computed font-weight: 400 → 600', 'computed line-height: 18.849999999999998px → 15.600000000000001px']],
+    // Rewritten in HD1 (forced: AC98 puts the strip's head with cards at 600 15 px; tests/desk/ac88-dark.test.mjs:1600-1602).
+    `border-bottom: (none) → 1px solid ${line}`, `font: (none) → ${STRIP_FONT('600 15px/1.3')}`, `color: (none) → ${ink}`]],
+  ['span (the strip\'s title)', ['computed font-size: 13px → 15px', 'computed font-weight: 400 → 600', 'computed line-height: 18.849999999999998px → 19.5px']],
   ['ol.v2-krow', ['padding: 0 → 2px 0 6px', 'display: (none) → flex', 'gap: (none) → 8px', 'max-width: (none) → 100%', 'overflow-x: (none) → auto', 'overflow-y: (none) → hidden',
     'overscroll-behavior-x: (none) → contain', 'scroll-snap-type: (none) → x mandatory']],
   ['li.v2-kslot', ['flex: (none) → 0 0 200px', 'display: (none) → grid', 'scroll-snap-align: (none) → start']],

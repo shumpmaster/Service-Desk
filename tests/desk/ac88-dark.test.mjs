@@ -1549,7 +1549,8 @@ const QW1_LOOK = (ink, ink2, line) => new Map([
     'computed font-size: 13px → 11px', 'computed line-height: 18.849999999999998px → 15.399999999999999px',
     'computed font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif → "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace',
     `computed color: ${ink} → ${ink2}`]],
-  ['p.v2-kq (the section\'s line)', [`font: (none) → ${QW1_FONT('500 11px/1.35')}`, `color: (none) → ${ink2}`, 'padding: (none) → 4px 0']],
+  // Rewritten in HD1 (forced: AC98 puts the section's empty line on --t-row, 500 13 px; tests/desk/ac88-dark.test.mjs:1545).
+  ['p.v2-kq (the section\'s line)', [`font: (none) → ${QW1_FONT('500 13px/1.35')}`, `color: (none) → ${ink2}`, 'padding: (none) → 4px 0']],
   ['a.v2-t (a section question\'s title)', [`font: ${QW1_FONT('500 12px/1.33')} → ${QW1_FONT('500 13px/1.35')}`, 'max-height: calc(3 * 1.33em) → calc(3 * 1.35em)']],
   // Its clip (`span.v2-tt`) is M3D5's, newer than bd4097d, so its display and overflow are M3D5_ONCE's; only its height is QW1's.
   ['span.v2-tt (a section question\'s title)', ['max-height: (none) → calc(3 * 1.35em)', 'computed font-size: 12px → 13px', 'computed line-height: 15.96px → 17.55px']],

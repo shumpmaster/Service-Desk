@@ -715,7 +715,9 @@ test('AC94 ("Its look"; AC81; AC88): the head 600 15 px --ink (from HD1, AC98; 6
         for (const el of findAll(sec, (e) => (e.children || []).some((x) => x.nodeType === 3 && String(x.text || '').trim()))) {
           const l = L.get(el);
           assert.ok([c.ink, c.ink2].includes(l.colour), `${at}: "${el.textContent.slice(0, 30)}" in ${l.colour}`);
-          assert.ok(['11px', '12px', '13px'].includes(l.size), `${at}: "${el.textContent.slice(0, 30)}" at ${l.size}`);
+          // Rewritten in HD1 (forced: the section's head, its title text among the section's texts, is 15 px from AC98;
+          // tests/desk/ac94-qw1-questions.test.mjs:716).
+          assert.ok(['11px', '12px', '13px', '15px'].includes(l.size), `${at}: "${el.textContent.slice(0, 30)}" at ${l.size}`);
           assert.ok(['400', '500', '600'].includes(l.weight));
           let ground = null;
           for (let n = el; n && !ground; n = n.parent) { const g = L.get(n); const bgv = g && (g.decl('background') || g.decl('background-color')); if (bgv && /^#/.test(bgv)) ground = bgv.toLowerCase(); }

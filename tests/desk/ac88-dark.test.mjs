@@ -1840,7 +1840,8 @@ const VT2_FLAT = [...VT2_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k,
  * in each theme, on only its own element. Every element is new in VT3, so bd4097d's stylesheet gives it only what it gave
  * any such element:
  * - Home's weekly line (`a.v2-wkline`, between the portfolio's block and "More detail"): a plain row, a flex line at least
- *   44 px tall, its words and chevron apart, in --t-body --ink, never --you, no soft box, no underline;
+ *   44 px tall, its words and chevron apart, in --t-body --ink, never --you, no soft box, no underline; its chevron in --ink2,
+ *   as "More detail"'s and the portfolio rows' are (VT3's design review, N1);
  * - "Your weekly figures" (`section.v2-vweek`, the targets' sheet's last block): a grid under a 1 px --line hairline, as the
  *   stop rule's block; its weeks' lists (`ul.v2-wkl`, a grid with no bullets) and each week (`li.v2-wkw`, its button and,
  *   past `linkCap`, AC17's Copy under it).
@@ -1850,6 +1851,7 @@ const VT2_FLAT = [...VT2_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k,
 const VT3_LOOK = (t) => new Map([
   ['a.v2-wkline (Home\'s weekly line)', ['display: (none) → flex', 'align-items: (none) → center', 'justify-content: (none) → space-between', 'gap: (none) → 8px',
     'min-height: (none) → 44px', `font: (none) → ${VT1_FONT('400 13px/1.45')}`, `color: inherit → ${t.ink}`]],
+  ['svg (the weekly line\'s chevron)', [`color: (none) → ${t.ink2}`]],
   ['section.v2-vweek ("Your weekly figures")', ['display: (none) → grid', 'gap: (none) → 6px', 'min-width: (none) → 0', 'padding-top: (none) → 12px', `border-top: (none) → 1px solid ${t.line}`]],
   ['ul.v2-wkl (a list of weeks)', ['display: (none) → grid', 'gap: (none) → 8px']],
   ['li.v2-wkw (a week)', ['display: (none) → grid', 'gap: (none) → 6px', 'justify-items: (none) → start', 'min-width: (none) → 0']],

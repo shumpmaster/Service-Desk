@@ -7,7 +7,8 @@
 // records, real; the launch days, the cards, the device's notes and the portfolio made up, NOT real, labelled so in
 // tests/desk/fixtures/README.md), the notes put in the page's localStorage before it loads. The page's clock is
 // Playwright's, set to the state's time. Home's captures have its weekly line in the middle of the screen; the sheet's are
-// as the line's tap leaves it, scrolled to "Your weekly figures", with a `-full` one as tall as the whole sheet. Each line
+// as the line's tap leaves it, scrolled to "Your weekly figures", with a `-full` one as tall as the whole sheet; each such
+// landing must show the whole block, its last line included (VT3's design review, B1), or the run fails. Each line
 // printed says whether the page or the sheet scrolls sideways (it must not), the line's words and the block's.
 import { createServer } from 'node:http';
 import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
@@ -126,6 +127,19 @@ async function main() {
             const weeks = blk ? [...blk.querySelectorAll('a')].map((a) => a.textContent.replace('Save the week of ', '').replace(' ↗', '')).join(', ') : '';
             return `${location.hash} · line: ${line ? `"${line.textContent}"` : 'none'} · block: ${blk ? `${weeks}${blk.querySelector('pre') ? ', Copy' : ''}` : 'none'}${s ? ` · sheet sideways ${s.scrollWidth - s.clientWidth} px` : ''}`;
           });
+          // VT3's design review, B1: a landing from Home's line shows the whole block, its last line included.
+          if (shot.tap) {
+            const seen = await page.evaluate(() => {
+              const s = document.querySelector('.v2-sheet');
+              const blk = document.querySelector('[data-k="vt-weekly"]');
+              if (!s || !blk) return 'no block';
+              const sb = s.getBoundingClientRect();
+              const b = blk.getBoundingClientRect();
+              const last = blk.lastElementChild.getBoundingClientRect();
+              return b.top >= sb.top - 1 && last.bottom <= sb.bottom + 1 ? 'whole' : `cut: block ${Math.round(b.top)}–${Math.round(last.bottom)}, sheet ${Math.round(sb.top)}–${Math.round(sb.bottom)}`;
+            });
+            if (seen !== 'whole') fails.push(`${shot.name}-${w}x${hgt}-${theme}: the landing doesn't show the whole block (${seen})`);
+          }
           const scroll = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
           if (scroll > 0) fails.push(`${shot.name}-${w}x${hgt}-${theme}: the page scrolls sideways by ${scroll} px`);
           if (/sideways [1-9]/.test(said)) fails.push(`${shot.name}-${w}x${hgt}-${theme}: the sheet scrolls sideways`);

@@ -1462,6 +1462,8 @@ html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform:
    weekly figures", under a hairline as the stop rule's, each week its "Save the week of …" button. */
 .v2-wkline { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; font: var(--t-body); color: var(--ink);
   text-decoration: none; overflow-wrap: anywhere; }
+/* Its chevron in --ink2, as "More detail"'s and the portfolio's rows' (VT3's design review, N1). */
+.v2-wkline > .v2-k { color: var(--ink2); }
 .v2-vweek { display: grid; gap: 6px; min-width: 0; padding-top: 12px; border-top: 1px solid var(--line); }
 .v2-wkl { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .v2-wkw { display: grid; gap: 6px; justify-items: start; min-width: 0; }

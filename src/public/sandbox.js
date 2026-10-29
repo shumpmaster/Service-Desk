@@ -1648,6 +1648,37 @@ function weeklySafe() {
 }
 
 /**
+ * The landing at "Your weekly figures" (AC25: the targets' sheet "scrolled to its block"): the sheet scrolled so the block
+ * is at its top (as far as the sheet scrolls), so the whole block shows, its last line included. Once landed it holds: at
+ * every drawing, and at three later looks (50, 250 and 1000 ms, for layout that comes without a drawing, such as a font),
+ * the sheet is scrolled there again while the owner has not scrolled it themselves (its scroll still where the landing
+ * left it) and the route is still the block's. A landing waits for the block and the sheet to be drawn.
+ */
+function landWeekly(view) {
+  if (!view) return;
+  const here = nav.route && nav.route.weekly && nav.route.sheet === 'values';
+  if (!here) {
+    nav.scrollWeekly = false;
+    nav.weeklyHold = null;
+    return;
+  }
+  const blk = findKey(view, 'vt-weekly');
+  const sh = findClass(view, 'v2-sheet');
+  if (!blk || !sh) return;
+  const first = nav.scrollWeekly;
+  if (!first && !(nav.weeklyHold && sh.scrollTop === nav.weeklyHold.top)) {
+    nav.weeklyHold = null; // the owner has scrolled: the landing lets go
+    return;
+  }
+  nav.scrollWeekly = false;
+  if (blk.getBoundingClientRect && sh.getBoundingClientRect) {
+    sh.scrollTop = Math.max(0, Math.round((sh.scrollTop || 0) + blk.getBoundingClientRect().top - sh.getBoundingClientRect().top - 12));
+  }
+  nav.weeklyHold = { top: sh.scrollTop };
+  if (first) for (const ms of [50, 250, 1000]) setTimeout(() => landWeekly(document.getElementById('view')), ms);
+}
+
+/**
  * Home's line (AC25, "The weekly offer"; AC82 changed): between the portfolio's block and "More detail", a plain row in
  * --t-body with a chevron, no soft box and no icon of its own, never counted, never coral, never notified; it opens
  * Service-Desk's page with the targets' sheet over it, at "Your weekly figures".
@@ -5369,17 +5400,10 @@ export function startSandbox(opts = {}) {
     }
     // AC56, changed: after a full reload, the screen's and the sheet's scroll as they were, once there is room for it.
     restoreScroll(view, desk);
-    // AC25 (VT3): the targets' sheet opened from Home's weekly line: the sheet scrolled so "Your weekly figures" is at its top.
-    if (nav.scrollWeekly && nav.route.sheet === 'values') {
-      const blk = findKey(view, 'vt-weekly');
-      const sh = findClass(view, 'v2-sheet');
-      if (blk && sh) {
-        nav.scrollWeekly = false;
-        if (blk.getBoundingClientRect && sh.getBoundingClientRect) {
-          sh.scrollTop = Math.max(0, Math.round((sh.scrollTop || 0) + blk.getBoundingClientRect().top - sh.getBoundingClientRect().top - 12));
-        }
-      }
-    }
+    // AC25 (VT3): the targets' sheet opened from Home's weekly line lands with "Your weekly figures" at its top, and holds
+    // that landing through what is laid out after it (VT3's design review, B1: the stop rule's "Read it all" row, added at
+    // the next drawing, pushed the block's last line out of view).
+    landWeekly(view);
     // The Timeline just opened: scroll to its Now line (or the sprint) once it is drawn (AC59).
     if (nav.scrollTo && nav.route.kind === 'timeline') {
       const t = nav.scrollTo;

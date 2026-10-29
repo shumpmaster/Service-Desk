@@ -21,7 +21,7 @@ import { PORTFOLIO_POLL_MS } from '../../src/lib/scheduler.js';
 import { WEEKLY_WORDS } from '../../src/lib/weekly.js';
 import {
   vt3State, vt3Open, storeWith, notesOf, J5_WEEK, J5_FILE, MON16, MONDAY, EIGHT, weeksOfWindows, memStore, keyed, weeklyLine, weeklyBlock, sheetOf,
-  saveLinks, landed, chi, MIN, H,
+  saveLinks, landed, chi, MIN, H, z,
 } from './vt3-fixtures.mjs';
 
 const RULES = (() => {
@@ -246,5 +246,69 @@ test('AC25 + J5: storage throwing — neither Home\'s line nor the sheet\'s bloc
     assert.equal(weeklyLine(none), null, 'no portfolio repository: nowhere to save');
   } finally {
     none.restore();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// VT3's round 2 (the Design reviewer's B1 and N1; the Reviewer's N2, N3 and N4, and the bugs B3, B8, B26 and B27 his plants
+// left standing)
+
+/**
+ * The fake DOM lays nothing out: here the sheet's top is at 100 and the block `at` px down its content, moved up by the
+ * sheet's own scroll, as a browser has it; `shift` px more once the stop rule's "Read it all" row is laid out late.
+ */
+function layout(lay) {
+  const real = El0.prototype.getBoundingClientRect;
+  El0.prototype.getBoundingClientRect = function rect() {
+    if (this.dataset && this.dataset.k === 'vt-weekly') return { top: 100 + lay.at + lay.shift - ((this.parent && this.parent.scrollTop) || 0), height: 120 };
+    return { top: 100, height: 600 };
+  };
+  return () => { El0.prototype.getBoundingClientRect = real; };
+}
+
+test('AC25 (VT3\'s design review, B1): the landing at "Your weekly figures" holds through what is laid out after it — the stop rule\'s row added at the next drawing, and layout that comes with no drawing (looked at again at 50, 250 and 1000 ms) — so the whole block shows, its last line included, at 360 and at 414 px; once the owner scrolls, it lets go', async () => {
+  for (const width of [360, 414]) {
+    const lay = { at: 900, shift: 0 };
+    const restoreLayout = layout(lay);
+    const app = await vt3Open(vt3State(), { store: j5Store() });
+    try {
+      await app.resize(width);
+      await app.go(weeklyLine(app).attrs.href);
+      const sh = sheetOf(app);
+      assert.equal(sh.scrollTop, 900 - 12, `${width}: landed with the block at the sheet's top`);
+      // The stop rule's "Read it all" row is laid out at the next drawing, 34 px over the block.
+      lay.shift = 34;
+      await app.advance(10);
+      await app.visibility('visible'); // a drawing (the desk's onChange), the stop rule's row in it
+      assert.equal(sheetOf(app).scrollTop, 934 - 12, `${width}: landed again under the row added late`);
+      // Late layout with no drawing (a font): the looks at 50, 250 and 1000 ms land it again.
+      lay.shift = 50;
+      await app.advance(300);
+      assert.equal(sheetOf(app).scrollTop, 950 - 12, `${width}: landed again at a later look`);
+      // The owner scrolls: the landing lets go, at a look and at a drawing alike.
+      sheetOf(app).scrollTop = 500;
+      lay.shift = 80;
+      await app.advance(1000);
+      await app.visibility('visible');
+      assert.equal(sheetOf(app).scrollTop, 500, `${width}: the owner's own scroll kept`);
+    } finally {
+      restoreLayout();
+      app.restore();
+    }
+  }
+});
+
+test('AC25 (VT3\'s design review, N1): Home\'s line\'s chevron in --ink2, as "More detail"\'s and the portfolio rows\' are, its words --ink', async () => {
+  const app = await vt3Open(vt3State(), { store: j5Store() });
+  try {
+    const line = weeklyLine(app);
+    for (const scheme of ['light', 'dark']) {
+      const n = cascaded(app, scheme);
+      const chev = n.find((x) => x.el === line.children[1]);
+      assert.equal(plain(chev.style.get('color') || chev.declared.get('color')), scheme === 'light' ? '#5c5f66' : '#a2a5ac');
+      assert.equal(plain(n.find((x) => x.el === line).declared.get('color')), scheme === 'light' ? '#18191c' : '#ecedef');
+    }
+  } finally {
+    app.restore();
   }
 });

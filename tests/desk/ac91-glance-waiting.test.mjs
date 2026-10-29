@@ -255,7 +255,7 @@ test('AC91 (f), amended: the empty strip\'s parts each in their role — " · " 
 // out of age order with the other's (Alpha's pull request, Bravo's, Alpha's gate card by age), the kicks in another order
 // again: the strip goes by project in J7's order, the portfolio's last, then place (AC95; reading (p)), each card naming its
 // project and showing its place.
-test('AC91 (f), rewritten in QW1 and in QW2 (AC95): with kicked-back cards, the strip\'s head "Kicked back" (600 12 px ink) with its count (--t-mono) over a hairline, then its cards in one row, by project in J7\'s order, the portfolio\'s last, then in place order — not the newest first, nor by age across projects — each 200 px wide, naming its project after " · ", with its place, its reason and its button; the row scrolls sideways inside the strip, snapping to a card; a kicked-back question in the "Questions for you" section instead', async () => {
+test('AC91 (f), rewritten in QW1 and in QW2 (AC95): with kicked-back cards, the strip\'s head "Kicked back" (600 15 px ink from HD1, AC98; 600 12 px before) with its count (--t-mono) over a hairline, then its cards in one row, by project in J7\'s order, the portfolio\'s last, then in place order — not the newest first, nor by age across projects — each 200 px wide, naming its project after " · ", with its place, its reason and its button; the row scrolls sideways inside the strip, snapping to a card; a kicked-back question in the "Questions for you" section instead', async () => {
   const st = stripState();
   const app = await open(st, { store: looked(NOW - 5 * H, st.seed) });
   try {
@@ -288,7 +288,9 @@ test('AC91 (f), rewritten in QW1 and in QW2 (AC95): with kicked-back cards, the 
     for (const theme of THEMES) {
       const L = looks(app, theme);
       const c = INK[theme];
-      assert.deepEqual([L.get(head).size, L.get(head).weight, L.get(head).colour], ['12px', '600', c.ink], `${theme}: the head, 600 12 px ink`);
+      // Rewritten in HD1 (forced: AC98 puts a section head, the strip's "Kicked back" with cards among them, at 600 15 px --ink;
+      // tests/desk/ac91-glance-waiting.test.mjs:287).
+      assert.deepEqual([L.get(head).size, L.get(head).weight, L.get(head).colour], ['15px', '600', c.ink], `${theme}: the head, 600 15 px ink (AC98)`);
       const n = head.children[1];
       assert.deepEqual([L.get(n).size, L.get(n).weight, L.get(n).colour], ['11px', '400', c.ink2], `${theme}: its count in --t-mono`);
       assert.match(L.get(n).raw('font'), /^400 11px\/1\.4 ⟦--mono\|/, 'the --t-mono role');

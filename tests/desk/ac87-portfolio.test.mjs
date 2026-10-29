@@ -23,6 +23,7 @@ import { SD, POOM, waSetup, j77Files, poomFiles, snapOf } from './wa-fixtures.mj
 import { j11Records, timelineOf, phaseView } from '../../src/lib/sandbox.js';
 import { portfolioView, versionsView, capView, behindWords, rowText, PF_WORDS, PF_ROWS } from '../../src/lib/portfolio.js';
 import { WA } from '../../src/lib/workahead.js';
+import { vt3State, storeWith, notesOf, J5_WEEK, MON16 } from './vt3-fixtures.mjs';
 
 const NOW = Date.parse('2026-10-18T18:00:00Z');
 const VERSION_PATH = 'governance/OPERATING_MODEL_VERSION';
@@ -67,12 +68,16 @@ function entry(project, f) {
 // ---------------------------------------------------------------------------
 // Where it sits, and its words
 
-test('AC87 (AC82\'s foot, specs/S-001.md:6696-6700): Home\'s foot is the portfolio\'s block, then "More detail", closed, last; the block is headed "Across your projects · read only" with "portfolio" in Plex Mono at its right, and holds five rows in frame H4\'s order, then one line', async () => {
+// Rewritten in VT3 of M3B (forced: AC82 as changed by AC25's third part puts the weekly line between the portfolio's block and
+// "More detail" while a week waits to be saved; this case's own fixture keeps no notes and names no portfolio, so it draws no
+// line and its order holds as before, and the case now also opens Home with a week to save, VT3's made-up notes and
+// portfolio, NOT real, and checks the foot's order with the line in it).
+test('AC87 (AC82\'s foot, specs/S-001.md:6696-6700; from VT3 the weekly line): Home\'s foot is the portfolio\'s block, then the weekly line while a week waits to be saved, then "More detail", closed, last; the block is headed "Across your projects · read only" with "portfolio" in Plex Mono at its right, and holds five rows in frame H4\'s order, then one line', async () => {
   const app = await open();
   try {
     const home = byClass(app.view, 'v2-home')[0];
     const keys = home.children.map((c) => c.dataset.k || c.className.split(' ')[0]);
-    assert.deepEqual(keys.slice(-3), ['hgroups', 'portfolio', 'home-more-detail'], 'after the groups, before the fold');
+    assert.deepEqual(keys.slice(-3), ['hgroups', 'portfolio', 'home-more-detail'], 'after the groups, before the fold (no week to save: no weekly line)');
     const b = block(app);
     assert.equal(b.tag, 'section');
     const head = b.children[0];
@@ -88,6 +93,16 @@ test('AC87 (AC82\'s foot, specs/S-001.md:6696-6700): Home\'s foot is the portfol
       'The desk will read your portfolio repository and never change it, once you add it to the desk\'s read access (your ruling, P-001-portfolio-read).', '6a\'s line under the rows');
   } finally {
     app.restore();
+  }
+  // VT3 (AC25, AC82 changed): with a week to save, the foot is the block, the weekly line, then "More detail".
+  const wk = await loadSandbox({ ...vt3State(), hash: '#/', now: MON16, store: storeWith(notesOf({ ...J5_WEEK })) });
+  try {
+    await wk.advance(1000);
+    await wk.advance(61_000);
+    const keys = byClass(wk.view, 'v2-home')[0].children.map((c) => c.dataset.k || c.className.split(' ')[0]);
+    assert.deepEqual(keys.slice(-4), ['hgroups', 'portfolio', 'home-weekly', 'home-more-detail'], 'the weekly line between the portfolio\'s block and the fold');
+  } finally {
+    wk.restore();
   }
 });
 

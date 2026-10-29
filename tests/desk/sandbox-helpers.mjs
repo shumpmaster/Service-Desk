@@ -194,17 +194,17 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
     /** The sandbox's 15-second tick (setInterval), run once. */
     async tick() { for (const i of intervals) if (i.ms === 15_000) i.fn(); await flush(); },
     /** A key pressed on the document (Escape and the like). */
-    async key(k) { for (const fn of docListeners.keydown || []) fn({ key: k, target: document.activeElement, preventDefault() {} }); await flush(); },
-    /** An event that reaches the document's own listeners (AC80's drag: pointermove, pointerup, touchmove). */
+    async key(k) { for (const fn of [...(docCapture.keydown || []), ...(docListeners.keydown || [])]) fn({ key: k, target: document.activeElement, preventDefault() {} }); await flush(); },
+    /** An event that reaches the document's own listeners (AC80's drag: pointermove, pointerup, touchmove), its capture-phase ones first. */
     async docEvent(type, ev = {}) {
       let cancelled = false;
       const e = { type, target: els.view, preventDefault() { cancelled = true; }, stopPropagation() {}, ...ev };
-      for (const fn of docListeners[type] || []) fn(e);
+      for (const fn of [...(docCapture[type] || []), ...(docListeners[type] || [])]) fn(e);
       await flush();
       return { cancelled };
     },
-    /** A tap on the document's background, outside any sheet or bubble. */
-    async tapOutside(target = els.view) { for (const t of ['pointerdown', 'click']) for (const fn of docListeners[t] || []) fn({ type: t, target, pointerType: 'touch', preventDefault() {} }); await flush(); },
+    /** A tap on the document's background, outside any sheet or bubble: each event to the capture-phase listeners first, as a browser does (from VT3's round 5). */
+    async tapOutside(target = els.view) { for (const t of ['pointerdown', 'click']) for (const fn of [...(docCapture[t] || []), ...(docListeners[t] || [])]) fn({ type: t, target, pointerType: 'touch', preventDefault() {} }); await flush(); },
     /**
      * A real tap or click on an element, in a browser's order: pointerdown on it (then on the
      * document, as it bubbles), the old focus lost (blur, focusout), focus on it (focus, focusin),

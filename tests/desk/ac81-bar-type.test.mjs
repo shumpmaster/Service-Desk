@@ -338,7 +338,11 @@ test('AC81 (stage 1a\'s build review, round 1, F1): no rule that reaches mockup 
   assert.deepEqual(offenders, [], 'element rules that would out-rank a single v2 class');
   // And the classes themselves set what the frames draw (AC80; AC81 as settled after round 1).
   const rule = (sel) => (rules.find((r) => r.sel === sel) || { body: '' }).body;
-  assert.match(rule('.v2-grp'), /font: var\(--t-label\)/, 'a group\'s name 500 11 px');
+  // Rewritten in HD1 (vacuous: `.v2-grp` still takes --t-label, but a group's name is its `.v2-gn`, which AC98 draws at 600
+  // 13 px; tests/desk/ac81-bar-type.test.mjs:336; the header plan's review, round 1, the Reviewer's N1): the font that wins on
+  // `.v2-gn`, the last rule whose selector list names it.
+  const won = (sel) => rules.filter((r) => r.sel.split(/\s*,\s*/).includes(sel)).map((r) => (/(?:^|;)\s*font:\s*([^;]+)/.exec(r.body) || [])[1]).filter(Boolean).at(-1);
+  assert.equal(won('.v2-gn').trim(), '600 13px/1.3 var(--font)', 'a group\'s name 600 13 px (AC98)');
   assert.match(rule('.v2-ql'), /font: var\(--t-small\)/, 'a quiet line 400 12 px');
   assert.match(rule('.v2-undo'), /font: var\(--t-label\)/, '"Undo" 500 11 px');
   assert.match(rule('.v2-more'), /font: var\(--t-label\)/, '"<n> more" 500 11 px');

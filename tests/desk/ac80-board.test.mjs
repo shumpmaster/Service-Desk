@@ -821,7 +821,9 @@ test('AC80, rewritten in G2 (AC91 (f)): the CSS — two lanes side by side at ev
   assert.match(rule('.v2-t'), /font: 500 12px\/[\d.]+ var\(--font\);/, 'a card\'s title 500 12 px');
   assert.match(rule('.v2-m'), /font: var\(--t-mono\);/, 'its meta in Plex Mono 11 px');
   assert.match(rule('.v2-dt'), /font: 400 12px\/[\d.]+ var\(--font\);/, 'a Done row\'s title 400 12 px');
-  assert.match(rule('.v2-grp'), /font: var\(--t-label\);/, 'a group\'s name 500 11 px');
+  // Rewritten in HD1 (vacuous: `.v2-grp` still takes --t-label, but a group's name is its `.v2-gn`, which AC98 draws at 600
+  // 13 px; tests/desk/ac80-board.test.mjs:813; the header plan's review, round 1, the Reviewer's N1).
+  assert.equal(lastFont('.v2-gn'), '600 13px/1.3 var(--font)', 'a group\'s name 600 13 px (AC98)');
   // Every control on the board: a tap target at least 24 px tall.
   for (const sel of ['.v2-grp', '.v2-ql', '.v2-qs', '.v2-more', '.v2-x', '.v2-lnk', '.v2-ft', '.v2-undo', '.v2-fold']) {
     const h = /min-height: (\d+)px/.exec(rule(sel)) || /(?:^|;)\s*height: (\d+)px/.exec(rule(sel)) || /(?:^|\s)height: (\d+)px/.exec(rule(sel));

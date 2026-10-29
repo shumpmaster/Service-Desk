@@ -847,8 +847,23 @@ function ideaLines(seen, since) {
   return ideaEvents(r.kept, since);
 }
 
+/**
+ * AC98, "Two headings on one line" (stage HD1; the owner's answer A, P-001-headers-wrap.md): a heading's words split at their
+ * first " · ", the words before it the head's (600 15 px `--ink`), " · " and what follows in `--t-small` `--ink2`
+ * (`.v2-htail`), a clock time in Plex Mono 400 12 px (`.v2-htime`); all in the one `h2`, so it is read whole. The words are
+ * AC82's and AC83's, unchanged.
+ */
+function splitHead(words, mono) {
+  const i = String(words).indexOf(' · ');
+  if (i < 0) return words;
+  const tail = words.slice(i + 3);
+  return [words.slice(0, i), h('span', { class: 'v2-htail' }, ' · ', mono ? h('span', { class: 'v2-htime' }, tail) : tail)];
+}
+
 function sinceNode(sv, seen, nowMs, unread = null, missing = []) {
-  const head = h('div', { class: 'v2-sh', key: 'since-h' }, h('h2', { class: 'v2-shw' }, sv.heading),
+  // The time after "Since you last looked · " is a clock time with its day ("yesterday, 04:00"), in Plex Mono; "in the last
+  // 7 days" is words, in Plex Sans (AC98).
+  const head = h('div', { class: 'v2-sh', key: 'since-h' }, h('h2', { class: 'v2-shw' }, splitHead(sv.heading, Boolean(sv.time) && sv.time !== HOME_WORDS.lastWeek)),
     sv.off ? null : h('button', { type: 'button', class: 'v2-seen', key: 'mark-seen', onclick: () => {
       seen.markSeen();
       homeState.accepted = null;
@@ -1464,7 +1479,7 @@ function pageMilestones(p) {
 function milestonesNode(p, mv) {
   const name = p.project.name;
   // AC92 (c), from G5: the head sums each phase's "<R> of <T> reached"; "↑ start at the foot" stays.
-  const head = h('div', { class: 'v2-sh', key: 'ms-h' }, h('h2', { class: 'v2-shw' }, PAGE_WORDS.milestonesHead(mv.tracked ? mv.sum : null)), h('span', { class: 'v2-mono' }, PAGE_WORDS.startFoot));
+  const head = h('div', { class: 'v2-sh', key: 'ms-h' }, h('h2', { class: 'v2-shw' }, splitHead(PAGE_WORDS.milestonesHead(mv.tracked ? mv.sum : null), false)), h('span', { class: 'v2-mono' }, PAGE_WORDS.startFoot));
   if (!mv.tracked) return [head, h('p', { class: 'v2-small', key: 'ms-none' }, mv.words)];
   return [head, h('ol', { class: 'v2-std', key: 'ms-lines' }, mv.lines.map((l) => {
     const fk = `phase:${l.phase}`;

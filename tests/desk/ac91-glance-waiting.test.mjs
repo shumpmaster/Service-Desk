@@ -185,7 +185,7 @@ test('AC91 (f), as Part A item 5: an unknown is said in words in the strip\'s li
 
 // AC91 (f) as amended after G2's reviews (the Reviewer's note 2, the Design reviewer's N3 and Q2): "none" alone is in
 // --t-mono, standing in the count's place; the words that are not a count are in --t-label --ink2, as "Kicked back" is.
-test('AC91 (f), amended: the empty strip\'s parts each in their role — " · " and "none" in --t-mono --ink2; "when last read", "not read yet" and "can\'t read" in --t-label --ink2, as "Kicked back" — in each state, in both themes; the words unchanged', async () => {
+test('AC91 (f), amended: the empty strip\'s parts each in their role — " · " and "none" in --t-mono --ink2; "when last read", "not read yet" and "can\'t read" in the line\'s role, --t-row --ink2 from HD1 (AC98), as "Kicked back" — in each state, in both themes; the words unchanged', async () => {
   assert.deepEqual([stripEmptyParts({}), stripEmptyParts({ unread: 'pending' }), stripEmptyParts({ unread: 'cant' })],
     [{ count: ' · none', words: '' }, { count: ' · ', words: 'not read yet' }, { count: ' · ', words: "can't read" }]);
   const state5 = oneProjectView({ name: 'Alpha', read: { read: 'cant-read', since: NOW }, lastSuccessAt: NOW, tz: 'America/Chicago' });
@@ -202,8 +202,10 @@ test('AC91 (f), amended: the empty strip\'s parts each in their role — " · " 
       const c = INK[theme];
       assert.match(L.get(kn).raw('font'), /^400 11px\/1\.4 ⟦--mono\|/, `${what}, ${theme}: " · " and "none" in --t-mono`);
       assert.equal(L.get(kn).colour, c.ink2);
+      // Rewritten in HD1 (forced: AC98 puts the empty section's line on --t-row, 500 13 px, --ink2, so its words that are not
+      // a count are 13 px; tests/desk/ac91-glance-waiting.test.mjs:204).
       for (const el of [byClass(s, 'v2-kl')[0], kw].filter(Boolean)) {
-        assert.deepEqual([L.get(el).size, L.get(el).weight, L.get(el).colour], ['11px', '500', c.ink2], `${what}, ${theme}: "${el.textContent}" in --t-label --ink2`);
+        assert.deepEqual([L.get(el).size, L.get(el).weight, L.get(el).colour], ['13px', '500', c.ink2], `${what}, ${theme}: "${el.textContent}" in --t-row --ink2 (AC98)`);
         assert.doesNotMatch(L.get(el).family, /Mono/, `${what}, ${theme}: "${el.textContent}" not in mono`);
       }
     }

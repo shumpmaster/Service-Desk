@@ -1226,8 +1226,9 @@ const G5_EXCEPT = (n, d) => {
  * - on the Timeline, a standard milestone's name (`p.v2-mstt` in a `div.v2-ms.std`) at 400.
  * A standard row's name keeps its 400 13 px (`--t-body`), so it adds none.
  */
-const G6_HEAD = (ink, ink2) => [`font: ${G1_FONT('400 11px/1.35')} → ${G1_FONT('500 11px/1.35')}`, `color: ${ink2} → ${ink}`, 'padding: 6px 0 0 → 10px 0 0',
-  'computed font-weight: 400 → 500', `computed color: ${ink2} → ${ink}`];
+// Rewritten in HD1 (forced: AC98 draws the two group heads at 600 12 px; tests/desk/ac88-dark.test.mjs:1226-1230).
+const G6_HEAD = (ink, ink2) => [`font: ${G1_FONT('400 11px/1.35')} → ${G1_FONT('600 12px/1.3')}`, `color: ${ink2} → ${ink}`, 'padding: 6px 0 0 → 10px 0 0',
+  'computed font-weight: 400 → 600', 'computed font-size: 11px → 12px', 'computed line-height: 14.850000000000001px → 15.600000000000001px', `computed color: ${ink2} → ${ink}`];
 const G6_LOOK = (ink, ink2, line) => new Map([
   ['p.v2-subh', G6_HEAD(ink, ink2)],
   ['p.v2-subh.std', [...G6_HEAD(ink, ink2), 'margin-top: (none) → 8px', `border-top: (none) → 1px solid ${line}`]],

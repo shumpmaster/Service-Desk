@@ -678,7 +678,7 @@ test('AC94 ("Before and around a link"): AC77\'s re-read before a section link, 
 // ---------------------------------------------------------------------------
 // Its look, its targets, its region
 
-test('AC94 ("Its look"; AC81; AC88): the head 600 12 px --ink, its count and each " · " --t-mono, " · " --ink2, a hairline under it; each question a board card, its title --t-row cut at three lines; the boxes in the sheet\'s form (10/12 px inside, a 12 px corner, 8 px apart, 36 px buttons); no soft box, no new colour, size or weight, every text at least 4.5:1 — in light and dark, at 360 and 414 px', async () => {
+test('AC94 ("Its look"; AC81; AC88): the head 600 15 px --ink (from HD1, AC98; 600 12 px before), its count and each " · " --t-mono, " · " --ink2, a hairline under it; each question a board card, its title --t-row cut at three lines; the boxes in the sheet\'s form (10/12 px inside, a 12 px corner, 8 px apart, 36 px buttons); no soft box, no new colour, size or weight, every text at least 4.5:1 — in light and dark, at 360 and 414 px', async () => {
   const b = busiestState();
   const app = await open(b, { store: seen(NOW + H, b.seed) });
   try {
@@ -693,7 +693,9 @@ test('AC94 ("Its look"; AC81; AC88): the head 600 12 px --ink, its count and eac
         const c = INK[theme];
         const at = `${theme}, ${w} px`;
         const h = L.get(head);
-        assert.deepEqual([h.size, h.weight, h.colour, h.decl('border-bottom')], ['12px', '600', c.ink, `1px solid ${c.line}`], `${at}: the head`);
+        // Rewritten in HD1 (forced: AC98 puts the section head, "Questions for you · <n>", at 600 15 px --ink;
+        // tests/desk/ac94-qw1-questions.test.mjs:696).
+        assert.deepEqual([h.size, h.weight, h.colour, h.decl('border-bottom')], ['15px', '600', c.ink, `1px solid ${c.line}`], `${at}: the head, 600 15 px (AC98)`);
         const [, dot, count] = head.children;
         assert.match(L.get(dot).raw('font'), /^400 11px\/1\.4 ⟦--mono\|/, `${at}: " · " in --t-mono`);
         assert.equal(L.get(dot).colour, c.ink2);

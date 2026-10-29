@@ -191,8 +191,10 @@ test('AC92 (d), on Service-Desk\'s records at 77bfeae (real): every run, earlier
     assert.deepEqual(heads(old), ['Your milestones · 0', 'Standard checklist · 6 · 2 tracked']);
     for (const [theme, ink] of THEMES) {
       const L = looks(app, theme);
+      // Rewritten in HD1 (forced: AC98 draws an opened phase's two group heads at 600 12 px --ink, one step under its run's head;
+      // tests/desk/ac92-glance-standard.test.mjs:195).
       for (const hd of byClass(keyed(app, 'ms-lines'), 'v2-subh')) {
-        assert.deepEqual([L.get(hd).size, L.get(hd).weight, L.get(hd).color], ['11px', '500', ink], `${theme}: "${hd.textContent}" in --t-label --ink`);
+        assert.deepEqual([L.get(hd).size, L.get(hd).weight, L.get(hd).color], ['12px', '600', ink], `${theme}: "${hd.textContent}" at 600 12 px --ink (AC98)`);
       }
       const std = byClass(keyed(app, 'stdl:Design'), 'v2-subh').filter((x) => /\bstd\b/.test(x.className));
       assert.equal(std.length, 2);

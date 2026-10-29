@@ -21,6 +21,7 @@ import { MARKERS_OFF } from '../../src/lib/seen.js';
 import { briefingView, settleWords, briefAge, HOME_WORDS, nextLine, nowLine, atWorkLine, tileWaits } from '../../src/lib/home.js';
 import { models } from './tv2-fixtures.mjs';
 import { durationText } from '../../src/lib/timefmt.js';
+import { vt3State, notesOf, J5_WEEK, MON16, METRICS_KEY } from './vt3-fixtures.mjs';
 
 const TZ = CONFIG.ownerTimeZone;
 const keyed = (app, k) => findAll(app.view, (e) => e.dataset && e.dataset.k === k)[0] || null;
@@ -112,7 +113,11 @@ test('AC82: "Nothing needs you" only under Quiet\'s rule, with "Every project re
 // ---------------------------------------------------------------------------
 // On the page
 
-test('AC82: Home, top to bottom (frame H1): the title, "checked <age> ago", the briefing (one tap from Waiting), "Since you last looked", the three groups, from stage 6a the portfolio\'s block (AC87), and "More detail" last, closed; no "Work ahead ›", no "⋯ More" pill, no "Latest"', async () => {
+// Rewritten in VT3 of M3B (forced: AC82 as changed by AC25's third part puts the weekly line, "Last week's desk figures are
+// ready to save ›", at Home's foot between the portfolio's block and "More detail"; this case's own fixture keeps no notes,
+// so it draws no line and its order holds as before, and the case now also opens Home with a week to save, VT3's made-up
+// notes and portfolio, NOT real, and checks the line's place in the whole order).
+test('AC82: Home, top to bottom (frame H1): the title, "checked <age> ago", the briefing (one tap from Waiting), "Since you last looked", the three groups, from stage 6a the portfolio\'s block (AC87), from VT3 the weekly line while a week waits to be saved, and "More detail" last, closed; no "Work ahead ›", no "⋯ More" pill, no "Latest"', async () => {
   const app = await loadSandbox({ ...textSetup(), hash: '#/', now: NOW, store: looked(NOW - 6 * 3600e3) });
   try {
     assert.equal(keyed(app, 'home-checked').textContent, 'Checking…', 'before every project has been read once in this opening');
@@ -142,8 +147,22 @@ test('AC82: Home, top to bottom (frame H1): the title, "checked <age> ago", the 
     assert.doesNotMatch(home.textContent, /Work ahead/);
     assert.equal(findAll(home, (e) => e.attrs && /^(More|Latest)$/.test(e.attrs['aria-label'] || '')).length, 0, 'no "⋯ More" pill and no "Latest" control');
     assert.equal(byClass(app.view, 'sb-latest').length + byClass(app.view, 'sb-pc').length + byClass(app.view, 'sb-top').length, 0, 'today\'s Home is gone');
+    assert.equal(keyed(app, 'home-weekly'), null, 'no week to save: no weekly line');
   } finally {
     app.restore();
+  }
+  // VT3 (AC25, AC82 changed): with a week to save, its line between the portfolio's block and "More detail", which stays last.
+  const wk = await loadSandbox({ ...vt3State(), hash: '#/', now: MON16, store: looked(MON16 - 6 * 3600e3, { [METRICS_KEY]: JSON.stringify(notesOf({ ...J5_WEEK })) }) });
+  try {
+    await wk.advance(1000);
+    await wk.advance(61_000);
+    const home = byClass(wk.view, 'v2-home')[0];
+    const order = home.children.map((c) => (c.dataset.k || c.className.split(' ')[0]));
+    assert.deepEqual(order.filter((k) => k !== 'notify:top' && k !== 'since-more'), ['v2-top', 'home-checked', 'brief', 'since-h', 'since', 'hgroups', 'portfolio', 'home-weekly', 'home-more-detail']);
+    assert.equal(keyed(wk, 'home-weekly').textContent, "Last week's desk figures are ready to save");
+    assert.equal(home.children[home.children.length - 1], keyed(wk, 'home-more-detail'), '"More detail" still last');
+  } finally {
+    wk.restore();
   }
 });
 

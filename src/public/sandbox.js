@@ -5642,8 +5642,10 @@ export function startSandbox(opts = {}) {
   }
   document.addEventListener('click', outsideTapEnd);
   // AC25 (VT3's review, round 2, N6): the owner's own tap inside the sheet (a press or a click, a key's included) ends the
-  // landing's hold at "Your weekly figures", as their own scroll does, so what the tap opens is never scrolled away.
-  for (const t of ['pointerdown', 'click']) document.addEventListener(t, (e) => { if (nav.weeklyHold && inSheet(e && e.target)) nav.weeklyHold = null; });
+  // landing's hold at "Your weekly figures", as their own scroll does, so what the tap opens is never scrolled away. In the
+  // capture phase (round 3, N9), so the hold has ended before the control's own handler redraws: a key's click (Enter or
+  // Space on "Read it all") comes with no press before it.
+  for (const t of ['pointerdown', 'click']) document.addEventListener(t, (e) => { if (nav.weeklyHold && inSheet(e && e.target)) nav.weeklyHold = null; }, true);
   document.addEventListener('visibilitychange', () => {
     if (isVisible()) {
       seen.visible();

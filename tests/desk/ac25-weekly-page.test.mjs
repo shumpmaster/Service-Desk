@@ -300,7 +300,7 @@ test('AC25 (VT3\'s design review, B1): the landing at "Your weekly figures" hold
   }
 });
 
-test('AC25 (VT3\'s review, round 2, N6): the owner\'s own tap inside the sheet ends the landing\'s hold — "Read it all" on the stop rule opens the rule where it is, the sheet never re-landed under it, at a drawing or at a later look; a tap outside the sheet is no such tap', async () => {
+test('AC25 (VT3\'s review, round 2, N6): the owner\'s own tap inside the sheet ends the landing\'s hold — "Read it all" on the stop rule opens the rule where it is, the sheet never re-landed under it, at a drawing or at a later look, a key\'s press of it too (round 3, N9); a tap outside the sheet is no such tap', async () => {
   const lay = { at: 900, shift: 0 };
   const restoreLayout = layout(lay);
   const app = await vt3Open(vt3State(), { store: j5Store() });
@@ -324,6 +324,28 @@ test('AC25 (VT3\'s review, round 2, N6): the owner\'s own tap inside the sheet e
   } finally {
     restoreLayout();
     app.restore();
+  }
+  // VT3's review, round 3, N9: a key's press of "Read it all" (Enter or Space: a click with no press before it) ends the hold
+  // too, before the button's own handler redraws.
+  const lay3 = { at: 900, shift: 0 };
+  const restore3 = layout(lay3);
+  const k = await vt3Open(vt3State(), { store: j5Store() });
+  try {
+    await k.go(weeklyLine(k).attrs.href);
+    const clip = keyed(k, 'clip:vt-stop:Service-Desk');
+    clip.clientHeight = 57;
+    clip.scrollHeight = 95;
+    await k.resize(360);
+    assert.equal(sheetOf(k).scrollTop, 888, 'landed');
+    lay3.shift = 120;
+    await k.press(keyed(k, 'clipbtn:vt-stop:Service-Desk'));
+    assert.equal(sheetOf(k).scrollTop, 888, 'the button\'s own drawing: never re-landed');
+    await k.visibility('visible');
+    await k.advance(1200);
+    assert.equal(sheetOf(k).scrollTop, 888, 'nor at a later drawing or look');
+  } finally {
+    restore3();
+    k.restore();
   }
   // A tap on Home's own screen under the sheet (outside it) leaves the hold: the late row still re-lands it.
   const lay2 = { at: 900, shift: 0 };

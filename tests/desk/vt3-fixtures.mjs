@@ -96,9 +96,9 @@ export function vt3State({ launch = LAUNCH_EARLY, cards = weekCards(), pfMore = 
 /** A made-up weekly file in the portfolio's tree for `monday`'s week from `device` (its text made up, NOT a real record). */
 export const landed = (path) => ({ [path]: 'Week: made up for VT3\'s tests (NOT a real record)\n' });
 
-/** The page opened on `st` at `now` with `store`, read twice (the projects and the portfolio). */
-export async function vt3Open(st, { hash = '#/', now = MON16, store = memStore() } = {}) {
-  const app = await loadSandbox({ ...st, hash, now, store });
+/** The page opened on `st` at `now` with `store`, read twice (the projects and the portfolio); `serverConfig` and `globals` as loadSandbox's. */
+export async function vt3Open(st, { hash = '#/', now = MON16, store = memStore(), serverConfig = null, globals = {} } = {}) {
+  const app = await loadSandbox({ ...st, hash, now, store, serverConfig, globals });
   await app.advance(1000);
   await app.advance(61_000);
   app.store = store;

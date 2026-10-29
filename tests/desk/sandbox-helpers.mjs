@@ -131,7 +131,7 @@ let loads = 0;
  * imports the desk itself with J7's committed config (src/config/projects.json): the fake desk function then answers
  * through `fetch`, and `desk` is null.
  */
-export async function loadSandbox({ config, repos, hash = '#/', search = '', now: start = Date.parse('2026-10-14T15:00:00Z'), store = null, win = {}, globals = {}, entry = false, breakView = false, visibility = 'visible' }) {
+export async function loadSandbox({ config, repos, hash = '#/', search = '', now: start = Date.parse('2026-10-14T15:00:00Z'), store = null, win = {}, globals = {}, entry = false, breakView = false, visibility = 'visible', serverConfig = null }) {
   const { fakeServer } = await import('./fake-desk.mjs');
   const names = ['document', 'window', 'location', 'Node', 'setTimeout', 'clearTimeout', 'setInterval', 'navigator', 'localStorage', 'Notification', 'history', 'fetch'];
   const saved = Object.fromEntries(names.map((k) => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
@@ -169,7 +169,9 @@ export async function loadSandbox({ config, repos, hash = '#/', search = '', now
   set('localStorage', store);
   set('Notification', globals.Notification); // AC75's control (from 2026-10-18); none by default
   Date.now = () => now;
-  const server = fakeServer(repos, config, { now: () => now });
+  // `serverConfig` (from VT3's round 2): the desk function's own J7 where a test gives the page keys the function's check
+  // would refuse (J7's `portfolio` takes `repo` and `defaultBranch` alone), so the page's drawing of them can be tested.
+  const server = fakeServer(repos, serverConfig || config, { now: () => now });
   const held = { server };
   const flush = async () => { for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r)); };
   let mod = null;

@@ -142,3 +142,21 @@ test('J3 + AC17 + AC18: a week\'s link — J3\'s form against the portfolio repo
   assert.equal(nw.warning, "This repository doesn't take commits to main from the web. On GitHub, choose 'Create a new branch' and then open the pull request GitHub offers; the week stays offered until that pull request is merged.");
   assert.equal(nw.url, l.url, 'the link itself J3\'s, unchanged');
 });
+
+// VT3's round 2 (the Reviewer's N4: B23 and B24, the V5 line's two guards, left standing by his plants).
+test('J5 (VT3\'s review, N4): the week\'s V5 line says why it has no figure — a v3 project not read, or its dispatch log not loaded ("not available until <project> has been read"), and a week older than the dispatch-log months the desk reads (the current and the one before, UTC)', async () => {
+  const { v5Week } = await import('../../src/lib/values.js');
+  const config = { ownerTimeZone: TZ, v5Clock: { days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], from: '07:00', to: '22:00' } };
+  const read = (name, extra = {}) => ({ name, v3: true, readOk: true, model: { logLoaded: true, allEntries: [] }, tree: new Map(), ...extra });
+  const week = { startMs: W46, endMs: MON16 };
+  assert.deepEqual(v5Week({ projects: [read('Service-Desk'), read('Alpha', { readOk: false })], ...week, nowMs: MON16, config }),
+    { ms: null, k: 0, words: 'not available until Alpha has been read' });
+  assert.deepEqual(v5Week({ projects: [read('Service-Desk', { model: { logLoaded: false, allEntries: [] } })], ...week, nowMs: MON16, config }),
+    { ms: null, k: 0, words: 'not available until Service-Desk has been read' }, 'the log not loaded');
+  assert.equal(v5Week({ projects: [read('Old', { v3: false, readOk: false })], ...week, nowMs: MON16, config }).words, 'no weekday cards', 'a v2.5 project is not waited on');
+  // The week of 9 Nov seen on Mon 4 Jan 2027: J2 reads December's and January's logs only.
+  assert.deepEqual(v5Week({ projects: [read('Service-Desk')], ...week, nowMs: chi('2027-01-04', '10:00'), config }),
+    { ms: null, k: 0, words: 'not available: the dispatch log months the desk reads no longer cover this week' });
+  // On Tue 1 Dec 2026, November's log is still read.
+  assert.equal(v5Week({ projects: [read('Service-Desk')], ...week, nowMs: chi('2026-12-01', '10:00'), config }).words, 'no weekday cards');
+});

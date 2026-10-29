@@ -24,6 +24,7 @@ import {
   saveLinks, landed, chi, MIN, H, z,
 } from './vt3-fixtures.mjs';
 import { ALPHA_TARGETS } from './vt1-fixtures.mjs';
+import { CONFIG } from './helpers.mjs';
 
 const RULES = (() => {
   const a = parseCss(readFileSync(join(SRC, 'public', 'style.css'), 'utf8'), 'style.css');
@@ -365,6 +366,72 @@ test('AC25 (VT3\'s review, N3): a truncated portfolio tree is unread, as the por
     st.pf.commit({ 'README.md': 'A made-up change (NOT real).\n' });
     await app.advance(PF_POLL + 61_000);
     assert.equal(weeklyLine(app).textContent, "Last week's desk figures are ready to save", 'whole: offered');
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC18 + AC17 on the page (VT3\'s review, N4, B3): with `webCommitsToDefault: false`, AC18\'s words in the block, above the weeks; with `contentPrefill: false`, each week\'s link the file name only, its file to copy and the cause\'s words (J7\'s check refuses both keys on `portfolio`, so the function\'s own J7 here leaves them out)', async () => {
+  const st = vt3State({ pfConf: { webCommitsToDefault: false, contentPrefill: false } });
+  const serverConfig = { ...st.config, portfolio: { repo: st.config.portfolio.repo, defaultBranch: st.config.portfolio.defaultBranch } };
+  const app = await vt3Open(st, { store: j5Store(), serverConfig });
+  try {
+    await app.go('#/p/Service-Desk/values/weekly');
+    const blk = weeklyBlock(app);
+    assert.equal(blk.children[1].textContent, "This repository doesn't take commits to main from the web. On GitHub, choose 'Create a new branch' and then open the pull request GitHub offers; the week stays offered until that pull request is merged.", 'AC18\'s words, before the link is opened');
+    const [l] = saveLinks(app);
+    assert.equal(l.href, `https://github.com/shumpmaster/portfolio/new/main?filename=${encodeURIComponent('metrics/service-desk/2026-W46-d3fa2.md')}`, 'the file name only');
+    const li = l.el.parent;
+    assert.equal(byClass(li, 'v2-pre')[0].textContent, J5_FILE, 'the file to copy, character for character');
+    assert.equal(byClass(li, 'v2-small')[0].textContent, WEEKLY_WORDS.copyPrefill);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC17 on the page (VT3\'s review, B26): a tap on a week whose link holds the file name only copies the week\'s file; one whose link holds it all copies nothing', async () => {
+  const copied = [];
+  const navigator = { clipboard: { writeText: async (t) => { copied.push(t); } } };
+  const app = await vt3Open(vt3State({ linkCap: 200 }), { store: j5Store(), globals: { navigator } });
+  try {
+    await app.go('#/p/Service-Desk/values/weekly');
+    await app.tap(saveLinks(app)[0].el);
+    assert.deepEqual(copied, [J5_FILE]);
+  } finally {
+    app.restore();
+  }
+  copied.length = 0;
+  const whole = await vt3Open(vt3State(), { store: j5Store(), globals: { navigator } });
+  try {
+    await whole.go('#/p/Service-Desk/values/weekly');
+    await whole.tap(saveLinks(whole)[0].el);
+    assert.deepEqual(copied, [], 'the link holds the file: nothing copied');
+  } finally {
+    whole.restore();
+  }
+});
+
+test('J5 on the page (VT3\'s review, N4, B8): a card answered after the week is counted to the week\'s end, never to its answer', async () => {
+  // Raised Fri 13 Nov 21:00 in Chicago, answered Mon 16 Nov 09:00 (made up): 1h to the week's end (22:00 Friday), 3h to its answer.
+  const card = { n: 300, raised: chi('2026-11-13', '21:00'), answered: chi('2026-11-16', '09:00') };
+  const app = await vt3Open(vt3State({ cards: [card] }), { store: j5Store() });
+  try {
+    await app.go('#/p/Service-Desk/values/weekly');
+    assert.match(saveLinks(app)[0].content, /\nV5 median \(weekday cards\): 1h 00m over 1 card\n/);
+  } finally {
+    app.restore();
+  }
+});
+
+test('AC25 (VT3\'s review, B27): "Your weekly figures" on the planning project\'s targets\' sheet alone, never another project\'s', async () => {
+  const app = await vt3Open(vt3State({ alpha: ALPHA_TARGETS }), { store: j5Store() });
+  try {
+    await app.go('#/p/Alpha/values');
+    assert.ok(sheetOf(app), 'Alpha\'s targets\' sheet');
+    assert.ok(byClass(sheetOf(app), 'v2-tgt').length >= 1);
+    assert.equal(weeklyBlock(app), null, 'no block on Alpha\'s');
+    await app.go('#/p/Service-Desk/values');
+    assert.ok(weeklyBlock(app), 'Service-Desk\'s (the planning project\'s) has it');
   } finally {
     app.restore();
   }

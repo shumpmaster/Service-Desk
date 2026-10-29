@@ -903,7 +903,9 @@ function assertUnknownLook(app, ref, where) {
     assert.doesNotMatch(L.get(el).family, /Mono/, `${where}, ${theme}: the lane's words not in mono`);
     assert.equal(L.get(el).colour, INK2[theme], `${where}, ${theme}: the lane's words in --ink2`);
     if (ref) assert.deepEqual(look(L, kw), look(looks(ref, theme), refKw), `${where}, ${theme}: the strip's words in "can't read"'s look`);
-    assert.deepEqual([L.get(kw).size, L.get(kw).weight, L.get(kw).colour], ['11px', '500', INK2[theme]], `${where}, ${theme}: --t-label --ink2`);
+    // Rewritten in HD1 (forced: AC98 puts the strip's empty line on --t-row, 500 13 px, --ink2, so its words are 13 px;
+    // tests/desk/ac91-g8d.test.mjs:906).
+    assert.deepEqual([L.get(kw).size, L.get(kw).weight, L.get(kw).colour], ['13px', '500', INK2[theme]], `${where}, ${theme}: --t-row --ink2 (AC98)`);
     assert.doesNotMatch(L.get(kw).family, /Mono/, `${where}, ${theme}: not in mono`);
   }
 }

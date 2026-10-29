@@ -215,13 +215,15 @@ test('AC91 (h) with AC89 (j): the gate\'s short title is cut at two lines only w
     measure(keyed(app, `tt:${G4}`), 3, 16, 2);
     await app.resize(360);
     assert.match(keyed(app, `tt:${G4}`).className, /\bover\b/);
-    // The sheet: its title in --t-sheet at two lines; its opening in --t-lead at three.
+    // The sheet: its title at two lines; its opening in --t-lead at three.
+    // Rewritten in HD1 (forced: AC98 draws a sheet's title at 600 20 px, the owner's, no longer --t-sheet's 18 px; the two-line
+    // clip, calc(2 * 1.3em), still holds two lines; tests/desk/ac91-glance-gates.test.mjs:224).
     await app.go(route(G4));
     for (const theme of THEMES) {
       for (const w of WIDTHS) {
         const L = looks(app, theme, w);
         const h2 = byClass(sheet(app), 'v2-stitle')[0];
-        assert.deepEqual([L.get(h2).size, L.get(h2).weight], ['18px', '600'], `${theme}, ${w} px: the title in --t-sheet`);
+        assert.deepEqual([L.get(h2).size, L.get(h2).weight], ['20px', '600'], `${theme}, ${w} px: the title 600 20 px (AC98)`);
         assert.equal(L.get(keyed(app, `clip:stitle:${G4}`)).decl('max-height'), 'calc(2 * 1.3em)', `${theme}, ${w} px: the title held to two lines`);
         const lead = L.get(keyed(app, `clip:gopen:${G4}`));
         assert.deepEqual([lead.size, lead.weight], ['15px', '400'], `${theme}, ${w} px: the opening in --t-lead`);

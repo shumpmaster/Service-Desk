@@ -41,6 +41,7 @@ import { QW3_OPENS } from './qw3-fixtures.mjs';
 import { VT1_OPENS } from './vt1-fixtures.mjs';
 import { VT2_OPENS } from './vt2-fixtures.mjs';
 import { VT3_OPENS } from './vt3-fixtures.mjs';
+import { HD1_OPENS } from './hd1-fixtures.mjs';
 
 const SANDBOX_CSS = readFileSync(join(SRC, 'public', 'sandbox.css'), 'utf8');
 const STYLE_CSS = readFileSync(join(SRC, 'public', 'style.css'), 'utf8');
@@ -95,7 +96,9 @@ const lum = (hex) => {
   return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 };
 /** AC81's roles' sizes (--t-title 24, --t-sheet 18, --t-lead 15, --t-row and --t-body 13, --t-small 12, --t-label and --t-mono 11), and AC63's 16 px text box. */
-const ROLE_PX = [24, 18, 15, 13, 12, 11, 16];
+// Rewritten in HD1 (forced: AC81 as changed for HD1 adds the owner's two titles' sizes, 28 px a screen's and 20 px a sheet's;
+// AC98; tests/desk/ac88-dark.test.mjs:98, not named in HD1's row).
+const ROLE_PX = [28, 24, 20, 18, 15, 13, 12, 11, 16];
 const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 
 /** A node's own ground: its background's first colour when that is opaque (a token's six-digit value). */
@@ -236,7 +239,8 @@ function checkScreen(app, where, fails, seen) {
       const size = parseFloat(n.style.get('font-size') || '16');
       const large = size >= 24 || (size >= 18.66 && Number(n.style.get('font-weight')) >= 700);
       // After MD3, stage 8 ((b) item 37; stage 8's review, round 1, B1: `.sb-unb-t` lost its role and no test saw it): every drawn
-      // text takes one of AC81's roles' sizes (24, 18, 15, 13, 12 and 11 px; 16 px for text boxes, AC63), never one of its own.
+      // text takes one of AC81's roles' sizes (from HD1 28, 24, 20, 18, 15, 13, 12 and 11 px; 16 px for text boxes, AC63), never
+      // one of its own.
       const fpx = parseFloat(n.style.get('font-size') || '');
       if (!ROLE_PX.includes(fpx)) fail(n, `"${n.text.trim().slice(0, 30)}" at ${n.style.get('font-size')}: no role's size`);
       // After MD3, stage 8 ((b) item 37): a text drawn under an opacity below 1 is a contrast the cascade can't read, so it fails.
@@ -1088,11 +1092,11 @@ const G2_LOOK = (ink, ink2, bg2) => new Map([
   ['div.v2-lanes', ['grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr) minmax(0, 1fr) → minmax(0, 1fr) minmax(0, 1fr)']],
   ['section.v2-lane.lane-done', [`background: (none) → ${bg2}`, 'border-radius: (none) → 12px', 'padding: (none) → 0 8px 10px', 'align-self: (none) → stretch']],
   ['h2.v2-lh (Done)', ['padding-top: (none) → 6px']],
-  ['p.v2-kq', [`font: (none) → ${G2_FONT('500 11px/1.35')}`, `color: (none) → ${ink2}`, 'padding: (none) → 4px 0']],
-  ['span.v2-kl', ['computed font-size: 13px → 11px', 'computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 14.850000000000001px',
-    `computed color: ${ink} → ${ink2}`]],
-  ['span.v2-kw', ['computed font-size: 13px → 11px', 'computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 14.850000000000001px',
-    `computed color: ${ink} → ${ink2}`]],
+  // Rewritten in HD1 (forced: AC98 puts the empty line on --t-row, 500 13 px, so its words keep the 13 px they had before G2
+  // and take --t-row's line height; tests/desk/ac88-dark.test.mjs:1091 and the lines under it).
+  ['p.v2-kq', [`font: (none) → ${G2_FONT('500 13px/1.35')}`, `color: (none) → ${ink2}`, 'padding: (none) → 4px 0']],
+  ['span.v2-kl', ['computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 17.55px', `computed color: ${ink} → ${ink2}`]],
+  ['span.v2-kw', ['computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 17.55px', `computed color: ${ink} → ${ink2}`]],
   ['span.v2-kn', ['font: (none) → 400 11px/1.4 "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace', `color: (none) → ${ink2}`,
     'computed font-size: 13px → 11px', 'computed line-height: 18.849999999999998px → 15.399999999999999px',
     'computed font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif → "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace',
@@ -1223,8 +1227,9 @@ const G5_EXCEPT = (n, d) => {
  * - on the Timeline, a standard milestone's name (`p.v2-mstt` in a `div.v2-ms.std`) at 400.
  * A standard row's name keeps its 400 13 px (`--t-body`), so it adds none.
  */
-const G6_HEAD = (ink, ink2) => [`font: ${G1_FONT('400 11px/1.35')} → ${G1_FONT('500 11px/1.35')}`, `color: ${ink2} → ${ink}`, 'padding: 6px 0 0 → 10px 0 0',
-  'computed font-weight: 400 → 500', `computed color: ${ink2} → ${ink}`];
+// Rewritten in HD1 (forced: AC98 draws the two group heads at 600 12 px; tests/desk/ac88-dark.test.mjs:1226-1230).
+const G6_HEAD = (ink, ink2) => [`font: ${G1_FONT('400 11px/1.35')} → ${G1_FONT('600 12px/1.3')}`, `color: ${ink2} → ${ink}`, 'padding: 6px 0 0 → 10px 0 0',
+  'computed font-weight: 400 → 600', 'computed font-size: 11px → 12px', 'computed line-height: 14.850000000000001px → 15.600000000000001px', `computed color: ${ink2} → ${ink}`];
 const G6_LOOK = (ink, ink2, line) => new Map([
   ['p.v2-subh', G6_HEAD(ink, ink2)],
   ['p.v2-subh.std', [...G6_HEAD(ink, ink2), 'margin-top: (none) → 8px', `border-top: (none) → 1px solid ${line}`]],
@@ -1486,7 +1491,9 @@ const G8C_EXCEPT = (n, d, theme) => {
  * run heads, the first and those after it, on the `text` page with every phase opened, and G9's own screens
  * (tests/desk/glance-fixtures.mjs's G9_OPENS, below).
  */
-const G9_RUNH = (ink, ink2) => [`color: ${ink2} → ${ink}`, 'font-weight: (none) → 600', 'computed font-weight: 500 → 600', `computed color: ${ink2} → ${ink}`];
+// Rewritten in HD1 (forced: AC98 draws a run's head at 600 13 px; tests/desk/ac88-dark.test.mjs:1489-1496).
+const G9_RUNH = (ink, ink2) => [`color: ${ink2} → ${ink}`, `font: ${G1_FONT('500 11px/1.35')} → ${G1_FONT('600 13px/1.3')}`,
+  'computed font-weight: 500 → 600', 'computed font-size: 11px → 13px', 'computed line-height: 14.850000000000001px → 16.900000000000002px', `computed color: ${ink2} → ${ink}`];
 const G9_LOOK = (ink, ink2, bg2, line) => new Map([
   ['div.v2-anchor (a project page\'s soft box)', ['display: (none) → grid', 'gap: (none) → 4px 10px', 'padding: (none) → 12px', 'border-radius: (none) → 12px',
     `background: (none) → ${bg2}`, `color: (none) → ${ink}`]],
@@ -1536,13 +1543,15 @@ const QW1_FONT = (f) => `${f} "IBM Plex Sans", system-ui, -apple-system, "Segoe 
 const QW1_LOOK = (ink, ink2, line) => new Map([
   ['section.v2-qsec', ['display: (none) → grid', 'gap: (none) → 6px']],
   ['h2.v2-kh (the section\'s head)', ['display: (none) → flex', 'align-items: (none) → center', 'gap: (none) → 6px', 'min-height: (none) → 28px', 'padding-bottom: (none) → 4px',
-    `border-bottom: (none) → 1px solid ${line}`, `font: (none) → ${QW1_FONT('600 12px/1.3')}`, `color: (none) → ${ink}`]],
-  ['span (the section\'s title)', ['computed font-size: 13px → 12px', 'computed font-weight: 400 → 600', 'computed line-height: 18.849999999999998px → 15.600000000000001px']],
+    // Rewritten in HD1 (forced: AC98 puts the section head at 600 15 px; tests/desk/ac88-dark.test.mjs:1538-1540).
+    `border-bottom: (none) → 1px solid ${line}`, `font: (none) → ${QW1_FONT('600 15px/1.3')}`, `color: (none) → ${ink}`]],
+  ['span (the section\'s title)', ['computed font-size: 13px → 15px', 'computed font-weight: 400 → 600', 'computed line-height: 18.849999999999998px → 19.5px']],
   ['span.v2-kn (the head\'s " · ")', ['font: (none) → 400 11px/1.4 "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace', `color: (none) → ${ink2}`,
     'computed font-size: 13px → 11px', 'computed line-height: 18.849999999999998px → 15.399999999999999px',
     'computed font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif → "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace',
     `computed color: ${ink} → ${ink2}`]],
-  ['p.v2-kq (the section\'s line)', [`font: (none) → ${QW1_FONT('500 11px/1.35')}`, `color: (none) → ${ink2}`, 'padding: (none) → 4px 0']],
+  // Rewritten in HD1 (forced: AC98 puts the section's empty line on --t-row, 500 13 px; tests/desk/ac88-dark.test.mjs:1545).
+  ['p.v2-kq (the section\'s line)', [`font: (none) → ${QW1_FONT('500 13px/1.35')}`, `color: (none) → ${ink2}`, 'padding: (none) → 4px 0']],
   ['a.v2-t (a section question\'s title)', [`font: ${QW1_FONT('500 12px/1.33')} → ${QW1_FONT('500 13px/1.35')}`, 'max-height: calc(3 * 1.33em) → calc(3 * 1.35em)']],
   // Its clip (`span.v2-tt`) is M3D5's, newer than bd4097d, so its display and overflow are M3D5_ONCE's; only its height is QW1's.
   ['span.v2-tt (a section question\'s title)', ['max-height: (none) → calc(3 * 1.35em)', 'computed font-size: 12px → 13px', 'computed line-height: 15.96px → 17.55px']],
@@ -1598,8 +1607,9 @@ const G9C_EXCEPT = (n, d, theme) => {
 const STRIP_FONT = (f) => `${f} "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
 const STRIP_LOOK = (ink, line) => new Map([
   ['h2.v2-kh (the strip\'s head)', ['display: (none) → flex', 'align-items: (none) → center', 'gap: (none) → 6px', 'min-height: (none) → 28px', 'padding-bottom: (none) → 4px',
-    `border-bottom: (none) → 1px solid ${line}`, `font: (none) → ${STRIP_FONT('600 12px/1.3')}`, `color: (none) → ${ink}`]],
-  ['span (the strip\'s title)', ['computed font-size: 13px → 12px', 'computed font-weight: 400 → 600', 'computed line-height: 18.849999999999998px → 15.600000000000001px']],
+    // Rewritten in HD1 (forced: AC98 puts the strip's head with cards at 600 15 px; tests/desk/ac88-dark.test.mjs:1600-1602).
+    `border-bottom: (none) → 1px solid ${line}`, `font: (none) → ${STRIP_FONT('600 15px/1.3')}`, `color: (none) → ${ink}`]],
+  ['span (the strip\'s title)', ['computed font-size: 13px → 15px', 'computed font-weight: 400 → 600', 'computed line-height: 18.849999999999998px → 19.5px']],
   ['ol.v2-krow', ['padding: 0 → 2px 0 6px', 'display: (none) → flex', 'gap: (none) → 8px', 'max-width: (none) → 100%', 'overflow-x: (none) → auto', 'overflow-y: (none) → hidden',
     'overscroll-behavior-x: (none) → contain', 'scroll-snap-type: (none) → x mandatory']],
   ['li.v2-kslot', ['flex: (none) → 0 0 200px', 'display: (none) → grid', 'scroll-snap-align: (none) → start']],
@@ -1712,8 +1722,10 @@ const VT1_LOOK = (t) => new Map([
   // The sheet's blocks.
   ['section.v2-tgt (a target)', VT1_BLOCK(t)],
   ['section.v2-vstop (the miss and stop rule)', VT1_BLOCK(t)],
-  ['h3.v2-vth (a target\'s id and short name)', [`font: (none) → ${VT1_FONT('500 13px/1.35')}`, `color: (none) → ${t.ink}`]],
-  ['span (a target\'s short name)', ['computed font-weight: 400 → 500', 'computed line-height: 18.849999999999998px → 17.55px']],
+  // Rewritten in HD1 (forced: AC98 puts each target's id and short name, a sheet-block head, at 600 15 px;
+  // tests/desk/ac88-dark.test.mjs:1715 and the line under it).
+  ['h3.v2-vth (a target\'s id and short name)', [`font: (none) → ${VT1_FONT('600 15px/1.3')}`, `color: (none) → ${t.ink}`]],
+  ['span (a target\'s short name)', ['computed font-size: 13px → 15px', 'computed font-weight: 400 → 600', 'computed line-height: 18.849999999999998px → 19.5px']],
   ['p.v2-vfig (a figure and its words)', ['display: (none) → flex', 'flex-wrap: (none) → wrap', 'align-items: (none) → baseline', 'gap: (none) → 2px 8px']],
   ['span.v2-vbig (a figure)', [`font: (none) → ${VT1_FONT('600 24px/1.2')}`, `color: (none) → ${t.ink}`, 'overflow-wrap: (none) → anywhere', 'computed font-size: 13px → 24px',
     'computed font-weight: 400 → 600', 'computed line-height: 18.849999999999998px → 28.799999999999997px']],
@@ -1873,6 +1885,120 @@ const VT3_EXCEPT = (n, d, theme) => {
   return Boolean(k && (VT3_ONCE.get(theme).get(k) || []).includes(d)) ? `VT3 ${theme} ${k} ${d}` : null;
 };
 const VT3_FLAT = [...VT3_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `VT3 ${theme} ${k} ${d}`))).sort();
+/**
+ * HD1's changes to an element's look on purpose (AC98; the stage's row: "`HD1_ONCE`"; the approved header picture,
+ * docs/design/builds/headers-picture/, with the owner's bigger titles), each declaration before and after, in each theme, on
+ * only its own element, keyed by its role in AC98's table (the elements an earlier stage pinned, G2's, G6's, G9's, QW1's, the
+ * strip's and VT1's, keep their own pins, rewritten to HD1's look):
+ * - a screen's title (`h1.v2-title`, and `.sb-hdr h1` on Team, a member's page and the Details views): 600 28px/1.2;
+ * - a sheet's title (`h2.v2-stitle`, and `.sb-sheet-t` on Team's sheets): 600 20px/1.3, the gate title's clip and its item
+ *   computed with it;
+ * - a section or sheet-block head (`.v2-sh`, `.v2-shw`, Plan's `.v2-plhw`, `.v2-hgt`, `.v2-mds`, `.v2-bh`, `.sb-h2`,
+ *   `.sb-sec h3`): 500 11px/1.35 --ink2 → 600 15px/1.3 --ink, its words computed with it; "More detail"'s chevron keeping
+ *   --ink2 by a rule of its own;
+ * - a sub-head (`.v2-lh`, `.v2-gn`, the goal labels, Plan's card label, "More detail"'s `.sb-h3`): 600 13px/1.3, each
+ *   keeping its colour (a run's head, `.v2-runh`, is G9's pin);
+ * - the two headings' small part (`span.v2-htail`, --t-small --ink2) and a heading's time (`span.v2-htime`, Plex Mono 400 12
+ *   px), new in HD1, and their rows (`div.v2-sh.v2-shsplit`) wrapping, so where the heading and its control ("Mark as seen",
+ *   "↑ start at the foot") don't fit one line together, at 360 px, the control goes under it, at its right.
+ * The walk reaches them on every fixture above and HD1's own screens (tests/desk/hd1-fixtures.mjs's HD1_OPENS, below).
+ */
+const HD1_FONT = (f) => `${f} "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+const HD1_SCREEN = ['computed font-size: 24px → 28px', 'computed line-height: 28.799999999999997px → 33.6px'];
+const HD1_SHEET = ['computed font-size: 18px → 20px', 'computed line-height: 23.400000000000002px → 26px'];
+const HD1_SEC = (t) => [`font: ${HD1_FONT('500 11px/1.35')} → ${HD1_FONT('600 15px/1.3')}`, `color: ${t.ink2} → ${t.ink}`];
+const HD1_SEC_TEXT = (t) => [`computed color: ${t.ink2} → ${t.ink}`, 'computed font-size: 11px → 15px', 'computed font-weight: 500 → 600', 'computed line-height: 14.850000000000001px → 19.5px'];
+const HD1_SUB_TEXT = ['computed font-size: 11px → 13px', 'computed font-weight: 500 → 600', 'computed line-height: 14.850000000000001px → 16.900000000000002px'];
+const HD1_SUB = [`font: ${HD1_FONT('500 11px/1.35')} → ${HD1_FONT('600 13px/1.3')}`, ...HD1_SUB_TEXT];
+const HD1_LOOK = (t) => new Map([
+  // Titles: a screen's 600 28px/1.2, a sheet's 600 20px/1.3 (the owner's answer B).
+  ['h1.v2-title (a screen\'s title)', [`font: ${HD1_FONT('600 24px/1.2')} → ${HD1_FONT('600 28px/1.2')}`, ...HD1_SCREEN]],
+  ['h1 (an older screen\'s title, .sb-hdr h1)', [`font: ${HD1_FONT('600 24px/1.2')} → ${HD1_FONT('600 28px/1.2')}`, ...HD1_SCREEN]],
+  ['h2.v2-stitle (a sheet\'s title)', [`font: ${HD1_FONT('600 18px/1.3')} → ${HD1_FONT('600 20px/1.3')}`, ...HD1_SHEET]],
+  ['h2.sb-sheet-t (a Team sheet\'s title)', [`font: ${HD1_FONT('600 18px/1.3')} → ${HD1_FONT('600 20px/1.3')}`, ...HD1_SHEET]],
+  ['span.v2-clip.v2-stt (the gate sheet title\'s clip)', HD1_SHEET],
+  ['span.v2-gitem (the gate sheet title\'s item)', HD1_SHEET],
+  // Section and sheet-block heads: 600 15px/1.3 --ink (answer A), their words computed with them.
+  ['div.v2-sh (a section head\'s line)', HD1_SEC(t)],
+  // The two headings' rows wrap where the heading and its control don't fit one line together (at 360 px), the control under it
+  // at its right, so the heading stays one line.
+  ['div.v2-sh.v2-shsplit (one of the two headings\' line)', [...HD1_SEC(t), 'flex-wrap: (none) → wrap', 'row-gap: (none) → 4px']],
+  ['button.v2-seen ("Mark as seen", beside or under its heading)', ['margin-left: (none) → auto']],
+  ['span.v2-mono ("↑ start at the foot", beside or under its heading)', ['margin-left: (none) → auto']],
+  ['h2.v2-shw (a section head\'s words)', [...HD1_SEC(t), ...HD1_SEC_TEXT(t)]],
+  ['h2.v2-sh.v2-shw ("The rest")', [...HD1_SEC(t), ...HD1_SEC_TEXT(t)]],
+  ['h2.v2-sh.v2-pfh (the portfolio\'s head)', HD1_SEC(t)],
+  ['span.v2-shw (the portfolio\'s words)', [...HD1_SEC(t), ...HD1_SEC_TEXT(t)]],
+  ['h2.v2-sh.v2-plh (a Plan group\'s head)', HD1_SEC(t)],
+  ['span.v2-shw.v2-plhw (a Plan group\'s words)', HD1_SEC(t)],
+  ['span (a Plan group\'s name)', HD1_SEC_TEXT(t)],
+  ['span.v2-hgt (a Home group\'s name)', [`font: (none) → ${HD1_FONT('600 15px/1.3')}`, `color: (none) → ${t.ink}`, ...HD1_SEC_TEXT(t)]],
+  ['summary.v2-mds ("More detail")', HD1_SEC(t)],
+  ['span ("More detail"\'s words)', HD1_SEC_TEXT(t)],
+  ['svg ("More detail"\'s chevron)', [`color: (none) → ${t.ink2}`]],
+  ['h3.v2-bh (a sheet\'s block head)', [...HD1_SEC(t), ...HD1_SEC_TEXT(t)]],
+  ['p.v2-bh (a sheet\'s block head)', [...HD1_SEC(t), ...HD1_SEC_TEXT(t)]],
+  ['h2.sb-h2 (an older screen\'s section head)', [...HD1_SEC(t), ...HD1_SEC_TEXT(t)]],
+  ['h3 (a Team sheet\'s block head, .sb-sec h3)', [...HD1_SEC(t), ...HD1_SEC_TEXT(t)]],
+  // Sub-heads: 600 13px/1.3, each keeping its colour.
+  ['h2.v2-lh (a lane\'s head)', [`font: ${HD1_FONT('600 11px/1.3')} → ${HD1_FONT('600 13px/1.3')}`]],
+  ['span (a lane head\'s title)', ['computed font-size: 11px → 13px', 'computed line-height: 14.3px → 16.900000000000002px']],
+  ['span.v2-gn (a group\'s name)', [`font: (none) → ${HD1_FONT('600 13px/1.3')}`, ...HD1_SUB_TEXT]],
+  ['h3.v2-label (a goal\'s label)', HD1_SUB],
+  ['p.v2-label (Plan\'s card label)', HD1_SUB],
+  ['h3.sb-h3 ("More detail"\'s sub-head)', [`font: ${HD1_FONT('500 13px/1.35')} → ${HD1_FONT('600 13px/1.3')}`, 'computed font-weight: 500 → 600',
+    'computed line-height: 17.55px → 16.900000000000002px']],
+  // The two headings' small part (--t-small --ink2) and a heading's time (Plex Mono 400 12 px).
+  ['span.v2-htail (a heading\'s small part)', [`font: (none) → ${HD1_FONT('400 12px/1.4')}`, `color: (none) → ${t.ink2}`, 'computed font-size: 11px → 12px',
+    'computed font-weight: 500 → 400', 'computed line-height: 14.850000000000001px → 16.799999999999997px']],
+  ['span.v2-htime (a heading\'s time)', ['font: (none) → 400 12px/1.4 "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace', 'computed font-size: 11px → 12px',
+    'computed font-weight: 500 → 400', 'computed line-height: 14.850000000000001px → 16.799999999999997px',
+    'computed font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif → "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace']],
+]);
+const HD1_ONCE = new Map([['light', HD1_LOOK({ ink: '#18191c', ink2: '#5c5f66' })], ['dark', HD1_LOOK({ ink: '#ecedef', ink2: '#a2a5ac' })]]);
+const HD1_KEY = (n) => {
+  const p = n.parent;
+  const is = (x, tag, cls) => Boolean(x && x.tag === tag && (!cls || x.cls.has(cls)));
+  const up = (x, cls) => { for (let a = x; a; a = a.parent) if (a.cls && a.cls.has(cls)) return true; return false; };
+  if (is(n, 'h1', 'v2-title')) return 'h1.v2-title (a screen\'s title)';
+  if (is(n, 'h1') && up(n, 'sb-hdr')) return 'h1 (an older screen\'s title, .sb-hdr h1)';
+  if (is(n, 'h2', 'v2-stitle')) return 'h2.v2-stitle (a sheet\'s title)';
+  if (is(n, 'h2', 'sb-sheet-t')) return 'h2.sb-sheet-t (a Team sheet\'s title)';
+  if (is(n, 'span', 'v2-stt') && up(n, 'v2-stitle')) return 'span.v2-clip.v2-stt (the gate sheet title\'s clip)';
+  if (is(n, 'span', 'v2-gitem') && up(n, 'v2-stitle')) return 'span.v2-gitem (the gate sheet title\'s item)';
+  if (is(n, 'span', 'v2-htail')) return 'span.v2-htail (a heading\'s small part)';
+  if (is(n, 'span', 'v2-htime')) return 'span.v2-htime (a heading\'s time)';
+  if (is(n, 'div', 'v2-sh') && n.cls.has('v2-shsplit')) return 'div.v2-sh.v2-shsplit (one of the two headings\' line)';
+  if (is(n, 'button', 'v2-seen') && p && p.cls.has('v2-shsplit')) return 'button.v2-seen ("Mark as seen", beside or under its heading)';
+  if (is(n, 'span', 'v2-mono') && p && p.cls.has('v2-shsplit')) return 'span.v2-mono ("↑ start at the foot", beside or under its heading)';
+  if (is(n, 'div', 'v2-sh')) return 'div.v2-sh (a section head\'s line)';
+  if (is(n, 'h2', 'v2-sh') && n.cls.has('v2-pfh')) return 'h2.v2-sh.v2-pfh (the portfolio\'s head)';
+  if (is(n, 'h2', 'v2-sh') && n.cls.has('v2-plh')) return 'h2.v2-sh.v2-plh (a Plan group\'s head)';
+  if (is(n, 'h2', 'v2-sh') && n.cls.has('v2-shw')) return 'h2.v2-sh.v2-shw ("The rest")';
+  if (is(n, 'h2', 'v2-shw') && is(p, 'div', 'v2-sh')) return 'h2.v2-shw (a section head\'s words)';
+  if (is(n, 'span', 'v2-shw') && n.cls.has('v2-plhw')) return 'span.v2-shw.v2-plhw (a Plan group\'s words)';
+  if (is(n, 'span', 'v2-shw')) return 'span.v2-shw (the portfolio\'s words)';
+  if (is(n, 'span') && n.cls.size === 0 && is(p, 'span', 'v2-plhw')) return 'span (a Plan group\'s name)';
+  if (is(n, 'span', 'v2-hgt')) return 'span.v2-hgt (a Home group\'s name)';
+  if (is(n, 'summary', 'v2-mds')) return 'summary.v2-mds ("More detail")';
+  if (is(n, 'span') && n.cls.size === 0 && is(p, 'summary', 'v2-mds')) return 'span ("More detail"\'s words)';
+  if (is(n, 'svg') && is(p, 'summary', 'v2-mds')) return 'svg ("More detail"\'s chevron)';
+  if ((is(n, 'h3', 'v2-bh') || is(n, 'p', 'v2-bh'))) return `${n.tag}.v2-bh (a sheet's block head)`;
+  if (is(n, 'h2', 'sb-h2')) return 'h2.sb-h2 (an older screen\'s section head)';
+  if (is(n, 'h3') && n.cls.size === 0 && p && p.cls.has('sb-sec')) return 'h3 (a Team sheet\'s block head, .sb-sec h3)';
+  if (is(n, 'h2', 'v2-lh')) return 'h2.v2-lh (a lane\'s head)';
+  if (is(n, 'span', 'v2-gn')) return 'span.v2-gn (a group\'s name)';
+  if (is(n, 'span') && n.cls.size === 0 && is(p, 'h2', 'v2-lh')) return 'span (a lane head\'s title)';
+  if (n.cls.has('v2-label') && up(n, 'v2-goal')) return `${n.tag}.v2-label (a goal's label)`;
+  if (n.cls.has('v2-label') && p && p.cls.has('v2-plcard')) return `${n.tag}.v2-label (Plan's card label)`;
+  if (is(n, 'h3', 'sb-h3') && (up(n, 'v2-home') || up(n, 'v2-proj'))) return 'h3.sb-h3 ("More detail"\'s sub-head)';
+  return null;
+};
+const HD1_EXCEPT = (n, d, theme) => {
+  const k = HD1_KEY(n);
+  return Boolean(k && (HD1_ONCE.get(theme).get(k) || []).includes(d)) ? `HD1 ${theme} ${k} ${d}` : null;
+};
+const HD1_FLAT = [...HD1_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `HD1 ${theme} ${k} ${d}`))).sort();
 const STRIP_FLAT = [...STRIP_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G2-STRIP ${theme} ${k} ${d}`))).sort();
 const G9C_FLAT = [...G9C_ONCE].flatMap(([theme, look]) => [...look].flatMap(([k, ds]) => ds.map((d) => `G9C ${theme} ${k} ${d}`))).sort();
 const M3D1_EXCEPT = (n, d) => n.cls.has('v2-wn') && n.cls.has('v2-small') && n.parent && n.parent.cls.has('v2-prt')
@@ -1950,6 +2076,8 @@ function sameLook(app, where, fails, seen) {
         if (vt2) { excepted.add(vt2); continue; }
         const vt3 = VT3_EXCEPT(b, d, way.theme);
         if (vt3) { excepted.add(vt3); continue; }
+        const hd1 = HD1_EXCEPT(b, d, way.theme);
+        if (hd1) { excepted.add(hd1); continue; }
         const k = `${way.theme} ${label(b)} ${d}`;
         if (!seen.has(k)) { seen.add(k); fails.push(`${where} · ${way.name} · ${label(b)}${b.text.trim() ? ` "${b.text.trim().slice(0, 30)}"` : ''}: ${d}`); }
       }
@@ -2242,7 +2370,10 @@ test('AC44 step 4 (stage 8; the Reviewer\'s B1, round 1): the rules stage 8 remo
   // AC25, whose new look VT2_ONCE pins): VT2's exception is pinned exactly by VT2's own walk, below; any the walks above meet is
   // of it alone.
   assert.ok([...excepted].filter((x) => /^VT2 /.test(x)).every((x) => VT2_FLAT.includes(x)), 'VT2: only its pinned declarations');
-  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[123456789] |G7B |G8B |G8C |G9C |PRE-G7 |QW1 |VT1 |VT2 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
+  // Rewritten in HD1 (forced: the walks above draw every header AC98 sizes up, whose new look HD1_ONCE pins): HD1's exception
+  // is pinned exactly by HD1's own walk, below; any the walks above meet is of it alone.
+  assert.ok([...excepted].filter((x) => /^HD1 /.test(x)).every((x) => HD1_FLAT.includes(x)), 'HD1: only its pinned declarations');
+  assert.deepEqual([...excepted].filter((x) => !/^(section\.sb-screen|div\.v2-tlhead|M3D[45] |G[123456789] |G7B |G8B |G8C |G9C |PRE-G7 |QW1 |VT1 |VT2 |HD1 )/.test(x)).sort(), [...[...M3D1_WAITS].map((d) => `span.v2-small.v2-wn ${d}`), ...m3d3].sort());
 });
 
 // The running log's lanes (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes
@@ -2642,4 +2773,44 @@ test('AC88 + AC69 + AC92 (a) + AC44 step 4 (VT3 of M3B; AC25, AC82): on VT3\'s s
   assert.ok(drawn.line >= 2 && drawn.block >= 2 && drawn.weeks >= 9 && drawn.copy >= 8 && drawn.trial >= 1, JSON.stringify(drawn));
   assert.deepEqual([...excepted].filter((x) => /^VT3 /.test(x)).sort(), VT3_FLAT, 'VT3_ONCE met exactly');
   assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^VT3 /.test(x)), [], 'no other exception the walks above had not met');
+});
+
+// HD1 (AC98; the stage's row: "AC88's dark cascade" and "`HD1_ONCE`"): the headers sized up on every screen and sheet the walks
+// above reach, and on HD1's own screens (tests/desk/hd1-fixtures.mjs's HD1_OPENS, made up, NOT real): Home with "Since you
+// last looked · <time>" and with "· in the last 7 days", a project's page with "Milestones by phase · <count>" and its phases
+// opened, and Plan, two page loads (the suite's memory), each read by all four checks: AC88's (every colour one of AC81's
+// tokens with the theme's value, every text 4.5:1 and at a role's size, 28 and 20 px among them from HD1), AC69's (no
+// vermilion), AC92 (a)'s (no green or red) and the stage-8 guard, which meets HD1_ONCE exactly, over every walk, and no other
+// exception the walks above had not met.
+test('AC88 + AC69 + AC92 (a) + AC44 step 4 (HD1; AC98): the headers sized up — on HD1\'s screens (HD1_OPENS, made up, NOT real) and every walk above, in dark (forced, and the phone\'s own) and light — every colour a token, every text 4.5:1 at a role\'s size, no vermilion, no green or red, and every element\'s look bd4097d\'s but for the earlier stages\' pins and HD1_ONCE, met exactly', async () => {
+  const fails = [];
+  const seen = new Set();
+  const places = new Set();
+  const before = new Set(excepted);
+  const drawn = { time: 0, words: 0, count: 0 };
+  for (const [where, open, screens] of HD1_OPENS) {
+    const app = await open();
+    try {
+      for (const [hash, prepare] of screens) {
+        await app.go(hash);
+        if (prepare) await prepare(app);
+        const w = `HD1 ${where} ${hash}`;
+        for (const t of findAll(app.view, (e) => / v2-htail /.test(` ${e.className || ''} `))) {
+          if (findAll(t, (e) => / v2-htime /.test(` ${e.className || ''} `)).length) drawn.time += 1;
+          else if (/in the last 7 days/.test(t.textContent)) drawn.words += 1;
+          else drawn.count += 1;
+        }
+        checkScreen(app, w, fails, seen);
+        vermilionCheck(app, w, fails, seen, places);
+        okBadCheck(app, w, fails, seen, places);
+        sameLook(app, w, fails, seen);
+      }
+    } finally {
+      app.restore();
+    }
+  }
+  assert.deepEqual(fails, []);
+  assert.ok(drawn.time >= 1 && drawn.words >= 1 && drawn.count >= 1, JSON.stringify(drawn));
+  assert.deepEqual([...excepted].filter((x) => /^HD1 /.test(x)).sort(), HD1_FLAT, 'HD1_ONCE met exactly');
+  assert.deepEqual([...excepted].filter((x) => !before.has(x) && !/^HD1 /.test(x)), [], 'no other exception the walks above had not met');
 });

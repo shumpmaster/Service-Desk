@@ -89,7 +89,7 @@ const LAB_BLOCK = LAB_LINES.slice(LAB_LINES.indexOf('OPTIONS:') + 1, LAB_LINES.f
 // adds " · <k> of <N> waiting""): each head ends with its card's place in Letters' order, six cards waiting (AC95's age
 // order: the design-lab question raised first, the Launch gate's card second, then the next-work question, … the send
 // question last).
-test('AC85 every sheet, rewritten in QW2 (AC95): the head in Plex Mono, "<project> · <kind> · <its name or id> · <milestone> · waiting <age>", each part only when its record gives it, then " · <k> of <N> waiting"; its title in --t-sheet; a 44 × 44 px close', async () => {
+test('AC85 every sheet, rewritten in QW2 (AC95): the head in Plex Mono, "<project> · <kind> · <its name or id> · <milestone> · waiting <age>", each part only when its record gives it, then " · <k> of <N> waiting"; its title at 600 20 px (from HD1, AC98; --t-sheet before); a 44 × 44 px close', async () => {
   const app = await openLetters();
   try {
     const heads = [
@@ -111,7 +111,13 @@ test('AC85 every sheet, rewritten in QW2 (AC95): the head in Plex Mono, "<projec
       assert.equal(byClass(app.view, 'v2-scrim').length, 1, 'over a dimmed screen');
     }
     assert.match(rule('.v2-x44'), /width: 44px; height: 44px;/);
-    assert.match(rule('.v2-stitle'), /font: var\(--t-sheet\)/);
+    // Rewritten in HD1 (vacuous: `.v2-stitle`'s first rule still takes --t-sheet, but AC98's later rule draws a sheet's title at
+    // 600 20 px, the owner's; tests/desk/ac85-sheets.test.mjs:114): the font that wins; --t-sheet keeps 18 px for what else
+    // takes it (the briefing's count).
+    const plain = CSS.replace(/\/\*[\s\S]*?\*\//g, '');
+    const won = (sel) => [...plain.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((m) => m[1].split(',').map((x) => x.trim()).includes(sel))
+      .map((m) => (/(?:^|;)\s*font:\s*([^;]+)/.exec(m[2]) || [])[1]).filter(Boolean).at(-1);
+    assert.equal(won('.v2-stitle').trim(), '600 20px/1.3 var(--font)', 'a sheet\'s title 600 20 px (AC98, AC85)');
     assert.match(CSS, /--t-sheet: 600 18px\/1\.3 var\(--font\);/);
     assert.match(rule('.v2-mono'), /font: var\(--t-mono\)/);
     assert.match(CSS, /--mono: "IBM Plex Mono"/);

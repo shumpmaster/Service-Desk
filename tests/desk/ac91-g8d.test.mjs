@@ -903,7 +903,9 @@ function assertUnknownLook(app, ref, where) {
     assert.doesNotMatch(L.get(el).family, /Mono/, `${where}, ${theme}: the lane's words not in mono`);
     assert.equal(L.get(el).colour, INK2[theme], `${where}, ${theme}: the lane's words in --ink2`);
     if (ref) assert.deepEqual(look(L, kw), look(looks(ref, theme), refKw), `${where}, ${theme}: the strip's words in "can't read"'s look`);
-    assert.deepEqual([L.get(kw).size, L.get(kw).weight, L.get(kw).colour], ['11px', '500', INK2[theme]], `${where}, ${theme}: --t-label --ink2`);
+    // Rewritten in HD1 (forced: AC98 puts the strip's empty line on --t-row, 500 13 px, --ink2, so its words are 13 px;
+    // tests/desk/ac91-g8d.test.mjs:906).
+    assert.deepEqual([L.get(kw).size, L.get(kw).weight, L.get(kw).colour], ['13px', '500', INK2[theme]], `${where}, ${theme}: --t-row --ink2 (AC98)`);
     assert.doesNotMatch(L.get(kw).family, /Mono/, `${where}, ${theme}: not in mono`);
   }
 }
@@ -956,7 +958,7 @@ test('AC91 (f), AC89 (a), G8d round 3, the pure functions: everyProjectUnread\'s
   }
 });
 
-test('AC91 (f), AC80, G8d round 3: Waiting with every project shown and no shown project both read and drawn (made up, NOT real) — Service-Desk and Personal-Org-Operating-Model can\'t be read and Alpha can\'t be drawn (BAD_PR), and every project can\'t be drawn: the empty "Waiting on you" lane exactly "Can\'t read or show", with no count, in the "Can\'t read" lane\'s look; the strip "Kicked back · can\'t read or show" in --t-label --ink2; the red quiet lines as round 2; Done as built; no "Nothing here", "none" or 0; beside it kept, every shown project unreadable: "Can\'t read" and "Kicked back · can\'t read", never "or show"', async () => {
+test('AC91 (f), AC80, G8d round 3: Waiting with every project shown and no shown project both read and drawn (made up, NOT real) — Service-Desk and Personal-Org-Operating-Model can\'t be read and Alpha can\'t be drawn (BAD_PR), and every project can\'t be drawn: the empty "Waiting on you" lane exactly "Can\'t read or show", with no count, in the "Can\'t read" lane\'s look; the strip "Kicked back · can\'t read or show" in the empty line\'s --t-row --ink2 (500 13 px from HD1, AC98); the red quiet lines as round 2; Done as built; no "Nothing here", "none" or 0; beside it kept, every shown project unreadable: "Can\'t read" and "Kicked back · can\'t read", never "or show"', async () => {
   const ref = await open(orderState(), '#/waiting');
   try {
     // Kept: every shown project unreadable (the reference for the look).
@@ -1029,7 +1031,7 @@ test('AC91 (f), G8d round 3, the cases beside it kept (every shown project unrea
   }
 });
 
-test('AC89 (a), G8d round 3: Waiting with the made-up project the desk can\'t draw (BAD_PR, NOT real) alone shown, read earlier in this opening and then failing (state 5; with no card and with its cards) — the empty lane exactly "Can\'t show when last read", in the unknown look, with no count; the strip "Kicked back · can\'t show when last read" in --t-label --ink2; "checked <age> ago"; above the lanes "✕ Can\'t read Alpha since HH:MM: <reason>", never "Can\'t show Alpha" (no ql:show: key); no small line; no "Nothing here", "none" or 0', async () => {
+test('AC89 (a), G8d round 3: Waiting with the made-up project the desk can\'t draw (BAD_PR, NOT real) alone shown, read earlier in this opening and then failing (state 5; with no card and with its cards) — the empty lane exactly "Can\'t show when last read", in the unknown look, with no count; the strip "Kicked back · can\'t show when last read" in the empty line\'s --t-row --ink2 (500 13 px from HD1, AC98); "checked <age> ago"; above the lanes "✕ Can\'t read Alpha since HH:MM: <reason>", never "Can\'t show Alpha" (no ql:show: key); no small line; no "Nothing here", "none" or 0', async () => {
   {
     for (const [where, state] of [['no card (G8D_OPENS)', () => openR3(R3.showLast)], ['its cards', () => open(cantShowLastState({ cards: true }), `#/waiting/${MIX_PROJECT}`, { later: true })]]) {
       const app = await state();

@@ -678,7 +678,7 @@ test('AC94 ("Before and around a link"): AC77\'s re-read before a section link, 
 // ---------------------------------------------------------------------------
 // Its look, its targets, its region
 
-test('AC94 ("Its look"; AC81; AC88): the head 600 12 px --ink, its count and each " · " --t-mono, " · " --ink2, a hairline under it; each question a board card, its title --t-row cut at three lines; the boxes in the sheet\'s form (10/12 px inside, a 12 px corner, 8 px apart, 36 px buttons); no soft box, no new colour, size or weight, every text at least 4.5:1 — in light and dark, at 360 and 414 px', async () => {
+test('AC94 ("Its look"; AC81; AC88): the head 600 15 px --ink (from HD1, AC98; 600 12 px before), its count and each " · " --t-mono, " · " --ink2, a hairline under it; each question a board card, its title --t-row cut at three lines; the boxes in the sheet\'s form (10/12 px inside, a 12 px corner, 8 px apart, 36 px buttons); no soft box, no new colour, size or weight, every text at least 4.5:1 — in light and dark, at 360 and 414 px', async () => {
   const b = busiestState();
   const app = await open(b, { store: seen(NOW + H, b.seed) });
   try {
@@ -693,7 +693,9 @@ test('AC94 ("Its look"; AC81; AC88): the head 600 12 px --ink, its count and eac
         const c = INK[theme];
         const at = `${theme}, ${w} px`;
         const h = L.get(head);
-        assert.deepEqual([h.size, h.weight, h.colour, h.decl('border-bottom')], ['12px', '600', c.ink, `1px solid ${c.line}`], `${at}: the head`);
+        // Rewritten in HD1 (forced: AC98 puts the section head, "Questions for you · <n>", at 600 15 px --ink;
+        // tests/desk/ac94-qw1-questions.test.mjs:696).
+        assert.deepEqual([h.size, h.weight, h.colour, h.decl('border-bottom')], ['15px', '600', c.ink, `1px solid ${c.line}`], `${at}: the head, 600 15 px (AC98)`);
         const [, dot, count] = head.children;
         assert.match(L.get(dot).raw('font'), /^400 11px\/1\.4 ⟦--mono\|/, `${at}: " · " in --t-mono`);
         assert.equal(L.get(dot).colour, c.ink2);
@@ -713,7 +715,11 @@ test('AC94 ("Its look"; AC81; AC88): the head 600 12 px --ink, its count and eac
         for (const el of findAll(sec, (e) => (e.children || []).some((x) => x.nodeType === 3 && String(x.text || '').trim()))) {
           const l = L.get(el);
           assert.ok([c.ink, c.ink2].includes(l.colour), `${at}: "${el.textContent.slice(0, 30)}" in ${l.colour}`);
-          assert.ok(['11px', '12px', '13px'].includes(l.size), `${at}: "${el.textContent.slice(0, 30)}" at ${l.size}`);
+          // Rewritten in HD1 (forced: the section's head, its title text among the section's texts, is 15 px from AC98;
+          // tests/desk/ac94-qw1-questions.test.mjs:716); narrowed in HD1's round 2 (the Reviewer's N2): 15 px for the head's
+          // title alone, so any other text at 15 px (a card's title) still fails.
+          const headTitle = el === head || (el.parent === head && el === head.children[0]);
+          assert.ok((headTitle ? ['15px'] : ['11px', '12px', '13px']).includes(l.size), `${at}: "${el.textContent.slice(0, 30)}" at ${l.size}${headTitle ? ' (the head\'s title)' : ''}`);
           assert.ok(['400', '500', '600'].includes(l.weight));
           let ground = null;
           for (let n = el; n && !ground; n = n.parent) { const g = L.get(n); const bgv = g && (g.decl('background') || g.decl('background-color')); if (bgv && /^#/.test(bgv)) ground = bgv.toLowerCase(); }

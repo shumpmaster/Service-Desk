@@ -125,7 +125,7 @@ test('AC91 (f): two lanes, "Waiting on you" and "Done · last 24 h", side by sid
   assert.doesNotMatch(flat, /lane-done[^{]*\{[^}]*(width|grid-column|flex)/, 'an empty Done never shrinks');
 });
 
-test('AC91 (f): with no kicked-back card, one quiet line in the ruling\'s words, "Kicked back · none" — "Kicked back" in --t-label --ink2, " · none" in --t-mono --ink2 — under the quiet lines and above the lanes, with no fold mark, no control, no hairline and no drop target', async () => {
+test('AC91 (f): with no kicked-back card, one quiet line in the ruling\'s words, "Kicked back · none" — "Kicked back" in --t-row --ink2 (from HD1, AC98; --t-label before), " · none" in --t-mono --ink2 — under the quiet lines and above the lanes, with no fold mark, no control, no hairline and no drop target', async () => {
   const app = await open(quietState());
   const undo = layout();
   try {
@@ -142,7 +142,9 @@ test('AC91 (f): with no kicked-back card, one quiet line in the ruling\'s words,
     for (const theme of THEMES) {
       const L = looks(app, theme);
       const c = INK[theme];
-      assert.deepEqual([L.get(label).size, L.get(label).weight, L.get(label).colour], ['11px', '500', c.ink2], `${theme}: "Kicked back" in --t-label --ink2`);
+      // Rewritten in HD1 (forced: AC98 puts the empty section's line, `.v2-kq`, on --t-row, 500 13 px, still --ink2, a step up
+      // and quieter than a full head; tests/desk/ac91-glance-waiting.test.mjs:145).
+      assert.deepEqual([L.get(label).size, L.get(label).weight, L.get(label).colour], ['13px', '500', c.ink2], `${theme}: "Kicked back" in --t-row --ink2 (AC98)`);
       assert.deepEqual([L.get(none).size, L.get(none).weight, L.get(none).colour], ['11px', '400', c.ink2], `${theme}: " · none" in --t-mono --ink2`);
       assert.match(L.get(none).family, /Plex Mono/);
       assert.match(L.get(none).raw('font'), /^400 11px\/1\.4 ⟦--mono\|/, `${theme}: the --t-mono role`);
@@ -183,7 +185,7 @@ test('AC91 (f), as Part A item 5: an unknown is said in words in the strip\'s li
 
 // AC91 (f) as amended after G2's reviews (the Reviewer's note 2, the Design reviewer's N3 and Q2): "none" alone is in
 // --t-mono, standing in the count's place; the words that are not a count are in --t-label --ink2, as "Kicked back" is.
-test('AC91 (f), amended: the empty strip\'s parts each in their role — " · " and "none" in --t-mono --ink2; "when last read", "not read yet" and "can\'t read" in --t-label --ink2, as "Kicked back" — in each state, in both themes; the words unchanged', async () => {
+test('AC91 (f), amended: the empty strip\'s parts each in their role — " · " and "none" in --t-mono --ink2; "when last read", "not read yet" and "can\'t read" in the line\'s role, --t-row --ink2 from HD1 (AC98), as "Kicked back" — in each state, in both themes; the words unchanged', async () => {
   assert.deepEqual([stripEmptyParts({}), stripEmptyParts({ unread: 'pending' }), stripEmptyParts({ unread: 'cant' })],
     [{ count: ' · none', words: '' }, { count: ' · ', words: 'not read yet' }, { count: ' · ', words: "can't read" }]);
   const state5 = oneProjectView({ name: 'Alpha', read: { read: 'cant-read', since: NOW }, lastSuccessAt: NOW, tz: 'America/Chicago' });
@@ -200,8 +202,10 @@ test('AC91 (f), amended: the empty strip\'s parts each in their role — " · " 
       const c = INK[theme];
       assert.match(L.get(kn).raw('font'), /^400 11px\/1\.4 ⟦--mono\|/, `${what}, ${theme}: " · " and "none" in --t-mono`);
       assert.equal(L.get(kn).colour, c.ink2);
+      // Rewritten in HD1 (forced: AC98 puts the empty section's line on --t-row, 500 13 px, --ink2, so its words that are not
+      // a count are 13 px; tests/desk/ac91-glance-waiting.test.mjs:204).
       for (const el of [byClass(s, 'v2-kl')[0], kw].filter(Boolean)) {
-        assert.deepEqual([L.get(el).size, L.get(el).weight, L.get(el).colour], ['11px', '500', c.ink2], `${what}, ${theme}: "${el.textContent}" in --t-label --ink2`);
+        assert.deepEqual([L.get(el).size, L.get(el).weight, L.get(el).colour], ['13px', '500', c.ink2], `${what}, ${theme}: "${el.textContent}" in --t-row --ink2 (AC98)`);
         assert.doesNotMatch(L.get(el).family, /Mono/, `${what}, ${theme}: "${el.textContent}" not in mono`);
       }
     }
@@ -251,7 +255,7 @@ test('AC91 (f), amended: the empty strip\'s parts each in their role — " · " 
 // out of age order with the other's (Alpha's pull request, Bravo's, Alpha's gate card by age), the kicks in another order
 // again: the strip goes by project in J7's order, the portfolio's last, then place (AC95; reading (p)), each card naming its
 // project and showing its place.
-test('AC91 (f), rewritten in QW1 and in QW2 (AC95): with kicked-back cards, the strip\'s head "Kicked back" (600 12 px ink) with its count (--t-mono) over a hairline, then its cards in one row, by project in J7\'s order, the portfolio\'s last, then in place order — not the newest first, nor by age across projects — each 200 px wide, naming its project after " · ", with its place, its reason and its button; the row scrolls sideways inside the strip, snapping to a card; a kicked-back question in the "Questions for you" section instead', async () => {
+test('AC91 (f), rewritten in QW1 and in QW2 (AC95): with kicked-back cards, the strip\'s head "Kicked back" (600 15 px ink from HD1, AC98; 600 12 px before) with its count (--t-mono) over a hairline, then its cards in one row, by project in J7\'s order, the portfolio\'s last, then in place order — not the newest first, nor by age across projects — each 200 px wide, naming its project after " · ", with its place, its reason and its button; the row scrolls sideways inside the strip, snapping to a card; a kicked-back question in the "Questions for you" section instead', async () => {
   const st = stripState();
   const app = await open(st, { store: looked(NOW - 5 * H, st.seed) });
   try {
@@ -284,7 +288,9 @@ test('AC91 (f), rewritten in QW1 and in QW2 (AC95): with kicked-back cards, the 
     for (const theme of THEMES) {
       const L = looks(app, theme);
       const c = INK[theme];
-      assert.deepEqual([L.get(head).size, L.get(head).weight, L.get(head).colour], ['12px', '600', c.ink], `${theme}: the head, 600 12 px ink`);
+      // Rewritten in HD1 (forced: AC98 puts a section head, the strip's "Kicked back" with cards among them, at 600 15 px --ink;
+      // tests/desk/ac91-glance-waiting.test.mjs:287).
+      assert.deepEqual([L.get(head).size, L.get(head).weight, L.get(head).colour], ['15px', '600', c.ink], `${theme}: the head, 600 15 px ink (AC98)`);
       const n = head.children[1];
       assert.deepEqual([L.get(n).size, L.get(n).weight, L.get(n).colour], ['11px', '400', c.ink2], `${theme}: its count in --t-mono`);
       assert.match(L.get(n).raw('font'), /^400 11px\/1\.4 ⟦--mono\|/, 'the --t-mono role');

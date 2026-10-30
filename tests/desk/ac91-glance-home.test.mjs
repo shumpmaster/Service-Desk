@@ -137,9 +137,11 @@ test('AC91 (a): on Home (`mix`), "<n> need you" takes --t-sheet (600 18 px) in i
         assert.deepEqual([L.get(d).size, L.get(d).weight, L.get(d).colour], ['12px', '500', c.ink], `${theme}: ${d.textContent}`);
         assert.equal(L.get(svgOf(d)).colour, c.ink, `${theme}: its icon in ink`);
       }
-      // The largest text under the title: the title (--t-title) is larger, every other text on Home smaller.
+      // The largest text under the title: the title is larger, every other text on Home smaller.
+      // Rewritten in HD1 (forced: AC98 draws a screen's title at 600 28 px, the owner's, no longer --t-title's 24 px;
+      // tests/desk/ac91-glance-home.test.mjs:142); the count keeps --t-sheet's 18 px, the largest text under it.
       const title = byClass(app.view, 'v2-title')[0];
-      assert.equal(L.get(title).size, '24px');
+      assert.equal(L.get(title).size, '28px');
       const home = byClass(app.view, 'v2-home')[0];
       const texts = findAll(home, (e) => e.tag && (e.children || []).some((x) => x.nodeType === 3 && String(x.text || x.textContent || '').trim()));
       assert.ok(texts.length > 20, 'Home\'s texts');

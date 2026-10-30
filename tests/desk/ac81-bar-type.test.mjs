@@ -130,10 +130,15 @@ test('AC81 (from stage 3): `p/<name>` opens the page\'s Overview, a tile\'s tap 
 // ---------------------------------------------------------------------------
 // Type, colour and the fonts, from the stylesheet and the files
 
-/** The pairs AC81 allows beside the tokens, where desk-v2.html's own CSS sets them (Plex Sans; then Plex Mono). */
-const PAIRS = { font: ['600 11', '400 11', '500 12', '400 12', '600 12', '600 13', '500 15', '600 15'], mono: ['500 11'] };
+/**
+ * The pairs AC81 allows beside the tokens, where desk-v2.html's own CSS sets them (Plex Sans; then Plex Mono); from HD1
+ * (AC98; AC81 as changed, the owner's answer "Bigger titles too", B), 600 28 and 600 20, the owner's titles, and in Plex
+ * Mono 400 12, a heading's time.
+ * Rewritten in HD1 (forced: AC81 as changed adds exactly these three pairs; tests/desk/ac81-bar-type.test.mjs:134 and :136).
+ */
+const PAIRS = { font: ['600 11', '400 11', '500 12', '400 12', '600 12', '600 13', '500 15', '600 15', '600 20', '600 28'], mono: ['500 11', '400 12'] };
 
-test('AC81: every font on the new screens is a token or one of the pairs desk-v2.html sets (frame 1\'s 400 11 px among them); the only sizes 24, 18, 15, 13, 12 and 11 px with 16 px for text boxes, the only weights 400, 500 and 600', () => {
+test('AC81: every font on the new screens is a token or one of the pairs desk-v2.html sets (frame 1\'s 400 11 px among them), from HD1 the owner\'s two titles\' pairs and Plex Mono 400 12 px; the only sizes 28, 24, 20, 18, 15, 13, 12 and 11 px with 16 px for text boxes, the only weights 400, 500 and 600', () => {
   const decls = [...V2.matchAll(/(?:^|[{;\s])(font|font-size|font-weight)\s*:\s*([^;{}]+?)\s*(?=;|})/g)].map((m) => [m[1], m[2].trim()]);
   assert.ok(decls.length > 40, `${decls.length} declarations`);
   for (const [prop, v] of decls) {
@@ -333,7 +338,11 @@ test('AC81 (stage 1a\'s build review, round 1, F1): no rule that reaches mockup 
   assert.deepEqual(offenders, [], 'element rules that would out-rank a single v2 class');
   // And the classes themselves set what the frames draw (AC80; AC81 as settled after round 1).
   const rule = (sel) => (rules.find((r) => r.sel === sel) || { body: '' }).body;
-  assert.match(rule('.v2-grp'), /font: var\(--t-label\)/, 'a group\'s name 500 11 px');
+  // Rewritten in HD1 (vacuous: `.v2-grp` still takes --t-label, but a group's name is its `.v2-gn`, which AC98 draws at 600
+  // 13 px; tests/desk/ac81-bar-type.test.mjs:336; the header plan's review, round 1, the Reviewer's N1): the font that wins on
+  // `.v2-gn`, the last rule whose selector list names it.
+  const won = (sel) => rules.filter((r) => r.sel.split(/\s*,\s*/).includes(sel)).map((r) => (/(?:^|;)\s*font:\s*([^;]+)/.exec(r.body) || [])[1]).filter(Boolean).at(-1);
+  assert.equal(won('.v2-gn').trim(), '600 13px/1.3 var(--font)', 'a group\'s name 600 13 px (AC98)');
   assert.match(rule('.v2-ql'), /font: var\(--t-small\)/, 'a quiet line 400 12 px');
   assert.match(rule('.v2-undo'), /font: var\(--t-label\)/, '"Undo" 500 11 px');
   assert.match(rule('.v2-more'), /font: var\(--t-label\)/, '"<n> more" 500 11 px');

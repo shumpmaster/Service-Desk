@@ -1,0 +1,1469 @@
+/* From stage 7 (S-001 AC88) every trial-view screen is drawn on mockup v2's tokens (the block at this file's
+   end): the rules below keep the layout of the screens no frame redraws, and every token they name resolves,
+   on mockup v2's ground, to one of AC81's (see "From stage 7" there). What follows describes the shared look
+   as it was drawn before; its token values are kept for AC48's and AC62's rules.
+
+   The MD sandbox's shared look (spec S-001, AC48 "The shared look"; AC42; AC62). One palette, each
+   colour with one meaning on every screen: coral the owner, blue an agent, green and red pass and
+   fail, purple a change to merge, amber a blocker, gold phase progress; from trial-view notes 2, one
+   colour per phase (on the phase boxes' stripes and the Timeline's bands, line and chips only) and
+   one per Timeline bullet; slate (the muted grey) is Technical's and a gap the agents fill (AC69).
+   Milestones are neutral. Colour never carries meaning alone: a word, an icon or a shape goes with
+   it. Hand-built CSS and SVG, the system font stack (no web font: the CSP forbids other origins),
+   light and dark. Loaded only under ?sandbox; every rule is scoped to html.sb.
+
+   AC62: one spacing scale, 4, 8, 12, 20 and 32 px (--s1 to --s5), and one type scale of seven roles
+   (--t-screen, --t-section, --t-item, --t-body, --t-meta, --t-quote, --t-code). Every margin, padding
+   and gap is 0 or one of the five, but the values marked "AC62:" with why; every font is a role. */
+
+html.sb {
+  --page: #eef0f2; --surf: #ffffff; --surf2: #e4e7ea; --ink: #0b0d10; --muted: #4b525b; --line: #c9cdd3; --soft: #8a919a; --tie: #c3c8cf;
+  --you: #d23c0f; --yous: #fbe4dc; --agent: #1d5bd6; --agents: #e1e9fa; --pass: #0f7a3a; --passs: #dcefe2; --passl: #a9d8b9;
+  --fail: #b8141d; --fails: #f9dfdf; --merge: #5b3cc4; --merges: #e8e2f8; --block: #9e5800; --blocks: #f6ead3;
+  --gold: #8a6a10; --golds: #f4ecd2; --idle: #b7bdc5; --focus: #1d5bd6; --on: #ffffff; --scrim: rgb(11 13 16 / .5);
+  --ph-disc: #0f766e; --ph-des: #9d2f7e; --ph-build: #5c6a10; --ph-launch: #7a5a48;
+  --run1: var(--muted); --run2: var(--gold); --run3: #7b828a; --run4: #7f8669; /* AC57 (draft 6): runs 3 and 4 neutral-tinted, none of AC48's 14; run 5 on as runs 3 and 4 in turn */
+  --shade0: #1d5bd6; --shade1: #5b8be6; --shade2: #0f3f9e; --shade3: #8fb0ee;
+  --you0: #d23c0f; --you1: #f07a50; --you2: #9c2a08; --you3: #f4a283;
+  --r: 6px; --rs: 4px; --track: .07em;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 20px; --s5: 32px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --t-screen: 800 1.45rem/1.2 var(--font);
+  --t-section: 800 .74rem/1.3 var(--font);
+  --t-item: 700 1rem/1.3 var(--font);
+  --t-body: 400 .94rem/1.5 var(--font);
+  --t-meta: 600 .78rem/1.35 var(--font);
+  --t-quote: 400 .9rem/1.45 var(--font);
+  --t-code: 500 .74rem/1.3 var(--mono);
+  --sb-dock-h: 88px; /* AC81: the bar at every screen's foot (60 px, 14 px above the foot, and a margin): the room every bubble keeps clear of it */
+  --rail: 28px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  html.sb:not([data-theme="light"]) {
+    --page: #0c0d0f; --surf: #16181c; --surf2: #101215; --ink: #f1f3f5; --muted: #a3a9b2; --line: #363b43; --soft: #6f7680; --tie: #3d434b;
+    --you: #ff6a3d; --yous: #3d1b10; --agent: #6ea0ff; --agents: #14223b; --pass: #3fb950; --passs: #112b19; --passl: #275f3a;
+    --fail: #ff6b6b; --fails: #3b1516; --merge: #a78bfa; --merges: #261d3d; --block: #e3a33b; --blocks: #33260c;
+    --gold: #c9b04f; --golds: #2c2410; --idle: #4a5059; --focus: #6ea0ff; --on: #0b0d10; --scrim: rgb(0 0 0 / .62);
+    --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
+    --run3: #8d8d77; --run4: #c3d0c3;
+    --shade0: #6ea0ff; --shade1: #9cbcff; --shade2: #3f74d8; --shade3: #c2d5ff;
+    --you0: #ff6a3d; --you1: #ff9a76; --you2: #d9481c; --you3: #ffc2ad;
+    color-scheme: dark;
+  }
+}
+html.sb[data-theme="dark"] {
+  --page: #0c0d0f; --surf: #16181c; --surf2: #101215; --ink: #f1f3f5; --muted: #a3a9b2; --line: #363b43; --soft: #6f7680; --tie: #3d434b;
+  --you: #ff6a3d; --yous: #3d1b10; --agent: #6ea0ff; --agents: #14223b; --pass: #3fb950; --passs: #112b19; --passl: #275f3a;
+  --fail: #ff6b6b; --fails: #3b1516; --merge: #a78bfa; --merges: #261d3d; --block: #e3a33b; --blocks: #33260c;
+  --gold: #c9b04f; --golds: #2c2410; --idle: #4a5059; --focus: #6ea0ff; --on: #0b0d10; --scrim: rgb(0 0 0 / .62);
+  --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
+  --run3: #8d8d77; --run4: #c3d0c3;
+  --shade0: #6ea0ff; --shade1: #9cbcff; --shade2: #3f74d8; --shade3: #c2d5ff;
+  --you0: #ff6a3d; --you1: #ff9a76; --you2: #d9481c; --you3: #ffc2ad;
+  color-scheme: dark;
+}
+
+html.sb, html.sb body { background: var(--page); color: var(--ink); }
+html.sb body { font: var(--t-body); max-width: 560px; margin: 0 auto; overflow-x: hidden;
+  padding: 0 16px 120px; /* AC62: the page's 16 px side gutter, and the room kept for the bottom bar */
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); /* AC62: the gutter with the safe areas */ }
+html.sb header#top, html.sb footer#foot { display: none; }
+html.sb main#view { display: block; }
+html.sb *, html.sb *::before, html.sb *::after { box-sizing: border-box; }
+/* Mockup v2's screens (`.v2`) set their own links and paragraphs (AC81): these two resets stop at them, with no weight added. */
+html.sb a:where(:not(.v2 *)) { color: inherit; text-underline-offset: 2px; } /* AC88: a link in its words' ink, underlined as mockup v2 underlines one */
+html.sb :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+html.sb p:where(:not(.v2 *)) { margin: 0; }
+/* AC88: bold inside any text is 600, mockup v2's (AC81: "600 for bold inside any of these"); no rule gives it weight. */
+html.sb :where(b, strong):where(:not(.v2 *)) { font-weight: 600; }
+.sb-screen, .sb-screen * { overflow-wrap: anywhere; word-break: break-word; min-width: 0; }
+.small { font: var(--t-meta); }
+.sb-muted { color: var(--muted); }
+.code { font: var(--t-code); color: var(--muted); white-space: normal; }
+.sb-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sb-screen { display: grid; gap: var(--s3); padding-bottom: var(--s4); --sb-clear: var(--sb-dock-h); }
+.sb-meta { font: var(--t-meta); color: var(--muted); }
+.sb-quote { font: var(--t-quote); } /* quoted record text (AC62); .sb-quote never takes the owner's coral (AC69) */
+.sb-src { display: block; font: var(--t-meta); color: var(--muted); }
+/* AC69: a gap the agents fill reads in slate, saying who fills it; coral (--you) is only for what waits on the owner. */
+.gap, .sb-meta.gap, .sb-began.gap, .sb-feeds.gap, .sb-unb-t.gap { color: var(--muted); }
+
+
+/* Headers */
+.sb-hdr { display: flex; gap: var(--s3); align-items: flex-start; padding: var(--s3) 0 0; }
+.sb-hdr h1 { margin: 0; font: var(--t-screen); }
+.sb-eyebrow { margin: 0; font: var(--t-section); letter-spacing: var(--track); color: var(--muted); }
+.sb-sub { margin: var(--s1) 0 0; color: var(--muted); font: var(--t-meta); }
+.sb-navs { display: flex; gap: var(--s2); flex: none; }
+.sb-back, .sb-prev, .sb-close { display: grid; place-items: center; min-width: 44px; min-height: 44px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surf); color: var(--ink); position: relative; cursor: pointer; padding: 0; }
+.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.sb-lead { margin: 0; font: var(--t-body); }
+.sb-h2 { margin: var(--s4) 0 0; font: var(--t-section); letter-spacing: var(--track); color: var(--muted); }
+.sb-stale { color: var(--block); font: var(--t-meta); margin: 0; }
+.sb-stale::before { content: "! "; }
+.sb-card { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3); margin: 0; }
+.sb-card > summary, details.sb-sec > summary { cursor: pointer; min-height: 44px; display: flex; gap: var(--s2); align-items: center; justify-content: space-between; flex-wrap: wrap; }
+
+/* The plain-circle icons (AC59, AC65, AC67): a neutral circle with an icon inside, never a colour of its own,
+   each with its words beside it. The gold ring is "next to reach"; the half-filled circle is work under way;
+   the empty dashed circle is "planned" or "still to come" (and "Idle" on the Team screen); the coral diamond
+   is what waits on the owner; the slate diamond is for the agents to file (AC69). */
+.sb-ic { display: inline-grid; place-items: center; flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--muted); background: var(--surf); color: var(--ink);
+  font: var(--t-code); font-size: 10px; /* AC62: a mark drawn as text is an icon, sized to its circle */ vertical-align: middle; position: relative; }
+.sb-ic.i-check::after { content: "✓"; }
+.sb-ic.i-pastcheck { border-color: var(--soft); color: var(--soft); }
+.sb-ic.i-pastcheck::after { content: "✓"; }
+.sb-ic.i-half::after { content: ""; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--ink); background: linear-gradient(90deg, var(--ink) 50%, transparent 50%); }
+.sb-ic.i-next { border: 3px solid var(--gold); }
+.sb-ic.i-planned { border-style: dashed; }
+.sb-ic.i-cross::after { content: "✕"; }
+.sb-ic.i-skip { border-color: var(--soft); color: var(--soft); }
+.sb-ic.i-skip::after { content: "–"; }
+.sb-ic.i-unrec { border-style: dashed; border-color: var(--soft); color: var(--soft); }
+.sb-ic.i-unrec::after { content: "?"; }
+.sb-ic.i-flag, .sb-ic.i-you { width: 11px; height: 11px; border-radius: 2px; transform: rotate(45deg); border: 0; margin: 0 var(--s1); }
+.sb-ic.i-flag { background: var(--muted); }
+.sb-ic.i-you { background: var(--you); }
+
+/* Folds (AC57, AC59, AC60, AC66): a real button, its state as its accessible state and a mark beside its words. */
+.sb-more { appearance: none; background: none; border: 0; padding: 0; margin: 0; color: inherit; cursor: pointer; text-align: left; display: inline-flex; gap: var(--s1); align-items: center; min-height: 44px; }
+.sb-more { font: var(--t-meta); color: var(--muted); }
+.sb-fmark { font: var(--t-meta); color: var(--muted); }
+
+/* The phase marker (AC68): under the project's name, the now phase in its colour, a tap to the Timeline at Now. */
+.ph-disc { --ph: var(--ph-disc); } .ph-des { --ph: var(--ph-des); } .ph-build { --ph: var(--ph-build); } .ph-launch { --ph: var(--ph-launch); } .ph-done { --ph: var(--idle); }
+
+/* Home's summary box and its bubble (AC54 (a); on AC82's tiles from stage 2, `.v2-tile`, below). Today's Home's own
+   rules, its groups, its two-column grid of cards and their "Latest" control, went at stage 7 (AC88), all but
+   `.sb-latest`'s first rule, which a member's page (AC49) still draws its "latest" lines with. */
+/* The summary (AC54 (a), 2026-10-15): its box always takes exactly three lines' height and hides
+   the lines after the third; the card holds the whole text. Nothing scrolls in it and nothing adds
+   an ellipsis: when the text runs past three lines, the third line fades at its end into the card's
+   background (--surf, in each theme). `overflow: clip` (where a browser has it) makes the box no
+   scroll container, so focus never scrolls the text in it. The box lets a tap through to the
+   card's link, except on the summary's own button and its bubble. Its role is the quoted record's
+   (AC62): .9rem at 1.45, three lines 4.35em. */
+.sb-sumbox { position: relative; pointer-events: none; }
+.sb-sumclip { position: relative; font: var(--t-quote); height: 4.35em; overflow: hidden; overflow: clip; }
+.sb-sumclip.over::after { content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1.45em; pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--surf) 85%); }
+.sb-sumclip:has(.sb-sum:focus-visible) { outline: 2px solid var(--focus); outline-offset: 1px; }
+.sb-sum { margin: 0; font: var(--t-quote); color: var(--ink); }
+.sb-sum.none { color: var(--muted); font-style: italic; }
+button.sb-sum { display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: none; font: var(--t-quote);
+  text-align: left; color: var(--ink); cursor: pointer; pointer-events: auto; }
+button.sb-sum:focus-visible { outline: none; }
+.sb-sumbox > .sb-bubble { pointer-events: auto; top: calc(100% + 4px); }
+.sb-sumbox > .sb-bubble.up { top: auto; bottom: calc(100% + 4px); }
+.sb-why { position: relative; z-index: 2; font: var(--t-meta); color: var(--muted); }
+.sb-why > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
+.sb-why p { margin: var(--s1) 0 0; }
+.sb-latest { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: var(--s1); min-width: 44px; min-height: 44px; padding: 0 var(--s2);
+  margin: -4px -4px -4px 0; /* AC62: an offset that keeps the 44 px target on the card's top row */
+  border: 1px solid var(--line); border-radius: var(--rs); background: var(--surf); color: var(--muted); font: var(--t-meta); cursor: pointer; }
+/* The bubble spans the group's grid (both columns), below the card's top row or above the card, so it is never clipped.
+   Every bubble (AC54, AC55, 2026-10-16) is held to the viewport's height less a margin at each end, and
+   clear of the bar at every screen's foot (--sb-clear, set on the screens below; AC81): taller content
+   scrolls up and down inside it, never sideways, and its top row, with "Close", stays in view (sticky). */
+.sb-bubble { position: absolute; z-index: 8; top: 48px; background: var(--surf); color: var(--ink); border: 1px solid var(--ink); border-radius: var(--r);
+  padding: var(--s2) var(--s3) var(--s3); box-shadow: var(--shadow);
+  max-height: calc(100vh - var(--sb-clear, 0px) - 16px); max-height: calc(100dvh - var(--sb-clear, 0px) - 16px);
+  overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+.sb-bubble.up { top: auto; bottom: calc(100% + 4px); }
+.sb-bubble-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); position: sticky; top: -8px; background: var(--surf); }
+.sb-bubble-t { margin: var(--s1) 0 0; font: var(--t-quote); }
+/* Held: taller than the room, or where the page cannot scroll it into the room, the bubble is held
+   in the viewport itself, inside the page's gutters, a margin from the top and clear of the bottom bar. */
+.sb-bubble.held, .sb-sumbox > .sb-bubble.held, .sb-linebox > .sb-bubble.held {
+  position: fixed; top: 8px; bottom: auto; left: max(16px, calc(50% - 264px)); right: max(16px, calc(50% - 264px)); }
+/* A sheet or a bubble the owner opened may come in, gently, without reduced motion; nothing else moves (AC57's "Still and plain"). */
+@media (prefers-reduced-motion: no-preference) {
+  .sb-bubble { animation: sb-pop .12s ease-out; }
+  @keyframes sb-pop { from { opacity: .4; transform: translateY(-4px); } }
+}
+.circ { width: 16px; height: 16px; flex: none; }
+.circ circle { fill: none; stroke: var(--idle); stroke-width: 1.6; }
+.circ.tick circle { fill: var(--pass); stroke: var(--pass); }
+.circ.tick path { fill: none; stroke: var(--on); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.circ.ring circle { stroke: var(--gold); stroke-width: 2.4; }
+.circ.hatch circle { stroke: var(--muted); stroke-dasharray: 2 2; }
+.circ.hatch path { stroke: var(--muted); stroke-width: 1.2; }
+.sb-ball { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s1); font: var(--t-meta); }
+.sb-ball li { display: flex; gap: var(--s2); align-items: center; }
+.sb-ball li.who-you { color: var(--ink); } /* AC88: the words in ink; vermilion only on the ◆ beside them (AC81) */
+.sb-v5 { color: var(--muted); font: var(--t-meta); margin: var(--s3) 0; }
+/* Home has no bottom band (AC48, 2026-10-16): the owner dropped the "Tell your Chief of Staff…" bar it held. */
+
+/* The Home tile's old phases (AC65, AC58) gave way to AC82's timeline at stage 2, and their rules went at stage 7 (AC88). */
+
+/* The old Status screen's branch drawing, its phase boxes and its pill and rule signs (AC57, AC58, AC65, AC42), the old
+   Timeline's runs and milestones (AC59, AC60), the AC43 marker and the accepted-era Queue, answer and "Done today"
+   rules went at stage 8 (AC44, step 4), when the desk became `/`: nothing draws them. */
+
+/* From stage 1a the project screens' own bottom bar is gone (AC81, "Until stage 3"): the bar Home ·
+   Waiting · Plan (.v2-bar, below) is the only bar at every screen's foot, and Status, Timeline and Team
+   carry the row Status · Timeline · Team · Waiting at their top (.v2-row). */
+
+/* Buttons */
+.sb-btn { display: flex; gap: var(--s2); align-items: center; justify-content: center; min-height: 44px; padding: var(--s2) var(--s3); border-radius: var(--rs); text-decoration: none;
+  font: var(--t-item); background: var(--surf); border: 1px solid var(--line); color: var(--ink); cursor: pointer; }
+.sb-dl dt { font: var(--t-item); margin-top: var(--s2); } .sb-dl dd { margin: 0; }
+
+/* A key's line and its entries (AC57's marks, beside their words). */
+.sb-keyl { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s3); font: var(--t-meta); color: var(--muted); }
+.sb-keye { display: inline-flex; align-items: center; gap: 6px; /* AC62: the gap between a mark and its word */ }
+/* AC70: why a run began, beside the curve where it starts. */
+.sb-began { display: grid; gap: var(--s1); border-left: 2px solid var(--rk, var(--run2)); padding-left: var(--s3); font: var(--t-meta); }
+/* "Run <k> began" in its run's own shade (AC70, draft 6); a "not recorded" reason stays slate (AC69). */
+.sb-began.run2 { --rk: var(--run2); } .sb-began.run3 { --rk: var(--run3); } .sb-began.run4 { --rk: var(--run4); }
+.sb-began-h, .sb-began-k { color: var(--rk, var(--run2)); }
+.sb-began-h { font: var(--t-section); letter-spacing: var(--track); }
+.sb-began-p { font: var(--t-body); }
+p.sb-began.gap { border-left: 0; padding-left: 0; font: var(--t-meta); }
+
+/* Queue (AC52, as AC66 changed it): each group a title, a count and a neutral mark; a group holding
+   anything that waits on the owner shows the coral diamond, "needs you". Rows that wait on the owner
+   keep the coral edge (AC69); every other mark and edge is the muted grey. */
+.sb-gcount { margin-left: auto; color: var(--muted); }
+.sb-qlist { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.sb-qlist > li > a { display: inline-flex; align-items: center; min-height: 24px; max-width: 100%; } /* AC88: a link alone on its row, a target at least 24 px tall (WCAG 2.5.8) */
+.sb-qrow { border-left: 4px solid var(--muted); border-radius: var(--rs); background: var(--page); color: var(--ink); }
+.sb-qrow.g-decisions { border-left-color: var(--ink); } /* AC88: what waits on the owner, the heavier edge, never vermilion (AC81) */
+.sb-qrow > a { display: grid; gap: var(--s1); padding: var(--s2) var(--s3); min-height: 44px; text-decoration: none; }
+.sb-qt { font: var(--t-item); }
+.sb-unb-t { font: var(--t-meta); } /* the owner's Team tile: a Next / Then / Later line's "· unblocks …", at the line's own size */
+.sb-tlink { font: var(--t-meta); text-decoration: underline; color: var(--ink); display: inline-flex; align-items: center; min-height: 24px; } /* AC88: a target at least 24 px tall (WCAG 2.5.8) */
+
+/* The response sheet, and the Team's sheets */
+.sb-scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 5; }
+.sb-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; max-height: 88vh; overflow-y: auto; overflow-x: hidden; background: var(--page);
+  border-top: 1px solid var(--line); border-radius: var(--r) var(--r) 0 0; max-width: 560px; margin: 0 auto;
+  padding: var(--s2) 16px var(--s5); /* AC62: the page's 16 px side gutter */ }
+@media (prefers-reduced-motion: no-preference) {
+  .sb-sheet { animation: sb-up .18s ease-out; }
+  @keyframes sb-up { from { transform: translateY(16px); opacity: .6; } }
+}
+.sb-sheet-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); position: sticky; top: -8px; background: var(--page); padding: var(--s1) 0; z-index: 1; }
+.sb-sheet-top .sb-grab { margin: 0 0 0 calc(50% - 20px); /* AC62: an offset that centres the grab handle */ }
+.sb-grab { display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: var(--s1) auto var(--s3); }
+/* AC74 (2026-10-19): the tap's line, "Opened from a notification" or "That no longer waits on you". */
+.sb-tap { margin: var(--s2) 0; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: var(--r); background: var(--surf); color: var(--ink); font: var(--t-item); } /* AC88: its words in ink, never the accepted view's `.gone` amber (style.css) */
+.sb-sheet-t { margin: var(--s1) 0; font: var(--t-screen); }
+.sb-sec { margin: var(--s3) 0; }
+.sb-sec h3 { margin: 0 0 var(--s1); font: var(--t-section); letter-spacing: var(--track); color: var(--muted); }
+.sb-sec p { margin: 0 0 var(--s1); }
+.sb-sec blockquote { margin: var(--s1) 0; padding: var(--s2) var(--s3); border-left: 3px solid var(--tie); background: var(--page); font: var(--t-quote); }
+.sb-tag { display: inline-block; font: var(--t-section); letter-spacing: var(--track); border: 1px solid currentColor; border-radius: var(--rs); color: var(--muted);
+  padding: 1px 6px; /* AC62: a tag's inner padding, as drawn */ }
+.sb-warn { color: var(--block); background: var(--blocks); border: 1px solid var(--block); border-radius: var(--r); padding: var(--s2); font: var(--t-meta); }
+.sb-record { background: var(--page); border-radius: var(--r); padding: var(--s3); font: var(--t-quote); }
+.sb-record pre, .sb-quote { white-space: pre-wrap; font: var(--t-code); background: var(--page); padding: var(--s2); border-radius: var(--rs); overflow-wrap: anywhere; }
+.sb-sheet .sb-quote { background: var(--surf2); } /* AC88: on a sheet (its ground --page), a quoted record keeps a panel of its own */
+
+/* A run's band (AC59, AC60): pinned while its stretch scrolls by, in its phase colour. */
+.sb-pband { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; background: var(--page);
+  margin-left: -26px; /* AC62: the band spans the line's room */ padding: var(--s2) 0 var(--s2) var(--s1); border-bottom: 2px solid var(--ph); color: var(--ph); }
+.sb-mkw { font: var(--t-meta); }
+.sb-mkw.sb-why { z-index: auto; }
+/* From stage 3 (AC84; AC60 and AC48, changed): the Timeline's Technical, Context and Why are small grey words
+   (.v2-bl, below); their own colours (--b-tech, --b-ctx, --b-why) and boxed, upper-case labels are gone. */
+.sb-para { display: block; }
+
+/* Team (AC49, as AC67 changed its cards): each member's state in a plain circle with its word, no light and no glow. */
+.sb-you { display: block; background: var(--surf); border: 1px solid var(--line); border-left: 4px solid var(--tie); border-radius: var(--r); padding: var(--s3); margin: var(--s3) 0; }
+.sb-you-a { display: block; text-decoration: none; min-height: 44px; }
+.sb-you-st { margin: var(--s1) 0; font: var(--t-item); display: flex; align-items: center; gap: var(--s2); }
+.sb-you-st.you { color: var(--ink); } /* AC88: the words in ink, the ◆ before them vermilion (AC81) */
+.sb-next { list-style: none; margin: var(--s2) 0 0; padding: 0; display: grid; gap: var(--s2); }
+.sb-next li { display: grid; grid-template-columns: 52px 1fr; gap: var(--s2); align-items: start; font: var(--t-body); border-top: 1px solid var(--line); padding-top: var(--s2); }
+.sb-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+/* AC67, changed after MD3 (P-001-audit-team.md, B): the idle members folded into one line, "<n> idle ›", a 44 px control;
+   opened, their cards below it, with AC90's line at the list's head where they share a reason. */
+.sb-idle { display: flex; align-items: center; width: 100%; min-height: 44px; margin-top: var(--s2); font: var(--t-meta); color: var(--ink); text-align: left; }
+.sb-idlelist { display: grid; gap: var(--s2); }
+.sb-tile { display: grid; gap: var(--s1); align-content: start; background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3) var(--s2); min-height: 92px; }
+.sb-tile-n { display: flex; gap: var(--s2); align-items: center; min-height: 44px; text-decoration: none; font: var(--t-item); }
+.sb-tile-n strong { font: var(--t-item); }
+.sb-tile-st { font: var(--t-meta); }
+.sb-feeds { font: var(--t-meta); }
+.sb-feeds b { font: var(--t-meta); }
+.sb-resp { display: grid; gap: 0; }
+.sb-resp .sb-card { margin: var(--s2) 0; padding: var(--s1) var(--s3); }
+.sb-latest { flex-basis: 100%; }
+.sb-upnext { background: var(--surf); border: 1px dashed var(--line); border-radius: var(--r); padding: var(--s2) var(--s3); margin: var(--s2) 0; }
+.sb-upnext ul { margin: var(--s1) 0 0; padding-left: var(--s4); font: var(--t-body); }
+.sb-branch { display: flex; align-items: flex-start; gap: var(--s2); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: 0 var(--s3) 0 var(--s1); }
+.sb-brows { list-style: none; margin: 0; padding: 0; flex: 1 1 auto; }
+.sb-brow { min-height: 44px; display: flex; align-items: center; }
+.sb-brow a { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s2); padding: var(--s1) 0; text-decoration: none; font: var(--t-meta); flex: 1; min-height: 44px; align-content: center; }
+.sb-brow.now .sb-brow-t { font-weight: 600; } /* AC88: mockup v2's weights are 400, 500 and 600 (AC81) */
+.sb-brow-lane { font: var(--t-code); color: var(--muted); }
+/* AC49, changed after MD3 (stage 4): a Chief of Staff helper or end row's piece, " · <doing>", cut at one line, faded at
+   its end into the log's ground when cut (the browser measures it); the whole is in the row's summary sheet. */
+.sb-brow-of { position: relative; flex: 1 1 100%; min-width: 0; max-height: 1.35em; overflow: hidden; overflow: clip; overflow-wrap: anywhere; }
+.sb-brow-of.over::after { content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1.35em; pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--surf) 85%); }
+.sb-nowtag { font: var(--t-section); letter-spacing: var(--track); color: var(--ink); border: 1px solid var(--tie); border-radius: var(--rs);
+  padding: 1px 6px; /* AC62: a tag's inner padding */ }
+/* The running log's drawing (AC49): one SVG behind the rows; straight vertical lines, a curve out and back, shades per lane. */
+.sb-lanes { flex: none; display: block; overflow: visible; }
+.sb-lanes .main { stroke: var(--muted); stroke-width: 1.6; fill: none; }
+.sb-lanes .lane { stroke-width: 2; fill: none; }
+.sb-lanes .stub { stroke-dasharray: 2 3; }
+.sb-lanes .shade-0 { stroke: var(--shade0); } .sb-lanes .shade-1 { stroke: var(--shade1); }
+.sb-lanes .shade-2 { stroke: var(--shade2); } .sb-lanes .shade-3 { stroke: var(--shade3); }
+.sb-lanes.fam-you .shade-0 { stroke: var(--you0); } .sb-lanes.fam-you .shade-1 { stroke: var(--you1); }
+.sb-lanes.fam-you .shade-2 { stroke: var(--you2); } .sb-lanes.fam-you .shade-3 { stroke: var(--you3); }
+.sb-lanes .dot { stroke: var(--surf); stroke-width: 1.5; }
+.sb-lanes .dot.shade-main { fill: var(--muted); }
+.sb-lanes .dot.shade-0 { fill: var(--shade0); } .sb-lanes .dot.shade-1 { fill: var(--shade1); }
+.sb-lanes .dot.shade-2 { fill: var(--shade2); } .sb-lanes .dot.shade-3 { fill: var(--shade3); }
+.sb-lanes.fam-you .dot.shade-0 { fill: var(--you0); } .sb-lanes.fam-you .dot.shade-1 { fill: var(--you1); }
+.sb-lanes.fam-you .dot.shade-2 { fill: var(--you2); } .sb-lanes.fam-you .dot.shade-3 { fill: var(--you3); }
+.sb-lanes .ring { fill: none; stroke: var(--agent); stroke-width: 2; }
+/* From stage 7 (AC49 with the owner's ruling, decisions/questions/P-001-desk-v2-lanes.md, A: "the work lanes take three
+   greys from the new look and each lane also gets its own line style (solid, dashed, dotted), so every lane looks
+   different at a glance in light and dark"): the four lanes, in turn, --ink solid, --ink2 dashed, --ink3 dotted and
+   --ink dashed (--shade0 to --shade3 and --you0 to --you3, below), so any two of them differ in their line, or in a
+   grey far apart from the other. A lane's curve out and back takes its line; its dots take its form: filled on a
+   solid lane, a ring on a dashed one, a dotted ring on a dotted one. The short dashed stub, a piece still under way
+   (AC49), stays in its lane's grey and is drawn as no lane, curve or dot is: twice a lane's weight (4 px), in short
+   square dashes (1.5 on, 2.5 off), so it reads at a glance on a solid, dashed or dotted lane (stage 7's design
+   review, round 2, R2-1). */
+.sb-lanes .lane.shade-1, .sb-lanes .lane.shade-3 { stroke-dasharray: 6 4; }
+.sb-lanes .lane.shade-2 { stroke-dasharray: 0.01 4; stroke-linecap: round; }
+.sb-lanes .lane.stub { stroke-width: 4; stroke-dasharray: 1.5 2.5; stroke-linecap: butt; }
+.sb-lanes .dot.shade-1, .sb-lanes .dot.shade-2, .sb-lanes .dot.shade-3,
+.sb-lanes.fam-you .dot.shade-1, .sb-lanes.fam-you .dot.shade-2, .sb-lanes.fam-you .dot.shade-3 { fill: var(--surf); stroke-width: 1.8; }
+.sb-lanes .dot.shade-1 { stroke: var(--shade1); } .sb-lanes .dot.shade-3 { stroke: var(--shade3); }
+.sb-lanes .dot.shade-2 { stroke: var(--shade2); stroke-dasharray: 0.01 2.6; stroke-linecap: round; }
+.sb-lanes.fam-you .dot.shade-1 { stroke: var(--you1); } .sb-lanes.fam-you .dot.shade-3 { stroke: var(--you3); }
+.sb-lanes.fam-you .dot.shade-2 { stroke: var(--you2); }
+.sb-brow-lane.shade-0, .sb-brow-lane.shade-1, .sb-brow-lane.shade-2, .sb-brow-lane.shade-3 { color: var(--ink); }
+.sb-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); margin: var(--s2) 0; }
+.sb-kpi { display: grid; gap: var(--s1); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2) var(--s3); background: var(--surf2); }
+.sb-kpi strong { font: var(--t-item); }
+.sb-kv { list-style: none; margin: var(--s2) 0; padding: 0; display: grid; gap: var(--s1); font: var(--t-body); }
+
+@media (forced-colors: active) {
+  .circ.tick circle, .sb-ic { forced-color-adjust: none; }
+}
+
+/* "Your last action" (AC55). */
+.sb-last { border-left: 3px solid var(--you); background: var(--surf); border-radius: var(--rs); padding: var(--s2) var(--s3); margin: 0; }
+.sb-last-t { margin: 0; font: var(--t-quote); }
+/* A ruling's line 1 (AC55, AC52; 2026-10-16): at most three lines in its box, the rest hidden, never
+   scrolled, no ellipsis; past three lines the third fades at its end into the row's background
+   (--surf, in each theme) and the box is a button opening the whole line in a bubble. A shorter line
+   takes its own height. The time and code follow the box, outside it. Its role is the quoted record's
+   (AC62): .9rem at 1.45, three lines 4.35em. */
+.sb-linebox { position: relative; }
+.sb-lineclip { position: relative; font: var(--t-quote); max-height: 4.35em; overflow: hidden; overflow: clip; }
+.sb-lineclip.over { height: 4.35em; } /* the button is exactly the three lines it shows */
+.sb-lineclip.over::after { content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1.45em; pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--surf) 85%); }
+.sb-lineclip:has(.sb-line:focus-visible) { outline: 2px solid var(--focus); outline-offset: 1px; }
+button.sb-line { display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: none; font: var(--t-quote);
+  text-align: left; color: var(--ink); cursor: pointer; }
+button.sb-line:focus-visible { outline: none; }
+.sb-linebox > .sb-bubble { top: calc(100% + 4px); left: -4px; right: -4px; }
+.sb-linebox > .sb-bubble.up { top: auto; bottom: calc(100% + 4px); }
+.sb-linebox + .sb-line-m { display: block; } /* clipped: the mark, time and code start their own line */
+.sb-bubble-note { position: sticky; bottom: -12px; margin: var(--s2) -12px -12px; /* AC62: the notice spans the bubble's padding */ padding: var(--s2) var(--s3); background: var(--surf); border-top: 1px solid var(--line);
+  font: var(--t-meta); }
+/* The bar Home · Waiting · Plan is fixed at the foot of every screen (AC81): every bubble keeps clear of
+   it (--sb-clear, on .sb-screen above). */
+.sb-last-l { font: var(--t-section); letter-spacing: var(--track); text-transform: uppercase; color: var(--you); }
+.sb-last .sb-why { font: var(--t-meta); }
+.sb-last a.code { text-decoration: underline; }
+
+/* The rebuilt detail views (AC55): Time asked, Agents, the v2.5 reduced view, and the record notes (AC68), in the shared look. */
+.sb-asks, .sb-sessions, .sb-tlx { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.sb-wait-b { display: grid; gap: var(--s1); padding: var(--s2) var(--s3); }
+.sb-ask { display: grid; gap: var(--s1); background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2) var(--s3); }
+.sb-ask.open { border-left: 4px solid var(--ink); } /* AC88: an open card the heavier edge, its state in words; never vermilion (AC81) */
+.sb-sess { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s1) var(--s3); }
+.sb-sess > details > summary { cursor: pointer; min-height: 44px; display: grid; gap: var(--s1); align-content: center; }
+.sb-sess-h { display: flex; gap: var(--s2); align-items: center; }
+.sb-usage { margin: var(--s1) 0 var(--s2); padding-left: var(--s3); }
+.sb-tlx-ev { list-style: none; margin: var(--s2) 0 0; padding: 0; display: grid; gap: var(--s2); }
+.sb-tlx-e { display: grid; gap: var(--s1); }
+.sb-axis { display: block; width: 100%; height: 8px; }
+.sb-axis .track { fill: var(--line); }
+.sb-axis .bar { fill: var(--agent); }
+.sb-axis .bar.card { fill: var(--ink); } /* AC88: a card's span in ink, a session's in the agents' grey; each says which in words */
+.sb-axis .bar.open { opacity: .6; }
+
+.sb-btn.small { min-height: 44px; font: var(--t-meta); margin: var(--s2) 0; }
+
+/* Notifications (AC75, AC77, AC78; 2026-10-18): the "Notifications" control, "GitHub Actions this
+   month" and the Queue's "Asked in your session", in the shared look and its scales. */
+html.sb .sb-notify { margin: var(--s2) 0; display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+html.sb .sb-notify > p { margin: 0; font: var(--t-body); }
+html.sb .sb-notify .sb-value { flex: 1 1 100%; max-width: 100%; margin: 0; padding: var(--s2); white-space: pre-wrap; word-break: break-all; font: var(--t-code);
+  background: var(--surf2); border: 1px solid var(--line); border-radius: var(--rs); }
+html.sb .sb-steps { flex: 1 1 100%; margin: 0; padding-left: var(--s4); font: var(--t-body); }
+html.sb .sb-notify-line, html.sb .sb-actions-usage { margin: var(--s3) 0 0; }
+html.sb .sb-h3 { margin: 0 0 var(--s1); font: var(--t-item); }
+html.sb .sb-actions-usage p { margin: var(--s1) 0; }
+html.sb .sb-actions-bar { display: block; width: 100%; height: 12px; margin: var(--s1) 0; accent-color: var(--agent); }
+
+/* A note clipped to two lines (AC24's estimate notes): the button exactly the two lines it shows. */
+html.sb .sb-lineclip.two { max-height: 2.7em; }
+html.sb .sb-lineclip.two.over { height: 2.7em; }
+
+/* ===========================================================================================
+   Desk mockup v2 (spec S-001, AC80 and AC81; docs/design/mockups/desk-v2.html), from stage 1a:
+   the bar Home · Waiting · Plan, the project screens' top row, the board and its sheets. Every
+   rule below is scoped to `.v2` (or html.v2-page, the ground every trial-view screen is drawn on from
+   stage 7). From stage 7 (AC88) the screens no frame redraws are on these tokens too, through the
+   names their rules above use ("From stage 7", below): no screen mixes the old look with the new.
+
+   AC81: IBM Plex, served by the desk itself (AC42: no font from another origin), IBM's own files,
+   unchanged, from @ibm/plex-sans 1.1.0 and @ibm/plex-mono 2.5.0: the Latin1 and Pi subsets of
+   fonts/split/woff2/, each with the unicode-range IBM's own CSS beside it gives, under the SIL Open
+   Font License 1.1 (fonts/LICENSE.txt). ◆, ✕, ▸ and ⇅, which neither subset holds, are inline SVG
+   icons (sandbox.js, V2_ICONS), never text. Until a file has loaded the text shows in the fallback
+   stack the mockup names.
+   =========================================================================================== */
+@font-face { font-family: "IBM Plex Sans"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("fonts/IBMPlexSans-Regular-Latin1.woff2") format("woff2");
+  unicode-range: U+0000, U+000D, U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044, U+20AC, U+2122, U+2212, U+FB01-FB02; }
+@font-face { font-family: "IBM Plex Sans"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("fonts/IBMPlexSans-Regular-Pi.woff2") format("woff2");
+  unicode-range: U+0E3F, U+2000-200D, U+2015, U+2028-2029, U+202F, U+2032-2033, U+2070, U+2074-2079, U+2080-2089, U+2113, U+2116, U+2126, U+212E, U+2150-2151, U+2153-215E, U+2190-2199, U+21A9-21AA, U+21B0-21B3, U+21B6-21B7, U+21BA-21BB, U+21C4, U+21C6, U+2202, U+2206, U+220F, U+2211, U+2215, U+221A, U+221E, U+222B, U+2248, U+2260, U+2264-2265, U+25CA, U+2713, U+274C, U+2B0E-2B11, U+ECE0, U+EFCC, U+FEFF, U+FFFD; }
+@font-face { font-family: "IBM Plex Sans"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("fonts/IBMPlexSans-Medium-Latin1.woff2") format("woff2");
+  unicode-range: U+0000, U+000D, U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044, U+20AC, U+2122, U+2212, U+FB01-FB02; }
+@font-face { font-family: "IBM Plex Sans"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("fonts/IBMPlexSans-Medium-Pi.woff2") format("woff2");
+  unicode-range: U+0E3F, U+2000-200D, U+2015, U+2028-2029, U+202F, U+2032-2033, U+2070, U+2074-2079, U+2080-2089, U+2113, U+2116, U+2126, U+212E, U+2150-2151, U+2153-215E, U+2190-2199, U+21A9-21AA, U+21B0-21B3, U+21B6-21B7, U+21BA-21BB, U+21C4, U+21C6, U+2202, U+2206, U+220F, U+2211, U+2215, U+221A, U+221E, U+222B, U+2248, U+2260, U+2264-2265, U+25CA, U+2713, U+274C, U+2B0E-2B11, U+ECE0, U+EFCC, U+FEFF, U+FFFD; }
+@font-face { font-family: "IBM Plex Sans"; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("fonts/IBMPlexSans-SemiBold-Latin1.woff2") format("woff2");
+  unicode-range: U+0000, U+000D, U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044, U+20AC, U+2122, U+2212, U+FB01-FB02; }
+@font-face { font-family: "IBM Plex Sans"; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("fonts/IBMPlexSans-SemiBold-Pi.woff2") format("woff2");
+  unicode-range: U+0E3F, U+2000-200D, U+2015, U+2028-2029, U+202F, U+2032-2033, U+2070, U+2074-2079, U+2080-2089, U+2113, U+2116, U+2126, U+212E, U+2150-2151, U+2153-215E, U+2190-2199, U+21A9-21AA, U+21B0-21B3, U+21B6-21B7, U+21BA-21BB, U+21C4, U+21C6, U+2202, U+2206, U+220F, U+2211, U+2215, U+221A, U+221E, U+222B, U+2248, U+2260, U+2264-2265, U+25CA, U+2713, U+274C, U+2B0E-2B11, U+ECE0, U+EFCC, U+FEFF, U+FFFD; }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("fonts/IBMPlexMono-Regular-Latin1.woff2") format("woff2");
+  unicode-range: U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044, U+20AC, U+2122, U+2212, U+FB01-FB02; }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("fonts/IBMPlexMono-Regular-Pi.woff2") format("woff2");
+  unicode-range: U+03C0, U+0E3F, U+2000-200D, U+2010-2012, U+2015, U+2028-2029, U+202F, U+2032-2033, U+203E, U+205F, U+2070, U+2074-2079, U+2080-2089, U+2113, U+2116, U+2126, U+212E, U+2150-2151, U+2153-215E, U+2190-2199, U+21A9-21AA, U+21B0-21B3, U+21B6-21B7, U+21BA-21BB, U+21C4, U+21C6, U+2202, U+2206, U+220F, U+2211, U+2215, U+2219-221A, U+221E, U+222B, U+2236, U+2248, U+2260, U+2264-2265, U+2400-2421, U+2500-259F, U+25CA, U+2713, U+274C, U+2B0E-2B11, U+3000, U+FEFF, U+FFFD; }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("fonts/IBMPlexMono-Medium-Latin1.woff2") format("woff2");
+  unicode-range: U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044, U+20AC, U+2122, U+2212, U+FB01-FB02; }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("fonts/IBMPlexMono-Medium-Pi.woff2") format("woff2");
+  unicode-range: U+03C0, U+0E3F, U+2000-200D, U+2010-2012, U+2015, U+2028-2029, U+202F, U+2032-2033, U+203E, U+205F, U+2070, U+2074-2079, U+2080-2089, U+2113, U+2116, U+2126, U+212E, U+2150-2151, U+2153-215E, U+2190-2199, U+21A9-21AA, U+21B0-21B3, U+21B6-21B7, U+21BA-21BB, U+21C4, U+21C6, U+2202, U+2206, U+220F, U+2211, U+2215, U+2219-221A, U+221E, U+222B, U+2236, U+2248, U+2260, U+2264-2265, U+2400-2421, U+2500-259F, U+25CA, U+2713, U+274C, U+2B0E-2B11, U+3000, U+FEFF, U+FFFD; }
+
+/* AC81: mockup v2's tokens (desk-v2.html:18-66), light, then dark: following the phone's setting
+   (prefers-color-scheme), with no switch on the desk (C, stage 7's AC88). Vermilion (--you) only for
+   what needs the owner; --ok, --bad and --gold for pass, fail and next to reach; the four phase
+   colours, each always with its phase's name; --ink2 the agents' grey. */
+html.sb .v2, html.sb.v2-page {
+  --bg: #ffffff; --bg2: #f7f7f8; --card: #fbfbfb; --chip: #f1f1f3; --line: #e7e7ea; --line2: #d6d6db;
+  --ink: #18191c; --ink2: #5c5f66; --ink3: #6a6d75;
+  --you: #c9380c; --on-you: #ffffff; --ok: #12733a; --bad: #b3162a; --gold: #8a6a10;
+  --ph-disc: #0f766e; --ph-des: #9d2f7e; --ph-build: #5c6a10; --ph-launch: #7a5a48;
+  --shadow: 0 8px 28px rgb(24 25 28 / .12), 0 1px 3px rgb(24 25 28 / .08); --scrim: rgb(24 25 28 / .32);
+  --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --t-title: 600 24px/1.2 var(--font);
+  --t-sheet: 600 18px/1.3 var(--font);
+  --t-lead: 400 15px/1.45 var(--font);
+  --t-row: 500 13px/1.35 var(--font);
+  --t-body: 400 13px/1.45 var(--font);
+  --t-small: 400 12px/1.4 var(--font);
+  --t-label: 500 11px/1.35 var(--font);
+  --t-mono: 400 11px/1.4 var(--mono);
+  --t-input: 400 16px/1.4 var(--font);
+  --focus: var(--ink);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  html.sb:not([data-theme="light"]) .v2, html.sb.v2-page:not([data-theme="light"]) {
+    --bg: #0f1012; --bg2: #141517; --card: #17181b; --chip: #212226; --line: #26282c; --line2: #34363c;
+    --ink: #ecedef; --ink2: #a2a5ac; --ink3: #9a9da5;
+    --you: #ff6a3d; --on-you: #0f1012; --ok: #4cc06a; --bad: #ff6b78; --gold: #c9b04f;
+    --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
+    --shadow: 0 8px 28px rgb(0 0 0 / .55), 0 0 0 1px rgb(255 255 255 / .05); --scrim: rgb(0 0 0 / .58);
+    color-scheme: dark;
+  }
+}
+html.sb[data-theme="dark"] .v2, html.sb.v2-page[data-theme="dark"] {
+  --bg: #0f1012; --bg2: #141517; --card: #17181b; --chip: #212226; --line: #26282c; --line2: #34363c;
+  --ink: #ecedef; --ink2: #a2a5ac; --ink3: #9a9da5;
+  --you: #ff6a3d; --on-you: #0f1012; --ok: #4cc06a; --bad: #ff6b78; --gold: #c9b04f;
+  --ph-disc: #65bdb3; --ph-des: #f07cca; --ph-build: #a4b562; --ph-launch: #c6a28f;
+  --shadow: 0 8px 28px rgb(0 0 0 / .55), 0 0 0 1px rgb(255 255 255 / .05); --scrim: rgb(0 0 0 / .58);
+  color-scheme: dark;
+}
+html.sb.v2-page, html.sb.v2-page body { background: var(--bg); color: var(--ink); }
+/* From stage 7 (AC88): every trial-view screen is on mockup v2's ground (sandbox.js sets html.v2-page on each),
+   and the screens no frame redraws (the Team screen and its members' pages, the Chief of Staff's page,
+   "Details"' views, the bubbles and the sheets) keep their layout and their words: only their fonts and colours
+   move onto AC81's tokens. Their rules, above this block, name the shared look's tokens; on mockup v2's ground
+   each of those names resolves to one of AC81's, in light and in dark (the value it names is the theme's), so no
+   screen mixes the old look with the new. The grounds and inks take mockup v2's; pass and fail take --ok and
+   --bad; the agents' blue and the merge purple, which mockup v2 does not use (it marks agents and merges by icon
+   and word), the agents' grey --ink2; the blocker amber, which marked a read that failed, --bad, as Home's and
+   Waiting's "Can't read" lines have it; the runs' shades mockup v2's greys; the running log's four lanes, in turn,
+   --ink, --ink2, --ink3 and --ink, each with its own line, solid, dashed, dotted and dashed (the owner's ruling,
+   P-001-desk-v2-lanes.md, A; the lines are AC49's rules above), vermilion being only for what needs the owner
+   (AC81); and the seven type roles
+   the nearest of mockup v2's (AC81: "Text no frame draws ... takes the nearest role"): a screen's title
+   --t-title, a section head --t-label, an item's title --t-row, sentences --t-body, secondary lines --t-small,
+   quoted record text --t-body (AC81: "body with a left rule"), and codes --t-mono. */
+html.sb.v2-page {
+  --page: var(--bg); --surf: var(--card); --surf2: var(--bg2); --muted: var(--ink2); --soft: var(--ink3); --tie: var(--line2); --idle: var(--line2);
+  --yous: var(--chip); --agent: var(--ink2); --agents: var(--chip); --merge: var(--ink2); --merges: var(--chip);
+  --pass: var(--ok); --passs: var(--chip); --passl: var(--line2); --fail: var(--bad); --fails: var(--chip); --block: var(--bad); --blocks: var(--bg2);
+  --golds: var(--bg2); --on: var(--bg);
+  --run1: var(--ink2); --run2: var(--ink2); --run3: var(--ink2); --run4: var(--ink2);
+  --shade0: var(--ink); --shade1: var(--ink2); --shade2: var(--ink3); --shade3: var(--ink);
+  --you0: var(--ink); --you1: var(--ink2); --you2: var(--ink3); --you3: var(--ink);
+  --t-screen: var(--t-title); --t-section: var(--t-label); --t-item: var(--t-row); --t-meta: var(--t-small); --t-quote: var(--t-body); --t-code: var(--t-mono);
+  --track: 0;
+}
+/* The sheets no frame redraws (AC88: the Team's "Working now" and "Summary"): a sheet's title takes --t-sheet, as
+   mockup v2's sheets have theirs (AC81, "--t-sheet ... a sheet's title"), and the sheet mockup v2's shadow. */
+html.sb.v2-page .sb-sheet-t { font: var(--t-sheet); }
+html.sb.v2-page .sb-sheet { box-shadow: var(--shadow); }
+html.sb body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /* AC81: every screen keeps room for the bar at its foot, with the safe areas */ }
+/* Stage 8 (the Design reviewer's round 1, part B item 26; frames H1, 1, 5 and 11): every screen starts 14 px down, as
+   mockup v2's screen does (`.scr`, desk-v2.html:97), Team's and each detail screen's too; the Timeline's pinned head sits
+   flush at the top with its own 8 px inside, as frame 7b's `.thead` does (desk-v2.html:278). */
+html.sb.v2-page main#view > .sb-screen { padding-top: 14px; }
+html.sb.v2-page main#view > .v2-timeline > .v2-tlhead { margin-top: -14px; }
+.v2 { font: var(--t-body); color: var(--ink); }
+.v2 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+/* The resets carry no weight (:where), so every v2 class below outranks them (stage 1a's build review,
+   round 1, the design reviewer's F1: a `.v2 button` reset had out-ranked the board's button classes). */
+:where(.v2) :where(p, h1, h2, h3, ol, ul) { margin: 0; }
+:where(.v2) :where(ol, ul) { list-style: none; padding: 0; }
+:where(.v2) a { color: inherit; text-decoration: none; }
+:where(.v2) :where(b, strong) { font-weight: 600; }
+:where(.v2) button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+.v2-k { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.v2-i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.v2-k .fill, .v2-i .fill { fill: currentColor; stroke: none; }
+.v2-mono { font: var(--t-mono); color: var(--ink2); }
+.v2-small { font: var(--t-small); color: var(--ink2); }
+.v2-body { font: var(--t-body); }
+.v2-label { font: var(--t-label); color: var(--ink2); }
+.v2-lnk { font: 500 12px/1.4 var(--font); color: var(--ink); text-decoration: underline; text-underline-offset: 2px; min-height: 28px; display: inline-flex; align-items: center; }
+
+/* The bar (AC81; frames H1, 1, 5 and 11): three tabs, each an icon above its word, in a rounded bar
+   floating at the foot of every trial-view screen, the current one shaded; tap areas 52 px tall.
+   Above every tile and control on the screens (z-index up to 3), below a sheet and its scrim. */
+.v2-bar { position: fixed; z-index: 4; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); left: max(16px, calc(50% - 264px)); right: max(16px, calc(50% - 264px));
+  height: 60px; border-radius: 30px; background: var(--bg); box-shadow: var(--shadow); display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; }
+.v2-tab { display: grid; justify-items: center; align-content: center; gap: 1px; border-radius: 26px; font: var(--t-label); color: var(--ink2); position: relative; min-height: 52px; }
+.v2-tab[aria-current="page"] { color: var(--ink); background: var(--chip); }
+.v2-badge { position: absolute; top: 4px; left: calc(50% + 6px); min-width: 18px; height: 18px; border-radius: 9px; background: var(--you); color: var(--on-you);
+  font: 600 11px/18px var(--font); text-align: center; padding: 0 5px; }
+
+
+/* The board (AC80; frame 1, desk-v2.html:148-183): title, "checked <age> ago", the quiet lines,
+   three lanes at every width, 1.18 : 1 : 1, 6 px apart. */
+.v2-board { display: grid; gap: 12px; padding-top: 4px; }
+.v2-top { display: flex; align-items: center; min-height: 44px; }
+.v2-title { font: var(--t-title); letter-spacing: -.01em; overflow-wrap: anywhere; }
+.v2-sub { font: var(--t-small); color: var(--ink2); margin-top: -6px; }
+.v2-quiet { display: flex; flex-wrap: wrap; gap: 0 10px; align-items: center; }
+.v2-quiet.under { display: grid; gap: 4px; }
+.v2-qs { font: var(--t-small); color: var(--ink2); min-height: 24px; text-decoration: underline; text-underline-offset: 2px; }
+.v2-ql { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; font: var(--t-small); color: var(--ink2); }
+.v2-ql b { font-weight: 500; color: var(--ink); }
+.v2-ql.bad { color: var(--bad); }
+/* G9c (AC91 (c), "each on a row of its own"; P-001-glance-g9c-row.md, A): Waiting's "Still reading" line holds a row of its own in the quiet lines' wrapping box, as .v2-qfold does. */
+.v2-qread { flex-basis: 100%; }
+.v2-qsmall { display: flex; flex-wrap: wrap; gap: 0 4px; align-items: center; font: var(--t-small); color: var(--ink2); }
+.v2-qfold { flex-basis: 100%; padding: 4px 0 8px; }
+.v2-flist { display: grid; gap: 8px; }
+.v2-flist > li { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
+.v2-ft { font: var(--t-row); overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: 2px; display: block; min-height: 24px; padding: 3px 0; /* a tap target at least 24 px tall (AC80) */ }
+.v2-fw { font: var(--t-small); color: var(--ink2); }
+.v2-fw.strong { color: var(--ink); }
+.v2-fd > summary { font: var(--t-label); color: var(--ink2); min-height: 28px; display: flex; align-items: center; cursor: pointer; }
+.v2-filter { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.v2-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 4px 0 12px; border-radius: 16px; background: var(--chip); font: var(--t-label); color: var(--ink); }
+.v2-x { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 14px; }
+/* AC91 (f) (stage G2; P-001-glance-lanes.md, C, with equal widths): two lanes, "Waiting on you" and "Done · last 24 h",
+   side by side at every width, 1 : 1, 6 px apart; Kicked back is a strip above them (below), never a column. */
+.v2-lanes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; align-items: start; }
+.v2-lane { min-width: 0; display: grid; gap: 6px; align-content: start; }
+.v2-lh { font: 600 11px/1.3 var(--font); color: var(--ink); padding: 4px 0 6px; border-bottom: 1px solid var(--line); height: 44px; display: flex; flex-direction: column; justify-content: flex-end; overflow-wrap: anywhere; }
+.v2-lc { font: var(--t-mono); color: var(--ink2); }
+/* AC91 (f), item 4c (mock pD): the Done lane's ground is --bg2, 12 px round, the full height of the lanes (as tall as
+   the taller), 8 px inside its sides and 10 px at its foot, its head 6 px from its top; its cards keep --card. A lane's
+   ground, the place cards move to, not a soft box (AC92 (e)). */
+.v2-lane.lane-done { align-self: stretch; background: var(--bg2); border-radius: 12px; padding: 0 8px 10px; }
+.v2-lane.lane-done > .v2-lh { padding-top: 6px; }
+/* AC91 (f) (mock pK): the Kicked back strip. With no card, one quiet line, "Kicked back" in --t-label and " · none" in
+   --t-mono, both --ink2, with no fold mark, no control and no drop target; words that are not a count ("not read yet",
+   "can't read", " when last read", `.v2-kw`) keep the line's --t-label --ink2, as "Kicked back" does. With any, its head, "Kicked back" in 600 12 px
+   ink with its count in --t-mono, over a hairline, then its cards in one row, each 200 px wide, the row scrolling
+   sideways inside the strip, snapping to a card, so the page itself never scrolls sideways. */
+.v2-kq { font: var(--t-label); color: var(--ink2); padding: 4px 0; overflow-wrap: anywhere; }
+.v2-kn { font: var(--t-mono); color: var(--ink2); }
+.v2-kh { display: flex; align-items: center; gap: 6px; min-height: 28px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font: 600 12px/1.3 var(--font); color: var(--ink); }
+.v2-krow { display: flex; gap: 8px; max-width: 100%; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; padding: 2px 0 6px; }
+.v2-kslot { flex: 0 0 200px; min-width: 0; display: grid; scroll-snap-align: start; }
+/* While one of its cards is carried into Done, the row is clipped sideways only, so the card shows below it. */
+.v2-krow.carrying { overflow-x: clip; overflow-y: visible; }
+/* AC94 (stage QW1 of "After the questions request"; reading (o): as the approved picture draws it, docs/design/builds/
+   m3g-picture/): the "Questions for you" section at Waiting's full width, its head and its empty line the Kicked back
+   strip's (`.v2-kh`, `.v2-kq`), its groups a lane's (`.v2-grp`, `.v2-list`), each question a board card (`.v2-card`) with
+   its title in --t-row, cut at three of its own lines (AC89 (j)), and its choices the sheet's boxes (`.v2-opt`, `.v2-abtn`).
+   Everything under its lock or clock line (its choices, its folds, the words box, "More about it ›" and "Done ✓") is drawn
+   above the card's full-card link (`.v2-t::after`), as `.v2-step` is, so a tap on one never opens the sheet instead. No
+   soft box, no new colour, size or weight. */
+.v2-qsec { display: grid; gap: 6px; min-width: 0; }
+.v2-qcard .v2-t { font: var(--t-row); max-height: calc(3 * 1.35em); }
+.v2-qcard .v2-tt { max-height: calc(3 * 1.35em); }
+.v2-qbody { position: relative; z-index: 1; display: grid; gap: 8px; min-width: 0; }
+/* AC95's blocker parts and AC96 (stage QW3 of "After the questions request"; C, (n); the approved picture's "Answer first ·
+   cards 4 and 10 wait on it" and "Waits on question 1"; draft 3, the Design reviewer's build note 1; draft 6, the picture's
+   note; AC96's "Settled from QW3's build", 3: the picture draws both at 12 px, so --t-small). A question other cards wait
+   on: "Answer first · …" under its lock or clock line, in --t-small --ink, wrapping as every line does. A card it holds up: "Waits on question <k>" under its meta line, in --t-small --ink, wrapping to two lines
+   if it must, its box at least 24 px tall (16.8 px of text and 4 px over and under it), drawn above the card's full-card
+   link (`.v2-t::after`) as `.v2-step` is; each number a link underlined under its own text, so a wrapped line is underlined
+   under each of its lines, never a rule across the block, 5 px over and under its text, so each link's target is at least
+   24 px tall too (Plex Sans' 12 px text box, about 15.6 px, and 10 px). The
+   question's sheet: "Cards waiting on it", each card a link on a line of its own, at least 24 px tall, underlined, in
+   --t-small --ink; the entries that do not count in the sheet's `.v2-small` with each code in `.v2-mono` (N2). No new
+   colour, size or weight. */
+.v2-afirst { font: var(--t-small); color: var(--ink); overflow-wrap: anywhere; }
+.v2-waits { position: relative; z-index: 1; display: block; min-height: 24px; padding: 4px 0; font: var(--t-small); color: var(--ink); overflow-wrap: anywhere; }
+.v2-waits > a { text-decoration: underline; text-underline-offset: 2px; padding: 5px 0; }
+.v2-wlist { display: grid; }
+.v2-wlist a { display: block; min-height: 24px; padding: 3px 0; font: var(--t-small); color: var(--ink); text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+/* AC96's "From QW3's design review, round 1", N3: a row's place and kind whole on a line of their own, its title under them
+   cut at three of its own lines (--t-small's 1.4), faded at the cut once the browser measures it cut (`.v2-tt.over`), as a
+   card's title on the board is; the whole title in the card's sheet, which the row opens. */
+.v2-wlk { display: block; }
+/* AC94's held question's "Also asked in your session: answer in one place" (QW1's line), in --t-small --ink, the picture's
+   12 px, as "Answer first" (AC96's "From QW3's design review, round 1", N1; QW1 drew it in --t-body). */
+.v2-heldl { font: var(--t-small); color: var(--ink); overflow-wrap: anywhere; }
+.v2-wlist .v2-tt { max-height: calc(3 * 1.4em); }
+/* AC91 (g) (P-001-glance-new.md, A): "new" beside a card's kind label, in ink, with no colour and no box; drawn as
+   nothing on a card that isn't new, so the 15-second tick can show or hide it. */
+.v2-new { font: var(--t-label); color: var(--ink); flex: none; }
+.v2-new.none { display: none; }
+.v2-grp { display: flex; align-items: center; gap: 4px; min-height: 26px; font: var(--t-label); color: var(--ink2); width: 100%; flex-wrap: wrap; padding-top: 2px; }
+.v2-gn { color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
+.v2-gc { font: var(--t-mono); }
+.v2-list { display: grid; gap: 6px; }
+.v2-card { position: relative; display: grid; gap: 3px; padding: 6px 7px 7px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); min-width: 0;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.v2-card.gate { border-color: var(--line2); background: var(--bg); }
+.v2-kd { display: flex; align-items: center; gap: 4px; font: var(--t-label); color: var(--ink2); min-width: 0; overflow-wrap: anywhere; }
+.v2-kd .v2-k { color: var(--you); } /* AC81: vermilion marks the kinds of cards that wait on the owner */
+.v2-kd.done .v2-k { color: var(--ink2); }
+/* Clipped at three lines (AC80), at the line's foot, never given an ellipsis (AC54's rule). */
+.v2-t { font: 500 12px/1.33 var(--font); overflow-wrap: anywhere; max-height: calc(3 * 1.33em); overflow: hidden; overflow: clip; }
+.v2-t::after { content: ""; position: absolute; inset: 0; } /* a tap anywhere on the card, outside its buttons, opens its sheet */
+.v2-card.conf .v2-t { color: var(--ink2); font-weight: 400; }
+.v2-m { font: var(--t-mono); color: var(--ink2); overflow-wrap: anywhere; }
+.v2-mk { display: flex; gap: 4px; align-items: flex-start; font: var(--t-label); color: var(--ink); }
+.v2-why { display: flex; gap: 4px; align-items: flex-start; font: 400 11px/1.4 var(--font); color: var(--ink); overflow-wrap: anywhere; }
+.v2-why.bad { color: var(--bad); }
+.v2-gl { font: 400 11px/1.4 var(--font); color: var(--ink); overflow-wrap: anywhere; }
+.v2-gk { color: var(--ink2); }
+.v2-step { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-height: 28px; padding: 0 8px; border: 1px solid var(--line2);
+  border-radius: 6px; font: var(--t-label); /* AC81, settled after round 1: the board's buttons 500 11 px */ color: var(--ink); background: var(--bg); justify-self: start; max-width: 100%; text-align: center; }
+.v2-step.off { color: var(--ink2); }
+.v2-steps { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.v2-undo { position: relative; z-index: 1; min-height: 28px; padding: 0 4px; font: var(--t-label); color: var(--ink2); text-decoration: underline; text-underline-offset: 2px; }
+.v2-gatebtns { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.v2-gatebtns .v2-step { width: 100%; padding: 0 2px; min-height: 26px; font: var(--t-label); }
+.v2-drow { position: relative; display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 2px 4px; padding: 5px 0 6px; border-bottom: 1px solid var(--line); min-width: 0; }
+.v2-drow .v2-k.ok { color: var(--ok); margin-top: 1px; }
+.v2-dt { font: 400 12px/1.33 var(--font); color: var(--ink2); overflow-wrap: anywhere; max-height: calc(2 * 1.33em); overflow: hidden; overflow: clip; }
+.v2-dt::after { content: ""; position: absolute; inset: 0; }
+.v2-drow .v2-m { grid-column: 2; }
+.v2-empty { font: 400 11px/1.4 var(--font); color: var(--ink2); padding: 4px 0; }
+.v2-more { display: inline-flex; align-items: center; gap: 2px; min-height: 28px; font: var(--t-label); color: var(--ink2); }
+.v2-device { padding-top: 4px; }
+.v2-card.lifted { z-index: 3; box-shadow: var(--shadow); border-color: var(--line2); transform-origin: center; rotate: 1.5deg; }
+/* AC42, AC80: with reduced motion the lifted card does not tilt; nothing on the board moves unless the owner acts. */
+@media (prefers-reduced-motion: reduce) { .v2-card.lifted { rotate: none; } }
+
+/* The card's sheet (AC80, AC85's frame 3, 3b and 4 look): it rises from the bottom over a dimmed
+   screen, with a grab handle and a 44 px close at its top right; taller than the screen, it scrolls
+   inside itself. Above the bar. */
+.v2-scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 6; }
+.v2-sheet { position: fixed; z-index: 7; left: max(8px, calc(50% - 272px)); right: max(8px, calc(50% - 272px)); bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  max-height: calc(100% - 56px); overflow-y: auto; overflow-x: hidden; border-radius: 26px; background: var(--bg); box-shadow: var(--shadow); padding: 6px 16px 18px;
+  display: grid; gap: 12px; align-content: start; }
+.v2-grab { justify-self: center; width: 36px; height: 5px; border-radius: 3px; background: var(--line2); }
+.v2-shead { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 8px; align-items: start; margin-top: -4px; }
+.v2-x44 { width: 44px; height: 44px; border-radius: 22px; display: grid; place-items: center; background: var(--chip); color: var(--ink); }
+.v2-stitle { font: var(--t-sheet); overflow-wrap: anywhere; }
+.v2-blk { display: grid; gap: 4px; min-width: 0; }
+.v2-bh { font: var(--t-label); color: var(--ink2); }
+.v2-quote { font: var(--t-body); color: var(--ink); border-left: 2px solid var(--line2); padding: 2px 0 2px 10px; overflow-wrap: anywhere; }
+.v2-mark { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: start; font: var(--t-small); color: var(--ink); }
+.v2-tap { font: var(--t-small); color: var(--ink); background: var(--bg2); border-radius: 8px; padding: 6px 10px; }
+.v2-opts { display: grid; gap: 8px; }
+.v2-opt { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.v2-ot { display: grid; gap: 2px; min-width: 0; }
+.v2-ol { font: var(--t-row); overflow-wrap: anywhere; }
+.v2-letter { font-weight: 600; }
+.v2-lead { font: var(--t-lead); }
+.v2-od { font: var(--t-small); color: var(--ink2); overflow-wrap: anywhere; }
+.v2-rec { font: var(--t-label); color: var(--ink); background: var(--chip); border-radius: 4px; padding: 1px 5px; justify-self: start; }
+.v2-abtn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 36px; padding: 0 12px; border-radius: 18px; background: var(--chip);
+  font: 500 12px/1.35 var(--font); color: var(--ink); text-align: center; }
+.v2-abtn.ghost { box-shadow: inset 0 0 0 1px var(--line2); background: var(--bg); }
+.v2-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.v2-field { display: grid; gap: 6px; }
+.v2-input { font: var(--t-input); color: var(--ink); background: var(--bg2); border: 1px solid var(--line2); border-radius: 10px; padding: 10px 12px; min-height: 64px; width: 100%; resize: vertical; }
+.v2-input::placeholder { color: var(--ink3); }
+.v2-recheck { font: var(--t-small); color: var(--ink); }
+.v2-fold { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; font: var(--t-label); color: var(--ink2); }
+.v2-src { display: block; font: var(--t-small); color: var(--ink2); }
+.v2-facts { display: grid; gap: 4px; font: var(--t-small); padding-left: 1.1em; list-style: disc; }
+.v2-sheet .sb-record { font: var(--t-body); overflow-wrap: anywhere; }
+/* AC81 (settled after round 1): a heading inside quoted record text takes --t-row, the rest --t-body. */
+.v2-sheet .sb-record :is(h1, h2, h3, h4, h5, h6) { font: var(--t-row); margin: 8px 0 4px; }
+.v2-sheet .sb-record :is(p, li, td, th, blockquote) { font: var(--t-body); }
+.v2-sheet .gap { color: var(--ink2); }
+
+/* The question's and the gate's sheets (AC85; frames 3, 3b and 4; desk-v2.html:193-230): the
+   opening and the case held to three lines, faded only when cut (the browser measures it), whole once
+   opened; the lock or clock line and the eye line; the gate's views in two columns; Kill's outlined
+   button; "Move to Done" and the whole record's fold as 44 px rows; the fold's files as they are written. */
+.v2-clip { overflow: hidden; overflow: clip; max-height: calc(3 * 1.45em); overflow-wrap: anywhere; }
+.v2-clip.v2-lead { font: var(--t-lead); }
+.v2-clip.v2-quote { font: var(--t-body); padding: 0 0 0 10px; max-height: calc(3 * 1.45em); }
+.v2-clip.over { -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
+.v2-clip.open { max-height: none; overflow: visible; }
+.v2-marks { display: grid; gap: 6px; }
+.v2-mark b { font-weight: 600; }
+.v2-abtn.danger { box-shadow: inset 0 0 0 1px var(--line2); background: var(--bg); }
+.v2-undo1 { font: var(--t-small); color: var(--ink); align-items: center; }
+.v2-verd { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; align-items: baseline; }
+.v2-vw { font: var(--t-row); }
+.v2-vt { font: var(--t-small); color: var(--ink); overflow-wrap: anywhere; }
+.v2-vt.gap { color: var(--ink2); }
+.v2-slist { display: grid; min-width: 0; }
+.v2-sitem { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 44px; font: var(--t-row); width: 100%; color: var(--ink); }
+.v2-sitem + .v2-sitem { border-top: 1px solid var(--line); }
+.v2-sitem { border-radius: 0; -webkit-appearance: none; appearance: none; }
+/* A numbered question's box (P-001-sheet-boxes.md, A): the question over its text box, at the box's full width. */
+.v2-opt.num { grid-template-columns: minmax(0, 1fr); }
+.v2-sv { font: var(--t-small); color: var(--ink2); text-align: right; }
+.v2-whole { display: grid; gap: 8px; padding: 4px 0 8px; min-width: 0; }
+.v2-files { display: grid; gap: 8px; }
+.v2-pre { font: var(--t-mono); color: var(--ink); background: var(--bg2); border-radius: 8px; padding: 8px 10px; margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.v2-foot { gap: 2px; }
+/* The record keeps its lists' marks inside the trial view's sheets (the resets take them from every v2 list),
+   each number the file's own (renderMarkdown's `numbers`); and a card's `code` words in Plex Mono. */
+.v2-sheet .sb-record ol { list-style: decimal; padding-left: 1.6em; }
+.v2-sheet .sb-record ul { list-style: disc; padding-left: 1.2em; }
+/* AC89 (h): the board's held-question fold ("The question and its options, to read") shows its record text in AC81's
+   roles, a heading --t-row and the rest --t-body, its lists' marks kept, as every sheet's record does. */
+.v2-qfold .sb-record { font: var(--t-body); overflow-wrap: anywhere; }
+.v2-qfold .sb-record :is(h1, h2, h3, h4, h5, h6) { font: var(--t-row); margin: 8px 0 4px; }
+.v2-qfold .sb-record :is(p, li, td, th, blockquote) { font: var(--t-body); }
+.v2-qfold .sb-record ol { list-style: decimal; padding-left: 1.6em; }
+.v2-qfold .sb-record ul { list-style: disc; padding-left: 1.2em; }
+.v2-code { font-family: var(--mono); }
+/* The whole record in the fold (and a file that can't be split, shown whole): on mockup v2's surface tokens. */
+.v2-whole .sb-record, .v2-sheet > .sb-record, .v2-fd > .sb-record { background: var(--bg2); border-radius: 10px; padding: 10px 12px; }
+/* Its code in Plex Mono, in the body role (AC81, settled after round 1: record text takes --t-body). */
+.v2-whole .sb-record :is(code, pre), .v2-sheet > .sb-record :is(code, pre), .v2-fd > .sb-record :is(code, pre) { font: var(--t-body); font-family: var(--mono); background: none; padding: 0; }
+.v2-fk { font-weight: 500; }
+
+/* Home (AC82; frames H1 to H5; desk-v2.html:317-362), from stage 2: the title and "checked <age> ago",
+   the briefing, "Since you last looked", the tiles in their three groups, and "More detail" folded last.
+   One tile a row below 720 px; two from 720 px, Home's column widening to at most 960 px (C). */
+.v2-home { display: grid; gap: 12px; padding-top: 4px; }
+.v2-home .v2-sub { margin-top: -6px; }
+.v2-brief { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 4px 10px; align-items: start; padding: 12px; border-radius: 12px; background: var(--bg2); color: var(--ink); }
+.v2-bi { display: grid; padding-top: 2px; }
+.v2-bt1 { font: 500 15px/1.35 var(--font); overflow-wrap: anywhere; }
+/* After the glance audit (AC91 (a); P-001-glance-count.md, A): "<n> need you" in the sheet-title role, the largest text
+   under the screen's title, the vermilion ◆ sized to it and, with "Waiting ›", centred on its line. The briefing's other
+   forms keep their look (C). */
+.v2-brief.k-you { grid-template-columns: 18px minmax(0, 1fr) auto; }
+.v2-brief.k-you .v2-bt1 { font: var(--t-sheet); }
+.v2-brief.k-you .v2-bi, .v2-brief.k-you .v2-go { align-self: center; padding-top: 0; }
+.v2-brief.k-you .v2-bi > .v2-s { width: 18px; height: 18px; }
+.v2-bt2 { grid-column: 2 / 4; font: var(--t-small); color: var(--ink); }
+.v2-bt3 { grid-column: 2 / 4; font: var(--t-small); color: var(--ink2); }
+/* AC91 (a): a settle time or what can't be undone, each on a line of its own under the parts, in 500 12 px ink (the
+   card-title pair) with its clock or lock in ink before it, as the board's cards mark them (`.v2-mk`). */
+.v2-bdue { grid-column: 2 / 4; display: flex; gap: 4px; align-items: flex-start; font: 500 12px/1.35 var(--font); color: var(--ink); }
+.v2-bdue > .v2-k { margin-top: 1px; color: var(--ink); }
+.v2-bdue.none { display: none; }
+.v2-bt3.bad, .v2-brief .v2-k.bad { color: var(--bad); }
+/* AC91 (c), from G7: a can't-read line under the briefing's first carries the ✕ before its words, as the due lines carry
+   their clock (`.v2-bdue`). */
+.v2-bcant { display: flex; gap: 4px; align-items: flex-start; }
+.v2-bcant > .v2-k { margin-top: 1px; }
+.v2-go { font: var(--t-label); color: var(--ink2); padding-top: 3px; }
+.v2-brief:focus-visible { outline-offset: 2px; }
+.v2-sh { display: flex; align-items: center; justify-content: space-between; gap: 8px; font: var(--t-label); color: var(--ink2); padding-top: 10px; min-height: 28px; }
+.v2-shw { font: var(--t-label); color: var(--ink2); overflow-wrap: anywhere; }
+.v2-seen { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border-radius: 14px; background: var(--chip); font: var(--t-label); color: var(--ink); flex: none; }
+/* The lines share their columns (time, icon, words, chevron) where the browser has subgrid; else each keeps 38 px for its time. */
+.v2-since { display: grid; grid-template-columns: minmax(38px, max-content) 14px minmax(0, 1fr) 10px; column-gap: 8px; }
+.v2-since > li { grid-column: 1 / -1; display: grid; column-gap: 8px; grid-template-columns: minmax(38px, max-content) 14px minmax(0, 1fr) 10px; grid-template-columns: subgrid; }
+.v2-since > li + li > .v2-ev { border-top: 1px solid var(--line); }
+.v2-ev { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(38px, max-content) 14px minmax(0, 1fr) 10px; grid-template-columns: subgrid; gap: 2px 8px; align-items: start; padding: 8px 0; min-height: 40px; color: var(--ink); }
+.v2-tm { display: grid; font: var(--t-mono); color: var(--ink2); padding-top: 1px; }
+.v2-tmd { font: var(--t-mono); }
+.v2-ev > .v2-k { margin-top: 2px; color: var(--ink2); }
+.v2-ev > .v2-k.bad { color: var(--bad); }
+.v2-et { display: grid; gap: 1px; min-width: 0; }
+/* At most two lines (after the glance audit, AC91 (e); P-001-glance-since.md, A): never an ellipsis; the whole record is
+   one tap away where the line opens. */
+.v2-e1 { position: relative; font: var(--t-body); overflow-wrap: anywhere; max-height: calc(2 * 1.45em); overflow: hidden; overflow: clip; }
+/* Cut at two lines, the second fades at its end into the ground, Home's and the sheet's alike (rulebook item 16). */
+.v2-e1.over::after { content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1.45em; pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--bg) 85%); }
+.v2-e2 { font: var(--t-mono); color: var(--ink2); overflow-wrap: anywhere; }
+.v2-ev > .v2-chev { width: 10px; height: 10px; margin-top: 4px; color: var(--ink2); }
+/* AC91 (c), from G7b (P-001-glance-since-incomplete.md, A): while a project can't be read, the grey lines that end the
+   list, one a project, 6 px under its last line (Home's 12 px gap, less 6), 2 px apart; `.v2-small`'s --t-small --ink2,
+   no icon; each wraps at a long name, never cut (style.css's `overflow-wrap: anywhere` on every p). */
+.v2-smiss { display: grid; gap: 2px; margin-top: -6px; }
+.v2-hgroups { display: grid; gap: 8px; }
+.v2-hgroup { display: grid; gap: 8px; }
+.v2-hgh { font: var(--t-label); }
+.v2-hg { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; width: 100%; min-height: 28px; padding-top: 10px; font: var(--t-label); color: var(--ink2); }
+.v2-hgt { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.v2-hgy { display: inline-flex; align-items: center; gap: 4px; color: var(--ink); }
+.v2-hgb { color: var(--bad); }
+.v2-hgn { font: var(--t-mono); color: var(--ink2); }
+.v2-hg > .v2-k { width: 10px; height: 10px; color: var(--ink2); }
+.v2-tiles { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.v2-tile { position: relative; display: grid; gap: 6px; align-content: start; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); min-width: 0; }
+.v2-thd { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
+.v2-tnm { font: 600 13px/1.3 var(--font); overflow-wrap: anywhere; }
+/* The whole tile opens the project (its name's link, stretched over it); the summary's control and "Why" sit above that link. */
+.v2-ta::after { content: ""; position: absolute; inset: 0; border-radius: 10px; }
+.v2-ta:focus-visible { outline: none; }
+.v2-ta:focus-visible::after { outline: 2px solid var(--ink); outline-offset: 2px; }
+.v2-wt { display: inline-flex; gap: 4px; align-items: center; font: 400 12px/1.3 var(--font); color: var(--ink2); }
+.v2-wt.you { font: 500 12px/1.3 var(--font); color: var(--ink); }
+/* AC91 (c): a project the desk can't read, with nothing waiting in it: "✕ Can't read since HH:MM", the ✕ and the words in --bad. */
+.v2-wt.bad { font: 500 12px/1.3 var(--font); color: var(--bad); }
+/* The summary (AC54 (a), kept by AC82): its first three lines, faded at the cut into the tile's ground, the whole one tap away. */
+.v2-tile .sb-sumclip { font: var(--t-small); height: auto; max-height: calc(3 * 1.4em); }
+.v2-tile .sb-sumclip.over { height: calc(3 * 1.4em); }
+.v2-tile .sb-sumclip.over::after { height: 1.4em; background: linear-gradient(to right, transparent, var(--card) 85%); }
+.v2-tile .sb-sum { font: var(--t-small); color: var(--ink2); }
+.v2-tile .sb-sum.none { color: var(--ink2); }
+.v2-tile button.sb-sum { font: var(--t-small); color: var(--ink2); }
+.v2-tile .sb-sumbox > .sb-bubble { left: -10px; right: -10px; }
+.v2-home .sb-bubble { background: var(--bg); color: var(--ink); border: 1px solid var(--line2); border-radius: 12px; box-shadow: var(--shadow); }
+.v2-home .sb-bubble-top { background: var(--bg); }
+.v2-home .sb-bubble .sb-eyebrow { font: var(--t-label); color: var(--ink2); }
+.v2-home .sb-bubble-t { font: var(--t-body); }
+.v2-why { position: relative; z-index: 1; font: var(--t-small); color: var(--ink2); }
+.v2-why > summary { min-height: 28px; display: flex; align-items: center; cursor: pointer; }
+.v2-ln { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 6px; align-items: start; font: var(--t-small); color: var(--ink); }
+.v2-ln > .v2-k { margin-top: 1px; color: var(--ink); }
+.v2-ln.bad, .v2-ln.bad > .v2-k { color: var(--bad); }
+.v2-ln b { font-weight: 600; }
+.v2-g { color: var(--ink2); }
+.v2-tnone { padding: 2px 0; }
+/* After the glance audit (AC91 (b); AC71, changed): a stopped project's line, directly under the tile's name row, in
+   500 12 px ink with the clock in ink before it, never vermilion or --bad (AC69: the gap is the agents'). Drawn
+   only once it says something: the tick gives it `v2-ln` then (sandbox.js, stallNode). */
+.v2-stall { display: none; }
+.v2-ln.v2-stall { display: grid; font: 500 12px/1.4 var(--font); color: var(--ink); }
+/* The tile's phases as a timeline (frame H5): one row per run, a cell per phase, the line between cells in
+   the phase's colour, solid where finished and dashed where still to come, lighter where gone back over;
+   a later run's short dashed drop from the run above. Drawn only: its sentence carries it in words. */
+.v2-s { width: 16px; height: 16px; flex: none; color: var(--ink); }
+.v2-s .ring { fill: none; stroke: currentColor; stroke-width: 1.4; }
+.v2-s .ring.dash { stroke-dasharray: 2.2 2; }
+.v2-s .mk { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.v2-s .fill { fill: currentColor; stroke: none; }
+.v2-s .you { fill: var(--you); }
+.v2-s.soft { color: var(--ink2); }
+.v2-s.st-pastcheck { opacity: .5; }
+.v2-k.st-you .you { fill: var(--you); }
+/* After the glance audit, G7 (AC92 (a); P-001-glance2-palette.md, A, "on the 14–16 px mark only, never on words, rows or
+   borders"): a status mark the page draws as one (sandbox.js, smk) takes --ok where reached and --bad where not reached;
+   its words stay ink or grey, and every other mark (absences, the lighter gone-back-over check) keeps its own. */
+.v2-s.st-check.ok { color: var(--ok); }
+.v2-s.st-cross.bad { color: var(--bad); }
+/* A CI line's ✓ or ✕ before its words (AC92 (a), sandbox.js, ciMark), inline in the line's text. */
+.v2-cim { vertical-align: -2px; margin-right: 4px; }
+.v2-cim.ok { color: var(--ok); }
+.v2-cim.bad { color: var(--bad); }
+/* A waiting deploy's mismatch mark (AC72), its words in ink. */
+.v2-safe.bad > .v2-safe-l > .v2-k { color: var(--bad); }
+/* Where the project is now (AC92 (b), from G8; P-001-glance2-arrow.md, A; round 2's mock, changes2.js q3): one small filled
+   triangle in --ink pointing at the present, right on a vertical drawing (`.r`) and down on a horizontal one (`.d`), never
+   up; a clip-path on an empty span, so no font can change it; hidden from assistive technology (sandbox.js, hereMark); still.
+   On the Timeline's Now line, 8 x 10 px in place of its bar, centred on the rail; above the page's strip, 10 x 6 px, centred
+   9 px above the now phase's bar, in the gap under the sentence; on a Home tile, 6 x 8 px, 3 px left of the now run's icon;
+   on Plan, 6 x 8 px in the page's 16 px margin, level with the next-to-reach row's icon; in an opened phase, 6 x 8 px on
+   the phase's thin line, beside the now run's next-to-reach row. */
+.v2-here { display: block; background: var(--ink); }
+.v2-here.r { clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.v2-here.d { clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.v2-nowl > .v2-here { flex: none; width: 8px; height: 10px; margin-left: 4px; }
+.v2-ph.here, .v2-plrow.here, .v2-sm.here { position: relative; }
+.v2-ph > .v2-here { position: absolute; top: -9px; left: 50%; width: 10px; height: 6px; margin-left: -5px; }
+.v2-c > .v2-here { position: absolute; top: 50%; right: calc(50% + 10px); width: 6px; height: 8px; margin-top: -4px; }
+.v2-plrow > .v2-here { position: absolute; top: 14px; left: -12px; width: 6px; height: 8px; }
+.v2-sm > .v2-here { position: absolute; top: 10px; left: -19px; width: 6px; height: 8px; }
+.v2-ptl { display: grid; gap: 0; margin-top: 2px; }
+.v2-rwl, .v2-lbl { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; }
+.v2-rk { font: 400 11px/1.35 var(--font); color: var(--ink2); }
+.v2-rw, .v2-lb { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.v2-rw { height: 22px; }
+.v2-rw.n4, .v2-lb.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.v2-rw.n3, .v2-lb.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.v2-rw.n2, .v2-lb.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.v2-rw.n1, .v2-lb.n1 { grid-template-columns: minmax(0, 1fr); }
+.v2-c { position: relative; display: grid; place-items: center; --phc: var(--ink2); }
+.v2-c.ph-disc { --phc: var(--ph-disc); }
+.v2-c.ph-des { --phc: var(--ph-des); }
+.v2-c.ph-build { --phc: var(--ph-build); }
+.v2-c.ph-launch { --phc: var(--ph-launch); }
+.v2-c > .v2-s { position: relative; z-index: 1; width: 14px; height: 14px; background: var(--card); border-radius: 7px; }
+.v2-c.l::before, .v2-c.r::after { content: ""; position: absolute; top: 50%; height: 2px; margin-top: -1px; background: var(--phc); }
+.v2-c.l::before { left: 0; right: 50%; }
+.v2-c.r::after { left: 50%; right: 0; }
+/* AC92 (b), from G8c (P-001-glance-arrow-on-line.md, B): in the now cell, the line coming in from the left stops 3 px before
+   the arrow (whose left edge is 16 px left of the cell's centre), so the arrow stands on its own; too narrow a cell keeps none. */
+.v2-c.here.l::before { right: calc(50% + 19px); }
+.v2-c.s-ahead.l::before, .v2-c.s-ahead.r::after { background: repeating-linear-gradient(90deg, var(--phc) 0 3px, transparent 3px 6px); }
+.v2-c.s-gone.l::before, .v2-c.s-gone.r::after { opacity: .4; }
+.v2-c.dn > i, .v2-c.up > i { position: absolute; left: 50%; width: 0; border-left: 1.5px dashed var(--ink2); margin-left: -.75px; }
+.v2-c.dn > i { top: 50%; bottom: 0; }
+.v2-c.up > i { top: 0; bottom: 50%; }
+.v2-lb { font: 400 11px/1.3 var(--font); color: var(--ink2); text-align: center; padding-top: 2px; }
+.v2-lb > * { overflow-wrap: anywhere; }
+.v2-lb b { color: var(--ink); font-weight: 600; }
+.v2-ptl.sprints .v2-lb { font: var(--t-mono); }
+.v2-ptl.sprints .v2-lb b { font-weight: 500; }
+/* The portfolio's block at Home's foot (AC87, stage 6a; frame H4, desk-v2.html:796-804): its head with a
+   rule above, "portfolio" in Plex Mono at its right; the page's rows (an empty mark column, the title,
+   a grey line, a chevron); each state's mark drawn before the words it marks; then one line under the rows. */
+.v2-pf { display: grid; gap: 12px; }
+.v2-pfh { padding-top: 18px; border-top: 1px solid var(--line); }
+.v2-pfmk { display: block; width: 12px; height: 12px; flex: none; }
+/* A mark and the first word it marks, one box, so the mark never ends a line alone (no nowrap: AC42). */
+.v2-pfnb { display: inline-flex; align-items: center; gap: 4px; vertical-align: bottom; }
+.v2-pfs { display: grid; gap: 10px; }
+.v2-pfsl > li + li { border-top: 1px solid var(--line); }
+.v2-pfsi { display: grid; gap: 2px; padding: 8px 0; min-width: 0; }
+.v2-pfsi > * { overflow-wrap: anywhere; }
+/* A portfolio card's link in its row's sheet (AC87, stage 6b): a target 24 px tall at least (WCAG 2.5.8). */
+.v2-pfsi > a.v2-prtt { display: flex; align-items: center; min-height: 24px; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.v2-pffrom .code { font: var(--t-mono); color: var(--ink2); }
+/* "More detail", folded last at Home's foot (P-001-settings-place.md, A): the notifications switch and the usage bar. */
+.v2-mdetail { border-top: 1px solid var(--line); padding-top: 4px; }
+.v2-mds { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; font: var(--t-label); color: var(--ink2); cursor: pointer; list-style: none; }
+.v2-mds::-webkit-details-marker { display: none; }
+.v2-mdetail[open] > .v2-mds > .v2-k { rotate: 90deg; }
+.v2-mdetail > section { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid var(--line); }
+html.sb .v2-home .sb-h3 { font: var(--t-row); color: var(--ink); text-transform: none; letter-spacing: 0; margin: 0; }
+.v2-home .sb-notify { display: grid; gap: 6px; }
+.v2-home .sb-notify .small, .v2-home .sb-actions-usage .small, .v2-home .sb-v5 { font: var(--t-small); color: var(--ink2); }
+.v2-home .sb-notify .sb-warn { color: var(--bad); }
+.v2-home .sb-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 12px; border: 0; border-radius: 18px; background: var(--chip);
+  font: 500 12px/1.35 var(--font); color: var(--ink); justify-self: start; text-align: center; }
+.v2-home .sb-btn.ghost { box-shadow: inset 0 0 0 1px var(--line2); background: var(--bg); }
+.v2-home .sb-value { font: var(--t-mono); color: var(--ink); background: var(--bg2); border-radius: 8px; padding: 8px; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.v2-home .sb-steps { font: var(--t-small); color: var(--ink2); padding-left: 1.2em; margin: 0; }
+.v2-home .sb-steps a, .v2-home .sb-notify a { text-decoration: underline; text-underline-offset: 2px; }
+/* ===========================================================================================
+   A project's page and its Timeline (AC83, AC84; frames 5, 6, 6b, 7b and 8; desk-v2.html:261-301),
+   from stage 3, on stage 1a's tokens: the page at `p/<name>` in the Status screen's place, the
+   Timeline cleaned up as frame 7b draws it, and the short phase line atop the Timeline and the Team
+   screen (AC68, changed). Sizes and weights are the tokens' or the pairs desk-v2.html sets (AC81).
+   =========================================================================================== */
+.v2 .ph-disc { --phc: var(--ph-disc); }
+.v2 .ph-des { --phc: var(--ph-des); }
+.v2 .ph-build { --phc: var(--ph-build); }
+.v2 .ph-launch { --phc: var(--ph-launch); }
+.v2 .ph-done, .v2 .ph-none { --phc: var(--ink2); }
+.v2-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--phc, var(--ink2)); flex: none; }
+.v2-s .gold { fill: none; stroke: var(--gold); stroke-width: 2.2; }
+.v2-s .agents { fill: var(--ink2); }
+.v2-round { width: 44px; height: 44px; border-radius: 22px; display: grid; place-items: center; color: var(--ink); background: var(--bg); box-shadow: var(--shadow); flex: none; }
+.v2-round.flat { box-shadow: none; background: var(--chip); }
+.v2-inl { font-weight: 500; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.v2-src { color: var(--ink2); }
+.v2 .gap { color: var(--ink2); }
+
+/* The page (frame 5): the back control; the name and the top line in Plex Mono; Overview | Timeline. */
+.v2-proj { display: grid; gap: 12px; padding-top: 4px; }
+.v2-ptop { display: flex; align-items: center; min-height: 44px; }
+.v2-phead { display: grid; gap: 4px; }
+.v2-phead .v2-mono { overflow-wrap: anywhere; }
+.v2-seg { display: inline-grid; grid-auto-flow: column; gap: 2px; padding: 2px; border-radius: 10px; background: var(--chip); justify-self: start; }
+.v2-sega { min-height: 32px; min-width: 88px; padding: 0 12px; display: grid; place-items: center; border-radius: 8px; font: 500 12px/1.35 var(--font); color: var(--ink2); }
+.v2-sega[aria-current="page"] { background: var(--bg); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+.v2-lead { font: var(--t-lead); overflow-wrap: break-word; }
+/* AC92 (e), from G9 (P-001-glance2-anchor.md, A): the page's soft box, the briefing's own look (`.v2-brief`: the --bg2
+   ground, its 12 px radius, 12 px padding and its gap), no edge and no shadow, never vermilion; it holds the sentence and,
+   under it, the one-line tally (`.v2-small`, wrapping as every line on a screen does), "<R> of <T>" in 500 12 px ink as a
+   phase's line has it (`.v2-sd b`), the rest --t-small grey. */
+.v2-anchor { display: grid; gap: 4px 10px; padding: 12px; border-radius: 12px; background: var(--bg2); color: var(--ink); }
+.v2-tally b { font-weight: 500; color: var(--ink); }
+
+/* The phase strip (frame 5): a thin bar in each phase's colour, solid where finished or now, dashed
+   where still to come, over its icon and name, its state in words under it; frame 8's sprints in grey. */
+.v2-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.v2-ph { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.v2-bar3 { height: 3px; border-radius: 2px; background: var(--phc); }
+.v2-ph.b-dashed .v2-bar3 { background: repeating-linear-gradient(90deg, var(--phc) 0 6px, transparent 6px 10px); opacity: .7; }
+.v2-pn { display: flex; align-items: center; gap: 5px; font: 500 12px/1.35 var(--font); color: var(--ink); min-width: 0; }
+.v2-ph.now .v2-pn { font: 600 12px/1.3 var(--font); }
+.v2-pnm { min-width: 0; overflow-wrap: anywhere; }
+.v2-pnm.mono { font: var(--t-mono); color: var(--ink); }
+.v2-ps { font: 400 11px/1.35 var(--font); color: var(--ink2); overflow-wrap: break-word; }
+.v2-strip.sprints .v2-ph { --phc: var(--ink2); }
+
+/* Under the strip, in small text: why a phase ran again, and "Your last action" (AC55, moved here). */
+.v2-under { display: grid; gap: 2px; }
+.v2-under .v2-small { overflow-wrap: break-word; }
+.v2-proj .sb-last { border: 0; background: none; padding: 0; margin: 0; border-radius: 0; }
+.v2-proj .sb-last-t, .v2-proj .sb-line-w, .v2-proj .sb-last-when, .v2-proj .sb-sep { font: var(--t-small); color: var(--ink2); }
+.v2-proj .sb-last-l { font: var(--t-small); color: var(--ink2); text-transform: none; letter-spacing: 0; }
+.v2-proj .sb-last .code { font: var(--t-mono); color: var(--ink2); }
+.v2-proj .sb-lineclip, .v2-proj button.sb-line { font: var(--t-small); color: var(--ink2); }
+.v2-proj .sb-lineclip { max-height: calc(3 * 1.4em); }
+.v2-proj .sb-lineclip.over { height: calc(3 * 1.4em); }
+.v2-proj .sb-lineclip.over::after { height: 1.4em; background: linear-gradient(to right, transparent, var(--bg) 85%); }
+.v2-proj .sb-why { font: var(--t-small); color: var(--ink2); }
+.v2-proj .sb-why > summary { min-height: 28px; }
+.v2-proj .sb-why .small, .v2-proj .sb-why p { font: var(--t-small); color: var(--ink2); }
+.v2-proj .sb-bubble { background: var(--bg); color: var(--ink); border: 1px solid var(--line2); border-radius: 12px; box-shadow: var(--shadow); }
+.v2-proj .sb-bubble-top { background: var(--bg); }
+.v2-proj .sb-bubble .sb-eyebrow { font: var(--t-label); color: var(--ink2); text-transform: none; letter-spacing: 0; }
+.v2-proj .sb-bubble-t, .v2-proj .sb-bubble-note { font: var(--t-body); }
+
+/* The rows (frames 5 and 8): an icon, the title, a grey line, a chevron. */
+.v2-rows { display: grid; }
+.v2-rows > li + li > .v2-prow { border-top: 1px solid var(--line); }
+.v2-prow { display: grid; grid-template-columns: 16px minmax(0, 1fr) 10px; gap: 2px 10px; align-items: start; padding: 9px 0; min-height: 44px; width: 100%; color: var(--ink); cursor: pointer; list-style: none; }
+.v2-prow::-webkit-details-marker { display: none; }
+.v2-prow > .v2-k, .v2-prow > .v2-s { margin-top: 1px; color: var(--ink); }
+.v2-prow.bad, .v2-prow.bad > .v2-k { color: var(--bad); }
+.v2-prt { display: grid; gap: 2px; min-width: 0; }
+.v2-prtt { font: var(--t-row); overflow-wrap: break-word; }
+.v2-prtt.soft, .v2-prow.soft .v2-prtt { color: var(--ink2); font-weight: 400; }
+.v2-prt .v2-small, .v2-prt .v2-mono { overflow-wrap: anywhere; }
+.v2-prow > .v2-chev { width: 10px; height: 10px; margin-top: 4px; color: var(--ink2); }
+/* AC89 (c): the waits row's short names cut at two lines, the second fading at its end into the page's ground when cut
+   (part A item 16; the browser measures it); the tap opens Waiting, where every title is whole. */
+.v2-wn { display: block; position: relative; max-height: calc(2 * 1.4em); overflow: hidden; overflow: clip; }
+.v2-wn.over::after { content: ""; position: absolute; right: 0; bottom: 0; width: 5em; max-width: 100%; height: 1.4em; pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--bg) 85%); }
+/* AC89 (c), from G4's fix round: each id in the row ("#148", a question's file name, "P-004 launch-1", a gate's or a
+   merge's item, "run 41", "launch-2") moves to the next line as one piece, never split at its hyphen or its space, as
+   `.v2-gitem` keeps a gate's item: an inline block, not `nowrap` (AC42), so one longer than the line still wraps inside
+   itself (`.v2-prt .v2-mono`'s overflow-wrap) and nothing scrolls sideways. The two-line cut, its fade and the tap are
+   unchanged. */
+.v2-wn > .v2-mono { display: inline-block; }
+
+/* Milestones by phase (frames 5, 6 and 6b): one line per phase, bottom up; opened, a thin line with an arrow pointing up. */
+.v2-std { display: grid; }
+.v2-std > li + li { border-top: 1px solid var(--line); }
+.v2-std .v2-stdr { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 14px; gap: 2px 10px; align-items: center; min-height: 44px; width: 100%; padding: 8px 0; color: var(--ink); }
+.v2-stdr > .v2-dot { grid-column: 1; grid-row: 1; }
+.v2-sn { grid-column: 2; grid-row: 1; font: var(--t-row); }
+.v2-sv { grid-column: 3; grid-row: 1; font: var(--t-small); color: var(--ink2); text-align: right; }
+.v2-std .v2-stdr > .v2-k { grid-column: 4; grid-row: 1; width: 10px; height: 10px; color: var(--ink2); justify-self: end; }
+.v2-sd { grid-column: 2 / 4; grid-row: 2; font: var(--t-small); color: var(--ink2); overflow-wrap: break-word; }
+.v2-sd b { font-weight: 500; color: var(--ink); }
+/* AC92 (c), from G5: the phase's two lines of detail, "<R> of <T> reached · <sprints>" over "Standard checklist: …". */
+.v2-sdl { display: block; }
+.v2-stdl { display: grid; padding: 0 0 10px 20px; position: relative; }
+.v2-stdl::before { content: ""; position: absolute; left: 4px; top: 10px; bottom: 14px; width: 1px; background: var(--line2); }
+.v2-runh { font: var(--t-label); font-weight: 600; color: var(--ink); padding: 8px 0 2px; }
+/* AC92 (d), from G9's round 2 (the Design reviewer's call, B1): a run's head outranks its two group heads, in --ink at 600,
+   its size 11 px; each run's head after the first in an opened phase set apart by the standard group head's own rule and
+   gap, a 1 px --line rule with 8 px over it; the first, the latest run's, has none. */
+.v2-runh ~ .v2-runh { margin-top: 8px; border-top: 1px solid var(--line); }
+/* AC92 (d), from G6 (P-001-glance2-standard.md, A; round 2's mock, changes2.js q5): an opened phase's two heads on every
+   run, "Your milestones · <n>" and "Standard checklist · <n> · <h> tracked", in --t-label --ink; the standard group set
+   apart by a 1 px --line rule above its head, 8 px over it; the owner's own rows' names in --t-row (500 13 px), a standard
+   row's in 400 13 px, an earlier run's rows smaller (note 2) with the same weights; the untracked ones folded into one row,
+   the dashed ring, its words in --t-small --ink2 and the chevron. */
+.v2-subh { font: var(--t-label); color: var(--ink); padding: 10px 0 0; }
+.v2-subh.std { margin-top: 8px; border-top: 1px solid var(--line); }
+.v2-sml { display: grid; }
+.v2-oldrun { display: grid; }
+.v2-sm { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: start; padding: 6px 0; }
+.v2-smt { display: grid; gap: 1px; min-width: 0; }
+.v2-smn { font: var(--t-body); color: var(--ink); overflow-wrap: break-word; }
+.v2-sm.own .v2-smn { font: var(--t-row); }
+.v2-id { font: var(--t-mono); color: var(--ink2); }
+.v2-sms { font: var(--t-small); color: var(--ink2); overflow-wrap: break-word; }
+.v2-sm.soft .v2-smn { color: var(--ink2); }
+.v2-sm.old .v2-smn { font: var(--t-small); color: var(--ink2); }
+.v2-sm.old.own .v2-smn { font-weight: 500; }
+.v2-untr { display: grid; }
+.v2-fold.v2-untrb { display: grid; grid-template-columns: 16px minmax(0, 1fr) 10px; gap: 8px; align-items: center; width: 100%; min-height: 32px; padding: 4px 0; font: var(--t-small); color: var(--ink2); text-align: left; }
+/* The why line (AC83; P-001-why-line.md's words): from G9 (AC92 (e)) a plain --t-small line in the grey of a gap the agents
+   fill, its eye icon in the rows' icon column (AC69), with no filled ground, so a filled box never holds an agents' gap. */
+.v2-callout { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; margin-top: 6px; font: var(--t-small); color: var(--ink2); }
+.v2-callout > .v2-k { margin-top: 1px; }
+
+/* The rest, "Details" and its views (AC55, AC36), and a v2.5 project's "Not used by this project" (frame 8). */
+.v2-pdetail { display: block; min-height: 0; color: var(--ink); } /* a block, as the rows above it, never .sb-more's inline-flex (the Design reviewer's B1) */
+.v2-pdetail > summary { cursor: pointer; }
+.v2-pdetail[open] > summary > .v2-chev { rotate: 90deg; }
+.v2-pdbody { display: grid; gap: 6px; padding: 0 0 8px 26px; }
+.v2-links { display: grid; gap: 0; }
+.v2-pdetail > section.sb-notify-line, .v2-pdetail > .sb-actions-usage { display: grid; gap: 6px; padding: 8px 0 8px 26px; border-top: 1px solid var(--line); }
+html.sb .v2-proj .sb-h3 { font: var(--t-row); color: var(--ink); text-transform: none; letter-spacing: 0; margin: 0; }
+.v2-proj .sb-notify { display: grid; gap: 6px; }
+.v2-proj .sb-notify .small, .v2-proj .sb-actions-usage .small, .v2-proj .sb-actions-usage, .v2-proj .sb-notify p { font: var(--t-small); color: var(--ink2); }
+.v2-proj .sb-notify .sb-warn { color: var(--bad); }
+.v2-proj .sb-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 12px; border: 0; border-radius: 18px; background: var(--chip);
+  font: 500 12px/1.35 var(--font); color: var(--ink); justify-self: start; text-align: center; }
+.v2-proj .sb-btn.ghost { box-shadow: inset 0 0 0 1px var(--line2); background: var(--bg); }
+.v2-proj .sb-value { font: var(--t-mono); color: var(--ink); background: var(--bg2); border-radius: 8px; padding: 8px; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.v2-proj .sb-steps { font: var(--t-small); color: var(--ink2); padding-left: 1.2em; margin: 0; }
+.v2-proj .sb-steps a, .v2-proj .sb-notify a { text-decoration: underline; text-underline-offset: 2px; }
+.v2-notused { display: grid; }
+.v2-notused > li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+.v2-nt { font: var(--t-body); color: var(--ink2); }
+.v2-nw { font: var(--t-small); color: var(--ink2); }
+.v2-sheet .v2-qlist { display: grid; gap: 8px; }
+.v2-sheet .v2-explist { gap: 0; }
+.v2-exl { display: flex; align-items: center; min-height: 32px; overflow-wrap: anywhere; } /* each experiment a 32 px target, alone on its row (rulebook item 11, WCAG 2.5.8) */
+.v2-sheet .v2-quote { font: var(--t-body); color: var(--ink); border-left: 2px solid var(--line2); padding: 2px 0 2px 10px; overflow-wrap: break-word; }
+.v2-sheet .v2-six { display: grid; gap: 4px; padding-left: 1.2em; list-style: decimal; font: var(--t-body); }
+.v2-mono.ink { color: var(--ink); }
+
+/* The short phase line (AC84; AC68, changed): the now phase's small square, then the first part of
+   the page's sentence, in --t-small; pinned with the Timeline's header, and under the Team screen's title. */
+.v2-phl { display: flex; align-items: center; gap: 8px; min-height: 28px; font: var(--t-small); color: var(--ink); }
+.v2-phlw { min-width: 0; overflow-wrap: break-word; }
+.v2-phlpin { position: sticky; top: 0; z-index: 3; background: var(--page, var(--bg)); margin: 0 -16px; padding: 4px 16px; border-bottom: 1px solid var(--line); }
+
+/* The Timeline (AC84; frame 7b and its full-length capture): one feed, newest at the top, under a compact
+   pinned header; pinned bands with a hairline and no box; a thin rail in the phase's colour, solid through
+   what has happened and dashed through what is planned; the Now line the only heavy rule. */
+.v2-timeline { display: grid; gap: 12px; padding-top: 4px; }
+.v2-tlhead { position: sticky; top: 0; z-index: 3; background: var(--bg); margin: 0 -16px; padding: 8px 16px 4px; border-bottom: 1px solid var(--line); display: grid; gap: 2px; align-content: start; }
+.v2-thead { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.v2-tn { font: 600 15px/1.3 var(--font); overflow-wrap: anywhere; min-width: 0; }
+.v2-thead .v2-sega { min-width: 0; }
+.v2-tlnone { padding: 8px 0; }
+.v2-goal { display: grid; gap: 4px; padding: 10px 12px; border-radius: 10px; background: var(--bg2); }
+.v2-goal .v2-label { font: var(--t-label); color: var(--ink2); }
+.v2-gq { font: var(--t-body); overflow-wrap: break-word; }
+.v2-feed { position: relative; display: grid; }
+.v2-tblk { position: relative; display: grid; padding-bottom: 6px; }
+.v2-tph { position: sticky; top: 96px; z-index: 1; background: var(--bg); display: flex; align-items: center; gap: 8px; min-height: 36px; border-bottom: 1px solid var(--line); margin: 0 -16px; padding: 0 16px; }
+/* The bands pin just under the Timeline's pinned header and phase line (AC84): the page measures the header and names its height, to the next 8 px, by a class (no inline style, AC41). */
+.v2-timeline.tlh-64 .v2-tph { top: 64px; }
+.v2-timeline.tlh-64 .v2-tlhead { min-height: 64px; }
+.v2-timeline.tlh-72 .v2-tph { top: 72px; }
+.v2-timeline.tlh-72 .v2-tlhead { min-height: 72px; }
+.v2-timeline.tlh-80 .v2-tph { top: 80px; }
+.v2-timeline.tlh-80 .v2-tlhead { min-height: 80px; }
+.v2-timeline.tlh-88 .v2-tph { top: 88px; }
+.v2-timeline.tlh-88 .v2-tlhead { min-height: 88px; }
+.v2-timeline.tlh-96 .v2-tph { top: 96px; }
+.v2-timeline.tlh-96 .v2-tlhead { min-height: 96px; }
+.v2-timeline.tlh-104 .v2-tph { top: 104px; }
+.v2-timeline.tlh-104 .v2-tlhead { min-height: 104px; }
+.v2-timeline.tlh-112 .v2-tph { top: 112px; }
+.v2-timeline.tlh-112 .v2-tlhead { min-height: 112px; }
+.v2-timeline.tlh-120 .v2-tph { top: 120px; }
+.v2-timeline.tlh-120 .v2-tlhead { min-height: 120px; }
+.v2-timeline.tlh-128 .v2-tph { top: 128px; }
+.v2-timeline.tlh-128 .v2-tlhead { min-height: 128px; }
+.v2-timeline.tlh-136 .v2-tph { top: 136px; }
+.v2-timeline.tlh-136 .v2-tlhead { min-height: 136px; }
+.v2-timeline.tlh-144 .v2-tph { top: 144px; }
+.v2-timeline.tlh-144 .v2-tlhead { min-height: 144px; }
+.v2-timeline.tlh-152 .v2-tph { top: 152px; }
+.v2-timeline.tlh-152 .v2-tlhead { min-height: 152px; }
+.v2-timeline.tlh-160 .v2-tph { top: 160px; }
+.v2-timeline.tlh-160 .v2-tlhead { min-height: 160px; }
+.v2-timeline.tlh-168 .v2-tph { top: 168px; }
+.v2-timeline.tlh-168 .v2-tlhead { min-height: 168px; }
+.v2-timeline.tlh-176 .v2-tph { top: 176px; }
+.v2-timeline.tlh-176 .v2-tlhead { min-height: 176px; }
+.v2-timeline.tlh-184 .v2-tph { top: 184px; }
+.v2-timeline.tlh-184 .v2-tlhead { min-height: 184px; }
+.v2-timeline.tlh-192 .v2-tph { top: 192px; }
+.v2-timeline.tlh-192 .v2-tlhead { min-height: 192px; }
+.v2-timeline.tlh-200 .v2-tph { top: 200px; }
+.v2-timeline.tlh-200 .v2-tlhead { min-height: 200px; }
+.v2-timeline.tlh-208 .v2-tph { top: 208px; }
+.v2-timeline.tlh-208 .v2-tlhead { min-height: 208px; }
+.v2-tpn { font: 600 12px/1.3 var(--font); color: var(--ink); }
+.v2-tpd { margin-left: auto; font: var(--t-mono); color: var(--ink2); text-align: right; }
+.v2-tseg { position: relative; padding-left: 26px; }
+/* AC90 (AC59, changed): a why not recorded yet for two or more of a run's milestones, said once under its band, in line with them. */
+.v2-tonce { padding: 8px 0 2px 26px; }
+.v2-tseg::before { content: ""; position: absolute; left: 7px; top: 0; bottom: 0; width: 1.5px; background: var(--phc); opacity: .55; }
+.v2-tseg.plan::before { background: repeating-linear-gradient(var(--phc) 0 4px, transparent 4px 8px); opacity: .7; }
+.v2-timeline .sb-began { display: block; margin: 0; padding: 8px 0 2px; font: var(--t-small); color: var(--ink2); background: none; border: 0; }
+.v2-timeline .sb-began.gap > span { display: inline; }
+.v2-stats .sb-mkw, .v2-stats .sb-mkw > summary { font: 400 11px/1.35 var(--font); color: var(--ink2); }
+.v2-timeline .sb-began :is(p, span, .sb-quote, .sb-src, .sb-muted, .sb-began-h, .sb-began-p, .sb-began-k) { font: var(--t-small); color: var(--ink2); margin: 0; text-transform: none; letter-spacing: 0; }
+.v2-timeline .sb-began .sb-quote { color: var(--ink); }
+.v2-timeline .sb-began .code { font: var(--t-mono); color: var(--ink2); }
+.v2-ms { position: relative; display: grid; gap: 3px; padding: 10px 0 8px; }
+.v2-msi { position: absolute; left: -26px; top: 10px; display: grid; background: var(--bg); border-radius: 8px; }
+.v2-mstt { font: var(--t-row); overflow-wrap: break-word; }
+/* AC92 (d), from G6: a standard milestone's name in 400 13 px; the owner's own keep --t-row's 500 (AC84). */
+.v2-ms.std .v2-mstt { font-weight: 400; }
+.v2-msm { font: var(--t-mono); color: var(--ink2); overflow-wrap: anywhere; }
+.v2-msd { font: var(--t-small); color: var(--ink2); overflow-wrap: break-word; }
+.v2-msd b { font-weight: 500; color: var(--ink); }
+.v2-fold { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; font: var(--t-label); color: var(--ink2); justify-self: start; }
+.v2-fold > .v2-k { width: 10px; height: 10px; }
+.v2-gather, .v2-fkeys { display: grid; }
+.v2-glist, .v2-keyl { display: grid; gap: 2px; padding: 0 0 6px; font: var(--t-small); color: var(--ink2); }
+.v2-keyl > li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: center; }
+.v2-nowl { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 4px 0; min-height: 28px; font: 500 11px/1.4 var(--mono); color: var(--ink); }
+.v2-nowl::after { content: ""; flex: 1 1 24px; border-top: 1px solid var(--ink); }
+.v2-nowt { text-transform: uppercase; letter-spacing: .04em; }
+.v2-nows { font: var(--t-small); color: var(--ink2); }
+.v2-sps { display: grid; margin-top: 4px; border-top: 1px solid var(--line); }
+.v2-sp { display: grid; gap: 6px; padding: 10px 0 12px; border-bottom: 1px solid var(--line); min-width: 0; }
+.v2-sph { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.v2-stats { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0 8px; font: 400 11px/1.35 var(--font); color: var(--ink2); }
+.v2-stats .sb-why > summary { min-height: 24px; }
+.v2-timeline .sb-why, .v2-timeline .sb-why > summary, .v2-timeline .sb-why p { font: var(--t-small); color: var(--ink2); }
+/* The marks row (frame 7b): one even line in one size, a mark with a reason as its neighbours (the Design reviewer's 2). */
+.v2-stats { align-items: center; }
+.v2-timeline .v2-stats .sb-mkw, .v2-timeline .v2-stats .sb-mkw > summary { font: 400 11px/1.35 var(--font); color: var(--ink2); }
+.v2-timeline .v2-stats span.sb-mkw, .v2-timeline .v2-stats .sb-mkw > summary { display: inline-flex; align-items: center; gap: 2px; }
+.v2-stats .v2-smk { width: 10px; height: 10px; color: var(--bad); } /* the ✕ in --bad, its word staying --ink2 (AC92 (a), from G7) */
+.v2-stats .v2-okm { color: var(--ok); font-weight: 600; } /* the ✓ in --ok, its word staying --ink2 (AC92 (a), from G7; round 2's mock, changes2.js q1) */
+.v2-spt { font: var(--t-row); overflow-wrap: break-word; margin: 0; }
+.v2-bl { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 8px; align-items: start; padding-left: 8px; border-left: 2px solid var(--line2); }
+.v2-bn { font: var(--t-label); color: var(--ink2); padding-top: 1px; }
+.v2-bt { font: var(--t-small); color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
+.v2-bt.mono { font: var(--t-mono); color: var(--ink2); }
+.v2-bt > .sb-para { display: block; } /* each of Why's paragraphs kept as its own (AC60) */
+.v2-bt.nr { color: var(--ink2); }
+.v2-bt.cut { display: block; max-height: calc(3 * 1.4em); overflow: hidden; overflow: clip; }
+.v2-bl > .v2-inmore { grid-column: 2; }
+.v2-inmore { min-height: 24px; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.v2-feednote { padding: 4px 0; }
+@media (min-width: 720px) {
+  html.sb.v2-page.v2-home-page body { max-width: 960px; }
+  .v2-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .v2-tile .sb-sumclip { height: calc(3 * 1.4em); }
+}
+
+/* Plan (AC86; frame 11; desk-v2.html:824-851), from stage 5: AC24's Work ahead in the Plan tab. The title
+   with frame 11's round pill holding "⇅"; the line under it; each project's group, a head with its count,
+   each row an icon, the name, "<id> · <phase> · about <low>–<high> days" in Plex Mono and its value at the
+   right; under a row only what AC24 must say there. "⇅" opens AC24's ordering: each row's place and its move
+   controls, the card, and the bar sticking above the tab bar. Nothing moves unless the owner acts. */
+.v2-plan { display: grid; gap: 12px; padding-top: 4px; }
+.v2-plan .v2-sub { margin-top: -6px; }
+.v2-pltop { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 44px; }
+.v2-pill { display: flex; padding: 2px; border-radius: 24px; background: var(--bg); box-shadow: var(--shadow); }
+.v2-ib { width: 44px; height: 44px; border-radius: 22px; display: grid; place-items: center; color: var(--ink); }
+.v2-ib[aria-pressed="true"] { background: var(--chip); }
+.v2-plstate b { font-weight: 500; color: var(--ink); }
+.v2-plnotice { color: var(--ink); background: var(--bg2); border-radius: 8px; padding: 6px 10px; }
+.v2-plgrp { display: grid; gap: 0; min-width: 0; }
+.v2-plh { padding-top: 6px; }
+.v2-plhw { display: inline-flex; align-items: center; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.v2-plhw > .v2-k { color: var(--ink2); }
+.v2-plline { padding: 2px 0 4px; }
+.v2-plli { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 8px; min-width: 0; }
+.v2-rows > .v2-plli + .v2-plli { border-top: 1px solid var(--line); }
+.v2-plrow { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 2px 10px; align-items: start; padding: 9px 0; min-height: 40px; width: 100%; color: var(--ink); min-width: 0; }
+.v2-plrow > .v2-s { margin-top: 1px; }
+.v2-plrow > .v2-chev { width: 10px; height: 10px; margin-top: 4px; color: var(--ink2); }
+.v2-plord { display: contents; }
+.v2-plname { overflow-wrap: break-word; }
+/* A gate card's row (AC86, frame 11): its title the gate's short title, held to two lines, as the board's (AC91 (h); AC89 (j),
+   changed after the glance audit); the whole card one tap away. */
+.v2-plli.gate .v2-plname { max-height: calc(2 * 1.35em); overflow: hidden; overflow: clip; }
+.v2-plm { overflow-wrap: anywhere; }
+.v2-plv { font: var(--t-mono); color: var(--ink2); text-align: right; padding-top: 1px; }
+.v2-plv.accept, .v2-plv.ruling { font: var(--t-small); }
+.v2-plunder { display: grid; gap: 2px; padding: 0 0 9px 26px; margin-top: -5px; min-width: 0; }
+/* AC90: a reason two or more of a group's rows share, said once under the group's head, in the agents' grey (AC69). */
+.v2-plonce { display: grid; gap: 2px; padding: 2px 0 4px; min-width: 0; }
+.v2-plgap, .v2-pltag { overflow-wrap: anywhere; }
+.v2-plyou { font: var(--t-small); }
+/* Vermilion only on the ◆ beside the words (mockup v2: "the diamond"; AC69); the words in ink. */
+.v2-plyou a { display: inline-flex; align-items: center; gap: 4px; min-height: 24px; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+.v2-plyou .v2-k { flex: none; }
+/* The ordering (⇅): each row's place in Plex Mono before its icon, the two move controls at its right. */
+.v2-plli.ord { grid-template-columns: minmax(0, 1fr) auto; }
+.v2-plli.ord > .v2-plrow { grid-template-columns: 18px 16px minmax(0, 1fr) auto; }
+.v2-plli.ord .v2-plord { display: block; font: var(--t-mono); color: var(--ink2); padding-top: 1px; }
+.v2-plli.ord > .v2-plunder { grid-column: 1; padding-left: 44px; }
+.v2-plmove { grid-column: 2; grid-row: 1 / span 2; display: grid; grid-auto-rows: 32px; gap: 4px; align-content: start; padding: 6px 0; }
+.v2-plmv { width: 36px; height: 32px; display: grid; place-items: center; border-radius: 8px; background: var(--chip); color: var(--ink); }
+.v2-plmv[aria-disabled="true"] { color: var(--ink2); background: var(--bg2); cursor: default; }
+.v2-plmv[aria-disabled="true"] .v2-k { opacity: .45; }
+/* The row moved last: an edge in the light line grey until the next move, with "moved" in its words (AC24; after the
+   glance audit, G7, P-001-glance-plan-gold.md, A: gold means only "next to reach"). */
+.v2-plli.moved { box-shadow: inset 2px 0 0 var(--line2); border-radius: 2px; }
+.v2-plli.moved > .v2-plrow { padding-left: 8px; }
+/* G8b (AC24's note; P-001-glance-moved-word.md, B: "Show the word — a small grey 'moved' on the row, in the secondary text
+   colour, beside the light-grey edge; gold keeps its one meaning"): the word "moved" on the moved row only, on a line of
+   its own in the row's text column, directly under its code line and left-aligned with the name, in --t-small --ink2,
+   never --gold or --you, with no icon, fill or border; it takes no width from the name. Hidden from assistive technology:
+   the place's words say ", moved" once. */
+.v2-plmoved { font: var(--t-small); color: var(--ink2); }
+.v2-plcard { display: grid; gap: 2px; padding: 12px; border-radius: 12px; background: var(--bg2); }
+.v2-plbig { font: var(--t-sheet); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+/* The bar (AC24): what changed and "Record plan", held above the tab bar while the list scrolls under it. */
+.v2-plbar { position: sticky; z-index: 3; bottom: calc(82px + env(safe-area-inset-bottom, 0px)); display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between;
+  padding: 8px 8px 8px 12px; border-radius: 14px; background: var(--bg); box-shadow: var(--shadow); }
+.v2-plsay { color: var(--ink); }
+.v2-plrec { background: var(--ink); color: var(--bg); }
+.v2-plrec[disabled] { background: var(--chip); color: var(--ink2); cursor: default; }
+.v2-plwhy { flex: 1 1 100%; }
+.v2-plcopy { display: grid; gap: 6px; min-width: 0; padding-bottom: 6px; }
+.v2-plcopy .v2-pre { margin: 0; }
+.v2-plcopy .v2-abtn { justify-self: start; }
+.v2-plnote2 { overflow-wrap: anywhere; }
+.v2-plw { color: var(--ink); overflow-wrap: anywhere; }
+.v2-plans .sb-lineclip, .v2-plans button.sb-line, .v2-plans .sb-line-w { font: var(--t-small); color: var(--ink); }
+.v2-plfold { justify-self: start; padding-top: 6px; }
+.v2-plmini { display: grid; gap: 4px; padding: 2px 0 6px; }
+.v2-plmini > li { overflow-wrap: anywhere; }
+.v2-plt { font-weight: 500; color: var(--ink); }
+/* The Reached list's check before each name (AC92 (a), from G7), in its line's text. */
+.v2-plmini > li > .v2-s { width: 14px; height: 14px; vertical-align: -2px; margin-right: 6px; }
+.v2-plideas { padding: 2px 0; }
+/* A milestone's sheet over Plan (AC86): AC24's whole row, its phase in words with its phase colour (AC24, AC48). */
+.v2-plph.ph-disc { color: var(--ph-disc); }
+.v2-plph.ph-des { color: var(--ph-des); }
+.v2-plph.ph-build { color: var(--ph-build); }
+.v2-plph.ph-launch { color: var(--ph-launch); }
+.v2-plst { font: var(--t-row); }
+.v2-pldone, .v2-plest, .v2-plfin { overflow-wrap: anywhere; }
+.v2-plest.missing, .v2-plest.na { color: var(--ink2); }
+.v2-plnote .sb-lineclip, .v2-plnote button.sb-line, .v2-plnote .sb-line-w { font: var(--t-small); color: var(--ink2); }
+.v2-plnote .sb-lineclip.two { max-height: calc(2 * 1.4em); }
+.v2-plnote .sb-lineclip.two.over { height: calc(2 * 1.4em); }
+.v2-plnote .sb-lineclip.over::after { height: 1.4em; background: linear-gradient(to right, transparent, var(--bg) 85%); }
+.v2-plan .sb-bubble, .v2-sheet .sb-linebub { background: var(--bg); color: var(--ink); border: 1px solid var(--line2); border-radius: 12px; box-shadow: var(--shadow); }
+.v2-sheet .sb-linebub .sb-bubble-top { background: var(--bg); }
+/* AC89 (f) (the audit's item 9): a bubble's top row and its note take the bubble's own ground, never --card over it. */
+.v2-plan .sb-bubble-top, .v2-plan .sb-bubble-note, .v2-sheet .sb-linebub .sb-bubble-note, .v2-home .sb-bubble-note, .v2-proj .sb-bubble-note { background: var(--bg); }
+.v2-sheet .sb-linebub .sb-eyebrow { font: var(--t-label); color: var(--ink2); }
+.v2-sheet .sb-linebub .sb-bubble-t { font: var(--t-body); }
+
+/* M3D stage 5, answering. AC17, changed after MD3 ("Ruling: A — when an answer is too long to prefill, a Copy sits inside
+   each choice's box, with the text one tap down", P-001-audit-copy.md): where a choice's link can't carry its text, its
+   "Copy" sits in the choice's box under its answer button, nothing stacked above the choices. AC89 (j): a question file's
+   DEFAULT words set apart as quoted record text; long titles cut at three lines with the fade, the whole one tap away
+   (the board's card titles, Plan's gate row, a gate sheet's title), the fade drawn only once the browser measures the cut. */
+.v2-obtns { display: grid; gap: 6px; }
+.v2-dq { display: block; margin-top: 4px; }
+.v2-tt { display: block; max-height: calc(3 * 1.33em); overflow: hidden; overflow: clip; }
+.v2-tt.over, .v2-plli.gate .v2-plname.over { -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
+.v2-clip.v2-stt { display: block; max-height: calc(2 * 1.3em); }
+.v2-clip.v2-stt.open { max-height: none; }
+/* G3 of "After the glance audit" (AC91 (h)): one short title for every gate, the same words on the board, in its sheet and
+   on Plan, so it takes one line or two at 360 px; should it need more, it is cut at two lines with the fade: a gate card's
+   title on the board, a gate sheet's (the only sheet title held to lines) and Plan's gate row (above). The board's other
+   card titles keep AC89 (j)'s three. */
+.v2-card.gate .v2-tt { max-height: calc(2 * 1.33em); }
+/* G3: the item ending a gate's short title ("P-004") moves to the next line as one piece, so a wrap never splits it at its
+   hyphen; an inline block, not `nowrap`, so it still wraps inside should it ever be wider than its line (AC42). */
+.v2-gitem { display: inline-block; }
+
+/* M3D stage 6a, the words and drawing on the screens (AC89 (f), (g), (k)). (g) The Timeline's sprint marks level: every
+   mark, a plain one too, as tall as one with a reason (its 24 px summary), so centred on one line their tops meet. (k) The
+   ordering view's rows have no empty space under them (stage 6a's design reviews, N1 and round 2's B1): a row with
+   nothing under it keeps its two move controls stacked beside the row only, with no padding, filling the row's own
+   height, shared between the two (each at least 24 px, the target floor), so they are never taller than its
+   words and the names keep their width; a row with lines under it keeps the controls' column spanning them, as before.
+   (k) An unparseable portfolio card's "can't parse" note cut at three lines, faded only once the browser measures the cut. */
+.v2-timeline .v2-stats span.sb-mkw { min-height: 24px; }
+.v2-plli.ord:not(:has(.v2-plunder)) > .v2-plmove { grid-row: 1; padding: 0; align-self: stretch; grid-auto-rows: minmax(24px, 1fr); }
+.v2-plli.ord:not(:has(.v2-plunder)) > .v2-plmove > .v2-plmv { height: auto; }
+.v2-why.v2-wclip { max-height: calc(3 * 1.4em); overflow: hidden; overflow: clip; }
+.v2-why.v2-wclip.over { -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
+
+/* G4 of "After the glance audit" (AC91 (k); AC89 (h), changed): the failed-load screen, which app.js draws when the
+   desk's own code fails to load: "The desk couldn't load." in --t-lead --ink, the ✕ (app.js's own inline SVG) in --bad
+   before it, and under it a "Reload" button at least 44 px tall in 500 15 px (the briefing's pair), which reloads the
+   page; nothing else. style.css holds the few rules it keeps should this sheet not load either. */
+.v2-loadfail { display: grid; gap: 12px; justify-items: start; }
+.v2-lf { display: flex; gap: 8px; align-items: flex-start; margin: 0; font: var(--t-lead); color: var(--ink); }
+.v2-lf > .v2-lfx { width: 16px; height: 16px; flex: none; margin-top: 3px; color: var(--bad); }
+.v2-reload { min-height: 44px; padding: 0 20px; border: 1px solid var(--line2); border-radius: 10px; background: var(--bg); color: var(--ink);
+  font: 500 15px/1.35 var(--font); cursor: pointer; }
+
+/* VT1 of M3B (AC97; round 2's approved picture, docs/design/builds/m3b-picture/round-2/): each value target against its
+   measure. AC81's tokens and type roles only, no new colour, size or weight: the figure is --t-title (24 px 600, in the
+   scale); green and red only on the 14 to 16 px marks with ✓ or ✕ and words beside them, and on the charts' fills, which
+   the owner's approval of round 2's picture covers (P-001-m3b-picture-approve.md, A; AC97, "Green and red on the chart's
+   fills"); V5's grey before W1 is --ink3 (4.19:1 on the track in light, 5.44:1 in dark), never --line2. */
+/* The row: under its title, the five marks, each its icon (14 px) and its id in Plex Mono, then the row's words. */
+.v2-vmarks { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; }
+.v2-vmk { display: inline-flex; align-items: center; gap: 3px; }
+.v2-vmk > .v2-s { width: 14px; height: 14px; }
+/* The sheet: a block per target, a hairline above it. */
+.v2-tgt, .v2-vstop { display: grid; gap: 6px; min-width: 0; padding-top: 12px; border-top: 1px solid var(--line); }
+.v2-vth { margin: 0; font: var(--t-row); color: var(--ink); overflow-wrap: anywhere; }
+.v2-vfig { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin: 0; }
+.v2-vbig { font: var(--t-title); color: var(--ink); overflow-wrap: anywhere; }
+.v2-vfw { font: var(--t-small); color: var(--ink2); }
+/* The chart: one grid, so every bar's track starts and ends at the same place; its label, the track, its value. */
+.v2-vchart { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 5px 8px; }
+.v2-vrow { display: contents; }
+.v2-vbl { font: var(--t-label); font-weight: 400; color: var(--ink2); overflow-wrap: anywhere; }
+.v2-vbv { font: var(--t-mono); color: var(--ink); text-align: right; }
+.v2-vgt { position: relative; height: 14px; }
+.v2-vgl { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font: var(--t-label); font-weight: 400; color: var(--ink2); }
+.v2-vgl.at0 { left: 0; transform: none; }
+.v2-vgl.at33 { left: 33.333%; }
+.v2-vsvg { display: block; width: 100%; height: 18px; overflow: visible; }
+.v2-vsvg .tr { fill: var(--line); }
+.v2-vsvg .fl.ok { fill: var(--ok); }
+.v2-vsvg .fl.bad { fill: var(--bad); }
+.v2-vsvg .fl.grey { fill: var(--ink3); }
+.v2-vsvg .gl { fill: var(--ink); }
+/* V4's two steps, joined by a thin --line connector. */
+.v2-vsteps { display: grid; margin: 0; padding: 0; list-style: none; }
+.v2-vsteps > li { position: relative; display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: start; padding: 3px 0; font: var(--t-small); color: var(--ink); }
+.v2-vsteps > li + li::before { content: ""; position: absolute; left: 7.5px; top: -8px; width: 1px; height: 10px; background: var(--line); }
+/* The verdict: its mark, its first part in 600, " · " and the rest; under it the check's line and the rest in --ink2. */
+.v2-vverd { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: start; margin: 0; font: var(--t-small); color: var(--ink); overflow-wrap: anywhere; }
+.v2-vverd b { font-weight: 600; }
+.v2-vline, .v2-vearly { margin: 0; padding-left: 24px; font: var(--t-small); color: var(--ink2); overflow-wrap: anywhere; }
+.v2-vearly { display: grid; gap: 4px; list-style: none; }
+/* The stop rule's quote held to exactly three lines (AC97's follow-up from the picture): the sheet's quote padding
+   (`.v2-sheet .v2-quote`, 2 px over and under) outweighed the clip's (`.v2-clip.v2-quote`, none), so a quote of exactly
+   three lines was cut; here the clip's own padding wins. */
+.v2-vstop .v2-clip.v2-quote { padding: 0 0 0 10px; }
+
+/* AC25, as changed for M3B (stage VT2): "Didn't need me", a sheet's last line, under a hairline, in --t-small --ink2, never
+   --you; a text button at least 24 px tall, underlined as the sheet's quiet links are. Marked, "Marked as not needing you · "
+   in --ink2 and "Unmark" its own button. */
+.v2-dnm { margin: 0; padding-top: 8px; border-top: 1px solid var(--line); min-height: 24px; font: var(--t-small); color: var(--ink2); overflow-wrap: anywhere; }
+.v2-dnmb { display: inline-flex; align-items: center; min-height: 24px; margin: 0; padding: 0; border: 0; border-radius: 0; background: none;
+  font: var(--t-small); color: var(--ink2); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; vertical-align: middle; }
+
+/* AC25, as changed for M3B (stage VT3): Home's weekly line, a plain row between the portfolio's block and "More detail", in
+   --t-body --ink with a chevron, no soft box and no icon of its own (never --you); and the targets' sheet's last block, "Your
+   weekly figures", under a hairline as the stop rule's, each week its "Save the week of …" button. */
+.v2-wkline { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; font: var(--t-body); color: var(--ink);
+  text-decoration: none; overflow-wrap: anywhere; }
+/* Its chevron in --ink2, as "More detail"'s and the portfolio's rows' (VT3's design review, N1). */
+.v2-wkline > .v2-k { color: var(--ink2); }
+.v2-vweek { display: grid; gap: 6px; min-width: 0; padding-top: 12px; border-top: 1px solid var(--line); }
+.v2-wkl { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.v2-wkw { display: grid; gap: 6px; justify-items: start; min-width: 0; }

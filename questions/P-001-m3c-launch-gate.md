@@ -8,7 +8,7 @@ OPTIONS:
   A. Launch now, the gate later — M3C is your launch approval. Service-Desk stays on its own desk with M3F's later work, and your Chief of Staff brings the Launch gate's case (the handover, the launch review, the Critic's view) when the desk's work is done.
   B. M3C is the Launch gate — your Chief of Staff writes the gate's case and the launch review runs before launch day, about a day more; once you rule proceed, Service-Desk shows as Graduated, and M3F's work comes back later as new work.
 RECOMMENDATION: A — the build path you chose has no further Critic gate, and M3F is still ahead: graduating now would take the desk's own remaining work off its board.
-RISK CLASS: R3   REVERSIBILITY: the gate can still be held later under A   BLAST RADIUS: Service-Desk's phase and whether it stays on its own desk
+RISK CLASS: R3   REVERSIBILITY: reversible   BLAST RADIUS: Service-Desk's phase and whether it stays on its own desk
 DEFAULT: A   TIMEOUT: 168
 
 ## Context

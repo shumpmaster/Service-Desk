@@ -321,6 +321,15 @@ test('AC98, "Two headings on one line": "Since you last looked · <time>" and "M
           assert.equal(L.get(time).decl('font').replace(/ "IBM Plex Mono".*$/, ''), '400 12px/1.4', 'its pair, 400 12px/1.4');
         }
         assert.deepEqual([L.get(row).decl('flex-wrap'), L.get(row.children.at(-1)).decl('margin-left')], ['wrap', 'auto'], `${k}, ${theme} ${w}: the control under the heading where both don't fit, at its right`);
+        // HD1's review, round 2, B2: what the suite can check without layout — the row and its control in the flow, so the
+        // control can only sit beside the heading or wrap under it, never laid over it (positioned, moved or transformed);
+        // where it sits is measured in Chromium by tools/hd1-shots.mjs.
+        for (const [what, el] of [['the row', row], ['its heading', h2], ['its control', row.children.at(-1)]]) {
+          const d = L.get(el);
+          assert.deepEqual(['position', 'top', 'right', 'bottom', 'left', 'inset', 'transform', 'translate', 'float', 'margin-top'].map((x) => d.decl(x)).filter(Boolean), [],
+            `${k}, ${theme} ${w}: ${what} in the flow, nothing moving it`);
+        }
+        assert.equal(L.get(row).decl('display'), 'flex', `${k}, ${theme} ${w}: the row a flex line`);
       }
     }
     const ctl = row.children.at(-1);

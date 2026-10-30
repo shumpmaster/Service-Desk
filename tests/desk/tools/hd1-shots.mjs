@@ -81,6 +81,9 @@ function serve(cur) {
   return new Promise((ok) => srv.listen(0, '127.0.0.1', () => ok(srv)));
 }
 
+/** Where a heading's control sits, in words. */
+const placeWords = (x) => (!x.place ? '' : `, its control ${x.place.beside ? 'beside' : x.place.under ? `under, ${x.place.gap} px below${x.place.atRight ? ', at the right' : ', not at the right'}` : 'neither beside nor under'}${x.place.over ? ', OVER its text' : ''}`);
+
 async function main() {
   const { chromium } = await import('playwright').catch(() => import(pathToFileURL(join(dirname(process.execPath), '..', 'lib', 'node_modules', 'playwright', 'index.mjs')).href));
   mkdirSync(OUT, { recursive: true });
@@ -146,11 +149,27 @@ async function main() {
                 let last = -1e9;
                 for (const m of mids) { if (m - last > 6) n++; last = m; }
                 const words = [...h2.childNodes].map((c) => Math.round(c.nodeType === 3 ? (() => { const q = document.createRange(); q.selectNodeContents(c); return q.getBoundingClientRect().width; })() : c.getBoundingClientRect().width));
-                // Its control beside it: the control's middle within the heading's line, not under it.
+                // Its control (HD1's review, round 2, B2): beside it (the control's middle within the heading's line), or under it
+                // (its top at or below the h2's bottom) at the row's right edge; and over none of the heading's text.
                 const ctl = sh.tagName === 'H2' ? null : sh.lastElementChild !== h2 ? sh.lastElementChild : null;
                 const hb = h2.getBoundingClientRect();
-                const beside = ctl ? (() => { const c = ctl.getBoundingClientRect(); const mid = (c.top + c.bottom) / 2; return mid >= hb.top && mid <= hb.bottom; })() : null;
-                return { words: h2.textContent, lines: n, size: getComputedStyle(h2).fontSize, widths: words, room: Math.round(sh.getBoundingClientRect().width), beside };
+                const rb = sh.getBoundingClientRect();
+                let place = null;
+                if (ctl) {
+                  const c = ctl.getBoundingClientRect();
+                  const mid = (c.top + c.bottom) / 2;
+                  const texts = [];
+                  const each = (n) => {
+                    for (const x of n.childNodes) {
+                      if (x.nodeType === 3 && x.textContent.trim()) { const q = document.createRange(); q.selectNodeContents(x); texts.push(...[...q.getClientRects()].filter((r) => r.width > 0)); } else if (x.nodeType === 1) each(x);
+                    }
+                  };
+                  each(h2);
+                  const over = texts.some((t) => t.left < c.right - 0.5 && c.left < t.right - 0.5 && t.top < c.bottom - 0.5 && c.top < t.bottom - 0.5);
+                  place = { beside: mid >= hb.top && mid <= hb.bottom, under: c.top >= hb.bottom - 0.5, atRight: Math.abs(c.right - rb.right) <= 1, over,
+                    gap: Math.round(c.top - hb.bottom) };
+                }
+                return { words: h2.textContent, lines: n, size: getComputedStyle(h2).fontSize, widths: words, room: Math.round(rb.width), beside: place ? place.beside : null, place };
               }).filter(Boolean);
               const s = document.querySelector('.v2-sheet');
               return { heads, sideways: document.documentElement.scrollWidth - document.documentElement.clientWidth, sheet: s ? s.scrollWidth - s.clientWidth : 0 };
@@ -160,11 +179,23 @@ async function main() {
             if (when === 'after') for (const x of said.heads) if (/^(Since you last looked|Milestones by phase) · /.test(x.words) && x.lines !== 1) fails.push(`${shot.name} ${w} ${theme}: "${x.words}" on ${x.lines} lines`);
             // Today's time alone fits beside "Mark as seen", at 360 px too (HD1's review, round 1, B1).
             if (when === 'after') for (const x of said.heads) if (/^Since you last looked · \d\d:\d\d$/.test(x.words) && x.beside !== true) fails.push(`${shot.name} ${w} ${theme}: "Mark as seen" not beside "${x.words}"`);
+            // HD1's review, round 2, B2 (the plan's draft 3): for each of the two headings, its control beside it at 414 px; at
+            // 360 px beside it where it fits, otherwise on its own line just below it (its top at or below the h2's bottom), at
+            // the row's right edge; at both widths over none of the heading's text.
+            if (when === 'after') {
+              for (const x of said.heads) {
+                if (!/^(Since you last looked|Milestones by phase) · /.test(x.words) || !x.place) continue;
+                const at = `${shot.name} ${w} ${theme}: "${x.words}"`;
+                if (x.place.over) fails.push(`${at}: its control over the heading's text`);
+                if (w >= 414 && !x.place.beside) fails.push(`${at}: its control not beside it at ${w} px`);
+                if (w < 414 && !x.place.beside && !(x.place.under && x.place.atRight)) fails.push(`${at}: its control neither beside it nor under it at the right (under ${x.place.under}, at the right ${x.place.atRight})`);
+              }
+            }
             if (w === 360) {
               const file = join(OUT, `${shot.name}-${when}-${w}x${hgt}-${theme}.png`);
               await page.screenshot({ path: file });
-              lines.push(`${file}  (${said.heads.map((x) => `"${x.words}" ${x.size} ${x.lines} line${x.lines === 1 ? '' : 's'}${x.beside == null ? '' : x.beside ? ', its control beside' : ', its control under'} [${x.widths.join('+')} of ${x.room}]`).join('; ') || 'no section head'})`);
-            } else lines.push(`${shot.name}-${when}-${w}x${hgt}-${theme}: ${said.heads.map((x) => `"${x.words}" ${x.lines}`).join('; ')}`);
+              lines.push(`${file}  (${said.heads.map((x) => `"${x.words}" ${x.size} ${x.lines} line${x.lines === 1 ? '' : 's'}${placeWords(x)} [${x.widths.join('+')} of ${x.room}]`).join('; ') || 'no section head'})`);
+            } else lines.push(`${shot.name}-${when}-${w}x${hgt}-${theme}: ${said.heads.map((x) => `"${x.words}" ${x.lines} line${x.lines === 1 ? '' : 's'}${placeWords(x)}`).join('; ')}`);
             await ctx.close();
           }
         }

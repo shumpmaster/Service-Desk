@@ -16,6 +16,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fakeServer } from '../fake-desk.mjs';
 import { mixState, gatesState, GATE_KEY, GATE4, MIX_PROJECT, NOW } from '../glance-fixtures.mjs';
 import { vt1State, DAY5, windowCards, chi } from '../vt1-fixtures.mjs';
+import { noneTrackedState } from '../hd1-fixtures.mjs';
 
 const AFTER = resolve(fileURLToPath(new URL('../../../src/public/', import.meta.url)));
 const args = process.argv.slice(2);
@@ -30,9 +31,14 @@ const seen = (ms) => ({ 'desk-seen-v1': JSON.stringify({ lastLooked: ms }) });
 const SHOTS = [
   { name: 'hd1-home', state: () => mixState(), now: NOW, hash: '#/', store: seen(NOW - 20 * H), at: '[data-k="since-h"]' },
   { name: 'hd1-home-last-7-days', state: () => mixState(), now: NOW, hash: '#/', store: seen(NOW - 9 * 24 * H), at: '[data-k="since-h"]' },
+  // HD1's review, round 1, B1: a time with its date ("· 11 Oct, 10:00"), and today's time alone ("· 08:00"), which fits
+  // beside "Mark as seen" at 360 px (checked below).
+  { name: 'hd1-home-date', state: () => mixState(), now: NOW, hash: '#/', store: seen(NOW - 3 * 24 * H), at: '[data-k="since-h"]' },
+  { name: 'hd1-home-today', state: () => mixState(), now: NOW, hash: '#/', store: seen(NOW - 2 * H), at: '[data-k="since-h"]' },
   { name: 'hd1-home-foot', state: () => mixState(), now: NOW, hash: '#/', store: seen(NOW - 20 * H), at: '[data-k="home-more-detail"]' },
   { name: 'hd1-waiting', state: () => mixState(), now: NOW, hash: '#/waiting', store: {}, at: null },
   { name: 'hd1-project-page', state: () => mixState(), now: NOW, hash: '#/p/Service-Desk', store: {}, at: '[data-k="ms-h"]', open: true },
+  { name: 'hd1-project-page-none-tracked', state: () => noneTrackedState(), now: NOW, hash: '#/p/Alpha', store: {}, at: '[data-k="ms-h"]' },
   { name: 'hd1-plan', state: () => mixState(), now: NOW, hash: '#/work', store: {}, at: null },
   { name: 'hd1-gate-sheet', state: () => gatesState(), now: NOW, hash: `#/waiting/card/${encodeURIComponent(GATE_KEY(MIX_PROJECT, GATE4))}`, store: {}, at: null },
   { name: 'hd1-targets-sheet', state: () => vt1State({ lines: DAY5, cards: windowCards() }), now: chi('2026-12-07', '15:00'), hash: '#/p/Service-Desk/values', store: {}, at: null },
@@ -140,7 +146,11 @@ async function main() {
                 let last = -1e9;
                 for (const m of mids) { if (m - last > 6) n++; last = m; }
                 const words = [...h2.childNodes].map((c) => Math.round(c.nodeType === 3 ? (() => { const q = document.createRange(); q.selectNodeContents(c); return q.getBoundingClientRect().width; })() : c.getBoundingClientRect().width));
-                return { words: h2.textContent, lines: n, size: getComputedStyle(h2).fontSize, widths: words, room: Math.round(sh.getBoundingClientRect().width) };
+                // Its control beside it: the control's middle within the heading's line, not under it.
+                const ctl = sh.tagName === 'H2' ? null : sh.lastElementChild !== h2 ? sh.lastElementChild : null;
+                const hb = h2.getBoundingClientRect();
+                const beside = ctl ? (() => { const c = ctl.getBoundingClientRect(); const mid = (c.top + c.bottom) / 2; return mid >= hb.top && mid <= hb.bottom; })() : null;
+                return { words: h2.textContent, lines: n, size: getComputedStyle(h2).fontSize, widths: words, room: Math.round(sh.getBoundingClientRect().width), beside };
               }).filter(Boolean);
               const s = document.querySelector('.v2-sheet');
               return { heads, sideways: document.documentElement.scrollWidth - document.documentElement.clientWidth, sheet: s ? s.scrollWidth - s.clientWidth : 0 };
@@ -148,10 +158,12 @@ async function main() {
             if (said.sideways > 0) fails.push(`${shot.name} ${when} ${w} ${theme}: the page scrolls sideways by ${said.sideways} px`);
             if (said.sheet > 0) fails.push(`${shot.name} ${when} ${w} ${theme}: the sheet scrolls sideways by ${said.sheet} px`);
             if (when === 'after') for (const x of said.heads) if (/^(Since you last looked|Milestones by phase) · /.test(x.words) && x.lines !== 1) fails.push(`${shot.name} ${w} ${theme}: "${x.words}" on ${x.lines} lines`);
+            // Today's time alone fits beside "Mark as seen", at 360 px too (HD1's review, round 1, B1).
+            if (when === 'after') for (const x of said.heads) if (/^Since you last looked · \d\d:\d\d$/.test(x.words) && x.beside !== true) fails.push(`${shot.name} ${w} ${theme}: "Mark as seen" not beside "${x.words}"`);
             if (w === 360) {
               const file = join(OUT, `${shot.name}-${when}-${w}x${hgt}-${theme}.png`);
               await page.screenshot({ path: file });
-              lines.push(`${file}  (${said.heads.map((x) => `"${x.words}" ${x.size} ${x.lines} line${x.lines === 1 ? '' : 's'} [${x.widths.join('+')} of ${x.room}]`).join('; ') || 'no section head'})`);
+              lines.push(`${file}  (${said.heads.map((x) => `"${x.words}" ${x.size} ${x.lines} line${x.lines === 1 ? '' : 's'}${x.beside == null ? '' : x.beside ? ', its control beside' : ', its control under'} [${x.widths.join('+')} of ${x.room}]`).join('; ') || 'no section head'})`);
             } else lines.push(`${shot.name}-${when}-${w}x${hgt}-${theme}: ${said.heads.map((x) => `"${x.words}" ${x.lines}`).join('; ')}`);
             await ctx.close();
           }

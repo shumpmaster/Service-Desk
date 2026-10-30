@@ -27,7 +27,7 @@ import { mixState, quietState, gatesState, GATE_KEY, GATE4, MIX_PROJECT } from '
 import { busiestState } from './qw1-fixtures.mjs';
 import { stripState } from './qw2-fixtures.mjs';
 import { vt1State, DAY5, windowCards, chi } from './vt1-fixtures.mjs';
-import { hd1Open, openPhases, lookedAt, H } from './hd1-fixtures.mjs';
+import { hd1Open, openPhases, lookedAt, noneTrackedState, H } from './hd1-fixtures.mjs';
 import { PF_ROWS } from '../../src/public/lib/portfolio.js';
 import { POLL_MS } from '../../src/lib/scheduler.js';
 
@@ -295,7 +295,7 @@ test('AC98: Home with "Since you last looked" and with it off, Waiting with ques
   }
 });
 
-test('AC98, "Two headings on one line": "Since you last looked · <time>" and "Milestones by phase · <count>" split at their first " · " in the one h2 — the words before it the head\'s, " · " and the rest in --t-small --ink2, a clock time in Plex Mono 400 12 px, "in the last 7 days" and the count in Plex Sans — the words unchanged; their rows letting the control beside them go under them', async () => {
+test('AC98, "Two headings on one line": "Since you last looked · <time>" and "Milestones by phase · <count>" split at their first " · " in the one h2 — the words before it the head\'s, " · " and the rest in --t-small --ink2, a clock time in Plex Mono 400 12 px ("yesterday, 14:00", "11 Oct, 10:00", today\'s "08:00"), "in the last 7 days", the counts and "none tracked yet" in Plex Sans — the words unchanged; their rows letting the control beside them go under them', async () => {
   const check = async (app, k, want) => {
     const row = findAll(app.view, (e) => e.dataset && e.dataset.k === k)[0];
     assert.ok(row && has(row, 'v2-shsplit'), `${k}: its row lets its control move under it`);
@@ -343,6 +343,45 @@ test('AC98, "Two headings on one line": "Since you last looked · <time>" and "M
   app = await hd1Open({ ago: 9 * 24 * H });
   try {
     await check(app, 'since-h', { words: 'Since you last looked · in the last 7 days', mono: false, control: 'Mark as seen', controlLook: ['11px', '500'] });
+  } finally {
+    app.restore();
+  }
+  // HD1's review, round 1, B1: every form HD1's row lists. A time with its date ("· 11 Oct, 10:00", as "· 18 Oct, 04:00"), in
+  // Plex Mono with its date; today's time alone ("· 08:00"), in Plex Mono (it fits beside "Mark as seen" at 360 px, measured in
+  // Chromium by tools/hd1-shots.mjs); a second count ("· 5 of 15 reached", as "· 12 of 15 reached"); and "· none tracked yet",
+  // words and no count, in Plex Sans.
+  app = await hd1Open({ ago: 3 * 24 * H });
+  try {
+    const words = findAll(app.view, (e) => e.dataset && e.dataset.k === 'since-h')[0].children[0].textContent;
+    assert.match(words, /^Since you last looked · \d{1,2} [A-Z][a-z]{2}, \d\d:\d\d$/, 'a time with its date');
+    await check(app, 'since-h', { words, mono: true, control: 'Mark as seen', controlLook: ['11px', '500'] });
+    assert.match(byClass(findAll(app.view, (e) => e.dataset && e.dataset.k === 'since-h')[0], 'v2-htime')[0].textContent, /^\d{1,2} [A-Z][a-z]{2}, \d\d:\d\d$/, 'its date in the Mono part with its time');
+  } finally {
+    app.restore();
+  }
+  app = await hd1Open({ ago: 2 * H });
+  try {
+    const words = findAll(app.view, (e) => e.dataset && e.dataset.k === 'since-h')[0].children[0].textContent;
+    assert.match(words, /^Since you last looked · \d\d:\d\d$/, 'today\'s time alone');
+    await check(app, 'since-h', { words, mono: true, control: 'Mark as seen', controlLook: ['11px', '500'] });
+  } finally {
+    app.restore();
+  }
+  app = await loadSandbox({ ...textSetup(), hash: '#/p/Service-Desk', now: NOW, store: memStore() });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    const ms = findAll(app.view, (e) => e.dataset && e.dataset.k === 'ms-h')[0].children[0].textContent;
+    assert.equal(ms, 'Milestones by phase · 5 of 15 reached');
+    await check(app, 'ms-h', { words: ms, mono: false, control: '↑ start at the foot', controlLook: ['11px', '400'] });
+  } finally {
+    app.restore();
+  }
+  app = await loadSandbox({ ...noneTrackedState(), hash: '#/p/Alpha', now: NOW, store: memStore() });
+  try {
+    await app.advance(1000);
+    await app.advance(POLL_MS);
+    await check(app, 'ms-h', { words: 'Milestones by phase · none tracked yet', mono: false, control: '↑ start at the foot', controlLook: ['11px', '400'] });
   } finally {
     app.restore();
   }

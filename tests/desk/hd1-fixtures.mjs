@@ -2,7 +2,9 @@
 // 77bfeae, real; Personal-Org-Operating-Model in poom/'s placeholder form; the made-up project Alpha, NOT real), opened with
 // "last looked" kept on the device at a made-up time (NOT a real record), so Home's "Since you last looked" reads with a clock
 // time ("yesterday, 14:00") or with "in the last 7 days". Labelled in tests/desk/fixtures/README.md.
-import { loadSandbox, findAll } from './sandbox-helpers.mjs';
+import { loadSandbox, findAll, j11Files } from './sandbox-helpers.mjs';
+import { repo } from './fake-desk.mjs';
+import { fixture } from './helpers.mjs';
 import { memStore } from './wa-fixtures.mjs';
 import { mixState, NOW } from './glance-fixtures.mjs';
 
@@ -35,6 +37,19 @@ export async function withoutSinceList(app) {
     while (li && li.tag !== 'li') li = li.parent;
     if (li && li.parent) li.parent.removeChild(li);
   }
+}
+
+/**
+ * A made-up project (NOT real) whose phases are tracked and whose own milestones are all dropped, with no dispatch log: `mix`
+ * with Alpha's records replaced by J11's project document at 3117150 with every milestone line ending ` · dropped` (and its
+ * ` · reached:` left out), so its page reads "Milestones by phase · none tracked yet" (AC92 (c): every phase's T is 0).
+ */
+export function noneTrackedState() {
+  const st = mixState();
+  const doc = j11Files()['docs/PROJECT.md'].split('\n').map((l) => (/\(M[\w.]+\) · done when /.test(l) ? `${l.replace(/ · reached: [\d-]+/, '')} · dropped` : l)).join('\n');
+  st.repos.Alpha = repo({ 'docs/PROJECT.md': doc, 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml'),
+    'README.md': '# Alpha\n\nNOT a real project: made up for HD1\'s tests, its milestones all dropped.\n' });
+  return st;
 }
 
 // HD1_OPENS: the screens HD1's cascade walk reads (tests/desk/ac88-dark.test.mjs), two page loads, each [where, open() → app,

@@ -188,7 +188,7 @@ test('AC91 (h): the sheet\'s opening is the card\'s section 1\'s whole first lin
   assert.equal(gateOpening({ gate: 'launch', parsed: null }), null, 'a card not read yet: none');
 });
 
-test('AC91 (h) with AC89 (j): the gate\'s short title is cut at two lines only where it doesn\'t fit — on its card (the board\'s other titles keep three; from QW1 a question\'s, in the section, three of --t-row), as its sheet\'s title in --t-sheet and on Plan\'s gate row, its item never split; the opening in --t-lead at three; in light and dark, at 360 and 414 px', async () => {
+test('AC91 (h) with AC89 (j): the gate\'s short title is cut at two lines only where it doesn\'t fit — on its card (the board\'s other titles keep three; from QW1 a question\'s, in the section, three of --t-row), as its sheet\'s title at 600 20 px (from HD1, AC98; --t-sheet before) and on Plan\'s gate row, its item never split; the opening in --t-lead at three; in light and dark, at 360 and 414 px', async () => {
   const app = await open();
   try {
     // The board: the gate cards' titles at two lines, a question's at three.

@@ -168,7 +168,7 @@ test('AC92 (d) (G6\'s fix round, the Definer\'s narrowing): in a phase with one 
 // ---------------------------------------------------------------------------
 // The heads and the rule, on every run
 
-test('AC92 (d), on Service-Desk\'s records at 77bfeae (real): every run, earlier ones included, under two heads, "Your milestones · <n>" and "Standard checklist · <n> · <h> tracked" (or "· none tracked this run"), in --t-label --ink, in light and dark; the standard group with a 1 px --line rule above its head and 8 px over it', async () => {
+test('AC92 (d), on Service-Desk\'s records at 77bfeae (real): every run, earlier ones included, under two heads, "Your milestones · <n>" and "Standard checklist · <n> · <h> tracked" (or "· none tracked this run"), at 600 12 px --ink from HD1 (AC98; --t-label before), in light and dark; the standard group with a 1 px --line rule above its head and 8 px over it', async () => {
   const app = await openPage(textState());
   try {
     await openAll(app);

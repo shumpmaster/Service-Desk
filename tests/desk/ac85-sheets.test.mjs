@@ -89,7 +89,7 @@ const LAB_BLOCK = LAB_LINES.slice(LAB_LINES.indexOf('OPTIONS:') + 1, LAB_LINES.f
 // adds " · <k> of <N> waiting""): each head ends with its card's place in Letters' order, six cards waiting (AC95's age
 // order: the design-lab question raised first, the Launch gate's card second, then the next-work question, … the send
 // question last).
-test('AC85 every sheet, rewritten in QW2 (AC95): the head in Plex Mono, "<project> · <kind> · <its name or id> · <milestone> · waiting <age>", each part only when its record gives it, then " · <k> of <N> waiting"; its title in --t-sheet; a 44 × 44 px close', async () => {
+test('AC85 every sheet, rewritten in QW2 (AC95): the head in Plex Mono, "<project> · <kind> · <its name or id> · <milestone> · waiting <age>", each part only when its record gives it, then " · <k> of <N> waiting"; its title at 600 20 px (from HD1, AC98; --t-sheet before); a 44 × 44 px close', async () => {
   const app = await openLetters();
   try {
     const heads = [

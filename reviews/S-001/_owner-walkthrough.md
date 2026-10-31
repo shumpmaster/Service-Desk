@@ -22,3 +22,6 @@ Ticked, word for word: "W1: Home, all read, W2: answer link, W3: test notificati
 - W2 (a waiting card's answer link to GitHub's prefilled new-file page): as said.
 - W3 (the test notification arrived, and its tap opened the desk): as said.
 - W4 (the targets sheet: measured from launch; "Before launch: a trial, not counted"): as said.
+
+## Correction (2026-10-31, the same session)
+Asked afterwards to save a trial week (O5), the owner said, word for word: "I can’t find that section", then "I don’t have your weekly figures". The block "Your weekly figures" is drawn only when a finished week is offered (src/lib/weekly.js:129-136; src/public/sandbox.js weeklyBlock returns nothing without an offer), and the device's notes began this week, which ends Sunday 1 November in America/Chicago, so no week is offered yet. So W4's second part ("Before launch: a trial, not counted") could not have shown: W4 is recorded as **said for the sheet's "measured from launch" words; the trial line not shown, because no week is offered yet (not a fault)**. W1 to W3 stand as said. O5 moves to the first day a week is offered, Monday 2 November.

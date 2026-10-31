@@ -213,6 +213,23 @@ function parts(body, level) {
   return out.map((p) => ({ title: p.title, body: p.lines.join('\n') }));
 }
 
+// Every figure in a heading's closing parenthesis (round 2, N3): the first is the job's minutes; each further one
+// ("5 more only if…", "8 if…") must be one of its parts' minutes, or its minutes with the "(<n> minute… more)" extras
+// its steps note, so no figure in a heading goes unchecked.
+const headingFigures = (title) => {
+  const m = /\(([^()]*)\)\s*$/.exec(title);
+  return m ? [...m[1].matchAll(/\d+/g)].map((f) => Number(f[0])) : [];
+};
+const EXTRA = /\((?:about )?(\d+) minutes? more\)/g;
+
+function checkFigures(path, title, n, allowed) {
+  const figs = headingFigures(title);
+  assert.equal(figs[0], n, `${path}: the heading's first figure is its minutes`);
+  for (const f of figs.slice(1)) {
+    assert.ok(allowed.includes(f), `${path}: the heading's figure ${f} is one of ${allowed.join(', ')}`);
+  }
+}
+
 /** Checks one job against its steps; returns its heading's minutes. `capped`: its total is under 10 (every job but the
  * launch, a one-time job whose every step is under 10 instead). */
 function checkJob(title, body, level, path = title, capped = true) {
@@ -223,6 +240,7 @@ function checkJob(title, body, level, path = title, capped = true) {
   if (ps.length > 0) {
     const each = ps.map((p) => checkJob(p.title, p.body, level + 1, `${path} › ${p.title}`, capped));
     assert.equal(n, Math.max(...each), `${path}: done in parts, its heading gives its longest part (${each.join(', ')})`);
+    checkFigures(path, title, n, each);
     return n;
   }
   const lines = body.split('\n');
@@ -235,11 +253,14 @@ function checkJob(title, body, level, path = title, capped = true) {
     });
     const sum = mins.reduce((a, b) => a + b, 0);
     assert.equal(n, sum, `${path}: the heading's ${n} minutes equal its steps' ${mins.join(' + ')} = ${sum}`);
+    const extras = [...body.matchAll(EXTRA)].reduce((a, m) => a + Number(m[1]), 0);
+    checkFigures(path, title, n, extras > 0 ? [sum + extras] : []);
     return n;
   }
   const alts = lines.filter((l) => ALT_LINE.test(l)).map((l) => minutesOf(l));
   assert.ok(alts.length > 0, `${path}: no counted steps`);
   assert.equal(n, Math.max(...alts), `${path}: a job of alternatives is headed with its longest (${alts.join(', ')})`);
+  checkFigures(path, title, n, alts);
   return n;
 }
 

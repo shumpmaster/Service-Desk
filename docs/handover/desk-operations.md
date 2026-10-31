@@ -6,11 +6,10 @@ These notes are for you and your Chief of Staff. Every job the desk needs is wri
 the read token, checking the Access applications, adding a project, switching a project from v2.5
 to v3, rolling back, questions answered from the desk, checking the deploy gate, approving a
 deploy, the launch (once), the phone notifications and the GitHub Actions line. Each job takes
-under 10 minutes, or is done in parts that each take under 10; the launch is a one-time job whose
-every step takes under 10. None of them can lose anything you have to do: the desk always shows
-everything that waits on you when you open it, and a sender that was stopped picks up again on its
-next run. Regenerating a token can't be undone (the old value stops at once); going live, archiving
-the old page and every rollback here can be undone in minutes.
+under 10 minutes, or is done in parts that each do; every launch step does too. None of them can
+lose anything that waits on you: the desk always shows it all when you open it, and a stopped
+sender picks up again on its next run. Regenerating the read token at launch can't be undone;
+going live, archiving the old page and every rollback here can be undone in minutes.
 
 The step numbers in brackets (C2, G1, N1 to N12 and so on) are the spec's one-time setup steps,
 which these jobs repeat in part. The launch's own steps (O8, L0 to L11) are the launch plan's; the
@@ -61,53 +60,58 @@ included. The Orchestrator records the ledger entry that extends the build's
 exception past launch for these four only. **Anything else is new work:** a defect fix goes through
 a short Design of its own, and an addition through a small Discovery.
 
-## Renewing the read token (about 7 minutes, then 4 more straight after from launch; in two parts)
+## Renewing the read token (about 8 minutes at most; in three parts, each done on its own)
 
 The desk reads every project with one GitHub read token, the same value in both Cloudflare Pages
 projects: `service-desk-preview` (the preview) and, from launch, `needs-you` (your address). GitHub
 e-mails you before it expires. Once it has expired, Home shows "Can't read" for every project.
 
-**When to do it.** A regenerated token stops both projects at once, until each has deployed again,
-and the production deploy takes only main's current deployable commit, the one the preview deployed
-last. So renew only:
-- when production already runs main's deployable code (your Chief of Staff tells you; in Actions,
-  desk-deploy, the newest successful `production` run has the same SHA as the newest successful
-  `preview` run); or
-- right after you accept main's newer commit on the preview, so that one preview deploy and one
-  production deploy of that commit follow.
+You renew it **new token first**, so the desk never stops reading: you make a new token and paste
+it in, the deploys switch the desk to it while the old one still works, and then you delete the
+old one, leaving one read token, as your answer A intends (decisions/questions/P-001-m3c-tokens.md).
+Each part is done on its own, so start the first part a few days before the expiry date in
+GitHub's e-mail. Only launch day regenerates the token instead (L2a). Before launch there is only
+the preview: skip what names `needs-you` or production.
 
-Before you start, your Chief of Staff starts desk-deploy by hand, job `preview`, on main's current
-commit, so the run is waiting for you when you need it. Before launch there is only the preview:
-do the first part alone, with the preview's secret only.
+### A new token, in both projects (about 6 minutes)
 
-### The token and the preview (about 7 minutes)
+1. **The new token (3 minutes).** GitHub, Settings, Developer settings, Fine-grained tokens,
+   Generate new token, with G1's settings: an expiry you choose; repository access to Service-Desk,
+   Personal-Org-Operating-Model, the portfolio and any project you added (G1, P1); permissions
+   Contents: read, Metadata: read, Pull requests: read and Actions: read (G3); nothing that writes.
+   Copy the new value.
+2. **Both Pages projects (3 minutes).** Cloudflare, Workers & Pages, `service-desk-preview`,
+   Settings, Variables and Secrets, **Production**, the secret `GITHUB_READ_TOKEN`, edit, paste,
+   save. Then the same in `needs-you`. The desk keeps using the old token until each project
+   deploys, and the old one still works.
 
-1. **The token and both secrets (4 minutes).** GitHub, Settings, Developer settings, Fine-grained
-   tokens, the desk's read token. Check it still has only these: repository access to Service-Desk,
-   Personal-Org-Operating-Model, the portfolio and any project you added; permissions Contents:
-   read, Metadata: read, Pull requests: read and Actions: read; nothing that writes (G1, G3, P1).
-   Then Regenerate token, choose an expiry, and copy the new value. Paste it in Cloudflare,
-   Workers & Pages, `service-desk-preview`, Settings, Variables and Secrets, **Production**, the
-   secret `GITHUB_READ_TOKEN` (edit, paste, save), then the same in `needs-you`. The old value has
-   already stopped.
-2. **The preview's deploy (2 minutes).** Cloudflare uses a new secret only from the next
-   deployment. Approve the waiting `preview` job (see "Approving a deploy").
-3. **Check the preview (1 minute).** Once it has finished, open the preview: Home shows every
+### Both deploys, any time while the old token still works (about 8 minutes)
+
+Cloudflare uses a new secret only from the next deployment. The production deploy takes only
+main's current deployable commit, the one the preview deployed last, so do this part when
+production already runs main's deployable code (your Chief of Staff tells you), or right after you
+accept main's newer commit on the preview. A desk-deploy run deploys only the one job it was
+started for, so production is a second run.
+
+1. **The preview's deploy (3 minutes).** Your Chief of Staff starts desk-deploy by hand, job
+   `preview`, on main's current commit; approve it (see "Approving a deploy").
+2. **Check the preview (1 minute).** Once it has finished, open the preview: Home shows every
    project read, with no "Can't read".
+3. **Production (3 minutes).** Once the preview's run has finished, your Chief of Staff starts
+   desk-deploy again by hand, job `production`, the same SHA; approve it.
+4. **Check needs-you (1 minute).** Once it has finished, open the desk: every project read.
 
-### Production, straight after (about 4 minutes)
+### Delete the old token (about 2 minutes)
 
-A desk-deploy run deploys only the one job it was started for, so production is a second run.
+1. **Delete it (1 minute).** GitHub, Settings, Developer settings, Fine-grained tokens, the old read
+   token, Delete.
+2. **Check (1 minute).** Open the desk: every project still read. If one reads "Can't read", a
+   project didn't deploy with the new token: do the second part again.
 
-1. **Wait for the second run (1 minute).** Once the preview's run has finished, your Chief of Staff
-   starts desk-deploy again by hand: job `production`, the same SHA.
-2. **Approve it (2 minutes)**, when its SHA is the one the preview just deployed.
-3. **Check needs-you (1 minute).** Once it has finished, open the desk: every project read.
+Never paste a token into a chat, a file or a commit. If it may have leaked, delete it in GitHub at
+once (the desk then stops reading), and do the three parts straight away.
 
-Never paste the token into a chat, a file or a commit. If it may have leaked, regenerate it at once
-as above.
-
-## Checking the Access applications (about 6 minutes; 5 more only if you remake an application)
+## Checking the Access applications (about 8 minutes at most: the check 6, and 8 only if you remake an application)
 
 Cloudflare Access is what makes the desk ask you to sign in. Each Pages project has **two**
 applications: one for its address and one for its preview deployments (C2, C3; for `needs-you`,
@@ -129,13 +133,16 @@ behaves in a way you don't expect.
    for a desk address, and tell your Chief of Staff.
 3. **Check (1 minute).** In a private window, open each desk address: each asks you to sign in.
 
-### Only if you remake an application (about 5 minutes)
+### Only if you remake an application (about 8 minutes)
 
 A remade application has a new audience tag, and the desk refuses you until it knows it.
 
-1. **The tag (2 minutes).** That project, Settings, Variables and Secrets, Production, `ACCESS_AUD`:
+1. **Remake it (3 minutes).** Cloudflare, Zero Trust, Access, Applications: make the application
+   again for the same address (C2 for the preview deployments' wildcard, C3 for the address
+   itself), with one policy: Include, Emails, your address. Copy its audience tag.
+2. **The tag (2 minutes).** That project, Settings, Variables and Secrets, Production, `ACCESS_AUD`:
    its two applications' tags, comma-separated, edit, save.
-2. **A deploy of that project (3 minutes).** Your Chief of Staff starts desk-deploy by hand on
+3. **A deploy of that project (3 minutes).** Your Chief of Staff starts desk-deploy by hand on
    main's current commit (job `preview` or `production`, for the project you changed); approve it.
 
 ## Adding a project (about 9 minutes at most; in two parts, with the Builder's work between)
@@ -345,7 +352,7 @@ commit your graduation record. It is done once. Each step gives its minutes.
 Meanwhile, the agents: once these notes are merged, the address change (LA2) is brought up to date
 with main, and desk-build passes on it, before you give its verdict (O10) and merge it (L3).
 
-### The sitting (about 32 minutes; 37 if you make a usage token first)
+### The sitting (about 32 minutes)
 
 1. **L0, the ruling (1 minute).** Answer question 3 (questions/P-001-launch-gate-1.md) in your own
    words to your Chief of Staff, not from the desk's answer box.
@@ -362,10 +369,9 @@ with main, and desk-build passes on it, before you give its verdict (O10) and me
    the desk's read token, Regenerate token. Paste the new value as `needs-you`'s Production secret
    `GITHUB_READ_TOKEN`, and over the preview's. The old value stops at once: the preview reads
    nothing until L4's deploy.
-4. **L2b, the usage token (0 minutes now; 5 minutes only if you later make one).** No usage token was
-   ever made, so there is nothing to regenerate: skip this step. Only if you make one before the
-   sitting: from where you made it, Regenerate, and paste it into `needs-you`'s
-   `GITHUB_BILLING_TOKEN`, over the preview's, and over Service-Desk's `notify` secret
+4. **L2b, the usage token (0 minutes; only if you later make one).** No usage token was ever made,
+   so there is nothing to regenerate: skip this step. If you later make one (N12), paste it into
+   `needs-you`'s `GITHUB_BILLING_TOKEN`, the preview's, and Service-Desk's `notify` secret
    `DESK_BILLING_TOKEN`.
 
    Never paste a token into a chat, a file or a commit.
@@ -377,6 +383,10 @@ with main, and desk-build passes on it, before you give its verdict (O10) and me
    LA2 stays unmerged, nothing goes live, your Chief of Staff starts a `preview` deploy of main's
    current commit for you to approve (so the preview reads with L2a's token), and the sitting stops
    (below).
+
+   **The tap gap, which you accepted** (decisions/questions/P-001-m3c-tap-window.md, A): from L3 to
+   L9b, about 20 minutes, a notification's tap opens the desk's Home instead of its card; the card is
+   one tap away on Waiting.
 6. **L4, the preview (3 minutes).** Approve desk-deploy's `preview` job, its SHA LA2's merge commit.
    The preview reads every project.
 7. **L5, the old page stopped (2 minutes).** Operations-Hub, Actions, `needs-you-page`, "…",
@@ -418,7 +428,8 @@ For example, L7 shows the old page, a deploy fails, or something is rolled back.
 - Your Chief of Staff restores what was done, with you approving each deploy:
   - **after L2a (the tokens):** a `preview` deploy of main's current commit, so the preview reads
     with the new token (3 minutes);
-  - **after L3 (LA2 merged):** taps now open needs-you, which isn't the desk. Unless you retry the
+  - **after L3 (LA2 merged):** taps now open needs-you, which isn't the desk, and the tap gap you
+    accepted lasts until the address is taken back: a tap opens Home, not its card. Unless you retry the
     same day, the Builder takes the address back ("The tap's address back", above). That puts main's
     deployable files back as they were at R, so L3's check passes on the retry, where the address
     change is made again. If L3 didn't run, LA2 stays unmerged;
@@ -560,14 +571,15 @@ make one, GitHub's own e-mails are your only Actions alert: Settings, Billing an
 "Receive alerts when my included usage reaches 90% and 100%" (N11). Every usage-token step in these
 notes, the launch's L2b among them, applies only if you later make one.
 
-### The usage token, only if you later make one (about 5 minutes at most; in three parts)
+### The usage token, only if you later make one (about 6 minutes at most; in three parts)
 
-The same three parts make it the first time and renew it at its expiry. GitHub e-mails you before
-it expires; after it expires the desk's line reads "can't be read: the usage token was refused…",
-and the issue "Desk notifications have stopped" says "GitHub Actions use can't be read". As with
-the read token, renew it when production already runs main's deployable code, or right after you
-accept main's newer commit on the preview. Before you start, your Chief of Staff starts desk-deploy
-by hand, job `preview`, on main's current commit, so the run is waiting when you need it.
+The same three parts make it the first time and renew it at its expiry, new token first. GitHub
+e-mails you before it expires; after it expires the desk's line reads "can't be read: the usage
+token was refused…", and the issue "Desk notifications have stopped" says "GitHub Actions use can't
+be read". **The parts can be done separately:** until the deploys, the desk keeps the old token,
+which works until it expires or you delete it in the last part. Do the deploys, as with the read
+token, when production already runs main's deployable code, or right after you accept main's newer
+commit on the preview.
 
 #### The token and its three places (about 5 minutes)
 
@@ -583,11 +595,12 @@ by hand, job `preview`, on main's current commit, so the run is waiting when you
      **Production**, the secret `GITHUB_BILLING_TOKEN`, edit, paste, save;
    - the same in `needs-you`, from launch.
 
-#### The deploys (about 5 minutes)
+#### The deploys (about 6 minutes)
 
 Cloudflare uses a new secret only from the next deployment.
 
-1. **The preview's deploy (2 minutes).** Approve the waiting `preview` job.
+1. **The preview's deploy (3 minutes).** Your Chief of Staff starts desk-deploy by hand, job
+   `preview`, on main's current commit; approve it.
 2. **Wait for the production run (1 minute)**, which your Chief of Staff starts by hand once the
    preview's has finished, job `production`, the same SHA (from launch).
 3. **Approve it (2 minutes).**

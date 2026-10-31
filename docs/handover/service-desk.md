@@ -78,8 +78,8 @@ such work, filed later.
   Access is refusing. Renew or check the token, then the Access applications.
 - **A GitHub issue "Desk notifications have stopped"**, assigned to you: a sender can't send. The
   issue says why; most causes are fixed by turning notifications on again.
-- **GitHub's e-mail that the read token expires soon:** renew it at the next good moment (the notes
-  say when).
+- **GitHub's e-mail that the read token expires soon:** start its renewal a few days ahead, new
+  token first (the notes give its three parts).
 - **A deploy waiting that no merge you know of started,** or whose SHA matches no pull request the
   Reviewer passed: reject it.
 - **Any environment change in your security log you didn't make:** it stops the next acceptance

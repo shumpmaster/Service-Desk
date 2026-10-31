@@ -270,3 +270,17 @@ options_considered: "Work only, merge nothing" (the owner's words grant more); "
 decided_by: owner ("you have my permission to act as my proxy to work through the night for the next 6 hours", 2026-10-25, in the session)
 proposed_by: orchestrator
 reversibility: reversible
+
+## L-0020 — After launch, four settings jobs on the desk are running it, past L-0003's end
+date: 2026-10-31
+type: ruling
+supersedes: []
+scope: P-001 (specs/S-001.md)
+expires: never
+asked: L-0003 lets the Builder change the desk from the draft S-001 only "until P-001 launches (S-001 AC28) or is stopped", and a graduated product's other work comes back as new work. After Service-Desk graduates, are four routine settings changes running the desk, or new work each time? (decisions/questions/P-001-graduated-changes.md, filed at 15ad528 after the Critic's two checks.)
+decision: Running the desk. From launch on, these four jobs only stay in the Builder's lane against S-001 as it stands at launch: adding a project (AC26), moving a project from v2.5 to v3, changing the notification key after a leak, and taking the tap's address back in a rollback. Each is the Builder's pull request, reviewed by the Reviewer and the Design reviewer, with the owner's verdict, as the operating notes (docs/handover/desk-operations.md) and the handover package (docs/handover/service-desk.md) say. Anything else after launch is new work: a fix through a short Design, an addition through a small Discovery.
+licenses_next: The Builder's pull requests for those four jobs after launch.
+options_considered: "As new work each time" (1 to 2 days and 15 to 30 owner minutes each, an estimate; the operating notes would break their under-10-minutes promise and a rollback mid-incident would wait days).
+decided_by: owner (decisions/questions/P-001-graduated-changes.md, A)
+proposed_by: orchestrator
+reversibility: costly

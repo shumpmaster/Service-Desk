@@ -35,6 +35,7 @@ test('J7: the committed config holds the launch values and passes the build\'s c
 });
 
 test('J7: a 6th entry fails with a message saying 5 is the limit; a model other than v3 or v2.5 fails', () => {
+  // ac-test: S-001/AC26
   const six = { ...CONFIG, projects: Array.from({ length: 6 }, (_, i) => ({ ...CONFIG.projects[0], name: `P${i}` })) };
   const errs = validateConfig(six);
   assert.equal(MAX_PROJECTS, 5);

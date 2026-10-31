@@ -30,7 +30,7 @@ recorded; **C**, not recorded, or a reading of what the records imply.
 | 4. The same with the Access session ended | Not recorded | — | C |
 | 5. Each trigger route's delay, (5a) to (5h) | Not recorded as measured. The Reviewer read desk-notify on Service-Desk's main since 2026-10-24: 2413 runs, none failed, which says the sender ran, not how fast | reviews/S-001/_reviewer-build.md | A for the runs; the delays C |
 | 6 to 10 | Not recorded | — | C |
-| 11. Whether GitHub reports Actions use, and which token reads it | **Not run: the usage token ("Desk: Actions use", Setup N12) was never made** | The owner, 2026-10-31: it was never made (B). desk-notify's logs show `DESK_BILLING_TOKEN:` empty (A, as handed over). With no token, the desk's line reads "GitHub Actions use: not set up yet (Setup N12)" (A: src/lib/github.js:951, src/lib/notifyview.js:253) | A and B |
+| 11. Whether GitHub reports Actions use, and which token reads it | **Not run: the usage token ("Desk: Actions use", Setup N12) was never made** | The owner, 2026-10-31: it was never made (B). desk-notify's logs show `DESK_BILLING_TOKEN:` empty (B: the Chief of Staff's hand-over; the Builder did not read the log). With no token, the desk's line reads "GitHub Actions use: not set up yet (Setup N12)" (A: src/lib/github.js:951, src/lib/notifyview.js:253) | A and B |
 | 12. The icon and taps after the move to the sandbox view | Not recorded (Setup N13 was "only if needed") | — | C |
 
 **The Access exception (Setup N10).** Whether any Access bypass application exists, for
@@ -40,9 +40,12 @@ added; the records don't say which (C).
 
 ## Against the deciding threshold
 
-- **Pass** needs cases 1 to 4, and (5a) to (5e) and (5g) each under 5 minutes. Case 3 passes (A,
-  B), case 2 in effect (B), case 1 only by implication (C), and case 4 and case 5's delays were
-  never recorded (C). So the threshold is **not judged**: neither a pass nor a fail is recorded.
+- **Pass** needs cases 1 to 4 to pass, and (5a) to (5e) and (5g) each under 5 minutes. **Cases 1 to
+  4 and case 5's delays have no record made as the registration's method asks** (its readings of
+  the icon, the subscribing path, the tap with the Access session ended, and each route's times).
+  Case 3 is shown working on the preview by its run and the owner's W3, outside that method; cases
+  1, 2 and 4 and case 5's delays have no record at all. So the threshold is **not judged**: neither
+  a pass nor a fail is recorded, and the experiment is not answered as registered.
 - **Case 11's fallback is not taken.** It applies when the case finds GitHub reports no Actions use,
   or every token kind refused. The case was never run, so J7's `actionsUsage.reported` stays
   absent (true), and nothing in the desk changes.
@@ -59,6 +62,13 @@ No code or config.
   on the preview's address, and adds the same three for `needs-you.pages.dev` if one is there.
 
 ## Open
+
+- **A risk for the Launch gate's case (its section 5): case 4,** a notification's tap after the
+  Access session has ended, now on needs-you. It was never recorded on the preview either; if Access
+  answers the tap with a sign-in page that doesn't lead back, the tap opens no item. The launch's L7
+  checks sign-in on needs-you, and L9b's test checks a tap with a live session only.
+- **For the Chief of Staff's lines and case (CS40, CS41):** Build-4, "The experiments are
+  answered", is taken on while this result is not judged; the line and the case should say so.
 
 - What O8 (d) finds, which the Chief of Staff can add here.
 - If the owner later makes a usage token: case 11 then runs as registered (Setup N12's test), and

@@ -4,14 +4,15 @@
 
 ## What this means for you
 
-Four things were not done the usual way before launch. You accepted the trial week and its check
+Five things were not done the usual way before launch. You accepted the trial week and its check
 as met, so your first weekly figures and their check are first seen after launch. The screen names
 in your steps were not re-checked. No usage token was ever made, so the desk shows no Actions
-figures. Three of your model's Build checks are recorded as skipped, each with its reason. From
-launch, the desk lives at your needs-you address, the old page is archived, and your phone's
-notifications come from the new icon. You approve every deploy, renew the tokens and answer what
-the desk asks; your Chief of Staff runs the weekly value check. Regenerating the tokens at launch
-can't be undone; going live and archiving can be undone in minutes.
+figures. Your operating-model project has no notification sender yet, so its items reach the desk
+but not your phone. Three of your model's Build checks will be recorded as skipped, each with its
+reason. From launch, the desk lives at your needs-you address and the old page is archived. You
+approve every deploy, renew the read token and answer what the desk asks; your Chief of Staff runs
+the weekly value check. Regenerating the read token at launch can't be undone; going live and
+archiving can be undone in minutes.
 
 ## What it does
 
@@ -102,7 +103,7 @@ tests at R count through the Reviewer's own full-suite run at R, on 2026-10-31.
 | Part | What it does | Where it runs | The record that shows it running before launch |
 |---|---|---|---|
 | The value targets' sheet (AC97) | Shows each target against its measure: before launch, "measured from launch"; from launch, the 14 days' figures and the check's verdict | The desk, Service-Desk's page, its value targets row | Its tests at R (tests/desk/ac97-values.test.mjs, ac97-values-page.test.mjs), in the Reviewer's full-suite run at R on 2026-10-31 (1558 of 1558 pass, reviews/S-001/_reviewer-build.md); the owner's W4, "as said" for the sheet's "measured from launch" words (reviews/S-001/_owner-walkthrough.md, with its correction) |
-| The device's notes (V1 and V2's raw times and "didn't need me" marks) | Note, on the phone, when the desk was open and when it first showed each item | The desk, in the phone's own storage | Their tests at R (tests/desk/ac25-weekly.test.mjs), in the same run; the notes began this week, which is why no week is offered yet (the walk-through's correction) |
+| The device's notes (V1 and V2's raw times and "didn't need me" marks) | Note, on the phone, when the desk was open and when it first showed each item | The desk, in the phone's own storage | Their tests at R (tests/desk/ac25-metrics.test.mjs and ac25-metrics-page.test.mjs), in the same run; the notes began this week, which is why no week is offered yet (the walk-through's correction) |
 | The weekly file (AC25) | Once a week, offers a prefilled link that commits the week's figures to your private portfolio repository | The desk's Home line and the targets sheet; the file in the portfolio repository | Before launch, a trial week, not counted: waived by your ruling (decisions/questions/P-001-m3c-weekly-trial-waive.md), with its tests at R (tests/desk/ac25-weekly.test.mjs, ac25-weekly-page.test.mjs). First seen live from Monday 2 November: a risk in the gate's case |
 | The weekly value check (CS34, J25) | The Chief of Staff counts V1 and V2 from the weekly file, asks your V3 estimate, and writes one line a week that the targets sheet reads | The Chief of Staff's session; intake/value-checks.jsonl | Before launch, a dry run on the trial week: waived by the same ruling, with its reader's tests at R (tests/desk/j25-value-checks.test.mjs). From launch's first week |
 | The sender (AC73 to AC78) | Notifies the phone the moment something waits on you; a tap opens the desk at it | GitHub Actions: `desk-notify` in Service-Desk. The operating-model project has no sender yet (found 2026-10-30; N9 and CS16 never done) | desk-notify on Service-Desk's main since 2026-10-24: 2413 runs, none failed (Build's join-up review, reviews/S-001/_reviewer-build.md); test run 41203166648 (2026-10-31T12:54:53Z, after R), and the owner's W3, "as said": the test arrived and its tap opened the desk |

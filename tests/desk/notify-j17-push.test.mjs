@@ -106,7 +106,7 @@ test('J17, J7: the sender\'s first step on the committed config: push is in form
   const matching = { ...CONFIG, push: { ...CONFIG.push, vapidPublicKey: v.publicB64 } };
   const r = firstStep(env, matching);
   assert.equal(r.ok, true, 'a private key whose public half is J7\'s passes');
-  assert.equal(r.secrets.push.deskUrl, 'https://service-desk-preview.pages.dev');
+  assert.equal(r.secrets.push.deskUrl, 'https://needs-you.pages.dev');
   assert.deepEqual(firstStep(env, CONFIG), { ok: false, problem: 'keys', name: 'DESK_VAPID_PRIVATE_KEY' }, 'the throwaway key is not the owner\'s');
 });
 

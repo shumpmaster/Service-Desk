@@ -88,14 +88,15 @@ test('AC15: package.json has no dependency block or lifecycle script, wrangler p
 });
 
 // From 2026-10-18 (notifications): `push`, `deploysNeedOwner` and `actionsUsage`, wrong kinds among them.
-test('J7 (2026-10-18): deploysNeedOwner on Service-Desk only; actionsUsage as given, in Service-Desk\'s entry (draft 9); push holds the owner\'s public key (Setup N1, CS18) and the preview\'s address', () => {
+test('J7 (2026-10-18): deploysNeedOwner on Service-Desk only; actionsUsage as given, in Service-Desk\'s entry (draft 9); push holds the owner\'s public key (Setup N1, CS18) and the needs-you address', () => {
+  // ac-test: S-001/AC28
   assert.deepEqual(CONFIG.projects.map((p) => [p.name, p.deploysNeedOwner === true]), [['Service-Desk', true], ['Personal-Org-Operating-Model', false]]);
   assert.equal('deploysNeedOwner' in CONFIG.projects[1], false, 'absent means false');
   assert.deepEqual(CONFIG.projects[0].actionsUsage, { account: 'shumpmaster', includedMinutes: 3000 });
   assert.equal('actionsUsage' in CONFIG, false, 'not at the top level');
   assert.equal('actionsUsage' in CONFIG.projects[1], false, 'Workflow 4\'s project holds none, so its sender reads no usage');
   assert.deepEqual(CONFIG.push, { vapidPublicKey: 'BFTM_IZawd-WOl_Mgf5RzLMAtGYwL7lIO9y9p2gVOQYwAjjIphr6q_TN4hiLCLasXYhdGhQqDHUuEyX40BMC8bM',
-    deskUrl: 'https://service-desk-preview.pages.dev' }, 'J7\'s push, as the owner handed it over; the preview\'s address until launch (Setup N10)');
+    deskUrl: 'https://needs-you.pages.dev' }, 'the needs-you address from launch (Setup N10)');
   assert.deepEqual(GENERATED.push, CONFIG.push, 'and in the generated config the function and the page read');
   // The no-push path, with a fixture config: a missing push alone builds; the desk says "Notifications aren't set up yet".
   const { push: _committed, ...noPush } = CONFIG;

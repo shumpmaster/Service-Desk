@@ -196,3 +196,22 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           "$GITHUB_WORKSPACE/.github/deploy-tools/node_modules/.bin/wrangler" pages project list
+
+      # S-001 CS37 (M3C): read needs-you's production branch before the production job's values are
+      # set. Both steps only read; nothing on needs-you changes.
+      - name: List needs-you's production deployments
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          "$GITHUB_WORKSPACE/.github/deploy-tools/node_modules/.bin/wrangler" pages deployment list \
+            --project-name needs-you --environment production
+
+      - name: Read needs-you's production branch
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/needs-you" \
+            | jq '{success: .success, production_branch: .result.production_branch}'

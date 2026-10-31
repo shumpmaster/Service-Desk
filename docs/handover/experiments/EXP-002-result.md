@@ -8,8 +8,9 @@ production branch read: 2026-10-31, by the `exp-002` job's two read-only steps a
 (GitHub Actions run 41151614374), approved by the owner in the `preview` environment; recorded by
 the Builder from the Chief of Staff's hand-over (Setup CS39, stage LA1); the Builder ran nothing
 
-**Grades for the production branch's read (2026-10-31):** **A**, read in the run's log by the Chief of
-Staff; **B**, as the Chief of Staff handed it over.
+**Grades for the production branch's read (2026-10-31):** **B**, the Chief of Staff's hand-over:
+the Builder read neither the log nor the list, and the Reviewer could not open the log (403). The
+printed line is the one the Chief of Staff read in the log itself.
 
 ## What the run showed
 
@@ -30,7 +31,7 @@ dashboard (method step 2): the row settled the question.
 |---|---|
 | Deployment method | **Direct Upload** (Git Provider: No) |
 | Production branch | Not shown by `pages project list`. Operations-Hub's `needs-you-page` workflow deploys with `--branch main` (bd84592, line 110; S-001 AC28), which points to `main` (C). The `production` job's `--branch` is confirmed against the dashboard before AC28's launch. |
-| Production branch, read (2026-10-31, CS37) | **`main`**, from both sources, which agree. The Cloudflare API's project read printed `{"success": true, "production_branch": "main"}` (A: the Chief of Staff read the run's log, 2026-10-31). `wrangler pages deployment list --project-name needs-you --environment production` showed Branch `main` on every row (about 25 rows, the newest 1 day old, all at commit 758ef27; B, as handed over). The API's value is the one that decides (S-001, Setup CS38) |
+| Production branch, read (2026-10-31, CS37) | **`main`**, from both sources, which agree. The Cloudflare API's project read printed `{"success": true, "production_branch": "main"}` (B: the Chief of Staff read the run's log, 2026-10-31). `wrangler pages deployment list --project-name needs-you --environment production` showed Branch `main` on every row (about 25 rows, the newest 1 day old, all at commit 758ef27; B, as handed over). The API's value is the one that decides (S-001, Setup CS38) |
 | Custom domains of `needs-you` | None listed: the Domains column held only `needs-you.pages.dev` |
 | Access application on each hostname | Not shown by the run. Setup C6 puts one on `needs-you.pages.dev` before launch |
 
@@ -47,8 +48,8 @@ decisions/questions/P-001-o5-define.md) is not needed, and Setup C7 is dropped.
 The 2026-10-07 run left the production branch unread (above). Before launch, desk-deploy's
 `exp-002` job gained two read-only steps (CS37): the pinned wrangler's production deployments list
 for `needs-you`, and a read of the project from Cloudflare's API printing only `success` and
-`production_branch`. Run 41151614374 printed `main` from both, as the row above records (the API's
-line A, read in the log by the Chief of Staff; the list B). CS38 then
+`production_branch`. Run 41151614374 printed `main` from both, as the row above records (both B: the
+API's line read in the log by the Chief of Staff, the list as handed over). CS38 then
 set the `production` job to `PROD_PROJECT: "needs-you"` and `PROD_BRANCH: "main"` (#256, merged),
 since the API printed `success` `true` and a branch that is a non-empty string other than `null`.
 So the launch's production deploy (S-001 AC28; the launch step L6) makes a production deployment

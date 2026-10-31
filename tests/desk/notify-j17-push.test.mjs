@@ -98,7 +98,7 @@ test('J17, J7: the sender\'s first step on the committed config: push is in form
   assert.equal(real.publicRaw[0], 0x04, 'uncompressed');
   const jwk = { kty: 'EC', crv: 'P-256', x: real.publicRaw.subarray(1, 33).toString('base64url'), y: real.publicRaw.subarray(33).toString('base64url') };
   assert.equal(createPublicKey({ key: jwk, format: 'jwk' }).asymmetricKeyDetails.namedCurve, 'prime256v1', 'a point on P-256');
-  assert.equal(real.deskUrl, 'https://service-desk-preview.pages.dev', 'the tap opens the preview until launch');
+  assert.equal(real.deskUrl, 'https://needs-you.pages.dev', 'the tap opens needs-you from launch');
   const v = makeVapid();
   const s = makeSubscription();
   const env = { GITHUB_TOKEN: 't', DESK_VAPID_PRIVATE_KEY: v.pem, DESK_VAPID_SUBJECT: 'mailto:o@example.invalid', DESK_PUSH_SUBSCRIPTION: s.value,

@@ -87,7 +87,7 @@ test('AC15: package.json has no dependency block or lifecycle script, wrangler p
 });
 
 // From 2026-10-18 (notifications): `push`, `deploysNeedOwner` and `actionsUsage`, wrong kinds among them.
-test('J7 (2026-10-18): deploysNeedOwner on Service-Desk only; actionsUsage as given, in Service-Desk\'s entry (draft 9); push holds the owner\'s public key (Setup N1, CS18) and the preview\'s address', () => {
+test('J7 (2026-10-18): deploysNeedOwner on Service-Desk only; actionsUsage as given, in Service-Desk\'s entry (draft 9); push holds the owner\'s public key (Setup N1, CS18) and the needs-you address', () => {
   assert.deepEqual(CONFIG.projects.map((p) => [p.name, p.deploysNeedOwner === true]), [['Service-Desk', true], ['Personal-Org-Operating-Model', false]]);
   assert.equal('deploysNeedOwner' in CONFIG.projects[1], false, 'absent means false');
   assert.deepEqual(CONFIG.projects[0].actionsUsage, { account: 'shumpmaster', includedMinutes: 3000 });

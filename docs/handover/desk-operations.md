@@ -30,8 +30,7 @@ Staff what it is called now; your Chief of Staff corrects these notes.
 - **You:** approve every deploy, renew the tokens, answer what the desk asks, and do the steps
   these notes give.
 - **Your Chief of Staff:** the weekly value check from launch's first week, deleting answered
-  questions, moving the operating-model project's pin, starting the deploys you approve, and
-  writing your steps out.
+  questions, starting the deploys you approve, and writing your steps out.
 - **The Builder:** the four settings jobs below, each as a pull request.
 - **The Reviewer and the Design reviewer:** their reviews of each settings job.
 - **The Orchestrator:** recording the reviews and your verdicts.
@@ -142,8 +141,8 @@ lines and its v3 records. It is a settings job: the Builder's pull request chang
 2. **The deploys.** Approve its `preview` deploy and open that project's page on the preview: it
    now reads as a v3 project. Then approve its `production` deploy (about 3 minutes each).
 3. **Its sender's pin (2 minutes, only if it has one).** If the project runs a sender pinned to the
-   desk's code, as the operating-model project's is (CS16), your Chief of Staff moves the pin in a
-   reviewed pull request there, and you merge it.
+   desk's code, your Chief of Staff moves the pin in a reviewed pull request there, and you merge
+   it. Today no other project has one (see "Notifications").
 
 ## Rolling back (about 4 minutes; each part below under 10)
 
@@ -181,14 +180,12 @@ A notification's tap opens the address in the settings file's `push.deskUrl`: fr
 
 1. **The address (2 minutes).** The Builder's pull request changes `push.deskUrl` back to
    `https://service-desk-preview.pages.dev`. Give your verdict and merge it once the Reviewer and the
-   Design reviewer have passed it. The senders read it from main, so taps change once it merges;
-   approve its `preview` deploy when it is offered. Your Chief of Staff moves the operating-model
-   project's pin to that commit in a reviewed pull request there (CS16), which you merge.
+   Design reviewer have passed it. The sender reads it from main, so taps change once it merges;
+   approve its `preview` deploy when it is offered.
 2. **The phone (about 7 minutes).** In Safari, open `https://service-desk-preview.pages.dev`, sign
    in, Share, Add to Home Screen. Open the new icon; More detail, "Turn on notifications", Allow,
-   "Copy". Update `DESK_PUSH_SUBSCRIPTION` in both projects ("Updating the subscription in both
-   projects", below), tap "I've added it to GitHub", send a test in each, and remove the needs-you
-   icon.
+   "Copy". Update `DESK_PUSH_SUBSCRIPTION` in Service-Desk ("Updating the subscription", below),
+   tap "I've added it to GitHub", send a test, and remove the needs-you icon.
 
 ## Questions answered from the desk (about 2 minutes)
 
@@ -212,13 +209,14 @@ yourself (Setup CS9). Your Chief of Staff's summary of the same is a convenience
 1. **The settings page (2 minutes).** Service-Desk, Settings, Environments:
    - `preview` and `production`: each has you as required reviewer, and deployment branch `main`
      only;
-   - `notify`, in Service-Desk and in Personal-Org-Operating-Model: deployment branch `main` only,
-     and its secrets the ones you set (their names and update dates; GitHub never shows values).
+   - `notify`, in Service-Desk: deployment branch `main` only, and its secrets the ones you set
+     (their names and update dates; GitHub never shows values). The operating-model project has no
+     sender and no `notify` environment yet (see "Notifications").
      Service-Desk's `DESK_BILLING_TOKEN` and the usage token's own entry in your token settings
      exist only if you made a usage token; none has been made.
 2. **Your security log (1 minute).** GitHub, Settings, Security log, filtered to Service-Desk's
    environment changes since the last milestone (protection rules, secrets, deployment branches),
-   and the same for `notify` in both projects. Your Chief of Staff shows you any change to the
+   `notify` among them. Your Chief of Staff shows you any change to the
    sender's code or its workflow since then. If no log entries appear, the settings page alone is
    the check.
 
@@ -324,9 +322,10 @@ with main, and desk-build passes on it, before you give its verdict (O10) and me
     Archive this repository.
 11. **L9a, the new icon (4 minutes).** In Safari, open needs-you, sign in, Share, Add to Home Screen.
     Open the new icon; in More detail, "Turn on notifications", Allow, "Copy".
-12. **L9b, the subscription (5 minutes).** Update `DESK_PUSH_SUBSCRIPTION` in both projects
-    ("Updating the subscription in both projects", below), then "I've added it to GitHub". Send a
-    test in each, and remove the preview's icon.
+12. **L9b, the subscription (5 minutes).** Update `DESK_PUSH_SUBSCRIPTION` in Service-Desk
+    ("Updating the subscription", below), then "I've added it to GitHub". Send a test there, and
+    remove the preview's icon. The operating-model project has no sender yet, so nothing there
+    changes at launch.
 13. **L10, your graduation record (2 minutes).** Commit decisions/questions/P-001-graduation.md
     yourself, from your Chief of Staff's prefilled link, adding your own words. The desk then shows
     Service-Desk as Done, still showing anything that waits on you.
@@ -336,7 +335,8 @@ with main, and desk-build passes on it, before you give its verdict (O10) and me
 
 - Merge the reached date's commit for M3C (1 minute).
 - Merge your Chief of Staff's deletion of questions/P-001-launch-gate-1.md (1 minute).
-- Merge the operating-model project's pin move there, once reviewed (2 minutes).
+- The operating-model project's pin move (CS16) has nothing to move today: that project has no
+  sender yet (see "Notifications"). If one is set up later, that work brings its own pin.
 
 ### If the sitting stops after L0's `proceed` and before L10
 
@@ -360,6 +360,12 @@ For example, L7 shows the old page, a deploy fails, or something is rolled back.
   Critic reads it afresh.
 
 ## Notifications
+
+**Only Service-Desk has a sender today.** Personal-Org-Operating-Model has no desk-notify workflow
+and no `notify` environment (as your Chief of Staff found on 2026-10-30: Setup N9 and CS16 were
+never done), so its waiting items show on the desk but don't notify the phone, and nothing there
+changes at launch. If its sender is set up later (N9, CS16), that work brings its own steps and its
+pin, and these notes gain them.
 
 ### What the desk tells you
 
@@ -397,38 +403,34 @@ the same with the new icon (N10).
      it, and confirm. Then, in Safari, open the desk, Share, Add to Home Screen, and open it from the
      new icon. Removing the desk from the Home Screen ends its subscription (spec J19). Now
      "Turn on notifications", then Allow, gives a new value. Carry on with step 3.
-3. Tap "Copy", then update the subscription in both projects (below).
+3. Tap "Copy", then update the subscription (below).
 4. Tap "I've added it to GitHub" on the desk.
-5. Send a test in each project (below). The issue closes on the next good send.
+5. Send a test (below). The issue closes on the next good send.
 
-### Updating the subscription in both projects (about 3 minutes)
-
-One phone receives both projects' notifications, so the same value goes in both (N6, N9).
+### Updating the subscription (about 2 minutes)
 
 1. GitHub, **Service-Desk**, Settings, Environments, `notify`, Environment secrets,
-   `DESK_PUSH_SUBSCRIPTION`, Update, paste the value, Update secret.
-2. The same in **Personal-Org-Operating-Model**: Settings, Environments, `notify`,
-   `DESK_PUSH_SUBSCRIPTION`, Update, paste the same value.
-3. Never paste the value into a chat, a file or a commit: the endpoint in it is a secret (anyone
+   `DESK_PUSH_SUBSCRIPTION`, Update, paste the value, Update secret (N6).
+2. Never paste the value into a chat, a file or a commit: the endpoint in it is a secret (anyone
    holding it with the keys could send to your phone).
 
-Each sender reads the new value on its next run. If it had stopped because the old subscription
+The sender reads the new value on its next run. If it had stopped because the old subscription
 was gone, it then sends "Notifications are back on", closes the issue, and sends anything that
 started waiting meanwhile, once each.
 
 ### Sending a test (about 2 minutes)
 
-In each project: Actions, desk-notify, Run workflow, `test` = `true`, Run workflow (N8). When the
+In Service-Desk: Actions, desk-notify, Run workflow, `test` = `true`, Run workflow (N8). When the
 run has finished, the iPhone shows "Test from your desk: notifications work"; tap it and the desk
 opens. If no run appears within a minute, run it again (a pending run can be replaced).
 
 ### The switch: stopping and starting a sender (1 minute)
 
-Each project has its own switch, the repository variable `DESK_NOTIFY_ON` (N7).
+The sender's switch is Service-Desk's repository variable `DESK_NOTIFY_ON` (N7).
 
-- **To stop** a project's sender: GitHub, that project, Settings, Secrets and variables, Actions,
+- **To stop** the sender: GitHub, Service-Desk, Settings, Secrets and variables, Actions,
   Variables, `DESK_NOTIFY_ON`, delete it (or set it to anything but `true`). Its runs then do
-  nothing. Do it in both projects to stop all notifications.
+  nothing, and no notification is sent.
 - **To start it again**: add `DESK_NOTIFY_ON` = `true` again. The next run reads the records as
   they stand: what started waiting while it was off is sent once; if it was off for more than
   7 days, its memory has expired and it sends one summary, "Notifications are on: <n> things wait
@@ -443,18 +445,17 @@ Changing the public key is one of the four settings jobs: the Builder's pull req
 the Reviewer and the Design reviewer, with your verdict. Nothing that waits on you is lost meanwhile:
 the desk shows it all when you open it.
 
-1. **Now (about 5 minutes).** Turn the switch off in both projects (above). Make a new key pair
+1. **Now (about 5 minutes).** Turn the switch off (above). Make a new key pair
    on your computer (N1) and send the new public key to your Chief of Staff. The Builder changes
    `push.vapidPublicKey` in `src/config/projects.json`.
 2. **The change (about 8 minutes).** Once the Reviewer and the Design reviewer have passed it, give
    your verdict and merge it (2 minutes). Approve its `preview` deploy (3 minutes) and, from launch,
-   its `production` deploy (3 minutes). Your Chief of Staff moves the operating-model project's pin
-   to that commit (CS16).
-3. **Once that change is deployed (about 4 minutes).** In both projects, update
-   `DESK_VAPID_PRIVATE_KEY` with the new private key's text (N4, N9).
+   its `production` deploy (3 minutes).
+3. **Once that change is deployed (about 2 minutes).** In Service-Desk, update
+   `DESK_VAPID_PRIVATE_KEY` with the new private key's text (N4).
 4. **Then (about 9 minutes).** Turn notifications on again on the phone and update the
-   subscription in both projects (above); the new subscription ends the old one. Turn the
-   switches back on, and send a test in each project.
+   subscription (above); the new subscription ends the old one. Turn the switch back on, and send
+   a test.
 
 ## GitHub Actions use on the desk
 

@@ -21,8 +21,9 @@ for your other work): cards, questions, pull requests to merge or give a verdict
 approve. Each item opens a sheet with its context and an answer link that opens GitHub's new-file
 page with your answer filled in; the desk itself writes nothing. It also shows each project's plan
 with the agents' estimates, the agents' usage and context figures, each project's phases and
-timeline, and Service-Desk's value targets against their measures. A sender sends a phone
-notification the moment something starts waiting on you, and a tap opens the desk at it.
+timeline, and Service-Desk's value targets against their measures. Service-Desk's sender sends a
+phone notification the moment something starts waiting on you there, and a tap opens the desk at
+it.
 
 It runs on Cloudflare Pages behind Cloudflare Access (your e-mail address only), reading GitHub
 with one read-only token:
@@ -30,8 +31,10 @@ with one read-only token:
 - **`service-desk-preview`** (`https://service-desk-preview.pages.dev`): the preview, where each
   change is accepted before it reaches production.
 
-The senders are GitHub Actions workflows: Service-Desk's `desk-notify`, and the operating-model
-project's own, pinned to the desk's code (CS16); the build and tests are
+The sender is Service-Desk's `desk-notify` workflow in GitHub Actions. The operating-model project
+has no sender yet (found 2026-10-30: Setup N9 and CS16 were never done), so its items show on the
+desk but don't notify the phone; setting one up later brings its own steps and pin. The build and
+tests are
 Service-Desk's `desk-build` workflow; the deploys are its `desk-deploy` workflow, every job held for
 your approval.
 
@@ -41,7 +44,8 @@ your approval.
 - **the owner:** approves every deploy, renews the tokens, answers asks, and does the jobs the
   operating notes give;
 - **Service-Desk's Chief of Staff:** the weekly value check from launch's first week (CS34),
-  deleting answered questions (CS7), the operating-model project's pin (CS16), starting the deploys
+  deleting answered questions (CS7), the operating-model project's pin (CS16) once that project
+  has a sender, starting the deploys
   the owner approves, and the owner's steps written out;
 - **the Builder:** the four settings jobs, as below;
 - **the Reviewer and the Design reviewer:** their reviews of each settings job;
@@ -100,7 +104,7 @@ tests at R count through the Reviewer's own full-suite run at R, on 2026-10-31.
 | The device's notes (V1 and V2's raw times and "didn't need me" marks) | Note, on the phone, when the desk was open and when it first showed each item | The desk, in the phone's own storage | Their tests at R (tests/desk/ac25-weekly.test.mjs), in the same run; the notes began this week, which is why no week is offered yet (the walk-through's correction) |
 | The weekly file (AC25) | Once a week, offers a prefilled link that commits the week's figures to your private portfolio repository | The desk's Home line and the targets sheet; the file in the portfolio repository | Before launch, a trial week, not counted: waived by your ruling (decisions/questions/P-001-m3c-weekly-trial-waive.md), with its tests at R (tests/desk/ac25-weekly.test.mjs, ac25-weekly-page.test.mjs). First seen live from Monday 2 November: a risk in the gate's case |
 | The weekly value check (CS34, J25) | The Chief of Staff counts V1 and V2 from the weekly file, asks your V3 estimate, and writes one line a week that the targets sheet reads | The Chief of Staff's session; intake/value-checks.jsonl | Before launch, a dry run on the trial week: waived by the same ruling, with its reader's tests at R (tests/desk/j25-value-checks.test.mjs). From launch's first week |
-| The senders (AC73 to AC78) | Notify the phone the moment something waits on you; a tap opens the desk at it | GitHub Actions: `desk-notify` in Service-Desk, and the operating-model project's own sender where CS16 sets it up there | desk-notify on Service-Desk's main since 2026-10-24: 2413 runs, none failed (Build's join-up review, reviews/S-001/_reviewer-build.md); test run 41203166648 (2026-10-31T12:54:53Z, after R), and the owner's W3, "as said": the test arrived and its tap opened the desk |
+| The sender (AC73 to AC78) | Notifies the phone the moment something waits on you; a tap opens the desk at it | GitHub Actions: `desk-notify` in Service-Desk. The operating-model project has no sender yet (found 2026-10-30; N9 and CS16 never done) | desk-notify on Service-Desk's main since 2026-10-24: 2413 runs, none failed (Build's join-up review, reviews/S-001/_reviewer-build.md); test run 41203166648 (2026-10-31T12:54:53Z, after R), and the owner's W3, "as said": the test arrived and its tap opened the desk |
 | The "stopped" issue (AC76) | Opens a GitHub issue assigned to you when a sender can't send, and closes it when sending works again | GitHub Actions, `desk-notify`; the issue in its project | Its tests at R (tests/desk/notify-ac76.test.mjs, marked `ac-test: S-001/AC76`), in the Reviewer's run at R. No issue labelled `desk-notify` is open (the only one, #121, closed 2026-10-19), which shows only that it hasn't fired |
 | The can't-read lines (AC5, AC89) | Say in words, on Home and the project's page, when a project can't be read and why | The desk | Their tests at R (tests/desk/ac89-after-md3.test.mjs, ac83-page.test.mjs, ac82-home.test.mjs), in the Reviewer's run at R; the owner's W1: every project read, no "Can't read" |
 | CI (AC29) | Builds and runs the desk's full suite on every pull request and on each push to main touching `src/**` or `tests/**` | GitHub Actions, `desk-build`; CI's line on the desk | The Reviewer's own full-suite run at R on 2026-10-31 (1558 of 1558 pass, reviews/S-001/_reviewer-build.md); desk-build run 41161002293 on #256, whose `src` and `tests` equal R's; and desk-build's push run on this package's merge, which touches `tests/` |

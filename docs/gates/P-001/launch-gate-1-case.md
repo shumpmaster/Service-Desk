@@ -8,8 +8,8 @@ Proceeding puts the desk live at needs-you and graduates Service-Desk in one act
 
 ## 2. The vision
 
-Projects stop whenever they need your ruling; the old page showed that hourly, read-only [docs/PROJECT.md:59].
-The desk puts what needs you, and the answer, on one phone screen, close to real time [docs/PROJECT.md:62].
+Projects stop whenever they need your ruling [docs/PROJECT.md:60]; the old page showed that hourly, read-only [docs/PROJECT.md:61].
+The desk puts what needs you, and the answer, on one phone screen, close to real time [docs/PROJECT.md:63].
 
 ## 3. What this phase taught us
 

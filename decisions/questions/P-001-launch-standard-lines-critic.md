@@ -1,0 +1,18 @@
+Verdict: PASS
+
+Launch-3 and Launch-4 both follow the form `- <Phase>-<n> (standard) · taken on · why: <reason>`, and neither reason contains " · ". Both are taken on, which matches the owner's ruling A in decisions/questions/P-001-launch-standard-lines.md ("Build-4, Build-5 and Launch's five are taken on").
+
+- **Launch-3 is true to its records.** The LA1 round 3 review (reviews/LA1/_review-r3-verbatim.md:1, :27) passed both the operating notes (desk-operations.md) and the handover package (service-desk.md). The launch review (reviews/S-001/reviewer.md:1, :26-31) then passed the package against the spec and the template. The why gives a real need: the team runs the desk from these two documents after launch.
+- **Launch-4 is true to its records.** The launch review (reviewer.md:5, :15-24) shows a record for each monitoring part. For the weekly file and the weekly check, the record is "Ruling A" plus their tests. Each part is in its before-launch form (:30), and the review passed. The owner's words in P-001-m3c-weekly-trial-waive.md:1 and :7 accept the trial week and the dry run as met, which matches the line. One weakness, not a reason to fail: its "must be confirmed running before the Launch gate" mostly repeats the model's "done when" (OPERATING_MODEL.md:173). The why holds because it ties the milestone to reaching the gate, and it says honestly that two parts count by the owner's waiver. Rewording it would only change the style.
+
+The seven taken-on lines, to be committed as they stand:
+
+- Build-4 (standard) · taken on · why: the desk's unknowns were registered as experiments EXP-001 to EXP-006, and each needs a recorded result; EXP-001 to EXP-004 have one (docs/handover/experiments/), EXP-005 was withdrawn unrun by the owner's ruling (decisions/questions/P-001-md-glance-test.md), and EXP-006 was run only in part, so it is not answered as registered (docs/handover/experiments/EXP-006-result.md)
+- Build-5 (standard) · taken on · why: the owner uses the desk as one product, so its parts must work together; Build's join-up review checked its eight paths through the product together at the reviewed commit and passed, with no blocking findings (reviews/S-001/_reviewer-build.md)
+- Launch-1 (standard) · taken on · why: the desk must go live at the owner's needs-you address in place of the old page, and its value targets are measured from that day (docs/PROJECT.md section 6)
+- Launch-2 (standard) · taken on · why: the owner and the Chief of Staff run the desk day to day, with the Builder for its four settings jobs, the Reviewer and the Design reviewer reviewing them, and the Orchestrator recording reviews, as the handover package names them
+- Launch-3 (standard) · taken on · why: after launch the owner and the operating team run the desk from the handover package and the operating notes, so both must be complete before the owner approves the launch at the Launch gate; both passed LA1's review (reviews/LA1/_review-r3-verbatim.md), and the launch review then passed the handover package (reviews/S-001/reviewer.md)
+- Launch-4 (standard) · taken on · why: the desk's own monitoring and feedback must be confirmed running before the Launch gate; the launch review found a record, or the owner's ruling, for each part in its before-launch form and passed (reviews/S-001/reviewer.md), and the owner accepted the trial week and the weekly check's dry run as met (decisions/questions/P-001-m3c-weekly-trial-waive.md)
+- Launch-5 (standard) · taken on · why: the owner chose to go live and graduate in one act at the Launch gate (decisions/questions/P-001-m3c-launch-gate-2.md)
+
+File checked: /tmp/claude-0/-home-user/70528afa-d5f7-555f-8ed9-b235c4cf0a39/scratchpad/cs40/lines.md

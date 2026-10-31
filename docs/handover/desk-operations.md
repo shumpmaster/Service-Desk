@@ -6,16 +6,25 @@ These notes are for you and your Chief of Staff. Every job the desk needs is wri
 the read token, checking the Access applications, adding a project, switching a project from v2.5
 to v3, rolling back, questions answered from the desk, checking the deploy gate, approving a
 deploy, the launch (once), the phone notifications and the GitHub Actions line. Each job takes
-under 10 minutes; the launch is a one-time job whose every step takes under 10. None of them can
-lose anything you have to do: the desk always shows everything that waits on you when you open it,
-and a sender that was stopped picks up again on its next run. Regenerating a token can't be undone
-(the old value stops at once); going live, archiving the old page and every rollback here can be
-undone in minutes.
+under 10 minutes, or is done in parts that each take under 10; the launch is a one-time job whose
+every step takes under 10. None of them can lose anything you have to do: the desk always shows
+everything that waits on you when you open it, and a sender that was stopped picks up again on its
+next run. Regenerating a token can't be undone (the old value stops at once); going live, archiving
+the old page and every rollback here can be undone in minutes.
 
 The step numbers in brackets (C2, G1, N1 to N12 and so on) are the spec's one-time setup steps,
 which these jobs repeat in part. The launch's own steps (O8, L0 to L11) are the launch plan's; the
 plan is the source, and these notes are your copy of it (spec S-001, "The desk live at the needs-you
 address: M3C, through the Launch gate"). A difference between the two is fixed here.
+
+### How the minutes are counted
+
+Each job's heading gives its steps' minutes added up. A job too long for one go is done in parts,
+each headed with its own minutes added up and each under 10; the job's heading then gives its
+longest part. Every job counts a deploy the same way: **a deploy approval is about 2 minutes**
+(open the run, match its SHA, approve); 1 more where you wait while your Chief of Staff starts the
+run; 1 more to check what it deployed. The launch's steps keep the plan's minutes, which count the
+same way.
 
 ### The screen names in these steps
 
@@ -46,12 +55,13 @@ settings file stay as running the desk after it graduates:
 4. taking the tap's address back in a rollback.
 
 Each is the Builder's pull request, reviewed by the Reviewer and the Design reviewer (the settings
-file is copied into the page), with your verdict: about 5 minutes of yours and about an hour of the
-agents' work each (an estimate). The Orchestrator records the ledger entry that extends the build's
+file is copied into the page), with your verdict. The ruling estimated about 5 minutes of yours and
+about an hour of the agents' work each; the jobs below count your minutes step by step, deploys
+included. The Orchestrator records the ledger entry that extends the build's
 exception past launch for these four only. **Anything else is new work:** a defect fix goes through
 a short Design of its own, and an addition through a small Discovery.
 
-## Renewing the read token (about 9 minutes)
+## Renewing the read token (about 7 minutes, then 4 more straight after from launch; in two parts)
 
 The desk reads every project with one GitHub read token, the same value in both Cloudflare Pages
 projects: `service-desk-preview` (the preview) and, from launch, `needs-you` (your address). GitHub
@@ -66,30 +76,45 @@ last. So renew only:
 - right after you accept main's newer commit on the preview, so that one preview deploy and one
   production deploy of that commit follow.
 
-Before launch there is only the preview: do steps 1, 2 (the preview only), 3 (the preview only) and 4.
+Before you start, your Chief of Staff starts desk-deploy by hand, job `preview`, on main's current
+commit, so the run is waiting for you when you need it. Before launch there is only the preview:
+do the first part alone, with the preview's secret only.
 
-1. **The token (2 minutes).** GitHub, Settings, Developer settings, Fine-grained tokens, the desk's
-   read token. Check it still has only these: repository access to Service-Desk,
+### The token and the preview (about 7 minutes)
+
+1. **The token and both secrets (4 minutes).** GitHub, Settings, Developer settings, Fine-grained
+   tokens, the desk's read token. Check it still has only these: repository access to Service-Desk,
    Personal-Org-Operating-Model, the portfolio and any project you added; permissions Contents:
    read, Metadata: read, Pull requests: read and Actions: read; nothing that writes (G1, G3, P1).
-   Then Regenerate token, choose an expiry, and copy the new value.
-2. **Both Pages projects (3 minutes).** Cloudflare, Workers & Pages, `service-desk-preview`,
-   Settings, Variables and Secrets, **Production**, the secret `GITHUB_READ_TOKEN`, edit, paste,
-   save. Then the same in `needs-you`. The old value has already stopped.
-3. **Both deploys (4 minutes).** Cloudflare uses a new secret only from the next deployment. Your
-   Chief of Staff starts desk-deploy by hand on main's current commit. Approve its `preview` job,
-   then its `production` job for the same SHA (see "Approving a deploy").
-4. **Check.** Open the desk: Home shows every project read, with no "Can't read".
+   Then Regenerate token, choose an expiry, and copy the new value. Paste it in Cloudflare,
+   Workers & Pages, `service-desk-preview`, Settings, Variables and Secrets, **Production**, the
+   secret `GITHUB_READ_TOKEN` (edit, paste, save), then the same in `needs-you`. The old value has
+   already stopped.
+2. **The preview's deploy (2 minutes).** Cloudflare uses a new secret only from the next
+   deployment. Approve the waiting `preview` job (see "Approving a deploy").
+3. **Check the preview (1 minute).** Once it has finished, open the preview: Home shows every
+   project read, with no "Can't read".
+
+### Production, straight after (about 4 minutes)
+
+A desk-deploy run deploys only the one job it was started for, so production is a second run.
+
+1. **Wait for the second run (1 minute).** Once the preview's run has finished, your Chief of Staff
+   starts desk-deploy again by hand: job `production`, the same SHA.
+2. **Approve it (2 minutes)**, when its SHA is the one the preview just deployed.
+3. **Check needs-you (1 minute).** Once it has finished, open the desk: every project read.
 
 Never paste the token into a chat, a file or a commit. If it may have leaked, regenerate it at once
 as above.
 
-## Checking the Access applications (about 6 minutes)
+## Checking the Access applications (about 6 minutes; 5 more only if you remake an application)
 
 Cloudflare Access is what makes the desk ask you to sign in. Each Pages project has **two**
 applications: one for its address and one for its preview deployments (C2, C3; for `needs-you`,
 C6, done as the launch's step O8). Do this check with each read-token renewal, and whenever sign-in
 behaves in a way you don't expect.
+
+### The check (about 6 minutes)
 
 1. **The applications (3 minutes).** Cloudflare, Zero Trust, Access, Applications. You should see:
    - `service-desk-preview.pages.dev` and `*.service-desk-preview.pages.dev`;
@@ -104,15 +129,22 @@ behaves in a way you don't expect.
    for a desk address, and tell your Chief of Staff.
 3. **Check (1 minute).** In a private window, open each desk address: each asks you to sign in.
 
-If you ever remake an application, its audience tag changes: put the new tag in that project's
-`ACCESS_AUD` (Settings, Variables and Secrets, Production; both tags, comma-separated) and approve a
-deploy of that project, or the desk refuses you.
+### Only if you remake an application (about 5 minutes)
 
-## Adding a project (about 5 minutes)
+A remade application has a new audience tag, and the desk refuses you until it knows it.
+
+1. **The tag (2 minutes).** That project, Settings, Variables and Secrets, Production, `ACCESS_AUD`:
+   its two applications' tags, comma-separated, edit, save.
+2. **A deploy of that project (3 minutes).** Your Chief of Staff starts desk-deploy by hand on
+   main's current commit (job `preview` or `production`, for the project you changed); approve it.
+
+## Adding a project (about 9 minutes at most; in two parts, with the Builder's work between)
 
 The desk reads up to 5 projects. Adding one is one entry in the desk's settings file and one
 repository added to the read token; nothing else changes (spec AC26). A 6th entry fails the build
 with a message saying 5 is the limit. It is a settings job: the Builder's pull request, reviewed.
+
+### Asking for it (about 3 minutes)
 
 1. **Tell your Chief of Staff (1 minute)** the repository, and whether it runs the v3 or the v2.5
    model. The Builder adds its entry to `src/config/projects.json`.
@@ -121,71 +153,101 @@ with a message saying 5 is the limit. It is a settings job: the Builder's pull r
    they are. The token's value doesn't change, so the Pages secrets stay as they are. If GitHub
    won't let you change it, renew it instead ("Renewing the read token"), with the new repository
    included.
-3. **Your verdict and the merge (2 minutes)**, once the Reviewer and the Design reviewer have passed
-   it.
-4. **The deploys.** Approve its `preview` deploy, check the new project's tile on the preview's
-   Home, then approve its `production` deploy (see "Approving a deploy"; about 3 minutes each).
+
+### The change, live (about 9 minutes)
+
+Once the Reviewer and the Design reviewer have passed the Builder's pull request:
+
+1. **Your verdict and the merge (2 minutes).**
+2. **The preview's deploy (2 minutes).** The merge starts a `preview` run; approve it (see
+   "Approving a deploy").
+3. **Check the preview (1 minute):** the new project's tile is on Home, with no "Can't read".
+4. **Wait for the production run (1 minute)**, which your Chief of Staff starts by hand, job
+   `production`, the same SHA (from launch).
+5. **Approve it (2 minutes).**
+6. **Check needs-you (1 minute):** the new tile is there.
 
 The new project's waiting items show on the desk at once. Phone notifications from it need a sender
 in that project too, which is separate work: ask your Chief of Staff.
 
-## Switching a project from v2.5 to v3 (about 4 minutes)
+## Switching a project from v2.5 to v3 (about 9 minutes; 2 more only if it has a sender)
 
 When a project adopts the v3 operating model, the desk should read it as one: its phases, its plan
 lines and its v3 records. It is a settings job: the Builder's pull request changes that project's
 `model` from `v2.5` to `v3` in the settings file, and nothing else (only one project plans, so its
 `planning` stays as it is).
 
-1. **Your verdict and the merge (2 minutes)**, once the Reviewer and the Design reviewer have passed
-   it.
-2. **The deploys.** Approve its `preview` deploy and open that project's page on the preview: it
-   now reads as a v3 project. Then approve its `production` deploy (about 3 minutes each).
-3. **Its sender's pin (2 minutes, only if it has one).** If the project runs a sender pinned to the
-   desk's code, your Chief of Staff moves the pin in a reviewed pull request there, and you merge
-   it. Today no other project has one (see "Notifications").
+### The change, live (about 9 minutes)
 
-## Rolling back (about 4 minutes; each part below under 10)
+Once the Reviewer and the Design reviewer have passed the Builder's pull request:
 
-There are three parts, each done alone or together: an earlier desk back, the old page back, and
-the tap's address and the phone's subscription back.
+1. **Your verdict and the merge (2 minutes).**
+2. **The preview's deploy (2 minutes).** Approve the `preview` run the merge starts.
+3. **Check the preview (1 minute):** that project's page now reads as a v3 project.
+4. **Wait for the production run (1 minute)**, which your Chief of Staff starts by hand, job
+   `production`, the same SHA (from launch).
+5. **Approve it (2 minutes).**
+6. **Check needs-you (1 minute):** the same page, as on the preview.
+
+### Its sender's pin, only if it has one (about 2 minutes)
+
+1. **Merge the pin move (2 minutes).** If the project runs a sender pinned to the desk's code, your
+   Chief of Staff moves the pin in a reviewed pull request there, and you merge it. Today no other
+   project has one (see "Notifications").
+
+## Rolling back (about 9 minutes at most; in four parts, each done on its own)
+
+There are four parts: an earlier desk back; the old page back; then, after the old page, the tap's
+address back and the phone back.
 
 ### An earlier desk back (about 4 minutes)
 
 For a deploy that broke the desk.
 
-1. Cloudflare, Workers & Pages, the project (`needs-you`, or `service-desk-preview`), Deployments,
-   All deployments. On the last production deployment that worked, "…", **"Rollback to this
-   deployment"**. It is instant. Only production deployments can be rolled back to.
-2. Open the desk. Whether a rollback brings back a deployment's own secrets is not known. If the
-   desk can't read after a rollback (for example after a token renewal), the fix is forward: your
-   Chief of Staff starts a deploy of main's current commit for you to approve, as in "Renewing the
-   read token", step 3.
-3. Tell your Chief of Staff, who files the fix. Until it lands, approve no deploy of the faulty
-   commit.
+1. **Roll back (2 minutes).** Cloudflare, Workers & Pages, the project (`needs-you`, or
+   `service-desk-preview`), Deployments, All deployments. On the last production deployment that
+   worked, "…", **"Rollback to this deployment"**. It is instant. Only production deployments can be
+   rolled back to.
+2. **Check (1 minute).** Open the desk. Whether a rollback brings back a deployment's own secrets is
+   not known. If the desk can't read after a rollback (for example after a token renewal), the fix
+   is forward: the earlier deployment can't be used, and the fixed commit's deploys are the way back.
+3. **Tell your Chief of Staff (1 minute)**, who files the fix. Until it lands, approve no deploy of
+   the faulty commit.
 
-### The old page back (about 7 minutes)
+### The old page back (about 6 minutes)
 
 For going back to the page Operations-Hub served before launch (the spec's rollback after launch).
 
-1. Cloudflare, Workers & Pages, `needs-you`, Deployments, All deployments. On the last deployment
-   from before launch (Operations-Hub's), "…", **"Rollback to this deployment"**.
-2. GitHub, Operations-Hub, Settings, General, Danger Zone, Unarchive this repository.
-3. Operations-Hub, Actions, `needs-you-page`, Enable workflow, so the old page keeps updating.
-4. Then take the tap's address and the phone's subscription back (below), or taps open the old page.
+1. **Roll back (2 minutes).** Cloudflare, Workers & Pages, `needs-you`, Deployments, All
+   deployments. On the last deployment from before launch (Operations-Hub's), "…", **"Rollback to
+   this deployment"**.
+2. **Unarchive (2 minutes).** GitHub, Operations-Hub, Settings, General, Danger Zone, Unarchive this
+   repository.
+3. **The old page's workflow (1 minute).** Operations-Hub, Actions, `needs-you-page`, Enable
+   workflow, so the old page keeps updating.
+4. **Check (1 minute).** Open `https://needs-you.pages.dev`: it shows the old page.
 
-### The tap's address and the phone's subscription back (about 9 minutes)
+From now on, approve no `production` deploy: one would put the desk back over the old page. Then
+take the tap's address and the phone back (below), or taps open the old page.
+
+### The tap's address back (about 4 minutes)
 
 A notification's tap opens the address in the settings file's `push.deskUrl`: from launch,
-`https://needs-you.pages.dev`. Taking it back to the preview is a settings job.
+`https://needs-you.pages.dev`. Taking it back to the preview is a settings job: the Builder's pull
+request changes `push.deskUrl` back to `https://service-desk-preview.pages.dev`. Once the Reviewer
+and the Design reviewer have passed it:
 
-1. **The address (2 minutes).** The Builder's pull request changes `push.deskUrl` back to
-   `https://service-desk-preview.pages.dev`. Give your verdict and merge it once the Reviewer and the
-   Design reviewer have passed it. The sender reads it from main, so taps change once it merges;
-   approve its `preview` deploy when it is offered.
-2. **The phone (about 7 minutes).** In Safari, open `https://service-desk-preview.pages.dev`, sign
-   in, Share, Add to Home Screen. Open the new icon; More detail, "Turn on notifications", Allow,
-   "Copy". Update `DESK_PUSH_SUBSCRIPTION` in Service-Desk ("Updating the subscription", below),
-   tap "I've added it to GitHub", send a test, and remove the needs-you icon.
+1. **Your verdict and the merge (2 minutes).** The sender reads the address from main, so taps
+   change once it merges.
+2. **The preview's deploy (2 minutes).** Approve the `preview` run the merge starts.
+
+### The phone back (about 9 minutes)
+
+1. **The preview's icon (4 minutes).** In Safari, open `https://service-desk-preview.pages.dev`,
+   sign in, Share, Add to Home Screen. Open the new icon; More detail, "Turn on notifications",
+   Allow, "Copy".
+2. **The subscription (5 minutes).** Update `DESK_PUSH_SUBSCRIPTION` in Service-Desk ("Updating the
+   subscription", below), tap "I've added it to GitHub", send a test, and remove the needs-you icon.
 
 ## Questions answered from the desk (about 2 minutes)
 
@@ -195,10 +257,12 @@ shows the question answered at once. The model's own count of open questions (th
 (Setup CS7). Your Chief of Staff deletes it in a pull request of its own, which the automatic
 asks-merge job usually merges within minutes of its checks passing.
 
-- **Your job:** if the owner signal lists a question the desk shows as answered for more than a day,
-  tell your Chief of Staff (1 minute), or merge the waiting deletion yourself (1 minute).
-- **Never** answer the Launch gate's question (questions/P-001-launch-gate-1.md) from the desk's
-  answer box: answer it in the launch sitting, in your own words to your Chief of Staff (L0).
+1. **Look (1 minute).** If the owner signal lists a question the desk has shown as answered for more
+   than a day, its deletion is stuck.
+2. **Unstick it (1 minute).** Tell your Chief of Staff, or merge the waiting deletion yourself.
+
+**Never** answer the Launch gate's question (questions/P-001-launch-gate-1.md) from the desk's
+answer box: answer it in the launch sitting, in your own words to your Chief of Staff (L0).
 
 ## Checking the deploy gate (about 3 minutes)
 
@@ -222,25 +286,30 @@ yourself (Setup CS9). Your Chief of Staff's summary of the same is a convenience
 
 Any change you didn't make stops the acceptance (or the sitting) until you rule.
 
-## Approving a deploy (about 3 minutes)
+## Approving a deploy (about 2 minutes)
 
 Every deploy waits for your approval on GitHub (the GitHub app offers it), in the environment
-`preview` or `production`.
+`preview` or `production`. This is the one count the other jobs use: **a deploy approval is about 2
+minutes**; 1 more where you wait while your Chief of Staff starts the run; 1 more to check what it
+deployed.
 
-- **Preview.** A merge that changes the desk's code starts a `preview` run, which waits for you. The
-  approval screen shows the run's full SHA. Approve only when it equals the merge-commit SHA shown on
-  the page of a pull request the Reviewer passed (its first 7 characters are the short SHA on the
-  pull request's page). **Match the SHA, never the commit message or the dispatch note,** which
-  anyone can write. The desk's Queue line ("Matches PR #<n>'s merge · Reviewer PASS") makes the same
-  check from the records; the approval itself stays on GitHub.
-- **Production.** Your Chief of Staff starts it by hand, job `production`, with the SHA. Approve only
-  a SHA the preview has already deployed and you have accepted there. The job itself also refuses
-  any other.
+1. **Match the SHA (1 minute).** Open the waiting run. The approval screen shows its full SHA.
+2. **Approve or reject (1 minute)**, by the rules below.
+
+- **Preview.** A merge that changes the desk's code starts a `preview` run, which waits for you.
+  Approve only when its SHA equals the merge-commit SHA shown on the page of a pull request the
+  Reviewer passed (its first 7 characters are the short SHA on the pull request's page). **Match the
+  SHA, never the commit message or the dispatch note,** which anyone can write. The desk's Queue
+  line ("Matches PR #<n>'s merge · Reviewer PASS") makes the same check from the records; the
+  approval itself stays on GitHub.
+- **Production.** Your Chief of Staff starts it by hand, in a run of its own, job `production`, with
+  the SHA. Approve only a SHA the preview has already deployed and you have accepted there. The job
+  itself also refuses any other.
 - **`exp-002`:** approve only when you or your Chief of Staff asked for it. It deploys nothing.
 - **Reject every other run.** The actor name can't tell your runs from an agent's (both show as
   your account), so the SHA is the only thing to check.
 
-## Launching, once (about 37 minutes in the sitting; every step under 10)
+## Launching, once (about 32 minutes in the sitting; every step under 10)
 
 The launch is the Launch gate's sitting: you rule the gate, and on `proceed` the desk goes live at
 `https://needs-you.pages.dev`, the old page is archived, your phone moves to the new icon, and you
@@ -276,7 +345,7 @@ commit your graduation record. It is done once. Each step gives its minutes.
 Meanwhile, the agents: once these notes are merged, the address change (LA2) is brought up to date
 with main, and desk-build passes on it, before you give its verdict (O10) and merge it (L3).
 
-### The sitting (about 37 minutes)
+### The sitting (about 32 minutes; 37 if you make a usage token first)
 
 1. **L0, the ruling (1 minute).** Answer question 3 (questions/P-001-launch-gate-1.md) in your own
    words to your Chief of Staff, not from the desk's answer box.
@@ -331,12 +400,14 @@ with main, and desk-build passes on it, before you give its verdict (O10) and me
     Service-Desk as Done, still showing anything that waits on you.
 14. **L11, accepting M3C (1 minute).** Answer question 4, questions/P-001-m3c-accept.md.
 
-### After the sitting (about 4 minutes)
+### After the sitting (about 2 minutes)
 
-- Merge the reached date's commit for M3C (1 minute).
-- Merge your Chief of Staff's deletion of questions/P-001-launch-gate-1.md (1 minute).
-- The operating-model project's pin move (CS16) has nothing to move today: that project has no
-  sender yet (see "Notifications"). If one is set up later, that work brings its own pin.
+1. **The reached date (1 minute).** Merge the commit that adds M3C's reached date.
+2. **The question's deletion (1 minute).** Merge your Chief of Staff's deletion of
+   questions/P-001-launch-gate-1.md.
+
+The operating-model project's pin move (CS16) has nothing to move today: that project has no
+sender yet (see "Notifications"). If one is set up later, that work brings its own pin.
 
 ### If the sitting stops after L0's `proceed` and before L10
 
@@ -348,13 +419,13 @@ For example, L7 shows the old page, a deploy fails, or something is rolled back.
   - **after L2a (the tokens):** a `preview` deploy of main's current commit, so the preview reads
     with the new token (3 minutes);
   - **after L3 (LA2 merged):** taps now open needs-you, which isn't the desk. Unless you retry the
-    same day, the Builder takes the address back ("The tap's address", above). That puts main's
+    same day, the Builder takes the address back ("The tap's address back", above). That puts main's
     deployable files back as they were at R, so L3's check passes on the retry, where the address
     change is made again. If L3 didn't run, LA2 stays unmerged;
   - **after L5 or L8:** `needs-you-page` enabled again, and Operations-Hub unarchived ("The old page
     back", above);
   - **after L6:** needs-you rolled back to the last Operations-Hub deployment ("The old page back");
-  - **after L9:** the phone moved back to the preview's icon ("The phone", above).
+  - **after L9:** the phone moved back to the preview's icon ("The phone back", above).
 - A retry asks L0 again (1 minute) on the same case if nothing in it has changed. If anything went
   live and was rolled back, or R moved, the case is written again with what happened, and the
   Critic reads it afresh.
@@ -386,33 +457,34 @@ pin, and these notes gain them.
   runs, and goes by itself at the next run that reads the state, or finds none. Only the line
   saying the memory "could not be trusted" needs your Chief of Staff.
 
-### Turning notifications on again (about 8 minutes; 9 if the phone must first drop a dead subscription)
+### Turning notifications on again (about 7 minutes; 8 if the phone must first drop a dead subscription)
 
 Do this when the issue says the subscription is gone or invalid, when the phone shows "Desk
 notifications need turning on again: open the desk", after a new phone or after removing the desk
 from the Home Screen. At launch, the desk's address changes, and the launch's steps L9a and L9b do
 the same with the new icon (N10).
 
-1. On the iPhone, open the desk from its Home Screen icon: before launch the preview's, from launch
-   the needs-you one.
-2. More detail, "Turn on notifications", then Allow (N5). If it already says "On for this phone",
-   tap "Show the value again".
-   - **If the issue says the subscription is gone, but the phone still says "On for this phone"**,
-     the phone is still holding the dead subscription, and "Show the value again" would show that
-     same dead value. Drop it first. Press and hold the desk's Home Screen icon, choose to remove
-     it, and confirm. Then, in Safari, open the desk, Share, Add to Home Screen, and open it from the
-     new icon. Removing the desk from the Home Screen ends its subscription (spec J19). Now
-     "Turn on notifications", then Allow, gives a new value. Carry on with step 3.
-3. Tap "Copy", then update the subscription (below).
-4. Tap "I've added it to GitHub" on the desk.
-5. Send a test (below). The issue closes on the next good send.
+1. **Open the desk (1 minute)** from its Home Screen icon on the iPhone: before launch the
+   preview's, from launch the needs-you one.
+2. **Turn them on (2 minutes).** More detail, "Turn on notifications", then Allow (N5). If it
+   already says "On for this phone", tap "Show the value again".
+   - **If the issue says the subscription is gone, but the phone still says "On for this phone"**
+     (1 minute more), the phone is still holding the dead subscription, and "Show the value again"
+     would show that same dead value. Drop it first. Press and hold the desk's Home Screen icon,
+     choose to remove it, and confirm. Then, in Safari, open the desk, Share, Add to Home Screen,
+     and open it from the new icon. Removing the desk from the Home Screen ends its subscription
+     (spec J19). Now "Turn on notifications", then Allow, gives a new value.
+3. **Copy and update (2 minutes).** Tap "Copy", update the subscription (below), then tap "I've
+   added it to GitHub" on the desk.
+4. **Send a test (2 minutes)** (below). The issue closes on the next good send.
 
 ### Updating the subscription (about 2 minutes)
 
-1. GitHub, **Service-Desk**, Settings, Environments, `notify`, Environment secrets,
-   `DESK_PUSH_SUBSCRIPTION`, Update, paste the value, Update secret (N6).
-2. Never paste the value into a chat, a file or a commit: the endpoint in it is a secret (anyone
-   holding it with the keys could send to your phone).
+1. **The secret (2 minutes).** GitHub, **Service-Desk**, Settings, Environments, `notify`,
+   Environment secrets, `DESK_PUSH_SUBSCRIPTION`, Update, paste the value, Update secret (N6).
+
+Never paste the value into a chat, a file or a commit: the endpoint in it is a secret (anyone
+holding it with the keys could send to your phone).
 
 The sender reads the new value on its next run. If it had stopped because the old subscription
 was gone, it then sends "Notifications are back on", closes the issue, and sends anything that
@@ -420,42 +492,60 @@ started waiting meanwhile, once each.
 
 ### Sending a test (about 2 minutes)
 
-In Service-Desk: Actions, desk-notify, Run workflow, `test` = `true`, Run workflow (N8). When the
-run has finished, the iPhone shows "Test from your desk: notifications work"; tap it and the desk
-opens. If no run appears within a minute, run it again (a pending run can be replaced).
+1. **Run it (2 minutes).** In Service-Desk: Actions, desk-notify, Run workflow, `test` = `true`, Run
+   workflow (N8). When the run has finished, the iPhone shows "Test from your desk: notifications
+   work"; tap it and the desk opens. If no run appears within a minute, run it again (a pending run
+   can be replaced).
 
-### The switch: stopping and starting a sender (1 minute)
+### The switch: stopping and starting the sender (1 minute)
 
-The sender's switch is Service-Desk's repository variable `DESK_NOTIFY_ON` (N7).
+The sender's switch is Service-Desk's repository variable `DESK_NOTIFY_ON` (N7). Each of these is a
+job on its own:
 
-- **To stop** the sender: GitHub, Service-Desk, Settings, Secrets and variables, Actions,
+- **To stop it (1 minute):** GitHub, Service-Desk, Settings, Secrets and variables, Actions,
   Variables, `DESK_NOTIFY_ON`, delete it (or set it to anything but `true`). Its runs then do
   nothing, and no notification is sent.
-- **To start it again**: add `DESK_NOTIFY_ON` = `true` again. The next run reads the records as
-  they stand: what started waiting while it was off is sent once; if it was off for more than
-  7 days, its memory has expired and it sends one summary, "Notifications are on: <n> things wait
-  on you now", instead of one notification each.
-- To silence the phone without touching GitHub: iPhone Settings, Notifications, Service Desk.
+- **To start it again (1 minute):** add `DESK_NOTIFY_ON` = `true` again. The next run reads the
+  records as they stand: what started waiting while it was off is sent once; if it was off for more
+  than 7 days, its memory has expired and it sends one summary, "Notifications are on: <n> things
+  wait on you now", instead of one notification each.
 
-### If the notification keys may have leaked (with your Chief of Staff)
+To silence the phone without touching GitHub: iPhone Settings, Notifications, Service Desk.
 
-The spec's rollback, for a key pair or subscription that may have been copied out. It is four short
-jobs, each under 10 minutes, with waits between them while the new key is reviewed and deployed.
+### If the notification keys may have leaked (about 8 minutes at most; in four parts, with your Chief of Staff)
+
+The spec's rollback, for a key pair or subscription that may have been copied out. It is four
+parts, each under 10 minutes, with waits between them while the new key is reviewed and deployed.
 Changing the public key is one of the four settings jobs: the Builder's pull request, reviewed by
-the Reviewer and the Design reviewer, with your verdict. Nothing that waits on you is lost meanwhile:
-the desk shows it all when you open it.
+the Reviewer and the Design reviewer, with your verdict. Nothing that waits on you is lost
+meanwhile: the desk shows it all when you open it.
 
-1. **Now (about 5 minutes).** Turn the switch off (above). Make a new key pair
-   on your computer (N1) and send the new public key to your Chief of Staff. The Builder changes
-   `push.vapidPublicKey` in `src/config/projects.json`.
-2. **The change (about 8 minutes).** Once the Reviewer and the Design reviewer have passed it, give
-   your verdict and merge it (2 minutes). Approve its `preview` deploy (3 minutes) and, from launch,
-   its `production` deploy (3 minutes).
-3. **Once that change is deployed (about 2 minutes).** In Service-Desk, update
+#### Now (about 5 minutes)
+
+1. **The switch off (1 minute)** (above).
+2. **A new key pair (4 minutes)** on your computer (N1); send the new public key to your Chief of
+   Staff. The Builder changes `push.vapidPublicKey` in `src/config/projects.json`.
+
+#### The change (about 7 minutes)
+
+Once the Reviewer and the Design reviewer have passed it:
+
+1. **Your verdict and the merge (2 minutes).**
+2. **The preview's deploy (2 minutes).** Approve the `preview` run the merge starts.
+3. **Wait for the production run (1 minute)**, which your Chief of Staff starts by hand, job
+   `production`, the same SHA (from launch).
+4. **Approve it (2 minutes).**
+
+#### The private key (about 2 minutes)
+
+1. **The secret (2 minutes).** Once that change is deployed: in Service-Desk, update
    `DESK_VAPID_PRIVATE_KEY` with the new private key's text (N4).
-4. **Then (about 9 minutes).** Turn notifications on again on the phone and update the
-   subscription (above); the new subscription ends the old one. Turn the switch back on, and send
-   a test.
+
+#### Notifications on again (about 8 minutes)
+
+1. **The switch on (1 minute)** (above).
+2. **Turn notifications on again (7 minutes)** on the phone, as above, with its test; the new
+   subscription ends the old one.
 
 ## GitHub Actions use on the desk
 
@@ -470,37 +560,46 @@ make one, GitHub's own e-mails are your only Actions alert: Settings, Billing an
 "Receive alerts when my included usage reaches 90% and 100%" (N11). Every usage-token step in these
 notes, the launch's L2b among them, applies only if you later make one.
 
-### Making the usage token, only if you choose to (about 9 minutes)
+### The usage token, only if you later make one (about 5 minutes at most; in three parts)
 
-Setup N12's steps: a fine-grained token named "Desk: Actions use", resource owner your account, an
-expiry you choose, Repository access "Public repositories (read-only)", Account permissions, Plan:
-Read-only, and nothing else. Put it in the three places of the renewal below (step 2), approve the
-deploys (step 3), and test it (step 4). If the test's log says it was refused or not found, N12
-step 5 tries a classic token instead; tell your Chief of Staff which kind worked, or that none did,
-so EXP-006's result records it.
+The same three parts make it the first time and renew it at its expiry. GitHub e-mails you before
+it expires; after it expires the desk's line reads "can't be read: the usage token was refused…",
+and the issue "Desk notifications have stopped" says "GitHub Actions use can't be read". As with
+the read token, renew it when production already runs main's deployable code, or right after you
+accept main's newer commit on the preview. Before you start, your Chief of Staff starts desk-deploy
+by hand, job `preview`, on main's current commit, so the run is waiting when you need it.
 
-### Renewing the usage token at its expiry, only if you later make one (about 8 minutes)
+#### The token and its three places (about 5 minutes)
 
-GitHub e-mails you before the token expires; after it expires the desk's line reads "can't be
-read: the usage token was refused…", and the issue "Desk notifications have stopped" says "GitHub
-Actions use can't be read". As with the read token, renew it when production already runs main's
-deployable code, or right after you accept main's newer commit on the preview.
-
-1. **The token (2 minutes).** GitHub, Settings, Developer settings: make a new token **of the kind
-   that worked** (recorded in EXP-006's result), with the settings above; for a classic token, the
-   scope recorded there and nothing more.
+1. **The token (2 minutes).** GitHub, Settings, Developer settings. The first time, as Setup N12: a
+   fine-grained token named "Desk: Actions use", resource owner your account, an expiry you choose,
+   Repository access "Public repositories (read-only)", Account permissions, Plan: Read-only, and
+   nothing else. At renewal, a new token **of the kind that worked** (recorded in EXP-006's result);
+   for a classic token, the scope recorded there and nothing more.
 2. **Three places, with the same value (3 minutes):**
    - Service-Desk, Settings, Environments, `notify`, Environment secrets, `DESK_BILLING_TOKEN`,
      Update;
    - Cloudflare, Workers & Pages, `service-desk-preview`, Settings, Variables and Secrets,
      **Production**, the secret `GITHUB_BILLING_TOKEN`, edit, paste, save;
    - the same in `needs-you`, from launch.
-3. **Both deploys (3 minutes).** Cloudflare uses a new secret only from the next deployment. Your
-   Chief of Staff starts desk-deploy by hand on main's current commit; approve its `preview` job,
-   then, from launch, its `production` job for the same SHA.
-4. **Test it.** Service-Desk, Actions, desk-notify, Run workflow, `test` = `usage`; then open the
-   desk's More detail: the line shows a figure again, "as of" the time it read it. Delete the old
-   token in GitHub's token settings.
+
+#### The deploys (about 5 minutes)
+
+Cloudflare uses a new secret only from the next deployment.
+
+1. **The preview's deploy (2 minutes).** Approve the waiting `preview` job.
+2. **Wait for the production run (1 minute)**, which your Chief of Staff starts by hand once the
+   preview's has finished, job `production`, the same SHA (from launch).
+3. **Approve it (2 minutes).**
+
+#### The test (about 3 minutes)
+
+1. **Test it (2 minutes).** Service-Desk, Actions, desk-notify, Run workflow, `test` = `usage`; then
+   open the desk's More detail: the line shows a figure, "as of" the time it read it.
+2. **Tidy up (1 minute).** At renewal, delete the old token in GitHub's token settings. The first
+   time, if the test's log says the token was refused or not found, N12 step 5 tries a classic token
+   instead; tell your Chief of Staff which kind worked, or that none did, so EXP-006's result records
+   it.
 
 Never paste the token into a chat, a file or a commit. If it may have leaked, delete it in GitHub
 at once and make a new one as above.

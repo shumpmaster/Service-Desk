@@ -54,7 +54,8 @@ your approval.
 **Day to day:** open the desk from its Home Screen icon. What waits on you is on Home; answer from
 each item's sheet. Approve a deploy only when its SHA matches a merge the Reviewer passed.
 
-**The jobs**, each under 10 minutes, are written out in docs/handover/desk-operations.md: renewing
+**The jobs**, each under 10 minutes or done in parts that each are (the launch's every step under
+10), are written out in docs/handover/desk-operations.md: renewing
 the read token; checking the Access applications; adding a project; switching a project from v2.5
 to v3; rolling back; questions answered from the desk; checking the deploy gate; approving a deploy;
 the launch, once; the notifications' jobs; and the usage token's, only if one is made.
@@ -147,7 +148,8 @@ date, and the 14 days count from it (AC97):
   0.
 - **V2, false alarms:** items the desk flagged that did not need the owner: at most 1 a week.
 - **V3, owner upkeep:** the owner's time on the desk itself (tokens, settings, adding repositories):
-  at most 30 minutes a week after launch. Every job in the operating notes is under 10 minutes.
+  at most 30 minutes a week after launch. Every job in the operating notes takes under 10 minutes,
+  or is done in parts that each take under 10, deploy approvals counted.
 - **V4, replacement:** the desk serves the needs-you address and Operations-Hub is archived, at
   launch (steps L6 to L8).
 - **V5, owner response time:** the median time from a card appearing to its answer being committed,

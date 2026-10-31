@@ -173,10 +173,13 @@ test('Launch-2 and Launch-4: the package opens with a plain paragraph, names the
   const words = first.split(' ').length;
   assert.ok(words >= 15 && words <= 150, `the plain paragraph is 15 to 150 words: ${words}`);
   assert.doesNotMatch(first, /`|\b[\w-]+\/[\w./-]+\.\w+\b|\b(?:AC|CS|EXP-|S-|P-|L-)\d/, 'no file paths, code or ids');
+  // The operating team (Launch-2), as its own block in "How to run it": one bullet per member, by its words.
   const run = got.find((s) => s.title === 'How to run it').body;
-  for (const who of ['the owner', 'Chief of Staff', 'the Builder', 'the Reviewer and the Design reviewer', 'the Orchestrator']) {
-    assert.ok(run.includes(who), `the operating team names ${who}`);
-  }
+  const team = /\*\*The operating team:\*\*\n((?:- .*\n(?: {2}.*\n)*)+)/.exec(`${run}\n`);
+  assert.ok(team, 'How to run it holds "**The operating team:**" and its list');
+  const members = team[1].split('\n').filter((l) => /^- /.test(l)).map((l) => (/^- \*\*([^*]+):\*\*/.exec(l) || [])[1]);
+  assert.deepEqual(members, ['the owner', 'Service-Desk\'s Chief of Staff', 'the Builder', 'the Reviewer and the Design reviewer',
+    'the Orchestrator'], 'the operating team as the plan names it');
   const monitoring = got.find((s) => s.title === 'Its own monitoring and feedback').body;
   const rows = monitoring.split('\n').filter((l) => /^\| /.test(l) && !/^\| ?-/.test(l)).slice(1);
   assert.ok(rows.length >= 6, 'each part in its row');
@@ -185,4 +188,86 @@ test('Launch-2 and Launch-4: the package opens with a plain paragraph, names the
     assert.equal(cells.length, 4, r);
     assert.ok(cells.every((c) => c.length > 0), `each part names what it does, where it runs, and its record: ${cells[0]}`);
   }
+});
+
+// From LA1's review, round 1 (B1): each job's heading equals its steps' minutes added up, honestly, so a heading can't
+// understate its job. A job's numbered steps (top-level, each giving its minutes on its first line) are added up; a job
+// of alternatives (bold bullets, each giving its minutes) takes its longest; a job done in parts (sub-headings, each
+// with its own minutes) is checked part by part, and its heading gives its longest part. Every total is under 10.
+const STEP_LINE = /^\d+\.\s+\*\*/;
+const ALT_LINE = /^- \*\*[^*]*\((?:about )?\d+ minutes?\b/;
+
+/** The direct sub-sections of a section's body at heading level `level` (2 for `###` inside a `##`). */
+function parts(body, level) {
+  const mark = `${'#'.repeat(level + 1)} `;
+  const out = [];
+  let cur = null;
+  for (const line of body.split('\n')) {
+    if (line.startsWith(mark)) {
+      cur = { title: line.slice(mark.length).trim(), lines: [] };
+      out.push(cur);
+    } else if (cur) {
+      cur.lines.push(line);
+    }
+  }
+  return out.map((p) => ({ title: p.title, body: p.lines.join('\n') }));
+}
+
+/** Checks one job against its steps; returns its heading's minutes. `capped`: its total is under 10 (every job but the
+ * launch, a one-time job whose every step is under 10 instead). */
+function checkJob(title, body, level, path = title, capped = true) {
+  const n = minutesOf(title);
+  assert.notEqual(n, null, `${path}: its heading gives its minutes`);
+  if (capped) assert.ok(n < 10, `${path}: ${n} minutes, under 10`);
+  const ps = parts(body, level);
+  if (ps.length > 0) {
+    const each = ps.map((p) => checkJob(p.title, p.body, level + 1, `${path} › ${p.title}`, capped));
+    assert.equal(n, Math.max(...each), `${path}: done in parts, its heading gives its longest part (${each.join(', ')})`);
+    return n;
+  }
+  const lines = body.split('\n');
+  const steps = lines.filter((l) => STEP_LINE.test(l));
+  if (steps.length > 0) {
+    const mins = steps.map((l) => {
+      const m = minutesOf(l);
+      assert.notEqual(m, null, `${path}: a step gives its minutes on its first line: ${l.trim()}`);
+      return m;
+    });
+    const sum = mins.reduce((a, b) => a + b, 0);
+    assert.equal(n, sum, `${path}: the heading's ${n} minutes equal its steps' ${mins.join(' + ')} = ${sum}`);
+    return n;
+  }
+  const alts = lines.filter((l) => ALT_LINE.test(l)).map((l) => minutesOf(l));
+  assert.ok(alts.length > 0, `${path}: no counted steps`);
+  assert.equal(n, Math.max(...alts), `${path}: a job of alternatives is headed with its longest (${alts.join(', ')})`);
+  return n;
+}
+
+test('AC27 (LA1 review B1): each job\'s heading equals its steps\' minutes added up, part by part, each under 10', () => {
+  for (const [job, re] of JOBS.filter(([j]) => j !== 'launching, once')) {
+    const [s] = jobSection(re);
+    checkJob(s.title, s.body, 2, job);
+  }
+  // The launch: each of its parts that gives minutes adds up (the step before the sitting, the sitting, after).
+  const [launch] = jobSection(/^Launching, once\b/);
+  const counted = parts(launch.body, 2).filter((p) => minutesOf(p.title) !== null);
+  assert.deepEqual(counted.map((p) => p.title.replace(/ \(.*$/, '')), ['Before the sitting, any day', 'The sitting', 'After the sitting']);
+  for (const p of counted) checkJob(p.title, p.body, 3, `launching › ${p.title}`, false);
+  assert.equal(minutesOf(launch.title), minutesOf(counted[1].title), 'the launch\'s heading gives the sitting\'s minutes');
+});
+
+test('AC27 (LA1 review B1): the notifications\' and the usage token\'s jobs add up too', () => {
+  const want = ['Turning notifications on again', 'Updating the subscription', 'Sending a test', 'The switch',
+    'If the notification keys may have leaked', 'The usage token'];
+  const jobs = [];
+  for (const area of ['Notifications', 'GitHub Actions use on the desk']) {
+    const [s] = NOTE_SECTIONS.filter((x) => x.title === area);
+    assert.ok(s, area);
+    for (const p of parts(s.body, 2)) {
+      if (minutesOf(p.title) === null) continue;
+      jobs.push(p.title);
+      checkJob(p.title, p.body, 3, p.title);
+    }
+  }
+  assert.deepEqual(jobs.map((t) => want.find((w) => t.startsWith(w))), want, `every one of them counted: ${jobs.join(' | ')}`);
 });

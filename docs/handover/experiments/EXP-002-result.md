@@ -4,6 +4,9 @@ registration: experiments/EXP-002-o5-needs-you-deploy-method.md   spec: S-001 (A
 run: 2026-10-07, by desk-deploy's read-only `exp-002` job (GitHub Actions run 37689475141),
 approved by the owner in the `preview` environment
 recorded by: the Builder, from the Chief of Staff's hand-over (Setup CS5); the Builder ran nothing
+production branch read: 2026-10-31, by the `exp-002` job's two read-only steps added in Setup CS37
+(GitHub Actions run 41151614374), approved by the owner in the `preview` environment; recorded by
+the Builder from the Chief of Staff's hand-over (Setup CS39, stage LA1); the Builder ran nothing
 
 ## What the run showed
 
@@ -24,6 +27,7 @@ dashboard (method step 2): the row settled the question.
 |---|---|
 | Deployment method | **Direct Upload** (Git Provider: No) |
 | Production branch | Not shown by `pages project list`. Operations-Hub's `needs-you-page` workflow deploys with `--branch main` (bd84592, line 110; S-001 AC28), which points to `main` (C). The `production` job's `--branch` is confirmed against the dashboard before AC28's launch. |
+| Production branch, read (2026-10-31, CS37) | **`main`**, from both sources, which agree. The Cloudflare API's project read printed `{"success": true, "production_branch": "main"}`. `wrangler pages deployment list --project-name needs-you --environment production` showed Branch `main` on every row (about 25 rows, the newest 1 day old, all at commit 758ef27). The API's value is the one that decides (S-001, Setup CS38) |
 | Custom domains of `needs-you` | None listed: the Domains column held only `needs-you.pages.dev` |
 | Access application on each hostname | Not shown by the run. Setup C6 puts one on `needs-you.pages.dev` before launch |
 
@@ -34,6 +38,17 @@ dashboard (method step 2): the row settled the question.
 in the `production` environment and has disabled Operations-Hub's `needs-you-page` workflow (Setup
 C8). The fallback (a new Pages project, a custom domain and a Bulk Redirect,
 decisions/questions/P-001-o5-define.md) is not needed, and Setup C7 is dropped.
+
+## The production branch, read (Setup CS37 and CS38)
+
+The 2026-10-07 run left the production branch unread (above). Before launch, desk-deploy's
+`exp-002` job gained two read-only steps (CS37): the pinned wrangler's production deployments list
+for `needs-you`, and a read of the project from Cloudflare's API printing only `success` and
+`production_branch`. Run 41151614374 printed `main` from both, as the row above records. CS38 then
+set the `production` job to `PROD_PROJECT: "needs-you"` and `PROD_BRANCH: "main"` (#256, merged),
+since the API printed `success` `true` and a branch that is a non-empty string other than `null`.
+So the launch's production deploy (S-001 AC28; the launch step L6) makes a production deployment
+of `needs-you`, not a preview one.
 
 ## What changes
 

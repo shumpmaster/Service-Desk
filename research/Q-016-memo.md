@@ -47,7 +47,7 @@ This is a map of questions, not graded fact.
 - C4 After the owner sees a change, what does the reader do next (open GitHub, answer, nothing)? — shapes the link or action on the summary; unknown; answered by O.
 
 ### D. How many changes arrive
-- D1 How many pull requests merge per week across all the projects, and how many open and wait? — sets whether per-change reading, a digest or exception-only is feasible; known for Service-Desk, unknown for the others.
+- D1 How many pull requests merge per week across all the projects, and how many open and wait? — sets whether per-change reading, a digest or exception-only is feasible; merged: known for Service-Desk; waiting: one snapshot only; other projects unknown.
 - D2 How does volume differ by project and kind (feature, record-only, governance, settings)? — decides grouping and what to skip; unknown beyond Service-Desk; answered by R (needs repository access to each project).
 - D3 Does volume rise when many agents run at once? — determines peak load against average; unknown, but the series below shows large swings; answered by R.
 
@@ -55,7 +55,7 @@ This is a map of questions, not graded fact.
 - Source: the Source checker's own count (research/Q-016-source-check.md:9-37), taken as of 2026-11-01. I did not run these methods; I report them as the checker's.
 - Method 1: the GitHub API, `gh api repos/shumpmaster/Service-Desk/pulls?state=closed&per_page=100&page=1..4`, keeping PRs with `merged_at` set and grouping by UTC date. Result: 258 closed PRs, of which 251 merged (#1 to #264).
 - Method 2: after `git fetch --unshallow`, `TZ=UTC git log origin/main --first-parent --merges`, reading PR numbers from `(#NNN)` or `Merge pull request #NNN`. Result: 251 PRs. The two sets are identical and every merge date matches.
-- Grade A (two independent methods on primary records, agreeing), subject to the Source checker's own filing.
+- Grade A (two independent methods on primary records, agreeing), confirmed by the Source checker (two methods).
 - Why my first count was wrong: I used a summarising fetch of GitHub's list page, which held only the first 25 results (#240 to #264). It counted only the PRs on that page, so Oct 25 came out as 4 (#240-#243) when the real figure is 22 (#222-#243). That led me to about 22 a week, which was the quietest recent week and not a typical one.
 
 Merged per day, last 8 days (UTC):
@@ -84,7 +84,7 @@ Merged per week (Monday to Sunday):
 | Oct 26-Nov 1 | 21 |
 
 - Average: about 55 a week since the first merge on 2026-09-30. Open now: #265.
-- What it means for the map: volume swings by a factor of about six between weeks, from 21 to 121. The recent week is the quietest of the five. A design has to be tried against both the quiet and the busy weeks. Peaks of 36 in one day are well beyond what is readable one change at a time.
+- What it means for the map: volume swings by a factor of about six between weeks, from 21 to 121. The recent week is the quietest of the five. A design has to be tried against both the quiet and the busy weeks. Assumed, answered by E: peaks of 36 in one day are well beyond what is readable one change at a time.
 - Not counted: Personal-Org-Operating-Model, the portfolio repository, and Model-Lab (not to be read).
 
 ### E. What a per-change summary can hold

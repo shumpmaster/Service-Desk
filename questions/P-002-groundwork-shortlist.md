@@ -22,7 +22,7 @@ RISK CLASS: R0   REVERSIBILITY: reversible   BLAST RADIUS: what the new research
 DEFAULT: none (the Discovery waits for you)   TIMEOUT: none
 
 ## Context
-- The owner asked for "a visual update page with every pull request summarized almost like a briefing ppt" (source: portfolio ideas/IDEAS.md, 2026-11-01 entry)
+- The owner asked for "a visual update page with every pull request summarized almost like a briefing ppt" (source: the portfolio repository, ideas/IDEAS.md, 2026-11-01 entry)
 - The owner ruled to start a small Discovery now, its first step a map of what an expert would ask (source: decisions/questions/P-002-route.md)
 - The groundwork map's owner shortlist holds these eight questions (source: research/Q-016-memo.md, "Owner shortlist")
 - The map passed its source check at round 2 (source: research/Q-016-source-check-2.md)

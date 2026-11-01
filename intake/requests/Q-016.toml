@@ -1,0 +1,8 @@
+kind = "research"
+milestone = "Discovery-3"
+# Groundwork map (model S-020), the first step of a Discovery on the desk, filed on the owner's
+# ruling of 2026-11-01. The full question, checked by the Critic for neutral phrasing
+# (reviews/Q-016/critic.md), is research/Q-016.md.
+question = """
+Groundwork map: how one owner who oversees several projects, worked on mostly by AI agents, keeps up with the completed and waiting changes in them. See research/Q-016.md for the full question, the decision it serves and its depth.
+"""

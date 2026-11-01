@@ -284,3 +284,17 @@ options_considered: "As new work each time" (1 to 2 days and 15 to 30 owner minu
 decided_by: owner (decisions/questions/P-001-graduated-changes.md, A)
 proposed_by: orchestrator
 reversibility: costly
+
+## L-0021 — Exception: the desk's tests are fixed directly so that adding a project changes only the settings file
+date: 2026-11-01
+type: ruling
+supersedes: []
+scope: P-001 (specs/S-001.md)
+expires: never
+asked: Adding Model-Lab (the settings job "adding a project", L-0020) made 50 of the desk's tests fail, because they expect exactly the two projects of today. The model's re-entry rule (§3) sends a graduated product's change to its tests through a small Discovery; the handover sends a defect fix through a short Design. Which route? (decisions/questions/P-001-add-project-tests.md, filed in PR #261 after the Critic's two checks.)
+decision: A, as an exception neither rule provides: the desk's tests are changed so they no longer depend on the live project list, and Model-Lab's row is added where the list is written out; then the one-line settings change lands. Made by a separate Builder session on a different model from the settings change (the tests are in the Builder's lane, not the check author's), reviewed by the Reviewer and the Design reviewer, with the owner's verdict and merge, and the two deploy approvals. This sets a precedent for fixing a graduated product's tests without a Discovery; it covers only this change.
+licenses_next: The Builder's pull request for the test change and the Model-Lab entry.
+options_considered: B, a small Discovery for the desk (the model's rule; slower, a day or more by estimate). C, leaving Model-Lab off the desk (every later addition hits the same failures).
+decided_by: owner (decisions/questions/P-001-add-project-tests.md, A)
+proposed_by: chief-of-staff
+reversibility: reversible

@@ -11,5 +11,8 @@
       "webCommitsToDefault": true, "contentPrefill": true, "contentParam": "value" },
     { "name": "Personal-Org-Operating-Model", "repo": "shumpmaster/Personal-Org-Operating-Model",
       "defaultBranch": "main", "model": "v2.5", "planning": false, "publishesModel": true,
+      "webCommitsToDefault": true, "contentPrefill": true, "contentParam": "value" },
+    { "name": "Model-Lab", "repo": "shumpmaster/Model-Lab", "defaultBranch": "main",
+      "model": "v3", "planning": false,
       "webCommitsToDefault": true, "contentPrefill": true, "contentParam": "value" } ],
   "portfolio": { "repo": "shumpmaster/portfolio", "defaultBranch": "main" } }

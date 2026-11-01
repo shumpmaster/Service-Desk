@@ -5,7 +5,7 @@
 // ac-test: S-001/AC4 ac-test: S-001/AC5
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fixture, CONFIG } from './helpers.mjs';
+import { fixture, LIVE_FILE } from './helpers.mjs';
 import { repo, BAD_PR, PORTFOLIO_REPO } from './fake-desk.mjs';
 import { pfFiles, withPortfolio } from './pf-fixtures.mjs';
 import { loadSandbox, byClass } from './sandbox-helpers.mjs';
@@ -26,12 +26,16 @@ function cleanRepos({ badRecord = false } = {}) {
     // The committed config names the portfolio (J7, stage 6b), so the desk reads it too: a made-up portfolio with
     // nothing on its queue (NOT real records), so the state line can reach "Quiet".
     [PORTFOLIO_REPO]: repo(pfFiles()),
+    // Any project the committed list holds beyond these two (the entry reads that list, not a fixed one): an empty repo.
+    ...Object.fromEntries(LIVE_FILE.projects.filter((p) => !['Service-Desk', 'Personal-Org-Operating-Model'].includes(p.name)).map((p) => [p.name, repo({})])),
   };
 }
 
 // The projects' polls (the portfolio's own read, J23, is counted apart).
 const polls = (app) => app.server.calls.filter((c) => c.path === '/api/poll' && c.target !== 'portfolio').length;
-// The entry reads the committed config, which names the portfolio (J7); the fake function is given the same.
+// The entry reads the committed config, which names the portfolio (J7); the fake function is given the same
+// (this file tests the entry itself, so it is the one place beside J7's own test that reads the live list).
+const CONFIG = LIVE_FILE;
 const open = (o) => loadSandbox({ config: withPortfolio(CONFIG), now: Date.now(), search: '', entry: true, ...o });
 
 test('Page (review N6): opened at #/p/%E0, the desk shows Home with every project, starts polling and reaches Quiet', async () => {

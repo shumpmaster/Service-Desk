@@ -11,11 +11,25 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { validateConfig, MAX_PROJECTS } from '../../src/lib/configcheck.js';
 import GENERATED from '../../src/lib/config.js';
-import { CONFIG, J7_FILE, SRC, withUsage } from './helpers.mjs';
+import { CONFIG, J7_FILE, LIVE_FILE, SRC, withUsage } from './helpers.mjs';
 
-test('J7: the committed config holds the launch values and passes the build\'s check', () => {
+test('J7: the committed config passes the build\'s check and the generated config is it, without pinning its project list', () => {
+  assert.deepEqual(validateConfig(LIVE_FILE), []);
+  // Rewritten in stage 6b (J7's `portfolio`, specs/S-001.md:9515-9520): the generated config is the committed
+  // file whole, its `portfolio` among it.
+  assert.deepEqual(GENERATED, LIVE_FILE, 'lib/config.js is generated from projects.json');
+  // The rules every project row follows, whatever the list holds (a new project's row must not break them).
+  assert.equal(LIVE_FILE.projects.filter((p) => p.planning === true).length, 1, 'exactly one planning project');
+  for (const p of LIVE_FILE.projects) {
+    assert.equal(p.webCommitsToDefault, true, p.name);
+    assert.equal(p.contentPrefill, true, p.name);
+    assert.equal(p.contentParam, 'value', p.name);
+  }
+});
+
+test('J7: the fixed test configuration holds the launch values and passes the build\'s check', () => {
   assert.deepEqual(validateConfig(CONFIG), []);
-  // From stage 6b, helpers' CONFIG is J7 less its `portfolio` (6a's state); the committed file, with it, passes too.
+  // From stage 6b, helpers' CONFIG is J7 less its `portfolio` (6a's state); the file, with it, passes too.
   assert.deepEqual(validateConfig(J7_FILE), []);
   assert.equal(CONFIG.ownerLogin, 'shumpmaster');
   assert.equal(CONFIG.ownerTimeZone, 'America/Chicago');
@@ -29,9 +43,6 @@ test('J7: the committed config holds the launch values and passes the build\'s c
     assert.equal(p.contentPrefill, true);
     assert.equal(p.contentParam, 'value');
   }
-  // Rewritten in stage 6b (J7's `portfolio`, specs/S-001.md:9515-9520): the generated config is the committed
-  // file whole, its `portfolio` among it; helpers' CONFIG leaves the portfolio out for the cases before 6b.
-  assert.deepEqual(GENERATED, J7_FILE, 'lib/config.js is generated from projects.json');
 });
 
 test('J7: a 6th entry fails with a message saying 5 is the limit; a model other than v3 or v2.5 fails', () => {
@@ -90,7 +101,10 @@ test('AC15: package.json has no dependency block or lifecycle script, wrangler p
 // From 2026-10-18 (notifications): `push`, `deploysNeedOwner` and `actionsUsage`, wrong kinds among them.
 test('J7 (2026-10-18): deploysNeedOwner on Service-Desk only; actionsUsage as given, in Service-Desk\'s entry (draft 9); push holds the owner\'s public key (Setup N1, CS18) and the needs-you address', () => {
   // ac-test: S-001/AC28
-  assert.deepEqual(CONFIG.projects.map((p) => [p.name, p.deploysNeedOwner === true]), [['Service-Desk', true], ['Personal-Org-Operating-Model', false]]);
+  assert.deepEqual(CONFIG.projects.map((p) => [p.name, p.deploysNeedOwner === true]), [['Service-Desk', true], ['Personal-Org-Operating-Model', false]], 'the fixed test configuration');
+  // The rule itself, on the committed list: deploysNeedOwner is true or absent on each row, and a project that holds it is Service-Desk.
+  for (const p of LIVE_FILE.projects) assert.ok(p.deploysNeedOwner === undefined || p.deploysNeedOwner === true, p.name);
+  assert.equal(LIVE_FILE.projects.find((p) => p.name === 'Service-Desk').deploysNeedOwner, true);
   assert.equal('deploysNeedOwner' in CONFIG.projects[1], false, 'absent means false');
   assert.deepEqual(CONFIG.projects[0].actionsUsage, { account: 'shumpmaster', includedMinutes: 3000 });
   assert.equal('actionsUsage' in CONFIG, false, 'not at the top level');

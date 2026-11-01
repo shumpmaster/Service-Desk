@@ -45,6 +45,16 @@ export default {
       "webCommitsToDefault": true,
       "contentPrefill": true,
       "contentParam": "value"
+    },
+    {
+      "name": "Model-Lab",
+      "repo": "shumpmaster/Model-Lab",
+      "defaultBranch": "main",
+      "model": "v3",
+      "planning": false,
+      "webCommitsToDefault": true,
+      "contentPrefill": true,
+      "contentParam": "value"
     }
   ],
   "portfolio": {

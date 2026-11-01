@@ -9,7 +9,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { FIX, CONFIG } from './helpers.mjs';
+import { FIX, CONFIG, LIVE_FILE } from './helpers.mjs';
 import { repo, gitSha } from './fake-desk.mjs';
 import { loadSandbox } from './sandbox-helpers.mjs';
 import { j77Files, poomFiles, snapOf, SD, POOM } from './wa-fixtures.mjs';
@@ -135,7 +135,9 @@ test('J23 (A3): in the sandbox each of the three is asked for once in an opening
 // J7's `publishesModel`
 
 test('J7 (stage 3, J23): `publishesModel` on Personal-Org-Operating-Model\'s entry; one entry passing, two failing, "yes" failing, on a v3 entry passing, absent meaning false', () => {
-  assert.deepEqual(CONFIG.projects.map((p) => [p.name, p.publishesModel === true]), [['Service-Desk', false], ['Personal-Org-Operating-Model', true]]);
+  assert.deepEqual(CONFIG.projects.map((p) => [p.name, p.publishesModel === true]), [['Service-Desk', false], ['Personal-Org-Operating-Model', true]], 'the fixed test configuration');
+  // The rule itself, on the committed list: publishesModel only on Personal-Org-Operating-Model.
+  assert.deepEqual(LIVE_FILE.projects.filter((p) => p.publishesModel === true).map((p) => p.name), ['Personal-Org-Operating-Model']);
   assert.equal('publishesModel' in CONFIG.projects[0], false, 'absent on Service-Desk\'s: false');
   assert.deepEqual(validateConfig(CONFIG), []);
   const set = (fn) => { const c = JSON.parse(JSON.stringify(CONFIG)); fn(c); return validateConfig(c); };

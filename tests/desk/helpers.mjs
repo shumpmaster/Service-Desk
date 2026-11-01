@@ -18,8 +18,14 @@ export function recorded(name) {
   return JSON.parse(fixture(`github/${name}.json`));
 }
 
-/** J7 as committed (src/config/projects.json), the portfolio's entry among it from stage 6b. */
-export const J7_FILE = JSON.parse(readFileSync(join(SRC, 'config', 'projects.json'), 'utf8'));
+/**
+ * The fixed test configuration (fixtures/config/projects.json): J7's launch values with the two projects the
+ * desk's page-level tests were written against, the portfolio's entry among it from stage 6b. The tests read this,
+ * not src/config/projects.json, so adding a project (desk-operations.md, "Adding a project") changes only that file.
+ */
+export const J7_FILE = JSON.parse(readFileSync(join(FIX, 'config', 'projects.json'), 'utf8'));
+/** src/config/projects.json as committed, the live list: only J7's own test of the committed file reads it. */
+export const LIVE_FILE = JSON.parse(readFileSync(join(SRC, 'config', 'projects.json'), 'utf8'));
 /** J7's `portfolio` (stage 6b; J23): `{ repo, defaultBranch }`. */
 export const PORTFOLIO = J7_FILE.portfolio;
 /**

@@ -1,9 +1,9 @@
-Ruling: shortlist answered in part — questions 1 to 5 answered in the owner's words; 6 to 8 not yet answered (asked again in the session)
+Ruling: shortlist answered — all eight questions answered in the owner's words
 
 Question: questions/P-002-groundwork-shortlist.md
 Milestone: Discovery-3
 
-How it was answered: the question was filed in PR #265 after the Critic's two checks (reviews/P-002-groundwork-shortlist/critic.md, PASS at round 2), and its eight questions were put to the owner in the Chief of Staff's session (session_01QBwHGLrbUaowxNjhF5oC3A) on 2026-11-01, word for word as filed. The owner replied in the session on 2026-11-02 to questions 1 to 5; recorded by the Chief of Staff, word for word, as AGENTS.md §5 has a ruling asked in a session recorded. The owner's text is kept exactly as typed.
+How it was answered: the question was filed in PR #265 after the Critic's two checks (reviews/P-002-groundwork-shortlist/critic.md, PASS at round 2), and its eight questions were put to the owner in the Chief of Staff's session (session_01QBwHGLrbUaowxNjhF5oC3A) on 2026-11-01, word for word as filed. The owner replied in the session on 2026-11-02 to questions 1 to 5 in free text; questions 6 to 8 were then put again as choices by the session's question tool, worded as shown below, and the owner chose one option each. Recorded by the Chief of Staff, word for word, as AGENTS.md §5 has a ruling asked in a session recorded. The owner's text is kept exactly as typed.
 
 ## The owner's words, verbatim
 1. How do you find out today that a change has merged or is waiting on you, and about how long does that take you in a week? "Either notifications, by me checking the service desk, or more often through conversations with the chief of staff. It doesn’t take me long, but if I’m not actively paying attention I might miss things."
@@ -11,11 +11,12 @@ How it was answered: the question was filed in PR #265 after the Critic's two ch
 3. For a change waiting on you, what do you need to see to decide without opening GitHub? "Usually I’m just deferring to recommendation. But like I said I like to know a plain English description of what’s being done, the implications of what is being done, why it’s being done, and ultimately how it fits into the entire objective of the project or initiative."
 4. For changes already merged, do you want to know about each one, only the ones that went wrong or surprised you, or none? "If the example is a few merges done automatically without my involvement and then a new one requiring me - I would like to see the dots connected between changes already made and where we are now."
 5. Would you rather get a short list when you open the desk, a once-a-day or once-a-week note, a phone alert, a mix, or nothing beyond what you have now? "Everything I have now is great with the inclusion of the PR visual report l."
-6. What would "I have dealt with this" mean for you, and should the desk remember it across your phone and computer? not yet answered
-7. If a short summary were wrong or left out a risk, what would you do about it, and would you still want it if it carried a visible "not checked" label? not yet answered
-8. Are you willing to let the text of your pull requests and changes go to an outside AI service to write summaries, and is any project too private for that? not yet answered
+6. Put as: "Shortlist Q6: what would "I have dealt with this" mean for you on a change, and should the desk remember it across your phone and computer?" Options, as put: Looked at it; remember · Looked at it; this device · Decided on it · No need to track. The owner chose: "Looked at it; remember"
+7. Put as: "Shortlist Q7: if a short summary of a change were wrong or left out a risk, would you still want summaries, if each one showed a visible "not checked" label until checked?" Options, as put: Yes, with the label · Only once checked · Not sure yet. The owner chose: "Yes, with the label"
+8. Put as: "Shortlist Q8: may the text of your pull requests and changes go to an outside AI service to write summaries? (Service-Desk is already public; this matters for the others.)" Options, as put: Yes, any project · Public projects only · No · Ask per project. The owner chose: "Yes, any project"
 
 ## What follows from the answers (the Chief of Staff's reading, for the research list; not the owner's words)
 - The gap is context, not notice: the owner hears about changes, but sees pull requests as separate items, not as steps toward the project's objective (answers 2 and 4).
 - For each change the owner wants: what is being done, its implications, why, and how it fits the whole objective (answer 3), and the thread connecting earlier merges to where the work is now (answer 4).
+- Seeing a change counts as dealing with it, remembered on every device (answer 6); a summary is wanted even unchecked, with a visible "not checked" label (answer 7); any project's text may go to an outside AI service to write summaries (answer 8), which changes the desk's data boundary and so goes into the brief's limits for the owner's approval at the Design gate.
 - The owner keeps today's channels and adds the pull-request visual report (answer 5); the owner usually defers to the recommendation (answer 3).

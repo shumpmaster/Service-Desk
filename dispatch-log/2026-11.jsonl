@@ -1,1 +1,2 @@
 {"item":"Q-016","prev":"8611da6da16c1757159168234d2a8ab4b84e10cd564b2ec9caef49c692b4898d","record":"intake/requests/Q-016.toml","result":"created","time":"2026-11-02T00:39:50Z","trigger":"request"}
+{"action":"dispatch","gate":null,"item":"Q-016","prev":"8ecdc871828021b72975f4636669a150542403c39d763376a7e9d05d8e43b61c","role":"researcher","route":"ready-dispatch","spec":null,"stage":2,"time":"2026-11-02T00:46:09Z","trigger":"step"}

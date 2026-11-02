@@ -1,0 +1,8 @@
+kind = "research"
+milestone = "Discovery-5"
+# Research for the desk's new Discovery (the owner's route ruling of 2026-11-01), drawn from the
+# groundwork map's research shortlist (research/Q-016-memo.md). The full question, to be checked by
+# the Critic for neutral phrasing before any Researcher sees it, is research/Q-019.md.
+question = """
+What does the desk already show, and already read, for pull requests, and which existing records tie a pull request to the milestone, sprint and aim of the work it belongs to? See research/Q-019.md for the full question, the decision it serves and its depth.
+"""

@@ -4,5 +4,5 @@ milestone = "Discovery-4"
 # groundwork map's research shortlist (research/Q-016-memo.md). The full question, to be checked by
 # the Critic for neutral phrasing before any Researcher sees it, is research/Q-020.md.
 question = """
-What does published evidence show on how one decision-maker is kept informed about many changes or events, and what is known about errors in summaries written by machines? See research/Q-020.md for the full question, the decision it serves and its depth.
+What does published evidence show on how one decision-maker is kept informed about many changes or events, and where such briefing has misled, been skipped, or added little? See research/Q-020.md for the full question, the decision it serves and its depth.
 """

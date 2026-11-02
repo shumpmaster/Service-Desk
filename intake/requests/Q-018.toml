@@ -4,5 +4,5 @@ milestone = "Discovery-5"
 # groundwork map's research shortlist (research/Q-016-memo.md). The full question, to be checked by
 # the Critic for neutral phrasing before any Researcher sees it, is research/Q-018.md.
 question = """
-How many changes of each kind arrive per day and per week in each project the desk connects to, and in the portfolio repository, over the last eight weeks? See research/Q-018.md for the full question, the decision it serves and its depth.
+How many changes of each kind arrive per day and per week in each repository the desk reads? See research/Q-018.md for the full question, the decision it serves and its depth.
 """

@@ -1,13 +1,12 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "research"
 stage = 2
-state = "dispatched"
+state = "ready"
 role = "researcher"
 last_verdict = "none"
 plan_round = 0
 build_round = 0
 confirm_used = false
-attempts = 0
+attempts = 1
 sessions = 1
-dispatched_at = "2026-11-03T00:52:52Z"
 milestone = "Discovery-5"

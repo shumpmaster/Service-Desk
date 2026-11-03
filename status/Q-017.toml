@@ -9,5 +9,6 @@ build_round = 0
 confirm_used = false
 attempts = 0
 sessions = 1
-dispatched_at = "2026-11-03T00:52:52Z"
+dispatched_at = "2026-11-03T03:04:17Z"
+card = 1
 milestone = "Discovery-5"

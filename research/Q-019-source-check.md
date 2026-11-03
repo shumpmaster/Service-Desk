@@ -1,40 +1,50 @@
 Verdict: FAIL
 
-I opened the memo's sources and could confirm some claims but not others. The unconfirmed ones keep the memo from passing, and I filed no library entries. I read the sources through the same kind of summarising fetch the Researcher used, so these results are as soft as theirs.
+I filed no library entries. Several claims were confirmed, but others could not be confirmed to the standard the brief sets. I read the sources through the same kind of summarising fetch the Researcher used, so my reads are as soft as theirs.
 
-**Confirmed**
-- **Waiting rule** (`research/Q-019-memo.md` §1, entry F-desk-pr-01):
-  - `classifyPull` in `records.js` matches the memo's rule: draft, base not the default branch, or a same-repository `item/*` head branch in a v3 project. Otherwise it returns "waiting on your review or merge".
-  - The function does not look at reviews or labels.
-  - The memo cites `records.js` ~1258–1268. The function sits at lines 825–833 in the raw file, so the cited lines are wrong by more than 400.
-- **`waiting.js` L88–116:** the cited range matches `waitingSet`. It skips job candidates (`jobs.has(n)`). The key is `${project}|${kind}|${id}`, as claimed.
-- **`status/merges.jsonl`** (memo §7, entry F-desk-records-01): it has 10 lines, each with `"spec": null`, and none has a PR number. This matches.
-- **`seen.js`** (memo §9, entry F-desk-seen-01): it has the key `desk-seen-v1`, the 10-second rule, "Mark as seen", and "nothing is stored on Cloudflare". This matches.
-- **`words.mjs`:**
-  - The outside-author wording ("Waits on you: a pull request from someone outside the project") is at line 34.
-  - The "things now wait on you" wording is at line 41.
-  - The memo cites L28–40, so the second line falls just outside it.
-- **PR #268:** its Milestone line reads "none (the project item is not filed yet; …)". This matches.
-- **PR #267:** the merge SHA is 7a91b6a…, and the GitHub milestone and labels are empty. These match.
+**Confirmed this round**
+- **`classifyPull`** (`src/lib/records.js`, function `classifyPull`): the quoted function matches the memo (§1, F-desk-pr-01). It returns `flagged: false` for a draft, for a base that is not the default branch, and for a same-repository `item/*` head in a v3 project. Otherwise it returns `waiting on your review or merge`. It does not use labels, and "review" appears only in the returned wording.
+- **Handover** (`docs/handover/service-desk.md`, memo §6, F-desk-notify-01):
+  - The sender sentence is present: "Service-Desk's sender sends a phone notification the moment something starts waiting on you there".
+  - The "no sender yet (found 2026-10-30…)" sentence is present.
+  - The "today Service-Desk and Personal-Org-Operating-Model" text is present.
+  - Model-Lab is not named. This fixes the round-1 failure on this point.
+- **PR #267** (memo §7, F-desk-records-01): the description reads "Milestone: Discovery-5, Discovery-4". The GitHub milestone is empty and there are no labels. This fixes the round-1 failure on this point.
+- **`sender.mjs`**: the fetch says the file has no 'merged', 'mergedAt', 'completed' or 'success'. It also describes the `sent`/`gaveUp` carry-over, so this agrees with the memo, but only through the summariser (see the first failure below).
 
-**Not confirmed or wrong**
-- **Handover line numbers** (memo §6, entry F-desk-notify-01): `docs/handover/service-desk.md` has the Service-Desk sender sentence at lines 24–25 and the Personal-Org-Operating-Model "no sender yet" sentence at lines 35–38. The memo cites ~47–48 and ~56–58.
-- **Model-Lab and handover scope** (memo §6): the handover does not mention Model-Lab at all. The memo's claim that it "still says … today Service-Desk and Personal-Org-Operating-Model" at ~40–41 was not found.
-- **PR #267 "Discovery-5, Discovery-4"** (memo §7): the fetch showed only the GitHub milestone field, not the description's `Milestone:` line. I could not confirm this value.
-- **Not opened:** the other 19 PR pages and the following. The sample counts (6/11 naming ids, 5/11 "none", 4/11 spec id, 2/11 and 3/10 `reviews/<n>/`, 8/10 item ids) therefore remain unconfirmed.
-  - `github.js`, `model.js`, `home.js`, `feed.js`, `sandbox.js`, `pulls.js`, `prfiles.js` and `scheduler.js`
-  - the `dispatch-log` file
-  - `reviews/README`
-  - the tree at e6dd6b8
-- **Library entries:**
-  - F-desk-pr-02 rests on `feed.js`, `home.js` and `sandbox.js`, none of which I opened.
-  - F-desk-notify-01 claims "no notification for merges". That is a negative claim, and nothing opened supports it.
-  - F-desk-notify-01 also claims the key is `project|kind|id` and the wording is "Waits on you: <kind>: <title>". Both match.
-- **Independence:** every source is the same repository at one commit, read through a summariser. The memo grades most items A or B, but the summariser's line numbers are wrong, so the A grades on `words.mjs` and `seen.js` are unsafe as stated.
-- **Entry fields:** the `grade` field of F-desk-notify-01 holds two grades ("A for wording … B for scope"). The library form needs one.
-- **No entries filed:** F-desk-pr-01 and F-desk-seen-01 are close to passing. They should wait for a corrected memo that has raw-file line numbers and a second independent read of each.
+**Why it fails**
+1. **F-desk-notify-02 rests on a negative search by a summariser.**
+   - The memo grades it C and calls it an estimate, so it cannot be filed as a fact in any case.
+   - A summarising fetch cannot reliably prove that a string is absent from a file.
+   - The `sender.mjs` line numbers it gave (~270–278) are also not usable.
+2. **No two independent sources for any load-bearing fact.**
+   - Every entry cites one repository at one commit (e6dd6b8), read through one summariser.
+   - I found no second, independent read of any claim. The duty is two independent sources for load-bearing facts.
+   - The memo's own sources section lists the same repository throughout.
+3. **No line numbers.**
+   - The question (`research/Q-019.md` L11) asks "which file and lines show it".
+   - The memo admits it gives no exact lines for large files (§4 and §5) and asks someone with a shell to run `grep -n`. That request is still open.
+   - Function-name citations are not checkable by line, and I cannot accept them in the Researcher's place.
+4. **Sources not reopened this round.**
+   - I did not reopen these sources: `github.js`, `model.js`, `home.js`, `feed.js`, `sandbox.js`, `pulls.js`, `prfiles.js`, `scheduler.js`, `seen.js`, `words.mjs`, `waiting.js`, `merges.jsonl`, the dispatch-log file, `reviews/` and the other 20 PR pages.
+   - I am not asserting that the sample counts are right. These are unconfirmed: 6/11 and 5/11 for the `Milestone:` line, 4/11 for the spec id, the `reviews/<n>/` counts, 8/10 for Q-ids, and the "0 of 10 merge SHAs" claim.
+   - F-desk-pr-02 and F-desk-records-01 depend on these, so neither can be filed.
+5. **Items the memo itself leaves undone** (§0 and §4):
+   - The S-032 or S-033 milestone-rule version.
+   - Model-Lab's sender.
+   - The `· sprints:` contents.
+   - The headings of #263 and #267, which were carried over, not re-read.
+   - Reading all PRs through the desk's GraphQL paging.
+
+   The first three are named in the question, so the memo cannot be called complete.
+
+**Entry status**
+- F-desk-pr-01, F-desk-seen-01 and F-desk-notify-01: the points I opened agree with the memo, but they lack a second independent source and line numbers. Not filed.
+- F-desk-notify-02: it is an estimate based on a negative search. Not filed.
+- F-desk-pr-02 and F-desk-records-01: not enough checked. Not filed.
 
 **Open questions**
-1. Can the Researcher or the owner supply raw-file line numbers? The summariser's counts are unreliable, as the memo itself warned.
-2. Is the Personal-Org-Operating-Model repository private? The milestone-rule claims (S-032 against S-033) remain untestable from public GitHub.
-3. Does Model-Lab have a notification sender? The memo leaves this open, and the handover says nothing on it.
+1. Can someone with a shell run `grep -n` on the raw files at e6dd6b8 and supply real line numbers? That would also serve as the second, independent read.
+2. Is Personal-Org-Operating-Model private? It returns 404, so the S-032 and S-033 question and the OPERATING_MODEL.md §3 claims cannot be tested.
+3. Does Model-Lab have a notification sender?
+4. Should the Orchestrator accept function-name citations, or require line numbers?

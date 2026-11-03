@@ -9,3 +9,5 @@ Triage did not find this: its return (triage/Q-019.md on item/Q-019) says its fo
 What Q-019 did establish stays in its branch (item/Q-019): the memo's revision 2 and the checker's one confirmed claim (`classifyPull`'s text). The helper may start from them; they enter the library only through a passing check.
 
 A `drop` cannot be written by proxy (D-066): the owner writes decisions/Q-019/stop-1.md, first line `Decision: drop`.
+
+The owner chose, in the session on 2026-11-03 (session_01QBwHGJj8xSAqpKWLY9qhk5), between "Drop; read code with a helper (Recommended)", "One more check" and "Re-run the research": "Drop; read code with a helper (Recommended)". The owner writes decisions/Q-019/stop-1.md.

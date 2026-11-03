@@ -4,17 +4,8 @@
       "action": "dispatch",
       "gate": null,
       "item": "Q-017",
-      "role": "researcher",
-      "route": "source-fail",
-      "spec": null,
-      "stage": 2
-    },
-    {
-      "action": "dispatch",
-      "gate": null,
-      "item": "Q-019",
-      "role": "critic-triage",
-      "route": "third-fail",
+      "role": "source-checker",
+      "route": "research-to-source",
       "spec": null,
       "stage": 2
     }

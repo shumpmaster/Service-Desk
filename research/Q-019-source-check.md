@@ -1,27 +1,35 @@
 Verdict: FAIL
 
-I filed no library entries. The memo itself (`research/Q-019-memo.md` L1) says Q-019 can't be filed at depth 3. My reads agree with that, and the earlier blockers still stand.
+I filed no library entries. The memo says in its own first line (`research/Q-019-memo.md` L1) that Q-019 can't be filed at depth 3, and my reads agree. Nothing in the Q-019 memo is graded A, and the brief says an unverifiable claim is a FAIL.
 
 **Confirmed this round**
-- **`status/merges.jsonl`:** I opened it at e6dd6b8. It has 10 lines, items Q-001, Q-004, Q-002, Q-005, Q-006, Q-008, Q-007, Q-011, Q-013 and Q-016. The merge prefixes match memo L259 and `spec` is null on every line (memo L258–L259).
-- **Merge SHA for #258:** the pulls API gives `fa50572f…`, which matches memo L264. I opened only #258 myself.
-- **Label search:** `is:pr no:label` gives total_count 265 with `incomplete_results` false, as in memo L254. I did not re-run the control searches or the `is:pr` total.
+- **`seen.js` at e6dd6b8** (memo §9, L302–L308; F-desk-seen-01 and -02).
+  - I fetched the raw file and asked for the whole file with line numbers. It came back as 97 lines, which matches the header figure in memo L317.
+  - The header comment is on L1–L5, and the constants `SEEN_KEY`, `SEEN_MIN_MS` and `MARKERS_OFF` are on L7–L9.
+  - `createSeen` is on L16 and `let held` on L27.
+  - The `hold(on)` block starts at L49, with its comment on L49–L52, and the `held` getter is on L56–L58.
+  - `hidden()` is on L59–L73.
+  - `markSeen()` and its comment run L74–L88.
+  - These agree with the memo's derived ranges (L1–L23, L1–L26, L27, L46–L66 and L74–L88). There is no 7-day constant in the file.
+  - This was still a summarising fetch. I did not run `wc -l` or `grep -n`, and the file content comes from the same single source as the memo's. The earlier round's read of 89 lines is not settled either.
+  - The commit hunk headers and add/delete counts (memo L320–L325) were not re-opened this round. F-desk-seen-01 and -02 therefore have no independent confirmation.
+- **Earlier rounds** (`research/Q-019-source-check.md` L6–L8). `status/merges.jsonl` L1–L10 (10 lines, `spec` null), the #258 merge SHA and the `is:pr no:label` total of 265 were confirmed. I did not re-open them.
 
 **Not confirmed, so these stay out**
-1. **`seen.js` line numbers** (memo L311–L322, F-desk-seen-01 sources).
-   - The 97 lines and the L74–L88 position come from the memo's own derivation in §9a. That derivation rests on a summariser's reading of the hunk headers. I can't reproduce them with a fetch that summarises.
-   - The earlier round's read gave 89 lines, not 97. I have no way to settle this without a shell.
-2. **Large-file facts.** F-desk-pr-01, F-desk-pr-02 and F-desk-notify-01 cite `records.js`, `github.js`, `model.js`, `home.js`, `feed.js`, `sandbox.js`, `waiting.js`, `words.mjs` and `sender.mjs` by grep string only (memo L47, L87). Q-019.md L11 and L32 require file and lines. I can't confirm the quoted strings without `grep -n`.
-3. **No second independent source** for any code fact (memo L97 and §4). Commit diffs of the same code are not independent. The Orchestrator hasn't ruled on this (memo §5).
-4. **Estimates (grade C) are still inside the proposed entries.** Examples: "merged changes are not notified" (memo L235–L239), no CI on the sheet, no direct commits shown, and the unread `reviews/<M…>/` folders.
-5. **F-desk-records-01** is partly confirmed (merges.jsonl, labels). It still depends on the dispatch-log (15 lines, no PR field), the milestones page, and the other nine merge SHAs, which I did not open, so it is not filed.
-6. **Samples** (F-desk-records-02) are the Researcher's own reads. Nobody else has checked them (memo L279).
-7. **Provenance of "B" grades.** The memo grades its summariser-read quotes B, but each was read through a summarising model, not a word-for-word copy.
-
-**Not filed:** F-desk-pr-01, F-desk-pr-02, F-desk-notify-01, F-desk-seen-01, F-desk-records-01 and F-desk-records-02.
+1. **F-desk-seen-01 and -02.**
+   - Only one source reads the file text, and it is a summariser.
+   - The commit-side numbers weren't re-opened.
+   - "Two independent sources for load-bearing facts" isn't met.
+   - Seen-01's claim that `createSeen` is "at or above L23" is weaker than what the full read shows, which is L16.
+2. **F-desk-pr-01, F-desk-pr-02, F-desk-notify-01 and F-desk-since-01** (memo L422–L477). They are cited by function and search string, with no line numbers. Q-019.md L11 and L32 require file and lines, and the memo (L355) agrees these are held. I did not open them.
+3. **F-desk-records-01b** (memo L407–L419). I did not open the other nine merge SHAs, dispatch-log/2026-11.jsonl or the milestones page.
+4. **F-desk-records-02.** The sample counts are the Researcher's own reads. The sample definitions are also still open (memo L60–L61).
+5. **F-desk-records-01a.** The merges.jsonl part was confirmed earlier. The label part (`is:pr` 265 and the `label:needs-you` control of 8) was not re-run, so the entry isn't filed. The whole entry should be re-confirmed in one pass.
+6. **Grade-B provenance.** Every B rests on a summarising read. The memo's precedent is entries filed at A (F-wcag22-01, F-platform-targets-contrast-01, F-webpush-08), but those were matched against the wording. I couldn't check that here.
 
 **Open questions**
-1. Can someone with a shell run `grep -n` for each quoted string and `wc -l src/lib/seen.js` at e6dd6b8? Only a shell can settle it.
-2. Will the Orchestrator accept function names plus quoted strings in place of line numbers? Will it count "the code plus GitHub's server" as two sources? Without that ruling, depth 3 can't be met through fetch alone.
-3. Is Personal-Org-Operating-Model private? It returns 404, and S-032 versus S-033 is still unresolved.
-4. Should the sample-A and sample-B definitions (memo §6, questions 2 and 3) be settled before any sample count is filed?
+1. Can someone with a shell run `wc -l`, `sed -n '74,88p'` and `grep -n` for each quoted string at e6dd6b8? That would settle seen.js and the large-file entries.
+2. Will the Orchestrator accept function name plus quoted string in place of line numbers, accept GitHub hunk headers as line evidence, and count "code plus GitHub server" as two sources?
+3. Is Personal-Org-Operating-Model private? It returns 404. Also, is the milestone rule from S-032 or S-033?
+4. Should the sample A and B definitions be settled before any sample count is filed?
+5. If seen.js is to be filed, should the source-checker re-open the four commit URLs next round, or only the shell route?

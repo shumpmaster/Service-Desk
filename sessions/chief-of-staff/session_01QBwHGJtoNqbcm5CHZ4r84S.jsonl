@@ -2,3 +2,4 @@
 {"event": "helper", "session": "session_01QBwHGJtoNqbcm5CHZ4r84S", "role": "critic", "started": "2026-11-03T00:48:00Z", "ended": "2026-11-03T00:52:00Z", "reported": {"tokens": 78546, "tool_uses": 53, "duration_ms": 233445}}
 {"event": "helper", "session": "session_01QBwHGJtoNqbcm5CHZ4r84S", "role": "critic", "started": "2026-11-03T00:56:00Z", "ended": "2026-11-03T00:57:00Z", "reported": {"tokens": 12915, "tool_uses": 4, "duration_ms": 55489}}
 {"event": "helper", "session": "session_01QBwHGJtoNqbcm5CHZ4r84S", "role": "critic", "started": "2026-11-03T00:58:00Z", "ended": "2026-11-03T01:00:00Z", "reported": {"tokens": 4971, "tool_uses": 5, "duration_ms": 112500}}
+{"event": "helper", "session": "session_01QBwHGJtoNqbcm5CHZ4r84S", "role": "survey", "started": "2026-11-03T03:00:00Z", "ended": "2026-11-03T03:05:00Z", "reported": {"tokens": 149100, "tool_uses": 37, "duration_ms": 275109}}

@@ -27,3 +27,12 @@ See decisions/questions/P-002-plan-place.md on branch cos/p002-plan-place-answer
 
 ## Token checkpoint
 The Critic used about 96,000 tokens across its three rounds in this session (sessions/chief-of-staff/session_01QBwHGJtoNqbcm5CHZ4r84S.jsonl). This session's own use and the plan's remaining allowance were not read at this handoff.
+
+## Update later the same session (3 November)
+- **Done since:** PR #268 merged (owner); the answer record merged as PR #269 (decisions/questions/P-002-plan-place.md). Model-Lab PR #32 records the ruling against LL-16 (kept open until the change is built); it needs the owner's merge (LL-33).
+- **The tools change has a groundwork draft:** Personal-Org-Operating-Model specs/S-035-plan-per-project.md, `status: draft`, on that repository's branch claude/chief-of-staff-discovery-um5ti9 (pushed; no pull request yet). It keeps verbatim a read-only survey of every reader of docs/PROJECT.md: in the model's tools (every check per repository; one constant, tools/v3_checks.py `PROJECT_REL`), the template's packs, brief and surfaces, the model text, 19 test files, and the desk app (src/lib/j11.js, model.js, timeline.js and the screens). It found two more inherited marks besides Discovery-2 and -7: Launch-3 and Launch-4 read any handover file in the repository. It recommends keeping docs/PROJECT.md as the first item's plan and adding docs/projects/P-<n>.md for later items, with one resolver, and lists ten choices for the owner.
+- **Next, in order (replacing step 3 above):**
+  1. Draft 1 of S-035 in Personal-Org-Operating-Model, in the form of S-034 (mechanism, problem, what changes for the owner, what exists today, why smallest, supersedes table, acceptance criteria as scenarios, stop rule, facts with evidence, prototype, known limits, risks, areas touched, adoption, open questions, plan review), re-checking every line reference in the survey; put the open questions to the owner; plan review by that repository's reviewer under its plan stop rule (its AGENTS.md); then `tools-builder` builds.
+  2. Then the desk's adoption (R3 here) and a desk change so its screens read each plan (src/lib/j11.js `PROJECT_DOC_PATH`, model.js, timeline.js).
+  3. Steps 1, 2 and 5 above stand (research watch; Model-Lab LL-16 done in PR #32).
+- **Helper use:** the survey helper used 149,100 tokens (session lines). This session's own status read at about 03:00 UTC: about 206,000 of 1,000,000 context tokens in use, about $7.01 estimated cost.

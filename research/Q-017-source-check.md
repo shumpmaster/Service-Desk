@@ -1,49 +1,47 @@
-I've checked the main sources and found conflicts, so I'm writing up the verdict now.
+I'm partway through re-opening the memo's sources. #5, #44, #65 and #239 are done. I have enough for a verdict, so I'm writing it up now.
 
 Verdict: FAIL
 
-I filed nothing in `library/`. Every proposed entry here is a fact or pattern, and some failed or rest on a source I couldn't confirm. I opened these sources:
+I filed nothing in `library/`. Several proposed entries are unconfirmed, and an unverifiable claim is a FAIL. I wrote no library files, and the "may read" files (the library and `docs/playbooks/software.md`) were not needed.
 
-- #31 diff
-- #175 diff
-- check-runs for #5's head (`d7d0749`) and #161's head (`612cf90`)
-- the `pulls/252` JSON
-- the GraphQL docs
-
-**Confirmed**
-- **F-pr-desc-01a, #31 diff** (memo lines 133–134). The diff has "if O5's fallback is needed, a permanent redirect from the old address counts as meeting V4." It also has "any API key needs the owner's ruling first." The body wording and the `decide` run on head `98cfcb4` were confirmed in the earlier round (`research/Q-017-source-check.md` lines 6–10). I did not re-open them, so this entry has one opening, not two independent ones.
-- **F-gh-api-01a** (memo lines 149–150). The earlier round confirmed the 60-per-hour limit (`research/Q-017-source-check.md` line 14). I did not re-open it.
-- **#175 reviewer quotes** (memo lines 113–116, 122–123, 145–146).
-  - The diff has the "my mistake" confirmation: "I judged the branch head, but CI judges the pull request's merge ref."
-  - The diff has round 2 finding 2 ("smaller" inaccurate).
-  - Round 2 finding 1 was a governance failure on the branch head (`FAIL record_checks`).
-  - This supports the narrowed F-pr-desc-02 for #175.
-  - Its #81 half, the "all six … about the description" quote, was confirmed earlier (`research/Q-017-source-check.md` line 15). I did not re-open it.
-- **GraphQL docs** (memo line 152). `lastEditedAt` reads "The moment the editor made the last edit." `userContentEdits` reads "A list of edits to this content."
+**Confirmed, opened this round**
+- **#5 check runs (memo lines 70, 109, 139).** The check-runs for `d7d0749f…` match the corrected memo.
+  - `governance` succeeded 11:10:52–11:10:57.
+  - `governance` then failed 11:11:05–11:11:13.
+  - No later `governance` run exists.
+  - The `pulls/5` API data gives created 11:10:58Z and merged 11:28:14Z. Its body has "`governance/checks/check_all.sh . origin/main` passed".
+  - The round-3 correction holds. This is a single fetch-tool extraction, so it is grade B.
+- **#44 commits (memo line 73).**
+  - There are 8 commits.
+  - `c514b51` is followed by `6206ebd` ("fix the Reviewer's PR #44 findings (B1, N1-N6)"), `1e17757` and `2681cce`.
+  - This supports P-summary-asof-01's #44 evidence.
+  - One opening, so it is not a second independent source.
+- **#65 (memo line 40).** Merged 2026-10-13T23:51:13Z. The quote "plain English first in everything written for you" matches.
+- **#239 (memo lines 88 and 148).** The HTML commit list shows 41 commits and `16e1389` "Rewrite round 2's locked case…". The nine round-1 "Rewrite" commits match the shas the memo lists.
 
 **Not confirmed or contradicted**
-1. **F-pr-desc-01b and the matching claim in P-summary-failed-01 (memo lines 24, 68, 124, 136, 159) are partly wrong for #5.**
-   - The check-runs for `d7d0749` show a `governance` success at 11:10:52–11:10:57, then a `governance` failure at 11:11:05–11:11:13.
-   - No later `governance` run passed. The failure is the latest one.
-   - The memo says "in #5 … a later run of the same check passed" (lines 24 and 136). That is false for #5.
-   - The counts of one failed and one passing run are right. So is the timing before the PR opened at 11:10:58.
-   - The §4 opinion that the latest run is the better test (line 124) would count #5 as failing. The pattern evidence doesn't hold for #5.
-   - #161 is correct. `governance` failed at 14:32:30–14:35:42, and the later `governance` run passed.
-2. **F-gh-api-01b fails on its numbers.**
-   - The memo says the `pulls/252` response has 48 top-level keys (lines 152, 192). My fetch counted 67.
-   - Both counts come from a model-based extraction, so neither is reliable.
-   - The "no key containing 'edit'" part agreed.
-   - The claim is an observation from one extracted response, and the count doesn't reproduce. I can't confirm it.
-3. **F-pr-desc-01c is not confirmed.** The memo itself says it rests on inferred rule dates (C) and that the 0-missing count was not re-checked (lines 167, 195). It has no second source. I did not open #65, #79 or #222.
-4. **The memo's own gaps remain** (lines 194–198).
-   - Six diffs are partial.
-   - Several reviews are known only as summaries.
-   - #148 is unresolved.
-   - P-summary-asof-01 depends on #44. I did not open #44. It is also an extraction of commits, with no second source.
-5. **The #239 "10 Rewrite commits" claim and the #70 merge state were not opened by me.** Both stay unconfirmed.
-6. **The #175 date.** I could not verify the date range (2026-10-01 to 2026-10-29) beyond the `pulls/252` timestamps. #252 was created 2026-10-29T21:03:00Z and merged 21:05:25Z, which fits the end of the range. I did not open `pulls/5`, so the start is unconfirmed here.
+1. **F-pr-desc-01d (#239) is only partly confirmed.**
+   - The API call `pulls/239/commits?per_page=100` returned only the 9 round-1 commits. Page 2 came back empty. The HTML page showed 41. The two views disagree and I can't tell why.
+   - I did not confirm the "(forced; not named in G8d's row)" markers on the last two commits.
+   - I did not confirm that `16e1389` falls in round 3.
+   - I did not open the `pulls/239` body for the "Nine locked cases rewritten" sentence.
+   - The fetch tool also appears to have mixed the first "Rewrite" commits into a list headed by `fcb3718`. That is another sign the extraction is unreliable.
+2. **F-pr-desc-01c is not confirmed.**
+   - Memo lines 172 and 146 say 14 bodies were not re-read, so the 0-missing count is unsupported.
+   - Rule binding dates are inferred (grade C).
+   - I opened #65 only. I did not open #79, #222, #70, #83 or #226.
+3. **Not re-opened, so one opening only:** F-pr-desc-01a (#31 diff and check-runs), F-pr-desc-02, F-gh-api-01a, F-gh-api-01b (REST and GraphQL docs) and F-pr-desc-01b's #161 half. The earlier round confirmed several of these (`research/Q-017-source-check.md` lines 13–22), but earlier confirmation is not a second source. Two independent sources are needed for load-bearing facts.
+4. **F-gh-api-01b is an absence claim.** It rests on a model extraction, which the memo's own method warning (line 126) says shouldn't be relied on.
+5. **The memo's own gaps:**
+   - Six partial diffs.
+   - #148 unresolved.
+   - Reviews seen only as summaries.
+   - #31's `decide` failure may be by design.
+   - The "latest run" test is an opinion.
+6. **The memo is not a groundwork map**, so every entry must pass individually. None can be filed yet.
 
 **Open questions**
-- Can an authenticated `gh` call return the real key count of `pulls/252` and the `userContentEdits` for the 20 PRs?
-- Should the "later run passed" wording be removed for #5 from 01b and the P-summary-failed-01 evidence?
-- Which meaning of "nothing failed" do the rules intend: checks only, or reviews too? #175's confirmation says the sentence is "accurate, apart from the verdicts that aren't recorded yet", so it appears to mean checks.
+- Can an authenticated `gh` or GraphQL call give the true `pulls/239/commits` list and the 20 PRs' `userContentEdits`?
+- Does "nothing failed" cover checks only, or reviews too?
+- Can the model repo's version dates be read, to turn the inferred rule dates into confirmed ones?
+- Why did the API and HTML views of #239's commits disagree?

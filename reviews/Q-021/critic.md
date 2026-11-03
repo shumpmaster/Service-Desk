@@ -1,0 +1,3 @@
+Verdict: PASS
+
+The Critic's check of research/Q-021.md for gaps and neutral phrasing, on a different model from its writer, verbatim: round 2 (FAIL), reviews/Q-021/_critic-r2-verbatim.md; round 3 (PASS; no change needed for its non-blocking findings), reviews/Q-021/_critic-r3-verbatim.md. Each Critic session checked two or three questions in one return; each round file holds the part of the return about this question, with any opening lines that cover all of them. Q-021 was split from Q-020 after round 1, on that round's non-blocking finding 5, so its round 1 is Q-020's (reviews/Q-020/_critic-r1-verbatim.md). Recorded by the orchestrator. Session session_01QBwHGLTq16QWmY6X4bJYoG, 2026-11-02.

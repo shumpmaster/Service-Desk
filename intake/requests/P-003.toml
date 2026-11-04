@@ -1,0 +1,9 @@
+kind = "project"
+earlier = "P-001"
+# The card fix: a decision card shows the Chief of Staff's recommendation and marks that answer's
+# button, held back until the notes are on main, or shown after a day marked "No Chief of Staff
+# recommendation yet"; gate cards unchanged. Later work on the graduated desk (P-001), filed as its
+# own addition by the owner's ruling, "A: own addition now (Recommended)"
+# (decisions/questions/P-001-card-recommendation.md). No `enters`: it starts at a short Discovery
+# scaled to its size. Its one milestone, M4, marked ` · for: P-003`, is proposed in its brief and goes into docs/PROJECT.md section 3 at its Design gate;
+# its short brief is docs/PROJECT.md Part 2, "Later work: the card fix (P-003)".

@@ -572,3 +572,36 @@ These are questions for Shape to answer with evidence, not rulings:
    want it is that requests get buried in long Claude Code conversations, so the question includes
    whether the desk can keep every request for the owner separate from the activity around it.
 4. **The spend ceiling and the tier** that Part 1 §5 must state.
+
+## Later work: the card fix (P-003)
+*Draft 1, 2026-11-04, by the Chief of Staff. P-003 is later work on the graduated desk, filed as its own addition by the owner's ruling, "A: own addition now (Recommended)" (decisions/questions/P-001-card-recommendation.md). It shares this document's brief, Part 1, and has one milestone of its own, M4, marked ` · for: P-003`, proposed below for section 3. This section is its short plan; the owner approves it, with M4, at P-003's Design gate. Until the desk takes up the planned tools change (model S-035), the desk's checks borrow P-003's "Success defined" and "Scope, limits and owners agreed" marks from Part 1, which the owner accepted for small additions; read them as not P-003's own.*
+
+### Why
+Twice on 3 November the owner answered a decision card the opposite way to what they meant (decisions/Q-019/stop-1.md, decisions/Q-017/stop-2.md). The card sheet shows a card's section 5 as written, which on those cards was only a pointer to the Chief of Staff's notes (src/lib/sandbox.js:955); it marks a button Recommended only when that section names one of the card's words (src/lib/board.js:487-499); and it never reads a notes file (src/lib/records.js:34-36). The owner's words, verbatim: "Proceed with the fix" (2026-11-03); "Well then we need to make sure the cards don't show up until then." and "Show it after a day, flagged (Recommended)" (2026-11-04).
+
+### What it covers
+- A decision card (a card under queue/ that is not a gate card) whose notes, `decisions/<item>/<gate>-<n>-notes.md`, are not on the main branch is held off the owner's queue and off Home's count of what needs the owner.
+- Once the notes are on the main branch, the card shows with the notes' recommended answer and that answer's button marked Recommended.
+- If no notes have arrived a day after the card was raised (its `card` entry in the dispatch log), the card shows anyway, marked "No Chief of Staff recommendation yet", with no button marked; if the notes arrive later, the mark gives way to the notes' recommendation.
+- Gate cards stay exactly as they are: their recommendation comes from the gate case.
+
+### What it does not cover
+- No change to how cards or notes are written, to the Orchestrator, or to the model; the desk only reads the records it reads today, and still writes nothing.
+- No change to questions, to gate cards, or to pull-request cards.
+
+### Its milestone, proposed
+The line below goes into section 3, after M3C's line, once the owner approves it at P-003's Design gate, in a commit naming that ruling and the Critic's check (reviews/P-003-m4-line/critic.md, PASS at round 2). Until then it is a proposal, quoted here:
+
+`Every decision card shows the Chief of Staff's recommendation, or says it has none (M4) · done when a decision card waits off the owner's queue until the Chief of Staff's notes for it are on the main branch, then shows with the notes' recommended answer and that answer's button marked Recommended, and, if no notes have arrived a day after it was raised, shows anyway marked "No Chief of Staff recommendation yet", gate cards staying as they are, and a card shown that way takes the recommendation once the notes arrive, on the desk's preview, with its tests · phase: Build · for: P-003 · why: twice on 3 November the owner answered a decision card the opposite way to what they meant, because the desk showed only a pointer to the Chief of Staff's notes and marked no answer as recommended`
+
+### Done when, and how it is checked
+- M4 is shown on the desk's preview with its tests, reviewed by the Reviewer and by the design reviewer (governance/risk-paths.toml), and accepted by the owner. Then the Build and Launch gates; the owner approves the live deploy, as for every change to the live desk.
+- Success: no decision card reaches the owner without either the Chief of Staff's recommendation marked or the "No Chief of Staff recommendation yet" mark.
+
+### Its Discovery, scaled to its size
+- Read the desk's code for where a card enters the queue, Home's count and the card sheet, and how the notes' recommended word is found, and size the change. The word comes only from the notes' own `Recommendation:` line naming one of the card's words; notes without one are treated as no notes: the card stays held until the day is up and then shows with the "No Chief of Staff recommendation yet" mark, so no button is marked that the Chief of Staff did not recommend. No outside research: nothing here is unknown to the desk's earlier work.
+- If it proves larger than a small addition, it needs a plan of its own, and comes back to the owner before any more work (the ruling's option A).
+- Until M4 is live, the Chief of Staff puts its notes on the main branch before the owner answers any card, and says the recommended word in plain text.
+
+### Owners and limits
+As Part 1 sections 4 and 5. The Builder builds it on the desk's page code (src/lib/ and its copies in src/public/), with its tests; no new spend, credential or service.

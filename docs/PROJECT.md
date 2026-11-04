@@ -603,5 +603,11 @@ The line below goes into section 3, after M3C's line, once the owner approves it
 - If it proves larger than a small addition, it needs a plan of its own, and comes back to the owner before any more work (the ruling's option A).
 - Until M4 is live, the Chief of Staff puts its notes on the main branch before the owner answers any card, and says the recommended word in plain text.
 
+### What its Discovery found (2026-11-04)
+The sizing is done (research/P-003-sizing-findings.md): it stays a small addition, about 60 to 90 lines in five of the desk's files plus their generated copies, with about 8 to 12 new tests. Every queue, board, Home and notification view reads one list of flagged cards, so the hold is one rule in one place; the desk already reads the dispatch log, so a card's raise time is known; whether notes exist is known from the file tree, and reading their word is one small new read per card. Three rules it adds to what the fix covers:
+- A notes file's word is the first backticked word on its `Recommendation:` line that is one of the card's words, whatever bold or heading marks surround the line; a notes file with no such word is treated as no notes.
+- A decision card whose raise time is not recorded (older than the log the desk reads, or the log not yet read) is shown at once with the "No Chief of Staff recommendation yet" mark, never held for good.
+- A held card is also left out of the desk's notifications until it shows; the notification for it is sent when it shows.
+
 ### Owners and limits
 As Part 1 sections 4 and 5. The Builder builds it on the desk's page code (src/lib/ and its copies in src/public/), with its tests; no new spend, credential or service.

@@ -11,7 +11,8 @@ widget (P-004)", "Its Discovery, scaled to its size")   milestone: none yet (M5 
 P-004, docs/PROJECT.md Part 2); run once the Builder's test widget is ready
 runner:
 - **The owner,** on their iPhone: about 15 minutes to make the key and install the test widget, then
-  a day of normal refreshes, then sharing the log. No agent holds the key.
+  a day of normal refreshes, then returning the log through GitHub and deleting the key. No agent
+  holds the key.
 - **The Builder** makes the throwaway test widget on a local build/builder/ branch, never merged and
   never under src/public/, and records the result file from the Reviewer's verdict.
 - **The Reviewer,** who did not make the test widget, judges the log against the pass mark.
@@ -44,8 +45,10 @@ changed, lines 14620-14621), plus up to 25 for each record-reading call the chan
 ## Method
 1. The owner makes a fine-grained, read-only GitHub key with Contents: read, Pull requests: read and
    Metadata: read, on only the four repositories in src/config/projects.json (shumpmaster/Service-Desk,
-   shumpmaster/Personal-Org-Operating-Model, shumpmaster/Model-Lab, shumpmaster/portfolio).
-2. The owner installs the test widget and runs it once in the Scriptable app, where it asks for the
+   shumpmaster/Personal-Org-Operating-Model, shumpmaster/Model-Lab, shumpmaster/portfolio), with a
+   7-day expiry. The owner deletes it after the test.
+2. Before installing, the owner turns Scriptable's iCloud Drive off, so nothing it keeps can sync to
+   iCloud. The owner then installs the test widget and runs it once in the Scriptable app, where it asks for the
    key and stores it in the iPhone keychain. Nothing is kept in Scriptable's iCloud folder, and the
    widget sends nothing anywhere but GitHub (docs/PROJECT.md Part 2, "Data on the phone").
 3. The owner adds it to the home screen. Two kinds of refresh are measured: a first with nothing
@@ -55,8 +58,11 @@ changed, lines 14620-14621), plus up to 25 for each record-reading call the chan
    either, nothing is kept and no later refresh can run.
 5. The owner lets it refresh normally for a day that includes at least one busy stretch (several
    merges in an hour), or, if no such stretch happens, a refresh after a whole day's changes.
-6. The owner shares the log file from the Scriptable app's share sheet. For each logged `end`, the
-   Reviewer runs the desk's own code on the records at the four logged shas and compares its summary
+6. The log holds project content, which Part 1 section 5 lets go only to GitHub and Cloudflare, so
+   the owner returns it through GitHub, never through a chat: from the Scriptable app's share sheet,
+   Save to Files (On My iPhone); then on github.com, in Service-Desk, Add file → Upload files, onto
+   a new branch `exp-007-log`. The Reviewer reads the log from that branch. For each logged `end`,
+   the Reviewer runs the desk's own code on the records at the four logged shas and compares its summary
    with the logged one.
 
 ## Measure

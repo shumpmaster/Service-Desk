@@ -1,0 +1,7 @@
+# Q-017 stop-2 — the Chief of Staff's notes (written after the card was answered)
+
+Recommendation: `drop`, and have the pull-request audit made by a read-only helper with a shell and authenticated access, with Q-018's counts and Q-019's code reading, its findings filed with the briefing work's Discovery records.
+
+Why: triage (triage/Q-017.md on item/Q-017) traces the root cause to the question's design: a pull-request-by-pull-request audit of diffs, commits, checks, reviews and edit history that the Researcher's tools (no shell; a fetch tool that summarises) cannot meet to the source checker's two-source standard. It says: "Do not send this back to the Researcher alone. Re-running the same question with the same tools is a re-run (D-047) and would fail the same way." `re-specify` sends research back to the Researcher with rounds reset on the same question (the card's section 4), so it re-runs it; `confirm` sends the same claims to the same checker.
+
+These notes came late: the card was answered `re-specify` on 2026-11-03 at 21:46 UTC (decisions/Q-017/stop-2.md) and applied at 21:53, before any notes existed. The desk shows a card's section 5 as written, "The Chief of Staff's part: `decisions/Q-017/stop-2-notes.md`", and does not open the notes, so no answer was marked recommended. The owner then said, in session session_01QBwHGJj8xSAqpKWLY9qhk5 on 2026-11-03: "I meant whatever your recommendation is". So the owner's intent is `drop`. The ruling on file stands; the owner answers `drop` at Q-017's next stop card, which the re-run is expected to reach.

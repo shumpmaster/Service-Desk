@@ -1,6 +1,6 @@
 # Ruling needed: May the Critic's reading pack leave out the desk's design pictures, so the Critic can run again?
 
-Milestone: Discovery-8 (A brief ready to rule on: the card fix's readiness check cannot run until this is fixed)
+Milestone: Discovery-8
 Asked in session: session_01QBwHGL14SMPK1652qVZprr
 
 WHY: The Critic can no longer run its readiness checks, plan reviews or its view beside a gate case in this project; only its tracing of failures (Triage) still runs. When the pipeline sent the card fix (the change that makes a decision card show my recommendation) to the Critic for its readiness check, it refused to start the session, because the bundle of files it hands the Critic was over its 20 MB limit: about 88 MB, almost all of it screenshots and mock-up pictures from the desk's design work. So nothing reached the Critic, and the card fix is stuck before its Design gate. The pipeline tries once more on its own, which hits the same limit; after that second refusal it raises a failure card for you. The gate Critic's bundle is over too (about 95 MB), so no Design, Build or Launch gate in this project can reach you until it is fixed. Nothing here is permanent.
@@ -21,7 +21,7 @@ OPTIONS:
      Cost: a failure card will probably still come first, unless the move lands within about half an hour. The design reviewer's recorded verdicts cite those screenshots, and they are kept word for word, so their links would break and could not be rewritten; and the folder fills up again with the next round of design work. Rules out: nothing. Reversible: yes.
   Not offered, and why: a separate limit for bundles only needs a change to the pipeline's tools, which come from the operating model, and so takes longer than either A or B; giving the design folder only to the one task that needs pictures needs the same kind of tools change, since a role's reading list is the same for all its tasks.
 RECOMMENDATION: A — it is the smallest change that makes the Critic and the gates work again, it keeps every written record the Critic checks against, and it does not need repeating with each round of design work. Confidence: high on the sizes, which anyone can measure again with the pipeline's own file matcher; medium-high that the Critic does not need the pictures, since its checks are of written records. It would change if you want the Critic to look at screenshots itself (then B).
-RISK CLASS: R3   REVERSIBILITY: R3, gate-bearing (owner approval, A4), so it never defaults   BLAST RADIUS: what the Critic and the gate Critic are shown in this project; every later readiness check, plan review and gate view in it
+RISK CLASS: R3   REVERSIBILITY: costly (risk class R3 is gate-bearing and needs the owner's approval, A4, so it never defaults)   BLAST RADIUS: what the Critic and the gate Critic are shown in this project; every later readiness check, plan review and gate view in it
 DEFAULT: none (a change to the rules is the owner's ruling)   TIMEOUT: none
 CHECKED: read cold by the Critic, 2026-11-04, PASS at round 3; reviews/P-003-critic-pack-cap/critic.md
 

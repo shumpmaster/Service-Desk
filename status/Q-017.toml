@@ -2,13 +2,13 @@
 kind = "research"
 stage = 2
 state = "dispatched"
-role = "researcher"
+role = "source-checker"
 last_verdict = "none"
 plan_round = 2
 build_round = 0
 confirm_used = false
 attempts = 0
-sessions = 5
-dispatched_at = "2026-11-04T00:29:45Z"
+sessions = 6
+dispatched_at = "2026-11-04T01:07:00Z"
 card = 2
 milestone = "Discovery-5"

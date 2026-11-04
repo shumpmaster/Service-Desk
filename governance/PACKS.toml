@@ -38,7 +38,7 @@ must_read = ["specs/{spec}.md", "docs/PROJECT.md", "{ruling}"]
 may_read = ["docs/playbooks/**", "library/**", "tests/acceptance/**", "checks/**",  # the checks it reviews (S-016 AC6); holdouts are always excluded
             "governance/standards/definition-of-ready.md",  # the card's "The definition of ready" (D-052), as a file
             "decisions/**",  # the owner's ruling records (model L-0119); the Chief of Staff's -notes.md never enter a pack
-            "docs/design/**",  # Design's join-up review (S-024 AC7)
+            "docs/design/**/*.md", "docs/design/screens/**",  # Design's join-up review (S-024 AC7); its written records and agreed screens, not its pictures, which are over the pack cap (questions/P-003-critic-pack-cap.md)
             "docs/users/**", "research/**"]  # the definition of ready's section 9: the profile and the research it cites (S-025 AC5)
 # "The writer's drafts and reasoning; the writer's own summary of its work."
 must_not_see = ["docs/reports/**", "docs/briefs/**"]
@@ -92,7 +92,7 @@ must_not_see = ["docs/reports/**", "docs/briefs/**"]
 # independent view, never the Chief of Staff's notes (kept out by name, S-014).
 must_read = ["docs/gates/{item}/**", "docs/gates/_GATE.md", "docs/PROJECT.md", "specs/{spec}.md", "reviews/{spec}/**", "reviews/{item}/**", "decisions/{item}/*.md", "status/{item}.toml", "dispatch-log/*.jsonl", "{ruling}"]
 # S-023's sprints: a merged item's line and a pull request's reviews/<n>/reviewer.md.
-may_read = ["research/**", "docs/design/**", "docs/handover/**", "status/merges.jsonl", "reviews/**", "decisions/questions/**",
+may_read = ["research/**", "docs/design/**/*.md", "docs/design/screens/**", "docs/handover/**", "status/merges.jsonl", "reviews/**", "decisions/questions/**",
             "docs/users/**"]  # the target-user profile a case may cite (S-025 AC5)
 # The User representative's records, reviews/<item>/_<phase>-gate-<n>-user.md, are left out of this
 # pack by name by the session runner, as the Chief of Staff's notes are, and gate-packs names one in

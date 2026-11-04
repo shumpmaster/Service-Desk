@@ -46,7 +46,7 @@ input-reader = ["Read", "Grep", "Glob", "WebFetch", "WebSearch"]
 
 [limits]
 file_bytes = 1048576
-change_set_bytes = 20971520
+change_set_bytes = 134217728   # 128 MiB, the owner's ruling decisions/questions/P-003-critic-pack-cap.md (B): the design folder outgrew 20 MiB
 change_set_files = 500
 path_part_bytes = 255
 path_bytes = 1024

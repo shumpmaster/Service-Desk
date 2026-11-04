@@ -611,3 +611,36 @@ The sizing is done (research/P-003-sizing-findings.md): it stays a small additio
 
 ### Owners and limits
 As Part 1 sections 4 and 5. The Builder builds it on the desk's page code (src/lib/ and its copies in src/public/), with its tests; no new spend, credential or service.
+
+## Later work: the home-screen widget (P-004)
+*Draft 1, 2026-11-04, by the Chief of Staff. P-004 is later work on the graduated desk, filed as its own addition by the owner's ruling, "A: widget runs desk code (Recommended)" (decisions/questions/P-001-home-screen-widget.md). It shares this document's brief, Part 1, and has one milestone of its own, M5, marked ` · for: P-004`, proposed below for section 3. This section is its short plan; the owner approves it, with M5, at P-004's Design gate. Until the desk takes up the planned tools change (model S-035), the desk's checks borrow P-004's "Success defined" and "Scope, limits and owners agreed" marks from Part 1, which the owner accepted for small additions; read them as not P-004's own.*
+
+### Why
+The owner wants the desk's own summary on the iPhone home screen. Shown three widget mockups, they chose "Option 2", the desk's own summary; asked how it should get that summary, they chose "A: widget runs desk code (Recommended)" (decisions/questions/P-001-home-screen-widget.md). A widget cannot load the desk, and the desk's server lets nothing in without the owner's Cloudflare Access sign-in (src/lib/access.js:1-4); but the desk's read model works out each view from the records with no network (src/lib/model.js:1-3), and the notification sender already runs it outside the browser (src/notify/collect.mjs:1-6).
+
+### What it covers
+- A Scriptable widget showing, for each of the desk's three projects, what waits on the owner and the project's state and headline, worded as on the desk, with when it last read; a tap opens the desk.
+- The widget reads the records from GitHub with a read-only key the owner makes and saves in Scriptable, limited to the repositories the desk reads (src/config/projects.json), and keeps what it has read on the phone so a later refresh reads again only what changed.
+- A build step in the desk's repository packs the desk's read model into one Scriptable file, with its tests, and a short guide for the owner to install it and make the key.
+
+### What it does not cover
+- No change to the desk's sign-in, its server, its notification sender, or any page the live desk serves; the desk still writes nothing.
+- No answering from the widget: it only shows, and the desk is where the owner acts.
+- No other widget sizes or the lock screen in this milestone.
+
+### Its milestone, proposed
+The line below goes into section 3, after M4's line, once the owner approves it at P-004's Design gate, in a commit naming that ruling and the Critic's check. Until then it is a proposal, quoted here:
+
+`The desk's summary on the owner's home screen (M5) · done when a Scriptable widget on the owner's iPhone shows, for each of the desk's projects, what waits on the owner and the project's state and headline as the desk shows them, read from GitHub with a read-only key and worked out by a copy of the desk's own read model that the desk's repository builds and tests, and a tap opens the desk, with the desk's sign-in, server and notification sender unchanged · phase: Build · for: P-004 · why: the owner chose the desk's own summary on the home screen, made by the widget running the desk's code`
+
+### Done when, and how it is checked
+- M5 is shown working on the owner's iPhone, its build step and packed copy tested in the desk's suite, reviewed by the Reviewer (and by the design reviewer if it writes into the page's served files; by the owner if it changes the package file), and accepted by the owner. Then the Build and Launch gates.
+- Success: the widget's summary matches the desk's for the same records, checked by a test that runs both on the same sample records.
+
+### Its Discovery, scaled to its size
+- First, measure whether it can work at all: a throwaway Scriptable script on the owner's phone, run cold and then warm, that makes the reads the desk makes for one project and runs the desk's read model on them, recording time, memory and requests. The desk's own reads can reach hundreds of GitHub requests per project on a first read (specs/S-001.md, J1, lines 14609-14621; lines 4954-4955), and whether a widget's time and memory allow that is not known. If it cannot work, the route comes back to the owner, with the sender's summary or the counts-only widget as the fallbacks the question named, before any more work.
+- Then size the build step: which of the desk's modules the packed copy needs, and whether any of them assume a browser.
+- If it proves larger than a small addition, it needs a plan of its own, and comes back to the owner.
+
+### Owners and limits
+As Part 1 sections 4 and 5. The Builder builds the build step and its tests under src/ (outside the sender's files) and the owner's guide; the owner runs the measurement script and installs the widget on their phone, since no agent can reach it. The read-only GitHub key is the owner's, made and held on their phone; no agent holds it. No new spend or service; Scriptable is free.

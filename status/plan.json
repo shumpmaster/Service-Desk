@@ -1,3 +1,22 @@
 {
-  "entries": []
+  "entries": [
+    {
+      "action": "dispatch",
+      "gate": null,
+      "item": "P-003",
+      "role": "critic",
+      "route": "ready-dispatch",
+      "spec": null,
+      "stage": 2
+    },
+    {
+      "action": "dispatch",
+      "gate": null,
+      "item": "P-004",
+      "role": "critic",
+      "route": "ready-dispatch",
+      "spec": null,
+      "stage": 2
+    }
+  ]
 }

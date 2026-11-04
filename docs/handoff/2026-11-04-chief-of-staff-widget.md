@@ -169,3 +169,20 @@ and by which route?", with the options and descriptions below, verbatim from the
   mark the plan sets."
 - "Pause the test" — "Stop here. The test widget exists only in this session's working copy, so it
   would have to be rebuilt in a later session."
+
+## The owner's answer to the data-route question
+PR #300 filed questions/P-004-test-data-route.md. The owner was then asked, by the session's
+question tool, "May a copy of the widget test's data leave your phone, and by which route?", with
+the four options and descriptions recorded verbatim above ("The ask, as it will be put"). The
+owner's answer, verbatim: "Widget sends it to portfolio (Recommended)".
+
+## Next
+1. Once #300 is on the default branch: a pull request that records the answer in
+   decisions/questions/P-004-test-data-route.md, with the owner's exact words, and deletes the
+   question file (AGENTS.md section 5, model S-033).
+2. The Builder adds "Send the test data" to the test widget (a second, portfolio-only write key in
+   the keychain; a new branch of portfolio, never its main), and removes the share items; the
+   Reviewer checks the widget again at that commit.
+3. The Definer writes EXP-007's Draft 4 (this route, and the Critic's round 2 findings); the
+   Critic's round 3 is the last (D-044). Then the registration is frozen and the owner gets the
+   install steps.

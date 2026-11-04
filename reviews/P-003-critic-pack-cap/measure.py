@@ -41,3 +41,13 @@ for name, globs in (("critic, today", CRITIC + TODAY), ("critic, option A", CRIT
     total, left_out = size(globs)
     print("%-22s %11d bytes (%5.1f MB)  %s the 20 MB limit; %d file(s) over 1 MB left out"
           % (name, total, total / 1e6, "over" if total > TOTAL_CAP else "under", left_out))
+
+print()
+for sub in ("builds", "mockups", "references", "screens"):
+    total = 0
+    for root, dirs, files in os.walk(os.path.join("docs", "design", sub)):
+        total += sum(os.path.getsize(os.path.join(root, f)) for f in files)
+    print("docs/design/%-11s %11d bytes (%5.1f MB)" % (sub, total, total / 1e6))
+big = [os.path.relpath(os.path.join(r, f)).replace(os.sep, "/") for r, _, fs in os.walk(os.path.join("docs", "design"))
+       for f in fs if os.path.getsize(os.path.join(r, f)) > FILE_CAP]
+print("files over 1 MB in docs/design: %d" % len(big))

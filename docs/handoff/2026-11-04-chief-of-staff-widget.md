@@ -34,3 +34,13 @@ runs desk code (Recommended)".
 2. Then file the widget as its own project item (the next free P-number) with its short brief and
    milestone, and start its Discovery. Discovery measures first whether a Scriptable widget can make
    the GitHub reads and run the desk's read model within its time and memory.
+
+## Update: P-004's plan (later the same session)
+#284 merged. P-004's request and short plan were drafted; the Critic failed round 1
+(reviews/P-004-brief/_critic-r1-verbatim.md). Two of its findings needed the owner. Asked by the
+session's question tool, "The widget's plan has to say in your own words why you want it. Which is
+closest?", with "See what's waiting at a glance", "Open the desk less often" and "Don't miss
+anything", the owner answered, verbatim: "See what's waiting at a glance". Asked "Where may the
+widget keep your records and the GitHub key? The desk's rules allow your project content to go
+only to GitHub and Cloudflare.", with "Phone only (Recommended)" and "Allow iCloud", the owner
+answered, verbatim: "Phone only (Recommended)".

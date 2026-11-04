@@ -68,3 +68,19 @@ questions/P-004-widget-why-and-data.md.
 
 The backup point (round 3's finding 6: the phone's own iCloud backup may copy the widget's storage)
 was raised after the owner's "Phone only" answer and has not been put to the owner.
+
+## The descriptions shown with the options (correction)
+The session's question tool showed each option with a description. "Update: P-004's plan" above
+gave only the labels; the descriptions as shown, verbatim, were:
+- For "The widget's plan has to say in your own words why you want it. Which is closest?":
+  "See what's waiting at a glance" — "So you know whether anything is waiting on you without opening
+  the desk."; "Open the desk less often" — "So you only open the desk when something actually needs
+  you."; "Don't miss anything" — "So nothing waits on you unnoticed between notifications."
+- For "Where may the widget keep your records and the GitHub key? …": "Phone only (Recommended)" —
+  "Key in the iPhone keychain, records cached on the phone only, nothing synced to iCloud. Stays
+  within the desk's current rule."; "Allow iCloud" — "Scriptable may keep its files in iCloud, so
+  they sync across your devices. Widens the rule to add Apple's iCloud; needs its own ruling."
+- For the round-limit question: "Drop the quotes, one check" — "Take both quotes out of the plan;
+  the phone-only rule stays as plan content you approve at the Design gate. Faster, but your stated
+  reason isn't on record."; "Pause P-004" — "Stop here. The plan stays on the branch, unmerged, until
+  you pick it up again."

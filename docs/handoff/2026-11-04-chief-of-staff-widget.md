@@ -84,3 +84,88 @@ gave only the labels; the descriptions as shown, verbatim, were:
   the phone-only rule stays as plan content you approve at the Design gate. Faster, but your stated
   reason isn't on record."; "Pause P-004" — "Stop here. The plan stays on the branch, unmerged, until
   you pick it up again."
+
+## Update: the plan merged, and P-004's Discovery starts (later the same day)
+Session: session_01QBwHGNFKViyibzxHx5qTtm
+
+Merged on main:
+- #289 filed questions/P-004-widget-why-and-data.md, carrying both answers word for word, with
+  P-004's request and draft plan.
+- #290 recorded the answers in decisions/questions/P-004-widget-why-and-data.md ("Phone only
+  (Recommended)"; "See what's waiting at a glance") and deleted the question file.
+- #291 is not a pull request in this repository (GitHub answers not found); nothing to record.
+- #292 merged P-004's finished plan (docs/PROJECT.md, "Later work: the home-screen widget (P-004)",
+  with M5 proposed; intake/requests/P-004.toml). The Critic passed it at the confirmation review
+  (reviews/P-004-brief/critic.md).
+
+No question has been put to the owner in this session.
+
+## Next (P-004's Discovery, as the plan's "Its Discovery, scaled to its size")
+1. Register the test as EXP-007 (experiments/_REGISTRATION.md), written by the Definer, checked by
+   the Critic (at most three rounds, D-044), with the plan's pass mark copied unchanged and frozen
+   before any run.
+2. The Builder makes the throwaway test widget on a local build/builder/ branch, never merged and
+   never under src/public/: a rough copy of the desk's card-making code in one Scriptable file
+   that, on each refresh, reads the three projects in src/config/projects.json (Service-Desk,
+   Personal-Org-Operating-Model, Model-Lab) and the portfolio repo, and logs time, memory, request
+   count and summary to a file on the phone. If the code cannot run outside a browser without
+   changing the desk's code, that goes back to the owner (as a question file first) before more work.
+3. The owner gets short install steps (a fine-grained read-only key, kept in the keychain, nothing
+   in iCloud) and is asked for the log a day later. These are steps, not a ruling.
+4. The Reviewer, not the Builder, judges the log against the pass mark; the Builder files the
+   result in docs/handover/experiments/EXP-007-result.md. On a fail, the route goes back to the
+   owner with the fallbacks the question named: the sender's summary or the counts-only widget.
+5. Then size the work and prepare the Design gate, where the owner rules on three open points: the
+   phone's own iCloud backup; whether widget time counts toward V3; and whether the plan may follow
+   P-003's form without Discovery or Design standard lines. Each is filed as a question, with a
+   Critic check and a pull request, before it is put.
+
+## Update: the test widget and its checks (later the same day)
+Session: session_01QBwHGNFKViyibzxHx5qTtm
+
+- **The test widget is built** on the local branch build/builder/p004-test-widget (never pushed or
+  merged; worktree /home/user/sd-wt-builder; last reviewed commit b2b1711, later commits in
+  progress). The desk's card-making code (src/lib) runs packed in one Scriptable file with no change
+  to the desk: the desk's 1569 tests pass, and its build check passes. Offline, on the local clones,
+  a cold refresh made 866 GitHub requests (Service-Desk 708, above the plan's "up to about 400" for
+  one project), and a later refresh made 29 to 39. The Home tile's own count is not what the widget
+  shows: the tile adds page-code numbers (src/public/sandbox.js) to src/lib's board. That is a point
+  for the Design gate, and the Critic agreed it does not block the test (reviews/EXP-007/_critic-r1-verbatim.md,
+  finding 4).
+- **The Builder was asked** to add a "Delete test data" app-menu item, which removes the stored copy,
+  the log and the kept data, together with the fixes from the Critic's round 2 on EXP-007.
+- **EXP-007's registration** (build/definer/p004-widget-exp, Draft 3) failed the Critic's rounds 1
+  and 2 (reviews/EXP-007/). Round 3 is the last (D-044). The Reviewer passed the widget's data
+  handling at b2b1711 (reviews/EXP-007/_reviewer-widget-b2b1711.md): the log holds no project
+  content, nothing goes to iCloud, and it talks only to GitHub.
+- **Service-Desk and Model-Lab are public repositories**; Personal-Org-Operating-Model and portfolio
+  are private. The first draft's route for the test data, an upload to Service-Desk, would have
+  published private records. It is withdrawn.
+- **The question** questions/P-004-test-data-route.md passed the Critic at round 3
+  (reviews/P-004-test-data-route/critic.md). It is put to the owner once its pull request is open.
+
+## The ask, as it will be put (recorded before it is quoted anywhere)
+By the session's question tool, the question "May a copy of the widget test's data leave your phone,
+and by which route?", with the options and descriptions below, verbatim from the card:
+- "Widget sends it to portfolio (Recommended)" — "One exception to Phone only: at the end of the
+  test you tap "Send the test data", and the widget sends its copy straight to a new branch of your
+  private portfolio repository on GitHub. It needs a second key, kept in the iPhone keychain like the
+  first, that can write files only in portfolio (7-day expiry, deleted after); a key that can write
+  portfolio's files could also change its main branch, which the desk reads, so a fault in the widget
+  could change what the desk shows from portfolio. The copy never goes into your phone's Files, so
+  your phone's iCloud backup doesn't pick it up. The Reviewer then downloads it into its working
+  session to check it, as it already does with your repositories. Its own extra costs: the send step
+  in the widget, the second key, and about 5 more minutes of your time."
+- "You upload it to portfolio" — "One exception to Phone only, and to the desk's rule: you save the
+  copy in Files (On My iPhone), upload it to a new branch of portfolio on github.com, then delete it
+  and empty Files' Recently Deleted, which otherwise keeps it for 30 days. While the file is in
+  Files, an iCloud backup may copy it, and that copy stays in Apple's iCloud until the backup is
+  replaced, usually for days. You can avoid that by turning iCloud Backup off until the file is
+  deleted. About 10 minutes."
+- "Check timing only" — "No exception: the copy never leaves the phone. Only the log comes back, and
+  it holds counts, project names and scrambled stand-ins for titles, no records. The test still
+  checks that later refreshes finish and how long they take, but not whether each summary was
+  right; that is checked later only by the desk's own test on sample records. This changes the pass
+  mark the plan sets."
+- "Pause the test" — "Stop here. The test widget exists only in this session's working copy, so it
+  would have to be rebuilt in a later session."

@@ -84,3 +84,38 @@ gave only the labels; the descriptions as shown, verbatim, were:
   the phone-only rule stays as plan content you approve at the Design gate. Faster, but your stated
   reason isn't on record."; "Pause P-004" — "Stop here. The plan stays on the branch, unmerged, until
   you pick it up again."
+
+## Update: the plan merged, and P-004's Discovery starts (later the same day)
+Session: session_01QBwHGNFKViyibzxHx5qTtm
+
+Merged on main:
+- #289 filed questions/P-004-widget-why-and-data.md, carrying both answers word for word, with
+  P-004's request and draft plan.
+- #290 recorded the answers in decisions/questions/P-004-widget-why-and-data.md ("Phone only
+  (Recommended)"; "See what's waiting at a glance") and deleted the question file.
+- #291 is not a pull request in this repository (GitHub answers not found); nothing to record.
+- #292 merged P-004's finished plan (docs/PROJECT.md, "Later work: the home-screen widget (P-004)",
+  with M5 proposed; intake/requests/P-004.toml). The Critic passed it at the confirmation review
+  (reviews/P-004-brief/critic.md).
+
+No question has been put to the owner in this session.
+
+## Next (P-004's Discovery, as the plan's "Its Discovery, scaled to its size")
+1. Register the test as EXP-007 (experiments/_REGISTRATION.md), written by the Definer, checked by
+   the Critic (at most three rounds, D-044), with the plan's pass mark copied unchanged and frozen
+   before any run.
+2. The Builder makes the throwaway test widget on a local build/builder/ branch, never merged and
+   never under src/public/: a rough copy of the desk's card-making code in one Scriptable file
+   that, on each refresh, reads the three projects in src/config/projects.json (Service-Desk,
+   Personal-Org-Operating-Model, Model-Lab) and the portfolio repo, and logs time, memory, request
+   count and summary to a file on the phone. If the code cannot run outside a browser without
+   changing the desk's code, that goes back to the owner (as a question file first) before more work.
+3. The owner gets short install steps (a fine-grained read-only key, kept in the keychain, nothing
+   in iCloud) and is asked for the log a day later. These are steps, not a ruling.
+4. The Reviewer, not the Builder, judges the log against the pass mark; the Builder files the
+   result in docs/handover/experiments/EXP-007-result.md. On a fail, the route goes back to the
+   owner with the fallbacks the question named: the sender's summary or the counts-only widget.
+5. Then size the work and prepare the Design gate, where the owner rules on three open points: the
+   phone's own iCloud backup; whether widget time counts toward V3; and whether the plan may follow
+   P-003's form without Discovery or Design standard lines. Each is filed as a question, with a
+   Critic check and a pull request, before it is put.

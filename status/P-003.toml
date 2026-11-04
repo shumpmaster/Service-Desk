@@ -1,12 +1,11 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "project"
 stage = 2
-state = "dispatched"
+state = "ready"
 role = "critic"
 last_verdict = "none"
 plan_round = 0
 build_round = 0
 confirm_used = false
-attempts = 0
+attempts = 1
 sessions = 1
-dispatched_at = "2026-11-04T16:38:43Z"

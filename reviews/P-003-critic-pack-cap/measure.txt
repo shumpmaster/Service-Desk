@@ -1,0 +1,12 @@
+Output of python3 -I reviews/P-003-critic-pack-cap/measure.py, run from the repository root at 7fc01949 (main at 0b226e55 plus this question's records), 2026-11-04:
+
+critic, today             87693971 bytes ( 87.7 MB)  over the 20 MB limit; 2 file(s) over 1 MB left out
+critic, option A           2052478 bytes (  2.1 MB)  under the 20 MB limit; 0 file(s) over 1 MB left out
+critic-gate, today        94569166 bytes ( 94.6 MB)  over the 20 MB limit; 2 file(s) over 1 MB left out
+critic-gate, option A      8927673 bytes (  8.9 MB)  under the 20 MB limit; 0 file(s) over 1 MB left out
+
+docs/design/builds         57505259 bytes ( 57.5 MB)
+docs/design/mockups        21662503 bytes ( 21.7 MB)
+docs/design/references      8879881 bytes (  8.9 MB)
+docs/design/screens          740107 bytes (  0.7 MB)
+files over 1 MB in docs/design: 2

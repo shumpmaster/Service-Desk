@@ -2,23 +2,29 @@
 
 *Pre-registered before any run (D-047). Frozen once the line below is set.*
 
-*Draft 2 (2026-11-04), from the Builder's finished test widget (src/widget-test/ on the local branch
-build/builder/p004-test-widget, never merged): the key's permissions are set by what the widget reads;
-the log holds no project content, since the phone's iCloud backup copies Scriptable's Documents
-folder (an unruled point); the Reviewer judges with src/widget-test/judge.mjs, and how its outcomes
-count is registered; the Builder's offline sizes are recorded; the earlier open points are settled
-in the text. Within Draft 2, at the coordinator's confirmation: the threshold note also registers a
-project "not read", a later refresh that ends with an error and no summary, and a repeat run that is
-again "not judged". Draft 1 (2026-11-04) was written from P-004's short plan, "Its Discovery, scaled to its
-size" (docs/PROJECT.md Part 2, "Later work: the home-screen widget (P-004)").*
+*Draft 3 (2026-11-04), after the Critic's round 1, FAIL (reviews/EXP-007/_critic-r1-verbatim.md).
+The "inconclusive" outcome and the Reviewer's hand check are gone (blockers 1 and 2). Each refresh
+now saves the GitHub responses a clone cannot rebuild, and the judge replays them, so every project
+is `match`, `mismatch` or `not judged`, with "not judged" deciding nothing by itself. A later refresh
+is now defined by a complete kept cache (blocker 3). Also: the tile line is corrected (note 4); what
+happens to excluded refreshes and who decides an exclusion (note 6); the owner's added time (note 7);
+the owner's steps (note 8); the hashes are not secret, and freezing waits for the Builder's change
+and the Reviewer's check (note 9). The Builder is changing the test widget to match.*
+
+*Draft 2 (2026-11-04) followed the Builder's finished test widget (src/widget-test/ on the local
+branch build/builder/p004-test-widget, never merged). Draft 1 (2026-11-04) was written from P-004's
+short plan, "Its Discovery, scaled to its size" (docs/PROJECT.md Part 2, "Later work: the
+home-screen widget (P-004)").*
 
 spec: P-004 (no spec yet; its short plan is docs/PROJECT.md Part 2, "Later work: the home-screen
 widget (P-004)", "Its Discovery, scaled to its size")   milestone: none yet (M5 is proposed for
-P-004, docs/PROJECT.md Part 2); run once the Builder's test widget is ready
+P-004, docs/PROJECT.md Part 2); run once the Builder's changed test widget is ready and this file is
+frozen
 runner:
 - **The owner,** on their iPhone: about 15 minutes to make the key and install the test widget, then
-  a day of normal refreshes, then returning the log through GitHub and deleting the key. No agent
-  holds the key.
+  a day of normal refreshes, then about 5 minutes to return two files through GitHub, and deleting
+  the key. If the run must be repeated (see Deciding threshold), one more day and about 10 minutes
+  more. No agent holds the key.
 - **The Builder** makes the throwaway test widget on a local build/builder/ branch, never merged and
   never under src/public/, and records the result file from the Reviewer's verdict.
 - **The Reviewer,** who did not make the test widget, judges the log against the pass mark.
@@ -30,25 +36,28 @@ Discovery measures first, and if it cannot, "the route comes back to the owner, 
 fallbacks the question named"); decisions/questions/P-004-widget-why-and-data.md ("Phone only
 (Recommended)": key in the iPhone keychain, records on the phone only, nothing synced to iCloud;
 its "Not ruled" point, the phone's own iCloud backup)
-basis: docs/PROJECT.md Part 2, P-004's "Data on the phone" and "Its Discovery, scaled to its size";
-intake/requests/P-004.toml; src/config/projects.json (three projects, Service-Desk,
-Personal-Org-Operating-Model and Model-Lab, plus the portfolio, shumpmaster/portfolio: four
-repositories); the request counts the plan cites, specs/S-001.md lines 4954-4955, 14611 and
-14620-14621; src/lib/model.js:1-3 (the read model needs no network); the Builder's test widget,
-src/widget-test/ (entry.js, judge.mjs) on build/builder/p004-test-widget
+basis: docs/PROJECT.md Part 2, P-004's "Data on the phone", "Done when, and how it is checked" and
+"Its Discovery, scaled to its size"; intake/requests/P-004.toml; src/config/projects.json (three
+projects, Service-Desk, Personal-Org-Operating-Model and Model-Lab, plus the portfolio,
+shumpmaster/portfolio: four repositories); the request counts the plan cites, specs/S-001.md lines
+4954-4955, 14611 and 14620-14621; src/lib/model.js:1-3 (the read model needs no network); the
+Builder's test widget, src/widget-test/ (entry.js, glue.js, judge.mjs) on
+build/builder/p004-test-widget; the Critic's round 1, reviews/EXP-007/_critic-r1-verbatim.md
 
 ## Hypothesis
 A Scriptable home-screen widget, run as the widget and not inside the Scriptable app, can make the
 desk's reads for all three projects and the portfolio and run the desk's card-making code on them
 within a widget refresh's time and memory.
-- A later refresh, with what an earlier one kept, finishes and shows a correct summary.
+- A later refresh, with a complete kept cache, finishes and shows a correct summary.
 - A first refresh, with nothing kept, may or may not finish in the widget.
 
 Already known from making the test widget: the desk's card-making code (src/lib) ran packed into one
-Scriptable file with no change to the desk. The Home tile's own count and its "Now:" line are page
-code (src/public/sandbox.js), not in the copy, so the test widget shows the desk's per-project state
-line and headline from src/lib. That difference is a point for P-004's Design gate, not part of this
-test.
+Scriptable file with no change to the desk. The widget shows, for each project, the number waiting
+as src/lib's box gives it (`box.flaggedCount`), with the desk's state line and headline from
+src/lib. The Home tile's count is different code: `bd.counts`, built in src/lib/board.js and added to
+in src/public/sandbox.js. So the widget's "waiting" number may differ from the Home tile's, and this
+test checks the src/lib summary against src/lib, not against the tile. Whether the widget should
+match the tile is a point for P-004's Design gate, not part of this test.
 
 The size to expect, from the plan: a first read of one project can take up to about 400 GitHub
 requests (up to 16 record-reading calls of up to 25 requests each, specs/S-001.md lines 4954-4955
@@ -69,50 +78,60 @@ the plan's "up to about 400" for one project.
    offers it (Metadata is added automatically); nothing else. If Checks is not offered, the key is
    made without it and the result notes that; the effect is that a job candidate reads as an
    ordinary waiting pull request. The owner deletes the key after the test.
-2. Before installing, the owner turns Scriptable's iCloud Drive off, so nothing it keeps can sync to
-   iCloud. The owner then installs the test widget and runs it once in the Scriptable app, where it
-   asks for the key and stores it in the iPhone keychain. Nothing is kept in Scriptable's iCloud
-   folder, and the widget sends nothing anywhere but GitHub (docs/PROJECT.md Part 2, "Data on the
-   phone").
-3. The owner adds it to the home screen. Two kinds of refresh are measured: a first with nothing
-   kept, and later ones with what the first kept. What it keeps is in Scriptable's local Caches
-   folder, which the phone's backup leaves out but iOS may empty; the next refresh then logs
-   `cache: false` and counts as a first refresh.
-4. If the first refresh cannot finish in the widget, it is done once in the Scriptable app and kept,
-   as the plan allows; the later refreshes then run in the widget. If it cannot finish in the app
-   either, nothing is kept and no later refresh can run: the later-refresh condition fails, and the
-   route goes back to the owner (see Deciding threshold).
+2. The owner installs the test widget and runs it once in the Scriptable app, where it asks for the
+   key and stores it in the iPhone keychain. The widget uses only the phone's local storage, never
+   Scriptable's iCloud folder, and sends nothing anywhere but GitHub (docs/PROJECT.md Part 2, "Data
+   on the phone").
+3. The owner adds it to the home screen. What it keeps is in Scriptable's local Caches folder, which
+   the phone's backup leaves out but iOS may empty. The kept data is marked complete only when a
+   refresh ends with no error.
+   - A **later refresh** is one run as the widget whose `start` logs `cacheComplete: true`.
+   - Every other refresh (no kept data, or kept data not marked complete) counts as a **first
+     refresh**. A first refresh that is killed does not fail the test.
+4. If no first refresh finishes in the widget, the owner does it once in the Scriptable app, as the
+   plan allows, and the later refreshes then run in the widget. If no refresh, in the widget or the
+   app, ever ends with no error, no later refresh can run: that is a fail (see Deciding threshold).
 5. The owner lets it refresh normally for a day that includes at least one busy stretch (several
    merges in an hour), or, if no such stretch happens, a refresh after a whole day's changes.
-6. The owner returns the log through GitHub, never through a chat: from the Scriptable app's share
-   sheet, Save to Files (On My iPhone); then on github.com, in Service-Desk, Add file → Upload
-   files, onto a new branch `exp-007-log`. The Reviewer reads the log from that branch. After the
-   result is filed, the owner deletes the branch; the log is not kept in the repository beyond it,
-   and the result records the counts and outcomes.
-7. The Reviewer, from build/builder/p004-test-widget, runs
-   `node src/widget-test/judge.mjs <log> <four clone paths>`. For each `end`, it runs the desk's own
-   code (readRecords, buildModel and the src/lib box) on each repository at the logged sha, at the
-   refresh's time, and compares the four fields of each project's summary. Each project comes out
-   match, mismatch, inconclusive (no match, and the project had open pull requests or pull-request
-   or deploy items at that refresh, which a clone cannot rebuild), or not read. The Reviewer then
-   checks each inconclusive one by hand against GitHub's records of those pull requests and deploys
-   (their numbers and times, read through the GitHub API), where possible.
+6. **Snapshots.** On each refresh the widget also saves, in Scriptable's local Caches folder only,
+   every GitHub response a clone cannot rebuild: everything except branches, trees and blobs. They
+   are stored by content hash, bounded to about 20 MB, the oldest dropped first. This file holds
+   project content, which is why it stays out of the backed-up Documents folder.
+7. The owner returns two files, the log and the snapshot file, through GitHub only, never through
+   a chat, so project content goes only to GitHub, as Part 1 section 5 allows: from the Scriptable
+   app's share sheet, Save to Files (On My iPhone); then on github.com, in Service-Desk, Add file →
+   Upload files, committing directly to a new branch `exp-007-log`. Do not open a pull request (it
+   would start the desk's workflows and show on the desk). The Reviewer reads both files from that
+   branch. After the result is filed, the owner deletes the branch; the result records the counts
+   and outcomes. A deleted branch's commits can still be fetched by their sha for a while.
+8. The Reviewer, from build/builder/p004-test-widget, runs
+   `node src/widget-test/judge.mjs <log> <snapshot file> <four clone paths>`. For each `end`, it
+   runs the desk's own code (readRecords, buildModel and the src/lib box) on each repository at the
+   logged sha, at the refresh's time, replaying the exact GitHub responses that refresh saved, and
+   compares the four fields of each project's summary. Each project is `match`, `mismatch` or
+   `not judged` (no snapshot, a sha the clone does not have, or a needed response not in the
+   snapshot). There is no hand check. This is the plan's comparison: "the desk's own code run on
+   the records as they stood then", and its Success line, "a test that runs both on the same sample
+   records".
 
 ## Measure
 The log: one JSON line per event, in Scriptable's on-phone Documents folder. That folder is copied
 by the phone's iCloud backup, an unruled point (decisions/questions/P-004-widget-why-and-data.md,
 "Not ruled"), so the log holds no project content.
-- **`start`,** written before any read: the time, the run context (widget or app), and whether a
-  kept cache was present (`cache`, true or false).
+- **`start`,** written before any read: the time, the run context (widget or app), whether kept
+  data was present (`cache`, true or false), and whether it was marked complete (`cacheComplete`,
+  true or false).
 - **`detail`,** written before `end`: response status counts, requests per repository, any blocked
   hosts (the host only), record-reading calls per cycle, `skipMs`, the list of shims, and for each
   project its `shape`: `{read, kinds, openPulls}`.
 - **`end`:** elapsed milliseconds; the GitHub request count; the response bytes read; the kept
-  cache's size in bytes; for each of the four repositories, the default-branch commit sha it read;
-  for each project, the summary as `{waiting, state, firstHash, headlineHash}`; and any error.
+  cache's size in bytes; whether a snapshot was saved (`snapshot`, true or false); for each of the
+  four repositories, the default-branch commit sha it read; for each project, the summary as
+  `{waiting, state, firstHash, headlineHash}`; and any error.
   - `state` is in plain words only when it is one of the desk's fixed state forms; otherwise it is
     `state: null` with a `stateHash`.
-  - Each hash is the lowercase hex SHA-256 of the exact UTF-8 string.
+  - Each hash is the lowercase hex SHA-256 of the exact UTF-8 string. The hashes are not secret:
+    anyone who can read the repositories could guess a short title or headline and check its hash.
   - An error is in fixed wording, or as `errorKind` with an `errorHash`.
 - A `start` with no matching `end` counts as a refresh that did not finish (killed for time or
   memory).
@@ -120,9 +139,8 @@ by the phone's iCloud backup, an unruled point (decisions/questions/P-004-widget
   So memory is judged by whether the refresh finished (no `end` means it was killed), with the
   response bytes and the cache size as proxies. A kill for memory and a kill for time cannot be told
   apart from the log.
-- **Correct:** for a project, a match on all four fields between the logged summary and the desk's
-  own code on the records at the logged shas; or, for an inconclusive one, the Reviewer's hand
-  check against GitHub's records showing it is the desk's summary.
+- **Correct:** for a project, a `match` on all four fields between the logged summary and the
+  judge's replay.
 
 ## Sample
 One phone, one day, by design: there is one owner and one phone. Every refresh in the day is
@@ -131,8 +149,14 @@ not the app: "measure whether it can work at all, as a home-screen widget, not i
 Scriptable app" (docs/PROJECT.md Part 2, "Its Discovery, scaled to its size").
 
 ## Exclusions
-A refresh interrupted by something outside it (the phone offline, or GitHub's status page showing an
-API incident at that time) is recorded and not counted. No other refresh is thrown out.
+A refresh interrupted by something outside it (the phone offline, or a GitHub API incident at that
+time) is recorded and not counted. No other refresh is thrown out.
+- The Reviewer decides an exclusion from three things only: the log's `errorKind` (a network
+  error), GitHub's status history for that time, and the owner's word. No other reason excludes a
+  refresh.
+- An excluded refresh is run again by the next normal refresh; nothing extra is needed.
+- If every refresh in the busy stretch is excluded, the end-of-day refresh (after a whole day's
+  changes) is the condition instead.
 
 ## Deciding threshold
 The plan's pass mark, unchanged in substance (docs/PROJECT.md Part 2, "Its Discovery, scaled to its
@@ -147,22 +171,26 @@ size"):
   counts-only widget as the fallbacks the question named, before any more work.
 
 **How "a correct summary every time" is read** (so the Critic can check it does not change the pass
-mark). It is applied to the later refreshes run as the widget, not excluded:
-- A mismatch is an incorrect summary. An inconclusive one the Reviewer's hand check finds is not the
-  desk's summary is also incorrect.
-- A later refresh that was killed (a `start` with no `end`) is a refresh that did not finish.
-- An inconclusive refresh is neither shown correct nor shown incorrect. The Reviewer checks it by
-  hand, as Method 7 says, and lists any it cannot confirm.
-- A project "not read", with no exclusion explaining it, is not a correct summary.
-- A later refresh whose `end` has an error and no summary did not show a correct summary.
-- So the pass needs zero incorrect summaries and zero unfinished later refreshes.
-- If every later refresh in the busy stretch (or the end-of-day refresh) is unconfirmable, the
-  result is "not judged": the test is run again once, and it is not passed. If that one repeat run
-  is also "not judged", the route goes back to the owner, as for a fail, before any more work.
-- If the first refresh cannot finish in the app either, no later refresh can run, so the
-  later-refresh condition fails and the route goes back to the owner.
+mark). It applies to the counted later refreshes: those run as the widget with `cacheComplete: true`,
+and not excluded.
+- **Pass:** every counted later refresh finishes and is `match` on every project.
+- **Fail:** any of these:
+  - a `mismatch` on any project;
+  - a counted later refresh that did not finish (a `start` with no `end`);
+  - a project "not read", with no exclusion explaining it (not a correct summary);
+  - a counted later refresh whose `end` has an error and no summary (it did not show a correct
+    summary);
+  - no refresh, in the widget or the app, ever ending with no error, so no later refresh can run.
+- **Not judged:** if any counted later refresh has a project `not judged`, and nothing above fails
+  the test, the whole result is "not judged", not a pass. The test is then run once more. If it is
+  not judged again, the route goes back to the owner, as for a fail, before any more work.
+- A fail sends the route back to the owner, with the fallbacks above, before any more work.
 
 ## Holdout use
 none.
+
+Before freezing: this file is frozen only after the Builder's change to the test widget lands and
+the Reviewer confirms that no raw state, error text or other project content reaches the Documents
+folder.
 
 frozen: the last commit that changes this file on build/definer/p004-widget-exp, before any run

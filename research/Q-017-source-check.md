@@ -1,40 +1,26 @@
 Verdict: FAIL
 
-I re-opened four of the memo's sources through the fetch tool, so everything below is grade B. The memo is not a groundwork map, so each entry has to pass on its own. Nothing passes with two independent confirmations, so I filed nothing in `library/`.
+I filed nothing in `library/`. The earlier round's blockers were the 22-entry truncation and the single-record problem. I cleared the truncation, but the single-record problem remains, so no entry meets the two-independent-sources rule.
 
-**Confirmed this round**
-- **#239 body (memo lines 67, 115, 162).**
-  - `pulls/239` reads "Nine locked cases rewritten, each in its own commit, two of them forced and named (AC80, AC89, AC91)".
-  - It shows 41 commits and `created_at` 2026-10-25T19:40:48Z.
-  - This matches the quote in the memo.
-- **#239 round-1 commits (memo line 92).**
-  - The `pulls/239/commits` view lists nine "Rewrite" commits before `cc76993`: e0015bd, 585cb35, ac47f6d, e25c44a, b9929fb, 50b89e0, a8d64b9, 69ec664 and f554f7a.
-  - The last two end "(forced; not named in G8d's row)".
-  - That matches the memo's round-1 list.
-- **#5 run (memo line 63).**
-  - Run 36853760813 is `governance`, event pull_request, conclusion failure, head `d7d0749f8bc7d959e35ed3af94bb635cce31211f`.
-  - It ran 11:11:02–11:11:26Z, which matches the memo's times. The date is 2026-10-01, which the memo omits.
-- **#5 PR (memo lines 63, 90).**
-  - `pulls/5` has `created_at` 11:10:58Z and `merged_at` 11:28:14Z.
-  - The body has "governance/checks/check_all.sh . origin/main passed; surface_guard OK".
-  - The memo's quote drops the `governance/checks/` path prefix, so it is not word for word.
+**What I confirmed this round**
+All of these came through the fetch tool, so they are grade B.
+- **#161 body (memo lines 28, 64, 119):** `pulls/161` contains "Nothing failed or was skipped in this pull request." It is followed by "It marks M3A … as reached today". `created_at` is 2026-10-20T14:32:43Z, `merged_at` is 14:43:33Z, and the head is `612cf90b…`. This matches the memo.
+- **#161 runs (memo line 64):** `actions/runs?head_sha=612cf90b…` returns total_count 5. The push `governance` run 39440152795 concluded failure at 14:32:27Z. The four pull_request runs succeeded, and `desk-notify-ready` started at 14:43:36Z, after the merge. This matches the memo exactly.
+- **#239 commit 16e1389 (memo lines 95–99):** `pulls/239/commits?per_page=10&page=3` returned 10 entries, so the truncation did not recur at that page size.
+  - It includes `16e1389e7640407ca7601c0fb7c1090807399447`, "Rewrite round 2's locked case about projects the desk can't draw whose read fails", at 2026-10-25T17:13:08Z.
+  - Its neighbours are 8446e28 (17:12:51Z) and 3b582a3 (17:15:34Z).
+  - The fetch tool listed the page newest-first, so 16e1389 shows as item 4 rather than the memo's item 7. That is consistent with the memo's entry 27 if the order is reversed. The position depends on how the extraction ordered the page, so I treat it as unreliable.
 
-**Not confirmed**
-1. **F-pr-desc-01d.**
-   - The commit list I fetched cut off after 22 entries (`d968b1e`). The memo's own method notes (lines 51–53) say the same truncation happened before.
-   - So I could not see `16e1389`, its message, or its 17:13:08Z time.
-   - The tenth "Rewrite" commit, and the claim that the count line leaves out round 3's rewrite, are unconfirmed.
-   - The earlier check (`research/Q-017-source-check.md` lines 13–16) also found the "forced" wording ambiguous. The memo withdrew the "short by one" claim.
-2. **F-pr-desc-01a, 01b, 01c, 01e, 01f, 02, F-gh-api-01a, F-gh-api-01b and the three patterns.**
-   - I did not independently re-open the #31 or #161 run records, #44 and its commits, the HTML "edited" markers, or the 14 bodies behind 01c.
-   - For 01b, only the #5 half has a second opening, and it has no second source.
-   - The #161 half of 01b has none.
-3. **Rule binding dates (memo lines 41–45).** They are inferred (grade C) because the model repo is private.
-4. **Load-bearing facts need two independent sources.** The memo itself says two views of one GitHub record are not independent (line 12). Each entry has only that one record.
-5. **Pattern entries.** P-fetch-two-views-01 rests on the extraction miscounting its own lists. That is the memo's own observation, and I just saw the same truncation again.
+**Why this is a FAIL**
+1. **Independence (memo lines 16 and 184).** The memo says every fact rests on one GitHub record, and I found the same. Reopening the record or reading another view of it checks the extraction, not the record. The rule requires two independent sources for load-bearing facts, so no entry passes. The memo asks the owner for a ruling on this standard. That is outside my lane, and I cannot waive the rule.
+2. **Entries I did not re-open:** F-pr-desc-01a (the #31 diff and `orchestrator` run), 01b (the #5 half), 01c, 01e, 01f, 02, F-gh-api-01a, F-gh-api-01b, and the three patterns. Memo line 180 says the #31 diff, #135, #175, #213 and #252 were not re-opened. I did not re-open them either. They are unconfirmed.
+3. **Rule binding dates (memo lines 37–45).** These are inferred (grade C) because the model repo is private. The "0 of 15 sections missing" count and the "required on its date" judgement depend on them.
+4. **P-fetch-two-views-01.** It rests only on observations of the extraction's own errors. It has no independent evidence and cannot be filed as a pattern.
+5. **F-pr-desc-01d.** The commit exists and the page sizes add up. The claim "round 1 only" is the memo's own estimate (C), and the meaning of "two of them forced and named" is still open. It is not fileable as a fact.
+6. **Absence findings.** The memo grades the #239 body search "could not be determined" (lines 52, 144). I agree.
 
 **Open questions**
-- Can authenticated `gh` or GraphQL be used to settle the commit list (the truncation is the blocker) and the raw body text?
-- What does "two of them forced and named (AC80, AC89, AC91)" mean?
-- Can the model repo's version dates be read?
-- The memo's own gaps remain: six partial diffs, #148, edit timing, and whether checks were required before merging.
+- Will the owner or Chief of Staff rule that "the primary record, opened twice" meets the evidence standard for facts about a single GitHub record? If not, no entry here can pass without a different kind of source, such as raw output from an authenticated `gh` or GraphQL call.
+- Can the model repo's version dates be read, to turn the grade-C rule binding dates into facts?
+- What does "two of them forced and named (AC80, AC89, AC91)" mean? What does #44's "5 Builder commits (`Spec: S-001`)" count?
+- Six partial diffs, #148, edit timing, and whether checks were required before merging are still unchecked.

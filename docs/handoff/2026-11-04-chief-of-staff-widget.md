@@ -20,6 +20,17 @@ The owner's answer, verbatim: "One final check (Recommended)".
 01e9be6, 2026-11-04: asks-merge.yml, governance.yml, orchestrator.yml, pr-body.yml,
 scrub-proof.yml. There is no notification sender.
 
+## The owner's answer
+The confirmation review passed (reviews/P-001-home-screen-widget/critic.md) and the question's pull
+request was opened (#283). The owner was then asked, by the session's question tool, "How should the
+iPhone widget get the desk's summary?", with the options "A: widget runs desk code (Recommended)",
+"B: sender saves a summary" and "C: counts-only widget". The owner's answer, verbatim: "A: widget
+runs desk code (Recommended)".
+
 ## Next
-The Critic's one focused confirmation reading of round 5's blocking findings. On PASS: record
-critic.md, open the question's pull request, then put the question to the owner.
+1. Once #283 is on the default branch: a pull request that records the answer in
+   decisions/questions/P-001-home-screen-widget.md, with the owner's exact words, and deletes the
+   question file (AGENTS.md §5, model S-033).
+2. Then file the widget as its own project item (the next free P-number) with its short brief and
+   milestone, and start its Discovery. Discovery measures first whether a Scriptable widget can make
+   the GitHub reads and run the desk's read model within its time and memory.

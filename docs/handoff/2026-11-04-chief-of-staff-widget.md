@@ -50,3 +50,21 @@ as a ruling: the reason is a note of the owner's for the milestone's why, and ke
 data on the phone is part of P-004's plan within Part 1 section 5's rule as it stands, approved with
 the plan at the Design gate. Letting Scriptable use iCloud would have needed a ruling, and was not
 chosen. The Critic's round 2 (reviews/P-004-brief/_critic-r2-verbatim.md) raised the point.
+
+## Update: the plan's round limit (later the same session)
+The paragraph above is superseded: the Critic's round 3 of P-004's plan
+(reviews/P-004-brief/_critic-r3-verbatim.md, finding 1) found that both answers were rulings put to
+the owner and must be filed as a question and recorded, not treated as notes. That was round 3, the
+plan's limit (D-044). The owner was asked, by the session's question tool: "The widget's plan
+(P-004) hit the Critic's 3-round limit. The one blocker is my process slip: I asked you two
+questions in chat (your reason, and phone-only data) without filing them as questions first, and the
+rules need them on record. The plan itself is sound. How should I continue?", with the options "File
+the answers, then one check (Recommended)" ("I file a question carrying both of your answers word
+for word (like the earlier card-fix question did), record them once it merges, fix the 7 smaller
+points, then the Critic does one final focused check. Two small extra PRs; nothing on the desk
+changes."), "Drop the quotes, one check" and "Pause P-004". The owner's answer, verbatim: "File the
+answers, then one check (Recommended)". The question carrying the answers is
+questions/P-004-widget-why-and-data.md.
+
+The backup point (round 3's finding 6: the phone's own iCloud backup may copy the widget's storage)
+was raised after the owner's "Phone only" answer and has not been put to the owner.

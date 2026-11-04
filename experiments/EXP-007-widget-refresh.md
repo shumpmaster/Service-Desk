@@ -7,7 +7,9 @@ build/builder/p004-test-widget, never merged): the key's permissions are set by 
 the log holds no project content, since the phone's iCloud backup copies Scriptable's Documents
 folder (an unruled point); the Reviewer judges with src/widget-test/judge.mjs, and how its outcomes
 count is registered; the Builder's offline sizes are recorded; the earlier open points are settled
-in the text. Draft 1 (2026-11-04) was written from P-004's short plan, "Its Discovery, scaled to its
+in the text. Within Draft 2, at the coordinator's confirmation: the threshold note also registers a
+project "not read", a later refresh that ends with an error and no summary, and a repeat run that is
+again "not judged". Draft 1 (2026-11-04) was written from P-004's short plan, "Its Discovery, scaled to its
 size" (docs/PROJECT.md Part 2, "Later work: the home-screen widget (P-004)").*
 
 spec: P-004 (no spec yet; its short plan is docs/PROJECT.md Part 2, "Later work: the home-screen
@@ -151,9 +153,12 @@ mark). It is applied to the later refreshes run as the widget, not excluded:
 - A later refresh that was killed (a `start` with no `end`) is a refresh that did not finish.
 - An inconclusive refresh is neither shown correct nor shown incorrect. The Reviewer checks it by
   hand, as Method 7 says, and lists any it cannot confirm.
+- A project "not read", with no exclusion explaining it, is not a correct summary.
+- A later refresh whose `end` has an error and no summary did not show a correct summary.
 - So the pass needs zero incorrect summaries and zero unfinished later refreshes.
 - If every later refresh in the busy stretch (or the end-of-day refresh) is unconfirmable, the
-  result is "not judged": the test is run again once, and it is not passed.
+  result is "not judged": the test is run again once, and it is not passed. If that one repeat run
+  is also "not judged", the route goes back to the owner, as for a fail, before any more work.
 - If the first refresh cannot finish in the app either, no later refresh can run, so the
   later-refresh condition fails and the route goes back to the owner.
 

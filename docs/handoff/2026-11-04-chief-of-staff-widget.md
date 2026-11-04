@@ -44,3 +44,9 @@ anything", the owner answered, verbatim: "See what's waiting at a glance". Asked
 widget keep your records and the GitHub key? The desk's rules allow your project content to go
 only to GitHub and Cloudflare.", with "Phone only (Recommended)" and "Allow iCloud", the owner
 answered, verbatim: "Phone only (Recommended)".
+
+The two answers above were asked in the session without a question file first. Neither is treated
+as a ruling: the reason is a note of the owner's for the milestone's why, and keeping the widget's
+data on the phone is part of P-004's plan within Part 1 section 5's rule as it stands, approved with
+the plan at the Design gate. Letting Scriptable use iCloud would have needed a ruling, and was not
+chosen. The Critic's round 2 (reviews/P-004-brief/_critic-r2-verbatim.md) raised the point.

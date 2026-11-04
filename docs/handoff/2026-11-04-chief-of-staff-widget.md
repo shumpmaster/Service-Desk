@@ -1,0 +1,36 @@
+# Handoff — the home-screen widget question (2026-11-04)
+
+Session: session_01QBwHGKYRJzkU6QvrF8X1wc
+
+## What happened
+The owner asked whether the desk could become an iPhone widget through the Scriptable app. Three
+widgets were mocked up and shown to the owner on a private page: (1) "Counts read straight from
+GitHub", marked "Recommended"; (2) "The desk's own summary", marked "Needs a desk change"; (3) "A
+one-tap launcher", marked "Lightest". The owner's reply, verbatim: "Option 2".
+
+The route for option 2 was filed as questions/P-001-home-screen-widget.md. The Critic failed it at
+five readings (reviews/P-001-home-screen-widget/), past the model's limit of three (D-044). The
+owner was asked, by the session's question tool: "The widget question failed the Critic 5 times,
+which passes the desk's 3-round limit, so the rules say you decide how to continue. …How should I
+continue?", with the options "One final check (Recommended)", "Simpler widget only" and "Drop it".
+The owner's answer, verbatim: "One final check (Recommended)".
+
+## Model-Lab's workflows
+`git ls-tree --name-only origin/main .github/workflows/` in a clone of shumpmaster/Model-Lab, at
+01e9be6, 2026-11-04: asks-merge.yml, governance.yml, orchestrator.yml, pr-body.yml,
+scrub-proof.yml. There is no notification sender.
+
+## The owner's answer
+The confirmation review passed (reviews/P-001-home-screen-widget/critic.md) and the question's pull
+request was opened (#283). The owner was then asked, by the session's question tool, "How should the
+iPhone widget get the desk's summary?", with the options "A: widget runs desk code (Recommended)",
+"B: sender saves a summary" and "C: counts-only widget". The owner's answer, verbatim: "A: widget
+runs desk code (Recommended)".
+
+## Next
+1. Once #283 is on the default branch: a pull request that records the answer in
+   decisions/questions/P-001-home-screen-widget.md, with the owner's exact words, and deletes the
+   question file (AGENTS.md §5, model S-033).
+2. Then file the widget as its own project item (the next free P-number) with its short brief and
+   milestone, and start its Discovery. Discovery measures first whether a Scriptable widget can make
+   the GitHub reads and run the desk's read model within its time and memory.

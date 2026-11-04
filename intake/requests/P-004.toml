@@ -1,0 +1,11 @@
+kind = "project"
+earlier = "P-001"
+# The home-screen widget: an iPhone widget, made with the Scriptable app, that shows the desk's own
+# summary (what waits on the owner, and each project's state and headline) by reading the records
+# from GitHub with a read-only key and running a packed copy of the desk's read model; the desk's
+# sign-in, server and notification sender are not changed. Later work on the graduated desk (P-001),
+# filed as its own addition by the owner's ruling, "A: widget runs desk code (Recommended)"
+# (decisions/questions/P-001-home-screen-widget.md). No `enters`: it starts at a short Discovery
+# scaled to its size, which first measures whether a widget can do the work. Its one milestone, M5,
+# marked ` · for: P-004`, is proposed in its brief and goes into docs/PROJECT.md section 3 at its
+# Design gate; its short brief is docs/PROJECT.md Part 2, "Later work: the home-screen widget (P-004)".

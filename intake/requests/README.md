@@ -4,8 +4,9 @@ The Chief of Staff starts a work item with `<item>.toml`: `kind = "project" | "r
 `question` (research). An evidence request is refused: a graduated product owns its own review
 (S-023, S-024). Item ids: `P-nnn`, `Q-nnn`.
 
-A research request may hold `milestone = "<id>"`: a project milestone's id from docs/PROJECT.md
-section 3 (`M<id>`), or a standard milestone's (`Discovery-1` to `Discovery-8`, `Design-1` to
+A research request may hold `milestone = "<id>"`: a project milestone's id from section 3 of any
+project item's plan, docs/PROJECT.md or docs/projects/<item>.md (`M<id>`; ids are unique across
+the repository, S-035), or a standard milestone's (`Discovery-1` to `Discovery-8`, `Design-1` to
 `Design-6`, `Build-1` to `Build-5`, `Launch-1` to `Launch-5`). It is required once the project is
 approved (a project status file holds a `spec`), and optional before; a project request never holds
 one (S-023).

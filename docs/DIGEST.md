@@ -1,5 +1,5 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-11-05: 20 active rulings and 0 kills, from 22 ledger entries.
+As of 2026-11-05: 21 active rulings and 0 kills, from 23 ledger entries.
 
 ## Active rulings
 
@@ -30,6 +30,7 @@ As of 2026-11-05: 20 active rulings and 0 kills, from 22 ledger entries.
 | L-0017 | asks-merge: granted, until the owner withdraws it by a later delegation entry superseding this one, with a decision beginning "asks-merge withdrawn:". The workflow merges only … | 2026-10-17 | never |
 | L-0018 | design-reviewer joins the roster as a read-only reviewer with the design domain pack (governance/domains/design/README.md). Its verdict is required on src/public/** (governance/risk-paths.toml), without raising a change's … | 2026-10-19 | never |
 | L-0022 | Copied byte for byte from the model at bbe010f: governance/checks/ v3_checks.py, orchestrator.py, govlib.py and governance_checks.py (each was byte-identical to the model's copy at 226f1c5). The … | 2026-11-05 | never |
+| L-0023 | Copied byte for byte from the model at b18259c (its pull request for 3.7.2): governance/checks/ orchestrator_git.py, session_runner.py and v3_checks.py (each was byte-identical to the model's … | 2026-11-05 | never |
 
 ## Kills
 None.

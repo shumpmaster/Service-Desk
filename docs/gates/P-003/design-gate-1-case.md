@@ -2,7 +2,7 @@
 
 ## 1. The ask
 
-The card fix's readiness check failed twice before it passed on its own plan, the third time [dispatch-log/2026-11.jsonl] [reviews/P-003/_critic-dor.md].
+The card fix's readiness check failed twice, and once stopped on an error, before passing on its own plan [dispatch-log/2026-11.jsonl] [reviews/P-003/_critic-dor.md].
 Proceeding moves it into Design, to pin down its behaviour; nothing is built until the Build gate, which you rule [docs/projects/P-003.md:56] [docs/projects/P-003.md:61] [docs/projects/P-003.md:44].
 
 **The proposer's recommendation:** proceed — the brief passed its readiness check with nothing blocking, and no unknown is left open [reviews/P-003/_critic-dor.md] [docs/projects/P-003.md:107]
@@ -21,7 +21,7 @@ The plan's place mattered: borrowing from the desk's first plan failed it [revie
 ## 4. The plan for the next phase
 
 Design writes scenarios and maps how the views join, and skips the experiment [docs/projects/P-003.md:56] [docs/projects/P-003.md:58].
-It ends with the spec, reviewed, and the Build gate [docs/projects/P-003.md:61].
+It ends with the reviewed spec and the Build gate [docs/projects/P-003.md:61].
 The Builder then builds the fix itself; no date is recorded [docs/projects/P-003.md:44] [docs/projects/P-003.md:68].
 
 ## 5. The risks
@@ -29,13 +29,13 @@ The Builder then builds the fix itself; no date is recorded [docs/projects/P-003
 A card held for good: never, after a day it shows [docs/projects/P-003.md:102].
 A wrong button marked: notes without a word count as none [docs/projects/P-003.md:103].
 You told twice: a held card's notification goes when it shows [docs/projects/P-003.md:104].
-A gate card changed by mistake: gate cards stay as they are [docs/projects/P-003.md:105].
+A gate card changed: gate cards stay as they are [docs/projects/P-003.md:105].
 Two steps you took on, the go-ahead and the risk list, read "not recorded" on the timeline: the plan takes them on, but no record marks them reached [docs/projects/P-003.md:48] [docs/projects/P-003.md:53].
 
 ## 6. Cost and limits
 
 $0 a month of new spend, no new data or outside service, tier T1 [docs/projects/P-003.md:79] [docs/projects/P-003.md:80] [docs/projects/P-003.md:81].
-Your time: none to run it; usage so far not recorded [docs/projects/P-003.md:90].
+Your time: none to run it; usage not recorded [docs/projects/P-003.md:90].
 
 ## 7. Kill criteria
 

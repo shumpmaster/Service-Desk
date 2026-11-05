@@ -229,3 +229,11 @@ owner approving by merging; (B) the owner merges #300 with this one check red; (
 letting a Definer commit name a project item (P-nnn) when its every path is in the Definer's lane
 (tools change, governance surface). Until then, builder-class commits for P-004 should not carry
 `Spec: P-004`. The test widget's own commits carry it too, but that branch is never merged.
+
+## The scope-check question, and the ask as it will be put (2026-11-05)
+questions/P-004-registration-commits.md passed the Critic at round 2
+(reviews/P-004-registration-commits/critic.md). By the session's question tool, the question
+"How should the widget test's plan get past the desk's scope check?", with these options and descriptions, verbatim from the card:
+- "Exempt the nine commits (Recommended)" — "The nine commits are added to the desk's list of commits that its scope check and its surface check skip, each with an entry in the decision log saying why. The same list holds the desk's founding commit, a different case. From then on both of those checks skip these nine, not only the scope check; the check that each writer kept to its own files already passed on them, but only that past run shows it. The change goes into #300, the Reviewer checks it, and your merging #300 is your approval. Both checks then pass. The list entries could be removed later, but once #300 is merged that changes nothing, because the checks never walk merged commits again."
+- "Merge with the checks red" — "You merge #300 as it is. I close its task with the reason, so only the scope check stays red. No list or log change. The red mark stays in #300's history, and nobody can tell from the checks alone that it was looked at and allowed."
+- "Change the check" — "The check is changed so a plan-writer's commit may name a project like P-004 when it touches only the plan-writer's own files. Fixes this for every later project too, but it is a change to the desk's own tools, which needs its own written plan, the Critic's check, the Reviewer's, and your own approval. #300 waits until it's done."

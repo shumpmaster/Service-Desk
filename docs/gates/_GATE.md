@@ -6,13 +6,13 @@
 **The proposer's recommendation:** <proceed, hold, recycle into <Phase>, or kill> — <why> [<path>]
 
 ## 2. The vision
-*Why the project exists and what changes for the owner, from the project document's strategy (docs/PROJECT.md section 2); cite no file outside this repository. Standard visual: the owner's way of working today, against the change.*
+*Why the project exists and what changes for the owner, from the project document's strategy (section 2 of the item's plan: docs/PROJECT.md, or docs/projects/<item>.md for a later item with a plan of its own); cite no file outside this repository. Standard visual: the owner's way of working today, against the change.*
 
 ## 3. What this phase taught us
 *The closing phases' findings, each a conclusion that changes the picture, with its evidence. At the Build gate, Design's join-up review (reviews/<spec>/plan.md); at the Launch gate, Build's join-up review (reviews/<spec>/_reviewer-build.md) and the lessons for the operating model. Standard visuals: fit against limits, such as an allowance against the need; at the Build gate, thumbnails of the agreed screens from docs/design/.*
 
 ## 4. The plan for the next phase
-*Its milestones, approach, who does what, and dates or estimates where they are recorded. At the Launch gate the next phase is the product's own: how it will run, monitor itself, take feedback and review its own value after it leaves the desk, citing the handover package's "Its own monitoring and feedback" section in docs/handover/ and the launch review, reviews/<spec>/reviewer.md. Standard visual: how the deliverables depend on each other, from section 3 of the project document and its milestones.*
+*Its milestones, approach, who does what, and dates or estimates where they are recorded. At the Launch gate the next phase is the product's own: how it will run, monitor itself, take feedback and review its own value after it leaves the desk, citing the handover package's "Its own monitoring and feedback" section in docs/handover/ (docs/handover/<item>/ for a later item with a plan of its own) and the launch review, reviews/<spec>/reviewer.md. Standard visual: how the deliverables depend on each other, from section 3 of the project document and its milestones.*
 
 ## 5. The risks
 *Each risk, with what would happen, what we would do, and where it stands now; a rating only where a record supports it. Any join-up difference not yet fixed is a risk here.*
@@ -21,7 +21,7 @@
 *The spend ceiling, the cost to the owner's time, and usage so far where the records hold it; otherwise "not recorded". Standard visual: the owner-time caps, from the project document's limits and value targets.*
 
 ## 7. Kill criteria
-*The project's stop rule and value targets (docs/PROJECT.md section 6): what would make proceeding wrong.*
+*The project's stop rule and value targets (section 6 of the item's plan: docs/PROJECT.md, or docs/projects/<item>.md): what would make proceeding wrong.*
 
 ## 8. What the owner is agreeing to
 *Every commitment the ruling carries: value targets, tier, spend ceiling, dates; at the Build gate, the frozen criteria; at the Launch gate, the go-live and the graduation.*

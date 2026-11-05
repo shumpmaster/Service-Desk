@@ -1,6 +1,6 @@
 # The target user — <project name>
 
-*The target user, built from Discovery's research (S-025). Every line below an instruction cites one or more records under research/ that exist, or ends with ` — not known`; cite nothing under docs/PROJECT.md, decisions/ or docs/gates/. The owner approves this file, by its SHA-256, before the definition-of-ready check.*
+*The target user, built from Discovery's research (S-025). Every line below an instruction cites one or more records under research/ that exist, or ends with ` — not known`; cite nothing under docs/PROJECT.md, docs/projects/, decisions/ or docs/gates/. The owner approves this file, by its SHA-256, before the definition-of-ready check.*
 
 ## Who they are
 *The people the work is for, as a group: their situation, never their names.*

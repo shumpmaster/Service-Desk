@@ -27,7 +27,8 @@ run, set up the following in the project repository's Settings.
    (for example `reviewer builder: only one model available this month`); a waiver for `critic`
    also covers Triage.
 
-   A project whose brief names a target-user profile (docs/PROJECT.md section 9, S-025) needs two
+   A project whose brief names a target-user profile (section 9 of an item's plan, docs/PROJECT.md
+   or docs/projects/<item>.md, S-025, S-035) needs two
    more variables: `MODEL_USER_REP`, the User representative's model, and `MODEL_CHIEF_OF_STAFF`,
    the model you run the Chief of Staff on (keep it true; the runner cannot see your own session).
    The User representative must run on a different model from the Chief of Staff, and no waiver

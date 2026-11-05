@@ -2,10 +2,12 @@
 
 *Pre-registered before any run (D-047). Frozen once the line below is set.*
 
-*Draft 5 (2026-11-05), from the Builder's test widget at 491baa7, which answers the Reviewer's FAIL at
+*Draft 6 (2026-11-05), final: the Critic's round 3 notes (reviews/EXP-007/_critic-r3-verbatim.md).
+Draft 5 (2026-11-05), from the Builder's test widget at 491baa7, which answers the Reviewer's FAIL at
 9eeae80 (reviews/EXP-007/_reviewer-widget-9eeae80.md). Changed: `end.heads` logs every branch read,
 failed ones included, and the replay serves the same failures (Measure; Method 8); the replay serves
-exactly what was recorded, a read no clone can serve is `missing-answer`, a miss on the portfolio
+exactly what was recorded, except a branch read logged as the same sha as the read before it, replayed
+as a 304; the desk's code treats both alike (src/lib/github.js:292-295, 352; scheduler.js:916); a read no clone can serve is `missing-answer`, a miss on the portfolio
 leaves every project not judged, and a start copy that can't be rebuilt has no fallback (Method 8);
 the send reads the test branch first, and its guard is one per send and stateful (Method 7).
 Draft 4 (2026-11-04), after the Critic's round 2, FAIL (reviews/EXP-007/_critic-r2-verbatim.md), and the
@@ -36,11 +38,11 @@ rulings: decisions/questions/P-001-home-screen-widget.md ("A: widget runs desk c
 Discovery measures first, and if it cannot, "the route comes back to the owner, with B or C as the
 fallbacks the question named"); decisions/questions/P-004-widget-why-and-data.md ("Phone only
 (Recommended)": key in the iPhone keychain, records on the phone only, nothing synced to iCloud;
-its "Not ruled" point, the phone's own iCloud backup); questions/P-004-test-data-route.md, option A,
-answered by the owner, verbatim, "Widget sends it to portfolio (Recommended)", as recorded in
-docs/handoff/2026-11-04-chief-of-staff-widget.md, "The owner's answer to the data-route question"
-(its record, decisions/questions/P-004-test-data-route.md, follows once #300 merges): a one-off
-exception to "Phone only", for this test only
+its "Not ruled" point, the phone's own iCloud backup); decisions/questions/P-004-test-data-route.md,
+the owner's answer, verbatim, "Widget sends it to portfolio (Recommended)", the card's option A,
+recorded in docs/handoff/2026-11-04-chief-of-staff-widget.md, "The owner's answer to the data-route question"
+(it stands there until its record follows PR #300): a one-off exception to "Phone only", for this
+test only
 basis: docs/PROJECT.md Part 2, P-004's "Data on the phone", "Done when, and how it is checked" and
 "Its Discovery, scaled to its size"; intake/requests/P-004.toml; src/config/projects.json (three
 projects, Service-Desk, Personal-Org-Operating-Model and Model-Lab, plus the portfolio,
@@ -102,7 +104,8 @@ when nothing changed, lines 14620-14621), plus up to 25 for each record-reading 
    from and what it read. Bodies are stored once each, by content hash. The whole is bounded to
    20 MB, counting the bodies and each refresh's list of answers, the oldest refresh dropped first;
    every dropped refresh, its own included, is logged (`snapshot-dropped`) and not judged. A first
-   refresh's snapshot is expected to be hundreds of KB to a few MB.
+   refresh's snapshot is expected to be hundreds of KB to a few MB. The log keeps its last 2000 lines;
+   one day stays far below that, and "Delete test data" clears the log before any repeat run.
 7. **The route for the test data** (the owner's ruling, option A: a one-off exception to "Phone only").
    - At the end of the day, in the Scriptable app, the owner taps "Send the test data". The widget asks
      for the second key, the **send key**, and keeps it in the iPhone keychain
@@ -120,13 +123,15 @@ when nothing changed, lines 14620-14621), plus up to 25 for each record-reading 
      is made from main.
    - **Its writes,** each once and in order: two blobs, a tree, a commit, and the ref write (a new
      branch, or a non-force move of the existing one; a 422 is logged as "it changed during the send").
+     A blob write whose answer fails is not counted, and the send stops at the first failure.
    - GitHub cannot narrow a key to one branch: the send key could also change portfolio's main, which
      the desk reads. The widget's request guard (send.js) is the only limit. It is one per send and
      stateful, and refuses, before sending, any request but the next one above: `base_tree` must be the
      parent's tree this send read; the tree exactly the two distinct paths, each entry with only
      `path`, `mode`, `type` and `sha`, naming one of this send's two blobs; the commit that tree with
      the one parent this send read; and the ref write naming this send's commit, as a create only when
-     the branch was absent and as a move only when it existed. A branch protection rule on portfolio's
+     the branch was absent and as a move only when it existed. It does not tie each blob to its path
+     (both stay on the test branch). A branch protection rule on portfolio's
      main is an optional second limit the owner may add.
    - Portfolio has no workflows, and the desk reads only its main branch, so the branch starts nothing
      and shows nowhere. Do not open a pull request.
@@ -155,7 +160,8 @@ when nothing changed, lines 14620-14621), plus up to 25 for each record-reading 
      A repository whose every branch read failed is judged against those failures, not skipped. Trees
      and blobs come from the clone at the commit read. Everything else comes only from that refresh's
      own saved answers, each address's in order, served exactly as recorded: a recorded 200 is never
-     turned into a 304. Not judged (`missing-answer`): a request the saved answers don't hold; a
+     turned into a 304. (A branch read logged as the same sha as the read before it is replayed as a
+     304; the desk's code treats both alike: src/lib/github.js:292-295, 352; scheduler.js:916.) Not judged (`missing-answer`): a request the saved answers don't hold; a
      branch, tree or blob read no clone can serve, `{status: 200, error: "body"}` and a read past the
      logged list included. A miss on the project's own repository leaves that project not judged; a
      miss on the portfolio, which is no project's, leaves every project not judged.
@@ -260,9 +266,6 @@ this, not the judge's printed label.
 ## Holdout use
 none.
 
-Before freezing: freezing now waits on the Reviewer's check of the test widget at 491baa7 (no raw
-state, error text or other project content reaches the Documents folder; the test data and log are
-built in memory and sent only to portfolio's test branch; the replay and the send guard as Method 7
-and 8 state them) and the Critic's round 3, the last (D-044).
+Before freezing: the Reviewer passed the test widget at 491baa7 (reviews/EXP-007/_reviewer-widget-491baa7.md) and the Critic passed this registration at round 3 (reviews/EXP-007/critic.md), so this commit is the frozen one.
 
 frozen: the last commit that changes this file on build/definer/p004-widget-exp, before any run

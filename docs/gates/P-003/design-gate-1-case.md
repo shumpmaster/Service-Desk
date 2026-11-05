@@ -9,20 +9,20 @@ Proceeding moves it into Design, to pin down its behaviour; nothing is built unt
 
 ## 2. The vision
 
-Twice you answered a card against the Chief of Staff's unshown recommendation [docs/projects/P-003.md:32].
+Twice you answered a card against the Chief of Staff's recommendation, not marked on it [docs/projects/P-003.md:32].
 With the fix, a card shows that recommendation marked, or after a day says it has none [docs/projects/P-003.md:44].
 
 ## 3. What this phase taught us
 
-One list feeds every view, so the hold is one rule in one place [docs/projects/P-003.md:99].
+One list feeds every view, so the hold is one rule [docs/projects/P-003.md:99].
 The change is about 60 to 90 lines and 8 to 12 tests [docs/projects/P-003.md:99].
-The plan's place mattered: borrowing from the desk's first plan failed it [reviews/P-003-dor-dry-run/_critic-dry-run-1-verbatim.md] [decisions/questions/P-003-plan-place.md].
+The plan's place mattered: a dry run failed it for borrowing from the desk's first plan [reviews/P-003-dor-dry-run/_critic-dry-run-1-verbatim.md] [decisions/questions/P-003-plan-place.md].
 
 ## 4. The plan for the next phase
 
-Design writes scenarios and maps how the views join, and skips the experiment [docs/projects/P-003.md:56] [docs/projects/P-003.md:58].
+Design writes scenarios and maps how the views join, and skips the experiment [docs/projects/P-003.md:56] [docs/projects/P-003.md:57] [docs/projects/P-003.md:58].
 It ends with the reviewed spec and the Build gate [docs/projects/P-003.md:61].
-The Builder then builds the fix itself; no date is recorded [docs/projects/P-003.md:44] [docs/projects/P-003.md:68].
+The Builder then builds the fix itself; no date is recorded [docs/projects/P-003.md:44] [docs/projects/P-003.md:69].
 
 ## 5. The risks
 
@@ -35,17 +35,17 @@ Two steps you took on, the go-ahead and the risk list, read "not recorded" on th
 ## 6. Cost and limits
 
 $0 a month of new spend, no new data or outside service, tier T1 [docs/projects/P-003.md:79] [docs/projects/P-003.md:80] [docs/projects/P-003.md:81].
-Your time: none to run it; usage not recorded [docs/projects/P-003.md:90].
+Your time: none to run it [docs/projects/P-003.md:90]; usage: per helper run, no total [research/P-003-sizing-findings.md:3].
 
 ## 7. Kill criteria
 
 Work stops and comes back to you if the build grows past twice its sizing, or a third review round fails [docs/projects/P-003.md:92].
-A miss on its target is any card shown with neither mark, or held over a day [docs/projects/P-003.md:90].
+A miss: a card shown with neither mark, or held over a day [docs/projects/P-003.md:90].
 
 ## 8. What the owner is agreeing to
 
-The fix's milestone and its target: no decision card shown unmarked, from its go-live to 31 December; the brief is settled [docs/projects/P-003.md:44] [docs/projects/P-003.md:86].
-The standard lines as you ruled them, $0 spend and tier T1 [decisions/questions/P-003-standard-lines.md] [docs/projects/P-003.md:79].
+The fix's milestone and its target: no decision card shown unmarked, from its go-live to 31 December; the brief is settled [docs/projects/P-003.md:44] [docs/projects/P-003.md:86] [docs/projects/P-003.md:3].
+The standard lines as you ruled them, at $0 and tier T1 [decisions/questions/P-003-standard-lines.md] [docs/projects/P-003.md:79] [docs/projects/P-003.md:81].
 
 ## 9. Appendix: the phase record
 <details>

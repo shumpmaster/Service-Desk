@@ -20,12 +20,18 @@ specs/*.md file as spec_check reads it; "frozen" is its status word.
   ready     (AC4, D-052) once any spec is frozen (or superseded), each of the
             eight Part 1 sections of docs/PROJECT.md (`## 1.` to `## 8.`) has
             text beyond its instruction line. An instruction line is a line
-            wholly wrapped in single asterisks (`*...*`).
+            wholly wrapped in single asterisks (`*...*`). Per plan
+            (model S-035 AC6): docs/PROJECT.md is the first item's plan and that of
+            every later item without one of its own; docs/projects/<item>.md
+            is a later item's own plan; each is checked once one of its items
+            is approved or waits on its Design gate, or a frozen spec belongs
+            to it (`spec_plan`).
   trace     (AC5, D-035) every criterion of a frozen spec (a line in its
             "Acceptance criteria" section starting `- **AC<n>` or `- AC<n>`,
             with its continuation lines) carries `[trace: V<k> → AC<n>]`: V<k>
             is a value target of docs/PROJECT.md section 6 (a line there
-            starting `V<k>:`) and AC<n> is the criterion's own number. A frozen
+            starting `V<k>:`; model S-035 AC7: of the section 6 of the spec's
+            own plan) and AC<n> is the criterion's own number. A frozen
             or superseded spec with no "Acceptance criteria" section fails.
   joins     (AC7, D-046) every join of a frozen spec (a line in its "Join
             sheets" section starting `- **J<n> —`) has a file under tests/
@@ -182,6 +188,7 @@ Exit 0 = pass, 1 = rule violated, 2 = usage or parse error.
 """
 
 import argparse
+import copy
 import datetime
 import json
 import os
@@ -353,6 +360,165 @@ def read_project(root):
 
 
 # --------------------------------------------------------------------------
+# model S-035: one plan per project item. docs/PROJECT.md is the first item's plan (and that of every later item
+# without a plan of its own); docs/projects/<item>.md is a later item's own plan.
+
+PLANS_REL = "docs/projects"
+PLAN_NAME_RE = re.compile(r"^(P-[0-9]{3,})\.md$")
+PLANS_OTHER = ("README.md", "_TEMPLATE.md")
+_UNSET = object()
+
+
+def _item_key(item):
+    return int(item.split("-", 1)[1])
+
+
+def _first_routed(objs):
+    """The lowest-numbered P item with a routed line among dispatch-log objects, as the timeline finds it."""
+    routed = sorted(set(o["item"] for o in objs if isinstance(o, dict) and isinstance(o.get("item"), str)
+                        and o["item"].startswith("P-") and "route" in o))
+    return routed[0] if routed else None
+
+
+def first_item(root):
+    """model S-035 AC3: the timeline's first project item, from the working tree's dispatch log."""
+    return _first_routed(o for _, _, _, o in read_log(root))
+
+
+def first_item_at(root, rev):
+    """The first project item, from the dispatch log at `rev`."""
+    objs = []
+    for rel in _ls(root, rev, "dispatch-log"):
+        if not re.fullmatch(r"dispatch-log/[0-9]{4}-[0-9]{2}\.jsonl", rel):
+            continue
+        for line in (g.git_blob(root, rev, rel) or b"").decode("utf-8", "replace").split("\n"):
+            try:
+                objs.append(json.loads(line) if line.strip() else None)
+            except ValueError:
+                continue
+    return _first_routed(objs)
+
+
+def plan_rel(root, item, first=_UNSET):
+    """model S-035 AC3: an item's plan: docs/projects/<item>.md when that file exists in the working tree and the
+    item is not the timeline's first item, else docs/PROJECT.md."""
+    if first is _UNSET:
+        first = first_item(root)
+    rel = "%s/%s.md" % (PLANS_REL, item)
+    if isinstance(item, str) and PLAN_NAME_RE.match(item + ".md") and item != first \
+            and os.path.isfile(os.path.join(root, *rel.split("/"))):
+        return rel
+    return PROJECT_REL
+
+
+def plan_rel_at(root, rev, item, first=_UNSET):
+    """plan_rel at a revision."""
+    if first is _UNSET:
+        first = first_item_at(root, rev)
+    rel = "%s/%s.md" % (PLANS_REL, item)
+    if isinstance(item, str) and PLAN_NAME_RE.match(item + ".md") and item != first \
+            and g.git_blob(root, rev, rel) is not None:
+        return rel
+    return PROJECT_REL
+
+
+def _later_plan_names(names, first):
+    """The later plans among file names directly in docs/projects/, in id order."""
+    out = []
+    for name in names:
+        m = PLAN_NAME_RE.match(name)
+        if m and m.group(1) != first:
+            out.append(m.group(1))
+    return sorted(set(out), key=_item_key)
+
+
+def plans(root, first=_UNSET):
+    """model S-035 AC3: [(rel, text, items)]: docs/PROJECT.md first, listed even when absent (text None), serving
+    every P item without a plan of its own (items None); then each docs/projects/P-<n>.md other than the first
+    item's, in id order, serving its one item."""
+    if first is _UNSET:
+        first = first_item(root)
+    out = [(PROJECT_REL, read_project(root), None)]
+    d = os.path.join(root, *PLANS_REL.split("/"))
+    names = [n for n in os.listdir(d) if os.path.isfile(os.path.join(d, n))] if os.path.isdir(d) else []
+    for item in _later_plan_names(names, first):
+        rel = "%s/%s.md" % (PLANS_REL, item)
+        out.append((rel, g.read_text(os.path.join(root, *rel.split("/"))), [item]))
+    return out
+
+
+def plans_at(root, rev, first=_UNSET):
+    """plans at a revision."""
+    if first is _UNSET:
+        first = first_item_at(root, rev)
+    out = [(PROJECT_REL, g.git_text(root, rev, PROJECT_REL), None)]
+    names = [rel[len(PLANS_REL) + 1:] for rel in _ls(root, rev, PLANS_REL)]
+    for item in _later_plan_names([n for n in names if "/" not in n], first):
+        rel = "%s/%s.md" % (PLANS_REL, item)
+        out.append((rel, g.git_text(root, rev, rel), [item]))
+    return out
+
+
+def plan_file_problems(root, first=_UNSET):
+    """model S-035 AC3: a file under docs/projects/ that is neither a later item's plan, README.md nor
+    _TEMPLATE.md, and a plan named after the first item."""
+    if first is _UNSET:
+        first = first_item(root)
+    d = os.path.join(root, *PLANS_REL.split("/"))
+    v = []
+    for dirpath, dirs, files in os.walk(d) if os.path.isdir(d) else []:
+        dirs.sort()
+        for f in sorted(files):
+            name = os.path.relpath(os.path.join(dirpath, f), d).replace(os.sep, "/")
+            m = PLAN_NAME_RE.match(name)
+            if name in PLANS_OTHER:
+                continue
+            if m and m.group(1) == first:
+                v.append("%s/%s: %s is the first project item, whose plan is %s (model S-035)"
+                         % (PLANS_REL, name, first, PROJECT_REL))
+            elif not m:
+                v.append("%s/%s: not a plan: a later item's plan is named after the item, %s/P-<n>.md (model S-035)"
+                         % (PLANS_REL, name, PLANS_REL))
+    return v
+
+
+def plan_milestones(rel, text, items):
+    """(milestones, problems) of one plan's section 3, each milestone carrying its plan and its item (model S-035
+    AC3): for a docs/PROJECT.md line its ` · for:` item or None (the first item); for a later plan's line, that
+    plan's item."""
+    ms, problems = milestone_lines(text)
+    for m in ms:
+        m.plan_rel = rel
+        m.item = items[0] if items else m.for_item
+    return ms, problems
+
+
+def spec_plan(root, sid, spec_text, statuses=None, plan_list=None, first=_UNSET):
+    """model S-035 AC3: the plan a spec belongs to: that of the (lowest-numbered) item whose status file names it
+    as its `spec` or among its `superseded`; else the plan whose section 3 holds every id its `milestones:` header
+    names; else docs/PROJECT.md."""
+    if first is _UNSET:
+        first = first_item(root)
+    statuses = project_statuses(root) if statuses is None else statuses
+    for item in sorted((k for k in statuses if k.startswith("P-")), key=_item_key):
+        st = statuses[item]
+        if st.get("spec") == sid or sid in (st.get("superseded") or []):
+            return plan_rel(root, item, first)
+    ids = spec_milestones(spec_text)[1]
+    if ids:
+        for rel, text, items in (plans(root, first) if plan_list is None else plan_list):
+            held = set(m.id for m in milestone_lines(text)[0])
+            if all(i in held for i in ids):
+                return rel
+    return PROJECT_REL
+
+
+def sections_3(rels):
+    """`<plan> section 3`, joined with ` or `: the plans a milestone id is looked up in."""
+    return " or ".join("%s section 3" % r for r in rels)
+
+
+# --------------------------------------------------------------------------
 # model S-023: the project's milestones, the standard milestones and the timeline
 
 
@@ -447,6 +613,8 @@ class Milestone(object):
         self.reached = m.group("reached")
         self.dropped = bool(m.group("dropped"))
         self.why = m.group("why")
+        self.item = self.for_item          # model S-035 AC3: the item it belongs to (None: the first item)
+        self.plan_rel = PROJECT_REL        # model S-035 AC3: the plan that holds it
 
     def part(self):
         """The `<name> (<id>) · done when <done> · phase: <phase>` part the Critic's record quotes (AC8)."""
@@ -832,9 +1000,16 @@ class Timeline(object):
 
     def __init__(self, root, repo=None):
         self.root, self.repo = root, repo or root
-        self.text = read_project(root) or ""
-        self.milestones, self.problems = milestone_lines(self.text)
         self.log = read_log(root)
+        # model S-035 AC5: every plan's milestones, each with its item; docs/PROJECT.md is the first item's plan.
+        self.plans = plans(self.root, _first_routed(o for _, _, _, o in self.log))
+        self.text = self.plans[0][1] or ""
+        self.own = dict((items[0], text or "") for _, text, items in self.plans[1:])
+        self.milestones, self.problems = [], []
+        for rel, text, items in self.plans:
+            ms, problems = plan_milestones(rel, text or "", items)
+            self.milestones += ms
+            self.problems += problems
         self.statuses = project_statuses(root)
         self.merges = read_merges(root)
         self.specs = {}
@@ -910,7 +1085,7 @@ class Timeline(object):
     # -- steps 2 to 4: where the project milestones go
     def place_milestones(self, item, runs):
         first_item = item == self.first
-        mine = [m for m in self.milestones if (m.for_item is None) == first_item and (first_item or m.for_item == item)]
+        mine = [m for m in self.milestones if (m.item is None) == first_item and (first_item or m.item == item)]
         if first_item:
             cut = min((p for r in runs for p, o in r.routed if orch.PHASE_OF_STAGE[o["stage"]] in ("Build", "Launch")),
                       default=None)
@@ -1052,11 +1227,31 @@ class Timeline(object):
             return False
         return True
 
+    def plan_text(self, item):
+        """model S-035 AC5: the text Discovery-2 and Discovery-7 read for `item`: the first item's docs/PROJECT.md, a
+        later item's own plan, or None for a later item without one (its marks are not recorded, never borrowed)."""
+        if item in self.own:
+            return self.own[item]
+        if item == self.first or item not in self.later:
+            return self.text
+        return None
+
+    def handover_of(self, item):
+        """model S-035 AC5: the handover files that count for `item`: docs/handover/<item>/ for an item with a plan
+        of its own; for any other item, every one outside such an item's folder."""
+        files = handover_files(self.root)
+        if item in self.own:
+            return [f for f in files if f.startswith("docs/handover/%s/" % item)]
+        own = tuple("docs/handover/%s/" % i for i in self.own)
+        return [f for f in files if not (own and f.startswith(own))]
+
     def file_part(self, item, mid):
         """True, False, 'none' (no file part) or 'not-recorded' (the file the record needs is not there)."""
         st = self.statuses.get(item, {})
+        if mid in ("Discovery-2", "Discovery-7") and self.plan_text(item) is None:
+            return "not-recorded"
         if mid == "Discovery-2":
-            return bool(value_targets(self.text))
+            return bool(value_targets(self.plan_text(item)))
         if mid == "Discovery-3":
             for suffix in ("groundwork", "discovery"):
                 t = read_file(self.root, "decisions/questions/%s-%s.md" % (item, suffix))
@@ -1064,7 +1259,7 @@ class Timeline(object):
                     return True
             return False
         if mid == "Discovery-7":
-            secs = part1_sections(self.text)
+            secs = part1_sections(self.plan_text(item))
             return all(n in secs and any(l.strip() and not is_instruction_line(l) for l in secs[n][2])
                        for n in (1, 4, 5))
         if mid in ("Design-2", "Design-4"):
@@ -1076,9 +1271,9 @@ class Timeline(object):
                 return bool(joins(text))
             return not spec_check.facts_violations("specs/%s" % spec, text)
         if mid == "Launch-3":
-            return bool(handover_files(self.root))
+            return bool(self.handover_of(item))
         if mid == "Launch-4":
-            if not any(monitoring_section_filled(read_file(self.root, f)) for f in handover_files(self.root)):
+            if not any(monitoring_section_filled(read_file(self.root, f)) for f in self.handover_of(item)):
                 return "not-recorded"
             return True
         return "none"
@@ -1146,12 +1341,14 @@ class Timeline(object):
         for mg in self.merges:
             it, ids = mg["item"], []
             st = self.statuses.get(it, {})
-            if it == self.first:
+            if it == self.first or it in self.own:
+                # model S-035 AC5: an item with a plan of its own maps its merges as the first item does.
+                own = None if it == self.first else it
                 specs = [mg.get("spec")] + list(st.get("superseded") or [])
                 for sid in specs:
-                    ids += [i for i in self.spec_ids(sid) if i in by_id and by_id[i].for_item is None]
+                    ids += [i for i in self.spec_ids(sid) if i in by_id and by_id[i].item == own]
             elif it.startswith("P-"):
-                ids = [m.id for m in self.milestones if m.for_item == it]
+                ids = [m.id for m in self.milestones if m.item == it]
             elif isinstance(st.get("milestone"), str):
                 ids = [st["milestone"]] if (st["milestone"] in by_id or st["milestone"] in STANDARD_IDS) else []
             seen = []
@@ -1160,7 +1357,8 @@ class Timeline(object):
                     seen.append(i)
                     tied.setdefault(i, []).append(it)
             if not seen and it not in listed:
-                runs = [r for b in self.blocks if b[0] == self.first for r in b[1] if r.is_item_run]
+                home = it if it in self.own else self.first
+                runs = [r for b in self.blocks if b[0] == home for r in b[1] if r.is_item_run]
                 lines = [p for p, o in self.by_item.get(it, []) if "route" in o]
                 target = None
                 if runs and lines:
@@ -1297,12 +1495,13 @@ PROFILE_SHA_RE = re.compile(r"^Profile-Sha256: ([0-9a-f]{64})$")
 PROFILE_FORM_REL = "docs/users/_PROFILE.md"
 
 
-def _profile_problems(root, approved):
-    """model S-025 AC7: the profile's form and citations, and its approval record's fingerprint."""
+def _profile_problems(root, approved, plan=PROJECT_REL):
+    """model S-025 AC7: the profile's form and citations, and its approval record's fingerprint; `plan` is the plan
+    whose section 9 names them (model S-035 AC6)."""
     import hashlib
     path = os.path.join(root, *PROFILE_REL.split("/"))
     if not os.path.isfile(path):
-        return ["%s: section 9 names %s, which does not exist (model S-025)" % (PROJECT_REL, PROFILE_REL)]
+        return ["%s: section 9 names %s, which does not exist (model S-025)" % (plan, PROFILE_REL)]
     with open(path, "rb") as fh:
         data = fh.read()
     lines = [l.rstrip("\r") for l in data.decode("utf-8", "replace").split("\n")]
@@ -1323,7 +1522,8 @@ def _profile_problems(root, approved):
         if current is None or not s.strip() or s in form_instructions:
             continue
         cites = [m.group("path") for m in CITATION_RE.finditer(s)]
-        barred = [c for c in cites if c == PROJECT_REL or c.startswith("decisions/") or c.startswith("docs/gates/")]
+        barred = [c for c in cites if c == PROJECT_REL or c.startswith(PLANS_REL + "/") or c.startswith("decisions/")
+                  or c.startswith("docs/gates/")]
         if barred:
             v.append("%s line %d: cites %s; a profile is built from the research, not from the project's hopes "
                      "(model S-025)" % (PROFILE_REL, i, barred[0]))
@@ -1339,7 +1539,7 @@ def _profile_problems(root, approved):
     rpath = os.path.join(root, *approved.split("/"))
     if not os.path.isfile(rpath):
         return v + ["%s: section 9 names the approval record %s, which does not exist (model S-025)"
-                    % (PROJECT_REL, approved)]
+                    % (plan, approved)]
     with open(rpath, encoding="utf-8", errors="replace", newline="") as fh:
         rec = [l.rstrip("\r") for l in fh.read().split("\n")]
     if rec[0] != "Decision: approve" or (len(rec) > 1 and rec[1].strip() and not rec[1].startswith(orch.PROXY_PREFIX)):
@@ -1352,49 +1552,92 @@ def _profile_problems(root, approved):
     return v
 
 
-def check_section9(root):
-    """model S-025 AC7: section 9 is in one of its two forms whenever it holds content, and holds content once a
-    project item is approved or waits on its Design gate."""
-    text = read_project(root)
+def _plan_states(root, plan_list, statuses):
+    """model S-035 AC6: [(rel, text, items, statuses of its items)]: docs/PROJECT.md's items are every P item without
+    a plan of its own; a later plan's, its one item."""
+    own = set(i for _, _, items in plan_list if items for i in items)
+    out = []
+    for rel, text, items in plan_list:
+        sts = dict((k, st) for k, st in statuses.items() if k.startswith("P-")
+                   and (k in items if items else k not in own))
+        out.append((rel, text, items, sts))
+    return out
+
+
+def _section9(rel, text, sts, profile):
+    """model S-025 AC7 for one plan (model S-035 AC6): (violations, the approval record its profile lines name or
+    None)."""
     if text is None:
-        return []
+        return [], None
     sections = part1_sections(text)
     body = [l.rstrip() for l in sections[SECTION9][2] if l.strip() and not is_instruction_line(l)] \
         if SECTION9 in sections else []
     if not body:
-        statuses = project_statuses(root)
-        if approved_in(statuses) or waiting_on_design_gate(statuses):
+        if approved_in(sts) or waiting_on_design_gate(sts):
             return ["%s: section '9. The target user' is missing or holds nothing beyond its instruction, and a "
                     "project item is approved or waits on its Design gate: write `%s` or the profile's two lines "
-                    "(model S-025)" % (PROJECT_REL, SWITCH_LINE)]
-        return []
-    profile = os.path.isfile(os.path.join(root, *PROFILE_REL.split("/")))
+                    "(model S-025)" % (rel, SWITCH_LINE)], None
+        return [], None
     if body == [SWITCH_LINE]:
         if profile:
-            return ["%s: section 9 says the owner is the user, but %s exists (model S-025)"
-                    % (PROJECT_REL, PROFILE_REL)]
-        return []
+            return ["%s: section 9 says the owner is the user, but %s exists (model S-025)" % (rel, PROFILE_REL)], None
+        return [], None
     if len(body) == 2 and body[0] == PROFILE_LINE and APPROVED_RE.match(body[1]):
-        return _profile_problems(root, APPROVED_RE.match(body[1]).group(1))
+        if not profile:
+            return ["%s: section 9 names %s, which does not exist (model S-025)" % (rel, PROFILE_REL)], None
+        return [], APPROVED_RE.match(body[1]).group(1)
     return ["%s: section 9 is neither the one line `%s` nor the two lines `%s` and `Approved: "
-            "decisions/questions/<P-id>-user-profile-<n>.md` (model S-025)" % (PROJECT_REL, SWITCH_LINE, PROFILE_LINE)]
+            "decisions/questions/<P-id>-user-profile-<n>.md` (model S-025)" % (rel, SWITCH_LINE, PROFILE_LINE)], None
+
+
+def check_section9(root, plan_list=None, statuses=None):
+    """model S-025 AC7: section 9 is in one of its two forms whenever it holds content, and holds content once a
+    project item is approved or waits on its Design gate; per plan, over that plan's items (model S-035 AC6). The
+    profile's own check runs once for each distinct approval record the plans name."""
+    plan_list = plans(root) if plan_list is None else plan_list
+    statuses = project_statuses(root) if statuses is None else statuses
+    profile = os.path.isfile(os.path.join(root, *PROFILE_REL.split("/")))
+    v, records = [], []
+    for rel, text, items, sts in _plan_states(root, plan_list, statuses):
+        found, record = _section9(rel, text, sts, profile)
+        v += found
+        if record is not None and record not in [r for r, _ in records]:
+            records.append((record, rel))
+    for record, rel in records:
+        v += _profile_problems(root, record, rel)
+    return v
 
 
 def check_ready(root):
-    s9 = check_section9(root)
-    v, notes = _check_ready_1_to_8(root)
+    first = first_item(root)
+    plan_list = plans(root, first)
+    statuses = project_statuses(root)
+    s9 = check_section9(root, plan_list, statuses)
+    v, notes = _check_ready_1_to_8(root, plan_list, statuses, first)
     return s9 + v, notes
 
 
-def _check_ready_1_to_8(root):
-    started = specs_with_status(root, ("frozen", "superseded"))
-    approved = approved_in(project_statuses(root))
+def _check_ready_1_to_8(root, plan_list, statuses, first):
+    all_started = specs_with_status(root, ("frozen", "superseded"))
+    v, notes = [], []
+    for rel, text, items, sts in _plan_states(root, plan_list, statuses):
+        started = [s for s in all_started if spec_plan(root, s[1], s[2], statuses, plan_list, first) == rel]
+        pv, pn = _ready_1_to_8(rel, text, started, approved_in(sts))
+        v += pv
+        notes += pn
+    return v, notes
+
+
+def _ready_1_to_8(rel, text, started, approved):
+    """One plan's definition of ready (D-052; model S-035 AC6): every finding names the plan, and a NOTE that names
+    no path gains the plan's path after "NOTE: " for a later plan."""
+    def note(msg):
+        return "NOTE: " + msg if rel == PROJECT_REL else "NOTE: %s: %s" % (rel, msg)
     if not started and not approved:
-        return [], ["NOTE: no frozen spec yet; the definition of ready is not checked"]
-    text = read_project(root)
+        return [], [note("no frozen spec yet; the definition of ready is not checked")]
     if text is None:
         return ["%s: missing — the project document's Part 1 must be complete once a spec is frozen (D-052)"
-                % PROJECT_REL], []
+                % rel], []
     v = []
     if approved:
         # model S-023 AC3: from the Design gate on, section 3 lists the project's own milestones.
@@ -1402,37 +1645,41 @@ def _check_ready_1_to_8(root):
         if not any(not m.dropped for m in ms):
             v.append("%s: section 3 holds no milestone line that is not marked dropped — the project is approved "
                      "(a project status holds a spec), so its own milestones are listed there, at least one "
-                     "(model S-023 AC3)" % PROJECT_REL)
+                     "(model S-023 AC3)" % rel)
     if not started:
-        return v, ["NOTE: the project is approved; no frozen spec yet, so only section 3's milestones are checked"]
+        return v, [note("the project is approved; no frozen spec yet, so only section 3's milestones are checked")]
     sections = part1_sections(text)
     for n in range(1, PART1_SECTIONS + 1):
         if n not in sections:
             v.append("%s: no '## %d.' section in Part 1 — the definition of ready's sections 1 to 8 must all be "
                      "there (D-052)"
-                     % (PROJECT_REL, n))
+                     % (rel, n))
             continue
         heading, _, body = sections[n]
         if not any(line.strip() and not is_instruction_line(line) for line in body):
             v.append("%s: section '%s' has no content beyond its instruction line — Part 1 must be complete "
-                     "once a spec is frozen (D-052)" % (PROJECT_REL, heading))
-    return v, ["NOTE: %d frozen or superseded spec(s); %s Part 1 checked" % (len(started), PROJECT_REL)]
+                     "once a spec is frozen (D-052)" % (rel, heading))
+    return v, ["NOTE: %d frozen or superseded spec(s); %s Part 1 checked" % (len(started), rel)]
 
 
 def check_trace(root):
     started = specs_with_status(root, ("frozen", "superseded"))
     frozen = specs_with_status(root, ("frozen",))
-    text = read_project(root)
-    targets = set(value_targets(text)) if text is not None else set()
+    # model S-035 AC7: a frozen spec traces to the value targets of its own plan; one NOTE per plan.
+    first = first_item(root)
+    plan_list = plans(root, first)
+    statuses = project_statuses(root)
+    targets = dict((rel, set(value_targets(text)) if text is not None else set()) for rel, text, _ in plan_list)
     notes = ["NOTE: value targets in %s section 6: %s"
-             % (PROJECT_REL, ", ".join(sorted(targets, key=lambda t: int(t[1:]))) or "none")]
+             % (rel, ", ".join(sorted(targets[rel], key=lambda t: int(t[1:]))) or "none") for rel, _, _ in plan_list]
     v, count = [], 0
     # A frozen or superseded spec whose criteria heading drifted must not pass unchecked.
     for rel, _, spec_text in started:
         if section(spec_text, _CRITERIA_HEADING_RE) is None:
             v.append("%s: no Acceptance criteria section found (a '## Acceptance criteria' heading) — its "
                      "criteria cannot be traced (D-035)" % rel)
-    for rel, _, spec_text in frozen:
+    for rel, sid, spec_text in frozen:
+        own = spec_plan(root, sid, spec_text, statuses, plan_list, first)
         for lineno, n, traces in criteria(spec_text):
             count += 1
             where = "%s line %d" % (rel, lineno)
@@ -1441,9 +1688,9 @@ def check_trace(root):
                          % (where, n, n))
                 continue
             for target, m in traces:
-                if target not in targets:
+                if target not in targets[own]:
                     v.append("%s: AC%s traces to %s, which is not a value target in %s section 6 — drift"
-                             % (where, n, target, PROJECT_REL))
+                             % (where, n, target, own))
                 if m != n:
                     v.append("%s: AC%s carries [trace: %s → AC%s], whose criterion number is not AC%s — drift"
                              % (where, n, target, m, n))
@@ -1652,22 +1899,46 @@ def check_holdouts(root, base):
 
 
 def milestone_trace(root):
-    """(violations, notes) that `trace` adds for the milestones (model S-023 AC8), the timeline NOTE included."""
+    """(violations, notes) that `trace` adds for the milestones (model S-023 AC8), the timeline NOTE included; every
+    plan's lines, each finding naming its plan (model S-035 AC4, AC8)."""
     v, notes = [], []
-    text = read_project(root)
-    if text is None:
-        return v, notes
-    ms, problems = milestone_lines(text)
-    for n, msg in problems:
-        v.append("%s line %d: %s (model S-023 AC3)" % (PROJECT_REL, n, msg))
-    for n, msg in standard_lines(text)[1]:
-        v.append("%s line %d: %s (model S-032 AC5)" % (PROJECT_REL, n, msg))
-    ids = set(m.id for m in ms)
+    first = first_item(root)
+    plan_list = plans(root, first)
+    if plan_list[0][1] is None and len(plan_list) == 1:
+        return v + plan_file_problems(root, first), notes
+    v += plan_file_problems(root, first)
+    statuses = project_statuses(root)
+    own = dict((items[0], rel) for rel, _, items in plan_list[1:])
+    present = [rel for rel, text, _ in plan_list if text is not None]
+    ms, where_id = [], {}
+    for rel, text, items in plan_list:
+        if text is None:
+            continue
+        pms, problems = plan_milestones(rel, text, items)
+        for n, msg in problems:
+            v.append("%s line %d: %s (model S-023 AC3)" % (rel, n, msg))
+        for n, msg in standard_lines(text)[1]:
+            v.append("%s line %d: %s (model S-032 AC5)" % (rel, n, msg))
+        for m in pms:
+            if items and m.for_item:
+                v.append("%s line %d: %s's ` · for: %s` is not needed in a plan of its own (model S-035)"
+                         % (rel, m.lineno, m.id, m.for_item))
+            elif not items and m.for_item in own:
+                v.append("%s line %d: %s's ` · for: %s` names an item whose plan is %s: move it there, by the owner's "
+                         "ruling (model S-035)" % (rel, m.lineno, m.id, m.for_item, own[m.for_item]))
+            if m.id in where_id:
+                a = where_id[m.id]
+                v.append("milestone id %s is in %s line %d and %s line %d: ids are unique across the repository "
+                         "(model S-035)" % (m.id, a.plan_rel, a.lineno, rel, m.lineno))
+                continue
+            where_id[m.id] = m
+            ms.append(m)
+    ids = set(where_id)
     merged = set(mg["item"] for mg in read_merges(root))
     prs = None
     for m in ms:
         for s in m.sprints:
-            where = "%s line %d: %s's sprint %s" % (PROJECT_REL, m.lineno, m.id, s)
+            where = "%s line %d: %s's sprint %s" % (m.plan_rel, m.lineno, m.id, s)
             if s.startswith("PR #"):
                 n = int(s[4:])
                 rec = read_file(root, "reviews/%d/reviewer.md" % n)
@@ -1683,6 +1954,12 @@ def milestone_trace(root):
                              % (where, n, n))
             elif s not in merged:
                 v.append("%s has no line in status/merges.jsonl (model S-023 AC5)" % where)
+    named_by = {}
+    for item in sorted((k for k in statuses if k.startswith("P-")), key=_item_key):
+        st = statuses[item]
+        for sid in [st.get("spec")] + list(st.get("superseded") or []):
+            if isinstance(sid, str):
+                named_by.setdefault(sid, item)
     for rel, sid, spec_text in specs_with_status(root, ("draft", "frozen", "superseded")):
         status = g.spec_status(spec_text)[0]
         line, fm = spec_fixes(spec_text)
@@ -1694,26 +1971,48 @@ def milestone_trace(root):
         if state == "malformed" or unknown or (state == "missing" and status != "draft"):
             why = ("has no `milestones:` header line" if state == "missing" else
                    "has a malformed `milestones:` line" if state == "malformed" else
-                   "names %s, not in %s section 3" % (", ".join(unknown), PROJECT_REL))
+                   "names %s, not in %s" % (", ".join(unknown), sections_3(present)))
             msg = "%s %s (model S-023 AC5)" % (rel, why)
             (v.append(msg) if status == "draft" else notes.append("NOTE: " + msg))
+        known = [i for i in named if i in ids]
+        item = named_by.get(sid)
+        if item is not None:
+            # model S-035 AC8: a spec names only its own item's plan's milestones, draft or frozen alike.
+            if status == "superseded":
+                continue
+            mine = plan_rel(root, item, first)
+            for i in known:
+                if where_id[i].plan_rel != mine:
+                    v.append("%s: %s's spec names %s, a milestone of %s; %s's plan is %s, and a spec names only its "
+                             "own item's plan's milestones (model S-035)"
+                             % (rel, item, i, where_id[i].plan_rel, item, mine))
+        else:
+            held = []
+            for i in known:
+                if where_id[i].plan_rel not in held:
+                    held.append(where_id[i].plan_rel)
+            if len(held) > 1:
+                held.sort(key=present.index)
+                msg = "%s names milestones of %s: a spec serves one plan (model S-035)" % (rel, " and ".join(held))
+                (v.append(msg) if status == "draft" else notes.append("NOTE: " + msg))
     tl = timeline(root)
     notes += ["NOTE: " + l for l in tl.lines()]
     notes += tl.notes
     for item in tl.later:
-        if not any(m.for_item == item for m in ms):
+        if item not in own and not any(m.for_item == item and m.plan_rel == PROJECT_REL for m in ms):
             notes.append("NOTE: later work %s has no milestone of its own in %s section 3 (` · for: %s`) "
                          "(model S-023 AC12)" % (item, PROJECT_REL, item))
     for m in ms:
-        if m.for_item and (m.for_item == tl.first or m.for_item not in tl.project_items):
+        if m.plan_rel == PROJECT_REL and m.for_item and (m.for_item == tl.first
+                                                         or m.for_item not in tl.project_items):
             notes.append("NOTE: %s line %d: %s's ` · for: %s` names %s (model S-023 AC3)"
                          % (PROJECT_REL, m.lineno, m.id, m.for_item,
                             "the first project item" if m.for_item == tl.first else "an item with no routed line"))
-    for item, st in sorted(project_statuses(root).items()):
+    for item, st in sorted(statuses.items()):
         tag = st.get("milestone")
         if isinstance(tag, str) and tag not in ids and tag not in STANDARD_IDS:
-            notes.append("NOTE: status/%s.toml: milestone %s is neither a milestone of %s section 3 nor a standard "
-                         "milestone (model S-023 AC8)" % (item, tag, PROJECT_REL))
+            notes.append("NOTE: status/%s.toml: milestone %s is neither a milestone of %s nor a standard "
+                         "milestone (model S-023 AC8)" % (item, tag, sections_3(present)))
     return v, notes
 
 
@@ -1739,8 +2038,12 @@ def statuses_at(root, rev):
 
 
 def milestones_at(root, rev):
-    text = g.git_text(root, rev, PROJECT_REL)
-    return milestone_lines(text)[0] if text is not None else []
+    """Every plan's milestones at `rev` (model S-035 AC9: ids are one namespace across the plans)."""
+    out = []
+    for rel, text, items in plans_at(root, rev):
+        if text is not None:
+            out += plan_milestones(rel, text, items)[0]
+    return out
 
 
 def _whole(word, text):
@@ -1760,11 +2063,11 @@ def ruling_path_problem(path):
     return None
 
 
-def build_gate_passed(root, rev, statuses, milestones):
+def build_gate_passed(root, rev, statuses, milestones, owns=None):
     """model S-032 AC5: the Build gate was passed at `rev`: a project status file stands at stage 4 or later, the
     dispatch log holds a project item's routed line at stage 4 or later (even if a recycle has since sent the
     project back), or a project milestone of phase Build or Launch lists a sprint (a project built outside the
-    pipeline)."""
+    pipeline). With `owns`, only the routed lines of the items it accepts count (model S-035 AC9: one plan's)."""
     def late(stage):
         return isinstance(stage, int) and not isinstance(stage, bool) and stage >= 4
     if any(k.startswith("P-") and late(st.get("stage")) for k, st in statuses.items()):
@@ -1780,33 +2083,185 @@ def build_gate_passed(root, rev, statuses, milestones):
             except ValueError:
                 continue
             if (isinstance(obj, dict) and "route" in obj and isinstance(obj.get("item"), str)
-                    and obj["item"].startswith("P-") and late(obj.get("stage"))):
+                    and obj["item"].startswith("P-") and late(obj.get("stage"))
+                    and (owns is None or owns(obj["item"]))):
                 return True
     return False
 
 
+class _PlanState(object):
+    """model S-035 AC9: one plan's items (`owns`), and their approval and Design-gate state at the base and HEAD."""
+
+    def __init__(self, rel, owns, st_ref, st_head):
+        self.rel, self.owns = rel, owns
+        self.st_ref = dict((k, s) for k, s in st_ref.items() if k.startswith("P-") and owns(k))
+        head = dict((k, s) for k, s in st_head.items() if k.startswith("P-") and owns(k))
+        self.approved_ref, self.approved_head = approved_in(self.st_ref), approved_in(head)
+        self.waiting_ref = waiting_on_design_gate(self.st_ref)
+
+    def ruled(self):
+        return self.approved_ref or self.waiting_ref
+
+    def when(self):
+        return "after approval" if self.approved_ref else "while the project waits on its Design gate"
+
+    def word(self):
+        return "approved" if self.approved_ref else ("waiting on its Design gate" if self.waiting_ref
+                                                     else "not approved")
+
+
 def check_milestones(root, base):
     """model S-023 AC8: never erased, changed only with the owner's record, Critic-checked, and new work tagged.
-    Returns [(check name, finding)], [note]."""
+    The rules run once per plan present at base or HEAD, each over its own items' state and the commits that change
+    it; a ` · for:` milestone moved into its item's own plan is judged, in the range that moves it, by
+    docs/PROJECT.md's state (model S-035 AC9). Returns [(check name, finding)], [note]."""
     g.verify_commit(root, base)
     g.verify_commit(root, "HEAD", "HEAD")
     f, notes = [], []
     st_ref, st_head = statuses_at(root, base), statuses_at(root, "HEAD")
-    approved_ref, approved_head = approved_in(st_ref), approved_in(st_head)
-    waiting_ref = waiting_on_design_gate(st_ref)
-    old = dict((m.id, m) for m in milestones_at(root, base))
-    new_list = milestones_at(root, "HEAD")
-    new = dict((m.id, m) for m in new_list)
+    approved_head = approved_in(st_head)
     commits = g.read_commits(root, g.rev_list(root, ["--reverse", "%s..HEAD" % base]))
-    own = [c for c in commits if not c.is_merge() and PROJECT_REL in g.commit_paths(root, c.sha)]
-    rulings = [(c, p) for c in own for p in c.trailer("Owner-Ruling")]
-    checks = [(c, p) for c in own for p in c.trailer("Critic-Check")]
     head_text = {}
 
     def at_head(path):
         if path not in head_text:
             head_text[path] = g.git_text(root, "HEAD", path) if not ruling_path_problem(path) else None
         return head_text[path]
+
+    plans_base, plans_head = plans_at(root, base), plans_at(root, "HEAD")
+    later = sorted(set(items[0] for _, _, items in plans_base[1:] + plans_head[1:]), key=_item_key)
+    own_items = set(later)
+    texts_base = dict((rel, text) for rel, text, _ in plans_base)
+    texts_head = dict((rel, text) for rel, text, _ in plans_head)
+    order = [PROJECT_REL] + ["%s/%s.md" % (PLANS_REL, i) for i in later]
+    states = {PROJECT_REL: _PlanState(PROJECT_REL, lambda k: k not in own_items, st_ref, st_head)}
+    for item in later:
+        states["%s/%s.md" % (PLANS_REL, item)] = _PlanState("%s/%s.md" % (PLANS_REL, item),
+                                                            lambda k, i=item: k == i, st_ref, st_head)
+    old_of = dict((rel, milestone_lines(texts_base.get(rel))[0]) for rel in order)
+    new_of = dict((rel, milestone_lines(texts_head.get(rel))[0]) for rel in order)
+    # The move: a ` · for: <item>` milestone of docs/PROJECT.md at base that docs/PROJECT.md does not hold at HEAD
+    # and docs/projects/<item>.md does (and did not at base).
+    moved = {}
+    head_project = set(m.id for m in new_of[PROJECT_REL])
+    for idx, m in enumerate(old_of[PROJECT_REL]):
+        dest = "%s/%s.md" % (PLANS_REL, m.for_item) if m.for_item else None
+        if dest in new_of and m.id not in head_project and any(x.id == m.id for x in new_of[dest]) \
+                and not any(x.id == m.id for x in old_of[dest]):
+            stripped = copy.copy(m)
+            stripped.for_item = None
+            moved[m.id] = (dest, stripped, idx)
+
+    # The state that governs a moved milestone, and the move itself: docs/PROJECT.md's items at base, every P item
+    # with no plan of its own at base, the moving item among them.
+    own_base = set(items[0] for _, _, items in plans_base[1:])
+    governing = _PlanState(PROJECT_REL, lambda k: k not in own_base, st_ref, st_head)
+
+    def state_in(rel, mid):
+        if mid in moved and moved[mid][0] == rel:
+            return governing
+        return states[rel]
+
+    # Whose state decides the reached-mark rules for an id: the plan holding it at HEAD (else at base).
+    home = {}
+    for rel in order:
+        for m in old_of[rel]:
+            home.setdefault(m.id, rel)
+    for rel in order:
+        for m in new_of[rel]:
+            home[m.id] = rel
+    reached = _reached_pairs(root, commits, at_head)
+    for rel in order:
+        f += _plan_milestone_findings(root, base, rel, commits, at_head, states[rel], governing,
+                                      lambda mid, rel=rel: state_in(rel, mid), old_of, new_of, moved,
+                                      texts_base, texts_head,
+                                      [(mid, msg) for mid, msg in reached if home.get(mid, PROJECT_REL) == rel])
+    # Tags on new work: a research request's tag is checked against every plan's ids together.
+    live = set(m.id for rel in order for m in new_of[rel] if not m.dropped)
+    every = set(m.id for rel in order for m in new_of[rel])
+    present = [rel for rel in order if texts_head.get(rel) is not None] or [PROJECT_REL]
+    for c in commits:
+        if c.is_merge():
+            continue
+        for path in g.commit_paths(root, c.sha):
+            mm = re.fullmatch(r"intake/requests/(Q-[0-9]{3,})\.toml", path)
+            if not mm or g.git_blob(root, c.sha, path) is None:
+                continue
+            if c.parents and g.git_blob(root, c.parents[0], path) is not None:
+                continue                 # not the commit that adds it
+            try:
+                req = tomllib.loads(g.git_text(root, c.sha, path) or "")
+            except tomllib.TOMLDecodeError:
+                continue
+            if req.get("kind") != "research":
+                continue
+            if not c.parents or not approved_in(statuses_at(root, c.parents[0])):
+                continue                 # filed before approval: no tag needed (AC4)
+            tag = req.get("milestone")
+            if tag is None:
+                why = "holds no `milestone`"
+            elif not isinstance(tag, str) or not (tag in live or tag in STANDARD_IDS):
+                why = ("names %r, a dropped milestone" % tag if isinstance(tag, str) and tag in every else
+                       "names %r, neither a milestone of %s nor a standard milestone" % (tag, sections_3(present)))
+            else:
+                continue
+            f.append(("v3_checks.milestone_tags", "%s (commit %s) %s: research filed after the project's approval "
+                                                  "names the milestone it serves (model S-023 AC4)"
+                      % (path, c.short, why)))
+    if approved_head:
+        for name in g.spec_files_at(root, "HEAD"):
+            rel = "%s/%s" % (g.SPECS_REL, name)
+            t = g.git_text(root, "HEAD", rel) or ""
+            status = g.spec_status(t)[0]
+            if spec_milestones(t)[0] != "missing":
+                continue
+            if status == "draft":
+                f.append(("v3_checks.milestone_tags", "%s is a draft spec with no `milestones:` header line naming the "
+                                                      "project milestones it delivers (model S-023 AC5)" % rel))
+            elif status in ("frozen", "superseded"):
+                notes.append("NOTE: %s (%s) carries no `milestones:` line" % (rel, status))
+    for item, st in sorted(st_head.items()):
+        if st.get("kind") == "research" and st.get("state") not in ("done", "closed") and "milestone" not in st:
+            notes.append("NOTE: open research item %s carries no milestone tag" % item)
+    opening = []
+    for rel in order:
+        s = states[rel]
+        if rel == PROJECT_REL:
+            opening.append("NOTE: the project is %s at %s and %s at HEAD; %d milestone(s) at HEAD"
+                           % (s.word(), base, "approved" if s.approved_head else "not approved", len(new_of[rel])))
+        else:
+            opening.append("NOTE: %s: %s is %s at %s and %s at HEAD; %d milestone(s) at HEAD"
+                           % (rel, rel[len(PLANS_REL) + 1:-3], s.word(), base,
+                              "approved" if s.approved_head else "not approved", len(new_of[rel])))
+    return f, opening + notes
+
+
+def _plan_milestone_findings(root, base, rel, commits, at_head, plan, governing, state, old_of, new_of, moved,
+                             texts_base, texts_head, reached):
+    """model S-023 AC8's rules for one plan (model S-035 AC9): [(check name, finding)]. `state(mid)` is the state that
+    governs `mid`: `governing`, docs/PROJECT.md's items at base, for a milestone moved into this plan in the range,
+    and for the move itself in docs/PROJECT.md's run; else `plan`'s. `reached` holds the
+    reached-mark findings (model S-033 AC7), (id, finding), of the ids this plan holds."""
+    f = []
+    own = [c for c in commits if not c.is_merge() and rel in g.commit_paths(root, c.sha)]
+    rulings = [(c, p) for c in own for p in c.trailer("Owner-Ruling")]
+    checks = [(c, p) for c in own for p in c.trailer("Critic-Check")]
+    # The old milestones: this plan's at base, less those moved out of it, plus those moved into it (their base line
+    # less ` · for:`); a moved one's order is its docs/PROJECT.md order at base, compared only with its own group.
+    group = {}
+    old_list = []
+    for idx, m in enumerate(old_of[rel]):
+        if rel == PROJECT_REL and m.id in moved:
+            continue
+        old_list.append(m)
+        group[m.id] = (0, idx)
+    for mid, (dest, stripped, idx) in moved.items():
+        if dest == rel:
+            old_list.append(stripped)
+            group[mid] = (1, idx)
+    old = dict((m.id, m) for m in old_list)
+    new_list = new_of[rel]
+    new = dict((m.id, m) for m in new_list)
 
     def ruling_why(path, mid):
         why = ruling_path_problem(path)
@@ -1821,84 +2276,95 @@ def check_milestones(root, base):
             return "it does not name %s" % mid
         return None
 
-    def hold_licence(mid):
-        """A Design-gate hold whose Reason: names `mid` licenses it, but only for the wait it answers: the project
-        waits on its Design gate at REF, and the hold record was added in REF..HEAD (model S-023 AC8)."""
-        if not waiting_ref:
+    def hold_licence(mid, s=None):
+        """A Design-gate hold whose Reason: names `mid` licenses it, but only for the wait it answers: the governing
+        plan's items wait on their Design gate at REF, and the hold record, one of those items', was added in
+        REF..HEAD (model S-023 AC8)."""
+        s = s or state(mid)
+        if not s.waiting_ref:
             return None
-        for rel in _ls(root, "HEAD", "decisions"):
-            if not re.fullmatch(r"decisions/P-[0-9]{3,}/dor-[0-9]+\.md", rel):
+        for path in _ls(root, "HEAD", "decisions"):
+            hm = re.fullmatch(r"decisions/(P-[0-9]{3,})/dor-[0-9]+\.md", path)
+            if not hm or not s.owns(hm.group(1)):
                 continue
-            if g.git_blob(root, base, rel) is not None:
+            if g.git_blob(root, base, path) is not None:
                 continue                 # written before the range: it answered an earlier wait
-            t = g.git_text(root, "HEAD", rel) or ""
+            t = g.git_text(root, "HEAD", path) or ""
             lines = t.split("\n")
             if lines[0].rstrip("\r").rstrip() != "Decision: hold":
                 continue
             if any(l.startswith("Reason:") and _whole(mid, l) for l in lines):
-                return rel
+                return path
         return None
 
     def hold_text(mid):
-        rel = hold_licence(mid)
-        return (g.git_text(root, "HEAD", rel) or "") if rel else ""
+        path = hold_licence(mid)
+        return (g.git_text(root, "HEAD", path) or "") if path else ""
 
-    def licensed(mid):
+    def licensed(mid, s=None):
         if any(ruling_why(p, mid) is None for _, p in rulings):
             return True
-        return hold_licence(mid) is not None
+        return hold_licence(mid, s) is not None
 
     def why_not(mid, what):
         msg = ("%s %s: needs an Owner-Ruling: trailer, on a commit that changes %s, naming the owner's ruling record "
-               "that names %s (model S-023 AC8)" % (mid, what, PROJECT_REL, mid))
+               "that names %s (model S-023 AC8)" % (mid, what, rel, mid))
         reasons = ["Owner-Ruling: %s: %s" % (p, ruling_why(p, mid)) for _, p in rulings]
         return msg + ("; " + "; ".join(reasons) if reasons else "")
 
-    if approved_ref:
-        for mid, m in old.items():
-            if mid not in new:
-                f.append(("v3_checks.milestones", "%s is in %s section 3 at %s but not at HEAD: a milestone is never "
-                                                  "deleted or renumbered; to drop it, add ` · dropped` before any "
-                                                  "` · why:` (model S-023 AC8)" % (mid, PROJECT_REL, base)))
-            elif m.dropped and not new[mid].dropped:
-                f.append(("v3_checks.milestones", "%s was marked dropped at %s and is not at HEAD: a dropped milestone "
-                                                  "stays dropped (model S-023 AC8)" % (mid, base)))
-    when = "after approval" if approved_ref else "while the project waits on its Design gate"
-    if approved_ref or waiting_ref:
-        changed = []
-        for mid, m in new.items():
-            if mid not in old:
-                changed.append((mid, "added " + when))
-            else:
-                o = old[mid]
-                if m.dropped and not o.dropped:
-                    changed.append((mid, "marked dropped " + when))
-                if m.phase != o.phase:
-                    changed.append((mid, "moved from %s to %s %s" % (o.phase, m.phase, when)))
-                if m.for_item != o.for_item:
-                    changed.append((mid, "given another ` · for:` item %s" % when))
-        common_old = [i for i in old if i in new]
-        common_new = [m.id for m in new_list if m.id in old]
-        pos_old = dict((i, n) for n, i in enumerate(common_old))
-        for a_i in range(len(common_new)):
-            for b_i in range(a_i + 1, len(common_new)):
-                a, b = common_new[a_i], common_new[b_i]
-                if pos_old[a] > pos_old[b]:
-                    changed.append((a, "reordered with %s %s" % (b, when)))
-                    changed.append((b, "reordered with %s %s" % (a, when)))
-        if waiting_ref and not approved_ref:
-            for mid, o in old.items():
-                if mid not in new:
-                    changed.append((mid, "deleted " + when))
-                elif o.dropped and not new[mid].dropped:
-                    changed.append((mid, "un-dropped " + when))
-        seen = set()
-        for mid, what in changed:
-            if (mid, what) in seen:
+    for mid, m in old.items():
+        if not state(mid).approved_ref:
+            continue
+        if mid not in new:
+            f.append(("v3_checks.milestones", "%s is in %s section 3 at %s but not at HEAD: a milestone is never "
+                                              "deleted or renumbered; to drop it, add ` · dropped` before any "
+                                              "` · why:` (model S-023 AC8)" % (mid, rel, base)))
+        elif m.dropped and not new[mid].dropped:
+            f.append(("v3_checks.milestones", "%s was marked dropped at %s and is not at HEAD: a dropped milestone "
+                                              "stays dropped (model S-023 AC8)" % (mid, base)))
+    changed = []
+    for mid, m in new.items():
+        s = state(mid)
+        if not s.ruled():
+            continue
+        when = s.when()
+        if mid not in old:
+            changed.append((mid, "added " + when))
+        else:
+            o = old[mid]
+            if m.dropped and not o.dropped:
+                changed.append((mid, "marked dropped " + when))
+            if m.phase != o.phase:
+                changed.append((mid, "moved from %s to %s %s" % (o.phase, m.phase, when)))
+            if m.for_item != o.for_item:
+                changed.append((mid, "given another ` · for:` item %s" % when))
+    common_new = [m.id for m in new_list if m.id in old]
+    for a_i in range(len(common_new)):
+        for b_i in range(a_i + 1, len(common_new)):
+            a, b = common_new[a_i], common_new[b_i]
+            if group[a][0] != group[b][0] or group[a] < group[b]:
                 continue
-            seen.add((mid, what))
-            if not licensed(mid):
-                f.append(("v3_checks.milestones", why_not(mid, what)))
+            for x, y in ((a, b), (b, a)):
+                if state(x).ruled():
+                    changed.append((x, "reordered with %s %s" % (y, state(x).when())))
+    for mid, o in old.items():
+        s = state(mid)
+        if s.waiting_ref and not s.approved_ref:
+            if mid not in new:
+                changed.append((mid, "deleted " + s.when()))
+            elif o.dropped and not new[mid].dropped:
+                changed.append((mid, "un-dropped " + s.when()))
+    if rel == PROJECT_REL and governing.ruled():
+        # model S-035 AC9: the move itself needs what a change of its ` · for:` item needs.
+        for mid, (dest, _, _) in moved.items():
+            changed.append((mid, "moved to %s %s" % (dest, governing.when())))
+    seen = set()
+    for mid, what in changed:
+        if (mid, what) in seen:
+            continue
+        seen.add((mid, what))
+        if not licensed(mid, governing if what.startswith("moved to ") else None):
+            f.append(("v3_checks.milestones", why_not(mid, what)))
     ruling_paths = set(p for _, p in rulings)
 
     def critic_record(quote_re, quoted):
@@ -1923,29 +2389,30 @@ def check_milestones(root, base):
             reasons.append("Critic-Check: %s: %s" % (p, why))
         return None, reasons
 
-    if approved_ref:
-        for m in new_list:
-            o = old.get(m.id)
-            if o is not None and (o.name, o.done, o.why) == (m.name, m.done, m.why):
-                continue
-            what = "added after approval" if o is None else "reworded after approval"
-            part = m.part() if m.why is None else m.whole()
-            found, reasons = critic_record(m.quote_re(), part)
-            if found is None:
-                f.append(("v3_checks.milestones", "%s %s: needs a Critic-Check: trailer naming the Critic's PASS "
-                                                  "record that quotes '%s' (model S-023 AC8)%s"
-                          % (m.id, what, part, "; " + "; ".join(reasons) if reasons else "")))
-            elif o is None and not any(ruling_why(p, m.id) is None and found in (at_head(p) or "")
-                                       for _, p in rulings) and found not in hold_text(m.id):
-                f.append(("v3_checks.milestones", "%s added after approval: the owner's ruling record that licenses it "
-                                                  "names no Critic-Check: record %s (model S-023 AC8)" % (m.id, found)))
-    if approved_ref or waiting_ref:
+    for m in new_list:
+        if not state(m.id).approved_ref:
+            continue
+        o = old.get(m.id)
+        if o is not None and (o.name, o.done, o.why) == (m.name, m.done, m.why):
+            continue
+        what = "added after approval" if o is None else "reworded after approval"
+        part = m.part() if m.why is None else m.whole()
+        found, reasons = critic_record(m.quote_re(), part)
+        if found is None:
+            f.append(("v3_checks.milestones", "%s %s: needs a Critic-Check: trailer naming the Critic's PASS "
+                                              "record that quotes '%s' (model S-023 AC8)%s"
+                      % (m.id, what, part, "; " + "; ".join(reasons) if reasons else "")))
+        elif o is None and not any(ruling_why(p, m.id) is None and found in (at_head(p) or "")
+                                   for _, p in rulings) and found not in hold_text(m.id):
+            f.append(("v3_checks.milestones", "%s added after approval: the owner's ruling record that licenses it "
+                                              "names no Critic-Check: record %s (model S-023 AC8)" % (m.id, found)))
+    if plan.ruled():
         # model S-032 AC5: who may change a standard milestone's line. Discovery's and Design's are ruled with
         # the Design gate (the project is approved), Build's and Launch's with the Build gate.
-        ruled = {"Discovery": approved_ref, "Design": approved_ref}
-        ruled["Build"] = ruled["Launch"] = build_gate_passed(root, base, st_ref, old.values())
-        old_std = dict((s.id, s) for s in standard_lines(g.git_text(root, base, PROJECT_REL))[0])
-        new_std = standard_lines(g.git_text(root, "HEAD", PROJECT_REL))[0]
+        ruled = {"Discovery": plan.approved_ref, "Design": plan.approved_ref}
+        ruled["Build"] = ruled["Launch"] = build_gate_passed(root, base, plan.st_ref, old_of[rel], plan.owns)
+        old_std = dict((s.id, s) for s in standard_lines(texts_base.get(rel))[0])
+        new_std = standard_lines(texts_head.get(rel))[0]
         new_ids = set(s.id for s in new_std)
         for s in new_std + [o for i, o in old_std.items() if i not in new_ids]:
             o, n = old_std.get(s.id), (s if s.id in new_ids else None)
@@ -1965,7 +2432,7 @@ def check_milestones(root, base):
                     f.append(("v3_checks.milestones", "%s's standard line %s %s: dropping work needs an "
                                                       "Owner-Ruling: trailer, on a commit that changes %s, naming the "
                                                       "owner's ruling record that names %s (model S-032 AC5)%s"
-                              % (s.id, what, gate, PROJECT_REL, s.id, "; " + "; ".join(reasons) if reasons else "")))
+                              % (s.id, what, gate, rel, s.id, "; " + "; ".join(reasons) if reasons else "")))
             elif n is not None:
                 quoted = n.text()
                 found, reasons = critic_record(re.compile(r"^(?:- |`)?" + re.escape(quoted) + r"(?:[ \t\r]*$|`)"),
@@ -1974,70 +2441,21 @@ def check_milestones(root, base):
                     f.append(("v3_checks.milestones", "%s's standard line %s %s: needs a Critic-Check: trailer naming "
                                                       "the Critic's PASS record that quotes '%s' (model S-032 AC5)%s"
                               % (s.id, what, gate, quoted, "; " + "; ".join(reasons) if reasons else "")))
-    # model S-033 AC7: a milestone reached, only by the owner's own ruling, never a default.
-    if approved_ref or waiting_ref:
-        f += [("v3_checks.milestones", msg) for msg in reached_findings(root, commits, at_head)]
-    else:
-        # None can be reached before the milestones are approved (model S-033, build review round 1, note 6).
-        for m in new_list:
-            if m.reached:
-                f.append(("v3_checks.milestones", "%s is marked reached (%s) while the project is neither approved "
-                                                  "nor waiting on its Design gate at %s: no milestone can be reached "
-                                                  "before the milestones are approved; take the ` · reached:` part "
-                                                  "out (model S-033 AC7)" % (m.id, m.reached, base)))
+    # model S-033 AC7: a milestone reached, only by the owner's own ruling, never a default; under the rules once
+    # the state governing its id is approved or waits on its Design gate.
+    f += [("v3_checks.milestones", msg) for mid, msg in reached if state(mid).ruled()]
+    for m in new_list:
+        if m.reached and not state(m.id).ruled():
+            # None can be reached before the milestones are approved (model S-033, build review round 1, note 6).
+            f.append(("v3_checks.milestones", "%s is marked reached (%s) while the project is neither approved "
+                                              "nor waiting on its Design gate at %s: no milestone can be reached "
+                                              "before the milestones are approved; take the ` · reached:` part "
+                                              "out (model S-033 AC7)" % (m.id, m.reached, base)))
     for m in new_list:
         if m.reached and m.dropped:
             f.append(("v3_checks.milestones", "%s is marked both reached and dropped: a milestone is one or the "
                                               "other (model S-033 AC7)" % m.id))
-    # Tags on new work.
-    live = set(i for i, m in new.items() if not m.dropped)
-    for c in commits:
-        if c.is_merge():
-            continue
-        for path in g.commit_paths(root, c.sha):
-            mm = re.fullmatch(r"intake/requests/(Q-[0-9]{3,})\.toml", path)
-            if not mm or g.git_blob(root, c.sha, path) is None:
-                continue
-            if c.parents and g.git_blob(root, c.parents[0], path) is not None:
-                continue                 # not the commit that adds it
-            try:
-                req = tomllib.loads(g.git_text(root, c.sha, path) or "")
-            except tomllib.TOMLDecodeError:
-                continue
-            if req.get("kind") != "research":
-                continue
-            if not c.parents or not approved_in(statuses_at(root, c.parents[0])):
-                continue                 # filed before approval: no tag needed (AC4)
-            tag = req.get("milestone")
-            if tag is None:
-                why = "holds no `milestone`"
-            elif not isinstance(tag, str) or not (tag in live or tag in STANDARD_IDS):
-                why = ("names %r, a dropped milestone" % tag if isinstance(tag, str) and tag in new else
-                       "names %r, neither a milestone of %s section 3 nor a standard milestone" % (tag, PROJECT_REL))
-            else:
-                continue
-            f.append(("v3_checks.milestone_tags", "%s (commit %s) %s: research filed after the project's approval "
-                                                  "names the milestone it serves (model S-023 AC4)"
-                      % (path, c.short, why)))
-    if approved_head:
-        for name in g.spec_files_at(root, "HEAD"):
-            rel = "%s/%s" % (g.SPECS_REL, name)
-            t = g.git_text(root, "HEAD", rel) or ""
-            status = g.spec_status(t)[0]
-            if spec_milestones(t)[0] != "missing":
-                continue
-            if status == "draft":
-                f.append(("v3_checks.milestone_tags", "%s is a draft spec with no `milestones:` header line naming the "
-                                                      "project milestones it delivers (model S-023 AC5)" % rel))
-            elif status in ("frozen", "superseded"):
-                notes.append("NOTE: %s (%s) carries no `milestones:` line" % (rel, status))
-    for item, st in sorted(st_head.items()):
-        if st.get("kind") == "research" and st.get("state") not in ("done", "closed") and "milestone" not in st:
-            notes.append("NOTE: open research item %s carries no milestone tag" % item)
-    notes.insert(0, "NOTE: the project is %s at %s and %s at HEAD; %d milestone(s) at HEAD"
-                 % ("approved" if approved_ref else ("waiting on its Design gate" if waiting_ref else "not approved"),
-                    base, "approved" if approved_head else "not approved", len(new_list)))
-    return f, notes
+    return f
 
 
 # model S-033 AC7: the owner's acceptance (or reopening) of a milestone, on the record's first line or, for a
@@ -2108,6 +2526,12 @@ def _committer_date(root, sha):
 def reached_findings(root, commits, at_head):
     """model S-033 AC7: each commit that adds, changes or removes a milestone's reached part carries the owner's
     record for it, and no reached date is later than its commit's committer date (UTC)."""
+    return [msg for _, msg in _reached_pairs(root, commits, at_head)]
+
+
+def _reached_pairs(root, commits, at_head):
+    """reached_findings as (milestone id, finding); each id's mark is compared across every plan at each revision,
+    so a mark kept through a move is not erased (model S-035 AC9)."""
     out, cache = [], {}
 
     def reached_at(rev):
@@ -2139,14 +2563,14 @@ def reached_findings(root, commits, at_head):
                 need = ("whose first line begins `Ruling: reopen` and names %s" % mid if word == "reopen" else
                         "whose first line begins `Ruling: accept` and names %s, or a letter answer whose question's "
                         "option accepts it" % mid)
-                out.append("%s: needs an Owner-Ruling: trailer on that commit naming the owner's decisions/questions/ "
-                           "record %s (model S-033 AC7)%s"
-                           % (what, need, "".join("; Owner-Ruling: %s: %s" % r for r in reasons)))
+                out.append((mid, "%s: needs an Owner-Ruling: trailer on that commit naming the owner's "
+                                 "decisions/questions/ record %s (model S-033 AC7)%s"
+                                 % (what, need, "".join("; Owner-Ruling: %s: %s" % r for r in reasons))))
             if new is not None:
                 day = _committer_date(root, c.sha)
                 if new > day:
-                    out.append("%s is marked reached on %s, later than commit %s's committer date %s (UTC) "
-                               "(model S-033 AC7)" % (mid, new, c.short, day))
+                    out.append((mid, "%s is marked reached on %s, later than commit %s's committer date %s (UTC) "
+                                     "(model S-033 AC7)" % (mid, new, c.short, day)))
     return out
 
 

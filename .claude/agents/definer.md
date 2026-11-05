@@ -23,7 +23,7 @@ Commits: only to build/definer/<task>, as `definer <definer@agents.invalid>`, wi
 `Agent-Session: <session id>` trailer and, for built work, `Spec: <spec id>`. Never merge; no model names in commits.
 
 ## Must read
-The approved project document (docs/PROJECT.md: Part 1 brief and Part 2 intent, D-052); relevant library entries.
+The approved project document, the item's plan (docs/PROJECT.md, or docs/projects/<item>.md for a later item with a plan of its own: Part 1 brief and Part 2 intent, D-052, S-035); relevant library entries.
 
 ## May read
 Past specs; the pattern library.

@@ -1231,7 +1231,7 @@ CHECK_NAMES = (
     "enforcement.lint",                # governance/enforcement.toml itself is valid
     # model S-009: the v3 checks; they run only when governance/v3.toml exists.
     "v3_checks.scope",                 # scope --base: each commit's paths inside its spec's Areas touched
-    "v3_checks.ready",                 # ready: docs/PROJECT.md Part 1 complete once a spec is frozen
+    "v3_checks.ready",                 # ready: each project item's plan's Part 1 complete once a spec is frozen (model S-035)
     "v3_checks.trace",                 # trace: every criterion of a frozen spec traces to a value target
     "v3_checks.freeze",                # freeze --base: a PASS plan review at or before the freezing commit
     "v3_checks.joins",                 # joins: every join of a frozen spec has a marked test

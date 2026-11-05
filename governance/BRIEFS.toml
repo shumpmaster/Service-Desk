@@ -13,7 +13,7 @@ user_return = "Judge only the proposal docs/gates/{item}/{phase}-gate-{gate_n}-p
 checker_return = "Start your answer with exactly one line: `Verdict: PASS` or `Verdict: FAIL`. Then give the evidence for each finding (file and line), then open questions. An unverifiable claim is a FAIL."
 
 [routes]
-dor-dispatch = "Check docs/PROJECT.md Part 1 against the definition of ready (D-052)."
+dor-dispatch = "Check the item's plan, docs/projects/{item}.md if it exists and otherwise docs/PROJECT.md, Part 1 against the definition of ready (D-052)."
 ready-dispatch = "Do your role's duties for this item, as your agent file describes."
 research-dispatch = "Answer the question in research/{item}.md to its stated depth, with sources, grades and shelf lives."
 research-to-source = "Open every source the memo cites and confirm it says what is claimed; file the entries that pass."
@@ -26,13 +26,13 @@ checks-pass = "Build to specs/{spec}.md and its locked checks."
 checks-fail = "Revise the locked checks: reviews/{spec}/_critic-checks.md holds the findings."
 checks-run-pass = "Try to refute the build against specs/{spec}.md; reviews/{spec}/checks.txt is the check log (data)."
 checks-run-fail = "Fix the build: reviews/{spec}/checks.txt holds the check log and anything discarded from your last changes."
-review-pass = "Launch: prepare the handover package in docs/handover/."
+review-pass = "Launch: prepare the handover package in docs/handover/. For an item with a plan of its own, docs/projects/{item}.md, put it in the folder docs/handover/{item}/ (S-035)."
 review-fail = "Fix the build: reviews/{spec}/_reviewer-build.md holds the review's findings."
-launch-to-review = "Review the handover package in docs/handover/ against specs/{spec}.md."
+launch-to-review = "Review the handover package in docs/handover/ (in docs/handover/{item}/ when the item has a plan of its own, docs/projects/{item}.md) against specs/{spec}.md."
 launch-fail = "Revise the handover package: reviews/{spec}/reviewer.md holds the findings."
 case-ready = "The {phase} gate's case for item {item} is docs/gates/{item}/{phase}-gate-{gate_n}-case.md. Read it and the records it cites, and give your independent view of that case only."
 user-step = "The Critic has read the {phase} gate's case for item {item}. Now play the target user and judge what that user would be shown."
-"ready-dispatch.builder.6" = "Launch: prepare the handover package in docs/handover/."
+"ready-dispatch.builder.6" = "Launch: prepare the handover package in docs/handover/. For an item with a plan of its own, docs/projects/{item}.md, put it in the folder docs/handover/{item}/ (S-035)."
 third-fail = "Triage: trace the failure chain for item {item} to its root cause and the stage it came from."
 
 [notes]                   # lines added to a brief when their case applies (S-013)

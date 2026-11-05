@@ -110,6 +110,9 @@ RECOMMENDATION_RE = re.compile(r"^\*\*The Critic's recommendation:\*\* (proceed|
 GATE_WORDS = ("proceed", "hold", "recycle", "kill")
 # model S-025: the user representative, at every phase gate of a project with a target-user profile.
 PROFILE_REL = "docs/users/PROFILE.md"
+# model S-035: the first item's plan, and where a later item's own plan lives (paths only; never opened).
+PROJECT_REL = "docs/PROJECT.md"
+PLANS_DIR = "docs/projects"
 USER_VERDICT_RE = re.compile(r"^\*\*The user representative's verdict:\*\* (approve|reject) — \S.*$")
 GATE_ROLES = ("critic-gate", "user-rep")
 # model S-025: the words that move an item forward over the representative's reject need `User-Override:`.
@@ -929,7 +932,7 @@ def card_text(routing, item, st, action, links, words, milestone=None, spec_path
                         % (st.get("user_verdict") or "(the representative's line is not recorded)"))
         elif user == "not-needed":
             rec5.insert(1, "The user representative: not needed. The brief records that the owner is the user "
-                           "(docs/PROJECT.md, section 9).")
+                           "(%s, section 9)." % (action.get("plan") or PROJECT_REL))
         elif user == "not-run":
             rec5.insert(1, "The user representative did not run: no proposal was written for this gate. Answer "
                            "`hold` to have it run on an updated case and proposal.")
@@ -1067,6 +1070,22 @@ class Step:
     def has_profile(self):
         """model S-025: a target-user profile on the checkout (a path test; never opened)."""
         return os.path.isfile(self.path(PROFILE_REL))
+
+    def first_item(self):
+        """model S-035: the lowest-numbered P item with a routed line among the dispatch-log lines `step` already
+        holds (those it read and those it writes in this run), as v3_checks' timeline finds the first item."""
+        items = set(self.item_objs) | set(l.get("item") for l in self.lines)
+        routed = sorted(i for i in items if isinstance(i, str) and i.startswith("P-")
+                        and any("route" in l for l in self.lines_of(i)))
+        return routed[0] if routed else None
+
+    def plan_rel(self, item):
+        """model S-035: the item's plan, docs/projects/<item>.md when that file exists and the item is not the
+        first, else docs/PROJECT.md: a path test, never opened (model S-012 AC10)."""
+        rel = "%s/%s.md" % (PLANS_DIR, item)
+        if item != self.first_item() and os.path.isfile(self.path(rel)):
+            return rel
+        return PROJECT_REL
 
     def case_written(self, item, st):
         # model S-025: with a target-user profile, the gate waits for the proposal too.
@@ -1576,7 +1595,8 @@ class Step:
                               "the user representative's view: `reviews/%s/_%s-gate-%d-user.md` (branch item/%s)"
                               % (item, ph, gn, item)]
                 else:
-                    action = dict(action, user="not-run" if self.has_profile() else "not-needed")
+                    action = dict(action, user="not-run" if self.has_profile() else "not-needed",
+                                  plan=self.plan_rel(item))
                 if gate == "criteria" and spec:
                     links.append("the plan review, with Design's join-up review: `reviews/%s/plan.md` (branch "
                                  "item/%s)" % (spec, item))

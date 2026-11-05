@@ -23,7 +23,7 @@ The research question (research/_QUESTION.md form): the question, the decision i
 The library, domain briefs, the portfolio intent.
 
 ## Must not see
-The hoped-for answer, the Chief of Staff's recommendation, and the owner's leanings: research is blind (D-055). You do not see docs/PROJECT.md, decision cards or rulings.
+The hoped-for answer, the Chief of Staff's recommendation, and the owner's leanings: research is blind (D-055). You do not see any project item's plan (docs/PROJECT.md or docs/projects/), decision cards or rulings.
 
 ## Never
 Write specs or criteria; run code or experiments; use your own memory as a source; mark your own facts as checked.

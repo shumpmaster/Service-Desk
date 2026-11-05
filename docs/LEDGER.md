@@ -298,3 +298,142 @@ options_considered: B, a small Discovery for the desk (the model's rule; slower,
 decided_by: owner (decisions/questions/P-001-add-project-tests.md, A)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0022 — Model v3.7.0 adopted: a later project item may have a plan of its own, and is judged on it
+date: 2026-11-05
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The model is at v3.7.0 (its PR #46: S-035, bbe010f). Bring Service Desk to it, as the owner asked on 2026-11-05 ("then take the desk's adoption of 3.7.0"): a later project item may have a plan of its own in docs/projects/<item>.md, and the checks judge each item on its own plan?
+decision: Copied byte for byte from the model at bbe010f: governance/checks/ v3_checks.py, orchestrator.py, govlib.py and governance_checks.py (each was byte-identical to the model's copy at 226f1c5). The model's template-v3 changes from 226f1c5 to bbe010f are carried into this project's own copies, keeping the desk's own lines: governance/PACKS.toml's nine pack lines, BRIEFS.toml's four brief lines, SURFACES.md's two docs/projects/** lines; the builder, critic, definer and researcher cards; docs/SETUP.md, docs/gates/_GATE.md, docs/users/_PROFILE.md, intake/requests/README.md; docs/PROJECT.md's section 3 instruction line only; docs/projects/README.md and _TEMPLATE.md (a byte-for-byte copy of the model's plan form). OPERATING_MODEL_VERSION reads 3.7.0. P-003 and P-004 keep their ` · for:` path; their Discovery-2 and Discovery-7 now read not recorded, as S-035 says. The Chief of Staff's card gains its S-035 lines wherever it lives; no file of it is in a repository this session reaches. Nothing written before is rewritten.
+licenses_next: The briefing work (P-002) files its project request with docs/projects/P-002.md; P-003's plan is rewritten as docs/projects/P-003.md (decisions/questions/P-003-plan-place.md). The desk's own reading of the plans folder is S-001's (J1), and the design-reviewer pack gains its docs/projects/{item}.md line in a later change (reviews/302, N8).
+decided_by: owner (asked for the sync on 2026-11-05; merges this pull request)
+proposed_by: chief-of-staff
+reversibility: reversible
+
+## L-0023 — The plan-writer's commit 57c024b (EXP-007 draft 1 (its pre-registration)) is exempt from the range checks
+date: 2026-11-05
+type: ruling
+supersedes: []
+scope: P-004
+expires: never
+asked: The nine Definer commits that wrote experiments/EXP-007-widget-refresh.md carry `Spec: P-004`, which the scope check never accepts (it takes only `S-nnn`, read at each commit), so PR #300's governance check fails; they are pushed and can't be rewritten. How should they get past it? (questions/P-004-registration-commits.md, read cold by the Critic, reviews/P-004-registration-commits/critic.md.)
+decision: Exempt 57c024b8a9f2717008243d37b77d51a0e955e605 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … checked", 2026-11-05). The scope check and surface_guard skip it from now on.
+licenses_next: PR #300's governance check passes; the answer is recorded in decisions/questions/P-004-registration-commits.md once #300 is on the default branch.
+options_considered: B, merging #300 with the scope check red. C, changing the scope check so a Definer commit may name a project item (R3, its own plan and reviews; #300 would wait).
+decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in session session_01QBwHGNFKViyibzxHx5qTtm; merges PR #300)
+proposed_by: chief-of-staff
+reversibility: reversible
+
+## L-0024 — The plan-writer's commit 3dd65a5 (EXP-007 draft 1, the log's route and the key) is exempt from the range checks
+date: 2026-11-05
+type: ruling
+supersedes: []
+scope: P-004
+expires: never
+asked: The nine Definer commits that wrote experiments/EXP-007-widget-refresh.md carry `Spec: P-004`, which the scope check never accepts (it takes only `S-nnn`, read at each commit), so PR #300's governance check fails; they are pushed and can't be rewritten. How should they get past it? (questions/P-004-registration-commits.md, read cold by the Critic, reviews/P-004-registration-commits/critic.md.)
+decision: Exempt 3dd65a5ad0845f974fcf554530272e44d208e481 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … checked", 2026-11-05). The scope check and surface_guard skip it from now on.
+licenses_next: PR #300's governance check passes; the answer is recorded in decisions/questions/P-004-registration-commits.md once #300 is on the default branch.
+options_considered: B, merging #300 with the scope check red. C, changing the scope check so a Definer commit may name a project item (R3, its own plan and reviews; #300 would wait).
+decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in session session_01QBwHGNFKViyibzxHx5qTtm; merges PR #300)
+proposed_by: chief-of-staff
+reversibility: reversible
+
+## L-0025 — The plan-writer's commit e11b6f4 (EXP-007 draft 2) is exempt from the range checks
+date: 2026-11-05
+type: ruling
+supersedes: []
+scope: P-004
+expires: never
+asked: The nine Definer commits that wrote experiments/EXP-007-widget-refresh.md carry `Spec: P-004`, which the scope check never accepts (it takes only `S-nnn`, read at each commit), so PR #300's governance check fails; they are pushed and can't be rewritten. How should they get past it? (questions/P-004-registration-commits.md, read cold by the Critic, reviews/P-004-registration-commits/critic.md.)
+decision: Exempt e11b6f4321d25702347097502ad7214146a5f01c (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … checked", 2026-11-05). The scope check and surface_guard skip it from now on.
+licenses_next: PR #300's governance check passes; the answer is recorded in decisions/questions/P-004-registration-commits.md once #300 is on the default branch.
+options_considered: B, merging #300 with the scope check red. C, changing the scope check so a Definer commit may name a project item (R3, its own plan and reviews; #300 would wait).
+decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in session session_01QBwHGNFKViyibzxHx5qTtm; merges PR #300)
+proposed_by: chief-of-staff
+reversibility: reversible
+
+## L-0026 — The plan-writer's commit ddc67fb (EXP-007 draft 2, its failure cases) is exempt from the range checks
+date: 2026-11-05
+type: ruling
+supersedes: []
+scope: P-004
+expires: never
+asked: The nine Definer commits that wrote experiments/EXP-007-widget-refresh.md carry `Spec: P-004`, which the scope check never accepts (it takes only `S-nnn`, read at each commit), so PR #300's governance check fails; they are pushed and can't be rewritten. How should they get past it? (questions/P-004-registration-commits.md, read cold by the Critic, reviews/P-004-registration-commits/critic.md.)
+decision: Exempt ddc67fb8602b7ef7af5955edfda5a6d2505db4d0 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … checked", 2026-11-05). The scope check and surface_guard skip it from now on.
+licenses_next: PR #300's governance check passes; the answer is recorded in decisions/questions/P-004-registration-commits.md once #300 is on the default branch.
+options_considered: B, merging #300 with the scope check red. C, changing the scope check so a Definer commit may name a project item (R3, its own plan and reviews; #300 would wait).
+decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in session session_01QBwHGNFKViyibzxHx5qTtm; merges PR #300)
+proposed_by: chief-of-staff
+reversibility: reversible
+
+## L-0027 — The plan-writer's commit 7fdeedc (EXP-007 draft 3) is exempt from the range checks
+date: 2026-11-05
+type: ruling
+supersedes: []
+scope: P-004
+expires: never
+asked: The nine Definer commits that wrote experiments/EXP-007-widget-refresh.md carry `Spec: P-004`, which the scope check never accepts (it takes only `S-nnn`, read at each commit), so PR #300's governance check fails; they are pushed and can't be rewritten. How should they get past it? (questions/P-004-registration-commits.md, read cold by the Critic, reviews/P-004-registration-commits/critic.md.)
+decision: Exempt 7fdeedcbbaecf80e5b9189e979b6292e9d000fbd (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … checked", 2026-11-05). The scope check and surface_guard skip it from now on.
+licenses_next: PR #300's governance check passes; the answer is recorded in decisions/questions/P-004-registration-commits.md once #300 is on the default branch.
+options_considered: B, merging #300 with the scope check red. C, changing the scope check so a Definer commit may name a project item (R3, its own plan and reviews; #300 would wait).
+decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in session session_01QBwHGNFKViyibzxHx5qTtm; merges PR #300)
+proposed_by: chief-of-staff
+reversibility: reversible
+
+## L-0028 — The plan-writer's commit 514675d (EXP-007 draft 3, from the widget at 4a2684e) is exempt from the range checks
+date: 2026-11-05
+type: ruling
+supersedes: []
+scope: P-004
+expires: never
+asked: The nine Definer commits that wrote experiments/EXP-007-widget-refresh.md carry `Spec: P-004`, which the scope check never accepts (it takes only `S-nnn`, read at each commit), so PR #300's governance check fails; they are pushed and can't be rewritten. How should they get past it? (questions/P-004-registration-commits.md, read cold by the Critic, reviews/P-004-registration-commits/critic.md.)
+decision: Exempt 514675db43d90a44ce0a05a141ed07769100e601 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … checked", 2026-11-05). The scope check and surface_guard skip it from now on.
+licenses_next: PR #300's governance check passes; the answer is recorded in decisions/questions/P-004-registration-commits.md once #300 is on the default branch.
+options_considered: B, merging #300 with the scope check red. C, changing the scope check so a Definer commit may name a project item (R3, its own plan and reviews; #300 would wait).
+decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in session session_01QBwHGNFKViyibzxHx5qTtm; merges PR #300)
+proposed_by: chief-of-staff
+reversibility: reversible
+
+## L-0029 — The plan-writer's commit 389dd68 (EXP-007 draft 4) is exempt from the range checks
+date: 2026-11-05
+type: ruling
+supersedes: []
+scope: P-004
+expires: never
+asked: The nine Definer commits that wrote experiments/EXP-007-widget-refresh.md carry `Spec: P-004`, which the scope check never accepts (it takes only `S-nnn`, read at each commit), so PR #300's governance check fails; they are pushed and can't be rewritten. How should they get past it? (questions/P-004-registration-commits.md, read cold by the Critic, reviews/P-004-registration-commits/critic.md.)
+decision: Exempt 389dd68d5a76d7949a5476a0184dbaaa5e286ad9 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … checked", 2026-11-05). The scope check and surface_guard skip it from now on.
+licenses_next: PR #300's governance check passes; the answer is recorded in decisions/questions/P-004-registration-commits.md once #300 is on the default branch.
+options_considered: B, merging #300 with the scope check red. C, changing the scope check so a Definer commit may name a project item (R3, its own plan and reviews; #300 would wait).
+decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in session session_01QBwHGNFKViyibzxHx5qTtm; merges PR #300)
+proposed_by: chief-of-staff
+reversibility: reversible
+
+## L-0030 — The plan-writer's commit 4184785 (EXP-007 draft 5) is exempt from the range checks
+date: 2026-11-05
+type: ruling
+supersedes: []
+scope: P-004
+expires: never
+asked: The nine Definer commits that wrote experiments/EXP-007-widget-refresh.md carry `Spec: P-004`, which the scope check never accepts (it takes only `S-nnn`, read at each commit), so PR #300's governance check fails; they are pushed and can't be rewritten. How should they get past it? (questions/P-004-registration-commits.md, read cold by the Critic, reviews/P-004-registration-commits/critic.md.)
+decision: Exempt 4184785b67ebfa6e4b05d840b5c9d50f262cde66 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … checked", 2026-11-05). The scope check and surface_guard skip it from now on.
+licenses_next: PR #300's governance check passes; the answer is recorded in decisions/questions/P-004-registration-commits.md once #300 is on the default branch.
+options_considered: B, merging #300 with the scope check red. C, changing the scope check so a Definer commit may name a project item (R3, its own plan and reviews; #300 would wait).
+decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in session session_01QBwHGNFKViyibzxHx5qTtm; merges PR #300)
+proposed_by: chief-of-staff
+reversibility: reversible
+
+## L-0031 — The plan-writer's commit ad2709e (EXP-007 draft 6, the frozen version) is exempt from the range checks
+date: 2026-11-05
+type: ruling
+supersedes: []
+scope: P-004
+expires: never
+asked: The nine Definer commits that wrote experiments/EXP-007-widget-refresh.md carry `Spec: P-004`, which the scope check never accepts (it takes only `S-nnn`, read at each commit), so PR #300's governance check fails; they are pushed and can't be rewritten. How should they get past it? (questions/P-004-registration-commits.md, read cold by the Critic, reviews/P-004-registration-commits/critic.md.)
+decision: Exempt ad2709e20faddd72483acc0a21ce2aeaacecb73c (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … checked", 2026-11-05). The scope check and surface_guard skip it from now on.
+licenses_next: PR #300's governance check passes; the answer is recorded in decisions/questions/P-004-registration-commits.md once #300 is on the default branch.
+options_considered: B, merging #300 with the scope check red. C, changing the scope check so a Definer commit may name a project item (R3, its own plan and reviews; #300 would wait).
+decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in session session_01QBwHGNFKViyibzxHx5qTtm; merges PR #300)
+proposed_by: chief-of-staff
+reversibility: reversible

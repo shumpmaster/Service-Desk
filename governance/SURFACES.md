@@ -42,6 +42,7 @@ docs/**
 !docs/gates/**/*-proposal.md
 !docs/users/PROFILE.md
 !docs/PROJECT.md
+!docs/projects/**
 !docs/handover/**
 digest/**
 reviews/**
@@ -77,6 +78,7 @@ library/**
 ```surface:chief-of-staff
 AGENTS.md
 docs/PROJECT.md
+docs/projects/**
 intake/**
 decisions/**
 questions/**
@@ -121,4 +123,13 @@ agent identities existed. Each needs its own ledger entry; adding one is R3.
 
 ```exempt
 c1c9a56491d34565b931a6a8f6f41fab2caa855e L-0002
+57c024b8a9f2717008243d37b77d51a0e955e605 L-0023
+3dd65a5ad0845f974fcf554530272e44d208e481 L-0024
+e11b6f4321d25702347097502ad7214146a5f01c L-0025
+ddc67fb8602b7ef7af5955edfda5a6d2505db4d0 L-0026
+7fdeedcbbaecf80e5b9189e979b6292e9d000fbd L-0027
+514675db43d90a44ce0a05a141ed07769100e601 L-0028
+389dd68d5a76d7949a5476a0184dbaaa5e286ad9 L-0029
+4184785b67ebfa6e4b05d840b5c9d50f262cde66 L-0030
+ad2709e20faddd72483acc0a21ce2aeaacecb73c L-0031
 ```

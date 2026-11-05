@@ -2,57 +2,57 @@
 
 ## 1. The ask
 
-The card fix's readiness check failed twice before it passed on its own plan, the third time [decisions/P-003/dor-fail-1.md] [decisions/P-003/dor-fail-2.md] [reviews/P-003/_critic-dor.md].
-Proceeding moves it into Design, where its behaviour is pinned down as scenarios and checked before anything is built; nothing is irreversible [docs/projects/P-003.md:56] [docs/projects/P-003.md:61].
+The card fix's readiness check failed twice before it passed on its own plan, the third time [dispatch-log/2026-11.jsonl] [reviews/P-003/_critic-dor.md].
+Proceeding moves it into Design, to pin down its behaviour; nothing is built until the Build gate, which you rule [docs/projects/P-003.md:56] [docs/projects/P-003.md:61] [docs/projects/P-003.md:44].
 
 **The proposer's recommendation:** proceed — the brief passed its readiness check with nothing blocking, and no unknown is left open [reviews/P-003/_critic-dor.md] [docs/projects/P-003.md:107]
 
 ## 2. The vision
 
-Twice you answered a decision card against the Chief of Staff's recommendation, which the card did not show [docs/projects/P-003.md:32].
-With the fix, a decision card waits until its notes are in, then shows their answer marked Recommended, or after a day shows marked as having none [docs/projects/P-003.md:44].
+Twice you answered a card against the Chief of Staff's unshown recommendation [docs/projects/P-003.md:32].
+With the fix, a card shows that recommendation marked, or after a day says it has none [docs/projects/P-003.md:44].
 
 ## 3. What this phase taught us
 
 One list feeds every view, so the hold is one rule in one place [docs/projects/P-003.md:99].
 The change is about 60 to 90 lines and 8 to 12 tests [docs/projects/P-003.md:99].
-The plan's place mattered: it passed only once it had a plan of its own [decisions/questions/P-003-plan-place.md] [reviews/P-003/_critic-dor.md].
+The plan's place mattered: borrowing from the desk's first plan failed it [reviews/P-003-dor-dry-run/_critic-dry-run-1-verbatim.md] [decisions/questions/P-003-plan-place.md].
 
 ## 4. The plan for the next phase
 
-Design takes on five standard steps and skips the experiment [docs/projects/P-003.md:56] [docs/projects/P-003.md:58].
+Design writes scenarios and maps how the views join, and skips the experiment [docs/projects/P-003.md:56] [docs/projects/P-003.md:58].
 It ends with the spec, reviewed, and the Build gate [docs/projects/P-003.md:61].
-One milestone, M4, is built in Build [docs/projects/P-003.md:44].
+The Builder then builds the fix itself; no date is recorded [docs/projects/P-003.md:44] [docs/projects/P-003.md:68].
 
 ## 5. The risks
 
 A card held for good: never, after a day it shows [docs/projects/P-003.md:102].
-A button marked that was not recommended: notes without a word count as none [docs/projects/P-003.md:103].
+A wrong button marked: notes without a word count as none [docs/projects/P-003.md:103].
 You told twice: a held card's notification goes when it shows [docs/projects/P-003.md:104].
 A gate card changed by mistake: gate cards stay as they are [docs/projects/P-003.md:105].
-The timeline reads two steps taken on, the go-ahead and the risks, as not recorded; the plan holds both [docs/projects/P-003.md:48] [docs/projects/P-003.md:53].
+Two steps you took on, the go-ahead and the risk list, read "not recorded" on the timeline: the plan takes them on, but no record marks them reached [docs/projects/P-003.md:48] [docs/projects/P-003.md:53].
 
 ## 6. Cost and limits
 
 $0 a month of new spend, no new data or outside service, tier T1 [docs/projects/P-003.md:79] [docs/projects/P-003.md:80] [docs/projects/P-003.md:81].
-Your time: none to run it [docs/projects/P-003.md:90].
+Your time: none to run it; usage so far not recorded [docs/projects/P-003.md:90].
 
 ## 7. Kill criteria
 
-Work stops and comes back to you if the build grows past about twice its sizing, or a third plan review fails [docs/projects/P-003.md:92].
-A miss on V6 is any card shown with neither mark, or held over a day [docs/projects/P-003.md:90].
+Work stops and comes back to you if the build grows past twice its sizing, or a third review round fails [docs/projects/P-003.md:92].
+A miss on its target is any card shown with neither mark, or held over a day [docs/projects/P-003.md:90].
 
 ## 8. What the owner is agreeing to
 
-The milestone M4 and the target V6: no decision card shown unmarked, from M4's go-live to 31 December [docs/projects/P-003.md:44] [docs/projects/P-003.md:86].
+The fix's milestone and its target: no decision card shown unmarked, from its go-live to 31 December; the brief is settled [docs/projects/P-003.md:44] [docs/projects/P-003.md:86].
 The standard lines as you ruled them, $0 spend and tier T1 [decisions/questions/P-003-standard-lines.md] [docs/projects/P-003.md:79].
 
 ## 9. Appendix: the phase record
 <details>
 <summary>The phase record</summary>
 
-Discovery ran once: three readiness checks, the first two failed and each answered resubmit, the third passed [dispatch-log/2026-11.jsonl] [reviews/P-003/_critic-dor.md].
-Your rulings in the phase: the plan's place and the standard lines [decisions/questions/P-003-plan-place.md] [decisions/questions/P-003-standard-lines.md].
+Discovery ran once: four readiness runs; the first stopped on an error, the next two failed and were answered resubmit (the second by the Chief of Staff at your request), the fourth passed [dispatch-log/2026-11.jsonl] [decisions/P-003/dor-fail-1.md] [decisions/P-003/dor-fail-2.md] [reviews/P-003/_critic-dor.md].
+Your rulings in the phase: the Critic's size limit raised, the plan's place, and the standard lines [decisions/questions/P-003-critic-pack-cap.md] [decisions/questions/P-003-plan-place.md] [decisions/questions/P-003-standard-lines.md].
 The two steps skipped by your ruling show as not reached and not recorded [docs/projects/P-003.md:50] [docs/projects/P-003.md:51].
 
 ```milestones

@@ -2,9 +2,14 @@
 
 *Pre-registered before any run (D-047). Frozen once the line below is set.*
 
-*Draft 4 (2026-11-04), after the Critic's round 2, FAIL (reviews/EXP-007/_critic-r2-verbatim.md), and the
-owner's ruling on the route for the test data. Written from the Builder's test widget at 9eeae80.
-Changed: the widget sends the test data and the log to a branch of the private portfolio repository,
+*Draft 5 (2026-11-05), from the Builder's test widget at 491baa7, which answers the Reviewer's FAIL at
+9eeae80 (reviews/EXP-007/_reviewer-widget-9eeae80.md). Changed: `end.heads` logs every branch read,
+failed ones included, and the replay serves the same failures (Measure; Method 8); the replay serves
+exactly what was recorded, a read no clone can serve is `missing-answer`, a miss on the portfolio
+leaves every project not judged, and a start copy that can't be rebuilt has no fallback (Method 8);
+the send reads the test branch first, and its guard is one per send and stateful (Method 7).
+Draft 4 (2026-11-04), after the Critic's round 2, FAIL (reviews/EXP-007/_critic-r2-verbatim.md), and the
+owner's ruling on the route for the test data. Changed: the widget sends the test data and the log to a branch of the private portfolio repository,
 and the first draft's routes are withdrawn (finding 7); each refresh's snapshot holds the kept data it
 started from, its 304 answers and every branch read, and the judge replays only that refresh's own
 answers (findings 1, 2 and 6); the read states, and which of them a correct summary needs (3); what the
@@ -41,8 +46,8 @@ basis: docs/PROJECT.md Part 2, P-004's "Data on the phone", "Done when, and how 
 projects, Service-Desk, Personal-Org-Operating-Model and Model-Lab, plus the portfolio,
 shumpmaster/portfolio: four repositories); the request counts the plan cites, specs/S-001.md lines
 4954-4955, 14611 and 14620-14621; the Builder's test widget, src/widget-test/ (entry.js, send.js,
-snapshot.js, glue.js, judge.mjs) on build/builder/p004-test-widget at 9eeae80; the Critic's rounds 1
-and 2 and the Reviewer's check at b2b1711, reviews/EXP-007/
+snapshot.js, glue.js, judge.mjs, fakes.mjs) on build/builder/p004-test-widget at 491baa7; the Critic's
+rounds 1 and 2 and the Reviewer's checks at b2b1711 and 9eeae80, reviews/EXP-007/
 
 ## Hypothesis
 A Scriptable home-screen widget, run as the widget and not inside the Scriptable app, can make the
@@ -105,13 +110,24 @@ when nothing changed, lines 14620-14621), plus up to 25 for each record-reading 
      portfolio only, Contents read and write and nothing else (GitHub adds Metadata), 7-day expiry.
    - The widget builds the test data (the snapshot as one JSON) and the log in memory only, and sends
      both through GitHub's Git Data API to a new branch, `exp-007-test-data`, of the **private**
-     repository shumpmaster/portfolio, as `exp-007/test-data.json` and `exp-007/log.jsonl`. Its reads
-     there (main's ref and commit, and the test branch's ref when it already exists) use the read key;
-     only its writes use the send key. Nothing goes through Files or the share sheet.
+     repository shumpmaster/portfolio, as `exp-007/test-data.json` and `exp-007/log.jsonl`. Nothing
+     goes through Files or the share sheet.
+   - **Its reads on portfolio,** in this order, all with the read key (only its writes use the send
+     key): the test branch's ref (`git/ref/heads/exp-007-test-data`); main's ref
+     (`git/ref/heads/main`) only when the branch's read answers 404; then the parent commit
+     (`git/commits/<parent>`), for its tree. The parent is the branch's head when the branch exists,
+     else main's head; its tree is the base. When the branch exists, main is not read, and no commit
+     is made from main.
+   - **Its writes,** each once and in order: two blobs, a tree, a commit, and the ref write (a new
+     branch, or a non-force move of the existing one; a 422 is logged as "it changed during the send").
    - GitHub cannot narrow a key to one branch: the send key could also change portfolio's main, which
-     the desk reads. The widget's request guard (send.js) is the only limit: it refuses, before
-     sending, any request but those reads and a non-force write to that one branch. A branch
-     protection rule on portfolio's main is an optional second limit the owner may add.
+     the desk reads. The widget's request guard (send.js) is the only limit. It is one per send and
+     stateful, and refuses, before sending, any request but the next one above: `base_tree` must be the
+     parent's tree this send read; the tree exactly the two distinct paths, each entry with only
+     `path`, `mode`, `type` and `sha`, naming one of this send's two blobs; the commit that tree with
+     the one parent this send read; and the ref write naming this send's commit, as a create only when
+     the branch was absent and as a move only when it existed. A branch protection rule on portfolio's
+     main is an optional second limit the owner may add.
    - Portfolio has no workflows, and the desk reads only its main branch, so the branch starts nothing
      and shows nowhere. Do not open a pull request.
    - The Reviewer fetches the branch into its working session (its portfolio clone) and runs the judge
@@ -125,18 +141,24 @@ when nothing changed, lines 14620-14621), plus up to 25 for each record-reading 
      puts the data in the phone's backup and can default to iCloud Drive; and Service-Desk is a
      **public** repository, so uploading there would have published the private projects' records.
 8. **Judging.** The Reviewer takes the two files from the branch, makes sure each clone holds the
-   logged commits (fetching them), and from a checkout of build/builder/p004-test-widget at 9eeae80
+   logged commits (fetching them), and from a checkout of build/builder/p004-test-widget at 491baa7
    runs `node src/widget-test/judge.mjs log.jsonl --snapshot test-data.json <Service-Desk clone>
    <Personal-Org-Operating-Model clone> <Model-Lab clone> <portfolio clone>`. For each `end`, it runs
    the desk's own code on what that refresh read and compares the four fields of each project's
    summary. It has no fallbacks:
-   - **Start:** the kept data from that refresh's snapshot; else the judge's own, carried from a start
-     with no kept data (a cache reset) through refreshes each replayed whole with every answer found;
-     else not judged (`chain-not-reproducible`).
-   - **Answers:** branches, trees and blobs from the clone, each branch read at the commit `end.heads`
-     logged for it, in order; everything else only from that refresh's own saved answers, each
-     address's in order, a 304 as a 304. Any other request makes the project not judged
-     (`missing-answer`).
+   - **Start:** the kept data from that refresh's snapshot (the widget saves it for every refresh). A
+     start copy the judge can't rebuild is not judged (`chain-not-reproducible`), never replaced by the
+     judge's own carried copy. (The judge carries its own only for a snapshot holding no start copy,
+     which this widget never writes.)
+   - **Answers:** each branch read served as `end.heads` logged it, in order: a commit from the clone at
+     that commit, a `{status}` (304 included) as that status, `{error: "network"}` as a network failure.
+     A repository whose every branch read failed is judged against those failures, not skipped. Trees
+     and blobs come from the clone at the commit read. Everything else comes only from that refresh's
+     own saved answers, each address's in order, served exactly as recorded: a recorded 200 is never
+     turned into a 304. Not judged (`missing-answer`): a request the saved answers don't hold; a
+     branch, tree or blob read no clone can serve, `{status: 200, error: "body"}` and a read past the
+     logged list included. A miss on the project's own repository leaves that project not judged; a
+     miss on the portfolio, which is no project's, leaves every project not judged.
    - **Clock:** the replay runs at the refresh's start time. A project that differs is replayed again
      at the end time and each whole minute between, since some state words hold a time ("Can't read
      since HH:MM"). It matches only when all four fields match in one replay, at one clock time.
@@ -168,8 +190,10 @@ ruled"), so the log holds no project content. Every event carries `ev` and `id`.
   project's `shape` is `{read, kinds, openPulls}`, with `read` one of `ok`, `cant-read` or `checking`
   (stopped before done).
 - **`end`:** `at`, `ms`, `requests`, `bytes`, `cacheBytes`; `shas` (each repository's default-branch
-  commit); `heads` (every branch read, in order: a 304 as the commit before it, a failed read as
-  null); `summary`; `error`; and `snapshot` (true or false). Each project in `summary` is
+  commit); `heads` (every branch read of each repository, in order: a 200 as its commit; a 304 as the
+  commit read before it in this refresh, else `{status: 304}`; a 200 whose body is no branch as
+  `{status: 200, error: "body"}`; any other answer as `{status}`; a network failure as
+  `{error: "network"}`); `summary`; `error`; and `snapshot` (true or false). Each project in `summary` is
   `{waiting, state, stateHash, firstHash, headlineHash}`, with `state` in plain words only when it is
   one of the desk's fixed state forms, else null with `stateHash` (present only then). An error is in
   fixed wording, or the unexpected-error wording with `errorKind` and `errorHash`.
@@ -236,9 +260,9 @@ this, not the judge's printed label.
 ## Holdout use
 none.
 
-Before freezing: this file is frozen only after the Reviewer's check of the test widget at 9eeae80
-(no raw state, error text or other project content reaches the Documents folder; the test data and
-log are built in memory and sent only to portfolio's test branch) and the Critic's round 3, the last
-(D-044).
+Before freezing: freezing now waits on the Reviewer's check of the test widget at 491baa7 (no raw
+state, error text or other project content reaches the Documents folder; the test data and log are
+built in memory and sent only to portfolio's test branch; the replay and the send guard as Method 7
+and 8 state them) and the Critic's round 3, the last (D-044).
 
 frozen: the last commit that changes this file on build/definer/p004-widget-exp, before any run

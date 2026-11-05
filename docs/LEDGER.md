@@ -298,3 +298,16 @@ options_considered: B, a small Discovery for the desk (the model's rule; slower,
 decided_by: owner (decisions/questions/P-001-add-project-tests.md, A)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0022 — Model v3.7.0 adopted: a later project item may have a plan of its own, and is judged on it
+date: 2026-11-05
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The model is at v3.7.0 (its PR #46: S-035, bbe010f). Bring Service Desk to it, as the owner asked on 2026-11-05 ("then take the desk's adoption of 3.7.0"): a later project item may have a plan of its own in docs/projects/<item>.md, and the checks judge each item on its own plan?
+decision: Copied byte for byte from the model at bbe010f: governance/checks/ v3_checks.py, orchestrator.py, govlib.py and governance_checks.py (each was byte-identical to the model's copy at 226f1c5). The model's template-v3 changes from 226f1c5 to bbe010f are carried into this project's own copies, keeping the desk's own lines: governance/PACKS.toml's nine pack lines, BRIEFS.toml's four brief lines, SURFACES.md's two docs/projects/** lines; the builder, critic, definer and researcher cards; docs/SETUP.md, docs/gates/_GATE.md, docs/users/_PROFILE.md, intake/requests/README.md; docs/PROJECT.md's section 3 instruction line only; docs/projects/README.md and _TEMPLATE.md (a byte-for-byte copy of the model's plan form). OPERATING_MODEL_VERSION reads 3.7.0. P-003 and P-004 keep their ` · for:` path; their Discovery-2 and Discovery-7 now read not recorded, as S-035 says. The Chief of Staff's card gains its S-035 lines wherever it lives; no file of it is in a repository this session reaches. Nothing written before is rewritten.
+licenses_next: The briefing work (P-002) files its project request with docs/projects/P-002.md; P-003's plan is rewritten as docs/projects/P-003.md (decisions/questions/P-003-plan-place.md). The desk's own reading of the plans folder is S-001's (J1), and the design-reviewer pack gains its docs/projects/{item}.md line in a later change (reviews/302, N8).
+decided_by: owner (asked for the sync on 2026-11-05; merges this pull request)
+proposed_by: chief-of-staff
+reversibility: reversible

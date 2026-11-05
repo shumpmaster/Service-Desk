@@ -186,3 +186,32 @@ owner's answer, verbatim: "Widget sends it to portfolio (Recommended)".
 3. The Definer writes EXP-007's Draft 4 (this route, and the Critic's round 2 findings); the
    Critic's round 3 is the last (D-044). Then the registration is frozen and the owner gets the
    install steps.
+
+## Update: EXP-007 frozen, the test given to the owner (2026-11-05)
+- The test widget's final commit is 491baa7 on the local branch build/builder/p004-test-widget
+  (never pushed or merged). Its packed file, src/widget-test/needs-you-test.js, is 362,709 bytes,
+  sha256 2259de93853df4349024a47a3721c203237d2308d41db1d575fb3d688e39d0fe. The Reviewer passed it
+  (reviews/EXP-007/_reviewer-widget-491baa7.md). If this session's working copy is lost, a later
+  Builder rebuilds it from the frozen registration; the result must name the sha the owner ran.
+- EXP-007's registration is frozen at ad2709e (Draft 6), after the Critic's PASS at round 3
+  (reviews/EXP-007/critic.md).
+- The owner was given the packed file and short install steps: a read-only key at install, a
+  portfolio-only send key at the end, nothing through Files or iCloud. The steps are not a ruling.
+
+## Next
+1. Once #300 is on the default branch: record the answer in
+   decisions/questions/P-004-test-data-route.md, with the owner's exact words, "Widget sends it to
+   portfolio (Recommended)", and delete the question file (AGENTS.md section 5, model S-033).
+2. When the owner says "sent": fetch portfolio's branch exp-007-test-data into the portfolio clone;
+   the Reviewer runs `node src/widget-test/judge.mjs exp-007/log.jsonl --snapshot
+   exp-007/test-data.json <four clones>` from the widget's branch, fetched to the logged shas, and
+   judges against the frozen pass mark; the Builder files docs/handover/experiments/EXP-007-result.md
+   from the Reviewer's verdict. Then the branch is deleted. On a fail or a second "not judged", the
+   route goes back to the owner, with the sender's summary or the counts-only widget as fallbacks.
+3. Then size the work and prepare P-004's Design gate. Points for the owner there, each filed as a
+   question first: the phone's own iCloud backup; whether widget time counts toward V3; whether the
+   plan may follow P-003's form without Discovery or Design standard lines; and the widget's waiting
+   number, which is src/lib's count and may differ from the Home tile's. The gate case must also
+   say: memory could not be measured; the judge shares the widget's adapter (glue.js), cross-checked
+   independently only for projects with no pull requests; Service-Desk's cold read was 708 requests
+   offline, above the plan's "up to about 400".

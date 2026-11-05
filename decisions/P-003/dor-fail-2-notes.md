@@ -34,3 +34,11 @@ failed its own dry run (reviews/P-003-dor-dry-run/), so nothing in this FAIL is 
 the owner rules on the Discovery and Design standard lines; Part 1's stale statuses are tidied.
 3. A dry run on the real pack passes. 4. The Chief of Staff answers `resubmit`. If the owner wants
 P-003 before S-035's adoption, the Chief of Staff puts that choice to the owner.
+
+## Update, 2026-11-05: the dry run passes, and this card is answered `resubmit`
+P-003's plan was rewritten in its own form (docs/projects/P-003.md, PR #304), the owner ruled its standard
+lines (decisions/questions/P-003-standard-lines.md, A), and the dry run with the real pack failed once on
+three citations of records outside the pack (reviews/P-003-dor-dry-run/_critic-dry-run-2-verbatim.md),
+then passed (_critic-dry-run-3-verbatim.md). The Chief of Staff answers `resubmit` in the same pull request
+as the plan the dry run passed, so the real check reads that plan and not an older one, as happened on
+card 1. Its check run, later, still needs model S-036 and S-037 at the desk's next model update.

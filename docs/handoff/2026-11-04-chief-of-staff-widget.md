@@ -215,3 +215,17 @@ owner's answer, verbatim: "Widget sends it to portfolio (Recommended)".
    say: memory could not be measured; the judge shares the widget's adapter (glue.js), cross-checked
    independently only for projects with no pull requests; Service-Desk's cold read was 708 requests
    offline, above the plan's "up to about 400".
+
+## Open: the scope check fails on #300 (found 2026-11-05, after the push)
+`v3_checks scope --base origin/main` fails on the nine Definer commits that wrote EXP-007
+(57c024b to ad2709e): each carries `Spec: P-004`, and the check accepts only an `S-nnn` spec with a
+file in specs/ (govlib.py:822, v3_checks.py:1548). P-004 has no spec yet. My briefs gave the
+trailer; the slip is mine. The commits are on the pushed branch and force-push is denied, so they
+can't be re-made. CI will mark #300 red on this check. The desk's mechanism for commits the guard
+must skip is the `exempt` block of governance/SURFACES.md with a ledger entry each (R3, the owner's
+approval, as L-0002). Nothing has been changed for it. Next session: file a question (with the
+Critic's check and a pull request) offering (A) exempt the nine commits, with one ledger entry, the
+owner approving by merging; (B) the owner merges #300 with this one check red; (C) a check change
+letting a Definer commit name a project item (P-nnn) when its every path is in the Definer's lane
+(tools change, governance surface). Until then, builder-class commits for P-004 should not carry
+`Spec: P-004`. The test widget's own commits carry it too, but that branch is never merged.

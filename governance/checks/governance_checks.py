@@ -23,9 +23,10 @@ branch was deleted, or opened from a fork, is invisible to it.
 
 `handover` (model S-026 AC5) reads every file directly in docs/handover/ whose
 name ends in `.md` or `.markdown`, in any case (model S-029 AC3), except
-`_TEMPLATE.md`; subfolders are not read, and a symbolic link fails. No folder or
-no such file: it passes. Each file is read as UTF-8 (Windows line ends as `\n`,
-a leading byte order mark dropped, model S-029 AC3): blank lines, at most one
+`_TEMPLATE.md`; of its subfolders it reads only an own-plan item's folder,
+docs/handover/P-<n>/, its files directly in it in the same way (model S-035), and a
+symbolic link fails. No folder or no such file: it passes. Each file is read as
+UTF-8 (Windows line ends as `\n`, a leading byte order mark dropped, model S-029 AC3): blank lines, at most one
 `# ` title line, then blank lines and the handover form's two instruction lines
 (exactly as the form holds them) are skipped; the next line must be a `What this
 means for you` heading, as for `pr-body`. After it, blank lines and form lines
@@ -832,6 +833,8 @@ def tasks_problems(lines, start, draft):
 # model S-026 AC5: the handover package's plain opening.
 HANDOVER_REL = "docs/handover"
 HANDOVER_SKIP = "_TEMPLATE.md"
+# model S-035 AC13: an own-plan item's handover folder, read as the top level is; no other subfolder.
+HANDOVER_ITEM_RE = re.compile(r"^P-[0-9]{3,}$")
 # The handover form's two instruction lines, exactly as template-v3/docs/handover/_TEMPLATE.md holds them
 # (its opening line, and the line under "What this means for you"); a change to the form is made here too.
 HANDOVER_FORM_LINES = (
@@ -883,16 +886,32 @@ def handover_problems(text):
 
 
 def check_handover(root):
-    """(violations, notes): every top-level docs/handover/*.md but _TEMPLATE.md opens plainly (model S-026 AC5)."""
+    """(violations, notes): every docs/handover/*.md and docs/handover/P-<n>/*.md but _TEMPLATE.md opens plainly
+    (model S-026 AC5; model S-035 AC13)."""
     folder = os.path.join(root, HANDOVER_REL)
     if not os.path.isdir(folder):
         return [], []
+    v = _handover_folder(folder, HANDOVER_REL)
+    for name in sorted(os.listdir(folder)):
+        path = os.path.join(folder, name)
+        rel = "%s/%s" % (HANDOVER_REL, name)
+        if not HANDOVER_ITEM_RE.match(name):
+            continue
+        if os.path.islink(path):
+            v.append("%s: a symbolic link, not followed; an item's handover folder must be a real folder" % rel)
+        elif os.path.isdir(path):
+            v.extend(_handover_folder(path, rel))
+    return v, []
+
+
+def _handover_folder(folder, folder_rel):
+    """The findings for the files directly in one handover folder (model S-026 AC5)."""
     v = []
     for name in sorted(os.listdir(folder)):
         if not name.lower().endswith((".md", ".markdown")) or name == HANDOVER_SKIP:    # model S-029 AC3
             continue
         path = os.path.join(folder, name)
-        rel = "%s/%s" % (HANDOVER_REL, name)
+        rel = "%s/%s" % (folder_rel, name)
         if os.path.islink(path):
             v.append("%s: a symbolic link, not followed; a handover package must be a regular file" % rel)
             continue
@@ -905,7 +924,7 @@ def check_handover(root):
             v.append("%s: not valid UTF-8" % rel)
             continue
         v.extend("%s: %s" % (rel, p) for p in handover_problems(text))
-    return v, []
+    return v
 
 
 def run_pr_body(event, root="."):

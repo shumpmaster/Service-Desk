@@ -237,3 +237,10 @@ questions/P-004-registration-commits.md passed the Critic at round 2
 - "Exempt the nine commits (Recommended)" — "The nine commits are added to the desk's list of commits that its scope check and its surface check skip, each with an entry in the decision log saying why. The same list holds the desk's founding commit, a different case. From then on both of those checks skip these nine, not only the scope check; the check that each writer kept to its own files already passed on them, but only that past run shows it. The change goes into #300, the Reviewer checks it, and your merging #300 is your approval. Both checks then pass. The list entries could be removed later, but once #300 is merged that changes nothing, because the checks never walk merged commits again."
 - "Merge with the checks red" — "You merge #300 as it is. I close its task with the reason, so only the scope check stays red. No list or log change. The red mark stays in #300's history, and nobody can tell from the checks alone that it was looked at and allowed."
 - "Change the check" — "The check is changed so a plan-writer's commit may name a project like P-004 when it touches only the plan-writer's own files. Fixes this for every later project too, but it is a change to the desk's own tools, which needs its own written plan, the Critic's check, the Reviewer's, and your own approval. #300 waits until it's done."
+
+## The owner's answer to the scope-check question
+Asked as recorded above. The owner's answer, verbatim: "Exempt the nine commits (Recommended)".
+The nine commits are in governance/SURFACES.md's exempt block (L-0023 to L-0031), in PR #300; the
+Reviewer checks it there (R3: the Reviewer and the owner), and the owner's merge of #300 is the
+approval. Both answers (the data route and this) are recorded in decisions/questions/ once #300
+is on the default branch, each deleting its question file.

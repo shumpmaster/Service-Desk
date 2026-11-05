@@ -1,5 +1,5 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-11-05: 20 active rulings and 0 kills, from 22 ledger entries.
+As of 2026-11-05: 29 active rulings and 0 kills, from 31 ledger entries.
 
 ## Active rulings
 
@@ -9,6 +9,19 @@ As of 2026-11-05: 20 active rulings and 0 kills, from 22 ledger entries.
 | L-0003 | Yes, for S-001 only, until P-001 launches (S-001 AC28) or is stopped. The owner's ruling is decisions/questions/P-001-build-path.md, question 0. The Builder builds S-001 from the … | 2026-10-07 | never |
 | L-0020 | Running the desk. From launch on, these four jobs only stay in the Builder's lane against S-001 as it stands at launch: adding a project … | 2026-10-31 | never |
 | L-0021 | A, as an exception neither rule provides: the desk's tests are changed so they no longer depend on the live project list, and Model-Lab's row … | 2026-11-01 | never |
+
+### P-004
+| ID | Decision | Since | Expires |
+| --- | --- | --- | --- |
+| L-0023 | Exempt 57c024b8a9f2717008243d37b77d51a0e955e605 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0024 | Exempt 3dd65a5ad0845f974fcf554530272e44d208e481 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0025 | Exempt e11b6f4321d25702347097502ad7214146a5f01c (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0026 | Exempt ddc67fb8602b7ef7af5955edfda5a6d2505db4d0 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0027 | Exempt 7fdeedcbbaecf80e5b9189e979b6292e9d000fbd (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0028 | Exempt 514675db43d90a44ce0a05a141ed07769100e601 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0029 | Exempt 389dd68d5a76d7949a5476a0184dbaaa5e286ad9 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0030 | Exempt 4184785b67ebfa6e4b05d840b5c9d50f262cde66 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0031 | Exempt ad2709e20faddd72483acc0a21ce2aeaacecb73c (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
 
 ### project
 | ID | Decision | Since | Expires |

@@ -80,9 +80,10 @@ milestones (STANDARD_MILESTONES) and the timeline (`timeline`):
             section 3 lists at least one milestone not marked dropped.
   trace     also fails a milestone line out of form, a code-first line, a repeated
             id, a name holding a code or id, a `sprints:` entry not built,
-            reviewed and merged, and a draft spec's malformed `fixes:` or
-            `milestones:` line (a frozen one's is a NOTE); it prints the timeline
-            as NOTE lines.
+            reviewed and merged (where a copy's history is cut short, a
+            missing merge commit is a NOTE (model S-037)), and a draft spec's
+            malformed `fixes:` or `milestones:` line (a frozen one's is a
+            NOTE); it prints the timeline as NOTE lines.
   freeze    with --milestones, each spec it checks needs a `milestones:` header
             line; a spec with a `fixes:` line copying frozen criteria the owner's
             ruling names needs no plan review of its own.
@@ -864,6 +865,19 @@ def merged_pr_numbers(repo):
         return out
     except (g.GitError, OSError, ValueError):
         return set()
+
+
+def history_cut_short(repo):
+    """True when this copy's history is cut short (model S-037 AC2): git's own shallow flag is set, or HEAD names
+    a commit with no parent. Any git error, or no HEAD commit, counts as not cut short."""
+    try:
+        if g.git(repo, ["rev-parse", "--is-shallow-repository"]).strip() == b"true":
+            return True
+        if not g.git_ok(repo, ["rev-parse", "--verify", "-q", "HEAD^{commit}"]):
+            return False
+        return len(g.git(repo, ["rev-list", "--max-count=2", "HEAD"]).split()) == 1
+    except (g.GitError, OSError, ValueError):
+        return False
 
 
 def pr_number(c):
@@ -1936,6 +1950,7 @@ def milestone_trace(root):
     ids = set(where_id)
     merged = set(mg["item"] for mg in read_merges(root))
     prs = None
+    short = None
     for m in ms:
         for s in m.sprints:
             where = "%s line %d: %s's sprint %s" % (m.plan_rel, m.lineno, m.id, s)
@@ -1949,6 +1964,13 @@ def milestone_trace(root):
                 if prs is None:
                     prs = merged_pr_numbers(root)
                 if n not in prs:
+                    if short is None:
+                        short = history_cut_short(root)
+                    if short:
+                        notes.append("NOTE: %s has no merge commit here: this copy's history is cut short (a shallow "
+                                     "clone or a one-commit copy), so it is judged where the full history is "
+                                     "(model S-037)" % where)
+                        continue
                     v.append("%s has no merge commit `Merge pull request #%d from …` or `<title> (#%d)` reachable "
                              "from HEAD: a sprint is built, reviewed and merged (model S-023 AC5, model S-032 AC9)"
                              % (where, n, n))

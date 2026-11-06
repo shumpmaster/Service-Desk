@@ -733,14 +733,40 @@ def load_caps(path, h=None):
     return caps_of(obj.get("limits") if isinstance(obj, dict) else None)
 
 
-def make_tar(src, out_file, caps=None):
-    """A deterministic pax tar of src's folders and regular files. Returns (sha256, omitted)."""
+# model S-036 AC1: the raster images the check run's copy leaves out of docs/design/ (SVG is text).
+DESIGN_IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".bmp", ".tif", ".tiff", ".ico", ".heic",
+                     ".heif")
+
+
+def is_text(data):
+    """model S-036 AC3: strict UTF-8 with no NUL byte, from the bytes only (an empty file is text)."""
+    if data is None or b"\x00" in data:
+        return False
+    try:
+        data.decode("utf-8", errors="strict")
+    except UnicodeDecodeError:
+        return False
+    return True
+
+
+def is_design_image(rel):
+    return rel.startswith("docs/design/") and rel.rsplit("/", 1)[-1].lower().endswith(DESIGN_IMAGE_EXTS)
+
+
+def make_tar(src, out_file, caps=None, check_tree=False):
+    """A deterministic pax tar of src's folders and regular files. Returns (sha256, omitted).
+    check_tree (the check run's tree only, model S-036 AC1): design images are left out, and a file over the
+    per-file cap goes in when it is text."""
     items, omitted, total = [], [], 0
     for rel, st, kind in sr.walk(src):
         if kind == "dir":
             items.append((rel, None, None))
         elif kind == "file" and sr.is_utf8(rel):
-            if caps and st.st_size > caps["file_bytes"]:
+            if check_tree and is_design_image(rel):
+                omitted.append((rel, "a design image"))
+                continue
+            if caps and st.st_size > caps["file_bytes"] and not (
+                    check_tree and is_text(sr.read_regular(os.path.join(src, rel)))):
                 raise CapError("%s is %d bytes, over the per-file cap of %d" % (rel, st.st_size, caps["file_bytes"]))
             total += st.st_size
             if caps and total > caps["change_set_bytes"]:
@@ -787,8 +813,10 @@ def cmd_tar(a):
     return 0
 
 
-def safe_untar(tar_path, expected, out, caps):
-    """Check, then extract a hand-over tar into a new folder (AC8). Raises Refused."""
+def safe_untar(tar_path, expected, out, caps, check_tree=False):
+    """Check, then extract a hand-over tar into a new folder (AC8). Raises Refused.
+    check_tree (the check run's tree only, model S-036 AC2): a member over the per-file cap is let through
+    when its bytes are text, read only after the total and member-count checks."""
     if not hasattr(tarfile, "data_filter"):
         raise g.UsageError("this Python has no tarfile data filter (3.11.4+ is needed)")
     check_hash(expected)
@@ -816,7 +844,7 @@ def safe_untar(tar_path, expected, out, caps):
                     raise Refused("%s holds more than %d members; refused (model S-016 AC9)" % (tar_path, MAX_MEMBERS))
         except (tarfile.TarError, OSError) as exc:
             raise Refused("%s is not a readable tar: %s" % (tar_path, exc))
-        seen, files, total = set(), set(), 0
+        seen, files, total, large = set(), set(), 0, []
         for m in members:
             name = m.name
             if name.startswith("/") or os.path.isabs(name):
@@ -838,11 +866,22 @@ def safe_untar(tar_path, expected, out, caps):
             if m.isreg():
                 files.add(n)
                 if m.size > caps["file_bytes"]:
-                    raise Refused("%s: %s is over the per-file cap (%d bytes)" % (tar_path, sr.show(name),
-                                                                                caps["file_bytes"]))
+                    if not check_tree:
+                        raise Refused("%s: %s is over the per-file cap (%d bytes)" % (tar_path, sr.show(name),
+                                                                                    caps["file_bytes"]))
+                    large.append(m)
                 total += m.size
                 if total > caps["change_set_bytes"]:
                     raise Refused("%s is over the total cap (%d bytes)" % (tar_path, caps["change_set_bytes"]))
+        for m in large:
+            try:
+                fh = tf.extractfile(m)
+                data = fh.read() if fh is not None else None
+            except (tarfile.TarError, OSError) as exc:
+                raise Refused("%s is not a readable tar: %s" % (tar_path, exc))
+            if not is_text(data):
+                raise Refused("%s: %s is over the per-file cap (%d bytes)" % (tar_path, sr.show(m.name),
+                                                                            caps["file_bytes"]))
         fresh_dir(out, "--out")
         try:
             tf.extractall(out, filter="data")
@@ -867,7 +906,7 @@ def cmd_untar(a):
         raise g.UsageError("give exactly one of --hash and --hash-file")
     expected = a.hash or hash_from_file(a.hash_file)
     caps = load_caps(a.limits, a.limits_hash)
-    safe_untar(a.tar, expected, a.out, caps)
+    safe_untar(a.tar, expected, a.out, caps, check_tree=a.check_tree)
     print("OK: %s extracted into %s" % (a.tar, a.out))
     return 0
 
@@ -1610,15 +1649,15 @@ class Prep(object):
         return build_tree(self.repo, self.a.remote, self.a.default_ref, item, role, ref, self.overlay,
                           os.path.join(self.work, "tree-%d" % n))
 
-    def put_tar(self, src, name, n, hashes):
+    def put_tar(self, src, name, n, hashes, check_tree=False):
         path = os.path.join(self.a.out, "%s-%d" % (name, n), "%s.tar" % name)
         try:
-            h, _ = make_tar(src, path, self.caps)
+            h, omitted = make_tar(src, path, self.caps, check_tree=check_tree)
         except CapError as exc:
             shutil.rmtree(os.path.dirname(path), True)
             raise EntryError("the %s is over RUNNER.toml's caps: %s" % (name, exc))
         hashes["%s-%d" % (name, n)] = h
-        return h
+        return h, omitted
 
     def entry_file(self, n, e):
         path = os.path.join(self.work, "entry-%d.json" % n)
@@ -1716,10 +1755,16 @@ class Prep(object):
         control = os.path.join(self.a.out, "control-%d" % n, "control.json")
         os.makedirs(os.path.dirname(control), exist_ok=True)
         try:
+            # model S-036 AC4: the tree first, so its left-out list goes into the (hashed) control file.
+            _, omitted = self.put_tar(tree, "tree", n, hashes, check_tree=True)
+            left_out = os.path.join(self.work, "left-out-%d.json" % n)
+            with open(left_out, "w", encoding="utf-8") as fh:
+                json.dump([[rel, why] for rel, why in omitted], fh)
+            for rel, why in omitted:
+                print("omitted (%s): %s" % (why, sr.show(rel)[1:-1]))
             h = self.pack(["pack", "--entry", self.entry_file(n, e), "--source", tree, "--now", self.now,
-                           "--control", control, "--builder-control", bpath, "--builder-hash", bh]
-                          + self.source_tip_args(item))
-            self.put_tar(tree, "tree", n, hashes)
+                           "--control", control, "--builder-control", bpath, "--builder-hash", bh,
+                           "--left-out", left_out] + self.source_tip_args(item))
             self.put_tar(cdir, "changes", n, hashes)
         except EntryError:
             for name in ("control", "tree", "changes"):
@@ -4426,7 +4471,8 @@ def build_parser():
     add("changeset", "--item", "--role", "--ref", "--control", "--hash", "--out", **repo)
     add("prepare", "--decided", "--decided-hash", "--now", "--out", github_output=None, **repo)
     add("tar", "--dir", "--out", limits=None, limits_hash=None, summary=None)
-    add("untar", "--tar", "--out", hash=None, hash_file=None, limits=None, limits_hash=None)
+    s = add("untar", "--tar", "--out", hash=None, hash_file=None, limits=None, limits_hash=None)
+    s.add_argument("--check-tree", action="store_true")
     add("verify", "--file", "--hash")
     add("cli-version", "--control", "--hash", github_output=None)
     add("leak-check", "--control", "--hash", "--out", pack=None)

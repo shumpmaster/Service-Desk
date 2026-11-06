@@ -116,6 +116,7 @@ Discovery i1
     decision 2026-11-05T16:25:24Z dor-fail resubmit
     step 2026-11-05T16:30:02Z critic stage 2
     step 2026-11-06T16:16:56Z critic-gate stage 2
+    decision 2026-11-06T17:50:25Z dor hold
 ```
 
 </details>

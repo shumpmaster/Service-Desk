@@ -257,7 +257,8 @@ cold read finished (1,033 requests, 2 minutes) and later app refreshes matched t
 on the home screen, all 25 widget refreshes were stopped within seconds, and none started from a
 complete kept copy, because the widget appears not to see the app's Caches folder (Documents, the
 log, is shared). No counted later refresh ran; the frozen registration does not cleanly decide the
-case. PR #300 was not yet merged when this was written; the owner had added reviews/300/owner.md.
+case. PR #300 was merged by the owner on 2026-11-06, after the owner added
+reviews/300/owner.md.
 
 ## Next
 1. After #300 merges: restart the claude branch from main (it holds only merged history), push

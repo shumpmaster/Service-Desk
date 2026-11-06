@@ -249,3 +249,26 @@ is on the default branch, each deleting its question file.
 Main took L-0023 (model 3.7.2 sync) while #300 was open, so at the merge of main the nine
 exemption entries became L-0024 to L-0032 (governance/SURFACES.md, docs/LEDGER.md and the register
 row match). Earlier lines here naming L-0023 to L-0031 mean these.
+
+## Update: EXP-007 run and judged — NOT JUDGED (2026-11-06)
+The owner ran the test and sent its data (portfolio, branch exp-007-test-data, 620e2f4). The
+Reviewer's verdict, verbatim in reviews/EXP-007/_reviewer-result.md: NOT JUDGED. In the app, the
+cold read finished (1,033 requests, 2 minutes) and later app refreshes matched the desk's own code;
+on the home screen, all 25 widget refreshes were stopped within seconds, and none started from a
+complete kept copy, because the widget appears not to see the app's Caches folder (Documents, the
+log, is shared). No counted later refresh ran; the frozen registration does not cleanly decide the
+case. PR #300 was not yet merged when this was written; the owner had added reviews/300/owner.md.
+
+## Next
+1. After #300 merges: restart the claude branch from main (it holds only merged history), push
+   these records, and record both answers (P-004-test-data-route, P-004-registration-commits) in
+   decisions/questions/, deleting the question files.
+2. The result file docs/handover/experiments/EXP-007-result.md is the Builder's lane, and a
+   builder-class commit needs a `Spec:` trailer the scope check accepts; P-004 has none. Settle
+   this before the Builder files it (it may be part of the next question).
+3. File a question (Critic check, pull request) on the next step, with options such as: the route
+   comes back as failed and P-004 takes a fallback (the sender's summary, or the counts-only
+   widget); a second test with the kept data in Documents, which the phone's iCloud backup copies
+   (the unruled backup point, so it needs that ruling too); or a run repeated as registered,
+   expected to hit the same storage split. Record the 1,033-request cold read for sizing.
+4. The owner can delete the test data branch and the script's data once the result is filed.

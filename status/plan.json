@@ -1,3 +1,14 @@
 {
-  "entries": []
+  "entries": [
+    {
+      "action": "dispatch",
+      "gate": "dor",
+      "gate_n": 2,
+      "item": "P-003",
+      "role": "critic-gate",
+      "route": "case-ready",
+      "spec": null,
+      "stage": 2
+    }
+  ]
 }

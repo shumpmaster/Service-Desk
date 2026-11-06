@@ -35,7 +35,7 @@ Two steps you took on, the go-ahead and the risk list, read "not recorded" on th
 ## 6. Cost and limits
 
 $0 a month of new spend, no new data or outside service, tier T1 [docs/projects/P-003.md:79] [docs/projects/P-003.md:80] [docs/projects/P-003.md:81].
-Your time: none to run it [docs/projects/P-003.md:90]; usage: per helper run, no total [research/P-003-sizing-findings.md:3].
+Your time: none to run it [docs/projects/P-003.md:90]; usage: per helper run, such as 91,414 tokens for the sizing, no total [research/P-003-sizing-findings.md:3].
 
 ## 7. Kill criteria
 

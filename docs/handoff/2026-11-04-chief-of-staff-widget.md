@@ -293,3 +293,29 @@ By the session's question tool, both questions together, once their pull request
   - "Keep the Reviewer's record as the result" — "No result file is written. The Reviewer's verdict, already on the desk word for word with a plain summary written for the result, stands as the result, and the desk's notes record that the test's plan named a file that was not written. No exemption and no check change, and the test data can be deleted as soon as you rule. The folder of the desk's test results has a gap where this one would be, and it covers only this result: a second test's plan would still need A or D."
   - "Wait for P-004's spec" — "The result is filed once P-004 has a spec, after its Design gate. Any widget P-004 goes on to build, a fallback included, gets one there. No exemption, but the test data and the phone's copy wait, perhaps for weeks, and if P-004 is dropped the result is never filed. A second test's plan or a repeat's result would wait for the gate too."
   - "Change the check" — "The check is changed so a Builder commit may name a project like P-004 when it changes only a test result file. Fixes this for every later project, but the desk's checks come from its operating model, so a change made only here could be undone at the next update: the lasting fix is a change to the model, with its own written plan, the Critic's check, the Reviewer's and your approval. Days to weeks; the result waits."
+
+## The owner's answers to the two next-step questions
+PR #312 filed both questions. The owner was then asked both together, by the session's question
+tool, with the options and descriptions recorded verbatim above ("The ask, as it will be put").
+The owner's answers, verbatim:
+- "The widget test couldn't reach what it was meant to check. What next?": "Second test, data kept in
+  Documents (Recommended)"
+- "How should the widget test's result be filed, so it passes the desk's scope check?": "Exempt each
+  such commit (Recommended)"
+
+## Next
+1. Once #312 is on the default branch: one pull request recording both answers in
+   decisions/questions/P-004-widget-next-step.md and decisions/questions/P-004-result-spec.md, with
+   the owner's exact words, deleting both question files (AGENTS.md section 5, model S-033).
+2. The Builder files docs/handover/experiments/EXP-007-result.md from the Reviewer's verdict, in a
+   commit with no Spec: trailer, on purpose; the Chief of Staff adds that commit's full sha to
+   governance/SURFACES.md's exempt block with one ledger entry (check main's latest ledger ID first);
+   the Reviewer checks it; the owner's merge approves it. The result records the deviation that the
+   run used 553bcc6, not 491baa7 (the Reviewer's finding 1).
+3. The Definer registers the second test as EXP-008 (Critic, at most three rounds, D-044), each
+   commit with no Spec: trailer and exempted the same way. The Builder rebuilds the test widget and
+   its judge with the kept copy and the per-refresh snapshots in Documents; the Reviewer checks the
+   widget before freezing. The install steps tell the owner to switch Scriptable off in the phone's
+   iCloud Backup settings first and check it daily.
+4. The owner may delete both EXP-007 keys on GitHub now. The portfolio branch exp-007-test-data and
+   the phone's test data are deleted after the result is filed.

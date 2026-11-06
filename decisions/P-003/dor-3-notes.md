@@ -37,3 +37,10 @@ hand-built pack did not. The next dry run uses the pipeline's own pack, or holds
 2. A Critic dry run with the form in its pack, to a pass.
 3. The case on main; the pipeline's gate Critic reads it again; a new card (dor-4) reaches you, with notes.
 Nothing about the fix itself changes, and nothing is irreversible.
+
+## Update, 2026-11-06: answered `hold`
+The owner answered `hold` (decisions/P-003/dor-3.md, commit e296ee8) before these notes reached main, with
+an empty `Reason:` line, which a hold cannot be read without. At the owner's request ("You are good to fill
+it in for me, use the reason as what you described") the Chief of Staff filled in the reason given above,
+under a `Proxy:` line. The desk's answer box starts a hold with an empty `Reason:` line and warns only in its
+own check, so a record made straight on GitHub can miss it: a lesson for the desk.

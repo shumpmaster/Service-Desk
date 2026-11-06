@@ -312,7 +312,20 @@ decided_by: owner (asked for the sync on 2026-11-05; merges this pull request)
 proposed_by: chief-of-staff
 reversibility: reversible
 
-## L-0023 — The plan-writer's commit 57c024b (EXP-007 draft 1 (its pre-registration)) is exempt from the range checks
+## L-0023 — Model v3.7.2 adopted: the check run's copy leaves out design images and lets large text through, and a cut-short history reports the sprint-merged test
+date: 2026-11-05
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The model is at v3.7.2: S-036 (3.7.1, the check run's copy) and S-037 (3.7.2, a cut-short history). Bring Service Desk to it, as the owner asked on 2026-11-05 ("Then plan and make the desk's model sync to 3.7.2 (S-036 and S-037 together, with the workflow's tree untar line)"), so the card fix's first check run is neither refused on the desk's large files nor failed on nine lines that are not the builder's?
+decision: Copied byte for byte from the model at b18259c (its pull request for 3.7.2): governance/checks/ orchestrator_git.py, session_runner.py and v3_checks.py (each was byte-identical to the model's copy at bbe010f before it). The workflow's tree untar line gains ` --check-tree` with them, as the model's CHANGELOG 3.7.1 says the two go together; .github/workflows/orchestrator.yml is then byte-identical to the model's template-v3 copy. OPERATING_MODEL_VERSION reads 3.7.2. Also the design-reviewer pack may read docs/projects/{item}.md (reviews/302, N8, carried in L-0022). This pull request merges after the model's 3.7.2 pull request.
+licenses_next: P-003's check runs on the desk's full tree; P-002 reaches design review with its own plan in the pack.
+decided_by: owner (asked for the sync on 2026-11-05; merges this pull request)
+proposed_by: chief-of-staff
+reversibility: reversible
+
+## L-0024 — The plan-writer's commit 57c024b (EXP-007 draft 1 (its pre-registration)) is exempt from the range checks
 date: 2026-11-05
 type: ruling
 supersedes: []
@@ -326,7 +339,7 @@ decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in
 proposed_by: chief-of-staff
 reversibility: reversible
 
-## L-0024 — The plan-writer's commit 3dd65a5 (EXP-007 draft 1, the log's route and the key) is exempt from the range checks
+## L-0025 — The plan-writer's commit 3dd65a5 (EXP-007 draft 1, the log's route and the key) is exempt from the range checks
 date: 2026-11-05
 type: ruling
 supersedes: []
@@ -340,7 +353,7 @@ decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in
 proposed_by: chief-of-staff
 reversibility: reversible
 
-## L-0025 — The plan-writer's commit e11b6f4 (EXP-007 draft 2) is exempt from the range checks
+## L-0026 — The plan-writer's commit e11b6f4 (EXP-007 draft 2) is exempt from the range checks
 date: 2026-11-05
 type: ruling
 supersedes: []
@@ -354,7 +367,7 @@ decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in
 proposed_by: chief-of-staff
 reversibility: reversible
 
-## L-0026 — The plan-writer's commit ddc67fb (EXP-007 draft 2, its failure cases) is exempt from the range checks
+## L-0027 — The plan-writer's commit ddc67fb (EXP-007 draft 2, its failure cases) is exempt from the range checks
 date: 2026-11-05
 type: ruling
 supersedes: []
@@ -368,7 +381,7 @@ decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in
 proposed_by: chief-of-staff
 reversibility: reversible
 
-## L-0027 — The plan-writer's commit 7fdeedc (EXP-007 draft 3) is exempt from the range checks
+## L-0028 — The plan-writer's commit 7fdeedc (EXP-007 draft 3) is exempt from the range checks
 date: 2026-11-05
 type: ruling
 supersedes: []
@@ -382,7 +395,7 @@ decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in
 proposed_by: chief-of-staff
 reversibility: reversible
 
-## L-0028 — The plan-writer's commit 514675d (EXP-007 draft 3, from the widget at 4a2684e) is exempt from the range checks
+## L-0029 — The plan-writer's commit 514675d (EXP-007 draft 3, from the widget at 4a2684e) is exempt from the range checks
 date: 2026-11-05
 type: ruling
 supersedes: []
@@ -396,7 +409,7 @@ decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in
 proposed_by: chief-of-staff
 reversibility: reversible
 
-## L-0029 — The plan-writer's commit 389dd68 (EXP-007 draft 4) is exempt from the range checks
+## L-0030 — The plan-writer's commit 389dd68 (EXP-007 draft 4) is exempt from the range checks
 date: 2026-11-05
 type: ruling
 supersedes: []
@@ -410,7 +423,7 @@ decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in
 proposed_by: chief-of-staff
 reversibility: reversible
 
-## L-0030 — The plan-writer's commit 4184785 (EXP-007 draft 5) is exempt from the range checks
+## L-0031 — The plan-writer's commit 4184785 (EXP-007 draft 5) is exempt from the range checks
 date: 2026-11-05
 type: ruling
 supersedes: []
@@ -424,7 +437,7 @@ decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in
 proposed_by: chief-of-staff
 reversibility: reversible
 
-## L-0031 — The plan-writer's commit ad2709e (EXP-007 draft 6, the frozen version) is exempt from the range checks
+## L-0032 — The plan-writer's commit ad2709e (EXP-007 draft 6, the frozen version) is exempt from the range checks
 date: 2026-11-05
 type: ruling
 supersedes: []

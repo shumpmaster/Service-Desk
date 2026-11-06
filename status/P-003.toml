@@ -1,12 +1,15 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "project"
 stage = 2
-state = "ready"
-role = "critic"
+state = "waiting-owner"
+role = "critic-gate"
 last_verdict = "none"
 plan_round = 2
 build_round = 0
 confirm_used = false
 attempts = 0
 sessions = 0
-card = 2
+gate = "dor"
+card = 3
+gate_n = 1
+gate_recommendation = "**The Critic's recommendation:** recycle into Design. The substance supports proceeding: the readiness check passed, the cost is $0 at tier T1, and the risks have answers. But the case breaks its form on length and visuals, and the owner can't see the milestone they are asked to approve. Fix the case and resubmit it. This is not a call to redo Discovery. I'd expect a corrected case to support proceed."

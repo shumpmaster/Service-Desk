@@ -113,7 +113,7 @@ must_not_see = ["docs/PROJECT.md", "docs/projects/**", "docs/gates/**/*-case.md"
 # The design domain's reviewer (governance/domains/design/README.md; .claude/agents/design-reviewer.md):
 # "The domain pack; the diff; the page as it renders; the owner's design rulings the pack lists."
 must_read = ["governance/domains/design/README.md", "src/public/**", "{ruling}"]
-may_read = ["specs/{spec}.md", "docs/PROJECT.md", "docs/design/**", "src/**", "tests/**",
+may_read = ["specs/{spec}.md", "docs/PROJECT.md", "docs/projects/{item}.md", "docs/design/**", "src/**", "tests/**",
             "decisions/**",  # the owner's ruling records; the Chief of Staff's -notes.md never enter a pack
             "questions/**",  # the open questions, so an open one is never taken as ruled
             "library/**", "docs/playbooks/**"]

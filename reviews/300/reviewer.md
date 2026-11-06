@@ -1,6 +1,6 @@
 Verdict: PASS
 
-The Reviewer's verdict on PR #300 (R3: governance/SURFACES.md's exempt block gains the nine plan-writer commits of EXP-007, L-0023 to L-0031, the owner's answer "Exempt the nine commits (Recommended)"), verbatim below. Finding 4's wording fault in the register row was fixed after it. Recorded by the orchestrator, session session_01QBwHGNFKViyibzxHx5qTtm, 2026-11-05.
+The Reviewer's verdict on PR #300 (R3: governance/SURFACES.md's exempt block gains the nine plan-writer commits of EXP-007, L-0023 to L-0031, the owner's answer "Exempt the nine commits (Recommended)"), verbatim below. Finding 4's wording fault in the register row was fixed after it. Recorded by the orchestrator, session session_01QBwHGNFKViyibzxHx5qTtm, 2026-11-05. Note, 2026-11-06: main took L-0023 for the model 3.7.2 sync while this PR was open, so the nine entries were renumbered L-0024 to L-0032 at the merge of main; the verdict below names their earlier numbers.
 
 ---
 

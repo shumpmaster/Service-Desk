@@ -1,5 +1,5 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-11-05: 29 active rulings and 0 kills, from 31 ledger entries.
+As of 2026-11-05: 30 active rulings and 0 kills, from 32 ledger entries.
 
 ## Active rulings
 
@@ -13,15 +13,15 @@ As of 2026-11-05: 29 active rulings and 0 kills, from 31 ledger entries.
 ### P-004
 | ID | Decision | Since | Expires |
 | --- | --- | --- | --- |
-| L-0023 | Exempt 57c024b8a9f2717008243d37b77d51a0e955e605 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
-| L-0024 | Exempt 3dd65a5ad0845f974fcf554530272e44d208e481 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
-| L-0025 | Exempt e11b6f4321d25702347097502ad7214146a5f01c (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
-| L-0026 | Exempt ddc67fb8602b7ef7af5955edfda5a6d2505db4d0 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
-| L-0027 | Exempt 7fdeedcbbaecf80e5b9189e979b6292e9d000fbd (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
-| L-0028 | Exempt 514675db43d90a44ce0a05a141ed07769100e601 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
-| L-0029 | Exempt 389dd68d5a76d7949a5476a0184dbaaa5e286ad9 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
-| L-0030 | Exempt 4184785b67ebfa6e4b05d840b5c9d50f262cde66 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
-| L-0031 | Exempt ad2709e20faddd72483acc0a21ce2aeaacecb73c (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0024 | Exempt 57c024b8a9f2717008243d37b77d51a0e955e605 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0025 | Exempt 3dd65a5ad0845f974fcf554530272e44d208e481 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0026 | Exempt e11b6f4321d25702347097502ad7214146a5f01c (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0027 | Exempt ddc67fb8602b7ef7af5955edfda5a6d2505db4d0 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0028 | Exempt 7fdeedcbbaecf80e5b9189e979b6292e9d000fbd (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0029 | Exempt 514675db43d90a44ce0a05a141ed07769100e601 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0030 | Exempt 389dd68d5a76d7949a5476a0184dbaaa5e286ad9 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0031 | Exempt 4184785b67ebfa6e4b05d840b5c9d50f262cde66 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0032 | Exempt ad2709e20faddd72483acc0a21ce2aeaacecb73c (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
 
 ### project
 | ID | Decision | Since | Expires |
@@ -43,6 +43,7 @@ As of 2026-11-05: 29 active rulings and 0 kills, from 31 ledger entries.
 | L-0017 | asks-merge: granted, until the owner withdraws it by a later delegation entry superseding this one, with a decision beginning "asks-merge withdrawn:". The workflow merges only … | 2026-10-17 | never |
 | L-0018 | design-reviewer joins the roster as a read-only reviewer with the design domain pack (governance/domains/design/README.md). Its verdict is required on src/public/** (governance/risk-paths.toml), without raising a change's … | 2026-10-19 | never |
 | L-0022 | Copied byte for byte from the model at bbe010f: governance/checks/ v3_checks.py, orchestrator.py, govlib.py and governance_checks.py (each was byte-identical to the model's copy at 226f1c5). The … | 2026-11-05 | never |
+| L-0023 | Copied byte for byte from the model at b18259c (its pull request for 3.7.2): governance/checks/ orchestrator_git.py, session_runner.py and v3_checks.py (each was byte-identical to the model's … | 2026-11-05 | never |
 
 ## Kills
 None.

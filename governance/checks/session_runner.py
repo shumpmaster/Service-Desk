@@ -747,6 +747,20 @@ def manifest_problems(roles, ctl):
     return out
 
 
+def load_left_out(path):
+    """model S-036 AC4: the check run's left-out list, a JSON list of [path, reason] pairs, as
+    [{"path", "reason"}] sorted by path."""
+    data = read_regular(path)
+    try:
+        obj = json.loads(data.decode("utf-8")) if data is not None else None
+    except (UnicodeDecodeError, ValueError):
+        obj = None
+    if not isinstance(obj, list) or not all(isinstance(x, list) and len(x) == 2
+                                            and all(isinstance(v, str) for v in x) for x in obj):
+        raise g.UsageError("--left-out %s is not a JSON list of [path, reason] pairs" % path)
+    return [{"path": p, "reason": why} for p, why in sorted(obj, key=lambda x: x[0])]
+
+
 def cmd_pack(a):
     now = parse_now(a.now)
     now_s = orch.fmt_time(now)
@@ -770,15 +784,20 @@ def cmd_pack(a):
             raise g.UsageError("a run-checks entry gets a control file only, no pack folder (AC2)")
         if not a.builder_control or not a.builder_hash:
             raise g.UsageError("a run-checks entry needs --builder-control and --builder-hash")
+        left_out = load_left_out(a.left_out) if a.left_out is not None else None
         b = load_control(a.builder_control, a.builder_hash, what="builder's control file")
         if b.get("class") != "builder" or b["entry"]["item"] != entry["item"]:
             raise Refused("the builder's control file is not a builder-class session of item %s" % entry["item"])
         control = {"format": CONTROL_FORMAT, "entry": entry, "dispatched_at": now_s, "session": session,
                    "role": "checks", "builder_control_hash": a.builder_hash, "limits": dict(cfg.limits),
                    "credential_files": cfg.credential_files, "source_tip": source_tip}
+        if left_out is not None:
+            control["left_out"] = left_out
         print(write_control(a.control, control))
         return 0
 
+    if a.left_out is not None:
+        raise g.UsageError("--left-out is for a run-checks entry only (model S-036 AC4)")
     if role not in SESSION_ROLES:
         raise Refused("unknown role %r in the plan entry for %s; report it as result `error`" % (role, entry["item"]))
     if not a.pack:
@@ -1833,8 +1852,10 @@ def cmd_record(a):
         changes = load_changes(a.changes, ctl["builder_control_hash"])
         log = read_regular(os.path.join(a.checks, "checks.log")) or b""
         disc = [(d.get("path"), d.get("reason")) for d in changes.get("discarded", [])]
+        left = [(d.get("path"), d.get("reason")) for d in ctl.get("left_out") or []]
         tail = ("\n== Discarded from the builder's last change set (model S-014 AC8)\n%s"
-                % (discard_lines(disc) or "none\n")).encode("utf-8")
+                "\n== Left out of the check run's copy (model S-036)\n%s"
+                % (discard_lines(disc) or "none\n", discard_lines(left) or "none\n")).encode("utf-8")
         data, _ = cap(log + tail, len(log) + len(tail), lim["record_bytes"])
         result = res["result"]
         verdict = res.get("verdict") if result == "ok" and res.get("verdict") in ("PASS", "FAIL") else "none"
@@ -1907,6 +1928,7 @@ def build_parser():
     s.add_argument("--builder-hash")
     s.add_argument("--waivers")
     s.add_argument("--source-tip")
+    s.add_argument("--left-out")
 
     s = sub.add_parser("run")
     for k in ("--pack", "--control", "--hash", "--out"):

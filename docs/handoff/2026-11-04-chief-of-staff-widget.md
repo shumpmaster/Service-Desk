@@ -244,3 +244,8 @@ The nine commits are in governance/SURFACES.md's exempt block (L-0023 to L-0031)
 Reviewer checks it there (R3: the Reviewer and the owner), and the owner's merge of #300 is the
 approval. Both answers (the data route and this) are recorded in decisions/questions/ once #300
 is on the default branch, each deleting its question file.
+
+## Note: the nine ledger entries renumbered (2026-11-06)
+Main took L-0023 (model 3.7.2 sync) while #300 was open, so at the merge of main the nine
+exemption entries became L-0024 to L-0032 (governance/SURFACES.md, docs/LEDGER.md and the register
+row match). Earlier lines here naming L-0023 to L-0031 mean these.

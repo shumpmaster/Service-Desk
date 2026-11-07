@@ -1,15 +1,14 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "project"
-stage = 2
-state = "waiting-owner"
-role = "critic-gate"
+stage = 3
+state = "ready"
+role = "definer"
 last_verdict = "none"
 plan_round = 2
 build_round = 0
 confirm_used = false
 attempts = 0
 sessions = 0
-gate = "dor"
 card = 4
 gate_n = 2
-gate_recommendation = "**The Critic's recommendation:** proceed. The earlier objections are met in substance, and the two remaining faults are cosmetic. I'd ask the Chief of Staff to trim the case to the cap and name the Design steps in section 8 before the owner reads it. If the owner holds again over the length, that is a form fix and not a reason to recycle Discovery."
+spec = "S-002"

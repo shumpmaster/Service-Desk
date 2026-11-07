@@ -2,26 +2,31 @@
 
 *Pre-registered before any run (D-047). Frozen once the line below is set.*
 
-*Draft 2 (2026-11-07), by the Definer, for the Critic's round 2 (at most three rounds, D-044). It
-answers the Critic's round 1, FAIL (findings 1 to 13), and matches every log name to the Builder's
-test widget at 92caf00 (src/widget-test/README.md and the files it names). Changed:
-- a busy stretch that happened counts only if a counted later refresh covered it; one that no
-  counted refresh covered is not judged (finding 1);
-- merges are counted from GitHub's pull request records (finding 8);
-- a widget that never sees a complete kept copy is a named not-judged code, not a fail, with no
-  question left open (finding 2);
-- that code's conditions use what the kept copy's own record says, with no time window, and need
-  that no widget start ever saw a complete copy (finding 3);
-- the iCloud Backup check runs until the phone's test data is deleted, which now happens as soon as
-  the Reviewer confirms the sent copy (finding 4);
-- "cut off by the send" is narrowed to refreshes whose `alive` marks show they could still be
-  running (finding 5);
-- the sizing figures are listed (finding 6);
-- the upper bound on a widget's lifetime uses the next widget start only (finding 7);
-- a first read in the app is defined in log terms (finding 9);
-- the clean start and the log bound are stated, and trimming is checked first (findings 10 and 11);
-- citations, the guard, and the route of the owner's reports to the Reviewer (findings 12 and 13).
-Draft 1 followed the owner's ruling and EXP-007's frozen registration.*
+*Draft 3 (2026-11-07), by the Definer, final: the last draft before the Critic's round 3, the
+limit (D-044), and the version to freeze if round 3 passes. It answers the Critic's round 2, FAIL
+(reviews/EXP-008/, round 2), and the Reviewer's PASS of the test widget at 92caf00
+(reviews/EXP-008/_reviewer-widget-92caf00.md). The widget is unchanged; only the rules change:
+- every line after the last `send-start` in the sent log is ignored, so a refresh that starts while
+  the send is under way can never count (Critic round 2, finding 1);
+- F6 needs a first read in the app that was really tried: one that reached its `end` with an
+  error, or one the owner reports was not interrupted; Method 6 tells the owner to keep Scriptable
+  open until the read shows its result (finding 2);
+- N1 and N3 name the case this test exists to find, a widget that does not share the app's
+  Documents, and the owner reports what the widget showed (finding 3);
+- N0 reads the sent log, and trimming overrides F6 (finding 4);
+- merge commits that belong to no pull request count as merges too, and the pull request list must
+  cover the whole run (finding 5);
+- a second send and a failed confirmation are covered (finding 6);
+- Pass (b) loses its untestable clause (finding 7);
+- the two edges at the ends of the run are made rules and disclosed (finding 8);
+- a 200 whose body is no branch is replayed exactly as recorded, as the judge does (Reviewer,
+  finding 1);
+- a log that will not parse has its own not-judged code, and the judge is not run on it (Reviewer,
+  finding 5a); the judge's other limits are disclosed (5b, 5c);
+- the Reviewer's three small points on Draft 2 (finding 9), and that `Timer` inside a home-screen
+  widget is unverified, so a missing `alive` mark is not itself evidence of when a refresh died.
+Draft 2 answered the Critic's round 1 and matched every log name to the widget at 92caf00; Draft 1
+followed the owner's ruling and EXP-007's frozen registration.*
 
 spec: P-004 (no spec yet; its short plan is docs/PROJECT.md Part 2, "Later work: the home-screen
 widget (P-004)", "Its Discovery, scaled to its size")   milestone: none yet (M5 is proposed for
@@ -35,11 +40,12 @@ runner:
   keys. No agent holds either key.
 - **The Builder** made the throwaway test widget and its judge on the local branch
   build/builder/p004-exp008-widget, never merged and never under src/public/, at 92caf00
-  (92caf00b9e5f98bd4cd0687fbe6ea87e8606cf7d), once the Reviewer passes it. The file the owner
+  (92caf00b9e5f98bd4cd0687fbe6ea87e8606cf7d), which the Reviewer passed
+  (reviews/EXP-008/_reviewer-widget-92caf00.md). The file the owner
   installs is src/widget-test/needs-you-test.js at that commit (351,274 bytes, SHA-256
   4c88f8150e6980a12cee46e7640a9e5c85438e2ae161a6497f4b1c42c9494b79). The Builder files the result
   file from the Reviewer's verdict.
-- **The Reviewer,** who did not make the test widget, checks the widget before this file is frozen
+- **The Reviewer,** who did not make the test widget, checked the widget before this file was frozen
   and judges the log against the pass mark.
 
 result: docs/handover/experiments/EXP-008-result.md, filed by the Builder from the Reviewer's
@@ -62,7 +68,8 @@ reviews/316/_reviewer-verbatim.md; src/config/projects.json (three projects, Ser
 Personal-Org-Operating-Model and Model-Lab, plus the portfolio, shumpmaster/portfolio: four
 repositories); the request counts the plan cites, specs/S-001.md lines 4954-4955, 14611 and
 14620-14621; the Builder's test widget, src/widget-test/ on build/builder/p004-exp008-widget at
-92caf00 (README.md; entry.js, phone.js, send.js, glue.js, sha256.js, judge.mjs, fakes.mjs)
+92caf00 (README.md; entry.js, phone.js, send.js, glue.js, sha256.js, judge.mjs, fakes.mjs); the
+Reviewer's check of it, reviews/EXP-008/_reviewer-widget-92caf00.md
 
 ## Why this is a new test, not a re-run of EXP-007
 EXP-007 stays **not judged** (docs/handover/experiments/EXP-007-result.md). Nothing in this test
@@ -146,7 +153,7 @@ Measured in EXP-007, for information only: 1,033 requests on the first read in t
      up").
    - The owner installs the file needs-you-test.js (runner, above) in Scriptable.
    - The owner runs it once in the Scriptable app, where it asks for the read key and keeps it in the
-     iPhone keychain, then makes a first read in the app at once (entry.js:472-476). That first
+     iPhone keychain, then makes a first read in the app at once (entry.js:472-478). That first
      refresh finds no needs-you-exp008 folder and logs `install`.
    - The widget makes requests only to api.github.com (docs/PROJECT.md Part 2, "Data on the
      phone").
@@ -173,10 +180,11 @@ Measured in EXP-007, for information only: 1,033 requests on the first read in t
      - A refresh with no error saves the copy marked complete; its `end` has `kept: "complete"` and
        `error: null`.
      - If that save fails, `end` has `kept: "failed"` and `error: "kept copy not saved"`.
-     - A refresh with an error, which started from a copy not marked complete, saves what it read,
-       marked not complete (`kept: "incomplete"`).
-     - A refresh with an error that started from a complete copy leaves the copy as it was
-       (`kept: "unchanged"`).
+     - A refresh with an error, which started from a copy not marked complete, holds a read key and
+       read something, saves what it read, marked not complete (`kept: "incomplete"`;
+       entry.js:311).
+     - Any other refresh with an error leaves the copy as it was (`kept: "unchanged"`): one that
+       started from a complete copy, one with no read key, or one that read nothing.
      - A refresh killed before its end saves nothing.
      - So an `end` with `error: null` always means a complete copy was saved, and any save is followed
        by its `end` line unless the refresh is killed between the two.
@@ -192,12 +200,28 @@ Measured in EXP-007, for information only: 1,033 requests on the first read in t
      - **`first`:** every other refresh (no kept copy, or one not marked complete). A first refresh
        that is killed does not fail the test.
    - **A first read in the app** is a `start` with `context: app` of kind `first`. The app refreshes
-     only when the read key is first entered (entry.js:472-476) and when the owner taps "Refresh now"
+     only when the read key is first entered (entry.js:472-478) and when the owner taps "Refresh now"
      in its menu.
+   - **A first read in the app that was tried** (for F6) is one that reached its `end` with an error
+     and is not excluded, or one with no `end` that the owner reports kept Scriptable open, with the
+     phone unlocked, until it stopped (Method 11). One the owner left or locked the phone during, or
+     one the owner says nothing about, was not tried.
+   - **The start copy's snapshot name** comes from `kept-meta.json` without being worked out again
+     (phone.js:122, 219-224). If an app refresh and a widget refresh ever saved the kept copy at the
+     same moment, the judge could start from an older copy. That gives a false mismatch or a not
+     judged, never a false match (reviews/EXP-008/_reviewer-widget-92caf00.md, finding 9).
 6. **The first read, and a day of use.**
    - If no first refresh finishes in the widget, the owner makes a first read in the app ("Refresh
-     now"), as the plan allows, and the later refreshes then run in the widget.
+     now"), as the plan allows, and the later refreshes then run in the widget. The read that runs
+     when the read key is first entered is one too.
+   - **For every first read in the app,** the owner keeps Scriptable open, with the phone unlocked,
+     until the read shows its result (a summary or an error); in EXP-007 it took about two minutes.
+     If it did not finish (the owner left Scriptable, the phone locked, or it stopped with no result),
+     the owner taps "Refresh now" again and waits. The owner reports each first read in the app:
+     whether it showed a result, and whether Scriptable stayed open until it did (Method 11).
    - The owner does it again in the app if the kept copy is lost.
+   - The owner also reports, at least once a day, what the widget on the home screen shows (a
+     summary, an error, a blank, or "nothing yet"), in their own words (Method 11).
    - Then the owner lets the widget refresh normally for at least a day: 24 hours of counted later
      refreshes (see Sample). The owner sends the test data after that (Method 8).
    - The busy stretch is not arranged. Whether it happened, and whether a counted refresh covered it,
@@ -215,8 +239,12 @@ Measured in EXP-007, for information only: 1,033 requests on the first read in t
      (phone.js `LOG_KEEP_FILES`). It drops the oldest whole files without logging it.
      - A refresh's `start`, `alive`, `detail` and `end` lines are all in its own file, so trimming
        removes whole refreshes. It never leaves a `start` without its `end`.
-     - The `install` line is in the oldest file. So a log whose first line is neither `install` nor
-       `reset` has been trimmed (or has lost its first file).
+     - The `install` line is in the oldest file. So a sent log whose first line is neither `install`
+       nor `reset` has been trimmed (or has lost its first file).
+     - Each log file is rewritten whole at every line (phone.js:146-160). Whether Scriptable's file
+       write is atomic is not known; if it is not, a refresh killed mid-write could leave its file cut
+       off, or lose that file's earlier lines (reviews/EXP-008/_reviewer-widget-92caf00.md, finding
+       5a). What follows is N0b.
      - At most six `alive` marks and four other lines a refresh, so 600 files are expected to cover
        well over a day of widget refreshes. EXP-007's widget started 25 times in its busiest hour
        and about once an hour after.
@@ -228,9 +256,14 @@ Measured in EXP-007, for information only: 1,033 requests on the first read in t
      keychain (`needs-you-exp008-send-key`). The owner makes it just before: fine-grained, on
      portfolio only, Contents read and write and nothing else (GitHub adds Metadata), 7-day expiry.
    - **What it sends.**
-     - The widget first logs `send-start`. It then builds, in memory only, the test data (every
-       snapshot list and the bodies they name, as one JSON) and the log (every log file, oldest
-       first).
+     - The widget first logs `send-start`. Then, if the send key is not yet in the keychain, it asks
+       for it, which waits on the owner. Only then does it build, in memory only, the test data (every
+       snapshot list and the bodies they name, as one JSON) and the log (every log file present,
+       oldest first; entry.js:408-420).
+     - So the sent log can hold lines written after its `send-start`: for example a widget refresh
+       that started while the owner was pasting the key. **Every line after the sent log's last
+       `send-start` is ignored** (Sample, "The run"). The last `send-start` is this send's, since a
+       send's log is built after its own `send-start` is written.
      - It sends both through GitHub's Git Data API to a new branch, `exp-008-test-data`, of the
        **private** repository shumpmaster/portfolio, as `exp-008/test-data.json` and
        `exp-008/log.jsonl`.
@@ -263,11 +296,19 @@ Measured in EXP-007, for information only: 1,033 requests on the first read in t
    - **The sent copy confirmed.** The Reviewer fetches the branch into its working session (its
      portfolio clone). It confirms within a day of the send, and says so in its verdict, that:
      - the branch head holds both files;
-     - `log.jsonl` parses line by line, and its last action is the `send-start` of this send;
+     - `log.jsonl` holds at least one `send-start` line, and every line up to its last `send-start`
+       parses (Method 9, first step);
      - `test-data.json` parses; and
      - the judge reads both (Method 9).
 
      The Chief of Staff tells the owner when this is done.
+   - **If the Reviewer cannot confirm the sent copy** (the send failed, the branch is missing a file,
+     or a file will not parse), the Chief of Staff tells the owner. The test data stays on the
+     phone, the daily iCloud Backup check goes on, and the owner sends again with "Send the test
+     data". A second send moves the same branch (the guard's step 8) and its log holds both
+     `send-start` lines. The run then ends at the later one, so refreshes between the two sends are
+     part of the run. If a log line before the last `send-start` will not parse, sending again does
+     not help, since the same file is sent; that run is N0b.
    - **Then, on the phone, at once:**
      - The owner runs "Delete test data (after sending it)". It removes the kept copy, the snapshots
        and every log file, then writes one small log file holding a single `reset` line (its id, time
@@ -281,17 +322,37 @@ Measured in EXP-007, for information only: 1,033 requests on the first read in t
      - A deleted branch's commits can still be fetched for a while, by the owner and by anything they
        have given read access to portfolio, including the GitHub access these sessions use.
 9. **Judging.** The Reviewer takes the two files from the branch and makes sure each clone holds the
-   logged commits (fetching them). From a checkout of build/builder/p004-exp008-widget at 92caf00, it
-   runs:
+   logged commits (fetching them). Then, from a checkout of build/builder/p004-exp008-widget at
+   92caf00:
+   - **First, cut the log at its last `send-start`** (Sample, "The run"):
 
-   ```
-   node src/widget-test/judge.mjs log.jsonl --snapshot test-data.json <Service-Desk clone> <Personal-Org-Operating-Model clone> <Model-Lab clone> <portfolio clone> --json
-   ```
+     ```
+     n=$(grep -n '"ev":"send-start"' log.jsonl | tail -n 1 | cut -d: -f1)
+     head -n "$n" log.jsonl > run.jsonl
+     ```
 
-   It also runs the same command without `--json`, for the printed table. The judge reads only the
-   log's lines after its last `install` or `reset` line. For each `end`, it runs the desk's own code
-   on what that refresh read and compares the four fields of each project's summary. It has no
-   fallbacks:
+     (JSON.stringify writes `"ev":"send-start"` with no spaces, as the widget logs it.)
+   - **Second, check that every line of run.jsonl parses**:
+
+     ```
+     node -e 'require("fs").readFileSync(process.argv[1],"utf8").split("\n").forEach((l,i)=>{if(l)try{JSON.parse(l)}catch{console.log(i+1)}})' run.jsonl
+     ```
+
+     It prints the number of each line that does not parse. If it prints any, the result is N0b
+     (`log-unreadable`). The judge is not run, since it stops with no verdict on such a line
+     (judge.mjs:242), and the Reviewer applies no other rule by hand. Its verdict gives the line
+     numbers and how many lines there are.
+   - **Third, run the judge on run.jsonl:**
+
+     ```
+     node src/widget-test/judge.mjs run.jsonl --snapshot test-data.json <Service-Desk clone> <Personal-Org-Operating-Model clone> <Model-Lab clone> <portfolio clone> --json
+     ```
+
+     and the same command without `--json`, for the printed table.
+
+   The judge reads only the lines after the last `install` or `reset` line. For each `end`, it runs
+   the desk's own code on what that refresh read and compares the four fields of each project's
+   summary. It has no fallbacks:
    - **Start:** the kept copy rebuilt from that refresh's snapshot, checked against its key and
      length. A start copy the judge can't rebuild is not judged (`chain-not-reproducible`), never
      replaced by a copy the judge carries itself.
@@ -303,8 +364,13 @@ Measured in EXP-007, for information only: 1,033 requests on the first read in t
      - Trees and blobs come from the clone at the commit read.
      - Everything else comes only from that refresh's own saved answers, each address's in order,
        served exactly as recorded. A recorded 200 is never turned into a 304, nor a 304 into a 200.
+     - A branch read logged as `{status: 200, error: "body"}` (a 200 whose body is no branch) is
+       served as the answer the snapshot recorded at that place, after the judge checks that its
+       status agrees with the log (judge.mjs:158-161). The widget saves that body whole
+       (entry.js:168-177), so the replay is exact.
      - Not judged (`missing-answer`): a request the saved answers don't hold; a branch, tree or blob
-       read no clone can serve; `{status: 200, error: "body"}`; or a read past the logged list.
+       read no clone can serve; a logged status the snapshot does not agree with; or a read past the
+       logged list.
      - A miss on the project's own repository leaves that project not judged. A miss on the
        portfolio, which is no project's, leaves every project not judged.
    - **Clock:** the replay runs at the refresh's start time. A project that differs is replayed again
@@ -329,12 +395,21 @@ Measured in EXP-007, for information only: 1,033 requests on the first read in t
 
        A fault there is the same on both sides and still matches.
      - So **the Reviewer audits glue.js in full, against G1 to G8 and against the desk's code it
-       stands in for,** twice: when checking the widget before this file is frozen, and again when
+       stands in for,** twice: when checking the widget before this file was frozen, and again when
        judging. Each verdict says that it did, and what it found. In EXP-007 it was "not audited in
-       depth" (reviews/316/_reviewer-verbatim.md, finding 6).
+       depth" (reviews/316/_reviewer-verbatim.md, finding 6). The first audit is done: "I found no
+       behaviour that would change a summary" (reviews/EXP-008/_reviewer-widget-92caf00.md, finding
+       2). The second checks the same commit again, against the run.
      - The Reviewer also checks that `bodyHash` names each body by its content alone.
      - A fault found in either that would change a summary makes the result not judged (Deciding
        threshold).
+   - **What the judge does not check** (reviews/EXP-008/_reviewer-widget-92caf00.md, finding 5):
+     - It does not check that the replay used every logged branch read. An extra or missing branch
+       read can go unnoticed when the summary still matches. The summary, which is what this test
+       compares, is still compared in full.
+     - When the log has no `install` or `reset` line, it prints only "judged from log line 1". The
+       Reviewer decides N0 from run.jsonl itself, not from the judge's words.
+     - It does not parse a broken line; that is why the second step above comes first.
    - **Outcomes:** each project is `match`, `mismatch` or not judged, with one of the judge's codes:
      `no-snapshot`, `unknown-sha`, `chain-not-reproducible`, `missing-answer`, `no-summary-logged`. A
      crash of the desk's code during the replay is a `mismatch`. There is no hand check. This is the
@@ -356,7 +431,10 @@ Measured in EXP-007, for information only: 1,033 requests on the first read in t
      - whether a busy stretch happened, with its merges' times by repository, and whether a counted
        refresh covered it (Deciding threshold);
      - which rule decided the outcome, by its code;
-     - the owner's iCloud Backup reports, and whether Checks was offered (Method 11);
+     - the owner's reports (Method 11): whether Checks was offered, each iCloud Backup report, each
+       first read in the app, and what the widget showed;
+     - how many lines of the sent log come after its last `send-start` and were ignored, and how many
+       sends it holds;
      - the confirmation of the sent copy (Method 8); and
      - any deviation from this file.
 10. **The result file** records only what the Reviewer's verdict says, in the verdict's terms. It
@@ -365,8 +443,13 @@ Measured in EXP-007, for information only: 1,033 requests on the first read in t
     verdict does not give, it says "not in the verdict" and the Builder asks the orchestrator.
 11. **How the owner's reports reach the Reviewer.**
     - The owner gives each report to the Chief of Staff, in a session or through the desk. There are
-      three kinds: whether Checks was offered, given with the install; each iCloud Backup report; and
-      that the phone's data was deleted and the keys forgotten.
+      five kinds:
+      - whether Checks was offered, given with the install;
+      - each iCloud Backup report (Method 1);
+      - each first read in the app: whether it showed a result, and whether Scriptable stayed open,
+        with the phone unlocked, until it did (Method 6);
+      - what the widget on the home screen showed, at least once a day (Method 6);
+      - that the phone's data was deleted and the keys forgotten (Method 8).
     - The Chief of Staff records each one in the widget handoff (docs/handoff/), with the owner's
       words and the day.
     - The orchestrator's brief for the judging cites those entries.
@@ -430,8 +513,11 @@ The log: one JSON line per event, in the log files of Method 4, sent as one file
 - **`send-failed`:** `at`, `error` (fixed words), `step`, `status`, `requests`; `errorKind` and
   `errorHash` only with `unexpected error`.
 
-The log built for the send stops at its `send-start`, so it never holds that send's `sent` or
-`send-failed` line. The Reviewer reads the outcome from the branch itself (Method 8).
+The log is built for the send after that send's `send-start` is written, and before its `sent` or
+`send-failed`. So it never holds this send's `sent` or `send-failed`, but it may hold lines that
+other refreshes wrote after the `send-start`; those are ignored (Sample, "The run"). An earlier send
+that failed leaves its own `send-start` and `send-failed` in the log. The Reviewer reads this send's
+outcome from the branch itself (Method 8).
 
 **Reading the events:**
 - **Hashes.** Each hash is the lowercase hex SHA-256 of the exact UTF-8 string. The hashes are not
@@ -442,6 +528,12 @@ The log built for the send stops at its `send-start`, so it never holds that sen
 - **Widget lifetimes are bounds, never measurements.** For a widget refresh that did not finish:
   - **Lower bound:** the `ms` of its last `alive` line. It lived at least that long; the bound is 0 if
     it logged none.
+  - **`Timer` in a widget is unverified.** The marks are written by Scriptable's `Timer`, which the
+    Reviewer could not check inside a home-screen widget (reviews/EXP-008/_reviewer-widget-92caf00.md,
+    open questions). So a missing `alive` mark is not itself evidence of when a refresh died. A
+    widget refresh's marks are read as evidence only when the run shows `Timer` working in the widget:
+    at least one `alive` line from a refresh with `context: widget`. Without that, the lower bound is
+    given as "not known", and the cut-off rule uses its no-`Timer` branch (Exclusions).
   - **Upper bound:** the gap from its `start` to the next `start` with `context: widget`. It is given
     only when that gap is under 130 seconds and the refresh logged no line after that next start.
     - Only a widget start bounds a widget refresh, since a widget refresh can run while the app runs.
@@ -460,7 +552,11 @@ One phone, by design: there is one owner and one phone. Every refresh is logged.
 refreshes judged are those run as the widget, since the plan tests the widget, not the app: "measure
 whether it can work at all, as a home-screen widget, not inside the Scriptable app" (docs/PROJECT.md
 Part 2, "Its Discovery, scaled to its size").
-- **The run** is the log's lines after its last `install` or `reset` line, as the judge reads it.
+- **The run** is the sent log's lines after its last `install` or `reset` line, up to and
+  including its last `send-start` line. Every line after the last `send-start` is ignored: whatever
+  it says, it was written while the send was under way (Method 8). This is run.jsonl (Method 9),
+  and the judge reads it from its last `install` or `reset` line. "The run's `send-start`" means
+  that last `send-start`.
 - **"A day" means 24 hours** of counted later refreshes: from the `start` of the first counted later
   refresh to the `start` of the last is at least 24 hours.
   - It reads the plan's "a day of normal refreshes" and its alternative, "a refresh after a whole
@@ -483,18 +579,26 @@ thrown out. There are two kinds:
   - the owner's word.
 
   The owner's iCloud Backup reports (Method 1) exclude nothing.
-- **Cut off by the send.** This one is decided from the log's times and `alive` marks alone. A
-  `start` with no `end` is cut off by the send when:
-  - it began before the run's `send-start`; and
-  - it logged every `alive` mark due before that `send-start`, a mark of N seconds being due when its
-    start was more than N seconds before the `send-start`.
-
-  Such a refresh may still have been running when the log was built, so its end, if any, is not in
-  the log.
-  - A refresh that missed a mark due before the send was killed before then. It is not excluded: if
-    counted, it is F2.
-  - A refresh started more than 120 seconds before the `send-start` with all six marks logged lived
-    past the widget's last mark. It is not excluded either.
+- **Cut off by the send.** This one is decided from the log's times and `alive` marks alone. It
+  concerns a counted later refresh R with no `end` that started before the run's `send-start` (one
+  that started after it is outside the run). R may still have been running when the log was built.
+  - **(i) R started more than 120 seconds before the `send-start`:** not excluded. R is a refresh that
+    did not finish (F2), whatever marks it logged.
+  - **(ii) R started within the 120 seconds before the `send-start`, and the run shows `Timer`
+    working in the widget (Measure):**
+    - if R logged every `alive` mark due before the `send-start` (a mark of N seconds is due when R
+      started more than N seconds before the `send-start`), R is cut off by the send: excluded;
+    - if R missed a mark due before then, it was killed before the send: not excluded, F2.
+  - **(iii) R started within the 120 seconds before the `send-start`, and the run does not show
+    `Timer` working in the widget:** R cannot be told from a kill. It is neither excluded nor a
+    fail. It stops the run from passing, and if nothing else fails, the run is N11.
+  - *Choices,* disclosed:
+    - In (i), R may still have been running. It is read as not finished, because a counted widget
+      refresh had not ended two minutes after it started, and the owner then chose to send. That is longer
+      than the widget's last `alive` mark, and EXP-007's widget refreshes lived seconds. This can
+      only turn a pass into a fail.
+    - The 120 seconds is the widget's last mark.
+    - (iii) can only turn a pass or a fail into a not-judged.
 - An excluded refresh is run again by the next normal refresh; nothing extra is needed.
 
 ## Deciding threshold
@@ -518,20 +622,39 @@ Everything below only says how those words apply to this test's log.
 
 **Counted later refresh:** kind `later` (Method 5), not excluded.
 
-**The order.** The Reviewer checks first whether the log is whole (N0), then the fail rules, then
-the pass, then the other not-judged codes. A fail found in a trimmed log still stands, because
-trimming removes whole refreshes and never makes a false fail (Method 7). A trimmed log can never
-pass, because a dropped refresh could have failed.
+**The order.**
+1. The Reviewer checks first whether the log can be read (N0b) and is whole (N0).
+2. Then the fail rules.
+3. Then the pass.
+4. Then the other not-judged codes.
 
-### Is the log whole
-- **N0. `log-trimmed`.** The run's log does not begin with an `install` or `reset` line, or holds
-  more than one such line before its `send-start`. Then a refresh may be missing, so "every time"
-  cannot be shown. The run is not judged, unless a fail rule fires on the refreshes that remain.
+- A log that will not parse (N0b) stops there: no other rule is applied.
+- A trimmed log (N0) can still fail by F1 to F5, because trimming removes whole refreshes and never
+  leaves a counted later refresh's `start` without its `end`, or changes what it shows (Method 7).
+- A trimmed log cannot fail by F6, because trimming could have dropped the very `end` with
+  `error: null` that F6 needs to be absent.
+- A trimmed log can never pass, because a dropped refresh could have failed.
+
+### Can the log be read, and is it whole
+- **N0b. `log-unreadable`.** A line of run.jsonl does not parse (Method 9, second step). The judge
+  is not run and no other rule is applied, since there is no hand check.
+  - *A choice,* disclosed: even a line cut off at the end of one refresh's own file makes the run
+    not judged. The widget's log files are rewritten whole at each line, and whether the phone's
+    write is atomic is not known. So a cut-off file may also have lost that refresh's earlier lines,
+    its `start` included, and the log cannot be shown whole.
+  - This can only turn a pass or a fail into a not-judged. Sending again does not help (Method 8).
+- **N0. `log-trimmed`.** The sent log, read as run.jsonl, does not begin with an `install` or `reset`
+  line, or holds more than one such line. "Delete test data" removes every log file before it writes
+  its `reset`, so a whole log holds at most one.
+  - Then a refresh may be missing, so "every time" cannot be shown.
+  - The run is not judged, unless one of F1 to F5 fires on the refreshes that remain; F6 is not
+    applied.
 
 ### Fail: any one of these
 - **F1.** A `mismatch` on any project of a counted later refresh (a replay crash included).
-- **F2.** A counted later refresh that did not finish (a `start` with no `end`). This includes the
-  case where the widget saw a complete kept copy but every such refresh was killed.
+- **F2.** A counted later refresh that did not finish: a `start` with no `end`, unless it is cut off
+  by the send or undecided (Exclusions, (ii) and (iii)). This includes the case where the widget saw
+  a complete kept copy but every such refresh was killed.
 - **F3.** A project of a counted later refresh at `checking` (stopped before done): not a correct
   summary.
 - **F4.** A project of a counted later refresh at `cant-read` with no exclusion explaining it: not a
@@ -540,12 +663,14 @@ pass, because a dropped refresh could have failed.
   copy not saved` or `unexpected error`), whatever label the judge prints (it prints
   `no-summary-logged`). It did not show a correct summary.
 - **F6.** No refresh, in the widget or the app, ever ends with `error: null`, though at least one
-  first read in the app (Method 5) was made and not excluded. The in-app allowance was tried and no
-  copy was ever kept, so no later refresh can run.
+  first read in the app was tried (Method 5): it reached its `end` with an error and is not
+  excluded, or the owner reports it was not interrupted. The in-app allowance was tried and no copy
+  was ever kept, so no later refresh can run. Not applied to a trimmed log (N0).
 
 ### Pass
 Every one of these, and no fail rule fires:
-- the log is whole (not N0), and no `snapshot-dropped` line names a counted later refresh;
+- the log can be read and is whole (not N0b or N0), and no `snapshot-dropped` line names a counted
+  later refresh;
 - there is at least one counted later refresh, and every counted later refresh finishes, with every
   project read `ok` and a `match`;
 - no project of a counted later refresh is not judged, and no fault was found in glue.js or
@@ -555,35 +680,72 @@ Every one of these, and no fail rule fires:
   - **(a)** a busy stretch happened in the run and at least one busy stretch was covered; or
   - **(b)** no busy stretch happened in the run. Then the 24 hours of counted later refreshes are
     the plan's "a refresh after a whole day's changes": the last counted later refresh starts at
-    least 24 hours after the first, with the kept copy carried through every change between.
+    least 24 hours after the first;
+- and no counted later refresh is undecided (Exclusions, (iii)).
 
 ### The busy stretch
-- **A merge** is a pull request merged into the default branch of one of the three projects in
-  src/config/projects.json, at its `merged_at` time in GitHub's pull request records.
-  - The Reviewer reads these records with its GitHub access, for example `gh pr list --repo
-    <repository> --state merged --base main --json number,mergedAt --limit 200`, and lists the
-    merges in its verdict.
-  - Each merged pull request counts once, whatever its merge method: a merge commit, a squash, or a
-    rebase that adds several commits.
-  - Commits pushed to a default branch without a pull request are not merges (the plan's busy
-    stretch is merged work). Nor are the portfolio's pull requests (it is no project's).
-- **A busy stretch** is at least three merges, across the three projects, whose `merged_at` times
-  all fall within 60 minutes of each other. It happened in the run when all those times fall between
-  the first and the last counted later refresh's `start`. This reads "several merges in an hour" as
-  three or more. EXP-007's had about six in an hour.
+- **The span** for merges is from 60 minutes before the first counted later refresh's `start` to the
+  last counted later refresh's `start`, so a stretch that starts before the counted refreshes is
+  seen too.
+- **A merge** is either of these, on the default branch of one of the three projects in
+  src/config/projects.json:
+  - **a merged pull request:** a pull request merged into that branch, at its `merged_at` time in
+    GitHub's pull request records. Each counts once, whatever its merge method: a merge commit, a
+    squash, or a rebase that adds several commits. The Reviewer reads them with its GitHub access,
+    for each repository:
+
+    ```
+    gh pr list --repo <repository> --state merged --base main --search "merged:<span start>..<span end>" --json number,mergedAt,mergeCommit --limit 1000
+    ```
+
+    It checks that each list is shorter than the limit, so it covers every pull request merged in
+    the span, and lists the merges in its verdict.
+  - **a merge commit that belongs to no pull request:** a commit with two or more parents on the
+    branch's first-parent line, in the Reviewer's up-to-date clone, at its committer time, that is
+    not the `mergeCommit` of any listed pull request. For example, a branch merged locally with
+    `git merge --no-ff` and pushed, as this desk's own mechanics allow. The Reviewer finds them
+    with:
+
+    ```
+    git log --first-parent --merges --format='%H %cI' --since=<span start> --until=<span end> origin/main
+    ```
+
+  - Not merges: commits pushed with no merge, and the portfolio's merges (it is no project's).
+- **A busy stretch** is at least three merges, across the three projects, whose times all fall
+  within 60 minutes of each other. It happened in the run when at least one of its merges falls in
+  the span.
 - **It is covered** when at least one counted later refresh starts after the stretch's first merge
   and no later than 60 minutes after its last. That refresh read what the stretch changed.
+- *Choices,* disclosed:
+  - "several merges in an hour" is read as three or more within 60 minutes (EXP-007's had about six
+    in an hour);
+  - a local merge is timed by its committer time, which is when it was made, not when it was pushed;
+  - a stretch counts as having happened if any of its merges falls in the span. That makes N10 more
+    likely and (b) less likely, so it can only make a pass harder.
 
 ### Not judged: when no fail rule fires and the run does not pass
 After N0, the Reviewer gives the first code below that applies. Each is a code of this registration,
 not of the judge.
-- **N1. `no-widget-start`.** No `start` with `context: widget`. The widget never ran on the home
-  screen, so the condition the pass mark tests never happened.
-- **N2. `app-first-read-not-made`.** No refresh ever ended with `error: null`, and no first read in
-  the app was made, or every one made was excluded. Method 6 was not followed, so F6 cannot apply.
-- **N3. `no-widget-start-after-kept`.** A refresh ended with `error: null`, but no widget `start`
-  came after any such `end`. The widget never had the chance to use the kept copy: the run was too
-  short, or the widget did not refresh after the first read.
+- **N1. `no-widget-start`.** No `start` with `context: widget` in the sent log. There are two
+  possible causes:
+  - the widget never ran on the home screen; or
+  - it ran, but does not share the app's Documents folder, so its log files were never in what the
+    app sent. That is the question this test exists to answer (Hypothesis).
+
+  The log cannot tell these apart. The Reviewer states the owner's reports of what the widget showed
+  (Method 11) beside the code, and names both causes.
+- **N2. `app-first-read-not-tried`.** No refresh ever ended with `error: null`, and no first read in
+  the app was tried (Method 5): none was made, or every one made was excluded, or every one stopped
+  with no `end` and no report from the owner that it was not interrupted. The in-app allowance was
+  not tested, so F6 cannot apply.
+- **N3. `no-widget-start-after-kept`.** A refresh ended with `error: null`, but no widget `start` in
+  the sent log came after any such `end`. There are three possible causes:
+  - the run was too short;
+  - the widget did not refresh after the first read; or
+  - the widget's later refreshes wrote to a folder the app does not share.
+
+  As for N1, the Reviewer states the owner's reports of what the widget showed, and names the
+  causes.
 - **N4. `kept-copy-not-seen`.** No widget `start` in the run ever logged `cacheComplete: true`, and
   at least one widget `start` S is *blind*. S is blind when there is a refresh E that ended with
   `error: null` before S started, and either:
@@ -613,6 +775,9 @@ not of the judge.
 - **N9. `run-too-short`.** Counted later refreshes span less than 24 hours.
 - **N10. `busy-stretch-not-covered`.** At least one busy stretch happened in the run, and no counted
   later refresh covered any of them.
+- **N11. `send-cut-undecided`.** A counted later refresh is undecided (Exclusions, (iii)): it started
+  within the last 120 seconds before the send, has no `end`, and the run does not show `Timer`
+  working in the widget.
 
 ### What follows each outcome
 - **Pass:** P-004's Discovery goes on to sizing (the plan's next step), and the result goes to the
@@ -631,11 +796,13 @@ not of the judge.
   "Nothing in it loosens the mark" (reviews/EXP-007/_critic-r3-verbatim.md, section 2). Each is a
   counted later refresh that did not finish or did not show a correct summary, so "finishes and shows
   a correct summary every time" is broken. F5 now names the widget's error words.
-- **F6** is EXP-007's rule, narrowed to a run where the first read in the app was tried. Then the
-  allowance "may still pass if it can be done once inside the Scriptable app and kept" was used and
-  failed, and no later refresh can exist. Where it was not tried, the allowance was never tested, so
-  that run is N2, not a fail. *A choice:* the narrowing, which can only turn a fail into a
-  not-judged.
+- **F6** is EXP-007's rule, narrowed to a run where the first read in the app was really tried: it
+  reached its `end` with an error, or the owner reports that it ran with Scriptable open until it
+  stopped. Then the allowance "may still pass if it can be done once inside the Scriptable app and
+  kept" was used and failed, and no later refresh can exist. One interrupted attempt does not show
+  that it "cannot" be done, so that run is N2, not a fail. *A choice:* the narrowing, which can only
+  turn a fail into a not-judged. The owner's report is one of this registration's three sources for
+  facts the log cannot hold, as for exclusions.
 - **N4, the widget that never sees the kept copy, is not judged, not a fail.** Under N4 no later
   refresh exists, and the pass mark's fail clause is "If the later refresh fails". So the words give
   no fail. The owner's options B and C on the last card were worded "though the test didn't fail it"
@@ -646,8 +813,13 @@ not of the judge.
 - **N1 to N6** cover every way a run can end with no counted later refresh. In each, the condition
   the pass mark tests (a later refresh in the widget, with a complete kept copy) never happened.
   "Every time" is not met by none, so it is not a pass. No later refresh failed, so it is not a fail.
-- **N0, N7 and N8** are cases where the comparison could not be made in full, or could not be
-  trusted: EXP-007's not-judged rule and glue.js clause, plus the log's bound.
+- **N0b, N0, N7, N8 and N11** are cases where the comparison could not be made in full, or could not
+  be trusted: EXP-007's not-judged rule and glue.js clause, plus the log's parse, its bound and a
+  refresh the send cut off that no `Timer` mark can place.
+- **Ignoring the lines after the last `send-start`** changes nothing the pass mark tests: those
+  lines were written while the send was being made, and a refresh that starts then cannot finish in
+  the sent log. Counting it would make a fail of a refresh the send cut off, which the words do not
+  support.
 - **N9.** "Over a day" is part of the pass mark, so a shorter run cannot pass. It is not a fail,
   since no refresh failed. A fail inside a short run is still a fail (F1 to F5), since "every time"
   is already broken. *A choice:* "a day" as 24 hours (Sample).
@@ -661,17 +833,19 @@ not of the judge.
     pass, and since no refresh failed, it is not judged (N10).
 
   *Choices:* "several" as three or more; "in an hour" as within 60 minutes; covered as a counted
-  start within 60 minutes after the last merge; merges as merged pull requests. Each says how the
-  words apply. None makes a pass easier than the words do.
+  start within 60 minutes after the last merge; merges as merged pull requests plus merge commits
+  that belong to no pull request; a stretch counted as happening if any of its merges falls in the
+  span. Each says how the words apply. None makes a pass easier than the words do.
 
 ### Every way a run can have no counted later refresh
 | What the log shows | Rule | Outcome |
 |---|---|---|
+| A line of the log, up to its last `send-start`, does not parse | N0b | not judged |
 | The log was trimmed (no `install` or `reset` first) | N0 | not judged |
-| The widget never started on the home screen | N1 | not judged |
-| No refresh ever ended with no error; a first read in the app was made | F6 | fail |
-| No refresh ever ended with no error; no first read in the app was made | N2 | not judged |
-| A copy was kept complete, but no widget start came after it | N3 | not judged |
+| No widget start in the sent log (never ran, or does not share the app's Documents) | N1 | not judged |
+| No refresh ever ended with no error; a first read in the app was tried | F6 | fail |
+| No refresh ever ended with no error; no first read in the app was tried | N2 | not judged |
+| A copy was kept complete, but no widget start in the sent log came after it | N3 | not judged |
 | The widget never saw a complete copy, and a widget start read an older copy, or none, after a complete save | N4 | not judged |
 | The widget saw a complete copy, but every such refresh was killed | F2 (these are counted later refreshes) | fail |
 | The widget saw a complete copy, but every such refresh was excluded or cut off by the send | N5 | not judged |
@@ -680,13 +854,11 @@ not of the judge.
 ## Holdout use
 none.
 
-Before freezing:
-- The Reviewer passes the test widget at 92caf00, or the commit its check names. It must have
-  audited glue.js in full against G1 to G8, checked `bodyHash`, and confirmed that the widget writes
-  only to Documents/needs-you-exp008/ and the two keychain names.
-- The packed file's size and SHA-256 in the runner line are confirmed against that commit.
-- The Critic passes this registration (at most three rounds, D-044).
+Before freezing: the Reviewer passed the test widget at 92caf00
+(reviews/EXP-008/_reviewer-widget-92caf00.md), having audited glue.js in full against G1 to G8,
+checked `bodyHash`, confirmed that the widget writes only to Documents/needs-you-exp008/ and its two
+keychain names, and confirmed the packed file's size and SHA-256 in the runner line. This draft is
+the last before the Critic's round 3 (D-044); if the Critic passes it at round 3
+(reviews/EXP-008/critic.md), this commit is the frozen one, with no further change.
 
-The commit that freezes this file sets the line below; until then it is unset.
-
-frozen: unset in Draft 2; set by the commit that freezes this file on build/definer/p004-exp008, before any run
+frozen: the last commit that changes this file on build/definer/p004-exp008, before any run

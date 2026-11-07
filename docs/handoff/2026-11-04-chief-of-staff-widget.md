@@ -319,3 +319,22 @@ The owner's answers, verbatim:
    iCloud Backup settings first and check it daily.
 4. The owner may delete both EXP-007 keys on GitHub now. The portfolio branch exp-007-test-data and
    the phone's test data are deleted after the result is filed.
+
+## Update: EXP-007's result filed (2026-11-07)
+- The owner recorded both next-step answers on main themselves ("Ruling: A" in each of
+  decisions/questions/P-004-widget-next-step.md and P-004-result-spec.md); #315 then only removed the
+  leftover question files.
+- PR #316: the Builder's c7086cd files docs/handover/experiments/EXP-007-result.md (not judged), with
+  no Spec: trailer, exempted as L-0033. The Reviewer passed it (reviews/316/reviewer.md). It needs the
+  owner's reviews/316/owner.md and merge.
+- Carry into EXP-008's registration from the Reviewer's non-blocking findings 6 to 8 and its open
+  question: the facts the result left out (glue.js not audited in depth; the busy stretch did happen;
+  the run was about 9¾ hours); widget lifetimes are upper bounds; whether the second test makes new
+  keys is for its registration to say; and whether the token page offered Checks for the read key
+  (registration line 80) is unconfirmed: ask the owner by question file if it matters.
+
+## Next
+1. After #316 merges: the owner deletes portfolio's exp-007-test-data and the phone's test data.
+2. The Definer registers EXP-008 (Critic, at most three rounds), each commit without Spec: and exempted
+   with its own ledger entry; the Builder rebuilds the widget and its judge with the kept copy and
+   snapshots in Documents; the Reviewer checks the widget before the freeze.

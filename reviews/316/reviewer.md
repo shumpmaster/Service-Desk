@@ -1,0 +1,3 @@
+Verdict: PASS
+
+The Reviewer's verdict on PR #316 (R3: governance/SURFACES.md's exempt block gains the Builder's EXP-007 result commit c7086cd, L-0033, by the owner's ruling "Exempt each such commit (Recommended)"; the result file docs/handover/experiments/EXP-007-result.md), read at 46b25f6. Its return is copied word for word in reviews/316/_reviewer-verbatim.md; it is kept there because it quotes the verdict word mid-line, which a verdict file may not. Its findings are non-blocking and none was applied: changing the result file would need another exempted Builder commit. Findings 6 to 8 are carried to the second test's registration. Recorded by the orchestrator, session session_01QBwHGJ3UVJ6HY4SS92w7UW, 2026-11-07.

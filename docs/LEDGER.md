@@ -450,3 +450,17 @@ options_considered: B, merging #300 with the scope check red. C, changing the sc
 decided_by: owner ("Exempt the nine commits (Recommended)", 2026-11-05, asked in session session_01QBwHGNFKViyibzxHx5qTtm; merges PR #300)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0033 — The Builder's commit c7086cd (EXP-007's result) is exempt from the range checks
+date: 2026-11-07
+type: ruling
+supersedes: []
+scope: P-004
+expires: never
+asked: The widget test's result is the Builder's to file (experiments/EXP-007-widget-refresh.md, "result:"), and the scope check fails every builder commit without an S-numbered spec, which P-004 can get only at its Design gate. How should the result be filed? (questions/P-004-result-spec.md, read cold by the Critic, reviews/P-004-result-spec/critic.md, PASS at round 3.)
+decision: Exempt c7086cde9e20d626e204ab7ca89c24b6897f02b5 (governance/SURFACES.md exempt block). It adds only docs/handover/experiments/EXP-007-result.md, in the Builder's own lane, carries no Spec: trailer on purpose, and passed surface_guard diff before the exemption ("OK: 1 commit(s) … checked", 2026-11-07). The scope check and surface_guard skip it from now on. The first planned entry under the ruling; the second test's commits are exempted the same way, each with its own entry.
+licenses_next: The result is on the default branch once this pull request merges; then the owner deletes the portfolio branch exp-007-test-data and the phone's test data (experiments/EXP-007-widget-refresh.md, Method 7).
+options_considered: B, keeping the Reviewer's record as the result; C, waiting for P-004's spec; D, changing the check through the operating model (questions/P-004-result-spec.md).
+decided_by: owner ("Exempt each such commit (Recommended)", 2026-11-06, asked in session session_01QBwHGJ3UVJ6HY4SS92w7UW; recorded by the owner in decisions/questions/P-004-result-spec.md, "Ruling: A"; merges this pull request)
+proposed_by: chief-of-staff
+reversibility: reversible

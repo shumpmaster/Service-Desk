@@ -338,3 +338,22 @@ The owner's answers, verbatim:
 2. The Definer registers EXP-008 (Critic, at most three rounds), each commit without Spec: and exempted
    with its own ledger entry; the Builder rebuilds the widget and its judge with the kept copy and
    snapshots in Documents; the Reviewer checks the widget before the freeze.
+
+## Update: EXP-007 cleaned up (2026-11-07)
+- #316 merged with the owner's verdict; EXP-007's result is on main (docs/handover/experiments/EXP-007-result.md).
+- The owner deleted portfolio's branch exp-007-test-data (`git ls-remote origin exp-007-test-data` in
+  the portfolio clone prints nothing, 2026-11-07) and the phone's test data, as the owner reported
+  ("all good on my end").
+- The two keys would not delete on GitHub; the owner chose to let them expire (both made with a
+  7-day expiry: the read key about 12 November, the send key about 13 November), after removing them
+  from the phone with "Forget keys". A departure from Method 7's clean-up in method only; a deleted
+  branch's commits can still be fetched for a while.
+
+## Next
+1. The Definer registers EXP-008, the second test (decisions/questions/P-004-widget-next-step.md,
+   Ruling A), with the carry-overs in "Update: EXP-007's result filed". Each Definer and Builder
+   commit carries no Spec: trailer and is exempted with its own ledger entry
+   (decisions/questions/P-004-result-spec.md, Ruling A).
+2. The Builder rebuilds the test widget and its judge with the kept copy and snapshots in Documents;
+   the Reviewer checks the widget; the Critic checks the registration (at most three rounds); frozen
+   before the owner gets the install steps, which include switching Scriptable off in iCloud Backup.

@@ -1,0 +1,3 @@
+Verdict: PASS
+
+The Reviewer's verdict on PR #320 (R3: governance/SURFACES.md's exempt block gains the three Definer commits of EXP-008, 712c951, cd98e5f and 9328cfc, L-0034 to L-0036, by the owner's ruling "Exempt each such commit (Recommended)"; with EXP-008's frozen registration, its review records, the register row, the digest and the handoff), read at f0b0d43. Its return is copied word for word in reviews/320/_reviewer-verbatim.md; it is kept there because it quotes the verdict word mid-line, which a verdict file may not. All its findings are non-blocking. It found the local record_checks merges failure an artifact of a local run (CI checks GitHub's merge ref), as on PR #300. Recorded by the orchestrator, session session_01QBwHGJ3CcwMQ1i8bkydhLN, 2026-11-07.

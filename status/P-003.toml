@@ -2,14 +2,14 @@
 kind = "project"
 stage = 3
 state = "dispatched"
-role = "critic"
+role = "critic-triage"
 last_verdict = "none"
-plan_round = 2
+plan_round = 3
 build_round = 0
 confirm_used = false
 attempts = 0
 sessions = 2
-dispatched_at = "2026-11-07T20:08:14Z"
+dispatched_at = "2026-11-07T20:40:01Z"
 card = 4
 gate_n = 2
 spec = "S-002"

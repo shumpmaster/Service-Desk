@@ -1,4 +1,4 @@
-Ruling: A — P-004's widget route continues to a second test, registered anew, with the test widget rebuilt so that its kept copy and per-refresh snapshots are in Scriptable's Documents folder; for the test the owner switches Scriptable off in the phone's iCloud Backup settings and checks it daily; the test data comes back by the EXP-007 route, which this extends to the second test; the backup point stays for P-004's Design gate
+Ruling: A
 
 Question: questions/P-004-widget-next-step.md
 Milestone: none (the widget's milestone, M5, is still only a proposal in its plan, so nothing here serves a milestone yet)
@@ -9,15 +9,3 @@ Options, as put:
   B. "Sender saves a summary" — "You treat the widget route as failed, though the test didn't fail it. P-004 takes the first fallback you were offered: the desk's notification sender also saves a summary, and the widget only reads that. It changes the sender, which needs your approval, and where the summary is saved has to keep your private projects out of the desk's public repository. Not sized yet."
   C. "Counts-only widget" — "You treat the widget route as failed, though the test didn't fail it. P-004 takes the other fallback: a widget that reads a few counts straight from GitHub and doesn't show the desk's own summary. No desk change; the lightest to build. You lose what you chose the widget for: the desk's summary at a glance."
   D. "Repeat the test as it is" — "The Builder rebuilds the same test widget and its judge from the test's frozen plan (this session's copies are gone), the Reviewer checks them again, and you run it once more, the step the test's rules give after a not-judged result, though they don't cleanly cover this case. If the rebuilt widget differs from the frozen plan in any way, it is a new test instead. A few days of the desk's work before your test day. Its result needs your answer to the other question too. Another day of your phone and about 25 minutes of your time: 15 to install the rebuilt widget and a new read key, and 10 at the end. Expect the same result, because the widget still can't see the kept copy; if it is not judged again, this question comes back."
-
-How it was answered: filed in PR #312 after the Critic's three readings (reviews/P-004-widget-next-step/critic.md, PASS at round 3), then asked in session session_01QBwHGJ3UVJ6HY4SS92w7UW on 2026-11-06 by the session's question tool, together with the other next-step question, with the options exactly as above (recorded verbatim beforehand in docs/handoff/2026-11-04-chief-of-staff-widget.md, "The ask, as it will be put", under "Update: the next-step questions filed"). The owner chose "Second test, data kept in Documents (Recommended)", which is option A. A reversible ruling (R0), answered by the owner. Recorded by the Chief of Staff, word for word.
-
-## The owner's words, verbatim
-"Second test, data kept in Documents (Recommended)"
-
-## How it is carried out
-- The Builder files EXP-007's result, which stays NOT JUDGED (decisions/questions/P-004-result-spec.md).
-- The Definer registers the second test as a new experiment, EXP-008, from experiments/_REGISTRATION.md, with the plan's pass mark copied unchanged; the Critic checks it (at most three rounds, D-044) and it is frozen before any run. Its commits carry no Spec: trailer and are exempted as decisions/questions/P-004-result-spec.md rules.
-- The Builder rebuilds the test widget and its judge on a local build/builder/ branch, never merged and never under src/public/, with the kept copy and the per-refresh snapshots in Documents; the Reviewer checks the widget before the freeze.
-- The install steps tell the owner to switch Scriptable off in the phone's iCloud Backup settings before installing, to check it daily, and, if it is back on, to switch it off again and say so; the test carries on.
-- A fail or another not-judged result sends the route back to the owner, with the sender's summary or the counts-only widget as the fallbacks (decisions/questions/P-001-home-screen-widget.md).

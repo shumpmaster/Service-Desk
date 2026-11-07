@@ -1,5 +1,5 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-11-05: 30 active rulings and 0 kills, from 32 ledger entries.
+As of 2026-11-07: 31 active rulings and 0 kills, from 33 ledger entries.
 
 ## Active rulings
 
@@ -22,6 +22,7 @@ As of 2026-11-05: 30 active rulings and 0 kills, from 32 ledger entries.
 | L-0030 | Exempt 389dd68d5a76d7949a5476a0184dbaaa5e286ad9 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
 | L-0031 | Exempt 4184785b67ebfa6e4b05d840b5c9d50f262cde66 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
 | L-0032 | Exempt ad2709e20faddd72483acc0a21ce2aeaacecb73c (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
+| L-0033 | Exempt c7086cde9e20d626e204ab7ca89c24b6897f02b5 (governance/SURFACES.md exempt block). It adds only docs/handover/experiments/EXP-007-result.md, in the Builder's own lane, carries no Spec: trailer on purpose, and passed surface_guard diff before … | 2026-11-07 | never |
 
 ### project
 | ID | Decision | Since | Expires |

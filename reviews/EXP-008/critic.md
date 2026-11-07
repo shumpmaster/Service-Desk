@@ -1,0 +1,3 @@
+Verdict: PASS
+
+The Critic's check of the experiment pre-registration EXP-008 (experiments/EXP-008-widget-refresh-documents.md, P-004's second widget test), verbatim: round 1 (FAIL, at 712c951), _critic-r1-verbatim.md; round 2 (FAIL, at cd98e5f), _critic-r2-verbatim.md; round 3 (PASS, at 9328cfc, the frozen version), _critic-r3-verbatim.md, all in reviews/EXP-008/. Round 3's findings are non-blocking; the draft froze as it stands, so they are carried into the judging brief, the result and, where it says so, the Design gate. The Reviewer's check of the test widget: _reviewer-widget-92caf00.md (PASS). Recorded by the orchestrator. Session session_01QBwHGJ3CcwMQ1i8bkydhLN, 2026-11-07.

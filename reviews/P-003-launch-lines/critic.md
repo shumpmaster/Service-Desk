@@ -1,0 +1,3 @@
+Verdict: PASS
+
+questions/P-003-launch-lines.md, read cold by the Critic before it goes to the owner: FAIL at round 1 (_critic-r1-verbatim.md), FAIL at round 2 (_critic-r2-verbatim.md), PASS at round 3 (_critic-r3-verbatim.md), and PASS at round 4 on the changes made after round 3 (_critic-r4-verbatim.md), 2026-11-08. After round 4, the clause its finding 1 offered ("skipping them drops only the hidden tests; the locked tests and the review still happen") was added to the note under the Build and Launch lines, word for word, and nothing else changed. Round 3's finding 4 (what the weekly count can miss) is left for S-003's plan review. Recorded by the Chief of Staff, session_01QBwHGJtifME7NbEyt9zSVJ.

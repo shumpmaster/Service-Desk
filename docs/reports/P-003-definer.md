@@ -1,34 +1,37 @@
-I've revised specs/S-003.md to answer all five plan-review findings, including both blocking ones. It is still a draft and goes back to the Critic for a second plan review.
+I've revised specs/S-003.md, but it can't be frozen yet: one owner ruling is needed first (question 1 below). Every other review finding is answered in the spec.
 
 ## 1. What I changed
-- **J1, clock skew (finding 1, blocking):** I replaced the wording that could be read two ways with one rule. A card's age is the current time minus the raise time in its log entry, and that time is never reset. A raise time in the future gives a negative age, which counts as "less than a day", so the card is held until the logged time plus 24 hours, then shown. J1 now has worked examples (10:00 logged; 09:58 that day → held; 09:59 the next day → held; 10:00 the next day → shown). The "records" paragraph defines "age" once, and AC1 and AC4 use it.
-- **A notice already sent when its card goes back to held (finding 2, blocking):** new **AC15**. The sender withdraws nothing and sends nothing more. While the card is held, opening that notice shows the card sheet saying it waits for the Chief of Staff's notes, with no answer buttons, rather than "gone". When the card shows again, the same notice opens it as shown. I added this case to J4 and J5, to the risks, and as open question 5.
-- **AC11 and the "at most once" notice (finding 3):** I moved the notice rule out of AC11 into a new **AC14** under "Notifications". It says what the sender may keep between runs and that this never decides whether a card is held or shown. Its test runs the sender over a chosen series of records and times, including a card that shows, goes back to held and shows again, and counts the notices per card. J5 now says what is handed over and has the Builder name the sender's current way of avoiding repeats in the J5 test. AC13 now says notices are not worked out from the records.
-- **The owner's ruling record (finding 5):** I updated "The defect" and the known limits to say the Critic checked the quotations at source and found them matching.
-- **Finding 4:** nothing changed; open question 3 still covers it, as the Critic advised.
-- **Other edits:** the supersession note explains that AC14 and AC15 here are not S-002's criteria of those numbers. I added a fact for today's "gone" behaviour, a held-for-good line about far-future raise times, and open question 4.
+- **Finding 1 (AC7 vs AC11):** AC7 now covers only a dispatch log on main that has no `card` entry for the card. A read that couldn't get the log at all is a new criterion, AC16. That read gives no decision card a state: it shows none of them, sends no notice for them, and puts a line on the queue and Home saying "Decision cards not shown: the dispatch log could not be read". AC11, J1, J3 and J5 now say the same.
+- **Finding 3 (sender mechanism, new sheet state):** AC14 now asks nothing of the sender's own files. Held cards aren't on the shared card list, so they get no notice. A card gets one notice the first time it shows. The two repeat cases (a recommendation arriving later; a card going back to held and showing again) keep today's sender behaviour, and the test checks that against the sender as it was before the fix. AC15 drops the new "waiting" sheet: a held card's link or notice opens what the desk opens today for a card not on its list. src/notify/** is out of Areas touched. If the build turns out to need a change there, it stops and comes back to the owner.
+- **Finding 2 (approval):** the criteria heading now says "for the owner's approval on the scenario card, not yet approved", and the header says the dor-4 approval covers the plan only. Open questions are cut to one that must be ruled before freeze and two marked as not holding the criteria up. The old questions about a second notice (1) and exact matching (2) are dropped because the plan's text settles them.
+- **Finding 4 (size):** I restated it as my own estimate, not a measurement: about 80–120 lines and 14–22 tests. The upper end is close to the stop rule's 24 tests. The plan's stop rule is unchanged, with the src/notify/** stop added.
+- **Finding 5 (unchecked sources):** I dropped notifyview.js:337 and the citations to the old review's findings. Citations now point to what this review confirmed at source (lines 17–19 of the owner's record, research:67, research:32–39).
+- **Finding 6 (J2):** the notes' line is now the first line that begins with `Recommendation:` once leading heading, bold or italic marks are removed. I added an italic example and a prose-line example.
+- **Finding 7 (AC1):** AC1 now says no view offers a held card's answer buttons, and a link or notice to it opens what the desk shows today.
 
 ## 2. Why
-Findings 1 and 2 blocked the plan review: no J1 test could be written from the old wording, and a sent notice could point at a card that looks gone. Finding 3 left the J5 test undefined. Every change keeps the owner's stop-5 ruling that only the records on main decide whether a card is held or shown.
+The owner's ruling (stop-5) says a card's state comes only from the records on main. The notification changes and dropping the waiting sheet keep the criteria to what the shared rule can deliver without unknown sender code or unsized new screens. That also answers the reviewer's point that a criterion can't be frozen while it depends on open questions or on a mechanism nobody has checked.
 
 ## 3. What I verified
-- I read the review, the S-003 draft, the plan and all five earlier decision records.
-- A search of the spec for every AC and open-question reference found all of them pointing at criteria and questions that exist. AC14 and AC15 are defined once each, and open questions 4 and 5 exist.
-- I checked the J1 examples by hand against the 24-hour rule.
-- No tests or builds were run; that is outside my lane.
+- All 16 criteria carry `[trace: V6 → ACn]`.
+- No references to notifyview, the old review's findings or the removed questions are left.
+- docs/PROJECT.md:85, :127, :540, :588 and :616 say what the spec cites them for.
+- Plan §1, §4, §6 and §7 match how the spec uses them.
+
+I ran no tests; that's outside my lane.
 
 ## 4. What is undone
-- The spec is not frozen; it needs a second plan review and then the freeze gate.
-- Open questions 1 to 5 are still for the owner.
-- The size may grow: AC14 and AC15 add about two tests and a change to `notifyview.js`, though it should stay within the stop rule's limit of about twice the sizing.
-- The "gone" behaviour (sizing findings line 67, `notifyview.js:337`) is cited from the review only; I have not seen it at source.
+- The spec isn't ready to freeze until the owner rules on question 1.
+- The size is still an estimate; nobody has re-sized the work.
+- I haven't seen the sender's code or research/P-003-sizing-findings.md myself.
 
 ## 5. Needed outside my lane
-- **Critic:** a second plan review. Please check at source the sizing findings line 67 and `notifyview.js:337`, which AC15 rests on.
-- **Owner approval:** AC15 probably changes `notifyview.js`, and AC14 may change what the sender keeps between runs. If either is one of the sender's own files, plan §4 needs the owner to approve the change.
-- **Builder:** name the sender's current way of avoiding repeats in the J5 test.
+- **Chief of Staff:** put question 1 to the owner through the channel, then bring plan §1's "or the log not yet read … shows at once" in line with the ruling.
+- **Critic:** check at source that research:67 says what the spec relies on, and that the size estimate is reasonable.
+- **Design reviewer:** the side-by-side view review that plan Design-5 calls for (docs/design/JOIN_UP_REVIEW.md form) is still missing. The Build gate carries it, and I don't write it.
+- This revision goes to the third plan-review round. Under the plan's stop rule, a third failure sends the work back to the owner.
 
 ## 6. Open questions
-- **Far-future raise times (open question 4):** a malformed log entry with a time far in the future would hold a card until that time plus a day, which breaks the owner's "never hidden more than a day". The option is to treat such a time as unrecorded, so the card shows at once, at the cost of the card sometimes vanishing again later. The owner must choose.
-- **Sent notice for a re-held card (open question 5):** leave it alone (this spec's default) or withdraw it and resend later, which tells the owner twice?
-- **The plan review's own question, how the sender avoids repeats today:** still unknown in my pack. AC14 and AC15 are written so the J5 test can be built whatever the answer.
+1. **Needed before freeze:** if a read can't get the dispatch log, should the desk hold decision cards back and say so (the spec's recommended choice, following stop-5), or keep the plan's "show at once" (which would need the owner to change stop-5)?
+2. **Doesn't hold the criteria up:** should a later change stop today's sender from sending a repeat notice in the two cases above?
+3. **Doesn't hold the criteria up:** is it acceptable that a malformed far-future raise time holds a card until that time plus a day? It would show up as a V6 miss in the Chief of Staff's value check.

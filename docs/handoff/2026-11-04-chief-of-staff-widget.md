@@ -419,3 +419,7 @@ Session: session_01QBwHGJ3CcwMQ1i8bkydhLN
   read the three projects normally is asked. The owner was told to leave the widget on the home
   screen and carry on: a widget that shows nothing is what the test measures, and its log records
   each attempt.
+- 2026-11-08 (02:50Z), the owner, as given: "They read normally" (the app's "Refresh now" read the
+  three projects normally). The day of use started about 2026-11-08 02:45Z. At the owner's request,
+  reminders are scheduled into this session: a daily check on 2026-11-09 00:23Z, the send on
+  2026-11-09 16:13Z, and a follow-up on 2026-11-11 00:17Z.

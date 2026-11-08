@@ -414,3 +414,8 @@ Session: session_01QBwHGJ3CcwMQ1i8bkydhLN
 - Asked of the owner: one more "Refresh now" in the app, kept open until it shows a result (an app
   refresh is reported, not counted), and a screenshot; if all three still read "Can't read", the
   owner pauses and the cause is looked at before the day of use starts.
+- 2026-11-08, the owner, as given: after "Refresh now" in the app, "It refreshed, and then the
+  widget was just blank". Earlier: "It still won't load on the widget". Whether the app's refresh
+  read the three projects normally is asked. The owner was told to leave the widget on the home
+  screen and carry on: a widget that shows nothing is what the test measures, and its log records
+  each attempt.

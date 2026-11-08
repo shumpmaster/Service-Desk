@@ -1,5 +1,5 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-11-07: 31 active rulings and 0 kills, from 33 ledger entries.
+As of 2026-11-07: 34 active rulings and 0 kills, from 36 ledger entries.
 
 ## Active rulings
 
@@ -23,6 +23,9 @@ As of 2026-11-07: 31 active rulings and 0 kills, from 33 ledger entries.
 | L-0031 | Exempt 4184785b67ebfa6e4b05d840b5c9d50f262cde66 (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
 | L-0032 | Exempt ad2709e20faddd72483acc0a21ce2aeaacecb73c (governance/SURFACES.md exempt block). It changes only experiments/EXP-007-widget-refresh.md, in the Definer's own lane, and passed surface_guard diff before the exemption ("OK: 9 commit(s) … … | 2026-11-05 | never |
 | L-0033 | Exempt c7086cde9e20d626e204ab7ca89c24b6897f02b5 (governance/SURFACES.md exempt block). It adds only docs/handover/experiments/EXP-007-result.md, in the Builder's own lane, carries no Spec: trailer on purpose, and passed surface_guard diff before … | 2026-11-07 | never |
+| L-0034 | Exempt 712c951f164f5b5344106acb9f2ec237afb94436 (governance/SURFACES.md exempt block). It changes only experiments/EXP-008-widget-refresh-documents.md, in the Definer's own lane, carries no Spec: trailer on purpose, and passed surface_guard diff before … | 2026-11-07 | never |
+| L-0035 | Exempt cd98e5f08cdfce990360dd0b3cc5958ccb3bc6ca (governance/SURFACES.md exempt block). It changes only experiments/EXP-008-widget-refresh-documents.md, in the Definer's own lane, carries no Spec: trailer on purpose, and passed surface_guard diff before … | 2026-11-07 | never |
+| L-0036 | Exempt 9328cfc05dcd76898f9869693386c52f99dc0521 (governance/SURFACES.md exempt block). It changes only experiments/EXP-008-widget-refresh-documents.md, in the Definer's own lane, carries no Spec: trailer on purpose, and passed surface_guard diff before … | 2026-11-07 | never |
 
 ### project
 | ID | Decision | Since | Expires |

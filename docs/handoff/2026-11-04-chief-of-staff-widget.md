@@ -357,3 +357,48 @@ The owner's answers, verbatim:
 2. The Builder rebuilds the test widget and its judge with the kept copy and snapshots in Documents;
    the Reviewer checks the widget; the Critic checks the registration (at most three rounds); frozen
    before the owner gets the install steps, which include switching Scriptable off in iCloud Backup.
+
+## Update: EXP-008 registered, frozen, and its widget rebuilt (2026-11-07)
+Session: session_01QBwHGJ3CcwMQ1i8bkydhLN
+
+- **The test widget is rebuilt** on the local branch build/builder/p004-exp008-widget (never pushed
+  or merged; worktree /home/user/sd-wt-builder), final commit 92caf00 (work in 1d130fd). Packed file
+  src/widget-test/needs-you-test.js, 351,274 bytes, sha256
+  4c88f8150e6980a12cee46e7640a9e5c85438e2ae161a6497f4b1c42c9494b79, pure ASCII, packed from src/lib
+  at 88b9cf0 unchanged. Everything it keeps is in Documents/needs-you-exp008/; keys
+  needs-you-exp008-read-key and needs-you-exp008-send-key; send branch exp-008-test-data on portfolio.
+  The Reviewer passed it and audited glue.js in full (reviews/EXP-008/_reviewer-widget-92caf00.md).
+  If this container is lost, a later Builder rebuilds it from the frozen registration, and the
+  result must name the sha the owner ran.
+- **EXP-008's registration** (experiments/EXP-008-widget-refresh-documents.md) failed the Critic's
+  rounds 1 and 2 and passed round 3, the last (reviews/EXP-008/critic.md). Frozen at 9328cfc (Draft
+  3). Its three Definer commits (712c951, cd98e5f, 9328cfc) carry no Spec: trailer and are exempted,
+  L-0034 to L-0036, by ruling A of P-004-result-spec. Measured: `v3_checks scope` went from 3
+  violations to pass; surface_guard diff passes.
+- **For the judging brief (the Critic's round 3, carried):** the Reviewer's verdict must state, as
+  facts, (1) for each exclusion of kind (ii), the refresh's start, its last `alive` mark, the time
+  from that mark to `send-start`, that a kill then can't be ruled out, and whether the pass depends
+  on it; (2) the count of snapshot lists in test-data.json with no `start` of that id in run.jsonl
+  (lost refreshes), and that limit; (3) for each line that does not parse, whether its file's first
+  line parses and its time against the first error-free `end`, plus the run's facts from the lines
+  that parse; (4) beside any F6 or N2, the owner's report on that read and the reading applied;
+  (5) the covering refresh's start against each merge time, the push time of local merges where
+  GitHub shows it, and that main is each project's default branch. Items (1) and (2) go to the
+  Design gate as risks if they matter. Also the plan's measures and sizing figures by kind of
+  refresh (Method 9).
+- **The owner's reports during the run** (Method 11) go to the Chief of Staff, who records them here
+  for the Reviewer's brief: the iCloud Backup checks; whether the token page offered Checks; each
+  first read in the app (did it show a result, did Scriptable stay open); what the widget showed, at
+  least once a day; and the send.
+- No question has been put to the owner in this session.
+
+## Next
+1. The PR with the registration and its three exemptions gets the Reviewer's verdict, then the
+   owner's (reviews/<PR>/owner.md) and merge, which approves the exemptions (R3).
+2. The owner installs: Scriptable off in iCloud Backup first, a new read key, the packed file; a
+   first read in the app; then at least 24 hours of counted later refreshes (allow about 30 hours);
+   then a new send key and "Send the test data".
+3. When the owner says "sent": the Reviewer confirms the sent copy within a day; the owner then
+   deletes the phone's data and forgets the keys; the Reviewer judges per Method 9 with the brief
+   above; the Builder files docs/handover/experiments/EXP-008-result.md with no Spec: trailer,
+   exempted the same way.

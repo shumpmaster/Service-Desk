@@ -464,3 +464,45 @@ options_considered: B, keeping the Reviewer's record as the result; C, waiting f
 decided_by: owner ("Exempt each such commit (Recommended)", 2026-11-06, asked in session session_01QBwHGJ3UVJ6HY4SS92w7UW; recorded by the owner in decisions/questions/P-004-result-spec.md, "Ruling: A"; merges this pull request)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0034 — The plan-writer's commit 712c951 (EXP-008 draft 1) is exempt from the range checks
+date: 2026-11-07
+type: ruling
+supersedes: []
+scope: P-004
+expires: never
+asked: The second widget test's registration is the Definer's to write, and the scope check fails every builder-class commit without an S-numbered spec, which P-004 can get only at its Design gate. How should such commits be filed? (questions/P-004-result-spec.md, read cold by the Critic, reviews/P-004-result-spec/critic.md, PASS at round 3; its option A names the second test's plan commits.)
+decision: Exempt 712c951f164f5b5344106acb9f2ec237afb94436 (governance/SURFACES.md exempt block). It changes only experiments/EXP-008-widget-refresh-documents.md, in the Definer's own lane, carries no Spec: trailer on purpose, and passed surface_guard diff before the exemption ("OK: 3 commit(s) in origin/main..build/definer/p004-exp008 checked", 2026-11-07). The scope check and surface_guard skip it from now on. One of the three Definer commits of EXP-008, each with its own entry.
+licenses_next: EXP-008's registration is on the default branch once this pull request merges, frozen at 9328cfc after the Critic's PASS at round 3 (reviews/EXP-008/critic.md) and the Reviewer's PASS of the test widget at 92caf00 (reviews/EXP-008/_reviewer-widget-92caf00.md); then the owner gets the install steps.
+options_considered: B, keeping the Reviewer's record as the result; C, waiting for P-004's spec; D, changing the check through the operating model (questions/P-004-result-spec.md).
+decided_by: owner ("Exempt each such commit (Recommended)", 2026-11-06, asked in session session_01QBwHGJ3UVJ6HY4SS92w7UW; recorded by the owner in decisions/questions/P-004-result-spec.md, "Ruling: A"; merges this pull request)
+proposed_by: chief-of-staff
+reversibility: reversible
+
+## L-0035 — The plan-writer's commit cd98e5f (EXP-008 draft 2) is exempt from the range checks
+date: 2026-11-07
+type: ruling
+supersedes: []
+scope: P-004
+expires: never
+asked: The second widget test's registration is the Definer's to write, and the scope check fails every builder-class commit without an S-numbered spec, which P-004 can get only at its Design gate. How should such commits be filed? (questions/P-004-result-spec.md, read cold by the Critic, reviews/P-004-result-spec/critic.md, PASS at round 3; its option A names the second test's plan commits.)
+decision: Exempt cd98e5f08cdfce990360dd0b3cc5958ccb3bc6ca (governance/SURFACES.md exempt block). It changes only experiments/EXP-008-widget-refresh-documents.md, in the Definer's own lane, carries no Spec: trailer on purpose, and passed surface_guard diff before the exemption ("OK: 3 commit(s) in origin/main..build/definer/p004-exp008 checked", 2026-11-07). The scope check and surface_guard skip it from now on. One of the three Definer commits of EXP-008, each with its own entry.
+licenses_next: EXP-008's registration is on the default branch once this pull request merges, frozen at 9328cfc after the Critic's PASS at round 3 (reviews/EXP-008/critic.md) and the Reviewer's PASS of the test widget at 92caf00 (reviews/EXP-008/_reviewer-widget-92caf00.md); then the owner gets the install steps.
+options_considered: B, keeping the Reviewer's record as the result; C, waiting for P-004's spec; D, changing the check through the operating model (questions/P-004-result-spec.md).
+decided_by: owner ("Exempt each such commit (Recommended)", 2026-11-06, asked in session session_01QBwHGJ3UVJ6HY4SS92w7UW; recorded by the owner in decisions/questions/P-004-result-spec.md, "Ruling: A"; merges this pull request)
+proposed_by: chief-of-staff
+reversibility: reversible
+
+## L-0036 — The plan-writer's commit 9328cfc (EXP-008 draft 3, the frozen version) is exempt from the range checks
+date: 2026-11-07
+type: ruling
+supersedes: []
+scope: P-004
+expires: never
+asked: The second widget test's registration is the Definer's to write, and the scope check fails every builder-class commit without an S-numbered spec, which P-004 can get only at its Design gate. How should such commits be filed? (questions/P-004-result-spec.md, read cold by the Critic, reviews/P-004-result-spec/critic.md, PASS at round 3; its option A names the second test's plan commits.)
+decision: Exempt 9328cfc05dcd76898f9869693386c52f99dc0521 (governance/SURFACES.md exempt block). It changes only experiments/EXP-008-widget-refresh-documents.md, in the Definer's own lane, carries no Spec: trailer on purpose, and passed surface_guard diff before the exemption ("OK: 3 commit(s) in origin/main..build/definer/p004-exp008 checked", 2026-11-07). The scope check and surface_guard skip it from now on. One of the three Definer commits of EXP-008, each with its own entry.
+licenses_next: EXP-008's registration is on the default branch once this pull request merges, frozen at 9328cfc after the Critic's PASS at round 3 (reviews/EXP-008/critic.md) and the Reviewer's PASS of the test widget at 92caf00 (reviews/EXP-008/_reviewer-widget-92caf00.md); then the owner gets the install steps.
+options_considered: B, keeping the Reviewer's record as the result; C, waiting for P-004's spec; D, changing the check through the operating model (questions/P-004-result-spec.md).
+decided_by: owner ("Exempt each such commit (Recommended)", 2026-11-06, asked in session session_01QBwHGJ3UVJ6HY4SS92w7UW; recorded by the owner in decisions/questions/P-004-result-spec.md, "Ruling: A"; merges this pull request)
+proposed_by: chief-of-staff
+reversibility: reversible

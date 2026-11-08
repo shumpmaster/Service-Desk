@@ -17,7 +17,7 @@ DEFAULT: B   TIMEOUT: 72 hours
 
 ## Context
 - The owner's ruling on card stop-5: "Whether a card is held or shown comes only from the records on main, so every view and the sender agree" (source: decisions/P-003/stop-5.md)
-- The plan's rule: "A decision card whose raise time is not recorded (older than the log the desk reads, or the log not yet read) shows at once with the 'No Chief of Staff recommendation yet' mark, so no card is ever held for good" (source: docs/projects/P-003.md, section 1)
+- The plan's rule: a decision card with no recorded raise time, "older than the log the desk reads, or the log not yet read", shows at once with the "No Chief of Staff recommendation yet" mark, "so no card is ever held for good" (source: docs/projects/P-003.md, section 1)
 - The plan also says a card held for good: "never", that the rules "cannot leave a card hidden", and the owner's preference "never a card hidden for more than a day" (source: docs/projects/P-003.md, sections 7 and 8, and Part 2)
 - The Critic's plan reviews of S-003: FAIL at round 1 and FAIL at round 2; round 2's first finding is that a read that skipped the log shows a card at once and the next read holds it again, which the ruling forbids (source: reviews/S-003/plan.md on the item/P-003 branch; dispatch-log/2026-11.jsonl, the critic outcome lines at 2026-11-08T00:15:45Z and 00:40:05Z)
 - A third failed plan-review round stops the work and brings it back to the owner (source: docs/projects/P-003.md, section 6, stop rule)

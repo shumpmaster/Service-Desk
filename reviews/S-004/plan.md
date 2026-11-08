@@ -1,61 +1,41 @@
 Verdict: FAIL
 
-I plan-reviewed S-004 against the plan (docs/projects/P-003.md), the sizing findings (research/P-003-sizing-findings.md) and the owner's rulings (stop-5, stop-6, dor-4). Several cited files are not in this pack, and one finding is a scope error that would block the Builder.
+I checked the spec against its plan (docs/projects/P-003.md), the sizing findings, and the owner's records. The quotations in the spec's "The defect" section match decisions/questions/P-001-card-recommendation.md:17-19. The "criteria-wrong" ruling is in decisions/P-003/stop-6.md:1-3. The header's `milestones: M4` is the one milestone in plan §3 (line 46). The spec fails on the monitoring criterion, which contradicts itself and measures nothing.
 
-## Findings
+## Blocking finding
 
-**1. Blocking: the Areas touched path for tests does not match the repository.**
-- specs/S-004.md:77 lists `src/lib/**, src/public/**, test/**, docs/handover/**`.
-- research/P-003-sizing-findings.md:41 says the existing tests are in `tests/desk/`, "not under src/". The pack's only test path is `tests/acceptance/`.
-- The spec expects 15 to 23 new tests (lines 90 and 122). Every `join-test:` file would sit outside the stated scope, so the Builder would be out of scope or would write tests to a wrong folder.
-- Fix: name the real directory (`tests/**`, or `tests/desk/**`). Also say where the J1 to J6 `join-test` files go.
+**1. AC13 and J6 give a count that can never find a held-too-long card (specs/S-004.md:51, 78, 102, 123).**
+- J6 (line 78) defines a held-too-long miss as a card whose state is `held` when the rule is run at its raise time plus 24 hours.
+- The age rule (line 23) says an age of 24 hours or more counts as "a day ago or more", and AC4 (line 31) shows such a card.
+- At exactly raise time plus 24 hours the age is exactly 24 hours, so the rule gives `shown`. The state is therefore never `held` at the moment J6 tests.
+- The same holds for the future-dated raise time. J6 calls it a held-too-long miss "once its raise time plus 24 hours is past", and Risks (line 102) and open question 2 (line 123) say the count will find it. At that moment the age is again 24 hours, so the rule shows the card and the count reports no miss.
+- So the count can only report 0. It does so because the rule is run against its own boundary, not because the desk behaved. AC13's claim that the count "can find a held-too-long card" is false as written.
+- This is the half of V6 the spec says it can measure, and it was the plan's "monitoring criterion" (plan §6, line 98). The spec must define the miss on something the rule's output can actually show. One option is the card's real hold, measured against a read at a moment before the 24-hour mark. Open questions 2 and 4 (lines 123 and 125) and the AC18 operating notes (line 52) depend on the same wrong claim.
 
-**2. Blocking: the criteria depend on facts the spec admits it cannot verify.**
-- AC14 (line 52) tests "the same notices as the sender of before this fix". Line 94 says "How the sender today avoids repeating a notice is not known here".
-- AC15 (line 53) and J4 (line 72) require that a notice or link to an unlisted card "opens what the desk opens today". That is known only second-hand from sizing:67, and only as a "gone" re-check at notifyview.js:337.
-- AC9, AC16 and AC17 require that gate cards behave "as today" on a failed read. Line 94 says this behaviour "is not known here".
-- A check author cannot lock criteria whose baseline nobody has read. The sender's behaviour (AC14) and the gate-card behaviour on a failed read (AC9, AC16, AC17) are the unread baselines.
-- Fix: have the Definer read the sender's dedup logic, notifyview and the gate-card failed-read paths at source. Then state the baseline in the criteria, or make the criterion "equal to a recorded baseline run".
+## Non-blocking findings (carry to the gate as risks)
 
-**3. Blocking: J1 may contradict the existing log reader.**
-- J1 (line 56) says "two `card` entries for one card (the earliest counts)". It also says the field names are those of the existing reader.
-- Nothing in the pack shows what the reader does with duplicates. If it keeps the last entry, the rule and the reader disagree, and AC11 and AC7 are not "as the desk's existing log reader reads it".
-- Fix: either cite the reader's behaviour or state that the rule has its own pick, and say where that pick is made.
-
-**4. Non-blocking: AC13 and J6 cannot find a no-mark miss.**
-- J6 (line 74) concedes that a no-mark miss is "0 unless the rule is broken". J4's test is the only guard against a view dropping the mark.
-- V6's first count is therefore not measured by the monitoring criterion.
-- Plan §6 calls this "the spec's monitoring criterion". The mismatch with V6's first half should be said openly in the spec or carried to the gate as a risk.
-
-**5. Non-blocking: the spec's own size and scope are near the stop rule.**
-- Line 90 puts tests at 15 to 23 against a stop at 24. Line 105 admits this.
-- AC16 hides all decision cards if one notes file fails (open question 3). That is wider than the plan needs.
-- The plan says "cannot get … the notes". Both are disclosed, so I am not failing on them.
-
-**6. Non-blocking: AC11 and "the same moment".**
-- The desk and the sender will not run at the same instant, so AC11 can only be tested with an injected moment. Say so in the AC11 test line.
-
-## What held up
-- Header `milestones: M4` matches docs/projects/P-003.md:46.
-- The plan is cited as draft 3, approved by dor-4.md ("proceed").
-- The re-specify ruling (stop-5.md) is honoured: no weekly check, reports or review card are built.
-- AC16 and AC17 match plan §1 bullets 5 and 6.
-- J2's examples cover the real note forms in sizing:32–39, including the bold-wrapped form `**Recommendation: \`x\`…**`, the `##` heading form, and the bare `## Recommendation` heading with no word.
-
-## Join-up review (Design), for plan.md
-Screens checked: queue, Home count, board, card sheet (src/public/sandbox.js) and notifications. These are views in the spec's words only; no mockup exists for the new lines.
+**2. Join-up review, Design (not in the spec, so added here).** The spec has no join-up section in the docs/design/JOIN_UP_REVIEW.md form. The views are the queue, Home's count, the board, the card sheet and notifications. This project has no design files.
 
 | Check | Result | Fix |
 |---|---|---|
-| One meaning per signal | Pass in the text. "Recommended" and "No Chief of Staff recommendation yet" are exclusive (AC3, AC5). | none |
-| One navigation | Pass. No navigation change. | none |
-| Consistent type, spacing and codes | Not checkable: no drawn design. The three "not shown" lines (AC16, AC17) are given as exact words. | The Builder shows the lines on a preview. |
-| No two screens doing the same job | Pass. Queue and Home both carry the same lines (J4). | none |
-| Every screen's data available from the records | Pass, subject to findings 2 and 3. | See findings 2 and 3. |
+| One meaning per status signal | Mostly passes. The "No Chief of Staff recommendation yet" mark appears only on the card sheet (AC4, line 31). The queue row, the board, Home and the notice show neither the word nor the mark. | Non-blocking: say so in the case. |
+| One navigation | Passes. Nothing new is added. | None. |
+| Consistent wording | The three "not shown" lines (AC16, AC17, lines 38-39) are on the queue and Home only. The board and notices show nothing, so a card is silently missing there. Plan §2 and the Intent (line 138) say the owner would hate a card "silently missing". | Non-blocking: carry as a risk. |
+| No two screens doing the same job | Passes. J4 and AC11 make every view take the one card list. | None. |
+| Data available from the records | Passes. The only new read is the notes blob (sizing findings §3). | None. |
 
-Needed changes to the records: none.
+**3. Wording on repository reads.** AC10 and AC12 (lines 43, 50) say the desk reads notes "through the repository reads it already makes" and needs nothing new. The sizing findings (lines 28-29 of research/P-003-sizing-findings.md) say a new record kind and a new blob read per card with notes. This is the same mechanism but not the same reads. Reword it so a check author does not treat any new read as a breach.
+
+**4. Hard-to-verify claims rest on records that are not in this folder.**
+- The plan reviews, reviews/S-003/plan.md and reviews/S-004/plan.md, and specs/S-003.md are not in this folder. The spec says openly that it relies on them second-hand (line 99).
+- The source files (notifyview.js, model.js and others) are not in this folder either. AC9 and AC14 to AC17 are correctly pushed onto recorded baseline runs.
+- AC14's "baseline sender handed the same sequence of card lists" (line 56) depends on how the sender detects a changed card, which the spec says it does not know. It is checkable by test, but I could not verify that the sender can be fed lists this way.
+
+**5. Size.** Tests are 15 to 23 against the stop rule's 24 (line 95), and J5 can stop the build if `src/notify/**` needs a change. This is disclosed and acceptable.
+
+**6. Cosmetic.** The AC numbering runs out of order: AC16 and AC17 come before AC9.
 
 ## Open questions
-- Does the existing log reader keep the first or the last of two `card` entries? (Finding 3.)
-- What is the real tests directory, and is `tests/desk/` in scope? (Finding 1.)
-- Can the Definer read the sender's dedup and the "gone" path at source before freeze? (Finding 2.)
+- What should "held more than a day after it was raised" mean in the count when the rule itself shows a card at 24 hours? Should the check use the card's real hold time against the real dispatch log?
+- Is the earliest-entry pick in J1 for two `card` entries (line 60) acceptable? Plan §8 says "raised" means "the card's `card` entry", and the plan does not say which entry to take.
+- Should the board and the notification carry the "not shown" line? That would change the sender, which needs the owner's approval.

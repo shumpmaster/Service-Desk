@@ -1,47 +1,45 @@
-I'm plan-reviewing S-003 against the plan, the sizing findings and the owner's ruling records. I've finished reading them, so here is the verdict.
-
 Verdict: FAIL
 
-**Findings**
+I could not check several things the spec relies on, and some criteria contradict each other or depend on unanswered owner questions. Findings are in order of weight.
 
-1. **Blocking: the clock-skew rule in J1 contradicts itself and can hold a card for good** (specs/S-003.md:46).
-   - J1 says a raise time later than the current time is "treated as raised at the current time of that read, so held while it stays within a day of the recorded time".
-   - Read the first way, the raise time is reset to "now" on every read. Age is then always 0, so the card is held for good with no notes. That breaks AC4, plan §1 line 21 ("no card is ever held for good") and the V6 miss definition (docs/projects/P-003.md:90).
-   - Read the second way, the recorded time counts, so the card shows 24 hours after that time. The wording does not say which reading is meant.
-   - A test for J1 cannot be written from this text. Fix: state one rule, for example "age is measured from the recorded time; a negative age is held until recorded time + 24h".
+1. **AC11 contradicts AC7 and J3.** AC11 says a card's state comes "from the records and the moment alone, whatever was read before" (specs/S-003.md:38). AC7 and J3 make the state depend on whether the dispatch log was read in that read (:30, :62). A read that skipped the log shows the card at once, and the next read holds it again. "Log not read" is a fact about the read, not a record on main.
+   - This is the exact thing the owner's ruling forbids (decisions/P-003/stop-5.md:3: "comes only from the records on main").
+   - The spec admits the problem in open question 3 (:100) but still freezes AC7 as written.
+   - Two reads of the same records can give different states, so the "views and sender agree" claim fails in this case.
 
-2. **Blocking: a notification already sent for a card that then goes back to held is not covered** (specs/S-003.md:58, 60, 83).
-   - research/P-003-sizing-findings.md:67 says a sent notification for a card that is then held would re-check as "gone" (notifyview.js:337).
-   - J3 allows this: notes are removed, or the log read changes, and the card goes back to held.
-   - J5 only covers not re-notifying. It does not say what happens to the notice already sent.
-   - Say what the sender does with that notice, or put it in the open questions.
+2. **The criteria depend on owner answers that are still open.** Open questions 1, 3, 4 and 5 (:98–102) decide the behaviour of AC5, AC7, J1, AC14 and AC15.
+   - A spec cannot be frozen with scenarios whose outcome depends on unanswered questions.
+   - The header "Acceptance criteria (scenarios; owner-approved)" (:18) has no support. The only approval on file for this spec is decisions/P-003/stop-5.md, which says "re-specify" and approves no criteria. The Design-gate approval in decisions/P-003/dor-4.md covers the plan, not these AC14, AC15 or J1–J5 additions.
 
-3. **Non-blocking: AC11 and J5 sit uneasily together** (specs/S-003.md:38, 60).
-   - AC11 says state comes "on nothing else" than the records and the moment. It also promises "at most once" notification, which needs the sender to remember what it has sent.
-   - J5 does separate "what it has sent" from the hold rule.
-   - Even so, "at most once" cannot be checked from the records alone. AC13 says V6 can be worked out from the records, but it does not cover notifications.
-   - Spec line 75 admits it does not know how the sender avoids repeats today. That leaves the J5 test unspecified.
+3. **The mechanism for AC14 and AC15 is unknown.** The spec says "How the sender keeps that record today is not known" (:80, :64). It also says a fix may be needed in src/notify/**, which "needs the owner's approval" (:64).
+   - Yet src/notify/** is already listed under Areas touched (:67), with no approval on file.
+   - A criterion whose feasibility is unknown is unverifiable, and the test cannot be written yet.
+   - AC15's "opens the card sheet saying the card is waiting, with no answer buttons" adds new behaviour (a new sheet state in J4, a change to the "gone" re-check). The sizing never covered this: research/P-003-sizing-findings.md:67 only flags the "gone" problem.
 
-4. **Non-blocking: AC7 and J3 let the same records give two different states, and the spec accepts this** (specs/S-003.md:30, 58, 83).
-   - A read without the log shows a card at once. The next read, with the log, can hold it again.
-   - AC11 treats "the log not read in that read" as part of the records. That is defensible, but it is what makes a card vanish.
-   - This is correctly raised as open question 3.
-   - Plan §1 line 21 is the rule it relies on, so no plan change is needed unless the owner picks the second option.
+4. **The size claim is unsupported.** The spec still says "60 to 90 lines, 8 to 12 tests" (:76, :107), taken from the sizing in research/P-003-sizing-findings.md:59–64.
+   - That sizing predates the sender memory, the waiting sheet (AC15), the replay at a past moment (AC13) and the five join tests.
+   - The 180-line stop rule is likely to trip, and the spec does not address this.
 
-5. **Non-blocking: the record for the owner's ruling is not at source** (specs/S-003.md:14, 75).
-   - The ruling record is in the pack and I read it. Its quotations of the owner ("Proceed with the fix", "Show it after a day, flagged (Recommended)", "A: own addition now (Recommended)") match the plan.
-   - The "Well then we need to make sure…" quotation also matches.
-   - The limit noted at line 75 is therefore partly out of date.
+5. **Second-hand evidence I could not check.**
+   - reviews/S-003/plan.md is cited for the "gone" behaviour and for the owner-quotation check (:14, :47, :79), but it is not in my folder.
+   - notifyview.js:337 and src/** are also not in my folder.
+   - I could confirm only that research/P-003-sizing-findings.md:67 says what the spec attributes to it.
+   - Under the "unverifiable is a FAIL" rule, these claims fail.
 
-**Checked and found sound**
-- The header names M4, which is in plan §3 line 44 as a milestone.
-- decisions/P-003/stop-5.md matches the supersession note at line 11.
-- The decision-card and gate-card split and the `dor-fail` versus `dor` trap match findings §1.
-- The recommended-word examples in J2 match the four real forms in findings §4.
-- The size and the stop rule match plan §6.
+6. **A weak spot in J2.** The rule reads "the first line containing `Recommendation:`" (:51). Any earlier prose line that mentions that string would decide the word. The sizing's real notes (research/P-003-sizing-findings.md:32–39) show the line is usually line 3, but the rule does not require that. Pinning it to a line that starts with `Recommendation:` once the marks are stripped would be safer.
+
+7. **Smaller point.** AC1 says a held card has "no card sheet reachable" (:24), while AC15 and J4 make a waiting sheet reachable from a notice or a direct link. The wording "from those views" nearly reconciles them, but AC1 should say so.
+
+**What checked out**
+- The header `milestones: M4` matches docs/projects/P-003.md:44.
+- The plan file is the item's own plan.
+- The sizing quotations match.
+- docs/PROJECT.md:85, :588 and :616 support the facts they are cited for.
+- The owner-record quotations match decisions/questions/P-001-card-recommendation.md:17–19.
+- The J2 examples agree with the real note forms in the sizing findings (:32–39).
+- I did not find a join-up review section in the form docs/design/JOIN_UP_REVIEW.md. The spec's J1–J5 join sheets partly stand in for it, but there is no side-by-side view review.
 
 **Open questions**
-- Which clock-skew rule is intended (finding 1)?
-- Should a notice already sent for a card that goes back to held be withdrawn, left alone, or covered by an owner ruling (finding 2)?
-- How does the sender avoid repeats today? J5 needs this before its test can be written.
-- The spec's own open questions 1 to 3 remain for the owner. I found no reason to block on them.
+- Should a read without the dispatch log hold nothing back, or show cards at once? It cannot be both under the owner's records-only ruling. This needs the owner and a change to plan §1.
+- Which mechanism does the sender use today to remember the notices it has sent, and does fixing it need owner approval for src/notify/**? Settle this before freeze, not in the Builder's test.
+- Should the size and stop-rule figures be restated for the criteria as they now stand?

@@ -402,3 +402,15 @@ Session: session_01QBwHGJ3CcwMQ1i8bkydhLN
    deletes the phone's data and forgets the keys; the Reviewer judges per Method 9 with the brief
    above; the Builder files docs/handover/experiments/EXP-008-result.md with no Spec: trailer,
    exempted the same way.
+
+## Update: EXP-008's install, the owner's first reports (2026-11-08)
+- PR #320 merged with the owner's verdict (reviews/320/owner.md, PASS).
+- The owner's reports (Method 11), as given: "Checks was not offered" (the read key was made
+  without Checks). The owner sent a screenshot of the app's preview after the first read in the app:
+  it showed a result, with each of the three projects at "Can't read since 20:43" in the desk's
+  wording for GitHub or network errors (scheduler.js REASON_WORDS `github`, which a 403 never
+  gives: github.js maps that to `token`). Whether Scriptable stayed open until it finished is not
+  yet reported. No project content from the screenshot is recorded here.
+- Asked of the owner: one more "Refresh now" in the app, kept open until it shows a result (an app
+  refresh is reported, not counted), and a screenshot; if all three still read "Can't read", the
+  owner pauses and the cause is looked at before the day of use starts.

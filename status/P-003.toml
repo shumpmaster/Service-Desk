@@ -1,17 +1,16 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "project"
 stage = 3
-state = "waiting-owner"
-role = "critic-gate"
+state = "dispatched"
+role = "definer"
 last_verdict = "none"
-plan_round = 1
+plan_round = 0
 build_round = 0
 confirm_used = false
 attempts = 0
-sessions = 0
-gate = "criteria"
+sessions = 1
+dispatched_at = "2026-11-08T23:06:57Z"
 card = 8
 gate_n = 1
-gate_recommendation = "**The Critic's recommendation:** hold. Proceeding freezes AC1 to AC19, and the case says the evidence check rejects eleven of the spec's facts. That leaves Design-4 \"not reached\". The case never says why the owner should proceed anyway. It only says a refused freeze \"returns to you as a card\" (section 5). Fixing the facts so each cites a line is small Definer work and should happen before the owner is asked. If the owner would rather decide now, the case must state that choice and its cost in pl"
 spec = "S-005"
 superseded = ["S-002", "S-003", "S-004"]

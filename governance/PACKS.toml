@@ -28,7 +28,8 @@ include_feedback = ["research/{item}-source-check.md", "research/{item}-memo.md"
 
 [roles.definer]
 must_read = ["docs/PROJECT.md", "docs/projects/{item}.md", "library/**", "{ruling}"]
-may_read = ["specs/**", "library/patterns/**"]
+may_read = ["specs/**", "library/patterns/**",
+            "docs/design/JOIN_UP_REVIEW.md"]  # the form its join-up review section follows (S-024 AC7; L-0037)
 must_not_see = []
 include_feedback = ["reviews/{spec}/plan.md", "decisions/{item}/*.md"]
 

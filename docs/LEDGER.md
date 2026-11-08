@@ -506,3 +506,17 @@ options_considered: B, keeping the Reviewer's record as the result; C, waiting f
 decided_by: owner ("Exempt each such commit (Recommended)", 2026-11-06, asked in session session_01QBwHGJ3UVJ6HY4SS92w7UW; recorded by the owner in decisions/questions/P-004-result-spec.md, "Ruling: A"; merges this pull request)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0037 — The Definer's pack gains the join-up review form
+date: 2026-11-08
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The Definer's pack has no docs/design/**, so it cannot read docs/design/JOIN_UP_REVIEW.md, the form a spec's join-up review section must follow (S-024 AC7; .claude/agents/critic.md), though the Critic's pack has it. S-004's third plan review and S-005's first both failed on that section (reviews/S-005/plan.md on item/P-003; triage/P-003.md). Approve adding the one file to the Definer's may_read? Put in session, not first filed as a question file (AGENTS.md §5, model S-033): the Chief of Staff's slip.
+decision: governance/PACKS.toml [roles.definer] may_read gains "docs/design/JOIN_UP_REVIEW.md", that file only. Measured: a Definer pack built by governance/checks/session_runner.py pack for P-003/S-005 from main's tree at 65e0c00 holds 119 files before and 120 after (from item/P-003's tree, 116 and 117, by the Reviewer); the one added file is docs/design/JOIN_UP_REVIEW.md.
+licenses_next: The Definer's next session at Design reads the form, so its join-up section can follow it. The same gap in the model's template (Personal-Org-Operating-Model template-v3/governance/PACKS.toml) is raised there separately.
+options_considered: Leave the pack as it is and let the Definer copy the form from the Critic's review; add all of docs/design/** (more than the Definer needs).
+decided_by: owner ("i approve the fix", 2026-11-08, asked in session session_01QBwHGKhJ6vt6gamzfUwHwc; recorded in decisions/questions/definer-join-up-form.md; merges this pull request)
+proposed_by: chief-of-staff
+reversibility: reversible

@@ -1,5 +1,5 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-11-07: 34 active rulings and 0 kills, from 36 ledger entries.
+As of 2026-11-08: 35 active rulings and 0 kills, from 37 ledger entries.
 
 ## Active rulings
 
@@ -48,6 +48,7 @@ As of 2026-11-07: 34 active rulings and 0 kills, from 36 ledger entries.
 | L-0018 | design-reviewer joins the roster as a read-only reviewer with the design domain pack (governance/domains/design/README.md). Its verdict is required on src/public/** (governance/risk-paths.toml), without raising a change's … | 2026-10-19 | never |
 | L-0022 | Copied byte for byte from the model at bbe010f: governance/checks/ v3_checks.py, orchestrator.py, govlib.py and governance_checks.py (each was byte-identical to the model's copy at 226f1c5). The … | 2026-11-05 | never |
 | L-0023 | Copied byte for byte from the model at b18259c (its pull request for 3.7.2): governance/checks/ orchestrator_git.py, session_runner.py and v3_checks.py (each was byte-identical to the model's … | 2026-11-05 | never |
+| L-0037 | governance/PACKS.toml [roles.definer] may_read gains "docs/design/JOIN_UP_REVIEW.md", that file only. Measured: a Definer pack built by governance/checks/session_runner.py pack for P-003/S-005 from main's tree at 65e0c00 holds 119 … | 2026-11-08 | never |
 
 ## Kills
 None.

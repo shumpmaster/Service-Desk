@@ -298,3 +298,11 @@ options_considered: B, a small Discovery for the desk (the model's rule; slower,
 decided_by: owner (decisions/questions/P-001-add-project-tests.md, A)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0034 — S-002 superseded
+date: 2026-11-07
+type: ruling
+supersedes: []
+amends: [S-002]
+decided_by: owner (decisions/P-003/stop-5.md)
+proposed_by: orchestrator

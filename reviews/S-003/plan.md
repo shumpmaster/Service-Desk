@@ -1,45 +1,46 @@
 Verdict: FAIL
 
-I could not check several things the spec relies on, and some criteria contradict each other or depend on unanswered owner questions. Findings are in order of weight.
+I tried to refute the spec and found three blocking problems and one smaller one. None of them can be waved through as "checked at source" when the check isn't in the pack.
 
-1. **AC11 contradicts AC7 and J3.** AC11 says a card's state comes "from the records and the moment alone, whatever was read before" (specs/S-003.md:38). AC7 and J3 make the state depend on whether the dispatch log was read in that read (:30, :62). A read that skipped the log shows the card at once, and the next read holds it again. "Log not read" is a fact about the read, not a record on main.
-   - This is the exact thing the owner's ruling forbids (decisions/P-003/stop-5.md:3: "comes only from the records on main").
-   - The spec admits the problem in open question 3 (:100) but still freezes AC7 as written.
-   - Two reads of the same records can give different states, so the "views and sender agree" claim fails in this case.
+**Blocking findings**
 
-2. **The criteria depend on owner answers that are still open.** Open questions 1, 3, 4 and 5 (:98–102) decide the behaviour of AC5, AC7, J1, AC14 and AC15.
-   - A spec cannot be frozen with scenarios whose outcome depends on unanswered questions.
-   - The header "Acceptance criteria (scenarios; owner-approved)" (:18) has no support. The only approval on file for this spec is decisions/P-003/stop-5.md, which says "re-specify" and approves no criteria. The Design-gate approval in decisions/P-003/dor-4.md covers the plan, not these AC14, AC15 or J1–J5 additions.
+1. **The spec contradicts itself on AC16 (specs/S-003.md:23 against :40–41).**
+   - Line 23 says "nothing about how a read went" decides a card's state.
+   - AC16 makes a card's state depend on whether a read got the log: a failed read means no card gets a state.
+   - AC11 (line 40) claims the same records and moment always give the same state. The records are the same in both cases, yet a read that failed shows nothing while a read that succeeded shows cards.
+   - A reader could not write one consistent test from these three passages.
 
-3. **The mechanism for AC14 and AC15 is unknown.** The spec says "How the sender keeps that record today is not known" (:80, :64). It also says a fix may be needed in src/notify/**, which "needs the owner's approval" (:64).
-   - Yet src/notify/** is already listed under Areas touched (:67), with no approval on file.
-   - A criterion whose feasibility is unknown is unverifiable, and the test cannot be written yet.
-   - AC15's "opens the card sheet saying the card is waiting, with no answer buttons" adds new behaviour (a new sheet state in J4, a change to the "gone" re-check). The sizing never covered this: research/P-003-sizing-findings.md:67 only flags the "gone" problem.
+2. **The spec cannot be frozen as written (specs/S-003.md:3, :41, :105).**
+   - Open question 1 says AC16 "departs from the plan's §1" (docs/projects/P-003.md:21, "or the log not yet read … shows at once").
+   - The plan's Part 1 was approved with that rule (decisions/P-003/dor-4.md).
+   - M4's "done when" and V6 (plan §3 and §6) were approved against the plan's rule.
+   - The spec says the plan "needs the Chief of Staff to bring it in line". That has not happened, so the spec and its approved plan conflict.
+   - I read decisions/P-003/stop-5.md. It supports "from the records on main", but it does not explicitly rule that a failed log read shows no cards.
+   - AC16 is therefore the spec's own interpretation, and the spec itself says it needs a ruling.
 
-4. **The size claim is unsupported.** The spec still says "60 to 90 lines, 8 to 12 tests" (:76, :107), taken from the sizing in research/P-003-sizing-findings.md:59–64.
-   - That sizing predates the sender memory, the waiting sheet (AC15), the replay at a past moment (AC13) and the five join tests.
-   - The 180-line stop rule is likely to trip, and the spec does not address this.
+3. **AC16 can break the plan's V6 miss definition without the spec saying how it is counted.**
+   - The plan counts any card held more than a day after it was raised as a miss (plan:90).
+   - AC16 can hide every decision card for as long as the log read fails, and the spec only says that is a miss (line 90).
+   - AC13 (line 46) says V6 can be worked out from the records alone, but a failed read leaves no record. So AC13 does not cover the AC16 hiding.
 
-5. **Second-hand evidence I could not check.**
-   - reviews/S-003/plan.md is cited for the "gone" behaviour and for the owner-quotation check (:14, :47, :79), but it is not in my folder.
-   - notifyview.js:337 and src/** are also not in my folder.
-   - I could confirm only that research/P-003-sizing-findings.md:67 says what the spec attributes to it.
-   - Under the "unverifiable is a FAIL" rule, these claims fail.
+4. **Evidence the spec leans on is not in the pack.**
+   - The spec cites reviews/S-003/plan.md for the plan review's findings and its "checked at source" claims (lines 13, 16, 50, 80, 82, 86). That file is not in the pack, and I found no reviews/ folder at all. These claims are unverifiable here.
+   - AC15 and J4 depend on what the desk "opens today" for a link to a card not on its list. That rests on one line, research/P-003-sizing-findings.md:67, which only says such a notice "would re-check as 'gone'". The pack has no source file to check it against.
+   - AC14's "same notices as the sender of before this fix" and J5's "existing way of not repeating a notice" depend on sender behaviour the spec admits it doesn't know (line 86).
 
-6. **A weak spot in J2.** The rule reads "the first line containing `Recommendation:`" (:51). Any earlier prose line that mentions that string would decide the word. The sizing's real notes (research/P-003-sizing-findings.md:32–39) show the line is usually line 3, but the rule does not require that. Pinning it to a line that starts with `Recommendation:` once the marks are stripped would be safer.
+**Smaller finding**
 
-7. **Smaller point.** AC1 says a held card has "no card sheet reachable" (:24), while AC15 and J4 make a waiting sheet reachable from a notice or a direct link. The wording "from those views" nearly reconciles them, but AC1 should say so.
+- AC4 (line 29) promises "the card shows on the desk's next read, without a reload" when the day passes. The findings (:29) say only that "the model is rebuilt each read cycle". That does not show the open desk re-evaluates on the clock when the records are unchanged. The spec needs to name where the time input comes from.
 
 **What checked out**
-- The header `milestones: M4` matches docs/projects/P-003.md:44.
-- The plan file is the item's own plan.
-- The sizing quotations match.
-- docs/PROJECT.md:85, :588 and :616 support the facts they are cited for.
-- The owner-record quotations match decisions/questions/P-001-card-recommendation.md:17–19.
-- The J2 examples agree with the real note forms in the sizing findings (:32–39).
-- I did not find a join-up review section in the form docs/design/JOIN_UP_REVIEW.md. The spec's J1–J5 join sheets partly stand in for it, but there is no side-by-side view review.
+
+- The header names M4, which is in the plan's §3 (specs/S-003.md:7, docs/projects/P-003.md:44).
+- The J2 examples match the real note forms in research/P-003-sizing-findings.md:32–39.
+- docs/PROJECT.md:127 and :588 say what the spec cites them for.
+- The sizing of 60 to 90 lines and 8 to 12 tests is correctly restated as an estimate rather than a measurement.
 
 **Open questions**
-- Should a read without the dispatch log hold nothing back, or show cards at once? It cannot be both under the owner's records-only ruling. This needs the owner and a change to plan §1.
-- Which mechanism does the sender use today to remember the notices it has sent, and does fixing it need owner approval for src/notify/**? Settle this before freeze, not in the Builder's test.
-- Should the size and stop-rule figures be restated for the criteria as they now stand?
+
+- Does the owner confirm that a failed log read hides all decision cards (AC16 as written), or should the plan's "shows at once" rule stand? If the owner confirms AC16, the plan's §1 and V6 need amending first.
+- Could the Chief of Staff supply reviews/S-003/plan.md, or the source for research/P-003-sizing-findings.md:67 (notifyview.js:337), so that AC15 and AC14 can be checked?
+- Is the sender's duplicate-notice mechanism known? If not, AC14's before-and-after comparison test needs an explicit harness.

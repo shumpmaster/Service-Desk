@@ -1,47 +1,37 @@
-I've drafted S-004 as the spec that replaces S-003, and marked S-003 superseded. It is a draft, not frozen, and goes to the Critic next.
+I've revised specs/S-004.md for the plan review's three blocking findings and two of its three non-blocking ones. No scenario's meaning changed: the edits change how "as today" is checked, how J1 picks between duplicate log entries, and what AC13 claims to measure. The spec is still a draft and not frozen. Nothing was committed, because this folder is not a git repository.
 
-## 1. What I changed
-- **New file `specs/S-004.md`** (status `draft`, `milestones: M4`, lineage `[S-001, S-002, S-003]`, work type `fix`).
-  - **Read failures follow the plan now.** S-003's AC16 is split in two:
-    - **AC16:** if a read can't get queue/ or the notes, no decision card is shown, counted or notified. The queue and Home name what failed, with exact wording for the line.
-    - **AC17:** if a read can't get the dispatch log, cards whose notes give a recommended word still show and notify as usual. The rest are left off, with the line "Decision cards without Chief of Staff notes not shown: the dispatch log could not be read", shown only while at least one card is actually left off.
-  - **Views and sender agree (AC11 and the card-list join, J3):** a read that misses some records gives a card no state or the same state as a full read, never a different one.
-  - **Monitoring (AC13 and a new join, J6):** these say exactly what the rule hands the Chief of Staff's V6 count, and how the count's two kinds of miss are worked out. The rule also runs on records from before M4 was live, so the count can be tried on past records before the Launch gate.
-  - **AC18 (operating notes) is back,** owned by the Builder in the handover package. That adds `docs/handover/**` to the areas the work touches.
-  - **AC19:** the owner's feedback (filed as a question) and the review card after 2026-12-31 follow the existing rules for their kind of card.
-  - **Notifications (AC14, AC15):** these now also cover a card that leaves the list because a read failed.
-  - Join tests are relabelled `S-004/J1`–`J6`, and the size estimate is restated.
-  - S-003's open question 1 is closed. Three questions remain, and none holds up the freeze.
-- **`specs/S-003.md`:** I changed only the status word to `superseded`. The brief expected it to read `frozen`, but it read `draft`. I replaced that word and left the rest of the line, including "(not ready to freeze until the owner rules on open question 1)", untouched.
+**1. What I changed**
+- **Revision note:** a new note under the header maps each finding to its fix.
+- **Finding 1 (tests folder):** Areas touched now lists `tests/desk/**` instead of `test/**`. A new line in "Facts relied on" says the Builder's tests, the six join tests (J1 to J6) and the baseline runs all go in tests/desk/. The check author's locked checks keep their own path, set at freeze.
+- **Finding 2 (unread baselines):** I added a defined term, **baseline run**. It is the desk's code, or the notification sender, run at the build's starting commit on the same inputs a test sets. Its output is saved in a file under tests/desk/ that names that commit, committed before any change under src/. "As today" now means "equal to that saved output":
+  - AC9 gets a test: gate cards, questions and pull-request cards, with every read working and then with each of the three reads failing in turn.
+  - AC16 and AC17: gate cards on a failed read are checked against a baseline run.
+  - AC14: the sender is checked against a baseline run of the old sender, given the same card lists.
+  - AC15: what a notice or link to an unlisted card opens is checked against a baseline run, with the second-hand "gone" account kept as background only.
+  - "Known limits" now says these behaviours were not read at source, and why the criteria are still checkable.
+- **Finding 3 (duplicate log entries):** J1 now makes the choice in the rule itself, in src/lib/. It takes the earliest of the entries the existing log reader returns, or the only one if it returns one. AC13 and J6 report the same choice. The J1 test states which entries the reader returns.
+- **Finding 4 (count misses half of V6):** AC13 now says openly that the weekly count from the records finds cards held too long, but not cards shown with neither mark. That half is guarded by the J4 and AC11 tests before launch. This is added to J6, the risks (carried to the Launch gate) and the operating notes (AC18), and is new open question 4.
+- **Finding 6 (same moment):** AC11 now says the moment is passed in to the rule, never read from a clock. Its test feeds the views and the sender one fixed moment, at several moments around the 24-hour mark.
+- **Other:** two new risks (the count's blind half; a baseline saved from the wrong code). The size line now covers the baselines, and the Builder's brief mentions them.
 
-## 2. Why
-- The owner ruled S-003's criteria wrong ("criteria-wrong", "flawed plan", `stop-6.md`). S-003 had broken from the plan on what happens when the log can't be read. The plan's section 1 now settles that case itself, so S-004 takes the plan's words.
-- The plan's section 4 gives the operating notes to the Builder, and its section 6 relies on "the spec's monitoring criterion". So both belong in the spec.
-- The `stop-5.md` ruling still holds: the weekly check, the reports and the end-of-year card stay with the Chief of Staff, outside this spec.
-- `dor-3`, `dor-4`, `dor-fail-1` and `dor-fail-2` are rulings on the plan, and none changes the criteria.
+**2. Why**
+The review failed the spec on findings 1–3. On finding 2 it offered two fixes: read the source, or check against a saved baseline run. The source files are not in my folder, so I took the second. That makes AC9 and AC14–AC17 checkable without me guessing today's behaviour. Findings 4 and 6 were cheap to fix and made the spec more honest.
 
-## 3. What I verified
-- A search for trace tags in S-004 found 19 criteria (AC1–AC19), each traced to V6.
-- A search for status lines shows S-003 `superseded`, S-004 `draft` and S-002 unchanged; S-004 has no `S-003/J` labels left.
-- I re-read the `docs/PROJECT.md` lines S-004 cites (85, 121, 125, 127, 540, 588, 616) and the library entries F-cf-02, P-notice-actionable-01, P-stale-visible-01 and F-automation-complacency-01. They say what S-004 says they do.
-- No tests were run; this lane writes no code.
+**3. What I verified**
+- I re-read the plan (docs/projects/P-003.md) and the rulings (stop-5, stop-6, dor-4). The new wording keeps to plan §1 and §6 and keeps the weekly check, reports and review card out of the spec, as stop-5 requires.
+- I searched the spec for `test/**`, "as today", "before this fix" and "earliest". `test/**` is gone. Every remaining "as today" is either checked against a baseline run or points to AC9, which now is.
+- I could not open the source files or research/P-003-sizing-findings.md. The tests/desk/ folder and the notifyview.js:337 line are cited through the plan review only.
 
-## 4. What is undone
-- **Not committed:** this folder isn't a git repository, so nothing went to `build/definer/P-003`.
-- **Not reviewed or frozen:** S-004 still needs the Critic's plan review, the freeze gate and the owner's scenario card.
-- **Size:** the restated estimate is about 90–130 lines and 15–23 tests. The top of that is close to the stop rule's 24 tests.
+**4. What is undone**
+- **Finding 5 (size):** the test estimate is still 15 to 23 against the stop rule's 24, and AC16 still hides every decision card if one notes file fails. Both are disclosed, as before.
+- **Not frozen:** the spec still needs the next plan review and the freeze gate.
 
-## 5. Needed outside my lane
-- **Critic:** the plan review of S-004.
-- **Builder:** name the exact operating-notes file under `docs/handover/` in the build's return.
-- **Check author:** the locked checks for S-004 once it is frozen.
-- **Chief of Staff:** the weekly count, reports, feedback questions and review card, as the plan already says.
-- **Not in this pack:** the sizing findings, S-003's plan review and the owner's original ruling record. I relied on them second-hand, as the spec's limits say.
+**5. Needed outside my lane**
+- **Plan review (Critic):** needs to read the revised spec. While doing so it could confirm at source that tests/desk/ is right and what the log reader does with two `card` entries.
+- **Builder or check author:** must record the baseline runs from the starting commit before changing src/. The Reviewer then checks the commit order on the branch.
+- **Orchestrator:** the plan stops the work if a third plan-review round fails. I can see one failed review on S-003 and this one on S-004, but not S-002's history. If this revision is reviewed and fails, it may be the third; please confirm the count.
 
-## 6. Open questions
-- **For the owner** (S-004's three, none blocking the freeze):
-  1. Should a later change stop the sender from repeating a notice?
-  2. Is it acceptable that a malformed future raise time holds a card until that time plus a day?
-  3. A single notes file that can't be fetched hides every decision card, as the plan's wording reads. Is that acceptable, or should it hide only that card?
-- **For the Critic and owner:** I added `docs/handover/**` to the areas touched for AC18. Please confirm that is within the fix's scope.
-- **For the Critic and owner:** S-003's leftover wording "(not ready to freeze until…)" now sits next to `superseded`. Was keeping it unchanged the intent?
+**6. Open questions**
+- **New, open question 4 (for the owner, not holding up freeze):** the record-based count can't see a card shown with neither mark, so that half of V6 rests on tests before launch. Is that enough?
+- **Open questions 1 to 3:** unchanged.
+- **Is AC9 baseline enough?** Does the review accept a saved baseline run as the baseline for AC9 and AC14–AC17, rather than the behaviour being stated in the spec?

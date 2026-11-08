@@ -1,37 +1,40 @@
-I've revised specs/S-004.md for the plan review's three blocking findings and two of its three non-blocking ones. No scenario's meaning changed: the edits change how "as today" is checked, how J1 picks between duplicate log entries, and what AC13 claims to measure. The spec is still a draft and not frozen. Nothing was committed, because this folder is not a git repository.
+I've revised `specs/S-004.md` against the second plan review. It's still a draft and not frozen. One thing to know first: this is S-004's second failed plan review, so if the next one also fails, the plan's stop rule sends the work back to the owner.
 
 **1. What I changed**
-- **Revision note:** a new note under the header maps each finding to its fix.
-- **Finding 1 (tests folder):** Areas touched now lists `tests/desk/**` instead of `test/**`. A new line in "Facts relied on" says the Builder's tests, the six join tests (J1 to J6) and the baseline runs all go in tests/desk/. The check author's locked checks keep their own path, set at freeze.
-- **Finding 2 (unread baselines):** I added a defined term, **baseline run**. It is the desk's code, or the notification sender, run at the build's starting commit on the same inputs a test sets. Its output is saved in a file under tests/desk/ that names that commit, committed before any change under src/. "As today" now means "equal to that saved output":
-  - AC9 gets a test: gate cards, questions and pull-request cards, with every read working and then with each of the three reads failing in turn.
-  - AC16 and AC17: gate cards on a failed read are checked against a baseline run.
-  - AC14: the sender is checked against a baseline run of the old sender, given the same card lists.
-  - AC15: what a notice or link to an unlisted card opens is checked against a baseline run, with the second-hand "gone" account kept as background only.
-  - "Known limits" now says these behaviours were not read at source, and why the criteria are still checkable.
-- **Finding 3 (duplicate log entries):** J1 now makes the choice in the rule itself, in src/lib/. It takes the earliest of the entries the existing log reader returns, or the only one if it returns one. AC13 and J6 report the same choice. The J1 test states which entries the reader returns.
-- **Finding 4 (count misses half of V6):** AC13 now says openly that the weekly count from the records finds cards held too long, but not cards shown with neither mark. That half is guarded by the J4 and AC11 tests before launch. This is added to J6, the risks (carried to the Launch gate) and the operating notes (AC18), and is new open question 4.
-- **Finding 6 (same moment):** AC11 now says the moment is passed in to the rule, never read from a clock. Its test feeds the views and the sender one fixed moment, at several moments around the 24-hour mark.
-- **Other:** two new risks (the count's blind half; a baseline saved from the wrong code). The size line now covers the baselines, and the Builder's brief mentions them.
+- **The V6 count (blocking finding 1).** The count used to look at a card only at its raise time plus 24 hours. That is the exact moment the rule shows the card, so the count could never find one held too long. J6 now checks each card at every later moment its state can change: each later commit to the main branch that touches `queue/`, the notes, the dispatch log or the rule's code in `src/lib/`. At each moment it uses the rule's code as it stood on the main branch then.
+- **A second figure.** J6 also reports cards still held a day after their card file first reached the main branch. This catches a skewed or far-future raise time, and a log entry that arrives after its card. By the plan's meaning of "raised" these are not V6 misses, so they are reported beside V6, not counted in it.
+- **Saying what each figure can find.** J6 and AC13 now say openly that, with the rule as M4 builds it, the V6 figure is 0 by construction. It only catches a later change to the rule. AC13's test now shows the second figure finding two such cards and passing one shown on time.
+- **Text that depended on the count.** AC18 (operating notes), the risks, and open questions 2 and 4 now match the new count.
+- **Finding 2.** I added a "Join-up review (Design)" section in the form the review used. It says the board and notifications carry no "not shown" line; that is now a risk and new open question 5.
+- **Finding 3.** AC10 and AC12 now say that reading a notes file is one new kind of read on the existing read path, and that this is not a breach. They name what would be one.
+- **Finding 4.** AC14 now covers the case where the old sender can't be handed card lists: the test may use a stand-in under `tests/desk/`, and failing that the build stops (J5 and the builder's brief say the same).
+- **Finding 6.** The sections are reordered so the criteria run AC1 to AC19 in order. Nothing is renumbered.
+- **Smaller additions.** The review's question about which of two log entries counts is new open question 6. I also added a fact and two limits about reading the main branch's commit history. The revision note records both review rounds.
 
 **2. Why**
-The review failed the spec on findings 1–3. On finding 2 it offered two fixes: read the source, or check against a saved baseline run. The source files are not in my folder, so I took the second. That makes AC9 and AC14–AC17 checkable without me guessing today's behaviour. Findings 4 and 6 were cheap to fix and made the spec more honest.
+The review failed the spec on finding 1 alone. I kept the plan's definition of "raised" and did not redefine V6, since that would change the plan, which is the Chief of Staff's job. No criterion changes what the desk does.
 
 **3. What I verified**
-- I re-read the plan (docs/projects/P-003.md) and the rulings (stop-5, stop-6, dor-4). The new wording keeps to plan §1 and §6 and keeps the weekly check, reports and review card out of the spec, as stop-5 requires.
-- I searched the spec for `test/**`, "as today", "before this fix" and "earliest". `test/**` is gone. Every remaining "as today" is either checked against a baseline run or points to AC9, which now is.
-- I could not open the source files or research/P-003-sizing-findings.md. The tests/desk/ folder and the notifyview.js:337 line are cited through the plan review only.
+I checked the criteria list: all 19 appear once, in order. Each has its V6 trace, and J1 to J6 each name a join test. I worked J6's examples through the age rule by hand: a card at exactly 24 hours is shown, and a card at 1 hour is held. Nothing else could be run, since I only write specs.
 
 **4. What is undone**
-- **Finding 5 (size):** the test estimate is still 15 to 23 against the stop rule's 24, and AC16 still hides every decision card if one notes file fails. Both are disclosed, as before.
-- **Not frozen:** the spec still needs the next plan review and the freeze gate.
+- The spec is not frozen; it goes to the Critic's plan review next.
+- J6's check-moment procedure is prose for the Chief of Staff, not code.
+- The size estimate is unchanged (tests 15–23, near the stop rule's 24).
 
 **5. Needed outside my lane**
-- **Plan review (Critic):** needs to read the revised spec. While doing so it could confirm at source that tests/desk/ is right and what the log reader does with two `card` entries.
-- **Builder or check author:** must record the baseline runs from the starting commit before changing src/. The Reviewer then checks the commit order on the branch.
-- **Orchestrator:** the plan stops the work if a third plan-review round fails. I can see one failed review on S-003 and this one on S-004, but not S-002's history. If this revision is reviewed and fails, it may be the third; please confirm the count.
+- **Critic:** run the plan review again.
+- **Chief of Staff:** decide whether "held a day after reaching the main branch" should count in V6. That would change plan §6.
+- **Builder:** name the operating-notes file under `docs/handover/` in the build's return.
+- **Owner:** approve any later change to the notification sender (questions 1 and 5).
 
 **6. Open questions**
-- **New, open question 4 (for the owner, not holding up freeze):** the record-based count can't see a card shown with neither mark, so that half of V6 rests on tests before launch. Is that enough?
-- **Open questions 1 to 3:** unchanged.
-- **Is AC9 baseline enough?** Does the review accept a saved baseline run as the baseline for AC9 and AC14–AC17, rather than the behaviour being stated in the spec?
+None blocks freezing.
+- **1.** Should a later change stop the sender notifying twice?
+- **2.** Should cards held a day after reaching the main branch count as V6 misses?
+- **3.** Is it acceptable that one unreadable notes file hides every decision card?
+- **4.** Is checking the no-mark half of V6 by tests before launch enough?
+- **5.** Should the board or notifications also show the "not shown" lines?
+- **6.** When the log has two entries for one card, is counting from the earlier one right?
+
+One note for the Critic: the review said `specs/S-003.md` was not in its folder, but it is in mine.

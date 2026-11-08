@@ -1,34 +1,39 @@
-I wrote the draft spec S-005 and marked S-004 superseded. Two of the owner's latest instructions could not be fully met from this folder: the join-up review form file and a source for the tests folder are both missing (part 5). Nothing was frozen, run or committed.
+I've revised specs/S-005.md for the plan review's blocking finding and two of its three non-blocking ones. No criterion's meaning changed and nothing is committed yet. The join-up section follows the form as the review quotes it, because docs/design/JOIN_UP_REVIEW.md itself is not in my pack.
 
-**1. What I changed**
-- **`specs/S-005.md` (new, draft):** it covers M4, traces every criterion to V6 (AC1–AC19), has join sheets J1–J6 with tests marked `join-test: S-005/J<n>`, and lists the areas touched as before. Changes from S-004:
-  - **AC7** now uses the plan's narrow reading: a card shows at once only when it was raised before the part of the dispatch log the desk reads. It says why: a new card's log entry lands on the main branch with its card file.
-  - **Removed as a result:** the case of a card file arriving before its log entry, from J3, J6 and AC13. AC13's test now has two sample cards instead of three.
-  - **The "rare" risk** (a notice opening to a card that has left the list) now names the only two cases it can happen in, and says why.
-  - **Join-up section** rewritten, with a note that its form is my own.
-  - **Citations:** every reference to an earlier review round is gone, and so are research file line numbers. Each fact now cites a file in this folder, or names the plan or the project document as citing it.
-  - **Trimmed:** the long revision-history paragraphs are replaced by one short "Supersedes" note.
-- **`specs/S-004.md`:** only the status word changed, to `superseded`. One correction to the brief: that word was `draft`, not `frozen` (it was never frozen; `frozen_at: —`). S-002 and S-003 went from draft to superseded the same way.
+**1. What I changed** (only `specs/S-005.md`)
+- **Join-up review (blocking finding 1), rewritten to the form:**
+  - The heading is now `# Join-up review — Design, 2026-11-08`.
+  - A `Screens checked:` line lists each of the five views with its file and the criteria that cover it.
+  - The table columns are Check | Result | Fix, with the form's five rows in its order and words, including "Consistent type, spacing and codes".
+  - Each difference is rated:
+    - The board and notifications showing nothing while a read fails is **non-blocking**, filed under "One meaning per colour or status signal". It is carried into the Build gate's case as a risk (open question 5).
+    - The type and spacing of the new mark and lines are not fixed by the criteria. This is **non-blocking**: the Builder uses the desk's existing styles and the design reviewer checks it (plan §4).
+  - Added "Needed changes to the records: none" and a `## Sign-off` section.
+  - The "form could not be checked" note is now one line naming the form file. Open question 7 is removed.
+- **Citation (finding 2):** removed the `docs/PROJECT.md:540` cite. The card-file form `queue/<item>-<gate>-<n>.md` is now stated as inferred, from the answer-record pattern (`docs/PROJECT.md:85`), the notes pattern (plan §1) and the plan's "told apart by their gate word" (§7). J1 points to this, and there is a new known limit: the Builder states the form the existing code in src/lib/ parses.
+- **tests/desk/ limit (finding 3):** it now says S-004 *is* in my pack, but the source S-004 gives for tests/desk/ is not.
+- **Smaller edits:** the supersedes note is updated. The "count finding nothing" risk is cut to a pointer to AC13 and AC18, where the same text already is.
 
 **2. Why**
-The owner's latest ruling, `decisions/P-003/stop-7.md` ("criteria-wrong"), asks for exactly these changes. The earlier ruling in `stop-5.md` still holds: the weekly value check, its reports and the end-of-year card stay with the Chief of Staff, not in this spec.
+The plan review failed the spec on the join-up form, and the stop-7 ruling says to use that form, cite only files I was given, and not grow the spec. The `docs/PROJECT.md:540` cite didn't support the claim, and no file in my pack states the card-file naming, so I said so plainly.
 
-**3. What I verified** (search tool only; there was no shell, so no `wc` or diff)
-- S-005 has no mentions of `reviews/`, `research/`, `S-004/J`, "plan review" or "rare".
-- 19 trace tags were found, AC1 to AC19.
-- S-004 and S-005 both have 196 non-empty lines. I couldn't measure character counts. I expect S-005 is shorter, since the revision paragraphs are gone, but "not grown" is not confirmed by a count.
-- Each `docs/PROJECT.md` line I cite (85, 121, 125, 127, 540, 588, 616) says what I use it for. The grades of the four library entries are A, B, B and B, as cited.
-- The status lines read: S-004 superseded, S-005 draft.
+**3. What I verified** (file searches only; no commands run)
+- No file named `*JOIN*` is in my pack, and decisions/ holds only P-003's records. So the form file and `decisions/questions/P-001-card-recommendation.md` really are absent here, though the review says the form file is readable.
+- No file outside specs/ states the card-file naming rule.
+- S-004 is 227 lines with the same budget (90 to 130 lines of code, 15 to 23 tests) and already had AC18 and AC19. So S-005 did not grow against S-004; it is now about 233 lines, the extra being the sign-off and the needed-changes line the form requires.
+- After the edits there are no remaining matches for "open question 7", "PROJECT.md:540" or the old "Where" column.
 
 **4. What is undone**
-- The Critic's plan review, the freeze and the owner's scenario card have not happened. S-005 shows `frozen_at: —`.
-- No commit was made, since this folder is not a git repository.
+- **Finding 3, ruling record:** the spec still says `decisions/questions/P-001-card-recommendation.md` is not in my pack. It isn't, so I can't quote it directly.
+- **Finding 4, AC19:** kept, not cut. My role requires criteria for how the product takes feedback and reviews its own value after graduation, and AC19 is that criterion. It is one bullet and was already in S-004.
+- **Sign-off:** it names no decision record, because the Build gate's record does not exist yet.
+- The spec is not frozen.
 
 **5. Needed outside my lane**
-- **`docs/design/JOIN_UP_REVIEW.md` is not in my pack.** The owner asked for the join-up section in that file's form, but I couldn't see it, so the form I used is my own and is labelled as such (open question 7). Add the file to my pack, or have the Critic check the section against it.
-- **The `tests/desk/` folder has no source here** apart from S-004 itself. The Builder should confirm it; if the tests live elsewhere, that path goes in before freeze.
+- **Critic:** check the section against docs/design/JOIN_UP_REVIEW.md itself, including the exact layout of the Sign-off section, which I only know from the review's summary.
+- **Orchestrator:** either add the form file and the P-001 ruling record to the definer's pack, or confirm the Critic's pack is the one that holds them.
+- **Builder, at build:** confirm the card-file form and tests/desk/.
 
 **6. Open questions**
-- **For the owner** (none blocks freeze): the same six as in S-004. Question 2 is reworded to cover only a skewed or malformed raise time.
-- **For the Critic:** the join-up form (question 7).
-- **On AC7:** the rule cannot tell from the records why a card's log entry is missing, so AC7 relies on your statement that a new card's entry lands with its card file. This is listed as a known limit in the spec.
+- The form's top-level `#` heading appears partway through the spec. If any check parses the spec's sections by heading level, does that break it?
+- The review says the Critic is the one who adds this section, but stop-7 told the definer to write it. Should the Critic treat my version as a draft to accept, or replace it?

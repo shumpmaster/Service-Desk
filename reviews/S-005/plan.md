@@ -1,42 +1,31 @@
-Verdict: FAIL
+Verdict: PASS
 
-**Blocking**
+I tried to refute S-005 against the plan, the owner's rulings and the join-up form, and found nothing blocking. I could not read the source files or S-004, so claims about the code rest on the sizing memo and on the spec's baseline-run tests.
 
-1. **The join-up review does not follow the form in `docs/design/JOIN_UP_REVIEW.md`.** The owner's ruling (`decisions/P-003/stop-7.md`) says to write it "in the form in docs/design/JOIN_UP_REVIEW.md". That file is now readable, so open question 7 can be settled. The spec's section (`specs/S-005.md:147-158`) differs from the form (`JOIN_UP_REVIEW.md:12-23, 32-33`) in these ways:
-   - **Heading:** the form wants `# Join-up review — Design, <date>`. The spec has "## Join-up review (Design)" and no date.
-   - **Screens line:** the form wants `Screens checked: <list each view with its design file or link>`. The spec has "What is joined: …", which is prose.
-   - **Table columns:** the form has Check | Result | Fix. The spec has Check | Result | Where.
-   - **Table rows:** the form's five rows are "One meaning per colour or status signal", "One navigation", "Consistent type, spacing and codes", "No two screens doing the same job" and "Every screen's data available from the records, or listed as a needed change". The spec's rows are reworded and out of order, and "Consistent type, spacing and codes" is missing. "One navigation" is recast as "One way to reach a card".
-   - **Needed changes:** the form requires "Needed changes to the records: …". The spec has no such line.
-   - **Sign-off:** the form requires a Sign-off section naming the gate's decision record. The spec has none.
-   - **Rating:** the form wants each difference rated blocking or non-blocking. The spec marks every row "Passes", yet row 3 ("Passes … with a gap", line 156) describes a real difference: the board and notices show no line while a read fails. That gap is not rated, so it can't be carried into the gate's case as a risk. The Critic is the one who adds this section, so the spec's version is not one the Critic can accept as written.
-   - **Line 148 and open question 7 (line 219)** say the form couldn't be checked. They should be removed or updated.
+**What I checked, and what held**
+- **Header (specs/S-005.md:7):** it names `milestones: M4`. That is the one project milestone in docs/projects/P-003.md:46, and the plan is the right item's plan.
+- **Plan match:** I compared AC1, AC2, AC4, AC6, AC7, AC16 and AC17 with plan §1's six "In" bullets (docs/projects/P-003.md:18-23). They match, including the exact "not shown" line wording and the plan's narrow reading of "older than the log the desk reads".
+- **The two rulings:**
+  - stop-7 (decisions/P-003/stop-7.md:3) asked for the narrow reading of AC7, the removal of "rare", the join-up section in the form's layout, and citations only to files in the pack. S-005 does these (specs/S-005.md:11, 32, 147-163, 204). Nothing in S-005 depends on a review round.
+  - stop-5 (decisions/P-003/stop-5.md:3) keeps the Chief of Staff's weekly check out of the build. AC12 to AC19 and specs/S-005.md:43 do this, and AC19 asks for no change to the desk.
+- **Join-up review (specs/S-005.md:147-163):** it has the form's heading, "Screens checked" line, five-row table, "Needed changes to the records" line and Sign-off, per docs/design/JOIN_UP_REVIEW.md:12-33. Both differences are rated non-blocking, with a fix or a carry-over to the Build gate. The rating is reasonable because plan §1 sets the lines' places.
+- **Defect evidence:**
+  - Both answers were `re-specify` (decisions/Q-019/stop-1.md:1 and decisions/Q-017/stop-2.md:1).
+  - The owner's words are quoted correctly from decisions/questions/P-001-card-recommendation.md:14-19.
+  - The Part 1 approval is "proceed" (decisions/P-003/dor-4.md:1).
+- **Other citations:**
+  - docs/PROJECT.md lines 85, 127, 588 and 616 say what the spec claims.
+  - The four library entries exist with grades A, B, B and B. The F-automation quote is verbatim.
+  - The sizing memo (research/P-003-sizing-findings.md:10-71) supports the facts about the single card list, the hand-written sandbox.js, the unread notes, a null raise time and the notes' line forms.
+- **Examples:** J1's clock-skew example, J2's examples and J6's worked example are internally consistent. For J6, the 23-hour skew gives a due time of 11-12 09:00 (no V6 miss) and the second figure's due time of 11-11 10:00 (held, reported).
 
 **Non-blocking findings**
-
-2. **One citation does not support its claim.** `specs/S-005.md:174` cites `docs/PROJECT.md:540` for card files being named `queue/<item>-<gate>-<n>.md`.
-   - Line 540 is an accepted-risk bullet about a session token.
-   - It mentions `queue/Q-003-failure-1.md` only as a passing example and states no naming rule.
-   - The other cite on that line, `docs/PROJECT.md:85` for answer records `decisions/<item>/<gate>-<card>.md`, holds.
-   - J1 depends on this naming (the `<gate>` parse), so it needs a real source.
-3. **Cites to sources the stop-7 ruling excluded.** The ruling says "Cite only files you were given".
-   - **Source file for the new tests:** line 183 relies on `specs/S-004.md` for the `tests/desk/` location, and S-004 is not in this pack. The spec admits this, so `tests/desk/` stays unverified. The build's return is meant to confirm it.
-   - **Header reference:** the supersedes note at line 11 names S-004. That is acceptable as history.
-   - **Ruling record:** line 14 says `decisions/questions/P-001-card-recommendation.md` is not in the pack. It is in this pack, so the spec can quote it directly.
-4. **The spec has grown.** Stop-7 said "Do not grow the spec". S-005 still carries the full AC13 and J6 count machinery (check moments, two figures, worked examples) and AC18 and AC19.
-   - The plan does require a monitoring criterion (§6), so some of this is justified.
-   - The spec's own estimate of 15 to 23 tests (line 177) is near the plan's stop at 24 (line 178). I can't compare against S-004 here, so I can't say whether it grew.
-   - The Orchestrator or owner should check this against S-004.
-
-**What holds**
-
-- The header names M4 (line 7), which is in `docs/projects/P-003.md` §3 line 46. The plan is the right item's document.
-- AC1 to AC8, AC16 and AC17 match plan §1 bullets 1 to 6.
-- AC7 matches the owner's narrow reading in `decisions/P-003/stop-7.md`.
-- The cites at `docs/PROJECT.md:127, 588, 616` and `docs/handover` (lines 121, 624) check out.
-- The four library entries cited exist.
+1. **Size:** specs/S-005.md:180-183 estimates 90 to 130 lines and 15 to 23 tests, against the plan's 60 to 90 lines and 8 to 12 tests (P-003.md:107). The estimate is near the plan's stop rule of about 180 lines or 24 tests (P-003.md:100). The spec discloses this and keeps the stop. I count about 20 or more distinct tests from AC9, AC11, AC13 to AC17 and J1 to J6, so the Builder may hit the limit. stop-7 said "Do not grow the spec." I cannot compare with S-004, which is not in my pack.
+2. **AC13(a) wording (specs/S-005.md:46):** "a day later than that" does not say what "that" is. J6's example uses 23 hours of skew (specs/S-005.md:136). I'd tighten it to "later than the card's arrival".
+3. **Test folder (specs/S-005.md:188):** the spec says no pack file gives tests/desk/. The sizing memo does, at P-003-sizing-findings.md:41 (`/home/user/Service-Desk/tests/desk/`), so the limit can be softened.
+4. **Test setup for AC13 and J6 (specs/S-005.md:45, 145):** the test needs a fake main-line history with committer times, and with the rule's code as it stood at each commit. The spec does not say how. The Builder should state the fixture in the build's return.
+5. **Pack-gap claim (specs/S-005.md:14):** "The record is not in this definer's pack." It is in mine, and the quotation matches it. No effect.
 
 **Open questions**
-
-- Which of the form's rows should the board and notices gap be filed under, and is it blocking? I read it as non-blocking, because the plan excludes it (§1) and the spec raises it as owner question 5. That is for the rewritten section to rate.
-- Should the spec drop or merge AC18 and AC19 to honour "do not grow the spec"? Plan §4 gives the Builder the operating notes, so AC18 stays. AC19 adds nothing new and is a candidate to cut.
+- Is the owner content that a single notes file that can't be fetched hides every decision card (AC16, question 3)? The plan's words require it, but a narrower rule is cheap to ask for later.
+- AC7 rests on one statement from the owner, that a new card's `card` entry lands with its card file (stop-7). If that is ever false, a card could show with the mark and then be held, or the reverse. The spec records this as a known limit (specs/S-005.md:191).

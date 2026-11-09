@@ -1,7 +1,7 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "project"
 stage = 3
-state = "dispatched"
+state = "waiting-owner"
 role = "critic-gate"
 last_verdict = "none"
 plan_round = 0
@@ -9,9 +9,9 @@ build_round = 0
 confirm_used = false
 attempts = 0
 sessions = 0
-dispatched_at = "2026-11-09T00:10:53Z"
-card = 8
-next_gate = "criteria"
+gate = "criteria"
+card = 9
 gate_n = 2
+gate_recommendation = "**The Critic's recommendation:** proceed. The earlier ground for holding is gone: the facts cite lines, the plan review passed, and no criterion is reported changed. The owner should first be told that \"no criterion changed\" is the Definer's claim, not a checked one. The form faults should be fixed in the case wording but do not justify another recycle."
 spec = "S-005"
 superseded = ["S-002", "S-003", "S-004"]

@@ -46,7 +46,7 @@ must_not_see = ["docs/reports/**", "docs/briefs/**"]
 
 [roles.check-author]
 must_read = ["specs/{spec}.md", "{ruling}"]
-may_read = ["library/**", "docs/playbooks/**"]
+may_read = ["library/**", "docs/playbooks/**", "tests/acceptance/**", "checks/**"]  # its own locked checks, to revise them on a Critic FAIL (L-0039); holdouts are always excluded
 # "Any work product."
 must_not_see = ["src/**", "docs/handover/**", "docs/reports/**"]
 include_feedback = ["reviews/{spec}/_critic-checks.md"]

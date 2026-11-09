@@ -425,3 +425,6 @@ Session: session_01QBwHGJ3CcwMQ1i8bkydhLN
   2026-11-09 16:13Z, and a follow-up on 2026-11-11 00:17Z.
 - 2026-11-09 (about 00:30Z), the daily check, the owner, as given: "Still blank an yes still off"
   (the widget shows blank; Scriptable is still off in iCloud Backup).
+- 2026-11-09 (about 16:20Z), the day-2 check, the owner, as given: "It says : received time out
+  when handling script." (the widget's own words, Scriptable's timeout message) and "Yes"
+  (Scriptable still off in iCloud Backup). The owner will make the send key and send shortly.

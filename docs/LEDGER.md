@@ -322,3 +322,11 @@ supersedes: []
 amends: [S-004]
 decided_by: owner (decisions/P-003/stop-7.md)
 proposed_by: orchestrator
+
+## L-0040 — S-005 superseded
+date: 2026-11-09
+type: ruling
+supersedes: []
+amends: [S-005]
+decided_by: owner (decisions/P-003/stop-11.md)
+proposed_by: orchestrator

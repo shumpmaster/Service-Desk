@@ -520,3 +520,17 @@ options_considered: Leave the pack as it is and let the Definer copy the form fr
 decided_by: owner ("i approve the fix", 2026-11-08, asked in session session_01QBwHGKhJ6vt6gamzfUwHwc; recorded in decisions/questions/definer-join-up-form.md; merges this pull request)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0038 — The Check author's commits are bounded by its own surface in the scope check
+date: 2026-11-09
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The Check author wrote S-005's locked tests twice (P-003, orchestrator runs 832 and 833), and both times the record step refused them: `v3_checks.py scope` judged every file under checks/S-005/ and tests/acceptance/S-005/ "outside the Areas touched of S-005". The check bounds only the Definer by its own surface (model S-019 AC1); the Check author's surface (governance/SURFACES.md, tests/acceptance/** and checks/**) is in no spec's areas touched. Approve a fix that gives the Check author the same lane? Filed first as questions/P-003-check-author-scope.md (#339). The fix landed in #341 without this entry; this entry and its register row follow it.
+decision: governance/checks/v3_checks.py `check_scope` bounds a spec-scoped commit by the Check author, like one by the Definer, by that role's own surface, and reports such paths in a separate "check-author-lane" note; every other builder is judged against the spec's Areas touched as before. Measured on a replay: a Check author commit on item/P-003 (`Spec: S-005`) touching checks/S-005/INDEX.md and tests/acceptance/S-005/rule.test.mjs fails the check before (2 violations) and passes after; a Builder commit into tests/acceptance/S-005/ and a Check author commit to a path outside both its surface and the areas still fail (1 violation each).
+licenses_next: A `retry` on P-003's failure card dispatches the Check author, whose locked tests the record step can now push. The same gap in the operating model (Personal-Org-Operating-Model tools/v3_checks.py) is raised there separately.
+options_considered: Re-specify S-005 with the two test folders in its areas touched (this project only, another spec round); a one-off ledger widening of S-005's areas on item/P-003 (this project only, needs an Orchestrator session).
+decided_by: owner ("A: approve fix (Recommended)", 2026-11-09, asked in session session_01QBwHGLyWwT6VLiL5hC3LpG, and the same answer, "A: approve the fix (Recommended)", in session session_01QBwHGNazv3PGnrNErBEZfX; recorded in decisions/questions/P-003-check-author-scope.md; the fix merged by the owner in #341)
+proposed_by: chief-of-staff
+reversibility: reversible

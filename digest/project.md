@@ -22,6 +22,7 @@
 | L-0022 | Copied byte for byte from the model at bbe010f: governance/checks/ v3_checks.py, orchestrator.py, govlib.py and governance_checks.py (each was byte-identical to the model's copy at 226f1c5). The … | 2026-11-05 | never |
 | L-0023 | Copied byte for byte from the model at b18259c (its pull request for 3.7.2): governance/checks/ orchestrator_git.py, session_runner.py and v3_checks.py (each was byte-identical to the model's … | 2026-11-05 | never |
 | L-0037 | governance/PACKS.toml [roles.definer] may_read gains "docs/design/JOIN_UP_REVIEW.md", that file only. Measured: a Definer pack built by governance/checks/session_runner.py pack for P-003/S-005 from main's tree at 65e0c00 holds 119 … | 2026-11-08 | never |
+| L-0038 | governance/checks/v3_checks.py `check_scope` bounds a spec-scoped commit by the Check author, like one by the Definer, by that role's own surface, and reports such paths in … | 2026-11-09 | never |
 
 ## Kills
 None.

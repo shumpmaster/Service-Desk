@@ -423,3 +423,5 @@ Session: session_01QBwHGJ3CcwMQ1i8bkydhLN
   three projects normally). The day of use started about 2026-11-08 02:45Z. At the owner's request,
   reminders are scheduled into this session: a daily check on 2026-11-09 00:23Z, the send on
   2026-11-09 16:13Z, and a follow-up on 2026-11-11 00:17Z.
+- 2026-11-09 (about 00:30Z), the daily check, the owner, as given: "Still blank an yes still off"
+  (the widget shows blank; Scriptable is still off in iCloud Backup).

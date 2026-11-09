@@ -217,6 +217,7 @@ BUILDER = "builder"
 CHIEF_OF_STAFF = "chief-of-staff"   # builder-class, but bounded by the surface map only (model S-010 AC3a)
 SOURCE_CHECKER = "source-checker"   # files checked facts under library/** with `Item:` (model S-015 AC7)
 DEFINER = "definer"                 # its own spec and experiment files are bounded by its surface (model S-019 AC1)
+CHECK_AUTHOR = "check-author"       # its locked checks are bounded by its surface, as the Definer's files are
 _ITEM_ID_RE = re.compile(r"[PQE]-[0-9]+")
 
 _H1_RE = re.compile(r"^# ")
@@ -1767,14 +1768,17 @@ def check_scope(root, base, default_branch=None):
     s = g.load_surfaces(root)
     roster = dict((r.id, r) for r in s.roster)
     exempt = s.exempt_map()
-    # model S-019 AC1: the Definer's own surface, in glob-list form so `!` lines are honoured.
-    definer_globs = ["!" + p if neg else p for neg, p in s.blocks.get(DEFINER, [])] if DEFINER in roster else []
+    # model S-019 AC1: the Definer's own surface, in glob-list form so `!` lines are honoured; the Check
+    # author's likewise, since a frozen spec's locked checks are in no Areas touched.
+    lanes = dict((a, ["!" + p if neg else p for neg, p in s.blocks.get(a, [])])
+                 for a in (DEFINER, CHECK_AUTHOR) if a in roster)
     # model S-013 AC8: extensions added since the merge base count too, as governance_checks scope counts them.
     extends, extends_note = governance_checks.scope_extensions(root, base, default_branch)
     commits = g.read_commits(root, g.rev_list(root, ["--reverse", "%s..HEAD" % base]))
     cache = {}
     v, notes = [], []
-    merges = skipped = unscoped = scoped = filings = lane = 0
+    merges = skipped = unscoped = scoped = filings = 0
+    lanes_used = {}
     for c in commits:
         if c.is_merge():
             merges += 1
@@ -1809,12 +1813,12 @@ def check_scope(root, base, default_branch=None):
             v.append("%s: Spec: %s names no spec file in %s/ at that commit" % (c.short, sid or "''", g.SPECS_REL))
             continue
         scoped += 1
-        in_lane = agent == DEFINER and bool(definer_globs)
+        lane_globs = lanes.get(agent) or []
         for path in g.commit_paths(root, c.sha):
             if any(g.glob_match(gl, path) for gl in governance_checks.BOOKKEEPING_GLOBS):
                 continue
-            if in_lane and g.glob_list_includes(definer_globs, path):
-                lane += 1
+            if lane_globs and g.glob_list_includes(lane_globs, path):
+                lanes_used[agent] = lanes_used.get(agent, 0) + 1
                 continue
             if g.glob_list_includes(globs, path):
                 continue
@@ -1822,8 +1826,12 @@ def check_scope(root, base, default_branch=None):
                 continue
             v.append("%s: %s: outside the Areas touched of %s (%s) — widen them with a ledger entry's "
                      "extends_scope: in the same range, or leave the path alone" % (c.short, path, sid, rel))
-    if lane:
-        notes.insert(0, "NOTE: %d definer-lane path(s) bounded by the surface map, not Areas touched" % lane)
+    if lanes_used.get(CHECK_AUTHOR):
+        notes.insert(0, "NOTE: %d check-author-lane path(s) bounded by the surface map, not Areas touched"
+                     % lanes_used[CHECK_AUTHOR])
+    if lanes_used.get(DEFINER):
+        notes.insert(0, "NOTE: %d definer-lane path(s) bounded by the surface map, not Areas touched"
+                     % lanes_used[DEFINER])
     notes.insert(0, extends_note)
     notes.insert(0, "NOTE: %d commit(s) in %s..HEAD: %d spec-scoped, %d without a Spec: trailer and not a "
                  "builder's, %d source-checker filing(s), %d merge(s) skipped, %d exempt%s"

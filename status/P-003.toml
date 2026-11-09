@@ -1,17 +1,16 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "project"
 stage = 4
-state = "waiting-owner"
+state = "dispatched"
 role = "check-author"
 last_verdict = "none"
 plan_round = 0
 build_round = 0
 confirm_used = false
-attempts = 2
-sessions = 2
-gate = "failure"
+attempts = 0
+sessions = 1
+dispatched_at = "2026-11-09T13:53:18Z"
 card = 10
 gate_n = 2
-resume = "4/check-author"
 spec = "S-005"
 superseded = ["S-002", "S-003", "S-004"]

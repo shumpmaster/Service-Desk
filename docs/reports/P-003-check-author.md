@@ -1,50 +1,37 @@
-I made no changes. The four findings stay open, and the reason is the pack.
+Neither of the two conditions I need is met, so I'm stopping and reporting back instead of editing.
 
-None of the files I'm asked to revise are in this folder. Nothing exists under `tests/acceptance/` or `checks/`. That means no `README.md`, no `mutants.md`, no rubric and none of the test files the review cites (`j1-…`, `j3-…`, `j4-…`, `ac01-08-…`, `ac09-10-…`, `ac16-17-…`, `baseline-provenance.test.mjs`). The pack holds only the brief, the review, `specs/S-005.md`, the playbooks and the library.
+## 1. What I changed
+Nothing. I wrote no files and made no commits.
 
-I can't edit files I can't read. Writing new tests blind against a seam whose contract is in the missing README would be guesswork, and it could break the "missing seam fails at import" property the critic confirmed.
+## 2. Why
+- **The checks aren't in my pack.** The critic's findings point at `tests/acceptance/S-005/*.test.mjs`, `checks/S-005/rubric.md` and `checks/S-005/mutants.md`. None of these are in the folder, and neither are `README.md`, `record-baseline.mjs` or the seam. I can't revise files I can't read. Writing a new test blind against a seam and baseline format I've never seen would likely break or check the wrong thing.
+- **The checks are locked, and changing them isn't my call.** My role card says never to edit a check once it's locked; a new spec replaces it. The playbook (`docs/playbooks/software.md:238`) treats any change after lock as high-risk, needing the owner's approval. The critic asks the same thing (open question 1). The brief says "revise", but it doesn't override that rule, so this goes back through the stop rule (D-044).
 
-**1. What I changed**
-Nothing.
+## 3. What I verified
+- Searched the whole pack for test and check files: none found. The only files that mention `baseCommit` are the critic's review, the spec, the brief and my agent file.
+- Read `specs/S-005.md` in full. Line 23 defines the base commit as "the main-branch commit the build starts from". Line 208 relies only on the Reviewer to catch "a baseline recorded from the wrong code". So the critic's blocking finding holds against the spec: no locked check pins the base commit independently.
+- Checked the playbook's rules on locked checks (lines 238 and 313).
+- I ran no tests, because there is no code or test harness here and no git.
 
-**2. Why**
-The checks under revision are missing from the pack. Writing replacements from guesses would produce checks that don't match the seam contract, in a lane where locked tests are R3.
+## 4. What is undone
+- **Blocking: pin the base commit.** The fix I'd propose for a new spec or an approved change: the check reads the baseline file's base commit and requires that it equal `git merge-base origin/main HEAD`, taken at the build branch's first commit, or a hash fixed at freeze.
+  - It also requires the file that runs the baseline (`record-baseline.mjs`) to have no changes between that commit and the commit that added the baseline.
+  - The test that `src/notify/**` is unchanged should diff against the same pinned commit.
+  - A new mutant would move the declared base commit forward, and the check must catch it.
+- **Gaps in the failed-reads test (AC16/AC17):**
+  - add a case where queue/ and the dispatch log both fail;
+  - add a case where the log fails and a decision card's notes exist but have no recommended word (AC6 with AC17), so the card stays hidden.
+- **AC13 on old records:** add a test that runs the rule on records from a commit before M4 went live.
+- **Mutant table:** it still needs an actual run. M1–M30 are confirmed caught only by the critic reading the tests.
 
-**3. What I verified**
-- I searched the whole pack (`**/*`, then `{specs,tests,checks,governance,joins}/**/*`). Only `specs/S-005.md` exists in those folders.
-- I read the review and the spec in full. Each finding matches the spec text it cites: AC2 at line 27, the base-commit definition at line 23, AC6 and AC17 at lines 31 and 62, J1's duplicate rule at line 80.
-- I ran no tests; nothing here can be run.
+## 5. What is needed outside my lane
+- **Owner, through the Orchestrator:** decide whether this is a superseding spec or an approved change to the locked checks.
+- **Definer, if it's a new spec:** pin the base commit in the criteria, ideally replacing the Reviewer-only safeguard at spec line 208.
+- **Next brief to me:** include the existing S-005 checks, the README and the baseline recorder (`record-baseline.mjs`). The Builder's code must stay out of it.
+- **Build gate case:** record that AC12, AC18, AC19 and the static part of AC10 are covered only by the rubric. No automated test guards them; they rely on the Reviewer reading the build.
 
-**4. What is undone: all of it.** This is the revision I would make once I have the files:
-- **Finding 1 (AC17 with AC6):**
-  - In the AC16/17 test, plus the J1 and J3 tests, add cases where the log read fails and each card has a notes file in the tree but no recommended word:
-    - no `Recommendation:` line;
-    - the word without backticks;
-    - a backticked word that isn't one of the card's words;
-    - `` `Drop` `` (wrong case);
-    - a prose line that only mentions `Recommendation:`.
-  - Expect: none of those cards on the list, the AC17 line shown, no notice sent. A card with a valid word, in the same records, is still shown.
-  - In `mutants.md`, add the mutants "show any card whose notes file exists" and "…whose notes have any backticked word", and correct M14 and M15.
-- **Finding 2 (AC2 and J4, the sentence check):**
-  - Replace the two loose regexes with a phrase that requires "Chief of Staff", "recommend" and the word in one sentence (no full stop or line break between them).
-  - Add a control: the same matcher run on a `shown, no recommendation yet` sheet for the same card must not match. That proves the button labels alone can't satisfy it, whatever `Sheet.text` includes.
-  - Use a card whose words don't appear in its prose.
-- **Finding 3 (base commit not tied to main):** add a test that the base commit is an ancestor of `git merge-base HEAD origin/main`. If `origin/main` can't be resolved the test fails rather than skips, and the message asks for a full-history fetch. Also add a rubric item for the Reviewer to check the same thing by hand.
-- **Finding 4 (`duplicates` is self-declared):** in J1, call the real log reader through the seam on a two-entry log, in both orders. Work out the expected value from what it actually returns (the earliest of those), not from the Builder's `duplicates` claim. Add an R1 item: the seam's reader is imported from `src/lib`, not reimplemented, and the declaration matches the code.
-- **Smaller issues:**
-  - Mark M2's "age clamped at 0" as an equivalent mutant that no check can catch.
-  - AC8: add a check that the seam really serves `otherRefs` (the same notes placed on main must show the word), plus an R1 item.
-  - AC13:
-    - make `fetch` and network calls throw;
-    - check that nothing is written;
-    - add a temporary git repo fixture with records at two commits, and run the rule at the older one.
-  - AC10: count the notes reads across two reads and repeated sheet opens; it should be one per card per read.
-
-**5. What is needed outside my lane**
-- The Orchestrator should re-issue this task with a pack that holds the current `tests/acceptance/S-005/**` and `checks/S-005/**`, including the README and rubric.
-- Finding 3 needs CI to fetch `origin/main` with full history. CI config is R3, so that needs the owner's approval, or the fallback is a Reviewer rubric item only.
-
-**6. Open questions**
-1. My role says never edit a check once locked; a new spec supersedes it. The review's FAIL verdict suggests these checks aren't locked yet. If they are already locked, the revision has to go through a superseding spec, not edits to the files. Which is it?
-2. The review's own question 3 (does `Sheet.text` include the button labels?) needs the README. The control in finding 2 makes the answer matter less.
-3. Can CI see `origin/main` with its history, or should finding 3 fall back to a rubric item only?
+## 6. Open questions
+1. Should the base commit be pinned with a new spec, or by changing the locked checks with the owner's approval?
+2. What should the base commit be pinned to: the merge-base with main, or a hash fixed at freeze? The spec's header says no hash exists yet, so the merge-base looks like the only workable choice.
+3. Should rubric-only coverage go into the Build gate case as a known risk?
+4. When the log has two entries for one card (the spec's own open question 6), the spec says the rule picks the earlier raise time. The critic found the J1 test follows whatever the seam reports. Should that test assert the earlier entry outright? That would also be a change to a locked check.

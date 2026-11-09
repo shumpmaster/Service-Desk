@@ -5,7 +5,7 @@
       "gate": null,
       "item": "P-003",
       "role": "check-author",
-      "route": "freeze-frozen",
+      "route": "ready-dispatch",
       "spec": "S-005",
       "stage": 4
     }

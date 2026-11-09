@@ -1,51 +1,31 @@
 Verdict: FAIL
 
-The locked checks are mostly sound: they cover AC1–AC17 and J1–J6, and they compare against a recorded baseline. But I found four broken versions that would still pass, and two claims in `checks/S-005/mutants.md` that I could not support. I read every file in `tests/acceptance/S-005/`, `checks/S-005/` and `specs/S-005.md`. I did not run anything, because there is no seam (`tests/desk/s005-seam.mjs`) or `src/` in this pack.
+I read S-005 and every locked check. Almost everything is sound, but one gap lets a broken build pass. Nothing could be run: the pack has no `src/` and no seam (`tests/desk/s005-seam.mjs`).
 
-## Findings that fail the checks
+**Blocking finding: nothing independent fixes the base commit.**
+- `baseline-provenance.test.mjs:11-35` takes `b.baseCommit` from the baseline file. `record-baseline.mjs:16` takes it from `seam.baseCommit`, and the Builder writes that seam (README.md:114).
+- The only checks on it are that it is an ancestor of HEAD, that no `src/` change falls between it and the commit that added the baseline, and that the baseline file is unchanged afterwards.
+- `ac14-15-notices.test.mjs:16-19` ("src/notify/** is unchanged") diffs against the same self-declared commit.
+- A build can therefore declare a recent commit as the base and re-record the baseline from changed code, with the baseline file committed after the declared base. All three checks still pass.
+- That defeats AC9, AC14, AC15 and the "no change under `src/notify/**`" guard. Mutants M31 and M32 in `mutants.md:40-41` are claimed caught, but a mutant that moves the base commit survives.
+- Fix: the locked checks should anchor `baseCommit` independently, for example equal to `git merge-base origin/main HEAD` or to a commit hash fixed at freeze. The spec header says no hash exists yet (`specs/S-005.md:3`), so this is for the check author or a new spec.
 
-1. **AC17: the "notes file with no recommended word" case is never tested when the log is unreadable.**
-   - Spec: AC17 (specs/S-005.md:62) shows a card from a log-less read only if its notes have a recommended word.
-   - Tests: `j1-queue-log-to-rule.test.mjs:57-65`, `j3-rule-to-list.test.mjs:62-71` and `ac16-17-failed-reads.test.mjs:78-98` give the notes-less cards no notes file at all. No test combines a failed log with a notes file that is in the tree but has no `Recommendation:` line, no backticked word, or a word that is not one of the card's words (AC6).
-   - Broken version that survives: "log not got → show any card whose notes file exists". M14 and M15 in `mutants.md` claim to cover this area, but they don't catch it.
+**Non-blocking gaps (the first three are in the tests; the last concerns the mutant table):**
+- `tests/acceptance/S-005/ac16-17-failed-reads.test.mjs` never fails the queue and the log together.
+- It also never tests AC17 with a notes file that has no recommended word while the log fails. AC6 combined with AC17 is spec-implied (`specs/S-005.md:31`, `:62`).
+- AC13's "runs on records from before M4 was live" (`specs/S-005/spec:45`) has no test.
+- AC12, AC18 and AC19, and the static part of AC10, are covered only by the rubric (`checks/S-005/rubric.md`). That is a manual Reviewer review, not a locked check, and a reviewer who skips it lets a broken build through.
+- The mutants table (`checks/S-005/mutants.md`) has never been run. I traced M1–M30 to specific tests by reading them and found each caught, so the claim holds on inspection only.
 
-2. **AC2 and J4: the check that the sheet "says the Chief of Staff recommends that word" is too loose to fail.**
-   - `ac01-08-hold-and-show.test.mjs:51` and `j4-list-to-views.test.mjs:44` only test `/Chief of Staff/.test(text) && /\bdrop\b/.test(text)`.
-   - `Sheet.text` is "the sheet's visible text" (README.md:72), and the sheet already shows the button words and card prose. A build that marks the button but drops the sentence would likely pass.
-   - The sentence is part of AC2 (specs/S-005.md:27). The check should match a Chief-of-Staff-and-word phrase, or a baseline-shaped line, that cannot come from the button labels.
+**Checks that hold up:**
+- **Boundaries and skew:** J1 tests 23:59 vs 24:00, negative age (09:58), 09:59 vs 10:00 the next day, and a far-future raise time (`j1-queue-log-to-rule.test.mjs:38-108`).
+- **Notes line:** J2 has 13 table cases for the `Recommendation:` line, plus tests for another card's notes and unreadable notes content (`j2-notes-to-rule.test.mjs:16-65`).
+- **Views and failed reads:** J3, J4 and J5 cover the views and the sender, and AC16 and AC17 cover failed reads, including the exact line text.
+- **The reported defect:** AC3 reproduces it, with section 5 saying `re-specify` and the notes saying `drop` (`ac01-08-hold-and-show.test.mjs:59-71`).
+- **No clock, no memory:** AC11 and the AC13 clock test move the process clock.
+- **AC10 reads:** AC10 counts new reads exactly and checks origin, method and credential (`ac09-10-unchanged.test.mjs:65-87`).
 
-3. **The baseline provenance check does not tie the base commit to the main branch.**
-   - Spec: "the main-branch commit the build starts from, before any change for this fix" (specs/S-005.md:23).
-   - `baseline-provenance.test.mjs:11-36` checks only these things:
-     - `baseCommit` is an ancestor of HEAD.
-     - The baseline file was added after it.
-     - No `src/` change lies between them.
-   - A Builder who names a build-branch commit that already holds the `src/` changes passes every test, so the AC9, AC14 and AC15 comparisons would then run against changed code. M32 in `mutants.md` ("baseline re-recorded after src changes") does not cover this.
-   - A test is needed that the base commit is on the main line, for example an ancestor of `origin/main` that is not on the build branch only. Alternatively, `src/` at the base commit should be matched to the main-branch tree at the branch point.
-
-4. **`seam.logReader.duplicates` is self-declared by the Builder and cannot be checked.**
-   - `j1-queue-log-to-rule.test.mjs:75-90` builds its expected value from that declaration. If the Builder declares `last`, the test expects the later entry.
-   - M19 is caught only when the value is `all` (`mutants.md:28`). The spec's rule (specs/S-005.md:80) is "the earliest among the entries the reader returns". The check can't show what the reader returns, so it only verifies consistency with the seam's claim.
-   - The rubric (R1) has no item for verifying this claim against `src/lib`. Add one, or lock a reader fact that can be tested directly.
-
-## Smaller issues
-
-- **M2 in `mutants.md:11` is wrong.** "Age clamped at 0" gives the same answer as the correct rule. An age of 0 is under a day, so the card stays held in the same cases, and the J1 skew test (`j1:92-99`) cannot fail on it. The other two variants in that row are caught: "negative age shows at once" and "measured from the read". The row should be corrected, because it overstates what the checks catch.
-- **AC8 (M12) depends on the seam actually serving `otherRefs`.** Nothing in the checks, or in rubric R1, requires it. If the seam ignores `otherRefs`, "read notes from any ref" survives. Add an R1 item and a self-check that the seam does serve other refs.
-- **AC13 "no network, nothing stored" is untested.** Only the clock is faked (`j6:85-91`). `seam.monitor` is also fed neutral records, not a git commit, so running the rule at a past commit exists only in the rubric (R4).
-- **AC10 counts the notes reads in one `read` call only** (`ac09-10-unchanged.test.mjs:65-87`). A read repeated on each sheet open is not exercised. This is minor.
-- **Some criteria are covered only by the reviewer rubric:** AC10's static part, AC12, AC18 and AC19. The README says so openly, so I don't count it as a defect.
-
-## What I checked and found sound
-
-- Kind from `<gate>`, including the `dor-fail` versus `dor` case (J1).
-- The 24-hour boundary at 23:59 and 24:00, and negative and far-future raise times.
-- Every case in J2's line rule, including the two-line cases, other-card words and notes content that can't be read.
-- AC1, AC3–AC8, AC11 (multiple moments, a long-open desk, a faked clock and a partial read), AC14–AC16, and the J3–J6 states and flags.
-- A missing seam fails every test file at import (README.md:34), so "no seam, no pass".
-
-## Open questions
-
-1. Should the Builder's `logReader.duplicates` and `cardFileForm` statements be checked against `src/lib` by the Reviewer, with an R1 rubric item?
-2. Is a tie of the base commit to the main branch possible in CI, or does it need a rubric item for the Reviewer?
-3. Does `Sheet.text` include the button labels? That decides how loose finding 2 is.
+**Open questions:**
+1. How should `baseCommit` be anchored, and does that need a new spec, since the checks are locked once frozen (README.md:5-6)?
+2. Should the rubric items (AC12, AC18, AC19, AC10's static part) be recorded as reviewer-only coverage in the Build gate case, so the owner knows no test guards them?
+3. Is the first `card` entry the right pick when the log holds two entries for one card? This is the spec's own open question 6, and the checks follow whatever the seam reports (`j1…test.mjs:75-90`).

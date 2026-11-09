@@ -534,3 +534,17 @@ options_considered: Re-specify S-005 with the two test folders in its areas touc
 decided_by: owner ("A: approve fix (Recommended)", 2026-11-09, asked in session session_01QBwHGLyWwT6VLiL5hC3LpG, and the same answer, "A: approve the fix (Recommended)", in session session_01QBwHGNazv3PGnrNErBEZfX; recorded in decisions/questions/P-003-check-author-scope.md; the fix merged by the owner in #341)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0039 — The Check author may read its own locked checks, to revise them on a Critic FAIL
+date: 2026-11-09
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The Critic failed S-005's locked checks (P-003, reviews/S-005/_critic-checks.md) and route checks-fail sent them back to the Check author, but its pack (governance/PACKS.toml `[roles.check-author]`) held no tests/acceptance/ or checks/ file, so its round-2 session (orchestrator run 847) changed nothing and reported that the files it was asked to revise were missing; the outcome was still `ok`. Approve a fix that lets the Check author read its own checks? Filed first as questions/P-003-check-author-pack.md (#343).
+decision: governance/PACKS.toml `[roles.check-author]` may_read gains tests/acceptance/** and checks/**, the paths the Critic, Builder and Reviewer already read; holdouts are always excluded and its must_not_see (src/**, docs/handover/**, docs/reports/**) is unchanged. Measured with `session_runner.py pack` for the round-2 entry on item/P-003: 4 files besides the library and playbooks before, 23 after (checks/S-005's mutants and rubric, both READMEs and the 15 scripts in tests/acceptance/S-005 added), with no src/ in either.
+licenses_next: The Check author's next dispatch on P-003 sees its checks with the Critic's findings and can revise them. The same gap in the operating model (Personal-Org-Operating-Model template-v3/governance/PACKS.toml) is raised there.
+options_considered: No fix, letting the rounds run out to a stop card (fixes nothing, wastes two or three rounds); fixing it in the operating model first and bringing it with the next sync (P-003 waits).
+decided_by: owner ("A: approve the fix (Recommended)", 2026-11-09, asked in session session_01QBwHGN37HCacjWVWzYVhq5; recorded in decisions/questions/P-003-check-author-pack.md)
+proposed_by: chief-of-staff
+reversibility: reversible

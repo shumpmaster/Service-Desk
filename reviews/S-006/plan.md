@@ -1,40 +1,34 @@
 Verdict: FAIL
 
-I checked the spec's header, its cited records and its plan. Two things stop a freeze. The "unchanged from S-005" claim can't be verified from this pack. Several load-bearing facts depend on files that aren't here.
+The spec's main claims check out against the pack. It breaks one of the owner's rulings, though, and one load-bearing claim can't be verified.
 
 **Findings**
 
-1. **"Word for word" claim can't be verified (specs/S-006.md:11).**
-   - The spec says every criterion, join sheet, fact, risk and open question is S-005's, word for word.
-   - It says the owner's approval of S-005's criteria (decisions/P-003/criteria-9.md) therefore covers these same words.
-   - specs/S-005.md is not in the pack. `specs/` holds only S-006.md.
-   - criteria-9.md (line 1) says only "Decision: proceed". It names no spec and no text.
-   - So I can't confirm that the approved criteria are the ones in this spec. The whole approval chain rests on this claim, and an unverifiable claim is a FAIL.
-   - stop-11.md:3 allows only the id, the supersedes line "and anything the plan review requires", and says "Do not grow it". I can't tell whether the spec stayed within that.
-   - Fix: put S-005 in the pack, or have the Orchestrator record a diff of S-005 and S-006 showing only the permitted changes.
+1. **The spec cites an earlier review round, which the owner told the writer not to do.**
+   - specs/S-006.md:11 says "for the plan review (reviews/S-006/plan.md, findings 2 and 3), the stop-rule risk under Risks".
+   - decisions/P-003/stop-7.md:3 rules: "Cite only files you were given, never an earlier review round."
+   - There is no reviews/ folder in this pack, and the brief says there is no earlier feedback. So the citation breaks the ruling and can't be checked.
+   - Fix: say what the Risks item at specs/S-006.md:209 changed and why, without naming that file.
 
-2. **Facts the spec relies on for its checks are outside the pack (specs/S-006.md:188-194).**
-   - The spec itself admits that src/, research/P-003-sizing-findings.md and the S-004 spec are not in the definer's pack.
-   - AC9 and AC14 to AC17 rest on recorded baseline runs of behaviour that the spec says it cannot state. The spec says this openly and designs around it.
-   - Weaker point: J1 infers the card-file name form `queue/<item>-<gate>-<n>.md` from a single example (docs/PROJECT.md:540). The spec flags this as a known limit.
-   - These are disclosed limits, not defects. But AC9 and AC14 to AC17 can't be shown to be satisfiable before the freeze, and they could force a stop at the J5 `src/notify/**` boundary after the freeze.
+2. **The diff against S-005 can't be verified.**
+   - specs/S-006.md:11 says only the id, status, lineage, the S-005→S-006 marks and one Risks item changed, "compare the two files line by line, both 232 lines long".
+   - specs/S-005.md isn't in the pack, so the claim that "No criterion, join sheet, fact or open question changed" can't be tested.
+   - stop-11.md:3 says to carry S-005 forward unchanged, so that claim is the core of the compliance.
+   - I did check the eight line marks. S-006 does appear at lines 83, 97, 106, 116, 122, 145, 229 and 230, and the file is 232 lines long.
+   - Under your rule an unverifiable claim is a FAIL. The reviewer needs S-005 in the pack, or the spec needs to drop the claim.
 
-3. **Size mismatch with the stop rule (specs/S-006.md:180-183).**
-   - The restated estimate is 15 to 23 tests, against a plan stop rule of 24. The spec itself says this is "near it".
-   - That leaves almost no margin for 19 acceptance criteria, 6 join tests and the baseline files.
-   - The spec calls these estimates "not a measurement", so the risk of an early stop is real. I'd carry it to the gate.
+3. **The criteria approval is thin.**
+   - specs/S-006.md:18 and :11 say the criteria are owner-approved at criteria-9.md.
+   - decisions/P-003/criteria-9.md says only "proceed" and names no text. criteria-8.md:3 sent S-005 back, and stop-11.md:3 then calls the criteria "not wrong".
+   - The spec admits this at line 11, and I'd accept stop-11 as the basis. But "owner-approved" at line 18 overstates it. It should say the approval rests on stop-11.
 
-**What I checked and found sound**
-
-- The header names `milestones: M4`, and M4 exists in docs/projects/P-003.md:46 with a `· why:`. The spec title matches the milestone.
-- The plan is the item's own (docs/projects/P-003.md), as S-035 requires.
-- The Design approval record (decisions/P-003/dor-4.md) exists and says "proceed".
-- docs/PROJECT.md:127, :540 and :588 say what the spec cites.
-- The plan's §1 bullets (docs/projects/P-003.md:15-23) match AC1 to AC8, AC16 and AC17 as I read them.
-- The join-up review section is present, and it rates both differences non-blocking.
+**Checked and holding**
+- The header names M4 (specs/S-006.md:7). M4 is a milestone in docs/projects/P-003.md:46, in the plan of this item, not another item's.
+- The join-up review at specs/S-006.md:147-163 follows the form in docs/design/JOIN_UP_REVIEW.md:12-23. It lists every view, and the two differences are rated non-blocking and carried forward.
+- The citations I spot-checked match: docs/PROJECT.md:127 (Launch-5), :540 (Q-003-failure-1), :588 (model.js and collect.mjs), :85 (answer record names), and library/facts/F-cf-02.md:4 (rollback).
+- The J1 skew example and the J6 worked examples are consistent with AC4 and AC13.
+- The behaviour on a failed read (AC16, AC17) matches plan §1, lines 22-23.
 
 **Open questions**
-
-- Did the Builder's pack hold S-005? If so, can the Orchestrator attach a diff?
-- Should AC16 hide every decision card when one notes file can't be fetched? The spec already asks this as open question 3, and it is not a freeze blocker.
-- Can anyone check that J6's "first-parent history" and committer-time rules give the same result on a real main-branch history? No test fixture in the pack demonstrates it.
+- Does stop-rule counting treat this as a third plan-review round? The plan's stop rule at docs/projects/P-003.md:113 says a third failed plan-review round stops work. S-001 to S-005 came before this spec, but the pack holds no review records, so I can't count the rounds. The Orchestrator should confirm the count before recording this FAIL.
+- The baseline-run criteria (AC9, AC14 to AC17) rest on code that isn't in the pack, as the spec admits at line 190. That is sound only if the build can supply those baselines without changing src/notify/**. It can't be known before the build.

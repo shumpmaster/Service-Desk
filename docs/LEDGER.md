@@ -548,3 +548,17 @@ options_considered: No fix, letting the rounds run out to a stop card (fixes not
 decided_by: owner ("A: approve the fix (Recommended)", 2026-11-09, asked in session session_01QBwHGN37HCacjWVWzYVhq5; recorded in decisions/questions/P-003-check-author-pack.md)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0040 — The Critic may read the specs a new spec supersedes, to check what it carries forward
+date: 2026-11-10
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The owner ruled that S-006 carry S-005 forward unchanged (decisions/P-003/stop-11.md). The Critic failed S-006's plan review three times (P-003, 2026-11-09 20:41Z and 21:16Z, 2026-11-10 03:28Z), each time because specs/S-005.md was not in its pack (governance/PACKS.toml `[roles.critic]` may read no spec but the one under review), so the "unchanged" claim could not be verified. Approve a fix that lets the Critic read specs/**, as the Definer does? Filed first as questions/P-003-critic-superseded-specs.md (#346).
+decision: governance/PACKS.toml `[roles.critic]` may_read gains specs/**; its must_not_see (docs/reports/**, docs/briefs/**) is unchanged, and the critic-triage and critic-gate entries are unchanged. Measured with `session_runner.py pack` for the plan-review entry on item/P-003: specs/S-006.md only before, specs S-002 to S-006, specs/_TEMPLATE.md and specs/S-005.facts.tmp after, with no other file changed.
+licenses_next: The plan review of a spec that supersedes another can compare the two. The same gap in the operating model (Personal-Org-Operating-Model template-v3/governance/PACKS.toml) is raised there.
+options_considered: No fix, with the next spec dropping its "unchanged" claim (breaks the link to the approved criteria); an Orchestrator-attached diff of the two specs (a pack-builder code change and an Orchestrator session).
+decided_by: owner ("A: approve the fix (Recommended)", 2026-11-10, asked in session session_01QBwHGN37HCacjWVWzYVhq5; recorded in decisions/questions/P-003-critic-superseded-specs.md)
+proposed_by: chief-of-staff
+reversibility: reversible

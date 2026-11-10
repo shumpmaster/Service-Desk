@@ -1,40 +1,27 @@
-I've written specs/S-007.md with only AC13 changed, as stop-12 ruled, and marked specs/S-006.md superseded. One thing to know first: S-006's status line said `draft`, not `frozen` as the brief expected, so I changed `draft` to `superseded`.
+I've fixed the one blocking finding in specs/S-007.md: the list of changed lines in the line 11 note now includes line 3. Nothing else in the spec changed.
 
 **1. What I changed**
-- **New file, specs/S-007.md**, status `draft` (231 lines, the same as S-006). It differs from S-006 only on these lines:
-  - **Line 1:** the id.
-  - **Line 4:** the lineage now ends with S-006.
-  - **Line 11:** the supersedes note, which quotes stop-12 and lists every changed line.
-  - **Line 18:** the criteria heading now says the criteria are carried unchanged from S-006 except AC13, by stop-12.
-  - **Line 45 (AC13):** the sample now holds **three** cards, and the check of each card's id, raise time and state moved into this sentence from old line 48.
-  - **Line 46, case (a):** the raise time is now said to be later than the card's arrival on the main branch, as in J6's first worked example (arrival 2026-11-10 10:00, recorded 2026-11-11 09:00).
-  - **Line 48:** now case (c), a card raised before the part of the log that is read. It is reported `not recorded`, shown at once, and neither figure reports it, as J6's awkward cases say.
-  - **Lines 83, 97, 106, 116, 122, 145, 229, 230:** `S-006` → `S-007` in the join-test marks and the builder's brief.
-- **specs/S-006.md, line 3:** only the status word changed, to `superseded`.
+- In the note at line 11, the list of changed lines now reads "line 1 (id), line 3 (status: `draft` here, `superseded` in S-006), line 4 (lineage), this note, …".
+- No other line changed. The file is still 231 lines long, so every line number the note cites still holds.
 
 **2. Why**
-- The stop-12 ruling was "criteria-wrong": fix AC13 only, say how many cards the sample holds so that the third case is one of them, say what case (a)'s raise time is later than, keep everything else, list every changed line, and do not grow the spec.
-- In case (a) I wrote "**almost** a day later" rather than "a day later". J6's example has 23 hours, and an exact "a day" would contradict it. The case's outcome is the same either way.
-- To keep the length unchanged, I folded the old "also checks" line into line 45 instead of adding a line.
+- The owner's ruling says to "list every changed line" (decisions/P-003/stop-12.md:3). The plan review found that S-007's line 3 differs from S-006's but was not in the list (reviews/S-007/plan.md, Finding 1).
+- S-006 named its own line 3 in its list (specs/S-006.md:11), so I followed that.
+- I kept the change to one clause because the ruling also says "Do not grow it."
 
-**3. What I verified**
-- A line count of S-007 gives 231, the same as S-006.
-- A search for `S-00[67]` in S-007 finds S-007 on lines 1, 11, 83, 97, 106, 116, 122, 145, 229 and 230, and S-006 only on lines 4, 11 and 18. This matches the note's list.
-- A search for the case markers finds (a), (b) and (c) on lines 46 to 48, and "three cards" on lines 11 and 45.
-- I checked the rest of S-007 against S-006 by reading, not with a diff tool; nothing could be run in this pack. No git repository was available, so nothing was committed.
+**3. What I verified** (by reading and searching the files; I had no shell, so no command-line diff was run)
+- **Line 3:** read specs/S-006.md lines 1–20. Line 3 is `status: superseded`, and S-007's line 3 is `status: draft`, so the finding is real.
+- **Id swaps:** searched both files for `S-006`/`S-007`. The `S-006` → `S-007` swaps are exactly at lines 83, 97, 106, 116, 122, 145, 229 and 230, as the note says. In S-007, `S-006` appears only at lines 4, 11 and 18, which are all listed as changed.
+- **AC13:** read S-006 lines 45–48. The differences from S-007's AC13 match the note: two cards become three, case (a) is reworded, and the old line 48 becomes case (c).
+- **The rest:** I relied on the reviewer's line-by-line comparison for everything else. Apart from line 3, it found only the listed differences.
 
 **4. What is undone**
-- S-007 has not been frozen; that happens at the freeze gate after the Critic's plan review.
-- Case (b) on line 47 still ends with "." while (a) ends with ";". I left it so as not to change a line the ruling did not ask for.
-- No experiment registration: Design-3 is skipped.
-- Pack housekeeping: specs/S-005.facts.tmp is still in specs/. I didn't touch it.
+- The spec is still `draft`. It still has to go through the Critic's plan review again, then the freeze gate, then the owner's scenario card.
 
 **5. What is needed outside my lane**
-- The Critic's plan review of S-007, then the freeze gate.
-- The owner's scenario card for the changed AC13.
-- The Check author needs to revise the AC13/J6 test for the three-card sample. J6's test still covers case (b), as before.
-- A commit to build/definer/P-003 with the trailers my role requires.
+- The Orchestrator sets line 3's status at the freeze gate and S-006's status on supersession. I didn't touch S-006.
+- The Build gate must carry the reviewer's second point: the tests/desk/ path and the behaviour of the code in src/ can't be checked from this pack. The spec already does this (lines 188–190 and 209).
 
 **6. Open questions**
-- S-006 was marked `draft`, yet stop-12 ruled on it as if it had been frozen. Should the freeze record be checked to confirm that `superseded` is the right status, and that S-006's `frozen_at` should stay blank?
-- The six open questions for the owner in the spec are carried over unchanged, and none blocks freeze.
+- **Who sets line 3** (the reviewer's question 1): I named line 3 as changed but didn't say who sets the status, to avoid growing the note. If the Critic wants it said that the Orchestrator, not the Definer, sets it, that is one more clause in line 11.
+- **Line 47:** case (b) of AC13 ends with a full stop while case (a) ends with a semicolon, and case (c) follows it. I didn't fix this. Line 47 isn't on the change list, and the ruling says to carry everything except the listed lines unchanged.

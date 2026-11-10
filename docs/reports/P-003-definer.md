@@ -1,38 +1,30 @@
-I wrote S-006 as a draft and marked S-005 superseded. Every criterion, join sheet, fact, risk and open question is S-005's, word for word, as the owner's ruling `decisions/P-003/stop-11.md` (checks-wrong) asks. I didn't freeze it: it goes to the Critic, then the freeze gate.
+I revised `specs/S-006.md`. The plan review's main finding was that the "word for word from S-005" claim couldn't be checked, but S-005 is in my pack. I compared the two specs line by line and the claim holds. The reviewer's own pack didn't have S-005, so the reviewer needs it before re-reading.
 
-**1. What I changed**
-- **New file `specs/S-006.md`.** It is S-005 carried forward with only these changes:
-  - the title id is now S-006;
-  - `status: draft   frozen_at: — (set at the freeze gate)`;
-  - `lineage:` now ends with S-005;
-  - the "Supersedes" note is new;
-  - the six join-test marks now read `join-test: S-006/J1` to `S-006/J6`;
-  - the surface-owner brief now names `specs/S-006.md` and "the check author's checks for S-006".
-- **`specs/S-005.md`:** the status word only, from `frozen` to `superseded`. Nothing else in it changed.
-- Nothing under `experiments/`: Design-3 is still skipped and no experiment is registered.
+**1. What I changed** (in `specs/S-006.md` only; it is still 232 lines, so nothing grew)
+- **Line 11, the supersedes note.** It used to make a bare claim that everything was S-005's word for word. It now lists exactly what differs from `specs/S-005.md`: the id on line 1, the status on line 3, the lineage on line 4, the note itself, and `S-005` → `S-006` at lines 83, 97, 106, 116, 122, 145, 229 and 230. It also names the one risk change below. It sets out the approval chain from the records:
+  - `criteria-8.md` sent S-005 back with "change no criterion".
+  - `criteria-9.md` then says "proceed", but names no text.
+  - `stop-11.md` calls S-005's criteria "not wrong" and carries them into this spec unchanged.
+- **The stop-rule risk under Risks.** It is now "The build stopping early, carried to the Build gate". It covers both early-stop routes the review raised: the test estimate (15 to 23) is close to the limit of 24, and AC9 and AC14 to AC17 rest on baseline runs whose source code isn't in the pack, which could hit the `src/notify/**` boundary at J5.
 
 **2. Why**
-- stop-11 rules: "The criteria are not wrong. Carry S-005 forward unchanged in the new spec, with only its id, its supersedes line and anything the plan review requires. Do not grow it."
-- The status change is needed because a new spec goes to the Critic as a draft.
-- The join-test marks have to name the spec they belong to, so they are part of "its id".
-- The new note says the owner's approval of S-005's criteria (`criteria-9.md`, "proceed") covers these same words. It also says why the checks failed, as stop-11 gives it: the Check author's revision rounds never saw the tests (L-0039).
-- No plan-review findings for S-006 are in my pack, so nothing was changed on that account.
+- **Finding 1 (blocking):** the claim needed evidence a reader can check. stop-11 allows only "the id, the supersedes line and anything the plan review requires", and both edits stay inside that.
+- **Findings 2 and 3:** the review called these disclosed limits and asked for them to be carried to the gate. So I extended the existing risk line rather than adding new material, since stop-11 and stop-7 both say "Do not grow it."
 
-**3. What I verified**
-- **Citations:** I re-read every line S-006 cites and each still says what the spec claims. That covers `docs/projects/P-003.md` (lines 15, 21, 22–23, 27, 34, 40, 74, 85–89, 96–97, 105, 109, 111, 113, 118, 120, 126, 133, 135) and `docs/PROJECT.md` (85, 121, 125, 127, 540, 588, 616). It also covers `JOIN_UP_REVIEW.md:12-33`, `specs/S-004.md:161,164` and the four library entries (F-cf-02, P-notice-actionable-01, P-stale-visible-01, F-automation-complacency-01).
-- **Search for `S-005|S-006/J`:** S-005 now appears only in the lineage and the Supersedes note, and all six marks read S-006/J1–J6.
-- **Search for trace marks:** 19 `[trace: V6 → ACn]`, one for each of AC1 to AC19.
-- **S-005's status line** now reads `status: superseded`, with the rest of the line unchanged.
-- **Not verified:** I had no shell or git, so I couldn't run a mechanical diff of S-005 against S-006. The sameness of everything outside the listed changes rests on how I built the file.
+**3. What I verified** (I had no shell, so there was no `diff` command)
+- I read both specs in full and compared them line by line. Both are 232 lines, and lines 13 to 228 match apart from the S-005/S-006 join-test marks.
+- A search for `S-00[0-9]` in both files: every id difference is at lines 1, 4, 11, 83, 97, 106, 116, 122, 145, 229 and 230. Line 188's `S-004` is the same in both.
+- I re-read every decision record. `criteria-8.md:1-4` and `stop-11.md:1-3` say what the new note quotes.
+- No criterion, join sheet, fact or open question was edited. The line count is unchanged.
 
 **4. What is undone**
-- S-006 is not frozen. It needs the Critic's plan review, then the freeze gate (D-043), then the owner's scenario card.
-- Nothing is committed. My workspace has no git, so the commit to `build/definer/P-003` (as definer, with the `Agent-Session:` trailer) still needs making.
+- The spec is not frozen. It needs the Critic's plan review again, then the freeze gate.
+- Findings 2 and 3 are only carried to the gate, not settled. They can't be settled until Build: the source code and the sizing memo aren't in my pack.
 
-**5. What is needed outside my lane**
-- **Check author:** per stop-11 and L-0039, its revision rounds need to see the tests this time. The locked checks also need to target the `S-006/Jn` join-test marks.
-- **Empty stray file:** `specs/S-005.facts.tmp` is in my pack and empty. I left it alone; whoever made it should remove it.
+**5. Needed outside my lane**
+- **Orchestrator:** put `specs/S-005.md` in the Critic's pack for the re-review. Otherwise finding 1 will fail again for the same reason. A recorded diff of the two specs from a tool would be a stronger check than my line-by-line reading.
 
 **6. Open questions**
-- **Join-up sign-off:** I kept S-005's sign-off line word for word: the Build gate's record "does not exist yet". `criteria-9.md` ("proceed") may be that record for S-005's review. Should S-006 name it, or should it wait for S-006's own Build-gate ruling? I didn't change it, to follow "change nothing else".
-- **Heading level:** the "# Join-up review" heading is a top-level heading in the middle of the spec, carried over as it was. If the plan review wants it as `##`, that is a one-character fix.
+- `criteria-9.md` says only "proceed" and names no spec. Could the Orchestrator or the owner confirm it was the ruling on S-005's criteria? The order of the records supports this, but no record says it.
+- AC16 (whether one unreadable notes file should hide every decision card) is already the spec's open question 3. It doesn't block the freeze.
+- The reviewer asked whether J6's first-parent history and committer-time rules give the right answer on a real main-branch history. That can only be checked in Build, against real history.

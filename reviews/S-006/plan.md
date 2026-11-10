@@ -1,34 +1,42 @@
 Verdict: FAIL
 
-The spec's main claims check out against the pack. It breaks one of the owner's rulings, though, and one load-bearing claim can't be verified.
+I'm failing it on two defects in the spec's own text and one claim I can't verify from this pack. The plan side (milestone, quotations, join-up review) checks out. Throughout, "line" means a line of specs/S-006.md.
 
 **Findings**
 
-1. **The spec cites an earlier review round, which the owner told the writer not to do.**
-   - specs/S-006.md:11 says "for the plan review (reviews/S-006/plan.md, findings 2 and 3), the stop-rule risk under Risks".
-   - decisions/P-003/stop-7.md:3 rules: "Cite only files you were given, never an earlier review round."
-   - There is no reviews/ folder in this pack, and the brief says there is no earlier feedback. So the citation breaks the ruling and can't be checked.
-   - Fix: say what the Risks item at specs/S-006.md:209 changed and why, without naming that file.
+1. **AC13's test is not well-formed (line 45).**
+   - It says the test runs on "sample records holding two cards", with case (a) and case (b).
+   - Line 48 then adds a check on "a card raised before the part of the log that is read (reported `not recorded`, shown)". That is a third card.
+   - A locked check cannot satisfy both statements. Either the sample holds at least three cards or the third case is dropped.
 
-2. **The diff against S-005 can't be verified.**
-   - specs/S-006.md:11 says only the id, status, lineage, the S-005→S-006 marks and one Risks item changed, "compare the two files line by line, both 232 lines long".
-   - specs/S-005.md isn't in the pack, so the claim that "No criterion, join sheet, fact or open question changed" can't be tested.
-   - stop-11.md:3 says to carry S-005 forward unchanged, so that claim is the core of the compliance.
-   - I did check the eight line marks. S-006 does appear at lines 83, 97, 106, 116, 122, 145, 229 and 230, and the file is 232 lines long.
-   - Under your rule an unverifiable claim is a FAIL. The reviewer needs S-005 in the pack, or the spec needs to drop the claim.
+2. **Case (a) has a dangling reference (line 46).**
+   - It reads "records a raise time a day later than that", and nothing before it gives "that" a referent.
+   - The J6 worked example (line 136) suggests the card's arrival, but the criterion doesn't say so.
+   - Check authors would read it differently, which is a risk for a frozen spec whose checks have already failed once (stop-11).
 
-3. **The criteria approval is thin.**
-   - specs/S-006.md:18 and :11 say the criteria are owner-approved at criteria-9.md.
-   - decisions/P-003/criteria-9.md says only "proceed" and names no text. criteria-8.md:3 sent S-005 back, and stop-11.md:3 then calls the criteria "not wrong".
-   - The spec admits this at line 11, and I'd accept stop-11 as the basis. But "owner-approved" at line 18 overstates it. It should say the approval rests on stop-11.
+3. **The "carried unchanged" claim can't be verified (lines 11 and 18).**
+   - The owner's ruling (decisions/P-003/stop-11.md:3) says "Carry S-005 forward unchanged… Do not grow it."
+   - The spec says only its id, status, lineage, the S-005→S-006 marks and line 209 changed. The pack holds no specs/S-005.md (the only spec file is specs/S-006.md), so I can't confirm that.
+   - The spec's own text admits it has the S-005 mention at line 11 and cites S-005 lines.
+   - The spec also relies on records outside this pack: research/P-003-sizing-findings.md and the src/ files (Known limits, lines 188–190). It admits it cannot check how the sender or the desk behave today.
+   - AC9 and AC14–AC17 are therefore checkable only against baseline runs that nobody has made yet. The spec flags this itself at line 209.
 
-**Checked and holding**
-- The header names M4 (specs/S-006.md:7). M4 is a milestone in docs/projects/P-003.md:46, in the plan of this item, not another item's.
-- The join-up review at specs/S-006.md:147-163 follows the form in docs/design/JOIN_UP_REVIEW.md:12-23. It lists every view, and the two differences are rated non-blocking and carried forward.
-- The citations I spot-checked match: docs/PROJECT.md:127 (Launch-5), :540 (Q-003-failure-1), :588 (model.js and collect.mjs), :85 (answer record names), and library/facts/F-cf-02.md:4 (rollback).
-- The J1 skew example and the J6 worked examples are consistent with AC4 and AC13.
-- The behaviour on a failed read (AC16, AC17) matches plan §1, lines 22-23.
+**What checks out**
+
+- **Header and milestone:**
+  - The header says `milestones: M4` (line 7).
+  - M4 is listed in docs/projects/P-003.md:46, in the milestone form with a `· why:`.
+  - That file is the plan of the item (S-035).
+  - Section 9 is "The owner is the user." (docs/projects/P-003.md:140), and the standard lines are present (lines 50–76).
+- **Ruling quotations:**
+  - The quotations from decisions/P-003/stop-11.md and decisions/questions/P-001-card-recommendation.md are accurate.
+  - stop-7.md:3 does say a new card's log entry lands with its card file.
+- **Cited facts:** docs/PROJECT.md:588 and :540 say what the spec claims, and F-cf-02 supports the rollback claim.
+- **Join-up review:** it is present and uses the JOIN_UP_REVIEW form.
+- **Size and stop rule:** the spec estimates 15–23 tests against a stop rule of 24. That is tight but stated openly (line 209).
 
 **Open questions**
-- Does stop-rule counting treat this as a third plan-review round? The plan's stop rule at docs/projects/P-003.md:113 says a third failed plan-review round stops work. S-001 to S-005 came before this spec, but the pack holds no review records, so I can't count the rounds. The Orchestrator should confirm the count before recording this FAIL.
-- The baseline-run criteria (AC9, AC14 to AC17) rest on code that isn't in the pack, as the spec admits at line 190. That is sound only if the build can supply those baselines without changing src/notify/**. It can't be known before the build.
+
+- Is the sample in AC13 meant to hold two or three cards, and is "that" in case (a) the card's arrival?
+- Can the owner or the Orchestrator put specs/S-005.md into the Critic's pack, so the "unchanged" claim can be diffed rather than taken on trust?
+- This is a new spec after the stop-11 ruling. Which plan-review round is this? The stop rule (docs/projects/P-003.md:113) halts work if a third round fails, and I can't tell the count from the pack.

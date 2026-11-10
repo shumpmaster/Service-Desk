@@ -36,7 +36,8 @@ include_feedback = ["reviews/{spec}/plan.md", "decisions/{item}/*.md"]
 [roles.critic]
 # "The finished document under review; for Triage, the failure and the traceability chain."
 must_read = ["specs/{spec}.md", "docs/PROJECT.md", "docs/projects/{item}.md", "{ruling}"]
-may_read = ["docs/playbooks/**", "library/**", "tests/acceptance/**", "checks/**",  # the checks it reviews (S-016 AC6); holdouts are always excluded
+may_read = ["specs/**",  # the specs a new spec supersedes, to check what it carries forward (L-0040)
+            "docs/playbooks/**", "library/**", "tests/acceptance/**", "checks/**",  # the checks it reviews (S-016 AC6); holdouts are always excluded
             "governance/standards/definition-of-ready.md",  # the card's "The definition of ready" (D-052), as a file
             "decisions/**",  # the owner's ruling records (model L-0119); the Chief of Staff's -notes.md never enter a pack
             "docs/design/**",  # Design's join-up review (S-024 AC7)

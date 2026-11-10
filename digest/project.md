@@ -24,6 +24,7 @@
 | L-0037 | governance/PACKS.toml [roles.definer] may_read gains "docs/design/JOIN_UP_REVIEW.md", that file only. Measured: a Definer pack built by governance/checks/session_runner.py pack for P-003/S-005 from main's tree at 65e0c00 holds 119 … | 2026-11-08 | never |
 | L-0038 | governance/checks/v3_checks.py `check_scope` bounds a spec-scoped commit by the Check author, like one by the Definer, by that role's own surface, and reports such paths in … | 2026-11-09 | never |
 | L-0039 | governance/PACKS.toml `[roles.check-author]` may_read gains tests/acceptance/** and checks/**, the paths the Critic, Builder and Reviewer already read; holdouts are always excluded and its must_not_see (src/**, docs/handover/**, … | 2026-11-09 | never |
+| L-0040 | governance/PACKS.toml `[roles.critic]` may_read gains specs/**; its must_not_see (docs/reports/**, docs/briefs/**) is unchanged, and the critic-triage and critic-gate entries are unchanged. Measured with `session_runner.py pack` for the … | 2026-11-10 | never |
 
 ## Kills
 None.

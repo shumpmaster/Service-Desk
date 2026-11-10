@@ -1,28 +1,28 @@
-Verdict: FAIL
+Verdict: PASS
 
-**Finding 1 (blocking, small): the change list omits a changed line.**
-- The owner's ruling says to "list every changed line" (decisions/P-003/stop-12.md:3).
-- specs/S-007.md:11 lists the changed lines as 1, 4, 11, 18, 45, 46, 48, and the `S-006` → `S-007` id swaps. It says "No other criterion, join sheet, fact, risk or open question changed."
-- Line 3 also differs. specs/S-007.md:3 reads `status: draft`, and specs/S-006.md:3 reads `status: superseded`.
-- S-006's own note listed its line 3 as changed (specs/S-006.md:11), so there is a precedent for naming it.
-- The note invites a line-by-line comparison, so a reader finds an unlisted difference. The fix is to add "line 3 (status)" to the list at line 11.
+I tried to refute S-007 and could not. I read specs/S-007.md and specs/S-006.md in full, plus decisions/P-003/stop-12.md and the relevant parts of docs/projects/P-003.md and docs/design/JOIN_UP_REVIEW.md.
 
-**What I checked and found sound:**
-- **Unchanged text.** I compared S-007 with S-006 line by line. Apart from line 3, the differences are the ones line 11 names:
-  - the id at line 1;
-  - the lineage at line 4;
-  - the note at line 11;
-  - line 18;
-  - the AC13 lines 45, 46 and 48;
-  - the `S-007` join-test marks at lines 83, 97, 106, 116, 122, 145, 229 and 230.
-- **Risk at line 209.** It is identical to S-006's, which matches the note.
-- **Ruling followed.** AC13 now says its sample holds three cards (line 45). Case (a) names the card's arrival on the main branch, as J6's first worked example has it (line 46; the example is at line 136). Case (c) covers the card raised before the part of the log that is read (line 48). This is what stop-12.md:3 asked for, and nothing else was grown.
-- **AC13 against J6.**
-  - Case (a): arrival 11-10 10:00, recorded 11-11 09:00. The V6 due time is 11-12 09:00, so it is not a V6 miss. The second figure's due time is 11-11 10:00, when the card is still held, so it is reported. This matches J6 (lines 132–133, 136).
-  - Case (c): the card has no recorded raise time, so it is never `held` (line 132, and AC7). Neither figure reports it, which matches line 142.
-- **Header.** `milestones: M4` (line 7) is a project milestone. docs/projects/P-003.md:46 matches it, though that line is too long to display.
-- **Criteria record.** decisions/P-003/criteria-9.md:1 is "proceed" and names no text, as line 18 says.
+**Findings**
 
-**Open questions:**
-1. Should the note at line 11 also say that line 3's status is set by the Orchestrator and not by the Definer? That would settle whether the difference counts as a change.
-2. The tests/desk/ path and the behaviour of the code in src/ are unverifiable from this pack (lines 188–190). The spec admits this, and AC9 and AC14 to AC17 rest on baseline runs. I am not failing on it, but the Build gate must carry it, as line 209 does.
+1. **The change matches the owner's ruling.** decisions/P-003/stop-12.md:3 says to fix AC13 only, with three parts: say how many cards the sample holds, so the "raised before the log" case is one of them; say in case (a) what the raise time is a day later than; and list every changed line. I compared S-007 with S-006 line by line.
+   - AC13 (specs/S-007.md:45-48) now says "three cards" and moves the id, raise-time and state check into its last sentence.
+   - Case (a) (S-007:46) is now "a day later than the card's arrival on the main branch". That matches J6's first worked example (S-007:136), with arrival 2026-11-10 10:00 and a recorded time of 2026-11-11 09:00.
+   - Case (c) (S-007:48) is new. The card raised before the log is reported `not recorded`, shown at once, and neither figure reports it. That agrees with AC7 (S-007:32), J1 (S-007:77), and J6's awkward case (S-007:142).
+   - The other differences from S-006 are the id and status lines (1, 3), the lineage (4), the supersedes note (11), the criteria heading at line 18, and the `S-006` → `S-007` join-test marks. All of these are listed in the note at S-007:11. I found no unlisted change to any criterion, join sheet, fact, risk or open question.
+
+2. **The three cases are consistent with J6's rules.**
+   - Case (a) is reported by the second figure, "held a day after reaching the main branch". Its due time is arrival plus 24 hours, when the age is 1 hour, so the card is `held` (S-007:136).
+   - Case (a) is not a V6 miss. Its due time is the recorded raise time plus 24 hours, so it is shown then (S-007:136).
+   - Case (b) is shown on time, so neither figure reports it.
+   - Case (c) can never be `held` (J6, S-007:132), so neither figure reports it.
+
+3. **The plan checks pass.**
+   - The header names `milestones: M4`, which is the plan's own milestone at docs/projects/P-003.md:46. It reads as an achievement and its why line is plain.
+   - The spec cites docs/projects/P-003.md as the plan of this item.
+   - The join-up review section follows the five-row form in docs/design/JOIN_UP_REVIEW.md:12-23 and rates its two differences as non-blocking and carried to the Build gate.
+   - The test estimate (15 to 23 tests) stays under the stop rule of 24. The restated sizing is labelled as an estimate, not a measurement.
+
+**Open questions**
+
+- None block the freeze. The spec's six owner questions are non-blocking, and the spec says so.
+- I could not check the claims about today's behaviour: the sender's repeat-notice handling, what the desk opens for a card not on its list, and the failed-read behaviour for gate cards. The pack has no src/. The spec says so openly (S-007:190) and checks those claims against a recorded baseline run instead. Build could still stop under J5 if it needs a change to src/notify/**.

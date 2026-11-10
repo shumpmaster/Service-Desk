@@ -1,30 +1,34 @@
-I revised `specs/S-006.md`. The plan review's main finding was that the "word for word from S-005" claim couldn't be checked, but S-005 is in my pack. I compared the two specs line by line and the claim holds. The reviewer's own pack didn't have S-005, so the reviewer needs it before re-reading.
+I've revised specs/S-006.md for the review's three findings, but the review's second finding can only be closed by giving the Critic specs/S-005.md; that file isn't in its pack.
 
-**1. What I changed** (in `specs/S-006.md` only; it is still 232 lines, so nothing grew)
-- **Line 11, the supersedes note.** It used to make a bare claim that everything was S-005's word for word. It now lists exactly what differs from `specs/S-005.md`: the id on line 1, the status on line 3, the lineage on line 4, the note itself, and `S-005` → `S-006` at lines 83, 97, 106, 116, 122, 145, 229 and 230. It also names the one risk change below. It sets out the approval chain from the records:
-  - `criteria-8.md` sent S-005 back with "change no criterion".
-  - `criteria-9.md` then says "proceed", but names no text.
-  - `stop-11.md` calls S-005's criteria "not wrong" and carries them into this spec unchanged.
-- **The stop-rule risk under Risks.** It is now "The build stopping early, carried to the Build gate". It covers both early-stop routes the review raised: the test estimate (15 to 23) is close to the limit of 24, and AC9 and AC14 to AC17 rest on baseline runs whose source code isn't in the pack, which could hit the `src/notify/**` boundary at J5.
+**1. What I changed** (specs/S-006.md, lines 11 and 18 only)
+- **Line 11, the note on what changed from S-005:**
+  - I removed the citation of the earlier plan-review round. In its place the note now says what line 209 changed and why: that risk was S-005's "The build going past the stop rule". It now also says the risk goes to the Build gate, and that the build could stop early. The reason is that AC9 and AC14 to AC17 rest on baseline runs of code that isn't in the pack, so whether they can be met without changing src/notify/** only shows up in Build.
+  - I added line 18 to the list of changed lines.
+  - The note said both files are 232 lines long; both are 231, and I corrected it.
+  - I shortened the separate paragraph about the criteria approval, since line 18 now says it.
+- **Line 18, the criteria heading:** "owner-approved, decisions/P-003/criteria-9.md" now says the criteria are carried unchanged from S-005 by the owner's ruling in stop-11.md:3 ("The criteria are not wrong"). It also says that criteria-9.md:1 says only "proceed" and names no text.
+- No criterion, join sheet, fact, risk wording, open question or line number changed. The file is still 231 lines.
 
 **2. Why**
-- **Finding 1 (blocking):** the claim needed evidence a reader can check. stop-11 allows only "the id, the supersedes line and anything the plan review requires", and both edits stay inside that.
-- **Findings 2 and 3:** the review called these disclosed limits and asked for them to be carried to the gate. So I extended the existing risk line rather than adding new material, since stop-11 and stop-7 both say "Do not grow it."
+- Finding 1: the owner's ruling in stop-7.md:3 says to cite only files I was given, never an earlier review round.
+- Finding 3: the review found that "owner-approved" overstated the approval, and that it rests on stop-11.
+- Finding 2: the review said the claim that only those lines changed could not be checked. The file S-005 *is* in my pack, so I checked the claim and kept it, rather than dropping it.
+- Size: stop-11 says not to grow the spec, and it is no longer.
 
-**3. What I verified** (I had no shell, so there was no `diff` command)
-- I read both specs in full and compared them line by line. Both are 232 lines, and lines 13 to 228 match apart from the S-005/S-006 join-test marks.
-- A search for `S-00[0-9]` in both files: every id difference is at lines 1, 4, 11, 83, 97, 106, 116, 122, 145, 229 and 230. Line 188's `S-004` is the same in both.
-- I re-read every decision record. `criteria-8.md:1-4` and `stop-11.md:1-3` say what the new note quotes.
-- No criterion, join sheet, fact or open question was edited. The line count is unchanged.
+**3. What I verified** (I had file tools only, no shell, so I couldn't run `diff`)
+- I read S-005 and S-006 in full and compared them line by line. They differ only at lines 1, 3, 4, 11, 18, 83, 97, 106, 116, 122, 145, 209, 229 and 230, as line 11 now says.
+- I counted lines with a search for `^`: both files have 231.
+- A search for `S-006` finds it at lines 1, 11, 83, 97, 106, 116, 122, 145, 229 and 230.
+- A search for `reviews/|S-005` finds no `reviews/` citation left; `S-005` appears only at lines 4, 11 and 18.
 
 **4. What is undone**
-- The spec is not frozen. It needs the Critic's plan review again, then the freeze gate.
-- Findings 2 and 3 are only carried to the gate, not settled. They can't be settled until Build: the source code and the sizing memo aren't in my pack.
+- The spec is not frozen; that happens at the freeze gate.
+- There is no git in this folder, so nothing is committed to build/definer/P-003.
 
-**5. Needed outside my lane**
-- **Orchestrator:** put `specs/S-005.md` in the Critic's pack for the re-review. Otherwise finding 1 will fail again for the same reason. A recorded diff of the two specs from a tool would be a stronger check than my line-by-line reading.
+**5. What is needed outside my lane**
+- The Orchestrator should add specs/S-005.md to the Critic's pack for the next plan review. Without it, finding 2 can't be checked, and by the review's own rule that is a fail.
+- The Orchestrator should also answer the review's question about the stop-rule count: does this failed review count as the third plan-review round, which under the plan's stop rule (docs/projects/P-003.md:113) stops the work? If so, this goes to the owner rather than straight back to review.
 
 **6. Open questions**
-- `criteria-9.md` says only "proceed" and names no spec. Could the Orchestrator or the owner confirm it was the ruling on S-005's criteria? The order of the records supports this, but no record says it.
-- AC16 (whether one unreadable notes file should hide every decision card) is already the spec's open question 3. It doesn't block the freeze.
-- The reviewer asked whether J6's first-parent history and committer-time rules give the right answer on a real main-branch history. That can only be checked in Build, against real history.
+- I don't know what drove the line 209 change: that reasoning came from the earlier review round I can no longer cite. The reason now written is the one the spec itself supports (line 190 and J5). If the owner meant line 209 to stay as S-005 had it, the change should be undone, since stop-11 allows only changes the plan review requires.
+- The spec's six open questions for the owner are unchanged.

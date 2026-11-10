@@ -1,13 +1,3 @@
 {
-  "entries": [
-    {
-      "action": "dispatch",
-      "gate": null,
-      "item": "P-003",
-      "role": "critic",
-      "route": "define-to-plan-review",
-      "spec": "S-007",
-      "stage": 3
-    }
-  ]
+  "entries": []
 }

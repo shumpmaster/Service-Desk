@@ -1,34 +1,40 @@
-I've revised specs/S-006.md for the review's three findings, but the review's second finding can only be closed by giving the Critic specs/S-005.md; that file isn't in its pack.
+I've written specs/S-007.md with only AC13 changed, as stop-12 ruled, and marked specs/S-006.md superseded. One thing to know first: S-006's status line said `draft`, not `frozen` as the brief expected, so I changed `draft` to `superseded`.
 
-**1. What I changed** (specs/S-006.md, lines 11 and 18 only)
-- **Line 11, the note on what changed from S-005:**
-  - I removed the citation of the earlier plan-review round. In its place the note now says what line 209 changed and why: that risk was S-005's "The build going past the stop rule". It now also says the risk goes to the Build gate, and that the build could stop early. The reason is that AC9 and AC14 to AC17 rest on baseline runs of code that isn't in the pack, so whether they can be met without changing src/notify/** only shows up in Build.
-  - I added line 18 to the list of changed lines.
-  - The note said both files are 232 lines long; both are 231, and I corrected it.
-  - I shortened the separate paragraph about the criteria approval, since line 18 now says it.
-- **Line 18, the criteria heading:** "owner-approved, decisions/P-003/criteria-9.md" now says the criteria are carried unchanged from S-005 by the owner's ruling in stop-11.md:3 ("The criteria are not wrong"). It also says that criteria-9.md:1 says only "proceed" and names no text.
-- No criterion, join sheet, fact, risk wording, open question or line number changed. The file is still 231 lines.
+**1. What I changed**
+- **New file, specs/S-007.md**, status `draft` (231 lines, the same as S-006). It differs from S-006 only on these lines:
+  - **Line 1:** the id.
+  - **Line 4:** the lineage now ends with S-006.
+  - **Line 11:** the supersedes note, which quotes stop-12 and lists every changed line.
+  - **Line 18:** the criteria heading now says the criteria are carried unchanged from S-006 except AC13, by stop-12.
+  - **Line 45 (AC13):** the sample now holds **three** cards, and the check of each card's id, raise time and state moved into this sentence from old line 48.
+  - **Line 46, case (a):** the raise time is now said to be later than the card's arrival on the main branch, as in J6's first worked example (arrival 2026-11-10 10:00, recorded 2026-11-11 09:00).
+  - **Line 48:** now case (c), a card raised before the part of the log that is read. It is reported `not recorded`, shown at once, and neither figure reports it, as J6's awkward cases say.
+  - **Lines 83, 97, 106, 116, 122, 145, 229, 230:** `S-006` → `S-007` in the join-test marks and the builder's brief.
+- **specs/S-006.md, line 3:** only the status word changed, to `superseded`.
 
 **2. Why**
-- Finding 1: the owner's ruling in stop-7.md:3 says to cite only files I was given, never an earlier review round.
-- Finding 3: the review found that "owner-approved" overstated the approval, and that it rests on stop-11.
-- Finding 2: the review said the claim that only those lines changed could not be checked. The file S-005 *is* in my pack, so I checked the claim and kept it, rather than dropping it.
-- Size: stop-11 says not to grow the spec, and it is no longer.
+- The stop-12 ruling was "criteria-wrong": fix AC13 only, say how many cards the sample holds so that the third case is one of them, say what case (a)'s raise time is later than, keep everything else, list every changed line, and do not grow the spec.
+- In case (a) I wrote "**almost** a day later" rather than "a day later". J6's example has 23 hours, and an exact "a day" would contradict it. The case's outcome is the same either way.
+- To keep the length unchanged, I folded the old "also checks" line into line 45 instead of adding a line.
 
-**3. What I verified** (I had file tools only, no shell, so I couldn't run `diff`)
-- I read S-005 and S-006 in full and compared them line by line. They differ only at lines 1, 3, 4, 11, 18, 83, 97, 106, 116, 122, 145, 209, 229 and 230, as line 11 now says.
-- I counted lines with a search for `^`: both files have 231.
-- A search for `S-006` finds it at lines 1, 11, 83, 97, 106, 116, 122, 145, 229 and 230.
-- A search for `reviews/|S-005` finds no `reviews/` citation left; `S-005` appears only at lines 4, 11 and 18.
+**3. What I verified**
+- A line count of S-007 gives 231, the same as S-006.
+- A search for `S-00[67]` in S-007 finds S-007 on lines 1, 11, 83, 97, 106, 116, 122, 145, 229 and 230, and S-006 only on lines 4, 11 and 18. This matches the note's list.
+- A search for the case markers finds (a), (b) and (c) on lines 46 to 48, and "three cards" on lines 11 and 45.
+- I checked the rest of S-007 against S-006 by reading, not with a diff tool; nothing could be run in this pack. No git repository was available, so nothing was committed.
 
 **4. What is undone**
-- The spec is not frozen; that happens at the freeze gate.
-- There is no git in this folder, so nothing is committed to build/definer/P-003.
+- S-007 has not been frozen; that happens at the freeze gate after the Critic's plan review.
+- Case (b) on line 47 still ends with "." while (a) ends with ";". I left it so as not to change a line the ruling did not ask for.
+- No experiment registration: Design-3 is skipped.
+- Pack housekeeping: specs/S-005.facts.tmp is still in specs/. I didn't touch it.
 
 **5. What is needed outside my lane**
-- The Orchestrator should add specs/S-005.md to the Critic's pack for the next plan review. Without it, finding 2 can't be checked, and by the review's own rule that is a fail.
-- The Orchestrator should also answer the review's question about the stop-rule count: does this failed review count as the third plan-review round, which under the plan's stop rule (docs/projects/P-003.md:113) stops the work? If so, this goes to the owner rather than straight back to review.
+- The Critic's plan review of S-007, then the freeze gate.
+- The owner's scenario card for the changed AC13.
+- The Check author needs to revise the AC13/J6 test for the three-card sample. J6's test still covers case (b), as before.
+- A commit to build/definer/P-003 with the trailers my role requires.
 
 **6. Open questions**
-- I don't know what drove the line 209 change: that reasoning came from the earlier review round I can no longer cite. The reason now written is the one the spec itself supports (line 190 and J5). If the owner meant line 209 to stay as S-005 had it, the change should be undone, since stop-11 allows only changes the plan review requires.
-- The spec's six open questions for the owner are unchanged.
+- S-006 was marked `draft`, yet stop-12 ruled on it as if it had been frozen. Should the freeze record be checked to confirm that `superseded` is the right status, and that S-006's `frozen_at` should stay blank?
+- The six open questions for the owner in the spec are carried over unchanged, and none blocks freeze.

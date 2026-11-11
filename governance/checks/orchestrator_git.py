@@ -3539,7 +3539,12 @@ PROOF_ON = (PROOF_INTRO + "1. Use the Write tool to create the file proof.txt in
             "this text: {A} 2. Use the Bash tool to run exactly this one command, with nothing added: "
             "`bash probe.sh` (it writes ran.txt and probe-out.txt in this folder for a check made after the "
             "session; you need not open them). " + PROOF_READS.replace("{n}", "3").replace("{m}", "4"))
-PROOF_OFF = PROOF_INTRO + PROOF_READS.replace("{n}", "1").replace("{m}", "2")
+# A harmless first step before the Reads (the owner's ruling, decisions/questions/scrub-proof-off-brief.md, A;
+# model L-0129): opened on the environment Reads alone, the commands-off session made no tool calls in every
+# proof run (L-0007; run 43018049218). The file holds fixed text, never nonce A (L-0101), and is not proof.txt.
+# A desk departure from model S-015 AC12 and S-021 AC2 until the model adopts it (LL-047).
+PROOF_OFF = (PROOF_INTRO + "1. Use the Write tool to create the file off-check.txt in the current folder, holding "
+             "exactly this text: harness check " + PROOF_READS.replace("{n}", "2").replace("{m}", "3"))
 # The commands-on session's script (L-0101); proof-setup adds it to that pack and its manifest.
 PROBE = """#!/usr/bin/env bash
 # A harness check for the live proof (model S-015 AC12), written by orchestrator_git.py proof-setup.

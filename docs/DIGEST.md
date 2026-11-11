@@ -1,5 +1,5 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-11-11: 39 active rulings and 0 kills, from 41 ledger entries.
+As of 2026-11-11: 42 active rulings and 0 kills, from 44 ledger entries.
 
 ## Active rulings
 
@@ -53,6 +53,9 @@ As of 2026-11-11: 39 active rulings and 0 kills, from 41 ledger entries.
 | L-0039 | governance/PACKS.toml `[roles.check-author]` may_read gains tests/acceptance/** and checks/**, the paths the Critic, Builder and Reviewer already read; holdouts are always excluded and its must_not_see (src/**, docs/handover/**, … | 2026-11-09 | never |
 | L-0040 | governance/PACKS.toml `[roles.critic]` may_read gains specs/**; its must_not_see (docs/reports/**, docs/briefs/**) is unchanged, and the critic-triage and critic-gate entries are unchanged. Measured with `session_runner.py pack` for the … | 2026-11-10 | never |
 | L-0042 | Raise it in the operating model (Personal-Org-Operating-Model docs/LESSONS.md LL-045, #55) and record it here; the timer, the chain cap and the workflows stay as they … | 2026-11-11 | never |
+| L-0043 | build_tree's new step keep_default_ledger: when the item branch changed docs/LEDGER.md, the copy holds main's ledger with the item branch's own new entries after it, each … | 2026-11-11 | never |
+| L-0044 | .github/workflows/scrub-proof.yml gains `schedule: cron "41 10 * * 1"`; a scheduled run's model is the MODEL_BUILDER repository variable. Its permissions stay read-only and it still … | 2026-11-11 | never |
+| L-0045 | governance/checks/orchestrator_git.py PROOF_OFF: step 1 writes off-check.txt holding the fixed text "harness check" (never nonce A, L-0101; not proof.txt), then the two Reads as steps 2 … | 2026-11-11 | never |
 
 ## Kills
 None.

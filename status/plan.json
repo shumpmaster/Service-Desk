@@ -4,10 +4,10 @@
       "action": "dispatch",
       "gate": null,
       "item": "P-003",
-      "role": "definer-freeze",
-      "route": "ready-dispatch",
+      "role": "check-author",
+      "route": "freeze-frozen",
       "spec": "S-007",
-      "stage": 3
+      "stage": 4
     }
   ]
 }

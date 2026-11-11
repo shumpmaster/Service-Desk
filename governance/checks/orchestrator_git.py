@@ -556,6 +556,71 @@ def apply_commit_diff(repo, a, b, w, creds):
         w.put(path, blobs[sha], mode == "100755")
 
 
+LEDGER_ENTRY_RE = re.compile(r"^## (L-[0-9]+)\b", re.M)
+
+
+def ledger_blocks(text):
+    """(head, [(id, block)]) of a ledger's text, split at each `## L-nnnn` heading."""
+    starts = [m.start() for m in LEDGER_ENTRY_RE.finditer(text)]
+    head = text[:starts[0]] if starts else text
+    blocks = []
+    for i, at in enumerate(starts):
+        block = text[at:starts[i + 1] if i + 1 < len(starts) else len(text)].strip("\n")
+        blocks.append((LEDGER_ENTRY_RE.match(block).group(1), block))
+    return head, blocks
+
+
+def compose_ledger(default_text, base_text, item_text):
+    """The default branch's ledger with the item branch's own new entries after it (owner ruling,
+    decisions/questions/P-003-build-blocked.md, A). An item entry is its own when its text is not in the
+    merge base's ledger nor already in the default branch's; one whose id the default branch already uses
+    takes the next free id, so the composed ledger keeps every id unique."""
+    _, base_blocks = ledger_blocks(base_text)
+    _, default_blocks = ledger_blocks(default_text)
+    _, item_blocks = ledger_blocks(item_text)
+    seen = set(b for _, b in base_blocks) | set(b for _, b in default_blocks)
+    used = set(i for i, _ in default_blocks)
+    top = max([int(i[2:]) for i in used | set(i for i, _ in item_blocks)] or [0])
+    out = default_text.rstrip("\n") + "\n"
+    for lid, block in item_blocks:
+        if block in seen:
+            continue
+        if lid in used:
+            top += 1
+            new_id = "L-%04d" % top
+            block = "## " + new_id + block[3 + len(lid):]
+            lid = new_id
+        used.add(lid)
+        seen.add(block)
+        out += "\n" + block + "\n"
+    return out
+
+
+def keep_default_ledger(repo, base, mb, item_sha, w, out):
+    """When the item branch changed the ledger, lay the composed ledger, not the item branch's whole copy,
+    over the tree, and rebuild the digest from it: the item branch's copy lacks every entry the default
+    branch gained after the merge base."""
+    if blob_at(repo, mb, g.LEDGER_REL) == blob_at(repo, item_sha, g.LEDGER_REL):
+        return
+    texts = []
+    for commit in (base, mb, item_sha):
+        data = blob_at(repo, commit, g.LEDGER_REL)
+        texts.append(data.decode("utf-8", "replace") if data is not None else "")
+    import digest
+    text = compose_ledger(*texts)
+    dig, packs, _ = digest.generate(g.LEDGER_REL, text, "digest")
+    w.put(g.LEDGER_REL, text.encode("utf-8"))
+    w.put("docs/DIGEST.md", dig.encode("utf-8"))
+    folder = os.path.join(out, "digest")
+    if os.path.isdir(folder):
+        for name in os.listdir(folder):
+            rel = "digest/" + name
+            if name.endswith(".md") and rel not in packs:
+                w.remove(rel)
+    for rel, t in sorted(packs.items()):
+        w.put(rel, t.encode("utf-8"))
+
+
 def build_tree(repo, remote, default_ref, item, role, ref, overlay, out):
     base = rev(repo, default_ref)
     if base is None:
@@ -581,6 +646,7 @@ def build_tree(repo, remote, default_ref, item, role, ref, overlay, out):
     if item_sha:
         mb = merge_base(repo, base, item_sha) or base
         apply_commit_diff(repo, mb, item_sha, w, creds)
+        keep_default_ledger(repo, base, mb, item_sha, w, out)
     # 4. For a builder-class role's own dispatch, its role branch's own changes.
     if role:
         role_sha = branch_sha(repo, remote, "build/%s/%s" % (role, ref))
@@ -3473,7 +3539,12 @@ PROOF_ON = (PROOF_INTRO + "1. Use the Write tool to create the file proof.txt in
             "this text: {A} 2. Use the Bash tool to run exactly this one command, with nothing added: "
             "`bash probe.sh` (it writes ran.txt and probe-out.txt in this folder for a check made after the "
             "session; you need not open them). " + PROOF_READS.replace("{n}", "3").replace("{m}", "4"))
-PROOF_OFF = PROOF_INTRO + PROOF_READS.replace("{n}", "1").replace("{m}", "2")
+# A harmless first step before the Reads (the owner's ruling, decisions/questions/scrub-proof-off-brief.md, A;
+# model L-0129): opened on the environment Reads alone, the commands-off session made no tool calls in every
+# proof run (L-0007; run 43018049218). The file holds fixed text, never nonce A (L-0101), and is not proof.txt.
+# A desk departure from model S-015 AC12 and S-021 AC2 until the model adopts it (LL-047).
+PROOF_OFF = (PROOF_INTRO + "1. Use the Write tool to create the file off-check.txt in the current folder, holding "
+             "exactly this text: harness check " + PROOF_READS.replace("{n}", "2").replace("{m}", "3"))
 # The commands-on session's script (L-0101); proof-setup adds it to that pack and its manifest.
 PROBE = """#!/usr/bin/env bash
 # A harness check for the live proof (model S-015 AC12), written by orchestrator_git.py proof-setup.

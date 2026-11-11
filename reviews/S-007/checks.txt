@@ -1,4 +1,4 @@
-== Check run P-003:build-to-checks:2026-11-11T07:14:54Z (model S-014 AC9)
+== Check run P-003:build-to-checks:2026-11-11T12:19:24Z (model S-014 AC9)
 == Prepared the check tree (0 change(s) applied)
 == Made a fresh one-commit repository of the check tree (no history, no remote; L-0088)
 == The check run's sandbox started (bwrap preflight; model S-016 AC3)
@@ -338,6 +338,7 @@ NOTE:     decision 2026-11-09T20:18:43Z stop checks-wrong
 NOTE:     step 2026-11-11T04:04:39Z check-author stage 4
 NOTE:     step 2026-11-11T06:54:55Z critic stage 4
 NOTE:     step 2026-11-11T07:08:27Z builder stage 5
+NOTE:     step 2026-11-11T12:01:31Z builder stage 5
 NOTE: Later work 2: P-004 into Discovery
 NOTE: Discovery i1
 NOTE:   Discovery-1 "An idea worth exploring": not recorded
@@ -358,11 +359,11 @@ OK: every join of a frozen spec has a marked test
 NOTE: 20 session file(s) in sessions/chief-of-staff/
 OK: the Chief of Staff's session lines are in their form
 == record_checks routing
-NOTE: 260 routed line(s) checked against governance/ROUTING.toml
+NOTE: 263 routed line(s) checked against governance/ROUTING.toml
 OK: the dispatch log's chain and routes hold
 == record_checks build-cap
 project items in Build or Launch (stages 4 to 6), neither done nor closed: 1
-research items neither done nor closed: 0
+research items neither done nor closed: 1
 build cap: not set (the owner's to define; reported only)
 OK: within the build cap (or none set)
 == record_checks grants

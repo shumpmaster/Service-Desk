@@ -1,7 +1,7 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "project"
 stage = 3
-state = "dispatched"
+state = "waiting-owner"
 role = "critic-gate"
 last_verdict = "none"
 plan_round = 1
@@ -9,9 +9,9 @@ build_round = 0
 confirm_used = false
 attempts = 0
 sessions = 0
-dispatched_at = "2026-11-11T02:44:25Z"
-card = 12
-next_gate = "criteria"
+gate = "criteria"
+card = 13
 gate_n = 3
+gate_recommendation = "**The Critic's recommendation:** proceed. The case's recommendation to proceed is supported. The corrections below should be made before the owner reads it, and none of them changes the substance. The remaining risk is the one the case already names. Today's sender and desk behaviour (src/) is outside every pack, so AC9 and AC14 to AC17 can only be tested against a baseline run in Build. Build stops if that run needs a change to src/notify/**."
 spec = "S-007"
 superseded = ["S-002", "S-003", "S-004", "S-005", "S-006"]

@@ -1,14 +1,3 @@
 {
-  "entries": [
-    {
-      "action": "dispatch",
-      "gate": "criteria",
-      "gate_n": 3,
-      "item": "P-003",
-      "role": "critic-gate",
-      "route": "case-ready",
-      "spec": "S-007",
-      "stage": 3
-    }
-  ]
+  "entries": []
 }

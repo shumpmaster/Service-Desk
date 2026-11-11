@@ -1,0 +1,880 @@
+== Check run P-003:build-to-checks:2026-11-11T07:14:54Z (model S-014 AC9)
+== Prepared the check tree (0 change(s) applied)
+== Made a fresh one-commit repository of the check tree (no history, no remote; L-0088)
+== The check run's sandbox started (bwrap preflight; model S-016 AC3)
+== governance/checks/check_all.sh output
+== surface_guard check
+governance/SURFACES.md line 126: exempt 57c024b8a9f2717008243d37b77d51a0e955e605 cites L-0024, which is not an entry in docs/LEDGER.md
+governance/SURFACES.md line 127: exempt 3dd65a5ad0845f974fcf554530272e44d208e481 cites L-0025, which is not an entry in docs/LEDGER.md
+governance/SURFACES.md line 128: exempt e11b6f4321d25702347097502ad7214146a5f01c cites L-0026, which is not an entry in docs/LEDGER.md
+governance/SURFACES.md line 129: exempt ddc67fb8602b7ef7af5955edfda5a6d2505db4d0 cites L-0027, which is not an entry in docs/LEDGER.md
+governance/SURFACES.md line 130: exempt 7fdeedcbbaecf80e5b9189e979b6292e9d000fbd cites L-0028, which is not an entry in docs/LEDGER.md
+governance/SURFACES.md line 131: exempt 514675db43d90a44ce0a05a141ed07769100e601 cites L-0029, which is not an entry in docs/LEDGER.md
+governance/SURFACES.md line 132: exempt 389dd68d5a76d7949a5476a0184dbaaa5e286ad9 cites L-0030, which is not an entry in docs/LEDGER.md
+governance/SURFACES.md line 133: exempt 4184785b67ebfa6e4b05d840b5c9d50f262cde66 cites L-0031, which is not an entry in docs/LEDGER.md
+governance/SURFACES.md line 134: exempt ad2709e20faddd72483acc0a21ce2aeaacecb73c cites L-0032, which is not an entry in docs/LEDGER.md
+governance/SURFACES.md line 135: exempt c7086cde9e20d626e204ab7ca89c24b6897f02b5 cites L-0033, which is not an entry in docs/LEDGER.md
+governance/SURFACES.md line 137: exempt cd98e5f08cdfce990360dd0b3cc5958ccb3bc6ca cites L-0035, which is not an entry in docs/LEDGER.md
+governance/SURFACES.md line 138: exempt 9328cfc05dcd76898f9869693386c52f99dc0521 cites L-0036, which is not an entry in docs/LEDGER.md
+FAIL: 12 violation(s)
+== ledger_check check
+OK: docs/LEDGER.md has 26 well-formed entries
+== digest check
+digest/project.md: missing, out of date or hand-edited — regenerate it with digest.py build
+digest/p-004.md: stale pack — no active ruling or kill has this scope; delete it or run digest.py build
+FAIL: 2 violation(s)
+== governance_checks all
+NOTE: v3 project (governance/v3.toml): sprints are retired (D-063); the sprints check not run
+NOTE: one-active-builder check skipped at T1 (a T2 rule)
+OK: question, reviewer and builder checks passed
+== review_check lint
+OK: governance/risk-paths.toml and 231 verdict file(s) are well-formed
+== spec_check status
+OK: every spec has a valid status and every ledger spec reference resolves
+== v3_checks ready
+NOTE: the project is approved; no frozen spec yet, so only section 3's milestones are checked
+NOTE: 6 frozen or superseded spec(s); docs/projects/P-003.md Part 1 checked
+OK: the project document's Part 1 is complete, or no spec is frozen yet
+== v3_checks trace
+NOTE: value targets in docs/PROJECT.md section 6: V1, V2, V3, V4, V5
+NOTE: value targets in docs/projects/P-003.md section 6: V6
+NOTE: 19 criteria in 1 frozen spec(s) checked
+NOTE: docs/PROJECT.md line 106: M1's sprint PR #40 has no merge commit here: this copy's history is cut short (a shallow clone or a one-commit copy), so it is judged where the full history is (model S-037)
+NOTE: docs/PROJECT.md line 106: M1's sprint PR #41 has no merge commit here: this copy's history is cut short (a shallow clone or a one-commit copy), so it is judged where the full history is (model S-037)
+NOTE: docs/PROJECT.md line 107: M2's sprint PR #44 has no merge commit here: this copy's history is cut short (a shallow clone or a one-commit copy), so it is judged where the full history is (model S-037)
+NOTE: docs/PROJECT.md line 108: M2B's sprint PR #44 has no merge commit here: this copy's history is cut short (a shallow clone or a one-commit copy), so it is judged where the full history is (model S-037)
+NOTE: docs/PROJECT.md line 108: M2B's sprint PR #52 has no merge commit here: this copy's history is cut short (a shallow clone or a one-commit copy), so it is judged where the full history is (model S-037)
+NOTE: docs/PROJECT.md line 110: MD2's sprint PR #72 has no merge commit here: this copy's history is cut short (a shallow clone or a one-commit copy), so it is judged where the full history is (model S-037)
+NOTE: docs/PROJECT.md line 110: MD2's sprint PR #74 has no merge commit here: this copy's history is cut short (a shallow clone or a one-commit copy), so it is judged where the full history is (model S-037)
+NOTE: docs/PROJECT.md line 110: MD2's sprint PR #75 has no merge commit here: this copy's history is cut short (a shallow clone or a one-commit copy), so it is judged where the full history is (model S-037)
+NOTE: docs/PROJECT.md line 110: MD2's sprint PR #77 has no merge commit here: this copy's history is cut short (a shallow clone or a one-commit copy), so it is judged where the full history is (model S-037)
+NOTE: Discovery i1
+NOTE:   Discovery-1 "An idea worth exploring": not recorded
+NOTE:   Discovery-2 "Success defined": reached
+NOTE:   Discovery-3 "The expert's questions answered": not reached
+NOTE:     sprint Q-016
+NOTE:       step 2026-11-02T00:46:09Z researcher stage 2
+NOTE:       step 2026-11-02T01:01:28Z source-checker stage 2
+NOTE:       step 2026-11-02T04:30:14Z researcher stage 2
+NOTE:       step 2026-11-02T04:47:25Z source-checker stage 2
+NOTE:   Discovery-4 "The right problem chosen": not recorded
+NOTE:     sprint Q-020
+NOTE:       step 2026-11-03T00:52:52Z researcher stage 2
+NOTE:       step 2026-11-03T01:21:02Z source-checker stage 2
+NOTE:   Discovery-5 "What already exists is known": reached
+NOTE:     sprint Q-018
+NOTE:       step 2026-11-03T00:52:52Z researcher stage 2
+NOTE:       step 2026-11-03T01:21:02Z source-checker stage 2
+NOTE:       step 2026-11-03T03:04:17Z researcher stage 2
+NOTE:       step 2026-11-03T03:29:16Z source-checker stage 2
+NOTE:     sprint Q-021
+NOTE:       step 2026-11-03T00:52:52Z researcher stage 2
+NOTE:       step 2026-11-03T01:21:02Z source-checker stage 2
+NOTE:       step 2026-11-03T03:04:17Z researcher stage 2
+NOTE:       step 2026-11-03T03:29:16Z source-checker stage 2
+NOTE:       step 2026-11-03T03:37:41Z researcher stage 2
+NOTE:       step 2026-11-03T03:45:49Z source-checker stage 2
+NOTE:   Discovery-6 "The risks are known": not recorded
+NOTE:   Discovery-7 "Scope, limits and owners agreed": reached
+NOTE:   Discovery-8 "A brief ready to rule on": reached
+NOTE:   untagged
+NOTE:     sprint Q-001
+NOTE:       step 2026-10-01T01:46:42Z researcher stage 2
+NOTE:       step 2026-10-01T02:17:21Z source-checker stage 2
+NOTE:       step 2026-10-01T09:15:57Z researcher stage 2
+NOTE:       step 2026-10-01T10:45:54Z source-checker stage 2
+NOTE:       step 2026-10-01T11:28:52Z researcher stage 2
+NOTE:       step 2026-10-01T12:19:35Z source-checker stage 2
+NOTE:     sprint Q-004
+NOTE:       step 2026-10-01T01:46:42Z researcher stage 2
+NOTE:       step 2026-10-01T02:17:21Z source-checker stage 2
+NOTE:       step 2026-10-01T09:15:57Z researcher stage 2
+NOTE:       step 2026-10-01T10:45:54Z source-checker stage 2
+NOTE:       step 2026-10-01T11:28:52Z researcher stage 2
+NOTE:       step 2026-10-01T12:19:35Z source-checker stage 2
+NOTE:     sprint Q-002
+NOTE:       step 2026-10-01T01:46:42Z researcher stage 2
+NOTE:       step 2026-10-01T02:17:21Z source-checker stage 2
+NOTE:       step 2026-10-01T09:15:57Z researcher stage 2
+NOTE:       step 2026-10-01T10:45:54Z source-checker stage 2
+NOTE:       step 2026-10-01T11:28:52Z researcher stage 2
+NOTE:       step 2026-10-01T12:19:35Z source-checker stage 2
+NOTE:       step 2026-10-01T12:26:37Z critic-triage stage 2
+NOTE:       step 2026-10-01T14:48:25Z researcher stage 2
+NOTE:       step 2026-10-01T15:52:24Z source-checker stage 2
+NOTE:       step 2026-10-01T16:06:59Z researcher stage 2
+NOTE:       step 2026-10-01T16:23:47Z source-checker stage 2
+NOTE:     sprint Q-005
+NOTE:       step 2026-10-01T10:45:54Z researcher stage 2
+NOTE:       step 2026-10-01T11:28:52Z source-checker stage 2
+NOTE:       step 2026-10-01T12:19:35Z researcher stage 2
+NOTE:       step 2026-10-01T12:26:37Z source-checker stage 2
+NOTE:       step 2026-10-01T12:37:25Z researcher stage 2
+NOTE:       step 2026-10-01T14:48:25Z source-checker stage 2
+NOTE:       step 2026-10-01T15:52:24Z critic-triage stage 2
+NOTE:       step 2026-10-01T16:23:47Z source-checker stage 2
+NOTE:     sprint Q-006
+NOTE:       step 2026-10-02T00:15:15Z researcher stage 2
+NOTE:       step 2026-10-02T00:28:43Z source-checker stage 2
+NOTE:       step 2026-10-02T01:17:15Z researcher stage 2
+NOTE:       step 2026-10-02T07:17:46Z source-checker stage 2
+NOTE:       step 2026-10-02T14:00:18Z researcher stage 2
+NOTE:       step 2026-10-02T19:26:38Z source-checker stage 2
+NOTE:       step 2026-10-02T23:10:04Z critic-triage stage 2
+NOTE:       step 2026-10-03T23:12:05Z source-checker stage 2
+NOTE:       step 2026-10-03T23:22:50Z critic-triage stage 2
+NOTE:       step 2026-10-04T00:26:09Z researcher stage 2
+NOTE:       step 2026-10-04T00:36:58Z source-checker stage 2
+NOTE:       step 2026-10-04T01:21:06Z researcher stage 2
+NOTE:       step 2026-10-04T01:28:40Z source-checker stage 2
+NOTE:       step 2026-10-04T04:23:15Z researcher stage 2
+NOTE:       step 2026-10-04T10:42:00Z source-checker stage 2
+NOTE:     sprint Q-008
+NOTE:       step 2026-10-04T04:23:15Z researcher stage 2
+NOTE:       step 2026-10-04T10:42:00Z source-checker stage 2
+NOTE:     sprint Q-007
+NOTE:       step 2026-10-04T04:23:15Z researcher stage 2
+NOTE:       step 2026-10-04T10:42:00Z source-checker stage 2
+NOTE:       step 2026-10-04T14:51:12Z researcher stage 2
+NOTE:       step 2026-10-04T15:12:08Z source-checker stage 2
+NOTE:     step 2026-10-01T17:18:13Z critic stage 2
+NOTE:     decision 2026-10-04T01:12:58Z dor-fail resubmit
+NOTE:     step 2026-10-04T01:21:06Z critic stage 2
+NOTE:     decision 2026-10-05T10:33:02Z dor-fail resubmit
+NOTE:     step 2026-10-05T12:50:37Z critic stage 2
+NOTE:     step 2026-10-05T16:01:20Z critic-triage stage 2
+NOTE:     decision 2026-10-05T17:02:20Z stop resubmit
+NOTE:     step 2026-10-05T17:08:25Z critic stage 2
+NOTE:     decision 2026-10-05T17:14:13Z dor build
+NOTE: Design i1
+NOTE:   Design-1 "Done defined in real scenarios": reached
+NOTE:   Design-2 "How the pieces connect is mapped": not recorded
+NOTE:   Design-3 "Every unknown has a test": not recorded
+NOTE:   Design-4 "Every fact is backed by evidence": not recorded
+NOTE:   Design-5 "The design fits together": not recorded
+NOTE:   Design-6 "A plan that passed review": not reached
+NOTE:   untagged
+NOTE:     sprint Q-011
+NOTE:       step 2026-10-08T12:05:36Z researcher stage 2
+NOTE:       step 2026-10-08T12:17:22Z source-checker stage 2
+NOTE:       step 2026-10-08T12:21:41Z researcher stage 2
+NOTE:       step 2026-10-08T12:29:13Z source-checker stage 2
+NOTE:       step 2026-10-08T12:33:35Z researcher stage 2
+NOTE:       step 2026-10-08T12:42:25Z source-checker stage 2
+NOTE:       step 2026-10-08T13:53:49Z critic-triage stage 2
+NOTE:       step 2026-10-08T14:06:26Z researcher stage 2
+NOTE:       step 2026-10-08T14:11:23Z source-checker stage 2
+NOTE:       step 2026-10-08T14:15:12Z researcher stage 2
+NOTE:       step 2026-10-08T14:19:21Z source-checker stage 2
+NOTE:       step 2026-10-08T14:27:26Z researcher stage 2
+NOTE:       step 2026-10-08T16:59:31Z source-checker stage 2
+NOTE:     step 2026-10-05T17:20:55Z definer stage 3
+NOTE:     step 2026-10-05T22:50:13Z definer stage 3
+NOTE:     decision 2026-10-06T16:16:12Z failure retry
+NOTE:     step 2026-10-06T16:16:12Z definer stage 3
+NOTE:     step 2026-10-06T16:23:48Z critic stage 3
+NOTE:     step 2026-10-06T16:26:39Z definer stage 3
+NOTE:     step 2026-10-06T16:32:21Z critic stage 3
+NOTE:     step 2026-10-06T16:35:05Z definer stage 3
+NOTE:     step 2026-10-06T16:40:19Z critic stage 3
+NOTE:     step 2026-10-06T18:48:58Z critic-triage stage 3
+NOTE:     decision 2026-10-06T21:31:02Z stop re-scope
+NOTE: Build i1
+NOTE:   Build-1 "Tests written before the work": not recorded
+NOTE:   Build-2 "The work is built": not recorded
+NOTE:   Build-3 "Independently reviewed and passing": not recorded
+NOTE:   Build-4 "The experiments are answered": not recorded
+NOTE:   Build-5 "Everything built fits together": not recorded
+NOTE:   M1 "Every project's status visible on the phone"
+NOTE:     sprint PR #40
+NOTE:       steps not read: no merge commit for PR #40 here
+NOTE:     sprint PR #41
+NOTE:       steps not read: no merge commit for PR #41 here
+NOTE:   M2 "Cards answered straight from the desk"
+NOTE:     sprint PR #44
+NOTE:       steps not read: no merge commit for PR #44 here
+NOTE:   M2B "Agent usage shown on the desk"
+NOTE:     sprint PR #44
+NOTE:       steps not read: no merge commit for PR #44 here
+NOTE:     sprint PR #52
+NOTE:       steps not read: no merge commit for PR #52 here
+NOTE: Design i2
+NOTE:   Design-1 "Done defined in real scenarios": not recorded
+NOTE:   Design-2 "How the pieces connect is mapped": not recorded
+NOTE:   Design-3 "Every unknown has a test": not recorded
+NOTE:   Design-4 "Every fact is backed by evidence": not recorded
+NOTE:   Design-5 "The design fits together": not recorded
+NOTE:   Design-6 "A plan that passed review": not recorded
+NOTE:   MD1 "What a good desk looks like is known"
+NOTE:     sprint Q-013
+NOTE:       step 2026-10-08T21:42:17Z researcher stage 2
+NOTE:       step 2026-10-08T21:48:30Z source-checker stage 2
+NOTE:   MD2 "The desk's look and screens chosen"
+NOTE:     sprint PR #72
+NOTE:       steps not read: no merge commit for PR #72 here
+NOTE:     sprint PR #74
+NOTE:       steps not read: no merge commit for PR #74 here
+NOTE:     sprint PR #75
+NOTE:       steps not read: no merge commit for PR #75 here
+NOTE:     sprint PR #77
+NOTE:       steps not read: no merge commit for PR #77 here
+NOTE:   MD3 "The chosen design running on the real back end"
+NOTE: Build i2
+NOTE:   Build-1 "Tests written before the work": not recorded
+NOTE:   Build-2 "The work is built": not recorded
+NOTE:   Build-3 "Independently reviewed and passing": not recorded
+NOTE:   Build-4 "The experiments are answered": not recorded
+NOTE:   Build-5 "Everything built fits together": not recorded
+NOTE:   M3A "Work ahead planned from the desk"
+NOTE:   M3B "The desk's value targets shown"
+NOTE:   M3D "The desk's faults fixed and the owner's design answers built"
+NOTE:   M3E "The desk's important things readable at a glance"
+NOTE:   M3G "Questions answered in one place and waiting cards in order"
+NOTE: Launch i1
+NOTE:   Launch-1 "It's live": not recorded
+NOTE:   Launch-2 "An operating team is in place": not recorded
+NOTE:   Launch-3 "It's handed over": not recorded
+NOTE:   Launch-4 "Its own monitoring and feedback works": not recorded
+NOTE:   Launch-5 "Graduated": not recorded
+NOTE:   M3C "The desk live at the needs-you address"
+NOTE: Later work 1: P-003 into Discovery
+NOTE: Discovery i1
+NOTE:   Discovery-1 "An idea worth exploring": not recorded
+NOTE:   Discovery-2 "Success defined": reached
+NOTE:   Discovery-3 "The expert's questions answered": not reached
+NOTE:   Discovery-4 "The right problem chosen": not recorded
+NOTE:   Discovery-5 "What already exists is known": reached
+NOTE:   Discovery-6 "The risks are known": not recorded
+NOTE:   Discovery-7 "Scope, limits and owners agreed": reached
+NOTE:   Discovery-8 "A brief ready to rule on": reached
+NOTE:     step 2026-11-04T16:38:43Z critic stage 2
+NOTE:     step 2026-11-04T20:27:40Z critic stage 2
+NOTE:     decision 2026-11-04T20:43:51Z dor-fail resubmit
+NOTE:     step 2026-11-04T20:43:51Z critic stage 2
+NOTE:     decision 2026-11-05T16:25:24Z dor-fail resubmit
+NOTE:     step 2026-11-05T16:30:02Z critic stage 2
+NOTE:     step 2026-11-06T16:16:56Z critic-gate stage 2
+NOTE:     decision 2026-11-06T17:50:25Z dor hold
+NOTE:     step 2026-11-06T23:28:02Z critic-gate stage 2
+NOTE:     decision 2026-11-07T19:48:07Z dor proceed
+NOTE: Design i1
+NOTE:   Design-1 "Done defined in real scenarios": reached
+NOTE:   Design-2 "How the pieces connect is mapped": not recorded
+NOTE:   Design-3 "Every unknown has a test": not recorded
+NOTE:   Design-4 "Every fact is backed by evidence": not recorded
+NOTE:   Design-5 "The design fits together": not recorded
+NOTE:   Design-6 "A plan that passed review": not reached
+NOTE:     step 2026-11-07T19:53:55Z definer stage 3
+NOTE:     step 2026-11-07T20:08:14Z critic stage 3
+NOTE:     step 2026-11-07T20:40:01Z critic-triage stage 3
+NOTE:     decision 2026-11-07T22:16:19Z stop re-specify
+NOTE:     step 2026-11-07T22:22:34Z definer stage 3
+NOTE:     step 2026-11-07T22:36:22Z critic stage 3
+NOTE:     step 2026-11-08T00:22:00Z definer stage 3
+NOTE:     step 2026-11-08T00:34:09Z critic stage 3
+NOTE:     step 2026-11-08T00:40:05Z definer stage 3
+NOTE:     step 2026-11-08T03:17:11Z critic stage 3
+NOTE:     step 2026-11-08T03:28:18Z critic-triage stage 3
+NOTE:     decision 2026-11-08T13:24:51Z stop criteria-wrong
+NOTE:     step 2026-11-08T13:24:51Z definer stage 3
+NOTE:     step 2026-11-08T13:33:25Z critic stage 3
+NOTE:     step 2026-11-08T13:39:54Z definer stage 3
+NOTE:     step 2026-11-08T13:52:25Z critic stage 3
+NOTE:     step 2026-11-08T16:32:46Z definer stage 3
+NOTE:     step 2026-11-08T16:48:43Z critic stage 3
+NOTE:     step 2026-11-08T16:55:36Z critic-triage stage 3
+NOTE:     decision 2026-11-08T19:17:23Z stop criteria-wrong
+NOTE:     step 2026-11-08T19:23:11Z definer stage 3
+NOTE:     step 2026-11-08T19:39:21Z critic stage 3
+NOTE:     step 2026-11-08T20:27:33Z definer stage 3
+NOTE:     step 2026-11-08T20:34:40Z critic stage 3
+NOTE:     step 2026-11-08T22:43:33Z critic-gate stage 3
+NOTE:     decision 2026-11-08T23:06:57Z criteria recycle
+NOTE: Design i2
+NOTE:   Design-1 "Done defined in real scenarios": reached
+NOTE:   Design-2 "How the pieces connect is mapped": reached
+NOTE:   Design-3 "Every unknown has a test": not recorded
+NOTE:   Design-4 "Every fact is backed by evidence": reached
+NOTE:   Design-5 "The design fits together": not recorded
+NOTE:   Design-6 "A plan that passed review": reached
+NOTE:     step 2026-11-08T23:06:57Z definer stage 3
+NOTE:     step 2026-11-08T23:19:58Z critic stage 3
+NOTE:     step 2026-11-09T00:10:53Z critic-gate stage 3
+NOTE:     decision 2026-11-09T01:11:22Z criteria proceed
+NOTE:     step 2026-11-09T01:17:21Z definer-freeze stage 3
+NOTE:     step 2026-11-09T20:25:06Z definer stage 3
+NOTE:     step 2026-11-09T20:39:00Z critic stage 3
+NOTE:     step 2026-11-09T20:56:08Z definer stage 3
+NOTE:     step 2026-11-09T21:09:23Z critic stage 3
+NOTE:     step 2026-11-10T03:14:20Z definer stage 3
+NOTE:     step 2026-11-10T03:21:18Z critic stage 3
+NOTE:     step 2026-11-10T03:34:20Z critic-triage stage 3
+NOTE:     decision 2026-11-10T12:53:25Z stop criteria-wrong
+NOTE:     step 2026-11-10T12:53:25Z definer stage 3
+NOTE:     step 2026-11-10T13:06:43Z critic stage 3
+NOTE:     step 2026-11-10T13:20:07Z definer stage 3
+NOTE:     step 2026-11-10T19:19:22Z critic stage 3
+NOTE:     step 2026-11-11T02:44:25Z critic-gate stage 3
+NOTE:     decision 2026-11-11T03:52:19Z criteria proceed
+NOTE:     step 2026-11-11T03:57:58Z definer-freeze stage 3
+NOTE: Build i1
+NOTE:   Build-1 "Tests written before the work": reached
+NOTE:   Build-2 "The work is built": not reached
+NOTE:   Build-3 "Independently reviewed and passing": not reached
+NOTE:   Build-4 "The experiments are answered": not recorded
+NOTE:   Build-5 "Everything built fits together": not recorded
+NOTE:   M4 "Every decision card shows the Chief of Staff's recommendation, or says it has none"
+NOTE:     step 2026-11-09T01:30:47Z check-author stage 4
+NOTE:     step 2026-11-09T02:22:11Z check-author stage 4
+NOTE:     decision 2026-11-09T13:53:18Z failure retry
+NOTE:     step 2026-11-09T13:53:18Z check-author stage 4
+NOTE:     step 2026-11-09T14:16:30Z critic stage 4
+NOTE:     step 2026-11-09T15:00:35Z check-author stage 4
+NOTE:     step 2026-11-09T15:13:24Z critic stage 4
+NOTE:     step 2026-11-09T15:20:35Z check-author stage 4
+NOTE:     step 2026-11-09T15:29:00Z critic stage 4
+NOTE:     step 2026-11-09T18:37:02Z critic-triage stage 4
+NOTE:     decision 2026-11-09T20:18:43Z stop checks-wrong
+NOTE:     step 2026-11-11T04:04:39Z check-author stage 4
+NOTE:     step 2026-11-11T06:54:55Z critic stage 4
+NOTE:     step 2026-11-11T07:08:27Z builder stage 5
+NOTE: Later work 2: P-004 into Discovery
+NOTE: Discovery i1
+NOTE:   Discovery-1 "An idea worth exploring": not recorded
+NOTE:   Discovery-2 "Success defined": not recorded
+NOTE:   Discovery-3 "The expert's questions answered": not reached
+NOTE:   Discovery-4 "The right problem chosen": not recorded
+NOTE:   Discovery-5 "What already exists is known": not reached
+NOTE:   Discovery-6 "The risks are known": not recorded
+NOTE:   Discovery-7 "Scope, limits and owners agreed": not recorded
+NOTE:   Discovery-8 "A brief ready to rule on": not reached
+NOTE:     step 2026-11-04T20:43:51Z critic stage 2
+NOTE: later work P-004 has no milestone of its own in docs/PROJECT.md section 3 (` · for: P-004`) (model S-023 AC12)
+OK: every criterion of a frozen spec traces to a value target
+== v3_checks joins
+NOTE: 6 join(s) in 1 frozen spec(s) checked
+OK: every join of a frozen spec has a marked test
+== v3_checks sessions
+NOTE: 20 session file(s) in sessions/chief-of-staff/
+OK: the Chief of Staff's session lines are in their form
+== record_checks routing
+NOTE: 260 routed line(s) checked against governance/ROUTING.toml
+OK: the dispatch log's chain and routes hold
+== record_checks build-cap
+project items in Build or Launch (stages 4 to 6), neither done nor closed: 1
+research items neither done nor closed: 0
+build cap: not set (the owner's to define; reported only)
+OK: within the build cap (or none set)
+== record_checks grants
+grants not checked: the format is not defined
+OK: grants reported
+== surface_guard charters --check
+NOTE: builder 'chief-of-staff' has no .claude/agents/chief-of-staff.md; nothing to check
+OK: 4 builder charter(s) match governance/SURFACES.md
+== Summary
+FAIL  surface_guard check (exit 1)
+PASS  ledger_check check
+FAIL  digest check (exit 1)
+PASS  governance_checks all
+PASS  review_check lint
+PASS  spec_check status
+PASS  v3_checks ready
+PASS  v3_checks trace
+PASS  v3_checks joins
+PASS  v3_checks sessions
+PASS  record_checks routing
+PASS  record_checks build-cap
+PASS  record_checks grants
+PASS  surface_guard charters --check
+Governance checks FAILED.
+
+== Exit 1
+verdict: FAIL
+
+== Discarded from the builder's last change set (model S-014 AC8)
+none
+
+== Left out of the check run's copy (model S-036)
+"docs/design/builds/hd1/01-home-360-light-before-after-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/hd1/02-home-414-dark-before-after-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/hd1/03-r2-home-today-360-light-0-before-after-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/hd1/04-r2-home-date-360-light-0-before-after-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/hd1/05-r2-none-tracked-360-light-0-before-after-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/hd1/06-project-sd-ms-360-dark-0-before-after-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/hd1/07-member-360-light-0-before-after-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/headers-picture/headers-1-home.png": a design image
+"docs/design/builds/headers-picture/headers-2-home-foot.png": a design image
+"docs/design/builds/headers-picture/headers-3-waiting.png": a design image
+"docs/design/builds/headers-picture/headers-4-project-page.png": a design image
+"docs/design/builds/headers-picture/headers-5-plan.png": a design image
+"docs/design/builds/headers-picture/headers-6-gate-sheet.png": a design image
+"docs/design/builds/headers-picture/headers-7-targets-sheet.png": a design image
+"docs/design/builds/headers-picture/headers-8-option-bigger-titles.png": a design image
+"docs/design/builds/m3b-picture/m3b-5-sheet-before-launch-360-dark.png": a design image
+"docs/design/builds/m3b-picture/m3b-5-sheet-before-launch-360-light.png": a design image
+"docs/design/builds/m3b-picture/m3b-6-sheet-launch-day-first-screen-360-light.png": a design image
+"docs/design/builds/m3b-picture/m3b-7-sheet-day5-one-check-414-dark.png": a design image
+"docs/design/builds/m3b-picture/m3b-7-sheet-day5-one-check-414-light.png": a design image
+"docs/design/builds/m3b-picture/m3b-8-sheet-after-14-days-one-missed-360-dark.png": a design image
+"docs/design/builds/m3b-picture/m3b-8-sheet-after-14-days-one-missed-360-light.png": a design image
+"docs/design/builds/m3b-picture/m3b-overview-1-row-states-360-dark.png": a design image
+"docs/design/builds/m3b-picture/m3b-overview-1-row-states-360-light.png": a design image
+"docs/design/builds/m3b-picture/m3b-overview-2-sheet-lines-360-dark.png": a design image
+"docs/design/builds/m3b-picture/m3b-overview-2-sheet-lines-360-light.png": a design image
+"docs/design/builds/m3b-picture/m3b-overview-3-didnt-need-me-360-dark.png": a design image
+"docs/design/builds/m3b-picture/m3b-overview-3-didnt-need-me-360-light.png": a design image
+"docs/design/builds/m3b-picture/m3b-overview-4-home-weekly-360-dark.png": a design image
+"docs/design/builds/m3b-picture/m3b-overview-4-home-weekly-360-light.png": a design image
+"docs/design/builds/m3b-picture/round-2/m3b-r2-1-row-states-360-dark.png": a design image
+"docs/design/builds/m3b-picture/round-2/m3b-r2-1-row-states-360-light.png": a design image
+"docs/design/builds/m3b-picture/round-2/m3b-r2-2-sheet-before-launch-360-dark.png": a design image
+"docs/design/builds/m3b-picture/round-2/m3b-r2-2-sheet-before-launch-360-light.png": a design image
+"docs/design/builds/m3b-picture/round-2/m3b-r2-3-sheet-day5-one-outside-360-dark.png": a design image
+"docs/design/builds/m3b-picture/round-2/m3b-r2-3-sheet-day5-one-outside-360-light.png": a design image
+"docs/design/builds/m3b-picture/round-2/m3b-r2-3b-sheet-day5-first-screen-360-dark.png": a design image
+"docs/design/builds/m3b-picture/round-2/m3b-r2-3b-sheet-day5-first-screen-360-light.png": a design image
+"docs/design/builds/m3b-picture/round-2/m3b-r2-4-sheet-after-14-days-one-missed-414-dark.png": a design image
+"docs/design/builds/m3b-picture/round-2/m3b-r2-4-sheet-after-14-days-one-missed-414-light.png": a design image
+"docs/design/builds/m3b-picture/round-2/m3b-r2-5-weekly-figures-trial-weeks-360-dark.png": a design image
+"docs/design/builds/m3b-picture/round-2/m3b-r2-5-weekly-figures-trial-weeks-360-light.png": a design image
+"docs/design/builds/m3b-vt1/01-row-5b-day5-one-outside-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3b-vt1/02-sheet-day5-one-outside-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3b-vt1/03-sheet-after-14-days-two-not-measured-360x740-light-full-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3b-vt1/04-sheet-before-launch-360x740-dark-full-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3b-vt1/05-sheet-after-14-days-one-missed-414x896-dark-full-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3b-vt2/01-card-sheet-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3b-vt2/02-card-sheet-marked-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3b-vt2/03-question-sheet-marked-360x740-dark-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3b-vt2/04-gate-kicked-back-sheet-marked-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3b-vt2/05-targets-sheet-not-noted-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3b-vt3/01-home-one-week-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3b-vt3/02-home-eight-weeks-six-before-launch-360x740-dark-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3b-vt3/03-sheet-weekly-eight-weeks-trial-grouped-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3b-vt3/04-sheet-weekly-one-week-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3d-1/after-deploy-sheet-414-light.png": a design image
+"docs/design/builds/m3d-1/after-page-waits-414-light.png": a design image
+"docs/design/builds/m3d-1/after-w2-cant-never-414-dark.png": a design image
+"docs/design/builds/m3d-1/after-w5-cant-after-414-light.png": a design image
+"docs/design/builds/m3d-1/before-deploy-sheet-414-light.png": a design image
+"docs/design/builds/m3d-1/before-page-waits-414-light.png": a design image
+"docs/design/builds/m3d-1/before-w2-cant-never-414-dark.png": a design image
+"docs/design/builds/m3d-1/before-w5-cant-after-414-light.png": a design image
+"docs/design/builds/m3d-2/after-reload-c-dh-all-escape-360-light.png": a design image
+"docs/design/builds/m3d-2/after-reload-c-dh-all-escape-414-dark.png": a design image
+"docs/design/builds/m3d-2/after-reload-c-info-A-escape-360-dark.png": a design image
+"docs/design/builds/m3d-2/after-reload-c-info-A-escape-414-light.png": a design image
+"docs/design/builds/m3d-3/after-s3-home-grouphead-360-light.png": a design image
+"docs/design/builds/m3d-3/after-s3-plan-groups-360-light.png": a design image
+"docs/design/builds/m3d-3/after-s3-plan-groups-414-dark.png": a design image
+"docs/design/builds/m3d-3/after-s3-tl-top-dark.png": a design image
+"docs/design/builds/m3d-4/after-r2-now-sheet-after-reload-360-light.png": a design image
+"docs/design/builds/m3d-4/after-s4-cos-fifth-360-dark.png": a design image
+"docs/design/builds/m3d-4/after-s4-team-folded-360-dark.png": a design image
+"docs/design/builds/m3d-4/after-s4-team-opened-360-light.png": a design image
+"docs/design/builds/m3d-5/after-s5-board-cut-due-360-dark.png": a design image
+"docs/design/builds/m3d-5/after-s5-copy-gate-414-dark.png": a design image
+"docs/design/builds/m3d-5/after-s5-copy-in-choice-360-light.png": a design image
+"docs/design/builds/m3d-5/after-s5-default-360-dark.png": a design image
+"docs/design/builds/m3d-6a/after-ordering-360-light-414-dark.png": a design image
+"docs/design/builds/m3d-6a/after-pfcard-360-light.png": a design image
+"docs/design/builds/m3d-6a/after-two-gates.png": a design image
+"docs/design/builds/m3d-6b/after-load-states.png": a design image
+"docs/design/builds/m3d-7/after-rarer-records-414-dark.png": a design image
+"docs/design/builds/m3e-g1/01-count-and-due-lines-360-light.png": a design image
+"docs/design/builds/m3e-g1/02-stall-tile-360-light.png": a design image
+"docs/design/builds/m3e-g1/03-cant-read-tile-360-light.png": a design image
+"docs/design/builds/m3e-g1/04-cant-read-with-cards-waiting-360-dark.png": a design image
+"docs/design/builds/m3e-g1/05-not-read-since-414-light.png": a design image
+"docs/design/builds/m3e-g1/06-signed-out-360-dark.png": a design image
+"docs/design/builds/m3e-g1/07-at-work-360-light.png": a design image
+"docs/design/builds/m3e-g1/08-since-two-lines-360-light.png": a design image
+"docs/design/builds/m3e-g1/09-long-name-cant-read-360-dark.png": a design image
+"docs/design/builds/m3e-g1/10-due-line-on-the-tick-360-light.png": a design image
+"docs/design/builds/m3e-g2/01-equal-lanes-done-shaded-new-360x740-light.png": a design image
+"docs/design/builds/m3e-g2/02-kicked-back-strip-3-cards-360x740-light.png": a design image
+"docs/design/builds/m3e-g2/03-kicked-back-5-cards-row-scrolls-360x740-light.png": a design image
+"docs/design/builds/m3e-g2/04-kicked-back-one-project-360x740-dark.png": a design image
+"docs/design/builds/m3e-g2/05-quiet-kicked-back-none-360x740-dark.png": a design image
+"docs/design/builds/m3e-g2/06-signed-out-kicked-back-cant-read-360x740-light.png": a design image
+"docs/design/builds/m3e-g2/07-md-extremes-25-waits-414x896-light.png": a design image
+"docs/design/builds/m3e-g2/08-touch-drag-into-done-360x740-light.png": a design image
+"docs/design/builds/m3e-g3/01-waiting-gate-cards-360x740-light.png": a design image
+"docs/design/builds/m3e-g3/02-gate-sheet-title-and-opening-360x740-light.png": a design image
+"docs/design/builds/m3e-g3/03-gate-sheet-no-case-line-414x896-dark.png": a design image
+"docs/design/builds/m3e-g3/04-plan-gate-rows-360x740-light.png": a design image
+"docs/design/builds/m3e-g3/05-done-row-short-title-360x740-dark.png": a design image
+"docs/design/builds/m3e-g3/06-waiting-cards-without-case-lines-414x896-light.png": a design image
+"docs/design/builds/m3e-g4/01-page-calm-row-and-last-action-date-360x740-light.png": a design image
+"docs/design/builds/m3e-g4/02-page-ran-again-once-and-gate-name-360x740-light.png": a design image
+"docs/design/builds/m3e-g4/03-timeline-opens-next-milestone-in-view-360x740-light.png": a design image
+"docs/design/builds/m3e-g4/04-failed-load-reload-button-360x740-dark.png": a design image
+"docs/design/builds/m3e-g4/05-waits-row-two-gate-cards-414x896-light.png": a design image
+"docs/design/builds/m3e-g4/06-member-page-dates-414x896-dark.png": a design image
+"docs/design/builds/m3e-g4/07-waits-row-ids-whole-360x740-dark.png": a design image
+"docs/design/builds/m3e-g5/01-page-milestone-counts-360x740-light.png": a design image
+"docs/design/builds/m3e-g5/02-launch-f1-f2-opened-414x896-dark.png": a design image
+"docs/design/builds/m3e-g5/03-design-opened-rows-sprints-360x740-light.png": a design image
+"docs/design/builds/m3e-g5/04-timeline-sprint-folds-360x740-light.png": a design image
+"docs/design/builds/m3e-g5/05-details-ci-workflows-414x896-light.png": a design image
+"docs/design/builds/m3e-g5/06-waits-row-gate-named-once-414x896-light.png": a design image
+"docs/design/builds/m3e-g6/01-design-opened-two-groups-360x740-light.png": a design image
+"docs/design/builds/m3e-g6/02-untracked-fold-opened-360x740-dark.png": a design image
+"docs/design/builds/m3e-g6/03-earlier-run-heads-and-fold-414x896-light.png": a design image
+"docs/design/builds/m3e-g6/04-launch-as-mock-q5-360x740-light.png": a design image
+"docs/design/builds/m3e-g6/05-every-line-written-made-up-414x896-dark.png": a design image
+"docs/design/builds/m3e-g6/06-timeline-standard-meta-360x740-light.png": a design image
+"docs/design/builds/m3e-g7/01-page-reached-green-not-reached-red-360x740-light.png": a design image
+"docs/design/builds/m3e-g7/02-timeline-sprint-marks-360x740-dark.png": a design image
+"docs/design/builds/m3e-g7/03-home-briefing-cant-read-x-360x740-light.png": a design image
+"docs/design/builds/m3e-g7/04-plan-moved-edge-grey-reached-checks-414x896-light.png": a design image
+"docs/design/builds/m3e-g7/05-sheet-ci-failing-x-360x740-dark.png": a design image
+"docs/design/builds/m3e-g7/06-gone-back-over-run-414x896-dark.png": a design image
+"docs/design/builds/m3e-g7b/01-two-unreadable-tile-order-NOT-real-360-light.png": a design image
+"docs/design/builds/m3e-g7b/02-signed-out-three-projects-NOT-real-360-dark.png": a design image
+"docs/design/builds/m3e-g7b/03-list-full-under-more-NOT-real-414-light.png": a design image
+"docs/design/builds/m3e-g7b/04-long-name-wraps-NOT-real-360-dark.png": a design image
+"docs/design/builds/m3e-g7b/05-cant-show-and-cant-read-NOT-real-360-light.png": a design image
+"docs/design/builds/m3e-g8/01-timeline-now-line-360x740-light.png": a design image
+"docs/design/builds/m3e-g8/02-page-strip-414x896-dark.png": a design image
+"docs/design/builds/m3e-g8/03-opened-phase-360x740-light.png": a design image
+"docs/design/builds/m3e-g8/04-home-tiles-NOT-real-360x740-light.png": a design image
+"docs/design/builds/m3e-g8/05-plan-414x896-dark.png": a design image
+"docs/design/builds/m3e-g8/06-plan-ordering-360x740-light.png": a design image
+"docs/design/builds/m3e-g8/07-home-unread-arrows-and-missing-line-NOT-real-360x740-light.png": a design image
+"docs/design/builds/m3e-g8b/01-moved-row-360-light.png": a design image
+"docs/design/builds/m3e-g8b/02-long-name-in-ordering-360-dark.png": a design image
+"docs/design/builds/m3e-g8b/03-moved-row-is-next-to-reach-414-light.png": a design image
+"docs/design/builds/m3e-g8b/04-word-among-grey-lines-414-dark.png": a design image
+"docs/design/builds/m3e-g8c/01-in-this-opening-everywhere-360-light.png": a design image
+"docs/design/builds/m3e-g8c/02-tile-order-and-not-shown-414-dark.png": a design image
+"docs/design/builds/m3e-g8c/03-not-shown-under-nothing-new-360-light.png": a design image
+"docs/design/builds/m3e-g8c/04-line-stops-before-arrow-360-light-and-414-dark.png": a design image
+"docs/design/builds/m3e-g8d/01-waiting-every-project-360-light.png": a design image
+"docs/design/builds/m3e-g8d/02-waiting-alone-360-dark.png": a design image
+"docs/design/builds/m3e-g8d/03-waiting-every-project-round3-360-light.png": a design image
+"docs/design/builds/m3e-g8d/r1-01-home-group-head-360-light.png": a design image
+"docs/design/builds/m3e-g8d/r1-02-home-cap-versions-360-dark.png": a design image
+"docs/design/builds/m3e-g8d/r1-03-waiting-in-this-opening-360-dark.png": a design image
+"docs/design/builds/m3e-g8d/r1-04-page-and-pipeline-414-light.png": a design image
+"docs/design/builds/m3e-g9/01-project-page-box-and-tally-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3e-g9/02-project-page-box-and-tally-414x896-dark-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3e-g9/03-opened-phase-why-line-plain-360x740-light-real-records-77bfeae.png": a design image
+"docs/design/builds/m3e-g9/04-project-with-nothing-recorded-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3e-g9/05-run-headings-outrank-414x896-light-real-records-77bfeae.png": a design image
+"docs/design/builds/m3e-g9b/g9b-home-failed-held-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3e-g9b/g9b-home-signed-out-360x740-dark-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3e-g9b/g9b-waiting-every-failed-414x896-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3e-g9b/g9b-waiting-failed-held-360x740-dark-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3e-g9b/g9b-waiting-one-checking-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3e-g9c/01-g9c-waiting-first-paint-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3e-g9c/02-g9c-waiting-agents-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3e-g9c/03-waiting-long-names-mixed-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3e-g9c/04-g9c-waiting-signed-out-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3e-g9c/05-round1-beside-round2-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3e-g9c/06-page-own-age-after-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3e-g9c/06-page-own-age-before-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-picture/m3g-f1-board-360-light-first-screen.png": a design image
+"docs/design/builds/m3g-picture/m3g-f1-board-360-light-full.png": a design image
+"docs/design/builds/m3g-picture/m3g-f1-board-414-dark-first-screen.png": a design image
+"docs/design/builds/m3g-picture/m3g-f3-one-alpha-360-light-full.png": a design image
+"docs/design/builds/m3g-picture/m3g-f4-empty-360-light-first-screen.png": a design image
+"docs/design/builds/m3g-picture/m3g-overview-first-screens-360-dark.png": a design image
+"docs/design/builds/m3g-picture/m3g-overview-first-screens-360-light.png": a design image
+"docs/design/builds/m3g-qw1/01-qw1-busiest-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw1/02-qw1-busiest-folds-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw1/03-qw1-one-beta-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw1/04-qw1-empty-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw1/05-qw1-epsilon-choices-414x896-dark-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw1/06-qw1-kinds-360x740-dark-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw1/07-qw1-reload-words-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw2/01-qw2-one-alpha-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw2/02-qw2-busiest-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw2/03-qw2-sheet-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw2/04-qw2-held-sheet-360x740-dark-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw2/05-qw2-strip-order-a-360-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw2/05-qw2-strip-order-b-360-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw3/01-qw3-busiest-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw3/02-qw3-one-alpha-414x896-dark-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw3/03-qw3-held-sheet-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/m3g-qw3/04-qw3-blocker-sheet-360x740-light-MADE-UP-NOT-real.png": a design image
+"docs/design/builds/stage-2/beside-H1-414.png": a design image
+"docs/design/builds/stage-2/beside-H3-414.png": a design image
+"docs/design/builds/stage-2/beside-H5-360.png": a design image
+"docs/design/builds/stage-2/beside-H5-414.png": a design image
+"docs/design/builds/stage-2/sd-home-1024x768-dark.png": a design image
+"docs/design/builds/stage-2/sd-home-414x896-dark.png": a design image
+"docs/design/builds/stage-2/sd-home-720x1024-light.png": a design image
+"docs/design/builds/stage-3/beside-5-414.png": a design image
+"docs/design/builds/stage-3/beside-6-414.png": a design image
+"docs/design/builds/stage-3/beside-7b-414.png": a design image
+"docs/design/builds/stage-3/beside-8-414.png": a design image
+"docs/design/builds/stage-3/pr40-marks-414-light.png": a design image
+"docs/design/builds/stage-3/v25-unread-page-414-light.png": a design image
+"docs/design/builds/stage-4/beside-3-question-414.png": a design image
+"docs/design/builds/stage-4/beside-3b-settles-414.png": a design image
+"docs/design/builds/stage-4/beside-4-gate-414.png": a design image
+"docs/design/builds/stage-4/gate-choices-414x896-light.png": a design image
+"docs/design/builds/stage-4/q-numbered-fold-open-414x896-light.png": a design image
+"docs/design/builds/stage-4/q-unsplittable-file-414x896-light.png": a design image
+"docs/design/builds/stage-5/beside-11-plan-plan-414-light.png": a design image
+"docs/design/builds/stage-5/beside-11-plan-plan-gate-414-light.png": a design image
+"docs/design/builds/stage-5/beside-11-plan-plan-two-projects-414-light.png": a design image
+"docs/design/builds/stage-6a/beside-H4-example-414-light.png": a design image
+"docs/design/builds/stage-6a/beside-H4-today-414-light.png": a design image
+"docs/design/builds/stage-6b/beside-11-plan-plan-ideas-414-light.png": a design image
+"docs/design/builds/stage-6b/beside-H4-home-portfolio-foot-home-foot-414-dark.png": a design image
+"docs/design/builds/stage-6b/beside-H4-home-portfolio-foot-home-foot-414-light.png": a design image
+"docs/design/builds/stage-6b/beside-H4-home-portfolio-foot-home-foot-access-414-light.png": a design image
+"docs/design/builds/stage-6b/board-portfolio-414-light.png": a design image
+"docs/design/builds/stage-7/beside-12-team-414-dark.png": a design image
+"docs/design/builds/stage-7/beside-12-team_orchestrator-414-dark.png": a design image
+"docs/design/builds/stage-7/beside-12-team_owner-414-dark.png": a design image
+"docs/design/builds/stage-8/beside-1-waiting-414-light.png": a design image
+"docs/design/builds/stage-8/beside-5-team-414-dark.png": a design image
+"docs/design/builds/stage-8/beside-H1-home-414-light.png": a design image
+"docs/design/builds/stage-8/beside-H2-home-414-dark.png": a design image
+"docs/design/mockups/board/a-five-waiting-360.png": a design image
+"docs/design/mockups/board/a-five-waiting-414-v2.png": a design image
+"docs/design/mockups/board/a-five-waiting-414-v3.png": a design image
+"docs/design/mockups/board/a-five-waiting-414.png": a design image
+"docs/design/mockups/board/b-mid-drag-414.png": a design image
+"docs/design/mockups/board/board-360-v5.png": a design image
+"docs/design/mockups/board/board-414-v5.png": a design image
+"docs/design/mockups/board/board-dark-414-v5.png": a design image
+"docs/design/mockups/board/c-two-checking-414.png": a design image
+"docs/design/mockups/board/c-two-marked-done-414-v3.png": a design image
+"docs/design/mockups/board/d-kicked-back-414-v2.png": a design image
+"docs/design/mockups/board/d-kicked-back-414-v3.png": a design image
+"docs/design/mockups/board/d-still-waiting-414.png": a design image
+"docs/design/mockups/board/e-nothing-waiting-414.png": a design image
+"docs/design/mockups/board/f-dark-414.png": a design image
+"docs/design/mockups/board/g-130-after-verdict-414-v3.png": a design image
+"docs/design/mockups/board/option1-360-v4.png": a design image
+"docs/design/mockups/board/option1-414-v4.png": a design image
+"docs/design/mockups/board/option1-dark-414-v4.png": a design image
+"docs/design/mockups/board/option1-sheet-414-v4.png": a design image
+"docs/design/mockups/board/option2-360-v4.png": a design image
+"docs/design/mockups/board/option2-414-v4.png": a design image
+"docs/design/mockups/board/option2-drag-414-v4.png": a design image
+"docs/design/mockups/board/option2-mid-swipe-414-v4.png": a design image
+"docs/design/mockups/board/page-1024-v4.png": a design image
+"docs/design/mockups/board/sheet-414-v5.png": a design image
+"docs/design/mockups/board/wide-1024-v2.png": a design image
+"docs/design/mockups/board/wide-1024-v3.png": a design image
+"docs/design/mockups/board/wide-1024.png": a design image
+"docs/design/mockups/board/wide-414-v3.png": a design image
+"docs/design/mockups/desk-v2/1-waiting-360.png": a design image
+"docs/design/mockups/desk-v2/1-waiting-414.png": a design image
+"docs/design/mockups/desk-v2/11-plan-414.png": a design image
+"docs/design/mockups/desk-v2/12-waiting-dark-414.png": a design image
+"docs/design/mockups/desk-v2/2-waiting-one-project-414.png": a design image
+"docs/design/mockups/desk-v2/3-question-sheet-irreversible-360.png": a design image
+"docs/design/mockups/desk-v2/3-question-sheet-irreversible-414.png": a design image
+"docs/design/mockups/desk-v2/3b-question-sheet-settles-414.png": a design image
+"docs/design/mockups/desk-v2/4-gate-sheet-360.png": a design image
+"docs/design/mockups/desk-v2/4-gate-sheet-414.png": a design image
+"docs/design/mockups/desk-v2/5-project-service-desk-360.png": a design image
+"docs/design/mockups/desk-v2/5-project-service-desk-414.png": a design image
+"docs/design/mockups/desk-v2/6-standard-milestones-open-414.png": a design image
+"docs/design/mockups/desk-v2/6b-standard-skipped-members-letter-414.png": a design image
+"docs/design/mockups/desk-v2/7a-timeline-colour-labels-360.png": a design image
+"docs/design/mockups/desk-v2/7a-timeline-colour-labels-414.png": a design image
+"docs/design/mockups/desk-v2/7a-timeline-colour-labels-full-414.png": a design image
+"docs/design/mockups/desk-v2/7b-timeline-grey-labels-414.png": a design image
+"docs/design/mockups/desk-v2/7b-timeline-grey-labels-full-414.png": a design image
+"docs/design/mockups/desk-v2/7c-current-timeline-414.png": a design image
+"docs/design/mockups/desk-v2/8-project-poom-414.png": a design image
+"docs/design/mockups/desk-v2/9-project-members-letter-414.png": a design image
+"docs/design/mockups/desk-v2/H1-home-360.png": a design image
+"docs/design/mockups/desk-v2/H1-home-414.png": a design image
+"docs/design/mockups/desk-v2/H2-home-dark-360.png": a design image
+"docs/design/mockups/desk-v2/H2-home-dark-414.png": a design image
+"docs/design/mockups/desk-v2/H3-home-all-clear-360.png": a design image
+"docs/design/mockups/desk-v2/H3-home-all-clear-414.png": a design image
+"docs/design/mockups/desk-v2/H4-home-portfolio-foot-360.png": a design image
+"docs/design/mockups/desk-v2/H4-home-portfolio-foot-414.png": a design image
+"docs/design/mockups/desk-v2/H5-home-tiles-360.png": a design image
+"docs/design/mockups/desk-v2/H5-home-tiles-414.png": a design image
+"docs/design/mockups/glance-emphasis/shots/01-stall-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/01-stall-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/02a-cant-read-tile-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/02a-cant-read-tile-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/02b-signed-out-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/02b-signed-out-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/03-count-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/03-count-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/04-lanes-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/04-lanes-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/05a-gate-board-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/05a-gate-board-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/05b-gate-sheet-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/05b-gate-sheet-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/05c-gate-plan-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/05c-gate-plan-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/06-since-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/06-since-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/07-timeline-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/07-timeline-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/08a-nothing-waiting-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/08a-nothing-waiting-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/08b-ran-again-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/08b-ran-again-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/09-at-work-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/09-at-work-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/10-failload-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/10-failload-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/11-new-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/11-new-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/12a-kick-strip-empty-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/12a-kick-strip-empty-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/12b-kick-strip-cards-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/12b-kick-strip-cards-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/12c-kick-strip-cards-p4-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/12c-kick-strip-cards-p4-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-failload-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-failload-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-failload-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-failload-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-gate-sheet-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-gate-sheet-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-gate-sheet-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-gate-sheet-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-ext-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-ext-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-ext-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-ext-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-mix-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-mix-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-mix-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-mix-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-signed-out-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-signed-out-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-signed-out-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-signed-out-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-stall-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-stall-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-stall-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-stall-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-unread-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-unread-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-unread-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-home-unread-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-plan-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-plan-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-plan-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-plan-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-project-alpha-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-project-alpha-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-project-alpha-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-project-alpha-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-project-sd-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-project-sd-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-project-sd-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-project-sd-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-timeline-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-timeline-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-timeline-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-timeline-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-waiting-ext-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-waiting-ext-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-waiting-ext-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-waiting-ext-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-waiting-mix-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-waiting-mix-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-waiting-mix-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/all-waiting-mix-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q1-disc-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q1-disc-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q1-home-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q1-home-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q1-tl-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q1-tl-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q2-page-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q2-page-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q3-home-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q3-home-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q3-page-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q3-page-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q3-plan-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q3-plan-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q3-timeline-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q3-timeline-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q4-counts-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q4-counts-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q5-design-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q5-design-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q5-launch-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2-q5-launch-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-home-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-home-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-home-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-home-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-openBuild-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-openBuild-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-openBuild-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-openBuild-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-openDesign-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-openDesign-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-openDesign-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-openDesign-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-page3-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-page3-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-page3-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-page3-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-plan-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-plan-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-plan-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-plan-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-timeline-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-timeline-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-timeline-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-mix-timeline-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-text-openLaunch-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-text-openLaunch-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-text-openLaunch-light-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r2all-text-openLaunch-light-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r4c-cards-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r4c-cards-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r4c-dark-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r4c-dark-before.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r4c-empty-after.webp": a design image
+"docs/design/mockups/glance-emphasis/shots/r4c-empty-before.webp": a design image
+"docs/design/mockups/linear-inspired/1-waiting-lanes.png": a design image
+"docs/design/mockups/linear-inspired/2-waiting-grouped.png": a design image
+"docs/design/mockups/linear-inspired/3-card-sheet.png": a design image
+"docs/design/mockups/linear-inspired/4-snooze-proposal.png": a design image
+"docs/design/mockups/linear-inspired/5-plan.png": a design image
+"docs/design/mockups/linear-inspired/6-project-page.png": a design image
+"docs/design/mockups/linear-inspired/7-all-clear.png": a design image
+"docs/design/mockups/linear-inspired/8-grouped-dark.png": a design image
+"docs/design/mockups/notify-more-detail/home-installed-414.png": a design image
+"docs/design/mockups/notify-more-detail/home-safari-414.png": a design image
+"docs/design/mockups/redesign/1-waiting.png": a design image
+"docs/design/mockups/redesign/2-card-sheet.png": a design image
+"docs/design/mockups/redesign/3-plan.png": a design image
+"docs/design/mockups/redesign/4-projects.png": a design image
+"docs/design/mockups/redesign/5-project-page.png": a design image
+"docs/design/mockups/redesign/6-details.png": a design image
+"docs/design/mockups/redesign/7-all-clear.png": a design image
+"docs/design/mockups/redesign/8-waiting-dark.png": a design image
+"docs/design/mockups/work-ahead-home/home-today-414.png": a design image
+"docs/design/mockups/work-ahead-home/home-with-work-ahead-414.png": a design image
+"docs/design/references/01-home-overview-abode.png": a design image
+"docs/design/references/02-project-phases-lifesum.png": a design image
+"docs/design/references/03-team-agents-bevel.png": a design image
+"docs/design/references/04-timeline-structured.jpg": a design image
+"docs/design/references/05-breakdown-tasks-tiimo.png": a design image
+"docs/design/references/06-queue-monday.png": a design image
+"docs/design/references/07-response-card-linear.png": a design image
+"docs/design/references/08-home-phase-checklist-start.png": a design image
+"docs/design/references/09-home-phase-checklist-done.png": a design image
+"docs/design/references/10-agent-log-branch-timeline.png": a design image
+"docs/design/references/trial-view/2026-10-14-merge-sheet-1127.png": a design image
+"docs/design/references/trial-view/2026-10-14-queue-1128.png": a design image
+"docs/design/references/trial-view/2026-10-14-status-1119.png": a design image
+"docs/design/references/trial-view/2026-10-14-team-log-1130.png": a design image
+"docs/design/references/trial-view/2026-10-14-timeline-1131.png": a design image
+"docs/design/references/trial-view/2026-10-14-timeline-1133.png": a design image
+"docs/design/references/trial-view/2026-10-16-answer-choices-1030.png": a design image
+"docs/design/references/trial-view/2026-10-16-release-changelog-example.png": a design image
+"docs/design/references/trial-view/2026-10-16-status-phases-0649.png": a design image

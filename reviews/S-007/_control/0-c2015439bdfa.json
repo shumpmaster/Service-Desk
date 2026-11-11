@@ -1,0 +1,1969 @@
+{
+ "builder_control_hash": "703c5b71b08dcacb3ef93c5838ea7bb8c0221e7ed5fd9900f3466753b7a04246",
+ "credential_files": [
+  ".npmrc",
+  ".netrc",
+  ".pypirc",
+  ".env",
+  ".env.*",
+  "**/*.pem",
+  "**/*.key"
+ ],
+ "dispatched_at": "2026-11-11T07:14:54Z",
+ "entry": {
+  "action": "run-checks",
+  "gate": null,
+  "item": "P-003",
+  "role": "checks",
+  "route": "build-to-checks",
+  "spec": "S-007",
+  "stage": 5
+ },
+ "format": "session-runner-control/1",
+ "left_out": [
+  {
+   "path": "docs/design/builds/hd1/01-home-360-light-before-after-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/hd1/02-home-414-dark-before-after-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/hd1/03-r2-home-today-360-light-0-before-after-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/hd1/04-r2-home-date-360-light-0-before-after-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/hd1/05-r2-none-tracked-360-light-0-before-after-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/hd1/06-project-sd-ms-360-dark-0-before-after-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/hd1/07-member-360-light-0-before-after-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/headers-picture/headers-1-home.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/headers-picture/headers-2-home-foot.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/headers-picture/headers-3-waiting.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/headers-picture/headers-4-project-page.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/headers-picture/headers-5-plan.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/headers-picture/headers-6-gate-sheet.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/headers-picture/headers-7-targets-sheet.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/headers-picture/headers-8-option-bigger-titles.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/m3b-5-sheet-before-launch-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/m3b-5-sheet-before-launch-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/m3b-6-sheet-launch-day-first-screen-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/m3b-7-sheet-day5-one-check-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/m3b-7-sheet-day5-one-check-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/m3b-8-sheet-after-14-days-one-missed-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/m3b-8-sheet-after-14-days-one-missed-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/m3b-overview-1-row-states-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/m3b-overview-1-row-states-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/m3b-overview-2-sheet-lines-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/m3b-overview-2-sheet-lines-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/m3b-overview-3-didnt-need-me-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/m3b-overview-3-didnt-need-me-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/m3b-overview-4-home-weekly-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/m3b-overview-4-home-weekly-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/round-2/m3b-r2-1-row-states-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/round-2/m3b-r2-1-row-states-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/round-2/m3b-r2-2-sheet-before-launch-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/round-2/m3b-r2-2-sheet-before-launch-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/round-2/m3b-r2-3-sheet-day5-one-outside-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/round-2/m3b-r2-3-sheet-day5-one-outside-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/round-2/m3b-r2-3b-sheet-day5-first-screen-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/round-2/m3b-r2-3b-sheet-day5-first-screen-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/round-2/m3b-r2-4-sheet-after-14-days-one-missed-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/round-2/m3b-r2-4-sheet-after-14-days-one-missed-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/round-2/m3b-r2-5-weekly-figures-trial-weeks-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-picture/round-2/m3b-r2-5-weekly-figures-trial-weeks-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-vt1/01-row-5b-day5-one-outside-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-vt1/02-sheet-day5-one-outside-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-vt1/03-sheet-after-14-days-two-not-measured-360x740-light-full-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-vt1/04-sheet-before-launch-360x740-dark-full-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-vt1/05-sheet-after-14-days-one-missed-414x896-dark-full-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-vt2/01-card-sheet-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-vt2/02-card-sheet-marked-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-vt2/03-question-sheet-marked-360x740-dark-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-vt2/04-gate-kicked-back-sheet-marked-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-vt2/05-targets-sheet-not-noted-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-vt3/01-home-one-week-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-vt3/02-home-eight-weeks-six-before-launch-360x740-dark-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-vt3/03-sheet-weekly-eight-weeks-trial-grouped-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3b-vt3/04-sheet-weekly-one-week-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-1/after-deploy-sheet-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-1/after-page-waits-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-1/after-w2-cant-never-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-1/after-w5-cant-after-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-1/before-deploy-sheet-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-1/before-page-waits-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-1/before-w2-cant-never-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-1/before-w5-cant-after-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-2/after-reload-c-dh-all-escape-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-2/after-reload-c-dh-all-escape-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-2/after-reload-c-info-A-escape-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-2/after-reload-c-info-A-escape-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-3/after-s3-home-grouphead-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-3/after-s3-plan-groups-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-3/after-s3-plan-groups-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-3/after-s3-tl-top-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-4/after-r2-now-sheet-after-reload-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-4/after-s4-cos-fifth-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-4/after-s4-team-folded-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-4/after-s4-team-opened-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-5/after-s5-board-cut-due-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-5/after-s5-copy-gate-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-5/after-s5-copy-in-choice-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-5/after-s5-default-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-6a/after-ordering-360-light-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-6a/after-pfcard-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-6a/after-two-gates.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-6b/after-load-states.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3d-7/after-rarer-records-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g1/01-count-and-due-lines-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g1/02-stall-tile-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g1/03-cant-read-tile-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g1/04-cant-read-with-cards-waiting-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g1/05-not-read-since-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g1/06-signed-out-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g1/07-at-work-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g1/08-since-two-lines-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g1/09-long-name-cant-read-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g1/10-due-line-on-the-tick-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g2/01-equal-lanes-done-shaded-new-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g2/02-kicked-back-strip-3-cards-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g2/03-kicked-back-5-cards-row-scrolls-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g2/04-kicked-back-one-project-360x740-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g2/05-quiet-kicked-back-none-360x740-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g2/06-signed-out-kicked-back-cant-read-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g2/07-md-extremes-25-waits-414x896-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g2/08-touch-drag-into-done-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g3/01-waiting-gate-cards-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g3/02-gate-sheet-title-and-opening-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g3/03-gate-sheet-no-case-line-414x896-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g3/04-plan-gate-rows-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g3/05-done-row-short-title-360x740-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g3/06-waiting-cards-without-case-lines-414x896-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g4/01-page-calm-row-and-last-action-date-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g4/02-page-ran-again-once-and-gate-name-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g4/03-timeline-opens-next-milestone-in-view-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g4/04-failed-load-reload-button-360x740-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g4/05-waits-row-two-gate-cards-414x896-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g4/06-member-page-dates-414x896-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g4/07-waits-row-ids-whole-360x740-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g5/01-page-milestone-counts-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g5/02-launch-f1-f2-opened-414x896-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g5/03-design-opened-rows-sprints-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g5/04-timeline-sprint-folds-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g5/05-details-ci-workflows-414x896-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g5/06-waits-row-gate-named-once-414x896-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g6/01-design-opened-two-groups-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g6/02-untracked-fold-opened-360x740-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g6/03-earlier-run-heads-and-fold-414x896-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g6/04-launch-as-mock-q5-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g6/05-every-line-written-made-up-414x896-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g6/06-timeline-standard-meta-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g7/01-page-reached-green-not-reached-red-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g7/02-timeline-sprint-marks-360x740-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g7/03-home-briefing-cant-read-x-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g7/04-plan-moved-edge-grey-reached-checks-414x896-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g7/05-sheet-ci-failing-x-360x740-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g7/06-gone-back-over-run-414x896-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g7b/01-two-unreadable-tile-order-NOT-real-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g7b/02-signed-out-three-projects-NOT-real-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g7b/03-list-full-under-more-NOT-real-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g7b/04-long-name-wraps-NOT-real-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g7b/05-cant-show-and-cant-read-NOT-real-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8/01-timeline-now-line-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8/02-page-strip-414x896-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8/03-opened-phase-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8/04-home-tiles-NOT-real-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8/05-plan-414x896-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8/06-plan-ordering-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8/07-home-unread-arrows-and-missing-line-NOT-real-360x740-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8b/01-moved-row-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8b/02-long-name-in-ordering-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8b/03-moved-row-is-next-to-reach-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8b/04-word-among-grey-lines-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8c/01-in-this-opening-everywhere-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8c/02-tile-order-and-not-shown-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8c/03-not-shown-under-nothing-new-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8c/04-line-stops-before-arrow-360-light-and-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8d/01-waiting-every-project-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8d/02-waiting-alone-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8d/03-waiting-every-project-round3-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8d/r1-01-home-group-head-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8d/r1-02-home-cap-versions-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8d/r1-03-waiting-in-this-opening-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g8d/r1-04-page-and-pipeline-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9/01-project-page-box-and-tally-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9/02-project-page-box-and-tally-414x896-dark-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9/03-opened-phase-why-line-plain-360x740-light-real-records-77bfeae.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9/04-project-with-nothing-recorded-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9/05-run-headings-outrank-414x896-light-real-records-77bfeae.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9b/g9b-home-failed-held-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9b/g9b-home-signed-out-360x740-dark-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9b/g9b-waiting-every-failed-414x896-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9b/g9b-waiting-failed-held-360x740-dark-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9b/g9b-waiting-one-checking-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9c/01-g9c-waiting-first-paint-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9c/02-g9c-waiting-agents-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9c/03-waiting-long-names-mixed-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9c/04-g9c-waiting-signed-out-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9c/05-round1-beside-round2-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9c/06-page-own-age-after-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3e-g9c/06-page-own-age-before-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-picture/m3g-f1-board-360-light-first-screen.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-picture/m3g-f1-board-360-light-full.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-picture/m3g-f1-board-414-dark-first-screen.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-picture/m3g-f3-one-alpha-360-light-full.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-picture/m3g-f4-empty-360-light-first-screen.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-picture/m3g-overview-first-screens-360-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-picture/m3g-overview-first-screens-360-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw1/01-qw1-busiest-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw1/02-qw1-busiest-folds-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw1/03-qw1-one-beta-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw1/04-qw1-empty-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw1/05-qw1-epsilon-choices-414x896-dark-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw1/06-qw1-kinds-360x740-dark-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw1/07-qw1-reload-words-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw2/01-qw2-one-alpha-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw2/02-qw2-busiest-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw2/03-qw2-sheet-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw2/04-qw2-held-sheet-360x740-dark-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw2/05-qw2-strip-order-a-360-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw2/05-qw2-strip-order-b-360-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw3/01-qw3-busiest-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw3/02-qw3-one-alpha-414x896-dark-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw3/03-qw3-held-sheet-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/m3g-qw3/04-qw3-blocker-sheet-360x740-light-MADE-UP-NOT-real.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-2/beside-H1-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-2/beside-H3-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-2/beside-H5-360.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-2/beside-H5-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-2/sd-home-1024x768-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-2/sd-home-414x896-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-2/sd-home-720x1024-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-3/beside-5-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-3/beside-6-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-3/beside-7b-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-3/beside-8-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-3/pr40-marks-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-3/v25-unread-page-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-4/beside-3-question-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-4/beside-3b-settles-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-4/beside-4-gate-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-4/gate-choices-414x896-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-4/q-numbered-fold-open-414x896-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-4/q-unsplittable-file-414x896-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-5/beside-11-plan-plan-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-5/beside-11-plan-plan-gate-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-5/beside-11-plan-plan-two-projects-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-6a/beside-H4-example-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-6a/beside-H4-today-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-6b/beside-11-plan-plan-ideas-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-6b/beside-H4-home-portfolio-foot-home-foot-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-6b/beside-H4-home-portfolio-foot-home-foot-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-6b/beside-H4-home-portfolio-foot-home-foot-access-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-6b/board-portfolio-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-7/beside-12-team-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-7/beside-12-team_orchestrator-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-7/beside-12-team_owner-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-8/beside-1-waiting-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-8/beside-5-team-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-8/beside-H1-home-414-light.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/builds/stage-8/beside-H2-home-414-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/a-five-waiting-360.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/a-five-waiting-414-v2.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/a-five-waiting-414-v3.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/a-five-waiting-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/b-mid-drag-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/board-360-v5.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/board-414-v5.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/board-dark-414-v5.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/c-two-checking-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/c-two-marked-done-414-v3.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/d-kicked-back-414-v2.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/d-kicked-back-414-v3.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/d-still-waiting-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/e-nothing-waiting-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/f-dark-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/g-130-after-verdict-414-v3.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/option1-360-v4.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/option1-414-v4.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/option1-dark-414-v4.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/option1-sheet-414-v4.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/option2-360-v4.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/option2-414-v4.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/option2-drag-414-v4.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/option2-mid-swipe-414-v4.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/page-1024-v4.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/sheet-414-v5.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/wide-1024-v2.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/wide-1024-v3.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/wide-1024.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/board/wide-414-v3.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/1-waiting-360.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/1-waiting-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/11-plan-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/12-waiting-dark-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/2-waiting-one-project-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/3-question-sheet-irreversible-360.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/3-question-sheet-irreversible-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/3b-question-sheet-settles-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/4-gate-sheet-360.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/4-gate-sheet-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/5-project-service-desk-360.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/5-project-service-desk-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/6-standard-milestones-open-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/6b-standard-skipped-members-letter-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/7a-timeline-colour-labels-360.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/7a-timeline-colour-labels-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/7a-timeline-colour-labels-full-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/7b-timeline-grey-labels-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/7b-timeline-grey-labels-full-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/7c-current-timeline-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/8-project-poom-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/9-project-members-letter-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/H1-home-360.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/H1-home-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/H2-home-dark-360.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/H2-home-dark-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/H3-home-all-clear-360.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/H3-home-all-clear-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/H4-home-portfolio-foot-360.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/H4-home-portfolio-foot-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/H5-home-tiles-360.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/desk-v2/H5-home-tiles-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/01-stall-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/01-stall-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/02a-cant-read-tile-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/02a-cant-read-tile-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/02b-signed-out-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/02b-signed-out-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/03-count-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/03-count-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/04-lanes-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/04-lanes-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/05a-gate-board-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/05a-gate-board-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/05b-gate-sheet-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/05b-gate-sheet-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/05c-gate-plan-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/05c-gate-plan-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/06-since-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/06-since-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/07-timeline-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/07-timeline-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/08a-nothing-waiting-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/08a-nothing-waiting-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/08b-ran-again-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/08b-ran-again-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/09-at-work-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/09-at-work-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/10-failload-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/10-failload-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/11-new-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/11-new-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/12a-kick-strip-empty-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/12a-kick-strip-empty-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/12b-kick-strip-cards-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/12b-kick-strip-cards-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/12c-kick-strip-cards-p4-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/12c-kick-strip-cards-p4-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-failload-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-failload-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-failload-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-failload-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-gate-sheet-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-gate-sheet-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-gate-sheet-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-gate-sheet-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-ext-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-ext-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-ext-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-ext-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-mix-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-mix-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-mix-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-mix-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-signed-out-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-signed-out-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-signed-out-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-signed-out-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-stall-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-stall-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-stall-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-stall-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-unread-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-unread-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-unread-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-home-unread-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-plan-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-plan-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-plan-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-plan-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-project-alpha-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-project-alpha-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-project-alpha-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-project-alpha-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-project-sd-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-project-sd-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-project-sd-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-project-sd-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-timeline-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-timeline-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-timeline-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-timeline-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-waiting-ext-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-waiting-ext-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-waiting-ext-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-waiting-ext-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-waiting-mix-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-waiting-mix-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-waiting-mix-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/all-waiting-mix-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q1-disc-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q1-disc-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q1-home-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q1-home-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q1-tl-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q1-tl-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q2-page-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q2-page-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q3-home-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q3-home-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q3-page-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q3-page-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q3-plan-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q3-plan-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q3-timeline-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q3-timeline-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q4-counts-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q4-counts-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q5-design-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q5-design-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q5-launch-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2-q5-launch-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-home-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-home-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-home-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-home-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-openBuild-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-openBuild-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-openBuild-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-openBuild-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-openDesign-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-openDesign-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-openDesign-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-openDesign-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-page3-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-page3-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-page3-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-page3-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-plan-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-plan-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-plan-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-plan-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-timeline-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-timeline-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-timeline-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-mix-timeline-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-text-openLaunch-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-text-openLaunch-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-text-openLaunch-light-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r2all-text-openLaunch-light-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r4c-cards-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r4c-cards-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r4c-dark-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r4c-dark-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r4c-empty-after.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/glance-emphasis/shots/r4c-empty-before.webp",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/linear-inspired/1-waiting-lanes.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/linear-inspired/2-waiting-grouped.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/linear-inspired/3-card-sheet.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/linear-inspired/4-snooze-proposal.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/linear-inspired/5-plan.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/linear-inspired/6-project-page.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/linear-inspired/7-all-clear.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/linear-inspired/8-grouped-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/notify-more-detail/home-installed-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/notify-more-detail/home-safari-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/redesign/1-waiting.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/redesign/2-card-sheet.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/redesign/3-plan.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/redesign/4-projects.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/redesign/5-project-page.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/redesign/6-details.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/redesign/7-all-clear.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/redesign/8-waiting-dark.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/work-ahead-home/home-today-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/mockups/work-ahead-home/home-with-work-ahead-414.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/01-home-overview-abode.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/02-project-phases-lifesum.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/03-team-agents-bevel.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/04-timeline-structured.jpg",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/05-breakdown-tasks-tiimo.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/06-queue-monday.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/07-response-card-linear.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/08-home-phase-checklist-start.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/09-home-phase-checklist-done.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/10-agent-log-branch-timeline.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/trial-view/2026-10-14-merge-sheet-1127.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/trial-view/2026-10-14-queue-1128.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/trial-view/2026-10-14-status-1119.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/trial-view/2026-10-14-team-log-1130.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/trial-view/2026-10-14-timeline-1131.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/trial-view/2026-10-14-timeline-1133.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/trial-view/2026-10-16-answer-choices-1030.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/trial-view/2026-10-16-release-changelog-example.png",
+   "reason": "a design image"
+  },
+  {
+   "path": "docs/design/references/trial-view/2026-10-16-status-phases-0649.png",
+   "reason": "a design image"
+  }
+ ],
+ "limits": {
+  "change_set_bytes": 134217728,
+  "change_set_files": 500,
+  "check_run_minutes": 20,
+  "file_bytes": 1048576,
+  "path_bytes": 1024,
+  "path_part_bytes": 255,
+  "record_bytes": 1048576
+ },
+ "role": "checks",
+ "session": "P-003:build-to-checks:2026-11-11T07:14:54Z",
+ "source_tip": "09ed4196875b9855afc2955f92fb64073668ac81"
+}

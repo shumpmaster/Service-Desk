@@ -2,14 +2,14 @@
 kind = "project"
 stage = 5
 state = "dispatched"
-role = "builder"
+role = "checks"
 last_verdict = "none"
 plan_round = 1
 build_round = 0
 confirm_used = false
 attempts = 0
 sessions = 1
-dispatched_at = "2026-11-11T07:08:27Z"
+dispatched_at = "2026-11-11T07:14:54Z"
 card = 13
 gate_n = 3
 spec = "S-007"

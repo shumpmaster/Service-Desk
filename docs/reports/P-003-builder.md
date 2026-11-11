@@ -1,32 +1,30 @@
-I stopped before changing anything. I can't do the build in this session, so nothing is built and nothing was run.
+I changed nothing. The check run fails on two governance checks, and neither can be fixed from my lane (`src/**`, `tests/**` excluding `tests/acceptance/**`, `docs/handover/**`).
 
 **1. What I changed**
-Nothing. I wrote no files under `src/`, `tests/` or `docs/handover/`.
+Nothing. I made no edits and discarded nothing (the log says "Discarded from the builder's last change set: none").
 
 **2. Why**
-- **No shell.** I only have Read, Write, Edit, Glob and Grep. I can't run `node --test tests/acceptance/S-007/`, run `tests/acceptance/S-007/record-baseline.mjs`, or run git.
-- **The baseline can't be recorded.** S-007 says the baseline runs of the desk and the sender are recorded and committed before any change under `src/`. The locked checks enforce it in `baseline-provenance.test.mjs`. The baseline is a JSON file of recorded outputs from the unchanged code. I can't run that code, so I can't produce it.
-- **The workspace is not a git repository.** I can't commit to `build/builder/P-003`, so the baseline can't be committed first. The `Agent-Session` and `Spec` trailers can't be added either.
-- **Writing the rule first would break the order.** The spec requires the baseline to come first, and AC9 and AC14 to AC17 are checked against it. Changing `src/` first would leave those criteria uncheckable. I did not do that.
-- **The seam is missing.** Every locked check imports `tests/desk/s007-seam.mjs`, and that file doesn't exist. It's mine to write (README, "Why there is a seam"). It has to drive the real log reader, file-tree read, card sheet and sender. Without running anything I can't confirm it works at the base commit, and that is a precondition for the baseline.
+The log in `reviews/S-007/checks.txt` ends with `verdict: FAIL`. Two checks failed and twelve passed.
+- **`surface_guard check`:** 12 violations. Lines 126–135, 137 and 138 of `governance/SURFACES.md` are exemptions that cite L-0024 to L-0033, L-0035 and L-0036. Those IDs are not entries in `docs/LEDGER.md`, which has 26 well-formed entries. A Grep count of those IDs in the ledger returned 1. That count is one matching line, not one matching ID. I didn't confirm which IDs are present.
+- **`digest check`:** 2 violations.
+  - `digest/project.md` is missing, out of date or hand-edited, and needs `digest.py build`.
+  - `digest/p-004.md` is a stale pack with no active ruling or kill for its scope, and should be deleted or rebuilt.
+
+`governance/SURFACES.md` is generated and not mine to edit. `digest/` is outside my write lane. The failures are not in the product work. Everything else passed, including the trace and joins checks for the 19 criteria and 6 joins.
 
 **3. What I verified**
-Nothing ran. I read `specs/S-007.md`, the S-007 README, `lib.mjs` and `scenarios.mjs`. I also confirmed that `tests/desk/s007-seam.mjs` and `tests/desk/S-007-baseline.json` don't exist yet. `src/lib/`, `src/public/` and `tests/desk/` do exist.
+- I read the whole log and grepped it for FAIL and the verdict lines. That is all I did, and I ran no commands of my own.
+- I did not check whether my build satisfies the frozen spec S-007, because I never opened the spec or the product files.
 
 **4. What is undone**
-All of it:
-- the seam (`tests/desk/s007-seam.mjs`);
-- the recorded baseline (`tests/desk/S-007-baseline.json`);
-- the rule in `src/lib/`;
-- the views, including `src/public/sandbox.js` and its generated copies;
-- the tests under `tests/desk/`;
-- the operating notes under `docs/handover/`.
+- Both failing checks remain failing.
+- I did not run a stage-5 handback check or write a handover package.
 
-**5. What is needed outside my lane**
-- A builder session with a shell and a git checkout of the base commit on `build/builder/P-003`.
-- The order for that session: write the seam, run `record-baseline.mjs`, commit the baseline, then make the `src/` changes.
-- The session needs `fetch-depth: 0` for the provenance checks.
+**5. Needed outside my lane**
+- The owner of `governance/SURFACES.md` needs to do one of two things. Either add ledger entries L-0024 to L-0033, L-0035 and L-0036, or correct or remove the exemptions that cite them.
+- The owner of `digest/` needs to run `digest.py build` to regenerate `digest/project.md` and clear `digest/p-004.md`.
+- I'd then like the check re-run.
 
 **6. Open questions**
-- Should I be re-dispatched with shell and git access? Or should the owner treat this as an environment fault, not a stop under the stop rule?
-- Do the seam and baseline need to be done by me, or has someone already produced them on a branch I can't see?
+- Were the missing ledger entries ever written to `docs/LEDGER.md`, or were they lost? The check ran on a fresh one-commit copy of the tree, so its history was cut short, though ledger entries shouldn't depend on history.
+- Is the Chief of Staff or the Reviewer the right owner for these two governance fixes?

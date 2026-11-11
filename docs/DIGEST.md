@@ -1,5 +1,5 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-11-10: 38 active rulings and 0 kills, from 40 ledger entries.
+As of 2026-11-11: 39 active rulings and 0 kills, from 41 ledger entries.
 
 ## Active rulings
 
@@ -52,6 +52,7 @@ As of 2026-11-10: 38 active rulings and 0 kills, from 40 ledger entries.
 | L-0038 | governance/checks/v3_checks.py `check_scope` bounds a spec-scoped commit by the Check author, like one by the Definer, by that role's own surface, and reports such paths in … | 2026-11-09 | never |
 | L-0039 | governance/PACKS.toml `[roles.check-author]` may_read gains tests/acceptance/** and checks/**, the paths the Critic, Builder and Reviewer already read; holdouts are always excluded and its must_not_see (src/**, docs/handover/**, … | 2026-11-09 | never |
 | L-0040 | governance/PACKS.toml `[roles.critic]` may_read gains specs/**; its must_not_see (docs/reports/**, docs/briefs/**) is unchanged, and the critic-triage and critic-gate entries are unchanged. Measured with `session_runner.py pack` for the … | 2026-11-10 | never |
+| L-0042 | Raise it in the operating model (Personal-Org-Operating-Model docs/LESSONS.md LL-045, #55) and record it here; the timer, the chain cap and the workflows stay as they … | 2026-11-11 | never |
 
 ## Kills
 None.

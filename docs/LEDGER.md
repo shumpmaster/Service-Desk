@@ -562,3 +562,17 @@ options_considered: No fix, with the next spec dropping its "unchanged" claim (b
 decided_by: owner ("A: approve the fix (Recommended)", 2026-11-10, asked in session session_01QBwHGN37HCacjWVWzYVhq5; recorded in decisions/questions/P-003-critic-superseded-specs.md)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0042 — The loop's timer gaps are raised in the operating model; nothing on the desk changes
+date: 2026-11-11
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The loop's timer (.github/workflows/orchestrator.yml, every 30 minutes) fired about 40 times from 2026-10-31 15:02Z to 2026-11-10 11:30Z, 4 to 8 hours apart. With the chain cap of five self-starts (model S-015 AC10), ready work waits for it: three stalls on 2026-11-09, and on 2026-11-10 the Critic's dispatch for S-007 waited from 13:23Z to 19:19Z. Raise it upstream, add a desk alert too, or leave it? Filed first as questions/orchestrator-schedule-gaps.md (#348).
+decision: Raise it in the operating model (Personal-Org-Operating-Model docs/LESSONS.md LL-045, #55) and record it here; the timer, the chain cap and the workflows stay as they are. The Chief of Staff reports stalls each session; a manual start stays the owner's call.
+licenses_next: The model's owner decides how the loop resumes after the cap. This entry is numbered above both main (L-0040) and item/P-003 (L-0041), whose ledgers already share L-0034, L-0037, L-0038 and L-0040 (raised as LL-046).
+options_considered: The same plus a desk item to alert the owner when the loop stops at the cap with work ready (a new spec competing with P-003 for runs); leave it unrecorded.
+decided_by: owner ("A: raise upstream (Recommended)", 2026-11-10, asked in session session_01QBwHGNGhaxp9ABH6WFJJE2; recorded in decisions/questions/orchestrator-schedule-gaps.md)
+proposed_by: chief-of-staff
+reversibility: reversible

@@ -1,4 +1,5 @@
 Ruling: A — fix both faults, then build: re-prove the runner image and record it, and make the check run's copy keep main's ledger
+Proxy: done at the owner's request (the owner picked an option in the session on 2026-11-11; the question, the options as put and the owner's answer are quoted verbatim below)
 
 Question: questions/P-003-build-blocked.md (filed in #353, removed here)
 Milestone: M4

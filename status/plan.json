@@ -1,11 +1,11 @@
 {
   "entries": [
     {
-      "action": "run-checks",
+      "action": "dispatch",
       "gate": null,
       "item": "P-003",
-      "role": "checks",
-      "route": "build-to-checks",
+      "role": "critic-triage",
+      "route": "third-fail",
       "spec": "S-007",
       "stage": 5
     },
@@ -13,8 +13,8 @@
       "action": "dispatch",
       "gate": null,
       "item": "Q-022",
-      "role": "researcher",
-      "route": "source-fail",
+      "role": "source-checker",
+      "route": "research-to-source",
       "spec": null,
       "stage": 2
     }

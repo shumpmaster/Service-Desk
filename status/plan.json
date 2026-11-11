@@ -5,7 +5,7 @@
       "gate": null,
       "item": "P-003",
       "role": "builder",
-      "route": "checks-run-fail",
+      "route": "ready-dispatch",
       "spec": "S-007",
       "stage": 5
     },
@@ -14,7 +14,7 @@
       "gate": null,
       "item": "Q-022",
       "role": "source-checker",
-      "route": "research-to-source",
+      "route": "ready-dispatch",
       "spec": null,
       "stage": 2
     }

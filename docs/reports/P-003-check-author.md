@@ -1,37 +1,49 @@
-Neither of the two conditions I need is met, so I'm stopping and reporting back instead of editing.
+I've written the locked checks for S-007, but none of them has been run, and nothing is committed. I only had file read/write/search tools here, with no shell, Node or git, and this folder isn't a git repository.
 
-## 1. What I changed
-Nothing. I wrote no files and made no commits.
+**1. What I changed**
+- I added a new folder, `tests/acceptance/S-007/`, with 15 files:
+  - one test file for each join sheet, each marked `join-test: S-007/J<n>` for J1 to J6;
+  - test files for AC1–AC8, AC9–AC10, AC11, AC14–AC15 and AC16–AC17;
+  - a check that the baseline file was recorded properly;
+  - the baseline recorder, the shared inputs, helpers, and a README that sets out what the Builder's adapter must provide.
+- I added `checks/S-007/rubric.md`: a checklist for the reviewer covering the criteria a test can't fully check (AC10's static part, AC12, AC13's static part, AC18, AC19, "one rule in one place", and that the locked checks and baseline are untouched).
+- I added `checks/S-007/mutants.md`: 37 deliberately broken versions, each tied to the test that must catch it.
+- I left the existing S-005 checks alone, since they are locked.
 
-## 2. Why
-- **The checks aren't in my pack.** The critic's findings point at `tests/acceptance/S-005/*.test.mjs`, `checks/S-005/rubric.md` and `checks/S-005/mutants.md`. None of these are in the folder, and neither are `README.md`, `record-baseline.mjs` or the seam. I can't revise files I can't read. Writing a new test blind against a seam and baseline format I've never seen would likely break or check the wrong thing.
-- **The checks are locked, and changing them isn't my call.** My role card says never to edit a check once it's locked; a new spec replaces it. The playbook (`docs/playbooks/software.md:238`) treats any change after lock as high-risk, needing the owner's approval. The critic asks the same thing (open question 1). The brief says "revise", but it doesn't override that rule, so this goes back through the stop rule (D-044).
+**2. Why**
+- The spec is frozen. Its header says `work-type: fix` but has no `fixes:` line, so I wrote a complete set of checks for it rather than a single defect check.
+- **AC13, the one criterion S-007 changed, now has three cases.** The test builds a sample main-branch history and works out J6's check moments from it. At each moment it runs the real rule through the adapter and checks each card's id, raise time and state. It then checks both figures:
+  - V6 held-too-long: none;
+  - held a day after reaching the main branch: case (a) only.
+  - Case (a) is J6's first worked example: the card arrives at 2026-11-10 10:00, its log entry records 2026-11-11 09:00, it is held at 2026-11-11 10:00 and shown at 2026-11-12 09:00.
+  - Case (c) is reported as `not recorded`, shown at once, and in neither figure.
+- **Where I tightened the checks compared with S-005's:**
+  - the V6 due time comes from the raise time the rule reports, so it is always the rule's own pick;
+  - the monitoring run must exclude gate cards and keep nothing between runs;
+  - AC2's "says the Chief of Staff recommends that word" is checked properly, not by any mention of the word;
+  - new sender sequences cover a card first shown after a day, and a card leaving the list because its notes couldn't be read;
+  - a failed notes file for a card no longer in queue/ must hide nothing;
+  - new J2 cases: `# Recommendation:`, `## **Recommendation:**`, and a word that only matches the start of a card word.
 
-## 3. What I verified
-- Searched the whole pack for test and check files: none found. The only files that mention `baseCommit` are the critic's review, the spec, the brief and my agent file.
-- Read `specs/S-005.md` in full. Line 23 defines the base commit as "the main-branch commit the build starts from". Line 208 relies only on the Reviewer to catch "a baseline recorded from the wrong code". So the critic's blocking finding holds against the spec: no locked check pins the base commit independently.
-- Checked the playbook's rules on locked checks (lines 238 and 313).
-- I ran no tests, because there is no code or test harness here and no git.
+**3. What I verified**
+- I read the spec, the playbook, the README of locked tests and every S-005 check file.
+- I searched the S-007 folder: all six join marks are present, and nothing imports S-005.
+- I checked every import against what the helper file exports.
+- I traced each J6 check moment and expected state by hand, including that M3 (`>` instead of `>=`) makes case (b) a V6 miss, so it gets caught.
+- I could not run `node --test`, and could not test the broken versions against a build, because no build exists yet.
 
-## 4. What is undone
-- **Blocking: pin the base commit.** The fix I'd propose for a new spec or an approved change: the check reads the baseline file's base commit and requires that it equal `git merge-base origin/main HEAD`, taken at the build branch's first commit, or a hash fixed at freeze.
-  - It also requires the file that runs the baseline (`record-baseline.mjs`) to have no changes between that commit and the commit that added the baseline.
-  - The test that `src/notify/**` is unchanged should diff against the same pinned commit.
-  - A new mutant would move the declared base commit forward, and the check must catch it.
-- **Gaps in the failed-reads test (AC16/AC17):**
-  - add a case where queue/ and the dispatch log both fail;
-  - add a case where the log fails and a decision card's notes exist but have no recommended word (AC6 with AC17), so the card stays hidden.
-- **AC13 on old records:** add a test that runs the rule on records from a commit before M4 went live.
-- **Mutant table:** it still needs an actual run. M1–M30 are confirmed caught only by the critic reading the tests.
+**4. What is undone**
+- Committing to `build/check-author/P-003` as `check-author <check-author@agents.invalid>` with the `Agent-Session:` trailer. I had no git, and I don't know the session id.
+- A first run of the suite and of the broken versions once the Builder's adapter (`tests/desk/s007-seam.mjs`) and the baseline file exist.
 
-## 5. What is needed outside my lane
-- **Owner, through the Orchestrator:** decide whether this is a superseding spec or an approved change to the locked checks.
-- **Definer, if it's a new spec:** pin the base commit in the criteria, ideally replacing the Reviewer-only safeguard at spec line 208.
-- **Next brief to me:** include the existing S-005 checks, the README and the baseline recorder (`record-baseline.mjs`). The Builder's code must stay out of it.
-- **Build gate case:** record that AC12, AC18, AC19 and the static part of AC10 are covered only by the rubric. No automated test guards them; they rely on the Reviewer reading the build.
+**5. Needed outside my lane**
+- **Orchestrator:** commit these files on my build branch with my identity and session id, and record the "path set at freeze" as `tests/acceptance/S-007/` plus `checks/S-007/`.
+- **Builder:**
+  - write the adapter at the base commit (README, "The seam contract"), with the card sheet's text split into its visual lines;
+  - run `record-baseline.mjs` and commit `tests/desk/S-007-baseline.json` before any change under src/.
+- **CI:** run with full git history (`fetch-depth: 0`).
 
-## 6. Open questions
-1. Should the base commit be pinned with a new spec, or by changing the locked checks with the owner's approval?
-2. What should the base commit be pinned to: the merge-base with main, or a hash fixed at freeze? The spec's header says no hash exists yet, so the merge-base looks like the only workable choice.
-3. Should rubric-only coverage go into the Build gate case as a known risk?
-4. When the log has two entries for one card (the spec's own open question 6), the spec says the rule picks the earlier raise time. The critic found the J1 test follows whatever the seam reports. Should that test assert the earlier entry outright? That would also be a change to a locked check.
+**6. Open questions**
+1. I read J2's strip rule as allowing heading marks followed by bold marks (`## **Recommendation:**` gives `drop`). If the spec meant only one kind of mark, that test is stricter than intended.
+2. J5 says a held card "is not on the list" the sender takes, but J3's list carries held cards with the state `held`. The tests accept either, as long as no held card is notified or listed as shown.
+3. The AC2 test needs a line naming the Chief of Staff and saying "recommend", with the word on that line or the next. The spec doesn't fix the wording, so the Builder should know this is what's checked.

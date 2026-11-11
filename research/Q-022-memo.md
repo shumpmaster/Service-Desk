@@ -1,8 +1,8 @@
-I've revised the Q-022 groundwork map; the full text is below for the Orchestrator to record. Six of the seven failed items are now fixed or downgraded. The seventh, re-reading through the summarising tool, can't be fixed in my lane. Two of my earlier claims were wrong and are now removed. The map now has 51 questions; the question list and shortlists are otherwise unchanged.
+I've re-read the three sources behind the two failed items, and they confirm both of the source checker's findings. Below is the revised memo in full for the Orchestrator to record; after it comes the six-part contract.
 
 ---
 
-# Groundwork map — Q-022 — how one overseer follows many parallel pieces of delegated work, and sees which steps wait on them — 2026-11-11 (revision 2)
+# Groundwork map — Q-022 — how one overseer follows many parallel pieces of delegated work, and sees which steps wait on them — 2026-11-11 (revision 3)
 
 This is a map of questions, not graded fact.
 
@@ -39,8 +39,12 @@ This is a map of questions, not graded fact.
   - Overrides of 49–96% were driven mostly by low signal-to-noise (F-alert-override-01, B).
   - Which events qualify here: unknown, answered by O
 - C2 Is there a ceiling on interruptions per day? — avoids an alarm flood; sets the threshold. Known from process-plant operations:
-  - EEMUA 191 treats less than one alarm per 10 minutes in steady state as "very likely to be acceptable". After a major upset it treats fewer than ten alarms in the first 10 minutes as "should be manageable, but may be difficult". Sources: humanfactors101.com alarms page and a Control Global article on ASM guidelines and ISA-18.2, two independent secondary sources that agree. The standard itself is paid. Grade C.
-  - A widely used flood threshold: a flood starts when more than 10 new alarms arrive in a 10-minute period, and ends when a 10-minute period has fewer than 5. The figure agrees across sources, but the attribution conflicts. An ISA-CAP study guide (open-exam-prep.com) attributes it to ISA-18.2. Kim VanCamp ("Alarm Management by the Numbers", Chemical Engineering, 1 Mar 2016) attributes it to EEMUA 191. Grade C.
+  - EEMUA 191 treats less than one alarm per 10 minutes in steady state as "very likely to be acceptable". After an upset it treats fewer than ten alarms in 10 minutes as "should be manageable, but may be difficult". Sources: the humanfactors101.com alarms page gives the rates, and a Control Global article (Doug Metzger, 13 Oct 2009) gives the rates with this wording. These are two independent secondary sources that agree; the second is from 2009. The standard itself is paid. Grade C.
+  - Flood threshold: more than 10 alarms in a 10-minute period counts as a flood. Two sources give this:
+    - An ISA-CAP study guide (open-exam-prep.com) gives it as ISA-18.2's figure and also lists it in a table of EEMUA 191 / ISA-18.2 benchmarks.
+    - Kim VanCamp ("Alarm Management by the Numbers", Chemical Engineering, 1 Mar 2016) attributes it to EEMUA 191.
+    - Grade C.
+  - Flood end: only VanCamp gives a rule for when a flood ends, at the first 10-minute period with fewer than five new alarms, and he attributes it to EEMUA 191. He also says that defining a flood simply as a 10-minute period with more than 10 new alarms is "equally acceptable". Single secondary source, grade C.
   - These figures are for a full-time control-room operator, not a part-time owner. The owner's own ceiling is unknown.
   - Answered by O / E
 - C3 Should pushes be batched into a digest at set times rather than sent as they happen? — digest or live; design. Known: phone notifications batched three times a day improved self-reported attention and stress against controls, and no notifications at all raised anxiety (F-batch-notify-01, B; wellbeing outcomes only). Answered by O / E
@@ -135,7 +139,7 @@ This is a map of questions, not graded fact.
 
 ### O. Other fields
 - O1 How do CI run views, history graphs, kanban boards, and air-traffic and operations displays show one decision-maker many parallel flows, and where did they mislead, overload or get ignored? — design traps. Known cases:
-  - **Milford Haven, 1994.** HSE lists "Excessive number of alarms in emergency situation reduced effectiveness of operator response" (hse.gov.uk case study, B). The figure of 275 alarms in the last 11 minutes appears only on humanfactors101.com, citing HSE (C).
+  - **Milford Haven, 1994.** HSE lists "Excessive number of alarms in emergency situation reduced effectiveness of operator response" (hse.gov.uk case study, B). humanfactors101.com says the two operators faced 275 alarms in the last 11 minutes. It gives no specific source for that figure, only a general "(HSE, 1997)" reference for the incident, and HSE's case-study page does not give it. Grade C, figure unsourced.
   - **Air traffic (FAA, 2005).** In an FAA human-in-the-loop simulation with 12 controllers, URET and CPDLC caused no display clutter alone, but "both tools in combination made it difficult for D-side controllers to find the information they needed quickly". Source: Sollenberger et al., DOT/FAA/CT-TN04/28, Feb 2005, abstract on rosap.ntl.bts.gov. Grade B: one primary study, small sample, abstract only (the PDF did not render).
   - **President's Daily Brief, 6 Aug 2001.** The item went without follow-up: it was the 36th related item that year and was read as "historical in nature" (F-briefing-case-pdb-01, B).
   - A systematic scan of these fields: unknown; answered by R
@@ -211,14 +215,17 @@ Suggested experiments:
 - **F (fact):** The Kanban Guide (2025 edition) has four mandatory flow measures: WIP, Throughput, Work Item Age and Cycle Time. Work Item Age is "the elapsed time between when a work item started and the current date".
   - Sources: https://kanbanguides.org/english/ ; https://prokanban.org/the-kanban-guide/ (the same guide by the same authors, so a single authority)
   - Grade B. Shelf life 36 months. Topics: dashboards, monitoring.
-- **F (fact):** EEMUA 191 treats less than one alarm per 10 minutes in steady state as "very likely to be acceptable", and fewer than ten alarms in the 10 minutes after a major upset as "should be manageable, but may be difficult".
-  - Sources: https://humanfactors101.com/topics/alarms/ ; https://www.controlglobal.com/protect/safety-instrumented-systems/article/11382017/alarm-management-asm-alarm-management-guidelines-and-isa-182-how-do-they-stack-up-control-global
-  - Grade C (two independent secondaries; the standard is paid). Shelf life 60 months. Topics: monitoring, notifications.
-- **F (fact):** A common alarm-flood threshold: a flood starts when more than 10 new alarms arrive in a 10-minute period, and ends at a 10-minute period with fewer than 5. Attribution conflicts: ISA-18.2 per open-exam-prep.com; EEMUA 191 per VanCamp, Chemical Engineering, 1 Mar 2016.
-  - Sources: https://open-exam-prep.com/study-guides/isa-cap/system-design-hmi-alarms-enterprise/alarm-management-isa182 ; https://www.chemengonline.com/?p=115704
-  - Grade C. Shelf life 60 months. Topics: monitoring, notifications.
-- **F (fact):** At Milford Haven (24 July 1994), HSE found "Excessive number of alarms in emergency situation reduced effectiveness of operator response". A secondary source, citing HSE, gives 275 alarms in the last 11 minutes before the explosion.
-  - Sources: https://www.hse.gov.uk/comah/sragtech/casetexaco94.htm (B, for the finding) ; https://humanfactors101.com/topics/alarms/ (C, for the figure)
+- **F (fact):** EEMUA 191 treats less than one alarm per 10 minutes in steady state as "very likely to be acceptable", and fewer than ten alarms in 10 minutes after an upset as "should be manageable, but may be difficult".
+  - Sources: https://humanfactors101.com/topics/alarms/ (rates) ; https://www.controlglobal.com/protect/safety-instrumented-systems/article/11382017/alarm-management-asm-alarm-management-guidelines-and-isa-182-how-do-they-stack-up-control-global (rates and wording; Doug Metzger, 13 Oct 2009)
+  - Grade C (two independent secondaries, one from 2009; the standard is paid). Shelf life 60 months. Topics: monitoring, notifications.
+- **F (fact):** A common alarm-flood threshold is more than 10 alarms in a 10-minute period.
+  - Attribution is mixed. An ISA-CAP study guide gives it as ISA-18.2's figure and also lists it in a table of EEMUA 191 / ISA-18.2 benchmarks. VanCamp (Chemical Engineering, 1 Mar 2016) attributes it to EEMUA 191.
+  - The end condition comes from VanCamp alone: a flood continues until a 10-minute interval with fewer than five new alarms, attributed to EEMUA 191. He adds that a flood can equally be defined simply as a 10-minute period with more than 10 new alarms.
+  - Sources: https://open-exam-prep.com/study-guides/isa-cap/system-design-hmi-alarms-enterprise/alarm-management-isa182 (threshold) ; https://www.chemengonline.com/?p=115704 (threshold and end condition)
+  - Grade C; the end condition rests on a single secondary source. Shelf life 60 months. Topics: monitoring, notifications.
+- **F (fact):** At Milford Haven (24 July 1994), HSE found "Excessive number of alarms in emergency situation reduced effectiveness of operator response".
+  - Source: https://www.hse.gov.uk/comah/sragtech/casetexaco94.htm (B)
+  - Not included as a fact: humanfactors101.com gives a figure of 275 alarms in the last 11 minutes. It states the figure without a specific citation; the page has only a general "(HSE, 1997)" reference for the incident. The figure stays unsourced until the HSE 1997 report is read.
   - Shelf life 120 months. Topics: monitoring.
 - **F (fact):** In an FAA human-in-the-loop simulation (12 air-traffic controllers), URET and CPDLC each caused no display clutter alone, but "both tools in combination made it difficult for D-side controllers to find the information they needed quickly".
   - Source: Sollenberger, Willems, Della Rocco, Koros, Truitt, DOT/FAA/CT-TN04/28 (Feb 2005), https://rosap.ntl.bts.gov/view/dot/71673
@@ -226,65 +233,6 @@ Suggested experiments:
 - **P (pattern):** Show each event with its record link, its author class (Orchestrator or agent) and its as-of time. Mark reconstructed steps as reconstructed. Interrupt only for new items the owner must act on, within a daily budget. Add panels only when tested together.
   - Opinion, grade C. Draws on P-stale-visible-01, P-notice-actionable-01, F-status-optimism-01, F-alert-override-01, F-supervisor-capacity-01 and the facts above.
   - This is an inference, not a finding, and it is untested for overseeing agents.
-
----
-
-1. **What I changed:**
-   - **Question count:** corrected to 51.
-   - **CI notifications (A4):**
-     - Watching a repository does not bring CI activity: GitHub lists CI activity as a separate subscription option.
-     - Added that workflow-run notifications go to whoever triggered the run.
-     - Removed the "5 months" retention figure.
-     - Rewrote the matching gap item and library entry.
-   - **Alarm figures (C2):**
-     - The flood threshold is now credited to the two sources I opened, with their disagreement over attribution (ISA-18.2 or EEMUA 191) stated openly.
-     - The EEMUA 191 rates now rest on two independent pages I opened. The ABB paper is gone.
-   - **Endsley (B3):** now cites the Wikipedia page I opened and the paper's details. It stays at grade C.
-   - **Air-traffic clutter (O1):** now cites the FAA report's abstract, which I read, with authors and report number; grade B. Added a matching design trap and library entry.
-   - **Milford Haven (O1):** split into the HSE finding, which I read on HSE's own page (B), and the 275-alarm figure, which only the secondary page gives (C).
-   - **Actions retention (E4):** added GitHub's 1 Oct 2026 change and shortened that entry's shelf life to 6 months.
-   - **Events API (E5):** removed my earlier claim that older Enterprise Server pages said 90 days. The 3.17 page says 30 days.
-   - **Single sources:** each single-source known item now says so.
-   - **Experiment E2:** now also checks whether old run links still work.
-2. **Why:** The source check found that seven sources did not say what I claimed. Two of my claims were simply wrong: the CI-activity one and the 90-day one. The others needed different or extra sources, a lower grade, or an open statement of their limits.
-3. **What I verified (fetch and search tools only; no commands run):**
-   - **GitHub notifications:**
-     - The about-notifications page lists "CI activity" separately and says 3 months.
-     - The configuring-notifications page says 3 months.
-     - The workflow-run notifications page sends them to whoever triggered the run, or the cron author.
-   - **GitHub retention:** the retention page gives the 1 Oct 2026 text quoted in E4.
-   - **Events API:** the Enterprise Server 3.17 page says 30 days, 300 events, 30 s to 6 h.
-   - **Alarm sources:**
-     - The ISA study guide gives the >10-in-10-minutes flood definition.
-     - Control Global gives the EEMUA "very likely acceptable" and "manageable" figures.
-     - The Chemical Engineering article (VanCamp, 2016) credits the flood definition to EEMUA 191.
-   - **Endsley:** Wikipedia gives the three levels, citing Endsley 1995a/b.
-   - **FAA report:** its landing page gives the abstract quoted in O1.
-   - **Kanban:** prokanban.org gives the same guide text as kanbanguides.org.
-   - **Milford Haven:** HSE's case study page has the "excessive number of alarms" line but not the 275 figure.
-   - **What failed:**
-     - The ABB and FAA PDFs did not render, because the PDF reader isn't installed here.
-     - The exida tag page had no definition.
-     - Every page was read through a summarising tool.
-4. **What is undone:**
-   - **Single-source facts:** I found no independent second source for GitHub's own limits (Events API, retention). Only the vendor states these, so they stay at B on vendor pages alone.
-   - **Kanban:** it is a single authority.
-   - **Unopened sources:**
-     - the full text of the FAA report
-     - the HSE full report holding the 275 figure
-     - Endsley 1995 itself
-     - EEMUA 191 and ISA-18.2, which are paid
-   - **Outside my pack:** everything that depends on records I can't see (D1, E1, G3, K1).
-5. **Needed outside my lane:**
-   - **Source checker:** re-check the revised entries, ideally reading raw page text, since we both used the same summarising tool.
-   - **Owner decision card:** buying EEMUA 191 or ISA-18.2 would settle the attribution conflict.
-   - **PDF reading:** a source checker able to read PDFs could check the FAA full text, the HSE report and the ABB paper.
-   - **Experiments:** E1 to E3 need registering.
-   - **Routing and dispatch log:** whoever may read ROUTING.toml and the dispatch log can answer D1, and whose identity triggers runs (A4).
-6. **Open questions:**
-   - **Single-authority facts:** should vendor and guide facts with a single authority (GitHub limits, the Kanban Guide) count as meeting the two-source rule, or stay below the bar for load-bearing use?
-   - **2001 briefing case:** does it belong in this ground, or only in the briefing work?
-   - **Watching the watcher:** should "who watches the watcher" (F3) become its own research request?
 
 Sources:
 - [GitHub Events API](https://docs.github.com/en/rest/activity/events)
@@ -296,10 +244,53 @@ Sources:
 - [Kanban Guide (kanbanguides.org)](https://kanbanguides.org/english/)
 - [Kanban Guide (prokanban.org)](https://prokanban.org/the-kanban-guide/)
 - [Human Factors 101: alarms](https://humanfactors101.com/topics/alarms/)
-- [Control Global: ASM guidelines and ISA-18.2](https://www.controlglobal.com/protect/safety-instrumented-systems/article/11382017/alarm-management-asm-alarm-management-guidelines-and-isa-182-how-do-they-stack-up-control-global)
+- [Control Global: ASM guidelines and ISA-18.2 (Metzger, 2009)](https://www.controlglobal.com/protect/safety-instrumented-systems/article/11382017/alarm-management-asm-alarm-management-guidelines-and-isa-182-how-do-they-stack-up-control-global)
 - [ISA-18.2 study guide](https://open-exam-prep.com/study-guides/isa-cap/system-design-hmi-alarms-enterprise/alarm-management-isa182)
 - [VanCamp, Alarm Management by the Numbers](https://www.chemengonline.com/?p=115704)
 - [HSE: Texaco Milford Haven case study](https://www.hse.gov.uk/comah/sragtech/casetexaco94.htm)
 - [FAA DOT/FAA/CT-TN04/28 (abstract)](https://rosap.ntl.bts.gov/view/dot/71673)
 - [Wikipedia: Situation awareness](https://en.wikipedia.org/wiki/Situation_awareness)
 - [Endsley 1995 bibliographic record](https://citedrive.com/en/discovery/toward-a-theory-of-situation-awareness-in-dynamic-systems)
+
+---
+
+## Six-part contract
+
+**1. What I changed**
+- **The 275-alarm figure (O1 and the Milford Haven entry):**
+  - I removed "citing HSE".
+  - The figure is now marked as stated without a specific citation; the page has only a general "(HSE, 1997)" reference for the incident.
+  - It is out of the proposed fact. The entry now holds only HSE's own finding, at grade B.
+- **The alarm-flood rule (C2 and its entry):**
+  - The threshold (more than 10 in 10 minutes) is kept, with mixed attribution: the ISA study guide names ISA-18.2 and also lists the figure in an EEMUA 191 / ISA-18.2 table, while VanCamp credits EEMUA 191.
+  - The end condition (fewer than five) now rests on VanCamp alone and is marked as a single source. I also added his note that the simpler definition is "equally acceptable".
+  - I removed the "attribution conflict" wording.
+- **EEMUA 191 rates (C2 and its entry):** I added that the Control Global article is by Doug Metzger and dated 13 Oct 2009. I also changed "after a major upset … in the first 10 minutes" to "after an upset … in 10 minutes", which matches that article's wording.
+- Nothing else changed. There are still 51 questions, 8 owner questions and 5 research questions.
+
+**2. Why:** The source check (research/Q-022-source-check.md) failed the memo on two points. The "citing HSE" claim was overstated, and I had credited the ISA guide with a flood end condition it doesn't give. It also noted that the Control Global article's 2009 date wasn't stated.
+
+**3. What I verified** (fetch tool only, no commands run; each page read through a summarising fetch tool, so not raw text):
+- **humanfactors101.com:** it has the sentence about "275 alarms" in the last 11 minutes. The fetch found no citation attached to it. The EEMUA rates are there.
+- **open-exam-prep.com:** it gives "more than 10 alarms in a 10-minute period" under ISA-18.2, and "More than 10 in 10 minutes is a flood" in a table headed EEMUA 191 / ISA-18.2. Its "Fewer than 5" is about stale alarms, not floods.
+- **chemengonline.com:** VanCamp, 1 Mar 2016, credits the start and the fewer-than-five end condition to EEMUA-191, and says the simpler definition is "equally acceptable".
+- **controlglobal.com:** Doug Metzger, 13 Oct 2009. The "very likely to be acceptable" and "should be manageable, but may be difficult" wording is there.
+
+**4. What is undone**
+- **275 figure:** still unsourced. The HSE 1997 full report needs reading.
+- **Paid standards:** EEMUA 191 and ISA-18.2 are still unread.
+- **Single-authority facts:** the GitHub limits and the Kanban Guide each rest on one authority.
+- **Other unopened sources:** the full FAA report and Endsley 1995 itself.
+- **Outside my pack:** the items that need records I can't see (D1, E1, G3, K1).
+
+**5. Needed outside my lane**
+- **Source checker:** re-check the three changed items, ideally against raw page text.
+- **PDF reading:** someone who can read PDFs should check the HSE 1997 report.
+- **Owner decision card:** whether to buy EEMUA 191 or ISA-18.2.
+- **Experiments:** E1 to E3 need registering.
+- **Records access:** whoever can read ROUTING.toml and the dispatch log can answer D1 and A4.
+
+**6. Open questions**
+- Do facts resting on one vendor or one guide meet the two-source rule for load-bearing use? Only the owner can settle this.
+- Does the 2001 President's Daily Brief case belong here, or only in the pull-request briefing work (Q-016)?
+- Should "who watches the watcher" (F3) become its own research request?

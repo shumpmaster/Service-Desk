@@ -1,13 +1,3 @@
 {
-  "entries": [
-    {
-      "action": "dispatch",
-      "gate": null,
-      "item": "P-003",
-      "role": "check-author",
-      "route": "freeze-frozen",
-      "spec": "S-007",
-      "stage": 4
-    }
-  ]
+  "entries": []
 }

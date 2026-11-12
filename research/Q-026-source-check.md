@@ -1,40 +1,37 @@
 Verdict: FAIL
 
-I filed 7 entries and held back 2. I fetched every cited page as raw text and compared each quote with the memo. Nothing was committed, because this directory is not a git repository. The brief's rule is that an unverifiable claim fails the round, so the two held entries make the verdict FAIL.
+I filed one entry and held back three. I fetched every cited page as raw HTML and stripped the tags, then compared each quote with the memo. Nothing was committed, because this directory is not a git repository. Under the brief, an unverifiable claim makes the round FAIL, and the three held entries each contain such a claim.
 
-## Rule applied
-`governance/standards/sources.md` now includes the owner's ruling of 2026-11-12. One quoted specification passage is enough for what a specification requires. That clears the specification-text entries held last round.
+## Filed
+**`library/facts/F-incidentio-severity-ownership-01.md`** (grade A, 18 months, checked 2026-11-12). Every quote was confirmed in the raw text:
+- **`docs.incident.io/incidents/severities`:** "hide severities that don't apply, and restrict who's allowed to set a particular severity".
+- **`docs.incident.io/incidents/incident-types`:** "severities are shared across incident types and their order will remain consistent", "hidden the Minor severity", "restrict which users are allowed to select a particular severity for a given incident type", "Who can set this severity?" and "only available on our Pro or Enterprise plan".
+  - Last round's raw read reported that this page lacks the hide and restrict wording. The page as served today has it. Either it changed or last round's read missed it.
+- **`incident.io/changelog/incident-role-restrictions`:** dated April 8, 2026. It says "enabled per incident type, not in the general severity configuration, and is available for our Pro and Enterprise customers".
+- **`docs.incident.io/api-reference/severities-v1`:** "picked from one of the severities configured in your organisations settings".
 
-## Filed (library/facts/ unless noted)
-- **`F-otel-event-name-01`:** "An event MUST have an event name that uniquely identifies the event structure" is on the events `index.md`, whose Status is Development. "This name SHOULD uniquely identify the event structure (both attributes and body)" is in `logs/data-model.md`. The entry rests on the MUST text and notes the SHOULD.
-- **`F-otel-event-name-static-01`:** "Event names MUST NOT include dynamic values. Use attributes for identifiers, names, or other values that vary per…" is on the same events page.
-- **`F-cloudevents-type-owner-01` and `F-cloudevents-type-prefix-01`:** the spec text says "SHOULD be prefixed with a reverse-DNS name. The prefixed domain dictates the organization which defines the semantics of this event type." The Firebase reference says "Should be prefixed with a reverse-DNS name (com.my-org.v1.something.happended)". Because the spec passage is enough, I graded the ownership entry A, not B as the memo proposed.
-- **`F-weaver-stability-values-01`:** `semconv-syntax.md` has `stability ::= "stable" | "development" | "alpha" | "beta" | "release_candidate"`. I treated that file as a syntax specification, not product behaviour, and graded it B. This is a judgement call; see open question 2.
-- **`F-category-count-limit-01`:** the EU guide says "Seven is a good maximum". The arXiv 2508.17460 abstract says "if the category number is smaller than six, people tend to perform well at all tasks", "between 2 and 15 classes", and "When category numbers increased, performance fell". The record's journal reference is IEEE TVCG (2026) 32(1). These are two independent publishers. Applying the study to legends is the Researcher's inference, and the entry says so.
-- **`library/patterns/P-event-vocab-layered-01`:**
-  - The incident.io and Linear wording was read raw this round.
-  - Every other cited page was reached. I spot-checked the field names:
-    - GitHub: `conclusion` values, check `name`.
-    - PagerDuty: `payload.class`.
-    - Kubernetes: `type` (Normal, Warning) and Reason.
-    - Jira: three status categories.
-    - CloudTrail: `eventCategory`, `eventType`.
-    - OCSF: the `_name` suffix.
-    - Grafana: annotation tags.
-    - Prometheus: the naming page.
-  - I did not check the 6, 2 and 4 count. It is the Researcher's judgement, and the entry says so.
+That is four different pages of the vendor's own site, which meets the two-page rule for vendor behaviour. The entry is labelled same publisher.
 
-## Held (not filed)
-- **`F-linear-status-categories-01`:**
-  - The `issue-property` page confirms the fixed-order sentence, the "at least one status exists in each category" limit and the "additional status category" wording. The triage page confirms only the "outside the normal workflow" part.
-  - Linear states the category rules on one page only. This is vendor behaviour, which needs two pages.
-  - The two pages also disagree on duplicates. `issue-property` says the Duplicate status is "a system-managed status that cannot be renamed or customized", while `triage` says a duplicate moves to a "Canceled status type".
-- **`F-incidentio-severity-ownership-01`:**
-  - The `severities.md` page confirms all three quotes.
-  - The only other page, `incident-types.md`, covers only customised severity descriptions and shared order. It does not cover the "Manage organization settings" permission or the hide and restrict wording. I count one page for this vendor behaviour, and the Researcher's own note also says to hold it.
+## Not filed
+- **`F-linear-status-categories-01`: not confirmed as written.**
+  - Two pages confirm "a group of ordered issue statuses defined per-team" and the default workflow ("further customize in Team Settings"). Those are `conceptual-model` and `issue-property`.
+  - Two pages confirm that triage is "outside the normal workflow". The `triage` page says it directly, and `issue-property` calls triage "an additional status category".
+  - "Teams can reorder statuses within each status category" appears only on `issue-property`. The `conceptual-model` page does not say it.
+  - "An additional status category" appears only on `issue-property`. The `triage` page does not use that wording.
+  - The 2026-05-21 changelog confirms "Duplicate issues now use a dedicated status type" and "every issue with a duplicate status must now link to the original issue".
+  - `triage` still says duplicates go to "a Canceled status type", twice. The memo's reading that this is older wording is an inference, not something Linear says.
+  - Whether a changelog counts as a second page is the memo's open question Q-f, and no ruling covers it. The standard says "two different pages of that vendor's documentation".
+  - The entry needs narrowing to the supported parts, or the rulings on Q-e and Q-f.
+- **`F-linear-category-rules-01`: held.** Both quotes ("the categories themselves stay in a fixed order", "as long as at least one status exists in each category") are on `issue-property` only. The 2024-03-19 changelog ("under the categories: Backlog, Planned, Started, Completed, and Canceled") is about project statuses, not issues, so it is not a second source.
+- **`F-incidentio-severity-permission-01`: held.** "Managing severities requires the Manage organization settings permission" and "Rename them, rewrite their descriptions, or add your own" are confirmed on `severities` only, as the memo itself says.
+
+## Not re-read
+- **Linear changelog `2024-03-19`:** read only for the quote above.
+- **Other pages:** `user-permissions`, `api-keys`, the 2023-03-14 changelog and the 404 `configuring-workflows` page. These are negative-result pages used only to explain why a second page was not found, so I did not rely on them.
+- **Linear schema:** the memo's request for `WorkflowState` in the full `schema.graphql` is not done. I did not open it.
 
 ## Open questions
-1. **Researcher:** can you supply a second page for the Linear category rules and for the incident.io permission rule? The Linear configuring-workflows page returned 404 for you.
-2. **Owner:** is `semconv-syntax.md` a specification under the ruling, or product documentation that needs two pages? If it is product documentation, `F-weaver-stability-values-01` needs a superseding entry, because I cannot edit a filed fact.
-3. **Owner (the Researcher's Q-e):** when a vendor's own pages disagree, as Linear's do on duplicates, should the library file both readings with dates, or neither? The Linear entry stays out until this is ruled.
-4. **Pattern shelf life:** the pattern rests on pages that change. I set it to 24 months, as the Researcher proposed.
+1. **Owner (Q-f):** does a vendor changelog count as a second page under the two-page rule?
+2. **Owner (Q-e):** when a vendor's pages disagree, may the library file the dated newer reading and note the older one?
+3. **Researcher:** can you supply a second Linear page for fixed category order, the one-status-per-category minimum and reordering within categories? Alternatively, can you supply one for the incident.io permission rule? Or should those be dropped?
+4. **Researcher:** should `F-linear-status-categories-01` be re-proposed without the reorder and "additional status category" wording? Without them, `conceptual-model` and `triage` support the rest.

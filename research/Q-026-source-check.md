@@ -1,55 +1,48 @@
 Verdict: FAIL
 
-The memo is mostly accurate, but some cited claims are unconfirmed or wrong, and I held back most of its proposed entries. I fetched every cited page as raw text and searched it for the quoted wording. The memo is `research/Q-026-memo.md` and the entry blocks are under "Proposed library entries". I filed two entries, below. The directory is not a git repository, so nothing was committed.
+I filed three of the memo's proposed entries. The other five are held back. The directory is not a git repository, so nothing was committed. I fetched every cited page as raw text and searched it for the quoted wording. Evidence is in `research/Q-026-memo.md` (the memo) and the new entries in `library/facts/`.
 
-## Filed (library/facts/)
-- **`F-enum-evolution-01.md`:**
-  - Kubernetes api-conventions has "adding new enum values breaks backward compatibility", but it is said about deprecated `phase` fields, so I added a note.
-  - AIP-126 has "no more than once a year", "document whether the enum is frozen", and "use a string and document the format".
-  - Protobuf says closed enums put the value in the unknown field set, and accessors report the field as unset.
-- **`F-change-events-separate-01.md`:**
-  - recent-changes has "Change events do not create alerts, incidents or notifications", the 90-day limit, the `/v2/change/enqueue` endpoint, and "a maximum of two" in the mobile incident detail.
-  - I added `docs.pagerduty.com/developer/send-change-event` as the second page. It confirms the endpoint. The two pages count as two sources from the same publisher under `governance/standards/sources.md`.
+## Filed
+- **`library/facts/F-enum-escape-values-01.md`:**
+  - The OCSF overview has "every Enum type has two common values with integer value 0 for `Unknown` and 99 for `Other`" and `class_uid * 100 + activity_id`.
+  - The OCSF authentication class page has "0 Unknown", "99 Other", "its string sibling is activity_name" and the same `type_uid` formula.
+  - AIP-126 names the zero value `_UNSPECIFIED`, with a "clearly useful zero value" exception for `UNKNOWN`.
+  - The protobuf style guide has "suffix of either _UNSPECIFIED or _UNKNOWN" and "distinct from any of the semantic values you expect to be explicitly set".
+  - Each half rests on two pages from one publisher (OCSF, Google). `governance/standards/sources.md` speaks of vendor product behaviour, so applying it to specification text is my reading (see open question 1).
+- **`library/facts/F-high-cardinality-01.md`:**
+  - Prometheus's naming page has "Do not use labels to store dimensions with high cardinality… such as user IDs, email addresses, or other unbounded sets of values".
+  - Grafana Labs has "Never use these as metric label values: … Each of these creates a new series per unique value".
+  - The two sources are from different publishers.
+- **`library/facts/F-board-status-categories-01.md`:**
+  - The Jira page has all three quotes: "even custom statuses… must belong to one of three status categories", grey/blue/green "(this can't be customized)", and the effect on "lists, reports, and boards".
+  - JRACLOUD-44020 says a status can't be created "without any Category via the JIRA UI". It supports only the category rule. The colour and board sentences rest on the first page.
+  - That issue also describes a database workaround that sets "No Category", so the rule is a UI rule. I put this in the entry's note.
+  - Both pages are Atlassian's, filed under the same-publisher rule.
 
 ## Not filed
-- **`F-board-status-categories-01` (not confirmed):**
-  - The Jira half is confirmed. The status-categories page has the three categories, the grey/blue/green colours "(this can't be customized)", and the effect on lists, reports and boards.
-  - The Linear half is not. The cited `linear.app/docs/triage` page lists no state types. It only says triage is "outside the normal workflow".
-  - Linear's own GraphQL schema lists seven types, including `"duplicate"`. The memo lists six (memo §A item 13, and the claim in this entry).
-  - The configuring-workflows page is rendered by script and gave no usable text.
-- **`F-vocab-registry-check-01` (partly unconfirmed):**
-  - Confirmed: `registry check` and `registry live-check` in the Weaver README, and the `_incubating` path in the code-generation page.
-  - Not found on either cited page: "groups are stable or experimental (default experimental)".
-- **`F-gh-custom-kinds-01` (partly unconfirmed):**
-  - Confirmed: the check conclusion values, the sentence that only GitHub can set "stale", the free `name`, `environment` and `task` fields, `event_type` at 100 characters or fewer, `client_payload` at 10 properties and under 64KB, label permissions, and the `category.action` audit-log names.
-  - Not confirmed: that timeline event types are closed and cannot be extended. The issue-event-types page says only that each type is available in the REST API for issue events or timeline events. The memo's own note admits this is an absence on the page, not a stated rule.
-- **`P-event-vocab-layered-01` (not confirmed):**
-  - The five examples are confirmed.
-  - "Convenience sample of 11 systems" and "9 of 11 use a closed category beside an open kind" (memo §B) do not match the roughly 14 systems in §A.
-  - I did not edit the claim.
-- **`F-enum-escape-values-01` and `F-event-namespace-owner-01` (quotes confirmed, held on the two-source rule):**
-  - The quotes are confirmed: OCSF 0 and 99, the `_name` sibling and `type_uid`; AIP-126 `_UNSPECIFIED`; the CloudEvents reverse-DNS text; and OpenTelemetry's "MUST NOT include dynamic values".
-  - Each half rests on one primary specification, so the two-independent-sources rule isn't met. The owner can waive it for specification text.
-- **`F-high-cardinality-01` (single source):**
-  - The Prometheus naming page has the quote.
-  - The instrumentation page gives only a general cardinality guideline, not the user-ID wording.
-- **`F-legend-colour-limit-01` (single source):**
-  - "Seven is a good maximum" is confirmed on the EU guide.
-  - The memo itself says it is a single source, and the proposal is grade C.
+- **`F-event-namespace-owner-01`:**
+  - Confirmed: the OpenTelemetry events page has "MUST NOT include dynamic values", and the logs data model has `EventName` "SHOULD uniquely identify the event structure". The CloudEvents spec has the reverse-DNS wording.
+  - The "dynamic values" rule is on the events page only. The reverse-DNS rule is on the spec only. Each of those parts has a single source.
+- **`F-gh-custom-kinds-01`:**
+  - The claim says "audit log entries are named category.action", but none of its five listed pages contains that text. I searched all five.
+  - Confirmed: `event_type` of 100 characters or fewer, `client_payload` at 10 properties and under 64KB, only GitHub can set `stale`, deployment `environment` and `task`, and "Anyone with write access" for labels.
+- **`F-vocab-registry-check-01`:**
+  - Weaver's README has `registry check` and `registry live-check`. The code-generation page covers `_incubating` only as examples: a Python import path, and Java "incubating" artifacts.
+  - The two pages support different halves of the claim, so each half has a single source. "Experimental names in an `_incubating` path" is also broader than the page.
+- **`P-event-vocab-layered-01`:**
+  - The five named examples are confirmed: GitHub check conclusion and name, PagerDuty `severity` with `class` and `summary`, Kubernetes `type`, `reason` and `message`, Jira's three categories, and CloudTrail `eventCategory`, `eventType` and `eventName`.
+  - The "6 of 12" count includes Linear, which has no official source. The "4 single open form" systems (CloudEvents, OpenTelemetry events, Prometheus labels, Grafana tags) are not in the entry's source list.
+  - The count of 12 matches §A.
+- **`F-legend-colour-limit-01`:** "Seven is a good maximum" is on the EU guide, but it is a single source.
 
-## Other memo points checked
-- **Confirmed as quoted:**
-  - GitHub status and conclusion lists, the deployment `state` list, the ten default labels, and the three annotation levels.
-  - CloudTrail: `eventCategory` (Management/Data/NetworkActivity), the five `eventType` values, `eventName`, and the unchanged-version sentence.
-  - OCSF: the 0/99 convention, the `_name` sibling, `type_uid = class_uid * 100 + activity_id`, and extensions needing a registry UID.
-  - PagerDuty: `severity`, `event_action` and the free `class`, `component` and `group` fields.
-  - incident.io: "starting point, not a rule" and per-type description overrides.
-  - Grafana: tag filters with a single tag, several tags (all must match) and wildcards. The page is for Graphite annotations only.
-  - The Atlassian community answer and the JRACLOUD-44020 issue ("configure statuses without any category").
-- **Misattributed quote:** the Kubernetes "one-word, CamelCase representation of the category of cause" and "human-readable phrase" (memo §A item 9) are not on the Event v1 page. They are in api-conventions, in the text about condition `Reason` and `Message`. Event `reason` itself is "a short, machine understandable string", which is confirmed.
-- **Quote out of order:** the memo's OCSF extensions quote ("attributes, objects, profiles, event classes, and categories") does not match the source order, which is "attributes, objects, categories, profiles and event classes".
+## Memo points checked
+- **Kubernetes quote:** the "one-word, CamelCase" Reason/Message text is now correctly placed in api-conventions, with the "everywhere else they appear" wording. The "Choose a unique, specific, short, CamelCase reason" text and `reportingComponent` are also confirmed.
+- **Weaver stability:** the `stability` values `stable | development | alpha | beta | release_candidate` and "`stability` is not required for attrib…" are in semconv-syntax.md. The extract was cut off, so I did not confirm the full sentence. It is not filed.
+- **Ten default labels:** confirmed on the labels page.
+- **Linear:** the memo says it could not read an official source, and I did not try one. Linear stays grade C and unfiled.
 
 ## Open questions
-1. Does the owner accept single-primary-specification entries (OCSF, CloudEvents, OpenTelemetry) under the two-source rule?
-2. Should the Researcher fix the Linear type list, the stability-level claim, the "11 systems" count and the Kubernetes quote attribution, so those entries can be re-checked?
-3. What would the Researcher use as a second source for the Prometheus claim?
+1. Does the owner accept two pages from one publisher as two sources for specification text, as I did for `F-enum-escape-values-01`? If not, that entry should be withdrawn.
+2. Can the Researcher find a second source for the OpenTelemetry "dynamic values" rule and the CloudEvents reverse-DNS rule? They could also split the entry into two claims.
+3. The Researcher needs to fix or drop the audit-log claim in `F-gh-custom-kinds-01`, or cite the page that has it. They also need to narrow the `_incubating` claim.
+4. Is there an official Linear source for the state types?

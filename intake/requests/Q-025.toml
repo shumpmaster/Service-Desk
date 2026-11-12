@@ -1,0 +1,23 @@
+kind = "research"
+milestone = "Discovery-5"
+# Research for the desk's timeline work (P-005), from the groundwork map's research shortlist
+# (research/Q-022-memo.md). Checked by the Critic for gaps and neutral phrasing before filing
+# (D-032, D-055); the Critic's returns are recorded in this session's handoff.
+question = """
+Showing as-of time, provenance and gaps in status and history views.
+
+How do status and history views (CI run pages, version-control history, audit logs, operations dashboards) show their as-of time, where each item came from, which steps were not recorded or were reconstructed, and half-finished states? How do readers notice a stale, stopped or wrong view, including the case where the system feeding the view has itself stopped? What is known about readers' trust in such views when some entries are machine-written by the system being watched?
+
+The setup. One owner oversees several software projects worked on mostly by AI agents. In each project a script, the Orchestrator, moves work through fixed phases and stages, dispatches agent sessions with distinct roles (builder, check author, reviewer, critic, researcher, source checker) and routes each result by a fixed table (shumpmaster/Personal-Org-Operating-Model OPERATING_MODEL.md §4 and §5; Service-Desk governance/ROUTING.toml). The work leaves records in two kinds of place: GitHub objects (branches, commits, pull requests, checks run by GitHub Actions, reviews, merges, deploys) and files in each project repository and in one portfolio repository spanning them (status files, an append-only dispatch log, decision cards in queue/, the owner's answers in decisions/, review verdicts in reviews/, research questions, memos and source checks in research/, design mockups in docs/design/, gate cases in docs/gates/). Every agent commit names its session; where only one branch can be pushed, builder branches stay local and reach GitHub only through merge commits; reviewer-role agents never commit, and their verdicts are filed by the Orchestrator (Service-Desk AGENTS.md §1; CLAUDE.md). Some steps wait on the owner: answering a card or a question, ruling a phase gate, merging a pull request that needs the owner, approving a production deploy. The owner reads mostly on a phone. The groundwork map behind this question is research/Q-022-memo.md.
+
+## The decision it serves
+
+How the view shows freshness, sources and gaps, and how a stopped feed is noticed.
+
+## What each answer would change
+
+How gaps, provenance and as-of time are shown, and what signal says the view or its feed has stopped.
+
+topics: dashboards, monitoring
+depth: 3
+"""

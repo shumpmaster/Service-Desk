@@ -1,0 +1,23 @@
+kind = "research"
+milestone = "Discovery-5"
+# Research for the desk's timeline work (P-005), from the groundwork map's research shortlist
+# (research/Q-022-memo.md). Checked by the Critic for gaps and neutral phrasing before filing
+# (D-032, D-055); the Critic's returns are recorded in this session's handoff.
+question = """
+Event vocabularies: closed sets, open labels or free text.
+
+In audit logs, CI systems, incident tools and workflow boards, what are the options for classifying events (a fixed closed set of kinds, open labels, free text, or a mix), and what does each gain or lose for filtering, counting, drawing a legend, and change over time? How do such systems fit in events that have no counterpart in the version-control host (phase gates, decisions, research, stops), and who owns the vocabulary so it does not drift from the process it describes?
+
+The setup. One owner oversees several software projects worked on mostly by AI agents. In each project a script, the Orchestrator, moves work through fixed phases and stages, dispatches agent sessions with distinct roles (builder, check author, reviewer, critic, researcher, source checker) and routes each result by a fixed table (shumpmaster/Personal-Org-Operating-Model OPERATING_MODEL.md §4 and §5; Service-Desk governance/ROUTING.toml). The work leaves records in two kinds of place: GitHub objects (branches, commits, pull requests, checks run by GitHub Actions, reviews, merges, deploys) and files in each project repository and in one portfolio repository spanning them (status files, an append-only dispatch log, decision cards in queue/, the owner's answers in decisions/, review verdicts in reviews/, research questions, memos and source checks in research/, design mockups in docs/design/, gate cases in docs/gates/). Every agent commit names its session; where only one branch can be pushed, builder branches stay local and reach GitHub only through merge commits; reviewer-role agents never commit, and their verdicts are filed by the Orchestrator (Service-Desk AGENTS.md §1; CLAUDE.md). Some steps wait on the owner: answering a card or a question, ruling a phase gate, merging a pull request that needs the owner, approving a production deploy. The owner reads mostly on a phone. The groundwork map behind this question is research/Q-022-memo.md.
+
+## The decision it serves
+
+The event data model and who owns it.
+
+## What each answer would change
+
+The schema of kinds and states, where non-GitHub events sit in it, and the rule that keeps it in step with the routing table.
+
+topics: change-reporting, monitoring
+depth: 2
+"""

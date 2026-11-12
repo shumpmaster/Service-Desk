@@ -1,0 +1,4 @@
+Decision: re-specify
+Proxy: done at the owner's request (the owner told the Chief of Staff in session session_01QBwHGHz5MYhhmpeH91GSdw on 2026-11-12, verbatim: "Can you go with your recommendations on the questions, then adjust the handover if needed and provide me a copy paste handover prompt to start a new session"; the recommendation in decisions/P-003/failure-15-notes.md was `re-specify`, and the owner's answer to questions/P-003-baseline-proof.md is A, decisions/questions/P-003-baseline-proof.md)
+
+Fix the baseline run only: the old behaviour is recorded from the unchanged code before the build, by a run the Builder cannot change, and kept with the locked tests; drop the git-history provenance test. Since the Check author may not see src/, the new spec says who runs the Builder's adapter against the unchanged code and how the record is guarded. Carry everything else from S-007 unchanged, and list every changed line.

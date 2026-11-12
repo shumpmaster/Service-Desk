@@ -618,3 +618,17 @@ options_considered: Wait for a model spec superseding S-015 AC12 and S-021 AC2; 
 decided_by: owner ("A: change it now (Recommended)", 2026-11-11, asked in session session_01QBwHGNGhaxp9ABH6WFJJE2; recorded in decisions/questions/scrub-proof-off-brief.md)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0046 — The safety proof passed on November's image, and the runner settings record it
+date: 2026-11-12
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: With L-0045's harmless first step, the owner ran the safety proof by hand (run 43126296640, 2026-11-12 00:18Z, model sonnet, runner image ubuntu24 20261101.360.1, command line 2.1.284). Record its image month in the runner settings, as ruling A on questions/P-003-build-blocked.md provides when a proof passes?
+decision: governance/RUNNER.toml `proven_image_version` goes from "202609" to "202611"; `proven_version` (2.1.284), `proven_image_os` (ubuntu24), `session_commands` ("on") and `pass_env_cleared` (false) are unchanged. The proof passed all 21 checks: the 8 commands-on checks, the 4 commands-off checks (its session made 4 tool calls, a Write and three Reads, both environment Reads blocked) and the 9 sandbox checks. Measured with session_runner.py `proven`: true for image 20261101.360.1, false for 20260920 and 20261201.
+licenses_next: Builder-class sessions on November's images run with commands, so P-003's Builder can record its baseline after the owner answers stop card 14 `rebuild`. L-0007's condition, a passing proof before P-001 closes, is met on this image. December's first image switches commands off again until the Monday proof (L-0044) passes and a change like this one records it.
+options_considered: Leave commands off until the operating model adopts L-0045's step (LL-047).
+decided_by: owner ("A: fix both (Recommended)", 2026-11-11, asked in session session_01QBwHGNGhaxp9ABH6WFJJE2; recorded in decisions/questions/P-003-build-blocked.md)
+proposed_by: chief-of-staff
+reversibility: reversible

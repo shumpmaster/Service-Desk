@@ -646,3 +646,45 @@ options_considered: "Work only, merge nothing" (the owner's words grant more); "
 decided_by: owner ("permission to act on my behalf over the next 6hours", 2026-11-12, in the session)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0048 — A published specification's own quoted text is enough to source what it requires
+date: 2026-11-12
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The source rule covers a vendor's documentation of its own product but not a published specification's text about its own requirements, and Q-026's third source check held `F-otel-event-name-01` on that gap (OpenTelemetry's events page says an event name "MUST" uniquely identify the event structure; its log data model says "SHOULD"). Is one quoted passage enough, two of its pages, or two independent publishers? Filed first as questions/P-005-spec-sources.md (#373), after the Critic's four cold reads.
+decision: governance/standards/sources.md gains one rule: for what a published specification itself requires, one quoted passage of that specification is enough; where its pages state the requirement at different strengths, the entry quotes the one it rests on and notes the others; a specification's text is never evidence of what others do in practice. The two rules already there are unchanged.
+licenses_next: Once merged, and only with the owner's say-so in session, the Q-026 stop card is answered `re-specify` (a strike), and its next source check may file `F-otel-event-name-01` on the "MUST", with the "SHOULD" noted. The filed `F-enum-escape-values-01` stands.
+options_considered: B, two of the specification's pages labelled "same publisher" (a requirement stated on one page could not be filed); C, two independent publishers (no rule change; the OCSF part of the filed entry withdrawn by a superseding entry).
+decided_by: owner ("A: one passage (Recommended)", 2026-11-12, asked in session session_01QBwHGJzc87ezrCJjztgrMp; recorded in decisions/questions/P-005-spec-sources.md)
+proposed_by: chief-of-staff
+reversibility: irreversible
+
+## L-0049 — Open-ended proxy: the Chief of Staff carries the timeline work forward on the owner's behalf until its first design mockup
+date: 2026-11-12
+type: delegation
+supersedes: []
+scope: project
+expires: never
+asked: none; the owner said in the session (session_01QBwHGJzc87ezrCJjztgrMp, 2026-11-12 about 15:43 UTC): "Honestly you can run autonomously as you did overnight. You stoppage point is our first design mock up. Please notify me if any significant blockers arise".
+decision: From now until the timeline work (P-005) reaches its first design mockup, or the owner ends it, the Chief of Staff acts as the owner's proxy (D-066) on that work and what it waits on, with the same scope as L-0047 and read as narrowly as L-0019: it may file research requests, questions and the project request, start Orchestrator runs by hand, replace its own unmerged branch's commits where no pull request uses them, merge a records-only (R0) pull request when its checks are green and it holds no code, and answer a reversible procedural question or card of this work as the owner's proxy, its answer record's second line "Proxy: done at the owner's request". Not done by proxy, and left for the owner: the plan's value targets, misses, costs and stop rule; gate rulings, the Design gate included, which comes before any design mockup and so ends this proxy in practice; kills; rule changes; owner verdict files; deploys; code (R1) and governance (R3) changes; another session's questions and cards; and anything irreversible. Every proxy action is listed in the session's handoff; a significant blocker is sent to the owner's phone.
+licenses_next: Q-026's return to the Researcher and its source checks, the question on taking experiments E1 and E2 into Design, and the project request P-005 with its readiness check, until the owner's Design gate.
+options_considered: Stop and ask before each step (the owner's words grant more); "Full authority", the Design gate and the plan's targets included (never delegable under the operating model's delegation grants).
+decided_by: owner ("you can run autonomously as you did overnight. You stoppage point is our first design mock up", 2026-11-12, in the session)
+proposed_by: chief-of-staff
+reversibility: reversible
+
+## L-0050 — A vendor's changelog counts as one of its pages; facts its pages disagree on, or found on one page, are filed but not load-bearing
+date: 2026-11-12
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: Q-026 stopped a second time on three held facts the source rule did not say how to file: one from Linear's changelog that one of its guide pages contradicts, and two each found on one vendor page. How may the library file a vendor's facts from its changelog, from pages that disagree, or from a single page? Filed first as questions/P-005-vendor-pages.md (#390), after the Critic's four cold reads.
+decision: governance/standards/sources.md gains four lines: a vendor's changelog on its own site counts as one of its documentation pages for how its product behaves; where a vendor's own pages disagree on how its product behaves, the fact is filed as a record of what each page says, quoting each with its page and any date it gives, without stating which is current, and is not load-bearing; a fact about how a vendor's product behaves found on only one of its pages may be filed marked "single page", and is not load-bearing; not load-bearing means no plan decision may rest on the entry. The earlier lines are unchanged.
+licenses_next: Once merged, the Q-026 stop card 2 is answered `re-specify` by the owner's choice of "Option 1" (a strike), and its next source checks may file the three held facts under these lines. A changelog and one guide page together can carry a plan decision in later research.
+options_considered: B, the changelog and disagreement lines only (the two single-page facts stay held, a third stop card possible); C, no change (all three stay held, likely a third stop card).
+decided_by: owner ("A: file all three (Recommended)", 2026-11-12, asked in session session_01QBwHGJzc87ezrCJjztgrMp; recorded in decisions/questions/P-005-vendor-pages.md)
+proposed_by: chief-of-staff
+reversibility: irreversible

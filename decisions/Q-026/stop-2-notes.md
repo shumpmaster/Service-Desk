@@ -1,0 +1,15 @@
+# Q-026 stop-2 — the Chief of Staff's notes
+
+Recommendation: `re-specify`.
+
+Why: Q-026 asks how events can be classified. Since the owner's ruling on specification text (decisions/questions/P-005-spec-sources.md) and stop-1's `re-specify`, its three source checks filed nine entries, among them the OpenTelemetry finding that stop-1 held, and the third check holds back three (research/Q-026-source-check.md on item/Q-026):
+- `F-linear-category-rules-01` and `F-incidentio-severity-permission-01`: each quote is on one vendor page only, and the source rule needs two pages for a vendor's own product behaviour (governance/standards/sources.md).
+- `F-linear-duplicate-status-01`: its quotes are confirmed, but Linear's pages disagree on the Duplicate status, and the source rule says neither whether a changelog counts as a page nor how to file a vendor's pages that disagree.
+Triage found the checker working as designed and two causes: entries resting on one page each, and those gaps in the source rule (triage/Q-026.md on item/Q-026). It advises no further Researcher round without a new source or a ruling.
+- `re-specify` sends the memo back to the Researcher with rounds reset and the source check's reasons, the only feedback it sees (governance/PACKS.toml, `[roles.researcher]`). Those reasons ask it to find a second page for the two single-page entries or drop them; for the Duplicate entry, dropping it is the only way under the rules as they stand. Dropping all three passes without any new rule, and the nine filed entries are kept.
+- This sets aside Triage's advice only in part: no new source or ruling comes with this round, but the source check's own question to the Researcher is whether to drop the three, and dropping them is a new memo, not a repeat. Nothing forces the Researcher to drop rather than search again, so it may hold them and stop the same way; if it does, the card comes back to the owner with the rulings below as the way on.
+- `confirm` sends the same memo to the same checker unchanged, so it would fail on the same three entries.
+- `drop` would close the item, and a closed item never merges (governance/checks/orchestrator_git.py, `ready_items`), so the filed entries would stay off the main branch. It is also refused by proxy (governance/ROUTING.toml, `[proxy]`).
+- Filing the three as they stand needs rulings that widen the source rule, a governance change only the owner can make: for the Duplicate entry, whether a changelog counts as a page and whether a dated newer reading may be filed against an older page; for the two single-page entries, whether a single-page vendor fact may be kept on hold (the checker's questions Q-f, Q-e and Q-g). This answer does not rule them out later.
+
+Unlike stop-1, where the next step turned on the source rule and so was left to the owner, this step passes without a rule change, so it is not a blocker for the owner. `re-specify` is reversible, changes no rule, and is answered as the owner's proxy under L-0049 (decisions/Q-026/stop-2.md); the three rulings stay open to the owner and are listed in the session's handoff. It is logged as the second strike on Q-026.

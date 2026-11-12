@@ -1,5 +1,5 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-11-12: 45 active rulings and 0 kills, from 47 ledger entries.
+As of 2026-11-12: 46 active rulings and 0 kills, from 48 ledger entries.
 
 ## Active rulings
 
@@ -59,6 +59,7 @@ As of 2026-11-12: 45 active rulings and 0 kills, from 47 ledger entries.
 | L-0046 | governance/RUNNER.toml `proven_image_version` goes from "202609" to "202611"; `proven_version` (2.1.284), `proven_image_os` (ubuntu24), `session_commands` ("on") and `pass_env_cleared` (false) are unchanged. The proof passed all 21 checks: the … | 2026-11-12 | never |
 | L-0047 | Until 10:53 UTC on the expiry date, the Chief of Staff acts as the owner's proxy (D-066) on the desk's timeline work (P-005) and what … | 2026-11-12 | 2026-11-12 |
 | L-0048 | governance/standards/sources.md gains one rule: for what a published specification itself requires, one quoted passage of that specification is enough; where its pages state the requirement … | 2026-11-12 | never |
+| L-0049 | From now until the timeline work (P-005) reaches its first design mockup, or the owner ends it, the Chief of Staff acts as the owner's … | 2026-11-12 | never |
 
 ## Kills
 None.

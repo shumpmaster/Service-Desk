@@ -1,128 +1,96 @@
-I've written revision 4 of the memo below. It deals with the five items the round-3 source check held. Two gaps are now closed: incident.io and Linear have official sources. The colour-limit item now has a peer-reviewed second source. Two items still rest on one page each. I read every page through a summarising fetch, so the checker needs to re-read the quotes as raw text.
+I've written revision 5 of the memo below. The check held back two entries because each rested on one vendor page. Both are now split: the parts that two vendor pages support are re-proposed, and the parts still on one page are proposed apart and marked hold. A dated Linear changelog entry also explains why Linear's pages disagree about duplicates. As before, every page was read through a summarising fetch, so the Source checker needs to re-read each quote as raw text.
 
 ---
 
-# Research memo (revision 4): Q-026, Event vocabularies: closed sets, open labels, free text, or none (2026-11-12)
+# Research memo (revision 5): Q-026, Event vocabularies: closed sets, open labels, free text, or none (2026-11-12)
 
-*Researcher, depth 2. This revision answers `research/Q-026-source-check.md` (round 4 of checking). Research is blind: I did not see the routing table, the operating model or any project plan. **Every page this round was read through a summarising fetch, not raw.** The quotes below are what that summariser returned, so the Source checker should re-read them raw.*
+*Researcher, depth 2. This revision answers `research/Q-026-source-check.md` (round 5 of checking, verdict FAIL, two entries held). Research is blind. **Every page this round was read through a summarising fetch, not raw;** the quotes below are what the summariser returned.*
 
-**Grade key:** A means the vendor's own docs about its own product. B means one authoritative source, or a solid source plus some inference. C means secondary sources only. Each statement is marked **[F]** fact, **[E]** estimate or **[O]** opinion.
+**Grade key:** as in revision 4. Each statement is marked **[F]** fact, **[E]** estimate or **[O]** opinion.
 
-**Unchanged from revision 3:** sections A to E and the summary stand, except where noted below. These are already filed and not proposed again: `F-enum-evolution-01`, `F-change-events-separate-01`, `F-enum-escape-values-01`, `F-high-cardinality-01`, `F-board-status-categories-01`, `F-gh-custom-kinds-01`, `F-vocab-registry-check-01` and `F-semconv-stable-split-01`.
+**Unchanged:** everything in revision 4 except the two held entries. The checker has filed seven entries: `F-otel-event-name-01`, `F-otel-event-name-static-01`, `F-cloudevents-type-owner-01`, `F-cloudevents-type-prefix-01`, `F-weaver-stability-values-01`, `F-category-count-limit-01` and `P-event-vocab-layered-01`. They are not proposed again.
 
 ## What changed in the findings
 
-### 1. incident.io: URL supplied (checker question 2)
-**[F, A]** Source: https://docs.incident.io/incidents/severities (fetched as `.md`).
-- On the default severities: "These are a starting point, not a rule. Rename them, rewrite their descriptions, or add your own to match how your team thinks about impact."
-- On who can change them: "Managing severities requires the **Manage organization settings** permission."
-- On incident types: "Within an incident type you can override a severity's description, hide severities that don't apply, and restrict who's allowed to set a particular severity."
+### 1. Linear: a second page for part of the claim
+- **[F, A]** The Linear "Concepts" page, https://linear.app/docs/conceptual-model, says:
+  - "As you work on and complete issues, they'll move through workflows; a group of ordered issue statuses defined per-team."
+  - "We create a default workflow for you that you can further customize in Team Settings."
+  - With `issue-property`, that makes two vendor pages for: statuses are ordered, set per team, and customisable.
+- **[F, A]** Two vendor pages already agreed that triage is a category outside the normal workflow (`issue-property` and `triage`; the checker confirmed the triage half).
+- **[F, A, one page only]** Two rules are still only on `issue-property`:
+  - the fixed order of the categories ("the categories themselves stay in a fixed order")
+  - the minimum of one status per category ("as long as at least one status exists in each category")
+  - The Concepts page does not list the categories or say whether they are fixed. `configuring-workflows` still returns 404, including its `.md` form and the `?_rsc=` form that a search surfaced. I could not read Linear's GraphQL schema: the raw `schema.graphql` was cut off before `WorkflowState`, and Apollo Studio returned only a title. Third-party pages (SDK mirrors, CLI source, blogs) repeat the category list, but they are not vendor pages and I do not cite them.
+- **[F, A] Supporting, not a second page for the issue rule:** the Linear changelog of 2024-03-19 (https://linear.app/changelog/2024-03-19-custom-statuses-for-projects) says, for **project** statuses: "Go to workspace settings > projects to create or modify statuses under the categories: *Backlog, Planned, Started, Completed,* and *Canceled.*" Linear uses the same design (a fixed set of categories, with statuses the customer names inside them) for a second object. This page is about projects, not issues.
+- **[F, A] The duplicate disagreement now has a date.** The Linear changelog entry of 2026-05-21, "Issue duplicates" (https://linear.app/changelog/2026-05-21-project-slack-channels), says: "Duplicate issues now use a dedicated status type in Linear and move context to the original issue." It also says "every issue with a duplicate status must now link to the original issue."
+- **[E]** The triage page's "updated to a *Canceled* status type" is probably text from before 2026-05-21 that was not updated. The `issue-property` wording ("a system-managed status that cannot be renamed or customized") matches the changelog. This is my inference from dates. Linear has not said the triage page is out of date.
+  - It turns the closed-set growth in §B into a **[F, A]** fact with a date: Linear added a status type on 2026-05-21.
+  - It also bears on the owner's Q-e. A changelog entry with a date may let the library file the newer reading and note the older one, rather than choose between them.
 
-This gives a new ownership point for §D: **who may change the vocabulary is controlled by a named permission**.
+### 2. incident.io: second pages for most of the claim, not the permission rule
+- **[F, A]** The incident-types page, https://docs.incident.io/incidents/incident-types (fetched as `.md`), returned:
+  - "severities are shared across incident types and their order will remain consistent."
+  - "we've hidden the Minor severity by clicking the toggle visibility button to the right of the severity panel."
+  - "You can restrict which users are allowed to select a particular severity for a given incident type" and "use the **Who can set this severity?** section to build your restriction."
+  - "Incident types are only available on our Pro or Enterprise plan."
+  - **The checker reported that this page covers only customised descriptions and shared order.** My summariser returned the hide and restrict sentences above. The checker should re-read the page raw, in case it has changed or my summariser is wrong.
+- **[F, A]** The incident.io changelog "Incident role restrictions", dated 2026-04-08 (https://incident.io/changelog/incident-role-restrictions), says:
+  - "we've released the ability to restrict who can set particular incident severities."
+  - "This feature can be enabled per incident type, not in the general severity configuration, and is available for our Pro and Enterprise customers."
+- **[F, A]** The Severities API reference (https://docs.incident.io/api-reference/severities-v1, fetched as `.md`) says: "Each incident has a severity, picked from one of the severities configured in your organisations settings." Together with the `severities` page, that makes two pages for: the organisation configures the set.
+- **[F, A, one page only]** The rule that managing severities "requires the **Manage organization settings** permission" is still only on `severities`.
+  - The API-keys page describes the `manage_settings` scope as "Change organization-level configuration such as custom fields, and manage the catalog." It does not mention severities.
+  - The user-permissions page lists an "Edit organization settings" permission and no severities.
+  - The 2023-03-14 permissions changelog mentions no severities.
+  - So I do not count these pages as a second source.
+- **[F, A, one page only]** The full wording "Rename them, rewrite their descriptions, or add your own" is also only on `severities`.
+- **[O]** For Q-026 §D (who owns the vocabulary), the two-page facts are the useful part:
+  - The organisation defines the set.
+  - The set is shared, with one order across incident types.
+  - Each incident type can hide a value or restrict who may set it.
+  - The named permission is a detail.
 
-### 2. Linear: official source found (checker question 4)
-The page that answers it is **https://linear.app/docs/issue-property**. The configuring-workflows and issue-status pages still return 404.
-- **[F, A]** "Issue statuses define the type and order of states that issues can move through from start to completion. These workflows are team-specific and come with a default set and order: *Backlog > Todo > In Progress > Done > Canceled*."
-- **[F, A]** "Teams can reorder statuses within each status category, but the categories themselves stay in a fixed order."
-- **[F, A]** On editing statuses: "…make changes to the name, color, or description. Create statuses by clicking the **+** button, or remove statuses (as long as at least one status exists in each category)."
-- **[F, A]** "Triage is an additional status category that acts as an Inbox for your team." The triage page agrees: "By default, we exclude triage issues from all views since triage is considered to be outside the normal workflow."
-- **[F, A]** A "How we work at Linear" note on the same page shows each category holding several statuses. For example, *Canceled* holds Canceled, Could not reproduce and Won't Fix. *Duplicate* holds Duplicate, applied automatically.
-- **[F, A] Linear's own pages disagree:**
-  - The issue-property page says: "Issues marked as duplicates are automatically moved into a reserved *Duplicate* status… a system-managed status that cannot be renamed or customized."
-  - The triage page says a duplicate "is updated to a *Canceled* status type".
-- **[E]** Linear seems to have added a seventh category recently, and not every page has been updated. This is a live case of a closed set growing (the "change over time" column in §B). Revision 3 inferred the same from third-party pull requests; this is now on vendor pages.
-
-Linear is now **counted** in the pattern on a grade-A source. The pattern no longer relies on the grade-C sources.
-
-**[E] Revised count (§B):**
-- 6 systems clearly combine a closed category with an open kind on grade-A sources: GitHub, CloudTrail, Kubernetes, PagerDuty, Jira and Linear.
-- 2 arguably do: OCSF and incident.io.
-- 4 use a single open form.
-
-It is still a convenience sample, not a survey.
-
-### 3. CloudEvents reverse-DNS rule: second source for half of it (checker question 3)
-- **[F, A]** The Firebase Admin Node SDK reference (Google, a different publisher from the CloudEvents project) describes `CloudEvent.type` as: "Type of the event. Should be prefixed with a reverse-DNS name (`com.my-org.v1.something.happended`)." Source: https://firebase.google.com/docs/reference/admin/node/firebase-admin.eventarc.cloudevent
-- **[F, B]** The half that says who owns the meaning is still on one page only: "The prefixed domain dictates the organization which defines the semantics of this event type." No other page I found repeats it.
-- I therefore split the entry: the prefix rule (two publishers) and the ownership rule (one specification).
-
-### 4. Colour limit: replaced by a better-sourced claim (checker question 3)
-- **[F, C]** The EU data visualisation guide says "Seven is a good maximum". This is unchanged.
-- **[F, A for the paper's own findings]** Wang, Quadri, Zhu, Tseng and Szafir, "Characterizing Visualization Perception with Psychological Phenomena: Uncovering the Role of Subitizing in Data Visualization". It is in *IEEE TVCG* 32(1), 2026, and on arXiv as 2508.17460.
-  - The abstract says: "We conducted three experiments with multi-class scatterplots — between 2 and 15 classes… Our results indicate if the category number is smaller than six, people tend to perform well at all tasks… When category numbers increased, performance fell, with the magnitude of the performance change depending on task and encoding."
-  - **This is level-3 evidence**: a controlled study, not a guideline.
-- **[E]** It tested scatterplots, not legends or timelines. Applying it to a timeline legend is my inference.
-- Other guides I saw gave figures of 6 to 10. I could not read the text of the Atlassian or Adobe Spectrum pages (the fetch returned only navigation), so they are not cited.
-
-### 5. OpenTelemetry "dynamic values" rule: still single-source, plus a new caveat
-- **[F, A]** The events page (fetched as `index.md`) still has "Event names MUST NOT include dynamic values. Use attributes for identifiers, names, or other values that vary per occurrence."
-  - It adds that when an existing system lacks a single name field, "semantic conventions can use a combination of fields to create a low-cardinality event name."
-- **[F, A] New:** the page is marked **Status: Development**.
-  - This affects `F-otel-event-name-01` too: the semconv-page half of that claim is not stable text. I shortened that entry's shelf life to 18 months.
-- No second source turned up:
-  - The semconv naming page covers event names only under general naming rules, with nothing about cardinality.
-  - The `events-general` URL returns 404.
-
-### 6. Weaver `stability` values (checker question 5)
-- **[F, B]** A second, separate fetch of the raw `schemas/semconv-syntax.md` returned: `stability ::= "stable" | "development" | "alpha" | "beta" | "release_candidate"`.
-- This is one page. I propose it below for the checker to read raw. It does not affect the answer to the question.
-
-### Corrections to revision 3
-- In §A 13, Linear moves from [F, C] to [F, A] on the vendor page, with the disagreement between Linear's pages noted.
-- In §B, the "change over time" cell for closed sets now cites Linear at grade A.
-- In §D, add: **[F, A]** incident.io limits changes to severities by a named permission.
+## Corrections to revision 4
+- **§B, "change over time" for closed sets:** Linear's added status type now has a date, 2026-05-21, from the vendor's changelog. The "seems to have added recently" estimate becomes a fact. That the triage page is stale stays an estimate.
+- **§D:** incident.io restricting who may set a value is now on two pages (the incident-types doc and the 2026-04-08 changelog). The named permission is still on one page.
 
 ## Field scan (new this round)
-- incident.io severities docs
-- Linear issue-property and triage pages
-- Firebase Admin Eventarc CloudEvent reference
-- Google Eventarc CloudEvents pages (in search results only, not read)
-- the TVCG 2026 subitizing paper
-- the EU guide, re-found
-- OpenTelemetry semconv naming and events `index.md`
-- Weaver `semconv-syntax.md`
+- Linear: Concepts page, two changelog entries (2024-03-19 and 2026-05-21), `configuring-workflows` in three forms (all 404), the GraphQL schema (cut off) and Apollo Studio (empty).
+- incident.io: user-permissions, restrict-incident-type-management (no severity content), the Severities API reference, the foundations guide (best practice only, no product behaviour), `llms-full.txt`, the 2023-03-14 and 2026-04-08 changelogs, and incident-types.
 
 **Still not covered:** controlled-vocabulary and records-management literature, and ITIL change categories.
 
-## Proposed library entries (revision 4)
-
-```yaml
----
-id: P-event-vocab-layered-01
-form: pattern
-claim: "Of 12 event/label systems sampled (convenience sample, not a survey), 6 clearly layer a small closed set (used for filtering, counting, colour) over an open producer- or admin-named kind, usually with free-text detail, on vendor sources: GitHub check conclusion + check name; PagerDuty severity + class + summary; Kubernetes Event type + reason + message; Jira's three fixed status categories + custom statuses; Linear's fixed-order status categories + team-created statuses; CloudTrail eventCategory/eventType + eventName. 2 arguably do (OCSF: closed IDs with open _name; incident.io: severities closed within an organisation but defined by it). 4 use a single open form with no closed category (CloudEvents type, OpenTelemetry event name, Prometheus labels, Grafana annotation tags)."
-grade: B
-topics: [change-reporting, dashboards, monitoring, status-reports]
-shelf_life: 24 months
-sources:
-  - https://docs.github.com/en/rest/checks/runs
-  - https://docs.pagerduty.com/developer/send-alert-event
-  - https://kubernetes.io/docs/reference/kubernetes-api/cluster-resources/event-v1/
-  - https://support.atlassian.com/jira-cloud-administration/docs/what-is-a-workflow-status/
-  - https://linear.app/docs/issue-property  # "Teams can reorder statuses within each status category, but the categories themselves stay in a fixed order."
-  - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference-record-contents.html
-  - https://github.com/ocsf/ocsf-docs/blob/main/overview/understanding-ocsf.md
-  - https://docs.incident.io/incidents/severities  # "These are a starting point, not a rule. Rename them, rewrite their descriptions, or add your own…"
-  - https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md
-  - https://opentelemetry.io/docs/specs/semconv/general/events/
-  - https://prometheus.io/docs/practices/naming/
-  - https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/annotate-visualizations/
-note: Revision 4. incident.io URL supplied; Linear now sourced from its own docs and counted (6 clear, was 5). The classification into 'closed beside open' versus 'single open form' is the researcher's judgement.
----
-```
+## Proposed library entries (revision 5)
 
 ```yaml
 ---
 id: F-linear-status-categories-01
 form: fact
-claim: "Linear: issue statuses are team-specific and each belongs to a status category; teams can reorder statuses within a category but 'the categories themselves stay in a fixed order'. Teams can create, rename, recolour, re-describe and remove statuses 'as long as at least one status exists in each category'. Triage is 'an additional status category' that is excluded from views by default as 'outside the normal workflow'."
+claim: "Linear: issue statuses form workflows, 'a group of ordered issue statuses defined per-team', with a default workflow teams can customise; teams can reorder statuses within a status category. Triage is 'an additional status category' whose issues are excluded from views by default as 'outside the normal workflow'. On 2026-05-21 Linear announced that 'Duplicate issues now use a dedicated status type'."
+grade: A
+topics: [status-reports, dashboards, change-reporting]
+shelf_life: 12 months
+sources:
+  - https://linear.app/docs/issue-property  # "Teams can reorder statuses within each status category"; "Triage is an additional status category that acts as an Inbox for your team."
+  - https://linear.app/docs/conceptual-model  # "they'll move through workflows; a group of ordered issue statuses defined per-team." / "We create a default workflow for you that you can further customize in Team Settings."
+  - https://linear.app/docs/triage  # "By default, we exclude triage issues from all views since triage is considered to be outside the normal workflow."
+  - https://linear.app/changelog/2026-05-21-project-slack-channels  # "Duplicate issues now use a dedicated status type in Linear and move context to the original issue."
+note: Revision 5, narrowed. Fixed category order and the one-status-per-category minimum moved to F-linear-category-rules-01 (single page). The duplicate sentence comes from a dated changelog, the vendor's own record of a change; the triage page's older 'Canceled status type' wording is left out as probably out of date (researcher's inference). Short shelf life because the set changed in 2026.
+---
+```
+
+```yaml
+---
+id: F-linear-category-rules-01
+form: fact
+claim: "Linear: 'the categories themselves stay in a fixed order', and statuses can be removed only 'as long as at least one status exists in each category'."
 grade: A
 topics: [status-reports, dashboards]
 shelf_life: 12 months
 sources:
   - https://linear.app/docs/issue-property
-  - https://linear.app/docs/triage  # "By default, we exclude triage issues from all views since triage is considered to be outside the normal workflow."
-note: New. Duplicate handling is deliberately left out. issue-property says duplicates move to 'a reserved Duplicate status… system-managed', while triage says they are 'updated to a Canceled status type'. Linear's own pages disagree, which suggests a recently added category. Short shelf life for that reason.
+note: Single vendor page. HOLD under the two-page rule for vendor behaviour. Supporting only, not a second page for issues: the 2024-03-19 changelog (https://linear.app/changelog/2024-03-19-custom-statuses-for-projects) shows the same fixed-category design for project statuses ('create or modify statuses under the categories: Backlog, Planned, Started, Completed, and Canceled'). configuring-workflows, the likely second page, returns 404.
 ---
 ```
 
@@ -130,170 +98,87 @@ note: New. Duplicate handling is deliberately left out. issue-property says dupl
 ---
 id: F-incidentio-severity-ownership-01
 form: fact
-claim: "incident.io: the default severities 'are a starting point, not a rule'; an organisation can rename them, rewrite descriptions or add its own; managing severities 'requires the Manage organization settings permission'; within an incident type one can override a severity's description, hide severities and restrict who may set a severity."
+claim: "incident.io: each incident's severity is 'picked from one of the severities configured in your organisations settings'; severities 'are shared across incident types and their order will remain consistent'; per incident type an organisation can hide a severity and restrict who may set it ('restrict who can set particular incident severities… enabled per incident type, not in the general severity configuration'; Pro and Enterprise plans)."
+grade: A
+topics: [monitoring, status-reports]
+shelf_life: 18 months
+sources:
+  - https://docs.incident.io/incidents/severities  # "Within an incident type you can override a severity's description, hide severities that don't apply, and restrict who's allowed to set a particular severity."
+  - https://docs.incident.io/incidents/incident-types  # "severities are shared across incident types and their order will remain consistent." / "You can restrict which users are allowed to select a particular severity for a given incident type"
+  - https://incident.io/changelog/incident-role-restrictions  # 2026-04-08: "This feature can be enabled per incident type, not in the general severity configuration"
+  - https://docs.incident.io/api-reference/severities-v1  # "Each incident has a severity, picked from one of the severities configured in your organisations settings."
+note: Revision 5, narrowed. The 'Manage organization settings' permission and the exact 'Rename them… add your own' wording moved to F-incidentio-severity-permission-01 (single page). Checker to re-read incident-types raw: round 5 found only description and order there, while my summarised fetch returned the hide and restrict sentences.
+---
+```
+
+```yaml
+---
+id: F-incidentio-severity-permission-01
+form: fact
+claim: "incident.io: default severities 'are a starting point, not a rule. Rename them, rewrite their descriptions, or add your own'; 'Managing severities requires the Manage organization settings permission.'"
 grade: A
 topics: [monitoring, status-reports]
 shelf_life: 18 months
 sources:
   - https://docs.incident.io/incidents/severities
-note: New, single vendor page about its own product. Hold if the source standard needs two pages from the vendor.
+note: Single vendor page. HOLD under the two-page rule. Searched and not counted: user-permissions (an 'Edit organization settings' permission, no severities); api-keys (manage_settings 'such as custom fields, and manage the catalog', no severities); the 2023-03-14 permissions changelog (no severities).
 ---
 ```
-
-```yaml
----
-id: F-cloudevents-type-prefix-01
-form: fact
-claim: "CloudEvents event type should be prefixed with a reverse-DNS name. Stated in the CloudEvents specification ('SHOULD be prefixed with a reverse-DNS name') and repeated in Google's Firebase Admin SDK reference for its CloudEvent type ('Should be prefixed with a reverse-DNS name (com.my-org.v1.something.happended)')."
-grade: A
-topics: [monitoring, change-reporting]
-shelf_life: 36 months
-sources:
-  - https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md
-  - https://firebase.google.com/docs/reference/admin/node/firebase-admin.eventarc.cloudevent
-note: New, split from F-cloudevents-type-owner-01. Two publishers. Firebase states it as guidance for its own SDK, not as a restatement of the specification.
----
-```
-
-```yaml
----
-id: F-cloudevents-type-owner-01
-form: fact
-claim: "CloudEvents: 'The prefixed domain dictates the organization which defines the semantics of this event type.'"
-grade: B
-topics: [monitoring, change-reporting]
-shelf_life: 36 months
-sources:
-  - https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md
-note: Narrowed to the ownership sentence; the prefix half is now F-cloudevents-type-prefix-01. Still a single specification; hold unless the owner accepts single-specification text.
----
-```
-
-```yaml
----
-id: F-category-count-limit-01
-form: fact
-claim: "Guidance and evidence put the number of colour-coded categories people handle well at about six to seven. The EU data visualisation guide: 'Seven is a good maximum'. A 2026 IEEE TVCG study (three experiments, multi-class scatterplots with 2–15 classes): 'if the category number is smaller than six, people tend to perform well at all tasks… When category numbers increased, performance fell', with the size of the drop depending on task and encoding."
-grade: B
-topics: [dashboards, design]
-shelf_life: 60 months
-sources:
-  - https://data.europa.eu/apps/data-visualisation-guide/colour-for-categories
-  - https://arxiv.org/abs/2508.17460  # Wang, Quadri, Zhu, Tseng, Szafir; IEEE TVCG 32(1), 2026
-note: Replaces F-legend-colour-limit-01 (withdrawn). The study used scatterplots; applying it to legends and timelines is inference. Other guides give 6–10; not cited because their text could not be read.
----
-```
-
-```yaml
----
-id: F-otel-event-name-01
-form: fact
-claim: "OpenTelemetry: an event name identifies the event structure. The semconv events page (status: Development) says an event 'MUST have an event name that uniquely identifies the event structure'; the logs data model says EventName 'SHOULD uniquely identify the event structure (both attributes and body)'."
-grade: A
-topics: [monitoring, change-reporting]
-shelf_life: 18 months
-sources:
-  - https://opentelemetry.io/docs/specs/semconv/general/events/
-  - https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/logs/data-model.md
-note: Revised. Development status noted and shelf life cut from 36 to 18 months. Still waits on checker open question 1 (one publisher's two pages for specification text).
----
-```
-
-```yaml
----
-id: F-otel-event-name-static-01
-form: fact
-claim: "OpenTelemetry semantic conventions (events page, status: Development): 'Event names MUST NOT include dynamic values. Use attributes for identifiers, names, or other values that vary per occurrence.'"
-grade: B
-topics: [monitoring]
-shelf_life: 18 months
-sources:
-  - https://opentelemetry.io/docs/specs/semconv/general/events/
-note: Still single-source; the naming page and Logs API page do not repeat it. Hold unless the owner accepts single-specification text.
----
-```
-
-```yaml
----
-id: F-weaver-stability-values-01
-form: fact
-claim: "Weaver's semantic-convention syntax defines stability ::= 'stable' | 'development' | 'alpha' | 'beta' | 'release_candidate'."
-grade: B
-topics: [monitoring]
-shelf_life: 18 months
-sources:
-  - https://raw.githubusercontent.com/open-telemetry/weaver/main/schemas/semconv-syntax.md
-note: Single page; checker to read raw. Low importance to Q-026.
----
-```
-
-**Withdrawn:** `F-legend-colour-limit-01`, replaced by `F-category-count-limit-01`.
 
 ---
 
 ## Six-part contract
 
 1. **What I changed**
-   - **`P-event-vocab-layered-01`:** added the incident.io URL. Linear now has its own docs as a source and is counted, so the count is now 6, 2 and 4.
-   - **New entries:**
-     - `F-linear-status-categories-01`
-     - `F-incidentio-severity-ownership-01`
-     - `F-cloudevents-type-prefix-01`, a second publisher (Firebase/Google)
-     - `F-category-count-limit-01`, adding the TVCG 2026 study to the EU guide
-     - `F-weaver-stability-values-01`
-   - **Narrowed:** `F-cloudevents-type-owner-01`, now only the ownership sentence.
-   - **Revised:**
-     - Both OpenTelemetry event entries now note the page's Development status.
-     - `F-otel-event-name-01` has a shorter shelf life.
-   - **Withdrawn:** `F-legend-colour-limit-01`.
-2. **Why:** these are the round-4 check's open questions 2 to 5.
-   - The pattern lacked an incident.io URL and a Linear source.
-   - Three items needed second sources.
-   - The Weaver `stability` text was unconfirmed.
-3. **What I verified:** I have no shell, so I ran no commands. I made about 20 summarising fetches and searches.
+   - **`F-linear-status-categories-01`:** narrowed to what two vendor pages support, with the Concepts page added. It now includes the duplicate status type, dated by the 2026-05-21 changelog.
+   - **`F-linear-category-rules-01`:** new. It holds the single-page rules (fixed order, one status per category) and is marked hold.
+   - **`F-incidentio-severity-ownership-01`:** narrowed to the organisation-configured, shared set with per-type hide and restrict. Three new sources: incident-types, the 2026-04-08 changelog and the API reference.
+   - **`F-incidentio-severity-permission-01`:** new. It holds the single-page permission and rename wording and is marked hold.
+   - **Memo:** §B and §D corrected.
+2. **Why:** the round-5 check held both entries because each rested on one page (its open question 1), and it pointed out that Linear's pages disagree on duplicates. Splitting each entry lets the parts with two sources be filed now, without stretching any source.
+3. **What I verified:** I have no shell, so I ran no commands. I made about 21 summarising fetches and searches.
    - **Confirmed:**
-     - the incident.io wording, three quotes
-     - the Linear issue-property wording, four quotes, and the triage wording
-     - the Firebase `type` description
-     - the arXiv abstract and the journal it appeared in
-     - the OpenTelemetry events page wording and its Development status
-     - the Weaver `stability` grammar
+     - Linear: the Concepts page wording, the 2026-05-21 and 2024-03-19 changelog wording, and the `issue-property` quotes again.
+     - incident.io: the incident-types hide and restrict wording, the 2026-04-08 changelog wording, and the API reference sentence.
    - **Negative results:**
-     - Linear's configuring-workflows page still returns 404.
-     - The OpenTelemetry `events-general` URL returns 404.
-     - The OpenTelemetry naming page has no rule on event-name cardinality.
-     - The Atlassian and Adobe Spectrum fetches returned no body text.
-   - **Contradiction found:** two Linear pages disagree on how duplicates are handled. The new Linear entry leaves duplicate handling out.
+     - Linear: `configuring-workflows` returns 404 in all three forms. The GraphQL schema was cut off and Apollo Studio was empty.
+     - incident.io: user-permissions, api-keys, the 2023-03-14 changelog, restrict-incident-type-management and the foundations guide say nothing about who may manage severities.
+   - **Conflict with the checker:** what I read on incident-types differs from round 5's raw read.
 4. **What is undone**
-   - A second source for the OpenTelemetry "dynamic values" rule and the CloudEvents ownership sentence.
-   - A second page for the incident.io and Weaver entries.
-   - The controlled-vocabulary literature and ITIL.
-   - Evidence on vocabulary drift outcomes. There is still none; the TVCG paper is level-3 evidence only on how many categories people can read.
-5. **Needed outside my lane**
-   - **Source checker:** re-read every quote above as raw text, especially:
-     - Linear issue-property: the fixed-order sentence and the note block
-     - the Firebase `type` text
-     - the arXiv abstract
-   - **Owner:** rule on checker open question 1, which decides:
-     - `F-otel-event-name-01`
-     - `F-otel-event-name-static-01` and `F-cloudevents-type-owner-01` (single-specification text)
-     - possibly `F-incidentio-severity-ownership-01` and `F-weaver-stability-values-01` (single vendor page)
+   - Second pages for the Linear category rules and the incident.io permission rule.
+   - Reading Linear's `WorkflowState.type` description in the official schema.
+   - Controlled-vocabulary literature and ITIL.
+   - Evidence on how vocabulary drift turns out in practice.
+5. **What is needed outside my lane**
+   - **Source checker:** re-read raw:
+     - incident-types (the hide and restrict sentences)
+     - the Linear Concepts page
+     - both Linear changelog entries
+     - the incident.io 2026-04-08 changelog
+     - the Severities API reference
+   - **Source checker or anyone with a shell:** read `WorkflowState` in the full `linear/linear` `schema.graphql`. If its `type` description lists the categories, it may be the second page for the category list (though probably not for the fixed-order rule).
+   - **Owner:** rule on the checker's open questions 2 and 3.
 6. **Open questions**
-   - Q-a to Q-d from earlier rounds stand.
-   - **New, Q-e:** when a system's own docs disagree, as Linear's do on duplicates, should the library file both readings with dates, or file neither until the docs are fixed?
-   - Checker question 4 (an official Linear source) can close.
+   - Q-a to Q-e from earlier rounds stand.
+   - **Q-e, refined:** where a vendor's dated changelog announces a change, may the library treat the newer reading as current and record the older page's wording as out of date with its date, instead of filing neither?
+   - **New, Q-f:** does a vendor changelog entry count as a separate "page" under the two-page rule, given that the same publisher wrote it?
+   - The checker's open question 1 can close for the parts re-proposed here. It stays open for the two hold entries.
 
 Sources:
-- [incident.io severities](https://docs.incident.io/incidents/severities)
 - [Linear issue properties](https://linear.app/docs/issue-property)
+- [Linear Concepts](https://linear.app/docs/conceptual-model)
 - [Linear triage](https://linear.app/docs/triage)
-- [Firebase Admin Eventarc CloudEvent](https://firebase.google.com/docs/reference/admin/node/firebase-admin.eventarc.cloudevent)
-- [CloudEvents spec](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md)
-- [Wang et al., subitizing in visualization (arXiv / IEEE TVCG 2026)](https://arxiv.org/abs/2508.17460)
-- [EU data visualisation guide](https://data.europa.eu/apps/data-visualisation-guide/colour-for-categories)
-- [OTel semconv events](https://opentelemetry.io/docs/specs/semconv/general/events/)
-- [OTel semconv naming](https://opentelemetry.io/docs/specs/semconv/general/naming/)
-- [OTel logs data model](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/logs/data-model.md)
-- [Weaver semconv syntax (raw)](https://raw.githubusercontent.com/open-telemetry/weaver/main/schemas/semconv-syntax.md)
+- [Linear changelog 2026-05-21, Issue duplicates](https://linear.app/changelog/2026-05-21-project-slack-channels)
+- [Linear changelog 2024-03-19, Custom statuses for projects](https://linear.app/changelog/2024-03-19-custom-statuses-for-projects)
+- [Linear changelog page 2](https://linear.app/changelog/page/2)
 - [Linear configuring workflows (404)](https://linear.app/docs/configuring-workflows)
-- Pattern sources for GitHub, PagerDuty, Kubernetes, Jira, CloudTrail, OCSF, Prometheus and Grafana: as in revision 3, all confirmed by the checker.
+- [Linear GraphQL schema (cut off)](https://raw.githubusercontent.com/linear/linear/master/packages/sdk/src/schema.graphql)
+- [incident.io severities](https://docs.incident.io/incidents/severities)
+- [incident.io incident types](https://docs.incident.io/incidents/incident-types)
+- [incident.io changelog: Incident role restrictions](https://incident.io/changelog/incident-role-restrictions)
+- [incident.io Severities API](https://docs.incident.io/api-reference/severities-v1)
+- [incident.io user permissions](https://docs.incident.io/admin/user-permissions)
+- [incident.io restrict incident type management](https://docs.incident.io/admin/restrict-incident-type-management)
+- [incident.io llms-full.txt (api-keys passage)](https://docs.incident.io/llms-full.txt)
+- [incident.io changelog 2023-03-14](https://incident.io/changelog/2023-03-14)
+- [incident.io severities guide](https://incident.io/guide/foundations/severities)

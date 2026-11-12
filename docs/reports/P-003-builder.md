@@ -1,42 +1,39 @@
-I built nothing for P-003, and I changed no files. I have no shell in this session and no git, and the baseline step needs both.
+I stopped before changing anything, because the S-007 baseline can't be recorded in this workspace. I made no edits and no commits.
 
 **1. What I changed**
-Nothing. There is no `src/` change, no seam, no baseline and no handover notes.
+Nothing. I read the brief, `specs/S-007.md`, the locked checks in `tests/acceptance/S-007/` and the earlier rulings in `decisions/P-003/`.
 
-**2. Why I stopped**
-- **No way to run commands.** My tools here are Read, Write, Edit, Glob and Grep. The S-007 baseline procedure (`tests/acceptance/S-007/README.md`) needs commands I can't run:
-  - write `tests/desk/s007-seam.mjs`;
-  - run `node tests/acceptance/S-007/record-baseline.mjs`, which refuses unless `src/` matches the base commit;
-  - commit `tests/desk/S-007-baseline.json` before any change under `src/`.
-- **No git.** The working directory is not a git repository. I can't make the base-commit or ordering commits. Without them `baseline-provenance.test.mjs` and rubric R9 would fail.
-- **Not safe to build around it.** If I edited `src/` first, today's behaviour could no longer be recorded. AC9 and AC14 to AC17 are all checked against that record. The spec's duty to run the checks before handback (D-045) also can't be met.
-- **Nothing exists yet.** Neither `tests/desk/s007-seam.mjs` nor `tests/desk/S-007-baseline.json` is in the pack. The fix isn't in `src/lib` either; I searched for the mark text. The locked checks in `tests/acceptance/S-007/` import the seam at load, so every one of them fails until it exists.
+**2. Why**
+- **No git here.** The workspace isn't a git repository: `git rev-parse` fails, there is no `.git` anywhere above it, and there is no `governance/` folder.
+- **The baseline needs git.** The locked checks require me to write the seam, then run `record-baseline.mjs` at the base commit, before any change under `src/`. That script needs a real base commit (`git cat-file`, `git diff base -- src/`). Then I must commit the baseline file before touching `src/`.
+- **Provenance can't pass.** `baseline-provenance.test.mjs` checks that order from git history. If I built the rule and recorded the baseline afterwards, it would be a false baseline, and the ACs that compare against it (AC9, AC10, AC14, AC15, AC16 and AC17) would prove nothing.
+- **Seam and baseline don't exist yet.** `tests/desk/s007-seam.mjs` isn't there, and neither is `tests/desk/S-007-baseline.json`. Every locked test imports the seam, so none can run.
+- **I didn't work around it.** I didn't run `git init` or guess a base commit. Both would fake the provenance the checks exist to prove.
 
 **3. What I verified**
-- I read the frozen spec `specs/S-007.md`, the plan `docs/projects/P-003.md`, `decisions/P-003/stop-12.md`, the locked-check README and `lib.mjs`, and the rubric.
-- I ran no commands, so no check was run by me.
-- The last check run, `reviews/S-007/checks.txt`, reports FAIL, but only on two governance checks, neither in my lane:
-  - `surface_guard check` lists 12 exemptions in `governance/SURFACES.md` (lines 126–138, minus 136) that cite ledger entries L-0024 to L-0033, L-0035 and L-0036. None of them is in `docs/LEDGER.md`.
-  - `digest check` says `digest/project.md` is out of date and `digest/p-004.md` is a stale pack.
-- The other twelve checks in that run passed. That run does not execute `tests/acceptance/S-007/`.
+- `ls` on `tests/desk` for seam or baseline files returned nothing.
+- `git -C pack rev-parse --show-toplevel` returned "not a git repository".
+- I did not run the acceptance tests, because the seam is missing.
+- `reviews/S-007/checks.txt` shows governance failures:
+  - `surface_guard`: 12 violations, entries citing ledger ids (L-0024 to L-0036, except L-0034) that aren't in `docs/LEDGER.md`.
+  - `digest`: 2 violations.
+  - These are outside my lane. They don't depend on the build.
 
 **4. What is undone**
-All of the build:
-- the seam, the baseline file and the baseline commit;
-- the single rule in `src/lib/`;
-- the card-sheet changes in `src/public/sandbox.js` and its regenerated copies;
-- the queue, Home, board and sender wiring;
-- the AC13 monitoring entry point;
-- the AC18 operating notes in `docs/handover/`, which I'd put at `docs/handover/P-003/`;
-- the handover package's monitoring section.
+All of it:
+- the seam at `tests/desk/s007-seam.mjs`
+- the baseline, recorded and committed before any `src/` change
+- the one rule in `src/lib/`
+- the changes to the views and to `src/public/sandbox.js`
+- the unit tests under `tests/desk/`
+- the handover package in `docs/handover/`, including the operating notes (AC18) and the monitoring section
 
 **5. Needed outside my lane**
-- **A session with a shell and git.** It needs git on a `build/builder/P-003` branch with full history and Node 20 or later, so the baseline can be recorded and committed first. It also needs `node --test tests/acceptance/S-007/` to run.
-- **Governance fixes.** Someone with that lane has to fix the two failing checks above:
-  - Add ledger entries L-0024 to L-0033, L-0035 and L-0036, or correct the exemptions that cite them.
-  - Run `digest.py build`.
-  - Until then the overall check run stays red whatever I build.
+- A checkout of the repository with full history (the checks say `fetch-depth: 0`), on branch `build/builder/P-003`.
+- The base commit's id, for `seam.baseCommit`.
+- The governance files, so I can check my commit trailers and branch rules.
+- The ledger and digest failures in `checks.txt` need whoever owns `governance/`.
 
 **6. Open questions**
-- Is it intended that this builder session has no shell? If so, how should the baseline-before-`src/` ordering be satisfied?
-- Does the check run's `check_all` include the acceptance tests, once the seam exists?
+- Is there a different workspace, with git, where this builder session should run? If not, should the freeze gate treat the missing git history as a blocker? I think it should.
+- The seam must reach the real code in `src/lib/`, `src/public/sandbox.js` and `src/notify/`. That is a sizeable task. I'd do it first, at the base commit, once git is available.

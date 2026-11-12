@@ -1,5 +1,5 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-11-12: 43 active rulings and 0 kills, from 45 ledger entries.
+As of 2026-11-12: 44 active rulings and 0 kills, from 46 ledger entries.
 
 ## Active rulings
 
@@ -57,6 +57,7 @@ As of 2026-11-12: 43 active rulings and 0 kills, from 45 ledger entries.
 | L-0044 | .github/workflows/scrub-proof.yml gains `schedule: cron "41 10 * * 1"`; a scheduled run's model is the MODEL_BUILDER repository variable. Its permissions stay read-only and it still … | 2026-11-11 | never |
 | L-0045 | governance/checks/orchestrator_git.py PROOF_OFF: step 1 writes off-check.txt holding the fixed text "harness check" (never nonce A, L-0101; not proof.txt), then the two Reads as steps 2 … | 2026-11-11 | never |
 | L-0046 | governance/RUNNER.toml `proven_image_version` goes from "202609" to "202611"; `proven_version` (2.1.284), `proven_image_os` (ubuntu24), `session_commands` ("on") and `pass_env_cleared` (false) are unchanged. The proof passed all 21 checks: the … | 2026-11-12 | never |
+| L-0047 | Until 10:53 UTC on the expiry date, the Chief of Staff acts as the owner's proxy (D-066) on the desk's timeline work (P-005) and what … | 2026-11-12 | 2026-11-12 |
 
 ## Kills
 None.

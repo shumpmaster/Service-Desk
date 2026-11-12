@@ -1,0 +1,23 @@
+kind = "research"
+milestone = "Discovery-5"
+# Research for the desk's timeline work (P-005), from the groundwork map's research shortlist
+# (research/Q-022-memo.md). Checked by the Critic for gaps and neutral phrasing before filing
+# (D-032, D-055); the Critic's returns are recorded in this session's handoff.
+question = """
+What an event record must hold for work to be rebuilt from records alone.
+
+In software delivery pipelines and audit-trail practice (CI systems, version-control hosts, workflow and orchestration engines, audit logs), what must each event record hold for a reader to rebuild a piece of work end to end from records alone: who or what wrote it and in what capacity, when, by which clock and in which time zone, and how it links to the piece of work, the project, the milestone and the run or session it belongs to? Which kinds of step are commonly missing, ambiguous or only reconstructable (for example work on branches never pushed and seen only through merge commits, results filed by one party on another's behalf, steps grouped by session), and how do such systems mark them? How do they keep a link from an event to its record working after the host's retention period ends? An inventory of this setup's own records is not asked here; it is done separately from the records themselves.
+
+The setup. One owner oversees several software projects worked on mostly by AI agents. In each project a script, the Orchestrator, run on GitHub Actions by repository events and a schedule, moves work through fixed phases and stages, dispatches agent sessions with distinct roles (for example builder, definer, check author, reviewer, critic, researcher, source checker) and routes each result by a fixed table (shumpmaster/Personal-Org-Operating-Model OPERATING_MODEL.md §4 and §5; Service-Desk governance/ROUTING.toml). The owner also works with a conversational agent, the Chief of Staff, which the Orchestrator does not dispatch; it writes the questions put to the owner, records the owner's rulings and writes the case at each phase gate. The work leaves records in two kinds of place: GitHub objects (branches, commits, pull requests, checks run by GitHub Actions, reviews, merges, deploys) and files in each project repository and in one portfolio repository spanning them (status files, an append-only dispatch log, decision cards in queue/, the owner's answers in decisions/, review verdicts in reviews/, research questions, memos and source checks in research/, design mockups in docs/design/, gate cases in docs/gates/). Every agent commit names its session; where only one branch can be pushed, builder branches stay local and reach GitHub only through merge commits; reviewer-role agents never commit, and their verdicts are filed by the Orchestrator (Service-Desk AGENTS.md §1; CLAUDE.md). Some steps wait on the owner: answering a card or a question, ruling a phase gate, merging a pull request that needs the owner, approving a deploy. What exists today: a status page, the desk, hosted on Cloudflare Pages, reads every connected project's records with one fine-grained, read-only GitHub token. Its screens include one card per project, what waits on the owner, and each project's timeline of phase runs and milestones with each step linked to its record. The owner answers questions from the desk through a link that commits the answer record; other actions happen on GitHub. In one of the projects, a sender run by GitHub Actions every 5 minutes and when workflow runs end sends Web Push alerts to the desk installed on the owner's iPhone, and opens a GitHub issue if it can no longer send. The owner reads mostly on a phone.
+
+## The decision it serves
+
+Which fields and links this setup's records must carry for a view of the work to be built from records alone.
+
+## What each answer would change
+
+Each required field or link becomes a check run against this setup's own records; each one missing becomes a request to change what the Orchestrator or the agents write, or a field shown as not recorded.
+
+topics: github, attribution, automation, change-reporting, status-reports, agents
+depth: 2
+"""

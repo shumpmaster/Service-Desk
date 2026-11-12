@@ -632,3 +632,17 @@ options_considered: Leave commands off until the operating model adopts L-0045's
 decided_by: owner ("A: fix both (Recommended)", 2026-11-11, asked in session session_01QBwHGNGhaxp9ABH6WFJJE2; recorded in decisions/questions/P-003-build-blocked.md)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0047 — Six-hour proxy: the Chief of Staff carries the timeline Discovery forward on the owner's behalf until 10:53 UTC
+date: 2026-11-12
+type: delegation
+supersedes: []
+scope: project
+expires: 2026-11-12
+asked: none; the owner said in the session (session_01QBwHGMeiscLbX8ZWj6MH1K, 2026-11-12 04:53 UTC): "Merged, now I am giving you as my chief of staff permission to act on my behalf over the next 6hours. My only expectation is a summary of any rulings/ decisions etc be provided on the 6 hours is up".
+decision: Until 10:53 UTC on the expiry date, the Chief of Staff acts as the owner's proxy (D-066) on the desk's timeline work (P-005) and what it waits on. It may file research requests and the project request, start Orchestrator runs by hand, merge a records-only (R0) pull request when its checks are green and it holds no code, and answer a reversible procedural question of this work as the owner's proxy, its answer record's second line "Proxy: done at the owner's request". It is read as narrowly as L-0019, the earlier six-hour proxy. Not done by proxy, and left for the owner: the plan's value target, success criteria and stop rule, which are drafted for the owner's approval at the Design gate; gate rulings; kills; rule changes; owner verdict files; deploys; code (R1) and governance (R3) changes; another session's questions and cards; and anything irreversible. Every proxy action is listed in the summary to the owner at the end and in the session's handoff.
+licenses_next: The timeline Discovery's research requests and project request, their merges, and Orchestrator runs started by hand, until 10:53 UTC on 2026-11-12.
+options_considered: "Work only, merge nothing" (the owner's words grant more); "Full authority, the plan's value target and gate rulings included" (never delegable under the operating model's delegation grants).
+decided_by: owner ("permission to act on my behalf over the next 6hours", 2026-11-12, in the session)
+proposed_by: chief-of-staff
+reversibility: reversible

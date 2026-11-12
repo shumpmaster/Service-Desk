@@ -8,7 +8,7 @@ version = "2.1.284"          # the pinned Claude Code command line
 # Record a new passing proof run's values here by a rule change.
 proven_version = "2.1.284"
 proven_image_os = "ubuntu24"
-proven_image_version = "202609"
+proven_image_version = "202611"
 # Each role's model is a repository variable, MODEL_<ROLE> (L-0097, S-016 AC1), never a file.
 max_turns = 50
 
@@ -17,6 +17,8 @@ max_turns = 50
 # bubblewrap and socat, a session's commands saw no trace of the token. Re-proof rule (D-077):
 # a new pinned version above, or a new runner image, needs a fresh passing proof run first, or
 # this goes back to "off". Proven with version 2.1.284 on ubuntu-24.04 (image 20260920).
+# Re-proved on image 20261101.360.1 (run 43126296640, 2026-11-12): every check passed, both sessions
+# included, after L-0045 gave the commands-off brief its harmless first step (L-0046).
 # Any value other than "on" counts as "off".
 session_commands = "on"
 command_tools = ["Bash", "BashOutput", "KillShell", "Monitor", "PowerShell", "Task", "Agent"]

@@ -33,6 +33,7 @@
 | L-0047 | Until 10:53 UTC on the expiry date, the Chief of Staff acts as the owner's proxy (D-066) on the desk's timeline work (P-005) and what … | 2026-11-12 | 2026-11-12 |
 | L-0048 | governance/standards/sources.md gains one rule: for what a published specification itself requires, one quoted passage of that specification is enough; where its pages state the requirement … | 2026-11-12 | never |
 | L-0049 | From now until the timeline work (P-005) reaches its first design mockup, or the owner ends it, the Chief of Staff acts as the owner's … | 2026-11-12 | never |
+| L-0050 | governance/standards/sources.md gains four lines: a vendor's changelog on its own site counts as one of its documentation pages for how its product behaves; where a … | 2026-11-12 | never |
 
 ## Kills
 None.

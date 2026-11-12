@@ -674,3 +674,17 @@ options_considered: Stop and ask before each step (the owner's words grant more)
 decided_by: owner ("you can run autonomously as you did overnight. You stoppage point is our first design mock up", 2026-11-12, in the session)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0050 — A vendor's changelog counts as one of its pages; facts its pages disagree on, or found on one page, are filed but not load-bearing
+date: 2026-11-12
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: Q-026 stopped a second time on three held facts the source rule did not say how to file: one from Linear's changelog that one of its guide pages contradicts, and two each found on one vendor page. How may the library file a vendor's facts from its changelog, from pages that disagree, or from a single page? Filed first as questions/P-005-vendor-pages.md (#390), after the Critic's four cold reads.
+decision: governance/standards/sources.md gains four lines: a vendor's changelog on its own site counts as one of its documentation pages for how its product behaves; where a vendor's own pages disagree on how its product behaves, the fact is filed as a record of what each page says, quoting each with its page and any date it gives, without stating which is current, and is not load-bearing; a fact about how a vendor's product behaves found on only one of its pages may be filed marked "single page", and is not load-bearing; not load-bearing means no plan decision may rest on the entry. The earlier lines are unchanged.
+licenses_next: Once merged, the Q-026 stop card 2 is answered `re-specify` by the owner's choice of "Option 1" (a strike), and its next source checks may file the three held facts under these lines. A changelog and one guide page together can carry a plan decision in later research.
+options_considered: B, the changelog and disagreement lines only (the two single-page facts stay held, a third stop card possible); C, no change (all three stay held, likely a third stop card).
+decided_by: owner ("A: file all three (Recommended)", 2026-11-12, asked in session session_01QBwHGJzc87ezrCJjztgrMp; recorded in decisions/questions/P-005-vendor-pages.md)
+proposed_by: chief-of-staff
+reversibility: irreversible

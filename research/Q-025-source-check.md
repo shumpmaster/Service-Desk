@@ -1,34 +1,21 @@
-Verdict: FAIL
+Verdict: PASS
 
-Two of the three entries in this round pass and are filed. The third, `F-agent-false-success-01`, stays out, so the item as a whole fails. I made no commits because there is no git repository in this folder. The five entries filed in earlier rounds were not re-checked.
+`F-agent-false-success-01` now passes and is filed at grade B in `library/facts/F-agent-false-success-01.md`. I made no commits because the folder has no git repository. I did not re-check the seven entries filed in earlier rounds.
 
-## Filed
-- **`library/facts/F-provenance-self-generated-01.md`**
-  - **`slsa.dev/spec/v1.0/levels`:** L1 "trivial to bypass or forge". L2 requires an "explicit 'attack'". L3 keeps signing material "accessible to the user-defined build steps" out of reach.
-  - **GitHub blog (Heidinger, 19 Dec 2024):**
-    - L1 is "Provenance exists for traceability, but minimal tamper resistance".
-    - L2 is "Provenance signed by a managed build platform, deterring simple tampering".
-    - L3 says "user-defined build steps should not have access to sensitive signing material".
-  - **Socket.dev glossary (page dated 2026-10-30):**
-    - L1 provenance "can be unsigned or self-generated".
-    - L3 is "the first level at which code running inside your build cannot forge your provenance".
-  - **Limit:** the two secondary pages restate the spec and add no new evidence. They are different publishers, which satisfies independence as the memo frames it. The entry says so in its note.
-  - **Fetch method:** all three pages were opened through summarising fetches that returned verbatim quotes.
-- **`library/facts/F-algorithm-aversion-01.md`**
-  - **Dietvorst et al. 2015:** I read the PDF text directly. The abstract says people "more quickly lose confidence in algorithmic than human forecasters after seeing them make the same mistake". It says "In 5 studies", and "This was true even among those who saw the algorithm outperform the human."
-  - **Crossref:** confirms the citation, *J. Experimental Psychology: General* 144(1), 114–126.
-  - **Prahl & Van Swol 2017:** the IDEAS/RePEc page gives the full abstract. It includes "We do not replicate the finding that human advice is generally utilized more than automated advice." It also says "after receiving bad advice, utilization of automated advice decreased significantly more than advice from humans." This answers the memo's open point, because the IDEAS page does carry the sentence.
-  - **Limit:** the Wiley publisher page returned 403, so IDEAS (a bibliographic index) is the only place I confirmed the abstract.
+**Evidence**
+- **Advani, arXiv 2606.09863:** I read the PDF text itself. It gives:
+  - "45–48% of failures in single-control tau2-bench domains, 3% in dual-control telecom, and 75.8%" for AppWorld agents with explicit status claims.
+  - A domain table totalling 9,876 tau2-bench trajectories.
+  - "Per-model false-success rates span 13% to 89%".
+  - The abstract page also gives 1 Jun 2026 and two benchmarks.
+- **Smyth et al., arXiv 2609.20812v3:**
+  - The abstract page confirms nine authors and the dates (17 Sep, v3 22 Sep 2026). It also confirms 67.9% of runs, 80.4% misleading (59–96% per model), the 1.8× rate, and eight proprietary plus four open-source models.
+  - The HTML confirms affiliations at Tara Research, Mila and Cohere. It says 774 incomplete runs, of which 52.8% explicitly claimed complete coverage and 27.5% omitted the gap, which together make 80.4%. Explicit overclaiming runs missed 720 of 1,237 planted defects (58.2%). Runs that touched every file missed 342 of 1,055 (32.4%).
+  - "Misleading" is defined as incomplete responses that "do not adequately disclose their coverage gaps". This matches the claim's wording, "falsely claiming a complete review or not disclosing the gap".
+- **Independence:** Smyth cites Advani only as prior work ("Guo et al., 2026; Advani, 2026"). Smyth has its own benchmark, tasks, models and authors, so I count it as an independent second source. The two-source rule is met without a waiver.
+- **Zhang & Ma, ACL Anthology:** pages 281–294, the DOI, and False Completion Rate 12.7%→6.9% over 1,280 tasks are all in the abstract. It is cited only in the note as support, not as a source for the claim.
 
-## Not filed
-- **`F-agent-false-success-01`**
-  - **Figures confirmed:** the arXiv abstract matches the memo. It lists 9,876 tau2-bench and 1,879 AppWorld trajectories, 45–48%, 3%, 75.8%, AUROC 0.65 and 0.54, and TF-IDF AUROC 0.83 and 0.95. Author and date also match (Laksh Advani, 1 Jun 2026, FAGEN@ICML2026).
-  - **ICML page:** it carries the 9,876 count, 45–48%, 3% and the TF-IDF 0.83. It has no AppWorld figures. It is the same author, so it adds no independence.
-  - **Why it stays out:** it is one author's preprint with no independent source. The memo itself says to file it only under an owner waiver, and none is on record.
-
-## Open questions
-- Does the owner waive the two-source rule for Advani at grade C, or should the entry wait for a replication?
-- Is Socket.dev, which restates the spec, enough as the "independent" secondary source for SLSA? I filed on the memo's framing. A stricter reading would leave that entry with only the GitHub blog.
-- Can someone with publisher access confirm the Prahl & Van Swol abstract at doi 10.1002/for.2464?
-
-Files are in `library/facts/`. I also added a short round-4 note to `research/Q-025-source-check.md`.
+**Open questions**
+- Smyth's 52.8% and 58.2% figures reached me through a summarising fetch that returned verbatim quotes, not the raw table. They are in the note only, not in the claim. The 67.9%, 80.4% and 1.8× figures in the claim come from the abstract page.
+- Both sources are preprints. Grade B follows the memo. If the grading rule caps preprint-only evidence at C, the entry should be superseded at C.
+- The ICML page (`icml.cc/virtual/2026/77904`) is listed as a source but is the same author as Advani. I did not reopen it this round, and it is not counted as a second source.

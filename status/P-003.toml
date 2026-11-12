@@ -1,7 +1,7 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "project"
 stage = 3
-state = "dispatched"
+state = "returned"
 role = "definer"
 last_verdict = "none"
 plan_round = 0
@@ -9,7 +9,6 @@ build_round = 0
 confirm_used = false
 attempts = 0
 sessions = 1
-dispatched_at = "2026-11-12T16:31:29Z"
 card = 15
 gate_n = 3
 spec = "S-008"

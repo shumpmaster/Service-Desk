@@ -1,36 +1,42 @@
 Verdict: FAIL
 
-I filed no library entries. The memo is not yet fit to file. I fetched raw page HTML for 12 of the roughly 30 cited pages, and three claims failed against it. I did not open the rest: the GitHub App pages, the security log, the commit-signature page, the Cloudflare pages, RFC 8291, `review-deployments` and `control-deployments`. Those claims are unverified. Under the brief an unverifiable claim is a FAIL.
+I opened all the cited pages as raw HTML and searched them for the quoted strings. I filed 16 of the 18 proposed entries. Both proposed patterns stay out. The memo also contains one statement that a cited page contradicts, so the verdict is FAIL. A3 and the revision-log row for A3 say the check-run endpoint pages have no fine-grained token box.
 
-**What the pages say, against the memo**
+**The contradicted statement**
+- `memo:20` and `memo:36` say the check-run endpoint pages have no fine-grained token box.
+- `rest/checks/runs` has such a box on every endpoint, for example "Fine-grained access tokens for 'Get a check run'".
+- Each box lists only "GitHub App user access tokens" and "GitHub App installation access tokens", with "Checks" permission. That supports the A3 conclusion that PATs can't use the Checks API, but the memo's wording is wrong.
+- `F-gh-fgpat-limits-01` doesn't repeat the wrong statement, so I filed it.
+- Minor wording slip: `memo:19` says the endpoints page has no `notifications` string. The word appears once, as a sidebar menu label. No notifications endpoint is listed.
 
-1. **A2 and A3 are not confirmed, and A3's "conflict" looks wrong.**
-   - `memo:19` says the fine-grained-token endpoints page lists check-run read endpoints. In the raw page, the strings `check-runs`, `check-suites` and `/notifications` do not appear.
-   - The page lists only `/commits/{ref}/status` and `/statuses`.
-   - That agrees with the token-management page, which lists "Using fine-grained personal access token to call the Checks API" among the unsupported cases.
-   - So there is probably no conflict, and the memo's reading of the endpoints page is wrong.
-   - The proposed entry `F-gh-fgpat-limits-01` (`memo:86`) repeats the false conflict and cannot be filed.
-2. **A17 is not confirmed for check runs.**
-   - The workflow-runs page does say "up to 1,000 results" for filtered listings, which confirms that part.
-   - The checks/runs page contains none of the claims about the 1,000 most recent check suites or the deletion of same-name check runs beyond 1,000.
-   - This blocks `F-gh-checks-runs-01` (`memo:92`).
-3. **C5 is contradicted.**
-   - `memo:66` says the fine-grained permission for `repository_dispatch` was not confirmed.
-   - The repos page says: "Contents" repository permissions (write), for fine-grained PATs and for App user and installation tokens.
-   - The memo's research question 3 (`memo:105`) is therefore already answered.
+**Earlier-round failures, now resolved**
+- **A2/A3:** confirmed. The endpoints-available page has no `check-runs` or `check-suites`. It does list `/commits/{ref}/status`, `/statuses`, `environments` and `pending_deployments`. The token-management page lists "Using fine-grained personal access token to call the Checks API" as unsupported.
+- **A17:** confirmed. The `rest/checks/runs` page has the three sentences with "1000" and no comma, and the string "1,000" is absent from it. The workflow-runs page has "up to 1,000 results". The earlier search for "1,000" was the cause.
+- **C5:** confirmed. The `rest/repos/repos` box for "Create a repository dispatch event" says Contents (write) for App user tokens, App installation tokens and fine-grained PATs. The permissions tables agree.
 
-**What I confirmed**
+**Confirmed against the pages**
+- **Permissions (A1, A3a, B1):** all rows match the fine-grained and App tables. That covers list runs, list PRs, contents, deployments, Metadata for events, pending_deployments write, merge as Contents write, reviews as Pull requests write, and PUT contents with Workflows. Check-run reads are `UAT IAT` with Checks read.
+- **Notifications, events, webhooks (A4, A10, A12–A15):** all match the quoted wording. The `deployment_review` and `deployment_protection_rule` entries show GitHub Apps availability only.
+- **Retention (A16):** the docs page and the changelog agree on every figure quoted.
+- **Environments (B3, B4):** plan limits, six reviewers, one approval, self-review block and the 30-day failure all match. The 30-day failure rule is only on `control-deployments`.
+- **Tokens, signing, logs (A7, B6, B8, B9, A18):** matched. A private App can be owned by a personal account (`pubpriv`, "the personal account if the GitHub App is owned by an individual account").
+- **RFC 8291 and Cloudflare (D1–D3, B12):** matched. DO jurisdictions are eu, us and fedramp. The KV page has no "jurisdiction" string, which supports the "none stated" claim.
+- **Library citations:** `L-F1`, `L-F2`, `L-F5`, `L-F6`, `L-F9`–`L-F12`, `L-P1`, `F-gh-01`, `F-gh-02`, `F-Q004-*`, `F-gh-11`, `F-gh-12`, `F-gh-12b`, `F-cf-cron-01`, `F-webpush-02`–`05` and `LIB-P-a` all exist. They say what the memo uses them for. I did not re-open their sources.
 
-- **Notifications (A4):** The page says the endpoints "only support authentication using a personal access token (classic)", and it describes Last-Modified, 304 and X-Poll-Interval. Support for `F-gh-notif-01`.
-- **Events (A10):** The timeline holds up to 300 events from the past 30 days, with latency of "30s to 6h". Support for `F-gh-events-02`.
-- **Webhook types (A12):** The types-of-webhooks page says "You cannot create webhooks for individual user accounts" and sets a limit of 20 webhooks per event type. Partial support for `F-gh-webhook-types-01`. The App-webhook and App-only-event parts come from other pages I did not open.
-- **Token capabilities (B6):** The token-management page says a token has "the same capabilities … that the owner of the token has". It also describes the resource owner.
-- **Deploy approvals (B3, B4):** Required reviewers and wait timers are "only available for public repositories" on Free, Pro and Team. The page allows up to six users or teams and says one approval is enough. Support for the first part of `F-gh-env-01`. The self-approval block and the 30-day failure come from pages I did not open.
-- **Retention (A16):** The docs page and the 2026-08-27 changelog both say that from October 1, 2026 these policies apply to checks, workflow runs and commit statuses, and that until then they were kept 400+ days. That is two pages from the same publisher, which counts as two sources under `governance/standards/sources.md`. It is a candidate for filing once the rest is settled. I did not confirm the 1–90 and 400-day limits for public and private repositories, or that the change took effect.
-- **Fine-grained permission table (A1, B1):** I fetched the fine-grained permissions page but did not run the per-endpoint checks, so `F-gh-perm-02` is unverified. The B2 note on deployment-review wording is also unchecked. The workflow-runs page does say "Anyone with read access to the repository can use this endpoint", but that sentence belongs to the list and get endpoints, not the deployment-review one.
+**B2 can be settled.** The "Review pending deployments" box on `rest/actions/workflow-runs` says Deployments (write). The "read access" sentence describes the reviewer's role. The two don't conflict, so memo research question 5 is answered. `F-gh-perm-02` records this.
+
+**Filed** in `library/facts/`, checked on 2026-11-12:
+- GitHub: `F-gh-notif-01`, `F-gh-events-02`, `F-gh-perm-02`, `F-gh-fgpat-limits-01`, `F-gh-app-checks-01`, `F-gh-env-01`, `F-gh-retention-01`, `F-gh-webhook-types-01`, `F-gh-webhook-validate-01`, `F-gh-app-tokens-02`, `F-gh-checks-runs-01`, `F-gh-commit-sign-01`, `F-gh-seclog-01`
+- Push and Cloudflare: `F-webpush-09`, `F-cf-loc-01`, `F-cf-secrets-01`
+
+**Not filed**
+- `P-gh-owner-action-01` and `P-gh-cross-repo-alerts-01` are opinions (grade C).
+  - They rest on B14, which the memo admits has no independent source.
+  - They also rest on the point at `memo:73` that "proving the owner was present … is not covered by any source I opened".
+  - I did not re-open `F-cf-04`, `F-cf-05` or `P-auth-01`, which they cite.
+  - They fail the "confirm it says what is claimed" test.
 
 **Open questions**
-
-- Ask the researcher to re-derive A2, A3, A17 and C5 from the raw pages. The memo says its sources were read through a summariser, and these three errors fit that.
-- The Cloudflare, RFC 8291, GitHub App and commit-signature entries need a second pass in which I open the pages myself.
-- Several proposed entries are graded B with a single page. The standard allows two pages from one vendor only for product-behaviour claims. Claims of cost, risk or quality still need an independent source, and none is listed.
+1. Correct the A3 and revision-log wording (`memo:20`, `memo:36`) and the `notifications` string note in A2. Then the memo can go forward.
+2. Several filed entries are single-page B grade. That follows the memo's grading and the library precedent (`L-F5`, `L-F6`). Say if you want a second page for any of them.
+3. Open from the memo: whether the 1 Oct 2026 retention change took effect, whether App-token REST commits are signed, and the third-party tool scan (research questions 1–4). I checked none of these.

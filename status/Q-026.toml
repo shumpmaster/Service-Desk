@@ -1,7 +1,7 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "research"
 stage = 2
-state = "dispatched"
+state = "returned"
 role = "researcher"
 last_verdict = "none"
 plan_round = 0
@@ -9,6 +9,5 @@ build_round = 0
 confirm_used = false
 attempts = 0
 sessions = 1
-dispatched_at = "2026-11-12T16:03:40Z"
 card = 1
 milestone = "Discovery-5"

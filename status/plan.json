@@ -4,8 +4,8 @@
       "action": "dispatch",
       "gate": null,
       "item": "P-003",
-      "role": "definer",
-      "route": "plan-fail",
+      "role": "critic",
+      "route": "define-to-plan-review",
       "spec": "S-008",
       "stage": 3
     },
@@ -13,8 +13,8 @@
       "action": "dispatch",
       "gate": null,
       "item": "Q-026",
-      "role": "source-checker",
-      "route": "research-to-source",
+      "role": "researcher",
+      "route": "source-fail",
       "spec": null,
       "stage": 2
     }

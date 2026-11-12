@@ -646,3 +646,17 @@ options_considered: "Work only, merge nothing" (the owner's words grant more); "
 decided_by: owner ("permission to act on my behalf over the next 6hours", 2026-11-12, in the session)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0048 — A published specification's own quoted text is enough to source what it requires
+date: 2026-11-12
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The source rule covers a vendor's documentation of its own product but not a published specification's text about its own requirements, and Q-026's third source check held `F-otel-event-name-01` on that gap (OpenTelemetry's events page says an event name "MUST" uniquely identify the event structure; its log data model says "SHOULD"). Is one quoted passage enough, two of its pages, or two independent publishers? Filed first as questions/P-005-spec-sources.md (#373), after the Critic's four cold reads.
+decision: governance/standards/sources.md gains one rule: for what a published specification itself requires, one quoted passage of that specification is enough; where its pages state the requirement at different strengths, the entry quotes the one it rests on and notes the others; a specification's text is never evidence of what others do in practice. The two rules already there are unchanged.
+licenses_next: Once merged, and only with the owner's say-so in session, the Q-026 stop card is answered `re-specify` (a strike), and its next source check may file `F-otel-event-name-01` on the "MUST", with the "SHOULD" noted. The filed `F-enum-escape-values-01` stands.
+options_considered: B, two of the specification's pages labelled "same publisher" (a requirement stated on one page could not be filed); C, two independent publishers (no rule change; the OCSF part of the filed entry withdrawn by a superseding entry).
+decided_by: owner ("A: one passage (Recommended)", 2026-11-12, asked in session session_01QBwHGJzc87ezrCJjztgrMp; recorded in decisions/questions/P-005-spec-sources.md)
+proposed_by: chief-of-staff
+reversibility: irreversible

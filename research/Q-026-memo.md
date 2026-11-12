@@ -1,24 +1,28 @@
-# Research memo (revision 2): Q-026, Event vocabularies: closed sets, open labels, free text, or none (2026-11-12)
+# Research memo (revision 3): Q-026, Event vocabularies: closed sets, open labels, free text, or none (2026-11-12)
 
-*Researcher, depth 2. This revises `research/Q-026-memo.md` to answer `research/Q-026-source-check.md`. I did not see the routing table, the operating model or any project plan. **I read every web page in this round through a summarising fetch, not as raw text.** The quotes below are what that summariser returned, so the Source checker should re-read them raw.*
+*Researcher, depth 2. This revision answers the round-3 source check in `research/Q-026-source-check.md`. I did not see the routing table, the operating model or any project plan. **I read every page in this round through a summarising fetch, not as raw text.** The quotes below are what that summariser returned, so the Source checker should re-read them raw.*
 
 **Grade key, as the library uses it.** A: the vendor's own docs about its own product. B: one authoritative source, or a solid source plus some inference. C: third-party or secondary sources only. Each statement is marked **[F]** fact, **[E]** estimate or **[O]** opinion.
 
-**Already filed by the Source checker, not proposed again:** `F-enum-evolution-01` and `F-change-events-separate-01`.
+**Already filed, not proposed again:** `F-enum-evolution-01`, `F-change-events-separate-01`, `F-enum-escape-values-01`, `F-high-cardinality-01` and `F-board-status-categories-01`.
 
 ## Summary
 
-None of the systems I checked uses a single pure form. Six of the twelve in §A clearly use the same layered form, two arguably do, and four use a single open form (§B gives the count):
+None of the systems I checked uses a single pure form. Most of them layer three forms. Of the 12 systems in §A, five clearly do this on grade-A sources, Linear also does on grade-C sources, two arguably do, and four use a single open form (§B gives the count). The three layers are:
 
-- **A small closed set** for the thing tools must count, colour or route on. Examples: GitHub check run `conclusion`, PagerDuty `severity`, Kubernetes Event `type`, Jira's three status categories, CloudTrail `eventCategory`.
+- **A small closed set** for the thing tools must count, colour or route on. Examples: GitHub check `conclusion`, PagerDuty `severity`, Kubernetes Event `type`, Jira's three status categories, CloudTrail `eventCategory`.
 - **An open identifier named by the producer** for the specific kind. Examples: Kubernetes `reason`, PagerDuty `class`, GitHub check `name`, CloudTrail `eventName`.
 - **Free text** for the human detail. Examples: Kubernetes `message`, PagerDuty `summary`.
 
-Where a closed set must still take in values nobody planned for, schemas add explicit escape values: OCSF's `0 Unknown` and `99 Other`, and a zero value ending `_UNSPECIFIED` in AIP-126 and the protobuf style guide.
+Where a closed set must still take in values nobody planned for, schemas add escape values: OCSF's `0 Unknown` and `99 Other`, and a zero value ending `_UNSPECIFIED` (filed: `F-enum-escape-values-01`).
 
-Events with no counterpart in the host usually go **in the same envelope, under a separate namespace with a named owner** (CloudEvents type prefixes, OCSF extensions), or **in a separate stream** (PagerDuty change events). In both cases they are **shown together** on one view.
+Events with no counterpart in the host usually go one of two ways:
+- **In the same envelope, under a namespace with a named owner.** Examples: CloudEvents type prefixes, OCSF extensions.
+- **In a separate stream.** Example: PagerDuty change events.
 
-Who owns the vocabulary is explicit wherever it is documented. Open labels that anyone with write access can edit are the least controlled form.
+Either way, they are **shown together** in one view.
+
+Who owns the vocabulary is explicit wherever it is documented. Open labels that anyone with write access can edit are the least controlled form. The only drift control I found documented is mechanical: a registry, plus a check of what is actually emitted against it.
 
 ## A. The forms in use, by system
 
@@ -31,15 +35,18 @@ Who owns the vocabulary is explicit wherever it is documented. Open labels that 
 2. **[F, A]** *Deploys (GitHub).*
    - Deployment `environment` and `task` are free strings.
    - Deployment status `state` is one of `error, failure, inactive, in_progress, queued, pending, success`.
-   - Sources: …/deployments/deployments; …/deployments/statuses. *(Checker confirmed.)*
+   - *(Checker confirmed.)*
 3. **[F, A]** *Custom events (GitHub).*
    - `repository_dispatch` `event_type` must be 100 characters or fewer.
    - `client_payload` may have at most 10 top-level properties and must be under 64 KB.
-   - Source: docs.github.com/en/rest/repos/repos. *(Checker confirmed.)*
+   - *(Checker confirmed.)*
 4. *Host-owned sets (GitHub).*
-   - **[F, A]** Audit log entries are named `category.action`. *(Checker confirmed.)*
-   - **[F, A]** GitHub publishes a list of issue and timeline event types. Each type is marked as available in the REST API for issue events or for timeline events.
-   - **[E] (revised)** I found no documented way to add custom timeline event types. **This is an absence on the page, not a rule GitHub states.** The earlier memo said "cannot be extended" as if it were fact, and that is withdrawn.
+   - **[F, A] (sources added)** Audit log entry names have the form `category.operation`.
+     - Organisation audit-log page: "The name for each audit log entry is composed of a category of events, followed by an operation type. For example, the `repo.create` entry refers to the `create` operation on the `repo` category."
+     - Enterprise audit-log search page: "Each category has a set of associated actions that you can filter on. For example: `action:team.create` finds all events where a team was created."
+     - The round-3 check was right that none of the five pages cited earlier said this. These two pages are new.
+   - **[F, A]** GitHub publishes a list of issue and timeline event types.
+   - **[E]** I found no documented way to add custom timeline event types. This is an absence on the page, not a rule GitHub states.
 5. **[F, A]** *Open labels (GitHub).*
    - There are ten default labels.
    - Anyone with write access can create or edit a label.
@@ -53,52 +60,45 @@ Who owns the vocabulary is explicit wherever it is documented. Open labels that 
    - The event version does not change when new event types are introduced.
    - *(Checker confirmed.)*
 8. **[F, A]** *Security events (OCSF).*
-   - "By convention, every Enum type has two common values with integer value 0 for `Unknown` and 99 for `Other`."
-   - The `_name` sibling attribute carries the string. On the authentication class, `activity_name` is "The event activity name, as defined by the activity_id".
-   - `type_uid` is "calculated by the logging system as: `class_uid * 100 + activity_id`".
-   - The authentication class lists `activity_id` values 0 Unknown, 1–6, and 99 Other.
-   - Sources: github.com/ocsf/ocsf-docs overview/understanding-ocsf.md; schema.ocsf.io/1.3.0/classes/authentication.
-9. **[F, A]** *Cluster events (Kubernetes). Attribution revised.*
-   - **Event v1 reference:** `type` is "Normal, Warning; new types could be added in the future". `reason` is "a short, machine understandable string". *(Checker confirmed.)*
-   - **api-conventions, under "Typical status properties":** "In condition types, and everywhere else they appear in the API, `Reason` is intended to be a one-word, CamelCase representation of the category of cause of the current status, and `Message` is intended to be a human-readable phrase or sentence…"
-     - The earlier memo wrongly put this quote on the Event v1 page.
-     - **[E]** The words "everywhere else they appear in the API" suggest the rule also covers Event `reason`. That is my reading, not a stated rule.
-   - **api-conventions, "Events" section:** "Choose a unique, specific, short, CamelCase reason for each event category. For example, `FreeDiskSpaceInvalid` is a good event reason… but `Started` is not…"
+   - Every enum has `0 Unknown` and `99 Other`.
+   - `_name` siblings carry the string.
+   - `type_uid = class_uid * 100 + activity_id`.
+   - *(Filed as `F-enum-escape-values-01`.)*
+9. **[F, A]** *Cluster events (Kubernetes).*
+   - **Event v1 reference:** `type` is "Normal, Warning; new types could be added in the future". `reason` is "a short, machine understandable string". It also has `reportingComponent`.
+   - **api-conventions:** `Reason` is "a one-word, CamelCase representation of the category of cause", "everywhere else they appear in the API". "Choose a unique, specific, short, CamelCase reason for each event category."
+   - *(All checker confirmed.)*
+   - **[E]** I read "everywhere else" as covering Event `reason` too.
 10. **[F, A]** *Incidents (PagerDuty Events v2).*
     - `severity` is one of `critical, error, warning, info`.
     - `event_action` is `trigger`, `acknowledge` or `resolve`.
     - `class`, `component` and `group` are free strings.
     - *(Checker confirmed.)*
-11. **[F, A]** *Incidents (incident.io).* Severities are owned and renamed by the organisation: "starting point, not a rule". Incident types can override a severity's description. *(Checker confirmed.)*
-12. **[F, A]** *Boards (Jira).*
-    - "All statuses, even custom statuses you create yourself, must belong to one of three status categories – To do, In progress, or Done."
-    - The colours are grey, blue and green "(this can't be customized)".
-    - "Status categories impact how work items are visualized in lists, reports, and boards."
-    - Source: support.atlassian.com/…/what-is-a-workflow-status/. Re-fetched this round.
-    - **[F, C]** Community answers and JRACLOUD-44020 are consistent with categories being fixed. *(Checker confirmed.)*
-13. **[F, C] (revised)** *Boards (Linear). Sources disagree; Linear's own docs could not be read.*
-    - The checker reports that Linear's GraphQL schema lists **seven** types: `triage, backlog, unstarted, started, completed, canceled, duplicate`.
-    - Third-party pages I fetched list six or fewer:
-      - The DX schema page says "One of 'triage', 'backlog', 'unstarted', 'started', 'completed', 'canceled'".
-      - Plain's mirror enum has six values plus its own `UNKNOWN`, described as "Placeholder for unknown or unsupported future states from Linear".
-    - Several third-party GitHub pull requests in 2026 add handling for a `duplicate` type, which suggests it was added recently.
-    - Sources I could not read:
+11. **[F, A]** *Incidents (incident.io).* The organisation owns and renames severities ("starting point, not a rule"). Incident types can override a severity's description. *(Checker confirmed.)*
+12. **[F, A]** *Boards (Jira).* Every status belongs to one of three fixed categories, whose colours can't be customised. *(Filed as `F-board-status-categories-01`. It is a UI rule: a database workaround exists, per the checker's note.)*
+13. **[F, C]** *Boards (Linear). Still no official source.*
+    - Linear's GraphQL schema, as the checker reports it, lists seven types: `triage, backlog, unstarted, started, completed, canceled, duplicate`.
+    - Third-party mirrors list six. Pull requests in 2026 add `duplicate`, which suggests it was added recently.
+    - This round I tried three official sources:
+      - linear.app/docs/issue-status returned 404.
       - linear.app/docs/configuring-workflows returned 404 again.
-      - The Linear SDK schema file was cut off before `WorkflowState`.
-    - The triage page says only that triage is "outside the normal workflow".
-    - **Taken together:** Linear has a small closed set of state types with names each team chooses, and **that set has grown at least once**, which is itself evidence for §B's "change over time" column. I take the checker's seven-type list as the more current one. I make no claim about the order of the types: the earlier "fixed order" claim is withdrawn as unsourced.
-14. **[F, A]** *Event envelopes (CloudEvents).* `type` "SHOULD be prefixed with a reverse-DNS name. The prefixed domain dictates the organization which defines the semantics of this event type." *(Checker confirmed.)*
-    - The CloudEvents primer, fetched this round, says `type` "is expected to be the primary means by which consumers identify the type of event". It does **not** discuss reverse-DNS prefixes, so it is no second source for them.
+      - The Linear SDK `schema.graphql` excerpt I could read did not include `WorkflowState`.
+    - The triage page says triage is "outside the normal workflow", and that declining an issue or marking it duplicate moves it to "a *Canceled* status type". That last part is my summariser's wording. It does not list the types.
+    - Linear stays grade C and is **left out of the counted pattern** (§B).
+14. **[F, A]** *Event envelopes (CloudEvents).* `type` "SHOULD be prefixed with a reverse-DNS name. The prefixed domain dictates the organization which defines the semantics of this event type." *(Checker confirmed. Single source; see §E.)*
 15. **[F, A]** *Telemetry events (OpenTelemetry).*
-    - The semantic-conventions events page says an event name "uniquely identifies the event structure", and names "MUST NOT include dynamic values". *(Checker confirmed.)*
-    - The OTel logs data model, a separate spec page: `EventName` is the "Name that identifies the class / type of the Event. This name SHOULD uniquely identify the event structure (both attributes and body)."
-    - That page does **not** contain the "dynamic values" rule.
-16. **[F, A]** *Metrics labels (Prometheus, and now Grafana).*
-    - Prometheus naming page: "Every unique combination of key-value label pairs represents a new time series… Do not use labels to store dimensions with high cardinality (many different label values), such as user IDs, email addresses, or other unbounded sets of values." *(Checker confirmed.)*
-    - **New second source, Grafana Labs learning hub, "Use bounded labels":**
-      - Never use as labels: "User, customer, or session IDs, Request or trace IDs, IP addresses, Email addresses, Timestamps".
-      - "Each of these creates a new series per unique value, and the combinations multiply against every other label on the metric."
-17. **[F, A]** *Dashboard overlays (Grafana).* Annotations are filtered by tags: a single tag, several tags (all must match), or wildcards. That page covers Graphite annotations only. *(Checker confirmed.)*
+    - The semconv events page says an event name "uniquely identifies the event structure", and names "MUST NOT include dynamic values".
+    - The logs data model says `EventName` "SHOULD uniquely identify the event structure (both attributes and body)".
+    - *(Checker confirmed.)*
+    - The "dynamic values" rule is on the events page only. I looked for it in two more places this round:
+      - The how-to-write-conventions page has only the span rule: "Span names must have low cardinality…"
+      - The Logs API page refers to the data model and adds nothing.
+      - **[E]** The span rule is a related principle, not a second source for the event rule.
+16. **[F, A]** *Metrics labels.* Unbounded label values create a new series each. *(Filed as `F-high-cardinality-01`.)*
+17. **[F, A]** *Dashboard overlays (Grafana).*
+    - The Graphite annotation page covers filtering by a single tag, by several tags (all must match), and by wildcards. *(Checker confirmed.)*
+    - **New:** the built-in annotations page (the `-- Grafana --` data source) says "If multiple tags are defined in an annotation query, then Grafana only shows annotations matching all the tags." With `Match any` enabled, "Grafana shows annotations that contain any one of the tags you provided."
+    - Source: grafana.com/docs/grafana/latest/dashboards/build-dashboards/annotate-visualizations/.
 
 ## B. Gains and losses by form
 
@@ -106,35 +106,36 @@ The rows are opinion or estimate built on §A, unless marked [F].
 
 | Form | Filtering | Counting | Legend | Change over time |
 |---|---|---|---|---|
-| Closed set | Exact and complete [O] | Reliable totals; a zero means something [O] | Bounded; can be fixed in advance (Jira fixes the colours) [F 12] | Costly to change: see filed entry `F-enum-evolution-01`. Real sets do grow: Linear's `duplicate` [F 13, C]; Kubernetes "new types could be added" [F 9]; Plain's mirror carries an `UNKNOWN` placeholder for future Linear states [F 13, C] |
-| Open labels / ids named by producers | Flexible, but only as good as naming discipline [O] | Totals split across synonyms; unbounded values inflate metric storage [F 16] | Unbounded. One guide says "Seven is a good maximum" for category colours [F, C, single source] | Easy to add; drift goes unnoticed [O] |
+| Closed set | Exact and complete [O] | Reliable totals; a zero means something [O] | Bounded; can be fixed in advance (Jira fixes the colours) [F 12] | Costly to change (`F-enum-evolution-01`). Real sets do grow: Kubernetes "new types could be added" [F 9]; Linear's `duplicate` [F 13, C] |
+| Open labels / ids named by producers | Flexible, but only as good as naming discipline [O] | Totals split across synonyms; unbounded values inflate metric storage [F 16] | Unbounded. One guide says "Seven is a good maximum" [F, C, single source] | Easy to add; drift goes unnoticed [O] |
 | Free text | Search only [O] | Not countable without classifying it later [O] | None [O] | No migration, and no structure [O] |
-| Mix (closed category + open kind + free detail) | Coarse filters on the category, exact filters on the kind [O] | Count by category, drill down by kind [O] | Colour by category only, which stays within the colour limit [E] | The category changes rarely; kinds grow freely; escape values absorb surprises [F 8] |
+| Mix (closed category + open kind + free detail) | Coarse filters on the category, exact filters on the kind [O] | Count by category, drill down by kind [O] | Colour by category only [E] | The category changes rarely; kinds grow freely; escape values absorb surprises [F 8] |
 | None | — | — | — | Every reader builds its own classification [O] |
 
-**[E] (revised count)** §A covers **12 systems**, counting GitHub as one.
+**[E] (count revised again)** §A covers 12 systems, counting GitHub as one.
 
-- **Clearly a closed category beside an open kind (6):** GitHub, CloudTrail, Kubernetes, PagerDuty, Jira, Linear.
+- **Clearly a closed category beside an open kind, on grade-A sources (5):** GitHub, CloudTrail, Kubernetes, PagerDuty, Jira.
+- **Same, but on grade-C sources only (1):** Linear. It is not counted in the proposed pattern.
 - **Arguably (2):**
-  - OCSF: closed IDs at every level, with only the `_name` string open, used when `Other` is chosen.
-  - incident.io: severities form a closed set within each organisation, but the organisation defines it.
-- **No closed category, one open form (4):** CloudEvents, OpenTelemetry events, Prometheus labels, Grafana tags.
+  - OCSF: closed IDs at every level; only the `_name` string is open.
+  - incident.io: severities are a closed set within each organisation, but the organisation defines it.
+- **One open form, no closed category (4):** CloudEvents `type`, OpenTelemetry event name, Prometheus labels, Grafana annotation tags.
 
-This is a convenience sample, not a survey. The earlier figure, "9 of 11", is withdrawn because it matched neither the list nor any stated rule for counting.
+This is a convenience sample, not a survey.
 
 ## C. Events with no host counterpart (phase gates, decisions, research, stops)
 
 - **Same envelope, separate namespace.**
   - The CloudEvents type prefix names the organisation that defines the type [F 14].
-  - "OCSF schemas can be extended by adding new attributes, objects, categories, profiles and event classes." *(Quote order corrected.)*
-  - To make an extension public, "add a UID to your extension name in the OCSF Extensions Registry … to avoid collisions with core or other extension schemas". "New categories and event classes will have their unique IDs offset by the UID." [F, A, understanding-ocsf.md]
-  - Kubernetes records the controller that emitted an event in `reportingComponent` [F 9].
-- **Separate stream, joined at display.** PagerDuty change events go to a separate endpoint and appear beside incidents (filed entry `F-change-events-separate-01`). Grafana annotations are drawn over metric series [F 17].
-- **The host's free fields used as the carrier.** On GitHub, custom kinds fit in the free fields: check `name`, deployment `environment` and `task`, `repository_dispatch` `event_type`, and labels [F 1–5].
-  - GitHub alone sets the conclusions [F 1] and the audit action names [F 4].
-  - **[E]** For timeline event types, no way to add one is documented (§A 4, revised).
+  - OCSF: "OCSF schemas can be extended by adding new attributes, objects, categories, profiles and event classes". Public extensions get a UID in the OCSF Extensions Registry, "to avoid collisions" [F, A]. *(Checker confirmed in round 2.)*
+  - Kubernetes `reportingComponent` names the controller that emitted the event [F 9].
+  - **[F, C-as-example]** Azure Event Grid's CloudEvents page uses types such as `com.yourcompany.order.created` and `com.example.someeventtype` in its examples. It does **not** state the prefix rule, so I do not count it as a second source.
+- **Separate stream, joined at display.** PagerDuty change events (`F-change-events-separate-01`). Grafana annotations drawn over series, filtered by tags [F 17].
+- **The host's free fields used as the carrier.** On GitHub, custom kinds can go in check `name`, deployment `environment` and `task`, `repository_dispatch` `event_type`, and labels [F 1–5].
+  - Only GitHub sets the conclusions [F 1] and the audit action names [F 4].
+  - **[E]** No documented way to add timeline event types.
 
-Costs [O], unchanged from the first memo:
+Costs [O]:
 
 - **Same scheme:** one filter and one legend, but two owners must keep it in step.
 - **Separate scheme:** each side stays clean, but every view must join them.
@@ -142,38 +143,54 @@ Costs [O], unchanged from the first memo:
 
 ## D. Who owns the vocabulary, and how drift is held back
 
-- **[F, A]** *The vendor owns the categories and admins own the names:* Jira [12], GitHub conclusions [1]. Linear follows the same pattern [13, grade C].
-- **[F, A]** *The namespace owner defines the meaning:* CloudEvents [14]. OCSF extensions reserve their IDs in a registry [C].
-- **[F, A]** *A registry plus a checking tool (stability wording revised):*
-  - Weaver's `registry check` validates a semantic-convention registry, and `registry live-check` checks an OTLP stream against it. *(Checker confirmed.)*
-  - Generated libraries keep experimental names in an `_incubating` path. *(Checker confirmed.)*
-  - **[F, B] (revised)** Weaver's semconv syntax document lists the `stability` values as `stable`, `development`, `alpha`, `beta` and `release_candidate`, and says "Stability is not required for attribute groups". Source: github.com/open-telemetry/weaver schemas/semconv-syntax.md, read through a summarising fetch.
-  - The earlier "stable or experimental (default experimental)" is **withdrawn**.
+- **[F, A]** *The vendor owns the categories and admins own the names:* Jira [12], GitHub conclusions [1]. Linear may follow the same pattern [13, grade C].
+- **[F, A]** *The namespace owner defines the meaning:* CloudEvents [14]; OCSF extension registry [C].
+- **[F, A] (second sources added)** *A registry plus a checking tool.*
+  - **Weaver README:** `registry check` "Validates a semantic convention registry". `registry live-check` will "Check the conformance level of an OTLP stream against a semantic convention registry".
+  - **OpenTelemetry blog, "Observability by Design: Unlocking Consistency with OpenTelemetry Weaver" (2025):** "Users and maintainers can leverage Weaver to live-check that their application correctly emits telemetry conforming to the official semantic conventions, or a custom registry." Also: "Weaver ensures every change to the registry is consistent, validated, and follows the core policies."
+    - The second blog sentence was matched to `registry check` by my summariser, so the checker should confirm that pairing in raw text.
+- **[F, A] (narrowed)** *Stable and experimental conventions are shipped apart.*
+  - **Code-generation page:** "Ship two different artifacts: one that contains stable Semantic Conventions and another one with all available conventions." Python "puts unstable attributes in `opentelemetry.semconv._incubating` import path which is considered … to be internal and subject to change."
+  - **semantic-conventions-java README:**
+    - `io.opentelemetry.semconv:opentelemetry-semconv` is "Generated code for stable semantic conventions."
+    - `…:opentelemetry-semconv-incubating` is "Generated code for experimental semantic conventions", an `-alpha` artifact that "comes with no compatibility guarantees".
+  - The two pages agree on the Java split. The Python path rests on the code-generation page only.
+  - The earlier wording, "experimental names in an `_incubating` path", is withdrawn as broader than the source.
+- **[F, B]** Weaver's semconv syntax lists `stability` values `stable | development | alpha | beta | release_candidate`. The checker saw a cut-off extract, so this stays unfiled.
 - **[F, A]** *Owned and renamed by the organisation:* incident.io severities [11]; GitHub default labels [5].
-- **[O]** The only drift control I found documented is mechanical: one machine-readable source plus a check of what is actually emitted against it (Weaver live-check). Written style rules, such as Kubernetes's `reason` guidance, govern the form of names but not which names exist.
+- **[O]** The only drift control I found documented is mechanical: one machine-readable registry plus a live check of what is emitted. Written style rules, such as Kubernetes `reason`, govern the form of names but not which names exist.
 - **[E]** I found no study measuring vocabulary drift (no level-3 evidence).
+
+## E. Items that rest on one specification
+
+These are split out so that each can be filed or held on its own:
+- the OpenTelemetry "MUST NOT include dynamic values" rule;
+- the CloudEvents reverse-DNS rule;
+- the OCSF extension registry wording;
+- the EU colour limit (grade C).
+
+I searched for second sources for the first two and found none (§A 14–15, §C). Filing them needs the owner's ruling on single-specification text (checker open question 1).
 
 ## Field scan
 
-The fields are unchanged from the first memo. New pages this round:
-
-- protobuf style guide
-- Grafana Labs learning hub
-- OTel logs data model
-- CloudEvents primer
-- Weaver semconv-syntax
-- DX and Plain Linear mirrors
-- OCSF authentication class page
+Pages new in this round:
+- GitHub organisation and enterprise audit-log pages
+- OpenTelemetry Weaver blog
+- semantic-conventions-java README
+- Grafana built-in annotations page
+- Azure Event Grid CloudEvents page
+- OTel how-to-write-conventions and Logs API pages
+- Linear triage page; Linear issue-status page (404)
 
 Still not covered: records-management and controlled-vocabulary literature, and ITIL change categories.
 
-## Proposed library entries (revised)
+## Proposed library entries (revision 3)
 
 ```yaml
 ---
 id: P-event-vocab-layered-01
 form: pattern
-claim: "Of 12 event/label systems sampled (convenience sample, not a survey), 6 clearly layer a small closed set (used for filtering, counting, colour) over an open producer-named kind and free-text detail: GitHub check conclusion + check name; PagerDuty severity + class + summary; Kubernetes Event type + reason + message; Jira's three fixed status categories + custom statuses; CloudTrail eventCategory/eventType + eventName; Linear state type + team-named status (grade C part). 2 arguably do (OCSF, incident.io); 4 use a single open form (CloudEvents type, OpenTelemetry event name, Prometheus labels, Grafana tags)."
+claim: "Of 12 event/label systems sampled (convenience sample, not a survey), 5 clearly layer a small closed set (used for filtering, counting, colour) over an open producer-named kind, usually with free-text detail, on vendor sources: GitHub check conclusion + check name; PagerDuty severity + class + summary; Kubernetes Event type + reason + message; Jira's three fixed status categories + custom statuses; CloudTrail eventCategory/eventType + eventName. 2 arguably do (OCSF: closed IDs with open _name; incident.io: closed per-organisation severities). 4 use a single open form with no closed category (CloudEvents type, OpenTelemetry event name, Prometheus labels, Grafana annotation tags). A sixth layered case, Linear, rests on third-party sources only and is not counted."
 grade: B
 topics: [change-reporting, dashboards, monitoring, status-reports]
 shelf_life: 24 months
@@ -183,40 +200,55 @@ sources:
   - https://kubernetes.io/docs/reference/kubernetes-api/cluster-resources/event-v1/
   - https://support.atlassian.com/jira-cloud-administration/docs/what-is-a-workflow-status/
   - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference-record-contents.html
-note: The count is the researcher's classification of memo §A (revision 2); the five named examples are each sourced. Linear example rests on grade C sources.
----
-```
-
-```yaml
----
-id: F-enum-escape-values-01
-form: fact
-claim: "OCSF: by convention every enum has 0 Unknown and 99 Other; the sibling _name attribute (e.g. activity_name) carries the string; type_uid = class_uid * 100 + activity_id (both on the overview doc and on the schema's authentication class page). Google AIP-126 and the protobuf style guide: the first (zero) enum value should be an unspecified/unknown value; the style guide says suffix _UNSPECIFIED or _UNKNOWN, 'distinct from any of the semantic values you expect to be explicitly set'."
-grade: A
-topics: [monitoring, change-reporting]
-shelf_life: 36 months
-sources:
   - https://github.com/ocsf/ocsf-docs/blob/main/overview/understanding-ocsf.md
-  - https://schema.ocsf.io/1.3.0/classes/authentication
-  - https://google.aip.dev/126
-  - https://protobuf.dev/programming-guides/style/
-note: Each half now has two pages; each pair is from one publisher (OCSF; Google), as accepted for PagerDuty in F-change-events-separate-01.
+  - https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md
+  - https://opentelemetry.io/docs/specs/semconv/general/events/
+  - https://prometheus.io/docs/practices/naming/
+  - https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/annotate-visualizations/
+note: Revised. Linear removed from the count. Sources added for OCSF and all four single-open-form systems. The incident.io page is the one cited in the first memo and confirmed by the checker; the Orchestrator's record of that memo has its URL. The classification is the researcher's.
 ---
 ```
 
 ```yaml
 ---
-id: F-event-namespace-owner-01
+id: F-otel-event-name-01
 form: fact
-claim: "OpenTelemetry: an event name identifies the event structure (semconv events page: 'uniquely identifies the event structure'; logs data model: EventName 'SHOULD uniquely identify the event structure (both attributes and body)'), and event names 'MUST NOT include dynamic values' (semconv events page only). CloudEvents: type SHOULD be prefixed with a reverse-DNS name; 'The prefixed domain dictates the organization which defines the semantics of this event type' (spec only; the primer does not repeat it)."
+claim: "OpenTelemetry: an event name identifies the event structure. The semconv events page says it 'uniquely identifies the event structure'; the logs data model says EventName 'SHOULD uniquely identify the event structure (both attributes and body)'."
 grade: A
 topics: [monitoring, change-reporting]
 shelf_life: 36 months
 sources:
   - https://opentelemetry.io/docs/specs/semconv/general/events/
   - https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/logs/data-model.md
+note: Split from F-event-namespace-owner-01. Two pages from one publisher; filing depends on checker open question 1.
+---
+```
+
+```yaml
+---
+id: F-otel-event-name-static-01
+form: fact
+claim: "OpenTelemetry semantic conventions: event names 'MUST NOT include dynamic values'."
+grade: B
+topics: [monitoring]
+shelf_life: 36 months
+sources:
+  - https://opentelemetry.io/docs/specs/semconv/general/events/
+note: Single specification. No second source found (how-to-write-conventions has only the span-name low-cardinality rule; the Logs API page adds nothing). Hold unless the owner accepts single-specification text.
+---
+```
+
+```yaml
+---
+id: F-cloudevents-type-owner-01
+form: fact
+claim: "CloudEvents: type SHOULD be prefixed with a reverse-DNS name; 'The prefixed domain dictates the organization which defines the semantics of this event type.'"
+grade: B
+topics: [monitoring, change-reporting]
+shelf_life: 36 months
+sources:
   - https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md
-note: The 'dynamic values' rule and the CloudEvents reverse-DNS rule each rest on one specification; filing those parts needs the owner's waiver for primary specification text (checker open question 1).
+note: Single specification. The CloudEvents primer does not repeat the rule. Azure Event Grid's CloudEvents page uses reverse-DNS types in examples only (https://learn.microsoft.com/en-us/azure/event-grid/namespaces-cloud-events) and does not state the rule. Hold unless the owner accepts single-specification text.
 ---
 ```
 
@@ -224,7 +256,7 @@ note: The 'dynamic values' rule and the CloudEvents reverse-DNS rule each rest o
 ---
 id: F-gh-custom-kinds-01
 form: fact
-claim: "On GitHub, custom kinds fit free fields: check run name, deployment environment and task, repository_dispatch event_type (100 characters or fewer; client_payload at most 10 top-level properties, under 64 KB), labels (anyone with write access can create or edit; organization owners set defaults). Host-defined lists: check status and conclusion (only GitHub can set 'stale'), deployment status state; audit log entries are named category.action."
+claim: "On GitHub, custom kinds fit free fields: check run name, deployment environment and task, repository_dispatch event_type (100 characters or fewer; client_payload at most 10 top-level properties, under 64 KB), labels (anyone with write access can create or edit; organization owners set defaults). Host-defined lists: check status and conclusion (only GitHub can set 'stale'), deployment status state. Audit log entry names are a category followed by an operation (e.g. repo.create, team.create)."
 grade: A
 topics: [change-reporting, status-reports]
 shelf_life: 12 months
@@ -234,22 +266,9 @@ sources:
   - https://docs.github.com/en/rest/deployments/statuses
   - https://docs.github.com/en/rest/repos/repos
   - https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work/managing-labels
-note: Revised. The claim that issue/timeline event types cannot be extended is removed (it was an absence on the page, not a stated rule); it stays in the memo as an estimate only.
----
-```
-
-```yaml
----
-id: F-board-status-categories-01
-form: fact
-claim: "Jira: 'All statuses, even custom statuses you create yourself, must belong to one of three status categories – To do, In progress, or Done'; shown grey, blue and green '(this can't be customized)'; 'Status categories impact how work items are visualized in lists, reports, and boards.'"
-grade: A
-topics: [dashboards, status-reports]
-shelf_life: 24 months
-sources:
-  - https://support.atlassian.com/jira-cloud-administration/docs/what-is-a-workflow-status/
-  - https://jira.atlassian.com/browse/JRACLOUD-44020
-note: Revised to Jira only; the Linear half is withdrawn (official page unreadable; sources disagree on six vs seven types). Second source is Atlassian's own issue tracker, same publisher, and supports only that statuses carry a category.
+  - https://docs.github.com/en/organizations/keeping-your-organization-secure/managing-security-settings-for-your-organization/reviewing-the-audit-log-for-your-organization  # "composed of a category of events, followed by an operation type"
+  - https://docs.github.com/en/admin/monitoring-activity-in-your-enterprise/reviewing-audit-logs-for-your-enterprise/searching-the-audit-log-for-your-enterprise  # "action:team.create"
+note: Revised. The audit-log sentence now cites the two pages that carry it. The timeline-types claim is removed (an estimate in the memo only).
 ---
 ```
 
@@ -257,29 +276,29 @@ note: Revised to Jira only; the Linear half is withdrawn (official page unreadab
 ---
 id: F-vocab-registry-check-01
 form: fact
-claim: "OpenTelemetry Weaver validates a semantic convention registry ('registry check') and checks the conformance of an OTLP stream against it ('registry live-check'); OpenTelemetry code generation places experimental names in an _incubating path."
+claim: "OpenTelemetry Weaver validates a semantic convention registry ('registry check') and checks that emitted telemetry (an OTLP stream) conforms to the official or a custom registry ('registry live-check')."
 grade: A
 topics: [monitoring]
 shelf_life: 18 months
 sources:
-  - https://github.com/open-telemetry/weaver
-  - https://opentelemetry.io/docs/specs/semconv/non-normative/code-generation/
-note: Revised. The unconfirmed 'stable or experimental (default experimental)' is removed. The memo cites stability values from weaver schemas/semconv-syntax.md as grade B, unfiled.
+  - https://github.com/open-telemetry/weaver  # README: "Validates a semantic convention registry"; "Check the conformance level of an OTLP stream against a semantic convention registry"
+  - https://opentelemetry.io/blog/2025/otel-weaver/  # "live-check that their application correctly emits telemetry conforming to the official semantic conventions, or a custom registry"
+note: Revised. Each half now has two pages from one project; filing depends on checker open question 1. The _incubating half has moved to F-semconv-stable-split-01.
 ---
 ```
 
 ```yaml
 ---
-id: F-high-cardinality-01
+id: F-semconv-stable-split-01
 form: fact
-claim: "Every unique combination of label key-value pairs is a new time series (Prometheus); labels must not hold high-cardinality or unbounded values such as user IDs or email addresses (Prometheus naming page; Grafana Labs: never use user, customer or session IDs, request or trace IDs, IP addresses, email addresses or timestamps as label values, since 'each of these creates a new series per unique value')."
+claim: "OpenTelemetry semantic-convention libraries ship stable and experimental conventions apart. Java has two artifacts: opentelemetry-semconv ('Generated code for stable semantic conventions') and opentelemetry-semconv-incubating ('Generated code for experimental semantic conventions', an -alpha artifact with 'no compatibility guarantees'). The code-generation guidance recommends 'two different artifacts: one that contains stable Semantic Conventions and another one with all available conventions'. Python puts unstable attributes in the opentelemetry.semconv._incubating import path."
 grade: A
-topics: [monitoring, dashboards]
-shelf_life: 36 months
+topics: [monitoring, change-reporting]
+shelf_life: 18 months
 sources:
-  - https://prometheus.io/docs/practices/naming/
-  - https://grafana.com/docs/learning-hub/labeling-strategy/03-metrics-labeling/09-use-bounded-labels/
-note: Second source replaces the Prometheus instrumentation page; different publisher.
+  - https://opentelemetry.io/docs/specs/semconv/non-normative/code-generation/
+  - https://github.com/open-telemetry/semantic-conventions-java/blob/main/README.md
+note: New, narrowed from the old _incubating claim. The Java split rests on both pages; the Python path on the code-generation page only.
 ---
 ```
 
@@ -293,66 +312,73 @@ topics: [dashboards, design]
 shelf_life: 36 months
 sources:
   - https://data.europa.eu/apps/data-visualisation-guide/colour-for-categories
-note: Unchanged; still a single source. Adobe Spectrum page fetched again and returned no colour-count text; search snippets attributing 'fewer than 6' to Spectrum are unverified. Hold unless the owner accepts single-source grade C.
+note: Unchanged and still single-source. Hold unless the owner accepts single-source grade C.
 ---
 ```
+
+`F-event-namespace-owner-01` is **withdrawn**. It is replaced by `F-otel-event-name-01`, `F-otel-event-name-static-01` and `F-cloudevents-type-owner-01`.
 
 ---
 
 ## Six-part contract
 
-1. **What I changed.** I revised the memo and its entries for every point the checker raised:
-   - **Linear:** the six-type list is replaced by the open disagreement, the "fixed order" claim is dropped, and the Linear half is removed from `F-board-status-categories-01`.
-   - **Weaver:** the stability claim is withdrawn, replaced with grade-B values from semconv-syntax.md, and removed from `F-vocab-registry-check-01`.
-   - **GitHub timeline types:** "cannot be extended" is now an estimate, and it is removed from `F-gh-custom-kinds-01`.
-   - **"9 of 11":** replaced by an explicit classification of 12 systems (6 clear, 2 arguable, 4 not).
-   - **Kubernetes quote:** moved to api-conventions "Typical status properties", with the "Events" section text added.
-   - **OCSF extension quote:** source word order restored, registry wording added.
-   - **Second sources:**
-     - Grafana Labs for Prometheus cardinality.
-     - The OCSF schema page for the enum and type_uid points.
-     - The protobuf style guide for `_UNSPECIFIED`.
-     - The OTel logs data model for "identifies the event structure".
-   - I removed the two entries already filed.
-2. **Why.** The source check failed those claims, either as not confirmed or as single-source.
-3. **What I checked.** About 20 summarising fetches and searches. I have no shell, so there were no commands.
-   - **Confirmed:** the api-conventions Reason/Message text and its section; the OCSF extension, registry and enum text; the OCSF authentication class values and `type_uid`; the Jira page; the protobuf style-guide zero value; the Grafana bounded-labels page; the OTel data-model `EventName`; the Weaver syntax stability values.
+1. **What I changed.**
+   - **`F-gh-custom-kinds-01`:** the audit-log claim now cites the two GitHub audit-log pages that say it.
+   - **`F-vocab-registry-check-01`:**
+     - Narrowed to Weaver only, with a second source (the OpenTelemetry blog).
+     - The `_incubating` half moved to a new `F-semconv-stable-split-01`, narrowed to what the pages say (the Java artifact pair, plus the Python path from one page), with the semantic-conventions-java README added.
+   - **`F-event-namespace-owner-01`:** split into three entries, so that the two-page part can be filed apart from the two single-specification parts.
+   - **`P-event-vocab-layered-01`:**
+     - Linear is removed from the count, which is now 5 clear, 2 arguable and 4 open, plus Linear noted at grade C.
+     - Sources are added for OCSF and for all four open-form systems, including the Grafana built-in annotations page.
+   - **Memo:** the three filed entries are summarised by reference, and §E gathers the single-specification items.
+2. **Why.** These are the round-3 failures:
+   - the audit-log text was not on the cited pages;
+   - the `_incubating` claim went beyond its source, and each half had only one source;
+   - two parts of the namespace entry had single sources;
+   - the pattern counted Linear and left the open-form systems unsourced.
+3. **What I checked.** I have no shell, so I ran no commands. I made about 18 summarising fetches and searches.
+   - **Confirmed:**
+     - the GitHub organisation audit-log "category … followed by an operation type" text, and the enterprise search page's `action:team.create`;
+     - the Weaver README and blog wording;
+     - the code-generation "two different artifacts" and Python `_incubating` text;
+     - the Java README artifact descriptions;
+     - Grafana's built-in tag filtering ("matching all the tags", "Match any").
    - **Negative results:**
-     - The CloudEvents primer has no reverse-DNS text.
-     - The OTel data model has no "dynamic values" rule.
-     - Adobe Spectrum returned no colour-count text.
-     - linear.app/docs/configuring-workflows returned 404.
-     - The Linear SDK schema was cut off.
-     - Third-party Linear sources disagree with the checker's seven types.
+     - The Linear issue-status and configuring-workflows pages returned 404.
+     - The Linear SDK schema excerpt had no `WorkflowState`.
+     - The Linear triage page lists no types.
+     - The OpenTelemetry how-to and Logs API pages have no event "dynamic values" rule.
+     - Azure Event Grid shows reverse-DNS types only in examples.
 4. **What is undone.**
    - An official Linear source.
-   - A second source for the colour limit, the CloudEvents reverse-DNS rule and the OTel "dynamic values" rule.
+   - A second source for the OpenTelemetry "dynamic values" rule, the CloudEvents reverse-DNS rule and the colour limit.
+   - A full raw read of Weaver's `stability` text.
    - The controlled-vocabulary literature, ITIL, and level-3 outcome evidence.
 5. **Needed outside my lane.**
-   - The Source checker should re-read the new quotes as raw text, especially the Weaver syntax values and the Grafana page. They should also confirm where the seven-type Linear list comes from in Linear's schema.
-   - The owner should rule on single-specification entries (checker open question 1).
-6. **Open questions.** Q-a, Q-b and Q-c from the first memo stand. One added question, phrased neutrally:
-   - **Q-d:** How have published closed event-type sets (for example Linear state types, Kubernetes Event types) changed over time, and how did consumers handle the added values? Decision: the change rule for any closed set. Depth 2.
+   - **Source checker:** re-read the new quotes as raw text, especially the blog's `registry check` pairing and the two audit-log pages. Supply the incident.io URL for the pattern entry from the earlier record if it is needed.
+   - **Owner:** rule on checker open question 1 (two pages from one publisher for specification text). This decides `F-otel-event-name-01`, `F-vocab-registry-check-01` and `F-semconv-stable-split-01`, and also whether single-specification and single-source grade-C entries can be filed (§E).
+6. **Open questions.** Q-a, Q-b, Q-c and Q-d from earlier rounds stand. Checker question 4, whether there is an official Linear source, is still open: the public docs pages I tried return 404. Reading Linear's live GraphQL schema directly may need an authenticated tool, which is outside my lane.
 
 Sources:
-- [Kubernetes API conventions (raw)](https://raw.githubusercontent.com/kubernetes/community/master/contributors/devel/sig-architecture/api-conventions.md)
-- [OCSF understanding (raw)](https://raw.githubusercontent.com/ocsf/ocsf-docs/main/overview/understanding-ocsf.md)
-- [OCSF authentication class](https://schema.ocsf.io/1.3.0/classes/authentication)
-- [Weaver semconv syntax](https://raw.githubusercontent.com/open-telemetry/weaver/main/schemas/semconv-syntax.md)
-- [Protobuf style guide](https://protobuf.dev/programming-guides/style/)
-- [Google AIP-126](https://google.aip.dev/126)
-- [Grafana: use bounded labels](https://grafana.com/docs/learning-hub/labeling-strategy/03-metrics-labeling/09-use-bounded-labels/)
-- [Prometheus naming](https://prometheus.io/docs/practices/naming/)
-- [OTel logs data model](https://raw.githubusercontent.com/open-telemetry/opentelemetry-specification/main/specification/logs/data-model.md)
+- [GitHub: reviewing the audit log for your organization](https://docs.github.com/en/organizations/keeping-your-organization-secure/managing-security-settings-for-your-organization/reviewing-the-audit-log-for-your-organization)
+- [GitHub: searching the audit log for your enterprise](https://docs.github.com/en/admin/monitoring-activity-in-your-enterprise/reviewing-audit-logs-for-your-enterprise/searching-the-audit-log-for-your-enterprise)
+- [Weaver README (raw)](https://raw.githubusercontent.com/open-telemetry/weaver/main/README.md)
+- [OpenTelemetry blog: Observability by Design with Weaver](https://opentelemetry.io/blog/2025/otel-weaver/)
+- [OTel semconv code generation](https://opentelemetry.io/docs/specs/semconv/non-normative/code-generation/)
+- [semantic-conventions-java README (raw)](https://raw.githubusercontent.com/open-telemetry/semantic-conventions-java/main/README.md)
+- [OTel how to write conventions](https://opentelemetry.io/docs/specs/semconv/how-to-write-conventions/)
+- [OTel Logs API](https://opentelemetry.io/docs/specs/otel/logs/api/)
 - [OTel semconv events](https://opentelemetry.io/docs/specs/semconv/general/events/)
-- [CloudEvents primer](https://raw.githubusercontent.com/cloudevents/spec/main/cloudevents/primer.md)
+- [OTel logs data model](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/logs/data-model.md)
 - [CloudEvents spec](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md)
-- [Jira workflow status](https://support.atlassian.com/jira-cloud-administration/docs/what-is-a-workflow-status/)
-- [JRACLOUD-44020](https://jira.atlassian.com/browse/JRACLOUD-44020)
-- [DX linear_states schema](https://docs.getdx.com/schema/linear_states/)
-- [Plain LinearIssueStateType](https://www.plain.com/docs/graphql-reference/types/LinearIssueStateType.md)
-- [superlinear PR #19 (duplicate state)](https://github.com/armcknight/superlinear/pull/19)
+- [Azure Event Grid: CloudEvents schema](https://learn.microsoft.com/en-us/azure/event-grid/namespaces-cloud-events)
+- [Grafana: annotate visualizations](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/annotate-visualizations/)
+- [Linear triage](https://linear.app/docs/triage)
+- [Linear issue status (404)](https://linear.app/docs/issue-status)
 - [Linear configuring workflows (404)](https://linear.app/docs/configuring-workflows)
-- [Adobe Spectrum colour for data visualisation](https://spectrum.adobe.com/page/color-for-data-visualization)
+- [Linear SDK schema (raw)](https://raw.githubusercontent.com/linear/linear/master/packages/sdk/src/schema.graphql)
+- [Prometheus naming](https://prometheus.io/docs/practices/naming/)
+- [OCSF understanding](https://github.com/ocsf/ocsf-docs/blob/main/overview/understanding-ocsf.md)
 - [EU data visualisation guide](https://data.europa.eu/apps/data-visualisation-guide/colour-for-categories)
-- GitHub, CloudTrail, PagerDuty, incident.io and Grafana annotation pages: as listed in the first memo, all confirmed by the checker.
+- Other GitHub, CloudTrail, PagerDuty, Kubernetes, Jira and incident.io pages: as in earlier rounds, all confirmed by the checker.

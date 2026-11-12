@@ -1,3 +1,13 @@
 {
-  "entries": []
+  "entries": [
+    {
+      "action": "run-checks",
+      "gate": null,
+      "item": "P-003",
+      "role": "checks",
+      "route": "build-to-checks",
+      "spec": "S-007",
+      "stage": 5
+    }
+  ]
 }

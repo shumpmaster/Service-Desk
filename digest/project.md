@@ -29,6 +29,7 @@
 | L-0043 | build_tree's new step keep_default_ledger: when the item branch changed docs/LEDGER.md, the copy holds main's ledger with the item branch's own new entries after it, each … | 2026-11-11 | never |
 | L-0044 | .github/workflows/scrub-proof.yml gains `schedule: cron "41 10 * * 1"`; a scheduled run's model is the MODEL_BUILDER repository variable. Its permissions stay read-only and it still … | 2026-11-11 | never |
 | L-0045 | governance/checks/orchestrator_git.py PROOF_OFF: step 1 writes off-check.txt holding the fixed text "harness check" (never nonce A, L-0101; not proof.txt), then the two Reads as steps 2 … | 2026-11-11 | never |
+| L-0046 | governance/RUNNER.toml `proven_image_version` goes from "202609" to "202611"; `proven_version` (2.1.284), `proven_image_os` (ubuntu24), `session_commands` ("on") and `pass_env_cleared` (false) are unchanged. The proof passed all 21 checks: the … | 2026-11-12 | never |
 
 ## Kills
 None.

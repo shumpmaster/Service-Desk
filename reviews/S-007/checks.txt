@@ -1,34 +1,20 @@
-== Check run P-003:build-to-checks:2026-11-11T18:10:46Z (model S-014 AC9)
+== Check run P-003:build-to-checks:2026-11-12T01:34:43Z (model S-014 AC9)
 == Prepared the check tree (0 change(s) applied)
 == Made a fresh one-commit repository of the check tree (no history, no remote; L-0088)
 == The check run's sandbox started (bwrap preflight; model S-016 AC3)
 == governance/checks/check_all.sh output
 == surface_guard check
-governance/SURFACES.md line 126: exempt 57c024b8a9f2717008243d37b77d51a0e955e605 cites L-0024, which is not an entry in docs/LEDGER.md
-governance/SURFACES.md line 127: exempt 3dd65a5ad0845f974fcf554530272e44d208e481 cites L-0025, which is not an entry in docs/LEDGER.md
-governance/SURFACES.md line 128: exempt e11b6f4321d25702347097502ad7214146a5f01c cites L-0026, which is not an entry in docs/LEDGER.md
-governance/SURFACES.md line 129: exempt ddc67fb8602b7ef7af5955edfda5a6d2505db4d0 cites L-0027, which is not an entry in docs/LEDGER.md
-governance/SURFACES.md line 130: exempt 7fdeedcbbaecf80e5b9189e979b6292e9d000fbd cites L-0028, which is not an entry in docs/LEDGER.md
-governance/SURFACES.md line 131: exempt 514675db43d90a44ce0a05a141ed07769100e601 cites L-0029, which is not an entry in docs/LEDGER.md
-governance/SURFACES.md line 132: exempt 389dd68d5a76d7949a5476a0184dbaaa5e286ad9 cites L-0030, which is not an entry in docs/LEDGER.md
-governance/SURFACES.md line 133: exempt 4184785b67ebfa6e4b05d840b5c9d50f262cde66 cites L-0031, which is not an entry in docs/LEDGER.md
-governance/SURFACES.md line 134: exempt ad2709e20faddd72483acc0a21ce2aeaacecb73c cites L-0032, which is not an entry in docs/LEDGER.md
-governance/SURFACES.md line 135: exempt c7086cde9e20d626e204ab7ca89c24b6897f02b5 cites L-0033, which is not an entry in docs/LEDGER.md
-governance/SURFACES.md line 137: exempt cd98e5f08cdfce990360dd0b3cc5958ccb3bc6ca cites L-0035, which is not an entry in docs/LEDGER.md
-governance/SURFACES.md line 138: exempt 9328cfc05dcd76898f9869693386c52f99dc0521 cites L-0036, which is not an entry in docs/LEDGER.md
-FAIL: 12 violation(s)
+OK: surface map is coherent; 2432 file(s) each have exactly one owner
 == ledger_check check
-OK: docs/LEDGER.md has 26 well-formed entries
+OK: docs/LEDGER.md has 50 well-formed entries
 == digest check
-digest/project.md: missing, out of date or hand-edited — regenerate it with digest.py build
-digest/p-004.md: stale pack — no active ruling or kill has this scope; delete it or run digest.py build
-FAIL: 2 violation(s)
+OK: docs/DIGEST.md and 4 scope pack(s) match docs/LEDGER.md
 == governance_checks all
 NOTE: v3 project (governance/v3.toml): sprints are retired (D-063); the sprints check not run
 NOTE: one-active-builder check skipped at T1 (a T2 rule)
 OK: question, reviewer and builder checks passed
 == review_check lint
-OK: governance/risk-paths.toml and 231 verdict file(s) are well-formed
+OK: governance/risk-paths.toml and 235 verdict file(s) are well-formed
 == spec_check status
 OK: every spec has a valid status and every ledger spec reference resolves
 == v3_checks ready
@@ -341,11 +327,22 @@ NOTE:     step 2026-11-11T07:08:27Z builder stage 5
 NOTE:     step 2026-11-11T12:01:31Z builder stage 5
 NOTE:     step 2026-11-11T14:54:53Z builder stage 5
 NOTE:     step 2026-11-11T17:57:27Z builder stage 5
+NOTE:     step 2026-11-11T18:19:31Z critic-triage stage 5
+NOTE:     decision 2026-11-12T01:17:52Z stop rebuild
+NOTE:     step 2026-11-12T01:21:47Z builder stage 5
 NOTE: Later work 2: P-004 into Discovery
 NOTE: Discovery i1
 NOTE:   Discovery-1 "An idea worth exploring": not recorded
 NOTE:   Discovery-2 "Success defined": not recorded
 NOTE:   Discovery-3 "The expert's questions answered": not reached
+NOTE:     sprint Q-022
+NOTE:       step 2026-11-11T12:19:24Z researcher stage 2
+NOTE:       step 2026-11-11T14:54:53Z source-checker stage 2
+NOTE:       step 2026-11-11T17:57:27Z source-checker stage 2
+NOTE:       step 2026-11-11T18:10:46Z researcher stage 2
+NOTE:       step 2026-11-11T18:19:31Z source-checker stage 2
+NOTE:       step 2026-11-11T20:12:26Z researcher stage 2
+NOTE:       step 2026-11-11T22:20:33Z source-checker stage 2
 NOTE:   Discovery-4 "The right problem chosen": not recorded
 NOTE:   Discovery-5 "What already exists is known": not reached
 NOTE:   Discovery-6 "The risks are known": not recorded
@@ -361,11 +358,11 @@ OK: every join of a frozen spec has a marked test
 NOTE: 20 session file(s) in sessions/chief-of-staff/
 OK: the Chief of Staff's session lines are in their form
 == record_checks routing
-NOTE: 269 routed line(s) checked against governance/ROUTING.toml
+NOTE: 277 routed line(s) checked against governance/ROUTING.toml
 OK: the dispatch log's chain and routes hold
 == record_checks build-cap
 project items in Build or Launch (stages 4 to 6), neither done nor closed: 1
-research items neither done nor closed: 1
+research items neither done nor closed: 0
 build cap: not set (the owner's to define; reported only)
 OK: within the build cap (or none set)
 == record_checks grants
@@ -375,9 +372,9 @@ OK: grants reported
 NOTE: builder 'chief-of-staff' has no .claude/agents/chief-of-staff.md; nothing to check
 OK: 4 builder charter(s) match governance/SURFACES.md
 == Summary
-FAIL  surface_guard check (exit 1)
+PASS  surface_guard check
 PASS  ledger_check check
-FAIL  digest check (exit 1)
+PASS  digest check
 PASS  governance_checks all
 PASS  review_check lint
 PASS  spec_check status
@@ -389,10 +386,10 @@ PASS  record_checks routing
 PASS  record_checks build-cap
 PASS  record_checks grants
 PASS  surface_guard charters --check
-Governance checks FAILED.
+OK: all governance checks passed.
 
-== Exit 1
-verdict: FAIL
+== Exit 0
+verdict: PASS
 
 == Discarded from the builder's last change set (model S-014 AC8)
 none

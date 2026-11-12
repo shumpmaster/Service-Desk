@@ -1,3 +1,13 @@
 {
-  "entries": []
+  "entries": [
+    {
+      "action": "dispatch",
+      "gate": null,
+      "item": "P-003",
+      "role": "builder",
+      "route": "ready-dispatch",
+      "spec": "S-007",
+      "stage": 5
+    }
+  ]
 }

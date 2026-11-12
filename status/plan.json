@@ -4,8 +4,8 @@
       "action": "dispatch",
       "gate": null,
       "item": "P-003",
-      "role": "critic",
-      "route": "define-to-plan-review",
+      "role": "critic-triage",
+      "route": "third-fail",
       "spec": "S-008",
       "stage": 3
     },
@@ -13,8 +13,8 @@
       "action": "dispatch",
       "gate": null,
       "item": "Q-026",
-      "role": "source-checker",
-      "route": "ready-dispatch",
+      "role": "critic-triage",
+      "route": "third-fail",
       "spec": null,
       "stage": 2
     }

@@ -40,7 +40,7 @@
     "decisions/Q-019/stop-1.md": "3135a5a4d648d7755dd10cc5f16aa54a639003828acbde8e356cc6afaa019104",
     "decisions/Q-019/stop-2.md": "08c5b7a716263fd5a3bff2a225d2ce6a0eee4c4de15800abbce6d528c1bae3ec"
   },
-  "log_head": "253609db983c6e2c56a4f58806aa63899cfc523ffd5bc1f72c12d5e9a4052931",
+  "log_head": "70cad8e4dc69a60f0607eb33afa260ac16ac77fc1cbaf217eb41703d1a5af58c",
   "outcomes": {
     "P-001:define-to-plan-review:2026-10-06T16:23:48Z": "ac8bc768c70dabe235e2f375c6bbba63a932a35f366cff849bc45aa101c61d3c",
     "P-001:define-to-plan-review:2026-10-06T16:32:21Z": "2bb97686ce3bbec96b45fce95e37ac65e19623dd33ef8e2ba519c2fd7663018a",
@@ -300,7 +300,7 @@
     "Q-027:source-fail:2026-11-12T06:19:28Z": "2b4ce82cb17624dde78075ce8535831877e4cf5fd6cdd55994a9ef50f95cde10",
     "Q-027:source-fail:2026-11-12T07:08:33Z": "3b2a8c4553cf138630a7043dc1f783519dda7156ef2950285edfbee1b7e7d3ae"
   },
-  "plan_hash": "364b37738032a28a72829f4d2192b70bd9353c9ee8dddfc5b70c2785f995d6ac",
+  "plan_hash": "e8bbd1ef4da0942f6dcfebabaeeea7be216c848c85bf93ddf47a3f9f05fce386",
   "requests": [
     "P-001",
     "P-003",

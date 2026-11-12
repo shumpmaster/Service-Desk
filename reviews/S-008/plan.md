@@ -1,34 +1,51 @@
 Verdict: FAIL
 
-I could not check the spec's key evidence: no src/ is in the pack. I read specs/S-008.md in full, compared it line by line with specs/S-007.md, and read decisions/P-003/failure-15.md, criteria-13.md and the plan's section 3. The change list in line 11 is accurate. The header `milestones: M4` is in the right form. I have two findings, plus one point that needs the owner.
+The spec's central new mechanism is the Reviewer making and committing the baseline record. Its stated basis is unverified and partly contradicted by the pack. The rest of the carry-over from S-007 checks out.
 
 **Blocking findings**
 
-1. **The spec does not say who makes the baseline record.**
-   - The owner's ruling (decisions/P-003/failure-15.md:4) says "the new spec says who runs the Builder's adapter against the unchanged code and how the record is guarded."
-   - S-008 only proposes the Reviewer. Line 23 says "proposed: the Reviewer; open question 7, ruled before freeze". Line 216 says "the runner is proposed, not shown". Line 251 says "No role's written duties include running the code and committing the record."
-   - The brief (line 256) tells the Builder to wait for "the role ruled in open question 7", which is not a role yet.
-   - The Reviewer has no stated duty or lane to do this. S-008 also admits (line 216) that no pack file gives any role the lane. A frozen spec cannot depend on a role that does not exist, so the ruling's instruction is not met.
+1. **The Reviewer's ability to make and commit the baseline record is unsupported (specs/S-008.md:23, :217).**
+   - Line 217 says "On the desk the Reviewer … wrote its reviews under reviews/ (docs/PROJECT.md:122, :125), so the record and its note go there, in the Reviewer's own lane."
+   - docs/PROJECT.md:122 and :125 only cite review files. They do not say the Reviewer wrote or committed them.
+   - docs/PROJECT.md:124 says "the Orchestrator recording reviews", which points the other way.
+   - Line 217 itself admits "The Reviewer's role card is not in this pack."
+   - So there is no evidence the Reviewer can run `node` against the base commit and commit files under reviews/S-008/baseline/. In this operating model, review roles are read-only (class `reviewer`, with no write tool) and the Orchestrator records their outputs.
+   - The whole baseline mechanism (AC9, AC14–AC17, J7) depends on this. Under your brief's rule, an unverifiable claim is a FAIL.
+   - Fix: name who executes and commits the record. Use a role whose write lane is shown by a cited file, or have the Orchestrator record output the Reviewer produces. Alternatively, cite the Reviewer's role card.
 
-2. **The baseline guard can be passed without ever running src/.**
-   - The Builder writes the adapter (line 23, J7). The Check author may not see src/. The runner's run is "mechanical".
-   - Nothing in J7's checks makes the adapter call src/ at all. The checks cover the hashes, whether the record covers every case, and the "gate card on_list" and "sender sends a notice" sanity checks (line 168).
-   - An adapter that returns canned or re-implemented outputs would pass every check. It would produce the same bytes on the base commit and on the built code, so AC9 and AC14 to AC17 would pass whatever the build does.
-   - Line 234 concedes "No check can show that the run used the base commit's src/." It leaves that to "anyone allowed to read src/", with no named party or step. That falls short of the ruling's "a run the Builder cannot change", because the Builder authors the code that does the run.
-   - A fix would add a check that the adapter reaches the code under src/, or a named second party who must confirm it.
+2. **J7 does not say what a `fail` case means on the base commit's code (specs/S-008.md:150, :160).**
+   - Line 150 says the adapter "makes each listed read fail in the read path's own way".
+   - At the base commit the desk never reads notes (spec line 16, plan §2), so a `notes` failure has no read path to fail.
+   - Line 157 says "An error, a missing field or a field of the wrong type is a failed run", and line 168 says the record fails coverage if any case has no result.
+   - So the AC9, AC16 and AC17 cases with `fail: ["notes"]` can only be an unstated no-op or a failed run. A failed run stops the build.
+   - The same is unspecified for how `queue` and `log` failures are induced on code the Check author has not seen.
+   - The spec must say that a notes failure at the base is a no-op, and how `queue` and `log` failures are induced.
 
-**Needs the owner**
+**Non-blocking findings and risks**
 
-3. **Which spec's criteria did the owner approve?** Line 18 admits that decisions/P-003/criteria-13.md ("Decision: proceed") names no spec, and that "to be confirmed". I could not confirm it from the pack either. This does not block the plan review, but it is not settled. The criteria still go to the scenario card.
+3. **Approval of the criteria is unconfirmed (specs/S-008.md:18).**
+   - decisions/P-003/criteria-13.md is only "Decision: proceed" and names no spec.
+   - The spec says as much, so this is honest. But it means the criteria are not yet shown as owner-approved.
+   - Fix: confirm the approval before the scenario card.
 
-**Checked and found sound**
+4. **AC4 says the card shows "without a reload" (specs/S-008.md:29).**
+   - That depends on the desk re-reading while open. AC10 (line 37) forbids changing the schedule, and the code is not in the pack.
+   - If the desk only reads on load, AC4 or AC10 breaks. Fix: check this at the base commit.
 
-- Carry-over claim: apart from the lines listed in line 11, S-008 is the same as S-007. That covers the criteria, the join sheets J1 to J6, the facts, the risks, the stop rule and open questions 1 to 6. Line counts match (231 and 258).
-- J7 sits at lines 146 to 171, as line 11 says.
-- Dropping the git-history test is consistent with the ruling: line 23 says "no check reads the branch's history".
+5. **The poison run replaces only `.js`, `.mjs` and `.cjs` files under src/ (specs/S-008.md:170).**
+   - An adapter could still take values from other files under src/, such as JSON or HTML. Widen the poison to every file under src/.
+
+6. **The test budget is tight (specs/S-008.md:209–210, :236).**
+   - J7 packs several checks into one test: hashes, coverage, poison run and comparison. The estimate of 15–23 tests sits against a stop at 24.
+   - This is acknowledged in the spec, so I treat it as a risk, not a defect.
+
+**Checked and sound**
+- The header names `milestones: M4`, and M4 is in docs/projects/P-003.md:46.
+- The plan has the Discovery and Design standard lines and a `why` on M4.
+- The S-007 line count of 231 is correct, and the changed-lines note matches what I compared (lines 1, 3, 4, 18, 23 and AC15).
+- The J6 worked examples are arithmetically consistent.
+- The join-up review section is present, with non-blocking differences.
 
 **Open questions**
-
-- Which role runs the adapter, and does it have a written lane? This must be settled before freeze.
-- Who confirms the adapter really exercises src/ at the base commit?
-- The spec's stop rule (24 tests) leaves almost no room for J7's checks. They cover hashes, coverage and per-AC comparisons, and line 208 treats them as one test.
+- Who may execute code and commit under reviews/ in the Build stage? The role cards or the Orchestrator's rules would settle finding 1.
+- What does the base-commit read path do when a `queue` or `log` read fails?

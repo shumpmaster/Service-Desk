@@ -1,6 +1,8 @@
-# The live proof (model S-015 AC12, D-074): started only by hand, before session_commands may be
-# "on", and again on any new pinned version or runner image (the re-proof rule, D-077, model S-016
-# AC2). Its first part (model S-016 AC3) holds no secret: it tests the check-run sandbox with the
+# The live proof (model S-015 AC12, D-074): started by hand before session_commands may be "on",
+# and again on any new pinned version or runner image (the re-proof rule, D-077, model S-016 AC2);
+# also every Monday on its own (the owner's ruling, decisions/questions/scrub-proof-schedule.md, A),
+# so a new month's runner image is proved within about a week. A scheduled run uses the Builder's
+# model (the MODEL_BUILDER repository variable), since no one types one in. Its first part (model S-016 AC3) holds no secret: it tests the check-run sandbox with the
 # production steps. Then it runs the production session_runner.py pack and run, twice (session
 # commands on, then off), through a wrapper that keeps the command line's raw stream, and ends with
 # PASS or FAIL per check only, then the runner's ImageOS and ImageVersion and the command line's
@@ -9,6 +11,8 @@
 name: scrub-proof
 
 on:
+  schedule:
+    - cron: "41 10 * * 1"
   workflow_dispatch:
     inputs:
       model:
@@ -67,7 +71,7 @@ jobs:
       - name: Set up the proof
         id: setup
         env:
-          MODEL: ${{ inputs.model }}
+          MODEL: ${{ inputs.model || vars.MODEL_BUILDER }}
         run: python3 governance/checks/orchestrator_git.py proof-setup --config governance --agents .claude/agents --tools governance/checks --work "$RUNNER_TEMP/proof" --model "$MODEL" --github-output "$GITHUB_OUTPUT"
       - name: Install the pinned command line
         env:

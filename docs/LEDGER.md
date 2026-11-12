@@ -576,3 +576,45 @@ options_considered: The same plus a desk item to alert the owner when the loop s
 decided_by: owner ("A: raise upstream (Recommended)", 2026-11-10, asked in session session_01QBwHGNGhaxp9ABH6WFJJE2; recorded in decisions/questions/orchestrator-schedule-gaps.md)
 proposed_by: chief-of-staff
 reversibility: reversible
+
+## L-0043 — The check run's copy keeps the default branch's ledger and adds the item branch's own entries
+date: 2026-11-11
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: P-003's check runs (2026-11-11, recorded 07:20Z and again 12:29Z, reviews/S-007/checks.txt on item/P-003) failed its surface and digest checks, whatever the build: the copy is main plus the item branch's changed files (governance/checks/orchestrator_git.py build_tree), so item/P-003's 26-entry ledger replaced main's 41, and 12 exempt lines cited entries the copy lacked. Fix it, pause for the model, or decide at the stop card? Filed first as questions/P-003-build-blocked.md (#353).
+decision: build_tree's new step keep_default_ledger: when the item branch changed docs/LEDGER.md, the copy holds main's ledger with the item branch's own new entries after it, each whose id main already uses renumbered above both, and the digest rebuilt from it. Measured on P-003's copy: 26 entries before and 46 after; surface_guard and digest fail before and pass after; every other check is unchanged. A desk change to a copy of the operating model's tools (raised there as LL-048).
+licenses_next: P-003's next check run judges the build, not the stale ledger. The merge gate still merges the two ledgers by git, which conflicts, and the item branch's ids still clash with main's (L-0034, L-0037, L-0038, L-0040; LL-046): both need a ruling before P-003 lands. Renumbered ids in a copy or pack (above main's highest, so L-0046 upward on P-003's once this lands) exist only there.
+options_considered: Pause P-003 until the model fixes it upstream; leave it and decide at the stop card.
+decided_by: owner ("A: fix both (Recommended)", 2026-11-11, asked in session session_01QBwHGNGhaxp9ABH6WFJJE2; recorded in decisions/questions/P-003-build-blocked.md)
+proposed_by: chief-of-staff
+reversibility: reversible
+
+## L-0044 — The safety proof also runs every Monday
+date: 2026-11-11
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: Builder commands run only while the runner image's month matches the last passing proof (governance/RUNNER.toml), and the proof starts only by hand, so commands switch off silently each new month; they had been off since October. Run it on a schedule, and how often? Filed first as questions/scrub-proof-schedule.md (#354).
+decision: .github/workflows/scrub-proof.yml gains `schedule: cron "41 10 * * 1"`; a scheduled run's model is the MODEL_BUILDER repository variable. Its permissions stay read-only and it still writes and commits nothing. A pass on a new image month leads to a RUNNER.toml rule change the Chief of Staff opens for the owner's approval; a failure is reported by the Chief of Staff.
+licenses_next: The desk's notifications do not watch this workflow, so a scheduled failure is seen only at a Chief of Staff session.
+options_considered: Monthly on the 3rd; weekly with the passing run opening the settings change itself (needs write access the proof lacks).
+decided_by: owner ("A: weekly (Recommended)", 2026-11-11, asked in session session_01QBwHGNGhaxp9ABH6WFJJE2; recorded in decisions/questions/scrub-proof-schedule.md)
+proposed_by: chief-of-staff
+reversibility: reversible
+
+## L-0045 — The proof's commands-off session opens with a harmless Write
+date: 2026-11-11
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: In every proof run on the desk (October, L-0007; 2026-11-11, run 43018049218) the commands-off session made no tool calls, so its two Read checks had nothing to judge and the proof could not pass. The model's L-0129 suggests the commands-on brief's harmless first step, but its frozen S-015 AC12 and S-021 AC2 fix the commands-off brief. Change the desk's copy now, wait for the model, or build outside the loop? Filed first as questions/scrub-proof-off-brief.md (#355).
+decision: governance/checks/orchestrator_git.py PROOF_OFF: step 1 writes off-check.txt holding the fixed text "harness check" (never nonce A, L-0101; not proof.txt), then the two Reads as steps 2 and 3. A desk departure from model S-015 AC12 and S-021 AC2: run against the model's tests, the copy fails 2 of 91 (the commands-off step numbers, and "Write" in the commands-off brief), and passes every check that only line counts are asked for and that both Reads are made.
+licenses_next: The owner runs the proof again by hand. If it passes, RUNNER.toml records its image month by a rule change, and Builder sessions run commands. Raised in the model as LL-047, for it to adopt or replace.
+options_considered: Wait for a model spec superseding S-015 AC12 and S-021 AC2; build P-003 outside the loop in a session that has a shell.
+decided_by: owner ("A: change it now (Recommended)", 2026-11-11, asked in session session_01QBwHGNGhaxp9ABH6WFJJE2; recorded in decisions/questions/scrub-proof-off-brief.md)
+proposed_by: chief-of-staff
+reversibility: reversible

@@ -3,27 +3,9 @@
     {
       "action": "dispatch",
       "gate": null,
-      "item": "Q-023",
-      "role": "researcher",
-      "route": "ready-dispatch",
-      "spec": null,
-      "stage": 2
-    },
-    {
-      "action": "dispatch",
-      "gate": null,
-      "item": "Q-024",
-      "role": "researcher",
-      "route": "ready-dispatch",
-      "spec": null,
-      "stage": 2
-    },
-    {
-      "action": "dispatch",
-      "gate": null,
       "item": "Q-025",
-      "role": "researcher",
-      "route": "ready-dispatch",
+      "role": "critic-triage",
+      "route": "third-fail",
       "spec": null,
       "stage": 2
     },
@@ -31,8 +13,8 @@
       "action": "dispatch",
       "gate": null,
       "item": "Q-026",
-      "role": "researcher",
-      "route": "ready-dispatch",
+      "role": "critic-triage",
+      "route": "third-fail",
       "spec": null,
       "stage": 2
     },
@@ -40,8 +22,8 @@
       "action": "dispatch",
       "gate": null,
       "item": "Q-027",
-      "role": "researcher",
-      "route": "ready-dispatch",
+      "role": "critic-triage",
+      "route": "third-fail",
       "spec": null,
       "stage": 2
     }

@@ -1,0 +1,25 @@
+# Ruling needed: does a tool's own changelog count as one of its pages, and how is a fact filed when the tool's own pages disagree?
+
+Milestone: Discovery-5
+
+WHY: The research on how events are classified has stopped a second time. Nine of its findings are filed, and one of the three facts still held waits on two gaps in your source rule. The fact is that one tool, Linear, now gives duplicate issues a status of their own. Linear's dated changelog says so; one of its guide pages, undated, still describes the older behaviour. Your rule says two of a tool's own pages count as two sources for how that tool behaves, but not whether a changelog is one of those pages, nor what to do when the tool's own pages disagree. Until you rule, sending the research back is expected to stop again on this fact, and Discovery's research milestone is not reached.
+How to answer: one letter.
+If you don't answer: nothing moves and nothing breaks; the research's stop card keeps waiting.
+
+OPTIONS:
+  A. A changelog counts, and the newest dated reading is filed with the older one noted — two lines are added to the source rule the checker reads, a governance change you approve, merged as its own pull request; then the card's `re-specify` sends the research back. The lines: a tool's dated changelog or release notes on its own site count as one of its pages for how it behaves; where its own pages disagree, the entry rests on the newest dated page and quotes each older reading with its page, an undated page counting as older. The held fact can then be filed on the changelog and the guide page that agrees with it, with the undated page's older wording noted. Cost: the rule widens by two lines for all later research. It rules out treating a tool's changelog as weaker than its guides.
+  B. A changelog counts, but a fact the tool's own pages disagree on is not filed — two lines are added to the source rule, a governance change you approve; then `re-specify`. The lines: a changelog counts as one of the tool's pages; a fact on which the tool's own pages disagree is not filed, and the memo records the disagreement. The held fact is then dropped, and the research is expected to pass on the rest. Cost: the rule widens by two lines; any fact a tool documents inconsistently stays out of the library, even when the newer page is clear. It rules out filing the newest reading of a tool whose guides lag its changelog.
+  C. No change — no rule changes; the card's `re-specify` sends the research back at once. The fact stays held unless the Researcher drops it, and nothing it receives asks it to, so the research is likely to stop again and come back to you. Cost: one more round of the loop, likely wasted, and a third stop card. It rules out filing this fact.
+RECOMMENDATION: A — a tool's dated changelog is its own statement of how it behaves, as its guides are, and the newest dated reading is the one a timeline built today would meet.
+RISK CLASS: R3 for A and B (they change governance/standards/sources.md, which governance/risk-paths.toml classes irreversible or gate-bearing); R0 for C (records only)   REVERSIBILITY: irreversible   BLAST RADIUS: the source rule the Source checker reads, and so what it may file for this and later research; nothing on the desk's screens changes
+DEFAULT: none — the recommendation changes your source rule, which is yours alone and is not changed by proxy (docs/LEDGER.md L-0049)   TIMEOUT: none
+
+## Context
+- The third source check since the first stop card filed one entry and held three; it holds `F-linear-duplicate-status-01` pending two rulings, whether a changelog counts as a page and whether a dated newer reading may be filed against an older page, and puts them to the owner (source: research/Q-026-source-check.md on item/Q-026)
+- The held entry's quotes are confirmed: the 2026-05-21 changelog says "Duplicate issues now use a dedicated status type"; the issue-property page calls Duplicate "a system-managed status that cannot be renamed or customized"; the triage page says duplicates move to "a Canceled status type" (source: research/Q-026-source-check.md on item/Q-026)
+- That the triage page is out of date is the Researcher's inference from the dates; Linear does not say so (source: research/Q-026-memo.md on item/Q-026)
+- The other two held entries each rest on one page; the check asks the Researcher to find a second page or drop them, and no ruling is needed for that (source: research/Q-026-source-check.md on item/Q-026)
+- The source rule counts two of a vendor's documentation pages as two sources for its own product's behaviour, and "anything wider needs its own ruling" (source: governance/standards/sources.md)
+- Triage found the checker working as designed and advises no further Researcher round without a new source or a ruling (source: triage/Q-026.md on item/Q-026, the 17:53 UTC return)
+- The Researcher sees only the source check and its own memo, not decisions/ (source: governance/PACKS.toml, `[roles.researcher]`)
+- The Chief of Staff's notes on the card (source: decisions/Q-026/stop-2-notes.md)

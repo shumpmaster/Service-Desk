@@ -1,27 +1,27 @@
-Verdict: FAIL
+Verdict: PASS
 
-I filed nothing this round. The one entry still proposed can't be checked as written, because its text isn't in this folder.
+I opened all four cited pages raw today (2026-11-12), with scripts and tags stripped. Every quote in the three proposed entries is in the page text, and all three entries are now filed. The Duplicate entry's claim is the page-by-page disagreement, and the entry does not say which page is current.
 
-**Findings**
-- **Proposed entry missing.** `research/Q-026-memo.md` (lines 28–30, 38) says `F-linear-duplicate-status-01` is "unchanged from revision 6". Revision 6 isn't in this folder, and the memo never states the claim or its quotes. The only wording I have is the quotes listed in `research/Q-026-source-check.md` (lines 22–26). I won't write the claim myself, because the checker's job is to confirm what the memo claims. This is the reason for the FAIL.
-- **Sources re-fetched raw today (2026-11-12).** Tags stripped, quotes checked in the text.
+**Findings** (line numbers are in the stripped text of each page)
+- **`F-linear-duplicate-status-01`: confirmed. It is filed as a disagreement record, not load-bearing, under `governance/standards/sources.md`.**
   - `linear.app/docs/issue-property`:
-    - Lines 1052–1053 of the stripped text: issues marked as duplicates are moved into a reserved "Duplicate" status.
-    - Lines 1108–1112 list Canceled and Duplicate as separate status types. Duplicate is "applied automatically when an issue is marked as a duplicate".
-  - `linear.app/docs/triage` (lines 1156–1168) ties Canceled to the mark-as-duplicate action. This matches the earlier note that it says "a Canceled status type", though I only skimmed it this round.
-  - `linear.app/changelog/2026-05-21-project-slack-channels`:
-    - Line 546: "Duplicate issues now use a dedicated status type in Linear and move context to the original issue."
-    - Line 550: every issue with a duplicate status must now link to the original issue.
-    - Line 649: duplicates now appear in the canceled section of focus-grouped lists.
-- **The blocker is gone.** `governance/standards/sources.md` now rules on the earlier open questions Q-e and Q-f.
-  - A vendor changelog counts as one of its documentation pages.
-  - Where a vendor's own pages disagree, the entry records what each page says, with its page and date, and does not say which is current. Such an entry is not load-bearing.
-  - A fact found on only one vendor page may be filed marked "single page", also not load-bearing.
-- **What this allows.** The Duplicate entry can be filed as a disagreement record: `issue-property` and the changelog say Duplicate is its own status type, and `triage` says Canceled. The memo's reading that the `triage` page is out of date is an inference, so it must stay out.
-- **Memo is out of date.** Revision 7 was written before these rulings. It still says the Duplicate entry waits on the owner, and it withdrew `F-linear-category-rules-01` and `F-incidentio-severity-permission-01`. Both could now be filed marked "single page", but only if the Researcher re-proposes them. I can't file entries nobody proposed.
-- **Already filed, not re-checked.** `F-linear-status-categories-01` and `F-incidentio-severity-ownership-01` are in `library/facts/`. I only read their entry files this round.
+    - Line 93: "Issues marked as duplicates are automatically moved into a reserved Duplicate status."
+    - Lines 118–119 list Canceled and Duplicate as separate types: "Duplicate (applied automatically when an issue is marked as a duplicate)".
+    - The memo's "automatically moved" wording was right. The earlier checker note had dropped "automatically", and I filed the raw wording.
+  - Changelog `2026-05-21-project-slack-channels`:
+    - Line 15 is the date, May 21, 2026.
+    - Line 45: "Duplicate issues now use a dedicated status type in Linear and move context to the original issue."
+    - Line 47: every issue with a duplicate status must now link to the original issue.
+    - Line 76: duplicates now appear in the canceled section of focus-grouped lists "instead of active buckets".
+  - `linear.app/docs/triage`, lines 125–126: "Once selected, the new issue is updated to a Canceled status type."
+  - Pages (a) and (c) disagree: Duplicate is its own status type on one page and Canceled on the other.
+  - I left out the memo's inference that the `triage` page is out of date. I also left out "system-managed, cannot be renamed", which I did not look for in the raw text.
+- **`F-linear-category-rules-01`: confirmed, filed marked "single page", not load-bearing.** `issue-property` line 105 says teams can reorder statuses within a category but the categories stay in a fixed order. Line 104 says statuses can be removed as long as at least one exists in each category.
+- **`F-incidentio-severity-permission-01`: confirmed, filed marked "single page", not load-bearing.** On `docs.incident.io/incidents/severities`, the page says managing severities requires the "Manage organization settings" permission. Line 165 says "Rename them, rewrite their descriptions, or add your own…".
+- **Entry format.** The three files are in `library/facts/` with checked-on date, shelf life, grade, topics and `opened_by`. Shelf lives are 6, 12 and 18 months, as the memo proposed.
+- **Not re-checked.** `F-linear-status-categories-01` and `F-incidentio-severity-ownership-01` were already filed in an earlier round. I only read their entry files.
 
 **Open questions**
-1. Researcher: please revise the memo to state the Duplicate entry's claim and quotes, framed as a disagreement record under the new standard. Also say whether to re-propose the two withdrawn entries as "single page".
-2. Linear `schema.graphql` (`WorkflowState.type`) is still not opened. The memo lists it as undone, and it's outside this brief.
-3. The memo says the topics on controlled vocabularies, ITIL change categories and vocabulary drift are not covered. Nothing about them can be filed.
+1. The memo's Q-h asks whether disagreement records should default to a shorter shelf life. I kept the proposed 6 months, but the standard does not say. That needs an owner ruling.
+2. The pages `issue-property` and `triage` carry no date. The disagreement entry records them as undated, so later readers cannot tell which is newer. Re-check it when the entry's shelf life ends.
+3. Linear's `schema.graphql` (`WorkflowState.type`) is still not opened. The memo's topics on controlled vocabularies, ITIL change categories and vocabulary drift are still uncovered. Nothing about them can be filed.

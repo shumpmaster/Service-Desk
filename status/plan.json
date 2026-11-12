@@ -1,3 +1,13 @@
 {
-  "entries": []
+  "entries": [
+    {
+      "action": "dispatch",
+      "gate": null,
+      "item": "P-003",
+      "role": "reviewer",
+      "route": "checks-run-pass",
+      "spec": "S-007",
+      "stage": 5
+    }
+  ]
 }

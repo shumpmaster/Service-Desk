@@ -1,37 +1,27 @@
 Verdict: FAIL
 
-I filed one entry and held back three. I fetched every cited page as raw HTML and stripped the tags, then compared each quote with the memo. Nothing was committed, because this directory is not a git repository. Under the brief, an unverifiable claim makes the round FAIL, and the three held entries each contain such a claim.
+I filed nothing this round. The one entry still proposed can't be checked as written, because its text isn't in this folder.
 
-## Filed
-**`library/facts/F-incidentio-severity-ownership-01.md`** (grade A, 18 months, checked 2026-11-12). Every quote was confirmed in the raw text:
-- **`docs.incident.io/incidents/severities`:** "hide severities that don't apply, and restrict who's allowed to set a particular severity".
-- **`docs.incident.io/incidents/incident-types`:** "severities are shared across incident types and their order will remain consistent", "hidden the Minor severity", "restrict which users are allowed to select a particular severity for a given incident type", "Who can set this severity?" and "only available on our Pro or Enterprise plan".
-  - Last round's raw read reported that this page lacks the hide and restrict wording. The page as served today has it. Either it changed or last round's read missed it.
-- **`incident.io/changelog/incident-role-restrictions`:** dated April 8, 2026. It says "enabled per incident type, not in the general severity configuration, and is available for our Pro and Enterprise customers".
-- **`docs.incident.io/api-reference/severities-v1`:** "picked from one of the severities configured in your organisations settings".
+**Findings**
+- **Proposed entry missing.** `research/Q-026-memo.md` (lines 28–30, 38) says `F-linear-duplicate-status-01` is "unchanged from revision 6". Revision 6 isn't in this folder, and the memo never states the claim or its quotes. The only wording I have is the quotes listed in `research/Q-026-source-check.md` (lines 22–26). I won't write the claim myself, because the checker's job is to confirm what the memo claims. This is the reason for the FAIL.
+- **Sources re-fetched raw today (2026-11-12).** Tags stripped, quotes checked in the text.
+  - `linear.app/docs/issue-property`:
+    - Lines 1052–1053 of the stripped text: issues marked as duplicates are moved into a reserved "Duplicate" status.
+    - Lines 1108–1112 list Canceled and Duplicate as separate status types. Duplicate is "applied automatically when an issue is marked as a duplicate".
+  - `linear.app/docs/triage` (lines 1156–1168) ties Canceled to the mark-as-duplicate action. This matches the earlier note that it says "a Canceled status type", though I only skimmed it this round.
+  - `linear.app/changelog/2026-05-21-project-slack-channels`:
+    - Line 546: "Duplicate issues now use a dedicated status type in Linear and move context to the original issue."
+    - Line 550: every issue with a duplicate status must now link to the original issue.
+    - Line 649: duplicates now appear in the canceled section of focus-grouped lists.
+- **The blocker is gone.** `governance/standards/sources.md` now rules on the earlier open questions Q-e and Q-f.
+  - A vendor changelog counts as one of its documentation pages.
+  - Where a vendor's own pages disagree, the entry records what each page says, with its page and date, and does not say which is current. Such an entry is not load-bearing.
+  - A fact found on only one vendor page may be filed marked "single page", also not load-bearing.
+- **What this allows.** The Duplicate entry can be filed as a disagreement record: `issue-property` and the changelog say Duplicate is its own status type, and `triage` says Canceled. The memo's reading that the `triage` page is out of date is an inference, so it must stay out.
+- **Memo is out of date.** Revision 7 was written before these rulings. It still says the Duplicate entry waits on the owner, and it withdrew `F-linear-category-rules-01` and `F-incidentio-severity-permission-01`. Both could now be filed marked "single page", but only if the Researcher re-proposes them. I can't file entries nobody proposed.
+- **Already filed, not re-checked.** `F-linear-status-categories-01` and `F-incidentio-severity-ownership-01` are in `library/facts/`. I only read their entry files this round.
 
-That is four different pages of the vendor's own site, which meets the two-page rule for vendor behaviour. The entry is labelled same publisher.
-
-## Not filed
-- **`F-linear-status-categories-01`: not confirmed as written.**
-  - Two pages confirm "a group of ordered issue statuses defined per-team" and the default workflow ("further customize in Team Settings"). Those are `conceptual-model` and `issue-property`.
-  - Two pages confirm that triage is "outside the normal workflow". The `triage` page says it directly, and `issue-property` calls triage "an additional status category".
-  - "Teams can reorder statuses within each status category" appears only on `issue-property`. The `conceptual-model` page does not say it.
-  - "An additional status category" appears only on `issue-property`. The `triage` page does not use that wording.
-  - The 2026-05-21 changelog confirms "Duplicate issues now use a dedicated status type" and "every issue with a duplicate status must now link to the original issue".
-  - `triage` still says duplicates go to "a Canceled status type", twice. The memo's reading that this is older wording is an inference, not something Linear says.
-  - Whether a changelog counts as a second page is the memo's open question Q-f, and no ruling covers it. The standard says "two different pages of that vendor's documentation".
-  - The entry needs narrowing to the supported parts, or the rulings on Q-e and Q-f.
-- **`F-linear-category-rules-01`: held.** Both quotes ("the categories themselves stay in a fixed order", "as long as at least one status exists in each category") are on `issue-property` only. The 2024-03-19 changelog ("under the categories: Backlog, Planned, Started, Completed, and Canceled") is about project statuses, not issues, so it is not a second source.
-- **`F-incidentio-severity-permission-01`: held.** "Managing severities requires the Manage organization settings permission" and "Rename them, rewrite their descriptions, or add your own" are confirmed on `severities` only, as the memo itself says.
-
-## Not re-read
-- **Linear changelog `2024-03-19`:** read only for the quote above.
-- **Other pages:** `user-permissions`, `api-keys`, the 2023-03-14 changelog and the 404 `configuring-workflows` page. These are negative-result pages used only to explain why a second page was not found, so I did not rely on them.
-- **Linear schema:** the memo's request for `WorkflowState` in the full `schema.graphql` is not done. I did not open it.
-
-## Open questions
-1. **Owner (Q-f):** does a vendor changelog count as a second page under the two-page rule?
-2. **Owner (Q-e):** when a vendor's pages disagree, may the library file the dated newer reading and note the older one?
-3. **Researcher:** can you supply a second Linear page for fixed category order, the one-status-per-category minimum and reordering within categories? Alternatively, can you supply one for the incident.io permission rule? Or should those be dropped?
-4. **Researcher:** should `F-linear-status-categories-01` be re-proposed without the reorder and "additional status category" wording? Without them, `conceptual-model` and `triage` support the rest.
+**Open questions**
+1. Researcher: please revise the memo to state the Duplicate entry's claim and quotes, framed as a disagreement record under the new standard. Also say whether to re-propose the two withdrawn entries as "single page".
+2. Linear `schema.graphql` (`WorkflowState.type`) is still not opened. The memo lists it as undone, and it's outside this brief.
+3. The memo says the topics on controlled vocabularies, ITIL change categories and vocabulary drift are not covered. Nothing about them can be filed.

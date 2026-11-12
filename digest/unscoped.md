@@ -8,6 +8,7 @@
 | L-0038 | S-004 superseded | 2026-11-08 | never |
 | L-0040 | S-005 superseded | 2026-11-09 | never |
 | L-0041 | S-006 superseded | 2026-11-10 | never |
+| L-0050 | S-007 superseded | 2026-11-12 | never |
 
 ## Kills
 None.

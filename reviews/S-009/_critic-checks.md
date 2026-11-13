@@ -2,6 +2,146 @@
 
 *Recorded by the Chief of Staff's session (session_01QBwHGMmHGgB3fLufS5ELH2) as `orchestrator`, under L-0051. Each round's Critic return, verbatim under its heading; the latest round first, as the pipeline reads this record's first verdict. At most three rounds; a third failure goes back to the owner.*
 
+## Round 2 — checks at build/check-author/S-009 e27eb1d (session branch 8cca44c); dispatched about 2026-11-13T15:18Z, returned about 15:23Z (times from the session, approximate)
+
+Verdict: PASS
+
+Round 2 of 3, checks at build/check-author/S-009 e27eb1d. Round 1's blocking finding B1 is closed. A build that takes a `criteria` or `launch` gate card's mark from its notes now fails the J7 comparison and a built-only test. A build whose failed read of a gate card's notes hides the decision cards fails a J8 test. N1 and N3 to N8 are each handled as stated. I found no criterion that a plausible wrong build can break with every check passing, except the AC13 list. That is the spec gap round 1 already named (N2), which the session carries as a risk. I found no false stop that the spec does not already accept. All findings are non-blocking.
+
+What I read, all in /home/user/wt-check-author-S-009: specs/S-009.md (all 296 lines), every file under tests/acceptance/S-009/ (12 baseline case files, 11 .mjs files, README.md), tests/acceptance/package.json, run-all.cjs and README.md, and checks/S-009/review-rubric.md and AC18-rubric.md. I also read /home/user/Service-Desk/reviews/S-009/_critic-checks.md. I did not read src/, tests/desk/ or reviews/S-009/_src-reading.md. I ran nothing; every finding comes from reading the files.
+
+## 1. Round 1's findings
+
+**B1: closed.**
+- **The baseline cases now hold the card B1 asked for.** P-102-criteria-1 has notes recommending `kill` and no gate case. It is in every desk and open baseline case (for example cases/baseline/S009-B-desk-ok.json:36-38 and :41).
+- **Why a wrong build fails.** The base commit reads no notes, and a card file has no section 5 (spec :150, :229). So the record cannot mark that card `kill`. The J7 comparison of cards that are not decision cards (s009-j7-baseline.test.mjs:135-143) therefore fails any build whose mark is `gateCase ?? notesWord ?? section5`, whatever the base gives.
+- **The case set cannot drop it.** s009-case-set.test.mjs:82-87 fails a case set without such a card.
+- **Built-only check of the mark.** s009-hold-show.test.mjs:135-152 checks that a `criteria` card and a `launch` card with notes are unmarked. It also checks that a `dor` card's gate case beats its notes.
+- **Second wrong build.** s009-j8-reads.test.mjs:71-86 covers it. Only gate cards' notes fail, and the test asserts: no notes line, no "Can't read" line, non-empty `notices`, and the one decision card shown (`norec`). A build that reads gate notes and treats their failure as a failed read fails it, on the desk and on the sender.
+
+**Round 1's non-blocking findings:**
+- **N1 (hashes for imported tests/ files): handled.** s009-j7-baseline.test.mjs:53 requires a hash for every tests/ file the adapter imports. s009-lib.mjs:241-257 finds those files by following relative imports from the adapter.
+- **N3 (AC2's single mark and its words): handled.** Rubric R11 (review-rubric.md:20) names both.
+- **N4 (AC18 test too strict): handled.** s009-ac18-operating-notes.test.mjs:26-33 now checks only that the notes exist and name the mark, with either apostrophe and any case or spacing. AC18-rubric.md items 1 to 7 carry the rest.
+- **N5 (poison run edge cases): handled.**
+  - Symlinks: the copy keeps relative symlinks as they are (`verbatimSymlinks: true`, j7 :112), and symlinks inside src/ are replaced with the poison line (:119).
+  - Exit code: `wroteResult` no longer depends on the exit code (lib :125-127), so any run that writes a result in J7's form fails the poison run, as spec :171 says.
+- **N6 (hash key form): handled.** lib :234 ignores a leading "./" or "/" and turns back-slashes into "/". README :8-10 names the key form.
+- **N7 (AC11's "no memory"): handled.** R5 (rubric :14) now names "no memory of earlier reads, nothing kept on a device".
+- **N8 (AC8 test name): handled.** hold-show :112 is now named "partial; the rest is rubric R3".
+
+## 2. Can each criterion be broken while every check passes?
+
+- **Checks that fail a breaking build:**
+  - AC1, AC4 (the 24-hour boundary), AC5, AC6, AC7, AC19: hold-show tests, J1, J2, J4.
+  - AC2: the word and the `marked` field.
+  - AC9: the J7 comparison, hold-show :135, J8 :71.
+  - AC11, its observable part: J4 at three moments, and the same bytes in J3 :65.
+  - AC14: J7 :146 and J5.
+  - AC15: J7 :154-178 and J4 :54-79.
+  - AC16 and AC17: J1, J2, J3, J4, J8, and J7 for cards that are not decision cards.
+  - AC18, its mechanical part: the notes exist and name the mark.
+- **Rubric items standing in where J7's forms truly cannot see:**
+  - AC3 (R1): card files have no `## 5.` section (spec :150).
+  - AC4 and AC5's 60-second schedule (R2): a case is one read.
+  - AC8 (R3): the case form holds only the main branch's records.
+  - AC10 (R4) and AC12 (R6).
+  - AC11's "no memory" (R5).
+  - AC2's single mark and its words (R11): `marked` is one word, and `shows` holds every word.
+  - src/notify/** unchanged (R8).
+  - J3's card answered while held (R9) and J4's sheet left open (R10).
+  - Each is unobservable through the case and output forms, so each stand-in is fair.
+- **Can be broken with every check passing:** only AC13's handed-over list (id, raise time or `not recorded`, flag). That is round 1's N2, a gap in the spec carried with R7 standing in. My N1 below is a narrow leftover of AC9.
+
+## 3. The baseline cases
+
+- **J7's list** (spec :160-162) is met:
+  - One card each of `dor`, `criteria` and `launch`, an owner question and a pull request, beside a decision card with notes (P-104-stop-1) and one without (P-105-failure-1).
+  - The `dor` card's gate case says `hold` and its notes say `recycle`.
+  - No failure, then `queue`, `notes` and `log` failing in the `path` form, then `queue` failing in the `call` form.
+  - Two `sender` cases, one for each of AC14's cases.
+  - Four `open` cases for the one id P-106-stop-1, which is not in queue/: by notice and by link, each with no failure and with `log` failing.
+- **Coverage rules:** rules (a) and (b) (j7 :77-96), rule (c) for notice cases only (:101-104), the notes-equals-no-failure rule (:88-90), the gate-case mark rule (:80-85) and the on_list rule (:76) are all implemented.
+- **Twin and open-card rules:** case-set :34-45.
+- **The new criteria card breaks none of these.** All desk and open cases still share identical records and moment, so every failing case keeps its twin. Today's code reads no notes, so the new notes cannot affect rules (a), (b) or (c) at the base. The mark rule looks only at the `dor` card.
+
+## 4. s009-j7-baseline.test.mjs against line 23 and J7
+
+It carries out line 23 and J7:
+- **Paths and base commit:** the record and note paths (lib :18-19), and `base_commit` equal to 04b722ecd45fd5ffb3f133a29475b8777c9bab1f (lib :21, j7 :41).
+- **The note:** it must hold the record's SHA-256 (j7 :38-40).
+- **Hashes:** they must cover the adapter, every case file and every imported tests/ file, and every hashed file must match (j7 :51-58). No comparison runs unless this passes.
+- **Coverage:** checked before the poison run (:62-106).
+- **Poison run:** every file under src/, whatever its type, is replaced with `throw new Error('baseline-poison')`, then the adapter runs on every case (:108-131).
+- **Comparisons:**
+  - A notes failure is compared with the record's `log`-failing case in the same form (:138, lib :224-228).
+  - Home's count less the decision cards on the list, with the AC16 and AC17 lines removed (lib :198-206).
+  - The `sender` cases' notices in full (:146-152).
+  - AC15's two built-only cases, held and not shown on a failed log read (:162-178).
+- It reads no branch history.
+
+## 5. Join marks
+
+`join-test: S-009/J<n>` is on line 1 of each test file:
+- J1: s009-j1-cards-log
+- J2: s009-j2-notes-word
+- J3: s009-j3-card-list
+- J4: s009-j4-views
+- J5: s009-j5-sender
+- J6: s009-j6-count
+- J7: s009-j7-baseline
+- J8: s009-j8-reads
+
+Each file exercises its join. J6 covers the states at the check moments, not the list's form (the carried spec gap).
+
+## 6. The README's open points (tests/acceptance/S-009/README.md:22-49)
+
+- **Points 1 to 5:** real limits of the forms, each matched to a rubric item.
+- **Point 6:** keeping the far-future raise time inside a month file the desk reads is right for the case form. A build that treats a far-future time as malformed and shows the card at once fails j1 :74.
+- **Point 7, interpretations:** each follows the spec, including that a failed notes read shows a can't-read line (spec :165) and that both AC16 lines show when both reads fail (AC16). None of them lets a wrong build pass. Key normalising and whitespace collapsing can only stop a build, never pass a wrong one.
+- **Point 8:** AC18's plain-words test belongs in the rubric.
+
+## 7. False stops
+
+None found beyond stops the spec already accepts: the Home-count assumption (:164), and notes-failure versus log-failure wording (Risks :260). N2 below is a conditional risk.
+
+## Blocking findings
+None.
+
+## Non-blocking findings
+
+**N1. A `dor` gate card with no gate case never has its notes read successfully on a no-failure read, so a dor-only use of notes would pass.** This finding implicates the earlier Critic check (round 1): its B1 fix named only `criteria` or `launch` cards (_critic-checks.md:21).
+- **The cases.**
+  - The baseline `dor` card has a gate case (S009-B-desk-ok.json:36-38).
+  - hold-show :148-151 gives its `dor` card a gate case.
+  - j8 :78 gives P-100-dor-1 notes with no gate case, but with `notes` failing, so they are never got.
+- **The wrong build that passes.** It uses notes for `dor` cards only, for example `gateCase ?? (gate === 'dor' ? notesWord : null) ?? section5`. The likelihood is low.
+- **Fix in the checks.** Add a no-failure built-only `dor` card with notes and no gate case to hold-show :135, asserting `marked: null`.
+
+**N2. Built-only tests hard-code today's behaviour for gate cards, questions and pull-request cards; the record comparison already covers it.**
+- **Where.**
+  - hold-show :144-145 asserts `on_board` and `buttons` true and a notice for `criteria` and `launch` cards.
+  - hold-show :127 and j5 :43 assert that a question and a gate card are notified on a first run.
+- **Why it matters.** Coverage rule (b) asks only for non-empty `notices`, and the spec does not say today's board shows gate cards. If the base commit differs, a correct build stops here. The spec only partly supports the notice assertions (AC9 "notifies", J5 :119).
+- **Fix.** Compare with the record's result instead, or drop those fields.
+
+**N3. Leftover of round 1's N1 and N5.**
+- adapterTestImports (lib :238-248) follows only relative, literal imports. It misses a `new URL(...)` or non-literal `import()`, and files read with `fs`. README :47 and lib :240 say so, and the Reviewer's confirmation (spec :23) covers it.
+- An absolute symlink outside src/ that points into the real src/ still escapes the poison (j7 :112).
+
+**N4. The case-set B1 test checks for a backticked word anywhere in the notes, not for a J2 `Recommendation:` line** (case-set :85). The locked case does hold a proper J2 line (desk-ok :41), so this is harmless.
+
+**N5. The AC18 test passes on any .md or .txt file under docs/handover/P-003/ that names the mark** (ac18 :16-33), including one that existed before the build. AC18-rubric.md carries the substance.
+
+**N6. A stale comment.** s009-j6-count.test.mjs:7-8 still says the gap is in "the Check author's return". It is now README point 1.
+
+## Open questions
+- N2 rests on whether today's board shows gate cards and offers their buttons. Only the record will show it. Does the session accept a stop there, or should the Check author fix N2 before locking?
+- AC13's list (round 1 N2) is still a spec gap carried as a risk with R7 standing in. Is it confirmed to go into the owner's case?
+- J1's far-future raise time in the real log: a real entry is written to the current month's file, not to its raise time's month file. So the case form cannot reach the real case, and the J1 test can never show it. Whether the real desk holds that card as J1 says is open; that is in the spec, not the checks.
+
+*The session's note after the return, not part of it: the checks passed at round 2 of 3. N1 (a dor card with notes and no gate case on a good read) and N2 (built-only tests asserting today's behaviour for gate cards, questions and pull-request cards, a possible false stop) are put to the owner before the checks are locked, in questions/P-003-S-009-checks-lock.md, since a fix needs round 3, the last. Round 1's N2 (AC13's list) stays a spec gap carried as a risk.*
+
 ## Round 1 — checks at build/check-author/S-009 37181d0 (session branch 47e0530); dispatched about 2026-11-13T15:08Z, returned about 15:14Z (times from the session, approximate)
 
 Verdict: FAIL

@@ -1,0 +1,8 @@
+kind = "project"
+earlier = "P-001"
+# The desk's timeline: every event of the agent team's work across the owner's projects on one
+# timeline, read like a CI, with what waits on the owner first. New work on the graduated desk
+# (P-001), started as its own Discovery with a plan of its own by the owner's ruling "A: Discovery,
+# own plan (Recommended)" (decisions/questions/P-005-route.md). No `enters`: it starts at Discovery's
+# readiness check of its plan, docs/projects/P-005.md (draft 5). Filed with the question on taking
+# experiments E1 and E2 into Design (questions/P-005-experiments.md), which the plan's section 7 names.

@@ -4,8 +4,8 @@
 // The spec fixes no entry point for the rule's handed-over list (id, raise time, state) other than
 // the J7 forms, so the states here are read from J7 `desk` results (held = not on the list;
 // `shown, recommended <word>` = marked <word>; `shown, no recommendation yet` = on the list, no mark).
-// The list's own form and its raise-time field are not reachable through the J7 forms; see the
-// Check author's return. Built code, through the adapter.
+// The list's own form and its raise-time field are not reachable through the J7 forms; see
+// README.md open point 1. Built code, through the adapter.
 // Covers: AC13, AC7 (case (c)), AC4.
 
 import { test } from 'node:test';

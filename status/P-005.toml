@@ -1,7 +1,7 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "project"
 stage = 2
-state = "waiting-owner"
+state = "ready"
 role = "critic-gate"
 last_verdict = "none"
 plan_round = 1
@@ -9,7 +9,6 @@ build_round = 0
 confirm_used = false
 attempts = 0
 sessions = 0
-gate = "dor"
 card = 2
-gate_n = 1
-gate_recommendation = "**The Critic's recommendation:** hold. Return the case to the Chief of Staff to fix the points below, then proceed."
+next_gate = "dor"
+gate_n = 2

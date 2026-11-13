@@ -18,3 +18,7 @@ How it was answered: in the Chief of Staff's session (session_01QBwHGJGYoFwkxVun
 - A fresh Critic checks only those lines, as plan review round 6.
 - On a PASS, the Definer freezes S-009, and the Check author writes the locked checks (plan step 5).
 - On a FAIL, it comes back to the owner.
+
+## What happened
+- The Definer made the fixes N-A, N-B and N-C on build/definer/S-009 (84b3891), changing lines 11, 156, 169 and 288 only and no criterion; merged with a merge commit (a0d8ab6).
+- A fresh Critic checked those lines as plan review round 6: PASS (reviews/S-009/plan.md, round 6). Its non-blocking N2: question 13 does not name the notes-failing rule, which the spec shows the owner elsewhere (specs/S-009.md:260, :270); carried as a risk.

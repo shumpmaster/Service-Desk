@@ -1,0 +1,2 @@
+Decision: resubmit
+Proxy: done at the owner's request (the owner's words, verbatim: "Honestly you can run autonomously as you did overnight. You stoppage point is our first design mock up", docs/LEDGER.md L-0049, which licenses the project request P-005 with its readiness check; this card's resubmit is the Chief of Staff's by governance/ROUTING.toml [gates.dor-fail]; the plan's draft 6 is on main (#413) and both dry runs on the real pack passed, reviews/P-005-dor-dry-run/)

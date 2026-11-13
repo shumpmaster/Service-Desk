@@ -190,3 +190,150 @@ Desk end-to-end:
    - For notes files, if presence comes from the tree, the matching failure is a poll or tree failure. In a fresh opening `st.tree` is null and no card shows; after a read, the last tree is kept.
 3. The sender turns an unreadable (non-UTF-8) dispatch log or card into an empty record with no "not read" flag (collect.mjs:43). Should S-009 count that as a failed read?
 4. Which `card` entry is authoritative when there are two? The readers disagree today: the model takes the last, Time asked takes the first, Home and Team keep all.
+
+---
+
+## Follow-up, A to D (asked after the plan review's round 1; returned 2026-11-13, recorded verbatim)
+
+S-009 step-2 follow-up (A to D). The only folder read was /tmp/claude-0/-home-user/ac6bc9b8-20ad-59d2-b4af-fac3ee45c43c/scratchpad/s009-reading (base 0ae6c8d9); paths below are relative to it. No file was changed or written.
+
+## changed
+None.
+
+## why: the answers
+
+**A. The Recommended mark comes from the gate case for gate cards and from the card's own section 5 otherwise.**
+
+Both come from one function, `answerButtons(project, f, linkCap, words = '', opts = {})` (src/lib/board.js:448-460):
+```js
+const recWord = (gate ? caseWord(opts.caseRec) : null) || recommendedWord(c);   // :454
+... recommended: recWord === w                                                  // :459
+```
+`gate` means `GATE_WORDS.includes(c.gate)`, with `GATE_WORDS = ['dor', 'criteria', 'launch']` (j11.js:24). A `dor-fail` card is a decision card.
+
+Gate card (dor, criteria, launch):
+- **File:** the gate case, `docs/gates/<item>/<phase>-gate-<n>-case.md` (path built at board.js:577; `GATE_CASE_RE` at j11.js:14; phase from `GATE_PHASE = { dor:'design', criteria:'build', launch:'launch' }` at j11.js:23).
+- **Parser:** `parseGateCase(text)` (j11.js:709-732) gives `{ opening, recommendation }`. It looks in the `## 1.` section for a line matching `PROPOSER_RE = /^\*\*The proposer's recommendation:\*\* (proceed|hold|recycle(?: into (?:Discovery|Design|Build|Launch))?|kill)\b/` (j11.js:702).
+- **Field:** `caseRec.recommendation`. `caseWord` (sheets.js:270-275) takes its first word if it is proceed, hold, recycle or kill.
+- **How the record arrives:** `caseRec = snap.records.get(casePath)` (board.js:580), passed as `{ caseRec }` (board.js:581; public/sandbox.js:2725, :3502).
+- **Fallback:** with no case record, a gate card falls back to the card's own section 5, as below.
+
+Decision card, or a gate card without a case:
+- **File:** the card file `queue/<item>-<gate>-<n>.md`, as `c.parsed.text`. `parseCard` (records.js:107-131) gives the options: `- \`word\`` lines under `## 4. Options` (:115-119).
+- **Parser:** `recommendedWord(c)` (board.js:487-499). It reads the section that starts `^## 5\.`. The hit is the first option word in backquotes in that section, or else the first option word named as a whole word on its first non-blank line. On a gate card, lines starting `The Critic` or `The user representative` are skipped, and the standard words proceed, hold, recycle and kill also count.
+- **The sheet's text** of the recommendation is `cardSection(p && p.text, 5)` (sandbox.js:955).
+
+Sample texts, checked with node:
+- Decision card:
+  ```
+  # Card
+
+  ## 1. The decision
+  Pick a colour
+
+  ## 4. Options
+  - `red` — red
+  - `blue` — blue
+
+  ## 5. Recommendation
+  `blue`, because.
+  ```
+  Result: `red:false blue:true`.
+- Gate card `dor`, with no case: a `## 5. Recommendation` section holding `` `hold` `` and then `The Critic: \`kill\`` gives `proceed:false hold:true recycle:false kill:false`.
+- Gate case:
+  ```
+  # Case
+
+  ## 1. The ask
+  **The proposer's recommendation:** recycle into Design — why
+  ```
+  `parseGateCase` gives `recommendation: "recycle into Design"`, and the buttons become `recycle:true`, everything else false.
+
+**Does `neededReads` ask for these files?**
+- **Card file:** yes, a required read (`for (const card of openCards(tree)) add(card.path)`, model.js:235).
+- **Gate case:** only as an optional read, and only when `ctx.j11` is set (model.js:297 `if (ctx.j11)`; :306-308 `if (phase) opt(\`docs/gates/${card.item}/${phase}-gate-${card.n}-case.md\`)`). The desk page sets `j11: true` (public/sandbox.js:5397). The sender does not set it (collect.mjs:34), so the sender never reads a gate case.
+- **While a case is in the tree but unread:** the sheet shows `opening: 'reading…'` (sandbox.js:961), and the mark falls back to section 5.
+
+**B. The sender keeps its previous set in a signed workflow artifact on GitHub.**
+
+- **Where:** the artifact `desk-notify-state`, holding `state.json` and `state.sig` (state.mjs:1-5, :25-27). It is not an issue and not a passed-in store.
+- **Reading it:** `lookupState({ gh, repo, repoId, defaultBranch, stateKey })` (sender.mjs:86) runs through REST:
+  - the workflow runs list (state.mjs:278-280)
+  - `/actions/runs/<id>/artifacts?name=desk-notify-state` (:293)
+  - the zip download (:299)
+  - `readZip` and then `verifyState` with an HMAC check (:302-304)
+- **First run:** with no state, `prev = emptyState(...)` (sender.mjs:97-99).
+- **Writing it:** every run that builds a state calls `writeState(o.outDir, S.stateKey, next)` (sender.mjs:313). That does `mkdirSync` and `writeFileSync` of both files in `outDir` (state.mjs:219-223). The workflow's upload step then turns them into the artifact. `writeState` is imported directly, not injected, so **a sender run always writes to disk at `o.outDir`**.
+
+What a test supplies for two runs in a row, with no network:
+- `runSender({ project, config, env, fetch, now, sleep, openCheckout, log, outDir })` (sender.mjs:32).
+- `env` needs `GITHUB_REPOSITORY`, `GITHUB_REPOSITORY_ID`, `GITHUB_EVENT_NAME`, `GITHUB_TOKEN`, `DESK_VAPID_PRIVATE_KEY`, `DESK_VAPID_SUBJECT`, `DESK_PUSH_SUBSCRIPTION` and `DESK_NOTIFY_STATE_KEY`.
+- `fetch` is a fake GitHub and push service that answers the state lookup from the artifacts it holds.
+- Between runs, the state files written to `outDir` are zipped and added as the next run's artifact.
+
+This already exists: `harness(opts)` in tests/desk/notify-helpers.mjs:482-529 uses `makeWorld` for the fake fetch (:224) and `makeZip` for the upload (:509-515). However, `h.outRoot = tempDir('notify-out-')` (:490) and the checkouts are real git repos (`checkoutOf`, :100-107), both under `os.tmpdir`. **Without a filesystem write, the sender cannot run as the code stands.**
+
+**C. A notice opens `<deskUrl>/?open=<key>`, and a key not on the list says "That no longer waits on you" if the project was read.**
+
+- **The link:** `openUrl(deskUrl, key)` = `` `${deskUrl}/?open=${encodeURIComponent(key)}` `` (notify/words.mjs:20-22). The key is `waitKey(project, kind, id)` = `` `${project}|${kind}|${id}` `` (waiting.js:27-29). For a card that is `<Project>|card|queue/<file>.md`, or `|gate|` for dor, criteria and launch.
+- Grouped, summary and test notices open `homeUrl` = `` `${deskUrl}/` `` (words.mjs:25-27).
+
+How the desk follows a key:
+- `openTarget(location.search)` (lib/notifyview.js:35-46) sets `opening` at start (public/sandbox.js:5406-5407). A tap on an already-open page arrives through the service-worker message instead (:5616-5622).
+- `followOpening(desk, built)` (public/sandbox.js:76-111) calls `tapDecision({ target, projects, box, settled })` (notifyview.js:68-91). Its rules, in order:
+  - The project is unknown: `{ kind: 'gone', project: null }`.
+  - The read is `checking`, or AC77's closed read is not settled: `{ kind: 'wait' }`, decided again on a later drawing.
+  - The key is found in `model.flagged`: `item`. The desk goes to `go('waiting', 'card', t.key)` = `#/waiting/card/<key>`, with "Opened from a notification" (sandbox.js:96; `go` at :313; `OPENED_WORDS` at notifyview.js:48).
+  - A held question (`held`) or a PR the automatic job is recording (`recording`) gets its own handling.
+  - **The key is not in `flagged`** and the project reads `cant-read`: `cant-read`, which goes to the project's page with "Opened from a notification: the desk can't read this project just now" (sandbox.js:106; notifyview.js:50).
+  - **The key is not in `flagged`** and the read is good: `gone`. If this device marked that card done, the desk goes to its Done row (sandbox.js:107-108). Otherwise it goes to the project's page, or `#/`, with `GONE_WORDS = 'That no longer waits on you'` (sandbox.js:109; notifyview.js:49).
+- **A `#/waiting/card/<key>` address for a card that is not on the board:** `cardSheet(bd, built, only, sheetId, …)` (public/sandbox.js:3578; branch at :3608-3634) draws a sheet titled "No longer waiting". It says "That no longer waits on you" and "It is no longer on the board: answered, merged, withdrawn, or not read yet."
+
+For S-009: a card held back (not flagged) on a good read would show "That no longer waits on you". In tests, `loadSandbox({ config, repos, search: '?open=<key>' })` drives this in memory (tests/desk/sandbox-helpers.mjs:134).
+
+**D. Home's count needs a full board model; its "since" lines need one project's model and snapshot.**
+
+`briefingView(input)` (lib/home.js:170-229) reads `{ bd, reads, flagged, signedOut, v3, lastReadMs, portfolio, nowMs, tz }`; the page builds this at public/sandbox.js:744-749. Inputs that come from records:
+- **`bd`**, the board: the head `${n} need${n===1?'s':''} you` takes `bd.badge` (:178, :218). It also uses:
+  - `bd.waits || bd.lanes`: the lanes `wait` and `kick`, then `groups[].rows`, each row with `raisedAt`, `kind`, `v25`, `project` and `flag.question.parsed` (:182-215)
+  - `bd.counts`: Map project → `{ waiting, kicked }` (:187-190)
+  - `bd.quiet.agents` and `bd.pendingAny` (:224-225)
+- **`bd` comes from a glue function in the page, not in lib:** `boardOf(built, nowMs, only)` (public/sandbox.js:2266-2332), which is not exported. Its chain:
+  - `buildModel` gives `model.flagged`.
+  - `queueView` (sandbox.js:470) gives the rows.
+  - `projectCards` (board.js:528) gives the cards.
+  - `boardView({ projects: [{ project, cards, agents, read, recording, asking, answerRecording, recordRows, seenRows }], marks, only, nowMs, tz, signedOut, portfolio })` (board.js:1202; called at public/sandbox.js:2331) gives `bd`.
+- **`reads`:** `[{ name, read: box.read, drawError, opening }]` (public/sandbox.js:745), from `readState` (universe.js:14).
+- **`flagged`:** the sum of `model.flagged.length` (public/sandbox.js:746).
+- **`lastReadMs`:** from the reads' `lastSuccessAt`.
+
+`projectEvents(input)` (home.js:263) gives Home's "since you last looked" lines. It reads `{ project, model, snap, j, commits, ownerLogin, titles, nowMs, tz }` (called at public/sandbox.js:807-808). From records it uses:
+- `model.questions` (:276)
+- `ownerActions(project, model, snap, j)` for rulings (:285)
+- `snap.tree` and `snap.records` (:267-268), to look up a card's title by path
+- the dispatch-log rows, either `j.logRows` when `j.ready`, else `model.allEntries` (:320), as `card`, `decision` and `outcome` entries
+- `j` from `j11Records(project, snap)` (sandbox.js:49): the roster and the log rows
+- `commits` from `desk.commits(name)`, and the open PRs from the model
+
+Minimum a test must supply for one project:
+- **Count:** `project`, `config`, a tree and records (cards, status, dispatch log) for `buildModel`; a `snap` of `{ tree, records, checkPages }`; then `queueView`, `projectCards` (`j22` may be null) and `boardView` with `marks: { marks: {} }`; then `briefingView` with `reads: [{ name, read: { read: 'ok' } }]`, `flagged`, `nowMs` and `tz`.
+- **Lines:** `projectEvents` with the same `project`, `model` and `snap`, and `j` (or null, in which case it uses `model.allEntries`), plus `nowMs` and `tz`.
+
+Because `boardOf` lives in the DOM page module, the existing whole-chain route is `loadSandbox({ config, repos })` with `fakeServer` repos keyed by path (sandbox-helpers.mjs:134). I did not build a direct `boardView` input for Home in a run.
+
+## verified (commands + output)
+- A node script, in memory, called `answerButtons`, `parseCard` and `parseGateCase` on the sample texts in A. Output: `decision: red:false blue:true`; `gate, card only: proceed:false hold:true recycle:false kill:false`; `case parse: {"opening":"**The proposer's recommendation:** recycle into Design — why","recommendation":"recycle into Design"}`; `gate, with case: proceed:false hold:false recycle:true kill:false`.
+- The rest was read and searched with grep and sed, with no writes.
+
+## undone
+- I did not run the sender twice: its harness writes to `os.tmpdir` and `outDir`.
+- I did not drive Home's count through `boardView` or `loadSandbox` in a run.
+- I did not trace the portfolio's part of Home.
+
+## needed outside your surface
+- Permission to write to a temp directory, if the sender's two-run behaviour has to be shown by running it.
+
+## open questions
+1. With S-009, a held-back card on a good read would make a notice tap and its sheet say "That no longer waits on you". Should that wording, or a "held" kind like AC77's, be part of the spec?
+2. The gate case is read only on the desk (`ctx.j11`). The sender never reads it, but the sender does not need Recommended either, so this matters only if S-009 adds a sender-side check that depends on desk-only reads.
+3. Home's count can only be had through `boardOf` in public/sandbox.js or through `loadSandbox`. Should the test adapter use `loadSandbox`, or should the spec ask for `boardOf` to move into lib?

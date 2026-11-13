@@ -1,0 +1,30 @@
+kind = "research"
+milestone = "Discovery-5"
+# Research for the desk's timeline work (P-005): the facts the owner's ruling on lasting copies
+# (decisions/questions/P-005-lasting-copies.md) needs before the records change that writes the
+# copies can be put to the owner as its own question. Checked by the Critic for gaps and neutral
+# phrasing before filing (D-032, D-055); the Critic's returns are recorded in this session's handoff.
+question = """
+How a job run inside a GitHub repository can keep lasting copies of that repository's workflow run, check and commit status results, and what it costs.
+
+Here "results" means workflow runs, check runs and commit statuses. GitHub keeps them only as long as a repository's Actions retention setting allows (by GitHub's announcement, from 2026-10-01; 90 days by default). The results are to stay readable for the whole life of a piece of work, through copies written as files in the same repository by an automated job that runs in that repository. The core questions, in order of weight:
+
+1. Triggers and what they see. Which triggers can start such a job when a workflow run or check ends, or on a schedule, and which runs, checks and statuses each can and cannot see (runs of other workflows, from forks, from apps outside GitHub Actions, from a schedule)? How reliably does each fire: missed or delayed events, schedule delay, scheduled workflows disabled in a quiet repository, and whether the job's own commits start runs that then need copying? How far back can runs, check runs and statuses be listed, so that the job can catch up after a gap, and how can it tell what it has already copied, so that a re-run (a new attempt of the same run) or a repeated trigger neither duplicates nor loses a copy?
+2. Credentials. What can the repository's own workflow token read and write, which permission does each read and write need, and what limits apply (rate limits, the token's lifetime, whether a commit pushed with it starts other workflows)? Where the workflow token cannot reach a kind of result, what other credential could, and what would holding it in the repository mean?
+3. Where the copies go, and cost. Where in the repository can the copies be written without colliding with other writers, with required checks or with branch protection and rulesets on the default branch (for example a file on the default branch, a dedicated branch, or elsewhere in the repository), and what does each place cost in conflicts, history size and size limits as copies accumulate over years? Can a fine-grained read-only token with Contents and Metadata read read the copies in each place, and with how many API calls? What does running the job cost under GitHub's plans for a personal account, for public and for private repositories (included minutes, storage, the minutes a run of this kind uses, what happens on reaching a limit)? Give unit costs and the formula from runs, checks and statuses per day, since the volumes are not given here.
+
+Lower priority, to be answered briefly: what a copy can hold and what it loses against the original, for these fields at least: name, result, start and end times, commit, run id and attempt, the actor, and a link (logs and annotations, where they can be kept, as a separate cost, and what a copy would expose in a public repository, since logs and annotations can hold private detail); what happens to results already past a repository's retention setting (the limits themselves, 1 to 90 days for public and 1 to 400 for private repositories, are already known and need only be confirmed if they have changed); and how others keep CI results beyond a platform's retention, and what went wrong for them. Other stores a repository holds, such as releases or the wiki, may be described for comparison. If no single job can copy every kind of result, say which kinds each way can copy.
+
+The setup. One owner oversees several software projects worked on mostly by AI agents, each in its own GitHub repository under one personal account; two are public and two are private. In each project a script, the Orchestrator, run on GitHub Actions by repository events and a schedule, moves work through fixed steps and commits its own records (status files, an append-only dispatch log, decision cards) under its own identity; every path in a repository has exactly one writer, pull requests merge with merge commits and never by squashing, and pull requests run required checks. A read-only status page, the desk, reads every repository's records with one fine-grained, read-only token that can write nothing. The owner has ruled that run and check results are kept for the whole life of the work as copies saved as files in each project's own repository, with nothing stored at Cloudflare, where the desk is hosted; this research does not reopen that ruling. The change that writes the copies is ruled separately, with what it writes, how often, with what credential and what it costs. The spend ceiling is $0 a month of new spend.
+
+## The decision it serves
+
+The records change that writes lasting copies of run and check results in each repository: its trigger, its credential and permissions, where the copies are written, how often, and what it costs, put to the owner as its own ruling.
+
+## What each answer would change
+
+Whether one job per repository can copy every result or only some kinds, the credential and permissions it is given, which branch or place holds the copies, how often it runs and how it catches up, whether it fits the $0 ceiling for each repository, and what the timeline shows for results it cannot copy.
+
+topics: github, actions, retention, records, ci, billing
+depth: 3
+"""

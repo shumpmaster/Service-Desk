@@ -243,3 +243,146 @@ Files:
 - /home/user/wt-critic/docs/projects/P-003.md
 - /home/user/wt-critic/decisions/questions/P-003-outside-build-plan.md
 - /tmp/claude-0/-home-user/ac6bc9b8-20ad-59d2-b4af-fac3ee45c43c/scratchpad/definer-inputs/S-008.md
+
+## Round 3 — spec at build/definer/S-009 09b806ed (session branch a08f666a); dispatched 2026-11-13T05:13:23Z, returned 05:18:12Z
+
+Verdict: FAIL
+
+Round 2's blocking findings B1 and B2 are fixed, and its N1 to N6 are fixed. Round 1's fixes and the plan's step-3 fixes still hold. The first list on line 11 is accurate. Every citation of the reading I checked is quoted correctly. All criteria are When/then scenarios traced to V6.
+
+The spec still fails on two points, both in J7/J8:
+- **B1:** the coverage check cannot fail when a listed read failure, or the desk cases' notices, never took effect. That leaves the failed-read parts of AC9, AC16 and AC17 open to passing vacuously.
+- **B2:** one claim about today's code is unverified, and probably false for the `call` form.
+
+Both fixes are one or two sentences. Both gaps were already in the text rounds 1 and 2 passed, so I flag them as implicating this role's earlier checks (D-050).
+
+**How I checked line 11's three lists (no shell, no diff).**
+- **List 1, S-008 → S-009: true.** I read the S-008 copy (259 lines) and S-009 (294 lines) in full, line against line, with these offsets:
+  - 1–164 match one for one;
+  - 165 is new; 166–173 = S-008 165–172;
+  - 174–181 are new; 182–222 = S-008 173–213;
+  - 223–232 are new; 233–240 = S-008 214–221;
+  - 241–244 are new; 245–258 = S-008 222–235;
+  - 259–265 are new; 266–282 = S-008 236–252;
+  - 283–287 are new; 288–294 = S-008 253–259.
+
+  259 + 35 new lines = 294. Every changed or new line I found is in the list, and every line outside it is word-for-word S-008's. "No other criterion, join sheet, fact, risk or open question changed" holds.
+- **Lists 2 and 3: consistent, but only partly verifiable.** My pack holds neither 23256968 nor fa98acd8.
+  - Every line the round-1 and round-2 verdicts objected to is listed under its present number. That includes the +1 shift after the new line 244: round 2's 263, 265, 269, 284–286 and 291 are now 264, 266, 270, 285–287 and 292.
+  - Each round-2 finding maps to a listed round-3 line:
+    - B1 → 58, 156, 167;
+    - B2 → 150, 154, 169, 244;
+    - N1 → 270; N2 → 23, 158; N3 → 292; N4 → 190;
+    - N5 → 148, 175, 236; N6 → 147.
+  - Every line outside list 1 still equals S-008, so no unlisted change exists outside list 1. Inside list 1, I cannot prove that unlisted lines did not change between rounds (see N4 below).
+
+## Blocking findings
+
+**B1. The coverage check cannot fail for the `fail` entries, or for the desk cases' `notices`, so the failed-read parts of AC9, AC16 and AC17 can pass vacuously (specs/S-009.md:169, :150, :154, :160).**
+- The coverage rules at J7:169:
+  - every `queue`, `questions` and `pulls` entry has a `cards` entry;
+  - in a no-failure case, gate cards, questions and pull requests are `on_list`;
+  - each `sender` case sends a notice;
+  - a `notes`-failing result equals the no-failure result;
+  - the `dor` card's `marked` is the gate case's word.
+- No rule fails a record in which a listed `queue` or `log` failure (path or call form) changed nothing at the base commit. No rule fails a desk case whose `notices` is empty because the adapter's `runSender` route sent nothing.
+- The same adapter runs the record and the built code (line 23). Suppose it does not apply `fail`, or catches no push call. Then:
+  - the record's failing cases equal its no-failure cases;
+  - the built code is never failed in the locked check;
+  - a build that changes gate cards' behaviour on a failed read, or their notices, still passes.
+- The poison run does not catch this, because the adapter still needs src/. Only the Reviewer's judgement before the record does (line 23), and the Builder writes the adapter.
+- This is the same class of gap round 1 rated blocking (round 1 B3, reviews/S-009/plan.md:54-64). The brief asks for a coverage check that can fail for each kind of entry. `fail`, `log` and the desk `notices` have none.
+- The spec already states today's behaviour, from the reading:
+  - J8:178: a `path`-form failure on the desk ends can't-read with today's "Can't read" line (src-reading.md:61-63, :74-75). The real server's whole-call form is also can't-read (:55).
+  - J8:179: on the sender, any failed read sends nothing (:79, :84).
+- Fix: add to J7:169 that coverage also fails unless:
+  - (a) each `queue`- or `log`-failing `desk` case, in either form, has in `lines` a line its no-failure result lacks, and has empty `notices`;
+  - (b) each no-failure `desk` case has non-empty `notices` and no can't-read line in `lines`. This also shows the log entries reached the code (src-reading.md:70).
+
+  The stop for a record that fails coverage is already at :270 and :292.
+
+**B2. An unverified, probably false, claim about today's code (specs/S-009.md:175).**
+- The line says: "On the desk only, `neededReads` also asks, as an optional read, for each gate card's gate case (:252-254); the sender never reads one, and no J7 case makes a gate case's read fail."
+- J7:160 sets a case with `queue` failing in the `call` form. In that form "one failed blob makes its whole blob call can't-read, and the call's other blobs come back null" (J8:178; src-reading.md:55, :87-88).
+- The reading does not say whether the optional gate-case read goes in the same blob call as the card files. :38 says the scheduler maps the needed reads to shas in `missing` and makes one `blobCall`. So in the `call` form the gate case's read likely does fail.
+- The comparison itself is unharmed: the same adapter runs both sides, and no coverage rule covers `marked` in failing cases. But the brief makes an unverifiable claim a FAIL.
+- Fix: "no J7 case names a gate case's path as failing; in the `call` form a gate case fetched in the same blob call may also come back unread (:55, :38)."
+
+## Non-blocking findings and risks
+
+**Earlier fixes, checked:**
+- **Round 2 B1: resolved.**
+  - J7:156 defines `lands` and `shows` for each route: for a notice, the view it lands on and its arrival words; for a link, its address and the sheet's text.
+  - J7:167 strips the AC16 and AC17 lines from `shows`.
+  - Line 58 quotes src-reading.md:289 word for word. It also quotes :288 and :290 accurately.
+- **Round 2 B2: resolved.**
+  - J7:150 is now an instruction (the header comment names the form and the file it follows).
+  - Known limit 244 is new, and it quotes :28 and :43 accurately.
+  - J7:154 adds the ids `question:<name>` and `pr:<number>`.
+  - J7:169 requires a `cards` entry for every `queue`, `questions` and `pulls` entry.
+- **Round 2 N1 to N6: fixed.**
+  - N1: 270, "or otherwise fails coverage".
+  - N2: 158 (the session's script, results in case-id order) and 23 (bytes compared case by case).
+  - N3: 292 now holds both stops.
+  - N4: 190 adds the second difference, carried into question 12.
+  - N5: 148 (`openCheckout`), 236 (AGENTS.md:38, which I confirmed) and 175 (answer paths, :136).
+  - N6: 147 (the header says how the moment reaches each entry point; :159, :269).
+- **Round 2 N7 and its open questions:** left for the criteria question, as briefed.
+- **Round 1 B1 to B3 still hold:** 62 and 119; 177's unmoved-head sentence; 150, 160, 169 and 229.
+- **Plan step 3 (docs/handoff/2026-11-13-P-003-outside-build-plan.md:51-65) still holds:**
+  - finding 1: line 23 and the fact at :228;
+  - finding 2: J8 174-180, J7:165 and :169;
+  - the poison run covers every file under src/ (171);
+  - AC4 matches the reading (29, citing :104-106);
+  - the stop rule is kept, with the adapter outside the count (218, 270).
+
+**Claims about today's code:** these are quoted accurately from reviews/S-009/src-reading.md:
+- 29; 75 (:118-124, :131); 80 (:131-135); 147 (:159, :269);
+- 148 (:156, :266, :269-274, :278-292, :301-305, :322); 150 (:215-222, :248);
+- 152 (:278); 154 (:68-69); 169 (:93-100, :205-219);
+- 175-180, except B2; 223-232; 241-244; 265.
+
+**Line 18 and the open questions:**
+- Line 18 names the new wording that the plan's approval does not contain (AC9 and AC16; AC17 and J5) and sends it to questions 10 and 11, which both give options A and B.
+- Line 275 is consistent with them.
+- Areas touched (202) match plan step 9.
+- The stop rules at 270 match 23, J5, J7, Known limits and Risks.
+
+**N1. The brief (292) does not tell the first dispatch what to do if no adapter can run at the base commit.**
+- An example is `loadSandbox` not passing `blobNull` or `blobFail` on (Known limits 243).
+- Lines 270 and J7:172 put that stop on the session. The Builder might instead hand back an adapter that cannot run.
+- Add "or stop and return if the adapter cannot be written to run at the base commit".
+
+**N2. AC15's link comparison could fail a correct build.**
+- The baseline's `open` case is for an id not in queue/ (J7:162). The built held-card case has a card file.
+- The reading gives only part of the "No longer waiting" sheet's text (:290). If that sheet shows the card's title from its file, `shows` differs, and the build stops.
+- Consider saying the card's title is removed or written as `<id>` like the key.
+
+**N3. Per-card `in_home_count` may not be readable from the page.**
+- J7:148 forbids the adapter working out a field. The reading shows Home's head count (`bd.badge`, :297) but not which cards Home draws (:69, :179, :330).
+- Known limit 243 covers Home's count not being driven in a run, but not this per-card field. The stop at 172 covers the failure, but a false stop goes to the owner.
+
+**N4. Lists 2 and 3 on line 11 are only partly verifiable from my pack.**
+- Before recording, the session could confirm them with `git diff 23256968 fa98acd8 -- specs/S-009.md` and `git diff fa98acd8 <this commit> -- specs/S-009.md`.
+
+**N5. A departure from the earlier ruling.** Line 23's "no copy of the record is kept with the locked checks" departs from decisions/P-003/failure-15.md:4 ("kept with the locked tests"). The approved plan (:76) and L-0051 cover it, and line 11 lists it. The criteria question should still say plainly that the place has moved.
+
+**Self-implication (D-050).** B1's gap was in J7:169 as rounds 1 and 2 read it. B2's sentence came in with round 2's B3 fix, and round 2 passed it. This role's earlier checks missed both.
+
+## Open questions
+1. This is the third failed round, so it goes back to the owner. Both fixes are a sentence each in J7:169 and J8:175. Should the session ask the owner to allow one short definer fix, checked by a fresh Critic, rather than a re-plan?
+2. B1's fix writes today's failed-read behaviour from the reading into the coverage rules. If the base commit behaves otherwise, the record fails coverage and the build stops. Should the criteria question say so beside questions 10 and 11?
+
+Files:
+- /home/user/wt-critic/specs/S-009.md
+- /home/user/wt-critic/reviews/S-009/plan.md
+- /home/user/wt-critic/reviews/S-009/src-reading.md
+- /home/user/wt-critic/docs/handoff/2026-11-13-P-003-outside-build-plan.md
+- /home/user/wt-critic/decisions/questions/P-003-outside-build-plan.md
+- /home/user/wt-critic/decisions/questions/P-001-card-recommendation.md
+- /home/user/wt-critic/decisions/P-003/failure-15.md
+- /home/user/wt-critic/AGENTS.md
+- /tmp/claude-0/-home-user/ac6bc9b8-20ad-59d2-b4af-fac3ee45c43c/scratchpad/definer-inputs/S-008.md
+- /tmp/claude-0/-home-user/ac6bc9b8-20ad-59d2-b4af-fac3ee45c43c/scratchpad/definer-inputs/S-008-plan-review.md
+
+*The session's check of round 3's N4, made after the return and not part of it: `git diff -U0 fa98acd8 09b806ed -- specs/S-009.md` gives hunks at lines 11, 23, 58, 147-148, 150, 154, 156, 158, 167, 169, 175, 190, 236, 244, 270 and 292, the round-3 list on line 11 exactly. This is the third failed round: by the plan's stop rule the build stops here and goes back to the owner (questions/P-003-S-009-third-fail.md).*

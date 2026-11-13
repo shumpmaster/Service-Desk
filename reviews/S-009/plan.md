@@ -543,3 +543,73 @@ Files:
 - /tmp/claude-0/-home-user/2aa7e563-9eb8-5f6c-8b1b-50ea8df7b370/scratchpad/critic-inputs/S-008.md
 
 *The session's note after the return, not part of it: the round passed. The Critic's open question 2 asks whether N2 and N3 should be folded into the spec before freeze. The owner allowed one round only, so the session does not run another; N1 to N7 and both open questions are carried into the criteria question for the owner to rule.*
+
+## Round 5 — the lines that close round 4's gaps only, spec at build/definer/S-009 f39133ec (session branch bba779f5); dispatched 2026-11-13T14:33:20Z, returned 14:35:23Z
+
+*Under the owner's criteria answer, given in session at about 14:29Z: "B: close gaps first (Recommended)" (to be recorded in decisions/questions/P-003-S-009-criteria.md once the question is on main). A fresh Critic, checking only the changed lines; recorded by session_01QBwHGJGYoFwkxVunu5XDbF as `orchestrator`.*
+
+Verdict: PASS
+
+S-009 round 5 closes round 4's N1 to N6. I checked only the changed lines (specs/S-009.md:11, 148, 150, 156, 162, 164, 167, 169, 242, 243, 270, 275, 288, 293), and read other lines only where I needed them to judge those.
+- No changed line makes a claim about today's code that reviews/S-009/_src-reading.md does not support.
+- No criterion's meaning changed, and no check can now pass vacuously or cannot be built.
+- Nothing contradicts the rest of the spec or the owner's criteria answer.
+
+Two of the findings below are worth carrying to the owner or the criteria record, though neither blocks:
+- New rule (c) will probably stop the build for its direct-link case, at the coverage check, before src/ changes.
+- Question 13 does not yet describe rule (c).
+
+**How each round-4 gap was closed**
+- **N1, closed.** :164 states the Home-count assumption, says the reading does not show it, and names the stop. :243 adds it to Known limits. The stop is in :270 ("if the Home-count comparison (J7, line 164) cannot be met by a build that meets AC1, AC4, AC16 and AC17") and in :293.
+- **N2, closed.** :169 rule (c): "each `open` case with `log` failing has `shows` or `lands` differing from its no-failure twin". For notices this is supported by _src-reading.md:288, with :70 and :75 showing that a failed log read makes the project read can't-read. See N-A for direct links.
+- **N3, closed.**
+  - :150 gives every card file a fixed title line, `# Card` then `## 1. The decision` then `Pick one`. That follows the reading's sample card (:229-236), and :75 shows "Pick one" drawn as the title.
+  - :148 now lists the key and the title as rewritten to `<id>`, which matches :156.
+  - :162 and :167 use the same decision-card id in the baseline cases and the built-only cases.
+  - :156 covers the `encodeURIComponent` key, supported by :278.
+- **N4, closed.** I checked the first list on line 11 against every round's list. It now has 164 and 288, and every line named in rounds 2 to 5 is in it. Its closing sentence ("Counting every round to round 5 below, no other criterion … differs from S-008") is true.
+- **N5, closed.** :288 now offers options A and B. :275 records the owner's choice of A on questions 10, 11 and 13 as "to be recorded", which is correct per the brief.
+- **N6, closed.**
+  - The can't-read line is defined by its words (:169), supported by :68-69.
+  - Every failing `desk` or `open` case must have a no-failure twin.
+  - Every no-failure `desk` case must hold an open card, and a case set that breaks either rule fails.
+  - :242 names the first-run assumption (from `emptyState`, :265) and its stop (:270).
+  - The AC15 cases at :162 and the AC9/16/17 cases at :160 already meet the twin rule.
+
+## Blocking findings
+None.
+
+## Non-blocking findings and risks
+
+**N-A. Rule (c) is backed for notices only, but it also applies to direct links, and the spec's own account suggests links do not differ (specs/S-009.md:169; :58; _src-reading.md:288, :290).** This is a false-stop risk and probably a real one.
+- The rule's parenthetical cites only :288, which covers the notice route.
+- For a direct link, :156 sets `lands` to "the link's address", which is the same on both reads. `shows` is the sheet's visible text.
+- The reading shows only one link sheet for a card not on the board, "No longer waiting" / "That no longer waits on you" (:290). It does not show that sheet's text changing when the read fails.
+- AC15 (:58) describes the link sheet the same way and makes no difference by read state.
+- So the base commit's log-failing link case may well equal its no-failure twin. The record would then fail coverage, and the build would stop under :270 ("otherwise fails coverage") after the adapter and record are made.
+- This cannot let a wrong build pass. Unlike rule (b)'s assumption (:242), though, this one is not named in Known limits.
+- Possible fix, not made by me: limit (c) to `via: "notice"` cases, or name the link-route assumption beside :242 and :243.
+- **D-050:** this gap is in this role's own round-4 fix proposal (reviews/S-009/plan.md:481), which cited only :288. That implicates this role's earlier check.
+
+**N-B. Question 13 (:288) does not describe rule (c), the twin rule or the open-card rule (specs/S-009.md:288 vs :169).**
+- It describes the coverage check as only rules (a) and (b), and its option B drops only those two.
+- The owner's "A on 13" was given before rule (c) existed. Rule (c) is within the owner's B answer (questions/P-003-S-009-criteria.md:25, "changes only the comparison's wording … and question 13's options"), so this is not a contradiction.
+- Still, the question the owner's A is recorded against now understates the coverage stops, and N-A's likely stop comes from the rule it leaves out. This matters for how the answer is recorded under decisions/questions/.
+
+**N-C. One phrase in :156 understates the reading.** It says "the reading shows only the title the desk falls back to when the file is unread, `card <gate>-<n>` (:66)". But _src-reading.md:74-75 also shows a title drawn from a card file that was read ("P-001 dor-2: Pick one"). The mistake is harmless, since it understates rather than overclaims and the fixed title line makes the rewrite safe either way. It is still not accurate as written.
+
+**N-D. The Home-count stop (:164, :243, :270, :293) is still the likeliest false stop.** If today's Home leaves a can't-read project's cards out of its count, the base subtracts all decision cards while the build subtracts only those with notes, and the build stops. It is now named, with its stop, as N1 asked. It stays a risk for the criteria record.
+
+## Open questions
+1. Should rule (c) be limited to notice `open` cases before freeze (N-A)? Or should its link-route assumption be named and carried as a risk, as rule (b)'s first-run assumption is (:242)?
+2. Should the recorded answer to question 13, or question 13's text, say that rule (c), the twin rule and the open-card rule are part of the coverage the owner's A accepts (N-B)?
+
+**Self-implication (D-050):** N-A implicates this role's round-4 check (reviews/S-009/plan.md:481).
+
+Files:
+- /home/user/wt-critic/specs/S-009.md
+- /home/user/wt-critic/reviews/S-009/_src-reading.md
+- /home/user/wt-critic/reviews/S-009/plan.md
+- /home/user/wt-critic/questions/P-003-S-009-criteria.md
+
+*The session's note after the return, not part of it: the check passed, so by the owner's answer B the spec is frozen as in A once the answer is recorded under decisions/questions/. The question is not yet on main (#419), so the answer is not recorded and the spec is not frozen. N-A and N-B are put to the owner before freeze.*

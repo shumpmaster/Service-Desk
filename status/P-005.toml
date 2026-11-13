@@ -1,7 +1,7 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "project"
 stage = 2
-state = "dispatched"
+state = "waiting-owner"
 role = "critic-gate"
 last_verdict = "none"
 plan_round = 1
@@ -9,7 +9,7 @@ build_round = 0
 confirm_used = false
 attempts = 0
 sessions = 0
-dispatched_at = "2026-11-13T14:42:04Z"
-card = 2
-next_gate = "dor"
+gate = "dor"
+card = 3
 gate_n = 2
+gate_recommendation = "**The Critic's recommendation:** proceed. The owner has what they need to rule: the ask, the plan, the risks including the copying-job one, the costs and the stop rule. The remaining faults are in the case's form and in a few citations. They are listed below for the Chief of Staff to correct, and none of them is a reason to hold a second time. The owner should rule knowing that the case still runs over its length cap, and that the wording of M7 has not changed."

@@ -1,4 +1,5 @@
 Ruling: A — each action starts from the timeline and finishes with one tap on GitHub's own page; the desk holds no key that can write, and the project stays at T1
+Proxy: done at the owner's request (the owner answered in the session by the question tool, verbatim: "A: Finish on GitHub (Recommended)"; the answer is the owner's own, and this line marks only that the Chief of Staff recorded it)
 
 Question: questions/P-005-acting.md
 Milestone: Discovery-7, M8

@@ -2,6 +2,55 @@
 
 *Recorded by the Chief of Staff's session (session_01QBwHGMmHGgB3fLufS5ELH2) as `orchestrator`, under L-0051. Each round's Critic return, verbatim under its heading; the latest round first, as the pipeline reads this record's first verdict. At most three rounds; a third failure goes back to the owner.*
 
+## Round 4, past the last, by the owner's ruling A on the Reviewer's finding (questions/P-003-S-009-reviewer-fail.md) — the one changed line only, at build/check-author/S-009-r4 ad5cede (session branch 7c1385c); dispatched about 2026-11-13T17:07Z, returned about 17:08Z (times from the session, approximate)
+
+*Recorded by the Chief of Staff's session (session_01QBwHGM9A8Rm6ghUgprr5tF) as `orchestrator`. Recorder's note on its open question 2: `git diff --stat` of the commit shows only tests/acceptance/S-009/s009-j4-views.test.mjs, 2 lines added and 1 removed.*
+
+Verdict: PASS
+
+I checked the changed AC15 test against the spec and it is sound. For a notice, spec :156 makes `shows` the words the desk shows where the notice lands, and those need not contain "No Chief of Staff recommendation yet". So the old assertion could fail a correct build, and taking it out for the notice route follows the spec. The link route keeps the mark assertion, which is right: there `shows` is the sheet's visible text, and the card is in AC4's state. Dropping the assertion does leave a gap: no check sees what the sheet shows after a notice opens it. But that gap comes from the spec's output form, not from this change. The old assertion never closed it properly, because it rested on a reading of `shows` the spec does not give. I found nothing else broken.
+
+**What I read** (all under /home/user/wt-critic-S-009):
+- specs/S-009.md: AC1, AC4 to AC7, AC11, AC14, AC15 (:26-58) and J7/J8 (:150-181), with :156, :162, :167 and :169 read closely
+- tests/acceptance/S-009/s009-j4-views.test.mjs (whole file)
+- tests/acceptance/S-009/s009-lib.mjs (whole file)
+- tests/acceptance/S-009/s009-hold-show.test.mjs (whole file)
+- tests/acceptance/S-009/s009-j7-baseline.test.mjs:90-180
+- a search of tests/acceptance/** for `via`, `AC15` and `MARK`
+
+I did not read src/. I did not read commit ad5cede's diff either, since my brief limited me to these paths. I judged the file as it stands against the change you described.
+
+**Blocking findings:** none.
+
+**(1) Does the test follow spec :156 and AC15 for both routes?** Yes.
+- **Link route (s009-j4-views.test.mjs:76, :78):** The card is raised 2026-11-10T10:00Z (:73) and run at 2026-11-12T12:00Z with no notes, so AC4 (:29) says it shows with the mark. Spec :156 says a link's `shows` is the sheet's visible text. So checking `buttons === true` and that `shows` contains the mark is exactly AC15's "opens it as shown".
+- **Notice route (:76):** `buttons === true` means the view it opened offers answer buttons, which only a shown card's sheet does. The other places a notice can land (the "gone" words, the Done row, the project page, the can't-read words) all have `buttons: false`. That is the record's behaviour for an id not on the list (s009-j7-baseline.test.mjs:172, :176; s009-hold-show.test.mjs:31). So the one fixed field in the output form (spec :156) that can tell "opened as shown" apart is held to the right value. Nothing more about the opened sheet can be asserted from `shows` by spec :156.
+
+**(2) Can a plausible wrong build now pass every check?** Only one kind, and only because of the spec's form:
+- **What gets through:** a build whose notice route opens the card's sheet with buttons, but draws that sheet differently from the link's sheet. For example, it drops the mark, or marks a button, or shows stale content. AC15 says "as for any card on the list", and AC11 (:40) asks every card sheet to agree.
+- **No other check catches it:**
+  - J7's baseline open cases cover only an id not in queue/, or held, or not shown on a failed read (s009-j7-baseline.test.mjs:154-160, :162-178; spec :162, :167). None covers a shown card.
+  - Every mark check is link-only: s009-j4-views.test.mjs:36-38 and :78; s009-hold-show.test.mjs:42-45, :65-67 and :80-81.
+  - The held and not-shown notice checks (s009-j4-views.test.mjs:57-60 and :64-67; s009-hold-show.test.mjs:30-31) do not apply to a shown card.
+- **How plausible it is:** low to moderate. It needs the notice to open a sheet drawn by a separate path. I cannot weigh this without src/, which I was not allowed to read.
+- **Which wrong builds are still caught:** a notice for a shown-again card that lands on "That no longer waits on you", the project page or the can't-read words. All of those give `buttons: false` and fail :76.
+- **Why this is not a regression:** the removed assertion only worked by treating the arrival words as the sheet's text. A correct build could fail it, and a wrong build whose arrival words happened to name the mark could pass it.
+
+**(3) Did the change break anything else?** No.
+- The link assertion and its message are unchanged (:78).
+- `MARK` is still imported and used (:11, :38, :78).
+- No other test depends on this one.
+- This test file is not among the files J7's `hashes` cover (spec :158 names the adapter's files, files under tests/ the adapter reads, and the case files), so no hash comparison is affected.
+
+**Non-blocking findings:**
+- **N1 (risk to carry):** as in (2), the sheet a notice opens for a shown card is not checked for the mark or the marked button. This is limited by spec :156's form, and AC13 (:50) and the Risks section (:256) already accept that view-level drops of the mark are guarded only by tests. If the owner wants it closed, the spec would need an output field for the opened sheet's text on the notice route. That would be a spec change, not a check change.
+- **N2:** the comment at s009-j4-views.test.mjs:77 says "the sheet's address form is not fixed". Spec :156 does not use those words. It is true only in that :156 fixes `lands` loosely (raw or encoded key). The reason that matters is the arrival-words definition, and the comment states that correctly too. It is a wording matter only.
+- **N3 (existed before this change):** the test never makes the card leave the list and come back. It runs one shown state only (:73-75). Because AC11 (:40) makes the state depend only on the records and the moment, this is equivalent for the desk. I note it only because the test's name promises a return.
+
+**Open questions:**
+1. Should the Definer and the owner add an observable for the notice route's opened sheet, so that AC11's agreement between card sheets can be checked there? This only matters if N1 is not accepted as a risk.
+2. I could not confirm that commit ad5cede changed nothing beyond s009-j4-views.test.mjs:77-78. The Orchestrator should check the commit touches only that file.
+
 ## Round 3, the last — checks at build/check-author/S-009-r3 20ed529 (session branch b6c8fbe); dispatched about 2026-11-13T16:05Z, returned about 16:07Z (times from the session, approximate)
 
 *Recorded by the Chief of Staff's session (session_01QBwHGM9A8Rm6ghUgprr5tF) as `orchestrator`, after the owner's answer A (decisions/questions/P-003-S-009-checks-lock.md).*

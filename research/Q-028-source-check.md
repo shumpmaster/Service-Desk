@@ -1,77 +1,77 @@
 Verdict: FAIL
 
-I opened the sources over the network, but only through summarising fetches, not raw HTML. I filed no library entries, because the memo has load-bearing claims that I could not confirm and it has no second source for several proposed entries. The memo (`research/Q-028-memo.md`) is not a groundwork map, so the full check applied.
+I fetched the raw HTML of every cited page with curl and searched it for the quoted strings. Most claims are confirmed. The memo (`research/Q-028-memo.md`, revision 2) still overstates some grades and misreads one page, so the memo fails as submitted. I filed the claims that pass, with the corrected grades.
+
+The memo is not a groundwork map, so the full check applied. The directory is not a git repository, so I made no commit.
 
 ## Confirmed
-These claims match their sources.
+- **Round-1 fixes:**
+  - 1,000-suites sentence: on the check-runs page, next to the 1,000 same-name limit.
+  - Minute rounding: on the runner-pricing page and the view-job-execution-time page.
+  - Token lifetime: 6 hours on hosted runners, refreshed up to 24 hours on self-hosted.
+  - Budget: "always enforce a hard stop" on the set-up-budgets page.
+  - Annotation limits: in `problem-matchers.md`.
+  - Security Lab: the `if` guard and the "artifacts … themselves untrusted" line.
+  - actions/runner #726: opened 2020-09-29, closed 2023-02-28; the comment lists `check_run:created`, `workflow_run:completed`, `check_run:completed` and no `requested`.
+- **Fine-grained permissions page (raw HTML):**
+  - Contents (read) covers `/commits`, `/compare`, `/tarball`, `/zipball`, trees, blobs, `git/ref`, `matching-refs` and `contents`.
+  - `commits/{ref}/statuses` is under Commit statuses (read).
+  - No check-runs entry appears, which is only absence from the page.
+- **Other pages:**
+  - Rate limits: the rate-limits and Actions-limits pages both give 1,000 per hour per repository.
+  - Secondary limits: the rate-limits page gives 100 concurrent, 900 points per minute, and 80 per minute and 500 per hour for content creation.
+  - Listing and size limits: workflow-runs, statuses, contents, trees and refs match.
+  - Billing: $12/$18, 500 MB, logs not counted, payment-method block, and $0.002/$0.006 per minute match.
+  - Schedule: the events page gives the 5-minute minimum, high-load delay and 60-day disabling.
+  - Willison's `|| exit 0`: confirmed.
+  - Upptime: confirms scheduled runs starting late.
+  - Rulesets bypass list: matches.
+  - Attic repository: README and post match the memo, apart from the cap noted below.
 
-- **Event triggers** (events page):
-  - `workflow_run` types, glob filter, default-branch requirement and the three-level chain limit.
-  - The `workflow_run` quote about secrets and write tokens.
-  - The `check_run` / `check_suite` recursion-guard text.
-  - The `status` default-branch requirement.
-  - Schedule: 5-minute minimum, delay under load, 60-day disabling, default branch.
-- **Workflow token**:
-  - `GITHUB_TOKEN` page: limited to its own repository, expires at job end, no new runs except `workflow_dispatch` and `repository_dispatch`.
-  - Rate-limits page and Actions limits page: 1,000 requests per hour per repository. Secondary limits: 100 concurrent, 900 points per minute, 80 per minute and 500 per hour for content-creating requests.
-  - Workflow syntax page: permission keys, and unspecified permissions become `none`.
-- **Listing APIs**:
-  - Workflow-runs REST: 1,000 results per search, 100 per page, attempts endpoint, 1-minute log link.
-  - Statuses REST: newest first, 100 per page, 1,000 per SHA and context.
-  - Check-runs REST: 1,000-same-name limit and the response fields.
-  - Contents REST: 1 MB / 100 MB tiers, 1,000 files per directory, `ref`, parallel-write conflict.
-  - Trees: 100,000 entries / 7 MB.
-  - Refs: formats, matching-refs with no ref, and "at least two slashes".
-- **Retention changelog** (2026-10-01): "Changing the setting won't restore data."
-- **Billing and limits**:
-  - Billing page: $12 Free and $18 Pro, 500 MB storage, logs not counted, usage blocked without a payment method, free public-repository runners.
-  - Runner pricing page: $0.006 for 2-core, $0.002 for 1-core.
-  - Hosted-runners page and changelog: `ubuntu-slim` is 1 vCPU, runs in a container, has a 15-minute limit, and went generally available 2026-01-22.
-  - Large-files page: 1 GB / 5 GB advice, 50 MiB warning, 100 MiB block.
-  - Repo-limits page: 10 GB, 2 GB push, 3,000 entries, depth 50, 5,000 branches, 6 pushes per minute.
-- **Rulesets**: the bypass list includes admins, maintain/write roles, teams, GitHub Apps and Dependabot.
-- **actions-attic repository**: MIT, 22 commits, 0 stars, schedule plus dispatch, `refs/attic/archive`, monthly JSONL, 800 requests per hour, one writer, no logs, window halving.
-- **actions-attic author's post**: run IDs in attestations can no longer be resolved after expiry.
-- **Other C sources**: Willison's `|| exit 0` pattern; the upptime post on late scheduled runs.
+## Findings that fail the memo
+1. **Grade A for F-gh-trigger-scope-01 is unsupported.** The workflow-syntax page has only the glob and `branches` filter. These are on the events page alone:
+   - the three-level limit;
+   - "requested does not occur on re-run";
+   - secrets and write tokens;
+   - the `check_run`/`check_suite` exclusion;
+   - the default-branch rule.
 
-## Not confirmed or misattributed
-1. **Minute rounding.**
-   - The memo quotes "GitHub rounds the minutes and partial minutes…" and cites the Actions billing page and the runner pricing page.
-   - The billing page has no such sentence.
-   - The runner pricing page does contain the quote, so the claim holds there only.
-   - Grade A needs a second page. The view-job-execution-time page says "rounded up to the next minute", which would do, but the memo does not cite it.
-   - F-gh-actions-billing-2026-01 should list those pages correctly.
-2. **Check suites: "only the 1,000 most recent suites per ref".** The suites REST page, as fetched, did not show this. The `app_id` filter is confirmed. The 1,000-suite limit is unconfirmed, so it stays out of every entry.
-3. **Fine-grained "Commit statuses read" permission.** The FG PAT permissions page lists a "Commit statuses" category with read endpoints `commits/{ref}/status` and `commits/{ref}/statuses`. That is a different page from the statuses REST page the memo cites, which only mentions the `repo:status` scope. F-gh-status-list-01 is therefore single-page for that part.
-4. **Contents vs Metadata endpoints.**
-   - The memo says its fetch put `/commits`, `/compare` and the tarball and zipball endpoints under Metadata, and calls that doubtful.
-   - My fetch of the same page put them under Contents.
-   - The memo's flag is resolved only in the sense that Contents is the likelier reading. I cannot call it confirmed from a summarised fetch.
-5. **Security Lab claim is wrong.**
-   - The memo says Security Lab treats `workflow_run` after fork PRs as a known risk that a `branches` filter or an `event_name` check can limit.
-   - The page presents `workflow_run` as the recommended safe pattern.
-   - Its only mitigation is an `if` on `workflow_run.event == 'pull_request'` and a success conclusion.
-   - It does not discuss branch filters.
-   - The memo's C-grade claim is misattributed.
-6. **Community reliability reports.**
-   - Discussion 124010 is about delayed status updates, not `workflow_run` failing to fire.
-   - The lightrun page had no relevant content.
-   - So the claims that `workflow_run` does not fire after API-started runs and that re-running all jobs does not emit `workflow_run.requested` have no source I could open. They must be dropped or sourced again.
-7. **Annotation limits.** Community #68471 gives only "10 per step, 50 per job". The memo's "10 per type per step" and "50 per run" are not in it.
-8. **Token lifetime.** The GITHUB_TOKEN page says 6 hours maximum on GitHub-hosted runners and 24 hours on self-hosted. The memo says "refreshed for up to 24 hours on self-hosted" and omits the 6-hour cap.
-9. **Budget claim ($0 until a budget is set).** It rests on a search summary of an enterprise page and was not opened by me. It is unconfirmed, so it stays out.
-10. **IDs I could not locate as memo sources.** The memo's L-F8 and L-F6 do exist in the library (`library/facts/L-F8.md`, `L-F6.md`); I did not re-open their sources. The same goes for the cited F-gh-* and F-rec-* entries.
+   The memo's own section marks "requested" as B, then proposes A for the bundle. I filed it as B, single page.
+2. **F-gh-token-limits-02 was graded A as a bundle.** Only the 1,000-per-hour figure is on two pages. Lifetime and own-repository scope are on the token page only. The permission keys and "unspecified become none" are on workflow-syntax only. I split it: F-gh-token-limits-02 (A) and F-gh-token-life-01 (B).
+3. **Repository limits are misread.**
+   - The page says "we recommend staying within the following maximum limits" for 10 GB, 3,000 entries, depth 50, 5,000 branches and 6 pushes per minute.
+   - Only push size (2 GB) and single object (100 MB) are "enforced".
+   - The memo calls them limits and its own note reads 10 GB as a limit.
+   - I filed the corrected wording.
+4. **F-gh-ubuntu-slim-01 was graded A as a bundle.** The 15-minute limit and "unprivileged" are on the hosted-runners page only. The general-availability date is on the changelog only. I filed it as B.
+5. **F-gh-actions-billing-2026-01 was graded A as a bundle.** The $12/$18 allowance, storage, payment-method block and budget hard stop are each on one page. I split it: F-gh-actions-price-01 (A) and F-gh-actions-included-01 (B).
+6. **F-gh-checkruns-list-01 duplicates an existing entry.** The 1,000-suites and 1,000-same-name text is already filed as `library/facts/F-gh-checks-runs-01.md` (Q-027). I did not file it again.
+7. **Smaller points:**
+   - actions-attic's README gives 2,500 as the cap that triggers window halving. The post and GitHub's docs say 1,000, and the memo says "1,000 or more". The filed note records the discrepancy.
+   - Community #68471 says "10 warnings or errors per step, 50 per job" and does not mention notices.
+   - The 50-per-run system-annotation line is on the toolkit page, so the memo's "unconfirmed" means unconfirmed in behaviour, not absent from the page. I put it in the entry note only.
 
-## Proposed entries
-No entry was filed.
-- **Could be filed once re-sourced:** F-gh-trigger-scope-01, F-gh-token-limits-02, F-gh-ubuntu-slim-01, F-gh-repo-size-01 and F-gh-ruleset-bypass-01.
-- **F-gh-ruleset-bypass-01** has only one page, so it would carry the "single page" mark and is not load-bearing.
-- **F-gh-contents-read-01** is supported by its three REST pages.
-- **F-gh-actions-billing-2026-01** needs the rounding source fixed.
-- **F-gh-status-list-01** needs the permission wording settled.
-- **P-ci-copy-sweep-01** is opinion and rests on those facts.
-- **F-field-actions-attic-01** (graded C): confirmed from the repository and the post.
+## Not confirmed, not filed
+- The "$0 budget default" with a payment method on file.
+- "Metadata is always read."
+- "`completed` fires on every re-run": only the 2020 community report supports it.
+- Statuses posted with a workflow token not starting `status` workflows.
+- A ref outside `refs/heads/` being pushable with the workflow token and untouched by rulesets.
+- Whether jobs share the 1,000-per-hour token limit.
+- The annotations-endpoint permission, which the memo says it did not re-check.
+- The worked cost table and formula: estimates, not filed.
+
+## Filed (library/)
+- **Facts (`library/facts/`):**
+  - Grade A: F-gh-token-limits-02, F-gh-status-list-01, F-gh-actions-price-01.
+  - Grade B: F-gh-trigger-scope-01, F-gh-token-life-01, F-gh-actions-included-01, F-gh-ubuntu-slim-01, F-gh-contents-read-01, F-gh-ruleset-bypass-01, F-gh-annotation-limits-01.
+  - Grade A, with the A holding only for the 100 MiB block: F-gh-repo-size-01.
+  - Grade C: F-field-actions-attic-01.
+- **Pattern (`library/patterns/`):** P-ci-copy-sweep-01 (C, opinion).
+
+Parts resting on one page carry the single-page, not-load-bearing note in the entry. Each entry's `opened_by` says the raw HTML was fetched.
 
 ## Open questions
-- Should the Researcher fix items 1–9 and resubmit, or should I file the confirmed subset now with those claims removed?
-- Does the owner want the fetch limitation accepted for grade A, or should raw pages be pulled?
+- Should the Researcher resubmit with the items above corrected? The filed entries already carry the corrected grades.
+- Is the 2020–2023 issue #726 enough to keep any re-run-`completed` claim, or should it wait for a GitHub page?
+- Can the 2,500-versus-1,000 search-cap discrepancy in actions-attic be resolved from GitHub's own docs?

@@ -40,7 +40,8 @@ test('J5: the sender takes the same list as the desk (first run of the desk case
   assert.ok(!r.notices.includes(held), 'a held card is notified (AC1)');
   assert.ok(r.notices.includes(shown), 'a card with a word is not notified at first showing (AC2)');
   assert.ok(r.notices.includes(late), 'a card a day old is not notified at first showing (AC4)');
-  assert.ok(r.notices.includes('P-100-dor-1'), 'a gate card is not notified');
+  // a gate card's notice is "as today" (AC9): no baseline case holds these records, so it is left to
+  // the J7 locked check's comparison with the record (Critic round 2, N2)
   // J5 awkward cases: a failed queue/, notes or log read sends no notice for any card on that run
   for (const f of ['queue', 'notes', 'log']) {
     const x = run(deskCase(`S009-X-j5-fail-${f}`, M, recs, { fail: [f] }));

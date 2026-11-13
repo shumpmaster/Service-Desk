@@ -124,7 +124,8 @@ test('AC19: a question shows as today, and a review card that is a decision card
   const recs = withCards({ ...BG, questions: [...BG.questions, q] }, [{ id: rv, raised: before(2) }]);
   const r = run(deskCase('S009-X-ac19', M, recs));
   assert.equal(entry(r, `question:${q}`).on_list, true, 'the feedback question is not shown');
-  assert.ok(r.notices.includes(`question:${q}`), 'the feedback question is not notified');
+  // Whether it is notified is "as today" (AC9); no baseline case holds these records, so it is left
+  // to the J7 locked check's comparison with the record (Critic round 2, N2).
   assert.equal(stateOf(r, rv), 'off', 'the review card is not held for its notes');
   const later = run(deskCase('S009-X-ac19-later', M, withCards({ ...BG, questions: [...BG.questions, q] }, [{ id: rv, raised: before(24) }])));
   assert.equal(stateOf(later, rv), 'norec', 'the review card does not show after a day');
@@ -133,16 +134,20 @@ test('AC19: a question shows as today, and a review card that is a decision card
 
 
 test('AC9 (Critic B1): a gate card\'s notes mark no button; with no gate case and no section 5 it is unmarked', () => {
-  const crit = 'P-250-criteria-1', launch = 'P-251-launch-1';
+  // AC9 fixes only that a gate card is listed and its mark comes from its gate case; its board,
+  // buttons and notice are "as today", which no baseline case gives for these records, so they are
+  // left to the J7 locked check's comparison with the record (Critic round 2, N2).
+  const crit = 'P-250-criteria-1', launch = 'P-251-launch-1', dorNotes = 'P-253-dor-1';
   const recs = withCards(BG, [
     { id: crit, words: GATE_WORDS, raised: before(2), notes: 'Recommendation: `kill`\n' },
     { id: launch, words: GATE_WORDS, raised: before(30), notes: '**Recommendation:** `hold`\n' },
+    // a dor card with notes and no gate case, on a read with no failure (Critic round 2, N1)
+    { id: dorNotes, words: GATE_WORDS, raised: before(2), notes: 'Recommendation: `recycle`\n' },
   ]);
   const r = run(deskCase('S009-X-ac9-gatenotes', M, recs));
-  for (const id of [crit, launch]) {
+  for (const id of [crit, launch, dorNotes]) {
     const e = entry(r, id);
-    assert.deepEqual([e.on_list, e.on_board, e.buttons, e.marked], [true, true, true, null], `${id}: ${JSON.stringify(e)}`);
-    assert.ok(r.notices.includes(id), `${id} is not notified`);
+    assert.deepEqual([e.on_list, e.marked], [true, null], `${id}: ${JSON.stringify(e)}`);
   }
   // a dor card with a gate case keeps the gate case's word, not its notes'
   const dor = 'P-252-dor-1';

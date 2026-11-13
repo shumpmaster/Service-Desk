@@ -1,6 +1,6 @@
 # PR #429 — the Reviewer's return, verbatim
 
-*Recorded by the Chief of Staff's session (session_01QBwHGM9A8Rm6ghUgprr5tF) as `orchestrator`. Read at 2395d20 on claude/chief-of-staff-discovery-gptn7g, dispatched about 2026-11-13T16:12Z, returned about 16:20Z. Recorder's note: the blocking finding's line numbers in s009-j4-views.test.mjs (":191-198", ":197") do not match the file, which has 79 lines; the test it names, "AC15: once the card shows again", is at :71-79, and the assertion at :77. The finding itself was checked against the file and holds.*
+*Recorded by the Chief of Staff's session (session_01QBwHGM9A8Rm6ghUgprr5tF) as `orchestrator`. Read at 2395d20 on claude/chief-of-staff-discovery-gptn7g, dispatched about 2026-11-13T16:11Z, returned about 16:18Z. Recorder's note: the blocking finding's line numbers in s009-j4-views.test.mjs (":191-198", ":197") do not match the file, which has 79 lines; the test it names, "AC15: once the card shows again", is at :71-79, and the assertion at :77. The finding itself was checked against the file and holds.*
 
 Verdict: FAIL
 

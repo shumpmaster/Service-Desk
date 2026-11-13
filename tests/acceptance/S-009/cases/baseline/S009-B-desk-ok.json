@@ -1,0 +1,77 @@
+{
+  "case": "S009-B-desk-ok",
+  "kind": "desk",
+  "moment": "2026-11-12T12:00:00Z",
+  "records": {
+    "queue": {
+      "P-101-dor-1": [
+        "proceed",
+        "hold",
+        "recycle",
+        "kill"
+      ],
+      "P-102-criteria-1": [
+        "proceed",
+        "hold",
+        "recycle",
+        "kill"
+      ],
+      "P-103-launch-1": [
+        "proceed",
+        "hold",
+        "recycle",
+        "kill"
+      ],
+      "P-104-stop-1": [
+        "drop",
+        "re-specify",
+        "resubmit"
+      ],
+      "P-105-failure-1": [
+        "drop",
+        "re-specify",
+        "resubmit"
+      ]
+    },
+    "cases": {
+      "P-101-dor-1": "hold"
+    },
+    "notes": {
+      "P-101-dor-1": "# Chief of Staff notes: P-101 dor-1\n\nRecommendation: `recycle`\n",
+      "P-104-stop-1": "# Chief of Staff notes: P-104 stop-1\n\n**Recommendation:** `drop` — the scope is gone\n"
+    },
+    "log": [
+      {
+        "card": "P-101-dor-1",
+        "raised": "2026-11-12T08:00:00Z"
+      },
+      {
+        "card": "P-102-criteria-1",
+        "raised": "2026-11-12T08:10:00Z"
+      },
+      {
+        "card": "P-103-launch-1",
+        "raised": "2026-11-12T08:20:00Z"
+      },
+      {
+        "card": "P-104-stop-1",
+        "raised": "2026-11-12T09:00:00Z"
+      },
+      {
+        "card": "P-105-failure-1",
+        "raised": "2026-11-12T10:00:00Z"
+      }
+    ],
+    "questions": [
+      "release-timing"
+    ],
+    "pulls": [
+      {
+        "number": 7,
+        "title": "Update the board legend"
+      }
+    ]
+  },
+  "fail": [],
+  "form": "path"
+}

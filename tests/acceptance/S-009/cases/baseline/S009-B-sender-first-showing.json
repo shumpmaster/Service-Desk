@@ -1,0 +1,46 @@
+{
+  "case": "S009-B-sender-first-showing",
+  "kind": "sender",
+  "moment": "2026-11-12T12:00:00Z",
+  "runs": [
+    [
+      {
+        "id": "P-101-dor-1",
+        "kind": "dor",
+        "content": "v1"
+      },
+      {
+        "id": "question:release-timing",
+        "kind": "question",
+        "content": "q1"
+      },
+      {
+        "id": "pr:7",
+        "kind": "pr",
+        "content": "t1"
+      }
+    ],
+    [
+      {
+        "id": "P-101-dor-1",
+        "kind": "dor",
+        "content": "v1"
+      },
+      {
+        "id": "question:release-timing",
+        "kind": "question",
+        "content": "q1"
+      },
+      {
+        "id": "pr:7",
+        "kind": "pr",
+        "content": "t1"
+      },
+      {
+        "id": "P-105-failure-1",
+        "kind": "failure",
+        "content": "no-recommendation-yet"
+      }
+    ]
+  ]
+}

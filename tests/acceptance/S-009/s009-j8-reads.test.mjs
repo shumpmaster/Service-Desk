@@ -8,7 +8,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { run, deskCase, background, withCards, entry, stateOf, hasLine, isCantReadLine, L_QUEUE, L_NOTES, L_LOG } from './s009-lib.mjs';
+import { run, deskCase, background, withCards, entry, stateOf, hasLine, isCantReadLine, L_QUEUE, L_NOTES, L_LOG, GATE_WORDS } from './s009-lib.mjs';
 
 const BG = background();
 const M = '2026-11-12T12:00:00Z';
@@ -66,4 +66,21 @@ test('J8, AC16: a later read that gets the records holds or shows each card by i
   assert.equal(stateOf(r, w), 'rec:drop');
   assert.equal(stateOf(r, n), 'norec');
   assert.ok(!hasLine(r, L_QUEUE) && !hasLine(r, L_NOTES) && !hasLine(r, L_LOG));
+});
+
+test('J8, AC9 (Critic B1): a failing gate card\'s notes file fails no read', () => {
+  // the only notes are gate cards' (no gate case): the rule needs no notes file, so failing them
+  // hides nothing, shows no line, and the sender still sends
+  const r2 = withCards(BG, [
+    { id: 'P-904-criteria-1', words: GATE_WORDS, raised: '2026-11-12T10:00:00Z', notes: 'Recommendation: `kill`\n' },
+    { id: 'P-905-stop-1', raised: '2026-11-10T10:00:00Z' },
+  ]);
+  r2.notes['P-100-dor-1'] = 'Recommendation: `hold`\n';
+  const r = run(deskCase('S009-X-j8-gatenotes', M, r2, { fail: ['notes'] }));
+  assert.ok(!hasLine(r, L_NOTES), 'the notes line shows though only gate cards\' notes failed');
+  assert.ok(!r.lines.some(isCantReadLine), 'a can\'t-read line though only gate cards\' notes failed');
+  assert.ok(r.notices.length > 0, 'the sender sends nothing though only gate cards\' notes failed');
+  assert.equal(entry(r, 'P-904-criteria-1').on_list, true);
+  assert.equal(entry(r, 'P-904-criteria-1').marked, null);
+  assert.equal(stateOf(r, 'P-905-stop-1'), 'norec');
 });

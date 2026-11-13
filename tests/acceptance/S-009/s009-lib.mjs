@@ -118,13 +118,16 @@ export function runAdapterRaw(caseData, { root = ROOT, caseFile } = {}) {
   const of = path.join(dir, `${caseData.case}.out.json`);
   const p = spawnSync(process.execPath, [ADAPTER, cf, of], { cwd: root, encoding: 'utf8', timeout: 300000 });
   const diag = `exit ${p.status}${p.signal ? ' signal ' + p.signal : ''}${p.error ? ' ' + p.error.message : ''}\n${(p.stderr || '').slice(-2000)}`;
-  if (!fs.existsSync(of)) return { ok: false, error: `no output written (${diag})` };
+  if (!fs.existsSync(of)) return { ok: false, wroteResult: false, error: `no output written (${diag})` };
   let out;
-  try { out = JSON.parse(fs.readFileSync(of, 'utf8')); } catch (e) { return { ok: false, error: `output is not JSON: ${e.message}` }; }
+  try { out = JSON.parse(fs.readFileSync(of, 'utf8')); } catch (e) { return { ok: false, wroteResult: false, error: `output is not JSON: ${e.message}` }; }
   const errs = validateOutput(caseData, out);
+  // wroteResult: the run wrote a result in J7's form, whatever its exit code (the poison run, J7
+  // line 171: "A run that writes a result shows that the adapter does not need src/").
+  const wroteResult = errs.length === 0;
   if (p.status !== 0) errs.unshift(`adapter exited non-zero (${diag})`);
-  if (errs.length) return { ok: false, out, error: errs.join('; ') };
-  return { ok: true, out, text: fs.readFileSync(of, 'utf8') };
+  if (errs.length) return { ok: false, wroteResult, out, error: errs.join('; ') };
+  return { ok: true, wroteResult, out, text: fs.readFileSync(of, 'utf8') };
 }
 
 // Runs a case on the built code and returns its result; fails the calling test on a failed run.
@@ -222,4 +225,33 @@ export function logTargetOf(c, all) {
   // J7 line 165: the record's result for the same records with `log` failing in the same form.
   const form = c.form || 'path';
   return all.find((o) => o.kind === c.kind && o.moment === c.moment && sameRecords(o, c) && same(o.fail, ['log']) && (o.form || 'path') === form && (c.kind !== 'open' || same(o.open, c.open)));
+}
+
+// ---------- the record's hash keys (Critic N6) ----------
+// The record's `hashes` keys are taken as paths from the repository root, POSIX separators; a
+// leading "./" or "/" is ignored.
+export const HASH_KEY_FORM = 'a path from the repository root with "/" separators, e.g. tests/desk/baseline/adapter.mjs';
+export function normKey(k) { return k.replace(/\\/g, '/').replace(/^(\.\/)+/, '').replace(/^\/+/, ''); }
+export function normHashes(h) { return Object.fromEntries(Object.entries(h).map(([k, v]) => [normKey(k), v])); }
+
+// ---------- the files under tests/ the adapter reads (Critic N1) ----------
+// Found statically: the adapter's relative imports (static `from '...'`, bare `import '...'`, and
+// `import('...')` with a literal), followed through every imported file under tests/. A file it
+// reads by another route cannot be found this way; the Reviewer's confirmation covers it (line 23).
+export function adapterTestImports(root = ROOT) {
+  const seen = new Set();
+  const visit = (relPath) => {
+    const abs = path.join(root, relPath);
+    if (seen.has(relPath) || !fs.existsSync(abs)) return;
+    seen.add(relPath);
+    const text = fs.readFileSync(abs, 'utf8');
+    const re = /(?:\bfrom\s*|\bimport\s*\(?\s*)['"](\.{1,2}\/[^'"]+)['"]/g;
+    for (const m of text.matchAll(re)) {
+      const target = path.relative(root, path.resolve(path.dirname(abs), m[1])).split(path.sep).join('/');
+      if (target.startsWith('tests/')) visit(target);
+    }
+  };
+  visit(ADAPTER);
+  seen.delete(ADAPTER);
+  return [...seen].sort();
 }

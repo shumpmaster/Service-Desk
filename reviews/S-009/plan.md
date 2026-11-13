@@ -126,3 +126,120 @@ Files:
 - /home/user/wt-critic/docs/projects/P-003.md
 - /tmp/claude-0/-home-user/ac6bc9b8-20ad-59d2-b4af-fac3ee45c43c/scratchpad/definer-inputs/S-008.md
 - /tmp/claude-0/-home-user/ac6bc9b8-20ad-59d2-b4af-fac3ee45c43c/scratchpad/definer-inputs/S-008-plan-review.md
+
+## Round 2 — spec at build/definer/S-009 fa98acd8 (session branch 37d88090); dispatched 2026-11-13T05:04:25Z, returned 05:10:39Z
+
+Verdict: FAIL
+
+S-009 round 2 fixes round 1's three blocking findings (B1 to B3), and every non-blocking finding is fixed or honestly left. The plan's step-3 fixes still hold. Both change lists on line 11 check out as far as I could check them. It still fails on two points in J7's baseline-case form, both new this round:
+- the `open` output is not defined for a notice, and AC15's comparison can fail a correct build;
+- questions and pull-request cards rest on an unsupported claim about today's tests and have no output id, so the coverage check cannot be written for them.
+
+Both fixes are a few sentences.
+
+**How I checked (no shell).**
+- **S-008 → S-009.** I read the S-008 copy (259 lines) and S-009 (293 lines) in full, line against line, using these offsets:
+  - lines 1–164 match one for one;
+  - S-009 165 is new;
+  - S-009 166–173 = S-008 165–172; 174–181 (J8) are new;
+  - S-009 183–222 = S-008 174–213; 223–232 are new;
+  - S-009 233–240 = S-008 214–221; 241–243 are new;
+  - S-009 245–257 = S-008 223–235; 258–264 are new;
+  - S-009 265–281 = S-008 236–252; 282–286 are new;
+  - S-009 287–293 = S-008 253–259.
+  
+  Every changed line I found is in the first list, and I found no change outside it. The line counts (259, 293) are right.
+- **Round 1 → round 2.** I could not see round 1's text, so I mapped every line round 1's verdict cites onto today's numbering:
+  - same numbers up to 228;
+  - +4 from 229, after the new 229–232;
+  - +5 after the new 243;
+  - +7 after the new 263–264;
+  - +9 after the new 285–286.
+  
+  284 + 9 = 293. Each quote round 1 objected to (old 62, 119, 175, 177, 178, 277, 282) is gone and its line is listed. Lines round 1 cited without objection (36, 61, 165, 179) are unlisted and still read as round 1 described. So "No other line changed" fits every reference I have, but I cannot prove it.
+
+## Blocking findings
+
+**B1. AC15's `open` output is undefined for a notice, and the comparison as written would fail a correct build.**
+- J7:156 defines `shows` as "the card sheet's visible text". But a notice for a card not on the list opens no card sheet. On a good read it goes "to the project's page, or `#/`" with "That no longer waits on you", or to the card's Done row if this device marked it done. On a failed read it goes to the project's page with a can't-read message (src-reading.md:288-289). So for `via: notice` the field has nothing to point at, and the Check author cannot know what is compared.
+- J7:162 and :167 (changed this round) add a built-only case: a decision card without notes, with `log` failing. It "must equal" the record's `open` result. If `shows` is read as the page's text, the built desk must show AC17's line, "Decision cards without Chief of Staff notes not shown: the dispatch log could not be read", on the queue and Home (AC17, line 62; J4:111). The notice may land on `#/`, which the reading does not identify further. The baseline has no such line.
+- J7:164 strips the AC16 and AC17 lines for `desk` cases. Line 167 strips nothing for `open` cases. Line 58 also drops the reading's "or `#/`" and Done-row routes.
+- The adapter and cases cannot change after the record (line 23), so a correct build would fail its locked check and stop.
+- Fix:
+  - define `shows` for each route: for a notice, the arrival words and the view it lands on; for a link, the sheet's text;
+  - remove the AC16 and AC17 lines before the `open` comparison, as J7:164 does;
+  - quote :289 in full at line 58.
+
+**B2. Questions and pull-request cards in the case form rest on an unsupported claim, and have no output id.**
+- J7:150 says the adapter writes the owner question file and the open pull request "each written as the tests in tests/desk/ already write that kind". The reading never says tests/desk/ writes either. It also does not show `fakeServer` or `loadSandbox` serving pull requests, or the sender's fake `fetch` answering them. Answer 1 (:28) says only that the poll reads PRs, and :43 that the sender reads REST through `makeGitHub`. Known limits (241-243) do not name this gap. The brief makes an unverifiable claim a FAIL.
+- The output form gives an id form only for queue cards (`<item>-<gate>-<n>`, J7:150, :154). It gives none for a question or a pull request, in `cards[].id` or in `notices`. The coverage check (J7:169) fails if a question or pull-request card "is not `on_list`". It cannot do that for an entry it cannot find. An adapter that leaves those entries out passes, which is the same gap round 1 closed for gate cards (round 1 B3).
+- Fix:
+  - reword J7:150 as an instruction: the adapter's header comment names the src/ or tests/desk/ form it follows;
+  - add a known limit that the reading does not show questions or PRs through these routes (the stop at line 172 covers failure);
+  - fix the output ids, for example `question:<name>` and `pr:<number>`;
+  - make coverage fail unless every `queue`, `questions` and `pulls` entry of the case has its entry.
+
+## Non-blocking findings and risks
+
+**Round 1, checked:**
+- **B1:** resolved.
+  - AC17 (line 62) now says the sender sends nothing on a failed log read, and why.
+  - J5:119 is reworded.
+  - Risk 263 and question 11 (line 285) give options A and B, and line 18 names it as new wording.
+- **B2:** resolved. J8:177 says "A successful poll whose branch head has not moved gets the tree the desk already holds".
+- **B3:** resolved.
+  - J7:150 adds `cases` and the gate-case form, matching src-reading.md:215-216.
+  - J7:160 adds a `dor` card with a gate case and different notes.
+  - J7:169 adds the coverage rule on `marked`.
+  - Line 229 adds the fact, citing :205-255.
+- **N1 to N10:** fixed.
+  - N1: lines 18 and 284. Question 10 now has options and names the board.
+  - N2: lines 23, 148 and 291 say one file. Line 57's stand-in "under tests/desk/" still fits, since the adapter sits there.
+  - N3: line 269 lists every stop in one place.
+  - N4: lines 190, 199, 249 and 265.
+  - N5: lines 175, 177 and 178.
+  - N6: line 148 and Known limits 243.
+  - N7: lines 148 and 264.
+  - N8: J7:150.
+  - N9: AC18 (line 68).
+  - N10: lines 23, 262 and 269.
+
+**Plan step 3 still holds.**
+- Finding 1 (plan :52-57) is in line 23, the facts at 228 and 236, and the brief at 291.
+- Finding 2 (plan :58-61) is in J8:174, where no read fails inside the rule; J8:175-178 for the read place and forms; and J8:180 with J7:165 and :169, where the base commit's notes failure equals its no-failure result.
+- Every file under src/ is poisoned (171).
+- AC4 matches the reading (29, citing :104-106).
+- The stop rule is kept, with the adapter outside the count (218, 269).
+
+**New this round:**
+- **N1. A coverage failure has no stated route.** J7:169 says only that the check fails when a gate card's `marked` is not its gate case's word, a `sender` case sends nothing, or a card is not `on_list`. Only the notes-reading case says "the build stops and returns". The adapter and cases are frozen after the record (line 23), so such a record can never pass. Add "the record fails coverage" to line 269.
+- **N2. Who assembles record.json is not stated.** J7:147 runs the adapter once per case and writes one output. The record (J7:158) adds `base_commit`, `node` and `hashes`, and no one is named to compute or wrap them. Line 23 says the session commits "the output, unedited". Say that the session's script wraps the per-case outputs unchanged, in a fixed order (by case id), and adds those fields. Say also that the step-11 re-run compares each result's bytes.
+- **N3. The Builder's brief (291) lacks two of line 269's stops:**
+  - the built desk showing gate cards on a failed notes read otherwise than the base commit on a failed log read;
+  - a record that fails coverage.
+  
+  Left out, the Builder would rework the code until its three build rounds run out, instead of stopping.
+- **N4. The join-up review was not updated for a fact found this round.** "That no longer waits on you", and the "No longer waiting" sheet, now also mean "held, will show again" (line 58, question 12, src-reading.md:289-290). The "One meaning per status signal" row (190) still lists only board and notification absence. I rate it non-blocking: it is reversible and question 12 covers it. Add it as a second difference carried into the criteria question.
+- **N5. Small citation inaccuracies:**
+  - Line 148: "the sender's `runSender` … handed a checkout-shaped object". `runSender` takes `openCheckout` (src-reading.md:156, :269).
+  - Line 236: it cites plan :56 for the surface guard keeping the Builder out of tests/acceptance/**, but :56 covers only reviews/. The tests/acceptance/** rule is in AGENTS.md §1.
+  - Line 175: the list of what `neededReads` asks omits the answer paths it pushes for each log entry (:136).
+- **N6. Line 147, carried from S-008, is a risk.** "Fixes the process clock … by replacing the global `Date`" may not govern the injected clocks the reading shows: `createDesk({clock})`, `fakeServer(…, clock)`, `runSender({now})` (:159, :269). The stop at line 172 covers it. The adapter's header should say how the moment reaches each entry point.
+- **N7. A failed poll now hides every decision card** (J1:79, J8:177; AC18 at 68). This follows plan §1:22's words and is now in the operating notes. Line 18 lists it only as "AC18's third bullet". The criteria question should say it plainly, because an offline phone hides decision cards that today stay shown.
+
+**Criteria:** every criterion is a When/then scenario with a `[trace: V6 → ACn]` tag. AC9, AC16 and AC17 carry test mechanics, which is acceptable.
+
+**Areas touched** (202) match plan step 9, including docs/handover/P-003/**.
+
+## Open questions
+1. If the owner chooses A on question 10 or 11, the ruled criteria will contradict P-003 Part 1: §1:23 ("notified as when the log is read") and §1 Out:26 ("Gate cards … unchanged"). Should the Chief of Staff note the ruling against Part 1, or amend it?
+2. Should the criteria question list N7, decision cards hidden whenever the desk is offline or signed out, as its own item rather than inside AC18?
+
+Files:
+- /home/user/wt-critic/specs/S-009.md
+- /home/user/wt-critic/reviews/S-009/src-reading.md
+- /home/user/wt-critic/reviews/S-009/plan.md
+- /home/user/wt-critic/docs/handoff/2026-11-13-P-003-outside-build-plan.md
+- /home/user/wt-critic/docs/projects/P-003.md
+- /home/user/wt-critic/decisions/questions/P-003-outside-build-plan.md
+- /tmp/claude-0/-home-user/ac6bc9b8-20ad-59d2-b4af-fac3ee45c43c/scratchpad/definer-inputs/S-008.md

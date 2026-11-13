@@ -386,3 +386,160 @@ Files:
 - /tmp/claude-0/-home-user/ac6bc9b8-20ad-59d2-b4af-fac3ee45c43c/scratchpad/definer-inputs/S-008-plan-review.md
 
 *The session's check of round 3's N4, made after the return and not part of it: `git diff -U0 fa98acd8 09b806ed -- specs/S-009.md` gives hunks at lines 11, 23, 58, 147-148, 150, 154, 156, 158, 167, 169, 175, 190, 236, 244, 270 and 292, the round-3 list on line 11 exactly. This is the third failed round: by the plan's stop rule the build stops here and goes back to the owner (questions/P-003-S-009-third-fail.md).*
+
+## Round 4 — spec at build/definer/S-009 71ea17d2 (session branch 2d91daad); dispatched 2026-11-13T14:18:45Z, returned 14:22:32Z
+
+*The one further round the owner allowed (decisions/questions/P-003-S-009-third-fail.md); a fresh Critic, recorded by session_01QBwHGJGYoFwkxVunu5XDbF as `orchestrator`.*
+
+Verdict: PASS
+
+S-009 round 4 fixes round 3's B1 and B2 and its N1 to N3. None of the earlier fixes has regressed. Every citation of today's code that I checked is supported by reviews/S-009/_src-reading.md. The header names `milestones: M4`, and M4 is a milestone of docs/projects/P-003.md (:46). The join-up review section is present and in form (specs/S-009.md:183-199). Nothing contradicts the approved plan (docs/handoff/2026-11-13-P-003-outside-build-plan.md, steps 3, 4 and 6, and its stop rules) or the owner's rulings (decisions/questions/P-003-outside-build-plan.md:1, :14; decisions/questions/P-003-S-009-third-fail.md:1, :17-21; decisions/P-003/failure-15.md:4).
+
+I found nothing that meets the round's blocking bar:
+- no false or unverifiable claim about today's code;
+- no check that can pass vacuously on its own terms;
+- no check that cannot be built;
+- no contradiction with the plan or the rulings;
+- no break in the spec form.
+
+The findings below are non-blocking. Most are risks that the build stops when it need not, and they should be carried into the criteria question (plan step 4).
+
+**Method.** I read the spec, the reading and the plan cold. Only then did I read reviews/S-009/plan.md. I did not re-prove the diff hunks, as briefed. I checked the content of every changed line, and compared line 164 with S-008:164.
+
+## Blocking findings
+None.
+
+**Round 3, checked (reviews/S-009/plan.md:281-363):**
+- **B1: fixed.** specs/S-009.md:169 adds rules (a) and (b), as proposed. Their citations hold:
+  - _src-reading.md:61-63, :68 and :74-75 for the path-form "Can't read" line;
+  - :55 for the whole-call form;
+  - :79 and :84 for the sender sending nothing;
+  - :70 for the no-failure case.
+- **B2: fixed.** :175 now reads "no J7 case names a gate case's path as failing; in the `call` form a gate case fetched in the same blob call may also come back unread (:55, :38)". That is hedged and supported.
+- **N1: fixed.** :293 adds "or stop and return if the adapter cannot be written to run at the base commit". This matches plan :166 and specs/S-009.md:172 and :270.
+- **N2: fixed.** :156 writes the key, the id and the title as `<id>`. N3 and N4 below give the caveats.
+- **N3: fixed.** :154 drops the per-card Home field and says why. The citations hold: :297 for the head count; :69, :179 and :330 for what was not traced.
+- **Round 3, open question 2** is now open question 13 (:288).
+
+**Regression check (all still in place):**
+- Round 1:
+  - B1 at :62 and :119;
+  - B2 at :177, on the unmoved head;
+  - B3 at :150, :160, :169 and :229.
+- Round 2:
+  - B1 at :156 and :167;
+  - B2 at :150, :154, :169 and :244.
+- Round 2's N1 to N6 and round 3's notes (:270 lists every stop; :293 holds them for the Builder).
+- Plan step 3: line 23 and :228, J8 at :174-180, the poison run on every src/ file (:171), AC4 against :104-106 (:29), and the stop rule with the adapter outside the count (:218, :270).
+
+**Citations on the round-4 lines, all supported:**
+- :29 (:104-106)
+- :58 (quotes :288, :289 and :290 word for word)
+- :75 (:118-124, :131)
+- :80 (:131-135)
+- :147 (:159, :269)
+- :148 (:156, :266, :269-274, :278-292, :301-305, :322)
+- :150 (:205-250)
+- :152 (:278)
+- :154 (:68-69, :297, :69, :179, :330)
+- :169 (:93-100, :205-219, :61-63, :68, :74-75, :55, :79, :84, :70)
+- :175 (:28, :33-38, :55, :136, :252-254, :16, :100)
+- :190 (:289-290)
+- :215 (:118-125)
+- :223-232
+- :234-236 (:164, :118-124, :126, :3)
+- :238 (:129-136)
+- :241-244 (:186, :166, :178, :87-88, :322, :290, :329-330, :339, :28, :43)
+- :265 (:257-266, :329)
+
+## Non-blocking findings and risks
+
+**N1. :164's Home-count comparison rests on an unstated assumption about today's Home. It is a false-stop risk only, not a blocker.**
+- The parenthetical says "a decision card is in Home's count exactly when it is on the queue". It is justified "by AC1, AC2, AC4, AC16 and AC17", which bind only the built code.
+- The same subtraction is applied to the record's result. For the base commit, the reading shows that Home's head count takes `bd.badge` (_src-reading.md:297), but not what `bd.badge` counts. It is also explicitly untraced on a can't-read project (:69, :179) and was never driven in a run (:330).
+- **Why it is not a blocker:**
+  - If the assumption is false, the derived figures differ between the record and the build, and the check fails. It never passes wrongly.
+  - The subtraction even catches a held card counted in Home: the built count rises and `on_list` does not.
+  - A false pass needs two offsetting bugs, one of which AC1's own tests catch.
+- **The real risk is the failed-read cases.** At the base commit, decision cards stay flagged from the tree on a failed read (:66, :68). If the base's Home head count leaves out a can't-read project's cards, then no build that meets AC16 or AC17 can match the record.
+- **No stop is named for this.** It is not in :270 or :293, so the Builder would use up its three build rounds before it stopped.
+- **Fix:**
+  - name the assumption in Known limits or Risks;
+  - add a stop for "the Home-count comparison cannot be met by a build that meets AC1, AC4, AC16 and AC17";
+  - carry it into the criteria question.
+- Route: Definer.
+
+**N2. Coverage has no rule for `open` cases with `log` failing (:162, :167, :169).**
+- Rules (a) and (b) cover only `desk` cases. Suppose the adapter's `open` route ignored `fail`. Then:
+  - the record's log-failing `open` result would equal its good-read one, "That no longer waits on you";
+  - the built-only case at :167 would also pass, with the AC15 failed-read half never exercised.
+- **Why non-blocking:**
+  - The adapter is one file (:23, :148), and both kinds load the page through `loadSandbox` with the fake server's `blobNull`.
+  - Rule (a) shows that this route applies `fail` for `desk` cases.
+  - The Reviewer confirms the adapter before the record (:23).
+- Escaping all of that needs deliberately separate handling for `open` cases.
+- **Fix:** a one-line rule that each `open` case with `log` failing has `shows` or `lands` differing from its no-failure twin. The base gives the can't-read words, _src-reading.md:288.
+- **D-050:** this gap is in round 3's own B1 fix proposal (reviews/S-009/plan.md:298-300), which covered `desk` cases only. That implicates this role's earlier check.
+- Route: Definer.
+
+**N3. :156's title rule has nothing definite to act on, and :148 still lists only the id as rewritten.**
+- J7's card file has no title line: only `## 4. Options` lines and no `## 5.` (:150). So "its title from its card file" is whatever the desk derives. The reading shows only the fallback `card <gate>-<n>` when the file is unread (:66).
+- :148 says the adapter "only picks fields, sorts and writes `<id>` for the card id". It does not mention the key or the title, which :156 now adds. The Reviewer's check against :148 could refuse the adapter.
+- **Possible false stops in the same field:**
+  - the encoded key in an address (`encodeURIComponent`, :278) does not match the raw key;
+  - part-forms such as `<gate>-<n>` are not rewritten.
+- This bites if the baseline's id (one "not in queue/", :162) differs from the built held card's id.
+- **Fix:**
+  - give J7's card file a fixed title line;
+  - align :148 with :156;
+  - or require the built-only AC15 cases to use the same id as the baseline `open` cases, which makes the rewrite unneeded.
+- **D-050:** this came from round 3's N2 suggestion (plan.md:356-359).
+- Route: Definer.
+
+**N4. Line 11's first list ("What changed from S-008") is now incomplete, and its closing sentence is now false.**
+- Round 4 changed :164, which was S-008:164 ("`home_count` less the decision cards counted"), and added open question 13 at :288. Neither is in the first list.
+- The first list still ends "No other criterion, join sheet, fact, risk or open question changed."
+- The round-4 list does name both, so the record taken as a whole is complete. A reader comparing S-008 with S-009 by the first list alone is misled.
+- **Fix:** add 164 and 288 to the first list, or scope its closing sentence to "before round 4".
+- The session's diff check covered only the round-4 list.
+- Route: Definer.
+
+**N5. Open question 13 (:288) offers no options, unlike questions 10 and 11 (:285-286).**
+- It describes the rule accurately, matching :169, and says "You rule this with the criteria". It never says what the owner chooses between.
+- For example:
+  - A: accept, so a base that behaves otherwise stops the build;
+  - B: drop rules (a) and (b), accepting that the failed-read checks may pass vacuously (round 3 B1).
+- Round 2 found the same gap in question 10 (plan.md:74).
+- Route: Definer. The criteria question's author should fix it there too.
+
+**N6. Rules (a) and (b) assume cases are written to suit them.**
+- (a) needs "its no-failure result for the same records". Nothing requires every `queue`- or `log`-failing `desk` case to have a no-failure twin.
+- (b) fails any no-failure `desk` case whose first sender run sends nothing, such as a case with no open cards.
+- (b) also assumes that today's sender sends on its first run, from `emptyState` (:265). The reading does not show that. A first run that sends nothing for the whole set would stop the build.
+- "Can't-read line" is not defined by its words.
+- All of these give false stops only, and question 13 covers the class.
+- **Fix:** state that every failing case has a no-failure twin, and that every no-failure `desk` case holds at least one open card. Name the first-run assumption in Known limits.
+- Route: Definer.
+
+**N7. :175's `call`-form note leaves a small false-stop risk.**
+- Suppose the built code moves the optional gate-case read into a separate blob call. Then in the `call` case the built gate card's `marked` could be the gate case's word, where the base gives `null`, and the check would fail.
+- The build has no reason to do that, and :148 asks it to keep its entry points. Mentioned for completeness.
+
+## Open questions
+1. N1: should the criteria question say plainly that the Home-count comparison assumes today's Home counts each listed decision card exactly once, including on a can't-read project? And that if it does not, the build stops?
+2. N2 and N3 are each one sentence in J7. Since a PASS sends the spec on to the criteria question with no further plan-review round, should the session ask the Definer to fold them in before freeze? Or should they be carried as risks into the criteria question?
+
+**Self-implication (D-050):** N2 and N3 implicate this role's round-3 check: its B1 fix proposal and its N2 suggestion.
+
+Files:
+- /home/user/wt-critic/specs/S-009.md
+- /home/user/wt-critic/reviews/S-009/_src-reading.md
+- /home/user/wt-critic/reviews/S-009/plan.md
+- /home/user/wt-critic/docs/handoff/2026-11-13-P-003-outside-build-plan.md
+- /home/user/wt-critic/decisions/questions/P-003-outside-build-plan.md
+- /home/user/wt-critic/decisions/questions/P-003-S-009-third-fail.md
+- /home/user/wt-critic/decisions/P-003/failure-15.md
+- /home/user/wt-critic/docs/projects/P-003.md
+- /tmp/claude-0/-home-user/2aa7e563-9eb8-5f6c-8b1b-50ea8df7b370/scratchpad/critic-inputs/S-008.md
+
+*The session's note after the return, not part of it: the round passed. The Critic's open question 2 asks whether N2 and N3 should be folded into the spec before freeze. The owner allowed one round only, so the session does not run another; N1 to N7 and both open questions are carried into the criteria question for the owner to rule.*

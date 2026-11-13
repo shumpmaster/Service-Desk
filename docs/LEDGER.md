@@ -688,3 +688,17 @@ options_considered: B, the changelog and disagreement lines only (the two single
 decided_by: owner ("A: file all three (Recommended)", 2026-11-12, asked in session session_01QBwHGJzc87ezrCJjztgrMp; recorded in decisions/questions/P-005-vendor-pages.md)
 proposed_by: chief-of-staff
 reversibility: irreversible
+
+## L-0051 — The card fix is built outside the pipeline by the approved plan, from a new spec S-009, with the plan's departures for this build only
+date: 2026-11-13
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The pipeline's attempt at the card fix (P-003, milestone M4) failed its spec's plan review three times, the owner chose to build it outside the pipeline (decisions/questions/P-003-baseline-runner.md, "C") and closed the item with `re-scope` (decisions/P-003/stop-16.md). The Chief of Staff planned the build (docs/handoff/2026-11-13-P-003-outside-build-plan.md) and asked whether it may be built that way (questions/P-003-outside-build-plan.md, #411).
+decision: The card fix is built outside the pipeline, in working sessions, by the plan as written; the departures below end with the build's launch records (the plan's step 18). It is built from a new spec, S-009, whose lineage names S-008 at 23c31dd2 on item/P-003; S-007 and S-008 are superseded by it. Each departure the plan lists under "Where this differs from the pipeline" is allowed for this build only: the Chief of Staff's session commits as `orchestrator` for the ledger, the improvement register and every record under reviews/ for S-009 and its pull request, including the baseline record it makes itself by running today's code; it merges builder branches into its push branch with merge commits (the merges to main stay the owner's); the Reviewer reads today's code to inform the spec (step 2), confirms the adapter before any build (step 7), re-runs today's code and checks commit order at stage 5 (step 11), and is given the V6 count record at stage 6 (step 15); the Definer is dispatched on this approval, and its brief adds S-008 and S-008's plan review from item/P-003, and the step-2 reading; the Critic's plan-review brief adds the same three records; the Builder's first dispatch hands back with no passing check record, its second dispatch's brief adds the record and its note, and its step-15 brief adds the V6 count record; the Build gate is the owner's criteria question, with no gate case or gate Critic, and the Launch gate's case sits inside its question, neither being a card in queue/. Nothing else changes: the Check author's pack and duties, every must-not-see list, the surface guard, the required reviews, the owner's merges to main, and the plan's stop rules.
+licenses_next: The plan's session 1: the Reviewer's reading of today's code, the Definer's S-009 on build/definer/S-009 and the Critic's plan reviews, then the criteria question. No change under src/ or tests/ before the owner approves S-009's criteria.
+options_considered: B, build from the pipeline's last spec left as a draft, as the desk was (L-0003), with no locked checks and no record of today's desk; C, not now.
+decided_by: owner ("A: approve as written (Recommended)", 2026-11-13, asked in session session_01QBwHGJGmgrBkfU9PjLST43; recorded in decisions/questions/P-003-outside-build-plan.md)
+proposed_by: chief-of-staff
+reversibility: irreversible

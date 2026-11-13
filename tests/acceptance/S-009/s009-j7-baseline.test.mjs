@@ -18,7 +18,7 @@ import path from 'node:path';
 import {
   ROOT, ADAPTER, RECORD, NOTE, BASE_COMMIT, loadRecord, loadBaselineCases, validateOutput, sha256File,
   runAdapterRaw, run, twinOf, logTargetOf, deskProjection, openProjection, isDecisionId, isCantReadLine,
-  withCards, openCase,
+  withCards, openCase, normHashes, HASH_KEY_FORM, adapterTestImports,
 } from './s009-lib.mjs';
 
 const cases = loadBaselineCases();
@@ -46,9 +46,11 @@ test('S-009 line 23 locked check', { concurrency: false }, async (t) => {
 
   await t.test('every hashed file matches the record, including the adapter and every case file', (st) => {
     if (!gate(st, 'record')) return;
-    const h = rec.raw.hashes;
-    assert.ok(ADAPTER in h, `record does not hash the adapter ${ADAPTER}`);
-    for (const c of cases) assert.ok(c.file in h, `record does not hash case file ${c.file}`);
+    const h = normHashes(rec.raw.hashes);
+    const form = `(hash keys are read as ${HASH_KEY_FORM})`;
+    assert.ok(ADAPTER in h, `record does not hash the adapter ${ADAPTER} ${form}`);
+    for (const c of cases) assert.ok(c.file in h, `record does not hash case file ${c.file} ${form}`);
+    for (const f of adapterTestImports()) assert.ok(f in h, `record does not hash ${f}, a file under tests/ the adapter imports ${form}`);
     for (const [p, want] of Object.entries(h)) {
       const abs = path.join(ROOT, p);
       assert.ok(fs.existsSync(abs), `hashed file ${p} is missing`);
@@ -107,7 +109,7 @@ test('S-009 line 23 locked check', { concurrency: false }, async (t) => {
     if (!gate(st, 'record', 'hashes', 'coverage')) return;
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 's009-poison-'));
     const copy = path.join(tmp, 'tree');
-    fs.cpSync(ROOT, copy, { recursive: true, filter: (src) => path.relative(ROOT, src).split(path.sep)[0] !== '.git' });
+    fs.cpSync(ROOT, copy, { recursive: true, verbatimSymlinks: true, filter: (src) => path.relative(ROOT, src).split(path.sep)[0] !== '.git' });
     const srcDir = path.join(copy, 'src');
     assert.ok(fs.existsSync(srcDir), 'the working tree has no src/');
     const poison = (dir) => {
@@ -122,7 +124,7 @@ test('S-009 line 23 locked check', { concurrency: false }, async (t) => {
     poison(srcDir);
     for (const c of cases) {
       const r = runAdapterRaw(c.data, { root: copy, caseFile: path.join(copy, c.file) });
-      assert.ok(!r.ok, `${c.data.case}: the adapter wrote a result with src/ poisoned, so it does not need src/`);
+      assert.ok(!r.wroteResult, `${c.data.case}: the adapter wrote a result with src/ poisoned, so it does not need src/`);
     }
     fs.rmSync(tmp, { recursive: true, force: true });
     ok.poison = true;

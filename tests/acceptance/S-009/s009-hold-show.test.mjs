@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   run, deskCase, openCase, background, withCards, entry, stateOf, assertViewsAgree,
-  MARK, NEW_LINES,
+  MARK, NEW_LINES, GATE_WORDS,
 } from './s009-lib.mjs';
 
 const M = '2026-11-12T12:00:00Z';
@@ -109,9 +109,10 @@ test('AC7: a card with no card entry in the log that was read is shown at once',
   assertViewsAgree(r, a); assertViewsAgree(r, b);
 });
 
-test('AC8: notes not on the main branch (only in an open pull request) count as no notes', () => {
-  // The case form holds only the main branch's records; a pull request is the only other branch it
-  // can name, so this checks that a card whose notes are only on a pull request is held.
+test('AC8 (partial; the rest is rubric R3): a card whose notes are named only in a pull request\'s title is held', () => {
+  // The case form holds only the main branch's records and gives a pull request only a number and a
+  // title, so this checks only that notes named in a pull request do not count. Notes on another
+  // branch's tree cannot be expressed in J7's form: checks/S-009/review-rubric.md R3.
   const id = 'P-230-stop-1';
   const recs = withCards({ ...BG, pulls: [...BG.pulls, { number: 8, title: 'Notes for P-230 stop-1: Recommendation: `drop`' }] }, [{ id, raised: before(2) }]);
   const r = run(deskCase('S009-X-ac8', M, recs));
@@ -130,3 +131,22 @@ test('AC19: a question shows as today, and a review card that is a decision card
   assert.equal(entry(later, 'P-100-dor-1').on_list, true, 'a gate card is not shown');
 });
 
+
+test('AC9 (Critic B1): a gate card\'s notes mark no button; with no gate case and no section 5 it is unmarked', () => {
+  const crit = 'P-250-criteria-1', launch = 'P-251-launch-1';
+  const recs = withCards(BG, [
+    { id: crit, words: GATE_WORDS, raised: before(2), notes: 'Recommendation: `kill`\n' },
+    { id: launch, words: GATE_WORDS, raised: before(30), notes: '**Recommendation:** `hold`\n' },
+  ]);
+  const r = run(deskCase('S009-X-ac9-gatenotes', M, recs));
+  for (const id of [crit, launch]) {
+    const e = entry(r, id);
+    assert.deepEqual([e.on_list, e.on_board, e.buttons, e.marked], [true, true, true, null], `${id}: ${JSON.stringify(e)}`);
+    assert.ok(r.notices.includes(id), `${id} is not notified`);
+  }
+  // a dor card with a gate case keeps the gate case's word, not its notes'
+  const dor = 'P-252-dor-1';
+  const recs2 = withCards(BG, [{ id: dor, words: GATE_WORDS, raised: before(2), notes: 'Recommendation: `kill`\n' }]);
+  recs2.cases[dor] = 'proceed';
+  assert.equal(entry(run(deskCase('S009-X-ac9-dorcase', M, recs2)), dor).marked, 'proceed');
+});

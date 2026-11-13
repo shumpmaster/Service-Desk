@@ -78,3 +78,10 @@ test('J7 line 162 (AC15): open cases by notice and by link, one decision id not 
     assert.ok(open.some((c) => c.open.via === via && JSON.stringify(c.fail) === JSON.stringify(fail) && (c.form || 'path') === 'path'), `missing open case via ${via} with fail ${JSON.stringify(fail)}`);
   }
 });
+
+test('AC9 (Critic B1): a no-failure desk case holds a criteria or launch card with notes naming one of its words and no gate case', () => {
+  const ok = desk.some((c) => c.fail.length === 0 && Object.entries(c.records.queue).some(([id, words]) =>
+    /^[A-Z]+-\d+-(criteria|launch)-\d+$/.test(id) && !(id in c.records.cases) && c.records.notes[id] &&
+    words.some((w) => c.records.notes[id].includes('`' + w + '`'))));
+  assert.ok(ok, 'no criteria or launch card with notes and no gate case: a gate card\'s notes would go untested');
+});

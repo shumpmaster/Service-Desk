@@ -2,7 +2,7 @@
 
 *Check author, from specs/S-009.md (frozen) AC18 (lines 65-71). Judged at the build's review on the
 operating notes under docs/handover/P-003/. The mechanical part is
-tests/acceptance/S-009/s009-ac18-operating-notes.test.mjs. Each item passes only if the notes say
+tests/acceptance/S-009/s009-ac18-operating-notes.test.mjs, which checks only that the notes are there and name the mark. Each item passes only if the notes say
 it in plain words; a pointer to the spec or the code alone does not pass.*
 
 | # | The notes say | Pass when |

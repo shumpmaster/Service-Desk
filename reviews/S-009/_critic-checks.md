@@ -2,6 +2,86 @@
 
 *Recorded by the Chief of Staff's session (session_01QBwHGMmHGgB3fLufS5ELH2) as `orchestrator`, under L-0051. Each round's Critic return, verbatim under its heading; the latest round first, as the pipeline reads this record's first verdict. At most three rounds; a third failure goes back to the owner.*
 
+## Round 3, the last — checks at build/check-author/S-009-r3 20ed529 (session branch b6c8fbe); dispatched about 2026-11-13T16:05Z, returned about 16:07Z (times from the session, approximate)
+
+*Recorded by the Chief of Staff's session (session_01QBwHGM9A8Rm6ghUgprr5tF) as `orchestrator`, after the owner's answer A (decisions/questions/P-003-S-009-checks-lock.md).*
+
+Verdict: PASS
+
+Round 3 of 3, checks in /home/user/wt-check-author-S-009-r3 after commit 20ed529. **N1 is closed.** A build that takes a `dor` gate card's mark from its notes when the card has no gate case now fails a built-only check. **N2 is closed without opening a hole that matters.** The dropped assertions fixed today's behaviour from guesses. The J7 comparison with the record now carries them on the baseline cases, and those cases hold the records that matter: gate cards with notes, with and without a gate case, a question and a pull request, under every failure mode. Every assertion that remains is backed by the spec. I found one narrow, unlikely gap: no check looks at a gate card more than a day old for its board or buttons (non-blocking N1 below). The three changes break nothing else and reopen no earlier finding. All findings are non-blocking.
+
+**What I read:** all in /home/user/wt-check-author-S-009-r3:
+- specs/S-009.md: lines 1-212, which take in AC1-AC19, J1-J8 and the facts at :229.
+- tests/acceptance/S-009/: s009-hold-show.test.mjs, s009-j5-sender.test.mjs, s009-j6-count.test.mjs, s009-lib.mjs, s009-j7-baseline.test.mjs, README.md and cases/baseline/S009-B-desk-ok.json.
+
+I also read /home/user/Service-Desk/reviews/S-009/_critic-checks.md (rounds 2 and 1). I kept to the changed lines and what they touch, so I did not re-read the other test files, the other case files, package.json, run-all.cjs or the rubrics. I did not read src/, tests/desk/, docs/handover/ or the reading. I ran nothing; every finding comes from reading the files.
+
+## 1. N1: closed
+- **The new case.** s009-hold-show.test.mjs:144-145 adds P-253-dor-1:
+  - its words are GATE_WORDS, so `recycle` is one of its words;
+  - its notes say `Recommendation: \`recycle\``;
+  - it has no `cases` entry (withCards, s009-lib.mjs:163-173, adds none);
+  - it is run with no failure (`deskCase` defaults to `fail: []`, lib :144-145).
+- **What it asserts.** :148-150 asserts `on_list: true, marked: null` for it.
+- **The wrong build fails.** Round 2's wrong build was `gateCase ?? (gate === 'dor' ? notesWord : null) ?? section5`. It gives `recycle`, so it fails :150.
+- **A correct build passes.** It takes the gate case, then section 5 (spec :229). The case form gives card files no section 5 (spec :150), so the mark is `null` and :150 holds.
+- **Still checked.**
+  - :152-156 checks that a `dor` card's gate case beats its notes.
+  - :150 still checks the `criteria` and `launch` cards with notes, so round 1's B1 stays closed.
+
+## 2. N2: closed, no hole that matters
+- **The assertions dropped:**
+  - `on_board`, `buttons` and the notice for the gate cards (hold-show :136-150);
+  - the question's notice (AC19, :126-128);
+  - the gate card's first-run notice in J5's desk case (j5 :43-44).
+- **The assertions kept, each backed by the spec:**
+  - `on_list: true` for gate cards and questions on a good read (hold-show :126, :132, :150). J7 :169's coverage rule makes the record show these as `on_list`, so "as today" agrees.
+  - `marked: null` for gate cards with no gate case (:150), from spec :229 and :150.
+  - The gate case's word (:156), from AC9 :36 and J7 :169's mark rule.
+  - J5 :46-49, no notice for any card on a failed read, still follows J5 :118-119 and J8 :179.
+  - None of these fixes a behaviour the spec leaves to the record.
+- **Is the J7 comparison enough for these kinds?** Yes, on the baseline cases:
+  - **Which fields are compared.** `deskProjection` (lib :198-206) compares, for every card that is not a decision card: `on_list`, `on_board`, `buttons` and `marked`, plus their `notices`, `home_count` less the decision cards on the list, and `lines` with the AC16 and AC17 lines removed.
+  - **On which cases.** j7 :135-143 runs this on every `desk` baseline case. A `notes`-failing case is compared with the record's `log`-failing case (:138).
+  - **What the records hold.** S009-B-desk-ok.json:6-74 holds:
+    - P-101-dor-1, with a gate case and notes;
+    - P-102-criteria-1, with notes and no gate case, the same set-up as the built-only P-250;
+    - P-103-launch-1, with neither;
+    - a question and a pull request;
+    - a decision card that is shown (P-104) and one that is held (P-105).
+  - **What a wrong build would have to do.** A build that changes a gate card's board, buttons or notice because the card has notes would trip P-101 or P-102. So would a build that runs gate cards through the decision-card rule: P-103, under a day old with no notes, would go off the list, and P-102 would gain `kill`. Either fails j7 :141. A build that breaks notices for questions or pull requests fails the same comparison.
+  - **AC19.** A question shows by its kind, and J7 compares the kind on `question:release-timing`. Dropping the notice for a second question name (`v6-feedback`) opens no hole a plausible build could use.
+  - **J5.** The sender cases are compared in full against the record (j7 :146-152), gate card included. That covers what j5 :43 used to assert.
+
+## 3. Other effects
+- **Nothing broken.**
+  - The new case ids (`S009-X-ac9-gatenotes`, `S009-X-ac9-dorcase`) are unique.
+  - `recs2` is a fresh object from withCards, so changing it at :155 affects no other case.
+  - P-253-dor-1 is not a decision id (lib :35-38).
+  - No unused or missing import.
+- **No earlier finding reopened.**
+  - Round 1's B1 still holds: hold-show :150 and the baseline P-102 card.
+  - Round 2's N8 test name is unchanged (:112).
+  - N6 is closed: j6 :7-8 now points to README open point 1, and README.md:24-27 is that AC13/J6 point.
+
+## Blocking findings
+None.
+
+## Non-blocking findings
+1. **No check looks at a gate card more than a day old for its board or buttons, now that hold-show's old assertions are gone.**
+   - **The baseline gate cards are all young.** They were raised 08:00-08:20 against a moment of 12:00 (S009-B-desk-ok.json:44-56), so J7's comparison never sees an old gate card.
+   - **The built-only checks see only part of it.** The background P-100-dor-1 was raised 2026-11-01 (lib :158), and P-251-launch-1 is 30 hours old (hold-show :143). They are checked only for `on_list` and `marked` (:132, :150).
+   - **What could slip through.** A build that changes `on_board` or `buttons` for gate cards a day old or more, and only for them, would pass. So would one that drops an old `dor` card's gate-case word: no case has an old gate card with a gate case.
+   - **Likelihood.** Low: a build that ran gate cards through the decision rule at all would fail on P-103 and P-102.
+   - **The fix it would take.** A check would need an older gate card in the baseline cases, which are locked with the record. This is carried as a risk, not a reason to fail.
+2. **The comment at hold-show.test.mjs:137-139 overstates AC9.** It says AC9 fixes "only that a gate card is listed". AC9 (spec :36) asks for "exactly as before" across all its fields. The test itself is right; only the wording is off.
+
+## Open questions
+- Should the owner's case name non-blocking N1 (no old gate card in the record) beside round 1's N2 (the AC13 list) as a carried risk?
+- Separately, outside the changed lines: no check compares a gate card's card-sheet text. For example, the "No Chief of Staff recommendation yet" mark appearing on a gate card's sheet would pass every check. AC9's test, as the spec defines it (spec :36), does not list sheet text, so this is a spec matter, not a gap in the checks.
+
+No earlier check of mine is involved in any finding.
+
 ## Round 2 — checks at build/check-author/S-009 e27eb1d (session branch 8cca44c); dispatched about 2026-11-13T15:18Z, returned about 15:23Z (times from the session, approximate)
 
 Verdict: PASS

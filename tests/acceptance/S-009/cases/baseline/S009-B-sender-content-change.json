@@ -1,0 +1,31 @@
+{
+  "case": "S009-B-sender-content-change",
+  "kind": "sender",
+  "moment": "2026-11-12T12:00:00Z",
+  "runs": [
+    [
+      {
+        "id": "P-101-dor-1",
+        "kind": "dor",
+        "content": "v1"
+      },
+      {
+        "id": "P-104-stop-1",
+        "kind": "stop",
+        "content": "no-recommendation-yet"
+      }
+    ],
+    [
+      {
+        "id": "P-101-dor-1",
+        "kind": "dor",
+        "content": "v1"
+      },
+      {
+        "id": "P-104-stop-1",
+        "kind": "stop",
+        "content": "recommended-drop"
+      }
+    ]
+  ]
+}

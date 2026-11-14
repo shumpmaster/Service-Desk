@@ -384,6 +384,79 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 /* state words stay words beside their colour: a soft chip behind each, in the same family */
 .crow .s { padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, currentColor 11%, transparent); font-size: 11px; font-weight: 500; }
 .pl.now .crow .s { background: rgba(255, 255, 255, .18); }
+
+/* ================= v6.1 · bolder: a vivid aurora field, frosted panels, big type, glowing rails ================= */
+:root {
+  --ground: #e9ecf8; --surface: #ffffff;
+  --field-a: rgba(37, 99, 235, .42); --field-b: rgba(20, 184, 166, .34); --field-c: rgba(245, 158, 11, .22); --field-d: rgba(99, 102, 241, .30);
+  --panel: rgba(255, 255, 255, .78); --panel-edge: rgba(255, 255, 255, .9); --glow: rgba(37, 99, 235, .35);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #070a14; --surface: #121626;
+  --field-a: rgba(59, 130, 246, .55); --field-b: rgba(20, 184, 166, .38); --field-c: rgba(245, 158, 11, .20); --field-d: rgba(99, 102, 241, .40);
+  --panel: rgba(18, 22, 38, .72); --panel-edge: rgba(255, 255, 255, .10); --glow: rgba(107, 149, 255, .55);
+  --glass: rgba(22, 27, 46, .55); } }
+:root[data-theme="dark"] {
+  --ground: #070a14; --surface: #121626;
+  --field-a: rgba(59, 130, 246, .55); --field-b: rgba(20, 184, 166, .38); --field-c: rgba(245, 158, 11, .20); --field-d: rgba(99, 102, 241, .40);
+  --panel: rgba(18, 22, 38, .72); --panel-edge: rgba(255, 255, 255, .10); --glow: rgba(107, 149, 255, .55);
+  --glass: rgba(22, 27, 46, .55); }
+
+/* the aurora: large soft fields of colour, fixed behind everything, tinted by state */
+body { background-color: var(--ground); background-image:
+  radial-gradient(55% 45% at 100% 0%, var(--field-a), transparent 70%),
+  radial-gradient(50% 40% at 0% 30%, var(--field-b), transparent 70%),
+  radial-gradient(60% 40% at 80% 75%, var(--field-d), transparent 70%),
+  radial-gradient(45% 35% at 10% 100%, var(--field-c), transparent 70%); background-attachment: fixed; }
+html[data-mood="calm"] body { background-image:
+  radial-gradient(55% 45% at 100% 0%, var(--field-b), transparent 70%),
+  radial-gradient(50% 40% at 0% 30%, var(--field-c), transparent 70%),
+  radial-gradient(60% 40% at 80% 75%, var(--field-b), transparent 70%); }
+
+/* big type */
+h1 { font-size: 40px; letter-spacing: -1px; line-height: 1.05; }
+.top h1 { font-size: 34px; }
+.phase .phname { font-size: 28px; letter-spacing: -.6px; font-weight: 600; }
+.phase { padding-top: 22px; }
+.p-name { font-size: 18px; }
+.needs-head h2 { font-size: 20px; }
+
+/* frosted panels: content stays readable (a near-solid frost), the aurora shows through its edges */
+.pcard, .pl.reached > .rbody, .pl.progress > .rbody, .pl.planned > .rbody, .pl.notrec > .rbody, .pl.notreach > .rbody, .pl.gate > .rbody, .pl.phase-done > .rbody {
+  background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 16px;
+  -webkit-backdrop-filter: blur(16px) saturate(150%); backdrop-filter: blur(16px) saturate(150%);
+  box-shadow: 0 6px 24px rgba(10, 20, 60, .10); }
+.pl > .rbody { padding: 0 12px; margin-top: 6px; margin-right: 0; }
+.pl.unhide > .rbody, .pl.empty > .rbody { background: none; border: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.pcard { border-radius: 20px; padding: 16px; }
+.needs { border-radius: 24px; }
+.top { border-radius: 0 0 28px 28px; }
+
+/* glowing rails and dots */
+.trunk, .ptl .pmain { width: 3px; box-shadow: 0 0 14px var(--glow); }
+.ptl .pmain { left: 46.5px; }
+.branchoff svg path { stroke-width: 3 !important; filter: drop-shadow(0 0 6px var(--glow)); }
+.pfut { border-left: 2px dashed var(--branch-line); }
+.pl .node, .ev .node, .ico.enode, .snode, .need .ico, .p-last .ico { box-shadow: 0 0 0 3px var(--ground), 0 0 14px -2px currentColor; }
+.pl .node.ms.reached { box-shadow: 0 0 0 3px var(--ground), 0 0 12px var(--done); }
+.pl .node.ms.progress { box-shadow: 0 0 0 3px var(--ground), 0 0 14px var(--running); }
+
+/* Now: the hero. A luminous card, larger type, a halo around its dot */
+.pl.now > .rbody { background: linear-gradient(135deg, var(--you), color-mix(in srgb, var(--you) 70%, #14b8a6)); border-radius: 24px; padding: 10px 18px 8px; box-shadow: 0 16px 48px var(--glow), inset 0 1px 0 rgba(255, 255, 255, .35); }
+.pl.now .crow .tt { font-size: 20px; line-height: 1.25; font-weight: 600; letter-spacing: -.3px; }
+.pl .now-node { width: 30px; height: 30px; left: 33px; box-shadow: 0 0 0 4px var(--ground), 0 0 0 8px color-mix(in srgb, var(--you) 35%, transparent), 0 0 30px var(--glow); }
+
+/* the dock: bigger, brighter */
+.dock { padding: 8px; box-shadow: inset 0 1px 0 var(--glass-hi), 0 16px 40px rgba(10, 20, 60, .25); }
+.dock button { min-height: 48px; font-size: 14px; }
+.dock button.now { background: linear-gradient(135deg, var(--you), color-mix(in srgb, var(--you) 70%, #14b8a6)); box-shadow: 0 6px 18px var(--glow); }
+
+/* phase bar on cards: thicker, with a glow on the current phase */
+.phbar .ph i { height: 6px; border-radius: 6px; }
+.phbar .ph.current i { background: var(--you); box-shadow: 0 0 10px var(--glow); }
+.phbar .ph.current { color: var(--you-t); }
+
+@media (prefers-reduced-transparency: reduce) { .pcard, .pl > .rbody { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--surface); } }
 </style>
 
 <div class="page">

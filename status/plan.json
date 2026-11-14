@@ -1,13 +1,3 @@
 {
-  "entries": [
-    {
-      "action": "dispatch",
-      "gate": null,
-      "item": "P-005",
-      "role": "critic-triage",
-      "route": "third-fail",
-      "spec": "S-010",
-      "stage": 3
-    }
-  ]
+  "entries": []
 }

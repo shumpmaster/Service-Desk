@@ -74,3 +74,5 @@ N4. `check_all.sh . origin/main 447` fails only on review_check. The missing ver
 **Open questions**
 - My standing instruction points to a reviewer checklist in docs/archive/OPERATING_MODEL_v2.5.1.md §12 and cites L-0112. That file is not in Service-Desk, and the ledger has no L-0112 (it ends at L-0055). The model repository was not looked at this time. The #444 Reviewer raised the same pointer. I reviewed against AGENTS.md §1, §4 and §5 and .claude/agents/reviewer.md instead. Should that instruction be corrected?
 - AGENTS.md §1 calls the orchestrator "the sole merger", but merge commit d0dd7067 is by chief-of-staff. The same pattern went through in #444 (e5d1bc7b) and its Reviewer accepted it. Is that a permitted exception, and if so, where is it recorded?
+
+My scratch work, including the check_all output, is in /tmp/claude-0/-home-user/d558f184-3384-55df-a587-f3c887fcf8f3/scratchpad/r447/ (the output file is /tmp/claude-0/-home-user/d558f184-3384-55df-a587-f3c887fcf8f3/scratchpad/r447/checkall.txt). Nothing in /home/user/Service-Desk was changed.

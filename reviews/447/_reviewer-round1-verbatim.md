@@ -1,6 +1,6 @@
 Verdict: FAIL
 
-The Reviewer's first-round verdict on PR #447 (R3: the Definer's pack, L-0055; the owner's three answers on S-011's second plan review), on d0dd7067, verbatim below. Recorded by the orchestrator, session session_01QBwHGL7cLBqyQ4o1BxNuyh, 2026-11-14. B1 was fixed in the pull request's body; N1 by the owner's confirmation in decisions/questions/P-005-s011-m8-reading.md; N3 in L-0055 and the register row. N2 and the two open questions are for the operating model.
+The Reviewer's first-round verdict on PR #447 (R3: the Definer's pack, L-0055; the owner's three answers on S-011's second plan review), on d0dd7067, verbatim below. Recorded by the orchestrator, session session_01QBwHGL7cLBqyQ4o1BxNuyh, 2026-11-14. B1 was addressed in the pull request's body; N1 by the owner's confirmation in decisions/questions/P-005-s011-m8-reading.md; N3 in L-0055 and the register row. N2 and the two open questions are for the operating model.
 
 ## The Reviewer's return
 

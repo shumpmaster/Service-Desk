@@ -1,5 +1,5 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-11-14: 49 active rulings and 0 kills, from 52 ledger entries.
+As of 2026-11-14: 50 active rulings and 0 kills, from 53 ledger entries.
 
 ## Active rulings
 
@@ -63,6 +63,7 @@ As of 2026-11-14: 49 active rulings and 0 kills, from 52 ledger entries.
 | L-0051 | The card fix is built outside the pipeline, in working sessions, by the plan as written; the departures below end with the build's launch records … | 2026-11-13 | never |
 | L-0052 | Adopted from the model at 8ed88f7. governance/checks/orchestrator.py is copied byte for byte. governance/checks/orchestrator_git.py takes only the model's S-038 change (b55addc to 8ed88f7), applied onto the … | 2026-11-14 | never |
 | L-0053 | governance/PACKS.toml `[roles.critic]` may_read gains experiments/{item}-*.md, and it gains include_feedback = ["reviews/{spec}/plan.md"]; must_read and must_not_see are unchanged. Measured with `session_runner.py pack` for P-005's define-to-plan-review entry: 1,167 … | 2026-11-14 | never |
+| L-0055 | governance/PACKS.toml `[roles.definer]` may_read gains experiments/{item}-*.md and decisions/questions/{item}-*.md; must_read, must_not_see and include_feedback are unchanged. Measured with `session_runner.py pack` for P-005's plan-fail entry (S-011) on the source … | 2026-11-14 | never |
 
 ## Kills
 None.

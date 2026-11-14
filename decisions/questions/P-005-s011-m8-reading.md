@@ -17,6 +17,8 @@ First reply: "What does a time promise mean? Like how long a task should take?"
 
 Answer: "Accept the reading (Recommended)"
 
+Confirmation: the Reviewer of #447 noted that the second ask left out two parts of the reading the owner saw first (the normal alert level if Time Sensitive is not available, and no daily cap). Put to the owner in the same session at about 15:30Z: "Confirming your M8 answer covers the whole reading. Besides 'sent by name, aiming at 5 minutes, every late or missed alert counted', it also has two smaller parts: if iPhone's Time Sensitive alert level isn't available the normal level is used, and there is no daily cap on alerts. Do you accept those too? (questions/P-005-s011-m8-reading.md)", with options "Yes, all of it (Recommended)" and "Change a part". The owner's words: "Yes, all of it (Recommended)"
+
 ## How it is carried out
 - S-011's reading of M8 (the note under "What needs the owner", AC23, AC41) stands as the owner's, and the spec's open question 2 is closed. The Definer writes that in its next round (it reads this record by L-0055).
 - Reversible (R0): a later spec may tighten M8 if a route that can keep a time is found.

@@ -1,51 +1,54 @@
 Verdict: FAIL
 
-I read the spec against the plan, both experiment registrations, the owner's ruling (decisions/P-005/stop-4.md) and the files in the pack. I'm sending the findings now.
+I checked the spec against the plan, both experiment registrations, stop-4.md, the library files it cites and docs/PROJECT.md. Revision 2 does fix the earlier findings 1, 3, 4 and 5. Two new defects block the freeze, and one criterion cannot be locked as written.
 
-**Findings**
+**Blocking findings**
 
-1. **AC23 and J5 contradict each other (specs/S-011.md:53, :103).**
-   - AC23 says the first successful run after a step's due time notifies it.
-   - J5 says a run that cannot read one project "sends nothing for that project".
-   - The next window starts at the last successful run's start. A step due in a run that could not read its project therefore falls in no later window, so it is never notified.
-   - J5 also says a step in a "missed stretch" is not notified. That is true only on the fallback path, but the text doesn't say so.
-   - The spec must say whether a partly failed run counts as "successful". It must also say how a project that couldn't be read is carried into the next window. As written, AC23's guarantee fails. A locked check built from it would be unsound.
+1. **AC23's "always notified" guarantee is false for a late-visible step.**
+   - J5 (specs/S-011.md:112) sends an entry only if its `due_at` or `changed_at` falls in the run's window.
+   - AC23 (:62) allows only two exceptions, (a) and (b), and says "Outside these two… always notified".
+   - `due_at` comes from a record's time, and that time can be earlier than the run that first sees the record. J1 (:102) and AC6 (:40) both say commit times are set by whoever commits, and the decision-card due time comes from notes reaching main (the S-009 rule, per E1 :20).
+   - A step whose `due_at` is already before the window when the run first reads it falls in no window. It is never sent, and neither exception covers it.
+   - This is a third unlisted path, so a locked check built from AC23 is unsound.
+   - It is not one of the counted misses in AC41 (:91) either. AC41 would list it as a miss, but AC23 claims it cannot happen.
+   - Fix: define the window by when the route first saw the entry, not by `due_at`. Or add this case as an exception counted by AC41.
 
-2. **Unverifiable claim in AC17 (specs/S-011.md:45).**
-   - It rests on "the widths the owner's design records use, per the plan review, reviews/S-010/plan.md; the records themselves are outside this pack".
-   - Neither that file nor the design records are in the pack. The 360 and 414 px figures cannot be checked.
-   - Either cite an in-pack record, or have the owner set the widths.
+2. **AC37 and J10 need files that "Areas touched" does not list.**
+   - AC37 (:73) requires the widget's copy to be "regenerated in the same pull request".
+   - docs/PROJECT.md:593 says that copy "lives in its own folder under src/, outside src/public/".
+   - Areas touched (:141) are src/lib/**, src/public/**, src/tools/**, tests/desk/** and docs/handover/P-005/**. The widget folder is not among them.
+   - The Out of scope line (:204) excludes "everything else". As written, the Builder must either break AC37 or leave scope, and the spec's own stop rule (:145) calls that a stop.
+   - Fix: name the widget copy's path in Areas touched. Or say it is not needed and why.
 
-3. **The experiment registrations don't match what the spec cites (specs/S-011.md:59, :72, :109, :160).**
-   - Both registrations name `spec: specs/S-010.md` (experiments/P-005-E1.md:3, P-005-E2.md:3), a spec this one supersedes. Line 178 says "Both are registered in this revision", but nothing in the pack shows they were updated.
-   - AC46 requires E2's "Result" section to hold a row for each kind. E2 has no such section. Its output is a separate file, docs/handover/experiments/P-005-E2-result.md (E2:19).
-   - AC40 cites E1's "The rule". E1's heading is "Rule" (E1:13).
-   - Line 160 admits the definer did not re-read these files. AC46 is M6's acceptance test, so it points at a section that doesn't exist.
+**Further findings**
 
-4. **AC20 conflicts with J4 (specs/S-011.md:50, :102).**
-   - J4 adds deploys awaiting review to the waiting list. J4 says the other kinds are listed "as the desk lists them today".
-   - AC20 demands that unreplaced core screens show the same steps and the same count.
-   - Nothing says those screens must start showing deploys. "Areas touched" does not clearly cover that change to the screens.
-   - Either the screens change or the test cannot pass. The spec needs to say which.
+3. **AC17 cannot be locked.**
+   - The widths 360 and 414 are only the definer's proposal (:53, open question 1).
+   - A check author cannot write a locked check for a criterion whose figure is open.
+   - Either the owner sets the widths before freeze, or AC17 is marked as not yet checkable.
+   - The Docs show 360 and 414 as the sizes in the build screenshots under docs/design/builds/. Citing those would fix the sourcing, but the owner still has to set the widths.
 
-5. **AC25 and M8 don't line up (plan line 74).**
-   - M8 says each thing that needs the owner "reaches their phone".
-   - AC23 allows grouped notices and caps nothing. Its risk line admits that no daily limit was found.
-   - Time Sensitive marking (AC25) is optional.
-   - This is weaker than M8's wording. The spec should say it is a deliberate narrowing.
+4. **AC25 is conditional on a Design test that has not run.** Its condition is "when the owner's phone allows… (tested in Design)" (:64). Until that test runs, a check can only cover the "otherwise" branch. The spec should say so, or state which branch a locked check covers.
 
-6. **Several citations point outside the pack (minor).**
-   - Examples are docs/PROJECT.md line numbers and "plan line N". The plan is in the pack, but I did not verify the PROJECT.md lines.
-   - The join-up review table is entirely "Open". The plan review rated four of its rows blocking. The spec says so itself (line 116), so it is honest, but the spec cannot be closed at the Design gate on its own terms.
+5. **The registrations still name S-010.** E1:3 and E2:3 say `spec: specs/S-010.md`. The spec says so openly (open question 3). AC46's result file path matches E2:19, so that citation is now sound. But M6's acceptance rests on a registration that points at a superseded spec. The re-point must happen before the freeze, not after.
 
-**What I checked and found sound**
-- The header's `milestones: M6, M7, M8` matches plan lines 72–74.
-- The owner's six answers are carried into AC3, AC8, AC14, AC15, AC26 and J9 as written in stop-4.md.
-- The three triage defects are fixed: AC23 sets no minute figure, AC40 is handed its "now", and the heading no longer says "owner-approved".
-- AC40's rule matches E1's table.
+6. **The E1 and AC40 proxy rule differs slightly.**
+   - E1:28 says the proxy is decided "from who made the ending record".
+   - AC40 (:88) says it is decided by a `Proxy:` line in the ending record.
+   - The `Proxy:` line is real (decisions/P-005/stop-4.md:2). But AC40's test does not cover a proxy action that has no such line.
+   - AC40 is the stronger, testable form. J11 should say that it replaces E1's wording.
+
+**Verified and sound**
+
+- The header's `milestones: M6, M7, M8` matches plan lines 72–74, and each milestone line has a why.
+- The six owner answers are written in as stop-4.md gives them.
+- All the library facts and patterns I sampled exist: F-gh-12, F-gh-12b, F-gh-env-01, F-cf-02, the P-feed and P-repeat patterns, and others.
+- docs/PROJECT.md:588 and :593 say what the spec cites them for.
+- The join-up review section is present and rates its open items honestly.
+- The section on how this spec reads M8 states its narrowing openly.
 
 **Open questions**
-- Does a run that read some projects but not others count as "successful" for J5's window?
-- Where do the 360 and 414 px widths come from, as an in-pack record?
-- Should the E1 and E2 registrations be re-pointed to S-011 and given the section names the spec cites? Who does that?
-- Does the unreplaced-screens change cover deploys, and is that inside the areas touched?
+
+- Does the owner accept the narrowed reading of M8? It leaves out any promised minutes, and it counts misses that fall before a fallback window instead of preventing them. Answer 2 in the plan reads "any single thing that needs me". Open question 2 must be answered before freeze, or the spec is revised.
+- Which route notices a step that is already old the first time it is seen (finding 1)?
+- Where does the widget copy live, and who approves a change there?

@@ -1,48 +1,46 @@
-I've written S-011 as a draft and marked S-010 superseded. Nothing is committed: the folder isn't a git repository (`git status` returns "not a git repository"), so the files sit on disk in the pack.
+I've revised `specs/S-011.md` to answer all six findings in the plan review. It isn't committed, because this folder is not a git repository. Two things I couldn't settle from here: the experiment registrations are not in my pack, so they still point at S-010, and three questions now go to the owner.
 
-**1. What I changed**
-- **New `specs/S-011.md`** (draft, `lineage: [S-010]`, `milestones: M6, M7, M8`). It is S-010 with only these changes:
-  - **Your six answers are written into the criteria**, each quoting `decisions/P-005/stop-4.md`:
-    - M9 and M10 go to a second spec.
-    - AC8: an agent step is "stalled" after 2 hours with no new record.
-    - AC14: a project is "late" after 4 minutes with no successful read.
-    - AC3 keeps the three record writers.
-    - J9 and AC26: the weekly device log goes to `value/P-005/` in the portfolio repository.
-    - AC15 and J7: the banner alone is enough if the outside check can't alert you.
-  - **Triage's three spec defects are fixed:**
-    - **AC23** no longer promises a phone notice within 5 minutes. It now says the first successful run of the alert route after a step falls due sends the notice. No route the plan names can promise a set number of minutes (facts F-gh-12 and F-gh-12b, plan line 136). The 5 minutes stays as V8's measure, counted by AC41. The Design states how late its chosen route can be, and that goes to you at the Design gate.
-    - **AC40** is now handed the window's end and treats it as "now". A wait still open is measured up to that moment, and the count reads no clock of its own. Its test now also runs the count twice and expects identical figures.
-    - **The criteria heading** now says they are approved at the scenario card, which this draft hasn't reached.
-  - **One consequence of the AC23 fix:** in J5, when the route finds no earlier run, it now looks back over its own period instead of the timeline's 2-minute read interval. Otherwise a 5-minute schedule would skip steps.
-  - **Housekeeping:**
-    - Join-test labels now say S-011.
-    - Criterion numbers are unchanged (AC27–AC36 stay unused).
-    - The M9 drafts are not copied over; they remain readable in S-010.
-    - The open questions are all answered.
-    - The surface owner's brief now points to S-011.
-- **`specs/S-010.md`**: only the status word changed. The file said `status: draft`, not `frozen` as the brief says, so I changed `draft` to `superseded`. See question 1.
+## 1. What I changed (`specs/S-011.md` only)
+- **Header:** added a "Revision 2" note listing each change against its finding. The coverage paragraph no longer says the criteria can be checked from the registrations.
+- **Finding 1 (AC23 vs J5):**
+  - J5 now counts a run as successful **per project**: it read that project and sent all of that project's notices. The run's overall result on GitHub doesn't decide it.
+  - Each project's window starts at the last run that read that project. A project a run couldn't read is carried whole into the next run that reads it.
+  - Each run writes one line per project to its run log saying whether it read that project.
+  - The fallback window applies only when no earlier read of the project is found. The "missed stretch" wording now applies only to that case.
+  - A run that stops between sending and logging will send again; a repeat is preferred to a miss.
+  - AC23 now names both exceptions; outside them, a due step that is still waiting is always notified.
+  - AC41 now lists repeats separately from misses, and its test covers both. The J5 test lists the run logs it uses.
+- **Finding 2 (AC17):** 360 and 414 px are now the definer's proposal, for the owner to set (open question 1). The citation to a review outside the pack is gone.
+- **Finding 3 (registrations):**
+  - AC40 now rests on V7's rule from the plan (line 135), not on a section of E1.
+  - AC46 and J11 name E2's result file, `docs/handover/experiments/P-005-E2-result.md`, as the plan review reports it.
+  - The line "Both are registered in this revision" is replaced: both still name S-010.
+  - Known limits now say what comes from the plan review rather than from the files themselves.
+- **Finding 4 (AC20 vs J4):** the screens not yet replaced now list deploys awaiting the owner's review, taken from the same list, and AC20's test includes one. J4, the join-up table and "Areas touched" say this falls inside `src/lib/**` and `src/public/**`.
+- **Finding 5 (M8):** a note under "What needs the owner" now spells out how this spec reads M8 and four ways it is deliberately narrower: no promised minutes, misses before the fallback window counted rather than prevented, the normal level if Time Sensitive isn't available, and no cap on notices. It also says the spec tests that a notice was sent, not that it arrived. This goes to the owner as open question 2, and the risks list points to it.
+- **Finding 6:** I re-read every `docs/PROJECT.md` line the spec cites (Known limits now lists them). The join-up note now says the Critic's review that closes Design closes the open rows (`JOIN_UP_REVIEW.md:3-6`).
+- "Open questions" changed from "None" to three questions.
 
-**2. Why**
-The owner's "criteria-wrong" ruling (`stop-4.md`) asked for a new spec that writes in the six answers and fixes triage's three defects.
+## 2. Why
+The review failed the spec (FAIL). The worst problem was finding 1: AC23 promised something J5 couldn't deliver, so a locked check built from it would be wrong. Every other change answers one of the other findings. No acceptance criterion was added or dropped, and their numbers are unchanged.
 
-**3. What I verified**
-- Comparing S-010 with my saved copy shows exactly one changed line, the status line.
-- S-011 has 36 criteria, each with its own `[trace: V → AC]` line.
-- Join-test labels S-011/J1 to J10 are all present, and none still says S-010.
-- Every library file S-011 cites exists, and the "Carried to the spec" section is gone.
-- I checked the plan and `docs/PROJECT.md` lines the changes rely on (plan lines 136 and 180; `PROJECT.md` 115, 116, 205–209, 286–287, 588 and 593). Each supports what the spec says.
-- I checked S-009's earliest-entry rule, which AC40 and J1 use.
+## 3. What I verified
+- `grep` for the stale phrases (`"The rule"`, `"Result"`, `reviews/S-010`, "in this revision and", "registrations are in this pack", "last successful run"): none left.
+- A script matched each criterion's number to its trace label: 36 criteria (AC1–26 and AC37–46), no mismatches. The header still reads `milestones: M6, M7, M8`.
+- I read the cited `docs/PROJECT.md` lines with `sed`. Each one supports what the spec cites it for, including 115 (green and red), 116 (published order) and 588 (the sender runs the card-making code).
+- I read plan lines 22, 40, 42, 44, 72–74, 108, 126–136, 141, 158–159, 171 and 180–186. Line 135 is V7's measuring rule.
+- Neither library width fact, nor any other in-pack record I searched, gives a phone width, so the figures can only be a proposal.
 
-**4. What is undone**
-- No commit, because there is no git repository here.
-- The Critic's plan review, the freeze gate and the scenario card haven't happened yet.
-- The spec cites the two experiment registrations (`experiments/P-005-E1.md`, `experiments/P-005-E2.md`), but they aren't in this folder, so I couldn't re-read them. This is now listed in the spec's known limits.
+## 4. What is undone
+- Not committed: there is no git repository here, so there is no `build/definer/<task>` branch.
+- The registrations still name S-010, and I didn't touch them: they are in my write lane but not in my pack, and I wasn't going to rewrite files I can't read.
+- The join-up rows stay open until the mockups and E2's result exist.
 
-**5. What is needed outside my lane**
-- Commit to `build/definer/P-005` from a real checkout.
-- Confirm the two experiment registrations exist on the branch, and that E2's has a "Result" section, which AC46 names.
-- The M9 and M10 spec needs a pack with the four records the spec lists.
+## 5. Needed outside my lane
+- A definer session that has both `experiments/P-005-E1.md` and `experiments/P-005-E2.md` in its pack, to re-point them to S-011 and check their section names. The Chief of Staff routes this.
+- A commit of this revision to the definer branch by whoever handles that, then a fresh plan review by the Critic.
 
-**6. Open questions**
-1. S-010 was marked `draft` in the file, not `frozen`. Was it actually frozen? I treated the brief as meaning "mark it superseded".
-2. The heading now reads "owner-approved at the scenario card, which this draft has not yet reached". If CI expects the template's exact heading, it should be changed back at freeze.
+## 6. Open questions (for the owner, through the channel)
+1. **Phone widths for AC17:** which widths must the timeline fit with no sideways scrolling? I propose 360 and 414 CSS px.
+2. **M8:** is the stated reading of "each single thing that needs them reaches their phone" enough for M8, or should the spec be revised?
+3. **Registrations:** confirm they should be re-pointed to S-011, and that the Chief of Staff routes the session that does it.

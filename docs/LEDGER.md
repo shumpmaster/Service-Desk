@@ -702,3 +702,31 @@ options_considered: B, build from the pipeline's last spec left as a draft, as t
 decided_by: owner ("A: approve as written (Recommended)", 2026-11-13, asked in session session_01QBwHGJGmgrBkfU9PjLST43; recorded in decisions/questions/P-003-outside-build-plan.md)
 proposed_by: chief-of-staff
 reversibility: irreversible
+
+## L-0052 — The desk takes the operating model's spec-number fix (3.7.3) before any new spec number is drawn
+date: 2026-11-14
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: The Orchestrator gave P-005 a spec number another spec already held, because it counted only the specs a status file names (decisions/questions/P-005-spec-id-clash.md). The operating model fixed the rule in S-038, merged as 3.7.3 (Personal-Org-Operating-Model #58). Take it into the desk now, before the timeline's and the card fix's next specs draw numbers? Filed first as questions/P-005-model-3.7.3.md (#443).
+decision: Adopted from the model at 8ed88f7. governance/checks/orchestrator.py is copied byte for byte. governance/checks/orchestrator_git.py takes only the model's S-038 change (b55addc to 8ed88f7), applied onto the desk's copy with no conflict, keeping its own ledger-composition lines (decisions/questions/P-003-build-blocked.md). OPERATING_MODEL_VERSION reads 3.7.3. No workflow file changes. With both copies, the model's S-038 and loop tests pass (70 tests).
+licenses_next: The next new spec number on the desk is drawn by the new rule: P-005's spec after stop card 4, and the card fix's notices spec.
+options_considered: Wait for a full model sync, checking every new spec number by hand until then.
+decided_by: owner ("Take 3.7.3 now (Recommended)", 2026-11-14, asked in session session_01QBwHGKbJwQiq23S3G2JJet; recorded in decisions/questions/P-005-model-3.7.3.md)
+proposed_by: chief-of-staff
+reversibility: irreversible
+
+## L-0053 — The plan reviewer may read the item's experiment registrations and gets its own earlier plan review
+date: 2026-11-14
+type: ruling
+supersedes: []
+scope: project
+expires: never
+asked: S-010 failed three plan reviews and reached stop card 4; Triage traced the main cause to the Critic's pack, which never held experiments/P-005-E1.md, -E2.md or reviews/S-010/plan.md, so the Critic failed the criteria resting on them as unverifiable (triage/P-005.md on item/P-005). Approve a fix? Filed first as questions/P-005-critic-pack.md (#443).
+decision: governance/PACKS.toml `[roles.critic]` may_read gains experiments/{item}-*.md, and it gains include_feedback = ["reviews/{spec}/plan.md"]; must_read and must_not_see are unchanged. Measured with `session_runner.py pack` for P-005's define-to-plan-review entry: 1,167 files before, 1,170 after, the three added being experiments/P-005-E1.md, experiments/P-005-E2.md and reviews/S-010/plan.md.
+licenses_next: The plan review of P-005's next spec sees the experiments it cites and its earlier review. The same gap in the operating model's template is logged there (Personal-Org-Operating-Model docs/LESSONS.md, LL-054).
+options_considered: No fix, so the next plan review fails the same way.
+decided_by: owner ("Fix the pack (Recommended)", 2026-11-14, asked in session session_01QBwHGKbJwQiq23S3G2JJet; recorded in decisions/questions/P-005-critic-pack.md)
+proposed_by: chief-of-staff
+reversibility: irreversible

@@ -34,6 +34,8 @@
 | L-0049 | From now until the timeline work (P-005) reaches its first design mockup, or the owner ends it, the Chief of Staff acts as the owner's … | 2026-11-12 | never |
 | L-0050 | governance/standards/sources.md gains four lines: a vendor's changelog on its own site counts as one of its documentation pages for how its product behaves; where a … | 2026-11-12 | never |
 | L-0051 | The card fix is built outside the pipeline, in working sessions, by the plan as written; the departures below end with the build's launch records … | 2026-11-13 | never |
+| L-0052 | Adopted from the model at 8ed88f7. governance/checks/orchestrator.py is copied byte for byte. governance/checks/orchestrator_git.py takes only the model's S-038 change (b55addc to 8ed88f7), applied onto the … | 2026-11-14 | never |
+| L-0053 | governance/PACKS.toml `[roles.critic]` may_read gains experiments/{item}-*.md, and it gains include_feedback = ["reviews/{spec}/plan.md"]; must_read and must_not_see are unchanged. Measured with `session_runner.py pack` for P-005's define-to-plan-review entry: 1,167 … | 2026-11-14 | never |
 
 ## Kills
 None.

@@ -1,0 +1,11 @@
+<!-- @dsCard group="Sheets" height=140 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>SegmentedRow</title></head>
+<body>
+<div class="dk-stage"><div class="dk-seg" style="width:337px" role="group" aria-label="Zoom"><button aria-pressed="false">Phases</button><button aria-pressed="true">Milestones</button><button aria-pressed="false">Sprints</button></div><p class="dk-note">Tap a segment.</p></div>
+<script>
+document.addEventListener('click', function (e) { var b = e.target.closest('[aria-pressed]'); if (!b) return; var g = b.parentNode; g.querySelectorAll('[aria-pressed]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); });
+</script>
+</body>
+</html>

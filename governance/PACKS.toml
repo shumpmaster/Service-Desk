@@ -41,9 +41,12 @@ may_read = ["specs/**",  # the specs a new spec supersedes, to check what it car
             "governance/standards/definition-of-ready.md",  # the card's "The definition of ready" (D-052), as a file
             "decisions/**",  # the owner's ruling records (model L-0119); the Chief of Staff's -notes.md never enter a pack
             "docs/design/**",  # Design's join-up review (S-024 AC7)
-            "docs/users/**", "research/**"]  # the definition of ready's section 9: the profile and the research it cites (S-025 AC5)
+            "docs/users/**", "research/**",  # the definition of ready's section 9: the profile and the research it cites (S-025 AC5)
+            "experiments/{item}-*.md"]  # the item's experiment registrations a spec cites (L-0053; triage/P-005.md on item/P-005)
 # "The writer's drafts and reasoning; the writer's own summary of its work."
 must_not_see = ["docs/reports/**", "docs/briefs/**"]
+# Its own previous plan review, so a later round checks what the Definer changed (L-0053).
+include_feedback = ["reviews/{spec}/plan.md"]
 
 [roles.check-author]
 must_read = ["specs/{spec}.md", "{ruling}"]

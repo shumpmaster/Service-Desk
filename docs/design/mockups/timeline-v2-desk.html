@@ -1,0 +1,479 @@
+<title>Desk Timeline v2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: one phone column. The desk is a trunk on the left; each project branches off it into a card.
+   Opening a project turns its branch into that project's own main line, with its CI timeline below. */
+:root {
+  --ground: #f6f6f3; --surface: #ffffff; --ink: #1a1a18; --ink-2: #4a4a45; --ink-3: #6b6b65; --ink-4: #8a8a83;
+  --rule: #e1e1dc; --rule-2: #efefeb; --pill-line: #cfcfca; --branch-line: #c9c9c4; --trunk-faint: #dcdcd6; --main-line: #1a1a18;
+  --done: #2f8a4e; --running: #b7791f; --failed: #c2341b; --you: #1d4ed8; --idle: #8a8a83; --step: #3d3d39;
+  --done-t: #256b3d; --running-t: #7a4f0d; --failed-t: #a12a15; --you-t: #1d4ed8; --idle-t: #55554f;
+  --you-ring: #c9d7fa; --you-wash: #eef3fe; --warn-wash: #fdf3e2; --stop-wash: #fbe9e5; --flash: #fff3c4;
+  --font-ui: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #141413; --surface: #1d1d1b; --ink: #ecece7; --ink-2: #c4c4bd; --ink-3: #a3a39c; --ink-4: #85857e;
+  --rule: #33332f; --rule-2: #2a2a27; --pill-line: #45453f; --branch-line: #4d4d47; --trunk-faint: #34342f; --main-line: #ecece7;
+  --done: #3da862; --running: #d4952e; --failed: #e2553a; --you: #5b8cff; --idle: #77776f; --step: #5a5a54;
+  --done-t: #6cc98d; --running-t: #e8b35c; --failed-t: #f08a73; --you-t: #8fb0ff; --idle-t: #a3a39c;
+  --you-ring: #263c73; --you-wash: #17213a; --warn-wash: #2e2414; --stop-wash: #331913; --flash: #3a3214; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --ground: #141413; --surface: #1d1d1b; --ink: #ecece7; --ink-2: #c4c4bd; --ink-3: #a3a39c; --ink-4: #85857e;
+  --rule: #33332f; --rule-2: #2a2a27; --pill-line: #45453f; --branch-line: #4d4d47; --trunk-faint: #34342f; --main-line: #ecece7;
+  --done: #3da862; --running: #d4952e; --failed: #e2553a; --you: #5b8cff; --idle: #77776f; --step: #5a5a54;
+  --done-t: #6cc98d; --running-t: #e8b35c; --failed-t: #f08a73; --you-t: #8fb0ff; --idle-t: #a3a39c;
+  --you-ring: #263c73; --you-wash: #17213a; --warn-wash: #2e2414; --stop-wash: #331913; --flash: #3a3214; color-scheme: dark; }
+
+body { background: var(--ground); color: var(--ink); font-family: var(--font-ui); }
+.page { max-width: 440px; margin: 0 auto; padding-block: 20px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+button { font-family: var(--font-ui); color: inherit; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--you); outline-offset: 2px; }
+.mono { font-family: var(--font-mono); }
+.label { font-size: 11px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .6px; }
+
+.top { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.crumb { font-size: 13px; color: var(--ink-3); }
+h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -.4px; }
+.asof { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12px; color: var(--ink-3); }
+.asof b { color: var(--ink); font-weight: 600; }
+.live { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--done-t); }
+.live i { width: 8px; height: 8px; border-radius: 4px; background: var(--done); }
+.live.late { color: var(--running-t); } .live.late i { background: var(--running); }
+.live.stopped { color: var(--failed-t); } .live.stopped i { background: var(--failed); }
+.banner { border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.45; margin-bottom: 12px; }
+.banner.late { background: var(--warn-wash); color: var(--running-t); }
+.banner.stopped { background: var(--stop-wash); color: var(--failed-t); }
+.banner span { color: var(--ink-2); }
+.demo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-4); margin-bottom: 14px; }
+.demo button { min-height: 28px; padding: 0 9px; border-radius: 14px; border: 1px dashed var(--pill-line); background: transparent; color: var(--ink-3); font-size: 11px; cursor: pointer; }
+.demo button[aria-pressed="true"] { border-style: solid; color: var(--ink); background: var(--surface); }
+
+/* icons */
+.ico { width: 24px; height: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; flex: none; }
+.ico.sq { border-radius: 6px; }
+.ico svg { width: 12px; height: 12px; }
+
+/* condensed rows (needs you and events) */
+.crow { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 6px 0; background: none; border: none; text-align: left; cursor: pointer; }
+.crow .t1 { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.crow .line1 { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.crow .k { font-size: 13px; font-weight: 700; flex: none; }
+.crow .s { font-size: 11px; font-weight: 600; flex: none; }
+.crow .tt { font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.crow .sub { font-size: 11px; color: var(--ink-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crow .tm { font-size: 11px; color: var(--ink-4); flex: none; font-variant-numeric: tabular-nums; }
+.chev { width: 14px; height: 14px; flex: none; color: var(--ink-4); transition: transform .2s; }
+.open > .crow .chev, .open > .rbody > .crow .chev { transform: rotate(90deg); }
+.minijobs { display: inline-flex; gap: 3px; flex: none; }
+.minijobs i { width: 6px; height: 6px; border-radius: 3px; display: block; }
+.detail { display: flex; flex-direction: column; gap: 6px; padding: 2px 0 12px; font-size: 12px; color: var(--ink-3); }
+.detail .title { font-size: 14px; font-weight: 600; color: var(--ink); line-height: 1.35; }
+.vars { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pill { display: inline-flex; align-items: center; min-height: 24px; padding: 0 9px; border-radius: 12px; border: 1px solid var(--pill-line); background: var(--surface); font: 500 11px var(--font-mono); color: var(--ink); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.who { font-size: 11px; font-weight: 600; color: var(--ink-2); }
+.trail { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 11px; color: var(--ink-4); }
+.trail .ms { color: var(--ink-2); font-weight: 600; }
+.trail .nr { font-style: italic; }
+.jobs { border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); padding: 2px 10px; }
+.job { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--rule-2); font-size: 12px; color: var(--ink-2); }
+.job:first-child { border-top: none; }
+.job i { width: 9px; height: 9px; border-radius: 5px; flex: none; }
+.job span:first-of-type { flex: 1; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 0 14px; border-radius: 10px; font-weight: 600; font-size: 13px; background: var(--you); color: #fff; text-decoration: none; align-self: flex-start; }
+.ctx { display: flex; flex-direction: column; gap: 3px; }
+.ctx div { display: flex; align-items: center; gap: 6px; }
+.ctx i { width: 7px; height: 7px; border-radius: 4px; flex: none; }
+
+/* needs you */
+.needs { background: var(--you-wash); border: 1px solid var(--you-ring); border-radius: 12px; padding: 6px 12px; margin-bottom: 18px; }
+.needs-head { display: flex; align-items: baseline; justify-content: space-between; padding: 6px 0 2px; }
+.needs-head h2 { margin: 0; font-size: 15px; font-weight: 700; }
+.needs-head span { font-size: 12px; color: var(--ink-3); }
+.need { border-top: 1px solid var(--you-ring); }
+.need:first-of-type { border-top: none; }
+.need .ico { background: var(--you); }
+.need .k { color: var(--you-t); }
+
+/* desk view: the trunk and project branches */
+.desk { position: relative; padding-top: 4px; }
+.desk-label { display: flex; align-items: center; gap: 8px; height: 28px; padding-left: 30px; }
+.trunk { position: absolute; left: 13px; top: 14px; bottom: 30px; width: 3px; border-radius: 2px; background: var(--main-line); }
+.trunk-cap { position: absolute; left: 7px; top: 8px; width: 15px; height: 15px; border-radius: 8px; background: var(--main-line); }
+.proj { position: relative; padding-left: 40px; padding-block: 8px; }
+.proj svg.conn { position: absolute; left: 0; top: 0; width: 44px; height: 46px; overflow: visible; }
+.proj svg.conn path { fill: none; stroke: var(--branch-line); stroke-width: 2.5; stroke-dasharray: 5 4; }
+.proj.hot svg.conn path { stroke: var(--ink); stroke-dasharray: none; }
+.pcard { width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; }
+.pcard:hover { border-color: var(--pill-line); }
+.p-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.p-name { font: 600 14px var(--font-mono); }
+.p-badge { font-size: 11px; font-weight: 700; color: #fff; background: var(--you); border-radius: 10px; padding: 2px 8px; }
+.p-badge.quiet { background: transparent; color: var(--ink-4); padding: 0; font-weight: 600; }
+.p-what { font-size: 13px; color: var(--ink-2); line-height: 1.35; }
+.p-last { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-3); }
+.p-last .ico { width: 18px; height: 18px; } .p-last .ico svg { width: 10px; height: 10px; }
+.pulse { display: flex; align-items: center; gap: 4px; }
+.pulse i { width: 8px; height: 8px; border-radius: 4px; display: block; }
+.pulse i.sq { border-radius: 2px; }
+.pulse span { font-size: 10px; color: var(--ink-4); margin-left: 4px; }
+.desk-end { padding: 6px 0 0 40px; font-size: 11px; color: var(--ink-4); }
+
+/* project view */
+.back { min-height: 36px; padding: 0 12px 0 8px; border-radius: 18px; border: 1px solid var(--pill-line); background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 10px; }
+.branchoff { position: relative; height: 34px; }
+.branchoff svg { position: absolute; left: 0; top: 0; width: 60px; height: 34px; overflow: visible; }
+.branchoff .bo-desk { position: absolute; left: 13px; top: 0; bottom: 0; width: 3px; background: var(--trunk-faint); }
+.branchoff span { position: absolute; left: 26px; top: 2px; font-size: 10px; font-weight: 600; color: var(--ink-4); letter-spacing: .4px; }
+.phead { margin-left: 40px; }
+.phead .pcard { cursor: default; }
+.ptl { position: relative; margin-top: 8px; }
+.ptl .faint { position: absolute; left: 13px; top: -60px; bottom: 0; width: 3px; background: var(--trunk-faint); }
+.ptl .pmain { position: absolute; left: 47px; top: -8px; bottom: 0; width: 3px; border-radius: 2px; background: var(--main-line); transform-origin: top; }
+.ptl .pbr { position: absolute; left: 83px; top: 0; bottom: 0; border-left: 2px dashed var(--branch-line); transform-origin: top; }
+.lanehead { display: flex; padding-left: 36px; font-size: 10px; color: var(--ink-3); font-weight: 600; letter-spacing: .4px; height: 20px; align-items: center; position: relative; }
+.lanehead span:first-child { width: 36px; }
+.day { position: relative; padding: 12px 0 4px 104px; }
+.ev { position: relative; }
+.ev .node { position: absolute; top: 10px; width: 24px; height: 24px; border-radius: 12px; border: 3px solid var(--ground); display: flex; align-items: center; justify-content: center; color: #fff; z-index: 1; }
+.ev .node.sq { border-radius: 8px; }
+.ev .node svg { width: 11px; height: 11px; }
+.ev .node.m { left: 36px; } .ev .node.b { left: 72px; }
+.ev .joinbar { position: absolute; top: 20px; left: 50px; width: 32px; height: 3px; background: var(--branch-line); }
+.ev .rbody { margin-left: 104px; min-width: 0; }
+.ev .crow { min-height: 44px; }
+.need-here { margin: 0 0 6px 40px; position: relative; z-index: 2; }
+.need-here .needs { margin-bottom: 8px; }
+.ev, .day, .lanehead { position: relative; z-index: 1; }
+.replay { margin: 4px 0 6px 40px; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--ink-4); position: relative; z-index: 2; background: var(--ground); border-radius: 15px; padding: 4px 0; }
+.replay button { min-height: 30px; padding: 0 10px; border-radius: 15px; border: 1px solid var(--pill-line); background: var(--surface); font-size: 12px; font-weight: 600; cursor: pointer; }
+.flash { animation: flash 1.8s ease-out; }
+@keyframes flash { 0% { background: var(--flash); } 100% { background: transparent; } }
+.dotpulse { animation: dotpulse .55s ease-in-out infinite alternate; }
+@keyframes dotpulse { from { transform: scale(.85); opacity: .65; } to { transform: scale(1.15); opacity: 1; } }
+.foot { font-size: 11px; color: var(--ink-4); line-height: 1.5; border-top: 1px solid var(--rule); padding-top: 12px; margin-top: 18px; }
+@media (prefers-reduced-motion: reduce) { .flash, .dotpulse { animation: none; } .chev { transition: none; } }
+</style>
+
+<div class="page">
+  <div id="view"></div>
+  <p class="foot">Mockup, version 2, for the timeline work's Design step. Built from the desk's real records across Service-Desk, the operating model, Model-Lab and the portfolio, as of 14 November 2026 at 15:20 UTC; events picked by hand, times in UTC. Tap a project to open it; tap any line to open its detail. Buttons open the real page on GitHub, where you finish the step yourself.</p>
+</div>
+
+<script>
+(function () {
+  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var ICONS = {
+    branch: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="4" cy="3" r="1.6"/><circle cx="4" cy="13" r="1.6"/><circle cx="12" cy="5" r="1.6"/><path d="M4 4.6v6.8M12 6.6c0 3-8 2-8 4.8"/></svg>',
+    commit: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="2.8"/><path d="M1 8h4.2M10.8 8H15"/></svg>',
+    pr: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="4" cy="3.5" r="1.6"/><circle cx="4" cy="12.5" r="1.6"/><circle cx="12" cy="12.5" r="1.6"/><path d="M4 5.1v5.8M12 10.9V6a2 2 0 0 0-2-2H7.5M9 2.5L7.5 4 9 5.5"/></svg>',
+    check: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.2v9.6L12.8 8z"/></svg>',
+    review: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1.2 8S3.8 3.5 8 3.5 14.8 8 14.8 8 12.2 12.5 8 12.5 1.2 8 1.2 8z"/><circle cx="8" cy="8" r="2"/></svg>',
+    merge: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="4" cy="3" r="1.6"/><circle cx="4" cy="13" r="1.6"/><circle cx="12" cy="9" r="1.6"/><path d="M4 4.6v6.8M4.6 4.4c1 3 4 4.6 5.8 4.6"/></svg>',
+    deploy: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10.5V2M4.8 5.2L8 2l3.2 3.2M2.5 10v3.5h11V10"/></svg>',
+    gate: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 14.5V2M3.5 2.5h8.5l-2 3 2 3H3.5"/></svg>',
+    decision: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h12v8H7l-3 2.5V11H2z"/><path d="M5.5 7l1.8 1.6L10.5 5.5"/></svg>',
+    research: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.2"/><path d="M10.2 10.2L14 14"/></svg>',
+    stop: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 1.8h5l3.7 3.7v5l-3.7 3.7h-5l-3.7-3.7v-5z"/><path d="M5.5 8h5"/></svg>'
+  };
+  var CHEV = '<svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>';
+  var STEP = { gate: 1, decision: 1, research: 1, stop: 1 };
+  var KL = { branch: 'Branch', commit: 'Commit', pr: 'Pull request', check: 'Check', review: 'Review', merge: 'Merge', deploy: 'Deploy', gate: 'Gate', decision: 'Decision', research: 'Research', stop: 'Stop' };
+  var SL = { done: 'Done', running: 'Running', failed: 'Failed', you: 'Waiting on you', idle: 'Not started' };
+  var GH = 'https://github.com/shumpmaster/';
+  var SDB = 'claude/chief-of-staff-p005-la55js', TLB = 'claude/chief-of-staff-timeline-7bfp34';
+
+  var NEEDS = [
+    { p: 'sd', k: 'decision', t: '14:46', title: 'Which phone widths must the timeline fit?', age: 'waiting 34 min', who: 'chief of staff → you', rec: 'GitHub', feeds: ['M7', 'M8'],
+      ctx: [['failed', '15:14 plan review round 2 failed'], ['done', '14:46 you merged the question’s pull request']], action: 'Open the question on GitHub', href: GH + 'Service-Desk/blob/main/questions/P-005-s011-widths.md' },
+    { p: 'sd', k: 'decision', t: '14:46', title: 'Is the spec’s reading of “each thing reaches my phone” enough for M8?', age: 'waiting 34 min', who: 'chief of staff → you', rec: 'GitHub', feeds: ['M8'],
+      ctx: [['failed', '15:14 plan review round 2 failed']], action: 'Open the question on GitHub', href: GH + 'Service-Desk/blob/main/questions/P-005-s011-m8-reading.md' },
+    { p: 'sd', k: 'decision', t: '14:46', title: 'Let the spec writer see the experiment files and your answers?', age: 'waiting 34 min', who: 'chief of staff → you', rec: 'GitHub', feeds: ['M6', 'M7', 'M8'],
+      ctx: [['running', '15:14 the spec writer started round 3 without them']], action: 'Open the question on GitHub', href: GH + 'Service-Desk/blob/main/questions/P-005-definer-pack.md' },
+    { p: 'sd', k: 'gate', t: '4 Nov', title: 'The home-screen widget failed its readiness check: resubmit or stop?', age: 'waiting 9 days', who: 'orchestrator → you', rec: 'the Orchestrator', feeds: null,
+      ctx: [['failed', '4 Nov 20:52 readiness check failed, round 1'], ['idle', 'nothing moves until you answer; waiting is never counted as stalled']], action: 'Open the card on GitHub', href: GH + 'Service-Desk/blob/main/queue/P-004-dor-fail-1.md' }
+  ];
+
+  var PROJECTS = [
+    { id: 'sd', name: 'Service-Desk', what: 'The timeline’s spec is in its third round of plan review.',
+      last: { k: 'commit', s: 'running', text: 'Spec writer revising S-011', t: 'since 15:14' },
+      events: [
+        { day: 'Today, 14 Nov' },
+        { t: '15:14', lane: 'b', br: 'item/P-005', k: 'commit', s: 'running', who: 'spec writer', rec: 'the Orchestrator (dispatch log); no commit yet', title: 'Revising spec S-011 for round 3', meta: 'started 15:14 · no record of it finishing yet', feeds: ['M6', 'M7', 'M8'] },
+        { t: '15:14', lane: 'b', br: 'item/P-005', k: 'review', s: 'failed', who: 'reviewer (plan)', rec: 'an agent', title: 'Plan review failed, round 2', meta: 'ran from 12:37 · its findings became three questions for you', feeds: ['M6', 'M7', 'M8'] },
+        { t: '14:46', lane: 'm', br: TLB, join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #446: three questions for you', meta: 'they now wait on you', feeds: ['M6', 'M7', 'M8'] },
+        { t: '13:54', lane: 'm', br: SDB, join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #445: handoff and the first mockup', meta: '', feeds: ['M7', 'M8'] },
+        { t: '12:37', lane: 'b', br: 'item/P-005', k: 'commit', s: 'done', who: 'spec writer', rec: 'GitHub', title: 'Spec S-011 revised after round 1', meta: '', feeds: ['M6', 'M7', 'M8'] },
+        { t: '12:29', lane: 'b', br: 'item/P-005', k: 'review', s: 'failed', who: 'reviewer (plan)', rec: 'an agent', title: 'Plan review failed, round 1', meta: '', feeds: ['M6', 'M7', 'M8'] },
+        { t: '12:16', lane: 'b', br: 'item/P-005', k: 'commit', s: 'done', who: 'spec writer', rec: 'GitHub', title: 'First draft of spec S-011', meta: 'with your six answers from the stop card', feeds: ['M6', 'M7', 'M8'] },
+        { t: '12:12', lane: 'b', br: SDB, k: 'check', s: 'done', who: 'Actions', rec: 'GitHub', title: 'Checks passed on PR #445', meta: '', feeds: ['M7', 'M8'],
+          jobs: [['done', 'pr-body'], ['done', 'build'], ['done', 'governance'], ['done', 'owner-signal']] },
+        { t: '12:07', lane: 'm', br: 'main', k: 'decision', s: 'done', who: 'orchestrator', rec: 'the Orchestrator', title: 'Stop card applied: new spec S-011, rounds reset', meta: 'S-010 marked superseded', feeds: ['M6', 'M7', 'M8'] },
+        { t: '12:04', lane: 'm', br: SDB, join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #444: the spec-number fix and the stop card’s answer', meta: '', feeds: ['M6', 'M7', 'M8', 'M4'] },
+        { t: '05:07', lane: 'b', br: SDB, k: 'check', s: 'failed', who: 'Actions', rec: 'GitHub', title: 'Checks failed: governance on PR #444', meta: 'two verdicts not yet recorded; passed once they were', feeds: ['M6', 'M7', 'M8', 'M4'],
+          jobs: [['done', 'pr-body'], ['done', 'build'], ['failed', 'governance'], ['done', 'owner-signal']] },
+        { t: '04:58', lane: 'b', br: SDB, k: 'decision', s: 'done', who: 'you', rec: 'an agent (the chief of staff wrote it down)', title: 'You answered stop card 4: write a new spec', meta: '', feeds: ['M6', 'M7', 'M8'] },
+        { t: '01:05', lane: 'b', br: 'item/P-005', k: 'stop', s: 'done', who: 'orchestrator', rec: 'the Orchestrator', title: 'S-010 stopped: three plan reviews failed', meta: 'answered at 04:58', feeds: ['M6', 'M7', 'M8'] },
+        { day: 'Yesterday, 13 Nov' },
+        { t: '23:51', lane: 'b', br: 'item/P-005', k: 'review', s: 'failed', who: 'reviewer (plan)', rec: 'an agent', title: 'Plan review of S-010 failed, round 3', meta: '', feeds: ['M6', 'M7', 'M8'] },
+        { t: '16:10', lane: 'm', br: 'main', k: 'gate', s: 'done', who: 'you', rec: 'an agent (the chief of staff wrote it down)', title: 'Design gate passed: proceed', meta: '', feeds: ['M6', 'M7', 'M8'] }
+      ] },
+    { id: 'om', name: 'operating model', what: 'The spec-number fix is released as 3.7.3.',
+      last: { k: 'merge', s: 'done', text: 'Merged PR #59', t: '04:56' },
+      events: [
+        { day: 'Today, 14 Nov' },
+        { t: '04:56', lane: 'm', br: SDB, join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #59: two lessons rows', meta: '', feeds: null },
+        { t: '02:55', lane: 'm', br: SDB, join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #58: a new spec number counts every spec', meta: 'released as 3.7.3', feeds: null },
+        { t: '02:24', lane: 'b', br: SDB, k: 'check', s: 'done', who: 'Actions', rec: 'GitHub', title: 'Checks passed on PR #58', meta: '', feeds: null,
+          jobs: [['done', 'pr-body'], ['done', 'governance'], ['done', 'owner-signal']] },
+        { t: '01:19', lane: 'b', br: SDB, k: 'review', s: 'done', who: 'reviewer', rec: 'an agent', title: 'Build review passed', meta: '', feeds: null },
+        { t: '01:16', lane: 'b', br: 'build/tools-builder/s038', join: true, k: 'merge', s: 'done', who: 'orchestrator', rec: 'GitHub', title: 'Merged the build into the working branch', meta: 'with a merge commit', feeds: null },
+        { t: '01:07', lane: 'b', br: 'build/tools-builder/s038', k: 'commit', s: 'done', who: 'builder', rec: 'GitHub', title: 'The tools changed', meta: '', feeds: null },
+        { t: '00:56', lane: 'b', br: 'build/tools-builder/s038', k: 'commit', s: 'done', who: 'builder', rec: 'GitHub', title: 'Tests first: the desk’s case gives S-009', meta: 'they fail on the old tools, as they should', feeds: null },
+        { t: '00:53', lane: 'b', br: SDB, k: 'decision', s: 'done', who: 'you', rec: 'an agent (the chief of staff wrote it down)', title: 'You approved S-038 for building', meta: '', feeds: null }
+      ] },
+    { id: 'ml', name: 'Model-Lab', what: 'Four pull requests merged overnight.',
+      last: { k: 'merge', s: 'done', text: 'Merged PR #118', t: '01:06' },
+      events: [
+        { day: 'Today, 14 Nov' },
+        { t: '01:06', lane: 'm', br: 'claude/chief-of-staff-handoff-mt30qq', join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #118: a Chief of Staff handoff', meta: '', feeds: null },
+        { t: '01:02', lane: 'm', br: 'claude/determined-allen-1pygg8', join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #117', meta: 'its content not read for this mockup', feeds: null },
+        { day: 'Yesterday, 13 Nov' },
+        { t: '23:45', lane: 'm', br: 'claude/determined-allen-1pygg8', join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #116', meta: '', feeds: null },
+        { t: '23:30', lane: 'm', br: 'claude/determined-allen-1pygg8', join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #114', meta: '', feeds: null }
+      ] },
+    { id: 'pf', name: 'portfolio', what: 'Quiet since 12 November.',
+      last: { k: 'merge', s: 'done', text: 'Merged PR #13', t: '12 Nov' },
+      events: [
+        { day: '12 Nov' },
+        { t: '16:03', lane: 'm', br: 'claude/admiring-ritchie-8qo5jt', join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #13: log the idea of a listing of every session', meta: '', feeds: null }
+      ] }
+  ];
+
+  var state = { view: 'desk', proj: null, open: {}, feed: 'live' };
+  var busy = false;
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function D(ms) { return REDUCED ? 0 : ms; }
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, D(ms)); }); }
+  function anim(el, frames, opts) {
+    if (REDUCED || !el || !el.animate) return Promise.resolve();
+    return new Promise(function (r) { var a = el.animate(frames, Object.assign({ duration: 300, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' }, opts)); a.onfinish = r; a.oncancel = r; });
+  }
+  function ico(k, s, cls) { return '<span class="' + (cls || 'ico') + (STEP[k] ? ' sq' : '') + '" style="background:var(--' + s + ')">' + ICONS[k] + '</span>'; }
+  function feeds(f) { return f == null ? '<span class="nr">feeds: not recorded</span>' : '<span>feeds <span class="ms">' + f.join(' · ') + '</span></span>'; }
+  function proj(id) { for (var i = 0; i < PROJECTS.length; i++) if (PROJECTS[i].id === id) return PROJECTS[i]; }
+  function pulseOf(p) {
+    return p.events.filter(function (e) { return !e.day; }).slice(0, 10).reverse()
+      .map(function (e) { return '<i class="' + (STEP[e.k] ? 'sq' : '') + '" style="background:var(--' + e.s + ')" title="' + esc(KL[e.k] + ' · ' + SL[e.s]) + '"></i>'; }).join('');
+  }
+
+  function header(crumb) {
+    var f = state.feed;
+    var dot = { live: ['', 'Live'], late: ['late', 'Late'], stopped: ['stopped', 'Stopped'] }[f];
+    var age = { live: 'data read 1 min ago', late: 'data read 6 min ago', stopped: 'last data 13 min ago' }[f];
+    var h = '<header class="top"><div class="crumb mono">' + esc(crumb) + '</div><h1>Timeline</h1>' +
+      '<div class="asof"><span class="live ' + dot[0] + '"><i></i>' + dot[1] + '</span><span>As of <b>15:20 UTC</b></span><span>· ' + age + '</span></div></header>';
+    if (f === 'late') h += '<div class="banner late"><b>Late: the last read was 6 minutes ago.</b> <span>The desk reads every 2 minutes, so this is from 15:14 and may have changed.</span></div>';
+    if (f === 'stopped') h += '<div class="banner stopped"><b>Stopped since 15:07 UTC.</b> <span>The outside check has not heard from the desk for 13 minutes. Nothing below is new, and waiting items may already be done.</span></div>';
+    h += '<div class="demo"><span>Mockup: preview the feed as</span>' + ['live', 'late', 'stopped'].map(function (x) {
+      return '<button type="button" data-feed="' + x + '" aria-pressed="' + (f === x) + '">' + x + '</button>'; }).join('') + '</div>';
+    return h;
+  }
+
+  function needRow(n, i) {
+    var key = 'n' + i, open = !!state.open[key];
+    return '<div class="need' + (open ? ' open' : '') + '" data-key="' + key + '">' +
+      '<button type="button" class="crow" aria-expanded="' + open + '">' + ico(n.k, 'you') +
+        '<span class="t1"><span class="line1"><span class="k">' + KL[n.k] + '</span><span class="tt">' + esc(n.title) + '</span></span>' +
+        '<span class="sub">' + esc(proj(n.p).name) + ' · ' + esc(n.age) + '</span></span>' + CHEV + '</button>' +
+      (open ? detailNeed(n) : '') + '</div>';
+  }
+  function detailNeed(n) {
+    return '<div class="detail"><div class="title" style="color:var(--you-t)">' + esc(n.title) + '</div>' +
+      '<div class="vars"><span class="who">by ' + esc(n.who) + '</span><span>filed ' + esc(n.t) + '</span></div>' +
+      '<div class="ctx">' + n.ctx.map(function (c) { return '<div><i style="background:var(--' + c[0] + ')"></i><span>' + esc(c[1]) + '</span></div>'; }).join('') + '</div>' +
+      '<div class="trail">' + feeds(n.feeds) + '<span>record: ' + esc(n.rec) + '</span></div>' +
+      '<a class="btn" href="' + n.href + '" target="_blank" rel="noopener">' + esc(n.action) + ' ↗</a></div>';
+  }
+  function needsBlock(filter) {
+    var list = NEEDS.map(function (n, i) { return [n, i]; }).filter(function (x) { return !filter || x[0].p === filter; });
+    if (!list.length) return '';
+    return '<section class="needs" aria-label="Needs you"><div class="needs-head"><h2>Needs you</h2><span>' + list.length + ' waiting</span></div>' +
+      list.map(function (x) { return needRow(x[0], x[1]); }).join('') + '</section>';
+  }
+
+  function projCard(p) {
+    var n = NEEDS.filter(function (x) { return x.p === p.id; }).length;
+    return '<button type="button" class="pcard" data-proj="' + p.id + '" aria-label="Open ' + esc(p.name) + '">' +
+      '<span class="p-top"><span class="p-name">' + esc(p.name) + '</span>' + (n ? '<span class="p-badge">' + n + ' for you</span>' : '<span class="p-badge quiet">nothing for you</span>') + '</span>' +
+      '<span class="p-what">' + esc(p.what) + '</span>' +
+      '<span class="p-last">' + ico(p.last.k, p.last.s) + '<span><b style="color:var(--' + p.last.s + '-t)">' + SL[p.last.s] + '</b> · ' + esc(p.last.text) + ' · ' + esc(p.last.t) + '</span></span>' +
+      '<span class="pulse" aria-label="Its last events, oldest to newest">' + pulseOf(p) + '<span>last ' + Math.min(10, p.events.filter(function (e) { return !e.day; }).length) + '</span></span>' +
+    '</button>';
+  }
+
+  function renderDesk() {
+    var order = PROJECTS.slice().sort(function (a, b) {
+      return NEEDS.filter(function (x) { return x.p === b.id; }).length - NEEDS.filter(function (x) { return x.p === a.id; }).length; });
+    var h = header('all projects') + needsBlock(null) +
+      '<section class="desk" aria-label="Projects"><div class="trunk"></div><div class="trunk-cap"></div>' +
+      '<div class="desk-label label">The desk · ' + PROJECTS.length + ' projects</div>' +
+      order.map(function (p) {
+        return '<div class="proj" data-row="' + p.id + '"><svg class="conn" viewBox="0 0 44 46" aria-hidden="true"><path d="M14.5 0 V18 Q14.5 34 30 34 H42"/></svg>' + projCard(p) + '</div>'; }).join('') +
+      '<div class="desk-end">Tap a project to follow its branch.</div></section>';
+    document.getElementById('view').innerHTML = h;
+  }
+
+  function evRow(p, e, idx) {
+    var key = p.id + idx, open = !!state.open[key];
+    var mini = e.jobs ? '<span class="minijobs">' + e.jobs.map(function (j) { return '<i style="background:var(--' + j[0] + ')"></i>'; }).join('') + '</span>' : '';
+    var h = '<div class="ev' + (open ? ' open' : '') + '" data-key="' + key + '">' + (e.join ? '<div class="joinbar"></div>' : '') +
+      '<div class="node ' + e.lane + (STEP[e.k] ? ' sq' : '') + (e.s === 'running' ? ' dotpulse' : '') + '" style="background:var(--' + e.s + ')">' + ICONS[e.k] + '</div>' +
+      '<div class="rbody"><button type="button" class="crow" aria-expanded="' + open + '">' +
+        '<span class="t1"><span class="line1"><span class="k">' + KL[e.k] + '</span><span class="s" style="color:var(--' + e.s + '-t)">' + SL[e.s] + '</span>' + mini + '</span>' +
+        '<span class="tt">' + esc(e.title) + '</span></span><span class="tm mono">' + e.t + '</span>' + CHEV + '</button>';
+    if (open) h += detailEv(e);
+    return h + '</div></div>';
+  }
+  function detailEv(e) {
+    var h = '<div class="detail"><div class="vars">' + (e.br !== 'main' ? '<span class="pill">' + esc(e.br) + '</span>' : '<span class="pill">main</span>') + '<span class="who">by ' + esc(e.who) + '</span></div>' +
+      (e.meta ? '<div>' + esc(e.meta) + '</div>' : '') +
+      '<div class="trail">' + feeds(e.feeds) + '<span>record: ' + esc(e.rec) + '</span></div>';
+    if (e.jobs) h += '<div class="jobs">' + e.jobs.map(function (j) { return '<div class="job"><i style="background:var(--' + j[0] + ')"></i><span>' + esc(j[1]) + '</span><span class="mono" style="font-size:11px;color:var(--ink-4)">' + (j[0] === 'done' ? 'passed' : j[0] === 'failed' ? 'failed' : j[0]) + '</span></div>'; }).join('') + '</div>';
+    return h + '</div>';
+  }
+
+  function renderProject(id, hideRows) {
+    var p = proj(id), h = header('all projects / ' + p.name) +
+      '<button type="button" class="back" id="back">‹ All projects</button>' +
+      '<div class="branchoff"><div class="bo-desk"></div><svg viewBox="0 0 60 34" aria-hidden="true"><path id="bo-path" d="M14.5 0 V8 Q14.5 22 30 22 H48.5 V34" pathLength="1" style="fill:none;stroke:var(--main-line);stroke-width:3"/></svg><span>THE DESK</span></div>' +
+      '<div class="phead">' + projCard(p) + '</div>';
+    var needs = NEEDS.map(function (n, i) { return [n, i]; }).filter(function (x) { return x[0].p === id; });
+    h += '<div class="ptl" id="ptl"><div class="faint"></div><div class="pmain" id="pmain"></div><div class="pbr" id="pbr"></div>';
+    if (needs.length) h += '<div class="need-here">' + needsBlock(id) + '</div>';
+    if (id === 'sd') h += '<div class="replay"><button type="button" id="replay">▶ Replay the last change</button><span>15:14: round 2 fails, round 3 starts</span></div>';
+    h += '<div class="lanehead"><span>MAIN</span><span>BRANCH</span></div>';
+    p.events.forEach(function (e, i) {
+      if (e.day) { h += '<div class="day label">' + esc(e.day) + '</div>'; return; }
+      h += evRow(p, e, i);
+    });
+    h += '</div>';
+    document.getElementById('view').innerHTML = h;
+    var ph = document.querySelector('.phead .pcard'); if (ph) { ph.removeAttribute('data-proj'); ph.setAttribute('aria-label', p.name); ph.tabIndex = -1; }
+    if (hideRows) document.querySelectorAll('#ptl .ev, #ptl .day, #ptl .lanehead, #ptl .need-here, #ptl .replay').forEach(function (r) { r.style.opacity = '0'; });
+  }
+
+  function render() { if (state.view === 'desk') renderDesk(); else renderProject(state.proj); }
+
+  /* the branch-off: desk -> project */
+  function openProject(id) {
+    if (busy) return; busy = true;
+    var row = document.querySelector('[data-row="' + id + '"]'), card = row.querySelector('.pcard');
+    var r0 = card.getBoundingClientRect();
+    var others = Array.prototype.slice.call(document.querySelectorAll('.proj')).filter(function (r) { return r !== row; });
+    var fades = others.map(function (r, i) { return anim(r, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(18px)' }], { duration: 240, delay: i * 50, fill: 'forwards' }); });
+    var nb = document.querySelector('.needs'); if (nb) fades.push(anim(nb, [{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }));
+    fades.push(anim(document.querySelector('.desk-end'), [{ opacity: 1 }, { opacity: 0 }], { duration: 150, fill: 'forwards' }));
+    row.classList.add('hot');
+    Promise.all(fades).then(function () { return wait(120); }).then(function () {
+      state.view = 'proj'; state.proj = id; window.scrollTo(0, 0);
+      renderProject(id, true);
+      var head = document.querySelector('.phead .pcard'), r1 = head.getBoundingClientRect();
+      var dx = r0.left - r1.left, dy = r0.top - r1.top, sx = r0.width / r1.width;
+      var bo = document.getElementById('bo-path');
+      if (!REDUCED) { bo.style.strokeDasharray = '1'; bo.style.strokeDashoffset = '1'; }
+      var pm = document.getElementById('pmain'), pb = document.getElementById('pbr');
+      pm.style.transform = 'scaleY(0)'; pb.style.transform = 'scaleY(0)';
+      return anim(head, [{ transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + sx + ')', transformOrigin: 'top left' }, { transform: 'none', transformOrigin: 'top left' }], { duration: 520 })
+        .then(function () {
+          if (!REDUCED) { bo.style.transition = 'stroke-dashoffset .35s ease-out'; bo.getBoundingClientRect(); bo.style.strokeDashoffset = '0'; }
+          return wait(300);
+        })
+        .then(function () {
+          pm.style.transition = REDUCED ? 'none' : 'transform .6s cubic-bezier(.2,.7,.2,1)';
+          pb.style.transition = REDUCED ? 'none' : 'transform .6s cubic-bezier(.2,.7,.2,1) .15s';
+          pm.style.transform = 'scaleY(1)'; pb.style.transform = 'scaleY(1)';
+          var rows = document.querySelectorAll('#ptl .need-here, #ptl .replay, #ptl .lanehead, #ptl .day, #ptl .ev');
+          var shows = Array.prototype.map.call(rows, function (r, i) {
+            r.style.opacity = '';
+            return anim(r, [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], { duration: 260, delay: 120 + Math.min(i, 14) * 40 });
+          });
+          return Promise.all(shows);
+        });
+    }).then(function () { busy = false; });
+  }
+
+  /* folding back: project -> desk */
+  function closeProject() {
+    if (busy) return; busy = true;
+    var id = state.proj, head = document.querySelector('.phead .pcard'), r1 = head.getBoundingClientRect();
+    var rows = document.querySelectorAll('#ptl .need-here, #ptl .replay, #ptl .lanehead, #ptl .day, #ptl .ev');
+    var outs = Array.prototype.map.call(rows, function (r) { return anim(r, [{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' }); });
+    var pm = document.getElementById('pmain'); pm.style.transition = REDUCED ? 'none' : 'transform .3s ease-in'; pm.style.transform = 'scaleY(0)';
+    var pb = document.getElementById('pbr'); pb.style.transition = REDUCED ? 'none' : 'transform .3s ease-in'; pb.style.transform = 'scaleY(0)';
+    Promise.all(outs).then(function () { return wait(200); }).then(function () {
+      state.view = 'desk'; state.proj = null; window.scrollTo(0, 0);
+      renderDesk();
+      var row = document.querySelector('[data-row="' + id + '"]'), card = row.querySelector('.pcard'), r0 = card.getBoundingClientRect();
+      var dx = r1.left - r0.left, dy = r1.top - r0.top, sx = r1.width / r0.width;
+      var others = Array.prototype.slice.call(document.querySelectorAll('.proj')).filter(function (r) { return r !== row; });
+      others.forEach(function (r, i) { anim(r, [{ opacity: 0, transform: 'translateX(18px)' }, { opacity: 1, transform: 'none' }], { duration: 260, delay: 260 + i * 60 }); });
+      var nb = document.querySelector('.needs'); if (nb) anim(nb, [{ opacity: 0 }, { opacity: 1 }], { duration: 260, delay: 200 });
+      return anim(card, [{ transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + sx + ')', transformOrigin: 'top left' }, { transform: 'none', transformOrigin: 'top left' }], { duration: 480 });
+    }).then(function () { busy = false; });
+  }
+
+  /* expand / collapse a condensed line */
+  function toggle(item) {
+    var key = item.dataset.key; state.open[key] = !state.open[key];
+    var before = item.offsetHeight;
+    var tmp = document.createElement('div');
+    if (state.view === 'desk' || item.classList.contains('need')) {
+      var idx = Number(key.slice(1)); tmp.innerHTML = needRow(NEEDS[idx], idx);
+    } else {
+      var p = proj(state.proj), i = Number(key.slice(state.proj.length)); tmp.innerHTML = evRow(p, p.events[i], i);
+    }
+    var fresh = tmp.firstChild; item.parentNode.replaceChild(fresh, item);
+    var after = fresh.offsetHeight; fresh.style.overflow = 'hidden';
+    anim(fresh, [{ height: before + 'px' }, { height: after + 'px' }], { duration: 240 }).then(function () { fresh.style.overflow = ''; });
+  }
+
+  /* the replay in Service-Desk: what the records show at 15:14 */
+  function replay() {
+    if (busy) return; busy = true;
+    var evs = document.querySelectorAll('#ptl .ev');
+    var newRun = evs[0], review = evs[1];
+    newRun.style.display = 'none';
+    var node = review.querySelector('.node'), st = review.querySelector('.s'), tt = review.querySelector('.tt'), tm = review.querySelector('.tm');
+    node.style.background = 'var(--running)'; node.classList.add('dotpulse'); st.textContent = 'Running'; st.style.color = 'var(--running-t)';
+    tt.textContent = 'Plan review of S-011, round 2'; tm.textContent = '12:37';
+    review.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'center' });
+    wait(1600).then(function () {
+      node.classList.remove('dotpulse'); node.style.background = 'var(--failed)';
+      anim(node, [{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 380 });
+      st.textContent = 'Failed'; st.style.color = 'var(--failed-t)'; tt.textContent = 'Plan review failed, round 2'; tm.textContent = '15:14';
+      review.classList.remove('flash'); void review.offsetWidth; review.classList.add('flash');
+      return wait(900);
+    }).then(function () {
+      newRun.style.display = ''; var h = newRun.scrollHeight; newRun.style.overflow = 'hidden';
+      var n2 = newRun.querySelector('.node'); n2.classList.add('dotpulse');
+      newRun.classList.remove('flash'); void newRun.offsetWidth; newRun.classList.add('flash');
+      return anim(newRun, [{ height: '0px', opacity: 0 }, { height: h + 'px', opacity: 1 }], { duration: 420 }).then(function () { newRun.style.overflow = ''; return wait(2400); }).then(function () { n2.classList.remove('dotpulse'); });
+    }).then(function () { busy = false; });
+  }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    var f = t.closest('[data-feed]'); if (f) { state.feed = f.dataset.feed; render(); return; }
+    var pc = t.closest('[data-proj]'); if (pc) { openProject(pc.dataset.proj); return; }
+    if (t.closest('#back')) { closeProject(); return; }
+    if (t.closest('#replay')) { replay(); return; }
+    var cr = t.closest('.crow'); if (cr && !busy) { toggle(cr.closest('[data-key]')); }
+  });
+  render();
+})();
+</script>

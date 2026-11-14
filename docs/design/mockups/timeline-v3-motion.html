@@ -154,6 +154,16 @@ h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -.4px; }
 .ev .joinbar { position: absolute; top: 20px; left: 50px; width: 32px; height: 3px; background: var(--branch-line); }
 .ev .rbody { margin-left: 104px; min-width: 0; }
 .ev .crow { min-height: 44px; }
+/* the past: finished lines sit back, a little more for each earlier day; running and waiting stay at full strength */
+.ev .rbody, .ev .node, .ev .joinbar { transition: opacity .25s, filter .25s; }
+.ev.past .rbody { opacity: .74; }
+.ev.past .node { opacity: .72; filter: saturate(.7); }
+.ev.past .joinbar { opacity: .7; }
+.ev.past.older .rbody { opacity: .6; }
+.ev.past.older .node { opacity: .58; filter: saturate(.55); }
+.ev.past.oldest .rbody { opacity: .5; }
+.ev.past.oldest .node { opacity: .5; filter: saturate(.45); }
+.ev.past.open .rbody, .ev.past.open .node, .ev.past:hover .rbody, .ev.past:hover .node, .ev.past:focus-within .rbody, .ev.past:focus-within .node { opacity: 1; filter: none; }
 .need-here { margin: 0 0 6px 40px; position: relative; z-index: 2; }
 .need-here .needs { margin-bottom: 8px; }
 .ev, .day, .lanehead { position: relative; z-index: 1; }
@@ -337,10 +347,12 @@ h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -.4px; }
     document.getElementById('view').innerHTML = h;
   }
 
+  function ageOf(p, idx) { var d = -1; for (var j = 0; j <= idx; j++) if (p.events[j].day) d++; return d; }
   function evRow(p, e, idx) {
     var key = p.id + idx, open = !!state.open[key];
     var mini = e.jobs ? '<span class="minijobs">' + e.jobs.map(function (j) { return '<i style="background:var(--' + j[0] + ')"></i>'; }).join('') + '</span>' : '';
-    var h = '<div class="ev' + (open ? ' open' : '') + '" data-key="' + key + '">' + (e.join ? '<div class="joinbar"></div>' : '') +
+    var age = ageOf(p, idx), past = (e.s === 'done' || e.s === 'failed');
+    var h = '<div class="ev' + (open ? ' open' : '') + (past ? ' past' + (age === 1 ? ' older' : age >= 2 ? ' oldest' : '') : '') + '" data-key="' + key + '">' + (e.join ? '<div class="joinbar"></div>' : '') +
       '<div class="node ' + e.lane + (STEP[e.k] ? ' sq' : '') + (e.s === 'running' ? ' dotpulse' : '') + '" style="background:var(--' + e.s + ')">' + ICONS[e.k] + '</div>' +
       '<div class="rbody"><button type="button" class="crow" aria-expanded="' + open + '">' +
         '<span class="t1"><span class="line1"><span class="k">' + KL[e.k] + '</span><span class="s" style="color:var(--' + e.s + '-t)">' + SL[e.s] + '</span>' + mini + '</span>' +
@@ -561,13 +573,14 @@ h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -.4px; }
     var newRun = evs[0], review = evs[1];
     newRun.style.display = 'none';
     var node = review.querySelector('.node'), st = review.querySelector('.s'), tt = review.querySelector('.tt'), tm = review.querySelector('.tm');
-    node.style.background = 'var(--running)'; node.classList.add('dotpulse'); st.textContent = 'Running'; st.style.color = 'var(--running-t)';
+    review.classList.remove('past'); node.style.background = 'var(--running)'; node.classList.add('dotpulse'); st.textContent = 'Running'; st.style.color = 'var(--running-t)';
     tt.textContent = 'Plan review of S-011, round 2'; tm.textContent = '12:37';
     review.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'center' });
     wait(1600).then(function () {
       node.classList.remove('dotpulse'); node.style.background = 'var(--failed)';
       anim(node, [{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 380 });
       st.textContent = 'Failed'; st.style.color = 'var(--failed-t)'; tt.textContent = 'Plan review failed, round 2'; tm.textContent = '15:14';
+      setTimeout(function () { review.classList.add('past'); }, D(1400));
       review.classList.remove('flash'); void review.offsetWidth; review.classList.add('flash');
       return wait(900);
     }).then(function () {

@@ -1,0 +1,14 @@
+<!-- @dsCard group="Navigation" height=110 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>TabBar</title></head>
+<body>
+<div class="dk-stage">
+  <nav class="dk-tabbar" aria-label="Tabs"><button class="dk-tab" aria-current="true" aria-label="Desk"><svg class="dk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11L12 4l8.5 7"/><path d="M5.5 9.5V20h5v-5.5h3V20h5V9.5"/></svg></button><button class="dk-tab" aria-current="false" aria-label="Plan"><svg class="dk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="6" r="1.8"/><circle cx="6" cy="18" r="1.8"/><path d="M6 8v8M10 6h10M10 12h10M10 18h10"/></svg></button><button class="dk-tab" aria-current="false" aria-label="Needs you"><svg class="dk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 13.5L6 5h12l2.5 8.5V19h-17z"/><path d="M3.5 13.5h5a3.5 3.5 0 0 0 7 0h5"/></svg></button></nav>
+  <button class="dk-round" aria-label="Now"><svg class="dk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/></svg></button>
+</div>
+<script>
+document.addEventListener('click', function (e) { var b = e.target.closest('.dk-tab'); if (!b) return; b.parentNode.querySelectorAll('.dk-tab').forEach(function (x) { x.setAttribute('aria-current', String(x === b)); }); });
+</script>
+</body>
+</html>

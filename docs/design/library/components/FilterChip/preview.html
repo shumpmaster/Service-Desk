@@ -1,0 +1,16 @@
+<!-- @dsCard group="Chips" height=140 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>FilterChip</title></head>
+<body>
+<div class="dk-stage"><div class="dk-chips" role="group" aria-label="Projects">
+  <button class="dk-chip" aria-pressed="true"><span class="label">Service-Desk</span><span class="n">2</span></button>
+  <button class="dk-chip" aria-pressed="false"><span class="label">Model-Lab</span>ML</button>
+  <button class="dk-chip" aria-pressed="false"><span class="label">Operating Model</span>OM</button>
+  <button class="dk-chip" aria-pressed="false"><span class="label">Portfolio</span>PF</button>
+</div><p class="dk-note">One of many: tap a chip. The selected one widens to show its label.</p></div>
+<script>
+document.addEventListener('click', function (e) { var b = e.target.closest('[aria-pressed]'); if (!b) return; var g = b.parentNode; g.querySelectorAll('[aria-pressed]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); });
+</script>
+</body>
+</html>

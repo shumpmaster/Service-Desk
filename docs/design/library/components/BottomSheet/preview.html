@@ -1,0 +1,18 @@
+<!-- @dsCard group="Sheets" height=350 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>BottomSheet</title></head>
+<body>
+<div class="dk-stage"><div class="dk-sheet" role="dialog" aria-label="Filter the plan">
+  <div class="dk-grab"></div>
+  <div class="dk-sheet-top"><button class="dk-text-btn">Reset</button><h3>Filter the plan</h3><button class="dk-done">Done</button></div>
+  <p class="dk-caps" style="margin-bottom:8px">Show on the plan</p>
+  <div class="dk-seg" role="group" aria-label="Zoom"><button aria-pressed="false">Phases</button><button aria-pressed="true">Milestones</button><button aria-pressed="false">Sprints</button></div>
+  <p class="dk-caps" style="margin:16px 0 8px">Hidden</p>
+  <div class="dk-list" style="width:auto;background:var(--surface);border-radius:var(--radius-10);padding:0 0 0 0"><div class="dk-row"><span class="ic"><span class="dk-radio on"></span></span><span class="tx">Hide unused milestones</span></div><div class="dk-row"><span class="ic"><span class="dk-radio"></span></span><span class="tx">Show everything</span></div></div>
+</div></div>
+<script>
+document.addEventListener('click', function (e) { var b = e.target.closest('[aria-pressed]'); if (!b) return; var g = b.parentNode; g.querySelectorAll('[aria-pressed]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); });
+</script>
+</body>
+</html>

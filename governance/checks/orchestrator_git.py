@@ -53,6 +53,10 @@ calls one of these subcommands (or session_runner.py); the workflow holds wiring
               queue/ci-hold-<tip>.md. model S-017 AC2: also outputs ci (the CI state) and held_work (how
               many dispatch entries `step` would have planned without --hold, from a second `step` on a
               copy of the tree; 0 when it did not hold), and hands on exactly what it would without it.
+              model S-038: `step` (and the second `step`) also gets --spec-ids, the id of every spec
+              file (specs/<name>.md) on the default branch and on every item branch
+              (refs/remotes/<remote>/item/* and refs/heads/item/*), so a new spec id is one past all of
+              them; a failure while listing stops the job before `step` runs.
   ci-runs     (model S-013 AC6) `gh api` for the governance workflow's runs on HEAD, into FILE;
               never fails (an error is written as unreadable, so the decide job holds). model S-017 AC1:
               with --wait-seconds N, while the latest run on HEAD is not completed, or there is none, it
@@ -703,6 +707,33 @@ def build_specs(repo, remote, default_ref, out):
             write_file(os.path.join(out, name), cat_blobs(repo, [sha])[sha])
             copied.append(name)
     return copied
+
+
+ITEM_BRANCH_RE = re.compile(r"[PQE]-[0-9]+")
+
+
+def all_spec_ids(repo, remote, default_ref):
+    """model S-038 AC3: the sorted, de-duplicated ids of every regular file specs/<name> (one level, a spec
+    name with an id) at `default_ref` and at the tip of every item branch, remote-tracking or local. A
+    `default_ref` that is not a commit is a usage error; any other git failure raises GitFailed."""
+    base = rev(repo, default_ref)
+    if base is None:
+        raise g.UsageError("%s is not a commit in %s" % (default_ref, repo))
+    prefixes = ("refs/remotes/%s/item/" % remote, "refs/heads/item/")
+    out = gitout(repo, ["for-each-ref", "--format=%(refname)%00%(objectname)"] + list(prefixes))
+    commits = [base]
+    for line in out.decode("utf-8", "replace").splitlines():
+        ref, _, obj = line.partition("\0")
+        for prefix in prefixes:
+            if ref.startswith(prefix) and ITEM_BRANCH_RE.fullmatch(ref[len(prefix):]):
+                commits.append(gitout(repo, ["rev-parse", "--verify", "%s^{commit}" % obj]).decode().strip())
+    ids = set()
+    for commit in dict.fromkeys(commits):
+        for p, e in ls_tree(repo, commit, "specs/").items():
+            parts = p.split("/")
+            if len(parts) == 2 and regular(e[0]) and g.is_spec_name(parts[1]) and g.spec_id(parts[1]):
+                ids.add(g.spec_id(parts[1]))
+    return sorted(ids)
 
 
 def cmd_specs(a):
@@ -1510,13 +1541,13 @@ def cmd_dispatch_governance(a):
     return 0
 
 
-def count_held_work(repo, dest, now, specs, tips):
+def count_held_work(repo, dest, now, specs, tips, spec_ids):
     """model S-017 AC2: how many dispatch entries `step` would plan without --hold, from a second `step` on a
     copy of the working tree (no .git) at `dest`; the tree handed on is never touched. 0 when it cannot tell."""
     try:
         shutil.copytree(repo, dest, symlinks=True, ignore=lambda d, names: [".git"] if d == repo else [])
         argv = ["step", "--root", dest, "--now", now, "--spec-dir", specs, "--outcomes",
-                os.path.join(dest, "status", "outcomes.jsonl"), "--item-tips", tips]
+                os.path.join(dest, "status", "outcomes.jsonl"), "--item-tips", tips, "--spec-ids", spec_ids]
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             code = orch.main(argv)
         if code != 0:
@@ -1563,11 +1594,14 @@ def cmd_decide(a):
     try:
         specs = os.path.join(work, "specs")
         build_specs(repo, a.remote, "HEAD", specs)
+        spec_ids = os.path.join(work, "spec-ids.json")         # model S-038 AC3: raises before step runs
+        with open(spec_ids, "w", encoding="utf-8") as fh:
+            json.dump(all_spec_ids(repo, a.remote, "HEAD"), fh)
         tips = os.path.join(work, "item-tips.json")
         with open(tips, "w", encoding="utf-8") as fh:
             json.dump(launch_tips(repo, a.remote, sha), fh)
         argv = ["step", "--root", repo, "--now", now, "--spec-dir", specs, "--outcomes", outcomes,
-                "--item-tips", tips]
+                "--item-tips", tips, "--spec-ids", spec_ids]
         held_work = 0
         if hold:
             argv.append("--hold")
@@ -1576,7 +1610,7 @@ def cmd_decide(a):
             card = hold_card(repo, sha, state, now)
             if card and not os.path.lexists(os.path.join(repo, card[0])):
                 write_file(os.path.join(repo, *card[0].split("/")), card[1].encode("utf-8"))
-            held_work = count_held_work(repo, os.path.join(work, "unheld"), now, specs, tips)
+            held_work = count_held_work(repo, os.path.join(work, "unheld"), now, specs, tips, spec_ids)
             print("NOTE: without the hold, step would have planned %d dispatch(es) (model S-017 AC2)" % held_work)
         code = orch.main(argv)
         if code != 0:

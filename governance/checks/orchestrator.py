@@ -3,12 +3,13 @@
 
 Usage:
   orchestrator.py step --root DIR --now RFC3339 --spec-dir DIR [--outcomes FILE] [--routing PATH]
-                       [--item-tips FILE] [--hold]
+                       [--item-tips FILE] [--spec-ids FILE] [--hold]
   orchestrator.py verify-log [--root DIR]
 
 A pure decision engine. It runs no sessions, touches no git branch and reads no
 work product's content (AC10: it parses only status files, request files,
 ROUTING.toml, the dispatch log, the outcomes file, status/processed.json, the
+--spec-ids file (a list of spec ids only; model S-038), the
 one decision record an item waits on (whole, up to 64 KiB; model S-024 AC4), and a
 spec's header up to its `status:` line; it may list file names and test paths). Two
 reads more (model S-023, model S-024): a later-work request's `ruling` record, only for
@@ -41,6 +42,12 @@ line. Whether a phase gate's case exists is a path test.
               is refused with a fresh launch card (route `launch-pass`, or `gate-view` for an item whose
               card the gate Critic's view raised, model S-024), and `approve` or `proceed` on a card with
               no `Item-Tip:` is refused (the card stays open). The commit job stamps the tip.
+  --spec-ids  (model S-038) a JSON array of the spec ids already in use (the decide job's: every spec
+              file on the default branch and on every item branch). Each string matching `S-nnn` is
+              counted before any status file is read, so a new spec id is one past the highest of
+              these, the --spec-dir names and every status file's `spec` and `superseded`; any other
+              element is ignored. A file that cannot be read, is not JSON or is not an array is a
+              usage error; an empty array counts nothing.
   --hold      (model S-013 AC6) CI is not green on the default tip: requests, outcomes and the owner's
               decisions are applied and cards raised, but no session or check run is dispatched
               (an item a route would dispatch keeps its status) and the plan is empty.
@@ -969,8 +976,9 @@ ITEM_TIP_RE = re.compile(r"^Item-Tip: ([0-9a-f]{40})[ \t]*$", re.M)
 
 
 class Step:
-    def __init__(self, root, now, spec_dir, outcomes, routing_path, item_tips=None, hold=False):
+    def __init__(self, root, now, spec_dir, outcomes, routing_path, item_tips=None, hold=False, spec_ids=None):
         self.root = root
+        self.spec_ids = spec_ids or []
         self.item_tips = item_tips
         self.hold = hold
         self.now = now
@@ -1171,6 +1179,9 @@ class Step:
 
     # -- phase 0: status files
     def load_statuses(self):
+        for sid in self.spec_ids:              # model S-038 AC1: before the status files
+            if isinstance(sid, str) and SPEC_ID_RE.fullmatch(sid):
+                self.note_spec(sid)
         for sid in self.spec_names():
             self.note_spec(sid)
         for name in self.listdir(STATUS_DIR):
@@ -1719,7 +1730,16 @@ def cmd_step(args):
             raise UsageError("--item-tips: %s" % exc)
         if not isinstance(tips, dict):
             raise UsageError("--item-tips holds a JSON object {item: {tip, fresh}}")
-    return Step(root, now, args.spec_dir, args.outcomes, routing, tips, args.hold).run()
+    spec_ids = None
+    if args.spec_ids is not None:              # model S-038 AC2
+        try:
+            with open(args.spec_ids, encoding="utf-8") as fh:
+                spec_ids = json.load(fh)
+        except (OSError, ValueError, RecursionError) as exc:
+            raise UsageError("--spec-ids: %s" % exc)
+        if not isinstance(spec_ids, list):
+            raise UsageError("--spec-ids holds a JSON array of spec ids")
+    return Step(root, now, args.spec_dir, args.outcomes, routing, tips, args.hold, spec_ids).run()
 
 
 # --------------------------------------------------------------------------
@@ -1790,6 +1810,7 @@ def main(argv=None):
     p.add_argument("--outcomes")
     p.add_argument("--routing")
     p.add_argument("--item-tips")
+    p.add_argument("--spec-ids")
     p.add_argument("--hold", action="store_true")
     v = sub.add_parser("verify-log", allow_abbrev=False)
     v.add_argument("--root", default=".")

@@ -688,3 +688,11 @@ options_considered: B, the changelog and disagreement lines only (the two single
 decided_by: owner ("A: file all three (Recommended)", 2026-11-12, asked in session session_01QBwHGJzc87ezrCJjztgrMp; recorded in decisions/questions/P-005-vendor-pages.md)
 proposed_by: chief-of-staff
 reversibility: irreversible
+
+## L-0054 — S-010 superseded
+date: 2026-11-14
+type: ruling
+supersedes: []
+amends: [S-010]
+decided_by: owner (decisions/P-005/stop-4.md)
+proposed_by: orchestrator

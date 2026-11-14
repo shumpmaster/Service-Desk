@@ -1,6 +1,6 @@
 Verdict: FAIL
 
-The Reviewer's second-round verdict on PR #447, on 2dba2686, verbatim below. Recorded by the orchestrator, session session_01QBwHGL7cLBqyQ4o1BxNuyh, 2026-11-14. B2 was fixed in 03fd5a01: the confirmation's time is stated as known (before 15:05Z), not estimated. N5 and N6 were fixed in the pull request's body. N7 is noted: the Chief of Staff's brief named a commit wrongly and said the digest changed when it did not. The open questions on the Reviewer's checklist pointer and the merger identity are for the operating model.
+The Reviewer's second-round verdict on PR #447, on 2dba2686, verbatim below. Recorded by the orchestrator, session session_01QBwHGL7cLBqyQ4o1BxNuyh, 2026-11-14. B2 was addressed in 03fd5a01: the confirmation's time is stated as known (before 15:05Z), not estimated. N5 and N6 were addressed in the pull request's body. N7 is noted: the Chief of Staff's brief named a commit wrongly and said the digest changed when it did not. The open questions on the Reviewer's checklist pointer and the merger identity are for the operating model.
 
 ## The Reviewer's return
 

@@ -4,8 +4,8 @@
       "action": "dispatch",
       "gate": null,
       "item": "P-005",
-      "role": "critic",
-      "route": "define-to-plan-review",
+      "role": "critic-triage",
+      "route": "third-fail",
       "spec": "S-011",
       "stage": 3
     }

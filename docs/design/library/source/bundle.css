@@ -170,6 +170,15 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-ms::before { z-index: 1; }
 .dk-branch { display: block; overflow: visible; filter: drop-shadow(0 1px 0 var(--groove-edge)); }
 .dk-branch path { fill: none; stroke: var(--groove); stroke-width: 6; stroke-linecap: round; }
+/* lane graph: main on the left, each open branch in the next free lane */
+.dk-lanes { position: relative; }
+.dk-lanes svg.lines { position: absolute; left: 0; top: 0; overflow: visible; filter: drop-shadow(0 1px 0 var(--groove-edge)); }
+.dk-lanes svg.lines path { fill: none; stroke: var(--groove); stroke-width: 6; stroke-linecap: round; }
+.dk-lanes svg.lines path.main { stroke: var(--groove-main); stroke-width: 8; }
+.dk-lane-ico { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: var(--radius-full); background: var(--fill); color: var(--text-1); display: grid; place-items: center; box-shadow: 0 0 0 3px var(--ground); }
+.dk-lane-ico .i { width: 15px; height: 15px; }
+.dk-lane-ico.main { background: var(--main-mark); color: var(--on-main-mark); }
+.dk-lane-ico.run { background: var(--ground); box-shadow: 0 0 0 3px var(--ground), inset 0 0 0 1.5px var(--text-3); }
 .dk-ms { position: relative; display: flex; flex-direction: column; justify-content: center; min-height: var(--size-row); }
 .dk-ms::before { content: ""; position: absolute; left: -27px; top: 50%; margin-top: -6px; width: 12px; height: 12px; border-radius: var(--radius-full); background: var(--ground); border: 1.5px solid var(--text-3); box-sizing: border-box; }
 .dk-ms.done::before { background: var(--text-3); }

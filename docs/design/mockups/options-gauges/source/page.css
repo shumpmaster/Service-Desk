@@ -60,3 +60,16 @@ figcaption { font-size:13px; color:var(--text-2); }
 .rdot { position:absolute; right:-1px; top:-1px; width:10px; height:10px; border-radius:5px; box-shadow:0 0 0 2px var(--ground); }
 .rdot.g { background:var(--g); } .rdot.y { background:var(--y); } .rdot.r { background:var(--r); }
 .gauge .in svg.sm { width:9px; height:9px; }
+
+/* softer versions of A */
+.pa1 .arc.g, .pa3 .arc.g { stroke:color-mix(in srgb, var(--g) 55%, var(--surface)); }
+.pa1 .arc.y, .pa3 .arc.y { stroke:color-mix(in srgb, var(--y) 55%, var(--surface)); }
+.pa1 .arc.r, .pa3 .arc.r { stroke:color-mix(in srgb, var(--r) 55%, var(--surface)); }
+.pa2 .trk { stroke-width:2.5; } .pa2 .arc { stroke-width:2.5; }
+.pa2 .arc.g { stroke:color-mix(in srgb, var(--g) 70%, var(--text-3)); }
+.pa2 .arc.y { stroke:color-mix(in srgb, var(--y) 70%, var(--text-3)); }
+.pa2 .arc.r { stroke:color-mix(in srgb, var(--r) 70%, var(--text-3)); }
+.pa3 .trk { stroke-width:4.5; } .pa3 .arc { stroke-width:4.5; }
+.pa3 .trk.g { fill:color-mix(in srgb, var(--g) 8%, var(--surface)); stroke:color-mix(in srgb, var(--g) 16%, var(--surface)); }
+.pa3 .trk.y { fill:color-mix(in srgb, var(--y) 8%, var(--surface)); stroke:color-mix(in srgb, var(--y) 16%, var(--surface)); }
+.pa3 .trk.r { fill:color-mix(in srgb, var(--r) 8%, var(--surface)); stroke:color-mix(in srgb, var(--r) 16%, var(--surface)); }

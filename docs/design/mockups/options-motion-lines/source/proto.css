@@ -1,0 +1,39 @@
+
+/* ================= options: motion and branch lines (proposals, not yet chosen) =================
+   body.l1 hairline curves · body.l2 soft rail · body.l3 lines only, no connectors. body.l0 is v10 as it is. */
+:root { --ln: #c7c7cc; --ln-done: #8e8e93; --rail: #e3e3e8; --rail-done: #c7c7cc; --rail-plan: #ececf0; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ln: #48484a; --ln-done: #8e8e93; --rail: #2c2c2e; --rail-done: #48484a; --rail-plan: #232325; } }
+:root[data-theme="dark"] { --ln: #48484a; --ln-done: #8e8e93; --rail: #2c2c2e; --rail-done: #48484a; --rail-plan: #232325; }
+
+/* Now settles with a blue wash, not v8's yellow flash */
+@keyframes flash { 0% { background: var(--you-wash); } 100% { background: transparent; } }
+
+/* ---- L1 and L3: hairlines. One weight, round ends, smooth curves; planned is dotted ---- */
+body.l1 .trunk, body.l3 .trunk, body.l1 .ptl .faint, body.l3 .ptl .faint, body.l1 .branchoff .bo-desk, body.l3 .branchoff .bo-desk { width: 1.5px; background: var(--ln); border-radius: 1px; }
+body.l1 .ptl .pmain, body.l3 .ptl .pmain { width: 1.5px; background: var(--ln-done); border-radius: 1px; }
+body.l1 .pfut, body.l3 .pfut { border-left: 0; width: 2px; left: 47px; background: radial-gradient(circle, var(--ln-done) 0.9px, transparent 1.2px) 0 0 / 2px 5px repeat-y; }
+body.l1 .proj svg.conn path, body.l1 .branchoff svg path { stroke: var(--ln) !important; stroke-width: 1.5 !important; stroke-dasharray: none; stroke-linecap: round; }
+body.l1 .proj svg.conn path.ink { stroke: var(--ln-done) !important; stroke-dasharray: 1; }
+body.l1 .br-out { border-left: 1.5px solid var(--ln); border-bottom: 1.5px solid var(--ln); border-radius: 0 0 0 18px; }
+body.l1 .events, body.l3 .events { border-left: 1.5px solid var(--ln); }
+body.l3 .proj svg.conn, body.l3 .branchoff svg, body.l3 .br-out { display: none; }
+body.l3 .branchoff .bo-desk { display: none; }
+body.l3 .ptl .faint { display: none; }
+
+/* ---- L2: a soft rail. A 4 pt track in a quiet fill; the done part a shade darker, the planned part paler ---- */
+body.l2 .trunk, body.l2 .ptl .faint, body.l2 .branchoff .bo-desk { width: 4px; left: 12.5px; background: var(--rail); border-radius: 2px; }
+body.l2 .ptl .pmain { width: 4px; left: 46px; background: var(--rail-done); border-radius: 2px; }
+body.l2 .pfut { border-left: 0; width: 4px; left: 46px; background: var(--rail-plan); border-radius: 2px; }
+body.l2 .proj svg.conn path, body.l2 .branchoff svg path { stroke: var(--rail) !important; stroke-width: 4 !important; stroke-dasharray: none; stroke-linecap: round; }
+body.l2 .proj svg.conn path.ink { stroke: var(--rail-done) !important; stroke-dasharray: 1; }
+body.l2 .trunk-cap { width: 10px; height: 10px; left: 9.5px; background: var(--rail-done); }
+body.l2 .br-out { border-left: 4px solid var(--rail); border-bottom: 4px solid var(--rail); border-radius: 0 0 0 18px; left: 46px; }
+body.l2 .events { border-left: 4px solid var(--rail); }
+body.l2 .pl .node.ms { box-shadow: 0 0 0 2px var(--ground); }
+body.l2 .pl .node.ms.notrec, body.l2 .pl .node.ms.notreach, body.l2 .pl .node.ms.planned { box-shadow: inset 0 0 0 1.5px var(--branch-line), 0 0 0 2px var(--ground); }
+
+/* the switcher, only on the options playground */
+.optbar { position: fixed; z-index: 50; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); display: flex; gap: 6px; padding: 5px; border-radius: 9999px; background: var(--glass); box-shadow: var(--float-shadow); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); font: 600 13px var(--font-ui); }
+.optbar label { display: inline-flex; align-items: center; gap: 4px; padding-left: 8px; color: var(--text-2); }
+.optbar select { font: 600 13px var(--font-ui); border: 0; border-radius: 9999px; background: var(--fill); color: var(--ink); padding: 6px 8px; }
+body.l1 .proj svg.conn path.ink, body.l2 .proj svg.conn path.ink, body.l3 .proj svg.conn path.ink { display: none; }

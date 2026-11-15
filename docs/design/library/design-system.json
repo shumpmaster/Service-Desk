@@ -1,7 +1,10 @@
 {
  "v": 3,
  "layout": "files",
- "createdOnFiles": {"v": 1, "at": "2026-11-14T23:03:43Z"},
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-14T23:03:43Z"
+ },
  "title": "Desk Element Library",
  "namespace": "DeskElements",
  "libraries": [],
@@ -9,6 +12,14 @@
  "groups": [],
  "assetGroups": {},
  "blobs": {},
- "docs": {"readme": "project/README.md", "sections": []},
- "lastChange": {"by": "Claude", "at": "2026-11-14T23:03:43Z", "via": "Claude Code", "note": "First fill: tokens, brand book and 26 element cards from the Craft references and the audit."}
+ "docs": {
+  "readme": "project/README.md",
+  "sections": []
+ },
+ "lastChange": {
+  "by": "Claude",
+  "at": "2026-11-15T00:02:59Z",
+  "via": "Claude Code",
+  "note": "Second pass against the references: glass, Phosphor icons, Craft spacing, icon-only chips, pinned-style cards, the Now block's margin bar, popover groups."
+ }
 }

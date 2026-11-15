@@ -9,7 +9,7 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 - **Neutral first, one blue.** The only hue is blue, and it means one thing: selected, or now. Nothing is coloured for decoration.
 - **Rows, not boxes.** Lists are plain rows on the ground, split by inset hairlines. Cards are kept for things you can open.
 - **Round shapes.** Controls are capsules and circles; sheets and popovers have a 28 radius. Nothing is square.
-- **Floating controls are glass.** Top buttons, the capsule, the tab bar and the round button float over the content on `surface-floating` with `shadow-float`. Rows and text never cast a shadow.
+- **Floating controls are glass.** Top buttons, the capsule, the tab bar and the round button float over the content: `surface-floating` is 78% opaque and blurs what is behind, and `shadow-float` adds a soft drop and a white inner edge. Sheets and popovers are frosted the same way. Rows and text never cast a shadow.
 - **The system font.** One family at a few sizes: 27, 19, 17, 15 and 13. Weight does the work, not colour.
 - **Everything rises.** Settings and tools come up in bottom sheets; short choices open as popovers from the button that asked.
 
@@ -17,15 +17,17 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 
 **Colour.** Tokens are semantic (`ground`, `surface`, `text-1`, `accent`). Light is sampled from the references. Dark is **assumed**: the references show no dark mode, so its values follow the usual iOS dark neutrals, and they are not yet reviewed.
 
-**Type.** The system font (`sans`), plus a mono (`mono`) only for the desk's ids, such as S-011. The references have no mono.
+**Type.** The system font (`sans`) only. On an iPhone or Mac it is SF Pro, as in the references; elsewhere the nearest system face stands in. Ids such as S-011 sit in captions in the same font: the references have no monospace, and the desk's monospace breadcrumb is dropped.
 
-**Spacing.** 16 is the screen margin, 8 the gap between chips and cards, 12 the sheet inset and 24 the gap between sections. Measures are points, used as px.
+**Icons.** Craft draws Apple's SF Symbols, which a web page cannot use. The library uses Phosphor (MIT licence), the closest open set: **regular** weight for list rows, **bold** for controls, tabs and menus, and the **filled** form for anything selected (the selected tab, the selected chip, the waiting bell). Sizes: 22 in rows and chips, 24 in top buttons, 26 in the capsule and menus, 27 in the tab bar. The circled More is drawn by hand to match SF's.
+
+**Spacing.** 16 is the screen margin, 8 the gap between chips and cards, 12 the sheet inset and 24 the gap between sections. Section headings sit 8 in from the title (x 24). On a 393 by 852 screen: status bar 54, top buttons 6 below it, the large title at y 136, search at y 188, the tab bar 22 from the bottom. Measures are points, used as px.
 
 **Size.** The fixed control sizes (44 hit, 40 chip, 48 row, 42 menu row, 62 tab bar, 56 round button, 36 capsule) are tokens in their own family.
 
-## Legibility: four values made darker
+## Legibility: three values made darker
 
-Words must reach 4.5:1 against what they sit on. Four reference values fall short, so the tokens use a darker value and the reference value is kept for icons only:
+Words must reach 4.5:1 against what they sit on. Three reference values fall short, so the tokens use a darker value; the original grey is kept, for icons only:
 
 | Use | Reference | Token value | Ratio |
 |---|---|---|---|

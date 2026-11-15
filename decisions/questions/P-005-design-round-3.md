@@ -66,3 +66,8 @@ Answered in chat: the reason is visual load only; both drawings space the events
 Is there any value to adding color to those icons as well?"
 
 Carried out: the map shows the icons of the events in view below and dots for the rest of the phase. On colour, the Chief of Staff answered in chat: some value, if it is the same soft status colour as the rows, used only for waiting and failed or blocked, and carried by the dots as well as the icons; to be shown in pictures before any change.
+
+Asked by the question tool: "Colour on the map. The page https://claude.ai/artifact/JrG3eLqqCvkL7x9zVTzX4c now shows B as you chose it, then B with the rows' soft colour (red for failed or blocked, yellow for waiting on you, done grey) on both the icons and the dots. Scroll in each phone. Which?" Options: "B with colour (Recommended)"; "B neutral".
+13. "B with colour (Recommended)"
+
+Carried out: the map's icons and dots take the rows' soft tones, red for failed or blocked and yellow for waiting on you; done stays grey and Now stays blue. Agreed in chat (the owner: "Yes of course that’s a perfect plan"): the library and mockup v13 are brought up to date with round 3's answers next; the owner's third point (what serves no purpose and what is missing) and gate, decision, research and stop go to the next session.

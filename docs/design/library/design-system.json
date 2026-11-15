@@ -18,8 +18,8 @@
  },
  "lastChange": {
   "by": "Claude",
-  "at": "2026-11-15T00:02:59Z",
+  "at": "2026-11-15T02:00:00Z",
   "via": "Claude Code",
-  "note": "Second pass against the references: glass, Phosphor icons, Craft spacing, icon-only chips, pinned-style cards, the Now block's margin bar, popover groups."
+  "note": "Chips raised with shadow-chip and shadow-chip-selected; FilterChip gains the named form for switching projects (owner's choice, Option A with the 3D look). Colour and the trunk shapes are on hold."
  }
 }

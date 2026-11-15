@@ -18,3 +18,8 @@ Asked by the question tool: "Lane width (your first point on v12). The page http
 2. "Hmm I’m not sure, can you please suggest a couple of radically different ideas"
 
 Carried out: radically different ways to show several branches, drawn with M6's real events.
+
+Asked by the question tool: "Lanes, three different ideas. The page https://claude.ai/artifact/Pv5M3fvaR7MBd7fUYYPyzi shows v12's lanes as they are, then three new ideas drawn with M6's real events (they follow your light/dark setting). Which direction?" Options: "1: Branch map on top (Recommended)"; "2: Sprint cards, no lines"; "3: Sideways, metro map"; "Mix or none". Pictures: docs/design/mockups/options-lane-ideas/.
+3. "1: Branch map on top (Recommended)"
+
+Carried out: an open milestone gets a small branch map at its top (main and every sprint, newest on the right, the one being read picked out); its events run full width below with no lines beside them. To be built into the library and the next mockup together with the owner's other points on v12.

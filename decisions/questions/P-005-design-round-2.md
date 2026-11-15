@@ -66,3 +66,8 @@ Carried out: the Chief of Staff reads answer 9 as the seven GitHub kinds (branch
 The next question (which branch drawing; how the model's own steps show) was dismissed. The owner then said: "Pause and I will ask you to resubmit your questions shortly", and next, unasked: "Okay so how would the lane graph visualize multiple parallel branches simultaneously? Just focus on the icons and branch structure. Also note I want to visually separate main branch. Just make it stand out somehow it doesn’t have to be significant"
 
 Carried out: docs/design/mockups/options-lanes/ (https://claude.ai/artifact/MtotUKqgeB5yqsYcGag8d4), the lane graph with four lines at once, icons and lines only, with three small ways to set main apart.
+
+The owner's words, verbatim, on the lane page's three ways to set main apart (A: a darker, wider groove; B: dark icons on main; C: both):
+11. "Option C is my choice"
+
+Carried out: the library gains a LaneGraph card (main's groove 8 wide in groove-main, main's icons on main-mark discs; each open branch in the next free lane). Still to be put again when the owner asks: which of the three branch drawings (lanes, one branch lane, grouped), and how gate, decision, research and stop show now that only the seven kinds are kept.

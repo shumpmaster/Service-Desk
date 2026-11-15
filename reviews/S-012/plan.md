@@ -1,34 +1,48 @@
 Verdict: FAIL
 
-I read specs/S-012.md in full, experiments/P-005-E1.md and the earlier review in reviews/S-012/plan.md. I did not open the library, decision and plan files the spec cites. The four earlier blocking items are addressed. Two new blocking defects are in AC41, and the join-up review is still open.
+I checked specs/S-012.md in full, along with reviews/S-012/plan.md, experiments/P-005-E1.md, docs/projects/P-005.md lines 70-76, and specs/S-009.md line 154.
+
+**What holds**
+- The header `milestones: M6, M7, M8` names milestones that exist in docs/projects/P-005.md lines 72-74.
+- J4's id forms (`<item>-<gate>-<n>`, `question:<name>`, `pr:<number>`) match S-009.md:154.
+- The second review's two blocking defects are fixed:
+  - AC41 now has cause (d) for a return a run saw, tried in a fixed order (a), (b), (c), (d) (spec lines 108-113).
+  - AC40 and AC41 now share the waiting-list `id` as their join key (spec lines 87, 100-102).
 
 **Blocking**
+1. **AC40's pull-request wait can't be timed as written** (spec line 92, copied from E1 line 26).
+   - A pull request "that needs the owner" is one the card-making code puts on the waiting list when run on the records as they stood at the window's end.
+   - A pull request merged or closed inside the window is no longer waiting at that moment, so it is not on the list and is not counted. A pull request still on the list at the window's end is open, so its end record is dated after the window and is not read.
+   - So no pull-request wait can end inside the window. That contradicts the same line's "waits from `ready_for_review` … to `merged_at`, or to `closed_at`".
+   - It also contradicts the test at line 98, which needs a counted pull-request wait of each ending type.
+   - The same defect sits in E1's baseline. The rule should say which pull requests count as needing the owner at some point in their life, not at the window's end.
 
-1. **AC41 treats a legitimate return as a fault of the route.**
-   - AC23 (line 63) and J5 (line 132) say a step is sent again when a run that read its project found it gone from the waiting list and a later run finds it back. This holds even with `changed_at` unchanged.
-   - AC41 (lines 103-107) lists every step sent more than once with the same (`id`, `changed_at`). It allows only causes (a), (b) and (c), and calls everything else "unexplained, a fault of the route".
-   - A step that left the list, was seen gone and came back fits none of the three causes. It would be reported as a fault of the route. The spec's own rule produces a false fault that goes to the owner with the week's misses.
-   - The repeat-test list (line 111) has no such case, so a test written from this spec would pass either way.
-   - Fix: add a cause (d) for a return seen through a `true` line without the step, or exclude such repeats. Add the case to the test.
+2. **AC41 can match a pull-request wait to a line from a different wait.**
+   - AC41 matches on the first `shown` line, or the first notice line, whose `id` equals the wait's, with no time bound (spec lines 101-102).
+   - A pull request id (`pr:<number>`) is reused if the pull request goes back to draft and returns to ready. A card, question or deploy id is unique.
+   - A line from an earlier wait could then make a later wait look shown or sent in time. A line from before the wait's start has no defined answer to "within 5 minutes of its due time".
+   - This breaks the spec's own principle that a missing log can only add misses (line 106).
+   - The fix is to match only lines dated at or after the wait's start and before its end, or to say that a return to ready is the same wait.
 
-2. **AC41 has no key to join AC40's waits to J5's and J9's lines.**
-   - AC41 (lines 95-97) takes its steps from "AC40's count". AC40's listed fields (line 82) are kind, project, start record and time, end record and time, and who acted. They do not include a J4 waiting-list `id` or `changed_at`.
-   - The notice lines (J5) and the `shown` lines (J9) are keyed by waiting-list `id`.
-   - The spec never says how a wait is matched to an `id`. That can only be done by reconstructing J4's id, and the spec doesn't say how. Without a join key, AC41's test cannot be written.
-   - Fix: add the J4 `id` and `changed_at` to AC40's output, or state the mapping per kind.
-   - Cause (a) and cause (b) can also both hold: the second sender's `from_run` is `null` and the first sender has no `true` line. No precedence is given at lines 104-106.
+3. **Cause (d) fails when the `from_run` run has no log.**
+   - Cause (d) reads "that run's `true` line does not hold the pair" (line 112).
+   - If the run named by `from_run` has no `true` line, or its log is past keeping, the spec doesn't say what to do.
+   - The repeat then falls to "unexplained", which is reported as a fault of the route, which is the false fault the last round removed. State this case, and put it in the test at line 117.
 
-3. **Join-up review rows 1, 2, 3 and 5 are still blocking.**
-   - The mockups and E2's result file do not exist (spec lines 148-154).
-   - The spec says it cannot close them. I agree: that review comes at the end of Design, once they exist.
+4. **Join-up review rows 1, 2, 3 and 5 are still blocking.**
+   - There are no mockups and no E2 result file yet (spec lines 152-160).
+   - The spec says it cannot close them, and I agree. They block the end of Design, not the freeze of this spec.
 
 **Non-blocking, carried as risks**
+- The repeat count is "found in the notice lines of the runs that started in the window" (line 108). A first sender before the window and a second inside it is not covered.
+- AC37 and J10 pass only by finding no widget copy until P-004 adds one. The spec says so (AC37).
+- Which src/lib/ files are risk paths is unknown until the Builder's reading of src/ (spec line 204).
 - Row 4 of the join-up review (two screens doing the same job until M10) is carried in Risks.
-- AC37 and J10 pass only by finding no widget copy until P-004 adds one. The spec says so.
-- The approval of the M7 pull request depends on the Builder's reading of src/. The spec names this at line 168.
-- J12's file place (`value/P-005/checks.jsonl`) is open question 2. It is not a blocker.
-- The start of a wait for the four kinds other than decision cards may differ from when the desk first lists the step. The spec admits this (line 200). It says the effect is only to show a step as later than it was, but I did not verify that.
+- The start time of non-card waits may differ from when the desk first lists the step. The spec admits this (line 206).
+
+**Stop rule**
+The stop rule (line 232) says work stops and comes back to the owner if "a third readiness or plan-review round fails". This is the third plan round for this spec, so a FAIL escalates to the owner.
 
 **Open questions**
-- Should a return seen by a run be a visible cause (d), or should the spec drop the resend for returns whose `changed_at` is unchanged? The owner's question 1 (line 231) chose to resend only when a run saw the step gone, and AC41 has to agree with that.
-- Which field ties an AC40 wait to a J4 `id` for the pull request, gate and deploy kinds?
+- Should "needs the owner" for a pull request mean "on the waiting list at any moment in its life", or something else? If it changes, E1's registration, which has not run, needs the same fix.
+- Is a pull request that returns to ready one wait or two?

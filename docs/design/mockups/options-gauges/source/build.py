@@ -18,7 +18,7 @@ def gauge(mode, pct, rag, inner):
     if mode == 'b': inner = f'<span class="pct">{pct}</span>'
     dot = f'<span class="rdot {rag}"></span>' if mode == 'c' and rag != 'none' else ''
     return (f'<span class="gauge m{mode}" role="img" aria-label="{pct}% {dict(g="on track", y="waiting or at risk", r="stopped or blocked", none="not started")[rag]}">'
-            f'<svg viewBox="0 0 34 34" width="34" height="34"><circle class="trk" cx="17" cy="17" r="14"/>{arc}</svg><span class="in">{inner}</span>{dot}</span>')
+            f'<svg viewBox="0 0 34 34" width="34" height="34"><circle class="trk {rag}" cx="17" cy="17" r="14"/>{arc}</svg><span class="in">{inner}</span>{dot}</span>')
 
 def row(mode, lvl, pct, rag, inner, no, name, meta, note=''):
     return (f'<div class="gr lv{lvl}">{gauge(mode, pct, rag, inner)}<div class="tx"><div class="l1"><span class="no">{no}</span><b>{E(name)}</b><span class="tm">{meta}</span></div>'
@@ -41,19 +41,20 @@ def screen(m):
             row(m, 2, 100, 'g', I['ms'], '2.1', 'Design-1', 'reached'))
 
 OPTS = [
- ('a', 'A · A coloured ring around the icon', 'The ring fills to show how far along it is, in green, yellow or red. The icon inside stays as it is.'),
- ('b', 'B · The number inside the ring', 'The same coloured ring, with the percent written inside instead of the icon. The level is told by the number on the left (2, 2.7, 2.7.2).'),
- ('c', 'C · A grey ring and a coloured dot', 'The ring fills in grey, and a small dot on its edge carries the colour. Calmer: colour only where it says something.'),
+ ('a', 'A · As you chose it', 'The coloured ring around the icon, as on the first page.'),
+ ('a1', 'A1 · Lighter tones', 'The same ring in paler green, yellow and red, so it sits back from the words.'),
+ ('a2', 'A2 · Thinner and muted', 'A thinner ring in muted, slightly greyed tones. The quietest of the three.'),
+ ('a3', 'A3 · A tinted ring', 'The whole ring takes a faint wash of its colour, and the filled part is a soft tone of it. Reads as one soft shape rather than a line.'),
 ]
 CSS = open(os.path.join(H, 'page.css')).read()
-frames = ''.join(f'<section class="opt"><div class="hd"><span class="tag">Option</span><h2>{h}</h2><p>{p}</p></div><div class="phone"><div class="screen">{screen(k)}</div></div></section>' for k, h, p in OPTS)
+frames = ''.join(f'<section class="opt"><div class="hd"><span class="tag">{"Chosen" if k == "a" else "Softer"}</span><h2>{h}</h2><p>{p}</p></div><div class="phone p{k}"><div class="screen">{screen(k)}</div></div></section>' for k, h, p in OPTS)
 page = f'''<title>Gauge Icons</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>{CSS}</style>
 <main>
-<header class="lede"><h1>Circle icons with percent gauges</h1>
+<header class="lede"><h1>Softer gauges</h1>
 <p>You asked for the circle icons with percent gauges, in red, yellow and green. Today, in v12, a milestone is a small circle: filled when reached, hollow when planned, a square for your own milestones. Phases have no icon, and sprints and steps have none on the line.</p>
-<p>Then three ways to draw the gauge, on the Design phase. Each one uses the same colours: <b class="k g">green</b> on track, <b class="k y">yellow</b> waiting on you or at risk, <b class="k r">red</b> stopped or blocked, and no colour for not started. Red keeps its meaning of a problem. The percentages marked “example” are made up: what a gauge counts is the next question.</p></header>
+<p>You chose A, the coloured ring with the icon inside, and asked for the colour to be softer. First A as it was shown, then three softer versions, on the Design phase. Each one uses the same colours: <b class="k g">green</b> on track, <b class="k y">yellow</b> waiting on you or at risk, <b class="k r">red</b> stopped or blocked, and no colour for not started. Red keeps its meaning of a problem. The percentages marked “example” are made up: what a gauge counts is the next question.</p></header>
 <section class="opt"><div class="hd"><span class="tag">Now</span><h2>v12 as it is</h2></div>
 <div class="pair"><figure><img src="now-light.png" alt="v12, light" width="393" height="640"><figcaption>Light</figcaption></figure><figure><img src="now-dark.png" alt="v12, dark" width="393" height="640"><figcaption>Dark</figcaption></figure></div></section>
 {frames}

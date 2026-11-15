@@ -36,3 +36,8 @@ Asked by the question tool: "The floating branch map. The page https://claude.ai
 6. "A: whole phase, panning (Recommended)"
 
 Carried out: the branch map floats at the top of the timeline and shows every sprint in the phase, oldest on the left; a soft window marks the events in view below, and the map slides sideways to keep them under it. Next: the circle icons with percent gauges, in red, yellow and green.
+
+Asked by the question tool: "Gauge icons. The page https://claude.ai/artifact/WCejAa8AxNzazgiyje3aM8 shows v12's milestone circles as they are, then three gauges on the Design phase: green on track, yellow waiting on you or at risk, red stopped or blocked, no colour when not started. Which one?" Options: "A: coloured ring, icon inside (Recommended)"; "B: number inside the ring"; "C: grey ring, coloured dot"; "Mix or none". Pictures: docs/design/mockups/options-gauges/.
+7. "A - but let’s make the color gauge softer"
+
+Carried out: A, the coloured ring with the icon inside, shown as it is and then three softer versions on the same page.

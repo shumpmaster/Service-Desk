@@ -1957,10 +1957,11 @@ body.m6.l1 .proj svg.conn path.ink, body.m6.l3 .proj svg.conn path.ink, body.m6.
     if (OPT.m === 'm0') return _close();
     if (busy) return; busy = true;
     var view = document.getElementById('view');
-    anim(view, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-16px)' }], { duration: 160, easing: 'ease-in', fill: 'forwards' }).then(function () {
+    var push = OPT.m === 'm5', dx = push ? 40 : 16;
+    anim(view, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-' + dx + 'px)' }], { duration: push ? 180 : 160, easing: 'ease-in', fill: 'forwards' }).then(function () {
       state.view = 'desk'; state.proj = null; renderDesk(); window.scrollTo(0, 0);
       view.getAnimations().forEach(function (a) { a.cancel(); });
-      return anim(view, [FROM, TO], { duration: 260, easing: EASE });
+      return anim(view, [{ opacity: 0, transform: 'translateX(' + (push ? 40 : -16) + 'px)' }, TO], { duration: push ? 300 : 260, easing: EASE });
     }).then(function () { busy = false; });
   };
   step = function (dir, target) {

@@ -325,20 +325,24 @@ A short menu that opens from the button that asked. From ref 17.
 - One inset hairline separates groups. Dismiss by tapping outside.
 """)
 
-comp("TimelineTrunk", "Desk", 340,
+comp("TimelineTrunk", "Desk", 430,
  f'''<div class="dk-stage"><div class="dk-trunk">
   <div class="dk-ms next"><span class="t">Build</span><span class="c">M-4 · planned</span></div>
   <div class="dk-ms now"><div class="dk-nowwrap" style="width:auto"><div class="dk-now">{TH}<div class="hx"><div class="t">Design: stop card 5</div><div class="c">S-011 · waits on you</div></div><span class="dk-radio on"></span></div></div></div>
   <div class="dk-ms done"><span class="t">Plan review</span><span class="c">S-011 · passed</span></div>
   <div class="dk-ms done"><span class="t">Define</span><span class="c">S-010 · done</span></div>
-</div><p class="dk-note">Newest first. The node shapes and how "planned" is drawn are placeholders until the owner chooses.</p></div>''',
+</div><p class="dk-note">Newest first. The trunk is a groove; done work fills it. The node shapes and how "planned" is drawn are placeholders, on hold.</p>
+<svg class="dk-branch" width="120" height="44" viewBox="0 0 120 44" aria-hidden="true"><path d="M15 0 C15 30 26 38 60 38 H110"/></svg><p class="dk-note">A branch: the same groove, one smooth curve.</p></div>''',
  """# TimelineTrunk
 
 The desk's own element: the quiet trunk the plan hangs from, with milestone rows on it. Not in the references; built from their pieces.
 
-- A 2-point trunk in `separator`. Done: a filled `text-3` node, words in `text-2`. Planned: a dashed ring. Now: the NowBlock, whose blue bar sits on the trunk.
+- The trunk is a groove, chosen by the owner on 15 November 2026 (option 4 of the line options): a 6-point track in `groove`, pressed into the page by `shadow-groove`, the opposite of the raised chips. Work that is done fills it in `groove-fill`, like a slider's fill.
+- Branches, from the desk's trunk to each project and from the desk's line into a project's, are the same 6-point groove drawn as one smooth curve with round ends (an SVG stroke in `groove`; a 1-point light lower edge stands in for the inner shadow).
+- Done: a filled `text-3` node, words in `text-2`. Planned: a dashed ring. Now: the NowBlock, whose blue bar sits on the trunk.
 - Newest at the top; unused milestones hidden by default.
-- Open: the key shapes for milestones and sprints, and how planned is drawn, are the owner's call.
+- Motion: opening a project pushes. The desk slides 40 out to the right and fades, and the plan slides in 40 from the left, already centred on Now, in about half a second (owner, 15 November 2026: option 5). Closing reverses it. Nothing draws from the top down. Reduced motion turns it off.
+- On hold, in the owner's words: the key shapes for milestones and sprints, and how planned is drawn ("I think that will get changed around a bit as well").
 """)
 
 HOME = f'''<div class="dk-stage phone">

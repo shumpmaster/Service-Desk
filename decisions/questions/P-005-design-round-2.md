@@ -95,3 +95,6 @@ Carried out: the same page gains the chosen form at its top. Each action says th
 17. On the problem-then-action list: "I think that’s probably good, is there anyway to keep it concise and my comment about the problems was more about just working the problem into the steps. Not just listing each problem and solution?"
 
 Carried out: each action is now one short line that says what the agent did and, in the same sentence, the problem that made it necessary (for example "Made every waiting step send an alert, because a step that showed up late could have been missed").
+18. After the concise actions and the Chief of Staff's description of question 2 (planned, then ticked off; or done only): "I can’t really tell the difference honestly."
+
+Carried out: read as being about question 2. The page gains, at its top, the same step frozen halfway through (15:16), drawn both ways: planned actions shown ahead as empty boxes and ticked off, against only what is done so far.

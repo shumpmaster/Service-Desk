@@ -209,3 +209,75 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-ms .c { font: 400 15px/20px var(--font-sans); color: var(--text-2); }
 .dk-ms.done .t { color: var(--text-2); }
 .dk-ms.now { margin: var(--space-12) 0 var(--space-12) -20px; }
+
+/* status colour (owner, round 3): soft green, yellow and red, for status only; everything else stays neutral */
+/* gauge: the tinted ring (A3), 34 round, line 3.5, filled by percent, its icon inside. Phases, milestones and sprints only */
+.dk-gauge { position: relative; flex: none; width: 34px; height: 34px; display: grid; place-items: center; border-radius: var(--radius-full); color: var(--text-1); }
+.dk-gauge .ring { position: absolute; inset: 0; width: 34px; height: 34px; overflow: visible; }
+.dk-gauge .trk { fill: var(--surface); stroke: var(--groove); stroke-width: 3.5; }
+.dk-gauge .arc { fill: none; stroke-width: 3.5; stroke-linecap: round; transition: stroke-dasharray .4s; }
+.dk-gauge.ok .trk { fill: var(--status-ok-wash); stroke: var(--status-ok-track); } .dk-gauge.ok .arc { stroke: var(--status-ok-arc); }
+.dk-gauge.wait .trk { fill: var(--status-wait-wash); stroke: var(--status-wait-track); } .dk-gauge.wait .arc { stroke: var(--status-wait-arc); }
+.dk-gauge.bad .trk { fill: var(--status-bad-wash); stroke: var(--status-bad-track); } .dk-gauge.bad .arc { stroke: var(--status-bad-arc); }
+.dk-gauge .in { position: relative; display: grid; place-items: center; }
+.dk-gauge .in .i { width: 14px; height: 14px; }
+.dk-gauge .in .i.sm { width: 9px; height: 9px; }
+.dk-gauge .pn { font: 700 14px/1 var(--font-sans); font-variant-numeric: tabular-nums; }
+.dk-gsec { width: 100%; }
+.dk-grow { display: flex; gap: 10px; align-items: center; width: 100%; padding: 6px 0; text-align: left; }
+.dk-grow .tx { min-width: 0; flex: 1; }
+.dk-grow .l1 { display: flex; align-items: baseline; gap: 6px; font: 400 15px/19px var(--font-sans); white-space: nowrap; }
+.dk-grow .l1 b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.dk-grow .no { font: 600 13px/19px var(--font-sans); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.dk-grow .tm { margin-left: auto; font: 400 13px/19px var(--font-sans); color: var(--text-2); }
+.dk-grow .l3 { font: 400 13px/17px var(--font-sans); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dk-gsec > .body { padding-left: 12px; }
+.dk-gsec:not(.open) > .body { display: none; }
+
+/* status mark: an event or step keeps its kind's icon; a small corner mark and a text tag carry its state */
+.dk-ev { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; width: 100%; }
+.dk-ev-ico { position: relative; flex: none; width: 26px; height: 26px; border-radius: var(--radius-full); background: var(--fill); color: var(--text-1); display: grid; place-items: center; }
+.dk-ev-ico > .i { width: 15px; height: 15px; }
+.dk-ev-ico.main { background: var(--main-mark); color: var(--on-main-mark); }
+.dk-mark { position: absolute; right: -4px; bottom: -3px; width: 14px; height: 14px; border-radius: var(--radius-full); display: grid; place-items: center; box-shadow: 0 0 0 2px var(--ground); }
+.dk-mark .i { width: 9px; height: 9px; }
+.dk-mark.ok { background: var(--status-ok-mark); color: var(--status-ok); }
+.dk-mark.wait { background: var(--status-wait-mark); color: var(--status-wait-tag); }
+.dk-mark.bad { background: var(--status-bad-mark); color: var(--status-bad); }
+.dk-mark.run { background: var(--surface); color: var(--text-2); }
+.dk-ev .tx { min-width: 0; flex: 1; }
+.dk-ev .l1 { display: flex; align-items: baseline; gap: 6px; font: 400 15px/19px var(--font-sans); }
+.dk-ev .l1 b { font-weight: 600; }
+.dk-ev .tm { margin-left: auto; font: 400 13px/19px var(--font-sans); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.dk-ev .l2 { font: 400 15px/19px var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dk-ev .l3 { font: 400 13px/17px var(--font-sans); color: var(--text-2); }
+.dk-tag { font: 400 13px/18px var(--font-sans); color: var(--text-2); white-space: nowrap; }
+.dk-tag.wait, .dk-tag.bad { padding: 0 7px; border-radius: var(--radius-6); font-weight: 600; }
+.dk-tag.wait { color: var(--status-wait-tag); background: var(--status-wait-tag-bg); }
+.dk-tag.bad { color: var(--status-bad-tag); background: var(--status-bad-tag-bg); }
+
+/* branch map: floats at the top of a project's timeline; the whole phase, panning under a soft window */
+.dk-mapbar { width: 393px; box-sizing: border-box; background: var(--surface-floating); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8); border-bottom: 1px solid var(--separator); padding: 8px 0 2px; }
+.dk-mapvp { overflow: hidden; }
+.dk-mapin svg { display: block; }
+.dk-map .g { fill: none; stroke: var(--groove); stroke-width: 5; stroke-linecap: round; }
+.dk-map .g.main { stroke: var(--groove-main); stroke-width: 7; }
+.dk-map .win { fill: var(--map-window); }
+.dk-map .dot { fill: var(--text-3); }
+.dk-map .dot.main { fill: var(--main-mark); }
+.dk-map .dot.wait { fill: var(--status-wait-dot); } .dk-map .dot.bad { fill: var(--status-bad-dot); }
+.dk-map .disc { fill: var(--fill); stroke: var(--ground); stroke-width: 2.5; }
+.dk-map .disc.main { fill: var(--main-mark); }
+.dk-map .disc.bad { fill: var(--status-bad-track); } .dk-map .disc.wait { fill: var(--status-wait-tag-bg); }
+.dk-map .disc.now { fill: var(--accent-select); stroke: var(--now-block); stroke-width: 3; }
+.dk-map .ic { color: var(--text-1); } .dk-map .ic.main { color: var(--on-main-mark); } .dk-map .ic.now { color: #fff; }
+.dk-map .ic.bad { color: var(--status-bad); } .dk-map .ic.wait { color: var(--status-wait-tag); }
+.dk-map .lb { font: 600 10.5px var(--font-sans); fill: var(--text-2); paint-order: stroke; stroke: var(--ground); stroke-width: 3px; stroke-linejoin: round; }
+.dk-map .lb.main { fill: var(--text-3); }
+
+/* phase row: one row of phase gauges under the map, oldest on the left, the current one raised */
+.dk-phases { display: flex; gap: 6px; width: 361px; padding: 8px 0 4px; }
+.dk-phase { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; border-radius: var(--radius-12); font: 400 12px/15px var(--font-sans); color: var(--text-2); }
+.dk-phase span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dk-phase[aria-current="true"] { background: var(--surface); color: var(--text-1); font-weight: 600; box-shadow: var(--shadow-chip-selected); }
+.dk-phase[aria-expanded="true"] { background: var(--fill); color: var(--text-1); }

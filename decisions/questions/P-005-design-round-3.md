@@ -56,3 +56,8 @@ Asked by the question tool: "How the timeline opens. The page https://claude.ai/
 10. "Phase gauges row - additionally is there anyway you can put the event icons on the branch timeline?"
 
 Carried out: the timeline opens on the current step with everything in it open; the phases sit in one row of gauges under the floating map, oldest on the left, the current one picked out; tapping another opens its milestones above the current phase, and only then does the page scroll. Event icons on the branch map: shown as it is and with icons, next.
+
+Asked by the question tool: "Event icons on the branch map. The page https://claude.ai/artifact/JrG3eLqqCvkL7x9zVTzX4c shows the map you chose (dots), then two ways to put the event icons on it, with the Design phase's real events. Scroll inside each phone. Which one?" Options: "B: icons where you are (Recommended)"; "A: every event as its icon"; "Keep dots". Pictures: docs/design/mockups/options-map-icons/.
+11. "Why would you pick B over A?"
+
+Answered in chat: the reason is visual load only; both drawings space the events the same, so neither shows more of the phase at once.

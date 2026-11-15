@@ -23,3 +23,8 @@ Asked by the question tool: "Lanes, three different ideas. The page https://clau
 3. "1: Branch map on top (Recommended)"
 
 Carried out: an open milestone gets a small branch map at its top (main and every sprint, newest on the right, the one being read picked out); its events run full width below with no lines beside them. To be built into the library and the next mockup together with the owner's other points on v12.
+
+Asked by the question tool: "Icons that open and fold (your second point). The page https://claude.ai/artifact/51q4ekt5WYByydm21ZcbeC shows how v12 folds today (icons do nothing), then three options you can tap, drawn in the branch-map layout. Which one?" Options: "C: one open at a time (Recommended)"; "A: count on the icon"; "B: ring and caret"; "Mix or none". Pictures: docs/design/mockups/options-fold/.
+4. "I want to move the branches to be at the top of the page, floating so that no matter how much you scroll down the page it wi stay there. I also want it to have motion and move with the timeline. I want the circle icons but with percent gauges. RYG coloring. And I want the page to always open the full set of tasks, sprints, etc… per the step we are on , and the other phases should all be fixed and only move when"
+
+The answer ends mid-sentence ("only move when"); the Chief of Staff asked the owner to finish it before acting on that part. It raises colour, which was on hold (round 2, answer 1), for the gauges: red, yellow and green.

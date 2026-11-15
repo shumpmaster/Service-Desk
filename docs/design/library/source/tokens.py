@@ -43,6 +43,9 @@ C = [
  ("now-text", "#0868bc", "#9fd0ff", "Title inside the Now block; 4.7:1 on now-block."),
  ("bell-filled", "#214269", "#9fc3f0", "The filled bell when something waits for the owner (ref 11)."),
  ("selection-frame", "#a0d0e8", "#2a5f7d", "Frame around a selected card (ref 12)."),
+ ("groove", "#e3e3e8", "#2c2c2e", "The timeline's track, pressed into the page: the trunk and every branch (owner, 15 Nov 2026: option 4, groove)."),
+ ("groove-edge", "#ffffffe6", "#ffffff12", "The light lower edge of a groove drawn as a line (a branch), where an inner shadow cannot go."),
+ ("groove-fill", "#b4b4ba", "#636366", "Fills the groove for work that is done, like a slider's fill."),
  ("scrim", "#1c1d2126", "#00000066", "Dims the page behind a sheet or popover (refs 14, 15, 17)."),
 ]
 tokens = {
@@ -90,6 +93,7 @@ tokens = {
    {"name": "shadow-card", "value": {"light": "0 1px 3px #1c1d2112", "dark": "0 1px 3px #00000059"}, "usage": "Tiles and cards that sit on the ground."},
    {"name": "shadow-chip", "value": {"light": "inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #1c1d2114, 0 1px 2px #1c1d2114", "dark": "inset 0 1px 0 #ffffff14, inset 0 -1px 0 #00000059, 0 1px 2px #00000066"}, "usage": "Unselected chips: a light top edge, a darker bottom edge and a small drop, so they read as raised (owner, 15 Nov: the chips were missing 'that slight element of shadow')."},
    {"name": "shadow-chip-selected", "value": {"light": "inset 0 1px 0 #ffffffcc, inset 0 -1px 0 #7d93a826, 0 2px 6px #1c3a5a1f, 0 1px 2px #1c1d2112", "dark": "inset 0 1px 0 #ffffff1f, inset 0 -1px 0 #00000066, 0 2px 6px #00000080"}, "usage": "The selected chip: a white top edge, a rim darker at the bottom and a soft drop below, as in ref 12."},
+   {"name": "shadow-groove", "value": {"light": "inset 0 1px 2px #1c1d2129, 0 1px 0 #ffffffe6", "dark": "inset 0 1px 2px #000000b3, 0 1px 0 #ffffff12"}, "usage": "Presses the timeline's track into the page: a soft inner shadow and a light lower edge, the opposite of shadow-chip."},
    {"name": "shadow-sheet", "value": {"light": "0 10px 40px #1c1d211f, 0 1px 3px #1c1d210d, inset 0 0 0 1px #ffffffcc", "dark": "0 10px 40px #00000099, inset 0 0 0 1px #ffffff1f"}, "usage": "Sheets and popovers."}]},
  "size": {"note": "Fixed control sizes from the references, in points.", "tokens": [
    {"name": "size-hit", "value": "44px", "usage": "Top circle buttons, capsule height, search height."},

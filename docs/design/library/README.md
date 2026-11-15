@@ -9,6 +9,7 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 - **Neutral first, one blue.** The only hue is blue, and it means one thing: selected, or now. Nothing is coloured for decoration.
 - **Rows, not boxes.** Lists are plain rows on the ground, split by inset hairlines. Cards are kept for things you can open.
 - **Round shapes.** Controls are capsules and circles; sheets and popovers have a 28 radius. Nothing is square.
+- **The timeline's track is pressed in.** The trunk and its branches are a 6-point groove (`groove`, `shadow-groove`), the opposite of the raised chips; done work fills it (`groove-fill`).
 - **Chips are raised.** A light top edge, a darker bottom edge and a small drop make chips read as pressable; the selected chip lifts a little more.
 - **Floating controls are glass.** Top buttons, the capsule, the tab bar and the round button float over the content: `surface-floating` is 78% opaque and blurs what is behind, and `shadow-float` adds a soft drop and a white inner edge. Sheets and popovers are frosted the same way. Rows and text never cast a shadow.
 - **The system font.** One family at a few sizes: 27, 19, 17, 15 and 13. Weight does the work, not colour.
@@ -46,7 +47,7 @@ Words must reach 4.5:1 against what they sit on. Three reference values fall sho
 - A row of named FilterChips switches projects: every chip shows its name, and the selected one adds its count (the owner's choice, 15 November 2026). Chips are raised a little by `shadow-chip`.
 - Only one NowBlock per plan.
 - A BottomSheet always has a Done; Apply and Cancel pairs sit at the foot of a sheet.
-- Motion stays as in v8: the branch from desk to project, sheets that rise, and the plan centring on Now. The reduced-motion setting turns it off.
+- Motion: opening a project is a push, the desk out to the right and the plan in from the left, already on Now, in about half a second (the owner's choice, 15 November 2026). Nothing draws from the top down. Sheets still rise. The reduced-motion setting turns motion off.
 
 ## Open, the owner's to choose
 

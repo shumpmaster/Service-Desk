@@ -59,6 +59,28 @@ p { margin: 0; max-width: 68ch; }
 .marks li.no { --mk: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20256%20256%22%20fill%3D%22currentColor%22%3E%3Cpath%20d%3D%22M236.8%2C188.09%2C149.35%2C36.22h0a24.76%2C24.76%2C0%2C0%2C0-42.7%2C0L19.2%2C188.09a23.51%2C23.51%2C0%2C0%2C0%2C0%2C23.72A24.35%2C24.35%2C0%2C0%2C0%2C40.55%2C224h174.9a24.35%2C24.35%2C0%2C0%2C0%2C21.33-12.19A23.51%2C23.51%2C0%2C0%2C0%2C236.8%2C188.09ZM120%2C104a8%2C8%2C0%2C0%2C1%2C16%2C0v40a8%2C8%2C0%2C0%2C1-16%2C0Zm8%2C88a12%2C12%2C0%2C1%2C1%2C12-12A12%2C12%2C0%2C0%2C1%2C128%2C192Z%22/%3E%3C/svg%3E"); }
 .marks li.no::before { background: var(--problem); }
 .marks li.no small { color: var(--problem); }
+
+/* the concept: each planned action is a title, its why, any problem, and what is being done about it */
+.plan { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.plan > li { position: relative; padding: 10px 0 10px 24px; }
+.plan > li + li { border-top: 1px solid var(--separator); }
+.plan > li::before { content: ""; position: absolute; left: 0; top: 12px; width: 16px; height: 16px; background: var(--text-1);
+  -webkit-mask: var(--mk) center / 16px 16px no-repeat; mask: var(--mk) center / 16px 16px no-repeat; }
+.plan > li.ok { --mk: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20256%20256%22%20fill%3D%22currentColor%22%3E%3Cpath%20d%3D%22M232.49%2C80.49l-128%2C128a12%2C12%2C0%2C0%2C1-17%2C0l-56-56a12%2C12%2C0%2C1%2C1%2C17-17L96%2C183%2C215.51%2C63.51a12%2C12%2C0%2C0%2C1%2C17%2C17Z%22/%3E%3C/svg%3E"); }
+.plan > li.todo { --mk: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20256%20256%22%20fill%3D%22currentColor%22%3E%3Cpath%20d%3D%22M128%2C24A104%2C104%2C0%2C1%2C0%2C232%2C128%2C104.11%2C104.11%2C0%2C0%2C0%2C128%2C24Zm0%2C192a88%2C88%2C0%2C1%2C1%2C88-88A88.1%2C88.1%2C0%2C0%2C1%2C128%2C216Z%22/%3E%3C/svg%3E"); }
+.plan > li.todo::before { background: var(--text-3); }
+.plan > li.blocked { --mk: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20256%20256%22%20fill%3D%22currentColor%22%3E%3Cpath%20d%3D%22M236.8%2C188.09%2C149.35%2C36.22h0a24.76%2C24.76%2C0%2C0%2C0-42.7%2C0L19.2%2C188.09a23.51%2C23.51%2C0%2C0%2C0%2C0%2C23.72A24.35%2C24.35%2C0%2C0%2C0%2C40.55%2C224h174.9a24.35%2C24.35%2C0%2C0%2C0%2C21.33-12.19A23.51%2C23.51%2C0%2C0%2C0%2C236.8%2C188.09ZM120%2C104a8%2C8%2C0%2C0%2C1%2C16%2C0v40a8%2C8%2C0%2C0%2C1-16%2C0Zm8%2C88a12%2C12%2C0%2C1%2C1%2C12-12A12%2C12%2C0%2C0%2C1%2C128%2C192Z%22/%3E%3C/svg%3E"); }
+.plan > li.blocked::before { background: var(--problem); }
+.plan .ti { font: 600 15px/1.3 var(--sans); }
+.plan .why { font-size: 14px; line-height: 1.35; color: var(--text-2); margin-top: 2px; }
+.plan .pr { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--problem) 8%, transparent); display: flex; flex-direction: column; gap: 4px; }
+.plan .pr .p { position: relative; padding-left: 20px; font-size: 14px; line-height: 1.35; color: var(--problem); }
+.plan .pr .p::before, .plan .pr .fix::before { content: ""; position: absolute; left: 0; top: 2px; width: 14px; height: 14px;
+  -webkit-mask: var(--mk) center / 14px 14px no-repeat; mask: var(--mk) center / 14px 14px no-repeat; }
+.plan .pr .p::before { --mk: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20256%20256%22%20fill%3D%22currentColor%22%3E%3Cpath%20d%3D%22M236.8%2C188.09%2C149.35%2C36.22h0a24.76%2C24.76%2C0%2C0%2C0-42.7%2C0L19.2%2C188.09a23.51%2C23.51%2C0%2C0%2C0%2C0%2C23.72A24.35%2C24.35%2C0%2C0%2C0%2C40.55%2C224h174.9a24.35%2C24.35%2C0%2C0%2C0%2C21.33-12.19A23.51%2C23.51%2C0%2C0%2C0%2C236.8%2C188.09ZM120%2C104a8%2C8%2C0%2C0%2C1%2C16%2C0v40a8%2C8%2C0%2C0%2C1-16%2C0Zm8%2C88a12%2C12%2C0%2C1%2C1%2C12-12A12%2C12%2C0%2C0%2C1%2C128%2C192Z%22/%3E%3C/svg%3E"); background: var(--problem); }
+.plan .pr .fix { position: relative; padding-left: 20px; font-size: 14px; line-height: 1.35; }
+.plan .pr .fix::before { --mk: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20256%20256%22%20fill%3D%22currentColor%22%3E%3Cpath%20d%3D%22M232.49%2C160.49l-48%2C48a12%2C12%2C0%2C0%2C1-17-17L195%2C164H128A108.12%2C108.12%2C0%2C0%2C1%2C20%2C56a12%2C12%2C0%2C0%2C1%2C24%2C0%2C84.09%2C84.09%2C0%2C0%2C0%2C84%2C84h67l-27.52-27.51a12%2C12%2C0%2C0%2C1%2C17-17l48%2C48A12%2C12%2C0%2C0%2C1%2C232.49%2C160.49Z%22/%3E%3C/svg%3E"); background: var(--text-1); }
+.concept { display: flex; flex-direction: column; gap: 10px; max-width: 560px; }
 .q2 { display: flex; flex-direction: column; gap: 12px; padding-top: 20px; border-top: 1px solid var(--separator); }
 .chosen { display: flex; flex-direction: column; gap: 8px; max-width: 520px; }
 .tag.rec { color: var(--accent); }
@@ -72,7 +94,7 @@ p { margin: 0; max-width: 68ch; }
 </style>
 <main>
   <header style="display:flex;flex-direction:column;gap:10px">
-    <h1>What counts as an action?</h1>
+    <h1>The actions between events</h1>
     <p class="lede">A real step from the timeline project, drawn two ways. Both show the same two events, the review before and the save after. They differ in the actions listed between them.</p>
   </header>
 
@@ -82,6 +104,26 @@ p { margin: 0; max-width: 68ch; }
     <div class="note">The actions below are pieced together from that revision note and from what changed in the spec. No agent keeps an action list today. That is the record you would be asking for.</div>
   </div>
 
+  <section class="concept">
+    <span class="tag rec">The concept, from your last answer</span>
+    <h2>Each action: the plan, why, any problem, and what we did about it</h2>
+    <p class="lede">The title is what the agent planned to do. Under it, in grey, is why, in the context of what is happening. If a problem came up, it shows in red, followed by what was done about it. Actions are planned ahead and ticked off as they are done.</p>
+    <div class="lane">
+      <div class="ev"><span class="ico"><svg aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M248,120H183.42a56,56,0,0,0-110.84,0H8a8,8,0,0,0,0,16H72.58a56,56,0,0,0,110.84,0H248a8,8,0,0,0,0-16ZM128,168a40,40,0,1,1,40-40A40,40,0,0,1,128,168Z"/></svg></span><div class="l1"><b>Commit</b><span>Done · 15:18</span></div><div class="l2">Saved the reworked spec</div><div class="l3">by the spec writer</div></div>
+      <div class="step"><div class="who">The spec writer · 4 minutes · 5 of 6 done · 1 blocked</div><ol class="plan">
+        <li class="ok"><div class="ti">Make sure no alert can be missed</div><div class="why">The point of this milestone is that anything needing you reaches your phone. The reviewer found a gap: a step that turned up late would never send an alert.</div></li>
+        <li class="ok"><div class="ti">Let the builder update the widget’s copy</div><div class="why">The spec asks the builder to refresh the widget’s copy in the same change, so it has to be allowed into that folder.</div><div class="pr"><div class="p">Nothing the spec writer was given says exactly where that folder is.</div><div class="fix">Allowed the folder, and added a question to confirm its exact place before the spec is frozen.</div></div></li>
+        <li class="ok"><div class="ti">Hold the phone-width check</div><div class="why">A check needs a fixed number to test against, and the widths are yours to choose.</div></li>
+        <li class="ok"><div class="ti">Say which version the check tests</div><div class="why">One requirement depends on a test of your phone that hasn’t run yet. Until it does, the check tests the normal version.</div></li>
+        <li class="blocked"><div class="ti">Move the two experiments onto the new spec</div><div class="why">The experiments are what prove this milestone works. They still point at the replaced spec, so the proof would rest on the wrong document.</div><div class="pr"><div class="p">They weren’t in what the spec writer was given, so it couldn’t change them.</div><div class="fix">Made it a condition: the spec can’t be frozen until they are moved.</div></div></li>
+        <li class="ok"><div class="ti">Settle what “acting for you” means</div><div class="why">Two places described it slightly differently, and a check can only test one rule. The case where no one is named wasn’t tested.</div></li>
+      </ol></div>
+      <div class="ev"><span class="ico"><svg aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></svg></span><div class="l1"><b>Review</b><span>Failed · 12:40</span></div><div class="l2">Plan review failed: two problems block the spec, four more to fix</div><div class="l3">by the plan reviewer</div></div>
+    </div>
+    <p class="note">A check is done. A red warning is an action that couldn’t be finished. A red box is a problem that came up, and the arrow is what was done about it.</p>
+  </section>
+
+  <h2 style="margin-top:8px">How we got here</h2>
   <section class="q2">
     <span class="tag">Question 2 · planned, or done only?</span>
     <h2>The same step, frozen halfway through, at 15:16</h2>

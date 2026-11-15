@@ -387,6 +387,38 @@ How several branches show at once on the timeline: a git graph drawn in the libr
 - Icons 26 round with a 15 glyph, a 3-point ring of `ground`; lanes 30 apart; rows 40 apart.
 """)
 
+
+def plan_item(state, n, title, why, prob=None, fix=None):
+    mk = {"ok": ic("check", "bold"), "blocked": ic("warning", "fill"), "now": "", "next": ""}[state]
+    h = f'<li class="{state}"><span class="mk {state}">{mk}</span><div class="ti"><span class="num">{n}</span>{title}' + ('<span class="nowtag">Now</span>' if state == "now" else '') + f'</div><div class="why">{why}</div>'
+    if prob:
+        h += f'<div class="pr"><div class="p">{ic("warning", "fill")}{prob}</div><div>{ic("arrow-bend-down-right", "bold")}{fix}</div></div>'
+    return h + '</li>'
+PLAN = [
+  ("next", "5.4", "Say which version the check tests", "Your phone test hasn&#8217;t run, so it tests the normal version until then."),
+  ("now", "5.3", "Hold the phone-width check", "It needs your widths first."),
+  ("ok", "5.2", "Let the builder update the widget&#8217;s copy", "The spec requires it, but that folder was off limits.", "Its exact location isn&#8217;t on record.", "Allowed it, and asked you to confirm the location before freezing."),
+  ("ok", "5.1", "Make sure no alert is missed", "The milestone promises anything that needs you reaches your phone. A late step could slip through."),
+]
+PLAN_DONE = [("blocked", "5.5", "Move the experiments to the new spec", "They prove the milestone, but still point at the old spec.", "They weren&#8217;t in what the spec writer was given.", "Made it a condition: no freeze until they move.")]
+comp("ActionPlan", "Desk", 680,
+ '<div class="dk-stage col" style="max-width:420px">'
+ '<div class="dk-step"><div class="hd">2.7.2.5 · The spec writer · 2 of 4 done</div><ol class="dk-plan">' + "".join(plan_item(*x) for x in PLAN) + '</ol></div>'
+ '<div class="dk-step"><div class="hd">A problem that stopped an action</div><ol class="dk-plan">' + "".join(plan_item(*x) for x in PLAN_DONE) + '</ol></div>'
+ '<p class="dk-note">Newest at the top. Each action is the agent&#8217;s plan, ticked off as it goes.</p></div>',
+ """# ActionPlan
+
+The work between two events: what the agent planned to do, why, and any problem with what was done about it, in plain English. Chosen by the owner on 15 November 2026 (decisions/questions/P-005-design-round-2.md, answers 14 to 23).
+
+- Sits on the timeline between the two events it connects, inside a `dk-step` card headed by the step's number, who, and how much is done.
+- Each action: a number (the step's number and its place, shown as 5.3 inside step 2.7.2.5), a title in 15 semibold, and one line of why in 14 `text-2`. Concise.
+- Marks: a check when done; a blue dot in a soft ring with the word Now for the one under way; an open dot, with a grey title, for those still to come; a red warning in `problem` for one that could not be finished.
+- A problem that came up sits in a `problem-wash` box: the problem in `problem` with a warning sign, then what was done about it after an arrow.
+- Newest at the top, like the rest of the timeline: the first action is at the bottom, next to the event that started the step.
+- Planned ahead and ticked off; the agent writes its own lines in this fixed form (the owner: "Yes I do"). Until the agents record actions, a mockup shows them as examples.
+- Numbers: each level counted inside the one above, never reused: phase 2, milestone 2.7, sprint 2.7.2, step 2.7.2.5, action 2.7.2.5.3.
+""")
+
 HOME = f'''<div class="dk-stage phone">
   <div class="dk-status">9:41</div>
   <div class="dk-topbar"><span></span>{capsule(2)}</div>

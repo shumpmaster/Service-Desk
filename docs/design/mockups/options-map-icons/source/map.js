@@ -35,7 +35,8 @@
         if (e.kind === 'merge') { var px = i ? L.x[s.evs[i - 1].k] : L.x[e.k] - 16, mx = L.x[e.k];
           p += '<path class="g" d="M' + px + ' ' + y + ' C' + (px + mx) / 2 + ' ' + y + ' ' + (px + mx) / 2 + ' ' + YMAIN + ' ' + mx + ' ' + YMAIN + '"/>'; }
         var cy = e.kind === 'merge' ? YMAIN : y, cx = L.x[e.k], mn = e.kind === 'merge' ? ' main' : '';
-        dots += '<g class="st' + mn + (e.now ? ' now' : '') + '" data-k="' + e.k + '"><circle class="dot' + mn + (e.now ? ' now' : '') + '" cx="' + cx + '" cy="' + cy + '" r="' + (e.now ? 5 : 4) + '"/>' +
+        var sc = e.st === 'Failed' ? ' bad' : e.st === 'Waiting on you' ? ' wait' : '';
+        dots += '<g class="st' + mn + sc + (e.now ? ' now' : '') + '" data-k="' + e.k + '"><circle class="dot' + mn + (e.now ? ' now' : '') + '" cx="' + cx + '" cy="' + cy + '" r="' + (e.now ? 5 : 4) + '"/>' +
           '<g class="ic"><circle class="disc' + mn + (e.now ? ' now' : '') + '" cx="' + cx + '" cy="' + cy + '" r="10.5"/>' + nest(ICONS[e.kind], cx, cy, 12) + '</g></g>';
       });
       labs += '<text class="lb" x="' + x0 + '" y="' + (y - 9) + '">' + esc(s.sp.no + ' ' + s.sp.name.replace('Spec ', '')) + '</text>';

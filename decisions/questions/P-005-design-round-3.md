@@ -61,3 +61,8 @@ Asked by the question tool: "Event icons on the branch map. The page https://cla
 11. "Why would you pick B over A?"
 
 Answered in chat: the reason is visual load only; both drawings space the events the same, so neither shows more of the phase at once.
+12. "B is the one, I don’t think it materialized on my end at first. 
+
+Is there any value to adding color to those icons as well?"
+
+Carried out: the map shows the icons of the events in view below and dots for the rest of the phase. On colour, the Chief of Staff answered in chat: some value, if it is the same soft status colour as the rows, used only for waiting and failed or blocked, and carried by the dots as well as the icons; to be shown in pictures before any change.

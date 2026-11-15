@@ -47,3 +47,8 @@ The owner's words, verbatim:
 8. "4: groove"
 
 Carried out: the library's TimelineTrunk becomes a groove (tokens groove, groove-fill, groove-edge and shadow-groove), with a grooved branch, and the README says opening a project is a push and nothing draws from the top down. Mockup v11 (docs/design/mockups/timeline-v11-craft.html) is v10 with the push and the groove.
+
+## The constants and the branches (same session, 15 November 2026)
+The owner raised it unasked, in chat: "Something I feel like you have missed is the multiple branches and the linkage back to our constants that were defined early on."
+
+Carried out: a check of mockups v5 and v11 against the timeline basis (portfolio ideas/basis/TIMELINE-BASIS.md, locked 9 November 2026), with pictures: docs/design/audits/constants-2026-11-15/ (https://claude.ai/artifact/TVywWD8pKD9azk5W4RVMWH). It finds the key, the branch pills, the state colours, the branch line in the plan and any showing of several branches at once lost or hidden, none of them by a change put to the owner as a change to the basis.

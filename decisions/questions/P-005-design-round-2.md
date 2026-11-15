@@ -20,3 +20,20 @@ Questions and options, as put:
 - Answer 2: v9's shapes and the dashed ring for "planned" stay as placeholders, with the owner's words in the library's Open list. Question 2 was taken to cover how "planned" is drawn as well, so that was not asked on its own.
 - Answer 3: from now on, a design question that proposes a change comes with a picture of the element as it is, then a picture of each option (docs/design/mockups/options-project-chips/ is the first). Written into the design handoff's "How the design work is done".
 - Answer 4: the library's FilterChip gains a named form for switching projects, and every chip is raised by two new shadow tokens, `shadow-chip` and `shadow-chip-selected`, read from Craft's selected chip in reference 12: a light top edge, a rim darker at the bottom and a soft drop. Mockup v10 (docs/design/mockups/timeline-v10-craft.html) is v9 with that layer.
+
+## Motion and branch lines (same session, 15 November 2026)
+The owner raised it unasked, in chat: "My next area of focus is the motion and the branching. I don’t want the branching to come from the top down. I’m kind of thinking a quick subtle fade in from the left? 
+
+Also the line for the branches looks very rudimentary and ugly."
+
+The pictures: docs/design/mockups/options-motion-lines/ (https://claude.ai/artifact/SVHh5HRkNJNDny1V1C6rci, live at https://claude.ai/artifact/MkkJfg5bkfSoNSvrMFevEe).
+
+Questions and options, as put by the question tool:
+5. "Opening a project: the page https://claude.ai/artifact/SVHh5HRkNJNDny1V1C6rci shows how it opens now (a pen drawing the plan top-down, about 2.5 s), then three fade-from-the-left options as frame strips. You can try them at https://claude.ai/artifact/MkkJfg5bkfSoNSvrMFevEe. Which motion?" Options: "1: all at once (Recommended)"; "2: ripple from Now"; "3: lines first".
+6. "Branch lines: the same page shows today's dashed, square-cornered elbows, then three styles drawn on v10 (desk, project top, around Now, and dark). Which style?" Options: "1: hairline curves (Recommended)"; "2: soft rail"; "3: no connectors".
+
+The owner's words, verbatim:
+5. "I’m not sure, are their any other options?"
+6. "Soft rail is the closest but it still doesn’t seem quite right"
+
+Carried out: a second round on the same pages, with motions 4 to 7 (soft focus, push, the branch reaches out, settle) and four variations on the soft rail (groove, thin rail, fading rail, line in the rail).

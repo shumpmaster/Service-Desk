@@ -4,6 +4,7 @@
 | ID | Decision | Since | Expires |
 | --- | --- | --- | --- |
 | L-0054 | S-010 superseded | 2026-11-14 | never |
+| L-0056 | S-011 superseded | 2026-11-15 | never |
 
 ## Kills
 None.

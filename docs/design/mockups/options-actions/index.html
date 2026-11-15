@@ -47,8 +47,7 @@ p { margin: 0; max-width: 68ch; }
 .pa .prob { font-size: 15px; line-height: 1.35; }
 .pa .prob b, .pa .did b { font-weight: 600; }
 .pa .did { font-size: 15px; line-height: 1.35; color: var(--text-2); }
-.step li + li { margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--separator); }
-.step li + li::before { top: 15px; }
+
 .note { font-size: 13px; color: var(--text-2); }
 @media (max-width: 720px) { .opts { grid-template-columns: 1fr; } }
 </style>
@@ -65,18 +64,18 @@ p { margin: 0; max-width: 68ch; }
   </div>
 
   <section class="chosen">
-    <span class="tag rec">Your choice · option 2, with the problem</span>
-    <h2>What you'd want explained, with the problem it fixes</h2>
-    <p class="lede">Each action now says the problem first, in plain words, then what the agent did about it. The problems are the plan reviewer's six findings, from its review record, rewritten plainly.</p>
+    <span class="tag rec">Your choice · option 2, the problem worked in</span>
+    <h2>What you'd want explained, with the problem worked in</h2>
+    <p class="lede">One short line per action. Each says what the agent did and, in the same sentence, the problem that made it necessary. The problems are the plan reviewer's six findings, from its review record.</p>
     <div class="lane">
       <div class="ev"><span class="ico"><svg aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M248,120H183.42a56,56,0,0,0-110.84,0H8a8,8,0,0,0,0,16H72.58a56,56,0,0,0,110.84,0H248a8,8,0,0,0,0-16ZM128,168a40,40,0,1,1,40-40A40,40,0,0,1,128,168Z"/></svg></span><div class="l1"><b>Commit</b><span>Done · 15:18</span></div><div class="l2">Saved the reworked spec</div><div class="l3">by the spec writer</div></div>
-      <div class="step"><div class="who">The spec writer · 4 minutes · 6 actions, one per problem</div><ol>
-        <li><div class="pa"><div class="prob"><b>The problem:</b> An alert could be missed. If a step's time had already passed when the desk first saw it, no alert would ever go out, yet the spec promised that could not happen.</div><div class="did"><b>What it did:</b> Changed how alerts are chosen. Every waiting step not yet sent now goes out, so a late step is never missed.</div></div></li>
-        <li><div class="pa"><div class="prob"><b>The problem:</b> The spec told the builder to update the widget's copy, but did not let it touch the folder where that copy lives. The builder would have broken a rule either way.</div><div class="did"><b>What it did:</b> Allowed that folder. Its exact path is still to be confirmed.</div></div></li>
-        <li><div class="pa"><div class="prob"><b>The problem:</b> A check cannot be written for the phone widths, because you have not chosen them yet.</div><div class="did"><b>What it did:</b> Held that check until you choose the widths.</div></div></li>
-        <li><div class="pa"><div class="prob"><b>The problem:</b> One requirement depends on a test of your phone that has not run yet, so it was unclear which version a check should test.</div><div class="did"><b>What it did:</b> Said the check covers the normal version until that test runs.</div></div></li>
-        <li class="no"><div class="pa"><div class="prob"><b>The problem:</b> The two experiments still point at the old spec, which has been replaced.</div><div class="did"><b>What it couldn't do:</b> Point them at the new spec: they were not in what it was given. That is now a condition before the spec is frozen.</div></div></li>
-        <li><div class="pa"><div class="prob"><b>The problem:</b> Two places described "acting for you" slightly differently, and one case was not tested.</div><div class="did"><b>What it did:</b> Made the newer, testable rule the one that counts, and added a test for the missing case.</div></div></li>
+      <div class="step"><div class="who">The spec writer · 4 minutes · 6 actions</div><ol>
+        <li>Made every waiting step send an alert, because a step that showed up late could have been missed</li>
+        <li>Let the builder update the widget's folder, which the spec had left off limits <small>Its exact path is still to be confirmed</small></li>
+        <li>Held the phone-width check until you pick the widths, since there is nothing to test against yet</li>
+        <li>Set the check to test the normal version until the test on your phone has run</li>
+        <li class="no">Couldn't move the two experiments off the old spec, because they weren't in what it was given <small>Now required before the spec is frozen</small></li>
+        <li>Settled two clashing wordings of "acting for you" on the one that can be tested, and added a test for the case no one checked</li>
       </ol></div>
       <div class="ev"><span class="ico"><svg aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></svg></span><div class="l1"><b>Review</b><span>Failed · 12:40</span></div><div class="l2">Plan review failed: two problems block the spec, four more to fix</div><div class="l3">by the plan reviewer</div></div>
     </div>

@@ -62,3 +62,7 @@ The owner's words, verbatim:
 10. "Keep neutral for now"
 
 Carried out: the Chief of Staff reads answer 9 as the seven GitHub kinds (branch, commit, pull request, check, review, merge, deploy), shown on the lines as the icon's shape and the kind's name, and answer 10 as states staying neutral words. The owner's earlier words still ask for several branches. Pictures of three ways to draw several branches at once with the seven kinds on the lines: docs/design/mockups/options-branches/ (https://claude.ai/artifact/1DfWTc1HZiMFwubm2pY52U). The timeline basis file (portfolio) is not edited by this design session; these answers change what the basis asks for (the key, the branch pills and state colour), and the basis's own change log is for the building session or the owner to update.
+
+The next question (which branch drawing; how the model's own steps show) was dismissed. The owner then said: "Pause and I will ask you to resubmit your questions shortly", and next, unasked: "Okay so how would the lane graph visualize multiple parallel branches simultaneously? Just focus on the icons and branch structure. Also note I want to visually separate main branch. Just make it stand out somehow it doesn’t have to be significant"
+
+Carried out: docs/design/mockups/options-lanes/ (https://claude.ai/artifact/MtotUKqgeB5yqsYcGag8d4), the lane graph with four lines at once, icons and lines only, with three small ways to set main apart.

@@ -4,15 +4,15 @@
 /* Layout: one real step between two events, drawn twice side by side (stacked on a phone): every action, then the actions you'd want explained. Tokens follow the Desk Element Library. */
 :root {
   --ground: #f2f3f7; --surface: #ffffff; --text-1: #1c1d21; --text-2: #6b6d71; --text-3: #a4a5a9; --separator: #e7e9ed;
-  --fill: #eae9ee; --groove: #e3e3e8; --groove-edge: #ffffffe6; --accent: #0a6fc0; --problem: #c4321f;
+  --fill: #eae9ee; --groove: #e3e3e8; --groove-edge: #ffffffe6; --accent: #0a6fc0; --problem: #c4321f; --now: #0388ff; --now-ring: #d6ecff; --now-text: #0868bc;
   --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --ground: #000000; --surface: #1c1c1e; --text-1: #f2f2f7; --text-2: #98989f; --text-3: #636366; --separator: #38383a;
-  --fill: #2c2c2e; --groove: #2c2c2e; --groove-edge: #ffffff12; --accent: #64b5ff; --problem: #ff6b5a; color-scheme: dark } }
+  --fill: #2c2c2e; --groove: #2c2c2e; --groove-edge: #ffffff12; --accent: #64b5ff; --problem: #ff6b5a; --now: #0a84ff; --now-ring: #0c2a45; --now-text: #9fd0ff; color-scheme: dark } }
 :root[data-theme="dark"] {
   --ground: #000000; --surface: #1c1c1e; --text-1: #f2f2f7; --text-2: #98989f; --text-3: #636366; --separator: #38383a;
-  --fill: #2c2c2e; --groove: #2c2c2e; --groove-edge: #ffffff12; --accent: #64b5ff; --problem: #ff6b5a; color-scheme: dark }
+  --fill: #2c2c2e; --groove: #2c2c2e; --groove-edge: #ffffff12; --accent: #64b5ff; --problem: #ff6b5a; --now: #0a84ff; --now-ring: #0c2a45; --now-text: #9fd0ff; color-scheme: dark }
 body { background: var(--ground); color: var(--text-1); font: 400 17px/1.4 var(--sans);
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 48px; }
 main { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
@@ -80,6 +80,20 @@ p { margin: 0; max-width: 68ch; }
 .plan .pr .p::before { --mk: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20256%20256%22%20fill%3D%22currentColor%22%3E%3Cpath%20d%3D%22M236.8%2C188.09%2C149.35%2C36.22h0a24.76%2C24.76%2C0%2C0%2C0-42.7%2C0L19.2%2C188.09a23.51%2C23.51%2C0%2C0%2C0%2C0%2C23.72A24.35%2C24.35%2C0%2C0%2C0%2C40.55%2C224h174.9a24.35%2C24.35%2C0%2C0%2C0%2C21.33-12.19A23.51%2C23.51%2C0%2C0%2C0%2C236.8%2C188.09ZM120%2C104a8%2C8%2C0%2C0%2C1%2C16%2C0v40a8%2C8%2C0%2C0%2C1-16%2C0Zm8%2C88a12%2C12%2C0%2C1%2C1%2C12-12A12%2C12%2C0%2C0%2C1%2C128%2C192Z%22/%3E%3C/svg%3E"); background: var(--problem); }
 .plan .pr .fix { position: relative; padding-left: 20px; font-size: 14px; line-height: 1.35; }
 .plan .pr .fix::before { --mk: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20256%20256%22%20fill%3D%22currentColor%22%3E%3Cpath%20d%3D%22M232.49%2C160.49l-48%2C48a12%2C12%2C0%2C0%2C1-17-17L195%2C164H128A108.12%2C108.12%2C0%2C0%2C1%2C20%2C56a12%2C12%2C0%2C0%2C1%2C24%2C0%2C84.09%2C84.09%2C0%2C0%2C0%2C84%2C84h67l-27.52-27.51a12%2C12%2C0%2C0%2C1%2C17-17l48%2C48A12%2C12%2C0%2C0%2C1%2C232.49%2C160.49Z%22/%3E%3C/svg%3E"); background: var(--text-1); }
+
+/* now and next: a blue dot in a soft ring for the action under way; open dots for actions still to come */
+.plan > li.cur::before { -webkit-mask: none; mask: none; width: 10px; height: 10px; left: 3px; top: 15px; border-radius: 5px; background: var(--now); box-shadow: 0 0 0 4px var(--now-ring); }
+.plan > li.cur .ti::after { content: "Now"; margin-left: 8px; font: 600 12px/1 var(--sans); letter-spacing: .04em; text-transform: uppercase; color: var(--now-text); }
+.plan > li.next::before { -webkit-mask: none; mask: none; width: 10px; height: 10px; left: 3px; top: 15px; border-radius: 5px; background: none; box-shadow: inset 0 0 0 1.5px var(--text-3); }
+.plan > li.next .ti { font-weight: 500; color: var(--text-2); }
+.plan .num { font: 500 13px/1 var(--sans); color: var(--text-2); font-variant-numeric: tabular-nums; margin-right: 6px; }
+.crumbs { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--text-2); padding: 0 2px 6px; }
+.crumbs b { font-weight: 600; color: var(--text-1); font-variant-numeric: tabular-nums; margin-right: 4px; }
+.crumbs .lv { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; margin-right: 4px; }
+.pair2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+@media (max-width: 760px) { .pair2 { grid-template-columns: 1fr; } }
+.numtbl { font-size: 14px; border-collapse: collapse; }
+.numtbl td { padding: 4px 12px 4px 0; vertical-align: top; } .numtbl td:first-child { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .concept { display: flex; flex-direction: column; gap: 10px; max-width: 560px; }
 .q2 { display: flex; flex-direction: column; gap: 12px; padding-top: 20px; border-top: 1px solid var(--separator); }
 .chosen { display: flex; flex-direction: column; gap: 8px; max-width: 520px; }
@@ -104,23 +118,42 @@ p { margin: 0; max-width: 68ch; }
     <div class="note">The actions below are pieced together from that revision note and from what changed in the spec. No agent keeps an action list today. That is the record you would be asking for.</div>
   </div>
 
-  <section class="concept">
-    <span class="tag rec">The concept, from your last answer</span>
-    <h2>Each action: the plan, why, any problem, and what we did about it</h2>
-    <p class="lede">The title is what the agent planned to do. Under it, in grey, is why, in the context of what is happening. If a problem came up, it shows in red, followed by what was done about it. Actions are planned ahead and ticked off as they are done.</p>
-    <div class="lane">
-      <div class="ev"><span class="ico"><svg aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M248,120H183.42a56,56,0,0,0-110.84,0H8a8,8,0,0,0,0,16H72.58a56,56,0,0,0,110.84,0H248a8,8,0,0,0,0-16ZM128,168a40,40,0,1,1,40-40A40,40,0,0,1,128,168Z"/></svg></span><div class="l1"><b>Commit</b><span>Done · 15:18</span></div><div class="l2">Saved the reworked spec</div><div class="l3">by the spec writer</div></div>
-      <div class="step"><div class="who">The spec writer · 4 minutes · 5 of 6 done · 1 blocked</div><ol class="plan">
-        <li class="ok"><div class="ti">Make sure no alert can be missed</div><div class="why">The point of this milestone is that anything needing you reaches your phone. The reviewer found a gap: a step that turned up late would never send an alert.</div></li>
-        <li class="ok"><div class="ti">Let the builder update the widget’s copy</div><div class="why">The spec asks the builder to refresh the widget’s copy in the same change, so it has to be allowed into that folder.</div><div class="pr"><div class="p">Nothing the spec writer was given says exactly where that folder is.</div><div class="fix">Allowed the folder, and added a question to confirm its exact place before the spec is frozen.</div></div></li>
-        <li class="ok"><div class="ti">Hold the phone-width check</div><div class="why">A check needs a fixed number to test against, and the widths are yours to choose.</div></li>
-        <li class="ok"><div class="ti">Say which version the check tests</div><div class="why">One requirement depends on a test of your phone that hasn’t run yet. Until it does, the check tests the normal version.</div></li>
-        <li class="blocked"><div class="ti">Move the two experiments onto the new spec</div><div class="why">The experiments are what prove this milestone works. They still point at the replaced spec, so the proof would rest on the wrong document.</div><div class="pr"><div class="p">They weren’t in what the spec writer was given, so it couldn’t change them.</div><div class="fix">Made it a condition: the spec can’t be frozen until they are moved.</div></div></li>
-        <li class="ok"><div class="ti">Settle what “acting for you” means</div><div class="why">Two places described it slightly differently, and a check can only test one rule. The case where no one is named wasn’t tested.</div></li>
-      </ol></div>
-      <div class="ev"><span class="ico"><svg aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></svg></span><div class="l1"><b>Review</b><span>Failed · 12:40</span></div><div class="l2">Plan review failed: two problems block the spec, four more to fix</div><div class="l3">by the plan reviewer</div></div>
+  <section class="concept" style="max-width:none">
+    <span class="tag rec">The concept, with your three changes</span>
+    <h2>Plan, why, problem, fix, now with numbers</h2>
+    <p class="lede">Shorter lines. A blue dot marks the action under way, and open dots mark those still to come. Each level is numbered inside the one above, from phase down to action.</p>
+    <div class="crumbs"><span><span class="lv">Phase</span><b>2</b>Design</span><span><span class="lv">Milestone</span><b>2.7</b>The records can carry the timeline (M6)</span><span><span class="lv">Sprint</span><b>2.7.2</b>Spec S-011</span><span><span class="lv">Step</span><b>2.7.2.5</b>The spec writer’s rework</span></div>
+    <div class="pair2">
+      <div class="opt"><span class="tag">At 15:16, under way</span>
+        <div class="lane"><div class="ev run"><span class="ico"><svg aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M248,120H183.42a56,56,0,0,0-110.84,0H8a8,8,0,0,0,0,16H72.58a56,56,0,0,0,110.84,0H248a8,8,0,0,0,0-16ZM128,168a40,40,0,1,1,40-40A40,40,0,0,1,128,168Z"/></svg></span><div class="l1"><b>Commit</b><span>Not yet</span></div><div class="l2">The reworked spec, not saved yet</div><div class="l3">by the spec writer</div></div><div class="step"><div class="who">2.7.2.5 · The spec writer · 2 of 6 done</div><ol class="plan">
+          <li class="ok"><div class="ti"><span class="num">5.1</span>Make sure no alert is missed</div><div class="why">The milestone promises anything that needs you reaches your phone. A late step could slip through.</div></li>
+          <li class="ok"><div class="ti"><span class="num">5.2</span>Let the builder update the widget’s copy</div><div class="why">The spec requires it, but that folder was off limits.</div><div class="pr"><div class="p">Its exact location isn’t on record.</div><div class="fix">Allowed it, and asked you to confirm the location before freezing.</div></div></li>
+          <li class="cur"><div class="ti"><span class="num">5.3</span>Hold the phone-width check</div><div class="why">It needs your widths first.</div></li>
+          <li class="next"><div class="ti"><span class="num">5.4</span>Say which version the check tests</div><div class="why">Your phone test hasn’t run, so it tests the normal version until then.</div></li>
+          <li class="next"><div class="ti"><span class="num">5.5</span>Move the experiments to the new spec</div><div class="why">They prove the milestone, but still point at the old spec.</div></li>
+          <li class="next"><div class="ti"><span class="num">5.6</span>Settle what “acting for you” means</div><div class="why">Two wordings clash, and a check needs one.</div></li>
+        </ol></div><div class="ev"><span class="ico"><svg aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></svg></span><div class="l1"><b>Review</b><span>Failed · 12:40</span></div><div class="l2">Plan review failed: 2 blockers, 4 fixes</div><div class="l3">by the plan reviewer</div></div></div>
+      </div>
+      <div class="opt"><span class="tag">At 15:18, finished</span>
+        <div class="lane"><div class="ev"><span class="ico"><svg aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M248,120H183.42a56,56,0,0,0-110.84,0H8a8,8,0,0,0,0,16H72.58a56,56,0,0,0,110.84,0H248a8,8,0,0,0,0-16ZM128,168a40,40,0,1,1,40-40A40,40,0,0,1,128,168Z"/></svg></span><div class="l1"><b>Commit</b><span>Done · 15:18</span></div><div class="l2">Saved the reworked spec</div><div class="l3">by the spec writer</div></div><div class="step"><div class="who">2.7.2.5 · The spec writer · 5 of 6 done · 1 blocked</div><ol class="plan">
+          <li class="ok"><div class="ti"><span class="num">5.1</span>Make sure no alert is missed</div><div class="why">The milestone promises anything that needs you reaches your phone. A late step could slip through.</div></li>
+          <li class="ok"><div class="ti"><span class="num">5.2</span>Let the builder update the widget’s copy</div><div class="why">The spec requires it, but that folder was off limits.</div><div class="pr"><div class="p">Its exact location isn’t on record.</div><div class="fix">Allowed it, and asked you to confirm the location before freezing.</div></div></li>
+          <li class="ok"><div class="ti"><span class="num">5.3</span>Hold the phone-width check</div><div class="why">It needs your widths first.</div></li>
+          <li class="ok"><div class="ti"><span class="num">5.4</span>Say which version the check tests</div><div class="why">Your phone test hasn’t run, so it tests the normal version until then.</div></li>
+          <li class="blocked"><div class="ti"><span class="num">5.5</span>Move the experiments to the new spec</div><div class="why">They prove the milestone, but still point at the old spec.</div><div class="pr"><div class="p">They weren’t in what the spec writer was given.</div><div class="fix">Made it a condition: no freeze until they move.</div></div></li>
+          <li class="ok"><div class="ti"><span class="num">5.6</span>Settle what “acting for you” means</div><div class="why">Two wordings clash, and a check needs one.</div></li>
+        </ol></div><div class="ev"><span class="ico"><svg aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></svg></span><div class="l1"><b>Review</b><span>Failed · 12:40</span></div><div class="l2">Plan review failed: 2 blockers, 4 fixes</div><div class="l3">by the plan reviewer</div></div></div>
+      </div>
     </div>
-    <p class="note">A check is done. A red warning is an action that couldn’t be finished. A red box is a problem that came up, and the arrow is what was done about it.</p>
+    <h2 style="font-size:17px;margin-top:6px">The numbers</h2>
+    <table class="numtbl"><tbody>
+      <tr><td>2</td><td>Phase: 1 Discovery, 2 Design, 3 Build, 4 Launch.</td></tr>
+      <tr><td>2.7</td><td>Milestone: the 7th in Design. The standard ones come first (Design-1 to 6), then the project’s own, so M6 is 7th.</td></tr>
+      <tr><td>2.7.2</td><td>Sprint: the 2nd under that milestone. S-010 was the 1st, and S-011 replaced it.</td></tr>
+      <tr><td>2.7.2.5</td><td>Step: the 5th agent session in that sprint, after the spec writer’s first draft, a review, a rework and another review.</td></tr>
+      <tr><td>2.7.2.5.3</td><td>Action: the 3rd in that step’s plan. Inside a step it shows as just 5.3.</td></tr>
+    </tbody></table>
+    <p class="note">Numbers count in the order things start and are never reused, as the model already keeps milestones: a dropped one keeps its number. A milestone keeps its own code, such as M6, beside its number. The numbers here come from the real records: the run log of S-011’s seven sessions on 14 November.</p>
   </section>
 
   <h2 style="margin-top:8px">How we got here</h2>

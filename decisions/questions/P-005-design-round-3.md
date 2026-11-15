@@ -31,3 +31,8 @@ The answer ends mid-sentence ("only move when"); the Chief of Staff asked the ow
 5. Finishing answer 4, in chat: "Sorry, should only scroll when a phase gets expanded"
 
 Read by the Chief of Staff as: the page opens on the current step with its tasks, sprints and the rest open; the other phases stay fixed in place, and the page scrolls only when one of them is expanded. Taken one at a time: the floating branch map first, then the gauges and their colours, then how the page opens.
+
+Asked by the question tool: "The floating branch map. The page https://claude.ai/artifact/2YiRfpz5Z2fiNx3b2gLtwb shows v12 as it is (lanes down the left, no map), then three scrollable phones built from the Design phase's real sprints; scroll inside each to see the map move. Which one?" Options: "A: whole phase, panning (Recommended)"; "B: only the milestone you're in"; "C: at the bottom, draggable"; "Mix or none". Pictures: docs/design/mockups/options-floating-map/.
+6. "A: whole phase, panning (Recommended)"
+
+Carried out: the branch map floats at the top of the timeline and shows every sprint in the phase, oldest on the left; a soft window marks the events in view below, and the map slides sideways to keep them under it. Next: the circle icons with percent gauges, in red, yellow and green.

@@ -28,3 +28,6 @@ Asked by the question tool: "Icons that open and fold (your second point). The p
 4. "I want to move the branches to be at the top of the page, floating so that no matter how much you scroll down the page it wi stay there. I also want it to have motion and move with the timeline. I want the circle icons but with percent gauges. RYG coloring. And I want the page to always open the full set of tasks, sprints, etc… per the step we are on , and the other phases should all be fixed and only move when"
 
 The answer ends mid-sentence ("only move when"); the Chief of Staff asked the owner to finish it before acting on that part. It raises colour, which was on hold (round 2, answer 1), for the gauges: red, yellow and green.
+5. Finishing answer 4, in chat: "Sorry, should only scroll when a phase gets expanded"
+
+Read by the Chief of Staff as: the page opens on the current step with its tasks, sprints and the rest open; the other phases stay fixed in place, and the page scrolls only when one of them is expanded. Taken one at a time: the floating branch map first, then the gauges and their colours, then how the page opens.

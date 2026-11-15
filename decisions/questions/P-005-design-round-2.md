@@ -101,3 +101,10 @@ Carried out: read as being about question 2. The page gains, at its top, the sam
 19. On question 2 (planned, then ticked off; or done only): "Planned and ticked off, but tick off with checkmarks? And introduce a color and different symbol for the problem"
 
 Carried out: on the actions page, a done action has a check, the one under way a dashed ring in bold, a planned one an empty ring, and a problem (an action the agent could not do) a filled warning sign in red, with its note in red. Red (#c4321f light, 5.3:1 on white; #ff6b5a dark) is the first colour beyond the neutrals and the blue, used only for problems; the rest of colour stays on hold.
+20. "Okay slight misunderstanding here, but ultimately it is okay. Originally when I referred to problem, I actually meant reason why, or purpose.
+
+I don’t know if this is becoming circular or not but when I review something I want to know what the plan was, why we were doing it, and any problems that arise - then how we solve it.
+
+So in this concept I’m thinking that the plan step is the title it’s what the agent was doing. There’s a reason why that is clearly defined and within the context of what is happennning, then if any problems that popup and then what we are doing about them."
+
+Carried out: the actions page opens with the concept. Each planned action has a title (what the agent planned to do), a why in grey (in the context of what is happening), and, if a problem came up, the problem in red with what was done about it. Marks as in answer 19: a check when done, a red warning when an action could not be finished.

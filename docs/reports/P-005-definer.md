@@ -1,49 +1,40 @@
-I've revised S-012 to deal with all four blocking findings and the five non-blocking ones. It is still a draft and not frozen. I could not commit it: this folder is not a git repository, so the `build/definer/<task>` branch and the commit are still to do.
+I've revised specs/S-012.md to fix the two blocking defects the second plan review found in AC41. The third blocking item, the join-up review rows, isn't something this spec can close. I haven't committed anything: the folder isn't a git repository, so the edit sits in the working copy only.
 
-## 1. What I changed (specs/S-012.md only)
-- **Revision note:** a new note under the header lists every change from this round.
-- **Blocking 1, missing device log (AC41, J9, AC26):** I chose the cautious reading. In a week with no committed device log, nothing counts as shown, so a step not sent within 5 minutes is a miss with the cause "no device log for <week>". The count also lists the weeks with no log. An empty file still means "used, nothing shown", not a missing log. So a missing log can only add misses, never hide one.
-  - J9 also logs `stopped`/`resumed` lines when the view shows or clears its "Stopped since" banner (AC15) or its "cannot be read just now" mark (AC16). Without them, AC41's separate count of steps not shown while the view said it had stopped had no record to read.
-  - New test cases: an empty file, a missing week, two devices, and a `stopped` line with no `resumed` line.
-- **Blocking 2, repeat causes (J5, AC41):** every log line now names its run. The "read" line names the run whose list of already-notified steps it used, or none when there was no earlier log. Each notice line now carries its project and `changed_at`, one line per step.
-  - AC41 now says exactly which lines it joins, and gives each repeat's cause by rule: (a) no earlier log, (b) a run that stopped before logging, (c) two runs overlapping, or "unexplained".
-- **Blocking 3, AC40 stated in full:** AC40 now spells out everything E1 states:
-  - the end of each wait is the first commit on the main branch's first-parent line holding the record;
-  - the decision card kinds are `dor-fail`, `stop` and `failure`;
-  - S-009's rule for when a card first shows is written out;
-  - gates are `dor`, `criteria` and `launch`;
-  - "a pull request that needs the owner" is defined as in E1 line 26.
+**1. What I changed**
+- **AC41, the causes of a repeat:** I added cause (d), "a return seen by a run". It applies when the second sender's `from_run` names the first sender or a later run, and that run's `true` line doesn't hold the step's (`id`, `changed_at`). The four causes are now tried in a fixed order, (a), (b), (c), (d), and the first one that holds is the cause. So a repeat where both (a) and (b) hold is listed as (a). I also simplified (c), since the fixed order now does the work its extra condition did.
+- **AC41, the matching key:** a wait is matched to `shown` lines and to notice lines by `id`, together with `project`, whatever the `changed_at`. Repeats are found in the notice lines alone, on (`project`, `id`, `changed_at`).
+- **AC41's test** gains:
+  - a case for cause (d);
+  - a case where (a) and (b) both hold;
+  - a step of each of the five waiting kinds, matched by its `id` from AC40.
+- **J4** now has an id rule for each kind:
+  - card or gate card: `<item>-<gate>-<n>`
+  - owner question: `question:<name>`
+  - pull request: `pr:<number>`
 
-  The test gains cases for these.
-- **Blocking 4, join-up review:** the table now gives the review's ratings. Rows 1, 2, 3 and 5 are blocking; row 4 is non-blocking and now sits in Risks.
-- **Non-blocking:**
-  - **Overlapping runs:** J5 now says one run at a time per project; for GitHub Actions that means a concurrency group with runs queued, not cancelled. If runs overlap anyway, AC23 and AC41 list the repeat under cause (c).
-  - **AC17's unit:** 44 by 44 CSS pixels (WCAG 2.5.5), not points.
-  - **New J12 for AC43:** the Chief of Staff commits a weekly value record to the portfolio repository. The desk reads it with its read key and works out no figure itself, so nothing is kept on Cloudflare.
-  - **AC44 and AC45:** each now says why it has no join sheet of its own.
-  - **Owner approval on M7:** the Areas touched now expect the owner's approval on the M7 pull request that changes the card-making code. It can go without that only if the Builder's reading of `src/` shows none of the changed files is one of the three files the notification sender runs that need the owner's approval.
-- **AC41's due times:** AC41 now takes its steps and due times from AC40's count for the same window. Without this, AC41 had no stated source for which steps fell due.
+  These three are the forms S-009 gives at specs/S-009.md:154. The fourth is new: a deploy awaiting the owner's review is `deploy:<run id>/<run attempt>`, because a re-run is a new wait. Each id is built from the step's own records. J4's test now checks one id of each kind.
+- **AC40** now lists each wait's waiting-list `id`, and its test checks it.
+- **AC23** says a return that a run saw is resent by its own rule, not as an exception. **J5** points to cause (d).
+- I added a revision note in the header, a Known limit on where the ids come from, two Risks, and a sentence under open question 1.
 
-## 2. Why
-Each change answers a finding in `reviews/S-012/plan.md`. I left the remaining review notes alone: the AC37 note, which the review rated a risk only, and both open questions, which the spec already handled. I did not change any registration.
+**2. Why**
+- Under the old AC41, a return that AC23 and J5 require to be resent would have been reported to the owner as a fault of the route.
+- AC40's output had no field that could be joined to J5's and J9's lines, which use the waiting-list id. Without one, AC41's test couldn't be written.
+- (a) and (b) could both hold with no rule for which one wins.
 
-## 3. What I verified
-- Read the review, both registrations, all the `decisions/P-005/` files, the two accessibility facts, S-009's rule, plan lines 100-190, and `docs/PROJECT.md` lines 196-216 and 584-632.
-- Checked each new line reference against its file and corrected three as I went: `docs/design/JOIN_UP_REVIEW.md:2-6` and `:8-9`, and `docs/PROJECT.md:216`.
-- Searched the spec to confirm every join-test label names S-012 (J1 to J10 and J12; J11 never had one) and that nothing still says "two exceptions".
+**3. What I verified**
+- I checked that `grep` finds (d), the id rule and the exception wording where they should be, consistent across AC23, AC41, J5, Risks and the open questions.
+- I read specs/S-009.md:154 to confirm the three id forms. They are the forms S-009 uses in its own records, from its reading of src/ at its base commit. I worded the spec to claim only that, not that the desk uses them today.
+- A Python replace confirmed each corrected sentence appeared exactly once. No tests were run, since this lane doesn't write or run any.
 
-There are no tests to run: the definer does not write tests.
+**4. What is undone**
+- **Join-up review rows 1, 2, 3 and 5** stay blocking until the mockups and E2's result exist. Both the spec and the review agree it can't close them.
+- **E1's output** (experiments/P-005-E1.md line 31) has an `id` field but doesn't say what form it takes. I left it alone, because the review didn't ask for it and E1 hasn't run. Aligning it with J4's id rule would be a small follow-up.
 
-## 4. What is undone
-- The commit, as above.
-- The join-up rows that need the mockups or E2's table stay open until those exist.
+**5. What is needed outside my lane**
+- In Build, the Builder's reading of src/ has to confirm the desk still forms ids as S-009 recorded. If it doesn't, that contradicts J4, which the stop rule makes a stop and a revision of this spec.
+- The spec then goes back to the Critic for another plan review.
 
-## 5. Needed outside my lane
-- The Critic needs to re-review the spec.
-- J12 needs the Chief of Staff to commit a weekly line for each of V7, V8 and V9.
-- Design has to name the one-run-at-a-time setting for whichever alert route it picks.
-
-## 6. Open questions (added to the spec's list for the owner)
-- **Where the weekly value record lives (J12):** I proposed `value/P-005/checks.jsonl` in the portfolio repository, beside the device logs. The alternative is the desk's existing `intake/value-checks.jsonl`, but its format (S-001 J25) is not in this pack, so I didn't use it.
-- **Missing device log counts as misses (AC41):** I chose this so a forgotten weekly commit can never hide a miss. The owner should see that choice at the scenario card.
-- **When the desk lists each kind of step:** this isn't in the pack. If the desk lists a step later than AC40's start, the step only looks later than it was, so no miss is hidden. The Builder's reading of `src/` should confirm.
+**6. Open questions**
+- **The deploy id:** a re-run with a raised attempt now counts as a new wait. Should the owner see this at the scenario card, or only if E2's records show something different?
+- **Aligning E1:** should E1's `id` be set to J4's id rule now, or left until E1 runs?

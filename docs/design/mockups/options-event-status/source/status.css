@@ -1,0 +1,29 @@
+
+/* the chosen gauge: A3, the tinted ring, 3.5 points */
+.gauge .trk, .gauge .arc { stroke-width:3.5; }
+.gauge .arc.g { stroke:color-mix(in srgb, var(--g) 55%, var(--surface)); }
+.gauge .arc.y { stroke:color-mix(in srgb, var(--y) 55%, var(--surface)); }
+.gauge .arc.r { stroke:color-mix(in srgb, var(--r) 55%, var(--surface)); }
+.gauge .trk.g { fill:color-mix(in srgb, var(--g) 8%, var(--surface)); stroke:color-mix(in srgb, var(--g) 16%, var(--surface)); }
+.gauge .trk.y { fill:color-mix(in srgb, var(--y) 8%, var(--surface)); stroke:color-mix(in srgb, var(--y) 16%, var(--surface)); }
+.gauge .trk.r { fill:color-mix(in srgb, var(--r) 8%, var(--surface)); stroke:color-mix(in srgb, var(--r) 16%, var(--surface)); }
+.sp { display:flex; gap:10px; align-items:center; padding:6px 0 4px; }
+.row { padding-left:4px; }
+.ico { position:relative; }
+
+/* A: the state word tinted */
+.ma .st.s-wait, .ma .st.s-bad { padding:1px 7px; border-radius:6px; font-weight:600; }
+.ma .st.s-wait { color:color-mix(in srgb, var(--y) 80%, var(--text-1)); background:color-mix(in srgb, var(--y) 14%, var(--surface)); }
+.ma .st.s-bad { color:var(--r); background:color-mix(in srgb, var(--r) 10%, var(--surface)); }
+
+/* B: a small mark on the icon's corner */
+.badge { position:absolute; right:-4px; bottom:-3px; width:14px; height:14px; border-radius:7px; display:grid; place-items:center; box-shadow:0 0 0 2px var(--ground); }
+.badge svg { width:9px; height:9px; }
+.badge.s-ok { background:color-mix(in srgb, var(--g) 22%, var(--surface)); color:var(--g); }
+.badge.s-wait { background:color-mix(in srgb, var(--y) 26%, var(--surface)); color:color-mix(in srgb, var(--y) 80%, var(--text-1)); }
+.badge.s-bad { background:color-mix(in srgb, var(--r) 18%, var(--surface)); color:var(--r); }
+
+/* C: the icon's disc takes a soft wash */
+.mc .ico.s-wait { background:color-mix(in srgb, var(--y) 22%, var(--surface)); color:color-mix(in srgb, var(--y) 70%, var(--text-1)); }
+.mc .ico.s-bad { background:color-mix(in srgb, var(--r) 16%, var(--surface)); color:var(--r); }
+.ico.main { background:var(--ink-arc); color:var(--surface); }

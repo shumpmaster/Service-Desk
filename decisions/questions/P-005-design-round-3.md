@@ -41,3 +41,8 @@ Asked by the question tool: "Gauge icons. The page https://claude.ai/artifact/WC
 7. "A - but let’s make the color gauge softer"
 
 Carried out: A, the coloured ring with the icon inside, shown as it is and then three softer versions on the same page.
+
+Asked by the question tool: "Softer gauges. The same page https://claude.ai/artifact/WCejAa8AxNzazgiyje3aM8 now shows A as you chose it, then three softer versions on the Design phase, light and dark. Which one?" Options: "A3: tinted ring (Recommended)"; "A1: lighter tones"; "A2: thinner and muted"; "Mix or none".
+8. "I like the tinted ring. Do a slightly thinner line. And only phases, milestones and sprints get the gauges. The events will need different status indicators"
+
+Carried out: the gauge is A3, the tinted ring, with its line thinned from 4.5 to 3.5 points; phases, milestones and sprints carry it, and steps and events do not. The Chief of Staff treats a step (the agent's plan between events) as event-level, and puts the events' status indicators next, with pictures.

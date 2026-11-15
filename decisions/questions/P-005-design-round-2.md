@@ -113,3 +113,8 @@ Carried out: the actions page opens with the concept. Each planned action has a 
 Three things - make the text more concise, add in indicator for current step and future steps should have open dots, also I want to introduce a number structure for working down to tasks from phases"
 
 Carried out: the concept shown at 15:16 (under way) and 15:18 (finished), with shorter lines; the action under way marked with a blue dot in a soft ring and the word Now; actions still to come with open dots. A proposed numbering, each level counted inside the one above in the order things start and never reused: phase 2 (Design), milestone 2.7 (M6, the 7th in Design after the six standard ones), sprint 2.7.2 (S-011, after S-010), step 2.7.2.5 (the 5th agent session of S-011 on 14 November, from status/outcomes.jsonl), action 2.7.2.5.3, shown as 5.3 inside its step.
+22. "Can the orientation of the tasks go the same orientation as the phases / milestones etc, from bottom to top?
+
+Also what is your recommendation for who writes them?"
+
+Carried out: the actions now run newest at the top, the first at the bottom next to the review that started the step. The Chief of Staff's recommendation on who writes them was given in chat (each agent writes its own, in a fixed short form, with a check on form and plain English); not yet ruled.

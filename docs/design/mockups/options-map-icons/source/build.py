@@ -40,17 +40,16 @@ DATA = [
 CSS = open(os.path.join(H, 'page.css')).read()
 JS = open(os.path.join(H, 'map.js')).read()
 OPTS = [
- ('dots', 'As you chose it: dots', 'The floating map from the last question. Each event is a dot; the ones you can see below are darker.'),
- ('icons', 'A · Every event as its icon', 'Each event is its kind’s icon on a small disc, merges on main’s dark disc, Now in blue. The map is a little taller and wider, and pans as before. Events out of view are paler.'),
- ('window', 'B · Icons where you are, dots elsewhere', 'The events you can see below show their icons; the rest of the phase stays as dots. As you scroll, the icons move along with the window.'),
+ ('window', 'B · As you chose it', 'Icons for the events you can see below, dots for the rest of the phase. All neutral.', 'window', ''),
+ ('colour', 'B with colour', 'The same, with the rows’ soft tones: red for a failed review or a blocked step, yellow for what waits on you (here Now, the stop, stays blue). Done stays grey. The dots carry it too, so the whole phase shows where the trouble was.', 'window', ' col'),
 ]
-frames = ''.join(f'<section class="opt"><div class="hd"><span class="tag">{"Chosen" if k == "dots" else "Option"}</span><h2>{h}</h2><p>{p}</p></div><div class="phone st-{k}" data-mode="a" data-st="{k}"></div></section>' for k, h, p in OPTS)
+frames = ''.join(f'<section class="opt"><div class="hd"><span class="tag">{"Chosen" if k == "window" else "Option"}</span><h2>{h}</h2><p>{p}</p></div><div class="phone st-{s}{c}" data-mode="a" data-st="{s}"></div></section>' for k, h, p, s, c in OPTS)
 page = f'''<title>Map Event Icons</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>{CSS}</style>
 <main>
 <header class="lede"><h1>Event icons on the branch map</h1>
-<p>You chose the row of phase gauges, and asked whether the event icons can go on the branch map. Today, in v12, there is no map (the first picture), and the map you chose last time shows each event as a dot (the second phone).</p><p>Then two ways to put the icons on it, drawn with the Design phase’s real events. Scroll inside each phone to see the map move. Gauges, status marks and the phase row are left out here to keep the pictures about the map.</p></header>
+<p>You chose B: icons for the events in view, dots for the rest. You asked whether colour on them adds anything. First B as you chose it, then B with colour. Scroll inside each phone; the map moves once you scroll.</p></header>
 <section class="opt"><div class="hd"><span class="tag">Now</span><h2>v12 as it is</h2><p>Lanes down the left of the open milestone. No map.</p></div>
 <div class="pair"><figure><img src="now-light.png" alt="v12 lanes, light" width="393" height="760"><figcaption>Light</figcaption></figure><figure><img src="now-dark.png" alt="v12 lanes, dark" width="393" height="760"><figcaption>Dark</figcaption></figure></div></section>
 {frames}

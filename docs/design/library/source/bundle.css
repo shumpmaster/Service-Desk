@@ -170,6 +170,27 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-ms::before { z-index: 1; }
 .dk-branch { display: block; overflow: visible; filter: drop-shadow(0 1px 0 var(--groove-edge)); }
 .dk-branch path { fill: none; stroke: var(--groove); stroke-width: 6; stroke-linecap: round; }
+/* action plan: the work between two events. Each action is a plan (title), why, and any problem with what was done about it */
+.dk-plan { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.dk-plan > li { position: relative; padding: 10px 0 10px 24px; }
+.dk-plan > li + li { border-top: 1px solid var(--separator-surface); }
+.dk-plan .mk { position: absolute; left: 0; top: 11px; width: 16px; height: 16px; display: grid; place-items: center; color: var(--text-1); }
+.dk-plan .mk .i { width: 16px; height: 16px; }
+.dk-plan .mk.now::before { content: ""; width: 10px; height: 10px; border-radius: var(--radius-full); background: var(--accent-select); box-shadow: 0 0 0 4px var(--now-block); }
+.dk-plan .mk.next::before { content: ""; width: 10px; height: 10px; border-radius: var(--radius-full); box-shadow: inset 0 0 0 1.5px var(--text-3); }
+.dk-plan .mk.blocked { color: var(--problem); }
+.dk-plan .ti { font: 600 15px/20px var(--font-sans); color: var(--text-1); }
+.dk-plan .num { font: 500 13px/20px var(--font-sans); color: var(--text-2); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.dk-plan li.next .ti { font-weight: 500; color: var(--text-2); }
+.dk-plan .nowtag { margin-left: 8px; font: 600 12px/1 var(--font-sans); letter-spacing: .04em; text-transform: uppercase; color: var(--now-text); }
+.dk-plan .why { font: 400 14px/19px var(--font-sans); color: var(--text-2); margin-top: 2px; }
+.dk-plan .pr { margin-top: 8px; padding: 8px 10px; border-radius: var(--radius-10); background: var(--problem-wash); display: flex; flex-direction: column; gap: 4px; }
+.dk-plan .pr > div { position: relative; padding-left: 20px; font: 400 14px/19px var(--font-sans); }
+.dk-plan .pr .i { position: absolute; left: 0; top: 2px; width: 14px; height: 14px; }
+.dk-plan .pr .p { color: var(--problem); }
+.dk-step { background: var(--surface); border-radius: var(--radius-12); padding: 10px 12px 4px; }
+.dk-step .hd { font: 600 13px/18px var(--font-sans); color: var(--text-2); }
+
 /* lane graph: main on the left, each open branch in the next free lane */
 .dk-lanes { position: relative; }
 .dk-lanes svg.lines { position: absolute; left: 0; top: 0; overflow: visible; filter: drop-shadow(0 1px 0 var(--groove-edge)); }

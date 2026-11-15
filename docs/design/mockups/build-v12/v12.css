@@ -1,0 +1,74 @@
+
+/* ================= v12 · the lanes, the actions between events, and the numbers =================
+   Desk Element Library: LaneGraph (main set apart: a wider, darker groove and dark icons), ActionPlan
+   (the plan, why, any problem and what was done, ticked off; red only for problems). Nothing else changes. */
+:root { --groove-main: #c9c9ce; --main-mark: #3a3b40; --on-main-mark: #ffffff; --problem: #c4321f; --problem-wash: rgba(196, 50, 31, .08); --now-dot: #0388ff; --now-ring: #d6ecff; --now-word: #0868bc; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --groove-main: #48484a; --main-mark: #d1d1d6; --on-main-mark: #000000; --problem: #ff6b5a; --problem-wash: rgba(255, 107, 90, .12); --now-dot: #0a84ff; --now-ring: #0c2a45; --now-word: #9fd0ff; } }
+:root[data-theme="dark"] { --groove-main: #48484a; --main-mark: #d1d1d6; --on-main-mark: #000000; --problem: #ff6b5a; --problem-wash: rgba(255, 107, 90, .12); --now-dot: #0a84ff; --now-ring: #0c2a45; --now-word: #9fd0ff; }
+
+/* main stands out: an 8-point groove, a shade darker */
+body.l4 .ptl .pmain, body.l4 .pfut { left: 44px; width: 8px; border-radius: 4px; }
+body.l4 .ptl .pmain { background: var(--groove-main); }
+
+/* numbers: phase, milestone */
+.phno { font-weight: 600; color: var(--ink-4); margin-right: 8px; font-variant-numeric: tabular-nums; }
+.k.mid { min-width: 78px; }
+.msno { font-weight: 600; color: var(--ink-2); margin-right: 6px; font-variant-numeric: tabular-nums; }
+
+/* a milestone opens in place: its sprints as lanes off main */
+.pl.open > .rbody > .detail { display: none; }
+.v12work { position: relative; margin: 2px 0 12px -64px; }
+.v12work .why { font-size: 14px; line-height: 1.35; color: var(--text-2); padding: 0 16px 8px 64px; }
+.v12work.none { padding-top: 2px; }
+.v12row { position: relative; }
+.v12row.ev { height: 64px; }
+.v12row.head { height: 34px; }
+.v12row .seg { position: absolute; top: 0; bottom: 0; width: 6px; margin-left: -3px; background: var(--rail); box-shadow: inset 0 1px 2px var(--groove-lo), 0 1px 0 var(--groove-hi); }
+.v12row .seg.half-lo { top: 50%; } .v12row .seg.half-hi { bottom: 50%; }
+.v12row .seg.cap { border-radius: 3px 3px 0 0; }
+.v12row svg.cv { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; filter: drop-shadow(0 1px 0 var(--groove-hi)); }
+.v12row svg.cv path { fill: none; stroke: var(--rail); stroke-width: 6; stroke-linecap: round; }
+.v12ico { position: absolute; top: 32px; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 13px; background: var(--fill); color: var(--ink); display: grid; place-items: center; box-shadow: 0 0 0 3px var(--ground); z-index: 1; }
+.v12ico svg { width: 15px; height: 15px; }
+.v12ico.main { background: var(--main-mark); color: var(--on-main-mark); }
+.v12ico.run { background: var(--ground); box-shadow: 0 0 0 3px var(--ground), inset 0 0 0 1.5px var(--ink-5); }
+.v12row .tx { position: absolute; right: 16px; top: 7px; min-width: 0; }
+.v12row.head .tx { top: 9px; font: 600 13px/16px var(--font-ui); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v12row .spno { margin-right: 6px; color: var(--ink-4); font-variant-numeric: tabular-nums; }
+.v12row .splab { font-weight: 400; color: var(--text-2); }
+.v12row .l1 { display: flex; align-items: baseline; gap: 6px; font-size: 15px; line-height: 19px; }
+.v12row .l1 b { font-weight: 600; } .v12row .l1 .st { color: var(--text-2); font-size: 13px; }
+.v12row .l1 .tm { margin-left: auto; color: var(--text-2); font-size: 13px; font-variant-numeric: tabular-nums; }
+.v12row .l2, .v12row .l3 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v12row .l2 { font-size: 15px; line-height: 19px; color: var(--ink); }
+.v12row .l3 { font-size: 13px; line-height: 17px; color: var(--text-2); }
+
+/* the step between two events: the agent's plan */
+.v12row.steprow { padding: 2px 16px 8px 0; }
+.v12step { background: var(--surface); border-radius: 14px; box-shadow: 0 1px 3px rgba(28, 29, 33, .06); }
+.v12step > .sthd { background: none !important; border: 0 !important; box-shadow: none !important; border-radius: 14px; min-height: 0; margin: 0; width: 100%; display: flex; align-items: center; gap: 6px; padding: 9px 12px; font: 600 13px/17px var(--font-ui); color: var(--text-2); text-align: left; }
+.v12step > .sthd .stno { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.v12step > .sthd .stwho { flex: 1; min-width: 0; }
+.v12step > .sthd .bl { color: var(--problem); }
+.v12step > .sthd svg { width: 13px; height: 13px; transition: transform .2s; }
+.v12step.open > .hd svg { transform: rotate(180deg); }
+.v12step .v12plan, .v12step .ex { display: none; }
+.v12step.open .v12plan { display: flex; } .v12step.open .ex { display: block; }
+.v12plan { list-style: none; margin: 0; padding: 0 12px 4px; flex-direction: column; }
+.v12plan > li { position: relative; padding: 9px 0 9px 22px; }
+.v12plan > li + li { border-top: 1px solid var(--rule-2); }
+.v12plan .mk { position: absolute; left: 0; top: 10px; width: 16px; height: 16px; display: grid; place-items: center; color: var(--ink); }
+.v12plan .mk svg { width: 15px; height: 15px; }
+.v12plan .mk.blocked { color: var(--problem); }
+.v12plan .mk.now::before { content: ""; width: 10px; height: 10px; border-radius: 5px; background: var(--now-dot); box-shadow: 0 0 0 4px var(--now-ring); }
+.v12plan .mk.next::before { content: ""; width: 10px; height: 10px; border-radius: 5px; box-shadow: inset 0 0 0 1.5px var(--ink-5); }
+.v12plan .ti { font: 600 14px/19px var(--font-ui); color: var(--ink); }
+.v12plan .num { font-weight: 500; font-size: 12px; color: var(--text-2); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.v12plan .nowtag { margin-left: 6px; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--now-word); }
+.v12plan .why { font-size: 13px; line-height: 18px; color: var(--text-2); margin-top: 1px; padding: 0; }
+.v12plan .pr { margin-top: 6px; padding: 7px 9px; border-radius: 10px; background: var(--problem-wash); display: flex; flex-direction: column; gap: 3px; }
+.v12plan .pr > div { position: relative; padding-left: 18px; font-size: 13px; line-height: 18px; color: var(--ink); }
+.v12plan .pr .p { color: var(--problem); }
+.v12plan .pr svg { position: absolute; left: 0; top: 2px; width: 13px; height: 13px; }
+.v12plan .pr .p svg { color: var(--problem); }
+.v12step .ex { font-size: 12px; color: var(--text-2); padding: 0 12px 10px 34px; }

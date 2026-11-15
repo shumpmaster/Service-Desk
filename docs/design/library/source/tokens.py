@@ -48,6 +48,8 @@ C = [
  ("groove-main", "#c9c9ce", "#48484a", "Main's groove, a shade darker than a branch's and 8 wide, so main stands out (owner, 15 Nov 2026: lane option C)."),
  ("main-mark", "#3a3b40", "#d1d1d6", "The disc behind an event icon on main; branch icons stay on fill."),
  ("on-main-mark", "#ffffff", "#000000", "The icon on a main-mark disc; 11:1."),
+ ("problem", "#c4321f", "#ff6b5a", "Problems only: an action that could not be finished, and a problem that came up. The one colour beyond the neutrals and blue (owner, 15 Nov 2026); 5.3:1 on white."),
+ ("problem-wash", "#c4321f14", "#ff6b5a1f", "The soft box behind a problem and what was done about it."),
  ("groove-fill", "#b4b4ba", "#636366", "Fills the groove for work that is done, like a slider's fill."),
  ("scrim", "#1c1d2126", "#00000066", "Dims the page behind a sheet or popover (refs 14, 15, 17)."),
 ]

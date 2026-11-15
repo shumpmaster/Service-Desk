@@ -1,0 +1,124 @@
+
+/* ================= v13 · the owner's round 3: floating branch map, phase row, gauges, marks and tags =================
+   Desk Element Library: BranchMap, PhaseRow, Gauge, StatusMark. Status colour is soft and used for status only
+   (status-ok, status-wait, status-bad and their tinted forms); everything else stays neutral, with the one blue. */
+:root { --status-ok: #1e8a4c; --status-ok-wash: #edf6f1; --status-ok-track: #dbece2; --status-ok-arc: #83bf9d; --status-ok-mark: #cee5d8;
+  --status-wait: #c27c00; --status-wait-wash: #faf5eb; --status-wait-track: #f5ead6; --status-wait-arc: #ddb773; --status-wait-mark: #efddbd; --status-wait-dot: #d3a147; --status-wait-tag: #90600a; --status-wait-tag-bg: #f6eddb;
+  --status-bad: #c4321f; --status-bad-wash: #faefed; --status-bad-track: #f6dedb; --status-bad-arc: #df8e84; --status-bad-mark: #f4dad7; --status-bad-dot: #d56b5e; --status-bad-tag: #c4321f; --status-bad-tag-bg: #f9eae9;
+  --map-window: rgba(3, 136, 255, .10); --v13-glass: rgba(242, 242, 246, .86); --v13-track: #e3e3e8; --v13-chip-shadow: inset 0 1px 0 #ffffffcc, inset 0 -1px 0 #7d93a826, 0 2px 6px #1c3a5a1f, 0 1px 2px #1c1d2112; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --status-ok: #4cd182; --status-ok-wash: #202a26; --status-ok-track: #24392e; --status-ok-arc: #368055; --status-ok-mark: #274434;
+  --status-wait: #ffc04d; --status-wait-wash: #2e2922; --status-wait-track: #403626; --status-wait-arc: #997638; --status-wait-mark: #57472a; --status-wait-dot: #bf9240; --status-wait-tag: #fcca6f; --status-wait-tag-bg: #3c3325;
+  --status-bad: #ff6b5a; --status-bad-wash: #2e2223; --status-bad-track: #402928; --status-bad-arc: #99473f; --status-bad-mark: #452a29; --status-bad-dot: #bf5549; --status-bad-tag: #ff6b5a; --status-bad-tag-bg: #332424;
+  --map-window: rgba(10, 132, 255, .18); --v13-glass: rgba(0, 0, 0, .82); --v13-track: #2c2c2e; --v13-chip-shadow: inset 0 1px 0 #ffffff1f, inset 0 -1px 0 #00000066, 0 2px 6px #00000080; } }
+:root[data-theme="dark"] { --status-ok: #4cd182; --status-ok-wash: #202a26; --status-ok-track: #24392e; --status-ok-arc: #368055; --status-ok-mark: #274434;
+  --status-wait: #ffc04d; --status-wait-wash: #2e2922; --status-wait-track: #403626; --status-wait-arc: #997638; --status-wait-mark: #57472a; --status-wait-dot: #bf9240; --status-wait-tag: #fcca6f; --status-wait-tag-bg: #3c3325;
+  --status-bad: #ff6b5a; --status-bad-wash: #2e2223; --status-bad-track: #402928; --status-bad-arc: #99473f; --status-bad-mark: #452a29; --status-bad-dot: #bf5549; --status-bad-tag: #ff6b5a; --status-bad-tag-bg: #332424;
+  --map-window: rgba(10, 132, 255, .18); --v13-glass: rgba(0, 0, 0, .82); --v13-track: #2c2c2e; --v13-chip-shadow: inset 0 1px 0 #ffffff1f, inset 0 -1px 0 #00000066, 0 2px 6px #00000080; }
+
+/* no lanes: the project line, main's groove and the branch-off curve go */
+#view.v13 .branchoff, .ptl.v13 > .faint, .ptl.v13 > .pmain, .ptl.v13 > .pfut, .ptl.v13 > .pbr, .ptl.v13 > .pen { display: none; }
+.ptl.v13 { margin-top: 0; }
+
+/* the floating band: the branch map, and the phase row under it */
+.v13band { position: sticky; top: 0; z-index: 6; margin: 4px -20px 0; padding: env(safe-area-inset-top, 0px) 0 0; background: var(--v13-glass);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8); border-bottom: 1px solid var(--rule); }
+.v13vp { position: relative; overflow: hidden; padding-top: 6px; touch-action: pan-y; }
+.v13in { will-change: transform; transition: transform .45s cubic-bezier(.2, .8, .2, 1); }
+.v13in svg { display: block; }
+.v13map .g { fill: none; stroke: var(--v13-track); stroke-width: 5; stroke-linecap: round; }
+.v13map .g.main { stroke: var(--groove-main); stroke-width: 7; }
+.v13map .win { fill: var(--map-window); transition: x .45s cubic-bezier(.2, .8, .2, 1), width .45s cubic-bezier(.2, .8, .2, 1), opacity .2s; }
+.v13map .dot { fill: var(--ink-5); transition: fill .2s; }
+.v13map .dot.main { fill: var(--main-mark); }
+.v13map .dot.bad { fill: var(--status-bad-dot); } .v13map .dot.wait { fill: var(--status-wait-dot); }
+.v13map .dot.now { fill: var(--now-dot); stroke: var(--now-ring); stroke-width: 3; }
+.v13map .ic { display: none; }
+.v13map .st.vis .ic, .v13map .st.now .ic { display: inline; }
+.v13map .st.vis .dot, .v13map .st.now .dot { display: none; }
+.v13map .disc { fill: var(--fill); stroke: var(--ground); stroke-width: 2.5; }
+.v13map .disc.main { fill: var(--main-mark); } .v13map .disc.bad { fill: var(--status-bad-track); } .v13map .disc.wait { fill: var(--status-wait-tag-bg); }
+.v13map .disc.now { fill: var(--now-dot); stroke: var(--now-ring); stroke-width: 3; }
+.v13map .ic svg { color: var(--ink); }
+.v13map .st.main .ic svg { color: var(--on-main-mark); } .v13map .st.bad .ic svg { color: var(--status-bad); } .v13map .st.wait .ic svg { color: var(--status-wait-tag); }
+.v13map .st.now .ic svg { color: #fff; }
+.v13map .lb { font: 600 10.5px var(--font-ui); fill: var(--text-2); paint-order: stroke; stroke: var(--ground); stroke-width: 3px; stroke-linejoin: round; }
+.v13main { position: absolute; left: 10px; bottom: 0; font: 600 10.5px/14px var(--font-ui); color: var(--ink-4); pointer-events: none; text-shadow: 0 0 3px var(--ground), 0 0 3px var(--ground); }
+@media (prefers-reduced-motion: reduce) { .v13in, .v13map .win, .v13map .dot { transition: none; } }
+
+.v13phases { display: flex; gap: 6px; padding: 6px 16px 8px; }
+.v13ph { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 0 4px; border: 0; border-radius: 12px; background: none; cursor: pointer; font: 400 12px/15px var(--font-ui); color: var(--text-2); }
+.v13ph .nm { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v13ph.cur { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--v13-chip-shadow); }
+.v13ph.x { background: var(--fill); color: var(--ink); }
+.v13ph:focus-visible, .v13gr:focus-visible, .v13stephd:focus-visible { outline: 2px solid var(--now-dot); outline-offset: 2px; }
+
+/* the gauge: the tinted ring (A3), 34 round, line 3.5 */
+.v13g { position: relative; flex: none; width: 34px; height: 34px; display: grid; place-items: center; color: var(--ink); }
+.v13g > svg { position: absolute; inset: 0; width: 34px; height: 34px; overflow: visible; }
+.v13g .trk { fill: var(--surface); stroke: var(--v13-track); stroke-width: 3.5; }
+.v13g .arc { fill: none; stroke-width: 3.5; stroke-linecap: round; }
+.v13g.ok .trk { fill: var(--status-ok-wash); stroke: var(--status-ok-track); } .v13g.ok .arc { stroke: var(--status-ok-arc); }
+.v13g.wait .trk { fill: var(--status-wait-wash); stroke: var(--status-wait-track); } .v13g.wait .arc { stroke: var(--status-wait-arc); }
+.v13g.bad .trk { fill: var(--status-bad-wash); stroke: var(--status-bad-track); } .v13g.bad .arc { stroke: var(--status-bad-arc); }
+.v13g .in { position: relative; display: grid; place-items: center; }
+.v13g .in svg { width: 14px; height: 14px; }
+.v13ms > .v13gr .v13g .in svg { width: 9px; height: 9px; }
+.v13g .pn { font: 700 14px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+
+/* the list: the current phase, full width, no lanes */
+.v13list { overflow-anchor: none; padding-top: 4px; }
+.v13gr { all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 10px; padding: 7px 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.v13gr .tx { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.v13gr .l1 { display: flex; align-items: baseline; gap: 6px; font: 400 15px/19px var(--font-ui); color: var(--ink); white-space: nowrap; min-width: 0; }
+.v13gr .l1 b { font-weight: 600; flex: none; }
+.v13gr .l1 .nm { overflow: hidden; text-overflow: ellipsis; min-width: 0; color: var(--ink-2); }
+.v13gr .no { font: 600 13px/19px var(--font-ui); color: var(--text-2); font-variant-numeric: tabular-nums; flex: none; }
+.v13gr .cnt { margin-left: auto; font-size: 13px; color: var(--text-2); }
+.v13gr .l3 { font: 400 13px/17px var(--font-ui); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v13phh { padding: 12px 0 8px; }
+.v13phh .l1 { font-size: 22px; line-height: 28px; } .v13phh .l1 b { font-weight: 700; }
+.v13phh .now { font: 600 13px var(--font-ui); color: var(--now-word); }
+.v13phh .pc { margin-left: auto; font: 400 13px var(--font-ui); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.v13phase + .v13phase { border-top: 1px solid var(--rule); margin-top: 8px; }
+.v13phase.xph { opacity: 1; }
+.v13ms { border-top: 1px solid var(--rule-2); }
+.v13phase > .v13body > .v13ms:first-child { border-top: 0; }
+.v13ms > .v13body { padding: 0 0 6px; }
+.v13why { font-size: 14px; line-height: 19px; color: var(--text-2); padding: 0 0 8px 44px; }
+.v13sp { padding-left: 10px; }
+.v13sp > .v13body { padding-left: 4px; }
+.v13unhide { padding: 4px 0 0 44px; }
+.v13end { height: 55vh; }
+
+/* the Now card, full width */
+.v13list .pl.v13now { margin: 8px 0 10px; }
+.v13list .pl.v13now > .rbody { margin-left: 0; }
+.v13list .pl.v13now > .rbody::before { display: none; }   /* the Now bar sat on the trunk; there is no trunk now */
+
+/* events and steps: the kind's icon at the left edge, a corner mark, a state tag */
+.v13ev { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; }
+.v13ico { position: relative; flex: none; width: 26px; height: 26px; border-radius: 13px; background: var(--fill); color: var(--ink); display: grid; place-items: center; }
+.v13ico > svg { width: 15px; height: 15px; }
+.v13ico.main { background: var(--main-mark); color: var(--on-main-mark); }
+.v13ico.plan { background: var(--ground); box-shadow: inset 0 0 0 1.5px var(--ink-5); }
+.v13mk { position: absolute; right: -4px; bottom: -3px; width: 14px; height: 14px; border-radius: 7px; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--ground); }
+.v13mk svg { width: 9px; height: 9px; }
+.v13mk.ok { background: var(--status-ok-mark); color: var(--status-ok); }
+.v13mk.wait { background: var(--status-wait-mark); color: var(--status-wait-tag); }
+.v13mk.bad { background: var(--status-bad-mark); color: var(--status-bad); }
+.v13mk.run { background: var(--surface); color: var(--text-2); }
+.v13ev .tx { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.v13ev .l1 { display: flex; align-items: baseline; gap: 6px; font: 400 15px/19px var(--font-ui); color: var(--ink); }
+.v13ev .l1 b { font-weight: 600; flex: none; }
+.v13ev .tm { margin-left: auto; font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.v13ev .l2 { font-size: 15px; line-height: 19px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v13ev .l3 { font-size: 13px; line-height: 17px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v13tag { font-size: 13px; line-height: 18px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.v13tag.wait, .v13tag.bad { padding: 0 7px; border-radius: 6px; font-weight: 600; }
+.v13tag.wait { color: var(--status-wait-tag); background: var(--status-wait-tag-bg); }
+.v13tag.bad { color: var(--status-bad-tag); background: var(--status-bad-tag-bg); }
+.v13stephd { all: unset; box-sizing: border-box; width: 100%; display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.v13stephd .tm svg { width: 13px; height: 13px; display: block; transition: transform .2s; }
+.v13step.open .v13stephd .tm svg { transform: rotate(180deg); }
+.v13acts { margin: 0 0 8px 36px; }
+.v13acts .ex { padding: 0 12px 10px 34px; }

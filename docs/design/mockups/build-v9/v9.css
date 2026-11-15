@@ -1,0 +1,113 @@
+
+/* ================= v9 · the Desk Element Library, second pass (docs/design/library/) =================
+   Phosphor icons (MIT) stand in for Apple's SF Symbols: regular in rows, bold on controls, filled when selected.
+   Glass is 78% opaque, blurred, with a white inner edge. Blues that carry words are darkened to reach 4.5:1.
+   No monospace anywhere: the references have none. Nothing here changes what the page does. */
+:root {
+  --font-mono: var(--font-ui);
+  --glass: rgba(252, 251, 255, .78); --sheet: rgba(245, 245, 248, .88); --popover: rgba(252, 252, 253, .9);
+  --float-shadow: 0 6px 20px rgba(28, 29, 33, .07), 0 1px 3px rgba(28, 29, 33, .05), inset 0 0 0 1px rgba(255, 255, 255, .7);
+  --sheet-shadow: 0 10px 40px rgba(28, 29, 33, .12), 0 1px 3px rgba(28, 29, 33, .05), inset 0 0 0 1px rgba(255, 255, 255, .8);
+  --apply: #2f6fd6; --text-2: #6b6d71; --icon: #7e8084; --chip-icon: #4e4f53; --sep-sheet: #e1dee2; --segment-on: #dbe9f7;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --glass: rgba(44, 44, 46, .78); --sheet: rgba(28, 28, 30, .88); --popover: rgba(44, 44, 46, .9);
+  --float-shadow: 0 6px 20px rgba(0, 0, 0, .4), inset 0 0 0 1px rgba(255, 255, 255, .1);
+  --sheet-shadow: 0 10px 40px rgba(0, 0, 0, .6), inset 0 0 0 1px rgba(255, 255, 255, .12);
+  --apply: #2f6fd6; --text-2: #98989f; --icon: #8e8e93; --chip-icon: #d1d1d6; --sep-sheet: #3a3a3c; --segment-on: #14324d; } }
+:root[data-theme="dark"] {
+  --glass: rgba(44, 44, 46, .78); --sheet: rgba(28, 28, 30, .88); --popover: rgba(44, 44, 46, .9);
+  --float-shadow: 0 6px 20px rgba(0, 0, 0, .4), inset 0 0 0 1px rgba(255, 255, 255, .1);
+  --sheet-shadow: 0 10px 40px rgba(0, 0, 0, .6), inset 0 0 0 1px rgba(255, 255, 255, .12);
+  --apply: #2f6fd6; --text-2: #98989f; --icon: #8e8e93; --chip-icon: #d1d1d6; --sep-sheet: #3a3a3c; --segment-on: #14324d; }
+
+/* glass on every floating control */
+.circ, .capsule, .tabbar, .roundbtn { background: var(--glass); box-shadow: var(--float-shadow); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); border: none; }
+.circ svg { width: 24px; height: 24px; }
+.capsule { width: 105.7px; justify-content: space-around; padding: 0 4px; box-sizing: border-box; }
+.cbtn { width: 44px; position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.cbtn svg { width: 26px; height: 26px; }
+.cbtn .bdot { top: 6px; right: 6px; box-shadow: 0 0 0 2px var(--surface); }
+.asof { color: var(--text-2); }
+.asof .live, .asof .live.late, .asof .live.stopped { color: var(--text-2); }
+
+/* search: a bold glass, 19 */
+.search svg { width: 19px; height: 19px; color: var(--icon); }
+.search input::placeholder { color: var(--icon); }
+
+/* headings: 8 in from the title (x 24); menu dots right after the word, the fold chevron at the right */
+.needs-head { display: flex; align-items: center; justify-content: space-between; padding: 0 0 0 8px; min-height: 44px; }
+.needs-head .hleft { display: inline-flex; align-items: center; gap: 6px; }
+.hbtn { color: var(--ink-4); }
+.hbtn svg { width: 18px; height: 18px; }
+.needs-head .hright .hbtn svg { width: 16px; height: 16px; }
+.desk-label { font-size: 19px; }
+
+/* rows: Phosphor regular at 22 in the icon grey; the age in legible grey; a bold small chevron */
+.need .ico, .sheet .ico.enode { color: var(--icon); }
+.need .ico svg { width: 22px; height: 22px; }
+.need .rc { color: var(--text-2); }
+.chev { width: 14px; height: 14px; color: var(--ink-5); }
+.pl .crow .chev { color: var(--ink-5); }
+.pl .node.sq svg { width: 12px; height: 12px; }
+.k.mid { color: var(--text-2); }
+
+/* project cards, in the pinned-card style */
+.pcard { border: none; border-radius: 18px; background: var(--surface); box-shadow: 0 1px 3px rgba(28, 29, 33, .07); padding: 16px; gap: 8px; display: flex; flex-direction: column; text-align: left; }
+.pcard:hover { border: none; box-shadow: 0 0 0 5px #a0d0e8, 0 1px 3px rgba(28, 29, 33, .07); }
+.pcard:focus-visible { outline: none; box-shadow: 0 0 0 5px #a0d0e8; }
+.p-head { display: flex; align-items: flex-start; gap: 12px; }
+.p-thumb { flex: none; width: 28px; height: 36px; border-radius: 4px; box-sizing: border-box; border: 1px solid var(--rule); background: var(--surface); padding: 6px 5px; display: flex; flex-direction: column; gap: 3px; }
+.p-thumb i { display: block; height: 2px; border-radius: 1px; background: var(--rule); }
+.p-thumb i:last-child { width: 60%; }
+.p-hx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.p-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.p-name { font: 500 17px/22px var(--font-ui); color: var(--ink-2); }
+.p-sub { font-size: 15px; line-height: 20px; color: var(--text-2); }
+.p-what { font-size: 15px; line-height: 1.35; color: var(--ink-2); padding-left: 40px; }
+.p-badge { flex: none; min-width: 22px; height: 22px; box-sizing: border-box; border-radius: 11px; padding: 0 7px; display: inline-flex; align-items: center; justify-content: center; font: 600 13px var(--font-ui); background: var(--you); color: #fff; }
+
+/* project chips: the selected one tinted with a thin edge and a light top edge, 17 semibold */
+.chip { color: var(--chip-icon); }
+.chip[aria-pressed="true"] { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6); font-weight: 600; }
+
+/* phases and milestones */
+.phase .phnote { color: var(--text-2); }
+.pl.reached .tt, .pl.notrec .tt, .pl.notreach .tt { color: var(--text-2); }
+.pl.gate .crow .tt { color: var(--text-2); }
+
+/* Now: the selected block of ref 13, its title in medium, not bold */
+.pl.now .crow .tt { font-weight: 500; }
+.pl.now .sub { color: var(--text-2); }
+.pl.now .nowtag { letter-spacing: .06em; }
+
+/* state chips: legible grey words */
+.st { color: var(--text-2); }
+
+/* sheets and popovers: frosted, with a white inner edge */
+.sheet { background: var(--sheet); box-shadow: var(--sheet-shadow); }
+.menu { background: var(--popover); box-shadow: var(--sheet-shadow); }
+.grab i { background: #d9d8db; }
+.sh-cap { color: var(--text-2); }
+.sh-text { color: var(--text-2); }
+.sh-group { color: var(--text-2); }
+.sh-row + .sh-row { border-top-color: var(--sep-sheet); }
+.done-btn { font: 600 17px var(--font-ui); min-width: 70px; }
+.sh-actions a, .sh-actions button { height: 40px; }
+.sh-actions .grey { background: #e3e3e3; color: #4b4e4d; box-shadow: inset 0 0 0 1px var(--sep-sheet); }
+.sh-actions .blue { background: var(--apply); color: #fff; font-weight: 500; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25); }
+.sheet .spr .cnt, .sheet .evt .tm { color: var(--text-2); }
+.mi { padding: 0 23px; gap: 12px; }
+.mi svg { width: 26px; height: 26px; color: var(--ink); }
+.mi .ck svg { width: 20px; height: 20px; color: var(--you); }
+.mcap { color: var(--text-2); }
+
+/* tab bar: bold icons at 27; the selected tab shows its filled form in blue */
+.tab .ti { display: inline-flex; }
+.tab .ti svg { width: 27px; height: 27px; }
+.tab .ti.on { display: none; }
+.tab[aria-current="true"] .ti.on { display: inline-flex; }
+.tab[aria-current="true"] .ti.off { display: none; }
+.tab[aria-current="true"] { width: 74px; color: var(--apply); }
+.roundbtn svg { width: 26px; height: 26px; }
+@media (prefers-reduced-transparency: reduce) { .sheet, .menu, .tabbar, .roundbtn, .circ, .capsule { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--surface); } }

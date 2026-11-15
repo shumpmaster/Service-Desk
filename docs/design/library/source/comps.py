@@ -157,18 +157,23 @@ One task: a checkbox, a date chip and the words, at a 36 pitch. From ref 12.
 - Words in `body`, `text-1-soft`.
 """)
 
+PROJ = [("The timeline", 4), ("Home-screen widget", 1), ("Operating model", 0), ("Model-Lab", 0), ("Portfolio", 0)]
 FILTERS = [("Needs you", "tray"), ("Today", "sun-horizon"), ("Plan", "calendar-dots"), ("All projects", "clipboard-text")]
-comp("FilterChip", "Chips", 130,
+comp("FilterChip", "Chips", 200,
  '<div class="dk-stage"><div class="dk-chips" role="group" aria-label="Show">' + "".join(
   f'<button class="dk-chip" aria-pressed="{str(i == 3).lower()}" aria-label="{l}">{ic(n, "regular", "i off")}{ic(n, "fill", "i on")}<span class="label">{l}</span></button>'
-  for i, (l, n) in enumerate(FILTERS)) + '</div><p class="dk-note">One of many: tap a chip. Unselected chips are icons only; the selected one tints, fills its icon and shows its label.</p></div>',
+  for i, (l, n) in enumerate(FILTERS)) + '</div><p class="dk-note">One of many: tap a chip. Unselected chips are icons only; the selected one tints, fills its icon and shows its label.</p>'
+ + '<div class="dk-chips named" role="group" aria-label="Projects">' + "".join(
+  f'<button class="dk-chip" aria-pressed="{str(i == 0).lower()}"><span class="label">{l}</span>' + (f'<span class="dk-count" aria-label="{c} need you">{c}</span>' if c and i == 0 else '') + '</button>'
+  for i, (l, c) in enumerate(PROJ)) + '</div><p class="dk-note">Named: the project switcher. Every chip shows its project&#8217;s name; the selected one adds how many things need you.</p></div>',
  """# FilterChip
 
 Switches the view, one of many, in a 40-high capsule. From ref 12.
 
 - `size-chip` high, at least 68 wide, 8 apart, `fill`, full radius; an icon only, 22, regular, in `chip-icon`.
 - Selected: `accent-tint` with a thin `accent-tint-edge` and a light top edge; the icon switches to its filled form in `accent-select`, and the label appears in 17 semibold `accent-on-tint`.
-- Open: switching projects with chips needs an icon for each project; the desk has none yet. Until then the project switcher stays as v8's named chips.
+- Every chip is raised a little: `shadow-chip` gives a light top edge, a darker bottom edge and a small drop; the selected one takes `shadow-chip-selected`, a white top edge, a rim darker at the bottom and a soft drop below, as in ref 12.
+- Named, for switching projects (the owner chose this on 15 November 2026: "Option A but they are missing that slight element of shadow or whatever that makes them look 3d"): every chip shows its project's name in 15 regular `text-1`, no icon; the selected one is 17 semibold `accent-on-tint` and adds a count badge, 22 high, white on `accent` (4.8:1). The row scrolls sideways.
 """, script=PRESS)
 
 comp("DocumentCard", "Cards", 210,

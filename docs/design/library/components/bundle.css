@@ -56,13 +56,19 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 
 /* chips: icon only; the selected one is tinted and shows its label */
 .dk-chips { display: flex; gap: var(--space-8); flex-wrap: wrap; }
-.dk-chip { height: var(--size-chip); min-width: 68px; padding: 0 var(--space-16); box-sizing: border-box; border-radius: var(--radius-full); background: var(--fill); color: var(--chip-icon); display: inline-flex; align-items: center; justify-content: center; gap: var(--space-6); font: 600 17px/22px var(--font-sans); border: 1px solid transparent; }
+.dk-chip { height: var(--size-chip); min-width: 68px; padding: 0 var(--space-16); box-sizing: border-box; border-radius: var(--radius-full); background: var(--fill); color: var(--chip-icon); display: inline-flex; align-items: center; justify-content: center; gap: var(--space-6); font: 600 17px/22px var(--font-sans); border: 1px solid transparent; box-shadow: var(--shadow-chip); }
 .dk-chip .i { width: 22px; height: 22px; }
 .dk-chip .label, .dk-chip .on { display: none; }
-.dk-chip[aria-pressed="true"] { background: var(--accent-tint); border-color: var(--accent-tint-edge); color: var(--accent-on-tint); box-shadow: inset 0 1px 0 #ffffff99; }
+.dk-chip[aria-pressed="true"] { background: var(--accent-tint); border-color: var(--accent-tint-edge); color: var(--accent-on-tint); box-shadow: var(--shadow-chip-selected); }
 .dk-chip[aria-pressed="true"] .label, .dk-chip[aria-pressed="true"] .on { display: inline; }
 .dk-chip[aria-pressed="true"] .off { display: none; }
 .dk-chip[aria-pressed="true"] .on { color: var(--accent-select); }
+/* named chips: the project switcher; every chip shows its name, the selected one adds its count */
+.dk-chips.named { flex-wrap: nowrap; overflow-x: auto; padding: 4px 2px 6px; margin: -4px -2px -6px; }
+.dk-chips.named .dk-chip { flex: none; font: 400 15px/20px var(--font-sans); color: var(--text-1); gap: var(--space-8); }
+.dk-chips.named .dk-chip .label { display: inline; }
+.dk-chips.named .dk-chip[aria-pressed="true"] { font: 600 17px/22px var(--font-sans); color: var(--accent-on-tint); }
+.dk-count { min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 7px; border-radius: var(--radius-full); background: var(--accent); color: var(--on-accent); font: 600 13px/22px var(--font-sans); text-align: center; }
 
 /* date chip and checkbox */
 .dk-date { height: 24px; border-radius: var(--radius-6); background: var(--fill); display: inline-flex; align-items: center; gap: var(--space-4); padding: 0 var(--space-6); font: 400 14px/18px var(--font-sans); color: var(--text-2); white-space: nowrap; }

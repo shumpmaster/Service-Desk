@@ -88,6 +88,8 @@ tokens = {
  "shadow": {"note": "Soft and wide; floating controls lift, rows never do.", "tokens": [
    {"name": "shadow-float", "value": {"light": "0 6px 20px #1c1d2112, 0 1px 3px #1c1d210d, inset 0 0 0 1px #ffffffb3", "dark": "0 6px 20px #00000066, inset 0 0 0 1px #ffffff1a"}, "usage": "Top buttons, the capsule, the tab bar, the round button."},
    {"name": "shadow-card", "value": {"light": "0 1px 3px #1c1d2112", "dark": "0 1px 3px #00000059"}, "usage": "Tiles and cards that sit on the ground."},
+   {"name": "shadow-chip", "value": {"light": "inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #1c1d2114, 0 1px 2px #1c1d2114", "dark": "inset 0 1px 0 #ffffff14, inset 0 -1px 0 #00000059, 0 1px 2px #00000066"}, "usage": "Unselected chips: a light top edge, a darker bottom edge and a small drop, so they read as raised (owner, 15 Nov: the chips were missing 'that slight element of shadow')."},
+   {"name": "shadow-chip-selected", "value": {"light": "inset 0 1px 0 #ffffffcc, inset 0 -1px 0 #7d93a826, 0 2px 6px #1c3a5a1f, 0 1px 2px #1c1d2112", "dark": "inset 0 1px 0 #ffffff1f, inset 0 -1px 0 #00000066, 0 2px 6px #00000080"}, "usage": "The selected chip: a white top edge, a rim darker at the bottom and a soft drop below, as in ref 12."},
    {"name": "shadow-sheet", "value": {"light": "0 10px 40px #1c1d211f, 0 1px 3px #1c1d210d, inset 0 0 0 1px #ffffffcc", "dark": "0 10px 40px #00000099, inset 0 0 0 1px #ffffff1f"}, "usage": "Sheets and popovers."}]},
  "size": {"note": "Fixed control sizes from the references, in points.", "tokens": [
    {"name": "size-hit", "value": "44px", "usage": "Top circle buttons, capsule height, search height."},

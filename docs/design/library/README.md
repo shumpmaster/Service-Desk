@@ -9,6 +9,7 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 - **Neutral first, one blue.** The only hue is blue, and it means one thing: selected, or now. Nothing is coloured for decoration.
 - **Rows, not boxes.** Lists are plain rows on the ground, split by inset hairlines. Cards are kept for things you can open.
 - **Round shapes.** Controls are capsules and circles; sheets and popovers have a 28 radius. Nothing is square.
+- **Chips are raised.** A light top edge, a darker bottom edge and a small drop make chips read as pressable; the selected chip lifts a little more.
 - **Floating controls are glass.** Top buttons, the capsule, the tab bar and the round button float over the content: `surface-floating` is 78% opaque and blurs what is behind, and `shadow-float` adds a soft drop and a white inner edge. Sheets and popovers are frosted the same way. Rows and text never cast a shadow.
 - **The system font.** One family at a few sizes: 27, 19, 17, 15 and 13. Weight does the work, not colour.
 - **Everything rises.** Settings and tools come up in bottom sheets; short choices open as popovers from the button that asked.
@@ -42,13 +43,13 @@ Words must reach 4.5:1 against what they sit on. Three reference values fall sho
 
 - One LargeTitle per screen. Groups get a SectionHeading. Sheets use CapsLabel inside them.
 - The TabBar holds the main sections as icons only, and each still needs a name for screen readers. The one RoundButton beside it is Now.
-- A FilterChip row switches projects. Only the selected chip shows its full label.
+- A row of named FilterChips switches projects: every chip shows its name, and the selected one adds its count (the owner's choice, 15 November 2026). Chips are raised a little by `shadow-chip`.
 - Only one NowBlock per plan.
 - A BottomSheet always has a Done; Apply and Cancel pairs sit at the foot of a sheet.
 - Motion stays as in v8: the branch from desk to project, sheets that rise, and the plan centring on Now. The reduced-motion setting turns it off.
 
 ## Open, the owner's to choose
 
-- Colour: which hues join the neutrals, and what each means.
-- The key shapes for milestones and sprints, and how "planned" is drawn on the trunk (TimelineTrunk shows a dashed ring as a placeholder).
+- Colour: on hold. The owner, 15 November 2026: "Hold tight on the colors for now, the design needs to be ironed out".
+- The key shapes for milestones and sprints, and how "planned" is drawn on the trunk (TimelineTrunk shows a dashed ring as a placeholder). The owner, 15 November 2026: "I think that will get changed around a bit as well".
 - Positions: DeskHome puts the elements together at phone width. Comment on any card to move, resize or drop an element.

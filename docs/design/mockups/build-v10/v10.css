@@ -1,0 +1,20 @@
+
+/* ================= v10 · raised project chips (Desk Element Library: shadow-chip, shadow-chip-selected) =================
+   The owner kept the named chips (Option A) and asked for "that slight element of shadow or whatever that makes them look 3d".
+   A light top edge, a darker bottom edge and a small drop; the selected chip lifts a little more. Nothing here changes what the page does. */
+:root {
+  --shadow-chip: inset 0 1px 0 rgba(255, 255, 255, .7), inset 0 -1px 0 rgba(28, 29, 33, .08), 0 1px 2px rgba(28, 29, 33, .08);
+  --shadow-chip-selected: inset 0 1px 0 rgba(255, 255, 255, .8), inset 0 -1px 0 rgba(125, 147, 168, .15), 0 2px 6px rgba(28, 58, 90, .12), 0 1px 2px rgba(28, 29, 33, .07);
+  --chip-count: #2f6fd6;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --shadow-chip: inset 0 1px 0 rgba(255, 255, 255, .08), inset 0 -1px 0 rgba(0, 0, 0, .35), 0 1px 2px rgba(0, 0, 0, .4);
+  --shadow-chip-selected: inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 -1px 0 rgba(0, 0, 0, .4), 0 2px 6px rgba(0, 0, 0, .5); } }
+:root[data-theme="dark"] {
+  --shadow-chip: inset 0 1px 0 rgba(255, 255, 255, .08), inset 0 -1px 0 rgba(0, 0, 0, .35), 0 1px 2px rgba(0, 0, 0, .4);
+  --shadow-chip-selected: inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 -1px 0 rgba(0, 0, 0, .4), 0 2px 6px rgba(0, 0, 0, .5); }
+
+.chips { padding: 4px 2px 6px; margin: 18px -2px 2px; }
+.chip { box-shadow: var(--shadow-chip); flex: none; }
+.chip[aria-pressed="true"] { box-shadow: var(--shadow-chip-selected); }
+.chip .n { background: var(--chip-count); }

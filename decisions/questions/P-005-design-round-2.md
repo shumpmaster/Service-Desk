@@ -92,3 +92,6 @@ Carried out: docs/design/mockups/options-actions/ (https://claude.ai/artifact/MM
 16. On what counts as an action (option 1, every action; option 2, what the owner would want explained): "I want option 2 - but I would want to see the actual problem described In a situation like this."
 
 Carried out: the same page gains the chosen form at its top. Each action says the problem first, in plain words, then what the agent did or could not do. The problems are the plan reviewer's six findings in reviews/S-011/plan.md as of the run at 12:40 on 14 November (commit a8e92740), rewritten plainly.
+17. On the problem-then-action list: "I think that’s probably good, is there anyway to keep it concise and my comment about the problems was more about just working the problem into the steps. Not just listing each problem and solution?"
+
+Carried out: each action is now one short line that says what the agent did and, in the same sentence, the problem that made it necessary (for example "Made every waiting step send an alert, because a step that showed up late could have been missed").

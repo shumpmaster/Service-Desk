@@ -51,3 +51,8 @@ Asked by the question tool: "Status for events and steps. The page https://claud
 9. "I Ike option 2 with the text tags as shown in option 1. To indicate things like awaiting merge, check status etc.."
 
 Carried out: an event or step shows a small mark on its icon's corner (a check, an hourglass or a cross, in soft green, yellow or red) and its state as a text tag, tinted as in option A, which can name states such as awaiting merge or checks running.
+
+Asked by the question tool: "How the timeline opens. The page https://claude.ai/artifact/V9B2THoqGmBiQ17d6GmGzb shows how v12 opens (partway down, everything scrolls together), then two live phones that open on the current step, fully open, with the other phases fixed. Scroll and tap in each. Which one?" Options: "B: phase gauges row (Recommended)"; "A: pinned above and below"; "Mix or none". Pictures: docs/design/mockups/options-opening/.
+10. "Phase gauges row - additionally is there anyway you can put the event icons on the branch timeline?"
+
+Carried out: the timeline opens on the current step with everything in it open; the phases sit in one row of gauges under the floating map, oldest on the left, the current one picked out; tapping another opens its milestones above the current phase, and only then does the page scroll. Event icons on the branch map: shown as it is and with icons, next.

@@ -37,3 +37,13 @@ The owner's words, verbatim:
 6. "Soft rail is the closest but it still doesn’t seem quite right"
 
 Carried out: a second round on the same pages, with motions 4 to 7 (soft focus, push, the branch reaches out, settle) and four variations on the soft rail (groove, thin rail, fading rail, line in the rail).
+
+Round 2, put by the question tool:
+7. "Motion, round 2: the options page (https://claude.ai/artifact/SVHh5HRkNJNDny1V1C6rci, 'Round 2') now adds four more ways to open a project. All of them are also in the live switcher (https://claude.ai/artifact/MkkJfg5bkfSoNSvrMFevEe). Which motion, from either round?" Options: "4: soft focus"; "5: push"; "6: branch reaches out"; "7: settle".
+8. "Branch lines, round 2: four variations on the soft rail, on the same page. Which is right, or which is closest?" Options: "4: groove"; "5: thin rail"; "6: fading rail"; "7: line in the rail".
+
+The owner's words, verbatim:
+7. "5: push"
+8. "4: groove"
+
+Carried out: the library's TimelineTrunk becomes a groove (tokens groove, groove-fill, groove-edge and shadow-groove), with a grooved branch, and the README says opening a project is a push and nothing draws from the top down. Mockup v11 (docs/design/mockups/timeline-v11-craft.html) is v10 with the push and the groove.

@@ -1,0 +1,107 @@
+<title>What Counts as an Action</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one real step between two events, drawn twice side by side (stacked on a phone): every action, then the actions you'd want explained. Tokens follow the Desk Element Library. */
+:root {
+  --ground: #f2f3f7; --surface: #ffffff; --text-1: #1c1d21; --text-2: #6b6d71; --text-3: #a4a5a9; --separator: #e7e9ed;
+  --fill: #eae9ee; --groove: #e3e3e8; --groove-edge: #ffffffe6; --accent: #0a6fc0;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #000000; --surface: #1c1c1e; --text-1: #f2f2f7; --text-2: #98989f; --text-3: #636366; --separator: #38383a;
+  --fill: #2c2c2e; --groove: #2c2c2e; --groove-edge: #ffffff12; --accent: #64b5ff; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --ground: #000000; --surface: #1c1c1e; --text-1: #f2f2f7; --text-2: #98989f; --text-3: #636366; --separator: #38383a;
+  --fill: #2c2c2e; --groove: #2c2c2e; --groove-edge: #ffffff12; --accent: #64b5ff; color-scheme: dark }
+body { background: var(--ground); color: var(--text-1); font: 400 17px/1.4 var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 48px; }
+main { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+h1 { font: 700 27px/1.15 var(--sans); margin: 0; text-wrap: balance; }
+h2 { font: 600 19px/1.25 var(--sans); margin: 0; }
+p { margin: 0; max-width: 68ch; }
+.lede { color: var(--text-2); font-size: 15px; }
+.ctx { background: var(--surface); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
+.ctx b { font-weight: 600; }
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.opt { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.tag { font: 600 13px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+.opt > p { font-size: 15px; color: var(--text-2); }
+.lane { position: relative; background: var(--ground); border: 1px solid var(--separator); border-radius: 22px; padding: 14px 14px 14px 52px; }
+.lane::before { content: ""; position: absolute; left: 25px; top: 28px; bottom: 28px; width: 6px; border-radius: 3px; background: var(--groove); box-shadow: inset 0 1px 2px #1c1d2129, 0 1px 0 var(--groove-edge); }
+.ev { position: relative; display: flex; flex-direction: column; padding: 4px 0; }
+.ev .ico { position: absolute; left: -40px; top: 3px; width: 26px; height: 26px; border-radius: 13px; background: var(--fill); color: var(--text-1); display: grid; place-items: center; box-shadow: 0 0 0 3px var(--ground); }
+.ev .ico svg { width: 15px; height: 15px; }
+.ev .l1 { font-size: 15px; } .ev .l1 b { font-weight: 600; } .ev .l1 span { color: var(--text-2); font-size: 13px; margin-left: 6px; }
+.ev .l2 { font-size: 15px; } .ev .l3 { font-size: 13px; color: var(--text-2); }
+.step { margin: 10px 0; padding: 10px 12px; background: var(--surface); border-radius: 14px; display: flex; flex-direction: column; gap: 6px; }
+.step .who { font: 600 13px/1.2 var(--sans); color: var(--text-2); }
+.step ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.step li { position: relative; padding-left: 20px; font-size: 15px; line-height: 1.35; }
+.step li::before { content: ""; position: absolute; left: 4px; top: 7px; width: 7px; height: 7px; border-radius: 4px; background: var(--text-3); }
+.step li.no::before { background: none; box-shadow: inset 0 0 0 1.5px var(--text-3); }
+.step li small { display: block; font-size: 13px; color: var(--text-2); }
+.count { font-size: 13px; color: var(--text-2); }
+.note { font-size: 13px; color: var(--text-2); }
+@media (max-width: 720px) { .opts { grid-template-columns: 1fr; } }
+</style>
+<main>
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <h1>What counts as an action?</h1>
+    <p class="lede">A real step from the timeline project, drawn two ways. Both show the same two events, the review before and the save after. They differ in the actions listed between them.</p>
+  </header>
+
+  <div class="ctx">
+    <div><b>The step.</b> On 14 November, from 15:14 to 15:18, the spec writer reworked the timeline's spec after the plan reviewer had failed it with six findings.</div>
+    <div><b>What it left behind.</b> One save, whose only words are "definer change set for P-005", plus a revision note it wrote at the top of the spec. Nothing else records what it did.</div>
+    <div class="note">The actions below are pieced together from that revision note and from what changed in the spec. No agent keeps an action list today. That is the record you would be asking for.</div>
+  </div>
+
+  <div class="opts">
+    <div class="opt">
+      <span class="tag">Option 1</span>
+      <h2>Every action</h2>
+      <p>Each thing the agent did, in the order it did it, including reading and checking. You see exactly what it took, but it is long, and most steps would be longer than this one.</p>
+      <div class="lane">
+        <div class="ev"><span class="ico"><svg aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M248,120H183.42a56,56,0,0,0-110.84,0H8a8,8,0,0,0,0,16H72.58a56,56,0,0,0,110.84,0H248a8,8,0,0,0,0-16ZM128,168a40,40,0,1,1,40-40A40,40,0,0,1,128,168Z"/></svg></span><div class="l1"><b>Commit</b><span>Done · 15:18</span></div><div class="l2">Saved the reworked spec</div><div class="l3">by the spec writer</div></div>
+        <div class="step"><div class="who">The spec writer · 4 minutes · 16 actions</div><ol>
+          <li>Read the plan reviewer's six findings</li>
+          <li>Opened the spec, the project plan and the rules for the run log</li>
+          <li>Re-read the two lines of the project plan the findings pointed to</li>
+          <li>Rewrote how alerts are chosen: no more time window, every waiting step not yet sent goes out</li>
+          <li>Removed the exception that let a step slip past</li>
+          <li>Changed the count of repeated alerts to match</li>
+          <li>Named the folder the widget's copy lives in</li>
+          <li>Added a question: confirm that folder's exact path</li>
+          <li>Said what holds while no copy exists yet</li>
+          <li>Marked the phone-width check as waiting on your widths</li>
+          <li>Said which version a locked check covers</li>
+          <li class="no">Tried to point the experiments at the new spec<small>Couldn't: they weren't in what it was given</small></li>
+          <li>Made that a condition before the spec is frozen</li>
+          <li>Made the "acting for you" rule replace the experiment's older wording, and added a test for it</li>
+          <li>Wrote the revision note at the top of the spec</li>
+          <li>Saved: 29 lines added, 19 removed</li>
+        </ol></div>
+        <div class="ev"><span class="ico"><svg aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></svg></span><div class="l1"><b>Review</b><span>Failed · before 15:14</span></div><div class="l2">Plan review failed, six findings</div><div class="l3">by the plan reviewer</div></div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <span class="tag">Option 2</span>
+      <h2>What you'd want explained</h2>
+      <p>One line for each thing that matters to you, usually one per finding or task, written as a short summary. Reading and checking are left out. The agent writes the summary.</p>
+      <div class="lane">
+        <div class="ev"><span class="ico"><svg aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M248,120H183.42a56,56,0,0,0-110.84,0H8a8,8,0,0,0,0,16H72.58a56,56,0,0,0,110.84,0H248a8,8,0,0,0,0-16ZM128,168a40,40,0,1,1,40-40A40,40,0,0,1,128,168Z"/></svg></span><div class="l1"><b>Commit</b><span>Done · 15:18</span></div><div class="l2">Saved the reworked spec</div><div class="l3">by the spec writer</div></div>
+        <div class="step"><div class="who">The spec writer · 4 minutes · 6 actions, one per finding</div><ol>
+          <li>Fixed how alerts are chosen, so a late step is never missed</li>
+          <li>Named the folder the widget's copy lives in<small>Its exact path is still to be confirmed</small></li>
+          <li>Held the phone-width check until you choose the widths</li>
+          <li>Said which version a locked check covers</li>
+          <li class="no">Couldn't point the experiments at the new spec<small>They weren't in what it was given, so it is now a condition before freezing</small></li>
+          <li>Made the "acting for you" rule replace the experiment's older wording</li>
+        </ol></div>
+        <div class="ev"><span class="ico"><svg aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></svg></span><div class="l1"><b>Review</b><span>Failed · before 15:14</span></div><div class="l2">Plan review failed, six findings</div><div class="l3">by the plan reviewer</div></div>
+      </div>
+    </div>
+  </div>
+  <p class="note">A hollow dot marks an action that could not be done. Newest is at the top, as on the timeline.</p>
+</main>

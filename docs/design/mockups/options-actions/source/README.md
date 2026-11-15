@@ -1,0 +1,1 @@
+The page was written by hand; the two icons are Phosphor (MIT) git-commit and eye, inlined. The actions are pieced together from S-011's revision 3 note and its diff in commit 98c717a1 (build/definer/S-011).

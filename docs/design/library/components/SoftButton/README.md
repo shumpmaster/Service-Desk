@@ -1,5 +1,5 @@
 # SoftButton
 
-Adds a value inside a sheet, as a 38-high soft rectangle. From ref 17.
+Adds a value inside a sheet. From ref 17.
 
-- Radius 12, `fill-sheet`, a "+" and 17 medium words in `text-1`.
+- 40 high, radius 10, white with a hairline `separator-sheet` edge; a grey "+" and 17 regular words.

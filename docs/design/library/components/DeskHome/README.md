@@ -1,6 +1,6 @@
 # DeskHome
 
-The Desk's home screen put together from the elements, at phone width (393), to judge positions. A composition, not a new element.
+The Desk's home screen assembled from the elements on a 393 by 852 phone, laid out like Craft's Home (ref 11), to judge positions. A composition, not a new element.
 
-- Top capsule, crumb and large title, search, Needs you rows, the project cards carousel, and the tab bar with the round Now button.
-- To move something, comment on this card with what should go where; the positions here are the starting point taken from mockup v8.
+- Status bar 54; the capsule 6 below it; the large title at y 136; search at y 188; recent documents as a carousel; Needs you rows; Projects as a section with rows; the tab bar and the round Now button floating at the foot.
+- To move something, comment on this card with what should go where.

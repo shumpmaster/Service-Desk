@@ -5,15 +5,21 @@ C = [
  ("ground", "#f2f3f7", "#000000", "Page background behind everything (refs 11, 12)."),
  ("ground-document", "#fefefe", "#0b0b0c", "Background of a document or plan page (refs 13, 16)."),
  ("surface", "#ffffff", "#1c1c1e", "Cards, tiles, fields and rows set on the ground (refs 12, 15, 17)."),
- ("surface-floating", "#fcfbff", "#2c2c2e", "Glass controls that float over content: top buttons, the capsule, the tab bar, the round button (refs 11, 12)."),
- ("surface-sheet", "#f5f5f8", "#1c1c1e", "Bottom sheets and popovers (ref 13)."),
+ ("surface-floating", "#fcfbffc7", "#2c2c2ec7", "Glass, 78% opaque and blurred behind: controls that float over content: top buttons, the capsule, the tab bar, the round button (refs 11, 12)."),
+ ("surface-sheet", "#f5f5f8e0", "#1c1c1ee0", "Bottom sheets, frosted: 88% opaque and blurred (ref 13)."),
+ ("surface-popover", "#fcfcfde6", "#2c2c2ee6", "Popover menus, frosted white (ref 17)."),
  ("fill", "#eae9ee", "#2c2c2e", "Chips, date chips and the search capsule (refs 11, 12)."),
+ ("chip-icon", "#4e4f53", "#d1d1d6", "Icons in unselected chips (ref 12); 7.6:1 on fill."),
+ ("checkbox-fill", "#f0eff4", "#2c2c2e", "Inside an empty checkbox (ref 12)."),
+ ("segment-on", "#dbe9f7", "#14324d", "A selected segment or tool in a sheet, with an accent-select edge (ref 13)."),
  ("fill-sheet", "#e5e7eb", "#3a3a3c", "Tool buttons and soft buttons inside a sheet (ref 13)."),
  ("fill-selected", "#e7e9ed", "#3a3a3c", "The pill behind the selected tab (ref 11)."),
  ("separator", "#e7e9ed", "#38383a", "Inset hairlines between rows on the ground (ref 11)."),
  ("separator-surface", "#efefef", "#2c2c2e", "Hairlines on white cards and sheets (ref 16)."),
+ ("separator-sheet", "#e1dee2", "#3a3a3c", "Dividers and button edges inside a sheet (refs 15, 17)."),
  ("edge", "#e6e6e6", "#3a3a3c", "One-point card edge when a card needs one (ref 12)."),
  ("control-border", "#d5d4d9", "#545458", "Checkbox and radio rings (refs 12, 13). Non-text, 3:1 is not required for a decorative ring beside a label."),
+ ("close", "#c9c9cd", "#5a5a5e", "The round close button in a popover header (ref 14)."),
  ("grabber", "#d9d8db", "#5a5a5e", "The 36 by 4 handle on a sheet (refs 13, 15)."),
  ("text-1", "#1c1d21", "#f2f2f7", "Titles, headings and row text; 15.2:1 on ground."),
  ("text-1-soft", "#36383c", "#d1d1d6", "Task text and card titles; 11.8:1 on surface."),
@@ -46,8 +52,7 @@ tokens = {
  "type": {
    "fonts": [],
    "families": {
-     "sans": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\", system-ui, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
-     "mono": "ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"},
+     "sans": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\", system-ui, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif"},
    "groups": [
      {"name": "Text", "family": "sans", "note": "The system font, as the references use. Sizes are points read as px.", "styles": [
        {"name": "large-title", "fontSize": "27px", "lineHeight": "33px", "fontWeight": 700, "letterSpacing": "-0.01em", "sample": "Timeline", "usage": "One per screen, 16 from the left; scrolls with the page."},
@@ -60,9 +65,8 @@ tokens = {
        {"name": "caption", "fontSize": "15px", "lineHeight": "20px", "fontWeight": 400, "sample": "Stop card 5 waits on you", "usage": "Under a card title or row; text-2."},
        {"name": "chip", "fontSize": "14px", "lineHeight": "18px", "fontWeight": 400, "sample": "Today", "usage": "Chip and date-chip text, tile labels."},
        {"name": "caps-label", "fontSize": "13px", "lineHeight": "16px", "fontWeight": 600, "letterSpacing": "0.06em", "sample": "MILESTONES", "usage": "Group label inside a sheet, upper case."},
-       {"name": "small", "fontSize": "13px", "lineHeight": "16px", "fontWeight": 400, "sample": "3 sprints", "usage": "Small tile labels and counts."}]},
-     {"name": "Ids", "family": "mono", "note": "The desk's ids only; the references have no mono.", "styles": [
-       {"name": "id", "fontSize": "13px", "lineHeight": "16px", "fontWeight": 500, "sample": "S-011 · P-005", "usage": "Spec, project and ledger ids in captions and crumbs."}]}]},
+       {"name": "small", "fontSize": "13px", "lineHeight": "16px", "fontWeight": 400, "sample": "3 sprints", "usage": "Small tile labels and counts."}]}
+   ]},
  "spacing": {"note": "Read from the references in points. 16 is the screen margin; 8 is the gap between chips and cards.", "tokens": [
    {"name": "space-2", "value": "2px", "usage": "Hairline offsets."},
    {"name": "space-4", "value": "4px", "usage": "Icon to dot; the Now bar width."},
@@ -82,9 +86,9 @@ tokens = {
    {"name": "radius-28", "value": "28px", "usage": "Bottom sheets and popovers."},
    {"name": "radius-full", "value": "9999px", "usage": "Capsules, chips, the tab bar, round buttons."}]},
  "shadow": {"note": "Soft and wide; floating controls lift, rows never do.", "tokens": [
-   {"name": "shadow-float", "value": {"light": "0 2px 10px #1c1d2114, 0 0 0 0.5px #1c1d210f", "dark": "0 2px 10px #00000066, 0 0 0 0.5px #ffffff14"}, "usage": "Top buttons, the capsule, the tab bar, the round button."},
+   {"name": "shadow-float", "value": {"light": "0 6px 20px #1c1d2112, 0 1px 3px #1c1d210d, inset 0 0 0 1px #ffffffb3", "dark": "0 6px 20px #00000066, inset 0 0 0 1px #ffffff1a"}, "usage": "Top buttons, the capsule, the tab bar, the round button."},
    {"name": "shadow-card", "value": {"light": "0 1px 3px #1c1d2112", "dark": "0 1px 3px #00000059"}, "usage": "Tiles and cards that sit on the ground."},
-   {"name": "shadow-sheet", "value": {"light": "0 -2px 30px #1c1d211f, 0 0 0 0.5px #1c1d210d", "dark": "0 -2px 30px #00000099, 0 0 0 0.5px #ffffff14"}, "usage": "Sheets and popovers."}]},
+   {"name": "shadow-sheet", "value": {"light": "0 10px 40px #1c1d211f, 0 1px 3px #1c1d210d, inset 0 0 0 1px #ffffffcc", "dark": "0 10px 40px #00000099, inset 0 0 0 1px #ffffff1f"}, "usage": "Sheets and popovers."}]},
  "size": {"note": "Fixed control sizes from the references, in points.", "tokens": [
    {"name": "size-hit", "value": "44px", "usage": "Top circle buttons, capsule height, search height."},
    {"name": "size-chip", "value": "40px", "usage": "Filter chip height."},

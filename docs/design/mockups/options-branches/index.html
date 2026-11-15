@@ -1,0 +1,147 @@
+<title>Several Branches</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: the three options as phone-width frames side by side (stacked on a phone), each drawn from the same sprint. Tokens follow the Desk Element Library: neutral, one blue, the groove. */
+:root {
+  --ground: #f2f3f7; --surface: #ffffff; --text-1: #1c1d21; --text-2: #6b6d71; --text-3: #a4a5a9; --separator: #e7e9ed;
+  --fill: #eae9ee; --groove: #e3e3e8; --groove-fill: #b4b4ba; --groove-edge: #ffffffe6; --accent: #0a6fc0;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #000000; --surface: #1c1c1e; --text-1: #f2f2f7; --text-2: #98989f; --text-3: #636366; --separator: #38383a;
+  --fill: #2c2c2e; --groove: #2c2c2e; --groove-fill: #636366; --groove-edge: #ffffff12; --accent: #64b5ff; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --ground: #000000; --surface: #1c1c1e; --text-1: #f2f2f7; --text-2: #98989f; --text-3: #636366; --separator: #38383a;
+  --fill: #2c2c2e; --groove: #2c2c2e; --groove-fill: #636366; --groove-edge: #ffffff12; --accent: #64b5ff; color-scheme: dark }
+body { background: var(--ground); color: var(--text-1); font: 400 17px/1.4 var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 48px; }
+main { max-width: 1260px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+h1 { font: 700 27px/1.15 var(--sans); margin: 0; text-wrap: balance; }
+p { margin: 0; max-width: 70ch; }
+.lede { color: var(--text-2); font-size: 15px; }
+.opts { display: grid; grid-template-columns: repeat(3, minmax(0, 393px)); gap: 20px; justify-content: start; }
+.opt { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.tag { font: 600 13px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+.opt h2 { font: 600 19px/1.25 var(--sans); margin: 0; }
+.opt p { font-size: 15px; color: var(--text-2); }
+.phone { position: relative; background: var(--ground); border: 1px solid var(--separator); border-radius: 22px; overflow: hidden; padding: 12px 0 16px; }
+.phone .ph-title { font: 700 22px/1.2 var(--sans); padding: 4px 16px 10px; }
+.list { position: relative; }
+.list svg.lines { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.lines path { fill: none; stroke: var(--groove); stroke-width: 6; stroke-linecap: round; }
+.lines path.done { stroke: var(--groove-fill); }
+.lines { filter: drop-shadow(0 1px 0 var(--groove-edge)); }
+.row { position: relative; height: 62px; }
+.ico { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; top: 31px; border-radius: 13px; background: var(--fill); color: var(--text-1); display: grid; place-items: center; box-shadow: 0 0 0 3px var(--ground); z-index: 1; }
+.ico svg { width: 15px; height: 15px; }
+.ico.run { box-shadow: 0 0 0 3px var(--ground), inset 0 0 0 1.5px var(--text-3); background: var(--ground); }
+.tx { position: absolute; top: 8px; right: 14px; min-width: 0; display: flex; flex-direction: column; }
+.l1 { display: flex; align-items: baseline; gap: 6px; font-size: 15px; line-height: 19px; }
+.l1 b { font-weight: 600; } .l1 .st { color: var(--text-2); font-size: 13px; } .l1 .tm { margin-left: auto; color: var(--text-2); font-size: 13px; font-variant-numeric: tabular-nums; }
+.l2, .l3 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.l2 { font-size: 15px; line-height: 19px; }
+.l3 { font-size: 13px; line-height: 17px; color: var(--text-2); }
+.grp { position: relative; height: 40px; }
+.grp .gx { position: absolute; top: 10px; right: 14px; font: 600 13px/18px var(--sans); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1290px) { .opts { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 393px)); } }
+</style>
+<main>
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <h1>Several branches at once, with the seven kinds on the lines</h1>
+    <p class="lede">One sprint, drawn three ways. It is the worked sprint from the constants walk-through, with a research branch added that runs alongside. A check author's branch writes the locked checks and merges. A builder's branch then builds, fails a check once, fixes it and merges. A source checker's branch is still open. Each event shows its kind (the icon's shape and its name in bold), its state as a grey word, what happened, and who did it. Newest is at the top. States are neutral, as you asked.</p>
+  </header>
+  <div class="opts" id="opts"></div>
+</main>
+<script>
+var IC = {"branch": "<svg aria-hidden=\"true\" focusable=\"false\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M232,64a32,32,0,1,0-40,31v17a8,8,0,0,1-8,8H96a23.84,23.84,0,0,0-8,1.38V95a32,32,0,1,0-16,0v66a32,32,0,1,0,16,0V144a8,8,0,0,1,8-8h88a24,24,0,0,0,24-24V95A32.06,32.06,0,0,0,232,64ZM64,64A16,16,0,1,1,80,80,16,16,0,0,1,64,64ZM96,192a16,16,0,1,1-16-16A16,16,0,0,1,96,192ZM200,80a16,16,0,1,1,16-16A16,16,0,0,1,200,80Z\"/></svg>", "commit": "<svg aria-hidden=\"true\" focusable=\"false\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M248,120H183.42a56,56,0,0,0-110.84,0H8a8,8,0,0,0,0,16H72.58a56,56,0,0,0,110.84,0H248a8,8,0,0,0,0-16ZM128,168a40,40,0,1,1,40-40A40,40,0,0,1,128,168Z\"/></svg>", "pr": "<svg aria-hidden=\"true\" focusable=\"false\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M104,64A32,32,0,1,0,64,95v66a32,32,0,1,0,16,0V95A32.06,32.06,0,0,0,104,64ZM56,64A16,16,0,1,1,72,80,16,16,0,0,1,56,64ZM88,192a16,16,0,1,1-16-16A16,16,0,0,1,88,192Zm120-31V110.63a23.85,23.85,0,0,0-7-17L163.31,56H192a8,8,0,0,0,0-16H144a8,8,0,0,0-8,8V96a8,8,0,0,0,16,0V67.31L189.66,105a8,8,0,0,1,2.34,5.66V161a32,32,0,1,0,16,0Zm-8,47a16,16,0,1,1,16-16A16,16,0,0,1,200,208Z\"/></svg>", "check": "<svg aria-hidden=\"true\" focusable=\"false\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm48.24-94.78-64-40A8,8,0,0,0,100,88v80a8,8,0,0,0,12.24,6.78l64-40a8,8,0,0,0,0-13.56ZM116,153.57V102.43L156.91,128Z\"/></svg>", "review": "<svg aria-hidden=\"true\" focusable=\"false\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z\"/></svg>", "merge": "<svg aria-hidden=\"true\" focusable=\"false\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M208,112a32.05,32.05,0,0,0-30.69,23l-42.21-6a8,8,0,0,1-4.95-2.71L94.43,84.55A32,32,0,1,0,72,87v82a32,32,0,1,0,16,0V101.63l30,35a24,24,0,0,0,14.83,8.14l44,6.28A32,32,0,1,0,208,112ZM64,56A16,16,0,1,1,80,72,16,16,0,0,1,64,56ZM96,200a16,16,0,1,1-16-16A16,16,0,0,1,96,200Zm112-40a16,16,0,1,1,16-16A16,16,0,0,1,208,160Z\"/></svg>", "deploy": "<svg aria-hidden=\"true\" focusable=\"false\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M223.85,47.12a16,16,0,0,0-15-15c-12.58-.75-44.73.4-71.41,27.07L132.69,64H74.36A15.91,15.91,0,0,0,63,68.68L28.7,103a16,16,0,0,0,9.07,27.16l38.47,5.37,44.21,44.21,5.37,38.49a15.94,15.94,0,0,0,10.78,12.92,16.11,16.11,0,0,0,5.1.83A15.91,15.91,0,0,0,153,227.3L187.32,193A15.91,15.91,0,0,0,192,181.64V123.31l4.77-4.77C223.45,91.86,224.6,59.71,223.85,47.12ZM74.36,80h42.33L77.16,119.52,40,114.34Zm74.41-9.45a76.65,76.65,0,0,1,59.11-22.47,76.46,76.46,0,0,1-22.42,59.16L128,164.68,91.32,128ZM176,181.64,141.67,216l-5.19-37.17L176,139.31Zm-74.16,9.5C97.34,201,82.29,224,40,224a8,8,0,0,1-8-8c0-42.29,23-57.34,32.86-61.85a8,8,0,0,1,6.64,14.56c-6.43,2.93-20.62,12.36-23.12,38.91,26.55-2.5,36-16.69,38.91-23.12a8,8,0,1,1,14.56,6.64Z\"/></svg>"};
+var KL = { branch: 'Branch', commit: 'Commit', pr: 'Pull request', check: 'Check', review: 'Review', merge: 'Merge', deploy: 'Deploy' };
+var BR = { ca: 'build/check-author/m3-checks', bu: 'build/builder/m3-saved-search', sc: 'build/source-checker/q-029' };
+/* newest first; br null = main; end: the branch this merge closes */
+var EV = [
+  { br: 'sc', k: 'commit', st: 'Running', by: 'source checker', t: '16:40', title: 'Filing the checked facts' },
+  { br: null, k: 'merge', st: 'Done', by: 'orchestrator', t: '16:22', title: 'Merged: every check and review passed', end: 'bu' },
+  { br: 'bu', k: 'review', st: 'Passed', by: 'design reviewer', t: '16:10', title: 'No design findings' },
+  { br: 'bu', k: 'review', st: 'Passed', by: 'reviewer', t: '15:58', title: 'Build review passed' },
+  { br: 'bu', k: 'check', st: 'Passed', by: 'Actions', t: '15:41', title: 'Locked checks passed · round 2 of 3' },
+  { br: 'bu', k: 'commit', n: 2, st: 'Done', by: 'builder', t: '15:30', title: 'Fixed the two failures' },
+  { br: 'bu', k: 'check', st: 'Failed', by: 'Actions', t: '15:02', title: 'Locked checks: 2 failed · round 1 of 3' },
+  { br: 'bu', k: 'commit', n: 9, st: 'Done', by: 'builder', t: '14:20', title: 'Built the work' },
+  { br: 'bu', k: 'pr', st: 'Done', by: 'builder', t: '13:05', title: 'Draft opened · M3 · tasks 0 of 5' },
+  { br: 'bu', k: 'branch', st: 'Done', by: 'builder', t: '13:01', title: 'Branched for the build' },
+  { br: 'sc', k: 'commit', st: 'Done', by: 'source checker', t: '12:40', title: 'Memo checked: 3 facts passed' },
+  { br: null, k: 'merge', st: 'Done', by: 'orchestrator', t: '12:31', title: 'Merged the locked checks', end: 'ca' },
+  { br: 'ca', k: 'review', st: 'Passed', by: 'critic', t: '12:20', title: 'Checks review passed · round 1' },
+  { br: 'sc', k: 'branch', st: 'Done', by: 'source checker', t: '11:52', title: 'Branched to check Q-029' },
+  { br: 'ca', k: 'commit', n: 4, st: 'Done', by: 'check author', t: '11:30', title: 'Wrote the locked checks' },
+  { br: 'ca', k: 'branch', st: 'Done', by: 'check author', t: '10:48', title: 'Branched for M3’s locked checks' },
+  { br: null, k: 'commit', st: 'Done', by: 'orchestrator', t: '10:40', title: 'Criteria frozen for M3' }
+];
+var RH = 62, X0 = 26, DX = 26;
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function cy(i) { return i * RH + 31; }
+function rowHTML(e, x, txLeft, showBranch) {
+  var kind = KL[e.k] + (e.n ? ' ×' + e.n : '');
+  var where = e.br ? (showBranch ? BR[e.br] : '') : 'main';
+  return '<div class="row"><span class="ico' + (e.st === 'Running' ? ' run' : '') + '" style="left:' + x + 'px">' + IC[e.k] + '</span>' +
+    '<div class="tx" style="left:' + txLeft + 'px"><div class="l1"><b>' + kind + '</b><span class="st">' + e.st + '</span><span class="tm">' + e.t + '</span></div>' +
+    '<div class="l2">' + esc(e.title) + '</div><div class="l3">by ' + esc(e.by) + (where ? ' · ' + esc(where) : '') + '</div></div></div>';
+}
+function curveOut(x0, xl, yStart) { return 'M' + x0 + ' ' + (yStart + 30) + ' C' + x0 + ' ' + (yStart + 12) + ' ' + xl + ' ' + (yStart + 18) + ' ' + xl + ' ' + yStart; }
+function curveIn(xl, x0, yEnd) { return 'M' + xl + ' ' + (yEnd + 30) + ' C' + xl + ' ' + (yEnd + 12) + ' ' + x0 + ' ' + (yEnd + 18) + ' ' + x0 + ' ' + yEnd; }
+function svg(w, h, paths) { return '<svg class="lines" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' + paths.map(function (p) { return '<path' + (p.c ? ' class="' + p.c + '"' : '') + ' d="' + p.d + '"/>'; }).join('') + '</svg>'; }
+function span(br) { var s = -1, e = -1; EV.forEach(function (x, i) { if (x.br === br && x.k === 'branch') s = i; if (x.end === br) e = i; }); return { s: s, e: e }; }
+
+/* A: lanes. Every branch gets its own groove beside main while it is open; a free lane is reused. */
+function lanes() {
+  var cols = { ca: 1, sc: 2, bu: 1 }, maxc = 2, h = EV.length * RH, x = function (c) { return X0 + c * DX; }, txL = x(maxc) + 24;
+  var paths = [{ d: 'M' + X0 + ' 0 V' + h }];
+  Object.keys(BR).forEach(function (b) {
+    var sp = span(b), xl = x(cols[b]), ys = cy(sp.s);
+    paths.push({ d: curveOut(X0, xl, ys) });
+    if (sp.e >= 0) { var ye = cy(sp.e); paths.push({ d: 'M' + xl + ' ' + ys + ' V' + (ye + 30) }); paths.push({ d: curveIn(xl, X0, ye) }); }
+    else paths.push({ d: 'M' + xl + ' ' + ys + ' V0' });
+  });
+  return '<div class="list">' + svg(393, h, paths) + EV.map(function (e) { return rowHTML(e, e.br ? x(cols[e.br]) : X0, txL, true); }).join('') + '</div>';
+}
+/* B: one branch lane, as the basis drew it; branches take turns on it and the name says which */
+function oneLane() {
+  var h = EV.length * RH, xl = X0 + DX, txL = xl + 24, paths = [{ d: 'M' + X0 + ' 0 V' + h }];
+  Object.keys(BR).forEach(function (b) {
+    var sp = span(b), ys = cy(sp.s);
+    paths.push({ d: curveOut(X0, xl, ys) });
+    if (sp.e >= 0) { var ye = cy(sp.e); paths.push({ d: 'M' + xl + ' ' + ys + ' V' + (ye + 30) }); paths.push({ d: curveIn(xl, X0, ye) }); }
+    else paths.push({ d: 'M' + xl + ' ' + ys + ' V0' });
+  });
+  return '<div class="list">' + svg(393, h, paths) + EV.map(function (e) { return rowHTML(e, e.br ? xl : X0, txL, true); }).join('') + '</div>';
+}
+/* C: grouped. Each branch is one block that leaves main, holds its own events, and merges back; blocks sit by their latest event */
+function grouped() {
+  var order = [], seen = {};
+  EV.forEach(function (e) {
+    if (!e.br) { order.push({ main: e }); return; }
+    if (seen[e.br]) return; seen[e.br] = true;
+    order.push({ br: e.br, evs: EV.filter(function (x) { return x.br === e.br; }) });
+  });
+  var html = '', y = 0, paths = [], xl = X0 + DX, txL = xl + 24, GH = 40;
+  order.forEach(function (o) {
+    if (o.main) { html += rowHTML(o.main, X0, txL, false); y += RH; return; }
+    var y0 = y, merged = EV.some(function (x) { return x.end === o.br; });
+    html += '<div class="grp"><span class="gx" style="left:' + txL + 'px">' + BR[o.br] + (merged ? ' · merged' : ' · open') + '</span></div>'; y += GH;
+    o.evs.forEach(function (e) { html += rowHTML(e, xl, txL, false); y += RH; });
+    var yb = y - 31;
+    paths.push({ d: 'M' + xl + ' ' + (y0 + 20) + ' V' + yb });
+    paths.push({ d: curveOut(X0, xl, yb) });
+    if (merged) paths.push({ d: 'M' + xl + ' ' + (y0 + 30) + ' C' + xl + ' ' + (y0 + 14) + ' ' + X0 + ' ' + (y0 + 18) + ' ' + X0 + ' ' + y0 });
+  });
+  paths.unshift({ d: 'M' + X0 + ' 0 V' + y });
+  return '<div class="list">' + svg(393, y, paths) + html + '</div>';
+}
+var OPTS = [
+  { tag: 'Option 1', h: 'Lanes, like a git graph', p: 'Each branch gets its own groove beside main for as long as it is open, curving out where it starts and back where it merges. Two branches open at once sit side by side. A lane is reused once its branch has merged.', f: lanes },
+  { tag: 'Option 2', h: 'One branch lane, as the basis drew it', p: 'Main and one branch lane beside it. Every branch takes its turn on that lane, and each event names its branch underneath. It is simpler, but two branches open at once share one line.', f: oneLane },
+  { tag: 'Option 3', h: 'Grouped by branch', p: 'Each branch is one block: it leaves main, holds its own events in order, and merges back. Blocks sit by their latest event, so a branch reads as one story. Running side by side is shown by order, not by lines.', f: grouped }
+];
+document.getElementById('opts').innerHTML = OPTS.map(function (o, i) {
+  return '<div class="opt" id="opt' + (i + 1) + '"><span class="tag">' + o.tag + '</span><h2>' + o.h + '</h2><p>' + o.p + '</p><div class="phone"><div class="ph-title">M3 · Saved search</div>' + o.f() + '</div></div>';
+}).join('');
+</script>

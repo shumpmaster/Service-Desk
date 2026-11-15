@@ -71,3 +71,16 @@ The owner's words, verbatim, on the lane page's three ways to set main apart (A:
 11. "Option C is my choice"
 
 Carried out: the library gains a LaneGraph card (main's groove 8 wide in groove-main, main's icons on main-mark discs; each open branch in the next free lane). Still to be put again when the owner asks: which of the three branch drawings (lanes, one branch lane, grouped), and how gate, decision, research and stop show now that only the seven kinds are kept.
+
+The owner's words, verbatim, in chat:
+12. On which branch drawing: "Option C was what I chose for Q1." The Chief of Staff reads it as the lanes, with main set apart as in option C, and has said so to the owner, asking to be told if option 3 (grouped by branch) was meant.
+13. On how gate, decision, research and stop show: "And for Q2 - this is something we need to discuss.
+
+The original structure was always that all of the constants, phases and milestones are linked together in a workflow"
+14. After the Chief of Staff's summary of that chain (phase, gate, milestone, sprint, event, and the routing that links each event to the next): "I think you got the summary nailed, except for one thing - and the operating model might miss this I’m not sure.
+
+Events would be the constants - the things GitHub and the different agents enable - however there should be actions, steps, plans of some sort in between events.
+
+For example if I am going to bake a cake my event might be taking it out of the oven, but I had to crack eggs, MIs the ingriedients, and all of that stuff.
+
+My goal for this timeline is that we can see all of that. Ultimately down to the task / actions level that feed events but all in plain English so I can understand"

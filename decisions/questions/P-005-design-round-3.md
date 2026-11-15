@@ -1,4 +1,4 @@
-Ruling: (in progress) the owner's view of timeline mockup v12, and what follows from it
+Ruling: the timeline's lanes give way to a branch map floating at the top, for the whole phase, panning with what is in view, with event icons where you are and dots elsewhere in soft status colour; the page opens on the current step fully open, with the phases in one row of gauges under the map; phases, milestones and sprints carry a soft tinted percent gauge in green, yellow and red; events and steps carry a corner mark and a tinted text tag
 
 Question: none filed. Put to the owner in the Chief of Staff's design session (session_01QBwHGKGeGiL9PYXrmRV49C) on 15 November 2026, in chat: "what do you think of v12?", the first open item of the design handoff (docs/handoff/2026-11-15-chief-of-staff-p005-13.md, "Open, for the owner", 1). Design-mockup answers, given in the session reserved for the mockups; this record says so rather than file a question after its answers.
 Milestone: Design-5 (the design fits together), M7, M8

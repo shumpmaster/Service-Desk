@@ -121,3 +121,6 @@ Carried out: the actions now run newest at the top, the first at the bottom next
 23. On the recommendation that each agent writes its own lines, in a fixed short form, with a check on the form rather than a rewrite: "Yes I do"
 
 Carried out: the ruling and what it needs are written for the building session in docs/design/requests/2026-11-15-agent-action-records.md; the design session does not change the operating model, the charters or the pipeline.
+24. "Can you then make a full mockup and record the current version. And a handoff then"
+
+Carried out: the library gains ActionPlan; mockup v12 (docs/design/mockups/timeline-v12-craft.html, https://claude.ai/artifact/MNfUA3g4RB6TrvzmtqX8bE) puts the lanes, the actions and the numbers together; docs/design/mockups/TIMELINE-CURRENT.md records the current version; handoff part 13 is brought up to date.

@@ -108,3 +108,8 @@ I don’t know if this is becoming circular or not but when I review something I
 So in this concept I’m thinking that the plan step is the title it’s what the agent was doing. There’s a reason why that is clearly defined and within the context of what is happennning, then if any problems that popup and then what we are doing about them."
 
 Carried out: the actions page opens with the concept. Each planned action has a title (what the agent planned to do), a why in grey (in the context of what is happening), and, if a problem came up, the problem in red with what was done about it. Marks as in answer 19: a check when done, a red warning when an action could not be finished.
+21. "Yes I like that.
+
+Three things - make the text more concise, add in indicator for current step and future steps should have open dots, also I want to introduce a number structure for working down to tasks from phases"
+
+Carried out: the concept shown at 15:16 (under way) and 15:18 (finished), with shorter lines; the action under way marked with a blue dot in a soft ring and the word Now; actions still to come with open dots. A proposed numbering, each level counted inside the one above in the order things start and never reused: phase 2 (Design), milestone 2.7 (M6, the 7th in Design after the six standard ones), sprint 2.7.2 (S-011, after S-010), step 2.7.2.5 (the 5th agent session of S-011 on 14 November, from status/outcomes.jsonl), action 2.7.2.5.3, shown as 5.3 inside its step.

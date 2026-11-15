@@ -13,3 +13,8 @@ I think there is information across the timeline that serves no purpose to be vi
 Ultimately I’m having a hard time not just getting overwhelmed to start when it gets pulled up"
 
 Carried out: taken one point at a time, with a picture of v12 as it is first and then each option.
+
+Asked by the question tool: "Lane width (your first point on v12). The page https://claude.ai/artifact/HvegkCyfjHpVz8MPYmTWia shows v12's lanes as they are (text starts ~112 pt in on a 393 pt phone), then three options drawn on the real page, light and dark. Which one?" Options: "B: no project line (Recommended)"; "A: tighter lanes"; "C: one line until overlap"; "None of these". Pictures: docs/design/mockups/options-lane-width/.
+2. "Hmm I’m not sure, can you please suggest a couple of radically different ideas"
+
+Carried out: radically different ways to show several branches, drawn with M6's real events.

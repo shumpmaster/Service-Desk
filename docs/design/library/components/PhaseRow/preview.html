@@ -1,0 +1,11 @@
+<!-- @dsCard group="Desk" height=190 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>PhaseRow</title></head>
+<body>
+<div class="dk-stage col" style="max-width:393px"><div class="dk-phases" role="group" aria-label="Phases"><button class="dk-phase" data-ph="1" aria-expanded="false" aria-label="Discovery, 38 percent"><span class="dk-gauge ok"><svg class="ring" viewBox="0 0 34 34" aria-hidden="true"><circle class="trk" cx="17" cy="17" r="14"/><circle class="arc" cx="17" cy="17" r="14" stroke-dasharray="33.4 88.0" transform="rotate(-90 17 17)"/></svg><span class="in"><span class=pn>1</span></span></span><span>Discovery</span></button><button class="dk-phase" data-ph="2" aria-current="true" aria-label="Design, 14 percent"><span class="dk-gauge wait"><svg class="ring" viewBox="0 0 34 34" aria-hidden="true"><circle class="trk" cx="17" cy="17" r="14"/><circle class="arc" cx="17" cy="17" r="14" stroke-dasharray="12.3 88.0" transform="rotate(-90 17 17)"/></svg><span class="in"><span class=pn>2</span></span></span><span>Design</span></button><button class="dk-phase" data-ph="3" aria-expanded="false" aria-label="Build, 0 percent"><span class="dk-gauge "><svg class="ring" viewBox="0 0 34 34" aria-hidden="true"><circle class="trk" cx="17" cy="17" r="14"/></svg><span class="in"><span class=pn>3</span></span></span><span>Build</span></button><button class="dk-phase" data-ph="4" aria-expanded="false" aria-label="Launch, 0 percent"><span class="dk-gauge "><svg class="ring" viewBox="0 0 34 34" aria-hidden="true"><circle class="trk" cx="17" cy="17" r="14"/></svg><span class="in"><span class=pn>4</span></span></span><span>Launch</span></button></div><p class="dk-note">Discovery done (3 of 8 milestones on record as reached), Design current and waiting on you (1 of 7), Build and Launch not started. Tap Build or Launch: it shows as opened.</p></div>
+<script>
+document.addEventListener('click', function (e) { var b = e.target.closest('.dk-phase[aria-expanded]'); if (b) b.setAttribute('aria-expanded', String(b.getAttribute('aria-expanded') !== 'true')); });
+</script>
+</body>
+</html>

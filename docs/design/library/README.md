@@ -4,9 +4,13 @@ The quiet, round, neutral look for the whole desk, taken from the owner's Craft 
 
 This library holds every element seen in the owner's seven Craft screenshots (references 11 to 17 in Service-Desk `docs/design/references/`). The measures come from the external audit of those screenshots (`docs/design/audit-2026-11-14-craft-v7.md`, Part 2). Mockup v8 (`docs/design/mockups/timeline-v8-craft.html`) is the first desk screen built from them. The palette is neutral only for now; the owner will add colour later.
 
+## Change, 15 November 2026 (round 3)
+
+The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.
+
 ## Principles
 
-- **Neutral first, one blue.** The only hue is blue, and it means one thing: selected, or now. Nothing is coloured for decoration.
+- **Neutral first, one blue.** The only hue is blue, and it means one thing: selected, or now. Nothing is coloured for decoration. The one exception is status: soft green, yellow and red say whether a phase, milestone, sprint or event is on track, waiting on you, or stopped (round 3).
 - **Rows, not boxes.** Lists are plain rows on the ground, split by inset hairlines. Cards are kept for things you can open.
 - **Round shapes.** Controls are capsules and circles; sheets and popovers have a 28 radius. Nothing is square.
 - **The timeline's track is pressed in.** The trunk and its branches are a 6-point groove (`groove`, `shadow-groove`), the opposite of the raised chips; done work fills it (`groove-fill`).
@@ -53,6 +57,7 @@ Words must reach 4.5:1 against what they sit on. Three reference values fall sho
 
 ## Open, the owner's to choose
 
-- Colour: on hold. The owner, 15 November 2026: "Hold tight on the colors for now, the design needs to be ironed out".
+- Colour: on hold except for status. The owner, 15 November 2026: "Hold tight on the colors for now, the design needs to be ironed out"; later that day the owner chose red, yellow and green gauges and marks, made softer (round 3, answers 4, 7, 9 and 13).
+- What a gauge counts for a milestone or a sprint, and exactly when it turns red, yellow or green beyond the examples.
 - The key shapes for milestones and sprints, and how "planned" is drawn on the trunk (TimelineTrunk shows a dashed ring as a placeholder). The owner, 15 November 2026: "I think that will get changed around a bit as well".
 - Positions: DeskHome puts the elements together at phone width. Comment on any card to move, resize or drop an element.

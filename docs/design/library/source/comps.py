@@ -380,6 +380,8 @@ comp("LaneGraph", "Desk", 600,
 
 How several branches show at once on the timeline: a git graph drawn in the library's groove. Chosen by the owner on 15 November 2026 ("Option C is my choice", of the lane options).
 
+**On the timeline it is replaced by BranchMap.** The owner found the lanes took too much room left to right (decisions/questions/P-005-design-round-3.md, answers 1 to 3) and chose a branch map floating at the top instead, showing the whole phase and panning with the page (answer 6). The card is kept for the record and for any place that needs a vertical git graph; timeline mockups from v13 on draw no lanes beside the list.
+
 - Main is the left lane. Its groove is 8 wide in `groove-main`, and its event icons sit on dark `main-mark` discs in `on-main-mark`. Branch grooves are 6 wide in `groove`, and their icons sit on `fill`.
 - A branch opens the lowest free lane to the right where it starts, curving out of main, and keeps it while it is open. Branches open at the same time sit side by side.
 - A merge curves the branch back into main. From a far lane, the curve crosses the lanes between. A merged branch frees its lane for the next branch. A branch still open runs to the top.
@@ -418,6 +420,144 @@ The work between two events: what the agent planned to do, why, and any problem 
 - Planned ahead and ticked off; the agent writes its own lines in this fixed form (the owner: "Yes I do"). Until the agents record actions, a mockup shows them as examples.
 - Numbers: each level counted inside the one above, never reused: phase 2, milestone 2.7, sprint 2.7.2, step 2.7.2.5, action 2.7.2.5.3.
 """)
+
+# ---- round 3 (owner, 15 November 2026): status colour, gauges, marks, the branch map and the phase row ----
+def gauge(pct, st, inner, tag="span", attrs=""):
+    c = 2 * 3.14159 * 14
+    arc = f'<circle class="arc" cx="17" cy="17" r="14" stroke-dasharray="{c * pct / 100:.1f} {c:.1f}" transform="rotate(-90 17 17)"/>' if pct else ''
+    return (f'<{tag} class="dk-gauge {st}"{attrs}><svg class="ring" viewBox="0 0 34 34" aria-hidden="true"><circle class="trk" cx="17" cy="17" r="14"/>{arc}</svg>'
+            f'<span class="in">{inner}</span></{tag}>')
+MS_IC = ic("circle", "fill", "i sm")
+OWN_IC = ic("square", "fill", "i sm")
+SP_IC = ic("git-branch")
+def grow(pct, st, inner, no, name, meta, note, label):
+    return (f'<button class="dk-grow" aria-expanded="true" aria-label="{label}">{gauge(pct, st, inner)}<span class="tx"><span class="l1"><span class="no">{no}</span><b>{name}</b>'
+            f'<span class="tm">{meta}</span></span><span class="l3" style="display:block">{note}</span></span></button>')
+MK = {"ok": ic("check", "bold"), "wait": ic("hourglass-medium", "fill"), "bad": ic("x", "bold"), "run": ic("hourglass-medium", "fill")}
+EVI = {"commit": "git-commit", "review": "eye", "stop": "hand-palm", "merge": "git-merge", "step": "list-checks", "check": "play-circle", "decision": "chat-circle-text"}
+def mark_ev(kind, st, tag, t, title, who, main=False, label=None):
+    return (f'<div class="dk-ev"><span class="dk-ev-ico{" main" if main else ""}">{ic(EVI[kind])}<span class="dk-mark {st}">{MK[st]}</span></span>'
+            f'<div class="tx"><div class="l1"><b>{label or kind.title()}</b><span class="dk-tag {st if st in ("wait", "bad") else ""}">{tag}</span><span class="tm">{t}</span></div>'
+            f'<div class="l2">{title}</div><div class="l3">by {who}{" · main" if main else ""}</div></div></div>')
+FOLD = "document.addEventListener('click', function (e) { var b = e.target.closest('.dk-grow'); if (!b) return; var s = b.parentNode, on = !s.classList.contains('open'); s.classList.toggle('open', on); b.setAttribute('aria-expanded', String(on)); });"
+
+comp("Gauge", "Desk", 460,
+ '<div class="dk-stage col" style="max-width:393px">'
+ '<div style="display:flex;gap:14px;align-items:center">' + gauge(14, "wait", '<span class="pn">2</span>') + gauge(100, "ok", MS_IC) + gauge(30, "bad", OWN_IC) + gauge(60, "bad", SP_IC) + gauge(0, "", MS_IC) + '</div>'
+ '<div class="dk-gsec open">' + grow(30, "bad", OWN_IC, "2.7", "M6", "example", "Stopped: three plan reviews failed", "M6, fold") +
+ '<div class="body"><div class="dk-gsec open">' + grow(60, "bad", SP_IC, "2.7.2", "Spec S-011", "example", "Stopped · your call", "Spec S-011, fold") +
+ '<div class="body">' + mark_ev("stop", "wait", "Waiting on you", "15:42", "Stop card 5", "orchestrator") + '</div></div>'
+ '<div class="dk-gsec">' + grow(100, "ok", SP_IC, "2.7.1", "Spec S-010", "merged", "Superseded by S-011", "Spec S-010, open") + '<div class="body">' + mark_ev("merge", "ok", "Done", "12:04", "Merged PR #444", "you", True) + '</div></div></div></div>'
+ '<div class="dk-gsec">' + grow(0, "", MS_IC, "2.6", "Design-6", "not started", "A plan that passed review", "Design-6") + '<div class="body"></div></div>'
+ '<p class="dk-note">The Design phase (yellow, 1 of 7 reached), a milestone reached, the owner&#8217;s milestone M6 and sprint S-011 stopped (red), not started (no colour). Tap a gauge row to fold or open it. Percentages marked example are made up.</p></div>',
+ """# Gauge
+
+How far a phase, milestone or sprint has got, and whether it is all right: a tinted ring filled by percent, with its icon inside. Chosen by the owner on 15 November 2026 (decisions/questions/P-005-design-round-3.md, answers 4, 6 to 8: "A - but let's make the color gauge softer", "I like the tinted ring. Do a slightly thinner line.").
+
+- 34 round, line 3.5. The arc starts at the top and runs clockwise; it is filled by percent with round ends. The inside of the ring takes an 8% wash of the status colour, the track 16% and the arc 55% (`status-*-wash`, `status-*-track`, `status-*-arc`), so the colour stays soft.
+- Only phases, milestones and sprints wear it (the owner: "only phases, milestones and sprints get the gauges"). Events and steps use StatusMark.
+- Inside: a phase's number; a small filled circle for a standard milestone, a small square for one of the project's own; the git-branch icon for a sprint.
+- Colour: green (`status-ok`) on track or done; yellow (`status-wait`) waiting on you or at risk; red (`status-bad`) stopped or blocked; no colour (the neutral `groove` track on `surface`) when not started.
+- A phase counts its milestones reached out of the milestones in the phase. What a milestone's or a sprint's percentage counts is not yet ruled; until it is, a mockup marks its values "example".
+- Tapping the gauge opens or folds its section (the owner, round 3: "the icons on the timeline should expand or collapse sections"). The whole row is the button, with the gauge as its mark; it carries aria-expanded.
+- Milestone and sprint shapes are still on hold (round 2): the circle and square inside are placeholders.
+""", script=FOLD)
+
+comp("StatusMark", "Desk", 520,
+ '<div class="dk-stage col" style="max-width:393px"><div>'
+ + mark_ev("stop", "wait", "Waiting on you", "15:42", "Stop card 5", "orchestrator")
+ + mark_ev("review", "bad", "Failed", "15:36", "Plan review failed, round 3", "reviewer (plan)")
+ + mark_ev("commit", "ok", "Done", "15:23", "Spec revised again", "spec writer")
+ + mark_ev("step", "bad", "1 blocked", "", "The spec writer&#8217;s plan · 5 of 6 done", "spec writer", label="2.7.2.5")
+ + mark_ev("merge", "wait", "Awaiting your answers", "14:46", "Merged PR #446: three questions for you", "you", True)
+ + mark_ev("check", "run", "Checks running", "12:10", "Checks on PR #445", "Actions")
+ + '</div><p class="dk-note">The kind&#8217;s icon stays; a small check, hourglass or cross on its corner; the state as a tag, tinted for waiting on you and for failed or blocked, plain grey when done or under way.</p></div>',
+ f"""# StatusMark
+
+The state of an event or a step, without a gauge. Chosen by the owner on 15 November 2026 (decisions/questions/P-005-design-round-3.md, answers 8 and 9: "I like option 2 with the text tags as shown in option 1. To indicate things like awaiting merge, check status etc..").
+
+- The event keeps its kind's icon on a 26 `fill` disc (a merge on main keeps its dark `main-mark` disc). A step, the agent's plan between events, is shown the same way with the list-checks icon.
+- A 14 round mark on the icon's lower right corner, ringed in `ground`: a check in `status-ok` on `status-ok-mark` (done, fine); an hourglass in `status-wait-tag` on `status-wait-mark` (waiting on you); a cross in `status-bad` on `status-bad-mark` (failed or blocked); a grey hourglass in `text-2` on `surface` for work under way that waits on no one (checks running). The state reads without colour too.
+- The state as a text tag after the kind: waiting tinted yellow (`status-wait-tag` on `status-wait-tag-bg`, 4.7:1), failed or blocked tinted red (`status-bad-tag` on `status-bad-tag-bg`, 4.7:1), done or under way a plain grey word in `text-2`. Tags can name the state in the desk's words: Awaiting merge, Awaiting your answers, Checks running, 1 blocked.
+- Red keeps meaning a problem (`status-bad` has the same value as `problem`).
+- How gate, decision, research and stop show (the model's own steps) is still to be discussed; they keep their own icons for now.
+- {SRC}
+""")
+
+# the branch map, drawn from the Design phase's real sprints (timeline mockup v12's records, 13 and 14 November 2026)
+def _t(d, hm): h, m = hm.split(":"); return (d - 13) * 1440 + int(h) * 60 + int(m)
+MAP_SP = [("2.7.1 S-010", [(13, "21:32", "commit", ""), (13, "21:44", "review", "bad"), (13, "23:45", "commit", ""), (13, "23:51", "review", "bad"), (14, "01:05", "stop", ""), (14, "04:56", "merge", ""), (14, "04:58", "decision", ""), (14, "12:04", "merge", "")]),
+          ("2.5.1 PR #445", [(14, "12:05", "commit", ""), (14, "12:12", "check", ""), (14, "13:54", "merge", "")]),
+          ("2.7.2 S-011", [(14, "12:07", "decision", ""), (14, "12:16", "commit", ""), (14, "12:29", "review", "bad"), (14, "12:37", "commit", ""), (14, "14:46", "merge", "wait"), (14, "15:14", "review", "bad"), (14, "15:23", "commit", ""), (14, "15:36", "review", "bad"), (14, "15:42", "stop", "now")]),
+          ("2.5.2 Mockups v2 to v4", [(14, "14:56", "commit", ""), (14, "15:26", "commit", ""), (14, "15:52", "commit", ""), (14, "16:00", "commit", ""), (14, "16:14", "commit", "")])]
+def branch_map(view=("15:14", "15:23", "15:36", "15:42"), vw=393):
+    DX, PAD, LANE = 30, 26, 32
+    evs = [dict(sp=si, t=_t(d, hm), hm=hm, k=k, st=st) for si, (_, es) in enumerate(MAP_SP) for d, hm, k, st in es]
+    order = sorted(range(len(evs)), key=lambda i: evs[i]["t"])
+    for n, i in enumerate(order): evs[i]["x"] = PAD + n * DX
+    sps = []
+    for si, (lab, _) in enumerate(MAP_SP):
+        es = sorted([e for e in evs if e["sp"] == si], key=lambda e: e["t"]); sps.append(dict(lab=lab, evs=es, a=es[0]["t"], b=es[-1]["t"]))
+    busy = {}
+    for s in sorted(sps, key=lambda s: s["a"]):
+        l = 1
+        while busy.get(l, -1) >= s["a"]: l += 1
+        s["lane"] = l; busy[l] = s["b"]
+    lanes = max(s["lane"] for s in sps); YM = 22 + LANE * lanes; W = PAD * 2 + (len(evs) - 1) * DX; H = YM + 24
+    vis = [e for e in evs if e["sp"] == 2 and e["hm"] in view]
+    a, b = min(e["x"] for e in vis) - 14, max(e["x"] for e in vis) + 14
+    pan = max(0, min(W - vw, (a + b) / 2 - vw / 2))
+    p = f'<path class="g main" d="M0 {YM} H{W}"/>'; st_ = ""; lb = ""
+    for s in sps:
+        y = YM - LANE * s["lane"]; on = [e for e in s["evs"] if e["k"] != "merge"]
+        x0 = s["evs"][0]["x"]; x1 = on[-1]["x"] if on else x0
+        p += f'<path class="g" d="M{x0 - 16} {YM} C{x0 - 8} {YM} {x0 - 8} {y} {x0} {y} H{x1}"/>'
+        for j, e in enumerate(s["evs"]):
+            main = e["k"] == "merge"; cy = YM if main else y
+            if main:
+                px = s["evs"][j - 1]["x"] if j else e["x"] - 16
+                p += f'<path class="g" d="M{px} {y} C{(px + e["x"]) / 2} {y} {(px + e["x"]) / 2} {YM} {e["x"]} {YM}"/>'
+            cls = " ".join(c for c in ["main" if main else "", e["st"]] if c)
+            if e in vis or e["st"] == "now":
+                svg = ic(EVI[e["k"]], cls="ic " + cls).replace('<svg class', f'<svg x="{e["x"] - 6}" y="{cy - 6}" width="12" height="12" class', 1)
+                st_ += f'<circle class="disc {cls}" cx="{e["x"]}" cy="{cy}" r="10.5"/>{svg}'
+            else:
+                st_ += f'<circle class="dot {cls}" cx="{e["x"]}" cy="{cy}" r="4"/>'
+        lb += f'<text class="lb" x="{x0}" y="{y - 9}">{s["lab"]}</text>'
+    win = f'<rect class="win" x="{a}" y="{YM - LANE * lanes - 12}" width="{b - a}" height="{LANE * lanes + 24}" rx="10"/>'
+    return (f'<div class="dk-mapbar"><div class="dk-mapvp"><div class="dk-mapin" style="transform:translateX({-pan:.0f}px)"><svg class="dk-map" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="Branch map of the Design phase">'
+            f'{win}{p}{st_}{lb}<text class="lb main" x="{pan + 6:.0f}" y="{YM + 19}">main</text></svg></div></div></div>')
+
+comp("BranchMap", "Desk", 330,
+ '<div class="dk-stage col" style="max-width:393px;padding:16px 0">' + branch_map() + '<p class="dk-note" style="padding:0 16px">The Design phase&#8217;s four sprints, oldest on the left. The window sits over S-011&#8217;s newest events, which the list below shows; they wear their icons, the rest are dots. Red for the failed reviews, yellow for PR #446 still awaiting your answers, Now blue.</p></div>',
+ """# BranchMap
+
+Every sprint of the current phase at once, floating at the top of a project's timeline. It replaces the lanes down the left (LaneGraph) on the timeline. Chosen by the owner on 15 November 2026 (decisions/questions/P-005-design-round-3.md: answers 1 to 3, the branch map on top; 4 to 6, "A: whole phase, panning"; 10 to 13, icons where you are, with colour).
+
+- Floats: it sits at the top of the project's timeline, under the page's header and chips, and stays there however far the page scrolls (sticky, glass: `surface-floating` blurred, a `separator` hairline below).
+- Shows the whole current phase: every sprint, oldest on the left, time running left to right. Main runs along the bottom, 7 wide in `groove-main`, darker than the sprints' 5-wide `groove`. Each sprint is a lane above main, curving out where it starts and back down at each merge; a merged sprint frees its lane for the next. Each lane is labelled with the sprint's number and name.
+- Merges sit on main, on dark `main-mark` discs.
+- A soft blue window (`map-window`) marks the events in view in the list below. As the page scrolls, the window moves and the map slides sideways to keep it centred (it moves with the timeline: the owner, round 3, answer 4).
+- Events in view show their kind's icon on a 21 disc; the rest of the phase is 8-point dots.
+- Status colour on both icons and dots, the same soft tones as the rows: red (`status-bad-dot`, an icon in `status-bad` on `status-bad-track`) for failed or blocked, yellow (`status-wait-dot`, `status-wait-tag` on `status-wait-tag-bg`) for waiting on you. Done stays grey. Now stays blue (`accent-select` in a `now-block` ring).
+- Below it, in the same floating band, sits the PhaseRow.
+- Motion: the window and the pan ease over about 0.45 s; reduced motion moves them at once.
+""")
+
+PH_ROW = [("1", "Discovery", 38, "ok", False), ("2", "Design", 14, "wait", True), ("3", "Build", 0, "", False), ("4", "Launch", 0, "", False)]
+comp("PhaseRow", "Desk", 190,
+ '<div class="dk-stage col" style="max-width:393px"><div class="dk-phases" role="group" aria-label="Phases">' +
+ "".join(f'<button class="dk-phase" data-ph="{n}"{" aria-current=&quot;true&quot;" if cur else " aria-expanded=&quot;false&quot;"} aria-label="{nm}, {p} percent">{gauge(p, st, f"<span class=pn>{n}</span>")}<span>{nm}</span></button>' for n, nm, p, st, cur in PH_ROW).replace("&quot;", '"') +
+ '</div><p class="dk-note">Discovery done (3 of 8 milestones on record as reached), Design current and waiting on you (1 of 7), Build and Launch not started. Tap Build or Launch: it shows as opened.</p></div>',
+ """# PhaseRow
+
+All of a project's phases in one row of gauges, under the BranchMap in the same floating band. Chosen by the owner on 15 November 2026 (decisions/questions/P-005-design-round-3.md, answers 4, 5 and 10: "Phase gauges row").
+
+- One Gauge per phase, its number inside, its name below in 12 `text-2`; oldest on the left, like the map. Each phase's percentage is its milestones reached out of the milestones in it.
+- The current phase is picked out: raised on `surface` with `shadow-chip-selected`, its name in `text-1` semibold.
+- The timeline opens on the current step with everything in it open, and lists only the current phase. Tapping another phase opens its milestones above the current phase (the button turns `fill`, aria-expanded true), and only then does the page scroll, to bring them under the band. Tapping it again folds them away. Tapping the current phase goes back to the current step.
+- Gates are not shown in the row; how a gate shows is still to be discussed.
+""", script="document.addEventListener('click', function (e) { var b = e.target.closest('.dk-phase[aria-expanded]'); if (b) b.setAttribute('aria-expanded', String(b.getAttribute('aria-expanded') !== 'true')); });")
 
 HOME = f'''<div class="dk-stage phone">
   <div class="dk-status">9:41</div>

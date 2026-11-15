@@ -98,3 +98,6 @@ Carried out: each action is now one short line that says what the agent did and,
 18. After the concise actions and the Chief of Staff's description of question 2 (planned, then ticked off; or done only): "I can’t really tell the difference honestly."
 
 Carried out: read as being about question 2. The page gains, at its top, the same step frozen halfway through (15:16), drawn both ways: planned actions shown ahead as empty boxes and ticked off, against only what is done so far.
+19. On question 2 (planned, then ticked off; or done only): "Planned and ticked off, but tick off with checkmarks? And introduce a color and different symbol for the problem"
+
+Carried out: on the actions page, a done action has a check, the one under way a dashed ring in bold, a planned one an empty ring, and a problem (an action the agent could not do) a filled warning sign in red, with its note in red. Red (#c4321f light, 5.3:1 on white; #ff6b5a dark) is the first colour beyond the neutrals and the blue, used only for problems; the rest of colour stays on hold.

@@ -118,3 +118,6 @@ Carried out: the concept shown at 15:16 (under way) and 15:18 (finished), with s
 Also what is your recommendation for who writes them?"
 
 Carried out: the actions now run newest at the top, the first at the bottom next to the review that started the step. The Chief of Staff's recommendation on who writes them was given in chat (each agent writes its own, in a fixed short form, with a check on form and plain English); not yet ruled.
+23. On the recommendation that each agent writes its own lines, in a fixed short form, with a check on the form rather than a rewrite: "Yes I do"
+
+Carried out: the ruling and what it needs are written for the building session in docs/design/requests/2026-11-15-agent-action-records.md; the design session does not change the operating model, the charters or the pipeline.

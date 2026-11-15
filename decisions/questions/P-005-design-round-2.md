@@ -89,3 +89,6 @@ My goal for this timeline is that we can see all of that. Ultimately down to the
 Start with one, provide an example of something within a currently active project and show the 2 options for what counts as an action"
 
 Carried out: docs/design/mockups/options-actions/ (https://claude.ai/artifact/MMqjRnpba6aqZ9VUt59ssa), the Definer's rework of S-011 on 14 November 2026 (15:14 to 15:18, commit 98c717a1 on build/definer/S-011) drawn with every action, and with what the owner would want explained. The actions are pieced together from the spec's revision note and its diff, since no agent records actions today. Still to come, one at a time: planned or done; who writes them.
+16. On what counts as an action (option 1, every action; option 2, what the owner would want explained): "I want option 2 - but I would want to see the actual problem described In a situation like this."
+
+Carried out: the same page gains the chosen form at its top. Each action says the problem first, in plain words, then what the agent did or could not do. The problems are the plan reviewer's six findings in reviews/S-011/plan.md as of the run at 12:40 on 14 November (commit a8e92740), rewritten plainly.

@@ -10,6 +10,7 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 - **Rows, not boxes.** Lists are plain rows on the ground, split by inset hairlines. Cards are kept for things you can open.
 - **Round shapes.** Controls are capsules and circles; sheets and popovers have a 28 radius. Nothing is square.
 - **The timeline's track is pressed in.** The trunk and its branches are a 6-point groove (`groove`, `shadow-groove`), the opposite of the raised chips; done work fills it (`groove-fill`).
+- **Main stands out.** On the lane graph, main's groove is wider and darker (`groove-main`) and its icons sit on dark discs (`main-mark`); every branch takes its own lane while it is open.
 - **Chips are raised.** A light top edge, a darker bottom edge and a small drop make chips read as pressable; the selected chip lifts a little more.
 - **Floating controls are glass.** Top buttons, the capsule, the tab bar and the round button float over the content: `surface-floating` is 78% opaque and blurs what is behind, and `shadow-float` adds a soft drop and a white inner edge. Sheets and popovers are frosted the same way. Rows and text never cast a shadow.
 - **The system font.** One family at a few sizes: 27, 19, 17, 15 and 13. Weight does the work, not colour.

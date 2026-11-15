@@ -45,6 +45,9 @@ C = [
  ("selection-frame", "#a0d0e8", "#2a5f7d", "Frame around a selected card (ref 12)."),
  ("groove", "#e3e3e8", "#2c2c2e", "The timeline's track, pressed into the page: the trunk and every branch (owner, 15 Nov 2026: option 4, groove)."),
  ("groove-edge", "#ffffffe6", "#ffffff12", "The light lower edge of a groove drawn as a line (a branch), where an inner shadow cannot go."),
+ ("groove-main", "#c9c9ce", "#48484a", "Main's groove, a shade darker than a branch's and 8 wide, so main stands out (owner, 15 Nov 2026: lane option C)."),
+ ("main-mark", "#3a3b40", "#d1d1d6", "The disc behind an event icon on main; branch icons stay on fill."),
+ ("on-main-mark", "#ffffff", "#000000", "The icon on a main-mark disc; 11:1."),
  ("groove-fill", "#b4b4ba", "#636366", "Fills the groove for work that is done, like a slider's fill."),
  ("scrim", "#1c1d2126", "#00000066", "Dims the page behind a sheet or popover (refs 14, 15, 17)."),
 ]

@@ -345,6 +345,48 @@ The desk's own element: the quiet trunk the plan hangs from, with milestone rows
 - On hold, in the owner's words: the key shapes for milestones and sprints, and how planned is drawn ("I think that will get changed around a bit as well").
 """)
 
+
+LANE_EV = [(None, "git-commit"), ("a", "git-branch"), ("a", "git-commit"), ("b", "git-branch"), ("a", "eye"), ("b", "git-commit"),
+           (None, "git-merge", "a"), ("c", "git-branch"), ("b", "git-pull-request"), ("c", "git-commit"), (None, "git-merge", "b"),
+           ("c", "play-circle", None, True), (None, "rocket-launch")]
+def lanes_html():
+    col, used, maxc = {}, {}, 0
+    for e in LANE_EV:
+        if e[1] == "git-branch":
+            c = 1
+            while used.get(c): c += 1
+            used[c] = e[0]; col[e[0]] = c; maxc = max(maxc, c)
+        if len(e) > 2 and e[2]: used[col[e[2]]] = None
+    RH, X0, DX, TOP = 40, 24, 30, 8
+    N = len(LANE_EV); H = TOP + N * RH; W = X0 + maxc * DX + 20
+    y = lambda i: TOP + (N - 1 - i) * RH + RH / 2
+    x = lambda c: X0 + c * DX
+    paths = [f'<path class="main" d="M{X0} {TOP - 4} V{H - 4}"/>']
+    for b, c in col.items():
+        s_ = next(i for i, e in enumerate(LANE_EV) if e[0] == b and e[1] == "git-branch")
+        e_ = next((i for i, e in enumerate(LANE_EV) if len(e) > 2 and e[2] == b), -1)
+        xl, ys = x(c), y(s_)
+        paths.append(f'<path d="M{X0} {ys + RH * .8} C{X0} {ys + RH * .35} {xl} {ys + RH * .45} {xl} {ys}"/>')
+        if e_ >= 0:
+            ye = y(e_); paths.append(f'<path d="M{xl} {ys} V{ye + RH * .8} C{xl} {ye + RH * .35} {X0} {ye + RH * .45} {X0} {ye}"/>')
+        else:
+            paths.append(f'<path d="M{xl} {ys} V{TOP - 4}"/>')
+    icons = "".join(f'<span class="dk-lane-ico{" main" if e[0] is None else ""}{" run" if len(e) > 3 and e[3] else ""}" style="left:{x(col[e[0]]) if e[0] else X0}px;top:{y(i)}px">{ic(e[1])}</span>' for i, e in enumerate(LANE_EV))
+    return f'<div class="dk-lanes" style="width:{W}px;height:{H}px"><svg class="lines" width="{W}" height="{H}" aria-hidden="true">{"".join(paths)}</svg>{icons}</div>'
+
+comp("LaneGraph", "Desk", 600,
+ '<div class="dk-stage">' + lanes_html() + '<p class="dk-note">Newest at the top. Main on the left, darker and wider, with dark icons. Each open branch takes the next free lane; a merged branch frees its lane.</p></div>',
+ """# LaneGraph
+
+How several branches show at once on the timeline: a git graph drawn in the library's groove. Chosen by the owner on 15 November 2026 ("Option C is my choice", of the lane options).
+
+- Main is the left lane. Its groove is 8 wide in `groove-main`, and its event icons sit on dark `main-mark` discs in `on-main-mark`. Branch grooves are 6 wide in `groove`, and their icons sit on `fill`.
+- A branch opens the lowest free lane to the right where it starts, curving out of main, and keeps it while it is open. Branches open at the same time sit side by side.
+- A merge curves the branch back into main. From a far lane, the curve crosses the lanes between. A merged branch frees its lane for the next branch. A branch still open runs to the top.
+- Each icon is one event, in its kind's shape: the seven GitHub kinds only (the owner, 15 November 2026: "The only thing I really want to keep is the different 7 constants."). States are neutral; a running event is an outlined ring.
+- Icons 26 round with a 15 glyph, a 3-point ring of `ground`; lanes 30 apart; rows 40 apart.
+""")
+
 HOME = f'''<div class="dk-stage phone">
   <div class="dk-status">9:41</div>
   <div class="dk-topbar"><span></span>{capsule(2)}</div>

@@ -52,3 +52,13 @@ Carried out: the library's TimelineTrunk becomes a groove (tokens groove, groove
 The owner raised it unasked, in chat: "Something I feel like you have missed is the multiple branches and the linkage back to our constants that were defined early on."
 
 Carried out: a check of mockups v5 and v11 against the timeline basis (portfolio ideas/basis/TIMELINE-BASIS.md, locked 9 November 2026), with pictures: docs/design/audits/constants-2026-11-15/ (https://claude.ai/artifact/TVywWD8pKD9azk5W4RVMWH). It finds the key, the branch pills, the state colours, the branch line in the plan and any showing of several branches at once lost or hidden, none of them by a change put to the owner as a change to the basis.
+
+Questions and options, as put by the question tool:
+9. "Constants check (https://claude.ai/artifact/TVywWD8pKD9azk5W4RVMWH): the mockups drifted from the timeline basis. The key, the branch pills, the state colours, the branch line in the plan and any view of several branches at once are lost or hidden. How much of the basis should the next mockup bring back?" Options: "All of it (Recommended)"; "Lines and kinds first"; "Show me options first".
+10. "The basis makes colour a constant (green done, amber running, red failed, blue waiting on you, grey not started), but you put colour on hold. Which should win for the states?" Options: "The basis's five colours (Recommended)"; "Keep neutral for now"; "Show me both".
+
+The owner's words, verbatim:
+9. "The only thing I really want to keep is the different 7 constants."
+10. "Keep neutral for now"
+
+Carried out: the Chief of Staff reads answer 9 as the seven GitHub kinds (branch, commit, pull request, check, review, merge, deploy), shown on the lines as the icon's shape and the kind's name, and answer 10 as states staying neutral words. The owner's earlier words still ask for several branches. Pictures of three ways to draw several branches at once with the seven kinds on the lines: docs/design/mockups/options-branches/ (https://claude.ai/artifact/1DfWTc1HZiMFwubm2pY52U). The timeline basis file (portfolio) is not edited by this design session; these answers change what the basis asks for (the key, the branch pills and state colour), and the basis's own change log is for the building session or the owner to update.

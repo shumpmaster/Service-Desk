@@ -1,0 +1,87 @@
+<title>Constants Check</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one column. The basis's key as a table of what each constant should do and where each version stands, then the pictures, v5 beside v11. Tokens follow the Desk Element Library. */
+:root {
+  --ground: #f2f3f7; --surface: #ffffff; --text-1: #17181c; --text-2: #6b6d71; --separator: #e7e9ed; --accent: #0a6fc0;
+  --kept: #2e7d4f; --lost: #b4372a; --part: #8a5a00;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #000000; --surface: #1c1c1e; --text-1: #f2f2f7; --text-2: #a1a1a6; --separator: #38383a; --accent: #5aa7ff;
+  --kept: #5cc08a; --lost: #ff7a6b; --part: #f0b44c; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --ground: #000000; --surface: #1c1c1e; --text-1: #f2f2f7; --text-2: #a1a1a6; --separator: #38383a; --accent: #5aa7ff;
+  --kept: #5cc08a; --lost: #ff7a6b; --part: #f0b44c; color-scheme: dark }
+body { background: var(--ground); color: var(--text-1); font: 400 17px/1.4 var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 48px; }
+main { max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1 { font: 700 27px/1.15 var(--sans); margin: 0; text-wrap: balance; }
+h2 { font: 700 22px/1.2 var(--sans); margin: 0; }
+p { margin: 0; max-width: 68ch; }
+.lede { color: var(--text-2); font-size: 15px; }
+section { display: flex; flex-direction: column; gap: 12px; padding-top: 20px; border-top: 1px solid var(--separator); min-width: 0; }
+.tbl { overflow-x: auto; border-radius: 14px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 15px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--separator); }
+th { font: 600 13px var(--sans); color: var(--text-2); letter-spacing: .04em; text-transform: uppercase; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; white-space: nowrap; }
+.kept { color: var(--kept); font-weight: 600; } .lost { color: var(--lost); font-weight: 600; } .part { color: var(--part); font-weight: 600; }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+figure { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+figure img { width: 100%; max-width: 393px; border-radius: 18px; border: 1px solid var(--separator); display: block; }
+figcaption { font-size: 13px; color: var(--text-2); }
+ul { margin: 0; padding-left: 20px; } li { margin: 4px 0; max-width: 68ch; }
+@media (max-width: 560px) { .pair { grid-template-columns: 1fr; } }
+</style>
+<main>
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <h1>The constants and the branches: what the mockups lost</h1>
+    <p class="lede">You were right. The timeline basis you locked on 9 November says everything on the page is read through a small key of constants, on two lines: main, and branches beside it. The restyle from v7 onwards kept the look of a timeline but dropped most of that. Some of it went even earlier.</p>
+  </header>
+
+  <section>
+    <h2>The basis, constant by constant</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Constant</th><th>What the basis says</th><th>v5 (before the restyle)</th><th>v11 (now)</th></tr></thead>
+      <tbody>
+        <tr><td>What it is</td><td>7 kinds (branch, commit, pull request, check, review, merge, deploy), plus a second row of 4 for the model (gate, decision, research, stop). Shown as the icon's shape and its name in bold.</td><td><span class="kept">Kept</span> on every event, on the line.</td><td><span class="part">Hidden.</span> Plan rows show milestones only. Kinds appear two taps down, inside a sheet.</td></tr>
+        <tr><td>Its state</td><td>5 states: done (green), running (amber), failed (red), waiting on you (blue), not started (grey). Shown as the icon's colour and a state word.</td><td><span class="kept">Kept.</span></td><td><span class="lost">Lost</span> except blue. States are grey words, after your "neutral now, colour later". That answer was never checked against the basis.</td></tr>
+        <tr><td>Where</td><td>Two lines: main solid, branches beside it. A short bar joins them where a branch leaves or merges.</td><td><span class="kept">Kept,</span> and grown: each milestone branches into sprints, and each sprint into its events.</td><td><span class="lost">Lost</span> in the plan. One line only, and sprints open in a bottom sheet. Kept only for a project with no plan.</td></tr>
+        <tr><td>Multiple branches</td><td>Several branches live at once (a check author's, a builder's, a source checker's), each leaving main and merging back.</td><td><span class="part">Partly.</span> One branch per sprint, drawn one at a time.</td><td><span class="lost">Lost.</span> Nothing shows two branches side by side.</td></tr>
+        <tr><td>Who did it</td><td>"by &lt;who&gt;" on each event.</td><td><span class="kept">Kept</span> in each event's detail.</td><td><span class="part">Kept</span> but buried with the events.</td></tr>
+        <tr><td>The key</td><td>Sits at the top and can be hidden.</td><td><span class="lost">Lost</span> from v2 on.</td><td><span class="lost">Lost.</span></td></tr>
+        <tr><td>Branch pills</td><td>The one place every branch is listed. Tap one to filter to it.</td><td><span class="lost">Lost</span> from v2 on, replaced by project switching.</td><td><span class="lost">Lost.</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>The same milestone, before and after</h2>
+    <p>M6 opened, with its sprint Spec S-011 opened. In v5 the sprint branches off the line, and every event sits on that branch with its kind, state and time. In v11 the sprints rise in a sheet, and the events are another tap away.</p>
+    <div class="pair">
+      <figure><img src="img/v5-plan-open.png" alt="v5: M6 on the line, Spec S-011 branching off it, and its events stacked on the branch, each with a coloured kind icon: Stop waiting on you, Review failed, Commit done, Merge done"><figcaption>v5</figcaption></figure>
+      <figure><img src="img/v11-plan-open.png" alt="v11: the plan dimmed behind a bottom sheet listing M6's two sprints as rows, with no events and no branch line"><figcaption>v11</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>A project with no plan: the basis layout survives here</h2>
+    <p>For a project with no plan, both versions still draw the basis: main and a branch line, with the join bars. v11 has lost the state colours, so everything reads alike.</p>
+    <div class="pair">
+      <figure><img src="img/v5-noplan.png" alt="v5: Model-Lab with MAIN and BRANCH lines and green Merge events"><figcaption>v5</figcaption></figure>
+      <figure><img src="img/v11-noplan.png" alt="v11: the same, with grey Merge events"><figcaption>v11</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>How it happened</h2>
+    <ul>
+      <li>From v2, the mockups moved to the desk's plan (phases, milestones and sprints). The key and the branch pills were not carried over.</li>
+      <li>From v7, the restyle followed the Craft references, which have no lines. Sprints and events moved into sheets, and the branch lane was hidden in the plan.</li>
+      <li>"Neutral now, colour later" removed the state colours. That answer was about the look, but the basis makes colour a constant, and the question did not say so.</li>
+      <li>The basis says it changes only on your word. None of these changes were put to you as changes to the basis. I should have checked each version against it.</li>
+    </ul>
+  </section>
+</main>

@@ -46,3 +46,8 @@ Asked by the question tool: "Softer gauges. The same page https://claude.ai/arti
 8. "I like the tinted ring. Do a slightly thinner line. And only phases, milestones and sprints get the gauges. The events will need different status indicators"
 
 Carried out: the gauge is A3, the tinted ring, with its line thinned from 4.5 to 3.5 points; phases, milestones and sprints carry it, and steps and events do not. The Chief of Staff treats a step (the agent's plan between events) as event-level, and puts the events' status indicators next, with pictures.
+
+Asked by the question tool: "Status for events and steps. The page https://claude.ai/artifact/PUiVhSy9MUK2ssHWG67wFL shows v12's events as they are (grey state words), then three indicators under S-011, with the sprint wearing your tinted gauge, now thinner. Which one?" Options: "B: small mark on the icon (Recommended)"; "A: state word in colour"; "C: icon disc tinted"; "Mix or none". Pictures: docs/design/mockups/options-event-status/.
+9. "I Ike option 2 with the text tags as shown in option 1. To indicate things like awaiting merge, check status etc.."
+
+Carried out: an event or step shows a small mark on its icon's corner (a check, an hourglass or a cross, in soft green, yellow or red) and its state as a text tag, tinted as in option A, which can name states such as awaiting merge or checks running.

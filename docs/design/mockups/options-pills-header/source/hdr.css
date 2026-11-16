@@ -1,0 +1,30 @@
+/* The sleek floating header (round 4, answer 14), over the slim pills of option B */
+.hd-band { margin-top: 0; padding-top: env(safe-area-inset-top, 0px); }
+.hd-bar { display: flex; align-items: center; gap: 10px; padding: 6px 16px 0; min-height: 50px; }
+.hd-bar .circ { width: 38px; height: 38px; flex: none; }
+.hd-bar .capsule { flex: none; margin-left: auto; transform: scale(.86); transform-origin: right center; }
+.hd-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.hd-tx h1 { font-size: 17px; line-height: 22px; font-weight: 700; letter-spacing: 0; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hd-tx .asof, .hd-st .asof { display: flex; gap: 4px; margin: 0; font-size: 12px; line-height: 16px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hd-tx .asof > span, .hd-st .asof > span { flex: none; }
+.hd-tx .asof .live i, .hd-st .asof .live i { width: 6px; height: 6px; }
+.hd-band .pl-row { padding-top: 2px; }
+/* 2: the pills are the title */
+.hd-2 { gap: 8px; }
+.hd-2 .pl-row { flex: 1; min-width: 0; padding: 0; }
+.hd-2 .pl-row .chips { padding: 4px 2px 4px; }
+.hd-2 .capsule { margin-left: 0; transform: scale(.78); margin-right: -6px; }
+.hd-st { padding: 0 16px 2px 64px; }
+.hd-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* 3: large at the top, slim once scrolled */
+.hd-b3 .hd-bar { align-items: flex-end; flex-wrap: wrap; transition: min-height .3s; }
+.hd-b3:not(.slim) .hd-bar { min-height: 0; padding-top: 6px; }
+.hd-b3:not(.slim) .hd-tx { order: 3; flex-basis: 100%; padding: 6px 0 2px; }
+.hd-b3:not(.slim) .hd-tx h1 { font-size: 27px; line-height: 32px; }
+.hd-b3:not(.slim) .hd-tx .asof { font-size: 13px; line-height: 18px; }
+.hd-b3 .hd-tx h1, .hd-b3 .hd-tx .asof { transition: font-size .3s, line-height .3s; }
+.hd-b3.slim .hd-bar { align-items: center; }
+@media (prefers-reduced-motion: reduce) { .hd-b3 .hd-bar, .hd-b3 .hd-tx h1, .hd-b3 .hd-tx .asof { transition: none; } }
+.hd-tx .asof, .hd-st .asof { flex-wrap: nowrap; }
+.hd-tx .asof > span:last-child { display: none; }   /* "read 1 min ago" drops in the slim bar */
+.hd-b3:not(.slim) .hd-tx .asof > span:last-child { display: inline; }

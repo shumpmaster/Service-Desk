@@ -56,3 +56,8 @@ Carried out: home is C with C2 and C3. One sentence says how many things wait an
 
 Shown in chat: the library with WaitGroup (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W, version 11) and mockup v15 (https://claude.ai/artifact/1G6hoK39NJnG5trBz3Gpwx).
 13. A comment on mockup v15, on the floating band of a project's page (the branch map and phase row): "The project pills need to be part of the floating header as well."
+
+Asked by the question tool: "Project pills in the floating header (your comment on v15). The page https://claude.ai/artifact/QZKEMSVRrtJV6VL6R6M4Be shows v15 as it is (pills scroll away), then three live phones on the timeline project; scroll inside each and tap a pill. Which one?" Options: "B: slimmer pills in band (Recommended)"; "A: pills as they are"; "C: one pill + menu"; "Mix or none". Pictures: docs/design/mockups/options-pills-header/.
+14. "Option B but you need to get rid of that gap of space between the title and pills. Honestly we can maybe shrink the title and update status and just convert it into a sleek header that stays with the pills and branch chart"
+
+Carried out: option B taken, and three ways to make the title and status a sleek header floating with the pills and the map, with no gap, drawn live: 1, one slim bar (recommended); 2, the pill you are in is the title; 3, large at the top, shrinking to the slim bar as you scroll. Pictures: docs/design/mockups/options-pills-header/ (header-1 to header-3).

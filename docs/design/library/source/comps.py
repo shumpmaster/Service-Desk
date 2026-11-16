@@ -669,6 +669,28 @@ Home, grouped by what waits on the owner: one summary sentence, then a group for
 - {SRC}
 """.replace("{SRC}", SRC))
 
+# a project's floating header (round 4, answers 13 to 16): one slim bar, the slim pills, the branch map and the phase row, floating together
+PH_PILLS = [("The timeline", 4, True), ("Home-screen widget", 1, False), ("operating model", 0, False), ("Model-Lab", 0, False), ("portfolio", 0, False)]
+PHEAD = ('<div class="dk-stage col" style="width:393px;max-width:100%;box-sizing:border-box;padding:0;flex-wrap:nowrap"><div class="dk-phead">'
+  f'<div class="bar"><button class="dk-circ glass sm" aria-label="All projects">{ic("caret-left", "bold")}</button>'
+  '<div class="tx"><h1>The timeline</h1><div class="asof"><i></i>Live · as of <b>17:25 UTC</b></div></div>' + capsule(5) + '</div>'
+  '<div class="dk-chips named slim" role="group" aria-label="Projects">' + "".join(
+    f'<button class="dk-chip" aria-pressed="{str(on).lower()}"><span class="label">{l}</span>' + (f'<span class="dk-count">{c}</span>' if c else '') + '</button>' for l, c, on in PH_PILLS) + '</div>'
+  + branch_map() + '<div class="dk-phases" role="group" aria-label="Phases" style="padding:8px 16px 4px;width:auto">' +
+  "".join(f'<button class="dk-phase"{" aria-current=&quot;true&quot;" if cur else ""}>{gauge(p_, st, f"<span class=pn>{n}</span>")}<span>{nm}</span></button>' for n, nm, p_, st, cur in PH_ROW).replace("&quot;", '"') +
+  '</div></div><p class="dk-note" style="padding:12px 16px">All of this floats at the top of a project&#8217;s page as you scroll: about 275 points on a 393 by 852 phone.</p></div>')
+comp("ProjectHeader", "Desk", 420, PHEAD,
+ """# ProjectHeader
+
+A project's page has one floating header: a slim bar with the title and status, the project pills right under it, then the BranchMap and the PhaseRow, all in one glass band that stays at the top as the page scrolls. Chosen by the owner on 16 November 2026 (decisions/questions/P-005-design-round-4.md: answer 13, "The project pills need to be part of the floating header as well."; answer 14, "Option B but you need to get rid of that gap of space between the title and pills. Honestly we can maybe shrink the title and update status and just convert it into a sleek header that stays with the pills and branch chart"; answer 16, option 1, "I like this option.").
+
+- **The bar**, about 50 high: a 38 round Back on the left (glass); the project's name in 17 bold `text-1` with the status under it in 12 `text-2` ("Live · as of 17:25 UTC", the live dot in its colour; "read 1 min ago" drops here); the bell and More capsule at the right, a little smaller than on home (86%).
+- **The pills**, right under the bar with no gap: the named FilterChips, slimmer (32 high, 14 type), in one row that scrolls sideways; the project you are in is picked out, with its waiting count.
+- **Then the BranchMap and the PhaseRow**, as before.
+- The whole band is `surface-floating`, blurred, with a `separator` hairline below; it is sticky at the top of the page from the first scroll. The large title no longer appears on a project's page; home keeps its LargeTitle.
+- {SRC}
+""".replace("{SRC}", SRC))
+
 HOME = f'''<div class="dk-stage phone">
   <div class="dk-status">9:41</div>
   <div class="dk-topbar"><span></span>{capsule(2)}</div>

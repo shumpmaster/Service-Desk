@@ -64,3 +64,6 @@ Carried out: option B taken, and three ways to make the title and status a sleek
 
 Asked by the question tool: "A sleek floating header. The page https://claude.ai/artifact/QZKEMSVRrtJV6VL6R6M4Be shows B as you chose it, then three live phones where title, status, slim pills and the branch map float together with no gap. Scroll inside each. Which one?" Options: "1: one slim bar (Recommended)"; "2: the pill is the title"; "3: large, then slim"; "Mix or none".
 15. "Mix or none" (with no words of its own). Asked in chat what to mix or change.
+16. A comment on that page, on option 1's phone: "I didn’t mean to select mix, I like this option."
+
+Withdrawn: answer 15 is not the owner's choice. Carried out: the project's header is one slim floating bar (back, the title in 17 with "Live · as of 17:25 UTC" under it in 12, the bell and More), the slim pills right under it with no gap, then the branch map and the phase row, all floating together. To be built into the library and then mockup v16 over v15.

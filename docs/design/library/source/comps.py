@@ -191,6 +191,8 @@ comp("ProjectCard", "Cards", 250,
  + card("Model-Lab", "All steps done", [], done=True) + '</div>',
  """# ProjectCard
 
+**Not used on home from round 4.** The owner did not want "the existing old cards sticking around" (decisions/questions/P-005-design-round-4.md, answer 7); home shows DeskMap instead.
+
 A project with its next steps, from Craft's pinned card. From ref 12.
 
 - 264 by 210, radius 18, `surface`, `shadow-card`, 12 apart in a carousel.
@@ -558,6 +560,63 @@ All of a project's phases in one row of gauges, under the BranchMap in the same 
 - The timeline opens on the current step with everything in it open, and lists only the current phase. Tapping another phase opens its milestones above the current phase (the button turns `fill`, aria-expanded true), and only then does the page scroll, to bring them under the band. Tapping it again folds them away. Tapping the current phase goes back to the current step.
 - Gates are not shown in the row; how a gate shows is still to be discussed.
 """, script="document.addEventListener('click', function (e) { var b = e.target.closest('.dk-phase[aria-expanded]'); if (b) b.setAttribute('aria-expanded', String(b.getAttribute('aria-expanded') !== 'true')); });")
+
+# the desk map: home's map of every project, one lane each (round 4, answers 6 to 8)
+import math
+DESK = [("The timeline", "Design · Service-Desk", "Design: the spec stopped again after three plan reviews. Your call.", "4",
+         [13.5, 12, 11, 9.5, 8, 6.5, 5, 3.2, 2, 1.2, .5, .25], None, [(9, 5), (4.5, 0)], [("wait", "chat-circle-text", "3 questions", .11), ("bad", "hand-palm", "Your call", .07)]),
+        ("Home-screen widget", "Discovery · Service-Desk", "Discovery: its readiness check failed on 4 November. Your call.", "1",
+         [14, 13], None, [], [("bad", "flag", "Failed · your call", 12.2)]),
+        ("operating model", "Personal-Org-Operating-Model", "The spec-number fix is released as 3.7.3.", "", [13, 11.5, 10, 7, 6, 4, 2.5], 1.4, [(7, 4)], []),
+        ("Model-Lab", "Model-Lab", "Four pull requests merged overnight.", "", [12, 9, 6, 3, .8, .6, .45, .3], None, [(3, .3)], []),
+        ("portfolio", "portfolio", "Quiet since 12 November.", "", [13, 8.5, 4.2], None, [], [])]
+def desk_map(folded=False, W=393):
+    x0, x1, top = 16, W - 22, 22
+    gap = 34 if folded else 62
+    X = lambda t: x1 - math.sqrt(t / 14) * (x1 - x0)
+    H = top + len(DESK) * gap + 4
+    o = f'<line class="nowl" x1="{x1}" x2="{x1}" y1="4" y2="{H - 4}"/>'
+    for t, w in ((14, "2 Nov"), (7, "9 Nov"), (1, "yesterday"), (0, "now")):
+        o += f'<text class="ax" x="{X(t):.1f}" y="12" text-anchor="{"start" if t == 14 else "middle" if t else "end"}">{w}</text>'
+    pops = ""
+    for i, (nm, sub, what, bd, ev, ok, br, pp) in enumerate(DESK):
+        y = top + (i + 1) * gap - 6
+        o += f'<g class="ln" transform="translate(0 {y})"><path class="g main" d="M{x0} 0H{x1}"/>'
+        for a, c in br:
+            a, c = X(a), X(c)
+            o += f'<path class="g" d="M{a:.1f} 0C{a + 6:.1f} 0 {a + 4:.1f} -9 {a + 12:.1f} -9H{c - 12:.1f}C{c - 4:.1f} -9 {c - 6:.1f} 0 {c:.1f} 0"/>'
+        o += "".join(f'<circle class="dot" cx="{X(t):.1f}" cy="0" r="3"/>' for t in ev)
+        if ok: o += f'<circle class="dot ok" cx="{X(ok):.1f}" cy="0" r="4"/>'
+        o += f'<circle class="now" cx="{x1}" cy="0" r="3"/>'
+        ny = -12 if folded else -32
+        o += f'<text class="nm" x="{x0}" y="{ny}">{nm}</text>'
+        if bd: o += f'<circle class="bdc" cx="{x0 + len(nm) * 6.9 + 13:.0f}" cy="{ny - 4.5}" r="7.5"/><text class="bd" x="{x0 + len(nm) * 6.9 + 13:.0f}" y="{ny - .5}" text-anchor="middle">{bd}</text>'
+        if not folded: o += f'<text class="sm" x="{x0}" y="-17">{what}</text>'
+        o += '</g>'
+        right = min(X(min(q[3] for q in pp)) + 11, x1 - 2) if pp else 0
+        for st, icn, tag, t in sorted(pp, key=lambda q: q[3]):
+            w = 30 + len(tag) * 6.6
+            if right - w < 60: left = max(4, right - 22); right = left - 4
+            else: left = right - w; right = left - 4
+            pops += f'<button class="dk-pop {st}" style="left:{left:.0f}px;top:{y}px" aria-label="{tag}: show what needs you"><span class="d">{ic(icn)}</span>{tag}</button>'
+    return (f'<div class="dk-deskmap{" folded" if folded else ""}"><div class="wrap" style="height:{H}px"><svg width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" '
+            f'aria-label="Desk map: every project over the last two weeks">{o}</svg>{pops}</div></div>')
+
+comp("DeskMap", "Desk", 700,
+ '<div class="dk-stage col" style="max-width:393px;padding:16px 0;gap:14px">' + desk_map() + '<p class="dk-note" style="padding:0 16px">Open, as home opens. Below: folded, once you scroll down to Needs you.</p>' + desk_map(True) + '<p class="dk-note" style="padding:0 16px">The activity before today is an example; what waits on you is the desk&#8217;s.</p></div>',
+ """# DeskMap
+
+Every project on the desk as one lane of a small branch map, at the top of the home page. It takes the place of the project cards. Chosen by the owner on 15 and 16 November 2026 (decisions/questions/P-005-design-round-4.md: answer 6, "show what you have pinned at the top, the maps - but things that need me will popup in their usually color and format"; answer 7, option 1, with "the map needs more space" and no "old cards"; answer 8, "B: opens large, folds slim").
+
+- One lane per project, in the desk's order, on one shared time axis: two weeks ago on the left, now on the right, the time stretched toward now (square root) so today's events have room. Axis words in 10 `text-3`: 2 Nov, 9 Nov, yesterday, now; a dotted `accent-select` line at now.
+- Each lane is the project's main in `groove-main`, 5 wide, its branches as 4-wide `groove` loops above, its events as 6-point dots, done green (`status-ok-arc`) where a release landed, and a Now dot at the right end.
+- **Open** (as the page opens): 62 per lane. The project's name in 13 semibold `text-1`, its waiting count in the blue badge, and its one line in 12 `text-2` under the name.
+- **Folded** (once scrolled to Needs you): 34 per lane, the name and badge only, pinned at the top in the glass band (`surface-floating`, blurred, a `separator` hairline below). Scrolling back to the top opens it again. Lanes, names and pop-ups slide between the two over about 0.4 s; reduced motion swaps at once.
+- **Pop-ups**: each thing waiting on the owner sits on its project's lane as a capsule, its icon on a `surface` disc and its tag in the StatusMark tint: red (`status-bad-tag` on `status-bad-tag-bg`) for stopped or failed, yellow (`status-wait-tag` on `status-wait-tag-bg`) for questions. The newest sits at its place in time and the others flow left from it; one with no room to its left grows rightward from its icon. They pop in on load.
+- Tapping a pop-up scrolls to its own row in Needs you and lights it in `map-window` for about 1.5 s; several rows (the three questions) light together. Needs you stays one list, in order of waiting.
+- Tapping a lane opens its project.
+- {SRC}
+""".replace("{SRC}", SRC), script="document.querySelectorAll('.dk-deskmap .ln').forEach(function (g) { var t = g.querySelector('.nm'), c = g.querySelector('.bdc'), n = g.querySelector('.bd'); if (!c) return; var x = +t.getAttribute('x') + t.getComputedTextLength() + 13; c.setAttribute('cx', x); n.setAttribute('x', x); });")
 
 HOME = f'''<div class="dk-stage phone">
   <div class="dk-status">9:41</div>

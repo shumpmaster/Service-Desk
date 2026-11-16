@@ -61,3 +61,6 @@ Asked by the question tool: "Project pills in the floating header (your comment 
 14. "Option B but you need to get rid of that gap of space between the title and pills. Honestly we can maybe shrink the title and update status and just convert it into a sleek header that stays with the pills and branch chart"
 
 Carried out: option B taken, and three ways to make the title and status a sleek header floating with the pills and the map, with no gap, drawn live: 1, one slim bar (recommended); 2, the pill you are in is the title; 3, large at the top, shrinking to the slim bar as you scroll. Pictures: docs/design/mockups/options-pills-header/ (header-1 to header-3).
+
+Asked by the question tool: "A sleek floating header. The page https://claude.ai/artifact/QZKEMSVRrtJV6VL6R6M4Be shows B as you chose it, then three live phones where title, status, slim pills and the branch map float together with no gap. Scroll inside each. Which one?" Options: "1: one slim bar (Recommended)"; "2: the pill is the title"; "3: large, then slim"; "Mix or none".
+15. "Mix or none" (with no words of its own). Asked in chat what to mix or change.

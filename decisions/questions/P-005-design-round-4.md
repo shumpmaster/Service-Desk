@@ -32,3 +32,10 @@ Asked by the question tool: "More room for the home map, old cards gone. The pag
 8. "B: opens large, folds slim (Recommended)"
 
 Carried out: the home page opens on the desk map at full size, one lane per project with its name, its waiting count, its one line and the pop-ups; scrolled down to Needs you, the map folds to slim pinned lanes with names and pop-ups, and opens again at the top. The project cards are gone; tapping a lane opens its project. To be built into the library (a DeskMap card) and then mockup v14 over v13.
+
+Shown in chat: the library with DeskMap (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W) and mockup v14 (https://claude.ai/artifact/BMDDwgTKZBFo48q3Wc2VZz); asked whether the "slightly visual rework" of answer 6 now means the rows in Needs you.
+9. "Okay, let’s pause. Does the home page really work?  Not technically but stylistically and functionally?
+
+Does it add anything?"
+
+Answered in chat by the Chief of Staff, plainly: not yet. The map says each waiting thing three times (badge, pop-up, row), pushes Needs you below the first screen, and its dots and loops on home carry no meaning the owner can act on. What it adds is a glance at which projects moved and which are quiet, and one look shared with the project page. Recommended keeping the idea only if the lanes carry real status, or else a calmer home.

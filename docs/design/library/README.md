@@ -8,6 +8,10 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 
 The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.
 
+## Change, 16 November 2026 (round 5, the map fits a milestone)
+
+Tapping a milestone's row selects it, and the branch map fits to it (MilestoneMap): only its sprints, across the full width, every event as its icon, planned ones as open rings; the events in view below spread apart under the window with their kind and a short title, the rest squeeze to the sides. A chip names the milestone; its cross brings back the whole phase (decisions/questions/P-005-design-round-5.md, answers 1 and 4).
+
 ## Change, 16 November 2026 (round 5, what an event needs)
 
 An event that still needs something shows it, hung from the event by a thin line (NeedsList): "Needs first" with how many are done, then each requirement as a small row, the plan's check column, the kind's icon, the tag its own event wears and its title, then "Then unlocks" the same way. Done events show nothing extra. A requirement that is an action of an agent's plan reads as that action, and the action in ActionPlan says "Needed by" and the event (decisions/questions/P-005-design-round-5.md, answers 1 to 3). Requirements are examples until the records carry them.

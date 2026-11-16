@@ -669,6 +669,58 @@ Home, grouped by what waits on the owner: one summary sentence, then a group for
 - {SRC}
 """.replace("{SRC}", SRC))
 
+# the branch map fitted to a selected milestone (round 5, answer 4): M6 only, every event an icon, the events in view spread with words
+def milestone_map(view=("15:14", "15:23", "15:36", "15:42"), vw=393):
+    PAD, LANE = 22, 50
+    sp = [MAP_SP[0], MAP_SP[2]]
+    evs = [dict(sp=si, t=_t(d, hm), hm=hm, k=k, st=st, ttl=tt) for si, (_, es) in enumerate(sp) for (d, hm, k, st), tt in zip(es, TITLES[si])]
+    evs += [dict(sp=1, t=10**7 + j, hm="", k=k, st="plan", ttl=tt) for j, (k, tt) in enumerate([("commit", "Spec revised, round 4"), ("review", "Review, round 4"), ("decision", "S-011 frozen")])]
+    evs.sort(key=lambda e: e["t"])
+    wt = [6.5 if e["sp"] == 1 and e["hm"] in view else 1 for e in evs]
+    gaps = [(wt[j - 1] + wt[j]) / 2 for j in range(1, len(evs))]; x = PAD; evs[0]["x"] = x
+    for j in range(1, len(evs)): x += (vw - 2 * PAD) * gaps[j - 1] / sum(gaps); evs[j]["x"] = x
+    YM = 26 + LANE; y = YM - LANE; H = YM + 40
+    p = f'<path class="g main" d="M0 {YM} H{vw}"/>'; st_ = ""; lb = ""; fl = ""
+    for si, (lab, _) in enumerate(sp):
+        es = [e for e in evs if e["sp"] == si]; on = [e for e in es if e["k"] != "merge"]
+        x0, x1 = es[0]["x"], on[-1]["x"]
+        p += f'<path class="g" d="M{x0 - 16:.1f} {YM} C{x0 - 8:.1f} {YM} {x0 - 8:.1f} {y} {x0:.1f} {y} H{x1:.1f}"/>'
+        for j, e in enumerate(es):
+            main = e["k"] == "merge"; cy = YM if main else y
+            if main:
+                px = es[j - 1]["x"] if j else e["x"] - 16
+                p += f'<path class="g" d="M{px:.1f} {y} C{(px + e["x"]) / 2:.1f} {y} {(px + e["x"]) / 2:.1f} {YM} {e["x"]:.1f} {YM}"/>'
+            cls = " ".join(c for c in ["main" if main else "", e["st"]] if c)
+            near = min([abs(q["x"] - e["x"]) for q in evs if q is not e and (q["k"] == "merge") == main] + [99])
+            sc = 1 if near >= 20 else .72; r = 10.5 * sc; s_ = 12 * sc
+            svg = ic(EVI[e["k"]], cls="ic " + cls).replace('<svg class', f'<svg x="{e["x"] - s_ / 2:.1f}" y="{cy - s_ / 2:.1f}" width="{s_:.1f}" height="{s_:.1f}" class', 1)
+            st_ += f'<circle class="disc {cls}" cx="{e["x"]:.1f}" cy="{cy}" r="{r:.1f}"/>{svg}'
+            if e["sp"] == 1 and e["hm"] in view:
+                w = min([abs(q["x"] - e["x"]) for q in evs if q is not e and q["sp"] == 1 and q["hm"] in view] + [76]); ch = int((w - 6) / 5.6)
+                t_ = e["ttl"] if len(e["ttl"]) <= ch else e["ttl"][:ch - 1] + "&#8230;"
+                fl += f'<text class="fl" x="{e["x"]:.1f}" y="{cy + 22}"><tspan class="k">{e["k"].title()}</tspan><tspan x="{e["x"]:.1f}" dy="11">{t_}</tspan></text>'
+        lb += f'<text class="lb" x="{x0:.1f}" y="{y - 9}">{lab}</text>'
+    vis = [e for e in evs if e["sp"] == 1 and e["hm"] in view]; a, b = vis[0]["x"] - 30, vis[-1]["x"] + 30
+    win = f'<rect class="win" x="{a:.1f}" y="{y - 22}" width="{b - a:.1f}" height="{LANE + 44}" rx="10"/>'
+    chip = f'<button class="dk-mapchip" aria-label="Show the whole phase on the map">2.7 M6{ic("x", "bold")}</button>'
+    return (f'<div class="dk-mapbar"><div class="dk-mapvp" style="position:relative"><svg class="dk-map" width="{vw}" height="{H}" viewBox="0 0 {vw} {H}" role="img" aria-label="Branch map of milestone M6">'
+            f'{win}{p}{st_}{lb}{fl}<text class="lb main" x="6" y="{YM + 19}">main</text></svg>{chip}</div></div>')
+TITLES = [["First draft", "Failed", "Spec revised", "Failed", "Stop card 4", "PR #443", "Write a new spec", "PR #444"],
+          ["New spec S-011", "First draft", "Failed, round 1", "Spec revised", "PR #446", "Failed, round 2", "Spec revised again", "Failed, round 3", "Stop card 5"]]
+comp("MilestoneMap", "Desk", 260,
+ '<div class="dk-stage col" style="max-width:393px;padding:16px 0">' + milestone_map() + '<p class="dk-note" style="padding:0 16px">M6 selected: its two sprints fill the width, every event an icon, the three planned ones as open rings at the right. The four events in view below spread apart under the window and carry their kind and a short title; the rest squeeze small to the sides. The chip&#8217;s cross brings back the whole phase.</p></div>',
+ """# MilestoneMap
+
+The BranchMap fitted to one milestone. Chosen by the owner on 16 November 2026 (decisions/questions/P-005-design-round-5.md: answer 1, "can we make it so whenever a milestone is selected, the branch map fits to the events in that milestone and expands the dots to our icons with descriptions if we can fit them?"; answer 4, "C: fit, spread what's in view").
+
+- **Selecting**: tapping a milestone's row selects it (and opens it). The page opens with the milestone in progress selected. Folding the selected milestone, or the chip's cross, brings back the whole phase (BranchMap).
+- **Fitted**: only the selected milestone's sprints, across the full width with nothing to pan; lanes 50 apart, so words fit under the icons. Every event wears its icon on a disc; planned events sit at the right as open rings (`text-3` ring on `ground`).
+- **Spread what is in view**: the events shown in the list below take about six times the room of the others, sit under the soft window and carry two lines in 9.5: the kind in semibold `text-1`, then a short title in `text-2`, cut with an ellipsis to the room it has. The rest squeeze to the sides; an icon closer than 20 to its neighbour shrinks to 72%. As the list scrolls, the spread follows.
+- **The chip**: the milestone's number and id in 11.5 semibold on `fill`, bottom right of the map, with a cross.
+- Colour as in BranchMap and StatusMark: red failed, yellow waiting on you, Now blue, main dark.
+- {SRC}
+""".replace("{SRC}", SRC))
+
 # a project's floating header (round 4, answers 13 to 16): one slim bar, the slim pills, the branch map and the phase row, floating together
 PH_PILLS = [("The timeline", 4, True), ("Home-screen widget", 1, False), ("operating model", 0, False), ("Model-Lab", 0, False), ("portfolio", 0, False)]
 PHEAD = ('<div class="dk-stage col" style="width:393px;max-width:100%;box-sizing:border-box;padding:0;flex-wrap:nowrap"><div class="dk-phead">'

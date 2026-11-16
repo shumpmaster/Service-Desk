@@ -43,3 +43,9 @@ Asked by the question tool: "The map's window in the centre (your comment on v19
 7. "2: centred, except at ends (Recommended)"
 
 Carried out: on the fitted map, the window over the events in view sits in the middle, what came before spread over the left side and what comes after over the right; at either end of the milestone it slides to that edge, so no half sits empty. To be built into the library (MilestoneMap) and then mockup v20 over v19.
+
+Two comments on mockup v19 written at 19:40 and 19:41 UTC reached the session only at 20:22, after answer 7; they are recorded here in the order they were written.
+8. A comment on mockup v19, written at 19:40, on the planned event "S-011 frozen" and the NeedsList under it: "I’m not sure how, but this hierarchy needs to be slightly more defined. And every icon should be able to collapse/exoand"
+9. A reply on the page, written at 19:41, to the Chief of Staff's answer on the centred window (answer 6): "Yes do that"
+
+Carried out: answer 9 matches what was done (answers 6 and 7). Answer 8 is taken next: how the levels under an event (what it needs, why, the plan) are set apart more clearly, and every icon opening and folding what sits under it, shown live as v20 is and with options.

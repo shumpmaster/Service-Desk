@@ -1,0 +1,66 @@
+<title>Clearer Event Hierarchy</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v20 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v8). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>A clearer hierarchy, and every icon folds</h1>
+    <p>Your comment on v19, on S-011 frozen and what it needs:</p>
+    <blockquote>"I’m not sure how, but this hierarchy needs to be slightly more defined. And every icon should be able to collapse/exoand"</blockquote>
+    <p>The folding works the same in all three. An icon with a ring has something under it. Tap an event's icon to fold what it needs, what it unlocks and why; folded, one line says what is there, and tapping it opens again. Tap a requirement's icon to open what that requirement needs in turn, one level deeper; tapping its words still takes you to it. The three options differ only in how the levels are set apart.</p>
+    <p>Each phone opens on the timeline project with S-011's planned events at the top. Tap the ringed icons. Try Spec revised, round 4's icon inside Plan review, round 4.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v20</h2>
+      <ul><li>What an event needs hangs from it on a thin line, its rows almost the same size as the event.</li>
+        <li>Only the plan's steps fold.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v20, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option 1</span><h2>An inset panel</h2>
+      <ul><li>Everything under an event sits in a soft grey panel set in under its words. A level deeper is a white panel inside it.</li>
+        <li>Plainly contained, like the plan's card, but boxes inside boxes.</li></ul>
+      <div class="phone"><iframe src="hier-1.html" title="Option 1, live" loading="lazy"></iframe></div>
+      <a class="open" href="hier-1.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option 2 · recommended</span><h2>A tree</h2>
+      <ul><li>One line runs down from the event's icon with a short elbow into each row, like a file tree. Rows under an event are a size smaller, and the event's title is semibold.</li>
+        <li>Each level deeper adds one more line, so you can see the depth at a glance without boxes.</li></ul>
+      <div class="phone"><iframe src="hier-2.html" title="Option 2, live" loading="lazy"></iframe></div>
+      <a class="open" href="hier-2.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option 3</span><h2>Stepped bands</h2>
+      <ul><li>Each level steps in under the words of the one above, on a faint band that runs to the right edge.</li>
+        <li>Quiet, with no lines, but the bands are close to the page's grey and the edges are soft.</li></ul>
+      <div class="phone"><iframe src="hier-3.html" title="Option 3, live" loading="lazy"></iframe></div>
+      <a class="open" href="hier-3.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

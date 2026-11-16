@@ -1,0 +1,21 @@
+/* Live options: what needs you pops up on its project's lane, in the StatusMark format, and ties back to the cards below. */
+.hm-band { position: sticky; }
+.hm-mapwrap { position: relative; }
+.hm-lit { fill: var(--map-window); transition: y .3s cubic-bezier(.2,.8,.2,1), opacity .2s; }
+.hm-lb.on { fill: var(--ink); }
+.hm-pop { position: absolute; display: flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px 0 2px; border-radius: 11px; transform: translateY(-50%);
+  font: 600 12px/1 var(--font-ui); white-space: nowrap; cursor: pointer; border: 0; box-shadow: 0 0 0 2px var(--ground), 0 2px 6px #1c3a5a1f;
+  animation: hm-pop .35s cubic-bezier(.3,1.5,.5,1) both; }
+.hm-pop.bad { background: var(--status-bad-tag-bg); color: var(--status-bad-tag); }
+.hm-pop.wait { background: var(--status-wait-tag-bg); color: var(--status-wait-tag); }
+.hm-pop .d { width: 18px; height: 18px; border-radius: 9px; display: grid; place-items: center; background: var(--surface); }
+.hm-pop .d svg { width: 12px; height: 12px; }
+.hm-pop:focus-visible { outline: 2px solid var(--now-dot); outline-offset: 2px; }
+@keyframes hm-pop { from { transform: translateY(-50%) scale(.3); opacity: 0; } to { transform: translateY(-50%) scale(1); opacity: 1; } }
+.hm-flash { animation: hm-flash 1.6s ease-out; border-radius: 12px; }
+@keyframes hm-flash { 0%, 30% { background: var(--map-window); box-shadow: 0 0 0 6px var(--map-window); } 100% { background: transparent; box-shadow: 0 0 0 6px transparent; } }
+.hm-items { margin: -10px 0 0 30px; padding: 14px 12px 4px; background: var(--surface); border-radius: 0 0 16px 16px; display: flex; flex-direction: column; }
+.hm-items .need { margin: 0; }
+.hm-items .need .crow { min-height: 48px; }
+.hm-items .need .ico { width: 28px; height: 28px; }
+@media (prefers-reduced-motion: reduce) { .hm-pop, .hm-flash { animation: none; } .hm-lit { transition: none; } }

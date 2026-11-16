@@ -1,0 +1,45 @@
+/* Round 4, second question: more room for the desk map, and no project cards. Pop-ups tie to their rows in Needs you (answer 7). */
+.desk { display: none !important; }
+.m2band { position: sticky; top: 0; z-index: 6; margin: 2px -20px 6px; padding: env(safe-area-inset-top, 0px) 0 6px; background: var(--v13-glass);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8); border-bottom: 1px solid var(--rule); }
+.m2band.static { position: relative; }
+.m2wrap { position: relative; transition: height .4s cubic-bezier(.2,.8,.2,1); }
+.m2wrap svg { display: block; overflow: visible; }
+.m2lane { transition: transform .4s cubic-bezier(.2,.8,.2,1); cursor: pointer; }
+.m2lane .hit { fill: transparent; }
+.m2lane:hover .hit { fill: var(--map-window); }
+.m2g { fill: none; stroke: var(--v13-track); stroke-width: 4; stroke-linecap: round; }
+.m2g.main { stroke: var(--groove-main); stroke-width: 5; }
+.m2dot { fill: var(--ink-5); } .m2dot.ok { fill: var(--status-ok-arc); }
+.m2now { fill: var(--now-dot); stroke: var(--now-ring); stroke-width: 3; }
+.m2nowline { stroke: var(--now-dot); stroke-width: 1; stroke-dasharray: 2 3; opacity: .55; }
+.m2ax { font: 500 10px var(--font-ui); fill: var(--ink-4); }
+.m2nm { font: 600 13px var(--font-ui); fill: var(--ink); }
+.m2sm { font: 400 12px var(--font-ui); fill: var(--text-2); transition: opacity .25s; }
+.m2sub { font: 400 11px var(--font-ui); fill: var(--ink-4); transition: opacity .25s; }
+.m2bd { font: 700 11px var(--font-ui); fill: #fff; } .m2bdc { fill: var(--now-dot); }
+.m2band.folded .m2sm, .m2band.folded .m2sub { opacity: 0; }
+.m2nm, .m2lane g { transition: transform .4s cubic-bezier(.2,.8,.2,1); }
+.hm-pop { position: absolute; display: flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px 0 2px; border-radius: 11px; transform: translateY(-50%);
+  font: 600 12px/1 var(--font-ui); white-space: nowrap; cursor: pointer; border: 0; box-shadow: 0 0 0 2px var(--ground), 0 2px 6px #1c3a5a1f;
+  animation: hm-pop .35s cubic-bezier(.3,1.5,.5,1) both; transition: top .4s cubic-bezier(.2,.8,.2,1); z-index: 2; }
+.hm-pop.bad { background: var(--status-bad-tag-bg); color: var(--status-bad-tag); }
+.hm-pop.wait { background: var(--status-wait-tag-bg); color: var(--status-wait-tag); }
+.hm-pop .d { width: 18px; height: 18px; border-radius: 9px; display: grid; place-items: center; background: var(--surface); }
+.hm-pop .d svg { width: 12px; height: 12px; }
+.hm-pop:focus-visible { outline: 2px solid var(--now-dot); outline-offset: 2px; }
+@keyframes hm-pop { from { transform: translateY(-50%) scale(.3); opacity: 0; } to { transform: translateY(-50%) scale(1); opacity: 1; } }
+.hm-flash { animation: hm-flash 1.6s ease-out; border-radius: 12px; }
+@keyframes hm-flash { 0%, 30% { background: var(--map-window); box-shadow: 0 0 0 6px var(--map-window); } 100% { background: transparent; box-shadow: 0 0 0 6px transparent; } }
+/* the drawer: Needs you as a sheet over the map */
+.m2drawer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--surface); border-radius: 22px 22px 0 0;
+  box-shadow: 0 -6px 24px rgba(0,0,0,.12); padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(96px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  transform: translateY(calc(100% - 176px)); transition: transform .4s cubic-bezier(.2,.8,.2,1); max-height: 78%; overflow: hidden; display: flex; flex-direction: column; }
+.m2drawer.open { transform: translateY(0); overflow-y: auto; }
+.m2drawer .grab { all: unset; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 8px 0 4px; cursor: pointer; position: sticky; top: 0; background: var(--surface); z-index: 1; }
+.m2drawer .grab i { width: 36px; height: 5px; border-radius: 3px; background: var(--fill); }
+.m2drawer .grab span { align-self: flex-start; font: 700 20px var(--font-ui); color: var(--ink); }
+.m2drawer .grab span em { font-style: normal; font-weight: 400; font-size: 15px; color: var(--text-2); margin-left: 6px; }
+.m2drawer section.needs { margin: 0; }
+.m2drawer .needs-head { display: none; }
+@media (prefers-reduced-motion: reduce) { .m2wrap, .m2lane, .hm-pop, .m2drawer, .m2sm, .m2sub { transition: none; } .hm-pop, .hm-flash { animation: none; } }

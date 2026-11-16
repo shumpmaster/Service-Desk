@@ -1,62 +1,68 @@
 <title>Home as a Map</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<style>/* Layout: the question, then B's map as it is and two live phones side by side; each stacks at phone width. Tokens follow the Desk Element Library (v8). */
+<style>/* Layout: the question, then option 1 as chosen and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v8). */
 :root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
 :root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
 body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
   padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
-main { max-width:1260px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
 h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
 p { margin:0; max-width:70ch; }
 a { color:var(--now-word); }
 .lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
 .lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
-.phones { display:grid; grid-template-columns:repeat(3, minmax(0, 395px)); gap:20px; align-items:start; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
 .opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
 .tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
 .tag.rec { color:var(--now-word); }
 h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
-.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
 .phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
 .phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
 .open { font-size:14px; }
-@media (max-width: 1100px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
-@media (max-width: 760px) { .phones { grid-template-columns:minmax(0, 1fr); } }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
 </style>
 <main>
   <div class="lede">
-    <h1>Home as a map: what needs you, on the map</h1>
-    <p>Your idea, in your words:</p>
-    <blockquote>"show what you have pinned at the top, the maps - but things that need me will popup in their usually color and format. But effectively be tied back to the actual cards below, of which I think need a slightly visual rework"</blockquote>
-    <p>This page is about the pop-ups and how they tie back. The cards' rework comes next, as its own question. Each phone is live: scroll inside it, and tap a pop-up. Tapping a card still opens it, as in v13. The activity before today is an example. Your first look at the three options is kept at <a href="round1.html">round1.html</a>.</p>
+    <h1>Home as a map: more room, no old cards</h1>
+    <p>Your answer on the pop-ups:</p>
+    <blockquote>"I like 1 - but in general I think the map needs more space and I don’t like the existing old cards sticking around there."</blockquote>
+    <p>So the pop-ups stay tied to their rows in Needs you, and each option below gives the map more room and drops the project cards. Each lane now carries what its card said: the project's name, what waits on you, and its one line. Tapping a lane opens the project, and tapping a pop-up goes to its row. Every phone is live, so scroll and tap. The activity before today is an example. Earlier questions on this page: <a href="round1.html">the first three ideas</a> and <a href="popups.html">the pop-ups</a>.</p>
   </div>
   <div class="phones">
     <section class="opt">
-      <span class="tag">As it is</span><h2>The pinned maps, as drawn in B</h2>
-      <ul><li>What needs you shows only as an icon on the lane: the timeline's questions and stop, the widget's failed check.</li>
-        <li>Tapping an icon does nothing. Needs you and the cards sit below, unconnected to the map.</li></ul>
-      <div class="phone"><iframe src="live-now.html" title="As it is: B's map, live" loading="lazy"></iframe></div>
-      <a class="open" href="live-now.html" target="_blank" rel="noopener">Open full screen</a>
-    </section>
-    <section class="opt">
-      <span class="tag rec">Option 1 · recommended</span><h2>Pop-ups tied to their rows in Needs you</h2>
-      <ul><li>Each thing that needs you pops up on its project's lane as its icon and tag, in the soft colour it has in the rows: "Your call" red, "3 questions" yellow, "Failed · your call" red.</li>
-        <li>Tapping one scrolls to its own row in Needs you and lights it. The three questions light together.</li>
-        <li>As you scroll down the project cards, the map lights the lane of the card you're on.</li>
-        <li>Needs you stays one list, in order of waiting, as in v13.</li></ul>
-      <div class="phone"><iframe src="live-row.html" title="Option 1: pop-ups tied to Needs you, live" loading="lazy"></iframe></div>
+      <span class="tag">As it is</span><h2>Option 1, as you chose it</h2>
+      <ul><li>The map is pinned but tight: five lanes in about 180 points, with names only.</li>
+        <li>The old project cards are still under Needs you.</li></ul>
+      <div class="phone"><iframe src="live-row.html" title="As it is: option 1, live" loading="lazy"></iframe></div>
       <a class="open" href="live-row.html" target="_blank" rel="noopener">Open full screen</a>
     </section>
     <section class="opt">
-      <span class="tag">Option 2</span><h2>Pop-ups tied to their project's card</h2>
-      <ul><li>The same pop-ups on the lanes.</li>
-        <li>Needs you moves into the cards: each project card carries its own waiting rows under it, so the map's lanes and the cards match one to one.</li>
-        <li>Tapping a pop-up scrolls to its row in its project's card and lights it. The lane of the card in view lights as you scroll.</li>
-        <li>There is no separate Needs you list. Everything waiting on you is on the map and in the cards.</li></ul>
-      <div class="phone"><iframe src="live-card.html" title="Option 2: pop-ups tied to the project cards, live" loading="lazy"></iframe></div>
-      <a class="open" href="live-card.html" target="_blank" rel="noopener">Open full screen</a>
+      <span class="tag">Option A</span><h2>A taller pinned map</h2>
+      <ul><li>Lanes nearly twice as tall. Each lane shows its name, what waits on you, and its one line.</li>
+        <li>It stays pinned the whole time, so it takes about 40% of the screen while you read Needs you.</li>
+        <li>No cards.</li></ul>
+      <div class="phone"><iframe src="space-tall.html" title="Option A: a taller pinned map, live" loading="lazy"></iframe></div>
+      <a class="open" href="space-tall.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option B · recommended</span><h2>Opens large, folds slim as you scroll</h2>
+      <ul><li>The page opens on the map at full size, with each lane's name, line and pop-ups.</li>
+        <li>Once you scroll down to Needs you, the map folds to slim lanes with names and pop-ups, and stays pinned. Scroll back up and it opens again.</li>
+        <li>The map gets the room when you're looking at it, and gives it back when you're reading. No cards.</li></ul>
+      <div class="phone"><iframe src="space-fold.html" title="Option B: opens large and folds as you scroll, live" loading="lazy"></iframe></div>
+      <a class="open" href="space-fold.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option C</span><h2>The map fills the page, Needs you pulls up</h2>
+      <ul><li>The map takes the whole page, with the tallest lanes, and each lane shows the phase and repository too.</li>
+        <li>Needs you becomes a sheet that peeks at the bottom. Tap its top to pull it up. Tapping a pop-up pulls it up at that row.</li>
+        <li>This gives the map the most room. Your list sits one tap away. No cards.</li></ul>
+      <div class="phone"><iframe src="space-drawer.html" title="Option C: the map fills the page and Needs you pulls up, live" loading="lazy"></iframe></div>
+      <a class="open" href="space-drawer.html" target="_blank" rel="noopener">Open full screen</a>
     </section>
   </div>
 </main>

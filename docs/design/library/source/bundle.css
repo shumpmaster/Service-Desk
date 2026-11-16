@@ -302,3 +302,33 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-pop .d { width: 18px; height: 18px; border-radius: 9px; display: grid; place-items: center; background: var(--surface); }
 .dk-pop .d svg { width: 12px; height: 12px; }
 .dk-pop:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 2px; }
+
+/* WaitGroup (round 4): home grouped by what waits, with what each answer holds up and a slim strip of what mattered */
+.dk-sum { margin: 0 4px; font: 400 17px/23px var(--font-sans); color: var(--text-1); } .dk-sum b { font-weight: 600; }
+.dk-wgroup { min-width: 0; background: var(--surface); border-radius: 18px; padding: 4px 12px; display: flex; flex-direction: column; }
+.dk-prow, .dk-wrow { all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 0; cursor: pointer; position: relative; }
+.dk-prow:focus-visible, .dk-wrow:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 2px; border-radius: 10px; }
+.dk-prow .tx, .dk-wrow .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; align-items: flex-start; }
+.dk-prow .l1 { width: 100%; display: flex; align-items: baseline; gap: 8px; font: 600 16px/21px var(--font-sans); color: var(--text-1); }
+.dk-prow.quiet .l1 { font-weight: 400; color: var(--text-2); }
+.dk-prow .tm { margin-left: auto; font: 400 13px var(--font-sans); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.dk-prow .l2 { max-width: 100%; font: 400 14px/19px var(--font-sans); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dk-prow .rc, .dk-wrow .rc { width: 14px; height: 14px; color: var(--text-3); flex: none; }
+.dk-prow .pn { font: 700 13px/1 var(--font-sans); }
+.dk-badge { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--accent-select); color: #fff; font: 700 11px/18px var(--font-sans); text-align: center; }
+.dk-wrow { padding-left: 12px; }
+.dk-wrow + .dk-wrow::before { content: ""; position: absolute; left: 46px; right: 0; top: 0; border-top: 1px solid var(--separator); }
+.dk-wrow .ic { width: 22px; height: 22px; color: var(--icon); flex: none; } .dk-wrow .ic svg { width: 20px; height: 20px; }
+.dk-wrow .t { max-width: 100%; font: 400 15px/20px var(--font-sans); color: var(--text-1); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.dk-wrow .h { font: 400 12.5px/16px var(--font-sans); color: var(--text-2); }
+.dk-wrow .dk-tag { margin-bottom: 2px; }
+.dk-wrow .ct { font: 400 13px var(--font-sans); color: var(--text-2); white-space: nowrap; }
+.dk-strip { display: block; margin-top: 4px; }
+.dk-strip svg { display: block; overflow: visible; }
+.dk-strip .ln { stroke: var(--groove); stroke-width: 3; stroke-linecap: round; }
+.dk-strip .ax { font: 500 9.5px var(--font-sans); fill: var(--text-3); }
+.dk-strip .ev { fill: var(--text-3); } .dk-strip .ev.merge { fill: var(--main-mark); }
+.dk-strip .ev.bad { fill: var(--status-bad-dot); } .dk-strip .ev.wait { fill: var(--status-wait-dot); }
+.dk-strip .now { fill: var(--accent-select); stroke: var(--now-block); stroke-width: 2.5; }
+.dk-quiet { min-width: 0; display: flex; flex-direction: column; }
+.dk-qdot { width: 34px; height: 34px; flex: none; display: grid; place-items: center; } .dk-qdot i { width: 10px; height: 10px; border-radius: 5px; background: var(--text-3); }

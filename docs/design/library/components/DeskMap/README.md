@@ -1,5 +1,7 @@
 # DeskMap
 
+**Not used on home from mockup v15.** The owner asked whether the home page really worked (decisions/questions/P-005-design-round-4.md, answer 9) and chose WaitGroup instead (answers 11 and 12). The card is kept for the record.
+
 Every project on the desk as one lane of a small branch map, at the top of the home page. It takes the place of the project cards. Chosen by the owner on 15 and 16 November 2026 (decisions/questions/P-005-design-round-4.md: answer 6, "show what you have pinned at the top, the maps - but things that need me will popup in their usually color and format"; answer 7, option 1, with "the map needs more space" and no "old cards"; answer 8, "B: opens large, folds slim").
 
 - One lane per project, in the desk's order, on one shared time axis: two weeks ago on the left, now on the right, the time stretched toward now (square root) so today's events have room. Axis words in 10 `text-3` (the mockup's dates): 31 Oct, 7 Nov, yesterday, now; a dotted `accent-select` line at now.

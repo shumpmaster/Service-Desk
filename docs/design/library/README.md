@@ -8,6 +8,10 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 
 The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.
 
+## Change, 16 November 2026 (round 4, later)
+
+Home is grouped by what waits. The owner asked whether the desk map really worked and chose a calmer home: one summary sentence, then a group for each project with something waiting (the project's row with its gauge, its one line and a slim strip of the events that matter, and its waiting rows, each saying what it holds up, the longest wait first and marked), and the quiet projects folded into one row (WaitGroup; decisions/questions/P-005-design-round-4.md, answers 9 to 12). DeskMap leaves home and is kept for the record.
+
 ## Change, 16 November 2026 (round 4)
 
 Home becomes a map. The project cards give way to DeskMap: every project as one lane on a shared two-week axis, opening large at the top of home and folding slim and pinned as you scroll to Needs you. What waits on the owner pops up on its project's lane in the StatusMark tint and, tapped, lights its row in Needs you (decisions/questions/P-005-design-round-4.md, answers 6 to 8). ProjectCard stays in the library but is no longer used on home.

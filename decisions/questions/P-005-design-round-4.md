@@ -67,3 +67,12 @@ Asked by the question tool: "A sleek floating header. The page https://claude.ai
 16. A comment on that page, on option 1's phone: "I didn’t mean to select mix, I like this option."
 
 Withdrawn: answer 15 is not the owner's choice. Carried out: the project's header is one slim floating bar (back, the title in 17 with "Live · as of 17:25 UTC" under it in 12, the bell and More), the slim pills right under it with no gap, then the branch map and the phase row, all floating together. To be built into the library and then mockup v16 over v15.
+
+Shown in chat: the library with ProjectHeader (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W, version 12) and mockup v16 (https://claude.ai/artifact/KRyUwfASR4pqLR2MRRpGgY).
+17. "This is honestly looking amazing. 
+
+some events ultimately are requirements for other events. I want to see that somehow. 
+
+Additionally, the one thing I always struggle understanding is how actions task events feed into one another. So when I’m perusing the plan I will want to see the context behind how or why things are happening the way they are? If that makes sense?"
+
+Read by the Chief of Staff as two halves of one idea: what an event needs before it can happen (its requirements), and why each action, task and event happens (what led to it and what it leads to). To be taken one at a time with pictures in the next design session, starting with requirements; the records do not yet say which event depends on which, so the first pictures will use marked examples. Put off to a fresh session because this one ran long (AGENTS.md §7).

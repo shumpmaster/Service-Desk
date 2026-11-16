@@ -676,9 +676,13 @@ def milestone_map(view=("15:14", "15:23", "15:36", "15:42"), vw=393):
     evs = [dict(sp=si, t=_t(d, hm), hm=hm, k=k, st=st, ttl=tt) for si, (_, es) in enumerate(sp) for (d, hm, k, st), tt in zip(es, TITLES[si])]
     evs += [dict(sp=1, t=10**7 + j, hm="", k=k, st="plan", ttl=tt) for j, (k, tt) in enumerate([("commit", "Spec revised, round 4"), ("review", "Review, round 4"), ("decision", "S-011 frozen")])]
     evs.sort(key=lambda e: e["t"])
-    wt = [6.5 if e["sp"] == 1 and e["hm"] in view else 1 for e in evs]
-    gaps = [(wt[j - 1] + wt[j]) / 2 for j in range(1, len(evs))]; x = PAD; evs[0]["x"] = x
-    for j in range(1, len(evs)): x += (vw - 2 * PAD) * gaps[j - 1] / sum(gaps); evs[j]["x"] = x
+    ins = [j for j, e in enumerate(evs) if e["sp"] == 1 and e["hm"] in view]; a, b = ins[0], ins[-1]; n = len(evs)
+    M = min(vw - 120, (b - a) * 68); start = vw / 2 - M / 2                  # the window in the centre (round 5, answer 7)
+    if a == 0: start = PAD + 14
+    elif b == n - 1: start = vw - PAD - 14 - M                               # except at either end
+    for j in range(a, b + 1): evs[j]["x"] = start + M * (j - a) / max(1, b - a)
+    for j in range(a): evs[j]["x"] = PAD + (start - 30 - PAD) * j / max(1, a - 1)
+    for j in range(b + 1, n): evs[j]["x"] = start + M + 30 + (vw - PAD - start - M - 30) * (j - b - 1) / max(1, n - b - 2)
     YM = 26 + LANE; y = YM - LANE; H = YM + 40
     p = f'<path class="g main" d="M0 {YM} H{vw}"/>'; st_ = ""; lb = ""; fl = ""
     for si, (lab, _) in enumerate(sp):
@@ -707,15 +711,16 @@ def milestone_map(view=("15:14", "15:23", "15:36", "15:42"), vw=393):
             f'{win}{p}{st_}{lb}{fl}<text class="lb main" x="6" y="{YM + 19}">main</text></svg>{chip}</div></div>')
 TITLES = [["First draft", "Failed", "Spec revised", "Failed", "Stop card 4", "PR #443", "Write a new spec", "PR #444"],
           ["New spec S-011", "First draft", "Failed, round 1", "Spec revised", "PR #446", "Failed, round 2", "Spec revised again", "Failed, round 3", "Stop card 5"]]
-comp("MilestoneMap", "Desk", 260,
- '<div class="dk-stage col" style="max-width:393px;padding:16px 0">' + milestone_map() + '<p class="dk-note" style="padding:0 16px">M6 selected: its two sprints fill the width, every event an icon, the three planned ones as open rings at the right. The four events in view below spread apart under the window and carry their kind and a short title; the rest squeeze small to the sides. The chip&#8217;s cross brings back the whole phase.</p></div>',
+comp("MilestoneMap", "Desk", 290,
+ '<div class="dk-stage col" style="max-width:393px;padding:16px 0">' + milestone_map() + '<p class="dk-note" style="padding:0 16px">M6 selected: its two sprints fill the width, every event an icon, the three planned ones as open rings at the right. The four events in view below spread apart under the window, in the centre, and carry their kind and a short title; what came before squeezes to the left, the planned events to the right. The chip&#8217;s cross brings back the whole phase.</p></div>',
  """# MilestoneMap
 
 The BranchMap fitted to one milestone. Chosen by the owner on 16 November 2026 (decisions/questions/P-005-design-round-5.md: answer 1, "can we make it so whenever a milestone is selected, the branch map fits to the events in that milestone and expands the dots to our icons with descriptions if we can fit them?"; answer 4, "C: fit, spread what's in view").
 
 - **Selecting**: tapping a milestone's row selects it (and opens it). The page opens with the milestone in progress selected. Folding the selected milestone, or the chip's cross, brings back the whole phase (BranchMap).
 - **Fitted**: only the selected milestone's sprints, across the full width with nothing to pan; lanes 50 apart, so words fit under the icons. Every event wears its icon on a disc; planned events sit at the right as open rings (`text-3` ring on `ground`).
-- **Spread what is in view**: the events shown in the list below take about six times the room of the others, sit under the soft window and carry two lines in 9.5: the kind in semibold `text-1`, then a short title in `text-2`, cut with an ellipsis to the room it has. The rest squeeze to the sides; an icon closer than 20 to its neighbour shrinks to 72%. As the list scrolls, the spread follows.
+- **Spread what is in view**: the events shown in the list below spread 68 apart under the soft window and carry two lines in 9.5: the kind in semibold `text-1`, then a short title in `text-2`, cut with an ellipsis to the room it has. As the list scrolls, the spread follows.
+- **The window in the centre**: it sits in the middle of the map; what came before is spread evenly over the left side and what comes after over the right, so you always see both. At either end of the milestone it slides to that edge, so no half sits empty (round 5, answer 6: "What are your thoughts on always pulling the highlighted section to the center of the slider so you can see the before and after?"; answer 7, "2: centred, except at ends"). Where it sits no longer says how far along the milestone you are; an icon closer than 20 to its neighbour shrinks to 72%.
 - **The chip**: the milestone's number and id in 11.5 semibold on `fill`, bottom right of the map, with a cross.
 - Colour as in BranchMap and StatusMark: red failed, yellow waiting on you, Now blue, main dark.
 - {SRC}

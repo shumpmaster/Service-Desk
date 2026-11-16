@@ -281,3 +281,24 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-phase span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dk-phase[aria-current="true"] { background: var(--surface); color: var(--text-1); font-weight: 600; box-shadow: var(--shadow-chip-selected); }
 .dk-phase[aria-expanded="true"] { background: var(--fill); color: var(--text-1); }
+
+/* DeskMap (round 4): every project as one lane at the top of home; open, then folded and pinned */
+.dk-deskmap { width: 393px; box-sizing: border-box; background: var(--surface-floating); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8); border-bottom: 1px solid var(--separator); padding: 4px 0 6px; }
+.dk-deskmap .wrap { position: relative; }
+.dk-deskmap svg { display: block; overflow: visible; }
+.dk-deskmap .g { fill: none; stroke: var(--groove); stroke-width: 4; stroke-linecap: round; }
+.dk-deskmap .g.main { stroke: var(--groove-main); stroke-width: 5; }
+.dk-deskmap .dot { fill: var(--text-3); } .dk-deskmap .dot.ok { fill: var(--status-ok-arc); }
+.dk-deskmap .now { fill: var(--accent-select); stroke: var(--now-block); stroke-width: 3; }
+.dk-deskmap .nowl { stroke: var(--accent-select); stroke-width: 1; stroke-dasharray: 2 3; opacity: .55; }
+.dk-deskmap .ax { font: 500 10px var(--font-sans); fill: var(--text-3); }
+.dk-deskmap .nm { font: 600 13px var(--font-sans); fill: var(--text-1); }
+.dk-deskmap .sm { font: 400 12px var(--font-sans); fill: var(--text-2); }
+.dk-deskmap .bdc { fill: var(--accent-select); } .dk-deskmap .bd { font: 700 11px var(--font-sans); fill: #fff; }
+.dk-pop { position: absolute; width: max-content; display: flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px 0 2px; border-radius: 11px; transform: translateY(-50%); border: 0; cursor: pointer;
+  font: 600 12px/1 var(--font-sans); white-space: nowrap; box-shadow: 0 0 0 2px var(--ground), 0 2px 6px #1c3a5a1f; }
+.dk-pop.bad { background: var(--status-bad-tag-bg); color: var(--status-bad-tag); }
+.dk-pop.wait { background: var(--status-wait-tag-bg); color: var(--status-wait-tag); }
+.dk-pop .d { width: 18px; height: 18px; border-radius: 9px; display: grid; place-items: center; background: var(--surface); }
+.dk-pop .d svg { width: 12px; height: 12px; }
+.dk-pop:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 2px; }

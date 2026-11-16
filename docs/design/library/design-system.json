@@ -18,8 +18,8 @@
  },
  "lastChange": {
   "by": "Claude",
-  "at": "2026-11-15T22:00:00Z",
+  "at": "2026-11-16T03:00:00Z",
   "via": "Claude Code",
-  "note": "Round 3: the colour hold lifted for status only, with soft green, yellow and red tokens (status-ok, status-wait, status-bad and their wash, track, arc, mark, dot and tag forms) and map-window. New cards: Gauge (the tinted ring on phases, milestones and sprints; tapping it folds its section), StatusMark (corner mark and tinted tag on events and steps), BranchMap (the whole phase floating at the top, panning under a window over the events in view) and PhaseRow (one row of phase gauges under the map). LaneGraph kept, but replaced by BranchMap on the timeline. The owner's rulings of 15 November 2026, decisions/questions/P-005-design-round-3.md."
+  "note": "Round 4: new card DeskMap, home's map of every project, one lane each on a shared two-week axis; it opens large at the top of home and folds slim and pinned as you scroll, and what waits on the owner pops up on its lane in the StatusMark tint, tied to its row in Needs you. It replaces the project cards on home; ProjectCard is kept but no longer used there. The owner's rulings of 15 and 16 November 2026, decisions/questions/P-005-design-round-4.md, answers 6 to 8."
  }
 }

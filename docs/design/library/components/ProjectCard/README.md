@@ -1,5 +1,7 @@
 # ProjectCard
 
+**Not used on home from round 4.** The owner did not want "the existing old cards sticking around" (decisions/questions/P-005-design-round-4.md, answer 7); home shows DeskMap instead.
+
 A project with its next steps, from Craft's pinned card. From ref 12.
 
 - 264 by 210, radius 18, `surface`, `shadow-card`, 12 apart in a carousel.

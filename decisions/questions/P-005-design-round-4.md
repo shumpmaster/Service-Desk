@@ -27,3 +27,8 @@ Asked by the question tool: "Pop-ups on the home map. The page https://claude.ai
 7. "I like 1 - but in general I think the map needs more space and I don’t like the existing old cards sticking around there."
 
 Carried out: what needs the owner pops up on its project's lane as its icon and tinted tag, and tapping it scrolls to and lights its own row in Needs you, which stays one list. Next, with live pictures: more room for the map, and what takes the place of the project cards.
+
+Asked by the question tool: "More room for the home map, old cards gone. The page https://claude.ai/artifact/Q1cSnW5qR3cj3yXdghf2QL shows option 1 as you chose it, then three live phones where each lane carries its project's name, waiting count and one line, with no cards. Scroll and tap in each. Which?" Options: "B: opens large, folds slim (Recommended)"; "A: taller pinned map"; "C: map fills the page"; "Mix or none". Pictures: docs/design/mockups/options-home-map/ (live-row, space-tall, space-fold, space-drawer).
+8. "B: opens large, folds slim (Recommended)"
+
+Carried out: the home page opens on the desk map at full size, one lane per project with its name, its waiting count, its one line and the pop-ups; scrolled down to Needs you, the map folds to slim pinned lanes with names and pop-ups, and opens again at the top. The project cards are gone; tapping a lane opens its project. To be built into the library (a DeskMap card) and then mockup v14 over v13.

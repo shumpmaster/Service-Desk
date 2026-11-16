@@ -24,4 +24,11 @@ for o in ('C1', 'C2', 'C3'):
     a = '\n  render();\n})();\n</script>'
     s = s.replace(a, "\n  var NEEDS_OPT = '" + o + "';\n" + js + js2 + a)
     open(os.path.join(H, '../needs-%s.html' % o), 'w', encoding='utf-8').write(HEAD + done(s))
+# round 5, answer 2: C1's look with C2's checklist, and the plan's crossover (needs3.css, needs3.js)
+css3 = open(os.path.join(H, 'needs3.css'), encoding='utf-8').read()
+js3 = open(os.path.join(H, 'needs3.js'), encoding='utf-8').read()
+s = v16; i = s.rindex('</style>'); s = s[:i] + css + css2 + css3 + s[i:]
+a = '\n  render();\n})();\n</script>'
+s = s.replace(a, "\n  var NEEDS_OPT = 'M';\n" + js + js2 + js3 + a)
+open(os.path.join(H, '../needs-M.html'), 'w', encoding='utf-8').write(HEAD + done(s))
 print('ok')

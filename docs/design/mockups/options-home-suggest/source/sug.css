@@ -1,0 +1,42 @@
+/* Suggestions for the home page (round 4, answer 10), drawn over v13's home. Rows, not boxes; status colour only on gauges and tags. */
+#view.sug .desk { display: none; }
+#view.sug.sugC section.needs { display: none; }
+.sg { margin: 18px 0 0; }
+.sg-h { display: flex; align-items: baseline; gap: 8px; padding: 0 4px 6px; font: 700 20px/26px var(--font-ui); color: var(--ink); }
+.sg-h small { font: 400 15px var(--font-ui); color: var(--text-2); }
+.sg-row { all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 4px; cursor: pointer; position: relative; -webkit-tap-highlight-color: transparent; }
+.sg-row + .sg-row::before, .sg-row + .sg-strip + .sg-row::before { content: ""; position: absolute; left: 50px; right: 0; top: 0; border-top: 1px solid var(--rule); }
+.sg-row:focus-visible { outline: 2px solid var(--now-dot); outline-offset: 2px; border-radius: 10px; }
+.sg-row .v13g { width: 34px; height: 34px; }
+.sg-row .v13g .pn { font: 700 13px/1 var(--font-ui); }
+.sg-row .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.sg-row .l1 { display: flex; align-items: baseline; gap: 8px; font: 600 16px/21px var(--font-ui); color: var(--ink); }
+.sg-row .l1 .tm { margin-left: auto; font: 400 13px var(--font-ui); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.sg-row .l2 { font: 400 14px/19px var(--font-ui); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sg-row .l3 { font: 400 12px/16px var(--font-ui); color: var(--ink-4); }
+.sg-row .chev { flex: none; color: var(--ink-5); width: 14px; height: 14px; }
+.sg-badge { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--now-dot); color: #fff; font: 700 11px/18px var(--font-ui); text-align: center; }
+/* B: a slim strip of the events that matter, under each project row */
+.sg-strip { display: block; margin: -4px 0 6px 50px; }
+.sg-strip svg { display: block; overflow: visible; }
+.sg-strip .ln { stroke: var(--v13-track); stroke-width: 3; stroke-linecap: round; }
+.sg-strip .ax { font: 500 9.5px var(--font-ui); fill: var(--ink-4); }
+.sg-strip .ev { fill: var(--ink-5); }
+.sg-strip .ev.merge { fill: var(--main-mark); }
+.sg-strip .ev.bad { fill: var(--status-bad-dot); } .sg-strip .ev.wait { fill: var(--status-wait-dot); }
+.sg-strip .now { fill: var(--now-dot); stroke: var(--now-ring); stroke-width: 2.5; }
+/* C: what waits, grouped by project; the quiet ones folded into one row */
+.sg-sum { margin: 14px 4px 2px; font: 400 17px/23px var(--font-ui); color: var(--ink); }
+.sg-sum b { font-weight: 600; }
+.sg-grp { margin: 10px 0 0; padding: 4px 12px 4px; border-radius: 18px; background: var(--surface); }
+.sg-grp > .sg-row { padding: 10px 0; }
+.sg-grp .need { margin: 0; }
+.sg-grp .need .crow { min-height: 44px; padding-left: 46px; }
+.sg-grp .need + .need::before { left: 46px; }
+.sg-quiet { margin-top: 10px; }
+.sg-quiet > .sg-row .l1 { font-weight: 400; color: var(--ink-2); }
+.sg-quiet-list { padding-left: 0; }
+.sg-quiet-list[hidden] { display: none; }
+.sg-dotg { width: 34px; height: 34px; flex: none; display: grid; place-items: center; }
+.sg-dotg i { width: 10px; height: 10px; border-radius: 5px; background: var(--ink-5); }
+.sg-foot { height: 30vh; }

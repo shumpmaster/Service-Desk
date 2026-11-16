@@ -53,3 +53,6 @@ Asked by the question tool: "What C may be missing. The page https://claude.ai/a
 12. "C2: what each answer holds up (Recommended), C3: a slim strip of what mattered"
 
 Carried out: home is C with C2 and C3. One sentence says how many things wait and where; each project with something waiting is a group, its row with its gauge, its one line and a slim two-week strip of the events that matter, and its waiting rows under it, each saying what it holds up; the group with the longest wait comes first, marked "Longest wait"; the quiet projects fold into one row, each with its strip when opened. The desk map of v14 leaves home. To be built into the library and then mockup v15 over v14.
+
+Shown in chat: the library with WaitGroup (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W, version 11) and mockup v15 (https://claude.ai/artifact/1G6hoK39NJnG5trBz3Gpwx).
+13. A comment on mockup v15, on the floating band of a project's page (the branch map and phase row): "The project pills need to be part of the floating header as well."

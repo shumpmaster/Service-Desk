@@ -721,6 +721,27 @@ The BranchMap fitted to one milestone. Chosen by the owner on 16 November 2026 (
 - {SRC}
 """.replace("{SRC}", SRC))
 
+# why each event happened (round 5, answer 5): the story between events
+def why(t): return f'<div class="dk-why"><span class="ar">{ic("arrow-elbow-down-right", "bold")}</span><p><b>Why:</b> {t}</p></div>'
+WHYC = ('<div class="dk-stage col" style="max-width:393px"><div>'
+  + mark_ev("stop", "wait", "Waiting on you", "15:42", "Stop card 5", "orchestrator") + why("Three failed reviews trip the stop rule, so the orchestrator stopped and asked you what next.")
+  + mark_ev("review", "bad", "Failed", "15:36", "Plan review failed, round 3", "reviewer (plan)") + why("Review again. The experiments still hadn&#8217;t moved, because the spec writer was never given them.")
+  + mark_ev("commit", "ok", "Done", "15:23", "Spec revised again", "spec writer") + why("The spec writer worked through six actions to answer round 2; one stayed blocked.")
+  + mark_ev("step", "bad", "1 blocked", "", "The spec writer&#8217;s plan · 5 of 6 done", "spec writer", label="2.7.2.5")
+  + '</div><p class="dk-note">Read down, it is the story of the spec: each sentence says how the event below led to the one above. The agent&#8217;s plan stays as the detail of how. Reasons are examples until the records carry them.</p></div>')
+comp("WhyLine", "Desk", 560, WHYC,
+ """# WhyLine
+
+Why an event happened, in one plain sentence under it, so the plan reads as a story while you scroll. Chosen by the owner on 16 November 2026 (decisions/questions/P-005-design-round-4.md, answer 17: "the one thing I always struggle understanding is how actions task events feed into one another. So when I’m perusing the plan I will want to see the context behind how or why things are happening the way they are?"; decisions/questions/P-005-design-round-5.md, answer 5, "C: the story between events").
+
+- **Under each event that happened**, after its "by" line: an elbow arrow turned upward in `text-2`, then the sentence on a 1.5 dotted `text-3` line that runs down toward the event before it.
+- **The sentence**: "Why:" in 13 semibold `text-1`, then one plain sentence in 13 `text-2`, naming what led to this event and, where it matters, why it went the way it did. No ids unless the owner knows them by name.
+- **With the plan**: the ActionPlan stays where it is, between the two events, as the detail of how; the WhyLine above it says why in one line.
+- **Planned events** carry a NeedsList instead: what must happen first. Together the two say what led here and what comes next.
+- Reasons are not yet on record; until an agent writes its own "why" with each event, a mockup's sentences are examples, marked so.
+- {SRC}
+""".replace("{SRC}", SRC))
+
 # a project's floating header (round 4, answers 13 to 16): one slim bar, the slim pills, the branch map and the phase row, floating together
 PH_PILLS = [("The timeline", 4, True), ("Home-screen widget", 1, False), ("operating model", 0, False), ("Model-Lab", 0, False), ("portfolio", 0, False)]
 PHEAD = ('<div class="dk-stage col" style="width:393px;max-width:100%;box-sizing:border-box;padding:0;flex-wrap:nowrap"><div class="dk-phead">'

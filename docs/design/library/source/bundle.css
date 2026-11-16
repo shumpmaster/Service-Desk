@@ -374,3 +374,10 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-map .fl .k { font-weight: 600; fill: var(--text-1); }
 .dk-mapchip { position: absolute; right: 10px; bottom: 4px; display: inline-flex; align-items: center; gap: 5px; padding: 2px 6px 2px 9px; border-radius: var(--radius-full); background: var(--fill); font: 600 11.5px/18px var(--font-sans); color: var(--text-1); border: 0; }
 .dk-mapchip .i { width: 10px; height: 10px; color: var(--text-2); }
+
+/* why line (round 5): one plain sentence under an event that happened, saying why, on a dotted line down to the event before */
+.dk-why { display: flex; gap: 8px; align-items: flex-start; margin: -2px 0 6px 6px; padding: 2px 0 4px; }
+.dk-why .ar { flex: none; width: 14px; display: grid; place-items: center; padding-top: 2px; color: var(--text-2); transform: scaleY(-1); }
+.dk-why .ar .i { width: 12px; height: 12px; }
+.dk-why p { margin: 0; padding-left: 14px; border-left: 1.5px dotted var(--text-3); font: 400 13px/18px var(--font-sans); color: var(--text-2); }
+.dk-why b { font-weight: 600; color: var(--text-1); }

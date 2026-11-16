@@ -43,3 +43,8 @@ Answered in chat by the Chief of Staff, plainly: not yet. The map says each wait
 10. "Make some suggestions"
 
 Carried out: three suggestions for home, drawn live on the real home page with real records only, after v14 as it is: A, Needs you first then quiet project rows; B, as A with a slim strip of the events that matter; C, what waits grouped by project, the quiet projects folded into one row (recommended). https://claude.ai/artifact/JoVQ4ci4GVZXzspd4eXCQV (docs/design/mockups/options-home-suggest/).
+
+Asked by the question tool: "Home, three suggestions. The page https://claude.ai/artifact/JoVQ4ci4GVZXzspd4eXCQV shows v14's home as it is (the map on top), then three live phones using only the desk's real records. Tap projects and rows in each. Which direction?" Options: "C: grouped by project (Recommended)"; "A: quiet project rows"; "B: rows with a slim strip"; "Keep v14's map / none".
+11. "C is where I’m leaning but I feel like it’s missing something"
+
+Carried out: C kept as the direction; three things it may be missing drawn live on C, for the owner to judge.

@@ -1,0 +1,36 @@
+/* ================= v14 · the owner's round 4: home becomes the desk map (DeskMap) =================
+   Every project as one lane on a shared two-week axis; it opens large and folds slim and pinned as you scroll;
+   what waits on the owner pops up on its lane and lights its row in Needs you. The project cards are gone. */
+#view.v14 .desk { display: none; }
+.v14band { position: sticky; top: 0; z-index: 6; margin: 6px -20px 6px; padding: env(safe-area-inset-top, 0px) 0 6px; background: var(--v13-glass);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8); border-bottom: 1px solid var(--rule); }
+.v14wrap { position: relative; transition: height .4s cubic-bezier(.2, .8, .2, 1); }
+.v14wrap svg { display: block; overflow: visible; }
+.v14lane { transition: transform .4s cubic-bezier(.2, .8, .2, 1); cursor: pointer; outline: none; }
+.v14lane .hit { fill: transparent; }
+.v14lane:hover .hit, .v14lane:focus-visible .hit { fill: var(--map-window); }
+.v14g { fill: none; stroke: var(--v13-track); stroke-width: 4; stroke-linecap: round; }
+.v14g.main { stroke: var(--groove-main); stroke-width: 5; }
+.v14dot { fill: var(--ink-5); } .v14dot.ok { fill: var(--status-ok-arc); }
+.v14now { fill: var(--now-dot); stroke: var(--now-ring); stroke-width: 3; }
+.v14nowl { stroke: var(--now-dot); stroke-width: 1; stroke-dasharray: 2 3; opacity: .55; transition: y2 .4s; }
+.v14ax { font: 500 10px var(--font-ui); fill: var(--ink-4); }
+.v14nm { font: 600 13px var(--font-ui); fill: var(--ink); }
+.v14sm { font: 400 12px var(--font-ui); fill: var(--text-2); transition: opacity .25s; }
+.v14bdc { fill: var(--now-dot); } .v14bd { font: 700 11px var(--font-ui); fill: #fff; }
+.v14head { transition: transform .4s cubic-bezier(.2, .8, .2, 1); }
+.v14band.folded .v14sm { opacity: 0; }
+.v14band.folded .v14head { transform: translateY(20px); }
+.v14pop { position: absolute; display: flex; align-items: center; gap: 4px; height: 22px; width: max-content; padding: 0 8px 0 2px; border-radius: 11px; transform: translateY(-50%);
+  font: 600 12px/1 var(--font-ui); white-space: nowrap; cursor: pointer; border: 0; box-shadow: 0 0 0 2px var(--ground), 0 2px 6px #1c3a5a1f; z-index: 2;
+  animation: v14pop .35s cubic-bezier(.3, 1.5, .5, 1) both; transition: top .4s cubic-bezier(.2, .8, .2, 1); }
+.v14pop.bad { background: var(--status-bad-tag-bg); color: var(--status-bad-tag); }
+.v14pop.wait { background: var(--status-wait-tag-bg); color: var(--status-wait-tag); }
+.v14pop .d { width: 18px; height: 18px; border-radius: 9px; display: grid; place-items: center; background: var(--surface); }
+.v14pop .d svg { width: 12px; height: 12px; }
+.v14pop:focus-visible { outline: 2px solid var(--now-dot); outline-offset: 2px; }
+@keyframes v14pop { from { transform: translateY(-50%) scale(.3); opacity: 0; } to { transform: translateY(-50%) scale(1); opacity: 1; } }
+.need.v14lit { animation: v14lit 1.6s ease-out; border-radius: 12px; }
+@keyframes v14lit { 0%, 30% { background: var(--map-window); box-shadow: 0 0 0 6px var(--map-window); } 100% { background: transparent; box-shadow: 0 0 0 6px transparent; } }
+.v14foot { height: 40vh; }
+@media (prefers-reduced-motion: reduce) { .v14wrap, .v14lane, .v14pop, .v14head, .v14sm, .v14nowl { transition: none; } .v14pop, .need.v14lit { animation: none; } }

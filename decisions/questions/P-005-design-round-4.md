@@ -1,4 +1,4 @@
-Ruling: in progress. The home page takes the branch map pinned at the top, a small map for each project, with the things that need the owner popping up on it in their usual colour and format and tied back to the cards below, which get a slight visual rework
+Ruling: the home page takes the branch map pinned at the top, a small map for each project, with the things that need the owner popping up on it in their usual colour and format and tied back to the cards below, which get a slight visual rework
 
 Question: none filed. Put to the owner in the Chief of Staff's design session (session_01QBwHGN2urkNY8gDYwjf97q) on 15 and 16 November 2026, in chat: "What do you think of v13?", the first open item of the design handoff (docs/handoff/2026-11-15-chief-of-staff-p005-14.md, "Open, for the owner", 1). The owner answered with a new idea for the home page instead. These are design-mockup answers, given in the session reserved for the mockups, and this record says so rather than filing a question after its answers.
 Milestone: Design-5 (the design fits together), M7, M8

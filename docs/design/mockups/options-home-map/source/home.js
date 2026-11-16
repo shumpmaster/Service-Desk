@@ -28,6 +28,8 @@
       else el('circle', { class: 'hm-dot ' + e[1], cx: x, cy: y, r: e[1] ? 4 : 3 }, svg);
     });
     icons.forEach(function (ic) { var x = ic[0], e = ic[1];   // icons over the dots
+      (window.HM_ICONS = window.HM_ICONS || []).push({ p: d.id, k: e[2], st: e[1], x: x, y: y });
+      if (window.HM_POP) return;   // the live options draw these as pop-ups instead
       el('circle', { class: 'hm-disc ' + e[1], cx: x, cy: y, r: 9.5 }, svg);
       var f = el('foreignObject', { x: x - 6.5, y: y - 6.5, width: 13, height: 13 }, svg);
       f.innerHTML = '<div xmlns="http://www.w3.org/1999/xhtml" class="hm-ic ' + e[1] + '" style="width:13px;height:13px;display:grid;place-items:center">' + ICON[e[2]].replace('<svg', '<svg width="13" height="13"') + '</div>';
@@ -47,12 +49,12 @@
   }
   if (opt === 'B') {
     var band = document.createElement('div'); band.className = 'hm-band';
-    var W = 393, x0 = 16, x1 = W - 22, top = 26, gap = 30, H = top + gap * 5 + 2;
+    var W = 393, x0 = 16, x1 = W - 22, top = 26, gap = window.HM_POP ? 34 : 30, H = top + gap * 5 + 2;
     var svg = el('svg', { width: W, height: H, viewBox: '0 0 ' + W + ' ' + H }); band.appendChild(svg);
     el('line', { class: 'hm-nowline', x1: x1, y1: 4, x2: x1, y2: H - 4 }, svg);
     [[14, '2 Nov'], [7, '9 Nov'], [1, 'yesterday'], [0, 'now']].forEach(function (a) { var x = x1 - Math.sqrt(a[0] / 14) * (x1 - x0);
       el('text', { class: 'hm-ax', x: x, y: 12, 'text-anchor': a[0] === 14 ? 'start' : a[0] ? 'middle' : 'end' }, svg).textContent = a[1]; });
-    order.forEach(function (id, i) { lane(svg, P[id], top + 18 + i * gap, x0, x1, P[id].short, true); el('circle', { class: 'hm-now', cx: x1, cy: top + 18 + i * gap, r: 3 }, svg); });
+    order.forEach(function (id, i) { P[id].id = id; lane(svg, P[id], top + 18 + i * gap, x0, x1, P[id].short, true); el('circle', { class: 'hm-now', cx: x1, cy: top + 18 + i * gap, r: 3 }, svg); });
     var needs = document.querySelector('section.needs'); needs.parentNode.insertBefore(band, needs);
     document.querySelectorAll('.desk .p-what').forEach(function (w) { w.style.display = 'none'; });
   }

@@ -22,3 +22,8 @@ Asked by the question tool: "Home page as a map, asked again since picking B was
 6. "Something else" (with no words of its own). Asked in chat what "this little set of maps" meant: "Sorry, my idea was to basically show what you have pinned at the top, the maps - but things that need me will popup in their usually color and format. But effectively be tied back to the actual cards below, of which I think need a slightly visual rework"
 
 Read by the Chief of Staff as: the map pinned at the top, as drawn in B, with a lane for each project. Each thing that needs the owner pops up on its project's lane in its usual colour and format, and is tied back to its card below. The cards below get a slight visual rework. Taken one at a time, with pictures: first how the things that need the owner pop up on the map and tie back to their cards, then the cards' rework.
+
+Asked by the question tool: "Pop-ups on the home map. The page https://claude.ai/artifact/Q1cSnW5qR3cj3yXdghf2QL shows the pinned maps as drawn in B, then two live phones where what needs you pops up on its project's lane (icon and tinted tag) and ties back below. Scroll and tap the pop-ups in each. Which tie-back?" Options: "1: to its row in Needs you (Recommended)"; "2: to its project's card"; "Mix or none". Pictures: docs/design/mockups/options-home-map/ (live-now, live-row, live-card).
+7. "I like 1 - but in general I think the map needs more space and I don’t like the existing old cards sticking around there."
+
+Carried out: what needs the owner pops up on its project's lane as its icon and tinted tag, and tapping it scrolls to and lights its own row in Needs you, which stays one list. Next, with live pictures: more room for the map, and what takes the place of the project cards.

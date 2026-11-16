@@ -691,6 +691,44 @@ A project's page has one floating header: a slim bar with the title and status, 
 - {SRC}
 """.replace("{SRC}", SRC))
 
+# what an event still needs (round 5, answers 1 to 3): C1's rows with C2's checklist, and the crossover with the plan
+NMK = {"ok": ("ok", ic("check", "bold")), "wait": ("wait", ic("hourglass-medium", "fill")), "bad": ("blocked", ic("warning", "fill")), "pend": ("next", "")}
+def need_row(st, kind, word, tag_st, tag, title, unlock=False):
+    mk = f'<span class="mk un">{ic("arrow-elbow-down-right", "bold")}</span>' if unlock else f'<span class="mk {NMK[st][0]}">{NMK[st][1]}</span>'
+    return (f'<li>{mk}<span class="dk-ev-ico">{ic(EVI[kind])}</span><span class="tx"><span class="l1"><b>{word}</b>'
+            f'<span class="dk-tag {tag_st}">{tag}</span></span><span class="l2">{title}</span></span></li>')
+def needs_list(rows, unl, done):
+    return ('<div class="dk-needs"><div class="nh">Needs first<span>' + f'{done} of {len(rows)} done</span></div><ol>' + "".join(need_row(*r) for r in rows) + '</ol>'
+            + ('<div class="nh">Then unlocks</div><ol>' + "".join(need_row("", *r, unlock=True) for r in unl) + '</ol>' if unl else '') + '</div>')
+def plan_ev(kind, title, who):
+    return (f'<div class="dk-ev"><span class="dk-ev-ico" style="background:var(--ground);box-shadow:inset 0 0 0 1.5px var(--text-3)">{ic(EVI[kind])}</span>'
+            f'<div class="tx"><div class="l1"><b>{kind.title()}</b><span class="dk-tag">Planned</span></div><div class="l2">{title}</div><div class="l3">by {who} · planned · an example</div></div></div>')
+NEEDS = ('<div class="dk-stage col" style="max-width:393px"><div>'
+  + plan_ev("commit", "Spec revised, round 4", "spec writer")
+  + needs_list([("wait", "stop", "Stop", "wait", "Waiting on you", "Stop card 5"),
+                ("wait", "merge", "Merge", "wait", "Awaiting your answers", "Merged PR #446: three questions for you"),
+                ("bad", "step", "Action 2.7.2.5.5", "bad", "Blocked", "Move the experiments to the new spec")],
+               [("review", "Review", "", "Planned", "Plan review, round 4")], 0)
+  + mark_ev("stop", "wait", "Waiting on you", "15:42", "Stop card 5", "orchestrator")
+  + '</div><div class="dk-step"><div class="hd">2.7.2.5 · The spec writer · the plan, crossing over</div><ol class="dk-plan"><li class="blocked"><span class="mk blocked">' + ic("warning", "fill") + '</span>'
+  '<div class="ti"><span class="num">5.5</span>Move the experiments to the new spec</div><div class="why">They prove the milestone, but still point at the old spec.</div>'
+  '<span class="by">' + ic("arrow-elbow-down-right", "bold") + '<span>Needed by <b>Spec revised, round 4</b></span></span></li></ol></div>'
+  '<p class="dk-note">A planned event with three things still to happen first: two wait on you, one is an action of the plan that is blocked. Done events show nothing extra. Requirements are examples until the records carry them.</p></div>')
+comp("NeedsList", "Desk", 690, NEEDS,
+ """# NeedsList
+
+What an event still needs before it can happen, and what it then unlocks, hung from the event as a short checklist. Chosen by the owner on 16 November 2026 (decisions/questions/P-005-design-round-5.md: answer 1, "option C is close, we just need to show it in a slightly different more consistent and easily graspable manner"; answer 2, "I think we mix c1 and c2. I like the look of c1, I like the checklist feel of c2"; answer 3, "Yes, take the mix").
+
+- **Only where something is unmet.** An event whose requirements are all done shows nothing extra; why done things happened is a separate question.
+- **Hung from the event**: indented to the event's icon, a 1.5 `text-3` line down the left.
+- **"Needs first"** in 12 semibold caps `text-2`, with "0 of 3 done" at the right in plain 12.
+- **Each requirement is a row**, as the event it points to looks, smaller: the ActionPlan's check column on the left (a check done, a yellow hourglass waiting on you, a red warning blocked, an open ring planned), the kind's icon on a 22 `fill` disc with no corner mark (the check column carries the state), the kind in 14 semibold with the same StatusMark tag that event wears, then its title in 14 `text-2`. Rows are split by the `separator-surface` hairline. Tapping one goes to that event, opening what holds it, and lights it for a moment.
+- **"Then unlocks"**: the events that need this one, the same rows with an elbow arrow in place of the check.
+- **The crossover with the plan**: a requirement that is an action of an agent's plan reads as that action ("Action 2.7.2.5.5", the list-checks icon), and that action in the ActionPlan carries "Needed by" and the event, in a small `fill` chip that goes to it.
+- The records do not yet say which event needs which; until they do, a mockup's requirements are examples, marked so.
+- {SRC}
+""".replace("{SRC}", SRC))
+
 HOME = f'''<div class="dk-stage phone">
   <div class="dk-status">9:41</div>
   <div class="dk-topbar"><span></span>{capsule(2)}</div>

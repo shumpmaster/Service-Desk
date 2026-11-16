@@ -1,6 +1,6 @@
 # The timeline mockup: current version
 
-**Current: v16**, 16 November 2026. `timeline-v16-craft.html`, https://claude.ai/artifact/KRyUwfASR4pqLR2MRRpGgY. The element library it is built from: https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W (version 12, with round 4's cards WaitGroup and ProjectHeader), source in `../library/`. v15 stays published at https://claude.ai/artifact/1G6hoK39NJnG5trBz3Gpwx, v14 at https://claude.ai/artifact/BMDDwgTKZBFo48q3Wc2VZz, v13 at https://claude.ai/artifact/FP8rED64DKBpujpinhLZpN and v12 at https://claude.ai/artifact/MNfUA3g4RB6TrvzmtqX8bE (private to the owner).
+**Current: v17**, 16 November 2026. `timeline-v17-craft.html`, https://claude.ai/artifact/DXv1eSvFKZnoe5rZpHsf9V. The element library it is built from: https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W (version 13, with round 5's card NeedsList), source in `../library/`. v16 stays published at https://claude.ai/artifact/KRyUwfASR4pqLR2MRRpGgY, v15 at https://claude.ai/artifact/1G6hoK39NJnG5trBz3Gpwx, v14 at https://claude.ai/artifact/BMDDwgTKZBFo48q3Wc2VZz, v13 at https://claude.ai/artifact/FP8rED64DKBpujpinhLZpN and v12 at https://claude.ai/artifact/MNfUA3g4RB6TrvzmtqX8bE (private to the owner).
 
 Each version is a layer over the one before, so behaviour stays fixed unless the owner asks for a change:
 
@@ -15,6 +15,14 @@ Each version is a layer over the one before, so behaviour stays fixed unless the
 | v14 | build-v14/ | Home becomes the desk map: one lane per project, opening large and folding slim and pinned; what waits on you pops up on its lane and lights its row in Needs you; no project cards (tried, then replaced in v15) |
 | v15 | build-v15/ (with options-home-suggest/source/) | Home grouped by what waits: a sentence, a group per project with a slim strip and its waiting rows, each saying what it holds up, the longest wait first; quiet projects folded; the desk map leaves home |
 | v16 | build-v16/ (with options-pills-header/source/) | One floating header on a project's page: a slim bar with title and status, the slim pills, the branch map and the phase row, together; the large title leaves a project's page |
+| v17 | build-v17/ (with options-needs/source/) | What an event needs: an event that still needs something shows a checklist of small event rows hung from it, then what it unlocks; a plan's action that an event needs says so (requirements are examples) |
+
+## What v17 adds on a project's page, and the owner's word for each
+Round 5 is verbatim in `decisions/questions/P-005-design-round-5.md` (cited as R5 and the answer number).
+
+- **What an event needs.** An event that still needs something shows, hung from it by a thin line, "Needs first" with how many are done, then each requirement as a small row: the plan's check column, the kind's icon, the tag that event wears, its title; then "Then unlocks" the same way. Tapping a row goes to it. Done events show nothing extra ("some events ultimately are requirements for other events. I want to see that somehow.", R4 answer 17; "option C is close, we just need to show it in a slightly different more consistent and easily graspable manner", R5 answer 1; "I like the look of c1, I like the checklist feel of c2", R5 answer 2; "Yes, take the mix", R5 answer 3).
+- **The plan crosses over.** A requirement that is an action of a plan reads as that action (Action 2.7.2.5.5), and the action in the plan says "Needed by Spec revised, round 4" ("The plan should naturally have crossover with what we are working on here right?", R5 answer 2).
+- **Examples.** Every requirement, and three planned events at the top of S-011 (Spec revised, round 4; Plan review, round 4; S-011 frozen): no record says yet which event needs which. Real dependency records would be a request for the building session.
 
 ## What v16 adds on a project's page, and the owner's word for each
 - **One floating header.** The project pills float with the branch map ("The project pills need to be part of the floating header as well.", R4 answer 13), slimmer ("Option B", R4 answer 14), and the title and status shrink into one slim bar right above them, with no gap ("get rid of that gap of space between the title and pills ... shrink the title and update status and just convert it into a sleek header that stays with the pills and branch chart", R4 answer 14; option 1, "I like this option.", R4 answer 16).

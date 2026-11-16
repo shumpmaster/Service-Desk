@@ -18,8 +18,8 @@
  },
  "lastChange": {
   "by": "Claude",
-  "at": "2026-11-16T15:30:00Z",
+  "at": "2026-11-16T17:00:00Z",
   "via": "Claude Code",
-  "note": "Round 4, the project header: new card ProjectHeader, one floating header on a project's page: a slim bar (back, the title in 17 with the status in 12, the bell and More), the project pills right under it, slimmer (32 high), then the BranchMap and PhaseRow, all in one glass band. The large title leaves a project's page. decisions/questions/P-005-design-round-4.md, answers 13 to 16."
+  "note": "Round 5, what an event needs: new card NeedsList, an event that still needs something shows, hung from it, a checklist of small event rows (the plan's check column, the kind's icon, the tag that event wears, its title), then what it unlocks; a requirement that is a plan's action reads as that action, and the action says which event needs it. ActionPlan gains the Needed by chip. decisions/questions/P-005-design-round-5.md, answers 1 to 3."
  }
 }

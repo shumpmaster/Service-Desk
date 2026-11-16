@@ -1,0 +1,47 @@
+/* round 4, answer 17: what an event needs (options-needs). Soft status colours only; blue only for the one tapped. */
+.nd-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 4px; font-size: 13px; line-height: 18px; }
+.nd-lb { color: var(--text-2); font-weight: 600; margin-right: 2px; }
+.nd-i { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 1px 7px 1px 3px; border-radius: 6px; background: var(--fill); color: var(--ink-2); font-size: 13px; line-height: 18px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.nd-i > span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.nd-i.wait { background: var(--status-wait-tag-bg); color: var(--status-wait-tag); font-weight: 600; }
+.nd-i.bad { background: var(--status-bad-tag-bg); color: var(--status-bad-tag); font-weight: 600; }
+.nd-i.pend { background: transparent; box-shadow: inset 0 0 0 1px var(--ink-5); }
+.nd-i.un { padding-left: 5px; }
+.nd-mk { flex: none; width: 13px; height: 13px; border-radius: 7px; display: grid; place-items: center; }
+.nd-mk svg { width: 8px; height: 8px; }
+.nd-mk.ok { background: var(--status-ok-mark); color: var(--status-ok); }
+.nd-mk.wait { background: var(--status-wait-mark); color: var(--status-wait-tag); }
+.nd-mk.bad { background: var(--status-bad-mark); color: var(--status-bad); }
+.nd-mk.pend { box-shadow: inset 0 0 0 1.5px var(--ink-5); }
+.nd-arr { display: grid; color: var(--text-2); } .nd-arr svg { width: 11px; height: 11px; }
+.nd-i:focus-visible { outline: 2px solid var(--now-word); outline-offset: 1px; }
+@keyframes ndflash { 0%, 60% { background: var(--map-window); } 100% { background: transparent; } }
+.nd-flash { animation: ndflash 1.6s ease-out; border-radius: 10px; }
+/* B */
+.nd-cnt { display: inline-flex; align-items: center; gap: 3px; font-size: 13px; line-height: 18px; color: var(--text-2); padding: 0 6px; border-radius: 6px; background: var(--fill); white-space: nowrap; }
+.nd-cnt svg { width: 12px; height: 12px; }
+.nd-cnt.wait { background: var(--status-wait-tag-bg); color: var(--status-wait-tag); font-weight: 600; }
+.nd-cnt.bad { background: var(--status-bad-tag-bg); color: var(--status-bad-tag); font-weight: 600; }
+.nd-cnt.quiet { background: transparent; padding: 0 2px; }
+.nd-tap { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+#v13list { position: relative; }
+.nd-tracing .v13ev, .nd-tracing .v13gr, .nd-tracing .v13acts, .nd-tracing .pl.v13now { opacity: .32; transition: opacity .25s; }
+.nd-tracing .v13ev.nd-on, .nd-tracing .v13ev.nd-me { opacity: 1; }
+.nd-tracing .v13ev.nd-me .v13ico { box-shadow: 0 0 0 2px var(--now-word); }
+.nd-wire { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; z-index: 1; }
+.nd-wire path { fill: none; stroke: var(--now-word); stroke-width: 1.5; stroke-linecap: round; opacity: .7; }
+#nd-card { position: fixed; left: 12px; right: 12px; bottom: 96px; z-index: 60; padding: 10px 12px; border-radius: 16px; background: var(--popover, var(--surface)); box-shadow: var(--float-shadow, 0 8px 30px rgba(0,0,0,.18)); display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 18px; color: var(--text-2); }
+#nd-card .nd-ct { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--ink); }
+#nd-card .nd-ct b { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nd-x { all: unset; cursor: pointer; width: 24px; height: 24px; border-radius: 12px; background: var(--fill); display: grid; place-items: center; color: var(--text-2); }
+.nd-x svg { width: 11px; height: 11px; }
+#nd-card .nd-cl { display: flex; flex-wrap: wrap; gap: 4px; }
+#nd-card .nd-ex, .nd-box .nd-ex { font-size: 12px; color: var(--text-2); }
+/* C */
+.nd-box { margin: -2px 0 10px 36px; padding: 8px 10px; border-radius: 12px; background: var(--fill); display: flex; flex-direction: column; gap: 5px; font-size: 13px; line-height: 18px; }
+.nd-hd { font-weight: 600; color: var(--ink-2); display: flex; gap: 6px; } .nd-hd span { font-weight: 400; color: var(--text-2); margin-left: auto; }
+.nd-box .nd-i { background: transparent; padding-left: 0; color: var(--ink); font-weight: 400; }
+.nd-box .nd-i.wait { color: var(--status-wait-tag); } .nd-box .nd-i.bad { color: var(--status-bad-tag); }
+.nd-box .nd-i.pend { box-shadow: none; color: var(--text-2); }
+.nd-then { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; color: var(--text-2); padding-top: 4px; border-top: 1px solid var(--separator, var(--rule)); }
+.nd-then .nd-i { color: var(--ink-2); }

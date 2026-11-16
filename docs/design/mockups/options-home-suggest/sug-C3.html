@@ -2649,7 +2649,7 @@ body.l4 .ptl .pmain { background: var(--groove-main); }
   }, true);
 
   var SUG = 'C3';
-  /* Suggestions for the home page (round 4, answers 10 and 11), a layer over v13 inside its script. SUG = 'A' | 'B' | 'C' | 'C1' | 'C2' | 'C3'.
+  /* Suggestions for the home page (round 4, answers 10 and 11), a layer over v13 inside its script. SUG = 'A' | 'B' | 'C' | 'C1' | 'C2' | 'C3', or C with several (mockup v15 uses 'C23').
      C1: C, with the quiet projects shown as what moved without you (today's events, the latest by name).
      C2: C, with what each answer holds up, and the longest wait first and marked.
      C3: C, with B's slim strip of the events that matter under each project.
@@ -2712,11 +2712,11 @@ body.l4 .ptl .pmain { background: var(--groove-main); }
     } else {
       var oldest = function (p) { return Math.max.apply(null, NEEDS.filter(function (x) { return x.p === p.id; }).map(function (x) { return sugAgo(x.t); })); };
       var waiting = sugOrder().filter(function (p) { return NEEDS.some(function (x) { return x.p === p.id; }); }), quiet = sugOrder().filter(function (p) { return waiting.indexOf(p) < 0; });
-      if (C === '2') waiting.sort(function (a, b) { return oldest(b) - oldest(a); });   // the longest wait first
-      var strip = function (p) { return C === '3' ? sugStrip(p) : ''; };
+      if (C.indexOf('2') >= 0) waiting.sort(function (a, b) { return oldest(b) - oldest(a); });   // the longest wait first
+      var strip = function (p) { return C.indexOf('3') >= 0 ? sugStrip(p) : ''; };
       h = '<p class="sg-sum"><b>' + NEEDS.length + ' things wait on you</b>, in ' + waiting.length + ' projects. ' + quiet.length + ' projects are quiet.</p>' +
         waiting.map(function (p) { return '<section class="sg-grp" data-sgg="' + p.id + '">' + sugRow(p) + strip(p) + '</section>'; }).join('');
-      if (C === '1') {
+      if (C.indexOf('1') >= 0) {
         h += '<section class="sg-moving"><div class="sg-h">Moving without you</div>' + quiet.map(function (p) {
           var ev = sugEvents(p), today = ev.filter(function (x) { return Math.floor(x.m / 1440) === 14; }).length, last = ev[0];
           var line = today ? today + (today === 1 ? ' event' : ' events') + ' today · latest: ' + last.e.title : 'Nothing since ' + sugLast(p) + ' · last: ' + (last ? last.e.title : '');
@@ -2729,7 +2729,7 @@ body.l4 .ptl .pmain { background: var(--groove-main); }
       view.querySelector('.desk').insertAdjacentHTML('beforebegin', h);
       if (needs) [].slice.call(needs.querySelectorAll('.need')).forEach(function (r) {   // move each waiting row under its project, keeping its own behaviour
         var i = +r.dataset.key.slice(1), n = NEEDS[i], g = view.querySelector('[data-sgg="' + n.p + '"]'); if (!g) return;
-        if (C === '2') {
+        if (C.indexOf('2') >= 0) {
           var hold = n.feeds ? 'Holds up ' + n.feeds.join(', ') : 'Holds up ' + proj(n.p).name + '’s ' + (sugGauge(n.p) || { name: 'work' }).name + ' phase';
           var t1 = r.querySelector('.t1'); if (t1) t1.insertAdjacentHTML('beforeend', '<span class="sg-hold">' + esc(hold) + '</span>');
           if (sugAgo(n.t) >= 7) { var tt = r.querySelector('.tt'); if (tt) tt.insertAdjacentHTML('beforebegin', '<span class="v13tag bad sg-long">Longest wait</span>'); }

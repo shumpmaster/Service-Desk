@@ -1,0 +1,68 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>What an Event Needs</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v16 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v8). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>What an event needs, made easier to grasp</h1>
+    <p>Your answer on the first round (kept at <a href="first.html">first.html</a>):</p>
+    <blockquote>"Okay option C is close, we just need to show it in a slightly different more consistent and easily graspable manner."</blockquote>
+    <p>Each form below is built only from parts the timeline already uses, and a requirement wears the same tag as the event it points to ("Planned", "Waiting on you"). Requirements and the three planned events at the top of S-011 are still examples. Each phone opens on S-011: scroll inside it and tap a requirement to go to it. Your second point, the branch map fitting to a milestone, comes next.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>C, as you saw it</h2>
+      <ul><li>A grey box headed "Before this can happen", with small marks and plain words.</li>
+        <li>Its marks and words differ from the rows around it, so it reads as a new kind of thing.</li></ul>
+      <div class="phone"><iframe src="needs-C.html" title="As it is: option C, live" loading="lazy"></iframe></div>
+      <a class="open" href="needs-C.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">C1 · recommended</span><h2>Needs as small event rows</h2>
+      <ul><li>Under the event, "Needs first" then each requirement drawn as a smaller event row: its icon, its corner mark, its kind and its tag. "Then unlocks" follows the same way.</li>
+        <li>A thin line hangs them from the event, so they read as belonging to it.</li></ul>
+      <div class="phone"><iframe src="needs-C1.html" title="C1, live" loading="lazy"></iframe></div>
+      <a class="open" href="needs-C1.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">C2</span><h2>Needs as a checklist</h2>
+      <ul><li>The same white card and check marks as the agent's plan, headed "Needs first · 0 of 2 done", with the state under each line.</li>
+        <li>Consistent with the plan's checklist, but it doesn't show the kind of each requirement.</li></ul>
+      <div class="phone"><iframe src="needs-C2.html" title="C2, live" loading="lazy"></iframe></div>
+      <a class="open" href="needs-C2.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">C3</span><h2>One line, opens to C1</h2>
+      <ul><li>One slim line under the event: "Needs 3 first: 2 on you, 1 blocked", with a soft dot in the worst state.</li>
+        <li>Tap it to open the C1 rows. The calmest list, but you tap to see what it needs.</li></ul>
+      <div class="phone"><iframe src="needs-C3.html" title="C3, live" loading="lazy"></iframe></div>
+      <a class="open" href="needs-C3.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

@@ -1,6 +1,6 @@
 # The timeline mockup: current version
 
-**Current: v15**, 16 November 2026. `timeline-v15-craft.html`, https://claude.ai/artifact/1G6hoK39NJnG5trBz3Gpwx. The element library it is built from: https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W (version 11, with round 4's card WaitGroup), source in `../library/`. v14 stays published at https://claude.ai/artifact/BMDDwgTKZBFo48q3Wc2VZz, v13 at https://claude.ai/artifact/FP8rED64DKBpujpinhLZpN and v12 at https://claude.ai/artifact/MNfUA3g4RB6TrvzmtqX8bE (private to the owner).
+**Current: v16**, 16 November 2026. `timeline-v16-craft.html`, https://claude.ai/artifact/KRyUwfASR4pqLR2MRRpGgY. The element library it is built from: https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W (version 12, with round 4's cards WaitGroup and ProjectHeader), source in `../library/`. v15 stays published at https://claude.ai/artifact/1G6hoK39NJnG5trBz3Gpwx, v14 at https://claude.ai/artifact/BMDDwgTKZBFo48q3Wc2VZz, v13 at https://claude.ai/artifact/FP8rED64DKBpujpinhLZpN and v12 at https://claude.ai/artifact/MNfUA3g4RB6TrvzmtqX8bE (private to the owner).
 
 Each version is a layer over the one before, so behaviour stays fixed unless the owner asks for a change:
 
@@ -14,6 +14,10 @@ Each version is a layer over the one before, so behaviour stays fixed unless the
 | v13 | build-v13/ | The floating branch map and phase row; opens on the current step, fully open; no lanes; soft red, yellow and green gauges that open and fold; marks and tags on events and steps |
 | v14 | build-v14/ | Home becomes the desk map: one lane per project, opening large and folding slim and pinned; what waits on you pops up on its lane and lights its row in Needs you; no project cards (tried, then replaced in v15) |
 | v15 | build-v15/ (with options-home-suggest/source/) | Home grouped by what waits: a sentence, a group per project with a slim strip and its waiting rows, each saying what it holds up, the longest wait first; quiet projects folded; the desk map leaves home |
+| v16 | build-v16/ (with options-pills-header/source/) | One floating header on a project's page: a slim bar with title and status, the slim pills, the branch map and the phase row, together; the large title leaves a project's page |
+
+## What v16 adds on a project's page, and the owner's word for each
+- **One floating header.** The project pills float with the branch map ("The project pills need to be part of the floating header as well.", R4 answer 13), slimmer ("Option B", R4 answer 14), and the title and status shrink into one slim bar right above them, with no gap ("get rid of that gap of space between the title and pills ... shrink the title and update status and just convert it into a sleek header that stays with the pills and branch chart", R4 answer 14; option 1, "I like this option.", R4 answer 16).
 
 ## What v15 shows on the home page, and the owner's word for each
 Round 4 is verbatim in `decisions/questions/P-005-design-round-4.md` (cited as R4 and the answer number). v14 tried a desk map on home (R4 answers 6 to 8); the owner then asked "Does the home page really work? ... Does it add anything?" (R4 answer 9), and the Chief of Staff answered: not yet.

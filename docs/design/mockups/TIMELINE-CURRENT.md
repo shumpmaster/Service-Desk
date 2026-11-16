@@ -1,6 +1,6 @@
 # The timeline mockup: current version
 
-**Current: v17**, 16 November 2026. `timeline-v17-craft.html`, https://claude.ai/artifact/DXv1eSvFKZnoe5rZpHsf9V. The element library it is built from: https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W (version 13, with round 5's card NeedsList), source in `../library/`. v16 stays published at https://claude.ai/artifact/KRyUwfASR4pqLR2MRRpGgY, v15 at https://claude.ai/artifact/1G6hoK39NJnG5trBz3Gpwx, v14 at https://claude.ai/artifact/BMDDwgTKZBFo48q3Wc2VZz, v13 at https://claude.ai/artifact/FP8rED64DKBpujpinhLZpN and v12 at https://claude.ai/artifact/MNfUA3g4RB6TrvzmtqX8bE (private to the owner).
+**Current: v18**, 16 November 2026. `timeline-v18-craft.html`, https://claude.ai/artifact/ETsiyg9ogQL3BwWA2VN7s4. The element library it is built from: https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W (version 14, with round 5's cards NeedsList and MilestoneMap), source in `../library/`. v17 stays published at https://claude.ai/artifact/DXv1eSvFKZnoe5rZpHsf9V, v16 stays published at https://claude.ai/artifact/KRyUwfASR4pqLR2MRRpGgY, v15 at https://claude.ai/artifact/1G6hoK39NJnG5trBz3Gpwx, v14 at https://claude.ai/artifact/BMDDwgTKZBFo48q3Wc2VZz, v13 at https://claude.ai/artifact/FP8rED64DKBpujpinhLZpN and v12 at https://claude.ai/artifact/MNfUA3g4RB6TrvzmtqX8bE (private to the owner).
 
 Each version is a layer over the one before, so behaviour stays fixed unless the owner asks for a change:
 
@@ -16,6 +16,10 @@ Each version is a layer over the one before, so behaviour stays fixed unless the
 | v15 | build-v15/ (with options-home-suggest/source/) | Home grouped by what waits: a sentence, a group per project with a slim strip and its waiting rows, each saying what it holds up, the longest wait first; quiet projects folded; the desk map leaves home |
 | v16 | build-v16/ (with options-pills-header/source/) | One floating header on a project's page: a slim bar with title and status, the slim pills, the branch map and the phase row, together; the large title leaves a project's page |
 | v17 | build-v17/ (with options-needs/source/) | What an event needs: an event that still needs something shows a checklist of small event rows hung from it, then what it unlocks; a plan's action that an event needs says so (requirements are examples) |
+| v18 | build-v18/ (with options-map-fit/source/) | The branch map fits the selected milestone: every event an icon, the events in view spread apart with their kind and a short title; a chip's cross brings back the phase |
+
+## What v18 adds on a project's page, and the owner's word for each
+- **The map fits the milestone you select.** Tapping a milestone's row selects it; the branch map shows only its sprints across the width, every event as its icon, planned ones as open rings; the events in view spread apart under the window with their kind and a short title, the rest squeeze to the sides; a chip names the milestone and its cross brings back the whole phase. The page opens with M6 selected ("whenever a milestone is selected, the branch map fits to the events in that milestone and expands the dots to our icons with descriptions if we can fit them", R5 answer 1; "C: fit, spread what's in view", R5 answer 4).
 
 ## What v17 adds on a project's page, and the owner's word for each
 Round 5 is verbatim in `decisions/questions/P-005-design-round-5.md` (cited as R5 and the answer number).

@@ -1,4 +1,4 @@
-Ruling: the home page becomes the desk map: one lane per project on a shared two-week axis, opening large with each project's line and folding slim and pinned as the page scrolls; what waits on the owner pops up on its lane in its usual soft colour and lights its own row in Needs you; the project cards are gone
+Ruling: home shows what waits on the owner grouped by project, after one summary sentence: each group is the project's row (its phase gauge, its one line and a slim two-week strip of the events that matter) with its waiting rows under it, each saying what it holds up, the longest wait first and marked; the quiet projects fold into one row. The desk map tried in v14 leaves home, and the project cards are gone
 
 Question: none filed. Put to the owner in the Chief of Staff's design session (session_01QBwHGN2urkNY8gDYwjf97q) on 15 and 16 November 2026, in chat: "What do you think of v13?", the first open item of the design handoff (docs/handoff/2026-11-15-chief-of-staff-p005-14.md, "Open, for the owner", 1). The owner answered with a new idea for the home page instead. These are design-mockup answers, given in the session reserved for the mockups, and this record says so rather than filing a question after its answers.
 Milestone: Design-5 (the design fits together), M7, M8
@@ -48,3 +48,8 @@ Asked by the question tool: "Home, three suggestions. The page https://claude.ai
 11. "C is where I’m leaning but I feel like it’s missing something"
 
 Carried out: C kept as the direction; three things it may be missing drawn live on C, for the owner to judge.
+
+Asked by the question tool: "What C may be missing. The page https://claude.ai/artifact/JoVQ4ci4GVZXzspd4eXCQV shows C as it is, then three additions drawn live on it with real records only. They can be combined. Which ones does C need?" (several could be chosen) Options: "C2: what each answer holds up (Recommended)"; "C1: what moved without you"; "C3: a slim strip of what mattered"; "None of these".
+12. "C2: what each answer holds up (Recommended), C3: a slim strip of what mattered"
+
+Carried out: home is C with C2 and C3. One sentence says how many things wait and where; each project with something waiting is a group, its row with its gauge, its one line and a slim two-week strip of the events that matter, and its waiting rows under it, each saying what it holds up; the group with the longest wait comes first, marked "Longest wait"; the quiet projects fold into one row, each with its strip when opened. The desk map of v14 leaves home. To be built into the library and then mockup v15 over v14.

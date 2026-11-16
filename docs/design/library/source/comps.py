@@ -606,6 +606,8 @@ comp("DeskMap", "Desk", 700,
  '<div class="dk-stage col" style="max-width:393px;padding:16px 0;gap:14px">' + desk_map() + '<p class="dk-note" style="padding:0 16px">Open, as home opens. Below: folded, once you scroll down to Needs you.</p>' + desk_map(True) + '<p class="dk-note" style="padding:0 16px">The activity before today is an example; what waits on you is the desk&#8217;s.</p></div>',
  """# DeskMap
 
+**Not used on home from mockup v15.** The owner asked whether the home page really worked (decisions/questions/P-005-design-round-4.md, answer 9) and chose WaitGroup instead (answers 11 and 12). The card is kept for the record.
+
 Every project on the desk as one lane of a small branch map, at the top of the home page. It takes the place of the project cards. Chosen by the owner on 15 and 16 November 2026 (decisions/questions/P-005-design-round-4.md: answer 6, "show what you have pinned at the top, the maps - but things that need me will popup in their usually color and format"; answer 7, option 1, with "the map needs more space" and no "old cards"; answer 8, "B: opens large, folds slim").
 
 - One lane per project, in the desk's order, on one shared time axis: two weeks ago on the left, now on the right, the time stretched toward now (square root) so today's events have room. Axis words in 10 `text-3` (the mockup's dates): 31 Oct, 7 Nov, yesterday, now; a dotted `accent-select` line at now.
@@ -617,6 +619,55 @@ Every project on the desk as one lane of a small branch map, at the top of the h
 - Tapping a lane opens its project.
 - {SRC}
 """.replace("{SRC}", SRC), script="document.querySelectorAll('.dk-deskmap .ln').forEach(function (g) { var t = g.querySelector('.nm'), c = g.querySelector('.bdc'), n = g.querySelector('.bd'); if (!c) return; var x = +t.getAttribute('x') + t.getComputedTextLength() + 13; c.setAttribute('cx', x); n.setAttribute('x', x); });")
+
+# home, grouped by what waits (round 4, answers 11 and 12): the desk's real records as of 14 November, 17:25
+NOW_M = 14 * 1440 + 17 * 60 + 25
+def _m(d, hm): h, m = hm.split(":"); return d * 1440 + int(h) * 60 + int(m)
+STRIP = {"tl": [(14, "15:42", "bad"), (14, "14:46", "merge"), (14, "13:54", "merge"), (14, "12:07", ""), (14, "12:04", "merge"), (14, "01:05", ""), (13, "16:10", "")],
+         "wd": [(4, "20:53", "bad")],
+         "om": [(14, "04:56", "merge"), (14, "02:55", "merge"), (14, "01:16", "merge")],
+         "ml": [(14, "01:06", "merge"), (14, "01:02", "merge"), (13, "23:45", "merge")],
+         "pf": [(12, "16:03", "merge")]}
+def strip(pid, W=260):
+    x0, x1 = 4, W - 8
+    X = lambda m: x1 - math.sqrt(min(14, (NOW_M - m) / 1440) / 14) * (x1 - x0)
+    o = f'<line class="ln" x1="{x0}" x2="{x1}" y1="14" y2="14"/>'
+    for d, hm, c in STRIP[pid]:
+        o += f'<circle class="ev {c}" cx="{X(_m(d, hm)):.1f}" cy="14" r="{4.5 if c == "bad" else 3}"/>'
+    o += f'<circle class="now" cx="{x1}" cy="14" r="3"/><text class="ax" x="{x0}" y="4">31 Oct</text><text class="ax" x="{x1}" y="4" text-anchor="end">now</text>'
+    return f'<span class="dk-strip" aria-hidden="true"><svg width="{W}" height="20" viewBox="0 0 {W} 20">{o}</svg></span>'
+def prow(pid, g, name, n, tm, what):
+    return (f'<button class="dk-prow" aria-label="Open {name}">{g}<span class="tx"><span class="l1">{name}' + (f'<span class="dk-badge">{n}</span>' if n else '') +
+            f'<span class="tm">{tm}</span></span><span class="l2">{what}</span>{strip(pid)}</span>{ic("caret-right", "bold", "rc")}</button>')
+def wrow(icon, title, hold, age, long=False):
+    return (f'<button class="dk-wrow"><span class="ic">{ic(icon)}</span><span class="tx">' + ('<span class="dk-tag bad">Longest wait</span>' if long else '') +
+            f'<span class="t">{title}</span><span class="h">{hold}</span></span><span class="ct">{age}</span>{ic("caret-right", "bold", "rc")}</button>')
+QUIET_DOT = '<span class="dk-qdot"><i></i></span>'
+WG = ('<div class="dk-stage col" style="width:393px;max-width:100%;box-sizing:border-box;gap:10px;flex-wrap:nowrap">'
+      '<p class="dk-sum"><b>5 things wait on you</b>, in 2 projects. 3 projects are quiet.</p>'
+      '<section class="dk-wgroup">' + prow("wd", gauge(0, "wait", '<span class="pn">1</span>'), "Home-screen widget", 1, "4 Nov", "Discovery: its readiness check failed on 4 November. Your call.")
+      + wrow("flag", "The widget failed its readiness check: resubmit or stop?", "Holds up Home-screen widget’s Discovery phase", "9 days", True) + '</section>'
+      '<section class="dk-wgroup">' + prow("tl", gauge(14, "wait", '<span class="pn">2</span>'), "The timeline", 4, "15:42", "Design: the spec stopped again after three plan reviews. Your call.")
+      + wrow("hand-palm", "S-011 failed three plan reviews: what happens next?", "Holds up M6, M7, M8", "1 h 43 min")
+      + wrow("chat-circle-text", "Which phone widths must the timeline fit?", "Holds up M7, M8", "2 h 39 min")
+      + wrow("chat-circle-text", "Is the spec’s reading of “each thing reaches my phone” enough for M8?", "Holds up M8", "2 h 39 min")
+      + wrow("chat-circle-text", "Let the spec writer see the experiment files and your answers?", "Holds up M6, M7, M8", "2 h 39 min") + '</section>'
+      '<section class="dk-quiet"><button class="dk-prow quiet" aria-expanded="true">' + QUIET_DOT + '<span class="tx"><span class="l1">Nothing waits on you in operating model, Model-Lab, portfolio</span></span>' + ic("caret-right", "bold", "rc") + '</button>'
+      + prow("om", QUIET_DOT, "operating model", 0, "04:56", "The spec-number fix is released as 3.7.3.") + prow("ml", QUIET_DOT, "Model-Lab", 0, "01:06", "Four pull requests merged overnight.")
+      + prow("pf", QUIET_DOT, "portfolio", 0, "12 Nov", "Quiet since 12 November.") + '</section></div>')
+comp("WaitGroup", "Desk", 1100, WG,
+ """# WaitGroup
+
+Home, grouped by what waits on the owner: one summary sentence, then a group for each project with something waiting, then the quiet projects folded into one row. It replaces the project cards and the separate Needs you list on home, and the desk map tried in mockup v14. Chosen by the owner on 16 November 2026 (decisions/questions/P-005-design-round-4.md: answer 9, "Does the home page really work?"; answer 11, "C is where I’m leaning but I feel like it’s missing something"; answer 12, "C2: what each answer holds up (Recommended), C3: a slim strip of what mattered").
+
+- **The sentence**: 17 `text-1`, the count in semibold: how many things wait, in how many projects, and how many projects are quiet.
+- **A group** is one `surface` block, radius 18, 12 inside: the project's row, then its waiting rows. Groups are ordered by their longest wait, oldest first.
+- **The project row**: the current phase's Gauge with its number (v13's rule: milestones reached, yellow while anything waits), the name in 16 semibold with the waiting count in the blue badge, when it last moved at the right in 13 `text-2`, its one line in 14 `text-2`, and under it the strip. Tapping it opens the project.
+- **The strip**: the last two weeks, 31 October to now, the time stretched toward now (square root), a 3-wide `groove` line; only the events that matter: merges as `main-mark` dots, a stop or gate waiting on the owner in `status-bad-dot`, a question waiting in `status-wait-dot`, others `text-3`; now in `accent-select`. Axis words in 9.5 `text-3`.
+- **A waiting row**: the kind's icon, the question in 15 `text-1` on up to two lines, under it what it holds up in 12.5 `text-2` ("Holds up M6, M7, M8", or the phase when it feeds no milestone), its age at the right. The longest wait on the desk, a week or more, wears a red "Longest wait" tag above its question. Each thing waiting is shown once on home.
+- **The quiet row**: a grey dot and "Nothing waits on you in …"; tapped, it opens the quiet projects as project rows, each with its strip. Shown here open.
+- {SRC}
+""".replace("{SRC}", SRC))
 
 HOME = f'''<div class="dk-stage phone">
   <div class="dk-status">9:41</div>

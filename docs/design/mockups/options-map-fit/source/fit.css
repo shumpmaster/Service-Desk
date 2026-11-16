@@ -1,0 +1,10 @@
+/* round 5, answer 1: the branch map fitted to the selected milestone (options-map-fit) */
+.v13map.fit .ic { display: inline; } .v13map.fit .dot { display: none; }
+.v13map.fit .ic { transform-box: fill-box; transform-origin: center; }
+.v13map .disc.plan { fill: var(--ground); stroke: var(--ink-5); stroke-width: 1.5; } .v13map .dot.plan { fill: none; stroke: var(--ink-5); stroke-width: 1.5; }
+.v13map .st.plan .ic svg { color: var(--text-2); }
+.v13map .fl { font: 400 9.5px var(--font-ui); fill: var(--text-2); text-anchor: middle; paint-order: stroke; stroke: var(--ground); stroke-width: 3px; stroke-linejoin: round; }
+.v13map .fl .k { font-weight: 600; fill: var(--ink-2); }
+.fit-chip { all: unset; position: absolute; right: 10px; bottom: 4px; z-index: 2; display: inline-flex; align-items: center; gap: 5px; padding: 2px 6px 2px 9px; border-radius: 10px; background: var(--fill); font: 600 11.5px/18px var(--font-ui); color: var(--ink-2); cursor: pointer; }
+.fit-chip svg { width: 10px; height: 10px; color: var(--text-2); }
+.fit-chip:focus-visible { outline: 2px solid var(--now-word); outline-offset: 2px; }

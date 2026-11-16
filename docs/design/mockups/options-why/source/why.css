@@ -1,0 +1,26 @@
+/* round 4, answer 17, second half: why things happen (options-why). Soft status colours only. */
+.wy-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 4px; font-size: 13px; line-height: 18px; }
+.wy-lb { color: var(--text-2); font-weight: 600; }
+.wy-chip { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 1px 8px 1px 2px; border-radius: 9px; background: var(--fill); font-size: 13px; line-height: 18px; color: var(--ink-2); cursor: pointer; }
+.wy-chip > span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.wy-chip:focus-visible { outline: 2px solid var(--now-word); outline-offset: 1px; }
+.v13ico.wy-ico { width: 16px; height: 16px; background: var(--surface); } .v13ico.wy-ico > svg { width: 10px; height: 10px; }
+.wy-q { font-size: 12px; line-height: 18px; color: var(--text-2); padding: 0 7px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--ink-5); }
+.wy-tap { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+#wy-sheet { position: fixed; left: 8px; right: 8px; bottom: 90px; max-height: 62vh; overflow: auto; z-index: 60; padding: 12px 14px 12px; border-radius: 20px; background: var(--surface); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--float-shadow, 0 8px 30px rgba(0,0,0,.18)); display: flex; flex-direction: column; gap: 8px; }
+.wy-hd { display: flex; align-items: center; font-size: 15px; color: var(--ink); } .wy-hd b { flex: 1; }
+.wy-goal { font-size: 13px; line-height: 18px; color: var(--text-2); padding: 6px 10px; border-radius: 10px; background: var(--fill); }
+.wy-chain { list-style: none; margin: 0; padding: 0 0 0 0; display: flex; flex-direction: column; position: relative; }
+.wy-chain::before { content: ""; position: absolute; left: 12.25px; top: 14px; bottom: 14px; width: 1.5px; background: var(--ink-5); }
+.wy-chain li { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; position: relative; }
+.wy-chain .tx { min-width: 0; flex: 1; }
+.wy-chain .l1 { display: flex; align-items: baseline; gap: 6px; font-size: 14px; line-height: 18px; color: var(--ink); } .wy-chain .l1 b { font-weight: 600; }
+.wy-chain .l2 { font-size: 14px; line-height: 18px; color: var(--ink-2); }
+.wy-why { font-size: 13px; line-height: 18px; color: var(--text-2); margin-top: 2px; }
+.wy-chain li:last-child .l2 { font-weight: 600; color: var(--ink); }
+.wy-led { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 13px; color: var(--text-2); border-top: 1px solid var(--rule-2); padding-top: 8px; }
+#wy-sheet .nd-ex { font-size: 12px; color: var(--text-2); }
+.wy-story { display: flex; gap: 8px; align-items: flex-start; margin: -2px 0 6px 6px; padding: 2px 0 4px 0; }
+.wy-arr { flex: none; width: 14px; display: grid; place-items: center; padding-top: 2px; color: var(--text-2); transform: scaleY(-1); } .wy-arr svg { width: 12px; height: 12px; }
+.wy-story p { margin: 0; font-size: 13px; line-height: 18px; color: var(--text-2); padding-left: 14px; border-left: 1.5px dotted var(--ink-5); }
+.wy-story b { font-weight: 600; color: var(--ink-2); }

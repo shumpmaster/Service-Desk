@@ -70,7 +70,7 @@
       });
     });
     var z = svg.lastIndexOf('</svg>');
-    return svg.slice(0, z) + lab + svg.slice(z) + (small ? '<style>' + small + '</style>' : '');
+    return svg.slice(0, z) + lab + svg.slice(z) + (small ? '<style>' + small + '</st' + 'yle>' : '');
   }
   function chipHTML() {
     var k = fitKey(); if (!k) return '';

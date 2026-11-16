@@ -348,3 +348,22 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-phead .dk-mapbar { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; border: 0; width: auto; }
 .dk-chips.named.slim .dk-chip, .dk-chips.slim .dk-chip .label { font-size: 14px; line-height: 18px; }
 .dk-chips.slim .dk-count { min-width: 20px; height: 20px; font-size: 12px; line-height: 20px; padding: 0 6px; }
+
+/* needs list (round 5): what an event still needs, hung from it as a checklist of small event rows */
+.dk-needs { margin: -4px 0 8px 12px; padding: 2px 0 4px 22px; border-left: 1.5px solid var(--text-3); }
+.dk-needs .nh { display: flex; font: 600 12px/16px var(--font-sans); letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); padding: 6px 0 2px; }
+.dk-needs .nh span { margin-left: auto; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.dk-needs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.dk-needs li { position: relative; display: flex; gap: 8px; align-items: flex-start; padding: 6px 0 6px 22px; min-width: 0; cursor: pointer; }
+.dk-needs li + li { border-top: 1px solid var(--separator-surface); }
+.dk-needs .mk { position: absolute; left: 0; top: 9px; width: 16px; height: 16px; display: grid; place-items: center; color: var(--text-1); }
+.dk-needs .mk .i { width: 15px; height: 15px; }
+.dk-needs .mk.wait { color: var(--status-wait-tag); } .dk-needs .mk.blocked { color: var(--problem); } .dk-needs .mk.un { color: var(--text-2); }
+.dk-needs .mk.next::before { content: ""; width: 10px; height: 10px; border-radius: var(--radius-full); box-shadow: inset 0 0 0 1.5px var(--text-3); }
+.dk-needs .dk-ev-ico { width: 22px; height: 22px; } .dk-needs .dk-ev-ico > .i { width: 13px; height: 13px; }
+.dk-needs .tx { min-width: 0; flex: 1; }
+.dk-needs .l1 { display: flex; align-items: baseline; gap: 6px; font: 400 14px/18px var(--font-sans); }
+.dk-needs .l1 b { font-weight: 600; }
+.dk-needs .l2 { font: 400 14px/18px var(--font-sans); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dk-plan .by { display: inline-flex; align-items: center; gap: 5px; margin-top: 6px; padding: 2px 8px; border-radius: var(--radius-6); background: var(--fill); font: 400 13px/18px var(--font-sans); color: var(--text-1); }
+.dk-plan .by .i { width: 12px; height: 12px; color: var(--text-2); }

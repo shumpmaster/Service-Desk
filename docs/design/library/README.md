@@ -8,6 +8,10 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 
 The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.
 
+## Change, 16 November 2026 (round 5, what an event needs)
+
+An event that still needs something shows it, hung from the event by a thin line (NeedsList): "Needs first" with how many are done, then each requirement as a small row, the plan's check column, the kind's icon, the tag its own event wears and its title, then "Then unlocks" the same way. Done events show nothing extra. A requirement that is an action of an agent's plan reads as that action, and the action in ActionPlan says "Needed by" and the event (decisions/questions/P-005-design-round-5.md, answers 1 to 3). Requirements are examples until the records carry them.
+
 ## Change, 16 November 2026 (round 4, the project header)
 
 A project's page has one floating header (ProjectHeader): a slim bar with the title in 17 and the status in 12, the project pills right under it, slimmer, then the branch map and the phase row, all floating together; the large title leaves a project's page (decisions/questions/P-005-design-round-4.md, answers 13 to 16).

@@ -8,6 +8,10 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 
 The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.
 
+## Change, 16 November 2026 (round 5, why things happen)
+
+Each event that happened carries one plain sentence under it saying why, on a dotted line down to the event before it (WhyLine), so the plan reads as a story while you scroll; the agent's plan stays as the detail of how, and planned events keep their NeedsList (decisions/questions/P-005-design-round-5.md, answer 5). Reasons are examples until the records carry them.
+
 ## Change, 16 November 2026 (round 5, the map fits a milestone)
 
 Tapping a milestone's row selects it, and the branch map fits to it (MilestoneMap): only its sprints, across the full width, every event as its icon, planned ones as open rings; the events in view below spread apart under the window with their kind and a short title, the rest squeeze to the sides. A chip names the milestone; its cross brings back the whole phase (decisions/questions/P-005-design-round-5.md, answers 1 and 4).

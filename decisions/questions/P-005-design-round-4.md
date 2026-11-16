@@ -39,3 +39,7 @@ Shown in chat: the library with DeskMap (https://claude.ai/artifact/UqdAH5E4nwtS
 Does it add anything?"
 
 Answered in chat by the Chief of Staff, plainly: not yet. The map says each waiting thing three times (badge, pop-up, row), pushes Needs you below the first screen, and its dots and loops on home carry no meaning the owner can act on. What it adds is a glance at which projects moved and which are quiet, and one look shared with the project page. Recommended keeping the idea only if the lanes carry real status, or else a calmer home.
+
+10. "Make some suggestions"
+
+Carried out: three suggestions for home, drawn live on the real home page with real records only, after v14 as it is: A, Needs you first then quiet project rows; B, as A with a slim strip of the events that matter; C, what waits grouped by project, the quiet projects folded into one row (recommended). https://claude.ai/artifact/JoVQ4ci4GVZXzspd4eXCQV (docs/design/mockups/options-home-suggest/).

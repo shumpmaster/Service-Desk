@@ -16,4 +16,12 @@ for o in 'ABC':
     a = '\n  render();\n})();\n</script>'; assert s.count(a) == 1
     s = s.replace(a, "\n  var NEEDS_OPT = '" + o + "';\n" + js + a)
     open(os.path.join(H, '../needs-%s.html' % o), 'w', encoding='utf-8').write(HEAD + done(s))
+# round 5, answer 1: three forms of C (needs2.css, needs2.js)
+css2 = open(os.path.join(H, 'needs2.css'), encoding='utf-8').read()
+js2 = open(os.path.join(H, 'needs2.js'), encoding='utf-8').read()
+for o in ('C1', 'C2', 'C3'):
+    s = v16; i = s.rindex('</style>'); s = s[:i] + css + css2 + s[i:]
+    a = '\n  render();\n})();\n</script>'
+    s = s.replace(a, "\n  var NEEDS_OPT = '" + o + "';\n" + js + js2 + a)
+    open(os.path.join(H, '../needs-%s.html' % o), 'w', encoding='utf-8').write(HEAD + done(s))
 print('ok')

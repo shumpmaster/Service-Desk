@@ -27,40 +27,39 @@ h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
 </style>
 <main>
   <div class="lede">
-    <h1>What an event needs</h1>
-    <p>The first half of your last point:</p>
-    <blockquote>"some events ultimately are requirements for other events. I want to see that somehow."</blockquote>
-    <p>The desk's records don't yet say which event needs which, so every requirement below is an example, and so are three planned events added to the top of S-011 (Spec revised, round 4; Plan review, round 4; S-011 frozen). They are there because a requirement matters most before an event happens. Marks keep the soft colours: grey check met, yellow waits on you, red blocked, an empty ring not yet.</p>
-    <p>Each phone opens on the timeline project, on S-011. Scroll inside it and tap. Tapping a requirement takes you to that event, opening what holds it. Why things happen, the second half of your point, comes next, on its own.</p>
+    <h1>What an event needs, made easier to grasp</h1>
+    <p>Your answer on the first round (kept at <a href="first.html">first.html</a>):</p>
+    <blockquote>"Okay option C is close, we just need to show it in a slightly different more consistent and easily graspable manner."</blockquote>
+    <p>Each form below is built only from parts the timeline already uses, and a requirement wears the same tag as the event it points to ("Planned", "Waiting on you"). Requirements and the three planned events at the top of S-011 are still examples. Each phone opens on S-011: scroll inside it and tap a requirement to go to it. Your second point, the branch map fitting to a milestone, comes next.</p>
   </div>
   <div class="phones">
     <section class="opt">
-      <span class="tag">As it is</span><h2>v16</h2>
-      <ul><li>Each event shows its kind, its state, its title and who did it.</li>
-        <li>Nothing says what it needed, or what it lets happen next. The order of the list is the only hint.</li></ul>
-      <div class="phone"><iframe src="now.html" title="As it is: v16, live" loading="lazy"></iframe></div>
-      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
-    </section>
-    <section class="opt">
-      <span class="tag">Option A</span><h2>A Needs line on every event</h2>
-      <ul><li>Under each event: "Needs", then each requirement as a small chip with its mark. "Unlocks" follows where a later event needs this one.</li>
-        <li>Always in view, so you read it as you scroll, but it adds a line or two to nearly every event, done ones included.</li></ul>
-      <div class="phone"><iframe src="needs-A.html" title="Option A, live" loading="lazy"></iframe></div>
-      <a class="open" href="needs-A.html" target="_blank" rel="noopener">Open full screen</a>
-    </section>
-    <section class="opt">
-      <span class="tag">Option B</span><h2>Trace on tap</h2>
-      <ul><li>An event with a requirement wears a small link tag, tinted and counted when something is unmet ("Needs 3").</li>
-        <li>Tap the event: what it needs and what it unlocks stay lit, joined to it by a thin line, the rest fades, and a card lists what is missing. Tap again, or the cross, to stop.</li></ul>
-      <div class="phone"><iframe src="needs-B.html" title="Option B, live" loading="lazy"></iframe></div>
-      <a class="open" href="needs-B.html" target="_blank" rel="noopener">Open full screen</a>
-    </section>
-    <section class="opt">
-      <span class="tag rec">Option C · recommended</span><h2>Before this can happen</h2>
-      <ul><li>Only an event still waiting on something gets a small checklist under it: what it needs, met or not, with "Then it unlocks" at the foot.</li>
-        <li>Done events stay as they are, so the list stays calm, and what holds the plan up stands out. Why done things happened is the next question.</li></ul>
-      <div class="phone"><iframe src="needs-C.html" title="Option C, live" loading="lazy"></iframe></div>
+      <span class="tag">As it is</span><h2>C, as you saw it</h2>
+      <ul><li>A grey box headed "Before this can happen", with small marks and plain words.</li>
+        <li>Its marks and words differ from the rows around it, so it reads as a new kind of thing.</li></ul>
+      <div class="phone"><iframe src="needs-C.html" title="As it is: option C, live" loading="lazy"></iframe></div>
       <a class="open" href="needs-C.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">C1 · recommended</span><h2>Needs as small event rows</h2>
+      <ul><li>Under the event, "Needs first" then each requirement drawn as a smaller event row: its icon, its corner mark, its kind and its tag. "Then unlocks" follows the same way.</li>
+        <li>A thin line hangs them from the event, so they read as belonging to it.</li></ul>
+      <div class="phone"><iframe src="needs-C1.html" title="C1, live" loading="lazy"></iframe></div>
+      <a class="open" href="needs-C1.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">C2</span><h2>Needs as a checklist</h2>
+      <ul><li>The same white card and check marks as the agent's plan, headed "Needs first · 0 of 2 done", with the state under each line.</li>
+        <li>Consistent with the plan's checklist, but it doesn't show the kind of each requirement.</li></ul>
+      <div class="phone"><iframe src="needs-C2.html" title="C2, live" loading="lazy"></iframe></div>
+      <a class="open" href="needs-C2.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">C3</span><h2>One line, opens to C1</h2>
+      <ul><li>One slim line under the event: "Needs 3 first: 2 on you, 1 blocked", with a soft dot in the worst state.</li>
+        <li>Tap it to open the C1 rows. The calmest list, but you tap to see what it needs.</li></ul>
+      <div class="phone"><iframe src="needs-C3.html" title="C3, live" loading="lazy"></iframe></div>
+      <a class="open" href="needs-C3.html" target="_blank" rel="noopener">Open full screen</a>
     </section>
   </div>
 </main>

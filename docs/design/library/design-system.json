@@ -18,8 +18,8 @@
  },
  "lastChange": {
   "by": "Claude",
-  "at": "2026-11-16T18:30:00Z",
+  "at": "2026-11-16T20:00:00Z",
   "via": "Claude Code",
-  "note": "Round 5, why things happen: new card WhyLine, one plain sentence under each event that happened saying why, on a dotted line down to the event before, so the plan reads as a story; the plan stays as the detail of how. decisions/questions/P-005-design-round-5.md, answer 5."
+  "note": "Round 5, the window in the centre: MilestoneMap keeps the window over the events in view in the middle of the map, before on the left and after on the right, sliding to an edge only at either end of the milestone. decisions/questions/P-005-design-round-5.md, answers 6 and 7."
  }
 }

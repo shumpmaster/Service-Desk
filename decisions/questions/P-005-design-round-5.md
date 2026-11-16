@@ -38,3 +38,8 @@ Shown in chat: the library with WhyLine (https://claude.ai/artifact/UqdAH5E4nwtS
 6. A comment on mockup v19, on the window of the floating branch map: "What are your thoughts on always pulling the highlighted section to the center of the slider so you can see the before and after?"
 
 Answered on the page by the Chief of Staff: a good idea. Today the window sits wherever the events in view fall, so at the newest end it hugs the right edge and shows only what came before. Pinned to the centre, what came before takes the left half and what comes after the right half. The cost: each side is squeezed by its own count, so position no longer says how far along the milestone you are, and at the newest end the right half holds only the planned events or is empty. To be shown live, as it is and centred, and asked.
+
+Asked by the question tool: "The map's window in the centre (your comment on v19). On https://claude.ai/artifact/FZooNniHckHDnSa7YhLFc7: v19's map as it is, then two live phones where the window stays in the middle so you see what came before and after. The cost is that where the window sits no longer shows how far along the milestone you are. Scroll inside each. Which one?" Options: "2: centred, except at ends (Recommended)"; "1: always in the centre"; "Keep v19 as it is"; "Mix or none". Pictures: docs/design/mockups/options-map-centre/ (now, centre-1, centre-2).
+7. "2: centred, except at ends (Recommended)"
+
+Carried out: on the fitted map, the window over the events in view sits in the middle, what came before spread over the left side and what comes after over the right; at either end of the milestone it slides to that edge, so no half sits empty. To be built into the library (MilestoneMap) and then mockup v20 over v19.

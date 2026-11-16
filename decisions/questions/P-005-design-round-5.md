@@ -33,3 +33,8 @@ Asked by the question tool: "Why things happen (the second half of your round 4 
 5. "C: the story between events (Recommended)"
 
 Carried out: under each event that happened, one plain sentence says why, after "Why:", on a dotted line down to the event before it; the agent's plan stays where it is as the detail of how. Planned events keep their NeedsList instead. The reasons are examples until the records carry them. To be built into the library (a WhyLine card) and then mockup v19 over v18.
+
+Shown in chat: the library with WhyLine (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W, version 15) and mockup v19 (https://claude.ai/artifact/YG9Y11Cw9R3nJm6Qfv67sY). The question on v16 was then put by the question tool, but the session's worker restarted before it was answered, so it was not asked.
+6. A comment on mockup v19, on the window of the floating branch map: "What are your thoughts on always pulling the highlighted section to the center of the slider so you can see the before and after?"
+
+Answered on the page by the Chief of Staff: a good idea. Today the window sits wherever the events in view fall, so at the newest end it hugs the right edge and shows only what came before. Pinned to the centre, what came before takes the left half and what comes after the right half. The cost: each side is squeezed by its own count, so position no longer says how far along the milestone you are, and at the newest end the right half holds only the planned events or is empty. To be shown live, as it is and centred, and asked.

@@ -486,6 +486,28 @@ The state of an event or a step, without a gauge. Chosen by the owner on 15 Nove
 - {SRC}
 """)
 
+# how heavy an event is (round 6, answers 3 and 6): turning points larger, checks as they are, routine one quiet line
+def wt(h, w): return h.replace('<div class="dk-ev">', f'<div class="dk-ev wt-{w}">', 1)
+EWT = ('<div class="dk-stage col" style="max-width:393px"><div>'
+  + wt(mark_ev("stop", "wait", "Waiting on you", "15:42", "Stop card 5", "orchestrator"), 1)
+  + wt(mark_ev("review", "bad", "Failed", "15:36", "Plan review failed, round 3", "reviewer (plan)"), 2)
+  + wt(mark_ev("commit", "ok", "Done", "15:23", "Spec revised again", "spec writer"), 3)
+  + wt(mark_ev("review", "bad", "Failed", "15:14", "Plan review failed, round 2", "reviewer (plan)"), 2)
+  + wt(mark_ev("merge", "wait", "Awaiting your answers", "14:46", "Merged PR #446: three questions for you", "you", True), 1)
+  + wt(mark_ev("commit", "ok", "Done", "12:37", "Spec revised", "spec writer"), 3)
+  + '</div><p class="dk-note">Read down S-011: the stop and the merge stand out, the reviews keep their row, the revisions recede. The weight comes from a rule, not a choice per event.</p></div>')
+comp("EventWeight", "Desk", 470, EWT,
+ """# EventWeight
+
+How heavy an event looks in a project's list comes from what it is, so the few that matter stand out. Chosen by the owner on 17 November 2026 (decisions/questions/P-005-design-round-6.md: answer 3, a comment on v21, "This entire flow here is solid, but in its current visual format every single event has the same weight and means nothing unique, can we change that"; answer 6, "I want to go with Option A").
+
+- **Turning points**: a stop, a decision, a gate, a merge to main, or anything waiting on you. The icon disc grows to 34 (its icon 19), the title is 17 semibold and wraps, and the row takes 12 above and 10 below.
+- **Checks**: a review or a check, passed or failed. The StatusMark row as it was: 26 disc, kind and tag, title in 15, the by-line.
+- **Routine**: a commit (a draft or a revision) and other agent housekeeping. One quiet line: a 20 outlined icon in `text-2` with no corner mark, the title in 14 `text-2`, then any Needs or Why tag and the time in 12; the kind word, the plain Done tag and the by-line go. A failed or waiting tag would still show.
+- Colour does not change: neutral greys and the soft status tints only. The order and the tree stay.
+- {SRC}
+""".replace("{SRC}", SRC))
+
 # the branch map, drawn from the Design phase's real sprints (timeline mockup v12's records, 13 and 14 November 2026)
 def _t(d, hm): h, m = hm.split(":"); return (d - 13) * 1440 + int(h) * 60 + int(m)
 MAP_SP = [("2.7.1 S-010", [(13, "21:32", "commit", ""), (13, "21:44", "review", "bad"), (13, "23:45", "commit", ""), (13, "23:51", "review", "bad"), (14, "01:05", "stop", ""), (14, "04:56", "merge", ""), (14, "04:58", "decision", ""), (14, "12:04", "merge", "")]),

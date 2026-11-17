@@ -49,3 +49,8 @@ Two comments on mockup v19 written at 19:40 and 19:41 UTC reached the session on
 9. A reply on the page, written at 19:41, to the Chief of Staff's answer on the centred window (answer 6): "Yes do that"
 
 Carried out: answer 9 matches what was done (answers 6 and 7). Answer 8 is taken next: how the levels under an event (what it needs, why, the plan) are set apart more clearly, and every icon opening and folding what sits under it, shown live as v20 is and with options.
+
+Asked by the question tool: "A clearer hierarchy, and every icon folds (your comment on v19). Mockup v20, with the window centred, is at https://claude.ai/artifact/1EbyNZHbAnCVmGybqFgU8o. On https://claude.ai/artifact/RHbJyabUVx2EgFS9n1gKCr: v20 as it is, then three live phones. In all three, a ringed icon folds or opens what sits under it, and a requirement's icon opens what it needs in turn. They differ in how the levels are set apart. Tap the ringed icons. Which one?" Options: "2: a tree (Recommended)"; "1: an inset panel"; "3: stepped bands"; "Mix or none". Pictures: docs/design/mockups/options-hierarchy/ (now, hier-1 to hier-3).
+10. "I like the tree, but I don’t like the format of the whys being embedded into everything like a step. I thought I would but I want it represented slightly differently"
+
+Carried out: the tree (option 2) is taken, with every ringed icon folding what sits under it. The why sentences come out of the tree; three other ways to carry them are drawn live on the tree, after the event as it is now, for the owner to pick.

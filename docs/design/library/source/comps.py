@@ -669,6 +669,14 @@ Home, grouped by what waits on the owner: one summary sentence, then a group for
 - {SRC}
 """.replace("{SRC}", SRC))
 
+def wrap_words(t, ch, mx):
+    out, cur = [], ""
+    for w in t.split():
+        if not cur or len(cur) + 1 + len(w) <= ch: cur = (cur + " " + w).strip(); continue
+        out.append(cur); cur = w
+    if cur: out.append(cur)
+    if len(out) > mx: out = out[:mx]; out[-1] = out[-1][:max(1, ch - 1)] + "&#8230;"
+    return [l if len(l) <= ch else l[:ch - 1] + "&#8230;" for l in out]
 # the branch map fitted to a selected milestone (round 5, answer 4): M6 only, every event an icon, the events in view spread with words
 def milestone_map(view=("15:14", "15:23", "15:36", "15:42"), vw=393):
     PAD, LANE = 22, 50
@@ -701,8 +709,8 @@ def milestone_map(view=("15:14", "15:23", "15:36", "15:42"), vw=393):
             st_ += f'<circle class="disc {cls}" cx="{e["x"]:.1f}" cy="{cy}" r="{r:.1f}"/>{svg}'
             if e["sp"] == 1 and e["hm"] in view:
                 w = min([abs(q["x"] - e["x"]) for q in evs if q is not e and q["sp"] == 1 and q["hm"] in view] + [76]); ch = int((w - 6) / 5.6)
-                t_ = e["ttl"] if len(e["ttl"]) <= ch else e["ttl"][:ch - 1] + "&#8230;"
-                fl += f'<text class="fl" x="{e["x"]:.1f}" y="{cy + 22}"><tspan class="k">{e["k"].title()}</tspan><tspan x="{e["x"]:.1f}" dy="11">{t_}</tspan></text>'
+                ls = wrap_words(e["ttl"], ch, 3)                                    # round 6, answer 5: the title alone, wrapped
+                fl += f'<text class="fl wr" x="{e["x"]:.1f}" y="{cy + 21}">' + "".join(f'<tspan x="{e["x"]:.1f}"{" dy=&quot;10.5&quot;" if i else ""}>{l}</tspan>' for i, l in enumerate(ls)).replace("&quot;", '"') + '</text>'
         lb += f'<text class="lb" x="{x0:.1f}" y="{y - 9}">{lab}</text>'
     vis = [e for e in evs if e["sp"] == 1 and e["hm"] in view]; a, b = vis[0]["x"] - 30, vis[-1]["x"] + 30
     win = f'<rect class="win" x="{a:.1f}" y="{y - 22}" width="{b - a:.1f}" height="{LANE + 44}" rx="10"/>'
@@ -712,14 +720,14 @@ def milestone_map(view=("15:14", "15:23", "15:36", "15:42"), vw=393):
 TITLES = [["First draft", "Failed", "Spec revised", "Failed", "Stop card 4", "PR #443", "Write a new spec", "PR #444"],
           ["New spec S-011", "First draft", "Failed, round 1", "Spec revised", "PR #446", "Failed, round 2", "Spec revised again", "Failed, round 3", "Stop card 5"]]
 comp("MilestoneMap", "Desk", 290,
- '<div class="dk-stage col" style="max-width:393px;padding:16px 0">' + milestone_map() + '<p class="dk-note" style="padding:0 16px">M6 selected: its two sprints fill the width, every event an icon, the three planned ones as open rings at the right. The four events in view below spread apart under the window, in the centre, and carry their kind and a short title; what came before squeezes to the left, the planned events to the right. The chip&#8217;s cross brings back the whole phase.</p></div>',
+ '<div class="dk-stage col" style="max-width:393px;padding:16px 0">' + milestone_map() + '<p class="dk-note" style="padding:0 16px">M6 selected: its two sprints fill the width, every event an icon, the three planned ones as open rings at the right. The four events in view below spread apart under the window, in the centre, each with its short title wrapped onto up to three lines (round 6); what came before squeezes to the left, the planned events to the right. The chip&#8217;s cross brings back the whole phase.</p></div>',
  """# MilestoneMap
 
 The BranchMap fitted to one milestone. Chosen by the owner on 16 November 2026 (decisions/questions/P-005-design-round-5.md: answer 1, "can we make it so whenever a milestone is selected, the branch map fits to the events in that milestone and expands the dots to our icons with descriptions if we can fit them?"; answer 4, "C: fit, spread what's in view").
 
 - **Selecting**: tapping a milestone's row selects it (and opens it). The page opens with the milestone in progress selected. Folding the selected milestone, or the chip's cross, brings back the whole phase (BranchMap).
 - **Fitted**: only the selected milestone's sprints, across the full width with nothing to pan; lanes 50 apart, so words fit under the icons. Every event wears its icon on a disc; planned events sit at the right as open rings (`text-3` ring on `ground`).
-- **Spread what is in view**: the events shown in the list below spread 68 apart under the soft window and carry two lines in 9.5: the kind in semibold `text-1`, then a short title in `text-2`, cut with an ellipsis to the room it has. As the list scrolls, the spread follows.
+- **Spread what is in view**: the events shown in the list below spread 68 apart under the soft window, each with its short title in 9.5 medium `text-1`, wrapped by whole words onto up to three lines 10.5 apart, under the icon; no kind word, since the icon says it (17 November 2026, decisions/questions/P-005-design-round-6.md: answer 2, a comment on v21, "Can we wrap text within the blue box?"; answer 5, "B: only the title, wrapped (Recommended)"). The map keeps its height. As the list scrolls, the spread follows.
 - **The window in the centre**: it sits in the middle of the map; what came before is spread evenly over the left side and what comes after over the right, so you always see both. At either end of the milestone it slides to that edge, so no half sits empty (round 5, answer 6: "What are your thoughts on always pulling the highlighted section to the center of the slider so you can see the before and after?"; answer 7, "2: centred, except at ends"). Where it sits no longer says how far along the milestone you are; an icon closer than 20 to its neighbour shrinks to 72%.
 - **The chip**: the milestone's number and id in 11.5 semibold on `fill`, bottom right of the map, with a cross.
 - Colour as in BranchMap and StatusMark: red failed, yellow waiting on you, Now blue, main dark.

@@ -372,6 +372,7 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-map .disc.plan { fill: var(--ground); stroke: var(--text-3); stroke-width: 1.5; } .dk-map .ic.plan { color: var(--text-2); }
 .dk-map .fl { font: 400 9.5px var(--font-sans); fill: var(--text-2); text-anchor: middle; paint-order: stroke; stroke: var(--ground); stroke-width: 3px; stroke-linejoin: round; }
 .dk-map .fl .k { font-weight: 600; fill: var(--text-1); }
+.dk-map .fl.wr { font-weight: 500; fill: var(--text-1); }   /* round 6, answer 5: the title alone, wrapped */
 .dk-mapchip { position: absolute; right: 10px; bottom: 4px; display: inline-flex; align-items: center; gap: 5px; padding: 2px 6px 2px 9px; border-radius: var(--radius-full); background: var(--fill); font: 600 11.5px/18px var(--font-sans); color: var(--text-1); border: 0; }
 .dk-mapchip .i { width: 10px; height: 10px; color: var(--text-2); }
 

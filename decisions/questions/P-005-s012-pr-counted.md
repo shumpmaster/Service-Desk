@@ -1,4 +1,5 @@
 Ruling: A — a pull request counts as waiting on the owner if the desk's rules would have listed it as waiting on the owner at any moment while it was open, judged on the records as they stood at that time
+Proxy: done at the owner's request (the owner picked an option in the session, answered before 12:29Z on 2026-11-17; the question, the options as put and the owner's answer are quoted verbatim below)
 
 Question: questions/P-005-s012-pr-counted.md (filed in #452, removed here)
 Milestone: M6, M7, M8

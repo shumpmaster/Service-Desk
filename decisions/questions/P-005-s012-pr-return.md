@@ -1,4 +1,5 @@
 Ruling: A — a pull request that goes back to draft and returns to ready is two waits: each spell of waiting has its own start and its own 5 minutes, and an alert or a showing counts for a spell only if it is dated inside that spell
+Proxy: done at the owner's request (the owner picked an option in the session, answered before 12:29Z on 2026-11-17; the question, the options as put and the owner's answer are quoted verbatim below)
 
 Question: questions/P-005-s012-pr-return.md (filed in #452, removed here)
 Milestone: M6, M7, M8

@@ -69,3 +69,8 @@ Asked by the question tool: "By when it was due, and how far it dragged. On http
 11. "So looking at design as an example - I see 2.1/2.2/2.3… and the design milestone is all over the place. This is where my brain gets thrown off."
 
 Read by the Chief of Staff as, to be confirmed: each milestone row carries two numbers that disagree. The position number (2.1, 2.2, 2.3) runs in order, but the standard milestones' own names (Design-1, Design-5, Design-6, Design-3) carry the model's numbering, so "2.3 Design-5" reads as two orders at once.
+
+Asked by the question tool, to confirm the reading above before drawing: "... So a row reads '2.3 Design-5': two orders at once. Is that what throws you off?" Options: "Yes, the two numbers"; "Partly"; "No, something else".
+12. "Yes, maybe the issue is that I’m picturing the fluid milestones as rigid fixed steps."
+
+Read by the Chief of Staff as: yes, the two numberings; and underneath, the milestones are outcomes that can be worked side by side, not steps in a fixed order, so the page should stop presenting them as numbered steps. To be drawn: rows with one naming only, in due order with the drag (as in due option A), and milestones shown as the phase's goals, apart from the flow of time.

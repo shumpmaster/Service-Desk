@@ -18,8 +18,8 @@
  },
  "lastChange": {
   "by": "Claude",
-  "at": "2026-11-17T03:00:00Z",
+  "at": "2026-11-17T04:10:00Z",
   "via": "Claude Code",
-  "note": "Round 5, the event's tags and bubble: new card EventBubble (the tree with ringed icons that fold, a Needs tag and a Why tag on the event that open a bubble, the Needs bubble a plain checklist opening the next layer in place, its chain ringed and joined on the map and in the list). NeedsList and WhyLine replaced, kept for the record. decisions/questions/P-005-design-round-5.md, answers 10 to 14."
+  "note": "Round 6, home's floating header: ProjectHeader gains home's bar, the same slim bar without Back, floating alone. decisions/questions/P-005-design-round-6.md, answers 1 and 4."
  }
 }

@@ -1,6 +1,6 @@
 # The timeline mockup: current version
 
-**Current: v21**, 17 November 2026. `timeline-v21-craft.html`, https://claude.ai/artifact/LQopLKr9MHfN8vd35oNmeu. The element library it is built from: https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W (version 17, with round 5's cards MilestoneMap and EventBubble; NeedsList and WhyLine kept for the record), source in `../library/`. v20 stays published at https://claude.ai/artifact/1EbyNZHbAnCVmGybqFgU8o, v19 at https://claude.ai/artifact/YG9Y11Cw9R3nJm6Qfv67sY, v18 at https://claude.ai/artifact/ETsiyg9ogQL3BwWA2VN7s4, v17 stays published at https://claude.ai/artifact/DXv1eSvFKZnoe5rZpHsf9V, v16 stays published at https://claude.ai/artifact/KRyUwfASR4pqLR2MRRpGgY, v15 at https://claude.ai/artifact/1G6hoK39NJnG5trBz3Gpwx, v14 at https://claude.ai/artifact/BMDDwgTKZBFo48q3Wc2VZz, v13 at https://claude.ai/artifact/FP8rED64DKBpujpinhLZpN and v12 at https://claude.ai/artifact/MNfUA3g4RB6TrvzmtqX8bE (private to the owner).
+**Current: v22**, 17 November 2026. `timeline-v22-craft.html`, https://claude.ai/artifact/LfZ6v5WPV7YhxaXvGnTJtg. The element library it is built from: https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W (version 18: ProjectHeader with home's bar; round 5's cards MilestoneMap and EventBubble; NeedsList and WhyLine kept for the record), source in `../library/`. v21 stays published at https://claude.ai/artifact/LQopLKr9MHfN8vd35oNmeu, v20 stays published at https://claude.ai/artifact/1EbyNZHbAnCVmGybqFgU8o, v19 at https://claude.ai/artifact/YG9Y11Cw9R3nJm6Qfv67sY, v18 at https://claude.ai/artifact/ETsiyg9ogQL3BwWA2VN7s4, v17 stays published at https://claude.ai/artifact/DXv1eSvFKZnoe5rZpHsf9V, v16 stays published at https://claude.ai/artifact/KRyUwfASR4pqLR2MRRpGgY, v15 at https://claude.ai/artifact/1G6hoK39NJnG5trBz3Gpwx, v14 at https://claude.ai/artifact/BMDDwgTKZBFo48q3Wc2VZz, v13 at https://claude.ai/artifact/FP8rED64DKBpujpinhLZpN and v12 at https://claude.ai/artifact/MNfUA3g4RB6TrvzmtqX8bE (private to the owner).
 
 Each version is a layer over the one before, so behaviour stays fixed unless the owner asks for a change:
 
@@ -20,6 +20,12 @@ Each version is a layer over the one before, so behaviour stays fixed unless the
 | v19 | build-v19/ (with options-why/source/) | Why things happen: one plain sentence under each event that happened, on a dotted line down to the event before; the plan stays as the detail (reasons are examples) |
 | v20 | build-v20/ (with options-map-centre/source/) | The fitted map's window stays in the centre, before on the left and after on the right, sliding to an edge only at either end of the milestone |
 | v21 | build-v21/ (with options-hierarchy, options-why2, options-needs2, options-bubble and options-chain, each source/) | The list as a tree whose ringed icons fold; Needs and Why tags on the event open a bubble; the Needs bubble a plain checklist opening the next layer in place; its chain ringed and joined on the map and in the list |
+| v22 | build-v22/ (with options-home-header/source/) | Home's header floats as the same slim bar a project's page uses, without Back |
+
+## What v22 adds on home, and the owner's word for it
+Round 6 is verbatim in `decisions/questions/P-005-design-round-6.md` (cited as R6 and the answer number).
+
+- **A floating header on home.** Home's large title, live line and bell scrolled away; now they float in the glass band as one slim bar, the same as a project's page without Back: "Timeline" in 17, "Live · as of 17:25 UTC" under it, the bell and More. The search and the groups scroll under it ("Floating Header here too", R6 answer 1, a comment on v21's home; "A: the slim bar only (Recommended)", R6 answer 4).
 
 ## What v21 adds on a project's page, and the owner's word for each
 - **A tree, every ringed icon folding.** The list under a milestone is drawn as a tree: a line down from an event's icon with an elbow into each row under it; a ringed icon folds or opens what sits under it ("this hierarchy needs to be slightly more defined. And every icon should be able to collapse/exoand", R5 answer 8; "I like the tree", R5 answer 10).

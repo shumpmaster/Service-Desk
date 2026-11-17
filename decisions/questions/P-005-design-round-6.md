@@ -47,3 +47,5 @@ Shown on the page, as a reply on the comment: v24 and the options page for the l
 7. Said in the session, after the options page for labels on main: "option 2 please"
 
 Carried out, the second half of answer 6: on the fitted map, every event on main carries its short title in one row in a strip under main, each label as near its icon as it can sit without touching the one before, joined to its icon by a thin line; a sprint's events keep their words only inside the window. To be built into the library (MilestoneMap) and then mockup v25 over v24.
+
+Shown in chat: the library with words on main in MilestoneMap (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W, version 21) and mockup v25 (https://claude.ai/artifact/3w8kRCDDa7SauhJZyKHuG7).

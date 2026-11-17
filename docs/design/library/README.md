@@ -8,6 +8,10 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 
 The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.
 
+## Change, 17 November 2026 (round 6, words on main)
+
+On the fitted map (MilestoneMap) every event on main carries its words wherever it sits: one row in a strip under main, each label as near its icon as it can sit without touching the one before, joined to it by a thin line. A sprint's events carry words only inside the window (decisions/questions/P-005-design-round-6.md, answers 6 and 7).
+
 ## Change, 17 November 2026 (round 6, each event as heavy as it is)
 
 A project's list weighs each event by what it is (EventWeight): turning points (a stop, a decision, a gate, a merge to main, anything waiting on you) take a larger icon and a 17 semibold title; checks (reviews) keep their row; routine (commits) shrinks to one quiet line. Colour does not change (decisions/questions/P-005-design-round-6.md, answers 3 and 6).

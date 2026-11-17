@@ -57,3 +57,7 @@ Read by the Chief of Staff as: on a project's page the phase's heading sits at t
 
 Asked by the question tool: "One reading direction (your view of v25). On https://claude.ai/artifact/3G4qNmWTrdoT8ev3bS5bpJ: v25 as it is, where the phase heading reads down but everything under it runs newest first; then two live phones that read one way at every level. Which one?" Options: "A: top down, oldest first (Recommended)"; "B: newest first, headings at the root"; "Mix or none". Pictures: docs/design/mockups/options-order/ (now, ord-A, ord-B).
 9. "Where I struggle with this is that it looks like milestones were performed out of order? So neither options really work for me"
+
+Read by the Chief of Staff as: the trouble is the milestone numbers. They follow the plan's order (2.1 to 2.7), but the milestones are worked in another order and two run at once (M6 and Design-5), so any list by time makes the numbers jump. Answered in chat with that cause, and three fixes drawn, each keeping the inside of a sprint top down, oldest first.
+
+Asked by the question tool: "Milestones that don't look out of order. On https://claude.ai/artifact/1h9D1pYjS97Jj95D4qKN6f: v25 as it is, then three fixes. Fold M6 in each to see the milestones together. Which one?" Options: "2: grouped by state (Recommended)"; "1: the plan's order"; "3: order of work, no numbers"; "Mix or none". Pictures: docs/design/mockups/options-order2/ (now, o2-1 to o2-3); options-order/ kept for the record, its layer now also keeps its order through in-place redraws.

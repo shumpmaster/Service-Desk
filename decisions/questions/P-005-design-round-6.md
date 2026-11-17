@@ -54,3 +54,5 @@ Asked by the question tool: "Now that v25 (https://claude.ai/artifact/3w8kRCDDa7
 8. "The Phase reads top down, then the milestones read bottom up - that needs to be fixed"
 
 Read by the Chief of Staff as: on a project's page the phase's heading sits at the top and reads downward, but the milestones under it run newest first (planned at the top, Design-1 at the bottom), and the events inside a sprint run newest first too. The whole list should read one way. To be shown live, as it is and both ways, and asked.
+
+Asked by the question tool: "One reading direction (your view of v25). On https://claude.ai/artifact/3G4qNmWTrdoT8ev3bS5bpJ: v25 as it is, where the phase heading reads down but everything under it runs newest first; then two live phones that read one way at every level. Which one?" Options: "A: top down, oldest first (Recommended)"; "B: newest first, headings at the root"; "Mix or none". Pictures: docs/design/mockups/options-order/ (now, ord-A, ord-B).

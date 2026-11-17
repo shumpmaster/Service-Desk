@@ -24,3 +24,7 @@ Asked again by the question tool, as above, with "(Your comments on the blue box
 4. "A: the slim bar only (Recommended)"
 
 Carried out: home's header floats in the glass band as one slim bar, the same as a project's page without Back: "Timeline" in 17 with the live line under it in 12, then the bell and More. The search and the rest of home scroll under it. To be built into the library (ProjectHeader, now for home too) and then mockup v22 over v21, with the next answers.
+
+Shown in chat: the library with home's bar in ProjectHeader (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W, version 18) and mockup v22 (https://claude.ai/artifact/LfZ6v5WPV7YhxaXvGnTJtg).
+
+Asked by the question tool: "The words in the blue box (your comment on v21). On https://claude.ai/artifact/FQbAGYWFKh9BNVdeS5NA98: v22's map as it is, where each event in the window gets its kind and a short title, both cut short; then three live phones where the words wrap by whole words. Scroll the list inside each. Which one?" Options: "B: only the title, wrapped (Recommended)"; "A: kind, then the title wrapped"; "C: kind, then the whole title"; "Mix or none". Pictures: docs/design/mockups/options-map-wrap/ (now, wrap-A to wrap-C).

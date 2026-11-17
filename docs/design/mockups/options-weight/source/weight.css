@@ -1,0 +1,31 @@
+/* round 6, answer 3: events weighted by what they are (options-weight). Neutral greys and the soft status colours only. */
+/* routine (A, B, C): one quiet line: the title in 14 text-2, the time at the right; the kind word, the Done tag and the by-line go */
+.v13ev.wt-3 { padding: 3px 0; align-items: center; }
+.v13ev.wt-3 > .v13ico { width: 20px; height: 20px; margin: 0 3px; background: transparent; box-shadow: inset 0 0 0 1px var(--ink-5); color: var(--text-2); }
+.v13ev.wt-3 > .v13ico > svg { width: 12px; height: 12px; }
+.v13ev.wt-3 > .v13ico .v13mk { display: none; }
+.v13ev.wt-3 .tx { flex-direction: row; align-items: baseline; gap: 6px; }
+.v13ev.wt-3 .l2 { order: 0; flex: 1; min-width: 0; font-size: 14px; color: var(--text-2); }
+.v13ev.wt-3 .l1 { order: 1; flex: none; }
+.v13ev.wt-3 .l1 > b, .v13ev.wt-3 .l1 > .v13tag:not(.wait):not(.bad), .v13ev.wt-3 .l3 { display: none; }
+.v13ev.wt-3 .tm { font-size: 12px; }
+/* turning points (A, B): larger icon, title in 17 semibold, more air */
+.wt-A.wt-1, .wt-B.wt-1 { padding: 12px 0 10px; }
+.wt-A.wt-1 > .v13ico, .wt-B.wt-1 > .v13ico { width: 34px; height: 34px; border-radius: 17px; margin-left: -4px; }
+.wt-A.wt-1 > .v13ico > svg, .wt-B.wt-1 > .v13ico > svg { width: 19px; height: 19px; }
+.wt-A.wt-1 .l2, .wt-B.wt-1 .l2 { font-size: 17px; line-height: 22px; font-weight: 600; white-space: normal; }
+/* B: the fold line for a run of routine events */
+.v13ev.wt-hid { display: none; }
+.wt-fold { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 0; font: 400 13px/18px var(--font-ui); color: var(--text-2); cursor: pointer; }
+.wt-fold .wt-dots { width: 26px; display: flex; justify-content: center; gap: 3px; flex: none; }
+.wt-fold .wt-dots i { width: 4px; height: 4px; border-radius: 2px; background: var(--ink-5); }
+.wt-fold svg { width: 12px; height: 12px; margin-left: auto; transition: transform .2s; }
+.wt-fold[aria-expanded="true"] svg { transform: rotate(180deg); }
+.wt-fold:focus-visible { outline: 2px solid var(--now-word); outline-offset: 2px; border-radius: 6px; }
+/* C: turning points on a card; checks as compact two-line rows */
+.wt-C.wt-1 { margin: 6px 0; padding: 12px 12px 10px; border-radius: 16px; background: var(--surface); }
+.wt-C.wt-1 > .v13ico { width: 32px; height: 32px; border-radius: 16px; }
+.wt-C.wt-1 > .v13ico > svg { width: 18px; height: 18px; }
+.wt-C.wt-1 .l2 { font-size: 17px; line-height: 22px; font-weight: 600; white-space: normal; }
+.wt-C.wt-2 { padding: 5px 0; }
+.wt-C.wt-2 .l1 { font-size: 14px; } .wt-C.wt-2 .l2 { font-size: 14px; color: var(--ink-2); } .wt-C.wt-2 .l3 { display: none; }

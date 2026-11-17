@@ -49,3 +49,8 @@ Shown on the page, as a reply on the comment: v24 and the options page for the l
 Carried out, the second half of answer 6: on the fitted map, every event on main carries its short title in one row in a strip under main, each label as near its icon as it can sit without touching the one before, joined to its icon by a thin line; a sprint's events keep their words only inside the window. To be built into the library (MilestoneMap) and then mockup v25 over v24.
 
 Shown in chat: the library with words on main in MilestoneMap (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W, version 21) and mockup v25 (https://claude.ai/artifact/3w8kRCDDa7SauhJZyKHuG7).
+
+Asked by the question tool: "Now that v25 (https://claude.ai/artifact/3w8kRCDDa7SauhJZyKHuG7) has your round 6 changes (home's floating bar, the wrapped words in the blue box, event weight, words on main), what do you think of the timeline as a whole? Your view of v21 as a whole was cut off by a restart, so this question stands in for it. ..." Options: "Good, move on"; "Good, with changes"; "Too much at once"; "Not working".
+8. "The Phase reads top down, then the milestones read bottom up - that needs to be fixed"
+
+Read by the Chief of Staff as: on a project's page the phase's heading sits at the top and reads downward, but the milestones under it run newest first (planned at the top, Design-1 at the bottom), and the events inside a sprint run newest first too. The whole list should read one way. To be shown live, as it is and both ways, and asked.

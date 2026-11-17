@@ -1,0 +1,58 @@
+<title>Fluid Milestones</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then due option A as it is and two live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v17). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(3, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1300px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>Milestones as goals, not steps</h1>
+    <p>Your answers on the due-date order:</p>
+    <blockquote>"So looking at design as an example - I see 2.1/2.2/2.3… and the design milestone is all over the place. This is where my brain gets thrown off."</blockquote>
+    <blockquote>"Yes, maybe the issue is that I’m picturing the fluid milestones as rigid fixed steps."</blockquote>
+    <p>A milestone is an outcome the phase must reach ("Done defined in real scenarios"), and several can be worked at once. So in both options below, nothing numbers them as steps any more: the 2.1, 2.2, 2.2.1 and 2.2.2.5 go from milestones, sprints, plans and the map, and each goes by its name only. They keep the due-date order and the drag bars from the last page. Dates and reasons are still examples. Below: that page's option A as it is, then two live phones.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>Due order, two numberings</h2>
+      <ul><li>"2.3 Design-5": a step number and the model's own name, two orders at once.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: due option A, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option 1</span><h2>Names only</h2>
+      <ul><li>"Design-5 The design fits together", with no step number; sprints read "Spec S-011", a plan reads "Plan".</li>
+        <li>The list still runs by due date with the drag bars, but nothing claims a fixed sequence.</li></ul>
+      <div class="phone"><iframe src="fl-1.html" title="Option 1, live" loading="lazy"></iframe></div>
+      <a class="open" href="fl-1.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option 2 · recommended</span><h2>Names only, and the goals up front</h2>
+      <ul><li>As 1, and the phase's milestones also sit together at the top as its goals, "reached in any order, some side by side": a chip each, with its state and drag. Tap one to go to it.</li>
+        <li>The goals read as a set; the list below reads as time.</li></ul>
+      <div class="phone"><iframe src="fl-2.html" title="Option 2, live" loading="lazy"></iframe></div>
+      <a class="open" href="fl-2.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

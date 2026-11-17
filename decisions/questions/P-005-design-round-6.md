@@ -19,3 +19,8 @@ Two more comments on mockup v21, written at 03:41 and 03:42 UTC, reached the ses
 3. A comment on mockup v21, written at 03:42, on the step 2.7.2 Spec S-011 and the events under it: "This entire flow here is solid, but in its current visual format every single event has the same weight and means nothing unique, can we change that"
 
 Read by the Chief of Staff as: answer 2, the words beside the events inside the map's window should wrap onto more lines instead of being cut short. Answer 3, the order and the tree under a sprint stay, but each event should look as important as it is, so that the few that matter (a stop, a failed review, a merge, a freeze) stand out from routine ones. Answer 3 is the owner's first point on what on the timeline serves no purpose and what is missing (docs/handoff/2026-11-17-chief-of-staff-p005-16.md, "Open, for the owner", 2). Each to be shown live, as it is and with options, and asked, after the home header.
+
+Asked again by the question tool, as above, with "(Your comments on the blue box and on event weight come next.)" added.
+4. "A: the slim bar only (Recommended)"
+
+Carried out: home's header floats in the glass band as one slim bar, the same as a project's page without Back: "Timeline" in 17 with the live line under it in 12, then the bell and More. The search and the rest of home scroll under it. To be built into the library (ProjectHeader, now for home too) and then mockup v22 over v21, with the next answers.

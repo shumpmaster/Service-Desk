@@ -79,3 +79,5 @@ Asked by the question tool: "Milestones as goals, not steps. On https://claude.a
 13. "I think I’m over working it, all I really want is an established order of operations basically so I can read things in the order they occurred or were meant to I guess?"
 
 Read by the Chief of Staff as: one plain order, top down, at every level: each thing where it happened, or, if it has not happened yet, where it is meant to happen; the numbers follow that same order, so they never jump; nothing else added (no bars, no goals strip, no group headings). To be shown against v25, and asked once.
+
+Asked by the question tool: "One order of operations. On https://claude.ai/artifact/QPCV8xRaP4sXL2o3ypcUsQ: v25 as it is, then one live phone: top down at every level, each thing where it happened or is meant to, numbers following that order, the standard milestone ids hidden, nothing else added. Is this it?" Options: "Yes, that's it (Recommended)"; "Close, but…". Pictures: docs/design/mockups/options-sequence/ (now, seq); built from options-order (ORD = 'A') and options-due (DUE_OPT = 'N').

@@ -8,6 +8,10 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 
 The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.
 
+## Change, 17 November 2026 (round 6, the words in the map's window)
+
+On the fitted map (MilestoneMap) each event in the window loses its kind word, since its icon says it, and its short title wraps by whole words onto up to three lines in that place; the map keeps its height (decisions/questions/P-005-design-round-6.md, answers 2 and 5).
+
 ## Change, 17 November 2026 (round 6, home's floating header)
 
 Home's header floats too: the same slim bar as a project's page without Back, "Timeline" in 17 with the status under it, the bell and More, alone in the glass band at about 57 high; the search and the rest of home scroll under it (ProjectHeader; decisions/questions/P-005-design-round-6.md, answers 1 and 4). LargeTitle no longer appears on the desk.

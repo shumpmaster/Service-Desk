@@ -1,0 +1,57 @@
+<title>Reading Order</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v25 as it is and two live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v17). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(3, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1300px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>One reading direction</h1>
+    <p>Your view of v25:</p>
+    <blockquote>"The Phase reads top down, then the milestones read bottom up - that needs to be fixed"</blockquote>
+    <p>In v25 the phase's heading sits on top, but everything under it runs newest first: planned milestones at the top, Design-1 at the bottom, and inside S-011, "S-011 frozen" (planned) down to "New spec S-011". Below: v25 as it is, then the list read one way at every level, two ways round. Each phone opens on the timeline; scroll to read it through.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v25: heading down, contents up</h2>
+      <ul><li>The phase heading reads down; milestones, events and a plan's actions read up (newest first).</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v25, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option A · recommended</span><h2>Top down, oldest first</h2>
+      <ul><li>Under the phase: Design-1, then M6 with S-010 and S-011, then Now, then the planned milestones. Inside S-011: "New spec" first, the planned freeze last. A plan's actions run 5.1 to 5.6.</li>
+        <li>It reads like a log. Now and what's next sit at the bottom of what has happened.</li></ul>
+      <div class="phone"><iframe src="ord-A.html" title="Option A, live" loading="lazy"></iframe></div>
+      <a class="open" href="ord-A.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option B</span><h2>Newest first, headings at the root</h2>
+      <ul><li>The order inside stays newest first, and each heading (phase, milestone, sprint) moves to the foot of what it holds, so every level reads upward from where it began.</li>
+        <li>Consistent, but you meet a sprint's events before you meet its name.</li></ul>
+      <div class="phone"><iframe src="ord-B.html" title="Option B, live" loading="lazy"></iframe></div>
+      <a class="open" href="ord-B.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

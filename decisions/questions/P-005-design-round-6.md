@@ -28,3 +28,6 @@ Carried out: home's header floats in the glass band as one slim bar, the same as
 Shown in chat: the library with home's bar in ProjectHeader (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W, version 18) and mockup v22 (https://claude.ai/artifact/LfZ6v5WPV7YhxaXvGnTJtg).
 
 Asked by the question tool: "The words in the blue box (your comment on v21). On https://claude.ai/artifact/FQbAGYWFKh9BNVdeS5NA98: v22's map as it is, where each event in the window gets its kind and a short title, both cut short; then three live phones where the words wrap by whole words. Scroll the list inside each. Which one?" Options: "B: only the title, wrapped (Recommended)"; "A: kind, then the title wrapped"; "C: kind, then the whole title"; "Mix or none". Pictures: docs/design/mockups/options-map-wrap/ (now, wrap-A to wrap-C).
+5. "B: only the title, wrapped (Recommended)"
+
+Carried out: in the map's window, each event in view loses its kind word (its icon already says it), and its short title wraps by whole words onto up to three tighter lines, in the kind's place; the map keeps its height. To be built into the library (MilestoneMap) and then mockup v23 over v22.
